@@ -23,6 +23,7 @@
 #include "pqProxyGroupMenuManager.h"
 #include "pqPVApplicationCore.h"
 #include "pqPythonShellReaction.h"
+#include "pqMacroReaction.h"
 #include "pqSaveDataReaction.h"
 
 namespace TEM
@@ -55,6 +56,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   mgr->addProxy("filters", "Clip");
   mgr->addProxy("filters", "Contour");
   mgr->addProxy("filters", "Cut");
+  mgr->addProxy("filters", "ExtractHistogram");
+  mgr->addProxy("filters", "Calculator");
+  mgr->addProxy("filters", "PlotAttributes");
+  mgr->addProxy("filters", "ProbeLine");
+  mgr->addProxy("filters", "PythonCalculator");
+  mgr->addProxy("filters", "ProgrammableFilter");
   mgr->populateMenu();
 
   new pqLoadDataReaction(ui.actionOpen);
@@ -63,6 +70,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
           pqApplicationCore::instance(), SLOT(quit()));
 
   new pqPythonShellReaction(ui.actionPythonConsole);
+  new pqMacroReaction(ui.actionMacros);
 }
 
 MainWindow::~MainWindow()
