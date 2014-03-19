@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  setWindowTitle("TEM Tomography Environment");
+  setWindowTitle("Materials Visualization Environment");
 
   new pqParaViewBehaviors(this, this);
 

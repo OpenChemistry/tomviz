@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
-project(temtomography)
+project(matviz)
 find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 if(NOT PARAVIEW_BUILD_QT_GUI)
@@ -21,6 +21,6 @@ qt4_wrap_ui(UI_SOURCES
   MainWindow.ui)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-add_executable(temtomography ${SOURCES} ${UI_SOURCES})
-set_target_properties(temtomography PROPERTIES AUTOMOC TRUE)
-target_link_libraries(temtomography LINK_PRIVATE pqApplicationComponents)
+add_executable(matviz ${SOURCES} ${UI_SOURCES})
+set_target_properties(matviz PROPERTIES AUTOMOC TRUE)
+target_link_libraries(matviz LINK_PRIVATE pqApplicationComponents)
