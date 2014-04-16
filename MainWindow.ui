@@ -13,14 +13,14 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="pqTabbedMultiViewWidget" name="centralwidget"/>
+  <widget class="TEM::CentralWidget" name="centralWidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>20</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -110,9 +110,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>pqTabbedMultiViewWidget</class>
+   <class>TEM::CentralWidget</class>
    <extends>QWidget</extends>
-   <header>pqTabbedMultiViewWidget.h</header>
+   <header>CentralWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

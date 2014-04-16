@@ -13,26 +13,36 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef __LoadDataReaction_h
+#define __LoadDataReaction_h
 
-#include <QMainWindow>
+#include "pqReaction.h"
+
+class pqPipelineSource;
 
 namespace TEM
 {
-  /// The main window for the MatViz application.
-  class MainWindow : public QMainWindow
+  /// LoadDataReaction handles the "Load Data" action in MatViz. On trigger,
+  /// this will open the data file and necessary subsequent actions, including:
+  /// \li make the data source "active".
+  ///
+  class LoadDataReaction : public pqReaction
   {
   Q_OBJECT
-  typedef QMainWindow Superclass;
+  typedef pqReaction Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
+  LoadDataReaction(QAction* parentAction);
+  virtual ~LoadDataReaction();
+
+protected:
+  /// Called when the action is triggered.
+  virtual void onTriggered();
+
+  /// Create a raw data source from the reader.
+  pqPipelineSource* createDataSource(pqPipelineSource* reader);
 
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(LoadDataReaction);
   };
 }
 #endif

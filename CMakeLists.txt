@@ -9,18 +9,34 @@ if(NOT PARAVIEW_BUILD_QT_GUI)
 endif()
 
 set(SOURCES
+  ActiveObjects.cxx
+  ActiveObjects.h
+  Behaviors.cxx
+  Behaviors.h
+  CentralWidget.cxx
+  CentralWidget.h
+  LoadDataReaction.cxx
+  LoadDataReaction.h
   main.cxx
   MainWindow.cxx
   MainWindow.h
+  Utilities.h
   )
 
 qt4_wrap_cpp(MOC_SOURCES
-  MainWindow.h)
+  ActiveObjects.h
+  Behaviors.h
+  CentralWidget.h
+  LoadDataReaction.h
+  MainWindow.h
+  )
 
 qt4_wrap_ui(UI_SOURCES
-  MainWindow.ui)
+  CentralWidget.ui
+  MainWindow.ui
+  )
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(matviz ${SOURCES} ${UI_SOURCES})
 set_target_properties(matviz PROPERTIES AUTOMOC TRUE)
 target_link_libraries(matviz LINK_PRIVATE pqApplicationComponents)

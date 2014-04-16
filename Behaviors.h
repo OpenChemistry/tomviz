@@ -13,26 +13,25 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef __Behaviors_h
+#define __Behaviors_h
 
-#include <QMainWindow>
+#include <QObject>
 
+class QMainWindow;
 namespace TEM
 {
-  /// The main window for the MatViz application.
-  class MainWindow : public QMainWindow
+  /// Behaviors instantiates MatViz relevant ParaView behaviors (and any new
+  /// ones) as needed.
+  class Behaviors : public QObject
   {
-  Q_OBJECT
-  typedef QMainWindow Superclass;
+  Q_OBJECT;
+  typedef QObject Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
-
+  Behaviors(QMainWindow* mainWindow);
+  virtual ~Behaviors();
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(Behaviors);
   };
 }
 #endif

@@ -17,14 +17,16 @@
 #include "ui_MainWindow.h"
 
 #include "pqFiltersMenuReaction.h"
-#include "pqLoadDataReaction.h"
-#include "pqParaViewBehaviors.h"
 #include "pqProxyGroupMenuManager.h"
 #include "pqProxyGroupMenuManager.h"
 #include "pqPVApplicationCore.h"
 #include "pqPythonShellReaction.h"
 #include "pqMacroReaction.h"
 #include "pqSaveDataReaction.h"
+
+#include "ActiveObjects.h"
+#include "Behaviors.h"
+#include "LoadDataReaction.h"
 
 namespace TEM
 {
@@ -42,35 +44,48 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  setWindowTitle("Materials Visualization Environment");
+  this->setWindowTitle("Materials Visualization Environment");
 
-  new pqParaViewBehaviors(this, this);
+  // Link the histogram in the central widget to the active data source.
+  ui.centralWidget->connect(&ActiveObjects::instance(),
+    SIGNAL(dataSourceChanged(pqPipelineSource*)),
+    SLOT(setDataSource(pqPipelineSource*)));
 
-  pqProxyGroupMenuManager* mgr =
-    new pqProxyGroupMenuManager(ui.menuFilters, QString("NotUsed"));
-  mgr->setRecentlyUsedMenuSize(0);
-  pqPVApplicationCore::instance()->registerForQuicklaunch(
-    mgr->widgetActionsHolder());
-  new pqFiltersMenuReaction(mgr);
+  // connect quit.
+  pqApplicationCore::instance()->connect(
+    ui.actionExit, SIGNAL(triggered()), SLOT(quit()));
 
-  mgr->addProxy("filters", "Clip");
-  mgr->addProxy("filters", "Contour");
-  mgr->addProxy("filters", "Cut");
-  mgr->addProxy("filters", "ExtractHistogram");
-  mgr->addProxy("filters", "Calculator");
-  mgr->addProxy("filters", "PlotAttributes");
-  mgr->addProxy("filters", "ProbeLine");
-  mgr->addProxy("filters", "PythonCalculator");
-  mgr->addProxy("filters", "ProgrammableFilter");
-  mgr->populateMenu();
+  //pqProxyGroupMenuManager* mgr =
+  //  new pqProxyGroupMenuManager(ui.menuFilters, QString("NotUsed"));
+  //mgr->setRecentlyUsedMenuSize(0);
+  //pqPVApplicationCore::instance()->registerForQuicklaunch(
+  //  mgr->widgetActionsHolder());
+  //new pqFiltersMenuReaction(mgr);
 
-  new pqLoadDataReaction(ui.actionOpen);
-  new pqSaveDataReaction(ui.actionSave);
-  connect(ui.actionExit, SIGNAL(triggered()),
-          pqApplicationCore::instance(), SLOT(quit()));
+  //mgr->addProxy("filters", "Clip");
+  //mgr->addProxy("filters", "Contour");
+  //mgr->addProxy("filters", "Cut");
+  //mgr->addProxy("filters", "ExtractHistogram");
+  //mgr->addProxy("filters", "Calculator");
+  //mgr->addProxy("filters", "PlotAttributes");
+  //mgr->addProxy("filters", "ProbeLine");
+  //mgr->addProxy("filters", "PythonCalculator");
+  //mgr->addProxy("filters", "ProgrammableFilter");
+  //mgr->populateMenu();
 
-  new pqPythonShellReaction(ui.actionPythonConsole);
-  new pqMacroReaction(ui.actionMacros);
+  //new pqLoadDataReaction(ui.actionOpen);
+  //new pqSaveDataReaction(ui.actionSave);
+
+
+
+  //new pqPythonShellReaction(ui.actionPythonConsole);
+  //new pqMacroReaction(ui.actionMacros);
+
+  // Instantiate MatViz application behavior.
+  new Behaviors(this);
+
+
+  new LoadDataReaction(ui.actionOpen);
 }
 
 MainWindow::~MainWindow()
