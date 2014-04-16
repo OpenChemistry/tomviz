@@ -17,6 +17,7 @@
 
 #include "pqPipelineSource.h"
 #include "pqServer.h"
+#include "Utilities.h"
 
 namespace TEM
 {
@@ -52,6 +53,7 @@ void ActiveObjects::setActiveView(pqView* view)
 //-----------------------------------------------------------------------------
 void ActiveObjects::setActiveDataSource(pqPipelineSource* source)
 {
+  Q_ASSERT(source == NULL || TEM::isDataProducer(source));
   if (this->VoidActiveDataSource != source)
     {
     this->ActiveDataSource = source;

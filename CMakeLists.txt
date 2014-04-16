@@ -20,6 +20,8 @@ set(SOURCES
   main.cxx
   MainWindow.cxx
   MainWindow.h
+  PipelineWidget.cxx
+  PipelineWidget.h
   Utilities.h
   )
 
@@ -29,6 +31,7 @@ qt4_wrap_cpp(MOC_SOURCES
   CentralWidget.h
   LoadDataReaction.h
   MainWindow.h
+  PipelineWidget.h
   )
 
 qt4_wrap_ui(UI_SOURCES

@@ -21,7 +21,9 @@
 #include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
+#include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkTrivialProducer.h"
@@ -57,6 +59,7 @@ void LoadDataReaction::onTriggered()
   foreach (pqPipelineSource* reader, readers)
     {
     pqPipelineSource* dataSource = this->createDataSource(reader);
+    Q_ASSERT(dataSource);
     dataSources.push_back(dataSource);
 
     controller->UnRegisterProxy(reader->getProxy());
@@ -99,8 +102,13 @@ pqPipelineSource* LoadDataReaction::createDataSource(pqPipelineSource* reader)
   Q_ASSERT(tp);
   tp->SetOutput(vtkalgorithm->GetOutputDataObject(0));
 
-  controller->RegisterPipelineProxy(source);
+  // We add an annotation to the proxy so that it'll be easier for code to
+  // locate registered pipeline proxies that are being treated as data sources.
+  TEM::annotateDataProducer(source,
+    vtkSMPropertyHelper(readerProxy,
+      vtkSMCoreUtilities::GetFileNameProperty(readerProxy)).GetAsString());
 
+  controller->RegisterPipelineProxy(source);
   return TEM::convert<pqPipelineSource*>(source);
 }
 

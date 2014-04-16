@@ -51,19 +51,43 @@
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QDockWidget" name="dockWidget">
    <property name="windowTitle">
-    <string>Pipeline Browser</string>
+    <string>Pipeline</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="pqPipelineBrowserWidget" name="pipelineBrowserWidget"/>
+   <widget class="QWidget" name="pipelineBrowserWidget">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="margin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="TEM::PipelineWidget" name="treeWidget">
+       <property name="rootIsDecorated">
+        <bool>false</bool>
+       </property>
+       <attribute name="headerVisible">
+        <bool>false</bool>
+       </attribute>
+       <column>
+        <property name="text">
+         <string notr="true">1</string>
+        </property>
+       </column>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QDockWidget" name="dockWidget_2">
    <property name="windowTitle">
-    <string>Properties Panel</string>
+    <string>Properties </string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>1</number>
+    <number>2</number>
    </attribute>
    <widget class="pqPropertiesPanel" name="propertiesPanel"/>
   </widget>
@@ -104,16 +128,15 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>pqPipelineBrowserWidget</class>
-   <extends>QWidget</extends>
-   <header>pqPipelineBrowserWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>TEM::CentralWidget</class>
    <extends>QWidget</extends>
    <header>CentralWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TEM::PipelineWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>PipelineWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

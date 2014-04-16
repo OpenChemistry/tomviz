@@ -30,6 +30,7 @@ namespace TEM
 public:
   Behaviors(QMainWindow* mainWindow);
   virtual ~Behaviors();
+
 private:
   Q_DISABLE_COPY(Behaviors);
   };
