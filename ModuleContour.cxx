@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "ModuleOutline.h"
+#include "ModuleContour.h"
 
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
@@ -26,24 +26,24 @@
 namespace TEM
 {
 //-----------------------------------------------------------------------------
-ModuleOutline::ModuleOutline(QObject* parentObject) : Superclass(parentObject)
+ModuleContour::ModuleContour(QObject* parentObject) :Superclass(parentObject)
 {
 }
 
 //-----------------------------------------------------------------------------
-ModuleOutline::~ModuleOutline()
+ModuleContour::~ModuleContour()
 {
   this->finalize();
 }
 
 //-----------------------------------------------------------------------------
-QIcon ModuleOutline::icon() const
+QIcon ModuleContour::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqProbeLocation24.png");
+  return QIcon(":/pqWidgets/Icons/pqIsosurface24.png");
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOutline::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+bool ModuleContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
@@ -54,50 +54,44 @@ bool ModuleOutline::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* vie
 
   vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
 
-  // Create the outline filter.
+  // Create the contour filter.
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("filters", "OutlineFilter"));
+  proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
 
-  this->OutlineFilter = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->OutlineFilter);
-  controller->PreInitializeProxy(this->OutlineFilter);
-  vtkSMPropertyHelper(this->OutlineFilter, "Input").Set(dataSource);
-  controller->PostInitializeProxy(this->OutlineFilter);
-  controller->RegisterPipelineProxy(this->OutlineFilter);
+  this->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(this->ContourFilter);
+  controller->PreInitializeProxy(this->ContourFilter);
+  vtkSMPropertyHelper(this->ContourFilter, "Input").Set(dataSource);
+  vtkSMPropertyHelper(this->ContourFilter, "ComputeScalars").Set(1);
+  controller->PostInitializeProxy(this->ContourFilter);
+  controller->RegisterPipelineProxy(this->ContourFilter);
 
   // Create the representation for it.
-  this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, view);
-  Q_ASSERT(this->OutlineRepresentation);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "Representation").Set("Outline");
-  this->OutlineRepresentation->UpdateVTKObjects();
+  this->ContourRepresentation = controller->Show(this->ContourFilter, 0, view);
+  Q_ASSERT(this->ContourRepresentation);
+  vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Surface");
+  this->ContourRepresentation->UpdateVTKObjects();
   return true;
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOutline::finalize()
+bool ModuleContour::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(this->OutlineRepresentation);
-  controller->UnRegisterProxy(this->OutlineFilter);
-
-  this->OutlineFilter = NULL;
-  this->OutlineRepresentation = NULL;
+  controller->UnRegisterProxy(this->ContourRepresentation);
+  controller->UnRegisterProxy(this->ContourFilter);
+  this->ContourFilter = NULL;
+  this->ContourRepresentation = NULL;
   return true;
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOutline::setVisibility(bool val)
+bool ModuleContour::setVisibility(bool val)
 {
-  Q_ASSERT(this->OutlineRepresentation);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility").Set(val? 1 : 0);
-  this->OutlineRepresentation->UpdateVTKObjects();
+  vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").Set(val? 1 : 0);
+  this->ContourRepresentation->UpdateVTKObjects();
   return true;
 }
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 } // end of namespace TEM

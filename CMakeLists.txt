@@ -21,6 +21,8 @@ set(SOURCES
   MainWindow.cxx
   MainWindow.h
   Module.cxx
+  ModuleContour.cxx
+  ModuleContour.h
   ModuleFactory.cxx
   ModuleFactory.h
   Module.h
@@ -42,6 +44,7 @@ qt4_wrap_cpp(MOC_SOURCES
   LoadDataReaction.h
   MainWindow.h
   Module.h
+  ModuleContour.h
   ModuleManager.h
   ModuleMenu.h
   ModuleOutline.h
