@@ -13,37 +13,37 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __CentralWidget_h
-#define __CentralWidget_h
+#ifndef __ModuleOutline_h
+#define __ModuleOutline_h
 
-#include <QWidget>
-#include <QScopedPointer>
+#include "Module.h"
+#include "vtkWeakPointer.h"
 
 class vtkSMSourceProxy;
+class vtkSMProxy;
 
 namespace TEM
 {
-  /// CentralWidget is a QWidget that is used as the central widget
-  /// for the application. This include a histogram at the top and a
-  /// ParaView view-layout widget at the bottom.
-  class CentralWidget : public QWidget
+  /// A simple module to show the outline for any dataset.
+  class ModuleOutline : public Module
   {
   Q_OBJECT;
-  typedef QWidget Superclass;
+  typedef Module Superclass;
 public:
-  CentralWidget(QWidget* parent=NULL, Qt::WindowFlags f=0);
-  virtual ~CentralWidget();
+  ModuleOutline(QObject* parent=NULL);
+  virtual ~ModuleOutline();
 
-public slots:
-  /// Set the data source to from which the data is "histogrammed" and shown
-  /// in the histogram view.
-  void setDataSource(vtkSMSourceProxy*);
+  virtual QString label() const { return  "Outline"; }
+  virtual QIcon icon() const;
+  virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
+  virtual bool finalize();
+  virtual bool setVisibility(bool val);
 
 private:
-  Q_DISABLE_COPY(CentralWidget);
-
-  class CWInternals;
-  QScopedPointer<CWInternals> Internals;
+  Q_DISABLE_COPY(ModuleOutline);
+  vtkWeakPointer<vtkSMSourceProxy> OutlineFilter;
+  vtkWeakPointer<vtkSMProxy> OutlineRepresentation;
   };
-};
+}
+
 #endif

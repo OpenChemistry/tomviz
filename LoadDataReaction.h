@@ -19,6 +19,7 @@
 #include "pqReaction.h"
 
 class pqPipelineSource;
+class vtkSMSourceProxy;
 
 namespace TEM
 {
@@ -39,7 +40,7 @@ protected:
   virtual void onTriggered();
 
   /// Create a raw data source from the reader.
-  pqPipelineSource* createDataSource(pqPipelineSource* reader);
+  vtkSMSourceProxy* createDataSource(pqPipelineSource* reader);
 
 private:
   Q_DISABLE_COPY(LoadDataReaction);

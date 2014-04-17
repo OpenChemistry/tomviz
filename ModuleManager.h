@@ -13,37 +13,41 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __CentralWidget_h
-#define __CentralWidget_h
+#ifndef __ModuleManager_h
+#define __ModuleManager_h
 
-#include <QWidget>
+#include <QObject>
 #include <QScopedPointer>
-
-class vtkSMSourceProxy;
 
 namespace TEM
 {
-  /// CentralWidget is a QWidget that is used as the central widget
-  /// for the application. This include a histogram at the top and a
-  /// ParaView view-layout widget at the bottom.
-  class CentralWidget : public QWidget
+  class Module;
+
+  /// Singleton akin to ProxyManager, but to keep track (and
+  /// serialize/deserialze) modules.
+  class ModuleManager : public QObject
   {
   Q_OBJECT;
-  typedef QWidget Superclass;
+  typedef QObject Superclass;
 public:
-  CentralWidget(QWidget* parent=NULL, Qt::WindowFlags f=0);
-  virtual ~CentralWidget();
+  static ModuleManager& instance();
 
 public slots:
-  /// Set the data source to from which the data is "histogrammed" and shown
-  /// in the histogram view.
-  void setDataSource(vtkSMSourceProxy*);
+  void addModule(Module*);
+  void removeModule(Module*);
+  void removeAllModules();
+
+signals:
+  void moduleAdded(Module*);
+  void moduleRemoved(Module*);
 
 private:
-  Q_DISABLE_COPY(CentralWidget);
+  Q_DISABLE_COPY(ModuleManager);
+  ModuleManager(QObject* parent=NULL);
+  ~ModuleManager();
 
-  class CWInternals;
-  QScopedPointer<CWInternals> Internals;
+  class MMInternals;
+  QScopedPointer<MMInternals> Internals;
   };
-};
+}
 #endif

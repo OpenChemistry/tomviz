@@ -80,7 +80,8 @@ namespace TEM
       proxy->HasAnnotation("MatViz.Type") &&
       (QString("DataSource") == proxy->GetAnnotation("MatViz.Type"));
     }
-  inline bool isDataProducer(pqProxy* proxy) { return isDataProducer(convert(proxy)); }
+  inline bool isDataProducer(pqProxy* pqproxy)
+    { return isDataProducer(convert(pqproxy)); }
 
   //---------------------------------------------------------------------------
   // Returns the MatViz label for a proxy, if any, otherwise simply returns the

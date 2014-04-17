@@ -27,6 +27,7 @@
 #include "ActiveObjects.h"
 #include "Behaviors.h"
 #include "LoadDataReaction.h"
+#include "ModuleMenu.h"
 
 namespace TEM
 {
@@ -48,8 +49,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
-    SIGNAL(dataSourceChanged(pqPipelineSource*)),
-    SLOT(setDataSource(pqPipelineSource*)));
+    SIGNAL(dataSourceChanged(vtkSMSourceProxy*)),
+    SLOT(setDataSource(vtkSMSourceProxy*)));
 
   // connect quit.
   pqApplicationCore::instance()->connect(
@@ -86,6 +87,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
 
   new LoadDataReaction(ui.actionOpen);
+
+  new ModuleMenu(ui.menuModules);
 }
 
 MainWindow::~MainWindow()

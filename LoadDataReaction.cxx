@@ -24,8 +24,8 @@
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMPropertyHelper.h"
-#include "vtkSMProxy.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMSourceProxy.h"
 #include "vtkTrivialProducer.h"
 
 namespace TEM
@@ -52,13 +52,13 @@ void LoadDataReaction::onTriggered()
 
   QList<pqPipelineSource*> readers = pqLoadDataReaction::loadData();
 
-  QList<pqPipelineSource*> dataSources;
+  QList<vtkSMSourceProxy*> dataSources;
 
   // Since we want to ditch the reader pipeline and just keep the raw data
   // around. We do this magic.
   foreach (pqPipelineSource* reader, readers)
     {
-    pqPipelineSource* dataSource = this->createDataSource(reader);
+    vtkSMSourceProxy* dataSource = this->createDataSource(reader);
     Q_ASSERT(dataSource);
     dataSources.push_back(dataSource);
 
@@ -77,7 +77,7 @@ void LoadDataReaction::onTriggered()
 }
 
 //-----------------------------------------------------------------------------
-pqPipelineSource* LoadDataReaction::createDataSource(pqPipelineSource* reader)
+vtkSMSourceProxy* LoadDataReaction::createDataSource(pqPipelineSource* reader)
 {
   Q_ASSERT(reader);
 
@@ -96,6 +96,7 @@ pqPipelineSource* LoadDataReaction::createDataSource(pqPipelineSource* reader)
   vtkSmartPointer<vtkSMProxy> source;
   source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
   Q_ASSERT(source != NULL);
+  Q_ASSERT(vtkSMSourceProxy::SafeDownCast(source));
 
   vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
     source->GetClientSideObject());
@@ -109,7 +110,7 @@ pqPipelineSource* LoadDataReaction::createDataSource(pqPipelineSource* reader)
       vtkSMCoreUtilities::GetFileNameProperty(readerProxy)).GetAsString());
 
   controller->RegisterPipelineProxy(source);
-  return TEM::convert<pqPipelineSource*>(source);
+  return vtkSMSourceProxy::SafeDownCast(source);
 }
 
 //-----------------------------------------------------------------------------

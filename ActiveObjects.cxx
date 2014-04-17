@@ -18,6 +18,10 @@
 #include "pqPipelineSource.h"
 #include "pqServer.h"
 #include "Utilities.h"
+#include "pqView.h"
+#include "pqActiveObjects.h"
+#include "vtkSMSourceProxy.h"
+#include "vtkSMViewProxy.h"
 
 namespace TEM
 {
@@ -26,10 +30,12 @@ namespace TEM
 ActiveObjects::ActiveObjects()
   : Superclass(),
   ActiveDataSource(NULL),
-  VoidActiveDataSource(NULL)
+  VoidActiveDataSource(NULL),
+  ActiveModule(NULL),
+  VoidActiveModule(NULL)
 {
   this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
-    SIGNAL(viewChanged(pqView*)));
+    SLOT(viewChanged(pqView*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -45,13 +51,26 @@ ActiveObjects& ActiveObjects::instance()
 }
 
 //-----------------------------------------------------------------------------
-void ActiveObjects::setActiveView(pqView* view)
+void ActiveObjects::setActiveView(vtkSMViewProxy* view)
 {
-  pqActiveObjects::instance().setActiveView(view);
+  pqActiveObjects::instance().setActiveView(TEM::convert<pqView*>(view));
 }
 
 //-----------------------------------------------------------------------------
-void ActiveObjects::setActiveDataSource(pqPipelineSource* source)
+vtkSMViewProxy* ActiveObjects::activeView() const
+{
+  pqView* view = pqActiveObjects::instance().activeView();
+  return view? view->getViewProxy() : NULL;
+}
+
+//-----------------------------------------------------------------------------
+void ActiveObjects::viewChanged(pqView* view)
+{
+  emit this->viewChanged(view? view->getViewProxy() : NULL);
+}
+
+//-----------------------------------------------------------------------------
+void ActiveObjects::setActiveDataSource(vtkSMSourceProxy* source)
 {
   Q_ASSERT(source == NULL || TEM::isDataProducer(source));
   if (this->VoidActiveDataSource != source)
@@ -70,5 +89,20 @@ vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 }
 
 //-----------------------------------------------------------------------------
+void ActiveObjects::setActiveModule(Module* module)
+{
+  if (this->VoidActiveModule != module)
+    {
+    this->VoidActiveModule = module;
+    this->ActiveModule = module;
+    if (module)
+      {
+      this->setActiveView(module->view());
+      this->setActiveDataSource(module->dataSource());
+      }
+    emit this->moduleChanged(module);
+    }
+}
 
+//-----------------------------------------------------------------------------
 } // end of namespace TEM

@@ -13,41 +13,43 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "CentralWidget.h"
-#include "ui_CentralWidget.h"
+#include "Module.h"
 
 #include "vtkSMSourceProxy.h"
-
-#include <QtDebug>
+#include "vtkSMViewProxy.h"
 
 namespace TEM
 {
-
-class CentralWidget::CWInternals
-{
-public:
-  Ui::CentralWidget Ui;
-};
-
 //-----------------------------------------------------------------------------
-CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
-  : Superclass(parentObject, wflags),
-  Internals(new CentralWidget::CWInternals())
-{
-  this->Internals->Ui.setupUi(this);
-}
-
-//-----------------------------------------------------------------------------
-CentralWidget::~CentralWidget()
+Module::Module(QObject* parentObject) : Superclass(parentObject)
 {
 }
 
 //-----------------------------------------------------------------------------
-void CentralWidget::setDataSource(vtkSMSourceProxy* source)
+Module::~Module()
 {
-  qDebug() << "TODO: Generate histogram and show for " << source;
 }
 
-//
-//
+//-----------------------------------------------------------------------------
+bool Module::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+{
+  this->View = view;
+  this->DataSource = dataSource;
+  return (this->View && this->DataSource);
+}
+
+//-----------------------------------------------------------------------------
+vtkSMViewProxy* Module::view() const
+{
+  return this->View;
+}
+
+//-----------------------------------------------------------------------------
+vtkSMSourceProxy* Module::dataSource() const
+{
+  return this->DataSource;
+}
+
+
+//-----------------------------------------------------------------------------
 } // end of namespace TEM

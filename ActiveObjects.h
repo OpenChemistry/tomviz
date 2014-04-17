@@ -17,14 +17,20 @@
 #define __ActiveObjects_h
 
 #include <QObject>
-#include "pqActiveObjects.h" // needed for pqActiveObjects.
+#include <QPointer>
+#include "vtkWeakPointer.h" // needed for vtkWeakPointer.
+#include "vtkSMSourceProxy.h"
+#include "Module.h"
 
 class pqView;
-class pqPipelineSource;
 class vtkSMSessionProxyManager;
+class vtkSMSourceProxy;
+class vtkSMViewProxy;
 
 namespace TEM
 {
+  class Module;
+
   /// ActiveObjects keeps track of active objects in MatViz.
   /// This is similar to pqActiveObjects in ParaView, however tracks objects
   /// relevant to MatViz.
@@ -37,12 +43,15 @@ public:
   static ActiveObjects& instance();
 
   /// Returns the active view.
-  pqView* activeView() const
-    { return pqActiveObjects::instance().activeView(); }
+  vtkSMViewProxy* activeView() const;
 
   /// Returns the active data source.
-  pqPipelineSource* activeDataSource() const
+  vtkSMSourceProxy* activeDataSource() const
     { return this->ActiveDataSource; }
+
+  /// Returns the active module.
+  Module* activeModule() const
+    { return this->ActiveModule; }
 
   /// Returns the vtkSMSessionProxyManager from the active server/session.
   /// Provided here for convenience, since we need to access the proxy manager
@@ -51,25 +60,36 @@ public:
 
 public slots:
   /// Set the active view;
-  void setActiveView(pqView*);
+  void setActiveView(vtkSMViewProxy*);
 
   /// Set the active data source.
-  void setActiveDataSource(pqPipelineSource* source);
+  void setActiveDataSource(vtkSMSourceProxy* source);
+
+  /// Set the active module.
+  void setActiveModule(Module* module);
 
 signals:
   /// fired whenever the active view changes.
-  void viewChanged(pqView*);
+  void viewChanged(vtkSMViewProxy*);
 
   /// fired whenever the active data source changes.
-  void dataSourceChanged(pqPipelineSource*);
+  void dataSourceChanged(vtkSMSourceProxy*);
+
+  /// fired whenever the active module changes.
+  void moduleChanged(Module*);
+
+private slots:
+  void viewChanged(pqView*);
 
 protected:
   ActiveObjects();
   virtual ~ActiveObjects();
 
-  QPointer<pqPipelineSource> ActiveDataSource;
+  vtkWeakPointer<vtkSMSourceProxy> ActiveDataSource;
   void* VoidActiveDataSource;
 
+  QPointer<Module> ActiveModule;
+  void* VoidActiveModule;
 private:
   Q_DISABLE_COPY(ActiveObjects);
   };
