@@ -37,20 +37,6 @@ set(SOURCES
   Utilities.h
   )
 
-qt4_wrap_cpp(MOC_SOURCES
-  ActiveObjects.h
-  Behaviors.h
-  CentralWidget.h
-  LoadDataReaction.h
-  MainWindow.h
-  Module.h
-  ModuleContour.h
-  ModuleManager.h
-  ModuleMenu.h
-  ModuleOutline.h
-  PipelineWidget.h
-  )
-
 qt4_wrap_ui(UI_SOURCES
   CentralWidget.ui
   MainWindow.ui
