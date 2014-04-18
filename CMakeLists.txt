@@ -8,6 +8,28 @@ if(NOT PARAVIEW_BUILD_QT_GUI)
     "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE")
 endif()
 
+option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" ON)
+if(ENABLE_DAX_ACCELERATION)
+  find_package(DAX REQUIRED)
+  DaxConfigureTBB(REQUIRED)
+
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dax)
+
+  set(accelerated_srcs
+    dax/vtkAccelContour.cxx
+    )
+
+  set(accelerated_xml
+    dax/AcceleratedAlgorithms.xml
+    )
+
+  add_server_manager_extension(accel_srcs "Accel" "1.0"
+                              "${accelerated_xml}"
+                              "${accelerated_srcs}"
+                              )
+  list(APPEND accel_srcs "${accelerated_srcs}")
+endif()
+
 set(SOURCES
   ActiveObjects.cxx
   ActiveObjects.h
@@ -44,11 +66,20 @@ qt4_wrap_ui(UI_SOURCES
   )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-add_executable(matviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES})
+
+add_executable(matviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES} ${accel_srcs})
+
 set_target_properties(matviz PROPERTIES AUTOMOC TRUE)
+
 target_link_libraries(matviz LINK_PRIVATE pqApplicationComponents)
 if(APPLE)
   install(TARGETS matviz DESTINATION Applications COMPONENT runtime)
 else()
   install(TARGETS matviz DESTINATION bin COMPONENT runtime)
+endif()
+
+if(ENABLE_DAX_ACCELERATION)
+  #set the dax backend to tbb explicitly
+  set_target_properties(matviz PROPERTIES COMPILE_DEFINITIONS
+                        "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
 endif()
