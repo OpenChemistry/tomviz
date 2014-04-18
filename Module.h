@@ -58,8 +58,8 @@ public slots:
   /// show/hide all representations created for this module.
   virtual bool setVisibility(bool val)=0;
 
-  bool show() { this->setVisibility(true); }
-  bool hide() { this->setVisibility(false); }
+  bool show() { return this->setVisibility(true); }
+  bool hide() { return this->setVisibility(false); }
 
 private:
   Q_DISABLE_COPY(Module);
