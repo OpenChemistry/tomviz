@@ -16,7 +16,12 @@
 #include "CentralWidget.h"
 #include "ui_CentralWidget.h"
 
-#include "vtkSMSourceProxy.h"
+#include <vtkSMSourceProxy.h>
+
+#include <vtkContextView.h>
+#include <vtkContextScene.h>
+#include <vtkChartXY.h>
+#include <vtkAxis.h>
 
 #include <QtDebug>
 
@@ -35,6 +40,18 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
     Internals(new CentralWidget::CWInternals())
 {
   this->Internals->Ui.setupUi(this);
+
+  // Set up our little chart.
+  this->Histogram
+      ->SetInteractor(this->Internals->Ui.histogramWidget->GetInteractor());
+  this->Internals->Ui.histogramWidget
+      ->SetRenderWindow(this->Histogram->GetRenderWindow());
+  vtkNew<vtkChartXY> chart;
+  this->Histogram->GetScene()->AddItem(chart.Get());
+  chart->SetRenderEmpty(true);
+  chart->SetAutoAxes(false);
+  chart->GetAxis(vtkAxis::LEFT)->SetTitle("");
+  chart->GetAxis(vtkAxis::BOTTOM)->SetTitle("");
 }
 
 //-----------------------------------------------------------------------------

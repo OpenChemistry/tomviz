@@ -13,14 +13,23 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGraphicsView" name="histogramWidget">
+    <widget class="QVTKWidget" name="histogramWidget" native="true">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
+       <verstretch>1</verstretch>
       </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>200</height>
+      </size>
+     </property>
+     <property name="autoFillBackground">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -29,7 +38,7 @@
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
        <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
+       <verstretch>3</verstretch>
       </sizepolicy>
      </property>
      <property name="minimumSize">
@@ -47,6 +56,12 @@
    <class>pqTabbedMultiViewWidget</class>
    <extends>QWidget</extends>
    <header>pqTabbedMultiViewWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QVTKWidget</class>
+   <extends>QWidget</extends>
+   <header>QVTKWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

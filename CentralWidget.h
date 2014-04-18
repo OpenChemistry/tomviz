@@ -18,8 +18,10 @@
 
 #include <QWidget>
 #include <QScopedPointer>
+#include <vtkNew.h>
 
 class vtkSMSourceProxy;
+class vtkContextView;
 
 namespace TEM
 {
@@ -34,7 +36,7 @@ class CentralWidget : public QWidget
   typedef QWidget Superclass;
 
 public:
-  CentralWidget(QWidget* parent=NULL, Qt::WindowFlags f=0);
+  CentralWidget(QWidget* parent = NULL, Qt::WindowFlags f = 0);
   virtual ~CentralWidget();
 
 public slots:
@@ -47,6 +49,7 @@ private:
 
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
+  vtkNew<vtkContextView> Histogram;
 };
 
 }
