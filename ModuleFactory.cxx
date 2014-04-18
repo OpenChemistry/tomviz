@@ -17,6 +17,7 @@
 
 #include "ModuleContour.h"
 #include "ModuleOutline.h"
+#include "ModuleVolume.h"
 #include "pqView.h"
 #include "Utilities.h"
 #include "vtkSMViewProxy.h"
@@ -46,7 +47,7 @@ QList<QString> ModuleFactory::moduleTypes(
 
     // based on the data type and view, return module types.
     reply << "Outline"
-//      << "Volume"
+      << "Volume"
       << "Contour";
     qSort(reply);
     }
@@ -65,6 +66,10 @@ Module* ModuleFactory::createModule(
   else if (type == "Contour")
     {
     module = new ModuleContour();
+    }
+  else if (type == "Volume")
+    {
+    module = new ModuleVolume();
     }
 
   if (module)

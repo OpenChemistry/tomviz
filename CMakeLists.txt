@@ -25,6 +25,7 @@ set(SOURCES
   ModuleContour.h
   ModuleFactory.cxx
   ModuleFactory.h
+  ModuleVolume.cxx
   Module.h
   ModuleManager.cxx
   ModuleManager.h
