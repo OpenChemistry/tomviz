@@ -55,15 +55,20 @@ bool ModuleContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* vie
 
   vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
 
-  // Create the contour filter.
+  // Create the contour filter. we first by trying to create the accelerated
+  // version of the filter, if that can't be found we fall back to the
+  // single threaded version.
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
+  proxy.TakeReference(pxm->NewProxy("accelerated_filters", "Contour"));
+  if(!proxy)
+    {
+    proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
+    }
 
   this->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->ContourFilter);
   controller->PreInitializeProxy(this->ContourFilter);
   vtkSMPropertyHelper(this->ContourFilter, "Input").Set(dataSource);
-  vtkSMPropertyHelper(this->ContourFilter, "ComputeScalars").Set(1);
   controller->PostInitializeProxy(this->ContourFilter);
   controller->RegisterPipelineProxy(this->ContourFilter);
 
