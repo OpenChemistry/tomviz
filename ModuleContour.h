@@ -23,10 +23,13 @@ class vtkSMProxy;
 
 namespace TEM
 {
-  class ModuleContour : public Module
-  {
-  Q_OBJECT;
+
+class ModuleContour : public Module
+{
+  Q_OBJECT
+
   typedef Module Superclass;
+
 public:
   ModuleContour(QObject* parent=NULL);
   virtual ~ModuleContour();
@@ -38,10 +41,11 @@ public:
   virtual bool setVisibility(bool val);
 
 private:
-  Q_DISABLE_COPY(ModuleContour);
+  Q_DISABLE_COPY(ModuleContour)
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
   vtkWeakPointer<vtkSMProxy> ContourRepresentation;
-  };
+};
+
 }
 
 #endif

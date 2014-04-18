@@ -24,16 +24,19 @@ class vtkSMSourceProxy;
 
 namespace TEM
 {
-  class Module;
 
-  /// PipelineWidget is a QTreeWidget to show the visualization "Pipeline" in MatViz.
-  /// This is not same as the underlying ParaView visualization pipeline. We
-  /// show higher level abstractions for MatViz users, than the raw VTK
-  /// pipelines.
-  class PipelineWidget : public QTreeWidget
-  {
-  Q_OBJECT;
+class Module;
+
+/// PipelineWidget is a QTreeWidget to show the visualization "Pipeline" in MatViz.
+/// This is not same as the underlying ParaView visualization pipeline. We
+/// show higher level abstractions for MatViz users, than the raw VTK
+/// pipelines.
+class PipelineWidget : public QTreeWidget
+{
+  Q_OBJECT
+
   typedef QTreeWidget Superclass;
+
 public:
   PipelineWidget(QWidget* parent=0);
   virtual ~PipelineWidget();
@@ -63,9 +66,11 @@ private:
   void removeDataSource(vtkSMSourceProxy* producer);
 
 private:
-  Q_DISABLE_COPY(PipelineWidget);
+  Q_DISABLE_COPY(PipelineWidget)
   class PWInternals;
   QScopedPointer<PWInternals> Internals;
-  };
+};
+
 }
+
 #endif

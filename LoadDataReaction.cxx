@@ -113,5 +113,4 @@ vtkSMSourceProxy* LoadDataReaction::createDataSource(pqPipelineSource* reader)
   return vtkSMSourceProxy::SafeDownCast(source);
 }
 
-//-----------------------------------------------------------------------------
 } // end of namespace TEM

@@ -18,7 +18,6 @@
 #include "Module.h"
 #include <QPointer>
 
-
 namespace TEM
 {
 
@@ -79,5 +78,4 @@ void ModuleManager::removeAllModules()
     }
 }
 
-//-----------------------------------------------------------------------------
 } // end of namesapce TEM

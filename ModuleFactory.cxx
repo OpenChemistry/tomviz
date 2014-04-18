@@ -82,5 +82,4 @@ Module* ModuleFactory::createModule(
   return module;
 }
 
-//-----------------------------------------------------------------------------
 } // end of namespace TEM

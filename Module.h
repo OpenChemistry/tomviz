@@ -23,14 +23,15 @@
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
 
-
 namespace TEM
 {
-  /// Abstract parent class for all Modules in MatViz.
-  class Module : public QObject
-  {
-  Q_OBJECT;
+/// Abstract parent class for all Modules in MatViz.
+class Module : public QObject
+{
+  Q_OBJECT
+
   typedef QObject Superclass;
+
 public:
   Module(QObject* parent=NULL);
   virtual ~Module();
@@ -62,9 +63,10 @@ public slots:
   bool hide() { return this->setVisibility(false); }
 
 private:
-  Q_DISABLE_COPY(Module);
+  Q_DISABLE_COPY(Module)
   vtkWeakPointer<vtkSMSourceProxy> DataSource;
   vtkWeakPointer<vtkSMViewProxy> View;
-  };
+};
+
 }
 #endif

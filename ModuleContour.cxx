@@ -25,6 +25,7 @@
 
 namespace TEM
 {
+
 //-----------------------------------------------------------------------------
 ModuleContour::ModuleContour(QObject* parentObject) :Superclass(parentObject)
 {
@@ -93,5 +94,4 @@ bool ModuleContour::setVisibility(bool val)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 } // end of namespace TEM

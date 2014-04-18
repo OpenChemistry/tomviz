@@ -29,15 +29,17 @@ class vtkSMViewProxy;
 
 namespace TEM
 {
-  class Module;
+class Module;
 
-  /// ActiveObjects keeps track of active objects in MatViz.
-  /// This is similar to pqActiveObjects in ParaView, however tracks objects
-  /// relevant to MatViz.
-  class ActiveObjects : public QObject
+/// ActiveObjects keeps track of active objects in MatViz.
+/// This is similar to pqActiveObjects in ParaView, however tracks objects
+/// relevant to MatViz.
+class ActiveObjects : public QObject
   {
-  Q_OBJECT;
+  Q_OBJECT
+
   typedef QObject Superclass;
+
 public:
   /// Returns reference to the singleton instance.
   static ActiveObjects& instance();
@@ -91,7 +93,7 @@ protected:
   QPointer<Module> ActiveModule;
   void* VoidActiveModule;
 private:
-  Q_DISABLE_COPY(ActiveObjects);
-  };
+  Q_DISABLE_COPY(ActiveObjects)
+};
 }
 #endif

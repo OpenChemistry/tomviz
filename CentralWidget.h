@@ -23,13 +23,16 @@ class vtkSMSourceProxy;
 
 namespace TEM
 {
-  /// CentralWidget is a QWidget that is used as the central widget
-  /// for the application. This include a histogram at the top and a
-  /// ParaView view-layout widget at the bottom.
-  class CentralWidget : public QWidget
-  {
-  Q_OBJECT;
+
+/// CentralWidget is a QWidget that is used as the central widget
+/// for the application. This include a histogram at the top and a
+/// ParaView view-layout widget at the bottom.
+class CentralWidget : public QWidget
+{
+  Q_OBJECT
+
   typedef QWidget Superclass;
+
 public:
   CentralWidget(QWidget* parent=NULL, Qt::WindowFlags f=0);
   virtual ~CentralWidget();
@@ -40,10 +43,12 @@ public slots:
   void setDataSource(vtkSMSourceProxy*);
 
 private:
-  Q_DISABLE_COPY(CentralWidget);
+  Q_DISABLE_COPY(CentralWidget)
 
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
-  };
 };
+
+}
+
 #endif

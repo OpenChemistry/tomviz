@@ -25,6 +25,7 @@
 
 namespace TEM
 {
+
 //-----------------------------------------------------------------------------
 ModuleOutline::ModuleOutline(QObject* parentObject) : Superclass(parentObject)
 {
@@ -43,7 +44,8 @@ QIcon ModuleOutline::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOutline::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+bool ModuleOutline::initialize(vtkSMSourceProxy* dataSource,
+                               vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
@@ -68,7 +70,8 @@ bool ModuleOutline::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* vie
   // Create the representation for it.
   this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, view);
   Q_ASSERT(this->OutlineRepresentation);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "Representation").Set("Outline");
+  vtkSMPropertyHelper(this->OutlineRepresentation,
+                      "Representation").Set("Outline");
   this->OutlineRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -94,10 +97,4 @@ bool ModuleOutline::setVisibility(bool val)
   return true;
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
 } // end of namespace TEM

@@ -20,11 +20,14 @@
 
 namespace TEM
 {
-  /// The main window for the MatViz application.
-  class MainWindow : public QMainWindow
-  {
+
+/// The main window for the MatViz application.
+class MainWindow : public QMainWindow
+{
   Q_OBJECT
+
   typedef QMainWindow Superclass;
+
 public:
   MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
   virtual ~MainWindow();
@@ -33,6 +36,7 @@ private:
   Q_DISABLE_COPY(MainWindow)
   class MWInternals;
   MWInternals* Internals;
-  };
+};
+
 }
 #endif

@@ -22,6 +22,7 @@
 
 namespace TEM
 {
+
 //-----------------------------------------------------------------------------
 ModuleMenu::ModuleMenu(QMenu* parentObject) : Superclass(parentObject)
 {
@@ -48,16 +49,16 @@ void ModuleMenu::aboutToShow()
   Q_ASSERT(menu);
 
   menu->clear();
-  QList<QString> modules = ModuleFactory::moduleTypes(
-    ActiveObjects::instance().activeDataSource(),
-    ActiveObjects::instance().activeView());
+  QList<QString> modules =
+      ModuleFactory::moduleTypes(ActiveObjects::instance().activeDataSource(),
+                                 ActiveObjects::instance().activeView());
 
   if (modules.size() > 0)
     {
-  foreach (const QString& txt, modules)
-    {
-    menu->addAction(txt);
-    }
+    foreach (const QString& txt, modules)
+      {
+      menu->addAction(txt);
+      }
     }
   else
     {
@@ -69,10 +70,10 @@ void ModuleMenu::aboutToShow()
 //-----------------------------------------------------------------------------
 void ModuleMenu::triggered(QAction* maction)
 {
-  Module* module = ModuleFactory::createModule(
-    maction->text(),
-    ActiveObjects::instance().activeDataSource(),
-    ActiveObjects::instance().activeView());
+  Module* module =
+      ModuleFactory::createModule(maction->text(),
+                                  ActiveObjects::instance().activeDataSource(),
+                                  ActiveObjects::instance().activeView());
   if (module)
     {
     ModuleManager::instance().addModule(module);
@@ -81,9 +82,7 @@ void ModuleMenu::triggered(QAction* maction)
   else
     {
     qCritical("Failed to create requested module.");
-
     }
 }
 
-//-----------------------------------------------------------------------------
 } // end of namespace TEM

@@ -21,18 +21,20 @@
 class QMainWindow;
 namespace TEM
 {
-  /// Behaviors instantiates MatViz relevant ParaView behaviors (and any new
-  /// ones) as needed.
-  class Behaviors : public QObject
+/// Behaviors instantiates MatViz relevant ParaView behaviors (and any new
+/// ones) as needed.
+class Behaviors : public QObject
   {
-  Q_OBJECT;
+  Q_OBJECT
+
   typedef QObject Superclass;
+
 public:
   Behaviors(QMainWindow* mainWindow);
   virtual ~Behaviors();
 
 private:
-  Q_DISABLE_COPY(Behaviors);
-  };
+  Q_DISABLE_COPY(Behaviors)
+};
 }
 #endif

@@ -35,7 +35,7 @@ ActiveObjects::ActiveObjects()
   VoidActiveModule(NULL)
 {
   this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
-    SLOT(viewChanged(pqView*)));
+                SLOT(viewChanged(pqView*)));
 }
 
 //-----------------------------------------------------------------------------

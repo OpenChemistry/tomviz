@@ -22,12 +22,14 @@ class QMenu;
 class QAction;
 namespace TEM
 {
-  /// ModuleMenu is manager for the Modules menu. It fills it up with actions
-  /// and handles their triggers based on available modules reported by
-  /// ModuleFactory.
-  class ModuleMenu : public QObject
-  {
-  Q_OBJECT;
+
+/// ModuleMenu is manager for the Modules menu. It fills it up with actions
+/// and handles their triggers based on available modules reported by
+/// ModuleFactory.
+class ModuleMenu : public QObject
+{
+  Q_OBJECT
+
   typedef QObject Superclass;
 
 public:
@@ -42,8 +44,9 @@ private slots:
   void triggered(QAction* maction);
 
 private:
-  Q_DISABLE_COPY(ModuleMenu);
-  };
+  Q_DISABLE_COPY(ModuleMenu)
+};
+
 }
 
 #endif

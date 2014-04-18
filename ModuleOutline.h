@@ -24,11 +24,14 @@ class vtkSMProxy;
 
 namespace TEM
 {
-  /// A simple module to show the outline for any dataset.
-  class ModuleOutline : public Module
-  {
-  Q_OBJECT;
+
+/// A simple module to show the outline for any dataset.
+class ModuleOutline : public Module
+{
+  Q_OBJECT
+
   typedef Module Superclass;
+
 public:
   ModuleOutline(QObject* parent=NULL);
   virtual ~ModuleOutline();
@@ -40,10 +43,11 @@ public:
   virtual bool setVisibility(bool val);
 
 private:
-  Q_DISABLE_COPY(ModuleOutline);
+  Q_DISABLE_COPY(ModuleOutline)
   vtkWeakPointer<vtkSMSourceProxy> OutlineFilter;
   vtkWeakPointer<vtkSMProxy> OutlineRepresentation;
-  };
+};
+
 }
 
 #endif

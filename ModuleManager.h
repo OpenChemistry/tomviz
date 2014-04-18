@@ -21,14 +21,17 @@
 
 namespace TEM
 {
-  class Module;
 
-  /// Singleton akin to ProxyManager, but to keep track (and
-  /// serialize/deserialze) modules.
-  class ModuleManager : public QObject
+class Module;
+
+/// Singleton akin to ProxyManager, but to keep track (and
+/// serialize/deserialze) modules.
+class ModuleManager : public QObject
   {
-  Q_OBJECT;
+  Q_OBJECT
+
   typedef QObject Superclass;
+
 public:
   static ModuleManager& instance();
 
@@ -42,12 +45,14 @@ signals:
   void moduleRemoved(Module*);
 
 private:
-  Q_DISABLE_COPY(ModuleManager);
+  Q_DISABLE_COPY(ModuleManager)
   ModuleManager(QObject* parent=NULL);
   ~ModuleManager();
 
   class MMInternals;
   QScopedPointer<MMInternals> Internals;
-  };
+};
+
 }
+
 #endif

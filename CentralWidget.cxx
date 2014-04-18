@@ -32,7 +32,7 @@ public:
 //-----------------------------------------------------------------------------
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   : Superclass(parentObject, wflags),
-  Internals(new CentralWidget::CWInternals())
+    Internals(new CentralWidget::CWInternals())
 {
   this->Internals->Ui.setupUi(this);
 }
@@ -48,6 +48,4 @@ void CentralWidget::setDataSource(vtkSMSourceProxy* source)
   qDebug() << "TODO: Generate histogram and show for " << source;
 }
 
-//
-//
 } // end of namespace TEM

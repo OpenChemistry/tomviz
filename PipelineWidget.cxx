@@ -26,6 +26,7 @@
 
 namespace TEM
 {
+
 class PipelineWidget::PWInternals
 {
 public:
@@ -38,7 +39,7 @@ public:
   vtkSMSourceProxy* dataProducer(QTreeWidgetItem* item) const
     {
     for (DataProducerItemsMap::const_iterator iter = this->DataProducerItems.begin();
-      iter != this->DataProducerItems.end(); ++iter)
+         iter != this->DataProducerItems.end(); ++iter)
       {
       if (iter.value() == item)
         {
@@ -51,7 +52,7 @@ public:
   Module* module(QTreeWidgetItem* item) const
     {
     for (ModuleItemsMap::const_iterator iter = this->ModuleItems.begin();
-      iter != this->ModuleItems.end(); ++iter)
+         iter != this->ModuleItems.end(); ++iter)
       {
       if (iter.value() == item)
         {
@@ -65,30 +66,32 @@ public:
 //-----------------------------------------------------------------------------
 PipelineWidget::PipelineWidget(QWidget* parentObject)
    : Superclass(parentObject),
-   Internals(new PipelineWidget::PWInternals())
+     Internals(new PipelineWidget::PWInternals())
 {
   // track registration of new proxies to update the widget.
   pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
   this->connect(smmodel, SIGNAL(sourceAdded(pqPipelineSource*)),
-    SLOT(sourceAdded(pqPipelineSource*)));
+                SLOT(sourceAdded(pqPipelineSource*)));
   this->connect(smmodel, SIGNAL(sourceRemoved(pqPipelineSource*)),
-    SLOT(sourceRemoved(pqPipelineSource*)));
+                SLOT(sourceRemoved(pqPipelineSource*)));
 
   // track selection to update ActiveObjects.
-  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(vtkSMSourceProxy*)),
-    SLOT(setCurrent(vtkSMSourceProxy*)));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(vtkSMSourceProxy*)),
+                SLOT(setCurrent(vtkSMSourceProxy*)));
   this->connect(&ActiveObjects::instance(), SIGNAL(moduleChanged(Module*)),
-    SLOT(setCurrent(Module*)));
+                SLOT(setCurrent(Module*)));
 
   // update ActiveObjects when user interacts.
-  this->connect(this, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-    SLOT(currentItemChanged(QTreeWidgetItem*)));
+  this->connect(this,
+                SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
+                SLOT(currentItemChanged(QTreeWidgetItem*)));
 
   // track ModuleManager.
   this->connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
-    SLOT(moduleAdded(Module*)));
+                SLOT(moduleAdded(Module*)));
   this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
-    SLOT(moduleRemoved(Module*)));
+                SLOT(moduleRemoved(Module*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -154,7 +157,7 @@ void PipelineWidget::moduleAdded(Module* module)
 
   QTreeWidgetItem* parentItem = this->Internals->DataProducerItems[dataSource];
   QTreeWidgetItem* child = new QTreeWidgetItem(parentItem,
-    QStringList(module->label()) );
+                                               QStringList(module->label()) );
   child->setIcon(0, module->icon());
   parentItem->setExpanded(true);
 
@@ -177,7 +180,6 @@ void PipelineWidget::moduleRemoved(Module* module)
 
   parentItem->removeChild(child);
   delete child;
-
 }
 
 //-----------------------------------------------------------------------------
@@ -218,5 +220,5 @@ void PipelineWidget::setCurrent(Module* module)
     this->setCurrentItem(item);
     }
 }
-//-----------------------------------------------------------------------------
+
 } // end of namespace TEM

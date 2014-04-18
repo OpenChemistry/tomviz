@@ -23,10 +23,11 @@ class vtkSMViewProxy;
 
 namespace TEM
 {
-  class Module;
 
-  class ModuleFactory
-  {
+class Module;
+
+class ModuleFactory
+{
   typedef QObject Superclass;
 public:
   /// Returns a list of module types that can be created for the data source
@@ -35,14 +36,15 @@ public:
     vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
 
   /// Creates a module of the given type to show the dataSource in the view.
-  static Module* createModule(
-    const QString& type, vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
+  static Module* createModule(const QString& type, vtkSMSourceProxy* dataSource,
+                              vtkSMViewProxy* view);
 
 private:
   ModuleFactory();
   ~ModuleFactory();
-  Q_DISABLE_COPY(ModuleFactory);
-  };
+  Q_DISABLE_COPY(ModuleFactory)
+};
+
 }
 
 #endif

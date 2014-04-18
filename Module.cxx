@@ -50,6 +50,4 @@ vtkSMSourceProxy* Module::dataSource() const
   return this->DataSource;
 }
 
-
-//-----------------------------------------------------------------------------
 } // end of namespace TEM

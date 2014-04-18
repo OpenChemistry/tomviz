@@ -23,14 +23,16 @@ class vtkSMSourceProxy;
 
 namespace TEM
 {
-  /// LoadDataReaction handles the "Load Data" action in MatViz. On trigger,
-  /// this will open the data file and necessary subsequent actions, including:
-  /// \li make the data source "active".
-  ///
-  class LoadDataReaction : public pqReaction
-  {
+/// LoadDataReaction handles the "Load Data" action in MatViz. On trigger,
+/// this will open the data file and necessary subsequent actions, including:
+/// \li make the data source "active".
+///
+class LoadDataReaction : public pqReaction
+{
   Q_OBJECT
+
   typedef pqReaction Superclass;
+
 public:
   LoadDataReaction(QAction* parentAction);
   virtual ~LoadDataReaction();
@@ -43,7 +45,8 @@ protected:
   vtkSMSourceProxy* createDataSource(pqPipelineSource* reader);
 
 private:
-  Q_DISABLE_COPY(LoadDataReaction);
-  };
+  Q_DISABLE_COPY(LoadDataReaction)
+};
+
 }
 #endif
