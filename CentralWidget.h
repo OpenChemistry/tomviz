@@ -22,6 +22,7 @@
 
 class vtkSMSourceProxy;
 class vtkContextView;
+class vtkChartXY;
 
 namespace TEM
 {
@@ -50,6 +51,7 @@ private:
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
   vtkNew<vtkContextView> Histogram;
+  vtkNew<vtkChartXY> Chart;
 };
 
 }
