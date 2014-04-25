@@ -74,20 +74,14 @@ CentralWidget::~CentralWidget()
 }
 
 template<typename T>
-void CalculateHistogram(T *values, unsigned int n, float min, int *pops,
-                        float inc, int numberOfBins)
+void CalculateHistogram(T *values, const unsigned int n, const float min,
+                        int *pops, const float inc, const int numberOfBins)
 {
+  const int maxBin(numberOfBins - 1);
   for (unsigned int j = 0; j < n; ++j)
     {
-    int index = static_cast<int>((*values - min) / inc);
-    if (index < 0 || index > 200)
-      cout << "Index of " << index << " for value of " << *values << endl;
-    if (index >= numberOfBins)
-      {
-      index = numberOfBins - 1;
-      }
+    int index = std::min(static_cast<int>((*(values++) - min) / inc), maxBin);
     ++pops[index];
-    ++values;
     }
 }
 
@@ -105,7 +99,7 @@ bool PopulateHistogram(vtkImageData *input, vtkTable *output)
     {
     minmax[1] = minmax[0] + 1.0;
     }
-  //minmax[1] = 40;
+
   double inc = (minmax[1] - minmax[0]) / numberOfBins;
   double halfInc = inc / 2.0;
   vtkSmartPointer<vtkFloatArray> extents =
@@ -149,6 +143,7 @@ bool PopulateHistogram(vtkImageData *input, vtkTable *output)
   double total = 0;
   for (int i = 0; i < numberOfBins; ++i)
     total += pops[i];
+  assert(total == input->GetPointData()->GetScalars()->GetNumberOfTuples());
 
   output->AddColumn(extents.GetPointer());
   output->AddColumn(populations.GetPointer());
