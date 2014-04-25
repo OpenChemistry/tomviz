@@ -19,15 +19,32 @@ if(ENABLE_DAX_ACCELERATION)
     dax/vtkAccelContour.cxx
     )
 
-  set(accelerated_xml
-    dax/AcceleratedAlgorithms.xml
-    )
+  # set(accelerated_xml
+  #   dax/AcceleratedAlgorithms.xml
+  #   )
 
-  add_server_manager_extension(accel_srcs "Accel" "1.0"
-                              "${accelerated_xml}"
-                              "${accelerated_srcs}"
-                              )
-  list(APPEND accel_srcs "${accelerated_srcs}")
+  # set(PLUGIN_NAME "Accel")
+  # set(PLUGIN_REQUIRED_ON_SERVER 1)
+  # set(PLUGIN_REQUIRED_ON_CLIENT 1)
+
+  # add_server_manager_extension(accel_srcs "Accel" "1.0"
+  #                             "${accelerated_xml}"
+  #                             "${accelerated_srcs}"
+  #                             )
+  # #variable needed by the configure_file
+  # set (EXTRA_INCLUDES "${SM_PLUGIN_INCLUDES}\n")
+  # configure_file(
+  #     ${ParaView_CMAKE_DIR}/pqParaViewPlugin.h.in
+  #     ${CMAKE_CURRENT_BINARY_DIR}/Accel_Plugin.h @ONLY)
+  # configure_file(
+  #     ${ParaView_CMAKE_DIR}/pqParaViewPlugin.cxx.in
+  #     ${CMAKE_CURRENT_BINARY_DIR}/Accel_Plugin.cxx @ONLY)
+
+  list(APPEND accel_srcs
+        "${accelerated_srcs}")
+        # "${CMAKE_CURRENT_BINARY_DIR}/Accel_Plugin.cxx")
+
+  # message("accel_srcs: ${accel_srcs}")
 endif()
 
 set(SOURCES
@@ -79,6 +96,8 @@ else()
 endif()
 
 if(ENABLE_DAX_ACCELERATION)
+  target_link_libraries(matviz LINK_PRIVATE ${TBB_LIBRARIES})
+
   #set the dax backend to tbb explicitly
   set_target_properties(matviz PROPERTIES COMPILE_DEFINITIONS
                         "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")

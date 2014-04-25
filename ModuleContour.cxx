@@ -23,6 +23,11 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
+#include "vtkAccelContour.h"
+#include "vtkAlgorithm.h"
+
+#include <QDebug>
+
 namespace TEM
 {
 
@@ -51,19 +56,20 @@ bool ModuleContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* vie
     return false;
     }
 
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  //get the input algorithm and connect it to the accelerated contour
+  vtkAlgorithm* input = vtkAlgorithm::SafeDownCast(dataSource->GetClientSideObject());
 
+  vtkNew<vtkAccelContour> accContour;
+  accContour->SetInputConnection( input->GetOutputPort() );
+  accContour->Update();
+
+
+  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
 
-  // Create the contour filter. we first by trying to create the accelerated
-  // version of the filter, if that can't be found we fall back to the
-  // single threaded version.
+
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("accelerated_filters", "Contour"));
-  if(!proxy)
-    {
-    proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
-    }
+  proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
 
   this->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->ContourFilter);

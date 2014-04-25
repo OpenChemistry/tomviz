@@ -17,7 +17,6 @@
 #define __vtkAccelContour_h
 
 #include "vtkPolyDataAlgorithm.h"
-#include "vtkNew.h"
 
 class vtkAccelContour : public vtkPolyDataAlgorithm
 {
@@ -41,10 +40,6 @@ protected:
   int RequestData(vtkInformation* request,
                   vtkInformationVector** inputVector,
                   vtkInformationVector* outputVector);
-
-  int RequestUpdateExtent(vtkInformation*,
-                          vtkInformationVector**,
-                          vtkInformationVector*);
 
   int FillInputPortInformation(int port, vtkInformation *info);
 private:
