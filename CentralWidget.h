@@ -27,6 +27,8 @@ class vtkChartXY;
 namespace TEM
 {
 
+class HistogramWorker;
+
 /// CentralWidget is a QWidget that is used as the central widget
 /// for the application. This include a histogram at the top and a
 /// ParaView view-layout widget at the bottom.
@@ -45,6 +47,9 @@ public slots:
   /// in the histogram view.
   void setDataSource(vtkSMSourceProxy*);
 
+private slots:
+  void histogramReady();
+
 private:
   Q_DISABLE_COPY(CentralWidget)
 
@@ -52,6 +57,7 @@ private:
   QScopedPointer<CWInternals> Internals;
   vtkNew<vtkContextView> Histogram;
   vtkNew<vtkChartXY> Chart;
+  HistogramWorker *Worker;
 };
 
 }

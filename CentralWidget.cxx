@@ -33,45 +33,10 @@
 #include <vtkPlotBar.h>
 
 #include <QtDebug>
+#include <QThread>
 
 namespace TEM
 {
-
-class CentralWidget::CWInternals
-{
-public:
-  Ui::CentralWidget Ui;
-};
-
-//-----------------------------------------------------------------------------
-CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
-  : Superclass(parentObject, wflags),
-    Internals(new CentralWidget::CWInternals())
-{
-  this->Internals->Ui.setupUi(this);
-
-  // Set up our little chart.
-  this->Histogram
-      ->SetInteractor(this->Internals->Ui.histogramWidget->GetInteractor());
-  this->Internals->Ui.histogramWidget
-      ->SetRenderWindow(this->Histogram->GetRenderWindow());
-  vtkChartXY* chart = this->Chart.Get();
-  this->Histogram->GetScene()->AddItem(chart);
-  chart->SetBarWidthFraction(0.95);
-  chart->SetRenderEmpty(true);
-  chart->SetAutoAxes(false);
-  chart->GetAxis(vtkAxis::LEFT)->SetTitle("");
-  chart->GetAxis(vtkAxis::BOTTOM)->SetTitle("");
-  chart->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
-  chart->GetAxis(vtkAxis::LEFT)->SetRange(0.0001, 10);
-  chart->GetAxis(vtkAxis::LEFT)->SetMinimumLimit(1);
-  chart->GetAxis(vtkAxis::LEFT)->SetLogScale(true);
-}
-
-//-----------------------------------------------------------------------------
-CentralWidget::~CentralWidget()
-{
-}
 
 template<typename T>
 void CalculateHistogram(T *values, const unsigned int n, const float min,
@@ -87,12 +52,12 @@ void CalculateHistogram(T *values, const unsigned int n, const float min,
 
 //-----------------------------------------------------------------------------
 // This is just here for now - quick and dirty historgram calculations...
-bool PopulateHistogram(vtkImageData *input, vtkTable *output)
+void PopulateHistogram(vtkImageData *input, vtkTable *output)
 {
   // The output table will have the twice the number of columns, they will be
   // the x and y for input column. This is the bin centers, and the population.
   double minmax[2] = { 0.0, 0.0 };
-  double numberOfBins = 200;
+  const int numberOfBins = 200;
   // The bin values are the centers, extending +/- half an inc either side
   input->GetScalarRange(minmax);
   if (minmax[0] == minmax[1])
@@ -140,14 +105,72 @@ bool PopulateHistogram(vtkImageData *input, vtkTable *output)
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
     }
-  double total = 0;
+  vtkIdType total = 0;
   for (int i = 0; i < numberOfBins; ++i)
     total += pops[i];
   assert(total == input->GetPointData()->GetScalars()->GetNumberOfTuples());
 
   output->AddColumn(extents.GetPointer());
   output->AddColumn(populations.GetPointer());
-  return true;
+}
+
+// Quick background thread for the histogram calculation.
+class HistogramWorker : public QThread
+{
+  Q_OBJECT
+
+  void run();
+
+public:
+  HistogramWorker(QObject *p = 0) : QThread(p) {}
+
+  vtkSmartPointer<vtkImageData> input;
+  vtkSmartPointer<vtkTable> output;
+};
+
+void HistogramWorker::run()
+{
+  if (input && output)
+    {
+    PopulateHistogram(input.Get(), output.Get());
+    }
+}
+
+class CentralWidget::CWInternals
+{
+public:
+  Ui::CentralWidget Ui;
+};
+
+//-----------------------------------------------------------------------------
+CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
+  : Superclass(parentObject, wflags),
+    Internals(new CentralWidget::CWInternals()),
+    Worker(NULL)
+{
+  this->Internals->Ui.setupUi(this);
+
+  // Set up our little chart.
+  this->Histogram
+      ->SetInteractor(this->Internals->Ui.histogramWidget->GetInteractor());
+  this->Internals->Ui.histogramWidget
+      ->SetRenderWindow(this->Histogram->GetRenderWindow());
+  vtkChartXY* chart = this->Chart.Get();
+  this->Histogram->GetScene()->AddItem(chart);
+  chart->SetBarWidthFraction(0.95);
+  chart->SetRenderEmpty(true);
+  chart->SetAutoAxes(false);
+  chart->GetAxis(vtkAxis::LEFT)->SetTitle("");
+  chart->GetAxis(vtkAxis::BOTTOM)->SetTitle("");
+  chart->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
+  chart->GetAxis(vtkAxis::LEFT)->SetRange(0.0001, 10);
+  chart->GetAxis(vtkAxis::LEFT)->SetMinimumLimit(1);
+  chart->GetAxis(vtkAxis::LEFT)->SetLogScale(true);
+}
+
+//-----------------------------------------------------------------------------
+CentralWidget::~CentralWidget()
+{
 }
 
 //-----------------------------------------------------------------------------
@@ -159,10 +182,32 @@ void CentralWidget::setDataSource(vtkSMSourceProxy* source)
 
   // Calculate a histogram.
   vtkNew<vtkTable> table;
-  PopulateHistogram(data, table.Get());
+
+  if (!this->Worker)
+    {
+    this->Worker = new HistogramWorker(this);
+    connect(this->Worker, SIGNAL(finished()), SLOT(histogramReady()));
+    }
+  else if (this->Worker->isRunning())
+    {
+    // FIXME: Queue, abort, something.
+    qDebug() << "Worker already running, skipping this one.";
+    return;
+    }
+  this->Worker->input = data;
+  this->Worker->output = table.Get();
+  this->Worker->start();
+}
+
+void CentralWidget::histogramReady()
+{
+  if (!this->Worker || !this->Worker->input || !this->Worker->output)
+    return;
+
+  vtkTable *table = this->Worker->output.Get();
   this->Chart->ClearPlots();
   vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
-  plot->SetInputData(table.Get(), "image_extents", "image_pops");
+  plot->SetInputData(table, "image_extents", "image_pops");
   vtkDataArray *arr =
       vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
   if (arr)
@@ -173,6 +218,11 @@ void CentralWidget::setDataSource(vtkSMSourceProxy* source)
     axis->SetMaximumLimit(max + 2.0);
     axis->SetMaximum(static_cast<int>(max) + 1.0);
     }
+
+  this->Worker->input = NULL;
+  this->Worker->output = NULL;
 }
 
 } // end of namespace TEM
+
+#include "CentralWidget.moc"
