@@ -31,6 +31,10 @@
 #include <vtkTable.h>
 #include <vtkMathUtilities.h>
 #include <vtkPlotBar.h>
+#include <vtkTransform2D.h>
+#include <vtkContextMouseEvent.h>
+#include <vtkObjectFactory.h>
+#include <vtkEventQtSlotConnect.h>
 
 #include <QtDebug>
 #include <QThread>
@@ -142,6 +146,44 @@ public:
   Ui::CentralWidget Ui;
 };
 
+class vtkChartHistogram : public vtkChartXY
+{
+public:
+  static vtkChartHistogram * New();
+
+  bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse);
+
+  vtkNew<vtkTransform2D> Transform;
+  double PositionX;
+};
+
+vtkStandardNewMacro(vtkChartHistogram)
+
+bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
+{
+  // Determine the location of the click, and emit something we can listen to!
+  vtkPlotBar *histo = 0;
+  if (this->GetNumberOfPlots() == 1)
+    {
+    histo = vtkPlotBar::SafeDownCast(this->GetPlot(0));
+    }
+  if (!histo)
+    {
+    return false;
+    }
+  if (this->Transform->GetMTime() < histo->GetMTime())
+    {
+    this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
+                                         this->Transform.Get());
+    }
+  vtkVector2f pos;
+  this->Transform->InverseTransformPoints(m.ScenePos.GetData(), pos.GetData(),
+                                          1);
+  this->PositionX = pos.GetX();
+  this->InvokeEvent(vtkCommand::CursorChangedEvent);
+  return true;
+}
+
 //-----------------------------------------------------------------------------
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   : Superclass(parentObject, wflags),
@@ -155,7 +197,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
       ->SetInteractor(this->Internals->Ui.histogramWidget->GetInteractor());
   this->Internals->Ui.histogramWidget
       ->SetRenderWindow(this->Histogram->GetRenderWindow());
-  vtkChartXY* chart = this->Chart.Get();
+  vtkChartHistogram* chart = this->Chart.Get();
   this->Histogram->GetScene()->AddItem(chart);
   chart->SetBarWidthFraction(0.95);
   chart->SetRenderEmpty(true);
@@ -166,6 +208,9 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   chart->GetAxis(vtkAxis::LEFT)->SetRange(0.0001, 10);
   chart->GetAxis(vtkAxis::LEFT)->SetMinimumLimit(1);
   chart->GetAxis(vtkAxis::LEFT)->SetLogScale(true);
+
+  this->EventLink->Connect(chart, vtkCommand::CursorChangedEvent, this,
+                           SLOT(histogramClicked(vtkObject*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -221,6 +266,13 @@ void CentralWidget::histogramReady()
 
   this->Worker->input = NULL;
   this->Worker->output = NULL;
+}
+
+void CentralWidget::histogramClicked(vtkObject *caller)
+{
+  qDebug() << "Histogram clicked at" << this->Chart->PositionX
+           << "making this a great spot to ask for an isosurface at value"
+           << this->Chart->PositionX;
 }
 
 } // end of namespace TEM

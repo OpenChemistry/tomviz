@@ -20,14 +20,16 @@
 #include <QScopedPointer>
 #include <vtkNew.h>
 
+class vtkObject;
 class vtkSMSourceProxy;
 class vtkContextView;
-class vtkChartXY;
+class vtkEventQtSlotConnect;
 
 namespace TEM
 {
 
 class HistogramWorker;
+class vtkChartHistogram;
 
 /// CentralWidget is a QWidget that is used as the central widget
 /// for the application. This include a histogram at the top and a
@@ -49,6 +51,7 @@ public slots:
 
 private slots:
   void histogramReady();
+  void histogramClicked(vtkObject *caller);
 
 private:
   Q_DISABLE_COPY(CentralWidget)
@@ -56,7 +59,8 @@ private:
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
   vtkNew<vtkContextView> Histogram;
-  vtkNew<vtkChartXY> Chart;
+  vtkNew<vtkChartHistogram> Chart;
+  vtkNew<vtkEventQtSlotConnect> EventLink;
   HistogramWorker *Worker;
 };
 
