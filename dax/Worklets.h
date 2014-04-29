@@ -15,15 +15,11 @@
 ******************************************************************************/
 
 #include <dax/cont/arg/ExecutionObject.h>
-#include <dax/cont/DeviceAdapter.h>
 #include <dax/cont/ArrayHandle.h>
-#include <dax/cont/UniformGrid.h>
-#include <dax/cont/UnstructuredGrid.h>
+
 
 #include <dax/math/Compare.h>
-
-#include <dax/exec/WorkletMapCell.h>
-#include <dax/worklet/MarchingCubes.h>
+#include <dax/exec/WorkletMapField.h>
 
 
 namespace functors
@@ -57,33 +53,41 @@ namespace functors
   dax::Extent3 FullExtent;
   dax::Id3 FullGridIJKOffset;
   };
-
 }
 
-namespace worklet
+namespace worklets
 {
 
-class FindLowHigh :  public dax::exec::WorkletMapCell
+//CPU only worklet, would not work on GPU, would require a rewrite to
+//parallelize the computation of the low high into a map/reduce pair of worklets
+template<typename ValueType>
+struct ComputeLowHighPerElement : dax::exec::WorkletMapField
 {
-public:
-  typedef void ControlSignature(Topology, Field(Point), Field(Out));
-  typedef _3 ExecutionSignature(_2);
+  typedef void ControlSignature(Field(In),Field(Out));
+  typedef _2 ExecutionSignature(_1);
 
-  template<class ValueType, class CellTag>
-  DAX_EXEC_EXPORT
-  dax::Tuple<ValueType,2> operator()(
-    const dax::exec::CellField<ValueType,CellTag> &values) const
+  ComputeLowHighPerElement(const std::vector< vtkDataArray* >& values):
+    Values(values)
   {
+  }
+
+  dax::Tuple<ValueType,2> operator()(dax::Id index) const
+  {
+    const dax::Id size = this->Values[index]->GetNumberOfTuples();
+    const ValueType* rawValues = static_cast<const ValueType*>(
+                                     this->Values[index]->GetVoidPointer(0));
+
     dax::Tuple<ValueType,2> lh;
-    lh[0] = values[0];
-    lh[1] = values[1];
-    for(int i=1; i < 8; ++i)
+    lh[0] = rawValues[0];
+    lh[1] = rawValues[0];
+    for(dax::Id i=1; i < size; ++i)
       {
-      lh[0] = dax::math::Min(values[i],lh[0]);
-      lh[1] = dax::math::Max(values[i], lh[1]);
+      lh[0] = std::min(rawValues[i],lh[0]);
+      lh[1] = std::max(rawValues[i],lh[1]);
       }
     return lh;
   }
+  const std::vector< vtkDataArray* >& Values;
 };
 
 }

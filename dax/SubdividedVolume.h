@@ -17,11 +17,10 @@
 #define __SubdividedVolume_h
 
 #include <dax/Types.h>
-#include <dax/cont/ArrayHandle.h>
 #include <dax/cont/UniformGrid.h>
 
+#include <vtkDataArray.h>
 #include <vector>
-
 
 namespace TEM
 {
@@ -37,13 +36,18 @@ namespace accel
                     ImageDataType* data,
                     LoggerType& logger );
 
+  ~SubdividedVolume( );
+
   template<typename IteratorType, typename LoggerType>
   void ComputeHighLows(IteratorType begin, IteratorType end, LoggerType& logger);
 
   bool isValidSubGrid(std::size_t index, dax::Scalar value);
 
-  const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
-    { return SubGrids[index]; }
+  // const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
+  //   { return SubGrids[index]; }
+
+  // const vtkDataArray* subGridValues( std::size_t index ) const
+  //   { return PerSubGridValues[index]; }
 
   void ReleaseAllResources()
     {
@@ -58,15 +62,24 @@ namespace accel
   dax::Extent3 getExtent() const { return Extent; }
 
 private:
+  template<typename IteratorType, typename LoggerType>
+  void ComputePerSubGridValues(IteratorType begin, IteratorType end, LoggerType& logger);
+
   dax::Vector3 Origin;
   dax::Vector3 Spacing;
   dax::Extent3 Extent;
 
+  std::vector< dax::cont::UniformGrid< > > SubGrids;
+  std::vector< dax::Id3 > SubGridsIJKOffset; //offsets
+
   //store PerSubGridLowHighs as 2 floats, as that is the maximum data size
   //that we support
   std::vector< dax::Vector2 > PerSubGridLowHighs;
-  std::vector< dax::Id3 > SubGridsIJKOffset; //offsets
-  std::vector< dax::cont::UniformGrid< > > SubGrids;
+
+  //store the sub grids cached values as vtkDataArray, and uses the
+  //ValueType of the method for quick casting of all the vtkDataArray's
+  //to the correct type
+  std::vector< vtkDataArray* > PerSubGridValues;
   };
 }
 }

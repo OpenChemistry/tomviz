@@ -15,17 +15,53 @@
 ******************************************************************************/
 
 #include <dax/cont/DeviceAdapter.h>
-#include <dax/cont/Timer.h>
-#include <dax/cont/DispatcherMapField.h>
+#include <dax/cont/ArrayHandle.h>
+#include <dax/cont/ArrayHandleCounting.h>
+#include <dax/cont/ArrayHandleImplicit.h>
 #include <dax/cont/DispatcherMapCell.h>
+#include <dax/cont/DispatcherMapField.h>
+#include <dax/cont/Timer.h>
+
+//supported iso values array types
+#include "vtkDataSetAttributes.h"
+#include "vtkCharArray.h"
+#include "vtkFloatArray.h"
+#include "vtkIntArray.h"
+#include "vtkShortArray.h"
+#include "vtkUnsignedIntArray.h"
+#include "vtkUnsignedShortArray.h"
+#include "vtkUnsignedCharArray.h"
+
 
 #include "Worklets.h"
+
+namespace
+{
+  vtkDataArray* make_vtkDataArray(float)
+    { return vtkFloatArray::New(); }
+
+  vtkDataArray* make_vtkDataArray(int)
+    { return vtkIntArray::New(); }
+  vtkDataArray* make_vtkDataArray(unsigned int)
+    { return vtkUnsignedIntArray::New(); }
+
+  vtkDataArray* make_vtkDataArray(short)
+    { return vtkShortArray::New(); }
+  vtkDataArray* make_vtkDataArray(unsigned short)
+    { return vtkUnsignedShortArray::New(); }
+
+  vtkDataArray* make_vtkDataArray(char)
+    { return vtkCharArray::New(); }
+  vtkDataArray* make_vtkDataArray(unsigned char)
+    { return vtkUnsignedCharArray::New(); }
+}
 
 namespace TEM
 {
 namespace accel
 {
 
+//----------------------------------------------------------------------------
 template< typename ImageDataType, typename LoggerType >
 SubdividedVolume::SubdividedVolume( std::size_t subGridsPerDim,
                                     ImageDataType* data,
@@ -98,52 +134,80 @@ SubdividedVolume::SubdividedVolume( std::size_t subGridsPerDim,
     }
   //now create the rest of the vectors to the same size as the subgrids
   this->PerSubGridLowHighs.resize( this->SubGrids.size() );
+  this->PerSubGridValues.resize( this->SubGrids.size() );
 
   logger << "Computed Sub Grids: " << timer.GetElapsedTime()
          << " sec ( " << data->GetNumberOfPoints() << " points)"
          << std::endl;
 }
 
+
+//----------------------------------------------------------------------------
+SubdividedVolume::~SubdividedVolume()
+{
+}
+
+//----------------------------------------------------------------------------
 template<typename IteratorType, typename LoggerType>
 void SubdividedVolume::ComputeHighLows(const IteratorType begin,
                                        const IteratorType end,
                                        LoggerType& logger)
 {
+  this->ComputePerSubGridValues(begin,end,logger);
+
   typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
 
   dax::cont::Timer<> timer;
-  dax::cont::Timer<> worklet_timer;
-  double workletTotalTime=0;
 
-  dax::Id numPoints = 0;
+  //we parallelize this operation by stating that each worklet will
+  //work on computing the low/high for an entire sub-grid
+  typedef ::worklets::ComputeLowHighPerElement<ValueType> LowHighWorkletType;
+  LowHighWorkletType computeLowHigh(this->PerSubGridValues);
 
+  dax::cont::ArrayHandleCounting<dax::Id> countingHandle(0,this->numSubGrids());
+  dax::cont::ArrayHandle< dax::Tuple<ValueType, 2 > > lowHighResults;
+
+  dax::cont::DispatcherMapField<LowHighWorkletType> dispatcher(computeLowHigh);
+  dispatcher.Invoke( countingHandle, lowHighResults );
+
+  //copy the results back from the lowHighResults into the stl vector
+  //to do going to have to do this manually with a cast
+  // lowHighResults.CopyInto(this->PerSubGridLowHighs.begin());
+
+  logger << "Computed Low High Field: " << timer.GetElapsedTime()
+         << std::endl;
+}
+
+//----------------------------------------------------------------------------
+template<typename IteratorType, typename LoggerType>
+void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
+                                               const IteratorType end,
+                                               LoggerType& logger)
+{
+  dax::cont::Timer<> timer;
+
+  typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
   typedef std::vector< dax::cont::UniformGrid< > >::const_iterator gridIt;
 
-
+  std::vector< vtkDataArray* >::iterator subGridValues = this->PerSubGridValues.begin();
   std::vector< dax::Id3 >::const_iterator ijkSubOffset = this->SubGridsIJKOffset.begin();
-  std::vector< dax::Vector2 >::iterator lowHighPerSub = this->PerSubGridLowHighs.begin();
 
-  //reuse lowhigh on each iteration
-  dax::cont::ArrayHandle< dax::Tuple<ValueType,2> > lowhigh;
 
-  //in the future if we want to support cuda, we need to upload only a subset
-  //of the data instead of everything, else we will run out of memory on cuda
-  //devices, plus this adds some override to keep converting from sub-grid
-  //space to full grid space
   dax::cont::ArrayHandle<ValueType> fullGridValues =
         dax::cont::make_ArrayHandle(begin, std::distance(begin,end) );
-
+  //abstract out the transform from full space to local space
+  //once and call it to store the subgrid data once
   for(gridIt grid = this->SubGrids.begin();
       grid != this->SubGrids.end();
-      ++grid, ++ijkSubOffset, ++lowHighPerSub)
+      ++grid, ++ijkSubOffset, ++subGridValues)
     {
     dax::cont::UniformGrid< > g = *grid;
-    numPoints += g.GetNumberOfPoints();
 
     typedef dax::cont::ArrayHandleImplicit< ValueType,
               ::functors::SubGridValues<ValueType> > PointsValuesForGrid;
 
-    worklet_timer.Reset();
+    //create temporary functor to fill continuous memory vector
+    //so that we don't have to iterate over non continuous memory
     ::functors::SubGridValues<ValueType> functor(fullGridValues,
                                                  g.GetExtent(),
                                                  this->getExtent(),
@@ -151,46 +215,26 @@ void SubdividedVolume::ComputeHighLows(const IteratorType begin,
 
     PointsValuesForGrid subgridValues(functor, g.GetNumberOfPoints());
 
-    //compute the low highs for each sub grid
-    dax::cont::DispatcherMapCell< ::worklet::FindLowHigh >().Invoke(
-                                                g, subgridValues, lowhigh);
-    workletTotalTime += worklet_timer.GetElapsedTime();
-
-    if(g.GetNumberOfCells() > 0)
-      {
-      const dax::Id size = lowhigh.GetNumberOfValues();
-      dax::Tuple<ValueType,2> lh;
-      lh[0] = lowhigh.GetPortalConstControl().Get(0)[0];
-      lh[1] = lowhigh.GetPortalConstControl().Get(0)[1];
-      for(dax::Id i=1; i < size; ++i)
-        {
-        dax::Tuple<ValueType,2> v = lowhigh.GetPortalConstControl().Get(i);
-        lh[0] = std::min(v[0],lh[0]);
-        lh[1] = std::max(v[1],lh[1]);
-        }
-      (*lowHighPerSub) = dax::Vector2(lh[0],lh[1]);
-      }
-    else
-      {
-      //invalid cell so make the low high impossible to match
-      (*lowHighPerSub) = dax::Vector2(1,-1);
-      }
+    //at this point we have an implicit array handle so it takes up no space
+    //and we are going to make it write actual values into PerSubGridValues
+    //so we never have to compute a sub grids value location in the full values
+    (*subGridValues) = make_vtkDataArray(ValueType());
+    (*subGridValues)->SetNumberOfTuples(g.GetNumberOfPoints());
+    (*subGridValues)->SetNumberOfComponents(1);
+    subgridValues.CopyInto(
+        static_cast<ValueType*>((*subGridValues)->GetVoidPointer(0)));
     }
 
-  logger << "Computed Low High Field: " << timer.GetElapsedTime()
-         << " sec (" << numPoints << " points)"
+  logger << "Computed Explicit Values Per Sub Grid: " << timer.GetElapsedTime()
          << std::endl;
-  logger << "Worklet time was: " << workletTotalTime
-         << " ( " << (workletTotalTime / timer.GetElapsedTime())*100 << "% ) "
-         << std::endl;
-
 }
 
+//----------------------------------------------------------------------------
 bool SubdividedVolume::isValidSubGrid(std::size_t index, dax::Scalar value)
-  {
+{
   return this->PerSubGridLowHighs[index][0] <= value &&
          this->PerSubGridLowHighs[index][1] >= value;
-  }
+}
 
 
 }

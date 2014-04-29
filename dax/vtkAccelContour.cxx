@@ -21,11 +21,8 @@
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 
-//supported iso values array types
+
 #include "vtkDataSetAttributes.h"
-#include "vtkCharArray.h"
-#include "vtkFloatArray.h"
-#include "vtkIntArray.h"
 #include "vtkPointData.h"
 
 #include "SubdividedVolume.h"
