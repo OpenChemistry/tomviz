@@ -44,7 +44,7 @@ qt4_wrap_ui(UI_SOURCES
   )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-add_executable(matviz MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES})
+add_executable(matviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES})
 set_target_properties(matviz PROPERTIES AUTOMOC TRUE)
 target_link_libraries(matviz LINK_PRIVATE pqApplicationComponents)
 if(APPLE)
