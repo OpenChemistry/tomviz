@@ -106,7 +106,7 @@ private:
 //----------------------------------------------------------------------------
 vtkAccelContour::vtkAccelContour():
   Value(40),
-  Internals( new vtkAccelContour::AccelInternals(16) )
+  Internals( new vtkAccelContour::AccelInternals(8) )
 {
 
   this->SetInputArrayToProcess(0,0,0,vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS,

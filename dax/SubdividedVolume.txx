@@ -33,6 +33,11 @@
 #include "vtkUnsignedShortArray.h"
 #include "vtkUnsignedCharArray.h"
 
+#include "vtkContourFilter.h"
+#include "vtkImageData.h"
+#include "vtkNew.h"
+#include "vtkPointData.h"
+#include "vtkSynchronizedTemplates3D.h"
 
 #include "Worklets.h"
 
@@ -259,10 +264,40 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
 
   //run the first stage of the contour algorithm
   const std::size_t totalSubGrids = this->numSubGrids();
+
+
+  /* enable to try out using vtk to contour instead
+  vtkNew<vtkSynchronizedTemplates3D> vContour;
+  vContour->SetValue(0, isoValue);
+  vtkNew<vtkImageData> vImage;
+  */
+
   for(std::size_t i = 0; i < totalSubGrids; ++i)
     {
     if(this->isValidSubGrid(i, isoValue))
       {
+      /* enable to try out using vtk to contour instead
+      vImage->SetOrigin( this->subGrid(i).GetOrigin()[0],
+                         this->subGrid(i).GetOrigin()[1],
+                         this->subGrid(i).GetOrigin()[2] );
+      vImage->SetSpacing( this->subGrid(i).GetSpacing()[0],
+                          this->subGrid(i).GetSpacing()[1],
+                          this->subGrid(i).GetSpacing()[2] );
+      vImage->SetExtent( 0,
+                         this->subGrid(i).GetExtent().Max[0],
+                         0,
+                         this->subGrid(i).GetExtent().Max[1],
+                         0,
+                         this->subGrid(i).GetExtent().Max[2]);
+      this->subGridValues(i)->SetName("ISOValues");
+      vImage->GetPointData()->SetScalars( this->subGridValues(i) );
+      vImage->GetPointData()->SetActiveScalars( "ISOValues" );
+
+      vContour->SetInputData(vImage.GetPointer());
+      vContour->Update();
+      */
+
+
       const ValueType* raw_values = reinterpret_cast<ValueType*>(this->subGridValues(i)->GetVoidPointer(0));
       const dax::Id raw_values_len = this->PerSubGridValues[i]->GetNumberOfTuples();
 
@@ -281,7 +316,7 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
       InterpolatedDispatcher interpDispatcher( numTrianglesPerCell,
                               ::worklets::ContourGenerate(isoValue) );
 
-      interpDispatcher.SetRemoveDuplicatePoints(true);
+      interpDispatcher.SetRemoveDuplicatePoints(false);
       //run the second step again with point merging
 
       UnstructuredGridType secondOutGrid;
