@@ -87,7 +87,7 @@ struct ComputeLowHighPerElement : dax::exec::WorkletMapField
   }
 
   DAX_EXEC_EXPORT
-  dax::Tuple<ValueType,2> operator()(dax::Id index) const
+  dax::Vector2 operator()(dax::Id index) const
   {
     const dax::Id size = this->Values[index]->GetNumberOfTuples();
     const ValueType* rawValues = static_cast<const ValueType*>(

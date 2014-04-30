@@ -165,14 +165,14 @@ void SubdividedVolume::ComputeHighLows(const IteratorType begin,
   LowHighWorkletType computeLowHigh(this->PerSubGridValues);
 
   dax::cont::ArrayHandleCounting<dax::Id> countingHandle(0,this->numSubGrids());
-  dax::cont::ArrayHandle< dax::Tuple<ValueType, 2 > > lowHighResults;
+  dax::cont::ArrayHandle< dax::Vector2 > lowHighResults;
 
   dax::cont::DispatcherMapField<LowHighWorkletType> dispatcher(computeLowHigh);
   dispatcher.Invoke( countingHandle, lowHighResults );
 
   //copy the results back from the lowHighResults into the stl vector
   //to do going to have to do this manually with a cast
-  // lowHighResults.CopyInto(this->PerSubGridLowHighs.begin());
+  lowHighResults.CopyInto(this->PerSubGridLowHighs.begin());
 
   logger << "Computed Low High Field: " << timer.GetElapsedTime()
          << std::endl;
