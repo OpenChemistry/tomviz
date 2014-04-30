@@ -184,6 +184,12 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
                                                const IteratorType end,
                                                LoggerType& logger)
 {
+  //find the default device adapter
+  typedef DAX_DEFAULT_DEVICE_ADAPTER_TAG AdapterTag;
+
+  //Make it easy to call the DeviceAdapter with the right tag
+  typedef dax::cont::DeviceAdapterAlgorithm<AdapterTag> DeviceAdapter;
+
   dax::cont::Timer<> timer;
 
   typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
@@ -195,34 +201,31 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
 
   dax::cont::ArrayHandle<ValueType> fullGridValues =
         dax::cont::make_ArrayHandle(begin, std::distance(begin,end) );
+
   //abstract out the transform from full space to local space
   //once and call it to store the subgrid data once
   for(gridIt grid = this->SubGrids.begin();
       grid != this->SubGrids.end();
       ++grid, ++ijkSubOffset, ++subGridValues)
     {
-    dax::cont::UniformGrid< > g = *grid;
+    //allocate the contiguous space for the sub grid
+    (*subGridValues) = make_vtkDataArray(ValueType());
+    (*subGridValues)->SetNumberOfTuples((*grid).GetNumberOfPoints());
+    (*subGridValues)->SetNumberOfComponents(1);
 
-    typedef dax::cont::ArrayHandleImplicit< ValueType,
-              ::functors::SubGridValues<ValueType> > PointsValuesForGrid;
+    ::functors::SubGridValues<ValueType> PointsValuesForGrid;
 
     //create temporary functor to fill continuous memory vector
     //so that we don't have to iterate over non continuous memory
     ::functors::SubGridValues<ValueType> functor(fullGridValues,
-                                                 g.GetExtent(),
+                                                 (*subGridValues),
                                                  this->getExtent(),
                                                  (*ijkSubOffset));
 
-    PointsValuesForGrid subgridValues(functor, g.GetNumberOfPoints());
-
-    //at this point we have an implicit array handle so it takes up no space
-    //and we are going to make it write actual values into PerSubGridValues
-    //so we never have to compute a sub grids value location in the full values
-    (*subGridValues) = make_vtkDataArray(ValueType());
-    (*subGridValues)->SetNumberOfTuples(g.GetNumberOfPoints());
-    (*subGridValues)->SetNumberOfComponents(1);
-    subgridValues.CopyInto(
-        static_cast<ValueType*>((*subGridValues)->GetVoidPointer(0)));
+    //We use the low level id3 scheduler to generate each sub grids values
+    //this is more efficient as we don't need to compute the local ijk
+    DeviceAdapter::Schedule(functor,
+                            dax::extentDimensions((*grid).GetExtent()));
     }
 
   logger << "Computed Explicit Values Per Sub Grid: " << timer.GetElapsedTime()

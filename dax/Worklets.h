@@ -27,31 +27,45 @@ namespace functors
   template<typename ValueType>
   struct SubGridValues
   {
+    DAX_CONT_EXPORT
     SubGridValues(){}
 
+    DAX_CONT_EXPORT
     SubGridValues(dax::cont::ArrayHandle<ValueType> fullGridContourValues,
-                  const dax::Extent3& subExtent,
+                  vtkDataArray* outputArray,
                   const dax::Extent3& fullExtent,
                   dax::Id3 subGridsOffsetsInFullGrid):
-    Portal(fullGridContourValues.PrepareForInput()),
-    SubExtent(subExtent),
+    InputPortal(fullGridContourValues.PrepareForInput()),
+    OutputPortal(static_cast<ValueType*>(outputArray->GetVoidPointer(0))),
     FullExtent(fullExtent),
-    FullGridIJKOffset(subGridsOffsetsInFullGrid)
+    FullGridIJKOffset(subGridsOffsetsInFullGrid),
+    FullGridDims(dax::extentDimensions(fullExtent))
     {
 
     }
 
-    ValueType operator()(dax::Id index) const
+    DAX_EXEC_EXPORT
+    void operator()(dax::exec::internal::IJKIndex local_ijk) const
     {
-      dax::Id3 local_ijk = dax::flatIndexToIndex3(index, this->SubExtent);
-      dax::Id3 global_ijk = local_ijk + this->FullGridIJKOffset;
-      return this->Portal.Get(dax::index3ToFlatIndex(global_ijk, this->FullExtent));
-      // return this->Portal.Get(index)
+      const dax::Id3 global_ijk = local_ijk.GetIJK() + this->FullGridIJKOffset;
+
+      const dax::Id3 deltas(global_ijk[0] - this->FullExtent.Min[0],
+                            global_ijk[1] - this->FullExtent.Min[1],
+                            global_ijk[2] - this->FullExtent.Min[2]);
+      const dax::Id index = deltas[0] + this->FullGridDims[0]*(deltas[1] + this->FullGridDims[1]*deltas[2]);
+
+      this->OutputPortal[local_ijk] = this->InputPortal.Get( index );
     }
-  typename dax::cont::ArrayHandle<ValueType>::PortalConstExecution Portal;
-  dax::Extent3 SubExtent;
+
+    DAX_CONT_EXPORT
+    void SetErrorMessageBuffer(const dax::exec::internal::ErrorMessageBuffer &)
+    {  }
+
+  typename dax::cont::ArrayHandle<ValueType>::PortalConstExecution InputPortal;
+  ValueType* OutputPortal;
   dax::Extent3 FullExtent;
   dax::Id3 FullGridIJKOffset;
+  dax::Id3 FullGridDims;
   };
 }
 
@@ -66,11 +80,13 @@ struct ComputeLowHighPerElement : dax::exec::WorkletMapField
   typedef void ControlSignature(Field(In),Field(Out));
   typedef _2 ExecutionSignature(_1);
 
+  DAX_CONT_EXPORT
   ComputeLowHighPerElement(const std::vector< vtkDataArray* >& values):
     Values(values)
   {
   }
 
+  DAX_EXEC_EXPORT
   dax::Tuple<ValueType,2> operator()(dax::Id index) const
   {
     const dax::Id size = this->Values[index]->GetNumberOfTuples();
