@@ -20,6 +20,7 @@
 #include <dax/cont/ArrayHandleImplicit.h>
 #include <dax/cont/DispatcherMapCell.h>
 #include <dax/cont/DispatcherMapField.h>
+#include <dax/cont/DispatcherGenerateInterpolatedCells.h>
 #include <dax/cont/Timer.h>
 
 //supported iso values array types
@@ -128,7 +129,12 @@ SubdividedVolume::SubdividedVolume( std::size_t subGridsPerDim,
         subGrid.SetExtent(sub_extent);
 
         this->SubGrids.push_back(subGrid);
-        this->SubGridsIJKOffset.push_back( dax::Id3(i,j,k) );
+
+        //I need to verify that this should be point based, instead of cell
+        //based
+        dax::Id3 worldIJKOffset(i,j,k);
+        worldIJKOffset = (worldIJKOffset * size_per_sub_grid) + my_remainder;
+        this->SubGridsIJKOffset.push_back( worldIJKOffset );
         }
       }
     }
@@ -137,7 +143,7 @@ SubdividedVolume::SubdividedVolume( std::size_t subGridsPerDim,
   this->PerSubGridValues.resize( this->SubGrids.size() );
 
   logger << "Computed Sub Grids: " << timer.GetElapsedTime()
-         << " sec ( " << data->GetNumberOfPoints() << " points)"
+         << " sec ( " << data->GetNumberOfPoints() << " points )"
          << std::endl;
 }
 
@@ -198,7 +204,6 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
   std::vector< vtkDataArray* >::iterator subGridValues = this->PerSubGridValues.begin();
   std::vector< dax::Id3 >::const_iterator ijkSubOffset = this->SubGridsIJKOffset.begin();
 
-
   dax::cont::ArrayHandle<ValueType> fullGridValues =
         dax::cont::make_ArrayHandle(begin, std::distance(begin,end) );
 
@@ -212,8 +217,6 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
     (*subGridValues) = make_vtkDataArray(ValueType());
     (*subGridValues)->SetNumberOfTuples((*grid).GetNumberOfPoints());
     (*subGridValues)->SetNumberOfComponents(1);
-
-    ::functors::SubGridValues<ValueType> PointsValuesForGrid;
 
     //create temporary functor to fill continuous memory vector
     //so that we don't have to iterate over non continuous memory
@@ -231,6 +234,73 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
   logger << "Computed Explicit Values Per Sub Grid: " << timer.GetElapsedTime()
          << std::endl;
 }
+
+//----------------------------------------------------------------------------
+template<typename IteratorType, typename LoggerType>
+void SubdividedVolume::Contour(dax::Scalar isoValue,
+                               const IteratorType begin,
+                               const IteratorType end,
+                               LoggerType& logger)
+{
+  dax::cont::Timer<> timer;
+  dax::cont::Timer<> stageTimer;
+  double stage1Time=0, stage2Time=0;
+
+  typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
+  typedef std::vector< dax::cont::UniformGrid< > >::const_iterator gridIt;
+
+  typedef  dax::cont::DispatcherGenerateInterpolatedCells<
+                  ::worklets::ContourGenerate > InterpolatedDispatcher;
+  typedef dax::cont::UnstructuredGrid<
+                  dax::CellTagTriangle > UnstructuredGridType;
+
+  //variables for info for the logger
+  std::size_t numValidSubGrids=0;
+
+  //run the first stage of the contour algorithm
+  const std::size_t totalSubGrids = this->numSubGrids();
+  for(std::size_t i = 0; i < totalSubGrids; ++i)
+    {
+    if(this->isValidSubGrid(i, isoValue))
+      {
+      const ValueType* raw_values = reinterpret_cast<ValueType*>(this->subGridValues(i)->GetVoidPointer(0));
+      const dax::Id raw_values_len = this->PerSubGridValues[i]->GetNumberOfTuples();
+
+      stageTimer.Reset();
+      //make an array handle the is read only reference to sub grid values
+      dax::cont::ArrayHandle<ValueType> values =
+        dax::cont::make_ArrayHandle(raw_values, raw_values_len);
+
+      dax::cont::ArrayHandle<dax::Id> numTrianglesPerCell;
+      dax::cont::DispatcherMapCell< ::worklets::ContourCount >
+        classify( ( ::worklets::ContourCount(isoValue)) );
+      classify.Invoke( this->subGrid(i), values, numTrianglesPerCell );
+      stage1Time += stageTimer.GetElapsedTime();
+
+      stageTimer.Reset();
+      InterpolatedDispatcher interpDispatcher( numTrianglesPerCell,
+                              ::worklets::ContourGenerate(isoValue) );
+
+      interpDispatcher.SetRemoveDuplicatePoints(true);
+      //run the second step again with point merging
+
+      UnstructuredGridType secondOutGrid;
+      interpDispatcher.Invoke(this->subGrid(i),
+                              secondOutGrid,
+                              values);
+      stage2Time += stageTimer.GetElapsedTime();
+
+      ++numValidSubGrids;
+      }
+    }
+
+  logger << "contour: " << timer.GetElapsedTime()  << " sec" << std::endl;
+  logger << "stage 1: " << stage1Time  << " sec" << std::endl;
+  logger << "stage 2: " << stage2Time  << " sec" << std::endl;
+  logger << numValidSubGrids << "(" << (numValidSubGrids/(float)totalSubGrids * 100)
+         << "%) of the subgrids are valid " << std::endl;
+}
+
 
 //----------------------------------------------------------------------------
 bool SubdividedVolume::isValidSubGrid(std::size_t index, dax::Scalar value)

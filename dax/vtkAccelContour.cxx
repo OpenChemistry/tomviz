@@ -54,8 +54,6 @@ namespace
       typedef vtkDAContainerType::Iterator vtkDAIteratorType;              \
       vtkDAIteratorType vtkDABegin(_dat->Begin());                         \
       vtkDAIteratorType vtkDAEnd(_dat->End());                             \
-      (void)vtkDABegin; /* Prevent warnings when unused */                 \
-      (void)vtkDAEnd;                                                      \
       _call;                                                               \
       }                                                                    \
     )
@@ -75,14 +73,15 @@ public:
 
   template <class IteratorType, class LoggerType>
   bool CreateSearchStructure( vtkImageData *input,
-                              const IteratorType begin,
-                              const IteratorType end,
+                              IteratorType begin,
+                              IteratorType end,
                               LoggerType& logger)
   {
     logger << "CreateSearchStructure" << std::endl;
     this->Volume = TEM::accel::SubdividedVolume( NumSubGridsPerDim,
                                                  input,
                                                  logger );
+
     logger << "ComputeHighLows" << std::endl;
     this->Volume.ComputeHighLows( begin, end, logger );
     return true;
@@ -94,7 +93,8 @@ public:
                const IteratorType end,
                LoggerType& logger)
   {
-    logger << "Contour" << std::endl;
+    logger << "Contour with value: " << v << std::endl;
+    this->Volume.Contour( v, begin, end, logger );
     return true;
   }
 private:
@@ -105,8 +105,8 @@ private:
 
 //----------------------------------------------------------------------------
 vtkAccelContour::vtkAccelContour():
-  Value(0),
-  Internals( new vtkAccelContour::AccelInternals(4) )
+  Value(40),
+  Internals( new vtkAccelContour::AccelInternals(16) )
 {
 
   this->SetInputArrayToProcess(0,0,0,vtkDataObject::FIELD_ASSOCIATION_POINTS_THEN_CELLS,

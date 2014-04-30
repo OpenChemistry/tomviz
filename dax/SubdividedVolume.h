@@ -43,11 +43,15 @@ namespace accel
 
   bool isValidSubGrid(std::size_t index, dax::Scalar value);
 
-  // const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
-  //   { return SubGrids[index]; }
+  template<typename IteratorType, typename LoggerType>
+  void Contour(dax::Scalar isoValue, IteratorType begin, IteratorType end,
+               LoggerType& logger);
 
-  // const vtkDataArray* subGridValues( std::size_t index ) const
-  //   { return PerSubGridValues[index]; }
+  const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
+    { return SubGrids[index]; }
+
+  vtkDataArray* subGridValues( std::size_t index ) const
+    { return PerSubGridValues[index]; }
 
   void ReleaseAllResources()
     {
