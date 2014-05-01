@@ -266,12 +266,6 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
   //run the first stage of the contour algorithm
   const std::size_t totalSubGrids = this->numSubGrids();
 
-  /* enable to try out using vtk to contour instead
-  vtkNew<vtkSynchronizedTemplates3D> vContour;
-  vContour->SetValue(0, isoValue);
-  vtkNew<vtkImageData> vImage;
-  */
-
   typedef  dax::cont::DispatcherGenerateInterpolatedCells<
                   ::worklets::ContourGenerate > InterpolatedDispatcher;
   typedef dax::cont::UnstructuredGrid<
@@ -294,27 +288,6 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
     {
     if(this->isValidSubGrid(i, isoValue))
       {
-      /* enable to try out using vtk to contour instead
-      vImage->SetOrigin( this->subGrid(i).GetOrigin()[0],
-                         this->subGrid(i).GetOrigin()[1],
-                         this->subGrid(i).GetOrigin()[2] );
-      vImage->SetSpacing( this->subGrid(i).GetSpacing()[0],
-                          this->subGrid(i).GetSpacing()[1],
-                          this->subGrid(i).GetSpacing()[2] );
-      vImage->SetExtent( 0,
-                         this->subGrid(i).GetExtent().Max[0],
-                         0,
-                         this->subGrid(i).GetExtent().Max[1],
-                         0,
-                         this->subGrid(i).GetExtent().Max[2]);
-      this->subGridValues(i)->SetName("ISOValues");
-      vImage->GetPointData()->SetScalars( this->subGridValues(i) );
-      vImage->GetPointData()->SetActiveScalars( "ISOValues" );
-
-      vContour->SetInputData(vImage.GetPointer());
-      vContour->Update();
-      */
-
       const ValueType* raw_values = reinterpret_cast<ValueType*>(this->subGridValues(i)->GetVoidPointer(0));
       const dax::Id raw_values_len = this->PerSubGridValues[i]->GetNumberOfTuples();
 
@@ -350,6 +323,48 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
          << "%) of the subgrids are valid " << std::endl;
 }
 
+/*
+
+//----------------------------------------------------------------------------
+template<typename IteratorType, typename LoggerType>
+void SubdividedVolume::Contour(dax::Scalar isoValue,
+                               const IteratorType begin,
+                               const IteratorType end,
+                               LoggerType& logger)
+{
+  dax::cont::Timer<> timer;
+
+  typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
+  typedef std::vector< dax::cont::UniformGrid< > >::const_iterator gridIt;
+
+
+  //run the first stage of the contour algorithm
+  const std::size_t totalSubGrids = this->numSubGrids();
+
+  std::vector<dax::Id> validSubGrids;
+  for(std::size_t i = 0; i < totalSubGrids; ++i)
+    {
+    if(this->isValidSubGrid(i, isoValue))
+      {
+      validSubGrids.push_back(i);
+      }
+    }
+
+  const std::size_t numValidSubGrids=validSubGrids.size();
+
+  typedef ::worklets::ComputeVtkContour  ContourWorkletType;
+
+  //make the functor to run the vtk contour algorithm
+  ContourWorkletType computeContour(isoValue, this->SubGrids,
+                                    this->PerSubGridValues);
+  dax::cont::DispatcherMapField<ContourWorkletType> dispatcher(computeContour);
+  dispatcher.Invoke( dax::cont::make_ArrayHandle(validSubGrids) );
+
+  logger << "contour: " << timer.GetElapsedTime()  << " sec" << std::endl;
+  logger << numValidSubGrids << "(" << (numValidSubGrids/(float)totalSubGrids * 100)
+         << "%) of the subgrids are valid " << std::endl;
+}
+*/
 
 //----------------------------------------------------------------------------
 bool SubdividedVolume::isValidSubGrid(std::size_t index, dax::Scalar value)
