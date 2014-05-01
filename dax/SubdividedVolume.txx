@@ -247,6 +247,12 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
                                const IteratorType end,
                                LoggerType& logger)
 {
+  //find the default device adapter
+  typedef DAX_DEFAULT_DEVICE_ADAPTER_TAG AdapterTag;
+
+  //Make it easy to call the DeviceAdapter with the right tag
+  typedef dax::cont::DeviceAdapterAlgorithm<AdapterTag> DeviceAdapter;
+
   dax::cont::Timer<> timer;
   dax::cont::Timer<> stageTimer;
   double stage1Time=0, stage2Time=0;
@@ -254,23 +260,35 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
   typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
   typedef std::vector< dax::cont::UniformGrid< > >::const_iterator gridIt;
 
-  typedef  dax::cont::DispatcherGenerateInterpolatedCells<
-                  ::worklets::ContourGenerate > InterpolatedDispatcher;
-  typedef dax::cont::UnstructuredGrid<
-                  dax::CellTagTriangle > UnstructuredGridType;
-
   //variables for info for the logger
   std::size_t numValidSubGrids=0;
 
   //run the first stage of the contour algorithm
   const std::size_t totalSubGrids = this->numSubGrids();
 
-
   /* enable to try out using vtk to contour instead
   vtkNew<vtkSynchronizedTemplates3D> vContour;
   vContour->SetValue(0, isoValue);
   vtkNew<vtkImageData> vImage;
   */
+
+  typedef  dax::cont::DispatcherGenerateInterpolatedCells<
+                  ::worklets::ContourGenerate > InterpolatedDispatcher;
+  typedef dax::cont::UnstructuredGrid<
+                  dax::CellTagTriangle > UnstructuredGridType;
+
+
+  //store numTrianglePerCell to reduce the number of frees/news
+  dax::cont::ArrayHandle<dax::Id> numTrianglesPerCell;
+
+  //Store the second stage dispatcher so that we don't reallocate
+  //the internal InterpolationWeights member variable for each iteration
+  //this should also reduce the number of mallocs
+  InterpolatedDispatcher interpDispatcher( numTrianglesPerCell,
+                              ::worklets::ContourGenerate(isoValue) );
+
+  interpDispatcher.SetReleaseCount(false);
+  interpDispatcher.SetRemoveDuplicatePoints(true);
 
   for(std::size_t i = 0; i < totalSubGrids; ++i)
     {
@@ -297,7 +315,6 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
       vContour->Update();
       */
 
-
       const ValueType* raw_values = reinterpret_cast<ValueType*>(this->subGridValues(i)->GetVoidPointer(0));
       const dax::Id raw_values_len = this->PerSubGridValues[i]->GetNumberOfTuples();
 
@@ -306,17 +323,12 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
       dax::cont::ArrayHandle<ValueType> values =
         dax::cont::make_ArrayHandle(raw_values, raw_values_len);
 
-      dax::cont::ArrayHandle<dax::Id> numTrianglesPerCell;
       dax::cont::DispatcherMapCell< ::worklets::ContourCount >
         classify( ( ::worklets::ContourCount(isoValue)) );
       classify.Invoke( this->subGrid(i), values, numTrianglesPerCell );
       stage1Time += stageTimer.GetElapsedTime();
 
       stageTimer.Reset();
-      InterpolatedDispatcher interpDispatcher( numTrianglesPerCell,
-                              ::worklets::ContourGenerate(isoValue) );
-
-      interpDispatcher.SetRemoveDuplicatePoints(false);
       //run the second step again with point merging
 
       UnstructuredGridType secondOutGrid;
@@ -324,6 +336,8 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
                               secondOutGrid,
                               values);
       stage2Time += stageTimer.GetElapsedTime();
+
+
 
       ++numValidSubGrids;
       }
