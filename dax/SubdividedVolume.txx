@@ -152,12 +152,6 @@ SubdividedVolume::SubdividedVolume( std::size_t subGridsPerDim,
          << std::endl;
 }
 
-
-//----------------------------------------------------------------------------
-SubdividedVolume::~SubdividedVolume()
-{
-}
-
 //----------------------------------------------------------------------------
 template<typename IteratorType, typename LoggerType>
 void SubdividedVolume::ComputeHighLows(const IteratorType begin,
@@ -247,11 +241,7 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
                                const IteratorType end,
                                LoggerType& logger)
 {
-  //find the default device adapter
-  typedef DAX_DEFAULT_DEVICE_ADAPTER_TAG AdapterTag;
-
-  //Make it easy to call the DeviceAdapter with the right tag
-  typedef dax::cont::DeviceAdapterAlgorithm<AdapterTag> DeviceAdapter;
+  logger << "Contour with value: " << isoValue << std::endl;
 
   dax::cont::Timer<> timer;
   dax::cont::Timer<> stageTimer;
@@ -323,6 +313,46 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
          << "%) of the subgrids are valid " << std::endl;
 }
 
+//----------------------------------------------------------------------------
+template<typename IteratorType, typename LoggerType>
+void SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
+                               std::size_t index,
+                               const IteratorType begin,
+                               const IteratorType end,
+                               LoggerType& logger)
+{
+  typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
+
+  typedef  dax::cont::DispatcherGenerateInterpolatedCells<
+                  ::worklets::ContourGenerate > InterpolatedDispatcher;
+
+  typedef dax::cont::UnstructuredGrid<
+                  dax::CellTagTriangle > UnstructuredGridType;
+
+  const ValueType* raw_values = reinterpret_cast<ValueType*>(
+                            this->subGridValues(index)->GetVoidPointer(0));
+  const dax::Id raw_values_len =
+                            this->PerSubGridValues[index]->GetNumberOfTuples();
+
+  //make an array handle the is read only reference to sub grid values
+  dax::cont::ArrayHandle<ValueType> values =
+    dax::cont::make_ArrayHandle(raw_values, raw_values_len);
+
+  dax::cont::ArrayHandle<dax::Id> numTrianglesPerCell;
+
+  dax::cont::DispatcherMapCell< ::worklets::ContourCount >
+    classify( ( ::worklets::ContourCount(isoValue)) );
+  classify.Invoke( this->subGrid(index), values, numTrianglesPerCell );
+
+  //run the second step again with point merging
+  InterpolatedDispatcher interpDispatcher( numTrianglesPerCell,
+                              ::worklets::ContourGenerate(isoValue) );
+  interpDispatcher.SetRemoveDuplicatePoints(true);
+  UnstructuredGridType secondOutGrid;
+  interpDispatcher.Invoke(this->subGrid(index),
+                          secondOutGrid,
+                          values);
+}
 /*
 
 //----------------------------------------------------------------------------

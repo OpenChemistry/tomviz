@@ -32,20 +32,23 @@ namespace accel
   SubdividedVolume() { }
 
   template< typename ImageDataType, typename LoggerType >
-  SubdividedVolume( std::size_t subGridsPerDim,
-                    ImageDataType* data,
-                    LoggerType& logger );
-
-  ~SubdividedVolume( );
+  inline SubdividedVolume( std::size_t subGridsPerDim,
+                           ImageDataType* data,
+                           LoggerType& logger );
 
   template<typename IteratorType, typename LoggerType>
-  void ComputeHighLows(IteratorType begin, IteratorType end, LoggerType& logger);
+  inline void ComputeHighLows(IteratorType begin, IteratorType end, LoggerType& logger);
 
-  bool isValidSubGrid(std::size_t index, dax::Scalar value);
+  inline bool isValidSubGrid(std::size_t index, dax::Scalar value);
 
   template<typename IteratorType, typename LoggerType>
-  void Contour(dax::Scalar isoValue, IteratorType begin, IteratorType end,
+  inline void Contour(dax::Scalar isoValue, IteratorType begin, IteratorType end,
                LoggerType& logger);
+
+  template<typename IteratorType, typename LoggerType>
+  inline void ContourSubGrid(dax::Scalar isoValue, std::size_t index,
+                      IteratorType begin, IteratorType end,
+                      LoggerType& logger);
 
   const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
     { return SubGrids[index]; }
