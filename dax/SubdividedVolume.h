@@ -18,6 +18,7 @@
 
 #include <dax/Types.h>
 #include <dax/cont/UniformGrid.h>
+#include <dax/cont/UnstructuredGrid.h>
 
 #include <vtkDataArray.h>
 #include <vector>
@@ -46,7 +47,8 @@ namespace accel
                LoggerType& logger);
 
   template<typename IteratorType, typename LoggerType>
-  inline void ContourSubGrid(dax::Scalar isoValue, std::size_t index,
+  inline  dax::cont::UnstructuredGrid< dax::CellTagTriangle >
+  ContourSubGrid(dax::Scalar isoValue, std::size_t index,
                       IteratorType begin, IteratorType end,
                       LoggerType& logger);
 

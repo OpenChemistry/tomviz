@@ -72,7 +72,7 @@ public:
   ModuleAccelContour(QObject* parent=NULL);
   virtual ~ModuleAccelContour();
 
-  virtual QString label() const { return  "Contour"; }
+  virtual QString label() const { return  "Accel Contour"; }
   virtual QIcon icon() const;
   virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();

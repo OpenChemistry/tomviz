@@ -92,16 +92,23 @@ bool ContourWorker::contour(double v,
              const IteratorType begin,
              const IteratorType end)
 {
+  std::cout << "Contour with value: " << v << std::endl;
+  std::size_t numTriangles=0;
+
+  dax::cont::Timer<> timer;
   const std::size_t totalSubGrids = this->volume->numSubGrids();
   for(std::size_t i=0; i < totalSubGrids; ++i)
     {
     if(this->volume->isValidSubGrid(i, v))
       {
       //need a way to get the output packed tri's
-      this->volume->ContourSubGrid( v, i, begin, end, std::cout );
+      numTriangles +=
+        this->volume->ContourSubGrid( v, i, begin, end, std::cout ).GetNumberOfCells();
       emit this->computed(i);
       }
     }
+
+  std::cout << "contour: " << timer.GetElapsedTime()  << " sec, number of triangles: " << numTriangles << std::endl;
   return true;
 }
 

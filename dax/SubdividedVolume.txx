@@ -315,7 +315,8 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
 
 //----------------------------------------------------------------------------
 template<typename IteratorType, typename LoggerType>
-void SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
+dax::cont::UnstructuredGrid< dax::CellTagTriangle >
+SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
                                std::size_t index,
                                const IteratorType begin,
                                const IteratorType end,
@@ -348,10 +349,11 @@ void SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
   InterpolatedDispatcher interpDispatcher( numTrianglesPerCell,
                               ::worklets::ContourGenerate(isoValue) );
   interpDispatcher.SetRemoveDuplicatePoints(true);
-  UnstructuredGridType secondOutGrid;
+  UnstructuredGridType outGrid;
   interpDispatcher.Invoke(this->subGrid(index),
-                          secondOutGrid,
+                          outGrid,
                           values);
+  return outGrid;
 }
 /*
 
