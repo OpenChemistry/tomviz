@@ -15,36 +15,11 @@ if(ENABLE_DAX_ACCELERATION)
 
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dax)
 
-  set(accelerated_srcs
+  set(accel_srcs
     dax/vtkAccelContour.cxx
+    dax/ModuleAccelContour.cxx
     )
 
-  # set(accelerated_xml
-  #   dax/AcceleratedAlgorithms.xml
-  #   )
-
-  # set(PLUGIN_NAME "Accel")
-  # set(PLUGIN_REQUIRED_ON_SERVER 1)
-  # set(PLUGIN_REQUIRED_ON_CLIENT 1)
-
-  # add_server_manager_extension(accel_srcs "Accel" "1.0"
-  #                             "${accelerated_xml}"
-  #                             "${accelerated_srcs}"
-  #                             )
-  # #variable needed by the configure_file
-  # set (EXTRA_INCLUDES "${SM_PLUGIN_INCLUDES}\n")
-  # configure_file(
-  #     ${ParaView_CMAKE_DIR}/pqParaViewPlugin.h.in
-  #     ${CMAKE_CURRENT_BINARY_DIR}/Accel_Plugin.h @ONLY)
-  # configure_file(
-  #     ${ParaView_CMAKE_DIR}/pqParaViewPlugin.cxx.in
-  #     ${CMAKE_CURRENT_BINARY_DIR}/Accel_Plugin.cxx @ONLY)
-
-  list(APPEND accel_srcs
-        "${accelerated_srcs}")
-        # "${CMAKE_CURRENT_BINARY_DIR}/Accel_Plugin.cxx")
-
-  # message("accel_srcs: ${accel_srcs}")
 endif()
 
 set(SOURCES
