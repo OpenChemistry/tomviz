@@ -39,20 +39,10 @@
 #include <QtDebug>
 #include <QThread>
 
+#include "ComputeHistogram.h"
+
 namespace TEM
 {
-
-template<typename T>
-void CalculateHistogram(T *values, const unsigned int n, const float min,
-                        int *pops, const float inc, const int numberOfBins)
-{
-  const int maxBin(numberOfBins - 1);
-  for (unsigned int j = 0; j < n; ++j)
-    {
-    int index = std::min(static_cast<int>((*(values++) - min) / inc), maxBin);
-    ++pops[index];
-    }
-}
 
 //-----------------------------------------------------------------------------
 // This is just here for now - quick and dirty historgram calculations...
@@ -62,8 +52,17 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   // the x and y for input column. This is the bin centers, and the population.
   double minmax[2] = { 0.0, 0.0 };
   const int numberOfBins = 200;
+
   // The bin values are the centers, extending +/- half an inc either side
-  input->GetScalarRange(minmax);
+  switch (input->GetScalarType())
+    {
+    vtkTemplateMacro(
+          TEM::GetScalarRange(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
+                         input->GetPointData()->GetScalars()->GetNumberOfTuples(),
+                         minmax));
+    default:
+      break;
+    }
   if (minmax[0] == minmax[1])
     {
     minmax[1] = minmax[0] + 1.0;
@@ -103,16 +102,19 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   switch (input->GetScalarType())
     {
     vtkTemplateMacro(
-          CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
+          TEM::CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
                              input->GetPointData()->GetScalars()->GetNumberOfTuples(),
                              minmax[0], pops, inc, numberOfBins));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
     }
+
+#ifndef NDEBUG
   vtkIdType total = 0;
   for (int i = 0; i < numberOfBins; ++i)
     total += pops[i];
   assert(total == input->GetPointData()->GetScalars()->GetNumberOfTuples());
+#endif
 
   output->AddColumn(extents.GetPointer());
   output->AddColumn(populations.GetPointer());
