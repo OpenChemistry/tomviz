@@ -10,7 +10,7 @@ endif()
 
 option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" ON)
 if(ENABLE_DAX_ACCELERATION)
-  find_package(DAX REQUIRED)
+  find_package(Dax REQUIRED)
   DaxConfigureTBB(REQUIRED)
 endif()
 
