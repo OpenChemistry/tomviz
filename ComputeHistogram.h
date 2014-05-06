@@ -81,7 +81,7 @@ struct Histogram: dax::exec::WorkletMapField
     const dax::Id end_offset = std::min(this->Length, (id+1) * TaskSize);
     const T* myEnd = this->Values + end_offset;
 
-    for(myValue++; myValue != myEnd; myValue++)
+    for(; myValue != myEnd; myValue++)
       {
       const int index = std::min(maxBin,
                      static_cast<int>((*myValue - MinValue) / BinSize));
@@ -114,11 +114,12 @@ template<typename T>
 void GetScalarRange(T *values, const unsigned int n, double* minmax)
 {
   using namespace dax::cont;
+  const int numTasks = 16;
 
   ArrayHandle< dax::Tuple<double,2> > minmaxHandle;
-  minmaxHandle.PrepareForOutput(16);
+  minmaxHandle.PrepareForOutput(numTasks);
 
-  worklets::ScalarRange<T> worklet(values, n, 16);
+  worklets::ScalarRange<T> worklet(values, n, numTasks);
   DispatcherMapField< worklets::ScalarRange<T> > dispatcher(worklet);
   dispatcher.Invoke( minmaxHandle );
 
@@ -139,10 +140,11 @@ void CalculateHistogram(T *values, const unsigned int n, const float min,
                         int *pops, const float inc, const int numberOfBins)
 {
   using namespace dax::cont;
+  const int numTasks = 16;
 
-  worklets::Histogram<T> worklet(values, n, 4, pops,  min, numberOfBins, inc);
+  worklets::Histogram<T> worklet(values, n, numTasks, pops,  min, numberOfBins, inc);
   DispatcherMapField< worklets::Histogram<T> > dispatcher(worklet);
-  dispatcher.Invoke( make_ArrayHandleCounting<dax::Id>(0,4) );
+  dispatcher.Invoke( make_ArrayHandleCounting<dax::Id>(0,numTasks) );
 }
 
 #else
