@@ -66,4 +66,5 @@ if(ENABLE_DAX_ACCELERATION)
   #set the dax backend to tbb explicitly
   set_target_properties(matviz PROPERTIES COMPILE_DEFINITIONS
                         "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
+  target_link_libraries(matviz LINK_PRIVATE ${TBB_LIBRARIES})
 endif()
