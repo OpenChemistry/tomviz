@@ -42,6 +42,7 @@ public:
 
 private:
   Q_DISABLE_COPY(ModuleVolume)
+  vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkWeakPointer<vtkSMProxy> Representation;
 };
 

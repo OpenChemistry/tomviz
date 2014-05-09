@@ -53,8 +53,21 @@ bool ModuleVolume::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
+  vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
+
+  // Create the pass through filter.
+  vtkSmartPointer<vtkSMProxy> proxy;
+  proxy.TakeReference(pxm->NewProxy("filters", "PassThrough"));
+
+  this->PassThrough = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(this->PassThrough);
+  controller->PreInitializeProxy(this->PassThrough);
+  vtkSMPropertyHelper(this->PassThrough, "Input").Set(dataSource);
+  controller->PostInitializeProxy(this->PassThrough);
+  controller->RegisterPipelineProxy(this->PassThrough);
+
   // Create the representation for it.
-  this->Representation = controller->Show(dataSource, 0, view);
+  this->Representation = controller->Show(this->PassThrough, 0, view);
   Q_ASSERT(this->Representation);
   vtkSMPropertyHelper(this->Representation,
                       "Representation").Set("Volume");
@@ -67,6 +80,9 @@ bool ModuleVolume::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(this->Representation);
+  controller->UnRegisterProxy(this->PassThrough);
+
+  this->PassThrough = NULL;
   this->Representation = NULL;
   return true;
 }
@@ -74,6 +90,7 @@ bool ModuleVolume::finalize()
 //-----------------------------------------------------------------------------
 bool ModuleVolume::setVisibility(bool val)
 {
+  Q_ASSERT(this->Representation);
   vtkSMPropertyHelper(this->Representation, "Visibility").Set(val? 1 : 0);
   this->Representation->UpdateVTKObjects();
   return true;

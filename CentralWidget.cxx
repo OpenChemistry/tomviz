@@ -179,7 +179,7 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
                                          this->Transform.Get());
     }
   vtkVector2f pos;
-  this->Transform->InverseTransformPoints(m.ScenePos.GetData(), pos.GetData(),
+  this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
                                           1);
   this->PositionX = pos.GetX();
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
