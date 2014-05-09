@@ -44,6 +44,8 @@ protected:
   /// Create a raw data source from the reader.
   vtkSMSourceProxy* createDataSource(pqPipelineSource* reader);
 
+  /// Handle creation of a new data source.
+  void dataSourceAdded(vtkSMSourceProxy*);
 private:
   Q_DISABLE_COPY(LoadDataReaction)
 };

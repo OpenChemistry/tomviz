@@ -16,6 +16,8 @@
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
+#include "ModuleFactory.h"
+#include "ModuleManager.h"
 #include "pqLoadDataReaction.h"
 #include "pqPipelineSource.h"
 #include "Utilities.h"
@@ -67,12 +69,10 @@ void LoadDataReaction::onTriggered()
     }
   readers.clear();
 
-  // TODO: do whatever we need to do with all the data sources.
-
-  // make the last one active, I suppose.
-  if (dataSources.size() > 0)
+  // do whatever we need to do with all the data sources.
+  foreach (vtkSMSourceProxy* dataSource, dataSources)
     {
-    ActiveObjects::instance().setActiveDataSource(dataSources.last());
+    this->dataSourceAdded(dataSource);
     }
 }
 
@@ -111,6 +111,25 @@ vtkSMSourceProxy* LoadDataReaction::createDataSource(pqPipelineSource* reader)
 
   controller->RegisterPipelineProxy(source);
   return vtkSMSourceProxy::SafeDownCast(source);
+}
+
+//-----------------------------------------------------------------------------
+void LoadDataReaction::dataSourceAdded(vtkSMSourceProxy* dataSource)
+{
+  Q_ASSERT(dataSource);
+  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  if (!view)
+    {
+    return;
+    }
+
+  // Create an outline module for the source in the active view.
+  Module* module = ModuleFactory::createModule("Outline", dataSource, view);
+  if (module)
+    {
+    ModuleManager::instance().addModule(module);
+    ActiveObjects::instance().setActiveModule(module);
+    }
 }
 
 } // end of namespace TEM
