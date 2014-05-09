@@ -17,17 +17,18 @@
 #include "ui_MainWindow.h"
 
 #include "pqFiltersMenuReaction.h"
+#include "pqMacroReaction.h"
 #include "pqProxyGroupMenuManager.h"
 #include "pqProxyGroupMenuManager.h"
 #include "pqPVApplicationCore.h"
 #include "pqPythonShellReaction.h"
-#include "pqMacroReaction.h"
 #include "pqSaveDataReaction.h"
 
 #include "ActiveObjects.h"
 #include "Behaviors.h"
 #include "LoadDataReaction.h"
 #include "ModuleMenu.h"
+#include "RecentFilesMenu.h"
 
 namespace TEM
 {
@@ -89,6 +90,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new LoadDataReaction(ui.actionOpen);
 
   new ModuleMenu(ui.menuModules);
+  new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
 }
 
 MainWindow::~MainWindow()

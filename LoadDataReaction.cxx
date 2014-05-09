@@ -51,10 +51,7 @@ void LoadDataReaction::onTriggered()
   // Let ParaView deal with reading the data. If we need more customization, we
   // can show our own "File/Open" dialog and then create the appropriate reader
   // proxies.
-
   QList<pqPipelineSource*> readers = pqLoadDataReaction::loadData();
-
-  QList<vtkSMSourceProxy*> dataSources;
 
   // Since we want to ditch the reader pipeline and just keep the raw data
   // around. We do this magic.
@@ -62,18 +59,11 @@ void LoadDataReaction::onTriggered()
     {
     vtkSMSourceProxy* dataSource = this->createDataSource(reader);
     Q_ASSERT(dataSource);
-    dataSources.push_back(dataSource);
 
     controller->UnRegisterProxy(reader->getProxy());
     // reader is dangling at this point.
     }
   readers.clear();
-
-  // do whatever we need to do with all the data sources.
-  foreach (vtkSMSourceProxy* dataSource, dataSources)
-    {
-    this->dataSourceAdded(dataSource);
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -110,7 +100,12 @@ vtkSMSourceProxy* LoadDataReaction::createDataSource(pqPipelineSource* reader)
       vtkSMCoreUtilities::GetFileNameProperty(readerProxy)).GetAsString());
 
   controller->RegisterPipelineProxy(source);
-  return vtkSMSourceProxy::SafeDownCast(source);
+
+  vtkSMSourceProxy* dataSource = vtkSMSourceProxy::SafeDownCast(source);
+
+  // do whatever we need to do with a new data source.
+  LoadDataReaction::dataSourceAdded(dataSource);
+  return dataSource;
 }
 
 //-----------------------------------------------------------------------------

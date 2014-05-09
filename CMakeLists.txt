@@ -41,6 +41,8 @@ set(SOURCES
   ModuleOutline.h
   PipelineWidget.cxx
   PipelineWidget.h
+  RecentFilesMenu.cxx
+  RecentFilesMenu.h
   Utilities.h
   )
 

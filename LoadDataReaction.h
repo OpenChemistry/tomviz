@@ -37,15 +37,15 @@ public:
   LoadDataReaction(QAction* parentAction);
   virtual ~LoadDataReaction();
 
+  /// Create a raw data source from the reader.
+  static vtkSMSourceProxy* createDataSource(pqPipelineSource* reader);
+
 protected:
   /// Called when the action is triggered.
   virtual void onTriggered();
 
-  /// Create a raw data source from the reader.
-  vtkSMSourceProxy* createDataSource(pqPipelineSource* reader);
-
   /// Handle creation of a new data source.
-  void dataSourceAdded(vtkSMSourceProxy*);
+  static void dataSourceAdded(vtkSMSourceProxy*);
 private:
   Q_DISABLE_COPY(LoadDataReaction)
 };
