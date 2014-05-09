@@ -23,6 +23,9 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
+#include <vector>
+#include <algorithm>
+
 namespace TEM
 {
 
@@ -92,6 +95,18 @@ bool ModuleContour::setVisibility(bool val)
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").Set(val? 1 : 0);
   this->ContourRepresentation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleContour::setIsoValues(const QList<double>& values)
+{
+  std::vector<double> vectorValues(values.size());
+  std::copy(values.begin(), values.end(), vectorValues.begin());
+  vectorValues.push_back(0); // to avoid having to check for 0 size on Windows.
+
+  vtkSMPropertyHelper(this->ContourFilter,"ContourValues").Set(
+    &vectorValues[0], values.size());
+  this->ContourFilter->UpdateVTKObjects();
 }
 
 } // end of namespace TEM

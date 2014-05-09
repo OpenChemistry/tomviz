@@ -16,7 +16,6 @@
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
-#include "ModuleFactory.h"
 #include "ModuleManager.h"
 #include "pqLoadDataReaction.h"
 #include "pqPipelineSource.h"
@@ -111,18 +110,11 @@ vtkSMSourceProxy* LoadDataReaction::createDataSource(pqPipelineSource* reader)
 //-----------------------------------------------------------------------------
 void LoadDataReaction::dataSourceAdded(vtkSMSourceProxy* dataSource)
 {
-  Q_ASSERT(dataSource);
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
-  if (!view)
-    {
-    return;
-    }
-
   // Create an outline module for the source in the active view.
-  Module* module = ModuleFactory::createModule("Outline", dataSource, view);
-  if (module)
+  if (Module* module = ModuleManager::instance().createAndAddModule(
+      "Outline", dataSource, view))
     {
-    ModuleManager::instance().addModule(module);
     ActiveObjects::instance().setActiveModule(module);
     }
 }

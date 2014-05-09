@@ -40,6 +40,14 @@ public:
   virtual bool finalize();
   virtual bool setVisibility(bool val);
 
+  void setIsoValues(const QList<double>& values);
+  void setIsoValue(double value)
+    {
+    QList<double> values;
+    values << value;
+    this->setIsoValues(values);
+    }
+
 private:
   Q_DISABLE_COPY(ModuleContour)
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;

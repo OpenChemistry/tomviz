@@ -19,9 +19,11 @@
 #include <QObject>
 #include <QScopedPointer>
 
+class vtkSMSourceProxy;
+class vtkSMViewProxy;
+
 namespace TEM
 {
-
 class Module;
 
 /// Singleton akin to ProxyManager, but to keep track (and
@@ -35,10 +37,33 @@ class ModuleManager : public QObject
 public:
   static ModuleManager& instance();
 
+  /// Returns a list of modules of the specified type showing the dataSource in
+  /// the give view. If view is NULL, all modules for the dataSource will be
+  /// returned.
+  template <class T>
+  QList<T> findModules(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+    {
+    QList<T> modulesT;
+    QList<Module*> modules = this->findModulesGeneric(dataSource, view);
+    foreach (Module* module, modules)
+      {
+      if (T moduleT = qobject_cast<T>(module))
+        {
+        modulesT.push_back(moduleT);
+        }
+      }
+    return modulesT;
+    }
+
 public slots:
   void addModule(Module*);
   void removeModule(Module*);
   void removeAllModules();
+
+  /// Creates and add a new module.
+  Module* createAndAddModule(
+    const QString& type, vtkSMSourceProxy* dataSource,
+    vtkSMViewProxy* view);
 
 signals:
   void moduleAdded(Module*);
@@ -48,6 +73,9 @@ private:
   Q_DISABLE_COPY(ModuleManager)
   ModuleManager(QObject* parent=NULL);
   ~ModuleManager();
+
+  QList<Module*> findModulesGeneric(
+    vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
 
   class MMInternals;
   QScopedPointer<MMInternals> Internals;

@@ -15,8 +15,8 @@
 ******************************************************************************/
 #include "ModuleMenu.h"
 
-#include "ModuleManager.h"
 #include "ModuleFactory.h"
+#include "ModuleManager.h"
 #include "ActiveObjects.h"
 #include <QMenu>
 
@@ -71,12 +71,11 @@ void ModuleMenu::aboutToShow()
 void ModuleMenu::triggered(QAction* maction)
 {
   Module* module =
-      ModuleFactory::createModule(maction->text(),
-                                  ActiveObjects::instance().activeDataSource(),
-                                  ActiveObjects::instance().activeView());
+    ModuleManager::instance().createAndAddModule(maction->text(),
+      ActiveObjects::instance().activeDataSource(),
+      ActiveObjects::instance().activeView());
   if (module)
     {
-    ModuleManager::instance().addModule(module);
     ActiveObjects::instance().setActiveModule(module);
     }
   else

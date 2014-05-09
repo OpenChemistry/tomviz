@@ -16,30 +16,34 @@
 #include "CentralWidget.h"
 #include "ui_CentralWidget.h"
 
-#include <vtkSMSourceProxy.h>
-
-#include <vtkContextView.h>
-#include <vtkContextScene.h>
-#include <vtkChartXY.h>
+#include <pqView.h>
 #include <vtkAxis.h>
-
-#include <vtkTrivialProducer.h>
-#include <vtkImageData.h>
-#include <vtkPointData.h>
-#include <vtkFloatArray.h>
-#include <vtkIntArray.h>
-#include <vtkTable.h>
-#include <vtkMathUtilities.h>
-#include <vtkPlotBar.h>
-#include <vtkTransform2D.h>
+#include <vtkChartXY.h>
 #include <vtkContextMouseEvent.h>
-#include <vtkObjectFactory.h>
+#include <vtkContextScene.h>
+#include <vtkContextView.h>
 #include <vtkEventQtSlotConnect.h>
+#include <vtkFloatArray.h>
+#include <vtkImageData.h>
+#include <vtkIntArray.h>
+#include <vtkMathUtilities.h>
+#include <vtkObjectFactory.h>
+#include <vtkPlotBar.h>
+#include <vtkPointData.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMViewProxy.h>
+#include <vtkTable.h>
+#include <vtkTransform2D.h>
+#include <vtkTrivialProducer.h>
 
 #include <QtDebug>
 #include <QThread>
 
+#include "ActiveObjects.h"
 #include "ComputeHistogram.h"
+#include "ModuleContour.h"
+#include "ModuleManager.h"
+#include "Utilities.h"
 
 namespace TEM
 {
@@ -223,6 +227,10 @@ CentralWidget::~CentralWidget()
 //-----------------------------------------------------------------------------
 void CentralWidget::setDataSource(vtkSMSourceProxy* source)
 {
+  this->DataSource = source;
+
+  // FIXME: Handle NULL source. We should clear the histogram.
+
   // Get the actual data source, build a histogram out of it.
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
   vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
@@ -272,9 +280,39 @@ void CentralWidget::histogramReady()
 
 void CentralWidget::histogramClicked(vtkObject *caller)
 {
-  qDebug() << "Histogram clicked at" << this->Chart->PositionX
-           << "making this a great spot to ask for an isosurface at value"
-           << this->Chart->PositionX;
+  //qDebug() << "Histogram clicked at" << this->Chart->PositionX
+  //         << "making this a great spot to ask for an isosurface at value"
+  //         << this->Chart->PositionX;
+  Q_ASSERT(this->DataSource);
+
+  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  if (!view)
+    {
+    return;
+    }
+
+  // Use active ModuleContour is possible. Otherwise, find the first existing
+  // ModuleContour instance or just create a new one, if none exists.
+  ModuleContour* contour = qobject_cast<ModuleContour*>(
+    ActiveObjects::instance().activeModule());
+  if (!contour)
+    {
+    QList<ModuleContour*> contours =
+      ModuleManager::instance().findModules<ModuleContour*>(this->DataSource, view);
+    if (contours.size() == 0)
+      {
+      contour = qobject_cast<ModuleContour*>(ModuleManager::instance().createAndAddModule(
+          "Contour", this->DataSource, view));
+      }
+    else
+      {
+      contour = contours[0];
+      }
+    ActiveObjects::instance().setActiveModule(contour);
+    }
+  Q_ASSERT(contour);
+  contour->setIsoValue(this->Chart->PositionX);
+  TEM::convert<pqView*>(view)->render();
 }
 
 } // end of namespace TEM

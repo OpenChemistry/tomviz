@@ -80,8 +80,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
 
 
-  //new pqPythonShellReaction(ui.actionPythonConsole);
-  //new pqMacroReaction(ui.actionMacros);
+  new pqPythonShellReaction(ui.actionPythonConsole);
+  new pqMacroReaction(ui.actionMacros);
 
   // Instantiate MatViz application behavior.
   new Behaviors(this);
