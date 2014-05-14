@@ -16,6 +16,7 @@
 #include "ModuleManager.h"
 
 #include "Module.h"
+#include "ModuleFactory.h"
 #include <QPointer>
 
 namespace TEM
@@ -77,5 +78,41 @@ void ModuleManager::removeAllModules()
     delete module;
     }
 }
+
+//-----------------------------------------------------------------------------
+Module* ModuleManager::createAndAddModule(
+  const QString& type, vtkSMSourceProxy* dataSource,
+  vtkSMViewProxy* view)
+{
+  if (!view || !dataSource)
+    {
+    return NULL;
+    }
+
+  // Create an outline module for the source in the active view.
+  Module* module = ModuleFactory::createModule(type, dataSource, view);
+  if (module)
+    {
+    this->addModule(module);
+    }
+  return module;
+}
+
+//-----------------------------------------------------------------------------
+QList<Module*> ModuleManager::findModulesGeneric(
+  vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+{
+  QList<Module*> modules;
+  foreach (Module* module, this->Internals->Modules)
+    {
+    if (module && module->dataSource() == dataSource &&
+      (view == NULL || view == module->view()))
+      {
+      modules.push_back(module);
+      }
+    }
+  return modules;
+}
+
 
 } // end of namesapce TEM

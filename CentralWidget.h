@@ -16,9 +16,10 @@
 #ifndef __CentralWidget_h
 #define __CentralWidget_h
 
-#include <QWidget>
 #include <QScopedPointer>
+#include <QWidget>
 #include <vtkNew.h>
+#include <vtkWeakPointer.h>
 
 class vtkObject;
 class vtkSMSourceProxy;
@@ -61,6 +62,7 @@ private:
   vtkNew<vtkContextView> Histogram;
   vtkNew<vtkChartHistogram> Chart;
   vtkNew<vtkEventQtSlotConnect> EventLink;
+  vtkWeakPointer<vtkSMSourceProxy> DataSource;
   HistogramWorker *Worker;
 };
 

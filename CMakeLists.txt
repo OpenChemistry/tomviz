@@ -8,9 +8,9 @@ if(NOT PARAVIEW_BUILD_QT_GUI)
     "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE")
 endif()
 
-option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" ON)
+option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
-  find_package(DAX REQUIRED)
+  find_package(Dax REQUIRED)
   DaxConfigureTBB(REQUIRED)
 
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dax)
@@ -49,6 +49,8 @@ set(SOURCES
   ModuleOutline.h
   PipelineWidget.cxx
   PipelineWidget.h
+  RecentFilesMenu.cxx
+  RecentFilesMenu.h
   Utilities.h
   )
 

@@ -16,43 +16,37 @@
 #include "CentralWidget.h"
 #include "ui_CentralWidget.h"
 
-#include <vtkSMSourceProxy.h>
-
-#include <vtkContextView.h>
-#include <vtkContextScene.h>
-#include <vtkChartXY.h>
+#include <pqView.h>
 #include <vtkAxis.h>
-
-#include <vtkTrivialProducer.h>
-#include <vtkImageData.h>
-#include <vtkPointData.h>
-#include <vtkFloatArray.h>
-#include <vtkIntArray.h>
-#include <vtkTable.h>
-#include <vtkMathUtilities.h>
-#include <vtkPlotBar.h>
-#include <vtkTransform2D.h>
+#include <vtkChartXY.h>
 #include <vtkContextMouseEvent.h>
-#include <vtkObjectFactory.h>
+#include <vtkContextScene.h>
+#include <vtkContextView.h>
 #include <vtkEventQtSlotConnect.h>
+#include <vtkFloatArray.h>
+#include <vtkImageData.h>
+#include <vtkIntArray.h>
+#include <vtkMathUtilities.h>
+#include <vtkObjectFactory.h>
+#include <vtkPlotBar.h>
+#include <vtkPointData.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMViewProxy.h>
+#include <vtkTable.h>
+#include <vtkTransform2D.h>
+#include <vtkTrivialProducer.h>
 
 #include <QtDebug>
 #include <QThread>
 
+#include "ActiveObjects.h"
+#include "ComputeHistogram.h"
+#include "ModuleContour.h"
+#include "ModuleManager.h"
+#include "Utilities.h"
+
 namespace TEM
 {
-
-template<typename T>
-void CalculateHistogram(T *values, const unsigned int n, const float min,
-                        int *pops, const float inc, const int numberOfBins)
-{
-  const int maxBin(numberOfBins - 1);
-  for (unsigned int j = 0; j < n; ++j)
-    {
-    int index = std::min(static_cast<int>((*(values++) - min) / inc), maxBin);
-    ++pops[index];
-    }
-}
 
 //-----------------------------------------------------------------------------
 // This is just here for now - quick and dirty historgram calculations...
@@ -62,8 +56,17 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   // the x and y for input column. This is the bin centers, and the population.
   double minmax[2] = { 0.0, 0.0 };
   const int numberOfBins = 200;
+
   // The bin values are the centers, extending +/- half an inc either side
-  input->GetScalarRange(minmax);
+  switch (input->GetScalarType())
+    {
+    vtkTemplateMacro(
+          TEM::GetScalarRange(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
+                         input->GetPointData()->GetScalars()->GetNumberOfTuples(),
+                         minmax));
+    default:
+      break;
+    }
   if (minmax[0] == minmax[1])
     {
     minmax[1] = minmax[0] + 1.0;
@@ -103,16 +106,19 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   switch (input->GetScalarType())
     {
     vtkTemplateMacro(
-          CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
+          TEM::CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
                              input->GetPointData()->GetScalars()->GetNumberOfTuples(),
                              minmax[0], pops, inc, numberOfBins));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
     }
+
+#ifndef NDEBUG
   vtkIdType total = 0;
   for (int i = 0; i < numberOfBins; ++i)
     total += pops[i];
   assert(total == input->GetPointData()->GetScalars()->GetNumberOfTuples());
+#endif
 
   output->AddColumn(extents.GetPointer());
   output->AddColumn(populations.GetPointer());
@@ -177,7 +183,7 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
                                          this->Transform.Get());
     }
   vtkVector2f pos;
-  this->Transform->InverseTransformPoints(m.ScenePos.GetData(), pos.GetData(),
+  this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
                                           1);
   this->PositionX = pos.GetX();
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
@@ -221,6 +227,10 @@ CentralWidget::~CentralWidget()
 //-----------------------------------------------------------------------------
 void CentralWidget::setDataSource(vtkSMSourceProxy* source)
 {
+  this->DataSource = source;
+
+  // FIXME: Handle NULL source. We should clear the histogram.
+
   // Get the actual data source, build a histogram out of it.
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
   vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
@@ -270,9 +280,39 @@ void CentralWidget::histogramReady()
 
 void CentralWidget::histogramClicked(vtkObject *caller)
 {
-  qDebug() << "Histogram clicked at" << this->Chart->PositionX
-           << "making this a great spot to ask for an isosurface at value"
-           << this->Chart->PositionX;
+  //qDebug() << "Histogram clicked at" << this->Chart->PositionX
+  //         << "making this a great spot to ask for an isosurface at value"
+  //         << this->Chart->PositionX;
+  Q_ASSERT(this->DataSource);
+
+  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  if (!view)
+    {
+    return;
+    }
+
+  // Use active ModuleContour is possible. Otherwise, find the first existing
+  // ModuleContour instance or just create a new one, if none exists.
+  ModuleContour* contour = qobject_cast<ModuleContour*>(
+    ActiveObjects::instance().activeModule());
+  if (!contour)
+    {
+    QList<ModuleContour*> contours =
+      ModuleManager::instance().findModules<ModuleContour*>(this->DataSource, view);
+    if (contours.size() == 0)
+      {
+      contour = qobject_cast<ModuleContour*>(ModuleManager::instance().createAndAddModule(
+          "Contour", this->DataSource, view));
+      }
+    else
+      {
+      contour = contours[0];
+      }
+    ActiveObjects::instance().setActiveModule(contour);
+    }
+  Q_ASSERT(contour);
+  contour->setIsoValue(this->Chart->PositionX);
+  TEM::convert<pqView*>(view)->render();
 }
 
 } // end of namespace TEM

@@ -16,6 +16,7 @@
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
+#include "ModuleManager.h"
 #include "pqLoadDataReaction.h"
 #include "pqPipelineSource.h"
 #include "Utilities.h"
@@ -49,10 +50,7 @@ void LoadDataReaction::onTriggered()
   // Let ParaView deal with reading the data. If we need more customization, we
   // can show our own "File/Open" dialog and then create the appropriate reader
   // proxies.
-
   QList<pqPipelineSource*> readers = pqLoadDataReaction::loadData();
-
-  QList<vtkSMSourceProxy*> dataSources;
 
   // Since we want to ditch the reader pipeline and just keep the raw data
   // around. We do this magic.
@@ -60,20 +58,11 @@ void LoadDataReaction::onTriggered()
     {
     vtkSMSourceProxy* dataSource = this->createDataSource(reader);
     Q_ASSERT(dataSource);
-    dataSources.push_back(dataSource);
 
     controller->UnRegisterProxy(reader->getProxy());
     // reader is dangling at this point.
     }
   readers.clear();
-
-  // TODO: do whatever we need to do with all the data sources.
-
-  // make the last one active, I suppose.
-  if (dataSources.size() > 0)
-    {
-    ActiveObjects::instance().setActiveDataSource(dataSources.last());
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -110,7 +99,24 @@ vtkSMSourceProxy* LoadDataReaction::createDataSource(pqPipelineSource* reader)
       vtkSMCoreUtilities::GetFileNameProperty(readerProxy)).GetAsString());
 
   controller->RegisterPipelineProxy(source);
-  return vtkSMSourceProxy::SafeDownCast(source);
+
+  vtkSMSourceProxy* dataSource = vtkSMSourceProxy::SafeDownCast(source);
+
+  // do whatever we need to do with a new data source.
+  LoadDataReaction::dataSourceAdded(dataSource);
+  return dataSource;
+}
+
+//-----------------------------------------------------------------------------
+void LoadDataReaction::dataSourceAdded(vtkSMSourceProxy* dataSource)
+{
+  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  // Create an outline module for the source in the active view.
+  if (Module* module = ModuleManager::instance().createAndAddModule(
+      "Outline", dataSource, view))
+    {
+    ActiveObjects::instance().setActiveModule(module);
+    }
 }
 
 } // end of namespace TEM

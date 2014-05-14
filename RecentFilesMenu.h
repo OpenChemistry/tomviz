@@ -13,39 +13,31 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleVolume_h
-#define __ModuleVolume_h
+#ifndef __RecentFilesMenu_h
+#define __RecentFilesMenu_h
 
-#include "Module.h"
-#include "vtkWeakPointer.h"
-
-class vtkSMProxy;
+#include "pqRecentFilesMenu.h"
 
 namespace TEM
 {
-
-class ModuleVolume : public Module
+/// Extends pqRecentFilesMenu to add support to open a data file customized for
+/// MatViz.
+class RecentFilesMenu : public pqRecentFilesMenu
 {
-  Q_OBJECT
-
-  typedef Module Superclass;
-
+  Q_OBJECT;
+  typedef pqRecentFilesMenu Superclass;
 public:
-  ModuleVolume(QObject* parent=NULL);
-  virtual ~ModuleVolume();
+  RecentFilesMenu(QMenu& menu, QObject* parent=NULL);
+  virtual ~RecentFilesMenu();
 
-  virtual QString label() const { return  "Volume"; }
-  virtual QIcon icon() const;
-  virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
-  virtual bool finalize();
-  virtual bool setVisibility(bool val);
-
+protected:
+  virtual pqPipelineSource* createReader(
+    const QString& readerGroup,
+    const QString& readerName,
+    const QStringList& files,
+    pqServer* server) const;
 private:
-  Q_DISABLE_COPY(ModuleVolume)
-  vtkWeakPointer<vtkSMSourceProxy> PassThrough;
-  vtkWeakPointer<vtkSMProxy> Representation;
+  Q_DISABLE_COPY(RecentFilesMenu);
 };
-
 }
-
 #endif
