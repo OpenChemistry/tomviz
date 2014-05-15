@@ -235,10 +235,8 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
 }
 
 //----------------------------------------------------------------------------
-template<typename IteratorType, typename LoggerType>
+template<typename ValueType, typename LoggerType>
 void SubdividedVolume::Contour(dax::Scalar isoValue,
-                               const IteratorType begin,
-                               const IteratorType end,
                                LoggerType& logger)
 {
   logger << "Contour with value: " << isoValue << std::endl;
@@ -247,7 +245,6 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
   dax::cont::Timer<> stageTimer;
   double stage1Time=0, stage2Time=0;
 
-  typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
   typedef std::vector< dax::cont::UniformGrid< > >::const_iterator gridIt;
 
   //variables for info for the logger
@@ -314,16 +311,13 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
 }
 
 //----------------------------------------------------------------------------
-template<typename IteratorType, typename LoggerType>
+template<typename ValueType, typename LoggerType>
 dax::cont::UnstructuredGrid< dax::CellTagTriangle >
 SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
                                std::size_t index,
-                               const IteratorType begin,
-                               const IteratorType end,
+                               ValueType,
                                LoggerType& logger)
 {
-  typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
-
   typedef  dax::cont::DispatcherGenerateInterpolatedCells<
                   ::worklets::ContourGenerate > InterpolatedDispatcher;
 
@@ -358,15 +352,12 @@ SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
 /*
 
 //----------------------------------------------------------------------------
-template<typename IteratorType, typename LoggerType>
+template<typename ValueType, typename LoggerType>
 void SubdividedVolume::Contour(dax::Scalar isoValue,
-                               const IteratorType begin,
-                               const IteratorType end,
                                LoggerType& logger)
 {
   dax::cont::Timer<> timer;
 
-  typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
   typedef std::vector< dax::cont::UniformGrid< > >::const_iterator gridIt;
 
 

@@ -42,15 +42,12 @@ namespace accel
 
   inline bool isValidSubGrid(std::size_t index, dax::Scalar value);
 
-  template<typename IteratorType, typename LoggerType>
-  inline void Contour(dax::Scalar isoValue, IteratorType begin, IteratorType end,
-               LoggerType& logger);
+  template<typename ValueType, typename LoggerType>
+  inline void Contour(dax::Scalar isoValue, LoggerType& logger);
 
-  template<typename IteratorType, typename LoggerType>
+  template<typename ValueType, typename LoggerType>
   inline  dax::cont::UnstructuredGrid< dax::CellTagTriangle >
-  ContourSubGrid(dax::Scalar isoValue, std::size_t index,
-                      IteratorType begin, IteratorType end,
-                      LoggerType& logger);
+  ContourSubGrid(dax::Scalar isoValue, std::size_t index, ValueType, LoggerType& logger);
 
   const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
     { return SubGrids[index]; }
