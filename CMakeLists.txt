@@ -16,8 +16,7 @@ if(ENABLE_DAX_ACCELERATION)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dax)
 
   set(accel_srcs
-    dax/vtkAccelContour.cxx
-    dax/ModuleAccelContour.cxx
+    dax/ModuleStreamingContour.cxx
     )
 
 endif()
@@ -75,7 +74,8 @@ endif()
 if(ENABLE_DAX_ACCELERATION)
   target_link_libraries(matviz LINK_PRIVATE ${TBB_LIBRARIES})
 
-  #set the dax backend to tbb explicitly
+  #set the dax backend to tbb explicitly as the histogram is
+  #computed using dax.
   set_target_properties(matviz PROPERTIES COMPILE_DEFINITIONS
                         "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
 endif()

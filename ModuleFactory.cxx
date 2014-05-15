@@ -16,7 +16,7 @@
 #include "ModuleFactory.h"
 
 #ifdef DAX_DEVICE_ADAPTER
-#  include "dax/ModuleAccelContour.h"
+#  include "dax/ModuleStreamingContour.h"
 #endif
 
 #include "ModuleContour.h"
@@ -70,7 +70,7 @@ Module* ModuleFactory::createModule(
   else if (type == "Contour")
     {
 #ifdef DAX_DEVICE_ADAPTER
-    module = new ModuleAccelContour();
+    module = new ModuleStreamingContour();
 #else
     module = new ModuleContour();
 #endif
