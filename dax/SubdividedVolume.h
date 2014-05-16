@@ -48,6 +48,10 @@ namespace accel
   inline vtkSmartPointer< vtkPolyData >
   ContourSubGrid(dax::Scalar isoValue, std::size_t index, ValueType, LoggerType& logger);
 
+  template<typename ValueType, typename LoggerType>
+  inline vtkSmartPointer< vtkPolyData >
+  PointCloudSubGrid(dax::Scalar isoValue, std::size_t index, ValueType, LoggerType& logger);
+
   const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
     { return SubGrids[index]; }
 
@@ -69,6 +73,10 @@ namespace accel
 private:
   template<typename IteratorType, typename LoggerType>
   void ComputePerSubGridValues(IteratorType begin, IteratorType end, LoggerType& logger);
+
+  template<typename ValueType, typename LoggerType>
+  inline dax::cont::UnstructuredGrid<dax::CellTagTriangle>
+  ComputeSubGridContour(dax::Scalar isoValue, std::size_t index, ValueType, LoggerType& logger);
 
   dax::Vector3 Origin;
   dax::Vector3 Spacing;

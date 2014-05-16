@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "vtkStreamingContourRepresentation.h"
+#include "vtkStreamingThresholdRepresentation.h"
 
 #include "vtkAlgorithmOutput.h"
 #include "vtkCompositeDataIterator.h"
@@ -32,21 +32,21 @@
 #include "vtkPVStreamingMacros.h"
 #include "vtkPVTrivialProducer.h"
 #include "vtkRenderer.h"
-#include "vtkStreamingContourWorker.h"
+#include "vtkStreamingThresholdWorker.h"
 
 #include <algorithm>
 #include <assert.h>
 #include <vector>
 
-vtkStandardNewMacro(vtkStreamingContourRepresentation);
+vtkStandardNewMacro(vtkStreamingThresholdRepresentation);
 //----------------------------------------------------------------------------
-vtkStreamingContourRepresentation::vtkStreamingContourRepresentation()
+vtkStreamingThresholdRepresentation::vtkStreamingThresholdRepresentation()
 {
   this->ContourValue = 50;
   this->StreamingCapablePipeline = false;
   this->InStreamingUpdate = false;
 
-  this->Worker = vtkSmartPointer<vtkStreamingContourWorker>::New();
+  this->Worker = vtkSmartPointer<vtkStreamingThresholdWorker>::New();
   this->Mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 
   this->Actor = vtkSmartPointer<vtkPVLODActor>::New();
@@ -59,25 +59,25 @@ vtkStreamingContourRepresentation::vtkStreamingContourRepresentation()
 }
 
 //----------------------------------------------------------------------------
-vtkStreamingContourRepresentation::~vtkStreamingContourRepresentation()
+vtkStreamingThresholdRepresentation::~vtkStreamingThresholdRepresentation()
 {
 }
 
 //----------------------------------------------------------------------------
-void vtkStreamingContourRepresentation::SetVisibility(bool val)
+void vtkStreamingThresholdRepresentation::SetVisibility(bool val)
 {
   this->Actor->SetVisibility(val);
   this->Superclass::SetVisibility(val);
 }
 
 //----------------------------------------------------------------------------
-void vtkStreamingContourRepresentation::SetOpacity(double val)
+void vtkStreamingThresholdRepresentation::SetOpacity(double val)
 {
   this->Actor->GetProperty()->SetOpacity(val);
 }
 
 //----------------------------------------------------------------------------
-int vtkStreamingContourRepresentation::ProcessViewRequest(
+int vtkStreamingThresholdRepresentation::ProcessViewRequest(
   vtkInformationRequestKey* request_type, vtkInformation* inInfo, vtkInformation* outInfo)
 {
   // always forward to superclass first. Superclass returns 0 if the
@@ -149,7 +149,7 @@ int vtkStreamingContourRepresentation::ProcessViewRequest(
 }
 
 //----------------------------------------------------------------------------
-int vtkStreamingContourRepresentation::RequestInformation(vtkInformation *rqst,
+int vtkStreamingThresholdRepresentation::RequestInformation(vtkInformation *rqst,
     vtkInformationVector **inputVector,
     vtkInformationVector *outputVector)
 {
@@ -175,7 +175,7 @@ int vtkStreamingContourRepresentation::RequestInformation(vtkInformation *rqst,
 }
 
 //----------------------------------------------------------------------------
-int vtkStreamingContourRepresentation::RequestUpdateExtent(
+int vtkStreamingThresholdRepresentation::RequestUpdateExtent(
   vtkInformation* request,
   vtkInformationVector** inputVector,
   vtkInformationVector* outputVector)
@@ -189,7 +189,7 @@ int vtkStreamingContourRepresentation::RequestUpdateExtent(
 
 
 //----------------------------------------------------------------------------
-int vtkStreamingContourRepresentation::RequestData(vtkInformation *rqst,
+int vtkStreamingThresholdRepresentation::RequestData(vtkInformation *rqst,
   vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
   if (inputVector[0]->GetNumberOfInformationObjects() == 1)
@@ -246,7 +246,7 @@ int vtkStreamingContourRepresentation::RequestData(vtkInformation *rqst,
 }
 
 //----------------------------------------------------------------------------
-bool vtkStreamingContourRepresentation::StreamingUpdate(const double view_planes[24])
+bool vtkStreamingThresholdRepresentation::StreamingUpdate(const double view_planes[24])
 {
   assert(this->InStreamingUpdate == false);
 
@@ -270,7 +270,7 @@ bool vtkStreamingContourRepresentation::StreamingUpdate(const double view_planes
 }
 
 //----------------------------------------------------------------------------
-int vtkStreamingContourRepresentation::FillInputPortInformation(
+int vtkStreamingThresholdRepresentation::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
 
@@ -285,7 +285,7 @@ int vtkStreamingContourRepresentation::FillInputPortInformation(
 }
 
 //----------------------------------------------------------------------------
-bool vtkStreamingContourRepresentation::AddToView(vtkView* view)
+bool vtkStreamingThresholdRepresentation::AddToView(vtkView* view)
 {
   vtkPVRenderView* rview = vtkPVRenderView::SafeDownCast(view);
   if (rview)
@@ -297,7 +297,7 @@ bool vtkStreamingContourRepresentation::AddToView(vtkView* view)
 }
 
 //----------------------------------------------------------------------------
-bool vtkStreamingContourRepresentation::RemoveFromView(vtkView* view)
+bool vtkStreamingThresholdRepresentation::RemoveFromView(vtkView* view)
 {
   vtkPVRenderView* rview = vtkPVRenderView::SafeDownCast(view);
   if (rview)
@@ -309,14 +309,14 @@ bool vtkStreamingContourRepresentation::RemoveFromView(vtkView* view)
 }
 
 //----------------------------------------------------------------------------
-void vtkStreamingContourRepresentation::PrintSelf(ostream& os, vtkIndent indent)
+void vtkStreamingThresholdRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "StreamingCapablePipeline: " << this->StreamingCapablePipeline << endl;
 }
 
 //----------------------------------------------------------------------------
-void vtkStreamingContourRepresentation::SetInputArrayToProcess(
+void vtkStreamingThresholdRepresentation::SetInputArrayToProcess(
   int idx, int port, int connection, int fieldAssociation, const char *name)
 {
   this->Superclass::SetInputArrayToProcess(
@@ -348,13 +348,13 @@ void vtkStreamingContourRepresentation::SetInputArrayToProcess(
 }
 
 //----------------------------------------------------------------------------
-void vtkStreamingContourRepresentation::SetLookupTable(vtkScalarsToColors* lut)
+void vtkStreamingThresholdRepresentation::SetLookupTable(vtkScalarsToColors* lut)
 {
   this->Mapper->SetLookupTable(lut);
 }
 
 //----------------------------------------------------------------------------
-void vtkStreamingContourRepresentation::SetPointSize(double val)
+void vtkStreamingThresholdRepresentation::SetPointSize(double val)
 {
   this->Actor->GetProperty()->SetPointSize(val);
 }

@@ -113,60 +113,6 @@ struct ComputeLowHighPerElement : dax::exec::WorkletMapField
   std::vector< vtkDataArray* > Values;
 };
 
-//CPU only worklet, would not work on GPU, would require a rewrite to
-//parallelize the computation of the low high into a map/reduce pair of worklets
-struct ComputeVtkContour : dax::exec::WorkletMapField
-{
-  typedef void ControlSignature(Field(In));
-  typedef void ExecutionSignature(_1);
-
-  DAX_CONT_EXPORT
-  ComputeVtkContour(dax::Scalar isoValue,
-                    const std::vector<dax::cont::UniformGrid< > >& grids,
-                    const std::vector< vtkDataArray* >& values):
-    IsoValue(isoValue),
-    Grids(grids),
-    Values(values)
-  {
-  }
-
-  DAX_EXEC_EXPORT
-  void operator()(dax::Id i) const
-  {
-    vtkNew<vtkContourFilter> vContour;
-    vContour->SetValue(0, this->IsoValue);
-    vContour->ComputeGradientsOff();
-    vContour->ComputeScalarsOff();
-    vtkNew<vtkImageData> vImage;
-
-    //use dax to call VTK for each subgrid
-    vImage->SetOrigin( this->Grids[i].GetOrigin()[0],
-                       this->Grids[i].GetOrigin()[1],
-                       this->Grids[i].GetOrigin()[2] );
-    vImage->SetSpacing( this->Grids[i].GetSpacing()[0],
-                        this->Grids[i].GetSpacing()[1],
-                        this->Grids[i].GetSpacing()[2] );
-    vImage->SetExtent( 0,
-                       this->Grids[i].GetExtent().Max[0],
-                       0,
-                       this->Grids[i].GetExtent().Max[1],
-                       0,
-                       this->Grids[i].GetExtent().Max[2]);
-    this->Values[i]->SetName("ISOValues");
-    vImage->GetPointData()->SetScalars( this->Values[i] );
-    vImage->GetPointData()->SetActiveScalars( "ISOValues" );
-
-    vContour->SetInputData(vImage.GetPointer());
-    vContour->Update();
-  }
-
-  dax::Scalar IsoValue;
-  std::vector<dax::cont::UniformGrid< > > Grids;
-  std::vector< vtkDataArray* > Values;
-};
-
-
-
 // -----------------------------------------------------------------------------
 class ContourCount : public dax::exec::WorkletMapCell
 {
@@ -278,5 +224,60 @@ private:
 
 
 }
+
+/*
+
+//CPU only worklet, would not work on GPU, would require a rewrite to
+//parallelize the computation of the low high into a map/reduce pair of worklets
+struct ComputeVtkContour : dax::exec::WorkletMapField
+{
+  typedef void ControlSignature(Field(In));
+  typedef void ExecutionSignature(_1);
+
+  DAX_CONT_EXPORT
+  ComputeVtkContour(dax::Scalar isoValue,
+                    const std::vector<dax::cont::UniformGrid< > >& grids,
+                    const std::vector< vtkDataArray* >& values):
+    IsoValue(isoValue),
+    Grids(grids),
+    Values(values)
+  {
+  }
+
+  DAX_EXEC_EXPORT
+  void operator()(dax::Id i) const
+  {
+    vtkNew<vtkContourFilter> vContour;
+    vContour->SetValue(0, this->IsoValue);
+    vContour->ComputeGradientsOff();
+    vContour->ComputeScalarsOff();
+    vtkNew<vtkImageData> vImage;
+
+    //use dax to call VTK for each subgrid
+    vImage->SetOrigin( this->Grids[i].GetOrigin()[0],
+                       this->Grids[i].GetOrigin()[1],
+                       this->Grids[i].GetOrigin()[2] );
+    vImage->SetSpacing( this->Grids[i].GetSpacing()[0],
+                        this->Grids[i].GetSpacing()[1],
+                        this->Grids[i].GetSpacing()[2] );
+    vImage->SetExtent( 0,
+                       this->Grids[i].GetExtent().Max[0],
+                       0,
+                       this->Grids[i].GetExtent().Max[1],
+                       0,
+                       this->Grids[i].GetExtent().Max[2]);
+    this->Values[i]->SetName("ISOValues");
+    vImage->GetPointData()->SetScalars( this->Values[i] );
+    vImage->GetPointData()->SetActiveScalars( "ISOValues" );
+
+    vContour->SetInputData(vImage.GetPointer());
+    vContour->Update();
+  }
+
+  dax::Scalar IsoValue;
+  std::vector<dax::cont::UniformGrid< > > Grids;
+  std::vector< vtkDataArray* > Values;
+};
+*/
 
 #endif

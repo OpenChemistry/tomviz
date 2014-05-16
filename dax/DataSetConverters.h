@@ -87,10 +87,29 @@ void convertPoints(GridType& grid, vtkPolyData* output)
 }
 
 //------------------------------------------------------------------------------
+void setCells(vtkCellArray* cells, vtkPolyData* output, dax::CellTagVertex)
+{
+output->SetVerts(cells);
+}
+
+//------------------------------------------------------------------------------
+void setCells(vtkCellArray* cells, vtkPolyData* output, dax::CellTagLine)
+{
+output->SetLines(cells);
+}
+
+//------------------------------------------------------------------------------
+void setCells(vtkCellArray* cells, vtkPolyData* output, dax::CellTagTriangle)
+{
+output->SetPolys(cells);
+}
+
+//------------------------------------------------------------------------------
 template<typename GridType>
 void convertCells(GridType& grid, vtkPolyData* output)
 {
-  //this is always triangles for us, so we don't need to do anything fancy
+  //determine the Cell type
+  typedef dax::CellTraits<typename GridType::CellTag> CellTraits;
 
   //determine amount of memory to allocate
   const vtkIdType num_cells = grid.GetNumberOfCells();
@@ -109,16 +128,15 @@ void convertCells(GridType& grid, vtkPolyData* output)
   vtkIdType daxIndex = 0;
   for(vtkIdType i=0; i < num_cells; ++i)
     {
-    *cellPointer = 3;
+    *cellPointer = CellTraits::NUM_VERTICES;
     ++cellPointer;
-    for(vtkIdType j=0; j < 3; ++j, ++cellPointer, ++daxIndex)
+    for(vtkIdType j=0; j < CellTraits::NUM_VERTICES; ++j, ++cellPointer, ++daxIndex)
       {
       *cellPointer = daxPortal.Get( daxIndex );
       }
     }
 
-  output->SetPolys(cells.GetPointer());
-
+  setCells(cells.GetPointer(),output,typename GridType::CellTag());
 }
 
 }

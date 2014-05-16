@@ -201,10 +201,11 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
          << std::endl;
 }
 
+
 //----------------------------------------------------------------------------
 template<typename ValueType, typename LoggerType>
-vtkSmartPointer< vtkPolyData >
-SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
+dax::cont::UnstructuredGrid< dax::CellTagTriangle >
+SubdividedVolume::ComputeSubGridContour(dax::Scalar isoValue,
                                std::size_t index,
                                ValueType,
                                LoggerType& logger)
@@ -238,6 +239,62 @@ SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
   interpDispatcher.Invoke(this->subGrid(index),
                           outGrid,
                           values);
+  return outGrid;
+}
+
+//----------------------------------------------------------------------------
+template<typename ValueType, typename LoggerType>
+vtkSmartPointer< vtkPolyData >
+SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
+                               std::size_t index,
+                               ValueType,
+                               LoggerType& logger)
+{
+  typedef dax::cont::UnstructuredGrid< dax::CellTagTriangle >
+                                                UnstructuredGridType;
+
+
+  UnstructuredGridType outGrid = this->ComputeSubGridContour(isoValue,
+                                                             index,
+                                                             ValueType(),
+                                                             logger);
+  //convert outGrid to a vtkPolyData
+  vtkSmartPointer<vtkPolyData> output = vtkSmartPointer<vtkPolyData>::New();
+  convertPoints(outGrid,output);
+  convertCells(outGrid,output);
+
+  return output;
+}
+
+//----------------------------------------------------------------------------
+template<typename ValueType, typename LoggerType>
+vtkSmartPointer< vtkPolyData >
+SubdividedVolume::PointCloudSubGrid(dax::Scalar isoValue,
+                                    std::size_t index,
+                                    ValueType,
+                                    LoggerType& logger)
+{
+  typedef dax::cont::UnstructuredGrid< dax::CellTagTriangle >
+                                                UnstructuredGridType;
+
+  typedef dax::cont::ArrayContainerControlTagImplicit<
+      dax::cont::internal::ArrayPortalCounting<dax::Id> > CountingIdContainerType;
+  typedef dax::cont::UnstructuredGrid< dax::CellTagVertex,
+                                       CountingIdContainerType> PointCloudGridType;
+
+
+  UnstructuredGridType triangleGrid =
+                                 this->ComputeSubGridContour(isoValue,
+                                                             index,
+                                                             ValueType(),
+                                                             logger);
+
+  //make an unstructured grid with a virtual topology that start at zero
+  //and monotonically increasing to the number of points we have
+  PointCloudGridType outGrid(
+    dax::cont::make_ArrayHandleCounting(0,
+          triangleGrid.GetPointCoordinates().GetNumberOfValues()),
+    triangleGrid.GetPointCoordinates());
 
   //convert outGrid to a vtkPolyData
   vtkSmartPointer<vtkPolyData> output = vtkSmartPointer<vtkPolyData>::New();

@@ -17,12 +17,16 @@ find_package(Dax REQUIRED)
 DaxConfigureTBB(REQUIRED)
 
 add_paraview_plugin(StreamingContour "1.0"
-  SERVER_MANAGER_XML StreamingContour.xml
+  SERVER_MANAGER_XML MatVizStreaming.xml
   SERVER_MANAGER_SOURCES
     vtkStreamingContourRepresentation.cxx
     vtkStreamingContourRepresentation.h
     vtkStreamingContourWorker.cxx
     vtkStreamingContourWorker.h
+    vtkStreamingThresholdRepresentation.cxx
+    vtkStreamingThresholdRepresentation.h
+    vtkStreamingThresholdWorker.cxx
+    vtkStreamingThresholdWorker.h
 )
 
 set_target_properties(StreamingContour PROPERTIES COMPILE_DEFINITIONS

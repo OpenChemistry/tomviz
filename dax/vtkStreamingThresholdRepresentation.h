@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef __vtkStreamingContourRepresentation_h
-#define __vtkStreamingContourRepresentation_h
+#ifndef __vtkStreamingThresholdRepresentation_h
+#define __vtkStreamingThresholdRepresentation_h
 
 #include "vtkPVDataRepresentation.h"
 #include "vtkSmartPointer.h" // for smart pointer.
@@ -26,13 +26,13 @@ class vtkPolyDataMapper;
 class vtkMultiBlockDataSet;
 class vtkPVLODActor;
 class vtkScalarsToColors;
-class vtkStreamingContourWorker;
+class vtkStreamingThresholdWorker;
 
-class vtkStreamingContourRepresentation : public vtkPVDataRepresentation
+class vtkStreamingThresholdRepresentation : public vtkPVDataRepresentation
 {
 public:
-  static vtkStreamingContourRepresentation* New();
-  vtkTypeMacro(vtkStreamingContourRepresentation, vtkPVDataRepresentation);
+  static vtkStreamingThresholdRepresentation* New();
+  vtkTypeMacro(vtkStreamingThresholdRepresentation, vtkPVDataRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -81,8 +81,8 @@ public:
 
 //BTX
 protected:
-  vtkStreamingContourRepresentation();
-  ~vtkStreamingContourRepresentation();
+  vtkStreamingThresholdRepresentation();
+  ~vtkStreamingThresholdRepresentation();
 
   vtkGetMacro(ContourValue,double);
   vtkSetMacro(ContourValue,double);
@@ -164,9 +164,9 @@ protected:
   vtkWeakPointer<vtkPolyData> RenderedData;
 
   // Description:
-  // vtkStreamingContourWorker is a helper class we used to compute the
+  // vtkStreamingThresholdWorker is a helper class we used to compute the
   // sub-blocks
-  vtkSmartPointer<vtkStreamingContourWorker> Worker;
+  vtkSmartPointer<vtkStreamingThresholdWorker> Worker;
 
   // Description:
   // Actor used to render the outlines in the view.
@@ -178,8 +178,8 @@ protected:
   vtkBoundingBox DataBounds;
 
 private:
-  vtkStreamingContourRepresentation(const vtkStreamingContourRepresentation&); // Not implemented
-  void operator=(const vtkStreamingContourRepresentation&); // Not implemented
+  vtkStreamingThresholdRepresentation(const vtkStreamingThresholdRepresentation&); // Not implemented
+  void operator=(const vtkStreamingThresholdRepresentation&); // Not implemented
 
   // Description:
   // The contour value to operate on
