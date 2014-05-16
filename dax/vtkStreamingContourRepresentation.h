@@ -22,7 +22,7 @@
 #include "vtkWeakPointer.h" // for weak pointer.
 #include "vtkBoundingBox.h" // needed for vtkBoundingBox.
 
-class vtkCompositePolyDataMapper2;
+class vtkPolyDataMapper;
 class vtkMultiBlockDataSet;
 class vtkPVLODActor;
 class vtkScalarsToColors;
@@ -161,7 +161,7 @@ protected:
 
   // Description:
   // Helps us keep track of the data being rendered.
-  vtkWeakPointer<vtkDataObject> RenderedData;
+  vtkWeakPointer<vtkPolyData> RenderedData;
 
   // Description:
   // vtkStreamingContourWorker is a helper class we used to compute the
@@ -170,7 +170,7 @@ protected:
 
   // Description:
   // Actor used to render the outlines in the view.
-  vtkSmartPointer<vtkCompositePolyDataMapper2> Mapper;
+  vtkSmartPointer<vtkPolyDataMapper> Mapper;
   vtkSmartPointer<vtkPVLODActor> Actor;
 
   // Description:

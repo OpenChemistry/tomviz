@@ -16,10 +16,8 @@
 #include "vtkStreamingContourRepresentation.h"
 
 #include "vtkAlgorithmOutput.h"
-#include "vtkAppendPolyData.h"
 #include "vtkCompositeDataIterator.h"
 #include "vtkCompositeDataPipeline.h"
-#include "vtkCompositePolyDataMapper2.h"
 #include "vtkGeometryRepresentation.h"
 #include "vtkImageData.h"
 #include "vtkInformation.h"
@@ -27,6 +25,7 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPolyData.h"
+#include "vtkPolyDataMapper.h"
 #include "vtkProperty.h"
 #include "vtkPVLODActor.h"
 #include "vtkPVRenderView.h"
@@ -43,16 +42,16 @@ vtkStandardNewMacro(vtkStreamingContourRepresentation);
 //----------------------------------------------------------------------------
 vtkStreamingContourRepresentation::vtkStreamingContourRepresentation()
 {
-  this->ContourValue = 42;
+  this->ContourValue = 50;
   this->StreamingCapablePipeline = false;
   this->InStreamingUpdate = false;
 
   this->ContourWorker = vtkSmartPointer<vtkStreamingContourWorker>::New();
-  this->Mapper = vtkSmartPointer<vtkCompositePolyDataMapper2>::New();
+  this->Mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 
   this->Actor = vtkSmartPointer<vtkPVLODActor>::New();
   this->Actor->SetMapper(this->Mapper);
-  this->Actor->GetProperty()->SetRepresentationToPoints();
+  this->Actor->GetProperty()->SetRepresentationToSurface();
   this->Actor->GetProperty()->SetAmbient(1.0);
   this->Actor->GetProperty()->SetDiffuse(0.0);
   this->Actor->GetProperty()->SetSpecular(0.0);
@@ -141,19 +140,8 @@ int vtkStreamingContourRepresentation::ProcessViewRequest(
     assert (this->RenderedData != NULL);
     vtkStreamingStatusMacro( << this << ": received new piece.");
 
-    // merge with what we are already rendering.
-    std::vector<vtkSmartPointer<vtkPolyData> > finishedPieces =
-                                  this->ContourWorker->GetFinishedPieces();
-    vtkNew<vtkAppendPolyData> appender;
-    for(unsigned int i=0; i < finishedPieces.size(); ++i)
-      {
-      appender->AddInputDataObject(finishedPieces[i]);
-      }
-
-    appender->AddInputDataObject(this->RenderedData);
-    appender->Update();
-
-    this->RenderedData = appender->GetOutputDataObject(0);
+    this->RenderedData = this->ContourWorker->GetFinishedPieces();
+    std::cout << "RenderedData size: " << RenderedData->GetNumberOfPolys() << std::endl;
     this->Mapper->SetInputDataObject(this->RenderedData);
     }
 

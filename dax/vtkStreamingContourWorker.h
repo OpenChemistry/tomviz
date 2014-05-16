@@ -23,7 +23,7 @@
 
 class vtkImageData;
 class vtkDataArray;
-class vtkPolyData;
+class vtkDataObject;
 
 
 //how is this going to interact with the view, do
@@ -40,11 +40,10 @@ public:
   //start the volume subdivision and contour algorithm
   void Start(vtkImageData*, vtkDataArray* data, double isoValue);
 
-  //pass all the finished contours back to the caller
-  //we don't hold any reference of these polydata internally
-  //so once the caller is finished with them they will
-  //be deleted.
-  std::vector< vtkSmartPointer< vtkPolyData > > GetFinishedPieces();
+  //pass as much of the contour back to the streamer for it
+  //to render, we will keep modifying the data object to add
+  //new data as contours get finished.
+  vtkDataObject* GetFinishedPieces();
 
   //ask if we any sections of the volume left to contour
   bool IsFinished() const;

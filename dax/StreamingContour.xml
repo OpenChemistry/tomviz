@@ -8,8 +8,7 @@
       </Documentation>
       <InputProperty command="SetInputConnection"
                      name="Input">
-        <DataTypeDomain composite_data_supported="1"
-                        name="input_type">
+        <DataTypeDomain name="input_type">
           <DataType value="vtkImageData" />
         </DataTypeDomain>
         <InputArrayDomain attribute_type="any"
@@ -17,22 +16,7 @@
         </InputArrayDomain>
         <Documentation>Set the input to the representation.</Documentation>
       </InputProperty>
-      <IntVectorProperty command="SetUseOutline"
-                         default_values="0"
-                         name="UseOutline"
-                         number_of_elements="1">
-        <BooleanDomain name="bool" />
-      </IntVectorProperty>
-      <IntVectorProperty command="SetStreamingRequestSize"
-                         default_values="1"
-                         name="StreamingRequestSize"
-                         number_of_elements="1">
-        <IntRangeDomain name="range" min="1" max="1000" />
-        <Documentation>
-        Set the number of blocks to request at a given time on a single process
-        when streaming.
-        </Documentation>
-      </IntVectorProperty>
+
       <DoubleVectorProperty command="SetPointSize"
                             default_values="2.0"
                             name="PointSize"
@@ -81,7 +65,7 @@
     <!-- End of StreamingContourRepresentation -->
     </RepresentationProxy>
 
-    <Extension name="GeometryRepresentation">
+    <Extension name="UniformGridRepresentation">
       <Documentation>
         Extends standard GeometryRepresentation by adding
         StreamingContourRepresentation as a new type of representation.
@@ -89,7 +73,7 @@
 
       <!-- this adds to what is already defined in PVRepresentationBase -->
       <RepresentationType subproxy="StreamingContourRepresentation"
-        text="Streaming Particles" />
+        text="Streaming Contours" />
 
       <SubProxy>
         <Proxy name="StreamingContourRepresentation"
@@ -99,35 +83,6 @@
           <Exception name="Input" />
           <Exception name="Visibility" />
         </ShareProperties>
-        <ExposedProperties>
-          <Property name="UseOutline" />
-          <Property name="StreamingRequestSize" />
-        </ExposedProperties>
-      </SubProxy>
-    </Extension>
-
-    <Extension name="UnstructuredGridRepresentation">
-      <Documentation>
-        Extends standard UnstructuredGridRepresentation by adding
-        StreamingContourRepresentation as a new type of representation.
-      </Documentation>
-
-      <!-- this adds to what is already defined in PVRepresentationBase -->
-      <RepresentationType subproxy="StreamingContourRepresentation"
-        text="Streaming Particles" />
-
-      <SubProxy>
-        <Proxy name="StreamingContourRepresentation"
-          proxygroup="representations" proxyname="StreamingContourRepresentation">
-        </Proxy>
-        <ShareProperties subproxy="SurfaceRepresentation">
-          <Exception name="Input" />
-          <Exception name="Visibility" />
-        </ShareProperties>
-        <ExposedProperties>
-          <Property name="UseOutline" />
-          <Property name="StreamingRequestSize" />
-        </ExposedProperties>
       </SubProxy>
     </Extension>
 
