@@ -24,12 +24,15 @@
 
 #include "SubdividedVolume.h"
 
-#include <tbb/tbb_thread.h>
+#include "tbb/tbb_thread.h"
+#include "tbb/spin_mutex.h"
 
 #include <iostream>
 
 namespace
 {
+  typedef tbb::spin_mutex MutexType;
+
 #define temTemplateMacro(call)                                              \
   vtkTemplateMacroCase(VTK_FLOAT, float, call);                             \
   vtkTemplateMacroCase(VTK_INT, int, call);                                 \
@@ -59,18 +62,26 @@ template<typename LoggerType>
 struct ComputeContourFunctor
 {
   TEM::accel::SubdividedVolume& Volume;
+  std::vector< vtkSmartPointer<vtkPolyData> >& DataSets;
+  MutexType* DataSetsMutex;
   LoggerType& Logger;
   bool& ContinueContouring;
 
+  //----------------------------------------------------------------------------
   ComputeContourFunctor(TEM::accel::SubdividedVolume& volume,
+                        std::vector< vtkSmartPointer<vtkPolyData> >& ds,
+                        MutexType* dsMutex,
                         bool& keepProcessing,
                         LoggerType& logger):
     Volume(volume),
+    DataSets(ds),
+    DataSetsMutex(dsMutex),
     Logger(logger),
     ContinueContouring(keepProcessing)
   {
   }
 
+  //----------------------------------------------------------------------------
   template<typename ValueType>
   void operator()(double v, ValueType)
   {
@@ -80,21 +91,25 @@ struct ComputeContourFunctor
   dax::cont::Timer<> timer;
   const std::size_t totalSubGrids = this->Volume.numSubGrids();
 
-  dax::cont::UnstructuredGrid< dax::CellTagTriangle > tris;
+  vtkSmartPointer< vtkPolyData > tris;
   for(std::size_t i=0; i < totalSubGrids && this->ContinueContouring; ++i)
     {
     if(this->ContinueContouring && this->Volume.isValidSubGrid(i, v))
       {
       tris = this->Volume.ContourSubGrid(v, i, ValueType(), this->Logger );
-      numTriangles += tris.GetNumberOfCells();
+      numTriangles += tris->GetNumberOfPolys();
 
-      //todo: convert the tris over to a vtk poly data
+        //lock while we push_back
+        {
+        MutexType::scoped_lock lock(*this->DataSetsMutex);
+        this->DataSets.push_back( tris );
+        }
+
       }
     }
 
   this->Logger << "contour: " << timer.GetElapsedTime()  << std::endl;
   }
-
 };
 
 
@@ -106,14 +121,17 @@ vtkStandardNewMacro(vtkStreamingContourWorker)
 class vtkStreamingContourWorker::WorkerInternals
 {
 public:
+  //----------------------------------------------------------------------------
   WorkerInternals(std::size_t numSubGridsPerDim):
     Thread(),
     ContinueContouring(false),
     Volume(),
+    ComputedContours(),
     NumSubGridsPerDim(numSubGridsPerDim)
   {
   }
 
+  //----------------------------------------------------------------------------
   ~WorkerInternals()
   {
     //tell the thread to stop
@@ -123,8 +141,10 @@ public:
     this->Thread.join();
   }
 
+  //----------------------------------------------------------------------------
   bool IsValid() const { return this->Volume.numSubGrids() > 0; }
 
+  //----------------------------------------------------------------------------
   template<class IteratorType, class LoggerType>
   bool Run(vtkImageData* input,
            double isoValue,
@@ -157,19 +177,44 @@ public:
 
     //now give the thread the volume to contour
     ComputeContourFunctor<LoggerType> functor(this->Volume,
+                                              this->ComputedContours,
+                                              &this->ComputedContoursMutex,
                                               this->ContinueContouring,
                                               logger);
     tbb::tbb_thread t(functor, isoValue, ValueType());
     this->Thread.swap(t);
 
     return true;
+
   }
+//----------------------------------------------------------------------------
+std::vector< vtkSmartPointer< vtkPolyData > > GetFinishedPieces()
+{
+  const std::size_t numElementsFinished = this->ComputedContours.size();
+
+  //copy the elements already in the vector to a new vector
+  std::vector< vtkSmartPointer<vtkPolyData> > finishedData(
+                          this->ComputedContours.begin(),
+                          this->ComputedContours.begin()+numElementsFinished);
+
+
+  { //lock while we erase
+    MutexType::scoped_lock lock(this->ComputedContoursMutex);
+    this->ComputedContours.erase(this->ComputedContours.begin(),
+                          this->ComputedContours.begin()+numElementsFinished);
+  }
+
+  return finishedData;
+}
 
 private:
   tbb::tbb_thread Thread;
   bool ContinueContouring;
 
   TEM::accel::SubdividedVolume Volume;
+  std::vector< vtkSmartPointer<vtkPolyData> > ComputedContours;
+  MutexType ComputedContoursMutex;
+
   std::size_t NumSubGridsPerDim;
 };
 
@@ -209,7 +254,7 @@ void vtkStreamingContourWorker::Start(vtkImageData* image,
 std::vector< vtkSmartPointer< vtkPolyData > >
 vtkStreamingContourWorker::GetFinishedPieces()
 {
-  return std::vector< vtkSmartPointer< vtkPolyData > >();
+  return this->Internals->GetFinishedPieces();
 }
 
 //----------------------------------------------------------------------------
@@ -218,13 +263,8 @@ bool vtkStreamingContourWorker::IsFinished() const
   return false;
 }
 
-
 //------------------------------------------------------------------------------
 void vtkStreamingContourWorker::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }
-
-
-
-

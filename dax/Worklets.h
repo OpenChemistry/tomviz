@@ -14,14 +14,15 @@
 
 ******************************************************************************/
 
+#ifndef __TEM_Worklets_
+#define __TEM_Worklets_
+
 #include <dax/cont/arg/ExecutionObject.h>
 #include <dax/cont/ArrayHandle.h>
-
 
 #include <dax/math/Compare.h>
 #include <dax/exec/WorkletMapField.h>
 #include <dax/worklet/MarchingCubes.h>
-
 
 #include "vtkImageData.h"
 #include "vtkNew.h"
@@ -277,3 +278,5 @@ private:
 
 
 }
+
+#endif

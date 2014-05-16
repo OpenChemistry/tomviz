@@ -23,44 +23,11 @@
 #include <dax/cont/DispatcherGenerateInterpolatedCells.h>
 #include <dax/cont/Timer.h>
 
-//supported iso values array types
-#include "vtkDataSetAttributes.h"
-#include "vtkCharArray.h"
-#include "vtkFloatArray.h"
-#include "vtkIntArray.h"
-#include "vtkShortArray.h"
-#include "vtkUnsignedIntArray.h"
-#include "vtkUnsignedShortArray.h"
-#include "vtkUnsignedCharArray.h"
-
-#include "vtkContourFilter.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
-#include "vtkPointData.h"
-#include "vtkSynchronizedTemplates3D.h"
 
 #include "Worklets.h"
-
-namespace
-{
-  vtkDataArray* make_vtkDataArray(float)
-    { return vtkFloatArray::New(); }
-
-  vtkDataArray* make_vtkDataArray(int)
-    { return vtkIntArray::New(); }
-  vtkDataArray* make_vtkDataArray(unsigned int)
-    { return vtkUnsignedIntArray::New(); }
-
-  vtkDataArray* make_vtkDataArray(short)
-    { return vtkShortArray::New(); }
-  vtkDataArray* make_vtkDataArray(unsigned short)
-    { return vtkUnsignedShortArray::New(); }
-
-  vtkDataArray* make_vtkDataArray(char)
-    { return vtkCharArray::New(); }
-  vtkDataArray* make_vtkDataArray(unsigned char)
-    { return vtkUnsignedCharArray::New(); }
-}
+#include "DataSetConverters.h"
 
 namespace TEM
 {
@@ -236,6 +203,54 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
 
 //----------------------------------------------------------------------------
 template<typename ValueType, typename LoggerType>
+vtkSmartPointer< vtkPolyData >
+SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
+                               std::size_t index,
+                               ValueType,
+                               LoggerType& logger)
+{
+  typedef  dax::cont::DispatcherGenerateInterpolatedCells<
+                  ::worklets::ContourGenerate > InterpolatedDispatcher;
+
+  typedef dax::cont::UnstructuredGrid< dax::CellTagTriangle >
+                                                UnstructuredGridType;
+
+  const ValueType* raw_values = reinterpret_cast<ValueType*>(
+                            this->subGridValues(index)->GetVoidPointer(0));
+  const dax::Id raw_values_len =
+                            this->PerSubGridValues[index]->GetNumberOfTuples();
+
+  //make an array handle the is read only reference to sub grid values
+  dax::cont::ArrayHandle<ValueType> values =
+    dax::cont::make_ArrayHandle(raw_values, raw_values_len);
+
+  dax::cont::ArrayHandle<dax::Id> numTrianglesPerCell;
+
+  dax::cont::DispatcherMapCell< ::worklets::ContourCount >
+    classify( ( ::worklets::ContourCount(isoValue)) );
+  classify.Invoke( this->subGrid(index), values, numTrianglesPerCell );
+
+  //run the second step again with point merging
+  InterpolatedDispatcher interpDispatcher( numTrianglesPerCell,
+                              ::worklets::ContourGenerate(isoValue) );
+  interpDispatcher.SetRemoveDuplicatePoints(true);
+  UnstructuredGridType outGrid;
+  interpDispatcher.Invoke(this->subGrid(index),
+                          outGrid,
+                          values);
+
+  //convert outGrid to a vtkPolyData
+  vtkSmartPointer<vtkPolyData> output = vtkSmartPointer<vtkPolyData>::New();
+  convertPoints(outGrid,output);
+  convertCells(outGrid,output);
+
+  return output;
+}
+/*
+
+
+//----------------------------------------------------------------------------
+template<typename ValueType, typename LoggerType>
 void SubdividedVolume::Contour(dax::Scalar isoValue,
                                LoggerType& logger)
 {
@@ -310,46 +325,6 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
          << "%) of the subgrids are valid " << std::endl;
 }
 
-//----------------------------------------------------------------------------
-template<typename ValueType, typename LoggerType>
-dax::cont::UnstructuredGrid< dax::CellTagTriangle >
-SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
-                               std::size_t index,
-                               ValueType,
-                               LoggerType& logger)
-{
-  typedef  dax::cont::DispatcherGenerateInterpolatedCells<
-                  ::worklets::ContourGenerate > InterpolatedDispatcher;
-
-  typedef dax::cont::UnstructuredGrid<
-                  dax::CellTagTriangle > UnstructuredGridType;
-
-  const ValueType* raw_values = reinterpret_cast<ValueType*>(
-                            this->subGridValues(index)->GetVoidPointer(0));
-  const dax::Id raw_values_len =
-                            this->PerSubGridValues[index]->GetNumberOfTuples();
-
-  //make an array handle the is read only reference to sub grid values
-  dax::cont::ArrayHandle<ValueType> values =
-    dax::cont::make_ArrayHandle(raw_values, raw_values_len);
-
-  dax::cont::ArrayHandle<dax::Id> numTrianglesPerCell;
-
-  dax::cont::DispatcherMapCell< ::worklets::ContourCount >
-    classify( ( ::worklets::ContourCount(isoValue)) );
-  classify.Invoke( this->subGrid(index), values, numTrianglesPerCell );
-
-  //run the second step again with point merging
-  InterpolatedDispatcher interpDispatcher( numTrianglesPerCell,
-                              ::worklets::ContourGenerate(isoValue) );
-  interpDispatcher.SetRemoveDuplicatePoints(true);
-  UnstructuredGridType outGrid;
-  interpDispatcher.Invoke(this->subGrid(index),
-                          outGrid,
-                          values);
-  return outGrid;
-}
-/*
 
 //----------------------------------------------------------------------------
 template<typename ValueType, typename LoggerType>

@@ -20,7 +20,9 @@
 #include <dax/cont/UniformGrid.h>
 #include <dax/cont/UnstructuredGrid.h>
 
-#include <vtkDataArray.h>
+#include "vtkDataArray.h"
+#include "vtkSmartPointer.h"
+#include "vtkPolyData.h"
 #include <vector>
 
 namespace TEM
@@ -43,10 +45,7 @@ namespace accel
   inline bool isValidSubGrid(std::size_t index, dax::Scalar value);
 
   template<typename ValueType, typename LoggerType>
-  inline void Contour(dax::Scalar isoValue, LoggerType& logger);
-
-  template<typename ValueType, typename LoggerType>
-  inline  dax::cont::UnstructuredGrid< dax::CellTagTriangle >
+  inline vtkSmartPointer< vtkPolyData >
   ContourSubGrid(dax::Scalar isoValue, std::size_t index, ValueType, LoggerType& logger);
 
   const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
