@@ -24,6 +24,9 @@
 #include "pqStandardPropertyWidgetInterface.h"
 #include "pqStandardViewModules.h"
 #include "pqViewFrameActionsBehavior.h"
+#include "ProgressBehavior.h"
+
+#include <QMainWindow>
 
 namespace TEM
 {
@@ -49,6 +52,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
+  new TEM::ProgressBehavior(mainWindow);
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
