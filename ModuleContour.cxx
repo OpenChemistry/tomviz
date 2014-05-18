@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleContour.h"
 
+#include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -107,6 +108,24 @@ void ModuleContour::setIsoValues(const QList<double>& values)
   vtkSMPropertyHelper(this->ContourFilter,"ContourValues").Set(
     &vectorValues[0], values.size());
   this->ContourFilter->UpdateVTKObjects();
+}
+
+//-----------------------------------------------------------------------------
+void ModuleContour::addToPanel(pqProxiesWidget* panel)
+{
+  Q_ASSERT(this->ContourFilter);
+  Q_ASSERT(this->ContourRepresentation);
+
+  QStringList contourProperties;
+  contourProperties << "ContourValues";
+  panel->addProxy(this->ContourFilter, "Contour", contourProperties, true);
+
+  QStringList contourRepresentationProperties;
+  contourRepresentationProperties
+    << "Representation"
+    << "Opacity"
+    << "Specular";
+  panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
 }
 
 } // end of namespace TEM

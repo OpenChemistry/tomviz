@@ -57,6 +57,8 @@ public:
 
 public slots:
   void addModule(Module*);
+
+  /// Use these methods to delete/remove modules.
   void removeModule(Module*);
   void removeAllModules();
 

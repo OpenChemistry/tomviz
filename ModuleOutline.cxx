@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleOutline.h"
 
+#include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -95,6 +96,16 @@ bool ModuleOutline::setVisibility(bool val)
   vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility").Set(val? 1 : 0);
   this->OutlineRepresentation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleOutline::addToPanel(pqProxiesWidget* panel)
+{
+  Q_ASSERT(panel && this->OutlineRepresentation);
+  QStringList properties;
+  properties << "CubeAxesVisibility";
+  panel->addProxy(
+    this->OutlineRepresentation, "Annotations", properties, true);
 }
 
 } // end of namespace TEM

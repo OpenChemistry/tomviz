@@ -39,6 +39,7 @@ public:
   virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
   virtual bool setVisibility(bool val);
+  virtual void addToPanel(pqProxiesWidget*);
 
   void setIsoValues(const QList<double>& values);
   void setIsoValue(double value)

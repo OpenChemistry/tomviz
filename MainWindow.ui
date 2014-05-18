@@ -96,12 +96,12 @@
   </widget>
   <widget class="QDockWidget" name="dockWidget_2">
    <property name="windowTitle">
-    <string>Properties </string>
+    <string>Module Properties </string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="pqPropertiesPanel" name="propertiesPanel"/>
+   <widget class="TEM::ModulePropertiesPanel" name="modulePropertiesPanel"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -134,12 +134,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>pqPropertiesPanel</class>
-   <extends>QWidget</extends>
-   <header>pqPropertiesPanel.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>TEM::CentralWidget</class>
    <extends>QWidget</extends>
    <header>CentralWidget.h</header>
@@ -149,6 +143,12 @@
    <class>TEM::PipelineWidget</class>
    <extends>QTreeWidget</extends>
    <header>PipelineWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TEM::ModulePropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>ModulePropertiesPanel.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

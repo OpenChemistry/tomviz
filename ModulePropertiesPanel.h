@@ -13,32 +13,40 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef __TEM_ModulePropertiesPanel_h
+#define __TEM_ModulePropertiesPanel_h
 
-#include <QMainWindow>
+#include <QWidget>
+#include <QScopedPointer>
+
+class vtkSMViewProxy;
 
 namespace TEM
 {
-
 class Module;
 
-/// The main window for the MatViz application.
-class MainWindow : public QMainWindow
+class ModulePropertiesPanel : public QWidget
 {
-  Q_OBJECT
-
-  typedef QMainWindow Superclass;
-
+  Q_OBJECT;
+  typedef QWidget Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
+  ModulePropertiesPanel(QWidget* parent=0);
+  virtual ~ModulePropertiesPanel();
+
+private slots:
+  void setModule(Module*);
+  void setView(vtkSMViewProxy*);
+  void updatePanel();
+  void deleteModule();
+  void render();
 
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(ModulePropertiesPanel);
+
+  class MPPInternals;
+  const QScopedPointer<MPPInternals> Internals;
 };
 
 }
+
 #endif

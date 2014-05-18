@@ -41,6 +41,7 @@ public:
   virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
   virtual bool setVisibility(bool val);
+  virtual void addToPanel(pqProxiesWidget*);
 
 private:
   Q_DISABLE_COPY(ModuleOutline)
