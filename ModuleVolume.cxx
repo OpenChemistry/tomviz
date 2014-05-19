@@ -96,4 +96,11 @@ bool ModuleVolume::setVisibility(bool val)
   return true;
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleVolume::visibility() const
+{
+  Q_ASSERT(this->Representation);
+  return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() != 0;
+}
+
 } // end of namespace TEM

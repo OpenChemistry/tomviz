@@ -60,6 +60,9 @@ private slots:
   /// Called when current item selected in the widget changes.
   void currentItemChanged(QTreeWidgetItem*);
 
+  /// called when an item is clicked. We handle visibility toggling.
+  void onItemClicked(QTreeWidgetItem*, int);
+
 private:
   /// Called by sourceAdded/sourceRemoved when a data producer is detected.
   void addDataSource(vtkSMSourceProxy* producer);

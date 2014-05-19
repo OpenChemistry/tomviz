@@ -99,6 +99,13 @@ bool ModuleOutline::setVisibility(bool val)
 }
 
 //-----------------------------------------------------------------------------
+bool ModuleOutline::visibility() const
+{
+  Q_ASSERT(this->OutlineRepresentation);
+  return vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility").GetAsInt() != 0;
+}
+
+//-----------------------------------------------------------------------------
 void ModuleOutline::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(panel && this->OutlineRepresentation);

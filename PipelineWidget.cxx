@@ -21,11 +21,18 @@
 #include "pqApplicationCore.h"
 #include "pqPipelineSource.h"
 #include "pqServerManagerModel.h"
+#include "pqView.h"
 #include "Utilities.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMViewProxy.h"
+
+#include <QHeaderView>
 
 namespace TEM
 {
+
+static const int EYE_COLUMN = 1;
+static const int MODULE_COLUMN = 0;
 
 class PipelineWidget::PWInternals
 {
@@ -87,11 +94,18 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
                 SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 SLOT(currentItemChanged(QTreeWidgetItem*)));
 
+  // toggle module visibility.
+  this->connect(this,
+                SIGNAL(itemClicked(QTreeWidgetItem*, int)),
+                SLOT(onItemClicked(QTreeWidgetItem*, int)));
+
   // track ModuleManager.
   this->connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
                 SLOT(moduleAdded(Module*)));
   this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
                 SLOT(moduleRemoved(Module*)));
+
+  this->header()->setResizeMode(QHeaderView::ResizeToContents);
 }
 
 //-----------------------------------------------------------------------------
@@ -124,8 +138,9 @@ void PipelineWidget::addDataSource(vtkSMSourceProxy* producer)
   Q_ASSERT(this->Internals->DataProducerItems.contains(producer) == false);
 
   QTreeWidgetItem* item = new QTreeWidgetItem();
-  item->setText(0, TEM::label(producer));
-  item->setIcon(0, QIcon(":/pqWidgets/Icons/pqInspect22.png"));
+  item->setText(MODULE_COLUMN, TEM::label(producer));
+  item->setIcon(MODULE_COLUMN, QIcon(":/pqWidgets/Icons/pqInspect22.png"));
+  item->setIcon(EYE_COLUMN, QIcon());
   this->addTopLevelItem(item);
 
   this->Internals->DataProducerItems[producer] = item;
@@ -156,9 +171,13 @@ void PipelineWidget::moduleAdded(Module* module)
   Q_ASSERT(this->Internals->DataProducerItems.contains(dataSource));
 
   QTreeWidgetItem* parentItem = this->Internals->DataProducerItems[dataSource];
-  QTreeWidgetItem* child = new QTreeWidgetItem(parentItem,
-                                               QStringList(module->label()) );
-  child->setIcon(0, module->icon());
+  QTreeWidgetItem* child = new QTreeWidgetItem(parentItem);
+  child->setText(MODULE_COLUMN, module->label());
+  child->setIcon(MODULE_COLUMN, module->icon());
+  child->setIcon(EYE_COLUMN,
+    module->visibility()?
+    QIcon(":/pqWidgets/Icons/pqEyeball16.png"):
+    QIcon(":/pqWidgets/Icons/pqEyeballd16.png"));
   parentItem->setExpanded(true);
 
   this->Internals->ModuleItems[module] = child;
@@ -183,6 +202,24 @@ void PipelineWidget::moduleRemoved(Module* module)
 }
 
 //-----------------------------------------------------------------------------
+void PipelineWidget::onItemClicked(QTreeWidgetItem* item, int col)
+{
+  int index = this->indexOfTopLevelItem(item);
+  if (index == -1 && // selected item is a plot.
+      col == EYE_COLUMN)
+    {
+    Module* module = this->Internals->module(item);
+    module->setVisibility(!module->visibility());
+    item->setIcon(EYE_COLUMN,
+      module->visibility()?
+      QIcon(":/pqWidgets/Icons/pqEyeball16.png"):
+      QIcon(":/pqWidgets/Icons/pqEyeballd16.png"));
+    if (pqView* view = TEM::convert<pqView*>(module->view()))
+      {
+      view->render();
+      }
+    }
+}
 
 //-----------------------------------------------------------------------------
 void PipelineWidget::currentItemChanged(QTreeWidgetItem* item)

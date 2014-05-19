@@ -52,6 +52,9 @@ public:
   /// release all proxies (and data) created for this module.
   virtual bool finalize()=0;
 
+  /// Returns the visibility for the module.
+  virtual bool visibility() const =0;
+
   vtkSMSourceProxy* dataSource() const;
   vtkSMViewProxy* view() const;
 

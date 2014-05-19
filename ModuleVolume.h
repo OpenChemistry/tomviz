@@ -39,6 +39,7 @@ public:
   virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
   virtual bool setVisibility(bool val);
+  virtual bool visibility() const;
 
 private:
   Q_DISABLE_COPY(ModuleVolume)

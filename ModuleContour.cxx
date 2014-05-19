@@ -93,9 +93,17 @@ bool ModuleContour::finalize()
 //-----------------------------------------------------------------------------
 bool ModuleContour::setVisibility(bool val)
 {
+  Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").Set(val? 1 : 0);
   this->ContourRepresentation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleContour::visibility() const
+{
+  Q_ASSERT(this->ContourRepresentation);
+  return vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------

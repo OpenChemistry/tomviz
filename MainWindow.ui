@@ -81,12 +81,23 @@
        <property name="rootIsDecorated">
         <bool>false</bool>
        </property>
+       <property name="columnCount">
+        <number>2</number>
+       </property>
        <attribute name="headerVisible">
         <bool>false</bool>
+       </attribute>
+       <attribute name="headerMinimumSectionSize">
+        <number>0</number>
        </attribute>
        <column>
         <property name="text">
          <string notr="true">1</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string notr="true">2</string>
         </property>
        </column>
       </widget>
