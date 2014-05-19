@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "vtkStreamingContourWorker.h"
+#include "vtkStreamingWorker.h"
 
 #include "vtkAppendPolyData.h"
 #include "vtkDataArray.h"
@@ -60,30 +60,32 @@ namespace
       }                                                                    \
     )
 
-
 template<typename LoggerType>
-struct ComputeContourFunctor
+struct ComputeFunctor
 {
+  vtkStreamingWorker::AlgorithmMode Mode;
   TEM::accel::SubdividedVolume& Volume;
   vtkSmartPointer<vtkAppendPolyData>& Appender;
   MutexType* AppenderMutex;
   LoggerType& Logger;
-  bool& ContinueContouring;
-  bool& FinishedContouring;
+  bool& ContinueWorking;
+  bool& FinishedWorkingOnData;
 
   //----------------------------------------------------------------------------
-  ComputeContourFunctor(TEM::accel::SubdividedVolume& volume,
-                        vtkSmartPointer<vtkAppendPolyData>& appender,
-                        MutexType* appenderMutex,
-                        bool& keepProcessing,
-                        bool& finishedContouring,
-                        LoggerType& logger):
+  ComputeFunctor(vtkStreamingWorker::AlgorithmMode mode,
+                 TEM::accel::SubdividedVolume& volume,
+                 vtkSmartPointer<vtkAppendPolyData>& appender,
+                 MutexType* appenderMutex,
+                 bool& keepProcessing,
+                 bool& finishedWorkingOnData,
+                 LoggerType& logger):
+    Mode(mode),
     Volume(volume),
     Appender(appender),
     AppenderMutex(appenderMutex),
     Logger(logger),
-    ContinueContouring(keepProcessing),
-    FinishedContouring(finishedContouring)
+    ContinueWorking(keepProcessing),
+    FinishedWorkingOnData(finishedWorkingOnData)
   {
   }
 
@@ -91,29 +93,46 @@ struct ComputeContourFunctor
   template<typename ValueType>
   void operator()(double v, ValueType)
   {
-  this->Logger << "Contour with value: " << v << std::endl;
-  std::size_t numTriangles=0;
+
+  //wrap up this->Volume.method as a function argument
+  if(this->Mode == vtkStreamingWorker::CONTOUR)
+    {
+    TEM::accel::ContourFunctor functor(this->Volume);
+    this->run(functor, v, ValueType());
+    }
+  else if(this->Mode == vtkStreamingWorker::THRESHOLD)
+    {
+    TEM::accel::ThresholdFunctor functor(this->Volume);
+    this->run(functor, v, ValueType());
+    }
+  }
+
+  //----------------------------------------------------------------------------
+  template<typename Functor, typename ValueType>
+  void run(Functor functor, double v, ValueType)
+  {
+  std::size_t numCells=0;
 
   dax::cont::Timer<> timer;
   const std::size_t totalSubGrids = this->Volume.numSubGrids();
+  vtkSmartPointer< vtkPolyData> output;
 
-  for(std::size_t i=0; i < totalSubGrids && this->ContinueContouring; ++i)
+  for(std::size_t i=0; i < totalSubGrids && this->ContinueWorking; ++i)
     {
-    if(this->ContinueContouring && this->Volume.isValidSubGrid(i, v))
+    if(this->ContinueWorking && this->Volume.isValidSubGrid(i, v))
       {
-
-      vtkSmartPointer< vtkPolyData> tris =
-                this->Volume.ContourSubGrid(v, i, ValueType(), this->Logger );
-      numTriangles += tris->GetNumberOfPolys();
+      output = functor(v, i, ValueType(), this->Logger );
+      numCells += output->GetNumberOfCells();
 
         //lock while we add to the appender
         {
         MutexType::scoped_lock lock(*this->AppenderMutex);
-        this->Appender->AddInputDataObject( tris );
+        this->Appender->AddInputDataObject( output );
         }
       }
     if(i%50==0 && this->Appender->GetNumberOfInputPorts() > 0)
       {
+      this->Logger << "this->Appender->Update(), " << this->Appender->GetNumberOfInputPorts() << std::endl;
       MutexType::scoped_lock lock(*this->AppenderMutex);
       this->Appender->Update();
       }
@@ -122,45 +141,51 @@ struct ComputeContourFunctor
   //append any remaining subgrids
   if(this->Appender->GetNumberOfInputPorts() > 0)
     {
+    this->Logger << "this->Appender->Update(), " << this->Appender->GetNumberOfInputPorts() << std::endl;
     MutexType::scoped_lock lock(*this->AppenderMutex);
     this->Appender->Update();
     }
 
-  this->Logger << "contour: " << timer.GetElapsedTime() << " num tris " << numTriangles << std::endl;
-  this->FinishedContouring = true;
+  this->Logger << "algorithm time: " << timer.GetElapsedTime() << " num cells " << numCells << std::endl;
+  this->FinishedWorkingOnData = true;
   }
 };
 
 
 }
 
-vtkStandardNewMacro(vtkStreamingContourWorker)
+vtkStandardNewMacro(vtkStreamingWorker)
 
 //----------------------------------------------------------------------------
-class vtkStreamingContourWorker::WorkerInternals
+class vtkStreamingWorker::WorkerInternals
 {
 public:
   //----------------------------------------------------------------------------
   WorkerInternals(std::size_t numSubGridsPerDim):
     Thread(),
-    ContinueContouring(false),
-    FinishedContouring(false),
+    ContinueWorking(false),
+    FinishedWorkingOnData(false),
     Volume(),
-    ComputedContours(),
+    ComputedData(),
     CurrentRenderData(),
     NumSubGridsPerDim(numSubGridsPerDim)
   {
-    this->ComputedContours = vtkSmartPointer<vtkAppendPolyData>::New();
+    this->ComputedData = vtkSmartPointer<vtkAppendPolyData>::New();
+    this->CurrentRenderData = vtkSmartPointer<vtkPolyData>::New();
   }
 
   //----------------------------------------------------------------------------
   ~WorkerInternals()
   {
-    //tell the thread to stop
-    this->ContinueContouring = false;
+    //only try to tell the thread to stop if we actually have a thread running
+    if(this->Thread.joinable())
+      {
+      //tell the thread to stop
+      this->ContinueWorking = false;
 
-    //wait for the thread to stop
-    this->Thread.join();
+      //wait for the thread to stop
+      this->Thread.join();
+      }
   }
 
   //----------------------------------------------------------------------------
@@ -171,36 +196,36 @@ public:
   {
     if(this->IsValid())
       {
-      return this->FinishedContouring;
+      return this->FinishedWorkingOnData;
       }
     return false;
   }
 
   //----------------------------------------------------------------------------
   template<class IteratorType, class LoggerType>
-  bool Run(vtkImageData* input,
+  bool Run(vtkStreamingWorker::AlgorithmMode mode,
+           vtkImageData* input,
            double isoValue,
            IteratorType begin,
            IteratorType end,
            LoggerType& logger)
   {
-
     typedef typename std::iterator_traits<IteratorType>::value_type ValueType;
 
     //first check if we have an existing thread
     if(this->Thread.joinable())
       {
-      this->ContinueContouring = false;
+      this->ContinueWorking = false;
       this->Thread.join();
       }
 
     //construct a thread, swap it with the class thread
     //and make it run the code
-    this->ContinueContouring = true;
-    this->FinishedContouring = false;
+    this->ContinueWorking = true;
+    this->FinishedWorkingOnData = false;
 
     //clear the appender
-    this->ComputedContours = vtkSmartPointer<vtkAppendPolyData>::New();
+    this->ComputedData = vtkSmartPointer<vtkAppendPolyData>::New();
 
     logger << "CreateSearchStructure" << std::endl;
     this->Volume = TEM::accel::SubdividedVolume( this->NumSubGridsPerDim,
@@ -212,57 +237,57 @@ public:
 
 
     //now give the thread the volume to contour
-    ComputeContourFunctor<LoggerType> functor(this->Volume,
-                                              this->ComputedContours,
-                                              &this->ComputedContoursMutex,
-                                              this->ContinueContouring,
-                                              this->FinishedContouring,
-                                              logger);
+    ComputeFunctor<LoggerType> functor(mode,
+                                       this->Volume,
+                                       this->ComputedData,
+                                       &this->ComputedDataMutex,
+                                       this->ContinueWorking,
+                                       this->FinishedWorkingOnData,
+                                       logger);
     tbb::tbb_thread t(functor, isoValue, ValueType());
     this->Thread.swap(t);
 
     return true;
-
   }
+
 //----------------------------------------------------------------------------
-vtkDataObject* GetFinishedPieces()
+vtkSmartPointer<vtkPolyData> GetFinishedPieces()
 {
-  MutexType::scoped_lock lock(this->ComputedContoursMutex);
-  if(this->ComputedContours->GetNumberOfInputPorts() > 0)
+  MutexType::scoped_lock lock(this->ComputedDataMutex);
+  if(this->ComputedData->GetNumberOfInputPorts() > 0)
     {
-    std::cout << "calling GetFinishedPieces yet again" << std::endl;
-    CurrentRenderData->ShallowCopy(ComputedContours->GetOutputDataObject(0));
+    CurrentRenderData->ShallowCopy(ComputedData->GetOutputDataObject(0));
     }
-  return this->CurrentRenderData.GetPointer();
+  return this->CurrentRenderData;
 }
 
 private:
   tbb::tbb_thread Thread;
-  bool ContinueContouring;
-  bool FinishedContouring;
+  bool ContinueWorking;
+  bool FinishedWorkingOnData;
 
   TEM::accel::SubdividedVolume Volume;
-  vtkSmartPointer<vtkAppendPolyData> ComputedContours;
-  vtkNew<vtkPolyData> CurrentRenderData;
-  MutexType ComputedContoursMutex;
+  vtkSmartPointer<vtkAppendPolyData> ComputedData;
+  vtkSmartPointer<vtkPolyData> CurrentRenderData;
+  MutexType ComputedDataMutex;
 
   std::size_t NumSubGridsPerDim;
 };
 
 //----------------------------------------------------------------------------
-vtkStreamingContourWorker::vtkStreamingContourWorker():
-  Internals( new vtkStreamingContourWorker::WorkerInternals(8) )
+vtkStreamingWorker::vtkStreamingWorker():
+  Internals( new vtkStreamingWorker::WorkerInternals(2) )
 {
 }
 
 //----------------------------------------------------------------------------
-vtkStreamingContourWorker::~vtkStreamingContourWorker()
+vtkStreamingWorker::~vtkStreamingWorker()
 {
   delete this->Internals;
 }
 
 //----------------------------------------------------------------------------
-void vtkStreamingContourWorker::Start(vtkImageData* image,
+void vtkStreamingWorker::StartContour(vtkImageData* image,
                                       vtkDataArray* data,
                                       double isoValue)
 {
@@ -275,27 +300,47 @@ void vtkStreamingContourWorker::Start(vtkImageData* image,
   switch (data->GetDataType())
       {
       temDataArrayIteratorMacro( data,
-            this->Internals->Run(image, isoValue, vtkDABegin, vtkDAEnd, std::cout) );
+            this->Internals->Run(CONTOUR, image, isoValue, vtkDABegin, vtkDAEnd, std::cout) );
       default:
         break;
       }
 }
 
 //----------------------------------------------------------------------------
-vtkDataObject*
-vtkStreamingContourWorker::GetFinishedPieces()
+void vtkStreamingWorker::StartThreshold(vtkImageData* image,
+                                      vtkDataArray* data,
+                                      double isoValue)
+{
+  //bad input abort
+  if(!image||!data)
+    {
+    return;
+    }
+  //todo we need to spawn a thread here I believe
+  switch (data->GetDataType())
+      {
+      temDataArrayIteratorMacro( data,
+            this->Internals->Run(THRESHOLD, image, isoValue, vtkDABegin, vtkDAEnd, std::cout) );
+      default:
+        break;
+      }
+}
+
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkPolyData>
+vtkStreamingWorker::GetFinishedPieces()
 {
   return this->Internals->GetFinishedPieces();
 }
 
 //----------------------------------------------------------------------------
-bool vtkStreamingContourWorker::IsFinished() const
+bool vtkStreamingWorker::IsFinished() const
 {
   return this->Internals->IsFinished();
 }
 
 //------------------------------------------------------------------------------
-void vtkStreamingContourWorker::PrintSelf(ostream& os, vtkIndent indent)
+void vtkStreamingWorker::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }

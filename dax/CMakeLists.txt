@@ -21,12 +21,10 @@ add_paraview_plugin(StreamingContour "1.0"
   SERVER_MANAGER_SOURCES
     vtkStreamingContourRepresentation.cxx
     vtkStreamingContourRepresentation.h
-    vtkStreamingContourWorker.cxx
-    vtkStreamingContourWorker.h
     vtkStreamingThresholdRepresentation.cxx
     vtkStreamingThresholdRepresentation.h
-    vtkStreamingThresholdWorker.cxx
-    vtkStreamingThresholdWorker.h
+    vtkStreamingWorker.cxx
+    vtkStreamingWorker.h
 )
 
 set_target_properties(StreamingContour PROPERTIES COMPILE_DEFINITIONS

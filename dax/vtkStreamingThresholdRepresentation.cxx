@@ -32,7 +32,7 @@
 #include "vtkPVStreamingMacros.h"
 #include "vtkPVTrivialProducer.h"
 #include "vtkRenderer.h"
-#include "vtkStreamingThresholdWorker.h"
+#include "vtkStreamingWorker.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -42,11 +42,11 @@ vtkStandardNewMacro(vtkStreamingThresholdRepresentation);
 //----------------------------------------------------------------------------
 vtkStreamingThresholdRepresentation::vtkStreamingThresholdRepresentation()
 {
-  this->ContourValue = 50;
+  this->ContourValue = 90;
   this->StreamingCapablePipeline = false;
   this->InStreamingUpdate = false;
 
-  this->Worker = vtkSmartPointer<vtkStreamingThresholdWorker>::New();
+  this->Worker = vtkSmartPointer<vtkStreamingWorker>::New();
   this->Mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 
   this->Actor = vtkSmartPointer<vtkPVLODActor>::New();
@@ -141,7 +141,7 @@ int vtkStreamingThresholdRepresentation::ProcessViewRequest(
     vtkStreamingStatusMacro( << this << ": received new piece.");
 
     this->RenderedData = this->Worker->GetFinishedPieces();
-    std::cout << "RenderedData size: " << RenderedData->GetNumberOfPolys() << std::endl;
+    std::cout << "RenderedData size: " << RenderedData->GetNumberOfCells() << std::endl;
     this->Mapper->SetInputDataObject(this->RenderedData);
     }
 
@@ -201,7 +201,7 @@ int vtkStreamingThresholdRepresentation::RequestData(vtkInformation *rqst,
       // and we should initialize our streaming.
       vtkImageData *input = vtkImageData::GetData(inputVector[0],0);
       vtkDataArray *inScalars = this->GetInputArrayToProcess(0,inputVector);
-      this->Worker->Start(input,inScalars,this->GetContourValue());
+      this->Worker->StartThreshold(input,inScalars,this->GetContourValue());
       }
     }
 

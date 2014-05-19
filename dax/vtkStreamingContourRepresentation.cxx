@@ -32,7 +32,7 @@
 #include "vtkPVStreamingMacros.h"
 #include "vtkPVTrivialProducer.h"
 #include "vtkRenderer.h"
-#include "vtkStreamingContourWorker.h"
+#include "vtkStreamingWorker.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -42,11 +42,11 @@ vtkStandardNewMacro(vtkStreamingContourRepresentation);
 //----------------------------------------------------------------------------
 vtkStreamingContourRepresentation::vtkStreamingContourRepresentation()
 {
-  this->ContourValue = 50;
+  this->ContourValue = 90;
   this->StreamingCapablePipeline = false;
   this->InStreamingUpdate = false;
 
-  this->Worker = vtkSmartPointer<vtkStreamingContourWorker>::New();
+  this->Worker = vtkSmartPointer<vtkStreamingWorker>::New();
   this->Mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 
   this->Actor = vtkSmartPointer<vtkPVLODActor>::New();
@@ -201,7 +201,7 @@ int vtkStreamingContourRepresentation::RequestData(vtkInformation *rqst,
       // and we should initialize our streaming.
       vtkImageData *input = vtkImageData::GetData(inputVector[0],0);
       vtkDataArray *inScalars = this->GetInputArrayToProcess(0,inputVector);
-      this->Worker->Start(input,inScalars,this->GetContourValue());
+      this->Worker->StartContour(input,inScalars,this->GetContourValue());
       }
     }
 

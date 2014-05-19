@@ -59,7 +59,7 @@ bool ModuleStreamingContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewP
   // Create the representation for it.
   this->ContourRepresentation = controller->Show(dataSource, 0, view);
   Q_ASSERT(this->ContourRepresentation);
-  vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("StreamingContourRepresentation");
+  vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Streaming Contour");
   this->ContourRepresentation->UpdateVTKObjects();
   return true;
 }

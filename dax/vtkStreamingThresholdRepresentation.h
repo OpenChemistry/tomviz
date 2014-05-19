@@ -26,7 +26,7 @@ class vtkPolyDataMapper;
 class vtkMultiBlockDataSet;
 class vtkPVLODActor;
 class vtkScalarsToColors;
-class vtkStreamingThresholdWorker;
+class vtkStreamingWorker;
 
 class vtkStreamingThresholdRepresentation : public vtkPVDataRepresentation
 {
@@ -164,9 +164,9 @@ protected:
   vtkWeakPointer<vtkPolyData> RenderedData;
 
   // Description:
-  // vtkStreamingThresholdWorker is a helper class we used to compute the
+  // vtkStreamingWorker is a helper class we used to compute the
   // sub-blocks
-  vtkSmartPointer<vtkStreamingThresholdWorker> Worker;
+  vtkSmartPointer<vtkStreamingWorker> Worker;
 
   // Description:
   // Actor used to render the outlines in the view.

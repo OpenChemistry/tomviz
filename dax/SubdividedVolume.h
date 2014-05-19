@@ -94,6 +94,37 @@ private:
   //to the correct type
   std::vector< vtkDataArray* > PerSubGridValues;
   };
+
+//helper functors to generalize calling Contour or Threshold based on
+//already having a SubdividedVolume
+struct ContourFunctor
+{
+  TEM::accel::SubdividedVolume& Volume;
+
+  ContourFunctor(TEM::accel::SubdividedVolume& v):Volume(v){}
+
+  template<typename ValueType, typename LoggerType>
+  vtkSmartPointer< vtkPolyData> operator()(double v, std::size_t i,
+                                           ValueType, LoggerType& logger)
+  {
+    return this->Volume.ContourSubGrid(v,i,ValueType(),logger);
+  }
+};
+
+struct ThresholdFunctor
+{
+  TEM::accel::SubdividedVolume& Volume;
+
+  ThresholdFunctor(TEM::accel::SubdividedVolume& v):Volume(v){}
+
+  template<typename ValueType, typename LoggerType>
+  vtkSmartPointer< vtkPolyData> operator()(double v, std::size_t i,
+                                           ValueType, LoggerType& logger)
+  {
+    return this->Volume.PointCloudSubGrid(v,i,ValueType(),logger);
+  }
+};
+
 }
 }
 
