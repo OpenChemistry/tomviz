@@ -141,7 +141,7 @@ int vtkStreamingContourRepresentation::ProcessViewRequest(
     vtkStreamingStatusMacro( << this << ": received new piece.");
 
     this->RenderedData = this->Worker->GetFinishedPieces();
-    std::cout << "RenderedData size: " << RenderedData->GetNumberOfPolys() << std::endl;
+    this->DataBounds.SetBounds(this->RenderedData->GetBounds());
     this->Mapper->SetInputDataObject(this->RenderedData);
     }
 
@@ -199,9 +199,12 @@ int vtkStreamingContourRepresentation::RequestData(vtkInformation *rqst,
       {
       // Since the representation re-executed, it means that the input changed
       // and we should initialize our streaming.
-      vtkImageData *input = vtkImageData::GetData(inputVector[0],0);
-      vtkDataArray *inScalars = this->GetInputArrayToProcess(0,inputVector);
-      this->Worker->StartContour(input,inScalars,this->GetContourValue());
+      if(!this->Worker->AlreadyComputed())
+        {
+        vtkImageData *input = vtkImageData::GetData(inputVector[0],0);
+        vtkDataArray *inScalars = this->GetInputArrayToProcess(0,inputVector);
+        this->Worker->StartContour(input,inScalars,this->GetContourValue());
+        }
       }
     }
 

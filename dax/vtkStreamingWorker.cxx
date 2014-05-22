@@ -339,6 +339,12 @@ bool vtkStreamingWorker::IsFinished() const
   return this->Internals->IsFinished();
 }
 
+//----------------------------------------------------------------------------
+bool vtkStreamingWorker::AlreadyComputed() const
+{
+  return this->Internals->IsValid();
+}
+
 //------------------------------------------------------------------------------
 void vtkStreamingWorker::PrintSelf(ostream& os, vtkIndent indent)
 {

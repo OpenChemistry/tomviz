@@ -51,6 +51,9 @@ public:
   //ask if we any sections of the volume left to contour
   bool IsFinished() const;
 
+  //reports if we have already computed a dataset.
+  bool AlreadyComputed() const;
+
 protected:
   vtkStreamingWorker();
   ~vtkStreamingWorker();
