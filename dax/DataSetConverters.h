@@ -69,6 +69,7 @@ void convertPoints(GridType& grid, vtkPolyData* output)
   //ask vtkToDax to allocate the vtkPoints so it gets the float vs double
   //settings correct
   vtkNew<vtkPoints> points;
+  points->SetDataTypeToFloat();
   points->SetNumberOfPoints(num_points);
 
   dax::Vector3 *raw_pts = reinterpret_cast<dax::Vector3*>(
@@ -82,7 +83,6 @@ void convertPoints(GridType& grid, vtkPolyData* output)
   std::copy(daxPortal.GetIteratorBegin(),
             daxPortal.GetIteratorEnd(),
             raw_pts);
-
   output->SetPoints( points.GetPointer() );
 }
 
