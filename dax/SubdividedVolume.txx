@@ -97,13 +97,13 @@ SubdividedVolume::SubdividedVolume( std::size_t subGridsPerDim,
         //calculate out the new extent
         dax::Extent3 sub_extent;
         sub_extent.Min = dax::Id3(0,0,0);
-        sub_extent.Max = size_per_sub_grid - dax::make_Id3(1,1,1) + my_remainder; //account for it being cells
+        sub_extent.Max = (size_per_sub_grid - dax::make_Id3(1,1,1));
+        sub_extent.Max = sub_extent.Max + my_remainder; //account for it being cells
+
         subGrid.SetExtent(sub_extent);
 
         this->SubGrids.push_back(subGrid);
 
-        //I need to verify that this should be point based, instead of cell
-        //based
         dax::Id3 worldIJKOffset(i,j,k);
         worldIJKOffset = (worldIJKOffset * size_per_sub_grid) + my_remainder;
         this->SubGridsIJKOffset.push_back( worldIJKOffset );
@@ -189,12 +189,10 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
     ::functors::SubGridValues<ValueType> functor(fullGridValues,
                                                  (*subGridValues),
                                                  this->getExtent(),
+                                                 (*grid).GetExtent(),
                                                  (*ijkSubOffset));
 
-    //We use the low level id3 scheduler to generate each sub grids values
-    //this is more efficient as we don't need to compute the local ijk
-    DeviceAdapter::Schedule(functor,
-                            dax::extentDimensions((*grid).GetExtent()));
+    DeviceAdapter::Schedule(functor, (*grid).GetNumberOfPoints() );
     }
 
   logger << "Computed Explicit Values Per Sub Grid: " << timer.GetElapsedTime()

@@ -41,27 +41,28 @@ namespace functors
     SubGridValues(dax::cont::ArrayHandle<ValueType> fullGridContourValues,
                   vtkDataArray* outputArray,
                   const dax::Extent3& fullExtent,
+                  const dax::Extent3& subGridExtent,
                   dax::Id3 subGridsOffsetsInFullGrid):
     InputPortal(fullGridContourValues.PrepareForInput()),
     OutputPortal(reinterpret_cast<ValueType*>(outputArray->GetVoidPointer(0))),
     FullExtent(fullExtent),
-    FullGridIJKOffset(subGridsOffsetsInFullGrid),
-    FullGridDims(dax::extentDimensions(fullExtent))
+    SubGridExtent(subGridExtent),
+    FullGridIJKOffset(subGridsOffsetsInFullGrid)
     {
 
     }
 
     DAX_EXEC_EXPORT
-    void operator()(dax::exec::internal::IJKIndex local_ijk) const
+    void operator()(dax::Id pointIndex) const
     {
-      const dax::Id3 global_ijk = local_ijk.GetIJK() + this->FullGridIJKOffset;
+      const dax::Id3 local_ijk = flatIndexToIndex3(pointIndex, this->SubGridExtent);
+      const dax::Id3 global_ijk = local_ijk + this->FullGridIJKOffset;
 
-      const dax::Id3 deltas(global_ijk[0] - this->FullExtent.Min[0],
-                            global_ijk[1] - this->FullExtent.Min[1],
-                            global_ijk[2] - this->FullExtent.Min[2]);
-      const dax::Id index = deltas[0] + this->FullGridDims[0]*(deltas[1] + this->FullGridDims[1]*deltas[2]);
+      //do we need to compute back to z,y,x order.
+      const dax::Id3 dims = extentDimensions(this->FullExtent);
+      const dax::Id index = global_ijk[0] + global_ijk[1]*dims[0] + global_ijk[2]*(dims[0]*dims[1]);
 
-      this->OutputPortal[local_ijk] = this->InputPortal.Get( index );
+      this->OutputPortal[pointIndex] = this->InputPortal.Get( index );
     }
 
     DAX_CONT_EXPORT
@@ -71,8 +72,8 @@ namespace functors
   typename dax::cont::ArrayHandle<ValueType>::PortalConstExecution InputPortal;
   ValueType* OutputPortal;
   dax::Extent3 FullExtent;
+  dax::Extent3 SubGridExtent;
   dax::Id3 FullGridIJKOffset;
-  dax::Id3 FullGridDims;
   };
 }
 
