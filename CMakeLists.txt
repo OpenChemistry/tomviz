@@ -36,6 +36,8 @@ set(SOURCES
   ModuleManager.h
   ModuleMenu.cxx
   ModuleMenu.h
+  ModuleOrthogonalSlice.cxx
+  ModuleOrthogonalSlice.h
   ModuleOutline.cxx
   ModuleOutline.h
   ModulePropertiesPanel.cxx

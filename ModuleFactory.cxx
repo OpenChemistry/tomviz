@@ -16,6 +16,7 @@
 #include "ModuleFactory.h"
 
 #include "ModuleContour.h"
+#include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
 #include "ModuleVolume.h"
 #include "pqView.h"
@@ -48,7 +49,8 @@ QList<QString> ModuleFactory::moduleTypes(
     // based on the data type and view, return module types.
     reply << "Outline"
       << "Volume"
-      << "Contour";
+      << "Contour"
+      << "Orthogonal Slice";
     qSort(reply);
     }
   return reply;
@@ -70,6 +72,10 @@ Module* ModuleFactory::createModule(
   else if (type == "Volume")
     {
     module = new ModuleVolume();
+    }
+  else if (type == "Orthogonal Slice")
+    {
+    module = new ModuleOrthogonalSlice();
     }
 
   if (module)
