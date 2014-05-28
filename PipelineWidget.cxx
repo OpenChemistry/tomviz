@@ -31,8 +31,8 @@
 namespace TEM
 {
 
-static const int EYE_COLUMN = 1;
-static const int MODULE_COLUMN = 0;
+static const int EYE_COLUMN = 0;
+static const int MODULE_COLUMN = 1;
 
 class PipelineWidget::PWInternals
 {
@@ -105,7 +105,7 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
   this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
                 SLOT(moduleRemoved(Module*)));
 
-  this->header()->setResizeMode(QHeaderView::ResizeToContents);
+  this->header()->setStretchLastSection(true);
 }
 
 //-----------------------------------------------------------------------------
@@ -141,6 +141,7 @@ void PipelineWidget::addDataSource(vtkSMSourceProxy* producer)
   item->setText(MODULE_COLUMN, TEM::label(producer));
   item->setIcon(MODULE_COLUMN, QIcon(":/pqWidgets/Icons/pqInspect22.png"));
   item->setIcon(EYE_COLUMN, QIcon());
+  item->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   this->addTopLevelItem(item);
 
   this->Internals->DataProducerItems[producer] = item;

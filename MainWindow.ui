@@ -78,8 +78,14 @@
        <property name="dragDropMode">
         <enum>QAbstractItemView::DragOnly</enum>
        </property>
+       <property name="indentation">
+        <number>0</number>
+       </property>
        <property name="rootIsDecorated">
         <bool>false</bool>
+       </property>
+       <property name="uniformRowHeights">
+        <bool>true</bool>
        </property>
        <property name="columnCount">
         <number>2</number>
@@ -87,8 +93,11 @@
        <attribute name="headerVisible">
         <bool>false</bool>
        </attribute>
+       <attribute name="headerDefaultSectionSize">
+        <number>20</number>
+       </attribute>
        <attribute name="headerMinimumSectionSize">
-        <number>0</number>
+        <number>20</number>
        </attribute>
        <column>
         <property name="text">
