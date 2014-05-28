@@ -22,8 +22,7 @@
 #include "pqPersistentMainWindowStateBehavior.h"
 #include "pqQtMessageHandlerBehavior.h"
 #include "pqStandardPropertyWidgetInterface.h"
-#include "pqStandardViewModules.h"
-#include "pqViewFrameActionsBehavior.h"
+#include "pqStandardViewFrameActionsImplementation.h"
 #include "ProgressBehavior.h"
 
 #include <QMainWindow>
@@ -38,17 +37,16 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   // Register ParaView interfaces.
   pqInterfaceTracker* pgm = pqApplicationCore::instance()->interfaceTracker();
 
-  // * adds support for standard paraview views.
-  pgm->addInterface(new pqStandardViewModules(pgm));
-
   // * add support for ParaView properties panel widgets.
   pgm->addInterface(new pqStandardPropertyWidgetInterface(pgm));
+
+  // * register standard types of view-frame actions.
+  pgm->addInterface(new pqStandardViewFrameActionsImplementation(pgm));
 
   // Load plugins distributed with application.
   pqApplicationCore::instance()->loadDistributedPlugins();
 
   new pqQtMessageHandlerBehavior(this);
-  new pqViewFrameActionsBehavior(this);
   new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
