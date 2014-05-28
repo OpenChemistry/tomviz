@@ -198,6 +198,12 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 {
   this->Internals->Ui.setupUi(this);
 
+  QList<int> sizes;
+  sizes << 200 << 200;
+  this->Internals->Ui.splitter->setSizes(sizes);
+  this->Internals->Ui.splitter->setStretchFactor(0, 0);
+  this->Internals->Ui.splitter->setStretchFactor(1, 1);
+
   // Set up our little chart.
   this->Histogram
       ->SetInteractor(this->Internals->Ui.histogramWidget->GetInteractor());
