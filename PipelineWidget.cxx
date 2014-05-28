@@ -88,6 +88,8 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
                 SLOT(setCurrent(vtkSMSourceProxy*)));
   this->connect(&ActiveObjects::instance(), SIGNAL(moduleChanged(Module*)),
                 SLOT(setCurrent(Module*)));
+  this->connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
+                SLOT(setActiveView(vtkSMViewProxy*)));
 
   // update ActiveObjects when user interacts.
   this->connect(this,
@@ -256,6 +258,25 @@ void PipelineWidget::setCurrent(Module* module)
   if (QTreeWidgetItem* item = this->Internals->ModuleItems.value(module, NULL))
     {
     this->setCurrentItem(item);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void PipelineWidget::setActiveView(vtkSMViewProxy* view)
+{
+  for (PWInternals::ModuleItemsMap::iterator iter =
+    this->Internals->ModuleItems.begin();
+    iter != this->Internals->ModuleItems.end(); ++iter)
+    {
+    Module* module = iter.key();
+    QTreeWidgetItem* item = iter.value();
+
+    bool item_enabled = (view == module->view());
+    item->setDisabled(!item_enabled);
+
+    QFont font = item->font(MODULE_COLUMN);
+    font.setItalic(!item_enabled);
+    item->setFont(MODULE_COLUMN, font);
     }
 }
 

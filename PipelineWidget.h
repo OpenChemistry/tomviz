@@ -21,6 +21,7 @@
 
 class pqPipelineSource;
 class vtkSMSourceProxy;
+class vtkSMViewProxy;
 
 namespace TEM
 {
@@ -62,6 +63,9 @@ private slots:
 
   /// called when an item is clicked. We handle visibility toggling.
   void onItemClicked(QTreeWidgetItem*, int);
+
+  /// called when the active view changes.
+  void setActiveView(vtkSMViewProxy* view);
 
 private:
   /// Called by sourceAdded/sourceRemoved when a data producer is detected.
