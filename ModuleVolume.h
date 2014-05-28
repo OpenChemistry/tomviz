@@ -40,6 +40,7 @@ public:
   virtual bool finalize();
   virtual bool setVisibility(bool val);
   virtual bool visibility() const;
+  virtual void addToPanel(pqProxiesWidget*);
 
 private:
   Q_DISABLE_COPY(ModuleVolume)

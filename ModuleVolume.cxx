@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleVolume.h"
 
+#include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -102,5 +103,22 @@ bool ModuleVolume::visibility() const
   Q_ASSERT(this->Representation);
   return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() != 0;
 }
+
+//-----------------------------------------------------------------------------
+void ModuleVolume::addToPanel(pqProxiesWidget* panel)
+{
+  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
+  Q_ASSERT(lut);
+
+  QStringList list;
+  list
+    << "Mapping Data"
+    << "EnableOpacityMapping"
+    << "RGBPoints"
+    << "ScalarOpacityFunction"
+    << "UseLogScale";
+  panel->addProxy(lut, "Color Map", list, true);
+}
+
 
 } // end of namespace TEM

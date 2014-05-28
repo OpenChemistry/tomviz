@@ -64,7 +64,11 @@ add_executable(matviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES} ${accel_srcs}
 
 set_target_properties(matviz PROPERTIES AUTOMOC TRUE)
 
-target_link_libraries(matviz LINK_PRIVATE pqApplicationComponents)
+target_link_libraries(matviz
+  LINK_PRIVATE
+    pqApplicationComponents
+    vtkPVServerManagerRendering
+  )
 if(APPLE)
   install(TARGETS matviz DESTINATION Applications COMPONENT runtime)
 else()

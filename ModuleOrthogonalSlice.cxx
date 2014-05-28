@@ -112,7 +112,19 @@ void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
   reprProperties
     << "SliceMode"
     << "Slice";
-  panel->addProxy(this->Representation, "", reprProperties, true);
+  panel->addProxy(this->Representation, "Slice", reprProperties, true);
+
+  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
+  Q_ASSERT(lut);
+
+  QStringList list;
+  list
+    << "Mapping Data"
+    << "EnableOpacityMapping"
+    << "RGBPoints"
+    << "ScalarOpacityFunction"
+    << "UseLogScale";
+  panel->addProxy(lut, "Color Map", list, true);
 }
 
 }
