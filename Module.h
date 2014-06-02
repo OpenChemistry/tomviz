@@ -22,6 +22,7 @@
 
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
+class pqProxiesWidget;
 
 namespace TEM
 {
@@ -51,6 +52,9 @@ public:
   /// release all proxies (and data) created for this module.
   virtual bool finalize()=0;
 
+  /// Returns the visibility for the module.
+  virtual bool visibility() const =0;
+
   vtkSMSourceProxy* dataSource() const;
   vtkSMViewProxy* view() const;
 
@@ -61,6 +65,12 @@ public slots:
 
   bool show() { return this->setVisibility(true); }
   bool hide() { return this->setVisibility(false); }
+
+  /// This method is called add the proxies in this module to a
+  /// pqProxiesWidget instance. Default implementation does nothing.
+  /// Subclasses should override to add proxies and relevant properties to the
+  /// panel.
+  virtual void addToPanel(pqProxiesWidget*) { }
 
 private:
   Q_DISABLE_COPY(Module)

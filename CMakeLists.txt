@@ -33,21 +33,27 @@ set(SOURCES
   main.cxx
   MainWindow.cxx
   MainWindow.h
-  Module.cxx
   ModuleContour.cxx
   ModuleContour.h
+  Module.cxx
   ModuleFactory.cxx
   ModuleFactory.h
-  ModuleVolume.cxx
   Module.h
   ModuleManager.cxx
   ModuleManager.h
   ModuleMenu.cxx
   ModuleMenu.h
+  ModuleOrthogonalSlice.cxx
+  ModuleOrthogonalSlice.h
   ModuleOutline.cxx
   ModuleOutline.h
+  ModulePropertiesPanel.cxx
+  ModulePropertiesPanel.h
+  ModuleVolume.cxx
   PipelineWidget.cxx
   PipelineWidget.h
+  ProgressBehavior.cxx
+  ProgressBehavior.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
   Utilities.h
@@ -56,6 +62,7 @@ set(SOURCES
 qt4_wrap_ui(UI_SOURCES
   CentralWidget.ui
   MainWindow.ui
+  ModulePropertiesPanel.ui
   )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
@@ -64,7 +71,11 @@ add_executable(matviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES} ${accel_srcs}
 
 set_target_properties(matviz PROPERTIES AUTOMOC TRUE)
 
-target_link_libraries(matviz LINK_PRIVATE pqApplicationComponents)
+target_link_libraries(matviz
+  LINK_PRIVATE
+    pqApplicationComponents
+    vtkPVServerManagerRendering
+  )
 if(APPLE)
   install(TARGETS matviz DESTINATION Applications COMPONENT runtime)
 else()

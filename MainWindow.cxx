@@ -39,6 +39,7 @@ public:
   Ui::MainWindow Ui;
 };
 
+//-----------------------------------------------------------------------------
 MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   : Superclass(_parent, _flags),
   Internals(new MainWindow::MWInternals())
@@ -57,29 +58,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   pqApplicationCore::instance()->connect(
     ui.actionExit, SIGNAL(triggered()), SLOT(quit()));
 
-  //pqProxyGroupMenuManager* mgr =
-  //  new pqProxyGroupMenuManager(ui.menuFilters, QString("NotUsed"));
-  //mgr->setRecentlyUsedMenuSize(0);
-  //pqPVApplicationCore::instance()->registerForQuicklaunch(
-  //  mgr->widgetActionsHolder());
-  //new pqFiltersMenuReaction(mgr);
-
-  //mgr->addProxy("filters", "Clip");
-  //mgr->addProxy("filters", "Contour");
-  //mgr->addProxy("filters", "Cut");
-  //mgr->addProxy("filters", "ExtractHistogram");
-  //mgr->addProxy("filters", "Calculator");
-  //mgr->addProxy("filters", "PlotAttributes");
-  //mgr->addProxy("filters", "ProbeLine");
-  //mgr->addProxy("filters", "PythonCalculator");
-  //mgr->addProxy("filters", "ProgrammableFilter");
-  //mgr->populateMenu();
-
-  //new pqLoadDataReaction(ui.actionOpen);
-  //new pqSaveDataReaction(ui.actionSave);
-
-
-
   new pqPythonShellReaction(ui.actionPythonConsole);
   new pqMacroReaction(ui.actionMacros);
 
@@ -93,9 +71,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
 }
 
+//-----------------------------------------------------------------------------
 MainWindow::~MainWindow()
 {
   delete this->Internals;
 }
-
 }

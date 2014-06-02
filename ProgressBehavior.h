@@ -13,32 +13,34 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef __TEM_ProgressBehavior_h
+#define __TEM_ProgressBehavior_h
 
-#include <QMainWindow>
+#include <QObject>
+#include <QPointer>
+
+class QProgressDialog;
+class QWidget;
 
 namespace TEM
 {
 
-class Module;
-
-/// The main window for the MatViz application.
-class MainWindow : public QMainWindow
+/// Behavior to show a progress dialog for ParaView progress events.
+class ProgressBehavior : public QObject
 {
-  Q_OBJECT
-
-  typedef QMainWindow Superclass;
-
+  Q_OBJECT;
+  typedef QObject Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
+  ProgressBehavior(QWidget* parent=NULL);
+  ~ProgressBehavior();
+
+private slots:
+  void enableProgress(bool enable);
+  void progress(const QString& message, int progress);
 
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(ProgressBehavior);
+  QPointer<QProgressDialog> ProgressDialog;
 };
-
 }
 #endif

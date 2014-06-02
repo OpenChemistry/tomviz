@@ -13,39 +13,38 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleVolume_h
-#define __ModuleVolume_h
+#ifndef __TEM_ModulePropertiesPanel_h
+#define __TEM_ModulePropertiesPanel_h
 
-#include "Module.h"
-#include "vtkWeakPointer.h"
+#include <QWidget>
+#include <QScopedPointer>
 
-class vtkSMProxy;
+class vtkSMViewProxy;
 
 namespace TEM
 {
+class Module;
 
-class ModuleVolume : public Module
+class ModulePropertiesPanel : public QWidget
 {
-  Q_OBJECT
-
-  typedef Module Superclass;
-
+  Q_OBJECT;
+  typedef QWidget Superclass;
 public:
-  ModuleVolume(QObject* parent=NULL);
-  virtual ~ModuleVolume();
+  ModulePropertiesPanel(QWidget* parent=0);
+  virtual ~ModulePropertiesPanel();
 
-  virtual QString label() const { return  "Volume"; }
-  virtual QIcon icon() const;
-  virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
-  virtual bool finalize();
-  virtual bool setVisibility(bool val);
-  virtual bool visibility() const;
-  virtual void addToPanel(pqProxiesWidget*);
+private slots:
+  void setModule(Module*);
+  void setView(vtkSMViewProxy*);
+  void updatePanel();
+  void deleteModule();
+  void render();
 
 private:
-  Q_DISABLE_COPY(ModuleVolume)
-  vtkWeakPointer<vtkSMSourceProxy> PassThrough;
-  vtkWeakPointer<vtkSMProxy> Representation;
+  Q_DISABLE_COPY(ModulePropertiesPanel);
+
+  class MPPInternals;
+  const QScopedPointer<MPPInternals> Internals;
 };
 
 }

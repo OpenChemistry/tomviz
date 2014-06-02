@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleVolume_h
-#define __ModuleVolume_h
+#ifndef __TEM_ModuleOrthogonalSlice_h
+#define __TEM_ModuleOrthogonalSlice_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
@@ -23,18 +23,15 @@ class vtkSMProxy;
 
 namespace TEM
 {
-
-class ModuleVolume : public Module
+class ModuleOrthogonalSlice : public Module
 {
-  Q_OBJECT
-
+  Q_OBJECT;
   typedef Module Superclass;
-
 public:
-  ModuleVolume(QObject* parent=NULL);
-  virtual ~ModuleVolume();
+  ModuleOrthogonalSlice(QObject* parent=NULL);
+  virtual ~ModuleOrthogonalSlice();
 
-  virtual QString label() const { return  "Volume"; }
+  virtual QString label() const { return  "Orthogonal Slice"; }
   virtual QIcon icon() const;
   virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
@@ -43,11 +40,10 @@ public:
   virtual void addToPanel(pqProxiesWidget*);
 
 private:
-  Q_DISABLE_COPY(ModuleVolume)
+  Q_DISABLE_COPY(ModuleOrthogonalSlice);
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkWeakPointer<vtkSMProxy> Representation;
 };
 
 }
-
 #endif

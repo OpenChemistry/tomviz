@@ -78,15 +78,35 @@
        <property name="dragDropMode">
         <enum>QAbstractItemView::DragOnly</enum>
        </property>
+       <property name="indentation">
+        <number>0</number>
+       </property>
        <property name="rootIsDecorated">
         <bool>false</bool>
+       </property>
+       <property name="uniformRowHeights">
+        <bool>true</bool>
+       </property>
+       <property name="columnCount">
+        <number>2</number>
        </property>
        <attribute name="headerVisible">
         <bool>false</bool>
        </attribute>
+       <attribute name="headerDefaultSectionSize">
+        <number>20</number>
+       </attribute>
+       <attribute name="headerMinimumSectionSize">
+        <number>20</number>
+       </attribute>
        <column>
         <property name="text">
          <string notr="true">1</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string notr="true">2</string>
         </property>
        </column>
       </widget>
@@ -96,12 +116,12 @@
   </widget>
   <widget class="QDockWidget" name="dockWidget_2">
    <property name="windowTitle">
-    <string>Properties </string>
+    <string>Module Properties </string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="pqPropertiesPanel" name="propertiesPanel"/>
+   <widget class="TEM::ModulePropertiesPanel" name="modulePropertiesPanel"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -134,12 +154,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>pqPropertiesPanel</class>
-   <extends>QWidget</extends>
-   <header>pqPropertiesPanel.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>TEM::CentralWidget</class>
    <extends>QWidget</extends>
    <header>CentralWidget.h</header>
@@ -149,6 +163,12 @@
    <class>TEM::PipelineWidget</class>
    <extends>QTreeWidget</extends>
    <header>PipelineWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TEM::ModulePropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>ModulePropertiesPanel.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

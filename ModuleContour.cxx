@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleContour.h"
 
+#include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -89,9 +90,17 @@ bool ModuleContour::finalize()
 //-----------------------------------------------------------------------------
 bool ModuleContour::setVisibility(bool val)
 {
+  Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").Set(val? 1 : 0);
   this->ContourRepresentation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleContour::visibility() const
+{
+  Q_ASSERT(this->ContourRepresentation);
+  return vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -104,6 +113,24 @@ void ModuleContour::setIsoValues(const QList<double>& values)
   vtkSMPropertyHelper(this->ContourFilter,"ContourValues").Set(
     &vectorValues[0], values.size());
   this->ContourFilter->UpdateVTKObjects();
+}
+
+//-----------------------------------------------------------------------------
+void ModuleContour::addToPanel(pqProxiesWidget* panel)
+{
+  Q_ASSERT(this->ContourFilter);
+  Q_ASSERT(this->ContourRepresentation);
+
+  QStringList contourProperties;
+  contourProperties << "ContourValues";
+  panel->addProxy(this->ContourFilter, "Contour", contourProperties, true);
+
+  QStringList contourRepresentationProperties;
+  contourRepresentationProperties
+    << "Representation"
+    << "Opacity"
+    << "Specular";
+  panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
 }
 
 } // end of namespace TEM

@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "ModuleVolume.h"
+#include "ModuleOrthogonalSlice.h"
 
 #include "pqProxiesWidget.h"
 #include "vtkNew.h"
@@ -26,26 +26,25 @@
 
 namespace TEM
 {
-
 //-----------------------------------------------------------------------------
-ModuleVolume::ModuleVolume(QObject* parentObject) :Superclass(parentObject)
+ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject) : Superclass(parentObject)
 {
 }
 
 //-----------------------------------------------------------------------------
-ModuleVolume::~ModuleVolume()
+ModuleOrthogonalSlice::~ModuleOrthogonalSlice()
 {
   this->finalize();
 }
 
 //-----------------------------------------------------------------------------
-QIcon ModuleVolume::icon() const
+QIcon ModuleOrthogonalSlice::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqVolumeData16.png");
+  return QIcon(":/pqWidgets/Icons/pqSlice24.png");
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleVolume::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+bool ModuleOrthogonalSlice::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
@@ -71,13 +70,13 @@ bool ModuleVolume::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view
   this->Representation = controller->Show(this->PassThrough, 0, view);
   Q_ASSERT(this->Representation);
   vtkSMPropertyHelper(this->Representation,
-                      "Representation").Set("Volume");
+                      "Representation").Set("Slice");
   this->Representation->UpdateVTKObjects();
   return true;
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleVolume::finalize()
+bool ModuleOrthogonalSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(this->Representation);
@@ -89,7 +88,7 @@ bool ModuleVolume::finalize()
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleVolume::setVisibility(bool val)
+bool ModuleOrthogonalSlice::setVisibility(bool val)
 {
   Q_ASSERT(this->Representation);
   vtkSMPropertyHelper(this->Representation, "Visibility").Set(val? 1 : 0);
@@ -98,15 +97,23 @@ bool ModuleVolume::setVisibility(bool val)
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleVolume::visibility() const
+bool ModuleOrthogonalSlice::visibility() const
 {
   Q_ASSERT(this->Representation);
   return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------
-void ModuleVolume::addToPanel(pqProxiesWidget* panel)
+void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
 {
+  Q_ASSERT(this->Representation);
+
+  QStringList reprProperties;
+  reprProperties
+    << "SliceMode"
+    << "Slice";
+  panel->addProxy(this->Representation, "Slice", reprProperties, true);
+
   vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
   Q_ASSERT(lut);
 
@@ -120,5 +127,4 @@ void ModuleVolume::addToPanel(pqProxiesWidget* panel)
   panel->addProxy(lut, "Color Map", list, true);
 }
 
-
-} // end of namespace TEM
+}
