@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "dax/ModuleStreamingContour.h"
 
+#include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -76,9 +77,17 @@ bool ModuleStreamingContour::finalize()
 //-----------------------------------------------------------------------------
 bool ModuleStreamingContour::setVisibility(bool val)
 {
+  Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").Set(val? 1 : 0);
   this->ContourRepresentation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleStreamingContour::visibility() const
+{
+  Q_ASSERT(this->ContourRepresentation);
+  return vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -93,6 +102,23 @@ void ModuleStreamingContour::setIsoValues(const QList<double>& values)
   vtkSMPropertyHelper(this->ContourRepresentation,"ContourValue").Set(
                                                                 vectorValue);
   this->ContourRepresentation->UpdateVTKObjects();
+}
+
+
+//-----------------------------------------------------------------------------
+void ModuleStreamingContour::addToPanel(pqProxiesWidget* panel)
+{
+  Q_ASSERT(this->ContourRepresentation);
+
+  QStringList contourProperties;
+  contourProperties << "ContourValues";
+  panel->addProxy(this->ContourRepresentation, "Contour", contourProperties, true);
+
+  QStringList contourRepresentationProperties;
+  contourRepresentationProperties
+    << "Opacity"
+    << "Specular";
+  panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
 }
 
 } // end of namespace TEM
