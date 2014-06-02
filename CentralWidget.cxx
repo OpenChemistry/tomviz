@@ -35,6 +35,8 @@
 #include <vtkTable.h>
 #include <vtkTransform2D.h>
 #include <vtkTrivialProducer.h>
+#include <vtkContext2D.h>
+#include <vtkPen.h>
 
 #include <QtDebug>
 #include <QThread>
@@ -152,6 +154,24 @@ public:
   Ui::CentralWidget Ui;
 };
 
+class vtkHistogramMarker : public vtkPlot
+{
+public:
+  static vtkHistogramMarker * New() { return new vtkHistogramMarker; }
+
+  double PositionX;
+
+  bool Paint(vtkContext2D *painter)
+  {
+    vtkNew<vtkPen> pen;
+    pen->SetColor(255, 0, 0, 255);
+    pen->SetWidth(2.0);
+    painter->ApplyPen(pen.Get());
+    painter->DrawLine(PositionX, 0, PositionX, 1e9);
+    return true;
+  }
+};
+
 class vtkChartHistogram : public vtkChartXY
 {
 public:
@@ -161,6 +181,7 @@ public:
 
   vtkNew<vtkTransform2D> Transform;
   double PositionX;
+  vtkNew<vtkHistogramMarker> Marker;
 };
 
 vtkStandardNewMacro(vtkChartHistogram)
@@ -169,7 +190,7 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
 {
   // Determine the location of the click, and emit something we can listen to!
   vtkPlotBar *histo = 0;
-  if (this->GetNumberOfPlots() == 1)
+  if (this->GetNumberOfPlots() > 0)
     {
     histo = vtkPlotBar::SafeDownCast(this->GetPlot(0));
     }
@@ -186,6 +207,13 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
                                           1);
   this->PositionX = pos.GetX();
+  this->Marker->PositionX = this->PositionX;
+  this->Marker->Modified();
+  this->Scene->SetDirty(true);
+  if (this->GetNumberOfPlots() == 1)
+    {
+    this->AddPlot(this->Marker.Get());
+    }
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
   return true;
 }
@@ -235,14 +263,34 @@ void CentralWidget::setDataSource(vtkSMSourceProxy* source)
 {
   this->DataSource = source;
 
-  // FIXME: Handle NULL source. We should clear the histogram.
+  // Whenever the data source changes clear the plot, and then populate when
+  // ready (or use the cached histogram values.
+  this->Chart->ClearPlots();
 
   // Get the actual data source, build a histogram out of it.
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
   vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
+  // Check our cache, and use that if appopriate (or update it).
+  if (this->HistogramCache.contains(data))
+    {
+    vtkTable *cachedTable = this->HistogramCache[data];
+    if (cachedTable->GetMTime() > data->GetMTime())
+      {
+      this->setHistogramTable(cachedTable);
+      return;
+      }
+    else
+      {
+      // Should this ever happen? Do we want to support this?
+      qDebug() << "Image data changed after histogram calculation.";
+      return;
+      }
+    }
+
   // Calculate a histogram.
   vtkNew<vtkTable> table;
+  this->HistogramCache[data] = table.Get();
 
   if (!this->Worker)
     {
@@ -265,20 +313,7 @@ void CentralWidget::histogramReady()
   if (!this->Worker || !this->Worker->input || !this->Worker->output)
     return;
 
-  vtkTable *table = this->Worker->output.Get();
-  this->Chart->ClearPlots();
-  vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
-  plot->SetInputData(table, "image_extents", "image_pops");
-  vtkDataArray *arr =
-      vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
-  if (arr)
-    {
-    double max = log10(arr->GetRange()[1]);
-    vtkAxis *axis = this->Chart->GetAxis(vtkAxis::LEFT);
-    axis->SetUnscaledMinimum(1.0);
-    axis->SetMaximumLimit(max + 2.0);
-    axis->SetMaximum(static_cast<int>(max) + 1.0);
-    }
+  this->setHistogramTable(this->Worker->output.Get());
 
   this->Worker->input = NULL;
   this->Worker->output = NULL;
@@ -319,6 +354,24 @@ void CentralWidget::histogramClicked(vtkObject *caller)
   Q_ASSERT(contour);
   contour->setIsoValue(this->Chart->PositionX);
   TEM::convert<pqView*>(view)->render();
+}
+
+void CentralWidget::setHistogramTable(vtkTable *table)
+{
+  this->Chart->ClearPlots();
+  vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
+  plot->SetInputData(table, "image_extents", "image_pops");
+  plot->SetColor(0, 0, 255, 255);
+  vtkDataArray *arr =
+      vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
+  if (arr)
+    {
+    double max = log10(arr->GetRange()[1]);
+    vtkAxis *axis = this->Chart->GetAxis(vtkAxis::LEFT);
+    axis->SetUnscaledMinimum(1.0);
+    axis->SetMaximumLimit(max + 2.0);
+    axis->SetMaximum(static_cast<int>(max) + 1.0);
+    }
 }
 
 } // end of namespace TEM

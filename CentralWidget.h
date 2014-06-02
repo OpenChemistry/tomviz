@@ -18,13 +18,17 @@
 
 #include <QScopedPointer>
 #include <QWidget>
+#include <QMap>
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
+#include <vtkSmartPointer.h>
 
 class vtkObject;
 class vtkSMSourceProxy;
 class vtkContextView;
 class vtkEventQtSlotConnect;
+class vtkImageData;
+class vtkTable;
 
 namespace TEM
 {
@@ -57,6 +61,8 @@ private slots:
 private:
   Q_DISABLE_COPY(CentralWidget)
 
+  void setHistogramTable(vtkTable *table);
+
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
   vtkNew<vtkContextView> Histogram;
@@ -64,6 +70,7 @@ private:
   vtkNew<vtkEventQtSlotConnect> EventLink;
   vtkWeakPointer<vtkSMSourceProxy> DataSource;
   HistogramWorker *Worker;
+  QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
 };
 
 }
