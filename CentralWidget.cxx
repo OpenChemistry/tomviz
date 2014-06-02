@@ -235,14 +235,34 @@ void CentralWidget::setDataSource(vtkSMSourceProxy* source)
 {
   this->DataSource = source;
 
-  // FIXME: Handle NULL source. We should clear the histogram.
+  // Whenever the data source changes clear the plot, and then populate when
+  // ready (or use the cached histogram values.
+  this->Chart->ClearPlots();
 
   // Get the actual data source, build a histogram out of it.
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
   vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
+  // Check our cache, and use that if appopriate (or update it).
+  if (this->HistogramCache.contains(data))
+    {
+    vtkTable *cachedTable = this->HistogramCache[data];
+    if (cachedTable->GetMTime() > data->GetMTime())
+      {
+      this->setHistogramTable(cachedTable);
+      return;
+      }
+    else
+      {
+      // Should this ever happen? Do we want to support this?
+      qDebug() << "Image data changed after histogram calculation.";
+      return;
+      }
+    }
+
   // Calculate a histogram.
   vtkNew<vtkTable> table;
+  this->HistogramCache[data] = table.Get();
 
   if (!this->Worker)
     {
@@ -265,20 +285,7 @@ void CentralWidget::histogramReady()
   if (!this->Worker || !this->Worker->input || !this->Worker->output)
     return;
 
-  vtkTable *table = this->Worker->output.Get();
-  this->Chart->ClearPlots();
-  vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
-  plot->SetInputData(table, "image_extents", "image_pops");
-  vtkDataArray *arr =
-      vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
-  if (arr)
-    {
-    double max = log10(arr->GetRange()[1]);
-    vtkAxis *axis = this->Chart->GetAxis(vtkAxis::LEFT);
-    axis->SetUnscaledMinimum(1.0);
-    axis->SetMaximumLimit(max + 2.0);
-    axis->SetMaximum(static_cast<int>(max) + 1.0);
-    }
+  this->setHistogramTable(this->Worker->output.Get());
 
   this->Worker->input = NULL;
   this->Worker->output = NULL;
@@ -319,6 +326,23 @@ void CentralWidget::histogramClicked(vtkObject *caller)
   Q_ASSERT(contour);
   contour->setIsoValue(this->Chart->PositionX);
   TEM::convert<pqView*>(view)->render();
+}
+
+void CentralWidget::setHistogramTable(vtkTable *table)
+{
+  this->Chart->ClearPlots();
+  vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
+  plot->SetInputData(table, "image_extents", "image_pops");
+  vtkDataArray *arr =
+      vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
+  if (arr)
+    {
+    double max = log10(arr->GetRange()[1]);
+    vtkAxis *axis = this->Chart->GetAxis(vtkAxis::LEFT);
+    axis->SetUnscaledMinimum(1.0);
+    axis->SetMaximumLimit(max + 2.0);
+    axis->SetMaximum(static_cast<int>(max) + 1.0);
+    }
 }
 
 } // end of namespace TEM
