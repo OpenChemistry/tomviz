@@ -145,6 +145,29 @@
     <bool>false</bool>
    </attribute>
   </widget>
+  <widget class="QDockWidget" name="dockWidget_3">
+   <property name="allowedAreas">
+    <set>Qt::BottomDockWidgetArea|Qt::TopDockWidgetArea</set>
+   </property>
+   <property name="windowTitle">
+    <string>Animation</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="pqPVAnimationWidget" name="animationWidget"/>
+  </widget>
+  <widget class="pqVCRToolbar" name="vcrToolbar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
   <action name="actionOpen">
    <property name="text">
     <string>&amp;Open</string>
@@ -201,6 +224,17 @@
    <class>pqAxesToolbar</class>
    <extends>QToolBar</extends>
    <header>pqAxesToolbar.h</header>
+  </customwidget>
+  <customwidget>
+   <class>pqPVAnimationWidget</class>
+   <extends>QWidget</extends>
+   <header>pqPVAnimationWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqVCRToolbar</class>
+   <extends>QToolBar</extends>
+   <header>pqVCRToolbar.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -23,6 +23,7 @@
 #include "pqPVApplicationCore.h"
 #include "pqPythonShellReaction.h"
 #include "pqSaveDataReaction.h"
+#include "pqSaveStateReaction.h"
 
 #include "ActiveObjects.h"
 #include "Behaviors.h"
@@ -69,6 +70,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new ModuleMenu(ui.menuModules);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
+  new pqSaveStateReaction(ui.actionSave);
 }
 
 //-----------------------------------------------------------------------------
