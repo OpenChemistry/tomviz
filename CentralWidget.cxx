@@ -35,6 +35,8 @@
 #include <vtkTable.h>
 #include <vtkTransform2D.h>
 #include <vtkTrivialProducer.h>
+#include <vtkContext2D.h>
+#include <vtkPen.h>
 
 #include <QtDebug>
 #include <QThread>
@@ -152,6 +154,24 @@ public:
   Ui::CentralWidget Ui;
 };
 
+class vtkHistogramMarker : public vtkPlot
+{
+public:
+  static vtkHistogramMarker * New() { return new vtkHistogramMarker; }
+
+  double PositionX;
+
+  bool Paint(vtkContext2D *painter)
+  {
+    vtkNew<vtkPen> pen;
+    pen->SetColor(255, 0, 0, 255);
+    pen->SetWidth(2.0);
+    painter->ApplyPen(pen.Get());
+    painter->DrawLine(PositionX, 0, PositionX, 1e9);
+    return true;
+  }
+};
+
 class vtkChartHistogram : public vtkChartXY
 {
 public:
@@ -161,6 +181,7 @@ public:
 
   vtkNew<vtkTransform2D> Transform;
   double PositionX;
+  vtkNew<vtkHistogramMarker> Marker;
 };
 
 vtkStandardNewMacro(vtkChartHistogram)
@@ -169,7 +190,7 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
 {
   // Determine the location of the click, and emit something we can listen to!
   vtkPlotBar *histo = 0;
-  if (this->GetNumberOfPlots() == 1)
+  if (this->GetNumberOfPlots() > 0)
     {
     histo = vtkPlotBar::SafeDownCast(this->GetPlot(0));
     }
@@ -186,6 +207,13 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
                                           1);
   this->PositionX = pos.GetX();
+  this->Marker->PositionX = this->PositionX;
+  this->Marker->Modified();
+  this->Scene->SetDirty(true);
+  if (this->GetNumberOfPlots() == 1)
+    {
+    this->AddPlot(this->Marker.Get());
+    }
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
   return true;
 }
@@ -333,6 +361,7 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   this->Chart->ClearPlots();
   vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
   plot->SetInputData(table, "image_extents", "image_pops");
+  plot->SetColor(0, 0, 255, 255);
   vtkDataArray *arr =
       vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
   if (arr)
