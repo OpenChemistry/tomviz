@@ -276,7 +276,7 @@ private:
 
 //----------------------------------------------------------------------------
 vtkStreamingWorker::vtkStreamingWorker():
-  Internals( new vtkStreamingWorker::WorkerInternals(2) )
+  Internals( new vtkStreamingWorker::WorkerInternals(16) )
 {
 }
 
