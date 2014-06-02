@@ -18,6 +18,7 @@
 #include "ModuleContour.h"
 #include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
+#include "ModuleThreshold.h"
 #include "ModuleVolume.h"
 #include "pqView.h"
 #include "Utilities.h"
@@ -50,6 +51,7 @@ QList<QString> ModuleFactory::moduleTypes(
     reply << "Outline"
       << "Volume"
       << "Contour"
+      << "Threshold"
       << "Orthogonal Slice";
     qSort(reply);
     }
@@ -76,6 +78,10 @@ Module* ModuleFactory::createModule(
   else if (type == "Orthogonal Slice")
     {
     module = new ModuleOrthogonalSlice();
+    }
+  else if (type == "Threshold")
+    {
+    module = new ModuleThreshold();
     }
 
   if (module)

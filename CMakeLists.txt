@@ -28,6 +28,8 @@ set(SOURCES
   MainWindow.h
   ModuleContour.cxx
   ModuleContour.h
+  ModuleThreshold.cxx
+  ModuleThreshold.h
   Module.cxx
   ModuleFactory.cxx
   ModuleFactory.h
