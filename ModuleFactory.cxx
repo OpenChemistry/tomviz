@@ -15,6 +15,10 @@
 ******************************************************************************/
 #include "ModuleFactory.h"
 
+#ifdef DAX_DEVICE_ADAPTER
+#  include "dax/ModuleStreamingContour.h"
+#endif
+
 #include "ModuleContour.h"
 #include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
@@ -69,7 +73,11 @@ Module* ModuleFactory::createModule(
     }
   else if (type == "Contour")
     {
+#ifdef DAX_DEVICE_ADAPTER
     module = new ModuleContour();
+#else
+    module = new ModuleContour();
+#endif
     }
   else if (type == "Volume")
     {
