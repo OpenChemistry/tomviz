@@ -47,20 +47,24 @@ namespace functors
     OutputPortal(reinterpret_cast<ValueType*>(outputArray->GetVoidPointer(0))),
     FullExtent(fullExtent),
     SubGridExtent(subGridExtent),
-    FullGridIJKOffset(subGridsOffsetsInFullGrid)
+    FullGridCellIJKOffset(subGridsOffsetsInFullGrid)
     {
-
     }
 
     DAX_EXEC_EXPORT
     void operator()(dax::Id pointIndex) const
     {
-      const dax::Id3 local_ijk = flatIndexToIndex3(pointIndex, this->SubGridExtent);
-      const dax::Id3 global_ijk = local_ijk + this->FullGridIJKOffset;
+      //compute the local point ijk index
+      const dax::Id3 local_ijk = dax::flatIndexToIndex3(pointIndex, this->SubGridExtent);
 
-      //do we need to compute back to z,y,x order.
-      const dax::Id3 dims = extentDimensions(this->FullExtent);
-      const dax::Id index = global_ijk[0] + global_ijk[1]*dims[0] + global_ijk[2]*(dims[0]*dims[1]);
+      //the problem is that we have our grids cell offset, and not our grids
+      //point offset into the full grid
+      const dax::Id3 global_ijk = local_ijk + this->FullGridCellIJKOffset;
+
+      //we can't use dax here as index3ToFlatIndex doesn't support negative
+      //extents
+      const dax::Id3 dims = dax::extentDimensions(this->FullExtent);
+      const dax::Id index = global_ijk[0] + dims[0]*(global_ijk[1] + dims[1]*global_ijk[2]);
 
       this->OutputPortal[pointIndex] = this->InputPortal.Get( index );
     }
@@ -73,7 +77,7 @@ namespace functors
   ValueType* OutputPortal;
   dax::Extent3 FullExtent;
   dax::Extent3 SubGridExtent;
-  dax::Id3 FullGridIJKOffset;
+  dax::Id3 FullGridCellIJKOffset;
   };
 }
 

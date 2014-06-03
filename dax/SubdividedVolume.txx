@@ -26,6 +26,8 @@
 #include "vtkImageData.h"
 #include "vtkNew.h"
 
+#include "vtkPolyDataWriter.h"
+
 #include "Worklets.h"
 #include "DataSetConverters.h"
 
@@ -261,6 +263,11 @@ SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
   convertPoints(outGrid,output);
   convertCells(outGrid,output);
 
+  // vtkNew<vtkPolyDataWriter> writer;
+  // writer->SetInputData(output);
+  // writer->SetFileName("/Users/robert/cdump.vtk");
+  // writer->Update();
+
   return output;
 }
 
@@ -301,6 +308,18 @@ SubdividedVolume::PointCloudSubGrid(dax::Scalar isoValue,
 
   return output;
 }
+
+//----------------------------------------------------------------------------
+bool SubdividedVolume::isValidSubGrid(std::size_t index, dax::Scalar value)
+{
+  return this->PerSubGridLowHighs[index][0] <= value &&
+         this->PerSubGridLowHighs[index][1] >= value;
+}
+
+}
+}
+
+
 /*
 
 
@@ -418,14 +437,3 @@ void SubdividedVolume::Contour(dax::Scalar isoValue,
          << "%) of the subgrids are valid " << std::endl;
 }
 */
-
-//----------------------------------------------------------------------------
-bool SubdividedVolume::isValidSubGrid(std::size_t index, dax::Scalar value)
-{
-  return this->PerSubGridLowHighs[index][0] <= value &&
-         this->PerSubGridLowHighs[index][1] >= value;
-}
-
-
-}
-}
