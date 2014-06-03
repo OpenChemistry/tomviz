@@ -46,6 +46,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   // Load plugins distributed with application.
   pqApplicationCore::instance()->loadDistributedPlugins();
 
+
   new pqQtMessageHandlerBehavior(this);
   new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
@@ -54,6 +55,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
+
 }
 
 //-----------------------------------------------------------------------------
