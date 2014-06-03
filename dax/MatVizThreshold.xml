@@ -21,10 +21,6 @@
        </DataTypeDomain>
        <InputArrayDomain name="input_array"
                          number_of_components="1">
-         <RequiredProperties>
-           <Property function="FieldDataSelection"
-                     name="SelectInputScalars" />
-         </RequiredProperties>
        </InputArrayDomain>
        <Documentation>This property specifies the input to the Threshold
        filter.</Documentation>
