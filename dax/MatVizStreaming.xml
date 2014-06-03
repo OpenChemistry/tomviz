@@ -24,6 +24,15 @@
         <DoubleRangeDomain min="0"
                            name="range" />
       </DoubleVectorProperty>
+
+      <DoubleVectorProperty command="SetContourValue"
+                            default_values="90"
+                            name="ContourValue"
+                            number_of_elements="1">
+      <DoubleRangeDomain min="0"
+                           name="range" />
+      </DoubleVectorProperty>
+
       <StringVectorProperty command="SetInputArrayToProcess"
                             element_types="0 0 0 0 2"
                             name="ColorArrayName"
@@ -81,6 +90,14 @@
         </InputArrayDomain>
         <Documentation>Set the input to the representation.</Documentation>
       </InputProperty>
+
+      <DoubleVectorProperty command="SetContourValue"
+                            default_values="90"
+                            name="ContourValue"
+                            number_of_elements="1">
+      <DoubleRangeDomain min="0"
+                           name="range" />
+      </DoubleVectorProperty>
 
       <DoubleVectorProperty command="SetPointSize"
                             default_values="2.0"
