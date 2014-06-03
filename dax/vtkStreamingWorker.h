@@ -48,11 +48,15 @@ public:
   //new data as contours get finished.
   vtkSmartPointer<vtkPolyData> GetFinishedPieces();
 
-  //ask if we any sections of the volume left to contour
+  //ask the worker to stop processing the Contour or Threshold it is currently
+  //processing
+  void StopWork();
+
+  //ask if we any sections of the volume left to contour and
   bool IsFinished() const;
 
-  //reports if we have already computed a dataset.
-  bool AlreadyComputed() const;
+  //reports if we have already computed the lookup search structure
+  bool AlreadyComputedSearchStructure() const;
 
 protected:
   vtkStreamingWorker();

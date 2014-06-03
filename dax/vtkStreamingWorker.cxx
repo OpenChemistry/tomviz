@@ -117,6 +117,7 @@ struct ComputeFunctor
   const std::size_t totalSubGrids = this->Volume.numSubGrids();
   vtkSmartPointer< vtkPolyData> output;
 
+  bool haveMoreData=false;
   for(std::size_t i=0; i < totalSubGrids && this->ContinueWorking; ++i)
     {
     if(this->ContinueWorking && this->Volume.isValidSubGrid(i, v))
@@ -126,24 +127,25 @@ struct ComputeFunctor
 
         //lock while we add to the appender
         {
+        haveMoreData=true;
         MutexType::scoped_lock lock(*this->AppenderMutex);
         this->Appender->AddInputDataObject( output );
         }
       }
-    if(i%50==0 && this->Appender->GetNumberOfInputPorts() > 0)
+    if(i%50==0 && haveMoreData && this->ContinueWorking)
       {
-      this->Logger << "this->Appender->Update(), " << this->Appender->GetNumberOfInputPorts() << std::endl;
       MutexType::scoped_lock lock(*this->AppenderMutex);
       this->Appender->Update();
+      haveMoreData = false;
       }
     }
 
   //append any remaining subgrids
-  if(this->Appender->GetNumberOfInputPorts() > 0)
+  if(haveMoreData && this->ContinueWorking)
     {
-    this->Logger << "this->Appender->Update(), " << this->Appender->GetNumberOfInputPorts() << std::endl;
     MutexType::scoped_lock lock(*this->AppenderMutex);
     this->Appender->Update();
+    haveMoreData = false;
     }
 
   this->Logger << "algorithm time: " << timer.GetElapsedTime() << " num cells " << numCells << std::endl;
@@ -192,12 +194,18 @@ public:
   bool IsValid() const { return this->Volume.numSubGrids() > 0; }
 
   //----------------------------------------------------------------------------
+  void StopWork() { this->ContinueWorking = false; }
+
+  //----------------------------------------------------------------------------
   bool IsFinished() const
   {
-    if(this->IsValid())
-      {
-      return this->FinishedWorkingOnData;
-      }
+    //we need a better check to have this be able to handle the use
+    //case that we have finished contouring before ProcessViewRequest
+    //with REQUEST_STREAMING_UPDATE has been called and we report we are
+    //finished before we ever report we have started.
+    //I think the best way is to track that GetFinishedPieces() has been
+    //called AFTER the algorithm is finished, only than are we really 'finished'
+
     return false;
   }
 
@@ -276,7 +284,7 @@ private:
 
 //----------------------------------------------------------------------------
 vtkStreamingWorker::vtkStreamingWorker():
-  Internals( new vtkStreamingWorker::WorkerInternals(16) )
+  Internals( new vtkStreamingWorker::WorkerInternals(6) )
 {
 }
 
@@ -334,13 +342,19 @@ vtkStreamingWorker::GetFinishedPieces()
 }
 
 //----------------------------------------------------------------------------
+void vtkStreamingWorker::StopWork()
+{
+  this->Internals->StopWork();
+}
+
+//----------------------------------------------------------------------------
 bool vtkStreamingWorker::IsFinished() const
 {
   return this->Internals->IsFinished();
 }
 
 //----------------------------------------------------------------------------
-bool vtkStreamingWorker::AlreadyComputed() const
+bool vtkStreamingWorker::AlreadyComputedSearchStructure() const
 {
   return this->Internals->IsValid();
 }
