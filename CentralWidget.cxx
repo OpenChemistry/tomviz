@@ -198,11 +198,8 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
     {
     return false;
     }
-  if (this->Transform->GetMTime() < histo->GetMTime())
-    {
-    this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
-                                         this->Transform.Get());
-    }
+  this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
+                                       this->Transform.Get());
   vtkVector2f pos;
   this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
                                           1);
