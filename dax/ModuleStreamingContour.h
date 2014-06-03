@@ -33,7 +33,7 @@ public:
   ModuleStreamingContour(QObject* parent=NULL);
   virtual ~ModuleStreamingContour();
 
-  virtual QString label() const { return  "Streaming Contour"; }
+  virtual QString label() const { return  "Accelerated Contour"; }
   virtual QIcon icon() const;
   virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();

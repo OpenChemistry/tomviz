@@ -31,7 +31,7 @@ public:
   ModuleAccelThreshold(QObject* parent=NULL);
   virtual ~ModuleAccelThreshold();
 
-  virtual QString label() const { return  "Threshold"; }
+  virtual QString label() const { return  "Accelerated Threshold"; }
   virtual QIcon icon() const;
   virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
