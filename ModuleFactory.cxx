@@ -17,6 +17,7 @@
 
 #ifdef DAX_DEVICE_ADAPTER
 #  include "dax/ModuleStreamingContour.h"
+#  include "dax/ModuleAccelThreshold.h"
 #endif
 
 #include "ModuleContour.h"
@@ -89,7 +90,11 @@ Module* ModuleFactory::createModule(
     }
   else if (type == "Threshold")
     {
+#ifdef DAX_DEVICE_ADAPTER
+    module = new ModuleAccelThreshold();
+#else
     module = new ModuleThreshold();
+#endif
     }
 
   if (module)

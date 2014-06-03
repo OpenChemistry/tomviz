@@ -17,6 +17,7 @@ if(ENABLE_DAX_ACCELERATION)
 
   set(accel_srcs
     dax/ModuleStreamingContour.cxx
+    dax/ModuleAccelThreshold.cxx
     )
 
 endif()

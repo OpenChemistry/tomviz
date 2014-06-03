@@ -34,6 +34,7 @@
 #include "vtkNew.h"
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
+#include "vtkUnstructuredGrid.h"
 
 namespace {
 
@@ -56,8 +57,8 @@ namespace {
     { return vtkUnsignedCharArray::New(); }
 
 //------------------------------------------------------------------------------
-template<typename GridType>
-void convertPoints(GridType& grid, vtkPolyData* output)
+template<typename GridType, typename OutputObjectType>
+void convertPoints(GridType& grid, OutputObjectType* output)
 {
   //we are dealing with a container type whose memory wasn't allocated by
   //vtk so we have to copy the data into a new vtk memory location just
@@ -105,8 +106,31 @@ output->SetPolys(cells);
 }
 
 //------------------------------------------------------------------------------
-template<typename GridType>
-void convertCells(GridType& grid, vtkPolyData* output)
+void setCells(vtkCellArray* cells, vtkUnstructuredGrid* output, dax::CellTagVertex)
+{
+output->SetCells(VTK_VERTEX,cells);
+}
+
+//------------------------------------------------------------------------------
+void setCells(vtkCellArray* cells, vtkUnstructuredGrid* output, dax::CellTagLine)
+{
+output->SetCells(VTK_LINE,cells);
+}
+
+//------------------------------------------------------------------------------
+void setCells(vtkCellArray* cells, vtkUnstructuredGrid* output, dax::CellTagTriangle)
+{
+output->SetCells(VTK_TRIANGLE,cells);
+}
+//------------------------------------------------------------------------------
+void setCells(vtkCellArray* cells, vtkUnstructuredGrid* output, dax::CellTagHexahedron)
+{
+output->SetCells(VTK_HEXAHEDRON,cells);
+}
+
+//------------------------------------------------------------------------------
+template<typename GridType, typename OutputObjectType>
+void convertCells(GridType& grid, OutputObjectType* output)
 {
   //determine the Cell type
   typedef dax::CellTraits<typename GridType::CellTag> CellTraits;
@@ -138,6 +162,7 @@ void convertCells(GridType& grid, vtkPolyData* output)
 
   setCells(cells.GetPointer(),output,typename GridType::CellTag());
 }
+
 
 }
 
