@@ -12,6 +12,10 @@ option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
   find_package(Dax REQUIRED)
   DaxConfigureTBB(REQUIRED)
+  set(accel_srcs
+      dax/ModuleAccelThreshold.cxx
+      dax/vtkAccelThreshold.cxx
+      )
 endif()
 
 set(SOURCES
