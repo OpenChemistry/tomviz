@@ -111,8 +111,6 @@ struct ComputeFunctor
   template<typename Functor, typename ValueType>
   void run(Functor functor, double v, ValueType)
   {
-  std::size_t numCells=0;
-
   dax::cont::Timer<> timer;
   const std::size_t totalSubGrids = this->Volume.numSubGrids();
   vtkSmartPointer< vtkPolyData> output;
@@ -123,7 +121,6 @@ struct ComputeFunctor
     if(this->ContinueWorking && this->Volume.isValidSubGrid(i, v))
       {
       output = functor(v, i, ValueType(), this->Logger );
-      numCells += output->GetNumberOfCells();
 
         //lock while we add to the appender
         {
@@ -148,7 +145,7 @@ struct ComputeFunctor
     haveMoreData = false;
     }
 
-  this->Logger << "algorithm time: " << timer.GetElapsedTime() << " num cells " << numCells << std::endl;
+  this->Logger << "algorithm time: " << timer.GetElapsedTime() << std::endl;
   this->FinishedWorkingOnData = true;
   }
 };
@@ -167,6 +164,7 @@ public:
     Thread(),
     ContinueWorking(false),
     FinishedWorkingOnData(false),
+    CurrentRenderDataFinished(false),
     Volume(),
     ComputedData(),
     CurrentRenderData(),
@@ -206,7 +204,7 @@ public:
     //I think the best way is to track that GetFinishedPieces() has been
     //called AFTER the algorithm is finished, only than are we really 'finished'
 
-    return false;
+    return this->CurrentRenderDataFinished;
   }
 
   //----------------------------------------------------------------------------
@@ -231,17 +229,21 @@ public:
     //and make it run the code
     this->ContinueWorking = true;
     this->FinishedWorkingOnData = false;
+    this->CurrentRenderDataFinished = false;
 
     //clear the appender
     this->ComputedData = vtkSmartPointer<vtkAppendPolyData>::New();
 
-    logger << "CreateSearchStructure" << std::endl;
-    this->Volume = TEM::accel::SubdividedVolume( this->NumSubGridsPerDim,
-                                                 input,
-                                                 logger );
+    if(this->Volume.numSubGrids() == 0)
+      {
+      logger << "CreateSearchStructure" << std::endl;
+      this->Volume = TEM::accel::SubdividedVolume( this->NumSubGridsPerDim,
+                                                   input,
+                                                   logger );
 
-    logger << "ComputeHighLows" << std::endl;
-    this->Volume.ComputeHighLows( begin, end, logger );
+      logger << "ComputeHighLows" << std::endl;
+      this->Volume.ComputeHighLows( begin, end, logger );
+      }
 
 
     //now give the thread the volume to contour
@@ -266,6 +268,8 @@ vtkSmartPointer<vtkPolyData> GetFinishedPieces()
     {
     CurrentRenderData->ShallowCopy(ComputedData->GetOutputDataObject(0));
     }
+  this->CurrentRenderDataFinished = this->FinishedWorkingOnData;
+
   return this->CurrentRenderData;
 }
 
@@ -273,6 +277,7 @@ private:
   tbb::tbb_thread Thread;
   bool ContinueWorking;
   bool FinishedWorkingOnData;
+  bool CurrentRenderDataFinished;
 
   TEM::accel::SubdividedVolume Volume;
   vtkSmartPointer<vtkAppendPolyData> ComputedData;
