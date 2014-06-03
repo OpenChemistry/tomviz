@@ -74,7 +74,7 @@ Module* ModuleFactory::createModule(
   else if (type == "Contour")
     {
 #ifdef DAX_DEVICE_ADAPTER
-    module = new ModuleContour();
+    module = new ModuleStreamingContour();
 #else
     module = new ModuleContour();
 #endif
