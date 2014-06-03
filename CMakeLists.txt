@@ -12,6 +12,13 @@ option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
   find_package(Dax REQUIRED)
   DaxConfigureTBB(REQUIRED)
+
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dax)
+
+  set(accel_srcs
+    dax/ModuleStreamingContour.cxx
+    )
+
 endif()
 
 set(SOURCES
@@ -78,8 +85,10 @@ else()
 endif()
 
 if(ENABLE_DAX_ACCELERATION)
-  #set the dax backend to tbb explicitly
+  target_link_libraries(matviz LINK_PRIVATE ${TBB_LIBRARIES})
+
+  #set the dax backend to tbb explicitly as the histogram is
+  #computed using dax.
   set_target_properties(matviz PROPERTIES COMPILE_DEFINITIONS
                         "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
-  target_link_libraries(matviz LINK_PRIVATE ${TBB_LIBRARIES})
 endif()
