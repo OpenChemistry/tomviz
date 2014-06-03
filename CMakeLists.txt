@@ -60,6 +60,10 @@ set(SOURCES
   ModulePropertiesPanel.cxx
   ModulePropertiesPanel.h
   ModuleVolume.cxx
+  Operator.cxx
+  Operator.h
+  OperatorPython.cxx
+  OperatorPython.h
   PipelineWidget.cxx
   PipelineWidget.h
   ProgressBehavior.cxx

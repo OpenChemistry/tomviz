@@ -56,6 +56,7 @@ public:
   /// Returns the visibility for the module.
   virtual bool visibility() const =0;
 
+  /// Accessors for the data-source and view associated with this Plot.
   DataSource* dataSource() const;
   vtkSMViewProxy* view() const;
 

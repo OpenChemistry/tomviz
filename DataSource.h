@@ -18,11 +18,13 @@
 
 #include <QObject>
 #include <QScopedPointer>
+#include <QSharedPointer>
 
 class vtkSMSourceProxy;
 
 namespace TEM
 {
+class Operator;
 
 /// Encapsulation for a DataSource. This class manages a data source, including
 /// the provenance for any operations performed on the data source.
@@ -41,6 +43,12 @@ public:
   /// This proxy instance doesn't change over the lifetime of a DataSource even
   /// if new DataOperators are added to the source.
   vtkSMSourceProxy* producer() const;
+
+  /// Add/remove operators.
+  int addOperator(const QSharedPointer<Operator>& op);
+
+protected:
+  void operate(Operator* op);
 
 private:
   Q_DISABLE_COPY(DataSource);

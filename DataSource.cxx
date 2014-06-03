@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "DataSource.h"
 
+#include "Operator.h"
 #include "Utilities.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
@@ -34,6 +35,7 @@ class DataSource::DSInternals
 public:
   vtkSmartPointer<vtkSMSourceProxy> OriginalDataSource;
   vtkWeakPointer<vtkSMSourceProxy> Producer;
+  QList<QSharedPointer<Operator> > Operators;
 };
 
 //-----------------------------------------------------------------------------
@@ -96,4 +98,28 @@ vtkSMSourceProxy* DataSource::producer() const
 {
   return this->Internals->Producer;
 }
+//-----------------------------------------------------------------------------
+int DataSource::addOperator(const QSharedPointer<Operator>& op)
+{
+  int index = this->Internals->Operators.count();
+  this->Internals->Operators.push_back(op);
+  this->operate(op.data());
+  return index;
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::operate(Operator* op)
+{
+  Q_ASSERT(op);
+
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  Q_ASSERT(tp);
+  if (op->transform(tp->GetOutputDataObject(0)))
+    {
+    tp->Modified();
+    this->Internals->Producer->MarkModified(NULL);
+    }
+}
+
 }
