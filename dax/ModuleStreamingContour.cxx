@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "ModuleContour.h"
+#include "dax/ModuleStreamingContour.h"
 
 #include "pqProxiesWidget.h"
 #include "vtkNew.h"
@@ -31,24 +31,24 @@ namespace TEM
 {
 
 //-----------------------------------------------------------------------------
-ModuleContour::ModuleContour(QObject* parentObject) :Superclass(parentObject)
+ModuleStreamingContour::ModuleStreamingContour(QObject* parentObject) :Superclass(parentObject)
 {
 }
 
 //-----------------------------------------------------------------------------
-ModuleContour::~ModuleContour()
+ModuleStreamingContour::~ModuleStreamingContour()
 {
   this->finalize();
 }
 
 //-----------------------------------------------------------------------------
-QIcon ModuleContour::icon() const
+QIcon ModuleStreamingContour::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqIsosurface24.png");
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+bool ModuleStreamingContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
@@ -56,39 +56,26 @@ bool ModuleContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* vie
     }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
-
-  vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
-
-  this->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->ContourFilter);
-  controller->PreInitializeProxy(this->ContourFilter);
-  vtkSMPropertyHelper(this->ContourFilter, "Input").Set(dataSource);
-  controller->PostInitializeProxy(this->ContourFilter);
-  controller->RegisterPipelineProxy(this->ContourFilter);
 
   // Create the representation for it.
-  this->ContourRepresentation = controller->Show(this->ContourFilter, 0, view);
+  this->ContourRepresentation = controller->Show(dataSource, 0, view);
   Q_ASSERT(this->ContourRepresentation);
-  vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Surface");
+  vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Streaming Contour");
   this->ContourRepresentation->UpdateVTKObjects();
   return true;
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleContour::finalize()
+bool ModuleStreamingContour::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(this->ContourRepresentation);
-  controller->UnRegisterProxy(this->ContourFilter);
-  this->ContourFilter = NULL;
   this->ContourRepresentation = NULL;
   return true;
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleContour::setVisibility(bool val)
+bool ModuleStreamingContour::setVisibility(bool val)
 {
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").Set(val? 1 : 0);
@@ -97,37 +84,38 @@ bool ModuleContour::setVisibility(bool val)
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleContour::visibility() const
+bool ModuleStreamingContour::visibility() const
 {
   Q_ASSERT(this->ContourRepresentation);
   return vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------
-void ModuleContour::setIsoValues(const QList<double>& values)
+void ModuleStreamingContour::setIsoValues(const QList<double>& values)
 {
-  std::vector<double> vectorValues(values.size());
-  std::copy(values.begin(), values.end(), vectorValues.begin());
-  vectorValues.push_back(0); // to avoid having to check for 0 size on Windows.
+  double vectorValue(1);
+  if(values.size() > 0)
+    {
+    vectorValue = values[0];
+    }
 
-  vtkSMPropertyHelper(this->ContourFilter,"ContourValues").Set(
-    &vectorValues[0], values.size());
-  this->ContourFilter->UpdateVTKObjects();
+  vtkSMPropertyHelper(this->ContourRepresentation,"ContourValue").Set(
+                                                                vectorValue);
+  this->ContourRepresentation->UpdateVTKObjects();
 }
 
+
 //-----------------------------------------------------------------------------
-void ModuleContour::addToPanel(pqProxiesWidget* panel)
+void ModuleStreamingContour::addToPanel(pqProxiesWidget* panel)
 {
-  Q_ASSERT(this->ContourFilter);
   Q_ASSERT(this->ContourRepresentation);
 
   QStringList contourProperties;
   contourProperties << "ContourValues";
-  panel->addProxy(this->ContourFilter, "Contour", contourProperties, true);
+  panel->addProxy(this->ContourRepresentation, "Contour", contourProperties, true);
 
   QStringList contourRepresentationProperties;
   contourRepresentationProperties
-    << "Representation"
     << "Opacity"
     << "Specular";
   panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
