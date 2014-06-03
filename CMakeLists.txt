@@ -8,6 +8,12 @@ if(NOT PARAVIEW_BUILD_QT_GUI)
     "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE")
 endif()
 
+# We need to link to QtMain on Windows, this is much better in Qt 5 with recent
+# CMake versions where a policy can invoke auto-linking of this library.
+if(WIN32)
+  find_package(Qt4 4.8 COMPONENTS QtGui QtMain REQUIRED)
+endif()
+
 option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
   find_package(Dax REQUIRED)
@@ -78,6 +84,9 @@ target_link_libraries(matviz
     pqApplicationComponents
     vtkPVServerManagerRendering
   )
+if(WIN32)
+  target_link_libraries(matviz LINK_PRIVATE ${QT_QTMAIN_LIBRARY})
+endif()
 if(APPLE)
   install(TARGETS matviz DESTINATION Applications COMPONENT runtime)
 else()
