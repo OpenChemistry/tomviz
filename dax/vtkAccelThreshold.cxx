@@ -100,7 +100,6 @@ namespace dax
                          dax::make_Id3(vtk_extent[1],vtk_extent[3],vtk_extent[5]))
             );
 
-
   //construct the classify functor
   ThresholdCountType classifyFunctor(static_cast<ValueType>(lower),
                                      static_cast<ValueType>(upper));
@@ -117,30 +116,34 @@ namespace dax
 
   dax::cont::DispatcherGenerateTopology< ThresholdTopologyType >
         topoDispatcher(count);
-  topoDispatcher.SetRemoveDuplicatePoints(false);
   topoDispatcher.Invoke(inputDaxGrid,outputDaxGrid);
 
-  //get the reduced output threshold point field
-  dax::cont::ArrayHandle<ValueType> resultHandle;
-  topoDispatcher.CompactPointField(thresholdInputValues,resultHandle);
+  if(outputDaxGrid.GetNumberOfCells() > 0)
+    {
+    std::cout << "outputDaxGrid size: " << outputDaxGrid.GetNumberOfCells() << std::endl;
 
-  //convert the resultHandle to a vtkDataArray
-  vtkDataArray* outputData = make_vtkDataArray(ValueType());
-  outputData->SetName( dataArrayName.c_str() );
-  outputData->SetNumberOfTuples(resultHandle.GetNumberOfValues());
-  outputData->SetNumberOfComponents(1);
+    // //get the reduced output threshold point field
+    dax::cont::ArrayHandle<ValueType> resultHandle;
+    topoDispatcher.CompactPointField(thresholdInputValues,resultHandle);
 
-  //copy the resultHandle into OutputData
-  resultHandle.CopyInto(
-                reinterpret_cast<ValueType*>(outputData->GetVoidPointer(0)));
+    //convert the resultHandle to a vtkDataArray
+    vtkDataArray* outputData = make_vtkDataArray(ValueType());
+    outputData->SetName( dataArrayName.c_str() );
+    outputData->SetNumberOfTuples(resultHandle.GetNumberOfValues());
+    outputData->SetNumberOfComponents(1);
 
-  //convert the outputDaxGrid to a vtkUnstructuredGrid
-  convertPoints(outputDaxGrid,output);
-  convertCells(outputDaxGrid,output);
+    //copy the resultHandle into OutputData
+    resultHandle.CopyInto(
+                  reinterpret_cast<ValueType*>(outputData->GetVoidPointer(0)));
 
-  //Assign the vtkDataArray to the vtkUnstructuredGrid.
-  vtkPointData *pd = output->GetPointData();
-  pd->AddArray(outputData);
+    //convert the outputDaxGrid to a vtkUnstructuredGrid
+    convertPoints(outputDaxGrid,output);
+    convertCells(outputDaxGrid,output);
+
+    //Assign the vtkDataArray to the vtkUnstructuredGrid.
+    vtkPointData *pd = output->GetPointData();
+    pd->AddArray(outputData);
+    }
   }
 }
 
@@ -173,7 +176,7 @@ int vtkAccelThreshold::RequestData(vtkInformation *request,
 
   vtkDataArray *inScalars = this->GetInputArrayToProcess(0,inputVector);
 
-  if(!input)
+  if(!input || !output)
     {
     //fallback to serial threshold if we don't have image data
     return this->Superclass::RequestData(request,inputVector,outputVector);
