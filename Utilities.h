@@ -21,7 +21,7 @@
 #include "pqApplicationCore.h"
 #include "pqProxy.h"
 #include "pqServerManagerModel.h"
-#include "vtkSMProxy.h"
+#include "vtkSMSourceProxy.h"
 
 #include <QFileInfo>
 
@@ -77,18 +77,18 @@ inline bool annotateDataProducer(pqProxy* pqproxy, const char* filename)
 }
 
 //---------------------------------------------------------------------------
-// Check if the proxy is a data producer.
-inline bool isDataProducer(vtkSMProxy* proxy)
-{
-  return proxy &&
-      proxy->HasAnnotation("TomViz.Type") &&
-      (QString("DataSource") == proxy->GetAnnotation("TomViz.Type"));
-}
-
-inline bool isDataProducer(pqProxy* pqproxy)
-{
-  return isDataProducer(convert(pqproxy));
-}
+//// Check if the proxy is a data producer.
+//inline bool isDataProducer(vtkSMProxy* proxy)
+//{
+//  return proxy &&
+//      proxy->HasAnnotation("TomViz.Type") &&
+//      (QString("DataSource") == proxy->GetAnnotation("TomViz.Type"));
+//}
+//
+//inline bool isDataProducer(pqProxy* pqproxy)
+//{
+//  return isDataProducer(convert(pqproxy));
+//}
 
 //---------------------------------------------------------------------------
 // Returns the TomViz label for a proxy, if any, otherwise simply returns the

@@ -18,18 +18,15 @@
 
 #include <QObject>
 #include <QPointer>
-#include "vtkWeakPointer.h" // needed for vtkWeakPointer.
-#include "vtkSMSourceProxy.h"
+#include "DataSource.h"
 #include "Module.h"
 
 class pqView;
 class vtkSMSessionProxyManager;
-class vtkSMSourceProxy;
 class vtkSMViewProxy;
 
 namespace TEM
 {
-class Module;
 
 /// ActiveObjects keeps track of active objects in TomViz.
 /// This is similar to pqActiveObjects in ParaView, however tracks objects
@@ -48,7 +45,7 @@ public:
   vtkSMViewProxy* activeView() const;
 
   /// Returns the active data source.
-  vtkSMSourceProxy* activeDataSource() const
+  DataSource* activeDataSource() const
     { return this->ActiveDataSource; }
 
   /// Returns the active module.
@@ -65,7 +62,7 @@ public slots:
   void setActiveView(vtkSMViewProxy*);
 
   /// Set the active data source.
-  void setActiveDataSource(vtkSMSourceProxy* source);
+  void setActiveDataSource(DataSource* source);
 
   /// Set the active module.
   void setActiveModule(Module* module);
@@ -75,7 +72,7 @@ signals:
   void viewChanged(vtkSMViewProxy*);
 
   /// fired whenever the active data source changes.
-  void dataSourceChanged(vtkSMSourceProxy*);
+  void dataSourceChanged(DataSource*);
 
   /// fired whenever the active module changes.
   void moduleChanged(Module*);
@@ -87,7 +84,7 @@ protected:
   ActiveObjects();
   virtual ~ActiveObjects();
 
-  vtkWeakPointer<vtkSMSourceProxy> ActiveDataSource;
+  QPointer<DataSource> ActiveDataSource;
   void* VoidActiveDataSource;
 
   QPointer<Module> ActiveModule;

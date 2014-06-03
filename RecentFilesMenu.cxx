@@ -15,12 +15,12 @@
 ******************************************************************************/
 #include "RecentFilesMenu.h"
 
+#include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "pqPipelineSource.h"
 #include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSMParaViewPipelineController.h"
-#include "vtkSMSourceProxy.h"
-#include "pqPipelineSource.h"
 
 namespace TEM
 {
@@ -47,10 +47,10 @@ pqPipelineSource* RecentFilesMenu::createReader(
     readerGroup, readerName, files, server);
   if (reader)
     {
-    vtkSMSourceProxy* dataSource = LoadDataReaction::createDataSource(reader);
+    DataSource* dataSource = LoadDataReaction::createDataSource(reader);
     controller->UnRegisterProxy(reader->getProxy());
     reader = NULL;
-    return TEM::convert<pqPipelineSource*>(dataSource);
+    return TEM::convert<pqPipelineSource*>(dataSource->producer());
     }
   return NULL;
 }

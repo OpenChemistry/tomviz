@@ -54,8 +54,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
-    SIGNAL(dataSourceChanged(vtkSMSourceProxy*)),
-    SLOT(setDataSource(vtkSMSourceProxy*)));
+    SIGNAL(dataSourceChanged(DataSource*)),
+    SLOT(setDataSource(DataSource*)));
 
   // connect quit.
   pqApplicationCore::instance()->connect(

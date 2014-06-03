@@ -44,7 +44,7 @@
    </widget>
    <widget class="QMenu" name="menuModules">
     <property name="title">
-     <string>Modules</string>
+     <string>Visualization Modules</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -54,7 +54,13 @@
     <addaction name="actionPythonConsole"/>
     <addaction name="actionMacros"/>
    </widget>
+   <widget class="QMenu" name="menuOperations">
+    <property name="title">
+     <string>Data Operators</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuOperations"/>
    <addaction name="menuModules"/>
    <addaction name="menuTools"/>
   </widget>

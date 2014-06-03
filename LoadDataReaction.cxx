@@ -16,6 +16,7 @@
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
+#include "DataSource.h"
 #include "ModuleManager.h"
 #include "pqLoadDataReaction.h"
 #include "pqPipelineSource.h"
@@ -56,60 +57,28 @@ void LoadDataReaction::onTriggered()
   // around. We do this magic.
   foreach (pqPipelineSource* reader, readers)
     {
-    vtkSMSourceProxy* dataSource = this->createDataSource(reader);
+    DataSource* dataSource = this->createDataSource(reader);
     Q_ASSERT(dataSource);
-
     controller->UnRegisterProxy(reader->getProxy());
-    // reader is dangling at this point.
     }
   readers.clear();
 }
 
 //-----------------------------------------------------------------------------
-vtkSMSourceProxy* LoadDataReaction::createDataSource(pqPipelineSource* reader)
+DataSource* LoadDataReaction::createDataSource(pqPipelineSource* reader)
 {
-  Q_ASSERT(reader);
-
-  // update the reader.
-  reader->updatePipeline();
-
-  vtkSMProxy* readerProxy = TEM::convert(reader);
-  vtkAlgorithm* vtkalgorithm = vtkAlgorithm::SafeDownCast(
-    readerProxy->GetClientSideObject());
-  Q_ASSERT(vtkalgorithm);
-
-  vtkNew<vtkSMParaViewPipelineController> controller;
-  vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
-  Q_ASSERT(pxm);
-
-  vtkSmartPointer<vtkSMProxy> source;
-  source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-  Q_ASSERT(source != NULL);
-  Q_ASSERT(vtkSMSourceProxy::SafeDownCast(source));
-
-  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-    source->GetClientSideObject());
-  Q_ASSERT(tp);
-  tp->SetOutput(vtkalgorithm->GetOutputDataObject(0));
-
-  // We add an annotation to the proxy so that it'll be easier for code to
-  // locate registered pipeline proxies that are being treated as data sources.
-  TEM::annotateDataProducer(source,
-    vtkSMPropertyHelper(readerProxy,
-      vtkSMCoreUtilities::GetFileNameProperty(readerProxy)).GetAsString());
-
-  controller->RegisterPipelineProxy(source);
-
-  vtkSMSourceProxy* dataSource = vtkSMSourceProxy::SafeDownCast(source);
-
+  DataSource* dataSource = new DataSource(
+    vtkSMSourceProxy::SafeDownCast(reader->getProxy()));
   // do whatever we need to do with a new data source.
   LoadDataReaction::dataSourceAdded(dataSource);
   return dataSource;
 }
 
 //-----------------------------------------------------------------------------
-void LoadDataReaction::dataSourceAdded(vtkSMSourceProxy* dataSource)
+void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
 {
+  ModuleManager::instance().addDataSource(dataSource);
+
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
   // Create an outline module for the source in the active view.
   if (Module* module = ModuleManager::instance().createAndAddModule(

@@ -24,6 +24,7 @@ class vtkSMViewProxy;
 
 namespace TEM
 {
+class DataSource;
 class Module;
 
 /// Singleton akin to ProxyManager, but to keep track (and
@@ -41,7 +42,7 @@ public:
   /// the give view. If view is NULL, all modules for the dataSource will be
   /// returned.
   template <class T>
-  QList<T> findModules(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+  QList<T> findModules(DataSource* dataSource, vtkSMViewProxy* view)
     {
     QList<T> modulesT;
     QList<Module*> modules = this->findModulesGeneric(dataSource, view);
@@ -64,12 +65,19 @@ public slots:
 
   /// Creates and add a new module.
   Module* createAndAddModule(
-    const QString& type, vtkSMSourceProxy* dataSource,
+    const QString& type, DataSource* dataSource,
     vtkSMViewProxy* view);
+
+  /// Register/Unregister data sources with the ModuleManager.
+  void addDataSource(DataSource*);
+  void removeDataSource(DataSource*);
 
 signals:
   void moduleAdded(Module*);
   void moduleRemoved(Module*);
+
+  void dataSourceAdded(DataSource*);
+  void dataSourceRemoved(DataSource*);
 
 private:
   Q_DISABLE_COPY(ModuleManager)
@@ -77,7 +85,7 @@ private:
   ~ModuleManager();
 
   QList<Module*> findModulesGeneric(
-    vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
+    DataSource* dataSource, vtkSMViewProxy* view);
 
   class MMInternals;
   QScopedPointer<MMInternals> Internals;

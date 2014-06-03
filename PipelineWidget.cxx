@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "PipelineWidget.h"
 
+#include "DataSource.h"
 #include "ActiveObjects.h"
 #include "Module.h"
 #include "ModuleManager.h"
@@ -37,13 +38,13 @@ static const int MODULE_COLUMN = 1;
 class PipelineWidget::PWInternals
 {
 public:
-  typedef QMap<vtkSMSourceProxy*, QTreeWidgetItem*> DataProducerItemsMap;
+  typedef QMap<DataSource*, QTreeWidgetItem*> DataProducerItemsMap;
   DataProducerItemsMap DataProducerItems;
 
   typedef QMap<Module*, QTreeWidgetItem*> ModuleItemsMap;
   ModuleItemsMap ModuleItems;
 
-  vtkSMSourceProxy* dataProducer(QTreeWidgetItem* item) const
+  DataSource* dataProducer(QTreeWidgetItem* item) const
     {
     for (DataProducerItemsMap::const_iterator iter = this->DataProducerItems.begin();
          iter != this->DataProducerItems.end(); ++iter)
@@ -75,17 +76,10 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
    : Superclass(parentObject),
      Internals(new PipelineWidget::PWInternals())
 {
-  // track registration of new proxies to update the widget.
-  pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
-  this->connect(smmodel, SIGNAL(sourceAdded(pqPipelineSource*)),
-                SLOT(sourceAdded(pqPipelineSource*)));
-  this->connect(smmodel, SIGNAL(sourceRemoved(pqPipelineSource*)),
-                SLOT(sourceRemoved(pqPipelineSource*)));
-
   // track selection to update ActiveObjects.
   this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(vtkSMSourceProxy*)),
-                SLOT(setCurrent(vtkSMSourceProxy*)));
+                SIGNAL(dataSourceChanged(DataSource*)),
+                SLOT(setCurrent(DataSource*)));
   this->connect(&ActiveObjects::instance(), SIGNAL(moduleChanged(Module*)),
                 SLOT(setCurrent(Module*)));
   this->connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
@@ -107,6 +101,11 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
   this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
                 SLOT(moduleRemoved(Module*)));
 
+  this->connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
+                SLOT(dataSourceAdded(DataSource*)));
+  this->connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
+                SLOT(dataSourceRemoved(DataSource*)));
+
   this->header()->setStretchLastSection(true);
 }
 
@@ -117,50 +116,32 @@ PipelineWidget::~PipelineWidget()
 }
 
 //-----------------------------------------------------------------------------
-void PipelineWidget::sourceAdded(pqPipelineSource* source)
+void PipelineWidget::dataSourceAdded(DataSource* datasource)
 {
-  if (TEM::isDataProducer(source))
-    {
-    this->addDataSource(source->getSourceProxy());
-    }
-}
-
-//-----------------------------------------------------------------------------
-void PipelineWidget::sourceRemoved(pqPipelineSource* source)
-{
-  if (TEM::isDataProducer(source))
-    {
-    this->removeDataSource(source->getSourceProxy());
-    }
-}
-
-//-----------------------------------------------------------------------------
-void PipelineWidget::addDataSource(vtkSMSourceProxy* producer)
-{
-  Q_ASSERT(this->Internals->DataProducerItems.contains(producer) == false);
+  Q_ASSERT(this->Internals->DataProducerItems.contains(datasource) == false);
 
   QTreeWidgetItem* item = new QTreeWidgetItem();
-  item->setText(MODULE_COLUMN, TEM::label(producer));
+  item->setText(MODULE_COLUMN, TEM::label(datasource->producer()));
   item->setIcon(MODULE_COLUMN, QIcon(":/pqWidgets/Icons/pqInspect22.png"));
   item->setIcon(EYE_COLUMN, QIcon());
   item->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
   this->addTopLevelItem(item);
 
-  this->Internals->DataProducerItems[producer] = item;
+  this->Internals->DataProducerItems[datasource] = item;
 }
 
 //-----------------------------------------------------------------------------
-void PipelineWidget::removeDataSource(vtkSMSourceProxy* producer)
+void PipelineWidget::dataSourceRemoved(DataSource* datasource)
 {
-  if (this->Internals->DataProducerItems.contains(producer))
+  if (this->Internals->DataProducerItems.contains(datasource))
     {
-    int index = this->indexOfTopLevelItem(this->Internals->DataProducerItems[producer]);
+    int index = this->indexOfTopLevelItem(this->Internals->DataProducerItems[datasource]);
     Q_ASSERT(index >= 0);
     QTreeWidgetItem* item = this->takeTopLevelItem(index);
-    Q_ASSERT(item == this->Internals->DataProducerItems[producer]);
+    Q_ASSERT(item == this->Internals->DataProducerItems[datasource]);
     delete item;
 
-    this->Internals->DataProducerItems.remove(producer);
+    this->Internals->DataProducerItems.remove(datasource);
     }
 }
 
@@ -169,8 +150,8 @@ void PipelineWidget::moduleAdded(Module* module)
 {
   Q_ASSERT(module);
 
-  vtkSMSourceProxy* dataSource = module->dataSource();
-  Q_ASSERT(TEM::isDataProducer(dataSource));
+  DataSource* dataSource = module->dataSource();
+  Q_ASSERT(dataSource);
   Q_ASSERT(this->Internals->DataProducerItems.contains(dataSource));
 
   QTreeWidgetItem* parentItem = this->Internals->DataProducerItems[dataSource];
@@ -191,8 +172,8 @@ void PipelineWidget::moduleRemoved(Module* module)
 {
   Q_ASSERT(module);
 
-  vtkSMSourceProxy* dataSource = module->dataSource();
-  Q_ASSERT(TEM::isDataProducer(dataSource));
+  DataSource* dataSource = module->dataSource();
+  Q_ASSERT(dataSource);
   Q_ASSERT(this->Internals->DataProducerItems.contains(dataSource));
   Q_ASSERT(this->Internals->ModuleItems.contains(module));
 
@@ -238,13 +219,13 @@ void PipelineWidget::currentItemChanged(QTreeWidgetItem* item)
   else
     {
     // selected item is a producer.
-    vtkSMSourceProxy* dataProducer = this->Internals->dataProducer(item);
+    DataSource* dataProducer = this->Internals->dataProducer(item);
     ActiveObjects::instance().setActiveDataSource(dataProducer);
     }
 }
 
 //-----------------------------------------------------------------------------
-void PipelineWidget::setCurrent(vtkSMSourceProxy* source)
+void PipelineWidget::setCurrent(DataSource* source)
 {
   if (QTreeWidgetItem* item = this->Internals->DataProducerItems.value(source, NULL))
     {

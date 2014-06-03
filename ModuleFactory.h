@@ -18,12 +18,11 @@
 
 #include <QObject>
 
-class vtkSMSourceProxy;
 class vtkSMViewProxy;
 
 namespace TEM
 {
-
+class DataSource;
 class Module;
 
 class ModuleFactory
@@ -33,11 +32,11 @@ public:
   /// Returns a list of module types that can be created for the data source
   /// in the provided view.
   static QList<QString> moduleTypes(
-    vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
+    DataSource* dataSource, vtkSMViewProxy* view);
 
   /// Creates a module of the given type to show the dataSource in the view.
-  static Module* createModule(const QString& type, vtkSMSourceProxy* dataSource,
-                              vtkSMViewProxy* view);
+  static Module* createModule(
+    const QString& type, DataSource* dataSource, vtkSMViewProxy* view);
 
 private:
   ModuleFactory();

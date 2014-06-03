@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleVolume.h"
 
+#include "DataSource.h"
 #include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
@@ -46,7 +47,7 @@ QIcon ModuleVolume::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleVolume::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+bool ModuleVolume::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
@@ -55,7 +56,7 @@ bool ModuleVolume::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm = dataSource->producer()->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -64,7 +65,7 @@ bool ModuleVolume::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view
   this->PassThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->PassThrough);
   controller->PreInitializeProxy(this->PassThrough);
-  vtkSMPropertyHelper(this->PassThrough, "Input").Set(dataSource);
+  vtkSMPropertyHelper(this->PassThrough, "Input").Set(dataSource->producer());
   controller->PostInitializeProxy(this->PassThrough);
   controller->RegisterPipelineProxy(this->PassThrough);
 

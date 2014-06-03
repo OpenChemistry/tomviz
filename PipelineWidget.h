@@ -25,7 +25,7 @@ class vtkSMViewProxy;
 
 namespace TEM
 {
-
+class DataSource;
 class Module;
 
 /// PipelineWidget is a QTreeWidget to show the visualization "Pipeline" in TomViz.
@@ -45,15 +45,15 @@ public:
 private slots:
   /// Slots connected to pqServerManagerModel to monitor pipeline proxies
   /// being registered/unregistered.
-  void sourceAdded(pqPipelineSource*);
-  void sourceRemoved(pqPipelineSource*);
+  void dataSourceAdded(DataSource* producer);
+  void dataSourceRemoved(DataSource* producer);
 
   /// Slots connected to ModuleManager to monitor modules.
   void moduleAdded(Module*);
   void moduleRemoved(Module*);
 
   /// Called when the ActiveObjects' active data source changes.
-  void setCurrent(vtkSMSourceProxy*);
+  void setCurrent(DataSource*);
 
   /// Called when the ActiveObjects's active module changes.
   void setCurrent(Module* module);
@@ -66,11 +66,6 @@ private slots:
 
   /// called when the active view changes.
   void setActiveView(vtkSMViewProxy* view);
-
-private:
-  /// Called by sourceAdded/sourceRemoved when a data producer is detected.
-  void addDataSource(vtkSMSourceProxy* producer);
-  void removeDataSource(vtkSMSourceProxy* producer);
 
 private:
   Q_DISABLE_COPY(PipelineWidget)

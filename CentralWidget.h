@@ -19,6 +19,7 @@
 #include <QScopedPointer>
 #include <QWidget>
 #include <QMap>
+#include <QPointer>
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
 #include <vtkSmartPointer.h>
@@ -32,7 +33,7 @@ class vtkTable;
 
 namespace TEM
 {
-
+class DataSource;
 class HistogramWorker;
 class vtkChartHistogram;
 
@@ -52,7 +53,7 @@ public:
 public slots:
   /// Set the data source to from which the data is "histogrammed" and shown
   /// in the histogram view.
-  void setDataSource(vtkSMSourceProxy*);
+  void setDataSource(DataSource*);
 
 private slots:
   void histogramReady();
@@ -68,7 +69,7 @@ private:
   vtkNew<vtkContextView> Histogram;
   vtkNew<vtkChartHistogram> Chart;
   vtkNew<vtkEventQtSlotConnect> EventLink;
-  vtkWeakPointer<vtkSMSourceProxy> DataSource;
+  QPointer<DataSource> ADataSource;
   HistogramWorker *Worker;
   QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
 };

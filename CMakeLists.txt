@@ -34,6 +34,8 @@ set(SOURCES
   Behaviors.h
   CentralWidget.cxx
   CentralWidget.h
+  DataSource.cxx
+  DataSource.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   main.cxx

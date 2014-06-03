@@ -21,6 +21,7 @@
 namespace TEM
 {
 
+class DataSource;
 class Module;
 
 /// The main window for the TomViz application.
