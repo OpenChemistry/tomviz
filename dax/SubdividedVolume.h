@@ -83,7 +83,7 @@ private:
   dax::Extent3 Extent;
 
   std::vector< dax::cont::UniformGrid< > > SubGrids;
-  std::vector< dax::Id3 > SubGridsIJKOffset; //offsets
+  std::vector< dax::Id3 > SubGridCellIJKOffset; //offsets
 
   //store PerSubGridLowHighs as 2 floats, as that is the maximum data size
   //that we support

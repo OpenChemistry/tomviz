@@ -38,7 +38,7 @@ namespace accel
 
 //----------------------------------------------------------------------------
 template< typename ImageDataType, typename LoggerType >
-SubdividedVolume::SubdividedVolume( std::size_t subGridsPerDim,
+SubdividedVolume::SubdividedVolume( std::size_t desiredSubGridsPerDim,
                                     ImageDataType* data,
                                     LoggerType& logger )
 {
@@ -53,65 +53,69 @@ SubdividedVolume::SubdividedVolume( std::size_t subGridsPerDim,
   this->Extent  = dax::Extent3(dax::make_Id3(vtk_extent[0],vtk_extent[2],vtk_extent[4]),
                                dax::make_Id3(vtk_extent[1],vtk_extent[3],vtk_extent[5]));
 
-  dax::Id3 size = dax::extentDimensions(this->Extent);
+  const dax::Id3 cellDims = dax::extentCellDimensions(this->Extent);
 
-  dax::Id3 size_per_sub_grid, remainder;
-  for(std::size_t dim=0; dim < 3; ++dim)
+  dax::Id3 subGridsPerDim;
+  for(std::size_t i=0; i < 3; ++i)
     {
-    size_per_sub_grid[dim] = size[dim] / subGridsPerDim;
-    remainder[dim] = size[dim] % subGridsPerDim;
+    subGridsPerDim[i] =( (desiredSubGridsPerDim < cellDims[i]) ? desiredSubGridsPerDim : 1);
     }
 
-  dax::Id3 my_remainder;
-
-  for(std::size_t k=0; k < subGridsPerDim; ++k)
+  dax::Id3 cellsPerSubGrid = cellDims / subGridsPerDim;
+  dax::Id3 remainderCellsPerSubGrids;
+  for(std::size_t i=0; i < 3; ++i)
     {
-    if(k == subGridsPerDim-1)
-      { my_remainder[2]=remainder[2]; }
-    else { my_remainder[2]=0; }
+    remainderCellsPerSubGrids[i] = cellDims[i] % subGridsPerDim[i];
+    }
 
-    for(std::size_t j=0; j < subGridsPerDim; ++j)
+
+  for(std::size_t k=0; k < subGridsPerDim[2]; ++k)
+    {
+    for(std::size_t j=0; j < subGridsPerDim[1]; ++j)
       {
-      if(j == subGridsPerDim-1)
-        { my_remainder[1]=remainder[1]; }
-      else { my_remainder[1]=0; }
-
-      for(std::size_t i=0; i < subGridsPerDim; ++i)
+      for(std::size_t i=0; i < subGridsPerDim[0]; ++i)
         {
-        if(i == subGridsPerDim-1)
-          { my_remainder[0]=remainder[0]; }
-        else { my_remainder[0]=0; }
+        const dax::Id3 ijk(i,j,k);
+
+        //calculate out the remainder for this grid, and the offsets for
+        //this subgrid at the same time
+        dax::Id3 current_remainder(0,0,0);
+        dax::Id3 subGridIJKOffset(0,0,0);
+        for(std::size_t f=0; f < 3; ++f)
+          {
+          if(ijk[f] > 0)
+            {
+            subGridIJKOffset[f] = ijk[f] * cellsPerSubGrid[f];
+            }
+          if(ijk[f] == (subGridsPerDim[f]-1))
+            {
+            current_remainder[f] = remainderCellsPerSubGrids[f];
+            }
+          }
 
         dax::cont::UniformGrid< > subGrid;
         subGrid.SetSpacing( this->Spacing ); //same as the full grid
 
         //calculate the origin
-        dax::Vector3 offset(i * size_per_sub_grid[0],
-                            j * size_per_sub_grid[1],
-                            k * size_per_sub_grid[2]);
-        dax::Vector3 sub_origin = this->Origin + ( offset * this->Spacing);
+        const dax::Vector3 offset(
+                dax::make_Vector3(ijk[0],ijk[1],ijk[2]) * cellsPerSubGrid[0]);
 
-        sub_origin[0] +=  my_remainder[0];
-        sub_origin[1] +=  my_remainder[1];
-        sub_origin[2] +=  my_remainder[2];
+        const dax::Vector3 sub_origin = this->Origin + ( offset * this->Spacing);
         subGrid.SetOrigin( sub_origin );
 
         //calculate out the new extent
         dax::Extent3 sub_extent;
         sub_extent.Min = dax::Id3(0,0,0);
-        sub_extent.Max = (size_per_sub_grid - dax::make_Id3(1,1,1));
-        sub_extent.Max = sub_extent.Max + my_remainder; //account for it being cells
-
+        sub_extent.Max = cellsPerSubGrid + current_remainder;
         subGrid.SetExtent(sub_extent);
 
-        this->SubGrids.push_back(subGrid);
 
-        dax::Id3 worldIJKOffset(i,j,k);
-        worldIJKOffset = (worldIJKOffset * size_per_sub_grid) + my_remainder;
-        this->SubGridsIJKOffset.push_back( worldIJKOffset );
+        this->SubGrids.push_back(subGrid);
+        this->SubGridCellIJKOffset.push_back( subGridIJKOffset );
         }
       }
     }
+
   //now create the rest of the vectors to the same size as the subgrids
   this->PerSubGridLowHighs.resize( this->SubGrids.size() );
   this->PerSubGridValues.resize( this->SubGrids.size() );
@@ -170,7 +174,7 @@ void SubdividedVolume::ComputePerSubGridValues(const IteratorType begin,
   typedef std::vector< dax::cont::UniformGrid< > >::const_iterator gridIt;
 
   std::vector< vtkDataArray* >::iterator subGridValues = this->PerSubGridValues.begin();
-  std::vector< dax::Id3 >::const_iterator ijkSubOffset = this->SubGridsIJKOffset.begin();
+  std::vector< dax::Id3 >::const_iterator ijkSubOffset = this->SubGridCellIJKOffset.begin();
 
   dax::cont::ArrayHandle<ValueType> fullGridValues =
         dax::cont::make_ArrayHandle(begin, std::distance(begin,end) );
