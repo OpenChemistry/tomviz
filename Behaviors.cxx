@@ -23,6 +23,7 @@
 #include "pqQtMessageHandlerBehavior.h"
 #include "pqStandardPropertyWidgetInterface.h"
 #include "pqStandardViewFrameActionsImplementation.h"
+#include "pqViewStreamingBehavior.h"
 #include "ProgressBehavior.h"
 
 #include <QMainWindow>
@@ -46,10 +47,10 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   // Load plugins distributed with application.
   pqApplicationCore::instance()->loadDistributedPlugins();
 
-
   new pqQtMessageHandlerBehavior(this);
   new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
+  new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
   new TEM::ProgressBehavior(mainWindow);
 

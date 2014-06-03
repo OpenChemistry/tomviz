@@ -29,8 +29,6 @@
                             default_values="90"
                             name="ContourValue"
                             number_of_elements="1">
-      <DoubleRangeDomain min="0"
-                           name="range" />
       </DoubleVectorProperty>
 
       <StringVectorProperty command="SetInputArrayToProcess"
@@ -95,8 +93,6 @@
                             default_values="90"
                             name="ContourValue"
                             number_of_elements="1">
-      <DoubleRangeDomain min="0"
-                           name="range" />
       </DoubleVectorProperty>
 
       <DoubleVectorProperty command="SetPointSize"
@@ -167,6 +163,9 @@
           <Exception name="Input" />
           <Exception name="Visibility" />
         </ShareProperties>
+        <ExposedProperties>
+          <Property name="ContourValue" />
+        </ExposedProperties>
       </SubProxy>
 
       <RepresentationType subproxy="StreamingThresholdRepresentation"
@@ -181,6 +180,9 @@
           <Exception name="Input" />
           <Exception name="Visibility" />
         </ShareProperties>
+<!--         <ExposedProperties>
+          <Property name="ContourValue" />
+        </ExposedProperties> -->
       </SubProxy>
     </Extension>
 
