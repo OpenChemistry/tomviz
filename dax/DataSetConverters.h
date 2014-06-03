@@ -30,6 +30,7 @@
 #include "vtkUnsignedCharArray.h"
 
 
+#include "vtkSmartPointer.h"
 #include "vtkCellArray.h"
 #include "vtkNew.h"
 #include "vtkPointData.h"
@@ -85,6 +86,13 @@ void convertPoints(GridType& grid, OutputObjectType* output)
             daxPortal.GetIteratorEnd(),
             raw_pts);
   output->SetPoints( points.GetPointer() );
+}
+
+//------------------------------------------------------------------------------
+template<typename GridType, typename OutputObjectType>
+void convertPoints(GridType& grid, vtkSmartPointer<OutputObjectType> output)
+{
+  convertPoints(grid,output.Get());
 }
 
 //------------------------------------------------------------------------------
@@ -161,6 +169,13 @@ void convertCells(GridType& grid, OutputObjectType* output)
     }
 
   setCells(cells.GetPointer(),output,typename GridType::CellTag());
+}
+
+//------------------------------------------------------------------------------
+template<typename GridType, typename OutputObjectType>
+void convertCells(GridType& grid, vtkSmartPointer<OutputObjectType> output)
+{
+  convertCells(grid,output.Get());
 }
 
 
