@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<Plugins>
+  <Plugin name="MatVizStreaming" auto_load="1"/>
+  <Plugin name="MatVizThreshold" auto_load="1"/>
+</Plugins>

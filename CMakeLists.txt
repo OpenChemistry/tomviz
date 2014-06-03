@@ -19,6 +19,9 @@ if(ENABLE_DAX_ACCELERATION)
     dax/ModuleStreamingContour.cxx
     dax/ModuleAccelThreshold.cxx
     )
+  configure_file(dax/plugins.in 
+    ${CMAKE_CURRENT_BINARY_DIR}/.plugins
+    COPYONLY)
 
 endif()
 
