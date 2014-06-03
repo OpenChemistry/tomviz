@@ -1,0 +1,76 @@
+<ServerManagerConfiguration>
+ <ProxyGroup name="filters">
+   <SourceProxy class="vtkAccelThreshold"
+                name="AccelThreshold"
+                label="Threshold">
+     <Documentation
+       long_help="This filter extracts cells that have point or cell scalars in the specified range."
+       short_help="Extract cells that satisfy a threshold criterion.">
+       The MatViz Threshold filter extracts cells with a field that meets a
+       certain criteria. It behaves similarly to the standard Threshold
+       filter but uses Dax's finely threaded parallel algorithms.
+     </Documentation>
+     <InputProperty command="SetInputConnection"
+                    name="Input">
+       <ProxyGroupDomain name="groups">
+         <Group name="sources" />
+         <Group name="filters" />
+       </ProxyGroupDomain>
+       <DataTypeDomain name="input_type">
+         <DataType value="vtkDataSet" />
+       </DataTypeDomain>
+       <InputArrayDomain name="input_array"
+                         number_of_components="1">
+         <RequiredProperties>
+           <Property function="FieldDataSelection"
+                     name="SelectInputScalars" />
+         </RequiredProperties>
+       </InputArrayDomain>
+       <Documentation>This property specifies the input to the Threshold
+       filter.</Documentation>
+     </InputProperty>
+     <StringVectorProperty command="SetInputArrayToProcess"
+                           element_types="0 0 0 0 2"
+                           label="Scalars"
+                           name="SelectInputScalars"
+                           number_of_elements="5">
+       <ArrayListDomain attribute_type="Scalars"
+                        name="array_list">
+         <RequiredProperties>
+           <Property function="Input"
+                     name="Input" />
+         </RequiredProperties>
+       </ArrayListDomain>
+       <FieldDataDomain name="field_list">
+         <RequiredProperties>
+           <Property function="Input"
+                     name="Input" />
+         </RequiredProperties>
+       </FieldDataDomain>
+       <Documentation>The value of this property contains the name of the
+       scalar array from which to perform thresholding.</Documentation>
+     </StringVectorProperty>
+     <DoubleVectorProperty command="ThresholdBetween"
+                           default_values="0 0"
+                           label="Threshold Range"
+                           name="ThresholdBetween"
+                           number_of_elements="2"
+                           panel_widget="double_range">
+       <ArrayRangeDomain name="range">
+         <RequiredProperties>
+           <Property function="Input"
+                     name="Input" />
+           <Property function="ArraySelection"
+                     name="SelectInputScalars" />
+         </RequiredProperties>
+       </ArrayRangeDomain>
+       <Documentation>The values of this property specify the upper and lower
+       bounds of the thresholding operation.</Documentation>
+     </DoubleVectorProperty>
+     <Hints>
+       <Visibility replace_input="2" />
+     </Hints>
+     <!-- End Threshold -->
+   </SourceProxy>
+ </ProxyGroup>
+</ServerManagerConfiguration>

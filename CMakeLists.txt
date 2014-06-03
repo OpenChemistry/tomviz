@@ -14,7 +14,6 @@ if(ENABLE_DAX_ACCELERATION)
   DaxConfigureTBB(REQUIRED)
   set(accel_srcs
       dax/ModuleAccelThreshold.cxx
-      dax/vtkAccelThreshold.cxx
       )
 endif()
 
