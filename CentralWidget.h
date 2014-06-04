@@ -58,6 +58,7 @@ public slots:
 private slots:
   void histogramReady();
   void histogramClicked(vtkObject *caller);
+  void refreshHistogram();
 
 private:
   Q_DISABLE_COPY(CentralWidget)

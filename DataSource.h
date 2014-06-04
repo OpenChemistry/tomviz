@@ -50,6 +50,11 @@ public:
   /// Creates a new clone from this DataSource.
   DataSource* clone() const;
 
+signals:
+  /// This signal is fired to notify the world that the DataSource may have
+  /// new/updated data.
+  void dataChanged();
+
 protected:
   void operate(Operator* op);
 

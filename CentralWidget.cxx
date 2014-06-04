@@ -259,7 +259,15 @@ CentralWidget::~CentralWidget()
 //-----------------------------------------------------------------------------
 void CentralWidget::setDataSource(DataSource* source)
 {
+  if (this->ADataSource)
+    {
+    this->disconnect(this->ADataSource);
+    }
   this->ADataSource = source;
+  if (source)
+    {
+    this->connect(source, SIGNAL(dataChanged()), SLOT(refreshHistogram()));
+    }
 
   // Whenever the data source changes clear the plot, and then populate when
   // ready (or use the cached histogram values.
@@ -306,6 +314,11 @@ void CentralWidget::setDataSource(DataSource* source)
   this->Worker->input = data;
   this->Worker->output = table.Get();
   this->Worker->start();
+}
+
+void CentralWidget::refreshHistogram()
+{
+  this->setDataSource(this->ADataSource);
 }
 
 void CentralWidget::histogramReady()

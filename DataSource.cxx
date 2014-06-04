@@ -136,6 +136,8 @@ void DataSource::operate(Operator* op)
     tp->GetOutputDataObject(0)->Modified();
     this->Internals->Producer->MarkModified(NULL);
     }
+
+  emit this->dataChanged();
 }
 
 }
