@@ -30,10 +30,14 @@ endif()
 set(SOURCES
   ActiveObjects.cxx
   ActiveObjects.h
+  AddExpressionReaction.cxx
+  AddExpressionReaction.h
   Behaviors.cxx
   Behaviors.h
   CentralWidget.cxx
   CentralWidget.h
+  CloneDataReaction.cxx
+  CloneDataReaction.h
   DataSource.cxx
   DataSource.h
   LoadDataReaction.cxx

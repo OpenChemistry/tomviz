@@ -158,8 +158,7 @@ public:
 class vtkHistogramMarker : public vtkPlot
 {
 public:
-  static vtkHistogramMarker * New() { return new vtkHistogramMarker; }
-
+  static vtkHistogramMarker * New();
   double PositionX;
 
   bool Paint(vtkContext2D *painter)
@@ -172,6 +171,7 @@ public:
     return true;
   }
 };
+vtkStandardNewMacro(vtkHistogramMarker);
 
 class vtkChartHistogram : public vtkChartXY
 {
@@ -281,9 +281,10 @@ void CentralWidget::setDataSource(DataSource* source)
       }
     else
       {
-      // Should this ever happen? Do we want to support this?
-      qDebug() << "Image data changed after histogram calculation.";
-      return;
+      // Should this ever happen? Do we want to support this? -- YES!!!
+      //qDebug() << "Image data changed after histogram calculation.";
+      //return;
+      this->HistogramCache.remove(data);
       }
     }
 

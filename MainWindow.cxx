@@ -28,7 +28,9 @@
 #include "pqSaveStateReaction.h"
 
 #include "ActiveObjects.h"
+#include "AddExpressionReaction.h"
 #include "Behaviors.h"
+#include "CloneDataReaction.h"
 #include "LoadDataReaction.h"
 #include "ModuleMenu.h"
 #include "RecentFilesMenu.h"
@@ -70,9 +72,13 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new LoadDataReaction(ui.actionOpen);
 
+  new CloneDataReaction(ui.actionClone);
+  new AddExpressionReaction(ui.actionPython_Expression);
+
   new ModuleMenu(ui.menuModules);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSave);
+
   new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
   new pqSaveAnimationReaction(ui.actionSaveMovie);
 }

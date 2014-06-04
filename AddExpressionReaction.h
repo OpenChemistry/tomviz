@@ -13,44 +13,32 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __LoadDataReaction_h
-#define __LoadDataReaction_h
+#ifndef __TEM_AddExpressionReaction_h
+#define __TEM_AddExpressionReaction_h
 
 #include "pqReaction.h"
-
-class pqPipelineSource;
 
 namespace TEM
 {
 class DataSource;
+class OperatorPython;
 
-/// LoadDataReaction handles the "Load Data" action in TomViz. On trigger,
-/// this will open the data file and necessary subsequent actions, including:
-/// \li make the data source "active".
-///
-class LoadDataReaction : public pqReaction
+class AddExpressionReaction : public pqReaction
 {
-  Q_OBJECT
-
+  Q_OBJECT;
   typedef pqReaction Superclass;
-
 public:
-  LoadDataReaction(QAction* parentAction);
-  virtual ~LoadDataReaction();
+  AddExpressionReaction(QAction* parent);
+  virtual ~AddExpressionReaction();
 
-  /// Create a raw data source from the reader.
-  static DataSource* createDataSource(pqPipelineSource* reader);
-
-  /// Handle creation of a new data source.
-  static void dataSourceAdded(DataSource*);
-
+  static OperatorPython* addExpression(DataSource* source=NULL);
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered();
+  void updateEnableState();
+  void onTriggered() { this->addExpression(); }
 
 private:
-  Q_DISABLE_COPY(LoadDataReaction)
+  Q_DISABLE_COPY(AddExpressionReaction);
 };
-
 }
+
 #endif

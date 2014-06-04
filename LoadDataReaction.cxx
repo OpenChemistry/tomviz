@@ -29,7 +29,6 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkTrivialProducer.h"
-#include "OperatorPython.h"
 
 namespace TEM
 {
@@ -87,9 +86,6 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
     {
     ActiveObjects::instance().setActiveModule(module);
     }
-
-  QSharedPointer<OperatorPython> op(new OperatorPython());
-  dataSource->addOperator(op);
 }
 
 } // end of namespace TEM

@@ -47,6 +47,9 @@ public:
   /// Add/remove operators.
   int addOperator(const QSharedPointer<Operator>& op);
 
+  /// Creates a new clone from this DataSource.
+  DataSource* clone() const;
+
 protected:
   void operate(Operator* op);
 

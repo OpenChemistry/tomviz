@@ -13,44 +13,34 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __LoadDataReaction_h
-#define __LoadDataReaction_h
+#ifndef __TEM_CloneDataReaction_h
+#define __TEM_CloneDataReaction_h
 
 #include "pqReaction.h"
-
-class pqPipelineSource;
 
 namespace TEM
 {
 class DataSource;
 
-/// LoadDataReaction handles the "Load Data" action in TomViz. On trigger,
-/// this will open the data file and necessary subsequent actions, including:
-/// \li make the data source "active".
-///
-class LoadDataReaction : public pqReaction
+class CloneDataReaction : public pqReaction
 {
-  Q_OBJECT
-
+  Q_OBJECT;
   typedef pqReaction Superclass;
-
 public:
-  LoadDataReaction(QAction* parentAction);
-  virtual ~LoadDataReaction();
+  CloneDataReaction(QAction* action);
+  virtual ~CloneDataReaction();
 
-  /// Create a raw data source from the reader.
-  static DataSource* createDataSource(pqPipelineSource* reader);
-
-  /// Handle creation of a new data source.
-  static void dataSourceAdded(DataSource*);
+  static DataSource* clone(DataSource* toClone=NULL);
 
 protected:
   /// Called when the action is triggered.
-  virtual void onTriggered();
+  virtual void onTriggered()
+    { this->clone();}
+  virtual void updateEnableState();
 
 private:
-  Q_DISABLE_COPY(LoadDataReaction)
+  Q_DISABLE_COPY(CloneDataReaction);
 };
-
 }
+
 #endif

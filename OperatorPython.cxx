@@ -33,11 +33,14 @@ OperatorPython::OperatorPython(QObject* parentObject) :
 {
   vtkPythonInterpreter::PrependPythonPath("/home/utkarsh/Kitware/TEMTomography/Python");
   vtkPythonInterpreter::PrependPythonPath("/home/utkarsh/Kitware/ParaView3/ParaViewBin/lib");
+  vtkPythonInterpreter::PrependPythonPath("/Users/utkarsh/Kitware/ParaView3/ParaViewBin/lib/site-packages");
+  vtkPythonInterpreter::PrependPythonPath("/Users/utkarsh/Kitware/ParaView3/ParaViewBin/lib");
+  vtkPythonInterpreter::PrependPythonPath("/Users/utkarsh/Kitware/TEM/matviz/Python");
   vtkPythonInterpreter::PrependPythonPath(
     "/home/utkarsh/Kitware/ParaView3/ParaViewBin/lib/site-packages");
 
-  this->Script = "import numpy as np\n"
-                 "np.cos(scalars, scalars)\n";
+ // this->Script = "import numpy as np\n"
+ //                "np.cos(scalars, scalars)\n";
 }
 
 //-----------------------------------------------------------------------------
@@ -75,6 +78,7 @@ bool OperatorPython::transform(vtkDataObject* data)
   stream <<
     "from paraview.vtk import vtkDataObject\n"
     "from matviz import operator as moperator\n"
+    "import numpy\n"
     "dataObj = vtkDataObject('" << aplus <<"')\n"
     "scalars = moperator.getscalars(dataObj)\n"
     << this->Script.toLatin1().data()  << "\n"

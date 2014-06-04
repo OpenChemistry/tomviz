@@ -58,6 +58,8 @@
     <property name="title">
      <string>Data Operators</string>
     </property>
+    <addaction name="actionClone"/>
+    <addaction name="actionPython_Expression"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuOperations"/>
@@ -213,7 +215,17 @@
   </action>
   <action name="actionSaveMovie">
    <property name="text">
-    <string>Save Movie</string>
+     <string>Save Movie</string>
+   </property>
+  </action>
+  <action name="actionClone">
+   <property name="text">
+    <string>Clone</string>
+   </property>
+  </action>
+  <action name="actionPython_Expression">
+   <property name="text">
+    <string>Python Expression</string>
    </property>
   </action>
  </widget>

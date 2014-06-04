@@ -65,7 +65,8 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
   vtkDataObject* data = vtkalgorithm->GetOutputDataObject(0);
   vtkDataObject* clone = data->NewInstance();
   clone->ShallowCopy(data);
-  data->ReleaseData();
+  //data->ReleaseData();  FIXME: how it this supposed to work? I get errors on
+  //attempting to re-execute the reader pipeline in clone().
 
   vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
     source->GetClientSideObject());
@@ -94,6 +95,20 @@ DataSource::~DataSource()
 }
 
 //-----------------------------------------------------------------------------
+DataSource* DataSource::clone() const
+{
+ // vtkAlgorithm::SafeDownCast(this->Internals->OriginalDataSource->GetClientSideObject())->Modified();
+  DataSource* newClone = new DataSource(this->Internals->OriginalDataSource);
+  // now, clone the operators.
+  foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+    {
+    newClone->addOperator(op);
+    }
+  return newClone;
+}
+
+
+//-----------------------------------------------------------------------------
 vtkSMSourceProxy* DataSource::producer() const
 {
   return this->Internals->Producer;
@@ -118,6 +133,7 @@ void DataSource::operate(Operator* op)
   if (op->transform(tp->GetOutputDataObject(0)))
     {
     tp->Modified();
+    tp->GetOutputDataObject(0)->Modified();
     this->Internals->Producer->MarkModified(NULL);
     }
 }
