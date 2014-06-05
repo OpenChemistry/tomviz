@@ -29,7 +29,9 @@ public:
   OperatorPython(QObject* parent=NULL);
   virtual ~OperatorPython();
 
-  virtual QString label() const { return "Python Operator"; }
+  virtual QString label() const { return this->Label; }
+  void setLabel(const QString& txt)
+    { this->Label = txt; }
 
   /// Returns an icon to use for this operator.
   virtual QIcon icon() const;
@@ -37,13 +39,15 @@ public:
   /// Method to transform a dataset in-place.
   virtual bool transform(vtkDataObject* data);
 
-  void setScript(const QString& str) { this->Script = str; }
+  void setScript(const QString& str);
+  const QString& script() const { return this->Script; }
 
 private:
   Q_DISABLE_COPY(OperatorPython);
 
   class OPInternals;
   const QScopedPointer<OPInternals> Internals;
+  QString Label;
   QString Script;
 };
 

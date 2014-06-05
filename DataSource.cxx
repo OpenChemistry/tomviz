@@ -44,13 +44,7 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
   Internals(new DataSource::DSInternals())
 {
   Q_ASSERT(dataSource);
-
   this->Internals->OriginalDataSource = dataSource;
-
-  dataSource->UpdatePipeline();
-  vtkAlgorithm* vtkalgorithm = vtkAlgorithm::SafeDownCast(
-    dataSource->GetClientSideObject());
-  Q_ASSERT(vtkalgorithm);
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
@@ -61,27 +55,15 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
   Q_ASSERT(source != NULL);
   Q_ASSERT(vtkSMSourceProxy::SafeDownCast(source));
 
-  // Create a clone and release the reader data.
-  vtkDataObject* data = vtkalgorithm->GetOutputDataObject(0);
-  vtkDataObject* clone = data->NewInstance();
-  clone->ShallowCopy(data);
-  //data->ReleaseData();  FIXME: how it this supposed to work? I get errors on
-  //attempting to re-execute the reader pipeline in clone().
-
-  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-    source->GetClientSideObject());
-  Q_ASSERT(tp);
-  tp->SetOutput(clone);
-  clone->FastDelete();
-
   // We add an annotation to the proxy so that it'll be easier for code to
   // locate registered pipeline proxies that are being treated as data sources.
   TEM::annotateDataProducer(source,
     vtkSMPropertyHelper(dataSource,
       vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString());
   controller->RegisterPipelineProxy(source);
-
   this->Internals->Producer = vtkSMSourceProxy::SafeDownCast(source);
+
+  this->resetData();
 }
 
 //-----------------------------------------------------------------------------
@@ -118,6 +100,9 @@ int DataSource::addOperator(const QSharedPointer<Operator>& op)
 {
   int index = this->Internals->Operators.count();
   this->Internals->Operators.push_back(op);
+  this->connect(op.data(), SIGNAL(transformModified()),
+    SLOT(operatorTransformModified()));
+  emit this->operatorAdded(op.data());
   this->operate(op.data());
   return index;
 }
@@ -137,6 +122,54 @@ void DataSource::operate(Operator* op)
     this->Internals->Producer->MarkModified(NULL);
     }
 
+  emit this->dataChanged();
+}
+
+//-----------------------------------------------------------------------------
+const QList<QSharedPointer<Operator> >& DataSource::operators() const
+{
+  return this->Internals->Operators;
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::resetData()
+{
+  vtkSMSourceProxy* dataSource = this->Internals->OriginalDataSource;
+  Q_ASSERT(dataSource);
+
+  dataSource->UpdatePipeline();
+  vtkAlgorithm* vtkalgorithm = vtkAlgorithm::SafeDownCast(
+    dataSource->GetClientSideObject());
+  Q_ASSERT(vtkalgorithm);
+
+  vtkSMSourceProxy* source = this->Internals->Producer;
+  Q_ASSERT(source != NULL);
+
+  // Create a clone and release the reader data.
+  vtkDataObject* data = vtkalgorithm->GetOutputDataObject(0);
+  vtkDataObject* clone = data->NewInstance();
+  clone->DeepCopy(data);
+  //data->ReleaseData();  FIXME: how it this supposed to work? I get errors on
+  //attempting to re-execute the reader pipeline in clone().
+
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    source->GetClientSideObject());
+  Q_ASSERT(tp);
+  tp->SetOutput(clone);
+  clone->FastDelete();
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::operatorTransformModified()
+{
+  this->resetData();
+
+  bool prev = this->blockSignals(true);
+  foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+    {
+    this->operate(op.data());
+    }
+  this->blockSignals(prev);
   emit this->dataChanged();
 }
 

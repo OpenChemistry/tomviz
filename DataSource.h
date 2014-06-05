@@ -44,6 +44,8 @@ public:
   /// if new DataOperators are added to the source.
   vtkSMSourceProxy* producer() const;
 
+  const QList<QSharedPointer<Operator> >& operators() const;
+
   /// Add/remove operators.
   int addOperator(const QSharedPointer<Operator>& op);
 
@@ -55,8 +57,12 @@ signals:
   /// new/updated data.
   void dataChanged();
 
+  void operatorAdded(Operator*);
 protected:
   void operate(Operator* op);
+  void resetData();
+protected slots:
+  void operatorTransformModified();
 
 private:
   Q_DISABLE_COPY(DataSource);

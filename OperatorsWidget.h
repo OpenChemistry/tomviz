@@ -13,41 +13,37 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_Operator_h
-#define __TEM_Operator_h
+#ifndef __TEM_OperatorsWidget_h
+#define __TEM_OperatorsWidget_h
 
-#include <QObject>
-#include <QIcon>
-
-class vtkDataObject;
+#include <QTreeWidget>
+#include <QScopedPointer>
 
 namespace TEM
 {
+class DataSource;
+class Operator;
 
-class Operator : public QObject
+class OperatorsWidget : public QTreeWidget
 {
   Q_OBJECT;
-  typedef QObject Superclass;
+  typedef QTreeWidget Superclass;
 public:
-  Operator(QObject* parent=NULL);
-  virtual ~Operator();
+  OperatorsWidget(QWidget* parent=0);
+  virtual ~OperatorsWidget();
 
-  /// Returns a label for this operator.
-  virtual QString label() const = 0;
+private slots:
+  void operatorAdded(Operator* op);
+//  void operatorRemoved(Operator* op);
 
-  /// Returns an icon to use for this operator.
-  virtual QIcon icon() const = 0;
+  /// called when the current data source changes.
+  void setDataSource(DataSource*);
 
-  /// Method to transform a dataset in-place.
-  virtual bool transform(vtkDataObject* data)=0;
-
-signals:
-  /// fire this signal with the operation is updated/modified
-  /// implying that the data needs to be reprocessed.
-  void transformModified();
-
+  void itemDoubleClicked(QTreeWidgetItem*);
 private:
-  Q_DISABLE_COPY(Operator);
+  Q_DISABLE_COPY(OperatorsWidget);
+  class OWInternals;
+  QScopedPointer<OWInternals> Internals;
 };
 
 }

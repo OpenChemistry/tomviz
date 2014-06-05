@@ -29,7 +29,8 @@ public:
 //-----------------------------------------------------------------------------
 OperatorPython::OperatorPython(QObject* parentObject) :
   Superclass(parentObject),
-  Internals(new OperatorPython::OPInternals())
+  Internals(new OperatorPython::OPInternals()),
+  Label("Python Operator")
 {
   vtkPythonInterpreter::PrependPythonPath("/home/utkarsh/Kitware/TEMTomography/Python");
   vtkPythonInterpreter::PrependPythonPath("/home/utkarsh/Kitware/ParaView3/ParaViewBin/lib");
@@ -39,6 +40,12 @@ OperatorPython::OperatorPython(QObject* parentObject) :
   vtkPythonInterpreter::PrependPythonPath(
     "/home/utkarsh/Kitware/ParaView3/ParaViewBin/lib/site-packages");
 
+  vtkPythonInterpreter::PrependPythonPath(
+    "/Users/utkarsh/Kitware/builds/ParaView/lib/site-packages");
+  vtkPythonInterpreter::PrependPythonPath(
+    "/Users/utkarsh/Kitware/builds/ParaView/lib");
+  vtkPythonInterpreter::PrependPythonPath(
+    "/Users/utkarsh/Kitware/sources/temtomography/Python");
  // this->Script = "import numpy as np\n"
  //                "np.cos(scalars, scalars)\n";
 }
@@ -52,6 +59,16 @@ OperatorPython::~OperatorPython()
 QIcon OperatorPython::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqProgrammableFilter24.png");
+}
+
+//-----------------------------------------------------------------------------
+void OperatorPython::setScript(const QString& str)
+{
+  if (this->Script != str)
+    {
+    this->Script = str;
+    emit this->transformModified();
+    }
 }
 
 //-----------------------------------------------------------------------------

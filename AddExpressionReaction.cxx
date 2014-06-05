@@ -19,8 +19,8 @@
 #include "DataSource.h"
 #include "OperatorPython.h"
 #include "pqCoreUtilities.h"
+#include "EditPythonOperatorDialog.h"
 
-#include <QInputDialog>
 
 namespace TEM
 {
@@ -54,16 +54,10 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     return NULL;
     }
 
-  QString exp = QInputDialog::getText(
-    pqCoreUtilities::mainWidget(),
-    tr("Enter Expression"),
-    tr("Enter expression for the operator (numpy is available as numpy)"),
-    QLineEdit::Normal,
-    "numpy.cos(scalars, scalars)");
-  if (!exp.isEmpty())
+  QSharedPointer<OperatorPython> op(new OperatorPython());
+  EditPythonOperatorDialog dialog (op.data(), pqCoreUtilities::mainWidget());
+  if (dialog.exec() == QDialog::Accepted)
     {
-    QSharedPointer<OperatorPython> op(new OperatorPython());
-    op->setScript(exp);
     source->addOperator(op);
     }
   return NULL;

@@ -40,6 +40,8 @@ set(SOURCES
   CloneDataReaction.h
   DataSource.cxx
   DataSource.h
+  EditPythonOperatorDialog.cxx
+  EditPythonOperatorDialog.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   main.cxx
@@ -68,6 +70,8 @@ set(SOURCES
   Operator.h
   OperatorPython.cxx
   OperatorPython.h
+  OperatorsWidget.cxx
+  OperatorsWidget.h
   PipelineWidget.cxx
   PipelineWidget.h
   ProgressBehavior.cxx
@@ -81,6 +85,7 @@ qt4_wrap_ui(UI_SOURCES
   CentralWidget.ui
   MainWindow.ui
   ModulePropertiesPanel.ui
+  EditPythonOperatorDialog.ui
   )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})

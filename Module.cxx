@@ -17,6 +17,8 @@
 
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
+#include "pqView.h"
+#include "Utilities.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
@@ -37,6 +39,12 @@ bool Module::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 {
   this->View = view;
   this->ADataSource = dataSource;
+  if (this->View && this->ADataSource)
+    {
+    // FIXME: we're connecting this too many times. Fix it.
+    TEM::convert<pqView*>(view)->connect(
+      this->ADataSource, SIGNAL(dataChanged()), SLOT(render()));
+    }
   return (this->View && this->ADataSource);
 }
 
