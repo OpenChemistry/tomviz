@@ -18,11 +18,13 @@
 
 #include "pqFiltersMenuReaction.h"
 #include "pqMacroReaction.h"
-#include "pqProxyGroupMenuManager.h"
-#include "pqProxyGroupMenuManager.h"
 #include "pqPVApplicationCore.h"
+#include "pqProxyGroupMenuManager.h"
+#include "pqProxyGroupMenuManager.h"
 #include "pqPythonShellReaction.h"
+#include "pqSaveAnimationReaction.h"
 #include "pqSaveDataReaction.h"
+#include "pqSaveScreenshotReaction.h"
 #include "pqSaveStateReaction.h"
 
 #include "ActiveObjects.h"
@@ -71,6 +73,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new ModuleMenu(ui.menuModules);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSave);
+  new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
+  new pqSaveAnimationReaction(ui.actionSaveMovie);
 }
 
 //-----------------------------------------------------------------------------
