@@ -38,6 +38,7 @@
 #include <assert.h>
 #include <vector>
 
+
 vtkStandardNewMacro(vtkStreamingContourRepresentation);
 //----------------------------------------------------------------------------
 vtkStreamingContourRepresentation::vtkStreamingContourRepresentation()

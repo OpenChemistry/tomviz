@@ -23,6 +23,9 @@
 #include "vtkDataArray.h"
 #include "vtkSmartPointer.h"
 #include "vtkPolyData.h"
+
+#include "DataSetConverters.h"
+
 #include <vector>
 
 namespace TEM
@@ -31,6 +34,15 @@ namespace accel
 {
   class SubdividedVolume
   {
+  typedef dax::cont::UnstructuredGrid< dax::CellTagTriangle >
+          ContourGridReturnType;
+
+  typedef dax::cont::ArrayContainerControlTagImplicit<
+      dax::cont::internal::ArrayPortalCounting<dax::Id> > CountingIdContainerType;
+  typedef dax::cont::UnstructuredGrid< dax::CellTagVertex,
+                                       CountingIdContainerType>
+          PointCloudSubGridReturnType;
+
   public:
   SubdividedVolume() { }
 
@@ -45,11 +57,11 @@ namespace accel
   inline bool isValidSubGrid(std::size_t index, dax::Scalar value);
 
   template<typename ValueType, typename LoggerType>
-  inline vtkSmartPointer< vtkPolyData >
+  ContourGridReturnType
   ContourSubGrid(dax::Scalar isoValue, std::size_t index, ValueType, LoggerType& logger);
 
   template<typename ValueType, typename LoggerType>
-  inline vtkSmartPointer< vtkPolyData >
+  PointCloudSubGridReturnType
   PointCloudSubGrid(dax::Scalar isoValue, std::size_t index, ValueType, LoggerType& logger);
 
   const dax::cont::UniformGrid< >& subGrid( std::size_t index ) const
@@ -99,30 +111,37 @@ private:
 //already having a SubdividedVolume
 struct ContourFunctor
 {
-  TEM::accel::SubdividedVolume& Volume;
+  typedef dax::cont::UnstructuredGrid< dax::CellTagTriangle > ReturnType;
+
 
   ContourFunctor(TEM::accel::SubdividedVolume& v):Volume(v){}
 
   template<typename ValueType, typename LoggerType>
-  vtkSmartPointer< vtkPolyData> operator()(double v, std::size_t i,
-                                           ValueType, LoggerType& logger)
+  ReturnType operator()(double v, std::size_t i, ValueType, LoggerType& logger)
   {
     return this->Volume.ContourSubGrid(v,i,ValueType(),logger);
   }
+
+  TEM::accel::SubdividedVolume& Volume;
 };
 
-struct ThresholdFunctor
+struct PointCloudFunctor
 {
-  TEM::accel::SubdividedVolume& Volume;
+  typedef dax::cont::ArrayContainerControlTagImplicit<
+      dax::cont::internal::ArrayPortalCounting<dax::Id> > CountingIdContainerType;
+  typedef dax::cont::UnstructuredGrid< dax::CellTagVertex,
+                                       CountingIdContainerType> ReturnType;
 
-  ThresholdFunctor(TEM::accel::SubdividedVolume& v):Volume(v){}
+
+  PointCloudFunctor(TEM::accel::SubdividedVolume& v):Volume(v){}
 
   template<typename ValueType, typename LoggerType>
-  vtkSmartPointer< vtkPolyData> operator()(double v, std::size_t i,
-                                           ValueType, LoggerType& logger)
+  ReturnType operator()(double v, std::size_t i, ValueType, LoggerType& logger)
   {
     return this->Volume.PointCloudSubGrid(v,i,ValueType(),logger);
   }
+
+  TEM::accel::SubdividedVolume& Volume;
 };
 
 }

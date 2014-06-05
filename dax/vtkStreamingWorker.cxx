@@ -60,13 +60,69 @@ namespace
       }                                                                    \
     )
 
+template<typename GridType>
+void combine_grids(std::vector<GridType>& grids,
+                   std::vector<dax::Vector3>& points,
+                   std::vector<dax::Id>& cellConns)
+{
+  typedef typename std::vector<GridType>::iterator IteratorType;
+  const std::size_t existingNumPoints = points.size();
+  const std::size_t existingNumCellIds = cellConns.size();
+
+  std::size_t numNewPoints = 0;
+  std::size_t numNewCellIds = 0;
+  for(IteratorType grid = grids.begin(); grid != grids.end(); ++grid)
+    {
+    numNewPoints += static_cast<std::size_t>(grid->GetNumberOfPoints());
+    //we need the size of the cell connection array not the num of cells
+    numNewCellIds += static_cast<std::size_t>(
+                              grid->GetCellConnections().GetNumberOfValues());
+    }
+
+  //resize the vectors
+  points.resize( points.size() + numNewPoints );
+  cellConns.resize( cellConns.size() + numNewCellIds );
+
+  std::size_t pointOffset = existingNumPoints;
+  std::size_t cellIdOffset = existingNumCellIds;
+  for(IteratorType grid = grids.begin(); grid != grids.end(); ++grid)
+    {
+    //copy the points, and than move the offset pointer to account for the
+    //new points we have copied in
+    grid->GetPointCoordinates().CopyInto(points.begin() + pointOffset);
+
+
+    //copy the cell conns, and than move the offset pointer to account for the
+    //new cell conns we have copied in
+    grid->GetCellConnections().CopyInto(cellConns.begin() + cellIdOffset);
+
+    //fixup the newly copied ids, by adding the number of points we
+    //already have to each new id
+    const std::size_t numValuesToFixUp = static_cast<std::size_t>(
+                              grid->GetCellConnections().GetNumberOfValues());
+    for(std::size_t i = 0; i < numValuesToFixUp; ++i)
+      {
+      //these ids are point ids, so we need to increment by the pointOffset
+      //not the celloffset
+      cellConns[cellIdOffset+i] += pointOffset;
+    }
+
+    pointOffset += static_cast<std::size_t>(grid->GetNumberOfPoints());
+    cellIdOffset += numValuesToFixUp;
+    }
+
+  //now that the values in grids are in points and cells, we clear grids.
+  grids.clear();
+}
+
+
 template<typename LoggerType>
 struct ComputeFunctor
 {
   vtkStreamingWorker::AlgorithmMode Mode;
   TEM::accel::SubdividedVolume& Volume;
-  vtkSmartPointer<vtkAppendPolyData>& Appender;
-  MutexType* AppenderMutex;
+  vtkSmartPointer<vtkPolyData>& VTKOutputData;
+  MutexType* OutputDataMutex;
   LoggerType& Logger;
   bool& ContinueWorking;
   bool& FinishedWorkingOnData;
@@ -74,15 +130,15 @@ struct ComputeFunctor
   //----------------------------------------------------------------------------
   ComputeFunctor(vtkStreamingWorker::AlgorithmMode mode,
                  TEM::accel::SubdividedVolume& volume,
-                 vtkSmartPointer<vtkAppendPolyData>& appender,
-                 MutexType* appenderMutex,
+                 vtkSmartPointer<vtkPolyData>& outputData,
+                 MutexType* outputDaxMutex,
                  bool& keepProcessing,
                  bool& finishedWorkingOnData,
                  LoggerType& logger):
     Mode(mode),
     Volume(volume),
-    Appender(appender),
-    AppenderMutex(appenderMutex),
+    VTKOutputData(outputData),
+    OutputDataMutex(outputDaxMutex),
     Logger(logger),
     ContinueWorking(keepProcessing),
     FinishedWorkingOnData(finishedWorkingOnData)
@@ -100,9 +156,9 @@ struct ComputeFunctor
     TEM::accel::ContourFunctor functor(this->Volume);
     this->run(functor, v, ValueType());
     }
-  else if(this->Mode == vtkStreamingWorker::THRESHOLD)
+  else if(this->Mode == vtkStreamingWorker::POINTCLOUD)
     {
-    TEM::accel::ThresholdFunctor functor(this->Volume);
+    TEM::accel::PointCloudFunctor functor(this->Volume);
     this->run(functor, v, ValueType());
     }
   }
@@ -112,27 +168,45 @@ struct ComputeFunctor
   void run(Functor functor, double v, ValueType)
   {
   dax::cont::Timer<> timer;
+  dax::cont::Timer<> conv_timer; double dataconv_time = 0;
+
   const std::size_t totalSubGrids = this->Volume.numSubGrids();
-  vtkSmartPointer< vtkPolyData> output;
+  typedef typename Functor::ReturnType OutputGridType;
+
+  //need a special temp grid type since OutputGridType can use virtual topology
+  //and we can't use that when we are copying concrete cellConns
+  typedef dax::cont::UnstructuredGrid< typename OutputGridType::CellTag > TempGridType;
+
+  //lightweight storage of combined points and cells
+  std::vector<OutputGridType> gridsPendingCollection;
+  std::vector<dax::Vector3> points;
+  std::vector<dax::Id> cellConns;
 
   bool haveMoreData=false;
   for(std::size_t i=0; i < totalSubGrids && this->ContinueWorking; ++i)
     {
     if(this->ContinueWorking && this->Volume.isValidSubGrid(i, v))
       {
-      output = functor(v, i, ValueType(), this->Logger );
+      OutputGridType outputGrid = functor(v, i, ValueType(), this->Logger );
+      gridsPendingCollection.push_back(outputGrid);
 
-        //lock while we add to the appender
-        {
-        haveMoreData=true;
-        MutexType::scoped_lock lock(*this->AppenderMutex);
-        this->Appender->AddInputDataObject( output );
-        }
+      haveMoreData=true;
       }
     if(i%50==0 && haveMoreData && this->ContinueWorking)
       {
-      MutexType::scoped_lock lock(*this->AppenderMutex);
-      this->Appender->Update();
+      conv_timer.Reset();
+      combine_grids(gridsPendingCollection,points,cellConns);
+
+      //make a dax grid structure around the std vector(s), this is basically
+      //a free operation
+      TempGridType tempGrid( dax::cont::make_ArrayHandle(cellConns),
+                             dax::cont::make_ArrayHandle(points));
+
+      MutexType::scoped_lock lock(*this->OutputDataMutex);
+      convertPoints(tempGrid,this->VTKOutputData);
+      convertCells(tempGrid,this->VTKOutputData);
+      dataconv_time += conv_timer.GetElapsedTime();
+
       haveMoreData = false;
       }
     }
@@ -140,12 +214,26 @@ struct ComputeFunctor
   //append any remaining subgrids
   if(haveMoreData && this->ContinueWorking)
     {
-    MutexType::scoped_lock lock(*this->AppenderMutex);
-    this->Appender->Update();
+    conv_timer.Reset();
+    combine_grids(gridsPendingCollection,points,cellConns);
+
+    //make a dax grid structure around the std vector(s), this is basically
+    //a free operation
+    TempGridType tempGrid( dax::cont::make_ArrayHandle(cellConns),
+                           dax::cont::make_ArrayHandle(points));
+
+    MutexType::scoped_lock lock(*this->OutputDataMutex);
+    convertPoints(tempGrid,this->VTKOutputData);
+    convertCells(tempGrid,this->VTKOutputData);
+    dataconv_time += conv_timer.GetElapsedTime();
+
     haveMoreData = false;
     }
 
-  this->Logger << "algorithm time: " << timer.GetElapsedTime() << std::endl;
+  double full_time = timer.GetElapsedTime();
+  double alg_time = full_time - dataconv_time;
+  this->Logger << "algorithm time: " << alg_time << std::endl;
+  this->Logger << "data conversion time: " << dataconv_time << std::endl;
   this->FinishedWorkingOnData = true;
   }
 };
@@ -170,7 +258,7 @@ public:
     CurrentRenderData(),
     NumSubGridsPerDim(numSubGridsPerDim)
   {
-    this->ComputedData = vtkSmartPointer<vtkAppendPolyData>::New();
+    this->ComputedData = vtkSmartPointer<vtkPolyData>::New();
     this->CurrentRenderData = vtkSmartPointer<vtkPolyData>::New();
   }
 
@@ -232,7 +320,7 @@ public:
     this->CurrentRenderDataFinished = false;
 
     //clear the appender
-    this->ComputedData = vtkSmartPointer<vtkAppendPolyData>::New();
+    this->ComputedData = vtkSmartPointer<vtkPolyData>::New();
 
     if(this->Volume.numSubGrids() == 0)
       {
@@ -264,11 +352,13 @@ public:
 vtkSmartPointer<vtkPolyData> GetFinishedPieces()
 {
   MutexType::scoped_lock lock(this->ComputedDataMutex);
-  if(this->ComputedData->GetNumberOfInputPorts() > 0)
+  if(this->ComputedData->GetNumberOfCells() > 0 &&
+     this->ComputedData->GetNumberOfPoints() > 0)
     {
-    CurrentRenderData->ShallowCopy(ComputedData->GetOutputDataObject(0));
+    CurrentRenderData->ShallowCopy(this->ComputedData);
     }
   this->CurrentRenderDataFinished = this->FinishedWorkingOnData;
+  std::cout << "GetFinishedPieces" << std::endl;
 
   return this->CurrentRenderData;
 }
@@ -280,7 +370,7 @@ private:
   bool CurrentRenderDataFinished;
 
   TEM::accel::SubdividedVolume Volume;
-  vtkSmartPointer<vtkAppendPolyData> ComputedData;
+  vtkSmartPointer<vtkPolyData> ComputedData;
   vtkSmartPointer<vtkPolyData> CurrentRenderData;
   MutexType ComputedDataMutex;
 
@@ -289,7 +379,7 @@ private:
 
 //----------------------------------------------------------------------------
 vtkStreamingWorker::vtkStreamingWorker():
-  Internals( new vtkStreamingWorker::WorkerInternals(6) )
+  Internals( new vtkStreamingWorker::WorkerInternals(8) )
 {
 }
 
@@ -333,7 +423,7 @@ void vtkStreamingWorker::StartThreshold(vtkImageData* image,
   switch (data->GetDataType())
       {
       temDataArrayIteratorMacro( data,
-            this->Internals->Run(THRESHOLD, image, isoValue, vtkDABegin, vtkDAEnd, std::cout) );
+            this->Internals->Run(POINTCLOUD, image, isoValue, vtkDABegin, vtkDAEnd, std::cout) );
       default:
         break;
       }
