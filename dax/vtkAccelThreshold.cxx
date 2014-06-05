@@ -120,8 +120,6 @@ namespace dax
 
   if(outputDaxGrid.GetNumberOfCells() > 0)
     {
-    std::cout << "outputDaxGrid size: " << outputDaxGrid.GetNumberOfCells() << std::endl;
-
     // //get the reduced output threshold point field
     dax::cont::ArrayHandle<ValueType> resultHandle;
     topoDispatcher.CompactPointField(thresholdInputValues,resultHandle);
@@ -143,6 +141,9 @@ namespace dax
     //Assign the vtkDataArray to the vtkUnstructuredGrid.
     vtkPointData *pd = output->GetPointData();
     pd->AddArray(outputData);
+    pd->SetActiveScalars( dataArrayName.c_str() );
+
+    outputData->FastDelete();
     }
   }
 }

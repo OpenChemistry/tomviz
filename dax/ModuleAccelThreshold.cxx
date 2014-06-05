@@ -19,6 +19,7 @@
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
@@ -83,6 +84,9 @@ bool ModuleAccelThreshold::initialize(vtkSMSourceProxy* dataSource, vtkSMViewPro
   this->ThresholdRepresentation = controller->Show(this->ThresholdFilter, 0, view);
   Q_ASSERT(this->ThresholdRepresentation);
   vtkSMPropertyHelper(this->ThresholdRepresentation, "Representation").Set("Surface");
+
+  vtkSMPVRepresentationProxy* rep = vtkSMPVRepresentationProxy::SafeDownCast(this->ThresholdRepresentation);
+  rep->RescaleTransferFunctionToDataRange(true);
   this->ThresholdRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -127,6 +131,9 @@ void ModuleAccelThreshold::addToPanel(pqProxiesWidget* panel)
 
   QStringList representationProperties;
   representationProperties
+    << "Color"
+    << "ColorEditor"
+    << "LookupTable"
     << "Representation"
     << "Opacity"
     << "Specular";
