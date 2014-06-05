@@ -72,6 +72,8 @@ public slots:
   void addDataSource(DataSource*);
   void removeDataSource(DataSource*);
 
+  /// Removes all modules and data sources.
+  void reset();
 signals:
   void moduleAdded(Module*);
   void moduleRemoved(Module*);

@@ -51,6 +51,19 @@ ModuleManager& ModuleManager::instance()
 }
 
 //-----------------------------------------------------------------------------
+void ModuleManager::reset()
+{
+  foreach (Module* module, this->Internals->Modules)
+    {
+    delete module;
+    }
+  foreach (DataSource* source, this->Internals->DataSources)
+    {
+    delete source;
+    }
+}
+
+//-----------------------------------------------------------------------------
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !this->Internals->DataSources.contains(dataSource))

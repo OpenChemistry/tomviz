@@ -32,6 +32,7 @@
 #include "Behaviors.h"
 #include "CloneDataReaction.h"
 #include "LoadDataReaction.h"
+#include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "RecentFilesMenu.h"
 
@@ -86,6 +87,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 //-----------------------------------------------------------------------------
 MainWindow::~MainWindow()
 {
+  ModuleManager::instance().reset();
   delete this->Internals;
 }
 }
