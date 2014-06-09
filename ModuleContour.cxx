@@ -131,6 +131,8 @@ void ModuleContour::addToPanel(pqProxiesWidget* panel)
     << "Opacity"
     << "Specular";
   panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
+
+  this->Superclass::addToPanel(panel);
 }
 
 } // end of namespace TEM

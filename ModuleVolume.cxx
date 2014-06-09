@@ -118,6 +118,8 @@ void ModuleVolume::addToPanel(pqProxiesWidget* panel)
     << "ScalarOpacityFunction"
     << "UseLogScale";
   panel->addProxy(lut, "Color Map", list, true);
+
+  this->Superclass::addToPanel(panel);
 }
 
 
