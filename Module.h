@@ -26,7 +26,7 @@ class pqProxiesWidget;
 
 namespace TEM
 {
-/// Abstract parent class for all Modules in MatViz.
+/// Abstract parent class for all Modules in TomViz.
 class Module : public QObject
 {
   Q_OBJECT

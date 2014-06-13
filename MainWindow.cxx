@@ -50,7 +50,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  this->setWindowTitle("Materials Visualization Environment");
+  this->setWindowTitle("TomViz");
 
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new pqPythonShellReaction(ui.actionPythonConsole);
   new pqMacroReaction(ui.actionMacros);
 
-  // Instantiate MatViz application behavior.
+  // Instantiate TomViz application behavior.
   new Behaviors(this);
 
 

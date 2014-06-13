@@ -53,7 +53,7 @@ inline vtkSMProxy* convert(pqProxy* pqproxy)
 }
 
 //===========================================================================
-// Functions for annotation proxies to help identification in MatViz.
+// Functions for annotation proxies to help identification in TomViz.
 //===========================================================================
 
 //---------------------------------------------------------------------------
@@ -62,10 +62,10 @@ inline bool annotateDataProducer(vtkSMProxy* proxy, const char* filename)
 {
   if (proxy)
     {
-    proxy->SetAnnotation("MatViz.Type", "DataSource");
+    proxy->SetAnnotation("TomViz.Type", "DataSource");
     QFileInfo fileInfo(filename);
-    proxy->SetAnnotation("MatViz.DataSource.FileName", filename);
-    proxy->SetAnnotation("MatViz.Label", fileInfo.fileName().toAscii().data());
+    proxy->SetAnnotation("TomViz.DataSource.FileName", filename);
+    proxy->SetAnnotation("TomViz.Label", fileInfo.fileName().toAscii().data());
     return true;
     }
   return false;
@@ -81,8 +81,8 @@ inline bool annotateDataProducer(pqProxy* pqproxy, const char* filename)
 inline bool isDataProducer(vtkSMProxy* proxy)
 {
   return proxy &&
-      proxy->HasAnnotation("MatViz.Type") &&
-      (QString("DataSource") == proxy->GetAnnotation("MatViz.Type"));
+      proxy->HasAnnotation("TomViz.Type") &&
+      (QString("DataSource") == proxy->GetAnnotation("TomViz.Type"));
 }
 
 inline bool isDataProducer(pqProxy* pqproxy)
@@ -91,13 +91,13 @@ inline bool isDataProducer(pqProxy* pqproxy)
 }
 
 //---------------------------------------------------------------------------
-// Returns the MatViz label for a proxy, if any, otherwise simply returns the
+// Returns the TomViz label for a proxy, if any, otherwise simply returns the
 // XML label for it.
 inline QString label(vtkSMProxy* proxy)
 {
-  if (proxy && proxy->HasAnnotation("MatViz.Label"))
+  if (proxy && proxy->HasAnnotation("TomViz.Label"))
     {
-    return proxy->GetAnnotation("MatViz.Label");
+    return proxy->GetAnnotation("TomViz.Label");
     }
   return proxy? proxy->GetXMLLabel() : NULL;
 }

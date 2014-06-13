@@ -23,7 +23,7 @@ class vtkSMSourceProxy;
 
 namespace TEM
 {
-/// LoadDataReaction handles the "Load Data" action in MatViz. On trigger,
+/// LoadDataReaction handles the "Load Data" action in TomViz. On trigger,
 /// this will open the data file and necessary subsequent actions, including:
 /// \li make the data source "active".
 ///

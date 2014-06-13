@@ -23,7 +23,7 @@ namespace TEM
 
 class Module;
 
-/// The main window for the MatViz application.
+/// The main window for the TomViz application.
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
