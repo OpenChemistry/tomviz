@@ -76,6 +76,9 @@ qt4_wrap_ui(UI_SOURCES
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES} ${accel_srcs})
+if(APPLE)
+  set_target_properties(tomviz PROPERTIES OUTPUT_NAME "TomViz")
+endif()
 
 set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
 
