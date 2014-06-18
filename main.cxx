@@ -21,8 +21,8 @@
 
 int main(int argc, char** argv)
 {
-  QCoreApplication::setApplicationName("temtomography");
-  QCoreApplication::setApplicationVersion("0.0.1");
+  QCoreApplication::setApplicationName("TomViz");
+  QCoreApplication::setApplicationVersion("0.1.0");
   QCoreApplication::setOrganizationName("Kitware");
 
   QApplication app(argc, argv);

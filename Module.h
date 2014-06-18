@@ -26,7 +26,7 @@ class pqProxiesWidget;
 
 namespace TEM
 {
-/// Abstract parent class for all Modules in MatViz.
+/// Abstract parent class for all Modules in TomViz.
 class Module : public QObject
 {
   Q_OBJECT
@@ -67,10 +67,11 @@ public slots:
   bool hide() { return this->setVisibility(false); }
 
   /// This method is called add the proxies in this module to a
-  /// pqProxiesWidget instance. Default implementation does nothing.
+  /// pqProxiesWidget instance. Default implementation simply adds the view
+  /// properties.
   /// Subclasses should override to add proxies and relevant properties to the
   /// panel.
-  virtual void addToPanel(pqProxiesWidget*) { }
+  virtual void addToPanel(pqProxiesWidget* panel);
 
 private:
   Q_DISABLE_COPY(Module)

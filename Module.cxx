@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "Module.h"
 
+#include "pqProxiesWidget.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
@@ -48,6 +49,12 @@ vtkSMViewProxy* Module::view() const
 vtkSMSourceProxy* Module::dataSource() const
 {
   return this->DataSource;
+}
+
+//-----------------------------------------------------------------------------
+void Module::addToPanel(pqProxiesWidget* panel)
+{
+  panel->addProxy(this->View, "View",QStringList(), true);
 }
 
 } // end of namespace TEM

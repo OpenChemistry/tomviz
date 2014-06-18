@@ -21,7 +21,7 @@
 namespace TEM
 {
 /// Extends pqRecentFilesMenu to add support to open a data file customized for
-/// MatViz.
+/// TomViz.
 class RecentFilesMenu : public pqRecentFilesMenu
 {
   Q_OBJECT;

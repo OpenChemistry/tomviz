@@ -1,11 +1,17 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
-project(matviz)
+project(tomviz)
 find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 if(NOT PARAVIEW_BUILD_QT_GUI)
   message(FATAL_ERROR
     "TEM tomography requires PARAVIEW_BUILD_QT_GUI to be enabled. "
     "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE")
+endif()
+
+# We need to link to QtMain on Windows, this is much better in Qt 5 with recent
+# CMake versions where a policy can invoke auto-linking of this library.
+if(WIN32)
+  find_package(Qt4 4.8 COMPONENTS QtGui QtMain REQUIRED)
 endif()
 
 option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
@@ -73,26 +79,29 @@ qt4_wrap_ui(UI_SOURCES
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(matviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES} ${accel_srcs})
+add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES} ${accel_srcs})
 
-set_target_properties(matviz PROPERTIES AUTOMOC TRUE)
+set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
 
-target_link_libraries(matviz
+target_link_libraries(tomviz
   LINK_PRIVATE
     pqApplicationComponents
     vtkPVServerManagerRendering
   )
+if(WIN32)
+  target_link_libraries(tomviz LINK_PRIVATE ${QT_QTMAIN_LIBRARY})
+endif()
 if(APPLE)
-  install(TARGETS matviz DESTINATION Applications COMPONENT runtime)
+  install(TARGETS tomviz DESTINATION Applications COMPONENT runtime)
 else()
-  install(TARGETS matviz DESTINATION bin COMPONENT runtime)
+  install(TARGETS tomviz DESTINATION bin COMPONENT runtime)
 endif()
 
 if(ENABLE_DAX_ACCELERATION)
-  target_link_libraries(matviz LINK_PRIVATE ${TBB_LIBRARIES})
+  target_link_libraries(tomviz LINK_PRIVATE ${TBB_LIBRARIES})
 
   #set the dax backend to tbb explicitly as the histogram is
   #computed using dax.
-  set_target_properties(matviz PROPERTIES COMPILE_DEFINITIONS
+  set_target_properties(tomviz PROPERTIES COMPILE_DEFINITIONS
                         "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
 endif()

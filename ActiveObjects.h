@@ -31,9 +31,9 @@ namespace TEM
 {
 class Module;
 
-/// ActiveObjects keeps track of active objects in MatViz.
+/// ActiveObjects keeps track of active objects in TomViz.
 /// This is similar to pqActiveObjects in ParaView, however tracks objects
-/// relevant to MatViz.
+/// relevant to TomViz.
 class ActiveObjects : public QObject
   {
   Q_OBJECT

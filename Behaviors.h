@@ -21,7 +21,7 @@
 class QMainWindow;
 namespace TEM
 {
-/// Behaviors instantiates MatViz relevant ParaView behaviors (and any new
+/// Behaviors instantiates TomViz relevant ParaView behaviors (and any new
 /// ones) as needed.
 class Behaviors : public QObject
   {

@@ -16,8 +16,8 @@ endif()
 find_package(Dax REQUIRED)
 DaxConfigureTBB(REQUIRED)
 
-add_paraview_plugin(MatVizStreaming "1.0"
-  SERVER_MANAGER_XML MatVizStreaming.xml
+add_paraview_plugin(tomvizStreaming "1.0"
+  SERVER_MANAGER_XML TomVizStreaming.xml
   SERVER_MANAGER_SOURCES
     vtkStreamingContourRepresentation.cxx
     vtkStreamingContourRepresentation.h
@@ -27,16 +27,16 @@ add_paraview_plugin(MatVizStreaming "1.0"
     vtkStreamingWorker.h
 )
 
-add_paraview_plugin(MatVizThreshold "1.0"
-  SERVER_MANAGER_XML MatVizThreshold.xml
+add_paraview_plugin(tomvizThreshold "1.0"
+  SERVER_MANAGER_XML TomVizThreshold.xml
   SERVER_MANAGER_SOURCES
     vtkAccelThreshold.cxx
     vtkAccelThreshold.h
 )
 
-set_target_properties(MatVizStreaming PROPERTIES COMPILE_DEFINITIONS
+set_target_properties(tomvizStreaming PROPERTIES COMPILE_DEFINITIONS
                       "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
 
 
-set_target_properties(MatVizThreshold PROPERTIES COMPILE_DEFINITIONS
+set_target_properties(tomvizThreshold PROPERTIES COMPILE_DEFINITIONS
                       "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")

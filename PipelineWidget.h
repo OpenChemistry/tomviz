@@ -28,9 +28,9 @@ namespace TEM
 
 class Module;
 
-/// PipelineWidget is a QTreeWidget to show the visualization "Pipeline" in MatViz.
+/// PipelineWidget is a QTreeWidget to show the visualization "Pipeline" in TomViz.
 /// This is not same as the underlying ParaView visualization pipeline. We
-/// show higher level abstractions for MatViz users, than the raw VTK
+/// show higher level abstractions for TomViz users, than the raw VTK
 /// pipelines.
 class PipelineWidget : public QTreeWidget
 {

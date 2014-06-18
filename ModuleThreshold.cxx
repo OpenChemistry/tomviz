@@ -131,6 +131,8 @@ void ModuleThreshold::addToPanel(pqProxiesWidget* panel)
     << "Opacity"
     << "Specular";
   panel->addProxy(this->ThresholdRepresentation, "Appearance", representationProperties, true);
+
+  this->Superclass::addToPanel(panel);
 }
 
 

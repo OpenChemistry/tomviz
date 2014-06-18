@@ -113,6 +113,7 @@ void ModuleOutline::addToPanel(pqProxiesWidget* panel)
   properties << "CubeAxesVisibility";
   panel->addProxy(
     this->OutlineRepresentation, "Annotations", properties, true);
+  this->Superclass::addToPanel(panel);
 }
 
 } // end of namespace TEM

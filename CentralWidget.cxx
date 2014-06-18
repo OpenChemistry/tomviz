@@ -61,7 +61,7 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   // The output table will have the twice the number of columns, they will be
   // the x and y for input column. This is the bin centers, and the population.
   double minmax[2] = { 0.0, 0.0 };
-  const int numberOfBins = 200;
+  const int numberOfBins = 256;
 
   // The bin values are the centers, extending +/- half an inc either side
   switch (input->GetScalarType())
@@ -202,11 +202,8 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
     {
     return false;
     }
-  if (this->Transform->GetMTime() < histo->GetMTime())
-    {
-    this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
-                                         this->Transform.Get());
-    }
+  this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
+                                       this->Transform.Get());
   vtkVector2f pos;
   this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
                                           1);
