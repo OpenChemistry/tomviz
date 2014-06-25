@@ -20,6 +20,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
@@ -69,8 +70,8 @@ bool ModuleOrthogonalSlice::initialize(vtkSMSourceProxy* dataSource, vtkSMViewPr
   // Create the representation for it.
   this->Representation = controller->Show(this->PassThrough, 0, view);
   Q_ASSERT(this->Representation);
-  vtkSMPropertyHelper(this->Representation,
-                      "Representation").Set("Slice");
+  vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
+    "Slice");
   this->Representation->UpdateVTKObjects();
   return true;
 }
