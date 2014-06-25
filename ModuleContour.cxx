@@ -65,6 +65,8 @@ bool ModuleContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* vie
   Q_ASSERT(this->ContourFilter);
   controller->PreInitializeProxy(this->ContourFilter);
   vtkSMPropertyHelper(this->ContourFilter, "Input").Set(dataSource);
+  vtkSMPropertyHelper(this->ContourFilter, "ComputeScalars", /*quiet*/ true).Set(1);
+
   controller->PostInitializeProxy(this->ContourFilter);
   controller->RegisterPipelineProxy(this->ContourFilter);
 
