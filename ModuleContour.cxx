@@ -59,7 +59,7 @@ bool ModuleContour::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   vtkSMSourceProxy* producer = dataSource->producer();
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
