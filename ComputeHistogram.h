@@ -5,6 +5,7 @@
 #include <dax/cont/ArrayHandle.h>
 #include <dax/cont/ArrayHandleCounting.h>
 #include <dax/cont/DispatcherMapField.h>
+#include "dax/Worklets.h"
 #endif
 
 namespace TEM
@@ -16,14 +17,15 @@ namespace worklets
 template<typename T>
 struct ScalarRange: dax::exec::WorkletMapField
 {
-  typedef void ControlSignature(Field(Out));
+  typedef void ControlSignature(FieldOut);
   typedef _1 ExecutionSignature(WorkId);
 
   DAX_CONT_EXPORT
   ScalarRange(T* v, int len, int numWorkers):
     Values(v),
     Length(len),
-    TaskSize(len/numWorkers)
+    TaskSize(len/numWorkers),
+    NumWorkers(numWorkers)
   {}
 
   DAX_EXEC_EXPORT
@@ -32,7 +34,11 @@ struct ScalarRange: dax::exec::WorkletMapField
     //compute the range we are calculating
     const T* myValue = this->Values + (id * TaskSize);
 
-    const dax::Id end_offset = std::min(this->Length, (id+1) * TaskSize);
+    dax::Id end_offset;
+    if(id+1 == this->NumWorkers)
+      { end_offset = this->Length; }
+    else
+      { end_offset = (id+1)*TaskSize; }
     const T* myEnd = this->Values + end_offset;
 
     dax::Tuple<T,2> lh;
@@ -50,12 +56,13 @@ struct ScalarRange: dax::exec::WorkletMapField
   T* Values;
   int Length;
   int TaskSize;
+  int NumWorkers;
 };
 
 template<typename T>
 struct Histogram: dax::exec::WorkletMapField
 {
-  typedef void ControlSignature(Field(In));
+  typedef void ControlSignature(FieldIn);
   typedef void ExecutionSignature(_1);
 
   DAX_CONT_EXPORT
@@ -63,6 +70,7 @@ struct Histogram: dax::exec::WorkletMapField
             int* histo, float minValue, int numBins, float binSize):
     Length(valueLength),
     TaskSize(valueLength/numWorkers),
+    NumWorkers(numWorkers),
     NumBins(numBins),
     MinValue(minValue),
     BinSize(binSize),
@@ -78,7 +86,13 @@ struct Histogram: dax::exec::WorkletMapField
     const int maxBin(this->NumBins - 1);
 
     const T* myValue = this->Values + (id * TaskSize);
-    const dax::Id end_offset = std::min(this->Length, (id+1) * TaskSize);
+
+    dax::Id end_offset;
+    if(id+1 == this->NumWorkers)
+      { end_offset = this->Length; }
+    else
+      { end_offset = (id+1)*TaskSize; }
+
     const T* myEnd = this->Values + end_offset;
 
     for(; myValue != myEnd; myValue++)
@@ -101,6 +115,7 @@ struct Histogram: dax::exec::WorkletMapField
 
   int Length;
   int TaskSize;
+  int NumWorkers;
   int NumBins;
   float MinValue;
   float BinSize;
@@ -114,7 +129,7 @@ template<typename T>
 void GetScalarRange(T *values, const unsigned int n, double* minmax)
 {
   using namespace dax::cont;
-  const int numTasks = 16;
+  const int numTasks = 32;
 
   ArrayHandle< dax::Tuple<double,2> > minmaxHandle;
   minmaxHandle.PrepareForOutput(numTasks);
@@ -140,7 +155,7 @@ void CalculateHistogram(T *values, const unsigned int n, const float min,
                         int *pops, const float inc, const int numberOfBins)
 {
   using namespace dax::cont;
-  const int numTasks = 16;
+  const int numTasks = 32;
 
   worklets::Histogram<T> worklet(values, n, numTasks, pops,  min, numberOfBins, inc);
   DispatcherMapField< worklets::Histogram<T> > dispatcher(worklet);

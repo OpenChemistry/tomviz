@@ -111,11 +111,14 @@ void ModuleStreamingContour::addToPanel(pqProxiesWidget* panel)
   Q_ASSERT(this->ContourRepresentation);
 
   QStringList contourProperties;
-  contourProperties << "ContourValues";
+  contourProperties << "ContourValue";
   panel->addProxy(this->ContourRepresentation, "Contour", contourProperties, true);
 
   QStringList contourRepresentationProperties;
   contourRepresentationProperties
+    << "Color"
+    << "ColorEditor"
+    << "Representation"
     << "Opacity"
     << "Specular";
   panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);

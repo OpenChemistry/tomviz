@@ -47,6 +47,10 @@
 #include "ModuleManager.h"
 #include "Utilities.h"
 
+#ifdef DAX_DEVICE_ADAPTER
+#  include "dax/ModuleStreamingContour.h"
+#endif
+
 namespace TEM
 {
 
@@ -331,15 +335,21 @@ void CentralWidget::histogramClicked(vtkObject *caller)
 
   // Use active ModuleContour is possible. Otherwise, find the first existing
   // ModuleContour instance or just create a new one, if none exists.
-  ModuleContour* contour = qobject_cast<ModuleContour*>(
+#ifdef DAX_DEVICE_ADAPTER
+  typedef ModuleStreamingContour ModuleContourType;
+#else
+  typedef ModuleContour ModuleContourType;
+#endif
+
+  ModuleContourType* contour = qobject_cast<ModuleContourType*>(
     ActiveObjects::instance().activeModule());
   if (!contour)
     {
-    QList<ModuleContour*> contours =
-      ModuleManager::instance().findModules<ModuleContour*>(this->DataSource, view);
+    QList<ModuleContourType*> contours =
+      ModuleManager::instance().findModules<ModuleContourType*>(this->DataSource, view);
     if (contours.size() == 0)
       {
-      contour = qobject_cast<ModuleContour*>(ModuleManager::instance().createAndAddModule(
+      contour = qobject_cast<ModuleContourType*>(ModuleManager::instance().createAndAddModule(
           "Contour", this->DataSource, view));
       }
     else

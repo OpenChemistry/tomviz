@@ -13,45 +13,35 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleStreamingContour_h
-#define __ModuleStreamingContour_h
+#ifndef __ModuleAccelThreshold_h
+#define __ModuleAccelThreshold_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
 
 class vtkSMProxy;
-
 namespace TEM
 {
-class ModuleStreamingContour : public Module
+
+class ModuleAccelThreshold : public Module
 {
-  Q_OBJECT
-
+  Q_OBJECT;
   typedef Module Superclass;
-
 public:
-  ModuleStreamingContour(QObject* parent=NULL);
-  virtual ~ModuleStreamingContour();
+  ModuleAccelThreshold(QObject* parent=NULL);
+  virtual ~ModuleAccelThreshold();
 
-  virtual QString label() const { return  "Accelerated Contour"; }
+  virtual QString label() const { return  "Accelerated Threshold"; }
   virtual QIcon icon() const;
   virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
   virtual bool setVisibility(bool val);
   virtual bool visibility() const;
   virtual void addToPanel(pqProxiesWidget*);
-
-  void setIsoValues(const QList<double>& values);
-  void setIsoValue(double value)
-    {
-    QList<double> values;
-    values << value;
-    this->setIsoValues(values);
-    }
-
 private:
-  Q_DISABLE_COPY(ModuleStreamingContour)
-  vtkWeakPointer<vtkSMProxy> ContourRepresentation;
+  Q_DISABLE_COPY(ModuleAccelThreshold);
+  vtkWeakPointer<vtkSMSourceProxy> ThresholdFilter;
+  vtkWeakPointer<vtkSMProxy> ThresholdRepresentation;
 };
 
 }

@@ -31,7 +31,7 @@ class vtkPolyData;
 class vtkStreamingWorker : public vtkObject
 {
 public:
-  enum AlgorithmMode { CONTOUR, THRESHOLD };
+  enum AlgorithmMode { CONTOUR, POINTCLOUD };
 
   vtkTypeMacro(vtkStreamingWorker,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);

@@ -79,14 +79,15 @@ public:
   void SetLookupTable(vtkScalarsToColors*);
   void SetPointSize(double val);
 
+  // Description:
+  // Get and Set the ContourValue to use
+  vtkGetMacro(ContourValue,double);
+  vtkSetMacro(ContourValue,double);
+
 //BTX
 protected:
   vtkStreamingThresholdRepresentation();
   ~vtkStreamingThresholdRepresentation();
-
-  vtkGetMacro(ContourValue,double);
-  vtkSetMacro(ContourValue,double);
-
 
   // Description:
   // Adds the representation to the view.  This is called from

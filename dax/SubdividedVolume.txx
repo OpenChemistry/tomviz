@@ -26,10 +26,7 @@
 #include "vtkImageData.h"
 #include "vtkNew.h"
 
-#include "vtkPolyDataWriter.h"
-
 #include "Worklets.h"
-#include "DataSetConverters.h"
 
 namespace TEM
 {
@@ -248,36 +245,20 @@ SubdividedVolume::ComputeSubGridContour(dax::Scalar isoValue,
 
 //----------------------------------------------------------------------------
 template<typename ValueType, typename LoggerType>
-vtkSmartPointer< vtkPolyData >
+dax::cont::UnstructuredGrid< dax::CellTagTriangle >
 SubdividedVolume::ContourSubGrid(dax::Scalar isoValue,
                                std::size_t index,
                                ValueType,
                                LoggerType& logger)
 {
-  typedef dax::cont::UnstructuredGrid< dax::CellTagTriangle >
-                                                UnstructuredGridType;
-
-
-  UnstructuredGridType outGrid = this->ComputeSubGridContour(isoValue,
-                                                             index,
-                                                             ValueType(),
-                                                             logger);
-  //convert outGrid to a vtkPolyData
-  vtkSmartPointer<vtkPolyData> output = vtkSmartPointer<vtkPolyData>::New();
-  convertPoints(outGrid,output);
-  convertCells(outGrid,output);
-
-  // vtkNew<vtkPolyDataWriter> writer;
-  // writer->SetInputData(output);
-  // writer->SetFileName("/Users/robert/cdump.vtk");
-  // writer->Update();
-
-  return output;
+  return this->ComputeSubGridContour(isoValue,index,ValueType(),logger);
 }
 
 //----------------------------------------------------------------------------
 template<typename ValueType, typename LoggerType>
-vtkSmartPointer< vtkPolyData >
+dax::cont::UnstructuredGrid< dax::CellTagVertex,
+  dax::cont::ArrayContainerControlTagImplicit<
+      dax::cont::internal::ArrayPortalCounting<dax::Id> > >
 SubdividedVolume::PointCloudSubGrid(dax::Scalar isoValue,
                                     std::size_t index,
                                     ValueType,
@@ -305,12 +286,7 @@ SubdividedVolume::PointCloudSubGrid(dax::Scalar isoValue,
           triangleGrid.GetPointCoordinates().GetNumberOfValues()),
     triangleGrid.GetPointCoordinates());
 
-  //convert outGrid to a vtkPolyData
-  vtkSmartPointer<vtkPolyData> output = vtkSmartPointer<vtkPolyData>::New();
-  convertPoints(outGrid,output);
-  convertCells(outGrid,output);
-
-  return output;
+  return outGrid;
 }
 
 //----------------------------------------------------------------------------

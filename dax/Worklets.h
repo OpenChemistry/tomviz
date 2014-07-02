@@ -29,6 +29,22 @@
 #include "vtkPointData.h"
 #include "vtkContourFilter.h"
 
+//If we are building against a version of dax that doesn't support windows
+//we will manually set these macros. This will allow us to still compile properly
+//on Linux and OSX, it is doubtful though that we will build properly on windows
+#ifndef FieldIn
+# define FieldIn dax::cont::arg::Field(*)(In)
+# define FieldOut dax::cont::arg::Field(*)(Out)
+# define FieldPointIn dax::cont::arg::Field(*)(In,Point)
+# define FieldCellIn dax::cont::arg::Field(*)(In,Cell)
+# define FieldCellOut dax::cont::arg::Field(*)(Out,Cell)
+# define TopologyIn dax::cont::arg::Topology(*)(In)
+# define TopologyOut dax::cont::arg::Topology(*)(Out)
+# define GeometryIn dax::cont::arg::Geometry(*)(In)
+# define GeometryOut dax::cont::arg::Geometry(*)(Out)
+# define AsVertices(pos) dax::cont::arg::Topology::Vertices(*)(pos)
+#endif
+
 namespace functors
 {
   template<typename ValueType>
@@ -89,7 +105,7 @@ namespace worklets
 template<typename ValueType>
 struct ComputeLowHighPerElement : dax::exec::WorkletMapField
 {
-  typedef void ControlSignature(Field(In),Field(Out));
+  typedef void ControlSignature(FieldIn,FieldOut);
   typedef _2 ExecutionSignature(_1);
 
   DAX_CONT_EXPORT
@@ -122,7 +138,7 @@ struct ComputeLowHighPerElement : dax::exec::WorkletMapField
 class ContourCount : public dax::exec::WorkletMapCell
 {
 public:
-  typedef void ControlSignature(Topology, Field(Point), Field(Out));
+  typedef void ControlSignature(TopologyIn, FieldPointIn, FieldCellOut);
   typedef _3 ExecutionSignature(_2);
 
   DAX_CONT_EXPORT ContourCount(dax::Scalar isoValue)
@@ -160,8 +176,8 @@ class ContourGenerate : public dax::exec::WorkletInterpolatedCell
 {
 public:
 
-  typedef void ControlSignature(Topology, Geometry(Out), Field(Point,In));
-  typedef void ExecutionSignature(Vertices(_1), _2, _3, VisitIndex);
+  typedef void ControlSignature(TopologyIn, GeometryOut, FieldPointIn);
+  typedef void ExecutionSignature(AsVertices(_1), _2, _3, VisitIndex);
 
   DAX_CONT_EXPORT ContourGenerate(dax::Scalar isoValue)
     : IsoValue(isoValue){ }
