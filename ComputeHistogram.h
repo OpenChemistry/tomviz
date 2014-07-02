@@ -5,6 +5,7 @@
 #include <dax/cont/ArrayHandle.h>
 #include <dax/cont/ArrayHandleCounting.h>
 #include <dax/cont/DispatcherMapField.h>
+#include "dax/Worklets.h"
 #endif
 
 namespace TEM
