@@ -19,16 +19,13 @@ if(ENABLE_DAX_ACCELERATION)
   find_package(Dax REQUIRED)
   DaxConfigureTBB(REQUIRED)
 
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dax)
+  add_subdirectory(dax)
 
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dax)
   set(accel_srcs
     dax/ModuleStreamingContour.cxx
     dax/ModuleAccelThreshold.cxx
     )
-  configure_file(dax/plugins.in 
-    ${CMAKE_CURRENT_BINARY_DIR}/.plugins
-    COPYONLY)
-
 endif()
 
 set(SOURCES
@@ -101,7 +98,11 @@ else()
 endif()
 
 if(ENABLE_DAX_ACCELERATION)
-  target_link_libraries(tomviz LINK_PRIVATE ${TBB_LIBRARIES})
+  target_link_libraries(tomviz
+                        LINK_PRIVATE
+                        tomvizStreaming
+                        tomvizThreshold
+                        ${TBB_LIBRARIES})
 
   #set the dax backend to tbb explicitly as the histogram is
   #computed using dax.
