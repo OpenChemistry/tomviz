@@ -14,10 +14,29 @@
 
 ******************************************************************************/
 #include <QApplication>
+
+#include "pqOptions.h"
 #include "pqPVApplicationCore.h"
+#include "vtkNew.h"
+
 #include "MainWindow.h"
 
 #include <clocale>
+
+//we need to override the default options to enable streaming by default.
+//Streaming needs to be enabled for the dax representations
+class TomoOptions : public pqOptions
+{
+public:
+  static TomoOptions* New() { return new TomoOptions(); }
+  vtkTypeMacro(TomoOptions,pqOptions);
+
+  TomoOptions():
+    pqOptions()
+  { }
+
+  int GetEnableStreaming() { return 1; }
+};
 
 int main(int argc, char** argv)
 {
@@ -27,7 +46,8 @@ int main(int argc, char** argv)
 
   QApplication app(argc, argv);
   setlocale(LC_NUMERIC, "C");
-  pqPVApplicationCore appCore(argc, argv);
+  vtkNew<TomoOptions> options;
+  pqPVApplicationCore appCore(argc, argv, options.GetPointer());
   TEM::MainWindow window;
   window.show();
   return app.exec();
