@@ -68,6 +68,7 @@ private:
 
   class WorkerInternals;
   WorkerInternals* Internals;
+  bool ValidWorkerInput;
 
   vtkStreamingWorker(const vtkStreamingWorker&); // Not implemented.
   void operator=(const vtkStreamingWorker&);  // Not implemented.

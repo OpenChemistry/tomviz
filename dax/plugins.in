@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<Plugins>
-  <Plugin name="tomvizStreaming" auto_load="1"/>
-  <Plugin name="tomvizThreshold" auto_load="1"/>
-</Plugins>

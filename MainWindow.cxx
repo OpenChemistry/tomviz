@@ -26,12 +26,22 @@
 #include "pqSaveDataReaction.h"
 #include "pqSaveScreenshotReaction.h"
 #include "pqSaveStateReaction.h"
+#include "vtkPVPlugin.h"
 
 #include "ActiveObjects.h"
 #include "Behaviors.h"
 #include "LoadDataReaction.h"
 #include "ModuleMenu.h"
 #include "RecentFilesMenu.h"
+
+
+
+//we are building with dax, so we have plugins to import
+#ifdef DAX_DEVICE_ADAPTER
+  // Adds required forward declarations.
+  PV_PLUGIN_IMPORT_INIT(tomvizThreshold);
+  PV_PLUGIN_IMPORT_INIT(tomvizStreaming);
+#endif
 
 namespace TEM
 {
@@ -75,6 +85,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new pqSaveStateReaction(ui.actionSave);
   new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
   new pqSaveAnimationReaction(ui.actionSaveMovie);
+
+  //now init the optional dax plugins
+#ifdef DAX_DEVICE_ADAPTER
+  PV_PLUGIN_IMPORT(tomvizThreshold);
+  PV_PLUGIN_IMPORT(tomvizStreaming);
+#endif
 }
 
 //-----------------------------------------------------------------------------

@@ -200,9 +200,10 @@ int vtkStreamingContourRepresentation::RequestData(vtkInformation *rqst,
       {
       // Since the representation re-executed, it means that the input changed
       // and we should initialize our streaming.
-      vtkImageData *input = vtkImageData::GetData(inputVector[0],0);
+      vtkImageData *inputImage = vtkImageData::GetData(inputVector[0],0);
       vtkDataArray *inScalars = this->GetInputArrayToProcess(0,inputVector);
-      this->Worker->StartContour(input,inScalars,this->GetContourValue());
+
+      this->Worker->StartContour(inputImage,inScalars,this->GetContourValue());
       }
     }
 

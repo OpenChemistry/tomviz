@@ -379,7 +379,8 @@ private:
 
 //----------------------------------------------------------------------------
 vtkStreamingWorker::vtkStreamingWorker():
-  Internals( new vtkStreamingWorker::WorkerInternals(8) )
+  Internals( new vtkStreamingWorker::WorkerInternals(8) ),
+  ValidWorkerInput(true)
 {
 }
 
@@ -397,6 +398,7 @@ void vtkStreamingWorker::StartContour(vtkImageData* image,
   //bad input abort
   if(!image||!data)
     {
+    this->ValidWorkerInput = false;
     return;
     }
   //todo we need to spawn a thread here I believe
@@ -417,6 +419,7 @@ void vtkStreamingWorker::StartThreshold(vtkImageData* image,
   //bad input abort
   if(!image||!data)
     {
+    this->ValidWorkerInput = false;
     return;
     }
   //todo we need to spawn a thread here I believe
@@ -445,7 +448,16 @@ void vtkStreamingWorker::StopWork()
 //----------------------------------------------------------------------------
 bool vtkStreamingWorker::IsFinished() const
 {
-  return this->Internals->IsFinished();
+  //if we didn't get valid input and output arguments we are finished
+  //since we can't do anything
+  if(!ValidWorkerInput)
+    {
+    return true;
+    }
+  else
+    {
+    return this->Internals->IsFinished();
+    }
 }
 
 //----------------------------------------------------------------------------
