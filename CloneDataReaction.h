@@ -13,33 +13,34 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef __TEM_CloneDataReaction_h
+#define __TEM_CloneDataReaction_h
 
-#include <QMainWindow>
+#include "pqReaction.h"
 
 namespace TEM
 {
-
 class DataSource;
-class Module;
 
-/// The main window for the TomViz application.
-class MainWindow : public QMainWindow
+class CloneDataReaction : public pqReaction
 {
-  Q_OBJECT
-
-  typedef QMainWindow Superclass;
-
+  Q_OBJECT;
+  typedef pqReaction Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
+  CloneDataReaction(QAction* action);
+  virtual ~CloneDataReaction();
+
+  static DataSource* clone(DataSource* toClone=NULL);
+
+protected:
+  /// Called when the action is triggered.
+  virtual void onTriggered()
+    { this->clone();}
+  virtual void updateEnableState();
 
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(CloneDataReaction);
 };
-
 }
+
 #endif

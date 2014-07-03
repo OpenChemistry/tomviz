@@ -13,33 +13,43 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef __TEM_Operator_h
+#define __TEM_Operator_h
 
-#include <QMainWindow>
+#include <QObject>
+#include <QIcon>
+
+class vtkDataObject;
 
 namespace TEM
 {
 
-class DataSource;
-class Module;
-
-/// The main window for the TomViz application.
-class MainWindow : public QMainWindow
+class Operator : public QObject
 {
-  Q_OBJECT
-
-  typedef QMainWindow Superclass;
-
+  Q_OBJECT;
+  typedef QObject Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
+  Operator(QObject* parent=NULL);
+  virtual ~Operator();
+
+  /// Returns a label for this operator.
+  virtual QString label() const = 0;
+
+  /// Returns an icon to use for this operator.
+  virtual QIcon icon() const = 0;
+
+  /// Method to transform a dataset in-place.
+  virtual bool transform(vtkDataObject* data)=0;
+
+signals:
+  /// fire this signal with the operation is updated/modified
+  /// implying that the data needs to be reprocessed.
+  void transformModified();
 
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(Operator);
 };
 
 }
+
 #endif

@@ -13,33 +13,39 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef __TEM_OperatorsWidget_h
+#define __TEM_OperatorsWidget_h
 
-#include <QMainWindow>
+#include <QTreeWidget>
+#include <QScopedPointer>
 
 namespace TEM
 {
-
 class DataSource;
-class Module;
+class Operator;
 
-/// The main window for the TomViz application.
-class MainWindow : public QMainWindow
+class OperatorsWidget : public QTreeWidget
 {
-  Q_OBJECT
-
-  typedef QMainWindow Superclass;
-
+  Q_OBJECT;
+  typedef QTreeWidget Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
+  OperatorsWidget(QWidget* parent=0);
+  virtual ~OperatorsWidget();
 
+private slots:
+  void operatorAdded(Operator* op);
+//  void operatorRemoved(Operator* op);
+
+  /// called when the current data source changes.
+  void setDataSource(DataSource*);
+
+  void itemDoubleClicked(QTreeWidgetItem*);
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(OperatorsWidget);
+  class OWInternals;
+  QScopedPointer<OWInternals> Internals;
 };
 
 }
+
 #endif

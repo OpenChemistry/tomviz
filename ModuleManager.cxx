@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleManager.h"
 
+#include "DataSource.h"
 #include "Module.h"
 #include "ModuleFactory.h"
 #include <QPointer>
@@ -25,6 +26,7 @@ namespace TEM
 class ModuleManager::MMInternals
 {
 public:
+  QList<QPointer<DataSource> > DataSources;
   QList<QPointer<Module> > Modules;
 };
 
@@ -46,6 +48,40 @@ ModuleManager& ModuleManager::instance()
 {
   static ModuleManager theInstance;
   return theInstance;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleManager::reset()
+{
+  foreach (Module* module, this->Internals->Modules)
+    {
+    delete module;
+    }
+  foreach (DataSource* source, this->Internals->DataSources)
+    {
+    delete source;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void ModuleManager::addDataSource(DataSource* dataSource)
+{
+  if (dataSource && !this->Internals->DataSources.contains(dataSource))
+    {
+    dataSource->setParent(this);
+    this->Internals->DataSources.push_back(dataSource);
+    emit this->dataSourceAdded(dataSource);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void ModuleManager::removeDataSource(DataSource* dataSource)
+{
+  if (this->Internals->DataSources.removeOne(dataSource))
+    {
+    emit this->dataSourceRemoved(dataSource);
+    delete dataSource;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -81,7 +117,7 @@ void ModuleManager::removeAllModules()
 
 //-----------------------------------------------------------------------------
 Module* ModuleManager::createAndAddModule(
-  const QString& type, vtkSMSourceProxy* dataSource,
+  const QString& type, DataSource* dataSource,
   vtkSMViewProxy* view)
 {
   if (!view || !dataSource)
@@ -100,7 +136,7 @@ Module* ModuleManager::createAndAddModule(
 
 //-----------------------------------------------------------------------------
 QList<Module*> ModuleManager::findModulesGeneric(
-  vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+  DataSource* dataSource, vtkSMViewProxy* view)
 {
   QList<Module*> modules;
   foreach (Module* module, this->Internals->Modules)

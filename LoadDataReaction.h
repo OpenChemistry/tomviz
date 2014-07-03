@@ -19,10 +19,11 @@
 #include "pqReaction.h"
 
 class pqPipelineSource;
-class vtkSMSourceProxy;
 
 namespace TEM
 {
+class DataSource;
+
 /// LoadDataReaction handles the "Load Data" action in TomViz. On trigger,
 /// this will open the data file and necessary subsequent actions, including:
 /// \li make the data source "active".
@@ -38,14 +39,15 @@ public:
   virtual ~LoadDataReaction();
 
   /// Create a raw data source from the reader.
-  static vtkSMSourceProxy* createDataSource(pqPipelineSource* reader);
+  static DataSource* createDataSource(pqPipelineSource* reader);
+
+  /// Handle creation of a new data source.
+  static void dataSourceAdded(DataSource*);
 
 protected:
   /// Called when the action is triggered.
   virtual void onTriggered();
 
-  /// Handle creation of a new data source.
-  static void dataSourceAdded(vtkSMSourceProxy*);
 private:
   Q_DISABLE_COPY(LoadDataReaction)
 };

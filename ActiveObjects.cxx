@@ -70,9 +70,8 @@ void ActiveObjects::viewChanged(pqView* view)
 }
 
 //-----------------------------------------------------------------------------
-void ActiveObjects::setActiveDataSource(vtkSMSourceProxy* source)
+void ActiveObjects::setActiveDataSource(DataSource* source)
 {
-  Q_ASSERT(source == NULL || TEM::isDataProducer(source));
   if (this->VoidActiveDataSource != source)
     {
     this->ActiveDataSource = source;

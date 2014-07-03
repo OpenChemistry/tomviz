@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleOutline.h"
 
+#include "DataSource.h"
 #include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
@@ -45,7 +46,7 @@ QIcon ModuleOutline::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOutline::initialize(vtkSMSourceProxy* dataSource,
+bool ModuleOutline::initialize(DataSource* dataSource,
                                vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
@@ -55,7 +56,7 @@ bool ModuleOutline::initialize(vtkSMSourceProxy* dataSource,
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm = dataSource->producer()->GetSessionProxyManager();
 
   // Create the outline filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -64,7 +65,7 @@ bool ModuleOutline::initialize(vtkSMSourceProxy* dataSource,
   this->OutlineFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->OutlineFilter);
   controller->PreInitializeProxy(this->OutlineFilter);
-  vtkSMPropertyHelper(this->OutlineFilter, "Input").Set(dataSource);
+  vtkSMPropertyHelper(this->OutlineFilter, "Input").Set(dataSource->producer());
   controller->PostInitializeProxy(this->OutlineFilter);
   controller->RegisterPipelineProxy(this->OutlineFilter);
 

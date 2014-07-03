@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleContour.h"
 
+#include "DataSource.h"
 #include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
@@ -48,15 +49,17 @@ QIcon ModuleContour::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+bool ModuleContour::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
     return false;
     }
 
+  vtkSMSourceProxy* producer = dataSource->producer();
+
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
@@ -64,7 +67,7 @@ bool ModuleContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* vie
   this->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->ContourFilter);
   controller->PreInitializeProxy(this->ContourFilter);
-  vtkSMPropertyHelper(this->ContourFilter, "Input").Set(dataSource);
+  vtkSMPropertyHelper(this->ContourFilter, "Input").Set(producer);
   vtkSMPropertyHelper(this->ContourFilter, "ComputeScalars", /*quiet*/ true).Set(1);
 
   controller->PostInitializeProxy(this->ContourFilter);

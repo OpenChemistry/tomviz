@@ -43,12 +43,13 @@
 
 #include "ActiveObjects.h"
 #include "ComputeHistogram.h"
+#include "DataSource.h"
 #include "ModuleContour.h"
 #include "ModuleManager.h"
 #include "Utilities.h"
 
 #ifdef DAX_DEVICE_ADAPTER
-#  include "dax/ModuleStreamingContour.h"
+# include "dax/ModuleStreamingContour.h"
 #endif
 
 namespace TEM
@@ -161,8 +162,7 @@ public:
 class vtkHistogramMarker : public vtkPlot
 {
 public:
-  static vtkHistogramMarker * New() { return new vtkHistogramMarker; }
-
+  static vtkHistogramMarker * New();
   double PositionX;
 
   bool Paint(vtkContext2D *painter)
@@ -175,6 +175,7 @@ public:
     return true;
   }
 };
+vtkStandardNewMacro(vtkHistogramMarker);
 
 class vtkChartHistogram : public vtkChartXY
 {
@@ -260,16 +261,25 @@ CentralWidget::~CentralWidget()
 }
 
 //-----------------------------------------------------------------------------
-void CentralWidget::setDataSource(vtkSMSourceProxy* source)
+void CentralWidget::setDataSource(DataSource* source)
 {
-  this->DataSource = source;
+  if (this->ADataSource)
+    {
+    this->disconnect(this->ADataSource);
+    }
+  this->ADataSource = source;
+  if (source)
+    {
+    this->connect(source, SIGNAL(dataChanged()), SLOT(refreshHistogram()));
+    }
 
   // Whenever the data source changes clear the plot, and then populate when
   // ready (or use the cached histogram values.
   this->Chart->ClearPlots();
 
   // Get the actual data source, build a histogram out of it.
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
+  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+    source->producer()->GetClientSideObject());
   vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   // Check our cache, and use that if appopriate (or update it).
@@ -283,9 +293,10 @@ void CentralWidget::setDataSource(vtkSMSourceProxy* source)
       }
     else
       {
-      // Should this ever happen? Do we want to support this?
-      qDebug() << "Image data changed after histogram calculation.";
-      return;
+      // Should this ever happen? Do we want to support this? -- YES!!!
+      //qDebug() << "Image data changed after histogram calculation.";
+      //return;
+      this->HistogramCache.remove(data);
       }
     }
 
@@ -309,6 +320,11 @@ void CentralWidget::setDataSource(vtkSMSourceProxy* source)
   this->Worker->start();
 }
 
+void CentralWidget::refreshHistogram()
+{
+  this->setDataSource(this->ADataSource);
+}
+
 void CentralWidget::histogramReady()
 {
   if (!this->Worker || !this->Worker->input || !this->Worker->output)
@@ -325,7 +341,7 @@ void CentralWidget::histogramClicked(vtkObject *caller)
   //qDebug() << "Histogram clicked at" << this->Chart->PositionX
   //         << "making this a great spot to ask for an isosurface at value"
   //         << this->Chart->PositionX;
-  Q_ASSERT(this->DataSource);
+  Q_ASSERT(this->ADataSource);
 
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
   if (!view)
@@ -346,11 +362,11 @@ void CentralWidget::histogramClicked(vtkObject *caller)
   if (!contour)
     {
     QList<ModuleContourType*> contours =
-      ModuleManager::instance().findModules<ModuleContourType*>(this->DataSource, view);
+      ModuleManager::instance().findModules<ModuleContourType*>(this->ADataSource, view);
     if (contours.size() == 0)
       {
       contour = qobject_cast<ModuleContourType*>(ModuleManager::instance().createAndAddModule(
-          "Contour", this->DataSource, view));
+          "Contour", this->ADataSource, view));
       }
     else
       {

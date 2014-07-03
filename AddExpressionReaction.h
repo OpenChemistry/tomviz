@@ -13,33 +13,32 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef __TEM_AddExpressionReaction_h
+#define __TEM_AddExpressionReaction_h
 
-#include <QMainWindow>
+#include "pqReaction.h"
 
 namespace TEM
 {
-
 class DataSource;
-class Module;
+class OperatorPython;
 
-/// The main window for the TomViz application.
-class MainWindow : public QMainWindow
+class AddExpressionReaction : public pqReaction
 {
-  Q_OBJECT
-
-  typedef QMainWindow Superclass;
-
+  Q_OBJECT;
+  typedef pqReaction Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
+  AddExpressionReaction(QAction* parent);
+  virtual ~AddExpressionReaction();
+
+  static OperatorPython* addExpression(DataSource* source=NULL);
+protected:
+  void updateEnableState();
+  void onTriggered() { this->addExpression(); }
 
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(AddExpressionReaction);
 };
-
 }
+
 #endif

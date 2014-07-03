@@ -46,7 +46,7 @@ ModuleFactory::~ModuleFactory()
 
 //-----------------------------------------------------------------------------
 QList<QString> ModuleFactory::moduleTypes(
-  vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+  DataSource* dataSource, vtkSMViewProxy* view)
 {
   QList<QString> reply;
   if (dataSource && view)
@@ -65,7 +65,7 @@ QList<QString> ModuleFactory::moduleTypes(
 
 //-----------------------------------------------------------------------------
 Module* ModuleFactory::createModule(
-  const QString& type, vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+  const QString& type, DataSource* dataSource, vtkSMViewProxy* view)
 {
   Module* module = NULL;
   if (type == "Outline")

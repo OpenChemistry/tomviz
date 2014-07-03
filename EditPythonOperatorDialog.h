@@ -12,34 +12,34 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
 
-#include <QMainWindow>
+ ******************************************************************************/
+#ifndef __TEM_EditPythonOperatorDialog_h
+#define __TEM_EditPythonOperatorDialog_h
+
+
+#include <QDialog>
+#include <QScopedPointer>
 
 namespace TEM
 {
+class OperatorPython;
 
-class DataSource;
-class Module;
-
-/// The main window for the TomViz application.
-class MainWindow : public QMainWindow
+class EditPythonOperatorDialog : public QDialog
 {
-  Q_OBJECT
-
-  typedef QMainWindow Superclass;
-
+  Q_OBJECT;
+  typedef QDialog Superclass;
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
+  EditPythonOperatorDialog(OperatorPython* op, QWidget* parent=NULL);
+  virtual ~EditPythonOperatorDialog();
+
+private slots:
+  void acceptChanges();
 
 private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
+  Q_DISABLE_COPY(EditPythonOperatorDialog);
+  class EPODInternals;
+  QScopedPointer<EPODInternals> Internals;
 };
-
 }
 #endif

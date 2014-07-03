@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleThreshold.h"
 
+#include "DataSource.h"
 #include "pqProxiesWidget.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
@@ -23,7 +24,6 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
-
 
 namespace TEM
 {
@@ -46,16 +46,18 @@ QIcon ModuleThreshold::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleThreshold::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+bool ModuleThreshold::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
     return false;
     }
 
+  vtkSMSourceProxy* producer = dataSource->producer();
+
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
   // Create the contour filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -64,7 +66,7 @@ bool ModuleThreshold::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* v
   this->ThresholdFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->ThresholdFilter);
   controller->PreInitializeProxy(this->ThresholdFilter);
-  vtkSMPropertyHelper(this->ThresholdFilter, "Input").Set(dataSource);
+  vtkSMPropertyHelper(this->ThresholdFilter, "Input").Set(producer);
   controller->PostInitializeProxy(this->ThresholdFilter);
   controller->RegisterPipelineProxy(this->ThresholdFilter);
 

@@ -16,16 +16,17 @@
 #ifndef __Module_h
 #define __Module_h
 
-#include <QObject>
 #include <QIcon>
+#include <QObject>
+#include <QPointer>
 #include "vtkWeakPointer.h"
 
-class vtkSMSourceProxy;
 class vtkSMViewProxy;
 class pqProxiesWidget;
 
 namespace TEM
 {
+class DataSource;
 /// Abstract parent class for all Modules in TomViz.
 class Module : public QObject
 {
@@ -46,7 +47,7 @@ public:
   /// Initialize the module for the data source and view. This is called after a
   /// new module is instantiated. Subclasses override this method to setup the
   /// visualization pipeline for this module.
-  virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
+  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
 
   /// Finalize the module. Subclasses should override this method to delete and
   /// release all proxies (and data) created for this module.
@@ -55,7 +56,8 @@ public:
   /// Returns the visibility for the module.
   virtual bool visibility() const =0;
 
-  vtkSMSourceProxy* dataSource() const;
+  /// Accessors for the data-source and view associated with this Plot.
+  DataSource* dataSource() const;
   vtkSMViewProxy* view() const;
 
 public slots:
@@ -75,7 +77,7 @@ public slots:
 
 private:
   Q_DISABLE_COPY(Module)
-  vtkWeakPointer<vtkSMSourceProxy> DataSource;
+  QPointer<DataSource> ADataSource;
   vtkWeakPointer<vtkSMViewProxy> View;
 };
 

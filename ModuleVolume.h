@@ -20,6 +20,7 @@
 #include "vtkWeakPointer.h"
 
 class vtkSMProxy;
+class vtkSMSourceProxy;
 
 namespace TEM
 {
@@ -36,7 +37,7 @@ public:
 
   virtual QString label() const { return  "Volume"; }
   virtual QIcon icon() const;
-  virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
+  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
   virtual bool setVisibility(bool val);
   virtual bool visibility() const;

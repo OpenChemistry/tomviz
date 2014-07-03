@@ -13,33 +13,18 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
-
-#include <QMainWindow>
+#include "Operator.h"
 
 namespace TEM
 {
-
-class DataSource;
-class Module;
-
-/// The main window for the TomViz application.
-class MainWindow : public QMainWindow
+//-----------------------------------------------------------------------------
+Operator::Operator(QObject* parentObject): Superclass(parentObject)
 {
-  Q_OBJECT
+}
 
-  typedef QMainWindow Superclass;
-
-public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
-  virtual ~MainWindow();
-
-private:
-  Q_DISABLE_COPY(MainWindow)
-  class MWInternals;
-  MWInternals* Internals;
-};
+//-----------------------------------------------------------------------------
+Operator::~Operator()
+{
+}
 
 }
-#endif
