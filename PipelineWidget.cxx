@@ -32,8 +32,8 @@
 namespace TEM
 {
 
-static const int EYE_COLUMN = 0;
-static const int MODULE_COLUMN = 1;
+static const int EYE_COLUMN = 1;
+static const int MODULE_COLUMN = 0;
 
 class PipelineWidget::PWInternals
 {
@@ -106,7 +106,11 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
   this->connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
                 SLOT(dataSourceRemoved(DataSource*)));
 
-  this->header()->setStretchLastSection(true);
+
+  this->header()->setResizeMode(0, QHeaderView::Stretch);
+  this->header()->setResizeMode(1, QHeaderView::Fixed);
+  this->header()->resizeSection(1, 25);
+  this->header()->setStretchLastSection(false);
 }
 
 //-----------------------------------------------------------------------------
