@@ -80,13 +80,16 @@ set(SOURCES
   RecentFilesMenu.cxx
   RecentFilesMenu.h
   Utilities.h
+  ViewPropertiesPanel.cxx
+  ViewPropertiesPanel.h
   )
 
 qt4_wrap_ui(UI_SOURCES
   CentralWidget.ui
+  EditPythonOperatorDialog.ui
   MainWindow.ui
   ModulePropertiesPanel.ui
-  EditPythonOperatorDialog.ui
+  ViewPropertiesPanel.ui
   )
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})

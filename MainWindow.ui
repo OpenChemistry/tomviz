@@ -20,7 +20,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>24</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -197,6 +197,18 @@
     <bool>false</bool>
    </attribute>
   </widget>
+  <widget class="QDockWidget" name="dockWidget_4">
+   <property name="allowedAreas">
+    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
+   </property>
+   <property name="windowTitle">
+    <string>View Properties</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="TEM::ViewPropertiesPanel" name="viewPropertiesPanel"/>
+  </widget>
   <action name="actionOpen">
    <property name="text">
     <string>&amp;Open</string>
@@ -289,6 +301,12 @@
    <class>TEM::OperatorsWidget</class>
    <extends>QTreeWidget</extends>
    <header>OperatorsWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TEM::ViewPropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>ViewPropertiesPanel.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

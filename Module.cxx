@@ -63,7 +63,7 @@ DataSource* Module::dataSource() const
 //-----------------------------------------------------------------------------
 void Module::addToPanel(pqProxiesWidget* panel)
 {
-  panel->addProxy(this->View, "View",QStringList(), true);
+  (void)panel;
 }
 
 } // end of namespace TEM
