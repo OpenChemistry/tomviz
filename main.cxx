@@ -18,6 +18,7 @@
 #include "pqOptions.h"
 #include "pqPVApplicationCore.h"
 #include "vtkNew.h"
+#include "vtkObjectFactory.h"
 
 #include "MainWindow.h"
 
@@ -28,15 +29,15 @@
 class TomoOptions : public pqOptions
 {
 public:
-  static TomoOptions* New() { return new TomoOptions(); }
+  static TomoOptions* New();
   vtkTypeMacro(TomoOptions,pqOptions);
+  virtual int GetEnableStreaming() { return 1; }
 
-  TomoOptions():
-    pqOptions()
+protected:
+  TomoOptions(): pqOptions()
   { }
-
-  int GetEnableStreaming() { return 1; }
 };
+vtkStandardNewMacro(TomoOptions);
 
 int main(int argc, char** argv)
 {
