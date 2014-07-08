@@ -38,6 +38,9 @@ public:
   static Module* createModule(
     const QString& type, DataSource* dataSource, vtkSMViewProxy* view);
 
+  /// Returns the type for a module instance.
+  static const char* moduleType(Module* module);
+
 private:
   ModuleFactory();
   ~ModuleFactory();

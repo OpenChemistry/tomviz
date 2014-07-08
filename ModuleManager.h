@@ -18,9 +18,11 @@
 
 #include <QObject>
 #include <QScopedPointer>
+#include <vtk_pugixml.h>
 
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
+
 
 namespace TEM
 {
@@ -55,6 +57,10 @@ public:
       }
     return modulesT;
     }
+
+  /// save the application state as xml.
+  bool serialize(pugi::xml_node& ns) const;
+  bool deserialize(const pugi::xml_node& ns);
 
 public slots:
   void addModule(Module*);

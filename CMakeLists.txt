@@ -79,7 +79,10 @@ set(SOURCES
   ProgressBehavior.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
+  SaveLoadStateReaction.cxx
+  SaveLoadStateReaction.h
   Utilities.h
+  Utilities.cxx
   ViewPropertiesPanel.cxx
   ViewPropertiesPanel.h
   )
@@ -105,6 +108,7 @@ target_link_libraries(tomviz
   LINK_PRIVATE
     pqApplicationComponents
     vtkPVServerManagerRendering
+    vtkpugixml
   )
 if(WIN32)
   target_link_libraries(tomviz LINK_PRIVATE ${QT_QTMAIN_LIBRARY})

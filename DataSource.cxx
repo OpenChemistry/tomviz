@@ -26,6 +26,7 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkTrivialProducer.h"
+#include <vtk_pugixml.h>
 
 namespace TEM
 {
@@ -77,24 +78,39 @@ DataSource::~DataSource()
 }
 
 //-----------------------------------------------------------------------------
+bool DataSource::serialize(pugi::xml_node& ns) const
+{
+  ns.append_attribute("number_of_operators").set_value(
+    static_cast<int>(this->Internals->Operators.size()));
+  return true;
+}
+
+//-----------------------------------------------------------------------------
 DataSource* DataSource::clone() const
 {
- // vtkAlgorithm::SafeDownCast(this->Internals->OriginalDataSource->GetClientSideObject())->Modified();
   DataSource* newClone = new DataSource(this->Internals->OriginalDataSource);
   // now, clone the operators.
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
     {
+    // don't think operators should be shared. we need to clone them
+    // to avoid side effects.
     newClone->addOperator(op);
     }
   return newClone;
 }
 
+//-----------------------------------------------------------------------------
+vtkSMSourceProxy* DataSource::originalDataSource() const
+{
+  return this->Internals->OriginalDataSource;
+}
 
 //-----------------------------------------------------------------------------
 vtkSMSourceProxy* DataSource::producer() const
 {
   return this->Internals->Producer;
 }
+
 //-----------------------------------------------------------------------------
 int DataSource::addOperator(const QSharedPointer<Operator>& op)
 {

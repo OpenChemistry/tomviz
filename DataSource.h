@@ -19,6 +19,7 @@
 #include <QObject>
 #include <QScopedPointer>
 #include <QSharedPointer>
+#include <vtk_pugixml.h>
 
 class vtkSMSourceProxy;
 
@@ -52,12 +53,20 @@ public:
   /// Creates a new clone from this DataSource.
   DataSource* clone() const;
 
+  /// Save the state out.
+  bool serialize(pugi::xml_node& in) const;
+
+  /// Returns the original data source. This is not meant to be used to connect
+  /// visualization pipelines on directly. Use producer() instead.
+  vtkSMSourceProxy* originalDataSource() const;
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
   void dataChanged();
 
   void operatorAdded(Operator*);
+
 protected:
   void operate(Operator* op);
   void resetData();

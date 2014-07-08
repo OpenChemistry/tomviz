@@ -36,7 +36,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "RecentFilesMenu.h"
-
+#include "SaveLoadStateReaction.h"
 
 
 //we are building with dax, so we have plugins to import
@@ -88,10 +88,13 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new ModuleMenu(ui.menuModules);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
-  new pqSaveStateReaction(ui.actionSave);
+  new pqSaveStateReaction(ui.actionSaveDebuggingState);
 
   new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
   new pqSaveAnimationReaction(ui.actionSaveMovie);
+
+  new SaveLoadStateReaction(ui.actionSaveState);
+  new SaveLoadStateReaction(ui.actionLoadState, /*load*/ true);
 
   //now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER

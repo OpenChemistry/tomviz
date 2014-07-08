@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
+#include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -87,6 +88,23 @@ bool ModuleOutline::finalize()
 
   this->OutlineFilter = NULL;
   this->OutlineRepresentation = NULL;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleOutline::serialize(pugi::xml_node& ns) const
+{
+  // save stuff that the user can change.
+  pugi::xml_node reprNode = ns.append_child("OutlineRepresentation");
+
+  QStringList properties;
+  properties << "CubeAxesVisibility" << "Visibility";
+  if (TEM::serialize(this->OutlineRepresentation, reprNode, properties) == false)
+    {
+    qWarning("Failed to serialize ModuleOutline.");
+    ns.remove_child(reprNode);
+    return false;
+    }
   return true;
 }
 

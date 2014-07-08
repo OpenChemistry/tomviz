@@ -23,7 +23,11 @@
 #include "pqServerManagerModel.h"
 #include "vtkSMSourceProxy.h"
 
+#include <vtk_pugixml.h>
 #include <QFileInfo>
+#include <QStringList>
+
+class vtkSMProxyLocator;
 
 namespace TEM
 {
@@ -102,10 +106,16 @@ inline QString label(vtkSMProxy* proxy)
   return proxy? proxy->GetXMLLabel() : NULL;
 }
 
+//---------------------------------------------------------------------------
 inline QString label(pqProxy* proxy)
 {
   return label(convert(proxy));
 }
+
+//---------------------------------------------------------------------------
+/// Serialize a proxy to a pugi::xml node.
+bool serialize(vtkSMProxy* proxy, pugi::xml_node& out, const QStringList& properties=QStringList());
+bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in, vtkSMProxyLocator* locator=NULL);
 
 }
 

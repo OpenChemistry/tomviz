@@ -35,10 +35,13 @@
     <addaction name="actionOpen"/>
     <addaction name="menuRecentlyOpened"/>
     <addaction name="separator"/>
+    <addaction name="actionSaveState"/>
+    <addaction name="actionLoadState"/>
+    <addaction name="separator"/>
     <addaction name="actionSaveScreenshot"/>
     <addaction name="actionSaveMovie"/>
     <addaction name="separator"/>
-    <addaction name="actionSave"/>
+    <addaction name="actionSaveDebuggingState"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -214,9 +217,12 @@
     <string>&amp;Open</string>
    </property>
   </action>
-  <action name="actionSave">
+  <action name="actionSaveDebuggingState">
    <property name="text">
-    <string>&amp;Save</string>
+    <string>&amp;Save Debugging State</string>
+   </property>
+   <property name="toolTip">
+    <string>Save state with debugging information (advanced)</string>
    </property>
   </action>
   <action name="actionExit">
@@ -255,6 +261,16 @@
   <action name="actionPython_Expression">
    <property name="text">
     <string>Python Expression</string>
+   </property>
+  </action>
+  <action name="actionSaveState">
+   <property name="text">
+    <string>Save State</string>
+   </property>
+  </action>
+  <action name="actionLoadState">
+   <property name="text">
+    <string>Load State</string>
    </property>
   </action>
  </widget>
