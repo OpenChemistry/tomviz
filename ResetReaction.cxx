@@ -15,7 +15,13 @@
 ******************************************************************************/
 #include "ResetReaction.h"
 
+#include "ActiveObjects.h"
 #include "ModuleManager.h"
+#include "vtkNew.h"
+#include "vtkSmartPointer.h"
+#include "vtkSMParaViewPipelineController.h"
+#include "vtkSMProxy.h"
+#include "vtkSMSessionProxyManager.h"
 
 namespace TEM
 {
@@ -34,6 +40,14 @@ ResetReaction::~ResetReaction()
 void ResetReaction::reset()
 {
   ModuleManager::instance().reset();
+
+  // create default render view.
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  vtkSmartPointer<vtkSMProxy> view;
+  view.TakeReference(ActiveObjects::instance().proxyManager()->NewProxy(
+      "views", "RenderView"));
+  controller->InitializeProxy(view);
+  controller->RegisterViewProxy(view);
 }
 
 }

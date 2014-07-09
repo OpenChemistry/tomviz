@@ -25,7 +25,7 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
-
+#include "vtkSMProperty.h"
 namespace TEM
 {
 
@@ -73,8 +73,8 @@ bool ModuleOutline::initialize(DataSource* dataSource,
   // Create the representation for it.
   this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, view);
   Q_ASSERT(this->OutlineRepresentation);
-  vtkSMPropertyHelper(this->OutlineRepresentation,
-                      "Representation").Set("Outline");
+  //vtkSMPropertyHelper(this->OutlineRepresentation,
+  //                    "Representation").Set("Outline");
   this->OutlineRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -105,6 +105,18 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
     ns.remove_child(reprNode);
     return false;
     }
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleOutline::deserialize(pugi::xml_node& ns)
+{
+  if (TEM::deserialize(this->OutlineRepresentation, ns.child("OutlineRepresentation")))
+    {
+    this->OutlineRepresentation->UpdateVTKObjects();
+    }
+  this->OutlineFilter->GetProperty("Input")->Modified();
+  this->OutlineFilter->UpdateVTKObjects();
   return true;
 }
 

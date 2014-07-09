@@ -103,6 +103,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   PV_PLUGIN_IMPORT(tomvizThreshold);
   PV_PLUGIN_IMPORT(tomvizStreaming);
 #endif
+
+  ResetReaction::reset();
 }
 
 //-----------------------------------------------------------------------------

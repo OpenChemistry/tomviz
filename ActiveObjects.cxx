@@ -39,8 +39,8 @@ ActiveObjects::ActiveObjects()
                 SLOT(viewChanged(pqView*)));
   this->connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
     SLOT(dataSourceRemoved(DataSource*)));
-  this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(DataSource*)),
-    SLOT(moduleRemoved(DataSource*)));
+  this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
+    SLOT(moduleRemoved(Module*)));
 }
 
 //-----------------------------------------------------------------------------

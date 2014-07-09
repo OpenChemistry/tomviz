@@ -63,6 +63,7 @@ public:
 
   /// serialize the state of the module.
   virtual bool serialize(pugi::xml_node& ns) const;
+  virtual bool deserialize(pugi::xml_node& ns);
 
 public slots:
   /// Set the visibility for this module. Subclasses should override this method

@@ -398,12 +398,15 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
       }
 
     // Create module.
-    Module* module = this->createAndAddModule(type, dataSources[dsid],
+    Module* module = ModuleFactory::createModule(type, dataSources[dsid],
       vtkSMViewProxy::SafeDownCast(locator->LocateProxy(viewid)));
-    if (!module)
+    if (!module || !module->deserialize(mdlnode))
       {
       qWarning() << "Failed to create module: " << type;
+      delete module;
+      continue;
       }
+    this->addModule(module);
     }
   return true;
 }

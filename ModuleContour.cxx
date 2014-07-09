@@ -172,4 +172,18 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   return true;
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleContour::deserialize(pugi::xml_node& ns)
+{
+  if (TEM::deserialize(this->ContourFilter, ns.child("ContourFilter")))
+    {
+    this->ContourFilter->UpdateVTKObjects();
+    }
+  if (TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")))
+    {
+    this->ContourRepresentation->UpdateVTKObjects();
+    }
+  return true;
+}
+
 } // end of namespace TEM
