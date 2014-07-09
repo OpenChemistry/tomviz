@@ -109,15 +109,9 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOutline::deserialize(pugi::xml_node& ns)
+bool ModuleOutline::deserialize(const pugi::xml_node& ns)
 {
-  if (TEM::deserialize(this->OutlineRepresentation, ns.child("OutlineRepresentation")))
-    {
-    this->OutlineRepresentation->UpdateVTKObjects();
-    }
-  this->OutlineFilter->GetProperty("Input")->Modified();
-  this->OutlineFilter->UpdateVTKObjects();
-  return true;
+  return TEM::deserialize(this->OutlineRepresentation, ns.child("OutlineRepresentation"));
 }
 
 //-----------------------------------------------------------------------------

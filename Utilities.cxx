@@ -76,7 +76,8 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
 
   if (!in || !in.first_child())
     {
-    return false;
+    // empty state loaded.
+    return true;
     }
 
   std::ostringstream stream;
@@ -86,7 +87,12 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
     {
     return false;
     }
-  return proxy->LoadXMLState(parser->GetRootElement(), locator) != 0;
+  if (proxy->LoadXMLState(parser->GetRootElement(), locator) != 0)
+    {
+    proxy->UpdateVTKObjects();
+    return true;
+    }
+  return false;
 }
 
 }

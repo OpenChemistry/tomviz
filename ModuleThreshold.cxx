@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
+#include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -137,5 +138,29 @@ void ModuleThreshold::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleThreshold::serialize(pugi::xml_node& ns) const
+{
+  QStringList fprops;
+  fprops << "SelectInputScalars" << "ThresholdBetween";
+  pugi::xml_node tnode = ns.append_child("Threshold");
+
+  QStringList representationProperties;
+  representationProperties
+    << "Representation"
+    << "Opacity"
+    << "Specular"
+    << "Visibility";
+  pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
+  return TEM::serialize(this->ThresholdFilter, tnode, fprops) &&
+    TEM::serialize(this->ThresholdRepresentation, rnode, representationProperties);
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
+{
+  return TEM::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
+    TEM::deserialize(this->ThresholdRepresentation, ns.child("ThresholdRepresentation"));
+}
 
 }

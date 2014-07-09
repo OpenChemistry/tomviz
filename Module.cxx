@@ -66,18 +66,4 @@ void Module::addToPanel(pqProxiesWidget* panel)
   (void)panel;
 }
 
-//-----------------------------------------------------------------------------
-bool Module::serialize(pugi::xml_node& ns) const
-{
-  Q_UNUSED(ns);
-  return false;
-}
-
-//-----------------------------------------------------------------------------
-bool Module::deserialize(pugi::xml_node& ns)
-{
-  Q_UNUSED(ns);
-  return false;
-}
-
 } // end of namespace TEM
