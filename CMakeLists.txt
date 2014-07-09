@@ -79,10 +79,12 @@ set(SOURCES
   ProgressBehavior.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
+  ResetReaction.cxx
+  ResetReaction.h
   SaveLoadStateReaction.cxx
   SaveLoadStateReaction.h
-  Utilities.h
   Utilities.cxx
+  Utilities.h
   ViewPropertiesPanel.cxx
   ViewPropertiesPanel.h
   )

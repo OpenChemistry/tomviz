@@ -15,11 +15,12 @@
 ******************************************************************************/
 #include "ActiveObjects.h"
 
+#include "ModuleManager.h"
+#include "pqActiveObjects.h"
 #include "pqPipelineSource.h"
 #include "pqServer.h"
-#include "Utilities.h"
 #include "pqView.h"
-#include "pqActiveObjects.h"
+#include "Utilities.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
@@ -36,6 +37,10 @@ ActiveObjects::ActiveObjects()
 {
   this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
                 SLOT(viewChanged(pqView*)));
+  this->connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
+    SLOT(dataSourceRemoved(DataSource*)));
+  this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(DataSource*)),
+    SLOT(moduleRemoved(DataSource*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -67,6 +72,24 @@ vtkSMViewProxy* ActiveObjects::activeView() const
 void ActiveObjects::viewChanged(pqView* view)
 {
   emit this->viewChanged(view? view->getViewProxy() : NULL);
+}
+
+//-----------------------------------------------------------------------------
+void ActiveObjects::dataSourceRemoved(DataSource* ds)
+{
+  if (this->VoidActiveDataSource == ds)
+    {
+    this->setActiveDataSource(NULL);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void ActiveObjects::moduleRemoved(Module* mdl)
+{
+  if (this->VoidActiveModule == mdl)
+    {
+    this->setActiveModule(NULL);
+    }
 }
 
 //-----------------------------------------------------------------------------

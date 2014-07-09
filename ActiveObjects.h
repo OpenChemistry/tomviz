@@ -79,6 +79,8 @@ signals:
 
 private slots:
   void viewChanged(pqView*);
+  void dataSourceRemoved(DataSource*);
+  void moduleRemoved(Module*);
 
 protected:
   ActiveObjects();

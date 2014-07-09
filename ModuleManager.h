@@ -77,6 +77,7 @@ public slots:
   /// Register/Unregister data sources with the ModuleManager.
   void addDataSource(DataSource*);
   void removeDataSource(DataSource*);
+  void removeAllDataSources();
 
   /// Removes all modules and data sources.
   void reset();

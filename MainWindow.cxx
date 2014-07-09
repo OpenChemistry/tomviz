@@ -36,8 +36,8 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "RecentFilesMenu.h"
+#include "ResetReaction.h"
 #include "SaveLoadStateReaction.h"
-
 
 //we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
@@ -95,6 +95,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new SaveLoadStateReaction(ui.actionSaveState);
   new SaveLoadStateReaction(ui.actionLoadState, /*load*/ true);
+
+  new ResetReaction(ui.actionReset);
 
   //now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER

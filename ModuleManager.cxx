@@ -69,14 +69,8 @@ ModuleManager& ModuleManager::instance()
 //-----------------------------------------------------------------------------
 void ModuleManager::reset()
 {
-  foreach (Module* module, this->Internals->Modules)
-    {
-    delete module;
-    }
-  foreach (DataSource* source, this->Internals->DataSources)
-    {
-    delete source;
-    }
+  this->removeAllModules();
+  this->removeAllDataSources();
   pqDeleteReaction::deleteAll();
 }
 
@@ -99,6 +93,17 @@ void ModuleManager::removeDataSource(DataSource* dataSource)
     emit this->dataSourceRemoved(dataSource);
     delete dataSource;
     }
+}
+
+//-----------------------------------------------------------------------------
+void ModuleManager::removeAllDataSources()
+{
+  foreach (DataSource* dataSource, this->Internals->DataSources)
+    {
+    emit this->dataSourceRemoved(dataSource);
+    delete dataSource;
+    }
+  this->Internals->DataSources.clear();
 }
 
 //-----------------------------------------------------------------------------
@@ -130,6 +135,7 @@ void ModuleManager::removeAllModules()
     emit this->moduleRemoved(module);
     delete module;
     }
+  this->Internals->Modules.clear();
 }
 
 //-----------------------------------------------------------------------------

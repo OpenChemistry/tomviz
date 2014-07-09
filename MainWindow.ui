@@ -43,6 +43,7 @@
     <addaction name="separator"/>
     <addaction name="actionSaveDebuggingState"/>
     <addaction name="separator"/>
+    <addaction name="actionReset"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuModules">
@@ -271,6 +272,14 @@
   <action name="actionLoadState">
    <property name="text">
     <string>Load State</string>
+   </property>
+  </action>
+  <action name="actionReset">
+   <property name="text">
+    <string>&amp;Reset</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset application</string>
    </property>
   </action>
  </widget>
