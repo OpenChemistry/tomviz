@@ -16,28 +16,30 @@
 #ifndef __RecentFilesMenu_h
 #define __RecentFilesMenu_h
 
-#include "pqRecentFilesMenu.h"
+#include <QObject>
+#include <QAction>
+
+class QMenu;
 
 namespace TEM
 {
 /// Extends pqRecentFilesMenu to add support to open a data file customized for
 /// TomViz.
-class RecentFilesMenu : public pqRecentFilesMenu
+class RecentFilesMenu : public QObject
 {
   Q_OBJECT;
-  typedef pqRecentFilesMenu Superclass;
+  typedef QObject Superclass;
 public:
   RecentFilesMenu(QMenu& menu, QObject* parent=NULL);
   virtual ~RecentFilesMenu();
 
-protected:
-  virtual pqPipelineSource* createReader(
-    const QString& readerGroup,
-    const QString& readerName,
-    const QStringList& files,
-    pqServer* server) const;
+private slots:
+  void aboutToShowMenu();
+  void triggeredMenu(QAction*);
+
 private:
   Q_DISABLE_COPY(RecentFilesMenu);
 };
+
 }
 #endif

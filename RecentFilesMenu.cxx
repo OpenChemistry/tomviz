@@ -18,16 +18,21 @@
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "pqPipelineSource.h"
+#include "pqSettings.h"
 #include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSMParaViewPipelineController.h"
+
+#include <QMenu>
 
 namespace TEM
 {
 //-------------------------------------------------------------------------
 RecentFilesMenu::RecentFilesMenu(QMenu& menu, QObject* parentObject)
-  : Superclass(menu, parentObject)
+  : Superclass(parentObject)
 {
+  this->connect(&menu, SIGNAL(aboutToShow()), SLOT(aboutToShowMenu()));
+  this->connect(&menu, SIGNAL(triggered(QAction*)), SLOT(triggeredMenu(QAction*)));
 }
 
 //-------------------------------------------------------------------------
@@ -36,23 +41,53 @@ RecentFilesMenu::~RecentFilesMenu()
 }
 
 //-------------------------------------------------------------------------
-pqPipelineSource* RecentFilesMenu::createReader(
-    const QString& readerGroup,
-    const QString& readerName,
-    const QStringList& files,
-    pqServer* server) const
+void RecentFilesMenu::aboutToShowMenu()
 {
-  vtkNew<vtkSMParaViewPipelineController> controller;
-  pqPipelineSource* reader = this->Superclass::createReader(
-    readerGroup, readerName, files, server);
-  if (reader)
+  QMenu* menu = qobject_cast<QMenu*>(this->sender());
+  Q_ASSERT(menu);
+  menu->clear();
+
+  QSettings* settings = pqApplicationCore::instance()->settings();
+  QString recent = settings->value("recentFiles").toString();
+  pugi::xml_document doc;
+  if (recent.isEmpty() || !doc.load(recent.toUtf8().data()))
     {
-    DataSource* dataSource = LoadDataReaction::createDataSource(reader);
-    controller->UnRegisterProxy(reader->getProxy());
-    reader = NULL;
-    return TEM::convert<pqPipelineSource*>(dataSource->producer());
+    QAction* actn = menu->addAction("Empty");
+    actn->setEnabled(false);
+    return;
     }
-  return NULL;
+
+  for (pugi::xml_node node = doc.child("DataSource"); node; node = node.next_sibling("DataSource"))
+    {
+
+    }
+
 }
+
+//-------------------------------------------------------------------------
+void RecentFilesMenu::triggeredMenu(QAction* actn)
+{
+}
+
+//
+////-------------------------------------------------------------------------
+//pqPipelineSource* RecentFilesMenu::createReader(
+//    const QString& readerGroup,
+//    const QString& readerName,
+//    const QStringList& files,
+//    pqServer* server) const
+//{
+//  vtkNew<vtkSMParaViewPipelineController> controller;
+//  pqPipelineSource* reader = this->Superclass::createReader(
+//    readerGroup, readerName, files, server);
+//  if (reader)
+//    {
+//    DataSource* dataSource = LoadDataReaction::createDataSource(reader);
+//    controller->UnRegisterProxy(reader->getProxy());
+//    reader = NULL;
+//    return TEM::convert<pqPipelineSource*>(dataSource->producer());
+//    }
+//  return NULL;
+//}
 
 }
