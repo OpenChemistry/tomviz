@@ -20,6 +20,7 @@
 #include <vtk_pugixml.h>
 
 #include "ModuleManager.h"
+#include "vtkSMProxyManager.h"
 
 #include <QtDebug>
 
@@ -100,6 +101,11 @@ bool SaveLoadStateReaction::saveState(const QString& filename)
   pugi::xml_document document;
   pugi::xml_node root = document.append_child("TomVizState");
   root.append_attribute("version").set_value("0.0a");
+  root.append_attribute("paraview_version").set_value(
+    QString("%1.%2.%3")
+    .arg(vtkSMProxyManager::GetVersionMajor())
+    .arg(vtkSMProxyManager::GetVersionMinor())
+    .arg(vtkSMProxyManager::GetVersionPatch()).toLatin1().data());
 
   return (ModuleManager::instance().serialize(root) &&
     document.save_file(/*path*/ filename.toLatin1().data(), /*indent*/ "  "));
