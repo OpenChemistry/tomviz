@@ -212,6 +212,10 @@ bool ModuleManager::serialize(pugi::xml_node& ns) const
         ds->producer()->GetGlobalIDAsString());
       dsnode.append_attribute("original_data_source").set_value(
         ds->originalDataSource()->GetGlobalIDAsString());
+      if (ds == ActiveObjects::instance().activeDataSource())
+        {
+        dsnode.append_attribute("active").set_value(1);
+        }
       if (!ds->serialize(dsnode))
         {
         qWarning("Failed to serialize DataSource.");
@@ -234,11 +238,17 @@ bool ModuleManager::serialize(pugi::xml_node& ns) const
         mdl->dataSource()->producer()->GetGlobalIDAsString());
       mdlnode.append_attribute("view").set_value(
         mdl->view()->GetGlobalIDAsString());
+      if (mdl == ActiveObjects::instance().activeModule())
+        {
+        mdlnode.append_attribute("active").set_value(1);
+        }
       if (!mdl->serialize(mdlnode))
         {
         qWarning() << "Failed to serialize Module.";
         ns.remove_child(mdlnode);
+        continue;
         }
+
       }
     }
 
@@ -269,6 +279,10 @@ bool ModuleManager::serialize(pugi::xml_node& ns) const
       vnode.append_attribute("id").set_value(view->GetGlobalIDAsString());
       vnode.append_attribute("xmlgroup").set_value(view->GetXMLGroup());
       vnode.append_attribute("xmlname").set_value(view->GetXMLName());
+      if (view == ActiveObjects::instance().activeView())
+        {
+        vnode.append_attribute("active").set_value(1);
+        }
       if (!TEM::serialize(view, vnode))
         {
         qWarning("Failed to serialize view.");
@@ -330,6 +344,11 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
     proxy->UpdateVTKObjects();
     pxm->RegisterProxy("views", proxy);
     locator->AssignProxy(id, proxy);
+
+    if (node.attribute("active").as_int(0) == 1)
+      {
+      ActiveObjects::instance().setActiveView(vtkSMViewProxy::SafeDownCast(proxy));
+      }
     }
 
   // process all original data sources i.e. readers and create them.
@@ -381,6 +400,11 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
     DataSource* dataSource = new DataSource(originalDataSources[odsid]);
     this->addDataSource(dataSource);
     dataSources[id] = dataSource;
+
+    if (dsnode.attribute("active").as_int(0) == 1)
+      {
+      ActiveObjects::instance().setActiveDataSource(dataSource);
+      }
     }
 
   // now, deserialize all the modules.
@@ -407,6 +431,10 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
       continue;
       }
     this->addModule(module);
+    if (mdlnode.attribute("active").as_int(0) == 1)
+      {
+      ActiveObjects::instance().setActiveModule(module);
+      }
     }
   return true;
 }
