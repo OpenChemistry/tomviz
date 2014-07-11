@@ -15,8 +15,10 @@
 ******************************************************************************/
 #include "dax/ModuleStreamingContour.h"
 
-#include "pqProxiesWidget.h"
+#include "DataSource.h"
 #include "Utilities.h"
+
+#include "pqProxiesWidget.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
 #include "vtkPVArrayInformation.h"
@@ -54,26 +56,28 @@ QIcon ModuleStreamingContour::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleStreamingContour::initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view)
+bool ModuleStreamingContour::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
     return false;
     }
 
+  vtkSMSourceProxy* producer = dataSource->producer();
+
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
   // Create the representation for it.
-  this->ContourRepresentation = controller->Show(dataSource, 0, view);
+  this->ContourRepresentation = controller->Show(producer, 0, view);
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Streaming Contour");
 
 
   // ColorArrayName
-  const char* propertyName = dataSource->GetDataInformation()->
-                                         GetPointDataInformation()->
-                                         GetArrayInformation(0)->
-                                         GetName();
+  const char* propertyName = producer->GetDataInformation()->
+                                       GetPointDataInformation()->
+                                       GetArrayInformation(0)->
+                                       GetName();
 
   vtkSMPVRepresentationProxy::SetScalarColoring(this->ContourRepresentation,
                                                 propertyName,
