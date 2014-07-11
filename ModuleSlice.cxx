@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "ModuleOrthogonalSlice.h"
+#include "ModuleSlice.h"
 
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
@@ -31,24 +31,24 @@
 namespace TEM
 {
 //-----------------------------------------------------------------------------
-ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject) : Superclass(parentObject)
+ModuleSlice::ModuleSlice(QObject* parentObject) : Superclass(parentObject)
 {
 }
 
 //-----------------------------------------------------------------------------
-ModuleOrthogonalSlice::~ModuleOrthogonalSlice()
+ModuleSlice::~ModuleSlice()
 {
   this->finalize();
 }
 
 //-----------------------------------------------------------------------------
-QIcon ModuleOrthogonalSlice::icon() const
+QIcon ModuleSlice::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqSlice24.png");
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOrthogonalSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
+bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 {
   if (!this->Superclass::initialize(dataSource, view))
     {
@@ -80,7 +80,7 @@ bool ModuleOrthogonalSlice::initialize(DataSource* dataSource, vtkSMViewProxy* v
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOrthogonalSlice::finalize()
+bool ModuleSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(this->Representation);
@@ -92,7 +92,7 @@ bool ModuleOrthogonalSlice::finalize()
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOrthogonalSlice::setVisibility(bool val)
+bool ModuleSlice::setVisibility(bool val)
 {
   Q_ASSERT(this->Representation);
   vtkSMPropertyHelper(this->Representation, "Visibility").Set(val? 1 : 0);
@@ -101,14 +101,14 @@ bool ModuleOrthogonalSlice::setVisibility(bool val)
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOrthogonalSlice::visibility() const
+bool ModuleSlice::visibility() const
 {
   Q_ASSERT(this->Representation);
   return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------
-void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
+void ModuleSlice::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(this->Representation);
 
@@ -133,7 +133,7 @@ void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
+bool ModuleSlice::serialize(pugi::xml_node& ns) const
 {
   vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
   vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
@@ -153,7 +153,7 @@ bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
+bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 {
   vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
   vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();

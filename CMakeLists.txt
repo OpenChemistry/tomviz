@@ -60,8 +60,8 @@ set(SOURCES
   ModuleManager.h
   ModuleMenu.cxx
   ModuleMenu.h
-  ModuleOrthogonalSlice.cxx
-  ModuleOrthogonalSlice.h
+  ModuleSlice.cxx
+  ModuleSlice.h
   ModuleOutline.cxx
   ModuleOutline.h
   ModulePropertiesPanel.cxx

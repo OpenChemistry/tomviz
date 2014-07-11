@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ModuleOrthogonalSlice_h
-#define __TEM_ModuleOrthogonalSlice_h
+#ifndef __TEM_ModuleSlice_h
+#define __TEM_ModuleSlice_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
@@ -24,15 +24,15 @@ class vtkSMSourceProxy;
 
 namespace TEM
 {
-class ModuleOrthogonalSlice : public Module
+class ModuleSlice : public Module
 {
   Q_OBJECT;
   typedef Module Superclass;
 public:
-  ModuleOrthogonalSlice(QObject* parent=NULL);
-  virtual ~ModuleOrthogonalSlice();
+  ModuleSlice(QObject* parent=NULL);
+  virtual ~ModuleSlice();
 
-  virtual QString label() const { return  "Orthogonal Slice"; }
+  virtual QString label() const { return  "Slice"; }
   virtual QIcon icon() const;
   virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
@@ -43,7 +43,7 @@ public:
   virtual bool deserialize(const pugi::xml_node& ns);
 
 private:
-  Q_DISABLE_COPY(ModuleOrthogonalSlice);
+  Q_DISABLE_COPY(ModuleSlice);
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkWeakPointer<vtkSMProxy> Representation;
 };
