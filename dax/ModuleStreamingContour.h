@@ -35,7 +35,7 @@ public:
 
   virtual QString label() const { return  "Accelerated Contour"; }
   virtual QIcon icon() const;
-  virtual bool initialize(vtkSMSourceProxy* dataSource, vtkSMViewProxy* view);
+  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
   virtual bool finalize();
   virtual bool setVisibility(bool val);
   virtual bool visibility() const;
