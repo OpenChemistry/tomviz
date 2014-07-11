@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
+#include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -24,7 +25,7 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
-
+#include "vtkSMProperty.h"
 namespace TEM
 {
 
@@ -72,8 +73,8 @@ bool ModuleOutline::initialize(DataSource* dataSource,
   // Create the representation for it.
   this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, view);
   Q_ASSERT(this->OutlineRepresentation);
-  vtkSMPropertyHelper(this->OutlineRepresentation,
-                      "Representation").Set("Outline");
+  //vtkSMPropertyHelper(this->OutlineRepresentation,
+  //                    "Representation").Set("Outline");
   this->OutlineRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -88,6 +89,29 @@ bool ModuleOutline::finalize()
   this->OutlineFilter = NULL;
   this->OutlineRepresentation = NULL;
   return true;
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleOutline::serialize(pugi::xml_node& ns) const
+{
+  // save stuff that the user can change.
+  pugi::xml_node reprNode = ns.append_child("OutlineRepresentation");
+
+  QStringList properties;
+  properties << "CubeAxesVisibility" << "Visibility";
+  if (TEM::serialize(this->OutlineRepresentation, reprNode, properties) == false)
+    {
+    qWarning("Failed to serialize ModuleOutline.");
+    ns.remove_child(reprNode);
+    return false;
+    }
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleOutline::deserialize(const pugi::xml_node& ns)
+{
+  return TEM::deserialize(this->OutlineRepresentation, ns.child("OutlineRepresentation"));
 }
 
 //-----------------------------------------------------------------------------

@@ -41,6 +41,8 @@ public:
   virtual bool setVisibility(bool val);
   virtual bool visibility() const;
   virtual void addToPanel(pqProxiesWidget*);
+  virtual bool serialize(pugi::xml_node& ns) const;
+  virtual bool deserialize(const pugi::xml_node& ns);
 
   void setIsoValues(const QList<double>& values);
   void setIsoValue(double value)

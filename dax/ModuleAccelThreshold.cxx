@@ -16,15 +16,15 @@
 #include "ModuleAccelThreshold.h"
 
 #include "pqProxiesWidget.h"
+#include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
-#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
-
 
 namespace TEM
 {
@@ -138,6 +138,37 @@ void ModuleAccelThreshold::addToPanel(pqProxiesWidget* panel)
     << "Opacity"
     << "Specular";
   panel->addProxy(this->ThresholdRepresentation, "Appearance", representationProperties, true);
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleAccelThreshold::serialize(pugi::xml_node& ns) const
+{
+  Q_ASSERT(this->ThresholdFilter);
+  Q_ASSERT(this->ThresholdRepresentation);
+
+  QStringList fprops;
+  fprops << "SelectInputScalars" << "ThresholdBetween";
+  pugi::xml_node fnode = ns.append_child("Threshold");
+
+  QStringList representationProperties;
+  representationProperties
+    << "Color"
+    << "ColorEditor"
+    << "LookupTable"
+    << "Representation"
+    << "Opacity"
+    << "Specular"
+    << "Visibility";
+  pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
+  return TEM::serialize(this->ThresholdFilter, fnode, fprops) &&
+    TEM::serialize(this->ThresholdRepresentation, rnode, representationProperties);
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleAccelThreshold::deserialize(const pugi::xml_node& ns)
+{
+  return TEM::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
+    TEM::deserialize(this->ThresholdRepresentation, ns.child("ThresholdRepresentation"));
 }
 
 

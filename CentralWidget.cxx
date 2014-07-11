@@ -277,6 +277,11 @@ void CentralWidget::setDataSource(DataSource* source)
   // ready (or use the cached histogram values.
   this->Chart->ClearPlots();
 
+  if (!source)
+    {
+    return;
+    }
+
   // Get the actual data source, build a histogram out of it.
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
     source->producer()->GetClientSideObject());

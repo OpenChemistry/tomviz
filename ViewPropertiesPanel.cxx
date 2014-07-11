@@ -20,6 +20,7 @@
 #include "Utilities.h"
 #include "pqProxiesWidget.h"
 #include "vtkSMViewProxy.h"
+#include "pqView.h"
 
 namespace TEM
 {
@@ -44,6 +45,7 @@ ViewPropertiesPanel::ViewPropertiesPanel(QWidget* parentObject)
 
   this->connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
     SLOT(setView(vtkSMViewProxy*)));
+  this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)), SLOT(render()));
 }
 
 //-----------------------------------------------------------------------------
@@ -63,6 +65,16 @@ void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
     }
   ui.ProxiesWidget->updateLayout();
   ui.ProxiesWidget->updatePanel();
+}
+
+//-----------------------------------------------------------------------------
+void ViewPropertiesPanel::render()
+{
+  pqView* view = TEM::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view)
+    {
+    view->render();
+    }
 }
 
 }

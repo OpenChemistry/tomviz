@@ -13,35 +13,29 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ViewPropertiesPanel_h
-#define __TEM_ViewPropertiesPanel_h
+#ifndef __TEM_ResetReaction_h
+#define __TEM_ResetReaction_h
 
-#include <QWidget>
-#include <QScopedPointer>
-
-class vtkSMViewProxy;
+#include "pqReaction.h"
 
 namespace TEM
 {
-class ViewPropertiesPanel : public QWidget
+class ResetReaction : public pqReaction
 {
   Q_OBJECT;
-  typedef QWidget Superclass;
+  typedef pqReaction Superclass;
 public:
-  ViewPropertiesPanel(QWidget* parent=0);
-  virtual ~ViewPropertiesPanel();
+  ResetReaction(QAction* action);
+  virtual ~ResetReaction();
 
-private slots:
-  void setView(vtkSMViewProxy*);
-  void render();
+  static void reset();
+
+protected:
+  virtual void onTriggered() { this->reset(); }
 
 private:
-  Q_DISABLE_COPY(ViewPropertiesPanel);
-
-  class VPPInternals;
-  const QScopedPointer<VPPInternals> Internals;
+  Q_DISABLE_COPY(ResetReaction);
 };
 
 }
-
 #endif

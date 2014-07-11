@@ -16,6 +16,7 @@
 #include "dax/ModuleStreamingContour.h"
 
 #include "pqProxiesWidget.h"
+#include "Utilities.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
 #include "vtkPVArrayInformation.h"
@@ -138,6 +139,28 @@ void ModuleStreamingContour::addToPanel(pqProxiesWidget* panel)
     << "Opacity"
     << "Specular";
   panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleStreamingContour::serialize(pugi::xml_node& ns) const
+{
+  QStringList contourProperties;
+  contourProperties << "ContourValue"
+    << "Color"
+    << "ColorEditor"
+    << "Representation"
+    << "Opacity"
+    << "Specular"
+    << "Visibility";
+  pugi::xml_node node = ns.append_child("ContourRepresentation");
+
+  return TEM::serialize(this->ContourRepresentation, node, contourProperties);
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleStreamingContour::deserialize(const pugi::xml_node& ns)
+{
+  return TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation"));
 }
 
 } // end of namespace TEM

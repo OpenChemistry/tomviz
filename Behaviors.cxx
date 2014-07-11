@@ -48,7 +48,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   pqApplicationCore::instance()->loadDistributedPlugins();
 
   new pqQtMessageHandlerBehavior(this);
-  new pqDefaultViewBehavior(this);
+//  new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
   new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);

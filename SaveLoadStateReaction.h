@@ -13,33 +13,33 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ViewPropertiesPanel_h
-#define __TEM_ViewPropertiesPanel_h
+#ifndef __TEM_SaveLoadStateReaction_h
+#define __TEM_SaveLoadStateReaction_h
 
-#include <QWidget>
-#include <QScopedPointer>
-
-class vtkSMViewProxy;
+#include "pqReaction.h"
 
 namespace TEM
 {
-class ViewPropertiesPanel : public QWidget
+
+class SaveLoadStateReaction : public pqReaction
 {
   Q_OBJECT;
-  typedef QWidget Superclass;
+  typedef pqReaction Superclass;
 public:
-  ViewPropertiesPanel(QWidget* parent=0);
-  virtual ~ViewPropertiesPanel();
+  SaveLoadStateReaction(QAction* action, bool load=false);
+  virtual ~SaveLoadStateReaction();
 
-private slots:
-  void setView(vtkSMViewProxy*);
-  void render();
+  static bool saveState();
+  static bool saveState(const QString& filename);
+  static bool loadState();
+  static bool loadState(const QString& filename);
+
+protected:
+  virtual void onTriggered();
 
 private:
-  Q_DISABLE_COPY(ViewPropertiesPanel);
-
-  class VPPInternals;
-  const QScopedPointer<VPPInternals> Internals;
+  Q_DISABLE_COPY(SaveLoadStateReaction);
+  bool Load;
 };
 
 }

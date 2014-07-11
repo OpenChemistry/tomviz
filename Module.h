@@ -20,6 +20,7 @@
 #include <QObject>
 #include <QPointer>
 #include "vtkWeakPointer.h"
+#include <vtk_pugixml.h>
 
 class vtkSMViewProxy;
 class pqProxiesWidget;
@@ -59,6 +60,10 @@ public:
   /// Accessors for the data-source and view associated with this Plot.
   DataSource* dataSource() const;
   vtkSMViewProxy* view() const;
+
+  /// serialize the state of the module.
+  virtual bool serialize(pugi::xml_node& ns) const=0;
+  virtual bool deserialize(const pugi::xml_node& ns)=0;
 
 public slots:
   /// Set the visibility for this module. Subclasses should override this method

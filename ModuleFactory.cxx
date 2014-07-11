@@ -99,6 +99,8 @@ Module* ModuleFactory::createModule(
 
   if (module)
     {
+    // sanity check.
+    Q_ASSERT(type == moduleType(module));
     if (!module->initialize(dataSource, view))
       {
       delete module;
@@ -110,6 +112,40 @@ Module* ModuleFactory::createModule(
     pqview->render();
     }
   return module;
+}
+
+//-----------------------------------------------------------------------------
+const char* ModuleFactory::moduleType(Module* module)
+{
+  if (qobject_cast<ModuleOutline*>(module))
+    {
+    return "Outline";
+    }
+#ifdef DAX_DEVICE_ADAPTER
+  if (qobject_cast<ModuleStreamingContour*>(module))
+#else
+  if (qobject_cast<ModuleContour*>(module))
+#endif
+    {
+    return "Contour";
+    }
+  if (qobject_cast<ModuleVolume*>(module))
+    {
+    return "Volume";
+    }
+  if (qobject_cast<ModuleOrthogonalSlice*>(module))
+    {
+    return "Orthogonal Slice";
+    }
+#ifdef DAX_DEVICE_ADAPTER
+  if (qobject_cast<ModuleAccelThreshold*>(module))
+#else
+  if (qobject_cast<ModuleThreshold*>(module))
+#endif
+    {
+    return "Threshold";
+    }
+  return NULL;
 }
 
 } // end of namespace TEM

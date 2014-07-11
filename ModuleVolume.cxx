@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
+#include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -123,5 +124,58 @@ void ModuleVolume::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
+
+//-----------------------------------------------------------------------------
+bool ModuleVolume::serialize(pugi::xml_node& ns) const
+{
+  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
+  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
+  Q_ASSERT(lut && sof);
+
+  QStringList list;
+  list << "Visibility"
+       << "ScalarOpacityUnitDistance";
+  pugi::xml_node nodeR = ns.append_child("Representation");
+  pugi::xml_node nodeL = ns.append_child("LookupTable");
+  pugi::xml_node nodeS = ns.append_child("ScalarOpacityFunction");
+  return (TEM::serialize(this->Representation, nodeR, list) &&
+    TEM::serialize(lut, nodeL) &&
+    TEM::serialize(sof, nodeS));
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleVolume::deserialize(const pugi::xml_node& ns)
+{
+  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
+  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
+
+  if (TEM::deserialize(this->Representation, ns.child("Representation")))
+    {
+    vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").Set(sof);
+    this->Representation->UpdateVTKObjects();
+    }
+  else
+    {
+    return false;
+    }
+  if (TEM::deserialize(lut, ns.child("LookupTable")))
+    {
+    vtkSMPropertyHelper(lut, "ScalarOpacityFunction").Set(sof);
+    lut->UpdateVTKObjects();
+    }
+  else
+    {
+    return false;
+    }
+  if (TEM::deserialize(sof, ns.child("ScalarOpacityFunction")))
+    {
+    sof->UpdateVTKObjects();
+    }
+  else
+    {
+    return false;
+    }
+  return true;
+}
 
 } // end of namespace TEM

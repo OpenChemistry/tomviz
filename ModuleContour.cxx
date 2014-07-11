@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
+#include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -138,6 +139,44 @@ void ModuleContour::addToPanel(pqProxiesWidget* panel)
   panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
 
   this->Superclass::addToPanel(panel);
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleContour::serialize(pugi::xml_node& ns) const
+{
+  // save stuff that the user can change.
+  pugi::xml_node node = ns.append_child("ContourFilter");
+  QStringList contourProperties;
+  contourProperties << "ContourValues";
+  if (TEM::serialize(this->ContourFilter, node, contourProperties) == false)
+    {
+    qWarning("Failed to serialize ContourFilter.");
+    ns.remove_child(node);
+    return false;
+    }
+
+  QStringList contourRepresentationProperties;
+  contourRepresentationProperties
+    << "Representation"
+    << "Opacity"
+    << "Specular"
+    << "Visibility";
+
+  node = ns.append_child("ContourRepresentation");
+  if (TEM::serialize(this->ContourRepresentation, node, contourRepresentationProperties) == false)
+    {
+    qWarning("Failed to serialize ContourFilter.");
+    ns.remove_child(node);
+    return false;
+    }
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+bool ModuleContour::deserialize(const pugi::xml_node& ns)
+{
+  return TEM::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
+    TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation"));
 }
 
 } // end of namespace TEM
