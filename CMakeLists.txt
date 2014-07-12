@@ -97,9 +97,12 @@ qt4_wrap_ui(UI_SOURCES
   ViewPropertiesPanel.ui
   )
 
+qt4_add_resources(RCC_SOURCES resources.qrc)
+
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES} ${accel_srcs})
+add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}
+  ${RCC_SOURCES} ${accel_srcs})
 if(APPLE)
   set_target_properties(tomviz PROPERTIES OUTPUT_NAME "TomViz")
 endif()

@@ -65,6 +65,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   this->setWindowTitle("TomViz");
 
+  QIcon icon(":/icons/tomviz.png");
+  setWindowIcon(icon);
+
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
     SIGNAL(dataSourceChanged(DataSource*)),
