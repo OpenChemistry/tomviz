@@ -20,8 +20,7 @@
 #include "Utilities.h"
 
 #include "vtkAlgorithm.h"
-#include "vtkImageMapToColors.h"
-#include "vtkImagePlaneWidget.h"
+#include "vtkColorImagePlaneWidget.h"
 #include "vtkNew.h"
 #include "vtkProperty.h"
 #include "vtkPVDataInformation.h"
@@ -88,11 +87,11 @@ bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 
   //get the current Interactor
   vtkRenderWindowInteractor* rwi = view->GetRenderWindow()->GetInteractor();
-  vtkAlgorithm* passThrough = vtkAlgorithm::SafeDownCast(
+  vtkAlgorithm* passThroughAlg = vtkAlgorithm::SafeDownCast(
                                    this->PassThrough->GetClientSideObject());
 
   // Create the representation for it.
-  this->Widget = vtkSmartPointer<vtkImagePlaneWidget>::New();
+  this->Widget = vtkSmartPointer<vtkColorImagePlaneWidget>::New();
 
   if(rwi)
     {
@@ -126,24 +125,16 @@ bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
                                        GetName();
 
   vtkNew<vtkSMTransferFunctionManager> tfm;
-  vtkSMProxy* transferProxy = tfm->GetColorTransferFunction(propertyName,pxm);
+  this->TransferFunction = tfm->GetColorTransferFunction(propertyName,pxm);
+  vtkScalarsToColors* stc = vtkScalarsToColors ::SafeDownCast(
+                                this->TransferFunction->GetClientSideObject());
 
-  vtkScalarsToColors* stc =  vtkScalarsToColors ::SafeDownCast(transferProxy->GetClientSideObject());
-  if(stc)
+  //needs to set up the lookup table first and the input connection
+  if(passThroughAlg && this->TransferFunction)
     {
-    std::cout << "setting up color map to property " << propertyName << std::endl;
-    vtkNew<vtkImageMapToColors> colorMap;
-    colorMap->SetInputConnection(passThrough->GetOutputPort());
-    colorMap->SetLookupTable(stc);
-    colorMap->SetOutputFormatToRGBA();
-    colorMap->PassAlphaToOutputOn();
-    this->Widget->SetColorMap(colorMap.GetPointer());
-    }
-
-  if(passThrough)
-    {
+    this->Widget->SetLookupTable(stc);
     //set the input connection to the local pass through filter
-    this->Widget->SetInputConnection(passThrough->GetOutputPort());
+    this->Widget->SetInputConnection(passThroughAlg->GetOutputPort());
     haveWidgetInput = true;
     }
 
@@ -164,6 +155,7 @@ bool ModuleSlice::finalize()
   controller->UnRegisterProxy(this->PassThrough);
 
   this->PassThrough = NULL;
+  this->TransferFunction = NULL;
   return true;
 }
 
@@ -186,19 +178,17 @@ bool ModuleSlice::visibility() const
 void ModuleSlice::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(this->Widget);
+  Q_ASSERT(this->TransferFunction);
 
-  // vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  // Q_ASSERT(lut);
-
-  // QStringList list;
-  // list
-  //   << "Mapping Data"
-  //   << "EnableOpacityMapping"
-  //   << "RGBPoints"
-  //   << "ScalarOpacityFunction"
-  //   << "UseLogScale";
-  // panel->addProxy(lut, "Color Map", list, true);
-  // this->Superclass::addToPanel(panel);
+  QStringList list;
+  list
+    << "Mapping Data"
+    << "EnableOpacityMapping"
+    << "RGBPoints"
+    << "ScalarOpacityFunction"
+    << "UseLogScale";
+  panel->addProxy(this->TransferFunction, "Color Map", list, true);
+  this->Superclass::addToPanel(panel);
 }
 
 //-----------------------------------------------------------------------------
