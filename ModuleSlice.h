@@ -18,9 +18,11 @@
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
+#include "vtkSmartPointer.h"
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
+class vtkImagePlaneWidget;
 
 namespace TEM
 {
@@ -45,7 +47,7 @@ public:
 private:
   Q_DISABLE_COPY(ModuleSlice);
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
-  vtkWeakPointer<vtkSMProxy> Representation;
+  vtkSmartPointer<vtkImagePlaneWidget> Widget;
 };
 
 }
