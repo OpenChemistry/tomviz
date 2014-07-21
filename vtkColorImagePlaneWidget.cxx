@@ -1646,8 +1646,6 @@ void vtkColorImagePlaneWidget::UpdatePlane()
   this->Reslice->SetOutputSpacing(outputSpacingX, outputSpacingY, 1);
   this->Reslice->SetOutputOrigin(0.5*outputSpacingX, 0.5*outputSpacingY, 0);
   this->Reslice->SetOutputExtent(0, extentX-1, 0, extentY-1, 0, 0);
-
-  this->LookupTable->Build();
 }
 
 //----------------------------------------------------------------------------
@@ -2317,7 +2315,10 @@ void vtkColorImagePlaneWidget::UpdatePlacement(void)
 {
   this->UpdatePlane();
   this->UpdateMargins();
+
+  this->Texture->Update();
   this->BuildRepresentation();
+
 }
 
 //----------------------------------------------------------------------------
