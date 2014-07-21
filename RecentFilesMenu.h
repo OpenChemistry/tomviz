@@ -20,6 +20,7 @@
 #include <QAction>
 
 class QMenu;
+class vtkSMProxy;
 
 namespace TEM
 {
@@ -33,9 +34,14 @@ public:
   RecentFilesMenu(QMenu& menu, QObject* parent=NULL);
   virtual ~RecentFilesMenu();
 
+  /// Pushes a reader on the recent files stack.
+  static void pushDataReader(vtkSMProxy* readerProxy);
+  static void pushStateFile(const QString& filename);
+
 private slots:
   void aboutToShowMenu();
-  void triggeredMenu(QAction*);
+  void dataSourceTriggered();
+  void stateTriggered();
 
 private:
   Q_DISABLE_COPY(RecentFilesMenu);
