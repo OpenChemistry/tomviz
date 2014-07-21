@@ -156,6 +156,10 @@ bool ModuleSlice::finalize()
 
   this->PassThrough = NULL;
   this->TransferFunction = NULL;
+
+  this->Widget->InteractionOff();
+  this->Widget->Off();
+
   return true;
 }
 
