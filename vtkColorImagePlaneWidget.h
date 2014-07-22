@@ -279,24 +279,10 @@ public:
 
   // Description:
   // Set/Get the internal lookuptable (lut) to one defined by the user, or,
-  // alternatively, to the lut of another vtkImgePlaneWidget.  In this way,
-  // a set of three orthogonal planes can share the same lut so that
-  // window-levelling is performed uniformly among planes.  The default
+  // alternatively, to the lut of another vtkImgePlaneWidget.  The default
   // internal lut can be re- set/allocated by setting to 0 (NULL).
   virtual void SetLookupTable(vtkScalarsToColors*);
   vtkGetObjectMacro(LookupTable,vtkScalarsToColors);
-
-  // Description:
-  // Enable/disable text display of window-level, image coordinates and
-  // scalar values in a render window.
-  vtkSetMacro(DisplayText,int);
-  vtkGetMacro(DisplayText,int);
-  vtkBooleanMacro(DisplayText,int);
-
-  // Description:
-  // Set the properties of the cross-hair cursor.
-  virtual void SetCursorProperty(vtkProperty*);
-  vtkGetObjectMacro(CursorProperty,vtkProperty);
 
   // Description:
   // Set the properties of the margins.
@@ -322,51 +308,9 @@ public:
   vtkGetObjectMacro(TexturePlaneProperty,vtkProperty);
 
   // Description:
-  // Set/Get the current window and level values.  SetWindowLevel should
-  // only be called after SetInput.  If a shared lookup table is being used,
-  // a callback is required to update the window level values without having
-  // to update the lookup table again.
-  void SetWindowLevel(double window, double level, int copy = 0);
-  void GetWindowLevel(double wl[2]);
-  double GetWindow(){return this->CurrentWindow;}
-  double GetLevel(){return this->CurrentLevel;}
-
-  // Description:
-  // Get the image coordinate position and voxel value.  Currently only
-  // supports single component image data.
-  int GetCursorData(double xyzv[4]);
-
-  // Description:
-  // Get the status of the cursor data.  If this returns 1 the
-  // CurrentCursorPosition and CurrentImageValue will have current
-  // data.  If it returns 0, these values are invalid.
-  int GetCursorDataStatus();
-
-  // Description:
-  // Get the current cursor position.  To be used in conjunction with
-  // GetCursorDataStatus.
-  vtkGetVectorMacro(CurrentCursorPosition,double,3);
-
-  // Description:
-  // Get the current image value at the current cursor position.  To
-  // be used in conjunction with GetCursorDataStatus.  The value is
-  // VTK_DOUBLE_MAX when the data is invalid.
-  vtkGetMacro(CurrentImageValue,double);
-
-  // Description:
   // Get the current reslice class and reslice axes
   vtkGetObjectMacro( ResliceAxes, vtkMatrix4x4 );
   vtkGetObjectMacro( Reslice, vtkImageReslice );
-
-  // Description:
-  // Choose between voxel centered or continuous cursor probing.  With voxel
-  // centered probing, the cursor snaps to the nearest voxel and the reported
-  // cursor coordinates are extent based.  With continuous probing, voxel data
-  // is interpolated using vtkDataSetAttributes' InterpolatePoint method and
-  // the reported coordinates are 3D spatial continuous.
-  vtkSetMacro(UseContinuousCursor,int);
-  vtkGetMacro(UseContinuousCursor,int);
-  vtkBooleanMacro(UseContinuousCursor,int);
 
   // Description:
   // Enable/disable mouse interaction so the widget remains on display.
@@ -379,16 +323,15 @@ public:
   // Set action associated to buttons.
   enum
   {
-    VTK_CURSOR_ACTION       = 0,
+    VTK_NO_ACTION = 0,
     VTK_SLICE_MOTION_ACTION = 1,
-    VTK_WINDOW_LEVEL_ACTION = 2
   };
   //ETX
-  vtkSetClampMacro(LeftButtonAction,int, VTK_CURSOR_ACTION, VTK_WINDOW_LEVEL_ACTION);
+  vtkSetClampMacro(LeftButtonAction,int, VTK_NO_ACTION, VTK_SLICE_MOTION_ACTION);
   vtkGetMacro(LeftButtonAction, int);
-  vtkSetClampMacro(MiddleButtonAction,int, VTK_CURSOR_ACTION, VTK_WINDOW_LEVEL_ACTION);
+  vtkSetClampMacro(MiddleButtonAction,int, VTK_NO_ACTION, VTK_SLICE_MOTION_ACTION);
   vtkGetMacro(MiddleButtonAction, int);
-  vtkSetClampMacro(RightButtonAction,int, VTK_CURSOR_ACTION, VTK_WINDOW_LEVEL_ACTION);
+  vtkSetClampMacro(RightButtonAction,int, VTK_NO_ACTION, VTK_SLICE_MOTION_ACTION);
   vtkGetMacro(RightButtonAction, int);
 
 protected:
@@ -400,7 +343,6 @@ protected:
   int LeftButtonAction;
   int MiddleButtonAction;
   int RightButtonAction;
-
 
   //BTX
   enum
@@ -418,8 +360,6 @@ protected:
   enum WidgetState
   {
     Start=0,
-    Cursoring,
-    WindowLevelling,
     Pushing,
     Spinning,
     Rotating,
@@ -442,36 +382,25 @@ protected:
 
   // ProcessEvents() dispatches to these methods.
   virtual void OnMouseMove();
-  virtual void OnLeftButtonDown();
-  virtual void OnLeftButtonUp();
-  virtual void OnMiddleButtonDown();
-  virtual void OnMiddleButtonUp();
-  virtual void OnRightButtonDown();
-  virtual void OnRightButtonUp();
-  virtual void OnChar();
+  void OnLeftButtonDown()     { this->OnButtonDown(&this->LeftButtonAction); }
+  void OnLeftButtonUp()       { this->OnButtonUp(&this->LeftButtonAction); }
+  void OnMiddleButtonDown()   { this->OnButtonDown(&this->MiddleButtonAction); }
+  void OnMiddleButtonUp()     { this->OnButtonUp(&this->MiddleButtonAction); }
+  void OnRightButtonDown()    { this->OnButtonDown(&this->RightButtonAction); }
+  void OnRightButtonUp()      { this->OnButtonUp(&this->RightButtonAction); }
 
-  virtual void StartCursor();
-  virtual void StopCursor();
+  virtual void OnButtonDown(int* btn);
+  virtual void OnButtonUp(int* btn);
+
   virtual void StartSliceMotion();
   virtual void StopSliceMotion();
-  virtual void StartWindowLevel();
-  virtual void StopWindowLevel();
 
   // controlling ivars
   int    Interaction; // Is the widget responsive to mouse events
   int    PlaneOrientation;
   int    RestrictPlaneToVolume;
-  double OriginalWindow;
-  double OriginalLevel;
-  double CurrentWindow;
-  double CurrentLevel;
-  double InitialWindow;
-  double InitialLevel;
-  int    StartWindowLevelPositionX;
-  int    StartWindowLevelPositionY;
   int    ResliceInterpolate;
   int    TextureInterpolate;
-  int    DisplayText;
 
   // The geometric represenation of the plane and it's outline
   vtkPlaneSource    *PlaneSource;
@@ -485,12 +414,10 @@ protected:
 
   // Do the picking
   vtkAbstractPropPicker *PlanePicker;
-
   // Register internal Pickers within PickingManager
   virtual void RegisterPickers();
 
   // Methods to manipulate the plane
-  void WindowLevel(int X, int Y);
   void Push(double *p1, double *p2);
   void Spin(double *p1, double *p2);
   void Rotate(double *p1, double *p2, double *vpn);
@@ -512,7 +439,6 @@ protected:
   // lighting etc. of the resliced image data.
   vtkProperty   *PlaneProperty;
   vtkProperty   *SelectedPlaneProperty;
-  vtkProperty   *CursorProperty;
   vtkProperty   *MarginProperty;
   vtkProperty   *TexturePlaneProperty;
   void           CreateDefaultProperties();
@@ -520,25 +446,6 @@ protected:
   // Reslice and texture management
   void UpdatePlane();
   void GenerateTexturePlane();
-
-  // The cross-hair cursor
-  vtkPolyData       *CursorPolyData;
-  vtkActor          *CursorActor;
-  double             CurrentCursorPosition[3];
-  double             CurrentImageValue; // Set to VTK_DOUBLE_MAX when invalid
-  void               GenerateCursor();
-  void               UpdateCursor(int,int);
-  void               ActivateCursor(int);
-  int                UpdateContinuousCursor(double *q);
-  int                UpdateDiscreteCursor(double *q);
-  int                UseContinuousCursor;
-
-  // The text to display W/L, image data
-  vtkTextActor *TextActor;
-  char          TextBuff[128];
-  void          GenerateText();
-  void          ManageTextDisplay();
-  void          ActivateText(int);
 
   // Oblique reslice control
   double RotateAxis[3];

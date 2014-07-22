@@ -28,6 +28,7 @@
 #include "vtkLookupTable.h"
 #include "vtkMath.h"
 #include "vtkMatrix4x4.h"
+#include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPickingManager.h"
 #include "vtkPlaneSource.h"
@@ -48,7 +49,6 @@ vtkStandardNewMacro(vtkColorImagePlaneWidget);
 
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, PlaneProperty, vtkProperty);
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, SelectedPlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, CursorProperty, vtkProperty);
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, MarginProperty, vtkProperty);
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, TexturePlaneProperty, vtkProperty);
 
@@ -62,19 +62,8 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->PlaneOrientation         = 0;
   this->PlaceFactor              = 1.0;
   this->RestrictPlaneToVolume    = 1;
-  this->OriginalWindow           = 1.0;
-  this->OriginalLevel            = 0.5;
-  this->CurrentWindow            = 1.0;
-  this->CurrentLevel             = 0.5;
   this->TextureInterpolate       = 1;
   this->ResliceInterpolate       = VTK_LINEAR_RESLICE;
-  this->DisplayText              = 0;
-  this->CurrentCursorPosition[0] = 0;
-  this->CurrentCursorPosition[1] = 0;
-  this->CurrentCursorPosition[2] = 0;
-  this->CurrentImageValue        = VTK_DOUBLE_MAX;
-  this->MarginSelectMode         = 8;
-  this->UseContinuousCursor      = 0;
   this->MarginSizeX              = 0.05;
   this->MarginSizeY              = 0.05;
 
@@ -98,19 +87,11 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->ImageData          = 0;
   this->LookupTable        = 0;
 
-  // Represent the cross hair cursor
-  //
-  this->CursorPolyData = vtkPolyData::New();
-  this->CursorActor    = vtkActor::New();
-
   // Represent the oblique positioning margins
   //
   this->MarginPolyData = vtkPolyData::New();
   this->MarginActor    = vtkActor::New();
 
-  // Represent the text: annotation for cursor position and W/L
-  //
-  this->TextActor = vtkTextActor::New();
 
   this->GeneratePlaneOutline();
 
@@ -129,32 +110,27 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->PlaceWidget(bounds);
 
   this->GenerateTexturePlane();
-  this->GenerateCursor();
   this->GenerateMargins();
-  this->GenerateText();
 
   // Manage the picking stuff
   //
   this->PlanePicker = NULL;
-  vtkCellPicker* picker = vtkCellPicker::New();
+  vtkNew<vtkCellPicker> picker;
   picker->SetTolerance(0.005); //need some fluff
-  this->SetPicker(picker);
-  picker->Delete();
+  this->SetPicker(picker.GetPointer());
 
   // Set up the initial properties
   //
   this->PlaneProperty         = 0;
   this->SelectedPlaneProperty = 0;
   this->TexturePlaneProperty  = 0;
-  this->CursorProperty        = 0;
   this->MarginProperty        = 0;
   this->CreateDefaultProperties();
 
   // Set up actions
-
   this->LeftButtonAction = vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
   this->MiddleButtonAction = vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
-  this->RightButtonAction = vtkColorImagePlaneWidget::VTK_WINDOW_LEVEL_ACTION;
+  this->RightButtonAction = vtkColorImagePlaneWidget::VTK_NO_ACTION;
 
   this->LastButtonPressed = vtkColorImagePlaneWidget::VTK_NO_BUTTON;
 
@@ -181,11 +157,6 @@ vtkColorImagePlaneWidget::~vtkColorImagePlaneWidget()
   if ( this->SelectedPlaneProperty )
     {
     this->SelectedPlaneProperty->Delete();
-    }
-
-  if ( this->CursorProperty )
-    {
-    this->CursorProperty->Delete();
     }
 
   if ( this->MarginProperty )
@@ -215,13 +186,8 @@ vtkColorImagePlaneWidget::~vtkColorImagePlaneWidget()
     this->ImageData = 0;
     }
 
-  this->CursorActor->Delete();
-  this->CursorPolyData->Delete();
-
   this->MarginActor->Delete();
   this->MarginPolyData->Delete();
-
-  this->TextActor->Delete();
 }
 
 //----------------------------------------------------------------------------
@@ -301,16 +267,9 @@ void vtkColorImagePlaneWidget::SetEnabled(int enabling)
     this->TexturePlaneActor->SetProperty(this->TexturePlaneProperty);
 
 
-    // Add the cross-hair cursor
-    this->CurrentRenderer->AddViewProp(this->CursorActor);
-    this->CursorActor->SetProperty(this->CursorProperty);
-
     // Add the margins
     this->CurrentRenderer->AddViewProp(this->MarginActor);
     this->MarginActor->SetProperty(this->MarginProperty);
-
-    // Add the image data annotation
-    this->CurrentRenderer->AddViewProp(this->TextActor);
 
     this->TexturePlaneActor->PickableOn();
 
@@ -338,14 +297,8 @@ void vtkColorImagePlaneWidget::SetEnabled(int enabling)
     //turn off the texture plane
     this->CurrentRenderer->RemoveViewProp(this->TexturePlaneActor);
 
-    //turn off the cursor
-    this->CurrentRenderer->RemoveViewProp(this->CursorActor);
-
     //turn off the margins
     this->CurrentRenderer->RemoveViewProp(this->MarginActor);
-
-    //turn off the image data annotation
-    this->CurrentRenderer->RemoveViewProp(this->TextActor);
 
     this->TexturePlaneActor->PickableOff();
 
@@ -398,34 +351,7 @@ void vtkColorImagePlaneWidget::ProcessEvents(vtkObject* vtkNotUsed(object),
       self->OnMouseMove();
       break;
     case vtkCommand::CharEvent:
-      self->OnChar();
       break;
-    }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnChar()
-{
-  vtkRenderWindowInteractor *i = this->Interactor;
-
-  if ( i->GetKeyCode() == 'r' || i->GetKeyCode() == 'R' )
-    {
-    if ( i->GetShiftKey() || i->GetControlKey() )
-      {
-      this->SetWindowLevel( this->OriginalWindow, this->OriginalLevel );
-      double wl[2] = { this->CurrentWindow, this->CurrentLevel };
-
-      this->EventCallbackCommand->SetAbortFlag(1);
-      this->InvokeEvent(vtkCommand::ResetWindowLevelEvent, wl);
-      }
-    else
-      {
-      this->Interactor->GetInteractorStyle()->OnChar();
-      }
-    }
-  else
-    {
-    this->Interactor->GetInteractorStyle()->OnChar();
     }
 }
 
@@ -515,16 +441,6 @@ void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "LookupTable: (none)\n";
     }
 
-  if ( this->CursorProperty )
-    {
-    os << indent << "Cursor Property:\n";
-    this->CursorProperty->PrintSelf(os,indent.GetNextIndent());
-    }
-  else
-    {
-    os << indent << "Cursor Property: (none)\n";
-    }
-
   if ( this->MarginProperty )
     {
     os << indent << "Margin Property:\n";
@@ -579,14 +495,6 @@ void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
      << pt2[1] << ", "
      << pt2[2] << ")\n";
 
-  os << indent << "Current Cursor Position: ("
-     << this->CurrentCursorPosition[0] << ", "
-     << this->CurrentCursorPosition[1] << ", "
-     << this->CurrentCursorPosition[2] << ")\n";
-
-  os << indent << "Current Image Value: "
-     << this->CurrentImageValue << "\n";
-
   os << indent << "Plane Orientation: " << this->PlaneOrientation << "\n";
   os << indent << "Reslice Interpolate: " << this->ResliceInterpolate << "\n";
   os << indent << "Texture Interpolate: "
@@ -595,15 +503,11 @@ void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
      << (this->TextureVisibility ? "On\n" : "Off\n") ;
   os << indent << "Restrict Plane To Volume: "
      << (this->RestrictPlaneToVolume ? "On\n" : "Off\n") ;
-  os << indent << "Display Text: "
-     << (this->DisplayText ? "On\n" : "Off\n") ;
   os << indent << "Interaction: "
      << (this->Interaction ? "On\n" : "Off\n") ;
   os << indent << "LeftButtonAction: " << this->LeftButtonAction << endl;
   os << indent << "MiddleButtonAction: " << this->MiddleButtonAction << endl;
   os << indent << "RightButtonAction: " << this->RightButtonAction << endl;
-  os << indent << "UseContinuousCursor: "
-     << (this->UseContinuousCursor ? "On\n" : "Off\n") ;
 
   os << indent << "MarginSizeX: "
      << this->MarginSizeX << "\n";
@@ -648,184 +552,29 @@ void vtkColorImagePlaneWidget::HighlightPlane(int highlight)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnLeftButtonDown()
+void vtkColorImagePlaneWidget::OnButtonDown(int *btn)
 {
-  switch (this->LeftButtonAction)
+  switch (*btn)
     {
-    case vtkColorImagePlaneWidget::VTK_CURSOR_ACTION:
-      this->StartCursor();
+    case vtkColorImagePlaneWidget::VTK_NO_ACTION:
       break;
     case vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
       this->StartSliceMotion();
       break;
-    case vtkColorImagePlaneWidget::VTK_WINDOW_LEVEL_ACTION:
-      this->StartWindowLevel();
-      break;
     }
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnLeftButtonUp()
+void vtkColorImagePlaneWidget::OnButtonUp(int *btn)
 {
-  switch (this->LeftButtonAction)
+  switch (*btn)
     {
-    case vtkColorImagePlaneWidget::VTK_CURSOR_ACTION:
-      this->StopCursor();
+    case vtkColorImagePlaneWidget::VTK_NO_ACTION:
       break;
     case vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
       this->StopSliceMotion();
       break;
-    case vtkColorImagePlaneWidget::VTK_WINDOW_LEVEL_ACTION:
-      this->StopWindowLevel();
-      break;
     }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnMiddleButtonDown()
-{
-  switch (this->MiddleButtonAction)
-    {
-    case vtkColorImagePlaneWidget::VTK_CURSOR_ACTION:
-      this->StartCursor();
-      break;
-    case vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
-      this->StartSliceMotion();
-      break;
-    case vtkColorImagePlaneWidget::VTK_WINDOW_LEVEL_ACTION:
-      this->StartWindowLevel();
-      break;
-    }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnMiddleButtonUp()
-{
-  switch (this->MiddleButtonAction)
-    {
-    case vtkColorImagePlaneWidget::VTK_CURSOR_ACTION:
-      this->StopCursor();
-      break;
-    case vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
-      this->StopSliceMotion();
-      break;
-    case vtkColorImagePlaneWidget::VTK_WINDOW_LEVEL_ACTION:
-      this->StopWindowLevel();
-      break;
-    }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnRightButtonDown()
-{
-  switch (this->RightButtonAction)
-    {
-    case vtkColorImagePlaneWidget::VTK_CURSOR_ACTION:
-      this->StartCursor();
-      break;
-    case vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
-      this->StartSliceMotion();
-      break;
-    case vtkColorImagePlaneWidget::VTK_WINDOW_LEVEL_ACTION:
-      this->StartWindowLevel();
-      break;
-    }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnRightButtonUp()
-{
-  switch (this->RightButtonAction)
-    {
-    case vtkColorImagePlaneWidget::VTK_CURSOR_ACTION:
-      this->StopCursor();
-      break;
-    case vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
-      this->StopSliceMotion();
-      break;
-    case vtkColorImagePlaneWidget::VTK_WINDOW_LEVEL_ACTION:
-      this->StopWindowLevel();
-      break;
-    }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::StartCursor()
-{
-  int X = this->Interactor->GetEventPosition()[0];
-  int Y = this->Interactor->GetEventPosition()[1];
-
-  // Okay, make sure that the pick is in the current renderer
-  if (!this->CurrentRenderer || !this->CurrentRenderer->IsInViewport(X, Y))
-    {
-    this->State = vtkColorImagePlaneWidget::Outside;
-    return;
-    }
-
-  // Okay, we can process this. If anything is picked, then we
-  // can start pushing the plane.
-  vtkAssemblyPath* path = this->GetAssemblyPath(X, Y, 0., this->PlanePicker);
-
-  int found = 0;
-  int i;
-  if ( path != 0 )
-    {
-    // Deal with the possibility that we may be using a shared picker
-    vtkCollectionSimpleIterator sit;
-    path->InitTraversal(sit);
-    vtkAssemblyNode *node;
-    for ( i = 0; i < path->GetNumberOfItems() && !found ; i++ )
-      {
-      node = path->GetNextNode(sit);
-      if ( node->GetViewProp() == vtkProp::SafeDownCast(this->TexturePlaneActor) )
-        {
-        found = 1;
-        }
-      }
-    }
-
-  if( ! found || path == 0 )
-    {
-    this->State = vtkColorImagePlaneWidget::Outside;
-    this->HighlightPlane(0);
-    this->ActivateCursor(0);
-    this->ActivateText(0);
-    return;
-    }
-  else
-    {
-    this->State = vtkColorImagePlaneWidget::Cursoring;
-    this->HighlightPlane(1);
-    this->ActivateCursor(1);
-    this->ActivateText(1);
-    this->UpdateCursor(X,Y);
-    this->ManageTextDisplay();
-    }
-
-  this->EventCallbackCommand->SetAbortFlag(1);
-  this->StartInteraction();
-  this->InvokeEvent(vtkCommand::StartInteractionEvent,0);
-  this->Interactor->Render();
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::StopCursor()
-{
-  if ( this->State == vtkColorImagePlaneWidget::Outside ||
-       this->State == vtkColorImagePlaneWidget::Start )
-    {
-    return;
-    }
-
-  this->State = vtkColorImagePlaneWidget::Start;
-  this->HighlightPlane(0);
-  this->ActivateCursor(0);
-  this->ActivateText(0);
-
-  this->EventCallbackCommand->SetAbortFlag(1);
-  this->EndInteraction();
-  this->InvokeEvent(vtkCommand::EndInteractionEvent,0);
-  this->Interactor->Render();
 }
 
 //----------------------------------------------------------------------------
@@ -904,91 +653,6 @@ void vtkColorImagePlaneWidget::StopSliceMotion()
   this->Interactor->Render();
 }
 
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::StartWindowLevel()
-{
-  int X = this->Interactor->GetEventPosition()[0];
-  int Y = this->Interactor->GetEventPosition()[1];
-
-  // Okay, make sure that the pick is in the current renderer
-  if (!this->CurrentRenderer || !this->CurrentRenderer->IsInViewport(X, Y))
-    {
-    this->State = vtkColorImagePlaneWidget::Outside;
-    return;
-    }
-
-  // Okay, we can process this. If anything is picked, then we
-  // can start window-levelling.
-  vtkAssemblyPath* path = this->GetAssemblyPath(X, Y, 0., this->PlanePicker);
-
-  int found = 0;
-  int i;
-  if ( path != 0 )
-    {
-    // Deal with the possibility that we may be using a shared picker
-    vtkCollectionSimpleIterator sit;
-    path->InitTraversal(sit);
-    vtkAssemblyNode *node;
-    for ( i = 0; i < path->GetNumberOfItems() && !found ; i++ )
-      {
-      node = path->GetNextNode(sit);
-      if ( node->GetViewProp() == vtkProp::SafeDownCast(this->TexturePlaneActor) )
-        {
-        found = 1;
-        }
-      }
-    }
-
-  this->InitialWindow = this->CurrentWindow;
-  this->InitialLevel = this->CurrentLevel;
-
-  if( ! found || path == 0 )
-    {
-    this->State = vtkColorImagePlaneWidget::Outside;
-    this->HighlightPlane(0);
-    this->ActivateText(0);
-    return;
-    }
-  else
-    {
-    this->State = vtkColorImagePlaneWidget::WindowLevelling;
-    this->HighlightPlane(1);
-    this->ActivateText(1);
-    this->StartWindowLevelPositionX = X;
-    this->StartWindowLevelPositionY = Y;
-    this->ManageTextDisplay();
-    }
-
-  this->EventCallbackCommand->SetAbortFlag(1);
-  this->StartInteraction();
-
-  double wl[2] = { this->CurrentWindow, this->CurrentLevel };
-  this->InvokeEvent(vtkCommand::StartWindowLevelEvent,wl);
-
-  this->Interactor->Render();
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::StopWindowLevel()
-{
-  if ( this->State == vtkColorImagePlaneWidget::Outside ||
-       this->State == vtkColorImagePlaneWidget::Start )
-    {
-    return;
-    }
-
-  this->State = vtkColorImagePlaneWidget::Start;
-  this->HighlightPlane(0);
-  this->ActivateText(0);
-
-  this->EventCallbackCommand->SetAbortFlag(1);
-  this->EndInteraction();
-
-  double wl[2] = { this->CurrentWindow, this->CurrentLevel };
-  this->InvokeEvent(vtkCommand::EndWindowLevelEvent,wl);
-
-  this->Interactor->Render();
-}
 
 //----------------------------------------------------------------------------
 void vtkColorImagePlaneWidget::OnMouseMove()
@@ -1030,13 +694,9 @@ void vtkColorImagePlaneWidget::OnMouseMove()
 
   this->ComputeDisplayToWorld(double(X), double(Y), z, pickPoint);
 
-  if ( this->State == vtkColorImagePlaneWidget::WindowLevelling )
+  if ( this->State == vtkColorImagePlaneWidget::Pushing )
     {
-    this->WindowLevel(X,Y);
-    this->ManageTextDisplay();
-    }
-  else if ( this->State == vtkColorImagePlaneWidget::Pushing )
-    {
+    std::cout << "vtkColorImagePlaneWidget::Pushing" << std::endl;
     this->Push(prevPickPoint, pickPoint);
     this->UpdatePlane();
     this->UpdateMargins();
@@ -1044,6 +704,7 @@ void vtkColorImagePlaneWidget::OnMouseMove()
     }
   else if ( this->State == vtkColorImagePlaneWidget::Spinning )
     {
+    std::cout << "vtkColorImagePlaneWidget::Spinning" << std::endl;
     this->Spin(prevPickPoint, pickPoint);
     this->UpdatePlane();
     this->UpdateMargins();
@@ -1051,6 +712,7 @@ void vtkColorImagePlaneWidget::OnMouseMove()
     }
   else if ( this->State == vtkColorImagePlaneWidget::Rotating )
     {
+    std::cout << "vtkColorImagePlaneWidget::Rotating" << std::endl;
     camera->GetViewPlaneNormal(vpn);
     this->Rotate(prevPickPoint, pickPoint, vpn);
     this->UpdatePlane();
@@ -1059,6 +721,7 @@ void vtkColorImagePlaneWidget::OnMouseMove()
     }
   else if ( this->State == vtkColorImagePlaneWidget::Scaling )
     {
+    std::cout << "vtkColorImagePlaneWidget::Scaling" << std::endl;
     this->Scale(prevPickPoint, pickPoint, X, Y);
     this->UpdatePlane();
     this->UpdateMargins();
@@ -1066,184 +729,19 @@ void vtkColorImagePlaneWidget::OnMouseMove()
     }
   else if ( this->State == vtkColorImagePlaneWidget::Moving )
     {
+    std::cout << "vtkColorImagePlaneWidget::Moving" << std::endl;
     this->Translate(prevPickPoint, pickPoint);
     this->UpdatePlane();
     this->UpdateMargins();
     this->BuildRepresentation();
     }
-  else if ( this->State == vtkColorImagePlaneWidget::Cursoring )
-    {
-    this->UpdateCursor(X,Y);
-    this->ManageTextDisplay();
-    }
 
   // Interact, if desired
   //
   this->EventCallbackCommand->SetAbortFlag(1);
-
-  if ( this->State == vtkColorImagePlaneWidget::WindowLevelling )
-    {
-    double wl[2] = { this->CurrentWindow, this->CurrentLevel };
-    this->InvokeEvent(vtkCommand::WindowLevelEvent,wl);
-    }
-  else
-    {
-    this->InvokeEvent(vtkCommand::InteractionEvent,0);
-    }
+  this->InvokeEvent(vtkCommand::InteractionEvent,0);
 
   this->Interactor->Render();
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::WindowLevel(int X, int Y)
-{
-  int *size = this->CurrentRenderer->GetSize();
-  double window = this->InitialWindow;
-  double level = this->InitialLevel;
-
-  // Compute normalized delta
-
-  double dx = 4.0 * ( X - this->StartWindowLevelPositionX ) / size[0];
-  double dy = 4.0 *( this->StartWindowLevelPositionY - Y ) / size[1];
-
-  // Scale by current values
-
-  if ( fabs( window ) > 0.01 )
-    {
-    dx = dx * window;
-    }
-  else
-    {
-    dx = dx * ( window < 0 ? -0.01 : 0.01 );
-    }
-  if ( fabs( level ) > 0.01 )
-    {
-    dy = dy * level;
-    }
-  else
-    {
-    dy = dy * ( level < 0 ? -0.01 : 0.01 );
-    }
-
-  // Abs so that direction does not flip
-
-  if ( window < 0.0 )
-    {
-    dx = -1 * dx;
-    }
-  if ( level < 0.0 )
-    {
-    dy = -1 * dy;
-    }
-
-  // Compute new window level
-
-  double newWindow = dx + window;
-  double newLevel = level - dy;
-
-  if ( fabs( newWindow ) < 0.01 )
-    {
-    newWindow = 0.01 * ( newWindow < 0 ? -1 : 1 );
-    }
-  if ( fabs( newLevel ) < 0.01 )
-    {
-    newLevel = 0.01 * ( newLevel < 0 ? -1 : 1 );
-    }
-
-  this->CurrentWindow = newWindow;
-  this->CurrentLevel = newLevel;
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetWindowLevel(double window, double level, int copy)
-{
-  if ( copy )
-    {
-    this->CurrentWindow = window;
-    this->CurrentLevel = level;
-    return;
-    }
-
-  if ( this->CurrentWindow == window && this->CurrentLevel == level )
-    {
-    return;
-    }
-
-  this->CurrentWindow = window;
-  this->CurrentLevel = level;
-
-  if ( this->Enabled )
-    {
-    this->Interactor->Render();
-    }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetWindowLevel(double wl[2])
-{
-  wl[0] = this->CurrentWindow;
-  wl[1] = this->CurrentLevel;
-}
-
-//----------------------------------------------------------------------------
-int vtkColorImagePlaneWidget::GetCursorData(double xyzv[4])
-{
-  if ( this->State != vtkColorImagePlaneWidget::Cursoring  || \
-    this->CurrentImageValue == VTK_DOUBLE_MAX )
-    {
-    return 0;
-    }
-
-  xyzv[0] = this->CurrentCursorPosition[0];
-  xyzv[1] = this->CurrentCursorPosition[1];
-  xyzv[2] = this->CurrentCursorPosition[2];
-  xyzv[3] = this->CurrentImageValue;
-
-  return 1;
-}
-
-//----------------------------------------------------------------------------
-int vtkColorImagePlaneWidget::GetCursorDataStatus()
-{
-  if ( this->State != vtkColorImagePlaneWidget::Cursoring  || \
-    this->CurrentImageValue == VTK_DOUBLE_MAX )
-    {
-    return 0;
-    }
-
-  return 1;
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::ManageTextDisplay()
-{
-  if ( !this->DisplayText )
-    {
-    return;
-    }
-
-  if ( this->State == vtkColorImagePlaneWidget::WindowLevelling )
-    {
-    sprintf(this->TextBuff,"Window, Level: ( %g, %g )",
-            this->CurrentWindow, this->CurrentLevel );
-    }
-  else if ( this->State == vtkColorImagePlaneWidget::Cursoring )
-    {
-    if( this->CurrentImageValue == VTK_DOUBLE_MAX )
-      {
-      sprintf(this->TextBuff,"Off Image");
-      }
-    else
-      {
-      sprintf(this->TextBuff,"( %g, %g, %g ): %g",
-                   this->CurrentCursorPosition[0],
-                   this->CurrentCursorPosition[1],
-                   this->CurrentCursorPosition[2],this->CurrentImageValue);
-      }
-    }
-
-  this->TextActor->SetInput(this->TextBuff);
-  this->TextActor->Modified();
 }
 
 //----------------------------------------------------------------------------
@@ -1278,15 +776,6 @@ void vtkColorImagePlaneWidget::CreateDefaultProperties()
     this->SelectedPlaneProperty->SetColor(0,1,0);
     this->SelectedPlaneProperty->SetRepresentationToWireframe();
     this->SelectedPlaneProperty->SetInterpolationToFlat();
-    }
-
-  if ( ! this->CursorProperty )
-    {
-    this->CursorProperty = vtkProperty::New();
-    this->CursorProperty->SetAmbient(1);
-    this->CursorProperty->SetColor(1,0,0);
-    this->CursorProperty->SetRepresentationToWireframe();
-    this->CursorProperty->SetInterpolationToFlat();
     }
 
   if ( ! this->MarginProperty )
@@ -1436,20 +925,6 @@ void vtkColorImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
   double range[2];
   this->ImageData->GetScalarRange(range);
 
-  this->OriginalWindow = range[1] - range[0];
-  this->OriginalLevel = 0.5*(range[0] + range[1]);
-
-  if( fabs( this->OriginalWindow ) < 0.001 )
-    {
-    this->OriginalWindow = 0.001 * ( this->OriginalWindow < 0.0 ? -1 : 1 );
-    }
-  if( fabs( this->OriginalLevel ) < 0.001 )
-   {
-   this->OriginalLevel = 0.001 * ( this->OriginalLevel < 0.0 ? -1 : 1 );
-   }
-
-  this->SetWindowLevel(this->OriginalWindow,this->OriginalLevel);
-
   this->Reslice->SetInputConnection(aout);
   int interpolate = this->ResliceInterpolate;
   this->ResliceInterpolate = -1; // Force change
@@ -1457,10 +932,6 @@ void vtkColorImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
 
   this->Texture->SetInputConnection(this->Reslice->GetOutputPort());
   this->Texture->SetInterpolate(this->TextureInterpolate);
-
-  //Make the texture treat char arrays as something that needs
-  //to go through the LookupTable
-  this->Texture->MapColorScalarsThroughLookupTableOn();
 
   this->SetPlaneOrientation(this->PlaneOrientation);
 }
@@ -1518,12 +989,6 @@ void vtkColorImagePlaneWidget::UpdatePlane()
         bounds[i] = t;
         }
       }
-
-    std::cout << "bounds "
-              << bounds[0] << " to " << bounds[1] << ", "
-              << bounds[2] << " to " << bounds[3] << ", "
-              << bounds[4] << " to " << bounds[5]
-              << std::endl;
 
     double abs_normal[3];
     this->PlaneSource->GetNormal(abs_normal);
@@ -1659,36 +1124,6 @@ vtkImageData* vtkColorImagePlaneWidget::GetResliceOutput()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetResliceInterpolate(int i)
-{
-  if ( this->ResliceInterpolate == i )
-    {
-    return;
-    }
-  this->ResliceInterpolate = i;
-  this->Modified();
-
-  if ( !this->Reslice )
-    {
-    return;
-    }
-
-  if ( i == VTK_NEAREST_RESLICE )
-    {
-    this->Reslice->SetInterpolationModeToNearestNeighbor();
-    }
-  else if ( i == VTK_LINEAR_RESLICE)
-    {
-    this->Reslice->SetInterpolationModeToLinear();
-    }
-  else
-    {
-    this->Reslice->SetInterpolationModeToCubic();
-    }
-  this->Texture->SetInterpolate(this->TextureInterpolate);
-}
-
-//----------------------------------------------------------------------------
 void vtkColorImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
 {
   // we have to have a picker for slice motion, window level and cursor to work
@@ -1721,10 +1156,34 @@ void vtkColorImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
     }
 }
 
-//------------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::RegisterPickers()
+//----------------------------------------------------------------------------
+void vtkColorImagePlaneWidget::SetResliceInterpolate(int i)
 {
-  this->Interactor->GetPickingManager()->AddPicker(this->PlanePicker, this);
+  if ( this->ResliceInterpolate == i )
+    {
+    return;
+    }
+  this->ResliceInterpolate = i;
+  this->Modified();
+
+  if ( !this->Reslice )
+    {
+    return;
+    }
+
+  if ( i == VTK_NEAREST_RESLICE )
+    {
+    this->Reslice->SetInterpolationModeToNearestNeighbor();
+    }
+  else if ( i == VTK_LINEAR_RESLICE)
+    {
+    this->Reslice->SetInterpolationModeToLinear();
+    }
+  else
+    {
+    this->Reslice->SetInterpolationModeToCubic();
+    }
+  this->Texture->SetInterpolate(this->TextureInterpolate);
 }
 
 //----------------------------------------------------------------------------
@@ -1766,26 +1225,12 @@ void vtkColorImagePlaneWidget::SetLookupTable(vtkScalarsToColors* table)
 
   this->Texture->SetLookupTable(this->LookupTable);
 
-  if( this->ImageData)
+  if(this->ImageData)
     {
     double range[2];
     this->ImageData->GetScalarRange(range);
 
     this->LookupTable->Build();
-
-    this->OriginalWindow = range[1] - range[0];
-    this->OriginalLevel = 0.5*(range[0] + range[1]);
-
-    if( fabs( this->OriginalWindow ) < 0.001 )
-      {
-      this->OriginalWindow = 0.001 * ( this->OriginalWindow < 0.0 ? -1 : 1 );
-      }
-    if( fabs( this->OriginalLevel ) < 0.001 )
-      {
-      this->OriginalLevel = 0.001 * ( this->OriginalLevel < 0.0 ? -1 : 1 );
-      }
-
-    this->SetWindowLevel(this->OriginalWindow,this->OriginalLevel);
     }
 }
 
@@ -1945,25 +1390,6 @@ int vtkColorImagePlaneWidget::GetSliceIndex()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::ActivateCursor(int i)
-{
-
-  if( !this->CurrentRenderer )
-    {
-    return;
-    }
-
-  if( i == 0 )
-    {
-    this->CursorActor->VisibilityOff();
-    }
-  else
-    {
-    this->CursorActor->VisibilityOn();
-    }
-}
-
-//----------------------------------------------------------------------------
 void vtkColorImagePlaneWidget::ActivateMargins(int i)
 {
 
@@ -1980,220 +1406,6 @@ void vtkColorImagePlaneWidget::ActivateMargins(int i)
     {
     this->MarginActor->VisibilityOn();
     }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::ActivateText(int i)
-{
-  if( !this->CurrentRenderer || !this->DisplayText)
-    {
-    return;
-    }
-
-  if( i == 0 )
-    {
-    this->TextActor->VisibilityOff();
-    }
-  else
-    {
-    this->TextActor->VisibilityOn();
-    }
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::UpdateCursor(int X, int Y )
-{
-  if ( !this->ImageData )
-    {
-    return;
-    }
-  // We're going to be extracting values with GetScalarComponentAsDouble(),
-  // we might as well make sure that the data is there.  If the data is
-  // up to date already, this call doesn't cost very much.  If we don't make
-  // this call and the data is not up to date, the GetScalar... call will
-  // cause a segfault.
-  this->Reslice->GetInputAlgorithm()->Update();
-
-  vtkAssemblyPath* path = this->GetAssemblyPath(X, Y, 0., this->PlanePicker);
-
-  this->CurrentImageValue = VTK_DOUBLE_MAX;
-
-  int found = 0;
-  int i;
-  if ( path  )
-    {
-    // Deal with the possibility that we may be using a shared picker
-    vtkCollectionSimpleIterator sit;
-    path->InitTraversal(sit);
-    vtkAssemblyNode *node;
-    for ( i = 0; i< path->GetNumberOfItems() && !found ; i++ )
-      {
-      node = path->GetNextNode(sit);
-      if ( node->GetViewProp() == vtkProp::SafeDownCast(this->TexturePlaneActor) )
-        {
-        found = 1;
-        }
-      }
-    }
-
-  if( !found || path == 0 )
-    {
-    this->CursorActor->VisibilityOff();
-    return;
-    }
-  else
-    {
-    this->CursorActor->VisibilityOn();
-    }
-
-  double q[3];
-  this->PlanePicker->GetPickPosition(q);
-
-  if(this->UseContinuousCursor)
-    {
-    found = this->UpdateContinuousCursor(q);
-    }
-  else
-    {
-    found = this->UpdateDiscreteCursor(q);
-    }
-
-  if(!found)
-    {
-    this->CursorActor->VisibilityOff();
-    return;
-    }
-
-  double o[3];
-  this->PlaneSource->GetOrigin(o);
-
-  // q relative to the plane origin
-  //
-  double qro[3];
-  qro[0]= q[0] - o[0];
-  qro[1]= q[1] - o[1];
-  qro[2]= q[2] - o[2];
-
-  double p1o[3];
-  double p2o[3];
-
-  this->GetVector1(p1o);
-  this->GetVector2(p2o);
-
-  double Lp1 = vtkMath::Dot(qro,p1o)/vtkMath::Dot(p1o,p1o);
-  double Lp2 = vtkMath::Dot(qro,p2o)/vtkMath::Dot(p2o,p2o);
-
-  double p1[3];
-  this->PlaneSource->GetPoint1(p1);
-  double p2[3];
-  this->PlaneSource->GetPoint2(p2);
-
-  double a[3];
-  double b[3];
-  double c[3];
-  double d[3];
-
-  for (i = 0; i < 3; i++)
-    {
-    a[i] = o[i]  + Lp2*p2o[i];   // left
-    b[i] = p1[i] + Lp2*p2o[i];   // right
-    c[i] = o[i]  + Lp1*p1o[i];   // bottom
-    d[i] = p2[i] + Lp1*p1o[i];   // top
-    }
-
-  vtkPoints* cursorPts = this->CursorPolyData->GetPoints();
-
-  cursorPts->SetPoint(0,a);
-  cursorPts->SetPoint(1,b);
-  cursorPts->SetPoint(2,c);
-  cursorPts->SetPoint(3,d);
-
-  this->CursorPolyData->Modified();
-}
-
-//----------------------------------------------------------------------------
-int vtkColorImagePlaneWidget::UpdateContinuousCursor(double *q)
-{
-  double tol2;
-  vtkCell *cell;
-  vtkPointData *pd;
-  int subId;
-  double pcoords[3], weights[8];
-
-  this->CurrentCursorPosition[0] = q[0];
-  this->CurrentCursorPosition[1] = q[1];
-  this->CurrentCursorPosition[2] = q[2];
-
-  pd = this->ImageData->GetPointData();
-
-  vtkPointData* outPD = vtkPointData::New();
-  outPD->InterpolateAllocate(pd, 1, 1);
-
-  // Use tolerance as a function of size of source data
-  //
-  tol2 = this->ImageData->GetLength();
-  tol2 = tol2 ? tol2*tol2 / 1000.0 : 0.001;
-
-  // Find the cell that contains q and get it
-  //
-  cell = this->ImageData->FindAndGetCell(q,NULL,-1,tol2,subId,pcoords,weights);
-  int found = 0;
-  if (cell)
-    {
-    // Interpolate the point data
-    //
-    outPD->InterpolatePoint(pd,0,cell->PointIds,weights);
-    this->CurrentImageValue = outPD->GetScalars()->GetTuple1(0);
-    found = 1;
-    }
-
-  outPD->Delete();
-  return found;
-}
-
-//----------------------------------------------------------------------------
-int vtkColorImagePlaneWidget::UpdateDiscreteCursor(double *q)
-{
-  // vtkImageData will find the nearest implicit point to q
-  //
-  vtkIdType ptId = this->ImageData->FindPoint(q);
-
-  if ( ptId == -1 )
-    {
-    return 0;
-    }
-
-  double closestPt[3];
-  this->ImageData->GetPoint(ptId,closestPt);
-
-  double origin[3];
-  this->ImageData->GetOrigin(origin);
-  double spacing[3];
-  this->ImageData->GetSpacing(spacing);
-  int extent[6];
-  this->ImageData->GetExtent(extent);
-
-  int iq[3];
-  int iqtemp;
-  for (int i = 0; i < 3; i++)
-    {
-  // compute world to image coords
-    iqtemp = vtkMath::Round((closestPt[i]-origin[i])/spacing[i]);
-
-  // we have a valid pick already, just enforce bounds check
-    iq[i] = (iqtemp < extent[2*i])?extent[2*i]:((iqtemp > extent[2*i+1])?extent[2*i+1]:iqtemp);
-
-  // compute image to world coords
-    q[i] = iq[i]*spacing[i] + origin[i];
-
-    this->CurrentCursorPosition[i] = iq[i];
-    }
-
-  this->CurrentImageValue = this->ImageData->GetScalarComponentAsDouble( \
-                   static_cast<int>(this->CurrentCursorPosition[0]),
-                   static_cast<int>(this->CurrentCursorPosition[1]),
-                   static_cast<int>(this->CurrentCursorPosition[2]),0);
-  return 1;
 }
 
 //----------------------------------------------------------------------------
@@ -2322,18 +1534,6 @@ void vtkColorImagePlaneWidget::UpdatePlacement(void)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetTextProperty(vtkTextProperty* tprop)
-{
-  this->TextActor->SetTextProperty(tprop);
-}
-
-//----------------------------------------------------------------------------
-vtkTextProperty* vtkColorImagePlaneWidget::GetTextProperty()
-{
-  return this->TextActor->GetTextProperty();
-}
-
-//----------------------------------------------------------------------------
 vtkTexture* vtkColorImagePlaneWidget::GetTexture()
 {
   return this->Texture;
@@ -2366,6 +1566,7 @@ void vtkColorImagePlaneWidget::AdjustState()
   this->GetVector1(v1);
   double v2[3];
   this->GetVector2(v2);
+
   double planeSize1 = vtkMath::Normalize(v1);
   double planeSize2 = vtkMath::Normalize(v2);
   double* planeOrigin = this->PlaneSource->GetOrigin();
@@ -2441,7 +1642,7 @@ void vtkColorImagePlaneWidget::AdjustState()
       }
     }
 
-
+  /
   if (this->MarginSelectMode >= 0 && this->MarginSelectMode < 4)
     {
     this->State = vtkColorImagePlaneWidget::Spinning;
@@ -2624,6 +1825,12 @@ void vtkColorImagePlaneWidget::GeneratePlaneOutline()
   planeOutlineMapper->Delete();
 }
 
+//------------------------------------------------------------------------------
+void vtkColorImagePlaneWidget::RegisterPickers()
+{
+  this->Interactor->GetPickingManager()->AddPicker(this->PlanePicker, this);
+}
+
 //----------------------------------------------------------------------------
 void vtkColorImagePlaneWidget::GenerateTexturePlane()
 {
@@ -2636,7 +1843,7 @@ void vtkColorImagePlaneWidget::GenerateTexturePlane()
     this->PlaneSource->GetOutputPort());
 
   this->Texture->SetQualityTo32Bit();
-  this->Texture->MapColorScalarsThroughLookupTableOff();
+  this->Texture->MapColorScalarsThroughLookupTableOn();
   this->Texture->SetInterpolate(this->TextureInterpolate);
   this->Texture->RepeatOff();
   this->Texture->SetLookupTable(this->LookupTable);
@@ -2683,65 +1890,6 @@ void vtkColorImagePlaneWidget::GenerateMargins()
   this->MarginActor->PickableOff();
   this->MarginActor->VisibilityOff();
   marginMapper->Delete();
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GenerateCursor()
-{
-  // Construct initial points
-  //
-  vtkPoints* points = vtkPoints::New(VTK_DOUBLE);
-  points->SetNumberOfPoints(4);
-  int i;
-  for (i = 0; i < 4; i++)
-    {
-    points->SetPoint(i,0.0,0.0,0.0);
-    }
-
-  vtkCellArray *cells = vtkCellArray::New();
-  cells->Allocate(cells->EstimateSize(2,2));
-  vtkIdType pts[2];
-  pts[0] = 0; pts[1] = 1;       // horizontal segment
-  cells->InsertNextCell(2,pts);
-  pts[0] = 2; pts[1] = 3;       // vertical segment
-  cells->InsertNextCell(2,pts);
-
-  this->CursorPolyData->SetPoints(points);
-  points->Delete();
-  this->CursorPolyData->SetLines(cells);
-  cells->Delete();
-
-  vtkPolyDataMapper* cursorMapper = vtkPolyDataMapper::New();
-  cursorMapper->SetInputData(this->CursorPolyData);
-  cursorMapper->SetResolveCoincidentTopologyToPolygonOffset();
-  this->CursorActor->SetMapper(cursorMapper);
-  this->CursorActor->PickableOff();
-  this->CursorActor->VisibilityOff();
-  cursorMapper->Delete();
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GenerateText()
-{
-  sprintf(this->TextBuff,"NA");
-  this->TextActor->SetInput(this->TextBuff);
-  this->TextActor->SetTextScaleModeToNone();
-
-  vtkTextProperty* textprop = this->TextActor->GetTextProperty();
-  textprop->SetColor(1,1,1);
-  textprop->SetFontFamilyToArial();
-  textprop->SetFontSize(18);
-  textprop->BoldOff();
-  textprop->ItalicOff();
-  textprop->ShadowOff();
-  textprop->SetJustificationToLeft();
-  textprop->SetVerticalJustificationToBottom();
-
-  vtkCoordinate* coord = this->TextActor->GetPositionCoordinate();
-  coord->SetCoordinateSystemToNormalizedViewport();
-  coord->SetValue(.01, .01);
-
-  this->TextActor->VisibilityOff();
 }
 
 //----------------------------------------------------------------------------
