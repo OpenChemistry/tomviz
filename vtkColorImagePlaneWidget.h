@@ -361,7 +361,6 @@ protected:
   {
     Start=0,
     Pushing,
-    Spinning,
     Rotating,
     Moving,
     Scaling,
@@ -419,7 +418,6 @@ protected:
 
   // Methods to manipulate the plane
   void Push(double *p1, double *p2);
-  void Spin(double *p1, double *p2);
   void Rotate(double *p1, double *p2, double *vpn);
   void Scale(double *p1, double *p2, int X, int Y);
   void Translate(double *p1, double *p2);

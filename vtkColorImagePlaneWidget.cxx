@@ -702,14 +702,6 @@ void vtkColorImagePlaneWidget::OnMouseMove()
     this->UpdateMargins();
     this->BuildRepresentation();
     }
-  else if ( this->State == vtkColorImagePlaneWidget::Spinning )
-    {
-    std::cout << "vtkColorImagePlaneWidget::Spinning" << std::endl;
-    this->Spin(prevPickPoint, pickPoint);
-    this->UpdatePlane();
-    this->UpdateMargins();
-    this->BuildRepresentation();
-    }
   else if ( this->State == vtkColorImagePlaneWidget::Rotating )
     {
     std::cout << "vtkColorImagePlaneWidget::Rotating" << std::endl;
@@ -1642,10 +1634,10 @@ void vtkColorImagePlaneWidget::AdjustState()
       }
     }
 
-  /
+
   if (this->MarginSelectMode >= 0 && this->MarginSelectMode < 4)
     {
-    this->State = vtkColorImagePlaneWidget::Spinning;
+    this->State = vtkColorImagePlaneWidget::Pushing;
     return;
     }
   else if (this->MarginSelectMode == 8)
