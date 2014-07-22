@@ -21,12 +21,15 @@
 
 #include "vtkAlgorithm.h"
 #include "vtkColorImagePlaneWidget.h"
+#include "vtkDataObject.h"
 #include "vtkNew.h"
 #include "vtkProperty.h"
+#include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkRenderWindow.h"
 #include "vtkRenderWindowInteractor.h"
+#include "vtkScalarsToColors.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMPVRepresentationProxy.h"
@@ -34,9 +37,8 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMTransferFunctionManager.h"
+#include "vtkSMTransferFunctionProxy.h"
 #include "vtkSMViewProxy.h"
-#include "vtkPVArrayInformation.h"
-#include "vtkScalarsToColors.h"
 
 namespace TEM
 {
@@ -137,10 +139,26 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer)
   this->Widget->TextureInterpolateOn();
   this->Widget->SetResliceInterpolateToLinear();
 
-  //setup the transfer function manager, so that we can color the output
+  //Construct the transfer function proxy for the widget
   vtkNew<vtkSMTransferFunctionManager> tfm;
   this->TransferFunction = tfm->GetColorTransferFunction(propertyName,pxm);
-  vtkScalarsToColors* stc = vtkScalarsToColors ::SafeDownCast(
+
+  //set the color range to the transfer function
+  vtkPVDataInformation* info = producer->GetDataInformation();
+  vtkPVArrayInformation* arrayInfo = info->GetArrayInformation(propertyName,
+                                                               vtkDataObject::POINT);
+  if(arrayInfo)
+    {
+    double range[2];
+    arrayInfo->GetComponentRange(0,range); //we only deal with scalar arrays
+
+    vtkSMTransferFunctionProxy::SafeDownCast(this->TransferFunction)
+                                            ->RescaleTransferFunction(range);
+    }
+
+  //set the widgets lookup table to be the one that the transfer function
+  //manager is using
+  vtkScalarsToColors* stc = vtkScalarsToColors::SafeDownCast(
                                 this->TransferFunction->GetClientSideObject());
   this->Widget->SetLookupTable(stc);
 
