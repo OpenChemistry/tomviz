@@ -40,6 +40,7 @@
 
 namespace TEM
 {
+
 //-----------------------------------------------------------------------------
 ModuleSlice::ModuleSlice(QObject* parentObject) : Superclass(parentObject)
 {
@@ -65,10 +66,9 @@ bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
     return false;
     }
 
-  vtkSMSourceProxy* producer = dataSource->producer();
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-
-  vtkSMSessionProxyManager* pxm = dataSource->producer()->GetSessionProxyManager();
+  vtkSMSourceProxy* producer = dataSource->producer();
+  vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -77,75 +77,78 @@ bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   this->PassThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->PassThrough);
   controller->PreInitializeProxy(this->PassThrough);
-  vtkSMPropertyHelper(this->PassThrough, "Input").Set(dataSource->producer());
+  vtkSMPropertyHelper(this->PassThrough, "Input").Set(producer);
   controller->PostInitializeProxy(this->PassThrough);
   controller->RegisterPipelineProxy(this->PassThrough);
 
+  //Create the widget
+  const bool widgetSetup = this->setupWidget(view,producer);
 
-  bool haveInteractor = false;
-  bool haveWidgetInput = false;
-
-  //get the current Interactor
-  vtkRenderWindowInteractor* rwi = view->GetRenderWindow()->GetInteractor();
-  vtkAlgorithm* passThroughAlg = vtkAlgorithm::SafeDownCast(
-                                   this->PassThrough->GetClientSideObject());
-
-  // Create the representation for it.
-  this->Widget = vtkSmartPointer<vtkColorImagePlaneWidget>::New();
-
-  if(rwi)
+  if(widgetSetup)
     {
-    //set the interactor on the widget to be what the current
-    //render window is using
-    this->Widget->SetInteractor( rwi );
-    haveInteractor = true;
+    this->Widget->On();
+    this->Widget->InteractionOn();
     }
 
-  vtkSmartPointer<vtkProperty> ipwProp =
-    vtkSmartPointer<vtkProperty>::New();
+  Q_ASSERT(this->Widget);
+  Q_ASSERT(rwi);
+  Q_ASSERT(passThrough);
+  return widgetSetup;
+}
 
-  //setup the rest of the widget
-  this->Widget->RestrictPlaneToVolumeOff();
 
-  {
-  double color[3] = {1, 0, 0};
-  this->Widget->GetPlaneProperty()->SetColor(color);
-  }
+//-----------------------------------------------------------------------------
+//should only be called from initialize after the PassThrough has been setup
+bool ModuleSlice::setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer)
+{
+  vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
+  vtkAlgorithm* passThroughAlg = vtkAlgorithm::SafeDownCast(
+                                 this->PassThrough->GetClientSideObject());
 
-  this->Widget->SetTexturePlaneProperty(ipwProp);
-  this->Widget->TextureInterpolateOff();
-  this->Widget->SetResliceInterpolateToLinear();
+  vtkRenderWindowInteractor* rwi = view->GetRenderWindow()->GetInteractor();
 
-  //setup the transfer function manager.
-
-  // ColorArrayName
+  //determine the name of the property we are coloring by
   const char* propertyName = producer->GetDataInformation()->
                                        GetPointDataInformation()->
                                        GetArrayInformation(0)->
                                        GetName();
 
+  if(!rwi||!passThroughAlg||!propertyName)
+    {
+    return false;
+    }
+
+  this->Widget = vtkSmartPointer<vtkColorImagePlaneWidget>::New();
+
+  //set the interactor on the widget to be what the current
+  //render window is using
+  this->Widget->SetInteractor( rwi );
+
+  //setup the widget to keep the plane inside the volume
+  this->Widget->RestrictPlaneToVolumeOn();
+
+  //setup the color of the border of the widget
+  {
+  double color[3] = {1, 0, 0};
+  this->Widget->GetPlaneProperty()->SetColor(color);
+  }
+
+  //turn texture interpolation to be linear
+  this->Widget->TextureInterpolateOn();
+  this->Widget->SetResliceInterpolateToLinear();
+
+  //setup the transfer function manager, so that we can color the output
   vtkNew<vtkSMTransferFunctionManager> tfm;
   this->TransferFunction = tfm->GetColorTransferFunction(propertyName,pxm);
   vtkScalarsToColors* stc = vtkScalarsToColors ::SafeDownCast(
                                 this->TransferFunction->GetClientSideObject());
-
-  //needs to set up the lookup table first and the input connection
-  if(passThroughAlg && this->TransferFunction)
-    {
-    this->Widget->SetLookupTable(stc);
-    //set the input connection to the local pass through filter
-    this->Widget->SetInputConnection(passThroughAlg->GetOutputPort());
-    haveWidgetInput = true;
-    }
+  this->Widget->SetLookupTable(stc);
 
 
-  this->Widget->On();
-  this->Widget->InteractionOn();
+  //lastly we set up the input connection
+  this->Widget->SetInputConnection(passThroughAlg->GetOutputPort());
 
-  Q_ASSERT(this->Widget);
-  Q_ASSERT(rwi);
-  Q_ASSERT(passThrough);
-  return haveInteractor && haveWidgetInput;
+  return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -157,8 +160,11 @@ bool ModuleSlice::finalize()
   this->PassThrough = NULL;
   this->TransferFunction = NULL;
 
-  this->Widget->InteractionOff();
-  this->Widget->Off();
+  if(this->Widget != NULL)
+    {
+    this->Widget->InteractionOff();
+    this->Widget->Off();
+    }
 
   return true;
 }
