@@ -362,7 +362,6 @@ protected:
     Start=0,
     Pushing,
     Rotating,
-    Moving,
     Scaling,
     Outside
   };
@@ -420,7 +419,6 @@ protected:
   void Push(double *p1, double *p2);
   void Rotate(double *p1, double *p2, double *vpn);
   void Scale(double *p1, double *p2, int X, int Y);
-  void Translate(double *p1, double *p2);
 
   vtkImageData         *ImageData;
   vtkImageReslice      *Reslice;

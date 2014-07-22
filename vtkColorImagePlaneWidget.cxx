@@ -696,7 +696,6 @@ void vtkColorImagePlaneWidget::OnMouseMove()
 
   if ( this->State == vtkColorImagePlaneWidget::Pushing )
     {
-    std::cout << "vtkColorImagePlaneWidget::Pushing" << std::endl;
     this->Push(prevPickPoint, pickPoint);
     this->UpdatePlane();
     this->UpdateMargins();
@@ -704,7 +703,6 @@ void vtkColorImagePlaneWidget::OnMouseMove()
     }
   else if ( this->State == vtkColorImagePlaneWidget::Rotating )
     {
-    std::cout << "vtkColorImagePlaneWidget::Rotating" << std::endl;
     camera->GetViewPlaneNormal(vpn);
     this->Rotate(prevPickPoint, pickPoint, vpn);
     this->UpdatePlane();
@@ -713,16 +711,7 @@ void vtkColorImagePlaneWidget::OnMouseMove()
     }
   else if ( this->State == vtkColorImagePlaneWidget::Scaling )
     {
-    std::cout << "vtkColorImagePlaneWidget::Scaling" << std::endl;
     this->Scale(prevPickPoint, pickPoint, X, Y);
-    this->UpdatePlane();
-    this->UpdateMargins();
-    this->BuildRepresentation();
-    }
-  else if ( this->State == vtkColorImagePlaneWidget::Moving )
-    {
-    std::cout << "vtkColorImagePlaneWidget::Moving" << std::endl;
-    this->Translate(prevPickPoint, pickPoint);
     this->UpdatePlane();
     this->UpdateMargins();
     this->BuildRepresentation();
@@ -1680,56 +1669,6 @@ void vtkColorImagePlaneWidget::AdjustState()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::Spin(double *p1, double *p2)
-{
-  // Disable cursor snap
-  //
-  this->PlaneOrientation = 3;
-
-  // Get the motion vector, in world coords
-  //
-  double v[3];
-  v[0] = p2[0] - p1[0];
-  v[1] = p2[1] - p1[1];
-  v[2] = p2[2] - p1[2];
-
-  // Plane center and normal before transform
-  //
-  double* wc = this->PlaneSource->GetCenter();
-  double* wn = this->PlaneSource->GetNormal();
-
-  // Radius vector from center to cursor position
-  //
-  double rv[3] = {p2[0]-wc[0], p2[1]-wc[1], p2[2]-wc[2]};
-
-  // Distance between center and cursor location
-  //
-  double rs = vtkMath::Normalize(rv);
-
-  // Spin direction
-  //
-  double wn_cross_rv[3];
-  vtkMath::Cross(wn,rv,wn_cross_rv);
-
-  // Spin angle
-  //
-  double dw = vtkMath::DegreesFromRadians( vtkMath::Dot( v, wn_cross_rv) / rs );
-
-  this->Transform->Identity();
-  this->Transform->Translate(wc[0],wc[1],wc[2]);
-  this->Transform->RotateWXYZ(dw,wn);
-  this->Transform->Translate(-wc[0],-wc[1],-wc[2]);
-
-  double newpt[3];
-  this->Transform->TransformPoint(this->PlaneSource->GetPoint1(),newpt);
-  this->PlaneSource->SetPoint1(newpt);
-  this->Transform->TransformPoint(this->PlaneSource->GetPoint2(),newpt);
-  this->PlaneSource->SetPoint2(newpt);
-  this->Transform->TransformPoint(this->PlaneSource->GetOrigin(),newpt);
-  this->PlaneSource->SetOrigin(newpt);
-}
-
-//----------------------------------------------------------------------------
 void vtkColorImagePlaneWidget::Rotate(double *p1, double *p2, double *vpn)
 {
   // Disable cursor snap
@@ -1936,124 +1875,6 @@ void vtkColorImagePlaneWidget::UpdateMargins()
   marginPts->SetPoint(7,d);
 
   this->MarginPolyData->Modified();
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::Translate(double *p1, double *p2)
-{
-  // Get the motion vector
-  //
-  double v[3];
-  v[0] = p2[0] - p1[0];
-  v[1] = p2[1] - p1[1];
-  v[2] = p2[2] - p1[2];
-
-  double *o = this->PlaneSource->GetOrigin();
-  double *pt1 = this->PlaneSource->GetPoint1();
-  double *pt2 = this->PlaneSource->GetPoint2();
-  double origin[3], point1[3], point2[3];
-
-  double vdrv = this->RadiusVector[0]*v[0] + \
-               this->RadiusVector[1]*v[1] + \
-               this->RadiusVector[2]*v[2];
-  double vdra = this->RotateAxis[0]*v[0] + \
-               this->RotateAxis[1]*v[1] + \
-               this->RotateAxis[2]*v[2];
-
-  int i;
-  if ( this->MarginSelectMode == 8 )       // everybody comes along
-    {
-    for (i=0; i<3; i++)
-      {
-      origin[i] = o[i] + v[i];
-      point1[i] = pt1[i] + v[i];
-      point2[i] = pt2[i] + v[i];
-      }
-    this->PlaneSource->SetOrigin(origin);
-    this->PlaneSource->SetPoint1(point1);
-    this->PlaneSource->SetPoint2(point2);
-    }
-  else if ( this->MarginSelectMode == 4 ) // left edge
-    {
-    for (i=0; i<3; i++)
-      {
-      origin[i] = o[i]   + vdrv*this->RadiusVector[i];
-      point2[i] = pt2[i] + vdrv*this->RadiusVector[i];
-      }
-    this->PlaneSource->SetOrigin(origin);
-    this->PlaneSource->SetPoint2(point2);
-    }
-  else if ( this->MarginSelectMode == 5 ) // right edge
-    {
-    for (i=0; i<3; i++)
-      {
-      point1[i] = pt1[i] + vdrv*this->RadiusVector[i];
-      }
-    this->PlaneSource->SetPoint1(point1);
-    }
-  else if ( this->MarginSelectMode == 6 ) // bottom edge
-    {
-    for (i=0; i<3; i++)
-      {
-      origin[i] = o[i]   + vdrv*this->RadiusVector[i];
-      point1[i] = pt1[i] + vdrv*this->RadiusVector[i];
-      }
-    this->PlaneSource->SetOrigin(origin);
-    this->PlaneSource->SetPoint1(point1);
-    }
-  else if ( this->MarginSelectMode == 7 ) // top edge
-    {
-    for (i=0; i<3; i++)
-      {
-      point2[i] = pt2[i] + vdrv*this->RadiusVector[i];
-      }
-    this->PlaneSource->SetPoint2(point2);
-    }
-  else if ( this->MarginSelectMode == 3 ) // top left corner
-    {
-    for (i=0; i<3; i++)
-      {
-      origin[i] = o[i]   + vdrv*this->RadiusVector[i];
-      point2[i] = pt2[i] + vdrv*this->RadiusVector[i] +
-        vdra*this->RotateAxis[i];
-      }
-    this->PlaneSource->SetOrigin(origin);
-    this->PlaneSource->SetPoint2(point2);
-    }
-  else if ( this->MarginSelectMode == 0 ) // bottom left corner
-    {
-    for (i=0; i<3; i++)
-      {
-      origin[i] = o[i]   + vdrv*this->RadiusVector[i] +
-        vdra*this->RotateAxis[i];
-      point1[i] = pt1[i] + vdra*this->RotateAxis[i];
-      point2[i] = pt2[i] + vdrv*this->RadiusVector[i];
-      }
-    this->PlaneSource->SetOrigin(origin);
-    this->PlaneSource->SetPoint1(point1);
-    this->PlaneSource->SetPoint2(point2);
-    }
-  else if ( this->MarginSelectMode == 2 ) // top right corner
-    {
-    for (i=0; i<3; i++)
-      {
-      point1[i] = pt1[i] + vdrv*this->RadiusVector[i];
-      point2[i] = pt2[i] + vdra*this->RotateAxis[i];
-      }
-    this->PlaneSource->SetPoint1(point1);
-    this->PlaneSource->SetPoint2(point2);
-    }
-  else                                   // bottom right corner
-    {
-    for (i=0; i<3; i++)
-      {
-      origin[i] = o[i]   + vdra*this->RotateAxis[i];
-      point1[i] = pt1[i] + vdrv*this->RadiusVector[i] +
-        vdra*this->RotateAxis[i];
-      }
-    this->PlaneSource->SetPoint1(point1);
-    this->PlaneSource->SetOrigin(origin);
-    }
 }
 
 //----------------------------------------------------------------------------
