@@ -34,26 +34,16 @@
 // "interactor") is pressed, the vtkColorImagePlaneWidget will appear. (See
 // superclass documentation for information about changing this behavior.)
 //
-// Selecting the widget with the middle mouse button with and without holding
-// the shift or control keys enables complex reslicing capablilites.
+// Selecting the widget with the left or middle mouse button enables
+// reslicing capablilites..
 // To facilitate use, a set of 'margins' (left, right, top, bottom) are shown as
 // a set of plane-axes aligned lines, the properties of which can be changed
 // as a group.
 // Without keyboard modifiers: selecting in the middle of the margins
-// enables translation of the plane along its normal. Selecting one of the
-// corners within the margins enables spinning around the plane's normal at its
-// center.  Selecting within a margin allows rotating about the center of the
-// plane around an axis aligned with the margin (i.e., selecting left margin
-// enables rotating around the plane's local y-prime axis).
-// With control key modifier: margin selection enables edge translation (i.e., a
-// constrained form of scaling). Selecting within the margins enables
-// translation of the entire plane.
-// With shift key modifier: uniform plane scaling is enabled.  Moving the mouse
-// up enlarges the plane while downward movement shrinks it.
-//
-// Window-level is achieved by using the right mouse button.  Window-level
-// values can be reset by shift + 'r' or control + 'r' while regular reset
-// camera is maintained with 'r' or 'R'.
+// enables translation of the plane along its normal. Selecting within a margin
+// allows rotating about the center of the plane around an axis aligned with the
+// margin (i.e., selecting left margin enables rotating around the plane's
+// local y-prime axis).
 //
 // Events that occur outside of the widget (i.e., no part of the widget is
 // picked) are propagated to any other registered obsevers (such as the
@@ -401,28 +391,6 @@ public:
   vtkSetClampMacro(RightButtonAction,int, VTK_CURSOR_ACTION, VTK_WINDOW_LEVEL_ACTION);
   vtkGetMacro(RightButtonAction, int);
 
-  //BTX
-  // Description:
-  // Set the auto-modifiers associated to buttons.
-  // This allows users to bind some buttons to actions that are usually
-  // triggered by a key modifier. For example, if you do not need cursoring,
-  // you can bind the left button action to VTK_SLICE_MOTION_ACTION (see above)
-  // and the left button auto modifier to VTK_CONTROL_MODIFIER: you end up with
-  // the left button controlling panning without pressing a key.
-  enum
-  {
-    VTK_NO_MODIFIER         = 0,
-    VTK_SHIFT_MODIFIER      = 1,
-    VTK_CONTROL_MODIFIER    = 2
-  };
-  //ETX
-  vtkSetClampMacro(LeftButtonAutoModifier,int, VTK_NO_MODIFIER, VTK_CONTROL_MODIFIER);
-  vtkGetMacro(LeftButtonAutoModifier, int);
-  vtkSetClampMacro(MiddleButtonAutoModifier,int, VTK_NO_MODIFIER, VTK_CONTROL_MODIFIER);
-  vtkGetMacro(MiddleButtonAutoModifier, int);
-  vtkSetClampMacro(RightButtonAutoModifier,int, VTK_NO_MODIFIER, VTK_CONTROL_MODIFIER);
-  vtkGetMacro(RightButtonAutoModifier, int);
-
 protected:
   vtkColorImagePlaneWidget();
   ~vtkColorImagePlaneWidget();
@@ -433,9 +401,6 @@ protected:
   int MiddleButtonAction;
   int RightButtonAction;
 
-  int LeftButtonAutoModifier;
-  int MiddleButtonAutoModifier;
-  int RightButtonAutoModifier;
 
   //BTX
   enum

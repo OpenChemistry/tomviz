@@ -156,11 +156,6 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->MiddleButtonAction = vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
   this->RightButtonAction = vtkColorImagePlaneWidget::VTK_WINDOW_LEVEL_ACTION;
 
-  // Set up modifiers
-  this->LeftButtonAutoModifier = vtkColorImagePlaneWidget::VTK_NO_MODIFIER;
-  this->MiddleButtonAutoModifier = vtkColorImagePlaneWidget::VTK_NO_MODIFIER;
-  this->RightButtonAutoModifier = vtkColorImagePlaneWidget::VTK_NO_MODIFIER;
-
   this->LastButtonPressed = vtkColorImagePlaneWidget::VTK_NO_BUTTON;
 
   this->TextureVisibility = 1;
@@ -607,12 +602,6 @@ void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "LeftButtonAction: " << this->LeftButtonAction << endl;
   os << indent << "MiddleButtonAction: " << this->MiddleButtonAction << endl;
   os << indent << "RightButtonAction: " << this->RightButtonAction << endl;
-  os << indent << "LeftButtonAutoModifier: " <<
-    this->LeftButtonAutoModifier << endl;
-  os << indent << "MiddleButtonAutoModifier: " <<
-    this->MiddleButtonAutoModifier << endl;
-  os << indent << "RightButtonAutoModifier: " <<
-    this->RightButtonAutoModifier << endl;
   os << indent << "UseContinuousCursor: "
      << (this->UseContinuousCursor ? "On\n" : "Off\n") ;
 
@@ -1530,6 +1519,12 @@ void vtkColorImagePlaneWidget::UpdatePlane()
         }
       }
 
+    std::cout << "bounds "
+              << bounds[0] << " to " << bounds[1] << ", "
+              << bounds[2] << " to " << bounds[3] << ", "
+              << bounds[4] << " to " << bounds[5]
+              << std::endl;
+
     double abs_normal[3];
     this->PlaneSource->GetNormal(abs_normal);
     double planeCenter[3];
@@ -2367,28 +2362,6 @@ void vtkColorImagePlaneWidget::GetVector2(double v2[3])
 //----------------------------------------------------------------------------
 void vtkColorImagePlaneWidget::AdjustState()
 {
-  int *auto_modifier = NULL;
-  switch (this->LastButtonPressed)
-    {
-    case vtkColorImagePlaneWidget::VTK_LEFT_BUTTON:
-      auto_modifier = &this->LeftButtonAutoModifier;
-      break;
-    case vtkColorImagePlaneWidget::VTK_MIDDLE_BUTTON:
-      auto_modifier = &this->MiddleButtonAutoModifier;
-      break;
-    case vtkColorImagePlaneWidget::VTK_RIGHT_BUTTON:
-      auto_modifier = &this->RightButtonAutoModifier;
-      break;
-    }
-
-  if (this->Interactor->GetShiftKey() ||
-      (auto_modifier &&
-       (*auto_modifier & vtkColorImagePlaneWidget::VTK_SHIFT_MODIFIER)))
-    {
-    this->State = vtkColorImagePlaneWidget::Scaling;
-    return;
-    }
-
   double v1[3];
   this->GetVector1(v1);
   double v2[3];
@@ -2468,28 +2441,20 @@ void vtkColorImagePlaneWidget::AdjustState()
       }
     }
 
-  if (this->Interactor->GetControlKey() ||
-      (auto_modifier &&
-       (*auto_modifier & vtkColorImagePlaneWidget::VTK_CONTROL_MODIFIER)))
+
+  if (this->MarginSelectMode >= 0 && this->MarginSelectMode < 4)
     {
-    this->State = vtkColorImagePlaneWidget::Moving;
+    this->State = vtkColorImagePlaneWidget::Spinning;
+    return;
+    }
+  else if (this->MarginSelectMode == 8)
+    {
+    this->State = vtkColorImagePlaneWidget::Pushing;
+    return;
     }
   else
     {
-    if (this->MarginSelectMode >= 0 && this->MarginSelectMode < 4)
-      {
-      this->State = vtkColorImagePlaneWidget::Spinning;
-      return;
-      }
-    else if (this->MarginSelectMode == 8)
-      {
-      this->State = vtkColorImagePlaneWidget::Pushing;
-      return;
-      }
-    else
-      {
-      this->State = vtkColorImagePlaneWidget::Rotating;
-      }
+    this->State = vtkColorImagePlaneWidget::Rotating;
     }
 
   double *raPtr = 0;
