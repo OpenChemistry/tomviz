@@ -305,6 +305,7 @@ void vtkColorImagePlaneWidget::SetEnabled(int enabling)
       }
     this->TexturePlaneActor->SetProperty(this->TexturePlaneProperty);
 
+
     // Add the cross-hair cursor
     this->CurrentRenderer->AddViewProp(this->CursorActor);
     this->CursorActor->SetProperty(this->CursorProperty);
@@ -1467,6 +1468,10 @@ void vtkColorImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
 
   this->Texture->SetInputConnection(this->Reslice->GetOutputPort());
   this->Texture->SetInterpolate(this->TextureInterpolate);
+
+  //Make the texture treat char arrays as something that needs
+  //to go through the LookupTable
+  this->Texture->MapColorScalarsThroughLookupTableOn();
 
   this->SetPlaneOrientation(this->PlaneOrientation);
 }
