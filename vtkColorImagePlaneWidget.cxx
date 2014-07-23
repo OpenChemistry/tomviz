@@ -18,6 +18,7 @@
 #include "vtkAlgorithmOutput.h"
 #include "vtkAssemblyNode.h"
 #include "vtkAssemblyPath.h"
+#include "vtkBoundingBox.h"
 #include "vtkCallbackCommand.h"
 #include "vtkCamera.h"
 #include "vtkCellArray.h"
@@ -992,15 +993,8 @@ void vtkColorImagePlaneWidget::SetPlaneOrientation(int i)
                      origin[1] + spacing[1] * (extent[3] + 0.5)};
   double zbounds[] = {origin[2] + spacing[2] * (extent[4] - 0.5),
                      origin[2] + spacing[2] * (extent[5] + 0.5)};
-  xbounds[0] -= (extent[0] + extent[1])/2;
-  xbounds[1] += (extent[0] + extent[1])/2;
 
-  ybounds[0] -= (extent[2] + extent[3])/2;
-  ybounds[1] += (extent[2] + extent[3])/2;
-
-  zbounds[0] -= (extent[4] + extent[5])/2;
-  zbounds[1] += (extent[4] + extent[5])/2;
-
+  //handle negative spacing
   if ( spacing[0] < 0.0 )
     {
     double t = xbounds[0];
@@ -1019,6 +1013,20 @@ void vtkColorImagePlaneWidget::SetPlaneOrientation(int i)
     zbounds[0] = zbounds[1];
     zbounds[1] = t;
     }
+
+  //push the bounds out by the diagonal length
+  vtkBoundingBox box;
+  box.AddPoint(xbounds[0],ybounds[0],zbounds[0]);
+  box.AddPoint(xbounds[1],ybounds[1],zbounds[1]);
+
+  double padding = box.GetDiagonalLength()/2.0;
+  xbounds[0] -= padding;
+  ybounds[0] -= padding;
+  zbounds[0] -= padding;
+
+  xbounds[1] += padding;
+  ybounds[1] += padding;
+  zbounds[1] += padding;
 
   if ( i == 2 ) //XY, z-normal
     {
