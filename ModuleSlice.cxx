@@ -93,8 +93,6 @@ bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
     }
 
   Q_ASSERT(this->Widget);
-  Q_ASSERT(rwi);
-  Q_ASSERT(passThrough);
   return widgetSetup;
 }
 
@@ -125,9 +123,6 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer)
   //set the interactor on the widget to be what the current
   //render window is using
   this->Widget->SetInteractor( rwi );
-
-  //setup the widget to keep the plane inside the volume
-  this->Widget->RestrictPlaneToVolumeOn();
 
   //setup the color of the border of the widget
   {
@@ -166,6 +161,8 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer)
   //lastly we set up the input connection
   this->Widget->SetInputConnection(passThroughAlg->GetOutputPort());
 
+  Q_ASSERT(rwi);
+  Q_ASSERT(passThroughAlg);
   return true;
 }
 
