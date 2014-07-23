@@ -20,6 +20,7 @@
 #include <vtk_pugixml.h>
 
 #include "ModuleManager.h"
+#include "RecentFilesMenu.h"
 #include "vtkSMProxyManager.h"
 
 #include <QtDebug>
@@ -92,7 +93,12 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     return false;
     }
 
-  return ModuleManager::instance().deserialize(document.child("TomVizState"));
+  if (ModuleManager::instance().deserialize(document.child("TomVizState")))
+    {
+    RecentFilesMenu::pushStateFile(filename);
+    return true;
+    }
+  return false;
 }
 
 //-----------------------------------------------------------------------------

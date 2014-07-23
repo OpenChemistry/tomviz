@@ -4,8 +4,13 @@ find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 if(NOT PARAVIEW_BUILD_QT_GUI)
   message(FATAL_ERROR
-    "TEM tomography requires PARAVIEW_BUILD_QT_GUI to be enabled. "
-    "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE")
+    "TomViz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
+    "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE.")
+endif()
+if(NOT PARAVIEW_ENABLE_PYTHON)
+  message(FATAL_ERROR
+    "TomViz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
+    "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
 endif()
 
 # We need to link to QtMain on Windows, this is much better in Qt 5 with recent
@@ -96,10 +101,11 @@ qt4_wrap_ui(UI_SOURCES
   ModulePropertiesPanel.ui
   ViewPropertiesPanel.ui
   )
-
 qt4_add_resources(RCC_SOURCES resources.qrc)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+
+configure_file(TomVizPythonConfig.h.in TomVizPythonConfig.h @ONLY)
 
 add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}
   ${RCC_SOURCES} ${accel_srcs})

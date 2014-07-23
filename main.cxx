@@ -21,6 +21,7 @@
 #include "vtkObjectFactory.h"
 
 #include "MainWindow.h"
+#include "TomVizPythonConfig.h"
 
 #include <clocale>
 
@@ -44,6 +45,8 @@ int main(int argc, char** argv)
   QCoreApplication::setApplicationName("TomViz");
   QCoreApplication::setApplicationVersion("0.1.0");
   QCoreApplication::setOrganizationName("Kitware");
+
+  TEM::InitializePythonEnvironment(argc, argv);
 
   QApplication app(argc, argv);
   setlocale(LC_NUMERIC, "C");
