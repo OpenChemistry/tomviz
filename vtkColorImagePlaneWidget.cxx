@@ -49,6 +49,31 @@
 
 vtkStandardNewMacro(vtkColorImagePlaneWidget);
 
+namespace detail
+{
+
+  //goal is to make an extent value that is a power of 2 and
+  //is greater or equal size to the real extent
+  int make_extent(double planeSize, double spacing)
+  {
+  // make sure we're working with valid values
+  double realExtent = ( spacing == 0 ) ? VTK_INT_MAX : planeSize / spacing;
+
+  int extent = 0;
+  // Sanity check the input data:
+  // * if realExtent is too large, extent will wrap
+  // * if spacing is 0, things will blow up.
+  if (realExtent < (VTK_INT_MAX >> 1))
+    {
+    extent = 1;
+    //compute the largest power of 2 that is greater or equal to realExtent
+    while (extent < realExtent)
+      { extent = extent << 1; }
+    }
+  return extent;
+  }
+}
+
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, PlaneProperty, vtkProperty);
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, SelectedPlaneProperty, vtkProperty);
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, MarginProperty, vtkProperty);
@@ -731,12 +756,18 @@ void vtkColorImagePlaneWidget::Push(double *p1, double *p2)
 {
   // Get the motion vector
   //
-  double v[3];
-  v[0] = p2[0] - p1[0];
-  v[1] = p2[1] - p1[1];
-  v[2] = p2[2] - p1[2];
+  const double v[3] = {
+                      p2[0] - p1[0],
+                      p2[1] - p1[1],
+                      p2[2] - p1[2]
+                      };
 
-  this->PlaneSource->Push( vtkMath::Dot( v, this->PlaneSource->GetNormal() ) );
+  //take only the primary component of the motion vector
+  double norm[3];
+  this->PlaneSource->GetNormal(norm);
+  const float dotV = vtkMath::Dot( v, norm  );
+
+  this->PlaneSource->Push( dotV );
 }
 
 //----------------------------------------------------------------------------
@@ -1001,55 +1032,13 @@ void vtkColorImagePlaneWidget::UpdatePlane()
                     fabs(2*planeAxis2[2]*spacing[2]);
 
 
+
   // Pad extent up to a power of two for efficient texture mapping
-
-  // make sure we're working with valid values
-  double realExtentX = ( spacingX == 0 ) ? VTK_INT_MAX : planeSizeX / spacingX;
-
-  int extentX;
-  // Sanity check the input data:
-  // * if realExtentX is too large, extentX will wrap
-  // * if spacingX is 0, things will blow up.
-  if (realExtentX > (VTK_INT_MAX >> 1))
-    {
-    vtkErrorMacro(<<"Invalid X extent: " << realExtentX);
-    extentX = 0;
-    }
-  else
-    {
-    extentX = 1;
-    while (extentX < realExtentX)
-      {
-      extentX = extentX << 1;
-      }
-    }
-
-  // make sure extentY doesn't wrap during padding
-  double realExtentY = ( spacingY == 0 ) ? VTK_INT_MAX : planeSizeY / spacingY;
-
-  int extentY;
-  if (realExtentY > (VTK_INT_MAX >> 1))
-    {
-    vtkErrorMacro(<<"Invalid Y extent: " << realExtentY);
-    extentY = 0;
-    }
-  else
-    {
-    extentY = 1;
-    while (extentY < realExtentY)
-      {
-      extentY = extentY << 2;
-      }
-    }
+  int extentX = detail::make_extent(planeSizeX,spacingX);
+  int extentY = detail::make_extent(planeSizeY,spacingY);
 
   double outputSpacingX = (planeSizeX == 0) ? 1.0 : planeSizeX/extentX;
   double outputSpacingY = (planeSizeY == 0) ? 1.0 : planeSizeY/extentY;
-
-  // std::cout << "outputSpacingX: " << outputSpacingX << std::endl;
-  // std::cout << "outputSpacingY: " << outputSpacingX << std::endl;
-  // std::cout << "extentX: " << extentX << std::endl;
-  // std::cout << "extentY: " << extentY << std::endl;
-  // std::cout <<"IsTranslucent: " << this->Texture->IsTranslucent() << std::endl;
 
 
   this->Reslice->SetOutputSpacing(outputSpacingX, outputSpacingY, 1);
@@ -1931,10 +1920,11 @@ void vtkColorImagePlaneWidget::Scale(double *p1, double *p2,
 {
   // Get the motion vector
   //
-  double v[3];
-  v[0] = p2[0] - p1[0];
-  v[1] = p2[1] - p1[1];
-  v[2] = p2[2] - p1[2];
+  const double v[3] = {
+                      p2[0] - p1[0],
+                      p2[1] - p1[1],
+                      p2[2] - p1[2]
+                      };
 
   double *o = this->PlaneSource->GetOrigin();
   double *pt1 = this->PlaneSource->GetPoint1();
