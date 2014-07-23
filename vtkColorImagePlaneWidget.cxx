@@ -149,9 +149,10 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   // Initial creation of the widget, serves to initialize it
   //
   this->GeneratePlaneOutline();
-  this->PlaceWidget(bounds);
   this->GenerateTexturePlane();
   this->GenerateArrow();
+  //GenerateArrow needs to before placeWidget
+  this->PlaceWidget(bounds);
 
   // Manage the picking stuff
   //
@@ -171,7 +172,7 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
 
   // Set up actions
   this->LeftButtonAction = vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
-  this->MiddleButtonAction = vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
+  this->MiddleButtonAction = vtkColorImagePlaneWidget::VTK_NO_ACTION;
   this->RightButtonAction = vtkColorImagePlaneWidget::VTK_NO_ACTION;
 
   this->LastButtonPressed = vtkColorImagePlaneWidget::VTK_NO_BUTTON;
@@ -342,9 +343,7 @@ void vtkColorImagePlaneWidget::SetEnabled(int enabling)
     this->ConeActor2->PickableOn();
     this->SphereActor->PickableOn();
 
-
     this->InvokeEvent(vtkCommand::EnableEvent,0);
-
     }
 
   else //disabling----------------------------------------------------------
@@ -599,16 +598,13 @@ void vtkColorImagePlaneWidget::BuildRepresentation()
   points->GetData()->Modified();
   this->PlaneOutlinePolyData->Modified();
 
-  // Setup the plane normal
-  double d = 1 ;
-  if(this->ImageData)
-    {
-    d = this->ImageData->GetLength();
-    }
-  else
-    {
-    d = vtkMath::Distance2BetweenPoints(pt1,pt2);
-    }
+
+  //setup the diagonal distance, i am lazy so use box to calculate it.
+  vtkBoundingBox box;
+  box.AddPoint(origin[0],origin[1],origin[2]);
+  box.AddPoint(x[0],x[1],x[2]);
+  double d = box.GetDiagonalLength()/2.0;
+
 
   //compute the center of the plane
   double center[3];
@@ -1078,6 +1074,8 @@ void vtkColorImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
   this->Texture->SetInterpolate(this->TextureInterpolate);
 
   this->SetPlaneOrientation(this->PlaneOrientation);
+
+  this->UpdatePlacement();
 }
 
 //----------------------------------------------------------------------------
