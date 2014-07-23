@@ -22,9 +22,11 @@
 #include "vtkCamera.h"
 #include "vtkCellArray.h"
 #include "vtkCellPicker.h"
+#include "vtkConeSource.h"
 #include "vtkImageData.h"
 #include "vtkImageReslice.h"
 #include "vtkInformation.h"
+#include "vtkLineSource.h"
 #include "vtkLookupTable.h"
 #include "vtkMath.h"
 #include "vtkMatrix4x4.h"
@@ -41,6 +43,7 @@
 #include "vtkRenderer.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkScalarsToColors.h"
+#include "vtkSphereSource.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkTextActor.h"
 #include "vtkTextProperty.h"
@@ -76,7 +79,8 @@ namespace detail
 
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, PlaneProperty, vtkProperty);
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, SelectedPlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, MarginProperty, vtkProperty);
+vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, ArrowProperty, vtkProperty);
+vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, SelectedArrowProperty, vtkProperty);
 vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, TexturePlaneProperty, vtkProperty);
 
 //----------------------------------------------------------------------------
@@ -90,8 +94,6 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->PlaceFactor              = 1.0;
   this->TextureInterpolate       = 1;
   this->ResliceInterpolate       = VTK_LINEAR_RESLICE;
-  this->MarginSizeX              = 0.05;
-  this->MarginSizeY              = 0.05;
 
   // Represent the plane's outline
   //
@@ -115,13 +117,23 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->ImageData          = 0;
   this->LookupTable        = 0;
 
-  // Represent the oblique positioning margins
+  // Represent the positioning arrow
   //
-  this->MarginPolyData = vtkPolyData::New();
-  this->MarginActor    = vtkActor::New();
+  this->LineSource = vtkLineSource::New();
+  this->LineActor = vtkActor::New();
 
+  this->ConeSource = vtkConeSource::New();
+  this->ConeActor = vtkActor::New();
 
-  this->GeneratePlaneOutline();
+  this->LineSource2 = vtkLineSource::New();
+  this->LineActor2 = vtkActor::New();
+
+  this->ConeSource2 = vtkConeSource::New();
+  this->ConeActor2 = vtkActor::New();
+
+  this->Sphere = vtkSphereSource::New();
+  this->SphereActor = vtkActor::New();
+
 
   // Define some default point coordinates
   //
@@ -135,10 +147,10 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
 
   // Initial creation of the widget, serves to initialize it
   //
+  this->GeneratePlaneOutline();
   this->PlaceWidget(bounds);
-
   this->GenerateTexturePlane();
-  this->GenerateMargins();
+  this->GenerateArrow();
 
   // Manage the picking stuff
   //
@@ -151,8 +163,9 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   //
   this->PlaneProperty         = 0;
   this->SelectedPlaneProperty = 0;
+  this->ArrowProperty         = 0;
+  this->SelectedArrowProperty = 0;
   this->TexturePlaneProperty  = 0;
-  this->MarginProperty        = 0;
   this->CreateDefaultProperties();
 
   // Set up actions
@@ -187,9 +200,14 @@ vtkColorImagePlaneWidget::~vtkColorImagePlaneWidget()
     this->SelectedPlaneProperty->Delete();
     }
 
-  if ( this->MarginProperty )
+  if ( this->ArrowProperty )
     {
-    this->MarginProperty->Delete();
+    this->ArrowProperty->Delete();
+    }
+
+  if ( this->SelectedArrowProperty )
+    {
+    this->SelectedArrowProperty->Delete();
     }
 
   this->ResliceAxes->Delete();
@@ -214,8 +232,17 @@ vtkColorImagePlaneWidget::~vtkColorImagePlaneWidget()
     this->ImageData = 0;
     }
 
-  this->MarginActor->Delete();
-  this->MarginPolyData->Delete();
+  //delete everything related to the arrow
+  this->LineSource->Delete();
+  this->LineActor->Delete();
+  this->ConeSource->Delete();
+  this->ConeActor->Delete();
+  this->LineSource2->Delete();
+  this->LineActor2->Delete();
+  this->ConeSource2->Delete();
+  this->ConeActor2->Delete();
+  this->Sphere->Delete();
+  this->SphereActor->Delete();
 }
 
 //----------------------------------------------------------------------------
@@ -294,12 +321,26 @@ void vtkColorImagePlaneWidget::SetEnabled(int enabling)
       }
     this->TexturePlaneActor->SetProperty(this->TexturePlaneProperty);
 
+    // add the default arrow properties
+    this->CurrentRenderer->AddViewProp(this->LineActor);
+    this->CurrentRenderer->AddViewProp(this->ConeActor);
+    this->CurrentRenderer->AddViewProp(this->LineActor2);
+    this->CurrentRenderer->AddViewProp(this->ConeActor2);
+    this->CurrentRenderer->AddViewProp(this->SphereActor);
 
-    // Add the margins
-    this->CurrentRenderer->AddViewProp(this->MarginActor);
-    this->MarginActor->SetProperty(this->MarginProperty);
+    this->LineActor->SetProperty(this->ArrowProperty);
+    this->ConeActor->SetProperty(this->ArrowProperty);
+    this->LineActor2->SetProperty(this->ArrowProperty);
+    this->ConeActor2->SetProperty(this->ArrowProperty);
+    this->SphereActor->SetProperty(this->ArrowProperty);
 
     this->TexturePlaneActor->PickableOn();
+    this->LineActor->PickableOn();
+    this->ConeActor->PickableOn();
+    this->LineActor2->PickableOn();
+    this->ConeActor2->PickableOn();
+    this->SphereActor->PickableOn();
+
 
     this->InvokeEvent(vtkCommand::EnableEvent,0);
 
@@ -325,10 +366,19 @@ void vtkColorImagePlaneWidget::SetEnabled(int enabling)
     //turn off the texture plane
     this->CurrentRenderer->RemoveViewProp(this->TexturePlaneActor);
 
-    //turn off the margins
-    this->CurrentRenderer->RemoveViewProp(this->MarginActor);
+    //turn off the arrow
+    this->CurrentRenderer->RemoveViewProp(this->LineActor);
+    this->CurrentRenderer->RemoveViewProp(this->ConeActor);
+    this->CurrentRenderer->RemoveViewProp(this->LineActor2);
+    this->CurrentRenderer->RemoveViewProp(this->ConeActor2);
+    this->CurrentRenderer->RemoveViewProp(this->SphereActor);
 
     this->TexturePlaneActor->PickableOff();
+    this->LineActor->PickableOff();
+    this->ConeActor->PickableOff();
+    this->LineActor2->PickableOff();
+    this->ConeActor2->PickableOff();
+    this->SphereActor->PickableOff();
 
     this->InvokeEvent(vtkCommand::DisableEvent,0);
     this->SetCurrentRenderer(NULL);
@@ -469,16 +519,6 @@ void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "LookupTable: (none)\n";
     }
 
-  if ( this->MarginProperty )
-    {
-    os << indent << "Margin Property:\n";
-    this->MarginProperty->PrintSelf(os,indent.GetNextIndent());
-    }
-  else
-    {
-    os << indent << "Margin Property: (none)\n";
-    }
-
   if ( this->TexturePlaneProperty )
     {
     os << indent << "TexturePlane Property:\n";
@@ -534,33 +574,121 @@ void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "LeftButtonAction: " << this->LeftButtonAction << endl;
   os << indent << "MiddleButtonAction: " << this->MiddleButtonAction << endl;
   os << indent << "RightButtonAction: " << this->RightButtonAction << endl;
-
-  os << indent << "MarginSizeX: "
-     << this->MarginSizeX << "\n";
-  os << indent << "MarginSizeY: "
-     << this->MarginSizeY << "\n";
 }
 
 //----------------------------------------------------------------------------
 void vtkColorImagePlaneWidget::BuildRepresentation()
 {
   this->PlaneSource->Update();
-  double *o = this->PlaneSource->GetOrigin();
+  double *origin = this->PlaneSource->GetOrigin();
+  double *normal = this->PlaneSource->GetNormal();
   double *pt1 = this->PlaneSource->GetPoint1();
   double *pt2 = this->PlaneSource->GetPoint2();
 
   double x[3];
-  x[0] = o[0] + (pt1[0]-o[0]) + (pt2[0]-o[0]);
-  x[1] = o[1] + (pt1[1]-o[1]) + (pt2[1]-o[1]);
-  x[2] = o[2] + (pt1[2]-o[2]) + (pt2[2]-o[2]);
+  x[0] = origin[0] + (pt1[0]-origin[0]) + (pt2[0]-origin[0]);
+  x[1] = origin[1] + (pt1[1]-origin[1]) + (pt2[1]-origin[1]);
+  x[2] = origin[2] + (pt1[2]-origin[2]) + (pt2[2]-origin[2]);
 
   vtkPoints* points = this->PlaneOutlinePolyData->GetPoints();
-  points->SetPoint(0,o);
+  points->SetPoint(0,origin);
   points->SetPoint(1,pt1);
   points->SetPoint(2,x);
   points->SetPoint(3,pt2);
   points->GetData()->Modified();
   this->PlaneOutlinePolyData->Modified();
+
+  // Setup the plane normal
+  double d = 1 ;
+  if(this->ImageData)
+    {
+    d = this->ImageData->GetLength();
+    }
+  else
+    {
+    d = vtkMath::Distance2BetweenPoints(pt1,pt2);
+    }
+
+  //compute the center of the plane
+  double center[3];
+  center[0] = origin[0] + ((pt1[0]-origin[0]) + (pt2[0]-origin[0]))/2.0;
+  center[1] = origin[1] + ((pt1[1]-origin[1]) + (pt2[1]-origin[1]))/2.0;
+  center[2] = origin[2] + ((pt1[2]-origin[2]) + (pt2[2]-origin[2]))/2.0;
+
+  double p1[3];
+  p1[0] = center[0] + 0.30 * d * normal[0];
+  p1[1] = center[1] + 0.30 * d * normal[1];
+  p1[2] = center[2] + 0.30 * d * normal[2];
+
+  this->LineSource->SetPoint1(center);
+  this->LineSource->SetPoint2(p1);
+  this->ConeSource->SetCenter(p1);
+  this->ConeSource->SetDirection(normal);
+
+  double p2[3];
+  p2[0] = center[0] - 0.30 * d * normal[0];
+  p2[1] = center[1] - 0.30 * d * normal[1];
+  p2[2] = center[2] - 0.30 * d * normal[2];
+
+  this->LineSource2->SetPoint1(center[0],center[1],center[2]);
+  this->LineSource2->SetPoint2(p2);
+  this->ConeSource2->SetCenter(p2);
+  this->ConeSource2->SetDirection(normal[0],normal[1],normal[2]);
+
+  // Set up the position handle
+  this->Sphere->SetCenter(center[0],center[1],center[2]);
+
+  this->UpdateArrowSize();
+  std::cout << "BuildRepresentation" << std::endl;
+}
+
+//----------------------------------------------------------------------------
+void vtkColorImagePlaneWidget::UpdateArrowSize()
+{
+  //we only want to rescale once we have an active camera, otherwise the
+  //initial arrow takes up the entire render window
+  if ( !this->CurrentRenderer || !this->CurrentRenderer->GetActiveCamera() )
+    {
+    return;
+    }
+
+  //hard code the controls for now
+  const double handleSize = 5.0;
+  const double factor = 1.5;
+  double* pos = this->Sphere->GetCenter();
+
+  double lowerLeft[4];
+  double upperRight[4];
+  double focalPoint[4];
+
+  this->ComputeWorldToDisplay(pos[0], pos[1], pos[2], focalPoint);
+  const double z = focalPoint[2];
+
+  double x = focalPoint[0] - handleSize/2.0;
+  double y = focalPoint[1] - handleSize/2.0;
+  this->ComputeDisplayToWorld(x,y,z,lowerLeft);
+
+  x = focalPoint[0] + handleSize/2.0;
+  y = focalPoint[1] + handleSize/2.0;
+  this->ComputeDisplayToWorld(x,y,z,upperRight);
+
+  double scaledRadius = factor;
+  {
+  double radius=0.0;
+  for (int i=0; i<3; i++)
+    {
+    radius += (upperRight[i] - lowerLeft[i]) * (upperRight[i] - lowerLeft[i]);
+    }
+  scaledRadius = factor * (sqrt(radius) / 2.0);
+  } //scope this so nobody uses radius
+
+
+  this->ConeSource->SetHeight(2.0*scaledRadius);
+  this->ConeSource->SetRadius(scaledRadius);
+  this->ConeSource2->SetHeight(2.0*scaledRadius);
+  this->ConeSource2->SetRadius(scaledRadius);
+  this->Sphere->SetRadius(scaledRadius);
+
 }
 
 //----------------------------------------------------------------------------
@@ -618,46 +746,41 @@ void vtkColorImagePlaneWidget::StartSliceMotion()
 
   // Okay, we can process this. If anything is picked, then we
   // can start pushing or check for adjusted states.
+  bool stateFound = false;
   vtkAssemblyPath* path = this->GetAssemblyPath(X, Y, 0., this->PlanePicker);
-
-  int found = 0;
-  int i;
-  if ( path != 0 )
+  if ( path != NULL ) // Not picking this widget
     {
-    // Deal with the possibility that we may be using a shared picker
-    vtkCollectionSimpleIterator sit;
-    path->InitTraversal(sit);
-    vtkAssemblyNode *node;
-    for(i = 0; i< path->GetNumberOfItems() && !found ;i++)
+    vtkProp *prop = path->GetFirstNode()->GetViewProp();
+    if ( prop == this->ConeActor || prop == this->LineActor ||
+         prop == this->ConeActor2 || prop == this->LineActor2 )
       {
-      node = path->GetNextNode(sit);
-      if(node->GetViewProp() == vtkProp::SafeDownCast(this->TexturePlaneActor) )
-        {
-        found = 1;
-        }
+      this->State = vtkColorImagePlaneWidget::Rotating;
+      this->HighlightPlane(1);
+      this->HighlightArrow(1);
+      stateFound = true;
+      }
+    else if(prop == this->TexturePlaneActor ||
+            prop == this->SphereActor)
+      {
+      this->State = vtkColorImagePlaneWidget::Pushing;
+      this->HighlightPlane(1);
+      this->HighlightArrow(1);
+      stateFound = true;
       }
     }
-
-  if ( !found || path == 0 )
+  if(!stateFound)
     {
     this->State = vtkColorImagePlaneWidget::Outside;
     this->HighlightPlane(0);
-    this->ActivateMargins(0);
+    this->HighlightArrow(0);
     return;
-    }
-  else
-    {
-    this->State = vtkColorImagePlaneWidget::Pushing;
-    this->HighlightPlane(1);
-    this->ActivateMargins(1);
-    this->AdjustState();
-    this->UpdateMargins();
     }
 
   this->EventCallbackCommand->SetAbortFlag(1);
   this->StartInteraction();
   this->InvokeEvent(vtkCommand::StartInteractionEvent,0);
   this->Interactor->Render();
+  return;
 }
 
 //----------------------------------------------------------------------------
@@ -671,7 +794,7 @@ void vtkColorImagePlaneWidget::StopSliceMotion()
 
   this->State = vtkColorImagePlaneWidget::Start;
   this->HighlightPlane(0);
-  this->ActivateMargins(0);
+  this->HighlightArrow(0);
 
   this->EventCallbackCommand->SetAbortFlag(1);
   this->EndInteraction();
@@ -723,24 +846,13 @@ void vtkColorImagePlaneWidget::OnMouseMove()
   if ( this->State == vtkColorImagePlaneWidget::Pushing )
     {
     this->Push(prevPickPoint, pickPoint);
-    this->UpdatePlane();
-    this->UpdateMargins();
-    this->BuildRepresentation();
+    this->UpdatePlacement();
     }
   else if ( this->State == vtkColorImagePlaneWidget::Rotating )
     {
     camera->GetViewPlaneNormal(vpn);
     this->Rotate(double(X), double(Y), prevPickPoint, pickPoint, vpn);
-    this->UpdatePlane();
-    this->UpdateMargins();
-    this->BuildRepresentation();
-    }
-  else if ( this->State == vtkColorImagePlaneWidget::Scaling )
-    {
-    this->Scale(prevPickPoint, pickPoint, X, Y);
-    this->UpdatePlane();
-    this->UpdateMargins();
-    this->BuildRepresentation();
+    this->UpdatePlacement();
     }
 
   // Interact, if desired
@@ -791,13 +903,18 @@ void vtkColorImagePlaneWidget::CreateDefaultProperties()
     this->SelectedPlaneProperty->SetInterpolationToFlat();
     }
 
-  if ( ! this->MarginProperty )
+  if ( ! this->ArrowProperty )
     {
-    this->MarginProperty = vtkProperty::New();
-    this->MarginProperty->SetAmbient(1);
-    this->MarginProperty->SetColor(0,0,1);
-    this->MarginProperty->SetRepresentationToWireframe();
-    this->MarginProperty->SetInterpolationToFlat();
+    this->ArrowProperty = vtkProperty::New();
+    this->ArrowProperty->SetColor(1,1,1);
+    this->ArrowProperty->SetLineWidth(2);
+    }
+
+  if ( ! this->SelectedArrowProperty )
+    {
+    this->SelectedArrowProperty = vtkProperty::New();
+    this->ArrowProperty->SetLineWidth(2);
+    this->SelectedArrowProperty->SetColor(0,0,1);
     }
 
   if ( ! this->TexturePlaneProperty )
@@ -820,22 +937,26 @@ void vtkColorImagePlaneWidget::PlaceWidget(double bds[6])
     this->PlaneSource->SetOrigin(bounds[0],center[1],bounds[4]);
     this->PlaneSource->SetPoint1(bounds[1],center[1],bounds[4]);
     this->PlaneSource->SetPoint2(bounds[0],center[1],bounds[5]);
+    this->LineSource->SetPoint2(0,1,0);
     }
   else if ( this->PlaneOrientation == 2 )
     {
     this->PlaneSource->SetOrigin(bounds[0],bounds[2],center[2]);
     this->PlaneSource->SetPoint1(bounds[1],bounds[2],center[2]);
     this->PlaneSource->SetPoint2(bounds[0],bounds[3],center[2]);
+    this->LineSource->SetPoint2(0,0,1);
     }
   else //default or x-normal
     {
     this->PlaneSource->SetOrigin(center[0],bounds[2],bounds[4]);
     this->PlaneSource->SetPoint1(center[0],bounds[3],bounds[4]);
     this->PlaneSource->SetPoint2(center[0],bounds[2],bounds[5]);
+    this->LineSource->SetPoint2(1,0,0);
     }
 
-  this->UpdatePlane();
-  this->BuildRepresentation();
+    this->LineSource->SetPoint1(this->PlaneSource->GetOrigin());
+
+  this->UpdatePlacement();
 }
 
 //----------------------------------------------------------------------------
@@ -912,8 +1033,7 @@ void vtkColorImagePlaneWidget::SetPlaneOrientation(int i)
     this->PlaneSource->SetPoint2(xbounds[1],ybounds[0],zbounds[0]);
     }
 
-  this->UpdatePlane();
-  this->BuildRepresentation();
+  this->UpdatePlacement();
   this->Modified();
 }
 
@@ -984,7 +1104,8 @@ void vtkColorImagePlaneWidget::UpdatePlane()
       }
     }
 
-  this->PlaneSource->SetCenter(planeCenter);
+  double normal[3];
+  this->PlaneSource->GetNormal(normal);
 
   double planeAxis1[3];
   double planeAxis2[3];
@@ -997,12 +1118,8 @@ void vtkColorImagePlaneWidget::UpdatePlane()
   double planeSizeX = vtkMath::Normalize(planeAxis1);
   double planeSizeY = vtkMath::Normalize(planeAxis2);
 
-  double normal[3];
-  this->PlaneSource->GetNormal(normal);
-
   // Generate the slicing matrix
   //
-
   this->ResliceAxes->Identity();
   for (int i = 0; i < 3; i++ )
      {
@@ -1023,15 +1140,13 @@ void vtkColorImagePlaneWidget::UpdatePlane()
 
   this->Reslice->SetResliceAxes(this->ResliceAxes);
 
-  double spacingX = fabs(2*planeAxis1[0]*spacing[0])+
-                    fabs(2*planeAxis1[1]*spacing[1])+
-                    fabs(2*planeAxis1[2]*spacing[2]);
+  double spacingX = fabs(planeAxis1[0]*spacing[0])+
+                    fabs(planeAxis1[1]*spacing[1])+
+                    fabs(planeAxis1[2]*spacing[2]);
 
-  double spacingY = fabs(2*planeAxis2[0]*spacing[0])+
-                    fabs(2*planeAxis2[1]*spacing[1])+
-                    fabs(2*planeAxis2[2]*spacing[2]);
-
-
+  double spacingY = fabs(planeAxis2[0]*spacing[0])+
+                    fabs(planeAxis2[1]*spacing[1])+
+                    fabs(planeAxis2[2]*spacing[2]);
 
   // Pad extent up to a power of two for efficient texture mapping
   int extentX = detail::make_extent(planeSizeX,spacingX);
@@ -1040,7 +1155,7 @@ void vtkColorImagePlaneWidget::UpdatePlane()
   double outputSpacingX = (planeSizeX == 0) ? 1.0 : planeSizeX/extentX;
   double outputSpacingY = (planeSizeY == 0) ? 1.0 : planeSizeY/extentY;
 
-
+  this->PlaneSource->SetCenter(planeCenter);
   this->Reslice->SetOutputSpacing(outputSpacingX, outputSpacingY, 1);
   this->Reslice->SetOutputOrigin(0.5*outputSpacingX, 0.5*outputSpacingY, 0);
   this->Reslice->SetOutputExtent(0, extentX-1, 0, extentY-1, 0, 0);
@@ -1177,6 +1292,11 @@ void vtkColorImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
 
     this->PlanePicker->Register(this);
     this->PlanePicker->AddPickList(this->TexturePlaneActor);
+    this->PlanePicker->AddPickList(this->LineActor);
+    this->PlanePicker->AddPickList(this->ConeActor);
+    this->PlanePicker->AddPickList(this->LineActor2);
+    this->PlanePicker->AddPickList(this->ConeActor2);
+    this->PlanePicker->AddPickList(this->SphereActor);
     this->PlanePicker->PickFromListOn();
 
     if ( delPicker )
@@ -1290,8 +1410,7 @@ void vtkColorImagePlaneWidget::SetSlicePosition(double position)
     }
 
   this->PlaneSource->Push( amount );
-  this->UpdatePlane();
-  this->BuildRepresentation();
+  this->UpdatePlacement();
   this->Modified();
 }
 
@@ -1373,8 +1492,7 @@ void vtkColorImagePlaneWidget::SetSliceIndex(int index)
   this->PlaneSource->SetOrigin(planeOrigin);
   this->PlaneSource->SetPoint1(pt1);
   this->PlaneSource->SetPoint2(pt2);
-  this->UpdatePlane();
-  this->BuildRepresentation();
+  this->UpdatePlacement();
   this->Modified();
 }
 
@@ -1417,25 +1535,6 @@ int vtkColorImagePlaneWidget::GetSliceIndex()
     }
 
   return 0;
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::ActivateMargins(int i)
-{
-
-  if( !this->CurrentRenderer )
-    {
-    return;
-    }
-
-  if( i == 0 )
-    {
-    this->MarginActor->VisibilityOff();
-    }
-  else
-    {
-    this->MarginActor->VisibilityOn();
-    }
 }
 
 //----------------------------------------------------------------------------
@@ -1556,9 +1655,6 @@ vtkPolyDataAlgorithm *vtkColorImagePlaneWidget::GetPolyDataAlgorithm()
 void vtkColorImagePlaneWidget::UpdatePlacement(void)
 {
   this->UpdatePlane();
-  this->UpdateMargins();
-
-  this->Texture->Update();
   this->BuildRepresentation();
 }
 
@@ -1586,134 +1682,6 @@ void vtkColorImagePlaneWidget::GetVector2(double v2[3])
   v2[0] = p2[0] - o[0];
   v2[1] = p2[1] - o[1];
   v2[2] = p2[2] - o[2];
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::AdjustState()
-{
-  double v1[3];
-  this->GetVector1(v1);
-  double v2[3];
-  this->GetVector2(v2);
-
-  double planeSize1 = vtkMath::Normalize(v1);
-  double planeSize2 = vtkMath::Normalize(v2);
-  double* planeOrigin = this->PlaneSource->GetOrigin();
-
-  double ppo[3] = {this->LastPickPosition[0] - planeOrigin[0],
-                  this->LastPickPosition[1] - planeOrigin[1],
-                  this->LastPickPosition[2] - planeOrigin[2] };
-
-  double x2D = vtkMath::Dot(ppo,v1);
-  double y2D = vtkMath::Dot(ppo,v2);
-
-  if ( x2D > planeSize1 ) { x2D = planeSize1; }
-  else if ( x2D < 0.0 ) { x2D = 0.0; }
-  if ( y2D > planeSize2 ) { y2D = planeSize2; }
-  else if ( y2D < 0.0 ) { y2D = 0.0; }
-
-  // Divide plane into three zones for different user interactions:
-  // four corners -- spin around the plane's normal at its center
-  // four edges   -- rotate around one of the plane's axes at its center
-  // center area  -- push
-  //
-  double marginX = planeSize1 * this->MarginSizeX;
-  double marginY = planeSize2 * this->MarginSizeY;
-
-  double x0 = marginX;
-  double y0 = marginY;
-  double x1 = planeSize1 - marginX;
-  double y1 = planeSize2 - marginY;
-
-  if ( x2D < x0  )       // left margin
-    {
-    if (y2D < y0)        // bottom left corner
-      {
-      this->MarginSelectMode =  0;
-      }
-    else if (y2D > y1)   // top left corner
-      {
-      this->MarginSelectMode =  3;
-      }
-    else                 // left edge
-      {
-      this->MarginSelectMode =  4;
-      }
-    }
-  else if ( x2D > x1 )   // right margin
-    {
-    if (y2D < y0)        // bottom right corner
-      {
-      this->MarginSelectMode =  1;
-      }
-    else if (y2D > y1)   // top right corner
-      {
-      this->MarginSelectMode =  2;
-      }
-    else                 // right edge
-      {
-      this->MarginSelectMode =  5;
-      }
-    }
-  else                   // middle or on the very edge
-    {
-    if (y2D < y0)        // bottom edge
-      {
-      this->MarginSelectMode =  6;
-      }
-    else if (y2D > y1)   // top edge
-      {
-      this->MarginSelectMode =  7;
-      }
-    else                 // central area
-      {
-      this->MarginSelectMode =  8;
-      }
-    }
-
-
-  if (this->MarginSelectMode >= 0 && this->MarginSelectMode < 4)
-    {
-    this->State = vtkColorImagePlaneWidget::Pushing;
-    return;
-    }
-  else if (this->MarginSelectMode == 8)
-    {
-    this->State = vtkColorImagePlaneWidget::Pushing;
-    return;
-    }
-  else
-    {
-    this->State = vtkColorImagePlaneWidget::Rotating;
-    }
-
-  double *raPtr = 0;
-  double *rvPtr = 0;
-  double rvfac = 1.0;
-  double rafac = 1.0;
-
-  switch ( this->MarginSelectMode )
-    {
-     // left bottom corner
-    case 0: raPtr = v2; rvPtr = v1; rvfac = -1.0; rafac = -1.0; break;
-     // right bottom corner
-    case 1: raPtr = v2; rvPtr = v1;               rafac = -1.0; break;
-     // right top corner
-    case 2: raPtr = v2; rvPtr = v1;               break;
-     // left top corner
-    case 3: raPtr = v2; rvPtr = v1; rvfac = -1.0; break;
-    case 4: raPtr = v2; rvPtr = v1; rvfac = -1.0; break; // left
-    case 5: raPtr = v2; rvPtr = v1;               break; // right
-    case 6: raPtr = v1; rvPtr = v2; rvfac = -1.0; break; // bottom
-    case 7: raPtr = v1; rvPtr = v2;               break; // top
-    default: raPtr = v1; rvPtr = v2; break;
-    }
-
-  for (int i = 0; i < 3; i++)
-    {
-    this->RotateAxis[i] = *raPtr++ * rafac;
-    this->RadiusVector[i] = *rvPtr++ * rvfac;
-    }
 }
 
 //----------------------------------------------------------------------------
@@ -1823,141 +1791,58 @@ void vtkColorImagePlaneWidget::GenerateTexturePlane()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GenerateMargins()
+void vtkColorImagePlaneWidget::GenerateArrow()
 {
-  // Construct initial points
-  vtkPoints* points = vtkPoints::New(VTK_DOUBLE);
-  points->SetNumberOfPoints(8);
-  int i;
-  for (i = 0; i < 8; i++)
-    {
-    points->SetPoint(i,0.0,0.0,0.0);
-    }
+  // Create the + plane normal
+  this->LineSource->SetResolution(1);
+  vtkNew<vtkPolyDataMapper> lineMapper;
+  lineMapper->SetInputConnection(this->LineSource->GetOutputPort());
+  this->LineActor->SetMapper(lineMapper.GetPointer());
 
-  vtkCellArray *cells = vtkCellArray::New();
-  cells->Allocate(cells->EstimateSize(4,2));
-  vtkIdType pts[2];
-  pts[0] = 0; pts[1] = 1;       // top margin
-  cells->InsertNextCell(2,pts);
-  pts[0] = 2; pts[1] = 3;       // bottom margin
-  cells->InsertNextCell(2,pts);
-  pts[0] = 4; pts[1] = 5;       // left margin
-  cells->InsertNextCell(2,pts);
-  pts[0] = 6; pts[1] = 7;       // right margin
-  cells->InsertNextCell(2,pts);
+  this->ConeSource->SetResolution(12);
+  this->ConeSource->SetAngle(25.0);
+  vtkNew<vtkPolyDataMapper> coneMapper;
+  coneMapper->SetInputConnection(this->ConeSource->GetOutputPort());
+  this->ConeActor->SetMapper(coneMapper.GetPointer());
 
-  this->MarginPolyData->SetPoints(points);
-  points->Delete();
-  this->MarginPolyData->SetLines(cells);
-  cells->Delete();
+  // Create the - plane normal
+  this->LineSource2->SetResolution(1);
+  vtkNew<vtkPolyDataMapper> lineMapper2;
+  lineMapper2->SetInputConnection(this->LineSource2->GetOutputPort());
+  this->LineActor2->SetMapper(lineMapper2.GetPointer());
 
-  vtkPolyDataMapper* marginMapper = vtkPolyDataMapper::New();
-  marginMapper->SetInputData(this->MarginPolyData);
-  marginMapper->SetResolveCoincidentTopologyToPolygonOffset();
-  this->MarginActor->SetMapper(marginMapper);
-  this->MarginActor->PickableOff();
-  this->MarginActor->VisibilityOff();
-  marginMapper->Delete();
+
+  this->ConeSource2->SetResolution(12);
+  this->ConeSource2->SetAngle(25.0);
+  vtkNew<vtkPolyDataMapper> coneMapper2;
+  coneMapper2->SetInputConnection(this->ConeSource2->GetOutputPort());
+  this->ConeActor2->SetMapper(coneMapper2.GetPointer());
+
+  // Create the origin handle
+  this->Sphere->SetThetaResolution(16);
+  this->Sphere->SetPhiResolution(8);
+  vtkNew<vtkPolyDataMapper> sphereMapper;
+  sphereMapper->SetInputConnection(this->Sphere->GetOutputPort());
+  this->SphereActor->SetMapper(sphereMapper.GetPointer());
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::UpdateMargins()
+void vtkColorImagePlaneWidget::HighlightArrow(int highlight)
 {
-  double v1[3];
-  this->GetVector1(v1);
-  double v2[3];
-  this->GetVector2(v2);
-  double o[3];
-  this->PlaneSource->GetOrigin(o);
-  double p1[3];
-  this->PlaneSource->GetPoint1(p1);
-  double p2[3];
-  this->PlaneSource->GetPoint2(p2);
-
-  double a[3];
-  double b[3];
-  double c[3];
-  double d[3];
-
-  double s = this->MarginSizeX;
-  double t = this->MarginSizeY;
-
-  int i;
-  for ( i = 0; i < 3; i++)
+  if ( highlight )
     {
-    a[i] = o[i] + v2[i]*(1-t);
-    b[i] = p1[i] + v2[i]*(1-t);
-    c[i] = o[i] + v2[i]*t;
-    d[i] = p1[i] + v2[i]*t;
-    }
-
-  vtkPoints* marginPts = this->MarginPolyData->GetPoints();
-
-  marginPts->SetPoint(0,a);
-  marginPts->SetPoint(1,b);
-  marginPts->SetPoint(2,c);
-  marginPts->SetPoint(3,d);
-
-  for ( i = 0; i < 3; i++)
-    {
-    a[i] = o[i] + v1[i]*s;
-    b[i] = p2[i] + v1[i]*s;
-    c[i] = o[i] + v1[i]*(1-s);
-    d[i] = p2[i] + v1[i]*(1-s);
-    }
-
-  marginPts->SetPoint(4,a);
-  marginPts->SetPoint(5,b);
-  marginPts->SetPoint(6,c);
-  marginPts->SetPoint(7,d);
-
-  this->MarginPolyData->Modified();
-}
-
-//----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::Scale(double *p1, double *p2,
-                                int vtkNotUsed(X), int Y)
-{
-  // Get the motion vector
-  //
-  const double v[3] = {
-                      p2[0] - p1[0],
-                      p2[1] - p1[1],
-                      p2[2] - p1[2]
-                      };
-
-  double *o = this->PlaneSource->GetOrigin();
-  double *pt1 = this->PlaneSource->GetPoint1();
-  double *pt2 = this->PlaneSource->GetPoint2();
-  double* center = this->PlaneSource->GetCenter();
-
-  // Compute the scale factor
-  //
-  double sf = vtkMath::Norm(v) /
-    sqrt(vtkMath::Distance2BetweenPoints(pt1,pt2));
-  if ( Y > this->Interactor->GetLastEventPosition()[1] )
-    {
-    sf = 1.0 + sf;
+    this->LineActor->SetProperty(this->SelectedArrowProperty);
+    this->ConeActor->SetProperty(this->SelectedArrowProperty);
+    this->LineActor2->SetProperty(this->SelectedArrowProperty);
+    this->ConeActor2->SetProperty(this->SelectedArrowProperty);
+    this->SphereActor->SetProperty(this->SelectedArrowProperty);
     }
   else
     {
-    sf = 1.0 - sf;
+    this->LineActor->SetProperty(this->ArrowProperty);
+    this->ConeActor->SetProperty(this->ArrowProperty);
+    this->LineActor2->SetProperty(this->ArrowProperty);
+    this->ConeActor2->SetProperty(this->ArrowProperty);
+    this->SphereActor->SetProperty(this->ArrowProperty);
     }
-
-  // Move the corner points
-  //
-  double origin[3], point1[3], point2[3];
-
-  for (int i=0; i<3; i++)
-    {
-    origin[i] = sf * (o[i] - center[i]) + center[i];
-    point1[i] = sf * (pt1[i] - center[i]) + center[i];
-    point2[i] = sf * (pt2[i] - center[i]) + center[i];
-    }
-
-  this->PlaneSource->SetOrigin(origin);
-  this->PlaneSource->SetPoint1(point1);
-  this->PlaneSource->SetPoint2(point2);
 }
-
-

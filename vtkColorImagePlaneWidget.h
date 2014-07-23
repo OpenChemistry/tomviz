@@ -87,11 +87,13 @@
 
 class vtkAbstractPropPicker;
 class vtkActor;
+class vtkConeSource;
 class vtkDataSetMapper;
 class vtkImageData;
 class vtkImageMapToColors;
 class vtkImageReslice;
 class vtkInformation;
+class vtkLineSource;
 class vtkLookupTable;
 class vtkMatrix4x4;
 class vtkPlaneSource;
@@ -99,6 +101,7 @@ class vtkPoints;
 class vtkPolyData;
 class vtkProperty;
 class vtkScalarsToColors;
+class vtkSphereSource;
 class vtkTextActor;
 class vtkTextProperty;
 class vtkTexture;
@@ -253,6 +256,14 @@ public:
   vtkGetObjectMacro(SelectedPlaneProperty,vtkProperty);
 
   // Description:
+  // Set/Get the arrows's outline properties. The properties of the arrow's
+  // outline when selected and unselected can be manipulated.
+  virtual void SetArrowProperty(vtkProperty*);
+  vtkGetObjectMacro(ArrowProperty,vtkProperty);
+  virtual void SetSelectedArrowProperty(vtkProperty*);
+  vtkGetObjectMacro(SelectedArrowProperty,vtkProperty);
+
+  // Description:
   // Convenience method sets the plane orientation normal to the
   // x, y, or z axes.  Default is XAxes (0).
   void SetPlaneOrientation(int);
@@ -277,24 +288,6 @@ public:
   // internal lut can be re- set/allocated by setting to 0 (NULL).
   virtual void SetLookupTable(vtkScalarsToColors*);
   vtkGetObjectMacro(LookupTable,vtkScalarsToColors);
-
-  // Description:
-  // Set the properties of the margins.
-  virtual void SetMarginProperty(vtkProperty*);
-  vtkGetObjectMacro(MarginProperty,vtkProperty);
-
-  // Description:
-  // Set the size of the margins based on a percentage of the
-  // plane's width and height, limited between 0 and 50%.
-  vtkSetClampMacro(MarginSizeX,double, 0.0, 0.5);
-  vtkGetMacro(MarginSizeX, double);
-  vtkSetClampMacro(MarginSizeY,double, 0.0, 0.5);
-  vtkGetMacro(MarginSizeY, double);
-
-  // Description:
-  // Set/Get the text property for the image data and window-level annotation.
-  void SetTextProperty(vtkTextProperty* tprop);
-  vtkTextProperty* GetTextProperty();
 
   // Description:
   // Set/Get the property for the resliced image.
@@ -356,7 +349,6 @@ protected:
     Start=0,
     Pushing,
     Rotating,
-    Scaling,
     Outside
   };
   //ETX
@@ -411,7 +403,6 @@ protected:
   // Methods to manipulate the plane
   void Push(double *p1, double *p2);
   void Rotate(double X, double Y, double *p1, double *p2, double *vpn);
-  void Scale(double *p1, double *p2, int X, int Y);
 
   vtkImageData         *ImageData;
   vtkImageReslice      *Reslice;
@@ -428,7 +419,8 @@ protected:
   // lighting etc. of the resliced image data.
   vtkProperty   *PlaneProperty; //used when not interacting
   vtkProperty   *SelectedPlaneProperty; //used when interacting
-  vtkProperty   *MarginProperty;
+  vtkProperty   *ArrowProperty;
+  vtkProperty   *SelectedArrowProperty;
   vtkProperty   *TexturePlaneProperty;
   void           CreateDefaultProperties();
 
@@ -439,20 +431,29 @@ protected:
 
   void GenerateTexturePlane();
 
-  // Oblique reslice control
-  double RotateAxis[3];
-  double RadiusVector[3];
-  void  AdjustState();
+  // The + normal cone
+  vtkConeSource     *ConeSource;
+  vtkActor          *ConeActor;
 
-  // Visible margins to assist user interaction
-  vtkPolyData       *MarginPolyData;
-  vtkActor          *MarginActor;
-  int                MarginSelectMode;
-  void               GenerateMargins();
-  void               UpdateMargins();
-  void               ActivateMargins(int);
-  double             MarginSizeX;
-  double             MarginSizeY;
+  // The + normal line
+  vtkLineSource     *LineSource;
+  vtkActor          *LineActor;
+
+  // The - normal cone
+  vtkConeSource     *ConeSource2;
+  vtkActor          *ConeActor2;
+
+  // The - normal line
+  vtkLineSource     *LineSource2;
+  vtkActor          *LineActor2;
+
+  // The origin positioning handle
+  vtkSphereSource   *Sphere;
+  vtkActor          *SphereActor;
+
+  void HighlightArrow(int highlight);
+  void GenerateArrow(); //generate the default arrow
+  void UpdateArrowSize(); //update the arrow so it is visible based on camera pos
 
 private:
   vtkColorImagePlaneWidget(const vtkColorImagePlaneWidget&);  //Not implemented
