@@ -80,6 +80,13 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   //
   this->Reslice            = vtkImageReslice::New();
   this->Reslice->TransformInputSamplingOff();
+  this->Reslice->AutoCropOutputOff();
+  this->Reslice->MirrorOff();
+
+  //background is transparent
+  double background[4]={255,0,0,0};
+  this->Reslice->SetBackgroundColor(background);
+
   this->ResliceAxes        = vtkMatrix4x4::New();
   this->Texture            = vtkTexture::New();
   this->TexturePlaneActor  = vtkActor::New();
