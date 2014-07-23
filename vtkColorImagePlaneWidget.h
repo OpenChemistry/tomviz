@@ -417,7 +417,7 @@ protected:
 
   // Methods to manipulate the plane
   void Push(double *p1, double *p2);
-  void Rotate(double *p1, double *p2, double *vpn);
+  void Rotate(double X, double Y, double *p1, double *p2, double *vpn);
   void Scale(double *p1, double *p2, int X, int Y);
 
   vtkImageData         *ImageData;

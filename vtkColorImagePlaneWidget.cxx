@@ -711,7 +711,7 @@ void vtkColorImagePlaneWidget::OnMouseMove()
   else if ( this->State == vtkColorImagePlaneWidget::Rotating )
     {
     camera->GetViewPlaneNormal(vpn);
-    this->Rotate(prevPickPoint, pickPoint, vpn);
+    this->Rotate(double(X), double(Y), prevPickPoint, pickPoint, vpn);
     this->UpdatePlane();
     this->UpdateMargins();
     this->BuildRepresentation();
@@ -1676,55 +1676,44 @@ void vtkColorImagePlaneWidget::AdjustState()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::Rotate(double *p1, double *p2, double *vpn)
+void vtkColorImagePlaneWidget::Rotate(double X, double Y,
+                                      double *p1, double *p2, double *vpn)
 {
-  // Disable cursor snap
-  //
-  this->PlaneOrientation = 3;
+  double v[3]; //vector of motion
+  double axis[3]; //axis of rotation
+  double theta; //rotation angle
 
-  // Get the motion vector, in world coords
-  //
-  double v[3];
+  // mouse motion vector in world space
   v[0] = p2[0] - p1[0];
   v[1] = p2[1] - p1[1];
   v[2] = p2[2] - p1[2];
 
-  // Plane center and normal
-  //
-  double* wc = this->PlaneSource->GetCenter();
+  double *origin = this->PlaneSource->GetOrigin();
+  double *normal = this->PlaneSource->GetNormal();
 
-  // Radius of the rotating circle of the picked point
-  //
-  double radius = fabs( this->RadiusVector[0]*(p2[0]-wc[0]) +
-                       this->RadiusVector[1]*(p2[1]-wc[1]) +
-                       this->RadiusVector[2]*(p2[2]-wc[2]) );
+  // Create axis of rotation and angle of rotation
+  vtkMath::Cross(vpn,v,axis);
+  if ( vtkMath::Normalize(axis) == 0.0 )
+    {
+    return;
+    }
+  int *const int_lastPos = this->Interactor->GetLastEventPosition();
+  const double lastPos[2]={int_lastPos[0],int_lastPos[1]};
 
-  // Rotate direction ra_cross_rv
-  //
-  double rd[3];
-  vtkMath::Cross(this->RotateAxis,this->RadiusVector,rd);
+  int *size = this->CurrentRenderer->GetSize();
+  double l2 = (X-lastPos[0])*(X-lastPos[0]) + (Y-lastPos[1])*(Y-lastPos[1]);
+  theta = 360.0 * sqrt(l2/(size[0]*size[0]+size[1]*size[1]));
 
-  // Direction cosin between rotating direction and view normal
-  //
-  double rd_dot_vpn = rd[0]*vpn[0] + rd[1]*vpn[1] + rd[2]*vpn[2];
-
-  // 'push' plane edge when mouse moves away from plane center
-  // 'pull' plane edge when mouse moves toward plane center
-  //
-  double dw = vtkMath::DegreesFromRadians( vtkMath::Dot( this->RadiusVector, v ) / radius ) * -rd_dot_vpn;
-
+  //Manipulate the transform to reflect the rotation
   this->Transform->Identity();
-  this->Transform->Translate(wc[0],wc[1],wc[2]);
-  this->Transform->RotateWXYZ(dw,this->RotateAxis);
-  this->Transform->Translate(-wc[0],-wc[1],-wc[2]);
+  this->Transform->Translate(origin[0],origin[1],origin[2]);
+  this->Transform->RotateWXYZ(theta,axis);
+  this->Transform->Translate(-origin[0],-origin[1],-origin[2]);
 
-  double newpt[3];
-  this->Transform->TransformPoint(this->PlaneSource->GetPoint1(),newpt);
-  this->PlaneSource->SetPoint1(newpt);
-  this->Transform->TransformPoint(this->PlaneSource->GetPoint2(),newpt);
-  this->PlaneSource->SetPoint2(newpt);
-  this->Transform->TransformPoint(this->PlaneSource->GetOrigin(),newpt);
-  this->PlaneSource->SetOrigin(newpt);
+  //Set the new normal
+  double new_normal[3];
+  this->Transform->TransformNormal(normal,new_normal);
+  this->PlaneSource->SetNormal(new_normal);
 }
 
 //----------------------------------------------------------------------------
