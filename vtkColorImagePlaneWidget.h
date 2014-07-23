@@ -91,6 +91,7 @@ class vtkDataSetMapper;
 class vtkImageData;
 class vtkImageMapToColors;
 class vtkImageReslice;
+class vtkInformation;
 class vtkLookupTable;
 class vtkMatrix4x4;
 class vtkPlaneSource;
@@ -200,13 +201,6 @@ public:
   // Description:
   // Convenience method to get the vtkImageReslice output.
   vtkImageData* GetResliceOutput();
-
-  // Description:
-  // Make sure that the plane remains within the volume.
-  // Default is On.
-  vtkSetMacro(RestrictPlaneToVolume,int);
-  vtkGetMacro(RestrictPlaneToVolume,int);
-  vtkBooleanMacro(RestrictPlaneToVolume,int);
 
   // Description:
   // Specify whether to interpolate the texture or not. When off, the
@@ -396,7 +390,6 @@ protected:
   // controlling ivars
   int    Interaction; // Is the widget responsive to mouse events
   int    PlaneOrientation;
-  int    RestrictPlaneToVolume;
   int    ResliceInterpolate;
   int    TextureInterpolate;
 
@@ -441,6 +434,9 @@ protected:
 
   // Reslice and texture management
   void UpdatePlane();
+  void FindPlaneBounds(vtkInformation* outInfo, double bounds[6] );
+  void UpdateClipBounds(double bounds[6], double spacing[3]);
+
   void GenerateTexturePlane();
 
   // Oblique reslice control

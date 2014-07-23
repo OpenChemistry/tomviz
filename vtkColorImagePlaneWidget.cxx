@@ -31,6 +31,8 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPickingManager.h"
+#include "vtkPlane.h"
+#include "vtkPlaneCollection.h"
 #include "vtkPlaneSource.h"
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
@@ -61,12 +63,10 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->Interaction              = 1;
   this->PlaneOrientation         = 0;
   this->PlaceFactor              = 1.0;
-  this->RestrictPlaneToVolume    = 1;
   this->TextureInterpolate       = 1;
   this->ResliceInterpolate       = VTK_LINEAR_RESLICE;
   this->MarginSizeX              = 0.05;
   this->MarginSizeY              = 0.05;
-
 
   // Represent the plane's outline
   //
@@ -82,10 +82,6 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->Reslice->TransformInputSamplingOff();
   this->Reslice->AutoCropOutputOff();
   this->Reslice->MirrorOff();
-
-  //background is transparent
-  double background[4]={255,0,0,0};
-  this->Reslice->SetBackgroundColor(background);
 
   this->ResliceAxes        = vtkMatrix4x4::New();
   this->Texture            = vtkTexture::New();
@@ -508,8 +504,6 @@ void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
      << (this->TextureInterpolate ? "On\n" : "Off\n") ;
   os << indent << "Texture Visibility: "
      << (this->TextureVisibility ? "On\n" : "Off\n") ;
-  os << indent << "Restrict Plane To Volume: "
-     << (this->RestrictPlaneToVolume ? "On\n" : "Off\n") ;
   os << indent << "Interaction: "
      << (this->Interaction ? "On\n" : "Off\n") ;
   os << indent << "LeftButtonAction: " << this->LeftButtonAction << endl;
@@ -910,9 +904,6 @@ void vtkColorImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
     return;
     }
 
-  double range[2];
-  this->ImageData->GetScalarRange(range);
-
   this->Reslice->SetInputConnection(aout);
   int interpolate = this->ResliceInterpolate;
   this->ResliceInterpolate = -1; // Force change
@@ -932,80 +923,37 @@ void vtkColorImagePlaneWidget::UpdatePlane()
     return;
     }
 
-  // Calculate appropriate pixel spacing for the reslicing
-  //
   vtkAlgorithm* inpAlg = this->Reslice->GetInputAlgorithm();
   inpAlg->UpdateInformation();
   vtkInformation* outInfo = inpAlg->GetOutputInformation(0);
+
+  double bounds[6];
+  this->FindPlaneBounds(outInfo, bounds);
+
   double spacing[3];
   outInfo->Get(vtkDataObject::SPACING(), spacing);
-  double origin[3];
-  outInfo->Get(vtkDataObject::ORIGIN(), origin);
-  int extent[6];
-  outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), extent);
 
-  int i;
+  //setup the clip bounds
+  this->UpdateClipBounds(bounds, spacing);
 
-  for (i = 0; i < 3; i++)
+  double planeCenter[3];
+  this->PlaneSource->GetCenter(planeCenter);
+
+  for (int i = 0; i < 3; i++ )
     {
-    if (extent[2*i] > extent[2*i + 1])
-      {
-      vtkErrorMacro("Invalid extent ["
-                    << extent[0] << ", " << extent[1] << ", "
-                    << extent[2] << ", " << extent[3] << ", "
-                    << extent[4] << ", " << extent[5] << "]."
-                    << " Perhaps the input data is empty?");
-      break;
-      }
-    }
-
-  if ( this->RestrictPlaneToVolume )
-    {
-    double bounds[] = {origin[0] + spacing[0]*extent[0], //xmin
-                       origin[0] + spacing[0]*extent[1], //xmax
-                       origin[1] + spacing[1]*extent[2], //ymin
-                       origin[1] + spacing[1]*extent[3], //ymax
-                       origin[2] + spacing[2]*extent[4], //zmin
-                       origin[2] + spacing[2]*extent[5]};//zmax
-
-    for ( i = 0; i <= 4; i += 2 ) // reverse bounds if necessary
-      {
-      if ( bounds[i] > bounds[i+1] )
-        {
-        double t = bounds[i+1];
-        bounds[i+1] = bounds[i];
-        bounds[i] = t;
-        }
-      }
-
-    double abs_normal[3];
-    this->PlaneSource->GetNormal(abs_normal);
-    double planeCenter[3];
-    this->PlaneSource->GetCenter(planeCenter);
-    double nmax = 0.0;
-    int k = 0;
-    for ( i = 0; i < 3; i++ )
-      {
-      abs_normal[i] = fabs(abs_normal[i]);
-      if ( abs_normal[i]>nmax )
-        {
-        nmax = abs_normal[i];
-        k = i;
-        }
-      }
     // Force the plane to lie within the true image bounds along its normal
     //
-    if ( planeCenter[k] > bounds[2*k+1] )
+    if ( planeCenter[i] > bounds[2*i+1] )
       {
-      planeCenter[k] = bounds[2*k+1];
+      planeCenter[i] = bounds[2*i+1];
       }
-    else if ( planeCenter[k] < bounds[2*k] )
+    else if ( planeCenter[i] < bounds[2*i] )
       {
-      planeCenter[k] = bounds[2*k];
+      planeCenter[i] = bounds[2*i];
       }
-
-    this->PlaneSource->SetCenter(planeCenter);
     }
+
+  this->PlaneSource->SetCenter(planeCenter);
 
   double planeAxis1[3];
   double planeAxis2[3];
@@ -1025,7 +973,7 @@ void vtkColorImagePlaneWidget::UpdatePlane()
   //
 
   this->ResliceAxes->Identity();
-  for ( i = 0; i < 3; i++ )
+  for (int i = 0; i < 3; i++ )
      {
      this->ResliceAxes->SetElement(0,i,planeAxis1[i]);
      this->ResliceAxes->SetElement(1,i,planeAxis2[i]);
@@ -1044,13 +992,13 @@ void vtkColorImagePlaneWidget::UpdatePlane()
 
   this->Reslice->SetResliceAxes(this->ResliceAxes);
 
-  double spacingX = fabs(planeAxis1[0]*spacing[0])+
-                   fabs(planeAxis1[1]*spacing[1])+
-                   fabs(planeAxis1[2]*spacing[2]);
+  double spacingX = fabs(2*planeAxis1[0]*spacing[0])+
+                    fabs(2*planeAxis1[1]*spacing[1])+
+                    fabs(2*planeAxis1[2]*spacing[2]);
 
-  double spacingY = fabs(planeAxis2[0]*spacing[0])+
-                   fabs(planeAxis2[1]*spacing[1])+
-                   fabs(planeAxis2[2]*spacing[2]);
+  double spacingY = fabs(2*planeAxis2[0]*spacing[0])+
+                    fabs(2*planeAxis2[1]*spacing[1])+
+                    fabs(2*planeAxis2[2]*spacing[2]);
 
 
   // Pad extent up to a power of two for efficient texture mapping
@@ -1090,15 +1038,120 @@ void vtkColorImagePlaneWidget::UpdatePlane()
     extentY = 1;
     while (extentY < realExtentY)
       {
-      extentY = extentY << 1;
+      extentY = extentY << 2;
       }
     }
 
   double outputSpacingX = (planeSizeX == 0) ? 1.0 : planeSizeX/extentX;
   double outputSpacingY = (planeSizeY == 0) ? 1.0 : planeSizeY/extentY;
+
+  // std::cout << "outputSpacingX: " << outputSpacingX << std::endl;
+  // std::cout << "outputSpacingY: " << outputSpacingX << std::endl;
+  // std::cout << "extentX: " << extentX << std::endl;
+  // std::cout << "extentY: " << extentY << std::endl;
+  // std::cout <<"IsTranslucent: " << this->Texture->IsTranslucent() << std::endl;
+
+
   this->Reslice->SetOutputSpacing(outputSpacingX, outputSpacingY, 1);
   this->Reslice->SetOutputOrigin(0.5*outputSpacingX, 0.5*outputSpacingY, 0);
   this->Reslice->SetOutputExtent(0, extentX-1, 0, extentY-1, 0, 0);
+}
+
+//----------------------------------------------------------------------------
+void vtkColorImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
+                                               double bounds[6])
+{
+  // Calculate appropriate pixel spacing for the reslicing
+  //
+  double spacing[3];
+  outInfo->Get(vtkDataObject::SPACING(), spacing);
+  double origin[3];
+  outInfo->Get(vtkDataObject::ORIGIN(), origin);
+  int extent[6];
+  outInfo->Get(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), extent);
+
+  int i;
+
+  double orig_bounds[] = {origin[0] + spacing[0]*extent[0], //xmin
+                          origin[0] + spacing[0]*extent[1], //xmax
+                          origin[1] + spacing[1]*extent[2], //ymin
+                          origin[1] + spacing[1]*extent[3], //ymax
+                          origin[2] + spacing[2]*extent[4], //zmin
+                          origin[2] + spacing[2]*extent[5]};//zmax
+
+  for ( i = 0; i <= 4; i += 2 ) // reverse bounds if necessary
+    {
+    if ( orig_bounds[i] > orig_bounds[i+1] )
+      {
+      double t = orig_bounds[i+1];
+      orig_bounds[i+1] = orig_bounds[i];
+      orig_bounds[i] = t;
+      }
+    }
+
+  //update the bounds
+  bounds[0]=orig_bounds[0];
+  bounds[1]=orig_bounds[1];
+  bounds[2]=orig_bounds[2];
+  bounds[3]=orig_bounds[3];
+  bounds[4]=orig_bounds[4];
+  bounds[5]=orig_bounds[5];
+}
+
+//----------------------------------------------------------------------------
+void vtkColorImagePlaneWidget::UpdateClipBounds(double bounds[6],
+                                                double spacing[3])
+{
+  //todo: we need to cache this so we don't redo this every frame
+
+  //setup custom clip planes for the texture mapper so that it doesn't
+  //draw outside the box
+  vtkNew<vtkPlaneCollection> clippingPlanes;
+
+  //we push the bounds out by two voxels by using the spacing
+  double clip_bounds[6] = { bounds[0] - (2 *spacing[0]),
+                            bounds[1] + (2 *spacing[0]),
+                            bounds[2] - (2 *spacing[1]),
+                            bounds[3] + (2 *spacing[1]),
+                            bounds[4] - (2 *spacing[2]),
+                            bounds[5] + (2 *spacing[2])
+                          };
+
+  vtkNew<vtkPlane> minXPlane;
+  minXPlane->SetOrigin(clip_bounds[0],clip_bounds[2],clip_bounds[4]);
+  minXPlane->SetNormal(1,0,0); //clip everything on low x
+
+  vtkNew<vtkPlane> maxXPlane;
+  maxXPlane->SetOrigin(clip_bounds[1],clip_bounds[3],clip_bounds[5]);
+  maxXPlane->SetNormal(-1,0,0); //clip everything on high x
+
+  vtkNew<vtkPlane> minYPlane;
+  minYPlane->SetOrigin(clip_bounds[0],clip_bounds[2],clip_bounds[4]);
+  minYPlane->SetNormal(0,1,0); //clip everything on low y
+
+  vtkNew<vtkPlane> maxYPlane;
+  maxYPlane->SetOrigin(clip_bounds[1],clip_bounds[3],clip_bounds[5]);
+  maxYPlane->SetNormal(0,-1,0); //clip everything on high y
+
+  vtkNew<vtkPlane> minZPlane;
+  minZPlane->SetOrigin(clip_bounds[0],clip_bounds[2],clip_bounds[4]);
+  minZPlane->SetNormal(0,0,1); //clip everything on low y
+
+  vtkNew<vtkPlane> maxZPlane;
+  maxZPlane->SetOrigin(clip_bounds[1],clip_bounds[3],clip_bounds[5]);
+  maxZPlane->SetNormal(0,0,-1); //clip everything on high y
+
+  clippingPlanes->AddItem(minXPlane.GetPointer());
+  clippingPlanes->AddItem(maxXPlane.GetPointer());
+
+  clippingPlanes->AddItem(minYPlane.GetPointer());
+  clippingPlanes->AddItem(maxYPlane.GetPointer());
+
+  clippingPlanes->AddItem(minZPlane.GetPointer());
+  clippingPlanes->AddItem(maxZPlane.GetPointer());
+
+  this->TexturePlaneActor->GetMapper()->SetClippingPlanes(
+                                              clippingPlanes.GetPointer());
 }
 
 //----------------------------------------------------------------------------
@@ -1518,7 +1571,6 @@ void vtkColorImagePlaneWidget::UpdatePlacement(void)
 
   this->Texture->Update();
   this->BuildRepresentation();
-
 }
 
 //----------------------------------------------------------------------------
@@ -1747,6 +1799,7 @@ void vtkColorImagePlaneWidget::GeneratePlaneOutline()
   vtkPolyDataMapper* planeOutlineMapper = vtkPolyDataMapper::New();
   planeOutlineMapper->SetInputData( this->PlaneOutlinePolyData );
   planeOutlineMapper->SetResolveCoincidentTopologyToPolygonOffset();
+
   this->PlaneOutlineActor->SetMapper(planeOutlineMapper);
   this->PlaneOutlineActor->PickableOff();
   planeOutlineMapper->Delete();
@@ -1765,7 +1818,7 @@ void vtkColorImagePlaneWidget::GenerateTexturePlane()
 
   this->LookupTable = this->CreateDefaultLookupTable();
 
-  vtkPolyDataMapper* texturePlaneMapper = vtkPolyDataMapper::New();
+  vtkNew<vtkPolyDataMapper> texturePlaneMapper;
   texturePlaneMapper->SetInputConnection(
     this->PlaneSource->GetOutputPort());
 
@@ -1775,10 +1828,9 @@ void vtkColorImagePlaneWidget::GenerateTexturePlane()
   this->Texture->RepeatOff();
   this->Texture->SetLookupTable(this->LookupTable);
 
-  this->TexturePlaneActor->SetMapper(texturePlaneMapper);
+  this->TexturePlaneActor->SetMapper(texturePlaneMapper.GetPointer());
   this->TexturePlaneActor->SetTexture(this->Texture);
   this->TexturePlaneActor->PickableOn();
-  texturePlaneMapper->Delete();
 }
 
 //----------------------------------------------------------------------------
