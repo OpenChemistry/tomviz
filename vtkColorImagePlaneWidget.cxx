@@ -639,7 +639,6 @@ void vtkColorImagePlaneWidget::BuildRepresentation()
   this->Sphere->SetCenter(center[0],center[1],center[2]);
 
   this->UpdateArrowSize();
-  std::cout << "BuildRepresentation" << std::endl;
 }
 
 //----------------------------------------------------------------------------
@@ -897,10 +896,9 @@ void vtkColorImagePlaneWidget::CreateDefaultProperties()
   if ( ! this->SelectedPlaneProperty )
     {
     this->SelectedPlaneProperty = vtkProperty::New();
-    this->SelectedPlaneProperty->SetAmbient(1);
+    this->SelectedPlaneProperty->SetOpacity(0);
     this->SelectedPlaneProperty->SetColor(0,1,0);
     this->SelectedPlaneProperty->SetRepresentationToWireframe();
-    this->SelectedPlaneProperty->SetInterpolationToFlat();
     }
 
   if ( ! this->ArrowProperty )
@@ -994,6 +992,14 @@ void vtkColorImagePlaneWidget::SetPlaneOrientation(int i)
                      origin[1] + spacing[1] * (extent[3] + 0.5)};
   double zbounds[] = {origin[2] + spacing[2] * (extent[4] - 0.5),
                      origin[2] + spacing[2] * (extent[5] + 0.5)};
+  xbounds[0] -= (extent[0] + extent[1])/2;
+  xbounds[1] += (extent[0] + extent[1])/2;
+
+  ybounds[0] -= (extent[2] + extent[3])/2;
+  ybounds[1] += (extent[2] + extent[3])/2;
+
+  zbounds[0] -= (extent[4] + extent[5])/2;
+  zbounds[1] += (extent[4] + extent[5])/2;
 
   if ( spacing[0] < 0.0 )
     {
