@@ -775,11 +775,11 @@ void vtkColorImagePlaneWidget::CreateDefaultProperties()
 {
   if ( ! this->PlaneProperty )
     {
+    //we are going to make sure the border is hidden
+    //when not selected
     this->PlaneProperty = vtkProperty::New();
-    this->PlaneProperty->SetAmbient(1);
-    this->PlaneProperty->SetColor(1,1,1);
+    this->PlaneProperty->SetOpacity(0);
     this->PlaneProperty->SetRepresentationToWireframe();
-    this->PlaneProperty->SetInterpolationToFlat();
     }
 
   if ( ! this->SelectedPlaneProperty )

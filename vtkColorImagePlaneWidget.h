@@ -426,8 +426,8 @@ protected:
   // the manipulator in general.  The plane property is actually that for
   // the outline.  The TexturePlaneProperty can be used to control the
   // lighting etc. of the resliced image data.
-  vtkProperty   *PlaneProperty;
-  vtkProperty   *SelectedPlaneProperty;
+  vtkProperty   *PlaneProperty; //used when not interacting
+  vtkProperty   *SelectedPlaneProperty; //used when interacting
   vtkProperty   *MarginProperty;
   vtkProperty   *TexturePlaneProperty;
   void           CreateDefaultProperties();
