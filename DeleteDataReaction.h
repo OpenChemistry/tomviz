@@ -1,0 +1,50 @@
+/******************************************************************************
+
+  This source file is part of the TEM tomography project.
+
+  Copyright Kitware, Inc.
+
+  This source code is released under the New BSD License, (the "License").
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+******************************************************************************/
+#ifndef __DeleteDataReaction_h
+#define __DeleteDataReaction_h
+
+#include "pqReaction.h"
+
+class vtkSMProxy;
+
+namespace TEM
+{
+class DataSource;
+
+/// DeleteDataReaction handles the "Delete Data" action in TomViz. On trigger,
+/// this will delete the active data source and all Modules connected to it.
+class DeleteDataReaction : public pqReaction
+{
+  Q_OBJECT
+  typedef pqReaction Superclass;
+public:
+  DeleteDataReaction(QAction* parentAction);
+  virtual ~DeleteDataReaction();
+
+  /// Create a raw data source from the reader.
+  static void deleteDataSource(DataSource*);
+
+protected:
+  /// Called when the action is triggered.
+  virtual void onTriggered();
+  virtual void updateEnableState();
+
+private:
+  Q_DISABLE_COPY(DeleteDataReaction)
+};
+
+}
+#endif

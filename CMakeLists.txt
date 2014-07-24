@@ -46,6 +46,8 @@ set(SOURCES
   CloneDataReaction.h
   DataSource.cxx
   DataSource.h
+  DeleteDataReaction.cxx
+  DeleteDataReaction.h
   EditPythonOperatorDialog.cxx
   EditPythonOperatorDialog.h
   LoadDataReaction.cxx

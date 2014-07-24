@@ -139,6 +139,24 @@ void ModuleManager::removeAllModules()
 }
 
 //-----------------------------------------------------------------------------
+void ModuleManager::removeAllModules(DataSource* source)
+{
+  Q_ASSERT(source);
+  QList<Module*> modules;
+  foreach (Module* module, this->Internals->Modules)
+    {
+    if (module->dataSource() == source)
+      {
+      modules.push_back(module);
+      }
+    }
+  foreach (Module* module, modules)
+    {
+    this->removeModule(module);
+    }
+}
+
+//-----------------------------------------------------------------------------
 Module* ModuleManager::createAndAddModule(
   const QString& type, DataSource* dataSource,
   vtkSMViewProxy* view)

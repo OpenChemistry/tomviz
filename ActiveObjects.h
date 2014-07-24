@@ -67,6 +67,8 @@ public slots:
   /// Set the active module.
   void setActiveModule(Module* module);
 
+  /// Renders all views.
+  void renderAllViews();
 signals:
   /// fired whenever the active view changes.
   void viewChanged(vtkSMViewProxy*);

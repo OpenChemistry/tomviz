@@ -32,6 +32,7 @@
 #include "AddExpressionReaction.h"
 #include "Behaviors.h"
 #include "CloneDataReaction.h"
+#include "DeleteDataReaction.h"
 #include "LoadDataReaction.h"
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
@@ -85,6 +86,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
 
   new LoadDataReaction(ui.actionOpen);
+  new DeleteDataReaction(ui.actionDeleteData);
 
   new CloneDataReaction(ui.actionClone);
   new AddExpressionReaction(ui.actionPython_Expression);
