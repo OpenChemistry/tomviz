@@ -17,6 +17,7 @@
 
 #include "ModuleManager.h"
 #include "pqActiveObjects.h"
+#include "pqApplicationCore.h"
 #include "pqPipelineSource.h"
 #include "pqServer.h"
 #include "pqView.h"
@@ -125,6 +126,13 @@ void ActiveObjects::setActiveModule(Module* module)
     emit this->moduleChanged(module);
     }
 }
+
+//-----------------------------------------------------------------------------
+void ActiveObjects::renderAllViews()
+{
+  pqApplicationCore::instance()->render();
+}
+
 
 //-----------------------------------------------------------------------------
 } // end of namespace TEM

@@ -68,6 +68,7 @@ public slots:
   /// Use these methods to delete/remove modules.
   void removeModule(Module*);
   void removeAllModules();
+  void removeAllModules(DataSource* source);
 
   /// Creates and add a new module.
   Module* createAndAddModule(

@@ -58,15 +58,17 @@
     <addaction name="actionPythonConsole"/>
     <addaction name="actionMacros"/>
    </widget>
-   <widget class="QMenu" name="menuOperations">
+   <widget class="QMenu" name="menuData">
     <property name="title">
-     <string>Data Operators</string>
+     <string>Data</string>
     </property>
     <addaction name="actionClone"/>
     <addaction name="actionPython_Expression"/>
+    <addaction name="separator"/>
+    <addaction name="actionDeleteData"/>
    </widget>
    <addaction name="menu_File"/>
-   <addaction name="menuOperations"/>
+   <addaction name="menuData"/>
    <addaction name="menuModules"/>
    <addaction name="menuTools"/>
   </widget>
@@ -261,7 +263,7 @@
   </action>
   <action name="actionPython_Expression">
    <property name="text">
-    <string>Python Expression</string>
+    <string>Transform</string>
    </property>
   </action>
   <action name="actionSaveState">
@@ -280,6 +282,18 @@
    </property>
    <property name="toolTip">
     <string>Reset application</string>
+   </property>
+  </action>
+  <action name="actionDeleteData">
+   <property name="icon">
+    <iconset resource="../ParaView3/ParaView/Qt/Widgets/Resources/QtWidgets.qrc">
+     <normaloff>:/QtWidgets/Icons/pqDelete32.png</normaloff>:/QtWidgets/Icons/pqDelete32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete Data</string>
    </property>
   </action>
  </widget>
@@ -334,6 +348,10 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../ParaView3/ParaView/Qt/Components/Resources/pqComponents.qrc"/>
+  <include location="../ParaView3/ParaView/Qt/Core/Resources/pqCore.qrc"/>
+  <include location="../ParaView3/ParaView/Qt/Widgets/Resources/QtWidgets.qrc"/>
+ </resources>
  <connections/>
 </ui>
