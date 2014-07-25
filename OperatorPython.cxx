@@ -197,4 +197,29 @@ bool OperatorPython::transform(vtkDataObject* data)
   return CheckForError() == false;
 }
 
+//-----------------------------------------------------------------------------
+Operator* OperatorPython::clone() const
+{
+  OperatorPython* newClone = new OperatorPython();
+  newClone->setLabel(this->label());
+  newClone->setScript(this->script());
+  return newClone;
+}
+
+//-----------------------------------------------------------------------------
+bool OperatorPython::serialize(pugi::xml_node& ns) const
+{
+  ns.append_attribute("label").set_value(this->label().toLatin1().data());
+  ns.append_attribute("script").set_value(this->script().toLatin1().data());
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+bool OperatorPython::deserialize(const pugi::xml_node& ns)
+{
+  this->setLabel(ns.attribute("label").as_string());
+  this->setScript(ns.attribute("script").as_string());
+  return true;
+}
+
 }

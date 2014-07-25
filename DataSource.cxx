@@ -15,7 +15,7 @@
 ******************************************************************************/
 #include "DataSource.h"
 
-#include "Operator.h"
+#include "OperatorPython.h"
 #include "Utilities.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
@@ -82,19 +82,54 @@ bool DataSource::serialize(pugi::xml_node& ns) const
 {
   ns.append_attribute("number_of_operators").set_value(
     static_cast<int>(this->Internals->Operators.size()));
+
+  foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+    {
+    pugi::xml_node node = ns.append_child("Operator");
+    if (!op->serialize(node))
+      {
+      qWarning("failed to serialize Operator. Skipping it.");
+      ns.remove_child(node);
+      }
+    }
   return true;
 }
 
 //-----------------------------------------------------------------------------
-DataSource* DataSource::clone() const
+bool DataSource::deserialize(const pugi::xml_node& ns)
+{
+  int num_operators = ns.attribute("number_of_operators").as_int(-1);
+  if (num_operators < 0)
+    {
+    return false;
+    }
+
+  this->Internals->Operators.clear();
+  this->resetData();
+
+  for (pugi::xml_node node=ns.child("Operator"); node; node = node.next_sibling("Operator"))
+    {
+    QSharedPointer<OperatorPython> op (new OperatorPython());
+    if (op->deserialize(node))
+      {
+      this->addOperator(op);
+      }
+    }
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+DataSource* DataSource::clone(bool clone_operators) const
 {
   DataSource* newClone = new DataSource(this->Internals->OriginalDataSource);
-  // now, clone the operators.
-  foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+  if (clone_operators)
     {
-    // don't think operators should be shared. we need to clone them
-    // to avoid side effects.
-    newClone->addOperator(op);
+    // now, clone the operators.
+    foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+      {
+      QSharedPointer<Operator> opClone(op->clone());
+      newClone->addOperator(opClone);
+      }
     }
   return newClone;
 }

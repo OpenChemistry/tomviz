@@ -18,6 +18,9 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "pqCoreUtilities.h"
+
+#include <QInputDialog>
 
 namespace TEM
 {
@@ -51,9 +54,27 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
     return NULL;
     }
 
-  DataSource* newClone = toClone->clone();
-  LoadDataReaction::dataSourceAdded(newClone);
-  return newClone;
+  QStringList items;
+  items << "Original data only"
+        << "Original data with transformations";
+
+  bool user_okayed;
+  QString	selection = QInputDialog::getItem(
+    pqCoreUtilities::mainWidget(),
+    "Clone Data Options",
+    "Select what should be cloned",
+    items,
+    /*current=*/0,
+    /*editable=*/false,
+    /*ok*/&user_okayed);
+
+  if (user_okayed)
+    {
+    DataSource* newClone = toClone->clone(selection == items[1]);
+    LoadDataReaction::dataSourceAdded(newClone);
+    return newClone;
+    }
+  return NULL;
 }
 
 }
