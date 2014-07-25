@@ -51,10 +51,11 @@ public:
   int addOperator(const QSharedPointer<Operator>& op);
 
   /// Creates a new clone from this DataSource.
-  DataSource* clone() const;
+  DataSource* clone(bool clone_operators) const;
 
   /// Save the state out.
   bool serialize(pugi::xml_node& in) const;
+  bool deserialize(const pugi::xml_node& ns);
 
   /// Returns the original data source. This is not meant to be used to connect
   /// visualization pipelines on directly. Use producer() instead.

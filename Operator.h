@@ -18,6 +18,7 @@
 
 #include <QObject>
 #include <QIcon>
+#include <vtk_pugixml.h>
 
 class vtkDataObject;
 
@@ -40,6 +41,14 @@ public:
 
   /// Method to transform a dataset in-place.
   virtual bool transform(vtkDataObject* data)=0;
+
+  /// Return a new clone.
+  virtual Operator* clone() const = 0;
+
+  /// Save/Restore state.
+  virtual bool serialize(pugi::xml_node& in) const=0;
+  virtual bool deserialize(const pugi::xml_node& ns)=0;
+
 
 signals:
   /// fire this signal with the operation is updated/modified

@@ -39,6 +39,12 @@ public:
   /// Method to transform a dataset in-place.
   virtual bool transform(vtkDataObject* data);
 
+  /// return a new clone.
+  virtual Operator* clone() const;
+
+  virtual bool serialize(pugi::xml_node& in) const;
+  virtual bool deserialize(const pugi::xml_node& ns);
+
   void setScript(const QString& str);
   const QString& script() const { return this->Script; }
 

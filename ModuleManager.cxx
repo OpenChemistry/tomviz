@@ -416,6 +416,13 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
 
     // create the data source.
     DataSource* dataSource = new DataSource(originalDataSources[odsid]);
+    if (!dataSource->deserialize(dsnode))
+      {
+      qWarning()
+        << "Failed to deserialze DataSource with id " << id
+        << ". Skipping it";
+      continue;
+      }
     this->addDataSource(dataSource);
     dataSources[id] = dataSource;
 

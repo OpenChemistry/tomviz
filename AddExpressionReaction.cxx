@@ -55,6 +55,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     }
 
   QSharedPointer<OperatorPython> op(new OperatorPython());
+  op->setLabel("Transform Data");
   EditPythonOperatorDialog dialog (op.data(), pqCoreUtilities::mainWidget());
   if (dialog.exec() == QDialog::Accepted)
     {
