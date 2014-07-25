@@ -241,7 +241,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
       ->SetRenderWindow(this->Histogram->GetRenderWindow());
   vtkChartHistogram* chart = this->Chart.Get();
   this->Histogram->GetScene()->AddItem(chart);
-  chart->SetBarWidthFraction(0.95);
+  chart->SetBarWidthFraction(1.0);
   chart->SetRenderEmpty(true);
   chart->SetAutoAxes(false);
   chart->GetAxis(vtkAxis::LEFT)->SetTitle("");
@@ -390,6 +390,7 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
   plot->SetInputData(table, "image_extents", "image_pops");
   plot->SetColor(0, 0, 255, 255);
+  plot->GetPen()->SetLineType(vtkPen::NO_PEN);
   vtkDataArray *arr =
       vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
   if (arr)
