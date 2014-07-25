@@ -81,7 +81,7 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="pipelineBrowserWidget">
-    <layout class="QVBoxLayout" name="verticalLayout">
+    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,3,0,1">
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
@@ -130,7 +130,7 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Data Operators&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Data Transforms&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
