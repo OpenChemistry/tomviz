@@ -401,6 +401,16 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     axis->SetMaximumLimit(max + 2.0);
     axis->SetMaximum(static_cast<int>(max) + 1.0);
     }
+  arr = vtkDataArray::SafeDownCast(table->GetColumnByName("image_extents"));
+  if (arr && arr->GetNumberOfTuples() > 2)
+    {
+    double range[2];
+    arr->GetRange(range);
+    double halfInc = (arr->GetTuple1(1) - arr->GetTuple1(0)) / 2.0;
+    vtkAxis *axis = this->Chart->GetAxis(vtkAxis::BOTTOM);
+    axis->SetBehavior(vtkAxis::FIXED);
+    axis->SetRange(range[0] - halfInc , range[1] + halfInc);
+    }
 }
 
 } // end of namespace TEM
