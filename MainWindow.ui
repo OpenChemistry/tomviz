@@ -290,7 +290,7 @@
      <normaloff>:/QtWidgets/Icons/pqDelete32.png</normaloff>:/QtWidgets/Icons/pqDelete32.png</iconset>
    </property>
    <property name="text">
-    <string>Delete</string>
+    <string>Delete Data &amp;&amp; Modules</string>
    </property>
    <property name="toolTip">
     <string>Delete Data</string>
