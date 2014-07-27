@@ -16,11 +16,13 @@
 #include "Utilities.h"
 
 #include "vtkNew.h"
-#include "vtkSMNamedPropertyIterator.h"
-#include "vtkSmartPointer.h"
-#include "vtkStringList.h"
-#include "vtkPVXMLParser.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVDataSetAttributesInformation.h"
 #include "vtkPVXMLElement.h"
+#include "vtkPVXMLParser.h"
+#include "vtkSmartPointer.h"
+#include "vtkSMNamedPropertyIterator.h"
+#include "vtkStringList.h"
 
 #include <sstream>
 
@@ -94,6 +96,14 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
     return true;
     }
   return false;
+}
+
+//---------------------------------------------------------------------------
+vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)
+{
+  vtkPVDataInformation* dinfo = proxy->GetDataInformation();
+  return dinfo? dinfo->GetPointDataInformation()->GetAttributeInformation(
+    vtkDataSetAttributes::SCALARS) : NULL;
 }
 
 }

@@ -20,10 +20,10 @@
 #include "DataSource.h"
 #include "pqPropertiesPanel.h"
 #include "pqProxyWidget.h"
+#include "Utilities.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
-#include "vtkPVDataSetAttributesInformation.h"
 #include "vtkSMSourceProxy.h"
 
 #include <QPointer>
@@ -127,20 +127,21 @@ void DataPropertiesPanel::update()
                          .arg(odInfo->GetExtent()[3] - odInfo->GetExtent()[2] + 1)
                          .arg(odInfo->GetExtent()[5] - odInfo->GetExtent()[4] + 1));
 
-  vtkPVArrayInformation* oscalars =
-      odInfo->GetPointDataInformation()->GetAttributeInformation(
-        vtkDataSetAttributes::SCALARS);
-  ui.OriginalDataRange->setText(QString("%1 : %2")
-                                .arg(oscalars->GetComponentRange(0)[0])
-                                .arg(oscalars->GetComponentRange(0)[1]));
+  if (vtkPVArrayInformation* oscalars = TEM::scalarArrayInformation(
+      dsource->originalDataSource()))
+    {
+    ui.OriginalDataRange->setText(QString("%1 : %2")
+                                  .arg(oscalars->GetComponentRange(0)[0])
+                                  .arg(oscalars->GetComponentRange(0)[1]));
+    }
 
-  vtkPVArrayInformation* tscalars =
-      tdInfo->GetPointDataInformation()->GetAttributeInformation(
-        vtkDataSetAttributes::SCALARS);
-
-  ui.TransformedDataRange->setText(QString("%1 : %2")
-                                   .arg(tscalars->GetComponentRange(0)[0])
-                                   .arg(tscalars->GetComponentRange(0)[1]));
+  if (vtkPVArrayInformation* tscalars = TEM::scalarArrayInformation(
+      dsource->producer()))
+    {
+    ui.TransformedDataRange->setText(QString("%1 : %2")
+                                     .arg(tscalars->GetComponentRange(0)[0])
+                                     .arg(tscalars->GetComponentRange(0)[1]));
+    }
 }
 
 //-----------------------------------------------------------------------------
