@@ -67,9 +67,15 @@
     <addaction name="separator"/>
     <addaction name="actionDeleteData"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuData"/>
    <addaction name="menuModules"/>
+   <addaction name="menuView"/>
    <addaction name="menuTools"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -160,7 +166,7 @@
   </widget>
   <widget class="pqCameraToolbar" name="cameraToolbar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>Camera Toolbar</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -171,7 +177,7 @@
   </widget>
   <widget class="pqAxesToolbar" name="axesToolbar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>Axes Toolbar</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -194,7 +200,7 @@
   </widget>
   <widget class="pqVCRToolbar" name="vcrToolbar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>VCR Toolbar</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
