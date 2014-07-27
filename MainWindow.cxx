@@ -18,14 +18,15 @@
 
 #include "pqFiltersMenuReaction.h"
 #include "pqMacroReaction.h"
+#include "pqProxyGroupMenuManager.h"
+#include "pqProxyGroupMenuManager.h"
 #include "pqPVApplicationCore.h"
-#include "pqProxyGroupMenuManager.h"
-#include "pqProxyGroupMenuManager.h"
 #include "pqPythonShellReaction.h"
 #include "pqSaveAnimationReaction.h"
 #include "pqSaveDataReaction.h"
 #include "pqSaveScreenshotReaction.h"
 #include "pqSaveStateReaction.h"
+#include "pqViewMenuManager.h"
 #include "vtkPVPlugin.h"
 
 #include "ActiveObjects.h"
@@ -102,6 +103,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new SaveLoadStateReaction(ui.actionLoadState, /*load*/ true);
 
   new ResetReaction(ui.actionReset);
+
+  new pqViewMenuManager(this, ui.menuView);
 
   //now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER
