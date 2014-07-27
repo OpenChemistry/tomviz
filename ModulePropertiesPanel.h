@@ -27,7 +27,7 @@ class Module;
 
 class ModulePropertiesPanel : public QWidget
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QWidget Superclass;
 public:
   ModulePropertiesPanel(QWidget* parent=0);
@@ -41,7 +41,7 @@ private slots:
   void render();
 
 private:
-  Q_DISABLE_COPY(ModulePropertiesPanel);
+  Q_DISABLE_COPY(ModulePropertiesPanel)
 
   class MPPInternals;
   const QScopedPointer<MPPInternals> Internals;

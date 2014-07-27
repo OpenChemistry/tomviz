@@ -186,7 +186,8 @@ bool OperatorPython::transform(vtkDataObject* data)
   PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
 
   SmartPyObject result;
-  result.TakeReference(PyObject_Call(this->Internals->TransformMethod, args, NULL));
+  result.TakeReference(PyObject_Call(this->Internals->TransformMethod, args,
+                                     NULL));
   if (!result)
     {
     qCritical("Failed to execute the script.");

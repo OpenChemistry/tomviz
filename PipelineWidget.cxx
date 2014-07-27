@@ -163,9 +163,9 @@ void PipelineWidget::moduleAdded(Module* module)
   child->setText(MODULE_COLUMN, module->label());
   child->setIcon(MODULE_COLUMN, module->icon());
   child->setIcon(EYE_COLUMN,
-    module->visibility()?
-    QIcon(":/pqWidgets/Icons/pqEyeball16.png"):
-    QIcon(":/pqWidgets/Icons/pqEyeballd16.png"));
+                 module->visibility() ?
+                   QIcon(":/pqWidgets/Icons/pqEyeball16.png") :
+                   QIcon(":/pqWidgets/Icons/pqEyeballd16.png"));
   parentItem->setExpanded(true);
 
   this->Internals->ModuleItems[module] = child;
@@ -199,9 +199,9 @@ void PipelineWidget::onItemClicked(QTreeWidgetItem* item, int col)
     Module* module = this->Internals->module(item);
     module->setVisibility(!module->visibility());
     item->setIcon(EYE_COLUMN,
-      module->visibility()?
-      QIcon(":/pqWidgets/Icons/pqEyeball16.png"):
-      QIcon(":/pqWidgets/Icons/pqEyeballd16.png"));
+                  module->visibility() ?
+                    QIcon(":/pqWidgets/Icons/pqEyeball16.png") :
+                    QIcon(":/pqWidgets/Icons/pqEyeballd16.png"));
     if (pqView* view = TEM::convert<pqView*>(module->view()))
       {
       view->render();

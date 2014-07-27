@@ -28,7 +28,8 @@ namespace TEM
 {
 
 //---------------------------------------------------------------------------
-bool serialize(vtkSMProxy* proxy, pugi::xml_node& out, const QStringList& properties)
+bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
+               const QStringList& properties)
 {
   if (!proxy)
     {
@@ -67,7 +68,7 @@ bool serialize(vtkSMProxy* proxy, pugi::xml_node& out, const QStringList& proper
 
 //---------------------------------------------------------------------------
 bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
-  vtkSMProxyLocator* locator)
+                 vtkSMProxyLocator* locator)
 {
   if (!proxy)
     {

@@ -31,7 +31,7 @@ class Operator;
 /// the provenance for any operations performed on the data source.
 class DataSource : public QObject
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QObject Superclass;
 
 public:
@@ -78,7 +78,7 @@ protected slots:
   void operatorTransformModified();
 
 private:
-  Q_DISABLE_COPY(DataSource);
+  Q_DISABLE_COPY(DataSource)
 
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;

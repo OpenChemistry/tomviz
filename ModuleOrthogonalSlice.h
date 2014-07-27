@@ -26,7 +26,7 @@ namespace TEM
 {
 class ModuleOrthogonalSlice : public Module
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef Module Superclass;
 public:
   ModuleOrthogonalSlice(QObject* parent=NULL);
@@ -43,7 +43,7 @@ public:
   virtual bool deserialize(const pugi::xml_node& ns);
 
 private:
-  Q_DISABLE_COPY(ModuleOrthogonalSlice);
+  Q_DISABLE_COPY(ModuleOrthogonalSlice)
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkWeakPointer<vtkSMProxy> Representation;
 };

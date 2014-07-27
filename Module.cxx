@@ -24,6 +24,7 @@
 
 namespace TEM
 {
+
 //-----------------------------------------------------------------------------
 Module::Module(QObject* parentObject) : Superclass(parentObject)
 {

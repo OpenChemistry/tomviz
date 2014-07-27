@@ -23,8 +23,9 @@ namespace TEM
 
 class SaveLoadStateReaction : public pqReaction
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
   SaveLoadStateReaction(QAction* action, bool load=false);
   virtual ~SaveLoadStateReaction();
@@ -38,7 +39,7 @@ protected:
   virtual void onTriggered();
 
 private:
-  Q_DISABLE_COPY(SaveLoadStateReaction);
+  Q_DISABLE_COPY(SaveLoadStateReaction)
   bool Load;
 };
 

@@ -28,6 +28,7 @@
 
 namespace TEM
 {
+
 class OperatorsWidget::OWInternals
 {
 public:
@@ -66,10 +67,13 @@ void OperatorsWidget::setDataSource(DataSource* ds)
     this->disconnect(this->Internals->ADataSource);
     }
   this->Internals->ADataSource = ds;
-  if (!ds) { return; }
+  if (!ds)
+    {
+    return;
+    }
 
   this->connect(ds, SIGNAL(operatorAdded(Operator*)),
-    SLOT(operatorAdded(Operator*)));
+                SLOT(operatorAdded(Operator*)));
 
   foreach (QSharedPointer<Operator> op, ds->operators())
     {

@@ -38,21 +38,22 @@ public:
 //-----------------------------------------------------------------------------
 ViewPropertiesPanel::ViewPropertiesPanel(QWidget* parentObject)
   : Superclass(parentObject),
-  Internals(new ViewPropertiesPanel::VPPInternals())
+    Internals(new ViewPropertiesPanel::VPPInternals())
 {
   Ui::ViewPropertiesPanel &ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  this->connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-    SLOT(setView(vtkSMViewProxy*)));
-  this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)), SLOT(render()));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(viewChanged(vtkSMViewProxy*)),
+                SLOT(setView(vtkSMViewProxy*)));
+  this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+                SLOT(render()));
 }
 
 //-----------------------------------------------------------------------------
 ViewPropertiesPanel::~ViewPropertiesPanel()
 {
 }
-
 
 //-----------------------------------------------------------------------------
 void ViewPropertiesPanel::setView(vtkSMViewProxy* view)

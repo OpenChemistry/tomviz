@@ -24,12 +24,14 @@ class vtkSMProxy;
 
 namespace TEM
 {
+
 /// Extends pqRecentFilesMenu to add support to open a data file customized for
 /// TomViz.
 class RecentFilesMenu : public QObject
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QObject Superclass;
+
 public:
   RecentFilesMenu(QMenu& menu, QObject* parent=NULL);
   virtual ~RecentFilesMenu();
@@ -44,7 +46,7 @@ private slots:
   void stateTriggered();
 
 private:
-  Q_DISABLE_COPY(RecentFilesMenu);
+  Q_DISABLE_COPY(RecentFilesMenu)
 };
 
 }

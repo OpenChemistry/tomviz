@@ -26,6 +26,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSMProperty.h"
+
 namespace TEM
 {
 
@@ -111,14 +112,16 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool ModuleOutline::deserialize(const pugi::xml_node& ns)
 {
-  return TEM::deserialize(this->OutlineRepresentation, ns.child("OutlineRepresentation"));
+  return TEM::deserialize(this->OutlineRepresentation,
+                          ns.child("OutlineRepresentation"));
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleOutline::setVisibility(bool val)
 {
   Q_ASSERT(this->OutlineRepresentation);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility").Set(val? 1 : 0);
+  vtkSMPropertyHelper(this->OutlineRepresentation,
+                      "Visibility").Set(val ? 1 : 0);
   this->OutlineRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -127,7 +130,8 @@ bool ModuleOutline::setVisibility(bool val)
 bool ModuleOutline::visibility() const
 {
   Q_ASSERT(this->OutlineRepresentation);
-  return vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility").GetAsInt() != 0;
+  return vtkSMPropertyHelper(this->OutlineRepresentation,
+                             "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------
