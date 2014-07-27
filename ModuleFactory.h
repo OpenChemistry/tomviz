@@ -31,12 +31,12 @@ class ModuleFactory
 public:
   /// Returns a list of module types that can be created for the data source
   /// in the provided view.
-  static QList<QString> moduleTypes(
-    DataSource* dataSource, vtkSMViewProxy* view);
+  static QList<QString> moduleTypes(DataSource* dataSource,
+                                    vtkSMViewProxy* view);
 
   /// Creates a module of the given type to show the dataSource in the view.
-  static Module* createModule(
-    const QString& type, DataSource* dataSource, vtkSMViewProxy* view);
+  static Module* createModule(const QString& type, DataSource* dataSource,
+                              vtkSMViewProxy* view);
 
   /// Returns the type for a module instance.
   static const char* moduleType(Module* module);

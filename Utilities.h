@@ -53,7 +53,7 @@ T convert(vtkSMProxy* proxy)
 /// convert a pqProxy to vtkSMProxy.
 inline vtkSMProxy* convert(pqProxy* pqproxy)
 {
-  return pqproxy? pqproxy->getProxy() : NULL;
+  return pqproxy ? pqproxy->getProxy() : NULL;
 }
 
 //===========================================================================

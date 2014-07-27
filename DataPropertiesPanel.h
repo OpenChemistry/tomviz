@@ -30,7 +30,7 @@ class DataSource;
 /// configurable options, such as color map.
 class DataPropertiesPanel : public QWidget
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QWidget Superclass;
 public:
   DataPropertiesPanel(QWidget* parent=0);
@@ -41,7 +41,7 @@ private slots:
   void update();
 
 private:
-  Q_DISABLE_COPY(DataPropertiesPanel);
+  Q_DISABLE_COPY(DataPropertiesPanel)
 
   class DPPInternals;
   const QScopedPointer<DPPInternals> Internals;

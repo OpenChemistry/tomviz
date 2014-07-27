@@ -25,13 +25,13 @@
 
 #include <clocale>
 
-//we need to override the default options to enable streaming by default.
-//Streaming needs to be enabled for the dax representations
+// We need to override the default options to enable streaming by default.
+// Streaming needs to be enabled for the dax representations
 class TomoOptions : public pqOptions
 {
 public:
   static TomoOptions* New();
-  vtkTypeMacro(TomoOptions,pqOptions);
+  vtkTypeMacro(TomoOptions, pqOptions);
   virtual int GetEnableStreaming() { return 1; }
 
 protected:

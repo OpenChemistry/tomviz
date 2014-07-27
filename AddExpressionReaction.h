@@ -25,7 +25,7 @@ class OperatorPython;
 
 class AddExpressionReaction : public pqReaction
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef pqReaction Superclass;
 public:
   AddExpressionReaction(QAction* parent);
@@ -37,7 +37,7 @@ protected:
   void onTriggered() { this->addExpression(); }
 
 private:
-  Q_DISABLE_COPY(AddExpressionReaction);
+  Q_DISABLE_COPY(AddExpressionReaction)
 };
 }
 

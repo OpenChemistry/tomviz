@@ -157,9 +157,9 @@ void ModuleManager::removeAllModules(DataSource* source)
 }
 
 //-----------------------------------------------------------------------------
-Module* ModuleManager::createAndAddModule(
-  const QString& type, DataSource* dataSource,
-  vtkSMViewProxy* view)
+Module* ModuleManager::createAndAddModule(const QString& type,
+                                          DataSource* dataSource,
+                                          vtkSMViewProxy* view)
 {
   if (!view || !dataSource)
     {
@@ -176,8 +176,8 @@ Module* ModuleManager::createAndAddModule(
 }
 
 //-----------------------------------------------------------------------------
-QList<Module*> ModuleManager::findModulesGeneric(
-  DataSource* dataSource, vtkSMViewProxy* view)
+QList<Module*> ModuleManager::findModulesGeneric(DataSource* dataSource,
+                                                 vtkSMViewProxy* view)
 {
   QList<Module*> modules;
   foreach (Module* module, this->Internals->Modules)

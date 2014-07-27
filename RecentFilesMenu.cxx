@@ -34,10 +34,10 @@
 #include <sstream>
 #include <string>
 
-
 namespace TEM
 {
-  static const int MAX_ITEMS = 10;
+
+static const int MAX_ITEMS = 10;
 
 void get_settings(pugi::xml_document& doc)
   {
@@ -55,7 +55,8 @@ void save_settings(pugi::xml_document &doc)
   pugi::xml_node root = doc.root();
   std::vector<pugi::xml_node> to_remove;
   int counter=0;
-  for (pugi::xml_node node = root.child("DataReader"); node; node = node.next_sibling("DataReader"), counter++)
+  for (pugi::xml_node node = root.child("DataReader"); node;
+       node = node.next_sibling("DataReader"), counter++)
     {
     if (counter >= MAX_ITEMS)
       {
@@ -63,14 +64,15 @@ void save_settings(pugi::xml_document &doc)
       }
     }
   counter=0;
-  for (pugi::xml_node node = root.child("State"); node; node = node.next_sibling("State"), counter++)
+  for (pugi::xml_node node = root.child("State"); node;
+       node = node.next_sibling("State"), counter++)
     {
     if (counter >= MAX_ITEMS)
       {
       to_remove.push_back(node);
       }
     }
-  for (size_t cc=0; cc < to_remove.size(); cc++)
+  for (size_t cc = 0; cc < to_remove.size(); cc++)
     {
     root.remove_child(to_remove[cc]);
     }
@@ -103,8 +105,10 @@ void RecentFilesMenu::pushDataReader(vtkSMProxy* readerProxy)
   const char* pname = vtkSMCoreUtilities::GetFileNameProperty(readerProxy);
   if (pname)
     {
-    const char* filename = vtkSMPropertyHelper(readerProxy, pname).GetAsString(0);
-    for (pugi::xml_node node = root.child("DataReader"); node; node = node.next_sibling("DataReader"))
+    const char* filename = vtkSMPropertyHelper(readerProxy,
+                                               pname).GetAsString(0);
+    for (pugi::xml_node node = root.child("DataReader"); node;
+         node = node.next_sibling("DataReader"))
       {
       if (strcmp(node.attribute("filename0").as_string(""), filename) == 0)
         {
@@ -129,7 +133,8 @@ void RecentFilesMenu::pushStateFile(const QString& filename)
   get_settings(settings);
 
   pugi::xml_node root = settings.root();
-  for (pugi::xml_node node = root.child("State"); node; node = node.next_sibling("State"))
+  for (pugi::xml_node node = root.child("State"); node;
+       node = node.next_sibling("State"))
     {
     if (filename == node.attribute("filename").as_string(""))
       {
@@ -163,7 +168,8 @@ void RecentFilesMenu::aboutToShowMenu()
 
   bool header_added = false;
   int index=0;
-  for (pugi::xml_node node = root.child("DataReader"); node; node = node.next_sibling("DataReader"))
+  for (pugi::xml_node node = root.child("DataReader"); node;
+       node = node.next_sibling("DataReader"))
     {
     if (header_added == false)
       {
@@ -179,7 +185,8 @@ void RecentFilesMenu::aboutToShowMenu()
     }
 
   header_added = false;
-  for (pugi::xml_node node = root.child("State"); node; node = node.next_sibling("State"))
+  for (pugi::xml_node node = root.child("State"); node;
+       node = node.next_sibling("State"))
     {
     if (header_added == false)
       {
@@ -206,14 +213,15 @@ void RecentFilesMenu::dataSourceTriggered()
   get_settings(settings);
   pugi::xml_node root = settings.root();
 
-  for (pugi::xml_node node = root.child("DataReader"); node; node = node.next_sibling("DataReader"), --index)
+  for (pugi::xml_node node = root.child("DataReader"); node;
+       node = node.next_sibling("DataReader"), --index)
     {
     if (index == 0)
       {
       vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
       vtkSmartPointer<vtkSMProxy> reader;
       reader.TakeReference(pxm->NewProxy(node.attribute("xmlgroup").as_string(),
-          node.attribute("xmlname").as_string()));
+                                         node.attribute("xmlname").as_string()));
       if (TEM::deserialize(reader, node))
         {
         reader->UpdateVTKObjects();
@@ -249,12 +257,12 @@ void RecentFilesMenu::stateTriggered()
     return;
     }
 
-
   // remove the item from the recent state files list.
   pugi::xml_document settings;
   get_settings(settings);
   pugi::xml_node root = settings.root();
-  for (pugi::xml_node node = root.child("State"); node; node = node.next_sibling("State"))
+  for (pugi::xml_node node = root.child("State"); node;
+       node = node.next_sibling("State"))
     {
     if (filename == node.attribute("filename").as_string())
       {

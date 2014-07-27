@@ -27,8 +27,9 @@ namespace TEM
 
 class Operator : public QObject
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QObject Superclass;
+
 public:
   Operator(QObject* parent=NULL);
   virtual ~Operator();
@@ -49,14 +50,13 @@ public:
   virtual bool serialize(pugi::xml_node& in) const=0;
   virtual bool deserialize(const pugi::xml_node& ns)=0;
 
-
 signals:
   /// fire this signal with the operation is updated/modified
   /// implying that the data needs to be reprocessed.
   void transformModified();
 
 private:
-  Q_DISABLE_COPY(Operator);
+  Q_DISABLE_COPY(Operator)
 };
 
 }

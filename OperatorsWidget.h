@@ -26,8 +26,9 @@ class Operator;
 
 class OperatorsWidget : public QTreeWidget
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QTreeWidget Superclass;
+
 public:
   OperatorsWidget(QWidget* parent=0);
   virtual ~OperatorsWidget();
@@ -40,8 +41,10 @@ private slots:
   void setDataSource(DataSource*);
 
   void itemDoubleClicked(QTreeWidgetItem*);
+
 private:
-  Q_DISABLE_COPY(OperatorsWidget);
+  Q_DISABLE_COPY(OperatorsWidget)
+
   class OWInternals;
   QScopedPointer<OWInternals> Internals;
 };

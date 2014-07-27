@@ -27,8 +27,9 @@ namespace TEM
 
 class ModuleThreshold : public Module
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef Module Superclass;
+
 public:
   ModuleThreshold(QObject* parent=NULL);
   virtual ~ModuleThreshold();
@@ -42,8 +43,9 @@ public:
   virtual void addToPanel(pqProxiesWidget*);
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
+
 private:
-  Q_DISABLE_COPY(ModuleThreshold);
+  Q_DISABLE_COPY(ModuleThreshold)
   vtkWeakPointer<vtkSMSourceProxy> ThresholdFilter;
   vtkWeakPointer<vtkSMProxy> ThresholdRepresentation;
 };

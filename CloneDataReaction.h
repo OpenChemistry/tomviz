@@ -24,7 +24,7 @@ class DataSource;
 
 class CloneDataReaction : public pqReaction
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef pqReaction Superclass;
 public:
   CloneDataReaction(QAction* action);

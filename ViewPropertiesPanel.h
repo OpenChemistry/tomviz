@@ -25,8 +25,9 @@ namespace TEM
 {
 class ViewPropertiesPanel : public QWidget
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QWidget Superclass;
+
 public:
   ViewPropertiesPanel(QWidget* parent=0);
   virtual ~ViewPropertiesPanel();
@@ -36,7 +37,7 @@ private slots:
   void render();
 
 private:
-  Q_DISABLE_COPY(ViewPropertiesPanel);
+  Q_DISABLE_COPY(ViewPropertiesPanel)
 
   class VPPInternals;
   const QScopedPointer<VPPInternals> Internals;

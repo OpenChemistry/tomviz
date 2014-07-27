@@ -23,8 +23,9 @@ namespace TEM
 {
 class OperatorPython : public Operator
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef Operator Superclass;
+
 public:
   OperatorPython(QObject* parent=NULL);
   virtual ~OperatorPython();
@@ -49,7 +50,7 @@ public:
   const QString& script() const { return this->Script; }
 
 private:
-  Q_DISABLE_COPY(OperatorPython);
+  Q_DISABLE_COPY(OperatorPython)
 
   class OPInternals;
   const QScopedPointer<OPInternals> Internals;

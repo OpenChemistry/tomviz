@@ -25,6 +25,7 @@
 
 namespace TEM
 {
+
 //-----------------------------------------------------------------------------
 ResetReaction::ResetReaction(QAction* parentObject)
   : Superclass(parentObject)

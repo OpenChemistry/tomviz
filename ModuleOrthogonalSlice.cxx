@@ -74,7 +74,7 @@ bool ModuleOrthogonalSlice::initialize(DataSource* dataSource, vtkSMViewProxy* v
   this->Representation = controller->Show(this->PassThrough, 0, view);
   Q_ASSERT(this->Representation);
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
-    "Slice");
+                                                  "Slice");
   this->Representation->UpdateVTKObjects();
   return true;
 }
