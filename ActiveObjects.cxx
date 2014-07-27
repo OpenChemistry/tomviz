@@ -31,17 +31,18 @@ namespace TEM
 //-----------------------------------------------------------------------------
 ActiveObjects::ActiveObjects()
   : Superclass(),
-  ActiveDataSource(NULL),
-  VoidActiveDataSource(NULL),
-  ActiveModule(NULL),
-  VoidActiveModule(NULL)
+    ActiveDataSource(NULL),
+    VoidActiveDataSource(NULL),
+    ActiveModule(NULL),
+    VoidActiveModule(NULL)
 {
   this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
                 SLOT(viewChanged(pqView*)));
-  this->connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
-    SLOT(dataSourceRemoved(DataSource*)));
+  this->connect(&ModuleManager::instance(),
+                SIGNAL(dataSourceRemoved(DataSource*)),
+                SLOT(dataSourceRemoved(DataSource*)));
   this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
-    SLOT(moduleRemoved(Module*)));
+                SLOT(moduleRemoved(Module*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -66,13 +67,13 @@ void ActiveObjects::setActiveView(vtkSMViewProxy* view)
 vtkSMViewProxy* ActiveObjects::activeView() const
 {
   pqView* view = pqActiveObjects::instance().activeView();
-  return view? view->getViewProxy() : NULL;
+  return view ? view->getViewProxy() : NULL;
 }
 
 //-----------------------------------------------------------------------------
 void ActiveObjects::viewChanged(pqView* view)
 {
-  emit this->viewChanged(view? view->getViewProxy() : NULL);
+  emit this->viewChanged(view ? view->getViewProxy() : NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -108,7 +109,7 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
 vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
-  return server? server->proxyManager(): NULL;
+  return server ? server->proxyManager() : NULL;
 }
 
 //-----------------------------------------------------------------------------

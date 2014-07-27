@@ -26,20 +26,20 @@ class CloneDataReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
   CloneDataReaction(QAction* action);
   virtual ~CloneDataReaction();
 
-  static DataSource* clone(DataSource* toClone=NULL);
+  static DataSource* clone(DataSource* toClone = NULL);
 
 protected:
   /// Called when the action is triggered.
-  virtual void onTriggered()
-    { this->clone();}
+  virtual void onTriggered() { this->clone(); }
   virtual void updateEnableState();
 
 private:
-  Q_DISABLE_COPY(CloneDataReaction);
+  Q_DISABLE_COPY(CloneDataReaction)
 };
 }
 

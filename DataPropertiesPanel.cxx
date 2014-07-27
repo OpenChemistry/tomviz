@@ -52,10 +52,12 @@ public:
     separator = pqProxyWidget::newGroupLabelWidget("Dimensions", parent);
     l->insertWidget(l->indexOf(ui.Dimensions), separator);
 
-    separator = pqProxyWidget::newGroupLabelWidget("Original Data Range", parent);
+    separator = pqProxyWidget::newGroupLabelWidget("Original Data Range",
+                                                   parent);
     l->insertWidget(l->indexOf(ui.OriginalDataRange), separator);
 
-    separator = pqProxyWidget::newGroupLabelWidget("Transformed Data Range", parent);
+    separator = pqProxyWidget::newGroupLabelWidget("Transformed Data Range",
+                                                   parent);
     l->insertWidget(l->indexOf(ui.TransformedDataRange), separator);
 
     this->clear();
@@ -77,8 +79,9 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   : Superclass(parentObject),
   Internals(new DataPropertiesPanel::DPPInternals(this))
 {
-  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-    SLOT(setDataSource(DataSource*)));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(DataSource*)),
+                SLOT(setDataSource(DataSource*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -96,7 +99,8 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
   this->Internals->CurrentDataSource = dsource;
   if (dsource)
     {
-    this->connect(dsource, SIGNAL(dataChanged()), SLOT(update()), Qt::UniqueConnection);
+    this->connect(dsource, SIGNAL(dataChanged()), SLOT(update()),
+                  Qt::UniqueConnection);
     }
   this->update();
 }
@@ -114,29 +118,29 @@ void DataPropertiesPanel::update()
   Ui::DataPropertiesPanel& ui = this->Internals->Ui;
   ui.FileName->setText(dsource->filename());
 
-  vtkPVDataInformation* odInfo = dsource->originalDataSource()->GetDataInformation(0);
+  vtkPVDataInformation* odInfo =
+      dsource->originalDataSource()->GetDataInformation(0);
   vtkPVDataInformation* tdInfo = dsource->producer()->GetDataInformation(0);
 
-  ui.Dimensions->setText(
-    QString("%1 x %2 x %3")
-    .arg(odInfo->GetExtent()[1] - odInfo->GetExtent()[0] + 1)
-    .arg(odInfo->GetExtent()[3] - odInfo->GetExtent()[2] + 1)
-    .arg(odInfo->GetExtent()[5] - odInfo->GetExtent()[4] + 1));
+  ui.Dimensions->setText(QString("%1 x %2 x %3")
+                         .arg(odInfo->GetExtent()[1] - odInfo->GetExtent()[0] + 1)
+                         .arg(odInfo->GetExtent()[3] - odInfo->GetExtent()[2] + 1)
+                         .arg(odInfo->GetExtent()[5] - odInfo->GetExtent()[4] + 1));
 
-  vtkPVArrayInformation* oscalars = odInfo->GetPointDataInformation()->GetAttributeInformation(
-    vtkDataSetAttributes::SCALARS);
-  ui.OriginalDataRange->setText(
-    QString("%1 : %2")
-    .arg(oscalars->GetComponentRange(0)[0])
-    .arg(oscalars->GetComponentRange(0)[1]));
+  vtkPVArrayInformation* oscalars =
+      odInfo->GetPointDataInformation()->GetAttributeInformation(
+        vtkDataSetAttributes::SCALARS);
+  ui.OriginalDataRange->setText(QString("%1 : %2")
+                                .arg(oscalars->GetComponentRange(0)[0])
+                                .arg(oscalars->GetComponentRange(0)[1]));
 
-  vtkPVArrayInformation* tscalars = tdInfo->GetPointDataInformation()->GetAttributeInformation(
-    vtkDataSetAttributes::SCALARS);
+  vtkPVArrayInformation* tscalars =
+      tdInfo->GetPointDataInformation()->GetAttributeInformation(
+        vtkDataSetAttributes::SCALARS);
 
-  ui.TransformedDataRange->setText(
-    QString("%1 : %2")
-    .arg(tscalars->GetComponentRange(0)[0])
-    .arg(tscalars->GetComponentRange(0)[1]));
+  ui.TransformedDataRange->setText(QString("%1 : %2")
+                                   .arg(tscalars->GetComponentRange(0)[0])
+                                   .arg(tscalars->GetComponentRange(0)[1]));
 }
 
 //-----------------------------------------------------------------------------

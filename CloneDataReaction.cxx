@@ -28,8 +28,9 @@ namespace TEM
 CloneDataReaction::CloneDataReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
-  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-    SLOT(updateEnableState()));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(DataSource*)),
+                SLOT(updateEnableState()));
   this->updateEnableState();
 }
 
