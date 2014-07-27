@@ -215,8 +215,7 @@ void PipelineWidget::currentItemChanged(QTreeWidgetItem* item)
   int index = this->indexOfTopLevelItem(item);
   if (index == -1)
     {
-    // selected item is a plot. FIXME: determine the data producer for that plot
-    // and activate it.
+    // selected item is a plot.
     Module* module = this->Internals->module(item);
     ActiveObjects::instance().setActiveModule(module);
     }
