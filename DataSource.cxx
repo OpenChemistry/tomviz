@@ -78,6 +78,14 @@ DataSource::~DataSource()
 }
 
 //-----------------------------------------------------------------------------
+QString DataSource::filename() const
+{
+  vtkSMProxy* dataSource = this->originalDataSource();
+  return vtkSMPropertyHelper(dataSource,
+    vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
+}
+
+//-----------------------------------------------------------------------------
 bool DataSource::serialize(pugi::xml_node& ns) const
 {
   ns.append_attribute("number_of_operators").set_value(
@@ -171,6 +179,7 @@ void DataSource::operate(Operator* op)
     tp->Modified();
     tp->GetOutputDataObject(0)->Modified();
     this->Internals->Producer->MarkModified(NULL);
+    this->Internals->Producer->UpdatePipeline();
     }
 
   emit this->dataChanged();

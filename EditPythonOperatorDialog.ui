@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>449</width>
-    <height>309</height>
+    <width>542</width>
+    <height>677</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -54,7 +54,10 @@
         raise RuntimeError(&quot;No scalars found!&quot;)
 
     # transform the dataset
-    np.sqrt(scalars, scalars)</string>
+    result = np.sqrt(scalars)
+    
+    # set the result as the new scalars.
+    utils.set_scalars(dataset, result)</string>
      </property>
     </widget>
    </item>

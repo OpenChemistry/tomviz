@@ -44,6 +44,8 @@ set(SOURCES
   CentralWidget.h
   CloneDataReaction.cxx
   CloneDataReaction.h
+  DataPropertiesPanel.cxx
+  DataPropertiesPanel.h
   DataSource.cxx
   DataSource.h
   DeleteDataReaction.cxx
@@ -98,6 +100,7 @@ set(SOURCES
 
 qt4_wrap_ui(UI_SOURCES
   CentralWidget.ui
+  DataPropertiesPanel.ui
   EditPythonOperatorDialog.ui
   MainWindow.ui
   ModulePropertiesPanel.ui
