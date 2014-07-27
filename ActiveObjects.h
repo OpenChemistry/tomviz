@@ -69,6 +69,7 @@ public slots:
 
   /// Renders all views.
   void renderAllViews();
+
 signals:
   /// fired whenever the active view changes.
   void viewChanged(vtkSMViewProxy*);
@@ -93,6 +94,7 @@ protected:
 
   QPointer<Module> ActiveModule;
   void* VoidActiveModule;
+
 private:
   Q_DISABLE_COPY(ActiveObjects)
 };

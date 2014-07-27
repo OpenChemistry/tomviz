@@ -28,8 +28,9 @@ namespace TEM
 AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
   :Superclass(parentObject)
 {
-  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-    SLOT(updateEnableState()));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(DataSource*)),
+                SLOT(updateEnableState()));
   this->updateEnableState();
 }
 
@@ -63,7 +64,5 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     }
   return NULL;
 }
-
-
 
 }
