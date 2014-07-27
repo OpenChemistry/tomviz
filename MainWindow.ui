@@ -221,6 +221,15 @@
    </attribute>
    <widget class="TEM::ViewPropertiesPanel" name="viewPropertiesPanel"/>
   </widget>
+  <widget class="QDockWidget" name="dockWidget_5">
+   <property name="windowTitle">
+    <string>Data Properties</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="TEM::DataPropertiesPanel" name="dockWidgetContents"/>
+  </widget>
   <action name="actionOpen">
    <property name="text">
     <string>&amp;Open</string>
@@ -351,6 +360,12 @@
    <class>TEM::ViewPropertiesPanel</class>
    <extends>QWidget</extends>
    <header>ViewPropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>TEM::DataPropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>DataPropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -61,6 +61,9 @@ public:
   /// visualization pipelines on directly. Use producer() instead.
   vtkSMSourceProxy* originalDataSource() const;
 
+  /// Returns the name of the filename used from the originalDataSource.
+  QString filename() const;
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.

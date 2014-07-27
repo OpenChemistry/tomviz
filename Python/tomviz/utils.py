@@ -10,6 +10,10 @@ def get_scalars(dataobject):
     return vtkarray
 
 
-def set_scalars(dataobject, scalars):
+def set_scalars(dataobject, newscalars):
     do = dsa.WrapDataObject(dataobject)
-    raise RuntimeError, "TODO"
+    oldscalars = do.PointData.GetScalars()
+    name = oldscalars.GetName()
+    del oldscalars
+    do.PointData.append(newscalars, name)
+    do.PointData.SetActiveScalars(name)
