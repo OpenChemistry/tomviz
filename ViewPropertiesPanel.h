@@ -35,6 +35,7 @@ public:
 private slots:
   void setView(vtkSMViewProxy*);
   void render();
+  void updatePanel();
 
 private:
   Q_DISABLE_COPY(ViewPropertiesPanel)

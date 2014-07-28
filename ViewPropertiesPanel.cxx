@@ -43,6 +43,10 @@ ViewPropertiesPanel::ViewPropertiesPanel(QWidget* parentObject)
   Ui::ViewPropertiesPanel &ui = this->Internals->Ui;
   ui.setupUi(this);
 
+  this->connect(ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
+                SLOT(updatePanel()));
+  this->connect(ui.SearchBox, SIGNAL(textChanged(const QString&)),
+                SLOT(updatePanel()));
   this->connect(&ActiveObjects::instance(),
                 SIGNAL(viewChanged(vtkSMViewProxy*)),
                 SLOT(setView(vtkSMViewProxy*)));
@@ -65,7 +69,7 @@ void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
     ui.ProxiesWidget->addProxy(view, view->GetXMLLabel(), QStringList(), true);
     }
   ui.ProxiesWidget->updateLayout();
-  ui.ProxiesWidget->updatePanel();
+  this->updatePanel();
 }
 
 //-----------------------------------------------------------------------------
@@ -76,6 +80,15 @@ void ViewPropertiesPanel::render()
     {
     view->render();
     }
+}
+
+//-----------------------------------------------------------------------------
+void ViewPropertiesPanel::updatePanel()
+{
+  Ui::ViewPropertiesPanel &ui = this->Internals->Ui;
+  ui.ProxiesWidget->filterWidgets(
+    ui.SearchBox->isAdvancedSearchActive(),
+    ui.SearchBox->text());
 }
 
 }

@@ -13,10 +13,20 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1">
    <property name="margin">
     <number>0</number>
    </property>
+   <item>
+    <widget class="pqSearchBox" name="SearchBox" native="true">
+     <property name="settingKey" stdset="0">
+      <string>ViewPropertiesPanelSeachBox</string>
+     </property>
+     <property name="advancedSearchEnabled" stdset="0">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
    <item>
     <widget class="pqProxiesWidget" name="ProxiesWidget" native="true"/>
    </item>
@@ -27,6 +37,12 @@
    <class>pqProxiesWidget</class>
    <extends>QWidget</extends>
    <header>pqProxiesWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqSearchBox</class>
+   <extends>QWidget</extends>
+   <header>pqSearchBox.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
