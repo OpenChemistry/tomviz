@@ -92,11 +92,20 @@ bool ModuleAccelThreshold::initialize(DataSource* dataSource, vtkSMViewProxy* vi
   //vtkSMPVRepresentationProxy* rep = vtkSMPVRepresentationProxy::SafeDownCast(this->ThresholdRepresentation);
   // rep->RescaleTransferFunctionToDataRange(true);
 
-  // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "LookupTable").Set(dataSource->colorMap());
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "ScalarOpacityFunction").Set(dataSource->opacityMap());
+  // use proper color map.
+  this->updateColorMap();
+
   this->ThresholdRepresentation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleAccelThreshold::updateColorMap()
+{
+  Q_ASSERT(this->ThresholdRepresentation);
+  vtkSMPropertyHelper(this->ThresholdRepresentation, "LookupTable").Set(this->colorMap());
+  vtkSMPropertyHelper(this->ThresholdRepresentation, "ScalarOpacityFunction").Set(this->opacityMap());
+  this->ThresholdRepresentation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
