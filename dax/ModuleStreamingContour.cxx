@@ -82,7 +82,11 @@ bool ModuleStreamingContour::initialize(DataSource* dataSource, vtkSMViewProxy* 
   vtkSMPVRepresentationProxy::SetScalarColoring(this->ContourRepresentation,
                                                 propertyName,
                                                 vtkDataObject::POINT );
+
+  // by default, use the data source's color/opacity maps.
+  vtkSMPropertyHelper(this->ContourRepresentation, "LookupTable").Set(dataSource->colorMap());
   this->ContourRepresentation->UpdateVTKObjects();
+
   return true;
 }
 

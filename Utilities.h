@@ -28,6 +28,7 @@
 #include <QStringList>
 
 class vtkSMProxyLocator;
+class vtkPVArrayInformation;
 
 namespace TEM
 {
@@ -116,6 +117,11 @@ inline QString label(pqProxy* proxy)
 /// Serialize a proxy to a pugi::xml node.
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out, const QStringList& properties=QStringList());
 bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in, vtkSMProxyLocator* locator=NULL);
+
+//---------------------------------------------------------------------------
+/// Returns the vtkPVArrayInformation for scalars array produced by the given
+/// source proxy.
+vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy);
 
 }
 

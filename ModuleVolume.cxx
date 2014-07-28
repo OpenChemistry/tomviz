@@ -76,6 +76,12 @@ bool ModuleVolume::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   Q_ASSERT(this->Representation);
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Volume");
+
+  // by default, use the data source's color/opacity maps.
+  vtkSMPropertyHelper(this->Representation,
+                      "LookupTable").Set(dataSource->colorMap());
+  vtkSMPropertyHelper(this->Representation,
+                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
   this->Representation->UpdateVTKObjects();
   return true;
 }

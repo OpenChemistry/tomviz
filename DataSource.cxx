@@ -19,13 +19,17 @@
 #include "Utilities.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
+#include "vtkPVArrayInformation.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTransferFunctionManager.h"
+#include "vtkSMTransferFunctionProxy.h"
 #include "vtkTrivialProducer.h"
+
 #include <vtk_pugixml.h>
 
 namespace TEM
@@ -37,6 +41,7 @@ public:
   vtkSmartPointer<vtkSMSourceProxy> OriginalDataSource;
   vtkWeakPointer<vtkSMSourceProxy> Producer;
   QList<QSharedPointer<Operator> > Operators;
+  vtkSmartPointer<vtkSMProxy> ColorMap;
 };
 
 //-----------------------------------------------------------------------------
@@ -63,6 +68,17 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
       vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString());
   controller->RegisterPipelineProxy(source);
   this->Internals->Producer = vtkSMSourceProxy::SafeDownCast(source);
+
+  // Setup color map for this data-source.
+  static unsigned int colorMapCounter=0;
+  colorMapCounter++;
+
+  vtkNew<vtkSMTransferFunctionManager> tfmgr;
+  this->Internals->ColorMap = tfmgr->GetColorTransferFunction(
+    QString("DataSourceColorMap%1").arg(colorMapCounter).toLatin1().data(), pxm);
+
+  // every time the data changes, we should update the color map.
+  this->connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
 
   this->resetData();
 }
@@ -217,20 +233,50 @@ void DataSource::resetData()
   Q_ASSERT(tp);
   tp->SetOutput(clone);
   clone->FastDelete();
+  emit this->dataChanged();
 }
 
 //-----------------------------------------------------------------------------
 void DataSource::operatorTransformModified()
 {
-  this->resetData();
-
   bool prev = this->blockSignals(true);
+
+  this->resetData();
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
     {
     this->operate(op.data());
     }
   this->blockSignals(prev);
   emit this->dataChanged();
+}
+
+//-----------------------------------------------------------------------------
+vtkSMProxy* DataSource::colorMap() const
+{
+  return this->Internals->ColorMap;
+}
+
+//-----------------------------------------------------------------------------
+vtkSMProxy* DataSource::opacityMap() const
+{
+  return this->Internals->ColorMap?
+  vtkSMPropertyHelper(this->Internals->ColorMap, "ScalarOpacityFunction").GetAsProxy() : NULL;
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::updateColorMap()
+{
+  // rescale the color/opacity maps for the data source.
+  vtkSMProxy* cmap = this->Internals->ColorMap;
+  vtkSMProxy* omap = vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
+  vtkPVArrayInformation* ainfo = TEM::scalarArrayInformation(this->producer());
+  if (ainfo != NULL && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
+    {
+    // assuming single component arrays.
+    Q_ASSERT(ainfo->GetNumberOfComponents() == 1);
+    vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, ainfo->GetComponentRange(0));
+    vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ainfo->GetComponentRange(0));
+    }
 }
 
 }

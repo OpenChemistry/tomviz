@@ -73,8 +73,16 @@ bool ModuleOrthogonalSlice::initialize(DataSource* dataSource, vtkSMViewProxy* v
   // Create the representation for it.
   this->Representation = controller->Show(this->PassThrough, 0, view);
   Q_ASSERT(this->Representation);
+
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Slice");
+
+  // by default, use the data source's color/opacity maps.
+  vtkSMPropertyHelper(this->Representation,
+                      "LookupTable").Set(dataSource->colorMap());
+  vtkSMPropertyHelper(this->Representation,
+                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
+
   this->Representation->UpdateVTKObjects();
   return true;
 }
