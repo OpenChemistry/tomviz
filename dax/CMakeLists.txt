@@ -30,3 +30,6 @@ set_target_properties(tomvizStreaming PROPERTIES COMPILE_DEFINITIONS
 
 set_target_properties(tomvizThreshold PROPERTIES COMPILE_DEFINITIONS
                       "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
+
+target_link_libraries(tomvizStreaming LINK_PRIVATE ${TBB_LIBRARIES})
+target_link_libraries(tomvizThreshold LINK_PRIVATE ${TBB_LIBRARIES})
