@@ -57,25 +57,28 @@ set(SOURCES
   main.cxx
   MainWindow.cxx
   MainWindow.h
+  Module.cxx
+  Module.h
   ModuleContour.cxx
   ModuleContour.h
-  ModuleThreshold.cxx
-  ModuleThreshold.h
-  Module.cxx
   ModuleFactory.cxx
   ModuleFactory.h
-  Module.h
   ModuleManager.cxx
   ModuleManager.h
   ModuleMenu.cxx
   ModuleMenu.h
-  ModuleSlice.cxx
-  ModuleSlice.h
+  ModuleOrthogonalSlice.cxx
+  ModuleOrthogonalSlice.h
   ModuleOutline.cxx
   ModuleOutline.h
   ModulePropertiesPanel.cxx
   ModulePropertiesPanel.h
+  ModuleSlice.cxx
+  ModuleSlice.h
+  ModuleThreshold.cxx
+  ModuleThreshold.h
   ModuleVolume.cxx
+  ModuleVolume.h
   Operator.cxx
   Operator.h
   OperatorPython.cxx

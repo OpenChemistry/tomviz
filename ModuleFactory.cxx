@@ -21,8 +21,9 @@
 #endif
 
 #include "ModuleContour.h"
-#include "ModuleSlice.h"
+#include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
+#include "ModuleSlice.h"
 #include "ModuleThreshold.h"
 #include "ModuleVolume.h"
 #include "pqView.h"
@@ -57,7 +58,8 @@ QList<QString> ModuleFactory::moduleTypes(
       << "Volume"
       << "Contour"
       << "Threshold"
-      << "Slice";
+      << "Slice"
+      << "Orthogonal Slice";
     qSort(reply);
     }
   return reply;
@@ -87,6 +89,10 @@ Module* ModuleFactory::createModule(
   else if (type == "Slice")
     {
     module = new ModuleSlice();
+    }
+  else if (type == "Orthogonal Slice")
+    {
+    module = new ModuleOrthogonalSlice();
     }
   else if (type == "Threshold")
     {
@@ -136,6 +142,10 @@ const char* ModuleFactory::moduleType(Module* module)
   if (qobject_cast<ModuleSlice*>(module))
     {
     return "Slice";
+    }
+  if (qobject_cast<ModuleOrthogonalSlice*>(module))
+    {
+    return "Orthogonal Slice";
     }
 #ifdef DAX_DEVICE_ADAPTER
   if (qobject_cast<ModuleAccelThreshold*>(module))
