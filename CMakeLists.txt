@@ -57,14 +57,12 @@ set(SOURCES
   main.cxx
   MainWindow.cxx
   MainWindow.h
+  Module.cxx
+  Module.h
   ModuleContour.cxx
   ModuleContour.h
-  ModuleThreshold.cxx
-  ModuleThreshold.h
-  Module.cxx
   ModuleFactory.cxx
   ModuleFactory.h
-  Module.h
   ModuleManager.cxx
   ModuleManager.h
   ModuleMenu.cxx
@@ -75,7 +73,12 @@ set(SOURCES
   ModuleOutline.h
   ModulePropertiesPanel.cxx
   ModulePropertiesPanel.h
+  ModuleSlice.cxx
+  ModuleSlice.h
+  ModuleThreshold.cxx
+  ModuleThreshold.h
   ModuleVolume.cxx
+  ModuleVolume.h
   Operator.cxx
   Operator.h
   OperatorPython.cxx
@@ -96,6 +99,8 @@ set(SOURCES
   Utilities.h
   ViewPropertiesPanel.cxx
   ViewPropertiesPanel.h
+  vtkColorImagePlaneWidget.cxx
+  vtkColorImagePlaneWidget.h
   )
 
 qt4_wrap_ui(UI_SOURCES

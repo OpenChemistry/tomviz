@@ -23,6 +23,7 @@
 #include "ModuleContour.h"
 #include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
+#include "ModuleSlice.h"
 #include "ModuleThreshold.h"
 #include "ModuleVolume.h"
 #include "pqView.h"
@@ -57,6 +58,7 @@ QList<QString> ModuleFactory::moduleTypes(
       << "Volume"
       << "Contour"
       << "Threshold"
+      << "Slice"
       << "Orthogonal Slice";
     qSort(reply);
     }
@@ -83,6 +85,10 @@ Module* ModuleFactory::createModule(
   else if (type == "Volume")
     {
     module = new ModuleVolume();
+    }
+  else if (type == "Slice")
+    {
+    module = new ModuleSlice();
     }
   else if (type == "Orthogonal Slice")
     {
@@ -132,6 +138,10 @@ const char* ModuleFactory::moduleType(Module* module)
   if (qobject_cast<ModuleVolume*>(module))
     {
     return "Volume";
+    }
+  if (qobject_cast<ModuleSlice*>(module))
+    {
+    return "Slice";
     }
   if (qobject_cast<ModuleOrthogonalSlice*>(module))
     {
