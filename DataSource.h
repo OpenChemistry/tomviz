@@ -67,7 +67,8 @@ public:
   QString filename() const;
 
   /// Returns the color map for the DataSource.
-  vtkSMProxy* colorMap();
+  vtkSMProxy* colorMap() const;
+  vtkSMProxy* opacityMap() const;
 
 signals:
   /// This signal is fired to notify the world that the DataSource may have

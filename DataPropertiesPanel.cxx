@@ -36,6 +36,7 @@ class DataPropertiesPanel::DPPInternals
 public:
   Ui::DataPropertiesPanel Ui;
   QPointer<DataSource> CurrentDataSource;
+  QPointer<pqProxyWidget> ColorMapWidget;
 
   DPPInternals(QWidget* parent)
     {
@@ -60,6 +61,12 @@ public:
                                                    parent);
     l->insertWidget(l->indexOf(ui.TransformedDataRange), separator);
 
+    // set icons for save/restore buttons.
+    ui.ColorMapSaveAsDefaults->setIcon(
+      ui.ColorMapSaveAsDefaults->style()->standardIcon(QStyle::SP_DialogSaveButton));
+    ui.ColorMapRestoreDefaults->setIcon(
+      ui.ColorMapRestoreDefaults->style()->standardIcon(QStyle::SP_BrowserReload));
+
     this->clear();
     }
 
@@ -70,6 +77,11 @@ public:
     ui.Dimensions->setText("");
     ui.OriginalDataRange->setText("");
     ui.TransformedDataRange->setText("");
+    if (this->ColorMapWidget)
+      {
+      ui.verticalLayout->removeWidget(this->ColorMapWidget);
+      delete this->ColorMapWidget;
+      }
     }
 
 };
@@ -108,13 +120,13 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
 //-----------------------------------------------------------------------------
 void DataPropertiesPanel::update()
 {
+  this->Internals->clear();
+
   DataSource* dsource = this->Internals->CurrentDataSource;
   if (!dsource)
     {
-    this->Internals->clear();
     return;
     }
-
   Ui::DataPropertiesPanel& ui = this->Internals->Ui;
   ui.FileName->setText(dsource->filename());
 
@@ -142,6 +154,16 @@ void DataPropertiesPanel::update()
                                      .arg(tscalars->GetComponentRange(0)[0])
                                      .arg(tscalars->GetComponentRange(0)[1]));
     }
+
+  pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap());
+  colorMapWidget->setApplyChangesImmediately(true);
+  colorMapWidget->updatePanel();
+  ui.verticalLayout->insertWidget(ui.verticalLayout->count()-1, colorMapWidget);
+  colorMapWidget->connect(ui.ColorMapExpander, SIGNAL(toggled(bool)), SLOT(setVisible(bool)));
+  colorMapWidget->setVisible(ui.ColorMapExpander->checked());
+  colorMapWidget->connect(ui.ColorMapSaveAsDefaults, SIGNAL(clicked()), SLOT(onSaveAsDefaults()));
+  colorMapWidget->connect(ui.ColorMapRestoreDefaults, SIGNAL(clicked()), SLOT(onRestoreDefaults()));
+  this->Internals->ColorMapWidget = colorMapWidget;
 }
 
 //-----------------------------------------------------------------------------

@@ -251,6 +251,19 @@ void DataSource::operatorTransformModified()
 }
 
 //-----------------------------------------------------------------------------
+vtkSMProxy* DataSource::colorMap() const
+{
+  return this->Internals->ColorMap;
+}
+
+//-----------------------------------------------------------------------------
+vtkSMProxy* DataSource::opacityMap() const
+{
+  return this->Internals->ColorMap?
+  vtkSMPropertyHelper(this->Internals->ColorMap, "ScalarOpacityFunction").GetAsProxy() : NULL;
+}
+
+//-----------------------------------------------------------------------------
 void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.
