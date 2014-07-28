@@ -15,20 +15,28 @@
 ******************************************************************************/
 #include "ModuleMenu.h"
 
+#include "ActiveObjects.h"
 #include "ModuleFactory.h"
 #include "ModuleManager.h"
-#include "ActiveObjects.h"
+
 #include <QMenu>
+#include <QToolBar>
 
 namespace TEM
 {
 
 //-----------------------------------------------------------------------------
-ModuleMenu::ModuleMenu(QMenu* parentObject) : Superclass(parentObject)
+ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject) :
+  Superclass(parentObject),
+  Menu(menu),
+  ToolBar(toolBar)
 {
-  Q_ASSERT(parentObject);
-  this->connect(parentObject, SIGNAL(aboutToShow()), SLOT(aboutToShow()));
-  this->connect(parentObject, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
+  Q_ASSERT(menu);
+  Q_ASSERT(toolBar);
+  this->connect(menu, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
+  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+                SLOT(updateActions()));
+  this->updateActions();
 }
 
 //-----------------------------------------------------------------------------
@@ -37,33 +45,31 @@ ModuleMenu::~ModuleMenu()
 }
 
 //-----------------------------------------------------------------------------
-QMenu* ModuleMenu::parentMenu() const
+void ModuleMenu::updateActions()
 {
-  return qobject_cast<QMenu*>(this->parent());
-}
-
-//-----------------------------------------------------------------------------
-void ModuleMenu::aboutToShow()
-{
-  QMenu* menu = this->parentMenu();
+  QMenu* menu = this->Menu;
+  QToolBar* toolBar = this->ToolBar;
   Q_ASSERT(menu);
+  Q_ASSERT(toolBar);
 
   menu->clear();
+  toolBar->clear();
   QList<QString> modules =
       ModuleFactory::moduleTypes(ActiveObjects::instance().activeDataSource(),
                                  ActiveObjects::instance().activeView());
-
   if (modules.size() > 0)
     {
     foreach (const QString& txt, modules)
       {
-      menu->addAction(txt);
+      QAction* actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
+      toolBar->addAction(actn);
       }
     }
   else
     {
     QAction* action = menu->addAction("No modules available");
     action->setEnabled(false);
+    toolBar->addAction(action);
     }
 }
 

@@ -107,17 +107,35 @@ Module* ModuleFactory::createModule(
     {
     // sanity check.
     Q_ASSERT(type == moduleType(module));
+    if (dataSource == NULL && view == NULL)
+      {
+      // don't initialize module if args are NULL.
+      return module;
+      }
+
     if (!module->initialize(dataSource, view))
       {
       delete module;
       return NULL;
       }
-
     pqView* pqview = TEM::convert<pqView*>(view);
     pqview->resetDisplay();
     pqview->render();
     }
   return module;
+}
+
+//-----------------------------------------------------------------------------
+QIcon ModuleFactory::moduleIcon(const QString& type)
+{
+  QIcon icon;
+  Module* mdl = ModuleFactory::createModule(type, NULL, NULL);
+  if (mdl)
+    {
+    icon = mdl->icon();
+    delete mdl;
+    }
+  return icon;
 }
 
 //-----------------------------------------------------------------------------
