@@ -27,8 +27,8 @@ namespace TEM
 ProgressBehavior::ProgressBehavior(QWidget* parentWindow)
   : Superclass(parentWindow)
 {
-  this->ProgressDialog = new QProgressDialog(
-    "In progress...", "Cancel", 0, 100, parentWindow);
+  this->ProgressDialog = new QProgressDialog("In progress...", "Cancel",
+                                             0, 100, parentWindow);
   this->ProgressDialog->setAutoClose(true);
   this->ProgressDialog->setAutoReset(false);
   this->ProgressDialog->setMinimumDuration(0); // 0 second.
@@ -37,9 +37,9 @@ ProgressBehavior::ProgressBehavior(QWidget* parentWindow)
     pqApplicationCore::instance()->getProgressManager();
 
   this->connect(progressManager, SIGNAL(enableProgress(bool)),
-    SLOT(enableProgress(bool)));
+                SLOT(enableProgress(bool)));
   this->connect(progressManager, SIGNAL(progress(const QString&, int)),
-    SLOT(progress(const QString, int)));
+                SLOT(progress(const QString, int)));
 
 }
 

@@ -16,8 +16,8 @@
 #include "ModuleFactory.h"
 
 #ifdef DAX_DEVICE_ADAPTER
-#  include "dax/ModuleStreamingContour.h"
-#  include "dax/ModuleAccelThreshold.h"
+# include "dax/ModuleStreamingContour.h"
+# include "dax/ModuleAccelThreshold.h"
 #endif
 
 #include "ModuleContour.h"

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>449</width>
-    <height>309</height>
+    <width>542</width>
+    <height>677</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,14 +33,31 @@
    </item>
    <item row="2" column="0" colspan="2">
     <widget class="QPlainTextEdit" name="script">
+     <property name="font">
+      <font>
+       <family>Monospace</family>
+      </font>
+     </property>
      <property name="lineWrapMode">
       <enum>QPlainTextEdit::NoWrap</enum>
      </property>
      <property name="plainText">
-      <string># Use 'scalars' variable to access data scalars.
+      <string>def transform_scalars(dataset):
+    &quot;&quot;&quot;Define this method for Python operators that 
+    transform input scalars&quot;&quot;&quot;
 
-import numpy
-numpy.sqrt(scalars, scalars)</string>
+    from tomviz import utils
+    import numpy as np
+
+    scalars = utils.get_scalars(dataset)
+    if scalars is None:
+        raise RuntimeError(&quot;No scalars found!&quot;)
+
+    # transform the dataset
+    result = np.sqrt(scalars)
+    
+    # set the result as the new scalars.
+    utils.set_scalars(dataset, result)</string>
      </property>
     </widget>
    </item>

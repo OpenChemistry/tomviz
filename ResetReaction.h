@@ -22,8 +22,9 @@ namespace TEM
 {
 class ResetReaction : public pqReaction
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
   ResetReaction(QAction* action);
   virtual ~ResetReaction();
@@ -34,7 +35,7 @@ protected:
   virtual void onTriggered() { this->reset(); }
 
 private:
-  Q_DISABLE_COPY(ResetReaction);
+  Q_DISABLE_COPY(ResetReaction)
 };
 
 }

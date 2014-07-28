@@ -13,56 +13,49 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "AddExpressionReaction.h"
+#include "DeleteDataReaction.h"
 
 #include "ActiveObjects.h"
-#include "DataSource.h"
-#include "OperatorPython.h"
-#include "pqCoreUtilities.h"
-#include "EditPythonOperatorDialog.h"
-
+#include "ModuleManager.h"
 
 namespace TEM
 {
 //-----------------------------------------------------------------------------
-AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
-  :Superclass(parentObject)
+DeleteDataReaction::DeleteDataReaction(QAction* parentObject)
+  : Superclass(parentObject)
 {
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateEnableState()));
+  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+    SLOT(updateEnableState()));
   this->updateEnableState();
 }
 
 //-----------------------------------------------------------------------------
-AddExpressionReaction::~AddExpressionReaction()
+DeleteDataReaction::~DeleteDataReaction()
 {
 }
 
 //-----------------------------------------------------------------------------
-void AddExpressionReaction::updateEnableState()
+void DeleteDataReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != NULL);
+  this->parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() != NULL);
 }
 
 //-----------------------------------------------------------------------------
-OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
+void DeleteDataReaction::onTriggered()
 {
-  source = source? source : ActiveObjects::instance().activeDataSource();
-  if (!source)
-    {
-    return NULL;
-    }
-
-  QSharedPointer<OperatorPython> op(new OperatorPython());
-  op->setLabel("Transform Data");
-  EditPythonOperatorDialog dialog (op.data(), pqCoreUtilities::mainWidget());
-  if (dialog.exec() == QDialog::Accepted)
-    {
-    source->addOperator(op);
-    }
-  return NULL;
+  DataSource* source = ActiveObjects::instance().activeDataSource();
+  Q_ASSERT(source);
+  DeleteDataReaction::deleteDataSource(source);
+  ActiveObjects::instance().renderAllViews();
 }
 
+//-----------------------------------------------------------------------------
+void DeleteDataReaction::deleteDataSource(DataSource* source)
+{
+  Q_ASSERT(source);
+
+  ModuleManager &mmgr = ModuleManager::instance();
+  mmgr.removeAllModules(source);
+  mmgr.removeDataSource(source);
 }
+} // end of namespace TEM

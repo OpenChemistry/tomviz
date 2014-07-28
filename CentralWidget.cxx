@@ -241,7 +241,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
       ->SetRenderWindow(this->Histogram->GetRenderWindow());
   vtkChartHistogram* chart = this->Chart.Get();
   this->Histogram->GetScene()->AddItem(chart);
-  chart->SetBarWidthFraction(0.95);
+  chart->SetBarWidthFraction(1.0);
   chart->SetRenderEmpty(true);
   chart->SetAutoAxes(false);
   chart->GetAxis(vtkAxis::LEFT)->SetTitle("");
@@ -390,6 +390,7 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
   plot->SetInputData(table, "image_extents", "image_pops");
   plot->SetColor(0, 0, 255, 255);
+  plot->GetPen()->SetLineType(vtkPen::NO_PEN);
   vtkDataArray *arr =
       vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
   if (arr)
@@ -399,6 +400,16 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     axis->SetUnscaledMinimum(1.0);
     axis->SetMaximumLimit(max + 2.0);
     axis->SetMaximum(static_cast<int>(max) + 1.0);
+    }
+  arr = vtkDataArray::SafeDownCast(table->GetColumnByName("image_extents"));
+  if (arr && arr->GetNumberOfTuples() > 2)
+    {
+    double range[2];
+    arr->GetRange(range);
+    double halfInc = (arr->GetTuple1(1) - arr->GetTuple1(0)) / 2.0;
+    vtkAxis *axis = this->Chart->GetAxis(vtkAxis::BOTTOM);
+    axis->SetBehavior(vtkAxis::FIXED);
+    axis->SetRange(range[0] - halfInc , range[1] + halfInc);
     }
 }
 

@@ -18,7 +18,7 @@
 
 #include "pqReaction.h"
 
-class pqPipelineSource;
+class vtkSMProxy;
 
 namespace TEM
 {
@@ -39,7 +39,7 @@ public:
   virtual ~LoadDataReaction();
 
   /// Create a raw data source from the reader.
-  static DataSource* createDataSource(pqPipelineSource* reader);
+  static DataSource* createDataSource(vtkSMProxy* reader);
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource*);

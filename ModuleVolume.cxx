@@ -31,7 +31,7 @@ namespace TEM
 {
 
 //-----------------------------------------------------------------------------
-ModuleVolume::ModuleVolume(QObject* parentObject) :Superclass(parentObject)
+ModuleVolume::ModuleVolume(QObject* parentObject) : Superclass(parentObject)
 {
 }
 
@@ -57,7 +57,8 @@ bool ModuleVolume::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = dataSource->producer()->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm =
+      dataSource->producer()->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -73,7 +74,14 @@ bool ModuleVolume::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   // Create the representation for it.
   this->Representation = controller->Show(this->PassThrough, 0, view);
   Q_ASSERT(this->Representation);
-  vtkSMRepresentationProxy::SetRepresentationType(this->Representation, "Volume");
+  vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
+                                                  "Volume");
+
+  // by default, use the data source's color/opacity maps.
+  vtkSMPropertyHelper(this->Representation,
+                      "LookupTable").Set(dataSource->colorMap());
+  vtkSMPropertyHelper(this->Representation,
+                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
   this->Representation->UpdateVTKObjects();
   return true;
 }
@@ -94,7 +102,7 @@ bool ModuleVolume::finalize()
 bool ModuleVolume::setVisibility(bool val)
 {
   Q_ASSERT(this->Representation);
-  vtkSMPropertyHelper(this->Representation, "Visibility").Set(val? 1 : 0);
+  vtkSMPropertyHelper(this->Representation, "Visibility").Set(val ? 1 : 0);
   this->Representation->UpdateVTKObjects();
   return true;
 }
@@ -103,13 +111,15 @@ bool ModuleVolume::setVisibility(bool val)
 bool ModuleVolume::visibility() const
 {
   Q_ASSERT(this->Representation);
-  return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() != 0;
+  return vtkSMPropertyHelper(this->Representation,
+                             "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------
 void ModuleVolume::addToPanel(pqProxiesWidget* panel)
 {
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
+  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation,
+                                        "LookupTable").GetAsProxy();
   Q_ASSERT(lut);
 
   QStringList list;
@@ -128,8 +138,10 @@ void ModuleVolume::addToPanel(pqProxiesWidget* panel)
 //-----------------------------------------------------------------------------
 bool ModuleVolume::serialize(pugi::xml_node& ns) const
 {
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
+  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation,
+                                        "LookupTable").GetAsProxy();
+  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation,
+                                        "ScalarOpacityFunction").GetAsProxy();
   Q_ASSERT(lut && sof);
 
   QStringList list;
@@ -146,8 +158,10 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool ModuleVolume::deserialize(const pugi::xml_node& ns)
 {
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
+  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation,
+                                        "LookupTable").GetAsProxy();
+  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation,
+                                        "ScalarOpacityFunction").GetAsProxy();
 
   if (TEM::deserialize(this->Representation, ns.child("Representation")))
     {

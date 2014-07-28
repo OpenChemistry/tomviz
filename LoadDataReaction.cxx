@@ -20,6 +20,8 @@
 #include "ModuleManager.h"
 #include "pqLoadDataReaction.h"
 #include "pqPipelineSource.h"
+#include "pqProxyWidgetDialog.h"
+#include "RecentFilesMenu.h"
 #include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
@@ -57,21 +59,33 @@ void LoadDataReaction::onTriggered()
   // around. We do this magic.
   foreach (pqPipelineSource* reader, readers)
     {
-    DataSource* dataSource = this->createDataSource(reader);
-    Q_ASSERT(dataSource);
+    DataSource* dataSource = this->createDataSource(reader->getProxy());
+    // dataSource may be NULL if user cancelled the action.
+    if (dataSource)
+      {
+      // add the file to recent files menu.
+      RecentFilesMenu::pushDataReader(reader->getProxy());
+      }
     controller->UnRegisterProxy(reader->getProxy());
     }
   readers.clear();
 }
 
 //-----------------------------------------------------------------------------
-DataSource* LoadDataReaction::createDataSource(pqPipelineSource* reader)
+DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
 {
-  DataSource* dataSource = new DataSource(
-    vtkSMSourceProxy::SafeDownCast(reader->getProxy()));
-  // do whatever we need to do with a new data source.
-  LoadDataReaction::dataSourceAdded(dataSource);
-  return dataSource;
+  // Prompt user for reader configuration.
+  pqProxyWidgetDialog dialog(reader);
+  dialog.setObjectName("ConfigureReaderDialog");
+  dialog.setWindowTitle("Configure Reader Parameters");
+  if (dialog.hasVisibleWidgets() == false || dialog.exec() == QDialog::Accepted)
+    {
+    DataSource* dataSource = new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
+    // do whatever we need to do with a new data source.
+    LoadDataReaction::dataSourceAdded(dataSource);
+    return dataSource;
+    }
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------

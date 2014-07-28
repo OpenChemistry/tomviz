@@ -13,34 +13,40 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_CloneDataReaction_h
-#define __TEM_CloneDataReaction_h
+#ifndef __TEM_DataPropertiesPanel_h
+#define __TEM_DataPropertiesPanel_h
 
-#include "pqReaction.h"
+#include <QWidget>
+#include <QScopedPointer>
 
 namespace TEM
 {
+
 class DataSource;
 
-class CloneDataReaction : public pqReaction
+/// DataPropertiesPanel is the panel that shows information (and other controls)
+/// for a DataSource. It monitors TEM::ActiveObjects instance and shows
+/// information about the active data source, as well allow the user to edit
+/// configurable options, such as color map.
+class DataPropertiesPanel : public QWidget
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
-
+  typedef QWidget Superclass;
 public:
-  CloneDataReaction(QAction* action);
-  virtual ~CloneDataReaction();
+  DataPropertiesPanel(QWidget* parent=0);
+  virtual ~DataPropertiesPanel();
 
-  static DataSource* clone(DataSource* toClone = NULL);
-
-protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered() { this->clone(); }
-  virtual void updateEnableState();
+private slots:
+  void setDataSource(DataSource*);
+  void update();
 
 private:
-  Q_DISABLE_COPY(CloneDataReaction)
+  Q_DISABLE_COPY(DataPropertiesPanel)
+
+  class DPPInternals;
+  const QScopedPointer<DPPInternals> Internals;
 };
+
 }
 
 #endif

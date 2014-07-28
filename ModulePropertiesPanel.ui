@@ -18,37 +18,14 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="SearchBoxLayout">
+    <layout class="QHBoxLayout" name="SearchBoxLayout" stretch="1,0">
      <property name="spacing">
       <number>2</number>
      </property>
      <item>
-      <widget class="QLineEdit" name="SearchLineEdit">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Search for properties by name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="placeholderText">
-        <string>Search ... (use Esc to clear text)</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="AdvancedButton">
-       <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Toggle advanced properties&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../ParaView3/ParaView/Qt/Components/Resources/pqComponents.qrc">
-         <normaloff>:/pqWidgets/Icons/pqAdvanced26.png</normaloff>:/pqWidgets/Icons/pqAdvanced26.png</iconset>
-       </property>
-       <property name="checkable">
-        <bool>true</bool>
-       </property>
-       <property name="checked">
-        <bool>false</bool>
+      <widget class="pqSearchBox" name="SearchBox" native="true">
+       <property name="settingKey" stdset="0">
+        <string>ModulePropertiesPanelSeachBox</string>
        </property>
       </widget>
      </item>
@@ -81,6 +58,12 @@
    <class>pqProxiesWidget</class>
    <extends>QWidget</extends>
    <header>pqProxiesWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqSearchBox</class>
+   <extends>QWidget</extends>
+   <header>pqSearchBox.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

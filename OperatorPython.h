@@ -23,8 +23,9 @@ namespace TEM
 {
 class OperatorPython : public Operator
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef Operator Superclass;
+
 public:
   OperatorPython(QObject* parent=NULL);
   virtual ~OperatorPython();
@@ -39,11 +40,17 @@ public:
   /// Method to transform a dataset in-place.
   virtual bool transform(vtkDataObject* data);
 
+  /// return a new clone.
+  virtual Operator* clone() const;
+
+  virtual bool serialize(pugi::xml_node& in) const;
+  virtual bool deserialize(const pugi::xml_node& ns);
+
   void setScript(const QString& str);
   const QString& script() const { return this->Script; }
 
 private:
-  Q_DISABLE_COPY(OperatorPython);
+  Q_DISABLE_COPY(OperatorPython)
 
   class OPInternals;
   const QScopedPointer<OPInternals> Internals;

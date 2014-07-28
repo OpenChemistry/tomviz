@@ -20,16 +20,18 @@
 #include <vtk_pugixml.h>
 
 #include "ModuleManager.h"
+#include "RecentFilesMenu.h"
 #include "vtkSMProxyManager.h"
 
 #include <QtDebug>
 
 namespace TEM
 {
+
 //-----------------------------------------------------------------------------
 SaveLoadStateReaction::SaveLoadStateReaction(QAction* parentObject, bool load)
   : Superclass(parentObject),
-  Load(load)
+    Load(load)
 {
 }
 
@@ -54,10 +56,9 @@ void SaveLoadStateReaction::onTriggered()
 //-----------------------------------------------------------------------------
 bool SaveLoadStateReaction::saveState()
 {
-  pqFileDialog fileDialog(NULL,
-    pqCoreUtilities::mainWidget(),
-    tr("Save State File"), QString(),
-    "TomViz state files (*.tvsm);;All files (*)");
+  pqFileDialog fileDialog(NULL, pqCoreUtilities::mainWidget(),
+                          tr("Save State File"), QString(),
+                          "TomViz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
   fileDialog.setFileMode(pqFileDialog::AnyFile);
   if (fileDialog.exec() == QDialog::Accepted)
@@ -71,8 +72,8 @@ bool SaveLoadStateReaction::saveState()
 bool SaveLoadStateReaction::loadState()
 {
   pqFileDialog fileDialog(NULL, pqCoreUtilities::mainWidget(),
-    tr("Load State File"), QString(),
-    "TomViz state files (*.tvsm);;All files (*)");
+                          tr("Load State File"), QString(),
+                          "TomViz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");
   fileDialog.setFileMode(pqFileDialog::ExistingFile);
   if (fileDialog.exec() == QDialog::Accepted)
@@ -92,7 +93,12 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     return false;
     }
 
-  return ModuleManager::instance().deserialize(document.child("TomVizState"));
+  if (ModuleManager::instance().deserialize(document.child("TomVizState")))
+    {
+    RecentFilesMenu::pushStateFile(filename);
+    return true;
+    }
+  return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -103,9 +109,9 @@ bool SaveLoadStateReaction::saveState(const QString& filename)
   root.append_attribute("version").set_value("0.0a");
   root.append_attribute("paraview_version").set_value(
     QString("%1.%2.%3")
-    .arg(vtkSMProxyManager::GetVersionMajor())
-    .arg(vtkSMProxyManager::GetVersionMinor())
-    .arg(vtkSMProxyManager::GetVersionPatch()).toLatin1().data());
+        .arg(vtkSMProxyManager::GetVersionMajor())
+        .arg(vtkSMProxyManager::GetVersionMinor())
+        .arg(vtkSMProxyManager::GetVersionPatch()).toLatin1().data());
 
   return (ModuleManager::instance().serialize(root) &&
     document.save_file(/*path*/ filename.toLatin1().data(), /*indent*/ "  "));

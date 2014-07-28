@@ -17,7 +17,6 @@
 #ifndef __TEM_EditPythonOperatorDialog_h
 #define __TEM_EditPythonOperatorDialog_h
 
-
 #include <QDialog>
 #include <QScopedPointer>
 
@@ -27,7 +26,7 @@ class OperatorPython;
 
 class EditPythonOperatorDialog : public QDialog
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QDialog Superclass;
 public:
   EditPythonOperatorDialog(OperatorPython* op, QWidget* parent=NULL);
@@ -37,9 +36,11 @@ private slots:
   void acceptChanges();
 
 private:
-  Q_DISABLE_COPY(EditPythonOperatorDialog);
+  Q_DISABLE_COPY(EditPythonOperatorDialog)
   class EPODInternals;
   QScopedPointer<EPODInternals> Internals;
 };
+
 }
+
 #endif

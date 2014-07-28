@@ -28,7 +28,7 @@ namespace TEM
 {
 class ModuleSlice : public Module
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef Module Superclass;
 public:
   ModuleSlice(QObject* parent=NULL);
@@ -49,6 +49,7 @@ private:
   bool setupWidget(vtkSMViewProxy* view,vtkSMSourceProxy* producer);
 
   Q_DISABLE_COPY(ModuleSlice);
+
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkSmartPointer<vtkColorImagePlaneWidget> Widget;
   vtkWeakPointer<vtkSMProxy> TransferFunction;

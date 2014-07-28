@@ -30,7 +30,8 @@ namespace TEM
 {
 
 //-----------------------------------------------------------------------------
-ModuleThreshold::ModuleThreshold(QObject* parentObject): Superclass(parentObject)
+ModuleThreshold::ModuleThreshold(QObject* parentObject)
+  : Superclass(parentObject)
 {
 }
 
@@ -76,16 +77,25 @@ bool ModuleThreshold::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   double range[2], newRange[2];
   rangeProperty.Get(range, 2);
   double delta = (range[1] - range[0]);
-  double mid = ((range[0] + range[1])/2.0);
+  double mid = ((range[0] + range[1]) / 2.0);
   newRange[0] = mid - 0.001 * delta;
   newRange[1] = mid + 0.001 * delta;
   rangeProperty.Set(newRange, 2);
   this->ThresholdFilter->UpdateVTKObjects();
 
   // Create the representation for it.
-  this->ThresholdRepresentation = controller->Show(this->ThresholdFilter, 0, view);
+  this->ThresholdRepresentation = controller->Show(this->ThresholdFilter, 0,
+                                                   view);
   Q_ASSERT(this->ThresholdRepresentation);
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "Representation").Set("Surface");
+  vtkSMPropertyHelper(this->ThresholdRepresentation,
+                      "Representation").Set("Surface");
+
+  // by default, use the data source's color/opacity maps.
+  vtkSMPropertyHelper(this->ThresholdRepresentation,
+                      "LookupTable").Set(dataSource->colorMap());
+  vtkSMPropertyHelper(this->ThresholdRepresentation,
+                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
+
   this->ThresholdRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -105,7 +115,8 @@ bool ModuleThreshold::finalize()
 bool ModuleThreshold::setVisibility(bool val)
 {
   Q_ASSERT(this->ThresholdRepresentation);
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "Visibility").Set(val? 1 : 0);
+  vtkSMPropertyHelper(this->ThresholdRepresentation,
+                      "Visibility").Set(val? 1 : 0);
   this->ThresholdRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -114,7 +125,8 @@ bool ModuleThreshold::setVisibility(bool val)
 bool ModuleThreshold::visibility() const
 {
   Q_ASSERT(this->ThresholdRepresentation);
-  return vtkSMPropertyHelper(this->ThresholdRepresentation, "Visibility").GetAsInt() != 0;
+  return vtkSMPropertyHelper(this->ThresholdRepresentation,
+                             "Visibility").GetAsInt() != 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -153,14 +165,16 @@ bool ModuleThreshold::serialize(pugi::xml_node& ns) const
     << "Visibility";
   pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
   return TEM::serialize(this->ThresholdFilter, tnode, fprops) &&
-    TEM::serialize(this->ThresholdRepresentation, rnode, representationProperties);
+    TEM::serialize(this->ThresholdRepresentation, rnode,
+                   representationProperties);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
 {
   return TEM::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
-    TEM::deserialize(this->ThresholdRepresentation, ns.child("ThresholdRepresentation"));
+    TEM::deserialize(this->ThresholdRepresentation,
+                     ns.child("ThresholdRepresentation"));
 }
 
 }

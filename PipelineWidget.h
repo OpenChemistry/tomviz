@@ -25,6 +25,7 @@ class vtkSMViewProxy;
 
 namespace TEM
 {
+
 class DataSource;
 class Module;
 

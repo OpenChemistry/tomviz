@@ -25,19 +25,21 @@ class OperatorPython;
 
 class AddExpressionReaction : public pqReaction
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
   AddExpressionReaction(QAction* parent);
   virtual ~AddExpressionReaction();
 
-  static OperatorPython* addExpression(DataSource* source=NULL);
+  static OperatorPython* addExpression(DataSource* source = NULL);
+
 protected:
   void updateEnableState();
   void onTriggered() { this->addExpression(); }
 
 private:
-  Q_DISABLE_COPY(AddExpressionReaction);
+  Q_DISABLE_COPY(AddExpressionReaction)
 };
 }
 

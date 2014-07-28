@@ -13,34 +13,38 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_CloneDataReaction_h
-#define __TEM_CloneDataReaction_h
+#ifndef __DeleteDataReaction_h
+#define __DeleteDataReaction_h
 
 #include "pqReaction.h"
+
+class vtkSMProxy;
 
 namespace TEM
 {
 class DataSource;
 
-class CloneDataReaction : public pqReaction
+/// DeleteDataReaction handles the "Delete Data" action in TomViz. On trigger,
+/// this will delete the active data source and all Modules connected to it.
+class DeleteDataReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
-
 public:
-  CloneDataReaction(QAction* action);
-  virtual ~CloneDataReaction();
+  DeleteDataReaction(QAction* parentAction);
+  virtual ~DeleteDataReaction();
 
-  static DataSource* clone(DataSource* toClone = NULL);
+  /// Create a raw data source from the reader.
+  static void deleteDataSource(DataSource*);
 
 protected:
   /// Called when the action is triggered.
-  virtual void onTriggered() { this->clone(); }
+  virtual void onTriggered();
   virtual void updateEnableState();
 
 private:
-  Q_DISABLE_COPY(CloneDataReaction)
+  Q_DISABLE_COPY(DeleteDataReaction)
 };
-}
 
+}
 #endif

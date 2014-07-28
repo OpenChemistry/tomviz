@@ -28,8 +28,9 @@ namespace TEM
 /// Behavior to show a progress dialog for ParaView progress events.
 class ProgressBehavior : public QObject
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QObject Superclass;
+
 public:
   ProgressBehavior(QWidget* parent=NULL);
   ~ProgressBehavior();
@@ -39,7 +40,7 @@ private slots:
   void progress(const QString& message, int progress);
 
 private:
-  Q_DISABLE_COPY(ProgressBehavior);
+  Q_DISABLE_COPY(ProgressBehavior)
   QPointer<QProgressDialog> ProgressDialog;
 };
 }

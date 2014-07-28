@@ -43,14 +43,18 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
 
   // Show active module in the "Module Properties" panel.
   this->connect(&ActiveObjects::instance(), SIGNAL(moduleChanged(Module*)),
-    SLOT(setModule(Module*)));
+                SLOT(setModule(Module*)));
   this->connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-    SLOT(setView(vtkSMViewProxy*)));
+                SLOT(setView(vtkSMViewProxy*)));
 
-  this->connect(ui.AdvancedButton, SIGNAL(toggled(bool)), SLOT(updatePanel()));
-  this->connect(ui.SearchLineEdit, SIGNAL(textChanged(QString)), SLOT(updatePanel()));
+  this->connect(ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
+                SLOT(updatePanel()));
+  this->connect(ui.SearchBox, SIGNAL(textChanged(const QString&)),
+                SLOT(updatePanel()));
+
   this->connect(ui.Delete, SIGNAL(clicked()), SLOT(deleteModule()));
-  this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)), SLOT(render()));
+  this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+                SLOT(render()));
 }
 
 //-----------------------------------------------------------------------------
@@ -84,16 +88,14 @@ void ModulePropertiesPanel::setView(vtkSMViewProxy* view)
 void ModulePropertiesPanel::updatePanel()
 {
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
-  ui.ProxiesWidget->filterWidgets(
-    ui.AdvancedButton->isChecked(),
-    ui.SearchLineEdit->text());
+  ui.ProxiesWidget->filterWidgets(ui.SearchBox->isAdvancedSearchActive(),
+                                  ui.SearchBox->text());
 }
 
 //-----------------------------------------------------------------------------
 void ModulePropertiesPanel::deleteModule()
 {
-  ModuleManager::instance().removeModule(
-    this->Internals->ActiveModule);
+  ModuleManager::instance().removeModule(this->Internals->ActiveModule);
   this->render();
 }
 

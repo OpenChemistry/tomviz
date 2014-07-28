@@ -23,7 +23,6 @@
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
 
-
 namespace TEM
 {
 class DataSource;
@@ -68,11 +67,11 @@ public slots:
   /// Use these methods to delete/remove modules.
   void removeModule(Module*);
   void removeAllModules();
+  void removeAllModules(DataSource* source);
 
   /// Creates and add a new module.
-  Module* createAndAddModule(
-    const QString& type, DataSource* dataSource,
-    vtkSMViewProxy* view);
+  Module* createAndAddModule(const QString& type, DataSource* dataSource,
+                             vtkSMViewProxy* view);
 
   /// Register/Unregister data sources with the ModuleManager.
   void addDataSource(DataSource*);

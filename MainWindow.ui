@@ -58,16 +58,24 @@
     <addaction name="actionPythonConsole"/>
     <addaction name="actionMacros"/>
    </widget>
-   <widget class="QMenu" name="menuOperations">
+   <widget class="QMenu" name="menuData">
     <property name="title">
-     <string>Data Operators</string>
+     <string>Data</string>
     </property>
     <addaction name="actionClone"/>
     <addaction name="actionPython_Expression"/>
+    <addaction name="separator"/>
+    <addaction name="actionDeleteData"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
    </widget>
    <addaction name="menu_File"/>
-   <addaction name="menuOperations"/>
+   <addaction name="menuData"/>
    <addaction name="menuModules"/>
+   <addaction name="menuView"/>
    <addaction name="menuTools"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -79,7 +87,7 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="pipelineBrowserWidget">
-    <layout class="QVBoxLayout" name="verticalLayout">
+    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,3,0,1">
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
@@ -128,7 +136,7 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Data Operators&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Data Transforms&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
@@ -158,7 +166,7 @@
   </widget>
   <widget class="pqCameraToolbar" name="cameraToolbar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>Camera Toolbar</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -169,7 +177,7 @@
   </widget>
   <widget class="pqAxesToolbar" name="axesToolbar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>Axes Toolbar</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -192,7 +200,7 @@
   </widget>
   <widget class="pqVCRToolbar" name="vcrToolbar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>VCR Toolbar</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -212,6 +220,15 @@
     <number>2</number>
    </attribute>
    <widget class="TEM::ViewPropertiesPanel" name="viewPropertiesPanel"/>
+  </widget>
+  <widget class="QDockWidget" name="dockWidget_5">
+   <property name="windowTitle">
+    <string>Data Properties</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="TEM::DataPropertiesPanel" name="dockWidgetContents"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -261,7 +278,7 @@
   </action>
   <action name="actionPython_Expression">
    <property name="text">
-    <string>Python Expression</string>
+    <string>Transform</string>
    </property>
   </action>
   <action name="actionSaveState">
@@ -280,6 +297,18 @@
    </property>
    <property name="toolTip">
     <string>Reset application</string>
+   </property>
+  </action>
+  <action name="actionDeleteData">
+   <property name="icon">
+    <iconset resource="../ParaView3/ParaView/Qt/Widgets/Resources/QtWidgets.qrc">
+     <normaloff>:/QtWidgets/Icons/pqDelete32.png</normaloff>:/QtWidgets/Icons/pqDelete32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete Data &amp;&amp; Modules</string>
+   </property>
+   <property name="toolTip">
+    <string>Delete Data</string>
    </property>
   </action>
  </widget>
@@ -333,7 +362,17 @@
    <header>ViewPropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>TEM::DataPropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>DataPropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../ParaView3/ParaView/Qt/Components/Resources/pqComponents.qrc"/>
+  <include location="../ParaView3/ParaView/Qt/Core/Resources/pqCore.qrc"/>
+  <include location="../ParaView3/ParaView/Qt/Widgets/Resources/QtWidgets.qrc"/>
+ </resources>
  <connections/>
 </ui>

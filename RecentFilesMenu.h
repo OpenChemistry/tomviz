@@ -20,25 +20,33 @@
 #include <QAction>
 
 class QMenu;
+class vtkSMProxy;
 
 namespace TEM
 {
+
 /// Extends pqRecentFilesMenu to add support to open a data file customized for
 /// TomViz.
 class RecentFilesMenu : public QObject
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QObject Superclass;
+
 public:
   RecentFilesMenu(QMenu& menu, QObject* parent=NULL);
   virtual ~RecentFilesMenu();
 
+  /// Pushes a reader on the recent files stack.
+  static void pushDataReader(vtkSMProxy* readerProxy);
+  static void pushStateFile(const QString& filename);
+
 private slots:
   void aboutToShowMenu();
-  void triggeredMenu(QAction*);
+  void dataSourceTriggered();
+  void stateTriggered();
 
 private:
-  Q_DISABLE_COPY(RecentFilesMenu);
+  Q_DISABLE_COPY(RecentFilesMenu)
 };
 
 }

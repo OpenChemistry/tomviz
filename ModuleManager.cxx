@@ -139,9 +139,27 @@ void ModuleManager::removeAllModules()
 }
 
 //-----------------------------------------------------------------------------
-Module* ModuleManager::createAndAddModule(
-  const QString& type, DataSource* dataSource,
-  vtkSMViewProxy* view)
+void ModuleManager::removeAllModules(DataSource* source)
+{
+  Q_ASSERT(source);
+  QList<Module*> modules;
+  foreach (Module* module, this->Internals->Modules)
+    {
+    if (module->dataSource() == source)
+      {
+      modules.push_back(module);
+      }
+    }
+  foreach (Module* module, modules)
+    {
+    this->removeModule(module);
+    }
+}
+
+//-----------------------------------------------------------------------------
+Module* ModuleManager::createAndAddModule(const QString& type,
+                                          DataSource* dataSource,
+                                          vtkSMViewProxy* view)
 {
   if (!view || !dataSource)
     {
@@ -158,8 +176,8 @@ Module* ModuleManager::createAndAddModule(
 }
 
 //-----------------------------------------------------------------------------
-QList<Module*> ModuleManager::findModulesGeneric(
-  DataSource* dataSource, vtkSMViewProxy* view)
+QList<Module*> ModuleManager::findModulesGeneric(DataSource* dataSource,
+                                                 vtkSMViewProxy* view)
 {
   QList<Module*> modules;
   foreach (Module* module, this->Internals->Modules)
@@ -398,6 +416,13 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
 
     // create the data source.
     DataSource* dataSource = new DataSource(originalDataSources[odsid]);
+    if (!dataSource->deserialize(dsnode))
+      {
+      qWarning()
+        << "Failed to deserialze DataSource with id " << id
+        << ". Skipping it";
+      continue;
+      }
     this->addDataSource(dataSource);
     dataSources[id] = dataSource;
 

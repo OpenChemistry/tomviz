@@ -21,16 +21,17 @@
 #include "vtkObjectFactory.h"
 
 #include "MainWindow.h"
+#include "TomVizPythonConfig.h"
 
 #include <clocale>
 
-//we need to override the default options to enable streaming by default.
-//Streaming needs to be enabled for the dax representations
+// We need to override the default options to enable streaming by default.
+// Streaming needs to be enabled for the dax representations
 class TomoOptions : public pqOptions
 {
 public:
   static TomoOptions* New();
-  vtkTypeMacro(TomoOptions,pqOptions);
+  vtkTypeMacro(TomoOptions, pqOptions);
   virtual int GetEnableStreaming() { return 1; }
 
 protected:
@@ -44,6 +45,8 @@ int main(int argc, char** argv)
   QCoreApplication::setApplicationName("TomViz");
   QCoreApplication::setApplicationVersion("0.1.0");
   QCoreApplication::setOrganizationName("Kitware");
+
+  TEM::InitializePythonEnvironment(argc, argv);
 
   QApplication app(argc, argv);
   setlocale(LC_NUMERIC, "C");

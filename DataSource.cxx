@@ -15,17 +15,21 @@
 ******************************************************************************/
 #include "DataSource.h"
 
-#include "Operator.h"
+#include "OperatorPython.h"
 #include "Utilities.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
+#include "vtkPVArrayInformation.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTransferFunctionManager.h"
+#include "vtkSMTransferFunctionProxy.h"
 #include "vtkTrivialProducer.h"
+
 #include <vtk_pugixml.h>
 
 namespace TEM
@@ -37,6 +41,7 @@ public:
   vtkSmartPointer<vtkSMSourceProxy> OriginalDataSource;
   vtkWeakPointer<vtkSMSourceProxy> Producer;
   QList<QSharedPointer<Operator> > Operators;
+  vtkSmartPointer<vtkSMProxy> ColorMap;
 };
 
 //-----------------------------------------------------------------------------
@@ -64,6 +69,17 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
   controller->RegisterPipelineProxy(source);
   this->Internals->Producer = vtkSMSourceProxy::SafeDownCast(source);
 
+  // Setup color map for this data-source.
+  static unsigned int colorMapCounter=0;
+  colorMapCounter++;
+
+  vtkNew<vtkSMTransferFunctionManager> tfmgr;
+  this->Internals->ColorMap = tfmgr->GetColorTransferFunction(
+    QString("DataSourceColorMap%1").arg(colorMapCounter).toLatin1().data(), pxm);
+
+  // every time the data changes, we should update the color map.
+  this->connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
+
   this->resetData();
 }
 
@@ -78,23 +94,66 @@ DataSource::~DataSource()
 }
 
 //-----------------------------------------------------------------------------
+QString DataSource::filename() const
+{
+  vtkSMProxy* dataSource = this->originalDataSource();
+  return vtkSMPropertyHelper(dataSource,
+    vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
+}
+
+//-----------------------------------------------------------------------------
 bool DataSource::serialize(pugi::xml_node& ns) const
 {
   ns.append_attribute("number_of_operators").set_value(
     static_cast<int>(this->Internals->Operators.size()));
+
+  foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+    {
+    pugi::xml_node node = ns.append_child("Operator");
+    if (!op->serialize(node))
+      {
+      qWarning("failed to serialize Operator. Skipping it.");
+      ns.remove_child(node);
+      }
+    }
   return true;
 }
 
 //-----------------------------------------------------------------------------
-DataSource* DataSource::clone() const
+bool DataSource::deserialize(const pugi::xml_node& ns)
+{
+  int num_operators = ns.attribute("number_of_operators").as_int(-1);
+  if (num_operators < 0)
+    {
+    return false;
+    }
+
+  this->Internals->Operators.clear();
+  this->resetData();
+
+  for (pugi::xml_node node=ns.child("Operator"); node; node = node.next_sibling("Operator"))
+    {
+    QSharedPointer<OperatorPython> op (new OperatorPython());
+    if (op->deserialize(node))
+      {
+      this->addOperator(op);
+      }
+    }
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+DataSource* DataSource::clone(bool clone_operators) const
 {
   DataSource* newClone = new DataSource(this->Internals->OriginalDataSource);
-  // now, clone the operators.
-  foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+  if (clone_operators)
     {
-    // don't think operators should be shared. we need to clone them
-    // to avoid side effects.
-    newClone->addOperator(op);
+    // now, clone the operators.
+    foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+      {
+      QSharedPointer<Operator> opClone(op->clone());
+      newClone->addOperator(opClone);
+      }
     }
   return newClone;
 }
@@ -136,6 +195,7 @@ void DataSource::operate(Operator* op)
     tp->Modified();
     tp->GetOutputDataObject(0)->Modified();
     this->Internals->Producer->MarkModified(NULL);
+    this->Internals->Producer->UpdatePipeline();
     }
 
   emit this->dataChanged();
@@ -173,20 +233,50 @@ void DataSource::resetData()
   Q_ASSERT(tp);
   tp->SetOutput(clone);
   clone->FastDelete();
+  emit this->dataChanged();
 }
 
 //-----------------------------------------------------------------------------
 void DataSource::operatorTransformModified()
 {
-  this->resetData();
-
   bool prev = this->blockSignals(true);
+
+  this->resetData();
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
     {
     this->operate(op.data());
     }
   this->blockSignals(prev);
   emit this->dataChanged();
+}
+
+//-----------------------------------------------------------------------------
+vtkSMProxy* DataSource::colorMap() const
+{
+  return this->Internals->ColorMap;
+}
+
+//-----------------------------------------------------------------------------
+vtkSMProxy* DataSource::opacityMap() const
+{
+  return this->Internals->ColorMap?
+  vtkSMPropertyHelper(this->Internals->ColorMap, "ScalarOpacityFunction").GetAsProxy() : NULL;
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::updateColorMap()
+{
+  // rescale the color/opacity maps for the data source.
+  vtkSMProxy* cmap = this->Internals->ColorMap;
+  vtkSMProxy* omap = vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
+  vtkPVArrayInformation* ainfo = TEM::scalarArrayInformation(this->producer());
+  if (ainfo != NULL && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
+    {
+    // assuming single component arrays.
+    Q_ASSERT(ainfo->GetNumberOfComponents() == 1);
+    vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, ainfo->GetComponentRange(0));
+    vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ainfo->GetComponentRange(0));
+    }
 }
 
 }
