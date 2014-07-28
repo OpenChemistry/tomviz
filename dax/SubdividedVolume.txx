@@ -28,10 +28,27 @@
 
 #include "Worklets.h"
 
+//for std::swap (c++98 / c++11 have different locations for swap)
+#include <algorithm>
+#include <utility>
+
+
 namespace TEM
 {
 namespace accel
 {
+//----------------------------------------------------------------------------
+SubdividedVolume::SubdividedVolume( ):
+  Origin(),
+  Spacing(),
+  Extent(),
+  SubGrids(),
+  SubGridCellIJKOffset(),
+  PerSubGridLowHighs(),
+  PerSubGridValues()
+{
+
+}
 
 //----------------------------------------------------------------------------
 template< typename ImageDataType, typename LoggerType >
@@ -115,11 +132,53 @@ SubdividedVolume::SubdividedVolume( std::size_t desiredSubGridsPerDim,
 
   //now create the rest of the vectors to the same size as the subgrids
   this->PerSubGridLowHighs.resize( this->SubGrids.size() );
-  this->PerSubGridValues.resize( this->SubGrids.size() );
+  this->PerSubGridValues.resize( this->SubGrids.size(), NULL );
 
   logger << "Computed Sub Grids: " << timer.GetElapsedTime()
          << " sec ( " << data->GetNumberOfPoints() << " points )"
          << std::endl;
+}
+
+//----------------------------------------------------------------------------
+SubdividedVolume::SubdividedVolume( const SubdividedVolume& other ):
+  Origin(other.Origin),
+  Spacing(other.Spacing),
+  Extent(other.Extent),
+  SubGrids(other.SubGrids),
+  SubGridCellIJKOffset(other.SubGridCellIJKOffset),
+  PerSubGridLowHighs(other.PerSubGridLowHighs),
+  PerSubGridValues(other.PerSubGridValues)
+{
+
+}
+
+//----------------------------------------------------------------------------
+SubdividedVolume::~SubdividedVolume()
+{
+  //release all the data arrays
+  const std::size_t size = this->numSubGrids();
+  for(std::size_t i=0; i < size; ++i)
+    {
+    vtkDataArray* da = this->subGridValues(i);
+    if(da)
+      {
+      da->Delete();
+      }
+    }
+}
+
+
+//----------------------------------------------------------------------------
+SubdividedVolume& SubdividedVolume::operator= (SubdividedVolume other)
+{
+  std::swap(this->Origin,other.Origin);
+  std::swap(this->Spacing,other.Spacing);
+  std::swap(this->Extent,other.Extent);
+  std::swap(this->SubGrids,other.SubGrids);
+  std::swap(this->SubGridCellIJKOffset,other.SubGridCellIJKOffset);
+  std::swap(this->PerSubGridLowHighs,other.PerSubGridLowHighs);
+  std::swap(this->PerSubGridValues,other.PerSubGridValues);
+  return *this;
 }
 
 //----------------------------------------------------------------------------
