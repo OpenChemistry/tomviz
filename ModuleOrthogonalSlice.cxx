@@ -77,14 +77,22 @@ bool ModuleOrthogonalSlice::initialize(DataSource* dataSource, vtkSMViewProxy* v
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Slice");
 
-  // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(this->Representation,
-                      "LookupTable").Set(dataSource->colorMap());
-  vtkSMPropertyHelper(this->Representation,
-                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
-
+  // pick proper color/opacity maps.
+  this->updateColorMap();
   this->Representation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleOrthogonalSlice::updateColorMap()
+{
+  Q_ASSERT(this->Representation);
+
+  vtkSMPropertyHelper(this->Representation,
+                      "LookupTable").Set(this->colorMap());
+  vtkSMPropertyHelper(this->Representation,
+                      "ScalarOpacityFunction").Set(this->opacityMap());
+  this->Representation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -125,18 +133,6 @@ void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
     << "SliceMode"
     << "Slice";
   panel->addProxy(this->Representation, "Slice", reprProperties, true);
-
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  Q_ASSERT(lut);
-
-  QStringList list;
-  list
-    << "Mapping Data"
-    << "EnableOpacityMapping"
-    << "RGBPoints"
-    << "ScalarOpacityFunction"
-    << "UseLogScale";
-  panel->addProxy(lut, "Color Map", list, true);
   this->Superclass::addToPanel(panel);
 }
 

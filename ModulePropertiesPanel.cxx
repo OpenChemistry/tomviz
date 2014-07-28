@@ -55,6 +55,9 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
   this->connect(ui.Delete, SIGNAL(clicked()), SLOT(deleteModule()));
   this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
                 SLOT(render()));
+
+  this->connect(ui.DetachColorMap, SIGNAL(clicked(bool)),
+                SLOT(detachColorMap(bool)));
 }
 
 //-----------------------------------------------------------------------------
@@ -68,9 +71,15 @@ void ModulePropertiesPanel::setModule(Module* module)
   this->Internals->ActiveModule = module;
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
   ui.ProxiesWidget->clear();
+  ui.DetachColorMap->setVisible(false);
   if (module)
     {
     module->addToPanel(ui.ProxiesWidget);
+    if (module->isColorMapNeeded())
+      {
+      ui.DetachColorMap->setVisible(true);
+      ui.DetachColorMap->setChecked(module->useDetachedColorMap());
+      }
     }
   ui.ProxiesWidget->updateLayout();
   this->updatePanel();
@@ -106,6 +115,18 @@ void ModulePropertiesPanel::render()
   if (view)
     {
     view->render();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void ModulePropertiesPanel::detachColorMap(bool val)
+{
+  Module* module = this->Internals->ActiveModule;
+  if (module)
+    {
+    module->setUseDetachedColorMap(val);
+    this->setModule(module); // refreshes the module.
+    this->render();
     }
 }
 

@@ -79,11 +79,20 @@ bool ModuleContour::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Surface");
 
-  // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(this->ContourRepresentation, "LookupTable").Set(dataSource->colorMap());
+  // use proper color map.
+  this->updateColorMap();
 
   this->ContourRepresentation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleContour::updateColorMap()
+{
+  Q_ASSERT(this->ContourRepresentation);
+  vtkSMPropertyHelper(this->ContourRepresentation,
+                      "LookupTable").Set(this->colorMap());
+  this->ContourRepresentation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------

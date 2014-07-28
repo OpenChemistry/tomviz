@@ -19,7 +19,6 @@
 #include "Utilities.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
-#include "vtkPVArrayInformation.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
@@ -27,7 +26,6 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMTransferFunctionManager.h"
-#include "vtkSMTransferFunctionProxy.h"
 #include "vtkTrivialProducer.h"
 
 #include <vtk_pugixml.h>
@@ -267,16 +265,7 @@ vtkSMProxy* DataSource::opacityMap() const
 void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.
-  vtkSMProxy* cmap = this->Internals->ColorMap;
-  vtkSMProxy* omap = vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
-  vtkPVArrayInformation* ainfo = TEM::scalarArrayInformation(this->producer());
-  if (ainfo != NULL && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
-    {
-    // assuming single component arrays.
-    Q_ASSERT(ainfo->GetNumberOfComponents() == 1);
-    vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, ainfo->GetComponentRange(0));
-    vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ainfo->GetComponentRange(0));
-    }
+  TEM::rescaleColorMap(this->colorMap(), this);
 }
 
 }

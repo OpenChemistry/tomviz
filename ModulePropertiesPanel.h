@@ -39,6 +39,7 @@ private slots:
   void updatePanel();
   void deleteModule();
   void render();
+  void detachColorMap(bool);
 
 private:
   Q_DISABLE_COPY(ModulePropertiesPanel)

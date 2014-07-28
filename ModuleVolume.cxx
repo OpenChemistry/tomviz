@@ -77,13 +77,24 @@ bool ModuleVolume::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Volume");
 
-  // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(this->Representation,
-                      "LookupTable").Set(dataSource->colorMap());
-  vtkSMPropertyHelper(this->Representation,
-                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
+  this->updateColorMap();
   this->Representation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleVolume::updateColorMap()
+{
+  Q_ASSERT(this->Representation);
+  vtkSMPropertyHelper(this->Representation,
+                      "LookupTable").Set(this->colorMap());
+  vtkSMPropertyHelper(this->Representation,
+                      "ScalarOpacityFunction").Set(this->opacityMap());
+  this->Representation->UpdateVTKObjects();
+
+  // BUG: volume mappers don't update property when LUT is changed and has an
+  // older Mtime. Fix for now by forcing the LUT to update.
+  vtkObject::SafeDownCast(this->colorMap()->GetClientSideObject())->Modified();
 }
 
 //-----------------------------------------------------------------------------
@@ -114,26 +125,6 @@ bool ModuleVolume::visibility() const
   return vtkSMPropertyHelper(this->Representation,
                              "Visibility").GetAsInt() != 0;
 }
-
-//-----------------------------------------------------------------------------
-void ModuleVolume::addToPanel(pqProxiesWidget* panel)
-{
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation,
-                                        "LookupTable").GetAsProxy();
-  Q_ASSERT(lut);
-
-  QStringList list;
-  list
-    << "Mapping Data"
-    << "EnableOpacityMapping"
-    << "RGBPoints"
-    << "ScalarOpacityFunction"
-    << "UseLogScale";
-  panel->addProxy(lut, "Color Map", list, true);
-
-  this->Superclass::addToPanel(panel);
-}
-
 
 //-----------------------------------------------------------------------------
 bool ModuleVolume::serialize(pugi::xml_node& ns) const

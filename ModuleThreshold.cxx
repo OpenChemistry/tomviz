@@ -22,6 +22,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
@@ -78,8 +79,8 @@ bool ModuleThreshold::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   rangeProperty.Get(range, 2);
   double delta = (range[1] - range[0]);
   double mid = ((range[0] + range[1]) / 2.0);
-  newRange[0] = mid - 0.001 * delta;
-  newRange[1] = mid + 0.001 * delta;
+  newRange[0] = mid - 0.1 * delta;
+  newRange[1] = mid + 0.1 * delta;
   rangeProperty.Set(newRange, 2);
   this->ThresholdFilter->UpdateVTKObjects();
 
@@ -87,17 +88,25 @@ bool ModuleThreshold::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   this->ThresholdRepresentation = controller->Show(this->ThresholdFilter, 0,
                                                    view);
   Q_ASSERT(this->ThresholdRepresentation);
-  vtkSMPropertyHelper(this->ThresholdRepresentation,
-                      "Representation").Set("Surface");
+  vtkSMRepresentationProxy::SetRepresentationType(this->ThresholdRepresentation,
+                                                  "Surface");
+  this->updateColorMap();
+  this->ThresholdRepresentation->UpdateVTKObjects();
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleThreshold::updateColorMap()
+{
+  Q_ASSERT(this->ThresholdRepresentation);
 
   // by default, use the data source's color/opacity maps.
   vtkSMPropertyHelper(this->ThresholdRepresentation,
-                      "LookupTable").Set(dataSource->colorMap());
+                      "LookupTable").Set(this->colorMap());
   vtkSMPropertyHelper(this->ThresholdRepresentation,
-                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
+                      "ScalarOpacityFunction").Set(this->opacityMap());
 
   this->ThresholdRepresentation->UpdateVTKObjects();
-  return true;
 }
 
 //-----------------------------------------------------------------------------

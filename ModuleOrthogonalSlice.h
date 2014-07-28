@@ -41,6 +41,10 @@ public:
   virtual void addToPanel(pqProxiesWidget*);
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
+  virtual bool isColorMapNeeded() const { return true; }
+
+protected:
+  virtual void updateColorMap();
 
 private:
   Q_DISABLE_COPY(ModuleOrthogonalSlice)
