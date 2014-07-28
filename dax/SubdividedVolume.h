@@ -43,13 +43,19 @@ namespace accel
                                        CountingIdContainerType>
           PointCloudSubGridReturnType;
 
-  public:
-  SubdividedVolume() { }
+public:
+
+  SubdividedVolume();
 
   template< typename ImageDataType, typename LoggerType >
   inline SubdividedVolume( std::size_t subGridsPerDim,
                            ImageDataType* data,
                            LoggerType& logger );
+
+  SubdividedVolume( const SubdividedVolume& other);
+
+  ~SubdividedVolume();
+  SubdividedVolume& operator= (SubdividedVolume other);
 
   template<typename IteratorType, typename LoggerType>
   inline void ComputeHighLows(IteratorType begin, IteratorType end, LoggerType& logger);
@@ -70,11 +76,6 @@ namespace accel
   vtkDataArray* subGridValues( std::size_t index ) const
     { return PerSubGridValues[index]; }
 
-  void ReleaseAllResources()
-    {
-    PerSubGridLowHighs.clear();
-    SubGrids.clear();
-    }
 
   std::size_t numSubGrids() const { return SubGrids.size(); }
 
