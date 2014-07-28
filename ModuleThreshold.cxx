@@ -89,6 +89,13 @@ bool ModuleThreshold::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   Q_ASSERT(this->ThresholdRepresentation);
   vtkSMPropertyHelper(this->ThresholdRepresentation,
                       "Representation").Set("Surface");
+
+  // by default, use the data source's color/opacity maps.
+  vtkSMPropertyHelper(this->ThresholdRepresentation,
+                      "LookupTable").Set(dataSource->colorMap());
+  vtkSMPropertyHelper(this->ThresholdRepresentation,
+                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
+
   this->ThresholdRepresentation->UpdateVTKObjects();
   return true;
 }
