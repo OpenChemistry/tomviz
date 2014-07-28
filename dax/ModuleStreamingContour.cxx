@@ -83,11 +83,19 @@ bool ModuleStreamingContour::initialize(DataSource* dataSource, vtkSMViewProxy* 
                                                 propertyName,
                                                 vtkDataObject::POINT );
 
-  // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(this->ContourRepresentation, "LookupTable").Set(dataSource->colorMap());
+  this->updateColorMap();
   this->ContourRepresentation->UpdateVTKObjects();
 
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleStreamingContour::updateColorMap()
+{
+  Q_ASSERT(this->ContourRepresentation);
+  vtkSMPropertyHelper(this->ContourRepresentation,
+                      "LookupTable").Set(this->colorMap());
+  this->ContourRepresentation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -168,7 +176,8 @@ bool ModuleStreamingContour::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool ModuleStreamingContour::deserialize(const pugi::xml_node& ns)
 {
-  return TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation"));
+  return TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
+    this->Superclass::deserialize(ns);
 }
 
 } // end of namespace TEM

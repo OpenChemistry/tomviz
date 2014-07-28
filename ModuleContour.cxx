@@ -79,11 +79,20 @@ bool ModuleContour::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Surface");
 
-  // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(this->ContourRepresentation, "LookupTable").Set(dataSource->colorMap());
+  // use proper color map.
+  this->updateColorMap();
 
   this->ContourRepresentation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleContour::updateColorMap()
+{
+  Q_ASSERT(this->ContourRepresentation);
+  vtkSMPropertyHelper(this->ContourRepresentation,
+                      "LookupTable").Set(this->colorMap());
+  this->ContourRepresentation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -173,14 +182,16 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
     ns.remove_child(node);
     return false;
     }
-  return true;
+
+  return this->Superclass::serialize(ns);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleContour::deserialize(const pugi::xml_node& ns)
 {
   return TEM::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
-    TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation"));
+    TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
+    this->Superclass::deserialize(ns);
 }
 
 } // end of namespace TEM

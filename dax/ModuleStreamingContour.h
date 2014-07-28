@@ -43,6 +43,10 @@ public:
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
 
+  // FIXME: return true once ModuleStreamingContour can produce scalars to color
+  // with.
+  virtual bool isColorMapNeeded() const { return false; }
+
   void setIsoValues(const QList<double>& values);
   void setIsoValue(double value)
     {
@@ -50,6 +54,9 @@ public:
     values << value;
     this->setIsoValues(values);
     }
+
+protected:
+  virtual void updateColorMap();
 
 private:
   Q_DISABLE_COPY(ModuleStreamingContour)

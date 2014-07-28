@@ -15,13 +15,17 @@
 ******************************************************************************/
 #include "Utilities.h"
 
+#include "DataSource.h"
 #include "vtkNew.h"
+#include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMNamedPropertyIterator.h"
+#include "vtkSMPropertyHelper.h"
+#include "vtkSMTransferFunctionProxy.h"
 #include "vtkStringList.h"
 
 #include <sstream>
@@ -105,5 +109,23 @@ vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)
   return dinfo? dinfo->GetPointDataInformation()->GetAttributeInformation(
     vtkDataSetAttributes::SCALARS) : NULL;
 }
+
+
+//---------------------------------------------------------------------------
+bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
+{
+  // rescale the color/opacity maps for the data source.
+  vtkSMProxy* cmap = colorMap;
+  vtkSMProxy* omap = vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
+  vtkPVArrayInformation* ainfo = TEM::scalarArrayInformation(dataSource->producer());
+  if (ainfo != NULL && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
+    {
+    // assuming single component arrays.
+    Q_ASSERT(ainfo->GetNumberOfComponents() == 1);
+    vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, ainfo->GetComponentRange(0));
+    vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ainfo->GetComponentRange(0));
+    }
+}
+
 
 }

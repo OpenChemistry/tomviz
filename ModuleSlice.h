@@ -40,9 +40,12 @@ public:
   virtual bool finalize();
   virtual bool setVisibility(bool val);
   virtual bool visibility() const;
-  virtual void addToPanel(pqProxiesWidget*);
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
+  virtual bool isColorMapNeeded() const { return true; }
+
+protected:
+  virtual void updateColorMap();
 
 private:
   //should only be called from initialize after the PassThrough has been setup
@@ -52,7 +55,6 @@ private:
 
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkSmartPointer<vtkColorImagePlaneWidget> Widget;
-  vtkWeakPointer<vtkSMProxy> TransferFunction;
 };
 
 }

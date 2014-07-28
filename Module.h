@@ -19,11 +19,13 @@
 #include <QIcon>
 #include <QObject>
 #include <QPointer>
+#include <QScopedPointer>
 #include "vtkWeakPointer.h"
 #include <vtk_pugixml.h>
 
-class vtkSMViewProxy;
 class pqProxiesWidget;
+class vtkSMProxy;
+class vtkSMViewProxy;
 
 namespace TEM
 {
@@ -62,8 +64,17 @@ public:
   vtkSMViewProxy* view() const;
 
   /// serialize the state of the module.
-  virtual bool serialize(pugi::xml_node& ns) const=0;
-  virtual bool deserialize(const pugi::xml_node& ns)=0;
+  virtual bool serialize(pugi::xml_node& ns) const;
+  virtual bool deserialize(const pugi::xml_node& ns);
+
+  /// Modules that use transfer functions should override this method to return
+  /// true.
+  virtual bool isColorMapNeeded() const { return false; }
+
+  /// Flag indicating whether the module uses a "detached" color map or not.
+  /// This is only applicable when isColorMapNeeded() return true.
+  void setUseDetachedColorMap(bool);
+  bool useDetachedColorMap() const { return this->UseDetachedColorMap; }
 
 public slots:
   /// Set the visibility for this module. Subclasses should override this method
@@ -80,10 +91,27 @@ public slots:
   /// panel.
   virtual void addToPanel(pqProxiesWidget* panel);
 
+protected:
+  /// Modules that use transfer functions for color/opacity should override this
+  /// method to set the color map on appropriate representations. This will be
+  /// called when the color map proxy is changed, for example, when
+  /// setUseDetachedColorMap is toggled.
+  virtual void updateColorMap() {}
+
+  /// Subclasses can use this method to get the current color/opacity maps.
+  /// This will either return the maps from the data source or detached ones
+  /// based on the UseDetachedColorMap flag.
+  vtkSMProxy* colorMap() const;
+  vtkSMProxy* opacityMap() const;
+
 private:
   Q_DISABLE_COPY(Module)
   QPointer<DataSource> ADataSource;
   vtkWeakPointer<vtkSMViewProxy> View;
+  bool UseDetachedColorMap;
+
+  class MInternals;
+  const QScopedPointer<MInternals> Internals;
 };
 
 }

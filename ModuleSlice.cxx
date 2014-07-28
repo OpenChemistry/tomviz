@@ -135,28 +135,13 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer)
   this->Widget->SetResliceInterpolateToLinear();
 
   //Construct the transfer function proxy for the widget
-  vtkNew<vtkSMTransferFunctionManager> tfm;
-  this->TransferFunction = tfm->GetColorTransferFunction(propertyName,pxm);
-
-  //set the color range to the transfer function
-  vtkPVDataInformation* info = producer->GetDataInformation();
-  vtkPVArrayInformation* arrayInfo = info->GetArrayInformation(propertyName,
-                                                               vtkDataObject::POINT);
-  if(arrayInfo)
-    {
-    double range[2];
-    arrayInfo->GetComponentRange(0,range); //we only deal with scalar arrays
-
-    vtkSMTransferFunctionProxy::SafeDownCast(this->TransferFunction)
-                                            ->RescaleTransferFunction(range);
-    }
+  vtkSMProxy* lut = this->colorMap();
 
   //set the widgets lookup table to be the one that the transfer function
   //manager is using
-  vtkScalarsToColors* stc = vtkScalarsToColors::SafeDownCast(
-                                this->TransferFunction->GetClientSideObject());
+  vtkScalarsToColors* stc =
+    vtkScalarsToColors::SafeDownCast(lut->GetClientSideObject());
   this->Widget->SetLookupTable(stc);
-
 
   //lastly we set up the input connection
   this->Widget->SetInputConnection(passThroughAlg->GetOutputPort());
@@ -167,13 +152,27 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer)
 }
 
 //-----------------------------------------------------------------------------
+void ModuleSlice::updateColorMap()
+{
+  Q_ASSERT(this->Widget);
+
+  //Construct the transfer function proxy for the widget
+  vtkSMProxy* lut = this->colorMap();
+
+  //set the widgets lookup table to be the one that the transfer function
+  //manager is using
+  vtkScalarsToColors* stc =
+    vtkScalarsToColors::SafeDownCast(lut->GetClientSideObject());
+  this->Widget->SetLookupTable(stc);
+}
+
+//-----------------------------------------------------------------------------
 bool ModuleSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(this->PassThrough);
 
   this->PassThrough = NULL;
-  this->TransferFunction = NULL;
 
   if(this->Widget != NULL)
     {
@@ -200,76 +199,17 @@ bool ModuleSlice::visibility() const
 }
 
 //-----------------------------------------------------------------------------
-void ModuleSlice::addToPanel(pqProxiesWidget* panel)
-{
-  Q_ASSERT(this->Widget);
-  Q_ASSERT(this->TransferFunction);
-
-  QStringList list;
-  list
-    << "Mapping Data"
-    << "EnableOpacityMapping"
-    << "RGBPoints"
-    << "ScalarOpacityFunction"
-    << "UseLogScale";
-  panel->addProxy(this->TransferFunction, "Color Map", list, true);
-  this->Superclass::addToPanel(panel);
-}
-
-//-----------------------------------------------------------------------------
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
 {
-  // vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  // vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
-  // Q_ASSERT(lut && sof);
-
-  // QStringList reprProperties;
-  // reprProperties
-  //   << "SliceMode"
-  //   << "Slice"
-  //   << "Visibility";
-  // pugi::xml_node nodeR = ns.append_child("Representation");
-  // pugi::xml_node nodeL = ns.append_child("LookupTable");
-  // pugi::xml_node nodeS = ns.append_child("ScalarOpacityFunction");
-  // return (TEM::serialize(this->Representation, nodeR, reprProperties) &&
-  //   TEM::serialize(lut, nodeL) &&
-  //   TEM::serialize(sof, nodeS));
-  return false;
+  // FIXME: serialize slice properties.
+  return this->Superclass::serialize(ns);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 {
-  return false;
-  // vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  // vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
-  // if (TEM::deserialize(this->Representation, ns.child("Representation")))
-  //   {
-  //   vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").Set(sof);
-  //   this->Representation->UpdateVTKObjects();
-  //   }
-  // else
-  //   {
-  //   return false;
-  //   }
-  // if (TEM::deserialize(lut, ns.child("LookupTable")))
-  //   {
-  //   vtkSMPropertyHelper(lut, "ScalarOpacityFunction").Set(sof);
-  //   lut->UpdateVTKObjects();
-  //   }
-  // else
-  //   {
-  //   return false;
-  //   }
-  // if (TEM::deserialize(sof, ns.child("ScalarOpacityFunction")))
-  //   {
-  //   sof->UpdateVTKObjects();
-  //   }
-  // else
-  //   {
-  //   return false;
-  //   }
-  // return true;
+  // FIXME: deserialize slice properties.
+  return this->Superclass::deserialize(ns);
 }
 
 }

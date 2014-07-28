@@ -77,14 +77,22 @@ bool ModuleOrthogonalSlice::initialize(DataSource* dataSource, vtkSMViewProxy* v
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Slice");
 
-  // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(this->Representation,
-                      "LookupTable").Set(dataSource->colorMap());
-  vtkSMPropertyHelper(this->Representation,
-                      "ScalarOpacityFunction").Set(dataSource->opacityMap());
-
+  // pick proper color/opacity maps.
+  this->updateColorMap();
   this->Representation->UpdateVTKObjects();
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleOrthogonalSlice::updateColorMap()
+{
+  Q_ASSERT(this->Representation);
+
+  vtkSMPropertyHelper(this->Representation,
+                      "LookupTable").Set(this->colorMap());
+  vtkSMPropertyHelper(this->Representation,
+                      "ScalarOpacityFunction").Set(this->opacityMap());
+  this->Representation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
@@ -125,73 +133,30 @@ void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
     << "SliceMode"
     << "Slice";
   panel->addProxy(this->Representation, "Slice", reprProperties, true);
-
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  Q_ASSERT(lut);
-
-  QStringList list;
-  list
-    << "Mapping Data"
-    << "EnableOpacityMapping"
-    << "RGBPoints"
-    << "ScalarOpacityFunction"
-    << "UseLogScale";
-  panel->addProxy(lut, "Color Map", list, true);
   this->Superclass::addToPanel(panel);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
 {
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
-  Q_ASSERT(lut && sof);
-
   QStringList reprProperties;
   reprProperties
     << "SliceMode"
     << "Slice"
     << "Visibility";
   pugi::xml_node nodeR = ns.append_child("Representation");
-  pugi::xml_node nodeL = ns.append_child("LookupTable");
-  pugi::xml_node nodeS = ns.append_child("ScalarOpacityFunction");
   return (TEM::serialize(this->Representation, nodeR, reprProperties) &&
-    TEM::serialize(lut, nodeL) &&
-    TEM::serialize(sof, nodeS));
+    this->Superclass::serialize(ns));
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
 {
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
-  if (TEM::deserialize(this->Representation, ns.child("Representation")))
-    {
-    vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").Set(sof);
-    this->Representation->UpdateVTKObjects();
-    }
-  else
+  if (!TEM::deserialize(this->Representation, ns.child("Representation")))
     {
     return false;
     }
-  if (TEM::deserialize(lut, ns.child("LookupTable")))
-    {
-    vtkSMPropertyHelper(lut, "ScalarOpacityFunction").Set(sof);
-    lut->UpdateVTKObjects();
-    }
-  else
-    {
-    return false;
-    }
-  if (TEM::deserialize(sof, ns.child("ScalarOpacityFunction")))
-    {
-    sof->UpdateVTKObjects();
-    }
-  else
-    {
-    return false;
-    }
-  return true;
+  return this->Superclass::deserialize(ns);
 }
 
 }

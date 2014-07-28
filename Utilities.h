@@ -33,6 +33,8 @@ class vtkPVArrayInformation;
 namespace TEM
 {
 
+class DataSource;
+
 //===========================================================================
 // Functions for converting from pqProxy to vtkSMProxy and vice-versa.
 //===========================================================================
@@ -122,6 +124,12 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in, vtkSMProxyLocator*
 /// Returns the vtkPVArrayInformation for scalars array produced by the given
 /// source proxy.
 vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy);
+
+//---------------------------------------------------------------------------
+/// Rescales the colorMap (and associated opacityMap) using the transformed data
+/// range from the data source. This will respect the "LockScalarRange" property
+/// on the colorMap i.e. if user locked the scalar range, it won't be rescaled.
+bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource);
 
 }
 

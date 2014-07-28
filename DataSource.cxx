@@ -19,7 +19,6 @@
 #include "Utilities.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
-#include "vtkPVArrayInformation.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
@@ -27,7 +26,6 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMTransferFunctionManager.h"
-#include "vtkSMTransferFunctionProxy.h"
 #include "vtkTrivialProducer.h"
 
 #include <vtk_pugixml.h>
@@ -104,6 +102,12 @@ QString DataSource::filename() const
 //-----------------------------------------------------------------------------
 bool DataSource::serialize(pugi::xml_node& ns) const
 {
+  pugi::xml_node node = ns.append_child("ColorMap");
+  TEM::serialize(this->colorMap(), node);
+
+  node = ns.append_child("OpacityMap");
+  TEM::serialize(this->opacityMap(), node);
+
   ns.append_attribute("number_of_operators").set_value(
     static_cast<int>(this->Internals->Operators.size()));
 
@@ -122,6 +126,12 @@ bool DataSource::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool DataSource::deserialize(const pugi::xml_node& ns)
 {
+  TEM::deserialize(this->colorMap(), ns.child("ColorMap"));
+  TEM::deserialize(this->opacityMap(), ns.child("OpacityMap"));
+  vtkSMPropertyHelper(this->colorMap(),
+                      "ScalarOpacityFunction").Set(this->opacityMap());
+  this->colorMap()->UpdateVTKObjects();
+
   int num_operators = ns.attribute("number_of_operators").as_int(-1);
   if (num_operators < 0)
     {
@@ -267,16 +277,7 @@ vtkSMProxy* DataSource::opacityMap() const
 void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.
-  vtkSMProxy* cmap = this->Internals->ColorMap;
-  vtkSMProxy* omap = vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
-  vtkPVArrayInformation* ainfo = TEM::scalarArrayInformation(this->producer());
-  if (ainfo != NULL && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
-    {
-    // assuming single component arrays.
-    Q_ASSERT(ainfo->GetNumberOfComponents() == 1);
-    vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, ainfo->GetComponentRange(0));
-    vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ainfo->GetComponentRange(0));
-    }
+  TEM::rescaleColorMap(this->colorMap(), this);
 }
 
 }

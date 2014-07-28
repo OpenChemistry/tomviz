@@ -43,6 +43,7 @@ public:
   virtual void addToPanel(pqProxiesWidget*);
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
+  virtual bool isColorMapNeeded() const { return true; }
 
   void setIsoValues(const QList<double>& values);
   void setIsoValue(double value)
@@ -51,6 +52,9 @@ public:
     values << value;
     this->setIsoValues(values);
     }
+
+protected:
+  virtual void updateColorMap();
 
 private:
   Q_DISABLE_COPY(ModuleContour)
