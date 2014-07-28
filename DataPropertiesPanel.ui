@@ -15,11 +15,14 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="FileName">
-     <property name="text">
-      <string>TextLabel</string>
+    <widget class="QLineEdit" name="FileName">
+     <property name="autoFillBackground">
+      <bool>true</bool>
      </property>
-     <property name="wordWrap">
+     <property name="frame">
+      <bool>false</bool>
+     </property>
+     <property name="readOnly">
       <bool>true</bool>
      </property>
     </widget>
