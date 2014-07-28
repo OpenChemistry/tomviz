@@ -17,9 +17,12 @@
 #define __ModuleMenu_h
 
 #include <QObject>
+#include <QPointer>
 
-class QMenu;
 class QAction;
+class QMenu;
+class QToolBar;
+
 namespace TEM
 {
 
@@ -29,22 +32,20 @@ namespace TEM
 class ModuleMenu : public QObject
 {
   Q_OBJECT
-
   typedef QObject Superclass;
 
 public:
-  ModuleMenu(QMenu* parentMenu);
+  ModuleMenu(QToolBar* toolBar, QMenu* parentMenu, QObject* parent=NULL);
   virtual ~ModuleMenu();
 
-  /// returns parent menu.
-  QMenu* parentMenu() const;
-
 private slots:
-  void aboutToShow();
+  void updateActions();
   void triggered(QAction* maction);
 
 private:
-  Q_DISABLE_COPY(ModuleMenu)
+  Q_DISABLE_COPY(ModuleMenu);
+  QPointer<QMenu> Menu;
+  QPointer<QToolBar> ToolBar;
 };
 
 }

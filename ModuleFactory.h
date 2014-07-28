@@ -17,6 +17,7 @@
 #define __ModuleFactory_h
 
 #include <QObject>
+#include <QIcon>
 
 class vtkSMViewProxy;
 
@@ -40,6 +41,9 @@ public:
 
   /// Returns the type for a module instance.
   static const char* moduleType(Module* module);
+
+  /// Returns the icon for a module.
+  static QIcon moduleIcon(const QString& type);
 
 private:
   ModuleFactory();

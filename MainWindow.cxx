@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new CloneDataReaction(ui.actionClone);
   new AddExpressionReaction(ui.actionPython_Expression);
 
-  new ModuleMenu(ui.menuModules);
+  new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSaveDebuggingState);
 
