@@ -64,8 +64,8 @@ public:
   vtkSMViewProxy* view() const;
 
   /// serialize the state of the module.
-  virtual bool serialize(pugi::xml_node& ns) const=0;
-  virtual bool deserialize(const pugi::xml_node& ns)=0;
+  virtual bool serialize(pugi::xml_node& ns) const;
+  virtual bool deserialize(const pugi::xml_node& ns);
 
   /// Modules that use transfer functions should override this method to return
   /// true.

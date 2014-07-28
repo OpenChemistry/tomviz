@@ -150,11 +150,11 @@ void ModuleAccelThreshold::addToPanel(pqProxiesWidget* panel)
   representationProperties
     << "Color"
     << "ColorEditor"
-    << "LookupTable"
     << "Representation"
     << "Opacity"
     << "Specular";
   panel->addProxy(this->ThresholdRepresentation, "Appearance", representationProperties, true);
+  this->Superclass::addToPanel(panel);
 }
 
 //-----------------------------------------------------------------------------
@@ -171,21 +171,22 @@ bool ModuleAccelThreshold::serialize(pugi::xml_node& ns) const
   representationProperties
     << "Color"
     << "ColorEditor"
-    << "LookupTable"
     << "Representation"
     << "Opacity"
     << "Specular"
     << "Visibility";
   pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
   return TEM::serialize(this->ThresholdFilter, fnode, fprops) &&
-    TEM::serialize(this->ThresholdRepresentation, rnode, representationProperties);
+    TEM::serialize(this->ThresholdRepresentation, rnode, representationProperties) &&
+    this->Superclass::serialize(ns);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleAccelThreshold::deserialize(const pugi::xml_node& ns)
 {
   return TEM::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
-    TEM::deserialize(this->ThresholdRepresentation, ns.child("ThresholdRepresentation"));
+    TEM::deserialize(this->ThresholdRepresentation, ns.child("ThresholdRepresentation")) &&
+    this->Superclass::deserialize(ns);
 }
 
 

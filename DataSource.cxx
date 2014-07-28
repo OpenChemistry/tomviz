@@ -102,6 +102,12 @@ QString DataSource::filename() const
 //-----------------------------------------------------------------------------
 bool DataSource::serialize(pugi::xml_node& ns) const
 {
+  pugi::xml_node node = ns.append_child("ColorMap");
+  TEM::serialize(this->colorMap(), node);
+
+  node = ns.append_child("OpacityMap");
+  TEM::serialize(this->opacityMap(), node);
+
   ns.append_attribute("number_of_operators").set_value(
     static_cast<int>(this->Internals->Operators.size()));
 
@@ -120,6 +126,12 @@ bool DataSource::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool DataSource::deserialize(const pugi::xml_node& ns)
 {
+  TEM::deserialize(this->colorMap(), ns.child("ColorMap"));
+  TEM::deserialize(this->opacityMap(), ns.child("OpacityMap"));
+  vtkSMPropertyHelper(this->colorMap(),
+                      "ScalarOpacityFunction").Set(this->opacityMap());
+  this->colorMap()->UpdateVTKObjects();
+
   int num_operators = ns.attribute("number_of_operators").as_int(-1);
   if (num_operators < 0)
     {

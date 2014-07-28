@@ -176,7 +176,8 @@ bool ModuleStreamingContour::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool ModuleStreamingContour::deserialize(const pugi::xml_node& ns)
 {
-  return TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation"));
+  return TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
+    this->Superclass::deserialize(ns);
 }
 
 } // end of namespace TEM

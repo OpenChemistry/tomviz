@@ -182,14 +182,16 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
     ns.remove_child(node);
     return false;
     }
-  return true;
+
+  return this->Superclass::serialize(ns);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleContour::deserialize(const pugi::xml_node& ns)
 {
   return TEM::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
-    TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation"));
+    TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
+    this->Superclass::deserialize(ns);
 }
 
 } // end of namespace TEM

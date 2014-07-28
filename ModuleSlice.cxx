@@ -201,57 +201,15 @@ bool ModuleSlice::visibility() const
 //-----------------------------------------------------------------------------
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
 {
-  // vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  // vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
-  // Q_ASSERT(lut && sof);
-
-  // QStringList reprProperties;
-  // reprProperties
-  //   << "SliceMode"
-  //   << "Slice"
-  //   << "Visibility";
-  // pugi::xml_node nodeR = ns.append_child("Representation");
-  // pugi::xml_node nodeL = ns.append_child("LookupTable");
-  // pugi::xml_node nodeS = ns.append_child("ScalarOpacityFunction");
-  // return (TEM::serialize(this->Representation, nodeR, reprProperties) &&
-  //   TEM::serialize(lut, nodeL) &&
-  //   TEM::serialize(sof, nodeS));
-  return false;
+  // FIXME: serialize slice properties.
+  return this->Superclass::serialize(ns);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 {
-  return false;
-  // vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation, "LookupTable").GetAsProxy();
-  // vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").GetAsProxy();
-  // if (TEM::deserialize(this->Representation, ns.child("Representation")))
-  //   {
-  //   vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").Set(sof);
-  //   this->Representation->UpdateVTKObjects();
-  //   }
-  // else
-  //   {
-  //   return false;
-  //   }
-  // if (TEM::deserialize(lut, ns.child("LookupTable")))
-  //   {
-  //   vtkSMPropertyHelper(lut, "ScalarOpacityFunction").Set(sof);
-  //   lut->UpdateVTKObjects();
-  //   }
-  // else
-  //   {
-  //   return false;
-  //   }
-  // if (TEM::deserialize(sof, ns.child("ScalarOpacityFunction")))
-  //   {
-  //   sof->UpdateVTKObjects();
-  //   }
-  // else
-  //   {
-  //   return false;
-  //   }
-  // return true;
+  // FIXME: deserialize slice properties.
+  return this->Superclass::deserialize(ns);
 }
 
 }

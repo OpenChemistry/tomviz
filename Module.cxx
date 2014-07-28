@@ -160,6 +160,55 @@ vtkSMProxy* Module::opacityMap() const
          this->dataSource()->opacityMap();
 }
 
+//-----------------------------------------------------------------------------
+bool Module::serialize(pugi::xml_node& ns) const
+{
+  if (this->isColorMapNeeded())
+    {
+    ns.append_attribute("use_detached_colormap").set_value(this->UseDetachedColorMap? 1 : 0);
+    if (this->UseDetachedColorMap)
+      {
+      pugi::xml_node nodeL = ns.append_child("ColorMap");
+      pugi::xml_node nodeS = ns.append_child("OpacityMap");
+
+      // using detached color map, so we need to save the local color map.
+      if (TEM::serialize(this->colorMap(), nodeL) == false ||
+        TEM::serialize(this->opacityMap(), nodeS) == false)
+        {
+        return false;
+        }
+      }
+    }
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+bool Module::deserialize(const pugi::xml_node& ns)
+{
+  if (this->isColorMapNeeded())
+    {
+    bool dcm = ns.attribute("use_detached_colormap").as_int(0) == 1;
+    if (dcm && ns.child("ColorMap"))
+      {
+      if (!TEM::deserialize(this->Internals->detachedColorMap(), ns.child("ColorMap")))
+        {
+        qCritical("Failed to deserialze ColorMap");
+        return false;
+        }
+      }
+    if (dcm && ns.child("OpacityMap"))
+      {
+      if (!TEM::deserialize(this->Internals->detachedOpacityMap(), ns.child("OpacityMap")))
+        {
+        qCritical("Failed to deserialze OpacityMap");
+        return false;
+        }
+      }
+    this->setUseDetachedColorMap(dcm);
+    }
+  return true;
+}
+
 
 //-----------------------------------------------------------------------------
 } // end of namespace TEM

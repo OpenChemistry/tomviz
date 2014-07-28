@@ -129,21 +129,11 @@ bool ModuleVolume::visibility() const
 //-----------------------------------------------------------------------------
 bool ModuleVolume::serialize(pugi::xml_node& ns) const
 {
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation,
-                                        "LookupTable").GetAsProxy();
-  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation,
-                                        "ScalarOpacityFunction").GetAsProxy();
-  Q_ASSERT(lut && sof);
-
   QStringList list;
   list << "Visibility"
        << "ScalarOpacityUnitDistance";
   pugi::xml_node nodeR = ns.append_child("Representation");
-  pugi::xml_node nodeL = ns.append_child("LookupTable");
-  pugi::xml_node nodeS = ns.append_child("ScalarOpacityFunction");
-  return (TEM::serialize(this->Representation, nodeR, list) &&
-    TEM::serialize(lut, nodeL) &&
-    TEM::serialize(sof, nodeS));
+  return (TEM::serialize(this->Representation, nodeR, list) && this->Superclass::serialize(ns));
 }
 
 //-----------------------------------------------------------------------------
@@ -154,33 +144,12 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
   vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation,
                                         "ScalarOpacityFunction").GetAsProxy();
 
-  if (TEM::deserialize(this->Representation, ns.child("Representation")))
-    {
-    vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction").Set(sof);
-    this->Representation->UpdateVTKObjects();
-    }
-  else
+  if (!TEM::deserialize(this->Representation, ns.child("Representation")))
     {
     return false;
     }
-  if (TEM::deserialize(lut, ns.child("LookupTable")))
-    {
-    vtkSMPropertyHelper(lut, "ScalarOpacityFunction").Set(sof);
-    lut->UpdateVTKObjects();
-    }
-  else
-    {
-    return false;
-    }
-  if (TEM::deserialize(sof, ns.child("ScalarOpacityFunction")))
-    {
-    sof->UpdateVTKObjects();
-    }
-  else
-    {
-    return false;
-    }
-  return true;
+
+  return this->Superclass::deserialize(ns);
 }
 
 } // end of namespace TEM

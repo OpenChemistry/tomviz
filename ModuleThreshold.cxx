@@ -174,8 +174,8 @@ bool ModuleThreshold::serialize(pugi::xml_node& ns) const
     << "Visibility";
   pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
   return TEM::serialize(this->ThresholdFilter, tnode, fprops) &&
-    TEM::serialize(this->ThresholdRepresentation, rnode,
-                   representationProperties);
+    TEM::serialize(this->ThresholdRepresentation, rnode, representationProperties) &&
+    this->Superclass::serialize(ns);
 }
 
 //-----------------------------------------------------------------------------
@@ -183,7 +183,8 @@ bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
 {
   return TEM::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
     TEM::deserialize(this->ThresholdRepresentation,
-                     ns.child("ThresholdRepresentation"));
+                     ns.child("ThresholdRepresentation")) &&
+    this->Superclass::deserialize(ns);
 }
 
 }
