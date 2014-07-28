@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
     <file>icons/tomviz.png</file>
+    <file>icons/tomvizfull.png</file>
   </qresource>
 </RCC>

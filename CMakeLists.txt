@@ -104,6 +104,7 @@ set(SOURCES
   )
 
 qt4_wrap_ui(UI_SOURCES
+  AboutDialog.ui
   CentralWidget.ui
   DataPropertiesPanel.ui
   EditPythonOperatorDialog.ui
