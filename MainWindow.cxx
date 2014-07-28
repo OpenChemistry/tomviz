@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+#include "ui_AboutDialog.h"
 
 #include "pqFiltersMenuReaction.h"
 #include "pqMacroReaction.h"
@@ -54,7 +55,11 @@ namespace TEM
 class MainWindow::MWInternals
 {
 public:
+  MWInternals() : AboutDialog(NULL) { ; }
+
   Ui::MainWindow Ui;
+  Ui::AboutDialog AboutUi;
+  QDialog *AboutDialog;
 };
 
 //-----------------------------------------------------------------------------
@@ -72,19 +77,21 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
-    SIGNAL(dataSourceChanged(DataSource*)),
-    SLOT(setDataSource(DataSource*)));
+                            SIGNAL(dataSourceChanged(DataSource*)),
+                            SLOT(setDataSource(DataSource*)));
 
   // connect quit.
-  pqApplicationCore::instance()->connect(
-    ui.actionExit, SIGNAL(triggered()), SLOT(quit()));
+  pqApplicationCore::instance()->connect(ui.actionExit, SIGNAL(triggered()),
+                                         SLOT(quit()));
+
+  // Connect the about dialog up too.
+  this->connect(ui.actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
 
   new pqPythonShellReaction(ui.actionPythonConsole);
   new pqMacroReaction(ui.actionMacros);
 
   // Instantiate TomViz application behavior.
   new Behaviors(this);
-
 
   new LoadDataReaction(ui.actionOpen);
   new DeleteDataReaction(ui.actionDeleteData);
@@ -121,4 +128,16 @@ MainWindow::~MainWindow()
   ModuleManager::instance().reset();
   delete this->Internals;
 }
+
+//-----------------------------------------------------------------------------
+void MainWindow::showAbout()
+{
+  if (!this->Internals->AboutDialog)
+    {
+    this->Internals->AboutDialog = new QDialog(this);
+    this->Internals->AboutUi.setupUi(this->Internals->AboutDialog);
+    }
+  this->Internals->AboutDialog->show();
+}
+
 }
