@@ -25,8 +25,21 @@
 #include "pqStandardViewFrameActionsImplementation.h"
 #include "pqViewStreamingBehavior.h"
 #include "ProgressBehavior.h"
+#include "vtkSMSettings.h"
 
 #include <QMainWindow>
+
+const char* const settings =
+"{"
+"   \"settings\" : {"
+"      \"RenderViewSettings\" : {"
+"         \"LODThreshold\" : 102400.0,"
+//"         \"ShowAnnotation\" : 1,"
+"         \"UseDisplayLists\" : 1"
+"      }"
+"   }"
+"}";
+
 
 namespace TEM
 {
@@ -34,6 +47,7 @@ namespace TEM
 Behaviors::Behaviors(QMainWindow* mainWindow)
 {
   Q_ASSERT(mainWindow);
+  vtkSMSettings::GetInstance()->AddCollectionFromString(settings, 0.0);
 
   // Register ParaView interfaces.
   pqInterfaceTracker* pgm = pqApplicationCore::instance()->interfaceTracker();
