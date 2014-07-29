@@ -70,7 +70,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  this->setWindowTitle("TomViz");
+  this->setWindowTitle("tomviz");
 
   QIcon icon(":/icons/tomviz.png");
   setWindowIcon(icon);
