@@ -124,7 +124,9 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
     Q_ASSERT(ainfo->GetNumberOfComponents() == 1);
     vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, ainfo->GetComponentRange(0));
     vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ainfo->GetComponentRange(0));
+    return true;
     }
+  return false;
 }
 
 
