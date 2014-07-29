@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(tomviz)
+
+set (tomviz_version_major 0)
+set (tomviz_version_minor 2)
+set (tomviz_version_patch 0)
+set (tomviz_version_suffix)
+set (tomviz_version "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
+
+# location where python modules will be installed.
+set (tomviz_python_install_dir "lib/tomviz-${tomviz_version}/site-packages")
+
 find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 if(NOT PARAVIEW_BUILD_QT_GUI)
@@ -140,6 +150,12 @@ if(APPLE)
 else()
   install(TARGETS tomviz DESTINATION bin COMPONENT runtime)
 endif()
+
+# install the tomviz Python files under site-packages.
+install(DIRECTORY Python/tomviz
+        DESTINATION "${tomviz_python_install_dir}"
+        USE_SOURCE_PERMISSIONS
+        COMPONENT runtime)
 
 if(ENABLE_DAX_ACCELERATION)
   target_link_libraries(tomviz
