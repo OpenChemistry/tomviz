@@ -22,7 +22,7 @@
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
-class vtkColorImagePlaneWidget;
+class vtkNonOrthoImagePlaneWidget;
 
 namespace TEM
 {
@@ -54,7 +54,7 @@ private:
   Q_DISABLE_COPY(ModuleSlice);
 
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
-  vtkSmartPointer<vtkColorImagePlaneWidget> Widget;
+  vtkSmartPointer<vtkNonOrthoImagePlaneWidget> Widget;
 };
 
 }

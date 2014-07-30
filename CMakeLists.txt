@@ -109,8 +109,8 @@ set(SOURCES
   Utilities.h
   ViewPropertiesPanel.cxx
   ViewPropertiesPanel.h
-  vtkColorImagePlaneWidget.cxx
-  vtkColorImagePlaneWidget.h
+  vtkNonOrthoImagePlaneWidget.cxx
+  vtkNonOrthoImagePlaneWidget.h
   )
 
 qt4_wrap_ui(UI_SOURCES

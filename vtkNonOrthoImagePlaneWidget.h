@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkColorImagePlaneWidget.h
+  Module:    vtkNonOrthoImagePlaneWidget.h
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,15 +12,15 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkColorImagePlaneWidget - 3D widget for reslicing image data
+// .NAME vtkNonOrthoImagePlaneWidget - 3D widget for reslicing image data
 // .SECTION Description
 // This 3D widget defines a plane that can be interactively placed in an
 // image volume. A nice feature of the object is that the
-// vtkColorImagePlaneWidget, like any 3D widget, will work with the current
-// interactor style. That is, if vtkColorImagePlaneWidget does not handle an
+// vtkNonOrthoImagePlaneWidget, like any 3D widget, will work with the current
+// interactor style. That is, if vtkNonOrthoImagePlaneWidget does not handle an
 // event, then all other registered observers (including the interactor
 // style) have an opportunity to process the event. Otherwise, the
-// vtkColorImagePlaneWidget will terminate the processing of the event that it
+// vtkNonOrthoImagePlaneWidget will terminate the processing of the event that it
 // handles.
 //
 // The core functionality of the widget is provided by a vtkImageReslice
@@ -31,7 +31,7 @@
 // To use this object, just invoke SetInteractor() with the argument of the
 // method a vtkRenderWindowInteractor.  You may also wish to invoke
 // "PlaceWidget()" to initially position the widget. If the "i" key (for
-// "interactor") is pressed, the vtkColorImagePlaneWidget will appear. (See
+// "interactor") is pressed, the vtkNonOrthoImagePlaneWidget will appear. (See
 // superclass documentation for information about changing this behavior.)
 //
 // Selecting the widget with the left or middle mouse button enables
@@ -53,7 +53,7 @@
 // InteractionEvent, and EndInteractionEvent as well as StartWindowLevelEvent,
 // WindowLevelEvent, EndWindowLevelEvent and ResetWindowLevelEvent.
 //
-// The vtkColorImagePlaneWidget has several methods that can be used in
+// The vtkNonOrthoImagePlaneWidget has several methods that can be used in
 // conjunction with other VTK objects. The GetPolyData() method can be used
 // to get the polygonal representation of the plane and can be used as input
 // for other VTK objects. Typical usage of the widget is to make use of the
@@ -79,10 +79,9 @@
 // vtkPolyDataSourceWidget vtkSphereWidget vtkImplicitPlaneWidget
 
 
-#ifndef __vtkColorImagePlaneWidget_h
-#define __vtkColorImagePlaneWidget_h
+#ifndef __vtkNonOrthoImagePlaneWidget_h
+#define __vtkNonOrthoImagePlaneWidget_h
 
-#include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPolyDataSourceWidget.h"
 
 class vtkAbstractPropPicker;
@@ -111,14 +110,14 @@ class vtkTransform;
 #define VTK_LINEAR_RESLICE  1
 #define VTK_CUBIC_RESLICE   2
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkColorImagePlaneWidget : public vtkPolyDataSourceWidget
+class vtkNonOrthoImagePlaneWidget : public vtkPolyDataSourceWidget
 {
 public:
   // Description:
   // Instantiate the object.
-  static vtkColorImagePlaneWidget *New();
+  static vtkNonOrthoImagePlaneWidget *New();
 
-  vtkTypeMacro(vtkColorImagePlaneWidget,vtkPolyDataSourceWidget);
+  vtkTypeMacro(vtkNonOrthoImagePlaneWidget,vtkPolyDataSourceWidget);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -322,8 +321,8 @@ public:
   vtkGetMacro(RightButtonAction, int);
 
 protected:
-  vtkColorImagePlaneWidget();
-  ~vtkColorImagePlaneWidget();
+  vtkNonOrthoImagePlaneWidget();
+  ~vtkNonOrthoImagePlaneWidget();
 
   int TextureVisibility;
 
@@ -456,8 +455,8 @@ protected:
   void UpdateArrowSize(); //update the arrow so it is visible based on camera pos
 
 private:
-  vtkColorImagePlaneWidget(const vtkColorImagePlaneWidget&);  //Not implemented
-  void operator=(const vtkColorImagePlaneWidget&);  //Not implemented
+  vtkNonOrthoImagePlaneWidget(const vtkNonOrthoImagePlaneWidget&);  //Not implemented
+  void operator=(const vtkNonOrthoImagePlaneWidget&);  //Not implemented
 };
 
 #endif

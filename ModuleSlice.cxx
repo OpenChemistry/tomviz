@@ -20,7 +20,7 @@
 #include "Utilities.h"
 
 #include "vtkAlgorithm.h"
-#include "vtkColorImagePlaneWidget.h"
+#include "vtkNonOrthoImagePlaneWidget.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
 #include "vtkProperty.h"
@@ -118,7 +118,7 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer)
     return false;
     }
 
-  this->Widget = vtkSmartPointer<vtkColorImagePlaneWidget>::New();
+  this->Widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
 
   //set the interactor on the widget to be what the current
   //render window is using
