@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkColorImagePlaneWidget.cxx
+  Module:    vtkNonOrthoImagePlaneWidget.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkColorImagePlaneWidget.h"
+#include "vtkNonOrthoImagePlaneWidget.h"
 
 #include "vtkActor.h"
 #include "vtkAlgorithmOutput.h"
@@ -51,7 +51,7 @@
 #include "vtkTexture.h"
 #include "vtkTransform.h"
 
-vtkStandardNewMacro(vtkColorImagePlaneWidget);
+vtkStandardNewMacro(vtkNonOrthoImagePlaneWidget);
 
 namespace detail
 {
@@ -78,17 +78,17 @@ namespace detail
   }
 }
 
-vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, PlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, SelectedPlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, ArrowProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, SelectedArrowProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkColorImagePlaneWidget, TexturePlaneProperty, vtkProperty);
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty);
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedPlaneProperty, vtkProperty);
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, ArrowProperty, vtkProperty);
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedArrowProperty, vtkProperty);
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, TexturePlaneProperty, vtkProperty);
 
 //----------------------------------------------------------------------------
-vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
+vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWidget()
 {
-  this->State = vtkColorImagePlaneWidget::Start;
-  this->EventCallbackCommand->SetCallback(vtkColorImagePlaneWidget::ProcessEvents);
+  this->State = vtkNonOrthoImagePlaneWidget::Start;
+  this->EventCallbackCommand->SetCallback(vtkNonOrthoImagePlaneWidget::ProcessEvents);
 
   this->Interaction              = 1;
   this->PlaneOrientation         = 0;
@@ -171,17 +171,17 @@ vtkColorImagePlaneWidget::vtkColorImagePlaneWidget() : vtkPolyDataSourceWidget()
   this->CreateDefaultProperties();
 
   // Set up actions
-  this->LeftButtonAction = vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
-  this->MiddleButtonAction = vtkColorImagePlaneWidget::VTK_NO_ACTION;
-  this->RightButtonAction = vtkColorImagePlaneWidget::VTK_NO_ACTION;
+  this->LeftButtonAction = vtkNonOrthoImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
+  this->MiddleButtonAction = vtkNonOrthoImagePlaneWidget::VTK_NO_ACTION;
+  this->RightButtonAction = vtkNonOrthoImagePlaneWidget::VTK_NO_ACTION;
 
-  this->LastButtonPressed = vtkColorImagePlaneWidget::VTK_NO_BUTTON;
+  this->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_NO_BUTTON;
 
   this->TextureVisibility = 1;
 }
 
 //----------------------------------------------------------------------------
-vtkColorImagePlaneWidget::~vtkColorImagePlaneWidget()
+vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
 {
   this->PlaneOutlineActor->Delete();
   this->PlaneOutlinePolyData->Delete();
@@ -248,7 +248,7 @@ vtkColorImagePlaneWidget::~vtkColorImagePlaneWidget()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetTextureVisibility(int vis)
+void vtkNonOrthoImagePlaneWidget::SetTextureVisibility(int vis)
 {
   if (this->TextureVisibility == vis)
     {
@@ -274,7 +274,7 @@ void vtkColorImagePlaneWidget::SetTextureVisibility(int vis)
 
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetEnabled(int enabling)
+void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
 {
 
   if ( ! this->Interactor )
@@ -388,41 +388,41 @@ void vtkColorImagePlaneWidget::SetEnabled(int enabling)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::ProcessEvents(vtkObject* vtkNotUsed(object),
+void vtkNonOrthoImagePlaneWidget::ProcessEvents(vtkObject* vtkNotUsed(object),
                                         unsigned long event,
                                         void* clientdata,
                                         void* vtkNotUsed(calldata))
 {
-  vtkColorImagePlaneWidget* self =
-    reinterpret_cast<vtkColorImagePlaneWidget *>( clientdata );
+  vtkNonOrthoImagePlaneWidget* self =
+    reinterpret_cast<vtkNonOrthoImagePlaneWidget *>( clientdata );
 
-  self->LastButtonPressed = vtkColorImagePlaneWidget::VTK_NO_BUTTON;
+  self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_NO_BUTTON;
 
   //okay, let's do the right thing
   switch ( event )
     {
     case vtkCommand::LeftButtonPressEvent:
-      self->LastButtonPressed = vtkColorImagePlaneWidget::VTK_LEFT_BUTTON;
+      self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_LEFT_BUTTON;
       self->OnLeftButtonDown();
       break;
     case vtkCommand::LeftButtonReleaseEvent:
-      self->LastButtonPressed = vtkColorImagePlaneWidget::VTK_LEFT_BUTTON;
+      self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_LEFT_BUTTON;
       self->OnLeftButtonUp();
       break;
     case vtkCommand::MiddleButtonPressEvent:
-      self->LastButtonPressed = vtkColorImagePlaneWidget::VTK_MIDDLE_BUTTON;
+      self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_MIDDLE_BUTTON;
       self->OnMiddleButtonDown();
       break;
     case vtkCommand::MiddleButtonReleaseEvent:
-      self->LastButtonPressed = vtkColorImagePlaneWidget::VTK_MIDDLE_BUTTON;
+      self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_MIDDLE_BUTTON;
       self->OnMiddleButtonUp();
       break;
     case vtkCommand::RightButtonPressEvent:
-      self->LastButtonPressed = vtkColorImagePlaneWidget::VTK_RIGHT_BUTTON;
+      self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_RIGHT_BUTTON;
       self->OnRightButtonDown();
       break;
     case vtkCommand::RightButtonReleaseEvent:
-      self->LastButtonPressed = vtkColorImagePlaneWidget::VTK_RIGHT_BUTTON;
+      self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_RIGHT_BUTTON;
       self->OnRightButtonUp();
       break;
     case vtkCommand::MouseMoveEvent:
@@ -434,7 +434,7 @@ void vtkColorImagePlaneWidget::ProcessEvents(vtkObject* vtkNotUsed(object),
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::AddObservers(void)
+void vtkNonOrthoImagePlaneWidget::AddObservers(void)
 {
   // listen for the following events
   vtkRenderWindowInteractor *i = this->Interactor;
@@ -460,7 +460,7 @@ void vtkColorImagePlaneWidget::AddObservers(void)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetInteraction(int interact)
+void vtkNonOrthoImagePlaneWidget::SetInteraction(int interact)
 {
   if (this->Interactor && this->Enabled)
     {
@@ -485,7 +485,7 @@ void vtkColorImagePlaneWidget::SetInteraction(int interact)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
+void vtkNonOrthoImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 
@@ -577,7 +577,7 @@ void vtkColorImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::BuildRepresentation()
+void vtkNonOrthoImagePlaneWidget::BuildRepresentation()
 {
   this->PlaneSource->Update();
   double *origin = this->PlaneSource->GetOrigin();
@@ -639,7 +639,7 @@ void vtkColorImagePlaneWidget::BuildRepresentation()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::UpdateArrowSize()
+void vtkNonOrthoImagePlaneWidget::UpdateArrowSize()
 {
   //we only want to rescale once we have an active camera, otherwise the
   //initial arrow takes up the entire render window
@@ -688,7 +688,7 @@ void vtkColorImagePlaneWidget::UpdateArrowSize()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::HighlightPlane(int highlight)
+void vtkNonOrthoImagePlaneWidget::HighlightPlane(int highlight)
 {
   if ( highlight )
     {
@@ -702,33 +702,33 @@ void vtkColorImagePlaneWidget::HighlightPlane(int highlight)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnButtonDown(int *btn)
+void vtkNonOrthoImagePlaneWidget::OnButtonDown(int *btn)
 {
   switch (*btn)
     {
-    case vtkColorImagePlaneWidget::VTK_NO_ACTION:
+    case vtkNonOrthoImagePlaneWidget::VTK_NO_ACTION:
       break;
-    case vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
+    case vtkNonOrthoImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
       this->StartSliceMotion();
       break;
     }
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnButtonUp(int *btn)
+void vtkNonOrthoImagePlaneWidget::OnButtonUp(int *btn)
 {
   switch (*btn)
     {
-    case vtkColorImagePlaneWidget::VTK_NO_ACTION:
+    case vtkNonOrthoImagePlaneWidget::VTK_NO_ACTION:
       break;
-    case vtkColorImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
+    case vtkNonOrthoImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
       this->StopSliceMotion();
       break;
     }
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::StartSliceMotion()
+void vtkNonOrthoImagePlaneWidget::StartSliceMotion()
 {
   int X = this->Interactor->GetEventPosition()[0];
   int Y = this->Interactor->GetEventPosition()[1];
@@ -736,7 +736,7 @@ void vtkColorImagePlaneWidget::StartSliceMotion()
   // Okay, make sure that the pick is in the current renderer
   if (!this->CurrentRenderer || !this->CurrentRenderer->IsInViewport(X, Y))
     {
-    this->State = vtkColorImagePlaneWidget::Outside;
+    this->State = vtkNonOrthoImagePlaneWidget::Outside;
     return;
     }
 
@@ -750,7 +750,7 @@ void vtkColorImagePlaneWidget::StartSliceMotion()
     if ( prop == this->ConeActor || prop == this->LineActor ||
          prop == this->ConeActor2 || prop == this->LineActor2 )
       {
-      this->State = vtkColorImagePlaneWidget::Rotating;
+      this->State = vtkNonOrthoImagePlaneWidget::Rotating;
       this->HighlightPlane(1);
       this->HighlightArrow(1);
       stateFound = true;
@@ -758,7 +758,7 @@ void vtkColorImagePlaneWidget::StartSliceMotion()
     else if(prop == this->TexturePlaneActor ||
             prop == this->SphereActor)
       {
-      this->State = vtkColorImagePlaneWidget::Pushing;
+      this->State = vtkNonOrthoImagePlaneWidget::Pushing;
       this->HighlightPlane(1);
       this->HighlightArrow(1);
       stateFound = true;
@@ -766,7 +766,7 @@ void vtkColorImagePlaneWidget::StartSliceMotion()
     }
   if(!stateFound)
     {
-    this->State = vtkColorImagePlaneWidget::Outside;
+    this->State = vtkNonOrthoImagePlaneWidget::Outside;
     this->HighlightPlane(0);
     this->HighlightArrow(0);
     return;
@@ -780,15 +780,15 @@ void vtkColorImagePlaneWidget::StartSliceMotion()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::StopSliceMotion()
+void vtkNonOrthoImagePlaneWidget::StopSliceMotion()
 {
-  if ( this->State == vtkColorImagePlaneWidget::Outside ||
-       this->State == vtkColorImagePlaneWidget::Start )
+  if ( this->State == vtkNonOrthoImagePlaneWidget::Outside ||
+       this->State == vtkNonOrthoImagePlaneWidget::Start )
     {
     return;
     }
 
-  this->State = vtkColorImagePlaneWidget::Start;
+  this->State = vtkNonOrthoImagePlaneWidget::Start;
   this->HighlightPlane(0);
   this->HighlightArrow(0);
 
@@ -800,12 +800,12 @@ void vtkColorImagePlaneWidget::StopSliceMotion()
 
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::OnMouseMove()
+void vtkNonOrthoImagePlaneWidget::OnMouseMove()
 {
   // See whether we're active
   //
-  if ( this->State == vtkColorImagePlaneWidget::Outside ||
-       this->State == vtkColorImagePlaneWidget::Start )
+  if ( this->State == vtkNonOrthoImagePlaneWidget::Outside ||
+       this->State == vtkNonOrthoImagePlaneWidget::Start )
     {
     return;
     }
@@ -839,12 +839,12 @@ void vtkColorImagePlaneWidget::OnMouseMove()
 
   this->ComputeDisplayToWorld(double(X), double(Y), z, pickPoint);
 
-  if ( this->State == vtkColorImagePlaneWidget::Pushing )
+  if ( this->State == vtkNonOrthoImagePlaneWidget::Pushing )
     {
     this->Push(prevPickPoint, pickPoint);
     this->UpdatePlacement();
     }
-  else if ( this->State == vtkColorImagePlaneWidget::Rotating )
+  else if ( this->State == vtkNonOrthoImagePlaneWidget::Rotating )
     {
     camera->GetViewPlaneNormal(vpn);
     this->Rotate(double(X), double(Y), prevPickPoint, pickPoint, vpn);
@@ -860,7 +860,7 @@ void vtkColorImagePlaneWidget::OnMouseMove()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::Push(double *p1, double *p2)
+void vtkNonOrthoImagePlaneWidget::Push(double *p1, double *p2)
 {
   // Get the motion vector
   //
@@ -879,7 +879,7 @@ void vtkColorImagePlaneWidget::Push(double *p1, double *p2)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::CreateDefaultProperties()
+void vtkNonOrthoImagePlaneWidget::CreateDefaultProperties()
 {
   if ( ! this->PlaneProperty )
     {
@@ -921,7 +921,7 @@ void vtkColorImagePlaneWidget::CreateDefaultProperties()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::PlaceWidget(double bds[6])
+void vtkNonOrthoImagePlaneWidget::PlaceWidget(double bds[6])
 {
   double bounds[6], center[3];
 
@@ -955,7 +955,7 @@ void vtkColorImagePlaneWidget::PlaceWidget(double bds[6])
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetPlaneOrientation(int i)
+void vtkNonOrthoImagePlaneWidget::SetPlaneOrientation(int i)
 {
   // Generate a XY plane if i = 2, z-normal
   // or a YZ plane if i = 0, x-normal
@@ -1048,7 +1048,7 @@ void vtkColorImagePlaneWidget::SetPlaneOrientation(int i)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
+void vtkNonOrthoImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
 {
   this->Superclass::SetInputConnection(aout);
 
@@ -1079,7 +1079,7 @@ void vtkColorImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::UpdatePlane()
+void vtkNonOrthoImagePlaneWidget::UpdatePlane()
 {
   if ( !this->Reslice || !this->ImageData )
     {
@@ -1174,7 +1174,7 @@ void vtkColorImagePlaneWidget::UpdatePlane()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
+void vtkNonOrthoImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
                                                double bounds[6])
 {
   // Calculate appropriate pixel spacing for the reslicing
@@ -1215,7 +1215,7 @@ void vtkColorImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::UpdateClipBounds(double bounds[6],
+void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6],
                                                 double spacing[3])
 {
   //todo: we need to cache this so we don't redo this every frame
@@ -1271,7 +1271,7 @@ void vtkColorImagePlaneWidget::UpdateClipBounds(double bounds[6],
 }
 
 //----------------------------------------------------------------------------
-vtkImageData* vtkColorImagePlaneWidget::GetResliceOutput()
+vtkImageData* vtkNonOrthoImagePlaneWidget::GetResliceOutput()
 {
   if ( ! this->Reslice )
     {
@@ -1281,7 +1281,7 @@ vtkImageData* vtkColorImagePlaneWidget::GetResliceOutput()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
+void vtkNonOrthoImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
 {
   // we have to have a picker for slice motion, window level and cursor to work
   if (this->PlanePicker != picker)
@@ -1319,7 +1319,7 @@ void vtkColorImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetResliceInterpolate(int i)
+void vtkNonOrthoImagePlaneWidget::SetResliceInterpolate(int i)
 {
   if ( this->ResliceInterpolate == i )
     {
@@ -1349,7 +1349,7 @@ void vtkColorImagePlaneWidget::SetResliceInterpolate(int i)
 }
 
 //----------------------------------------------------------------------------
-vtkScalarsToColors* vtkColorImagePlaneWidget::CreateDefaultLookupTable()
+vtkScalarsToColors* vtkNonOrthoImagePlaneWidget::CreateDefaultLookupTable()
 {
   vtkLookupTable* lut = vtkLookupTable::New();
   lut->Register(this);
@@ -1364,7 +1364,7 @@ vtkScalarsToColors* vtkColorImagePlaneWidget::CreateDefaultLookupTable()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetLookupTable(vtkScalarsToColors* table)
+void vtkNonOrthoImagePlaneWidget::SetLookupTable(vtkScalarsToColors* table)
 {
   if (this->LookupTable != table)
     {
@@ -1397,7 +1397,7 @@ void vtkColorImagePlaneWidget::SetLookupTable(vtkScalarsToColors* table)
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetSlicePosition(double position)
+void vtkNonOrthoImagePlaneWidget::SetSlicePosition(double position)
 {
   double amount = 0.0;
   double planeOrigin[3];
@@ -1427,7 +1427,7 @@ void vtkColorImagePlaneWidget::SetSlicePosition(double position)
 }
 
 //----------------------------------------------------------------------------
-double vtkColorImagePlaneWidget::GetSlicePosition()
+double vtkNonOrthoImagePlaneWidget::GetSlicePosition()
 {
   double planeOrigin[3];
   this->PlaneSource->GetOrigin( planeOrigin);
@@ -1453,7 +1453,7 @@ double vtkColorImagePlaneWidget::GetSlicePosition()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetSliceIndex(int index)
+void vtkNonOrthoImagePlaneWidget::SetSliceIndex(int index)
 {
   if ( !this->Reslice )
     {
@@ -1509,7 +1509,7 @@ void vtkColorImagePlaneWidget::SetSliceIndex(int index)
 }
 
 //----------------------------------------------------------------------------
-int vtkColorImagePlaneWidget::GetSliceIndex()
+int vtkNonOrthoImagePlaneWidget::GetSliceIndex()
 {
   if ( ! this->Reslice )
     {
@@ -1550,134 +1550,134 @@ int vtkColorImagePlaneWidget::GetSliceIndex()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetOrigin(double x, double y, double z)
+void vtkNonOrthoImagePlaneWidget::SetOrigin(double x, double y, double z)
 {
   this->PlaneSource->SetOrigin(x,y,z);
   this->Modified();
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetOrigin(double xyz[3])
+void vtkNonOrthoImagePlaneWidget::SetOrigin(double xyz[3])
 {
   this->PlaneSource->SetOrigin(xyz);
   this->Modified();
 }
 
 //----------------------------------------------------------------------------
-double* vtkColorImagePlaneWidget::GetOrigin()
+double* vtkNonOrthoImagePlaneWidget::GetOrigin()
 {
   return this->PlaneSource->GetOrigin();
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetOrigin(double xyz[3])
+void vtkNonOrthoImagePlaneWidget::GetOrigin(double xyz[3])
 {
   this->PlaneSource->GetOrigin(xyz);
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetPoint1(double x, double y, double z)
+void vtkNonOrthoImagePlaneWidget::SetPoint1(double x, double y, double z)
 {
   this->PlaneSource->SetPoint1(x,y,z);
   this->Modified();
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetPoint1(double xyz[3])
+void vtkNonOrthoImagePlaneWidget::SetPoint1(double xyz[3])
 {
   this->PlaneSource->SetPoint1(xyz);
   this->Modified();
 }
 
 //----------------------------------------------------------------------------
-double* vtkColorImagePlaneWidget::GetPoint1()
+double* vtkNonOrthoImagePlaneWidget::GetPoint1()
 {
   return this->PlaneSource->GetPoint1();
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetPoint1(double xyz[3])
+void vtkNonOrthoImagePlaneWidget::GetPoint1(double xyz[3])
 {
   this->PlaneSource->GetPoint1(xyz);
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetPoint2(double x, double y, double z)
+void vtkNonOrthoImagePlaneWidget::SetPoint2(double x, double y, double z)
 {
   this->PlaneSource->SetPoint2(x,y,z);
   this->Modified();
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::SetPoint2(double xyz[3])
+void vtkNonOrthoImagePlaneWidget::SetPoint2(double xyz[3])
 {
   this->PlaneSource->SetPoint2(xyz);
   this->Modified();
 }
 
 //----------------------------------------------------------------------------
-double* vtkColorImagePlaneWidget::GetPoint2()
+double* vtkNonOrthoImagePlaneWidget::GetPoint2()
 {
   return this->PlaneSource->GetPoint2();
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetPoint2(double xyz[3])
+void vtkNonOrthoImagePlaneWidget::GetPoint2(double xyz[3])
 {
   this->PlaneSource->GetPoint2(xyz);
 }
 
 //----------------------------------------------------------------------------
-double* vtkColorImagePlaneWidget::GetCenter()
+double* vtkNonOrthoImagePlaneWidget::GetCenter()
 {
   return this->PlaneSource->GetCenter();
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetCenter(double xyz[3])
+void vtkNonOrthoImagePlaneWidget::GetCenter(double xyz[3])
 {
   this->PlaneSource->GetCenter(xyz);
 }
 
 //----------------------------------------------------------------------------
-double* vtkColorImagePlaneWidget::GetNormal()
+double* vtkNonOrthoImagePlaneWidget::GetNormal()
 {
   return this->PlaneSource->GetNormal();
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetNormal(double xyz[3])
+void vtkNonOrthoImagePlaneWidget::GetNormal(double xyz[3])
 {
   this->PlaneSource->GetNormal(xyz);
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetPolyData(vtkPolyData *pd)
+void vtkNonOrthoImagePlaneWidget::GetPolyData(vtkPolyData *pd)
 {
   pd->ShallowCopy(this->PlaneSource->GetOutput());
 }
 
 //----------------------------------------------------------------------------
-vtkPolyDataAlgorithm *vtkColorImagePlaneWidget::GetPolyDataAlgorithm()
+vtkPolyDataAlgorithm *vtkNonOrthoImagePlaneWidget::GetPolyDataAlgorithm()
 {
   return this->PlaneSource;
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::UpdatePlacement(void)
+void vtkNonOrthoImagePlaneWidget::UpdatePlacement(void)
 {
   this->UpdatePlane();
   this->BuildRepresentation();
 }
 
 //----------------------------------------------------------------------------
-vtkTexture* vtkColorImagePlaneWidget::GetTexture()
+vtkTexture* vtkNonOrthoImagePlaneWidget::GetTexture()
 {
   return this->Texture;
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetVector1(double v1[3])
+void vtkNonOrthoImagePlaneWidget::GetVector1(double v1[3])
 {
   double* p1 = this->PlaneSource->GetPoint1();
   double* o =  this->PlaneSource->GetOrigin();
@@ -1687,7 +1687,7 @@ void vtkColorImagePlaneWidget::GetVector1(double v1[3])
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GetVector2(double v2[3])
+void vtkNonOrthoImagePlaneWidget::GetVector2(double v2[3])
 {
   double* p2 = this->PlaneSource->GetPoint2();
   double* o =  this->PlaneSource->GetOrigin();
@@ -1697,7 +1697,7 @@ void vtkColorImagePlaneWidget::GetVector2(double v2[3])
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::Rotate(double X, double Y,
+void vtkNonOrthoImagePlaneWidget::Rotate(double X, double Y,
                                       double *p1, double *p2, double *vpn)
 {
   double v[3]; //vector of motion
@@ -1738,7 +1738,7 @@ void vtkColorImagePlaneWidget::Rotate(double X, double Y,
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GeneratePlaneOutline()
+void vtkNonOrthoImagePlaneWidget::GeneratePlaneOutline()
 {
   vtkPoints* points   = vtkPoints::New(VTK_DOUBLE);
   points->SetNumberOfPoints(4);
@@ -1775,13 +1775,13 @@ void vtkColorImagePlaneWidget::GeneratePlaneOutline()
 }
 
 //------------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::RegisterPickers()
+void vtkNonOrthoImagePlaneWidget::RegisterPickers()
 {
   this->Interactor->GetPickingManager()->AddPicker(this->PlanePicker, this);
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GenerateTexturePlane()
+void vtkNonOrthoImagePlaneWidget::GenerateTexturePlane()
 {
   this->SetResliceInterpolate(this->ResliceInterpolate);
 
@@ -1803,7 +1803,7 @@ void vtkColorImagePlaneWidget::GenerateTexturePlane()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::GenerateArrow()
+void vtkNonOrthoImagePlaneWidget::GenerateArrow()
 {
   // Create the + plane normal
   this->LineSource->SetResolution(1);
@@ -1839,7 +1839,7 @@ void vtkColorImagePlaneWidget::GenerateArrow()
 }
 
 //----------------------------------------------------------------------------
-void vtkColorImagePlaneWidget::HighlightArrow(int highlight)
+void vtkNonOrthoImagePlaneWidget::HighlightArrow(int highlight)
 {
   if ( highlight )
     {
