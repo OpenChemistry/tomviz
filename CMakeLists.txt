@@ -14,12 +14,12 @@ find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 if(NOT PARAVIEW_BUILD_QT_GUI)
   message(FATAL_ERROR
-    "TomViz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
+    "Tomviz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
     "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE.")
 endif()
 if(NOT PARAVIEW_ENABLE_PYTHON)
   message(FATAL_ERROR
-    "TomViz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
+    "Tomviz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
     "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
 endif()
 
@@ -130,9 +130,6 @@ configure_file(TomVizPythonConfig.h.in TomVizPythonConfig.h @ONLY)
 
 add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}
   ${RCC_SOURCES} ${accel_srcs})
-if(APPLE)
-  set_target_properties(tomviz PROPERTIES OUTPUT_NAME "TomViz")
-endif()
 
 set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
 
