@@ -82,7 +82,6 @@
 #ifndef __vtkNonOrthoImagePlaneWidget_h
 #define __vtkNonOrthoImagePlaneWidget_h
 
-#include "vtkInteractionWidgetsModule.h" // For export macro
 #include "vtkPolyDataSourceWidget.h"
 
 class vtkAbstractPropPicker;
@@ -111,7 +110,7 @@ class vtkTransform;
 #define VTK_LINEAR_RESLICE  1
 #define VTK_CUBIC_RESLICE   2
 
-class VTKINTERACTIONWIDGETS_EXPORT vtkNonOrthoImagePlaneWidget : public vtkPolyDataSourceWidget
+class vtkNonOrthoImagePlaneWidget : public vtkPolyDataSourceWidget
 {
 public:
   // Description:
