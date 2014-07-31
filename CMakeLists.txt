@@ -121,6 +121,14 @@ qt4_wrap_ui(UI_SOURCES
   )
 qt4_add_resources(RCC_SOURCES resources.qrc)
 
+if(APPLE)
+  list(APPEND SOURCES icons/tomviz.icns)
+  set(MACOSX_BUNDLE_ICON_FILE tomviz.icns)
+  set(MACOSX_BUNDLE_BUNDLE_VERSION "${tomviz_version}")
+  set_source_files_properties(icons/tomviz.icns PROPERTIES
+    MACOSX_PACKAGE_LOCATION Resources)
+endif()
+
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 configure_file(TomVizPythonConfig.h.in TomVizPythonConfig.h @ONLY)
