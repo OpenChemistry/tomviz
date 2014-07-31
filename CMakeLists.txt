@@ -127,6 +127,8 @@ if(APPLE)
   set(MACOSX_BUNDLE_BUNDLE_VERSION "${tomviz_version}")
   set_source_files_properties(icons/tomviz.icns PROPERTIES
     MACOSX_PACKAGE_LOCATION Resources)
+elseif(WIN32)
+  list(APPEND SOURCES icons/tomviz.rc)
 endif()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
