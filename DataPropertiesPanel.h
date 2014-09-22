@@ -39,6 +39,7 @@ public:
 private slots:
   void setDataSource(DataSource*);
   void update();
+  void render();
 
 private:
   Q_DISABLE_COPY(DataPropertiesPanel)

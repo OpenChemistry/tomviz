@@ -25,6 +25,8 @@
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMViewProxy.h"
+#include "pqView.h"
 
 #include <QPointer>
 
@@ -159,11 +161,24 @@ void DataPropertiesPanel::update()
   colorMapWidget->setApplyChangesImmediately(true);
   colorMapWidget->updatePanel();
   ui.verticalLayout->insertWidget(ui.verticalLayout->count()-1, colorMapWidget);
-  colorMapWidget->connect(ui.ColorMapExpander, SIGNAL(toggled(bool)), SLOT(setVisible(bool)));
+  colorMapWidget->connect(ui.ColorMapExpander, SIGNAL(toggled(bool)),
+                          SLOT(setVisible(bool)));
   colorMapWidget->setVisible(ui.ColorMapExpander->checked());
-  colorMapWidget->connect(ui.ColorMapSaveAsDefaults, SIGNAL(clicked()), SLOT(onSaveAsDefaults()));
-  colorMapWidget->connect(ui.ColorMapRestoreDefaults, SIGNAL(clicked()), SLOT(onRestoreDefaults()));
+  colorMapWidget->connect(ui.ColorMapSaveAsDefaults, SIGNAL(clicked()),
+                          SLOT(onSaveAsDefaults()));
+  colorMapWidget->connect(ui.ColorMapRestoreDefaults, SIGNAL(clicked()),
+                          SLOT(onRestoreDefaults()));
+  this->connect(colorMapWidget, SIGNAL(changeFinished()), SLOT(render()));
   this->Internals->ColorMapWidget = colorMapWidget;
+}
+
+void DataPropertiesPanel::render()
+{
+  pqView* view = TEM::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view)
+    {
+    view->render();
+    }
 }
 
 //-----------------------------------------------------------------------------
