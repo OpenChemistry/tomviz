@@ -30,6 +30,7 @@ class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkImageData;
 class vtkTable;
+class vtkScalarsToColors;
 
 namespace TEM
 {
@@ -73,6 +74,7 @@ private:
   QPointer<DataSource> ADataSource;
   HistogramWorker *Worker;
   QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
+  vtkScalarsToColors *LUT;
 };
 
 }
