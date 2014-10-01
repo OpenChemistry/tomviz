@@ -37,6 +37,7 @@
 #include <vtkTrivialProducer.h>
 #include <vtkContext2D.h>
 #include <vtkPen.h>
+#include <vtkScalarsToColors.h>
 
 #include <QtDebug>
 #include <QThread>
@@ -305,6 +306,18 @@ void CentralWidget::setDataSource(DataSource* source)
       }
     }
 
+  // Get the current color map
+  vtkScalarsToColors *lut =
+      vtkScalarsToColors::SafeDownCast(source->colorMap()->GetClientSideObject());
+  if (lut)
+    {
+    this->LUT = lut;
+    }
+  else
+    {
+    this->LUT = NULL;
+    }
+
   // Calculate a histogram.
   vtkNew<vtkTable> table;
   this->HistogramCache[data] = table.Get();
@@ -387,7 +400,9 @@ void CentralWidget::histogramClicked(vtkObject *caller)
 void CentralWidget::setHistogramTable(vtkTable *table)
 {
   this->Chart->ClearPlots();
-  vtkPlot *plot = this->Chart->AddPlot(vtkChart::BAR);
+
+  vtkNew<vtkPlotBar> plot;
+  this->Chart->AddPlot(plot.Get());
   plot->SetInputData(table, "image_extents", "image_pops");
   plot->SetColor(0, 0, 255, 255);
   plot->GetPen()->SetLineType(vtkPen::NO_PEN);
@@ -410,6 +425,13 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     vtkAxis *axis = this->Chart->GetAxis(vtkAxis::BOTTOM);
     axis->SetBehavior(vtkAxis::FIXED);
     axis->SetRange(range[0] - halfInc , range[1] + halfInc);
+    }
+
+  if (this->LUT)
+    {
+    plot->ScalarVisibilityOn();
+    plot->SetLookupTable(this->LUT);
+    plot->SelectColorArray("image_extents");
     }
 }
 
