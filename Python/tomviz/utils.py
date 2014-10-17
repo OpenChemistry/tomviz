@@ -37,9 +37,10 @@ def set_array(dataobject, newarray):
     if np.isfortran(newarray):
         arr = newarray.reshape(-1, order='F')
     else:
-        print 'Warning, new array did not have Fortran order, deep copy needed.'
+        print 'Warning, array does not have Fortran order, making deep copy and fixing...'
         tmp = np.asfortranarray(newarray)
         arr = tmp.reshape(-1, order='F')
+        print '...done.'
 
     # Set the extents (they may have changed).
     dataobject.SetExtent(0, newarray.shape[0] - 1,
