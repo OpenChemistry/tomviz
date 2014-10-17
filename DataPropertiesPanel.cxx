@@ -137,9 +137,9 @@ void DataPropertiesPanel::update()
   vtkPVDataInformation* tdInfo = dsource->producer()->GetDataInformation(0);
 
   ui.Dimensions->setText(QString("%1 x %2 x %3")
-                         .arg(odInfo->GetExtent()[1] - odInfo->GetExtent()[0] + 1)
-                         .arg(odInfo->GetExtent()[3] - odInfo->GetExtent()[2] + 1)
-                         .arg(odInfo->GetExtent()[5] - odInfo->GetExtent()[4] + 1));
+                         .arg(tdInfo->GetExtent()[1] - tdInfo->GetExtent()[0] + 1)
+                         .arg(tdInfo->GetExtent()[3] - tdInfo->GetExtent()[2] + 1)
+                         .arg(tdInfo->GetExtent()[5] - tdInfo->GetExtent()[4] + 1));
 
   if (vtkPVArrayInformation* oscalars = TEM::scalarArrayInformation(
       dsource->originalDataSource()))
