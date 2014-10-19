@@ -63,6 +63,7 @@
      <string>Data</string>
     </property>
     <addaction name="actionClone"/>
+    <addaction name="actionReconstruct"/>
     <addaction name="actionPython_Expression"/>
     <addaction name="separator"/>
     <addaction name="actionDeleteData"/>
@@ -327,6 +328,11 @@
   <action name="actionClone">
    <property name="text">
     <string>Clone</string>
+   </property>
+  </action>
+  <action name="actionReconstruct">
+   <property name="text">
+    <string>Reconstruct</string>
    </property>
   </action>
   <action name="actionPython_Expression">

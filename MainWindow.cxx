@@ -32,6 +32,7 @@
 
 #include "ActiveObjects.h"
 #include "AddExpressionReaction.h"
+#include "AddReconstructReaction.h"
 #include "Behaviors.h"
 #include "CloneDataReaction.h"
 #include "DeleteDataReaction.h"
@@ -97,6 +98,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new DeleteDataReaction(ui.actionDeleteData);
 
   new CloneDataReaction(ui.actionClone);
+  new AddReconstructReaction(ui.actionReconstruct);
   new AddExpressionReaction(ui.actionPython_Expression);
 
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);

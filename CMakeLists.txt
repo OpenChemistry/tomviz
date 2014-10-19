@@ -51,6 +51,7 @@ set(SOURCES
   ActiveObjects.h
   AddExpressionReaction.cxx
   AddExpressionReaction.h
+  AddReconstructReaction.cxx
   Behaviors.cxx
   Behaviors.h
   CentralWidget.cxx
@@ -115,6 +116,23 @@ set(SOURCES
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
   )
+
+set(python_files "Python/reconstructdft.py")
+unset(python_h_files)
+foreach(file ${python_files})
+  get_filename_component(file_we ${file} NAME_WE)
+  set(src  ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+  set(res  ${CMAKE_CURRENT_BINARY_DIR}/${file_we}.cxx)
+  set(resh ${CMAKE_CURRENT_BINARY_DIR}/${file_we}.h)
+  list(APPEND python_h_files ${resh})
+  add_custom_command(
+    OUTPUT ${res} ${resh}
+    DEPENDS ${src} vtkEncodeString
+    COMMAND vtkEncodeString
+    ARGS ${res} ${src} ${file_we} --build-header VTK_EXPORT vtkObject.h
+    )
+  list(APPEND SOURCES ${res})
+endforeach()
 
 qt4_wrap_ui(UI_SOURCES
   AboutDialog.ui

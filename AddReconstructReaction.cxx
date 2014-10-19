@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "AddExpressionReaction.h"
+#include "AddReconstructReaction.h"
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
@@ -21,33 +21,33 @@
 #include "pqCoreUtilities.h"
 #include "EditPythonOperatorDialog.h"
 
+#include "reconstructdft.h"
 
 namespace TEM
 {
 //-----------------------------------------------------------------------------
-AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
-  :Superclass(parentObject)
+AddReconstructReaction::AddReconstructReaction(QAction* parentObject)
+  : Superclass(parentObject)
 {
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateEnableState()));
-  this->updateEnableState();
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateEnableState()));
+  updateEnableState();
 }
 
 //-----------------------------------------------------------------------------
-AddExpressionReaction::~AddExpressionReaction()
+AddReconstructReaction::~AddReconstructReaction()
 {
 }
 
 //-----------------------------------------------------------------------------
-void AddExpressionReaction::updateEnableState()
+void AddReconstructReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != NULL);
+  parentAction()->setEnabled(
+        ActiveObjects::instance().activeDataSource() != NULL);
 }
 
 //-----------------------------------------------------------------------------
-OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
+OperatorPython* AddReconstructReaction::addExpression(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
@@ -56,7 +56,8 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     }
 
   QSharedPointer<OperatorPython> op(new OperatorPython());
-  op->setLabel("Transform Data");
+  op->setLabel("Reconstruct Data");
+  op->setScript(reconstructdft);
   EditPythonOperatorDialog dialog (op.data(), pqCoreUtilities::mainWidget());
   if (dialog.exec() == QDialog::Accepted)
     {
