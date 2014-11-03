@@ -31,6 +31,7 @@
 #include "vtkPVPlugin.h"
 
 #include "ActiveObjects.h"
+#include "AddAlignReaction.h"
 #include "AddExpressionReaction.h"
 #include "AddReconstructReaction.h"
 #include "Behaviors.h"
@@ -97,6 +98,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new LoadDataReaction(ui.actionOpen);
   new DeleteDataReaction(ui.actionDeleteData);
 
+  new AddAlignReaction(ui.actionAlign);
   new CloneDataReaction(ui.actionClone);
   new AddReconstructReaction(ui.actionReconstruct);
   new AddExpressionReaction(ui.actionPython_Expression);

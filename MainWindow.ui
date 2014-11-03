@@ -62,6 +62,7 @@
     <property name="title">
      <string>Data</string>
     </property>
+    <addaction name="actionAlign"/>
     <addaction name="actionClone"/>
     <addaction name="actionReconstruct"/>
     <addaction name="actionPython_Expression"/>
@@ -328,6 +329,11 @@
   <action name="actionClone">
    <property name="text">
     <string>Clone</string>
+   </property>
+  </action>
+  <action name="actionAlign">
+   <property name="text">
+    <string>Align</string>
    </property>
   </action>
   <action name="actionReconstruct">

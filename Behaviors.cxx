@@ -78,7 +78,6 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
-
 }
 
 //-----------------------------------------------------------------------------
