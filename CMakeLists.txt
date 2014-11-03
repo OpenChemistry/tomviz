@@ -49,9 +49,13 @@ endif()
 set(SOURCES
   ActiveObjects.cxx
   ActiveObjects.h
+  AddAlignReaction.cxx
+  AddAlignReaction.h
   AddExpressionReaction.cxx
   AddExpressionReaction.h
   AddReconstructReaction.cxx
+  AlignWidget.cxx
+  AlignWidget.h
   Behaviors.cxx
   Behaviors.h
   CentralWidget.cxx
