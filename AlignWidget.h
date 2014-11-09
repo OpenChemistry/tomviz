@@ -62,6 +62,8 @@ protected slots:
   void startAlign();
   void stopAlign();
 
+  void doDataAlign();
+
 protected:
   vtkNew<vtkImageSlice> imageSlice;
   vtkNew<vtkImageSliceMapper> mapper;
@@ -75,6 +77,8 @@ protected:
   int sliceIncrement;
 
   QVector<vtkVector2i> offsets;
+  DataSource *unalignedData;
+  DataSource *alignedData;
 };
 
 }

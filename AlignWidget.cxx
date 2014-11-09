@@ -17,6 +17,7 @@
 #include "AlignWidget.h"
 
 #include "DataSource.h"
+#include "LoadDataReaction.h"
 
 #include <QVTKWidget.h>
 #include <vtkCamera.h>
@@ -31,6 +32,8 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkNew.h>
 #include <vtkVector.h>
+#include <vtkPointData.h>
+#include <vtkDataArray.h>
 
 #include <QTimer>
 #include <QGridLayout>
@@ -46,7 +49,8 @@ namespace TEM
 {
 
 AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
-  : QWidget(p, f), timer(new QTimer(this)), frameRate(10), sliceIncrement(1)
+  : QWidget(p, f), timer(new QTimer(this)), frameRate(10), sliceIncrement(1),
+    unalignedData(data), alignedData(NULL)
 {
   widget = new QVTKWidget(this);
   widget->installEventFilter(this);
@@ -141,7 +145,19 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   buttonLayout->addWidget(button);
   grid->addLayout(buttonLayout, 3, 0, 1, 2, Qt::AlignCenter);
 
+  button = new QPushButton("Create Aligned Data");
+  connect(button, SIGNAL(clicked()), SLOT(doDataAlign()));
+  grid->addWidget(button, 4, 0, 1, 2, Qt::AlignCenter);
+
   offsets.fill(vtkVector2i(0, 0), mapper->GetSliceNumberMaxValue() + 1);
+
+  /* Some test offsets.
+  offsets[1] = vtkVector2i(10, 0);
+  offsets[3] = vtkVector2i(-10, 0);
+  offsets[5] = vtkVector2i(0, 10);
+  offsets[7] = vtkVector2i(0, -10);
+  offsets[9] = vtkVector2i(10, 10);
+  offsets[11] = vtkVector2i(-10, -10); */
 
   connect(timer, SIGNAL(timeout()), SLOT(changeSlice()));
   timer->start(100);
@@ -282,6 +298,114 @@ void AlignWidget::stopAlign()
   timer->stop();
   sliceIncrement = 1;
   setSlice(currentSlice->value());
+}
+
+namespace
+{
+vtkImageData* imageData(DataSource *source)
+{
+  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+    source->producer()->GetClientSideObject());
+  return vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+}
+
+// We are assuming an image that begins at 0, 0, 0.
+vtkIdType imageIndex(const vtkVector3i &incs, const vtkVector3i &pos)
+{
+  return pos[0] * incs[0] + pos[1] * incs[1] + pos[2] * incs[2];
+}
+
+template<typename T>
+void applyImageOffsets(T* in, T* out, vtkImageData *image,
+                       const QVector<vtkVector2i> &offsets)
+{
+  // We know that the input and output images are the same size, with the
+  // supplied offsets applied to each slice. Copy the pixels, applying offsets.
+  int *extents = image->GetExtent();
+  vtkVector3i extent(extents[1] - extents[0] + 1,
+                     extents[3] - extents[2] + 1,
+                     extents[5] - extents[4] + 1);
+  vtkVector3i incs(1,
+                   1 * extent[0],
+                   1 * extent[0] * extent[1]);
+
+  // Zero out our output array, we should do this more intelligently in future.
+  T *ptr = out;
+  for (int i = 0; i < extent[0] * extent[1] * extent[2]; ++i)
+    {
+    *ptr++ = 0;
+    }
+
+  // We need to go slice by slice, applying the pixel offsets to the new image.
+  for (int i = 0; i < extent[2]; ++i)
+    {
+    vtkVector2i offset = offsets[i];
+    int idx = imageIndex(incs, vtkVector3i(0, 0, i));
+    T *inPtr = in + idx;
+    T* outPtr = out + idx;
+    for (int y = 0; y < extent[1]; ++y)
+      {
+      if (y + offset[1] >= extent[1])
+        {
+        break;
+        }
+      else if (y + offset[1] < 0)
+        {
+        inPtr += incs[1];
+        outPtr += incs[1];
+        continue;
+        }
+      for (int x = 0; x < extent[0]; ++x)
+        {
+        if (x + offset[0] >= extent[0])
+          {
+          inPtr += offset[0];
+          outPtr += offset[0];
+          break;
+          }
+        else if (x + offset[0] < 0)
+          {
+          ++inPtr;
+          ++outPtr;
+          continue;
+          }
+        *(outPtr + offset[0] + incs[1] * offset[1]) = *inPtr;
+        ++inPtr;
+        ++outPtr;
+        }
+      }
+    }
+}
+}
+
+void AlignWidget::doDataAlign()
+{
+  bool firstAdded = false;
+  if (!alignedData)
+    {
+    alignedData = unalignedData->clone(true);
+    QString name = alignedData->producer()->GetAnnotation("TomViz.Label");
+    name = "Aligned_" + name;
+    alignedData->producer()->SetAnnotation("TomViz.Label", name.toAscii().data());
+    firstAdded = true;
+    }
+  vtkImageData *in = imageData(unalignedData);
+  vtkImageData *out = imageData(alignedData);
+
+  switch (in->GetScalarType())
+    {
+    vtkTemplateMacro(
+      applyImageOffsets(reinterpret_cast<VTK_TT*>(in->GetScalarPointer()),
+                        reinterpret_cast<VTK_TT*>(out->GetScalarPointer()),
+                        in, offsets));
+    }
+  out->GetPointData()->GetScalars()->Modified();
+  out->Modified();
+
+  if (firstAdded)
+    {
+    LoadDataReaction::dataSourceAdded(alignedData);
+    }
 }
 
 }
