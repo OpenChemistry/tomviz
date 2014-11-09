@@ -399,8 +399,7 @@ void AlignWidget::doDataAlign()
                         reinterpret_cast<VTK_TT*>(out->GetScalarPointer()),
                         in, offsets));
     }
-  out->GetPointData()->GetScalars()->Modified();
-  out->Modified();
+  alignedData->dataModified();
 
   if (firstAdded)
     {
