@@ -79,6 +79,9 @@ signals:
   /// DataSource.
   void operatorAdded(Operator*);
 
+public slots:
+  void dataModified();
+
 protected:
   void operate(Operator* op);
   void resetData();

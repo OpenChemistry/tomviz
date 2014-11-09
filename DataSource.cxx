@@ -202,25 +202,33 @@ void DataSource::operate(Operator* op)
   Q_ASSERT(tp);
   if (op->transform(tp->GetOutputDataObject(0)))
     {
-    tp->Modified();
-    tp->GetOutputDataObject(0)->Modified();
-    this->Internals->Producer->MarkModified(NULL);
-
-
-    // This indirection is necessary to overcome a bug in VTK/ParaView when
-    // explicitly calling UpdatePipeline(). The extents don't reset to the whole
-    // extent. Until a  proper fix makes it into VTK, this is needed.
-    vtkSMSessionProxyManager* pxm =
-        this->Internals->Producer->GetSessionProxyManager();
-    vtkSMSourceProxy* filter =
-      vtkSMSourceProxy::SafeDownCast(pxm->NewProxy("filters", "PassThrough"));
-    Q_ASSERT(filter);
-    vtkSMPropertyHelper(filter, "Input").Set(this->Internals->Producer, 0);
-    filter->UpdateVTKObjects();
-    filter->UpdatePipeline();
-    filter->Delete();
-    //this->Internals->Producer->UpdatePipeline();
+    this->dataModified();
     }
+
+  emit this->dataChanged();
+}
+
+void DataSource::dataModified()
+{
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  Q_ASSERT(tp);
+  tp->Modified();
+  tp->GetOutputDataObject(0)->Modified();
+  this->Internals->Producer->MarkModified(NULL);
+
+  // This indirection is necessary to overcome a bug in VTK/ParaView when
+  // explicitly calling UpdatePipeline(). The extents don't reset to the whole
+  // extent. Until a  proper fix makes it into VTK, this is needed.
+  vtkSMSessionProxyManager* pxm =
+      this->Internals->Producer->GetSessionProxyManager();
+  vtkSMSourceProxy* filter =
+    vtkSMSourceProxy::SafeDownCast(pxm->NewProxy("filters", "PassThrough"));
+  Q_ASSERT(filter);
+  vtkSMPropertyHelper(filter, "Input").Set(this->Internals->Producer, 0);
+  filter->UpdateVTKObjects();
+  filter->UpdatePipeline();
+  filter->Delete();
 
   emit this->dataChanged();
 }
