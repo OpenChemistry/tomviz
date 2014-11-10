@@ -121,7 +121,12 @@ set(SOURCES
   vtkNonOrthoImagePlaneWidget.h
   )
 
-set(python_files "Python/reconstructdft.py")
+set(python_files
+  "Python/reconstructdft.py"
+  "Python/alignimages.py"
+  "Python/misalignimagespoisson.py"
+  "Python/misalignimagesuniform.py"
+  )
 unset(python_h_files)
 foreach(file ${python_files})
   get_filename_component(file_we ${file} NAME_WE)

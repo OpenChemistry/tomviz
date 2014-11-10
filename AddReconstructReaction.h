@@ -29,10 +29,11 @@ class AddReconstructReaction : public pqReaction
   typedef pqReaction Superclass;
 
 public:
-  AddReconstructReaction(QAction* parent);
+  AddReconstructReaction(QAction* parent, const QString &label,
+                         const QString &source);
   ~AddReconstructReaction();
 
-  static OperatorPython* addExpression(DataSource* source = NULL);
+  OperatorPython* addExpression(DataSource* source = NULL);
 
 protected:
   void updateEnableState();
@@ -40,6 +41,9 @@ protected:
 
 private:
   Q_DISABLE_COPY(AddReconstructReaction)
+
+  QString scriptLabel;
+  QString scriptSource;
 };
 }
 

@@ -21,13 +21,13 @@
 #include "pqCoreUtilities.h"
 #include "EditPythonOperatorDialog.h"
 
-#include "reconstructdft.h"
-
 namespace TEM
 {
 //-----------------------------------------------------------------------------
-AddReconstructReaction::AddReconstructReaction(QAction* parentObject)
-  : Superclass(parentObject)
+AddReconstructReaction::AddReconstructReaction(QAction* parentObject,
+                                               const QString &l,
+                                               const QString &s)
+  : Superclass(parentObject), scriptLabel(l), scriptSource(s)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -56,9 +56,9 @@ OperatorPython* AddReconstructReaction::addExpression(DataSource* source)
     }
 
   QSharedPointer<OperatorPython> op(new OperatorPython());
-  op->setLabel("Reconstruct Data");
-  op->setScript(reconstructdft);
-  EditPythonOperatorDialog dialog (op.data(), pqCoreUtilities::mainWidget());
+  op->setLabel(scriptLabel);
+  op->setScript(scriptSource);
+  EditPythonOperatorDialog dialog(op.data(), pqCoreUtilities::mainWidget());
   if (dialog.exec() == QDialog::Accepted)
     {
     source->addOperator(op);

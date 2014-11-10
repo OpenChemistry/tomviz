@@ -44,6 +44,11 @@
 #include "ResetReaction.h"
 #include "SaveLoadStateReaction.h"
 
+#include "alignimages.h"
+#include "misalignimagespoisson.h"
+#include "misalignimagesuniform.h"
+#include "reconstructdft.h"
+
 //we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
   // Adds required forward declarations.
@@ -72,7 +77,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  this->setWindowTitle("tomviz");
+  setWindowTitle("tomviz");
 
   QIcon icon(":/icons/tomviz.png");
   setWindowIcon(icon);
@@ -87,7 +92,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                          SLOT(quit()));
 
   // Connect the about dialog up too.
-  this->connect(ui.actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
+  connect(ui.actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
 
   new pqPythonShellReaction(ui.actionPythonConsole);
   new pqMacroReaction(ui.actionMacros);
@@ -100,7 +105,24 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new AddAlignReaction(ui.actionAlign);
   new CloneDataReaction(ui.actionClone);
-  new AddReconstructReaction(ui.actionReconstruct);
+
+  // Add our Python script reactions, these compose Python into menu entries.
+  new AddReconstructReaction(ui.actionReconstruct, "Reconstruct Volume",
+                             reconstructdft);
+
+  QAction *alignAction = new QAction("Align Images", this);
+  ui.menuData->insertAction(ui.actionReconstruct, alignAction);
+  new AddReconstructReaction(alignAction, "Align Images",
+                             alignimages);
+  QAction *misalignPoisson = new QAction("Misalign Images (Poisson)", this);
+  ui.menuData->insertAction(ui.actionReconstruct, misalignPoisson);
+  new AddReconstructReaction(misalignPoisson, "Misalign Images (Poisson)",
+                             misalignimagespoisson);
+  QAction *misalignUniform = new QAction("Misalign Images (Uniform)", this);
+  ui.menuData->insertAction(ui.actionReconstruct, misalignUniform);
+  new AddReconstructReaction(misalignUniform, "Misalign Images (Uniform)",
+                             misalignimagesuniform);
+
   new AddExpressionReaction(ui.actionPython_Expression);
 
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
