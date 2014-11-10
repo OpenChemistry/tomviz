@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "AddReconstructReaction.h"
+#include "AddPythonTransformReaction.h"
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
@@ -24,7 +24,7 @@
 namespace TEM
 {
 //-----------------------------------------------------------------------------
-AddReconstructReaction::AddReconstructReaction(QAction* parentObject,
+AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                const QString &l,
                                                const QString &s)
   : Superclass(parentObject), scriptLabel(l), scriptSource(s)
@@ -35,19 +35,19 @@ AddReconstructReaction::AddReconstructReaction(QAction* parentObject,
 }
 
 //-----------------------------------------------------------------------------
-AddReconstructReaction::~AddReconstructReaction()
+AddPythonTransformReaction::~AddPythonTransformReaction()
 {
 }
 
 //-----------------------------------------------------------------------------
-void AddReconstructReaction::updateEnableState()
+void AddPythonTransformReaction::updateEnableState()
 {
   parentAction()->setEnabled(
         ActiveObjects::instance().activeDataSource() != NULL);
 }
 
 //-----------------------------------------------------------------------------
-OperatorPython* AddReconstructReaction::addExpression(DataSource* source)
+OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)

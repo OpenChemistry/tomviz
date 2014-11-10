@@ -33,7 +33,7 @@
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddExpressionReaction.h"
-#include "AddReconstructReaction.h"
+#include "AddPythonTransformReaction.h"
 #include "Behaviors.h"
 #include "CloneDataReaction.h"
 #include "DeleteDataReaction.h"
@@ -107,21 +107,21 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new CloneDataReaction(ui.actionClone);
 
   // Add our Python script reactions, these compose Python into menu entries.
-  new AddReconstructReaction(ui.actionReconstruct, "Reconstruct Volume",
-                             reconstructdft);
+  new AddPythonTransformReaction(ui.actionReconstruct, "Reconstruct Volume",
+                                 reconstructdft);
 
-  QAction *alignAction = new QAction("Align Images", this);
+  QAction *alignAction = new QAction("Align Images (auto)", this);
   ui.menuData->insertAction(ui.actionReconstruct, alignAction);
-  new AddReconstructReaction(alignAction, "Align Images",
-                             alignimages);
+  new AddPythonTransformReaction(alignAction, "Align Images (auto)",
+                                 alignimages);
   QAction *misalignPoisson = new QAction("Misalign Images (Poisson)", this);
   ui.menuData->insertAction(ui.actionReconstruct, misalignPoisson);
-  new AddReconstructReaction(misalignPoisson, "Misalign Images (Poisson)",
-                             misalignimagespoisson);
+  new AddPythonTransformReaction(misalignPoisson, "Misalign Images (Poisson)",
+                                 misalignimagespoisson);
   QAction *misalignUniform = new QAction("Misalign Images (Uniform)", this);
   ui.menuData->insertAction(ui.actionReconstruct, misalignUniform);
-  new AddReconstructReaction(misalignUniform, "Misalign Images (Uniform)",
-                             misalignimagesuniform);
+  new AddPythonTransformReaction(misalignUniform, "Misalign Images (Uniform)",
+                                 misalignimagesuniform);
 
   new AddExpressionReaction(ui.actionPython_Expression);
 

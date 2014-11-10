@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_AddReconstructReaction_h
-#define __TEM_AddReconstructReaction_h
+#ifndef __TEM_AddPythonTransformReaction_h
+#define __TEM_AddPythonTransformReaction_h
 
 #include "pqReaction.h"
 
@@ -23,15 +23,15 @@ namespace TEM
 class DataSource;
 class OperatorPython;
 
-class AddReconstructReaction : public pqReaction
+class AddPythonTransformReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
 
 public:
-  AddReconstructReaction(QAction* parent, const QString &label,
+  AddPythonTransformReaction(QAction* parent, const QString &label,
                          const QString &source);
-  ~AddReconstructReaction();
+  ~AddPythonTransformReaction();
 
   OperatorPython* addExpression(DataSource* source = NULL);
 
@@ -40,7 +40,7 @@ protected:
   void onTriggered() { this->addExpression(); }
 
 private:
-  Q_DISABLE_COPY(AddReconstructReaction)
+  Q_DISABLE_COPY(AddPythonTransformReaction)
 
   QString scriptLabel;
   QString scriptSource;

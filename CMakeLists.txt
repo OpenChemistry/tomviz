@@ -53,7 +53,7 @@ set(SOURCES
   AddAlignReaction.h
   AddExpressionReaction.cxx
   AddExpressionReaction.h
-  AddReconstructReaction.cxx
+  AddPythonTransformReaction.cxx
   AlignWidget.cxx
   AlignWidget.h
   Behaviors.cxx
