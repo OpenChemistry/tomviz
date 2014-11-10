@@ -57,7 +57,8 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
 
   QStringList items;
   items << "Original data only"
-        << "Original data with transformations";
+        << "Original data with transformations"
+        << "Transformed data only";
 
   bool user_okayed;
   QString	selection = QInputDialog::getItem(
@@ -71,7 +72,8 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
 
   if (user_okayed)
     {
-    DataSource* newClone = toClone->clone(selection == items[1]);
+    DataSource* newClone = toClone->clone(selection == items[1],
+                                          selection == items[2]);
     LoadDataReaction::dataSourceAdded(newClone);
     return newClone;
     }

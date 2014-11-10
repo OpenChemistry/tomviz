@@ -52,8 +52,10 @@ public:
   /// Add/remove operators.
   int addOperator(const QSharedPointer<Operator>& op);
 
-  /// Creates a new clone from this DataSource.
-  DataSource* clone(bool clone_operators) const;
+  /// Creates a new clone from this DataSource. If cloneOperators then clone
+  /// the operators too, if cloneTransformedOnly clone the transformed data.
+  DataSource* clone(bool cloneOperators,
+                    bool cloneTransformedOnly = false) const;
 
   /// Save the state out.
   bool serialize(pugi::xml_node& in) const;

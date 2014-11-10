@@ -61,9 +61,19 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
 
   // We add an annotation to the proxy so that it'll be easier for code to
   // locate registered pipeline proxies that are being treated as data sources.
-  TEM::annotateDataProducer(source,
-    vtkSMPropertyHelper(dataSource,
-      vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString());
+  const char* sourceFilename =
+      vtkSMPropertyHelper(dataSource,
+                          vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
+  if (sourceFilename && strlen(sourceFilename))
+    {
+    TEM::annotateDataProducer(source, sourceFilename);
+    }
+  else if (dataSource->HasAnnotation("filename"))
+    {
+    cout << source->GetAnnotation("filename");
+    TEM::annotateDataProducer(source, dataSource->GetAnnotation("filename"));
+    }
+
   controller->RegisterPipelineProxy(source);
   this->Internals->Producer = vtkSMSourceProxy::SafeDownCast(source);
 
@@ -153,10 +163,23 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
 }
 
 //-----------------------------------------------------------------------------
-DataSource* DataSource::clone(bool clone_operators) const
+DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
 {
-  DataSource* newClone = new DataSource(this->Internals->OriginalDataSource);
-  if (clone_operators)
+  DataSource *newClone = NULL;
+  if (cloneTransformed)
+    {
+    const char* originalFilename =
+        vtkSMPropertyHelper(this->Internals->OriginalDataSource,
+                            vtkSMCoreUtilities::GetFileNameProperty(
+                             this->Internals->OriginalDataSource)).GetAsString();
+    this->Internals->Producer->SetAnnotation("filename", originalFilename);
+    newClone = new DataSource(this->Internals->Producer);
+    }
+  else
+    {
+    newClone = new DataSource(this->Internals->OriginalDataSource);
+    }
+  if (!cloneTransformed && cloneOperators)
     {
     // now, clone the operators.
     foreach (QSharedPointer<Operator> op, this->Internals->Operators)
