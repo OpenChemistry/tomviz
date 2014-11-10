@@ -110,6 +110,12 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   // Now to add the controls to the widget.
   QGridLayout *grid = new QGridLayout;
   v->addStretch(1);
+  QLabel *keyGuide = new QLabel;
+  keyGuide->setText("Use arrow keys to adjust offsets\n"
+                    "A to move back a slice\n"
+                    "S to move forward a slice");
+  v->addWidget(keyGuide);
+  v->addStretch(1);
   v->addLayout(grid);
   v->addStretch(1);
   QLabel *label = new QLabel("Current slice:");
