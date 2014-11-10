@@ -70,7 +70,7 @@ void SaveDataReaction::onTriggered()
   fileDialog.setFileMode(pqFileDialog::AnyFile);
   if (fileDialog.exec() == QDialog::Accepted)
     {
-    pqSaveDataReaction::saveActiveData(fileDialog.getSelectedFiles()[0]);
+    this->saveData(fileDialog.getSelectedFiles()[0]);
     }
 }
 
