@@ -211,6 +211,24 @@ void AlignWidget::changeSlice()
   setSlice(i, false);
 }
 
+void AlignWidget::changeSlice(int delta)
+{
+  int min = mapper->GetSliceNumberMinValue();
+  int max = mapper->GetSliceNumberMaxValue();
+  int i = currentSlice->value() + delta;
+  sliceIncrement = 1;
+  if (i > max)
+    {
+    i = min;
+    }
+  else if (i < min)
+    {
+    i = max;
+    }
+  currentSlice->setValue(i);
+  setSlice(i, false);
+}
+
 void AlignWidget::setSlice(int slice, bool resetInc)
 {
   if (resetInc)
@@ -261,6 +279,14 @@ void AlignWidget::widgetKeyPress(QKeyEvent *key)
     case Qt::Key_Down:
       offset[1] -= 1;
       break;
+    case Qt::Key_K:
+    case Qt::Key_S:
+      changeSlice(1);
+      return;
+    case Qt::Key_J:
+    case Qt::Key_A:
+      changeSlice(-1);
+      return;
     default:
       // Nothing
       break;

@@ -55,6 +55,7 @@ public slots:
 
 protected slots:
   void changeSlice();
+  void changeSlice(int delta);
   void setSlice(int slice, bool resetInc = true);
   void setFrameRate(int rate);
   void widgetKeyPress(QKeyEvent *key);
