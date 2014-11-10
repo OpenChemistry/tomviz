@@ -19,6 +19,8 @@
 
 #include "OperatorPython.h"
 
+#include "pqPythonSyntaxHighlighter.h"
+
 #include <QPointer>
 
 namespace TEM
@@ -47,6 +49,7 @@ EditPythonOperatorDialog::EditPythonOperatorDialog(
     {
     ui.script->setPlainText(op->script());
     }
+  new pqPythonSyntaxHighlighter(ui.script, this);
 
   this->connect(this, SIGNAL(accepted()), SLOT(acceptChanges()));
 }

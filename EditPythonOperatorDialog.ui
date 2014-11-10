@@ -32,14 +32,14 @@
     </widget>
    </item>
    <item row="2" column="0" colspan="2">
-    <widget class="QPlainTextEdit" name="script">
+    <widget class="QTextEdit" name="script">
      <property name="font">
       <font>
        <family>Monospace</family>
       </font>
      </property>
      <property name="lineWrapMode">
-      <enum>QPlainTextEdit::NoWrap</enum>
+      <enum>QTextEdit::NoWrap</enum>
      </property>
      <property name="plainText">
       <string>def transform_scalars(dataset):
