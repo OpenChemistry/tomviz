@@ -24,7 +24,6 @@
 #include "pqPVApplicationCore.h"
 #include "pqPythonShellReaction.h"
 #include "pqSaveAnimationReaction.h"
-#include "pqSaveDataReaction.h"
 #include "pqSaveScreenshotReaction.h"
 #include "pqSaveStateReaction.h"
 #include "pqViewMenuManager.h"
@@ -42,6 +41,7 @@
 #include "ModuleMenu.h"
 #include "RecentFilesMenu.h"
 #include "ResetReaction.h"
+#include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
 
 #include "alignimages.h"
@@ -129,6 +129,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSaveDebuggingState);
 
+  new SaveDataReaction(ui.actionSaveData);
   new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
   new pqSaveAnimationReaction(ui.actionSaveMovie);
 

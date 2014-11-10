@@ -67,9 +67,4 @@ void EditPythonOperatorDialog::acceptChanges()
   this->Internals->Operator->setScript(ui.script->toPlainText());
 }
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-
-
 }

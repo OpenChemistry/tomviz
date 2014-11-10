@@ -111,6 +111,7 @@ set(SOURCES
   RecentFilesMenu.h
   ResetReaction.cxx
   ResetReaction.h
+  SaveDataReaction.cxx
   SaveLoadStateReaction.cxx
   SaveLoadStateReaction.h
   Utilities.cxx

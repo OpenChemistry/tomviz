@@ -38,6 +38,7 @@
     <addaction name="actionSaveState"/>
     <addaction name="actionLoadState"/>
     <addaction name="separator"/>
+    <addaction name="actionSaveData"/>
     <addaction name="actionSaveScreenshot"/>
     <addaction name="actionSaveMovie"/>
     <addaction name="separator"/>
@@ -314,6 +315,11 @@
   <action name="actionMacros">
    <property name="text">
     <string>Macros</string>
+   </property>
+  </action>
+  <action name="actionSaveData">
+   <property name="text">
+    <string>Save Data</string>
    </property>
   </action>
   <action name="actionSaveScreenshot">
