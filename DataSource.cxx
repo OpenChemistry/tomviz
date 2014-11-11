@@ -216,6 +216,33 @@ int DataSource::addOperator(const QSharedPointer<Operator>& op)
 }
 
 //-----------------------------------------------------------------------------
+bool DataSource::removeOperator(Operator *op)
+{
+  QSharedPointer<Operator> ptr;
+
+  foreach (QSharedPointer<Operator> opPtr, this->Internals->Operators)
+    {
+    if (opPtr.data() == op)
+      {
+      ptr = opPtr;
+      }
+    }
+  if (ptr)
+    {
+    // We should emit that the operator was removed...
+    this->Internals->Operators.removeAll(ptr);
+    this->operatorTransformModified();
+    foreach (QSharedPointer<Operator> opPtr, this->Internals->Operators)
+      {
+      cout << "Operator: " << opPtr->label().toAscii().data() << endl;
+      }
+
+    return true;
+    }
+  return false;
+}
+
+//-----------------------------------------------------------------------------
 void DataSource::operate(Operator* op)
 {
   Q_ASSERT(op);

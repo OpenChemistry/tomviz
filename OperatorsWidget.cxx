@@ -41,12 +41,17 @@ OperatorsWidget::OperatorsWidget(QWidget* parentObject) :
   Superclass(parentObject),
   Internals(new OperatorsWidget::OWInternals())
 {
-  this->connect(&ActiveObjects::instance(),
-    SIGNAL(dataSourceChanged(DataSource*)),
-    SLOT(setDataSource(DataSource*)));
-  this->connect(this,
-    SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
-    SLOT(itemDoubleClicked(QTreeWidgetItem*)));
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(setDataSource(DataSource*)));
+  connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
+          SLOT(itemDoubleClicked(QTreeWidgetItem*)));
+  connect(this, SIGNAL(itemClicked(QTreeWidgetItem*, int)),
+          SLOT(onItemClicked(QTreeWidgetItem*, int)));
+
+  this->header()->setResizeMode(0, QHeaderView::Stretch);
+  this->header()->setResizeMode(1, QHeaderView::Fixed);
+  this->header()->resizeSection(1, 25);
+  this->header()->setStretchLastSection(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -87,6 +92,7 @@ void OperatorsWidget::operatorAdded(Operator* op)
   QTreeWidgetItem* item = new QTreeWidgetItem();
   item->setText(0, op->label());
   item->setIcon(0, op->icon());
+  item->setIcon(1, QIcon(":/QtWidgets/Icons/pqDelete32.png"));
   this->addTopLevelItem(item);
   this->Internals->ItemMap[item] = op;
 }
@@ -106,6 +112,17 @@ void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
     {
     // update label in case it changed.
     item->setText(0, op->label());
+    }
+}
+
+void OperatorsWidget::onItemClicked(QTreeWidgetItem *item, int col)
+{
+  Operator *op = this->Internals->ItemMap[item];
+  Q_ASSERT(op);
+  if (col == 1 && op)
+    {
+    this->Internals->ADataSource->removeOperator(op);
+    this->takeTopLevelItem(this->indexOfTopLevelItem(item));
     }
 }
 

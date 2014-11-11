@@ -36,6 +36,7 @@ public:
 private slots:
   void operatorAdded(Operator* op);
 //  void operatorRemoved(Operator* op);
+  void onItemClicked(QTreeWidgetItem*, int);
 
   /// called when the current data source changes.
   void setDataSource(DataSource*);
