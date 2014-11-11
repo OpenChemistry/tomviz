@@ -135,12 +135,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *cropDataAction = new QAction("Crop", this);
   QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
-  QAction *autoAlignAction = new QAction("Auto Align (XCORR)", this);
+  QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
   QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
   QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
   QAction *squareRootAction = new QAction("Square Root Data", this);
-  QAction *fftAbsLogAction = new QAction("FFT (ABS LOG)", this);
+  QAction *fftAbsLogAction = new QAction("FFT (abs log)", this);
 
   ui.menuData->insertAction(ui.actionAlign, cropDataAction);
   ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
