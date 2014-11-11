@@ -61,13 +61,13 @@
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
-     <string>Data</string>
+     <string>Data Transforms</string>
     </property>
     <addaction name="actionAlign"/>
-    <addaction name="actionClone"/>
     <addaction name="actionReconstruct"/>
     <addaction name="actionPython_Expression"/>
     <addaction name="separator"/>
+    <addaction name="actionClone"/>
     <addaction name="actionDeleteData"/>
    </widget>
    <widget class="QMenu" name="menuView">

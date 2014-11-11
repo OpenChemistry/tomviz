@@ -123,13 +123,19 @@ set(SOURCES
   )
 
 set(python_files
-  "Python/reconstructdft.py"
-  "Python/alignimages.py"
-  "Python/misalignimagespoisson.py"
-  "Python/misalignimagesuniform.py"
+  MisalignImgs_Uniform.py
+  Align_Images.py
+  Recon_DFT.py
+  Crop_Data.py
+  FFT_AbsLog.py
+  Shift_Stack_Uniformly.py
+  Square_Root_Data.py
+  Subtract_TiltSer_Background.py
+  MisalignImgs_Gaussian.py
   )
 unset(python_h_files)
 foreach(file ${python_files})
+  set(file Python/${file})
   get_filename_component(file_we ${file} NAME_WE)
   set(src  ${CMAKE_CURRENT_SOURCE_DIR}/${file})
   set(res  ${CMAKE_CURRENT_BINARY_DIR}/${file_we}.cxx)

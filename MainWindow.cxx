@@ -44,10 +44,15 @@
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
 
-#include "alignimages.h"
-#include "misalignimagespoisson.h"
-#include "misalignimagesuniform.h"
-#include "reconstructdft.h"
+#include "MisalignImgs_Uniform.h"
+#include "Align_Images.h"
+#include "Recon_DFT.h"
+#include "Crop_Data.h"
+#include "FFT_AbsLog.h"
+#include "Shift_Stack_Uniformly.h"
+#include "Square_Root_Data.h"
+#include "Subtract_TiltSer_Background.h"
+#include "MisalignImgs_Gaussian.h"
 
 //we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
@@ -106,22 +111,73 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddAlignReaction(ui.actionAlign);
   new CloneDataReaction(ui.actionClone);
 
-  // Add our Python script reactions, these compose Python into menu entries.
-  new AddPythonTransformReaction(ui.actionReconstruct, "Reconstruct Volume",
-                                 reconstructdft);
+  /*
+   * Data Transforms
+   *
+   * Crop - Crop_Data.py
+   * Background subtraction - Subtract_TiltSer_Background.py
+   * ---
+   * Manual Align
+   * Auto Align (XCORR) - Align_Images.py
+   * Shift Uniformly - Shift_Stack_Uniformly.py
+   * Misalign (Uniform) - MisalignImgs_Uniform.py
+   * Misalign (Gaussian) - MisalignImgs_Gaussian.py
+   * ---
+   * Reconstruct (Direct Fourier) - Recon_DFT.py
+   * ---
+   * Square Root Data - Square_Root_Data.py
+   * FFT (ABS LOG) - FFT_AbsLog.py
+   * ---
+   * Clone
+   * Delete
+   *
+   */
 
-  QAction *alignAction = new QAction("Align Images (auto)", this);
-  ui.menuData->insertAction(ui.actionReconstruct, alignAction);
-  new AddPythonTransformReaction(alignAction, "Align Images (auto)",
-                                 alignimages);
-  QAction *misalignPoisson = new QAction("Misalign Images (Poisson)", this);
-  ui.menuData->insertAction(ui.actionReconstruct, misalignPoisson);
-  new AddPythonTransformReaction(misalignPoisson, "Misalign Images (Poisson)",
-                                 misalignimagespoisson);
-  QAction *misalignUniform = new QAction("Misalign Images (Uniform)", this);
-  ui.menuData->insertAction(ui.actionReconstruct, misalignUniform);
-  new AddPythonTransformReaction(misalignUniform, "Misalign Images (Uniform)",
-                                 misalignimagesuniform);
+  QAction *cropDataAction = new QAction("Crop", this);
+  QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
+  QAction *autoAlignAction = new QAction("Auto Align (XCORR)", this);
+  QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
+  QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
+  QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
+  QAction *squareRootAction = new QAction("Square Root Data", this);
+  QAction *fftAbsLogAction = new QAction("FFT (ABS LOG)", this);
+
+  ui.menuData->insertAction(ui.actionAlign, cropDataAction);
+  ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
+  ui.menuData->insertSeparator(ui.actionAlign);
+  ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
+  ui.menuData->insertAction(ui.actionReconstruct, shiftUniformAction);
+  ui.menuData->insertAction(ui.actionReconstruct, misalignUniformAction);
+  ui.menuData->insertAction(ui.actionReconstruct, misalignGaussianAction);
+  ui.menuData->insertSeparator(ui.actionReconstruct);
+  ui.menuData->insertSeparator(ui.actionClone);
+  ui.menuData->insertAction(ui.actionClone, squareRootAction);
+  ui.menuData->insertAction(ui.actionClone, fftAbsLogAction);
+  ui.menuData->insertSeparator(ui.actionClone);
+
+  // Add our Python script reactions, these compose Python into menu entries.
+  new AddPythonTransformReaction(cropDataAction,
+                                 "Crop", Crop_Data);
+  new AddPythonTransformReaction(backgroundSubtractAction,
+                                 "Background Subtraction",
+                                 Subtract_TiltSer_Background);
+  ui.actionAlign->setText("Manual Align");
+  new AddPythonTransformReaction(autoAlignAction,
+                                 "Auto Align (XCORR)", Align_Images);
+  new AddPythonTransformReaction(shiftUniformAction,
+                                 "Shift Uniformly", Shift_Stack_Uniformly);
+  new AddPythonTransformReaction(misalignUniformAction,
+                                 "Misalign (Uniform)", MisalignImgs_Uniform);
+  new AddPythonTransformReaction(misalignGaussianAction,
+                                 "Misalign (Gaussian)", MisalignImgs_Uniform);
+  ui.actionReconstruct->setText("Reconstruct (Direct Fourier)");
+  new AddPythonTransformReaction(ui.actionReconstruct,
+                                 "Reconstruct (Direct Fourier)",
+                                 Recon_DFT);
+  new AddPythonTransformReaction(squareRootAction,
+                                 "Square Root Data", Square_Root_Data);
+  new AddPythonTransformReaction(fftAbsLogAction,
+                                 "FFT (ABS LOG)", FFT_AbsLog);
 
   new AddExpressionReaction(ui.actionPython_Expression);
 
