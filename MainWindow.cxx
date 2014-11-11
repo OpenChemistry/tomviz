@@ -135,22 +135,22 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *customPythonAction = new QAction("Custom Transform", this);
   QAction *cropDataAction = new QAction("Crop", this);
-  QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
+  //QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
   QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
-  QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
-  QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
+  //QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
+  //QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
   QAction *squareRootAction = new QAction("Square Root Data", this);
   QAction *fftAbsLogAction = new QAction("FFT (abs log)", this);
 
   ui.menuData->insertAction(ui.actionAlign, customPythonAction);
   ui.menuData->insertAction(ui.actionAlign, cropDataAction);
-  ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
+  //ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
   ui.menuData->insertSeparator(ui.actionAlign);
   ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
   ui.menuData->insertAction(ui.actionReconstruct, shiftUniformAction);
-  ui.menuData->insertAction(ui.actionReconstruct, misalignUniformAction);
-  ui.menuData->insertAction(ui.actionReconstruct, misalignGaussianAction);
+  //ui.menuData->insertAction(ui.actionReconstruct, misalignUniformAction);
+  //ui.menuData->insertAction(ui.actionReconstruct, misalignGaussianAction);
   ui.menuData->insertSeparator(ui.actionReconstruct);
   ui.menuData->insertSeparator(ui.actionClone);
   ui.menuData->insertAction(ui.actionClone, squareRootAction);
@@ -161,18 +161,18 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddExpressionReaction(customPythonAction);
   new AddPythonTransformReaction(cropDataAction,
                                  "Crop", Crop_Data);
-  new AddPythonTransformReaction(backgroundSubtractAction,
-                                 "Background Subtraction",
-                                 Subtract_TiltSer_Background);
+  //new AddPythonTransformReaction(backgroundSubtractAction,
+  //                               "Background Subtraction",
+  //                               Subtract_TiltSer_Background);
   ui.actionAlign->setText("Manual Align");
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", Align_Images);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", Shift_Stack_Uniformly);
-  new AddPythonTransformReaction(misalignUniformAction,
-                                 "Misalign (Uniform)", MisalignImgs_Uniform);
-  new AddPythonTransformReaction(misalignGaussianAction,
-                                 "Misalign (Gaussian)", MisalignImgs_Uniform);
+  //new AddPythonTransformReaction(misalignUniformAction,
+  //                               "Misalign (Uniform)", MisalignImgs_Uniform);
+  //new AddPythonTransformReaction(misalignGaussianAction,
+  //                               "Misalign (Gaussian)", MisalignImgs_Uniform);
   ui.actionReconstruct->setText("Reconstruct (Direct Fourier)");
   new AddPythonTransformReaction(ui.actionReconstruct,
                                  "Reconstruct (Direct Fourier)",
@@ -204,6 +204,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 #endif
 
   ResetReaction::reset();
+  LoadDataReaction::loadData("/home/marcus/src/tomviz/SampleData/Recon_NanoParticle_doi_10.1021-nl103400a.tif");
+  LoadDataReaction::loadData("/home/marcus/src/tomviz/SampleData/TiltSeries_NanoParticle_doi_10.1021-nl103400a.tif");
+
 }
 
 //-----------------------------------------------------------------------------
