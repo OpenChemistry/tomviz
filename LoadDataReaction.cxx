@@ -71,6 +71,23 @@ void LoadDataReaction::onTriggered()
   readers.clear();
 }
 
+DataSource* LoadDataReaction::loadData(const QString &fileName)
+{
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  QStringList files;
+  files << fileName;
+  pqPipelineSource* reader = pqLoadDataReaction::loadData(files);
+
+  DataSource* dataSource = createDataSource(reader->getProxy());
+  // dataSource may be NULL if user cancelled the action.
+  if (dataSource)
+    {
+    // add the file to recent files menu.
+    RecentFilesMenu::pushDataReader(reader->getProxy());
+    }
+  controller->UnRegisterProxy(reader->getProxy());
+}
+
 //-----------------------------------------------------------------------------
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
 {

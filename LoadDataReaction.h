@@ -41,6 +41,9 @@ public:
   /// Create a raw data source from the reader.
   static DataSource* createDataSource(vtkSMProxy* reader);
 
+  /// Load a data file from the specified location.
+  static DataSource* loadData(const QString &fileName);
+
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource*);
 
