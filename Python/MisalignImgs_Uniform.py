@@ -35,14 +35,14 @@ def transform_scalars(dataset):
             data_py[:,:,i] = np.roll( data_py[:,:,i], shift1, axis = 1)
         elif TILT_AXIS == 1:
             shift0 = int( np.random.uniform(0,np.size(data_py,0)*SHIFT_MAX) )
-            shift2 = int( np.random.uniform(0,np.size(data_py,0)*SHIFT_MAX) )
-            data_py[:,i,:] = np.roll( data_py[:,i,:], shift0, axis = 0)
-            data_py[:,i,:] = np.roll( data_py[:,i,:], shift2, axis = 2)
-        elif TILT_AXIS == 0:
             shift1 = int( np.random.uniform(0,np.size(data_py,0)*SHIFT_MAX) )
-            shift2 = int( np.random.uniform(0,np.size(data_py,0)*SHIFT_MAX) )
+            data_py[:,i,:] = np.roll( data_py[:,i,:], shift0, axis = 0)
+            data_py[:,i,:] = np.roll( data_py[:,i,:], shift1, axis = 1)
+        elif TILT_AXIS == 0:
+            shift0 = int( np.random.uniform(0,np.size(data_py,0)*SHIFT_MAX) )
+            shift1 = int( np.random.uniform(0,np.size(data_py,0)*SHIFT_MAX) )
+            data_py[i,:,:] = np.roll( data_py[i,:,:], shift0, axis = 0)
             data_py[i,:,:] = np.roll( data_py[i,:,:], shift1, axis = 1)
-            data_py[i,:,:] = np.roll( data_py[i,:,:], shift2, axis = 2)
         else:
             raise RuntimeError("Python Transform Error: Unknown TILT_AXIS.")
     
