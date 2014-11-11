@@ -1,24 +1,24 @@
 #3D Reconstruct from a tilt series using Direct Fourier Method
 #
+#NOTE: Tilt Axis needs to be in the third dimension
+#
 #developed as part of the tomviz project (www.tomviz.com)
 
 def transform_scalars(dataset):
-    """Define this method for Python operators that 
-    transform input scalars"""
+    from tomviz import utils
+    import numpy as np
 
     #----USER SPECIFIED VARIABLES-----#
     TILT_AXIS  = []  #Specify the tilt axis, if none is specified
                      #it assume it is the smallest dimension
+    ANGLES = []  #Specify the angles used in the tiltseries 
+                 #For example, ANGLES = np.linspace(0,140,70)
     #---------------------------------#
-        
-    
-    from tomviz import utils
-    import numpy as np
 
-    scalars3D = utils.get_array(dataset)
-    if scalars is None:
+    data_py = utils.get_array(dataset)
+    if data_py is None:
         raise RuntimeError("No scalars found!")
-
+        
     if TILT_AXIS == []: #If tilt axis is not given, find it
     #Find smallest array dimension, assume it is the tilt angle axis
         if data_py.ndim == 3:
@@ -28,13 +28,15 @@ def transform_scalars(dataset):
         else: 
             raise RuntimeError("Data Array is not 2 or 3 dimensions!")
     
-    # transform the dataset
-    angles = np.linspace(0,146,73)
-    result3D = dfm3(scalars3D,angles,512)
+    if ANGLES == []: #If angles are not given, assume 2 degree tilts
+        angles = np.linspace(0,146,74)
+        
+    dimx = np.size(data_py,0) #IN THE FUTURE THIS SHOULD NOT BE ASSUMED
+    result3D = dfm3(data_py,angles,dimx)
     
     # set the result as the new scalars.
-    utils.set_scalars(dataset, result3D)
-
+    utils.set_array(dataset, result3D)
+    print('Reconsruction Complete')
 
 #dfm3(input,angles,Npad)
 #3D Direct Fourier Method
@@ -49,9 +51,9 @@ def transform_scalars(dataset):
 import numpy as np
 
 def dfm3(input,angles,Npad):
-    print "you are using 3D direct fourier method"
+    print "You are using 3D direct fourier method, be patient."
     input = np.double(input)
-    (Np,Nx,Ny) = input.shape
+    (Nx,Ny,Np) = input.shape
     angles = np.double(angles)
     cen = np.floor(Ny/2)
     cen_pad = np.floor(Npad/2)
@@ -67,7 +69,7 @@ def dfm3(input,angles,Npad):
     for a in range(0,Np):
         print angles[a]
         ang = angles[a]*np.pi/180
-	projection = input[a,:,:] #projection
+	projection = input[:,:,a] #projection
         p = np.lib.pad(projection,((0,0),(pad_pre,pad_post)),'constant',constant_values=(0,0)) #pad zeros
         p = np.fft.ifftshift(p) 
 	pF = np.fft.fft2(p)
