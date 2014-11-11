@@ -117,6 +117,11 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
     {
     ActiveObjects::instance().setActiveModule(module);
     }
+  if (Module* module = ModuleManager::instance().createAndAddModule(
+        "Orthogonal Slice", dataSource, view))
+    {
+    ActiveObjects::instance().setActiveModule(module);
+    }
 }
 
 } // end of namespace TEM
