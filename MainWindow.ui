@@ -65,7 +65,6 @@
     </property>
     <addaction name="actionAlign"/>
     <addaction name="actionReconstruct"/>
-    <addaction name="actionPython_Expression"/>
     <addaction name="separator"/>
     <addaction name="actionClone"/>
     <addaction name="actionDeleteData"/>
@@ -360,11 +359,6 @@
   <action name="actionReconstruct">
    <property name="text">
     <string>Reconstruct</string>
-   </property>
-  </action>
-  <action name="actionPython_Expression">
-   <property name="text">
-    <string>Transform</string>
    </property>
   </action>
   <action name="actionSaveState">

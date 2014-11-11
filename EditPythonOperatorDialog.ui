@@ -44,20 +44,20 @@
      <property name="plainText">
       <string>def transform_scalars(dataset):
     &quot;&quot;&quot;Define this method for Python operators that 
-    transform input scalars&quot;&quot;&quot;
+    transform the input array&quot;&quot;&quot;
 
     from tomviz import utils
     import numpy as np
 
-    scalars = utils.get_scalars(dataset)
-    if scalars is None:
+    array = utils.get_array(dataset)
+    if array is None:
         raise RuntimeError(&quot;No scalars found!&quot;)
 
-    # transform the dataset
-    result = np.sqrt(scalars)
+    # Transform the dataset
+    result = np.sqrt(array)
     
-    # set the result as the new scalars.
-    utils.set_scalars(dataset, result)</string>
+    # Set the result as the new array.
+    utils.set_array(dataset, result)</string>
      </property>
     </widget>
    </item>
