@@ -204,9 +204,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 #endif
 
   ResetReaction::reset();
-  LoadDataReaction::loadData("/home/marcus/src/tomviz/SampleData/Recon_NanoParticle_doi_10.1021-nl103400a.tif");
-  LoadDataReaction::loadData("/home/marcus/src/tomviz/SampleData/TiltSeries_NanoParticle_doi_10.1021-nl103400a.tif");
-
 }
 
 //-----------------------------------------------------------------------------
