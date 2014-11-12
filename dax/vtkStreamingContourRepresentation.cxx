@@ -53,9 +53,6 @@ vtkStreamingContourRepresentation::vtkStreamingContourRepresentation()
   this->Actor = vtkSmartPointer<vtkPVLODActor>::New();
   this->Actor->SetMapper(this->Mapper);
   this->Actor->GetProperty()->SetRepresentationToSurface();
-  this->Actor->GetProperty()->SetAmbient(1.0);
-  this->Actor->GetProperty()->SetDiffuse(0.0);
-  this->Actor->GetProperty()->SetSpecular(0.0);
   this->Actor->SetPickable(0);
 }
 
