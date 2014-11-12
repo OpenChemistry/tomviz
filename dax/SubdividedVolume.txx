@@ -82,7 +82,6 @@ SubdividedVolume::SubdividedVolume( std::size_t desiredSubGridsPerDim,
     remainderCellsPerSubGrids[i] = cellDims[i] % subGridsPerDim[i];
     }
 
-
   for(std::size_t k=0; k < subGridsPerDim[2]; ++k)
     {
     for(std::size_t j=0; j < subGridsPerDim[1]; ++j)
@@ -111,9 +110,9 @@ SubdividedVolume::SubdividedVolume( std::size_t desiredSubGridsPerDim,
         subGrid.SetSpacing( this->Spacing ); //same as the full grid
 
         //calculate the origin
-        const dax::Vector3 offset(
-                dax::make_Vector3(ijk[0],ijk[1],ijk[2]) * cellsPerSubGrid[0]);
-
+        const dax::Vector3 offset = dax::make_Vector3(ijk[0] * cellsPerSubGrid[0],
+                                                      ijk[1] * cellsPerSubGrid[1],
+                                                      ijk[2] * cellsPerSubGrid[2]);
         const dax::Vector3 sub_origin = this->Origin + ( offset * this->Spacing);
         subGrid.SetOrigin( sub_origin );
 
@@ -122,7 +121,6 @@ SubdividedVolume::SubdividedVolume( std::size_t desiredSubGridsPerDim,
         sub_extent.Min = dax::Id3(0,0,0);
         sub_extent.Max = cellsPerSubGrid + current_remainder;
         subGrid.SetExtent(sub_extent);
-
 
         this->SubGrids.push_back(subGrid);
         this->SubGridCellIJKOffset.push_back( subGridIJKOffset );
