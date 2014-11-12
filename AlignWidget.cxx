@@ -79,6 +79,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
     {
     mapper->SetInputConnection(t->GetOutputPort());
     }
+  mapper->Update();
   imageSlice->SetMapper(mapper.Get());
   renderer->AddViewProp(imageSlice.Get());
   widget->GetRenderWindow()->AddRenderer(renderer.Get());
@@ -111,9 +112,10 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   QGridLayout *grid = new QGridLayout;
   v->addStretch(1);
   QLabel *keyGuide = new QLabel;
-  keyGuide->setText("Use arrow keys to adjust offsets\n"
-                    "A to move back a slice\n"
-                    "S to move forward a slice");
+  keyGuide->setText("1. Pick an object, use the arrow\nkeys to minimize the wobble.\n"
+                    "2. Use the S to move to the next\nslice, A to return to previous slice.\n"
+                    "3. Repeat steps 1 and 2.\n\n"
+                    "Note: The same object/point must\nbe used for all slices.");
   v->addWidget(keyGuide);
   v->addStretch(1);
   v->addLayout(grid);
