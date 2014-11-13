@@ -49,14 +49,13 @@
     from tomviz import utils
     import numpy as np
 
+    # Get the current volume as a numpy array.
     array = utils.get_array(dataset)
-    if array is None:
-        raise RuntimeError(&quot;No scalars found!&quot;)
 
-    # Transform the dataset
+    # This is where you operate on your data, here we square root it.
     result = np.sqrt(array)
     
-    # Set the result as the new array.
+    # This is where the transformed data is set, it will display in tomviz.
     utils.set_array(dataset, result)</string>
      </property>
     </widget>
