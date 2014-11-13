@@ -114,6 +114,8 @@ set(SOURCES
   SaveDataReaction.cxx
   SaveLoadStateReaction.cxx
   SaveLoadStateReaction.h
+  ScaleActorBehavior.cxx
+  ScaleActorBehavior.h
   Utilities.cxx
   Utilities.h
   ViewPropertiesPanel.cxx
