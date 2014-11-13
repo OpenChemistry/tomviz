@@ -35,6 +35,8 @@ public:
 
   OperatorPython* addExpression(DataSource* source = NULL);
 
+  void setInteractive(bool isInteractive) { interactive = isInteractive; }
+
 protected:
   void updateEnableState();
   void onTriggered() { this->addExpression(); }
@@ -44,6 +46,8 @@ private:
 
   QString scriptLabel;
   QString scriptSource;
+
+  bool interactive;
 };
 }
 

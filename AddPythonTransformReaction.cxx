@@ -21,13 +21,24 @@
 #include "pqCoreUtilities.h"
 #include "EditPythonOperatorDialog.h"
 
+#include <vtkImageData.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkTrivialProducer.h>
+
+#include <QDialog>
+#include <QLabel>
+#include <QSpinBox>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QDialogButtonBox>
+
 namespace TEM
 {
 //-----------------------------------------------------------------------------
 AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                const QString &l,
                                                const QString &s)
-  : Superclass(parentObject), scriptLabel(l), scriptSource(s)
+  : Superclass(parentObject), scriptLabel(l), scriptSource(s), interactive(false)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -58,8 +69,114 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   QSharedPointer<OperatorPython> op(new OperatorPython());
   op->setLabel(scriptLabel);
   op->setScript(scriptSource);
-  EditPythonOperatorDialog dialog(op.data(), pqCoreUtilities::mainWidget());
-  if (dialog.exec() == QDialog::Accepted)
+
+  // Shift uniformly, crop, both have custom gui
+  if (scriptLabel == "Shift Uniformly")
+    {
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    QHBoxLayout *layout = new QHBoxLayout;
+    QLabel *label = new QLabel("Shift to apply:");
+    layout->addWidget(label);
+    QSpinBox *spinx = new QSpinBox;
+    spinx->setValue(0);
+    QSpinBox *spiny = new QSpinBox;
+    spiny->setValue(0);
+    QSpinBox *spinz = new QSpinBox;
+    spinz->setValue(0);
+    layout->addWidget(spinx);
+    layout->addWidget(spiny);
+    layout->addWidget(spinz);
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+
+    if (dialog.exec() == QDialog::Accepted)
+      {
+      QString shiftScript = scriptSource;
+      shiftScript.replace("###SHIFT###",
+                          QString("SHIFT = [%1, %2, %3]").arg(spinx->value())
+                          .arg(spiny->value()).arg(spinz->value()));
+      op->setScript(shiftScript);
+      source->addOperator(op);
+      }
+    }
+  else if (scriptLabel == "Crop")
+    {
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+      source->producer()->GetClientSideObject());
+    vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    int *extent = data->GetExtent();
+
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    QHBoxLayout *layout1 = new QHBoxLayout;
+    QLabel *label = new QLabel("Crop data start:");
+    layout1->addWidget(label);
+    QSpinBox *spinx = new QSpinBox;
+    spinx->setRange(extent[0], extent[1]);
+    spinx->setValue(extent[0]);
+    QSpinBox *spiny = new QSpinBox;
+    spiny->setRange(extent[2], extent[3]);
+    spiny->setValue(extent[2]);
+    QSpinBox *spinz = new QSpinBox;
+    spinz->setRange(extent[4], extent[5]);
+    spinz->setValue(extent[4]);
+    layout1->addWidget(label);
+    layout1->addWidget(spinx);
+    layout1->addWidget(spiny);
+    layout1->addWidget(spinz);
+    QHBoxLayout *layout2 = new QHBoxLayout;
+    label = new QLabel("Crop data end:");
+    layout2->addWidget(label);
+    QSpinBox *spinxx = new QSpinBox;
+    spinxx->setRange(extent[0], extent[1]);
+    spinxx->setValue(extent[1]);
+    QSpinBox *spinyy = new QSpinBox;
+    spinyy->setRange(extent[2], extent[3]);
+    spinyy->setValue(extent[3]);
+    QSpinBox *spinzz = new QSpinBox;
+    spinzz->setRange(extent[4], extent[5]);
+    spinzz->setValue(extent[5]);
+    layout2->addWidget(label);
+    layout2->addWidget(spinxx);
+    layout2->addWidget(spinyy);
+    layout2->addWidget(spinzz);
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addLayout(layout1);
+    v->addLayout(layout2);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+
+    if (dialog.exec() == QDialog::Accepted)
+      {
+      QString cropScript = scriptSource;
+      cropScript.replace("###START_CROP###",
+                          QString("START_CROP = [%1, %2, %3]").arg(spinx->value())
+                          .arg(spiny->value()).arg(spinz->value()));
+      cropScript.replace("###END_CROP###",
+                          QString("END_CROP = [%1, %2, %3]").arg(spinxx->value())
+                          .arg(spinyy->value()).arg(spinzz->value()));
+      op->setScript(cropScript);
+      source->addOperator(op);
+      }
+    }
+  else if (interactive)
+    {
+    EditPythonOperatorDialog dialog(op.data(), pqCoreUtilities::mainWidget());
+    if (dialog.exec() == QDialog::Accepted)
+      {
+      source->addOperator(op);
+      }
+    }
+  else
     {
     source->addOperator(op);
     }

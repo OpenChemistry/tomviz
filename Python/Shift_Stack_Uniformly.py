@@ -7,7 +7,8 @@ def transform_scalars(dataset):
     import numpy as np
 
     #----USER SPECIFIED VARIABLES-----#
-    SHIFT  = [0,0,0]  #Specify the shifts (x,y,z) applied to data
+    #SHIFT  = [0,0,0]  #Specify the shifts (x,y,z) applied to data
+    ###SHIFT###
     #---------------------------------#
     
     data_py = utils.get_array(dataset) #get data as numpy array

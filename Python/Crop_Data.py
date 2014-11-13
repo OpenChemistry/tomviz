@@ -14,8 +14,10 @@ def transform_scalars(dataset):
     (Nx, Ny, Nz) = data_py.shape
     
     #----USER SPECIFIED VARIABLES-----#
-    START_CROP= [0,0,0]        #Specify start and end point of crop cube
-    END_CROP  = [Nx-1,Ny-1,Nz-1] # <-- Default will keep all data in range
+    #START_CROP= [0,0,0]        #Specify start and end point of crop cube
+    #END_CROP  = [Nx-1,Ny-1,Nz-1] # <-- Default will keep all data in range
+    ###START_CROP###
+    ###END_CROP###
     #---------------------------------#    
 
     #crop the data
