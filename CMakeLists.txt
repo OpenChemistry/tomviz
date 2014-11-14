@@ -16,7 +16,7 @@ endif()
 # Location where sample data will be installed.
 set(tomviz_data_install_dir "share/tomviz")
 if(APPLE)
-  set(tomviz_data_install_dir "Applications/tomviz.app/Contents")
+  set(tomviz_data_install_dir "Applications/tomviz.app/Contents/share/tomviz")
 endif()
 
 find_package(ParaView REQUIRED)
@@ -210,6 +210,7 @@ install(DIRECTORY Python/tomviz
        USE_SOURCE_PERMISSIONS
        COMPONENT runtime)
 if(tomviz_data_DIR)
+  add_definitions(-DTOMVIZ_DATA)
   install(DIRECTORY "${tomviz_data_DIR}"
     DESTINATION "${tomviz_data_install_dir}"
     USE_SOURCE_PERMISSIONS
