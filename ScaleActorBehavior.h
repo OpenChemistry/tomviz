@@ -24,7 +24,7 @@ namespace TEM
 {
 class ScaleActorBehavior : public QObject
 {
-  Q_OBJECT;
+  Q_OBJECT
   typedef QObject Superclass;
 public:
   ScaleActorBehavior(QObject* parent=NULL);
@@ -33,7 +33,7 @@ private slots:
   void viewAdded(pqView*);
 
 private:
-  Q_DISABLE_COPY(ScaleActorBehavior);
+  Q_DISABLE_COPY(ScaleActorBehavior)
 };
 }
 

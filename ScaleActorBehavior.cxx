@@ -15,7 +15,6 @@
 *****************************************************************************/
 #include "ScaleActorBehavior.h"
 
-
 #include "pqApplicationCore.h"
 #include "pqServerManagerModel.h"
 #include "pqView.h"
@@ -48,44 +47,44 @@ static void UpdateScale(vtkObject *caller,
   ren->NormalizedViewportToView(pos2[0], pos2[1], pos2[2]);
   ren->ViewToWorld(pos1[0], pos1[1], pos1[2]);
   ren->ViewToWorld(pos2[0], pos2[1], pos2[2]);
-  double distance = vtkMath::Distance2BetweenPoints(pos1,pos2);
+  double distance = vtkMath::Distance2BetweenPoints(pos1, pos2);
 
-  int scale = floor(log10(distance)-0.7);
+  int scale = floor(log10(distance) - 0.7);
   switch (scale)
     {
     case -7:
     case -8:
     case -9:
-      axis->SetTitle("size in nanometers");
-      axis->SetRange(0,distance*1000000000.0);
+      axis->SetTitle("nm");
+      axis->SetRange(0, distance * 1000000000.0);
       break;
     case -4:
     case -5:
     case -6:
-      axis->SetTitle("size in micrometers");
-      axis->SetRange(0,distance*1000000.0);
+      axis->SetTitle("microns");
+      axis->SetRange(0, distance * 1000000.0);
       break;
     case -1:
     case -2:
     case -3:
-      axis->SetTitle("size in millimeters");
-      axis->SetRange(0,distance*1000.0);
+      axis->SetTitle("mm");
+      axis->SetRange(0, distance * 1000.0);
       break;
     case 2:
     case 1:
     case 0:
-      axis->SetTitle("size in meters");
-      axis->SetRange(0,distance);
+      axis->SetTitle("m");
+      axis->SetRange(0, distance);
       break;
     case 5:
     case 4:
     case 3:
-      axis->SetTitle("size in kilometers");
-      axis->SetRange(0,distance/1000.0);
+      axis->SetTitle("km");
+      axis->SetRange(0, distance / 1000.0);
       break;
     default:
       axis->SetTitle("out of range");
-      axis->SetRange(0,1.0);
+      axis->SetRange(0, 1.0);
       break;
     }
 }
@@ -113,15 +112,17 @@ void ScaleActorBehavior::viewAdded(pqView* view)
     Q_ASSERT(ren);
 
     vtkNew<vtkAxisActor2D> axis;
-    axis->SetPoint1(0.6,0.1);
-    axis->SetPoint2(0.9,0.1);
-    axis->SetTitle("size in meters");
+    axis->SetPoint1(0.80, 0.1);
+    axis->SetPoint2(0.95, 0.1);
+    axis->SetTitle("m");
     axis->SetLabelFormat("%3.0f");
+    axis->SetRulerMode(1);
+    axis->SetNumberOfLabels(2);
 
     vtkNew<vtkCallbackCommand> cbc;
     cbc->SetCallback(UpdateScale);
     cbc->SetClientData(axis.GetPointer());
-    ren->AddObserver(vtkCommand::StartEvent, cbc.GetPointer());
+    ren->AddObserver(vtkCommand::StartEvent, cbc.Get());
     ren->AddActor(axis.GetPointer());
     }
 }
