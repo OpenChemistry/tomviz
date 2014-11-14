@@ -25,6 +25,7 @@
 #include "pqStandardViewFrameActionsImplementation.h"
 #include "pqViewStreamingBehavior.h"
 #include "ProgressBehavior.h"
+#include "ScaleActorBehavior.h"
 #include "vtkSMSettings.h"
 
 #include <QMainWindow>
@@ -75,6 +76,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
   new TEM::ProgressBehavior(mainWindow);
+  new TEM::ScaleActorBehavior(this);
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
