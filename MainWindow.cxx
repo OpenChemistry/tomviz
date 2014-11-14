@@ -43,6 +43,7 @@
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
+#include "SetScaleReaction.h"
 
 #include "MisalignImgs_Uniform.h"
 #include "Align_Images.h"
@@ -132,6 +133,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
    * Delete
    *
    */
+
+  QAction *setScaleAction = new QAction("Set Data Size", this);
+  ui.menuTools->addAction(setScaleAction);
+  new SetScaleReaction(setScaleAction);
 
   QAction *customPythonAction = new QAction("Custom Transform", this);
   QAction *cropDataAction = new QAction("Crop", this);
