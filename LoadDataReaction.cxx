@@ -86,6 +86,7 @@ DataSource* LoadDataReaction::loadData(const QString &fileName)
     RecentFilesMenu::pushDataReader(reader->getProxy());
     }
   controller->UnRegisterProxy(reader->getProxy());
+  return dataSource;
 }
 
 //-----------------------------------------------------------------------------
