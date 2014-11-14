@@ -176,7 +176,7 @@ public:
     return true;
   }
 };
-vtkStandardNewMacro(vtkHistogramMarker);
+vtkStandardNewMacro(vtkHistogramMarker)
 
 class vtkChartHistogram : public vtkChartXY
 {
@@ -215,6 +215,9 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   this->Scene->SetDirty(true);
   if (this->GetNumberOfPlots() == 1)
     {
+    // Work around a bug in the charts - ensure corner is invalid for the plot.
+    this->Marker->SetXAxis(NULL);
+    this->Marker->SetYAxis(NULL);
     this->AddPlot(this->Marker.Get());
     }
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
@@ -299,9 +302,8 @@ void CentralWidget::setDataSource(DataSource* source)
       }
     else
       {
-      // Should this ever happen? Do we want to support this? -- YES!!!
-      //qDebug() << "Image data changed after histogram calculation.";
-      //return;
+      // Need to recalculate, clear the plots, and remove the cached data.
+      this->Chart->ClearPlots();
       this->HistogramCache.remove(data);
       }
     }
