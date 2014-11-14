@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(tomviz)
 
 set (tomviz_version_major 0)
-set (tomviz_version_minor 3)
+set (tomviz_version_minor 4)
 set (tomviz_version_patch 0)
 set (tomviz_version_suffix)
 set (tomviz_version "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
