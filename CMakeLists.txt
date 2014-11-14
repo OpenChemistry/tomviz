@@ -13,6 +13,12 @@ if(APPLE)
   set(tomviz_python_install_dir "Applications/tomviz.app/Contents/Python")
 endif()
 
+# Location where sample data will be installed.
+set(tomviz_data_install_dir "share/tomviz")
+if(APPLE)
+  set(tomviz_data_install_dir "Applications/tomviz.app/Contents/share/tomviz")
+endif()
+
 find_package(ParaView REQUIRED)
 include(${PARAVIEW_USE_FILE})
 if(NOT PARAVIEW_BUILD_QT_GUI)
@@ -203,6 +209,13 @@ install(DIRECTORY Python/tomviz
        DESTINATION "${tomviz_python_install_dir}"
        USE_SOURCE_PERMISSIONS
        COMPONENT runtime)
+if(tomviz_data_DIR)
+  add_definitions(-DTOMVIZ_DATA)
+  install(DIRECTORY "${tomviz_data_DIR}"
+    DESTINATION "${tomviz_data_install_dir}"
+    USE_SOURCE_PERMISSIONS
+    COMPONENT runtime)
+endif()
 
 if(ENABLE_DAX_ACCELERATION)
   target_link_libraries(tomviz

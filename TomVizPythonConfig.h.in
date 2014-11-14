@@ -21,9 +21,11 @@
 // For development builds: these are paths when running from the build directory.
 #define PARAVIEW_BUILD_DIR "@ParaView_DIR@"
 #define TOMVIZ_PYTHON_SOURCE_DIR "@tomviz_SOURCE_DIR@/Python"
+#define TOMVIZ_DATA_SOURCE_DIR "@tomviz_data_DIR@/Data"
 
 // For install builds: these are paths when running from an installed location.
 #define TOMVIZ_PYTHON_INSTALL_DIR "@tomviz_python_install_dir@"
+#define TOMVIZ_DATA_INSTALL_DIR "@tomviz_data_install_dir@/Data"
 
 #include "vtkPythonInterpreter.h"
 #include <vtksys/SystemTools.hxx>

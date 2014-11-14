@@ -37,6 +37,8 @@ public:
 
 private slots:
   void showAbout();
+  void openTilt();
+  void openRecon();
 
 private:
   Q_DISABLE_COPY(MainWindow)
