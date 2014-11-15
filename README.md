@@ -4,13 +4,13 @@ tomviz
 Introduction
 ------------
 
-The tomviz project is developing a cross platform, open source application for
-the processing, visualization, and analysis of 3D tomography data. It is
-currently at an early stage of development, but is already capable of
-displaying, visualizing, and interacting with 3D reconstructions of tomographic
-data. In addition basic alignment and tomographic reconstruction are available,
-with Python scripts that can be modified in the interface to experiment with
-different techniques.
+The [tomviz project][tomviz] is developing a cross platform, open source
+application for the processing, visualization, and analysis of 3D tomography
+data. It is currently at an early stage of development, but is already capable
+of displaying, visualizing, and interacting with 3D reconstructions of
+tomographic data. In addition basic alignment and tomographic reconstruction
+are available, with Python scripts that can be modified in the interface to
+experiment with different techniques.
 
 ![Kitware, Inc.][KitwareLogo]
 
