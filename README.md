@@ -4,6 +4,7 @@ tomviz
 Introduction
 ------------
 
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.11445.png)](http://dx.doi.org/10.5281/zenodo.11445)
 The [tomviz project][tomviz] is developing a cross platform, open source
 application for the processing, visualization, and analysis of 3D tomography
 data. It is currently at an early stage of development, but is already capable
