@@ -43,14 +43,14 @@ def transform_scalars(dataset):
             shift0 = int( np.random.normal(shift_mu, shift_sigma) )
             shift1 = int( np.random.normal(shift_mu, shift_sigma) )
             data_py[:,i,:] = np.roll( data_py[:,i,:], shift0, axis = 0)
-            data_py[:,i,:] = np.roll( data_py[:,i,:], shift2, axis = 2)
+            data_py[:,i,:] = np.roll( data_py[:,i,:], shift1, axis = 1)
         elif TILT_AXIS == 0:
             shift_mu    = np.size(data_py,1)*SHIFT_EXP
             shift_sigma = np.size(data_py,1)*SHIFT_STDDEV
             shift0 = int( np.random.normal(shift_mu, shift_sigma) )
             shift1 = int( np.random.normal(shift_mu, shift_sigma) )
+            data_py[i,:,:] = np.roll( data_py[i,:,:], shift0, axis = 0)
             data_py[i,:,:] = np.roll( data_py[i,:,:], shift1, axis = 1)
-            data_py[i,:,:] = np.roll( data_py[i,:,:], shift2, axis = 2)
         else:
             raise RuntimeError("Python Transform Error: Unknown TILT_AXIS.")
     
