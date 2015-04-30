@@ -15,9 +15,9 @@ experiment with different techniques.
 
 ![Kitware, Inc.][KitwareLogo]
 
-The tomviz project is developed principally by Marcus D. Hanwell and Utkarsh
-Ayachit at Kitware, Inc., and David A. Muller and Robert Hovden at Cornell
-University under DOE Office of Science contract DE-SC0011385.
+The tomviz project is developed principally by [Marcus D. Hanwell](https://twitter.com/mhanwell) and [Utkarsh
+Ayachit](http://www.kitware.com/company/team/ayachit.html) at Kitware, Inc., and [David A. Muller](http://muller.research.engineering.cornell.edu/) and [Robert Hovden](http://www.roberthovden.com) at [Cornell
+University](http://www.aep.cornell.edu/) under DOE Office of Science contract DE-SC0011385.
 
 Installing
 ----------
