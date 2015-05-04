@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(tomviz)
 
+set(CMAKE_MODULE_PATH "${tomviz_SOURCE_DIR}/cmake")
+
+include(BuildType)
+include(BuildLocation)
+include(CompilerFlags)
+
 set (tomviz_version_major 0)
 set (tomviz_version_minor 4)
 set (tomviz_version_patch 0)
