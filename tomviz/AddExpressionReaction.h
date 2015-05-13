@@ -32,11 +32,14 @@ public:
   AddExpressionReaction(QAction* parent);
   virtual ~AddExpressionReaction();
 
-  static OperatorPython* addExpression(DataSource* source = NULL);
+  OperatorPython* addExpression(DataSource* source = NULL);
 
 protected:
   void updateEnableState();
   void onTriggered() { this->addExpression(); }
+
+private slots:
+  void addOperator();
 
 private:
   Q_DISABLE_COPY(AddExpressionReaction)

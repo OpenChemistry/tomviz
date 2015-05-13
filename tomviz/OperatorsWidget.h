@@ -34,7 +34,7 @@ public:
   virtual ~OperatorsWidget();
 
 private slots:
-  void operatorAdded(Operator* op);
+  void operatorAdded(QSharedPointer<Operator> &op);
 //  void operatorRemoved(Operator* op);
   void onItemClicked(QTreeWidgetItem*, int);
 
@@ -43,13 +43,14 @@ private slots:
 
   void itemDoubleClicked(QTreeWidgetItem*);
 
+  void updateOperator();
+
 private:
   Q_DISABLE_COPY(OperatorsWidget)
 
   class OWInternals;
   QScopedPointer<OWInternals> Internals;
 };
-
 }
 
 #endif

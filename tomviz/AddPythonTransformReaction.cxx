@@ -38,7 +38,8 @@ namespace TEM
 AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                const QString &l,
                                                const QString &s)
-  : Superclass(parentObject), scriptLabel(l), scriptSource(s), interactive(false)
+  : Superclass(parentObject), scriptLabel(l), scriptSource(s),
+    interactive(false)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -66,9 +67,10 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     return NULL;
     }
 
-  QSharedPointer<OperatorPython> op(new OperatorPython());
-  op->setLabel(scriptLabel);
-  op->setScript(scriptSource);
+  OperatorPython *opPython = new OperatorPython();
+  QSharedPointer<Operator> op(opPython);
+  opPython->setLabel(scriptLabel);
+  opPython->setScript(scriptSource);
 
   // Shift uniformly, crop, both have custom gui
   if (scriptLabel == "Shift Uniformly")
@@ -101,7 +103,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       shiftScript.replace("###SHIFT###",
                           QString("SHIFT = [%1, %2, %3]").arg(spinx->value())
                           .arg(spiny->value()).arg(spinz->value()));
-      op->setScript(shiftScript);
+      opPython->setScript(shiftScript);
       source->addOperator(op);
       }
     }
@@ -164,23 +166,38 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       cropScript.replace("###END_CROP###",
                           QString("END_CROP = [%1, %2, %3]").arg(spinxx->value())
                           .arg(spinyy->value()).arg(spinzz->value()));
-      op->setScript(cropScript);
+      opPython->setScript(cropScript);
       source->addOperator(op);
       }
     }
   else if (interactive)
     {
-    EditPythonOperatorDialog dialog(op.data(), pqCoreUtilities::mainWidget());
-    if (dialog.exec() == QDialog::Accepted)
-      {
-      source->addOperator(op);
-      }
+    // Create a non-modal dialog, delete it once it has been closed.
+    EditPythonOperatorDialog *dialog =
+        new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
+    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+    connect(dialog, SIGNAL(accepted()), SLOT(addOperator()));
+    dialog->show();
     }
   else
     {
     source->addOperator(op);
     }
   return NULL;
+}
+
+void AddPythonTransformReaction::addOperator()
+{
+  EditPythonOperatorDialog *dialog =
+      qobject_cast<EditPythonOperatorDialog*>(sender());
+  if (!dialog)
+    return;
+  DataSource *source = ActiveObjects::instance().activeDataSource();
+  if (!source)
+    {
+    return;
+    }
+  source->addOperator(dialog->op());
 }
 
 }

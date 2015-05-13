@@ -21,12 +21,11 @@
 #include "pqCoreUtilities.h"
 #include "EditPythonOperatorDialog.h"
 
-
 namespace TEM
 {
 //-----------------------------------------------------------------------------
 AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
-  :Superclass(parentObject)
+  : Superclass(parentObject)
 {
   this->connect(&ActiveObjects::instance(),
                 SIGNAL(dataSourceChanged(DataSource*)),
@@ -55,14 +54,32 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     return NULL;
     }
 
-  QSharedPointer<OperatorPython> op(new OperatorPython());
-  op->setLabel("Transform Data");
-  EditPythonOperatorDialog dialog (op.data(), pqCoreUtilities::mainWidget());
-  if (dialog.exec() == QDialog::Accepted)
-    {
-    source->addOperator(op);
-    }
+  OperatorPython *opPython = new OperatorPython();
+  QSharedPointer<Operator> op(opPython);
+  opPython->setLabel("Transform Data");
+
+  // Create a non-modal dialog, delete it once it has been closed.
+  EditPythonOperatorDialog *dialog =
+      new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
+  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+  connect(dialog, SIGNAL(accepted()), SLOT(addOperator()));
+  dialog->show();
   return NULL;
+}
+
+void AddExpressionReaction::addOperator()
+{
+  EditPythonOperatorDialog *dialog =
+      qobject_cast<EditPythonOperatorDialog*>(sender());
+  if (!dialog)
+    return;
+
+  DataSource *source = ActiveObjects::instance().activeDataSource();
+  if (!source)
+    {
+    return;
+    }
+  source->addOperator(dialog->op());
 }
 
 }

@@ -30,24 +30,27 @@ class EditPythonOperatorDialog::EPODInternals
 {
 public:
   Ui::EditPythonOperatorDialog Ui;
-  QPointer<OperatorPython> Operator;
+  QSharedPointer<Operator> Op;
 };
 
 //-----------------------------------------------------------------------------
 EditPythonOperatorDialog::EditPythonOperatorDialog(
-  OperatorPython* op, QWidget* parentObject)
+  QSharedPointer<Operator> &op, QWidget* parentObject)
   : Superclass(parentObject),
   Internals (new EditPythonOperatorDialog::EPODInternals())
 {
   Q_ASSERT(op);
-  this->Internals->Operator = op;
+  this->Internals->Op = op;
   Ui::EditPythonOperatorDialog& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  ui.name->setText(op->label());
-  if (!op->script().isEmpty())
+  OperatorPython* opPython = qobject_cast<OperatorPython*>(op.data());
+  Q_ASSERT(opPython);
+
+  ui.name->setText(opPython->label());
+  if (!opPython->script().isEmpty())
     {
-    ui.script->setPlainText(op->script());
+    ui.script->setPlainText(opPython->script());
     }
   new pqPythonSyntaxHighlighter(ui.script, this);
 
@@ -63,8 +66,16 @@ EditPythonOperatorDialog::~EditPythonOperatorDialog()
 void EditPythonOperatorDialog::acceptChanges()
 {
   Ui::EditPythonOperatorDialog& ui = this->Internals->Ui;
-  this->Internals->Operator->setLabel(ui.name->text());
-  this->Internals->Operator->setScript(ui.script->toPlainText());
+  OperatorPython* opPython =
+      qobject_cast<OperatorPython*>(this->Internals->Op.data());
+  Q_ASSERT(opPython);
+  opPython->setLabel(ui.name->text());
+  opPython->setScript(ui.script->toPlainText());
+}
+
+QSharedPointer<Operator>& EditPythonOperatorDialog::op()
+{
+  return this->Internals->Op;
 }
 
 }
