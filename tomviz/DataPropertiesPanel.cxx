@@ -165,9 +165,9 @@ void DataPropertiesPanel::update()
                           SLOT(setVisible(bool)));
   colorMapWidget->setVisible(ui.ColorMapExpander->checked());
   colorMapWidget->connect(ui.ColorMapSaveAsDefaults, SIGNAL(clicked()),
-                          SLOT(onSaveAsDefaults()));
+                          SLOT(saveAsDefaults()));
   colorMapWidget->connect(ui.ColorMapRestoreDefaults, SIGNAL(clicked()),
-                          SLOT(onRestoreDefaults()));
+                          SLOT(restoreDefaults()));
   this->connect(colorMapWidget, SIGNAL(changeFinished()), SLOT(render()));
   this->Internals->ColorMapWidget = colorMapWidget;
 }
