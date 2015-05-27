@@ -20,7 +20,7 @@
 
 // For development builds: these are paths when running from the build directory.
 #define PARAVIEW_BUILD_DIR "@ParaView_DIR@"
-#define TOMVIZ_PYTHON_SOURCE_DIR "@tomviz_SOURCE_DIR@/Python"
+#define TOMVIZ_PYTHON_SOURCE_DIR "@tomviz_SOURCE_DIR@/tomviz/python"
 #define TOMVIZ_DATA_SOURCE_DIR "@tomviz_data_DIR@/Data"
 
 // For install builds: these are paths when running from an installed location.
@@ -48,8 +48,8 @@ namespace TEM
   //---------------------------------------------------------------------------
   void PythonAppInitPrependPathWindows(const std::string& exe_dir)
     {
-    bool is_build_dir = vtksys::SystemTools::FileExists((exe_dir + "/CMakeCache.txt").c_str()) &&
-      vtksys::SystemTools::FileExists((exe_dir + "/TomVizPythonConfig.h").c_str());
+    bool is_build_dir = vtksys::SystemTools::FileExists((exe_dir + "/../CMakeCache.txt").c_str()) &&
+      vtksys::SystemTools::FileExists((exe_dir + "/../TomVizPythonConfig.h").c_str());
     if (is_build_dir)
       {
       PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/bin");
@@ -70,8 +70,10 @@ namespace TEM
   //---------------------------------------------------------------------------
   void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     {
-    bool is_build_dir = vtksys::SystemTools::FileExists((exe_dir + "/CMakeCache.txt").c_str()) &&
-      vtksys::SystemTools::FileExists((exe_dir + "/TomVizPythonConfig.h").c_str());
+    bool is_build_dir =
+        vtksys::SystemTools::FileExists((exe_dir + "/../CMakeCache.txt").c_str()) &&
+        vtksys::SystemTools::FileExists((exe_dir + "/../tomviz/TomVizPythonConfig.h").c_str());
+
     if (is_build_dir)
       {
       // Add ParaView directories.
