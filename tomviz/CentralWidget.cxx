@@ -401,23 +401,28 @@ void CentralWidget::histogramClicked(vtkObject *caller)
 
 void CentralWidget::setHistogramTable(vtkTable *table)
 {
+  vtkDataArray *arr =
+      vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
+  if (!arr)
+    {
+    return;
+    }
+
   this->Chart->ClearPlots();
 
   vtkNew<vtkPlotBar> plot;
+
   this->Chart->AddPlot(plot.Get());
   plot->SetInputData(table, "image_extents", "image_pops");
   plot->SetColor(0, 0, 255, 255);
   plot->GetPen()->SetLineType(vtkPen::NO_PEN);
-  vtkDataArray *arr =
-      vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
-  if (arr)
-    {
-    double max = log10(arr->GetRange()[1]);
-    vtkAxis *axis = this->Chart->GetAxis(vtkAxis::LEFT);
-    axis->SetUnscaledMinimum(1.0);
-    axis->SetMaximumLimit(max + 2.0);
-    axis->SetMaximum(static_cast<int>(max) + 1.0);
-    }
+
+  double max = log10(arr->GetRange()[1]);
+  vtkAxis *axis = this->Chart->GetAxis(vtkAxis::LEFT);
+  axis->SetUnscaledMinimum(1.0);
+  axis->SetMaximumLimit(max + 2.0);
+  axis->SetMaximum(static_cast<int>(max) + 1.0);
+
   arr = vtkDataArray::SafeDownCast(table->GetColumnByName("image_extents"));
   if (arr && arr->GetNumberOfTuples() > 2)
     {
