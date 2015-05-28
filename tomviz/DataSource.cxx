@@ -153,7 +153,7 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
 
   for (pugi::xml_node node=ns.child("Operator"); node; node = node.next_sibling("Operator"))
     {
-    QSharedPointer<OperatorPython> op (new OperatorPython());
+    QSharedPointer<Operator> op(new OperatorPython());
     if (op->deserialize(node))
       {
       this->addOperator(op);
@@ -204,33 +204,25 @@ vtkSMSourceProxy* DataSource::producer() const
 }
 
 //-----------------------------------------------------------------------------
-int DataSource::addOperator(const QSharedPointer<Operator>& op)
+int DataSource::addOperator(QSharedPointer<Operator>& op)
 {
   int index = this->Internals->Operators.count();
   this->Internals->Operators.push_back(op);
   this->connect(op.data(), SIGNAL(transformModified()),
     SLOT(operatorTransformModified()));
   emit this->operatorAdded(op.data());
+  emit this->operatorAdded(op);
   this->operate(op.data());
   return index;
 }
 
 //-----------------------------------------------------------------------------
-bool DataSource::removeOperator(Operator *op)
+bool DataSource::removeOperator(QSharedPointer<Operator>& op)
 {
-  QSharedPointer<Operator> ptr;
-
-  foreach (QSharedPointer<Operator> opPtr, this->Internals->Operators)
-    {
-    if (opPtr.data() == op)
-      {
-      ptr = opPtr;
-      }
-    }
-  if (ptr)
+  if (op)
     {
     // We should emit that the operator was removed...
-    this->Internals->Operators.removeAll(ptr);
+    this->Internals->Operators.removeAll(op);
     this->operatorTransformModified();
     foreach (QSharedPointer<Operator> opPtr, this->Internals->Operators)
       {

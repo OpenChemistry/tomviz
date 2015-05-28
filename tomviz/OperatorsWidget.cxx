@@ -23,7 +23,7 @@
 #include "pqCoreUtilities.h"
 
 #include <QHeaderView>
-#include <QPointer>
+#include <QSharedPointer>
 #include <QMap>
 
 namespace TEM
@@ -33,7 +33,7 @@ class OperatorsWidget::OWInternals
 {
 public:
   QPointer<DataSource> ADataSource;
-  QMap<QTreeWidgetItem*, QPointer<Operator> > ItemMap;
+  QMap<QTreeWidgetItem*, QSharedPointer<Operator> > ItemMap;
 };
 
 //-----------------------------------------------------------------------------
@@ -77,17 +77,17 @@ void OperatorsWidget::setDataSource(DataSource* ds)
     return;
     }
 
-  this->connect(ds, SIGNAL(operatorAdded(Operator*)),
-                SLOT(operatorAdded(Operator*)));
+  this->connect(ds, SIGNAL(operatorAdded(QSharedPointer<Operator>&)),
+                SLOT(operatorAdded(QSharedPointer<Operator>&)));
 
   foreach (QSharedPointer<Operator> op, ds->operators())
     {
-    this->operatorAdded(op.data());
+    this->operatorAdded(op);
     }
 }
 
 //-----------------------------------------------------------------------------
-void OperatorsWidget::operatorAdded(Operator* op)
+void OperatorsWidget::operatorAdded(QSharedPointer<Operator> &op)
 {
   QTreeWidgetItem* item = new QTreeWidgetItem();
   item->setText(0, op->label());
@@ -100,29 +100,47 @@ void OperatorsWidget::operatorAdded(Operator* op)
 //-----------------------------------------------------------------------------
 void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
 {
-  Operator* op = this->Internals->ItemMap[item];
+  QSharedPointer<Operator> op = this->Internals->ItemMap[item];
   Q_ASSERT(op);
 
-  OperatorPython* opPyhon = qobject_cast<OperatorPython*>(op);
-  Q_ASSERT(opPyhon);
-  //edit op.
-
-  EditPythonOperatorDialog dialog (opPyhon, pqCoreUtilities::mainWidget());
-  if (dialog.exec() == QDialog::Accepted)
-    {
-    // update label in case it changed.
-    item->setText(0, op->label());
-    }
+  // Create a non-modal dialog, delete it once it has been closed.
+  EditPythonOperatorDialog *dialog =
+      new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
+  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+  connect(dialog, SIGNAL(accepted()), SLOT(updateOperator()));
+  dialog->show();
 }
 
 void OperatorsWidget::onItemClicked(QTreeWidgetItem *item, int col)
 {
-  Operator *op = this->Internals->ItemMap[item];
+  QSharedPointer<Operator> op = this->Internals->ItemMap[item];
   Q_ASSERT(op);
   if (col == 1 && op)
     {
     this->Internals->ADataSource->removeOperator(op);
     this->takeTopLevelItem(this->indexOfTopLevelItem(item));
+    }
+}
+
+void OperatorsWidget::updateOperator()
+{
+  EditPythonOperatorDialog *dialog =
+      qobject_cast<EditPythonOperatorDialog*>(sender());
+  if (!dialog)
+    return;
+
+  // Find the item, and update the text. The actual operations will be applied
+  // if necessary using the operator's signal to request pipeline update.
+  QMap<QTreeWidgetItem*, QSharedPointer<Operator> >::iterator i =
+      this->Internals->ItemMap.begin();
+  while (i != this->Internals->ItemMap.constEnd())
+    {
+    if (i.value() == dialog->op())
+      {
+      i.key()->setText(0, dialog->op()->label());
+      return;
+      }
+    ++i;
     }
 }
 

@@ -50,8 +50,8 @@ public:
   const QList<QSharedPointer<Operator> >& operators() const;
 
   /// Add/remove operators.
-  int addOperator(const QSharedPointer<Operator>& op);
-  bool removeOperator(Operator *op);
+  int addOperator(QSharedPointer<Operator>& op);
+  bool removeOperator(QSharedPointer<Operator>& op);
 
   /// Creates a new clone from this DataSource. If cloneOperators then clone
   /// the operators too, if cloneTransformedOnly clone the transformed data.
@@ -81,6 +81,7 @@ signals:
   /// This signal is fired every time a new operator is added to this
   /// DataSource.
   void operatorAdded(Operator*);
+  void operatorAdded(QSharedPointer<Operator>&);
 
 public slots:
   void dataModified();

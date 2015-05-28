@@ -19,18 +19,22 @@
 
 #include <QDialog>
 #include <QScopedPointer>
+#include <QSharedPointer>
 
 namespace TEM
 {
-class OperatorPython;
+class Operator;
 
 class EditPythonOperatorDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
 public:
-  EditPythonOperatorDialog(OperatorPython* op, QWidget* parent=NULL);
+  EditPythonOperatorDialog(QSharedPointer<Operator> &op,
+                           QWidget* parent = NULL);
   virtual ~EditPythonOperatorDialog();
+
+  QSharedPointer<Operator>& op();
 
 private slots:
   void acceptChanges();
