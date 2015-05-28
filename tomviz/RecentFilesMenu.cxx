@@ -31,6 +31,7 @@
 #include "vtkSMSourceProxy.h"
 
 #include <QMenu>
+#include <QDebug>
 #include <sstream>
 #include <string>
 
@@ -177,10 +178,14 @@ void RecentFilesMenu::aboutToShowMenu()
       actn->setEnabled(false);
       header_added = true;
       }
-    QAction* actn = menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
-      node.attribute("filename0").as_string("<bug>"));
-    actn->setData(index);
-    this->connect(actn, SIGNAL(triggered()), SLOT(dataSourceTriggered()));
+    QFileInfo checkFile(node.attribute("filename0").as_string("<bug>"));
+    if (checkFile.exists())
+      {
+      QAction* actn = menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
+        node.attribute("filename0").as_string("<bug>"));
+      actn->setData(index);
+      this->connect(actn, SIGNAL(triggered()), SLOT(dataSourceTriggered()));
+      }
     index++;
     }
 
@@ -194,10 +199,14 @@ void RecentFilesMenu::aboutToShowMenu()
       actn->setEnabled(false);
       header_added = true;
       }
-    QAction* actn = menu->addAction(QIcon(":/icons/tomviz.png"),
-      node.attribute("filename").as_string("<bug>"));
-    actn->setData(node.attribute("filename").as_string("<bug>"));
-    this->connect(actn, SIGNAL(triggered()), SLOT(stateTriggered()));
+    QFileInfo checkFile(node.attribute("filename").as_string("<bug>"));
+    if (checkFile.exists())
+      {
+      QAction* actn = menu->addAction(QIcon(":/icons/tomviz.png"),
+        node.attribute("filename").as_string("<bug>"));
+      actn->setData(node.attribute("filename").as_string("<bug>"));
+      this->connect(actn, SIGNAL(triggered()), SLOT(stateTriggered()));
+      }
     index++;
     }
 }
@@ -207,6 +216,16 @@ void RecentFilesMenu::dataSourceTriggered()
 {
   QAction* actn = qobject_cast<QAction*>(this->sender());
   Q_ASSERT(actn);
+
+  QFileInfo checkFile(actn->iconText());
+  if (!checkFile.exists())
+    {
+    // This should never happen since the checks in aboutToShowMenu should
+    // prevent it, but just in case...
+    qWarning() << "Error: file '" << actn->iconText()
+               << "' does not exist.";
+    return;
+    }
 
   int index = actn->data().toInt();
   pugi::xml_document settings;
@@ -248,6 +267,16 @@ void RecentFilesMenu::stateTriggered()
 {
   QAction* actn = qobject_cast<QAction*>(this->sender());
   Q_ASSERT(actn);
+
+  QFileInfo checkFile(actn->iconText());
+  if (!checkFile.exists())
+    {
+    // This should never happen since the checks in aboutToShowMenu should
+    // prevent it, but just in case...
+    qWarning() << "Error: file '" << actn->iconText()
+               << "' does not exist.";
+    return;
+    }
 
   QString filename = actn->data().toString();
   if (SaveLoadStateReaction::loadState(filename))
