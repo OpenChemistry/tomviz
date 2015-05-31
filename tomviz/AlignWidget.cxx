@@ -120,7 +120,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   v->addStretch(1);
   v->addLayout(grid);
   v->addStretch(1);
-  QLabel *label = new QLabel("Current slice:");
+  QLabel *label = new QLabel("Current image:");
   grid->addWidget(label, 0, 0, 1, 1, Qt::AlignRight);
   currentSlice = new QSpinBox;
   currentSlice->setValue(0);
@@ -138,7 +138,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   grid->addWidget(spin, 1, 1, 1, 1, Qt::AlignLeft);
 
   // Slice offsets
-  label = new QLabel("Slice offset:");
+  label = new QLabel("Image shift:");
   grid->addWidget(label, 2, 0, 1, 1, Qt::AlignRight);
   currentSliceOffset = new QLabel("(0, 0)");
   grid->addWidget(currentSliceOffset, 2, 1, 1, 1, Qt::AlignLeft);
