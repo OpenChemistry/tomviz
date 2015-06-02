@@ -208,7 +208,7 @@ void AlignWidget::changeSlice()
   int max = mapper->GetSliceNumberMaxValue();
   int i = mapper->GetSliceNumber() + sliceIncrement;
   sliceIncrement *= -1;
-  if (i > max)
+  if (i > max)  //This makes stack circular
     {
     i = min;
     }
@@ -225,7 +225,7 @@ void AlignWidget::changeSlice(int delta)
   int max = mapper->GetSliceNumberMaxValue();
   int i = currentSlice->value() + delta;
   sliceIncrement = 1;
-  if (i > max)
+  if (i > max)  //This makes stack circular
     {
     i = min;
     }
