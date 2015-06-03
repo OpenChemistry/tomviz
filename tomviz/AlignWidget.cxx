@@ -41,9 +41,11 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QKeyEvent>
+#include <QButtonGroup>
 
 namespace TEM
 {
@@ -110,6 +112,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
 
   // Now to add the controls to the widget.
   QGridLayout *grid = new QGridLayout;
+  int gridrow = 0;
   v->addStretch(1);
   QLabel *keyGuide = new QLabel;
   keyGuide->setText("1. Pick an object, use the arrow\nkeys to minimize the wobble.\n"
@@ -121,29 +124,47 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   v->addLayout(grid);
   v->addStretch(1);
   QLabel *label = new QLabel("Current image:");
-  grid->addWidget(label, 0, 0, 1, 1, Qt::AlignRight);
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   currentSlice = new QSpinBox;
-  currentSlice->setValue(0);
+  currentSlice->setValue(1);
   currentSlice->setRange(mapper->GetSliceNumberMinValue(),
                          mapper->GetSliceNumberMaxValue());
   connect(currentSlice, SIGNAL(valueChanged(int)), SLOT(setSlice(int)));
-  grid->addWidget(currentSlice, 0, 1, 1, 1, Qt::AlignLeft);
+  grid->addWidget(currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
 
+  gridrow++;
   label = new QLabel("Frame rate (fps):");
-  grid->addWidget(label, 1, 0, 1, 1, Qt::AlignRight);
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   QSpinBox *spin = new QSpinBox;
   spin->setRange(0, 50);
   spin->setValue(10);
   connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
-  grid->addWidget(spin, 1, 1, 1, 1, Qt::AlignLeft);
+  grid->addWidget(spin, gridrow, 1, 1, 1, Qt::AlignLeft);
+
+  gridrow++;
+  label = new QLabel("Reference image:");
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
+  QRadioButton* PrevButton = new QRadioButton("Prev");
+  QRadioButton* NextButton = new QRadioButton("Next");
+  PrevButton->setCheckable(true);
+  NextButton->setCheckable(true);
+  grid->addWidget(PrevButton,gridrow,1,1,1, Qt::AlignRight);
+  grid->addWidget(NextButton,gridrow,2,1,1, Qt::AlignRight);
+  referenceSliceMode = new QButtonGroup;
+  referenceSliceMode->addButton(PrevButton);
+  referenceSliceMode->addButton(NextButton);
+  referenceSliceMode->setExclusive(true);
+  PrevButton->setChecked(true);
 
   // Slice offsets
+  gridrow++;
   label = new QLabel("Image shift:");
-  grid->addWidget(label, 2, 0, 1, 1, Qt::AlignRight);
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   currentSliceOffset = new QLabel("(0, 0)");
-  grid->addWidget(currentSliceOffset, 2, 1, 1, 1, Qt::AlignLeft);
+  grid->addWidget(currentSliceOffset, gridrow, 1, 1, 1, Qt::AlignLeft);
 
   // Add our buttons.
+  gridrow++;
   QHBoxLayout *buttonLayout = new QHBoxLayout;
   QPushButton *button = new QPushButton("Start");
   connect(button, SIGNAL(clicked()), SLOT(startAlign()));
@@ -151,11 +172,12 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   button = new QPushButton("Stop");
   connect(button, SIGNAL(clicked()), SLOT(stopAlign()));
   buttonLayout->addWidget(button);
-  grid->addLayout(buttonLayout, 3, 0, 1, 2, Qt::AlignCenter);
+  grid->addLayout(buttonLayout, gridrow, 0, 1, 2, Qt::AlignCenter);
 
+  gridrow++;
   button = new QPushButton("Create Aligned Data");
   connect(button, SIGNAL(clicked()), SLOT(doDataAlign()));
-  grid->addWidget(button, 4, 0, 1, 2, Qt::AlignCenter);
+  grid->addWidget(button, gridrow, 0, 1, 2, Qt::AlignCenter);
 
   offsets.fill(vtkVector2i(0, 0), mapper->GetSliceNumberMaxValue() + 1);
 
