@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleOutline_h
-#define __ModuleOutline_h
+#ifndef tomvizModuleOutline_h
+#define tomvizModuleOutline_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"

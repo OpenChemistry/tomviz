@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ModuleSlice_h
-#define __TEM_ModuleSlice_h
+#ifndef tomvizModuleSlice_h
+#define tomvizModuleSlice_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"

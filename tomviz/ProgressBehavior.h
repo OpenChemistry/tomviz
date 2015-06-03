@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ProgressBehavior_h
-#define __TEM_ProgressBehavior_h
+#ifndef tomvizProgressBehavior_h
+#define tomvizProgressBehavior_h
 
 #include <QObject>
 #include <QPointer>

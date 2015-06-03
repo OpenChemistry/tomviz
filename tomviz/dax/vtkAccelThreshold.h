@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef __vtkAccelThreshold_h
-#define __vtkAccelThreshold_h
+#ifndef tomvizvtkAccelThreshold_h
+#define tomvizvtkAccelThreshold_h
 
 #include "vtkThreshold.h"
 

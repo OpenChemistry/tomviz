@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef __vtkStreamingContourRepresentation_h
-#define __vtkStreamingContourRepresentation_h
+#ifndef tomvizvtkStreamingContourRepresentation_h
+#define tomvizvtkStreamingContourRepresentation_h
 
 #include "vtkPVDataRepresentation.h"
 #include "vtkSmartPointer.h" // for smart pointer.

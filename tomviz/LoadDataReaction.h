@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __LoadDataReaction_h
-#define __LoadDataReaction_h
+#ifndef tomvizLoadDataReaction_h
+#define tomvizLoadDataReaction_h
 
 #include "pqReaction.h"
 

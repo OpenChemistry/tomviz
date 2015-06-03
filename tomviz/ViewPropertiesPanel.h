@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ViewPropertiesPanel_h
-#define __TEM_ViewPropertiesPanel_h
+#ifndef tomvizViewPropertiesPanel_h
+#define tomvizViewPropertiesPanel_h
 
 #include <QWidget>
 #include <QScopedPointer>

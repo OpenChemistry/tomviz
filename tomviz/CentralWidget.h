@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __CentralWidget_h
-#define __CentralWidget_h
+#ifndef tomvizCentralWidget_h
+#define tomvizCentralWidget_h
 
 #include <QScopedPointer>
 #include <QWidget>

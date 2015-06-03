@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ActiveObjects_h
-#define __ActiveObjects_h
+#ifndef tomvizActiveObjects_h
+#define tomvizActiveObjects_h
 
 #include <QObject>
 #include <QPointer>

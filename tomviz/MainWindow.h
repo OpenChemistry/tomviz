@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef tomvizMainWindow_h
+#define tomvizMainWindow_h
 
 #include <QMainWindow>
 

@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_SaveLoadStateReaction_h
-#define __TEM_SaveLoadStateReaction_h
+#ifndef tomvizSaveLoadStateReaction_h
+#define tomvizSaveLoadStateReaction_h
 
 #include "pqReaction.h"
 

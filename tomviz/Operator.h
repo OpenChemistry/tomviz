@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_Operator_h
-#define __TEM_Operator_h
+#ifndef tomvizOperator_h
+#define tomvizOperator_h
 
 #include <QObject>
 #include <QIcon>

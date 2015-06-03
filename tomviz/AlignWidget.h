@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __AlignWidget_h
-#define __AlignWidget_h
+#ifndef tomvizAlignWidget_h
+#define tomvizAlignWidget_h
 
 #include <QWidget>
 
@@ -84,4 +84,4 @@ protected:
 
 }
 
-#endif // __AlignWidget
+#endif // tomvizAlignWidget

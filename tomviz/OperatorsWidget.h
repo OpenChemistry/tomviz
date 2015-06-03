@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_OperatorsWidget_h
-#define __TEM_OperatorsWidget_h
+#ifndef tomvizOperatorsWidget_h
+#define tomvizOperatorsWidget_h
 
 #include <QTreeWidget>
 #include <QScopedPointer>

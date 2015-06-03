@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __DataSource_h
-#define __DataSource_h
+#ifndef tomvizDataSource_h
+#define tomvizDataSource_h
 
 #include <QObject>
 #include <QScopedPointer>

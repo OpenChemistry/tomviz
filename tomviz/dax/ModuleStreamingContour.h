@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleStreamingContour_h
-#define __ModuleStreamingContour_h
+#ifndef tomvizModuleStreamingContour_h
+#define tomvizModuleStreamingContour_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"

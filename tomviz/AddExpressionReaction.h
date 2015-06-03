@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_AddExpressionReaction_h
-#define __TEM_AddExpressionReaction_h
+#ifndef tomvizAddExpressionReaction_h
+#define tomvizAddExpressionReaction_h
 
 #include "pqReaction.h"
 

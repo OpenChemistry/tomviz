@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleMenu_h
-#define __ModuleMenu_h
+#ifndef tomvizModuleMenu_h
+#define tomvizModuleMenu_h
 
 #include <QObject>
 #include <QPointer>

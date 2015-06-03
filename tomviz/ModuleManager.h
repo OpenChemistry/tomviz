@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleManager_h
-#define __ModuleManager_h
+#ifndef tomvizModuleManager_h
+#define tomvizModuleManager_h
 
 #include <QObject>
 #include <QScopedPointer>

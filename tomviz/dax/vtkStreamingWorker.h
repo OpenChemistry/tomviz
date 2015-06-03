@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __vtkStreamingWorker_h
-#define __vtkStreamingWorker_h
+#ifndef tomvizvtkStreamingWorker_h
+#define tomvizvtkStreamingWorker_h
 
 #include "vtkObject.h"
 #include "vtkSmartPointer.h"

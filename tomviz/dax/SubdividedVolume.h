@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __SubdividedVolume_h
-#define __SubdividedVolume_h
+#ifndef tomvizSubdividedVolume_h
+#define tomvizSubdividedVolume_h
 
 #include <dax/Types.h>
 #include <dax/cont/UniformGrid.h>
