@@ -130,6 +130,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   currentSlice->setRange(mapper->GetSliceNumberMinValue(),
                          mapper->GetSliceNumberMaxValue());
   connect(currentSlice, SIGNAL(valueChanged(int)), SLOT(setSlice(int)));
+  connect(currentSlice, SIGNAL(valueChanged(int)), SLOT(updateReference()));
   grid->addWidget(currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
 
   gridrow++;
@@ -141,11 +142,12 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
   grid->addWidget(spin, gridrow, 1, 1, 1, Qt::AlignLeft);
 
+  // Reference image controls
   gridrow++;
   label = new QLabel("Reference image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
-  QRadioButton* PrevButton = new QRadioButton("Prev");
-  QRadioButton* NextButton = new QRadioButton("Next");
+  PrevButton = new QRadioButton("Prev");
+  NextButton = new QRadioButton("Next");
   PrevButton->setCheckable(true);
   NextButton->setCheckable(true);
   grid->addWidget(PrevButton,gridrow,1,1,1, Qt::AlignRight);
@@ -155,6 +157,13 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   referenceSliceMode->addButton(NextButton);
   referenceSliceMode->setExclusive(true);
   PrevButton->setChecked(true);
+  connect(referenceSliceMode, SIGNAL(buttonClicked(int)), SLOT(updateReference()));
+
+  gridrow++;
+  label = new QLabel("ref:");
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
+  currentRef = new QLabel("(0)");
+  grid->addWidget(currentRef, gridrow, 1, 1, 1, Qt::AlignLeft);
 
   // Slice offsets
   gridrow++;
@@ -225,7 +234,7 @@ void AlignWidget::setDataSource(DataSource *source)
 }
 
 void AlignWidget::changeSlice()
-{
+{  //Does not change currentSlice, display only
   int min = mapper->GetSliceNumberMinValue();
   int max = mapper->GetSliceNumberMaxValue();
   int i = mapper->GetSliceNumber() + sliceIncrement;
@@ -242,7 +251,7 @@ void AlignWidget::changeSlice()
 }
 
 void AlignWidget::changeSlice(int delta)
-{
+{  //Changes currentSlice!
   int min = mapper->GetSliceNumberMinValue();
   int max = mapper->GetSliceNumberMaxValue();
   int i = currentSlice->value() + delta;
@@ -260,7 +269,7 @@ void AlignWidget::changeSlice(int delta)
 }
 
 void AlignWidget::setSlice(int slice, bool resetInc)
-{
+{  //Does not change currentSlice, display only
   if (resetInc)
     {
     sliceIncrement = 1;
@@ -269,6 +278,20 @@ void AlignWidget::setSlice(int slice, bool resetInc)
     }
   mapper->SetSliceNumber(slice);
   applySliceOffset(slice);
+}
+
+void AlignWidget::updateReference()
+{
+  if (PrevButton->isChecked())
+    {
+      referenceSlice=currentSlice->value()-1;
+    }
+  else if (NextButton->isChecked())
+  {
+      referenceSlice=currentSlice->value()+1;
+  }
+
+  currentRef->setText(QString("(%1)").arg(referenceSlice));
 }
 
 void AlignWidget::setFrameRate(int rate)
