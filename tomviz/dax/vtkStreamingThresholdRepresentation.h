@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef __vtkStreamingThresholdRepresentation_h
-#define __vtkStreamingThresholdRepresentation_h
+#ifndef tomvizvtkStreamingThresholdRepresentation_h
+#define tomvizvtkStreamingThresholdRepresentation_h
 
 #include "vtkPVDataRepresentation.h"
 #include "vtkSmartPointer.h" // for smart pointer.

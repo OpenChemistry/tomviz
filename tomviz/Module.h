@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __Module_h
-#define __Module_h
+#ifndef tomvizModule_h
+#define tomvizModule_h
 
 #include <QIcon>
 #include <QObject>

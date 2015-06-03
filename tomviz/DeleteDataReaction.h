@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __DeleteDataReaction_h
-#define __DeleteDataReaction_h
+#ifndef tomvizDeleteDataReaction_h
+#define tomvizDeleteDataReaction_h
 
 #include "pqReaction.h"
 

@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef __DataSetConverters_h
-#define __DataSetConverters_h
+#ifndef tomvizDataSetConverters_h
+#define tomvizDataSetConverters_h
 
 #include <dax/cont/ArrayHandle.h>
 

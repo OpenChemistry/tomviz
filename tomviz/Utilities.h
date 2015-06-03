@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __Utilties_h
-#define __Utilties_h
+#ifndef tomvizUtilties_h
+#define tomvizUtilties_h
 
 // Collection of miscellaneous utility functions.
 

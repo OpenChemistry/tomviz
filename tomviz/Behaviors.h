@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __Behaviors_h
-#define __Behaviors_h
+#ifndef tomvizBehaviors_h
+#define tomvizBehaviors_h
 
 #include <QObject>
 

@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_OperatorPython_h
-#define __TEM_OperatorPython_h
+#ifndef tomvizOperatorPython_h
+#define tomvizOperatorPython_h
 
 #include "Operator.h"
 #include <QScopedPointer>

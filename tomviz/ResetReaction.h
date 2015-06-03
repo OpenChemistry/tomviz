@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ResetReaction_h
-#define __TEM_ResetReaction_h
+#ifndef tomvizResetReaction_h
+#define tomvizResetReaction_h
 
 #include "pqReaction.h"
 

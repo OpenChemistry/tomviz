@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __PipelineWidget_h
-#define __PipelineWidget_h
+#ifndef tomvizPipelineWidget_h
+#define tomvizPipelineWidget_h
 
 #include <QTreeWidget>
 #include <QScopedPointer>

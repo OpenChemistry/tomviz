@@ -14,8 +14,8 @@
 
 
  ******************************************************************************/
-#ifndef __TEM_EditPythonOperatorDialog_h
-#define __TEM_EditPythonOperatorDialog_h
+#ifndef tomvizEditPythonOperatorDialog_h
+#define tomvizEditPythonOperatorDialog_h
 
 #include <QDialog>
 #include <QScopedPointer>

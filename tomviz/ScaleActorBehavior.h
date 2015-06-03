@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ScaleActorBehavior_h
-#define __TEM_ScaleActorBehavior_h
+#ifndef tomvizScaleActorBehavior_h
+#define tomvizScaleActorBehavior_h
 
 #include <QObject>
 

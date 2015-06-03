@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_CloneDataReaction_h
-#define __TEM_CloneDataReaction_h
+#ifndef tomvizCloneDataReaction_h
+#define tomvizCloneDataReaction_h
 
 #include "pqReaction.h"
 

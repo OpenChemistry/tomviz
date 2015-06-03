@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_AddPythonTransformReaction_h
-#define __TEM_AddPythonTransformReaction_h
+#ifndef tomvizAddPythonTransformReaction_h
+#define tomvizAddPythonTransformReaction_h
 
 #include "pqReaction.h"
 

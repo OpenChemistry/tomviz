@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __RecentFilesMenu_h
-#define __RecentFilesMenu_h
+#ifndef tomvizRecentFilesMenu_h
+#define tomvizRecentFilesMenu_h
 
 #include <QObject>
 #include <QAction>

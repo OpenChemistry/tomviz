@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleVolume_h
-#define __ModuleVolume_h
+#ifndef tomvizModuleVolume_h
+#define tomvizModuleVolume_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"

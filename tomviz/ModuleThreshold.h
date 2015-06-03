@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleThreshold_h
-#define __ModuleThreshold_h
+#ifndef tomvizModuleThreshold_h
+#define tomvizModuleThreshold_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
