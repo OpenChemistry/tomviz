@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -14,14 +14,14 @@
 
 
  ******************************************************************************/
-#ifndef __TEM_EditPythonOperatorDialog_h
-#define __TEM_EditPythonOperatorDialog_h
+#ifndef tomvizEditPythonOperatorDialog_h
+#define tomvizEditPythonOperatorDialog_h
 
 #include <QDialog>
 #include <QScopedPointer>
 #include <QSharedPointer>
 
-namespace TEM
+namespace tomviz
 {
 class Operator;
 

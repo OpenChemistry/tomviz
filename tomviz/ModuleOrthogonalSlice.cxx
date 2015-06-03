@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -28,7 +28,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
-namespace TEM
+namespace tomviz
 {
 //-----------------------------------------------------------------------------
 ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject) : Superclass(parentObject)
@@ -145,14 +145,14 @@ bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
     << "Slice"
     << "Visibility";
   pugi::xml_node nodeR = ns.append_child("Representation");
-  return (TEM::serialize(this->Representation, nodeR, reprProperties) &&
+  return (tomviz::serialize(this->Representation, nodeR, reprProperties) &&
     this->Superclass::serialize(ns));
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
 {
-  if (!TEM::deserialize(this->Representation, ns.child("Representation")))
+  if (!tomviz::deserialize(this->Representation, ns.child("Representation")))
     {
     return false;
     }

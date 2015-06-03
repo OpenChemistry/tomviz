@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,15 +13,15 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleStreamingContour_h
-#define __ModuleStreamingContour_h
+#ifndef tomvizModuleStreamingContour_h
+#define tomvizModuleStreamingContour_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
 
 class vtkSMProxy;
 
-namespace TEM
+namespace tomviz
 {
 class ModuleStreamingContour : public Module
 {

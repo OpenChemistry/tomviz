@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -30,7 +30,7 @@
 
 #include <sstream>
 
-namespace TEM
+namespace tomviz
 {
 
 //---------------------------------------------------------------------------
@@ -117,7 +117,7 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   // rescale the color/opacity maps for the data source.
   vtkSMProxy* cmap = colorMap;
   vtkSMProxy* omap = vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
-  vtkPVArrayInformation* ainfo = TEM::scalarArrayInformation(dataSource->producer());
+  vtkPVArrayInformation* ainfo = tomviz::scalarArrayInformation(dataSource->producer());
   if (ainfo != NULL && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
     {
     // assuming single component arrays.

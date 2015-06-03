@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -47,7 +47,7 @@
 #include <QKeyEvent>
 #include <QButtonGroup>
 
-namespace TEM
+namespace tomviz
 {
 
 AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)

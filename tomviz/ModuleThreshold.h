@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleThreshold_h
-#define __ModuleThreshold_h
+#ifndef tomvizModuleThreshold_h
+#define tomvizModuleThreshold_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
@@ -22,7 +22,7 @@
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
-namespace TEM
+namespace tomviz
 {
 
 class ModuleThreshold : public Module

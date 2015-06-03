@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __Utilties_h
-#define __Utilties_h
+#ifndef tomvizUtilties_h
+#define tomvizUtilties_h
 
 // Collection of miscellaneous utility functions.
 
@@ -30,7 +30,7 @@
 class vtkSMProxyLocator;
 class vtkPVArrayInformation;
 
-namespace TEM
+namespace tomviz
 {
 
 class DataSource;

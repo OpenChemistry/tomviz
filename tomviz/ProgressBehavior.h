@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ProgressBehavior_h
-#define __TEM_ProgressBehavior_h
+#ifndef tomvizProgressBehavior_h
+#define tomvizProgressBehavior_h
 
 #include <QObject>
 #include <QPointer>
@@ -22,7 +22,7 @@
 class QProgressDialog;
 class QWidget;
 
-namespace TEM
+namespace tomviz
 {
 
 /// Behavior to show a progress dialog for ParaView progress events.

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __AlignWidget_h
-#define __AlignWidget_h
+#ifndef tomvizAlignWidget_h
+#define tomvizAlignWidget_h
 
 #include <QWidget>
 
@@ -33,7 +33,7 @@ class vtkImageSlice;
 class vtkImageSliceMapper;
 class QVTKWidget;
 
-namespace TEM
+namespace tomviz
 {
 
 class DataSource;
@@ -86,4 +86,4 @@ protected:
 
 }
 
-#endif // __AlignWidget
+#endif // tomvizAlignWidget

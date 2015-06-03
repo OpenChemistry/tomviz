@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -35,7 +35,7 @@
 
 #include <QDebug>
 
-namespace TEM
+namespace tomviz
 {
 //-----------------------------------------------------------------------------
 SaveDataReaction::SaveDataReaction(QAction* parentObject)
@@ -113,4 +113,4 @@ bool SaveDataReaction::saveData(const QString &filename)
   return true;
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,12 +13,12 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_SetScaleReaction_h
-#define __TEM_SetScaleReaction_h
+#ifndef tomvizSetScaleReaction_h
+#define tomvizSetScaleReaction_h
 
 #include "pqReaction.h"
 
-namespace TEM
+namespace tomviz
 {
 class SetScaleReaction : public pqReaction
 {

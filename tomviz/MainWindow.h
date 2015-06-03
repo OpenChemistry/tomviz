@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,12 +13,12 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __MainWindow_h
-#define __MainWindow_h
+#ifndef tomvizMainWindow_h
+#define tomvizMainWindow_h
 
 #include <QMainWindow>
 
-namespace TEM
+namespace tomviz
 {
 
 class DataSource;

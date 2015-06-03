@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __DataSource_h
-#define __DataSource_h
+#ifndef tomvizDataSource_h
+#define tomvizDataSource_h
 
 #include <QObject>
 #include <QScopedPointer>
@@ -24,7 +24,7 @@
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
-namespace TEM
+namespace tomviz
 {
 class Operator;
 

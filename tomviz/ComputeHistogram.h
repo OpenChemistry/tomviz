@@ -1,5 +1,5 @@
-#ifndef __ComputeHistogram_h
-#define __ComputeHistogram_h
+#ifndef tomvizComputeHistogram_h
+#define tomvizComputeHistogram_h
 
 #ifdef DAX_DEVICE_ADAPTER
 #include <dax/cont/ArrayHandle.h>
@@ -8,7 +8,7 @@
 #include "dax/Worklets.h"
 #endif
 
-namespace TEM
+namespace tomviz
 {
 #ifdef DAX_DEVICE_ADAPTER
 

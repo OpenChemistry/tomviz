@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="TEM::CentralWidget" name="centralWidget"/>
+  <widget class="tomviz::CentralWidget" name="centralWidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
@@ -105,7 +105,7 @@
       </widget>
      </item>
      <item>
-      <widget class="TEM::PipelineWidget" name="treeWidget">
+      <widget class="tomviz::PipelineWidget" name="treeWidget">
        <property name="dragEnabled">
         <bool>true</bool>
        </property>
@@ -150,7 +150,7 @@
       </widget>
      </item>
      <item>
-      <widget class="TEM::OperatorsWidget" name="treeWidget_2">
+      <widget class="tomviz::OperatorsWidget" name="treeWidget_2">
        <property name="rootIsDecorated">
         <bool>false</bool>
        </property>
@@ -186,7 +186,7 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="TEM::ModulePropertiesPanel" name="modulePropertiesPanel"/>
+   <widget class="tomviz::ModulePropertiesPanel" name="modulePropertiesPanel"/>
   </widget>
   <widget class="pqCameraToolbar" name="cameraToolbar">
    <property name="windowTitle">
@@ -243,7 +243,7 @@
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="TEM::ViewPropertiesPanel" name="viewPropertiesPanel"/>
+   <widget class="tomviz::ViewPropertiesPanel" name="viewPropertiesPanel"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget_5">
    <property name="windowTitle">
@@ -274,7 +274,7 @@
        <property name="widgetResizable">
         <bool>true</bool>
        </property>
-       <widget class="TEM::DataPropertiesPanel" name="scrollAreaWidgetContents">
+       <widget class="tomviz::DataPropertiesPanel" name="scrollAreaWidgetContents">
         <property name="geometry">
          <rect>
           <x>0</x>
@@ -399,18 +399,18 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>TEM::CentralWidget</class>
+   <class>tomviz::CentralWidget</class>
    <extends>QWidget</extends>
    <header>CentralWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>TEM::PipelineWidget</class>
+   <class>tomviz::PipelineWidget</class>
    <extends>QTreeWidget</extends>
    <header>PipelineWidget.h</header>
   </customwidget>
   <customwidget>
-   <class>TEM::ModulePropertiesPanel</class>
+   <class>tomviz::ModulePropertiesPanel</class>
    <extends>QWidget</extends>
    <header>ModulePropertiesPanel.h</header>
    <container>1</container>
@@ -437,18 +437,18 @@
    <header>pqVCRToolbar.h</header>
   </customwidget>
   <customwidget>
-   <class>TEM::OperatorsWidget</class>
+   <class>tomviz::OperatorsWidget</class>
    <extends>QTreeWidget</extends>
    <header>OperatorsWidget.h</header>
   </customwidget>
   <customwidget>
-   <class>TEM::ViewPropertiesPanel</class>
+   <class>tomviz::ViewPropertiesPanel</class>
    <extends>QWidget</extends>
    <header>ViewPropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>TEM::DataPropertiesPanel</class>
+   <class>tomviz::DataPropertiesPanel</class>
    <extends>QWidget</extends>
    <header>DataPropertiesPanel.h</header>
    <container>1</container>

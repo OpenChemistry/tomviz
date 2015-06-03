@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __SubdividedVolume_h
-#define __SubdividedVolume_h
+#ifndef tomvizSubdividedVolume_h
+#define tomvizSubdividedVolume_h
 
 #include <dax/Types.h>
 #include <dax/cont/UniformGrid.h>
@@ -28,7 +28,7 @@
 
 #include <vector>
 
-namespace TEM
+namespace tomviz
 {
 namespace accel
 {
@@ -115,7 +115,7 @@ struct ContourFunctor
   typedef dax::cont::UnstructuredGrid< dax::CellTagTriangle > ReturnType;
 
 
-  ContourFunctor(TEM::accel::SubdividedVolume& v):Volume(v){}
+  ContourFunctor(tomviz::accel::SubdividedVolume& v):Volume(v){}
 
   template<typename ValueType, typename LoggerType>
   ReturnType operator()(double v, std::size_t i, ValueType, LoggerType& logger)
@@ -123,7 +123,7 @@ struct ContourFunctor
     return this->Volume.ContourSubGrid(v,i,ValueType(),logger);
   }
 
-  TEM::accel::SubdividedVolume& Volume;
+  tomviz::accel::SubdividedVolume& Volume;
 };
 
 struct PointCloudFunctor
@@ -134,7 +134,7 @@ struct PointCloudFunctor
                                        CountingIdContainerType> ReturnType;
 
 
-  PointCloudFunctor(TEM::accel::SubdividedVolume& v):Volume(v){}
+  PointCloudFunctor(tomviz::accel::SubdividedVolume& v):Volume(v){}
 
   template<typename ValueType, typename LoggerType>
   ReturnType operator()(double v, std::size_t i, ValueType, LoggerType& logger)
@@ -142,7 +142,7 @@ struct PointCloudFunctor
     return this->Volume.PointCloudSubGrid(v,i,ValueType(),logger);
   }
 
-  TEM::accel::SubdividedVolume& Volume;
+  tomviz::accel::SubdividedVolume& Volume;
 };
 
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef __TEM_Worklets_
-#define __TEM_Worklets_
+#ifndef tomvizWorklets_h
+#define tomvizWorklets_h
 
 #include <dax/cont/arg/ExecutionObject.h>
 #include <dax/cont/ArrayHandle.h>

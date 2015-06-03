@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef __DataSetConverters_h
-#define __DataSetConverters_h
+#ifndef tomvizDataSetConverters_h
+#define tomvizDataSetConverters_h
 
 #include <dax/cont/ArrayHandle.h>
 

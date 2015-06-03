@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,14 +13,14 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __LoadDataReaction_h
-#define __LoadDataReaction_h
+#ifndef tomvizLoadDataReaction_h
+#define tomvizLoadDataReaction_h
 
 #include "pqReaction.h"
 
 class vtkSMProxy;
 
-namespace TEM
+namespace tomviz
 {
 class DataSource;
 

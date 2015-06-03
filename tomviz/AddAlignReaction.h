@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,12 +13,12 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_AddAlignReaction_h
-#define __TEM_AddAlignReaction_h
+#ifndef tomvizAddAlignReaction_h
+#define tomvizAddAlignReaction_h
 
 #include "pqReaction.h"
 
-namespace TEM
+namespace tomviz
 {
 class DataSource;
 

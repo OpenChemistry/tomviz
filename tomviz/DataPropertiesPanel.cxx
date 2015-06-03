@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -30,7 +30,7 @@
 
 #include <QPointer>
 
-namespace TEM
+namespace tomviz
 {
 
 class DataPropertiesPanel::DPPInternals
@@ -141,7 +141,7 @@ void DataPropertiesPanel::update()
                          .arg(tdInfo->GetExtent()[3] - tdInfo->GetExtent()[2] + 1)
                          .arg(tdInfo->GetExtent()[5] - tdInfo->GetExtent()[4] + 1));
 
-  if (vtkPVArrayInformation* oscalars = TEM::scalarArrayInformation(
+  if (vtkPVArrayInformation* oscalars = tomviz::scalarArrayInformation(
       dsource->originalDataSource()))
     {
     ui.OriginalDataRange->setText(QString("%1 : %2")
@@ -149,7 +149,7 @@ void DataPropertiesPanel::update()
                                   .arg(oscalars->GetComponentRange(0)[1]));
     }
 
-  if (vtkPVArrayInformation* tscalars = TEM::scalarArrayInformation(
+  if (vtkPVArrayInformation* tscalars = tomviz::scalarArrayInformation(
       dsource->producer()))
     {
     ui.TransformedDataRange->setText(QString("%1 : %2")
@@ -174,7 +174,7 @@ void DataPropertiesPanel::update()
 
 void DataPropertiesPanel::render()
 {
-  pqView* view = TEM::convert<pqView*>(ActiveObjects::instance().activeView());
+  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view)
     {
     view->render();

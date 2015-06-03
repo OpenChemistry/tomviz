@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,14 +13,14 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ScaleActorBehavior_h
-#define __TEM_ScaleActorBehavior_h
+#ifndef tomvizScaleActorBehavior_h
+#define tomvizScaleActorBehavior_h
 
 #include <QObject>
 
 class pqView;
 
-namespace TEM
+namespace tomviz
 {
 class ScaleActorBehavior : public QObject
 {

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef __vtkAccelThreshold_h
-#define __vtkAccelThreshold_h
+#ifndef tomvizvtkAccelThreshold_h
+#define tomvizvtkAccelThreshold_h
 
 #include "vtkThreshold.h"
 

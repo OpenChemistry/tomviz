@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -22,7 +22,7 @@
 #include <QMenu>
 #include <QToolBar>
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -90,4 +90,4 @@ void ModuleMenu::triggered(QAction* maction)
     }
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __PipelineWidget_h
-#define __PipelineWidget_h
+#ifndef tomvizPipelineWidget_h
+#define tomvizPipelineWidget_h
 
 #include <QTreeWidget>
 #include <QScopedPointer>
@@ -23,7 +23,7 @@ class pqPipelineSource;
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
 
-namespace TEM
+namespace tomviz
 {
 
 class DataSource;

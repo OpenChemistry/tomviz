@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __RecentFilesMenu_h
-#define __RecentFilesMenu_h
+#ifndef tomvizRecentFilesMenu_h
+#define tomvizRecentFilesMenu_h
 
 #include <QObject>
 #include <QAction>
@@ -22,7 +22,7 @@
 class QMenu;
 class vtkSMProxy;
 
-namespace TEM
+namespace tomviz
 {
 
 /// Extends pqRecentFilesMenu to add support to open a data file customized for

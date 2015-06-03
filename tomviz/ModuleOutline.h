@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __ModuleOutline_h
-#define __ModuleOutline_h
+#ifndef tomvizModuleOutline_h
+#define tomvizModuleOutline_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
@@ -22,7 +22,7 @@
 class vtkSMSourceProxy;
 class vtkSMProxy;
 
-namespace TEM
+namespace tomviz
 {
 
 /// A simple module to show the outline for any dataset.

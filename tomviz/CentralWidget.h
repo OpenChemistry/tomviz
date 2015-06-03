@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __CentralWidget_h
-#define __CentralWidget_h
+#ifndef tomvizCentralWidget_h
+#define tomvizCentralWidget_h
 
 #include <QScopedPointer>
 #include <QWidget>
@@ -32,7 +32,7 @@ class vtkImageData;
 class vtkTable;
 class vtkScalarsToColors;
 
-namespace TEM
+namespace tomviz
 {
 class DataSource;
 class HistogramWorker;

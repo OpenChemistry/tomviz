@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,15 +13,15 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ViewPropertiesPanel_h
-#define __TEM_ViewPropertiesPanel_h
+#ifndef tomvizViewPropertiesPanel_h
+#define tomvizViewPropertiesPanel_h
 
 #include <QWidget>
 #include <QScopedPointer>
 
 class vtkSMViewProxy;
 
-namespace TEM
+namespace tomviz
 {
 class ViewPropertiesPanel : public QWidget
 {

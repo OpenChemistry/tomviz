@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_Operator_h
-#define __TEM_Operator_h
+#ifndef tomvizOperator_h
+#define tomvizOperator_h
 
 #include <QObject>
 #include <QIcon>
@@ -22,7 +22,7 @@
 
 class vtkDataObject;
 
-namespace TEM
+namespace tomviz
 {
 
 class Operator : public QObject

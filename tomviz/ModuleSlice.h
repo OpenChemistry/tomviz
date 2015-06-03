@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __TEM_ModuleSlice_h
-#define __TEM_ModuleSlice_h
+#ifndef tomvizModuleSlice_h
+#define tomvizModuleSlice_h
 
 #include "Module.h"
 #include "vtkWeakPointer.h"
@@ -24,7 +24,7 @@ class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
 
-namespace TEM
+namespace tomviz
 {
 class ModuleSlice : public Module
 {

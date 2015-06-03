@@ -79,8 +79,8 @@
 // vtkPolyDataSourceWidget vtkSphereWidget vtkImplicitPlaneWidget
 
 
-#ifndef __vtkNonOrthoImagePlaneWidget_h
-#define __vtkNonOrthoImagePlaneWidget_h
+#ifndef tomvizvtkNonOrthoImagePlaneWidget_h
+#define tomvizvtkNonOrthoImagePlaneWidget_h
 
 #include "vtkPolyDataSourceWidget.h"
 
