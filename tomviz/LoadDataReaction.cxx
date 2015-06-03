@@ -32,6 +32,8 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkTrivialProducer.h"
 
+#include <QFileDialog>
+
 namespace tomviz
 {
 //-----------------------------------------------------------------------------
@@ -48,27 +50,38 @@ LoadDataReaction::~LoadDataReaction()
 //-----------------------------------------------------------------------------
 void LoadDataReaction::onTriggered()
 {
+  loadData();
+}
+
+QList<DataSource*> LoadDataReaction::loadData()
+{
   vtkNew<vtkSMParaViewPipelineController> controller;
 
-  // Let ParaView deal with reading the data. If we need more customization, we
-  // can show our own "File/Open" dialog and then create the appropriate reader
-  // proxies.
-  QList<pqPipelineSource*> readers = pqLoadDataReaction::loadData();
+  QStringList filters;
+  filters << "Common file types (*.jpg *.jpeg *.png *.tiff *.tif *.raw *.dat *.bin *.txt)"
+          << "JPeg Image files (*.jpg *.jpeg)"
+          << "PNG Image files (*.png)"
+          << "TIFF Image files (*.tiff *.tif)"
+          << "Raw data files (*.raw *.dat *.bin)"
+          << "Text files (*.txt)"
+          << "All files (*.*)";
 
-  // Since we want to ditch the reader pipeline and just keep the raw data
-  // around. We do this magic.
-  foreach (pqPipelineSource* reader, readers)
+  QFileDialog dialog(NULL);
+  dialog.setFileMode(QFileDialog::ExistingFile);
+  dialog.setNameFilters(filters);
+  dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
+
+  QList<DataSource*> dataSources;
+  if (dialog.exec())
+  {
+    QStringList filenames = dialog.selectedFiles();
+    foreach(QString file, filenames)
     {
-    DataSource* dataSource = this->createDataSource(reader->getProxy());
-    // dataSource may be NULL if user cancelled the action.
-    if (dataSource)
-      {
-      // add the file to recent files menu.
-      RecentFilesMenu::pushDataReader(reader->getProxy());
-      }
-    controller->UnRegisterProxy(reader->getProxy());
+      dataSources << loadData(file);
     }
-  readers.clear();
+  }
+
+  return dataSources;
 }
 
 DataSource* LoadDataReaction::loadData(const QString &fileName)
