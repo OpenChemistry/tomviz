@@ -139,7 +139,8 @@ void ModuleOutline::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(panel && this->OutlineRepresentation);
   QStringList properties;
-  properties << "CubeAxesVisibility";
+  properties << "CubeAxesVisibility"
+      << "DiffuseColor";
   panel->addProxy(
     this->OutlineRepresentation, "Annotations", properties, true);
   this->Superclass::addToPanel(panel);
