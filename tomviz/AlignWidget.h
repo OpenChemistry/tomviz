@@ -28,6 +28,7 @@ class QSpinBox;
 class QTimer;
 class QKeyEvent;
 class QButtonGroup;
+class QRadioButton;
 
 class vtkImageSlice;
 class vtkImageSliceMapper;
@@ -58,6 +59,7 @@ protected slots:
   void changeSlice();
   void changeSlice(int delta);
   void setSlice(int slice, bool resetInc = true);
+  void updateReference();
   void setFrameRate(int rate);
   void widgetKeyPress(QKeyEvent *key);
   void applySliceOffset(int sliceNumber = -1);
@@ -74,10 +76,14 @@ protected:
   QTimer *timer;
   QSpinBox *currentSlice;
   QLabel *currentSliceOffset;
+  QLabel *currentRef; //for debugging, remove later
   QButtonGroup *referenceSliceMode;
+  QRadioButton *PrevButton;
+  QRadioButton *NextButton;
 
   int frameRate;
   int sliceIncrement;
+  int referenceSlice;
 
   QVector<vtkVector2i> offsets;
   DataSource *unalignedData;
