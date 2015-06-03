@@ -127,6 +127,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   currentSlice = new QSpinBox;
   currentSlice->setValue(1);
+  referenceSlice=0;
   currentSlice->setRange(mapper->GetSliceNumberMinValue(),
                          mapper->GetSliceNumberMaxValue());
   connect(currentSlice, SIGNAL(valueChanged(int)), SLOT(setSlice(int)));
@@ -235,11 +236,21 @@ void AlignWidget::setDataSource(DataSource *source)
 
 void AlignWidget::changeSlice()
 {  //Does not change currentSlice, display only
-  int min = mapper->GetSliceNumberMinValue();
-  int max = mapper->GetSliceNumberMaxValue();
-  int i = mapper->GetSliceNumber() + sliceIncrement;
-  sliceIncrement *= -1;
-  if (i > max)  // This makes stack circular
+  //int min = mapper->GetSliceNumberMinValue();
+  //int max = mapper->GetSliceNumberMaxValue();
+  //int i = mapper->GetSliceNumber() + sliceIncrement;
+  int i = mapper->GetSliceNumber();
+  if (i==currentSlice->value())
+    { //go to reference
+      i=referenceSlice;
+    }
+  else
+    { //go to current
+      i=currentSlice->value();
+    }
+  //sliceIncrement *= -1;
+  /*
+  if (i > max)  //This makes stack circular
     {
     i = min;
     }
@@ -247,6 +258,7 @@ void AlignWidget::changeSlice()
     {
     i = max;
     }
+    */
   setSlice(i, false);
 }
 
@@ -282,6 +294,9 @@ void AlignWidget::setSlice(int slice, bool resetInc)
 
 void AlignWidget::updateReference()
 {
+  int min = mapper->GetSliceNumberMinValue();
+  int max = mapper->GetSliceNumberMaxValue();
+
   if (PrevButton->isChecked())
     {
       referenceSlice=currentSlice->value()-1;
@@ -290,6 +305,15 @@ void AlignWidget::updateReference()
   {
       referenceSlice=currentSlice->value()+1;
   }
+
+  if (referenceSlice > max)  //This makes stack circular
+    {
+    referenceSlice = min;
+    }
+  else if (referenceSlice < min)
+    {
+    referenceSlice = max;
+    }
 
   currentRef->setText(QString("(%1)").arg(referenceSlice));
 }
