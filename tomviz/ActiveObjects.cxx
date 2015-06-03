@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -25,7 +25,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -60,7 +60,7 @@ ActiveObjects& ActiveObjects::instance()
 //-----------------------------------------------------------------------------
 void ActiveObjects::setActiveView(vtkSMViewProxy* view)
 {
-  pqActiveObjects::instance().setActiveView(TEM::convert<pqView*>(view));
+  pqActiveObjects::instance().setActiveView(tomviz::convert<pqView*>(view));
 }
 
 //-----------------------------------------------------------------------------
@@ -136,4 +136,4 @@ void ActiveObjects::renderAllViews()
 
 
 //-----------------------------------------------------------------------------
-} // end of namespace TEM
+} // end of namespace tomviz

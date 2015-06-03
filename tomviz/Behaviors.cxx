@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -49,7 +49,7 @@ const char* const settings =
 #endif
 "}";
 
-namespace TEM
+namespace tomviz
 {
 //-----------------------------------------------------------------------------
 Behaviors::Behaviors(QMainWindow* mainWindow)
@@ -74,8 +74,8 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   new pqAlwaysConnectedBehavior(this);
   new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
-  new TEM::ProgressBehavior(mainWindow);
-  //new TEM::ScaleActorBehavior(this);
+  new tomviz::ProgressBehavior(mainWindow);
+  //new tomviz::ScaleActorBehavior(this);
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
@@ -86,4 +86,4 @@ Behaviors::~Behaviors()
 {
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

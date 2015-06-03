@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -22,7 +22,7 @@
 #include "vtkSMViewProxy.h"
 #include "pqView.h"
 
-namespace TEM
+namespace tomviz
 {
 
 class ViewPropertiesPanel::VPPInternals
@@ -75,7 +75,7 @@ void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
 //-----------------------------------------------------------------------------
 void ViewPropertiesPanel::render()
 {
-  pqView* view = TEM::convert<pqView*>(ActiveObjects::instance().activeView());
+  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view)
     {
     view->render();

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -21,7 +21,7 @@
 
 class vtkSMViewProxy;
 
-namespace TEM
+namespace tomviz
 {
 class Module;
 

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -32,7 +32,7 @@ class vtkImageData;
 class vtkTable;
 class vtkScalarsToColors;
 
-namespace TEM
+namespace tomviz
 {
 class DataSource;
 class HistogramWorker;

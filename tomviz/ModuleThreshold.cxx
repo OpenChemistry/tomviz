@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -27,7 +27,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -173,16 +173,16 @@ bool ModuleThreshold::serialize(pugi::xml_node& ns) const
     << "Specular"
     << "Visibility";
   pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
-  return TEM::serialize(this->ThresholdFilter, tnode, fprops) &&
-    TEM::serialize(this->ThresholdRepresentation, rnode, representationProperties) &&
+  return tomviz::serialize(this->ThresholdFilter, tnode, fprops) &&
+    tomviz::serialize(this->ThresholdRepresentation, rnode, representationProperties) &&
     this->Superclass::serialize(ns);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
 {
-  return TEM::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
-    TEM::deserialize(this->ThresholdRepresentation,
+  return tomviz::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
+    tomviz::deserialize(this->ThresholdRepresentation,
                      ns.child("ThresholdRepresentation")) &&
     this->Superclass::deserialize(ns);
 }

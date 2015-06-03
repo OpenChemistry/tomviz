@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -19,7 +19,7 @@
 #include <QObject>
 
 class QMainWindow;
-namespace TEM
+namespace tomviz
 {
 /// Behaviors instantiates TomViz relevant ParaView behaviors (and any new
 /// ones) as needed.

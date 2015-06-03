@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -29,7 +29,7 @@
 
 #include <QHeaderView>
 
-namespace TEM
+namespace tomviz
 {
 
 static const int EYE_COLUMN = 1;
@@ -125,7 +125,7 @@ void PipelineWidget::dataSourceAdded(DataSource* datasource)
   Q_ASSERT(this->Internals->DataProducerItems.contains(datasource) == false);
 
   QTreeWidgetItem* item = new QTreeWidgetItem();
-  item->setText(MODULE_COLUMN, TEM::label(datasource->producer()));
+  item->setText(MODULE_COLUMN, tomviz::label(datasource->producer()));
   item->setIcon(MODULE_COLUMN, QIcon(":/pqWidgets/Icons/pqInspect22.png"));
   item->setIcon(EYE_COLUMN, QIcon());
   item->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicatorWhenChildless);
@@ -202,7 +202,7 @@ void PipelineWidget::onItemClicked(QTreeWidgetItem* item, int col)
                   module->visibility() ?
                     QIcon(":/pqWidgets/Icons/pqEyeball16.png") :
                     QIcon(":/pqWidgets/Icons/pqEyeballd16.png"));
-    if (pqView* view = TEM::convert<pqView*>(module->view()))
+    if (pqView* view = tomviz::convert<pqView*>(module->view()))
       {
       view->render();
       }
@@ -264,4 +264,4 @@ void PipelineWidget::setActiveView(vtkSMViewProxy* view)
     }
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -35,7 +35,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -170,14 +170,14 @@ bool ModuleStreamingContour::serialize(pugi::xml_node& ns) const
     << "Visibility";
   pugi::xml_node node = ns.append_child("ContourRepresentation");
 
-  return TEM::serialize(this->ContourRepresentation, node, contourProperties);
+  return tomviz::serialize(this->ContourRepresentation, node, contourProperties);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleStreamingContour::deserialize(const pugi::xml_node& ns)
 {
-  return TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
+  return tomviz::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
     this->Superclass::deserialize(ns);
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

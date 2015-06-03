@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -30,7 +30,7 @@
 
 #include <vtk_pugixml.h>
 
-namespace TEM
+namespace tomviz
 {
 
 class DataSource::DSInternals
@@ -66,12 +66,12 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
                           vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
   if (sourceFilename && strlen(sourceFilename))
     {
-    TEM::annotateDataProducer(source, sourceFilename);
+    tomviz::annotateDataProducer(source, sourceFilename);
     }
   else if (dataSource->HasAnnotation("filename"))
     {
     cout << source->GetAnnotation("filename");
-    TEM::annotateDataProducer(source, dataSource->GetAnnotation("filename"));
+    tomviz::annotateDataProducer(source, dataSource->GetAnnotation("filename"));
     }
 
   controller->RegisterPipelineProxy(source);
@@ -113,10 +113,10 @@ QString DataSource::filename() const
 bool DataSource::serialize(pugi::xml_node& ns) const
 {
   pugi::xml_node node = ns.append_child("ColorMap");
-  TEM::serialize(this->colorMap(), node);
+  tomviz::serialize(this->colorMap(), node);
 
   node = ns.append_child("OpacityMap");
-  TEM::serialize(this->opacityMap(), node);
+  tomviz::serialize(this->opacityMap(), node);
 
   ns.append_attribute("number_of_operators").set_value(
     static_cast<int>(this->Internals->Operators.size()));
@@ -136,8 +136,8 @@ bool DataSource::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool DataSource::deserialize(const pugi::xml_node& ns)
 {
-  TEM::deserialize(this->colorMap(), ns.child("ColorMap"));
-  TEM::deserialize(this->opacityMap(), ns.child("OpacityMap"));
+  tomviz::deserialize(this->colorMap(), ns.child("ColorMap"));
+  tomviz::deserialize(this->opacityMap(), ns.child("OpacityMap"));
   vtkSMPropertyHelper(this->colorMap(),
                       "ScalarOpacityFunction").Set(this->opacityMap());
   this->colorMap()->UpdateVTKObjects();
@@ -341,7 +341,7 @@ vtkSMProxy* DataSource::opacityMap() const
 void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.
-  TEM::rescaleColorMap(this->colorMap(), this);
+  tomviz::rescaleColorMap(this->colorMap(), this);
 }
 
 }

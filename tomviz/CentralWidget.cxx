@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -53,7 +53,7 @@
 # include "dax/ModuleStreamingContour.h"
 #endif
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -69,7 +69,7 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   switch (input->GetScalarType())
     {
     vtkTemplateMacro(
-          TEM::GetScalarRange(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
+          tomviz::GetScalarRange(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
                          input->GetPointData()->GetScalars()->GetNumberOfTuples(),
                          minmax));
     default:
@@ -114,7 +114,7 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   switch (input->GetScalarType())
     {
     vtkTemplateMacro(
-          TEM::CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
+          tomviz::CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
                              input->GetPointData()->GetScalars()->GetNumberOfTuples(),
                              minmax[0], pops, inc, numberOfBins));
     default:
@@ -396,7 +396,7 @@ void CentralWidget::histogramClicked(vtkObject *caller)
     }
   Q_ASSERT(contour);
   contour->setIsoValue(this->Chart->PositionX);
-  TEM::convert<pqView*>(view)->render();
+  tomviz::convert<pqView*>(view)->render();
 }
 
 void CentralWidget::setHistogramTable(vtkTable *table)
@@ -442,6 +442,6 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     }
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz
 
 #include "CentralWidget.moc"

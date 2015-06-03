@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -27,7 +27,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -133,7 +133,7 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
   list << "Visibility"
        << "ScalarOpacityUnitDistance";
   pugi::xml_node nodeR = ns.append_child("Representation");
-  return (TEM::serialize(this->Representation, nodeR, list) && this->Superclass::serialize(ns));
+  return (tomviz::serialize(this->Representation, nodeR, list) && this->Superclass::serialize(ns));
 }
 
 //-----------------------------------------------------------------------------
@@ -144,7 +144,7 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
   vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation,
                                         "ScalarOpacityFunction").GetAsProxy();
 
-  if (!TEM::deserialize(this->Representation, ns.child("Representation")))
+  if (!tomviz::deserialize(this->Representation, ns.child("Representation")))
     {
     return false;
     }
@@ -152,4 +152,4 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
   return this->Superclass::deserialize(ns);
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

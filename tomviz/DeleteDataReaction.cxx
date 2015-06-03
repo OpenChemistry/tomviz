@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -18,7 +18,7 @@
 #include "ActiveObjects.h"
 #include "ModuleManager.h"
 
-namespace TEM
+namespace tomviz
 {
 //-----------------------------------------------------------------------------
 DeleteDataReaction::DeleteDataReaction(QAction* parentObject)
@@ -58,4 +58,4 @@ void DeleteDataReaction::deleteDataSource(DataSource* source)
   mmgr.removeAllModules(source);
   mmgr.removeDataSource(source);
 }
-} // end of namespace TEM
+} // end of namespace tomviz

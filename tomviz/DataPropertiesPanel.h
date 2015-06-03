@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -19,13 +19,13 @@
 #include <QWidget>
 #include <QScopedPointer>
 
-namespace TEM
+namespace tomviz
 {
 
 class DataSource;
 
 /// DataPropertiesPanel is the panel that shows information (and other controls)
-/// for a DataSource. It monitors TEM::ActiveObjects instance and shows
+/// for a DataSource. It monitors tomviz::ActiveObjects instance and shows
 /// information about the active data source, as well allow the user to edit
 /// configurable options, such as color map.
 class DataPropertiesPanel : public QWidget

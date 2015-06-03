@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -28,7 +28,7 @@
 #include "vtkSMTransferFunctionManager.h"
 #include "vtkSMViewProxy.h"
 
-namespace TEM
+namespace tomviz
 {
 
 class Module::MInternals
@@ -85,7 +85,7 @@ bool Module::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   if (this->View && this->ADataSource)
     {
     // FIXME: we're connecting this too many times. Fix it.
-    TEM::convert<pqView*>(view)->connect(
+    tomviz::convert<pqView*>(view)->connect(
       this->ADataSource, SIGNAL(dataChanged()), SLOT(render()));
     }
   return (this->View && this->ADataSource);
@@ -135,7 +135,7 @@ void Module::setUseDetachedColorMap(bool val)
     this->Internals->ColorMap = this->Internals->detachedColorMap();
     this->Internals->OpacityMap = this->Internals->detachedOpacityMap();
 
-    TEM::rescaleColorMap(this->Internals->ColorMap, this->dataSource());
+    tomviz::rescaleColorMap(this->Internals->ColorMap, this->dataSource());
     }
   else
     {
@@ -172,8 +172,8 @@ bool Module::serialize(pugi::xml_node& ns) const
       pugi::xml_node nodeS = ns.append_child("OpacityMap");
 
       // using detached color map, so we need to save the local color map.
-      if (TEM::serialize(this->colorMap(), nodeL) == false ||
-        TEM::serialize(this->opacityMap(), nodeS) == false)
+      if (tomviz::serialize(this->colorMap(), nodeL) == false ||
+        tomviz::serialize(this->opacityMap(), nodeS) == false)
         {
         return false;
         }
@@ -190,7 +190,7 @@ bool Module::deserialize(const pugi::xml_node& ns)
     bool dcm = ns.attribute("use_detached_colormap").as_int(0) == 1;
     if (dcm && ns.child("ColorMap"))
       {
-      if (!TEM::deserialize(this->Internals->detachedColorMap(), ns.child("ColorMap")))
+      if (!tomviz::deserialize(this->Internals->detachedColorMap(), ns.child("ColorMap")))
         {
         qCritical("Failed to deserialze ColorMap");
         return false;
@@ -198,7 +198,7 @@ bool Module::deserialize(const pugi::xml_node& ns)
       }
     if (dcm && ns.child("OpacityMap"))
       {
-      if (!TEM::deserialize(this->Internals->detachedOpacityMap(), ns.child("OpacityMap")))
+      if (!tomviz::deserialize(this->Internals->detachedOpacityMap(), ns.child("OpacityMap")))
         {
         qCritical("Failed to deserialze OpacityMap");
         return false;
@@ -211,4 +211,4 @@ bool Module::deserialize(const pugi::xml_node& ns)
 
 
 //-----------------------------------------------------------------------------
-} // end of namespace TEM
+} // end of namespace tomviz

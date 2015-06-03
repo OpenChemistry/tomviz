@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -46,13 +46,13 @@ int main(int argc, char** argv)
   QCoreApplication::setApplicationVersion("0.1.0");
   QCoreApplication::setOrganizationName("Kitware");
 
-  TEM::InitializePythonEnvironment(argc, argv);
+  tomviz::InitializePythonEnvironment(argc, argv);
 
   QApplication app(argc, argv);
   setlocale(LC_NUMERIC, "C");
   vtkNew<TomoOptions> options;
   pqPVApplicationCore appCore(argc, argv, options.GetPointer());
-  TEM::MainWindow window;
+  tomviz::MainWindow window;
   window.show();
   return app.exec();
 }

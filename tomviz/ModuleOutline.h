@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -22,7 +22,7 @@
 class vtkSMSourceProxy;
 class vtkSMProxy;
 
-namespace TEM
+namespace tomviz
 {
 
 /// A simple module to show the outline for any dataset.

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -32,7 +32,7 @@
 
 #include <QtAlgorithms>
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -118,7 +118,7 @@ Module* ModuleFactory::createModule(
       delete module;
       return NULL;
       }
-    pqView* pqview = TEM::convert<pqView*>(view);
+    pqView* pqview = tomviz::convert<pqView*>(view);
     pqview->resetDisplay();
     pqview->render();
     }
@@ -176,4 +176,4 @@ const char* ModuleFactory::moduleType(Module* module)
   return NULL;
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz
