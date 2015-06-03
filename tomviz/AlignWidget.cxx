@@ -41,15 +41,17 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QKeyEvent>
+#include <QButtonGroup>
 
 namespace tomviz
 {
 
 AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
-  : QWidget(p, f), timer(new QTimer(this)), frameRate(10), sliceIncrement(1),
+  : QWidget(p, f), timer(new QTimer(this)), frameRate(10),
     unalignedData(data), alignedData(NULL)
 {
   widget = new QVTKWidget(this);
@@ -110,6 +112,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
 
   // Now to add the controls to the widget.
   QGridLayout *grid = new QGridLayout;
+  int gridrow = 0;
   v->addStretch(1);
   QLabel *keyGuide = new QLabel;
   keyGuide->setText("1. Pick an object, use the arrow\nkeys to minimize the wobble.\n"
@@ -121,29 +124,65 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   v->addLayout(grid);
   v->addStretch(1);
   QLabel *label = new QLabel("Current image:");
-  grid->addWidget(label, 0, 0, 1, 1, Qt::AlignRight);
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   currentSlice = new QSpinBox;
-  currentSlice->setValue(0);
+  currentSlice->setValue(1);
+  referenceSlice=0;
   currentSlice->setRange(mapper->GetSliceNumberMinValue(),
                          mapper->GetSliceNumberMaxValue());
   connect(currentSlice, SIGNAL(valueChanged(int)), SLOT(setSlice(int)));
-  grid->addWidget(currentSlice, 0, 1, 1, 1, Qt::AlignLeft);
+  connect(currentSlice, SIGNAL(valueChanged(int)), SLOT(updateReference()));
+  grid->addWidget(currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
 
+  gridrow++;
   label = new QLabel("Frame rate (fps):");
-  grid->addWidget(label, 1, 0, 1, 1, Qt::AlignRight);
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   QSpinBox *spin = new QSpinBox;
   spin->setRange(0, 50);
-  spin->setValue(10);
+  spin->setValue(7); //Default frame rate
   connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
-  grid->addWidget(spin, 1, 1, 1, 1, Qt::AlignLeft);
+  grid->addWidget(spin, gridrow, 1, 1, 1, Qt::AlignLeft);
+
+  // Reference image controls
+  gridrow++;
+  label = new QLabel("Reference image:");
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
+  PrevButton = new QRadioButton("Prev");
+  NextButton = new QRadioButton("Next");
+  StatButton = new QRadioButton("Static:");
+  PrevButton->setCheckable(true);
+  NextButton->setCheckable(true);
+  StatButton->setCheckable(true);
+  grid->addWidget(PrevButton,gridrow,1,1,1, Qt::AlignLeft);
+  grid->addWidget(NextButton,gridrow,2,1,1, Qt::AlignLeft);
+  gridrow++;
+  grid->addWidget(StatButton,gridrow,1,1,1, Qt::AlignLeft);
+  StatRefNum = new QSpinBox;
+  StatRefNum->setValue(0);
+  StatRefNum->setRange(mapper->GetSliceNumberMinValue(),
+                       mapper->GetSliceNumberMaxValue());
+  connect(StatRefNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
+  grid->addWidget(StatRefNum, gridrow, 2, 1, 1, Qt::AlignLeft);
+  StatRefNum->setEnabled(false);
+  connect(StatButton,SIGNAL(toggled(bool)),StatRefNum,SLOT(setEnabled(bool)));
+
+  referenceSliceMode = new QButtonGroup;
+  referenceSliceMode->addButton(PrevButton);
+  referenceSliceMode->addButton(NextButton);
+  referenceSliceMode->addButton(StatButton);
+  referenceSliceMode->setExclusive(true);
+  PrevButton->setChecked(true);
+  connect(referenceSliceMode, SIGNAL(buttonClicked(int)), SLOT(updateReference()));
 
   // Slice offsets
+  gridrow++;
   label = new QLabel("Image shift:");
-  grid->addWidget(label, 2, 0, 1, 1, Qt::AlignRight);
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   currentSliceOffset = new QLabel("(0, 0)");
-  grid->addWidget(currentSliceOffset, 2, 1, 1, 1, Qt::AlignLeft);
+  grid->addWidget(currentSliceOffset, gridrow, 1, 1, 1, Qt::AlignLeft);
 
   // Add our buttons.
+  gridrow++;
   QHBoxLayout *buttonLayout = new QHBoxLayout;
   QPushButton *button = new QPushButton("Start");
   connect(button, SIGNAL(clicked()), SLOT(startAlign()));
@@ -151,11 +190,12 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   button = new QPushButton("Stop");
   connect(button, SIGNAL(clicked()), SLOT(stopAlign()));
   buttonLayout->addWidget(button);
-  grid->addLayout(buttonLayout, 3, 0, 1, 2, Qt::AlignCenter);
+  grid->addLayout(buttonLayout, gridrow, 0, 1, 2, Qt::AlignCenter);
 
+  gridrow++;
   button = new QPushButton("Create Aligned Data");
   connect(button, SIGNAL(clicked()), SLOT(doDataAlign()));
-  grid->addWidget(button, 4, 0, 1, 2, Qt::AlignCenter);
+  grid->addWidget(button, gridrow, 0, 1, 2, Qt::AlignCenter);
 
   offsets.fill(vtkVector2i(0, 0), mapper->GetSliceNumberMaxValue() + 1);
 
@@ -203,29 +243,25 @@ void AlignWidget::setDataSource(DataSource *source)
 }
 
 void AlignWidget::changeSlice()
-{
-  int min = mapper->GetSliceNumberMinValue();
-  int max = mapper->GetSliceNumberMaxValue();
-  int i = mapper->GetSliceNumber() + sliceIncrement;
-  sliceIncrement *= -1;
-  if (i > max)
-    {
-    i = min;
+{  //Does not change currentSlice, display only
+  int i = mapper->GetSliceNumber();
+  if (i==currentSlice->value())
+    { //go to reference
+      i=referenceSlice;
     }
-  else if (i < min)
-    {
-    i = max;
+  else
+    { //go to current
+      i=currentSlice->value();
     }
   setSlice(i, false);
 }
 
 void AlignWidget::changeSlice(int delta)
-{
+{  //Changes currentSlice!
   int min = mapper->GetSliceNumberMinValue();
   int max = mapper->GetSliceNumberMaxValue();
   int i = currentSlice->value() + delta;
-  sliceIncrement = 1;
-  if (i > max)
+  if (i > max)  //This makes stack circular
     {
     i = min;
     }
@@ -238,15 +274,43 @@ void AlignWidget::changeSlice(int delta)
 }
 
 void AlignWidget::setSlice(int slice, bool resetInc)
-{
+{  //Does not change currentSlice, display only
   if (resetInc)
     {
-    sliceIncrement = 1;
     currentSliceOffset->setText(QString("(%1, %2)").arg(offsets[slice][0])
         .arg(offsets[slice][1]));
     }
   mapper->SetSliceNumber(slice);
   applySliceOffset(slice);
+}
+
+void AlignWidget::updateReference()
+{
+  int min = mapper->GetSliceNumberMinValue();
+  int max = mapper->GetSliceNumberMaxValue();
+
+  if (PrevButton->isChecked())
+    {
+      referenceSlice=currentSlice->value()-1;
+    }
+  else if (NextButton->isChecked())
+  {
+      referenceSlice=currentSlice->value()+1;
+  }
+  else if (StatButton->isChecked())
+  {
+      referenceSlice=StatRefNum->value();
+  }
+
+  if (referenceSlice > max)  //This makes stack circular
+    {
+    referenceSlice = min;
+    }
+  else if (referenceSlice < min)
+    {
+    referenceSlice = max;
+    }
+
 }
 
 void AlignWidget::setFrameRate(int rate)
@@ -330,7 +394,6 @@ void AlignWidget::startAlign()
 void AlignWidget::stopAlign()
 {
   timer->stop();
-  sliceIncrement = 1;
   setSlice(currentSlice->value());
 }
 
