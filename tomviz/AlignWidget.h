@@ -76,13 +76,13 @@ protected:
   QTimer *timer;
   QSpinBox *currentSlice;
   QLabel *currentSliceOffset;
-  QLabel *currentRef; //for debugging, remove later
   QButtonGroup *referenceSliceMode;
   QRadioButton *PrevButton;
   QRadioButton *NextButton;
+  QRadioButton *StatButton;
+  QSpinBox *StatRefNum;
 
   int frameRate;
-  int sliceIncrement;
   int referenceSlice;
 
   QVector<vtkVector2i> offsets;
