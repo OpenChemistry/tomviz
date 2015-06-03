@@ -27,6 +27,7 @@ class QLabel;
 class QSpinBox;
 class QTimer;
 class QKeyEvent;
+class QButtonGroup;
 
 class vtkImageSlice;
 class vtkImageSliceMapper;
@@ -73,6 +74,7 @@ protected:
   QTimer *timer;
   QSpinBox *currentSlice;
   QLabel *currentSliceOffset;
+  QButtonGroup *referenceSliceMode;
 
   int frameRate;
   int sliceIncrement;
