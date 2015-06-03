@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -23,7 +23,7 @@
 #include "vtkSMProxy.h"
 #include "vtkSMSessionProxyManager.h"
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------

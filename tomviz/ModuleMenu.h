@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -23,7 +23,7 @@ class QAction;
 class QMenu;
 class QToolBar;
 
-namespace TEM
+namespace tomviz
 {
 
 /// ModuleMenu is manager for the Modules menu. It fills it up with actions

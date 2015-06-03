@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -36,7 +36,7 @@
 #include <QSet>
 #include <QMap>
 
-namespace TEM
+namespace tomviz
 {
 
 class ModuleManager::MMInternals
@@ -209,7 +209,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns) const
     odsnode.append_attribute("id").set_value(reader->GetGlobalIDAsString());
     odsnode.append_attribute("xmlgroup").set_value(reader->GetXMLGroup());
     odsnode.append_attribute("xmlname").set_value(reader->GetXMLName());
-    if (TEM::serialize(reader, odsnode) == false)
+    if (tomviz::serialize(reader, odsnode) == false)
       {
       qWarning() << "Failed to serialize data reader: " << reader->GetGlobalIDAsString();
       ns.remove_child(odsnode);
@@ -282,7 +282,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns) const
       lnode.append_attribute("id").set_value(layout->GetGlobalIDAsString());
       lnode.append_attribute("xmlgroup").set_value(layout->GetXMLGroup());
       lnode.append_attribute("xmlname").set_value(layout->GetXMLName());
-      if (!TEM::serialize(layout, lnode))
+      if (!tomviz::serialize(layout, lnode))
         {
         qWarning("Failed to serialize layout.");
         ns.remove_child(lnode);
@@ -301,7 +301,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns) const
         {
         vnode.append_attribute("active").set_value(1);
         }
-      if (!TEM::serialize(view, vnode))
+      if (!tomviz::serialize(view, vnode))
         {
         qWarning("Failed to serialize view.");
         ns.remove_child(vnode);
@@ -333,7 +333,7 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
       }
     vtkSmartPointer<vtkSMProxy> proxy;
     proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!TEM::deserialize(proxy, node))
+    if (!tomviz::deserialize(proxy, node))
       {
       qWarning() << "Failed to create proxy of type: " << group << ", " << type;
       continue;
@@ -354,7 +354,7 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
       }
     vtkSmartPointer<vtkSMProxy> proxy;
     proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!TEM::deserialize(proxy, node, locator.GetPointer()))
+    if (!tomviz::deserialize(proxy, node, locator.GetPointer()))
       {
       qWarning() << "Failed to create proxy of type: " << group << ", " << type;
       continue;
@@ -385,7 +385,7 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
 
     vtkSmartPointer<vtkSMProxy> proxy;
     proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!TEM::deserialize(proxy, odsnode))
+    if (!tomviz::deserialize(proxy, odsnode))
       {
       qWarning() << "Failed to create proxy of type: " << group << ", " << type;
       continue;
@@ -464,4 +464,4 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
-} // end of namesapce TEM
+} // end of namesapce tomviz

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -29,7 +29,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -161,7 +161,7 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   pugi::xml_node node = ns.append_child("ContourFilter");
   QStringList contourProperties;
   contourProperties << "ContourValues";
-  if (TEM::serialize(this->ContourFilter, node, contourProperties) == false)
+  if (tomviz::serialize(this->ContourFilter, node, contourProperties) == false)
     {
     qWarning("Failed to serialize ContourFilter.");
     ns.remove_child(node);
@@ -176,7 +176,7 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
     << "Visibility";
 
   node = ns.append_child("ContourRepresentation");
-  if (TEM::serialize(this->ContourRepresentation, node, contourRepresentationProperties) == false)
+  if (tomviz::serialize(this->ContourRepresentation, node, contourRepresentationProperties) == false)
     {
     qWarning("Failed to serialize ContourFilter.");
     ns.remove_child(node);
@@ -189,9 +189,9 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool ModuleContour::deserialize(const pugi::xml_node& ns)
 {
-  return TEM::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
-    TEM::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
+  return tomviz::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
+    tomviz::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
     this->Superclass::deserialize(ns);
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

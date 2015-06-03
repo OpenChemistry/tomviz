@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -35,7 +35,7 @@
 #include <sstream>
 #include <string>
 
-namespace TEM
+namespace tomviz
 {
 
 static const int MAX_ITEMS = 10;
@@ -44,9 +44,9 @@ void get_settings(pugi::xml_document& doc)
   {
   QSettings* settings = pqApplicationCore::instance()->settings();
   QString recent = settings->value("recentFiles").toString();
-  if (recent.isEmpty() || !doc.load(recent.toUtf8().data()) || !doc.child("TEMRecentFilesMenu"))
+  if (recent.isEmpty() || !doc.load(recent.toUtf8().data()) || !doc.child("tomvizRecentFilesMenu"))
     {
-    doc.append_child("TEMRecentFilesMenu");
+    doc.append_child("tomvizRecentFilesMenu");
     }
   }
 
@@ -121,7 +121,7 @@ void RecentFilesMenu::pushDataReader(vtkSMProxy* readerProxy)
     node.append_attribute("filename0").set_value(filename);
     node.append_attribute("xmlgroup").set_value(readerProxy->GetXMLGroup());
     node.append_attribute("xmlname").set_value(readerProxy->GetXMLName());
-    TEM::serialize(readerProxy, node);
+    tomviz::serialize(readerProxy, node);
 
     save_settings(settings);
     }
@@ -241,7 +241,7 @@ void RecentFilesMenu::dataSourceTriggered()
       vtkSmartPointer<vtkSMProxy> reader;
       reader.TakeReference(pxm->NewProxy(node.attribute("xmlgroup").as_string(),
                                          node.attribute("xmlname").as_string()));
-      if (TEM::deserialize(reader, node))
+      if (tomviz::deserialize(reader, node))
         {
         reader->UpdateVTKObjects();
         vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();

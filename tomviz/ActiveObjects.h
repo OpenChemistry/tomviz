@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -25,7 +25,7 @@ class pqView;
 class vtkSMSessionProxyManager;
 class vtkSMViewProxy;
 
-namespace TEM
+namespace tomviz
 {
 
 /// ActiveObjects keeps track of active objects in TomViz.

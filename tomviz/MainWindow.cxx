@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -64,7 +64,7 @@
   PV_PLUGIN_IMPORT_INIT(tomvizStreaming);
 #endif
 
-namespace TEM
+namespace tomviz
 {
 
 class MainWindow::MWInternals

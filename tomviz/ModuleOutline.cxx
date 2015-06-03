@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -27,7 +27,7 @@
 #include "vtkSMViewProxy.h"
 #include "vtkSMProperty.h"
 
-namespace TEM
+namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
 
   QStringList properties;
   properties << "CubeAxesVisibility" << "Visibility";
-  if (TEM::serialize(this->OutlineRepresentation, reprNode, properties) == false)
+  if (tomviz::serialize(this->OutlineRepresentation, reprNode, properties) == false)
     {
     qWarning("Failed to serialize ModuleOutline.");
     ns.remove_child(reprNode);
@@ -112,7 +112,7 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool ModuleOutline::deserialize(const pugi::xml_node& ns)
 {
-  return TEM::deserialize(this->OutlineRepresentation,
+  return tomviz::deserialize(this->OutlineRepresentation,
                           ns.child("OutlineRepresentation"));
 }
 
@@ -145,4 +145,4 @@ void ModuleOutline::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

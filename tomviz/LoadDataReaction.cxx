@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -32,7 +32,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkTrivialProducer.h"
 
-namespace TEM
+namespace tomviz
 {
 //-----------------------------------------------------------------------------
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
@@ -125,4 +125,4 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
     }
 }
 
-} // end of namespace TEM
+} // end of namespace tomviz

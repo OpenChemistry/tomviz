@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -23,7 +23,7 @@
 
 #include <QPointer>
 
-namespace TEM
+namespace tomviz
 {
 
 class EditPythonOperatorDialog::EPODInternals

@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -31,7 +31,7 @@
 #include <QHBoxLayout>
 #include <QDialogButtonBox>
 
-namespace TEM
+namespace tomviz
 {
 
 SetScaleReaction::SetScaleReaction(QAction* parentObject)

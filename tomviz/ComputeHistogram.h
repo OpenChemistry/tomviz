@@ -8,7 +8,7 @@
 #include "dax/Worklets.h"
 #endif
 
-namespace TEM
+namespace tomviz
 {
 #ifdef DAX_DEVICE_ADAPTER
 

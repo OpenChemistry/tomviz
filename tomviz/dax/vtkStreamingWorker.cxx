@@ -1,6 +1,6 @@
 /******************************************************************************
 
-  This source file is part of the TEM tomography project.
+  This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
 
@@ -120,7 +120,7 @@ template<typename LoggerType>
 struct ComputeFunctor
 {
   vtkStreamingWorker::AlgorithmMode Mode;
-  TEM::accel::SubdividedVolume& Volume;
+  tomviz::accel::SubdividedVolume& Volume;
   vtkSmartPointer<vtkPolyData>& VTKOutputData;
   MutexType* OutputDataMutex;
   LoggerType& Logger;
@@ -129,7 +129,7 @@ struct ComputeFunctor
 
   //----------------------------------------------------------------------------
   ComputeFunctor(vtkStreamingWorker::AlgorithmMode mode,
-                 TEM::accel::SubdividedVolume& volume,
+                 tomviz::accel::SubdividedVolume& volume,
                  vtkSmartPointer<vtkPolyData>& outputData,
                  MutexType* outputDaxMutex,
                  bool& keepProcessing,
@@ -153,12 +153,12 @@ struct ComputeFunctor
   //wrap up this->Volume.method as a function argument
   if(this->Mode == vtkStreamingWorker::CONTOUR)
     {
-    TEM::accel::ContourFunctor functor(this->Volume);
+    tomviz::accel::ContourFunctor functor(this->Volume);
     this->run(functor, v, ValueType());
     }
   else if(this->Mode == vtkStreamingWorker::POINTCLOUD)
     {
-    TEM::accel::PointCloudFunctor functor(this->Volume);
+    tomviz::accel::PointCloudFunctor functor(this->Volume);
     this->run(functor, v, ValueType());
     }
   }
@@ -325,7 +325,7 @@ public:
     if(this->Volume.numSubGrids() == 0)
       {
       logger << "CreateSearchStructure" << std::endl;
-      this->Volume = TEM::accel::SubdividedVolume( this->NumSubGridsPerDim,
+      this->Volume = tomviz::accel::SubdividedVolume( this->NumSubGridsPerDim,
                                                    input,
                                                    logger );
 
@@ -369,7 +369,7 @@ private:
   bool FinishedWorkingOnData;
   bool CurrentRenderDataFinished;
 
-  TEM::accel::SubdividedVolume Volume;
+  tomviz::accel::SubdividedVolume Volume;
   vtkSmartPointer<vtkPolyData> ComputedData;
   vtkSmartPointer<vtkPolyData> CurrentRenderData;
   MutexType ComputedDataMutex;
