@@ -26,6 +26,8 @@ set(SOURCES
   AddExpressionReaction.cxx
   AddExpressionReaction.h
   AddPythonTransformReaction.cxx
+  AddResampleReaction.cxx
+  AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
   Behaviors.cxx
