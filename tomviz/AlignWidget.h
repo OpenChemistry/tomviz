@@ -77,10 +77,10 @@ protected:
   QSpinBox *currentSlice;
   QLabel *currentSliceOffset;
   QButtonGroup *referenceSliceMode;
-  QRadioButton *PrevButton;
-  QRadioButton *NextButton;
-  QRadioButton *StatButton;
-  QSpinBox *StatRefNum;
+  QRadioButton *prevButton;
+  QRadioButton *nextButton;
+  QRadioButton *statButton;
+  QSpinBox *statRefNum;
 
   int frameRate;
   int referenceSlice;
