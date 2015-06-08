@@ -25,6 +25,7 @@
 #include "pqStandardViewFrameActionsImplementation.h"
 #include "pqViewStreamingBehavior.h"
 #include "ProgressBehavior.h"
+#include "FixCenterOfRotationBehavior.h"
 //#include "ScaleActorBehavior.h"
 #include "vtkSMSettings.h"
 
@@ -73,6 +74,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
 //  new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
   new pqViewStreamingBehavior(this);
+  new tomviz::FixCenterOfRotationBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
   new tomviz::ProgressBehavior(mainWindow);
   //new tomviz::ScaleActorBehavior(this);
