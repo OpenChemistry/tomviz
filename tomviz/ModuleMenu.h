@@ -43,7 +43,7 @@ private slots:
   void triggered(QAction* maction);
 
 private:
-  Q_DISABLE_COPY(ModuleMenu);
+  Q_DISABLE_COPY(ModuleMenu)
   QPointer<QMenu> Menu;
   QPointer<QToolBar> ToolBar;
 };

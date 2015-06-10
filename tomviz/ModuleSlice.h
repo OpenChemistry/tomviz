@@ -51,7 +51,7 @@ private:
   //should only be called from initialize after the PassThrough has been setup
   bool setupWidget(vtkSMViewProxy* view,vtkSMSourceProxy* producer);
 
-  Q_DISABLE_COPY(ModuleSlice);
+  Q_DISABLE_COPY(ModuleSlice)
 
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> Widget;
