@@ -33,6 +33,7 @@
 #include "AddAlignReaction.h"
 #include "AddExpressionReaction.h"
 #include "AddPythonTransformReaction.h"
+#include "AddResampleReaction.h"
 #include "Behaviors.h"
 #include "CloneDataReaction.h"
 #include "DeleteDataReaction.h"
@@ -149,9 +150,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
   QAction *squareRootAction = new QAction("Square Root Data", this);
   QAction *fftAbsLogAction = new QAction("FFT (abs log)", this);
+  QAction *resampleDataAction = new QAction("Clone && Downsample", this);
 
   ui.menuData->insertAction(ui.actionAlign, customPythonAction);
   ui.menuData->insertAction(ui.actionAlign, cropDataAction);
+  ui.menuData->insertSeparator(ui.actionAlign);
   //ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
   ui.menuData->insertSeparator(ui.actionAlign);
   ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
@@ -163,11 +166,13 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->insertAction(ui.actionClone, squareRootAction);
   ui.menuData->insertAction(ui.actionClone, fftAbsLogAction);
   ui.menuData->insertSeparator(ui.actionClone);
+  ui.menuData->insertAction(ui.actionClone, resampleDataAction);
 
   // Add our Python script reactions, these compose Python into menu entries.
   new AddExpressionReaction(customPythonAction);
   new AddPythonTransformReaction(cropDataAction,
                                  "Crop", Crop_Data);
+  new AddResampleReaction(resampleDataAction);
   //new AddPythonTransformReaction(backgroundSubtractAction,
   //                               "Background Subtraction",
   //                               Subtract_TiltSer_Background);
