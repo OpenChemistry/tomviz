@@ -36,6 +36,10 @@ set(SOURCES
   CentralWidget.h
   CloneDataReaction.cxx
   CloneDataReaction.h
+  CropReaction.cxx
+  CropReaction.h
+  CropWidget.cxx
+  CropWidget.h
   DataPropertiesPanel.cxx
   DataPropertiesPanel.h
   DataSource.cxx

@@ -34,6 +34,7 @@
 #include "AddPythonTransformReaction.h"
 #include "AddResampleReaction.h"
 #include "Behaviors.h"
+#include "CropReaction.h"
 #include "CloneDataReaction.h"
 #include "DeleteDataReaction.h"
 #include "LoadDataReaction.h"
@@ -170,8 +171,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Add our Python script reactions, these compose Python into menu entries.
   new AddExpressionReaction(customPythonAction);
-  new AddPythonTransformReaction(cropDataAction,
-                                 "Crop", Crop_Data);
+  new CropReaction(cropDataAction);
   //new AddResampleReaction(resampleDataAction);
   //new AddPythonTransformReaction(backgroundSubtractAction,
   //                               "Background Subtraction",
