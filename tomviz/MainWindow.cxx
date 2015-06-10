@@ -33,6 +33,7 @@
 #include "AddAlignReaction.h"
 #include "AddExpressionReaction.h"
 #include "AddPythonTransformReaction.h"
+#include "AddResampleReaction.h"
 #include "Behaviors.h"
 #include "CloneDataReaction.h"
 #include "DeleteDataReaction.h"
@@ -142,6 +143,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *customPythonAction = new QAction("Custom Transform", this);
   QAction *cropDataAction = new QAction("Crop", this);
+  QAction *resampleDataAction = new QAction("Resample", this);
   //QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
   QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
@@ -152,6 +154,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   ui.menuData->insertAction(ui.actionAlign, customPythonAction);
   ui.menuData->insertAction(ui.actionAlign, cropDataAction);
+  ui.menuData->insertSeparator(ui.actionAlign);
+  ui.menuData->insertAction(ui.actionAlign, resampleDataAction);
   //ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
   ui.menuData->insertSeparator(ui.actionAlign);
   ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
@@ -168,6 +172,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddExpressionReaction(customPythonAction);
   new AddPythonTransformReaction(cropDataAction,
                                  "Crop", Crop_Data);
+  new AddResampleReaction(resampleDataAction);
   //new AddPythonTransformReaction(backgroundSubtractAction,
   //                               "Background Subtraction",
   //                               Subtract_TiltSer_Background);
