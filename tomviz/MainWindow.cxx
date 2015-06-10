@@ -143,7 +143,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *customPythonAction = new QAction("Custom Transform", this);
   QAction *cropDataAction = new QAction("Crop", this);
-  QAction *resampleDataAction = new QAction("Resample", this);
+  QAction *resampleDataAction = new QAction("Downsample", this);
   //QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
   QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);

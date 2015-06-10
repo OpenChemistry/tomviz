@@ -87,7 +87,7 @@ void AddResampleReaction::resample(DataSource* source)
   // Find out how big they want to resample it
   QDialog dialog(pqCoreUtilities::mainWidget());
   QHBoxLayout *layout = new QHBoxLayout;
-  QLabel *label0 = new QLabel(QString("Current resolution: %1 %2 %3")
+  QLabel *label0 = new QLabel(QString("Current resolution: %1, %2, %3")
       .arg(resolution[0]).arg(resolution[1]).arg(resolution[2]));
   QLabel *label1 = new QLabel("New resolution:");
   layout->addWidget(label1);
@@ -143,7 +143,7 @@ void AddResampleReaction::resample(DataSource* source)
     // out a different way to do it
     DataSource* resampledData = source->clone(true);
     QString name = resampledData->producer()->GetAnnotation("TomViz.Label");
-    name = "Resampled_" + name;
+    name = "Downsampled_" + name;
     resampledData->producer()->SetAnnotation("TomViz.Label", name.toAscii().data());
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
       resampledData->producer()->GetClientSideObject());
