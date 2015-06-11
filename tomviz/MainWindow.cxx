@@ -26,7 +26,6 @@
 #include "pqSaveAnimationReaction.h"
 #include "pqSaveScreenshotReaction.h"
 #include "pqSaveStateReaction.h"
-#include "pqViewMenuManager.h"
 #include "vtkPVPlugin.h"
 
 #include "ActiveObjects.h"
@@ -45,6 +44,7 @@
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
 #include "SetScaleReaction.h"
+#include "ViewMenuManager.h"
 
 #include "MisalignImgs_Uniform.h"
 #include "Align_Images.h"
@@ -207,7 +207,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new ResetReaction(ui.actionReset);
 
-  new pqViewMenuManager(this, ui.menuView);
+  new ViewMenuManager(this, ui.menuView);
 
 #ifdef TOMVIZ_DATA
   QMenu *sampleDataMenu = new QMenu("Sample Data", this);
