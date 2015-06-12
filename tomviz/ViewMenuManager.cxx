@@ -31,7 +31,7 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   : pqViewMenuManager(mainWindow, menu)
 {
   this->viewPropertiesDialog = new QDialog(mainWindow);
-  this->viewPropertiesDialog->SetWindowTitle("View Properties");
+  this->viewPropertiesDialog->setWindowTitle("View Properties");
   ViewPropertiesPanel* panel = new ViewPropertiesPanel(this->viewPropertiesDialog);
   QHBoxLayout *layout = new QHBoxLayout;
   layout->addWidget(panel);
