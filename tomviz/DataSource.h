@@ -24,6 +24,7 @@
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
+
 namespace tomviz
 {
 class Operator;
@@ -72,6 +73,9 @@ public:
   /// Returns the color map for the DataSource.
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
+
+  /// Crop the data to the given volume
+  void crop(int bounds[6]);
 
 signals:
   /// This signal is fired to notify the world that the DataSource may have

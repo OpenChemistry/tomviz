@@ -16,36 +16,46 @@
 #ifndef tomvizCropWidget_h
 #define tomvizCropWidget_h
 
-#include <QWidget>
+#include <QObject>
+#include <QScopedPointer>
 
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
 
 class vtkBoxWidget2;
 class vtkRenderWindowInteractor;
+class vtkEventQtSlotConnect;
+class vtkObject;
 
 namespace tomviz
 {
 
 class DataSource;
 
-class CropWidget : public QWidget
+class CropWidget : public QObject
 {
   Q_OBJECT
-  typedef QWidget Superclass;
 
 public:
   CropWidget(DataSource* source, vtkRenderWindowInteractor* iren,
-      QWidget* parent = 0);
+      QObject* parent = 0);
   virtual ~CropWidget();
 
   void getBounds(double bounds[6]);
+
+public slots:
+  void updateBounds(int* boxBounds);
+
+private slots:
+  void interactionEnd(vtkObject* caller);
+
+signals:
+  void bounds(double *bounds);
+
 private:
+  class CWInternals;
+  QScopedPointer<CWInternals> Internals;
 
-  vtkNew< vtkBoxWidget2 > boxWidget;
-  vtkSmartPointer< vtkRenderWindowInteractor > interactor;
-
-  DataSource* data;
 };
 
 }

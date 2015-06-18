@@ -12,36 +12,46 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-******************************************************************************/
-#ifndef tomvizCropReaction_h
-#define tomvizCropReaction_h
 
-#include <pqReaction.h>
+ ******************************************************************************/
+#ifndef tomvizCropDialog_h
+#define tomvizCropDialog_h
 
+#include <QDialog>
+#include <QScopedPointer>
 
-class QMainWindow;
-
+class vtkObject;
+class vtkImageData;
 namespace tomviz
 {
+
 class DataSource;
 
-class CropReaction : public pqReaction
+class CropDialog : public QDialog
 {
   Q_OBJECT
-
+  typedef QDialog Superclass;
 public:
-  CropReaction(QAction* parent, QMainWindow* mw);
-  ~CropReaction();
+  CropDialog(QWidget* parent, DataSource* data);
+  virtual ~CropDialog();
 
-  void crop(DataSource* source = NULL);
+private slots:
+  void crop();
+  void valueChanged();
+  void cancel();
 
-protected:
-  void updateEnableState();
-  void onTriggered() { this->crop(); }
+public slots:
+  void updateBounds(double *bounds);
+
+signals:
+  void bounds(int *bounds);
 
 private:
-  Q_DISABLE_COPY(CropReaction)
-  QMainWindow* mainWindow;
+  Q_DISABLE_COPY(CropDialog)
+  class CDInternals;
+  QScopedPointer<CDInternals> Internals;
 };
+
 }
+
 #endif

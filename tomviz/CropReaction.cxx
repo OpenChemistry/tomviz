@@ -15,20 +15,26 @@
 ******************************************************************************/
 #include "CropReaction.h"
 
-#include "ActiveObjects.h"
-#include "CropWidget.h"
-#include "DataSource.h"
-#include "vtkSMViewProxy.h"
-#include "vtkRenderWindow.h"
-#include "vtkRendererCollection.h"
-#include "vtkRenderer.h"
+#include <QDebug>
+#include <QMainWindow>
 #include <QVBoxLayout>
 #include <QDialog>
 #include <QAction>
-#include "pqCoreUtilities.h"
+#include <vtkCommand.h>
+#include <vtkImageData.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMViewProxy.h>
+#include <vtkTrivialProducer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRendererCollection.h>
+#include <vtkRenderer.h>
+#include <pqCoreUtilities.h>
 
-#include <QDebug>
-#include <QMainWindow>
+#include "ActiveObjects.h"
+#include "CropDialog.h"
+#include "CropWidget.h"
+#include "DataSource.h"
+
 
 namespace tomviz
 {
@@ -63,12 +69,15 @@ void CropReaction::crop(DataSource* source)
     return;
     }
 
-  QDialog* dialog = new QDialog(this->mainWindow);
+  CropDialog* dialog = new CropDialog(this->mainWindow, source);
   vtkSMViewProxy *viewProxy = ActiveObjects::instance().activeView();
   CropWidget *w = new CropWidget(source, viewProxy->GetRenderWindow()->GetInteractor(), dialog);
-  QVBoxLayout* layout = new QVBoxLayout;
-  layout->addWidget(w);
-  dialog->setLayout(layout);
+
+  this->connect(w, SIGNAL(bounds(double*)),
+                           dialog, SLOT(updateBounds(double*)));
+  this->connect(dialog, SIGNAL(bounds(int*)),
+                w, SLOT(updateBounds(int*)));
+
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
 }

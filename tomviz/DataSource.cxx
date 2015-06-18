@@ -18,7 +18,9 @@
 #include "OperatorPython.h"
 #include "Utilities.h"
 #include "vtkDataObject.h"
+#include "vtkExtractVOI.h"
 #include "vtkNew.h"
+#include "vtkImageData.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
@@ -29,6 +31,7 @@
 #include "vtkTrivialProducer.h"
 
 #include <vtk_pugixml.h>
+
 
 namespace tomviz
 {
@@ -342,6 +345,25 @@ void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.
   tomviz::rescaleColorMap(this->colorMap(), this);
+}
+
+void DataSource::crop(int bounds[6])
+{
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  Q_ASSERT(tp);
+
+  vtkDataObject* data = tp->GetOutputDataObject(0);
+  Q_ASSERT(data);
+
+  vtkNew<vtkExtractVOI> extractor;
+  extractor->SetVOI(bounds);
+  extractor->SetInputDataObject(data);
+  extractor->Update();
+  extractor->UpdateWholeExtent();
+  data->DeepCopy(extractor->GetOutputDataObject(0));
+  this->dataModified();
+  emit this->dataChanged();
 }
 
 }
