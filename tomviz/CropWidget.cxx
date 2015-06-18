@@ -56,6 +56,7 @@ CropWidget::CropWidget(DataSource* source, vtkRenderWindowInteractor* iren,
   this->boxWidget->SetInteractor(iren);
   this->boxWidget->SetRepresentation(boxRep.GetPointer());
   this->boxWidget->SetPriority(1);
+  this->boxWidget->EnabledOn();
 
   // These lines make it show up... it still doesn't work
   iren->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddViewProp(boxRep.GetPointer());
