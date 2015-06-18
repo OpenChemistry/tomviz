@@ -13,39 +13,34 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizModuleMenu_h
-#define tomvizModuleMenu_h
+#ifndef tomvizViewMenuManager_h
+#define tomvizViewMenuManager_h
 
-#include <QObject>
-#include <QPointer>
+#include <pqViewMenuManager.h>
 
+class QDialog;
 class QAction;
-class QMenu;
-class QToolBar;
 
 namespace tomviz
 {
 
-/// ModuleMenu is manager for the Modules menu. It fills it up with actions
-/// and handles their triggers based on available modules reported by
-/// ModuleFactory.
-class ModuleMenu : public QObject
+class ViewMenuManager : public pqViewMenuManager
 {
   Q_OBJECT
-  typedef QObject Superclass;
-
 public:
-  ModuleMenu(QToolBar* toolBar, QMenu* parentMenu, QObject* parent=NULL);
-  virtual ~ModuleMenu();
+  ViewMenuManager(QMainWindow* mainWindow, QMenu* menu);
+
+protected:
+  // Override to add 'show View Properties dialog'
+  virtual void buildMenu();
 
 private slots:
-  void updateActions();
-  void triggered(QAction* maction);
+  void showViewPropertiesDialog(bool show);
+  void viewPropertiesDialogHidden();
 
 private:
-  Q_DISABLE_COPY(ModuleMenu)
-  QPointer<QMenu> Menu;
-  QPointer<QToolBar> ToolBar;
+  QDialog* viewPropertiesDialog;
+  QAction* showViewPropertiesAction;
 };
 
 }

@@ -95,6 +95,8 @@ set(SOURCES
   Utilities.h
   ViewPropertiesPanel.cxx
   ViewPropertiesPanel.h
+  ViewMenuManager.cxx
+  ViewMenuManager.h
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
   )
