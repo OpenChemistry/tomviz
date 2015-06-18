@@ -49,8 +49,8 @@ CropWidget::CropWidget(DataSource* source, vtkRenderWindowInteractor* iren,
   boxRep->PlaceWidget(imageData->GetBounds());
   boxRep->HandlesOn();
 
-  this->boxWidget->SetTranslationEnabled(0);
-  this->boxWidget->SetScalingEnabled(0);
+  this->boxWidget->SetTranslationEnabled(1);
+  this->boxWidget->SetScalingEnabled(1);
   this->boxWidget->SetRotationEnabled(0);
   this->boxWidget->SetMoveFacesEnabled(1);
   this->boxWidget->SetInteractor(iren);
