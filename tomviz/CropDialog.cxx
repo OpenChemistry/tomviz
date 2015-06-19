@@ -65,7 +65,17 @@ public:
     QSettings* settings = pqApplicationCore::instance()->settings();
 
     return settings->value("cropDialogPosition");
-  }
+    }
+
+  void blockSpinnerSignals(bool block)
+    {
+    ui.startX->blockSignals(block);
+    ui.startY->blockSignals(block);
+    ui.startZ->blockSignals(block);
+    ui.endX->blockSignals(block);
+    ui.endY->blockSignals(block);
+    ui.endZ->blockSignals(block);
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -148,6 +158,8 @@ void CropDialog::updateBounds(double *newBounds)
 {
   Ui::CropDialog& ui = this->Internals->ui;
 
+  this->Internals->blockSpinnerSignals(true);
+
   ui.startX->setValue(round(newBounds[0]));
   ui.startY->setValue(round(newBounds[2]));
   ui.startZ->setValue(round(newBounds[4]));
@@ -155,6 +167,8 @@ void CropDialog::updateBounds(double *newBounds)
   ui.endX->setValue(round(newBounds[1]));
   ui.endY->setValue(round(newBounds[3]));
   ui.endZ->setValue(round(newBounds[5]));
+
+  this->Internals->blockSpinnerSignals(false);
 }
 
 //-----------------------------------------------------------------------------
