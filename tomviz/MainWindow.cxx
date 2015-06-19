@@ -171,7 +171,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Add our Python script reactions, these compose Python into menu entries.
   new AddExpressionReaction(customPythonAction);
-  new CropReaction(cropDataAction);
+  new CropReaction(cropDataAction, this);
   //new AddResampleReaction(resampleDataAction);
   //new AddPythonTransformReaction(backgroundSubtractAction,
   //                               "Background Subtraction",
