@@ -96,12 +96,12 @@ void CropWidget::interactionEnd(vtkObject *caller)
   double* origin = this->Internals->imageData->GetOrigin();
   double dataBounds[6];
 
-  dataBounds[0] =  (boxBounds[0] - origin[0])  / spacing[0] ;
-  dataBounds[1] =  (boxBounds[1] - origin[0]) / spacing[0];
-  dataBounds[2] =  (boxBounds[2] - origin[0]) / spacing[1];
-  dataBounds[3] =  (boxBounds[3] - origin[0]) / spacing[1];
-  dataBounds[4] =  (boxBounds[4] - origin[0]) / spacing[2];
-  dataBounds[5] =  (boxBounds[5] - origin[0]) / spacing[2];
+  int dim = 0;
+  for (int i=0; i<6; i++)
+    {
+    dataBounds[i] =  (boxBounds[i] - origin[dim]) / spacing[dim] ;
+    dim += i % 2 ? 1 : 0;
+    }
 
   emit this->bounds(dataBounds);
 }
@@ -112,12 +112,12 @@ void CropWidget::updateBounds(int* boxBounds)
   double* origin = this->Internals->imageData->GetOrigin();
   double newBounds[6];
 
-  newBounds[0] =  (boxBounds[0] * spacing[0]) + origin[0];
-  newBounds[1] =  (boxBounds[1] * spacing[0]) + origin[0];
-  newBounds[2] =  (boxBounds[2] * spacing[1]) + origin[1];
-  newBounds[3] =  (boxBounds[3] * spacing[1]) + origin[1];
-  newBounds[4] =  (boxBounds[4] * spacing[2]) + origin[2];
-  newBounds[5] =  (boxBounds[5] * spacing[2]) + origin[3];
+  int dim = 0;
+  for (int i=0; i<6; i++)
+    {
+    newBounds[i] =  (boxBounds[i] * spacing[dim]) + origin[dim];
+    dim += i % 2 ? 1 : 0;
+    }
 
   this->Internals->boxWidget->GetRepresentation()->PlaceWidget(newBounds);
   this->Internals->interactor->GetRenderWindow()->Render();
