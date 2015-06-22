@@ -97,7 +97,7 @@ void CropWidget::interactionEnd(vtkObject *caller)
   double dataBounds[6];
 
   int dim = 0;
-  for (int i=0; i<6; i++)
+  for (int i = 0; i < 6; i++)
     {
     dataBounds[i] =  (boxBounds[i] - origin[dim]) / spacing[dim] ;
     dim += i % 2 ? 1 : 0;
@@ -113,7 +113,7 @@ void CropWidget::updateBounds(int* boxBounds)
   double newBounds[6];
 
   int dim = 0;
-  for (int i=0; i<6; i++)
+  for (int i = 0; i < 6; i++)
     {
     newBounds[i] =  (boxBounds[i] * spacing[dim]) + origin[dim];
     dim += i % 2 ? 1 : 0;
