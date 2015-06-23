@@ -22,13 +22,16 @@
 
 #include <vtkEventQtSlotConnect.h>
 #include <vtkImageData.h>
+#include <vtkNew.h>
 #include <vtkObject.h>
 #include <vtkTrivialProducer.h>
 
 #include <pqSettings.h>
 #include <vtkSMSourceProxy.h>
 #include <pqApplicationCore.h>
+#include <vtkBoundingBox.h>
 
+#include <algorithm>
 #include <math.h>
 
 #include "DataSource.h"
@@ -42,6 +45,8 @@ class CropDialog::CDInternals
 public:
   Ui::CropDialog ui;
   DataSource* dataSource;
+  int* dataExtent;
+  vtkBoundingBox dataBoundingBox;
 
   void bounds(int bs[6]) const
     {
@@ -99,6 +104,11 @@ CropDialog::CropDialog(QWidget* parentObject, DataSource* source)
 
   vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   int *extent = imageData->GetExtent();
+  this->Internals->dataExtent = extent;
+
+  double e[6];
+  std::copy(extent, extent+6, e);
+  this->Internals->dataBoundingBox.SetBounds(e);
 
   // Set ranges and default values
   ui.startX->setRange(extent[0], extent[1]);
@@ -160,13 +170,30 @@ void CropDialog::updateBounds(double *newBounds)
 
   this->Internals->blockSpinnerSignals(true);
 
-  ui.startX->setValue(round(newBounds[0]));
-  ui.startY->setValue(round(newBounds[2]));
-  ui.startZ->setValue(round(newBounds[4]));
+  vtkBoundingBox newBoundingBox(newBounds);
 
-  ui.endX->setValue(round(newBounds[1]));
-  ui.endY->setValue(round(newBounds[3]));
-  ui.endZ->setValue(round(newBounds[5]));
+  if (this->Internals->dataBoundingBox.Intersects(newBoundingBox))
+    {
+    ui.startX->setValue(round(newBounds[0]));
+    ui.startY->setValue(round(newBounds[2]));
+    ui.startZ->setValue(round(newBounds[4]));
+
+    ui.endX->setValue(round(newBounds[1]));
+    ui.endY->setValue(round(newBounds[3]));
+    ui.endZ->setValue(round(newBounds[5]));
+    }
+  // If there is no intersection use data extent
+  else
+    {
+    ui.startX->setValue(this->Internals->dataExtent[0]);
+    ui.startY->setValue(this->Internals->dataExtent[2]);
+    ui.startZ->setValue(this->Internals->dataExtent[4]);
+
+    ui.endX->setValue(this->Internals->dataExtent[1]);
+    ui.endY->setValue(this->Internals->dataExtent[3]);
+    ui.endZ->setValue(this->Internals->dataExtent[5]);
+
+    }
 
   this->Internals->blockSpinnerSignals(false);
 }
