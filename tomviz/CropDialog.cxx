@@ -23,6 +23,7 @@
 #include <vtkEventQtSlotConnect.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
+#include <vtkMath.h>
 #include <vtkObject.h>
 #include <vtkTrivialProducer.h>
 
@@ -174,13 +175,13 @@ void CropDialog::updateBounds(double *newBounds)
 
   if (this->Internals->dataBoundingBox.Intersects(newBoundingBox))
     {
-    ui.startX->setValue(round(newBounds[0]));
-    ui.startY->setValue(round(newBounds[2]));
-    ui.startZ->setValue(round(newBounds[4]));
+    ui.startX->setValue(vtkMath::Round(newBounds[0]));
+    ui.startY->setValue(vtkMath::Round(newBounds[2]));
+    ui.startZ->setValue(vtkMath::Round(newBounds[4]));
 
-    ui.endX->setValue(round(newBounds[1]));
-    ui.endY->setValue(round(newBounds[3]));
-    ui.endZ->setValue(round(newBounds[5]));
+    ui.endX->setValue(vtkMath::Round(newBounds[1]));
+    ui.endY->setValue(vtkMath::Round(newBounds[3]));
+    ui.endZ->setValue(vtkMath::Round(newBounds[5]));
     }
   // If there is no intersection use data extent
   else
