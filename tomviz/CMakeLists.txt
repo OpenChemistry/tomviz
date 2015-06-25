@@ -147,7 +147,6 @@ qt4_wrap_ui(UI_SOURCES
   )
 qt4_add_resources(RCC_SOURCES resources.qrc)
 
-set(EXTRA_LIBRARIES)
 if(APPLE)
   list(APPEND SOURCES icons/tomviz.icns)
   set(MACOSX_BUNDLE_ICON_FILE tomviz.icns)
@@ -155,9 +154,7 @@ if(APPLE)
   set_source_files_properties(icons/tomviz.icns PROPERTIES
     MACOSX_PACKAGE_LOCATION Resources)
 elseif(WIN32)
-  add_subdirectory(icons)
-  list(APPEND EXTRA_LIBRARIES
-    windows_icon_rc)
+  list(APPEND SOURCES icons/tomviz.rc)
 endif()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
@@ -175,7 +172,6 @@ target_link_libraries(tomviz
     pqApplicationComponents
     vtkPVServerManagerRendering
     vtkpugixml
-    ${EXTRA_LIBRARIES}
   )
 if(WIN32)
   target_link_libraries(tomviz LINK_PRIVATE ${QT_QTMAIN_LIBRARY})
