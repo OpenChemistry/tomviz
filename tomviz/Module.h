@@ -30,7 +30,7 @@ class vtkSMViewProxy;
 namespace tomviz
 {
 class DataSource;
-/// Abstract parent class for all Modules in TomViz.
+/// Abstract parent class for all Modules in tomviz.
 class Module : public QObject
 {
   Q_OBJECT

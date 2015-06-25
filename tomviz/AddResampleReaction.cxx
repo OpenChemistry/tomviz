@@ -142,9 +142,9 @@ void AddResampleReaction::resample(DataSource* source)
     // TODO - cloning here is really expensive memory-wise, we should figure
     // out a different way to do it
     DataSource* resampledData = source->clone(true);
-    QString name = resampledData->producer()->GetAnnotation("TomViz.Label");
+    QString name = resampledData->producer()->GetAnnotation("tomviz.Label");
     name = "Downsampled_" + name;
-    resampledData->producer()->SetAnnotation("TomViz.Label", name.toAscii().data());
+    resampledData->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
       resampledData->producer()->GetClientSideObject());
     t->SetOutput(reslice->GetOutput());

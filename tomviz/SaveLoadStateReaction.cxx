@@ -58,7 +58,7 @@ bool SaveLoadStateReaction::saveState()
 {
   pqFileDialog fileDialog(NULL, pqCoreUtilities::mainWidget(),
                           tr("Save State File"), QString(),
-                          "TomViz state files (*.tvsm);;All files (*)");
+                          "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
   fileDialog.setFileMode(pqFileDialog::AnyFile);
   if (fileDialog.exec() == QDialog::Accepted)
@@ -73,7 +73,7 @@ bool SaveLoadStateReaction::loadState()
 {
   pqFileDialog fileDialog(NULL, pqCoreUtilities::mainWidget(),
                           tr("Load State File"), QString(),
-                          "TomViz state files (*.tvsm);;All files (*)");
+                          "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");
   fileDialog.setFileMode(pqFileDialog::ExistingFile);
   if (fileDialog.exec() == QDialog::Accepted)
@@ -93,7 +93,7 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     return false;
     }
 
-  if (ModuleManager::instance().deserialize(document.child("TomVizState")))
+  if (ModuleManager::instance().deserialize(document.child("tomvizState")))
     {
     RecentFilesMenu::pushStateFile(filename);
     return true;
@@ -105,7 +105,7 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
 bool SaveLoadStateReaction::saveState(const QString& filename)
 {
   pugi::xml_document document;
-  pugi::xml_node root = document.append_child("TomVizState");
+  pugi::xml_node root = document.append_child("tomvizState");
   root.append_attribute("version").set_value("0.0a");
   root.append_attribute("paraview_version").set_value(
     QString("%1.%2.%3")

@@ -24,7 +24,7 @@ namespace tomviz
 {
 class DataSource;
 
-/// LoadDataReaction handles the "Load Data" action in TomViz. On trigger,
+/// LoadDataReaction handles the "Load Data" action in tomviz. On trigger,
 /// this will open the data file and necessary subsequent actions, including:
 /// \li make the data source "active".
 ///

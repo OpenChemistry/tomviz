@@ -15,43 +15,43 @@
 ******************************************************************************/
 #include <QApplication>
 
-#include "pqOptions.h"
-#include "pqPVApplicationCore.h"
-#include "vtkNew.h"
-#include "vtkObjectFactory.h"
+#include <pqOptions.h>
+#include <pqPVApplicationCore.h>
+#include <vtkNew.h>
+#include <vtkObjectFactory.h>
 
 #include "MainWindow.h"
-#include "TomVizPythonConfig.h"
+#include "tomvizConfig.h"
+#include "tomvizPythonConfig.h"
 
 #include <clocale>
 
 // We need to override the default options to enable streaming by default.
 // Streaming needs to be enabled for the dax representations
-class TomoOptions : public pqOptions
+class TomvizOptions : public pqOptions
 {
 public:
-  static TomoOptions* New();
-  vtkTypeMacro(TomoOptions, pqOptions);
+  static TomvizOptions* New();
+  vtkTypeMacro(TomvizOptions, pqOptions)
   virtual int GetEnableStreaming() { return 1; }
 
 protected:
-  TomoOptions(): pqOptions()
-  { }
+  TomvizOptions() : pqOptions() { ; }
 };
-vtkStandardNewMacro(TomoOptions);
+vtkStandardNewMacro(TomvizOptions)
 
 int main(int argc, char** argv)
 {
-  QCoreApplication::setApplicationName("TomViz");
-  QCoreApplication::setApplicationVersion("0.1.0");
+  QCoreApplication::setApplicationName("tomviz");
+  QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);
   QCoreApplication::setOrganizationName("Kitware");
 
   tomviz::InitializePythonEnvironment(argc, argv);
 
   QApplication app(argc, argv);
   setlocale(LC_NUMERIC, "C");
-  vtkNew<TomoOptions> options;
-  pqPVApplicationCore appCore(argc, argv, options.GetPointer());
+  vtkNew<TomvizOptions> options;
+  pqPVApplicationCore appCore(argc, argv, options.Get());
   tomviz::MainWindow window;
   window.show();
   return app.exec();

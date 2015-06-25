@@ -26,7 +26,7 @@ namespace tomviz
 {
 
 /// Extends pqRecentFilesMenu to add support to open a data file customized for
-/// TomViz.
+/// tomviz.
 class RecentFilesMenu : public QObject
 {
   Q_OBJECT

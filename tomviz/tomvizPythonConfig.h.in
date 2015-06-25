@@ -1,0 +1,147 @@
+/******************************************************************************
+
+  This source file is part of the tomviz project.
+
+  Copyright Kitware, Inc.
+
+  This source code is released under the New BSD License, (the "License").
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+******************************************************************************/
+#ifndef tomvizPythonConfig_h
+#define tomvizPythonConfig_h
+
+// Header file to configure Python environment.
+
+// For development builds: these are paths when running from the build directory.
+#define PARAVIEW_BUILD_DIR "@ParaView_DIR@"
+#define TOMVIZ_PYTHON_SOURCE_DIR "@tomviz_SOURCE_DIR@/tomviz/python"
+#define TOMVIZ_DATA_SOURCE_DIR "@tomviz_data_DIR@/Data"
+
+// For install builds: these are paths when running from an installed location.
+#define TOMVIZ_PYTHON_INSTALL_DIR "@tomviz_python_install_dir@"
+#define TOMVIZ_DATA_INSTALL_DIR "@tomviz_data_install_dir@/Data"
+
+#include "vtkPythonInterpreter.h"
+#include <vtksys/SystemTools.hxx>
+#include <string>
+
+namespace tomviz
+{
+void PythonAppInitPrependPythonPath(const std::string& dir)
+  {
+  if (dir != "")
+    {
+    std::string collapsed_dir = vtksys::SystemTools::CollapseFullPath(dir.c_str());
+    if (vtksys::SystemTools::FileIsDirectory(collapsed_dir.c_str()))
+      {
+      vtkPythonInterpreter::PrependPythonPath(collapsed_dir.c_str());
+      }
+    }
+  }
+
+//---------------------------------------------------------------------------
+void PythonAppInitPrependPathWindows(const std::string& exe_dir)
+  {
+  bool is_build_dir = vtksys::SystemTools::FileExists((exe_dir + "/../CMakeCache.txt").c_str()) &&
+      vtksys::SystemTools::FileExists((exe_dir + "/../tomvizPythonConfig.h").c_str());
+  if (is_build_dir)
+    {
+    PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/bin");
+    PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
+
+    // Add tomviz Python source dir.
+    PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
+    }
+  else
+    {
+    // since exe_dir in <PREFiX>/bin, we do a  /../
+    PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
+
+    // we don't add anything for ParaView since, ParaView takes care of that.
+    }
+  }
+
+//---------------------------------------------------------------------------
+void PythonAppInitPrependPathLinux(const std::string& exe_dir)
+  {
+  bool is_build_dir =
+      vtksys::SystemTools::FileExists((exe_dir + "/../CMakeCache.txt").c_str()) &&
+      vtksys::SystemTools::FileExists((exe_dir + "/../tomviz/tomvizPythonConfig.h").c_str());
+
+  if (is_build_dir)
+    {
+    // Add ParaView directories.
+    PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib");
+    PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
+
+    // Add tomviz Python source dir.
+    PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
+    }
+  else
+    {
+    // since exe_dir in <PREFiX>/bin, we do a  /../
+    PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
+
+    // we don't add anything for ParaView since, ParaView takes care of that.
+    }
+  }
+
+//---------------------------------------------------------------------------
+void PythonAppInitPrependPathOsX(const std::string& exe_dir)
+  {
+  bool is_build_dir =
+      vtksys::SystemTools::FileExists((exe_dir + "/../../../CMakeCache.txt").c_str());
+  if (is_build_dir)
+    {
+    // Add ParaView directories.
+    PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib");
+    PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
+
+    // Add tomviz Python source dir.
+    PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
+    }
+  else
+    {
+    // since exe_dir in <PREFiX>/bin, we do a  /../
+    PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
+    // we don't add anything for ParaView since, ParaView takes care of that.
+    }
+  }
+
+static void InitializePythonEnvironment(int argc, char** argv)
+  {
+  std::string self_dir, programname;
+  if (argc > 0)
+    {
+    std::string errMsg;
+    if (!vtksys::SystemTools::FindProgramPath(argv[0], programname, errMsg))
+      {
+      // if FindProgramPath fails. We really don't have much of an alternative
+      // here. Python module importing is going to fail.
+      programname = vtksys::SystemTools::CollapseFullPath(argv[0]);
+      }
+    self_dir = vtksys::SystemTools::GetFilenamePath(programname.c_str());
+    }
+  else
+    {
+    self_dir = vtksys::SystemTools::GetCurrentWorkingDirectory(/*collapse=*/true);
+    programname = self_dir + "/unknown_exe";
+    }
+
+# if defined(_WIN32)
+  PythonAppInitPrependPathWindows(self_dir);
+# elif defined(__APPLE__)
+  PythonAppInitPrependPathOsX(self_dir);
+# else
+  PythonAppInitPrependPathLinux(self_dir);
+# endif
+  }
+}
+
+#endif

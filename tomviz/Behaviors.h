@@ -21,7 +21,7 @@
 class QMainWindow;
 namespace tomviz
 {
-/// Behaviors instantiates TomViz relevant ParaView behaviors (and any new
+/// Behaviors instantiates tomviz relevant ParaView behaviors (and any new
 /// ones) as needed.
 class Behaviors : public QObject
   {

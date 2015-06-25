@@ -6,12 +6,25 @@ set(CMAKE_MODULE_PATH "${tomviz_SOURCE_DIR}/cmake")
 include(BuildType)
 include(BuildLocation)
 include(CompilerFlags)
+include(tomvizDetermineVersion)
+include(Git)
 
-set (tomviz_version_major 0)
-set (tomviz_version_minor 5)
-set (tomviz_version_patch 0)
-set (tomviz_version_suffix)
-set (tomviz_version "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
+determine_version("${tomviz_SOURCE_DIR}" "${GIT_EXECUTABLE}" "tomviz")
+# Hard coded for source tarballs, releases, etc.
+set(tomviz_version_major 0)
+set(tomviz_version_minor 5)
+set(tomviz_version_patch 0)
+set(tomviz_version_extra)
+set(tomviz_version
+  "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
+if(tomviz_VERSION)
+  set(tomviz_version_major ${tomviz_VERSION_MAJOR})
+  set(tomviz_version_minor ${tomviz_VERSION_MINOR})
+  set(tomviz_version_patch ${tomviz_VERSION_PATCH})
+  set(tomviz_version_extra ${tomviz_VERSION_PATCH_EXTRA})
+endif()
+set(tomviz_version
+  "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
 
 # Location where python modules will be installed.
 set(tomviz_python_install_dir "lib/tomviz-${tomviz_version}/site-packages")
