@@ -24,7 +24,7 @@ namespace tomviz
 {
 class DataSource;
 
-/// DeleteDataReaction handles the "Delete Data" action in TomViz. On trigger,
+/// DeleteDataReaction handles the "Delete Data" action in tomviz. On trigger,
 /// this will delete the active data source and all Modules connected to it.
 class DeleteDataReaction : public pqReaction
 {

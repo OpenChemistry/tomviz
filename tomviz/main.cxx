@@ -21,7 +21,7 @@
 #include <vtkObjectFactory.h>
 
 #include "MainWindow.h"
-#include "TomVizPythonConfig.h"
+#include "tomvizPythonConfig.h"
 
 #include <clocale>
 

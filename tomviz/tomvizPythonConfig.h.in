@@ -49,13 +49,13 @@ namespace tomviz
   void PythonAppInitPrependPathWindows(const std::string& exe_dir)
     {
     bool is_build_dir = vtksys::SystemTools::FileExists((exe_dir + "/../CMakeCache.txt").c_str()) &&
-      vtksys::SystemTools::FileExists((exe_dir + "/../TomVizPythonConfig.h").c_str());
+      vtksys::SystemTools::FileExists((exe_dir + "/../tomvizPythonConfig.h").c_str());
     if (is_build_dir)
       {
       PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/bin");
       PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
 
-      // Add TomViz Python source dir.
+      // Add tomviz Python source dir.
       PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
       }
     else
@@ -72,7 +72,7 @@ namespace tomviz
     {
     bool is_build_dir =
         vtksys::SystemTools::FileExists((exe_dir + "/../CMakeCache.txt").c_str()) &&
-        vtksys::SystemTools::FileExists((exe_dir + "/../tomviz/TomVizPythonConfig.h").c_str());
+        vtksys::SystemTools::FileExists((exe_dir + "/../tomviz/tomvizPythonConfig.h").c_str());
 
     if (is_build_dir)
       {
@@ -80,7 +80,7 @@ namespace tomviz
       PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib");
       PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
 
-      // Add TomViz Python source dir.
+      // Add tomviz Python source dir.
       PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
       }
     else
@@ -103,7 +103,7 @@ namespace tomviz
       PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib");
       PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
 
-      // Add TomViz Python source dir.
+      // Add tomviz Python source dir.
       PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
       }
     else

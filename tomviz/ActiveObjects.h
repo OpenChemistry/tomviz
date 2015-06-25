@@ -28,9 +28,9 @@ class vtkSMViewProxy;
 namespace tomviz
 {
 
-/// ActiveObjects keeps track of active objects in TomViz.
-/// This is similar to pqActiveObjects in ParaView, however tracks objects
-/// relevant to TomViz.
+/// ActiveObjects keeps track of active objects in tomviz.
+/// This is similar to pqActiveObjects in ParaView, however it tracks objects
+/// relevant to tomviz.
 class ActiveObjects : public QObject
   {
   Q_OBJECT

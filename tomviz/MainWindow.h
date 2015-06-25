@@ -24,7 +24,7 @@ namespace tomviz
 class DataSource;
 class Module;
 
-/// The main window for the TomViz application.
+/// The main window for the tomviz application.
 class MainWindow : public QMainWindow
 {
   Q_OBJECT

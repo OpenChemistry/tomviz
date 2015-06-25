@@ -29,9 +29,9 @@ namespace tomviz
 class DataSource;
 class Module;
 
-/// PipelineWidget is a QTreeWidget to show the visualization "Pipeline" in TomViz.
-/// This is not same as the underlying ParaView visualization pipeline. We
-/// show higher level abstractions for TomViz users, than the raw VTK
+/// PipelineWidget is a QTreeWidget to show the visualization "Pipeline" in
+/// tomviz. This is not same as the underlying ParaView visualization pipeline.
+/// We show higher level abstractions for tomviz users, than the raw VTK
 /// pipelines.
 class PipelineWidget : public QTreeWidget
 {

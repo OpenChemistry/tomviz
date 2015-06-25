@@ -107,7 +107,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new pqPythonShellReaction(ui.actionPythonConsole);
   new pqMacroReaction(ui.actionMacros);
 
-  // Instantiate TomViz application behavior.
+  // Instantiate tomviz application behavior.
   new Behaviors(this);
 
   new LoadDataReaction(ui.actionOpen);

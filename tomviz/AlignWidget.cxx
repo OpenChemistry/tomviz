@@ -486,9 +486,9 @@ void AlignWidget::doDataAlign()
   if (!alignedData)
     {
     alignedData = unalignedData->clone(true);
-    QString name = alignedData->producer()->GetAnnotation("TomViz.Label");
+    QString name = alignedData->producer()->GetAnnotation("tomviz.Label");
     name = "Aligned_" + name;
-    alignedData->producer()->SetAnnotation("TomViz.Label", name.toAscii().data());
+    alignedData->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
     firstAdded = true;
     }
   vtkImageData *in = imageData(unalignedData);
