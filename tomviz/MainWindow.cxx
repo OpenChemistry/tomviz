@@ -88,7 +88,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  setWindowTitle("tomviz " + QString(TOMVIZ_VERSION));
+  QString version(TOMVIZ_VERSION);
+  if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)
+    version.append("-").append(TOMVIZ_VERSION_EXTRA);
+  setWindowTitle("tomviz " + version);
 
   QIcon icon(":/icons/tomviz.png");
   setWindowIcon(icon);
@@ -242,10 +245,12 @@ void MainWindow::showAbout()
     {
     this->Internals->AboutDialog = new QDialog(this);
     this->Internals->AboutUi.setupUi(this->Internals->AboutDialog);
-    QString version =
-        this->Internals->AboutUi.version->text().replace("#VERSION",
-                                                         TOMVIZ_VERSION);
-    this->Internals->AboutUi.version->setText(version);
+    QString version(TOMVIZ_VERSION);
+    if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)
+      version.append("-").append(TOMVIZ_VERSION_EXTRA);
+    QString versionString =
+        this->Internals->AboutUi.version->text().replace("#VERSION", version);
+    this->Internals->AboutUi.version->setText(versionString);
     }
   this->Internals->AboutDialog->show();
 }
