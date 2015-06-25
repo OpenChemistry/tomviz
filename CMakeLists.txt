@@ -26,7 +26,7 @@ if(APPLE)
 endif()
 
 find_package(ParaView REQUIRED)
-include(${PARAVIEW_USE_FILE})
+
 if(NOT PARAVIEW_BUILD_QT_GUI)
   message(FATAL_ERROR
     "Tomviz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
@@ -37,5 +37,11 @@ if(NOT PARAVIEW_ENABLE_PYTHON)
     "Tomviz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
     "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
 endif()
+
+include_directories(SYSTEM "${PARAVIEW_INCLUDE_DIRS}")
+
+find_package(Qt4 REQUIRED)
+include_directories(SYSTEM "${QT_INCLUDES}")
+add_definitions(${QT_DEFINITIONS})
 
 add_subdirectory(tomviz)
