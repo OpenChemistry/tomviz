@@ -28,6 +28,7 @@
 #include "pqSaveStateReaction.h"
 #include "vtkPVPlugin.h"
 
+#include "tomvizConfig.h"
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddExpressionReaction.h"
@@ -87,7 +88,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  setWindowTitle("tomviz");
+  setWindowTitle("tomviz " + QString(TOMVIZ_VERSION));
 
   QIcon icon(":/icons/tomviz.png");
   setWindowIcon(icon);
@@ -241,6 +242,10 @@ void MainWindow::showAbout()
     {
     this->Internals->AboutDialog = new QDialog(this);
     this->Internals->AboutUi.setupUi(this->Internals->AboutDialog);
+    QString version =
+        this->Internals->AboutUi.version->text().replace("#VERSION",
+                                                         TOMVIZ_VERSION);
+    this->Internals->AboutUi.version->setText(version);
     }
   this->Internals->AboutDialog->show();
 }

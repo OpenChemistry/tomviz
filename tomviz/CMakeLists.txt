@@ -162,6 +162,7 @@ endif()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
+configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
 add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}

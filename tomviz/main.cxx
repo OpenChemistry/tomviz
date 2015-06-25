@@ -21,6 +21,7 @@
 #include <vtkObjectFactory.h>
 
 #include "MainWindow.h"
+#include "tomvizConfig.h"
 #include "tomvizPythonConfig.h"
 
 #include <clocale>
@@ -42,7 +43,7 @@ vtkStandardNewMacro(TomvizOptions)
 int main(int argc, char** argv)
 {
   QCoreApplication::setApplicationName("tomviz");
-  QCoreApplication::setApplicationVersion("0.1.0");
+  QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);
   QCoreApplication::setOrganizationName("Kitware");
 
   tomviz::InitializePythonEnvironment(argc, argv);

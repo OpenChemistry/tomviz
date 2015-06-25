@@ -7,11 +7,12 @@ include(BuildType)
 include(BuildLocation)
 include(CompilerFlags)
 
-set (tomviz_version_major 0)
-set (tomviz_version_minor 5)
-set (tomviz_version_patch 0)
-set (tomviz_version_suffix)
-set (tomviz_version "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
+set(tomviz_version_major 0)
+set(tomviz_version_minor 5)
+set(tomviz_version_patch 0)
+set(tomviz_version_suffix)
+set(tomviz_version
+  "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
 
 # Location where python modules will be installed.
 set(tomviz_python_install_dir "lib/tomviz-${tomviz_version}/site-packages")
