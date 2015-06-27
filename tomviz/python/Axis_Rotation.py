@@ -37,26 +37,41 @@ def transform_scalars(dataset):
         Intensity[:,:,i] = np.fft.fftshift(pF/a)
     #rescale intensity
     Intensity = np.power(Intensity,0.2)
-    #calculate varivation itensity image
+    #calculate variation itensity image
     Intensity_var = np.var(Intensity,axis=2)
 
-    Nx = data_py.shape[0]; Ny = data_py.shape[1]
+    #start with coarse search
+    coarse_step=2
+    angles = np.arange(-90,90,coarse_step)
+    rot_ang=find_min_line(Intensity_var,angles)
+
+    #now refine
+    fine_step=0.1
+    angles = np.arange(rot_ang-coarse_step,rot_ang+coarse_step,fine_step)
+    rot_ang=find_min_line(Intensity_var,angles)
+
+    print('Align Images Complete')
+    print('Found in-plane rotation %.1f' % rot_ang)
+
+
+
+def find_min_line(Intensity_var,angles):
+    import numpy as np
+
+    Nx = Intensity_var.shape[0]; Ny = Intensity_var.shape[1]
     cenx = np.floor(Nx/2); ceny = np.floor(Ny/2)
 
     N = np.round(Nx/3)
     cen = np.floor(N/2)
-    Intensity_line = np.zeros((360,N))
+    Intensity_line = np.zeros((angles.size,N))
     w = np.zeros(N)
     v = np.zeros(N)
-    angles = np.linspace(0,179.5,360)
+
     for a in range(0,angles.size):
-        #print np.sin(ang*np.pi/180)
-        print angles[a]
         ang = angles[a]*np.pi/180
         w = np.zeros(N)
         v = np.zeros(N)
         for i in range(0,N):
-            #print i
             x = -i*np.sin(ang); y = i*np.cos(ang);
             sx = abs(np.floor(x) - x); sy = abs(np.floor(y) - y)
             px = np.floor(x)+cenx; py = np.floor(y)+ceny
@@ -79,8 +94,5 @@ def transform_scalars(dataset):
         Intensity_line[a,:] = v
     Intensity_line_sum = np.sum(Intensity_line,axis=1)
     rot_ang = angles[np.argmin(Intensity_line_sum)]
-    
 
-    print('Align Images Complete')
-    print('Found in-plane rotation %.1f' % rot_ang)
-
+    return rot_ang
