@@ -96,7 +96,7 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
 void PythonAppInitPrependPathOsX(const std::string& exe_dir)
   {
   bool is_build_dir =
-      vtksys::SystemTools::FileExists((exe_dir + "/../../../CMakeCache.txt").c_str());
+      vtksys::SystemTools::FileExists((exe_dir + "/../../../../CMakeCache.txt").c_str());
   if (is_build_dir)
     {
     // Add ParaView directories.
