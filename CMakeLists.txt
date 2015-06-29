@@ -14,7 +14,7 @@ set (tomviz_version_suffix)
 set (tomviz_version "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
 
 # Location where python modules will be installed.
-set(tomviz_python_install_dir "lib/tomviz-${tomviz_version}/site-packages")
+set(tomviz_python_install_dir "lib/tomviz/site-packages")
 if(APPLE)
   set(tomviz_python_install_dir "Applications/tomviz.app/Contents/Python")
 endif()
