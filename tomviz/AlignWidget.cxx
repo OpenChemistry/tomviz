@@ -184,16 +184,17 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   // Add our buttons.
   ++gridrow;
   QHBoxLayout *buttonLayout = new QHBoxLayout;
-  QPushButton *button = new QPushButton("Start");
-  connect(button, SIGNAL(clicked()), SLOT(startAlign()));
-  buttonLayout->addWidget(button);
-  button = new QPushButton("Stop");
-  connect(button, SIGNAL(clicked()), SLOT(stopAlign()));
-  buttonLayout->addWidget(button);
+  startButton = new QPushButton("Start");
+  connect(startButton, SIGNAL(clicked()), SLOT(startAlign()));
+  buttonLayout->addWidget(startButton);
+  startButton->setEnabled(false);
+  stopButton = new QPushButton("Stop");
+  connect(stopButton, SIGNAL(clicked()), SLOT(stopAlign()));
+  buttonLayout->addWidget(stopButton);
   grid->addLayout(buttonLayout, gridrow, 0, 1, 2, Qt::AlignCenter);
 
   gridrow++;
-  button = new QPushButton("Create Aligned Data");
+  QPushButton *button = new QPushButton("Create Aligned Data");
   connect(button, SIGNAL(clicked()), SLOT(doDataAlign()));
   grid->addWidget(button, gridrow, 0, 1, 2, Qt::AlignCenter);
 
@@ -208,6 +209,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   offsets[11] = vtkVector2i(-10, -10); */
 
   connect(timer, SIGNAL(timeout()), SLOT(changeSlice()));
+  connect(timer, SIGNAL(timeout()), widget, SLOT(update()));
   timer->start(100);
 }
 
@@ -224,6 +226,7 @@ bool AlignWidget::eventFilter(QObject *object, QEvent *event)
       case QEvent::KeyPress:
         widgetKeyPress(static_cast<QKeyEvent *>(event));
         return true;
+      case QEvent::KeyRelease:
       case QEvent::MouseMove:
       case QEvent::MouseButtonRelease:
       case QEvent::MouseButtonPress:
@@ -385,7 +388,6 @@ void AlignWidget::applySliceOffset(int sliceNumber)
     offset = offsets[sliceNumber];
     }
   imageSlice->SetPosition(offset[0], offset[1], 0);
-  widget->update();
 }
 
 void AlignWidget::startAlign()
@@ -394,12 +396,16 @@ void AlignWidget::startAlign()
     {
     timer->start(1000.0 / frameRate);
     }
+  startButton->setEnabled(false);
+  stopButton->setEnabled(true);
 }
 
 void AlignWidget::stopAlign()
 {
   timer->stop();
   setSlice(currentSlice->value());
+  startButton->setEnabled(true);
+  stopButton->setEnabled(false);
 }
 
 namespace
