@@ -28,6 +28,7 @@ class QSpinBox;
 class QTimer;
 class QKeyEvent;
 class QButtonGroup;
+class QPushButton;
 class QRadioButton;
 
 class vtkImageSlice;
@@ -81,6 +82,8 @@ protected:
   QRadioButton *nextButton;
   QRadioButton *statButton;
   QSpinBox *statRefNum;
+  QPushButton *startButton;
+  QPushButton *stopButton;
 
   int frameRate;
   int referenceSlice;
