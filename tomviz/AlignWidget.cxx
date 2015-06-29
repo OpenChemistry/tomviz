@@ -101,7 +101,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   camera->SetPosition(point.GetData());
   camera->SetViewUp(0.0, 1.0, 0.0);
   camera->ParallelProjectionOn();
-  camera->SetParallelScale(128);
+  camera->SetParallelScale(0.5 * (bounds[1] - bounds[0] + 1));
 
   vtkScalarsToColors *lut =
       vtkScalarsToColors::SafeDownCast(data->colorMap()->GetClientSideObject());
