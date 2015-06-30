@@ -34,6 +34,7 @@
 #include <vtkVector.h>
 #include <vtkPointData.h>
 #include <vtkDataArray.h>
+#include <vtkInteractorStyleRubberBand2D.h>
 
 #include <QTimer>
 #include <QGridLayout>
@@ -51,7 +52,7 @@ namespace tomviz
 {
 
 AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
-  : QWidget(p, f), timer(new QTimer(this)), frameRate(7),
+  : QWidget(p, f), timer(new QTimer(this)), frameRate(5),
     unalignedData(data), alignedData(NULL)
 {
   widget = new QVTKWidget(this);
@@ -85,6 +86,12 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   imageSlice->SetMapper(mapper.Get());
   renderer->AddViewProp(imageSlice.Get());
   widget->GetRenderWindow()->AddRenderer(renderer.Get());
+
+  // Set up render window interaction.
+  vtkNew<vtkInteractorStyleRubberBand2D> style;
+  style->SetRenderOnMouseMove(true);
+
+  widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(style.Get());
 
   renderer->SetBackground(1.0, 1.0, 1.0);
   vtkCamera *camera = renderer->GetActiveCamera();
@@ -139,7 +146,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   QSpinBox *spin = new QSpinBox;
   spin->setRange(0, 50);
-  spin->setValue(7);
+  spin->setValue(5);
   connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
   grid->addWidget(spin, gridrow, 1, 1, 1, Qt::AlignLeft);
 
@@ -227,9 +234,6 @@ bool AlignWidget::eventFilter(QObject *object, QEvent *event)
         widgetKeyPress(static_cast<QKeyEvent *>(event));
         return true;
       case QEvent::KeyRelease:
-      case QEvent::MouseMove:
-      case QEvent::MouseButtonRelease:
-      case QEvent::MouseButtonPress:
         return true;
       default:
         return false;
