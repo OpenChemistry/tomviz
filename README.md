@@ -1,8 +1,4 @@
-tomviz
-======
-
-Introduction
-------------
+![tomviz_logo]
 
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12723.svg)](http://dx.doi.org/10.5281/zenodo.12723)
 The [tomviz project][tomviz] is developing a cross platform, open source
@@ -33,6 +29,7 @@ Our project uses GitHub for code review, please fork the project and make a
 pull request if you would like us to consider your patch for inclusion.
 
   [tomviz]: http://tomviz.org/ "The tomviz project"
+  [tomviz_logo]: https://github.com/OpenChemistry/tomviz/blob/master/tomviz/icons/tomvizfull.png "tomviz"
   [Kitware]: http://kitware.com/ "Kitware, Inc."
   [KitwareLogo]: http://www.kitware.com/img/small_logo_over.png "Kitware"
   [Cornell]: http://www.aep.cornell.edu/
