@@ -57,6 +57,7 @@
 #include "Square_Root_Data.h"
 #include "Subtract_TiltSer_Background.h"
 #include "MisalignImgs_Gaussian.h"
+#include "Rotate3D.h"
 
 #include <QFileInfo>
 
@@ -151,6 +152,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
   QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
+  QAction *rotateAction = new QAction("Rotate", this);
   //QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
   //QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
   QAction *squareRootAction = new QAction("Square Root Data", this);
@@ -164,6 +166,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->insertSeparator(ui.actionAlign);
   ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
   ui.menuData->insertAction(ui.actionReconstruct, shiftUniformAction);
+  ui.menuData->insertAction(ui.actionReconstruct, rotateAction);
   //ui.menuData->insertAction(ui.actionReconstruct, misalignUniformAction);
   //ui.menuData->insertAction(ui.actionReconstruct, misalignGaussianAction);
   ui.menuData->insertSeparator(ui.actionReconstruct);
@@ -185,6 +188,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Auto Align (XCORR)", Align_Images);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", Shift_Stack_Uniformly);
+  new AddPythonTransformReaction(rotateAction,
+                                 "Rotate", Rotate3D);
   //new AddPythonTransformReaction(misalignUniformAction,
   //                               "Misalign (Uniform)", MisalignImgs_Uniform);
   //new AddPythonTransformReaction(misalignGaussianAction,

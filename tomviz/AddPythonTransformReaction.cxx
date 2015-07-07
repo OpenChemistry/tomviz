@@ -28,6 +28,7 @@
 #include <QDialog>
 #include <QLabel>
 #include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QDialogButtonBox>
@@ -170,6 +171,51 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       source->addOperator(op);
       }
     }
+  else if (scriptLabel == "Rotate")
+  {
+      vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+                                                               source->producer()->GetClientSideObject());
+      vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+      int *extent = data->GetExtent();
+      
+      QDialog dialog(pqCoreUtilities::mainWidget());
+      QHBoxLayout *layout1 = new QHBoxLayout;
+      QLabel *label = new QLabel("Rotate Angle:");
+      layout1->addWidget(label);
+      QDoubleSpinBox *angle = new QDoubleSpinBox;
+      angle->setRange(0, 360);
+      angle->setValue(0);
+      layout1->addWidget(label);
+      layout1->addWidget(angle);
+      QHBoxLayout *layout2 = new QHBoxLayout;
+      label = new QLabel("Rotate Axis:");
+      layout2->addWidget(label);
+      QSpinBox *axis = new QSpinBox;
+      axis->setRange(0, 2);
+      axis->setValue(0);
+      layout2->addWidget(label);
+      layout2->addWidget(axis);
+      QVBoxLayout *v = new QVBoxLayout;
+      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
+      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+      v->addLayout(layout1);
+      v->addLayout(layout2);
+      v->addWidget(buttons);
+      dialog.setLayout(v);
+      
+      if (dialog.exec() == QDialog::Accepted)
+      {
+          QString cropScript = scriptSource;
+          cropScript.replace("###ROT_AXIS###",
+                             QString("ROT_AXIS = %1").arg(axis->value()) );
+          cropScript.replace("###ROT_ANGLE###",
+                             QString("ROT_ANGLE = %1").arg(angle->value()) );
+          opPython->setScript(cropScript);
+          source->addOperator(op);
+      }
+  }
   else if (interactive)
     {
     // Create a non-modal dialog, delete it once it has been closed.

@@ -117,6 +117,7 @@ set(python_files
   Square_Root_Data.py
   Subtract_TiltSer_Background.py
   MisalignImgs_Gaussian.py
+  Rotate3D.py
   )
 unset(python_h_files)
 foreach(file ${python_files})
