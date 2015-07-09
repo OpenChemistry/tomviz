@@ -51,17 +51,17 @@
 namespace tomviz
 {
 
-AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
+AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   : QWidget(p, f), timer(new QTimer(this)), frameRate(5),
-    unalignedData(data), alignedData(NULL)
+    unalignedData(d), alignedData(NULL)
 {
   widget = new QVTKWidget(this);
   widget->installEventFilter(this);
-  QHBoxLayout *layout = new QHBoxLayout(this);
-  layout->addWidget(widget);
+  QHBoxLayout *myLayout = new QHBoxLayout(this);
+  myLayout->addWidget(widget);
   QVBoxLayout *v = new QVBoxLayout;
-  layout->addLayout(v);
-  setLayout(layout);
+  myLayout->addLayout(v);
+  setLayout(myLayout);
   setMinimumWidth(400);
   setMinimumHeight(300);
   setGeometry(-1, -1, 800, 600);
@@ -69,7 +69,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
 
   // Grab the image data from the data source...
   vtkTrivialProducer *t =
-      vtkTrivialProducer::SafeDownCast(data->producer()->GetClientSideObject());
+      vtkTrivialProducer::SafeDownCast(d->producer()->GetClientSideObject());
   vtkImageData *imageData(NULL);
   if (t)
     {
@@ -88,10 +88,11 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   widget->GetRenderWindow()->AddRenderer(renderer.Get());
 
   // Set up render window interaction.
-  vtkNew<vtkInteractorStyleRubberBand2D> style;
-  style->SetRenderOnMouseMove(true);
+  vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
+  interatorStyle->SetRenderOnMouseMove(true);
 
-  widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(style.Get());
+  widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+      interatorStyle.Get());
 
   renderer->SetBackground(1.0, 1.0, 1.0);
   vtkCamera *camera = renderer->GetActiveCamera();
@@ -111,7 +112,7 @@ AlignWidget::AlignWidget(DataSource* data, QWidget* p, Qt::WindowFlags f)
   camera->SetParallelScale(0.5 * (bounds[1] - bounds[0] + 1));
 
   vtkScalarsToColors *lut =
-      vtkScalarsToColors::SafeDownCast(data->colorMap()->GetClientSideObject());
+      vtkScalarsToColors::SafeDownCast(d->colorMap()->GetClientSideObject());
   if (lut)
     {
     imageSlice->GetProperty()->SetLookupTable(lut);
@@ -224,14 +225,14 @@ AlignWidget::~AlignWidget()
 {
 }
 
-bool AlignWidget::eventFilter(QObject *object, QEvent *event)
+bool AlignWidget::eventFilter(QObject *object, QEvent *e)
 {
   if (object == widget)
     {
-    switch (event->type())
+    switch (e->type())
       {
       case QEvent::KeyPress:
-        widgetKeyPress(static_cast<QKeyEvent *>(event));
+        widgetKeyPress(static_cast<QKeyEvent *>(e));
         return true;
       case QEvent::KeyRelease:
         return true;

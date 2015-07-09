@@ -49,14 +49,14 @@ QIcon ModuleThreshold::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleThreshold::initialize(DataSource* dataSource, vtkSMViewProxy* view)
+bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(dataSource, view))
+  if (!this->Superclass::initialize(data, vtkView))
     {
     return false;
     }
 
-  vtkSMSourceProxy* producer = dataSource->producer();
+  vtkSMSourceProxy* producer = data->producer();
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
@@ -86,7 +86,7 @@ bool ModuleThreshold::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 
   // Create the representation for it.
   this->ThresholdRepresentation = controller->Show(this->ThresholdFilter, 0,
-                                                   view);
+                                                   vtkView);
   Q_ASSERT(this->ThresholdRepresentation);
   vtkSMRepresentationProxy::SetRepresentationType(this->ThresholdRepresentation,
                                                   "Surface");

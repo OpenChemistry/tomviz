@@ -126,11 +126,11 @@ bool DataSource::serialize(pugi::xml_node& ns) const
 
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
     {
-    pugi::xml_node node = ns.append_child("Operator");
-    if (!op->serialize(node))
+    pugi::xml_node operatorNode = ns.append_child("Operator");
+    if (!op->serialize(operatorNode))
       {
       qWarning("failed to serialize Operator. Skipping it.");
-      ns.remove_child(node);
+      ns.remove_child(operatorNode);
       }
     }
   return true;
@@ -300,16 +300,16 @@ void DataSource::resetData()
 
   // Create a clone and release the reader data.
   vtkDataObject* data = vtkalgorithm->GetOutputDataObject(0);
-  vtkDataObject* clone = data->NewInstance();
-  clone->DeepCopy(data);
+  vtkDataObject* dataClone = data->NewInstance();
+  dataClone->DeepCopy(data);
   //data->ReleaseData();  FIXME: how it this supposed to work? I get errors on
   //attempting to re-execute the reader pipeline in clone().
 
   vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
     source->GetClientSideObject());
   Q_ASSERT(tp);
-  tp->SetOutput(clone);
-  clone->FastDelete();
+  tp->SetOutput(dataClone);
+  dataClone->FastDelete();
   emit this->dataChanged();
 }
 

@@ -61,15 +61,15 @@ QIcon ModuleSlice::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
+bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(dataSource, view))
+  if (!this->Superclass::initialize(data, vtkView))
     {
     return false;
     }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  vtkSMSourceProxy* producer = dataSource->producer();
+  vtkSMSourceProxy* producer = data->producer();
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
   // Create the pass through filter.
@@ -84,7 +84,7 @@ bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   controller->RegisterPipelineProxy(this->PassThrough);
 
   //Create the widget
-  const bool widgetSetup = this->setupWidget(view,producer);
+  const bool widgetSetup = this->setupWidget(vtkView,producer);
 
   if(widgetSetup)
     {
@@ -99,13 +99,12 @@ bool ModuleSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
 
 //-----------------------------------------------------------------------------
 //should only be called from initialize after the PassThrough has been setup
-bool ModuleSlice::setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer)
+bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView, vtkSMSourceProxy* producer)
 {
-  vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
   vtkAlgorithm* passThroughAlg = vtkAlgorithm::SafeDownCast(
                                  this->PassThrough->GetClientSideObject());
 
-  vtkRenderWindowInteractor* rwi = view->GetRenderWindow()->GetInteractor();
+  vtkRenderWindowInteractor* rwi = vtkView->GetRenderWindow()->GetInteractor();
 
   //determine the name of the property we are coloring by
   const char* propertyName = producer->GetDataInformation()->

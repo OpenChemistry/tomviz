@@ -258,9 +258,9 @@ void PipelineWidget::setActiveView(vtkSMViewProxy* view)
     bool item_enabled = (view == module->view());
     item->setDisabled(!item_enabled);
 
-    QFont font = item->font(MODULE_COLUMN);
-    font.setItalic(!item_enabled);
-    item->setFont(MODULE_COLUMN, font);
+    QFont f = item->font(MODULE_COLUMN);
+    f.setItalic(!item_enabled);
+    item->setFont(MODULE_COLUMN, f);
     }
 }
 

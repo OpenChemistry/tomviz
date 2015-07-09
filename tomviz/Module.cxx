@@ -78,14 +78,14 @@ Module::~Module()
 }
 
 //-----------------------------------------------------------------------------
-bool Module::initialize(DataSource* dataSource, vtkSMViewProxy* view)
+bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  this->View = view;
-  this->ADataSource = dataSource;
+  this->View = vtkView;
+  this->ADataSource = data;
   if (this->View && this->ADataSource)
     {
     // FIXME: we're connecting this too many times. Fix it.
-    tomviz::convert<pqView*>(view)->connect(
+    tomviz::convert<pqView*>(vtkView)->connect(
       this->ADataSource, SIGNAL(dataChanged()), SLOT(render()));
     }
   return (this->View && this->ADataSource);

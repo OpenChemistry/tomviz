@@ -48,16 +48,16 @@ QIcon ModuleOrthogonalSlice::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOrthogonalSlice::initialize(DataSource* dataSource, vtkSMViewProxy* view)
+bool ModuleOrthogonalSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(dataSource, view))
+  if (!this->Superclass::initialize(data, vtkView))
     {
     return false;
     }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = dataSource->producer()->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm = data->producer()->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -66,12 +66,12 @@ bool ModuleOrthogonalSlice::initialize(DataSource* dataSource, vtkSMViewProxy* v
   this->PassThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->PassThrough);
   controller->PreInitializeProxy(this->PassThrough);
-  vtkSMPropertyHelper(this->PassThrough, "Input").Set(dataSource->producer());
+  vtkSMPropertyHelper(this->PassThrough, "Input").Set(data->producer());
   controller->PostInitializeProxy(this->PassThrough);
   controller->RegisterPipelineProxy(this->PassThrough);
 
   // Create the representation for it.
-  this->Representation = controller->Show(this->PassThrough, 0, view);
+  this->Representation = controller->Show(this->PassThrough, 0, vtkView);
   Q_ASSERT(this->Representation);
 
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,

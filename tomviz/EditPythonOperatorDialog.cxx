@@ -35,16 +35,16 @@ public:
 
 //-----------------------------------------------------------------------------
 EditPythonOperatorDialog::EditPythonOperatorDialog(
-  QSharedPointer<Operator> &op, QWidget* parentObject)
+  QSharedPointer<Operator> &o, QWidget* parentObject)
   : Superclass(parentObject),
   Internals (new EditPythonOperatorDialog::EPODInternals())
 {
-  Q_ASSERT(op);
-  this->Internals->Op = op;
+  Q_ASSERT(o);
+  this->Internals->Op = o;
   Ui::EditPythonOperatorDialog& ui = this->Internals->Ui;
   ui.setupUi(this);
 
-  OperatorPython* opPython = qobject_cast<OperatorPython*>(op.data());
+  OperatorPython* opPython = qobject_cast<OperatorPython*>(o.data());
   Q_ASSERT(opPython);
 
   ui.name->setText(opPython->label());
