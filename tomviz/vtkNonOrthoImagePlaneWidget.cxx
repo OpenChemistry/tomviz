@@ -1719,7 +1719,7 @@ void vtkNonOrthoImagePlaneWidget::Rotate(double X, double Y,
     return;
     }
   int *const int_lastPos = this->Interactor->GetLastEventPosition();
-  const double lastPos[2]={int_lastPos[0],int_lastPos[1]};
+  const double lastPos[2]={(double)int_lastPos[0],(double)int_lastPos[1]};
 
   int *size = this->CurrentRenderer->GetSize();
   double l2 = (X-lastPos[0])*(X-lastPos[0]) + (Y-lastPos[1])*(Y-lastPos[1]);
