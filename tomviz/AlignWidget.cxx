@@ -70,11 +70,6 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   // Grab the image data from the data source...
   vtkTrivialProducer *t =
       vtkTrivialProducer::SafeDownCast(d->producer()->GetClientSideObject());
-  vtkImageData *imageData(NULL);
-  if (t)
-    {
-    imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    }
 
   // Set up the rendering pipeline
   vtkNew<vtkRenderer> renderer;

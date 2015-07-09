@@ -139,11 +139,6 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
 //-----------------------------------------------------------------------------
 bool ModuleVolume::deserialize(const pugi::xml_node& ns)
 {
-  vtkSMProxy* lut = vtkSMPropertyHelper(this->Representation,
-                                        "LookupTable").GetAsProxy();
-  vtkSMProxy* sof = vtkSMPropertyHelper(this->Representation,
-                                        "ScalarOpacityFunction").GetAsProxy();
-
   if (!tomviz::deserialize(this->Representation, ns.child("Representation")))
     {
     return false;

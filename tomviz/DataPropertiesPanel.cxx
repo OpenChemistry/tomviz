@@ -132,8 +132,6 @@ void DataPropertiesPanel::update()
   Ui::DataPropertiesPanel& ui = this->Internals->Ui;
   ui.FileName->setText(dsource->filename());
 
-  vtkPVDataInformation* odInfo =
-      dsource->originalDataSource()->GetDataInformation(0);
   vtkPVDataInformation* tdInfo = dsource->producer()->GetDataInformation(0);
 
   ui.Dimensions->setText(QString("%1 x %2 x %3")
