@@ -241,7 +241,7 @@ bool AlignWidget::eventFilter(QObject *object, QEvent *e)
     }
 }
 
-void AlignWidget::setDataSource(DataSource *source)
+void AlignWidget::setDataSource(DataSource *)
 {
 }
 

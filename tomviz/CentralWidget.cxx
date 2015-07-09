@@ -356,7 +356,7 @@ void CentralWidget::histogramReady()
   this->Worker->output = NULL;
 }
 
-void CentralWidget::histogramClicked(vtkObject *caller)
+void CentralWidget::histogramClicked(vtkObject *)
 {
   //qDebug() << "Histogram clicked at" << this->Chart->PositionX
   //         << "making this a great spot to ask for an isosurface at value"
