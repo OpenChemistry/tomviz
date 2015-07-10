@@ -76,16 +76,24 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   // Shift uniformly, crop, both have custom gui
   if (scriptLabel == "Shift Uniformly")
     {
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+      source->producer()->GetClientSideObject());
+    vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    int *extent = data->GetExtent();
+
     QDialog dialog(pqCoreUtilities::mainWidget());
     QHBoxLayout *layout = new QHBoxLayout;
     QLabel *label = new QLabel("Shift to apply:");
     layout->addWidget(label);
     QSpinBox *spinx = new QSpinBox;
-    spinx->setValue(0);
+    spinx->setRange(extent[0], extent[1]);
+    spinx->setValue(extent[0]);
     QSpinBox *spiny = new QSpinBox;
-    spiny->setValue(0);
+    spiny->setRange(extent[2], extent[3]);
+    spiny->setValue(extent[2]);
     QSpinBox *spinz = new QSpinBox;
-    spinz->setValue(0);
+    spinz->setRange(extent[4], extent[5]);
+    spinz->setValue(extent[4]);
     layout->addWidget(spinx);
     layout->addWidget(spiny);
     layout->addWidget(spinz);
