@@ -50,14 +50,14 @@ QIcon ModuleContour::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleContour::initialize(DataSource* dataSource, vtkSMViewProxy* view)
+bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(dataSource, view))
+  if (!this->Superclass::initialize(data, vtkView))
     {
     return false;
     }
 
-  vtkSMSourceProxy* producer = dataSource->producer();
+  vtkSMSourceProxy* producer = data->producer();
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
@@ -75,7 +75,7 @@ bool ModuleContour::initialize(DataSource* dataSource, vtkSMViewProxy* view)
   controller->RegisterPipelineProxy(this->ContourFilter);
 
   // Create the representation for it.
-  this->ContourRepresentation = controller->Show(this->ContourFilter, 0, view);
+  this->ContourRepresentation = controller->Show(this->ContourFilter, 0, vtkView);
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Surface");
 

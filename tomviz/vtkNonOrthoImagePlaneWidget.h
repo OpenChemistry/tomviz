@@ -310,7 +310,7 @@ public:
   enum
   {
     VTK_NO_ACTION = 0,
-    VTK_SLICE_MOTION_ACTION = 1,
+    VTK_SLICE_MOTION_ACTION = 1
   };
   //ETX
   vtkSetClampMacro(LeftButtonAction,int, VTK_NO_ACTION, VTK_SLICE_MOTION_ACTION);

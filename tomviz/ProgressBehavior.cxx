@@ -65,12 +65,12 @@ void ProgressBehavior::enableProgress(bool enable)
 }
 
 //-----------------------------------------------------------------------------
-void ProgressBehavior::progress(const QString& message, int progress)
+void ProgressBehavior::progress(const QString& message, int progressAmount)
 {
   Q_ASSERT(this->ProgressDialog);
 
   this->ProgressDialog->setLabelText(message);
-  this->ProgressDialog->setValue(progress);
+  this->ProgressDialog->setValue(progressAmount);
 }
 
 }

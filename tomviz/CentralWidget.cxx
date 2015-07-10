@@ -289,13 +289,13 @@ void CentralWidget::setDataSource(DataSource* source)
   // Get the actual data source, build a histogram out of it.
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
     source->producer()->GetClientSideObject());
-  vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   // Check our cache, and use that if appopriate (or update it).
-  if (this->HistogramCache.contains(data))
+  if (this->HistogramCache.contains(image))
     {
-    vtkTable *cachedTable = this->HistogramCache[data];
-    if (cachedTable->GetMTime() > data->GetMTime())
+    vtkTable *cachedTable = this->HistogramCache[image];
+    if (cachedTable->GetMTime() > image->GetMTime())
       {
       this->setHistogramTable(cachedTable);
       return;
@@ -304,7 +304,7 @@ void CentralWidget::setDataSource(DataSource* source)
       {
       // Need to recalculate, clear the plots, and remove the cached data.
       this->Chart->ClearPlots();
-      this->HistogramCache.remove(data);
+      this->HistogramCache.remove(image);
       }
     }
 
@@ -322,7 +322,7 @@ void CentralWidget::setDataSource(DataSource* source)
 
   // Calculate a histogram.
   vtkNew<vtkTable> table;
-  this->HistogramCache[data] = table.Get();
+  this->HistogramCache[image] = table.Get();
 
   if (!this->Worker)
     {
@@ -335,7 +335,7 @@ void CentralWidget::setDataSource(DataSource* source)
     qDebug() << "Worker already running, skipping this one.";
     return;
     }
-  this->Worker->input = data;
+  this->Worker->input = image;
   this->Worker->output = table.Get();
   this->Worker->start();
 }
@@ -356,7 +356,7 @@ void CentralWidget::histogramReady()
   this->Worker->output = NULL;
 }
 
-void CentralWidget::histogramClicked(vtkObject *caller)
+void CentralWidget::histogramClicked(vtkObject *)
 {
   //qDebug() << "Histogram clicked at" << this->Chart->PositionX
   //         << "making this a great spot to ask for an isosurface at value"
@@ -418,10 +418,10 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   plot->GetPen()->SetLineType(vtkPen::NO_PEN);
 
   double max = log10(arr->GetRange()[1]);
-  vtkAxis *axis = this->Chart->GetAxis(vtkAxis::LEFT);
-  axis->SetUnscaledMinimum(1.0);
-  axis->SetMaximumLimit(max + 2.0);
-  axis->SetMaximum(static_cast<int>(max) + 1.0);
+  vtkAxis *leftAxis = this->Chart->GetAxis(vtkAxis::LEFT);
+  leftAxis->SetUnscaledMinimum(1.0);
+  leftAxis->SetMaximumLimit(max + 2.0);
+  leftAxis->SetMaximum(static_cast<int>(max) + 1.0);
 
   arr = vtkDataArray::SafeDownCast(table->GetColumnByName("image_extents"));
   if (arr && arr->GetNumberOfTuples() > 2)
@@ -429,9 +429,9 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     double range[2];
     arr->GetRange(range);
     double halfInc = (arr->GetTuple1(1) - arr->GetTuple1(0)) / 2.0;
-    vtkAxis *axis = this->Chart->GetAxis(vtkAxis::BOTTOM);
-    axis->SetBehavior(vtkAxis::FIXED);
-    axis->SetRange(range[0] - halfInc , range[1] + halfInc);
+    vtkAxis *bottomAxis = this->Chart->GetAxis(vtkAxis::BOTTOM);
+    bottomAxis->SetBehavior(vtkAxis::FIXED);
+    bottomAxis->SetRange(range[0] - halfInc , range[1] + halfInc);
     }
 
   if (this->LUT)

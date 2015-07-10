@@ -48,17 +48,17 @@ QIcon ModuleOutline::icon() const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOutline::initialize(DataSource* dataSource,
-                               vtkSMViewProxy* view)
+bool ModuleOutline::initialize(DataSource* data,
+                               vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(dataSource, view))
+  if (!this->Superclass::initialize(data, vtkView))
     {
     return false;
     }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = dataSource->producer()->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm = data->producer()->GetSessionProxyManager();
 
   // Create the outline filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -67,12 +67,12 @@ bool ModuleOutline::initialize(DataSource* dataSource,
   this->OutlineFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->OutlineFilter);
   controller->PreInitializeProxy(this->OutlineFilter);
-  vtkSMPropertyHelper(this->OutlineFilter, "Input").Set(dataSource->producer());
+  vtkSMPropertyHelper(this->OutlineFilter, "Input").Set(data->producer());
   controller->PostInitializeProxy(this->OutlineFilter);
   controller->RegisterPipelineProxy(this->OutlineFilter);
 
   // Create the representation for it.
-  this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, view);
+  this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, vtkView);
   Q_ASSERT(this->OutlineRepresentation);
   //vtkSMPropertyHelper(this->OutlineRepresentation,
   //                    "Representation").Set("Outline");
