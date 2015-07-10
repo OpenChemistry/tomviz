@@ -24,6 +24,7 @@
 #include "vtkSMProxyManager.h"
 
 #include <QtDebug>
+#include <QDir>
 
 namespace tomviz
 {
@@ -93,7 +94,8 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     return false;
     }
 
-  if (ModuleManager::instance().deserialize(document.child("tomvizState")))
+  if (ModuleManager::instance().deserialize(document.child("tomvizState"),
+                                            QFileInfo(filename).dir()))
     {
     RecentFilesMenu::pushStateFile(filename);
     return true;
@@ -113,7 +115,9 @@ bool SaveLoadStateReaction::saveState(const QString& filename)
         .arg(vtkSMProxyManager::GetVersionMinor())
         .arg(vtkSMProxyManager::GetVersionPatch()).toLatin1().data());
 
-  return (ModuleManager::instance().serialize(root) &&
+  QFileInfo info(filename);
+
+  return (ModuleManager::instance().serialize(root, info.dir()) &&
     document.save_file(/*path*/ filename.toLatin1().data(), /*indent*/ "  "));
 }
 

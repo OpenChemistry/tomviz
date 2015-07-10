@@ -33,6 +33,7 @@
 
 #include <QPointer>
 #include <QtDebug>
+#include <QDir>
 #include <QSet>
 #include <QMap>
 
@@ -192,7 +193,7 @@ QList<Module*> ModuleManager::findModulesGeneric(DataSource* dataSource,
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleManager::serialize(pugi::xml_node& ns) const
+bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
 {
   QSet<vtkSMSourceProxy*> uniqueOriginalSources;
 
@@ -209,7 +210,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns) const
     odsnode.append_attribute("id").set_value(reader->GetGlobalIDAsString());
     odsnode.append_attribute("xmlgroup").set_value(reader->GetXMLGroup());
     odsnode.append_attribute("xmlname").set_value(reader->GetXMLName());
-    if (tomviz::serialize(reader, odsnode) == false)
+    if (tomviz::serialize(reader, odsnode, QStringList(), &saveDir) == false)
       {
       qWarning() << "Failed to serialize data reader: " << reader->GetGlobalIDAsString();
       ns.remove_child(odsnode);
@@ -312,7 +313,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns) const
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleManager::deserialize(const pugi::xml_node& ns)
+bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
 {
   this->reset();
 
@@ -333,7 +334,7 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
       }
     vtkSmartPointer<vtkSMProxy> proxy;
     proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!tomviz::deserialize(proxy, node))
+    if (!tomviz::deserialize(proxy, node, &stateDir))
       {
       qWarning() << "Failed to create proxy of type: " << group << ", " << type;
       continue;
@@ -354,7 +355,7 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
       }
     vtkSmartPointer<vtkSMProxy> proxy;
     proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!tomviz::deserialize(proxy, node, locator.GetPointer()))
+    if (!tomviz::deserialize(proxy, node, &stateDir, locator.GetPointer()))
       {
       qWarning() << "Failed to create proxy of type: " << group << ", " << type;
       continue;
@@ -385,7 +386,7 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns)
 
     vtkSmartPointer<vtkSMProxy> proxy;
     proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!tomviz::deserialize(proxy, odsnode))
+    if (!tomviz::deserialize(proxy, odsnode, &stateDir))
       {
       qWarning() << "Failed to create proxy of type: " << group << ", " << type;
       continue;

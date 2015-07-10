@@ -30,6 +30,8 @@
 class vtkSMProxyLocator;
 class vtkPVArrayInformation;
 
+class QDir;
+
 namespace tomviz
 {
 
@@ -117,8 +119,8 @@ inline QString label(pqProxy* proxy)
 
 //---------------------------------------------------------------------------
 /// Serialize a proxy to a pugi::xml node.
-bool serialize(vtkSMProxy* proxy, pugi::xml_node& out, const QStringList& properties=QStringList());
-bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in, vtkSMProxyLocator* locator=NULL);
+bool serialize(vtkSMProxy* proxy, pugi::xml_node& out, const QStringList& properties=QStringList(), const QDir* relDir = NULL);
+bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in, const QDir* relDir = NULL, vtkSMProxyLocator* locator=NULL);
 
 //---------------------------------------------------------------------------
 /// Returns the vtkPVArrayInformation for scalars array produced by the given

@@ -22,6 +22,7 @@
 
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
+class QDir;
 
 namespace tomviz
 {
@@ -58,8 +59,9 @@ public:
     }
 
   /// save the application state as xml.
-  bool serialize(pugi::xml_node& ns) const;
-  bool deserialize(const pugi::xml_node& ns);
+  /// Parameter stateDir: the location to use as the base of all relative file paths
+  bool serialize(pugi::xml_node& ns, const QDir& stateDir) const;
+  bool deserialize(const pugi::xml_node& ns, const QDir& stateDir);
 
 public slots:
   void addModule(Module*);

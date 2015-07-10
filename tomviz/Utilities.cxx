@@ -30,12 +30,66 @@
 
 #include <sstream>
 
+#include <QString>
+#include <QDir>
+
+namespace {
+
+  // This pugi::xml_tree_walker converts filenames in the xml to and
+  // from relative paths.
+  class XMLFileNameConverter : public pugi::xml_tree_walker
+  {
+  public:
+    XMLFileNameConverter(const QDir& dir, bool rel)
+      : rootDir(dir), toRelative(rel) {}
+    virtual bool for_each(pugi::xml_node& node)
+    {
+      if (strcmp(node.name(), "Property") != 0)
+        {
+        return true;
+        }
+      pugi::xml_attribute propName = node.attribute("name");
+      if ((strcmp(propName.value(), "FileNames") != 0) &&
+          (strcmp(propName.value(), "FileName") != 0))
+        {
+        return true;
+        }
+      pugi::xml_node child = node.first_child();
+      while (child)
+        {
+        if (strcmp(child.name(), "Element") == 0)
+          {
+          pugi::xml_attribute xml_fname = child.attribute("value");
+          if (xml_fname)
+            {
+            QString path(xml_fname.value());
+            QString newPath;
+            if (this->toRelative)
+              {
+              newPath = this->rootDir.relativeFilePath(path);
+              }
+            else
+              {
+              newPath = this->rootDir.absoluteFilePath(path);
+              }
+            xml_fname.set_value(newPath.toStdString().c_str());
+            }
+          }
+        child = child.next_sibling();
+        }
+      return true;
+    }
+    const QDir& rootDir;
+    bool toRelative;
+  };
+}
+
 namespace tomviz
 {
 
 //---------------------------------------------------------------------------
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
-               const QStringList& properties)
+               const QStringList& properties, const QDir* relDir)
 {
   if (!proxy)
     {
@@ -68,13 +122,19 @@ bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
     qCritical("Failed to convert from vtkPVXMLElement to pugi::xml_document");
     return false;
     }
+  if (relDir)
+    {
+    XMLFileNameConverter converter(*relDir, true);
+    pugi::xml_node root = document.first_child();
+    root.traverse(converter);
+    }
   out.append_copy(document.first_child());
   return true;
 }
 
 //---------------------------------------------------------------------------
 bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
-                 vtkSMProxyLocator* locator)
+                 const QDir* relDir, vtkSMProxyLocator* locator)
 {
   if (!proxy)
     {
@@ -85,6 +145,12 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
     {
     // empty state loaded.
     return true;
+    }
+
+  if (relDir)
+    {
+    XMLFileNameConverter converter(*relDir, false);
+    in.first_child().traverse(converter);
     }
 
   std::ostringstream stream;
