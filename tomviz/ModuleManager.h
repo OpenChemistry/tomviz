@@ -22,6 +22,8 @@
 
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
+class vtkPVXMLElement;
+class vtkSMProxyLocator;
 class QDir;
 
 namespace tomviz
@@ -82,6 +84,10 @@ public slots:
 
   /// Removes all modules and data sources.
   void reset();
+
+private slots:
+  /// Used when loading state
+  void onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*);
 signals:
   void moduleAdded(Module*);
   void moduleRemoved(Module*);
