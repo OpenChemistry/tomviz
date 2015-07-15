@@ -43,6 +43,8 @@ public:
   PipelineWidget(QWidget* parent=0);
   virtual ~PipelineWidget();
 
+  virtual void keyPressEvent(QKeyEvent*);
+
 private slots:
   /// Slots connected to pqServerManagerModel to monitor pipeline proxies
   /// being registered/unregistered.
@@ -67,6 +69,9 @@ private slots:
 
   /// called when the active view changes.
   void setActiveView(vtkSMViewProxy* view);
+
+  /// called when a context menu is required
+  void onCustomContextMenu(const QPoint &point);
 
 private:
   Q_DISABLE_COPY(PipelineWidget)
