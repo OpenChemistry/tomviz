@@ -18,7 +18,9 @@
 #include "OperatorPython.h"
 #include "Utilities.h"
 #include "vtkDataObject.h"
+#include "vtkDoubleArray.h"
 #include "vtkExtractVOI.h"
+#include "vtkFieldData.h"
 #include "vtkNew.h"
 #include "vtkImageData.h"
 #include "vtkSmartPointer.h"
@@ -43,15 +45,39 @@ public:
   vtkWeakPointer<vtkSMSourceProxy> Producer;
   QList<QSharedPointer<Operator> > Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
+  DataSource::DataSourceType Type;
 };
 
+namespace {
+void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
+{
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    proxy->GetClientSideObject());
+  vtkDataObject* data = tp->GetOutputDataObject(0);
+  vtkFieldData* fd = data->GetFieldData();
+  vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+  int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+  int num_tilt_angles = extent[5] - extent[4] + 1;
+  if (tiltAngles == NULL)
+  {
+    vtkNew< vtkDoubleArray > array;
+    array->SetName("tilt_angles");
+    array->SetNumberOfTuples(num_tilt_angles);
+    array->FillComponent(0,0.0);
+    fd->AddArray(array.GetPointer());
+  }
+}
+}
+
 //-----------------------------------------------------------------------------
-DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
+DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
+                      QObject* parentObject)
   : Superclass(parentObject),
   Internals(new DataSource::DSInternals())
 {
   Q_ASSERT(dataSource);
   this->Internals->OriginalDataSource = dataSource;
+  this->Internals->Type = dataType;
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
@@ -176,11 +202,12 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
                             vtkSMCoreUtilities::GetFileNameProperty(
                              this->Internals->OriginalDataSource)).GetAsString();
     this->Internals->Producer->SetAnnotation("filename", originalFilename);
-    newClone = new DataSource(this->Internals->Producer);
+    newClone = new DataSource(this->Internals->Producer, this->Internals->Type);
     }
   else
     {
-    newClone = new DataSource(this->Internals->OriginalDataSource);
+    newClone = new DataSource(this->Internals->OriginalDataSource,
+                              this->Internals->Type);
     }
   if (!cloneTransformed && cloneOperators)
     {
@@ -310,6 +337,10 @@ void DataSource::resetData()
   Q_ASSERT(tp);
   tp->SetOutput(dataClone);
   dataClone->FastDelete();
+  if (this->Internals->Type == TiltSeries)
+    {
+    ensureTiltAnglesArrayExists(this->Internals->Producer);
+    }
   emit this->dataChanged();
 }
 
@@ -331,6 +362,23 @@ void DataSource::operatorTransformModified()
 vtkSMProxy* DataSource::colorMap() const
 {
   return this->Internals->ColorMap;
+}
+
+//-----------------------------------------------------------------------------
+DataSource::DataSourceType DataSource::type() const
+{
+  return this->Internals->Type;
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::setType(DataSourceType t)
+{
+  this->Internals->Type = t;
+  if (t == TiltSeries)
+    {
+    ensureTiltAnglesArrayExists(this->Internals->Producer);
+    }
+  emit this->dataChanged();
 }
 
 //-----------------------------------------------------------------------------
