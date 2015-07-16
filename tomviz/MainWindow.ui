@@ -66,6 +66,8 @@
     <addaction name="actionAlign"/>
     <addaction name="actionReconstruct"/>
     <addaction name="separator"/>
+    <addaction name="actionToggleDataType"/>
+    <addaction name="separator"/>
     <addaction name="actionClone"/>
     <addaction name="actionDeleteData"/>
    </widget>
@@ -391,6 +393,14 @@
   <action name="actionAbout">
    <property name="text">
     <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="actionToggleDataType">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Toggle Data Type</string>
    </property>
   </action>
  </widget>
