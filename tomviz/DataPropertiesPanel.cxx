@@ -133,6 +133,9 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
 //-----------------------------------------------------------------------------
 void DataPropertiesPanel::update()
 {
+  this->disconnect(this->Internals->Ui.TiltAnglesTable,
+      SIGNAL(cellChanged(int, int)), this,
+      SLOT(onTiltAnglesModified(int, int)));
   this->Internals->clear();
 
   DataSource* dsource = this->Internals->CurrentDataSource;
@@ -200,6 +203,9 @@ void DataPropertiesPanel::update()
         }
       }
     }
+  this->connect(this->Internals->Ui.TiltAnglesTable,
+      SIGNAL(cellChanged(int, int)),
+      SLOT(onTiltAnglesModified(int, int)));
 }
 
 //-----------------------------------------------------------------------------
@@ -209,6 +215,32 @@ void DataPropertiesPanel::render()
   if (view)
     {
     view->render();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
+{
+  DataSource* dsource = this->Internals->CurrentDataSource;
+  QTableWidgetItem* item = this->Internals->Ui.TiltAnglesTable->item(row, column);
+  QString str = item->data(Qt::DisplayRole).toString();
+  if (dsource->type() == DataSource::TiltSeries)
+    {
+    vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
+        dsource->producer()->GetClientSideObject())
+      ->GetOutputDataObject(0)->GetFieldData()->GetArray("tilt_angles");
+    bool ok;
+    double value = str.toDouble(&ok);
+    if (ok)
+      {
+      double* tuple = tiltAngles->GetTuple(row);
+      tuple[column] = value;
+      tiltAngles->SetTuple(row, tuple);
+      }
+    else
+      {
+      std::cerr << "Invalid tilt angle: " << str.toStdString() << std::endl;
+      }
     }
 }
 

@@ -40,6 +40,7 @@ private slots:
   void setDataSource(DataSource*);
   void update();
   void render();
+  void onTiltAnglesModified(int row, int column);
 
 private:
   Q_DISABLE_COPY(DataPropertiesPanel)
