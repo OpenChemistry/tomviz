@@ -21,11 +21,16 @@
 #include "Utilities.h"
 #include "ActiveObjects.h"
 
+#include "pqApplicationCore.h"
+#include "pqActiveObjects.h"
 #include "pqDeleteReaction.h"
 #include "vtkNew.h"
+#include "vtkPVXMLParser.h"
+#include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMProxyIterator.h"
 #include "vtkSMProxyLocator.h"
+#include "vtkSMProxyManager.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
@@ -37,6 +42,8 @@
 #include <QSet>
 #include <QMap>
 
+#include <sstream>
+
 namespace tomviz
 {
 
@@ -45,6 +52,9 @@ class ModuleManager::MMInternals
 public:
   QList<QPointer<DataSource> > DataSources;
   QList<QPointer<Module> > Modules;
+  // only used by onPVStateLoaded for the second half of deserialize
+  pugi::xml_node node;
+  QDir dir;
 };
 
 //-----------------------------------------------------------------------------
@@ -317,58 +327,82 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
 {
   this->reset();
 
-  vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
-  Q_ASSERT(pxm);
-
-  // deserialize all views and layouts first.
-  vtkNew<vtkSMProxyLocator> locator;
-  for (pugi::xml_node node = ns.child("Layout"); node; node = node.next_sibling("Layout"))
-    {
-    vtkTypeUInt32 id = node.attribute("id").as_uint(0);
-    const char* group = node.attribute("xmlgroup").value();
-    const char* type = node.attribute("xmlname").value();
-    if (group==NULL || type==NULL)
-      {
-      qWarning() << "Invalid xml for Layout with id " << id;
-      continue;
-      }
-    vtkSmartPointer<vtkSMProxy> proxy;
-    proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!tomviz::deserialize(proxy, node, &stateDir))
-      {
-      qWarning() << "Failed to create proxy of type: " << group << ", " << type;
-      continue;
-      }
-    proxy->UpdateVTKObjects();
-    pxm->RegisterProxy("layouts", proxy);
-    locator->AssignProxy(id, proxy);
-    }
+  // let ParaView load all views and layouts first.
+  pugi::xml_document document;
+  pugi::xml_node pvxml = document.append_child("ParaView");
+  pugi::xml_node pvState = pvxml.append_child("ServerManagerState");
+  pvState.append_attribute("version").set_value(
+    QString("%1.%2.%3")
+        .arg(vtkSMProxyManager::GetVersionMajor())
+        .arg(vtkSMProxyManager::GetVersionMinor())
+        .arg(vtkSMProxyManager::GetVersionPatch()).toLatin1().data());
+  pugi::xml_node pvViews = pvState.append_child("ProxyCollection");
+  pvViews.append_attribute("name").set_value("views");
+  pugi::xml_node pvLayouts = pvState.append_child("ProxyCollection");
+  pvLayouts.append_attribute("name").set_value("layouts");
+  int numViews = 0, numLayouts = 0;
   for (pugi::xml_node node = ns.child("View"); node; node = node.next_sibling("View"))
     {
     vtkTypeUInt32 id = node.attribute("id").as_uint(0);
-    const char* group = node.attribute("xmlgroup").value();
-    const char* type = node.attribute("xmlname").value();
-    if (group==NULL || type==NULL)
+    pugi::xml_node proxyNode = node.child("Proxy");
+    if (proxyNode)
       {
-      qWarning() << "Invalid xml for View with id " << id;
-      continue;
-      }
-    vtkSmartPointer<vtkSMProxy> proxy;
-    proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!tomviz::deserialize(proxy, node, &stateDir, locator.GetPointer()))
-      {
-      qWarning() << "Failed to create proxy of type: " << group << ", " << type;
-      continue;
-      }
-    proxy->UpdateVTKObjects();
-    pxm->RegisterProxy("views", proxy);
-    locator->AssignProxy(id, proxy);
-
-    if (node.attribute("active").as_int(0) == 1)
-      {
-      ActiveObjects::instance().setActiveView(vtkSMViewProxy::SafeDownCast(proxy));
+      pvState.append_copy(proxyNode);
+      pugi::xml_node viewSummary = pvViews.append_child("Item");
+      viewSummary.append_attribute("id").set_value(id);
+      viewSummary.append_attribute("name").set_value(
+          QString("View%1").arg(++numViews).toStdString().c_str());
       }
     }
+  for (pugi::xml_node node = ns.child("Layout"); node; node = node.next_sibling("Layout"))
+    {
+    vtkTypeUInt32 id = node.attribute("id").as_uint(0);
+    pugi::xml_node proxyNode = node.child("Proxy");
+    if (proxyNode)
+      {
+      pvState.append_copy(proxyNode);
+      pugi::xml_node layoutSummary = pvLayouts.append_child("Item");
+      layoutSummary.append_attribute("id").set_value(id);
+      layoutSummary.append_attribute("name").set_value(
+          QString("Layout%1").arg(++numLayouts).toStdString().c_str());
+      }
+    }
+  // This state and connection is cleaned up by onPVStateLoaded.
+  this->Internals->node = ns;
+  this->Internals->dir = stateDir;
+  this->connect(pqApplicationCore::instance(),
+      SIGNAL(stateLoaded(vtkPVXMLElement*,vtkSMProxyLocator*)),
+      SLOT(onPVStateLoaded(vtkPVXMLElement*,vtkSMProxyLocator*)));
+  // Set up call to ParaView to load state
+  std::ostringstream stream;
+  document.first_child().print(stream);
+  vtkNew<vtkPVXMLParser> parser;
+  if (!parser->Parse(stream.str().c_str()))
+    {
+      return false;
+    }
+  pqActiveObjects* activeObjects = &pqActiveObjects::instance();
+  pqServer *server = activeObjects->activeServer();
+
+  pqApplicationCore::instance()->loadState(parser->GetRootElement(),
+                                           server);
+  // clean up the state -- since the Qt slot call should be synchronous
+  // it should be done before the code returns to here.
+  this->disconnect(pqApplicationCore::instance(),
+      SIGNAL(stateLoaded(vtkPVXMLElement*,vtkSMProxyLocator*)),
+      SLOT(onPVStateLoaded(vtkPVXMLElement*,vtkSMProxyLocator*)));
+  this->Internals->node = pugi::xml_node();
+  this->Internals->dir = QDir();
+  return true;
+}
+
+void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
+                                    vtkSMProxyLocator* locator)
+{
+  vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
+  Q_ASSERT(pxm);
+
+  pugi::xml_node& ns = this->Internals->node;
 
   // process all original data sources i.e. readers and create them.
   QMap<vtkTypeUInt32, vtkSmartPointer<vtkSMSourceProxy> > originalDataSources;
@@ -386,7 +420,7 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
 
     vtkSmartPointer<vtkSMProxy> proxy;
     proxy.TakeReference(pxm->NewProxy(group, type));
-    if (!tomviz::deserialize(proxy, odsnode, &stateDir))
+    if (!tomviz::deserialize(proxy, odsnode, &this->Internals->dir))
       {
       qWarning() << "Failed to create proxy of type: " << group << ", " << type;
       continue;
@@ -462,7 +496,6 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
       ActiveObjects::instance().setActiveModule(module);
       }
     }
-  return true;
 }
 
 } // end of namesapce tomviz
