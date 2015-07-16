@@ -58,6 +58,7 @@
 #include "Subtract_TiltSer_Background.h"
 #include "MisalignImgs_Gaussian.h"
 #include "Rotate3D.h"
+#include "HannWindow3D.h"
 
 #include <QFileInfo>
 
@@ -88,7 +89,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 {
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
-
+    
   QString version(TOMVIZ_VERSION);
   if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)
     version.append("-").append(TOMVIZ_VERSION_EXTRA);
@@ -156,6 +157,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
   //QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
   QAction *squareRootAction = new QAction("Square Root Data", this);
+  QAction *hannWindowAction = new QAction("Hann Window", this);
   QAction *fftAbsLogAction = new QAction("FFT (abs log)", this);
   //QAction *resampleDataAction = new QAction("Clone && Downsample", this);
 
@@ -172,6 +174,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->insertSeparator(ui.actionReconstruct);
   ui.menuData->insertSeparator(ui.actionClone);
   ui.menuData->insertAction(ui.actionClone, squareRootAction);
+  ui.menuData->insertAction(ui.actionClone, hannWindowAction);
   ui.menuData->insertAction(ui.actionClone, fftAbsLogAction);
   ui.menuData->insertSeparator(ui.actionClone);
   //ui.menuData->insertAction(ui.actionClone, resampleDataAction);
@@ -200,6 +203,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  Recon_DFT);
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", Square_Root_Data);
+  new AddPythonTransformReaction(hannWindowAction,
+                                 "Hann Window", HannWindow3D);
   new AddPythonTransformReaction(fftAbsLogAction,
                                  "FFT (ABS LOG)", FFT_AbsLog);
 
