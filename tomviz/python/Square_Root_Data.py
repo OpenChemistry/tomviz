@@ -10,7 +10,7 @@ def transform_scalars(dataset):
         raise RuntimeError("No scalars found!")
 
     if scalars.min() < 0:
-        print("WARNING: Square root of negative values results in NaN!)
+        print("WARNING: Square root of negative values results in NaN!")
 
     # transform the dataset
     result = np.sqrt(scalars)
