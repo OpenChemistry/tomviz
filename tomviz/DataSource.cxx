@@ -34,6 +34,7 @@
 
 #include <vtk_pugixml.h>
 
+#include <sstream>
 
 namespace tomviz
 {
@@ -50,6 +51,7 @@ public:
 
 namespace {
 
+//-----------------------------------------------------------------------------
 // Checks if the tilt angles data array exists on the given VTK data
 // and creates it if it does not exist.
 void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
@@ -71,6 +73,7 @@ void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
   }
 }
 
+//-----------------------------------------------------------------------------
 // Converts the data type to a string for writing to the save state
 const char* dataSourceTypeToString(DataSource::DataSourceType type)
 {
@@ -86,6 +89,7 @@ const char* dataSourceTypeToString(DataSource::DataSourceType type)
     }
 }
 
+//-----------------------------------------------------------------------------
 // Converts the save state string back to a DataSource::DataSourceType
 // Returns true if the type was successfully converted, false otherwise
 // the result is stored in the output paremeter type.
@@ -102,6 +106,46 @@ bool stringToDataSourceType(const char* str, DataSource::DataSourceType& type)
     return true;
   }
   return false;
+}
+
+//-----------------------------------------------------------------------------
+void serializeDataArray(pugi::xml_node& ns, vtkDataArray* array)
+{
+  ns.append_attribute("components").set_value(array->GetNumberOfComponents());
+  ns.append_attribute("tuples").set_value((int)array->GetNumberOfTuples());
+  std::ostringstream stream;
+  for (int i = 0; i < array->GetNumberOfTuples(); ++i)
+  {
+    double* tuple = array->GetTuple(i);
+    for (int j = 0; j < array->GetNumberOfComponents(); ++j)
+    {
+      stream << tuple[j] << " ";
+    }
+    stream << "\n";
+  }
+  pugi::xml_text text = ns.text();
+  text.set(stream.str().c_str());
+}
+
+//-----------------------------------------------------------------------------
+void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
+{
+  int components = ns.attribute("components").as_int(1);
+  array->SetNumberOfComponents(components);
+  int tuples = ns.attribute("tuples").as_int(array->GetNumberOfTuples());
+  array->SetNumberOfTuples(tuples);
+  const char* text = ns.child_value();
+  std::istringstream stream(text);
+  double* data = new double[components];
+  for (int i = 0; i < tuples; ++i)
+  {
+    for (int j = 0; j < components; ++j)
+    {
+      stream >> data[j];
+    }
+    array->SetTuple(i, data);
+  }
+  delete[] data;
 }
 
 }
@@ -189,6 +233,16 @@ bool DataSource::serialize(pugi::xml_node& ns) const
 
   ns.append_attribute("type").set_value(
     dataSourceTypeToString(this->type()));
+  if (this->type() == TiltSeries)
+    {
+    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+      this->producer()->GetClientSideObject());
+    vtkDataObject* data = tp->GetOutputDataObject(0);
+    vtkFieldData* fd = data->GetFieldData();
+    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+    node = ns.append_child("TiltAngles");
+    serializeDataArray(node, tiltAngles);
+    }
 
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
     {
@@ -226,6 +280,17 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
 
   this->Internals->Operators.clear();
   this->resetData();
+
+  // load tilt angles AFTER resetData call.
+  if (this->type() == TiltSeries)
+    {
+    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+      this->producer()->GetClientSideObject());
+    vtkDataObject* data = tp->GetOutputDataObject(0);
+    vtkFieldData* fd = data->GetFieldData();
+    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+    deserializeDataArray(ns.child("TiltAngles"), tiltAngles);
+    }
 
   for (pugi::xml_node node=ns.child("Operator"); node; node = node.next_sibling("Operator"))
     {
