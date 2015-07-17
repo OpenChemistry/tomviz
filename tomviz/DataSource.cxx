@@ -49,6 +49,9 @@ public:
 };
 
 namespace {
+
+// Checks if the tilt angles data array exists on the given VTK data
+// and creates it if it does not exist.
 void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
 {
   vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
@@ -67,6 +70,40 @@ void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
     fd->AddArray(array.GetPointer());
   }
 }
+
+// Converts the data type to a string for writing to the save state
+const char* dataSourceTypeToString(DataSource::DataSourceType type)
+{
+  switch (type)
+    {
+    case DataSource::Volume:
+      return "volume";
+    case DataSource::TiltSeries:
+      return "tilt-series";
+    default:
+      assert("Unhandled data source type" && false);
+      return "";
+    }
+}
+
+// Converts the save state string back to a DataSource::DataSourceType
+// Returns true if the type was successfully converted, false otherwise
+// the result is stored in the output paremeter type.
+bool stringToDataSourceType(const char* str, DataSource::DataSourceType& type)
+{
+  if (strcmp(str, "volume") == 0)
+  {
+    type = DataSource::Volume;
+    return true;
+  }
+  else if (strcmp(str, "tilt-series") == 0)
+  {
+    type = DataSource::TiltSeries;
+    return true;
+  }
+  return false;
+}
+
 }
 
 //-----------------------------------------------------------------------------
@@ -150,6 +187,9 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   ns.append_attribute("number_of_operators").set_value(
     static_cast<int>(this->Internals->Operators.size()));
 
+  ns.append_attribute("type").set_value(
+    dataSourceTypeToString(this->type()));
+
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
     {
     pugi::xml_node operatorNode = ns.append_child("Operator");
@@ -170,6 +210,13 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   vtkSMPropertyHelper(this->colorMap(),
                       "ScalarOpacityFunction").Set(this->opacityMap());
   this->colorMap()->UpdateVTKObjects();
+
+  DataSourceType dstype;
+  if (!stringToDataSourceType(ns.attribute("type").value(),dstype))
+    {
+    return false;
+    }
+  this->setType(dstype);
 
   int num_operators = ns.attribute("number_of_operators").as_int(-1);
   if (num_operators < 0)
