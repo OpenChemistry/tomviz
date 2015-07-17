@@ -389,7 +389,7 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
   // clean up the state -- since the Qt slot call should be synchronous
   // it should be done before the code returns to here.
   this->disconnect(pqApplicationCore::instance(),
-      SIGNAL(stateLoaded(vtkPVXMLElement*,vtkSMProxyLocator*)),
+      SIGNAL(stateLoaded(vtkPVXMLElement*,vtkSMProxyLocator*)), this,
       SLOT(onPVStateLoaded(vtkPVXMLElement*,vtkSMProxyLocator*)));
   this->Internals->node = pugi::xml_node();
   this->Internals->dir = QDir();
