@@ -53,6 +53,7 @@ namespace tomviz
 {
 //-----------------------------------------------------------------------------
 Behaviors::Behaviors(QMainWindow* mainWindow)
+  : Superclass(mainWindow)
 {
   Q_ASSERT(mainWindow);
   vtkSMSettings::GetInstance()->AddCollectionFromString(settings, 0.0);
