@@ -262,6 +262,10 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 //-----------------------------------------------------------------------------
 CentralWidget::~CentralWidget()
 {
+  if (this->Worker && this->Worker->isRunning())
+    {
+    this->Worker->wait();
+    }
 }
 
 //-----------------------------------------------------------------------------
