@@ -74,7 +74,7 @@ signals:
   /// fired whenever the active view changes.
   void viewChanged(vtkSMViewProxy*);
 
-  /// fired whenever the active data source changes.
+  /// fired whenever the active data source changes (or changes type).
   void dataSourceChanged(DataSource*);
 
   /// fired whenever the active module changes.
@@ -84,6 +84,7 @@ private slots:
   void viewChanged(pqView*);
   void dataSourceRemoved(DataSource*);
   void moduleRemoved(Module*);
+  void dataSourceChanged();
 
 protected:
   ActiveObjects();
@@ -91,6 +92,7 @@ protected:
 
   QPointer<DataSource> ActiveDataSource;
   void* VoidActiveDataSource;
+  DataSource::DataSourceType ActiveDataSourceType;
 
   QPointer<Module> ActiveModule;
   void* VoidActiveModule;

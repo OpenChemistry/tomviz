@@ -33,6 +33,7 @@ ActiveObjects::ActiveObjects()
   : Superclass(),
     ActiveDataSource(NULL),
     VoidActiveDataSource(NULL),
+    ActiveDataSourceType(DataSource::Volume),
     ActiveModule(NULL),
     VoidActiveModule(NULL)
 {
@@ -99,8 +100,27 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
 {
   if (this->VoidActiveDataSource != source)
     {
+    if (this->ActiveDataSource)
+      {
+      QObject::disconnect(this->ActiveDataSource, SIGNAL(dataChanged()),
+                          this, SLOT(dataSourceChanged()));
+      }
+    if (source)
+      {
+      QObject::connect(source, SIGNAL(dataChanged()),
+                       this, SLOT(dataSourceChanged()));
+      }
     this->ActiveDataSource = source;
     this->VoidActiveDataSource = source;
+    emit this->dataSourceChanged(this->ActiveDataSource);
+    }
+}
+//-----------------------------------------------------------------------------
+void ActiveObjects::dataSourceChanged()
+{
+  if (this->ActiveDataSource->type() != this->ActiveDataSourceType)
+    {
+    this->ActiveDataSourceType = this->ActiveDataSource->type();
     emit this->dataSourceChanged(this->ActiveDataSource);
     }
 }
