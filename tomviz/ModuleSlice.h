@@ -43,9 +43,13 @@ public:
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
   virtual bool isColorMapNeeded() const { return true; }
+  virtual void addToPanel(pqProxiesWidget* panel);
 
 protected:
   virtual void updateColorMap();
+
+private slots:
+  void onPropertyChanged();
 
 private:
   //should only be called from initialize after the PassThrough has been setup
@@ -54,6 +58,7 @@ private:
   Q_DISABLE_COPY(ModuleSlice)
 
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
+  vtkSmartPointer<vtkSMProxy> PropsPanelProxy;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> Widget;
 };
 

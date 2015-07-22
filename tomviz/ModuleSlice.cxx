@@ -17,9 +17,11 @@
 
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
+#include "pqCoreUtilities.h"
 #include "Utilities.h"
 
 #include "vtkAlgorithm.h"
+#include "vtkCommand.h"
 #include "vtkNonOrthoImagePlaneWidget.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
@@ -39,6 +41,8 @@
 #include "vtkSMTransferFunctionManager.h"
 #include "vtkSMTransferFunctionProxy.h"
 #include "vtkSMViewProxy.h"
+
+#include <QDebug>
 
 namespace tomviz
 {
@@ -75,6 +79,14 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(pxm->NewProxy("filters", "PassThrough"));
+  
+  // Create the Properties panel proxy
+  this->PropsPanelProxy.TakeReference(
+      pxm->NewProxy("tomviz_proxies", "NonOrthogonalSlice"));
+
+  pqCoreUtilities::connect(
+    this->PropsPanelProxy, vtkCommand::PropertyModifiedEvent,
+    this, SLOT(onPropertyChanged()));
 
   this->PassThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->PassThrough);
@@ -198,6 +210,16 @@ bool ModuleSlice::visibility() const
 }
 
 //-----------------------------------------------------------------------------
+void ModuleSlice::addToPanel(pqProxiesWidget* panel)
+{
+  QStringList properties;
+  properties << "ShowArrow";
+  panel->addProxy(this->PropsPanelProxy, "Appearance", properties, true);
+
+  this->Superclass::addToPanel(panel);
+}
+
+//-----------------------------------------------------------------------------
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
 {
   // FIXME: serialize slice properties.
@@ -209,6 +231,14 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 {
   // FIXME: deserialize slice properties.
   return this->Superclass::deserialize(ns);
+}
+
+//-----------------------------------------------------------------------------
+void ModuleSlice::onPropertyChanged()
+{
+  vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
+  qDebug() << "onPropertyChanged called.";
+  qDebug() << showProperty.GetAsInt();
 }
 
 }
