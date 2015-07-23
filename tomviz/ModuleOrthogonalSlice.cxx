@@ -44,7 +44,7 @@ ModuleOrthogonalSlice::~ModuleOrthogonalSlice()
 //-----------------------------------------------------------------------------
 QIcon ModuleOrthogonalSlice::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqSlice24.png");
+  return QIcon(":/icons/orthoslice.png");
 }
 
 //-----------------------------------------------------------------------------
