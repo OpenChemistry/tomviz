@@ -58,11 +58,13 @@ QList<DataSource*> LoadDataReaction::loadData()
   vtkNew<vtkSMParaViewPipelineController> controller;
 
   QStringList filters;
-  filters << "Common file types (*.jpg *.jpeg *.png *.tiff *.tif *.raw *.dat *.bin *.txt)"
+  filters << "Common file types (*.jpg *.jpeg *.png *.tiff *.tif *.raw"
+             " *.dat *.bin *.txt *.mrc *.st *.rec *.ali)"
           << "JPeg Image files (*.jpg *.jpeg)"
           << "PNG Image files (*.png)"
           << "TIFF Image files (*.tiff *.tif)"
           << "Raw data files (*.raw *.dat *.bin)"
+          << "MRC files (*.mrc *.st *.rec *.ali)"
           << "Text files (*.txt)"
           << "All files (*.*)";
 
