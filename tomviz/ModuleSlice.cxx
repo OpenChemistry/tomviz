@@ -237,8 +237,10 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 void ModuleSlice::onPropertyChanged()
 {
   vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
-  qDebug() << "onPropertyChanged called.";
-  qDebug() << showProperty.GetAsInt();
+  // Not this: it hides the plane as well as the arrow...
+  //this->Widget->SetEnabled(showProperty.GetAsInt());
+  this->Widget->SetArrowVisibility(showProperty.GetAsInt());
+  this->Widget->SetInteraction(showProperty.GetAsInt());
 }
 
 }
