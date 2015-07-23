@@ -50,6 +50,8 @@ set(SOURCES
   DeleteDataReaction.h
   EditPythonOperatorDialog.cxx
   EditPythonOperatorDialog.h
+  FixCenterOfRotationBehavior.cxx
+  FixCenterOfRotationBehavior.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   main.cxx
