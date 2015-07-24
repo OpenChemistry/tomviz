@@ -96,7 +96,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->RegisterPipelineProxy(this->PassThrough);
 
   //Create the widget
-  const bool widgetSetup = this->setupWidget(vtkView,producer);
+  const bool widgetSetup = this->setupWidget(vtkView, producer);
 
   if(widgetSetup)
     {
@@ -222,14 +222,86 @@ void ModuleSlice::addToPanel(pqProxiesWidget* panel)
 //-----------------------------------------------------------------------------
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
 {
-  // FIXME: serialize slice properties.
+  // Save the state of the arrow's visibility
+  vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
+  ns.append_attribute("show_arrow").set_value(showProperty.GetAsInt());
+
+  // Serialize the plane
+  double point[3];
+  pugi::xml_node plane = ns.append_child("Plane");
+  pugi::xml_node pointNode;
+  this->Widget->GetOrigin(point);
+  // Origin of plane
+  pointNode = plane.append_child("Point");
+  pointNode.append_attribute("index").set_value(0);
+  pointNode.append_attribute("x").set_value(point[0]);
+  pointNode.append_attribute("y").set_value(point[1]);
+  pointNode.append_attribute("z").set_value(point[2]);
+  // Point 1 of plane
+  this->Widget->GetPoint1(point);
+  pointNode = plane.append_child("Point");
+  pointNode.append_attribute("index").set_value(1);
+  pointNode.append_attribute("x").set_value(point[0]);
+  pointNode.append_attribute("y").set_value(point[1]);
+  pointNode.append_attribute("z").set_value(point[2]);
+  // Point 2 of plane
+  this->Widget->GetPoint2(point);
+  pointNode = plane.append_child("Point");
+  pointNode.append_attribute("index").set_value(2);
+  pointNode.append_attribute("x").set_value(point[0]);
+  pointNode.append_attribute("y").set_value(point[1]);
+  pointNode.append_attribute("z").set_value(point[2]);
+
+  // Let the superclass do its thing
   return this->Superclass::serialize(ns);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 {
-  // FIXME: deserialize slice properties.
+
+  pugi::xml_node plane = ns.child("Plane");
+  if (!plane)
+    {
+    // We are reading an older state file from before the change that added
+    // the ability to save these...
+    return this->Superclass::deserialize(ns);
+    }
+  // Deserialize the show arrow state
+  vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
+  showProperty.Set(ns.attribute("show_arrow").as_int());
+
+
+  // Deserialize the plane
+  double point[3];
+  for (pugi::xml_node pointNode = plane.child("Point"); pointNode;
+         pointNode = pointNode.next_sibling("Point"))
+    {
+    point[0] = pointNode.attribute("x").as_double();
+    point[1] = pointNode.attribute("y").as_double();
+    point[2] = pointNode.attribute("z").as_double();
+    int index = pointNode.attribute("index").as_int();
+    if (index == 0)
+      {
+      this->Widget->SetOrigin(point);
+      }
+    else if (index == 1)
+      {
+      this->Widget->SetPoint1(point);
+      }
+    else if (index == 2)
+      {
+      this->Widget->SetPoint2(point);
+      }
+    else
+      {
+      qCritical("Unknown point index for slice plane point");
+      return false;
+      }
+    }
+  this->Widget->UpdatePlacement();
+
+  // Let the superclass do its thing
   return this->Superclass::deserialize(ns);
 }
 
