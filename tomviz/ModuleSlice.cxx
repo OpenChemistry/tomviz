@@ -96,7 +96,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->RegisterPipelineProxy(this->PassThrough);
 
   //Create the widget
-  const bool widgetSetup = this->setupWidget(vtkView,producer);
+  const bool widgetSetup = this->setupWidget(vtkView, producer);
 
   if(widgetSetup)
     {
