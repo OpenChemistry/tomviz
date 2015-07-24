@@ -56,7 +56,6 @@
 Q_DECLARE_METATYPE(vtkSmartPointer<vtkImageData>)
 Q_DECLARE_METATYPE(vtkSmartPointer<vtkTable>)
 
-
 namespace tomviz
 {
 
@@ -275,8 +274,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Worker->start();
   this->HistogramGen->moveToThread(this->Worker);
   this->connect(this->HistogramGen,
-     SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,vtkSmartPointer<vtkTable>)),
-     SLOT(histogramReady(vtkSmartPointer<vtkImageData>,vtkSmartPointer<vtkTable>)));
+     SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>)),
+     SLOT(histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>)));
 }
 
 //-----------------------------------------------------------------------------
@@ -375,7 +374,7 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
 
   // If we no longer have an active datasource, ignore showing the histogram
   // since the data has been deleted
-  if (! this->ADataSource )
+  if (!this->ADataSource)
     return;
 
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
