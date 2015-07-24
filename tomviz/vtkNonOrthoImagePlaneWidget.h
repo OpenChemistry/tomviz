@@ -304,6 +304,15 @@ public:
   vtkGetMacro(Interaction,int);
   vtkBooleanMacro(Interaction,int);
 
+  // Description:
+  // Set the arrow visible or invisible so only the plane remains on display.
+  // This disables interaction with the arrow since only visible actors are
+  // pickable, but leaves interaction with the plane up to the state of 
+  // SetInteraction.
+  void SetArrowVisibility(int visible);
+  vtkGetMacro(ArrowVisibility,int);
+  vtkBooleanMacro(ArrowVisibility,int);
+
   //BTX
   // Description:
   // Set action associated to buttons.
@@ -380,6 +389,7 @@ protected:
 
   // controlling ivars
   int    Interaction; // Is the widget responsive to mouse events
+  int    ArrowVisibility;
   int    PlaneOrientation;
   int    ResliceInterpolate;
   int    TextureInterpolate;

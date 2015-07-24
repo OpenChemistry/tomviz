@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "Behaviors.h"
 
+#include "LoadTomvizExtensionsBehavior.h"
 #include "pqAlwaysConnectedBehavior.h"
 #include "pqApplicationCore.h"
 #include "pqDefaultViewBehavior.h"
@@ -76,6 +77,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
   new tomviz::ProgressBehavior(mainWindow);
+  new tomviz::LoadTomvizExtensionsBehavior(this);
   //new tomviz::ScaleActorBehavior(this);
 
   // this will trigger the logic to setup reader/writer factories, etc.

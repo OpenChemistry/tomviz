@@ -91,6 +91,7 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWi
   this->EventCallbackCommand->SetCallback(vtkNonOrthoImagePlaneWidget::ProcessEvents);
 
   this->Interaction              = 1;
+  this->ArrowVisibility          = 1;
   this->PlaneOrientation         = 0;
   this->PlaceFactor              = 1.0;
   this->TextureInterpolate       = 1;
@@ -481,6 +482,28 @@ void vtkNonOrthoImagePlaneWidget::SetInteraction(int interact)
   else
     {
     vtkGenericWarningMacro(<<"set interactor and Enabled before changing interaction...");
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkNonOrthoImagePlaneWidget::SetArrowVisibility(int visible)
+{
+  if (this->Interactor && this->Enabled)
+    {
+    if (this->ArrowVisibility == visible)
+      {
+      return;
+      }
+    this->LineActor->SetVisibility(visible);
+    this->ConeActor->SetVisibility(visible);
+    this->LineActor2->SetVisibility(visible);
+    this->ConeActor2->SetVisibility(visible);
+    this->SphereActor->SetVisibility(visible);
+    this->ArrowVisibility = visible;
+    }
+  else
+    {
+    vtkGenericWarningMacro(<<"set interactor and Enabled before changing visibility...");
     }
 }
 
