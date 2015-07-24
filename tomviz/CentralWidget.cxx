@@ -135,6 +135,8 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   output->AddColumn(populations.GetPointer());
 }
 
+// This is a QObject that will be owned by the background thread
+// and use signals/slots to create histograms
 class HistogramMaker : public QObject
 {
   Q_OBJECT
@@ -156,6 +158,8 @@ signals:
 void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
+  // make the histogram and notify observers (the main thread) that it
+  // is done.
   if (input && output)
     {
     PopulateHistogram(input.Get(), output.Get());
@@ -271,6 +275,10 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->EventLink->Connect(chart, vtkCommand::CursorChangedEvent, this,
                            SLOT(histogramClicked(vtkObject*)));
 
+  // start the worker thread and give it ownership of the HistogramMaker
+  // object.  Also connect the HistogramMaker's signal to the histogramReady
+  // slot on this object.  This slot will be called on the GUI thread when the
+  // histogram has been finished on the background thread.
   this->Worker->start();
   this->HistogramGen->moveToThread(this->Worker);
   this->connect(this->HistogramGen,
@@ -283,8 +291,11 @@ CentralWidget::~CentralWidget()
 {
   // disconnect all signals/slots
   QObject::disconnect(this->HistogramGen, NULL, NULL, NULL);
+  // when the HistogramMaker is deleted, kill the background thread
   QObject::connect(this->HistogramGen, SIGNAL(destroyed()),
                    this->Worker, SLOT(quit()));
+  // I can't remember if deleteLater must be called on the owning thread
+  // play it safe and let the owning thread call it.
   QMetaObject::invokeMethod(this->HistogramGen, "deleteLater");
   // Wait for the background thread to clean up the object and quit
   while (this->Worker->isRunning())
@@ -355,6 +366,10 @@ void CentralWidget::setDataSource(DataSource* source)
   this->HistogramCache[image] = table.Get();
   vtkSmartPointer<vtkImageData> const imageSP = image;
 
+  // This fakes a Qt signal to the background thread (without exposing the
+  // class internals as a signal).  The background thread will then call
+  // makeHistogram on the HistogramMaker object with the parameters we
+  // gave here.
   QMetaObject::invokeMethod(this->HistogramGen,
      "makeHistogram",
      Q_ARG(vtkSmartPointer<vtkImageData>, imageSP),
