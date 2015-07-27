@@ -15,8 +15,9 @@
 ******************************************************************************/
 #include "PipelineWidget.h"
 
-#include "DataSource.h"
 #include "ActiveObjects.h"
+#include "CloneDataReaction.h"
+#include "DataSource.h"
 #include "Module.h"
 #include "ModuleManager.h"
 #include "pqApplicationCore.h"
@@ -305,6 +306,7 @@ void PipelineWidget::setActiveView(vtkSMViewProxy* view)
     }
 }
 
+//-----------------------------------------------------------------------------
 void PipelineWidget::onCustomContextMenu(const QPoint &point)
 {
   QTreeWidgetItem* item = this->itemAt(point);
@@ -315,6 +317,12 @@ void PipelineWidget::onCustomContextMenu(const QPoint &point)
   QPoint globalPoint = this->mapToGlobal(point);
 
   QMenu contextMenu;
+  QAction* cloneAction = NULL;
+  if (this->Internals->dataProducer(item))
+    {
+    cloneAction = contextMenu.addAction("Clone");
+    new CloneDataReaction(cloneAction);
+    }
   QAction* deleteAction = contextMenu.addAction("Delete");
   QAction* selectedItem = contextMenu.exec(globalPoint);
   if (selectedItem == deleteAction)
