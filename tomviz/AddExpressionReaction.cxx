@@ -42,7 +42,8 @@ AddExpressionReaction::~AddExpressionReaction()
 void AddExpressionReaction::updateEnableState()
 {
   this->parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != NULL);
+    ActiveObjects::instance().activeDataSource() != NULL &&
+    ActiveObjects::instance().activeDataSource()->type() == DataSource::Volume);
 }
 
 //-----------------------------------------------------------------------------

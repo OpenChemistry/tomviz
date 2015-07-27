@@ -28,6 +28,12 @@
 #include "vtkSMViewProxy.h"
 #include "pqView.h"
 
+#include "vtkSMSourceProxy.h"
+#include "vtkDataObject.h"
+#include "vtkFieldData.h"
+#include "vtkDataArray.h"
+#include "vtkAlgorithm.h"
+
 #include <QPointer>
 
 namespace tomviz
@@ -63,6 +69,9 @@ public:
                                                    parent);
     l->insertWidget(l->indexOf(ui.TransformedDataRange), separator);
 
+    separator = pqProxyWidget::newGroupLabelWidget("Tilt Angles", parent);
+    l->insertWidget(l->indexOf(ui.TiltAnglesTable), separator);
+
     // set icons for save/restore buttons.
     ui.ColorMapSaveAsDefaults->setIcon(
       ui.ColorMapSaveAsDefaults->style()->standardIcon(QStyle::SP_DialogSaveButton));
@@ -84,6 +93,8 @@ public:
       ui.verticalLayout->removeWidget(this->ColorMapWidget);
       delete this->ColorMapWidget;
       }
+    ui.TiltAnglesTable->clear();
+    ui.TiltAnglesTable->setRowCount(0);
     }
 
 };
@@ -122,6 +133,9 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
 //-----------------------------------------------------------------------------
 void DataPropertiesPanel::update()
 {
+  this->disconnect(this->Internals->Ui.TiltAnglesTable,
+      SIGNAL(cellChanged(int, int)), this,
+      SLOT(onTiltAnglesModified(int, int)));
   this->Internals->clear();
 
   DataSource* dsource = this->Internals->CurrentDataSource;
@@ -158,7 +172,8 @@ void DataPropertiesPanel::update()
   pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap());
   colorMapWidget->setApplyChangesImmediately(true);
   colorMapWidget->updatePanel();
-  ui.verticalLayout->insertWidget(ui.verticalLayout->count()-1, colorMapWidget);
+  ui.verticalLayout->insertWidget(ui.verticalLayout->indexOf(ui.TiltAnglesTable)-1,
+                                  colorMapWidget);
   colorMapWidget->connect(ui.ColorMapExpander, SIGNAL(toggled(bool)),
                           SLOT(setVisible(bool)));
   colorMapWidget->setVisible(ui.ColorMapExpander->checked());
@@ -168,14 +183,64 @@ void DataPropertiesPanel::update()
                           SLOT(restoreDefaults()));
   this->connect(colorMapWidget, SIGNAL(changeFinished()), SLOT(render()));
   this->Internals->ColorMapWidget = colorMapWidget;
+
+  // display tilt series data
+  if (dsource->type() == DataSource::TiltSeries)
+    {
+    vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
+        dsource->producer()->GetClientSideObject())
+      ->GetOutputDataObject(0)->GetFieldData()->GetArray("tilt_angles");
+    ui.TiltAnglesTable->setRowCount(tiltAngles->GetNumberOfTuples());
+    ui.TiltAnglesTable->setColumnCount(tiltAngles->GetNumberOfComponents());
+    for (int i = 0; i < tiltAngles->GetNumberOfTuples(); ++i)
+      {
+      double* angles = tiltAngles->GetTuple(i);
+      for (int j = 0; j < tiltAngles->GetNumberOfComponents(); ++j)
+        {
+        QTableWidgetItem* item = new QTableWidgetItem();
+        item->setData(Qt::DisplayRole, QString("%1").arg(angles[j]));
+        ui.TiltAnglesTable->setItem(i, j, item);
+        }
+      }
+    }
+  this->connect(this->Internals->Ui.TiltAnglesTable,
+      SIGNAL(cellChanged(int, int)),
+      SLOT(onTiltAnglesModified(int, int)));
 }
 
+//-----------------------------------------------------------------------------
 void DataPropertiesPanel::render()
 {
   pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view)
     {
     view->render();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
+{
+  DataSource* dsource = this->Internals->CurrentDataSource;
+  QTableWidgetItem* item = this->Internals->Ui.TiltAnglesTable->item(row, column);
+  QString str = item->data(Qt::DisplayRole).toString();
+  if (dsource->type() == DataSource::TiltSeries)
+    {
+    vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
+        dsource->producer()->GetClientSideObject())
+      ->GetOutputDataObject(0)->GetFieldData()->GetArray("tilt_angles");
+    bool ok;
+    double value = str.toDouble(&ok);
+    if (ok)
+      {
+      double* tuple = tiltAngles->GetTuple(row);
+      tuple[column] = value;
+      tiltAngles->SetTuple(row, tuple);
+      }
+    else
+      {
+      std::cerr << "Invalid tilt angle: " << str.toStdString() << std::endl;
+      }
     }
 }
 

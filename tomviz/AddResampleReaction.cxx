@@ -53,7 +53,8 @@ AddResampleReaction::~AddResampleReaction()
 void AddResampleReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL);
+        ActiveObjects::instance().activeDataSource() != NULL &&
+        ActiveObjects::instance().activeDataSource()->type() == DataSource::Volume);
 }
 
 //-----------------------------------------------------------------------------

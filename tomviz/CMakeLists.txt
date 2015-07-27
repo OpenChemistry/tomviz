@@ -99,6 +99,8 @@ set(SOURCES
   ScaleActorBehavior.cxx
   ScaleActorBehavior.h
   SetScaleReaction.cxx
+  ToggleDataTypeReaction.h
+  ToggleDataTypeReaction.cxx
   Utilities.cxx
   Utilities.h
   ViewPropertiesPanel.cxx

@@ -46,6 +46,7 @@
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
 #include "SetScaleReaction.h"
+#include "ToggleDataTypeReaction.h"
 #include "ViewMenuManager.h"
 
 #include "MisalignImgs_Uniform.h"
@@ -121,6 +122,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new AddAlignReaction(ui.actionAlign);
   new CloneDataReaction(ui.actionClone);
+
+  new ToggleDataTypeReaction(ui.actionToggleDataType);
 
   /*
    * Data Transforms

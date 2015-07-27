@@ -37,9 +37,13 @@ class DataSource : public QObject
   typedef QObject Superclass;
 
 public:
+  /// The type of data in the data source.  The data types currently supported
+  /// are volumetric data and image stacks representing tilt series.
+  enum DataSourceType { Volume, TiltSeries };
   /// \c dataSource is the original reader that reads the data into the
   /// application.
-  DataSource(vtkSMSourceProxy* dataSource, QObject* parent=NULL);
+  DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
+             QObject* parent=NULL);
   virtual ~DataSource();
 
   /// Returns the data producer proxy to insert in ParaView pipelines.
@@ -69,6 +73,11 @@ public:
 
   /// Returns the name of the filename used from the originalDataSource.
   QString filename() const;
+
+  /// Returns the type of data in this DataSource
+  DataSourceType type() const;
+  /// Sets the type of data in the DataSource
+  void setType(DataSourceType t);
 
   /// Returns the color map for the DataSource.
   vtkSMProxy* colorMap() const;

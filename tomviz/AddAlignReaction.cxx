@@ -42,7 +42,8 @@ AddAlignReaction::~AddAlignReaction()
 void AddAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL);
+        ActiveObjects::instance().activeDataSource() != NULL &&
+        ActiveObjects::instance().activeDataSource()->type() == DataSource::Volume);
 }
 
 //-----------------------------------------------------------------------------

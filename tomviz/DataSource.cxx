@@ -18,7 +18,9 @@
 #include "OperatorPython.h"
 #include "Utilities.h"
 #include "vtkDataObject.h"
+#include "vtkDoubleArray.h"
 #include "vtkExtractVOI.h"
+#include "vtkFieldData.h"
 #include "vtkNew.h"
 #include "vtkImageData.h"
 #include "vtkSmartPointer.h"
@@ -32,6 +34,7 @@
 
 #include <vtk_pugixml.h>
 
+#include <sstream>
 
 namespace tomviz
 {
@@ -43,15 +46,119 @@ public:
   vtkWeakPointer<vtkSMSourceProxy> Producer;
   QList<QSharedPointer<Operator> > Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
+  DataSource::DataSourceType Type;
 };
 
+namespace {
+
 //-----------------------------------------------------------------------------
-DataSource::DataSource(vtkSMSourceProxy* dataSource, QObject* parentObject)
+// Checks if the tilt angles data array exists on the given VTK data
+// and creates it if it does not exist.
+void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
+{
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    proxy->GetClientSideObject());
+  vtkDataObject* data = tp->GetOutputDataObject(0);
+  vtkFieldData* fd = data->GetFieldData();
+  vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+  int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+  int num_tilt_angles = extent[5] - extent[4] + 1;
+  if (tiltAngles == NULL)
+  {
+    vtkNew< vtkDoubleArray > array;
+    array->SetName("tilt_angles");
+    array->SetNumberOfTuples(num_tilt_angles);
+    array->FillComponent(0,0.0);
+    fd->AddArray(array.GetPointer());
+  }
+}
+
+//-----------------------------------------------------------------------------
+// Converts the data type to a string for writing to the save state
+const char* dataSourceTypeToString(DataSource::DataSourceType type)
+{
+  switch (type)
+    {
+    case DataSource::Volume:
+      return "volume";
+    case DataSource::TiltSeries:
+      return "tilt-series";
+    default:
+      assert("Unhandled data source type" && false);
+      return "";
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Converts the save state string back to a DataSource::DataSourceType
+// Returns true if the type was successfully converted, false otherwise
+// the result is stored in the output paremeter type.
+bool stringToDataSourceType(const char* str, DataSource::DataSourceType& type)
+{
+  if (strcmp(str, "volume") == 0)
+  {
+    type = DataSource::Volume;
+    return true;
+  }
+  else if (strcmp(str, "tilt-series") == 0)
+  {
+    type = DataSource::TiltSeries;
+    return true;
+  }
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+void serializeDataArray(pugi::xml_node& ns, vtkDataArray* array)
+{
+  ns.append_attribute("components").set_value(array->GetNumberOfComponents());
+  ns.append_attribute("tuples").set_value((int)array->GetNumberOfTuples());
+  std::ostringstream stream;
+  for (int i = 0; i < array->GetNumberOfTuples(); ++i)
+  {
+    double* tuple = array->GetTuple(i);
+    for (int j = 0; j < array->GetNumberOfComponents(); ++j)
+    {
+      stream << tuple[j] << " ";
+    }
+    stream << "\n";
+  }
+  pugi::xml_text text = ns.text();
+  text.set(stream.str().c_str());
+}
+
+//-----------------------------------------------------------------------------
+void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
+{
+  int components = ns.attribute("components").as_int(1);
+  array->SetNumberOfComponents(components);
+  int tuples = ns.attribute("tuples").as_int(array->GetNumberOfTuples());
+  array->SetNumberOfTuples(tuples);
+  const char* text = ns.child_value();
+  std::istringstream stream(text);
+  double* data = new double[components];
+  for (int i = 0; i < tuples; ++i)
+  {
+    for (int j = 0; j < components; ++j)
+    {
+      stream >> data[j];
+    }
+    array->SetTuple(i, data);
+  }
+  delete[] data;
+}
+
+}
+
+//-----------------------------------------------------------------------------
+DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
+                      QObject* parentObject)
   : Superclass(parentObject),
   Internals(new DataSource::DSInternals())
 {
   Q_ASSERT(dataSource);
   this->Internals->OriginalDataSource = dataSource;
+  this->Internals->Type = dataType;
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
@@ -124,6 +231,19 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   ns.append_attribute("number_of_operators").set_value(
     static_cast<int>(this->Internals->Operators.size()));
 
+  ns.append_attribute("type").set_value(
+    dataSourceTypeToString(this->type()));
+  if (this->type() == TiltSeries)
+    {
+    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+      this->producer()->GetClientSideObject());
+    vtkDataObject* data = tp->GetOutputDataObject(0);
+    vtkFieldData* fd = data->GetFieldData();
+    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+    node = ns.append_child("TiltAngles");
+    serializeDataArray(node, tiltAngles);
+    }
+
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
     {
     pugi::xml_node operatorNode = ns.append_child("Operator");
@@ -145,6 +265,13 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
                       "ScalarOpacityFunction").Set(this->opacityMap());
   this->colorMap()->UpdateVTKObjects();
 
+  DataSourceType dstype;
+  if (!stringToDataSourceType(ns.attribute("type").value(),dstype))
+    {
+    return false;
+    }
+  this->setType(dstype);
+
   int num_operators = ns.attribute("number_of_operators").as_int(-1);
   if (num_operators < 0)
     {
@@ -153,6 +280,17 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
 
   this->Internals->Operators.clear();
   this->resetData();
+
+  // load tilt angles AFTER resetData call.
+  if (this->type() == TiltSeries)
+    {
+    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+      this->producer()->GetClientSideObject());
+    vtkDataObject* data = tp->GetOutputDataObject(0);
+    vtkFieldData* fd = data->GetFieldData();
+    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+    deserializeDataArray(ns.child("TiltAngles"), tiltAngles);
+    }
 
   for (pugi::xml_node node=ns.child("Operator"); node; node = node.next_sibling("Operator"))
     {
@@ -176,11 +314,12 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
                             vtkSMCoreUtilities::GetFileNameProperty(
                              this->Internals->OriginalDataSource)).GetAsString();
     this->Internals->Producer->SetAnnotation("filename", originalFilename);
-    newClone = new DataSource(this->Internals->Producer);
+    newClone = new DataSource(this->Internals->Producer, this->Internals->Type);
     }
   else
     {
-    newClone = new DataSource(this->Internals->OriginalDataSource);
+    newClone = new DataSource(this->Internals->OriginalDataSource,
+                              this->Internals->Type);
     }
   if (!cloneTransformed && cloneOperators)
     {
@@ -310,6 +449,10 @@ void DataSource::resetData()
   Q_ASSERT(tp);
   tp->SetOutput(dataClone);
   dataClone->FastDelete();
+  if (this->Internals->Type == TiltSeries)
+    {
+    ensureTiltAnglesArrayExists(this->Internals->Producer);
+    }
   emit this->dataChanged();
 }
 
@@ -331,6 +474,23 @@ void DataSource::operatorTransformModified()
 vtkSMProxy* DataSource::colorMap() const
 {
   return this->Internals->ColorMap;
+}
+
+//-----------------------------------------------------------------------------
+DataSource::DataSourceType DataSource::type() const
+{
+  return this->Internals->Type;
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::setType(DataSourceType t)
+{
+  this->Internals->Type = t;
+  if (t == TiltSeries)
+    {
+    ensureTiltAnglesArrayExists(this->Internals->Producer);
+    }
+  emit this->dataChanged();
 }
 
 //-----------------------------------------------------------------------------
