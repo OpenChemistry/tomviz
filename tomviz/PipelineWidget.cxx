@@ -28,6 +28,9 @@
 #include "vtkSMViewProxy.h"
 
 #include <QHeaderView>
+#include <QKeyEvent>
+#include <QAction>
+#include <QMenu>
 
 namespace tomviz
 {
@@ -69,6 +72,29 @@ public:
       }
     return NULL;
     }
+
+  void deleteDataOrModule(QTreeWidgetItem* item)
+    {
+    // If we are deleting it, first delete its children
+    for (int i = item->childCount() - 1; i >= 0; --i)
+      {
+      QTreeWidgetItem* child = item->child(i);
+      this->deleteDataOrModule(child);
+      }
+    // Handle deleting data source
+    DataSource* source = this->dataProducer(item);
+    if (source)
+      {
+      ModuleManager::instance().removeDataSource(source);
+      }
+    // Handle deleting module
+    Module* mod = this->module(item);
+    if (mod)
+      {
+      ModuleManager::instance().removeModule(mod);
+      }
+    ActiveObjects::instance().renderAllViews();
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -106,6 +132,10 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
   this->connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
                 SLOT(dataSourceRemoved(DataSource*)));
 
+  this->setContextMenuPolicy(Qt::CustomContextMenu);
+  this->connect(this, SIGNAL(customContextMenuRequested(const QPoint&)),
+                SLOT(onCustomContextMenu(const QPoint&)));
+
 
   this->header()->setResizeMode(0, QHeaderView::Stretch);
   this->header()->setResizeMode(1, QHeaderView::Fixed);
@@ -117,6 +147,17 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
 PipelineWidget::~PipelineWidget()
 {
   // this->Internals is a QScopedPointer. No need to delete here.
+}
+
+//-----------------------------------------------------------------------------
+void PipelineWidget::keyPressEvent(QKeyEvent* e)
+{
+  QTreeWidget::keyPressEvent(e);
+  if (e->key() == Qt::Key_Delete || e->key() == Qt::Key_Backspace)
+    {
+    QTreeWidgetItem* item = this->currentItem();
+    this->Internals->deleteDataOrModule(item);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -261,6 +302,24 @@ void PipelineWidget::setActiveView(vtkSMViewProxy* view)
     QFont f = item->font(MODULE_COLUMN);
     f.setItalic(!item_enabled);
     item->setFont(MODULE_COLUMN, f);
+    }
+}
+
+void PipelineWidget::onCustomContextMenu(const QPoint &point)
+{
+  QTreeWidgetItem* item = this->itemAt(point);
+  if (!item)
+    {
+    return;
+    }
+  QPoint globalPoint = this->mapToGlobal(point);
+
+  QMenu contextMenu;
+  QAction* deleteAction = contextMenu.addAction("Delete");
+  QAction* selectedItem = contextMenu.exec(globalPoint);
+  if (selectedItem == deleteAction)
+    {
+    this->Internals->deleteDataOrModule(item);
     }
 }
 

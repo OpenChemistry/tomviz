@@ -31,11 +31,12 @@ class vtkEventQtSlotConnect;
 class vtkImageData;
 class vtkTable;
 class vtkScalarsToColors;
+class QThread;
 
 namespace tomviz
 {
 class DataSource;
-class HistogramWorker;
+class HistogramMaker;
 class vtkChartHistogram;
 
 /// CentralWidget is a QWidget that is used as the central widget
@@ -57,7 +58,7 @@ public slots:
   void setDataSource(DataSource*);
 
 private slots:
-  void histogramReady();
+  void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
   void histogramClicked(vtkObject *caller);
   void refreshHistogram();
 
@@ -72,7 +73,8 @@ private:
   vtkNew<vtkChartHistogram> Chart;
   vtkNew<vtkEventQtSlotConnect> EventLink;
   QPointer<DataSource> ADataSource;
-  HistogramWorker *Worker;
+  HistogramMaker *HistogramGen;
+  QThread *Worker;
   QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
   vtkScalarsToColors *LUT;
 };

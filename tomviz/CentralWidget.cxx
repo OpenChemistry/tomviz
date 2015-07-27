@@ -53,6 +53,9 @@
 # include "dax/ModuleStreamingContour.h"
 #endif
 
+Q_DECLARE_METATYPE(vtkSmartPointer<vtkImageData>)
+Q_DECLARE_METATYPE(vtkSmartPointer<vtkTable>)
+
 namespace tomviz
 {
 
@@ -132,26 +135,36 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   output->AddColumn(populations.GetPointer());
 }
 
-// Quick background thread for the histogram calculation.
-class HistogramWorker : public QThread
+// This is a QObject that will be owned by the background thread
+// and use signals/slots to create histograms
+class HistogramMaker : public QObject
 {
   Q_OBJECT
 
   void run();
 
 public:
-  HistogramWorker(QObject *p = 0) : QThread(p) {}
+  HistogramMaker(QObject *p = 0) : QObject(p) {}
 
-  vtkSmartPointer<vtkImageData> input;
-  vtkSmartPointer<vtkTable> output;
+public slots:
+  void makeHistogram(vtkSmartPointer<vtkImageData> input,
+                     vtkSmartPointer<vtkTable> output);
+
+signals:
+  void histogramDone(vtkSmartPointer<vtkImageData> image,
+                     vtkSmartPointer<vtkTable> output);
 };
 
-void HistogramWorker::run()
+void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
+                                   vtkSmartPointer<vtkTable> output)
 {
+  // make the histogram and notify observers (the main thread) that it
+  // is done.
   if (input && output)
     {
     PopulateHistogram(input.Get(), output.Get());
     }
+  emit histogramDone(input, output);
 }
 
 class CentralWidget::CWInternals
@@ -228,9 +241,13 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   : Superclass(parentObject, wflags),
     Internals(new CentralWidget::CWInternals()),
-    Worker(NULL)
+    HistogramGen(new HistogramMaker),
+    Worker(new QThread(this))
 {
   this->Internals->Ui.setupUi(this);
+
+  qRegisterMetaType<vtkSmartPointer<vtkImageData> >();
+  qRegisterMetaType<vtkSmartPointer<vtkTable> >();
 
   QList<int> sizes;
   sizes << 200 << 200;
@@ -257,14 +274,33 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   this->EventLink->Connect(chart, vtkCommand::CursorChangedEvent, this,
                            SLOT(histogramClicked(vtkObject*)));
+
+  // start the worker thread and give it ownership of the HistogramMaker
+  // object.  Also connect the HistogramMaker's signal to the histogramReady
+  // slot on this object.  This slot will be called on the GUI thread when the
+  // histogram has been finished on the background thread.
+  this->Worker->start();
+  this->HistogramGen->moveToThread(this->Worker);
+  this->connect(this->HistogramGen,
+     SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>)),
+     SLOT(histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>)));
 }
 
 //-----------------------------------------------------------------------------
 CentralWidget::~CentralWidget()
 {
-  if (this->Worker && this->Worker->isRunning())
+  // disconnect all signals/slots
+  QObject::disconnect(this->HistogramGen, NULL, NULL, NULL);
+  // when the HistogramMaker is deleted, kill the background thread
+  QObject::connect(this->HistogramGen, SIGNAL(destroyed()),
+                   this->Worker, SLOT(quit()));
+  // I can't remember if deleteLater must be called on the owning thread
+  // play it safe and let the owning thread call it.
+  QMetaObject::invokeMethod(this->HistogramGen, "deleteLater");
+  // Wait for the background thread to clean up the object and quit
+  while (this->Worker->isRunning())
     {
-    this->Worker->wait();
+    QCoreApplication::processEvents();
     }
 }
 
@@ -325,23 +361,19 @@ void CentralWidget::setDataSource(DataSource* source)
     }
 
   // Calculate a histogram.
-  vtkNew<vtkTable> table;
+  vtkSmartPointer<vtkTable> table =
+    vtkSmartPointer<vtkTable>::New();
   this->HistogramCache[image] = table.Get();
+  vtkSmartPointer<vtkImageData> const imageSP = image;
 
-  if (!this->Worker)
-    {
-    this->Worker = new HistogramWorker(this);
-    connect(this->Worker, SIGNAL(finished()), SLOT(histogramReady()));
-    }
-  else if (this->Worker->isRunning())
-    {
-    // FIXME: Queue, abort, something.
-    qDebug() << "Worker already running, skipping this one.";
-    return;
-    }
-  this->Worker->input = image;
-  this->Worker->output = table.Get();
-  this->Worker->start();
+  // This fakes a Qt signal to the background thread (without exposing the
+  // class internals as a signal).  The background thread will then call
+  // makeHistogram on the HistogramMaker object with the parameters we
+  // gave here.
+  QMetaObject::invokeMethod(this->HistogramGen,
+     "makeHistogram",
+     Q_ARG(vtkSmartPointer<vtkImageData>, imageSP),
+     Q_ARG(vtkSmartPointer<vtkTable>, table));
 }
 
 void CentralWidget::refreshHistogram()
@@ -349,15 +381,27 @@ void CentralWidget::refreshHistogram()
   this->setDataSource(this->ADataSource);
 }
 
-void CentralWidget::histogramReady()
+void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
+                                   vtkSmartPointer<vtkTable> output)
 {
-  if (!this->Worker || !this->Worker->input || !this->Worker->output)
+  if (!input || !output)
     return;
 
-  this->setHistogramTable(this->Worker->output.Get());
+  // If we no longer have an active datasource, ignore showing the histogram
+  // since the data has been deleted
+  if (!this->ADataSource)
+    return;
 
-  this->Worker->input = NULL;
-  this->Worker->output = NULL;
+  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+    this->ADataSource->producer()->GetClientSideObject());
+  vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+
+  // The current dataset has changed since the histogram was requested,
+  // ignore this histogram and wait for the next one queued...
+  if (image != input.Get())
+    return;
+
+  this->setHistogramTable(output.Get());
 }
 
 void CentralWidget::histogramClicked(vtkObject *)
