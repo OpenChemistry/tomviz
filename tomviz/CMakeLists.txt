@@ -118,6 +118,7 @@ set(python_files
   Align_Images.py
   Recon_DFT.py
   Crop_Data.py
+  DownsampleByTwo.py
   FFT_AbsLog.py
   Shift_Stack_Uniformly.py
   Square_Root_Data.py
