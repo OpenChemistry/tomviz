@@ -15,8 +15,9 @@
 ******************************************************************************/
 #include "PipelineWidget.h"
 
-#include "DataSource.h"
 #include "ActiveObjects.h"
+#include "CloneDataReaction.h"
+#include "DataSource.h"
 #include "Module.h"
 #include "ModuleManager.h"
 #include "pqApplicationCore.h"
@@ -305,6 +306,7 @@ void PipelineWidget::setActiveView(vtkSMViewProxy* view)
     }
 }
 
+//-----------------------------------------------------------------------------
 void PipelineWidget::onCustomContextMenu(const QPoint &point)
 {
   QTreeWidgetItem* item = this->itemAt(point);
@@ -313,13 +315,40 @@ void PipelineWidget::onCustomContextMenu(const QPoint &point)
     return;
     }
   QPoint globalPoint = this->mapToGlobal(point);
+  DataSource* dataSource = this->Internals->dataProducer(item);
 
   QMenu contextMenu;
+  QAction* cloneAction = NULL;
+  QAction* markAsAction = NULL;
+  if (dataSource != NULL)
+    {
+    cloneAction = contextMenu.addAction("Clone");
+    new CloneDataReaction(cloneAction);
+    if (dataSource->type() == DataSource::Volume)
+      {
+      markAsAction = contextMenu.addAction("Mark as Tilt Series");
+      }
+    else
+      {
+      markAsAction = contextMenu.addAction("Mark as Volume");
+      }
+    }
   QAction* deleteAction = contextMenu.addAction("Delete");
   QAction* selectedItem = contextMenu.exec(globalPoint);
   if (selectedItem == deleteAction)
     {
     this->Internals->deleteDataOrModule(item);
+    }
+  else if (markAsAction != NULL && markAsAction == selectedItem)
+    {
+    if (dataSource->type() == DataSource::Volume)
+      {
+      dataSource->setType(DataSource::TiltSeries);
+      }
+    else
+      {
+      dataSource->setType(DataSource::Volume);
+      }
     }
 }
 

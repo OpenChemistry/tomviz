@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "Behaviors.h"
 
+#include "AddRenderViewContextMenuBehavior.h"
 #include "LoadTomvizExtensionsBehavior.h"
 #include "pqAlwaysConnectedBehavior.h"
 #include "pqApplicationCore.h"
@@ -79,6 +80,8 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   new tomviz::ProgressBehavior(mainWindow);
   new tomviz::LoadTomvizExtensionsBehavior(this);
   //new tomviz::ScaleActorBehavior(this);
+
+  new tomviz::AddRenderViewContextMenuBehavior(this);
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");

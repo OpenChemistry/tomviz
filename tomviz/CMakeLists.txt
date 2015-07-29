@@ -26,6 +26,8 @@ set(SOURCES
   AddExpressionReaction.cxx
   AddExpressionReaction.h
   AddPythonTransformReaction.cxx
+  AddRenderViewContextMenuBehavior.cxx
+  AddRenderViewContextMenuBehavior.h
   AddResampleReaction.cxx
   AddResampleReaction.h
   AlignWidget.cxx
