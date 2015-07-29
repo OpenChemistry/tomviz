@@ -42,8 +42,7 @@ AddExpressionReaction::~AddExpressionReaction()
 void AddExpressionReaction::updateEnableState()
 {
   this->parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != NULL &&
-    ActiveObjects::instance().activeDataSource()->type() == DataSource::Volume);
+    ActiveObjects::instance().activeDataSource() != NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -55,7 +54,35 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     return NULL;
     }
 
+  // Build the default script for the python operator
+  // This was done in the Dialog's UI file, but since it needs to change
+  // based on the type of dataset, do it here
+  QString script = QString("def transform_scalars(dataset):\n"
+      "    \"\"\"Define this method for Python operators that \n"
+      "    transform the input array\"\"\"\n"
+      "\n"
+      "    from tomviz import utils\n"
+      "    import numpy as np\n"
+      "\n"
+      "%1"
+      "    # Get the current volume as a numpy array.\n"
+      "    array = utils.get_array(dataset)\n"
+      "\n"
+      "    # This is where you operate on your data, here we square root it.\n"
+      "    result = np.sqrt(array)\n"
+      "\n" 
+      "    # This is where the transformed data is set, it will display in tomviz.\n"
+      "    utils.set_array(dataset, result)\n")
+      .arg( source->type() == DataSource::Volume ? "" :
+      "    # Get the tilt angles array as a numpy array.\n"
+      "    # There is also a utils.set_tilt_angles(dataset, angles) function if you need\n"
+      "    # to set tilt angles.\n"
+      "    tilt_angles = utils.get_tilt_angles(dataset)\n"
+      "\n");
+
+
   OperatorPython *opPython = new OperatorPython();
+  opPython->setScript(script);
   QSharedPointer<Operator> op(opPython);
   opPython->setLabel("Transform Data");
 
