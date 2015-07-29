@@ -45,6 +45,7 @@ public:
   Ui::DataPropertiesPanel Ui;
   QPointer<DataSource> CurrentDataSource;
   QPointer<pqProxyWidget> ColorMapWidget;
+  QPointer<QWidget> TiltAnglesSeparator;
 
   DPPInternals(QWidget* parent)
     {
@@ -69,8 +70,9 @@ public:
                                                    parent);
     l->insertWidget(l->indexOf(ui.TransformedDataRange), separator);
 
-    separator = pqProxyWidget::newGroupLabelWidget("Tilt Angles", parent);
-    l->insertWidget(l->indexOf(ui.TiltAnglesTable), separator);
+    this->TiltAnglesSeparator =
+      pqProxyWidget::newGroupLabelWidget("Tilt Angles", parent);
+    l->insertWidget(l->indexOf(ui.TiltAnglesTable), this->TiltAnglesSeparator);
 
     // set icons for save/restore buttons.
     ui.ColorMapSaveAsDefaults->setIcon(
@@ -93,8 +95,10 @@ public:
       ui.verticalLayout->removeWidget(this->ColorMapWidget);
       delete this->ColorMapWidget;
       }
+    this->TiltAnglesSeparator->hide();
     ui.TiltAnglesTable->clear();
     ui.TiltAnglesTable->setRowCount(0);
+    ui.TiltAnglesTable->hide();
     }
 
 };
@@ -187,6 +191,8 @@ void DataPropertiesPanel::update()
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries)
     {
+    this->Internals->TiltAnglesSeparator->show();
+    ui.TiltAnglesTable->show();
     vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
         dsource->producer()->GetClientSideObject())
       ->GetOutputDataObject(0)->GetFieldData()->GetArray("tilt_angles");
@@ -202,6 +208,11 @@ void DataPropertiesPanel::update()
         ui.TiltAnglesTable->setItem(i, j, item);
         }
       }
+    }
+  else
+    {
+    this->Internals->TiltAnglesSeparator->hide();
+    ui.TiltAnglesTable->hide();
     }
   this->connect(this->Internals->Ui.TiltAnglesTable,
       SIGNAL(cellChanged(int, int)),
