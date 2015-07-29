@@ -56,3 +56,23 @@ def set_array(dataobject, newarray):
     del oldscalars
     do.PointData.append(arr, name)
     do.PointData.SetActiveScalars(name)
+
+def get_tilt_angles(dataobject):
+    # Get the tilt angles array
+    do = dsa.WrapDataObject(dataobject)
+    rawarray = do.FieldData.GetArray('tilt_angles')
+    vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
+    vtkarray.Association = dsa.ArrayAssociation.FIELD
+    return vtkarray
+
+def set_tilt_angles(dataobject, newarray):
+    # replace the tilt angles with the new array
+    from vtk import VTK_DOUBLE
+    # deep copy avoids having to keep numpy array around, but is more
+    # expensive.  I don't expect tilt_angles to be a big array though.
+    vtkarray = np_s.numpy_to_vtk(newarray, deep=1, array_type=VTK_DOUBLE)
+    vtkarray.Association = dsa.ArrayAssociation.FIELD
+    vtkarray.SetName('tilt_angles')
+    do = dsa.WrapDataObject(dataobject)
+    do.FieldData.RemoveArray('tilt_angles')
+    do.FieldData.AddArray(vtkarray)
