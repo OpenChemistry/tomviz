@@ -58,14 +58,11 @@ public:
     QWidget* separator = pqProxyWidget::newGroupLabelWidget("Filename", parent);
     l->insertWidget(l->indexOf(ui.FileName), separator);
 
-    separator = pqProxyWidget::newGroupLabelWidget("Dimensions", parent);
-    l->insertWidget(l->indexOf(ui.Dimensions), separator);
-
-    separator = pqProxyWidget::newGroupLabelWidget("Original Data Range",
+    separator = pqProxyWidget::newGroupLabelWidget("Original Dimensions & Range",
                                                    parent);
     l->insertWidget(l->indexOf(ui.OriginalDataRange), separator);
 
-    separator = pqProxyWidget::newGroupLabelWidget("Transformed Data Range",
+    separator = pqProxyWidget::newGroupLabelWidget("Transformed Dimensions & Range",
                                                    parent);
     l->insertWidget(l->indexOf(ui.TransformedDataRange), separator);
 
@@ -85,7 +82,6 @@ public:
     {
     Ui::DataPropertiesPanel& ui = this->Ui;
     ui.FileName->setText("");
-    ui.Dimensions->setText("");
     ui.OriginalDataRange->setText("");
     ui.TransformedDataRange->setText("");
     if (this->ColorMapWidget)
@@ -130,6 +126,29 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
   this->update();
 }
 
+namespace {
+QString getDataExtentAndRangeString(vtkSMSourceProxy* proxy)
+{
+  vtkPVDataInformation* info = proxy->GetDataInformation(0);
+
+  QString extentString = QString("%1 x %2 x %3")
+                          .arg(info->GetExtent()[1] - info->GetExtent()[0] + 1)
+                          .arg(info->GetExtent()[3] - info->GetExtent()[2] + 1)
+                          .arg(info->GetExtent()[5] - info->GetExtent()[4] + 1);
+
+  if (vtkPVArrayInformation* scalarInfo = tomviz::scalarArrayInformation(proxy))
+    {
+    return QString("(%1)\t%2 : %3").arg(extentString)
+             .arg(scalarInfo->GetComponentRange(0)[0])
+             .arg(scalarInfo->GetComponentRange(0)[1]);
+    }
+  else
+    {
+    return QString("(%1)\t? : ?").arg(extentString);
+    }
+}
+}
+
 //-----------------------------------------------------------------------------
 void DataPropertiesPanel::update()
 {
@@ -146,28 +165,10 @@ void DataPropertiesPanel::update()
   Ui::DataPropertiesPanel& ui = this->Internals->Ui;
   ui.FileName->setText(dsource->filename());
 
-  vtkPVDataInformation* tdInfo = dsource->producer()->GetDataInformation(0);
-
-  ui.Dimensions->setText(QString("%1 x %2 x %3")
-                         .arg(tdInfo->GetExtent()[1] - tdInfo->GetExtent()[0] + 1)
-                         .arg(tdInfo->GetExtent()[3] - tdInfo->GetExtent()[2] + 1)
-                         .arg(tdInfo->GetExtent()[5] - tdInfo->GetExtent()[4] + 1));
-
-  if (vtkPVArrayInformation* oscalars = tomviz::scalarArrayInformation(
-      dsource->originalDataSource()))
-    {
-    ui.OriginalDataRange->setText(QString("%1 : %2")
-                                  .arg(oscalars->GetComponentRange(0)[0])
-                                  .arg(oscalars->GetComponentRange(0)[1]));
-    }
-
-  if (vtkPVArrayInformation* tscalars = tomviz::scalarArrayInformation(
-      dsource->producer()))
-    {
-    ui.TransformedDataRange->setText(QString("%1 : %2")
-                                     .arg(tscalars->GetComponentRange(0)[0])
-                                     .arg(tscalars->GetComponentRange(0)[1]));
-    }
+  ui.OriginalDataRange->setText(getDataExtentAndRangeString(
+        dsource->originalDataSource()));
+  ui.TransformedDataRange->setText(getDataExtentAndRangeString(
+        dsource->producer()));
 
   pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap());
   colorMapWidget->setApplyChangesImmediately(true);
