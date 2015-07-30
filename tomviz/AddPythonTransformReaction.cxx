@@ -56,8 +56,7 @@ AddPythonTransformReaction::~AddPythonTransformReaction()
 void AddPythonTransformReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL &&
-        ActiveObjects::instance().activeDataSource()->type() == DataSource::Volume);
+        ActiveObjects::instance().activeDataSource() != NULL);
 }
 
 //-----------------------------------------------------------------------------

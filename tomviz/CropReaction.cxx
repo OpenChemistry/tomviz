@@ -56,8 +56,7 @@ CropReaction::~CropReaction()
 void CropReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL &&
-        ActiveObjects::instance().activeDataSource()->type() == DataSource::Volume);
+        ActiveObjects::instance().activeDataSource() != NULL);
 }
 
 //-----------------------------------------------------------------------------
