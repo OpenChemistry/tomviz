@@ -99,7 +99,7 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
   pugi::xml_node reprNode = ns.append_child("OutlineRepresentation");
 
   QStringList properties;
-  properties << "CubeAxesVisibility" << "Visibility";
+  properties << "CubeAxesVisibility" << "Visibility" << "DiffuseColor";
   if (tomviz::serialize(this->OutlineRepresentation, reprNode, properties) == false)
     {
     qWarning("Failed to serialize ModuleOutline.");
