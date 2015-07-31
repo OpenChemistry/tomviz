@@ -50,7 +50,8 @@ namespace {
         }
       pugi::xml_attribute propName = node.attribute("name");
       if ((strcmp(propName.value(), "FileNames") != 0) &&
-          (strcmp(propName.value(), "FileName") != 0))
+          (strcmp(propName.value(), "FileName") != 0) &&
+          (strcmp(propName.value(), "FilePrefix") != 0))
         {
         return true;
         }
