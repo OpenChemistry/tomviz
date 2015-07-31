@@ -41,14 +41,6 @@ const char* const settings =
 "         \"UseDisplayLists\" : 1"
 "      }"
 "   }"
-#ifdef __APPLE__
-",   \"representations\" : {"
-"      \"UniformGridRepresentation\" : {"
-"         \"Representation\" : \"Volume\","
-"         \"VolumeRenderingMode\" : 2"
-"      }"
-"   }"
-#endif
 "}";
 
 namespace tomviz
