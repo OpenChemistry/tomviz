@@ -78,9 +78,10 @@ void SaveDataReaction::onTriggered()
   pqFileDialog fileDialog(server,
                           pqCoreUtilities::mainWidget(),
                           tr("Save File:"), QString(), filters);
-  // FIXME: fileDialog.setRecentlyUsedExtension(this->DataExtension);
   fileDialog.setObjectName("FileSaveDialog");
   fileDialog.setFileMode(pqFileDialog::AnyFile);
+  // Default to saving tiff files
+  fileDialog.setRecentlyUsedExtension(".tiff");
   if (fileDialog.exec() == QDialog::Accepted)
     {
     this->saveData(fileDialog.getSelectedFiles()[0]);
