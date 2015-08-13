@@ -33,6 +33,8 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMWriterFactory.h"
 
+#include <cassert>
+
 #include <QDebug>
 
 namespace tomviz
@@ -41,6 +43,9 @@ namespace tomviz
 SaveDataReaction::SaveDataReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateEnableState()));
+  updateEnableState();
 }
 
 //-----------------------------------------------------------------------------
@@ -49,10 +54,18 @@ SaveDataReaction::~SaveDataReaction()
 }
 
 //-----------------------------------------------------------------------------
+void SaveDataReaction::updateEnableState()
+{
+  parentAction()->setEnabled(
+        ActiveObjects::instance().activeDataSource() != NULL);
+}
+
+//-----------------------------------------------------------------------------
 void SaveDataReaction::onTriggered()
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
   DataSource *source = ActiveObjects::instance().activeDataSource();
+  assert(source);
   vtkSMWriterFactory* writerFactory =
       vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   QString filters = writerFactory->GetSupportedFileTypes(source->producer());

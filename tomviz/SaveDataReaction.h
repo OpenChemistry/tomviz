@@ -39,6 +39,8 @@ public:
   bool saveData(const QString &filename);
 
 protected:
+  /// Called when the data changes to enable/disable the menu item
+  void updateEnableState();
   /// Called when the action is triggered.
   virtual void onTriggered();
 
