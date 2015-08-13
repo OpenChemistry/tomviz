@@ -38,7 +38,27 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="OriginalDataType">
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLabel" name="TransformedDataRange">
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="TransformedDataType">
      <property name="text">
       <string>TextLabel</string>
      </property>
