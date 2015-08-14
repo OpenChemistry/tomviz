@@ -93,7 +93,7 @@ def dfm3(input,angles,Npad):
     v = np.fft.ifftshift(v)
     recon = np.real(np.fft.ifftn(v))
     recon = np.fft.fftshift(recon)
-    return recon
+    return recon.astype(np.float32)
 
 
 def bilinear(kz_new,ky_new,sz,sy,N,p):
