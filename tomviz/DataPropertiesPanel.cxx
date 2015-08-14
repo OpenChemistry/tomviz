@@ -85,7 +85,9 @@ public:
     Ui::DataPropertiesPanel& ui = this->Ui;
     ui.FileName->setText("");
     ui.OriginalDataRange->setText("");
+    ui.OriginalDataType->setText("Type:");
     ui.TransformedDataRange->setText("");
+    ui.TransformedDataType->setText("Type:");
     if (this->ColorMapWidget)
       {
       ui.verticalLayout->removeWidget(this->ColorMapWidget);
@@ -148,7 +150,20 @@ QString getDataExtentAndRangeString(vtkSMSourceProxy* proxy)
     }
   else
     {
-    return QString("(%1)\t? : ?").arg(extentString);
+    return QString("(%1)\t? : ? (type: ?)").arg(extentString);
+    }
+}
+
+QString getDataTypeString(vtkSMSourceProxy* proxy)
+{
+  if (vtkPVArrayInformation* scalarInfo = tomviz::scalarArrayInformation(proxy))
+    {
+    return QString("Type: %1").arg(vtkImageScalarTypeNameMacro(
+                                     scalarInfo->GetDataType()));
+    }
+  else
+    {
+    return QString("Type: ?");
     }
 }
 }
@@ -171,7 +186,11 @@ void DataPropertiesPanel::update()
 
   ui.OriginalDataRange->setText(getDataExtentAndRangeString(
         dsource->originalDataSource()));
+  ui.OriginalDataType->setText(getDataTypeString(
+        dsource->originalDataSource()));
   ui.TransformedDataRange->setText(getDataExtentAndRangeString(
+        dsource->producer()));
+  ui.TransformedDataType->setText(getDataTypeString(
         dsource->producer()));
 
   pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap());
