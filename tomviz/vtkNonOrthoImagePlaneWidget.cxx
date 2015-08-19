@@ -314,7 +314,11 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
     }
 
     // Add the plane
-    this->CurrentRenderer->AddViewProp(this->PlaneOutlineActor);
+    if (this->PlaneProperty->GetOpacity() != 0 ||
+        this->SelectedPlaneProperty->GetOpacity() != 0)
+      {
+      this->CurrentRenderer->AddViewProp(this->PlaneOutlineActor);
+      }
     this->PlaneOutlineActor->SetProperty(this->PlaneProperty);
 
     //add the TexturePlaneActor
