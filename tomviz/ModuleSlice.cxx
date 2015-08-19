@@ -199,6 +199,16 @@ bool ModuleSlice::setVisibility(bool val)
 {
   Q_ASSERT(this->Widget);
   this->Widget->SetEnabled(val ? 1 : 0);
+  // update the state of the arrow as well since it cannot update when the
+  // widget is not enabled
+  if (val)
+    {
+    vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
+    // Not this: it hides the plane as well as the arrow...
+    //this->Widget->SetEnabled(showProperty.GetAsInt());
+    this->Widget->SetArrowVisibility(showProperty.GetAsInt());
+    this->Widget->SetInteraction(showProperty.GetAsInt());
+    }
   return true;
 }
 
@@ -309,10 +319,13 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 void ModuleSlice::onPropertyChanged()
 {
   vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
-  // Not this: it hides the plane as well as the arrow...
-  //this->Widget->SetEnabled(showProperty.GetAsInt());
-  this->Widget->SetArrowVisibility(showProperty.GetAsInt());
-  this->Widget->SetInteraction(showProperty.GetAsInt());
+  if (this->Widget->GetEnabled())
+    {
+    // Not this: it hides the plane as well as the arrow...
+    //this->Widget->SetEnabled(showProperty.GetAsInt());
+    this->Widget->SetArrowVisibility(showProperty.GetAsInt());
+    this->Widget->SetInteraction(showProperty.GetAsInt());
+    }
 }
 
 }
