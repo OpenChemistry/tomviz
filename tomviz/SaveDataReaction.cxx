@@ -25,6 +25,10 @@
 #include "pqProxyWidgetDialog.h"
 #include "pqFileDialog.h"
 #include "pqWriterDialog.h"
+#include "vtkDataObject.h"
+#include "vtkDataArray.h"
+#include "vtkImageData.h"
+#include "vtkPointData.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMPropertyHelper.h"
@@ -32,10 +36,12 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMWriterFactory.h"
+#include "vtkTrivialProducer.h"
 
 #include <cassert>
 
 #include <QDebug>
+#include <QMessageBox>
 
 namespace tomviz
 {
@@ -107,6 +113,21 @@ bool SaveDataReaction::saveData(const QString &filename)
     {
     qCritical() << "Failed to create writer for: " << filename;
     return false;
+    }
+  if (strcmp(writer->GetClientSideObject()->GetClassName(),"vtkTIFFWriter") == 0)
+    {
+    vtkTrivialProducer *t =
+        vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+    vtkImageData* imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (imageData->GetPointData()->GetScalars()->GetDataType() == VTK_DOUBLE)
+      {
+      QMessageBox messageBox;
+      messageBox.setWindowTitle("Unsupported data type");
+      messageBox.setText("Tiff files do not support writing data of type double.");
+      messageBox.setIcon(QMessageBox::Critical);
+      messageBox.exec();
+      return false;
+      }
     }
 
   pqWriterDialog dialog(writer);
