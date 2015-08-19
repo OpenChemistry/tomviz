@@ -32,6 +32,7 @@
 
 #include <QString>
 #include <QDir>
+#include <QMessageBox>
 
 namespace {
 
@@ -188,7 +189,15 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   if (ainfo != NULL && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
     {
     // assuming single component arrays.
-    Q_ASSERT(ainfo->GetNumberOfComponents() == 1);
+    if (ainfo->GetNumberOfComponents() != 1)
+      {
+      QMessageBox box;
+      box.setWindowTitle("Warning");
+      box.setText("tomviz currently supports only single component data");
+      box.setIcon(QMessageBox::Warning);
+      box.exec();
+      return false;
+      }
     vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, ainfo->GetComponentRange(0));
     vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, ainfo->GetComponentRange(0));
     return true;
