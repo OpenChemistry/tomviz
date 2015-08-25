@@ -77,8 +77,14 @@ signals:
   /// fired whenever the active data source changes (or changes type).
   void dataSourceChanged(DataSource*);
 
+  /// Fired whenever the data source is activated, i.e. selected in the pipeline.
+  void dataSourceActivated(DataSource*);
+
   /// fired whenever the active module changes.
   void moduleChanged(Module*);
+
+  /// Fired whenever a module is activated, i.e. selected in the pipeline.
+  void moduleActivated(Module*);
 
 private slots:
   void viewChanged(pqView*);

@@ -114,6 +114,7 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
     this->VoidActiveDataSource = source;
     emit this->dataSourceChanged(this->ActiveDataSource);
     }
+  emit this->dataSourceActivated(this->ActiveDataSource);
 }
 //-----------------------------------------------------------------------------
 void ActiveObjects::dataSourceChanged()
@@ -146,6 +147,7 @@ void ActiveObjects::setActiveModule(Module* module)
       }
     emit this->moduleChanged(module);
     }
+  emit this->moduleActivated(module);
 }
 
 //-----------------------------------------------------------------------------
