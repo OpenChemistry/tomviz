@@ -21,8 +21,10 @@
 namespace tomviz
 {
 
+class DataPropertiesPanel;
 class DataSource;
 class Module;
+class ModulePropertiesPanel;
 
 /// The main window for the tomviz application.
 class MainWindow : public QMainWindow
@@ -40,10 +42,18 @@ private slots:
   void openTilt();
   void openRecon();
 
+  /// Change the active data source in the UI.
+  void dataSourceChanged(DataSource *source);
+  /// Change the active module displayed in the UI.
+  void moduleChanged(Module *module);
+
 private:
   Q_DISABLE_COPY(MainWindow)
   class MWInternals;
   MWInternals* Internals;
+
+  DataPropertiesPanel *DataPropertiesWidget;
+  ModulePropertiesPanel *ModulePropertiesWidget;
 };
 
 }

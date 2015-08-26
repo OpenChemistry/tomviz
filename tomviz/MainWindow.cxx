@@ -37,10 +37,12 @@
 #include "Behaviors.h"
 #include "CropReaction.h"
 #include "CloneDataReaction.h"
+#include "DataPropertiesPanel.h"
 #include "DeleteDataReaction.h"
 #include "LoadDataReaction.h"
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
+#include "ModulePropertiesPanel.h"
 #include "RecentFilesMenu.h"
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
@@ -87,7 +89,9 @@ public:
 //-----------------------------------------------------------------------------
 MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   : Superclass(_parent, _flags),
-  Internals(new MainWindow::MWInternals())
+  Internals(new MainWindow::MWInternals()),
+  DataPropertiesWidget(new DataPropertiesPanel(this)),
+  ModulePropertiesWidget(new ModulePropertiesPanel(this))
 {
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
@@ -108,6 +112,14 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // connect quit.
   pqApplicationCore::instance()->connect(ui.actionExit, SIGNAL(triggered()),
                                          SLOT(quit()));
+
+  // Connect up the module/data changed to the appropriate slots.
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceActivated(DataSource*)),
+          SLOT(dataSourceChanged(DataSource*)));
+  connect(&ActiveObjects::instance(), SIGNAL(moduleActivated(Module*)),
+          SLOT(moduleChanged(Module*)));
+  DataPropertiesWidget->hide();
+  ModulePropertiesWidget->hide();
 
   // Connect the about dialog up too.
   connect(ui.actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
@@ -293,6 +305,36 @@ void MainWindow::openRecon()
     {
     LoadDataReaction::loadData(info.canonicalFilePath());
     }
+}
+
+void MainWindow::dataSourceChanged(DataSource*)
+{
+  QVBoxLayout *layout =
+      qobject_cast<QVBoxLayout *>(this->Internals->Ui.propertiesPanel->layout());
+  if (!layout)
+    {
+    layout = new QVBoxLayout;
+    this->Internals->Ui.propertiesPanel->setLayout(layout);
+    }
+  layout->removeWidget(this->ModulePropertiesWidget);
+  this->ModulePropertiesWidget->hide();
+  layout->addWidget(this->DataPropertiesWidget);
+  this->DataPropertiesWidget->show();
+}
+
+void MainWindow::moduleChanged(Module*)
+{
+  QVBoxLayout *layout =
+      qobject_cast<QVBoxLayout *>(this->Internals->Ui.propertiesPanel->layout());
+  if (!layout)
+    {
+    layout = new QVBoxLayout;
+    this->Internals->Ui.propertiesPanel->setLayout(layout);
+    }
+  layout->removeWidget(this->DataPropertiesWidget);
+  this->DataPropertiesWidget->hide();
+  layout->addWidget(this->ModulePropertiesWidget);
+  this->ModulePropertiesWidget->show();
 }
 
 }

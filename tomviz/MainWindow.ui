@@ -20,7 +20,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>25</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -181,15 +181,6 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockWidget_2">
-   <property name="windowTitle">
-    <string>Module Properties </string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="tomviz::ModulePropertiesPanel" name="modulePropertiesPanel"/>
-  </widget>
   <widget class="pqCameraToolbar" name="cameraToolbar">
    <property name="windowTitle">
     <string>Camera Toolbar</string>
@@ -237,23 +228,14 @@
   </widget>
   <widget class="QDockWidget" name="dockWidget_5">
    <property name="windowTitle">
-    <string>Data Properties</string>
+    <string>Properties</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout_2">
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
+     <property name="margin">
       <number>0</number>
      </property>
      <item>
@@ -273,13 +255,13 @@
        <property name="widgetResizable">
         <bool>true</bool>
        </property>
-       <widget class="tomviz::DataPropertiesPanel" name="scrollAreaWidgetContents">
+       <widget class="QWidget" name="propertiesPanel">
         <property name="geometry">
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>76</width>
-          <height>441</height>
+          <width>79</width>
+          <height>615</height>
          </rect>
         </property>
        </widget>
@@ -417,12 +399,6 @@
    <header>PipelineWidget.h</header>
   </customwidget>
   <customwidget>
-   <class>tomviz::ModulePropertiesPanel</class>
-   <extends>QWidget</extends>
-   <header>ModulePropertiesPanel.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>pqCameraToolbar</class>
    <extends>QToolBar</extends>
    <header>pqCameraToolbar.h</header>
@@ -447,12 +423,6 @@
    <class>tomviz::OperatorsWidget</class>
    <extends>QTreeWidget</extends>
    <header>OperatorsWidget.h</header>
-  </customwidget>
-  <customwidget>
-   <class>tomviz::DataPropertiesPanel</class>
-   <extends>QWidget</extends>
-   <header>DataPropertiesPanel.h</header>
-   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
