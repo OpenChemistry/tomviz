@@ -31,6 +31,8 @@ public:
   static void setScale();
 
 protected:
+  void updateEnableState();
+
   virtual void onTriggered() { setScale(); }
 
 private:

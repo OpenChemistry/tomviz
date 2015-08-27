@@ -37,10 +37,20 @@ namespace tomviz
 SetScaleReaction::SetScaleReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateEnableState()));
+  updateEnableState();
 }
 
 SetScaleReaction::~SetScaleReaction()
 {
+}
+
+//-----------------------------------------------------------------------------
+void SetScaleReaction::updateEnableState()
+{
+  parentAction()->setEnabled(
+        ActiveObjects::instance().activeDataSource() != NULL);
 }
 
 void SetScaleReaction::setScale()
