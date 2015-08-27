@@ -11,9 +11,8 @@ def transform_scalars(dataset):
 
     if scalars.min() < 0:
         print("WARNING: Square root of negative values results in NaN!")
-
-    # transform the dataset
-    result = np.sqrt(scalars)
-    
-    # set the result as the new scalars.
-    utils.set_scalars(dataset, result)
+    else:
+        # transform the dataset
+        result = np.sqrt(scalars)
+        # set the result as the new scalars.
+        utils.set_scalars(dataset, result)
