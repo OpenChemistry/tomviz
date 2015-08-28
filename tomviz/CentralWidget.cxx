@@ -113,23 +113,28 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
     {
     pops[k] = 0;
     }
+  int invalid = 0;
 
   switch (input->GetScalarType())
     {
     vtkTemplateMacro(
           tomviz::CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
                              input->GetPointData()->GetScalars()->GetNumberOfTuples(),
-                             minmax[0], pops, inc, numberOfBins));
+                             minmax[0], pops, inc, numberOfBins, invalid));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
     }
 
 #ifndef NDEBUG
-  vtkIdType total = 0;
+  vtkIdType total = invalid;
   for (int i = 0; i < numberOfBins; ++i)
     total += pops[i];
   assert(total == input->GetPointData()->GetScalars()->GetNumberOfTuples());
 #endif
+  if (invalid)
+    {
+    cout << "Warning: NaN or infinite value in dataset" << endl;
+    }
 
   output->AddColumn(extents.GetPointer());
   output->AddColumn(populations.GetPointer());

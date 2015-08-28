@@ -6,6 +6,8 @@
 #include <dax/cont/ArrayHandleCounting.h>
 #include <dax/cont/DispatcherMapField.h>
 #include "dax/Worklets.h"
+#else
+#include "vtkMath.h"
 #endif
 
 namespace tomviz
@@ -171,6 +173,8 @@ void GetScalarRange(T *values, const unsigned int n, double* minmax)
   tempMinMax[1] = values[0];
   for (unsigned int j = 1; j < n; ++j)
     {
+    // This code does not handle NaN or Inf values, so check for them
+    if (!vtkMath::IsFinite(values[j])) continue;
     tempMinMax[0] = std::min(values[j], tempMinMax[0]);
     tempMinMax[1] = std::max(values[j], tempMinMax[1]);
     }
@@ -181,13 +185,24 @@ void GetScalarRange(T *values, const unsigned int n, double* minmax)
 
 template<typename T>
 void CalculateHistogram(T *values, const unsigned int n, const float min,
-                        int *pops, const float inc, const int numberOfBins)
+                        int *pops, const float inc, const int numberOfBins,
+                        int &invalid)
 {
   const int maxBin(numberOfBins - 1);
   for (unsigned int j = 0; j < n; ++j)
     {
-    int index = std::min(static_cast<int>((*(values++) - min) / inc), maxBin);
-    ++pops[index];
+    // This code does not handle NaN or Inf values, so check for them and handle
+    // them specially
+    if (vtkMath::IsFinite(*values))
+      {
+      int index = std::min(static_cast<int>((*(values++) - min) / inc), maxBin);
+      ++pops[index];
+      }
+    else
+      {
+      ++values;
+      ++invalid;
+      }
     }
 }
 #endif
