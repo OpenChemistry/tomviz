@@ -22,6 +22,7 @@
 #include "pqDefaultViewBehavior.h"
 #include "pqInterfaceTracker.h"
 #include "pqPersistentMainWindowStateBehavior.h"
+#include "pqPluginManager.h"
 #include "pqQtMessageHandlerBehavior.h"
 #include "pqStandardPropertyWidgetInterface.h"
 #include "pqStandardViewFrameActionsImplementation.h"
@@ -32,6 +33,11 @@
 #include "vtkSMSettings.h"
 
 #include <QMainWindow>
+
+// Import the generated header to load our custom plugin
+#include "pvextensions/tomvizExtensions_Plugin.h"
+
+PV_PLUGIN_IMPORT_INIT(tomvizExtensions)
 
 const char* const settings =
 "{"
@@ -54,9 +60,12 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "JPEGSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "PNGSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TIFFSeriesReader");
-  vtkSMReaderFactory::AddReaderToWhitelist("sources", "ImageReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "TVRawImageReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "MRCSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "CSVReader");
+
+  PV_PLUGIN_IMPORT(tomvizExtensions)
+
   vtkSMSettings::GetInstance()->AddCollectionFromString(settings, 0.0);
 
   // Register ParaView interfaces.

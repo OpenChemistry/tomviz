@@ -19,6 +19,7 @@
 #include <QObject>
 
 class QMainWindow;
+
 namespace tomviz
 {
 /// Behaviors instantiates tomviz relevant ParaView behaviors (and any new
