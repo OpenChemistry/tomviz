@@ -93,6 +93,11 @@ DataSource* LoadDataReaction::loadData(const QString &fileName)
   files << fileName;
   pqPipelineSource* reader = pqLoadDataReaction::loadData(files);
 
+  if (!reader)
+    {
+    return NULL;
+    }
+
   DataSource* dataSource = createDataSource(reader->getProxy());
   // dataSource may be NULL if user cancelled the action.
   if (dataSource)
