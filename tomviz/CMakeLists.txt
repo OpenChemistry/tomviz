@@ -18,6 +18,8 @@ if(ENABLE_DAX_ACCELERATION)
     )
 endif()
 
+add_subdirectory(pvextensions)
+
 set(SOURCES
   ActiveObjects.cxx
   ActiveObjects.h
@@ -181,6 +183,7 @@ target_link_libraries(tomviz
     pqApplicationComponents
     vtkPVServerManagerRendering
     vtkpugixml
+    tomvizExtensions
   )
 if(WIN32)
   target_link_libraries(tomviz LINK_PRIVATE ${QT_QTMAIN_LIBRARY})
