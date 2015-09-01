@@ -19,7 +19,6 @@
 #include "Utilities.h"
 #include "vtkDataObject.h"
 #include "vtkDoubleArray.h"
-#include "vtkExtractVOI.h"
 #include "vtkFieldData.h"
 #include "vtkNew.h"
 #include "vtkImageData.h"
@@ -505,25 +504,6 @@ void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.
   tomviz::rescaleColorMap(this->colorMap(), this);
-}
-
-void DataSource::crop(int bounds[6])
-{
-  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-    this->Internals->Producer->GetClientSideObject());
-  Q_ASSERT(tp);
-
-  vtkDataObject* data = tp->GetOutputDataObject(0);
-  Q_ASSERT(data);
-
-  vtkNew<vtkExtractVOI> extractor;
-  extractor->SetVOI(bounds);
-  extractor->SetInputDataObject(data);
-  extractor->Update();
-  extractor->UpdateWholeExtent();
-  data->DeepCopy(extractor->GetOutputDataObject(0));
-  this->dataModified();
-  emit this->dataChanged();
 }
 
 }

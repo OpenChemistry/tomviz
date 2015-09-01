@@ -44,6 +44,8 @@ set(SOURCES
   CropDialog.h
   CropReaction.cxx
   CropReaction.h
+  CropOperator.cxx
+  CropOperator.h
   CropWidget.cxx
   CropWidget.h
   DataPropertiesPanel.cxx

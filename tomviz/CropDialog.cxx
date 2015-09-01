@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <math.h>
 
+#include "CropOperator.h"
 #include "DataSource.h"
 
 
@@ -152,9 +153,14 @@ CropDialog::~CropDialog()
 void CropDialog::crop()
 {
   int cropVolume[6];
-
   this->Internals->bounds(cropVolume);
-  this->Internals->dataSource->crop(cropVolume);
+
+  CropOperator* cropOperator = new CropOperator();
+  cropOperator->setCropBounds(cropVolume);
+
+  QSharedPointer<Operator> op(cropOperator);
+
+  this->Internals->dataSource->addOperator(op);
   this->Internals->savePosition(this->pos());
 }
 
