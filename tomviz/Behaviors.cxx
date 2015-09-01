@@ -28,6 +28,7 @@
 #include "pqViewStreamingBehavior.h"
 #include "ProgressBehavior.h"
 //#include "ScaleActorBehavior.h"
+#include "vtkSMReaderFactory.h"
 #include "vtkSMSettings.h"
 
 #include <QMainWindow>
@@ -50,6 +51,12 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   : Superclass(mainWindow)
 {
   Q_ASSERT(mainWindow);
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "JPEGSeriesReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "PNGSeriesReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "TIFFSeriesReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "ImageReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "MRCSeriesReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "CSVReader");
   vtkSMSettings::GetInstance()->AddCollectionFromString(settings, 0.0);
 
   // Register ParaView interfaces.
