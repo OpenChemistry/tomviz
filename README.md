@@ -25,6 +25,10 @@ and Windows.
 
 __Windows__: Follow the installation instructions, double click on the tomviz icon to launch application. __Mac OS X__: After downloading tomviz double click to launch installation. After reading the License Agreement, drag the tomviz icon into your Applications directory – or anywhere else you would like to store the application. The first time you open tomviz, you will need to right-click on the application icon and select ‘open’. It will ask you if you are sure you wish to open it, click the ‘open’ button. This is only required the first time launching the application. It can be opened by double clicking all future times. __Linux__: Currently, the Linux application must be built from source, instructions for building can be found in the BUILDING.md document found in the source code archive.
 
+Publications using tomviz
+------------
+[Graphene kirigami, M.K. Blees et al., Nature (2015)](http://www.nature.com/nature/journal/v524/n7564/full/nature14588.html)
+
 Contributing
 ------------
 
