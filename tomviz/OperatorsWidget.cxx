@@ -103,12 +103,15 @@ void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
   QSharedPointer<Operator> op = this->Internals->ItemMap[item];
   Q_ASSERT(op);
 
-  // Create a non-modal dialog, delete it once it has been closed.
-  EditPythonOperatorDialog *dialog =
-      new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
-  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  connect(dialog, SIGNAL(accepted()), SLOT(updateOperator()));
-  dialog->show();
+  if (dynamic_cast<OperatorPython*>(op.data()) != NULL)
+    {
+    // Create a non-modal dialog, delete it once it has been closed.
+    EditPythonOperatorDialog *dialog =
+        new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
+    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+    connect(dialog, SIGNAL(accepted()), SLOT(updateOperator()));
+    dialog->show();
+    }
 }
 
 void OperatorsWidget::onItemClicked(QTreeWidgetItem *item, int col)
