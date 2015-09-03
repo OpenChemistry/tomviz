@@ -145,7 +145,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout2->addWidget(label);
     QSpinBox *spinxx = new QSpinBox;
     spinxx->setRange(-extent[1], extent[1]);
-    spinxx->setValue(extent[0]);
+    spinxx->setValue(extent[1]);
     QSpinBox *spinyy = new QSpinBox;
     spinyy->setRange(-extent[3], extent[3]);
     spinyy->setValue(extent[3]);
