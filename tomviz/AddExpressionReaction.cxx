@@ -90,7 +90,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
   EditPythonOperatorDialog *dialog =
       new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  connect(dialog, SIGNAL(accepted()), SLOT(addOperator()));
+  connect(dialog, SIGNAL(applyChanges()), SLOT(addOperator()));
   dialog->show();
   return NULL;
 }
@@ -106,6 +106,14 @@ void AddExpressionReaction::addOperator()
   if (!source)
     {
     return;
+    }
+  const QList<QSharedPointer<Operator> >& currentOps = source->operators();
+  for (int i = 0; i < currentOps.size(); ++i)
+    {
+    if (currentOps[i].data() == dialog->op().data())
+      {
+      return;
+      }
     }
   source->addOperator(dialog->op());
 }

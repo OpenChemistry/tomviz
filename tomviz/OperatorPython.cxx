@@ -121,6 +121,13 @@ OperatorPython::~OperatorPython()
 }
 
 //-----------------------------------------------------------------------------
+void OperatorPython::setLabel(const QString& txt)
+{
+  this->Label = txt;
+  emit labelModified();
+}
+
+//-----------------------------------------------------------------------------
 QIcon OperatorPython::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqProgrammableFilter24.png");

@@ -54,6 +54,9 @@ signals:
   /// fire this signal with the operation is updated/modified
   /// implying that the data needs to be reprocessed.
   void transformModified();
+  /// fire this signal to indicate that the operator's label changed
+  /// and the GUI needs to refresh its display of the Operator
+  void labelModified();
 
 private:
   Q_DISABLE_COPY(Operator)

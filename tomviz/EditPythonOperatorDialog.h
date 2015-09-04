@@ -36,6 +36,9 @@ public:
 
   QSharedPointer<Operator>& op();
 
+signals:
+  void applyChanges();
+
 private slots:
   void acceptChanges();
 

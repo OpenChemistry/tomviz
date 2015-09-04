@@ -31,8 +31,7 @@ public:
   virtual ~OperatorPython();
 
   virtual QString label() const { return this->Label; }
-  void setLabel(const QString& txt)
-    { this->Label = txt; }
+  void setLabel(const QString& txt);
 
   /// Returns an icon to use for this operator.
   virtual QIcon icon() const;

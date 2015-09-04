@@ -21,7 +21,9 @@
 
 #include "pqPythonSyntaxHighlighter.h"
 
+#include <QDialogButtonBox>
 #include <QPointer>
+#include <QPushButton>
 
 namespace tomviz
 {
@@ -54,6 +56,9 @@ EditPythonOperatorDialog::EditPythonOperatorDialog(
     }
   new pqPythonSyntaxHighlighter(ui.script, this);
 
+  this->connect(ui.buttonBox->button(QDialogButtonBox::Apply), SIGNAL(clicked()),
+                SLOT(acceptChanges()));
+
   this->connect(this, SIGNAL(accepted()), SLOT(acceptChanges()));
 }
 
@@ -71,6 +76,7 @@ void EditPythonOperatorDialog::acceptChanges()
   Q_ASSERT(opPython);
   opPython->setLabel(ui.name->text());
   opPython->setScript(ui.script->toPlainText());
+  emit applyChanges();
 }
 
 QSharedPointer<Operator>& EditPythonOperatorDialog::op()

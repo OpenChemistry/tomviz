@@ -43,7 +43,7 @@ private slots:
 
   void itemDoubleClicked(QTreeWidgetItem*);
 
-  void updateOperator();
+  void updateOperatorLabel();
 
 private:
   Q_DISABLE_COPY(OperatorsWidget)
