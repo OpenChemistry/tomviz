@@ -16,12 +16,17 @@
 #include "vtkPython.h"
 #include "OperatorPython.h"
 
+#include <QPointer>
 #include <QtDebug>
 
+#include "EditOperatorWidget.h"
+#include "pqPythonSyntaxHighlighter.h"
 #include "vtkDataObject.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
 #include <sstream>
+
+#include "ui_EditPythonOperatorWidget.h"
 
 namespace
 {
@@ -87,6 +92,37 @@ namespace
       }
     return false;
     }
+
+  class EditPythonOperatorWidget : public tomviz::EditOperatorWidget
+  {
+    Q_OBJECT
+    typedef tomviz::EditOperatorWidget Superclass;
+  public:
+    EditPythonOperatorWidget(QWidget *p, tomviz::OperatorPython *o)
+      : Superclass(p), Op(o), Ui()
+    {
+      this->Ui.setupUi(this);
+      this->Ui.name->setText(o->label());
+      if (!o->script().isEmpty())
+      {
+        this->Ui.script->setPlainText(o->script());
+      }
+      new pqPythonSyntaxHighlighter(this->Ui.script, this);
+    }
+    virtual void applyChangesToOperator()
+    {
+      if (this->Op)
+      {
+        this->Op->setLabel(this->Ui.name->text());
+        this->Op->setScript(this->Ui.script->toPlainText());
+      }
+    }
+  private:
+    QPointer<tomviz::OperatorPython> Op;
+    Ui::EditPythonOperatorWidget Ui;
+  };
+
+#include "OperatorPython.moc"
 }
 
 namespace tomviz
@@ -228,6 +264,11 @@ bool OperatorPython::deserialize(const pugi::xml_node& ns)
   this->setLabel(ns.attribute("label").as_string());
   this->setScript(ns.attribute("script").as_string());
   return true;
+}
+
+EditOperatorWidget *OperatorPython::getEditorContents(QWidget *p)
+{
+  return new EditPythonOperatorWidget(p, this);
 }
 
 }

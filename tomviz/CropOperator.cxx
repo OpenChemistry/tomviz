@@ -92,4 +92,9 @@ void CropOperator::setCropBounds(const int bounds[6])
   emit this->transformModified();
 }
 
+EditOperatorWidget *CropOperator::getEditorContents(QWidget *p)
+{
+  return NULL; // TODO - fixme
+}
+
 }

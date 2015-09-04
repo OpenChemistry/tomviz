@@ -54,8 +54,10 @@ set(SOURCES
   DataSource.h
   DeleteDataReaction.cxx
   DeleteDataReaction.h
-  EditPythonOperatorDialog.cxx
-  EditPythonOperatorDialog.h
+  EditOperatorDialog.cxx
+  EditOperatorDialog.h
+  EditOperatorWidget.cxx
+  EditOperatorWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   LoadTomvizExtensionsBehavior.cxx
@@ -153,7 +155,7 @@ qt4_wrap_ui(UI_SOURCES
   CentralWidget.ui
   CropDialog.ui
   DataPropertiesPanel.ui
-  EditPythonOperatorDialog.ui
+  EditPythonOperatorWidget.ui
   MainWindow.ui
   ModulePropertiesPanel.ui
   ViewPropertiesPanel.ui

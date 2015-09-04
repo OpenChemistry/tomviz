@@ -48,6 +48,8 @@ public:
   void setScript(const QString& str);
   const QString& script() const { return this->Script; }
 
+  EditOperatorWidget* getEditorContents(QWidget* parent);
+
 private:
   Q_DISABLE_COPY(OperatorPython)
 

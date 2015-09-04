@@ -25,27 +25,33 @@ namespace tomviz
 {
 class Operator;
 
-class EditPythonOperatorDialog : public QDialog
+class EditOperatorDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
 public:
-  EditPythonOperatorDialog(QSharedPointer<Operator> &op,
+  EditOperatorDialog(QSharedPointer<Operator> &op,
                            QWidget* parent = NULL);
-  virtual ~EditPythonOperatorDialog();
+  virtual ~EditOperatorDialog();
 
   QSharedPointer<Operator>& op();
 
 signals:
+  /// This signals that either Apply or OK has been pressed on
+  /// the dialog.  In most cases this should be handled internally
+  /// since this will call applyChangesToOperator() on the operator's
+  /// editor widget before emitting this signal.  But this can
+  /// be used for first-time operator creation to add the operator to
+  /// the data source.
   void applyChanges();
 
 private slots:
-  void acceptChanges();
+  void onApply();
 
 private:
-  Q_DISABLE_COPY(EditPythonOperatorDialog)
-  class EPODInternals;
-  QScopedPointer<EPODInternals> Internals;
+  Q_DISABLE_COPY(EditOperatorDialog)
+  class EODInternals;
+  QScopedPointer<EODInternals> Internals;
 };
 
 }

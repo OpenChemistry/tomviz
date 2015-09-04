@@ -19,7 +19,7 @@
 #include "DataSource.h"
 #include "OperatorPython.h"
 #include "pqCoreUtilities.h"
-#include "EditPythonOperatorDialog.h"
+#include "EditOperatorDialog.h"
 
 namespace tomviz
 {
@@ -87,8 +87,8 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
   opPython->setLabel("Transform Data");
 
   // Create a non-modal dialog, delete it once it has been closed.
-  EditPythonOperatorDialog *dialog =
-      new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
+  EditOperatorDialog *dialog =
+      new EditOperatorDialog(op, pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   connect(dialog, SIGNAL(applyChanges()), SLOT(addOperator()));
   dialog->show();
@@ -97,8 +97,8 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
 
 void AddExpressionReaction::addOperator()
 {
-  EditPythonOperatorDialog *dialog =
-      qobject_cast<EditPythonOperatorDialog*>(sender());
+  EditOperatorDialog *dialog =
+      qobject_cast<EditOperatorDialog*>(sender());
   if (!dialog)
     return;
 
@@ -107,15 +107,8 @@ void AddExpressionReaction::addOperator()
     {
     return;
     }
-  const QList<QSharedPointer<Operator> >& currentOps = source->operators();
-  for (int i = 0; i < currentOps.size(); ++i)
-    {
-    if (currentOps[i].data() == dialog->op().data())
-      {
-      return;
-      }
-    }
   source->addOperator(dialog->op());
+  disconnect(dialog, SIGNAL(applyChanges()), this, SLOT(addOperator()));
 }
 
 }

@@ -40,6 +40,8 @@ public:
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
 
+  virtual EditOperatorWidget *getEditorContents(QWidget* parent);
+
   void setCropBounds(const int bounds[6]);
   const int* cropBounds() const
     { return this->CropBounds; }

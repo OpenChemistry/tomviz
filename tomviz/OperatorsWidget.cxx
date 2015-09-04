@@ -18,7 +18,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "EditPythonOperatorDialog.h"
+#include "EditOperatorDialog.h"
 #include "OperatorPython.h"
 #include "pqCoreUtilities.h"
 
@@ -104,14 +104,11 @@ void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
   QSharedPointer<Operator> op = this->Internals->ItemMap[item];
   Q_ASSERT(op);
 
-  if (dynamic_cast<OperatorPython*>(op.data()) != NULL)
-    {
-    // Create a non-modal dialog, delete it once it has been closed.
-    EditPythonOperatorDialog *dialog =
-        new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
-    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-    dialog->show();
-    }
+  // Create a non-modal dialog, delete it once it has been closed.
+  EditOperatorDialog *dialog =
+    new EditOperatorDialog(op, pqCoreUtilities::mainWidget());
+  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+  dialog->show();
 }
 
 void OperatorsWidget::onItemClicked(QTreeWidgetItem *item, int col)
