@@ -1,6 +1,6 @@
 def transform_scalars(dataset):
     """Apply a Sobel filter to dataset."""
-    """Sobel Filter hgihtlights high intensity variations."""
+    """Sobel Filter hgihlights high intensity variations."""
     
     #----USER SPECIFIED VARIABLES-----#
     ###Filter_AXIS###    #Specify Axis along which to calculate
