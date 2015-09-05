@@ -219,6 +219,35 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
           source->addOperator(op);
       }
   }
+  else if (scriptLabel == "Sobel Filter") //UI for Sobel Filter
+  {
+      QDialog dialog(pqCoreUtilities::mainWidget());
+      QHBoxLayout *layout = new QHBoxLayout;
+      QLabel *label = new QLabel("Axis:");
+      layout->addWidget(label);
+      QSpinBox *axis = new QSpinBox;
+      axis->setRange(0, 2);
+      axis->setValue(0);
+      layout->addWidget(label);
+      layout->addWidget(axis);
+      QVBoxLayout *v = new QVBoxLayout;
+      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
+      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+      v->addLayout(layout);
+      v->addWidget(buttons);
+      dialog.setLayout(v);
+      
+      if (dialog.exec() == QDialog::Accepted)
+      {
+          QString cropScript = scriptSource;
+          cropScript.replace("###Filter_AXIS###",
+                             QString("Filter_AXIS = %1").arg(axis->value()) );
+          opPython->setScript(cropScript);
+          source->addOperator(op);
+      }
+  }
   else if (interactive)
     {
     // Create a non-modal dialog, delete it once it has been closed.
