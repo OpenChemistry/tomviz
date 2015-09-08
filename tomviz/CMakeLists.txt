@@ -40,8 +40,6 @@ set(SOURCES
   CentralWidget.h
   CloneDataReaction.cxx
   CloneDataReaction.h
-  CropDialog.cxx
-  CropDialog.h
   CropReaction.cxx
   CropReaction.h
   CropOperator.cxx
@@ -153,7 +151,7 @@ endforeach()
 qt4_wrap_ui(UI_SOURCES
   AboutDialog.ui
   CentralWidget.ui
-  CropDialog.ui
+  CropWidget.ui
   DataPropertiesPanel.ui
   EditPythonOperatorWidget.ui
   MainWindow.ui

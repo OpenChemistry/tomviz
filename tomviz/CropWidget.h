@@ -16,41 +16,35 @@
 #ifndef tomvizCropWidget_h
 #define tomvizCropWidget_h
 
-#include <QObject>
+#include "EditOperatorWidget.h"
 #include <QScopedPointer>
 
-#include <vtkNew.h>
-#include <vtkSmartPointer.h>
-
-class vtkBoxWidget2;
-class vtkRenderWindowInteractor;
-class vtkEventQtSlotConnect;
 class vtkObject;
 
 namespace tomviz
 {
 
-class DataSource;
+class CropOperator;
 
-class CropWidget : public QObject
+class CropWidget : public EditOperatorWidget
 {
   Q_OBJECT
+  typedef EditOperatorWidget Superclass;
 
 public:
-  CropWidget(DataSource* source, vtkRenderWindowInteractor* iren,
-      QObject* parent = 0);
+  CropWidget(CropOperator *source,
+             QWidget* parent = 0);
   virtual ~CropWidget();
 
   void getBounds(double bounds[6]);
 
-public slots:
-  void updateBounds(int* boxBounds);
+  virtual void applyChangesToOperator();
 
 private slots:
   void interactionEnd(vtkObject* caller);
-
-signals:
-  void bounds(double *bounds);
+  void valueChanged();
+  void updateBounds(int* bounds);
+  void updateBounds(double *bounds);
 
 private:
   class CWInternals;

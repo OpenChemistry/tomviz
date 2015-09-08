@@ -16,20 +16,27 @@
 
 #include "CropOperator.h"
 
+#include "CropWidget.h"
 #include "vtkDataObject.h"
 #include "vtkExtractVOI.h"
+#include "vtkImageData.h"
 #include "vtkNew.h"
 
 namespace tomviz
 {
 
-CropOperator::CropOperator(QObject* p)
+CropOperator::CropOperator(const int *dataExtent, const double *dataOrigin,
+                           const double *dataSpacing, QObject* p)
   : Superclass(p)
 {
+  // By default include the entire volume
   for (int i = 0; i < 6; ++i)
   {
-    this->CropBounds[i] = 0;
+    this->CropBounds[i] = dataExtent[i];
   }
+  std::copy(dataExtent, dataExtent + 6, this->InputDataExtent);
+  std::copy(dataOrigin, dataOrigin + 3, this->InputDataOrigin);
+  std::copy(dataSpacing, dataSpacing + 3, this->InputDataSpacing);
 }
 
 CropOperator::~CropOperator()
@@ -43,6 +50,10 @@ QIcon CropOperator::icon() const
 
 bool CropOperator::transform(vtkDataObject* data)
 {
+  vtkImageData *imageData = vtkImageData::SafeDownCast(data);
+  imageData->GetExtent(this->InputDataExtent);
+  imageData->GetOrigin(this->InputDataOrigin);
+  imageData->GetSpacing(this->InputDataSpacing);
   vtkNew<vtkExtractVOI> extractor;
   extractor->SetVOI(this->CropBounds);
   extractor->SetInputDataObject(data);
@@ -54,7 +65,9 @@ bool CropOperator::transform(vtkDataObject* data)
 
 Operator* CropOperator::clone() const
 {
-  CropOperator *other = new CropOperator();
+  CropOperator *other = new CropOperator(this->InputDataExtent,
+                                         this->InputDataOrigin,
+                                         this->InputDataSpacing);
   other->setCropBounds(this->CropBounds);
   return other;
 }
@@ -94,7 +107,22 @@ void CropOperator::setCropBounds(const int bounds[6])
 
 EditOperatorWidget *CropOperator::getEditorContents(QWidget *p)
 {
-  return NULL; // TODO - fixme
+  return new CropWidget(this, p);
+}
+
+void CropOperator::inputDataExtent(int *extent)
+{
+  std::copy(this->InputDataExtent, this->InputDataExtent + 6, extent);
+}
+
+void CropOperator::inputDataOrigin(double *origin)
+{
+  std::copy(this->InputDataOrigin, this->InputDataOrigin + 3, origin);
+}
+
+void CropOperator::inputDataSpacing(double *spacing)
+{
+  std::copy(this->InputDataSpacing, this->InputDataSpacing + 3, spacing);
 }
 
 }

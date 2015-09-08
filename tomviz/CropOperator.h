@@ -26,7 +26,8 @@ class CropOperator : public Operator
   typedef Operator Superclass;
 
 public:
-  CropOperator(QObject* parent=NULL);
+  CropOperator(const int *dataExtent, const double *dataOrigin,
+               const double *dataSpacing, QObject* parent=NULL);
   virtual ~CropOperator();
 
   virtual QString label() const { return "Crop"; }
@@ -46,8 +47,16 @@ public:
   const int* cropBounds() const
     { return this->CropBounds; }
 
+  // Used for the editor dialog
+  void inputDataExtent(int *extent);
+  void inputDataOrigin(double *origin);
+  void inputDataSpacing(double *spacing);
+
 private:
   int CropBounds[6];
+  int InputDataExtent[6];
+  double InputDataOrigin[3];
+  double InputDataSpacing[3];
   Q_DISABLE_COPY(CropOperator)
 };
 

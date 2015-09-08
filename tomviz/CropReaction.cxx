@@ -17,8 +17,6 @@
 
 #include <QDebug>
 #include <QMainWindow>
-#include <QVBoxLayout>
-#include <QDialog>
 #include <QAction>
 #include <vtkCommand.h>
 #include <vtkImageData.h>
@@ -31,8 +29,8 @@
 #include <pqCoreUtilities.h>
 
 #include "ActiveObjects.h"
-#include "CropDialog.h"
-#include "CropWidget.h"
+#include "CropOperator.h"
+#include "EditOperatorDialog.h"
 #include "DataSource.h"
 
 
@@ -68,16 +66,14 @@ void CropReaction::crop(DataSource* source)
     qDebug() << "Exiting early - no data :-(";
     return;
     }
+  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+    source->producer()->GetClientSideObject());
+  vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-  CropDialog* dialog = new CropDialog(this->mainWindow, source);
-  vtkSMViewProxy *viewProxy = ActiveObjects::instance().activeView();
-  CropWidget *w = new CropWidget(source, viewProxy->GetRenderWindow()->GetInteractor(), dialog);
+  QSharedPointer<Operator> Op(new CropOperator(image->GetExtent(), image->GetOrigin(),
+                                               image->GetSpacing()));
 
-  this->connect(w, SIGNAL(bounds(double*)),
-                           dialog, SLOT(updateBounds(double*)));
-  this->connect(dialog, SIGNAL(bounds(int*)),
-                w, SLOT(updateBounds(int*)));
-
+  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, this->mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
 }
