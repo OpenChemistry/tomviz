@@ -44,6 +44,7 @@ public:
 
 private slots:
   void onApply();
+  void onClose();
 
 private:
   Q_DISABLE_COPY(EditOperatorDialog)

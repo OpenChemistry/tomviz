@@ -20,11 +20,14 @@
 #include "EditOperatorWidget.h"
 #include "Operator.h"
 
+#include "pqApplicationCore.h"
 #include "pqPythonSyntaxHighlighter.h"
+#include "pqSettings.h"
 
 #include <QDialogButtonBox>
 #include <QPointer>
 #include <QPushButton>
+#include <QVariant>
 #include <QVBoxLayout>
 
 
@@ -38,6 +41,22 @@ public:
   EditOperatorWidget *Widget;
   bool needsToBeAdded;
   DataSource *dataSource;
+
+  void savePosition(const QPoint& pos)
+  {
+    QSettings *settings = pqApplicationCore::instance()->settings();
+    QString settingName = QString("Edit%1OperatorDialogPosition")
+                          .arg(Op->label());
+    settings->setValue(settingName, QVariant(pos));
+  }
+
+  QVariant loadPosition()
+  {
+    QSettings *settings = pqApplicationCore::instance()->settings();
+    QString settingName = QString("Edit%1OperatorDialogPosition")
+                          .arg(Op->label());
+    return settings->value(settingName);
+  }
 };
 
 //-----------------------------------------------------------------------------
@@ -52,6 +71,12 @@ EditOperatorDialog::EditOperatorDialog(
   this->Internals->Op = o;
   this->Internals->dataSource = dataSource;
   this->Internals->needsToBeAdded = (dataSource != NULL);
+
+  QVariant position = this->Internals->loadPosition();
+  if (!position.isNull())
+  {
+    this->move(position.toPoint());
+  }
 
   QVBoxLayout* vLayout = new QVBoxLayout(this);
   EditOperatorWidget* opWidget = o->getEditorContents(this);
@@ -69,6 +94,8 @@ EditOperatorDialog::EditOperatorDialog(
   this->connect(dialogButtons->button(QDialogButtonBox::Apply), SIGNAL(clicked()),
                    SLOT(onApply()));
   this->connect(this, SIGNAL(accepted()), SLOT(onApply()));
+  this->connect(this, SIGNAL(accepted()), SLOT(onClose()));
+  this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
 }
 
 //-----------------------------------------------------------------------------
@@ -89,6 +116,11 @@ void EditOperatorDialog::onApply()
     this->Internals->dataSource->addOperator(this->Internals->Op);
     this->Internals->needsToBeAdded = false;
   }
+}
+
+void EditOperatorDialog::onClose()
+{
+  this->Internals->savePosition(this->pos());
 }
 
 }
