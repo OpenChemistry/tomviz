@@ -187,7 +187,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       layout1->addWidget(label);
       QDoubleSpinBox *angle = new QDoubleSpinBox;
       angle->setRange(0, 360);
-      angle->setValue(0);
+      angle->setValue(90);
       layout1->addWidget(label);
       layout1->addWidget(angle);
       QHBoxLayout *layout2 = new QHBoxLayout;
@@ -195,7 +195,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       layout2->addWidget(label);
       QSpinBox *axis = new QSpinBox;
       axis->setRange(0, 2);
-      axis->setValue(0);
+      axis->setValue(2);
       layout2->addWidget(label);
       layout2->addWidget(axis);
       QVBoxLayout *v = new QVBoxLayout;
