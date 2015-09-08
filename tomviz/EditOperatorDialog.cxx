@@ -16,6 +16,7 @@
  ******************************************************************************/
 #include "EditOperatorDialog.h"
 
+#include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "Operator.h"
 
@@ -34,16 +35,23 @@ class EditOperatorDialog::EODInternals
 {
 public:
   QSharedPointer<Operator> Op;
+  EditOperatorWidget *Widget;
+  bool needsToBeAdded;
+  DataSource *dataSource;
 };
 
 //-----------------------------------------------------------------------------
 EditOperatorDialog::EditOperatorDialog(
-  QSharedPointer<Operator> &o, QWidget* parentObject)
+  QSharedPointer<Operator> &o,
+  DataSource *dataSource,
+  QWidget* parentObject)
   : Superclass(parentObject),
   Internals (new EditOperatorDialog::EODInternals())
 {
   Q_ASSERT(o);
   this->Internals->Op = o;
+  this->Internals->dataSource = dataSource;
+  this->Internals->needsToBeAdded = (dataSource != NULL);
 
   QVBoxLayout* vLayout = new QVBoxLayout(this);
   EditOperatorWidget* opWidget = o->getEditorContents(this);
@@ -52,16 +60,14 @@ EditOperatorDialog::EditOperatorDialog(
       QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok,
       Qt::Horizontal, this);
   vLayout->addWidget(dialogButtons);
+  this->Internals->Widget = opWidget;
 
   this->setLayout(vLayout);
   this->connect(dialogButtons, SIGNAL(accepted()), SLOT(accept()));
   this->connect(dialogButtons, SIGNAL(rejected()), SLOT(reject()));
 
-  QObject::connect(dialogButtons->button(QDialogButtonBox::Apply), SIGNAL(clicked()),
-                   opWidget, SLOT(applyChangesToOperator()));
   this->connect(dialogButtons->button(QDialogButtonBox::Apply), SIGNAL(clicked()),
                    SLOT(onApply()));
-  QObject::connect(this, SIGNAL(accepted()), opWidget, SLOT(applyChangesToOperator()));
   this->connect(this, SIGNAL(accepted()), SLOT(onApply()));
 }
 
@@ -77,7 +83,12 @@ QSharedPointer<Operator>& EditOperatorDialog::op()
 
 void EditOperatorDialog::onApply()
 {
-  emit applyChanges();
+  this->Internals->Widget->applyChangesToOperator();
+  if (this->Internals->needsToBeAdded && this->Internals->dataSource != NULL)
+  {
+    this->Internals->dataSource->addOperator(this->Internals->Op);
+    this->Internals->needsToBeAdded = false;
+  }
 }
 
 }

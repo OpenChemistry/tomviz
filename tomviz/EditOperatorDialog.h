@@ -24,26 +24,23 @@
 namespace tomviz
 {
 class Operator;
+class DataSource;
 
 class EditOperatorDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
 public:
+  // Creates an editor dialog for the given operator.  If this is creating a
+  // new operator, then pass in the data source that the operator needs to be
+  // added to and the first time that apply or OK is clicked it will be added
+  // to that data source.
   EditOperatorDialog(QSharedPointer<Operator> &op,
-                           QWidget* parent = NULL);
+                     DataSource* dataSource = NULL,
+                     QWidget* parent = NULL);
   virtual ~EditOperatorDialog();
 
   QSharedPointer<Operator>& op();
-
-signals:
-  /// This signals that either Apply or OK has been pressed on
-  /// the dialog.  In most cases this should be handled internally
-  /// since this will call applyChangesToOperator() on the operator's
-  /// editor widget before emitting this signal.  But this can
-  /// be used for first-time operator creation to add the operator to
-  /// the data source.
-  void applyChanges();
 
 private slots:
   void onApply();

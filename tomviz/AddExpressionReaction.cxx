@@ -88,27 +88,10 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
 
   // Create a non-modal dialog, delete it once it has been closed.
   EditOperatorDialog *dialog =
-      new EditOperatorDialog(op, pqCoreUtilities::mainWidget());
+      new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  connect(dialog, SIGNAL(applyChanges()), SLOT(addOperator()));
   dialog->show();
   return NULL;
-}
-
-void AddExpressionReaction::addOperator()
-{
-  EditOperatorDialog *dialog =
-      qobject_cast<EditOperatorDialog*>(sender());
-  if (!dialog)
-    return;
-
-  DataSource *source = ActiveObjects::instance().activeDataSource();
-  if (!source)
-    {
-    return;
-    }
-  source->addOperator(dialog->op());
-  disconnect(dialog, SIGNAL(applyChanges()), this, SLOT(addOperator()));
 }
 
 }
