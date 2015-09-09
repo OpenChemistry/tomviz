@@ -56,8 +56,6 @@ set(SOURCES
   EditPythonOperatorDialog.h
   LoadDataReaction.cxx
   LoadDataReaction.h
-  LoadTomvizExtensionsBehavior.cxx
-  LoadTomvizExtensionsBehavior.h
   main.cxx
   MainWindow.cxx
   MainWindow.h

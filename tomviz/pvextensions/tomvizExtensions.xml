@@ -146,4 +146,11 @@
       <!-- End ImageReader -->
     </SourceProxy>
   </ProxyGroup>
+    <ProxyGroup name="tomviz_proxies">
+      <Proxy name="NonOrthogonalSlice">
+        <IntVectorProperty default_values="1" number_of_elements="1" name="ShowArrow">
+          <BooleanDomain name="bool"/>
+        </IntVectorProperty>
+      </Proxy>
+    </ProxyGroup>
 </ServerManagerConfiguration>
