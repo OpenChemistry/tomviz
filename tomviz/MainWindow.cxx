@@ -63,7 +63,7 @@
 #include "MisalignImgs_Gaussian.h"
 #include "Rotate3D.h"
 #include "HannWindow3D.h"
-
+#include "SobelFilter.h"
 #include <QFileInfo>
 
 //we are building with dax, so we have plugins to import
@@ -177,6 +177,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *hannWindowAction = new QAction("Hann Window", this);
   QAction *fftAbsLogAction = new QAction("FFT (abs log)", this);
   //QAction *resampleDataAction = new QAction("Clone && Downsample", this);
+  QAction *sobelFilterAction = new QAction("Sobel Filter", this);
 
   ui.menuData->insertAction(ui.actionAlign, customPythonAction);
   ui.menuData->insertAction(ui.actionAlign, cropDataAction);
@@ -194,6 +195,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->insertAction(ui.actionClone, squareRootAction);
   ui.menuData->insertAction(ui.actionClone, hannWindowAction);
   ui.menuData->insertAction(ui.actionClone, fftAbsLogAction);
+  ui.menuData->insertAction(ui.actionClone, sobelFilterAction);
   ui.menuData->insertSeparator(ui.actionClone);
   //ui.menuData->insertAction(ui.actionClone, resampleDataAction);
 
@@ -227,7 +229,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Hann Window", HannWindow3D);
   new AddPythonTransformReaction(fftAbsLogAction,
                                  "FFT (ABS LOG)", FFT_AbsLog);
-
+  new AddPythonTransformReaction(sobelFilterAction,
+                                   "Sobel Filter", SobelFilter);
+    
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSaveDebuggingState);
