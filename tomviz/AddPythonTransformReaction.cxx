@@ -84,15 +84,15 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     QDialog dialog(pqCoreUtilities::mainWidget());
     QHBoxLayout *layout = new QHBoxLayout;
-    QLabel *label = new QLabel("Shift to apply:");
+    QLabel *label = new QLabel("Shift to apply:", &dialog);
     layout->addWidget(label);
-    QSpinBox *spinx = new QSpinBox;
+    QSpinBox *spinx = new QSpinBox(&dialog);
     spinx->setRange(-(extent[1]-extent[0]), extent[1]-extent[0]);
     spinx->setValue(0);
-    QSpinBox *spiny = new QSpinBox;
+    QSpinBox *spiny = new QSpinBox(&dialog);
     spiny->setRange(-(extent[3]-extent[2]), extent[3]-extent[2]);
     spiny->setValue(0);
-    QSpinBox *spinz = new QSpinBox;
+    QSpinBox *spinz = new QSpinBox(&dialog);
     spinz->setRange(-(extent[5]-extent[4]), extent[5]-extent[4]);
     spinz->setValue(0);
     layout->addWidget(spinx);
@@ -100,7 +100,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout->addWidget(spinz);
     QVBoxLayout *v = new QVBoxLayout;
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                     | QDialogButtonBox::Cancel);
+                                                     | QDialogButtonBox::Cancel,
+                                                     Qt::Horizontal,
+                                                     &dialog);
     connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
     connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
     v->addLayout(layout);
@@ -126,15 +128,15 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     QDialog dialog(pqCoreUtilities::mainWidget());
     QHBoxLayout *layout1 = new QHBoxLayout;
-    QLabel *label = new QLabel("Crop data start:");
+    QLabel *label = new QLabel("Crop data start:", &dialog);
     layout1->addWidget(label);
-    QSpinBox *spinx = new QSpinBox;
+    QSpinBox *spinx = new QSpinBox(&dialog);
     spinx->setRange(extent[0], extent[1]);
     spinx->setValue(extent[0]);
-    QSpinBox *spiny = new QSpinBox;
+    QSpinBox *spiny = new QSpinBox(&dialog);
     spiny->setRange(extent[2], extent[3]);
     spiny->setValue(extent[2]);
-    QSpinBox *spinz = new QSpinBox;
+    QSpinBox *spinz = new QSpinBox(&dialog);
     spinz->setRange(extent[4], extent[5]);
     spinz->setValue(extent[4]);
     layout1->addWidget(label);
@@ -142,15 +144,15 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout1->addWidget(spiny);
     layout1->addWidget(spinz);
     QHBoxLayout *layout2 = new QHBoxLayout;
-    label = new QLabel("Crop data end:");
+    label = new QLabel("Crop data end:", &dialog);
     layout2->addWidget(label);
-    QSpinBox *spinxx = new QSpinBox;
+    QSpinBox *spinxx = new QSpinBox(&dialog);
     spinxx->setRange(extent[0], extent[1]);
     spinxx->setValue(extent[1]);
-    QSpinBox *spinyy = new QSpinBox;
+    QSpinBox *spinyy = new QSpinBox(&dialog);
     spinyy->setRange(extent[2], extent[3]);
     spinyy->setValue(extent[3]);
-    QSpinBox *spinzz = new QSpinBox;
+    QSpinBox *spinzz = new QSpinBox(&dialog);
     spinzz->setRange(extent[4], extent[5]);
     spinzz->setValue(extent[5]);
     layout2->addWidget(label);
@@ -159,7 +161,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout2->addWidget(spinzz);
     QVBoxLayout *v = new QVBoxLayout;
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                     | QDialogButtonBox::Cancel);
+                                                     | QDialogButtonBox::Cancel,
+                                                     Qt::Horizontal,
+                                                     &dialog);
     connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
     connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
     v->addLayout(layout1);
@@ -184,15 +188,15 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   {
       QDialog dialog(pqCoreUtilities::mainWidget());
       QHBoxLayout *layout1 = new QHBoxLayout;
-      QLabel *label = new QLabel("Rotate Angle:");
+      QLabel *label = new QLabel("Rotate Angle:", &dialog);
       layout1->addWidget(label);
-      QDoubleSpinBox *angle = new QDoubleSpinBox;
+      QDoubleSpinBox *angle = new QDoubleSpinBox(&dialog);
       angle->setRange(0, 360);
       angle->setValue(90);
       layout1->addWidget(label);
       layout1->addWidget(angle);
       QHBoxLayout *layout2 = new QHBoxLayout;
-      label = new QLabel("Rotate Axis:");
+      label = new QLabel("Rotate Axis:", &dialog);
       layout2->addWidget(label);
       QComboBox *axis = new QComboBox(&dialog);
       axis->addItem("X");
@@ -203,7 +207,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       layout2->addWidget(axis);
       QVBoxLayout *v = new QVBoxLayout;
       QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel);
+                                                       | QDialogButtonBox::Cancel,
+                                                       Qt::Horizontal,
+                                                       &dialog);
       connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
       connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
       v->addLayout(layout1);
@@ -226,7 +232,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   {
       QDialog dialog(pqCoreUtilities::mainWidget());
       QHBoxLayout *layout = new QHBoxLayout;
-      QLabel *label = new QLabel("Axis:");
+      QLabel *label = new QLabel("Axis:", &dialog);
       layout->addWidget(label);
       QComboBox *axis = new QComboBox(&dialog);
       axis->addItem("X");
@@ -237,7 +243,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       layout->addWidget(axis);
       QVBoxLayout *v = new QVBoxLayout;
       QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel);
+                                                       | QDialogButtonBox::Cancel,
+                                                       Qt::Horizontal,
+                                                       &dialog);
       connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
       connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
       v->addLayout(layout);
