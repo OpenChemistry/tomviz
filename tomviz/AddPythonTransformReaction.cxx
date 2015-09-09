@@ -25,6 +25,7 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
 
+#include <QComboBox>
 #include <QDialog>
 #include <QLabel>
 #include <QSpinBox>
@@ -193,9 +194,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QHBoxLayout *layout2 = new QHBoxLayout;
       label = new QLabel("Rotate Axis:");
       layout2->addWidget(label);
-      QSpinBox *axis = new QSpinBox;
-      axis->setRange(0, 2);
-      axis->setValue(2);
+      QComboBox *axis = new QComboBox(&dialog);
+      axis->addItem("X");
+      axis->addItem("Y");
+      axis->addItem("Z");
+      axis->setCurrentIndex(2);
       layout2->addWidget(label);
       layout2->addWidget(axis);
       QVBoxLayout *v = new QVBoxLayout;
@@ -212,7 +215,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       {
           QString cropScript = scriptSource;
           cropScript.replace("###ROT_AXIS###",
-                             QString("ROT_AXIS = %1").arg(axis->value()) );
+                             QString("ROT_AXIS = %1").arg(axis->currentIndex()) );
           cropScript.replace("###ROT_ANGLE###",
                              QString("ROT_ANGLE = %1").arg(angle->value()) );
           opPython->setScript(cropScript);
@@ -225,9 +228,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QHBoxLayout *layout = new QHBoxLayout;
       QLabel *label = new QLabel("Axis:");
       layout->addWidget(label);
-      QSpinBox *axis = new QSpinBox;
-      axis->setRange(0, 2);
-      axis->setValue(0);
+      QComboBox *axis = new QComboBox(&dialog);
+      axis->addItem("X");
+      axis->addItem("Y");
+      axis->addItem("Z");
+      axis->setCurrentIndex(2);
       layout->addWidget(label);
       layout->addWidget(axis);
       QVBoxLayout *v = new QVBoxLayout;
@@ -243,7 +248,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       {
           QString cropScript = scriptSource;
           cropScript.replace("###Filter_AXIS###",
-                             QString("Filter_AXIS = %1").arg(axis->value()) );
+                             QString("Filter_AXIS = %1").arg(axis->currentIndex()) );
           opPython->setScript(cropScript);
           source->addOperator(op);
       }
