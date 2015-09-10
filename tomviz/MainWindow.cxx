@@ -65,6 +65,7 @@
 #include "HannWindow3D.h"
 #include "SobelFilter.h"
 #include "LaplaceFilter.h"
+#include "Resample.h"
 
 #include <QFileInfo>
 
@@ -172,6 +173,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
   QAction *downsampleByTwoAction = new QAction("Downsample x2", this);
+  QAction *resampleAction = new QAction("Resample", this);
   QAction *rotateAction = new QAction("Rotate", this);
   //QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
   //QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
@@ -190,6 +192,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
   ui.menuData->insertAction(ui.actionReconstruct, shiftUniformAction);
   ui.menuData->insertAction(ui.actionReconstruct, downsampleByTwoAction);
+  ui.menuData->insertAction(ui.actionReconstruct, resampleAction);
   ui.menuData->insertAction(ui.actionReconstruct, rotateAction);
   //ui.menuData->insertAction(ui.actionReconstruct, misalignUniformAction);
   //ui.menuData->insertAction(ui.actionReconstruct, misalignGaussianAction);
@@ -217,6 +220,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Shift Uniformly", Shift_Stack_Uniformly);
   new AddPythonTransformReaction(downsampleByTwoAction,
                                    "Downsample x2", DownsampleByTwo);
+  new AddPythonTransformReaction(resampleAction,
+                                   "Resample", Resample);
   new AddPythonTransformReaction(rotateAction,
                                  "Rotate", Rotate3D);
   //new AddPythonTransformReaction(misalignUniformAction,

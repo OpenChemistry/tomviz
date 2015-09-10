@@ -130,6 +130,7 @@ set(python_files
   HannWindow3D.py
   SobelFilter.py
   LaplaceFilter.py
+  Resample.py
   )
 unset(python_h_files)
 foreach(file ${python_files})
