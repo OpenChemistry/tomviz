@@ -66,7 +66,6 @@
 #include "SobelFilter.h"
 #include "LaplaceFilter.h"
 
->>>>>>> Added a laplace filter
 #include <QFileInfo>
 
 //we are building with dax, so we have plugins to import
