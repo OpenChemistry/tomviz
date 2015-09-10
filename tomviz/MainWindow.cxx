@@ -313,31 +313,31 @@ void MainWindow::openRecon()
 
 void MainWindow::dataSourceChanged(DataSource*)
 {
-  QVBoxLayout *layout =
+  QVBoxLayout *propsLayout =
       qobject_cast<QVBoxLayout *>(this->Internals->Ui.propertiesPanel->layout());
-  if (!layout)
+  if (!propsLayout)
     {
-    layout = new QVBoxLayout;
-    this->Internals->Ui.propertiesPanel->setLayout(layout);
+    propsLayout = new QVBoxLayout;
+    this->Internals->Ui.propertiesPanel->setLayout(propsLayout);
     }
-  layout->removeWidget(this->ModulePropertiesWidget);
+  propsLayout->removeWidget(this->ModulePropertiesWidget);
   this->ModulePropertiesWidget->hide();
-  layout->addWidget(this->DataPropertiesWidget);
+  propsLayout->addWidget(this->DataPropertiesWidget);
   this->DataPropertiesWidget->show();
 }
 
 void MainWindow::moduleChanged(Module*)
 {
-  QVBoxLayout *layout =
+  QVBoxLayout *propsLayout =
       qobject_cast<QVBoxLayout *>(this->Internals->Ui.propertiesPanel->layout());
-  if (!layout)
+  if (!propsLayout)
     {
-    layout = new QVBoxLayout;
-    this->Internals->Ui.propertiesPanel->setLayout(layout);
+    propsLayout = new QVBoxLayout;
+    this->Internals->Ui.propertiesPanel->setLayout(propsLayout);
     }
-  layout->removeWidget(this->DataPropertiesWidget);
+  propsLayout->removeWidget(this->DataPropertiesWidget);
   this->DataPropertiesWidget->hide();
-  layout->addWidget(this->ModulePropertiesWidget);
+  propsLayout->addWidget(this->ModulePropertiesWidget);
   this->ModulePropertiesWidget->show();
 }
 
