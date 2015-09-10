@@ -129,6 +129,7 @@ set(python_files
   Rotate3D.py
   HannWindow3D.py
   SobelFilter.py
+  LaplaceFilter.py
   )
 unset(python_h_files)
 foreach(file ${python_files})
