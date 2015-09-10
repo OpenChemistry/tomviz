@@ -1655,6 +1655,13 @@ void vtkNonOrthoImagePlaneWidget::GetPoint2(double xyz[3])
 }
 
 //----------------------------------------------------------------------------
+void vtkNonOrthoImagePlaneWidget::SetCenter(double xyz[3])
+{
+  this->PlaneSource->SetCenter(xyz);
+  this->Modified();
+}
+
+//----------------------------------------------------------------------------
 double* vtkNonOrthoImagePlaneWidget::GetCenter()
 {
   return this->PlaneSource->GetCenter();
@@ -1664,6 +1671,13 @@ double* vtkNonOrthoImagePlaneWidget::GetCenter()
 void vtkNonOrthoImagePlaneWidget::GetCenter(double xyz[3])
 {
   this->PlaneSource->GetCenter(xyz);
+}
+
+//----------------------------------------------------------------------------
+void vtkNonOrthoImagePlaneWidget::SetNormal(double xyz[3])
+{
+  this->PlaneSource->SetNormal(xyz);
+  this->Modified();
 }
 
 //----------------------------------------------------------------------------

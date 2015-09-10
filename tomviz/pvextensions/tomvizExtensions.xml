@@ -146,11 +146,17 @@
       <!-- End ImageReader -->
     </SourceProxy>
   </ProxyGroup>
-    <ProxyGroup name="tomviz_proxies">
-      <Proxy name="NonOrthogonalSlice">
-        <IntVectorProperty default_values="1" number_of_elements="1" name="ShowArrow">
-          <BooleanDomain name="bool"/>
-        </IntVectorProperty>
-      </Proxy>
-    </ProxyGroup>
+  <ProxyGroup name="tomviz_proxies">
+    <Proxy name="NonOrthogonalSlice">
+      <IntVectorProperty default_values="1" number_of_elements="1" name="ShowArrow">
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+      <DoubleVectorProperty name="PointOnPlane" default_values="0 0 0" number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+      <DoubleVectorProperty name="PlaneNormal" default_values="1 0 0" number_of_elements="3">
+        <DoubleRangeDomain name="range" />
+      </DoubleVectorProperty>
+    </Proxy>
+  </ProxyGroup>
 </ServerManagerConfiguration>
