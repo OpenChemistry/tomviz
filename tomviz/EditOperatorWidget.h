@@ -13,45 +13,29 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizCropWidget_h
-#define tomvizCropWidget_h
+#ifndef tomvizEditOperatorWidget_h
+#define tomvizEditOperatorWidget_h
 
-#include "EditOperatorWidget.h"
-#include <QScopedPointer>
-
-class vtkObject;
+#include <QWidget>
 
 namespace tomviz
 {
-
-class CropOperator;
-
-class CropWidget : public EditOperatorWidget
+// This class is the GUI needed to edit the properties of an operator.  The
+// operator will return one of these from its getEditorContents and it will
+// be shown in a dialog.  When Apply or Ok is clicked on the dialog, the
+// applyChangesToOperator() slot will be called on the widget.
+class EditOperatorWidget : public QWidget
 {
   Q_OBJECT
-  typedef EditOperatorWidget Superclass;
-
+  typedef QWidget Superclass;
 public:
-  CropWidget(CropOperator *source,
-             QWidget* parent = 0);
-  virtual ~CropWidget();
+  EditOperatorWidget(QWidget* parent);
+  ~EditOperatorWidget();
 
-  void getBounds(double bounds[6]);
-
-  virtual void applyChangesToOperator();
-
-private slots:
-  void interactionEnd(vtkObject* caller);
-  void valueChanged();
-  void updateBounds(int* bounds);
-  void updateBounds(double *bounds);
-
-private:
-  class CWInternals;
-  QScopedPointer<CWInternals> Internals;
-
+public slots:
+  // Called when the dialog should apply its changes to the operator
+  virtual void applyChangesToOperator() = 0;
 };
-
 }
 
 #endif

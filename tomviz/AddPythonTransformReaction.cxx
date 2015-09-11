@@ -19,7 +19,7 @@
 #include "DataSource.h"
 #include "OperatorPython.h"
 #include "pqCoreUtilities.h"
-#include "EditPythonOperatorDialog.h"
+#include "EditOperatorDialog.h"
 
 #include <vtkImageData.h>
 #include <vtkSMSourceProxy.h>
@@ -320,10 +320,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   else if (interactive)
     {
     // Create a non-modal dialog, delete it once it has been closed.
-    EditPythonOperatorDialog *dialog =
-        new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
+    EditOperatorDialog *dialog =
+        new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
     dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-    connect(dialog, SIGNAL(accepted()), SLOT(addOperator()));
     dialog->show();
     }
   else
@@ -331,20 +330,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     source->addOperator(op);
     }
   return NULL;
-}
-
-void AddPythonTransformReaction::addOperator()
-{
-  EditPythonOperatorDialog *dialog =
-      qobject_cast<EditPythonOperatorDialog*>(sender());
-  if (!dialog)
-    return;
-  DataSource *source = ActiveObjects::instance().activeDataSource();
-  if (!source)
-    {
-    return;
-    }
-  source->addOperator(dialog->op());
 }
 
 }

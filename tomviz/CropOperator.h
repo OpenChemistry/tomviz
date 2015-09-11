@@ -13,51 +13,53 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizOperatorPython_h
-#define tomvizOperatorPython_h
+#ifndef tomvizCropOperator_h
+#define tomvizCropOperator_h
 
 #include "Operator.h"
-#include <QScopedPointer>
 
 namespace tomviz
 {
-class OperatorPython : public Operator
+class CropOperator : public Operator
 {
   Q_OBJECT
   typedef Operator Superclass;
 
 public:
-  OperatorPython(QObject* parent=NULL);
-  virtual ~OperatorPython();
+  CropOperator(const int *dataExtent, const double *dataOrigin,
+               const double *dataSpacing, QObject* parent=NULL);
+  virtual ~CropOperator();
 
-  virtual QString label() const { return this->Label; }
-  void setLabel(const QString& txt);
+  virtual QString label() const { return "Crop"; }
 
-  /// Returns an icon to use for this operator.
   virtual QIcon icon() const;
 
-  /// Method to transform a dataset in-place.
   virtual bool transform(vtkDataObject* data);
 
-  /// return a new clone.
   virtual Operator* clone() const;
 
-  virtual bool serialize(pugi::xml_node& in) const;
+  virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
 
-  void setScript(const QString& str);
-  const QString& script() const { return this->Script; }
+  virtual EditOperatorWidget *getEditorContents(QWidget* parent);
 
-  EditOperatorWidget* getEditorContents(QWidget* parent);
+  void setCropBounds(const int bounds[6]);
+  const int* cropBounds() const
+    { return this->CropBounds; }
+
+  // Used for the editor dialog
+  void inputDataExtent(int *extent);
+  void inputDataOrigin(double *origin);
+  void inputDataSpacing(double *spacing);
 
 private:
-  Q_DISABLE_COPY(OperatorPython)
-
-  class OPInternals;
-  const QScopedPointer<OPInternals> Internals;
-  QString Label;
-  QString Script;
+  int CropBounds[6];
+  int InputDataExtent[6];
+  double InputDataOrigin[3];
+  double InputDataSpacing[3];
+  Q_DISABLE_COPY(CropOperator)
 };
 
 }
+
 #endif

@@ -18,7 +18,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "EditPythonOperatorDialog.h"
+#include "EditOperatorDialog.h"
 #include "OperatorPython.h"
 #include "pqCoreUtilities.h"
 
@@ -95,6 +95,7 @@ void OperatorsWidget::operatorAdded(QSharedPointer<Operator> &op)
   item->setIcon(1, QIcon(":/QtWidgets/Icons/pqDelete32.png"));
   this->addTopLevelItem(item);
   this->Internals->ItemMap[item] = op;
+  this->connect(op.data(), SIGNAL(labelModified()), SLOT(updateOperatorLabel()));
 }
 
 //-----------------------------------------------------------------------------
@@ -104,10 +105,9 @@ void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
   Q_ASSERT(op);
 
   // Create a non-modal dialog, delete it once it has been closed.
-  EditPythonOperatorDialog *dialog =
-      new EditPythonOperatorDialog(op, pqCoreUtilities::mainWidget());
+  EditOperatorDialog *dialog =
+    new EditOperatorDialog(op, NULL, pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  connect(dialog, SIGNAL(accepted()), SLOT(updateOperator()));
   dialog->show();
 }
 
@@ -122,22 +122,19 @@ void OperatorsWidget::onItemClicked(QTreeWidgetItem *item, int col)
     }
 }
 
-void OperatorsWidget::updateOperator()
+void OperatorsWidget::updateOperatorLabel()
 {
-  EditPythonOperatorDialog *dialog =
-      qobject_cast<EditPythonOperatorDialog*>(sender());
-  if (!dialog)
-    return;
+  Operator *op =
+      qobject_cast<Operator*>(sender());
 
-  // Find the item, and update the text. The actual operations will be applied
-  // if necessary using the operator's signal to request pipeline update.
+  // Find the item, and update the text.
   QMap<QTreeWidgetItem*, QSharedPointer<Operator> >::iterator i =
       this->Internals->ItemMap.begin();
   while (i != this->Internals->ItemMap.constEnd())
     {
-    if (i.value() == dialog->op())
+    if (i.value().data() == op)
       {
-      i.key()->setText(0, dialog->op()->label());
+      i.key()->setText(0, op->label());
       return;
       }
     ++i;

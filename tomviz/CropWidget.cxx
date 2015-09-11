@@ -15,25 +15,36 @@
 ******************************************************************************/
 
 #include "CropWidget.h"
+#include "ui_CropWidget.h"
 
+#include <pqApplicationCore.h>
+#include <pqSettings.h>
 #include <vtkSmartVolumeMapper.h>
+#include <vtkBoundingBox.h>
 #include <vtkBoxWidget2.h>
 #include <vtkBoxRepresentation.h>
 #include <vtkCommand.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkInteractorObserver.h>
 #include <vtkImageData.h>
-#include <vtkTrivialProducer.h>
+#include <vtkMath.h>
+#include <vtkNew.h>
 #include <vtkRenderWindowInteractor.h>
-#include <vtkVolume.h>
-#include <vtkVolumeProperty.h>
-#include <vtkSMSourceProxy.h>
 #include <vtkRenderWindow.h>
 #include <vtkRendererCollection.h>
 #include <vtkRenderer.h>
+#include <vtkSmartPointer.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMViewProxy.h>
+#include <vtkTrivialProducer.h>
+#include <vtkVolume.h>
+#include <vtkVolumeProperty.h>
 
 #include <QHBoxLayout>
+#include <QSettings>
 
+#include "ActiveObjects.h"
+#include "CropOperator.h"
 #include "DataSource.h"
 
 namespace tomviz
@@ -45,24 +56,57 @@ public:
   vtkNew< vtkBoxWidget2 > boxWidget;
   vtkSmartPointer< vtkRenderWindowInteractor > interactor;
   vtkNew<vtkEventQtSlotConnect> eventLink;
-  DataSource* dataSource;
-  vtkImageData* imageData;
+  CropOperator *op;
+
+  Ui::CropWidget ui;
+  int dataExtent[6];
+  double dataOrigin[3];
+  double dataSpacing[3];
+  vtkBoundingBox dataBoundingBox;
+
+  void bounds(int bs[6]) const
+  {
+    int index = 0;
+    bs[index++] = this->ui.startX->value();
+    bs[index++] = this->ui.endX->value();
+    bs[index++] = this->ui.startY->value();
+    bs[index++] = this->ui.endY->value();
+    bs[index++] = this->ui.startZ->value();
+    bs[index++] = this->ui.endZ->value();
+  }
+
+  void blockSpinnerSignals(bool block)
+  {
+    ui.startX->blockSignals(block);
+    ui.startY->blockSignals(block);
+    ui.startZ->blockSignals(block);
+    ui.endX->blockSignals(block);
+    ui.endY->blockSignals(block);
+    ui.endZ->blockSignals(block);
+  }
 };
 
-CropWidget::CropWidget(DataSource* source, vtkRenderWindowInteractor* iren,
-    QObject* p)
-  : QObject(p), Internals(new CropWidget::CWInternals())
+CropWidget::CropWidget(CropOperator *source, QWidget* p)
+  : Superclass(p), Internals(new CropWidget::CWInternals())
 {
+  vtkRenderWindowInteractor *iren =
+    ActiveObjects::instance().activeView()->GetRenderWindow()->GetInteractor();
   this->Internals->interactor = iren;
-  this->Internals->dataSource = source;
+  this->Internals->op = source;
 
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-    source->producer()->GetClientSideObject());
-  this->Internals->imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  source->inputDataExtent(this->Internals->dataExtent);
+  source->inputDataOrigin(this->Internals->dataOrigin);
+  source->inputDataSpacing(this->Internals->dataSpacing);
 
+  double bounds[6];
+  for (int i = 0; i < 6; ++i)
+  {
+    bounds[i] = this->Internals->dataOrigin[i >> 1] +
+      this->Internals->dataSpacing[i >> 1] * this->Internals->dataExtent[i];
+  }
   vtkNew< vtkBoxRepresentation > boxRep;
   boxRep->SetPlaceFactor(1.0);
-  boxRep->PlaceWidget(this->Internals->imageData->GetBounds());
+  boxRep->PlaceWidget(bounds);
   boxRep->HandlesOn();
 
   this->Internals->boxWidget->SetTranslationEnabled(1);
@@ -78,6 +122,45 @@ CropWidget::CropWidget(DataSource* source, vtkRenderWindowInteractor* iren,
                            this, SLOT(interactionEnd(vtkObject*)));
 
   iren->GetRenderWindow()->Render();
+
+  Ui::CropWidget& ui = this->Internals->ui;
+  ui.setupUi(this);
+
+  double e[6];
+  int *extent = this->Internals->dataExtent;
+  const int *currentBounds = this->Internals->op->cropBounds();
+  std::copy(extent, extent+6, e);
+  this->Internals->dataBoundingBox.SetBounds(e);
+
+  // Set ranges and default values
+  ui.startX->setRange(extent[0], extent[1]);
+  ui.startX->setValue(currentBounds[0]);
+  ui.startY->setRange(extent[2], extent[3]);
+  ui.startY->setValue(currentBounds[2]);
+  ui.startZ->setRange(extent[4], extent[5]);
+  ui.startZ->setValue(currentBounds[4]);
+
+  ui.endX->setRange(extent[0], extent[1]);
+  ui.endX->setValue(currentBounds[1]);
+  ui.endY->setRange(extent[2], extent[3]);
+  ui.endY->setValue(currentBounds[3]);
+  ui.endZ->setRange(extent[4], extent[5]);
+  ui.endZ->setValue(currentBounds[5]);
+
+  this->connect(ui.startX, SIGNAL(valueChanged(int)),
+                this, SLOT(valueChanged()));
+  this->connect(ui.startY, SIGNAL(valueChanged(int)),
+                this, SLOT(valueChanged()));
+  this->connect(ui.startZ, SIGNAL(valueChanged(int)),
+                this, SLOT(valueChanged()));
+  this->connect(ui.endX, SIGNAL(valueChanged(int)),
+                this, SLOT(valueChanged()));
+  this->connect(ui.endY, SIGNAL(valueChanged(int)),
+                this, SLOT(valueChanged()));
+  this->connect(ui.endZ, SIGNAL(valueChanged(int)),
+                this, SLOT(valueChanged()));
+  // force through the current values pulled from the operator and set above
+  this->valueChanged();
 }
 
 CropWidget::~CropWidget()
@@ -92,35 +175,89 @@ void CropWidget::interactionEnd(vtkObject *caller)
 
   double* boxBounds = this->Internals->boxWidget->GetRepresentation()->GetBounds();
 
-  double* spacing = this->Internals->imageData->GetSpacing();
-  double* origin = this->Internals->imageData->GetOrigin();
+  double* spacing = this->Internals->dataSpacing;
+  double* origin = this->Internals->dataOrigin;
   double dataBounds[6];
 
   int dim = 0;
   for (int i = 0; i < 6; i++)
-    {
+  {
     dataBounds[i] =  (boxBounds[i] - origin[dim]) / spacing[dim] ;
     dim += i % 2 ? 1 : 0;
-    }
+  }
 
-  emit this->bounds(dataBounds);
+  this->updateBounds(dataBounds);
 }
 
-void CropWidget::updateBounds(int* boxBounds)
+void CropWidget::updateBounds(int* bounds)
 {
-  double* spacing = this->Internals->imageData->GetSpacing();
-  double* origin = this->Internals->imageData->GetOrigin();
+  double* spacing = this->Internals->dataSpacing;
+  double* origin = this->Internals->dataOrigin;
   double newBounds[6];
 
   int dim = 0;
   for (int i = 0; i < 6; i++)
-    {
-    newBounds[i] =  (boxBounds[i] * spacing[dim]) + origin[dim];
+  {
+    newBounds[i] =  (bounds[i] * spacing[dim]) + origin[dim];
     dim += i % 2 ? 1 : 0;
-    }
+  }
 
   this->Internals->boxWidget->GetRepresentation()->PlaceWidget(newBounds);
   this->Internals->interactor->GetRenderWindow()->Render();
+}
+
+//-----------------------------------------------------------------------------
+void CropWidget::applyChangesToOperator()
+{
+  int cropVolume[6];
+  this->Internals->bounds(cropVolume);
+
+  this->Internals->op->setCropBounds(cropVolume);
+}
+
+//-----------------------------------------------------------------------------
+void CropWidget::updateBounds(double *newBounds)
+{
+  Ui::CropWidget& ui = this->Internals->ui;
+
+  this->Internals->blockSpinnerSignals(true);
+
+  vtkBoundingBox newBoundingBox(newBounds);
+
+  if (this->Internals->dataBoundingBox.Intersects(newBoundingBox))
+  {
+    ui.startX->setValue(vtkMath::Round(newBounds[0]));
+    ui.startY->setValue(vtkMath::Round(newBounds[2]));
+    ui.startZ->setValue(vtkMath::Round(newBounds[4]));
+
+    ui.endX->setValue(vtkMath::Round(newBounds[1]));
+    ui.endY->setValue(vtkMath::Round(newBounds[3]));
+    ui.endZ->setValue(vtkMath::Round(newBounds[5]));
+  }
+  // If there is no intersection use data extent
+  else
+  {
+    ui.startX->setValue(this->Internals->dataExtent[0]);
+    ui.startY->setValue(this->Internals->dataExtent[2]);
+    ui.startZ->setValue(this->Internals->dataExtent[4]);
+
+    ui.endX->setValue(this->Internals->dataExtent[1]);
+    ui.endY->setValue(this->Internals->dataExtent[3]);
+    ui.endZ->setValue(this->Internals->dataExtent[5]);
+
+  }
+
+  this->Internals->blockSpinnerSignals(false);
+}
+
+//-----------------------------------------------------------------------------
+void CropWidget::valueChanged()
+{
+  int cropVolume[6];
+
+  this->Internals->bounds(cropVolume);
+
+  this->updateBounds(cropVolume);
 }
 
 }

@@ -13,45 +13,19 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizCropWidget_h
-#define tomvizCropWidget_h
 
 #include "EditOperatorWidget.h"
-#include <QScopedPointer>
-
-class vtkObject;
 
 namespace tomviz
 {
 
-class CropOperator;
-
-class CropWidget : public EditOperatorWidget
+EditOperatorWidget::EditOperatorWidget(QWidget* p)
+  : Superclass(p)
 {
-  Q_OBJECT
-  typedef EditOperatorWidget Superclass;
-
-public:
-  CropWidget(CropOperator *source,
-             QWidget* parent = 0);
-  virtual ~CropWidget();
-
-  void getBounds(double bounds[6]);
-
-  virtual void applyChangesToOperator();
-
-private slots:
-  void interactionEnd(vtkObject* caller);
-  void valueChanged();
-  void updateBounds(int* bounds);
-  void updateBounds(double *bounds);
-
-private:
-  class CWInternals;
-  QScopedPointer<CWInternals> Internals;
-
-};
-
 }
 
-#endif
+EditOperatorWidget::~EditOperatorWidget()
+{
+}
+
+}

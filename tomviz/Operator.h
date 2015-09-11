@@ -21,9 +21,11 @@
 #include <vtk_pugixml.h>
 
 class vtkDataObject;
+class QWidget;
 
 namespace tomviz
 {
+class EditOperatorWidget;
 
 class Operator : public QObject
 {
@@ -50,10 +52,15 @@ public:
   virtual bool serialize(pugi::xml_node& in) const=0;
   virtual bool deserialize(const pugi::xml_node& ns)=0;
 
+  virtual EditOperatorWidget* getEditorContents(QWidget* parent) = 0;
+
 signals:
   /// fire this signal with the operation is updated/modified
   /// implying that the data needs to be reprocessed.
   void transformModified();
+  /// fire this signal to indicate that the operator's label changed
+  /// and the GUI needs to refresh its display of the Operator
+  void labelModified();
 
 private:
   Q_DISABLE_COPY(Operator)

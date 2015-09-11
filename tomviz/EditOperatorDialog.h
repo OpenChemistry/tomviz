@@ -24,25 +24,32 @@
 namespace tomviz
 {
 class Operator;
+class DataSource;
 
-class EditPythonOperatorDialog : public QDialog
+class EditOperatorDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
 public:
-  EditPythonOperatorDialog(QSharedPointer<Operator> &op,
-                           QWidget* parent = NULL);
-  virtual ~EditPythonOperatorDialog();
+  // Creates an editor dialog for the given operator.  If this is creating a
+  // new operator, then pass in the data source that the operator needs to be
+  // added to and the first time that apply or OK is clicked it will be added
+  // to that data source.
+  EditOperatorDialog(QSharedPointer<Operator> &op,
+                     DataSource* dataSource = NULL,
+                     QWidget* parent = NULL);
+  virtual ~EditOperatorDialog();
 
   QSharedPointer<Operator>& op();
 
 private slots:
-  void acceptChanges();
+  void onApply();
+  void onClose();
 
 private:
-  Q_DISABLE_COPY(EditPythonOperatorDialog)
-  class EPODInternals;
-  QScopedPointer<EPODInternals> Internals;
+  Q_DISABLE_COPY(EditOperatorDialog)
+  class EODInternals;
+  QScopedPointer<EODInternals> Internals;
 };
 
 }

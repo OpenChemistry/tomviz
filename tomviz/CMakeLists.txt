@@ -40,10 +40,10 @@ set(SOURCES
   CentralWidget.h
   CloneDataReaction.cxx
   CloneDataReaction.h
-  CropDialog.cxx
-  CropDialog.h
   CropReaction.cxx
   CropReaction.h
+  CropOperator.cxx
+  CropOperator.h
   CropWidget.cxx
   CropWidget.h
   DataPropertiesPanel.cxx
@@ -52,8 +52,10 @@ set(SOURCES
   DataSource.h
   DeleteDataReaction.cxx
   DeleteDataReaction.h
-  EditPythonOperatorDialog.cxx
-  EditPythonOperatorDialog.h
+  EditOperatorDialog.cxx
+  EditOperatorDialog.h
+  EditOperatorWidget.cxx
+  EditOperatorWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   LoadTomvizExtensionsBehavior.cxx
@@ -152,9 +154,9 @@ endforeach()
 qt4_wrap_ui(UI_SOURCES
   AboutDialog.ui
   CentralWidget.ui
-  CropDialog.ui
+  CropWidget.ui
   DataPropertiesPanel.ui
-  EditPythonOperatorDialog.ui
+  EditPythonOperatorWidget.ui
   MainWindow.ui
   ModulePropertiesPanel.ui
   ViewPropertiesPanel.ui
