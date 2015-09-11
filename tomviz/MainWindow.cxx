@@ -177,7 +177,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *customPythonAction = new QAction("Custom Transform", this);
   QAction *cropDataAction = new QAction("Crop", this);
   //QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
-  QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
+  QAction *autoAlignAction = new QAction("Translation Align (Auto)", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
   QAction *downsampleByTwoAction = new QAction("Downsample x2", this);
   QAction *resampleAction = new QAction("Resample", this);
@@ -193,21 +193,19 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *sobelFilterAction = new QAction("Sobel Filter", this);
   QAction *laplaceFilterAction = new QAction("Laplace Filter", this);
 
-  ui.menuData->insertAction(ui.actionAlign, customPythonAction);
-  ui.menuData->insertAction(ui.actionAlign, cropDataAction);
-  ui.menuData->insertSeparator(ui.actionAlign);
-  //ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
-  ui.menuData->insertSeparator(ui.actionAlign);
-  ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
-  ui.menuData->insertAction(ui.actionReconstruct, shiftUniformAction);
-  ui.menuData->insertAction(ui.actionReconstruct, deleteSliceAction);
-  ui.menuData->insertAction(ui.actionReconstruct, downsampleByTwoAction);
-  ui.menuData->insertAction(ui.actionReconstruct, resampleAction);
-  ui.menuData->insertAction(ui.actionReconstruct, rotateAction);
-
-  //ui.menuData->insertAction(ui.actionReconstruct, misalignUniformAction);
-  //ui.menuData->insertAction(ui.actionReconstruct, misalignGaussianAction);
-  ui.menuData->insertSeparator(ui.actionReconstruct);
+  // Build Data Transforms menu
+  // ################################################################
+  ui.menuData->insertAction(ui.actionClone, customPythonAction);
+  ui.menuData->insertAction(ui.actionClone, cropDataAction);
+  ui.menuData->insertSeparator(ui.actionClone);
+  //ui.menuData->insertAction(ui.actionClone, backgroundSubtractAction);
+  ui.menuData->insertAction(ui.actionClone, shiftUniformAction);
+  ui.menuData->insertAction(ui.actionClone, deleteSliceAction);
+  ui.menuData->insertAction(ui.actionClone, downsampleByTwoAction);
+  ui.menuData->insertAction(ui.actionClone, resampleAction);
+  ui.menuData->insertAction(ui.actionClone, rotateAction);
+  //ui.menuData->insertAction(ui.actionClone, misalignUniformAction);
+  //ui.menuData->insertAction(ui.actionClone, misalignGaussianAction);
   ui.menuData->insertSeparator(ui.actionClone);
   ui.menuData->insertAction(ui.actionClone, squareRootAction);
   ui.menuData->insertAction(ui.actionClone, hannWindowAction);
@@ -217,6 +215,13 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->insertSeparator(ui.actionClone);
   //ui.menuData->insertAction(ui.actionClone, resampleDataAction);
 
+  // Build Tomography menu
+  // ################################################################
+  ui.menuTomography->insertAction(ui.actionReconstruct, autoAlignAction);
+  ui.menuTomography->insertSeparator(ui.actionReconstruct);
+
+  //#################################################################
+
   // Add our Python script reactions, these compose Python into menu entries.
   new AddExpressionReaction(customPythonAction);
   new CropReaction(cropDataAction, this);
@@ -224,7 +229,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //new AddPythonTransformReaction(backgroundSubtractAction,
   //                               "Background Subtraction",
   //                               Subtract_TiltSer_Background);
-  ui.actionAlign->setText("Manual Align");
+  ui.actionAlign->setText("Translation Align");
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", Align_Images);
   new AddPythonTransformReaction(shiftUniformAction,
@@ -242,7 +247,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //                               "Misalign (Uniform)", MisalignImgs_Uniform);
   //new AddPythonTransformReaction(misalignGaussianAction,
   //                               "Misalign (Gaussian)", MisalignImgs_Uniform);
-  ui.actionReconstruct->setText("Reconstruct (Direct Fourier)");
+  ui.actionReconstruct->setText("Direct Fourier recon");
   new AddPythonTransformReaction(ui.actionReconstruct,
                                  "Reconstruct (Direct Fourier)",
                                  Recon_DFT);

@@ -20,7 +20,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>30</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -49,7 +49,7 @@
    </widget>
    <widget class="QMenu" name="menuModules">
     <property name="title">
-     <string>Visualization Modules</string>
+     <string>Visualization</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuTools">
@@ -63,10 +63,7 @@
     <property name="title">
      <string>Data Transforms</string>
     </property>
-    <addaction name="actionAlign"/>
-    <addaction name="actionReconstruct"/>
     <addaction name="separator"/>
-    <addaction name="actionToggleDataType"/>
     <addaction name="separator"/>
     <addaction name="actionClone"/>
     <addaction name="actionDeleteData"/>
@@ -82,8 +79,18 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuTomography">
+    <property name="title">
+     <string>Tomography</string>
+    </property>
+    <addaction name="actionToggleDataType"/>
+    <addaction name="separator"/>
+    <addaction name="actionAlign"/>
+    <addaction name="actionReconstruct"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuData"/>
+   <addaction name="menuTomography"/>
    <addaction name="menuModules"/>
    <addaction name="menuView"/>
    <addaction name="menuTools"/>
@@ -261,7 +268,7 @@
           <x>0</x>
           <y>0</y>
           <width>79</width>
-          <height>615</height>
+          <height>634</height>
          </rect>
         </property>
        </widget>
