@@ -40,7 +40,7 @@ public:
 
 public slots:
   void updateLastSliceMin(int min); //update minumum value allowed in last slice spinbox
-  void updateSliceMax(int a); //update maximum value allowed in of first and last slice
+  void updateSliceMax(int a); //update maximum value allowed in first and last slice spinbox
     
 protected:
   void updateEnableState();
@@ -53,7 +53,7 @@ private:
   QString scriptSource;
   QSpinBox *firstSlice;
   QSpinBox *lastSlice;
-  int *shape; //shape of input data
+  int *shape; //shape of dataset
   bool interactive;
 };
 }
