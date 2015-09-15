@@ -34,6 +34,116 @@
 #include <QHBoxLayout>
 #include <QDialogButtonBox>
 
+namespace
+{
+class SelectSliceRangeWidget : public QWidget
+{
+  Q_OBJECT
+  typedef QWidget Superclass;
+public:
+  SelectSliceRangeWidget(int *ext, bool showAxisSelector = true, QWidget* p = NULL)
+    : Superclass(p),
+      firstSlice(new QSpinBox(this)),
+      lastSlice(new QSpinBox(this)),
+      axisSelect(new QComboBox(this))
+  {
+    for (int i = 0; i < 6; ++i)
+    {
+      this->Extent[i] = ext[i];
+    }
+    QHBoxLayout *rangeLayout =  new QHBoxLayout;
+    QLabel *startLabel = new QLabel("Start:", this);
+    QLabel *endLabel = new QLabel("End:", this);
+
+    this->firstSlice->setRange(0, ext[5] - ext[4]);
+    this->firstSlice->setValue(0);
+    this->lastSlice->setRange(0, ext[5] - ext[4]);
+    this->lastSlice->setValue(0);
+
+    rangeLayout->addWidget(startLabel);
+    rangeLayout->addWidget(this->firstSlice);
+    rangeLayout->addWidget(endLabel);
+    rangeLayout->addWidget(this->lastSlice);
+
+    QHBoxLayout *axisSelectLayout = new QHBoxLayout;
+    QLabel *axisLabel = new QLabel("Axis:", this);
+    this->axisSelect->addItem("X");
+    this->axisSelect->addItem("Y");
+    this->axisSelect->addItem("Z");
+    this->axisSelect->setCurrentIndex(2);
+
+    axisSelectLayout->addWidget(axisLabel);
+    axisSelectLayout->addWidget(this->axisSelect);
+
+    QVBoxLayout *widgetLayout = new QVBoxLayout;
+    widgetLayout->addLayout(rangeLayout);
+    widgetLayout->addLayout(axisSelectLayout);
+
+    if (!showAxisSelector)
+    {
+      axisLabel->hide();
+      this->axisSelect->hide();
+    }
+
+    this->setLayout(widgetLayout);
+
+    this->connect(this->firstSlice, SIGNAL(valueChanged(int)),
+                  SLOT(onMinimumChanged(int)));
+    this->connect(this->lastSlice, SIGNAL(valueChanged(int)),
+                  SLOT(onMaximumChanged(int)));
+    this->connect(axisSelect, SIGNAL(currentIndexChanged(int)),
+                  SLOT(onAxisChanged(int)));
+  }
+  ~SelectSliceRangeWidget() {}
+
+  int startSlice() const
+  {
+    return this->firstSlice->value();
+  }
+  int endSlice() const
+  {
+    return this->lastSlice->value();
+  }
+  int axis() const
+  {
+    return this->axisSelect->currentIndex();
+  }
+
+public slots:
+  void onMinimumChanged(int val)
+  {
+    if (this->lastSlice->value() < val)
+    {
+      this->lastSlice->setValue(val);
+    }
+  }
+
+  void onMaximumChanged(int val)
+  {
+    if (this->firstSlice->value() > val)
+    {
+      this->firstSlice->setValue(val);
+    }
+  }
+
+  void onAxisChanged(int newAxis)
+  {
+    int newSliceMax = this->Extent[2 * newAxis + 1] - this->Extent[2 * newAxis];
+    this->firstSlice->setMaximum(newSliceMax);
+    this->lastSlice->setMaximum(newSliceMax);
+  }
+
+private:
+  Q_DISABLE_COPY(SelectSliceRangeWidget)
+  QSpinBox *firstSlice; // delete slices starting at this slice index
+  QSpinBox *lastSlice; // delete slices ending at this slice index
+  QComboBox *axisSelect;
+  int Extent[6];
+};
+}
+
+#include "AddPythonTransformReaction.moc"
+
 namespace tomviz
 {
 //-----------------------------------------------------------------------------
@@ -59,6 +169,7 @@ void AddPythonTransformReaction::updateEnableState()
   parentAction()->setEnabled(
         ActiveObjects::instance().activeDataSource() != NULL);
 }
+
 
 //-----------------------------------------------------------------------------
 OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
@@ -228,6 +339,46 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
           source->addOperator(op);
       }
   }
+    
+  else if (scriptLabel == "Delete Slices")
+  {
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+        source->producer()->GetClientSideObject());
+    vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    int *shape = data->GetExtent();
+
+    QDialog dialog(pqCoreUtilities::mainWidget());
+
+    SelectSliceRangeWidget *sliceRange = new SelectSliceRangeWidget(shape, true, &dialog);
+    
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel,
+                                                     Qt::Horizontal,
+                                                     &dialog);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addWidget(sliceRange);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    dialog.setWindowTitle("Delete Slices");
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+    
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QString deleteSlicesScript = scriptSource;
+      deleteSlicesScript.replace("###firstSlice###",
+                         QString("firstSlice = %1").arg(sliceRange->startSlice()) );
+      deleteSlicesScript.replace("###lastSlice###",
+                         QString("lastSlice = %1").arg(sliceRange->endSlice()) );
+      deleteSlicesScript.replace("###axis###",
+                         QString("axis = %1").arg(sliceRange->axis()) );
+
+      opPython->setScript(deleteSlicesScript);
+      source->addOperator(op);
+    }
+  }
+
   else if (scriptLabel == "Sobel Filter") //UI for Sobel Filter
   {
       QDialog dialog(pqCoreUtilities::mainWidget());
