@@ -60,6 +60,19 @@ void AddPythonTransformReaction::updateEnableState()
         ActiveObjects::instance().activeDataSource() != NULL);
 }
 
+    
+//Update minimum value allowed for last slice
+void AddPythonTransformReaction::updateLastSliceMin(int min){
+    lastSlice->setMinimum(min);
+}
+
+//Update maximum value allowed for first and last slices
+//a=0,1,2 represents axis
+void AddPythonTransformReaction::updateSliceMax(int a){
+    firstSlice->setMaximum(shape[2*a+1]-shape[2*a]);
+    lastSlice->setMaximum(shape[2*a+1]-shape[2*a]);
+}
+
 //-----------------------------------------------------------------------------
 OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 {
@@ -228,6 +241,76 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
           source->addOperator(op);
       }
   }
+    
+  else if (scriptLabel == "Delete Slices")
+  {
+      vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+                                                               source->producer()->GetClientSideObject());
+      vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+      shape = data->GetExtent();
+
+      QDialog dialog(pqCoreUtilities::mainWidget());
+      QHBoxLayout *layout1 = new QHBoxLayout;
+      QLabel *label = new QLabel("Start:", &dialog);
+      layout1->addWidget(label);
+
+      firstSlice = new QSpinBox(&dialog); //starting slice
+      firstSlice->setRange(0,shape[5]-shape[4]);
+      firstSlice->setValue(0);
+      layout1->addWidget(firstSlice);
+      
+      label = new QLabel("End:", &dialog);
+      layout1->addWidget(label);
+
+      lastSlice = new QSpinBox(&dialog); //end slice
+      lastSlice->setRange(0,shape[5]-shape[4]);
+      lastSlice->setMinimum(0);
+      lastSlice->setValue(0);
+      //update minimum value allowed in last slice when first slice changes
+      connect(firstSlice,SIGNAL(valueChanged(int)),SLOT(updateLastSliceMin(int)));
+      layout1->addWidget(lastSlice);
+      
+      QHBoxLayout *layout2 = new QHBoxLayout;
+      label = new QLabel("Axis:", &dialog);
+      layout2->addWidget(label);
+      QComboBox *axis = new QComboBox(&dialog);
+      axis->addItem("X");
+      axis->addItem("Y");
+      axis->addItem("Z");
+      axis->setCurrentIndex(2);
+      //update maximum for first and last slices when axis is changed
+      connect(axis,SIGNAL(currentIndexChanged(int)),SLOT(updateSliceMax(int)));
+      layout2->addWidget(axis);
+      
+      QVBoxLayout *v = new QVBoxLayout;
+      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel,
+                                                       Qt::Horizontal,
+                                                       &dialog);
+      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+      v->addLayout(layout1);
+      v->addLayout(layout2);
+      v->addWidget(buttons);
+      dialog.setLayout(v);
+      dialog.setWindowTitle("Delete Slices");
+      dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+      
+      if (dialog.exec() == QDialog::Accepted)
+      {
+          QString cropScript = scriptSource;
+          cropScript.replace("###firstSlice###",
+                             QString("firstSlice = %1").arg(firstSlice->value()) );
+          cropScript.replace("###lastSlice###",
+                             QString("lastSlice = %1").arg(lastSlice->value()) );
+          cropScript.replace("###axis###",
+                             QString("axis = %1").arg(axis->currentIndex()) );
+
+          opPython->setScript(cropScript);
+          source->addOperator(op);
+      }
+  }
+
   else if (scriptLabel == "Sobel Filter") //UI for Sobel Filter
   {
       QDialog dialog(pqCoreUtilities::mainWidget());

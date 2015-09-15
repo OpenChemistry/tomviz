@@ -133,6 +133,7 @@ set(python_files
   SobelFilter.py
   LaplaceFilter.py
   Resample.py
+  deleteSlices.py
   )
 unset(python_h_files)
 foreach(file ${python_files})

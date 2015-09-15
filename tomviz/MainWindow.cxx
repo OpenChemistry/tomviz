@@ -66,6 +66,7 @@
 #include "SobelFilter.h"
 #include "LaplaceFilter.h"
 #include "Resample.h"
+#include "deleteSlices.h"
 
 #include <QFileInfo>
 
@@ -175,6 +176,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *downsampleByTwoAction = new QAction("Downsample x2", this);
   QAction *resampleAction = new QAction("Resample", this);
   QAction *rotateAction = new QAction("Rotate", this);
+  QAction *deleteSliceAction = new QAction("Delete Slices", this);
+
   //QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
   //QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
   QAction *squareRootAction = new QAction("Square Root Data", this);
@@ -191,9 +194,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->insertSeparator(ui.actionAlign);
   ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
   ui.menuData->insertAction(ui.actionReconstruct, shiftUniformAction);
+  ui.menuData->insertAction(ui.actionReconstruct, deleteSliceAction);
   ui.menuData->insertAction(ui.actionReconstruct, downsampleByTwoAction);
   ui.menuData->insertAction(ui.actionReconstruct, resampleAction);
   ui.menuData->insertAction(ui.actionReconstruct, rotateAction);
+
   //ui.menuData->insertAction(ui.actionReconstruct, misalignUniformAction);
   //ui.menuData->insertAction(ui.actionReconstruct, misalignGaussianAction);
   ui.menuData->insertSeparator(ui.actionReconstruct);
@@ -218,12 +223,15 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Auto Align (XCORR)", Align_Images);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", Shift_Stack_Uniformly);
+  new AddPythonTransformReaction(deleteSliceAction,
+                                   "Delete Slices", deleteSlices);
   new AddPythonTransformReaction(downsampleByTwoAction,
                                    "Downsample x2", DownsampleByTwo);
   new AddPythonTransformReaction(resampleAction,
                                    "Resample", Resample);
   new AddPythonTransformReaction(rotateAction,
                                  "Rotate", Rotate3D);
+
   //new AddPythonTransformReaction(misalignUniformAction,
   //                               "Misalign (Uniform)", MisalignImgs_Uniform);
   //new AddPythonTransformReaction(misalignGaussianAction,

@@ -17,6 +17,7 @@
 #define tomvizAddPythonTransformReaction_h
 
 #include "pqReaction.h"
+#include <QSpinBox>
 
 namespace tomviz
 {
@@ -37,6 +38,10 @@ public:
 
   void setInteractive(bool isInteractive) { interactive = isInteractive; }
 
+public slots:
+  void updateLastSliceMin(int min); //update minumum value allowed in last slice spinbox
+  void updateSliceMax(int a); //update maximum value allowed in of first and last slice
+    
 protected:
   void updateEnableState();
   void onTriggered() { this->addExpression(); }
@@ -46,7 +51,9 @@ private:
 
   QString scriptLabel;
   QString scriptSource;
-
+  QSpinBox *firstSlice;
+  QSpinBox *lastSlice;
+  int *shape; //shape of input data
   bool interactive;
 };
 }
