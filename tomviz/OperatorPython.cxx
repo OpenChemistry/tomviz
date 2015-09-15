@@ -205,7 +205,7 @@ void OperatorPython::setScript(const QString& str)
     if (!this->Internals->TransformMethod)
     {
       CheckForError();
-      qWarning("Script doesn't have any 'transform' function.");
+      qWarning("Script doesn't have any 'transform_scalars' function.");
       return;
     }
     CheckForError();

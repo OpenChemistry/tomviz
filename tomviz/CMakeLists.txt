@@ -93,6 +93,8 @@ set(SOURCES
   PipelineWidget.h
   ProgressBehavior.cxx
   ProgressBehavior.h
+  PythonGeneratedDatasetReaction.cxx
+  PythonGeneratedDatasetReaction.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
   ResetReaction.cxx
@@ -132,6 +134,7 @@ set(python_files
   LaplaceFilter.py
   Resample.py
   deleteSlices.py
+  ZeroDataset.py
   )
 unset(python_h_files)
 foreach(file ${python_files})

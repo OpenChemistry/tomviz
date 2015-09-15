@@ -43,6 +43,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "PythonGeneratedDatasetReaction.h"
 #include "RecentFilesMenu.h"
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
@@ -67,6 +68,7 @@
 #include "LaplaceFilter.h"
 #include "Resample.h"
 #include "deleteSlices.h"
+#include "ZeroDataset.h"
 
 #include <QFileInfo>
 
@@ -277,14 +279,17 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new ViewMenuManager(this, ui.menuView);
 
-#ifdef TOMVIZ_DATA
   QMenu *sampleDataMenu = new QMenu("Sample Data", this);
   ui.menubar->insertMenu(ui.menuHelp->menuAction(), sampleDataMenu);
+#ifdef TOMVIZ_DATA
   QAction *reconAction = sampleDataMenu->addAction("Reconstruction");
   QAction *tiltAction = sampleDataMenu->addAction("Tilt Series");
   connect(reconAction, SIGNAL(triggered()), SLOT(openRecon()));
   connect(tiltAction, SIGNAL(triggered()), SLOT(openTilt()));
+  sampleDataMenu->addSeparator();
 #endif
+  QAction* blankDataAction = sampleDataMenu->addAction("Zero Dataset");
+  new PythonGeneratedDatasetReaction(blankDataAction, "Zero Dataset", ZeroDataset);
 
   //now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER

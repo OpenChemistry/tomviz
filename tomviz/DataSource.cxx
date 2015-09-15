@@ -170,9 +170,14 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
 
   // We add an annotation to the proxy so that it'll be easier for code to
   // locate registered pipeline proxies that are being treated as data sources.
-  const char* sourceFilename =
+  const char* sourceFilename = NULL;
+
+  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != NULL)
+  {
+    sourceFilename =
       vtkSMPropertyHelper(dataSource,
                           vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
+  }
   if (sourceFilename && strlen(sourceFilename))
     {
     tomviz::annotateDataProducer(source, sourceFilename);
@@ -181,6 +186,10 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
     {
     cout << source->GetAnnotation("filename");
     tomviz::annotateDataProducer(source, dataSource->GetAnnotation("filename"));
+    }
+  else
+    {
+    tomviz::annotateDataProducer(source, "No filename");
     }
 
   controller->RegisterPipelineProxy(source);
@@ -214,8 +223,15 @@ DataSource::~DataSource()
 QString DataSource::filename() const
 {
   vtkSMProxy* dataSource = this->originalDataSource();
-  return vtkSMPropertyHelper(dataSource,
-    vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
+  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != NULL)
+  {
+    return vtkSMPropertyHelper(dataSource,
+      vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
+  }
+  else
+  {
+    return dataSource->GetAnnotation("filename");
+  }
 }
 
 //-----------------------------------------------------------------------------
