@@ -30,7 +30,7 @@ class AddPythonTransformReaction : public pqReaction
 
 public:
   AddPythonTransformReaction(QAction* parent, const QString &label,
-                         const QString &source);
+                         const QString &source, bool requiresTiltSeries = false);
   ~AddPythonTransformReaction();
 
   OperatorPython* addExpression(DataSource* source = NULL);
@@ -48,6 +48,7 @@ private:
   QString scriptSource;
 
   bool interactive;
+  bool requiresTiltSeries;
 };
 }
 

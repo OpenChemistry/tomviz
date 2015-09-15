@@ -231,7 +231,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //                               Subtract_TiltSer_Background);
   ui.actionAlign->setText("Translation Align");
   new AddPythonTransformReaction(autoAlignAction,
-                                 "Auto Align (XCORR)", Align_Images);
+                                 "Auto Align (XCORR)", Align_Images, true);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", Shift_Stack_Uniformly);
   new AddPythonTransformReaction(deleteSliceAction,
@@ -250,7 +250,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.actionReconstruct->setText("Direct Fourier recon");
   new AddPythonTransformReaction(ui.actionReconstruct,
                                  "Reconstruct (Direct Fourier)",
-                                 Recon_DFT);
+                                 Recon_DFT, true);
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", Square_Root_Data);
   new AddPythonTransformReaction(hannWindowAction,

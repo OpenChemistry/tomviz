@@ -149,9 +149,10 @@ namespace tomviz
 //-----------------------------------------------------------------------------
 AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                const QString &l,
-                                               const QString &s)
+                                               const QString &s,
+                                               bool rts)
   : Superclass(parentObject), scriptLabel(l), scriptSource(s),
-    interactive(false)
+    interactive(false), requiresTiltSeries(rts)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -166,8 +167,12 @@ AddPythonTransformReaction::~AddPythonTransformReaction()
 //-----------------------------------------------------------------------------
 void AddPythonTransformReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL);
+  bool enable = ActiveObjects::instance().activeDataSource() != NULL;
+  if (enable && this->requiresTiltSeries)
+  {
+    enable = ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries;
+  }
+  parentAction()->setEnabled(enable);
 }
 
 
