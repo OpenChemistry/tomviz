@@ -37,6 +37,7 @@ namespace tomviz
 {
 class DataSource;
 class HistogramMaker;
+class Module;
 class vtkChartHistogram;
 
 /// CentralWidget is a QWidget that is used as the central widget
@@ -53,9 +54,12 @@ public:
   virtual ~CentralWidget();
 
 public slots:
-  /// Set the data source to from which the data is "histogrammed" and shown
-  /// in the histogram view.
-  void setDataSource(DataSource*);
+  /// Set the data source that is shown and color by the data source's
+  /// color map
+  void setActiveDataSource(DataSource*);
+  /// Set the data source that is shown to the module's data source and color
+  /// by the module's color map
+  void setActiveModule(Module*);
 
   void onColorMapUpdated();
 
@@ -67,6 +71,9 @@ private slots:
 private:
   Q_DISABLE_COPY(CentralWidget)
 
+  /// Set the data source to from which the data is "histogrammed" and shown
+  /// in the histogram view.
+  void setDataSource(DataSource*);
   void setHistogramTable(vtkTable *table);
 
   class CWInternals;
@@ -75,6 +82,7 @@ private:
   vtkNew<vtkChartHistogram> Chart;
   vtkNew<vtkEventQtSlotConnect> EventLink;
   QPointer<DataSource> ADataSource;
+  QPointer<Module> AModule;
   HistogramMaker *HistogramGen;
   QThread *Worker;
   QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
