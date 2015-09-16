@@ -120,6 +120,7 @@ set(SOURCES
 set(python_files
   MisalignImgs_Uniform.py
   Align_Images.py
+  Axis_Rotation.py
   Recon_DFT.py
   Crop_Data.py
   DownsampleByTwo.py

@@ -53,6 +53,7 @@
 
 #include "MisalignImgs_Uniform.h"
 #include "Align_Images.h"
+#include "Axis_Rotation.h"
 #include "Recon_DFT.h"
 #include "DownsampleByTwo.h"
 #include "Crop_Data.h"
@@ -149,6 +150,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
    * ---
    * Manual Align
    * Auto Align (XCORR) - Align_Images.py
+   * Auto Find Axis Rotation -
    * Shift Uniformly - Shift_Stack_Uniformly.py
    * Misalign (Uniform) - MisalignImgs_Uniform.py
    * Misalign (Gaussian) - MisalignImgs_Gaussian.py
@@ -171,6 +173,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *cropDataAction = new QAction("Crop", this);
   //QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
   QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
+  QAction *autoAxisRotationAction = new QAction("Auto Find Axis Rotation", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
   QAction *downsampleByTwoAction = new QAction("Downsample x2", this);
   QAction *resampleAction = new QAction("Resample", this);
@@ -190,6 +193,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
   ui.menuData->insertSeparator(ui.actionAlign);
   ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
+  ui.menuData->insertAction(ui.actionReconstruct, autoAxisRotationAction);
   ui.menuData->insertAction(ui.actionReconstruct, shiftUniformAction);
   ui.menuData->insertAction(ui.actionReconstruct, downsampleByTwoAction);
   ui.menuData->insertAction(ui.actionReconstruct, resampleAction);
@@ -216,6 +220,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.actionAlign->setText("Manual Align");
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", Align_Images);
+  new AddPythonTransformReaction(autoAxisRotationAction,
+                                 "Auto Find Axis Rotation", Axis_Rotation);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", Shift_Stack_Uniformly);
   new AddPythonTransformReaction(downsampleByTwoAction,
