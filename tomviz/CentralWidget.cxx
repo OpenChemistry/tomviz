@@ -202,6 +202,8 @@ public:
   static vtkChartHistogram * New();
 
   bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse);
+  bool MouseWheelEvent(const vtkContextMouseEvent&, int)
+    { return false; }
 
   vtkNew<vtkTransform2D> Transform;
   double PositionX;
