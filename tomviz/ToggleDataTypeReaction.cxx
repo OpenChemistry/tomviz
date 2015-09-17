@@ -41,17 +41,17 @@ void ToggleDataTypeReaction::onTriggered()
 {
   DataSource* dsource = ActiveObjects::instance().activeDataSource();
   if (dsource == NULL)
-    {
+  {
     return;
-    }
+  }
   if (dsource->type() == DataSource::Volume)
-    {
+  {
     dsource->setType(DataSource::TiltSeries);
-    }
+  }
   else if (dsource->type() == DataSource::TiltSeries)
-    {
+  {
     dsource->setType(DataSource::Volume);
-    }
+  }
   this->setWidgetText(dsource);
 }
 
@@ -68,17 +68,17 @@ void ToggleDataTypeReaction::updateEnableState()
 void ToggleDataTypeReaction::setWidgetText(DataSource* dsource)
 {
   if (dsource->type() == DataSource::Volume)
-    {
+  {
       this->parentAction()->setText("Mark As Tilt Series");
-    }
+  }
   else if (dsource->type() == DataSource::TiltSeries)
-    {
+  {
       this->parentAction()->setText("Mark As Volume");
-    }
+  }
   else
-    {
+  {
     assert("Unknown data source type" && false);
-    }
+  }
 }
 
 }

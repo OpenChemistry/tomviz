@@ -81,49 +81,49 @@ void ActiveObjects::viewChanged(pqView* view)
 void ActiveObjects::dataSourceRemoved(DataSource* ds)
 {
   if (this->VoidActiveDataSource == ds)
-    {
+  {
     this->setActiveDataSource(NULL);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void ActiveObjects::moduleRemoved(Module* mdl)
 {
   if (this->VoidActiveModule == mdl)
-    {
+  {
     this->setActiveModule(NULL);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void ActiveObjects::setActiveDataSource(DataSource* source)
 {
   if (this->VoidActiveDataSource != source)
-    {
+  {
     if (this->ActiveDataSource)
-      {
+    {
       QObject::disconnect(this->ActiveDataSource, SIGNAL(dataChanged()),
                           this, SLOT(dataSourceChanged()));
-      }
+    }
     if (source)
-      {
+    {
       QObject::connect(source, SIGNAL(dataChanged()),
                        this, SLOT(dataSourceChanged()));
-      }
+    }
     this->ActiveDataSource = source;
     this->VoidActiveDataSource = source;
     emit this->dataSourceChanged(this->ActiveDataSource);
-    }
+  }
   emit this->dataSourceActivated(this->ActiveDataSource);
 }
 //-----------------------------------------------------------------------------
 void ActiveObjects::dataSourceChanged()
 {
   if (this->ActiveDataSource->type() != this->ActiveDataSourceType)
-    {
+  {
     this->ActiveDataSourceType = this->ActiveDataSource->type();
     emit this->dataSourceChanged(this->ActiveDataSource);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -137,16 +137,16 @@ vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 void ActiveObjects::setActiveModule(Module* module)
 {
   if (this->VoidActiveModule != module)
-    {
+  {
     this->VoidActiveModule = module;
     this->ActiveModule = module;
     if (module)
-      {
+    {
       this->setActiveView(module->view());
       this->setActiveDataSource(module->dataSource());
-      }
-    emit this->moduleChanged(module);
     }
+    emit this->moduleChanged(module);
+  }
   emit this->moduleActivated(module);
 }
 

@@ -70,18 +70,18 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
 
   // The bin values are the centers, extending +/- half an inc either side
   switch (input->GetScalarType())
-    {
+  {
     vtkTemplateMacro(
           tomviz::GetScalarRange(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
                          input->GetPointData()->GetScalars()->GetNumberOfTuples(),
                          minmax));
     default:
       break;
-    }
+  }
   if (minmax[0] == minmax[1])
-    {
+  {
     minmax[1] = minmax[0] + 1.0;
-    }
+  }
 
   double inc = (minmax[1] - minmax[0]) / numberOfBins;
   double halfInc = inc / 2.0;
@@ -89,41 +89,41 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
       vtkFloatArray::SafeDownCast(
         output->GetColumnByName(vtkStdString("image_extents").c_str()));
   if (!extents)
-    {
+  {
     extents = vtkSmartPointer<vtkFloatArray>::New();
     extents->SetName(vtkStdString("image_extents").c_str());
-    }
+  }
   extents->SetNumberOfTuples(numberOfBins);
   double min = minmax[0] + halfInc;
   for (int j = 0; j < numberOfBins; ++j)
-    {
+  {
     extents->SetValue(j, min + j * inc);
-    }
+  }
   vtkSmartPointer<vtkIntArray> populations =
       vtkIntArray::SafeDownCast(
         output->GetColumnByName(vtkStdString("image_pops").c_str()));
   if (!populations)
-    {
+  {
     populations = vtkSmartPointer<vtkIntArray>::New();
     populations->SetName(vtkStdString("image_pops").c_str());
-    }
+  }
   populations->SetNumberOfTuples(numberOfBins);
   int *pops = static_cast<int *>(populations->GetVoidPointer(0));
   for (int k = 0; k < numberOfBins; ++k)
-    {
+  {
     pops[k] = 0;
-    }
+  }
   int invalid = 0;
 
   switch (input->GetScalarType())
-    {
+  {
     vtkTemplateMacro(
           tomviz::CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
                              input->GetPointData()->GetScalars()->GetNumberOfTuples(),
                              minmax[0], pops, inc, numberOfBins, invalid));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
-    }
+  }
 
 #ifndef NDEBUG
   vtkIdType total = invalid;
@@ -132,9 +132,9 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   assert(total == input->GetPointData()->GetScalars()->GetNumberOfTuples());
 #endif
   if (invalid)
-    {
+  {
     cout << "Warning: NaN or infinite value in dataset" << endl;
-    }
+  }
 
   output->AddColumn(extents.GetPointer());
   output->AddColumn(populations.GetPointer());
@@ -166,9 +166,9 @@ void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
   // make the histogram and notify observers (the main thread) that it
   // is done.
   if (input && output)
-    {
+  {
     PopulateHistogram(input.Get(), output.Get());
-    }
+  }
   emit histogramDone(input, output);
 }
 
@@ -217,13 +217,13 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   // Determine the location of the click, and emit something we can listen to!
   vtkPlotBar *histo = 0;
   if (this->GetNumberOfPlots() > 0)
-    {
+  {
     histo = vtkPlotBar::SafeDownCast(this->GetPlot(0));
-    }
+  }
   if (!histo)
-    {
+  {
     return false;
-    }
+  }
   this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
                                        this->Transform.Get());
   vtkVector2f pos;
@@ -234,12 +234,12 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   this->Marker->Modified();
   this->Scene->SetDirty(true);
   if (this->GetNumberOfPlots() == 1)
-    {
+  {
     // Work around a bug in the charts - ensure corner is invalid for the plot.
     this->Marker->SetXAxis(NULL);
     this->Marker->SetYAxis(NULL);
     this->AddPlot(this->Marker.Get());
-    }
+  }
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
   return true;
 }
@@ -306,9 +306,9 @@ CentralWidget::~CentralWidget()
   QMetaObject::invokeMethod(this->HistogramGen, "deleteLater");
   // Wait for the background thread to clean up the object and quit
   while (this->Worker->isRunning())
-    {
+  {
     QCoreApplication::processEvents();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -346,23 +346,23 @@ void CentralWidget::setActiveModule(Module* module)
 void CentralWidget::setDataSource(DataSource* source)
 {
   if (this->ADataSource)
-    {
+  {
     this->disconnect(this->ADataSource);
-    }
+  }
   this->ADataSource = source;
   if (source)
-    {
+  {
     this->connect(source, SIGNAL(dataChanged()), SLOT(refreshHistogram()));
-    }
+  }
 
   // Whenever the data source changes clear the plot, and then populate when
   // ready (or use the cached histogram values.
   this->Chart->ClearPlots();
 
   if (!source)
-    {
+  {
     return;
-    }
+  }
 
   // Get the actual data source, build a histogram out of it.
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
@@ -390,20 +390,20 @@ void CentralWidget::setDataSource(DataSource* source)
 
   // Check our cache, and use that if appopriate (or update it).
   if (this->HistogramCache.contains(image))
-    {
+  {
     vtkTable *cachedTable = this->HistogramCache[image];
     if (cachedTable->GetMTime() > image->GetMTime())
-      {
+    {
       this->setHistogramTable(cachedTable);
       return;
-      }
+    }
     else
-      {
+    {
       // Need to recalculate, clear the plots, and remove the cached data.
       this->Chart->ClearPlots();
       this->HistogramCache.remove(image);
-      }
     }
+  }
 
   // Calculate a histogram.
   vtkSmartPointer<vtkTable> table =
@@ -463,9 +463,9 @@ void CentralWidget::histogramClicked(vtkObject *)
 
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
   if (!view)
-    {
+  {
     return;
-    }
+  }
 
   // Use active ModuleContour is possible. Otherwise, find the first existing
   // ModuleContour instance or just create a new one, if none exists.
@@ -478,20 +478,20 @@ void CentralWidget::histogramClicked(vtkObject *)
   ModuleContourType* contour = qobject_cast<ModuleContourType*>(
     ActiveObjects::instance().activeModule());
   if (!contour)
-    {
+  {
     QList<ModuleContourType*> contours =
       ModuleManager::instance().findModules<ModuleContourType*>(this->ADataSource, view);
     if (contours.size() == 0)
-      {
+    {
       contour = qobject_cast<ModuleContourType*>(ModuleManager::instance().createAndAddModule(
           "Contour", this->ADataSource, view));
-      }
-    else
-      {
-      contour = contours[0];
-      }
-    ActiveObjects::instance().setActiveModule(contour);
     }
+    else
+    {
+      contour = contours[0];
+    }
+    ActiveObjects::instance().setActiveModule(contour);
+  }
   Q_ASSERT(contour);
   contour->setIsoValue(this->Chart->PositionX);
   tomviz::convert<pqView*>(view)->render();
@@ -502,9 +502,9 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   vtkDataArray *arr =
       vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
   if (!arr)
-    {
+  {
     return;
-    }
+  }
 
   this->Chart->ClearPlots();
 
@@ -523,21 +523,21 @@ void CentralWidget::setHistogramTable(vtkTable *table)
 
   arr = vtkDataArray::SafeDownCast(table->GetColumnByName("image_extents"));
   if (arr && arr->GetNumberOfTuples() > 2)
-    {
+  {
     double range[2];
     arr->GetRange(range);
     double halfInc = (arr->GetTuple1(1) - arr->GetTuple1(0)) / 2.0;
     vtkAxis *bottomAxis = this->Chart->GetAxis(vtkAxis::BOTTOM);
     bottomAxis->SetBehavior(vtkAxis::FIXED);
     bottomAxis->SetRange(range[0] - halfInc , range[1] + halfInc);
-    }
+  }
 
   if (this->LUT)
-    {
+  {
     plot->ScalarVisibilityOn();
     plot->SetLookupTable(this->LUT);
     plot->SelectColorArray("image_extents");
-    }
+  }
 }
 
 } // end of namespace tomviz

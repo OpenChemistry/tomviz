@@ -34,7 +34,7 @@ class Module;
 /// Singleton akin to ProxyManager, but to keep track (and
 /// serialize/deserialze) modules.
 class ModuleManager : public QObject
-  {
+{
   Q_OBJECT
 
   typedef QObject Superclass;
@@ -47,18 +47,18 @@ public:
   /// returned.
   template <class T>
   QList<T> findModules(DataSource* dataSource, vtkSMViewProxy* view)
-    {
+  {
     QList<T> modulesT;
     QList<Module*> modules = this->findModulesGeneric(dataSource, view);
     foreach (Module* module, modules)
-      {
+    {
       if (T moduleT = qobject_cast<T>(module))
-        {
+      {
         modulesT.push_back(moduleT);
-        }
       }
-    return modulesT;
     }
+    return modulesT;
+  }
 
   /// save the application state as xml.
   /// Parameter stateDir: the location to use as the base of all relative file paths

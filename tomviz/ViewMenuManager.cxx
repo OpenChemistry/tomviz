@@ -63,13 +63,13 @@ void ViewMenuManager::buildMenu()
 void ViewMenuManager::showViewPropertiesDialog(bool show)
 {
   if (show)
-    {
+  {
     this->viewPropertiesDialog->show();
-    }
+  }
   else
-    {
+  {
     this->viewPropertiesDialog->accept();
-    }
+  }
 }
 
 void ViewMenuManager::viewPropertiesDialogHidden()

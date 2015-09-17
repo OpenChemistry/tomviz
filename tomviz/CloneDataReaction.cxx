@@ -51,9 +51,9 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
 {
   toClone = toClone? toClone : ActiveObjects::instance().activeDataSource();
   if (!toClone)
-    {
+  {
     return NULL;
-    }
+  }
 
   QStringList items;
   items << "Original data only"
@@ -71,12 +71,12 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
     /*ok*/&user_okayed);
 
   if (user_okayed)
-    {
+  {
     DataSource* newClone = toClone->clone(selection == items[1],
                                           selection == items[2]);
     LoadDataReaction::dataSourceAdded(newClone);
     return newClone;
-    }
+  }
   return NULL;
 }
 

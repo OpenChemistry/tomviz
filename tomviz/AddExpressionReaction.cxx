@@ -50,9 +50,9 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
-    {
+  {
     return NULL;
-    }
+  }
 
   // Build the default script for the python operator
   // This was done in the Dialog's UI file, but since it needs to change

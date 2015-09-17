@@ -24,62 +24,13 @@
 #include "vtkDataObject.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
+#include "vtkSmartPyObject.h"
 #include <sstream>
 
 #include "ui_EditPythonOperatorWidget.h"
 
 namespace
 {
-  // Smart pointer for PyObjects. Calls Py_XDECREF when scope ends.
-  class SmartPyObject
-  {
-    PyObject *Object;
-
-  public:
-    SmartPyObject(PyObject *obj = NULL)
-      : Object(obj)
-    {
-    }
-    ~SmartPyObject()
-    {
-      Py_XDECREF(this->Object);
-    }
-    PyObject *operator->() const
-    {
-      return this->Object;
-    }
-    PyObject *GetPointer() const
-    {
-      return this->Object;
-    }
-    operator bool () const
-    {
-      return this->Object != NULL;
-    }
-    operator PyObject* () const
-    {
-      return this->Object;
-    }
-
-    void TakeReference(PyObject* obj)
-    {
-      if (this->Object)
-      {
-        Py_DECREF(this->Object);
-      }
-      this->Object = obj;
-    }
-    PyObject* ReleaseReference()
-    {
-      PyObject* ret = this->Object;
-      this->Object = NULL;
-      return ret;
-    }
-  private:
-    SmartPyObject(const SmartPyObject&);
-    void operator=(const SmartPyObject&) const;
-  };
-
   //----------------------------------------------------------------------------
   bool CheckForError()
   {
@@ -131,9 +82,9 @@ namespace tomviz
 class OperatorPython::OPInternals
 {
 public:
-  SmartPyObject OperatorModule;
-  SmartPyObject Code;
-  SmartPyObject TransformMethod;
+  vtkSmartPyObject OperatorModule;
+  vtkSmartPyObject Code;
+  vtkSmartPyObject TransformMethod;
 };
 
 //-----------------------------------------------------------------------------
@@ -189,7 +140,7 @@ void OperatorPython::setScript(const QString& str)
       return;
     }
 
-    SmartPyObject module;
+    vtkSmartPyObject module;
     module.TakeReference(PyImport_ExecCodeModule(
         QString("tomviz_%1").arg(this->label()).toLatin1().data(),
         this->Internals->Code));
@@ -224,11 +175,11 @@ bool OperatorPython::transform(vtkDataObject* data)
 
   Q_ASSERT(data);
 
-  SmartPyObject pydata(vtkPythonUtil::GetObjectFromPointer(data));
-  SmartPyObject args(PyTuple_New(1));
+  vtkSmartPyObject pydata(vtkPythonUtil::GetObjectFromPointer(data));
+  vtkSmartPyObject args(PyTuple_New(1));
   PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
 
-  SmartPyObject result;
+  vtkSmartPyObject result;
   result.TakeReference(PyObject_Call(this->Internals->TransformMethod, args,
                                      NULL));
   if (!result)

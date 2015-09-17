@@ -91,27 +91,31 @@ struct Histogram: dax::exec::WorkletMapField
 
     dax::Id end_offset;
     if(id+1 == this->NumWorkers)
-      { end_offset = this->Length; }
+    {
+      end_offset = this->Length;
+    }
     else
-      { end_offset = (id+1)*TaskSize; }
+    {
+      end_offset = (id+1)*TaskSize;
+    }
 
     const T* myEnd = this->Values + end_offset;
 
     for(; myValue != myEnd; myValue++)
-      {
+    {
       const int index = std::min(maxBin,
                      static_cast<int>((*myValue - MinValue) / BinSize));
       ++histo[index];
-      }
+    }
 
     //using tbb atomics add my histo to the global histogram
     tbb::atomic<int> x;
     for(int i=0; i < this->NumBins; ++i)
-      {
+    {
       x = GlobalHisto[i];
       x.fetch_and_add( histo[ i ]);
       GlobalHisto[i] = x;
-      }
+    }
 
   }
 
@@ -146,10 +150,10 @@ void GetScalarRange(T *values, const unsigned int n, double* minmax)
   minmax[0] = portal.Get(0)[0];
   minmax[1] = portal.Get(0)[1];
   for (unsigned int j = 1; j < minmaxHandle.GetNumberOfValues(); ++j)
-    {
+  {
     minmax[0] = std::min(portal.Get(j)[0], minmax[0]);
     minmax[1] = std::max(portal.Get(j)[1], minmax[1]);
-    }
+  }
 }
 
 template<typename T>
@@ -172,12 +176,12 @@ void GetScalarRange(T *values, const unsigned int n, double* minmax)
   tempMinMax[0] = values[0];
   tempMinMax[1] = values[0];
   for (unsigned int j = 1; j < n; ++j)
-    {
+  {
     // This code does not handle NaN or Inf values, so check for them
     if (!vtkMath::IsFinite(values[j])) continue;
     tempMinMax[0] = std::min(values[j], tempMinMax[0]);
     tempMinMax[1] = std::max(values[j], tempMinMax[1]);
-    }
+  }
 
   minmax[0] = static_cast<double>(tempMinMax[0]);
   minmax[1] = static_cast<double>(tempMinMax[1]);
@@ -190,20 +194,20 @@ void CalculateHistogram(T *values, const unsigned int n, const float min,
 {
   const int maxBin(numberOfBins - 1);
   for (unsigned int j = 0; j < n; ++j)
-    {
+  {
     // This code does not handle NaN or Inf values, so check for them and handle
     // them specially
     if (vtkMath::IsFinite(*values))
-      {
+    {
       int index = std::min(static_cast<int>((*(values++) - min) / inc), maxBin);
       ++pops[index];
-      }
+    }
     else
-      {
+    {
       ++values;
       ++invalid;
-      }
     }
+  }
 }
 #endif
 

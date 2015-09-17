@@ -70,9 +70,9 @@ QIcon ModuleSlice::icon() const
 bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
-    {
+  {
     return false;
-    }
+  }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   vtkSMSourceProxy* producer = data->producer();
@@ -101,13 +101,13 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   const bool widgetSetup = this->setupWidget(vtkView, producer);
 
   if(widgetSetup)
-    {
+  {
     this->Widget->On();
     this->Widget->InteractionOn();
     pqCoreUtilities::connect(
       this->Widget, vtkCommand::InteractionEvent,
       this, SLOT(onPlaneChanged()));
-    }
+  }
 
   Q_ASSERT(this->Widget);
   return widgetSetup;
@@ -130,9 +130,9 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView, vtkSMSourceProxy* produce
                                        GetName();
 
   if(!rwi||!passThroughAlg||!propertyName)
-    {
+  {
     return false;
-    }
+  }
 
   this->Widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
 
@@ -192,10 +192,10 @@ bool ModuleSlice::finalize()
   this->PassThrough = NULL;
 
   if(this->Widget != NULL)
-    {
+  {
     this->Widget->InteractionOff();
     this->Widget->Off();
-    }
+  }
 
   return true;
 }
@@ -208,13 +208,13 @@ bool ModuleSlice::setVisibility(bool val)
   // update the state of the arrow as well since it cannot update when the
   // widget is not enabled
   if (val)
-    {
+  {
     vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
     // Not this: it hides the plane as well as the arrow...
     //this->Widget->SetEnabled(showProperty.GetAsInt());
     this->Widget->SetArrowVisibility(showProperty.GetAsInt());
     this->Widget->SetInteraction(showProperty.GetAsInt());
-    }
+  }
   return true;
 }
 
@@ -278,11 +278,11 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 
   pugi::xml_node plane = ns.child("Plane");
   if (!plane)
-    {
+  {
     // We are reading an older state file from before the change that added
     // the ability to save these...
     return this->Superclass::deserialize(ns);
-    }
+  }
   // Deserialize the show arrow state
   vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
   showProperty.Set(ns.attribute("show_arrow").as_int());
@@ -292,29 +292,29 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
   double point[3];
   for (pugi::xml_node pointNode = plane.child("Point"); pointNode;
          pointNode = pointNode.next_sibling("Point"))
-    {
+  {
     point[0] = pointNode.attribute("x").as_double();
     point[1] = pointNode.attribute("y").as_double();
     point[2] = pointNode.attribute("z").as_double();
     int index = pointNode.attribute("index").as_int();
     if (index == 0)
-      {
+    {
       this->Widget->SetOrigin(point);
-      }
+    }
     else if (index == 1)
-      {
+    {
       this->Widget->SetPoint1(point);
-      }
+    }
     else if (index == 2)
-      {
+    {
       this->Widget->SetPoint2(point);
-      }
+    }
     else
-      {
+    {
       qCritical("Unknown point index for slice plane point");
       return false;
-      }
     }
+  }
   this->Widget->UpdatePlacement();
 
   // Let the superclass do its thing
@@ -326,18 +326,18 @@ void ModuleSlice::onPropertyChanged()
 {
   // Avoid recursive clobbering of the plane position
   if (this->IgnoreSignals)
-    {
+  {
     return;
-    }
+  }
   this->IgnoreSignals = true;
   vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
   if (this->Widget->GetEnabled())
-    {
+  {
     // Not this: it hides the plane as well as the arrow...
     //this->Widget->SetEnabled(showProperty.GetAsInt());
     this->Widget->SetArrowVisibility(showProperty.GetAsInt());
     this->Widget->SetInteraction(showProperty.GetAsInt());
-    }
+  }
   vtkSMPropertyHelper pointProperty(this->PropsPanelProxy, "PointOnPlane");
   std::vector<double> centerPoint = pointProperty.GetDoubleArray();
   this->Widget->SetCenter(&centerPoint[0]);
@@ -353,9 +353,9 @@ void ModuleSlice::onPlaneChanged()
 {
   // Avoid recursive clobbering of the plane position
   if (this->IgnoreSignals)
-    {
+  {
     return;
-    }
+  }
   this->IgnoreSignals = true;
   vtkSMPropertyHelper pointProperty(this->PropsPanelProxy, "PointOnPlane");
   double *centerPoint = this->Widget->GetCenter();

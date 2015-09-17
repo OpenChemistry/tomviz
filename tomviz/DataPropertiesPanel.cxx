@@ -48,7 +48,7 @@ public:
   QPointer<QWidget> TiltAnglesSeparator;
 
   DPPInternals(QWidget* parent)
-    {
+  {
     Ui::DataPropertiesPanel& ui = this->Ui;
     ui.setupUi(parent);
     QVBoxLayout* l = ui.verticalLayout;
@@ -78,10 +78,10 @@ public:
       ui.ColorMapRestoreDefaults->style()->standardIcon(QStyle::SP_BrowserReload));
 
     this->clear();
-    }
+  }
 
   void clear()
-    {
+  {
     Ui::DataPropertiesPanel& ui = this->Ui;
     ui.FileName->setText("");
     ui.OriginalDataRange->setText("");
@@ -89,15 +89,15 @@ public:
     ui.TransformedDataRange->setText("");
     ui.TransformedDataType->setText("Type:");
     if (this->ColorMapWidget)
-      {
+    {
       ui.verticalLayout->removeWidget(this->ColorMapWidget);
       delete this->ColorMapWidget;
-      }
+    }
     this->TiltAnglesSeparator->hide();
     ui.TiltAnglesTable->clear();
     ui.TiltAnglesTable->setRowCount(0);
     ui.TiltAnglesTable->hide();
-    }
+  }
 
 };
 
@@ -120,15 +120,15 @@ DataPropertiesPanel::~DataPropertiesPanel()
 void DataPropertiesPanel::setDataSource(DataSource* dsource)
 {
   if (this->Internals->CurrentDataSource)
-    {
+  {
     this->disconnect(this->Internals->CurrentDataSource);
-    }
+  }
   this->Internals->CurrentDataSource = dsource;
   if (dsource)
-    {
+  {
     this->connect(dsource, SIGNAL(dataChanged()), SLOT(update()),
                   Qt::UniqueConnection);
-    }
+  }
   this->update();
 }
 
@@ -143,28 +143,28 @@ QString getDataExtentAndRangeString(vtkSMSourceProxy* proxy)
                           .arg(info->GetExtent()[5] - info->GetExtent()[4] + 1);
 
   if (vtkPVArrayInformation* scalarInfo = tomviz::scalarArrayInformation(proxy))
-    {
+  {
     return QString("(%1)\t%2 : %3").arg(extentString)
              .arg(scalarInfo->GetComponentRange(0)[0])
              .arg(scalarInfo->GetComponentRange(0)[1]);
-    }
+  }
   else
-    {
+  {
     return QString("(%1)\t? : ? (type: ?)").arg(extentString);
-    }
+  }
 }
 
 QString getDataTypeString(vtkSMSourceProxy* proxy)
 {
   if (vtkPVArrayInformation* scalarInfo = tomviz::scalarArrayInformation(proxy))
-    {
+  {
     return QString("Type: %1").arg(vtkImageScalarTypeNameMacro(
                                      scalarInfo->GetDataType()));
-    }
+  }
   else
-    {
+  {
     return QString("Type: ?");
-    }
+  }
 }
 }
 
@@ -178,9 +178,9 @@ void DataPropertiesPanel::update()
 
   DataSource* dsource = this->Internals->CurrentDataSource;
   if (!dsource)
-    {
+  {
     return;
-    }
+  }
   Ui::DataPropertiesPanel& ui = this->Internals->Ui;
   ui.FileName->setText(dsource->filename());
 
@@ -210,7 +210,7 @@ void DataPropertiesPanel::update()
 
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries)
-    {
+  {
     this->Internals->TiltAnglesSeparator->show();
     ui.TiltAnglesTable->show();
     vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
@@ -219,21 +219,21 @@ void DataPropertiesPanel::update()
     ui.TiltAnglesTable->setRowCount(tiltAngles->GetNumberOfTuples());
     ui.TiltAnglesTable->setColumnCount(tiltAngles->GetNumberOfComponents());
     for (int i = 0; i < tiltAngles->GetNumberOfTuples(); ++i)
-      {
+    {
       double* angles = tiltAngles->GetTuple(i);
       for (int j = 0; j < tiltAngles->GetNumberOfComponents(); ++j)
-        {
+      {
         QTableWidgetItem* item = new QTableWidgetItem();
         item->setData(Qt::DisplayRole, QString("%1").arg(angles[j]));
         ui.TiltAnglesTable->setItem(i, j, item);
-        }
       }
     }
+  }
   else
-    {
+  {
     this->Internals->TiltAnglesSeparator->hide();
     ui.TiltAnglesTable->hide();
-    }
+  }
   this->connect(this->Internals->Ui.TiltAnglesTable,
       SIGNAL(cellChanged(int, int)),
       SLOT(onTiltAnglesModified(int, int)));
@@ -244,9 +244,9 @@ void DataPropertiesPanel::render()
 {
   pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view)
-    {
+  {
     view->render();
-    }
+  }
   emit colorMapUpdated();
 }
 
@@ -257,23 +257,23 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
   QTableWidgetItem* item = this->Internals->Ui.TiltAnglesTable->item(row, column);
   QString str = item->data(Qt::DisplayRole).toString();
   if (dsource->type() == DataSource::TiltSeries)
-    {
+  {
     vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
         dsource->producer()->GetClientSideObject())
       ->GetOutputDataObject(0)->GetFieldData()->GetArray("tilt_angles");
     bool ok;
     double value = str.toDouble(&ok);
     if (ok)
-      {
+    {
       double* tuple = tiltAngles->GetTuple(row);
       tuple[column] = value;
       tiltAngles->SetTuple(row, tuple);
-      }
-    else
-      {
-      std::cerr << "Invalid tilt angle: " << str.toStdString() << std::endl;
-      }
     }
+    else
+    {
+      std::cerr << "Invalid tilt angle: " << str.toStdString() << std::endl;
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------

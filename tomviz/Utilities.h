@@ -70,13 +70,13 @@ inline vtkSMProxy* convert(pqProxy* pqproxy)
 inline bool annotateDataProducer(vtkSMProxy* proxy, const char* filename)
 {
   if (proxy)
-    {
+  {
     proxy->SetAnnotation("tomviz.Type", "DataSource");
     QFileInfo fileInfo(filename);
     proxy->SetAnnotation("tomviz.DataSource.FileName", filename);
     proxy->SetAnnotation("tomviz.Label", fileInfo.fileName().toAscii().data());
     return true;
-    }
+  }
   return false;
 }
 
@@ -105,9 +105,9 @@ inline bool annotateDataProducer(pqProxy* pqproxy, const char* filename)
 inline QString label(vtkSMProxy* proxy)
 {
   if (proxy && proxy->HasAnnotation("tomviz.Label"))
-    {
+  {
     return proxy->GetAnnotation("tomviz.Label");
-    }
+  }
   return proxy? proxy->GetXMLLabel() : NULL;
 }
 

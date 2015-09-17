@@ -76,10 +76,10 @@ void SaveDataReaction::onTriggered()
       vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   QString filters = writerFactory->GetSupportedFileTypes(source->producer());
   if (filters.isEmpty())
-    {
+  {
     qCritical("Cannot determine writer to use.");
     return;
-    }
+  }
 
   pqFileDialog fileDialog(server,
                           pqCoreUtilities::mainWidget(),
@@ -89,9 +89,9 @@ void SaveDataReaction::onTriggered()
   // Default to saving tiff files
   fileDialog.setRecentlyUsedExtension(".tiff");
   if (fileDialog.exec() == QDialog::Accepted)
-    {
+  {
     this->saveData(fileDialog.getSelectedFiles()[0]);
-    }
+  }
 }
 
 bool SaveDataReaction::saveData(const QString &filename)
@@ -99,10 +99,10 @@ bool SaveDataReaction::saveData(const QString &filename)
   pqServer* server = pqActiveObjects::instance().activeServer();
   DataSource *source = ActiveObjects::instance().activeDataSource();
   if (!server || !source)
-    {
+  {
     qCritical("No active source located.");
     return false;
-    }
+  }
 
   vtkSMWriterFactory* writerFactory = vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -110,39 +110,39 @@ bool SaveDataReaction::saveData(const QString &filename)
                       source->producer()));
   vtkSMSourceProxy* writer = vtkSMSourceProxy::SafeDownCast(proxy);
   if (!writer)
-    {
+  {
     qCritical() << "Failed to create writer for: " << filename;
     return false;
-    }
+  }
   if (strcmp(writer->GetClientSideObject()->GetClassName(),"vtkTIFFWriter") == 0)
-    {
+  {
     vtkTrivialProducer *t =
         vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
     vtkImageData* imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     if (imageData->GetPointData()->GetScalars()->GetDataType() == VTK_DOUBLE)
-      {
+    {
       QMessageBox messageBox;
       messageBox.setWindowTitle("Unsupported data type");
       messageBox.setText("Tiff files do not support writing data of type double.");
       messageBox.setIcon(QMessageBox::Critical);
       messageBox.exec();
       return false;
-      }
     }
+  }
 
   pqWriterDialog dialog(writer);
 
   // Check to see if this writer has any properties that can be configured by
   // the user. If it does, display the dialog.
   if (dialog.hasConfigurableProperties())
-    {
+  {
     dialog.exec();
     if(dialog.result() == QDialog::Rejected)
-      {
+    {
       // The user pressed Cancel so don't write
       return false;
-      }
     }
+  }
   writer->UpdateVTKObjects();
   writer->UpdatePipeline();
   return true;

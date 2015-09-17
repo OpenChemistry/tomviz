@@ -45,13 +45,13 @@ SaveLoadStateReaction::~SaveLoadStateReaction()
 void SaveLoadStateReaction::onTriggered()
 {
   if (this->Load)
-    {
+  {
     this->loadState();
-    }
+  }
   else
-    {
+  {
     this->saveState();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -63,9 +63,9 @@ bool SaveLoadStateReaction::saveState()
   fileDialog.setObjectName("SaveStateDialog");
   fileDialog.setFileMode(pqFileDialog::AnyFile);
   if (fileDialog.exec() == QDialog::Accepted)
-    {
+  {
     return SaveLoadStateReaction::saveState(fileDialog.getSelectedFiles()[0]);
-    }
+  }
   return false;
 }
 
@@ -78,9 +78,9 @@ bool SaveLoadStateReaction::loadState()
   fileDialog.setObjectName("LoadStateDialog");
   fileDialog.setFileMode(pqFileDialog::ExistingFile);
   if (fileDialog.exec() == QDialog::Accepted)
-    {
+  {
     return SaveLoadStateReaction::loadState(fileDialog.getSelectedFiles()[0]);
-    }
+  }
   return false;
 }
 
@@ -89,17 +89,17 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
 {
   pugi::xml_document document;
   if (!document.load_file(filename.toLatin1().data()))
-    {
+  {
     qCritical() << "Failed to read file (or file not valid xml) :" << filename;
     return false;
-    }
+  }
 
   if (ModuleManager::instance().deserialize(document.child("tomvizState"),
                                             QFileInfo(filename).dir()))
-    {
+  {
     RecentFilesMenu::pushStateFile(filename);
     return true;
-    }
+  }
   return false;
 }
 

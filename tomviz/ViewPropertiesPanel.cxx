@@ -31,8 +31,8 @@ public:
   Ui::ViewPropertiesPanel Ui;
 
   VPPInternals()
-    {
-    }
+  {
+  }
 };
 
 //-----------------------------------------------------------------------------
@@ -65,9 +65,9 @@ void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
   Ui::ViewPropertiesPanel &ui = this->Internals->Ui;
   ui.ProxiesWidget->clear();
   if (view)
-    {
+  {
     ui.ProxiesWidget->addProxy(view, view->GetXMLLabel(), QStringList(), true);
-    }
+  }
   ui.ProxiesWidget->updateLayout();
   this->updatePanel();
 }
@@ -77,9 +77,9 @@ void ViewPropertiesPanel::render()
 {
   pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view)
-    {
+  {
     view->render();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------

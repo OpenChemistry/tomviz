@@ -71,10 +71,10 @@ void AddResampleReaction::resample(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
-    {
+  {
     qDebug() << "Exiting early - no data :-(";
     return;
-    }
+  }
   vtkImageData* originalData = imageData(source);
   int extents[6];
   originalData->GetExtent(extents);
@@ -113,7 +113,7 @@ void AddResampleReaction::resample(DataSource* source)
   v->addWidget(buttons);
   dialog.setLayout(v);
   if (dialog.exec() == QDialog::Accepted)
-    {
+  {
     // Compute the resampled data
     double origin[3];
     double spacing[3];
@@ -123,13 +123,13 @@ void AddResampleReaction::resample(DataSource* source)
     double newOrigin[3], newSpacing[3];
     int newExtents[6];
     for (int i = 0; i < 3; ++i)
-      {
+    {
       newOrigin[i] = origin[i] + extents[2*i] * spacing[i];
       newExtents[2*i] = 0;
       newExtents[2*i+1] = newResolution[i] - 1;
       newSpacing[i] = spacing[i] * (extents[2*i+1] - extents[2*i]) /
                                    (double)(newResolution[i]);
-      }
+    }
     vtkNew< vtkImageReslice > reslice;
     reslice->SetInputData(originalData);
     reslice->SetInterpolationModeToLinear(); // for now
@@ -152,7 +152,7 @@ void AddResampleReaction::resample(DataSource* source)
 
     // Add the new DataSource
     LoadDataReaction::dataSourceAdded(resampledData);
-    }
+  }
 }
 
 }

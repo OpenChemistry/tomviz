@@ -73,14 +73,14 @@ void ModulePropertiesPanel::setModule(Module* module)
   ui.ProxiesWidget->clear();
   ui.DetachColorMap->setVisible(false);
   if (module)
-    {
+  {
     module->addToPanel(ui.ProxiesWidget);
     if (module->isColorMapNeeded())
-      {
+    {
       ui.DetachColorMap->setVisible(true);
       ui.DetachColorMap->setChecked(module->useDetachedColorMap());
-      }
     }
+  }
   ui.ProxiesWidget->updateLayout();
   this->updatePanel();
   ui.Delete->setEnabled(module != NULL);
@@ -113,9 +113,9 @@ void ModulePropertiesPanel::render()
 {
   pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view)
-    {
+  {
     view->render();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -123,11 +123,11 @@ void ModulePropertiesPanel::detachColorMap(bool val)
 {
   Module* module = this->Internals->ActiveModule;
   if (module)
-    {
+  {
     module->setUseDetachedColorMap(val);
     this->setModule(module); // refreshes the module.
     this->render();
-    }
+  }
 }
 
 }
