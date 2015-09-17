@@ -63,27 +63,27 @@ OperatorsWidget::~OperatorsWidget()
 void OperatorsWidget::setDataSource(DataSource* ds)
 {
   if (this->Internals->ADataSource == ds)
-    {
+  {
     return;
-    }
+  }
   this->clear();
   if (this->Internals->ADataSource)
-    {
+  {
     this->Internals->ADataSource->disconnect();
-    }
+  }
   this->Internals->ADataSource = ds;
   if (!ds)
-    {
+  {
     return;
-    }
+  }
 
   this->connect(ds, SIGNAL(operatorAdded(QSharedPointer<Operator>&)),
                 SLOT(operatorAdded(QSharedPointer<Operator>&)));
 
   foreach (QSharedPointer<Operator> op, ds->operators())
-    {
+  {
     this->operatorAdded(op);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -116,10 +116,10 @@ void OperatorsWidget::onItemClicked(QTreeWidgetItem *item, int col)
   QSharedPointer<Operator> op = this->Internals->ItemMap[item];
   Q_ASSERT(op);
   if (col == 1 && op)
-    {
+  {
     this->Internals->ADataSource->removeOperator(op);
     this->takeTopLevelItem(this->indexOfTopLevelItem(item));
-    }
+  }
 }
 
 void OperatorsWidget::updateOperatorLabel()
@@ -131,14 +131,14 @@ void OperatorsWidget::updateOperatorLabel()
   QMap<QTreeWidgetItem*, QSharedPointer<Operator> >::iterator i =
       this->Internals->ItemMap.begin();
   while (i != this->Internals->ItemMap.constEnd())
-    {
+  {
     if (i.value().data() == op)
-      {
+    {
       i.key()->setText(0, op->label());
       return;
-      }
-    ++i;
     }
+    ++i;
+  }
 }
 
 }

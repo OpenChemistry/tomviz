@@ -47,11 +47,11 @@ public:
 
   void setIsoValues(const QList<double>& values);
   void setIsoValue(double value)
-    {
+  {
     QList<double> values;
     values << value;
     this->setIsoValues(values);
-    }
+  }
 
 protected:
   virtual void updateColorMap();

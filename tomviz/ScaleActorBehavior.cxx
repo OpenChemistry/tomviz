@@ -48,42 +48,42 @@ static void UpdateScale(vtkObject *caller,
   int scale = floor(log10(distance) - 0.7);
   //cout << "Scale: " << scale << ", Distance: " << distance << endl;
   switch (scale)
-    {
-    case -7:
-    case -8:
-    case -9:
-      axis->SetTitle("nm");
-      axis->SetRange(0, distance * 1e9);
-      break;
-    case -4:
-    case -5:
-    case -6:
-      axis->SetTitle("microns");
-      axis->SetRange(0, distance * 1e6);
-      break;
-    case -1:
-    case -2:
-    case -3:
-      axis->SetTitle("mm");
-      axis->SetRange(0, distance * 1e3);
-      break;
-    case 2:
-    case 1:
-    case 0:
-      axis->SetTitle("m");
-      axis->SetRange(0, distance);
-      break;
-    case 5:
-    case 4:
-    case 3:
-      axis->SetTitle("km");
-      axis->SetRange(0, distance * 1e-3);
-      break;
-    default:
-      axis->SetTitle("out of range");
-      axis->SetRange(0, 1.0);
-      break;
-    }
+  {
+  case -7:
+  case -8:
+  case -9:
+    axis->SetTitle("nm");
+    axis->SetRange(0, distance * 1e9);
+    break;
+  case -4:
+  case -5:
+  case -6:
+    axis->SetTitle("microns");
+    axis->SetRange(0, distance * 1e6);
+    break;
+  case -1:
+  case -2:
+  case -3:
+    axis->SetTitle("mm");
+    axis->SetRange(0, distance * 1e3);
+    break;
+  case 2:
+  case 1:
+  case 0:
+    axis->SetTitle("m");
+    axis->SetRange(0, distance);
+    break;
+  case 5:
+  case 4:
+  case 3:
+    axis->SetTitle("km");
+    axis->SetRange(0, distance * 1e-3);
+    break;
+  default:
+    axis->SetTitle("out of range");
+    axis->SetRange(0, 1.0);
+    break;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ ScaleActorBehavior::~ScaleActorBehavior()
 void ScaleActorBehavior::viewAdded(pqView* view)
 {
   if (vtkSMRenderViewProxy* viewProxy = vtkSMRenderViewProxy::SafeDownCast(view->getProxy()))
-    {
+  {
     vtkRenderer* ren = vtkPVRenderView::SafeDownCast(viewProxy->GetClientSideObject())
                        ->GetNonCompositedRenderer();
     Q_ASSERT(ren);
@@ -122,7 +122,7 @@ void ScaleActorBehavior::viewAdded(pqView* view)
     cbc->SetClientData(axis.GetPointer());
     ren->AddObserver(vtkCommand::StartEvent, cbc.Get());
     ren->AddActor(axis.GetPointer());
-    }
+  }
 }
 
 }

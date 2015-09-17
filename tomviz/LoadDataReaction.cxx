@@ -94,17 +94,17 @@ DataSource* LoadDataReaction::loadData(const QString &fileName)
   pqPipelineSource* reader = pqLoadDataReaction::loadData(files);
 
   if (!reader)
-    {
+  {
     return NULL;
-    }
+  }
 
   DataSource* dataSource = createDataSource(reader->getProxy());
   // dataSource may be NULL if user cancelled the action.
   if (dataSource)
-    {
+  {
     // add the file to recent files menu.
     RecentFilesMenu::pushDataReader(reader->getProxy());
-    }
+  }
   controller->UnRegisterProxy(reader->getProxy());
   return dataSource;
 }
@@ -117,12 +117,12 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
   dialog.setObjectName("ConfigureReaderDialog");
   dialog.setWindowTitle("Configure Reader Parameters");
   if (dialog.hasVisibleWidgets() == false || dialog.exec() == QDialog::Accepted)
-    {
+  {
     DataSource* dataSource = new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
     // do whatever we need to do with a new data source.
     LoadDataReaction::dataSourceAdded(dataSource);
     return dataSource;
-    }
+  }
   return NULL;
 }
 
@@ -135,14 +135,14 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
   // Create an outline module for the source in the active view.
   if (Module* module = ModuleManager::instance().createAndAddModule(
       "Outline", dataSource, view))
-    {
+  {
     ActiveObjects::instance().setActiveModule(module);
-    }
+  }
   if (Module* module = ModuleManager::instance().createAndAddModule(
         "Orthogonal Slice", dataSource, view))
-    {
+  {
     ActiveObjects::instance().setActiveModule(module);
-    }
+  }
 }
 
 } // end of namespace tomviz

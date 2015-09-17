@@ -42,9 +42,9 @@ public:
   vtkWeakPointer<vtkSMProxy> OpacityMap;
 
   vtkSMProxy* detachedColorMap()
-    {
+  {
     if (!this->DetachedColorMap)
-      {
+    {
       static unsigned int colorMapCounter=0;
       colorMapCounter++;
 
@@ -56,15 +56,15 @@ public:
                                                                pxm);
       this->DetachedOpacityMap = vtkSMPropertyHelper(this->DetachedColorMap,
                                                      "ScalarOpacityFunction").GetAsProxy();
-      }
-    return this->DetachedColorMap;
     }
+    return this->DetachedColorMap;
+  }
 
   vtkSMProxy* detachedOpacityMap()
-    {
+  {
     this->detachedColorMap();
     return this->DetachedOpacityMap;
-    }
+  }
 };
 
 //-----------------------------------------------------------------------------
@@ -85,11 +85,11 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   this->View = vtkView;
   this->ADataSource = data;
   if (this->View && this->ADataSource)
-    {
+  {
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
       this->ADataSource, SIGNAL(dataChanged()), SLOT(render()));
-    }
+  }
   return (this->View && this->ADataSource);
 }
 
@@ -109,7 +109,7 @@ DataSource* Module::dataSource() const
 void Module::addToPanel(pqProxiesWidget* panel)
 {
   if (this->UseDetachedColorMap)
-    {
+  {
     // add color map to the panel, since it's detached from the dataSource.
     vtkSMProxy* lut = this->colorMap();
     QStringList list;
@@ -120,7 +120,7 @@ void Module::addToPanel(pqProxiesWidget* panel)
       << "ScalarOpacityFunction"
       << "UseLogScale";
     panel->addProxy(lut, "Module Color Map", list, true);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -128,24 +128,24 @@ void Module::setUseDetachedColorMap(bool val)
 {
   this->UseDetachedColorMap = val;
   if (this->isColorMapNeeded() == false)
-    {
+  {
     return;
-    }
+  }
 
   if (this->UseDetachedColorMap)
-    {
+  {
     this->Internals->ColorMap = this->Internals->detachedColorMap();
     this->Internals->OpacityMap = this->Internals->detachedOpacityMap();
 
     tomviz::rescaleColorMap(this->Internals->ColorMap, this->dataSource());
     pqCoreUtilities::connect(this->Internals->ColorMap, vtkCommand::ModifiedEvent,
                              this, SLOT(onColorMapChanged()));
-    }
+  }
   else
-    {
+  {
     this->Internals->ColorMap = NULL;
     this->Internals->OpacityMap = NULL;
-    }
+  }
   this->updateColorMap();
   emit colorMapChanged();
 }
@@ -169,21 +169,21 @@ vtkSMProxy* Module::opacityMap() const
 bool Module::serialize(pugi::xml_node& ns) const
 {
   if (this->isColorMapNeeded())
-    {
+  {
     ns.append_attribute("use_detached_colormap").set_value(this->UseDetachedColorMap? 1 : 0);
     if (this->UseDetachedColorMap)
-      {
+    {
       pugi::xml_node nodeL = ns.append_child("ColorMap");
       pugi::xml_node nodeS = ns.append_child("OpacityMap");
 
       // using detached color map, so we need to save the local color map.
       if (tomviz::serialize(this->colorMap(), nodeL) == false ||
         tomviz::serialize(this->opacityMap(), nodeS) == false)
-        {
+      {
         return false;
-        }
       }
     }
+  }
   return true;
 }
 
@@ -191,26 +191,26 @@ bool Module::serialize(pugi::xml_node& ns) const
 bool Module::deserialize(const pugi::xml_node& ns)
 {
   if (this->isColorMapNeeded())
-    {
+  {
     bool dcm = ns.attribute("use_detached_colormap").as_int(0) == 1;
     if (dcm && ns.child("ColorMap"))
-      {
+    {
       if (!tomviz::deserialize(this->Internals->detachedColorMap(), ns.child("ColorMap")))
-        {
+      {
         qCritical("Failed to deserialze ColorMap");
         return false;
-        }
       }
+    }
     if (dcm && ns.child("OpacityMap"))
-      {
+    {
       if (!tomviz::deserialize(this->Internals->detachedOpacityMap(), ns.child("OpacityMap")))
-        {
+      {
         qCritical("Failed to deserialze OpacityMap");
         return false;
-        }
       }
-    this->setUseDetachedColorMap(dcm);
     }
+    this->setUseDetachedColorMap(dcm);
+  }
   return true;
 }
 

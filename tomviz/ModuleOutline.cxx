@@ -52,9 +52,9 @@ bool ModuleOutline::initialize(DataSource* data,
                                vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
-    {
+  {
     return false;
-    }
+  }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
@@ -101,11 +101,11 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
   QStringList properties;
   properties << "CubeAxesVisibility" << "Visibility" << "DiffuseColor";
   if (tomviz::serialize(this->OutlineRepresentation, reprNode, properties) == false)
-    {
+  {
     qWarning("Failed to serialize ModuleOutline.");
     ns.remove_child(reprNode);
     return false;
-    }
+  }
   return true;
 }
 

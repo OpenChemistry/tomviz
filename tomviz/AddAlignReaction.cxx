@@ -51,10 +51,10 @@ void AddAlignReaction::align(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
-    {
+  {
     qDebug() << "Exiting early - no data :-(";
     return;
-    }
+  }
 
   AlignWidget *widget = new AlignWidget(source, pqCoreUtilities::mainWidget(),
                                         Qt::Window);

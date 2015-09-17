@@ -77,15 +77,15 @@ void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
 const char* dataSourceTypeToString(DataSource::DataSourceType type)
 {
   switch (type)
-    {
-    case DataSource::Volume:
-      return "volume";
-    case DataSource::TiltSeries:
-      return "tilt-series";
-    default:
-      assert("Unhandled data source type" && false);
-      return "";
-    }
+  {
+  case DataSource::Volume:
+    return "volume";
+  case DataSource::TiltSeries:
+    return "tilt-series";
+  default:
+    assert("Unhandled data source type" && false);
+    return "";
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -179,18 +179,18 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
                           vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
   }
   if (sourceFilename && strlen(sourceFilename))
-    {
+  {
     tomviz::annotateDataProducer(source, sourceFilename);
-    }
+  }
   else if (dataSource->HasAnnotation("filename"))
-    {
+  {
     cout << source->GetAnnotation("filename");
     tomviz::annotateDataProducer(source, dataSource->GetAnnotation("filename"));
-    }
+  }
   else
-    {
+  {
     tomviz::annotateDataProducer(source, "No filename");
-    }
+  }
 
   controller->RegisterPipelineProxy(source);
   this->Internals->Producer = vtkSMSourceProxy::SafeDownCast(source);
@@ -213,10 +213,10 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
 DataSource::~DataSource()
 {
   if (this->Internals->Producer)
-    {
+  {
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(this->Internals->Producer);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -249,7 +249,7 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   ns.append_attribute("type").set_value(
     dataSourceTypeToString(this->type()));
   if (this->type() == TiltSeries)
-    {
+  {
     vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
       this->producer()->GetClientSideObject());
     vtkDataObject* data = tp->GetOutputDataObject(0);
@@ -257,17 +257,17 @@ bool DataSource::serialize(pugi::xml_node& ns) const
     vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
     node = ns.append_child("TiltAngles");
     serializeDataArray(node, tiltAngles);
-    }
+  }
 
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
-    {
+  {
     pugi::xml_node operatorNode = ns.append_child("Operator");
     if (!op->serialize(operatorNode))
-      {
+    {
       qWarning("failed to serialize Operator. Skipping it.");
       ns.remove_child(operatorNode);
-      }
     }
+  }
   return true;
 }
 
@@ -282,39 +282,39 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
 
   DataSourceType dstype;
   if (!stringToDataSourceType(ns.attribute("type").value(),dstype))
-    {
+  {
     return false;
-    }
+  }
   this->setType(dstype);
 
   int num_operators = ns.attribute("number_of_operators").as_int(-1);
   if (num_operators < 0)
-    {
+  {
     return false;
-    }
+  }
 
   this->Internals->Operators.clear();
   this->resetData();
 
   // load tilt angles AFTER resetData call.
   if (this->type() == TiltSeries)
-    {
+  {
     vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
       this->producer()->GetClientSideObject());
     vtkDataObject* data = tp->GetOutputDataObject(0);
     vtkFieldData* fd = data->GetFieldData();
     vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
     deserializeDataArray(ns.child("TiltAngles"), tiltAngles);
-    }
+  }
 
   for (pugi::xml_node node=ns.child("Operator"); node; node = node.next_sibling("Operator"))
-    {
+  {
     QSharedPointer<Operator> op(new OperatorPython());
     if (op->deserialize(node))
-      {
+    {
       this->addOperator(op);
-      }
     }
+  }
   return true;
 }
 
@@ -323,28 +323,28 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
 {
   DataSource *newClone = NULL;
   if (cloneTransformed)
-    {
+  {
     const char* originalFilename =
         vtkSMPropertyHelper(this->Internals->OriginalDataSource,
                             vtkSMCoreUtilities::GetFileNameProperty(
                              this->Internals->OriginalDataSource)).GetAsString();
     this->Internals->Producer->SetAnnotation("filename", originalFilename);
     newClone = new DataSource(this->Internals->Producer, this->Internals->Type);
-    }
+  }
   else
-    {
+  {
     newClone = new DataSource(this->Internals->OriginalDataSource,
                               this->Internals->Type);
-    }
+  }
   if (!cloneTransformed && cloneOperators)
-    {
+  {
     // now, clone the operators.
     foreach (QSharedPointer<Operator> op, this->Internals->Operators)
-      {
+    {
       QSharedPointer<Operator> opClone(op->clone());
       newClone->addOperator(opClone);
-      }
     }
+  }
   return newClone;
 }
 
@@ -377,17 +377,17 @@ int DataSource::addOperator(QSharedPointer<Operator>& op)
 bool DataSource::removeOperator(QSharedPointer<Operator>& op)
 {
   if (op)
-    {
+  {
     // We should emit that the operator was removed...
     this->Internals->Operators.removeAll(op);
     this->operatorTransformModified();
     foreach (QSharedPointer<Operator> opPtr, this->Internals->Operators)
-      {
+    {
       cout << "Operator: " << opPtr->label().toAscii().data() << endl;
-      }
+    }
 
     return true;
-    }
+  }
   return false;
 }
 
@@ -400,9 +400,9 @@ void DataSource::operate(Operator* op)
     this->Internals->Producer->GetClientSideObject());
   Q_ASSERT(tp);
   if (op->transform(tp->GetOutputDataObject(0)))
-    {
+  {
     this->dataModified();
-    }
+  }
 
   emit this->dataChanged();
 }
@@ -465,9 +465,9 @@ void DataSource::resetData()
   tp->SetOutput(dataClone);
   dataClone->FastDelete();
   if (this->Internals->Type == TiltSeries)
-    {
+  {
     ensureTiltAnglesArrayExists(this->Internals->Producer);
-    }
+  }
   emit this->dataChanged();
 }
 
@@ -478,9 +478,9 @@ void DataSource::operatorTransformModified()
 
   this->resetData();
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
-    {
+  {
     this->operate(op.data());
-    }
+  }
   this->blockSignals(prev);
   emit this->dataChanged();
 }
@@ -502,9 +502,9 @@ void DataSource::setType(DataSourceType t)
 {
   this->Internals->Type = t;
   if (t == TiltSeries)
-    {
+  {
     ensureTiltAnglesArrayExists(this->Internals->Producer);
-    }
+  }
   emit this->dataChanged();
 }
 

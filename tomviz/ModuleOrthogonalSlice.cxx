@@ -51,9 +51,9 @@ QIcon ModuleOrthogonalSlice::icon() const
 bool ModuleOrthogonalSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
-    {
+  {
     return false;
-    }
+  }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
@@ -153,9 +153,9 @@ bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
 bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
 {
   if (!tomviz::deserialize(this->Representation, ns.child("Representation")))
-    {
+  {
     return false;
-    }
+  }
   return this->Superclass::deserialize(ns);
 }
 

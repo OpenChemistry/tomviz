@@ -93,7 +93,7 @@ void SetScaleReaction::setScale()
   dialog.setLayout(v);
 
   if (dialog.exec() == QDialog::Accepted)
-    {
+  {
     vtkVector3d newLength(linex->text().toDouble() * 1e-9,
                           liney->text().toDouble() * 1e-9,
                           linez->text().toDouble() * 1e-9);
@@ -104,7 +104,7 @@ void SetScaleReaction::setScale()
     data->SetOrigin(0, 0, 0);
     spacing = data->GetSpacing();
     source->dataModified();
-    }
+  }
 }
 
 }

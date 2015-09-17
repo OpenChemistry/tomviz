@@ -52,9 +52,9 @@ QIcon ModuleThreshold::icon() const
 bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
-    {
+  {
     return false;
-    }
+  }
 
   vtkSMSourceProxy* producer = data->producer();
 

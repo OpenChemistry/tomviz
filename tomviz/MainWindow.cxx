@@ -311,7 +311,7 @@ MainWindow::~MainWindow()
 void MainWindow::showAbout()
 {
   if (!this->Internals->AboutDialog)
-    {
+  {
     this->Internals->AboutDialog = new QDialog(this);
     this->Internals->AboutUi.setupUi(this->Internals->AboutDialog);
     QString version(TOMVIZ_VERSION);
@@ -320,7 +320,7 @@ void MainWindow::showAbout()
     QString versionString =
         this->Internals->AboutUi.version->text().replace("#VERSION", version);
     this->Internals->AboutUi.version->setText(versionString);
-    }
+  }
   this->Internals->AboutDialog->show();
 }
 
@@ -330,9 +330,9 @@ void MainWindow::openTilt()
   path += "/TiltSeries_NanoParticle_doi_10.1021-nl103400a.tif";
   QFileInfo info(path);
   if (info.exists())
-    {
+  {
     LoadDataReaction::loadData(info.canonicalFilePath());
-    }
+  }
 }
 
 void MainWindow::openRecon()
@@ -341,9 +341,9 @@ void MainWindow::openRecon()
   path += "/Recon_NanoParticle_doi_10.1021-nl103400a.tif";
   QFileInfo info(path);
   if (info.exists())
-    {
+  {
     LoadDataReaction::loadData(info.canonicalFilePath());
-    }
+  }
 }
 
 void MainWindow::dataSourceChanged(DataSource*)
@@ -351,10 +351,10 @@ void MainWindow::dataSourceChanged(DataSource*)
   QVBoxLayout *propsLayout =
       qobject_cast<QVBoxLayout *>(this->Internals->Ui.propertiesPanel->layout());
   if (!propsLayout)
-    {
+  {
     propsLayout = new QVBoxLayout;
     this->Internals->Ui.propertiesPanel->setLayout(propsLayout);
-    }
+  }
   propsLayout->removeWidget(this->ModulePropertiesWidget);
   this->ModulePropertiesWidget->hide();
   propsLayout->addWidget(this->DataPropertiesWidget);
@@ -366,10 +366,10 @@ void MainWindow::moduleChanged(Module*)
   QVBoxLayout *propsLayout =
       qobject_cast<QVBoxLayout *>(this->Internals->Ui.propertiesPanel->layout());
   if (!propsLayout)
-    {
+  {
     propsLayout = new QVBoxLayout;
     this->Internals->Ui.propertiesPanel->setLayout(propsLayout);
-    }
+  }
   propsLayout->removeWidget(this->DataPropertiesWidget);
   this->DataPropertiesWidget->hide();
   propsLayout->addWidget(this->ModulePropertiesWidget);

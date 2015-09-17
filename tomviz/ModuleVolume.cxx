@@ -51,9 +51,9 @@ QIcon ModuleVolume::icon() const
 bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
-    {
+  {
     return false;
-    }
+  }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
@@ -140,9 +140,9 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
 bool ModuleVolume::deserialize(const pugi::xml_node& ns)
 {
   if (!tomviz::deserialize(this->Representation, ns.child("Representation")))
-    {
+  {
     return false;
-    }
+  }
 
   return this->Superclass::deserialize(ns);
 }

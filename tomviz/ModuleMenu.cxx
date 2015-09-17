@@ -58,19 +58,19 @@ void ModuleMenu::updateActions()
       ModuleFactory::moduleTypes(ActiveObjects::instance().activeDataSource(),
                                  ActiveObjects::instance().activeView());
   if (modules.size() > 0)
-    {
+  {
     foreach (const QString& txt, modules)
-      {
+    {
       QAction* actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
       toolBar->addAction(actn);
-      }
     }
+  }
   else
-    {
+  {
     QAction* action = menu->addAction("No modules available");
     action->setEnabled(false);
     toolBar->addAction(action);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -81,13 +81,13 @@ void ModuleMenu::triggered(QAction* maction)
       ActiveObjects::instance().activeDataSource(),
       ActiveObjects::instance().activeView());
   if (module)
-    {
+  {
     ActiveObjects::instance().setActiveModule(module);
-    }
+  }
   else
-    {
+  {
     qCritical("Failed to create requested module.");
-    }
+  }
 }
 
 } // end of namespace tomviz

@@ -181,9 +181,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
-    {
+  {
     return NULL;
-    }
+  }
 
   OperatorPython *opPython = new OperatorPython();
   QSharedPointer<Operator> op(opPython);
@@ -192,7 +192,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
   // Shift uniformly, crop, both have custom gui
   if (scriptLabel == "Shift Uniformly")
-    {
+  {
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
     vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
@@ -226,17 +226,17 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.setLayout(v);
 
     if (dialog.exec() == QDialog::Accepted)
-      {
+    {
       QString shiftScript = scriptSource;
       shiftScript.replace("###SHIFT###",
                           QString("SHIFT = [%1, %2, %3]").arg(spinx->value())
                           .arg(spiny->value()).arg(spinz->value()));
       opPython->setScript(shiftScript);
       source->addOperator(op);
-      }
     }
+  }
   else if (scriptLabel == "Crop")
-    {
+  {
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
     vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
@@ -288,7 +288,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.setLayout(v);
 
     if (dialog.exec() == QDialog::Accepted)
-      {
+    {
       QString cropScript = scriptSource;
       cropScript.replace("###START_CROP###",
                           QString("START_CROP = [%1, %2, %3]").arg(spinx->value())
@@ -298,57 +298,57 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                           .arg(spinyy->value()).arg(spinzz->value()));
       opPython->setScript(cropScript);
       source->addOperator(op);
-      }
     }
+  }
   else if (scriptLabel == "Rotate")
   {
-      QDialog dialog(pqCoreUtilities::mainWidget());
-      QHBoxLayout *layout1 = new QHBoxLayout;
-      QLabel *label = new QLabel("Rotate Angle:", &dialog);
-      layout1->addWidget(label);
-      QDoubleSpinBox *angle = new QDoubleSpinBox(&dialog);
-      angle->setRange(0, 360);
-      angle->setValue(90);
-      layout1->addWidget(label);
-      layout1->addWidget(angle);
-      QHBoxLayout *layout2 = new QHBoxLayout;
-      label = new QLabel("Rotate Axis:", &dialog);
-      layout2->addWidget(label);
-      QComboBox *axis = new QComboBox(&dialog);
-      axis->addItem("X");
-      axis->addItem("Y");
-      axis->addItem("Z");
-      axis->setCurrentIndex(2);
-      layout2->addWidget(label);
-      layout2->addWidget(axis);
-      QVBoxLayout *v = new QVBoxLayout;
-      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel,
-                                                       Qt::Horizontal,
-                                                       &dialog);
-      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-      v->addLayout(layout1);
-      v->addLayout(layout2);
-      v->addWidget(buttons);
-      dialog.setLayout(v);
-      
-      if (dialog.exec() == QDialog::Accepted)
-      {
-          QString cropScript = scriptSource;
-          cropScript.replace("###ROT_AXIS###",
-                             QString("ROT_AXIS = %1").arg(axis->currentIndex()) );
-          cropScript.replace("###ROT_ANGLE###",
-                             QString("ROT_ANGLE = %1").arg(angle->value()) );
-          opPython->setScript(cropScript);
-          source->addOperator(op);
-      }
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    QHBoxLayout *layout1 = new QHBoxLayout;
+    QLabel *label = new QLabel("Rotate Angle:", &dialog);
+    layout1->addWidget(label);
+    QDoubleSpinBox *angle = new QDoubleSpinBox(&dialog);
+    angle->setRange(0, 360);
+    angle->setValue(90);
+    layout1->addWidget(label);
+    layout1->addWidget(angle);
+    QHBoxLayout *layout2 = new QHBoxLayout;
+    label = new QLabel("Rotate Axis:", &dialog);
+    layout2->addWidget(label);
+    QComboBox *axis = new QComboBox(&dialog);
+    axis->addItem("X");
+    axis->addItem("Y");
+    axis->addItem("Z");
+    axis->setCurrentIndex(2);
+    layout2->addWidget(label);
+    layout2->addWidget(axis);
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel,
+                                                     Qt::Horizontal,
+                                                     &dialog);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addLayout(layout1);
+    v->addLayout(layout2);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QString cropScript = scriptSource;
+      cropScript.replace("###ROT_AXIS###",
+                         QString("ROT_AXIS = %1").arg(axis->currentIndex()) );
+      cropScript.replace("###ROT_ANGLE###",
+                         QString("ROT_ANGLE = %1").arg(angle->value()) );
+      opPython->setScript(cropScript);
+      source->addOperator(op);
+    }
   }
     
   else if (scriptLabel == "Delete Slices")
   {
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-        source->producer()->GetClientSideObject());
+      source->producer()->GetClientSideObject());
     vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int *shape = data->GetExtent();
 
@@ -386,105 +386,105 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
   else if (scriptLabel == "Sobel Filter") //UI for Sobel Filter
   {
-      QDialog dialog(pqCoreUtilities::mainWidget());
-      QHBoxLayout *layout = new QHBoxLayout;
-      QLabel *label = new QLabel("Axis:", &dialog);
-      layout->addWidget(label);
-      QComboBox *axis = new QComboBox(&dialog);
-      axis->addItem("X");
-      axis->addItem("Y");
-      axis->addItem("Z");
-      axis->setCurrentIndex(2);
-      layout->addWidget(label);
-      layout->addWidget(axis);
-      QVBoxLayout *v = new QVBoxLayout;
-      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel,
-                                                       Qt::Horizontal,
-                                                       &dialog);
-      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-      v->addLayout(layout);
-      v->addWidget(buttons);
-      dialog.setLayout(v);
-      
-      if (dialog.exec() == QDialog::Accepted)
-      {
-          QString cropScript = scriptSource;
-          cropScript.replace("###Filter_AXIS###",
-                             QString("Filter_AXIS = %1").arg(axis->currentIndex()) );
-          opPython->setScript(cropScript);
-          source->addOperator(op);
-      }
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    QHBoxLayout *layout = new QHBoxLayout;
+    QLabel *label = new QLabel("Axis:", &dialog);
+    layout->addWidget(label);
+    QComboBox *axis = new QComboBox(&dialog);
+    axis->addItem("X");
+    axis->addItem("Y");
+    axis->addItem("Z");
+    axis->setCurrentIndex(2);
+    layout->addWidget(label);
+    layout->addWidget(axis);
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel,
+                                                     Qt::Horizontal,
+                                                     &dialog);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QString cropScript = scriptSource;
+      cropScript.replace("###Filter_AXIS###",
+                         QString("Filter_AXIS = %1").arg(axis->currentIndex()) );
+      opPython->setScript(cropScript);
+      source->addOperator(op);
+    }
   }
     
   else if (scriptLabel == "Resample")
   {
-      vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-                                                               source->producer()->GetClientSideObject());
-      vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-      int *extent = data->GetExtent();
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+      source->producer()->GetClientSideObject());
+    vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    int *extent = data->GetExtent();
+    
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    QGridLayout *layout = new QGridLayout;
+    //Add labels
+    QLabel *labelx = new QLabel("x:");
+    layout->addWidget(labelx,0,1,1,1,Qt::AlignCenter);
+    QLabel *labely = new QLabel("y:");
+    layout->addWidget(labely,0,2,1,1,Qt::AlignCenter);
+    QLabel *labelz = new QLabel("z:");
+    layout->addWidget(labelz,0,3,1,1,Qt::AlignCenter);
+    QLabel *label = new QLabel("Scale Factors:");
+    layout->addWidget(label,1,0,1,1);
       
-      QDialog dialog(pqCoreUtilities::mainWidget());
-      QGridLayout *layout = new QGridLayout;
-      //Add labels
-      QLabel *labelx = new QLabel("x:");
-      layout->addWidget(labelx,0,1,1,1,Qt::AlignCenter);
-      QLabel *labely = new QLabel("y:");
-      layout->addWidget(labely,0,2,1,1,Qt::AlignCenter);
-      QLabel *labelz = new QLabel("z:");
-      layout->addWidget(labelz,0,3,1,1,Qt::AlignCenter);
-      QLabel *label = new QLabel("Scale Factors:");
-      layout->addWidget(label,1,0,1,1);
-      
-      QDoubleSpinBox *spinx = new QDoubleSpinBox;
-      spinx->setSingleStep(0.5);
-      spinx->setValue(1);
-      
-      QDoubleSpinBox *spiny = new QDoubleSpinBox;
-      spiny->setSingleStep(0.5);
-      spiny->setValue(1);
-      
-      QDoubleSpinBox *spinz = new QDoubleSpinBox;
-      spinz->setSingleStep(0.5);
-      spinz->setValue(1);
-      
-      layout->addWidget(spinx,1,1,1,1);
-      layout->addWidget(spiny,1,2,1,1);
-      layout->addWidget(spinz,1,3,1,1);
-      
-      QVBoxLayout *v = new QVBoxLayout;
-      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel);
-      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-      v->addLayout(layout);
-      v->addWidget(buttons);
-      dialog.setLayout(v);
-      
-      if (dialog.exec() == QDialog::Accepted)
-      {
-          QString shiftScript = scriptSource;
-          shiftScript.replace("###resampingFactor###",
-                              QString("resampingFactor = [%1, %2, %3]").arg(spinx->value())
-                              .arg(spiny->value()).arg(spinz->value()));
-          opPython->setScript(shiftScript);
-          source->addOperator(op);
-      }
+    QDoubleSpinBox *spinx = new QDoubleSpinBox;
+    spinx->setSingleStep(0.5);
+    spinx->setValue(1);
+    
+    QDoubleSpinBox *spiny = new QDoubleSpinBox;
+    spiny->setSingleStep(0.5);
+    spiny->setValue(1);
+    
+    QDoubleSpinBox *spinz = new QDoubleSpinBox;
+    spinz->setSingleStep(0.5);
+    spinz->setValue(1);
+    
+    layout->addWidget(spinx,1,1,1,1);
+    layout->addWidget(spiny,1,2,1,1);
+    layout->addWidget(spinz,1,3,1,1);
+    
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QString shiftScript = scriptSource;
+      shiftScript.replace("###resampingFactor###",
+                          QString("resampingFactor = [%1, %2, %3]").arg(spinx->value())
+                          .arg(spiny->value()).arg(spinz->value()));
+      opPython->setScript(shiftScript);
+      source->addOperator(op);
+    }
   }
     
   else if (interactive)
-    {
+  {
     // Create a non-modal dialog, delete it once it has been closed.
     EditOperatorDialog *dialog =
         new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
     dialog->setAttribute(Qt::WA_DeleteOnClose, true);
     dialog->show();
-    }
+  }
   else
-    {
+  {
     source->addOperator(op);
-    }
+  }
   return NULL;
 }
 

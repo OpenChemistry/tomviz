@@ -55,10 +55,10 @@ AddRenderViewContextMenuBehavior::~AddRenderViewContextMenuBehavior()
 void AddRenderViewContextMenuBehavior::onViewAdded(pqView* view)
 {
   if (view && view->getProxy()->IsA("vtkSMRenderViewProxy"))
-    {
+  {
     // add a link view menu
     view->widget()->installEventFilter(this);
-    }
+  }
 }
 
 void AddRenderViewContextMenuBehavior::onSetBackgroundColor()
@@ -86,33 +86,33 @@ void AddRenderViewContextMenuBehavior::onSetBackgroundColor()
 bool AddRenderViewContextMenuBehavior::eventFilter(QObject* caller, QEvent* e)
 {
   if (e->type() == QEvent::MouseButtonPress)
-    {
+  {
     QMouseEvent* me = static_cast<QMouseEvent*>(e);
     if (me->button() & Qt::RightButton)
-      {
-      this->position = me->pos();
-      }
-    }
-  else if (e->type() == QEvent::MouseButtonRelease)
     {
+      this->position = me->pos();
+    }
+  }
+  else if (e->type() == QEvent::MouseButtonRelease)
+  {
     QMouseEvent* me = static_cast<QMouseEvent*>(e);
     if (me->button() & Qt::RightButton && !this->position.isNull())
-      {
+    {
       QPoint newPos = static_cast<QMouseEvent*>(e)->pos();
       QPoint delta = newPos - this->position;
       QWidget* senderWidget = qobject_cast<QWidget*>(caller);
       if (delta.manhattanLength() < 3 && senderWidget != NULL)
-        {
+      {
         pqRenderView* view = qobject_cast<pqRenderView*>(
           pqActiveObjects::instance().activeView());
         if (view)
-          {
+        {
           this->menu->popup(senderWidget->mapToGlobal(newPos));
-          }
         }
-      this->position = QPoint();
       }
+      this->position = QPoint();
     }
+  }
 
   return Superclass::eventFilter(caller, e);
 }

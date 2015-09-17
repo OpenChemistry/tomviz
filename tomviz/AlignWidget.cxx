@@ -74,9 +74,9 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   // Set up the rendering pipeline
   vtkNew<vtkRenderer> renderer;
   if (t)
-    {
+  {
     mapper->SetInputConnection(t->GetOutputPort());
-    }
+  }
   mapper->Update();
   imageSlice->SetMapper(mapper.Get());
   renderer->AddViewProp(imageSlice.Get());
@@ -109,9 +109,9 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   vtkScalarsToColors *lut =
       vtkScalarsToColors::SafeDownCast(d->colorMap()->GetClientSideObject());
   if (lut)
-    {
+  {
     imageSlice->GetProperty()->SetLookupTable(lut);
-    }
+  }
 
   // Now to add the controls to the widget.
   QGridLayout *grid = new QGridLayout;
@@ -223,9 +223,9 @@ AlignWidget::~AlignWidget()
 bool AlignWidget::eventFilter(QObject *object, QEvent *e)
 {
   if (object == widget)
-    {
+  {
     switch (e->type())
-      {
+    {
       case QEvent::KeyPress:
         widgetKeyPress(static_cast<QKeyEvent *>(e));
         return true;
@@ -233,12 +233,12 @@ bool AlignWidget::eventFilter(QObject *object, QEvent *e)
         return true;
       default:
         return false;
-      }
     }
+  }
   else
-    {
+  {
     return false;
-    }
+  }
 }
 
 void AlignWidget::setDataSource(DataSource *)
@@ -250,13 +250,13 @@ void AlignWidget::changeSlice()
   // Does not change currentSlice, display only.
   int i = mapper->GetSliceNumber();
   if (i == currentSlice->value())
-    {
+  {
     i = referenceSlice;
-    }
+  }
   else
-    {
+  {
     i = currentSlice->value();
-    }
+  }
   setSlice(i, false);
 }
 
@@ -269,13 +269,13 @@ void AlignWidget::changeSlice(int delta)
 
   // This makes stack circular.
   if (i > max)
-    {
+  {
     i = min;
-    }
+  }
   else if (i < min)
-    {
+  {
     i = max;
-    }
+  }
   currentSlice->setValue(i);
   setSlice(i, false);
 }
@@ -284,10 +284,10 @@ void AlignWidget::setSlice(int slice, bool resetInc)
 {
   // Does not change currentSlice, display only.
   if (resetInc)
-    {
+  {
     currentSliceOffset->setText(QString("(%1, %2)").arg(offsets[slice][0])
         .arg(offsets[slice][1]));
-    }
+  }
   mapper->SetSliceNumber(slice);
   applySliceOffset(slice);
 }
@@ -298,79 +298,79 @@ void AlignWidget::updateReference()
   int max = mapper->GetSliceNumberMaxValue();
 
   if (prevButton->isChecked())
-    {
+  {
     referenceSlice = currentSlice->value() - 1;
-    }
+  }
   else if (nextButton->isChecked())
-    {
+  {
     referenceSlice = currentSlice->value() + 1;
-    }
+  }
   else if (statButton->isChecked())
-    {
+  {
     referenceSlice = statRefNum->value();
-    }
+  }
 
   // This makes the stack circular.
   if (referenceSlice > max)
-    {
+  {
     referenceSlice = min;
-    }
+  }
   else if (referenceSlice < min)
-    {
+  {
     referenceSlice = max;
-    }
+  }
 }
 
 void AlignWidget::setFrameRate(int rate)
 {
   if (rate < 0)
-    {
+  {
     frameRate = 0;
-    }
+  }
   frameRate = rate;
   if (frameRate > 0)
-    {
+  {
     timer->setInterval(1000.0 / frameRate);
     if (!timer->isActive())
-      {
-      timer->start();
-      }
-    }
-  else
     {
-    timer->stop();
+      timer->start();
     }
+  }
+  else
+  {
+    timer->stop();
+  }
 }
 
 void AlignWidget::widgetKeyPress(QKeyEvent *key)
 {
   vtkVector2i &offset = offsets[currentSlice->value()];
   switch (key->key())
-    {
-    case Qt::Key_Left:
-      offset[0] -= 1;
-      break;
-    case Qt::Key_Right:
-      offset[0] += 1;
-      break;
-    case Qt::Key_Up:
-      offset[1] += 1;
-      break;
-    case Qt::Key_Down:
-      offset[1] -= 1;
-      break;
-    case Qt::Key_K:
-    case Qt::Key_S:
-      changeSlice(1);
-      return;
-    case Qt::Key_J:
-    case Qt::Key_A:
-      changeSlice(-1);
-      return;
-    default:
-      // Nothing
-      break;
-    }
+  {
+  case Qt::Key_Left:
+    offset[0] -= 1;
+    break;
+  case Qt::Key_Right:
+    offset[0] += 1;
+    break;
+  case Qt::Key_Up:
+    offset[1] += 1;
+    break;
+  case Qt::Key_Down:
+    offset[1] -= 1;
+    break;
+  case Qt::Key_K:
+  case Qt::Key_S:
+    changeSlice(1);
+    return;
+  case Qt::Key_J:
+  case Qt::Key_A:
+    changeSlice(-1);
+    return;
+  default:
+    // Nothing
+    break;
+  }
   applySliceOffset();
 }
 
@@ -378,24 +378,24 @@ void AlignWidget::applySliceOffset(int sliceNumber)
 {
   vtkVector2i offset(0, 0);
   if (sliceNumber == -1)
-    {
+  {
     offset = offsets[currentSlice->value()];
     currentSliceOffset->setText(QString("(%1, %2)").arg(offset[0])
         .arg(offset[1]));
-    }
+  }
   else
-    {
+  {
     offset = offsets[sliceNumber];
-    }
+  }
   imageSlice->SetPosition(offset[0], offset[1], 0);
 }
 
 void AlignWidget::startAlign()
 {
   if (!timer->isActive())
-    {
+  {
     timer->start(1000.0 / frameRate);
-    }
+  }
   startButton->setEnabled(false);
   stopButton->setEnabled(true);
 }
@@ -440,49 +440,49 @@ void applyImageOffsets(T* in, T* out, vtkImageData *image,
   // Zero out our output array, we should do this more intelligently in future.
   T *ptr = out;
   for (int i = 0; i < extent[0] * extent[1] * extent[2]; ++i)
-    {
+  {
     *ptr++ = 0;
-    }
+  }
 
   // We need to go slice by slice, applying the pixel offsets to the new image.
   for (int i = 0; i < extent[2]; ++i)
-    {
+  {
     vtkVector2i offset = offsets[i];
     int idx = imageIndex(incs, vtkVector3i(0, 0, i));
     T *inPtr = in + idx;
     T* outPtr = out + idx;
     for (int y = 0; y < extent[1]; ++y)
-      {
+    {
       if (y + offset[1] >= extent[1])
-        {
+      {
         break;
-        }
+      }
       else if (y + offset[1] < 0)
-        {
+      {
         inPtr += incs[1];
         outPtr += incs[1];
         continue;
-        }
+      }
       for (int x = 0; x < extent[0]; ++x)
-        {
+      {
         if (x + offset[0] >= extent[0])
-          {
+        {
           inPtr += offset[0];
           outPtr += offset[0];
           break;
-          }
+        }
         else if (x + offset[0] < 0)
-          {
+        {
           ++inPtr;
           ++outPtr;
           continue;
-          }
+        }
         *(outPtr + offset[0] + incs[1] * offset[1]) = *inPtr;
         ++inPtr;
         ++outPtr;
-        }
       }
     }
+  }
 }
 }
 
@@ -490,29 +490,29 @@ void AlignWidget::doDataAlign()
 {
   bool firstAdded = false;
   if (!alignedData)
-    {
+  {
     alignedData = unalignedData->clone(true);
     QString name = alignedData->producer()->GetAnnotation("tomviz.Label");
     name = "Aligned_" + name;
     alignedData->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
     firstAdded = true;
-    }
+  }
   vtkImageData *in = imageData(unalignedData);
   vtkImageData *out = imageData(alignedData);
 
   switch (in->GetScalarType())
-    {
+  {
     vtkTemplateMacro(
       applyImageOffsets(reinterpret_cast<VTK_TT*>(in->GetScalarPointer()),
                         reinterpret_cast<VTK_TT*>(out->GetScalarPointer()),
                         in, offsets));
-    }
+  }
   alignedData->dataModified();
 
   if (firstAdded)
-    {
+  {
     LoadDataReaction::dataSourceAdded(alignedData);
-    }
+  }
 }
 
 }

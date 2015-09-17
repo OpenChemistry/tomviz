@@ -49,53 +49,53 @@ public:
   ModuleItemsMap ModuleItems;
 
   DataSource* dataProducer(QTreeWidgetItem* item) const
-    {
+  {
     for (DataProducerItemsMap::const_iterator iter = this->DataProducerItems.begin();
          iter != this->DataProducerItems.end(); ++iter)
-      {
+    {
       if (iter.value() == item)
-        {
+      {
         return iter.key();
-        }
       }
-    return NULL;
     }
+    return NULL;
+  }
 
   Module* module(QTreeWidgetItem* item) const
-    {
+  {
     for (ModuleItemsMap::const_iterator iter = this->ModuleItems.begin();
          iter != this->ModuleItems.end(); ++iter)
-      {
+    {
       if (iter.value() == item)
-        {
+      {
         return iter.key();
-        }
       }
-    return NULL;
     }
+    return NULL;
+  }
 
   void deleteDataOrModule(QTreeWidgetItem* item)
-    {
+  {
     // If we are deleting it, first delete its children
     for (int i = item->childCount() - 1; i >= 0; --i)
-      {
+    {
       QTreeWidgetItem* child = item->child(i);
       this->deleteDataOrModule(child);
-      }
+    }
     // Handle deleting data source
     DataSource* source = this->dataProducer(item);
     if (source)
-      {
+    {
       ModuleManager::instance().removeDataSource(source);
-      }
+    }
     // Handle deleting module
     Module* mod = this->module(item);
     if (mod)
-      {
+    {
       ModuleManager::instance().removeModule(mod);
-      }
-    ActiveObjects::instance().renderAllViews();
     }
+    ActiveObjects::instance().renderAllViews();
+  }
 };
 
 //-----------------------------------------------------------------------------
@@ -155,10 +155,10 @@ void PipelineWidget::keyPressEvent(QKeyEvent* e)
 {
   QTreeWidget::keyPressEvent(e);
   if (e->key() == Qt::Key_Delete || e->key() == Qt::Key_Backspace)
-    {
+  {
     QTreeWidgetItem* item = this->currentItem();
     this->Internals->deleteDataOrModule(item);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -180,7 +180,7 @@ void PipelineWidget::dataSourceAdded(DataSource* datasource)
 void PipelineWidget::dataSourceRemoved(DataSource* datasource)
 {
   if (this->Internals->DataProducerItems.contains(datasource))
-    {
+  {
     int index = this->indexOfTopLevelItem(this->Internals->DataProducerItems[datasource]);
     Q_ASSERT(index >= 0);
     QTreeWidgetItem* item = this->takeTopLevelItem(index);
@@ -188,7 +188,7 @@ void PipelineWidget::dataSourceRemoved(DataSource* datasource)
     delete item;
 
     this->Internals->DataProducerItems.remove(datasource);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -237,7 +237,7 @@ void PipelineWidget::onItemClicked(QTreeWidgetItem* item, int col)
   int index = this->indexOfTopLevelItem(item);
   if (index == -1 && // selected item is a plot.
       col == EYE_COLUMN)
-    {
+  {
     Module* module = this->Internals->module(item);
     module->setVisibility(!module->visibility());
     item->setIcon(EYE_COLUMN,
@@ -245,10 +245,10 @@ void PipelineWidget::onItemClicked(QTreeWidgetItem* item, int col)
                     QIcon(":/pqWidgets/Icons/pqEyeball16.png") :
                     QIcon(":/pqWidgets/Icons/pqEyeballd16.png"));
     if (pqView* view = tomviz::convert<pqView*>(module->view()))
-      {
+    {
       view->render();
-      }
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -256,35 +256,35 @@ void PipelineWidget::currentItemChanged(QTreeWidgetItem* item)
 {
   int index = this->indexOfTopLevelItem(item);
   if (index == -1)
-    {
+  {
     // selected item is a plot.
     Module* module = this->Internals->module(item);
     ActiveObjects::instance().setActiveModule(module);
-    }
+  }
   else
-    {
+  {
     // selected item is a producer.
     DataSource* dataProducer = this->Internals->dataProducer(item);
     ActiveObjects::instance().setActiveDataSource(dataProducer);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void PipelineWidget::setCurrent(DataSource* source)
 {
   if (QTreeWidgetItem* item = this->Internals->DataProducerItems.value(source, NULL))
-    {
+  {
     this->setCurrentItem(item);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void PipelineWidget::setCurrent(Module* module)
 {
   if (QTreeWidgetItem* item = this->Internals->ModuleItems.value(module, NULL))
-    {
+  {
     this->setCurrentItem(item);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -293,7 +293,7 @@ void PipelineWidget::setActiveView(vtkSMViewProxy* view)
   for (PWInternals::ModuleItemsMap::iterator iter =
     this->Internals->ModuleItems.begin();
     iter != this->Internals->ModuleItems.end(); ++iter)
-    {
+  {
     Module* module = iter.key();
     QTreeWidgetItem* item = iter.value();
 
@@ -303,7 +303,7 @@ void PipelineWidget::setActiveView(vtkSMViewProxy* view)
     QFont f = item->font(MODULE_COLUMN);
     f.setItalic(!item_enabled);
     item->setFont(MODULE_COLUMN, f);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -311,9 +311,9 @@ void PipelineWidget::onCustomContextMenu(const QPoint &point)
 {
   QTreeWidgetItem* item = this->itemAt(point);
   if (!item)
-    {
+  {
     return;
-    }
+  }
   QPoint globalPoint = this->mapToGlobal(point);
   DataSource* dataSource = this->Internals->dataProducer(item);
 
@@ -321,35 +321,35 @@ void PipelineWidget::onCustomContextMenu(const QPoint &point)
   QAction* cloneAction = NULL;
   QAction* markAsAction = NULL;
   if (dataSource != NULL)
-    {
+  {
     cloneAction = contextMenu.addAction("Clone");
     new CloneDataReaction(cloneAction);
     if (dataSource->type() == DataSource::Volume)
-      {
+    {
       markAsAction = contextMenu.addAction("Mark as Tilt Series");
-      }
-    else
-      {
-      markAsAction = contextMenu.addAction("Mark as Volume");
-      }
     }
+    else
+    {
+      markAsAction = contextMenu.addAction("Mark as Volume");
+    }
+  }
   QAction* deleteAction = contextMenu.addAction("Delete");
   QAction* selectedItem = contextMenu.exec(globalPoint);
   if (selectedItem == deleteAction)
-    {
+  {
     this->Internals->deleteDataOrModule(item);
-    }
+  }
   else if (markAsAction != NULL && markAsAction == selectedItem)
-    {
+  {
     if (dataSource->type() == DataSource::Volume)
-      {
+    {
       dataSource->setType(DataSource::TiltSeries);
-      }
-    else
-      {
-      dataSource->setType(DataSource::Volume);
-      }
     }
+    else
+    {
+      dataSource->setType(DataSource::Volume);
+    }
+  }
 }
 
 } // end of namespace tomviz

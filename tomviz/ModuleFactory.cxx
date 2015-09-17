@@ -51,7 +51,7 @@ QList<QString> ModuleFactory::moduleTypes(
 {
   QList<QString> reply;
   if (dataSource && view)
-    {
+  {
 
     // based on the data type and view, return module types.
     reply << "Outline"
@@ -61,7 +61,7 @@ QList<QString> ModuleFactory::moduleTypes(
       << "Slice"
       << "Orthogonal Slice";
     qSort(reply);
-    }
+  }
   return reply;
 }
 
@@ -71,57 +71,57 @@ Module* ModuleFactory::createModule(
 {
   Module* module = NULL;
   if (type == "Outline")
-    {
+  {
     module = new ModuleOutline();
-    }
+  }
   else if (type == "Contour")
-    {
+  {
 #ifdef DAX_DEVICE_ADAPTER
     module = new ModuleStreamingContour();
 #else
     module = new ModuleContour();
 #endif
-    }
+  }
   else if (type == "Volume")
-    {
+  {
     module = new ModuleVolume();
-    }
+  }
   else if (type == "Slice")
-    {
+  {
     module = new ModuleSlice();
-    }
+  }
   else if (type == "Orthogonal Slice")
-    {
+  {
     module = new ModuleOrthogonalSlice();
-    }
+  }
   else if (type == "Threshold")
-    {
+  {
 #ifdef DAX_DEVICE_ADAPTER
     module = new ModuleAccelThreshold();
 #else
     module = new ModuleThreshold();
 #endif
-    }
+  }
 
   if (module)
-    {
+  {
     // sanity check.
     Q_ASSERT(type == moduleType(module));
     if (dataSource == NULL && view == NULL)
-      {
+    {
       // don't initialize module if args are NULL.
       return module;
-      }
+    }
 
     if (!module->initialize(dataSource, view))
-      {
+    {
       delete module;
       return NULL;
-      }
+    }
     pqView* pqview = tomviz::convert<pqView*>(view);
     pqview->resetDisplay();
     pqview->render();
-    }
+  }
   return module;
 }
 
@@ -131,10 +131,10 @@ QIcon ModuleFactory::moduleIcon(const QString& type)
   QIcon icon;
   Module* mdl = ModuleFactory::createModule(type, NULL, NULL);
   if (mdl)
-    {
+  {
     icon = mdl->icon();
     delete mdl;
-    }
+  }
   return icon;
 }
 
@@ -142,37 +142,37 @@ QIcon ModuleFactory::moduleIcon(const QString& type)
 const char* ModuleFactory::moduleType(Module* module)
 {
   if (qobject_cast<ModuleOutline*>(module))
-    {
+  {
     return "Outline";
-    }
+  }
 #ifdef DAX_DEVICE_ADAPTER
   if (qobject_cast<ModuleStreamingContour*>(module))
 #else
   if (qobject_cast<ModuleContour*>(module))
 #endif
-    {
+  {
     return "Contour";
-    }
+  }
   if (qobject_cast<ModuleVolume*>(module))
-    {
+  {
     return "Volume";
-    }
+  }
   if (qobject_cast<ModuleSlice*>(module))
-    {
+  {
     return "Slice";
-    }
+  }
   if (qobject_cast<ModuleOrthogonalSlice*>(module))
-    {
+  {
     return "Orthogonal Slice";
-    }
+  }
 #ifdef DAX_DEVICE_ADAPTER
   if (qobject_cast<ModuleAccelThreshold*>(module))
 #else
   if (qobject_cast<ModuleThreshold*>(module))
 #endif
-    {
+  {
     return "Threshold";
-    }
+  }
   return NULL;
 }
 

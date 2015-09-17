@@ -62,10 +62,10 @@ void CropReaction::crop(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
-    {
+  {
     qDebug() << "Exiting early - no data :-(";
     return;
-    }
+  }
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
     source->producer()->GetClientSideObject());
   vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));

@@ -55,13 +55,13 @@ void ProgressBehavior::enableProgress(bool enable)
   Q_ASSERT(this->ProgressDialog);
 
   if (enable)
-    {
+  {
     this->ProgressDialog->setValue(0);
-    }
+  }
   else
-    {
+  {
     this->ProgressDialog->reset();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------

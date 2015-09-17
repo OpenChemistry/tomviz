@@ -53,9 +53,9 @@ QIcon ModuleContour::icon() const
 bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
-    {
+  {
     return false;
-    }
+  }
 
   vtkSMSourceProxy* producer = data->producer();
 
@@ -162,11 +162,11 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   QStringList contourProperties;
   contourProperties << "ContourValues";
   if (tomviz::serialize(this->ContourFilter, node, contourProperties) == false)
-    {
+  {
     qWarning("Failed to serialize ContourFilter.");
     ns.remove_child(node);
     return false;
-    }
+  }
 
   QStringList contourRepresentationProperties;
   contourRepresentationProperties
@@ -177,11 +177,11 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
 
   node = ns.append_child("ContourRepresentation");
   if (tomviz::serialize(this->ContourRepresentation, node, contourRepresentationProperties) == false)
-    {
+  {
     qWarning("Failed to serialize ContourFilter.");
     ns.remove_child(node);
     return false;
-    }
+  }
 
   return this->Superclass::serialize(ns);
 }
