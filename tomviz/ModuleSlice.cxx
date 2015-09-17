@@ -48,7 +48,9 @@ namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
-ModuleSlice::ModuleSlice(QObject* parentObject) : Superclass(parentObject)
+ModuleSlice::ModuleSlice(QObject* parentObject)
+  : Superclass(parentObject)
+  , IgnoreSignals(false)
 {
 }
 
@@ -102,6 +104,9 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     {
     this->Widget->On();
     this->Widget->InteractionOn();
+    pqCoreUtilities::connect(
+      this->Widget, vtkCommand::InteractionEvent,
+      this, SLOT(onPlaneChanged()));
     }
 
   Q_ASSERT(this->Widget);
@@ -159,6 +164,7 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView, vtkSMSourceProxy* produce
 
   Q_ASSERT(rwi);
   Q_ASSERT(passThroughAlg);
+  onPlaneChanged();
   return true;
 }
 
@@ -223,7 +229,7 @@ bool ModuleSlice::visibility() const
 void ModuleSlice::addToPanel(pqProxiesWidget* panel)
 {
   QStringList properties;
-  properties << "ShowArrow";
+  properties << "ShowArrow" << "PointOnPlane" << "PlaneNormal";
   panel->addProxy(this->PropsPanelProxy, "Appearance", properties, true);
 
   this->Superclass::addToPanel(panel);
@@ -318,6 +324,12 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 //-----------------------------------------------------------------------------
 void ModuleSlice::onPropertyChanged()
 {
+  // Avoid recursive clobbering of the plane position
+  if (this->IgnoreSignals)
+    {
+    return;
+    }
+  this->IgnoreSignals = true;
   vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
   if (this->Widget->GetEnabled())
     {
@@ -326,6 +338,32 @@ void ModuleSlice::onPropertyChanged()
     this->Widget->SetArrowVisibility(showProperty.GetAsInt());
     this->Widget->SetInteraction(showProperty.GetAsInt());
     }
+  vtkSMPropertyHelper pointProperty(this->PropsPanelProxy, "PointOnPlane");
+  std::vector<double> centerPoint = pointProperty.GetDoubleArray();
+  this->Widget->SetCenter(&centerPoint[0]);
+  vtkSMPropertyHelper normalProperty(this->PropsPanelProxy, "PlaneNormal");
+  std::vector<double> normalVector = normalProperty.GetDoubleArray();
+  this->Widget->SetNormal(&normalVector[0]);
+  this->Widget->UpdatePlacement();
+  this->IgnoreSignals = false;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleSlice::onPlaneChanged()
+{
+  // Avoid recursive clobbering of the plane position
+  if (this->IgnoreSignals)
+    {
+    return;
+    }
+  this->IgnoreSignals = true;
+  vtkSMPropertyHelper pointProperty(this->PropsPanelProxy, "PointOnPlane");
+  double *centerPoint = this->Widget->GetCenter();
+  pointProperty.Set(centerPoint, 3);
+  vtkSMPropertyHelper normalProperty(this->PropsPanelProxy, "PlaneNormal");
+  double *normalVector = this->Widget->GetNormal();
+  normalProperty.Set(normalVector, 3);
+  this->IgnoreSignals = false;
 }
 
 }

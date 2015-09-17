@@ -50,6 +50,7 @@ protected:
 
 private slots:
   void onPropertyChanged();
+  void onPlaneChanged();
 
 private:
   //should only be called from initialize after the PassThrough has been setup
@@ -60,6 +61,7 @@ private:
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkSmartPointer<vtkSMProxy> PropsPanelProxy;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> Widget;
+  bool IgnoreSignals;
 };
 
 }

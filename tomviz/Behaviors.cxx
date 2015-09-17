@@ -16,7 +16,6 @@
 #include "Behaviors.h"
 
 #include "AddRenderViewContextMenuBehavior.h"
-#include "LoadTomvizExtensionsBehavior.h"
 #include "pqAlwaysConnectedBehavior.h"
 #include "pqApplicationCore.h"
 #include "pqDefaultViewBehavior.h"
@@ -86,7 +85,6 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
   new tomviz::ProgressBehavior(mainWindow);
-  new tomviz::LoadTomvizExtensionsBehavior(this);
   //new tomviz::ScaleActorBehavior(this);
 
   new tomviz::AddRenderViewContextMenuBehavior(this);

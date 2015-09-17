@@ -135,7 +135,8 @@ public:
   void SetInputConnection(vtkAlgorithmOutput* aout);
 
   // Description:
-  // Set/Get the origin of the plane.
+  // Set/Get the origin of the plane.  Set origin changes the size of the plane
+  // by moving the origin and leaving the other two points fixed.
   void SetOrigin(double x, double y, double z);
   void SetOrigin(double xyz[3]);
   double* GetOrigin();
@@ -156,12 +157,16 @@ public:
   void GetPoint2(double xyz[3]);
 
   // Description:
-  // Get the center of the plane.
+  // Set/Get the center of the plane.  SetCenter translates the plane by the
+  // difference between the old and new center positions.
+  void SetCenter(double xyz[3]);
   double* GetCenter();
   void GetCenter(double xyz[3]);
 
   // Description:
-  // Get the normal to the plane.
+  // Set/Get the normal to the plane.  SetNormal rotates the plane about its
+  // center.
+  void SetNormal(double xyz[3]);
   double* GetNormal();
   void GetNormal(double xyz[3]);
 
