@@ -57,6 +57,8 @@ public slots:
   /// in the histogram view.
   void setDataSource(DataSource*);
 
+  void onColorMapUpdated();
+
 private slots:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
   void histogramClicked(vtkObject *caller);

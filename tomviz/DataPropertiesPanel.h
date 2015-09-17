@@ -42,6 +42,9 @@ private slots:
   void render();
   void onTiltAnglesModified(int row, int column);
 
+signals:
+  void colorMapUpdated();
+
 private:
   Q_DISABLE_COPY(DataPropertiesPanel)
 

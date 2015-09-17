@@ -247,6 +247,7 @@ void DataPropertiesPanel::render()
     {
     view->render();
     }
+  emit colorMapUpdated();
 }
 
 //-----------------------------------------------------------------------------

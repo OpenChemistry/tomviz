@@ -383,6 +383,11 @@ void CentralWidget::setDataSource(DataSource* source)
      Q_ARG(vtkSmartPointer<vtkTable>, table));
 }
 
+void CentralWidget::onColorMapUpdated()
+{
+  this->refreshHistogram();
+}
+
 void CentralWidget::refreshHistogram()
 {
   this->setDataSource(this->ADataSource);

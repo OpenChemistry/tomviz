@@ -111,6 +111,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.centralWidget->connect(&ActiveObjects::instance(),
                             SIGNAL(dataSourceChanged(DataSource*)),
                             SLOT(setDataSource(DataSource*)));
+  ui.centralWidget->connect(this->DataPropertiesWidget,
+                            SIGNAL(colorMapUpdated()),
+                            SLOT(onColorMapUpdated()));
 
   // connect quit.
   pqApplicationCore::instance()->connect(ui.actionExit, SIGNAL(triggered()),
