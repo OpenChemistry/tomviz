@@ -13,42 +13,39 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizAddPythonTransformReaction_h
-#define tomvizAddPythonTransformReaction_h
+#ifndef tomvizPythonGeneratedDatasetReaction_h
+#define tomvizPythonGeneratedDatasetReaction_h
 
 #include "pqReaction.h"
+
+#include <QScopedPointer>
 
 namespace tomviz
 {
 class DataSource;
-class OperatorPython;
 
-class AddPythonTransformReaction : public pqReaction
+class PythonGeneratedDatasetReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
 
 public:
-  AddPythonTransformReaction(QAction* parent, const QString &label,
-                         const QString &source, bool requiresTiltSeries = false);
-  ~AddPythonTransformReaction();
+  PythonGeneratedDatasetReaction(QAction* parent, const QString &label,
+                                 const QString &source);
+  ~PythonGeneratedDatasetReaction();
 
-  OperatorPython* addExpression(DataSource* source = NULL);
-
-  void setInteractive(bool isInteractive) { interactive = isInteractive; }
+  void addDataset();
 
 protected:
-  void updateEnableState();
-  void onTriggered() { this->addExpression(); }
+  void onTriggered() { this->addDataset(); }
 
 private:
-  Q_DISABLE_COPY(AddPythonTransformReaction)
+  Q_DISABLE_COPY(PythonGeneratedDatasetReaction)
 
-  QString scriptLabel;
-  QString scriptSource;
+  void dataSourceAdded(DataSource *source);
 
-  bool interactive;
-  bool requiresTiltSeries;
+  class PGDRInternal;
+  QScopedPointer<PGDRInternal> Internals;
 };
 }
 

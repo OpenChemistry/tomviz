@@ -43,6 +43,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "PythonGeneratedDatasetReaction.h"
 #include "RecentFilesMenu.h"
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
@@ -67,6 +68,7 @@
 #include "LaplaceFilter.h"
 #include "Resample.h"
 #include "deleteSlices.h"
+#include "ZeroDataset.h"
 
 #include <QFileInfo>
 
@@ -177,7 +179,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *customPythonAction = new QAction("Custom Transform", this);
   QAction *cropDataAction = new QAction("Crop", this);
   //QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
-  QAction *autoAlignAction = new QAction("Auto Align (xcorr)", this);
+  QAction *autoAlignAction = new QAction("Translation Align (Auto)", this);
   QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
   QAction *downsampleByTwoAction = new QAction("Downsample x2", this);
   QAction *resampleAction = new QAction("Resample", this);
@@ -193,21 +195,19 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *sobelFilterAction = new QAction("Sobel Filter", this);
   QAction *laplaceFilterAction = new QAction("Laplace Filter", this);
 
-  ui.menuData->insertAction(ui.actionAlign, customPythonAction);
-  ui.menuData->insertAction(ui.actionAlign, cropDataAction);
-  ui.menuData->insertSeparator(ui.actionAlign);
-  //ui.menuData->insertAction(ui.actionAlign, backgroundSubtractAction);
-  ui.menuData->insertSeparator(ui.actionAlign);
-  ui.menuData->insertAction(ui.actionReconstruct, autoAlignAction);
-  ui.menuData->insertAction(ui.actionReconstruct, shiftUniformAction);
-  ui.menuData->insertAction(ui.actionReconstruct, deleteSliceAction);
-  ui.menuData->insertAction(ui.actionReconstruct, downsampleByTwoAction);
-  ui.menuData->insertAction(ui.actionReconstruct, resampleAction);
-  ui.menuData->insertAction(ui.actionReconstruct, rotateAction);
-
-  //ui.menuData->insertAction(ui.actionReconstruct, misalignUniformAction);
-  //ui.menuData->insertAction(ui.actionReconstruct, misalignGaussianAction);
-  ui.menuData->insertSeparator(ui.actionReconstruct);
+  // Build Data Transforms menu
+  // ################################################################
+  ui.menuData->insertAction(ui.actionClone, customPythonAction);
+  ui.menuData->insertAction(ui.actionClone, cropDataAction);
+  ui.menuData->insertSeparator(ui.actionClone);
+  //ui.menuData->insertAction(ui.actionClone, backgroundSubtractAction);
+  ui.menuData->insertAction(ui.actionClone, shiftUniformAction);
+  ui.menuData->insertAction(ui.actionClone, deleteSliceAction);
+  ui.menuData->insertAction(ui.actionClone, downsampleByTwoAction);
+  ui.menuData->insertAction(ui.actionClone, resampleAction);
+  ui.menuData->insertAction(ui.actionClone, rotateAction);
+  //ui.menuData->insertAction(ui.actionClone, misalignUniformAction);
+  //ui.menuData->insertAction(ui.actionClone, misalignGaussianAction);
   ui.menuData->insertSeparator(ui.actionClone);
   ui.menuData->insertAction(ui.actionClone, squareRootAction);
   ui.menuData->insertAction(ui.actionClone, hannWindowAction);
@@ -217,6 +217,13 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->insertSeparator(ui.actionClone);
   //ui.menuData->insertAction(ui.actionClone, resampleDataAction);
 
+  // Build Tomography menu
+  // ################################################################
+  ui.menuTomography->insertAction(ui.actionReconstruct, autoAlignAction);
+  ui.menuTomography->insertSeparator(ui.actionReconstruct);
+
+  //#################################################################
+
   // Add our Python script reactions, these compose Python into menu entries.
   new AddExpressionReaction(customPythonAction);
   new CropReaction(cropDataAction, this);
@@ -224,9 +231,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //new AddPythonTransformReaction(backgroundSubtractAction,
   //                               "Background Subtraction",
   //                               Subtract_TiltSer_Background);
-  ui.actionAlign->setText("Manual Align");
+  ui.actionAlign->setText("Translation Align");
   new AddPythonTransformReaction(autoAlignAction,
-                                 "Auto Align (XCORR)", Align_Images);
+                                 "Auto Align (XCORR)", Align_Images, true);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", Shift_Stack_Uniformly);
   new AddPythonTransformReaction(deleteSliceAction,
@@ -242,10 +249,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //                               "Misalign (Uniform)", MisalignImgs_Uniform);
   //new AddPythonTransformReaction(misalignGaussianAction,
   //                               "Misalign (Gaussian)", MisalignImgs_Uniform);
-  ui.actionReconstruct->setText("Reconstruct (Direct Fourier)");
+  ui.actionReconstruct->setText("Direct Fourier recon");
   new AddPythonTransformReaction(ui.actionReconstruct,
                                  "Reconstruct (Direct Fourier)",
-                                 Recon_DFT);
+                                 Recon_DFT, true);
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", Square_Root_Data);
   new AddPythonTransformReaction(hannWindowAction,
@@ -272,14 +279,17 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new ViewMenuManager(this, ui.menuView);
 
-#ifdef TOMVIZ_DATA
   QMenu *sampleDataMenu = new QMenu("Sample Data", this);
   ui.menubar->insertMenu(ui.menuHelp->menuAction(), sampleDataMenu);
+#ifdef TOMVIZ_DATA
   QAction *reconAction = sampleDataMenu->addAction("Reconstruction");
   QAction *tiltAction = sampleDataMenu->addAction("Tilt Series");
   connect(reconAction, SIGNAL(triggered()), SLOT(openRecon()));
   connect(tiltAction, SIGNAL(triggered()), SLOT(openTilt()));
+  sampleDataMenu->addSeparator();
 #endif
+  QAction* blankDataAction = sampleDataMenu->addAction("Zero Dataset");
+  new PythonGeneratedDatasetReaction(blankDataAction, "Zero Dataset", ZeroDataset);
 
   //now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER
