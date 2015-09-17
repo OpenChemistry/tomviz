@@ -312,6 +312,37 @@ CentralWidget::~CentralWidget()
 }
 
 //-----------------------------------------------------------------------------
+void CentralWidget::setActiveDataSource(DataSource* source)
+{
+  if (this->AModule)
+  {
+    this->disconnect(this->AModule);
+    this->AModule = NULL;
+  }
+  this->setDataSource(source);
+}
+
+//-----------------------------------------------------------------------------
+void CentralWidget::setActiveModule(Module* module)
+{
+  if (this->AModule)
+  {
+    this->disconnect(this->AModule);
+  }
+  this->AModule = module;
+  if (this->AModule)
+  {
+    this->connect(this->AModule, SIGNAL(colorMapChanged()),
+                  SLOT(refreshHistogram()));
+    this->setDataSource(module->dataSource());
+  }
+  else
+  {
+    this->setDataSource(NULL);
+  }
+}
+
+//-----------------------------------------------------------------------------
 void CentralWidget::setDataSource(DataSource* source)
 {
   if (this->ADataSource)
@@ -338,6 +369,25 @@ void CentralWidget::setDataSource(DataSource* source)
     source->producer()->GetClientSideObject());
   vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
+  // Get the current color map
+  vtkScalarsToColors *lut;
+  if (this->AModule)
+  {
+    lut = vtkScalarsToColors::SafeDownCast(this->AModule->colorMap()->GetClientSideObject());
+  }
+  else
+  {
+    lut = vtkScalarsToColors::SafeDownCast(source->colorMap()->GetClientSideObject());
+  }
+  if (lut)
+  {
+    this->LUT = lut;
+  }
+  else
+  {
+    this->LUT = NULL;
+  }
+
   // Check our cache, and use that if appopriate (or update it).
   if (this->HistogramCache.contains(image))
     {
@@ -353,18 +403,6 @@ void CentralWidget::setDataSource(DataSource* source)
       this->Chart->ClearPlots();
       this->HistogramCache.remove(image);
       }
-    }
-
-  // Get the current color map
-  vtkScalarsToColors *lut =
-      vtkScalarsToColors::SafeDownCast(source->colorMap()->GetClientSideObject());
-  if (lut)
-    {
-    this->LUT = lut;
-    }
-  else
-    {
-    this->LUT = NULL;
     }
 
   // Calculate a histogram.

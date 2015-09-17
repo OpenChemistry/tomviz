@@ -76,6 +76,11 @@ public:
   void setUseDetachedColorMap(bool);
   bool useDetachedColorMap() const { return this->UseDetachedColorMap; }
 
+  /// This will either return the maps from the data source or detached ones
+  /// based on the UseDetachedColorMap flag.
+  vtkSMProxy* colorMap() const;
+  vtkSMProxy* opacityMap() const;
+
 public slots:
   /// Set the visibility for this module. Subclasses should override this method
   /// show/hide all representations created for this module.
@@ -98,11 +103,13 @@ protected:
   /// setUseDetachedColorMap is toggled.
   virtual void updateColorMap() {}
 
-  /// Subclasses can use this method to get the current color/opacity maps.
-  /// This will either return the maps from the data source or detached ones
-  /// based on the UseDetachedColorMap flag.
-  vtkSMProxy* colorMap() const;
-  vtkSMProxy* opacityMap() const;
+signals:
+  /// Emitted when the UseDetachedColorMap state changes or the detatched color
+  /// map is modified
+  void colorMapChanged();
+
+private slots:
+  void onColorMapChanged();
 
 private:
   Q_DISABLE_COPY(Module)

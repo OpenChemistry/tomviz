@@ -17,9 +17,11 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "pqCoreUtilities.h"
 #include "pqProxiesWidget.h"
 #include "pqView.h"
 #include "Utilities.h"
+#include "vtkCommand.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMPropertyHelper.h"
@@ -136,6 +138,8 @@ void Module::setUseDetachedColorMap(bool val)
     this->Internals->OpacityMap = this->Internals->detachedOpacityMap();
 
     tomviz::rescaleColorMap(this->Internals->ColorMap, this->dataSource());
+    pqCoreUtilities::connect(this->Internals->ColorMap, vtkCommand::ModifiedEvent,
+                             this, SLOT(onColorMapChanged()));
     }
   else
     {
@@ -143,6 +147,7 @@ void Module::setUseDetachedColorMap(bool val)
     this->Internals->OpacityMap = NULL;
     }
   this->updateColorMap();
+  emit colorMapChanged();
 }
 
 //-----------------------------------------------------------------------------
@@ -209,6 +214,11 @@ bool Module::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
+//-----------------------------------------------------------------------------
+void Module::onColorMapChanged()
+{
+  emit colorMapChanged();
+}
 
 //-----------------------------------------------------------------------------
 } // end of namespace tomviz
