@@ -264,6 +264,39 @@ void SelectVolumeWidget::updateBounds(double *newBounds)
 //-----------------------------------------------------------------------------
 void SelectVolumeWidget::valueChanged()
 {
+  QSpinBox *sBox = qobject_cast<QSpinBox*>(this->sender());
+
+  if (sBox)
+  {
+    Ui::SelectVolumeWidget& ui = this->Internals->ui;
+
+    QSpinBox *inputBoxes[6] = { ui.startX, ui.endX, ui.startY,
+                                ui.endY, ui.startZ, ui.endZ };
+    int senderIndex = -1;
+    for (int i = 0; i < 6; ++i)
+    {
+      if (inputBoxes[i] == sBox)
+      {
+        senderIndex = i;
+      }
+    }
+    int component = senderIndex / 2;
+    int end = senderIndex % 2;
+    if (end == 0)
+    {
+      if (inputBoxes[component * 2]->value() > inputBoxes[component * 2 + 1]->value())
+      {
+        inputBoxes[component * 2 + 1]->setValue(inputBoxes[component * 2]->value());
+      }
+    }
+    else
+    {
+      if (inputBoxes[component * 2]->value() > inputBoxes[component * 2 + 1]->value())
+      {
+        inputBoxes[component * 2]->setValue(inputBoxes[component * 2 + 1]->value());
+      }
+    }
+  }
   int cropVolume[6];
 
   this->Internals->bounds(cropVolume);
