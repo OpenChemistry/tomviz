@@ -184,7 +184,6 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   }
   else if (dataSource->HasAnnotation("filename"))
   {
-    cout << source->GetAnnotation("filename");
     tomviz::annotateDataProducer(source, dataSource->GetAnnotation("filename"));
   }
   else
@@ -324,11 +323,19 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
   DataSource *newClone = NULL;
   if (cloneTransformed)
   {
-    const char* originalFilename =
-        vtkSMPropertyHelper(this->Internals->OriginalDataSource,
-                            vtkSMCoreUtilities::GetFileNameProperty(
-                             this->Internals->OriginalDataSource)).GetAsString();
-    this->Internals->Producer->SetAnnotation("filename", originalFilename);
+    if (vtkSMCoreUtilities::GetFileNameProperty(this->Internals->OriginalDataSource) != NULL)
+    {
+      const char* originalFilename =
+          vtkSMPropertyHelper(this->Internals->OriginalDataSource,
+                              vtkSMCoreUtilities::GetFileNameProperty(
+                               this->Internals->OriginalDataSource)).GetAsString();
+      this->Internals->Producer->SetAnnotation("filename", originalFilename);
+    }
+    else
+    {
+      this->Internals->Producer->SetAnnotation(
+          "filename", this->originalDataSource()->GetAnnotation("filename"));
+    }
     newClone = new DataSource(this->Internals->Producer, this->Internals->Type);
   }
   else
