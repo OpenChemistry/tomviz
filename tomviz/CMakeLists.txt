@@ -77,6 +77,8 @@ set(SOURCES
   ModuleOutline.h
   ModulePropertiesPanel.cxx
   ModulePropertiesPanel.h
+  ModuleSegment.cxx
+  ModuleSegment.h
   ModuleSlice.cxx
   ModuleSlice.h
   ModuleThreshold.cxx

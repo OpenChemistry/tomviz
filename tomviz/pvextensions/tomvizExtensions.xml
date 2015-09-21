@@ -172,5 +172,12 @@
         </Hints>
       </DoubleVectorProperty>
     </Proxy>
+    <Proxy name="PythonProgrammableSegmentation">
+      <StringVectorProperty name="Script" number_of_elements="1">
+        <Hints>
+          <Widget type="multi_line" syntax="python" />
+        </Hints>
+      </StringVectorProperty>
+    </Proxy>
   </ProxyGroup>
 </ServerManagerConfiguration>
