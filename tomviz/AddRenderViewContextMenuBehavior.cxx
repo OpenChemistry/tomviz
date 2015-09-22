@@ -72,6 +72,10 @@ void AddRenderViewContextMenuBehavior::onSetBackgroundColor()
   QColor currentColor = QColor::fromRgbF(colorComps[0], colorComps[1], colorComps[2]);
   QColor c = QColorDialog::getColor(currentColor, view->widget(), "Select Color");
 
+  if (!c.isValid())
+  {
+    return;
+  }
   colorComps[0] = c.redF();
   colorComps[1] = c.greenF();
   colorComps[2] = c.blueF();
