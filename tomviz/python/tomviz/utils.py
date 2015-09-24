@@ -92,3 +92,27 @@ def make_dataset(x, y, z, generate_data_function):
     do.PointData.append(vtkarray, "generated_scalars")
     do.PointData.SetActiveScalars("generated_scalars")
     return dataset
+
+def mark_as_volume(dataobject):
+    from vtk import vtkTypeInt8Array
+    fd = dataobject.GetFieldData()
+    arr = fd.GetArray("tomviz_data_source_type")
+    if arr is None:
+        arr = vtkTypeInt8Array()
+        arr.SetNumberOfComponents(1)
+        arr.SetNumberOfTuples(1)
+        arr.SetName("tomviz_data_source_type")
+        fd.AddArray(arr)
+    arr.SetTuple1(0, 0)
+
+def mark_as_tiltseries(dataobject):
+    from vtk import vtkTypeInt8Array
+    fd = dataobject.GetFieldData()
+    arr = fd.GetArray("tomviz_data_source_type")
+    if arr is None:
+        arr = vtkTypeInt8Array()
+        arr.SetNumberOfComponents(1)
+        arr.SetNumberOfTuples(1)
+        arr.SetName("tomviz_data_source_type")
+        fd.AddArray(arr)
+    arr.SetTuple1(0, 1)
