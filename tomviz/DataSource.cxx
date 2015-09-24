@@ -30,6 +30,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMTransferFunctionManager.h"
 #include "vtkTrivialProducer.h"
+#include "vtkTypeInt8Array.h"
 
 #include <vtk_pugixml.h>
 
@@ -413,8 +414,29 @@ void DataSource::dataModified()
     this->Internals->Producer->GetClientSideObject());
   Q_ASSERT(tp);
   tp->Modified();
-  tp->GetOutputDataObject(0)->Modified();
+  vtkDataObject *dObject = tp->GetOutputDataObject(0);
+  dObject->Modified();
   this->Internals->Producer->MarkModified(NULL);
+
+  vtkFieldData *fd = dObject->GetFieldData();
+  if (fd->HasArray("tomviz_data_source_type"))
+  {
+    vtkTypeInt8Array *typeArray = vtkTypeInt8Array::SafeDownCast(
+        fd->GetArray("tomviz_data_source_type"));
+
+    // Casting is a bit hacky here, but it *should* work
+    this->setType((DataSourceType)(int)typeArray->GetTuple1(0));
+  }
+  else
+  {
+    vtkSmartPointer< vtkTypeInt8Array> typeArray =
+      vtkSmartPointer<vtkTypeInt8Array>::New();
+    typeArray->SetNumberOfComponents(1);
+    typeArray->SetNumberOfTuples(1);
+    typeArray->SetName("tomviz_data_source_type");
+    typeArray->SetTuple1(0,this->Internals->Type);
+    fd->AddArray(typeArray);
+  }
 
   // This indirection is necessary to overcome a bug in VTK/ParaView when
   // explicitly calling UpdatePipeline(). The extents don't reset to the whole
@@ -468,6 +490,18 @@ void DataSource::resetData()
   {
     ensureTiltAnglesArrayExists(this->Internals->Producer);
   }
+  vtkFieldData *fd = dataClone->GetFieldData();
+  vtkSmartPointer<vtkTypeInt8Array> typeArray = vtkTypeInt8Array::SafeDownCast(
+      fd->GetArray("tomviz_data_source_type"));
+  if (!typeArray)
+  {
+    typeArray = vtkSmartPointer<vtkTypeInt8Array>::New();
+    typeArray->SetNumberOfComponents(1);
+    typeArray->SetNumberOfTuples(1);
+    typeArray->SetName("tomviz_data_source_type");
+    fd->AddArray(typeArray);
+  }
+  typeArray->SetTuple1(0,this->Internals->Type);
   emit this->dataChanged();
 }
 
@@ -501,6 +535,14 @@ DataSource::DataSourceType DataSource::type() const
 void DataSource::setType(DataSourceType t)
 {
   this->Internals->Type = t;
+  vtkTrivialProducer *tp = vtkTrivialProducer::SafeDownCast(
+      this->Internals->Producer->GetClientSideObject());
+  vtkDataObject *data = tp->GetOutputDataObject(0);
+  vtkFieldData *fd = data->GetFieldData();
+  vtkTypeInt8Array *typeArray = vtkTypeInt8Array::SafeDownCast(
+      fd->GetArray("tomviz_data_source_type"));
+  assert(typeArray);
+  typeArray->SetTuple1(0,t);
   if (t == TiltSeries)
   {
     ensureTiltAnglesArrayExists(this->Internals->Producer);
