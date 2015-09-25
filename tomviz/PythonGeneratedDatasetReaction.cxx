@@ -291,6 +291,43 @@ void PythonGeneratedDatasetReaction::addDataset()
     shapeWidget->getShape(shape);
     this->dataSourceAdded(generator.createDataSource(shape));
   }
+  else if (this->Internals->scriptLabel == "Constant Dataset")
+  {
+    QDialog dialog;
+    dialog.setWindowTitle("Set Parameters");
+    ShapeWidget *shapeWidget = new ShapeWidget(&dialog);
+
+    QLabel *label = new QLabel("Value: ", &dialog);
+    QDoubleSpinBox *constant = new QDoubleSpinBox(&dialog);
+
+    QHBoxLayout *parametersLayout = new QHBoxLayout;
+    parametersLayout->addWidget(label);
+    parametersLayout->addWidget(constant);
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    QDialogButtonBox* buttons = new QDialogButtonBox(
+      QDialogButtonBox::Cancel|QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
+    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+    layout->addWidget(shapeWidget);
+    layout->addItem(parametersLayout);
+    layout->addWidget(buttons);
+
+    dialog.setLayout(layout);
+    if (dialog.exec() != QDialog::Accepted)
+    {
+      return;
+    }
+    // substitute values
+    QString localScript = this->Internals->scriptSource.replace(
+        "###CONSTANT###", QString("CONSTANT = %1").arg(constant->value()));
+
+    generator.setScript(localScript);
+    int shape[3];
+    shapeWidget->getShape(shape);
+    this->dataSourceAdded(generator.createDataSource(shape));
+  }
 }
 
 //-----------------------------------------------------------------------------
