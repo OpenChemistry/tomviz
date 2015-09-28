@@ -69,6 +69,7 @@
 #include "Resample.h"
 #include "deleteSlices.h"
 #include "ZeroDataset.h"
+#include "ConstantDataset.h"
 
 #include <QFileInfo>
 
@@ -290,6 +291,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 #endif
   QAction* blankDataAction = sampleDataMenu->addAction("Zero Dataset");
   new PythonGeneratedDatasetReaction(blankDataAction, "Zero Dataset", ZeroDataset);
+  QAction* constantDataAction = sampleDataMenu->addAction("Constant Dataset");
+  new PythonGeneratedDatasetReaction(constantDataAction, "Constant Dataset", ConstantDataset);
 
   //now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER
