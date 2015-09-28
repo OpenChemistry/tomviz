@@ -49,8 +49,11 @@ public:
 
   // Used for the editor dialog
   void inputDataExtent(int *extent);
+  const int *inputDataExtent() const { return this->InputDataExtent; }
   void inputDataOrigin(double *origin);
+  const double *inputDataOrigin() const { return this->InputDataOrigin; }
   void inputDataSpacing(double *spacing);
+  const double *inputDataSpacing() const { return this->InputDataSpacing; }
 
 private:
   int CropBounds[6];

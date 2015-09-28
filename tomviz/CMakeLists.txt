@@ -44,8 +44,8 @@ set(SOURCES
   CropReaction.h
   CropOperator.cxx
   CropOperator.h
-  CropWidget.cxx
-  CropWidget.h
+  SelectVolumeWidget.cxx
+  SelectVolumeWidget.h
   DataPropertiesPanel.cxx
   DataPropertiesPanel.h
   DataSource.cxx
@@ -156,7 +156,7 @@ endforeach()
 qt4_wrap_ui(UI_SOURCES
   AboutDialog.ui
   CentralWidget.ui
-  CropWidget.ui
+  SelectVolumeWidget.ui
   DataPropertiesPanel.ui
   EditPythonOperatorWidget.ui
   MainWindow.ui

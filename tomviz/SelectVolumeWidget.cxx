@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#include "CropWidget.h"
-#include "ui_CropWidget.h"
+#include "SelectVolumeWidget.h"
+#include "ui_SelectVolumeWidget.h"
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
@@ -50,15 +50,14 @@
 namespace tomviz
 {
 
-class CropWidget::CWInternals
+class SelectVolumeWidget::CWInternals
 {
 public:
   vtkNew< vtkBoxWidget2 > boxWidget;
   vtkSmartPointer< vtkRenderWindowInteractor > interactor;
   vtkNew<vtkEventQtSlotConnect> eventLink;
-  CropOperator *op;
 
-  Ui::CropWidget ui;
+  Ui::SelectVolumeWidget ui;
   int dataExtent[6];
   double dataOrigin[3];
   double dataSpacing[3];
@@ -86,17 +85,24 @@ public:
   }
 };
 
-CropWidget::CropWidget(CropOperator *source, QWidget* p)
-  : Superclass(p), Internals(new CropWidget::CWInternals())
+SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
+                                       const double spacing[3],
+                                       const int extent[6],
+                                       const int currentVolume[6],
+                                       QWidget* p)
+  : Superclass(p), Internals(new SelectVolumeWidget::CWInternals())
 {
   vtkRenderWindowInteractor *iren =
     ActiveObjects::instance().activeView()->GetRenderWindow()->GetInteractor();
   this->Internals->interactor = iren;
-  this->Internals->op = source;
 
-  source->inputDataExtent(this->Internals->dataExtent);
-  source->inputDataOrigin(this->Internals->dataOrigin);
-  source->inputDataSpacing(this->Internals->dataSpacing);
+  for (int i = 0; i < 3; ++i)
+  {
+    this->Internals->dataOrigin[i] = origin[i];
+    this->Internals->dataSpacing[i] = spacing[i];
+    this->Internals->dataExtent[2 * i] = extent[2 * i];
+    this->Internals->dataExtent[2 * i + 1] = extent[2 * i + 1];
+  }
 
   double bounds[6];
   for (int i = 0; i < 6; ++i)
@@ -123,29 +129,27 @@ CropWidget::CropWidget(CropOperator *source, QWidget* p)
 
   iren->GetRenderWindow()->Render();
 
-  Ui::CropWidget& ui = this->Internals->ui;
+  Ui::SelectVolumeWidget& ui = this->Internals->ui;
   ui.setupUi(this);
 
   double e[6];
-  int *extent = this->Internals->dataExtent;
-  const int *currentBounds = this->Internals->op->cropBounds();
   std::copy(extent, extent+6, e);
   this->Internals->dataBoundingBox.SetBounds(e);
 
   // Set ranges and default values
   ui.startX->setRange(extent[0], extent[1]);
-  ui.startX->setValue(currentBounds[0]);
+  ui.startX->setValue(currentVolume[0]);
   ui.startY->setRange(extent[2], extent[3]);
-  ui.startY->setValue(currentBounds[2]);
+  ui.startY->setValue(currentVolume[2]);
   ui.startZ->setRange(extent[4], extent[5]);
-  ui.startZ->setValue(currentBounds[4]);
+  ui.startZ->setValue(currentVolume[4]);
 
   ui.endX->setRange(extent[0], extent[1]);
-  ui.endX->setValue(currentBounds[1]);
+  ui.endX->setValue(currentVolume[1]);
   ui.endY->setRange(extent[2], extent[3]);
-  ui.endY->setValue(currentBounds[3]);
+  ui.endY->setValue(currentVolume[3]);
   ui.endZ->setRange(extent[4], extent[5]);
-  ui.endZ->setValue(currentBounds[5]);
+  ui.endZ->setValue(currentVolume[5]);
 
   this->connect(ui.startX, SIGNAL(valueChanged(int)),
                 this, SLOT(valueChanged()));
@@ -163,13 +167,13 @@ CropWidget::CropWidget(CropOperator *source, QWidget* p)
   this->valueChanged();
 }
 
-CropWidget::~CropWidget()
+SelectVolumeWidget::~SelectVolumeWidget()
 {
   this->Internals->boxWidget->SetInteractor(NULL);
   this->Internals->interactor->GetRenderWindow()->Render();
 }
 
-void CropWidget::interactionEnd(vtkObject *caller)
+void SelectVolumeWidget::interactionEnd(vtkObject *caller)
 {
   Q_UNUSED(caller);
 
@@ -189,7 +193,7 @@ void CropWidget::interactionEnd(vtkObject *caller)
   this->updateBounds(dataBounds);
 }
 
-void CropWidget::updateBounds(int* bounds)
+void SelectVolumeWidget::updateBounds(int* bounds)
 {
   double* spacing = this->Internals->dataSpacing;
   double* origin = this->Internals->dataOrigin;
@@ -207,18 +211,25 @@ void CropWidget::updateBounds(int* bounds)
 }
 
 //-----------------------------------------------------------------------------
-void CropWidget::applyChangesToOperator()
+void SelectVolumeWidget::getExtentOfSelection(int extent[6])
 {
-  int cropVolume[6];
-  this->Internals->bounds(cropVolume);
-
-  this->Internals->op->setCropBounds(cropVolume);
+  this->Internals->bounds(extent);
 }
 
 //-----------------------------------------------------------------------------
-void CropWidget::updateBounds(double *newBounds)
+void SelectVolumeWidget::getBoundsOfSelection(double bounds[6])
 {
-  Ui::CropWidget& ui = this->Internals->ui;
+  double* boxBounds = this->Internals->boxWidget->GetRepresentation()->GetBounds();
+  for (int i = 0; i < 6; ++i)
+  {
+    bounds[i] = boxBounds[i];
+  }
+}
+
+//-----------------------------------------------------------------------------
+void SelectVolumeWidget::updateBounds(double *newBounds)
+{
+  Ui::SelectVolumeWidget& ui = this->Internals->ui;
 
   this->Internals->blockSpinnerSignals(true);
 
@@ -251,8 +262,41 @@ void CropWidget::updateBounds(double *newBounds)
 }
 
 //-----------------------------------------------------------------------------
-void CropWidget::valueChanged()
+void SelectVolumeWidget::valueChanged()
 {
+  QSpinBox *sBox = qobject_cast<QSpinBox*>(this->sender());
+
+  if (sBox)
+  {
+    Ui::SelectVolumeWidget& ui = this->Internals->ui;
+
+    QSpinBox *inputBoxes[6] = { ui.startX, ui.endX, ui.startY,
+                                ui.endY, ui.startZ, ui.endZ };
+    int senderIndex = -1;
+    for (int i = 0; i < 6; ++i)
+    {
+      if (inputBoxes[i] == sBox)
+      {
+        senderIndex = i;
+      }
+    }
+    int component = senderIndex / 2;
+    int end = senderIndex % 2;
+    if (end == 0)
+    {
+      if (inputBoxes[component * 2]->value() > inputBoxes[component * 2 + 1]->value())
+      {
+        inputBoxes[component * 2 + 1]->setValue(inputBoxes[component * 2]->value());
+      }
+    }
+    else
+    {
+      if (inputBoxes[component * 2]->value() > inputBoxes[component * 2 + 1]->value())
+      {
+        inputBoxes[component * 2]->setValue(inputBoxes[component * 2 + 1]->value());
+      }
+    }
+  }
   int cropVolume[6];
 
   this->Internals->bounds(cropVolume);

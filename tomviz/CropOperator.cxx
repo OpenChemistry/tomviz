@@ -16,11 +16,54 @@
 
 #include "CropOperator.h"
 
-#include "CropWidget.h"
+#include "SelectVolumeWidget.h"
+#include "EditOperatorWidget.h"
 #include "vtkDataObject.h"
 #include "vtkExtractVOI.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
+
+#include <QPointer>
+#include <QHBoxLayout>
+
+namespace
+{
+class CropWidget : public tomviz::EditOperatorWidget
+{
+  Q_OBJECT
+  typedef tomviz::EditOperatorWidget Superclass;
+public:
+  CropWidget(tomviz::CropOperator *source, QWidget* p)
+    : Superclass(p), Op(source)
+  {
+    this->Widget = new tomviz::SelectVolumeWidget(
+                         source->inputDataOrigin(),
+                         source->inputDataSpacing(),
+                         source->inputDataExtent(),
+                         source->cropBounds(),
+                         this);
+    QHBoxLayout *hboxlayout = new QHBoxLayout;
+    hboxlayout->addWidget(this->Widget);
+    this->setLayout(hboxlayout);
+  }
+  ~CropWidget() {}
+
+  virtual void applyChangesToOperator()
+  {
+    int bounds[6];
+    this->Widget->getExtentOfSelection(bounds);
+    if (this->Op)
+    {
+      this->Op->setCropBounds(bounds);
+    }
+  }
+private:
+  QPointer<tomviz::CropOperator> Op;
+  tomviz::SelectVolumeWidget* Widget;
+};
+}
+
+#include "CropOperator.moc"
 
 namespace tomviz
 {

@@ -13,10 +13,10 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizCropWidget_h
-#define tomvizCropWidget_h
+#ifndef tomvizSelectVolumeWidget_h
+#define tomvizSelectVolumeWidget_h
 
-#include "EditOperatorWidget.h"
+#include <QWidget>
 #include <QScopedPointer>
 
 class vtkObject;
@@ -26,19 +26,24 @@ namespace tomviz
 
 class CropOperator;
 
-class CropWidget : public EditOperatorWidget
+class SelectVolumeWidget : public QWidget
 {
   Q_OBJECT
-  typedef EditOperatorWidget Superclass;
+  typedef QWidget Superclass;
 
 public:
-  CropWidget(CropOperator *source,
-             QWidget* parent = 0);
-  virtual ~CropWidget();
+  SelectVolumeWidget(const double origin[3], const double spacing[3],
+                     const int extent[6], const int currentVolume[6],
+                     QWidget* parent = 0);
+  virtual ~SelectVolumeWidget();
 
-  void getBounds(double bounds[6]);
-
-  virtual void applyChangesToOperator();
+  // Gets the bounds of the selection in real space (taking into account
+  // the origin and spacing of the image)
+  void getBoundsOfSelection(double bounds[6]);
+  // Gets the bounds of the selection as extents of interest.  This is
+  // the region of interest in terms of the extent given in the input
+  // without the origin and spacing factored in.
+  void getExtentOfSelection(int extent[6]);
 
 private slots:
   void interactionEnd(vtkObject* caller);
