@@ -227,9 +227,9 @@ public:
 //----------------------------------------------------------------------------
   void setSpinBoxValue(int x, int y, int z)
   {
-    this->xSpinBox->setValue(128);
-    this->ySpinBox->setValue(128);
-    this->zSpinBox->setValue(128);
+    this->xSpinBox->setValue(x);
+    this->ySpinBox->setValue(y);
+    this->zSpinBox->setValue(z);
   }
 //----------------------------------------------------------------------------
 
