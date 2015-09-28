@@ -523,7 +523,7 @@ void DataSource::operatorTransformModified()
     this->operate(op.data());
   }
   this->blockSignals(prev);
-  emit this->dataChanged();
+  this->dataModified();
 }
 
 //-----------------------------------------------------------------------------
