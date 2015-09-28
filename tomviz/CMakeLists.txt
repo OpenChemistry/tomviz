@@ -136,6 +136,7 @@ set(python_files
   deleteSlices.py
   ZeroDataset.py
   ConstantDataset.py
+  RandomParticles.py
   )
 unset(python_h_files)
 foreach(file ${python_files})
