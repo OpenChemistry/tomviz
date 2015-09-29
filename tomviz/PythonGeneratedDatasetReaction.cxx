@@ -38,6 +38,7 @@
 #include <QLabel>
 #include <QSpinBox>
 #include <QVBoxLayout>
+#include <QGridLayout>
 
 #include <limits>
 
@@ -222,6 +223,23 @@ public:
     shape[1] = ySpinBox->value();
     shape[2] = zSpinBox->value();
   }
+    
+//----------------------------------------------------------------------------
+  void setSpinBoxValue(int x, int y, int z)
+  {
+    this->xSpinBox->setValue(x);
+    this->ySpinBox->setValue(y);
+    this->zSpinBox->setValue(z);
+  }
+//----------------------------------------------------------------------------
+
+  void setSpinBoxMaximum(int xmax, int ymax, int zmax)
+  {
+    this->xSpinBox->setMaximum(xmax);
+    this->ySpinBox->setMaximum(ymax);
+    this->zSpinBox->setMaximum(zmax);
+  }
+
 private:
   Q_DISABLE_COPY(ShapeWidget)
 
@@ -328,6 +346,78 @@ void PythonGeneratedDatasetReaction::addDataset()
     shapeWidget->getShape(shape);
     this->dataSourceAdded(generator.createDataSource(shape));
   }
+  else if (this->Internals->scriptLabel == "Random Particles")
+  {
+    QDialog dialog;
+    dialog.setWindowTitle("Random Particles");
+    QVBoxLayout* layout = new QVBoxLayout; //overall layout
+    //Guide
+    QLabel *guide = new QLabel;
+    guide->setText("Generate many random 3D \"particles\" using the Fourier Noise method. You can increase the \"Internal Complexity\" of particles and their average \"Particle Size\". You can also specify the sparsity (percentage of non-zero voxels) of the generated dataset. Note: 512x512x512 may take a couple minutes to run.");
+    guide->setWordWrap(true);
+    layout->addWidget(guide);
+
+    //Shape Layout
+    ShapeWidget *shapeLayout = new ShapeWidget(&dialog);
+    shapeLayout->setSpinBoxValue(128,128,128);
+    shapeLayout->setSpinBoxMaximum(512,512,512);
+    //Parameter Layout
+    QGridLayout *parametersLayout = new QGridLayout;
+      
+    QLabel *label = new QLabel("Internal Complexity ([1-100]): ", &dialog);
+    parametersLayout->addWidget(label,0,0,1,2);
+  
+    QDoubleSpinBox *innerStructureParameter = new QDoubleSpinBox(&dialog);
+    innerStructureParameter->setRange(1, 100);
+    innerStructureParameter->setValue(30);
+    innerStructureParameter->setSingleStep(5);
+    parametersLayout->addWidget(innerStructureParameter,0,2,1,1);
+
+    label = new QLabel("Particle Size ([1-100]): ", &dialog);
+    parametersLayout->addWidget(label,1,0,1,2);
+
+    QDoubleSpinBox *shapeParameter = new QDoubleSpinBox(&dialog);
+    shapeParameter->setRange(1,100);
+    shapeParameter->setValue(60);
+    shapeParameter->setSingleStep(5);
+    parametersLayout->addWidget(shapeParameter,1,2,1,1);
+
+    label = new QLabel("Sparsity (percentage of non-zero voxels): ", &dialog);
+    parametersLayout->addWidget(label,2,0,2,1);
+
+    QDoubleSpinBox *sparsityParameter = new QDoubleSpinBox(&dialog);
+    sparsityParameter->setRange(0,1);
+    sparsityParameter->setValue(0.2);
+    sparsityParameter->setSingleStep(0.05);
+    parametersLayout->addWidget(sparsityParameter,2,2,1,1);
+  
+    //Buttons
+    QDialogButtonBox* buttons = new QDialogButtonBox(
+        QDialogButtonBox::Cancel|QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
+    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+      
+    layout->addWidget(shapeLayout);
+    layout->addItem(parametersLayout);
+    layout->addWidget(buttons);
+    dialog.setLayout(layout);
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+
+    // substitute values
+    if (dialog.exec() == QDialog::Accepted)
+      {
+        QString pythonScript = this->Internals->scriptSource;
+        pythonScript.replace("###p_in###", QString("p_in = %1").arg(innerStructureParameter->value()));
+        pythonScript.replace("###p_s###", QString("p_s = %1").arg(shapeParameter->value()));
+        pythonScript.replace("###sparsity###", QString("sparsity = %1").arg(sparsityParameter->value()));
+      
+        generator.setScript(pythonScript);
+        int shape[3];
+        shapeLayout->getShape(shape);
+        this->dataSourceAdded(generator.createDataSource(shape));
+      }
+    }
+    
 }
 
 //-----------------------------------------------------------------------------
