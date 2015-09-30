@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "pqCoreUtilities.h"
 #include "pqProxiesWidget.h"
+#include "Utilities.h"
 #include "vtkAlgorithm.h"
 #include "vtkCommand.h"
 #include "vtkNew.h"
@@ -156,12 +157,44 @@ bool ModuleSegment::setVisibility(bool val)
 
 bool ModuleSegment::serialize(pugi::xml_node &ns) const
 {
-  return false; // TODO
+  pugi::xml_node node = ns.append_child("ITKScript");
+  QStringList scriptProps;
+  scriptProps << "Script";
+  if (!tomviz::serialize(this->Internals->SegmentationScript, node, scriptProps))
+  {
+    qWarning("Failed to serialize script.");
+    ns.remove_child(node);
+    return false;
+  }
+
+  node = ns.append_child("ContourFilter");
+  QStringList contourProps;
+  contourProps << "ContourValues";
+  if (!tomviz::serialize(this->Internals->ContourFilter, node, contourProps))
+  {
+    qWarning("Failed to serialize contour.");
+    ns.remove_child(node);
+    return false;
+  }
+
+  node = ns.append_child("ContourRepresentation");
+  QStringList representationProps;
+  representationProps << "Representation" << "Opacity" << "Specular" << "Visibility";
+  if (!tomviz::serialize(this->Internals->ContourRepresentation, node, representationProps))
+  {
+    qWarning("Failed to serialize ContourRepresentation");
+    ns.remove_child(node);
+    return false;
+  }
+  return this->Superclass::serialize(ns);
 }
 
 bool ModuleSegment::deserialize(const pugi::xml_node &ns)
 {
-  return false; // TODO
+  return tomviz::deserialize(this->Internals->SegmentationScript, ns.child("ITKScript")) &&
+    tomviz::deserialize(this->Internals->ContourFilter, ns.child("ContourFilter")) &&
+    tomviz::deserialize(this->Internals->ContourRepresentation, ns.child("ContourRepresentation")) &&
+    this->Superclass::deserialize(ns);
 }
 
 void ModuleSegment::addToPanel(pqProxiesWidget *panel)
