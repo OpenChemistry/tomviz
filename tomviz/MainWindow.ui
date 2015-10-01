@@ -63,10 +63,6 @@
     <property name="title">
      <string>Data Transforms</string>
     </property>
-    <addaction name="separator"/>
-    <addaction name="separator"/>
-    <addaction name="actionClone"/>
-    <addaction name="actionDeleteData"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -83,10 +79,6 @@
     <property name="title">
      <string>Tomography</string>
     </property>
-    <addaction name="actionToggleDataType"/>
-    <addaction name="separator"/>
-    <addaction name="actionAlign"/>
-    <addaction name="actionReconstruct"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuData"/>
@@ -334,21 +326,6 @@
     <string>Save Movie</string>
    </property>
   </action>
-  <action name="actionClone">
-   <property name="text">
-    <string>Clone</string>
-   </property>
-  </action>
-  <action name="actionAlign">
-   <property name="text">
-    <string>Align</string>
-   </property>
-  </action>
-  <action name="actionReconstruct">
-   <property name="text">
-    <string>Reconstruct</string>
-   </property>
-  </action>
   <action name="actionSaveState">
    <property name="text">
     <string>Save State</string>
@@ -367,29 +344,9 @@
     <string>Reset application</string>
    </property>
   </action>
-  <action name="actionDeleteData">
-   <property name="icon">
-    <iconset resource="../ParaView3/ParaView/Qt/Widgets/Resources/QtWidgets.qrc">
-     <normaloff>:/QtWidgets/Icons/pqDelete32.png</normaloff>:/QtWidgets/Icons/pqDelete32.png</iconset>
-   </property>
-   <property name="text">
-    <string>Delete Data &amp;&amp; Modules</string>
-   </property>
-   <property name="toolTip">
-    <string>Delete Data</string>
-   </property>
-  </action>
   <action name="actionAbout">
    <property name="text">
     <string>&amp;About</string>
-   </property>
-  </action>
-  <action name="actionToggleDataType">
-   <property name="checkable">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Toggle Data Type</string>
    </property>
   </action>
  </widget>

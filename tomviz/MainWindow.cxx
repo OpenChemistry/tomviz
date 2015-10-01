@@ -145,12 +145,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new Behaviors(this);
 
   new LoadDataReaction(ui.actionOpen);
-  new DeleteDataReaction(ui.actionDeleteData);
 
-  new AddAlignReaction(ui.actionAlign);
-  new CloneDataReaction(ui.actionClone);
-
-  new ToggleDataTypeReaction(ui.actionToggleDataType);
 
   /*
    * Data Transforms
@@ -178,52 +173,44 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuTools->addAction(setScaleAction);
   new SetScaleReaction(setScaleAction);
 
-  QAction *customPythonAction = new QAction("Custom Transform", this);
-  QAction *cropDataAction = new QAction("Crop", this);
-  //QAction *backgroundSubtractAction = new QAction("Background Subtraction", this);
-  QAction *autoAlignAction = new QAction("Translation Align (Auto)", this);
-  QAction *shiftUniformAction = new QAction("Shift Uniformly", this);
-  QAction *downsampleByTwoAction = new QAction("Downsample x2", this);
-  QAction *resampleAction = new QAction("Resample", this);
-  QAction *rotateAction = new QAction("Rotate", this);
-  QAction *deleteSliceAction = new QAction("Delete Slices", this);
-
-  //QAction *misalignUniformAction = new QAction("Misalign (Uniform)", this);
-  //QAction *misalignGaussianAction = new QAction("Misalign (Gaussian)", this);
-  QAction *squareRootAction = new QAction("Square Root Data", this);
-  QAction *hannWindowAction = new QAction("Hann Window", this);
-  QAction *fftAbsLogAction = new QAction("FFT (abs log)", this);
-  //QAction *resampleDataAction = new QAction("Clone && Downsample", this);
-  QAction *sobelFilterAction = new QAction("Sobel Filter", this);
-  QAction *laplaceFilterAction = new QAction("Laplace Filter", this);
-
   // Build Data Transforms menu
   // ################################################################
-  ui.menuData->insertAction(ui.actionClone, customPythonAction);
-  ui.menuData->insertAction(ui.actionClone, cropDataAction);
-  ui.menuData->insertSeparator(ui.actionClone);
-  //ui.menuData->insertAction(ui.actionClone, backgroundSubtractAction);
-  ui.menuData->insertAction(ui.actionClone, shiftUniformAction);
-  ui.menuData->insertAction(ui.actionClone, deleteSliceAction);
-  ui.menuData->insertAction(ui.actionClone, downsampleByTwoAction);
-  ui.menuData->insertAction(ui.actionClone, resampleAction);
-  ui.menuData->insertAction(ui.actionClone, rotateAction);
-  //ui.menuData->insertAction(ui.actionClone, misalignUniformAction);
-  //ui.menuData->insertAction(ui.actionClone, misalignGaussianAction);
-  ui.menuData->insertSeparator(ui.actionClone);
-  ui.menuData->insertAction(ui.actionClone, squareRootAction);
-  ui.menuData->insertAction(ui.actionClone, hannWindowAction);
-  ui.menuData->insertAction(ui.actionClone, fftAbsLogAction);
-  ui.menuData->insertAction(ui.actionClone, sobelFilterAction);
-  ui.menuData->insertAction(ui.actionClone, laplaceFilterAction);
-  ui.menuData->insertSeparator(ui.actionClone);
-  //ui.menuData->insertAction(ui.actionClone, resampleDataAction);
+  QAction *customPythonAction = ui.menuData->addAction("Custom Transform");
+  QAction *cropDataAction = ui.menuData->addAction("Crop");
+  ui.menuData->addSeparator();
+  
+  QAction *shiftUniformAction = ui.menuData->addAction("Shift Uniformly");
+  QAction *deleteSliceAction = ui.menuData->addAction("Delete Slices");
+  QAction *downsampleByTwoAction = ui.menuData->addAction("Downsample x2");
+  QAction *resampleAction = ui.menuData->addAction("Resample");
+  QAction *rotateAction = ui.menuData->addAction("Rotate");
+  ui.menuData->addSeparator();
+
+  QAction *squareRootAction = ui.menuData->addAction("Square Root Data");
+  QAction *hannWindowAction = ui.menuData->addAction("Hann Window");
+  QAction *fftAbsLogAction = ui.menuData->addAction("FFT (abs log)");
+  QAction *sobelFilterAction = ui.menuData->addAction("Sobel Filter");
+  QAction *laplaceFilterAction = ui.menuData->addAction("Laplace Filter");
+  ui.menuData->addSeparator();
+
+  QAction *cloneAction = ui.menuData->addAction("Clone");
+  QAction *deleteDataAction = ui.menuData->addAction(
+      QIcon(":/QtWidgets/Icons/pqDelete32.png"), "Delete Data & Modules");
+  deleteDataAction->setToolTip("Delete Data");
 
   // Build Tomography menu
   // ################################################################
-  ui.menuTomography->insertAction(ui.actionReconstruct, autoAlignAction);
-  ui.menuTomography->insertSeparator(ui.actionReconstruct);
 
+  QAction *toggleDataTypeAction = ui.menuTomography->addAction("Toggle Data Type");
+  ui.menuTomography->addSeparator();
+
+  QAction *alignAction = ui.menuTomography->addAction("Translation Align");
+  QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
+  ui.menuTomography->addSeparator();
+
+  QAction *reconstructAction = ui.menuTomography->addAction("Direct Fourier recon");
+
+  // Set up reactions for Data Transforms Menu
   //#################################################################
 
   // Add our Python script reactions, these compose Python into menu entries.
@@ -233,9 +220,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //new AddPythonTransformReaction(backgroundSubtractAction,
   //                               "Background Subtraction",
   //                               Subtract_TiltSer_Background);
-  ui.actionAlign->setText("Translation Align");
-  new AddPythonTransformReaction(autoAlignAction,
-                                 "Auto Align (XCORR)", Align_Images, true);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", Shift_Stack_Uniformly);
   new AddPythonTransformReaction(deleteSliceAction,
@@ -251,10 +235,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //                               "Misalign (Uniform)", MisalignImgs_Uniform);
   //new AddPythonTransformReaction(misalignGaussianAction,
   //                               "Misalign (Gaussian)", MisalignImgs_Uniform);
-  ui.actionReconstruct->setText("Direct Fourier recon");
-  new AddPythonTransformReaction(ui.actionReconstruct,
-                                 "Reconstruct (Direct Fourier)",
-                                 Recon_DFT, true);
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", Square_Root_Data);
   new AddPythonTransformReaction(hannWindowAction,
@@ -265,10 +245,24 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                    "Sobel Filter", SobelFilter);
   new AddPythonTransformReaction(laplaceFilterAction,
                                    "Laplace Filter", LaplaceFilter);
+  new CloneDataReaction(cloneAction);
+  new DeleteDataReaction(deleteDataAction);
+  // Set up reactions for Tomography Menu
+  //#################################################################
+  new ToggleDataTypeReaction(toggleDataTypeAction);
+  new AddAlignReaction(alignAction);
+  new AddPythonTransformReaction(autoAlignAction,
+                                 "Auto Align (XCORR)", Align_Images, true);
+  new AddPythonTransformReaction(reconstructAction,
+                                 "Reconstruct (Direct Fourier)",
+                                 Recon_DFT, true);
 
+  //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSaveDebuggingState);
+
+
 
   new SaveDataReaction(ui.actionSaveData);
   new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
