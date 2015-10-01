@@ -178,7 +178,7 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   node = ns.append_child("ContourRepresentation");
   if (tomviz::serialize(this->ContourRepresentation, node, contourRepresentationProperties) == false)
   {
-    qWarning("Failed to serialize ContourFilter.");
+    qWarning("Failed to serialize ContourRepresentation.");
     ns.remove_child(node);
     return false;
   }
