@@ -1,57 +1,33 @@
-#3D Reconstruct from a tilt series using Direct Fourier Method
-#
-#NOTE: Tilt Axis needs to be in the third dimension
-#
-#developed as part of the tomviz project (www.tomviz.com)
-
 def transform_scalars(dataset):
+    """3D Reconstruct from a tilt series using Direct Fourier Method"""
+    
     from tomviz import utils
     import numpy as np
 
-    #----USER SPECIFIED VARIABLES-----#
-    TILT_AXIS  = []  #Specify the tilt axis, if none is specified
-                     #it assume it is the smallest dimension
-    ANGLES = []  #Specify the angles used in the tiltseries 
-                 #For example, ANGLES = np.linspace(0,140,70)
-    #---------------------------------#
+    try: #If dataset is marked as tilt series
+        tilt_angles = utils.get_tilt_angles(dataset) #Get Tilt angles
+        data_py = utils.get_array(dataset)
+        if data_py is None:
+           raise RuntimeError("No scalars found!")
 
-    data_py = utils.get_array(dataset)
-    if data_py is None:
-        raise RuntimeError("No scalars found!")
-        
-    if TILT_AXIS == []: #If tilt axis is not given, find it
-    #Find smallest array dimension, assume it is the tilt angle axis
-        if data_py.ndim == 3:
-            TILT_AXIS = np.argmin( data_py.shape )
-        elif data_py.ndim == 2:
-            raise RuntimeError("Data Array is 2 dimensions, it should be 3!")
-        else: 
-            raise RuntimeError("Data Array is not 2 or 3 dimensions!")
-    
-    if ANGLES == []: #If angles are not given, assume 2 degree tilts
-        angles = np.linspace(0,146,74)
-        
-    dimx = np.size(data_py,0) #IN THE FUTURE THIS SHOULD NOT BE ASSUMED
-    result3D = dfm3(data_py,angles,dimx)
-    
-    # set the result as the new scalars.
-    utils.set_array(dataset, result3D)
-    print('Reconsruction Complete')
+        recon = dfm3(data_py,angles,np.size(data_py,0))
+        print('Reconsruction Complete')
 
-#dfm3(input,angles,Npad)
-#3D Direct Fourier Method
-#Use numpy fft
-#
-#Yi Jiang
-#08/25/2014
-#input: aligned data
-#angles: projection angles
-#N_pad: size of padded projection. typical choice: twice as the original projection
+        # set the result as the new scalars.
+        utils.set_array(dataset, recon)
+
+        # Mark dataset as tilt series
+        utils.mark_as_volume(dataset)
+
+    except:
+         pass
 
 import numpy as np
-
 def dfm3(input,angles,Npad):
-    print "You are using 3D direct fourier method, be patient."
+    #input: aligned data
+    #angles: projection angles
+    #N_pad: size of padded projection. typical choice: twice as the original projection
+
     input = np.double(input)
     (Nx,Ny,Np) = input.shape
     angles = np.double(angles)
@@ -59,7 +35,6 @@ def dfm3(input,angles,Npad):
     cen_pad = np.floor(Npad/2)
     pad_post = np.ceil((Npad-Ny)/2); pad_pre = np.floor((Npad-Ny)/2)    
     #initialize value and weight matrix
-    print "initialization"
     Nz = Ny
     w = np.zeros((Nx,Ny,Nz))
     v = np.zeros((Nx,Ny,Nz)) + 1j*np.zeros((Nx,Ny,Nz))
