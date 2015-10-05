@@ -73,6 +73,8 @@
 #include "RandomParticles.h"
 #include "TiltSeries.h"
 #include <QFileInfo>
+#include <QMessageBox>
+#include <QDir>
 
 //we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
@@ -80,6 +82,14 @@
   PV_PLUGIN_IMPORT_INIT(tomvizThreshold);
   PV_PLUGIN_IMPORT_INIT(tomvizStreaming);
 #endif
+
+namespace
+{
+QString getAutosaveFile()
+{
+  return QDir::temp().absoluteFilePath(".tomviz_autosave.tvsm");
+}
+}
 
 namespace tomviz
 {
@@ -312,6 +322,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 MainWindow::~MainWindow()
 {
   ModuleManager::instance().reset();
+  if (!QFile::remove(getAutosaveFile()))
+  {
+    std::cerr << "Failed to remove autosave file." << std::endl;
+  }
   delete this->Internals;
 }
 
@@ -367,6 +381,7 @@ void MainWindow::dataSourceChanged(DataSource*)
   this->ModulePropertiesWidget->hide();
   propsLayout->addWidget(this->DataPropertiesWidget);
   this->DataPropertiesWidget->show();
+  SaveLoadStateReaction::saveState(getAutosaveFile());
 }
 
 void MainWindow::moduleChanged(Module*)
@@ -382,6 +397,29 @@ void MainWindow::moduleChanged(Module*)
   this->DataPropertiesWidget->hide();
   propsLayout->addWidget(this->ModulePropertiesWidget);
   this->ModulePropertiesWidget->show();
+  SaveLoadStateReaction::saveState(getAutosaveFile());
+}
+
+void MainWindow::showEvent(QShowEvent *e)
+{
+  Superclass::showEvent(e);
+  QTimer::singleShot(1,this,SLOT(checkForAutosaveFile()));
+}
+
+void MainWindow::checkForAutosaveFile()
+{
+  QFile file(getAutosaveFile());
+  if (!file.exists())
+  {
+    return;
+  }
+  QMessageBox::StandardButton response = QMessageBox::question(
+      this, "Load autosave?", "There is a tomviz autosave file present.  Load it?",
+      QMessageBox::Yes|QMessageBox::No);
+  if (response == QMessageBox::Yes)
+  {
+    SaveLoadStateReaction::loadState(getAutosaveFile());
+  }
 }
 
 }
