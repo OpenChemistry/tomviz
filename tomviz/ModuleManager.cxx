@@ -20,6 +20,7 @@
 #include "Module.h"
 #include "Utilities.h"
 #include "ActiveObjects.h"
+#include "PythonGeneratedDatasetReaction.h"
 
 #include "pqApplicationCore.h"
 #include "pqActiveObjects.h"
@@ -426,6 +427,16 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
       continue;
     }
     proxy->UpdateVTKObjects();
+    if (proxy->GetAnnotation("tomviz.DataSource.FileName") ==  QString("Python Generated Data"))
+    {
+      QString label = proxy->GetAnnotation("tomviz.Label");
+      QString script = proxy->GetAnnotation("tomviz.Python_Source.Script");
+      int shape[3];
+      shape[0] = std::atoi(proxy->GetAnnotation("tomviz.Python_Source.X"));
+      shape[1] = std::atoi(proxy->GetAnnotation("tomviz.Python_Source.Y"));
+      shape[2] = std::atoi(proxy->GetAnnotation("tomviz.Python_Source.Z"));
+      proxy = PythonGeneratedDatasetReaction::getSourceProxy(label, script, shape);
+    }
     originalDataSources[id] = vtkSMSourceProxy::SafeDownCast(proxy);
   }
 
