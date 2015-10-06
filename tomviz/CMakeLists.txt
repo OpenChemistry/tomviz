@@ -139,6 +139,7 @@ set(python_files
   ZeroDataset.py
   ConstantDataset.py
   RandomParticles.py
+  TiltSeries.py 
   )
 unset(python_h_files)
 foreach(file ${python_files})
