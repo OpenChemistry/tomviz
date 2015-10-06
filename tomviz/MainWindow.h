@@ -52,6 +52,8 @@ private slots:
 
   void checkForAutosaveFile();
 
+  void autosave();
+
 private:
   Q_DISABLE_COPY(MainWindow)
   class MWInternals;

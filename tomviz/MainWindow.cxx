@@ -72,9 +72,11 @@
 #include "ConstantDataset.h"
 #include "RandomParticles.h"
 #include "TiltSeries.h"
+
+#include <QDir>
 #include <QFileInfo>
 #include <QMessageBox>
-#include <QDir>
+#include <QTimer>
 
 //we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
@@ -102,6 +104,7 @@ public:
   Ui::MainWindow Ui;
   Ui::AboutDialog AboutUi;
   QDialog *AboutDialog;
+  QTimer *Timer;
 };
 
 //-----------------------------------------------------------------------------
@@ -113,6 +116,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 {
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
+  this->Internals->Timer = new QTimer(this);
+  this->connect(this->Internals->Timer, SIGNAL(timeout()), SLOT(autosave()));
+  this->Internals->Timer->start(
+      5 /*minutes*/ * 60 /*seconds per minute*/ * 1000 /*msec per second*/);
     
   QString version(TOMVIZ_VERSION);
   if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)
@@ -322,7 +329,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 MainWindow::~MainWindow()
 {
   ModuleManager::instance().reset();
-  if (!QFile::remove(getAutosaveFile()))
+  QString autosaveFile = getAutosaveFile();
+  if (QFile::exists(autosaveFile) && !QFile::remove(autosaveFile))
   {
     std::cerr << "Failed to remove autosave file." << std::endl;
   }
@@ -381,7 +389,6 @@ void MainWindow::dataSourceChanged(DataSource*)
   this->ModulePropertiesWidget->hide();
   propsLayout->addWidget(this->DataPropertiesWidget);
   this->DataPropertiesWidget->show();
-  SaveLoadStateReaction::saveState(getAutosaveFile());
 }
 
 void MainWindow::moduleChanged(Module*)
@@ -397,7 +404,6 @@ void MainWindow::moduleChanged(Module*)
   this->DataPropertiesWidget->hide();
   propsLayout->addWidget(this->ModulePropertiesWidget);
   this->ModulePropertiesWidget->show();
-  SaveLoadStateReaction::saveState(getAutosaveFile());
 }
 
 void MainWindow::showEvent(QShowEvent *e)
@@ -420,6 +426,11 @@ void MainWindow::checkForAutosaveFile()
   {
     SaveLoadStateReaction::loadState(getAutosaveFile());
   }
+}
+
+void MainWindow::autosave()
+{
+  SaveLoadStateReaction::saveState(getAutosaveFile());
 }
 
 }
