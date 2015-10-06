@@ -71,7 +71,7 @@
 #include "ZeroDataset.h"
 #include "ConstantDataset.h"
 #include "RandomParticles.h"
-
+#include "TiltSeries.h"
 #include <QFileInfo>
 
 //we are building with dax, so we have plugins to import
@@ -203,6 +203,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *toggleDataTypeAction = ui.menuTomography->addAction("Toggle Data Type");
   ui.menuTomography->addSeparator();
+    
+  QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
+  ui.menuTomography->addSeparator();
 
   QAction *alignAction = ui.menuTomography->addAction("Translation Align");
   QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
@@ -250,6 +253,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // Set up reactions for Tomography Menu
   //#################################################################
   new ToggleDataTypeReaction(toggleDataTypeAction);
+  new AddPythonTransformReaction(generateTiltSeriesAction,
+                                 "Generate Tilt Series", TiltSeries, false, true);
   new AddAlignReaction(alignAction);
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", Align_Images, true);

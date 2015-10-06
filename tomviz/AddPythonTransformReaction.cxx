@@ -150,9 +150,10 @@ namespace tomviz
 AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                const QString &l,
                                                const QString &s,
-                                               bool rts)
+                                               bool rts,
+                                               bool rv)
   : Superclass(parentObject), scriptLabel(l), scriptSource(s),
-    interactive(false), requiresTiltSeries(rts)
+    interactive(false), requiresTiltSeries(rts), requiresVolume(rv)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -171,6 +172,10 @@ void AddPythonTransformReaction::updateEnableState()
   if (enable && this->requiresTiltSeries)
   {
     enable = ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries;
+  }
+  if (enable && this->requiresVolume)
+  {
+    enable = ActiveObjects::instance().activeDataSource()->type() == DataSource::Volume;
   }
   parentAction()->setEnabled(enable);
 }
@@ -467,7 +472,69 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       source->addOperator(op);
     }
   }
-    
+  else if (scriptLabel == "Generate Tilt Series")
+  {
+      
+      QDialog dialog(pqCoreUtilities::mainWidget());
+      dialog.setWindowTitle("Generate Tilt Series");
+      
+      QGridLayout *layout = new QGridLayout;
+      
+      QLabel *label = new QLabel("Generate electron tomography tilt series from volume dataset:");
+      label->setWordWrap(true);
+      layout->addWidget(label,0,0,1,2);
+      
+      label = new QLabel("Start Angle:");
+      layout->addWidget(label,1,0,1,1);
+      
+      QDoubleSpinBox *startAngle = new QDoubleSpinBox;
+      startAngle->setSingleStep(1);
+      startAngle->setValue(0);
+      startAngle->setRange(-180,180);
+      layout->addWidget(startAngle,1,1,1,1);
+
+      label = new QLabel("Angle Increment:");
+      layout->addWidget(label,2,0,1,1);
+      
+      QDoubleSpinBox *angleIncrement = new QDoubleSpinBox;
+      angleIncrement->setSingleStep(0.5);
+      angleIncrement->setValue(6);
+      angleIncrement->setRange(-180,180);
+      layout->addWidget(angleIncrement,2,1,1,1);
+
+      label = new QLabel("Number of Tilts:");
+      layout->addWidget(label,3,0,1,1);
+      
+      QSpinBox *numberOfTilts = new QSpinBox;
+      numberOfTilts->setSingleStep(1);
+      numberOfTilts->setValue(30);
+      layout->addWidget(numberOfTilts,3,1,1,1);
+
+      QVBoxLayout *v = new QVBoxLayout;
+      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
+      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+      
+      v->addLayout(layout);
+      v->addWidget(buttons);
+      dialog.setLayout(v);
+      dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+      if (dialog.exec() == QDialog::Accepted)
+      {
+          QString pythonScript = scriptSource;
+          pythonScript.replace("###startAngle###",
+                              QString("startAngle = %1").arg(startAngle->value()));
+          pythonScript.replace("###angleIncrement###",
+                               QString("angleIncrement = %1").arg(angleIncrement->value()));
+          pythonScript.replace("###Nproj###",
+                               QString("Nproj = %1").arg(numberOfTilts->value()));
+          opPython->setScript(pythonScript);
+          source->addOperator(op);
+      }
+      
+
+  }
   else if (interactive)
   {
     // Create a non-modal dialog, delete it once it has been closed.
