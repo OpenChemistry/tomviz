@@ -202,8 +202,6 @@ public:
   static vtkChartHistogram * New();
 
   bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse);
-  bool MouseWheelEvent(const vtkContextMouseEvent&, int)
-    { return false; }
 
   vtkNew<vtkTransform2D> Transform;
   double PositionX;
@@ -272,6 +270,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   chart->SetBarWidthFraction(1.0);
   chart->SetRenderEmpty(true);
   chart->SetAutoAxes(false);
+  chart->ZoomWithMouseWheelOff();
   chart->GetAxis(vtkAxis::LEFT)->SetTitle("");
   chart->GetAxis(vtkAxis::BOTTOM)->SetTitle("");
   chart->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
