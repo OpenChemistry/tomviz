@@ -18,14 +18,15 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "SetTiltAnglesReaction.h"
 
 #include <cassert>
 
 namespace tomviz
 {
 
-ToggleDataTypeReaction::ToggleDataTypeReaction(QAction* action)
-  : pqReaction(action)
+ToggleDataTypeReaction::ToggleDataTypeReaction(QAction* action, QMainWindow *mw)
+  : pqReaction(action), mainWindow(mw)
 {
   this->connect(&ActiveObjects::instance(),
                 SIGNAL(dataSourceChanged(DataSource*)),
@@ -46,7 +47,12 @@ void ToggleDataTypeReaction::onTriggered()
   }
   if (dsource->type() == DataSource::Volume)
   {
+    bool needToSetTiltAngles = !dsource->hasTiltAngles();
     dsource->setType(DataSource::TiltSeries);
+    if (needToSetTiltAngles)
+    {
+      SetTiltAnglesReaction::showSetTiltAnglesUI(this->mainWindow, dsource);
+    }
   }
   else if (dsource->type() == DataSource::TiltSeries)
   {

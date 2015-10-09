@@ -256,7 +256,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new DeleteDataReaction(deleteDataAction);
   // Set up reactions for Tomography Menu
   //#################################################################
-  new ToggleDataTypeReaction(toggleDataTypeAction);
+  new ToggleDataTypeReaction(toggleDataTypeAction, this);
   new SetTiltAnglesReaction(setTiltAnglesAction, this);
   new AddPythonTransformReaction(generateTiltSeriesAction,
                                  "Generate Tilt Series", TiltSeries, false, true);

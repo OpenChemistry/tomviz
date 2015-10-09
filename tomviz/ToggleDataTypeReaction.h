@@ -18,6 +18,8 @@
 
 #include "pqReaction.h"
 
+class QMainWindow;
+
 namespace tomviz
 {
 
@@ -29,7 +31,7 @@ class ToggleDataTypeReaction : public pqReaction
   typedef pqReaction Superclass;
 
 public:
-  ToggleDataTypeReaction(QAction* action);
+  ToggleDataTypeReaction(QAction* action, QMainWindow *mw);
   ~ToggleDataTypeReaction();
 
 protected:
@@ -39,6 +41,8 @@ protected:
 
 private:
   void setWidgetText(DataSource* dsource);
+
+  QMainWindow *mainWindow;
 
   Q_DISABLE_COPY(ToggleDataTypeReaction)
 };

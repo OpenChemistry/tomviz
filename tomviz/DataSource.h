@@ -87,6 +87,12 @@ public:
   /// Crop the data to the given volume
   void crop(int bounds[6]);
 
+  /// Returns true if the dataset already has a tilt angles array
+  /// --- this CAN return true even if the dataset is currently a
+  ///     volume.  This is to tell if switching the dataset to a tilt
+  ///     series also needs to set the tilt angles.
+  bool hasTiltAngles();
+
   /// Get a copy of the current tilt angles
   QVector<double> getTiltAngles();
 

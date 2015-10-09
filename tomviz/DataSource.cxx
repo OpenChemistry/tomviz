@@ -558,6 +558,21 @@ void DataSource::setType(DataSourceType t)
 }
 
 //-----------------------------------------------------------------------------
+bool DataSource::hasTiltAngles()
+{
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  vtkDataObject* data = tp->GetOutputDataObject(0);
+  vtkFieldData* fd = data->GetFieldData();
+  if (!fd)
+  {
+    return false;
+  }
+  vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+  return tiltAngles != NULL;
+}
+
+//-----------------------------------------------------------------------------
 QVector<double> DataSource::getTiltAngles()
 {
   QVector<double> result;
