@@ -49,6 +49,7 @@
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
 #include "SetScaleReaction.h"
+#include "SetTiltAnglesReaction.h"
 #include "ToggleDataTypeReaction.h"
 #include "ViewMenuManager.h"
 
@@ -203,6 +204,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *toggleDataTypeAction = ui.menuTomography->addAction("Toggle Data Type");
   ui.menuTomography->addSeparator();
+
+  QAction *setTiltAnglesAction = ui.menuTomography->addAction("Set Tilt Angles");
+  ui.menuTomography->addSeparator();
     
   QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
   ui.menuTomography->addSeparator();
@@ -252,7 +256,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new DeleteDataReaction(deleteDataAction);
   // Set up reactions for Tomography Menu
   //#################################################################
-  new ToggleDataTypeReaction(toggleDataTypeAction);
+  new ToggleDataTypeReaction(toggleDataTypeAction, this);
+  new SetTiltAnglesReaction(setTiltAnglesAction, this);
   new AddPythonTransformReaction(generateTiltSeriesAction,
                                  "Generate Tilt Series", TiltSeries, false, true);
   new AddAlignReaction(alignAction);

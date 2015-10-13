@@ -558,6 +558,68 @@ void DataSource::setType(DataSourceType t)
 }
 
 //-----------------------------------------------------------------------------
+bool DataSource::hasTiltAngles()
+{
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  vtkDataObject* data = tp->GetOutputDataObject(0);
+  vtkFieldData* fd = data->GetFieldData();
+  if (!fd)
+  {
+    return false;
+  }
+  vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+  return tiltAngles != NULL;
+}
+
+//-----------------------------------------------------------------------------
+QVector<double> DataSource::getTiltAngles()
+{
+  QVector<double> result;
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  vtkDataObject* data = tp->GetOutputDataObject(0);
+  vtkFieldData* fd = data->GetFieldData();
+  int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+  int num_tilt_angles = extent[5] - extent[4] + 1;
+  result.resize(num_tilt_angles);
+  if (fd)
+  {
+    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+    if (tiltAngles)
+    {
+      for (int i = 0; i < tiltAngles->GetNumberOfTuples(); ++i)
+      {
+        result[i] = tiltAngles->GetTuple1(i);
+      }
+    }
+  }
+  return result;
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::setTiltAngles(const QVector<double> &angles)
+{
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  vtkDataObject* data = tp->GetOutputDataObject(0);
+  vtkFieldData* fd = data->GetFieldData();
+  if (fd)
+  {
+    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+    if (tiltAngles)
+    {
+      assert(tiltAngles->GetNumberOfTuples() == angles.size());
+      for (int i = 0; i < tiltAngles->GetNumberOfTuples(); ++i)
+      {
+        tiltAngles->SetTuple1(i, angles[i]);
+      }
+    }
+  }
+  emit this->dataChanged();
+}
+
+//-----------------------------------------------------------------------------
 vtkSMProxy* DataSource::opacityMap() const
 {
   return this->Internals->ColorMap?

@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizToggleDataTypeReaction_h
-#define tomvizToggleDataTypeReaction_h
+#ifndef tomvizSetTiltAnglesReaction_h
+#define tomvizSetTiltAnglesReaction_h
 
 #include "pqReaction.h"
 
@@ -22,31 +22,26 @@ class QMainWindow;
 
 namespace tomviz
 {
-
 class DataSource;
 
-class ToggleDataTypeReaction : public pqReaction
+class SetTiltAnglesReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
 
 public:
-  ToggleDataTypeReaction(QAction* action, QMainWindow *mw);
-  ~ToggleDataTypeReaction();
+  SetTiltAnglesReaction(QAction* parent, QMainWindow* mw);
+  ~SetTiltAnglesReaction();
+
+  static void showSetTiltAnglesUI(QMainWindow *window, DataSource *source = NULL);
 
 protected:
-  /// Called when the action is triggered.
-  virtual void onTriggered();
-  virtual void updateEnableState();
-
+  void updateEnableState();
+  void onTriggered() { showSetTiltAnglesUI(this->mainWindow); }
 private:
-  void setWidgetText(DataSource* dsource);
-
+  Q_DISABLE_COPY(SetTiltAnglesReaction)
   QMainWindow *mainWindow;
-
-  Q_DISABLE_COPY(ToggleDataTypeReaction)
 };
-
 }
 
 #endif
