@@ -59,6 +59,8 @@ private:
   class MWInternals;
   MWInternals* Internals;
 
+  QString readScript(const QString &scriptName);
+
   DataPropertiesPanel *DataPropertiesWidget;
   ModulePropertiesPanel *ModulePropertiesWidget;
 };
