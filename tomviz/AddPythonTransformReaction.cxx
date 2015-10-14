@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "OperatorPython.h"
 #include "pqCoreUtilities.h"
+#include "SelectVolumeWidget.h"
 #include "EditOperatorDialog.h"
 
 #include <vtkImageData.h>
@@ -33,6 +34,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QDialogButtonBox>
+
+#include <cassert>
 
 namespace
 {
@@ -535,6 +538,34 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       
 
   }
+  else if (scriptLabel == "Clear Volume")
+  {
+    QDialog *dialog = new QDialog(pqCoreUtilities::mainWidget());
+    dialog->setWindowTitle("Select Volume to Clear");
+    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+
+    double origin[3];
+    double spacing[3];
+    int extent[6];
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+      source->producer()->GetClientSideObject());
+    vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    image->GetOrigin(origin);
+    image->GetSpacing(spacing);
+    image->GetExtent(extent);
+
+    QVBoxLayout *layout = new QVBoxLayout();
+    SelectVolumeWidget *selectionWidget = new SelectVolumeWidget(origin, spacing, extent, extent, dialog);
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), dialog, SLOT(reject()));
+    layout->addWidget(selectionWidget);
+    layout->addWidget(buttons);
+    dialog->setLayout(layout);
+    this->connect(dialog, SIGNAL(accepted()), SLOT(addExpressionFromNonModalDialog()));
+    dialog->show();
+  }
   else if (interactive)
   {
     // Create a non-modal dialog, delete it once it has been closed.
@@ -548,6 +579,54 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     source->addOperator(op);
   }
   return NULL;
+}
+
+void AddPythonTransformReaction::addExpressionFromNonModalDialog()
+{
+  DataSource *source =  ActiveObjects::instance().activeDataSource();
+  QDialog *dialog = qobject_cast<QDialog*>(this->sender());
+  OperatorPython *opPython = new OperatorPython();
+  QSharedPointer<Operator> op(opPython);
+  opPython->setLabel(scriptLabel);
+  if (this->scriptLabel == "Clear Volume")
+  {
+    QLayout *layout = dialog->layout();
+    SelectVolumeWidget* volumeWidget = NULL;
+    for (int i = 0; i < layout->count(); ++i)
+    {
+      if ((volumeWidget = qobject_cast<SelectVolumeWidget*>(layout->itemAt(i)->widget())))
+      {
+        break;
+      }
+    }
+
+    assert(volumeWidget);
+    int selection_extent[6];
+    volumeWidget->getExtentOfSelection(selection_extent);
+
+    int image_extent[6];
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+      source->producer()->GetClientSideObject());
+    vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    image->GetExtent(image_extent);
+
+    // The image extent is not necessarily zero-based.  The numpy array is.
+    // Also adding 1 to the maximum extents since numpy expects the max to be one
+    // past the last item of interest.
+    int indices[6];
+    indices[0] = selection_extent[0] - image_extent[0];
+    indices[1] = selection_extent[1] - image_extent[0] + 1;
+    indices[2] = selection_extent[2] - image_extent[2];
+    indices[3] = selection_extent[3] - image_extent[2] + 1;
+    indices[4] = selection_extent[4] - image_extent[4];
+    indices[5] = selection_extent[5] - image_extent[4] + 1;
+    QString pythonScript = this->scriptSource;
+    pythonScript.replace("###XRANGE###", QString("XRANGE = [%1, %2]").arg(indices[0]).arg(indices[1]))
+                .replace("###YRANGE###", QString("YRANGE = [%1, %2]").arg(indices[2]).arg(indices[3]))
+                .replace("###ZRANGE###", QString("ZRANGE = [%1, %2]").arg(indices[4]).arg(indices[5]));
+    opPython->setScript(pythonScript);
+    source->addOperator(op);
+  }
 }
 
 }

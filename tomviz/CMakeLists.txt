@@ -139,6 +139,7 @@ set(python_files
   LaplaceFilter.py
   Resample.py
   deleteSlices.py
+  ClearVolume.py
   ZeroDataset.py
   ConstantDataset.py
   RandomParticles.py
