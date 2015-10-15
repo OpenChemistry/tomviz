@@ -20,6 +20,7 @@
 #include "DataSource.h"
 #include "pqPropertiesPanel.h"
 #include "pqProxyWidget.h"
+#include "SetTiltAnglesReaction.h"
 #include "Utilities.h"
 #include "vtkDataSetAttributes.h"
 #include "vtkPVArrayInformation.h"
@@ -35,6 +36,8 @@
 #include "vtkAlgorithm.h"
 
 #include <QPointer>
+#include <QPushButton>
+#include <QMainWindow>
 
 namespace tomviz
 {
@@ -69,7 +72,7 @@ public:
 
     this->TiltAnglesSeparator =
       pqProxyWidget::newGroupLabelWidget("Tilt Angles", parent);
-    l->insertWidget(l->indexOf(ui.TiltAnglesTable), this->TiltAnglesSeparator);
+    l->insertWidget(l->indexOf(ui.SetTiltAnglesButton), this->TiltAnglesSeparator);
 
     // set icons for save/restore buttons.
     ui.ColorMapSaveAsDefaults->setIcon(
@@ -94,6 +97,7 @@ public:
       delete this->ColorMapWidget;
     }
     this->TiltAnglesSeparator->hide();
+    ui.SetTiltAnglesButton->hide();
     ui.TiltAnglesTable->clear();
     ui.TiltAnglesTable->setRowCount(0);
     ui.TiltAnglesTable->hide();
@@ -109,6 +113,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   this->connect(&ActiveObjects::instance(),
                 SIGNAL(dataSourceChanged(DataSource*)),
                 SLOT(setDataSource(DataSource*)));
+  this->connect(this->Internals->Ui.SetTiltAnglesButton, SIGNAL(clicked()),
+                SLOT(setTiltAngles()));
 }
 
 //-----------------------------------------------------------------------------
@@ -196,7 +202,7 @@ void DataPropertiesPanel::update()
   pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap());
   colorMapWidget->setApplyChangesImmediately(true);
   colorMapWidget->updatePanel();
-  ui.verticalLayout->insertWidget(ui.verticalLayout->indexOf(ui.TiltAnglesTable)-1,
+  ui.verticalLayout->insertWidget(ui.verticalLayout->indexOf(ui.SetTiltAnglesButton)-1,
                                   colorMapWidget);
   colorMapWidget->connect(ui.ColorMapExpander, SIGNAL(toggled(bool)),
                           SLOT(setVisible(bool)));
@@ -212,6 +218,7 @@ void DataPropertiesPanel::update()
   if (dsource->type() == DataSource::TiltSeries)
   {
     this->Internals->TiltAnglesSeparator->show();
+    ui.SetTiltAnglesButton->show();
     ui.TiltAnglesTable->show();
     vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
         dsource->producer()->GetClientSideObject())
@@ -232,6 +239,7 @@ void DataPropertiesPanel::update()
   else
   {
     this->Internals->TiltAnglesSeparator->hide();
+    ui.SetTiltAnglesButton->hide();
     ui.TiltAnglesTable->hide();
   }
   this->connect(this->Internals->Ui.TiltAnglesTable,
@@ -274,6 +282,14 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
       std::cerr << "Invalid tilt angle: " << str.toStdString() << std::endl;
     }
   }
+}
+
+//-----------------------------------------------------------------------------
+void DataPropertiesPanel::setTiltAngles()
+{
+  DataSource* dsource = this->Internals->CurrentDataSource;
+  QMainWindow* mainWindow = qobject_cast<QMainWindow*>(this->window());
+  SetTiltAnglesReaction::showSetTiltAnglesUI(mainWindow, dsource);
 }
 
 //-----------------------------------------------------------------------------
