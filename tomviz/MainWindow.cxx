@@ -73,7 +73,11 @@
 #include "ConstantDataset.h"
 #include "RandomParticles.h"
 #include "TiltSeries.h"
+
+#include <QDir>
 #include <QFileInfo>
+#include <QMessageBox>
+#include <QTimer>
 
 //we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
@@ -81,6 +85,14 @@
   PV_PLUGIN_IMPORT_INIT(tomvizThreshold);
   PV_PLUGIN_IMPORT_INIT(tomvizStreaming);
 #endif
+
+namespace
+{
+QString getAutosaveFile()
+{
+  return QDir::temp().absoluteFilePath(".tomviz_autosave.tvsm");
+}
+}
 
 namespace tomviz
 {
@@ -93,6 +105,7 @@ public:
   Ui::MainWindow Ui;
   Ui::AboutDialog AboutUi;
   QDialog *AboutDialog;
+  QTimer *Timer;
 };
 
 //-----------------------------------------------------------------------------
@@ -104,6 +117,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 {
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
+  this->Internals->Timer = new QTimer(this);
+  this->connect(this->Internals->Timer, SIGNAL(timeout()), SLOT(autosave()));
+  this->Internals->Timer->start(
+      5 /*minutes*/ * 60 /*seconds per minute*/ * 1000 /*msec per second*/);
     
   QString version(TOMVIZ_VERSION);
   if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)
@@ -317,6 +334,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 MainWindow::~MainWindow()
 {
   ModuleManager::instance().reset();
+  QString autosaveFile = getAutosaveFile();
+  if (QFile::exists(autosaveFile) && !QFile::remove(autosaveFile))
+  {
+    std::cerr << "Failed to remove autosave file." << std::endl;
+  }
   delete this->Internals;
 }
 
@@ -387,6 +409,33 @@ void MainWindow::moduleChanged(Module*)
   this->DataPropertiesWidget->hide();
   propsLayout->addWidget(this->ModulePropertiesWidget);
   this->ModulePropertiesWidget->show();
+}
+
+void MainWindow::showEvent(QShowEvent *e)
+{
+  Superclass::showEvent(e);
+  QTimer::singleShot(1,this,SLOT(checkForAutosaveFile()));
+}
+
+void MainWindow::checkForAutosaveFile()
+{
+  QFile file(getAutosaveFile());
+  if (!file.exists())
+  {
+    return;
+  }
+  QMessageBox::StandardButton response = QMessageBox::question(
+      this, "Load autosave?", "There is a tomviz autosave file present.  Load it?",
+      QMessageBox::Yes|QMessageBox::No);
+  if (response == QMessageBox::Yes)
+  {
+    SaveLoadStateReaction::loadState(getAutosaveFile());
+  }
+}
+
+void MainWindow::autosave()
+{
+  SaveLoadStateReaction::saveState(getAutosaveFile());
 }
 
 }

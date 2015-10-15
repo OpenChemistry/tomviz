@@ -37,6 +37,9 @@ public:
   MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
   virtual ~MainWindow();
 
+protected:
+  virtual void showEvent(QShowEvent* event);
+
 private slots:
   void showAbout();
   void openTilt();
@@ -46,6 +49,10 @@ private slots:
   void dataSourceChanged(DataSource *source);
   /// Change the active module displayed in the UI.
   void moduleChanged(Module *module);
+
+  void checkForAutosaveFile();
+
+  void autosave();
 
 private:
   Q_DISABLE_COPY(MainWindow)
