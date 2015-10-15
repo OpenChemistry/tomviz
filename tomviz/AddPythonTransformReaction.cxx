@@ -540,7 +540,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       int *extent = data->GetExtent();
 
       QDialog dialog(pqCoreUtilities::mainWidget());
-      dialog.setWindowTitle("Weighted Back Projection");
+      dialog.setWindowTitle("Weighted Back Projection Reconstruction");
       
       QGridLayout *layout = new QGridLayout;
       //Description
@@ -548,7 +548,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       label->setWordWrap(true);
       layout->addWidget(label,0,0,1,2);
 
-      label = new QLabel("Reconstruction Size:");
+      label = new QLabel("Reconstruction Size (N):");
       layout->addWidget(label,1,0,1,1);
       
       QSpinBox *reconSize = new QSpinBox;

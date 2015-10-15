@@ -3,7 +3,7 @@ def transform_scalars(dataset):
     
     from tomviz import utils
     import numpy as np
-    interpolation_methods = ('linear','nearest','cubic')
+    interpolation_methods = ('linear','nearest','spline','cubic')
     filter_methods = ('none','ramp','shepp-logan','cosine','hamming','hann')
 
     ###Nrecon###
@@ -36,7 +36,7 @@ def wbp3(input,angles,N=None,filter="ramp",interp="linear"):
     (Nslice,Nray,Nproj) = input.shape
     if Nproj!=angles.size:
        raise ValueError('Data does not match angles!')
-    interpolation_methods = ('linear','nearest','cubic')
+    interpolation_methods = ('linear','nearest','spline','cubic')
     if not interp in interpolation_methods:
        raise ValueError("Unknown interpolation: %s" % interp)
     if not N: #if ouput size is not given
@@ -44,7 +44,7 @@ def wbp3(input,angles,N=None,filter="ramp",interp="linear"):
     
     recon = np.zeros((Nslice,N,N))
     for i in range(Nslice):
-        print "slice No.", i+1
+        #print "slice No.", i+1
         recon[i,:,:] = wbp2(input[i,:,:],angles,N,filter,interp)
     return recon
 
