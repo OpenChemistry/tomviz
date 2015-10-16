@@ -122,11 +122,13 @@ public:
       return;
     }
     CheckForError();
+    this->pythonScript = script;
   }
 
 //----------------------------------------------------------------------------
-  tomviz::DataSource *createDataSource(int shape[3])
+  vtkSmartPointer<vtkSMSourceProxy> createDataSource(const int shape[3])
   {
+  vtkSmartPointer<vtkSMSourceProxy> retVal;
   vtkSmartPyObject args(PyTuple_New(4));
   PyTuple_SET_ITEM(args.GetPointer(), 0, PyInt_FromLong(shape[0]));
   PyTuple_SET_ITEM(args.GetPointer(), 1, PyInt_FromLong(shape[1]));
@@ -140,7 +142,7 @@ public:
   {
     qCritical() << "Failed to execute script.";
     CheckForError();
-    return NULL;
+    return retVal;
   }
 
   vtkImageData* image = vtkImageData::SafeDownCast(
@@ -149,7 +151,7 @@ public:
   {
     qCritical() << "Failed to get a valid image data from generation method.";
     CheckForError();
-    return NULL;
+    return retVal;
   }
 
   vtkSMSessionProxyManager* pxm =
@@ -159,11 +161,18 @@ public:
   vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
     source->GetClientSideObject());
   tp->SetOutput(image);
-  tomviz::annotateDataProducer(source, this->label.toUtf8().data());
+  source->SetAnnotation("tomviz.Type", "DataSource");
+  source->SetAnnotation("tomviz.DataSource.FileName", "Python Generated Data");
+  source->SetAnnotation("tomviz.Label", this->label.toAscii().data());
+  source->SetAnnotation("tomviz.Python_Source.Script", this->pythonScript.toAscii().data());
+  source->SetAnnotation("tomviz.Python_Source.X", QString::number(shape[0]).toAscii().data());
+  source->SetAnnotation("tomviz.Python_Source.Y", QString::number(shape[1]).toAscii().data());
+  source->SetAnnotation("tomviz.Python_Source.Z", QString::number(shape[2]).toAscii().data());
 
   CheckForError();
 
-  return new tomviz::DataSource(vtkSMSourceProxy::SafeDownCast(source.Get()));
+  retVal = vtkSMSourceProxy::SafeDownCast(source.Get());
+  return retVal;
   }
 
 private:
@@ -172,6 +181,7 @@ private:
   vtkSmartPyObject GenerateFunction;
   vtkSmartPyObject MakeDatasetFunction;
   QString label;
+  QString pythonScript;
 };
 
 //----------------------------------------------------------------------------
@@ -421,12 +431,13 @@ void PythonGeneratedDatasetReaction::addDataset()
 }
 
 //-----------------------------------------------------------------------------
-void PythonGeneratedDatasetReaction::dataSourceAdded(DataSource* dataSource)
+void PythonGeneratedDatasetReaction::dataSourceAdded(vtkSmartPointer<vtkSMSourceProxy> proxy)
 {
-  if (!dataSource)
+  if (!proxy)
   {
     return;
   }
+  DataSource *dataSource = new DataSource(proxy);
   ModuleManager::instance().addDataSource(dataSource);
 
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
@@ -441,6 +452,15 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(DataSource* dataSource)
     {
     ActiveObjects::instance().setActiveModule(module);
     }
+}
+
+//-----------------------------------------------------------------------------
+vtkSmartPointer<vtkSMSourceProxy> PythonGeneratedDatasetReaction::getSourceProxy(
+    const QString &label, const QString &script, const int shape[3])
+{
+  PythonGeneratedDataSource generator(label);
+  generator.setScript(script);
+  return generator.createDataSource(shape);
 }
 
 }

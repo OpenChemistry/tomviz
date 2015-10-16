@@ -17,8 +17,11 @@
 #define tomvizPythonGeneratedDatasetReaction_h
 
 #include "pqReaction.h"
+#include "vtkSmartPointer.h"
 
 #include <QScopedPointer>
+
+class vtkSMSourceProxy;
 
 namespace tomviz
 {
@@ -36,13 +39,16 @@ public:
 
   void addDataset();
 
+  static vtkSmartPointer<vtkSMSourceProxy> getSourceProxy(
+      const QString &label, const QString &script, const int shape[3]);
+
 protected:
   void onTriggered() { this->addDataset(); }
 
 private:
   Q_DISABLE_COPY(PythonGeneratedDatasetReaction)
 
-  void dataSourceAdded(DataSource *source);
+  void dataSourceAdded(vtkSmartPointer<vtkSMSourceProxy> proxy);
 
   class PGDRInternal;
   QScopedPointer<PGDRInternal> Internals;
