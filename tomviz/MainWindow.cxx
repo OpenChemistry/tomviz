@@ -56,6 +56,7 @@
 #include "MisalignImgs_Uniform.h"
 #include "Align_Images.h"
 #include "Recon_DFT.h"
+#include "Recon_WBP.h"
 #include "DownsampleByTwo.h"
 #include "Crop_Data.h"
 #include "FFT_AbsLog.h"
@@ -232,7 +233,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
   ui.menuTomography->addSeparator();
 
-  QAction *reconstructAction = ui.menuTomography->addAction("Direct Fourier recon");
+  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier recon");
+  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection recon");
 
   // Set up reactions for Data Transforms Menu
   //#################################################################
@@ -280,9 +282,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddAlignReaction(alignAction);
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", Align_Images, true);
-  new AddPythonTransformReaction(reconstructAction,
+  new AddPythonTransformReaction(reconDFMAction,
                                  "Reconstruct (Direct Fourier)",
                                  Recon_DFT, true);
+  new AddPythonTransformReaction(reconWBPAction,
+                                 "Reconstruct (Back Projection)",
+                                 Recon_WBP, true);
 
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);

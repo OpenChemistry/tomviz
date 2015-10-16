@@ -532,8 +532,75 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
           opPython->setScript(pythonScript);
           source->addOperator(op);
       }
-      
+  }
+  else if (scriptLabel == "Reconstruct (Back Projection)")
+  {
+      vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+      vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+      int *extent = data->GetExtent();
 
+      QDialog dialog(pqCoreUtilities::mainWidget());
+      dialog.setWindowTitle("Weighted Back Projection Reconstruction");
+      
+      QGridLayout *layout = new QGridLayout;
+      //Description
+      QLabel *label = new QLabel("Reconstruct a tilt series using Weighted Back Projection (WBP) method. \nThe tilt axis must be parallel to the x-direction and centered in the y-direction.\nThe size of reconstruction will be (Nx,N,N), where Nx is the number of pixels in x-direction and N can be specified below. The maximum N allowed is 4096.\nReconstrucing a 512x512x512 tomogram typically takes 7-10 mins.");
+      label->setWordWrap(true);
+      layout->addWidget(label,0,0,1,2);
+
+      label = new QLabel("Reconstruction Size (N):");
+      layout->addWidget(label,1,0,1,1);
+      
+      QSpinBox *reconSize = new QSpinBox;
+      reconSize->setMaximum(4096);
+      reconSize->setValue(extent[3]-extent[2]+1);
+      layout->addWidget(reconSize,1,1,1,1);
+      
+      label = new QLabel("Fourier Weighting Filter:");
+      layout->addWidget(label,2,0,1,1);
+      
+      QComboBox *filters = new QComboBox(&dialog);
+      filters->addItem("None");
+      filters->addItem("Ramp");
+      filters->addItem("Shepp-Logan");
+      filters->addItem("Cosine");
+      filters->addItem("Hamming");
+      filters->addItem("Hann");
+      filters->setCurrentIndex(1); //Default filter: ramp
+      layout->addWidget(filters,2,1,1,1);
+      
+      label = new QLabel("Back Projection Interpolation Method:");
+      layout->addWidget(label,3,0,1,1);
+      QComboBox *interpMethods = new QComboBox(&dialog);
+      interpMethods->addItem("Linear");
+      interpMethods->addItem("Nearest");
+      interpMethods->addItem("Spline");
+      interpMethods->addItem("Cubic");
+      interpMethods->setCurrentIndex(0); //Default filter: linear
+      layout->addWidget(interpMethods,3,1,1,1);
+
+      QVBoxLayout *v = new QVBoxLayout;
+      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
+      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+      
+      v->addLayout(layout);
+      v->addWidget(buttons);
+      dialog.setLayout(v);
+      dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+      if (dialog.exec() == QDialog::Accepted)
+      {
+          QString pythonScript = scriptSource;
+          pythonScript.replace("###Nrecon###",
+                               QString("Nrecon = %1").arg(reconSize->value()));
+          pythonScript.replace("###filter###",
+                               QString("filter = %1").arg(filters->currentIndex()));
+          pythonScript.replace("###interp###",
+                               QString("interp = %1").arg(interpMethods->currentIndex()));
+          opPython->setScript(pythonScript);
+          source->addOperator(op);
+      }
   }
   else if (interactive)
   {

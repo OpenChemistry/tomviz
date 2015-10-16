@@ -126,6 +126,7 @@ set(python_files
   MisalignImgs_Uniform.py
   Align_Images.py
   Recon_DFT.py
+  Recon_WBP.py
   Crop_Data.py
   DownsampleByTwo.py
   FFT_AbsLog.py
