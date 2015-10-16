@@ -41,6 +41,7 @@ private slots:
   void update();
   void render();
   void onTiltAnglesModified(int row, int column);
+  void setTiltAngles();
 
 signals:
   void colorMapUpdated();
