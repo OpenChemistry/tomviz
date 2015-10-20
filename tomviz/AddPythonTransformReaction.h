@@ -42,6 +42,9 @@ protected:
   void updateEnableState();
   void onTriggered() { this->addExpression(); }
 
+private slots:
+  void addExpressionFromNonModalDialog();
+
 private:
   Q_DISABLE_COPY(AddPythonTransformReaction)
 

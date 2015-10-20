@@ -74,6 +74,7 @@
 #include "ConstantDataset.h"
 #include "RandomParticles.h"
 #include "TiltSeries.h"
+#include "ClearVolume.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -203,6 +204,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *downsampleByTwoAction = ui.menuData->addAction("Downsample x2");
   QAction *resampleAction = ui.menuData->addAction("Resample");
   QAction *rotateAction = ui.menuData->addAction("Rotate");
+  QAction *clearAction = ui.menuData->addAction("Clear Volume");
   ui.menuData->addSeparator();
 
   QAction *squareRootAction = ui.menuData->addAction("Square Root Data");
@@ -256,6 +258,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                    "Resample", Resample);
   new AddPythonTransformReaction(rotateAction,
                                  "Rotate", Rotate3D);
+  new AddPythonTransformReaction(clearAction, "Clear Volume", ClearVolume);
 
   //new AddPythonTransformReaction(misalignUniformAction,
   //                               "Misalign (Uniform)", MisalignImgs_Uniform);
