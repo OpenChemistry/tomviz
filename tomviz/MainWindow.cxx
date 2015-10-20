@@ -31,9 +31,11 @@
 #include "tomvizConfig.h"
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
+#include "AddRotateAlignReaction.h"
 #include "AddExpressionReaction.h"
 #include "AddPythonTransformReaction.h"
 #include "AddResampleReaction.h"
+#include "AddRotateAlignReaction.h"
 #include "Behaviors.h"
 #include "CropReaction.h"
 #include "CloneDataReaction.h"
@@ -213,6 +215,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
   QAction *alignAction = ui.menuTomography->addAction("Translation Align");
   QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
+  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Align");
   ui.menuTomography->addSeparator();
 
   QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier recon");
@@ -268,6 +271,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(subtractBackgroundAction, "Background Subtraction (Manual)",
                                  this->readScript("Subtract_TiltSer_Background"), true);
     
+  new AddRotateAlignReaction(rotateAlignAction);
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", this->readScript("Align_Images"), true);
   new AddPythonTransformReaction(reconDFMAction,

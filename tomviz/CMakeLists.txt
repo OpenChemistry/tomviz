@@ -32,6 +32,8 @@ set(SOURCES
   AddRenderViewContextMenuBehavior.h
   AddResampleReaction.cxx
   AddResampleReaction.h
+  AddRotateAlignReaction.cxx
+  AddRotateAlignReaction.h
   AlignWidget.cxx
   AlignWidget.h
   Behaviors.cxx
@@ -103,6 +105,8 @@ set(SOURCES
   ReconstructionReaction.cxx
   ResetReaction.cxx
   ResetReaction.h
+  RotateAlignWidget.cxx
+  RotateAlignWidget.h
   SaveDataReaction.cxx
   SaveLoadStateReaction.cxx
   SaveLoadStateReaction.h
@@ -164,6 +168,7 @@ qt4_wrap_ui(UI_SOURCES
   EditPythonOperatorWidget.ui
   MainWindow.ui
   ModulePropertiesPanel.ui
+  RotateAlignWidget.ui
   ViewPropertiesPanel.ui
   )
 qt4_add_resources(RCC_SOURCES resources.qrc)
