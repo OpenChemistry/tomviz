@@ -633,6 +633,53 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     this->connect(dialog, SIGNAL(accepted()), SLOT(addExpressionFromNonModalDialog()));
     dialog->show();
   }
+    
+  else if (scriptLabel == "Background Subtraction (Manual)")
+  {
+      QDialog *dialog = new QDialog(pqCoreUtilities::mainWidget());
+      dialog->setWindowTitle("Background Subtraction (Manual)");
+      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+      
+      double origin[3];
+      double spacing[3];
+      int extent[6];
+      
+      vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+                                                               source->producer()->GetClientSideObject());
+      vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+      image->GetOrigin(origin);
+      image->GetSpacing(spacing);
+      image->GetExtent(extent);
+      //Default background region
+      int currentVolume[6];
+      currentVolume[0] = 10;
+      currentVolume[1] = 50;
+      currentVolume[2] = 10;
+      currentVolume[3] = 50;
+      currentVolume[4] = extent[4];
+      currentVolume[5] = extent[5];
+      
+      QVBoxLayout *layout = new QVBoxLayout();
+      
+      QLabel *label = new QLabel("Subtract background in each image of a tilt series dataset. Specify the background regions using the x,y,z ranges or graphically in the visualization window. The mean value in the background window will be subtracted from each image tilt (x-y) in the stack's range (z).");
+      label->setWordWrap(true);
+      layout->addWidget(label);
+
+      
+      SelectVolumeWidget *selectionWidget = new SelectVolumeWidget(origin, spacing, extent, currentVolume, dialog);
+      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
+      connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
+      connect(buttons, SIGNAL(rejected()), dialog, SLOT(reject()));
+      layout->addWidget(selectionWidget);
+      layout->addWidget(buttons);
+      dialog->setLayout(layout);
+      dialog->layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+
+      this->connect(dialog, SIGNAL(accepted()), SLOT(addExpressionFromNonModalDialog()));
+      dialog->show();
+  }
+
   else if (interactive)
   {
     // Create a non-modal dialog, delete it once it has been closed.
@@ -694,6 +741,44 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     opPython->setScript(pythonScript);
     source->addOperator(op);
   }
+  if (this->scriptLabel == "Background Subtraction (Manual)")
+  {
+    QLayout *layout = dialog->layout();
+    SelectVolumeWidget* volumeWidget = NULL;
+    for (int i = 0; i < layout->count(); ++i)
+    {
+      if ((volumeWidget = qobject_cast<SelectVolumeWidget*>(layout->itemAt(i)->widget())))
+      {
+        break;
+      }
+    }
+
+    assert(volumeWidget);
+    int selection_extent[6];
+    volumeWidget->getExtentOfSelection(selection_extent);
+      
+    int image_extent[6];
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+    vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    image->GetExtent(image_extent);
+    int indices[6];
+    indices[0] = selection_extent[0] - image_extent[0];
+    indices[1] = selection_extent[1] - image_extent[0] + 1;
+    indices[2] = selection_extent[2] - image_extent[2];
+    indices[3] = selection_extent[3] - image_extent[2] + 1;
+    indices[4] = selection_extent[4] - image_extent[4];
+    indices[5] = selection_extent[5] - image_extent[4] + 1;
+    QString pythonScript = this->scriptSource;
+    pythonScript.replace("###XRANGE###", QString("XRANGE = [%1, %2]").arg(indices[0]).arg(indices[1]))
+                .replace("###YRANGE###", QString("YRANGE = [%1, %2]").arg(indices[2]).arg(indices[3]))
+                .replace("###ZRANGE###", QString("ZRANGE = [%1, %2]").arg(indices[4]).arg(indices[5]));
+    opPython->setScript(pythonScript);
+    source->addOperator(op);
+  
+      
+  }
+    
+    
 }
 
 }

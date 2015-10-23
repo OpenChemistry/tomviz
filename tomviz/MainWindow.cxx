@@ -231,6 +231,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
   ui.menuTomography->addSeparator();
 
+  QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
   QAction *alignAction = ui.menuTomography->addAction("Translation Align");
   QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
   ui.menuTomography->addSeparator();
@@ -283,6 +284,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(generateTiltSeriesAction,
                                  "Generate Tilt Series", TiltSeries, false, true);
   new AddAlignReaction(alignAction);
+  new AddPythonTransformReaction(subtractBackgroundAction,
+                                 "Background Subtraction (Manual)", Subtract_TiltSer_Background, true);
+    
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", Align_Images, true);
   new AddPythonTransformReaction(reconDFMAction,
