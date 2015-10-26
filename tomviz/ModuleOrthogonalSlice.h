@@ -29,7 +29,7 @@ class ModuleOrthogonalSlice : public Module
   Q_OBJECT
   typedef Module Superclass;
 public:
-  ModuleOrthogonalSlice(QObject* parent=NULL);
+  ModuleOrthogonalSlice(QObject* parent=nullptr);
   virtual ~ModuleOrthogonalSlice();
 
   virtual QString label() const { return  "Orthogonal Slice"; }

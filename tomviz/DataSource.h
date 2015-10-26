@@ -44,7 +44,7 @@ public:
   /// \c dataSource is the original reader that reads the data into the
   /// application.
   DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
-             QObject* parent=NULL);
+             QObject* parent=nullptr);
   virtual ~DataSource();
 
   /// Returns the data producer proxy to insert in ParaView pipelines.

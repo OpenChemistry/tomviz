@@ -65,7 +65,7 @@ class PythonGeneratedDataSource : public QObject
   typedef QObject Superclass;
 public:
 //----------------------------------------------------------------------------
-  PythonGeneratedDataSource(const QString &l, QObject* p = NULL)
+  PythonGeneratedDataSource(const QString &l, QObject* p = nullptr)
     : Superclass(p), label(l)
   {
   }
@@ -136,7 +136,7 @@ public:
   PyTuple_SET_ITEM(args.GetPointer(), 3, this->GenerateFunction);
 
   vtkSmartPyObject result;
-  result.TakeReference(PyObject_Call(this->MakeDatasetFunction, args, NULL));
+  result.TakeReference(PyObject_Call(this->MakeDatasetFunction, args, nullptr));
 
   if (!result)
   {
@@ -147,7 +147,7 @@ public:
 
   vtkImageData* image = vtkImageData::SafeDownCast(
       vtkPythonUtil::GetPointerFromObject(result,"vtkImageData"));
-  if (image == NULL)
+  if (image == nullptr)
   {
     qCritical() << "Failed to get a valid image data from generation method.";
     CheckForError();
@@ -191,7 +191,7 @@ class ShapeWidget : public QWidget
   typedef QWidget Superclass;
 public:
 //----------------------------------------------------------------------------
-  ShapeWidget(QWidget *p = NULL)
+  ShapeWidget(QWidget *p = nullptr)
     : Superclass(p),
       xSpinBox(new QSpinBox(this)),
       ySpinBox(new QSpinBox(this)),

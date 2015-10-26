@@ -38,7 +38,7 @@ class Module : public QObject
   typedef QObject Superclass;
 
 public:
-  Module(QObject* parent=NULL);
+  Module(QObject* parent=nullptr);
   virtual ~Module();
 
   /// Returns a  label for this module.

@@ -35,7 +35,7 @@ class ModuleMenu : public QObject
   typedef QObject Superclass;
 
 public:
-  ModuleMenu(QToolBar* toolBar, QMenu* parentMenu, QObject* parent=NULL);
+  ModuleMenu(QToolBar* toolBar, QMenu* parentMenu, QObject* parent=nullptr);
   virtual ~ModuleMenu();
 
 private slots:

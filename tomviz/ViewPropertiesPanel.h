@@ -29,7 +29,7 @@ class ViewPropertiesPanel : public QWidget
   typedef QWidget Superclass;
 
 public:
-  ViewPropertiesPanel(QWidget* parent=0);
+  ViewPropertiesPanel(QWidget* parent=nullptr);
   virtual ~ViewPropertiesPanel();
 
 private slots:

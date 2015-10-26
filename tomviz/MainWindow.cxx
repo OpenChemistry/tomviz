@@ -102,7 +102,7 @@ namespace tomviz
 class MainWindow::MWInternals
 {
 public:
-  MWInternals() : AboutDialog(NULL) { ; }
+  MWInternals() : AboutDialog(nullptr) { ; }
 
   Ui::MainWindow Ui;
   Ui::AboutDialog AboutUi;

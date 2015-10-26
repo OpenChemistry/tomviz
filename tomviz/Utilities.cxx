@@ -113,7 +113,7 @@ bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
 
   // Save options state -- that's all we need.
   vtkSmartPointer<vtkPVXMLElement> elem;
-  elem.TakeReference(proxy->SaveXMLState(NULL, iter.GetPointer()));
+  elem.TakeReference(proxy->SaveXMLState(nullptr, iter.GetPointer()));
 
   std::ostringstream stream;
   elem->PrintXML(stream, vtkIndent());
@@ -175,7 +175,7 @@ vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)
 {
   vtkPVDataInformation* dinfo = proxy->GetDataInformation();
   return dinfo? dinfo->GetPointDataInformation()->GetAttributeInformation(
-    vtkDataSetAttributes::SCALARS) : NULL;
+    vtkDataSetAttributes::SCALARS) : nullptr;
 }
 
 
@@ -186,7 +186,7 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   vtkSMProxy* cmap = colorMap;
   vtkSMProxy* omap = vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
   vtkPVArrayInformation* ainfo = tomviz::scalarArrayInformation(dataSource->producer());
-  if (ainfo != NULL && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
+  if (ainfo != nullptr && vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0)
   {
     // assuming single component arrays.
     if (ainfo->GetNumberOfComponents() != 1)

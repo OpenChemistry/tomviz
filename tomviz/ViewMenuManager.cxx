@@ -48,7 +48,7 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
 void ViewMenuManager::buildMenu()
 {
   bool checked = this->showViewPropertiesAction->isChecked();
-  this->showViewPropertiesAction = NULL; // The object is about to be deleted
+  this->showViewPropertiesAction = nullptr; // The object is about to be deleted
   pqViewMenuManager::buildMenu(); // deletes all prior menu items and repopulates menu
 
   this->showViewPropertiesAction = new QAction("View Properties", this->Menu);

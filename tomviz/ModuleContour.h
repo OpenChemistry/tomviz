@@ -31,7 +31,7 @@ class ModuleContour : public Module
   typedef Module Superclass;
 
 public:
-  ModuleContour(QObject* parent=NULL);
+  ModuleContour(QObject* parent=nullptr);
   virtual ~ModuleContour();
 
   virtual QString label() const { return  "Contour"; }

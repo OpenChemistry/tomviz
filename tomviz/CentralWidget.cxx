@@ -149,7 +149,7 @@ class HistogramMaker : public QObject
   void run();
 
 public:
-  HistogramMaker(QObject *p = 0) : QObject(p) {}
+  HistogramMaker(QObject *p = nullptr) : QObject(p) {}
 
 public slots:
   void makeHistogram(vtkSmartPointer<vtkImageData> input,
@@ -213,7 +213,7 @@ vtkStandardNewMacro(vtkChartHistogram)
 bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
 {
   // Determine the location of the click, and emit something we can listen to!
-  vtkPlotBar *histo = 0;
+  vtkPlotBar *histo = nullptr;
   if (this->GetNumberOfPlots() > 0)
   {
     histo = vtkPlotBar::SafeDownCast(this->GetPlot(0));
@@ -234,8 +234,8 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   if (this->GetNumberOfPlots() == 1)
   {
     // Work around a bug in the charts - ensure corner is invalid for the plot.
-    this->Marker->SetXAxis(NULL);
-    this->Marker->SetYAxis(NULL);
+    this->Marker->SetXAxis(nullptr);
+    this->Marker->SetYAxis(nullptr);
     this->AddPlot(this->Marker.Get());
   }
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
@@ -296,7 +296,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 CentralWidget::~CentralWidget()
 {
   // disconnect all signals/slots
-  QObject::disconnect(this->HistogramGen, NULL, NULL, NULL);
+  QObject::disconnect(this->HistogramGen, nullptr, nullptr, nullptr);
   // when the HistogramMaker is deleted, kill the background thread
   QObject::connect(this->HistogramGen, SIGNAL(destroyed()),
                    this->Worker, SLOT(quit()));
@@ -316,7 +316,7 @@ void CentralWidget::setActiveDataSource(DataSource* source)
   if (this->AModule)
   {
     this->disconnect(this->AModule);
-    this->AModule = NULL;
+    this->AModule = nullptr;
   }
   this->setDataSource(source);
 }
@@ -337,7 +337,7 @@ void CentralWidget::setActiveModule(Module* module)
   }
   else
   {
-    this->setDataSource(NULL);
+    this->setDataSource(nullptr);
   }
 }
 
@@ -384,7 +384,7 @@ void CentralWidget::setDataSource(DataSource* source)
   }
   else
   {
-    this->LUT = NULL;
+    this->LUT = nullptr;
   }
 
   // Check our cache, and use that if appopriate (or update it).

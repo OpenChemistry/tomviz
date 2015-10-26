@@ -33,7 +33,7 @@ class ModuleOutline : public Module
   typedef Module Superclass;
 
 public:
-  ModuleOutline(QObject* parent=NULL);
+  ModuleOutline(QObject* parent=nullptr);
   virtual ~ModuleOutline();
 
   virtual QString label() const { return  "Outline"; }

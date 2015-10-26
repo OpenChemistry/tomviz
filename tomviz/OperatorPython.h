@@ -27,7 +27,7 @@ class OperatorPython : public Operator
   typedef Operator Superclass;
 
 public:
-  OperatorPython(QObject* parent=NULL);
+  OperatorPython(QObject* parent=nullptr);
   virtual ~OperatorPython();
 
   virtual QString label() const { return this->Label; }

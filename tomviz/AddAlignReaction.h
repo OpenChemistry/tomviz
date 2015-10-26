@@ -30,7 +30,7 @@ public:
   AddAlignReaction(QAction* parent);
   ~AddAlignReaction();
 
-  void align(DataSource* source = NULL);
+  void align(DataSource* source = nullptr);
 
 protected:
   void updateEnableState();

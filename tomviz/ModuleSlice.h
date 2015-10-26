@@ -31,7 +31,7 @@ class ModuleSlice : public Module
   Q_OBJECT
   typedef Module Superclass;
 public:
-  ModuleSlice(QObject* parent=NULL);
+  ModuleSlice(QObject* parent=nullptr);
   virtual ~ModuleSlice();
 
   virtual QString label() const { return  "Slice"; }

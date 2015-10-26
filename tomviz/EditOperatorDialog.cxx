@@ -70,7 +70,7 @@ EditOperatorDialog::EditOperatorDialog(
   Q_ASSERT(o);
   this->Internals->Op = o;
   this->Internals->dataSource = dataSource;
-  this->Internals->needsToBeAdded = (dataSource != NULL);
+  this->Internals->needsToBeAdded = (dataSource != nullptr);
 
   QVariant position = this->Internals->loadPosition();
   if (!position.isNull())
@@ -111,7 +111,7 @@ QSharedPointer<Operator>& EditOperatorDialog::op()
 void EditOperatorDialog::onApply()
 {
   this->Internals->Widget->applyChangesToOperator();
-  if (this->Internals->needsToBeAdded && this->Internals->dataSource != NULL)
+  if (this->Internals->needsToBeAdded && this->Internals->dataSource != nullptr)
   {
     this->Internals->dataSource->addOperator(this->Internals->Op);
     this->Internals->needsToBeAdded = false;

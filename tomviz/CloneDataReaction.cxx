@@ -43,7 +43,7 @@ CloneDataReaction::~CloneDataReaction()
 void CloneDataReaction::updateEnableState()
 {
   this->parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != NULL);
+    ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
   toClone = toClone? toClone : ActiveObjects::instance().activeDataSource();
   if (!toClone)
   {
-    return NULL;
+    return nullptr;
   }
 
   QStringList items;
@@ -77,7 +77,7 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
     LoadDataReaction::dataSourceAdded(newClone);
     return newClone;
   }
-  return NULL;
+  return nullptr;
 }
 
 }

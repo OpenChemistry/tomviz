@@ -33,7 +33,7 @@ class DataPropertiesPanel : public QWidget
   Q_OBJECT
   typedef QWidget Superclass;
 public:
-  DataPropertiesPanel(QWidget* parent=0);
+  DataPropertiesPanel(QWidget* parent=nullptr);
   virtual ~DataPropertiesPanel();
 
 private slots:

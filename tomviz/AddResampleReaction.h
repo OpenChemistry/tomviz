@@ -30,7 +30,7 @@ public:
   AddResampleReaction(QAction* parent);
   ~AddResampleReaction();
 
-  void resample(DataSource* source = NULL);
+  void resample(DataSource* source = nullptr);
 
 protected:
   void updateEnableState();

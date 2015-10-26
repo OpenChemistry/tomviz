@@ -87,8 +87,8 @@ bool ModuleOutline::finalize()
   controller->UnRegisterProxy(this->OutlineRepresentation);
   controller->UnRegisterProxy(this->OutlineFilter);
 
-  this->OutlineFilter = NULL;
-  this->OutlineRepresentation = NULL;
+  this->OutlineFilter = nullptr;
+  this->OutlineRepresentation = nullptr;
   return true;
 }
 

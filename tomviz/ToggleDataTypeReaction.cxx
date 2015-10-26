@@ -41,7 +41,7 @@ ToggleDataTypeReaction::~ToggleDataTypeReaction()
 void ToggleDataTypeReaction::onTriggered()
 {
   DataSource* dsource = ActiveObjects::instance().activeDataSource();
-  if (dsource == NULL)
+  if (dsource == nullptr)
   {
     return;
   }
@@ -64,8 +64,8 @@ void ToggleDataTypeReaction::onTriggered()
 void ToggleDataTypeReaction::updateEnableState()
 {
   DataSource* dsource = ActiveObjects::instance().activeDataSource();
-  this->parentAction()->setEnabled(dsource != NULL);
-  if (dsource != NULL)
+  this->parentAction()->setEnabled(dsource != nullptr);
+  if (dsource != nullptr)
   {
     this->setWidgetText(dsource);
   }

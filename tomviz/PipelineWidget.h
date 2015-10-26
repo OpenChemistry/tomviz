@@ -40,7 +40,7 @@ class PipelineWidget : public QTreeWidget
   typedef QTreeWidget Superclass;
 
 public:
-  PipelineWidget(QWidget* parent=0);
+  PipelineWidget(QWidget* parent=nullptr);
   virtual ~PipelineWidget();
 
   virtual void keyPressEvent(QKeyEvent*);

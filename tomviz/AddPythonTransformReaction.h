@@ -34,7 +34,7 @@ public:
                          bool requiresVolume = false);
   ~AddPythonTransformReaction();
 
-  OperatorPython* addExpression(DataSource* source = NULL);
+  OperatorPython* addExpression(DataSource* source = nullptr);
 
   void setInteractive(bool isInteractive) { interactive = isInteractive; }
 

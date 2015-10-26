@@ -42,7 +42,7 @@ AddExpressionReaction::~AddExpressionReaction()
 void AddExpressionReaction::updateEnableState()
 {
   this->parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != NULL);
+    ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -51,7 +51,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
   {
-    return NULL;
+    return nullptr;
   }
 
   // Build the default script for the python operator
@@ -91,7 +91,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
       new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->show();
-  return NULL;
+  return nullptr;
 }
 
 }

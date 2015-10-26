@@ -33,7 +33,7 @@ public:
   SetTiltAnglesReaction(QAction* parent, QMainWindow* mw);
   ~SetTiltAnglesReaction();
 
-  static void showSetTiltAnglesUI(QMainWindow *window, DataSource *source = NULL);
+  static void showSetTiltAnglesUI(QMainWindow *window, DataSource *source = nullptr);
 
 protected:
   void updateEnableState();

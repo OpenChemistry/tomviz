@@ -45,8 +45,8 @@ class AlignWidget : public QWidget
   Q_OBJECT
 
 public:
-  AlignWidget(DataSource *data, QWidget* parent = NULL,
-              Qt::WindowFlags f = 0);
+  AlignWidget(DataSource *data, QWidget* parent = nullptr,
+              Qt::WindowFlags f = nullptr);
   ~AlignWidget();
 
   // This will filter the QVTKWidget events

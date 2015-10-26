@@ -104,8 +104,8 @@ bool ModuleVolume::finalize()
   controller->UnRegisterProxy(this->Representation);
   controller->UnRegisterProxy(this->PassThrough);
 
-  this->PassThrough = NULL;
-  this->Representation = NULL;
+  this->PassThrough = nullptr;
+  this->Representation = nullptr;
   return true;
 }
 

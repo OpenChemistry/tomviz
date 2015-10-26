@@ -106,7 +106,7 @@ void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
 
   // Create a non-modal dialog, delete it once it has been closed.
   EditOperatorDialog *dialog =
-    new EditOperatorDialog(op, NULL, pqCoreUtilities::mainWidget());
+    new EditOperatorDialog(op, nullptr, pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->show();
 }

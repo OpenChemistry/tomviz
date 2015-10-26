@@ -32,7 +32,7 @@ public:
   AddExpressionReaction(QAction* parent);
   virtual ~AddExpressionReaction();
 
-  OperatorPython* addExpression(DataSource* source = NULL);
+  OperatorPython* addExpression(DataSource* source = nullptr);
 
 protected:
   void updateEnableState();

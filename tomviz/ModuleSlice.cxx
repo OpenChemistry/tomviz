@@ -189,9 +189,9 @@ bool ModuleSlice::finalize()
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(this->PassThrough);
 
-  this->PassThrough = NULL;
+  this->PassThrough = nullptr;
 
-  if(this->Widget != NULL)
+  if(this->Widget != nullptr)
   {
     this->Widget->InteractionOff();
     this->Widget->Off();

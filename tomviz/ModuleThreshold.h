@@ -31,7 +31,7 @@ class ModuleThreshold : public Module
   typedef Module Superclass;
 
 public:
-  ModuleThreshold(QObject* parent=NULL);
+  ModuleThreshold(QObject* parent=nullptr);
   virtual ~ModuleThreshold();
 
   virtual QString label() const { return  "Threshold"; }

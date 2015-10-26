@@ -83,7 +83,7 @@ void ModulePropertiesPanel::setModule(Module* module)
   }
   ui.ProxiesWidget->updateLayout();
   this->updatePanel();
-  ui.Delete->setEnabled(module != NULL);
+  ui.Delete->setEnabled(module != nullptr);
 }
 
 //-----------------------------------------------------------------------------

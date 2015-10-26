@@ -31,11 +31,11 @@ namespace tomviz
 //-----------------------------------------------------------------------------
 ActiveObjects::ActiveObjects()
   : Superclass(),
-    ActiveDataSource(NULL),
-    VoidActiveDataSource(NULL),
+    ActiveDataSource(nullptr),
+    VoidActiveDataSource(nullptr),
     ActiveDataSourceType(DataSource::Volume),
-    ActiveModule(NULL),
-    VoidActiveModule(NULL)
+    ActiveModule(nullptr),
+    VoidActiveModule(nullptr)
 {
   this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
                 SLOT(viewChanged(pqView*)));
@@ -68,13 +68,13 @@ void ActiveObjects::setActiveView(vtkSMViewProxy* view)
 vtkSMViewProxy* ActiveObjects::activeView() const
 {
   pqView* view = pqActiveObjects::instance().activeView();
-  return view ? view->getViewProxy() : NULL;
+  return view ? view->getViewProxy() : nullptr;
 }
 
 //-----------------------------------------------------------------------------
 void ActiveObjects::viewChanged(pqView* view)
 {
-  emit this->viewChanged(view ? view->getViewProxy() : NULL);
+  emit this->viewChanged(view ? view->getViewProxy() : nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ void ActiveObjects::dataSourceRemoved(DataSource* ds)
 {
   if (this->VoidActiveDataSource == ds)
   {
-    this->setActiveDataSource(NULL);
+    this->setActiveDataSource(nullptr);
   }
 }
 
@@ -91,7 +91,7 @@ void ActiveObjects::moduleRemoved(Module* mdl)
 {
   if (this->VoidActiveModule == mdl)
   {
-    this->setActiveModule(NULL);
+    this->setActiveModule(nullptr);
   }
 }
 
@@ -130,7 +130,7 @@ void ActiveObjects::dataSourceChanged()
 vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
-  return server ? server->proxyManager() : NULL;
+  return server ? server->proxyManager() : nullptr;
 }
 
 //-----------------------------------------------------------------------------

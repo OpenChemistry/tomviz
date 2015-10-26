@@ -101,8 +101,8 @@ bool ModuleContour::finalize()
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(this->ContourRepresentation);
   controller->UnRegisterProxy(this->ContourFilter);
-  this->ContourFilter = NULL;
-  this->ContourRepresentation = NULL;
+  this->ContourFilter = nullptr;
+  this->ContourRepresentation = nullptr;
   return true;
 }
 

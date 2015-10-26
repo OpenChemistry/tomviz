@@ -135,9 +135,9 @@ bool ModuleSegment::finalize()
   controller->UnRegisterProxy(this->Internals->ProgrammableFilter);
   controller->UnRegisterProxy(this->Internals->ContourRepresentation);
   controller->UnRegisterProxy(this->Internals->ContourFilter);
-  this->Internals->ProgrammableFilter = NULL;
-  this->Internals->ContourFilter = NULL;
-  this->Internals->ContourRepresentation = NULL;
+  this->Internals->ProgrammableFilter = nullptr;
+  this->Internals->ContourFilter = nullptr;
+  this->Internals->ContourRepresentation = nullptr;
   return true;
 }
 

@@ -27,7 +27,7 @@ class CropOperator : public Operator
 
 public:
   CropOperator(const int *dataExtent, const double *dataOrigin,
-               const double *dataSpacing, QObject* parent=NULL);
+               const double *dataSpacing, QObject* parent=nullptr);
   virtual ~CropOperator();
 
   virtual QString label() const { return "Crop"; }

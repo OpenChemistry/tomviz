@@ -33,7 +33,7 @@ class Operator : public QObject
   typedef QObject Superclass;
 
 public:
-  Operator(QObject* parent=NULL);
+  Operator(QObject* parent=nullptr);
   virtual ~Operator();
 
   /// Returns a label for this operator.

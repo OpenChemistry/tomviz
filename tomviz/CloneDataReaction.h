@@ -31,7 +31,7 @@ public:
   CloneDataReaction(QAction* action);
   virtual ~CloneDataReaction();
 
-  static DataSource* clone(DataSource* toClone = NULL);
+  static DataSource* clone(DataSource* toClone = nullptr);
 
 protected:
   /// Called when the action is triggered.

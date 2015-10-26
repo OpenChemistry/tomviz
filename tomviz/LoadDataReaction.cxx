@@ -68,7 +68,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "Text files (*.txt)"
           << "All files (*.*)";
 
-  QFileDialog dialog(NULL);
+  QFileDialog dialog(nullptr);
   dialog.setFileMode(QFileDialog::ExistingFile);
   dialog.setNameFilters(filters);
   dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
@@ -95,7 +95,7 @@ DataSource* LoadDataReaction::loadData(const QString &fileName)
 
   if (!reader)
   {
-    return NULL;
+    return nullptr;
   }
 
   DataSource* dataSource = createDataSource(reader->getProxy());
@@ -123,7 +123,7 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
     LoadDataReaction::dataSourceAdded(dataSource);
     return dataSource;
   }
-  return NULL;
+  return nullptr;
 }
 
 //-----------------------------------------------------------------------------

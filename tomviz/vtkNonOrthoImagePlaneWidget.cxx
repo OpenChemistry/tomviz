@@ -116,8 +116,8 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWi
   this->Texture            = vtkTexture::New();
   this->TexturePlaneActor  = vtkActor::New();
   this->Transform          = vtkTransform::New();
-  this->ImageData          = 0;
-  this->LookupTable        = 0;
+  this->ImageData          = nullptr;
+  this->LookupTable        = nullptr;
 
   // Represent the positioning arrow
   //
@@ -157,18 +157,18 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWi
 
   // Manage the picking stuff
   //
-  this->PlanePicker = NULL;
+  this->PlanePicker = nullptr;
   vtkNew<vtkCellPicker> picker;
   picker->SetTolerance(0.005); //need some fluff
   this->SetPicker(picker.GetPointer());
 
   // Set up the initial properties
   //
-  this->PlaneProperty         = 0;
-  this->SelectedPlaneProperty = 0;
-  this->ArrowProperty         = 0;
-  this->SelectedArrowProperty = 0;
-  this->TexturePlaneProperty  = 0;
+  this->PlaneProperty         = nullptr;
+  this->SelectedPlaneProperty = nullptr;
+  this->ArrowProperty         = nullptr;
+  this->SelectedArrowProperty = nullptr;
+  this->TexturePlaneProperty  = nullptr;
   this->CreateDefaultProperties();
 
   // Set up actions
@@ -232,7 +232,7 @@ vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
 
   if ( this->ImageData )
     {
-    this->ImageData = 0;
+    this->ImageData = nullptr;
     }
 
   //delete everything related to the arrow
@@ -298,7 +298,7 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
       this->SetCurrentRenderer(this->Interactor->FindPokedRenderer(
         this->Interactor->GetLastEventPosition()[0],
         this->Interactor->GetLastEventPosition()[1]));
-      if (this->CurrentRenderer == NULL)
+      if (this->CurrentRenderer == nullptr)
         {
         return;
         }
@@ -348,7 +348,7 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
     this->ConeActor2->PickableOn();
     this->SphereActor->PickableOn();
 
-    this->InvokeEvent(vtkCommand::EnableEvent,0);
+    this->InvokeEvent(vtkCommand::EnableEvent,nullptr);
     }
 
   else //disabling----------------------------------------------------------
@@ -385,8 +385,8 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
     this->ConeActor2->PickableOff();
     this->SphereActor->PickableOff();
 
-    this->InvokeEvent(vtkCommand::DisableEvent,0);
-    this->SetCurrentRenderer(NULL);
+    this->InvokeEvent(vtkCommand::DisableEvent,nullptr);
+    this->SetCurrentRenderer(nullptr);
     }
 
   this->Interactor->Render();
@@ -771,7 +771,7 @@ void vtkNonOrthoImagePlaneWidget::StartSliceMotion()
   // can start pushing or check for adjusted states.
   bool stateFound = false;
   vtkAssemblyPath* path = this->GetAssemblyPath(X, Y, 0., this->PlanePicker);
-  if ( path != NULL ) // Not picking this widget
+  if ( path != nullptr ) // Not picking this widget
     {
     vtkProp *prop = path->GetFirstNode()->GetViewProp();
     if ( prop == this->ConeActor || prop == this->LineActor ||
@@ -801,7 +801,7 @@ void vtkNonOrthoImagePlaneWidget::StartSliceMotion()
 
   this->EventCallbackCommand->SetAbortFlag(1);
   this->StartInteraction();
-  this->InvokeEvent(vtkCommand::StartInteractionEvent,0);
+  this->InvokeEvent(vtkCommand::StartInteractionEvent,nullptr);
   this->Interactor->Render();
   return;
 }
@@ -821,7 +821,7 @@ void vtkNonOrthoImagePlaneWidget::StopSliceMotion()
 
   this->EventCallbackCommand->SetAbortFlag(1);
   this->EndInteraction();
-  this->InvokeEvent(vtkCommand::EndInteractionEvent,0);
+  this->InvokeEvent(vtkCommand::EndInteractionEvent,nullptr);
   this->Interactor->Render();
 }
 
@@ -881,7 +881,7 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
   // Interact, if desired
   //
   this->EventCallbackCommand->SetAbortFlag(1);
-  this->InvokeEvent(vtkCommand::InteractionEvent,0);
+  this->InvokeEvent(vtkCommand::InteractionEvent,nullptr);
 
   this->Interactor->Render();
 }
@@ -1088,7 +1088,7 @@ void vtkNonOrthoImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
     // If NULL is passed, remove any reference that Reslice had
     // on the old ImageData
     //
-    this->Reslice->SetInputData(NULL);
+    this->Reslice->SetInputData(nullptr);
     return;
     }
 
@@ -1302,7 +1302,7 @@ vtkImageData* vtkNonOrthoImagePlaneWidget::GetResliceOutput()
 {
   if ( ! this->Reslice )
     {
-    return 0;
+    return nullptr;
     }
   return this->Reslice->GetOutput();
 }
@@ -1316,13 +1316,13 @@ void vtkNonOrthoImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
     // to avoid destructor recursion
     vtkAbstractPropPicker *temp = this->PlanePicker;
     this->PlanePicker = picker;
-    if (temp != 0)
+    if (temp != nullptr)
       {
       temp->UnRegister(this);
       }
 
     int delPicker = 0;
-    if (this->PlanePicker == 0)
+    if (this->PlanePicker == nullptr)
       {
       this->PlanePicker = vtkCellPicker::New();
       vtkCellPicker::SafeDownCast(this->PlanePicker)->SetTolerance(0.005);
@@ -1398,11 +1398,11 @@ void vtkNonOrthoImagePlaneWidget::SetLookupTable(vtkScalarsToColors* table)
     // to avoid destructor recursion
     vtkScalarsToColors *temp = this->LookupTable;
     this->LookupTable = table;
-    if (temp != 0)
+    if (temp != nullptr)
       {
       temp->UnRegister(this);
       }
-    if (this->LookupTable != 0)
+    if (this->LookupTable != nullptr)
       {
       this->LookupTable->Register(this);
       }

@@ -32,7 +32,7 @@ class ModuleVolume : public Module
   typedef Module Superclass;
 
 public:
-  ModuleVolume(QObject* parent=NULL);
+  ModuleVolume(QObject* parent=nullptr);
   virtual ~ModuleVolume();
 
   virtual QString label() const { return  "Volume"; }

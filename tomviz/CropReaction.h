@@ -33,7 +33,7 @@ public:
   CropReaction(QAction* parent, QMainWindow* mw);
   ~CropReaction();
 
-  void crop(DataSource* source = NULL);
+  void crop(DataSource* source = nullptr);
 
 protected:
   void updateEnableState();

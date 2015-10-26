@@ -50,7 +50,7 @@ class CentralWidget : public QWidget
   typedef QWidget Superclass;
 
 public:
-  CentralWidget(QWidget* parent = NULL, Qt::WindowFlags f = 0);
+  CentralWidget(QWidget* parent = nullptr, Qt::WindowFlags f = nullptr);
   virtual ~CentralWidget();
 
 public slots:

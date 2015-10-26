@@ -28,7 +28,7 @@ class ModuleSegment : public Module
   Q_OBJECT
   typedef Module Superclass;
 public:
-  ModuleSegment(QObject *parent = NULL);
+  ModuleSegment(QObject *parent = nullptr);
   ~ModuleSegment();
 
   /// Returns a  label for this module.

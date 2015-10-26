@@ -169,7 +169,7 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
 
 SelectVolumeWidget::~SelectVolumeWidget()
 {
-  this->Internals->boxWidget->SetInteractor(NULL);
+  this->Internals->boxWidget->SetInteractor(nullptr);
   this->Internals->interactor->GetRenderWindow()->Render();
 }
 

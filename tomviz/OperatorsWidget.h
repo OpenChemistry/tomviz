@@ -30,7 +30,7 @@ class OperatorsWidget : public QTreeWidget
   typedef QTreeWidget Superclass;
 
 public:
-  OperatorsWidget(QWidget* parent=0);
+  OperatorsWidget(QWidget* parent=nullptr);
   virtual ~OperatorsWidget();
 
 private slots:
