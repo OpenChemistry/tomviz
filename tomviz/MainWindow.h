@@ -38,7 +38,7 @@ public:
   virtual ~MainWindow();
 
 protected:
-  virtual void showEvent(QShowEvent* event) override;
+  void showEvent(QShowEvent* event) override;
 
 private slots:
   void showAbout();

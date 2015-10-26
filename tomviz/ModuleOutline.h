@@ -36,15 +36,15 @@ public:
   ModuleOutline(QObject* parent=nullptr);
   virtual ~ModuleOutline();
 
-  virtual QString label() const override { return  "Outline"; }
-  virtual QIcon icon() const override;
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
-  virtual bool finalize() override;
-  virtual bool setVisibility(bool val) override;
-  virtual bool visibility() const override;
-  virtual void addToPanel(pqProxiesWidget*) override;
-  virtual bool serialize(pugi::xml_node& ns) const override;
-  virtual bool deserialize(const pugi::xml_node& ns) override;
+  QString label() const override { return  "Outline"; }
+  QIcon icon() const override;
+  bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
+  bool finalize() override;
+  bool setVisibility(bool val) override;
+  bool visibility() const override;
+  void addToPanel(pqProxiesWidget*) override;
+  bool serialize(pugi::xml_node& ns) const override;
+  bool deserialize(const pugi::xml_node& ns) override;
 
 private:
   Q_DISABLE_COPY(ModuleOutline)

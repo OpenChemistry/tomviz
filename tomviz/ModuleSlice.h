@@ -34,19 +34,19 @@ public:
   ModuleSlice(QObject* parent=nullptr);
   virtual ~ModuleSlice();
 
-  virtual QString label() const override { return  "Slice"; }
-  virtual QIcon icon() const override;
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
-  virtual bool finalize() override;
-  virtual bool setVisibility(bool val) override;
-  virtual bool visibility() const override;
-  virtual bool serialize(pugi::xml_node& ns) const override;
-  virtual bool deserialize(const pugi::xml_node& ns) override;
-  virtual bool isColorMapNeeded() const override { return true; }
-  virtual void addToPanel(pqProxiesWidget* panel) override;
+  QString label() const override { return  "Slice"; }
+  QIcon icon() const override;
+  bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
+  bool finalize() override;
+  bool setVisibility(bool val) override;
+  bool visibility() const override;
+  bool serialize(pugi::xml_node& ns) const override;
+  bool deserialize(const pugi::xml_node& ns) override;
+  bool isColorMapNeeded() const override { return true; }
+  void addToPanel(pqProxiesWidget* panel) override;
 
 protected:
-  virtual void updateColorMap() override;
+  void updateColorMap() override;
 
 private slots:
   void onPropertyChanged();

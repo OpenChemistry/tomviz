@@ -32,7 +32,7 @@ public:
 
 protected:
   // Override to add 'show View Properties dialog'
-  virtual void buildMenu() override;
+  void buildMenu() override;
 
 private slots:
   void showViewPropertiesDialog(bool show);

@@ -36,8 +36,8 @@ public:
 
 protected:
   /// Called when the action is triggered.
-  virtual void onTriggered() override;
-  virtual void updateEnableState() override;
+  void onTriggered() override;
+  void updateEnableState() override;
 
 private:
   void setWidgetText(DataSource* dsource);

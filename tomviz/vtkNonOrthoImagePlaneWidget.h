@@ -122,8 +122,8 @@ public:
 
   // Description:
   // Methods that satisfy the superclass' API.
-  virtual void SetEnabled(int) override;
-  virtual void PlaceWidget(double bounds[6]) override;
+  void SetEnabled(int) override;
+  void PlaceWidget(double bounds[6]) override;
   void PlaceWidget() override
     {this->Superclass::PlaceWidget();}
   void PlaceWidget(double xmin, double xmax, double ymin, double ymax,
@@ -412,7 +412,7 @@ protected:
   // Do the picking
   vtkAbstractPropPicker *PlanePicker;
   // Register internal Pickers within PickingManager
-  virtual void RegisterPickers() override;
+  void RegisterPickers() override;
 
   // Methods to manipulate the plane
   void Push(double *p1, double *p2);

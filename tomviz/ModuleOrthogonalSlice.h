@@ -32,19 +32,19 @@ public:
   ModuleOrthogonalSlice(QObject* parent=nullptr);
   virtual ~ModuleOrthogonalSlice();
 
-  virtual QString label() const override { return  "Orthogonal Slice"; }
-  virtual QIcon icon() const override;
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
-  virtual bool finalize() override;
-  virtual bool setVisibility(bool val) override;
-  virtual bool visibility() const override;
-  virtual void addToPanel(pqProxiesWidget*) override;
-  virtual bool serialize(pugi::xml_node& ns) const override;
-  virtual bool deserialize(const pugi::xml_node& ns) override;
-  virtual bool isColorMapNeeded() const override { return true; }
+  QString label() const override { return  "Orthogonal Slice"; }
+  QIcon icon() const override;
+  bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
+  bool finalize() override;
+  bool setVisibility(bool val) override;
+  bool visibility() const override;
+  void addToPanel(pqProxiesWidget*) override;
+  bool serialize(pugi::xml_node& ns) const override;
+  bool deserialize(const pugi::xml_node& ns) override;
+  bool isColorMapNeeded() const override { return true; }
 
 protected:
-  virtual void updateColorMap() override;
+  void updateColorMap() override;
 
 private:
   Q_DISABLE_COPY(ModuleOrthogonalSlice)

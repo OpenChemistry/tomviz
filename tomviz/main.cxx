@@ -33,7 +33,7 @@ class TomvizOptions : public pqOptions
 public:
   static TomvizOptions* New();
   vtkTypeMacro(TomvizOptions, pqOptions)
-  virtual int GetEnableStreaming() override { return 1; }
+  int GetEnableStreaming() override { return 1; }
 
 protected:
   TomvizOptions() : pqOptions() { ; }

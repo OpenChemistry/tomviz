@@ -60,7 +60,7 @@ namespace
       }
       new pqPythonSyntaxHighlighter(this->Ui.script, this);
     }
-    virtual void applyChangesToOperator() override
+    void applyChangesToOperator() override
     {
       if (this->Op)
       {
