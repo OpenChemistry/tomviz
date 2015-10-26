@@ -35,18 +35,18 @@ public:
   ModuleVolume(QObject* parent=nullptr);
   virtual ~ModuleVolume();
 
-  virtual QString label() const { return  "Volume"; }
-  virtual QIcon icon() const;
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
-  virtual bool finalize();
-  virtual bool setVisibility(bool val);
-  virtual bool visibility() const;
-  virtual bool serialize(pugi::xml_node& ns) const;
-  virtual bool deserialize(const pugi::xml_node& ns);
-  virtual bool isColorMapNeeded() const { return true; }
+  virtual QString label() const override { return  "Volume"; }
+  virtual QIcon icon() const override;
+  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
+  virtual bool finalize() override;
+  virtual bool setVisibility(bool val) override;
+  virtual bool visibility() const override;
+  virtual bool serialize(pugi::xml_node& ns) const override;
+  virtual bool deserialize(const pugi::xml_node& ns) override;
+  virtual bool isColorMapNeeded() const override { return true; }
 
 protected:
-  virtual void updateColorMap();
+  virtual void updateColorMap() override;
 
 private:
   Q_DISABLE_COPY(ModuleVolume)

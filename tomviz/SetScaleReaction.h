@@ -31,9 +31,9 @@ public:
   static void setScale();
 
 protected:
-  void updateEnableState();
+  void updateEnableState() override;
 
-  virtual void onTriggered() { setScale(); }
+  virtual void onTriggered() override { setScale(); }
 
 private:
   Q_DISABLE_COPY(SetScaleReaction)

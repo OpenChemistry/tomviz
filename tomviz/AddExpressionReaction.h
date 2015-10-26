@@ -35,8 +35,8 @@ public:
   OperatorPython* addExpression(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState();
-  void onTriggered() { this->addExpression(); }
+  void updateEnableState() override;
+  void onTriggered() override { this->addExpression(); }
 
 private:
   Q_DISABLE_COPY(AddExpressionReaction)

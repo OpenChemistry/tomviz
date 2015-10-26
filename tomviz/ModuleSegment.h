@@ -32,43 +32,43 @@ public:
   ~ModuleSegment();
 
   /// Returns a  label for this module.
-  virtual QString label() const;
+  virtual QString label() const override;
 
   /// Returns an icon to use for this module.
-  virtual QIcon icon() const;
+  virtual QIcon icon() const override;
 
   /// Initialize the module for the data source and view. This is called after a
   /// new module is instantiated. Subclasses override this method to setup the
   /// visualization pipeline for this module.
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
+  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
 
   /// Finalize the module. Subclasses should override this method to delete and
   /// release all proxies (and data) created for this module.
-  virtual bool finalize();
+  virtual bool finalize() override;
 
   /// Returns the visibility for the module.
-  virtual bool visibility() const;
+  virtual bool visibility() const override;
 
   /// serialize the state of the module.
-  virtual bool serialize(pugi::xml_node& ns) const;
-  virtual bool deserialize(const pugi::xml_node& ns);
+  virtual bool serialize(pugi::xml_node& ns) const override;
+  virtual bool deserialize(const pugi::xml_node& ns) override;
 
   /// Set the visibility for this module. Subclasses should override this method
   /// show/hide all representations created for this module.
-  virtual bool setVisibility(bool val);
+  virtual bool setVisibility(bool val) override;
 
   /// This method is called add the proxies in this module to a
   /// pqProxiesWidget instance. Default implementation simply adds the view
   /// properties.
   /// Subclasses should override to add proxies and relevant properties to the
   /// panel.
-  virtual void addToPanel(pqProxiesWidget* panel);
+  virtual void addToPanel(pqProxiesWidget* panel) override;
 
 private slots:
   void onPropertyChanged();
 private:
 
-  void updateColorMap();
+  void updateColorMap() override;
 
   class MSInternal;
   QScopedPointer<MSInternal> Internals;

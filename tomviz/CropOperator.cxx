@@ -48,7 +48,7 @@ public:
   }
   ~CropWidget() {}
 
-  virtual void applyChangesToOperator()
+  virtual void applyChangesToOperator() override
   {
     int bounds[6];
     this->Widget->getExtentOfSelection(bounds);

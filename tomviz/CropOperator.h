@@ -30,18 +30,18 @@ public:
                const double *dataSpacing, QObject* parent=nullptr);
   virtual ~CropOperator();
 
-  virtual QString label() const { return "Crop"; }
+  virtual QString label() const override { return "Crop"; }
 
-  virtual QIcon icon() const;
+  virtual QIcon icon() const override;
 
-  virtual bool transform(vtkDataObject* data);
+  virtual bool transform(vtkDataObject* data) override;
 
-  virtual Operator* clone() const;
+  virtual Operator* clone() const override;
 
-  virtual bool serialize(pugi::xml_node& ns) const;
-  virtual bool deserialize(const pugi::xml_node& ns);
+  virtual bool serialize(pugi::xml_node& ns) const override;
+  virtual bool deserialize(const pugi::xml_node& ns) override;
 
-  virtual EditOperatorWidget *getEditorContents(QWidget* parent);
+  virtual EditOperatorWidget *getEditorContents(QWidget* parent) override;
 
   void setCropBounds(const int bounds[6]);
   const int* cropBounds() const

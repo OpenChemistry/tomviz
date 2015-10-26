@@ -34,16 +34,16 @@ public:
   ModuleContour(QObject* parent=nullptr);
   virtual ~ModuleContour();
 
-  virtual QString label() const { return  "Contour"; }
-  virtual QIcon icon() const;
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
-  virtual bool finalize();
-  virtual bool setVisibility(bool val);
-  virtual bool visibility() const;
-  virtual void addToPanel(pqProxiesWidget*);
-  virtual bool serialize(pugi::xml_node& ns) const;
-  virtual bool deserialize(const pugi::xml_node& ns);
-  virtual bool isColorMapNeeded() const { return true; }
+  virtual QString label() const override { return  "Contour"; }
+  virtual QIcon icon() const override;
+  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
+  virtual bool finalize() override;
+  virtual bool setVisibility(bool val) override;
+  virtual bool visibility() const override;
+  virtual void addToPanel(pqProxiesWidget*) override;
+  virtual bool serialize(pugi::xml_node& ns) const override;
+  virtual bool deserialize(const pugi::xml_node& ns) override;
+  virtual bool isColorMapNeeded() const override { return true; }
 
   void setIsoValues(const QList<double>& values);
   void setIsoValue(double value)
@@ -54,7 +54,7 @@ public:
   }
 
 protected:
-  virtual void updateColorMap();
+  virtual void updateColorMap() override;
 
 private:
   Q_DISABLE_COPY(ModuleContour)

@@ -43,7 +43,7 @@ namespace {
   public:
     XMLFileNameConverter(const QDir& dir, bool rel)
       : rootDir(dir), toRelative(rel) {}
-    virtual bool for_each(pugi::xml_node& node)
+    virtual bool for_each(pugi::xml_node& node) override
     {
       if (strcmp(node.name(), "Property") != 0)
       {

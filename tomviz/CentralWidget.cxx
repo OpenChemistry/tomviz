@@ -184,7 +184,7 @@ public:
   static vtkHistogramMarker * New();
   double PositionX;
 
-  bool Paint(vtkContext2D *painter)
+  bool Paint(vtkContext2D *painter) override
   {
     vtkNew<vtkPen> pen;
     pen->SetColor(255, 0, 0, 255);
@@ -201,7 +201,7 @@ class vtkChartHistogram : public vtkChartXY
 public:
   static vtkChartHistogram * New();
 
-  bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse);
+  bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse) override;
 
   vtkNew<vtkTransform2D> Transform;
   double PositionX;

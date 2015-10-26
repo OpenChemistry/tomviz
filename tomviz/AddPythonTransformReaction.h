@@ -39,8 +39,8 @@ public:
   void setInteractive(bool isInteractive) { interactive = isInteractive; }
 
 protected:
-  void updateEnableState();
-  void onTriggered() { this->addExpression(); }
+  void updateEnableState() override;
+  void onTriggered() override { this->addExpression(); }
 
 private slots:
   void addExpressionFromNonModalDialog();

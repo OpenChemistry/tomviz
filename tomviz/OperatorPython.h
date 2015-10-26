@@ -30,25 +30,25 @@ public:
   OperatorPython(QObject* parent=nullptr);
   virtual ~OperatorPython();
 
-  virtual QString label() const { return this->Label; }
+  virtual QString label() const override { return this->Label; }
   void setLabel(const QString& txt);
 
   /// Returns an icon to use for this operator.
-  virtual QIcon icon() const;
+  virtual QIcon icon() const override;
 
   /// Method to transform a dataset in-place.
-  virtual bool transform(vtkDataObject* data);
+  virtual bool transform(vtkDataObject* data) override;
 
   /// return a new clone.
-  virtual Operator* clone() const;
+  virtual Operator* clone() const override;
 
-  virtual bool serialize(pugi::xml_node& in) const;
-  virtual bool deserialize(const pugi::xml_node& ns);
+  virtual bool serialize(pugi::xml_node& in) const override;
+  virtual bool deserialize(const pugi::xml_node& ns) override;
 
   void setScript(const QString& str);
   const QString& script() const { return this->Script; }
 
-  EditOperatorWidget* getEditorContents(QWidget* parent);
+  EditOperatorWidget* getEditorContents(QWidget* parent) override;
 
 private:
   Q_DISABLE_COPY(OperatorPython)

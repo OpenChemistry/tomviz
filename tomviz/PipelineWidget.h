@@ -43,7 +43,7 @@ public:
   PipelineWidget(QWidget* parent=nullptr);
   virtual ~PipelineWidget();
 
-  virtual void keyPressEvent(QKeyEvent*);
+  virtual void keyPressEvent(QKeyEvent*) override;
 
 private slots:
   /// Slots connected to pqServerManagerModel to monitor pipeline proxies

@@ -35,8 +35,8 @@ public:
 
 protected:
   /// Called when the action is triggered.
-  virtual void onTriggered() { this->clone(); }
-  virtual void updateEnableState();
+  virtual void onTriggered() override { this->clone(); }
+  virtual void updateEnableState() override;
 
 private:
   Q_DISABLE_COPY(CloneDataReaction)

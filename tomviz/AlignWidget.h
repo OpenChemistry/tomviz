@@ -50,7 +50,7 @@ public:
   ~AlignWidget();
 
   // This will filter the QVTKWidget events
-  bool eventFilter(QObject *object, QEvent *event);
+  bool eventFilter(QObject *object, QEvent *event) override;
 
 public slots:
   // Set the data source, which will be aligned by this widget.

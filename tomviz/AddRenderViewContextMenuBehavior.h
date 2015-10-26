@@ -38,7 +38,7 @@ protected slots:
   void onSetBackgroundColor();
 
 protected:
-  virtual bool eventFilter(QObject* caller, QEvent* e);
+  virtual bool eventFilter(QObject* caller, QEvent* e) override;
 
   QPoint position;
   QMenu* menu;

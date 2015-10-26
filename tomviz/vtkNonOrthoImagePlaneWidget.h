@@ -118,21 +118,21 @@ public:
   static vtkNonOrthoImagePlaneWidget *New();
 
   vtkTypeMacro(vtkNonOrthoImagePlaneWidget,vtkPolyDataSourceWidget);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   // Description:
   // Methods that satisfy the superclass' API.
-  virtual void SetEnabled(int);
-  virtual void PlaceWidget(double bounds[6]);
-  void PlaceWidget()
+  virtual void SetEnabled(int) override;
+  virtual void PlaceWidget(double bounds[6]) override;
+  void PlaceWidget() override
     {this->Superclass::PlaceWidget();}
   void PlaceWidget(double xmin, double xmax, double ymin, double ymax,
-                   double zmin, double zmax)
+                   double zmin, double zmax) override
     {this->Superclass::PlaceWidget(xmin,xmax,ymin,ymax,zmin,zmax);}
 
   // Description:
   // Set the vtkImageData* input for the vtkImageReslice.
-  void SetInputConnection(vtkAlgorithmOutput* aout);
+  void SetInputConnection(vtkAlgorithmOutput* aout) override;
 
   // Description:
   // Set/Get the origin of the plane.  Set origin changes the size of the plane
@@ -239,12 +239,12 @@ public:
   // vtkPolyData.  Make changes to this before calling the initial PlaceWidget()
   // to have the initial placement follow suit.  Or, make changes after the
   // widget has been initialised and call UpdatePlacement() to realise.
-  vtkPolyDataAlgorithm* GetPolyDataAlgorithm();
+  vtkPolyDataAlgorithm* GetPolyDataAlgorithm() override;
 
   // Description:
   // Satisfies superclass API.  This will change the state of the widget to
   // match changes that have been made to the underlying vtkPolyDataSource
-  void UpdatePlacement(void);
+  void UpdatePlacement(void) override;
 
   // Description:
   // Convenience method to get the texture used by this widget.  This can be
@@ -412,7 +412,7 @@ protected:
   // Do the picking
   vtkAbstractPropPicker *PlanePicker;
   // Register internal Pickers within PickingManager
-  virtual void RegisterPickers();
+  virtual void RegisterPickers() override;
 
   // Methods to manipulate the plane
   void Push(double *p1, double *p2);

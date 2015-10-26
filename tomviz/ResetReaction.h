@@ -32,7 +32,7 @@ public:
   static void reset();
 
 protected:
-  virtual void onTriggered() { this->reset(); }
+  virtual void onTriggered() override { this->reset(); }
 
 private:
   Q_DISABLE_COPY(ResetReaction)
