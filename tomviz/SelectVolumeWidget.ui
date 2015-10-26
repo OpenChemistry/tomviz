@@ -6,57 +6,75 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>296</width>
-    <height>84</height>
+    <width>390</width>
+    <height>103</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QFormLayout" name="formLayout_3">
-   <item row="0" column="0">
-    <layout class="QFormLayout" name="formLayout_2">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Selected Volume start:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>Selected Volume end:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <widget class="QSpinBox" name="startX"/>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="startY"/>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="startZ"/>
-       </item>
-      </layout>
-     </item>
-     <item row="1" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_4">
-       <item>
-        <widget class="QSpinBox" name="endX"/>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="endY"/>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="endZ"/>
-       </item>
-      </layout>
-     </item>
-    </layout>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Selected Volume start:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QSpinBox" name="startX"/>
+   </item>
+   <item row="2" column="2">
+    <widget class="QSpinBox" name="endY"/>
+   </item>
+   <item row="1" column="3">
+    <widget class="QSpinBox" name="startZ"/>
+   </item>
+   <item row="2" column="1">
+    <widget class="QSpinBox" name="endX"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Selected Volume end:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QSpinBox" name="startY"/>
+   </item>
+   <item row="2" column="3">
+    <widget class="QSpinBox" name="endZ"/>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>x:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>y:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>z:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
