@@ -37,50 +37,40 @@ TomographyReconstruction::~TomographyReconstruction()
 
 }
 
-  // conversion code
-  template<typename T>
-  vtkSmartPointer<vtkFloatArray> convertToFloatT(T *data, int len)
+// conversion code
+template<typename T>
+vtkSmartPointer<vtkFloatArray> convertToFloatT(T *data, int len)
+{
+  vtkSmartPointer<vtkFloatArray> array = vtkSmartPointer<vtkFloatArray>::New();
+  array->SetNumberOfTuples(len);
+  float *f = static_cast<float*>(array->GetVoidPointer(0));
+  for (int i = 0; i < len; ++i)
   {
-    vtkSmartPointer<vtkFloatArray> array = vtkSmartPointer<vtkFloatArray>::New();
-    array->SetNumberOfTuples(len);
-    float *f = static_cast<float*>(array->GetVoidPointer(0));
-    for (int i = 0; i < len; ++i)
-    {
-      f[i] = (float) data[i];
-    }
-    return array;
+    f[i] = (float) data[i];
   }
+  return array;
+}
   
-  vtkSmartPointer<vtkFloatArray> convertToFloat(vtkImageData* image)
+vtkSmartPointer<vtkFloatArray> convertToFloat(vtkImageData* image)
+{
+  vtkDataArray *scalars = image->GetPointData()->GetScalars();
+  int len = scalars->GetNumberOfTuples();
+  vtkSmartPointer<vtkFloatArray> array;
+  switch(scalars->GetDataType())
   {
-    vtkDataArray *scalars = image->GetPointData()->GetScalars();
-    int len = scalars->GetNumberOfTuples();
-    vtkSmartPointer<vtkFloatArray> array;
-    switch(scalars->GetDataType())
-    {
-        vtkTemplateMacro(array = convertToFloatT(static_cast<VTK_TT*>(scalars->GetVoidPointer(0)), len););
-    }
-    return array;
+    vtkTemplateMacro(array = convertToFloatT(static_cast<VTK_TT*>(scalars->GetVoidPointer(0)), len););
   }
+  return array;
+}
   
 void TomographyReconstruction::reconWBP(vtkImageData *tiltSeries,vtkImageData *recon)
 {
-  //Tomviz currently can't change data type. Enable this in the future.
-  /*
-  if (tiltSeries->GetScalarType() != VTK_FLOAT)
-  {
-    qDebug() << "Wrong datatype :-(";
-    return;
-  }
-  */
-  
   int extents[6];
   tiltSeries->GetExtent(extents);
   int xDim = extents[1] - extents[0] + 1;
   int yDim = extents[3] - extents[2] + 1;
   int zDim = extents[5] - extents[4] + 1;
-  //float *data = static_cast<float*>(tiltSeries->GetScalarPointer());
-  
+  //Convert input data type to float
   vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
   float *data = static_cast<float*>(dataAsFloats->GetVoidPointer(0));
   
@@ -117,27 +107,20 @@ void TomographyReconstruction::reconWBP(vtkImageData *tiltSeries,vtkImageData *r
           
           if (t >= -yDim/2 && t <= yDim/2 )	//check if ray is inside projection
           {
-            
             rayIndex = floor((t + yDim/2));	//determine index txi such that tx <= t <= tx+ddet
-            
-            //double tx = txi * ddet;
             if (rayIndex >= 0 && rayIndex <= yDim-2) //check that tx and tx+1 are within data range
             {
-   
+              //Linear interpolation
               Q1 = data[ang*xDim*yDim + rayIndex * xDim + x ];
               Q2 = data[ang*xDim*yDim + (rayIndex+1) * xDim + x ];
-              QDash = Q1 + (t-double(rayIndex-yDim/2))*(Q2-Q1); //linear interpolation
-   
+              QDash = Q1 + (t-double(rayIndex-yDim/2))*(Q2-Q1);
               reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + x] += QDash;
             }
-
-          } //if sDash lies within data range
-          
+          }
         }
       }
-    }// end of loop through tilt angles
+    }
   }
-  
   
   //Normalize
   double n = PI/double(2*numOfTilts);
@@ -153,7 +136,7 @@ void TomographyReconstruction::reconWBP(vtkImageData *tiltSeries,vtkImageData *r
   }
   
   
-} //end of reconWBP
+}
   
 
 
