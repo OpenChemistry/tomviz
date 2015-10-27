@@ -53,30 +53,8 @@
 #include "ToggleDataTypeReaction.h"
 #include "ViewMenuManager.h"
 
-#include "MisalignImgs_Uniform.h"
-#include "Align_Images.h"
-#include "Recon_DFT.h"
-#include "Recon_WBP.h"
-#include "DownsampleByTwo.h"
-#include "Crop_Data.h"
-#include "FFT_AbsLog.h"
-#include "Shift_Stack_Uniformly.h"
-#include "Square_Root_Data.h"
-#include "Subtract_TiltSer_Background.h"
-#include "MisalignImgs_Gaussian.h"
-#include "Rotate3D.h"
-#include "HannWindow3D.h"
-#include "SobelFilter.h"
-#include "LaplaceFilter.h"
-#include "Resample.h"
-#include "deleteSlices.h"
-#include "ZeroDataset.h"
-#include "ConstantDataset.h"
-#include "RandomParticles.h"
-#include "TiltSeries.h"
-#include "ClearVolume.h"
-
 #include <QDir>
+#include <QDebug>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QTimer>
@@ -250,31 +228,31 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //                               "Background Subtraction",
   //                               Subtract_TiltSer_Background);
   new AddPythonTransformReaction(shiftUniformAction,
-                                 "Shift Uniformly", Shift_Stack_Uniformly);
+                                 "Shift Uniformly", this->readScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,
-                                   "Delete Slices", deleteSlices);
+                                   "Delete Slices", this->readScript("deleteSlices"));
   new AddPythonTransformReaction(downsampleByTwoAction,
-                                   "Downsample x2", DownsampleByTwo);
+                                   "Downsample x2", this->readScript("DownsampleByTwo"));
   new AddPythonTransformReaction(resampleAction,
-                                   "Resample", Resample);
+                                   "Resample", this->readScript("Resample"));
   new AddPythonTransformReaction(rotateAction,
-                                 "Rotate", Rotate3D);
-  new AddPythonTransformReaction(clearAction, "Clear Volume", ClearVolume);
+                                 "Rotate", this->readScript("Rotate3D"));
+  new AddPythonTransformReaction(clearAction, "Clear Volume", this->readScript("ClearVolume"));
 
   //new AddPythonTransformReaction(misalignUniformAction,
   //                               "Misalign (Uniform)", MisalignImgs_Uniform);
   //new AddPythonTransformReaction(misalignGaussianAction,
   //                               "Misalign (Gaussian)", MisalignImgs_Uniform);
   new AddPythonTransformReaction(squareRootAction,
-                                 "Square Root Data", Square_Root_Data);
+                                 "Square Root Data", this->readScript("Square_Root_Data"));
   new AddPythonTransformReaction(hannWindowAction,
-                                 "Hann Window", HannWindow3D);
+                                 "Hann Window", this->readScript("HannWindow3D"));
   new AddPythonTransformReaction(fftAbsLogAction,
-                                 "FFT (ABS LOG)", FFT_AbsLog);
+                                 "FFT (ABS LOG)", this->readScript("FFT_AbsLog"));
   new AddPythonTransformReaction(sobelFilterAction,
-                                   "Sobel Filter", SobelFilter);
+                                   "Sobel Filter", this->readScript("SobelFilter"));
   new AddPythonTransformReaction(laplaceFilterAction,
-                                   "Laplace Filter", LaplaceFilter);
+                                   "Laplace Filter", this->readScript("LaplaceFilter"));
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
   // Set up reactions for Tomography Menu
@@ -282,19 +260,20 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new ToggleDataTypeReaction(toggleDataTypeAction, this);
   new SetTiltAnglesReaction(setTiltAnglesAction, this);
   new AddPythonTransformReaction(generateTiltSeriesAction,
-                                 "Generate Tilt Series", TiltSeries, false, true);
+                                 "Generate Tilt Series", this->readScript("TiltSeries"),
+                                 false, true);
   new AddAlignReaction(alignAction);
   new AddPythonTransformReaction(subtractBackgroundAction,
                                  "Background Subtraction (Manual)", Subtract_TiltSer_Background, true);
     
   new AddPythonTransformReaction(autoAlignAction,
-                                 "Auto Align (XCORR)", Align_Images, true);
+                                 "Auto Align (XCORR)", this->readScript("Align_Images"), true);
   new AddPythonTransformReaction(reconDFMAction,
                                  "Reconstruct (Direct Fourier)",
-                                 Recon_DFT, true);
+                                 this->readScript("Recon_DFT"), true);
   new AddPythonTransformReaction(reconWBPAction,
                                  "Reconstruct (Back Projection)",
-                                 Recon_WBP, true);
+                                 this->readScript("Recon_WBP"), true);
 
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
@@ -324,12 +303,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   sampleDataMenu->addSeparator();
 #endif
   QAction* blankDataAction = sampleDataMenu->addAction("Zero Dataset");
-  new PythonGeneratedDatasetReaction(blankDataAction, "Zero Dataset", ZeroDataset);
+  new PythonGeneratedDatasetReaction(blankDataAction, "Zero Dataset", this->readScript("ZeroDataset"));
   QAction* constantDataAction = sampleDataMenu->addAction("Constant Dataset");
-  new PythonGeneratedDatasetReaction(constantDataAction, "Constant Dataset", ConstantDataset);
+  new PythonGeneratedDatasetReaction(constantDataAction, "Constant Dataset", this->readScript("ConstantDataset"));
   sampleDataMenu->addSeparator();
   QAction* randomParticlesAction = sampleDataMenu->addAction("Random Particles");
-  new PythonGeneratedDatasetReaction(randomParticlesAction, "Random Particles", RandomParticles);
+  new PythonGeneratedDatasetReaction(randomParticlesAction, "Random Particles", this->readScript("RandomParticles"));
 
   
 
@@ -391,6 +370,20 @@ void MainWindow::openRecon()
   {
     LoadDataReaction::loadData(info.canonicalFilePath());
   }
+}
+
+QString MainWindow::readScript(const QString &scriptName)
+{
+  QString path = QApplication::applicationDirPath() + "/../share/tomviz/scripts/";
+  path += scriptName + ".py";
+  QFile file(path);
+  if (file.open(QIODevice::ReadOnly))
+  {
+    QByteArray array = file.readAll();
+    return QString(array);
+  }
+  qCritical() << "Error: Could not find script file: " << scriptName;
+  return "raise IOError(\"Couldn't read script file\")\n";
 }
 
 void MainWindow::dataSourceChanged(DataSource*)
