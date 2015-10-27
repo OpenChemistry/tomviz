@@ -263,8 +263,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Generate Tilt Series", this->readScript("TiltSeries"),
                                  false, true);
   new AddAlignReaction(alignAction);
-  new AddPythonTransformReaction(subtractBackgroundAction,
-                                 "Background Subtraction (Manual)", Subtract_TiltSer_Background, true);
+  new AddPythonTransformReaction(subtractBackgroundAction, "Background Subtraction (Manual)",
+                                 this->readScript("Subtract_TiltSer_Background"), true);
     
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", this->readScript("Align_Images"), true);
