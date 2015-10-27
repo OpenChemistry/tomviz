@@ -34,11 +34,11 @@ class MainWindow : public QMainWindow
   typedef QMainWindow Superclass;
 
 public:
-  MainWindow(QWidget* parent=0, Qt::WindowFlags flags=0);
+  MainWindow(QWidget* parent=nullptr, Qt::WindowFlags flags=nullptr);
   virtual ~MainWindow();
 
 protected:
-  virtual void showEvent(QShowEvent* event);
+  void showEvent(QShowEvent* event) override;
 
 private slots:
   void showAbout();

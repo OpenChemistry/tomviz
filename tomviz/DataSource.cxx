@@ -63,7 +63,7 @@ void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
   vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
   int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
   int num_tilt_angles = extent[5] - extent[4] + 1;
-  if (tiltAngles == NULL)
+  if (tiltAngles == nullptr)
   {
     vtkNew< vtkDoubleArray > array;
     array->SetName("tilt_angles");
@@ -166,14 +166,14 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
 
   vtkSmartPointer<vtkSMProxy> source;
   source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-  Q_ASSERT(source != NULL);
+  Q_ASSERT(source != nullptr);
   Q_ASSERT(vtkSMSourceProxy::SafeDownCast(source));
 
   // We add an annotation to the proxy so that it'll be easier for code to
   // locate registered pipeline proxies that are being treated as data sources.
-  const char* sourceFilename = NULL;
+  const char* sourceFilename = nullptr;
 
-  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != NULL)
+  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != nullptr)
   {
     sourceFilename =
       vtkSMPropertyHelper(dataSource,
@@ -223,7 +223,7 @@ DataSource::~DataSource()
 QString DataSource::filename() const
 {
   vtkSMProxy* dataSource = this->originalDataSource();
-  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != NULL)
+  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != nullptr)
   {
     return vtkSMPropertyHelper(dataSource,
       vtkSMCoreUtilities::GetFileNameProperty(dataSource)).GetAsString();
@@ -321,10 +321,10 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
 //-----------------------------------------------------------------------------
 DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
 {
-  DataSource *newClone = NULL;
+  DataSource *newClone = nullptr;
   if (cloneTransformed)
   {
-    if (vtkSMCoreUtilities::GetFileNameProperty(this->Internals->OriginalDataSource) != NULL)
+    if (vtkSMCoreUtilities::GetFileNameProperty(this->Internals->OriginalDataSource) != nullptr)
     {
       const char* originalFilename =
           vtkSMPropertyHelper(this->Internals->OriginalDataSource,
@@ -423,7 +423,7 @@ void DataSource::dataModified()
   tp->Modified();
   vtkDataObject *dObject = tp->GetOutputDataObject(0);
   dObject->Modified();
-  this->Internals->Producer->MarkModified(NULL);
+  this->Internals->Producer->MarkModified(nullptr);
 
   vtkFieldData *fd = dObject->GetFieldData();
   if (fd->HasArray("tomviz_data_source_type"))
@@ -479,7 +479,7 @@ void DataSource::resetData()
   Q_ASSERT(vtkalgorithm);
 
   vtkSMSourceProxy* source = this->Internals->Producer;
-  Q_ASSERT(source != NULL);
+  Q_ASSERT(source != nullptr);
 
   // Create a clone and release the reader data.
   vtkDataObject* data = vtkalgorithm->GetOutputDataObject(0);
@@ -569,7 +569,7 @@ bool DataSource::hasTiltAngles()
     return false;
   }
   vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
-  return tiltAngles != NULL;
+  return tiltAngles != nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -623,7 +623,7 @@ void DataSource::setTiltAngles(const QVector<double> &angles)
 vtkSMProxy* DataSource::opacityMap() const
 {
   return this->Internals->ColorMap?
-  vtkSMPropertyHelper(this->Internals->ColorMap, "ScalarOpacityFunction").GetAsProxy() : NULL;
+  vtkSMPropertyHelper(this->Internals->ColorMap, "ScalarOpacityFunction").GetAsProxy() : nullptr;
 }
 
 //-----------------------------------------------------------------------------

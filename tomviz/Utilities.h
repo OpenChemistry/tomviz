@@ -58,7 +58,7 @@ T convert(vtkSMProxy* proxy)
 /// convert a pqProxy to vtkSMProxy.
 inline vtkSMProxy* convert(pqProxy* pqproxy)
 {
-  return pqproxy ? pqproxy->getProxy() : NULL;
+  return pqproxy ? pqproxy->getProxy() : nullptr;
 }
 
 //===========================================================================
@@ -108,7 +108,7 @@ inline QString label(vtkSMProxy* proxy)
   {
     return proxy->GetAnnotation("tomviz.Label");
   }
-  return proxy? proxy->GetXMLLabel() : NULL;
+  return proxy? proxy->GetXMLLabel() : nullptr;
 }
 
 //---------------------------------------------------------------------------
@@ -119,8 +119,8 @@ inline QString label(pqProxy* proxy)
 
 //---------------------------------------------------------------------------
 /// Serialize a proxy to a pugi::xml node.
-bool serialize(vtkSMProxy* proxy, pugi::xml_node& out, const QStringList& properties=QStringList(), const QDir* relDir = NULL);
-bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in, const QDir* relDir = NULL, vtkSMProxyLocator* locator=NULL);
+bool serialize(vtkSMProxy* proxy, pugi::xml_node& out, const QStringList& properties=QStringList(), const QDir* relDir = nullptr);
+bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in, const QDir* relDir = nullptr, vtkSMProxyLocator* locator=nullptr);
 
 //---------------------------------------------------------------------------
 /// Returns the vtkPVArrayInformation for scalars array produced by the given

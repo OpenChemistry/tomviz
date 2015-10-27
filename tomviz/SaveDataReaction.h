@@ -40,9 +40,9 @@ public:
 
 protected:
   /// Called when the data changes to enable/disable the menu item
-  void updateEnableState();
+  void updateEnableState() override;
   /// Called when the action is triggered.
-  virtual void onTriggered();
+  void onTriggered() override;
 
 private:
   Q_DISABLE_COPY(SaveDataReaction)

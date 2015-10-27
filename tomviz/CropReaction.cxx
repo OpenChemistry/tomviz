@@ -54,7 +54,7 @@ CropReaction::~CropReaction()
 void CropReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL);
+        ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
 //-----------------------------------------------------------------------------

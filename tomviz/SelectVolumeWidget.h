@@ -34,7 +34,7 @@ class SelectVolumeWidget : public QWidget
 public:
   SelectVolumeWidget(const double origin[3], const double spacing[3],
                      const int extent[6], const int currentVolume[6],
-                     QWidget* parent = 0);
+                     QWidget* parent = nullptr);
   virtual ~SelectVolumeWidget();
 
   // Gets the bounds of the selection in real space (taking into account

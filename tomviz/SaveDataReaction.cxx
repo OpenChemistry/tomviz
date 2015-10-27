@@ -63,7 +63,7 @@ SaveDataReaction::~SaveDataReaction()
 void SaveDataReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL);
+        ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
 //-----------------------------------------------------------------------------

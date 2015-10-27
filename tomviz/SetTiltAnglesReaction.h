@@ -33,11 +33,11 @@ public:
   SetTiltAnglesReaction(QAction* parent, QMainWindow* mw);
   ~SetTiltAnglesReaction();
 
-  static void showSetTiltAnglesUI(QMainWindow *window, DataSource *source = NULL);
+  static void showSetTiltAnglesUI(QMainWindow *window, DataSource *source = nullptr);
 
 protected:
-  void updateEnableState();
-  void onTriggered() { showSetTiltAnglesUI(this->mainWindow); }
+  void updateEnableState() override;
+  void onTriggered() override { showSetTiltAnglesUI(this->mainWindow); }
 private:
   Q_DISABLE_COPY(SetTiltAnglesReaction)
   QMainWindow *mainWindow;

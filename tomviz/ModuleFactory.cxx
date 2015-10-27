@@ -71,7 +71,7 @@ QList<QString> ModuleFactory::moduleTypes(
 Module* ModuleFactory::createModule(
   const QString& type, DataSource* dataSource, vtkSMViewProxy* view)
 {
-  Module* module = NULL;
+  Module* module = nullptr;
   if (type == "Outline")
   {
     module = new ModuleOutline();
@@ -113,7 +113,7 @@ Module* ModuleFactory::createModule(
   {
     // sanity check.
     Q_ASSERT(type == moduleType(module));
-    if (dataSource == NULL && view == NULL)
+    if (dataSource == nullptr && view == nullptr)
     {
       // don't initialize module if args are NULL.
       return module;
@@ -122,7 +122,7 @@ Module* ModuleFactory::createModule(
     if (!module->initialize(dataSource, view))
     {
       delete module;
-      return NULL;
+      return nullptr;
     }
     pqView* pqview = tomviz::convert<pqView*>(view);
     pqview->resetDisplay();
@@ -135,7 +135,7 @@ Module* ModuleFactory::createModule(
 QIcon ModuleFactory::moduleIcon(const QString& type)
 {
   QIcon icon;
-  Module* mdl = ModuleFactory::createModule(type, NULL, NULL);
+  Module* mdl = ModuleFactory::createModule(type, nullptr, nullptr);
   if (mdl)
   {
     icon = mdl->icon();
@@ -183,7 +183,7 @@ const char* ModuleFactory::moduleType(Module* module)
   {
     return "Segmentation";
   }
-  return NULL;
+  return nullptr;
 }
 
 } // end of namespace tomviz

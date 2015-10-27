@@ -58,7 +58,7 @@ public:
         return iter.key();
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   Module* module(QTreeWidgetItem* item) const
@@ -71,7 +71,7 @@ public:
         return iter.key();
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   void deleteDataOrModule(QTreeWidgetItem* item)
@@ -272,7 +272,7 @@ void PipelineWidget::currentItemChanged(QTreeWidgetItem* item)
 //-----------------------------------------------------------------------------
 void PipelineWidget::setCurrent(DataSource* source)
 {
-  if (QTreeWidgetItem* item = this->Internals->DataProducerItems.value(source, NULL))
+  if (QTreeWidgetItem* item = this->Internals->DataProducerItems.value(source, nullptr))
   {
     this->setCurrentItem(item);
   }
@@ -281,7 +281,7 @@ void PipelineWidget::setCurrent(DataSource* source)
 //-----------------------------------------------------------------------------
 void PipelineWidget::setCurrent(Module* module)
 {
-  if (QTreeWidgetItem* item = this->Internals->ModuleItems.value(module, NULL))
+  if (QTreeWidgetItem* item = this->Internals->ModuleItems.value(module, nullptr))
   {
     this->setCurrentItem(item);
   }
@@ -318,9 +318,9 @@ void PipelineWidget::onCustomContextMenu(const QPoint &point)
   DataSource* dataSource = this->Internals->dataProducer(item);
 
   QMenu contextMenu;
-  QAction* cloneAction = NULL;
-  QAction* markAsAction = NULL;
-  if (dataSource != NULL)
+  QAction* cloneAction = nullptr;
+  QAction* markAsAction = nullptr;
+  if (dataSource != nullptr)
   {
     cloneAction = contextMenu.addAction("Clone");
     new CloneDataReaction(cloneAction);
@@ -339,7 +339,7 @@ void PipelineWidget::onCustomContextMenu(const QPoint &point)
   {
     this->Internals->deleteDataOrModule(item);
   }
-  else if (markAsAction != NULL && markAsAction == selectedItem)
+  else if (markAsAction != nullptr && markAsAction == selectedItem)
   {
     if (dataSource->type() == DataSource::Volume)
     {

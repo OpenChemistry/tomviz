@@ -43,7 +43,7 @@ public:
       const QString &label, const QString &script, const int shape[3]);
 
 protected:
-  void onTriggered() { this->addDataset(); }
+  void onTriggered() override { this->addDataset(); }
 
 private:
   Q_DISABLE_COPY(PythonGeneratedDatasetReaction)

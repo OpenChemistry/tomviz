@@ -30,11 +30,11 @@ public:
   AddResampleReaction(QAction* parent);
   ~AddResampleReaction();
 
-  void resample(DataSource* source = NULL);
+  void resample(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState();
-  void onTriggered() { this->resample(); }
+  void updateEnableState() override;
+  void onTriggered() override { this->resample(); }
 
 private:
   Q_DISABLE_COPY(AddResampleReaction)

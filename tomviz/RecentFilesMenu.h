@@ -33,7 +33,7 @@ class RecentFilesMenu : public QObject
   typedef QObject Superclass;
 
 public:
-  RecentFilesMenu(QMenu& menu, QObject* parent=NULL);
+  RecentFilesMenu(QMenu& menu, QObject* parent=nullptr);
   virtual ~RecentFilesMenu();
 
   /// Pushes a reader on the recent files stack.

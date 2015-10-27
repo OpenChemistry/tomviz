@@ -143,8 +143,8 @@ void Module::setUseDetachedColorMap(bool val)
   }
   else
   {
-    this->Internals->ColorMap = NULL;
-    this->Internals->OpacityMap = NULL;
+    this->Internals->ColorMap = nullptr;
+    this->Internals->OpacityMap = nullptr;
   }
   this->updateColorMap();
   emit colorMapChanged();

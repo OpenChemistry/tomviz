@@ -31,22 +31,22 @@ class ModuleSlice : public Module
   Q_OBJECT
   typedef Module Superclass;
 public:
-  ModuleSlice(QObject* parent=NULL);
+  ModuleSlice(QObject* parent=nullptr);
   virtual ~ModuleSlice();
 
-  virtual QString label() const { return  "Slice"; }
-  virtual QIcon icon() const;
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
-  virtual bool finalize();
-  virtual bool setVisibility(bool val);
-  virtual bool visibility() const;
-  virtual bool serialize(pugi::xml_node& ns) const;
-  virtual bool deserialize(const pugi::xml_node& ns);
-  virtual bool isColorMapNeeded() const { return true; }
-  virtual void addToPanel(pqProxiesWidget* panel);
+  QString label() const override { return  "Slice"; }
+  QIcon icon() const override;
+  bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
+  bool finalize() override;
+  bool setVisibility(bool val) override;
+  bool visibility() const override;
+  bool serialize(pugi::xml_node& ns) const override;
+  bool deserialize(const pugi::xml_node& ns) override;
+  bool isColorMapNeeded() const override { return true; }
+  void addToPanel(pqProxiesWidget* panel) override;
 
 protected:
-  virtual void updateColorMap();
+  void updateColorMap() override;
 
 private slots:
   void onPropertyChanged();

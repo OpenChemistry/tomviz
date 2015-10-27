@@ -60,7 +60,7 @@ namespace
       }
       new pqPythonSyntaxHighlighter(this->Ui.script, this);
     }
-    virtual void applyChangesToOperator()
+    void applyChangesToOperator() override
     {
       if (this->Op)
       {
@@ -126,8 +126,8 @@ void OperatorPython::setScript(const QString& str)
   if (this->Script != str)
   {
     this->Script = str;
-    this->Internals->Code.TakeReference(NULL);
-    this->Internals->TransformMethod.TakeReference(NULL);
+    this->Internals->Code.TakeReference(nullptr);
+    this->Internals->TransformMethod.TakeReference(nullptr);
 
     this->Internals->Code.TakeReference(Py_CompileString(
         this->Script.toLatin1().data(),
@@ -181,7 +181,7 @@ bool OperatorPython::transform(vtkDataObject* data)
 
   vtkSmartPyObject result;
   result.TakeReference(PyObject_Call(this->Internals->TransformMethod, args,
-                                     NULL));
+                                     nullptr));
   if (!result)
   {
     qCritical("Failed to execute the script.");

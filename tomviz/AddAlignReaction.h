@@ -30,11 +30,11 @@ public:
   AddAlignReaction(QAction* parent);
   ~AddAlignReaction();
 
-  void align(DataSource* source = NULL);
+  void align(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState();
-  void onTriggered() { this->align(); }
+  void updateEnableState() override;
+  void onTriggered() override { this->align(); }
 
 private:
   Q_DISABLE_COPY(AddAlignReaction)

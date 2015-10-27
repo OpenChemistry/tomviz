@@ -32,21 +32,21 @@ class ModuleVolume : public Module
   typedef Module Superclass;
 
 public:
-  ModuleVolume(QObject* parent=NULL);
+  ModuleVolume(QObject* parent=nullptr);
   virtual ~ModuleVolume();
 
-  virtual QString label() const { return  "Volume"; }
-  virtual QIcon icon() const;
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
-  virtual bool finalize();
-  virtual bool setVisibility(bool val);
-  virtual bool visibility() const;
-  virtual bool serialize(pugi::xml_node& ns) const;
-  virtual bool deserialize(const pugi::xml_node& ns);
-  virtual bool isColorMapNeeded() const { return true; }
+  QString label() const override { return  "Volume"; }
+  QIcon icon() const override;
+  bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
+  bool finalize() override;
+  bool setVisibility(bool val) override;
+  bool visibility() const override;
+  bool serialize(pugi::xml_node& ns) const override;
+  bool deserialize(const pugi::xml_node& ns) override;
+  bool isColorMapNeeded() const override { return true; }
 
 protected:
-  virtual void updateColorMap();
+  void updateColorMap() override;
 
 private:
   Q_DISABLE_COPY(ModuleVolume)

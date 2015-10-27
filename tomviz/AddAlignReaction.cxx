@@ -42,7 +42,7 @@ AddAlignReaction::~AddAlignReaction()
 void AddAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL &&
+        ActiveObjects::instance().activeDataSource() != nullptr &&
         ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries);
 }
 

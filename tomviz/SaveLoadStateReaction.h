@@ -36,7 +36,7 @@ public:
   static bool loadState(const QString& filename);
 
 protected:
-  virtual void onTriggered();
+  void onTriggered() override;
 
 private:
   Q_DISABLE_COPY(SaveLoadStateReaction)

@@ -36,8 +36,8 @@ public:
   // added to and the first time that apply or OK is clicked it will be added
   // to that data source.
   EditOperatorDialog(QSharedPointer<Operator> &op,
-                     DataSource* dataSource = NULL,
-                     QWidget* parent = NULL);
+                     DataSource* dataSource = nullptr,
+                     QWidget* parent = nullptr);
   virtual ~EditOperatorDialog();
 
   QSharedPointer<Operator>& op();

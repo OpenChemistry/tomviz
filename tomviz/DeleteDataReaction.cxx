@@ -37,7 +37,7 @@ DeleteDataReaction::~DeleteDataReaction()
 //-----------------------------------------------------------------------------
 void DeleteDataReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() != NULL);
+  this->parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
 //-----------------------------------------------------------------------------

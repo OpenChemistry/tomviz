@@ -1,3 +1,20 @@
+if (UNIX)
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-std=c++11" tomviz_have_cxx11)
+
+  if (NOT tomviz_have_cxx11)
+    message(FATAL_ERROR "Your compiler does not support C++11.  Try again with a newer compiler")
+  endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pedantic -Wshadow -Wextra")
+elseif (WIN32)
+  if (MSVC AND MSVC12)
+    set(CMAKE_CXX_FLAGS_STD_CPP)
+  else()
+    # ParaView doesn't support MSVC 2015 yet
+    message(FATAL_ERROR "Only the MSVC 2013 compiler is supported on windows.")
+  endif()
+endif()
+
 if(CMAKE_COMPILER_IS_GNUCXX)
 
   include(CheckCXXCompilerFlag)
@@ -11,12 +28,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   if(HAVE_GCC_ERROR_RETURN_TYPE)
     set(CMAKE_CXX_FLAGS_ERROR "-Werror=return-type")
   endif()
-  check_cxx_compiler_flag("-std=c++03" HAVE_GCC_STD_CPP_03)
-  if(HAVE_GCC_STD_CPP_03)
-    set(CMAKE_CXX_FLAGS_STD_CPP "-std=c++03 -pedantic -Wshadow -Wextra")
-  else()
-    set(CMAKE_CXX_FLAGS_STD_CPP "-ansi")
-  endif()
 
   # If we are compiling on Linux then set some extra linker flags too
   if(CMAKE_SYSTEM_NAME MATCHES Linux)
@@ -28,7 +39,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
       "-Wl,--fatal-warnings -Wl,--no-undefined -lc ${CMAKE_EXE_LINKER_FLAGS}")
   endif()
 
-  set(CMAKE_CXX_FLAGS_WARN "${CMAKE_CXX_FLAGS_WARN} ${CMAKE_CXX_FLAGS_STD_CPP}")
+  set(CMAKE_CXX_FLAGS_WARN "${CMAKE_CXX_FLAGS_WARN}")
   # Set up the debug CXX_FLAGS for extra warnings
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
     "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CMAKE_CXX_FLAGS_WARN}")

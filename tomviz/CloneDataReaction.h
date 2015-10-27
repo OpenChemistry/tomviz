@@ -31,12 +31,12 @@ public:
   CloneDataReaction(QAction* action);
   virtual ~CloneDataReaction();
 
-  static DataSource* clone(DataSource* toClone = NULL);
+  static DataSource* clone(DataSource* toClone = nullptr);
 
 protected:
   /// Called when the action is triggered.
-  virtual void onTriggered() { this->clone(); }
-  virtual void updateEnableState();
+  void onTriggered() override { this->clone(); }
+  void updateEnableState() override;
 
 private:
   Q_DISABLE_COPY(CloneDataReaction)

@@ -50,7 +50,7 @@ SetScaleReaction::~SetScaleReaction()
 void SetScaleReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL);
+        ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
 void SetScaleReaction::setScale()

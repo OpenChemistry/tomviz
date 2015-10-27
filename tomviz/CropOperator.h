@@ -27,21 +27,21 @@ class CropOperator : public Operator
 
 public:
   CropOperator(const int *dataExtent, const double *dataOrigin,
-               const double *dataSpacing, QObject* parent=NULL);
+               const double *dataSpacing, QObject* parent=nullptr);
   virtual ~CropOperator();
 
-  virtual QString label() const { return "Crop"; }
+  QString label() const override { return "Crop"; }
 
-  virtual QIcon icon() const;
+  QIcon icon() const override;
 
-  virtual bool transform(vtkDataObject* data);
+  bool transform(vtkDataObject* data) override;
 
-  virtual Operator* clone() const;
+  Operator* clone() const override;
 
-  virtual bool serialize(pugi::xml_node& ns) const;
-  virtual bool deserialize(const pugi::xml_node& ns);
+  bool serialize(pugi::xml_node& ns) const override;
+  bool deserialize(const pugi::xml_node& ns) override;
 
-  virtual EditOperatorWidget *getEditorContents(QWidget* parent);
+  EditOperatorWidget *getEditorContents(QWidget* parent) override;
 
   void setCropBounds(const int bounds[6]);
   const int* cropBounds() const

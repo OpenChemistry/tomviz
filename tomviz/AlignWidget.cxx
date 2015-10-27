@@ -53,7 +53,7 @@ namespace tomviz
 
 AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   : QWidget(p, f), timer(new QTimer(this)), frameRate(5),
-    unalignedData(d), alignedData(NULL)
+    unalignedData(d), alignedData(nullptr)
 {
   widget = new QVTKWidget(this);
   widget->installEventFilter(this);

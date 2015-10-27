@@ -30,7 +30,7 @@ class ModulePropertiesPanel : public QWidget
   Q_OBJECT
   typedef QWidget Superclass;
 public:
-  ModulePropertiesPanel(QWidget* parent=0);
+  ModulePropertiesPanel(QWidget* parent=nullptr);
   virtual ~ModulePropertiesPanel();
 
 private slots:

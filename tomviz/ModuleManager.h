@@ -97,7 +97,7 @@ signals:
 
 private:
   Q_DISABLE_COPY(ModuleManager)
-  ModuleManager(QObject* parent=NULL);
+  ModuleManager(QObject* parent=nullptr);
   ~ModuleManager();
 
   QList<Module*> findModulesGeneric(

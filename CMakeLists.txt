@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 project(tomviz)
 
 set(CMAKE_MODULE_PATH "${tomviz_SOURCE_DIR}/cmake")

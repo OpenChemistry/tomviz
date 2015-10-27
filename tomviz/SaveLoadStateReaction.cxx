@@ -57,7 +57,7 @@ void SaveLoadStateReaction::onTriggered()
 //-----------------------------------------------------------------------------
 bool SaveLoadStateReaction::saveState()
 {
-  pqFileDialog fileDialog(NULL, pqCoreUtilities::mainWidget(),
+  pqFileDialog fileDialog(nullptr, pqCoreUtilities::mainWidget(),
                           tr("Save State File"), QString(),
                           "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
@@ -72,7 +72,7 @@ bool SaveLoadStateReaction::saveState()
 //-----------------------------------------------------------------------------
 bool SaveLoadStateReaction::loadState()
 {
-  pqFileDialog fileDialog(NULL, pqCoreUtilities::mainWidget(),
+  pqFileDialog fileDialog(nullptr, pqCoreUtilities::mainWidget(),
                           tr("Load State File"), QString(),
                           "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");

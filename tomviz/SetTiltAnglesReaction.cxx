@@ -48,7 +48,7 @@ SetTiltAnglesReaction::~SetTiltAnglesReaction()
 
 void SetTiltAnglesReaction::updateEnableState()
 {
-  bool enable = ActiveObjects::instance().activeDataSource() != NULL;
+  bool enable = ActiveObjects::instance().activeDataSource() != nullptr;
   if (enable)
   {
     enable = ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries;

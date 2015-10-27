@@ -32,7 +32,7 @@ class ProgressBehavior : public QObject
   typedef QObject Superclass;
 
 public:
-  ProgressBehavior(QWidget* parent=NULL);
+  ProgressBehavior(QWidget* parent=nullptr);
   ~ProgressBehavior();
 
 private slots:

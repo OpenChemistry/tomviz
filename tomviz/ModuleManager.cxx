@@ -175,7 +175,7 @@ Module* ModuleManager::createAndAddModule(const QString& type,
 {
   if (!view || !dataSource)
   {
-    return NULL;
+    return nullptr;
   }
 
   // Create an outline module for the source in the active view.
@@ -195,7 +195,7 @@ QList<Module*> ModuleManager::findModulesGeneric(DataSource* dataSource,
   foreach (Module* module, this->Internals->Modules)
   {
     if (module && module->dataSource() == dataSource &&
-      (view == NULL || view == module->view()))
+      (view == nullptr || view == module->view()))
     {
       modules.push_back(module);
     }
@@ -211,12 +211,12 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
   // Build a list of unique original data sources. These are the data readers.
   foreach (const QPointer<DataSource>& ds, this->Internals->DataSources)
   {
-    if (ds == NULL || uniqueOriginalSources.contains(ds->originalDataSource()))
+    if (ds == nullptr || uniqueOriginalSources.contains(ds->originalDataSource()))
     {
       continue;
     }
     vtkSMSourceProxy* reader = ds->originalDataSource();
-    Q_ASSERT(reader != NULL);
+    Q_ASSERT(reader != nullptr);
     pugi::xml_node odsnode = ns.append_child("OriginalDataSource");
     odsnode.append_attribute("id").set_value(reader->GetGlobalIDAsString());
     odsnode.append_attribute("xmlgroup").set_value(reader->GetXMLGroup());
@@ -413,7 +413,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     vtkTypeUInt32 id = odsnode.attribute("id").as_uint(0);
     const char* group = odsnode.attribute("xmlgroup").value();
     const char* type = odsnode.attribute("xmlname").value();
-    if (group==NULL || type==NULL)
+    if (group==nullptr || type==nullptr)
     {
       qWarning() << "Invalid xml for OriginalDataSource with id " << id;
       continue;
@@ -485,8 +485,8 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     const char* type = mdlnode.attribute("type").value();
     vtkTypeUInt32 dsid = mdlnode.attribute("data_source").as_uint(0);
     vtkTypeUInt32 viewid = mdlnode.attribute("view").as_uint(0);
-    if (dataSources[dsid] == NULL ||
-      vtkSMViewProxy::SafeDownCast(locator->LocateProxy(viewid)) == NULL)
+    if (dataSources[dsid] == nullptr ||
+      vtkSMViewProxy::SafeDownCast(locator->LocateProxy(viewid)) == nullptr)
     {
       qWarning() << "Failed to create module: " << type;
       continue;

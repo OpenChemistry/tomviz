@@ -44,7 +44,7 @@ class SelectSliceRangeWidget : public QWidget
   Q_OBJECT
   typedef QWidget Superclass;
 public:
-  SelectSliceRangeWidget(int *ext, bool showAxisSelector = true, QWidget* p = NULL)
+  SelectSliceRangeWidget(int *ext, bool showAxisSelector = true, QWidget* p = nullptr)
     : Superclass(p),
       firstSlice(new QSpinBox(this)),
       lastSlice(new QSpinBox(this)),
@@ -171,7 +171,7 @@ AddPythonTransformReaction::~AddPythonTransformReaction()
 //-----------------------------------------------------------------------------
 void AddPythonTransformReaction::updateEnableState()
 {
-  bool enable = ActiveObjects::instance().activeDataSource() != NULL;
+  bool enable = ActiveObjects::instance().activeDataSource() != nullptr;
   if (enable && this->requiresTiltSeries)
   {
     enable = ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries;
@@ -190,7 +190,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
   {
-    return NULL;
+    return nullptr;
   }
 
   OperatorPython *opPython = new OperatorPython();
@@ -692,7 +692,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   {
     source->addOperator(op);
   }
-  return NULL;
+  return nullptr;
 }
 
 void AddPythonTransformReaction::addExpressionFromNonModalDialog()
@@ -705,7 +705,7 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
   if (this->scriptLabel == "Clear Volume")
   {
     QLayout *layout = dialog->layout();
-    SelectVolumeWidget* volumeWidget = NULL;
+    SelectVolumeWidget* volumeWidget = nullptr;
     for (int i = 0; i < layout->count(); ++i)
     {
       if ((volumeWidget = qobject_cast<SelectVolumeWidget*>(layout->itemAt(i)->widget())))
@@ -744,7 +744,7 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
   if (this->scriptLabel == "Background Subtraction (Manual)")
   {
     QLayout *layout = dialog->layout();
-    SelectVolumeWidget* volumeWidget = NULL;
+    SelectVolumeWidget* volumeWidget = nullptr;
     for (int i = 0; i < layout->count(); ++i)
     {
       if ((volumeWidget = qobject_cast<SelectVolumeWidget*>(layout->itemAt(i)->widget())))

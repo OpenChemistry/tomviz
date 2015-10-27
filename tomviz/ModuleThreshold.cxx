@@ -115,8 +115,8 @@ bool ModuleThreshold::finalize()
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   controller->UnRegisterProxy(this->ThresholdRepresentation);
   controller->UnRegisterProxy(this->ThresholdFilter);
-  this->ThresholdFilter = NULL;
-  this->ThresholdRepresentation = NULL;
+  this->ThresholdFilter = nullptr;
+  this->ThresholdRepresentation = nullptr;
   return true;
 }
 

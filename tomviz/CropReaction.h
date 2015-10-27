@@ -33,11 +33,11 @@ public:
   CropReaction(QAction* parent, QMainWindow* mw);
   ~CropReaction();
 
-  void crop(DataSource* source = NULL);
+  void crop(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState();
-  void onTriggered() { this->crop(); }
+  void updateEnableState() override;
+  void onTriggered() override { this->crop(); }
 
 private:
   Q_DISABLE_COPY(CropReaction)
