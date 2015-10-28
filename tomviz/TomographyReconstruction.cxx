@@ -87,33 +87,31 @@ void TomographyReconstruction::reconWBP(vtkImageData *tiltSeries,vtkImageData *r
   
   
   //Reconstruction
-  double angle,y,z,t,Q1,Q2,QDash;
-  int rayIndex;
   for (int x = 0; x < xDim; ++x) //loop through slices (x-direction)
   {
     //2D Back Projection
     for (int ang = 0; ang < numOfTilts; ++ang) //loop through tilt angles
     {
-      angle = tiltAngles[ang]*PI/180;
+      double angle = tiltAngles[ang]*PI/180;
       for (int iy = 0; iy < outputSize[1]; ++iy) //loop through all pixels in reconstructed image (y-z plane)
       {
         for (int iz = 0; iz < outputSize[2]; ++iz)
         {
           //Calcualte y,z coord.
-          y = iy + 0.5 - ((double)yDim)/2.0;
-          z = iz + 0.5 - ((double)yDim)/2.0;
+          double y = iy + 0.5 - ((double)yDim)/2.0;
+          double z = iz + 0.5 - ((double)yDim)/2.0;
           //calculate ray coord.
-          t = y * cos(angle) + z * sin(angle);
+          double t = y * cos(angle) + z * sin(angle);
           
           if (t >= -yDim/2 && t <= yDim/2 )	//check if ray is inside projection
           {
-            rayIndex = floor((t + yDim/2));	//determine index txi such that tx <= t <= tx+ddet
-            if (rayIndex >= 0 && rayIndex <= yDim-2) //check that tx and tx+1 are within data range
+            int rayIndex = floor((t + yDim/2));
+            if (rayIndex >= 0 && rayIndex <= yDim-2)
             {
               //Linear interpolation
-              Q1 = data[ang*xDim*yDim + rayIndex * xDim + x ];
-              Q2 = data[ang*xDim*yDim + (rayIndex+1) * xDim + x ];
-              QDash = Q1 + (t-double(rayIndex-yDim/2))*(Q2-Q1);
+              double Q1 = data[ang*xDim*yDim + rayIndex * xDim + x ];
+              double Q2 = data[ang*xDim*yDim + (rayIndex+1) * xDim + x ];
+              double QDash = Q1 + (t-double(rayIndex-yDim/2))*(Q2-Q1);
               reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + x] += QDash;
             }
           }
@@ -123,18 +121,13 @@ void TomographyReconstruction::reconWBP(vtkImageData *tiltSeries,vtkImageData *r
   }
   
   //Normalize
-  double n = PI/double(2*numOfTilts);
-  for (int xx = 0; xx < outputSize[0]; ++xx)
-  {
-    for (int yy = 0; yy < outputSize[1]; ++yy)
-    {
-      for (int zz = 0; zz < outputSize[2]; ++zz)
+  double normalizationFactor = PI/double(2*numOfTilts);
+  for (int z = 0; z < outputSize[2]; ++z)
+    for (int y = 0; y < outputSize[1]; ++y)
+      for (int x = 0; x < outputSize[0]; ++x)
       {
-        reconPtr[zz*outputSize[0]*outputSize[1] + yy*outputSize[0] + xx] *= n;
+        reconPtr[z*outputSize[0]*outputSize[1] + y*outputSize[0] + x] *= normalizationFactor;
       }
-    }
-  }
-  
   
 }
   
