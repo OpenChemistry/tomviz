@@ -384,6 +384,22 @@ QString MainWindow::readScript(const QString &scriptName)
     QByteArray array = file.readAll();
     return QString(array);
   }
+// On OSX the above doesn't work in a build tree.  It is fine
+// for superbuilds, but the following is needed in the build tree
+// since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
+#ifdef __APPLE__
+  else
+  {
+    path = QApplication::applicationDirPath() + "/../../../../share/tomviz/scripts/";
+    path += scriptName + ".py";
+    QFile file2(path);
+    if (file2.open(QIODevice::ReadOnly))
+    {
+      QByteArray array = file2.readAll();
+      return QString(array);
+    }
+  }
+#endif
   qCritical() << "Error: Could not find script file: " << scriptName;
   return "raise IOError(\"Couldn't read script file\")\n";
 }
