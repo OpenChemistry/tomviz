@@ -30,7 +30,10 @@ class TomographyReconstruction
 public:
   TomographyReconstruction();
   ~TomographyReconstruction();
-  static void reconWBP(vtkImageData *tiltSeries,vtkImageData *recon);
+  static void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon); //3D WBP recon
+  static void unweightedBackProjection2(float *sinogram, double *tiltAngles, float *recon,int numOfTilts, int numOfRays ); //2D WBP recon
+  static void tiltSeriesToSinogram(vtkImageData *tiltSeries, int, float* sinogram); //Extract sinograms from tilt series
+
 };
 }
 

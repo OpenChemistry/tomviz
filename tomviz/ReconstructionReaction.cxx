@@ -73,7 +73,7 @@ void ReconstructionReaction::recon(DataSource* input)
   t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
   vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-  TomographyReconstruction::reconWBP(tiltSeries,recon);
+  TomographyReconstruction::weightedBackProjection3(tiltSeries,recon);
 
   output->dataModified();
   // Add the new DataSource

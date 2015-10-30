@@ -62,17 +62,16 @@ vtkSmartPointer<vtkFloatArray> convertToFloat(vtkImageData* image)
   }
   return array;
 }
+
   
-void TomographyReconstruction::reconWBP(vtkImageData *tiltSeries,vtkImageData *recon)
+//3D Weighted Back Projection reconstruction
+void TomographyReconstruction::weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
 {
   int extents[6];
   tiltSeries->GetExtent(extents);
-  int xDim = extents[1] - extents[0] + 1;
-  int yDim = extents[3] - extents[2] + 1;
-  int zDim = extents[5] - extents[4] + 1;
-  //Convert input data type to float
-  vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
-  float *data = static_cast<float*>(dataAsFloats->GetVoidPointer(0));
+  int xDim = extents[1] - extents[0] + 1; //number of slices
+  int yDim = extents[3] - extents[2] + 1; //number of rays
+  int zDim = extents[5] - extents[4] + 1; //number of tilts
   
   //Get tilt angles
   vtkDataArray *tiltAnglesArray = tiltSeries->GetFieldData()->GetArray("tilt_angles");
@@ -80,58 +79,91 @@ void TomographyReconstruction::reconWBP(vtkImageData *tiltSeries,vtkImageData *r
   double *tiltAngles = static_cast<double*>(tiltAnglesArray->GetVoidPointer(0));
   
   // Creating the output volume and getting a pointer to it
-  int outputSize[3] = {xDim, yDim, yDim};
+  int outputSize[3] = { xDim, yDim, yDim};
   recon->SetExtent(0, outputSize[0] - 1, 0, outputSize[1] - 1, 0, outputSize[2] - 1);
   recon->AllocateScalars(VTK_FLOAT, 1); // 1 is for one component (i.e. not vector)
   float *reconPtr = static_cast<float*>(recon->GetScalarPointer());
   
-  
   //Reconstruction
-  for (int x = 0; x < xDim; ++x) //loop through slices (x-direction)
+  float *sinogram = new float[yDim*zDim]; //Placeholder for 2D sinogram
+  float *recon2d = new float[yDim*yDim]; //Placeholder for 2D reconstruction (y-z plane)
+  for (int s = 0; s < xDim; ++s) //loop through slices (x-direction)
   {
-    //2D Back Projection
-    for (int ang = 0; ang < numOfTilts; ++ang) //loop through tilt angles
-    {
-      double angle = tiltAngles[ang]*PI/180;
-      for (int iy = 0; iy < outputSize[1]; ++iy) //loop through all pixels in reconstructed image (y-z plane)
+    //Get sinogram
+    TomographyReconstruction::tiltSeriesToSinogram(tiltSeries, s, sinogram);
+    //2D back projection
+    TomographyReconstruction::unweightedBackProjection2(sinogram, tiltAngles, recon2d, zDim, yDim);
+    //Put recon into
+    for (int iy = 0; iy < outputSize[1]; ++iy) //loop through all pixels in reconstructed image (y-z plane)
+      for (int iz = 0; iz < outputSize[2]; ++iz)
       {
-        for (int iz = 0; iz < outputSize[2]; ++iz)
+        reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + s] = recon2d[iy*outputSize[0] + iz];
+      }
+  }
+}
+  
+//Extract sinograms from tilt series
+void TomographyReconstruction::tiltSeriesToSinogram(vtkImageData *tiltSeries, int sliceNumber,float* sinogram)
+{
+  int extents[6];
+  tiltSeries->GetExtent(extents);
+  int xDim = extents[1] - extents[0] + 1; //number of slices
+  int yDim = extents[3] - extents[2] + 1; //number of rays
+  int zDim = extents[5] - extents[4] + 1; //number of tilts
+  
+  //Convert tiltSeries type to float
+  vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
+  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); //Get pointer to tilt series (of type float)
+  
+  //Extract sinograms from tilt series. Make a deep copy
+  for (int t = 0; t < zDim; ++t) //loop through tilts (z-direction)
+    for (int r = 0; r < yDim; ++r) //loop through rays (y-direction)
         {
-          //Calcualte y,z coord.
-          double y = iy + 0.5 - ((double)yDim)/2.0;
-          double z = iz + 0.5 - ((double)yDim)/2.0;
-          //calculate ray coord.
-          double t = y * cos(angle) + z * sin(angle);
-          
-          if (t >= -yDim/2 && t <= yDim/2 )	//check if ray is inside projection
+          sinogram[t * yDim + r] = dataPtr[t * xDim * yDim + r * xDim + sliceNumber];
+        }
+}
+
+//2D WBP recon
+void TomographyReconstruction::unweightedBackProjection2(float *sinogram, double *tiltAngles, float* image, int numOfTilts, int numOfRays )
+{
+  for (int i = 0; i < numOfRays*numOfRays; ++i)
+  {
+    image[i] = 0; //Set all pixels to zero
+  }
+  
+  //2D unweighted Back Projection
+  for (int tt = 0; tt < numOfTilts; ++tt) //loop through tilts
+  {
+    double angle = tiltAngles[tt]*PI/180;
+    for (int iy = 0; iy < numOfRays; ++iy) //loop through all pixels in reconstructed image (y-z plane for a tilt series)
+      for (int iz = 0; iz < numOfRays; ++iz)
+      {
+        //Calcualte y,z coord.
+        double y = iy + 0.5 - ((double)numOfRays)/2.0;
+        double z = iz + 0.5 - ((double)numOfRays)/2.0;
+        //calculate ray coord.
+        double t = y * cos(angle) + z * sin(angle);
+        
+        if (t >= -numOfRays/2 && t <= numOfRays/2 )	//check if ray is inside projection
+        {
+          int rayIndex = floor((t + numOfRays/2));
+          if (rayIndex >= 0 && rayIndex <= numOfRays-2)
           {
-            int rayIndex = floor((t + yDim/2));
-            if (rayIndex >= 0 && rayIndex <= yDim-2)
-            {
-              //Linear interpolation
-              double Q1 = data[ang*xDim*yDim + rayIndex * xDim + x ];
-              double Q2 = data[ang*xDim*yDim + (rayIndex+1) * xDim + x ];
-              double QDash = Q1 + (t-double(rayIndex-yDim/2))*(Q2-Q1);
-              reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + x] += QDash;
-            }
+            //Linear interpolation
+            double Q1 = sinogram[tt*numOfRays + rayIndex ];
+            double Q2 = sinogram[tt*numOfRays + rayIndex+1 ];
+            double QDash = Q1 + (t-double(rayIndex-numOfRays/2))*(Q2-Q1);
+            image[iy*numOfRays + iz] += QDash;
           }
         }
       }
-    }
   }
-  
-  //Normalize
   double normalizationFactor = PI/double(2*numOfTilts);
-  for (int z = 0; z < outputSize[2]; ++z)
-    for (int y = 0; y < outputSize[1]; ++y)
-      for (int x = 0; x < outputSize[0]; ++x)
-      {
-        reconPtr[z*outputSize[0]*outputSize[1] + y*outputSize[0] + x] *= normalizationFactor;
-      }
-  
+  for (int i = 0; i < numOfRays*numOfRays; ++i)
+  {
+    image[i] *= normalizationFactor;
+  }
 }
-  
-
 
   
 }
