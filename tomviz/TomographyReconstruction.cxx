@@ -97,7 +97,7 @@ void TomographyReconstruction::weightedBackProjection3(vtkImageData *tiltSeries,
     for (int iy = 0; iy < outputSize[1]; ++iy) //loop through all pixels in reconstructed image (y-z plane)
       for (int iz = 0; iz < outputSize[2]; ++iz)
       {
-        reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + s] = recon2d[iy*outputSize[0] + iz];
+        reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + s] = recon2d[iy*outputSize[1] + iz];
       }
   }
 }
