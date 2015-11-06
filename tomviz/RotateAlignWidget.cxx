@@ -18,6 +18,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "TomographyReconstruction.h"
 
 #include "QVTKWidget.h"
 #include "vtkCamera.h"
@@ -118,12 +119,12 @@ class RotateAlignWidget::RAWInternal
 public:
   Ui::RotateAlignWidget Ui;
   vtkNew<vtkImageSlice> mainSlice;
+  vtkNew<vtkImageData> reconImage[3];
   vtkNew<vtkImageSlice> reconSlice[3];
   vtkNew<vtkImageSliceMapper> mainSliceMapper;
   vtkNew<vtkImageSliceMapper> reconSliceMapper[3];
   vtkNew<vtkRenderer> mainRenderer;
   vtkNew<vtkRenderer> reconRenderer[3];
-  vtkNew<vtkImageData> reconImage;
   QPointer<DataSource> Source;
   vtkNew<vtkLineSource> rotationAxis;
   vtkNew<vtkActor> axisActor;
@@ -207,6 +208,41 @@ public:
     this->Ui.sliceView->update();
   }
 
+  void updateReconSlice(int i)
+  {
+    vtkTrivialProducer *t =
+        vtkTrivialProducer::SafeDownCast(this->Source->producer()->GetClientSideObject());
+    if (!t)
+    {
+      return;
+    }
+    vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (imageData)
+    {
+      int extent[6];
+      imageData->GetExtent(extent);
+      int dims[3] = { extent[1] - extent[0] + 1,
+                      extent[3] - extent[2] + 1,
+                      extent[5] - extent[4] + 1 };
+      QSpinBox *spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2, this->Ui.spinBox_3 };
+      int sliceNum = spinBoxes[i]->value();
+      std::vector<float> sinogram(dims[1] * dims[2]);
+      TomographyReconstruction::tiltSeriesToSinogram(imageData, sliceNum, &sinogram[0]);
+      this->reconImage[i]->SetExtent(0, dims[1] - 1, 0, dims[1] - 1, 0, 0);
+      this->reconImage[i]->AllocateScalars(VTK_FLOAT, 1);
+      vtkDataArray *reconArray = this->reconImage[i]->GetPointData()->GetScalars();
+      float *reconPtr = static_cast<float*>(reconArray->GetVoidPointer(0));
+
+      vtkDataArray *tiltAnglesArray = imageData->GetFieldData()->GetArray("tilt_angles");
+      double *tiltAngles = static_cast<double*>(tiltAnglesArray->GetVoidPointer(0));
+
+      TomographyReconstruction::unweightedBackProjection2(&sinogram[0], tiltAngles, reconPtr, dims[2], dims[1]);
+      this->reconSliceMapper[i]->SetInputData(this->reconImage[i].GetPointer());
+      this->reconSliceMapper[i]->SetSliceNumber(0);
+      this->reconSliceMapper[i]->Update();
+    }
+  }
+
   void updateSliceLines()
   {
     vtkTrivialProducer *t =
@@ -220,12 +256,15 @@ public:
     {
       double bounds[6];
       imageData->GetBounds(bounds);
+      int extent[6];
+      imageData->GetExtent(extent);
+      double maxSlices = extent[1] - extent[0] + 1;
       QSpinBox *spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2, this->Ui.spinBox_3 };
       for (int i = 0; i < 3; ++i)
       {
         double p1[3], p2[3];
-        p1[0] = bounds[0] + (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / (bounds[1] - bounds[0]));
-        p2[0] = bounds[0] + (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / (bounds[1] - bounds[0]));
+        p1[0] = bounds[0] + (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / maxSlices);
+        p2[0] = bounds[0] + (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / maxSlices);
         p1[1] = bounds[2];
         p2[1] = bounds[3];
         p1[2] = bounds[5];
@@ -259,10 +298,6 @@ RotateAlignWidget::RotateAlignWidget(DataSource *source, QWidget *p)
       this->Internals->reconRenderer[1].Get());
   this->Internals->Ui.sliceView_3->GetRenderWindow()->AddRenderer(
       this->Internals->reconRenderer[2].Get());
-
-  this->Internals->reconSliceMapper[0]->SetOrientation(0);
-  this->Internals->reconSliceMapper[1]->SetOrientation(0);
-  this->Internals->reconSliceMapper[2]->SetOrientation(0);
 
   vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
   interatorStyle->SetRenderOnMouseMove(true);
@@ -409,19 +444,22 @@ void RotateAlignWidget::onReconSliceChanged(int newSlice)
   this->Internals->Ui.sliceView->update();
   if (sb == this->Internals->Ui.spinBox_1)
   {
-    this->Internals->reconSliceMapper[0]->SetSliceNumber(newSlice);
+    this->Internals->updateReconSlice(0);
+//    this->Internals->reconSliceMapper[0]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[0]->Update();
     this->Internals->Ui.sliceView_1->update();
   }
   else if (sb == this->Internals->Ui.spinBox_2)
   {
-    this->Internals->reconSliceMapper[1]->SetSliceNumber(newSlice);
+    this->Internals->updateReconSlice(1);
+//    this->Internals->reconSliceMapper[1]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[1]->Update();
     this->Internals->Ui.sliceView_2->update();
   }
   else // if (sb == this->Internals->Ui.spinBox_3)
   {
-    this->Internals->reconSliceMapper[2]->SetSliceNumber(newSlice);
+    this->Internals->updateReconSlice(2);
+//    this->Internals->reconSliceMapper[2]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[2]->Update();
     this->Internals->Ui.sliceView_3->update();
   }
