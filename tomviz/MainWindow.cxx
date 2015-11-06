@@ -45,6 +45,7 @@
 #include "ModulePropertiesPanel.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "RecentFilesMenu.h"
+#include "ReconstructionReaction.h"
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
@@ -216,6 +217,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier recon");
   QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection recon");
+  QAction *reconWBP_CAction = ui.menuTomography->addAction("Weighted Back Projection recon (C++)");
 
   // Set up reactions for Data Transforms Menu
   //#################################################################
@@ -274,7 +276,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(reconWBPAction,
                                  "Reconstruct (Back Projection)",
                                  this->readScript("Recon_WBP"), true);
-
+  new ReconstructionReaction(reconWBP_CAction);
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);

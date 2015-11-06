@@ -99,6 +99,8 @@ set(SOURCES
   PythonGeneratedDatasetReaction.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
+  ReconstructionReaction.h
+  ReconstructionReaction.cxx
   ResetReaction.cxx
   ResetReaction.h
   SaveDataReaction.cxx
@@ -112,6 +114,8 @@ set(SOURCES
   SetTiltAnglesReaction.h
   ToggleDataTypeReaction.h
   ToggleDataTypeReaction.cxx
+  TomographyReconstruction.h
+  TomographyReconstruction.cxx
   Utilities.cxx
   Utilities.h
   ViewPropertiesPanel.cxx
