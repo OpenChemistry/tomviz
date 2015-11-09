@@ -18,6 +18,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "LoadDataReaction.h"
 #include "TomographyReconstruction.h"
 
 #include "QVTKWidget.h"
@@ -353,6 +354,8 @@ RotateAlignWidget::RotateAlignWidget(DataSource *source, QWidget *p)
                 SLOT(onRotationAxisChanged()));
   this->connect(this->Internals->Ui.rotationAngle, SIGNAL(valueChanged(double)),
                 SLOT(onRotationAxisChanged()));
+  this->connect(this->Internals->Ui.pushButton, SIGNAL(pressed()),
+                SLOT(onFinalReconButtonPressed()));
 
   this->setDataSource(source);
   this->onProjectionNumberChanged(0);
@@ -437,7 +440,7 @@ void RotateAlignWidget::onRotationAngleChanged()
   this->Internals->moveRotationAxisLine();
 }
 
-void RotateAlignWidget::onReconSliceChanged(int newSlice)
+void RotateAlignWidget::onReconSliceChanged(int)
 {
   QSpinBox *sb = qobject_cast<QSpinBox*>(this->sender());
   this->Internals->updateSliceLines();
@@ -471,6 +474,30 @@ void RotateAlignWidget::updateWidgets()
   this->Internals->Ui.sliceView_1->update();
   this->Internals->Ui.sliceView_2->update();
   this->Internals->Ui.sliceView_3->update();
+}
+
+void RotateAlignWidget::onFinalReconButtonPressed()
+{
+  DataSource *source = this->Internals->Source;
+  if (!source)
+  {
+    return;
+  }
+  vtkTrivialProducer *t =
+      vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+  vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  DataSource* output = source->clone(true,true);
+  QString name = output->producer()->GetAnnotation("tomviz.Label");
+  name = "Rotation_Aligned_" + name;
+  output->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
+  t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
+  vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+
+  TomographyReconstruction::weightedBackProjection3(imageData, recon);
+  output->dataModified();
+
+  LoadDataReaction::dataSourceAdded(output);
+  emit creatingAlignedData();
 }
 
 }

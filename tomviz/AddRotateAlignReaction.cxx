@@ -64,6 +64,8 @@ void AddRotateAlignReaction::align(DataSource* source)
   QHBoxLayout *layout = new QHBoxLayout();
   layout->addWidget(widget);
   dialog->setLayout(layout);
+
+  QObject::connect(widget, SIGNAL(creatingAlignedData()), dialog, SLOT(accept()));
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
   dialog->raise();

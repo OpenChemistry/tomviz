@@ -46,6 +46,8 @@ protected slots:
 
   void updateWidgets();
 
+  void onFinalReconButtonPressed();
+
 private:
   Q_DISABLE_COPY(RotateAlignWidget)
 
