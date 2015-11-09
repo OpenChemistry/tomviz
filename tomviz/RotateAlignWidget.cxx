@@ -486,6 +486,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   vtkTrivialProducer *t =
       vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
   vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+/*
   DataSource* output = source->clone(true,true);
   QString name = output->producer()->GetAnnotation("tomviz.Label");
   name = "Rotation_Aligned_" + name;
@@ -493,10 +494,9 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
   vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-  TomographyReconstruction::weightedBackProjection3(imageData, recon);
-  output->dataModified();
 
   LoadDataReaction::dataSourceAdded(output);
+  */
   emit creatingAlignedData();
 }
 
