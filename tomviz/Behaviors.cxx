@@ -61,6 +61,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TIFFSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TVRawImageReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "MRCSeriesReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sourceS", "XdmfReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "CSVReader");
 
   PV_PLUGIN_IMPORT(tomvizExtensions)
