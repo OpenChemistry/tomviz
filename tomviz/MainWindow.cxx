@@ -27,6 +27,7 @@
 #include "pqSaveScreenshotReaction.h"
 #include "pqSaveStateReaction.h"
 #include "vtkPVPlugin.h"
+#include "vtkSMSettings.h"
 
 #include "tomvizConfig.h"
 #include "ActiveObjects.h"
@@ -60,6 +61,12 @@
 #include <QMessageBox>
 #include <QTimer>
 
+#if QT_VERSION >= 0x050000
+  #include <QStandardPaths>
+#else
+  #include <QDesktopServices>
+#endif
+
 //we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
   // Adds required forward declarations.
@@ -71,7 +78,19 @@ namespace
 {
 QString getAutosaveFile()
 {
-  return QDir::temp().absoluteFilePath(".tomviz_autosave.tvsm");
+  // workaround to get user config location
+  QString dataPath;
+#if QT_VERSION >= 0x050000
+  dataPath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+#else
+  dataPath = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+#endif
+  QDir dataDir(dataPath);
+  if (!dataDir.exists())
+  {
+    dataDir.mkpath(dataPath);
+  }
+  return dataDir.absoluteFilePath(".tomviz_autosave.tvsm");
 }
 }
 
