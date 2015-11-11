@@ -81,6 +81,27 @@ void tiltSeriesToSinogram(vtkImageData *tiltSeries, int sliceNumber,float* sinog
 }
 
 
+//Extract sinograms from tilt series
+void getSinogram(vtkImageData *tiltSeries, int sliceNumber,float* sinogram, double axisPosition)
+{
+  int extents[6];
+  tiltSeries->GetExtent(extents);
+  int xDim = extents[1] - extents[0] + 1; //number of slices
+  int yDim = extents[3] - extents[2] + 1; //number of rays
+  int zDim = extents[5] - extents[4] + 1; //number of tilts
+    
+  //Convert tiltSeries type to float
+  vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
+  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); //Get pointer to tilt series (of type float)
+    
+  //Extract sinograms from tilt series. Make a deep copy
+  for (int t = 0; t < zDim; ++t) //loop through tilts (z-direction)
+    for (int r = 0; r < yDim; ++r) //loop through rays (y-direction)
+    {
+      sinogram[t * yDim + r] = dataPtr[t * xDim * yDim + r * xDim + sliceNumber];
+    }
+  }
+  
 
   
 }
