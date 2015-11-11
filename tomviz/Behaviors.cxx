@@ -46,8 +46,16 @@ const char* const settings =
 //"         \"ShowAnnotation\" : 1,"
 "         \"UseDisplayLists\" : 1"
 "      }"
+"   },"
+"   \"lookup_tables\" : {"
+"      \"PVLookupTable\" : {"
+"         \"ColorSpace\" : 0,"
+"         \"NanColor\" : [ 1, 0, 0 ],"
+"         \"RGBPoints\" : [ 37.353103637695312, 0, 0, 0, 276.82882690429688, 1, 1, 1 ]"
+"      }"
 "   }"
-"}";
+"}"
+;
 
 namespace tomviz
 {
