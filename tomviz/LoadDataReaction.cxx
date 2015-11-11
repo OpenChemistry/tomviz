@@ -59,12 +59,13 @@ QList<DataSource*> LoadDataReaction::loadData()
 
   QStringList filters;
   filters << "Common file types (*.jpg *.jpeg *.png *.tiff *.tif *.raw"
-             " *.dat *.bin *.txt *.mrc *.st *.rec *.ali)"
+             " *.dat *.bin *.txt *.mrc *.st *.rec *.ali *.xmf *.xdmf)"
           << "JPeg Image files (*.jpg *.jpeg)"
           << "PNG Image files (*.png)"
           << "TIFF Image files (*.tiff *.tif)"
           << "Raw data files (*.raw *.dat *.bin)"
           << "MRC files (*.mrc *.st *.rec *.ali)"
+          << "XDMF files (*.xmf *.xdmf)"
           << "Text files (*.txt)"
           << "All files (*.*)";
 
