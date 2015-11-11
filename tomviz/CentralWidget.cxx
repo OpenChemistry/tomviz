@@ -368,6 +368,11 @@ void CentralWidget::setDataSource(DataSource* source)
     source->producer()->GetClientSideObject());
   vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
+  if (image->GetPointData()->GetScalars() == nullptr)
+  {
+    return;
+  }
+
   // Get the current color map
   vtkScalarsToColors *lut;
   if (this->AModule)

@@ -27,13 +27,16 @@
 #include "pqSaveScreenshotReaction.h"
 #include "pqSaveStateReaction.h"
 #include "vtkPVPlugin.h"
+#include "vtkSMSettings.h"
 
 #include "tomvizConfig.h"
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
+#include "AddRotateAlignReaction.h"
 #include "AddExpressionReaction.h"
 #include "AddPythonTransformReaction.h"
 #include "AddResampleReaction.h"
+#include "AddRotateAlignReaction.h"
 #include "Behaviors.h"
 #include "CropReaction.h"
 #include "CloneDataReaction.h"
@@ -60,6 +63,12 @@
 #include <QMessageBox>
 #include <QTimer>
 
+#if QT_VERSION >= 0x050000
+  #include <QStandardPaths>
+#else
+  #include <QDesktopServices>
+#endif
+
 //we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
   // Adds required forward declarations.
@@ -71,7 +80,19 @@ namespace
 {
 QString getAutosaveFile()
 {
-  return QDir::temp().absoluteFilePath(".tomviz_autosave.tvsm");
+  // workaround to get user config location
+  QString dataPath;
+#if QT_VERSION >= 0x050000
+  dataPath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+#else
+  dataPath = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+#endif
+  QDir dataDir(dataPath);
+  if (!dataDir.exists())
+  {
+    dataDir.mkpath(dataPath);
+  }
+  return dataDir.absoluteFilePath(".tomviz_autosave.tvsm");
 }
 }
 
@@ -213,6 +234,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
   QAction *alignAction = ui.menuTomography->addAction("Translation Align");
   QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
+  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Align");
   ui.menuTomography->addSeparator();
 
   QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier recon");
@@ -268,6 +290,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(subtractBackgroundAction, "Background Subtraction (Manual)",
                                  this->readScript("Subtract_TiltSer_Background"), true);
     
+  new AddRotateAlignReaction(rotateAlignAction);
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", this->readScript("Align_Images"), true);
   new AddPythonTransformReaction(reconDFMAction,

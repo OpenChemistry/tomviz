@@ -81,7 +81,7 @@ namespace {
       }
       return true;
   }
-    const QDir& rootDir;
+    QDir rootDir;
     bool toRelative;
   };
 }
@@ -126,7 +126,8 @@ bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
   }
   if (relDir)
   {
-    XMLFileNameConverter converter(*relDir, true);
+    QString canonicalPath = relDir->canonicalPath();
+    XMLFileNameConverter converter(QDir(canonicalPath), true);
     pugi::xml_node root = document.first_child();
     root.traverse(converter);
   }
@@ -151,7 +152,8 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
 
   if (relDir)
   {
-    XMLFileNameConverter converter(*relDir, false);
+    QString canonicalPath = relDir->canonicalPath();
+    XMLFileNameConverter converter(QDir(canonicalPath), false);
     in.first_child().traverse(converter);
   }
 

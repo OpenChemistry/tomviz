@@ -25,18 +25,8 @@
 
 #include <QDebug>
 
-namespace tomviz
+namespace
 {
-TomographyReconstruction::TomographyReconstruction()
-{
-
-}
-
-TomographyReconstruction::~TomographyReconstruction()
-{
-
-}
-
 // conversion code
 template<typename T>
 vtkSmartPointer<vtkFloatArray> convertToFloatT(T *data, int len)
@@ -62,10 +52,15 @@ vtkSmartPointer<vtkFloatArray> convertToFloat(vtkImageData* image)
   }
   return array;
 }
+}
 
+namespace tomviz
+{
+namespace TomographyReconstruction
+{
   
 //3D Weighted Back Projection reconstruction
-void TomographyReconstruction::weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
+void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
 {
   int extents[6];
   tiltSeries->GetExtent(extents);
@@ -75,7 +70,6 @@ void TomographyReconstruction::weightedBackProjection3(vtkImageData *tiltSeries,
   
   //Get tilt angles
   vtkDataArray *tiltAnglesArray = tiltSeries->GetFieldData()->GetArray("tilt_angles");
-  int numOfTilts = tiltAnglesArray->GetNumberOfTuples();
   double *tiltAngles = static_cast<double*>(tiltAnglesArray->GetVoidPointer(0));
   
   // Creating the output volume and getting a pointer to it
@@ -103,7 +97,7 @@ void TomographyReconstruction::weightedBackProjection3(vtkImageData *tiltSeries,
 }
   
 //Extract sinograms from tilt series
-void TomographyReconstruction::tiltSeriesToSinogram(vtkImageData *tiltSeries, int sliceNumber,float* sinogram)
+void tiltSeriesToSinogram(vtkImageData *tiltSeries, int sliceNumber,float* sinogram)
 {
   int extents[6];
   tiltSeries->GetExtent(extents);
@@ -124,7 +118,7 @@ void TomographyReconstruction::tiltSeriesToSinogram(vtkImageData *tiltSeries, in
 }
 
 //2D WBP recon
-void TomographyReconstruction::unweightedBackProjection2(float *sinogram, double *tiltAngles, float* image, int numOfTilts, int numOfRays )
+void unweightedBackProjection2(float *sinogram, double *tiltAngles, float* image, int numOfTilts, int numOfRays )
 {
   for (int i = 0; i < numOfRays*numOfRays; ++i)
   {
@@ -165,5 +159,5 @@ void TomographyReconstruction::unweightedBackProjection2(float *sinogram, double
   }
 }
 
-  
+}
 }
