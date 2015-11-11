@@ -116,6 +116,8 @@ set(SOURCES
   ToggleDataTypeReaction.cxx
   TomographyReconstruction.h
   TomographyReconstruction.cxx
+  TomographyTiltSeries.h
+  TomographyTiltSeries.cxx
   Utilities.cxx
   Utilities.h
   ViewPropertiesPanel.cxx

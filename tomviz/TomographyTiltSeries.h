@@ -27,7 +27,16 @@ class DataSource;
 namespace TomographyTiltSeries
 {
     
-void tiltSeriesToSinogram(vtkImageData *tiltSeries, int, float* sinogram); //Extract sinograms from tilt series
+void getSinogram(vtkImageData *tiltSeries, int, float* sinogram); //Useful for recon
+void getSinogram(vtkImageData *tiltSeries, int, float* sinogram,  int Nray, double axisPosition = 0); //Extract sinograms from tilt series
+
+void getSinogram(vtkImageData *tiltSeries, int, float* sinogram,  int Nray, double axisPosition = 0, double axisAngle = 0); //Extract sinograms from tilt series
+
+//Generate tiltseries from a volume
+//void generaeTiltSeries(vtkImageData *volume, vtkImageData* tiltSeries);
+  
+void averageTiltSeries(vtkImageData *tiltSeries, float* average); //Average all tilts
+
 
 }
 }
