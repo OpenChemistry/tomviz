@@ -15,6 +15,8 @@
  ******************************************************************************/
 #include <math.h>
 #include "TomographyReconstruction.h"
+#include "TomographyTiltSeries.h"
+
 #include "vtkImageData.h"
 #include "vtkFieldData.h"
 #include "vtkDataArray.h"
@@ -84,7 +86,7 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
   for (int s = 0; s < xDim; ++s) //loop through slices (x-direction)
   {
     //Get sinogram
-    TomographyReconstruction::tiltSeriesToSinogram(tiltSeries, s, sinogram);
+    TomographyTiltSeries::getSinogram(tiltSeries, s, sinogram);
     //2D back projection
     TomographyReconstruction::unweightedBackProjection2(sinogram, tiltAngles, recon2d, zDim, yDim);
     //Put recon into
@@ -94,27 +96,6 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
         reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + s] = recon2d[iy*outputSize[1] + iz];
       }
   }
-}
-  
-//Extract sinograms from tilt series
-void tiltSeriesToSinogram(vtkImageData *tiltSeries, int sliceNumber,float* sinogram)
-{
-  int extents[6];
-  tiltSeries->GetExtent(extents);
-  int xDim = extents[1] - extents[0] + 1; //number of slices
-  int yDim = extents[3] - extents[2] + 1; //number of rays
-  int zDim = extents[5] - extents[4] + 1; //number of tilts
-  
-  //Convert tiltSeries type to float
-  vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
-  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); //Get pointer to tilt series (of type float)
-  
-  //Extract sinograms from tilt series. Make a deep copy
-  for (int t = 0; t < zDim; ++t) //loop through tilts (z-direction)
-    for (int r = 0; r < yDim; ++r) //loop through rays (y-direction)
-        {
-          sinogram[t * yDim + r] = dataPtr[t * xDim * yDim + r * xDim + sliceNumber];
-        }
 }
 
 //2D WBP recon

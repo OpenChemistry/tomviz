@@ -37,12 +37,6 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon); //3D
 // The output image will be stored in recon and will be square with size numOfRays by numOfRays.
 void unweightedBackProjection2(float *sinogram, double *tiltAngles, float *recon,int numOfTilts, int numOfRays ); //2D WBP recon
 
-// This takes as input an image and a slice number.  If the input image has dimensions
-// [x, y, z] the slice number must be in the interval [0,y-1].  The output is stored in
-// the sinogram pointer, which should be a pointer to an array with dimensions [y, z, 1].
-// Essentially, this extracts a y-z slice of the input image.
-void tiltSeriesToSinogram(vtkImageData *tiltSeries, int, float* sinogram); //Extract sinograms from tilt series
-
 }
 }
 

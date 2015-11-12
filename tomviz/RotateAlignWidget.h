@@ -41,7 +41,6 @@ signals:
 protected slots:
   void onProjectionNumberChanged(int newVal);
   void onRotationAxisChanged();
-  void onRotationAngleChanged();
   void onReconSliceChanged(int newSlice);
 
   void updateWidgets();
