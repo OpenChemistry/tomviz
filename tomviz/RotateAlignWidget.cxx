@@ -134,7 +134,7 @@ public:
   vtkNew<vtkActor> axisActor;
   vtkNew<vtkLineSource> reconSliceLine[3];
   vtkNew<vtkActor> reconSliceLineActor[3];
-  
+
   void setupCameras()
   {
     setupRenderer(this->mainRenderer.Get(), this->mainSliceMapper.Get());
@@ -230,7 +230,7 @@ public:
                       extent[5] - extent[4] + 1 };
       QSpinBox *spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2, this->Ui.spinBox_3 };
       int sliceNum = spinBoxes[i]->value();
-      
+
       int Nray = 256; //Size of 2D reconstruction. Fixed for all tilt series
       std::vector<float> sinogram(Nray * dims[2]);
       //Approximate in-plance rotation as a shift in y-direction
@@ -445,15 +445,14 @@ void RotateAlignWidget::onRotationAxisChanged()
   this->Internals->updateReconSlice(0);
   this->Internals->reconSliceMapper[0]->Update();
   this->Internals->Ui.sliceView_1->update();
-  
+
   this->Internals->updateReconSlice(1);
   this->Internals->reconSliceMapper[1]->Update();
   this->Internals->Ui.sliceView_2->update();
-  
+
   this->Internals->updateReconSlice(2);
   this->Internals->reconSliceMapper[2]->Update();
   this->Internals->Ui.sliceView_3->update();
-
 }
 
 void RotateAlignWidget::onReconSliceChanged(int)

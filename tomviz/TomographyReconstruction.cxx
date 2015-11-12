@@ -1,17 +1,17 @@
 /******************************************************************************
- 
+
  This source file is part of the tomviz project.
- 
+
  Copyright Kitware, Inc.
- 
+
  This source code is released under the New BSD License, (the "License").
- 
+
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- 
+
  ******************************************************************************/
 #include <math.h>
 #include "TomographyReconstruction.h"
@@ -42,7 +42,7 @@ vtkSmartPointer<vtkFloatArray> convertToFloatT(T *data, int len)
   }
   return array;
 }
-  
+
 vtkSmartPointer<vtkFloatArray> convertToFloat(vtkImageData* image)
 {
   vtkDataArray *scalars = image->GetPointData()->GetScalars();
@@ -60,7 +60,7 @@ namespace tomviz
 {
 namespace TomographyReconstruction
 {
-  
+
 //3D Weighted Back Projection reconstruction
 void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
 {
@@ -69,17 +69,17 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
   int xDim = extents[1] - extents[0] + 1; //number of slices
   int yDim = extents[3] - extents[2] + 1; //number of rays
   int zDim = extents[5] - extents[4] + 1; //number of tilts
-  
+
   //Get tilt angles
   vtkDataArray *tiltAnglesArray = tiltSeries->GetFieldData()->GetArray("tilt_angles");
   double *tiltAngles = static_cast<double*>(tiltAnglesArray->GetVoidPointer(0));
-  
+
   // Creating the output volume and getting a pointer to it
   int outputSize[3] = { xDim, yDim, yDim};
   recon->SetExtent(0, outputSize[0] - 1, 0, outputSize[1] - 1, 0, outputSize[2] - 1);
   recon->AllocateScalars(VTK_FLOAT, 1); // 1 is for one component (i.e. not vector)
   float *reconPtr = static_cast<float*>(recon->GetScalarPointer());
-  
+
   //Reconstruction
   float *sinogram = new float[yDim*zDim]; //Placeholder for 2D sinogram
   float *recon2d = new float[yDim*yDim]; //Placeholder for 2D reconstruction (y-z plane)
@@ -105,7 +105,7 @@ void unweightedBackProjection2(float *sinogram, double *tiltAngles, float* image
   {
     image[i] = 0; //Set all pixels to zero
   }
-  
+
   //2D unweighted Back Projection
   for (int tt = 0; tt < numOfTilts; ++tt) //loop through tilts
   {
@@ -118,7 +118,7 @@ void unweightedBackProjection2(float *sinogram, double *tiltAngles, float* image
         double z = iz + 0.5 - ((double)numOfRays)/2.0;
         //calculate ray coord.
         double t = y * cos(angle) + z * sin(angle);
-        
+
         if (t >= -numOfRays/2 && t <= numOfRays/2 )	//check if ray is inside projection
         {
           int rayIndex = floor((t + numOfRays/2));
