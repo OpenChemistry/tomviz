@@ -515,42 +515,40 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
   vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-
   LoadDataReaction::dataSourceAdded(output);
   */
   //Apply python transform
-  
-  
   OperatorPython *opPython = new OperatorPython();
   QSharedPointer<Operator> op(opPython);
+  
+  //Apply shift (in y-direction) first
   QString scriptLabel = "Shift Uniformly";
-  QString scriptSource =this->readScript("Shift_Stack_Uniformly");
-
+  QString scriptSource = this->readScript("Shift_Stack_Uniformly"); //TODO:Rewrite python script
   
   opPython->setLabel(scriptLabel);
-  opPython->setScript(scriptSource);
-  
+  opPython->setScript(scriptSource); //TODO:Rewrite python script
+
   QString pythonScript = scriptSource;
   pythonScript.replace("###SHIFT###",
                       QString("SHIFT = [%1, %2, %3]").arg(0)
-                      .arg(this->Internals->Ui.rotationAxis->value()).arg(0));
+                      .arg(-this->Internals->Ui.rotationAxis->value()).arg(0));
   opPython->setScript(pythonScript);
   this->Internals->Source->addOperator(op);
   
-  
-  QString scriptLabel2 = "Rotate";
-  QString scriptSource2 = this->readScript("Rotate3D");
+  //Apply in-plane rotation
+  scriptLabel = "Rotate";
+  scriptSource = this->readScript("Rotate3D");
   OperatorPython *opPython2 = new OperatorPython();
   QSharedPointer<Operator> op2(opPython2);
 
-  opPython2->setLabel(scriptLabel2);
-  opPython2->setScript(scriptSource2);
-  QString pythonScript2 = scriptSource2;
-  pythonScript2.replace("###ROT_AXIS###",
+  opPython2->setLabel(scriptLabel);
+  opPython2->setScript(scriptSource);
+  pythonScript = scriptSource;
+  pythonScript.replace("###ROT_AXIS###",
                      QString("ROT_AXIS = %1").arg(2) );
-  pythonScript2.replace("###ROT_ANGLE###",
-                     QString("ROT_ANGLE = %1").arg(this->Internals->Ui.rotationAngle->value()) );
-  opPython2->setScript(pythonScript2);
+  pythonScript.replace("###ROT_ANGLE###",
+                     QString("ROT_ANGLE = %1").arg(-this->Internals->Ui.rotationAngle->value()) );
+  opPython2->setScript(pythonScript);
   this->Internals->Source->addOperator(op2);
   
   emit creatingAlignedData();
