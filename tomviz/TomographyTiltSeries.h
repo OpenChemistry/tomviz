@@ -26,11 +26,16 @@ class DataSource;
 
 namespace TomographyTiltSeries
 {
-    
-void getSinogram(vtkImageData *tiltSeries, int, float* sinogram); //Useful for recon
-void getSinogram(vtkImageData *tiltSeries, int, float* sinogram,  int Nray, double axisPosition = 0); //Extract sinograms from tilt series
 
-void getSinogram(vtkImageData *tiltSeries, int, float* sinogram,  int Nray, double axisPosition = 0, double axisAngle = 0); //Extract sinograms from tilt series
+// Extract sinogram from tilt series
+// This takes as input an image and a slice number.  If the input image has dimensions
+// [x, y, z] the slice number must be in the interval [0,y-1].  The output is stored in
+// the sinogram pointer, which should be a pointer to an array with dimensions [y, z, 1].
+// Simply takes a y-z slice of the input image. Useful for reconstruction
+void getSinogram(vtkImageData *tiltSeries, int, float* sinogram);
+// Interpolate a sinogram of given size and rotation axis. Useful for axis alignment
+void getSinogram(vtkImageData *tiltSeries, int, float* sinogram,  int Nray, double axisPosition = 0);
+//void getSinogram(vtkImageData *tiltSeries, int, float* sinogram,  int Nray, double axisPosition = 0, double axisAngle = 0);
 
 //Generate tiltseries from a volume
 //void generaeTiltSeries(vtkImageData *volume, vtkImageData* tiltSeries);
