@@ -111,9 +111,9 @@ void getSinogram(vtkImageData *tiltSeries, int sliceNumber, float* sinogram, int
         weight2[r] = 1 - weight1[r] ;
       }
       sinogram[z * Nray + r] = 0;
-      if (index1[r]>=0 and index1[r]<yDim)
+      if (index1[r]>=0 && index1[r]<yDim)
         sinogram[z * Nray + r] += dataPtr[z * xDim * yDim + index1[r] * xDim + sliceNumber] * weight1[r];
-      if (index2[r]>=0 and index2[r]<yDim)
+      if (index2[r]>=0 && index2[r]<yDim)
         sinogram[z * Nray + r] += dataPtr[z * xDim * yDim + index2[r] * xDim + sliceNumber] * weight2[r];
     }
 
