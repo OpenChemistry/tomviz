@@ -23,6 +23,11 @@
 #include "TomographyTiltSeries.h"
 #define PI 3.14159265359
 #include <math.h>
+#include "AddPythonTransformReaction.h"
+#include "OperatorPython.h"
+#include <QFileInfo>
+#include <QDir>
+#include <QDebug>
 
 #include "QVTKWidget.h"
 #include "vtkCamera.h"
@@ -513,7 +518,74 @@ void RotateAlignWidget::onFinalReconButtonPressed()
 
   LoadDataReaction::dataSourceAdded(output);
   */
+  //Apply python transform
+  
+  
+  OperatorPython *opPython = new OperatorPython();
+  QSharedPointer<Operator> op(opPython);
+  QString scriptLabel = "Shift Uniformly";
+  QString scriptSource =this->readScript("Shift_Stack_Uniformly");
+
+  
+  opPython->setLabel(scriptLabel);
+  opPython->setScript(scriptSource);
+  
+  QString pythonScript = scriptSource;
+  pythonScript.replace("###SHIFT###",
+                      QString("SHIFT = [%1, %2, %3]").arg(0)
+                      .arg(this->Internals->Ui.rotationAxis->value()).arg(0));
+  opPython->setScript(pythonScript);
+  this->Internals->Source->addOperator(op);
+  
+  
+  QString scriptLabel2 = "Rotate";
+  QString scriptSource2 = this->readScript("Rotate3D");
+  OperatorPython *opPython2 = new OperatorPython();
+  QSharedPointer<Operator> op2(opPython2);
+
+  opPython2->setLabel(scriptLabel2);
+  opPython2->setScript(scriptSource2);
+  QString pythonScript2 = scriptSource2;
+  pythonScript2.replace("###ROT_AXIS###",
+                     QString("ROT_AXIS = %1").arg(2) );
+  pythonScript2.replace("###ROT_ANGLE###",
+                     QString("ROT_ANGLE = %1").arg(this->Internals->Ui.rotationAngle->value()) );
+  opPython2->setScript(pythonScript2);
+  this->Internals->Source->addOperator(op2);
+  
   emit creatingAlignedData();
 }
+  
+//Copy from MainWindow.cxx
+QString RotateAlignWidget::readScript(const QString &scriptName)
+{
+  QString path = QApplication::applicationDirPath() + "/../share/tomviz/scripts/";
+  path += scriptName + ".py";
+  QFile file(path);
+  if (file.open(QIODevice::ReadOnly))
+  {
+    QByteArray array = file.readAll();
+    return QString(array);
+  }
+  // On OSX the above doesn't work in a build tree.  It is fine
+  // for superbuilds, but the following is needed in the build tree
+  // since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
+#ifdef __APPLE__
+  else
+  {
+    path = QApplication::applicationDirPath() + "/../../../../share/tomviz/scripts/";
+    path += scriptName + ".py";
+    QFile file2(path);
+    if (file2.open(QIODevice::ReadOnly))
+    {
+      QByteArray array = file2.readAll();
+      return QString(array);
+    }
+  }
+#endif
+  qCritical() << "Error: Could not find script file: " << scriptName;
+  return "raise IOError(\"Couldn't read script file\")\n";
+}
+  
 
 }
