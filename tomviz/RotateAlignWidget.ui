@@ -21,7 +21,10 @@
        <item>
         <widget class="QLabel" name="label_7">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Instructions:&lt;/p&gt;&lt;p&gt;1.&lt;/p&gt;&lt;p&gt;2.&lt;/p&gt;&lt;p&gt;3.&lt;/p&gt;&lt;p&gt;4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Instructions:&lt;/p&gt;&lt;p&gt;Adjust the &amp;quot;Shift Rotation Axis&amp;quot; and &amp;quot;Tilt Rotation Axis&amp;quot; such that the three reconstructions on the bottom look accurate.  The yellow line shows the current axis of rotation.  The three vertical red lines show where the displayed reconstructions are taken from.  It is often useful to reconstruct different slices of the tomogram by changing the corresponding &amp;quot;Slice No.&amp;quot;  When complete, click &amp;quot;Transform Data to Axis of Rotation&amp;quot; button.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -44,7 +47,7 @@
          <item>
           <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>Rotation axis position: </string>
+            <string>Shift Rotation Axis: </string>
            </property>
           </widget>
          </item>
@@ -54,7 +57,7 @@
          <item>
           <widget class="QLabel" name="label_6">
            <property name="text">
-            <string>Rotation angle: </string>
+            <string>Tilt Rotation Axis: </string>
            </property>
           </widget>
          </item>
@@ -73,7 +76,7 @@
        <item>
         <widget class="QPushButton" name="pushButton">
          <property name="text">
-          <string>Create aligned data</string>
+          <string>Transform Data to Axis of Rotation</string>
          </property>
         </widget>
        </item>

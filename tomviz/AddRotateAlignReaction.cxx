@@ -59,7 +59,7 @@ void AddRotateAlignReaction::align(DataSource* source)
   }
 
   QDialog *dialog = new QDialog(pqCoreUtilities::mainWidget());
-  dialog->setWindowTitle("Rotation Axis Align");
+  dialog->setWindowTitle("Determine Axis of Rotation");
   RotateAlignWidget *widget = new RotateAlignWidget(source, dialog);
   QHBoxLayout *layout = new QHBoxLayout();
   layout->addWidget(widget);
