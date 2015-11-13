@@ -465,131 +465,135 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   }
   else if (scriptLabel == "Generate Tilt Series")
   {
-      
-      QDialog dialog(pqCoreUtilities::mainWidget());
-      dialog.setWindowTitle("Generate Tilt Series");
-      
-      QGridLayout *layout = new QGridLayout;
-      
-      QLabel *label = new QLabel("Generate electron tomography tilt series from volume dataset:");
-      label->setWordWrap(true);
-      layout->addWidget(label,0,0,1,2);
-      
-      label = new QLabel("Start Angle:");
-      layout->addWidget(label,1,0,1,1);
-      
-      QDoubleSpinBox *startAngle = new QDoubleSpinBox;
-      startAngle->setSingleStep(1);
-      startAngle->setValue(0);
-      startAngle->setRange(-180,180);
-      layout->addWidget(startAngle,1,1,1,1);
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    dialog.setWindowTitle("Generate Tilt Series");
+    
+    QGridLayout *layout = new QGridLayout;
+    
+    QLabel *label = new QLabel("Generate electron tomography tilt series from volume dataset:");
+    label->setWordWrap(true);
+    layout->addWidget(label,0,0,1,2);
+    
+    label = new QLabel("Start Angle:");
+    layout->addWidget(label,1,0,1,1);
+    
+    QDoubleSpinBox *startAngle = new QDoubleSpinBox;
+    startAngle->setSingleStep(1);
+    startAngle->setValue(0);
+    startAngle->setRange(-180,180);
+    layout->addWidget(startAngle,1,1,1,1);
 
-      label = new QLabel("Angle Increment:");
-      layout->addWidget(label,2,0,1,1);
-      
-      QDoubleSpinBox *angleIncrement = new QDoubleSpinBox;
-      angleIncrement->setSingleStep(0.5);
-      angleIncrement->setValue(6);
-      angleIncrement->setRange(-180,180);
-      layout->addWidget(angleIncrement,2,1,1,1);
+    label = new QLabel("Angle Increment:");
+    layout->addWidget(label,2,0,1,1);
+    
+    QDoubleSpinBox *angleIncrement = new QDoubleSpinBox;
+    angleIncrement->setSingleStep(0.5);
+    angleIncrement->setValue(6);
+    angleIncrement->setRange(-180,180);
+    layout->addWidget(angleIncrement,2,1,1,1);
 
-      label = new QLabel("Number of Tilts:");
-      layout->addWidget(label,3,0,1,1);
-      
-      QSpinBox *numberOfTilts = new QSpinBox;
-      numberOfTilts->setSingleStep(1);
-      numberOfTilts->setValue(30);
-      layout->addWidget(numberOfTilts,3,1,1,1);
+    label = new QLabel("Number of Tilts:");
+    layout->addWidget(label,3,0,1,1);
+    
+    QSpinBox *numberOfTilts = new QSpinBox;
+    numberOfTilts->setSingleStep(1);
+    numberOfTilts->setValue(30);
+    layout->addWidget(numberOfTilts,3,1,1,1);
 
-      QVBoxLayout *v = new QVBoxLayout;
-      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel);
-      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-      
-      v->addLayout(layout);
-      v->addWidget(buttons);
-      dialog.setLayout(v);
-      dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
-      if (dialog.exec() == QDialog::Accepted)
-      {
-        QMap<QString, QString> substitutions;
-        substitutions.insert("###startAngle###",
-                             QString("startAngle = %1").arg(startAngle->value()));
-        substitutions.insert("###angleIncrement###",
-                             QString("angleIncrement = %1").arg(angleIncrement->value()));
-        substitutions.insert("###Nproj###",
-                             QString("Nproj = %1").arg(numberOfTilts->value()));
-        addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
-      }
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###startAngle###",
+                           QString("startAngle = %1").arg(startAngle->value()));
+      substitutions.insert("###angleIncrement###",
+                           QString("angleIncrement = %1").arg(angleIncrement->value()));
+      substitutions.insert("###Nproj###",
+                           QString("Nproj = %1").arg(numberOfTilts->value()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
+    }
   }
   else if (scriptLabel == "Reconstruct (Back Projection)")
   {
-      vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-      vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-      int *extent = data->GetExtent();
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+    vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    int *extent = data->GetExtent();
 
-      QDialog dialog(pqCoreUtilities::mainWidget());
-      dialog.setWindowTitle("Weighted Back Projection Reconstruction");
-      
-      QGridLayout *layout = new QGridLayout;
-      //Description
-      QLabel *label = new QLabel("Reconstruct a tilt series using Weighted Back Projection (WBP) method. \nThe tilt axis must be parallel to the x-direction and centered in the y-direction.\nThe size of reconstruction will be (Nx,N,N), where Nx is the number of pixels in x-direction and N can be specified below. The maximum N allowed is 4096.\nReconstrucing a 512x512x512 tomogram typically takes 7-10 mins.");
-      label->setWordWrap(true);
-      layout->addWidget(label,0,0,1,2);
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    dialog.setWindowTitle("Weighted Back Projection Reconstruction");
+    
+    QGridLayout *layout = new QGridLayout;
+    //Description
+    QLabel *label = new QLabel(
+        "Reconstruct a tilt series using Weighted Back Projection (WBP) method. \n"
+        "The tilt axis must be parallel to the x-direction and centered in the y-direction.\n"
+        "The size of reconstruction will be (Nx,N,N), where Nx is the number of pixels in"
+        " x-direction and N can be specified below. The maximum N allowed is 4096.\n"
+        "Reconstrucing a 512x512x512 tomogram typically takes 7-10 mins.");
+    label->setWordWrap(true);
+    layout->addWidget(label,0,0,1,2);
 
-      label = new QLabel("Reconstruction Size (N):");
-      layout->addWidget(label,1,0,1,1);
-      
-      QSpinBox *reconSize = new QSpinBox;
-      reconSize->setMaximum(4096);
-      reconSize->setValue(extent[3]-extent[2]+1);
-      layout->addWidget(reconSize,1,1,1,1);
-      
-      label = new QLabel("Fourier Weighting Filter:");
-      layout->addWidget(label,2,0,1,1);
-      
-      QComboBox *filters = new QComboBox(&dialog);
-      filters->addItem("None");
-      filters->addItem("Ramp");
-      filters->addItem("Shepp-Logan");
-      filters->addItem("Cosine");
-      filters->addItem("Hamming");
-      filters->addItem("Hann");
-      filters->setCurrentIndex(1); //Default filter: ramp
-      layout->addWidget(filters,2,1,1,1);
-      
-      label = new QLabel("Back Projection Interpolation Method:");
-      layout->addWidget(label,3,0,1,1);
-      QComboBox *interpMethods = new QComboBox(&dialog);
-      interpMethods->addItem("Linear");
-      interpMethods->addItem("Nearest");
-      interpMethods->addItem("Spline");
-      interpMethods->addItem("Cubic");
-      interpMethods->setCurrentIndex(0); //Default filter: linear
-      layout->addWidget(interpMethods,3,1,1,1);
+    label = new QLabel("Reconstruction Size (N):");
+    layout->addWidget(label,1,0,1,1);
+    
+    QSpinBox *reconSize = new QSpinBox;
+    reconSize->setMaximum(4096);
+    reconSize->setValue(extent[3]-extent[2]+1);
+    layout->addWidget(reconSize,1,1,1,1);
+    
+    label = new QLabel("Fourier Weighting Filter:");
+    layout->addWidget(label,2,0,1,1);
+    
+    QComboBox *filters = new QComboBox(&dialog);
+    filters->addItem("None");
+    filters->addItem("Ramp");
+    filters->addItem("Shepp-Logan");
+    filters->addItem("Cosine");
+    filters->addItem("Hamming");
+    filters->addItem("Hann");
+    filters->setCurrentIndex(1); //Default filter: ramp
+    layout->addWidget(filters,2,1,1,1);
+    
+    label = new QLabel("Back Projection Interpolation Method:");
+    layout->addWidget(label,3,0,1,1);
+    QComboBox *interpMethods = new QComboBox(&dialog);
+    interpMethods->addItem("Linear");
+    interpMethods->addItem("Nearest");
+    interpMethods->addItem("Spline");
+    interpMethods->addItem("Cubic");
+    interpMethods->setCurrentIndex(0); //Default filter: linear
+    layout->addWidget(interpMethods,3,1,1,1);
 
-      QVBoxLayout *v = new QVBoxLayout;
-      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel);
-      connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-      connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-      
-      v->addLayout(layout);
-      v->addWidget(buttons);
-      dialog.setLayout(v);
-      dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
-      if (dialog.exec() == QDialog::Accepted)
-      {
-        QMap<QString, QString> substitutions;
-        substitutions.insert("###Nrecon###",
-                             QString("Nrecon = %1").arg(reconSize->value()));
-        substitutions.insert("###filter###",
-                             QString("filter = %1").arg(filters->currentIndex()));
-        substitutions.insert("###interp###",
-                               QString("interp = %1").arg(interpMethods->currentIndex()));
-        addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
-      }
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###Nrecon###",
+                           QString("Nrecon = %1").arg(reconSize->value()));
+      substitutions.insert("###filter###",
+                           QString("filter = %1").arg(filters->currentIndex()));
+      substitutions.insert("###interp###",
+                             QString("interp = %1").arg(interpMethods->currentIndex()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
+    }
   }
   else if (scriptLabel == "Clear Volume")
   {
@@ -622,48 +626,52 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     
   else if (scriptLabel == "Background Subtraction (Manual)")
   {
-      QDialog *dialog = new QDialog(pqCoreUtilities::mainWidget());
-      dialog->setWindowTitle("Background Subtraction (Manual)");
-      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-      
-      double origin[3];
-      double spacing[3];
-      int extent[6];
-      
-      vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-                                                               source->producer()->GetClientSideObject());
-      vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-      image->GetOrigin(origin);
-      image->GetSpacing(spacing);
-      image->GetExtent(extent);
-      //Default background region
-      int currentVolume[6];
-      currentVolume[0] = 10;
-      currentVolume[1] = 50;
-      currentVolume[2] = 10;
-      currentVolume[3] = 50;
-      currentVolume[4] = extent[4];
-      currentVolume[5] = extent[5];
-      
-      QVBoxLayout *layout = new QVBoxLayout();
-      
-      QLabel *label = new QLabel("Subtract background in each image of a tilt series dataset. Specify the background regions using the x,y,z ranges or graphically in the visualization window. The mean value in the background window will be subtracted from each image tilt (x-y) in the stack's range (z).");
-      label->setWordWrap(true);
-      layout->addWidget(label);
+    QDialog *dialog = new QDialog(pqCoreUtilities::mainWidget());
+    dialog->setWindowTitle("Background Subtraction (Manual)");
+    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+    
+    double origin[3];
+    double spacing[3];
+    int extent[6];
+    
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+                                                             source->producer()->GetClientSideObject());
+    vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    image->GetOrigin(origin);
+    image->GetSpacing(spacing);
+    image->GetExtent(extent);
+    //Default background region
+    int currentVolume[6];
+    currentVolume[0] = 10;
+    currentVolume[1] = 50;
+    currentVolume[2] = 10;
+    currentVolume[3] = 50;
+    currentVolume[4] = extent[4];
+    currentVolume[5] = extent[5];
+    
+    QVBoxLayout *layout = new QVBoxLayout();
+    
+    QLabel *label = new QLabel(
+        "Subtract background in each image of a tilt series dataset. Specify the "
+        "background regions using the x,y,z ranges or graphically in the visualization"
+        " window. The mean value in the background window will be subtracted from each"
+        " image tilt (x-y) in the stack's range (z).");
+    label->setWordWrap(true);
+    layout->addWidget(label);
 
-      
-      SelectVolumeWidget *selectionWidget = new SelectVolumeWidget(origin, spacing, extent, currentVolume, dialog);
-      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                       | QDialogButtonBox::Cancel);
-      connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
-      connect(buttons, SIGNAL(rejected()), dialog, SLOT(reject()));
-      layout->addWidget(selectionWidget);
-      layout->addWidget(buttons);
-      dialog->setLayout(layout);
-      dialog->layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+    
+    SelectVolumeWidget *selectionWidget = new SelectVolumeWidget(origin, spacing, extent, currentVolume, dialog);
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), dialog, SLOT(reject()));
+    layout->addWidget(selectionWidget);
+    layout->addWidget(buttons);
+    dialog->setLayout(layout);
+    dialog->layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
 
-      this->connect(dialog, SIGNAL(accepted()), SLOT(addExpressionFromNonModalDialog()));
-      dialog->show();
+    this->connect(dialog, SIGNAL(accepted()), SLOT(addExpressionFromNonModalDialog()));
+    dialog->show();
   }
   else
   {
