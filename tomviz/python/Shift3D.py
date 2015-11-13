@@ -19,7 +19,7 @@ def transform_scalars(dataset):
   
     print('Shifting Images...')
     
-    data_py_return = ndimage.interpolation.shift( data_py, SHIFTS )
+    data_py_return = ndimage.interpolation.shift( data_py, SHIFT )
     
     utils.set_array(dataset, data_py_return)
     print('Shifting Complete')

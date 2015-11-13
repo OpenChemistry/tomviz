@@ -514,6 +514,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   LoadDataReaction::dataSourceAdded(output);
+ 
   */
   //Apply python transform
   //Apply shift (in y-direction) first
@@ -521,7 +522,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   substitutions.insert("###SHIFT###",
                        QString("SHIFT = [%1, %2, %3]").arg(0)
                        .arg(-this->Internals->Ui.rotationAxis->value()).arg(0));
-  
+
   QString scriptLabel = "Shift";
   QString scriptSource = readInPythonScript("Shift3D"); //TODO:Rewrite python script
   AddPythonTransformReaction::addPythonOperator(this->Internals->Source, scriptLabel, scriptSource, substitutions);
@@ -533,7 +534,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
                        QString("ROT_AXIS = %1").arg(2) );
   substitutions.insert("###ROT_ANGLE###",
                        QString("ROT_ANGLE = %1").arg(-this->Internals->Ui.rotationAngle->value()) );
-  
+
   AddPythonTransformReaction::addPythonOperator(this->Internals->Source, scriptLabel, scriptSource, substitutions);
   emit creatingAlignedData();
 }
