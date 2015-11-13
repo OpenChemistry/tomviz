@@ -141,6 +141,7 @@ set(python_files
   DownsampleByTwo.py
   FFT_AbsLog.py
   Shift_Stack_Uniformly.py
+  Shift3D.py
   Square_Root_Data.py
   Subtract_TiltSer_Background.py
   MisalignImgs_Gaussian.py

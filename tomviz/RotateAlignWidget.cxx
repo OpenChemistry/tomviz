@@ -522,8 +522,8 @@ void RotateAlignWidget::onFinalReconButtonPressed()
                        QString("SHIFT = [%1, %2, %3]").arg(0)
                        .arg(-this->Internals->Ui.rotationAxis->value()).arg(0));
   
-  QString scriptLabel = "Shift Uniformly";
-  QString scriptSource = readInPythonScript("Shift_Stack_Uniformly"); //TODO:Rewrite python script
+  QString scriptLabel = "Shift";
+  QString scriptSource = readInPythonScript("Shift3D"); //TODO:Rewrite python script
   AddPythonTransformReaction::addPythonOperator(this->Internals->Source, scriptLabel, scriptSource, substitutions);
   
   //Apply in-plane rotation
