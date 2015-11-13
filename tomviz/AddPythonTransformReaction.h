@@ -38,6 +38,10 @@ public:
 
   void setInteractive(bool isInteractive) { interactive = isInteractive; }
 
+  static void addPythonOperator(DataSource *source, const QString &scriptLabel,
+                                const QString &scriptBaseString,
+                                const QMap<QString, QString> substitutions);
+
 protected:
   void updateEnableState() override;
   void onTriggered() override { this->addExpression(); }
