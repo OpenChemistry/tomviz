@@ -193,11 +193,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     return nullptr;
   }
 
-  OperatorPython *opPython = new OperatorPython();
-  QSharedPointer<Operator> op(opPython);
-  opPython->setLabel(scriptLabel);
-  opPython->setScript(scriptSource);
-
   // Shift uniformly, crop, both have custom gui
   if (scriptLabel == "Shift Uniformly")
   {
@@ -235,12 +230,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     if (dialog.exec() == QDialog::Accepted)
     {
-      QString shiftScript = scriptSource;
-      shiftScript.replace("###SHIFT###",
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###SHIFT###",
                           QString("SHIFT = [%1, %2, %3]").arg(spinx->value())
                           .arg(spiny->value()).arg(spinz->value()));
-      opPython->setScript(shiftScript);
-      source->addOperator(op);
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
   else if (scriptLabel == "Crop")
@@ -297,15 +291,14 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     if (dialog.exec() == QDialog::Accepted)
     {
-      QString cropScript = scriptSource;
-      cropScript.replace("###START_CROP###",
-                          QString("START_CROP = [%1, %2, %3]").arg(spinx->value())
-                          .arg(spiny->value()).arg(spinz->value()));
-      cropScript.replace("###END_CROP###",
-                          QString("END_CROP = [%1, %2, %3]").arg(spinxx->value())
-                          .arg(spinyy->value()).arg(spinzz->value()));
-      opPython->setScript(cropScript);
-      source->addOperator(op);
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###START_CROP###",
+                           QString("START_CROP = [%1, %2, %3]").arg(spinx->value())
+                           .arg(spiny->value()).arg(spinz->value()));
+      substitutions.insert("###END_CROP###",
+                           QString("END_CROP = [%1, %2, %3]").arg(spinxx->value())
+                           .arg(spinyy->value()).arg(spinzz->value()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
   else if (scriptLabel == "Rotate")
@@ -343,13 +336,12 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     
     if (dialog.exec() == QDialog::Accepted)
     {
-      QString cropScript = scriptSource;
-      cropScript.replace("###ROT_AXIS###",
-                         QString("ROT_AXIS = %1").arg(axis->currentIndex()) );
-      cropScript.replace("###ROT_ANGLE###",
-                         QString("ROT_ANGLE = %1").arg(angle->value()) );
-      opPython->setScript(cropScript);
-      source->addOperator(op);
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###ROT_AXIS###",
+                           QString("ROT_AXIS = %1").arg(axis->currentIndex()));
+      substitutions.insert("###ROT_ANGLE###",
+                           QString("ROT_ANGLE = %1").arg(angle->value()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
     
@@ -379,16 +371,14 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     
     if (dialog.exec() == QDialog::Accepted)
     {
-      QString deleteSlicesScript = scriptSource;
-      deleteSlicesScript.replace("###firstSlice###",
-                         QString("firstSlice = %1").arg(sliceRange->startSlice()) );
-      deleteSlicesScript.replace("###lastSlice###",
-                         QString("lastSlice = %1").arg(sliceRange->endSlice()) );
-      deleteSlicesScript.replace("###axis###",
-                         QString("axis = %1").arg(sliceRange->axis()) );
-
-      opPython->setScript(deleteSlicesScript);
-      source->addOperator(op);
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###firstSlice###",
+                           QString("firstSlice = %1").arg(sliceRange->startSlice()));
+      substitutions.insert("###lastSlice###",
+                           QString("lastSlice = %1").arg(sliceRange->endSlice()));
+      substitutions.insert("###axis###",
+                           QString("axis = %1").arg(sliceRange->axis()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
 
@@ -418,11 +408,10 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     
     if (dialog.exec() == QDialog::Accepted)
     {
-      QString cropScript = scriptSource;
-      cropScript.replace("###Filter_AXIS###",
-                         QString("Filter_AXIS = %1").arg(axis->currentIndex()) );
-      opPython->setScript(cropScript);
-      source->addOperator(op);
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###Filter_AXIS###",
+                           QString("Filter_AXIS = %1").arg(axis->currentIndex()) );
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
     
@@ -467,12 +456,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     
     if (dialog.exec() == QDialog::Accepted)
     {
-      QString shiftScript = scriptSource;
-      shiftScript.replace("###resampingFactor###",
-                          QString("resampingFactor = [%1, %2, %3]").arg(spinx->value())
-                          .arg(spiny->value()).arg(spinz->value()));
-      opPython->setScript(shiftScript);
-      source->addOperator(op);
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###resampingFactor###",
+                           QString("resampingFactor = [%1, %2, %3]").arg(spinx->value())
+                           .arg(spiny->value()).arg(spinz->value()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
   else if (scriptLabel == "Generate Tilt Series")
@@ -525,15 +513,14 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
       if (dialog.exec() == QDialog::Accepted)
       {
-          QString pythonScript = scriptSource;
-          pythonScript.replace("###startAngle###",
-                              QString("startAngle = %1").arg(startAngle->value()));
-          pythonScript.replace("###angleIncrement###",
-                               QString("angleIncrement = %1").arg(angleIncrement->value()));
-          pythonScript.replace("###Nproj###",
-                               QString("Nproj = %1").arg(numberOfTilts->value()));
-          opPython->setScript(pythonScript);
-          source->addOperator(op);
+        QMap<QString, QString> substitutions;
+        substitutions.insert("###startAngle###",
+                             QString("startAngle = %1").arg(startAngle->value()));
+        substitutions.insert("###angleIncrement###",
+                             QString("angleIncrement = %1").arg(angleIncrement->value()));
+        substitutions.insert("###Nproj###",
+                             QString("Nproj = %1").arg(numberOfTilts->value()));
+        addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
       }
   }
   else if (scriptLabel == "Reconstruct (Back Projection)")
@@ -594,15 +581,14 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
       if (dialog.exec() == QDialog::Accepted)
       {
-          QString pythonScript = scriptSource;
-          pythonScript.replace("###Nrecon###",
-                               QString("Nrecon = %1").arg(reconSize->value()));
-          pythonScript.replace("###filter###",
-                               QString("filter = %1").arg(filters->currentIndex()));
-          pythonScript.replace("###interp###",
+        QMap<QString, QString> substitutions;
+        substitutions.insert("###Nrecon###",
+                             QString("Nrecon = %1").arg(reconSize->value()));
+        substitutions.insert("###filter###",
+                             QString("filter = %1").arg(filters->currentIndex()));
+        substitutions.insert("###interp###",
                                QString("interp = %1").arg(interpMethods->currentIndex()));
-          opPython->setScript(pythonScript);
-          source->addOperator(op);
+        addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
       }
   }
   else if (scriptLabel == "Clear Volume")
@@ -679,18 +665,25 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       this->connect(dialog, SIGNAL(accepted()), SLOT(addExpressionFromNonModalDialog()));
       dialog->show();
   }
-
-  else if (interactive)
-  {
-    // Create a non-modal dialog, delete it once it has been closed.
-    EditOperatorDialog *dialog =
-        new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
-    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-    dialog->show();
-  }
   else
   {
-    source->addOperator(op);
+    OperatorPython *opPython = new OperatorPython();
+    QSharedPointer<Operator> op(opPython);
+    opPython->setLabel(scriptLabel);
+    opPython->setScript(scriptSource);
+
+    if (interactive)
+    {
+      // Create a non-modal dialog, delete it once it has been closed.
+      EditOperatorDialog *dialog =
+          new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
+      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+      dialog->show();
+    }
+    else
+    {
+      source->addOperator(op);
+    }
   }
   return nullptr;
 }
@@ -699,9 +692,6 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
 {
   DataSource *source =  ActiveObjects::instance().activeDataSource();
   QDialog *dialog = qobject_cast<QDialog*>(this->sender());
-  OperatorPython *opPython = new OperatorPython();
-  QSharedPointer<Operator> op(opPython);
-  opPython->setLabel(scriptLabel);
   if (this->scriptLabel == "Clear Volume")
   {
     QLayout *layout = dialog->layout();
@@ -734,12 +724,12 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     indices[3] = selection_extent[3] - image_extent[2] + 1;
     indices[4] = selection_extent[4] - image_extent[4];
     indices[5] = selection_extent[5] - image_extent[4] + 1;
-    QString pythonScript = this->scriptSource;
-    pythonScript.replace("###XRANGE###", QString("XRANGE = [%1, %2]").arg(indices[0]).arg(indices[1]))
-                .replace("###YRANGE###", QString("YRANGE = [%1, %2]").arg(indices[2]).arg(indices[3]))
-                .replace("###ZRANGE###", QString("ZRANGE = [%1, %2]").arg(indices[4]).arg(indices[5]));
-    opPython->setScript(pythonScript);
-    source->addOperator(op);
+
+    QMap<QString, QString> substitutions;
+    substitutions.insert("###XRANGE###", QString("XRANGE = [%1, %2]").arg(indices[0]).arg(indices[1]));
+    substitutions.insert("###YRANGE###", QString("YRANGE = [%1, %2]").arg(indices[2]).arg(indices[3]));
+    substitutions.insert("###ZRANGE###", QString("ZRANGE = [%1, %2]").arg(indices[4]).arg(indices[5]));
+    addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
   }
   if (this->scriptLabel == "Background Subtraction (Manual)")
   {
@@ -768,17 +758,32 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     indices[3] = selection_extent[3] - image_extent[2] + 1;
     indices[4] = selection_extent[4] - image_extent[4];
     indices[5] = selection_extent[5] - image_extent[4] + 1;
-    QString pythonScript = this->scriptSource;
-    pythonScript.replace("###XRANGE###", QString("XRANGE = [%1, %2]").arg(indices[0]).arg(indices[1]))
-                .replace("###YRANGE###", QString("YRANGE = [%1, %2]").arg(indices[2]).arg(indices[3]))
-                .replace("###ZRANGE###", QString("ZRANGE = [%1, %2]").arg(indices[4]).arg(indices[5]));
-    opPython->setScript(pythonScript);
-    source->addOperator(op);
-  
-      
+
+    QMap<QString, QString> substitutions;
+    substitutions.insert("###XRANGE###", QString("XRANGE = [%1, %2]").arg(indices[0]).arg(indices[1]));
+    substitutions.insert("###YRANGE###", QString("YRANGE = [%1, %2]").arg(indices[2]).arg(indices[3]));
+    substitutions.insert("###ZRANGE###", QString("ZRANGE = [%1, %2]").arg(indices[4]).arg(indices[5]));
+    addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
   }
-    
-    
+}
+
+void AddPythonTransformReaction::addPythonOperator(DataSource *source,
+                                                   const QString &scriptLabel,
+                                                   const QString &scriptBaseString,
+                                                   const QMap<QString, QString> substitutions)
+{
+  // Substitute the values into the script
+  QString finalScript = scriptBaseString;
+  foreach (QString key, substitutions.keys())
+  {
+    finalScript.replace(key, substitutions.value(key));
+  }
+  // Create and add the operator
+  OperatorPython *opPython = new OperatorPython();
+  QSharedPointer<Operator> op(opPython);
+  opPython->setLabel(scriptLabel);
+  opPython->setScript(finalScript);
+  source->addOperator(op);
 }
 
 }
