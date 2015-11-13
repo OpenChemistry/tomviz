@@ -178,6 +178,7 @@ public:
       this->rotationAxis->Update();
       this->axisActor->GetMapper()->Update();
       this->updateSliceLines();
+      this->Ui.rotationAngle->setSingleStep(0.5);
     }
   }
 
