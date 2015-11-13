@@ -49,7 +49,6 @@ protected slots:
 
 private:
   Q_DISABLE_COPY(RotateAlignWidget)
-  QString readScript(const QString &scriptName);
 
   class RAWInternal;
   QScopedPointer<RAWInternal> Internals;
