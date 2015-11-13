@@ -23,6 +23,8 @@
 #include "TomographyTiltSeries.h"
 #define PI 3.14159265359
 #include <math.h>
+#include "AddPythonTransformReaction.h"
+#include "Utilities.h"
 
 #include "QVTKWidget.h"
 #include "vtkCamera.h"
@@ -175,6 +177,7 @@ public:
       this->rotationAxis->Update();
       this->axisActor->GetMapper()->Update();
       this->updateSliceLines();
+      this->Ui.rotationAngle->setSingleStep(0.5);
     }
   }
 
@@ -235,8 +238,8 @@ public:
       std::vector<float> sinogram(Nray * dims[2]);
       //Approximate in-plance rotation as a shift in y-direction
       double shift = this->Ui.rotationAxis->value() + sin(this->Ui.rotationAngle->value()*PI/180)*(sliceNum-dims[0]/2);
+      
       TomographyTiltSeries::getSinogram(imageData, sliceNum, &sinogram[0], Nray, shift); //Get a sinogram from tilt series
-
       this->reconImage[i]->SetExtent(0, Nray-1, 0, Nray-1, 0, 0);
       this->reconImage[i]->AllocateScalars(VTK_FLOAT, 1);
       vtkDataArray *reconArray = this->reconImage[i]->GetPointData()->GetScalars();
@@ -463,21 +466,18 @@ void RotateAlignWidget::onReconSliceChanged(int)
   if (sb == this->Internals->Ui.spinBox_1)
   {
     this->Internals->updateReconSlice(0);
-//    this->Internals->reconSliceMapper[0]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[0]->Update();
     this->Internals->Ui.sliceView_1->update();
   }
   else if (sb == this->Internals->Ui.spinBox_2)
   {
     this->Internals->updateReconSlice(1);
-//    this->Internals->reconSliceMapper[1]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[1]->Update();
     this->Internals->Ui.sliceView_2->update();
   }
   else // if (sb == this->Internals->Ui.spinBox_3)
   {
     this->Internals->updateReconSlice(2);
-//    this->Internals->reconSliceMapper[2]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[2]->Update();
     this->Internals->Ui.sliceView_3->update();
   }
@@ -509,9 +509,30 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
   vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-
   LoadDataReaction::dataSourceAdded(output);
+ 
   */
+  //Apply python transform
+  //Apply shift (in y-direction)
+  QMap<QString, QString> substitutions;
+  substitutions.insert("###SHIFT###",
+                       QString("SHIFT = [%1, %2, %3]").arg(0)
+                       .arg(-this->Internals->Ui.rotationAxis->value()).arg(0));
+
+  QString scriptLabel = "Shift";
+  QString scriptSource = readInPythonScript("Shift3D");
+  AddPythonTransformReaction::addPythonOperator(this->Internals->Source, scriptLabel, scriptSource, substitutions);
+  substitutions.clear();
+  
+  //Apply in-plane rotation
+  scriptLabel = "Rotate";
+  scriptSource = readInPythonScript("Rotate3D");
+  substitutions.insert("###ROT_AXIS###",
+                       QString("ROT_AXIS = %1").arg(2) );
+  substitutions.insert("###ROT_ANGLE###",
+                       QString("ROT_ANGLE = %1").arg(-this->Internals->Ui.rotationAngle->value()) );
+
+  AddPythonTransformReaction::addPythonOperator(this->Internals->Source, scriptLabel, scriptSource, substitutions);
   emit creatingAlignedData();
 }
 
