@@ -133,6 +133,12 @@ vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy);
 /// on the colorMap i.e. if user locked the scalar range, it won't be rescaled.
 bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource);
 
+//---------------------------------------------------------------------------
+// Given the name of a python script, find the script file and return the contents
+// This assumes that the given script is one of the built-in tomviz python operator
+// scripts.
+QString readInPythonScript(const QString &scriptName);
+
 }
 
 #endif
