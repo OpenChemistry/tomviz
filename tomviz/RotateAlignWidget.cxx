@@ -23,7 +23,6 @@
 #include "TomographyTiltSeries.h"
 #define PI 3.14159265359
 #include <math.h>
-#include "OperatorPython.h"
 #include "AddPythonTransformReaction.h"
 #include "Utilities.h"
 
@@ -514,7 +513,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
  
   */
   //Apply python transform
-  //Apply shift (in y-direction) first
+  //Apply shift (in y-direction)
   QMap<QString, QString> substitutions;
   substitutions.insert("###SHIFT###",
                        QString("SHIFT = [%1, %2, %3]").arg(0)
