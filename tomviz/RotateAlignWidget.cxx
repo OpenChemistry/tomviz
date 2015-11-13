@@ -239,8 +239,8 @@ public:
       std::vector<float> sinogram(Nray * dims[2]);
       //Approximate in-plance rotation as a shift in y-direction
       double shift = this->Ui.rotationAxis->value() + sin(this->Ui.rotationAngle->value()*PI/180)*(sliceNum-dims[0]/2);
+      
       TomographyTiltSeries::getSinogram(imageData, sliceNum, &sinogram[0], Nray, shift); //Get a sinogram from tilt series
-
       this->reconImage[i]->SetExtent(0, Nray-1, 0, Nray-1, 0, 0);
       this->reconImage[i]->AllocateScalars(VTK_FLOAT, 1);
       vtkDataArray *reconArray = this->reconImage[i]->GetPointData()->GetScalars();
@@ -467,21 +467,18 @@ void RotateAlignWidget::onReconSliceChanged(int)
   if (sb == this->Internals->Ui.spinBox_1)
   {
     this->Internals->updateReconSlice(0);
-//    this->Internals->reconSliceMapper[0]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[0]->Update();
     this->Internals->Ui.sliceView_1->update();
   }
   else if (sb == this->Internals->Ui.spinBox_2)
   {
     this->Internals->updateReconSlice(1);
-//    this->Internals->reconSliceMapper[1]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[1]->Update();
     this->Internals->Ui.sliceView_2->update();
   }
   else // if (sb == this->Internals->Ui.spinBox_3)
   {
     this->Internals->updateReconSlice(2);
-//    this->Internals->reconSliceMapper[2]->SetSliceNumber(newSlice);
     this->Internals->reconSliceMapper[2]->Update();
     this->Internals->Ui.sliceView_3->update();
   }
@@ -524,7 +521,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
                        .arg(-this->Internals->Ui.rotationAxis->value()).arg(0));
 
   QString scriptLabel = "Shift";
-  QString scriptSource = readInPythonScript("Shift3D"); //TODO:Rewrite python script
+  QString scriptSource = readInPythonScript("Shift3D");
   AddPythonTransformReaction::addPythonOperator(this->Internals->Source, scriptLabel, scriptSource, substitutions);
   
   //Apply in-plane rotation
