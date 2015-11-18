@@ -5,7 +5,7 @@ from tomviz import utils
 def transform_scalars(dataset):
   """3D Reconstruct from a tilt series using Algebraic Reconstruction Technique (ART)"""
   ###Niter###
-
+  
   #Get Tilt angles
   tiltAngles = utils.get_tilt_angles(dataset)
 
@@ -18,8 +18,9 @@ def transform_scalars(dataset):
 
   #Generate measurement matrix
   A = parallelRay(Nray,1.0,tiltAngles,Nray,1.0) #A is a sparse matrix
-  
-  recon = art3(A.todense(),tiltSeries,Niter,1.0)
+  recon = np.zeros((Nslice,Nray,Nray))
+
+  art3(A.todense(),tiltSeries,recon,Niter)
 
   # set the result as the new scalars.
   utils.set_array(dataset, recon)
@@ -27,15 +28,14 @@ def transform_scalars(dataset):
   # Mark dataset as volume
   utils.mark_as_volume(dataset)
 
-def art3(A,tiltSeries,iterNum,beta):
+def art3(A,tiltSeries,recon,iterNum=1,beta=1.0):
     (Nslice,Nray,Nproj) = tiltSeries.shape
 
     (Nrow,Ncol) = A.shape
     rowInnerProduct = np.zeros(Nrow);
     row = np.zeros(Ncol)
     f = np.zeros(Ncol) #placeholder for 2d image
-    recon = np.zeros((Nslice,Nray,Nray))
-
+    
     #calculate row inner product
     for j in range(Nrow):
         row[:] = A[j,].copy()

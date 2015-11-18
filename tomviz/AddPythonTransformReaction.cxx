@@ -602,32 +602,26 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     int *extent = data->GetExtent();
     
     QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Weighted Back Projection Reconstruction");
+    dialog.setWindowTitle("ART Reconstruction");
     
     QGridLayout *layout = new QGridLayout;
     //Description
     QLabel *label = new QLabel(
                                "Reconstruct a tilt series using Algebraic Reconstruction Technique (ART). \n"
                                "The tilt axis must be parallel to the x-direction and centered in the y-direction.\n"
-                               "The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.\n"
-                               "Reconstrucing a 256x256x256 tomogram typically takes more than 100mins with Niter=5.");
+                               "The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below."
+                               "Reconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 iterations.");
     label->setWordWrap(true);
     layout->addWidget(label,0,0,1,2);
     
-    label = new QLabel("Reconstruction Size (N):");
-    layout->addWidget(label,1,0,1,1);
-    
-    QSpinBox *reconSize = new QSpinBox;
-    reconSize->setMaximum(512);
-    reconSize->setValue(extent[3]-extent[2]+1);
-    layout->addWidget(reconSize,1,1,1,1);
-    
     label = new QLabel("Number of Iterations:");
-    layout->addWidget(label,2,0,1,1);
+    layout->addWidget(label,1,0,1,1);
     
     QSpinBox *Niter = new QSpinBox;
     Niter->setValue(1);
-    layout->addWidget(Niter,2,1,1,1);
+    Niter->setMinimum(1);
+
+    layout->addWidget(Niter,1,1,1,1);
     
     QVBoxLayout *v = new QVBoxLayout;
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
