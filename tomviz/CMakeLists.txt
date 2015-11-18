@@ -137,6 +137,7 @@ set(python_files
   Align_Images.py
   Recon_DFT.py
   Recon_WBP.py
+  Recon_ART.py
   Crop_Data.py
   DownsampleByTwo.py
   FFT_AbsLog.py
