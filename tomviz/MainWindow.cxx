@@ -167,29 +167,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new LoadDataReaction(ui.actionOpen);
 
-
-  /*
-   * Data Transforms
-   *
-   * Crop - Crop_Data.py
-   * Background subtraction - Subtract_TiltSer_Background.py
-   * ---
-   * Manual Align
-   * Auto Align (XCORR) - Align_Images.py
-   * Shift Uniformly - Shift_Stack_Uniformly.py
-   * Misalign (Uniform) - MisalignImgs_Uniform.py
-   * Misalign (Gaussian) - MisalignImgs_Gaussian.py
-   * ---
-   * Reconstruct (Direct Fourier) - Recon_DFT.py
-   * ---
-   * Square Root Data - Square_Root_Data.py
-   * FFT (ABS LOG) - FFT_AbsLog.py
-   * ---
-   * Clone
-   * Delete
-   *
-   */
-
   QAction *setScaleAction = new QAction("Set Data Size", this);
   ui.menuTools->addAction(setScaleAction);
   new SetScaleReaction(setScaleAction);
@@ -238,9 +215,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Align");
   ui.menuTomography->addSeparator();
 
-  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier recon");
-  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection recon");
-  QAction *reconWBP_CAction = ui.menuTomography->addAction("Weighted Back Projection recon (C++)");
+  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method");
+  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection");
+  QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
+  QAction *reconARTAction = ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
 
   // Set up reactions for Data Transforms Menu
   //#################################################################
@@ -300,6 +278,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(reconWBPAction,
                                  "Reconstruct (Back Projection)",
                                  readInPythonScript("Recon_WBP"), true);
+  new AddPythonTransformReaction(reconARTAction,
+                                 "Reconstruct (ART)",
+                                 readInPythonScript("Recon_ART"), true);
+  
   new ReconstructionReaction(reconWBP_CAction);
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
