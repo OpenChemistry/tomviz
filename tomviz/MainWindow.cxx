@@ -197,6 +197,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // Build Data Transforms menu
   // ################################################################
   QAction *customPythonAction = ui.menuData->addAction("Custom Transform");
+  QAction *customPythonITKAction = ui.menuData->addAction("Custom ITK Transform");
   QAction *cropDataAction = ui.menuData->addAction("Crop");
   ui.menuData->addSeparator();
   
@@ -247,6 +248,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Add our Python script reactions, these compose Python into menu entries.
   new AddExpressionReaction(customPythonAction);
+  new AddExpressionReaction(customPythonITKAction);
   new CropReaction(cropDataAction, this);
   //new AddResampleReaction(resampleDataAction);
   //new AddPythonTransformReaction(backgroundSubtractAction,

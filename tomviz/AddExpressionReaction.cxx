@@ -54,10 +54,68 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     return nullptr;
   }
 
+  QString script = this->getDefaultExpression(source);
+
+  OperatorPython *opPython = new OperatorPython();
+  opPython->setScript(script);
+  QSharedPointer<Operator> op(opPython);
+  opPython->setLabel("Transform Data");
+
+  // Create a non-modal dialog, delete it once it has been closed.
+  EditOperatorDialog *dialog =
+      new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
+  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+  dialog->show();
+  return nullptr;
+}
+
+//-----------------------------------------------------------------------------
+QString AddExpressionReaction::getDefaultExpression(DataSource *source)
+{
+  QString actionString = this->parentAction()->text();
+  if (actionString == "Custom ITK Transform")
+  {
+    return QString(
+      "def transform_scalars(dataset):\n"
+      "    \"\"\"Define this method for Python operators that \n"
+      "    transform the input array\"\"\"\n"
+      "\n"
+      "    from tomviz import utils\n"
+      "    import numpy as np\n"
+      "    import itk\n"
+      "\n"
+      "    # Get the current volume as a numpy array.\n"
+      "    array = utils.get_array(dataset)\n"
+      "\n"
+      "    # Set up some ITK variables\n"
+      "    itk_image_type = itk.Image.F3\n"
+      "    itk_converter = itk.PyBuffer[itk_image_type]\n"
+      "\n"
+      "    # Read the image into ITK\n"
+      "    itk_image = itk_converter.GetImageFromArray(array)\n"
+      "\n"
+      "    # ITK filter (I have no idea if this is right)\n"
+      "    filter = itk.ConfidenceConnectedImageFilter[itk_image_type,itk.Image.SS3].New()\n"
+      "    filter.SetInitialNeighborhoodRadius(3)\n"
+      "    filter.SetMultiplier(3)\n"
+      "    filter.SetNumberOfIterations(25)\n"
+      "    filter.SetReplaceValue(255)\n"
+      "    filter.SetSeed((24,65,37))\n"
+      "    filter.SetInput(itk_image)\n"
+      "    filter.Update()\n"
+      "\n"
+      "    # Get the image back from ITK (result is a numpy image)\n"
+      "    result = itk.PyBuffer[itk.Image.SS3].GetArrayFromImage(filter.GetOutput())\n"
+      "\n"
+      "    # This is where the transformed data is set, it will display in tomviz.\n"
+      "    utils.set_array(dataset, result)\n");
+  }
+  else
+  {
   // Build the default script for the python operator
   // This was done in the Dialog's UI file, but since it needs to change
   // based on the type of dataset, do it here
-  QString script = QString("def transform_scalars(dataset):\n"
+  return QString("def transform_scalars(dataset):\n"
       "    \"\"\"Define this method for Python operators that \n"
       "    transform the input array\"\"\"\n"
       "\n"
@@ -79,19 +137,6 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
       "    # to set tilt angles.\n"
       "    tilt_angles = utils.get_tilt_angles(dataset)\n"
       "\n");
-
-
-  OperatorPython *opPython = new OperatorPython();
-  opPython->setScript(script);
-  QSharedPointer<Operator> op(opPython);
-  opPython->setLabel("Transform Data");
-
-  // Create a non-modal dialog, delete it once it has been closed.
-  EditOperatorDialog *dialog =
-      new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
-  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  dialog->show();
-  return nullptr;
+  }
 }
-
 }
