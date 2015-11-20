@@ -199,26 +199,25 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Build Tomography menu
   // ################################################################
-
   QAction *toggleDataTypeAction = ui.menuTomography->addAction("Toggle Data Type");
   ui.menuTomography->addSeparator();
 
   QAction *setTiltAnglesAction = ui.menuTomography->addAction("Set Tilt Angles");
   ui.menuTomography->addSeparator();
-    
-  QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
-  ui.menuTomography->addSeparator();
 
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
-  QAction *alignAction = ui.menuTomography->addAction("Translation Alignment");
-  QAction *autoAlignAction = ui.menuTomography->addAction("Translation Alignment (Auto)");
-  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Axis Alignment");
+  QAction *alignAction = ui.menuTomography->addAction("Tilt Series Registration (Manual)");
+  QAction *autoAlignAction = ui.menuTomography->addAction("Tilt Series Registration (Auto)");
+  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
 
-  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method");
-  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection");
-  QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
+  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method Reconstruction");
+  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection Reconstruction");
+  //QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
   QAction *reconARTAction = ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
+
+  ui.menuTomography->addSeparator();
+  QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
 
   // Set up reactions for Data Transforms Menu
   //#################################################################
@@ -274,7 +273,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Reconstruct (ART)",
                                  readInPythonScript("Recon_ART"), true);
   
-  new ReconstructionReaction(reconWBP_CAction);
+  //new ReconstructionReaction(reconWBP_CAction);
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
