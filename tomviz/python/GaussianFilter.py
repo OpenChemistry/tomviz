@@ -3,7 +3,7 @@ def transform_scalars(dataset):
     """Gaussian Filter blurs the image and reduces the noise and details."""
     
     #----USER SPECIFIED VARIABLES-----#
-    ###Filter_AXIS###    #Specify sigma of the Gaussian Function
+    ###Sigma###    #Specify sigma of the Gaussian Function
     #---------------------------------#
 
     from tomviz import utils
@@ -13,7 +13,7 @@ def transform_scalars(dataset):
     array = utils.get_array(dataset)
 
     # transform the dataset
-    result = scipy.ndimage.filters.gaussian_filter(array,sigma=2.0)
+    result = scipy.ndimage.filters.gaussian_filter(array,sigma)
     
     # set the result as the new scalars.
     utils.set_array(dataset, result)
