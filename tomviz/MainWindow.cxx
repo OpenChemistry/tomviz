@@ -280,6 +280,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                    "Sobel Filter", readInPythonScript("SobelFilter"));
   new AddPythonTransformReaction(laplaceFilterAction,
                                    "Laplace Filter", readInPythonScript("LaplaceFilter"));
+  new AddPythonTransformReaction(gaussianFilterAction,
+                                   "Gaussian Filter", readInPythonScript("GaussianFilter"));
+    
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
   // Set up reactions for Tomography Menu

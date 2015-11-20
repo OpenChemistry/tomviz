@@ -415,6 +415,41 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     }
   }
     
+    
+    else if (scriptLabel == "Gaussian Filter") //UI for Gaussian Filter
+    {
+        QDialog dialog(pqCoreUtilities::mainWidget());
+        QHBoxLayout *layout = new QHBoxLayout;
+        QLabel *label = new QLabel("Sigma:", &dialog);
+        layout->addWidget(label);
+        QSpinBox *sigma = new QSpinBox(&dialog);
+        sigma->setRange(0, 20);
+        sigma->setValue(2);
+        layout->addWidget(label);
+        layout->addWidget(sigma);
+        
+        
+        QVBoxLayout *v = new QVBoxLayout;
+        QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                         | QDialogButtonBox::Cancel,
+                                                         Qt::Horizontal,
+                                                         &dialog);
+        connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+        connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+        v->addLayout(layout);
+        v->addWidget(buttons);
+        dialog.setLayout(v);
+        
+        if (dialog.exec() == QDialog::Accepted)
+        {
+            QMap<QString, QString> substitutions;
+            substitutions.insert("###Sigma###",
+                                 QString("sigma = %1").arg(sigma->value()) );
+            addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
+        }
+    }
+    
+    
   else if (scriptLabel == "Resample")
   {
     QDialog dialog(pqCoreUtilities::mainWidget());
