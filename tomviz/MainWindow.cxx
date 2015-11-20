@@ -210,9 +210,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuTomography->addSeparator();
 
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
-  QAction *alignAction = ui.menuTomography->addAction("Translation Align");
-  QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
-  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Align");
+  QAction *alignAction = ui.menuTomography->addAction("Translation Alignment");
+  QAction *autoAlignAction = ui.menuTomography->addAction("Translation Alignment (Auto)");
+  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Axis Alignment");
   ui.menuTomography->addSeparator();
 
   QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method");
@@ -226,10 +226,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // Add our Python script reactions, these compose Python into menu entries.
   new AddExpressionReaction(customPythonAction);
   new CropReaction(cropDataAction, this);
-  //new AddResampleReaction(resampleDataAction);
-  //new AddPythonTransformReaction(backgroundSubtractAction,
-  //                               "Background Subtraction",
-  //                               Subtract_TiltSer_Background);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,
@@ -242,10 +238,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Rotate", readInPythonScript("Rotate3D"));
   new AddPythonTransformReaction(clearAction, "Clear Volume", readInPythonScript("ClearVolume"));
 
-  //new AddPythonTransformReaction(misalignUniformAction,
-  //                               "Misalign (Uniform)", MisalignImgs_Uniform);
-  //new AddPythonTransformReaction(misalignGaussianAction,
-  //                               "Misalign (Gaussian)", MisalignImgs_Uniform);
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", readInPythonScript("Square_Root_Data"));
   new AddPythonTransformReaction(hannWindowAction,
@@ -287,8 +279,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSaveDebuggingState);
-
-
 
   new SaveDataReaction(ui.actionSaveData);
   new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
