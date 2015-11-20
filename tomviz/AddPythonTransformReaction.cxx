@@ -333,7 +333,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     v->addLayout(layout2);
     v->addWidget(buttons);
     dialog.setLayout(v);
-    
+
     if (dialog.exec() == QDialog::Accepted)
     {
       QMap<QString, QString> substitutions;
@@ -344,7 +344,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
-    
   else if (scriptLabel == "Delete Slices")
   {
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
@@ -381,7 +380,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
-
   else if (scriptLabel == "Sobel Filter") //UI for Sobel Filter
   {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -414,7 +412,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
-    
   else if (scriptLabel == "Resample")
   {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -522,6 +519,41 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
+  else if (scriptLabel == "Reconstruct (Direct Fourier)")
+  {
+    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+    vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    int *extent = data->GetExtent();
+
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    dialog.setWindowTitle("Direct Fourier Reconstruction");
+
+    QGridLayout *layout = new QGridLayout;
+    //Description
+    QLabel *label = new QLabel(
+                               "Reconstruct a tilt series using Direct Fourier Method (DFM). \n"
+                               "The tilt axis must be parallel to the x-direction and centered in the y-direction.\n"
+                               "The size of reconstruction will be (Nx,Ny,Ny).\n"
+                               "Reconstrucing a 512x512x512 tomogram typically takes 70-80 seconds.");
+    label->setWordWrap(true);
+    layout->addWidget(label,0,0,1,2);
+
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QMap<QString, QString> substitutions;
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
+    }
+  }
   else if (scriptLabel == "Reconstruct (Back Projection)")
   {
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
@@ -530,7 +562,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     QDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle("Weighted Back Projection Reconstruction");
-    
+
     QGridLayout *layout = new QGridLayout;
     //Description
     QLabel *label = new QLabel(
@@ -544,15 +576,15 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     label = new QLabel("Reconstruction Size (N):");
     layout->addWidget(label,1,0,1,1);
-    
+
     QSpinBox *reconSize = new QSpinBox;
     reconSize->setMaximum(4096);
     reconSize->setValue(extent[3]-extent[2]+1);
     layout->addWidget(reconSize,1,1,1,1);
-    
+
     label = new QLabel("Fourier Weighting Filter:");
     layout->addWidget(label,2,0,1,1);
-    
+
     QComboBox *filters = new QComboBox(&dialog);
     filters->addItem("None");
     filters->addItem("Ramp");
@@ -562,7 +594,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     filters->addItem("Hann");
     filters->setCurrentIndex(1); //Default filter: ramp
     layout->addWidget(filters,2,1,1,1);
-    
+
     label = new QLabel("Back Projection Interpolation Method:");
     layout->addWidget(label,3,0,1,1);
     QComboBox *interpMethods = new QComboBox(&dialog);
@@ -578,7 +610,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                                                      | QDialogButtonBox::Cancel);
     connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
     connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    
+
     v->addLayout(layout);
     v->addWidget(buttons);
     dialog.setLayout(v);
@@ -600,20 +632,20 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
     vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int *extent = data->GetExtent();
-    
+
     QDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle("ART Reconstruction");
-    
+
     QGridLayout *layout = new QGridLayout;
     //Description
     QLabel *label = new QLabel(
                                "Reconstruct a tilt series using Algebraic Reconstruction Technique (ART). \n"
                                "The tilt axis must be parallel to the x-direction and centered in the y-direction.\n"
-                               "The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below."
+                               "The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.\n"
                                "Reconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 iterations.");
     label->setWordWrap(true);
     layout->addWidget(label,0,0,1,2);
-    
+
     label = new QLabel("Number of Iterations:");
     layout->addWidget(label,1,0,1,1);
     
