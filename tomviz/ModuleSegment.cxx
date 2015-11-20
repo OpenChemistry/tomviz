@@ -82,7 +82,22 @@ bool ModuleSegment::initialize(DataSource *data, vtkSMViewProxy *vtkView)
       "def run_itk_segmentation(itk_image, itk_image_type):\n"
       "    # should return the result image and result image type like this:\n"
       "    # return outImage, outImageType\n"
-      "    return itk_image, itk_image_type\n"
+      "    # An example segmentation script follows: \n\n"
+      "    # Create a filter (ConfidenceConnectedImageFilter) for the input image type\n"
+      "    itk_filter = itk.ConfidenceConnectedImageFilter[itk_image_type,itk.Image.SS3].New()\n\n"
+      "    # Set input parameters on the filter (these are copied from an example in ITK.\n"
+      "    itk_filter.SetInitialNeighborhoodRadius(3)\n"
+      "    itk_filter.SetMultiplier(3)\n"
+      "    itk_filter.SetNumberOfIterations(25)\n"
+      "    itk_filter.SetReplaceValue(255)\n"
+      "    itk_filter.SetSeed((24,65,37))\n\n"
+      "    # Hand the input image to the filter\n"
+      "    itk_filter.SetInput(itk_image)\n"
+      "    # Run the filter\n"
+      "    itk_filter.Update()\n\n"
+      "    # Return the output and the output type (itk.Image.SS3 is one of the valid output\n"
+      "    # types for this filter and is the one we specified when we created the filter above\n"
+      "    return itk_filter.GetOutput(), itk.Image.SS3\n"
       );
 
   vtkSmartPointer<vtkSMProxy> proxy;

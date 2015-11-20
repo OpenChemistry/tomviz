@@ -40,6 +40,8 @@ protected:
 
 private:
   Q_DISABLE_COPY(AddExpressionReaction)
+
+  QString getDefaultExpression(DataSource*);
 };
 }
 
