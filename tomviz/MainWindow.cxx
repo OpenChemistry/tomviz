@@ -206,9 +206,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuTomography->addSeparator();
 
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
-  QAction *alignAction = ui.menuTomography->addAction("Tilt Series Registration (Manual)");
-  QAction *autoAlignAction = ui.menuTomography->addAction("Tilt Series Registration (Auto)");
-  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Axis Alignment (Manual)");
+  QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
+  QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
+  QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
 
   QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method Reconstruction");
