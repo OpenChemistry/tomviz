@@ -16,7 +16,16 @@
 #include "Utilities.h"
 
 #include "DataSource.h"
+#include "pqAnimationCue.h"
+#include "pqAnimationManager.h"
+#include "pqAnimationScene.h"
+#include "pqPVApplicationCore.h"
+#include "pqSMAdaptor.h"
+#include "vtkBoundingBox.h"
+#include "vtkCamera.h"
+#include "vtkImageData.h"
 #include "vtkNew.h"
+#include "vtkPoints.h"
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
@@ -25,8 +34,11 @@
 #include "vtkSmartPointer.h"
 #include "vtkSMNamedPropertyIterator.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMRenderViewProxy.h"
 #include "vtkSMTransferFunctionProxy.h"
+#include "vtkSMUtilities.h"
 #include "vtkStringList.h"
+#include "vtkTrivialProducer.h"
 
 #include <sstream>
 
@@ -238,6 +250,58 @@ QString readInPythonScript(const QString &scriptName)
 #endif
   qCritical() << "Error: Could not find script file: " << scriptName;
   return "raise IOError(\"Couldn't read script file\")\n";
+}
+
+void createCameraOrbit(vtkSMSourceProxy *data, vtkSMRenderViewProxy *renderView)
+{
+  // Get camera position at start
+  double *normal = renderView->GetActiveCamera()->GetViewUp();
+  double *origin = renderView->GetActiveCamera()->GetPosition();
+
+  // Get center of data
+  double center[3];
+  vtkTrivialProducer *t =
+      vtkTrivialProducer::SafeDownCast(data->GetClientSideObject());
+  if (!t)
+  {
+    return;
+  }
+  vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  double data_bounds[6];
+  imageData->GetBounds(data_bounds);
+  vtkBoundingBox box;
+  box.SetBounds(data_bounds);
+  box.GetCenter(center);
+  QList<QVariant> centerList;
+  centerList << center[0] << center[1] << center[2];
+
+  // Generate camera orbit
+  vtkSmartPointer< vtkPoints > pts;
+  pts.TakeReference(vtkSMUtilities::CreateOrbit(
+      center, normal, 7, origin));
+  QList<QVariant> points;
+  for (vtkIdType i = 0; i < pts->GetNumberOfPoints(); ++i)
+  {
+    double coords[3];
+    pts->GetPoint(i, coords);
+    points << coords[0] << coords[1] << coords[2];
+  }
+
+  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+
+  pqAnimationCue* cue = scene->createCue(renderView,"Camera", 0, "CameraAnimationCue");
+  pqSMAdaptor::setElementProperty(cue->getProxy()->GetProperty("Mode"), 1);
+  cue->getProxy()->UpdateVTKObjects();
+  vtkSMProxy *kf = cue->getKeyFrame(0);
+  pqSMAdaptor::setMultipleElementProperty(
+      kf->GetProperty("PositionPathPoints"),
+      points);
+  pqSMAdaptor::setMultipleElementProperty(
+      kf->GetProperty("FocalPathPoints"),
+      centerList);
+  pqSMAdaptor::setElementProperty(
+      kf->GetProperty("ClosedPositionPath"), 1);
+  kf->UpdateVTKObjects();
 }
 
 }
