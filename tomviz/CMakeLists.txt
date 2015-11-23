@@ -171,7 +171,7 @@ foreach(file ${python_files})
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
     "${tomviz_SOURCE_DIR}/tomviz/python/${file}"
     "${tomviz_BINARY_DIR}/share/tomviz/scripts/${file}")
-  install(FILES ${file}
+  install(FILES "python/${file}"
     DESTINATION "${tomviz_data_install_dir}/scripts"
     COMPONENT "Scripts")
 endforeach()
