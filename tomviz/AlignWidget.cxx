@@ -35,6 +35,7 @@
 #include <vtkPointData.h>
 #include <vtkDataArray.h>
 #include <vtkInteractorStyleRubberBand2D.h>
+#include <vtkInteractorStyleRubberBandZoom.h>
 
 #include <QTimer>
 #include <QGridLayout>
@@ -83,11 +84,10 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   widget->GetRenderWindow()->AddRenderer(renderer.Get());
 
   // Set up render window interaction.
-  vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
-  interatorStyle->SetRenderOnMouseMove(true);
+  this->defaultInteractorStyle->SetRenderOnMouseMove(true);
 
-  widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-      interatorStyle.Get());
+  this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+      this->defaultInteractorStyle.Get());
 
   renderer->SetBackground(1.0, 1.0, 1.0);
   vtkCamera *camera = renderer->GetActiveCamera();
@@ -114,6 +114,12 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   }
 
   // Now to add the controls to the widget.
+  QHBoxLayout *viewControls = new QHBoxLayout;
+  QPushButton *zoomToBox = new QPushButton(QIcon(":/pqWidgets/Icons/pqZoomToSelection24.png"),"Zoom to Selection");
+  this->connect(zoomToBox, SIGNAL(pressed()), this, SLOT(zoomToSelectionStart()));
+  viewControls->addWidget(zoomToBox);
+  v->addLayout(viewControls);
+
   QGridLayout *grid = new QGridLayout;
   int gridrow = 0;
   v->addStretch(1);
@@ -513,6 +519,22 @@ void AlignWidget::doDataAlign()
   {
     LoadDataReaction::dataSourceAdded(alignedData);
   }
+}
+
+void AlignWidget::zoomToSelectionStart()
+{
+  this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+      this->zoomToBoxInteractorStyle.Get());
+  this->observerId = this->widget->GetRenderWindow()->GetInteractor()->AddObserver(
+      vtkCommand::LeftButtonReleaseEvent, this, &AlignWidget::zoomToSelectionFinished);
+}
+
+void AlignWidget::zoomToSelectionFinished()
+{
+  this->widget->GetRenderWindow()->GetInteractor()
+      ->RemoveObserver(this->observerId);
+  this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+      this->defaultInteractorStyle.Get());
 }
 
 }
