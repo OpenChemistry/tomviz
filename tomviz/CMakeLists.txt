@@ -153,7 +153,6 @@ set(python_files
   Resample.py
   deleteSlices.py
   ClearVolume.py
-  ZeroDataset.py
   ConstantDataset.py
   RandomParticles.py
   TiltSeries.py 

@@ -301,9 +301,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   connect(tiltAction, SIGNAL(triggered()), SLOT(openTilt()));
   sampleDataMenu->addSeparator();
 #endif
-  QAction* blankDataAction = sampleDataMenu->addAction("Zero Dataset");
-  new PythonGeneratedDatasetReaction(blankDataAction, "Zero Dataset",
-      readInPythonScript("ZeroDataset"));
   QAction* constantDataAction = sampleDataMenu->addAction("Constant Dataset");
   new PythonGeneratedDatasetReaction(constantDataAction, "Constant Dataset",
       readInPythonScript("ConstantDataset"));

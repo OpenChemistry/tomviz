@@ -290,36 +290,7 @@ PythonGeneratedDatasetReaction::~PythonGeneratedDatasetReaction()
 void PythonGeneratedDatasetReaction::addDataset()
 {
   PythonGeneratedDataSource generator(this->Internals->scriptLabel);
-  if (this->Internals->scriptLabel == "Zero Dataset")
-  {
-    QDialog dialog;
-    dialog.setWindowTitle("Set Size");
-    ShapeWidget *shapeWidget = new ShapeWidget(&dialog);
-
-    // For other python scripts with parameters, create the GUI here
-
-    QVBoxLayout* layout = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Cancel|QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
-    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-
-    // For other python scripts with parameters, add the GUI here
-    layout->addWidget(shapeWidget);
-    layout->addWidget(buttons);
-
-    dialog.setLayout(layout);
-    if (dialog.exec() != QDialog::Accepted)
-    {
-      return;
-    }
-    // For other python scripts with paramters, modify the script here
-    generator.setScript(this->Internals->scriptSource);
-    int shape[3];
-    shapeWidget->getShape(shape);
-    this->dataSourceAdded(generator.createDataSource(shape));
-  }
-  else if (this->Internals->scriptLabel == "Constant Dataset")
+  if (this->Internals->scriptLabel == "Constant Dataset")
   {
     QDialog dialog;
     dialog.setWindowTitle("Set Parameters");
