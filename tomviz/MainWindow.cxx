@@ -63,7 +63,6 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QTimer>
-#include <QFont>
 
 #if QT_VERSION >= 0x050000
   #include <QStandardPaths>
@@ -206,7 +205,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *setTiltAnglesAction = ui.menuTomography->addAction("Set Tilt Angles");
   ui.menuTomography->addSeparator();
-  
+
   QAction *dataProcessingLabel = ui.menuTomography->addAction("Data Processing:");
   dataProcessingLabel->setEnabled(false);
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
@@ -214,7 +213,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
   QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
-  
+
   QAction *reconLabel = ui.menuTomography->addAction("Reconstruction:");
   reconLabel->setEnabled(false);
   QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method");
