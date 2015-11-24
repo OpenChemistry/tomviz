@@ -237,11 +237,11 @@ public:
   }
     
 //----------------------------------------------------------------------------
-  void setSpinBoxValue(int x, int y, int z)
+  void setSpinBoxValue(int newX, int newY, int newZ)
   {
-    this->xSpinBox->setValue(x);
-    this->ySpinBox->setValue(y);
-    this->zSpinBox->setValue(z);
+    this->xSpinBox->setValue(newX);
+    this->ySpinBox->setValue(newY);
+    this->zSpinBox->setValue(newZ);
   }
 //----------------------------------------------------------------------------
 
