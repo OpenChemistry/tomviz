@@ -33,6 +33,8 @@ class QRadioButton;
 
 class vtkImageSlice;
 class vtkImageSliceMapper;
+class vtkInteractorStyleRubberBand2D;
+class vtkInteractorStyleRubberBandZoom;
 class QVTKWidget;
 
 namespace tomviz
@@ -69,9 +71,14 @@ protected slots:
 
   void doDataAlign();
 
+  void zoomToSelectionStart();
+  void zoomToSelectionFinished();
+
 protected:
   vtkNew<vtkImageSlice> imageSlice;
   vtkNew<vtkImageSliceMapper> mapper;
+  vtkNew<vtkInteractorStyleRubberBand2D> defaultInteractorStyle;
+  vtkNew<vtkInteractorStyleRubberBandZoom> zoomToBoxInteractorStyle;
   QVTKWidget *widget;
 
   QTimer *timer;
@@ -87,6 +94,7 @@ protected:
 
   int frameRate;
   int referenceSlice;
+  int observerId;
 
   QVector<vtkVector2i> offsets;
   DataSource *unalignedData;
