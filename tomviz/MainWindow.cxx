@@ -200,26 +200,25 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Build Tomography menu
   // ################################################################
-
   QAction *toggleDataTypeAction = ui.menuTomography->addAction("Toggle Data Type");
   ui.menuTomography->addSeparator();
 
   QAction *setTiltAnglesAction = ui.menuTomography->addAction("Set Tilt Angles");
   ui.menuTomography->addSeparator();
-    
-  QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
-  ui.menuTomography->addSeparator();
 
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
-  QAction *alignAction = ui.menuTomography->addAction("Translation Align");
-  QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
-  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Align");
+  QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
+  QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
+  QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
 
-  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method");
-  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection");
-  QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
+  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method Reconstruction");
+  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection Reconstruction");
+  //QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
   QAction *reconARTAction = ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
+
+  ui.menuTomography->addSeparator();
+  QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
 
   // Set up reactions for Data Transforms Menu
   //#################################################################
@@ -228,10 +227,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddExpressionReaction(customPythonAction);
   new AddExpressionReaction(customPythonITKAction);
   new CropReaction(cropDataAction, this);
-  //new AddResampleReaction(resampleDataAction);
-  //new AddPythonTransformReaction(backgroundSubtractAction,
-  //                               "Background Subtraction",
-  //                               Subtract_TiltSer_Background);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,
@@ -244,10 +239,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Rotate", readInPythonScript("Rotate3D"));
   new AddPythonTransformReaction(clearAction, "Clear Volume", readInPythonScript("ClearVolume"));
 
-  //new AddPythonTransformReaction(misalignUniformAction,
-  //                               "Misalign (Uniform)", MisalignImgs_Uniform);
-  //new AddPythonTransformReaction(misalignGaussianAction,
-  //                               "Misalign (Gaussian)", MisalignImgs_Uniform);
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", readInPythonScript("Square_Root_Data"));
   new AddPythonTransformReaction(hannWindowAction,
@@ -284,13 +275,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Reconstruct (ART)",
                                  readInPythonScript("Recon_ART"), true);
   
-  new ReconstructionReaction(reconWBP_CAction);
+  //new ReconstructionReaction(reconWBP_CAction);
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSaveDebuggingState);
-
-
 
   new SaveDataReaction(ui.actionSaveData);
   new pqSaveScreenshotReaction(ui.actionSaveScreenshot);

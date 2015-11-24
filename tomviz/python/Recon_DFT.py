@@ -40,7 +40,7 @@ def dfm3(input,angles,Npad):
     dk = np.double(Ny)/np.double(Npad) *1
     
     for a in range(0,Nproj):
-        print angles[a]
+        #print angles[a]
         ang = angles[a]*np.pi/180
         projection = input[:,:,a] #projection
         p = np.lib.pad(projection,((0,0),(pad_pre,pad_post)),'constant',constant_values=(0,0)) #pad zeros
