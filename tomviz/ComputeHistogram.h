@@ -170,12 +170,12 @@ void CalculateHistogram(T *values, const unsigned int n, const float min,
 
 #else
 template<typename T>
-void GetScalarRange(T *values, const unsigned int n, double* minmax)
+void GetScalarRange(T *values, const vtkIdType n, double* minmax)
 {
   T tempMinMax[2];
   tempMinMax[0] = values[0];
   tempMinMax[1] = values[0];
-  for (unsigned int j = 1; j < n; ++j)
+  for (vtkIdType j = 1; j < n; ++j)
   {
     // This code does not handle NaN or Inf values, so check for them
     if (!vtkMath::IsFinite(values[j])) continue;
@@ -188,12 +188,12 @@ void GetScalarRange(T *values, const unsigned int n, double* minmax)
 }
 
 template<typename T>
-void CalculateHistogram(T *values, const unsigned int n, const float min,
+void CalculateHistogram(T *values, const vtkIdType n, const float min,
                         int *pops, const float inc, const int numberOfBins,
                         int &invalid)
 {
   const int maxBin(numberOfBins - 1);
-  for (unsigned int j = 0; j < n; ++j)
+  for (vtkIdType j = 0; j < n; ++j)
   {
     // This code does not handle NaN or Inf values, so check for them and handle
     // them specially
