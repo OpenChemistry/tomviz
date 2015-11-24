@@ -20,6 +20,8 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
+#include "pqActiveObjects.h"
+#include "pqRenderView.h"
 #include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkImageData.h"
@@ -235,11 +237,11 @@ public:
   }
     
 //----------------------------------------------------------------------------
-  void setSpinBoxValue(int x, int y, int z)
+  void setSpinBoxValue(int newX, int newY, int newZ)
   {
-    this->xSpinBox->setValue(x);
-    this->ySpinBox->setValue(y);
-    this->zSpinBox->setValue(z);
+    this->xSpinBox->setValue(newX);
+    this->ySpinBox->setValue(newY);
+    this->zSpinBox->setValue(newZ);
   }
 //----------------------------------------------------------------------------
 
@@ -290,36 +292,7 @@ PythonGeneratedDatasetReaction::~PythonGeneratedDatasetReaction()
 void PythonGeneratedDatasetReaction::addDataset()
 {
   PythonGeneratedDataSource generator(this->Internals->scriptLabel);
-  if (this->Internals->scriptLabel == "Zero Dataset")
-  {
-    QDialog dialog;
-    dialog.setWindowTitle("Set Size");
-    ShapeWidget *shapeWidget = new ShapeWidget(&dialog);
-
-    // For other python scripts with parameters, create the GUI here
-
-    QVBoxLayout* layout = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Cancel|QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
-    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-
-    // For other python scripts with parameters, add the GUI here
-    layout->addWidget(shapeWidget);
-    layout->addWidget(buttons);
-
-    dialog.setLayout(layout);
-    if (dialog.exec() != QDialog::Accepted)
-    {
-      return;
-    }
-    // For other python scripts with paramters, modify the script here
-    generator.setScript(this->Internals->scriptSource);
-    int shape[3];
-    shapeWidget->getShape(shape);
-    this->dataSourceAdded(generator.createDataSource(shape));
-  }
-  else if (this->Internals->scriptLabel == "Constant Dataset")
+  if (this->Internals->scriptLabel == "Constant Dataset")
   {
     QDialog dialog;
     dialog.setWindowTitle("Set Parameters");
@@ -452,6 +425,15 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(vtkSmartPointer<vtkSMSource
     {
     ActiveObjects::instance().setActiveModule(module);
     }
+  DataSource* previousActiveDataSource = ActiveObjects::instance().activeDataSource();
+  if (!previousActiveDataSource)
+  {
+    pqRenderView *renderView = qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+    if (renderView)
+    {
+      tomviz::createCameraOrbit(dataSource->producer(), renderView->getRenderViewProxy());
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
