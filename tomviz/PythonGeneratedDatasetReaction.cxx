@@ -20,6 +20,8 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
+#include "pqActiveObjects.h"
+#include "pqRenderView.h"
 #include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkImageData.h"
@@ -423,6 +425,15 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(vtkSmartPointer<vtkSMSource
     {
     ActiveObjects::instance().setActiveModule(module);
     }
+  DataSource* previousActiveDataSource = ActiveObjects::instance().activeDataSource();
+  if (!previousActiveDataSource)
+  {
+    pqRenderView *renderView = qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+    if (renderView)
+    {
+      tomviz::createCameraOrbit(dataSource->producer(), renderView->getRenderViewProxy());
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
