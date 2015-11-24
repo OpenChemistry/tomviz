@@ -1,5 +1,5 @@
 def transform_scalars(dataset):
-    """Resample dataset """
+    """Resample dataset"""
     
     from tomviz import utils
     import numpy as np
@@ -16,3 +16,12 @@ def transform_scalars(dataset):
     
     # set the result as the new scalars.
     utils.set_array(dataset, result)
+
+    #Update tilt angles if dataset is a tilt series
+    if resampingFactor[2] != 1:
+        try:
+            tilt_angles = utils.get_tilt_angles(dataset)
+            tilt_angles = scipy.ndimage.interpolation.zoom(tilt_angles, resampingFactor[2])
+            utils.set_tilt_angles(dataset, tilt_angles)
+        except:
+            pass
