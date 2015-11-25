@@ -1,0 +1,15 @@
+.git*            export-ignore
+
+*.sh             crlf=input
+*.sh.in          crlf=input
+
+*.bat            whitespace=-tab-in-indent,-blank-at-eol
+
+*.c              whitespace=tab-in-indent,-blank-at-eol
+*.h              whitespace=tab-in-indent,-blank-at-eol
+*.cxx            whitespace=tab-in-indent,-blank-at-eol
+*.py             whitespace=tab-in-indent,-blank-at-eol
+*.txt            whitespace=tab-in-indent,-blank-at-eol
+*.cmake          whitespace=tab-in-indent,-blank-at-eol
+
+*.md             whitespace=tab-in-indent conflict-marker-size=30
