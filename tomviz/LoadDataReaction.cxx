@@ -18,9 +18,11 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
+#include "pqActiveObjects.h"
 #include "pqLoadDataReaction.h"
 #include "pqPipelineSource.h"
 #include "pqProxyWidgetDialog.h"
+#include "pqRenderView.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
 #include "vtkNew.h"
@@ -107,6 +109,7 @@ DataSource* LoadDataReaction::loadData(const QString &fileName)
     RecentFilesMenu::pushDataReader(reader->getProxy());
   }
   controller->UnRegisterProxy(reader->getProxy());
+
   return dataSource;
 }
 
@@ -119,9 +122,19 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
   dialog.setWindowTitle("Configure Reader Parameters");
   if (dialog.hasVisibleWidgets() == false || dialog.exec() == QDialog::Accepted)
   {
+    DataSource* previousActiveDataSource = ActiveObjects::instance().activeDataSource();
+
     DataSource* dataSource = new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
     // do whatever we need to do with a new data source.
     LoadDataReaction::dataSourceAdded(dataSource);
+    if (!previousActiveDataSource)
+    {
+      pqRenderView *renderView = qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+      if (renderView)
+      {
+        tomviz::createCameraOrbit(dataSource->producer(), renderView->getRenderViewProxy());
+      }
+    }
     return dataSource;
   }
   return nullptr;

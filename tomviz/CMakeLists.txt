@@ -137,6 +137,7 @@ set(python_files
   Align_Images.py
   Recon_DFT.py
   Recon_WBP.py
+  Recon_ART.py
   Crop_Data.py
   DownsampleByTwo.py
   FFT_AbsLog.py
@@ -153,15 +154,26 @@ set(python_files
   Resample.py
   deleteSlices.py
   ClearVolume.py
-  ZeroDataset.py
   ConstantDataset.py
   RandomParticles.py
   TiltSeries.py 
   )
+
+# Make symlinks where possible, file copies where necessary in the build tree.
+if(UNIX)
+  set(script_cmd "create_symlink")
+else()
+  set(script_cmd "copy_if_different")
+endif()
+make_directory("${tomviz_BINARY_DIR}/share/tomviz/scripts")
 foreach(file ${python_files})
-  set(file python/${file})
-  file(COPY ${file} DESTINATION "${tomviz_BINARY_DIR}/share/tomviz/scripts")
-  install(FILES ${file} DESTINATION "${tomviz_data_install_dir}/scripts" COMPONENT "Scripts")
+  list(APPEND SOURCES "python/${file}")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/${file}"
+    "${tomviz_BINARY_DIR}/share/tomviz/scripts/${file}")
+  install(FILES "python/${file}"
+    DESTINATION "${tomviz_data_install_dir}/scripts"
+    COMPONENT "Scripts")
 endforeach()
 
 qt4_wrap_ui(UI_SOURCES

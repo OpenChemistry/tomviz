@@ -27,7 +27,10 @@
 #include <QFileInfo>
 #include <QStringList>
 
+class pqAnimationScene;
+
 class vtkSMProxyLocator;
+class vtkSMRenderViewProxy;
 class vtkPVArrayInformation;
 
 class QDir;
@@ -138,6 +141,10 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource);
 // This assumes that the given script is one of the built-in tomviz python operator
 // scripts.
 QString readInPythonScript(const QString &scriptName);
+
+//---------------------------------------------------------------------------
+// Create a camera orbit animation for the given renderview around the given object
+void createCameraOrbit(vtkSMSourceProxy *data, vtkSMRenderViewProxy *renderView);
 
 }
 

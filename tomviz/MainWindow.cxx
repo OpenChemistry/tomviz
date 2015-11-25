@@ -167,29 +167,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new LoadDataReaction(ui.actionOpen);
 
-
-  /*
-   * Data Transforms
-   *
-   * Crop - Crop_Data.py
-   * Background subtraction - Subtract_TiltSer_Background.py
-   * ---
-   * Manual Align
-   * Auto Align (XCORR) - Align_Images.py
-   * Shift Uniformly - Shift_Stack_Uniformly.py
-   * Misalign (Uniform) - MisalignImgs_Uniform.py
-   * Misalign (Gaussian) - MisalignImgs_Gaussian.py
-   * ---
-   * Reconstruct (Direct Fourier) - Recon_DFT.py
-   * ---
-   * Square Root Data - Square_Root_Data.py
-   * FFT (ABS LOG) - FFT_AbsLog.py
-   * ---
-   * Clone
-   * Delete
-   *
-   */
-
   QAction *setScaleAction = new QAction("Set Data Size", this);
   ui.menuTools->addAction(setScaleAction);
   new SetScaleReaction(setScaleAction);
@@ -197,6 +174,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // Build Data Transforms menu
   // ################################################################
   QAction *customPythonAction = ui.menuData->addAction("Custom Transform");
+  QAction *customPythonITKAction = ui.menuData->addAction("Custom ITK Transform");
   QAction *cropDataAction = ui.menuData->addAction("Crop");
   ui.menuData->addSeparator();
   
@@ -224,36 +202,33 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Build Tomography menu
   // ################################################################
-
   QAction *toggleDataTypeAction = ui.menuTomography->addAction("Toggle Data Type");
   ui.menuTomography->addSeparator();
 
   QAction *setTiltAnglesAction = ui.menuTomography->addAction("Set Tilt Angles");
   ui.menuTomography->addSeparator();
-    
-  QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
-  ui.menuTomography->addSeparator();
 
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
-  QAction *alignAction = ui.menuTomography->addAction("Translation Align");
-  QAction *autoAlignAction = ui.menuTomography->addAction("Translation Align (Auto)");
-  QAction *rotateAlignAction = ui.menuTomography->addAction("Rotation Align");
+  QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
+  QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
+  QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
 
-  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier recon");
-  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection recon");
-  QAction *reconWBP_CAction = ui.menuTomography->addAction("Weighted Back Projection recon (C++)");
+  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method Reconstruction");
+  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection Reconstruction");
+  //QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
+  QAction *reconARTAction = ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
+
+  ui.menuTomography->addSeparator();
+  QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
 
   // Set up reactions for Data Transforms Menu
   //#################################################################
 
   // Add our Python script reactions, these compose Python into menu entries.
   new AddExpressionReaction(customPythonAction);
+  new AddExpressionReaction(customPythonITKAction);
   new CropReaction(cropDataAction, this);
-  //new AddResampleReaction(resampleDataAction);
-  //new AddPythonTransformReaction(backgroundSubtractAction,
-  //                               "Background Subtraction",
-  //                               Subtract_TiltSer_Background);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,
@@ -266,10 +241,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Rotate", readInPythonScript("Rotate3D"));
   new AddPythonTransformReaction(clearAction, "Clear Volume", readInPythonScript("ClearVolume"));
 
-  //new AddPythonTransformReaction(misalignUniformAction,
-  //                               "Misalign (Uniform)", MisalignImgs_Uniform);
-  //new AddPythonTransformReaction(misalignGaussianAction,
-  //                               "Misalign (Gaussian)", MisalignImgs_Uniform);
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", readInPythonScript("Square_Root_Data"));
   new AddPythonTransformReaction(hannWindowAction,
@@ -305,13 +276,15 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(reconWBPAction,
                                  "Reconstruct (Back Projection)",
                                  readInPythonScript("Recon_WBP"), true);
-  new ReconstructionReaction(reconWBP_CAction);
+  new AddPythonTransformReaction(reconARTAction,
+                                 "Reconstruct (ART)",
+                                 readInPythonScript("Recon_ART"), true);
+  
+  //new ReconstructionReaction(reconWBP_CAction);
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
   new pqSaveStateReaction(ui.actionSaveDebuggingState);
-
-
 
   new SaveDataReaction(ui.actionSaveData);
   new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
@@ -333,9 +306,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   connect(tiltAction, SIGNAL(triggered()), SLOT(openTilt()));
   sampleDataMenu->addSeparator();
 #endif
-  QAction* blankDataAction = sampleDataMenu->addAction("Zero Dataset");
-  new PythonGeneratedDatasetReaction(blankDataAction, "Zero Dataset",
-      readInPythonScript("ZeroDataset"));
   QAction* constantDataAction = sampleDataMenu->addAction("Constant Dataset");
   new PythonGeneratedDatasetReaction(constantDataAction, "Constant Dataset",
       readInPythonScript("ConstantDataset"));
