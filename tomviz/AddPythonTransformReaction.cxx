@@ -379,10 +379,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
-<<<<<<< HEAD
-  
-=======
->>>>>>> master
+
   else if (scriptLabel == "Sobel Filter") //UI for Sobel Filter
   {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -415,7 +412,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
-<<<<<<< HEAD
 
   else if (scriptLabel == "Gaussian Filter") //UI for Gaussian Filter
   {
@@ -453,10 +449,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
        addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
      }
   }
-    
-    
-=======
->>>>>>> master
+
   else if (scriptLabel == "Resample")
   {
     QDialog dialog(pqCoreUtilities::mainWidget());
