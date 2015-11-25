@@ -28,9 +28,9 @@ def transform_scalars(dataset):
     if ROT_ANGLE == []: #If tilt axis is not given, assign it to 90 degrees.
         ROT_ANGLE = 90;
             
-    print('Rotating Images...')
+    print('Rotating Dataset...')
     
     data_py_return = ndimage.interpolation.rotate( data_py, ROT_ANGLE, axes=((ROT_AXIS+1)%3, (ROT_AXIS+2)%3) )
     
     utils.set_array(dataset, data_py_return)
-    print('Rotate Complete')
+    print('Rotation Complete')
