@@ -206,7 +206,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *setTiltAnglesAction = ui.menuTomography->addAction("Set Tilt Angles");
   ui.menuTomography->addSeparator();
 
-  QAction *dataProcessingLabel = ui.menuTomography->addAction("Data Processing:");
+  QAction *dataProcessingLabel = ui.menuTomography->addAction("Pre-reconstruction Processing:");
   dataProcessingLabel->setEnabled(false);
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
   QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
