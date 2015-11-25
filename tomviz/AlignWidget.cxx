@@ -73,7 +73,6 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
       vtkTrivialProducer::SafeDownCast(d->producer()->GetClientSideObject());
 
   // Set up the rendering pipeline
-  vtkNew<vtkRenderer> renderer;
   if (t)
   {
     mapper->SetInputConnection(t->GetOutputPort());
@@ -90,21 +89,10 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
       this->defaultInteractorStyle.Get());
 
   renderer->SetBackground(1.0, 1.0, 1.0);
-  vtkCamera *camera = renderer->GetActiveCamera();
   renderer->SetViewport(0.0, 0.0,
                         1.0, 1.0);
 
-  double *bounds = mapper->GetBounds();
-  vtkVector3d point;
-  point[0] = 0.5 * (bounds[0] + bounds[1]);
-  point[1] = 0.5 * (bounds[2] + bounds[3]);
-  point[2] = 0.5 * (bounds[4] + bounds[5]);
-  camera->SetFocalPoint(point.GetData());
-  point[2] += 500;
-  camera->SetPosition(point.GetData());
-  camera->SetViewUp(0.0, 1.0, 0.0);
-  camera->ParallelProjectionOn();
-  camera->SetParallelScale(0.5 * (bounds[1] - bounds[0] + 1));
+  this->resetCamera();
 
   vtkScalarsToColors *lut =
       vtkScalarsToColors::SafeDownCast(d->colorMap()->GetClientSideObject());
@@ -118,6 +106,9 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   QPushButton *zoomToBox = new QPushButton(QIcon(":/pqWidgets/Icons/pqZoomToSelection24.png"),"Zoom to Selection");
   this->connect(zoomToBox, SIGNAL(pressed()), this, SLOT(zoomToSelectionStart()));
   viewControls->addWidget(zoomToBox);
+  QPushButton *resetCamera = new QPushButton(QIcon(":/pqWidgets/Icons/pqResetCamera24.png"), "Reset");
+  this->connect(resetCamera, SIGNAL(pressed()), this, SLOT(resetCamera()));
+  viewControls->addWidget(resetCamera);
   v->addLayout(viewControls);
 
   QGridLayout *grid = new QGridLayout;
@@ -535,6 +526,36 @@ void AlignWidget::zoomToSelectionFinished()
       ->RemoveObserver(this->observerId);
   this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
       this->defaultInteractorStyle.Get());
+}
+
+void AlignWidget::resetCamera()
+{
+  vtkCamera *camera = renderer->GetActiveCamera();
+  double *bounds = mapper->GetBounds();
+  vtkVector3d point;
+  point[0] = 0.5 * (bounds[0] + bounds[1]);
+  point[1] = 0.5 * (bounds[2] + bounds[3]);
+  point[2] = 0.5 * (bounds[4] + bounds[5]);
+  camera->SetFocalPoint(point.GetData());
+  point[2] += 50 + 0.5 * (bounds[4] + bounds[5]);
+  camera->SetPosition(point.GetData());
+  camera->SetViewUp(0.0, 1.0, 0.0);
+  camera->ParallelProjectionOn();
+  double parallelScale;
+  if (bounds[1] - bounds[0] <
+        bounds[3] - bounds[2])
+  {
+    parallelScale = 0.5 * (bounds[3] - bounds[2] + 1);
+  }
+  else
+  {
+    parallelScale = 0.5 * (bounds[1] - bounds[0] + 1);
+  }
+  camera->SetParallelScale(parallelScale);
+  double clippingRange[2];
+  camera->GetClippingRange(clippingRange);
+  clippingRange[1] = clippingRange[0] + (bounds[5] - bounds[4] + 50);
+  camera->SetClippingRange(clippingRange);
 }
 
 }
