@@ -68,11 +68,16 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   double minmax[2] = { 0.0, 0.0 };
   const int numberOfBins = 256;
 
+  // Keep the array we are working on around even if the user shallow copies
+  // over the input image data by incrementing the reference count here.
+  vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
+
+
   // The bin values are the centers, extending +/- half an inc either side
-  switch (input->GetScalarType())
+  switch (arrayPtr->GetDataType())
   {
     vtkTemplateMacro(
-          tomviz::GetScalarRange(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
+          tomviz::GetScalarRange(reinterpret_cast<VTK_TT *>(arrayPtr->GetVoidPointer(0)),
                          input->GetPointData()->GetScalars()->GetNumberOfTuples(),
                          minmax));
     default:
@@ -115,11 +120,11 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   }
   int invalid = 0;
 
-  switch (input->GetScalarType())
+  switch (arrayPtr->GetDataType())
   {
     vtkTemplateMacro(
-          tomviz::CalculateHistogram(reinterpret_cast<VTK_TT *>(input->GetPointData()->GetScalars()->GetVoidPointer(0)),
-                             input->GetPointData()->GetScalars()->GetNumberOfTuples(),
+          tomviz::CalculateHistogram(reinterpret_cast<VTK_TT *>(arrayPtr->GetVoidPointer(0)),
+                             arrayPtr->GetNumberOfTuples(),
                              minmax[0], pops, inc, numberOfBins, invalid));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
@@ -129,7 +134,7 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   vtkIdType total = invalid;
   for (int i = 0; i < numberOfBins; ++i)
     total += pops[i];
-  assert(total == input->GetPointData()->GetScalars()->GetNumberOfTuples());
+  assert(total == arrayPtr->GetNumberOfTuples());
 #endif
   if (invalid)
   {

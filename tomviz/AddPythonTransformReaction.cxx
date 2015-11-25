@@ -304,24 +304,24 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   else if (scriptLabel == "Rotate")
   {
     QDialog dialog(pqCoreUtilities::mainWidget());
-    QHBoxLayout *layout1 = new QHBoxLayout;
-    QLabel *label = new QLabel("Rotate Angle:", &dialog);
-    layout1->addWidget(label);
+    dialog.setWindowTitle("Rotate");
+    QGridLayout *layout = new QGridLayout;
+    QLabel *labelDescription = new QLabel("Rotate dataset along a given axis.",&dialog);
+    layout->addWidget(labelDescription,0,0,1,2);
+    QLabel *label = new QLabel("Angle:",&dialog);
+    layout->addWidget(label,1,0,1,2);
     QDoubleSpinBox *angle = new QDoubleSpinBox(&dialog);
     angle->setRange(0, 360);
     angle->setValue(90);
-    layout1->addWidget(label);
-    layout1->addWidget(angle);
-    QHBoxLayout *layout2 = new QHBoxLayout;
-    label = new QLabel("Rotate Axis:", &dialog);
-    layout2->addWidget(label);
+    layout->addWidget(angle,1,1,1,1);
+    label = new QLabel("Axis:", &dialog);
+    layout->addWidget(label,2,0,1,1);
     QComboBox *axis = new QComboBox(&dialog);
     axis->addItem("X");
     axis->addItem("Y");
     axis->addItem("Z");
     axis->setCurrentIndex(2);
-    layout2->addWidget(label);
-    layout2->addWidget(axis);
+    layout->addWidget(axis,2,1,1,1);
     QVBoxLayout *v = new QVBoxLayout;
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
                                                      | QDialogButtonBox::Cancel,
@@ -329,11 +329,10 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                                                      &dialog);
     connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
     connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout1);
-    v->addLayout(layout2);
+    v->addLayout(layout);
     v->addWidget(buttons);
     dialog.setLayout(v);
-
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
     if (dialog.exec() == QDialog::Accepted)
     {
       QMap<QString, QString> substitutions;

@@ -35,6 +35,7 @@ class vtkImageSlice;
 class vtkImageSliceMapper;
 class vtkInteractorStyleRubberBand2D;
 class vtkInteractorStyleRubberBandZoom;
+class vtkRenderer;
 class QVTKWidget;
 
 namespace tomviz
@@ -74,9 +75,12 @@ protected slots:
   void zoomToSelectionStart();
   void zoomToSelectionFinished();
 
+  void resetCamera();
+
 protected:
   vtkNew<vtkImageSlice> imageSlice;
   vtkNew<vtkImageSliceMapper> mapper;
+  vtkNew<vtkRenderer> renderer;
   vtkNew<vtkInteractorStyleRubberBand2D> defaultInteractorStyle;
   vtkNew<vtkInteractorStyleRubberBandZoom> zoomToBoxInteractorStyle;
   QVTKWidget *widget;
