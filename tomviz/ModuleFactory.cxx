@@ -60,8 +60,8 @@ QList<QString> ModuleFactory::moduleTypes(
       << "Contour"
       << "Threshold"
       << "Slice"
-      << "Orthogonal Slice"
-      << "Segmentation";
+      << "Orthogonal Slice";
+//      << "Segmentation";
     qSort(reply);
   }
   return reply;
@@ -104,10 +104,10 @@ Module* ModuleFactory::createModule(
     module = new ModuleThreshold();
 #endif
   }
-  else if (type == "Segmentation")
-  {
-    module = new ModuleSegment();
-  }
+//  else if (type == "Segmentation")
+//  {
+//    module = new ModuleSegment();
+//  }
 
   if (module)
   {
@@ -179,10 +179,10 @@ const char* ModuleFactory::moduleType(Module* module)
   {
     return "Threshold";
   }
-  if (qobject_cast<ModuleSegment*>(module))
-  {
-    return "Segmentation";
-  }
+//  if (qobject_cast<ModuleSegment*>(module))
+//  {
+//    return "Segmentation";
+//  }
   return nullptr;
 }
 
