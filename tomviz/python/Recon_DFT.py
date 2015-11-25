@@ -60,8 +60,8 @@ def dfm3(input,angles,Npad):
                 pz = pz + cen;
                 py = py + cen;
                 if (py>=0 and py<Ny and pz>=0 and pz<Nz):
-                   w[:,py,pz] = w[:,py,pz] + weight
-	           v[:,py,pz] = v[:,py,pz] + weight * pF[:,i]
+                    w[:,py,pz] = w[:,py,pz] + weight
+                    v[:,py,pz] = v[:,py,pz] + weight * pF[:,i]
 
     v[w!=0] = v[w!=0]/w[w!=0]
     v = np.fft.ifftshift(v)
@@ -72,25 +72,25 @@ def dfm3(input,angles,Npad):
 #bilinear extrapolation
 def bilinear(kz_new,ky_new,sz,sy,N,p):
     if p==1:
-       py = np.floor(ky_new)
-       pz = np.floor(kz_new)
-       weight = (1-sy)*(1-sz)
+        py = np.floor(ky_new)
+        pz = np.floor(kz_new)
+        weight = (1-sy)*(1-sz)
     elif p==2:
-       py = np.ceil(ky_new) #P2
-       pz = np.floor(kz_new)
-       weight = sy*(1-sz)
+        py = np.ceil(ky_new) #P2
+        pz = np.floor(kz_new)
+        weight = sy*(1-sz)
     elif p==3:
-       py = np.floor(ky_new) #P3
-       pz = np.ceil(kz_new)
-       weight = (1-sy)*sz
+        py = np.floor(ky_new) #P3
+        pz = np.ceil(kz_new)
+        weight = (1-sy)*sz
     elif p==4:
-       py = np.ceil(ky_new) #P4
-       pz = np.ceil(kz_new)
-       weight = sy*sz
+        py = np.ceil(ky_new) #P4
+        pz = np.ceil(kz_new)
+        weight = sy*sz
     if py<0:
-       py = N+py
+        py = N+py
     else:
-       py = py
+        py = py
     return (pz,py,weight)
 
     

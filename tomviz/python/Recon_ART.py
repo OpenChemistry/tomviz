@@ -3,30 +3,30 @@ import scipy.sparse as ss
 from tomviz import utils
 
 def transform_scalars(dataset):
-  """3D Reconstruct from a tilt series using Algebraic Reconstruction Technique (ART)"""
-  ###Niter###
+    """3D Reconstruct from a tilt series using Algebraic Reconstruction Technique (ART)"""
+    ###Niter###
   
-  #Get Tilt angles
-  tiltAngles = utils.get_tilt_angles(dataset)
+    #Get Tilt angles
+    tiltAngles = utils.get_tilt_angles(dataset)
 
-  #Get Tilt Series
-  tiltSeries = utils.get_array(dataset)
-  (Nslice,Nray,Nproj) = tiltSeries.shape
+    #Get Tilt Series
+    tiltSeries = utils.get_array(dataset)
+    (Nslice,Nray,Nproj) = tiltSeries.shape
 
-  if tiltSeries is None:
-      raise RuntimeError("No scalars found!")
+    if tiltSeries is None:
+        raise RuntimeError("No scalars found!")
 
-  #Generate measurement matrix
-  A = parallelRay(Nray,1.0,tiltAngles,Nray,1.0) #A is a sparse matrix
-  recon = np.zeros((Nslice,Nray,Nray))
+    #Generate measurement matrix
+    A = parallelRay(Nray,1.0,tiltAngles,Nray,1.0) #A is a sparse matrix
+    recon = np.zeros((Nslice,Nray,Nray))
 
-  art3(A.todense(),tiltSeries,recon,Niter)
+    art3(A.todense(),tiltSeries,recon,Niter)
 
-  # set the result as the new scalars.
-  utils.set_array(dataset, recon)
+    # set the result as the new scalars.
+    utils.set_array(dataset, recon)
   
-  # Mark dataset as volume
-  utils.mark_as_volume(dataset)
+    # Mark dataset as volume
+    utils.mark_as_volume(dataset)
 
 def art3(A,tiltSeries,recon,iterNum=1,beta=1.0):
     (Nslice,Nray,Nproj) = tiltSeries.shape
