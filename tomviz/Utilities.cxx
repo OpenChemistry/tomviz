@@ -288,6 +288,7 @@ void createCameraOrbit(vtkSMSourceProxy *data, vtkSMRenderViewProxy *renderView)
   }
 
   pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("NumberOfFrames"), 200);
 
   pqAnimationCue* cue = scene->createCue(renderView,"Camera", 0, "CameraAnimationCue");
   pqSMAdaptor::setElementProperty(cue->getProxy()->GetProperty("Mode"), 1);
@@ -302,6 +303,7 @@ void createCameraOrbit(vtkSMSourceProxy *data, vtkSMRenderViewProxy *renderView)
   pqSMAdaptor::setElementProperty(
       kf->GetProperty("ClosedPositionPath"), 1);
   kf->UpdateVTKObjects();
+
 }
 
 }
