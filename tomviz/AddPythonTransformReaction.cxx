@@ -379,6 +379,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
+
   else if (scriptLabel == "Sobel Filter") //UI for Sobel Filter
   {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -411,6 +412,44 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
+
+  else if (scriptLabel == "Gaussian Filter") //UI for Gaussian Filter
+  {
+     QDialog dialog(pqCoreUtilities::mainWidget());
+     dialog.setWindowTitle("Apply Gaussian filter");
+     QGridLayout *layout = new QGridLayout;
+     QLabel *labelDescription = new QLabel("Apply an isotropic Gaussian filter. \nThe standard deviation (sigma) can be specidied below:");
+     layout->addWidget(labelDescription,0,0,1,2);
+
+     QLabel *label = new QLabel("Sigma:", &dialog);
+     layout->addWidget(label);
+     QDoubleSpinBox *sigma = new QDoubleSpinBox(&dialog);
+     sigma->setSingleStep(0.5);
+     //sigma->setRange(0, 20);
+     sigma->setValue(2);
+     layout->addWidget(label,1,0,1,1);
+     layout->addWidget(sigma,1,1,1,1);
+      
+     QVBoxLayout *v = new QVBoxLayout;
+     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                      | QDialogButtonBox::Cancel,
+                                                      Qt::Horizontal,
+                                                      &dialog);
+     connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+     connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+     v->addLayout(layout);
+     v->addWidget(buttons);
+     dialog.setLayout(v);
+     dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+     if (dialog.exec() == QDialog::Accepted)
+     {
+       QMap<QString, QString> substitutions;
+       substitutions.insert("###Sigma###",
+                                 QString("sigma = %1").arg(sigma->value()) );
+       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
+     }
+  }
+
   else if (scriptLabel == "Resample")
   {
     QDialog dialog(pqCoreUtilities::mainWidget());

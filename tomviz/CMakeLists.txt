@@ -150,6 +150,7 @@ set(python_files
   HannWindow3D.py
   SobelFilter.py
   LaplaceFilter.py
+  GaussianFilter.py
   Resample.py
   deleteSlices.py
   ClearVolume.py

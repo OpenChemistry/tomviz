@@ -191,6 +191,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *fftAbsLogAction = ui.menuData->addAction("FFT (abs log)");
   QAction *sobelFilterAction = ui.menuData->addAction("Sobel Filter");
   QAction *laplaceFilterAction = ui.menuData->addAction("Laplace Filter");
+  QAction *gaussianFilterAction = ui.menuData->addAction("Gaussian Filter");
+
   ui.menuData->addSeparator();
 
   QAction *cloneAction = ui.menuData->addAction("Clone");
@@ -249,6 +251,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                    "Sobel Filter", readInPythonScript("SobelFilter"));
   new AddPythonTransformReaction(laplaceFilterAction,
                                    "Laplace Filter", readInPythonScript("LaplaceFilter"));
+  new AddPythonTransformReaction(gaussianFilterAction,
+                                   "Gaussian Filter", readInPythonScript("GaussianFilter"));
+    
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
   // Set up reactions for Tomography Menu
