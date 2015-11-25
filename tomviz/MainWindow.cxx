@@ -208,14 +208,18 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *setTiltAnglesAction = ui.menuTomography->addAction("Set Tilt Angles");
   ui.menuTomography->addSeparator();
 
+  QAction *dataProcessingLabel = ui.menuTomography->addAction("Pre-reconstruction Processing:");
+  dataProcessingLabel->setEnabled(false);
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
   QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
   QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
 
-  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method Reconstruction");
-  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection Reconstruction");
+  QAction *reconLabel = ui.menuTomography->addAction("Reconstruction:");
+  reconLabel->setEnabled(false);
+  QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method");
+  QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection");
   //QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
   QAction *reconARTAction = ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
 
