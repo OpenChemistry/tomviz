@@ -466,7 +466,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      //size->setRange(0, 20);
      size->setValue(2);
      layout->addWidget(label,1,0,1,1);
-     layout->addWidget(median,1,1,1,1);
+     layout->addWidget(size,1,1,1,1);
     
      QVBoxLayout *v = new QVBoxLayout;
      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
@@ -482,8 +482,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      if (dialog.exec() == QDialog::Accepted)
      {
        QMap<QString, QString> substitutions;
-       substitutions.insert("###Median###",
-                             QString("median = %1").arg(size->value()) );
+       substitutions.insert("###Size###",
+                             QString("size = %1").arg(size->value()) );
        addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
      }
   }
