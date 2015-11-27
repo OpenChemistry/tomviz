@@ -462,9 +462,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      QLabel *label = new QLabel("Size:", &dialog);
      layout->addWidget(label);
      QDoubleSpinBox *size = new QDoubleSpinBox(&dialog);
-     median->setSingleStep(0.5);
-     //median->setRange(0, 20);
-     median->setValue(2);
+     size->setSingleStep(0.5);
+     //size->setRange(0, 20);
+     size->setValue(2);
      layout->addWidget(label,1,0,1,1);
      layout->addWidget(median,1,1,1,1);
     
