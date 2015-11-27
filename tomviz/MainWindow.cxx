@@ -192,6 +192,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *sobelFilterAction = ui.menuData->addAction("Sobel Filter");
   QAction *laplaceFilterAction = ui.menuData->addAction("Laplace Filter");
   QAction *gaussianFilterAction = ui.menuData->addAction("Gaussian Filter");
+  QAction *gaussianFilterAction = ui.menuData->addAction("Median Filter");
+    
 
   ui.menuData->addSeparator();
 

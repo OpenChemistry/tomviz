@@ -3,7 +3,7 @@ def transform_scalars(dataset):
     """ Median filter is a nonlinear filter used to reduce noise."""
     
     #----USER SPECIFIED VARIABLES-----#
-    ###Size###    #Specify size of the Gaussian Function
+    ###Size###    #Specify size of the Median filter
     #---------------------------------#
 
     from tomviz import utils
