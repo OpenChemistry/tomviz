@@ -13,7 +13,7 @@ def transform_scalars(dataset):
     array = utils.get_array(dataset)
 
     # transform the dataset
-    result = scipy.ndimage.filters.median_filter(array,sigma)
+    result = scipy.ndimage.filters.median_filter(array,size)
     
     # set the result as the new scalars.
     utils.set_array(dataset, result)

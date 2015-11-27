@@ -259,6 +259,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                    "Laplace Filter", readInPythonScript("LaplaceFilter"));
   new AddPythonTransformReaction(gaussianFilterAction,
                                    "Gaussian Filter", readInPythonScript("GaussianFilter"));
+  new AddPythonTransformReaction(medianFilterAction,
+                                   "Median Filter", readInPythonScript("MedianFilter"));
     
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
