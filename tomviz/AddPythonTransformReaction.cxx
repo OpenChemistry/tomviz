@@ -450,7 +450,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      }
   }
     
-    
+/*
   else if (scriptLabel == "Median Filter") //UI for Median Filter
   {
      QDialog dialog(pqCoreUtilities::mainWidget());
@@ -487,7 +487,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
        addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
      }
   }
-
+*/
 
   else if (scriptLabel == "Resample")
   {
