@@ -418,7 +418,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      QDialog dialog(pqCoreUtilities::mainWidget());
      dialog.setWindowTitle("Apply Gaussian filter");
      QGridLayout *layout = new QGridLayout;
-     QLabel *labelDescription = new QLabel("Apply an isotropic Gaussian filter. \nThe standard deviation (sigma) can be specidied below:");
+     QLabel *labelDescription = new QLabel("Apply an isotropic Gaussian filter. \nThe standard deviation (sigma) can be specified below:");
      layout->addWidget(labelDescription,0,0,1,2);
 
      QLabel *label = new QLabel("Sigma:", &dialog);
@@ -455,14 +455,14 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      QDialog dialog(pqCoreUtilities::mainWidget());
      dialog.setWindowTitle("Apply Median filter");
      QGridLayout *layout = new QGridLayout;
-     QLabel *labelDescription = new QLabel("Apply an isotropic Median filter. \nThe size can be specidied below:");
+     QLabel *labelDescription = new QLabel("Apply an isotropic median filter. \nThe window size can be specified below:");
      layout->addWidget(labelDescription,0,0,1,2);
     
      QLabel *label = new QLabel("Size:", &dialog);
      layout->addWidget(label);
      QSpinBox *size = new QSpinBox(&dialog);
      size->setSingleStep(1);
-     //size->setRange(0, 20);
+     size->setMinimum(1);
      size->setValue(2);
      layout->addWidget(label,1,0,1,1);
      layout->addWidget(size,1,1,1,1);
