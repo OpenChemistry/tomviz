@@ -192,6 +192,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *sobelFilterAction = ui.menuData->addAction("Sobel Filter");
   QAction *laplaceFilterAction = ui.menuData->addAction("Laplace Filter");
   QAction *gaussianFilterAction = ui.menuData->addAction("Gaussian Filter");
+  QAction *medianFilterAction = ui.menuData->addAction("Median Filter");
+    
 
   ui.menuData->addSeparator();
 
@@ -257,6 +259,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                    "Laplace Filter", readInPythonScript("LaplaceFilter"));
   new AddPythonTransformReaction(gaussianFilterAction,
                                    "Gaussian Filter", readInPythonScript("GaussianFilter"));
+  new AddPythonTransformReaction(medianFilterAction,
+                                   "Median Filter", readInPythonScript("MedianFilter"));
     
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);

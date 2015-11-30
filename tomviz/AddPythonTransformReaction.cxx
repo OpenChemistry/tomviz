@@ -418,7 +418,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      QDialog dialog(pqCoreUtilities::mainWidget());
      dialog.setWindowTitle("Apply Gaussian filter");
      QGridLayout *layout = new QGridLayout;
-     QLabel *labelDescription = new QLabel("Apply an isotropic Gaussian filter. \nThe standard deviation (sigma) can be specidied below:");
+     QLabel *labelDescription = new QLabel("Apply an isotropic Gaussian filter. \nThe standard deviation (sigma) can be specified below:");
      layout->addWidget(labelDescription,0,0,1,2);
 
      QLabel *label = new QLabel("Sigma:", &dialog);
@@ -446,6 +446,43 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
        QMap<QString, QString> substitutions;
        substitutions.insert("###Sigma###",
                                  QString("sigma = %1").arg(sigma->value()) );
+       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
+     }
+  }
+    
+  else if (scriptLabel == "Median Filter") //UI for Median Filter
+  {
+     QDialog dialog(pqCoreUtilities::mainWidget());
+     dialog.setWindowTitle("Apply Median filter");
+     QGridLayout *layout = new QGridLayout;
+     QLabel *labelDescription = new QLabel("Apply an isotropic median filter. \nThe window size can be specified below:");
+     layout->addWidget(labelDescription,0,0,1,2);
+    
+     QLabel *label = new QLabel("Size:", &dialog);
+     layout->addWidget(label);
+     QSpinBox *size = new QSpinBox(&dialog);
+     size->setSingleStep(1);
+     size->setMinimum(1);
+     size->setValue(2);
+     layout->addWidget(label,1,0,1,1);
+     layout->addWidget(size,1,1,1,1);
+    
+     QVBoxLayout *v = new QVBoxLayout;
+     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel,
+                                                     Qt::Horizontal,
+                                                     &dialog);
+     connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+     connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+     v->addLayout(layout);
+     v->addWidget(buttons);
+     dialog.setLayout(v);
+     dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+     if (dialog.exec() == QDialog::Accepted)
+     {
+       QMap<QString, QString> substitutions;
+       substitutions.insert("###Size###",
+                             QString("size = %1").arg(size->value()) );
        addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
      }
   }

@@ -151,6 +151,7 @@ set(python_files
   SobelFilter.py
   LaplaceFilter.py
   GaussianFilter.py
+  MedianFilter.py
   Resample.py
   deleteSlices.py
   ClearVolume.py
