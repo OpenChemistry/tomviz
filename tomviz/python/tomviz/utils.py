@@ -77,21 +77,17 @@ def set_tilt_angles(dataobject, newarray):
     do.FieldData.RemoveArray('tilt_angles')
     do.FieldData.AddArray(vtkarray)
 
-def make_dataset(x, y, z, generate_data_function):
+def make_dataset(x, y, z, dataset, generate_data_function):
     from vtk import vtkImageData, VTK_DOUBLE
     array = np.zeros((x,y,z), order='F')
     generate_data_function(array)
-    dataset = vtkImageData()
     dataset.SetOrigin(0,0,0)
     dataset.SetSpacing(1,1,1)
     dataset.SetExtent(0, x-1, 0, y-1, 0, z-1)
     flat_array = array.reshape(-1, order='F')
     vtkarray = np_s.numpy_to_vtk(flat_array, deep=1, array_type=VTK_DOUBLE)
-    vtkarray.Association = dsa.ArrayAssociation.POINT
-    do = dsa.WrapDataObject(dataset)
-    do.PointData.append(vtkarray, "generated_scalars")
-    do.PointData.SetActiveScalars("generated_scalars")
-    return dataset
+    vtkarray.SetName("generated_scalars")
+    dataset.GetPointData().SetScalars(vtkarray)
 
 def mark_as_volume(dataobject):
     from vtk import vtkTypeInt8Array
