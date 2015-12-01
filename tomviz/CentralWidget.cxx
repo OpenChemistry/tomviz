@@ -41,6 +41,7 @@
 
 #include <QtDebug>
 #include <QThread>
+#include <QTimer>
 
 #include "ActiveObjects.h"
 #include "ComputeHistogram.h"
@@ -181,6 +182,7 @@ class CentralWidget::CWInternals
 {
 public:
   Ui::CentralWidget Ui;
+  QTimer Timer;
 };
 
 class vtkHistogramMarker : public vtkPlot
@@ -295,6 +297,9 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->connect(this->HistogramGen,
      SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>)),
      SLOT(histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>)));
+  this->Internals->Timer.setInterval(200);
+  this->Internals->Timer.setSingleShot(true);
+  this->connect(&this->Internals->Timer, SIGNAL(timeout()), SLOT(refreshHistogram()));
 }
 
 //-----------------------------------------------------------------------------
@@ -337,7 +342,7 @@ void CentralWidget::setActiveModule(Module* module)
   if (this->AModule)
   {
     this->connect(this->AModule, SIGNAL(colorMapChanged()),
-                  SLOT(refreshHistogram()));
+                  SLOT(onDataSourceChanged()));
     this->setDataSource(module->dataSource());
   }
   else
@@ -356,7 +361,7 @@ void CentralWidget::setDataSource(DataSource* source)
   this->ADataSource = source;
   if (source)
   {
-    this->connect(source, SIGNAL(dataChanged()), SLOT(refreshHistogram()));
+    this->connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
   }
 
   // Whenever the data source changes clear the plot, and then populate when
@@ -432,7 +437,15 @@ void CentralWidget::setDataSource(DataSource* source)
 
 void CentralWidget::onColorMapUpdated()
 {
-  this->refreshHistogram();
+  this->onDataSourceChanged();
+}
+
+void CentralWidget::onDataSourceChanged()
+{
+  // This starts/restarts the internal timer so that several events occurring
+  // within a few milliseconds of each other only result in one call to
+  // refreshHistogram()
+  this->Internals->Timer.start();
 }
 
 void CentralWidget::refreshHistogram()
