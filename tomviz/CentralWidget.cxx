@@ -320,7 +320,7 @@ void CentralWidget::setActiveDataSource(DataSource* source)
 {
   if (this->AModule)
   {
-    this->disconnect(this->AModule);
+    this->AModule->disconnect(this);
     this->AModule = nullptr;
   }
   this->setDataSource(source);
@@ -331,7 +331,7 @@ void CentralWidget::setActiveModule(Module* module)
 {
   if (this->AModule)
   {
-    this->disconnect(this->AModule);
+    this->AModule->disconnect(this);
   }
   this->AModule = module;
   if (this->AModule)
@@ -351,7 +351,7 @@ void CentralWidget::setDataSource(DataSource* source)
 {
   if (this->ADataSource)
   {
-    this->disconnect(this->ADataSource);
+    this->ADataSource->disconnect(this);
   }
   this->ADataSource = source;
   if (source)
