@@ -66,6 +66,7 @@ public slots:
 private slots:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
   void histogramClicked(vtkObject *caller);
+  void onDataSourceChanged();
   void refreshHistogram();
 
 private:
