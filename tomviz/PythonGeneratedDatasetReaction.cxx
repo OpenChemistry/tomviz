@@ -99,7 +99,8 @@ public:
 
     vtkSmartPyObject module;
     module.TakeReference(PyImport_ExecCodeModule(
-            QString("tomviz_%1").arg(this->label).toLatin1().data(),
+          // Don't let these be the same, even for similar scripts.  Seems to cause python crashes.
+            QString("tomviz_%1%2").arg(this->label).arg(number_of_scripts++).toLatin1().data(),
             this->Code));
     if (!module)
     {
@@ -130,12 +131,14 @@ public:
 //----------------------------------------------------------------------------
   vtkSmartPointer<vtkSMSourceProxy> createDataSource(const int shape[3])
   {
+  vtkNew<vtkImageData> image;
   vtkSmartPointer<vtkSMSourceProxy> retVal;
-  vtkSmartPyObject args(PyTuple_New(4));
+  vtkSmartPyObject args(PyTuple_New(5));
   PyTuple_SET_ITEM(args.GetPointer(), 0, PyInt_FromLong(shape[0]));
   PyTuple_SET_ITEM(args.GetPointer(), 1, PyInt_FromLong(shape[1]));
   PyTuple_SET_ITEM(args.GetPointer(), 2, PyInt_FromLong(shape[2]));
-  PyTuple_SET_ITEM(args.GetPointer(), 3, this->GenerateFunction);
+  PyTuple_SET_ITEM(args.GetPointer(), 3, vtkPythonUtil::GetObjectFromPointer(image.Get()));
+  PyTuple_SET_ITEM(args.GetPointer(), 4, this->GenerateFunction);
 
   vtkSmartPyObject result;
   result.TakeReference(PyObject_Call(this->MakeDatasetFunction, args, nullptr));
@@ -147,22 +150,13 @@ public:
     return retVal;
   }
 
-  vtkImageData* image = vtkImageData::SafeDownCast(
-      vtkPythonUtil::GetPointerFromObject(result,"vtkImageData"));
-  if (image == nullptr)
-  {
-    qCritical() << "Failed to get a valid image data from generation method.";
-    CheckForError();
-    return retVal;
-  }
-
   vtkSMSessionProxyManager* pxm =
       tomviz::ActiveObjects::instance().proxyManager();
   vtkSmartPointer<vtkSMProxy> source;
   source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
   vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
     source->GetClientSideObject());
-  tp->SetOutput(image);
+  tp->SetOutput(image.Get());
   source->SetAnnotation("tomviz.Type", "DataSource");
   source->SetAnnotation("tomviz.DataSource.FileName", "Python Generated Data");
   source->SetAnnotation("tomviz.Label", this->label.toAscii().data());
@@ -184,7 +178,10 @@ private:
   vtkSmartPyObject MakeDatasetFunction;
   QString label;
   QString pythonScript;
+  static int number_of_scripts;
 };
+
+int PythonGeneratedDataSource::number_of_scripts = 0;
 
 //----------------------------------------------------------------------------
 class ShapeWidget : public QWidget
