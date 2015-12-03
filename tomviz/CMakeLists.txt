@@ -160,6 +160,10 @@ set(python_files
   TiltSeries.py 
   )
 
+set(resource_files
+  matplotlib_cmaps.json
+  )
+
 # Make symlinks where possible, file copies where necessary in the build tree.
 if(UNIX)
   set(script_cmd "create_symlink")
@@ -175,6 +179,15 @@ foreach(file ${python_files})
   install(FILES "python/${file}"
     DESTINATION "${tomviz_data_install_dir}/scripts"
     COMPONENT "Scripts")
+endforeach()
+foreach(file ${resource_files})
+  list(APPEND SOURCES "resources/${file}")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/resources/${file}"
+    "${tomviz_BINARY_DIR}/share/tomviz/${file}")
+  install(FILES "resources/${file}"
+    DESTINATION "${tomviz_data_install_dir}"
+    COMPONENT runtime)
 endforeach()
 
 qt4_wrap_ui(UI_SOURCES
