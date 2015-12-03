@@ -213,8 +213,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *dataProcessingLabel = ui.menuTomography->addAction("Pre-reconstruction Processing:");
   dataProcessingLabel->setEnabled(false);
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
-  QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
+  QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
 
