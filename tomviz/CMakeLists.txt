@@ -149,6 +149,7 @@ set(python_files
   Rotate3D.py
   HannWindow3D.py
   SobelFilter.py
+  SobelFilter2D.py
   LaplaceFilter.py
   GaussianFilter.py
   MedianFilter.py
