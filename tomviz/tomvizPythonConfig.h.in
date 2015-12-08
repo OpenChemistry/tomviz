@@ -24,6 +24,8 @@
 #define TOMVIZ_DATA_SOURCE_DIR "@tomviz_data_DIR@/Data"
 
 // For install builds: these are paths when running from an installed location.
+#define PARAVIEW_VERSION_MAJOR  "@PARAVIEW_VERSION_MAJOR@"
+#define PARAVIEW_VERSION_MINOR  "@PARAVIEW_VERSION_MINOR@"
 #define TOMVIZ_PYTHON_INSTALL_DIR "@tomviz_python_install_dir@"
 #define TOMVIZ_DATA_INSTALL_DIR "@tomviz_data_install_dir@/Data"
 
@@ -90,7 +92,13 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     // since exe_dir in <PREFiX>/bin, we do a  /../
     PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
 
-    // we don't add anything for ParaView since, ParaView takes care of that.
+    // ParaView tries to take care of this, but its assumption is that the executable is
+    // a shared-forwarded executable in INSTALL_DIR/lib/paraview-X.Y/paraview.  In our case
+    // the exectuable is in INSTALL_DIR/bin, so ParaView's baked-in paths do not work.
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/paraview-" PARAVIEW_VERSION_MAJOR "."
+        PARAVIEW_VERSION_MINOR "/site-packages");
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/paraview-" PARAVIEW_VERSION_MAJOR "."
+        PARAVIEW_VERSION_MINOR "/site-packages/vtk");
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/");
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/ITK-4.8/Python");
     }

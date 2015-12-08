@@ -13,7 +13,7 @@ determine_version("${tomviz_SOURCE_DIR}" "${GIT_EXECUTABLE}" "tomviz")
 # Hard coded for source tarballs, releases, etc.
 set(tomviz_version_major 0)
 set(tomviz_version_minor 7)
-set(tomviz_version_patch 0)
+set(tomviz_version_patch 1)
 set(tomviz_version_extra)
 set(tomviz_version
   "${tomviz_version_major}.${tomviz_version_minor}.${tomviz_version_patch}")
