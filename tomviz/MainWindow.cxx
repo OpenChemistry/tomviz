@@ -214,6 +214,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   dataProcessingLabel->setEnabled(false);
   QAction *autoSubtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Auto)");
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
+  QAction *sobelFilter2DAction = ui.menuTomography->addAction("Sobel Filter");
   QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
   QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
@@ -277,6 +278,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  readInPythonScript("Subtract_TiltSer_Background_Auto"), true);
   new AddPythonTransformReaction(subtractBackgroundAction, "Background Subtraction (Manual)",
                                  readInPythonScript("Subtract_TiltSer_Background"), true);
+  new AddPythonTransformReaction(sobelFilter2DAction, "Sobel Filter 2D",
+                                 readInPythonScript("SobelFilter2D"), true);
   new AddRotateAlignReaction(rotateAlignAction);
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", readInPythonScript("Align_Images"), true);
