@@ -147,6 +147,7 @@ set(python_files
   Subtract_TiltSer_Background.py
   Subtract_TiltSer_Background_Auto.py
   MisalignImgs_Gaussian.py
+  NormalizeTiltSeries.py
   Rotate3D.py
   HannWindow3D.py
   SobelFilter.py
