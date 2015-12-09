@@ -145,10 +145,13 @@ set(python_files
   Shift3D.py
   Square_Root_Data.py
   Subtract_TiltSer_Background.py
+  Subtract_TiltSer_Background_Auto.py
   MisalignImgs_Gaussian.py
+  NormalizeTiltSeries.py
   Rotate3D.py
   HannWindow3D.py
   SobelFilter.py
+  SobelFilter2D.py
   LaplaceFilter.py
   GaussianFilter.py
   MedianFilter.py

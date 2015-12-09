@@ -253,6 +253,9 @@ void RecentFilesMenu::dataSourceTriggered()
           save_settings(settings);
           return;
         }
+        // If the user pressed 'Cancel' on the reader properties dialog,
+        // don't remove the node
+        return;
       }
       // failed to create reader, remove the node.
       root.remove_child(node);
