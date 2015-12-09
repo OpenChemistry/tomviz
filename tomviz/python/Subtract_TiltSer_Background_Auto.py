@@ -1,4 +1,8 @@
 def transform_scalars(dataset):
+    '''For each tilt image, the method calculates its histogram 
+      and then chooses the highest peak as the background level and subtracts it from the image.'''
+    '''It does NOT set negative pixels to zero.'''
+
     from tomviz import utils
     import numpy as np
 

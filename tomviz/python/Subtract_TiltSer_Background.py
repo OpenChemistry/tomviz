@@ -1,4 +1,8 @@
 def transform_scalars(dataset):
+    '''For each tilt image, the method uses average pixel value of selected region
+      as the background level and subtracts it from the image.'''
+    '''It does NOT set negative pixels to zero.'''
+
     from tomviz import utils
     import numpy as np
 
