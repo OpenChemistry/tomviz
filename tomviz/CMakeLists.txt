@@ -150,8 +150,8 @@ set(python_files
   NormalizeTiltSeries.py
   Rotate3D.py
   HannWindow3D.py
-  SobelFilter.py
-  SobelFilter2D.py
+  GradientMagnitude_Sobel.py
+  GradientMagnitude2D_Sobel.py
   LaplaceFilter.py
   GaussianFilter.py
   MedianFilter.py

@@ -189,7 +189,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *squareRootAction = ui.menuData->addAction("Square Root Data");
   QAction *hannWindowAction = ui.menuData->addAction("Hann Window");
   QAction *fftAbsLogAction = ui.menuData->addAction("FFT (abs log)");
-  QAction *sobelFilterAction = ui.menuData->addAction("Sobel Filter");
+  QAction *gradientMagnitudeSobelAction = ui.menuData->addAction("Gradient Magnitude");
   QAction *laplaceFilterAction = ui.menuData->addAction("Laplace Filter");
   QAction *gaussianFilterAction = ui.menuData->addAction("Gaussian Filter");
   QAction *medianFilterAction = ui.menuData->addAction("Median Filter");
@@ -215,7 +215,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *autoSubtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Auto)");
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
   QAction *normalizationAction = ui.menuTomography->addAction("Normalization");
-  QAction *sobelFilter2DAction = ui.menuTomography->addAction("Sobel Filter");
+  QAction *gradientMagnitude2DSobelAction = ui.menuTomography->addAction("Gradient Magnitude");
   QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
   QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
@@ -256,8 +256,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Hann Window", readInPythonScript("HannWindow3D"));
   new AddPythonTransformReaction(fftAbsLogAction,
                                  "FFT (ABS LOG)", readInPythonScript("FFT_AbsLog"));
-  new AddPythonTransformReaction(sobelFilterAction,
-                                   "Sobel Filter", readInPythonScript("SobelFilter"));
+  new AddPythonTransformReaction(gradientMagnitudeSobelAction,
+                                   "Gradient Magnitude", readInPythonScript("GradientMagnitude_Sobel"));
   new AddPythonTransformReaction(laplaceFilterAction,
                                    "Laplace Filter", readInPythonScript("LaplaceFilter"));
   new AddPythonTransformReaction(gaussianFilterAction,
@@ -281,8 +281,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  readInPythonScript("Subtract_TiltSer_Background"), true);
   new AddPythonTransformReaction(normalizationAction, "Normalize Tilt Series",
                                  readInPythonScript("NormalizeTiltSeries"), true);
-  new AddPythonTransformReaction(sobelFilter2DAction, "Sobel Filter 2D",
-                                 readInPythonScript("SobelFilter2D"), true);
+  new AddPythonTransformReaction(gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
+                                 readInPythonScript("GradientMagnitude2D_Sobel"), true);
   new AddRotateAlignReaction(rotateAlignAction);
   new AddPythonTransformReaction(autoAlignAction,
                                  "Auto Align (XCORR)", readInPythonScript("Align_Images"), true);

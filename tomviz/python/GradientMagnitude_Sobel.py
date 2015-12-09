@@ -1,11 +1,12 @@
 def transform_scalars(dataset):
-    """Apply 3D Sobel filter to dataset"""
-    """Sobel Filter hgihlights high intensity variations"""
+    """Calculate 3D gradient magnitude using Sobel operator"""
 
     from tomviz import utils
+    import numpy as np
     import scipy.ndimage
 
     array = utils.get_array(dataset)
+    array = array.astype(np.float32)
 
     # transform the dataset
     result = scipy.ndimage.filters.generic_gradient_magnitude(array, scipy.ndimage.filters.sobel)
