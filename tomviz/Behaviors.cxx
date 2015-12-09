@@ -29,9 +29,13 @@
 #include "ProgressBehavior.h"
 //#include "ScaleActorBehavior.h"
 #include "vtkSMReaderFactory.h"
+#include "vtkSMTransferFunctionPresets.h"
+#include "vtkNew.h"
 #include "vtkSMSettings.h"
 
 #include <QMainWindow>
+#include <QApplication>
+#include <QFile>
 
 // Import the generated header to load our custom plugin
 #include "pvextensions/tomvizExtensions_Plugin.h"
@@ -69,7 +73,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TIFFSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TVRawImageReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "MRCSeriesReader");
-  vtkSMReaderFactory::AddReaderToWhitelist("sourceS", "XdmfReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "XdmfReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "CSVReader");
 
   PV_PLUGIN_IMPORT(tomvizExtensions)
@@ -98,6 +102,22 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
 
   new tomviz::AddRenderViewContextMenuBehavior(this);
 
+  vtkNew<vtkSMTransferFunctionPresets> presets;
+  bool needToAddMatplotlibColormaps = true;
+  for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i)
+  {
+    if (presets->GetPresetName(i) == QString("Viridis (matplotlib)"))
+    {
+      needToAddMatplotlibColormaps = false;
+      break;
+    }
+  }
+  if (needToAddMatplotlibColormaps)
+  {
+    QString colorMapFile = getMatplotlibColorMapFile();
+    presets->ImportPresets(colorMapFile.toStdString().c_str());
+  }
+
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
 }
@@ -105,6 +125,28 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
 //-----------------------------------------------------------------------------
 Behaviors::~Behaviors()
 {
+}
+
+QString Behaviors::getMatplotlibColorMapFile()
+{
+  QString path = QApplication::applicationDirPath() + "/../share/tomviz/matplotlib_cmaps.json";
+  QFile file(path);
+  if (file.exists())
+  {
+    return path;
+  }
+// On OSX the above doesn't work in a build tree.  It is fine
+// for superbuilds, but the following is needed in the build tree
+// since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
+#ifdef __APPLE__
+  else
+  {
+    path = QApplication::applicationDirPath() + "/../../../../share/tomviz/scripts/matplotlib_cmaps.json";
+    return path;
+  }
+#else
+  return "";
+#endif
 }
 
 } // end of namespace tomviz

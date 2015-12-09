@@ -36,6 +36,8 @@ public:
 
 private:
   Q_DISABLE_COPY(Behaviors)
+
+  QString getMatplotlibColorMapFile();
 };
 }
 #endif
