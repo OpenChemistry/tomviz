@@ -379,40 +379,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
     }
   }
-
-  else if (scriptLabel == "Sobel Filter") //UI for Sobel Filter
-  {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    QHBoxLayout *layout = new QHBoxLayout;
-    QLabel *label = new QLabel("Axis:", &dialog);
-    layout->addWidget(label);
-    QComboBox *axis = new QComboBox(&dialog);
-    axis->addItem("X");
-    axis->addItem("Y");
-    axis->addItem("Z");
-    axis->setCurrentIndex(2);
-    layout->addWidget(label);
-    layout->addWidget(axis);
-    QVBoxLayout *v = new QVBoxLayout;
-    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                     | QDialogButtonBox::Cancel,
-                                                     Qt::Horizontal,
-                                                     &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    
-    if (dialog.exec() == QDialog::Accepted)
-    {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###Filter_AXIS###",
-                           QString("Filter_AXIS = %1").arg(axis->currentIndex()) );
-      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
-    }
-  }
-
   else if (scriptLabel == "Gaussian Filter") //UI for Gaussian Filter
   {
      QDialog dialog(pqCoreUtilities::mainWidget());

@@ -1,6 +1,5 @@
 def transform_scalars(dataset):
-    """Apply a 2D Sobel filter to tilt series"""
-    """Sobel filter highlights high intensity variations and edges"""
+    """Calculate gradient magnitude of each tilt image using Sobel operator"""
     
     from tomviz import utils
     import numpy as np
