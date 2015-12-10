@@ -16,12 +16,13 @@
 #ifndef tomvizAlignWidget_h
 #define tomvizAlignWidget_h
 
-#include <QWidget>
+#include "EditOperatorWidget.h"
 
 #include <vtkNew.h>
 #include <vtkVector.h>
 
 #include <QVector>
+#include <QPointer>
 
 class QLabel;
 class QSpinBox;
@@ -42,22 +43,20 @@ namespace tomviz
 {
 
 class DataSource;
+class TranslateAlignOperator;
 
-class AlignWidget : public QWidget
+class AlignWidget : public EditOperatorWidget
 {
   Q_OBJECT
 
 public:
-  AlignWidget(DataSource *data, QWidget* parent = nullptr,
-              Qt::WindowFlags f = nullptr);
+  AlignWidget(TranslateAlignOperator *op, QWidget* parent = nullptr);
   ~AlignWidget();
 
   // This will filter the QVTKWidget events
   bool eventFilter(QObject *object, QEvent *event) override;
 
-public slots:
-  // Set the data source, which will be aligned by this widget.
-  void setDataSource(DataSource *source);
+  void applyChangesToOperator() override;
 
 protected slots:
   void changeSlice();
@@ -69,8 +68,6 @@ protected slots:
   void applySliceOffset(int sliceNumber = -1);
   void startAlign();
   void stopAlign();
-
-  void doDataAlign();
 
   void zoomToSelectionStart();
   void zoomToSelectionFinished();
@@ -101,6 +98,7 @@ protected:
   int observerId;
 
   QVector<vtkVector2i> offsets;
+  QPointer<TranslateAlignOperator> Op;
   DataSource *unalignedData;
   DataSource *alignedData;
 };

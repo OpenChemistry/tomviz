@@ -122,6 +122,8 @@ set(SOURCES
   TomographyReconstruction.cxx
   TomographyTiltSeries.h
   TomographyTiltSeries.cxx
+  TranslateAlignOperator.h
+  TranslateAlignOperator.cxx
   Utilities.cxx
   Utilities.h
   ViewPropertiesPanel.cxx
