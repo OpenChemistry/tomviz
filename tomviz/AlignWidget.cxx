@@ -133,6 +133,8 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   connect(currentSlice, SIGNAL(valueChanged(int)), SLOT(setSlice(int)));
   connect(currentSlice, SIGNAL(valueChanged(int)), SLOT(updateReference()));
   grid->addWidget(currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
+  label = new QLabel("Shortcut: (A/S)");
+  grid->addWidget(label, gridrow, 2, 1, 1, Qt::AlignRight);
 
   ++gridrow;
   label = new QLabel("Frame rate (fps):");
@@ -176,10 +178,8 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
 
   // Slice offsets
   ++gridrow;
-  label = new QLabel("Image shift:");
-  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
-  currentSliceOffset = new QLabel("(0, 0)");
-  grid->addWidget(currentSliceOffset, gridrow, 1, 1, 1, Qt::AlignLeft);
+  currentSliceOffset = new QLabel("Image shift (Shortcut: arrow keys): (0, 0)");
+  grid->addWidget(currentSliceOffset, gridrow, 0, 1, 3, Qt::AlignLeft);
 
   // Add our buttons.
   ++gridrow;
@@ -282,8 +282,8 @@ void AlignWidget::setSlice(int slice, bool resetInc)
   // Does not change currentSlice, display only.
   if (resetInc)
   {
-    currentSliceOffset->setText(QString("(%1, %2)").arg(offsets[slice][0])
-        .arg(offsets[slice][1]));
+    currentSliceOffset->setText(QString("Image shift (Shortcut: arrow keys): (%1, %2)")
+        .arg(offsets[slice][0]).arg(offsets[slice][1]));
   }
   mapper->SetSliceNumber(slice);
   applySliceOffset(slice);
@@ -377,7 +377,7 @@ void AlignWidget::applySliceOffset(int sliceNumber)
   if (sliceNumber == -1)
   {
     offset = offsets[currentSlice->value()];
-    currentSliceOffset->setText(QString("(%1, %2)").arg(offset[0])
+    currentSliceOffset->setText(QString("Image shift (Shortcut: arrow keys): (%1, %2)").arg(offset[0])
         .arg(offset[1]));
   }
   else
