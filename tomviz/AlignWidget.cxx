@@ -247,6 +247,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
 
   connect(timer, SIGNAL(timeout()), SLOT(changeSlice()));
   connect(timer, SIGNAL(timeout()), widget, SLOT(update()));
+  connect(offsetTable, SIGNAL(cellChanged(int, int)), SLOT(sliceOffsetEdited(int, int)));
   timer->start(100);
 }
 
@@ -375,19 +376,24 @@ void AlignWidget::setFrameRate(int rate)
 void AlignWidget::widgetKeyPress(QKeyEvent *key)
 {
   vtkVector2i &offset = offsets[currentSlice->value()];
+  bool updateTable = false;
   switch (key->key())
   {
   case Qt::Key_Left:
     offset[0] -= 1;
+    updateTable = true;
     break;
   case Qt::Key_Right:
     offset[0] += 1;
+    updateTable = true;
     break;
   case Qt::Key_Up:
     offset[1] += 1;
+    updateTable = true;
     break;
   case Qt::Key_Down:
     offset[1] -= 1;
+    updateTable = true;
     break;
   case Qt::Key_K:
   case Qt::Key_S:
@@ -400,6 +406,14 @@ void AlignWidget::widgetKeyPress(QKeyEvent *key)
   default:
     // Nothing
     break;
+  }
+  if (updateTable)
+  {
+    int sliceNumber = this->currentSlice->value();
+    QTableWidgetItem *item = this->offsetTable->item(sliceNumber, 1);
+    item->setData(Qt::DisplayRole, QString::number(offset[0]));
+    item = this->offsetTable->item(sliceNumber, 2);
+    item->setData(Qt::DisplayRole, QString::number(offset[1]));
   }
   applySliceOffset();
 }
@@ -490,6 +504,22 @@ void AlignWidget::resetCamera()
   camera->GetClippingRange(clippingRange);
   clippingRange[1] = clippingRange[0] + (bounds[5] - bounds[4] + 50);
   camera->SetClippingRange(clippingRange);
+}
+
+void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
+{
+  QTableWidgetItem* item = this->offsetTable->item(slice, offsetComponent);
+  QString str = item->data(Qt::DisplayRole).toString();
+  bool ok;
+  int offset = str.toInt(&ok);
+  if (ok)
+  {
+    this->offsets[slice][offsetComponent - 1] = offset;
+  }
+  if (slice == this->currentSlice->value())
+  {
+    applySliceOffset();
+  }
 }
 
 }

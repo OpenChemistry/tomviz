@@ -75,6 +75,8 @@ protected slots:
 
   void resetCamera();
 
+  void sliceOffsetEdited(int slice, int offsetComponent);
+
 protected:
   vtkNew<vtkImageSlice> imageSlice;
   vtkNew<vtkImageSliceMapper> mapper;
