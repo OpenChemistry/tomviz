@@ -21,6 +21,8 @@
 class QDialog;
 class QAction;
 
+class vtkSMViewProxy;
+
 namespace tomviz
 {
 
@@ -38,9 +40,19 @@ private slots:
   void showViewPropertiesDialog(bool show);
   void viewPropertiesDialogHidden();
 
+  void setProjectionModeToPerspective();
+  void setProjectionModeToOrthographic();
+  void onViewPropertyChanged();
+  void onViewChanged();
+
 private:
   QDialog* viewPropertiesDialog;
   QAction* showViewPropertiesAction;
+  QAction* perspectiveProjectionAction;
+  QAction* orthographicProjectionAction;
+
+  vtkSMViewProxy *View;
+  unsigned long ViewObserverId;
 };
 
 }
