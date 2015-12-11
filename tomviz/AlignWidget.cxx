@@ -48,6 +48,8 @@
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QKeyEvent>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 #include <QButtonGroup>
 
 namespace tomviz
@@ -194,14 +196,44 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   grid->addLayout(buttonLayout, gridrow, 0, 1, 2, Qt::AlignCenter);
 
   gridrow++;
+  offsetTable = new QTableWidget(this);
+  grid->addWidget(offsetTable, gridrow, 0, 1, 3, Qt::AlignCenter);
   offsets.fill(vtkVector2i(0, 0), mapper->GetSliceNumberMaxValue() + 1);
 
   const QVector<vtkVector2i> &oldOffsets = this->Op->getAlignOffsets();
 
+  offsetTable->setRowCount(offsets.size());
+  offsetTable->setColumnCount(3);
+  QTableWidgetItem* item = new QTableWidgetItem();
+  item->setText("Slice #");
+  offsetTable->setHorizontalHeaderItem(0,item);
+  item = new QTableWidgetItem();
+  item->setText("X offset");
+  offsetTable->setHorizontalHeaderItem(1,item);
+  item = new QTableWidgetItem();
+  item->setText("Y offset");
+  offsetTable->setHorizontalHeaderItem(2,item);
   for (int i = 0; i < oldOffsets.size(); ++i)
   {
     this->offsets[i] = oldOffsets[i];
   }
+
+  for (int i = 0; i < offsets.size(); ++i)
+  {
+    item = new QTableWidgetItem();
+    item->setData(Qt::DisplayRole, QString::number(i));
+    item->setFlags(Qt::ItemIsEnabled);
+    offsetTable->setItem(i, 0, item);
+
+    item = new QTableWidgetItem();
+    item->setData(Qt::DisplayRole, QString::number(offsets[i][0]));
+    offsetTable->setItem(i, 1, item);
+
+    item = new QTableWidgetItem();
+    item->setData(Qt::DisplayRole, QString::number(offsets[i][1]));
+    offsetTable->setItem(i, 2, item);
+  }
+  offsetTable->resizeColumnsToContents();
   currentSliceOffset->setText(QString("Image shift (Shortcut: arrow keys): (%1, %2)")
       .arg(offsets[currentSlice->value()][0]).arg(offsets[currentSlice->value()][1]));
 

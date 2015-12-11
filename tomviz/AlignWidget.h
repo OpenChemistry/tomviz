@@ -31,6 +31,7 @@ class QKeyEvent;
 class QButtonGroup;
 class QPushButton;
 class QRadioButton;
+class QTableWidget;
 
 class vtkImageSlice;
 class vtkImageSliceMapper;
@@ -92,6 +93,7 @@ protected:
   QSpinBox *statRefNum;
   QPushButton *startButton;
   QPushButton *stopButton;
+  QTableWidget *offsetTable;
 
   int frameRate;
   int referenceSlice;
