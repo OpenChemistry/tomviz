@@ -71,11 +71,17 @@ void ViewMenuManager::buildMenu()
   {
     perspectiveProjectionChecked = this->perspectiveProjectionAction->isChecked();
   }
+  bool axisGridIsShowing = false;
+  if (this->showAxisGridAction)
+  {
+    axisGridIsShowing = this->showAxisGridAction->isChecked();
+  }
   this->showViewPropertiesAction = nullptr; // The object is about to be deleted
   this->perspectiveProjectionAction = nullptr;
   this->orthographicProjectionAction = nullptr;
   pqViewMenuManager::buildMenu(); // deletes all prior menu items and repopulates menu
 
+  this->Menu->addSeparator();
   // Projection modes
   QMenu *projectionMenu = this->Menu->addMenu("Projection Mode");
   QActionGroup *projectionGroup = new QActionGroup(this);
@@ -92,6 +98,12 @@ void ViewMenuManager::buildMenu()
   this->orthographicProjectionAction->setChecked(!perspectiveProjectionChecked);
   this->connect(this->orthographicProjectionAction, SIGNAL(triggered()),
                 SLOT(setProjectionModeToOrthographic()));
+
+  this->showAxisGridAction = this->Menu->addAction("Show Axis Grid");
+  this->showAxisGridAction->setCheckable(true);
+  this->showAxisGridAction->setChecked(axisGridIsShowing);
+  this->connect(this->showAxisGridAction, SIGNAL(triggered(bool)),
+                SLOT(setShowAxisGrid(bool)));
 
   // Show view properties
   this->showViewPropertiesAction = new QAction("View Properties", this->Menu);
@@ -171,6 +183,8 @@ void ViewMenuManager::onViewChanged()
 {
   if (this->View)
   {
+    vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy()
+      ->RemoveObserver(this->AxesGridObserverId);
     this->View->RemoveObserver(this->ViewObserverId);
   }
   this->View = ActiveObjects::instance().activeView();
@@ -179,6 +193,43 @@ void ViewMenuManager::onViewChanged()
     this->ViewObserverId = pqCoreUtilities::connect(
         this->View, vtkCommand::PropertyModifiedEvent,
         this, SLOT(onViewPropertyChanged()));
+    this->AxesGridObserverId = pqCoreUtilities::connect(
+        vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy(),
+        vtkCommand::PropertyModifiedEvent, this, SLOT(onAxesGridChanged()));
+  }
+}
+
+void ViewMenuManager::setShowAxisGrid(bool show)
+{
+  vtkSMProxy *axesGrid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
+  int showing = vtkSMPropertyHelper(axesGrid, "Visibility").GetAsInt();
+  if (showing && !show)
+  {
+    vtkSMPropertyHelper(axesGrid, "Visibility").Set(0);
+  }
+  else if (!showing && show)
+  {
+    vtkSMPropertyHelper(axesGrid, "Visibility").Set(1);
+  }
+  axesGrid->UpdateVTKObjects();
+  pqView* view = tomviz::convert<pqView*>(this->View);
+  if (view)
+  {
+    view->render();
+  }
+}
+
+void ViewMenuManager::onAxesGridChanged()
+{
+  vtkSMProxy *axesGrid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
+  int showing = vtkSMPropertyHelper(axesGrid, "Visibility").GetAsInt();
+  if (showing && !this->showAxisGridAction->isChecked())
+  {
+    this->showAxisGridAction->setChecked(true);
+  }
+  else if (!showing && this->showAxisGridAction->isChecked())
+  {
+    this->showAxisGridAction->setChecked(false);
   }
 }
 

@@ -44,15 +44,19 @@ private slots:
   void setProjectionModeToOrthographic();
   void onViewPropertyChanged();
   void onViewChanged();
+  void setShowAxisGrid(bool show);
+  void onAxesGridChanged();
 
 private:
   QDialog* viewPropertiesDialog;
   QAction* showViewPropertiesAction;
   QAction* perspectiveProjectionAction;
   QAction* orthographicProjectionAction;
+  QAction* showAxisGridAction;
 
   vtkSMViewProxy *View;
   unsigned long ViewObserverId;
+  unsigned long AxesGridObserverId;
 };
 
 }
