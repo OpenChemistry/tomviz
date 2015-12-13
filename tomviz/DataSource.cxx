@@ -47,31 +47,40 @@ public:
   QList<QSharedPointer<Operator> > Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
   DataSource::DataSourceType Type;
-};
 
-namespace {
+  vtkSmartPointer<vtkDataArray> TiltAngles;
 
 //-----------------------------------------------------------------------------
 // Checks if the tilt angles data array exists on the given VTK data
 // and creates it if it does not exist.
-void ensureTiltAnglesArrayExists(vtkSMSourceProxy* proxy)
-{
-  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-    proxy->GetClientSideObject());
-  vtkDataObject* data = tp->GetOutputDataObject(0);
-  vtkFieldData* fd = data->GetFieldData();
-  vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
-  int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
-  int num_tilt_angles = extent[5] - extent[4] + 1;
-  if (tiltAngles == nullptr)
+  void ensureTiltAnglesArrayExists()
   {
-    vtkNew< vtkDoubleArray > array;
-    array->SetName("tilt_angles");
-    array->SetNumberOfTuples(num_tilt_angles);
-    array->FillComponent(0,0.0);
-    fd->AddArray(array.GetPointer());
+    vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
+      this->Producer->GetClientSideObject());
+    vtkDataObject* data = tp->GetOutputDataObject(0);
+    vtkFieldData* fd = data->GetFieldData();
+    if (!this->TiltAngles)
+    {
+      int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+      int num_tilt_angles = extent[5] - extent[4] + 1;
+      vtkNew< vtkDoubleArray > array;
+      array->SetName("tilt_angles");
+      array->SetNumberOfTuples(num_tilt_angles);
+      array->FillComponent(0,0.0);
+      fd->AddArray(array.GetPointer());
+      this->TiltAngles = array.Get();
+    }
+    else
+    {
+      if (!fd->HasArray("tilt_angles"))
+      {
+        fd->AddArray(this->TiltAngles);
+      }
+    }
   }
-}
+};
+
+namespace {
 
 //-----------------------------------------------------------------------------
 // Converts the data type to a string for writing to the save state
@@ -250,11 +259,7 @@ bool DataSource::serialize(pugi::xml_node& ns) const
     dataSourceTypeToString(this->type()));
   if (this->type() == TiltSeries)
   {
-    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-      this->producer()->GetClientSideObject());
-    vtkDataObject* data = tp->GetOutputDataObject(0);
-    vtkFieldData* fd = data->GetFieldData();
-    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+    vtkDataArray* tiltAngles = this->Internals->TiltAngles;
     node = ns.append_child("TiltAngles");
     serializeDataArray(node, tiltAngles);
   }
@@ -299,12 +304,7 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   // load tilt angles AFTER resetData call.
   if (this->type() == TiltSeries)
   {
-    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-      this->producer()->GetClientSideObject());
-    vtkDataObject* data = tp->GetOutputDataObject(0);
-    vtkFieldData* fd = data->GetFieldData();
-    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
-    deserializeDataArray(ns.child("TiltAngles"), tiltAngles);
+    deserializeDataArray(ns.child("TiltAngles"), this->Internals->TiltAngles);
   }
 
   for (pugi::xml_node node=ns.child("Operator"); node; node = node.next_sibling("Operator"))
@@ -344,6 +344,10 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
     newClone = new DataSource(this->Internals->OriginalDataSource,
                               this->Internals->Type);
   }
+  if (this->Internals->Type == TiltSeries)
+  {
+    newClone->setTiltAngles(this->getTiltAngles(!cloneTransformed));
+  }
   if (!cloneTransformed && cloneOperators)
   {
     // now, clone the operators.
@@ -352,6 +356,7 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
       QSharedPointer<Operator> opClone(op->clone());
       newClone->addOperator(opClone);
     }
+    newClone->setTiltAngles(this->getTiltAngles());
   }
   return newClone;
 }
@@ -495,7 +500,7 @@ void DataSource::resetData()
   dataClone->FastDelete();
   if (this->Internals->Type == TiltSeries)
   {
-    ensureTiltAnglesArrayExists(this->Internals->Producer);
+    this->Internals->ensureTiltAnglesArrayExists();
   }
   vtkFieldData *fd = dataClone->GetFieldData();
   vtkSmartPointer<vtkTypeInt8Array> typeArray = vtkTypeInt8Array::SafeDownCast(
@@ -552,7 +557,7 @@ void DataSource::setType(DataSourceType t)
   typeArray->SetTuple1(0,t);
   if (t == TiltSeries)
   {
-    ensureTiltAnglesArrayExists(this->Internals->Producer);
+    this->Internals->ensureTiltAnglesArrayExists();
   }
   emit this->dataChanged();
 }
@@ -560,38 +565,30 @@ void DataSource::setType(DataSourceType t)
 //-----------------------------------------------------------------------------
 bool DataSource::hasTiltAngles()
 {
-  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-    this->Internals->Producer->GetClientSideObject());
-  vtkDataObject* data = tp->GetOutputDataObject(0);
-  vtkFieldData* fd = data->GetFieldData();
-  if (!fd)
-  {
-    return false;
-  }
-  vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
+  vtkDataArray* tiltAngles = this->Internals->TiltAngles;
   return tiltAngles != nullptr;
 }
 
 //-----------------------------------------------------------------------------
-QVector<double> DataSource::getTiltAngles()
+QVector<double> DataSource::getTiltAngles(bool useOriginalDataTiltAngles) const
 {
   QVector<double> result;
-  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
     this->Internals->Producer->GetClientSideObject());
   vtkDataObject* data = tp->GetOutputDataObject(0);
-  vtkFieldData* fd = data->GetFieldData();
-  int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
-  int num_tilt_angles = extent[5] - extent[4] + 1;
-  result.resize(num_tilt_angles);
-  if (fd)
+  vtkFieldData *fd = data->GetFieldData();
+  vtkDataArray* tiltAngles = this->Internals->TiltAngles;
+  if (fd->HasArray("tilt_angles") && !useOriginalDataTiltAngles &&
+        fd->GetArray("tilt_angles") != this->Internals->TiltAngles.Get())
   {
-    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
-    if (tiltAngles)
+    tiltAngles = fd->GetArray("tilt_angles");
+  }
+  if (tiltAngles)
+  {
+    result.resize(tiltAngles->GetNumberOfTuples());
+    for (int i = 0; i < result.size(); ++i)
     {
-      for (int i = 0; i < tiltAngles->GetNumberOfTuples(); ++i)
-      {
-        result[i] = tiltAngles->GetTuple1(i);
-      }
+      result[i] = tiltAngles->GetTuple1(i);
     }
   }
   return result;
@@ -600,20 +597,20 @@ QVector<double> DataSource::getTiltAngles()
 //-----------------------------------------------------------------------------
 void DataSource::setTiltAngles(const QVector<double> &angles)
 {
-  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+  vtkDataArray* tiltAngles = this->Internals->TiltAngles;
+  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
     this->Internals->Producer->GetClientSideObject());
   vtkDataObject* data = tp->GetOutputDataObject(0);
-  vtkFieldData* fd = data->GetFieldData();
-  if (fd)
+  vtkFieldData *fd = data->GetFieldData();
+  if (fd->GetArray("tilt_angles") != this->Internals->TiltAngles)
   {
-    vtkDataArray* tiltAngles = fd->GetArray("tilt_angles");
-    if (tiltAngles)
+    tiltAngles = fd->GetArray("tilt_angles");
+  }
+  if (tiltAngles)
+  {
+    for (int i = 0; i < tiltAngles->GetNumberOfTuples() && i < angles.size(); ++i)
     {
-      assert(tiltAngles->GetNumberOfTuples() == angles.size());
-      for (int i = 0; i < tiltAngles->GetNumberOfTuples(); ++i)
-      {
-        tiltAngles->SetTuple1(i, angles[i]);
-      }
+      tiltAngles->SetTuple1(i, angles[i]);
     }
   }
   emit this->dataChanged();
