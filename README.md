@@ -9,7 +9,7 @@ tomographic data. In addition basic alignment and tomographic reconstruction are
 available, with Python scripts that can be modified in the interface to
 experiment with different techniques.
 
-![Kitware, Inc.][KitwareLogo]
+![tomviz_screenshot]
 
 The tomviz project is developed principally by [Marcus D. Hanwell][Hanwell] and
 [Utkarsh Ayachit][Ayachit] at [Kitware, Inc.][Kitware], and [David A.
@@ -18,6 +18,7 @@ under DOE Office of Science contract DE-SC0011385.
 
 Installing
 ----------
+<img align="right" src="https://github.com/OpenChemistry/tomviz/blob/master/docs/images/animation_nponcarbon1_small.gif">
 
 We recommend downloading the current [stable release](../../releases)
 but also provide nightly binaries built by our [dashboards][Dashboard] for Mac OS X
@@ -42,8 +43,11 @@ Contributing
 Our project uses GitHub for code review, please fork the project and make a
 pull request if you would like us to consider your patch for inclusion.
 
+![Kitware, Inc.][KitwareLogo]
+
   [tomviz]: http://tomviz.org/ "The tomviz project"
   [tomviz_logo]: https://github.com/OpenChemistry/tomviz/blob/master/tomviz/icons/tomvizfull.png "tomviz"
+  [tomviz_screenshot]: https://github.com/OpenChemistry/tomviz/blob/master/docs/images/screencap_mac_wide_v0.6.0.gif "tomviz screenshot v0.6.0"
   [Kitware]: http://kitware.com/ "Kitware, Inc."
   [KitwareLogo]: http://www.kitware.com/img/small_logo_over.png "Kitware"
   [Cornell]: http://www.aep.cornell.edu/
