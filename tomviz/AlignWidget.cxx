@@ -50,6 +50,7 @@
 #include <QKeyEvent>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QHeaderView>
 #include <QButtonGroup>
 
 namespace tomviz
@@ -197,6 +198,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
 
   gridrow++;
   offsetTable = new QTableWidget(this);
+  offsetTable->verticalHeader()->setVisible(false);
   grid->addWidget(offsetTable, gridrow, 0, 1, 3, Qt::AlignCenter);
   offsets.fill(vtkVector2i(0, 0), mapper->GetSliceNumberMaxValue() + 1);
 
