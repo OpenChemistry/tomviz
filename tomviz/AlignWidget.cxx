@@ -205,7 +205,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   const QVector<vtkVector2i> &oldOffsets = this->Op->getAlignOffsets();
 
   offsetTable->setRowCount(offsets.size());
-  offsetTable->setColumnCount(3);
+  offsetTable->setColumnCount(4);
   QTableWidgetItem* item = new QTableWidgetItem();
   item->setText("Slice #");
   offsetTable->setHorizontalHeaderItem(0,item);
@@ -215,10 +215,15 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   item = new QTableWidgetItem();
   item->setText("Y offset");
   offsetTable->setHorizontalHeaderItem(2,item);
+  item = new QTableWidgetItem();
+  item->setText("Tilt angle");
+  offsetTable->setHorizontalHeaderItem(3,item);
   for (int i = 0; i < oldOffsets.size(); ++i)
   {
     this->offsets[i] = oldOffsets[i];
   }
+
+  QVector<double> tiltAngles = this->unalignedData->getTiltAngles();
 
   for (int i = 0; i < offsets.size(); ++i)
   {
@@ -234,6 +239,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
     item = new QTableWidgetItem();
     item->setData(Qt::DisplayRole, QString::number(offsets[i][1]));
     offsetTable->setItem(i, 2, item);
+
+    item = new QTableWidgetItem();
+    item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
+    item->setFlags(Qt::ItemIsEnabled);
+    offsetTable->setItem(i, 3, item);
   }
   offsetTable->resizeColumnsToContents();
   currentSliceOffset->setText(QString("Image shift (Shortcut: arrow keys): (%1, %2)")
