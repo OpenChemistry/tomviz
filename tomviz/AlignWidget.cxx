@@ -260,7 +260,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   connect(timer, SIGNAL(timeout()), SLOT(changeSlice()));
   connect(timer, SIGNAL(timeout()), widget, SLOT(update()));
   connect(offsetTable, SIGNAL(cellChanged(int, int)), SLOT(sliceOffsetEdited(int, int)));
-  timer->start(100);
+  timer->start(200);
 }
 
 AlignWidget::~AlignWidget()
