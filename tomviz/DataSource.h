@@ -94,7 +94,7 @@ public:
   bool hasTiltAngles();
 
   /// Get a copy of the current tilt angles
-  QVector<double> getTiltAngles();
+  QVector<double> getTiltAngles(bool useOriginalDataTiltAngles = false) const;
 
   /// Set the tilt angles to the values in the given QVector
   void setTiltAngles(const QVector<double> &angles);

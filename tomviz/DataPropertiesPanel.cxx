@@ -220,20 +220,14 @@ void DataPropertiesPanel::update()
     this->Internals->TiltAnglesSeparator->show();
     ui.SetTiltAnglesButton->show();
     ui.TiltAnglesTable->show();
-    vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
-        dsource->producer()->GetClientSideObject())
-      ->GetOutputDataObject(0)->GetFieldData()->GetArray("tilt_angles");
-    ui.TiltAnglesTable->setRowCount(tiltAngles->GetNumberOfTuples());
-    ui.TiltAnglesTable->setColumnCount(tiltAngles->GetNumberOfComponents());
-    for (int i = 0; i < tiltAngles->GetNumberOfTuples(); ++i)
+    QVector<double> tiltAngles = dsource->getTiltAngles();
+    ui.TiltAnglesTable->setRowCount(tiltAngles.size());
+    ui.TiltAnglesTable->setColumnCount(1);
+    for (int i = 0; i < tiltAngles.size(); ++i)
     {
-      double* angles = tiltAngles->GetTuple(i);
-      for (int j = 0; j < tiltAngles->GetNumberOfComponents(); ++j)
-      {
-        QTableWidgetItem* item = new QTableWidgetItem();
-        item->setData(Qt::DisplayRole, QString("%1").arg(angles[j]));
-        ui.TiltAnglesTable->setItem(i, j, item);
-      }
+      QTableWidgetItem* item = new QTableWidgetItem();
+      item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
+      ui.TiltAnglesTable->setItem(i, 0, item);
     }
   }
   else
@@ -266,16 +260,13 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
   QString str = item->data(Qt::DisplayRole).toString();
   if (dsource->type() == DataSource::TiltSeries)
   {
-    vtkDataArray* tiltAngles = vtkAlgorithm::SafeDownCast(
-        dsource->producer()->GetClientSideObject())
-      ->GetOutputDataObject(0)->GetFieldData()->GetArray("tilt_angles");
+    QVector<double> tiltAngles = dsource->getTiltAngles();
     bool ok;
     double value = str.toDouble(&ok);
     if (ok)
     {
-      double* tuple = tiltAngles->GetTuple(row);
-      tuple[column] = value;
-      tiltAngles->SetTuple(row, tuple);
+      tiltAngles[row] = value;
+      dsource->setTiltAngles(tiltAngles);
     }
     else
     {
