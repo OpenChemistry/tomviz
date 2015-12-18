@@ -104,11 +104,14 @@ void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
   QSharedPointer<Operator> op = this->Internals->ItemMap[item];
   Q_ASSERT(op);
 
-  // Create a non-modal dialog, delete it once it has been closed.
-  EditOperatorDialog *dialog =
-    new EditOperatorDialog(op, nullptr, pqCoreUtilities::mainWidget());
-  dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-  dialog->show();
+  if (op->hasCustomUI())
+  {
+    // Create a non-modal dialog, delete it once it has been closed.
+    EditOperatorDialog *dialog =
+      new EditOperatorDialog(op, nullptr, pqCoreUtilities::mainWidget());
+    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+    dialog->show();
+  }
 }
 
 void OperatorsWidget::onItemClicked(QTreeWidgetItem *item, int col)

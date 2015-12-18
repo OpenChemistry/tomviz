@@ -42,6 +42,7 @@ public:
   bool deserialize(const pugi::xml_node& ns) override;
 
   EditOperatorWidget *getEditorContents(QWidget* parent) override;
+  bool hasCustomUI() const override { return true; }
 
   void setCropBounds(const int bounds[6]);
   const int* cropBounds() const
