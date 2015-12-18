@@ -160,7 +160,8 @@ set(python_files
   ClearVolume.py
   ConstantDataset.py
   RandomParticles.py
-  TiltSeries.py 
+  TiltSeries.py
+  SetNegativeVoxelsToZero.py
   )
 
 set(resource_files

@@ -185,7 +185,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *rotateAction = ui.menuData->addAction("Rotate");
   QAction *clearAction = ui.menuData->addAction("Clear Volume");
   ui.menuData->addSeparator();
-
+  QAction *setNegativeVoxelsToZeroAction = ui.menuData->addAction("Set Negative Voxels To Zero");
   QAction *squareRootAction = ui.menuData->addAction("Square Root Data");
   QAction *hannWindowAction = ui.menuData->addAction("Hann Window");
   QAction *fftAbsLogAction = ui.menuData->addAction("FFT (abs log)");
@@ -249,7 +249,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(rotateAction,
                                  "Rotate", readInPythonScript("Rotate3D"));
   new AddPythonTransformReaction(clearAction, "Clear Volume", readInPythonScript("ClearVolume"));
-
+  new AddPythonTransformReaction(setNegativeVoxelsToZeroAction,
+                                 "Set Negative Voxels to Zero", readInPythonScript("SetNegativeVoxelsToZero"));
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", readInPythonScript("Square_Root_Data"));
   new AddPythonTransformReaction(hannWindowAction,
