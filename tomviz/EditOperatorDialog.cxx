@@ -103,11 +103,13 @@ EditOperatorDialog::~EditOperatorDialog()
 {
 }
 
+//-----------------------------------------------------------------------------
 QSharedPointer<Operator>& EditOperatorDialog::op()
 {
   return this->Internals->Op;
 }
 
+//-----------------------------------------------------------------------------
 void EditOperatorDialog::onApply()
 {
   this->Internals->Widget->applyChangesToOperator();
@@ -118,6 +120,7 @@ void EditOperatorDialog::onApply()
   }
 }
 
+//-----------------------------------------------------------------------------
 void EditOperatorDialog::onClose()
 {
   this->Internals->savePosition(this->pos());
