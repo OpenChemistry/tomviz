@@ -24,8 +24,6 @@ class vtkObject;
 namespace tomviz
 {
 
-class CropOperator;
-
 class SelectVolumeWidget : public QWidget
 {
   Q_OBJECT
