@@ -281,4 +281,13 @@ void ModuleSegment::updateColorMap()
                       "LookupTable").Set(this->colorMap());
   this->Internals->ContourRepresentation->UpdateVTKObjects();
 }
+
+//-----------------------------------------------------------------------------
+void ModuleSegment::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->Internals->ContourRepresentation, "Position").
+    Set(pos, 3);
+}
+
 }

@@ -194,4 +194,13 @@ bool ModuleContour::deserialize(const pugi::xml_node& ns)
     this->Superclass::deserialize(ns);
 }
 
+//-----------------------------------------------------------------------------
+void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->ContourRepresentation, "Position").Set(pos, 3);
+  this->ContourRepresentation->MarkDirty(this->ContourRepresentation);
+  this->ContourRepresentation->UpdateVTKObjects();
+}
+
 } // end of namespace tomviz

@@ -91,6 +91,8 @@ set(SOURCES
   ModuleThreshold.h
   ModuleVolume.cxx
   ModuleVolume.h
+  MoveActiveObject.cxx
+  MoveActiveObject.h
   Operator.cxx
   Operator.h
   OperatorPython.cxx

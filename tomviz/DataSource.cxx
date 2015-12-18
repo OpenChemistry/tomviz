@@ -31,6 +31,7 @@
 #include "vtkSMTransferFunctionManager.h"
 #include "vtkTrivialProducer.h"
 #include "vtkTypeInt8Array.h"
+#include "vtkVector.h"
 
 #include <vtk_pugixml.h>
 
@@ -47,8 +48,8 @@ public:
   QList<QSharedPointer<Operator> > Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
   DataSource::DataSourceType Type;
-
   vtkSmartPointer<vtkDataArray> TiltAngles;
+  vtkVector3d DisplayPosition;
 
 //-----------------------------------------------------------------------------
 // Checks if the tilt angles data array exists on the given VTK data
@@ -168,6 +169,10 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   Q_ASSERT(dataSource);
   this->Internals->OriginalDataSource = dataSource;
   this->Internals->Type = dataType;
+  for (int i = 0; i < 3; ++i)
+  {
+    this->Internals->DisplayPosition[i] = 0.0;
+  }
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   vtkSMSessionProxyManager* pxm = dataSource->GetSessionProxyManager();
@@ -470,6 +475,36 @@ void DataSource::dataModified()
 const QList<QSharedPointer<Operator> >& DataSource::operators() const
 {
   return this->Internals->Operators;
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::translate(const double deltaPosition[3])
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    this->Internals->DisplayPosition[i] += deltaPosition[i];
+  }
+  emit displayPositionChanged(this->Internals->DisplayPosition[0],
+                              this->Internals->DisplayPosition[1],
+                              this->Internals->DisplayPosition[2]);
+}
+
+//-----------------------------------------------------------------------------
+const double *DataSource::displayPosition()
+{
+  return this->Internals->DisplayPosition.GetData();
+}
+
+//-----------------------------------------------------------------------------
+void DataSource::setDisplayPosition(const double newPosition[3])
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    this->Internals->DisplayPosition[i] = newPosition[i];
+  }
+  emit displayPositionChanged(this->Internals->DisplayPosition[0],
+                              this->Internals->DisplayPosition[1],
+                              this->Internals->DisplayPosition[2]);
 }
 
 //-----------------------------------------------------------------------------

@@ -99,6 +99,15 @@ public:
   /// Set the tilt angles to the values in the given QVector
   void setTiltAngles(const QVector<double> &angles);
 
+  /// Moves the displayPosition of the DataSource by detlaPosition
+  void translate(const double deltaPosition[3]);
+
+  /// Gets the display position of the data source
+  const double *displayPosition();
+
+  /// Sets the display position of the data source
+  void setDisplayPosition(const double newPosition[3]);
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
@@ -108,6 +117,12 @@ signals:
   /// DataSource.
   void operatorAdded(Operator*);
   void operatorAdded(QSharedPointer<Operator>&);
+
+  /// This signal is fired every time the display position is changed
+  /// Any actors based on this DataSource's data should update the position
+  /// on their actors to match this so the effect of setting the position is
+  /// to translate the dataset.
+  void displayPositionChanged(double newX, double newY, double newZ);
 
 public slots:
   void dataModified();

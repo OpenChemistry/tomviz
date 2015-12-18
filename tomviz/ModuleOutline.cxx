@@ -146,4 +146,12 @@ void ModuleOutline::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
+//-----------------------------------------------------------------------------
+void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->OutlineRepresentation, "Position").Set(pos, 3);
+  this->OutlineRepresentation->UpdateVTKObjects();
+}
+
 } // end of namespace tomviz
