@@ -63,7 +63,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
+  proxy.TakeReference(pxm->NewProxy("filters", "FlyingEdges"));
 
   this->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(this->ContourFilter);
