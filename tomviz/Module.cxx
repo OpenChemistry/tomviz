@@ -89,6 +89,8 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
       this->ADataSource, SIGNAL(dataChanged()), SLOT(render()));
+    this->connect(this->ADataSource, SIGNAL(displayPositionChanged(double, double, double)),
+                  SLOT(dataSourceMoved(double, double, double)));
   }
   return (this->View && this->ADataSource);
 }

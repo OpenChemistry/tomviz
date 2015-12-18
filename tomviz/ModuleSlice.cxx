@@ -366,4 +366,10 @@ void ModuleSlice::onPlaneChanged()
   this->IgnoreSignals = false;
 }
 
+//-----------------------------------------------------------------------------
+void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
+{
+  // TODO: this is a bit harder for slice than the others
+}
+
 }

@@ -159,4 +159,12 @@ bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
   return this->Superclass::deserialize(ns);
 }
 
+//-----------------------------------------------------------------------------
+void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->Representation, "Position").Set(pos, 3);
+  this->Representation->UpdateVTKObjects();
+}
+
 }

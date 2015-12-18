@@ -46,6 +46,8 @@ public:
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 
+  void dataSourceMoved(double newX, double newY, double newZ) override;
+
 private:
   Q_DISABLE_COPY(ModuleOutline)
   vtkWeakPointer<vtkSMSourceProxy> OutlineFilter;

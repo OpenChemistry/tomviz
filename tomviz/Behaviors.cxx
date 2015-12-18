@@ -16,6 +16,7 @@
 #include "Behaviors.h"
 
 #include "AddRenderViewContextMenuBehavior.h"
+#include "MoveActiveObject.h"
 #include "pqAlwaysConnectedBehavior.h"
 #include "pqApplicationCore.h"
 #include "pqDefaultViewBehavior.h"
@@ -101,6 +102,8 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   //new tomviz::ScaleActorBehavior(this);
 
   new tomviz::AddRenderViewContextMenuBehavior(this);
+
+  new tomviz::MoveActiveObject(this);
 
   vtkNew<vtkSMTransferFunctionPresets> presets;
   bool needToAddMatplotlibColormaps = true;

@@ -45,6 +45,8 @@ public:
   bool isColorMapNeeded() const override { return true; }
   void addToPanel(pqProxiesWidget* panel) override;
 
+  void dataSourceMoved(double newX, double newY, double newZ) override;
+
 protected:
   void updateColorMap() override;
 
