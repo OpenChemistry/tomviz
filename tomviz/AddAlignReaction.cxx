@@ -16,8 +16,9 @@
 #include "AddAlignReaction.h"
 
 #include "ActiveObjects.h"
-#include "AlignWidget.h"
 #include "DataSource.h"
+#include "EditOperatorDialog.h"
+#include "TranslateAlignOperator.h"
 #include "pqCoreUtilities.h"
 
 #include <QDebug>
@@ -56,11 +57,10 @@ void AddAlignReaction::align(DataSource* source)
     return;
   }
 
-  AlignWidget *widget = new AlignWidget(source, pqCoreUtilities::mainWidget(),
-                                        Qt::Window);
-  widget->setAttribute(Qt::WA_DeleteOnClose);
-  widget->show();
-  widget->raise();
+  QSharedPointer<Operator> Op(new TranslateAlignOperator(source));
+  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, pqCoreUtilities::mainWidget());
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->show();
 }
 
 }

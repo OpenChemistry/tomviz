@@ -16,12 +16,13 @@
 #ifndef tomvizAlignWidget_h
 #define tomvizAlignWidget_h
 
-#include <QWidget>
+#include "EditOperatorWidget.h"
 
 #include <vtkNew.h>
 #include <vtkVector.h>
 
 #include <QVector>
+#include <QPointer>
 
 class QLabel;
 class QSpinBox;
@@ -30,6 +31,7 @@ class QKeyEvent;
 class QButtonGroup;
 class QPushButton;
 class QRadioButton;
+class QTableWidget;
 
 class vtkImageSlice;
 class vtkImageSliceMapper;
@@ -42,22 +44,20 @@ namespace tomviz
 {
 
 class DataSource;
+class TranslateAlignOperator;
 
-class AlignWidget : public QWidget
+class AlignWidget : public EditOperatorWidget
 {
   Q_OBJECT
 
 public:
-  AlignWidget(DataSource *data, QWidget* parent = nullptr,
-              Qt::WindowFlags f = nullptr);
+  AlignWidget(TranslateAlignOperator *op, QWidget* parent = nullptr);
   ~AlignWidget();
 
   // This will filter the QVTKWidget events
   bool eventFilter(QObject *object, QEvent *event) override;
 
-public slots:
-  // Set the data source, which will be aligned by this widget.
-  void setDataSource(DataSource *source);
+  void applyChangesToOperator() override;
 
 protected slots:
   void changeSlice();
@@ -70,12 +70,12 @@ protected slots:
   void startAlign();
   void stopAlign();
 
-  void doDataAlign();
-
   void zoomToSelectionStart();
   void zoomToSelectionFinished();
 
   void resetCamera();
+
+  void sliceOffsetEdited(int slice, int offsetComponent);
 
 protected:
   vtkNew<vtkImageSlice> imageSlice;
@@ -95,12 +95,14 @@ protected:
   QSpinBox *statRefNum;
   QPushButton *startButton;
   QPushButton *stopButton;
+  QTableWidget *offsetTable;
 
   int frameRate;
   int referenceSlice;
   int observerId;
 
   QVector<vtkVector2i> offsets;
+  QPointer<TranslateAlignOperator> Op;
   DataSource *unalignedData;
   DataSource *alignedData;
 };

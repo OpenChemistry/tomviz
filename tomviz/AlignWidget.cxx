@@ -18,6 +18,7 @@
 
 #include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "TranslateAlignOperator.h"
 
 #include <QVTKWidget.h>
 #include <vtkCamera.h>
@@ -47,14 +48,17 @@
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QKeyEvent>
+#include <QTableWidget>
+#include <QTableWidgetItem>
+#include <QHeaderView>
 #include <QButtonGroup>
 
 namespace tomviz
 {
 
-AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
-  : QWidget(p, f), timer(new QTimer(this)), frameRate(5),
-    unalignedData(d), alignedData(nullptr)
+AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
+  : EditOperatorWidget(p), timer(new QTimer(this)), frameRate(5),
+    Op(op), unalignedData(op->getDataSource())
 {
   widget = new QVTKWidget(this);
   widget->installEventFilter(this);
@@ -63,14 +67,13 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   QVBoxLayout *v = new QVBoxLayout;
   myLayout->addLayout(v);
   setLayout(myLayout);
-  setMinimumWidth(400);
-  setMinimumHeight(300);
-  setGeometry(-1, -1, 800, 600);
+  setMinimumWidth(800);
+  setMinimumHeight(600);
   setWindowTitle("Align data");
 
   // Grab the image data from the data source...
   vtkTrivialProducer *t =
-      vtkTrivialProducer::SafeDownCast(d->producer()->GetClientSideObject());
+      vtkTrivialProducer::SafeDownCast(this->unalignedData->producer()->GetClientSideObject());
 
   // Set up the rendering pipeline
   if (t)
@@ -95,7 +98,7 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   this->resetCamera();
 
   vtkScalarsToColors *lut =
-      vtkScalarsToColors::SafeDownCast(d->colorMap()->GetClientSideObject());
+      vtkScalarsToColors::SafeDownCast(this->unalignedData->colorMap()->GetClientSideObject());
   if (lut)
   {
     imageSlice->GetProperty()->SetLookupTable(lut);
@@ -194,11 +197,57 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
   grid->addLayout(buttonLayout, gridrow, 0, 1, 2, Qt::AlignCenter);
 
   gridrow++;
-  QPushButton *button = new QPushButton("Create Aligned Data");
-  connect(button, SIGNAL(clicked()), SLOT(doDataAlign()));
-  grid->addWidget(button, gridrow, 0, 1, 2, Qt::AlignCenter);
-
+  offsetTable = new QTableWidget(this);
+  offsetTable->verticalHeader()->setVisible(false);
+  grid->addWidget(offsetTable, gridrow, 0, 1, 3, Qt::AlignCenter);
   offsets.fill(vtkVector2i(0, 0), mapper->GetSliceNumberMaxValue() + 1);
+
+  const QVector<vtkVector2i> &oldOffsets = this->Op->getAlignOffsets();
+
+  offsetTable->setRowCount(offsets.size());
+  offsetTable->setColumnCount(4);
+  QTableWidgetItem* item = new QTableWidgetItem();
+  item->setText("Slice #");
+  offsetTable->setHorizontalHeaderItem(0,item);
+  item = new QTableWidgetItem();
+  item->setText("X offset");
+  offsetTable->setHorizontalHeaderItem(1,item);
+  item = new QTableWidgetItem();
+  item->setText("Y offset");
+  offsetTable->setHorizontalHeaderItem(2,item);
+  item = new QTableWidgetItem();
+  item->setText("Tilt angle");
+  offsetTable->setHorizontalHeaderItem(3,item);
+  for (int i = 0; i < oldOffsets.size(); ++i)
+  {
+    this->offsets[i] = oldOffsets[i];
+  }
+
+  QVector<double> tiltAngles = this->unalignedData->getTiltAngles();
+
+  for (int i = 0; i < offsets.size(); ++i)
+  {
+    item = new QTableWidgetItem();
+    item->setData(Qt::DisplayRole, QString::number(i));
+    item->setFlags(Qt::ItemIsEnabled);
+    offsetTable->setItem(i, 0, item);
+
+    item = new QTableWidgetItem();
+    item->setData(Qt::DisplayRole, QString::number(offsets[i][0]));
+    offsetTable->setItem(i, 1, item);
+
+    item = new QTableWidgetItem();
+    item->setData(Qt::DisplayRole, QString::number(offsets[i][1]));
+    offsetTable->setItem(i, 2, item);
+
+    item = new QTableWidgetItem();
+    item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
+    item->setFlags(Qt::ItemIsEnabled);
+    offsetTable->setItem(i, 3, item);
+  }
+  offsetTable->resizeColumnsToContents();
+  currentSliceOffset->setText(QString("Image shift (Shortcut: arrow keys): (%1, %2)")
+      .arg(offsets[currentSlice->value()][0]).arg(offsets[currentSlice->value()][1]));
 
   /* Some test offsets.
   offsets[1] = vtkVector2i(10, 0);
@@ -210,7 +259,8 @@ AlignWidget::AlignWidget(DataSource* d, QWidget* p, Qt::WindowFlags f)
 
   connect(timer, SIGNAL(timeout()), SLOT(changeSlice()));
   connect(timer, SIGNAL(timeout()), widget, SLOT(update()));
-  timer->start(100);
+  connect(offsetTable, SIGNAL(cellChanged(int, int)), SLOT(sliceOffsetEdited(int, int)));
+  timer->start(200);
 }
 
 AlignWidget::~AlignWidget()
@@ -236,10 +286,6 @@ bool AlignWidget::eventFilter(QObject *object, QEvent *e)
   {
     return false;
   }
-}
-
-void AlignWidget::setDataSource(DataSource *)
-{
 }
 
 void AlignWidget::changeSlice()
@@ -342,19 +388,24 @@ void AlignWidget::setFrameRate(int rate)
 void AlignWidget::widgetKeyPress(QKeyEvent *key)
 {
   vtkVector2i &offset = offsets[currentSlice->value()];
+  bool updateTable = false;
   switch (key->key())
   {
   case Qt::Key_Left:
     offset[0] -= 1;
+    updateTable = true;
     break;
   case Qt::Key_Right:
     offset[0] += 1;
+    updateTable = true;
     break;
   case Qt::Key_Up:
     offset[1] += 1;
+    updateTable = true;
     break;
   case Qt::Key_Down:
     offset[1] -= 1;
+    updateTable = true;
     break;
   case Qt::Key_K:
   case Qt::Key_S:
@@ -367,6 +418,14 @@ void AlignWidget::widgetKeyPress(QKeyEvent *key)
   default:
     // Nothing
     break;
+  }
+  if (updateTable)
+  {
+    int sliceNumber = this->currentSlice->value();
+    QTableWidgetItem *item = this->offsetTable->item(sliceNumber, 1);
+    item->setData(Qt::DisplayRole, QString::number(offset[0]));
+    item = this->offsetTable->item(sliceNumber, 2);
+    item->setData(Qt::DisplayRole, QString::number(offset[1]));
   }
   applySliceOffset();
 }
@@ -405,113 +464,6 @@ void AlignWidget::stopAlign()
   stopButton->setEnabled(false);
 }
 
-namespace
-{
-vtkImageData* imageData(DataSource *source)
-{
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-    source->producer()->GetClientSideObject());
-  return vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-}
-
-// We are assuming an image that begins at 0, 0, 0.
-vtkIdType imageIndex(const vtkVector3i &incs, const vtkVector3i &pos)
-{
-  return pos[0] * incs[0] + pos[1] * incs[1] + pos[2] * incs[2];
-}
-
-template<typename T>
-void applyImageOffsets(T* in, T* out, vtkImageData *image,
-                       const QVector<vtkVector2i> &offsets)
-{
-  // We know that the input and output images are the same size, with the
-  // supplied offsets applied to each slice. Copy the pixels, applying offsets.
-  int *extents = image->GetExtent();
-  vtkVector3i extent(extents[1] - extents[0] + 1,
-                     extents[3] - extents[2] + 1,
-                     extents[5] - extents[4] + 1);
-  vtkVector3i incs(1,
-                   1 * extent[0],
-                   1 * extent[0] * extent[1]);
-
-  // Zero out our output array, we should do this more intelligently in future.
-  T *ptr = out;
-  for (int i = 0; i < extent[0] * extent[1] * extent[2]; ++i)
-  {
-    *ptr++ = 0;
-  }
-
-  // We need to go slice by slice, applying the pixel offsets to the new image.
-  for (int i = 0; i < extent[2]; ++i)
-  {
-    vtkVector2i offset = offsets[i];
-    int idx = imageIndex(incs, vtkVector3i(0, 0, i));
-    T *inPtr = in + idx;
-    T* outPtr = out + idx;
-    for (int y = 0; y < extent[1]; ++y)
-    {
-      if (y + offset[1] >= extent[1])
-      {
-        break;
-      }
-      else if (y + offset[1] < 0)
-      {
-        inPtr += incs[1];
-        outPtr += incs[1];
-        continue;
-      }
-      for (int x = 0; x < extent[0]; ++x)
-      {
-        if (x + offset[0] >= extent[0])
-        {
-          inPtr += offset[0];
-          outPtr += offset[0];
-          break;
-        }
-        else if (x + offset[0] < 0)
-        {
-          ++inPtr;
-          ++outPtr;
-          continue;
-        }
-        *(outPtr + offset[0] + incs[1] * offset[1]) = *inPtr;
-        ++inPtr;
-        ++outPtr;
-      }
-    }
-  }
-}
-}
-
-void AlignWidget::doDataAlign()
-{
-  bool firstAdded = false;
-  if (!alignedData)
-  {
-    alignedData = unalignedData->clone(true);
-    QString name = alignedData->producer()->GetAnnotation("tomviz.Label");
-    name = "Aligned_" + name;
-    alignedData->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
-    firstAdded = true;
-  }
-  vtkImageData *in = imageData(unalignedData);
-  vtkImageData *out = imageData(alignedData);
-
-  switch (in->GetScalarType())
-  {
-    vtkTemplateMacro(
-      applyImageOffsets(reinterpret_cast<VTK_TT*>(in->GetScalarPointer()),
-                        reinterpret_cast<VTK_TT*>(out->GetScalarPointer()),
-                        in, offsets));
-  }
-  alignedData->dataModified();
-
-  if (firstAdded)
-  {
-    LoadDataReaction::dataSourceAdded(alignedData);
-  }
-}
-
 void AlignWidget::zoomToSelectionStart()
 {
   this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
@@ -526,6 +478,14 @@ void AlignWidget::zoomToSelectionFinished()
       ->RemoveObserver(this->observerId);
   this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
       this->defaultInteractorStyle.Get());
+}
+
+void AlignWidget::applyChangesToOperator()
+{
+  if (this->Op)
+  {
+    this->Op->setAlignOffsets(this->offsets);
+  }
 }
 
 void AlignWidget::resetCamera()
@@ -556,6 +516,22 @@ void AlignWidget::resetCamera()
   camera->GetClippingRange(clippingRange);
   clippingRange[1] = clippingRange[0] + (bounds[5] - bounds[4] + 50);
   camera->SetClippingRange(clippingRange);
+}
+
+void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
+{
+  QTableWidgetItem* item = this->offsetTable->item(slice, offsetComponent);
+  QString str = item->data(Qt::DisplayRole).toString();
+  bool ok;
+  int offset = str.toInt(&ok);
+  if (ok)
+  {
+    this->offsets[slice][offsetComponent - 1] = offset;
+  }
+  if (slice == this->currentSlice->value())
+  {
+    applySliceOffset();
+  }
 }
 
 }
