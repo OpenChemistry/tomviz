@@ -39,6 +39,7 @@
 #include "AddRotateAlignReaction.h"
 #include "Behaviors.h"
 #include "CropReaction.h"
+#include "ConvertToFloatReaction.h"
 #include "CloneDataReaction.h"
 #include "DataPropertiesPanel.h"
 #include "DeleteDataReaction.h"
@@ -176,6 +177,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *customPythonAction = ui.menuData->addAction("Custom Transform");
   QAction *customPythonITKAction = ui.menuData->addAction("Custom ITK Transform");
   QAction *cropDataAction = ui.menuData->addAction("Crop");
+  QAction *convertDataAction = ui.menuData->addAction("Convert To Float");
   ui.menuData->addSeparator();
   
   QAction *shiftUniformAction = ui.menuData->addAction("Shift Uniformly");
@@ -238,6 +240,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddExpressionReaction(customPythonAction);
   new AddExpressionReaction(customPythonITKAction);
   new CropReaction(cropDataAction, this);
+  new ConvertToFloatReaction(convertDataAction);
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,

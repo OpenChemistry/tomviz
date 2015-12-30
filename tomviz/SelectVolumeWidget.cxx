@@ -44,8 +44,6 @@
 #include <QSettings>
 
 #include "ActiveObjects.h"
-#include "CropOperator.h"
-#include "DataSource.h"
 
 namespace tomviz
 {

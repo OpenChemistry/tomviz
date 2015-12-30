@@ -42,6 +42,10 @@ set(SOURCES
   CentralWidget.h
   CloneDataReaction.cxx
   CloneDataReaction.h
+  ConvertToFloatOperator.cxx
+  ConvertToFloatOperator.h
+  ConvertToFloatReaction.cxx
+  ConvertToFloatReaction.h
   CropReaction.cxx
   CropReaction.h
   CropOperator.cxx

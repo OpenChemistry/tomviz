@@ -49,6 +49,7 @@ public:
   const QString& script() const { return this->Script; }
 
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
+  bool hasCustomUI() const override { return true; }
 
 private:
   Q_DISABLE_COPY(OperatorPython)

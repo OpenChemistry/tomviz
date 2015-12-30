@@ -53,6 +53,7 @@ public:
   virtual bool deserialize(const pugi::xml_node& ns)=0;
 
   virtual EditOperatorWidget* getEditorContents(QWidget* parent) = 0;
+  virtual bool hasCustomUI() const = 0;
 
 signals:
   /// fire this signal with the operation is updated/modified
