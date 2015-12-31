@@ -43,24 +43,24 @@ public:
   virtual QIcon icon() const = 0;
 
   /// Method to transform a dataset in-place.
-  virtual bool transform(vtkDataObject* data)=0;
+  virtual bool transform(vtkDataObject* data) = 0;
 
   /// Return a new clone.
   virtual Operator* clone() const = 0;
 
   /// Save/Restore state.
-  virtual bool serialize(pugi::xml_node& in) const=0;
-  virtual bool deserialize(const pugi::xml_node& ns)=0;
+  virtual bool serialize(pugi::xml_node& in) const = 0;
+  virtual bool deserialize(const pugi::xml_node& ns) = 0;
 
   virtual EditOperatorWidget* getEditorContents(QWidget* parent) = 0;
-  virtual bool hasCustomUI() const = 0;
+  virtual bool hasCustomUI() const { return false; }
 
 signals:
-  /// fire this signal with the operation is updated/modified
+  /// Emit this signal with the operation is updated/modified
   /// implying that the data needs to be reprocessed.
   void transformModified();
-  /// fire this signal to indicate that the operator's label changed
-  /// and the GUI needs to refresh its display of the Operator
+  /// Emit this signal to indicate that the operator's label changed
+  /// and the GUI needs to refresh its display of the Operator.
   void labelModified();
 
 private:
