@@ -37,7 +37,8 @@ namespace tomviz
 {
 
 ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
-  : pqViewMenuManager(mainWindow, menu)
+  : pqViewMenuManager(mainWindow, menu), perspectiveProjectionAction(nullptr),
+    orthographicProjectionAction(nullptr), showAxisGridAction(nullptr)
 {
   this->viewPropertiesDialog = new QDialog(mainWindow);
   this->viewPropertiesDialog->setWindowTitle("View Properties");
@@ -164,11 +165,11 @@ void ViewMenuManager::setProjectionModeToOrthographic()
 
 void ViewMenuManager::onViewPropertyChanged()
 {
-  int parallel = vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
-  if (!this->perspectiveProjectionAction)
+  if (!this->perspectiveProjectionAction || !this->orthographicProjectionAction)
   {
     return;
   }
+  int parallel = vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
   if (parallel && this->perspectiveProjectionAction->isChecked())
   {
     this->orthographicProjectionAction->setChecked(true);
