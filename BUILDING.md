@@ -22,6 +22,7 @@ Dependencies
  * NumPy 1.8
  * Git 2.1
  * C++ compiler
+ * Intel TBB
 
 Initial Build
 -------------
@@ -36,8 +37,11 @@ prerequisites installed:
     mkdir paraview-build
     cd paraview-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
-      -DPARAVIEW_ENABLE_CATALYST:BOOL=OFF -DPARAVIEW_ENABLE_PYTHON:BOOL=ON \
-      -DVTK_RENDERING_BACKEND:STRING=OpenGL2 -DPARAVIEW_ENABLE_WEB:BOOL=OFF \
+      -DPARAVIEW_ENABLE_CATALYST:BOOL=OFF \
+      -DPARAVIEW_ENABLE_PYTHON:BOOL=ON \
+      -DVTK_RENDERING_BACKEND:STRING=OpenGL2 \
+      -DVTK_SMP_IMPLEMENTATION_TYPE:STRING=TBB \
+      -DPARAVIEW_ENABLE_WEB:BOOL=OFF \
       ../paraview
     cmake --build .
 
