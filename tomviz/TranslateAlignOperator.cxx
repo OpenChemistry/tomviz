@@ -158,7 +158,7 @@ bool TranslateAlignOperator::deserialize(const pugi::xml_node& ns)
 
 EditOperatorWidget* TranslateAlignOperator::getEditorContents(QWidget* p)
 {
-  return new AlignWidget(this);
+  return new AlignWidget(this, p);
 }
 
 void TranslateAlignOperator::setAlignOffsets(const QVector<vtkVector2i> &newOffsets)
