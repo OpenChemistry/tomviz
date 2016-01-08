@@ -50,6 +50,8 @@ public:
 
   DataSource *getDataSource() const { return this->dataSource; }
 
+  bool hasCustomUI() const override { return true; }
+
 private:
   QVector<vtkVector2i> offsets;
   const QPointer<DataSource> dataSource;
