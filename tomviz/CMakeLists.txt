@@ -1,9 +1,3 @@
-# We need to link to QtMain on Windows, this is much better in Qt 5 with recent
-# CMake versions where a policy can invoke auto-linking of this library.
-if(WIN32)
-  find_package(Qt4 4.8 COMPONENTS QtGui QtMain REQUIRED)
-endif()
-
 option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
   find_package(Dax REQUIRED)
@@ -200,7 +194,7 @@ foreach(file ${resource_files})
     COMPONENT runtime)
 endforeach()
 
-qt4_wrap_ui(UI_SOURCES
+qt5_wrap_ui(UI_SOURCES
   AboutDialog.ui
   CentralWidget.ui
   SelectVolumeWidget.ui
@@ -211,7 +205,7 @@ qt4_wrap_ui(UI_SOURCES
   RotateAlignWidget.ui
   ViewPropertiesPanel.ui
   )
-qt4_add_resources(RCC_SOURCES resources.qrc)
+qt5_add_resources(RCC_SOURCES resources.qrc)
 
 if(APPLE)
   list(APPEND SOURCES icons/tomviz.icns)
@@ -232,16 +226,14 @@ add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}
   ${RCC_SOURCES} ${accel_srcs})
 
 set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
-
+qt5_use_modules(tomviz Help Network Widgets Test UiTools Xml)
 target_link_libraries(tomviz
-  LINK_PRIVATE
-    pqApplicationComponents
-    vtkPVServerManagerRendering
-    vtkpugixml
-    tomvizExtensions
-  )
+  pqApplicationComponents
+  vtkPVServerManagerRendering
+  vtkpugixml
+  tomvizExtensions)
 if(WIN32)
-  target_link_libraries(tomviz LINK_PRIVATE ${QT_QTMAIN_LIBRARY})
+  target_link_libraries(tomviz LINK_PRIVATE Qt5::WinMain)
 endif()
 if(APPLE)
   install(TARGETS tomviz DESTINATION Applications COMPONENT runtime)
