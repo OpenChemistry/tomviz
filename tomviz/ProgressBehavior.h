@@ -32,8 +32,11 @@ class ProgressBehavior : public QObject
   typedef QObject Superclass;
 
 public:
-  ProgressBehavior(QWidget* parent=nullptr);
+  ProgressBehavior(QWidget* parent = nullptr);
   ~ProgressBehavior();
+
+  /// Delayed initialization of the dialog until it is used.
+  void initialize();
 
 private slots:
   void enableProgress(bool enable);
