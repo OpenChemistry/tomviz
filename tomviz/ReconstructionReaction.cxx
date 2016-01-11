@@ -69,7 +69,7 @@ void ReconstructionReaction::recon(DataSource* input)
   DataSource* output = input->clone(true,true);
   QString name = output->producer()->GetAnnotation("tomviz.Label");
   name = "Recon_WBP_" + name;
-  output->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
+  output->producer()->SetAnnotation("tomviz.Label", name.toLatin1().data());
   t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
   vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 

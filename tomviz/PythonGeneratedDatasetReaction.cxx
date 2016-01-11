@@ -159,11 +159,11 @@ public:
   tp->SetOutput(image.Get());
   source->SetAnnotation("tomviz.Type", "DataSource");
   source->SetAnnotation("tomviz.DataSource.FileName", "Python Generated Data");
-  source->SetAnnotation("tomviz.Label", this->label.toAscii().data());
-  source->SetAnnotation("tomviz.Python_Source.Script", this->pythonScript.toAscii().data());
-  source->SetAnnotation("tomviz.Python_Source.X", QString::number(shape[0]).toAscii().data());
-  source->SetAnnotation("tomviz.Python_Source.Y", QString::number(shape[1]).toAscii().data());
-  source->SetAnnotation("tomviz.Python_Source.Z", QString::number(shape[2]).toAscii().data());
+  source->SetAnnotation("tomviz.Label", this->label.toLatin1().data());
+  source->SetAnnotation("tomviz.Python_Source.Script", this->pythonScript.toLatin1().data());
+  source->SetAnnotation("tomviz.Python_Source.X", QString::number(shape[0]).toLatin1().data());
+  source->SetAnnotation("tomviz.Python_Source.Y", QString::number(shape[1]).toLatin1().data());
+  source->SetAnnotation("tomviz.Python_Source.Z", QString::number(shape[2]).toLatin1().data());
 
   CheckForError();
 
