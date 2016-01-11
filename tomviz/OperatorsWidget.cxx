@@ -34,6 +34,7 @@ class OperatorsWidget::OWInternals
 public:
   QPointer<DataSource> ADataSource;
   QMap<QTreeWidgetItem*, QSharedPointer<Operator> > ItemMap;
+  bool Initialized;
 };
 
 //-----------------------------------------------------------------------------
@@ -48,10 +49,7 @@ OperatorsWidget::OperatorsWidget(QWidget* parentObject) :
   connect(this, SIGNAL(itemClicked(QTreeWidgetItem*, int)),
           SLOT(onItemClicked(QTreeWidgetItem*, int)));
 
-  this->header()->setResizeMode(0, QHeaderView::Stretch);
-  this->header()->setResizeMode(1, QHeaderView::Fixed);
-  this->header()->resizeSection(1, 25);
-  this->header()->setStretchLastSection(false);
+  this->Internals->Initialized = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -96,6 +94,14 @@ void OperatorsWidget::operatorAdded(QSharedPointer<Operator> &op)
   this->addTopLevelItem(item);
   this->Internals->ItemMap[item] = op;
   this->connect(op.data(), SIGNAL(labelModified()), SLOT(updateOperatorLabel()));
+
+  if (!this->Internals->Initialized) {
+    this->Internals->Initialized = true;
+    this->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+    this->header()->setSectionResizeMode(1, QHeaderView::Fixed);
+    this->header()->resizeSection(1, 25);
+    this->header()->setStretchLastSection(false);
+  }
 }
 
 //-----------------------------------------------------------------------------
