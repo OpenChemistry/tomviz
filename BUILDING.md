@@ -16,7 +16,7 @@ be used to point to them if they are not found automatically.
 Dependencies
 ------------
 
- * Qt 4.8
+ * Qt 5.5.1
  * CMake 3.1 (2.8.8 minimum)
  * Python 2.7
  * NumPy 1.8
@@ -39,6 +39,7 @@ prerequisites installed:
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
       -DPARAVIEW_ENABLE_CATALYST:BOOL=OFF \
       -DPARAVIEW_ENABLE_PYTHON:BOOL=ON \
+      -DPARAVIEW_QT_VERSION:STRING=5 \
       -DVTK_RENDERING_BACKEND:STRING=OpenGL2 \
       -DVTK_SMP_IMPLEMENTATION_TYPE:STRING=TBB \
       -DPARAVIEW_ENABLE_WEB:BOOL=OFF \
