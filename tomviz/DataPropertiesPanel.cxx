@@ -199,7 +199,7 @@ void DataPropertiesPanel::update()
   ui.TransformedDataType->setText(getDataTypeString(
         dsource->producer()));
 
-  pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap());
+  pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap(), this);
   colorMapWidget->setApplyChangesImmediately(true);
   colorMapWidget->updatePanel();
   ui.verticalLayout->insertWidget(ui.verticalLayout->indexOf(ui.SetTiltAnglesButton)-1,
