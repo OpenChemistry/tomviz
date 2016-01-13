@@ -233,7 +233,7 @@ target_link_libraries(tomviz
   vtkpugixml
   tomvizExtensions)
 if(WIN32)
-  target_link_libraries(tomviz LINK_PRIVATE Qt5::WinMain)
+  target_link_libraries(tomviz Qt5::WinMain)
 endif()
 if(APPLE)
   install(TARGETS tomviz DESTINATION Applications COMPONENT runtime)
@@ -256,7 +256,6 @@ endif()
 
 if(ENABLE_DAX_ACCELERATION)
   target_link_libraries(tomviz
-    LINK_PRIVATE
       tomvizStreaming
       tomvizThreshold
       ${TBB_LIBRARIES})
