@@ -67,7 +67,6 @@ void PythonAppInitPrependPathWindows(const std::string& exe_dir)
 
     // we don't add anything for ParaView since, ParaView takes care of that.
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/");
-    PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/ITK-4.8/Python");
     }
   }
 
@@ -100,7 +99,6 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/paraview-" PARAVIEW_VERSION_MAJOR "."
         PARAVIEW_VERSION_MINOR "/site-packages/vtk");
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/");
-    PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/ITK-4.8/Python");
     }
   }
 
@@ -124,7 +122,6 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
     // we don't add anything for ParaView since, ParaView takes care of that.
     PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/");
-    PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/ITK-4.8/Python");
     }
   }
 
