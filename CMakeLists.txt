@@ -38,4 +38,11 @@ if(APPLE)
   set(tomviz_data_install_dir "Applications/tomviz.app/Contents/share/tomviz")
 endif()
 
+find_package(ITK 4.9)
+if(ITK-FOUND AND NOT ITK_WRAP_PYTHON)
+  message(FATAL_ERROR
+    "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
+    "Please rebuild ITK with ITK_WRAP_PYTHON set to TRUE.")
+endif()
+
 add_subdirectory(tomviz)
