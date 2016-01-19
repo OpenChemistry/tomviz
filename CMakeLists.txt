@@ -57,4 +57,11 @@ find_package(Qt4 REQUIRED)
 include_directories(SYSTEM "${QT_INCLUDES}")
 add_definitions(${QT_DEFINITIONS})
 
+find_package(ITK 4.9)
+if(ITK-FOUND AND NOT ITK_WRAP_PYTHON)
+  message(FATAL_ERROR
+    "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
+    "Please rebuild ITK with ITK_WRAP_PYTHON set to TRUE.")
+endif()
+
 add_subdirectory(tomviz)

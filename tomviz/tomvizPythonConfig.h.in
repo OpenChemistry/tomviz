@@ -20,6 +20,7 @@
 
 // For development builds: these are paths when running from the build directory.
 #define PARAVIEW_BUILD_DIR "@ParaView_DIR@"
+#define ITK_BUILD_DIR "@ITK_DIR@"
 #define TOMVIZ_PYTHON_SOURCE_DIR "@tomviz_SOURCE_DIR@/tomviz/python"
 #define TOMVIZ_DATA_SOURCE_DIR "@tomviz_data_DIR@/Data"
 
@@ -57,6 +58,11 @@ void PythonAppInitPrependPathWindows(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/bin");
     PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
 
+    PythonAppInitPrependPythonPath(ITK_BUILD_DIR "/lib");
+    PythonAppInitPrependPythonPath(ITK_BUILD_DIR "/lib/Release");
+    PythonAppInitPrependPythonPath(ITK_BUILD_DIR "/Wrapping/Generators/Python");
+    PythonAppInitPrependPythonPath(ITK_BUILD_DIR "/Wrapping/Generators/Python/Release");
+
     // Add tomviz Python source dir.
     PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
     }
@@ -83,6 +89,9 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     // Add ParaView directories.
     PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib");
     PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
+
+    PythonAppInitPrependPythonPath(ITK_BUILD_DIR "/lib");
+    PythonAppInitPrependPythonPath(ITK_BUILD_DIR "/Wrapping/Generators/Python");
 
     // Add tomviz Python source dir.
     PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
@@ -114,6 +123,9 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     // Add ParaView directories.
     PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib");
     PythonAppInitPrependPythonPath(PARAVIEW_BUILD_DIR "/lib/site-packages");
+
+    PythonAppInitPrependPythonPath(ITK_BUILD_DIR "/lib");
+    PythonAppInitPrependPythonPath(ITK_BUILD_DIR "/Wrapping/Generators/Python");
 
     // Add tomviz Python source dir.
     PythonAppInitPrependPythonPath(TOMVIZ_PYTHON_SOURCE_DIR);
