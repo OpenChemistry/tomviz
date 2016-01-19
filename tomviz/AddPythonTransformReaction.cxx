@@ -194,7 +194,17 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   }
 
   // Shift uniformly, crop, both have custom gui
-  if (scriptLabel == "Shift Uniformly")
+  if (scriptLabel == "Binary Threshold")
+  {
+    QMap<QString, QString> substitutions;
+    addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);    
+  }
+  else if (scriptLabel == "ConnectedComponents")
+  {
+    QMap<QString, QString> substitutions;
+    addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);
+  }
+  else if (scriptLabel == "Shift Uniformly")
   {
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());

@@ -133,6 +133,8 @@ set(SOURCES
   )
 
 set(python_files
+  BinaryThreshold.py
+  ConnectedComponents.py
   MisalignImgs_Uniform.py
   Align_Images.py
   Recon_DFT.py
