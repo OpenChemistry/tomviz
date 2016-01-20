@@ -90,6 +90,7 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   Q_ASSERT(this->ThresholdRepresentation);
   vtkSMRepresentationProxy::SetRepresentationType(this->ThresholdRepresentation,
                                                   "Surface");
+  vtkSMPropertyHelper(this->ThresholdRepresentation, "Position").Set(data->displayPosition(), 3);
   this->updateColorMap();
   this->ThresholdRepresentation->UpdateVTKObjects();
   return true;

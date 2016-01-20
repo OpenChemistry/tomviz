@@ -73,6 +73,7 @@ bool ModuleOutline::initialize(DataSource* data,
 
   // Create the representation for it.
   this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, vtkView);
+  vtkSMPropertyHelper(this->OutlineRepresentation, "Position").Set(data->displayPosition(), 3);
   Q_ASSERT(this->OutlineRepresentation);
   //vtkSMPropertyHelper(this->OutlineRepresentation,
   //                    "Representation").Set("Outline");

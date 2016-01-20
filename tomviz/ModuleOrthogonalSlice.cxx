@@ -76,6 +76,7 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView
 
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Slice");
+  vtkSMPropertyHelper(this->Representation, "Position").Set(data->displayPosition(), 3);
 
   // pick proper color/opacity maps.
   this->updateColorMap();

@@ -76,6 +76,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   Q_ASSERT(this->Representation);
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Volume");
+  vtkSMPropertyHelper(this->Representation, "Position").Set(data->displayPosition(), 3);
 
   this->updateColorMap();
   this->Representation->UpdateVTKObjects();
