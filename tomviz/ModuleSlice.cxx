@@ -104,6 +104,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   {
     this->Widget->On();
     this->Widget->InteractionOn();
+    this->Widget->SetDisplayOffset(data->displayPosition());
     pqCoreUtilities::connect(
       this->Widget, vtkCommand::InteractionEvent,
       this, SLOT(onPlaneChanged()));
@@ -369,7 +370,8 @@ void ModuleSlice::onPlaneChanged()
 //-----------------------------------------------------------------------------
 void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
 {
-  // TODO: this is a bit harder for slice than the others
+  double pos[3] = { newX, newY, newZ };
+  this->Widget->SetDisplayOffset(pos);
 }
 
 }

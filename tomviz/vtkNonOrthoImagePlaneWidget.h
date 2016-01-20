@@ -171,6 +171,13 @@ public:
   void GetNormal(double xyz[3]);
 
   // Description:
+  // Set/Get the diplay offset.  This translates the entire widget by the vector
+  // given.
+  void SetDisplayOffset(const double xyz[3]);
+  const double* GetDisplayOffset();
+  void GetDisplayOffset(double xyz[3]);
+
+  // Description:
   // Get the vector from the plane origin to point1.
   void GetVector1(double v1[3]);
 
@@ -398,6 +405,10 @@ protected:
   int    PlaneOrientation;
   int    ResliceInterpolate;
   int    TextureInterpolate;
+
+  // display offset
+  double DisplayOffset[3];
+  vtkTransform *DisplayTransform;
 
   // The geometric represenation of the plane and it's outline
   vtkPlaneSource    *PlaneSource;
