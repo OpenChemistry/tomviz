@@ -78,6 +78,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   this->ContourRepresentation = controller->Show(this->ContourFilter, 0, vtkView);
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Surface");
+  vtkSMPropertyHelper(this->ContourRepresentation, "Position").Set(data->displayPosition(), 3);
 
   // use proper color map.
   this->updateColorMap();
