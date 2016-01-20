@@ -158,7 +158,8 @@ public:
 
   // Description:
   // Set/Get the center of the plane.  SetCenter translates the plane by the
-  // difference between the old and new center positions.
+  // difference between the old and new center positions.  Only the part of
+  // the plane within the bounds given to PlaceWidget is shown however.
   void SetCenter(double xyz[3]);
   double* GetCenter();
   void GetCenter(double xyz[3]);
@@ -169,6 +170,13 @@ public:
   void SetNormal(double xyz[3]);
   double* GetNormal();
   void GetNormal(double xyz[3]);
+
+  // Description:
+  // Set/Get the diplay offset.  This translates the entire widget by the vector
+  // given.
+  void SetDisplayOffset(const double xyz[3]);
+  const double* GetDisplayOffset();
+  void GetDisplayOffset(double xyz[3]);
 
   // Description:
   // Get the vector from the plane origin to point1.
@@ -398,6 +406,10 @@ protected:
   int    PlaneOrientation;
   int    ResliceInterpolate;
   int    TextureInterpolate;
+
+  // display offset
+  double DisplayOffset[3];
+  vtkTransform *DisplayTransform;
 
   // The geometric represenation of the plane and it's outline
   vtkPlaneSource    *PlaneSource;
