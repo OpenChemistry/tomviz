@@ -1881,6 +1881,7 @@ void vtkNonOrthoImagePlaneWidget::GenerateTexturePlane()
 
   this->TexturePlaneActor->SetMapper(texturePlaneMapper.GetPointer());
   this->TexturePlaneActor->SetTexture(this->Texture);
+  this->TexturePlaneActor->SetUserTransform(this->DisplayTransform);
   this->TexturePlaneActor->PickableOn();
 }
 
