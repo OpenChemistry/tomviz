@@ -69,7 +69,7 @@ void OperatorsWidget::setDataSource(DataSource* ds)
   this->clear();
   if (this->Internals->ADataSource)
   {
-    this->Internals->ADataSource->disconnect();
+    this->Internals->ADataSource->disconnect(this);
   }
   this->Internals->ADataSource = ds;
   if (!ds)

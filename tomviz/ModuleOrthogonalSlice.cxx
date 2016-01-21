@@ -76,6 +76,7 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView
 
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Slice");
+  vtkSMPropertyHelper(this->Representation, "Position").Set(data->displayPosition(), 3);
 
   // pick proper color/opacity maps.
   this->updateColorMap();
@@ -157,6 +158,14 @@ bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
     return false;
   }
   return this->Superclass::deserialize(ns);
+}
+
+//-----------------------------------------------------------------------------
+void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->Representation, "Position").Set(pos, 3);
+  this->Representation->UpdateVTKObjects();
 }
 
 }

@@ -78,6 +78,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   this->ContourRepresentation = controller->Show(this->ContourFilter, 0, vtkView);
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Surface");
+  vtkSMPropertyHelper(this->ContourRepresentation, "Position").Set(data->displayPosition(), 3);
 
   // use proper color map.
   this->updateColorMap();
@@ -192,6 +193,15 @@ bool ModuleContour::deserialize(const pugi::xml_node& ns)
   return tomviz::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
     tomviz::deserialize(this->ContourRepresentation, ns.child("ContourRepresentation")) &&
     this->Superclass::deserialize(ns);
+}
+
+//-----------------------------------------------------------------------------
+void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->ContourRepresentation, "Position").Set(pos, 3);
+  this->ContourRepresentation->MarkDirty(this->ContourRepresentation);
+  this->ContourRepresentation->UpdateVTKObjects();
 }
 
 } // end of namespace tomviz

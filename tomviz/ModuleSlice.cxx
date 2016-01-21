@@ -104,6 +104,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   {
     this->Widget->On();
     this->Widget->InteractionOn();
+    this->Widget->SetDisplayOffset(data->displayPosition());
     pqCoreUtilities::connect(
       this->Widget, vtkCommand::InteractionEvent,
       this, SLOT(onPlaneChanged()));
@@ -364,6 +365,13 @@ void ModuleSlice::onPlaneChanged()
   double *normalVector = this->Widget->GetNormal();
   normalProperty.Set(normalVector, 3);
   this->IgnoreSignals = false;
+}
+
+//-----------------------------------------------------------------------------
+void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = { newX, newY, newZ };
+  this->Widget->SetDisplayOffset(pos);
 }
 
 }
