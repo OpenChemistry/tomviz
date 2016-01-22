@@ -57,6 +57,24 @@ def set_array(dataobject, newarray):
     do.PointData.append(arr, name)
     do.PointData.SetActiveScalars(name)
 
+def set_label_map(dataobject, labelarray):
+    # Ensure we have Fortran ordered flat array to assign to image data. This
+    # is ideally done without additional copies, but if C order we must copy.
+    if np.isfortran(labelarray):
+        arr = labelarray.reshape(-1, order='F')
+    else:
+        print 'Warning, array does not have Fortran order, making deep copy and fixing...'
+        tmp = np.asfortranarray(labelarray)
+        arr = tmp.reshape(-1, order='F')
+        print '...done.'
+
+    # Now add the label array to the image data
+    vtkarray = np_s.numpy_to_vtk(arr)
+    vtkarray.Association = dsa.ArrayAssociation.POINT
+    do = dsa.WrapDataObject(dataobject)
+    do.PointData.append(arr, "LabelMap")
+    do.PointData.AddArray(vtkarray)
+
 def get_tilt_angles(dataobject):
     # Get the tilt angles array
     do = dsa.WrapDataObject(dataobject)
