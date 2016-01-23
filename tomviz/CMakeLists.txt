@@ -67,6 +67,8 @@ set(SOURCES
   ModuleContour.h
   ModuleFactory.cxx
   ModuleFactory.h
+  ModuleLabelMapContour.h
+  ModuleLabelMapContour.cxx
   ModuleManager.cxx
   ModuleManager.h
   ModuleMenu.cxx
