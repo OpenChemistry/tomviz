@@ -26,6 +26,7 @@
 #include "vtkBoxWidget2.h"
 #include "vtkCommand.h"
 #include "vtkDataObject.h"
+#include "vtkEvent.h"
 #include "vtkEventQtSlotConnect.h"
 #include "vtkImageData.h"
 #include "vtkRenderWindow.h"
@@ -33,6 +34,8 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkTrivialProducer.h"
+#include "vtkWidgetEvent.h"
+#include "vtkWidgetEventTranslator.h"
 
 namespace tomviz
 {
@@ -42,13 +45,20 @@ MoveActiveObject::MoveActiveObject(QObject *p)
 {
   ActiveObjects &activeObjs = ActiveObjects::instance();
   this->BoxRep->SetPlaceFactor(1.0);
-  this->BoxRep->HandlesOn();
+  this->BoxRep->HandlesOff();
 
   this->BoxWidget->SetTranslationEnabled(1);
   this->BoxWidget->SetScalingEnabled(0);
   this->BoxWidget->SetRotationEnabled(0);
   this->BoxWidget->SetMoveFacesEnabled(0);
   this->BoxWidget->SetRepresentation(this->BoxRep.GetPointer());
+  vtkWidgetEventTranslator *translator = this->BoxWidget->GetEventTranslator();
+  translator->RemoveTranslation(vtkCommand::LeftButtonPressEvent);
+  translator->RemoveTranslation(vtkCommand::LeftButtonReleaseEvent);
+  translator->SetTranslation(vtkCommand::LeftButtonPressEvent, vtkEvent::NoModifier,
+                             0, 0, NULL, vtkWidgetEvent::Translate);
+  translator->SetTranslation(vtkCommand::LeftButtonReleaseEvent, vtkEvent::NoModifier,
+                             0, 0, NULL, vtkWidgetEvent::EndTranslate);
   this->BoxWidget->SetPriority(1);
 
   this->connect(&activeObjs, SIGNAL(dataSourceActivated(DataSource*)),
