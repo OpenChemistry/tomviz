@@ -144,7 +144,7 @@ void AddResampleReaction::resample(DataSource* source)
     DataSource* resampledData = source->clone(true);
     QString name = resampledData->producer()->GetAnnotation("tomviz.Label");
     name = "Downsampled_" + name;
-    resampledData->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
+    resampledData->producer()->SetAnnotation("tomviz.Label", name.toLatin1().data());
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
       resampledData->producer()->GetClientSideObject());
     t->SetOutput(reslice->GetOutput());

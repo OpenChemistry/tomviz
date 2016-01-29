@@ -25,33 +25,43 @@ namespace tomviz
 
 //-----------------------------------------------------------------------------
 ProgressBehavior::ProgressBehavior(QWidget* parentWindow)
-  : Superclass(parentWindow)
+  : Superclass(parentWindow), ProgressDialog(nullptr)
 {
-  this->ProgressDialog = new QProgressDialog("In progress...", "Cancel",
-                                             0, 100, parentWindow);
-  this->ProgressDialog->setAutoClose(true);
-  this->ProgressDialog->setAutoReset(false);
-  this->ProgressDialog->setMinimumDuration(0); // 0 second.
-
   pqProgressManager* progressManager =
     pqApplicationCore::instance()->getProgressManager();
-
   this->connect(progressManager, SIGNAL(enableProgress(bool)),
                 SLOT(enableProgress(bool)));
   this->connect(progressManager, SIGNAL(progress(const QString&, int)),
                 SLOT(progress(const QString, int)));
-
 }
 
 //-----------------------------------------------------------------------------
 ProgressBehavior::~ProgressBehavior()
 {
-  delete this->ProgressDialog;
+  this->ProgressDialog->deleteLater();
+}
+
+
+//-----------------------------------------------------------------------------
+void ProgressBehavior::initialize()
+{
+  if (this->ProgressDialog)
+  {
+    return;
+  }
+
+  this->ProgressDialog = new QProgressDialog("In progress...", "Cancel",
+                                             0, 100,
+                                             qobject_cast<QWidget*>(this->parent()));
+  this->ProgressDialog->setAutoClose(true);
+  this->ProgressDialog->setAutoReset(false);
+  this->ProgressDialog->setMinimumDuration(0); // 0 second.
 }
 
 //-----------------------------------------------------------------------------
 void ProgressBehavior::enableProgress(bool enable)
 {
+  this->initialize();
   Q_ASSERT(this->ProgressDialog);
 
   if (enable)
@@ -67,6 +77,7 @@ void ProgressBehavior::enableProgress(bool enable)
 //-----------------------------------------------------------------------------
 void ProgressBehavior::progress(const QString& message, int progressAmount)
 {
+  this->initialize();
   Q_ASSERT(this->ProgressDialog);
 
   this->ProgressDialog->setLabelText(message);

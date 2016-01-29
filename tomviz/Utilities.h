@@ -77,7 +77,7 @@ inline bool annotateDataProducer(vtkSMProxy* proxy, const char* filename)
     proxy->SetAnnotation("tomviz.Type", "DataSource");
     QFileInfo fileInfo(filename);
     proxy->SetAnnotation("tomviz.DataSource.FileName", filename);
-    proxy->SetAnnotation("tomviz.Label", fileInfo.fileName().toAscii().data());
+    proxy->SetAnnotation("tomviz.Label", fileInfo.fileName().toLatin1().data());
     return true;
   }
   return false;

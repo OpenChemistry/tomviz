@@ -396,7 +396,7 @@ bool DataSource::removeOperator(QSharedPointer<Operator>& op)
     this->operatorTransformModified();
     foreach (QSharedPointer<Operator> opPtr, this->Internals->Operators)
     {
-      cout << "Operator: " << opPtr->label().toAscii().data() << endl;
+      cout << "Operator: " << opPtr->label().toLatin1().data() << endl;
     }
 
     return true;

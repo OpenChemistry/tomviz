@@ -56,3 +56,8 @@ pull request if you would like us to consider your patch for inclusion.
   [Muller]: http://muller.research.engineering.cornell.edu/
   [Hovden]: http://www.roberthovden.com/
   [Dashboard]: http://open.cdash.org/index.php?project=TomViz "tomviz dashboard"
+
+Known Issues
+------------
+
+* On Mac OS X, tomviz built against Qt 5.5 will report several warnings of the form "0x7feeac460480 void QWindowPrivate::setTopLevelScreen(QScreen *, bool)( QScreen(0x7feea9e60200) ): Attempt to set a screen on a child window. (:0, ). These warnings can be ignored.

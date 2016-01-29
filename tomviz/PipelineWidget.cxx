@@ -48,6 +48,8 @@ public:
   typedef QMap<Module*, QTreeWidgetItem*> ModuleItemsMap;
   ModuleItemsMap ModuleItems;
 
+  bool Initialized;
+
   DataSource* dataProducer(QTreeWidgetItem* item) const
   {
     for (DataProducerItemsMap::const_iterator iter = this->DataProducerItems.begin();
@@ -137,11 +139,7 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
   this->connect(this, SIGNAL(customContextMenuRequested(const QPoint&)),
                 SLOT(onCustomContextMenu(const QPoint&)));
 
-
-  this->header()->setResizeMode(0, QHeaderView::Stretch);
-  this->header()->setResizeMode(1, QHeaderView::Fixed);
-  this->header()->resizeSection(1, 25);
-  this->header()->setStretchLastSection(false);
+  this->Internals->Initialized = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -174,6 +172,13 @@ void PipelineWidget::dataSourceAdded(DataSource* datasource)
   this->addTopLevelItem(item);
 
   this->Internals->DataProducerItems[datasource] = item;
+  if (!this->Internals->Initialized) {
+    this->Internals->Initialized = true;
+    this->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+    this->header()->setSectionResizeMode(1, QHeaderView::Fixed);
+    this->header()->resizeSection(1, 25);
+    this->header()->setStretchLastSection(false);
+  }
 }
 
 //-----------------------------------------------------------------------------
