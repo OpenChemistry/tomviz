@@ -1,7 +1,8 @@
 def transform_scalars(dataset):
-    """This filter labels the connected components in a binary input.
-    Usually this filter would follow a BinaryThreshold filter that produces
-    a binary label map."""
+    """This filter thresholds an image input by the lower and upper
+    intensity range provided and then generates a label map from the
+    connected components in the thresholded output.
+    """
 
     try:
         from tomviz import utils
