@@ -11,9 +11,10 @@ def transform_scalars(dataset):
         print("Could not import necessary module(s)")
         print(exc)
 
-    # Set some filter parameters
-    lower_threshold = 40
-    upper_threshold = 255
+    #----USER SPECIFIED VARIABLES-----#
+    #lower_threshold = 40
+    ###LOWERTHRESHOLD### # Specify lower threshold
+    ###UPPERTHRESHOLD### # Specify upper threhsold
     background_value = 0
 
     # Get the current volume as a numpy array.
