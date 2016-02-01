@@ -1,6 +1,73 @@
 import numpy as np
 import vtk.numpy_interface.dataset_adapter as dsa
 import vtk.util.numpy_support as np_s
+import itk
+
+# Dictionary going from VTK array type to ITK type
+vtk_to_itk_types = {
+    'vtkUnsignedCharArray'  : itk.Image.UC3,
+    #'vtkCharArray'          : itk.Image.SC3,
+    'vtkUnsignedShortArray' : itk.Image.US3,
+    'vtkShortArray'         : itk.Image.SS3,
+    #'vtkUnsignedIntArray'   : itk.Image.UI3,
+    #'vtkIntArray'           : itk.Image.SI3,
+    'vtFloatArray'          : itk.Image.F3,
+    'vtkDoubleArray'        : itk.Image.D3
+}
+
+def get_itk_image_type(vtk_image_data):
+    """Get an ITK image type corresponding to the provided vtkImageData object."""
+    image_type = None
+
+    # Get the scalars
+    pd = vtk_image_data.GetPointData()
+    scalars = pd.GetScalars()
+
+    vtk_class_name = scalars.GetClassName()
+
+    try:
+        image_type = vtk_to_itk_types[vtk_class_name]
+    except:
+        raise Exception('No ITK type known for %s with dimension %d' % (vtk_class_name, dim))
+
+    return image_type
+
+def convert_vtk_to_itk_image(vtk_image_data):
+    """Get an ITK image from the provided vtkImageData object.
+    This image can be passed to ITK filters."""
+    image_type = get_itk_image_type(vtk_image_data)
+
+    itk_import = itk.VTKImageToImageFilter[image_type].New()
+    itk_import.SetInput(vtk_image_data)
+    itk_import.Update()
+    itk_image = itk_import.GetOutput()
+    itk_image.DisconnectPipeline()
+
+    return itk_image
+
+def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
+    """Add an array from an ITK image to a vtkImageData with a given name."""
+
+    itk_output_image_type = type(itk_image_data)
+    
+    # Export the ITK image to a VTK image. No copying should take place.
+    export_filter = itk.ImageToVTKImageFilter[itk_output_image_type].New()
+    export_filter.SetInput(itk_image_data)
+    export_filter.Update()
+
+    # Get scalars from the temporary image and copy them to the data set
+    result_image = export_filter.GetOutput()
+    filter_array = result_image.GetPointData().GetArray(0)
+
+    # Make a new instance of the array that will stick around after this
+    # filters in this script are garbage collected
+    new_array = filter_array.NewInstance()
+    new_array.DeepCopy(filter_array) # Should be able to shallow copy?
+    new_array.SetName(name)
+
+    # Set a new point data array in the dataset
+    vtk_image_data.GetPointData().AddArray(new_array)
+
 
 def get_scalars(dataobject):
     do = dsa.WrapDataObject(dataobject)
