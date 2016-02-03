@@ -74,11 +74,18 @@ def convert_vtk_to_itk_image(vtk_image_data):
     This image can be passed to ITK filters."""
     image_type = get_itk_image_type(vtk_image_data)
 
-    itk_import = itk.VTKImageToImageFilter[image_type].New()
-    itk_import.SetInput(vtk_image_data)
-    itk_import.Update()
-    itk_image = itk_import.GetOutput()
-    itk_image.DisconnectPipeline()
+    # Save the VTKGlue optimization for later
+    #------------------------------------------
+    #itk_import = itk.VTKImageToImageFilter[image_type].New()
+    #itk_import.SetInput(vtk_image_data)
+    #itk_import.Update()
+    #itk_image = itk_import.GetOutput()
+    #itk_image.DisconnectPipeline()
+    #------------------------------------------
+
+    array = get_array(vtk_image_data)
+    itk_converter = itk.PyBuffer[image_type]
+    itk_image = itk_converter.GetImageFromArray(array)
 
     return itk_image
 
@@ -86,25 +93,30 @@ def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     """Add an array from an ITK image to a vtkImageData with a given name."""
 
     itk_output_image_type = type(itk_image_data)
-    
+
+    # Save the VTKGlue optimization for later
+    #------------------------------------------
     # Export the ITK image to a VTK image. No copying should take place.
-    export_filter = itk.ImageToVTKImageFilter[itk_output_image_type].New()
-    export_filter.SetInput(itk_image_data)
-    export_filter.Update()
+    #export_filter = itk.ImageToVTKImageFilter[itk_output_image_type].New()
+    #export_filter.SetInput(itk_image_data)
+    #export_filter.Update()
 
     # Get scalars from the temporary image and copy them to the data set
-    result_image = export_filter.GetOutput()
-    filter_array = result_image.GetPointData().GetArray(0)
+    #result_image = export_filter.GetOutput()
+    #filter_array = result_image.GetPointData().GetArray(0)
 
     # Make a new instance of the array that will stick around after this
     # filters in this script are garbage collected
-    new_array = filter_array.NewInstance()
-    new_array.DeepCopy(filter_array) # Should be able to shallow copy?
-    new_array.SetName(name)
+    #new_array = filter_array.NewInstance()
+    #new_array.DeepCopy(filter_array) # Should be able to shallow copy?
+    #new_array.SetName(name)
 
     # Set a new point data array in the dataset
-    vtk_image_data.GetPointData().AddArray(new_array)
+    #vtk_image_data.GetPointData().AddArray(new_array)
+    #------------------------------------------
 
+    result = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
+    set_label_map(vtk_image_data, result)
 
 def get_scalars(dataobject):
     do = dsa.WrapDataObject(dataobject)
