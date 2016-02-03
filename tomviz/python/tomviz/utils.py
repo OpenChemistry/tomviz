@@ -4,16 +4,53 @@ import vtk.util.numpy_support as np_s
 import itk
 
 # Dictionary going from VTK array type to ITK type
-vtk_to_itk_types = {
-    'vtkUnsignedCharArray'  : itk.Image.UC3,
-    #'vtkCharArray'          : itk.Image.SC3,
-    'vtkUnsignedShortArray' : itk.Image.US3,
-    'vtkShortArray'         : itk.Image.SS3,
-    #'vtkUnsignedIntArray'   : itk.Image.UI3,
-    #'vtkIntArray'           : itk.Image.SI3,
-    'vtFloatArray'          : itk.Image.F3,
-    'vtkDoubleArray'        : itk.Image.D3
-}
+vtk_to_itk_types = {}
+
+def setup_vtk_itk_map():
+    """Try to set up mappings between VTK image types and ITK image types.
+    Not all ITK image types may be available, hence the try statements."""
+    try:
+        vtk_to_itk_types['vtkUnsignedCharArray'] = itk.Image.UC3
+    except:
+        pass
+
+    try:
+        vtk_to_itk_types['vtkCharArray'] = itk.Image.SC3
+    except:
+        pass
+
+    try:
+        vtk_to_itk_types['vtkUnsignedShortArray'] = itk.Image.US3
+    except:
+        pass
+
+    try:
+        vtk_to_itk_types['vtkShortArray'] = itk.Image.SS3
+    except:
+        pass
+
+    try:
+        vtk_to_itk_types['vtkUnsignedIntArray'] = itk.Image.UI3
+    except:
+        pass
+
+    try:
+        vtk_to_itk_types['vtkIntArray'] = itk.Image.SI3
+    except:
+        pass
+
+    try:
+        vtk_to_itk_types['vtFloatArray'] = itk.Image.F3
+    except:
+        pass
+
+    try:
+        vtk_to_itk_types['vtkDoubleArray'] = itk.Image.D3
+    except:
+        pass
+
+# Set up the VTK-to-ITK image type mapping
+setup_vtk_itk_map()
 
 def get_itk_image_type(vtk_image_data):
     """Get an ITK image type corresponding to the provided vtkImageData object."""
@@ -28,7 +65,7 @@ def get_itk_image_type(vtk_image_data):
     try:
         image_type = vtk_to_itk_types[vtk_class_name]
     except:
-        raise Exception('No ITK type known for %s with dimension %d' % (vtk_class_name, dim))
+        raise Exception('No ITK type known for %s' % vtk_class_name)
 
     return image_type
 
