@@ -12,8 +12,9 @@ def transform_scalars(dataset):
         print(exc)
 
     # Set some filter parameters
-    lower_threshold = 40
-    upper_threshold = 255
+    #----USER SPECIFIED VARIABLES-----#
+    ###LOWERTHRESHOLD### # Specify lower threshold
+    ###UPPERTHRESHOLD### # Specify upper threshold
 
     # Add a try/except around the ITK portion. ITK exceptions are
     # passed up to the Python layer, so we can at least report what

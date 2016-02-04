@@ -196,8 +196,47 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   // Shift uniformly, crop, both have custom gui
   if (scriptLabel == "Binary Threshold")
   {
-    QMap<QString, QString> substitutions;
-    addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);    
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    dialog.setWindowTitle("Binary Threshold");
+    QGridLayout *layout = new QGridLayout;
+    QLabel *labelDescription = new QLabel("Threshold image. Voxels with values between minimum and maximum intensities\nwill be considered object, others background.");
+    layout->addWidget(labelDescription,0,0,1,2);
+
+    QLabel *lowerLabel = new QLabel("Lower Threshold:", &dialog);
+    QLabel *upperLabel = new QLabel("Upper Threshold:", &dialog);
+    QDoubleSpinBox *lowerThreshold = new QDoubleSpinBox(&dialog);
+    lowerThreshold->setSingleStep(0.5);
+    lowerThreshold->setRange(0, 65536);
+    lowerThreshold->setValue(40);
+    QDoubleSpinBox *upperThreshold = new QDoubleSpinBox(&dialog);
+    upperThreshold->setSingleStep(0.5);
+    upperThreshold->setRange(0, 65536);
+    upperThreshold->setValue(255);
+    layout->addWidget(lowerLabel,1,0,1,1);
+    layout->addWidget(upperLabel,2,0,1,1);
+    layout->addWidget(lowerThreshold,1,1,1,1);
+    layout->addWidget(upperThreshold,2,1,1,1);
+
+    QVBoxLayout *v = new QVBoxLayout;
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                     | QDialogButtonBox::Cancel,
+                                                     Qt::Horizontal,
+                                                     &dialog);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize);
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###LOWERTHRESHOLD###",
+                           QString("lower_threshold = %1").arg(lowerThreshold->value()));
+      substitutions.insert("###UPPERTHRESHOLD###",
+                           QString("upper_threshold = %1").arg(upperThreshold->value()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);    
+    }
   }
   else if (scriptLabel == "Connected Components")
   {
