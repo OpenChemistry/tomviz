@@ -15,7 +15,7 @@ def transform_scalars(dataset):
 
     #----USER SPECIFIED VARIABLES-----#
     ###LOWERTHRESHOLD### # Specify lower threshold
-    ###UPPERTHRESHOLD### # Specify upper threhsold
+    ###UPPERTHRESHOLD### # Specify upper threshold
     background_value = 0
 
     # Add a try/except around the ITK portion. ITK exceptions are
