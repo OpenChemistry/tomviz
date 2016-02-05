@@ -21,7 +21,6 @@
 #endif
 
 #include "ModuleContour.h"
-#include "ModuleLabelMapContour.h"
 #include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
 #include "ModuleSegment.h"
@@ -59,7 +58,6 @@ QList<QString> ModuleFactory::moduleTypes(
     reply << "Outline"
       << "Volume"
       << "Contour"
-      << "LabelMapContour"
       << "Threshold"
       << "Slice"
       << "Orthogonal Slice";
@@ -85,10 +83,6 @@ Module* ModuleFactory::createModule(
 #else
     module = new ModuleContour();
 #endif
-  }
-  else if (type == "LabelMapContour")
-  {
-    module = new ModuleLabelMapContour();
   }
   else if (type == "Volume")
   {
@@ -161,10 +155,6 @@ const char* ModuleFactory::moduleType(Module* module)
   if (qobject_cast<ModuleOutline*>(module))
   {
     return "Outline";
-  }
-  if (qobject_cast<ModuleLabelMapContour*>(module))
-  {
-    return "LabelMapContour";
   }
 #ifdef DAX_DEVICE_ADAPTER
   if (qobject_cast<ModuleStreamingContour*>(module))
