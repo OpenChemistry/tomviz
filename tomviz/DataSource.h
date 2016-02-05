@@ -84,6 +84,9 @@ public:
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
 
+  /// Indicates whether the DataSource has a label map of the voxels.
+  bool hasLabelMap();
+
   /// Crop the data to the given volume
   void crop(int bounds[6]);
 
