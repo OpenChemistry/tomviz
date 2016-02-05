@@ -69,6 +69,7 @@ public:
 
 //-----------------------------------------------------------------------------
 Module::Module(QObject* parentObject) : Superclass(parentObject),
+  ColorByLabelMap(false),
   UseDetachedColorMap(false),
   Internals(new Module::MInternals())
 {
@@ -218,6 +219,20 @@ bool Module::deserialize(const pugi::xml_node& ns)
 void Module::onColorMapChanged()
 {
   emit colorMapChanged();
+}
+
+//-----------------------------------------------------------------------------
+void Module::setColorByLabelMap(bool value)
+{
+  this->ColorByLabelMap = value;
+  this->updateColorMap();
+  emit colorMapChanged();
+}
+
+//-----------------------------------------------------------------------------
+bool Module::colorByLabelMap() const
+{
+  return this->ColorByLabelMap;
 }
 
 //-----------------------------------------------------------------------------
