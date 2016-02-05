@@ -18,6 +18,8 @@
 #include "DataSource.h"
 #include "pqProxiesWidget.h"
 #include "Utilities.h"
+
+#include "vtkDataObject.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -26,21 +28,33 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
-#include <vector>
 #include <algorithm>
+#include <string>
+#include <vector>
 
 namespace tomviz
 {
 
 //-----------------------------------------------------------------------------
-ModuleContour::ModuleContour(QObject* parentObject) :Superclass(parentObject)
+class ModuleContour::Private
 {
+public:
+  std::string NonLabelMapArrayName;
+};
+
+//-----------------------------------------------------------------------------
+ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
+{
+  this->Internals = new Private;
 }
 
 //-----------------------------------------------------------------------------
 ModuleContour::~ModuleContour()
 {
   this->finalize();
+
+  delete this->Internals;
+  this->Internals = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -62,10 +76,10 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
-  vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("filters", "FlyingEdges"));
+  vtkSmartPointer<vtkSMProxy> contourProxy;
+  contourProxy.TakeReference(pxm->NewProxy("filters", "FlyingEdges"));
 
-  this->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
+  this->ContourFilter = vtkSMSourceProxy::SafeDownCast(contourProxy);
   Q_ASSERT(this->ContourFilter);
   controller->PreInitializeProxy(this->ContourFilter);
   vtkSMPropertyHelper(this->ContourFilter, "Input").Set(producer);
@@ -74,15 +88,31 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PostInitializeProxy(this->ContourFilter);
   controller->RegisterPipelineProxy(this->ContourFilter);
 
-  // Create the representation for it.
+  // Set up a data resampler to add LabelMap values on the contour
+  vtkSmartPointer<vtkSMProxy> probeProxy;
+  probeProxy.TakeReference(pxm->NewProxy("filters", "Probe"));
+
+  this->ResampleFilter = vtkSMSourceProxy::SafeDownCast(probeProxy);
+  Q_ASSERT(this->ResampleFilter);
+  controller->PreInitializeProxy(this->ResampleFilter);
+  vtkSMPropertyHelper(this->ResampleFilter, "Input").Set(data->producer());
+  vtkSMPropertyHelper(this->ResampleFilter, "Source").Set(this->ContourFilter);
+  controller->PostInitializeProxy(this->ResampleFilter);
+  controller->RegisterPipelineProxy(this->ResampleFilter);
+
+  // Create the representation for it. Show the unresampled contour filter to start.
   this->ContourRepresentation = controller->Show(this->ContourFilter, 0, vtkView);
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation").Set("Surface");
+
+  vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation, "ColorArrayName");
+  this->Internals->NonLabelMapArrayName = std::string(colorArrayHelper.GetInputArrayNameToProcess());
 
   // use proper color map.
   this->updateColorMap();
 
   this->ContourRepresentation->UpdateVTKObjects();
+
   return true;
 }
 
@@ -92,6 +122,22 @@ void ModuleContour::updateColorMap()
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation,
                       "LookupTable").Set(this->colorMap());
+  vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation, "ColorArrayName");
+
+  if (this->colorByLabelMap())
+  {
+    this->Internals->NonLabelMapArrayName = std::string(colorArrayHelper.GetInputArrayNameToProcess());
+    colorArrayHelper.SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS, "LabelMap");
+
+    vtkSMPropertyHelper(this->ContourRepresentation, "Input").Set(this->ResampleFilter);
+  }
+  else
+  {
+    colorArrayHelper.SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS, this->Internals->NonLabelMapArrayName.c_str());
+    vtkSMPropertyHelper(this->ContourRepresentation, "Input").Set(this->ContourFilter);
+  }
+
+  vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").Set(this->visibility() ? 1 : 0);
   this->ContourRepresentation->UpdateVTKObjects();
 }
 
@@ -99,8 +145,10 @@ void ModuleContour::updateColorMap()
 bool ModuleContour::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  controller->UnRegisterProxy(this->ResampleFilter);
   controller->UnRegisterProxy(this->ContourRepresentation);
   controller->UnRegisterProxy(this->ContourFilter);
+  this->ResampleFilter = nullptr;
   this->ContourFilter = nullptr;
   this->ContourRepresentation = nullptr;
   return true;
@@ -112,6 +160,7 @@ bool ModuleContour::setVisibility(bool val)
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").Set(val? 1 : 0);
   this->ContourRepresentation->UpdateVTKObjects();
+
   return true;
 }
 

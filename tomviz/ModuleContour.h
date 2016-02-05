@@ -57,7 +57,11 @@ protected:
   void updateColorMap() override;
 
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
-  vtkWeakPointer<vtkSMProxy> ContourRepresentation;
+  vtkWeakPointer<vtkSMProxy>       ContourRepresentation;
+  vtkWeakPointer<vtkSMSourceProxy> ResampleFilter;
+
+  class Private;
+  Private* Internals;
 
 private:
   Q_DISABLE_COPY(ModuleContour)
