@@ -59,6 +59,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="ColorByLabelMap">
+     <property name="text">
+      <string>Color by label map</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="pqProxiesWidget" name="ProxiesWidget" native="true"/>
    </item>
   </layout>
