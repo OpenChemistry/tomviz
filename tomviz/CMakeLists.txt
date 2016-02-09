@@ -226,7 +226,7 @@ add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}
   ${RCC_SOURCES} ${accel_srcs})
 
 set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
-qt5_use_modules(tomviz Help Network Widgets Test UiTools Xml)
+qt5_use_modules(tomviz Help Network Widgets UiTools)
 target_link_libraries(tomviz
   pqApplicationComponents
   vtkPVServerManagerRendering
