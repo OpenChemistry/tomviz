@@ -117,7 +117,7 @@ public:
   // Instantiate the object.
   static vtkNonOrthoImagePlaneWidget *New();
 
-  vtkTypeMacro(vtkNonOrthoImagePlaneWidget,vtkPolyDataSourceWidget);
+  vtkTypeMacro(vtkNonOrthoImagePlaneWidget,vtkPolyDataSourceWidget)
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   // Description:
