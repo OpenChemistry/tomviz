@@ -51,7 +51,7 @@
 #include "vtkTexture.h"
 #include "vtkTransform.h"
 
-vtkStandardNewMacro(vtkNonOrthoImagePlaneWidget);
+vtkStandardNewMacro(vtkNonOrthoImagePlaneWidget)
 
 namespace detail
 {
@@ -78,11 +78,11 @@ namespace detail
   }
 }
 
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedPlaneProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, ArrowProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedArrowProperty, vtkProperty);
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, TexturePlaneProperty, vtkProperty);
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedPlaneProperty, vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, ArrowProperty, vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedArrowProperty, vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, TexturePlaneProperty, vtkProperty)
 
 //----------------------------------------------------------------------------
 vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWidget()
