@@ -1,3 +1,30 @@
+# These dependencies are inherited from ParaView, we will ideally trim away
+# Help and UiTools in the future (at least UiTools).
+find_package(Qt5 REQUIRED COMPONENTS Help Network Widgets UiTools)
+include_directories(SYSTEM
+  ${Qt5Help_INCLUDE_DIRS}
+  ${Qt5Network_INCLUDE_DIRS}
+  ${Qt5Widgets_INCLUDE_DIRS}
+  ${Qt5UiTools_INCLUDE_DIRS})
+
+find_package(ParaView REQUIRED)
+
+if(NOT PARAVIEW_BUILD_QT_GUI)
+  message(FATAL_ERROR
+    "Tomviz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
+    "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE.")
+endif()
+if(NOT PARAVIEW_ENABLE_PYTHON)
+  message(FATAL_ERROR
+    "Tomviz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
+    "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
+endif()
+if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
+  message(FATAL_ERROR
+    "Tomviz requires PARAVIEW_QT_VERSION to be 5, please rebuild ParaView.")
+endif()
+include_directories(SYSTEM ${PARAVIEW_INCLUDE_DIRS})
+
 option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
   find_package(Dax REQUIRED)
@@ -226,7 +253,6 @@ add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}
   ${RCC_SOURCES} ${accel_srcs})
 
 set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
-qt5_use_modules(tomviz Help Network Widgets UiTools)
 target_link_libraries(tomviz
   pqApplicationComponents
   vtkPVServerManagerRendering
