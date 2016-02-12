@@ -58,6 +58,8 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
 
   this->connect(ui.DetachColorMap, SIGNAL(clicked(bool)),
                 SLOT(detachColorMap(bool)));
+  this->connect(ui.ColorByLabelMap, SIGNAL(clicked(bool)),
+                SLOT(colorByLabelMap(bool)));
 }
 
 //-----------------------------------------------------------------------------
@@ -68,10 +70,28 @@ ModulePropertiesPanel::~ModulePropertiesPanel()
 //-----------------------------------------------------------------------------
 void ModulePropertiesPanel::setModule(Module* module)
 {
+  if (module != this->Internals->ActiveModule)
+  {
+    if (this->Internals->ActiveModule)
+    {
+      DataSource* dataSource = this->Internals->ActiveModule->dataSource();
+      QObject::disconnect(dataSource, SIGNAL(dataChanged()),
+                          this, SLOT(updatePanel()));
+    }
+
+    if (module)
+    {
+      DataSource* dataSource = module->dataSource();
+      QObject::connect(dataSource, SIGNAL(dataChanged()),
+                       this, SLOT(updatePanel()));
+    }
+  }
+
   this->Internals->ActiveModule = module;
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
   ui.ProxiesWidget->clear();
   ui.DetachColorMap->setVisible(false);
+  ui.ColorByLabelMap->setVisible(false);
   if (module)
   {
     module->addToPanel(ui.ProxiesWidget);
@@ -79,6 +99,8 @@ void ModulePropertiesPanel::setModule(Module* module)
     {
       ui.DetachColorMap->setVisible(true);
       ui.DetachColorMap->setChecked(module->useDetachedColorMap());
+      ui.ColorByLabelMap->setVisible(true);
+      ui.ColorByLabelMap->setChecked(module->colorByLabelMap());
     }
   }
   ui.ProxiesWidget->updateLayout();
@@ -99,6 +121,12 @@ void ModulePropertiesPanel::updatePanel()
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
   ui.ProxiesWidget->filterWidgets(ui.SearchBox->isAdvancedSearchActive(),
                                   ui.SearchBox->text());
+
+  if (this->Internals->ActiveModule)
+  {
+    DataSource* dataSource = this->Internals->ActiveModule->dataSource();
+    ui.ColorByLabelMap->setVisible(dataSource && dataSource->hasLabelMap());
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -126,6 +154,18 @@ void ModulePropertiesPanel::detachColorMap(bool val)
   {
     module->setUseDetachedColorMap(val);
     this->setModule(module); // refreshes the module.
+    this->render();
+  }
+}
+
+//-----------------------------------------------------------------------------
+void ModulePropertiesPanel::colorByLabelMap(bool val)
+{
+  Module* module = this->Internals->ActiveModule;
+  if (module)
+  {
+    module->setColorByLabelMap(val);
+    this->setModule(module); // refreshs the module.
     this->render();
   }
 }

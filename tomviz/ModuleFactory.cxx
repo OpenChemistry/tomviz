@@ -147,6 +147,11 @@ QIcon ModuleFactory::moduleIcon(const QString& type)
 //-----------------------------------------------------------------------------
 const char* ModuleFactory::moduleType(Module* module)
 {
+  // WARNING: to ensure the most useful result is returned from this
+  // function, the if statements should be ordered so that children
+  // classes are checked before parent classes. Otherwise, the module
+  // type may be reported to be a class's parent.
+
   if (qobject_cast<ModuleOutline*>(module))
   {
     return "Outline";

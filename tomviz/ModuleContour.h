@@ -38,9 +38,9 @@ public:
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
+  void addToPanel(pqProxiesWidget*) override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
-  void addToPanel(pqProxiesWidget*) override;
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
   bool isColorMapNeeded() const override { return true; }
@@ -56,10 +56,15 @@ public:
 protected:
   void updateColorMap() override;
 
+  vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
+  vtkWeakPointer<vtkSMProxy>       ContourRepresentation;
+  vtkWeakPointer<vtkSMSourceProxy> ResampleFilter;
+
+  class Private;
+  Private* Internals;
+
 private:
   Q_DISABLE_COPY(ModuleContour)
-  vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
-  vtkWeakPointer<vtkSMProxy> ContourRepresentation;
 };
 
 }

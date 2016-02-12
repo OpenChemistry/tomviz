@@ -180,6 +180,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *convertDataAction = ui.menuData->addAction("Convert To Float");
   ui.menuData->addSeparator();
   
+  QAction *binaryThresholdAction = ui.menuData->addAction("Binary Threshold");
+  QAction *connectedComponentsAction = ui.menuData->addAction("Connected Components");
   QAction *shiftUniformAction = ui.menuData->addAction("Shift Uniformly");
   QAction *deleteSliceAction = ui.menuData->addAction("Delete Slices");
   QAction *downsampleByTwoAction = ui.menuData->addAction("Downsample x2");
@@ -241,6 +243,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddExpressionReaction(customPythonITKAction);
   new CropReaction(cropDataAction, this);
   new ConvertToFloatReaction(convertDataAction);
+  new AddPythonTransformReaction(binaryThresholdAction,
+                                 "Binary Threshold", readInPythonScript("BinaryThreshold"));
+  new AddPythonTransformReaction(connectedComponentsAction,
+                                 "Connected Components", readInPythonScript("ConnectedComponents"));
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Uniformly", readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,

@@ -32,6 +32,10 @@
 #include "vtkTrivialProducer.h"
 #include "vtkTypeInt8Array.h"
 
+#include "vtkPVArrayInformation.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVDataSetAttributesInformation.h"
+
 #include <vtk_pugixml.h>
 
 #include <sstream>
@@ -621,6 +625,24 @@ vtkSMProxy* DataSource::opacityMap() const
 {
   return this->Internals->ColorMap?
   vtkSMPropertyHelper(this->Internals->ColorMap, "ScalarOpacityFunction").GetAsProxy() : nullptr;
+}
+
+//-----------------------------------------------------------------------------
+bool DataSource::hasLabelMap()
+{
+  vtkSMSourceProxy* dataSource = this->producer();
+  if (!dataSource)
+  {
+    return false;
+  }
+
+  // We could just as easily go to the client side VTK object to get this info,
+  // but we'll go the ParaView route for now.
+  vtkPVDataInformation* dataInfo = dataSource->GetDataInformation();
+  vtkPVDataSetAttributesInformation* pointDataInfo = dataInfo->GetPointDataInformation();
+   vtkPVArrayInformation* labelMapInfo = pointDataInfo->GetArrayInformation("LabelMap");
+ 
+  return labelMapInfo != nullptr;
 }
 
 //-----------------------------------------------------------------------------
