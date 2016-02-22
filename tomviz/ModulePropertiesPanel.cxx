@@ -47,11 +47,12 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
   this->connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
                 SLOT(setView(vtkSMViewProxy*)));
 
+/* Disabled the search box for now, uncomment to enable again.
   this->connect(ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
                 SLOT(updatePanel()));
   this->connect(ui.SearchBox, SIGNAL(textChanged(const QString&)),
                 SLOT(updatePanel()));
-
+*/
   this->connect(ui.Delete, SIGNAL(clicked()), SLOT(deleteModule()));
   this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
                 SLOT(render()));
@@ -119,8 +120,8 @@ void ModulePropertiesPanel::setView(vtkSMViewProxy* view)
 void ModulePropertiesPanel::updatePanel()
 {
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
-  ui.ProxiesWidget->filterWidgets(ui.SearchBox->isAdvancedSearchActive(),
-                                  ui.SearchBox->text());
+//  ui.ProxiesWidget->filterWidgets(ui.SearchBox->isAdvancedSearchActive(),
+//                                  ui.SearchBox->text());
 
   if (this->Internals->ActiveModule)
   {
