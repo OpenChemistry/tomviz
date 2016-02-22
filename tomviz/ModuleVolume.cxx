@@ -76,6 +76,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   Q_ASSERT(this->Representation);
   vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
                                                   "Volume");
+  vtkSMPropertyHelper(this->Representation, "Position").Set(data->displayPosition(), 3);
 
   this->updateColorMap();
   this->Representation->UpdateVTKObjects();
@@ -145,6 +146,14 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
   }
 
   return this->Superclass::deserialize(ns);
+}
+
+//-----------------------------------------------------------------------------
+void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->Representation, "Position").Set(pos, 3);
+  this->Representation->UpdateVTKObjects();
 }
 
 } // end of namespace tomviz

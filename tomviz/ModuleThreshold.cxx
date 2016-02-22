@@ -90,6 +90,7 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   Q_ASSERT(this->ThresholdRepresentation);
   vtkSMRepresentationProxy::SetRepresentationType(this->ThresholdRepresentation,
                                                   "Surface");
+  vtkSMPropertyHelper(this->ThresholdRepresentation, "Position").Set(data->displayPosition(), 3);
   this->updateColorMap();
   this->ThresholdRepresentation->UpdateVTKObjects();
   return true;
@@ -185,6 +186,14 @@ bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
     tomviz::deserialize(this->ThresholdRepresentation,
                      ns.child("ThresholdRepresentation")) &&
     this->Superclass::deserialize(ns);
+}
+
+//-----------------------------------------------------------------------------
+void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->ThresholdRepresentation, "Position").Set(pos, 3);
+  this->ThresholdRepresentation->UpdateVTKObjects();
 }
 
 }

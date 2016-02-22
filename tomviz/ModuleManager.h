@@ -24,6 +24,7 @@ class vtkSMSourceProxy;
 class vtkSMViewProxy;
 class vtkPVXMLElement;
 class vtkSMProxyLocator;
+class vtkSMRepresentationProxy;
 class QDir;
 
 namespace tomviz

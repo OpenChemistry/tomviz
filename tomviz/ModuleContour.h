@@ -45,6 +45,8 @@ public:
   bool deserialize(const pugi::xml_node& ns) override;
   bool isColorMapNeeded() const override { return true; }
 
+  void dataSourceMoved(double newX, double newY, double newZ) override;
+
   void setIsoValues(const QList<double>& values);
   void setIsoValue(double value)
   {

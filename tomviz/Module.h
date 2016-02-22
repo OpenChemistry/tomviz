@@ -100,6 +100,9 @@ public slots:
   /// panel.
   virtual void addToPanel(pqProxiesWidget* panel);
 
+  /// This method is called when the data source's display position changes.
+  virtual void dataSourceMoved(double newX, double newY, double newZ) = 0;
+
 protected:
   /// Modules that use transfer functions for color/opacity should override this
   /// method to set the color map on appropriate representations. This will be

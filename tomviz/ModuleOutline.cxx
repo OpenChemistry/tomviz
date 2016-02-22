@@ -73,6 +73,7 @@ bool ModuleOutline::initialize(DataSource* data,
 
   // Create the representation for it.
   this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, vtkView);
+  vtkSMPropertyHelper(this->OutlineRepresentation, "Position").Set(data->displayPosition(), 3);
   Q_ASSERT(this->OutlineRepresentation);
   //vtkSMPropertyHelper(this->OutlineRepresentation,
   //                    "Representation").Set("Outline");
@@ -144,6 +145,14 @@ void ModuleOutline::addToPanel(pqProxiesWidget* panel)
   panel->addProxy(
     this->OutlineRepresentation, "Annotations", properties, true);
   this->Superclass::addToPanel(panel);
+}
+
+//-----------------------------------------------------------------------------
+void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double pos[3] = {newX, newY, newZ};
+  vtkSMPropertyHelper(this->OutlineRepresentation, "Position").Set(pos, 3);
+  this->OutlineRepresentation->UpdateVTKObjects();
 }
 
 } // end of namespace tomviz

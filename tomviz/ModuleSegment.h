@@ -64,6 +64,8 @@ public:
   /// panel.
   void addToPanel(pqProxiesWidget* panel) override;
 
+  void dataSourceMoved(double newX, double newY, double newZ) override;
+
 private slots:
   void onPropertyChanged();
 private:

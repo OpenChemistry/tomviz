@@ -97,6 +97,11 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWi
   this->TextureInterpolate       = 1;
   this->ResliceInterpolate       = VTK_LINEAR_RESLICE;
 
+  this->DisplayOffset[0] = 0;
+  this->DisplayOffset[1] = 0;
+  this->DisplayOffset[2] = 0;
+  this->DisplayTransform = vtkTransform::New();
+
   // Represent the plane's outline
   //
   this->PlaneSource = vtkPlaneSource::New();
@@ -179,6 +184,14 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWi
   this->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_NO_BUTTON;
 
   this->TextureVisibility = 1;
+
+  this->PlaneOutlineActor->SetUserTransform(this->DisplayTransform);
+  this->TexturePlaneActor->SetUserTransform(this->DisplayTransform);
+  this->ConeActor->SetUserTransform(this->DisplayTransform);
+  this->LineActor->SetUserTransform(this->DisplayTransform);
+  this->ConeActor2->SetUserTransform(this->DisplayTransform);
+  this->LineActor2->SetUserTransform(this->DisplayTransform);
+  this->SphereActor->SetUserTransform(this->DisplayTransform);
 }
 
 //----------------------------------------------------------------------------
@@ -212,6 +225,8 @@ vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
     {
     this->SelectedArrowProperty->Delete();
     }
+
+  this->DisplayTransform->Delete();
 
   this->ResliceAxes->Delete();
   this->Transform->Delete();
@@ -1252,12 +1267,12 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6],
   vtkNew<vtkPlaneCollection> clippingPlanes;
 
   //we push the bounds out by two voxels by using the spacing
-  double clip_bounds[6] = { bounds[0] - (2 *spacing[0]),
-                            bounds[1] + (2 *spacing[0]),
-                            bounds[2] - (2 *spacing[1]),
-                            bounds[3] + (2 *spacing[1]),
-                            bounds[4] - (2 *spacing[2]),
-                            bounds[5] + (2 *spacing[2])
+  double clip_bounds[6] = { bounds[0] - (2 *spacing[0]) + this->DisplayOffset[0],
+                            bounds[1] + (2 *spacing[0]) + this->DisplayOffset[0],
+                            bounds[2] - (2 *spacing[1]) + this->DisplayOffset[1],
+                            bounds[3] + (2 *spacing[1]) + this->DisplayOffset[1],
+                            bounds[4] - (2 *spacing[2]) + this->DisplayOffset[2],
+                            bounds[5] + (2 *spacing[2]) + this->DisplayOffset[2]
                           };
 
   vtkNew<vtkPlane> minXPlane;
@@ -1691,6 +1706,33 @@ void vtkNonOrthoImagePlaneWidget::GetNormal(double xyz[3])
 {
   this->PlaneSource->GetNormal(xyz);
 }
+//----------------------------------------------------------------------------
+void vtkNonOrthoImagePlaneWidget::SetDisplayOffset(const double xyz[3])
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    this->DisplayOffset[i] = xyz[i];
+  }
+  this->DisplayTransform->Identity();
+  this->DisplayTransform->Translate(xyz);
+  this->DisplayTransform->Update();
+  this->UpdatePlacement();
+}
+
+//----------------------------------------------------------------------------
+const double* vtkNonOrthoImagePlaneWidget::GetDisplayOffset()
+{
+  return this->DisplayOffset;
+}
+
+//----------------------------------------------------------------------------
+void vtkNonOrthoImagePlaneWidget::GetDisplayOffset(double xyz[3])
+{
+  for (int i = 0; i < 3; ++i)
+  {
+    xyz[i] = this->DisplayOffset[i];
+  }
+}
 
 //----------------------------------------------------------------------------
 void vtkNonOrthoImagePlaneWidget::GetPolyData(vtkPolyData *pd)
@@ -1840,6 +1882,7 @@ void vtkNonOrthoImagePlaneWidget::GenerateTexturePlane()
 
   this->TexturePlaneActor->SetMapper(texturePlaneMapper.GetPointer());
   this->TexturePlaneActor->SetTexture(this->Texture);
+  this->TexturePlaneActor->SetUserTransform(this->DisplayTransform);
   this->TexturePlaneActor->PickableOn();
 }
 
