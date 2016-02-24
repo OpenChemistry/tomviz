@@ -6,47 +6,42 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>376</width>
+    <width>432</width>
     <height>771</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1">
-   <property name="margin">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="SearchBoxLayout" stretch="1,0">
-     <property name="spacing">
-      <number>2</number>
+    <widget class="QPushButton" name="Delete">
+     <property name="enabled">
+      <bool>false</bool>
      </property>
-     <item>
-      <widget class="pqSearchBox" name="SearchBox" native="true">
-       <property name="settingKey" stdset="0">
-        <string>ModulePropertiesPanelSeachBox</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="Delete">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="toolTip">
-        <string>Delete Module</string>
-       </property>
-       <property name="text">
-        <string>&amp;Delete</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../ParaView3/ParaView/Qt/Widgets/Resources/QtWidgets.qrc">
-         <normaloff>:/QtWidgets/Icons/pqDelete16.png</normaloff>:/QtWidgets/Icons/pqDelete16.png</iconset>
-       </property>
-      </widget>
-     </item>
-    </layout>
+     <property name="toolTip">
+      <string>Delete Module</string>
+     </property>
+     <property name="text">
+      <string>&amp;Delete</string>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>:/QtWidgets/Icons/pqDelete16.png</normaloff>:/QtWidgets/Icons/pqDelete16.png</iconset>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QCheckBox" name="DetachColorMap">
@@ -75,12 +70,6 @@
    <class>pqProxiesWidget</class>
    <extends>QWidget</extends>
    <header>pqProxiesWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>pqSearchBox</class>
-   <extends>QWidget</extends>
-   <header>pqSearchBox.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
