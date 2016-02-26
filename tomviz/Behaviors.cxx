@@ -103,7 +103,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
 
   new tomviz::AddRenderViewContextMenuBehavior(this);
 
-  new tomviz::MoveActiveObject(this);
+  this->MoveActiveBehavior = new tomviz::MoveActiveObject(this);
 
   vtkNew<vtkSMTransferFunctionPresets> presets;
   bool needToAddMatplotlibColormaps = true;

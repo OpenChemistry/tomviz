@@ -3,5 +3,6 @@
     <file>icons/tomviz.png</file>
     <file>icons/tomvizfull.png</file>
     <file>icons/orthoslice.png</file>
+    <file>icons/move_objects.png</file>
   </qresource>
 </RCC>
