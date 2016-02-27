@@ -18,6 +18,7 @@
 
 #include <pqView.h>
 #include <vtkAxis.h>
+#include <vtkChartHistogram.h>
 #include <vtkChartXY.h>
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
@@ -187,73 +188,6 @@ public:
   Ui::CentralWidget Ui;
   QTimer Timer;
 };
-
-//-----------------------------------------------------------------------------
-class vtkHistogramMarker : public vtkPlot
-{
-public:
-  static vtkHistogramMarker * New();
-  double PositionX;
-
-  bool Paint(vtkContext2D *painter) override
-  {
-    vtkNew<vtkPen> pen;
-    pen->SetColor(255, 0, 0, 255);
-    pen->SetWidth(2.0);
-    painter->ApplyPen(pen.Get());
-    painter->DrawLine(PositionX, 0, PositionX, 1e9);
-    return true;
-  }
-};
-vtkStandardNewMacro(vtkHistogramMarker)
-
-//-----------------------------------------------------------------------------
-class vtkChartHistogram : public vtkChartXY
-{
-public:
-  static vtkChartHistogram * New();
-
-  bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse) override;
-
-  vtkNew<vtkTransform2D> Transform;
-  double PositionX;
-  vtkNew<vtkHistogramMarker> Marker;
-};
-
-vtkStandardNewMacro(vtkChartHistogram)
-
-//-----------------------------------------------------------------------------
-bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
-{
-  // Determine the location of the click, and emit something we can listen to!
-  vtkPlotBar *histo = nullptr;
-  if (this->GetNumberOfPlots() > 0)
-  {
-    histo = vtkPlotBar::SafeDownCast(this->GetPlot(0));
-  }
-  if (!histo)
-  {
-    return false;
-  }
-  this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
-                                       this->Transform.Get());
-  vtkVector2f pos;
-  this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
-                                          1);
-  this->PositionX = pos.GetX();
-  this->Marker->PositionX = this->PositionX;
-  this->Marker->Modified();
-  this->Scene->SetDirty(true);
-  if (this->GetNumberOfPlots() == 1)
-  {
-    // Work around a bug in the charts - ensure corner is invalid for the plot.
-    this->Marker->SetXAxis(nullptr);
-    this->Marker->SetYAxis(nullptr);
-    this->AddPlot(this->Marker.Get());
-  }
-  this->InvokeEvent(vtkCommand::CursorChangedEvent);
-  return true;
-}
 
 //-----------------------------------------------------------------------------
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)

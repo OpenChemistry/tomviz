@@ -31,6 +31,8 @@ class vtkEventQtSlotConnect;
 class vtkImageData;
 class vtkTable;
 class vtkScalarsToColors;
+class vtkChartHistogram;
+
 class QThread;
 
 namespace tomviz
@@ -38,7 +40,6 @@ namespace tomviz
 class DataSource;
 class HistogramMaker;
 class Module;
-class vtkChartHistogram;
 
 /// CentralWidget is a QWidget that is used as the central widget
 /// for the application. This include a histogram at the top and a
