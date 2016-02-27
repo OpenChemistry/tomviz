@@ -146,6 +146,7 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   output->AddColumn(populations.GetPointer());
 }
 
+//-----------------------------------------------------------------------------
 // This is a QObject that will be owned by the background thread
 // and use signals/slots to create histograms
 class HistogramMaker : public QObject
@@ -166,6 +167,7 @@ signals:
                      vtkSmartPointer<vtkTable> output);
 };
 
+//-----------------------------------------------------------------------------
 void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
@@ -178,6 +180,7 @@ void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
   emit histogramDone(input, output);
 }
 
+//-----------------------------------------------------------------------------
 class CentralWidget::CWInternals
 {
 public:
@@ -185,6 +188,7 @@ public:
   QTimer Timer;
 };
 
+//-----------------------------------------------------------------------------
 class vtkHistogramMarker : public vtkPlot
 {
 public:
@@ -203,6 +207,7 @@ public:
 };
 vtkStandardNewMacro(vtkHistogramMarker)
 
+//-----------------------------------------------------------------------------
 class vtkChartHistogram : public vtkChartXY
 {
 public:
@@ -217,6 +222,7 @@ public:
 
 vtkStandardNewMacro(vtkChartHistogram)
 
+//-----------------------------------------------------------------------------
 bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
 {
   // Determine the location of the click, and emit something we can listen to!
@@ -435,11 +441,13 @@ void CentralWidget::setDataSource(DataSource* source)
      Q_ARG(vtkSmartPointer<vtkTable>, table));
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::onColorMapUpdated()
 {
   this->onDataSourceChanged();
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::onDataSourceChanged()
 {
   // This starts/restarts the internal timer so that several events occurring
@@ -448,11 +456,13 @@ void CentralWidget::onDataSourceChanged()
   this->Internals->Timer.start();
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::refreshHistogram()
 {
   this->setDataSource(this->ADataSource);
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
@@ -476,6 +486,7 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
   this->setHistogramTable(output.Get());
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::histogramClicked(vtkObject *)
 {
   //qDebug() << "Histogram clicked at" << this->Chart->PositionX
@@ -519,6 +530,7 @@ void CentralWidget::histogramClicked(vtkObject *)
   tomviz::convert<pqView*>(view)->render();
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::setHistogramTable(vtkTable *table)
 {
   vtkDataArray *arr =
