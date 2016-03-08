@@ -62,6 +62,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QFileInfo>
+#include <QIcon>
 #include <QMessageBox>
 #include <QTimer>
 
@@ -340,7 +341,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new PythonGeneratedDatasetReaction(randomParticlesAction, "Random Particles",
       readInPythonScript("RandomParticles"));
 
-  
+  QAction *moveObjects = ui.toolBar->addAction(QIcon(":/icons/move_objects"), "MoveObjects");
+  moveObjects->setToolTip("Enable to allow moving of the selected dataset in the scene");
+  moveObjects->setCheckable(true);
+
+  QObject::connect(moveObjects, SIGNAL(triggered(bool)),
+      &ActiveObjects::instance(), SLOT(setMoveObjectsMode(bool)));
 
   //now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER

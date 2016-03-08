@@ -62,17 +62,21 @@ MoveActiveObject::MoveActiveObject(QObject *p)
   this->BoxWidget->SetPriority(1);
 
   this->connect(&activeObjs, SIGNAL(dataSourceActivated(DataSource*)),
-                SLOT(updateForNewDataSource(DataSource*)));
+                SLOT(dataSourceActivated(DataSource*)));
   this->connect(&activeObjs, SIGNAL(moduleActivated(Module*)),
-                SLOT(hideMoveObjectWidget()));
+                SLOT(moduleActivated()));
   this->connect(&activeObjs, SIGNAL(viewChanged(vtkSMViewProxy*)),
                 SLOT(onViewChanged(vtkSMViewProxy*)));
+  this->connect(&activeObjs, SIGNAL(moveObjectsModeChanged(bool)),
+                SLOT(setMoveEnabled(bool)));
   this->EventLink->Connect(this->BoxWidget.GetPointer(), vtkCommand::InteractionEvent,
                            this, SLOT(interactionEnd(vtkObject*)));
   for (int i = 0; i < 3; ++i)
   {
     this->DataLocation[i] = 0.0;
   }
+  this->DataSourceActive = false;
+  this->MoveEnabled = false;
 
 }
 
@@ -156,6 +160,37 @@ void MoveActiveObject::interactionEnd(vtkObject *caller)
   }
 
   ActiveObjects::instance().activeDataSource()->setDisplayPosition(displayPosition);
+}
+
+void MoveActiveObject::setMoveEnabled(bool enabled)
+{
+  this->MoveEnabled = enabled;
+  if (!enabled)
+  {
+    this->hideMoveObjectWidget();
+  }
+  else if (this->DataSourceActive)
+  {
+    this->updateForNewDataSource(ActiveObjects::instance().activeDataSource());
+  }
+}
+
+void MoveActiveObject::dataSourceActivated(DataSource *ds)
+{
+  this->DataSourceActive = true;
+  if (this->MoveEnabled)
+  {
+    this->updateForNewDataSource(ds);
+  }
+}
+
+void MoveActiveObject::moduleActivated()
+{
+  this->DataSourceActive = false;
+  if (this->MoveEnabled)
+  {
+    this->hideMoveObjectWidget();
+  }
 }
 
 }

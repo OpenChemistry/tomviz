@@ -22,6 +22,7 @@ class QMainWindow;
 
 namespace tomviz
 {
+class MoveActiveObject;
 /// Behaviors instantiates tomviz relevant ParaView behaviors (and any new
 /// ones) as needed.
 class Behaviors : public QObject
@@ -34,8 +35,11 @@ public:
   Behaviors(QMainWindow* mainWindow);
   virtual ~Behaviors();
 
+  MoveActiveObject *moveActiveBehavior() { return this->MoveActiveBehavior; };
 private:
   Q_DISABLE_COPY(Behaviors)
+
+  MoveActiveObject *MoveActiveBehavior;
 
   QString getMatplotlibColorMapFile();
 };

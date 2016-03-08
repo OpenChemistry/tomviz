@@ -57,6 +57,9 @@ public:
   /// often.
   vtkSMSessionProxyManager* proxyManager() const;
 
+  bool moveObjectsEnabled()
+    { return this->MoveObjectsEnabled; }
+
 public slots:
   /// Set the active view;
   void setActiveView(vtkSMViewProxy*);
@@ -69,6 +72,10 @@ public slots:
 
   /// Renders all views.
   void renderAllViews();
+
+  /// Set the active mode (true for the mode where objects can 
+  /// be moved via MoveActiveObject)
+  void setMoveObjectsMode(bool moveObjectsOn);
 
 signals:
   /// fired whenever the active view changes.
@@ -86,6 +93,8 @@ signals:
   /// Fired whenever a module is activated, i.e. selected in the pipeline.
   void moduleActivated(Module*);
 
+  /// Fired when the mode changes
+  void moveObjectsModeChanged(bool moveObjectsOn);
 private slots:
   void viewChanged(pqView*);
   void dataSourceRemoved(DataSource*);
@@ -102,6 +111,8 @@ protected:
 
   QPointer<Module> ActiveModule;
   void* VoidActiveModule;
+
+  bool MoveObjectsEnabled;
 
 private:
   Q_DISABLE_COPY(ActiveObjects)

@@ -35,7 +35,8 @@ ActiveObjects::ActiveObjects()
     VoidActiveDataSource(nullptr),
     ActiveDataSourceType(DataSource::Volume),
     ActiveModule(nullptr),
-    VoidActiveModule(nullptr)
+    VoidActiveModule(nullptr),
+    MoveObjectsEnabled(false)
 {
   this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
                 SLOT(viewChanged(pqView*)));
@@ -148,6 +149,16 @@ void ActiveObjects::setActiveModule(Module* module)
     emit this->moduleChanged(module);
   }
   emit this->moduleActivated(module);
+}
+
+//-----------------------------------------------------------------------------
+void ActiveObjects::setMoveObjectsMode(bool moveObjectsOn)
+{
+  if (this->MoveObjectsEnabled != moveObjectsOn)
+  {
+    this->MoveObjectsEnabled = moveObjectsOn;
+    emit this->moveObjectsModeChanged(moveObjectsOn);
+  }
 }
 
 //-----------------------------------------------------------------------------

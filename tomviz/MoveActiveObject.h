@@ -41,11 +41,15 @@ public:
   MoveActiveObject(QObject *parent);
   ~MoveActiveObject();
 
-public slots:
+private slots:
+  void dataSourceActivated(DataSource *ds);
+  void moduleActivated();
+
   void updateForNewDataSource(DataSource *newDS);
   void hideMoveObjectWidget();
   void onViewChanged(vtkSMViewProxy *newView);
   void interactionEnd(vtkObject *obj);
+  void setMoveEnabled(bool enable);
 
 private:
   Q_DISABLE_COPY(MoveActiveObject)
@@ -53,6 +57,8 @@ private:
   vtkNew<vtkBoxWidget2> BoxWidget;
   vtkNew<vtkEventQtSlotConnect> EventLink;
   vtkVector3d DataLocation;
+  bool MoveEnabled;
+  bool DataSourceActive;
 };
 }
 #endif

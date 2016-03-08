@@ -143,6 +143,8 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
 //-----------------------------------------------------------------------------
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
 {
+  bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
+  ActiveObjects::instance().setMoveObjectsMode(false);
   ModuleManager::instance().addDataSource(dataSource);
 
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
@@ -157,6 +159,7 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
   {
     ActiveObjects::instance().setActiveModule(module);
   }
+  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
 }
 
 } // end of namespace tomviz
