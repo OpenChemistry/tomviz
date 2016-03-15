@@ -25,6 +25,13 @@ if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
 endif()
 include_directories(SYSTEM ${PARAVIEW_INCLUDE_DIRS})
 
+find_package(ITK 4.9)
+if(ITK_FOUND AND NOT ITK_WRAP_PYTHON)
+  message(FATAL_ERROR
+    "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
+    "Please rebuild ITK with ITK_WRAP_PYTHON set to TRUE.")
+endif()
+
 option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
   find_package(Dax REQUIRED)
