@@ -220,6 +220,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   chart->ZoomWithMouseWheelOff();
   chart->GetAxis(vtkAxis::LEFT)->SetTitle("");
   chart->GetAxis(vtkAxis::BOTTOM)->SetTitle("");
+  chart->GetAxis(vtkAxis::BOTTOM)->SetBehavior(vtkAxis::FIXED);
+  chart->GetAxis(vtkAxis::BOTTOM)->SetRange(0, 255);
   chart->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
   chart->GetAxis(vtkAxis::LEFT)->SetRange(0.0001, 10);
   chart->GetAxis(vtkAxis::LEFT)->SetMinimumLimit(1);
