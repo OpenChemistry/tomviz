@@ -35,6 +35,9 @@ public:
   vtkNew<vtkTransform2D> Transform;
   double PositionX;
   vtkNew<vtkHistogramMarker> Marker;
+
+private:
+  vtkChartHistogram();
 };
 
 #endif // tomvizvtkCharHistogram_h

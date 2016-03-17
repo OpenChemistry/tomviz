@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "vtkChartHistogram.h"
 
+#include "vtkAxis.h"
 #include "vtkCommand.h"
 #include "vtkContext2D.h"
 #include "vtkContextMouseEvent.h"
@@ -46,6 +47,22 @@ vtkStandardNewMacro(vtkHistogramMarker)
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkChartHistogram)
+
+vtkChartHistogram::vtkChartHistogram()
+{
+  this->SetBarWidthFraction(1.0);
+  this->SetRenderEmpty(true);
+  this->SetAutoAxes(false);
+  this->ZoomWithMouseWheelOff();
+  this->GetAxis(vtkAxis::LEFT)->SetTitle("");
+  this->GetAxis(vtkAxis::BOTTOM)->SetTitle("");
+  this->GetAxis(vtkAxis::BOTTOM)->SetBehavior(vtkAxis::FIXED);
+  this->GetAxis(vtkAxis::BOTTOM)->SetRange(0, 255);
+  this->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
+  this->GetAxis(vtkAxis::LEFT)->SetRange(0.0001, 10);
+  this->GetAxis(vtkAxis::LEFT)->SetMinimumLimit(1);
+  this->GetAxis(vtkAxis::LEFT)->SetLogScale(true);
+}
 
 //-----------------------------------------------------------------------------
 bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
