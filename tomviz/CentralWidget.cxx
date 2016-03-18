@@ -20,15 +20,20 @@
 #include <vtkAxis.h>
 #include <vtkChartHistogram.h>
 #include <vtkChartXY.h>
+#include <vtkCompositeControlPointsItem.h>
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
+#include <vtkDiscretizableColorTransferFunction.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkIntArray.h>
 #include <vtkMathUtilities.h>
 #include <vtkObjectFactory.h>
+#include <vtkPiecewiseControlPointsItem.h>
+#include <vtkPiecewiseFunction.h>
+#include <vtkPiecewiseFunctionItem.h>
 #include <vtkPlotBar.h>
 #include <vtkPointData.h>
 #include <vtkSMSourceProxy.h>
@@ -473,6 +478,37 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   plot->SetColor(0, 0, 255, 255);
   plot->GetPen()->SetLineType(vtkPen::NO_PEN);
 
+  vtkNew<vtkPiecewiseFunction> pwFunction;
+  pwFunction->AddPoint(0, 2);
+  pwFunction->AddPoint(128, 5);
+  pwFunction->AddPoint(256, 2);
+
+  // Add piecewise function that defines opacity to the chart
+  vtkNew<vtkPiecewiseFunctionItem> pwfItem;
+  pwfItem->SetPiecewiseFunction(pwFunction.Get());
+  pwfItem->SetColor(1.0, 1.0, 0.0);
+  //pwfItem->SetShiftScale(vtkRectd(100, 0, 1, 1000));
+  double bounds[4] = {0, 255, 0, 2}; // This changes the bounds of the function
+  pwfItem->SetUserBounds(bounds);
+  this->Chart->AddPlot(pwfItem.Get());
+  this->Chart->SetPlotCorner(pwfItem.Get(), 1);
+  
+  vtkNew<vtkPiecewiseControlPointsItem> cpItem;
+  cpItem->SetPiecewiseFunction(pwFunction.Get());
+  cpItem->SetColor(1, 0, 0);
+  cpItem->SetEndPointsXMovable(false);
+  cpItem->SetEndPointsYMovable(true);
+  pwfItem->SetUserBounds(bounds);
+
+  vtkPen* cpPen = cpItem->GetPen();
+  cpPen->SetLineType(vtkPen::SOLID_LINE);
+  cpPen->SetColor(0, 0, 0);
+  cpPen->SetOpacity(255);
+  cpPen->SetWidth(2.0);
+
+  this->Chart->AddPlot(cpItem.Get());
+  this->Chart->SetPlotCorner(cpItem.Get(), 1);
+  
   double max = log10(arr->GetRange()[1]);
   vtkAxis *leftAxis = this->Chart->GetAxis(vtkAxis::LEFT);
   leftAxis->SetUnscaledMinimum(1.0);
