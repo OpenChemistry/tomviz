@@ -62,6 +62,9 @@ vtkChartHistogram::vtkChartHistogram()
   this->GetAxis(vtkAxis::LEFT)->SetRange(0.0001, 10);
   this->GetAxis(vtkAxis::LEFT)->SetMinimumLimit(1);
   this->GetAxis(vtkAxis::LEFT)->SetLogScale(true);
+  this->GetAxis(vtkAxis::RIGHT)->SetBehavior(vtkAxis::FIXED);
+  this->GetAxis(vtkAxis::RIGHT)->SetRange(0.0, 1.0);
+  this->GetAxis(vtkAxis::RIGHT)->SetVisible(true);
 }
 
 //-----------------------------------------------------------------------------
