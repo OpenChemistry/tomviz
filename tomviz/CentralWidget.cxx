@@ -488,19 +488,15 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   plot->SetColor(0, 0, 255, 255);
   plot->GetPen()->SetLineType(vtkPen::NO_PEN);
 
-  vtkNew<vtkPiecewiseFunction> pwFunction;
-  pwFunction->AddPoint(0.0, 0.0);
-  pwFunction->AddPoint(256.0, 1.0);
-
   // Add piecewise function that defines opacity to the chart
   vtkNew<vtkPiecewiseFunctionItem> pwfItem;
-  pwfItem->SetPiecewiseFunction(pwFunction.Get());
+  pwfItem->SetPiecewiseFunction(this->ScalarOpacityFunction);
   pwfItem->SetColor(1.0, 1.0, 0.0);
   this->Chart->AddPlot(pwfItem.Get());
   this->Chart->SetPlotCorner(pwfItem.Get(), 1);
   
   vtkNew<vtkPiecewiseControlPointsItem> cpItem;
-  cpItem->SetPiecewiseFunction(pwFunction.Get());
+  cpItem->SetPiecewiseFunction(this->ScalarOpacityFunction);
   cpItem->SetColor(1, 0, 0);
   cpItem->SetEndPointsXMovable(false);
   cpItem->SetEndPointsYMovable(true);
