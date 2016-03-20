@@ -29,8 +29,8 @@ class vtkSMSourceProxy;
 class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkImageData;
+class vtkPVDiscretizableColorTransferFunction;
 class vtkTable;
-class vtkScalarsToColors;
 class vtkChartHistogram;
 
 class QThread;
@@ -88,7 +88,7 @@ private:
   HistogramMaker *HistogramGen;
   QThread *Worker;
   QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
-  vtkScalarsToColors *LUT;
+  vtkPVDiscretizableColorTransferFunction *LUT;
 };
 
 }

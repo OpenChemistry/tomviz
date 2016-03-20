@@ -36,6 +36,7 @@
 #include <vtkPiecewiseFunctionItem.h>
 #include <vtkPlotBar.h>
 #include <vtkPointData.h>
+#include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTable.h>
@@ -43,7 +44,6 @@
 #include <vtkTrivialProducer.h>
 #include <vtkContext2D.h>
 #include <vtkPen.h>
-#include <vtkScalarsToColors.h>
 
 #include <QtDebug>
 #include <QThread>
@@ -319,14 +319,16 @@ void CentralWidget::setDataSource(DataSource* source)
   }
 
   // Get the current color map
-  vtkScalarsToColors *lut;
+  vtkPVDiscretizableColorTransferFunction *lut;
   if (this->AModule)
   {
-    lut = vtkScalarsToColors::SafeDownCast(this->AModule->colorMap()->GetClientSideObject());
+    vtkObjectBase* colorMapObject = this->AModule->colorMap()->GetClientSideObject();
+    lut = vtkPVDiscretizableColorTransferFunction::SafeDownCast(colorMapObject);
   }
   else
   {
-    lut = vtkScalarsToColors::SafeDownCast(source->colorMap()->GetClientSideObject());
+    vtkObjectBase* colorMapObject = source->colorMap()->GetClientSideObject();
+    lut = vtkPVDiscretizableColorTransferFunction::SafeDownCast(colorMapObject);
   }
   if (lut)
   {
