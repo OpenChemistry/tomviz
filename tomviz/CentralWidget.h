@@ -29,6 +29,7 @@ class vtkSMSourceProxy;
 class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkImageData;
+class vtkPiecewiseFunction;
 class vtkPVDiscretizableColorTransferFunction;
 class vtkTable;
 class vtkChartHistogram;
@@ -89,6 +90,7 @@ private:
   QThread *Worker;
   QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
   vtkPVDiscretizableColorTransferFunction *LUT;
+  vtkPiecewiseFunction *ScalarOpacityFunction;
 };
 
 }

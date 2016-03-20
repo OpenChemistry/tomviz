@@ -235,6 +235,9 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Internals->Timer.setInterval(200);
   this->Internals->Timer.setSingleShot(true);
   this->connect(&this->Internals->Timer, SIGNAL(timeout()), SLOT(refreshHistogram()));
+
+  this->LUT = nullptr;
+  this->ScalarOpacityFunction = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -337,6 +340,11 @@ void CentralWidget::setDataSource(DataSource* source)
   else
   {
     this->LUT = nullptr;
+  }
+
+  if (this->LUT)
+  {
+    this->ScalarOpacityFunction = this->LUT->GetScalarOpacityFunction();
   }
 
   // Check our cache, and use that if appopriate (or update it).
