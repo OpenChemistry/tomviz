@@ -479,9 +479,8 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   plot->GetPen()->SetLineType(vtkPen::NO_PEN);
 
   vtkNew<vtkPiecewiseFunction> pwFunction;
-  pwFunction->AddPoint(0, 2);
-  pwFunction->AddPoint(128, 5);
-  pwFunction->AddPoint(256, 2);
+  pwFunction->AddPoint(0.0, 0.0);
+  pwFunction->AddPoint(256.0, 1.0);
 
   // Add piecewise function that defines opacity to the chart
   vtkNew<vtkPiecewiseFunctionItem> pwfItem;
