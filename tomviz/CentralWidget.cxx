@@ -487,9 +487,6 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   vtkNew<vtkPiecewiseFunctionItem> pwfItem;
   pwfItem->SetPiecewiseFunction(pwFunction.Get());
   pwfItem->SetColor(1.0, 1.0, 0.0);
-  //pwfItem->SetShiftScale(vtkRectd(100, 0, 1, 1000));
-  double bounds[4] = {0, 255, 0, 2}; // This changes the bounds of the function
-  pwfItem->SetUserBounds(bounds);
   this->Chart->AddPlot(pwfItem.Get());
   this->Chart->SetPlotCorner(pwfItem.Get(), 1);
   
@@ -498,7 +495,6 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   cpItem->SetColor(1, 0, 0);
   cpItem->SetEndPointsXMovable(false);
   cpItem->SetEndPointsYMovable(true);
-  pwfItem->SetUserBounds(bounds);
 
   vtkPen* cpPen = cpItem->GetPen();
   cpPen->SetLineType(vtkPen::SOLID_LINE);
