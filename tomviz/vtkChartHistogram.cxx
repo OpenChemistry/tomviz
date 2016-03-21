@@ -84,6 +84,7 @@ vtkChartHistogram::vtkChartHistogram()
 
   this->OpacityControlPointsItem->SetEndPointsXMovable(false);
   this->OpacityControlPointsItem->SetEndPointsYMovable(true);
+  this->OpacityControlPointsItem->SetEndPointsRemovable(false);
 
   vtkPen* pen = this->OpacityControlPointsItem->GetPen();
   pen->SetLineType(vtkPen::SOLID_LINE);
