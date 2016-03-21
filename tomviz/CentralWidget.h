@@ -70,6 +70,7 @@ private slots:
   void histogramClicked(vtkObject *caller);
   void onDataSourceChanged();
   void refreshHistogram();
+  void onScalarOpacityFunctionChanged();
 
 private:
   Q_DISABLE_COPY(CentralWidget)

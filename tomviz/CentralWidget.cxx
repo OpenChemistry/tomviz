@@ -344,7 +344,17 @@ void CentralWidget::setDataSource(DataSource* source)
 
   if (this->LUT)
   {
+    if (this->ScalarOpacityFunction)
+    {
+      // Remove connection
+      this->EventLink->Disconnect(this->ScalarOpacityFunction, vtkCommand::ModifiedEvent,
+                                  this, SLOT(onScalarOpacityFunctionChanged()));
+    }
     this->ScalarOpacityFunction = this->LUT->GetScalarOpacityFunction();
+
+    // Connect opacity function to update render view
+    this->EventLink->Connect(this->ScalarOpacityFunction, vtkCommand::ModifiedEvent,
+                             this, SLOT(onScalarOpacityFunctionChanged()));
   }
 
   // Check our cache, and use that if appopriate (or update it).
@@ -399,6 +409,18 @@ void CentralWidget::onDataSourceChanged()
 void CentralWidget::refreshHistogram()
 {
   this->setDataSource(this->ADataSource);
+}
+
+//-----------------------------------------------------------------------------
+void CentralWidget::onScalarOpacityFunctionChanged()
+{
+  pqApplicationCore* core = pqApplicationCore::instance();
+  pqServerManagerModel* smmodel = core->getServerManagerModel();
+  QList<pqView*> views = smmodel->findItems<pqView*>();
+  foreach(pqView* view, views)
+  {
+    view->render();
+  }
 }
 
 //-----------------------------------------------------------------------------
