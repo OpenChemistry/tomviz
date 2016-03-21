@@ -513,7 +513,7 @@ void CentralWidget::setHistogramTable(vtkTable *table)
   // Add piecewise function that defines opacity to the chart
   vtkNew<vtkPiecewiseFunctionItem> pwfItem;
   pwfItem->SetPiecewiseFunction(this->ScalarOpacityFunction);
-  pwfItem->SetColor(1.0, 1.0, 0.0);
+  pwfItem->SetOpacity(0.0);
   this->Chart->AddPlot(pwfItem.Get());
   this->Chart->SetPlotCorner(pwfItem.Get(), 1);
   
