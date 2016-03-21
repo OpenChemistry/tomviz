@@ -23,6 +23,12 @@
 
 class vtkContextMouseEvent;
 class vtkHistogramMarker;
+class vtkPiecewiseFunction;
+class vtkPiecewiseFunctionItem;
+class vtkPiecewiseControlPointsItem;
+class vtkPlotBar;
+class vtkScalarsToColors;
+class vtkTable;
 
 //-----------------------------------------------------------------------------
 class vtkChartHistogram : public vtkChartXY
@@ -32,9 +38,30 @@ public:
 
   bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse) override;
 
+  // Set input for histogram
+  virtual void SetHistogramInputData(vtkTable* table, const char* xAxisColumn, const char* yAxisColumn);
+
+  // Set scalar visibility in the histogram plot bar
+  virtual void SetScalarVisibility(bool visible);
+  virtual void ScalarVisibilityOn();
+
+  // Set lookup table
+  virtual void SetLookupTable(vtkScalarsToColors* lut);
+
+  // Set the color array name
+  virtual void SelectColorArray(const char* arrayName);
+
+  // Set opacity function from a transfer function
+  virtual void SetOpacityFunction(vtkPiecewiseFunction * opacityFunction);
+
   vtkNew<vtkTransform2D> Transform;
   double PositionX;
   vtkNew<vtkHistogramMarker> Marker;
+
+protected:
+  vtkNew<vtkPlotBar>                    HistogramPlotBar;
+  vtkNew<vtkPiecewiseFunctionItem>      OpacityFunctionItem;
+  vtkNew<vtkPiecewiseControlPointsItem> OpacityControlPointsItem;
 
 private:
   vtkChartHistogram();

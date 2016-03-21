@@ -302,10 +302,6 @@ void CentralWidget::setDataSource(DataSource* source)
     this->connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
   }
 
-  // Whenever the data source changes clear the plot, and then populate when
-  // ready (or use the cached histogram values.
-  this->Chart->ClearPlots();
-
   if (!source)
   {
     return;
@@ -369,7 +365,6 @@ void CentralWidget::setDataSource(DataSource* source)
     else
     {
       // Need to recalculate, clear the plots, and remove the cached data.
-      this->Chart->ClearPlots();
       this->HistogramCache.remove(image);
     }
   }
@@ -501,36 +496,8 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     return;
   }
 
-  this->Chart->ClearPlots();
-
-  vtkNew<vtkPlotBar> plot;
-
-  this->Chart->AddPlot(plot.Get());
-  plot->SetInputData(table, "image_extents", "image_pops");
-  plot->SetColor(0, 0, 255, 255);
-  plot->GetPen()->SetLineType(vtkPen::NO_PEN);
-
-  // Add piecewise function that defines opacity to the chart
-  vtkNew<vtkPiecewiseFunctionItem> pwfItem;
-  pwfItem->SetPiecewiseFunction(this->ScalarOpacityFunction);
-  pwfItem->SetOpacity(0.0);
-  this->Chart->AddPlot(pwfItem.Get());
-  this->Chart->SetPlotCorner(pwfItem.Get(), 1);
-  
-  vtkNew<vtkPiecewiseControlPointsItem> cpItem;
-  cpItem->SetPiecewiseFunction(this->ScalarOpacityFunction);
-  cpItem->SetColor(1, 0, 0);
-  cpItem->SetEndPointsXMovable(false);
-  cpItem->SetEndPointsYMovable(true);
-
-  vtkPen* cpPen = cpItem->GetPen();
-  cpPen->SetLineType(vtkPen::SOLID_LINE);
-  cpPen->SetColor(0, 0, 0);
-  cpPen->SetOpacity(255);
-  cpPen->SetWidth(2.0);
-
-  this->Chart->AddPlot(cpItem.Get());
-  this->Chart->SetPlotCorner(cpItem.Get(), 1);
+  this->Chart->SetHistogramInputData(table, "image_extents", "image_pops");
+  this->Chart->SetOpacityFunction(this->ScalarOpacityFunction);
   
   double max = log10(arr->GetRange()[1]);
   vtkAxis *leftAxis = this->Chart->GetAxis(vtkAxis::LEFT);
@@ -551,9 +518,9 @@ void CentralWidget::setHistogramTable(vtkTable *table)
 
   if (this->LUT)
   {
-    plot->ScalarVisibilityOn();
-    plot->SetLookupTable(this->LUT);
-    plot->SelectColorArray("image_extents");
+    this->Chart->ScalarVisibilityOn();
+    this->Chart->SetLookupTable(this->LUT);
+    this->Chart->SelectColorArray("image_extents");
   }
 }
 

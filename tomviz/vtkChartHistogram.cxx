@@ -21,9 +21,14 @@
 #include "vtkContextMouseEvent.h"
 #include "vtkContextScene.h"
 #include "vtkObjectFactory.h"
+#include "vtkPiecewiseFunction.h"
+#include "vtkPiecewiseFunctionItem.h"
+#include "vtkPiecewiseControlPointsItem.h"
 #include "vtkPen.h"
 #include "vtkPlot.h"
 #include "vtkPlotBar.h"
+#include "vtkScalarsToColors.h"
+#include "vtkTable.h"
 #include "vtkTransform2D.h"
 
 //-----------------------------------------------------------------------------
@@ -48,6 +53,7 @@ vtkStandardNewMacro(vtkHistogramMarker)
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkChartHistogram)
 
+//-----------------------------------------------------------------------------
 vtkChartHistogram::vtkChartHistogram()
 {
   this->SetBarWidthFraction(1.0);
@@ -65,6 +71,27 @@ vtkChartHistogram::vtkChartHistogram()
   this->GetAxis(vtkAxis::RIGHT)->SetBehavior(vtkAxis::FIXED);
   this->GetAxis(vtkAxis::RIGHT)->SetRange(0.0, 1.0);
   this->GetAxis(vtkAxis::RIGHT)->SetVisible(true);
+
+  // Set up the plot bar
+  this->AddPlot(this->HistogramPlotBar.Get());
+  this->HistogramPlotBar->SetColor(0, 0, 255, 255);
+  this->HistogramPlotBar->GetPen()->SetLineType(vtkPen::NO_PEN);
+
+  // Set up and add the opacity editor chart items
+  this->OpacityFunctionItem->SetOpacity(0.0); // don't show the transfer function
+  this->AddPlot(this->OpacityFunctionItem.Get());
+  this->SetPlotCorner(this->OpacityFunctionItem.Get(), 1);
+
+  this->OpacityControlPointsItem->SetEndPointsXMovable(false);
+  this->OpacityControlPointsItem->SetEndPointsYMovable(true);
+
+  vtkPen* pen = this->OpacityControlPointsItem->GetPen();
+  pen->SetLineType(vtkPen::SOLID_LINE);
+  pen->SetColor(0, 0, 0);
+  pen->SetOpacity(255);
+  pen->SetWidth(2.0);
+  this->AddPlot(this->OpacityControlPointsItem.Get());
+  this->SetPlotCorner(this->OpacityControlPointsItem.Get(), 1);
 }
 
 //-----------------------------------------------------------------------------
@@ -98,4 +125,43 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   }
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
+                                              const char* xAxisColumn,
+                                              const char* yAxisColumn)
+{
+  this->HistogramPlotBar->SetInputData(table, xAxisColumn, yAxisColumn);
+}
+
+//-----------------------------------------------------------------------------
+void vtkChartHistogram::SetScalarVisibility(bool visible)
+{
+  this->HistogramPlotBar->SetScalarVisibility(visible);
+}
+
+//-----------------------------------------------------------------------------
+void vtkChartHistogram::ScalarVisibilityOn()
+{
+  this->HistogramPlotBar->ScalarVisibilityOn();
+}
+
+//-----------------------------------------------------------------------------
+void vtkChartHistogram::SetLookupTable(vtkScalarsToColors* lut)
+{
+  this->HistogramPlotBar->SetLookupTable(lut);
+}
+
+//-----------------------------------------------------------------------------
+void vtkChartHistogram::SelectColorArray(const char* arrayName)
+{
+  this->HistogramPlotBar->SelectColorArray(arrayName);
+}
+
+//-----------------------------------------------------------------------------
+void vtkChartHistogram::SetOpacityFunction(vtkPiecewiseFunction* opacityFunction)
+{
+  this->OpacityFunctionItem->SetPiecewiseFunction(opacityFunction);
+  this->OpacityControlPointsItem->SetPiecewiseFunction(opacityFunction);
 }
