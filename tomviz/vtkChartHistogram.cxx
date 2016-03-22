@@ -70,7 +70,7 @@ vtkChartHistogram::vtkChartHistogram()
   this->GetAxis(vtkAxis::LEFT)->SetLogScale(true);
   this->GetAxis(vtkAxis::RIGHT)->SetBehavior(vtkAxis::FIXED);
   this->GetAxis(vtkAxis::RIGHT)->SetRange(0.0, 1.0);
-  this->GetAxis(vtkAxis::RIGHT)->SetVisible(true);
+  this->GetAxis(vtkAxis::RIGHT)->SetVisible(false);
 
   // Set up the plot bar
   this->AddPlot(this->HistogramPlotBar.Get());
