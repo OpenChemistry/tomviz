@@ -76,6 +76,7 @@ vtkChartHistogram::vtkChartHistogram()
   this->AddPlot(this->HistogramPlotBar.Get());
   this->HistogramPlotBar->SetColor(0, 0, 255, 255);
   this->HistogramPlotBar->GetPen()->SetLineType(vtkPen::NO_PEN);
+  this->HistogramPlotBar->SelectableOff();
 
   // Set up and add the opacity editor chart items
   this->OpacityFunctionItem->SetOpacity(0.0); // don't show the transfer function
