@@ -20,6 +20,8 @@
 #include <vtkAxis.h>
 #include <vtkChartHistogram.h>
 #include <vtkChartXY.h>
+#include "vtkColorTransferControlPointsItem.h"
+#include "vtkColorTransferFunctionItem.h"
 #include <vtkCompositeControlPointsItem.h>
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
@@ -37,6 +39,7 @@
 #include <vtkPlotBar.h>
 #include <vtkPointData.h>
 #include <vtkPVDiscretizableColorTransferFunction.h>
+#include <vtkRenderWindow.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTable.h>
@@ -222,6 +225,52 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   this->EventLink->Connect(chart, vtkCommand::CursorChangedEvent, this,
                            SLOT(histogramClicked(vtkObject*)));
+
+  this->TransferFunctionView
+      ->SetInteractor(this->Internals->Ui.transferFunctionWidget->GetInteractor());
+  this->Internals->Ui.transferFunctionWidget
+    ->SetRenderWindow(this->TransferFunctionView->GetRenderWindow());
+
+  vtkNew<vtkChartXY> bottomChart;
+  bottomChart->SetBarWidthFraction(1.0);
+  bottomChart->SetRenderEmpty(true);
+  bottomChart->SetAutoAxes(false);
+  bottomChart->ZoomWithMouseWheelOff();
+
+  vtkAxis* bottomAxis = bottomChart->GetAxis(vtkAxis::BOTTOM);
+  bottomAxis->SetTitle("");
+  bottomAxis->SetBehavior(vtkAxis::FIXED);
+  bottomAxis->SetVisible(false);
+  bottomAxis->SetRange(0, 255);
+  bottomAxis->SetMargins(0, 0);
+
+  vtkAxis* leftAxis = bottomChart->GetAxis(vtkAxis::LEFT);
+  leftAxis->SetTitle("");
+  leftAxis->SetBehavior(vtkAxis::FIXED);
+  leftAxis->SetVisible(false);
+
+  vtkAxis* topAxis = bottomChart->GetAxis(vtkAxis::TOP);
+  topAxis->SetVisible(false);
+  topAxis->SetMargins(0, 0);
+
+  bottomChart->GetAxis(vtkAxis::RIGHT)->SetVisible(false);
+
+  this->ColorTransferFunctionItem->SelectableOff();
+
+  this->ColorTransferControlPointsItem->SetEndPointsXMovable(false);
+  this->ColorTransferControlPointsItem->SetEndPointsYMovable(true);
+  this->ColorTransferControlPointsItem->SetEndPointsRemovable(false);
+  this->ColorTransferControlPointsItem->SelectableOff();
+
+  bottomChart->AddPlot(this->ColorTransferFunctionItem.Get());
+  bottomChart->SetPlotCorner(this->ColorTransferFunctionItem.Get(), 1);
+  bottomChart->AddPlot(this->ColorTransferControlPointsItem.Get());
+  bottomChart->SetPlotCorner(this->ColorTransferControlPointsItem.Get(), 1);
+
+  this->TransferFunctionView->GetScene()->AddItem(bottomChart.Get());
+
+  this->EventLink->Connect(this->ColorTransferControlPointsItem.Get(), vtkCommand::EndEvent, this,
+                           SLOT(onScalarOpacityFunctionChanged()));
 
   // start the worker thread and give it ownership of the HistogramMaker
   // object.  Also connect the HistogramMaker's signal to the histogramReady
@@ -416,6 +465,9 @@ void CentralWidget::onScalarOpacityFunctionChanged()
   {
     view->render();
   }
+
+  // Update the histogram
+  this->HistogramView->GetRenderWindow()->Render();
 }
 
 //-----------------------------------------------------------------------------
@@ -521,6 +573,13 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     this->Chart->ScalarVisibilityOn();
     this->Chart->SetLookupTable(this->LUT);
     this->Chart->SelectColorArray("image_extents");
+
+    vtkColorTransferFunction* ctf = vtkColorTransferFunction::SafeDownCast(this->LUT);
+    if (ctf)
+    {
+      this->ColorTransferControlPointsItem->SetColorTransferFunction(ctf);
+      this->ColorTransferFunctionItem->SetColorTransferFunction(ctf);
+    }
   }
 }
 

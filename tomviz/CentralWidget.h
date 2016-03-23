@@ -24,6 +24,8 @@
 #include <vtkWeakPointer.h>
 #include <vtkSmartPointer.h>
 
+class vtkColorTransferControlPointsItem;
+class vtkColorTransferFunctionItem;
 class vtkObject;
 class vtkSMSourceProxy;
 class vtkContextView;
@@ -84,6 +86,11 @@ private:
   QScopedPointer<CWInternals> Internals;
   vtkNew<vtkContextView> HistogramView;
   vtkNew<vtkChartHistogram> Chart;
+
+  vtkNew<vtkContextView> TransferFunctionView;
+  vtkNew<vtkColorTransferControlPointsItem> ColorTransferControlPointsItem;
+  vtkNew<vtkColorTransferFunctionItem> ColorTransferFunctionItem;
+
   vtkNew<vtkEventQtSlotConnect> EventLink;
   QPointer<DataSource> ADataSource;
   QPointer<Module> AModule;
