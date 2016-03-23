@@ -73,6 +73,7 @@ private slots:
   void onDataSourceChanged();
   void refreshHistogram();
   void onScalarOpacityFunctionChanged();
+  void onCurrentPointEditEvent();
 
 private:
   Q_DISABLE_COPY(CentralWidget)

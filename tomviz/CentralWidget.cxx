@@ -48,6 +48,8 @@
 #include <vtkContext2D.h>
 #include <vtkPen.h>
 
+#include <QColor>
+#include <QColorDialog>
 #include <QtDebug>
 #include <QThread>
 #include <QTimer>
@@ -269,8 +271,10 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   this->TransferFunctionView->GetScene()->AddItem(bottomChart.Get());
 
-  this->EventLink->Connect(this->ColorTransferControlPointsItem.Get(), vtkCommand::EndEvent, this,
-                           SLOT(onScalarOpacityFunctionChanged()));
+  this->EventLink->Connect(this->ColorTransferControlPointsItem.Get(), vtkCommand::EndEvent,
+                           this, SLOT(onScalarOpacityFunctionChanged()));
+  this->EventLink->Connect(this->ColorTransferControlPointsItem.Get(), vtkControlPointsItem::CurrentPointEditEvent,
+                           this, SLOT(onCurrentPointEditEvent()));
 
   // start the worker thread and give it ownership of the HistogramMaker
   // object.  Also connect the HistogramMaker's signal to the histogramReady
@@ -468,6 +472,34 @@ void CentralWidget::onScalarOpacityFunctionChanged()
 
   // Update the histogram
   this->HistogramView->GetRenderWindow()->Render();
+}
+
+//-----------------------------------------------------------------------------
+void CentralWidget::onCurrentPointEditEvent()
+{
+  vtkIdType currentIdx = this->ColorTransferControlPointsItem->GetCurrentPoint();
+  if (currentIdx < 0)
+  {
+    return;
+  }
+
+  vtkColorTransferFunction* ctf = this->ColorTransferControlPointsItem->GetColorTransferFunction();
+  Q_ASSERT(ctf != NULL);
+
+  double xrgbms[6];
+  ctf->GetNodeValue(currentIdx, xrgbms);
+  QColor color = QColorDialog::getColor(
+    QColor::fromRgbF(xrgbms[1], xrgbms[2], xrgbms[3]), this,
+    "Select Color", QColorDialog::DontUseNativeDialog);
+  if (color.isValid())
+    {
+    xrgbms[1] = color.redF();
+    xrgbms[2] = color.greenF();
+    xrgbms[3] = color.blueF();
+    ctf->SetNodeValue(currentIdx, xrgbms);
+
+    this->onScalarOpacityFunctionChanged();
+    }
 }
 
 //-----------------------------------------------------------------------------
