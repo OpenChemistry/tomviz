@@ -20,6 +20,7 @@
 #include "pqView.h"
 #include "vtkCommand.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMSessionProxyManager.h"
 #include "vtkSMViewProxy.h"
 
 #include <QAction>
@@ -194,8 +195,17 @@ void ViewMenuManager::onViewChanged()
     this->ViewObserverId = pqCoreUtilities::connect(
         this->View, vtkCommand::PropertyModifiedEvent,
         this, SLOT(onViewPropertyChanged()));
-    this->AxesGridObserverId = pqCoreUtilities::connect(
-        vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy(),
+    vtkSMPropertyHelper axesGridProp(this->View, "AxesGrid");
+    vtkSMProxy *proxy = axesGridProp.GetAsProxy();
+    if (!proxy)
+    {
+      vtkSMSessionProxyManager* pxm = this->View->GetSessionProxyManager();
+      proxy = pxm->NewProxy("annotations", "GridAxes3DActor");
+      axesGridProp.Set(proxy);
+      this->View->UpdateVTKObjects();
+      proxy->Delete();
+    }
+    this->AxesGridObserverId = pqCoreUtilities::connect(proxy,
         vtkCommand::PropertyModifiedEvent, this, SLOT(onAxesGridChanged()));
   }
 }
