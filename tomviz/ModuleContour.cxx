@@ -253,4 +253,52 @@ void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
   this->ContourRepresentation->UpdateVTKObjects();
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleContour::isProxyPartOfModule(vtkSMProxy *proxy)
+{
+  return (proxy == this->ContourFilter.Get()) || (proxy == this->ContourRepresentation.Get())
+      || (proxy == this->ResampleFilter.Get());
+}
+
+std::string ModuleContour::getStringForProxy(vtkSMProxy *proxy)
+{
+  if (proxy == this->ContourFilter.Get())
+  {
+    return "Contour";
+  }
+  else if (proxy == this->ContourRepresentation.Get())
+  {
+    return "Representation";
+  }
+  else if (proxy == this->ResampleFilter.Get())
+  {
+    return "Resample";
+  }
+  else
+  {
+    qWarning("Gave bad proxy to module in save animation state");
+    return "";
+  }
+}
+
+vtkSMProxy *ModuleContour::getProxyForString(const std::string& str)
+{
+  if (str == "Resample")
+  {
+    return this->ResampleFilter.Get();
+  }
+  else if (str == "Representation")
+  {
+    return this->ContourRepresentation.Get();
+  }
+  else if (str == "Contour")
+  {
+    return this->ContourFilter.Get();
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
 } // end of namespace tomviz

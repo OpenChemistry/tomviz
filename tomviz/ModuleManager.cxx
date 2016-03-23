@@ -24,11 +24,16 @@
 
 #include "pqApplicationCore.h"
 #include "pqActiveObjects.h"
+#include "pqAnimationCue.h"
+#include "pqAnimationManager.h"
+#include "pqAnimationScene.h"
 #include "pqDeleteReaction.h"
+#include "pqPVApplicationCore.h"
 #include "vtkNew.h"
 #include "vtkPVXMLParser.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
+#include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyIterator.h"
 #include "vtkSMProxyLocator.h"
@@ -260,8 +265,9 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
   }
 
   // Now serialize each of the modules.
-  foreach (const QPointer<Module>& mdl, this->Internals->Modules)
+  for (int i = 0; i < this->Internals->Modules.size(); ++i)
   {
+    const QPointer<Module>& mdl = this->Internals->Modules[i];
     if (mdl && serializedDataSources.contains(mdl->dataSource()))
     {
       pugi::xml_node mdlnode = ns.append_child("Module");
@@ -270,6 +276,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
         mdl->dataSource()->producer()->GetGlobalIDAsString());
       mdlnode.append_attribute("view").set_value(
         mdl->view()->GetGlobalIDAsString());
+      mdlnode.append_attribute("module_id").set_value(i);
       if (mdl == ActiveObjects::instance().activeModule())
       {
         mdlnode.append_attribute("active").set_value(1);
@@ -281,6 +288,29 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
         continue;
       }
 
+    }
+  }
+
+  // save the animations
+  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  QSet< pqAnimationCue *> cues = scene->getCues();
+  foreach( pqAnimationCue* cue, cues)
+  {
+    pugi::xml_node cueNode = ns.append_child("Cue");
+    vtkSMProxy *animatedProxy = cue->getAnimatedProxy();
+    for (int i = 0; i < this->Internals->Modules.size(); ++i)
+    {
+      const QPointer<Module>& mdl = this->Internals->Modules[i];
+      if (mdl && mdl->isProxyPartOfModule(animatedProxy))
+      {
+        cueNode.append_attribute("module_id").set_value(i);
+        Module::serializeAnimationCue(cue, mdl, cueNode);
+        break;
+      }
+    }
+    if (!cueNode.attribute("module_id"))
+    {
+      cueNode.append_attribute("module_id").set_value(-1);
     }
   }
 
@@ -504,6 +534,8 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     }
   }
 
+  QMap<int, Module*> modulesById;
+
   // now, deserialize all the modules.
   for (pugi::xml_node mdlnode = ns.child("Module"); mdlnode;
     mdlnode = mdlnode.next_sibling("Module"))
@@ -511,6 +543,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     const char* type = mdlnode.attribute("type").value();
     vtkTypeUInt32 dsid = mdlnode.attribute("data_source").as_uint(0);
     vtkTypeUInt32 viewid = mdlnode.attribute("view").as_uint(0);
+    int moduleId = mdlnode.attribute("module_id").as_int();
     if (dataSources[dsid] == nullptr ||
       vtkSMViewProxy::SafeDownCast(locator->LocateProxy(viewid)) == nullptr)
     {
@@ -528,9 +561,21 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
       continue;
     }
     this->addModule(module);
+    modulesById.insert(moduleId, module);
     if (mdlnode.attribute("active").as_int(0) == 1)
     {
       ActiveObjects::instance().setActiveModule(module);
+    }
+  }
+
+  for (pugi::xml_node cueNode = ns.child("Cue"); cueNode;
+    cueNode = cueNode.next_sibling("Cue"))
+  {
+    int idx = cueNode.attribute("module_id").as_int();
+    Module *module = modulesById.value(idx, nullptr);
+    if (module)
+    {
+      Module::deserializeAnimationCue(module, cueNode);
     }
   }
 }

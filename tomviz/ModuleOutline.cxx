@@ -155,4 +155,43 @@ void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
   this->OutlineRepresentation->UpdateVTKObjects();
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleOutline::isProxyPartOfModule(vtkSMProxy *proxy)
+{
+  return (proxy == this->OutlineFilter.Get()) || (proxy == this->OutlineRepresentation.Get());
+}
+
+std::string ModuleOutline::getStringForProxy(vtkSMProxy *proxy)
+{
+  if (proxy == this->OutlineFilter.Get())
+  {
+    return "Outline";
+  }
+  else if (proxy == this->OutlineRepresentation.Get())
+  {
+    return "Representation";
+  }
+  else
+  {
+    qWarning("Unknown proxy passed to module outline in save animation");
+    return "";
+  }
+}
+
+vtkSMProxy *ModuleOutline::getProxyForString(const std::string& str)
+{
+  if (str == "Outline")
+  {
+    return this->OutlineFilter.Get();
+  }
+  else if (str == "Representation")
+  {
+    return this->OutlineRepresentation.Get();
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
 } // end of namespace tomviz

@@ -17,13 +17,18 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "pqAnimationCue.h"
+#include "pqAnimationManager.h"
+#include "pqAnimationScene.h"
 #include "pqCoreUtilities.h"
 #include "pqProxiesWidget.h"
+#include "pqPVApplicationCore.h"
 #include "pqView.h"
 #include "Utilities.h"
 #include "vtkCommand.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
+#include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
@@ -237,5 +242,65 @@ bool Module::colorByLabelMap() const
   return this->ColorByLabelMap;
 }
 
+//-----------------------------------------------------------------------------
+bool Module::serializeAnimationCue(pqAnimationCue *cue, Module *module, pugi::xml_node& ns)
+{
+  vtkSMProxy *animated = cue->getAnimatedProxy();
+  vtkSMProperty *property = cue->getAnimatedProperty();
+  int propertyIndex = cue->getAnimatedPropertyIndex();
+  std::string proxy = module->getStringForProxy(animated);
+  const char *propName = property->GetXMLName();
+
+  pugi::xml_node n = ns.append_child("cue");
+  n.append_attribute("proxy").set_value(proxy.c_str());
+  n.append_attribute("property").set_value(propName);
+  n.append_attribute("propertyIndex").set_value(propertyIndex);
+  QList< vtkSMProxy* > keyframes = cue->getKeyFrames();
+  for (int i = 0; i < keyframes.size(); ++i)
+  {
+    pugi::xml_node keyframeNode = n.append_child("keyframe");
+    tomviz::serialize(keyframes[i], keyframeNode);
+  }
+  return true;
+}
+
+bool Module::deserializeAnimationCue(Module *module, const pugi::xml_node& ns)
+{
+  const pugi::xml_node &cueNode = ns.child("cue");
+  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  std::string proxy = cueNode.attribute("proxy").value();
+  const char *property = cueNode.attribute("property").value();
+  int propertyIndex = cueNode.attribute("propertyIndex").as_int();
+  vtkSMProxy* proxyObj = module->getProxyForString(proxy);
+  if (proxyObj == nullptr)
+  {
+    return false;
+  }
+
+  pqAnimationCue* cue = scene->createCue(proxyObj, property, propertyIndex);
+  int i = 0;
+  for (pugi::xml_node keyframeNode = cueNode.child("keyframe");
+      keyframeNode; keyframeNode = keyframeNode.next_sibling("keyframe"))
+  {
+    vtkSMProxy *keyframe = nullptr;
+    if (i < cue->getNumberOfKeyFrames())
+    {
+      keyframe = cue->getKeyFrame(i);
+    }
+    else
+    {
+      keyframe = cue->insertKeyFrame(i);
+    }
+    if (!tomviz::deserialize(keyframe, keyframeNode))
+    {
+      scene->removeCue(cue);
+      return false;
+    }
+    keyframe->UpdateVTKObjects();
+    ++i;
+  }
+  cue->triggerKeyFramesModified();
+  return true;
+}
 //-----------------------------------------------------------------------------
 } // end of namespace tomviz

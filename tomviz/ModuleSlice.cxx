@@ -374,4 +374,44 @@ void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
   this->Widget->SetDisplayOffset(pos);
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleSlice::isProxyPartOfModule(vtkSMProxy *proxy)
+{
+  return (proxy == this->PassThrough.Get()) ||
+         (proxy == this->PropsPanelProxy.Get());
+}
+
+std::string ModuleSlice::getStringForProxy(vtkSMProxy *proxy)
+{
+  if (proxy == this->PassThrough.Get())
+  {
+    return "PassThrough";
+  }
+  else if (proxy == this->PropsPanelProxy.Get())
+  {
+    return "NonOrthoSlice";
+  }
+  else
+  {
+    qWarning("Unknown proxy passed to module non-ortho-slice in save animation");
+    return "";
+  }
+}
+
+vtkSMProxy *ModuleSlice::getProxyForString(const std::string& str)
+{
+  if (str == "PassThrough")
+  {
+    return this->PassThrough.Get();
+  }
+  else if (str == "NonOrthoSlice")
+  {
+    return this->PropsPanelProxy.Get();
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
 }

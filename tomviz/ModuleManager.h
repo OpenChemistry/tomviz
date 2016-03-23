@@ -106,6 +106,7 @@ private:
 
   class MMInternals;
   QScopedPointer<MMInternals> Internals;
+
 };
 
 }
