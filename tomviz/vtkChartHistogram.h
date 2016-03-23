@@ -22,10 +22,10 @@
 #include "vtkTransform2D.h"
 
 class vtkContextMouseEvent;
+class vtkCustomPiecewiseControlPointsItem;
 class vtkHistogramMarker;
 class vtkPiecewiseFunction;
 class vtkPiecewiseFunctionItem;
-class vtkPiecewiseControlPointsItem;
 class vtkPlotBar;
 class vtkScalarsToColors;
 class vtkTable;
@@ -59,9 +59,9 @@ public:
   vtkNew<vtkHistogramMarker> Marker;
 
 protected:
-  vtkNew<vtkPlotBar>                    HistogramPlotBar;
-  vtkNew<vtkPiecewiseFunctionItem>      OpacityFunctionItem;
-  vtkNew<vtkPiecewiseControlPointsItem> OpacityControlPointsItem;
+  vtkNew<vtkPlotBar>                          HistogramPlotBar;
+  vtkNew<vtkPiecewiseFunctionItem>            OpacityFunctionItem;
+  vtkNew<vtkCustomPiecewiseControlPointsItem> OpacityControlPointsItem;
 
 private:
   vtkChartHistogram();

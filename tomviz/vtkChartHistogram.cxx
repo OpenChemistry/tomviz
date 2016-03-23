@@ -20,10 +20,10 @@
 #include "vtkContext2D.h"
 #include "vtkContextMouseEvent.h"
 #include "vtkContextScene.h"
+#include "vtkCustomPiecewiseControlPointsItem.h"
 #include "vtkObjectFactory.h"
 #include "vtkPiecewiseFunction.h"
 #include "vtkPiecewiseFunctionItem.h"
-#include "vtkPiecewiseControlPointsItem.h"
 #include "vtkPen.h"
 #include "vtkPlot.h"
 #include "vtkPlotBar.h"
@@ -76,7 +76,7 @@ vtkChartHistogram::vtkChartHistogram()
   this->AddPlot(this->HistogramPlotBar.Get());
   this->HistogramPlotBar->SetColor(0, 0, 255, 255);
   this->HistogramPlotBar->GetPen()->SetLineType(vtkPen::NO_PEN);
-  this->HistogramPlotBar->SelectableOff();
+  this->HistogramPlotBar->SetSelectable(false);
 
   // Set up and add the opacity editor chart items
   this->OpacityFunctionItem->SetOpacity(0.0); // don't show the transfer function
@@ -99,6 +99,13 @@ vtkChartHistogram::vtkChartHistogram()
 //-----------------------------------------------------------------------------
 bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
 {
+  // Return if control button isn't pressed
+  int modifiers = m.GetModifiers();
+  if (!(modifiers & vtkContextMouseEvent::CONTROL_MODIFIER))
+  {
+    return false;
+  }
+
   // Determine the location of the click, and emit something we can listen to!
   vtkPlotBar *histo = nullptr;
   if (this->GetNumberOfPlots() > 0)
