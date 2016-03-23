@@ -125,7 +125,7 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   this->Marker->PositionX = this->PositionX;
   this->Marker->Modified();
   this->Scene->SetDirty(true);
-  if (this->GetNumberOfPlots() == 1)
+  if (this->GetNumberOfPlots() > 0)
   {
     // Work around a bug in the charts - ensure corner is invalid for the plot.
     this->Marker->SetXAxis(nullptr);
