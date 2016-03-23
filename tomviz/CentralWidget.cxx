@@ -213,12 +213,12 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Internals->Ui.splitter->setStretchFactor(1, 1);
 
   // Set up our little chart.
-  this->Histogram
+  this->HistogramView
       ->SetInteractor(this->Internals->Ui.histogramWidget->GetInteractor());
   this->Internals->Ui.histogramWidget
-      ->SetRenderWindow(this->Histogram->GetRenderWindow());
+      ->SetRenderWindow(this->HistogramView->GetRenderWindow());
   vtkChartHistogram* chart = this->Chart.Get();
-  this->Histogram->GetScene()->AddItem(chart);
+  this->HistogramView->GetScene()->AddItem(chart);
 
   this->EventLink->Connect(chart, vtkCommand::CursorChangedEvent, this,
                            SLOT(histogramClicked(vtkObject*)));

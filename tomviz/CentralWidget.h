@@ -82,7 +82,7 @@ private:
 
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
-  vtkNew<vtkContextView> Histogram;
+  vtkNew<vtkContextView> HistogramView;
   vtkNew<vtkChartHistogram> Chart;
   vtkNew<vtkEventQtSlotConnect> EventLink;
   QPointer<DataSource> ADataSource;
