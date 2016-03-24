@@ -29,6 +29,7 @@
 #include "vtkPVXMLParser.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyIterator.h"
 #include "vtkSMProxyLocator.h"
 #include "vtkSMProxyManager.h"
@@ -319,6 +320,17 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
         qWarning("Failed to serialize view.");
         ns.remove_child(vnode);
       }
+
+      vtkSMProxy* axesGrid = vtkSMPropertyHelper(view, "AxesGrid").GetAsProxy();
+      pugi::xml_node axesGridNode = vnode.append_child("AxesGrid");
+      axesGridNode.append_attribute("id").set_value(axesGrid->GetGlobalIDAsString());
+      axesGridNode.append_attribute("xmlgroup").set_value(axesGrid->GetXMLGroup());
+      axesGridNode.append_attribute("xmlname").set_value(axesGrid->GetXMLName());
+      if (!tomviz::serialize(axesGrid, axesGridNode))
+      {
+        qWarning("Failed to serialize axes grid");
+        ns.remove_child(axesGridNode);
+      }
     }
   }
   return true;
@@ -345,6 +357,9 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
   int numViews = 0, numLayouts = 0;
   for (pugi::xml_node node = ns.child("View"); node; node = node.next_sibling("View"))
   {
+    pugi::xml_node axesGridNode = node.child("AxesGrid");
+    pugi::xml_node axesGridProxyNode = axesGridNode.child("Proxy");
+    vtkTypeUInt32 axesGridId = axesGridProxyNode.attribute("id").as_uint(0);
     vtkTypeUInt32 id = node.attribute("id").as_uint(0);
     pugi::xml_node proxyNode = node.child("Proxy");
     if (proxyNode)
@@ -354,6 +369,16 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
       viewSummary.append_attribute("id").set_value(id);
       viewSummary.append_attribute("name").set_value(
           QString("View%1").arg(++numViews).toStdString().c_str());
+    }
+    if (axesGridProxyNode)
+    {
+      pvState.append_copy(axesGridProxyNode);
+      pugi::xml_node collection = pvState.append_child("ProxyCollection");
+      QString name = QString("pq_helper_proxies.%1").arg(id);
+      collection.append_attribute("name").set_value(name.toStdString().c_str());
+      pugi::xml_node item = collection.append_child("Item");
+      item.append_attribute("id").set_value(axesGridId);
+      item.append_attribute("name").set_value("AxesGrid");
     }
   }
   for (pugi::xml_node node = ns.child("Layout"); node; node = node.next_sibling("Layout"))
