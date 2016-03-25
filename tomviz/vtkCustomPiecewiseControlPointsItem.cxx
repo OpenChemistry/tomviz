@@ -15,12 +15,12 @@
 ******************************************************************************/
 #include "vtkCustomPiecewiseControlPointsItem.h"
 
-#include "vtkContextMouseEvent.h"
-#include "vtkContextScene.h"
-#include "vtkObjectFactory.h"
+#include <vtkContextMouseEvent.h>
+#include <vtkContextScene.h>
+#include <vtkObjectFactory.h>
 
 //-----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkCustomPiecewiseControlPointsItem);
+vtkStandardNewMacro(vtkCustomPiecewiseControlPointsItem)
 
 //-----------------------------------------------------------------------------
 vtkCustomPiecewiseControlPointsItem::vtkCustomPiecewiseControlPointsItem()

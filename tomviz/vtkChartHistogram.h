@@ -16,10 +16,10 @@
 #ifndef tomvizvtkChartHistogram_h
 #define tomvizvtkChartHistogram_h
 
-#include "vtkChartXY.h"
+#include <vtkChartXY.h>
 
-#include "vtkNew.h"
-#include "vtkTransform2D.h"
+#include <vtkNew.h>
+#include <vtkTransform2D.h>
 
 class vtkContextMouseEvent;
 class vtkCustomPiecewiseControlPointsItem;
@@ -39,7 +39,9 @@ public:
   bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse) override;
 
   // Set input for histogram
-  virtual void SetHistogramInputData(vtkTable* table, const char* xAxisColumn, const char* yAxisColumn);
+  virtual void SetHistogramInputData(vtkTable* table,
+                                     const char* xAxisColumn,
+                                     const char* yAxisColumn);
 
   // Set scalar visibility in the histogram plot bar
   virtual void SetScalarVisibility(bool visible);
@@ -54,17 +56,22 @@ public:
   // Set opacity function from a transfer function
   virtual void SetOpacityFunction(vtkPiecewiseFunction * opacityFunction);
 
+  // Set the x-position of the marker
+  vtkSetMacro(PositionX, double)
+  vtkGetMacro(PositionX, double)
+
+protected:
   vtkNew<vtkTransform2D> Transform;
   double PositionX;
   vtkNew<vtkHistogramMarker> Marker;
 
-protected:
   vtkNew<vtkPlotBar>                          HistogramPlotBar;
   vtkNew<vtkPiecewiseFunctionItem>            OpacityFunctionItem;
   vtkNew<vtkCustomPiecewiseControlPointsItem> OpacityControlPointsItem;
 
 private:
   vtkChartHistogram();
+  virtual ~vtkChartHistogram();
 };
 
 #endif // tomvizvtkCharHistogram_h

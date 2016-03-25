@@ -15,21 +15,22 @@
 ******************************************************************************/
 #include "vtkChartHistogram.h"
 
-#include "vtkAxis.h"
-#include "vtkCommand.h"
-#include "vtkContext2D.h"
-#include "vtkContextMouseEvent.h"
-#include "vtkContextScene.h"
+#include <vtkAxis.h>
+#include <vtkCommand.h>
+#include <vtkContext2D.h>
+#include <vtkContextMouseEvent.h>
+#include <vtkContextScene.h>
+#include <vtkObjectFactory.h>
+#include <vtkPiecewiseFunction.h>
+#include <vtkPiecewiseFunctionItem.h>
+#include <vtkPen.h>
+#include <vtkPlot.h>
+#include <vtkPlotBar.h>
+#include <vtkScalarsToColors.h>
+#include <vtkTable.h>
+#include <vtkTransform2D.h>
+
 #include "vtkCustomPiecewiseControlPointsItem.h"
-#include "vtkObjectFactory.h"
-#include "vtkPiecewiseFunction.h"
-#include "vtkPiecewiseFunctionItem.h"
-#include "vtkPen.h"
-#include "vtkPlot.h"
-#include "vtkPlotBar.h"
-#include "vtkScalarsToColors.h"
-#include "vtkTable.h"
-#include "vtkTransform2D.h"
 
 //-----------------------------------------------------------------------------
 class vtkHistogramMarker : public vtkPlot
@@ -94,6 +95,11 @@ vtkChartHistogram::vtkChartHistogram()
   pen->SetWidth(2.0);
   this->AddPlot(this->OpacityControlPointsItem.Get());
   this->SetPlotCorner(this->OpacityControlPointsItem.Get(), 1);
+}
+
+//-----------------------------------------------------------------------------
+vtkChartHistogram::~vtkChartHistogram()
+{
 }
 
 //-----------------------------------------------------------------------------

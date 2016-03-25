@@ -463,8 +463,8 @@ void CentralWidget::refreshHistogram()
 void CentralWidget::onScalarOpacityFunctionChanged()
 {
   pqApplicationCore* core = pqApplicationCore::instance();
-  pqServerManagerModel* smmodel = core->getServerManagerModel();
-  QList<pqView*> views = smmodel->findItems<pqView*>();
+  pqServerManagerModel* smModel = core->getServerManagerModel();
+  QList<pqView*> views = smModel->findItems<pqView*>();
   foreach(pqView* view, views)
   {
     view->render();
@@ -484,7 +484,7 @@ void CentralWidget::onCurrentPointEditEvent()
   }
 
   vtkColorTransferFunction* ctf = this->ColorTransferControlPointsItem->GetColorTransferFunction();
-  Q_ASSERT(ctf != NULL);
+  Q_ASSERT(ctf != nullptr);
 
   double xrgbms[6];
   ctf->GetNodeValue(currentIdx, xrgbms);
@@ -492,14 +492,14 @@ void CentralWidget::onCurrentPointEditEvent()
     QColor::fromRgbF(xrgbms[1], xrgbms[2], xrgbms[3]), this,
     "Select Color", QColorDialog::DontUseNativeDialog);
   if (color.isValid())
-    {
+  {
     xrgbms[1] = color.redF();
     xrgbms[2] = color.greenF();
     xrgbms[3] = color.blueF();
     ctf->SetNodeValue(currentIdx, xrgbms);
 
     this->onScalarOpacityFunctionChanged();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -566,7 +566,7 @@ void CentralWidget::histogramClicked(vtkObject *)
     ActiveObjects::instance().setActiveModule(contour);
   }
   Q_ASSERT(contour);
-  contour->setIsoValue(this->Chart->PositionX);
+  contour->setIsoValue(this->Chart->GetPositionX());
   tomviz::convert<pqView*>(view)->render();
 }
 
