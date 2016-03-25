@@ -235,6 +235,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   vtkNew<vtkChartXY> bottomChart;
   bottomChart->SetBarWidthFraction(1.0);
+  bottomChart->SetHiddenAxisBorder(10);
   bottomChart->SetRenderEmpty(true);
   bottomChart->SetAutoAxes(false);
   bottomChart->ZoomWithMouseWheelOff();

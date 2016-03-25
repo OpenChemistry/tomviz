@@ -39,7 +39,7 @@
        <item>
         <widget class="QVTKWidget" name="histogramWidget" native="true">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -47,7 +47,7 @@
          <property name="minimumSize">
           <size>
            <width>200</width>
-           <height>200</height>
+           <height>150</height>
           </size>
          </property>
          <property name="autoFillBackground">
@@ -66,7 +66,7 @@
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>70</height>
+           <height>50</height>
           </size>
          </property>
          <property name="autoFillBackground">
