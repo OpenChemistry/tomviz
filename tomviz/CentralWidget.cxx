@@ -18,18 +18,28 @@
 
 #include <pqView.h>
 #include <vtkAxis.h>
+#include <vtkChartHistogram.h>
 #include <vtkChartXY.h>
+#include "vtkColorTransferControlPointsItem.h"
+#include "vtkColorTransferFunctionItem.h"
+#include <vtkCompositeControlPointsItem.h>
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
+#include <vtkDiscretizableColorTransferFunction.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkIntArray.h>
 #include <vtkMathUtilities.h>
 #include <vtkObjectFactory.h>
+#include <vtkPiecewiseControlPointsItem.h>
+#include <vtkPiecewiseFunction.h>
+#include <vtkPiecewiseFunctionItem.h>
 #include <vtkPlotBar.h>
 #include <vtkPointData.h>
+#include <vtkPVDiscretizableColorTransferFunction.h>
+#include <vtkRenderWindow.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTable.h>
@@ -37,8 +47,9 @@
 #include <vtkTrivialProducer.h>
 #include <vtkContext2D.h>
 #include <vtkPen.h>
-#include <vtkScalarsToColors.h>
 
+#include <QColor>
+#include <QColorDialog>
 #include <QtDebug>
 #include <QThread>
 #include <QTimer>
@@ -146,6 +157,7 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   output->AddColumn(populations.GetPointer());
 }
 
+//-----------------------------------------------------------------------------
 // This is a QObject that will be owned by the background thread
 // and use signals/slots to create histograms
 class HistogramMaker : public QObject
@@ -166,6 +178,7 @@ signals:
                      vtkSmartPointer<vtkTable> output);
 };
 
+//-----------------------------------------------------------------------------
 void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
@@ -178,76 +191,13 @@ void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
   emit histogramDone(input, output);
 }
 
+//-----------------------------------------------------------------------------
 class CentralWidget::CWInternals
 {
 public:
   Ui::CentralWidget Ui;
   QTimer Timer;
 };
-
-class vtkHistogramMarker : public vtkPlot
-{
-public:
-  static vtkHistogramMarker * New();
-  double PositionX;
-
-  bool Paint(vtkContext2D *painter) override
-  {
-    vtkNew<vtkPen> pen;
-    pen->SetColor(255, 0, 0, 255);
-    pen->SetWidth(2.0);
-    painter->ApplyPen(pen.Get());
-    painter->DrawLine(PositionX, 0, PositionX, 1e9);
-    return true;
-  }
-};
-vtkStandardNewMacro(vtkHistogramMarker)
-
-class vtkChartHistogram : public vtkChartXY
-{
-public:
-  static vtkChartHistogram * New();
-
-  bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse) override;
-
-  vtkNew<vtkTransform2D> Transform;
-  double PositionX;
-  vtkNew<vtkHistogramMarker> Marker;
-};
-
-vtkStandardNewMacro(vtkChartHistogram)
-
-bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
-{
-  // Determine the location of the click, and emit something we can listen to!
-  vtkPlotBar *histo = nullptr;
-  if (this->GetNumberOfPlots() > 0)
-  {
-    histo = vtkPlotBar::SafeDownCast(this->GetPlot(0));
-  }
-  if (!histo)
-  {
-    return false;
-  }
-  this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
-                                       this->Transform.Get());
-  vtkVector2f pos;
-  this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
-                                          1);
-  this->PositionX = pos.GetX();
-  this->Marker->PositionX = this->PositionX;
-  this->Marker->Modified();
-  this->Scene->SetDirty(true);
-  if (this->GetNumberOfPlots() == 1)
-  {
-    // Work around a bug in the charts - ensure corner is invalid for the plot.
-    this->Marker->SetXAxis(nullptr);
-    this->Marker->SetYAxis(nullptr);
-    this->AddPlot(this->Marker.Get());
-  }
-  this->InvokeEvent(vtkCommand::CursorChangedEvent);
-  return true;
-}
 
 //-----------------------------------------------------------------------------
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
@@ -268,25 +218,64 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Internals->Ui.splitter->setStretchFactor(1, 1);
 
   // Set up our little chart.
-  this->Histogram
+  this->HistogramView
       ->SetInteractor(this->Internals->Ui.histogramWidget->GetInteractor());
   this->Internals->Ui.histogramWidget
-      ->SetRenderWindow(this->Histogram->GetRenderWindow());
+      ->SetRenderWindow(this->HistogramView->GetRenderWindow());
   vtkChartHistogram* chart = this->Chart.Get();
-  this->Histogram->GetScene()->AddItem(chart);
-  chart->SetBarWidthFraction(1.0);
-  chart->SetRenderEmpty(true);
-  chart->SetAutoAxes(false);
-  chart->ZoomWithMouseWheelOff();
-  chart->GetAxis(vtkAxis::LEFT)->SetTitle("");
-  chart->GetAxis(vtkAxis::BOTTOM)->SetTitle("");
-  chart->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
-  chart->GetAxis(vtkAxis::LEFT)->SetRange(0.0001, 10);
-  chart->GetAxis(vtkAxis::LEFT)->SetMinimumLimit(1);
-  chart->GetAxis(vtkAxis::LEFT)->SetLogScale(true);
+  this->HistogramView->GetScene()->AddItem(chart);
 
   this->EventLink->Connect(chart, vtkCommand::CursorChangedEvent, this,
                            SLOT(histogramClicked(vtkObject*)));
+
+  this->TransferFunctionView
+      ->SetInteractor(this->Internals->Ui.transferFunctionWidget->GetInteractor());
+  this->Internals->Ui.transferFunctionWidget
+    ->SetRenderWindow(this->TransferFunctionView->GetRenderWindow());
+
+  vtkNew<vtkChartXY> bottomChart;
+  bottomChart->SetBarWidthFraction(1.0);
+  bottomChart->SetHiddenAxisBorder(10);
+  bottomChart->SetRenderEmpty(true);
+  bottomChart->SetAutoAxes(false);
+  bottomChart->ZoomWithMouseWheelOff();
+
+  vtkAxis* bottomAxis = bottomChart->GetAxis(vtkAxis::BOTTOM);
+  bottomAxis->SetTitle("");
+  bottomAxis->SetBehavior(vtkAxis::FIXED);
+  bottomAxis->SetVisible(false);
+  bottomAxis->SetRange(0, 255);
+  bottomAxis->SetMargins(0, 0);
+
+  vtkAxis* leftAxis = bottomChart->GetAxis(vtkAxis::LEFT);
+  leftAxis->SetTitle("");
+  leftAxis->SetBehavior(vtkAxis::FIXED);
+  leftAxis->SetVisible(false);
+
+  vtkAxis* topAxis = bottomChart->GetAxis(vtkAxis::TOP);
+  topAxis->SetVisible(false);
+  topAxis->SetMargins(0, 0);
+
+  bottomChart->GetAxis(vtkAxis::RIGHT)->SetVisible(false);
+
+  this->ColorTransferFunctionItem->SelectableOff();
+
+  this->ColorTransferControlPointsItem->SetEndPointsXMovable(false);
+  this->ColorTransferControlPointsItem->SetEndPointsYMovable(true);
+  this->ColorTransferControlPointsItem->SetEndPointsRemovable(false);
+  this->ColorTransferControlPointsItem->SelectableOff();
+
+  bottomChart->AddPlot(this->ColorTransferFunctionItem.Get());
+  bottomChart->SetPlotCorner(this->ColorTransferFunctionItem.Get(), 1);
+  bottomChart->AddPlot(this->ColorTransferControlPointsItem.Get());
+  bottomChart->SetPlotCorner(this->ColorTransferControlPointsItem.Get(), 1);
+
+  this->TransferFunctionView->GetScene()->AddItem(bottomChart.Get());
+
+  this->EventLink->Connect(this->ColorTransferControlPointsItem.Get(), vtkCommand::EndEvent,
+                           this, SLOT(onScalarOpacityFunctionChanged()));
+  this->EventLink->Connect(this->ColorTransferControlPointsItem.Get(), vtkControlPointsItem::CurrentPointEditEvent,
+                           this, SLOT(onCurrentPointEditEvent()));
 
   // start the worker thread and give it ownership of the HistogramMaker
   // object.  Also connect the HistogramMaker's signal to the histogramReady
@@ -300,6 +289,9 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Internals->Timer.setInterval(200);
   this->Internals->Timer.setSingleShot(true);
   this->connect(&this->Internals->Timer, SIGNAL(timeout()), SLOT(refreshHistogram()));
+
+  this->LUT = nullptr;
+  this->ScalarOpacityFunction = nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -364,10 +356,6 @@ void CentralWidget::setDataSource(DataSource* source)
     this->connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
   }
 
-  // Whenever the data source changes clear the plot, and then populate when
-  // ready (or use the cached histogram values.
-  this->Chart->ClearPlots();
-
   if (!source)
   {
     return;
@@ -384,14 +372,16 @@ void CentralWidget::setDataSource(DataSource* source)
   }
 
   // Get the current color map
-  vtkScalarsToColors *lut;
+  vtkPVDiscretizableColorTransferFunction *lut;
   if (this->AModule)
   {
-    lut = vtkScalarsToColors::SafeDownCast(this->AModule->colorMap()->GetClientSideObject());
+    vtkObjectBase* colorMapObject = this->AModule->colorMap()->GetClientSideObject();
+    lut = vtkPVDiscretizableColorTransferFunction::SafeDownCast(colorMapObject);
   }
   else
   {
-    lut = vtkScalarsToColors::SafeDownCast(source->colorMap()->GetClientSideObject());
+    vtkObjectBase* colorMapObject = source->colorMap()->GetClientSideObject();
+    lut = vtkPVDiscretizableColorTransferFunction::SafeDownCast(colorMapObject);
   }
   if (lut)
   {
@@ -400,6 +390,21 @@ void CentralWidget::setDataSource(DataSource* source)
   else
   {
     this->LUT = nullptr;
+  }
+
+  if (this->LUT)
+  {
+    if (this->ScalarOpacityFunction)
+    {
+      // Remove connection
+      this->EventLink->Disconnect(this->ScalarOpacityFunction, vtkCommand::ModifiedEvent,
+                                  this, SLOT(onScalarOpacityFunctionChanged()));
+    }
+    this->ScalarOpacityFunction = this->LUT->GetScalarOpacityFunction();
+
+    // Connect opacity function to update render view
+    this->EventLink->Connect(this->ScalarOpacityFunction, vtkCommand::ModifiedEvent,
+                             this, SLOT(onScalarOpacityFunctionChanged()));
   }
 
   // Check our cache, and use that if appopriate (or update it).
@@ -414,7 +419,6 @@ void CentralWidget::setDataSource(DataSource* source)
     else
     {
       // Need to recalculate, clear the plots, and remove the cached data.
-      this->Chart->ClearPlots();
       this->HistogramCache.remove(image);
     }
   }
@@ -435,11 +439,13 @@ void CentralWidget::setDataSource(DataSource* source)
      Q_ARG(vtkSmartPointer<vtkTable>, table));
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::onColorMapUpdated()
 {
   this->onDataSourceChanged();
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::onDataSourceChanged()
 {
   // This starts/restarts the internal timer so that several events occurring
@@ -448,11 +454,56 @@ void CentralWidget::onDataSourceChanged()
   this->Internals->Timer.start();
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::refreshHistogram()
 {
   this->setDataSource(this->ADataSource);
 }
 
+//-----------------------------------------------------------------------------
+void CentralWidget::onScalarOpacityFunctionChanged()
+{
+  pqApplicationCore* core = pqApplicationCore::instance();
+  pqServerManagerModel* smModel = core->getServerManagerModel();
+  QList<pqView*> views = smModel->findItems<pqView*>();
+  foreach(pqView* view, views)
+  {
+    view->render();
+  }
+
+  // Update the histogram
+  this->HistogramView->GetRenderWindow()->Render();
+}
+
+//-----------------------------------------------------------------------------
+void CentralWidget::onCurrentPointEditEvent()
+{
+  vtkIdType currentIdx = this->ColorTransferControlPointsItem->GetCurrentPoint();
+  if (currentIdx < 0)
+  {
+    return;
+  }
+
+  vtkColorTransferFunction* ctf = this->ColorTransferControlPointsItem->GetColorTransferFunction();
+  Q_ASSERT(ctf != nullptr);
+
+  double xrgbms[6];
+  ctf->GetNodeValue(currentIdx, xrgbms);
+  QColor color = QColorDialog::getColor(
+    QColor::fromRgbF(xrgbms[1], xrgbms[2], xrgbms[3]), this,
+    "Select Color", QColorDialog::DontUseNativeDialog);
+  if (color.isValid())
+  {
+    xrgbms[1] = color.redF();
+    xrgbms[2] = color.greenF();
+    xrgbms[3] = color.blueF();
+    ctf->SetNodeValue(currentIdx, xrgbms);
+
+    this->onScalarOpacityFunctionChanged();
+  }
+}
+
+//-----------------------------------------------------------------------------
 void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
@@ -476,6 +527,7 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
   this->setHistogramTable(output.Get());
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::histogramClicked(vtkObject *)
 {
   //qDebug() << "Histogram clicked at" << this->Chart->PositionX
@@ -515,10 +567,11 @@ void CentralWidget::histogramClicked(vtkObject *)
     ActiveObjects::instance().setActiveModule(contour);
   }
   Q_ASSERT(contour);
-  contour->setIsoValue(this->Chart->PositionX);
+  contour->setIsoValue(this->Chart->GetPositionX());
   tomviz::convert<pqView*>(view)->render();
 }
 
+//-----------------------------------------------------------------------------
 void CentralWidget::setHistogramTable(vtkTable *table)
 {
   vtkDataArray *arr =
@@ -528,15 +581,9 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     return;
   }
 
-  this->Chart->ClearPlots();
-
-  vtkNew<vtkPlotBar> plot;
-
-  this->Chart->AddPlot(plot.Get());
-  plot->SetInputData(table, "image_extents", "image_pops");
-  plot->SetColor(0, 0, 255, 255);
-  plot->GetPen()->SetLineType(vtkPen::NO_PEN);
-
+  this->Chart->SetHistogramInputData(table, "image_extents", "image_pops");
+  this->Chart->SetOpacityFunction(this->ScalarOpacityFunction);
+  
   double max = log10(arr->GetRange()[1]);
   vtkAxis *leftAxis = this->Chart->GetAxis(vtkAxis::LEFT);
   leftAxis->SetUnscaledMinimum(1.0);
@@ -556,9 +603,16 @@ void CentralWidget::setHistogramTable(vtkTable *table)
 
   if (this->LUT)
   {
-    plot->ScalarVisibilityOn();
-    plot->SetLookupTable(this->LUT);
-    plot->SelectColorArray("image_extents");
+    this->Chart->ScalarVisibilityOn();
+    this->Chart->SetLookupTable(this->LUT);
+    this->Chart->SelectColorArray("image_extents");
+
+    vtkColorTransferFunction* ctf = vtkColorTransferFunction::SafeDownCast(this->LUT);
+    if (ctf)
+    {
+      this->ColorTransferControlPointsItem->SetColorTransferFunction(ctf);
+      this->ColorTransferFunctionItem->SetColorTransferFunction(ctf);
+    }
   }
 }
 

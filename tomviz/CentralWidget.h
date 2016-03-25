@@ -24,13 +24,18 @@
 #include <vtkWeakPointer.h>
 #include <vtkSmartPointer.h>
 
+class vtkColorTransferControlPointsItem;
+class vtkColorTransferFunctionItem;
 class vtkObject;
 class vtkSMSourceProxy;
 class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkImageData;
+class vtkPiecewiseFunction;
+class vtkPVDiscretizableColorTransferFunction;
 class vtkTable;
-class vtkScalarsToColors;
+class vtkChartHistogram;
+
 class QThread;
 
 namespace tomviz
@@ -38,7 +43,6 @@ namespace tomviz
 class DataSource;
 class HistogramMaker;
 class Module;
-class vtkChartHistogram;
 
 /// CentralWidget is a QWidget that is used as the central widget
 /// for the application. This include a histogram at the top and a
@@ -68,6 +72,8 @@ private slots:
   void histogramClicked(vtkObject *caller);
   void onDataSourceChanged();
   void refreshHistogram();
+  void onScalarOpacityFunctionChanged();
+  void onCurrentPointEditEvent();
 
 private:
   Q_DISABLE_COPY(CentralWidget)
@@ -79,15 +85,21 @@ private:
 
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
-  vtkNew<vtkContextView> Histogram;
+  vtkNew<vtkContextView> HistogramView;
   vtkNew<vtkChartHistogram> Chart;
+
+  vtkNew<vtkContextView> TransferFunctionView;
+  vtkNew<vtkColorTransferControlPointsItem> ColorTransferControlPointsItem;
+  vtkNew<vtkColorTransferFunctionItem> ColorTransferFunctionItem;
+
   vtkNew<vtkEventQtSlotConnect> EventLink;
   QPointer<DataSource> ADataSource;
   QPointer<Module> AModule;
   HistogramMaker *HistogramGen;
   QThread *Worker;
   QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
-  vtkScalarsToColors *LUT;
+  vtkPVDiscretizableColorTransferFunction *LUT;
+  vtkPiecewiseFunction *ScalarOpacityFunction;
 };
 
 }

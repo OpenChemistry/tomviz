@@ -164,6 +164,10 @@ set(SOURCES
   ViewPropertiesPanel.h
   ViewMenuManager.cxx
   ViewMenuManager.h
+  vtkChartHistogram.cxx
+  vtkChartHistogram.h
+  vtkCustomPiecewiseControlPointsItem.cxx
+  vtkCustomPiecewiseControlPointsItem.h
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
   )
