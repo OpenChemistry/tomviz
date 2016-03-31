@@ -90,8 +90,12 @@ public:
   /// in this module
   virtual bool isProxyPartOfModule(vtkSMProxy *proxy) = 0;
 
-  /// Serialize an animation cue on the given module's proxies
-  static bool serializeAnimationCue(pqAnimationCue *cue, Module *module, pugi::xml_node& ns);
+  /// Serialize an animation cue on the given module's proxies.  If the proxy the
+  /// cue is animating is a helper proxy of a proxy in the module the helperKey
+  /// parameter should be set to the helper key used to find that helper proxy.
+  static bool serializeAnimationCue(pqAnimationCue *cue, Module *module,
+                                    pugi::xml_node& ns, const char *helperKey = nullptr,
+                                    vtkSMProxy *realProxy = nullptr);
   static bool deserializeAnimationCue(Module *module, const pugi::xml_node& ns);
 
 public slots:

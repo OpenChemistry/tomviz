@@ -298,6 +298,8 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
   {
     pugi::xml_node cueNode = ns.append_child("Cue");
     vtkSMProxy *animatedProxy = cue->getAnimatedProxy();
+    QString helperKey;
+    pqProxy* animatedSrcProxy = pqProxy::findProxyWithHelper(animatedProxy, helperKey);
     for (int i = 0; i < this->Internals->Modules.size(); ++i)
     {
       const QPointer<Module>& mdl = this->Internals->Modules[i];
@@ -307,10 +309,18 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
         Module::serializeAnimationCue(cue, mdl, cueNode);
         break;
       }
+      else if (mdl && animatedSrcProxy && mdl->isProxyPartOfModule(animatedSrcProxy->getProxy()))
+      {
+        cueNode.append_attribute("module_id").set_value(i);
+        Module::serializeAnimationCue(cue, mdl, cueNode, helperKey.toStdString().c_str(), animatedSrcProxy->getProxy());
+        break;
+      }
     }
     if (!cueNode.attribute("module_id"))
     {
       cueNode.append_attribute("module_id").set_value(-1);
+      if (cue->getAnimatedProxy()->GetClientSideObject()->GetClassName() == QString("vtkPVRepresentationAnimationHelper"))
+      vtkSMProxy::SafeDownCast(cue->getAnimatedProxy()->GetClientSideObject())->GetClientSideObject()->Print(std::cout);
     }
   }
 

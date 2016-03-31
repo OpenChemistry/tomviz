@@ -243,18 +243,24 @@ bool Module::colorByLabelMap() const
 }
 
 //-----------------------------------------------------------------------------
-bool Module::serializeAnimationCue(pqAnimationCue *cue, Module *module, pugi::xml_node& ns)
+bool Module::serializeAnimationCue(pqAnimationCue *cue, Module *module,
+    pugi::xml_node& ns, const char *helperName /* = nullptr */,
+    vtkSMProxy *realProxy /* = nullptr */)
 {
   vtkSMProxy *animated = cue->getAnimatedProxy();
   vtkSMProperty *property = cue->getAnimatedProperty();
   int propertyIndex = cue->getAnimatedPropertyIndex();
-  std::string proxy = module->getStringForProxy(animated);
+  std::string proxy = module->getStringForProxy(realProxy ? realProxy : animated);
   const char *propName = property->GetXMLName();
 
   pugi::xml_node n = ns.append_child("cue");
   n.append_attribute("proxy").set_value(proxy.c_str());
   n.append_attribute("property").set_value(propName);
   n.append_attribute("propertyIndex").set_value(propertyIndex);
+  if (helperName)
+  {
+    n.append_attribute("onHelper").set_value(helperName);
+  }
   QList< vtkSMProxy* > keyframes = cue->getKeyFrames();
   for (int i = 0; i < keyframes.size(); ++i)
   {
@@ -275,6 +281,20 @@ bool Module::deserializeAnimationCue(Module *module, const pugi::xml_node& ns)
   if (proxyObj == nullptr)
   {
     return false;
+  }
+  if (cueNode.attribute("onHelper"))
+  {
+    const char *helperKey = cueNode.attribute("onHelper").value();
+    QList<vtkSMProxy*> helpers = tomviz::convert<pqProxy*>(proxyObj)->getHelperProxies(helperKey);
+    if (helpers.size() == 1)
+    {
+      proxyObj = helpers[0];
+    }
+    else
+    {
+      qWarning("Not possible to tell which helper proxy needed to load cue");
+      return false;
+    }
   }
 
   pqAnimationCue* cue = scene->createCue(proxyObj, property, propertyIndex);
