@@ -30,6 +30,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMRenderViewProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMTransferFunctionManager.h"
@@ -242,19 +243,15 @@ bool Module::colorByLabelMap() const
   return this->ColorByLabelMap;
 }
 
-//-----------------------------------------------------------------------------
-bool Module::serializeAnimationCue(pqAnimationCue *cue, Module *module,
-    pugi::xml_node& ns, const char *helperName /* = nullptr */,
-    vtkSMProxy *realProxy /* = nullptr */)
+bool Module::serializeAnimationCue(pqAnimationCue *cue, const char *proxyName,
+    pugi::xml_node& ns, const char *helperName /* = nullptr */)
 {
-  vtkSMProxy *animated = cue->getAnimatedProxy();
   vtkSMProperty *property = cue->getAnimatedProperty();
   int propertyIndex = cue->getAnimatedPropertyIndex();
-  std::string proxy = module->getStringForProxy(realProxy ? realProxy : animated);
-  const char *propName = property->GetXMLName();
+  const char *propName = property ? property->GetXMLName() : "";
 
   pugi::xml_node n = ns.append_child("cue");
-  n.append_attribute("proxy").set_value(proxy.c_str());
+  n.append_attribute("proxy").set_value(proxyName);
   n.append_attribute("property").set_value(propName);
   n.append_attribute("propertyIndex").set_value(propertyIndex);
   if (helperName)
@@ -270,18 +267,33 @@ bool Module::serializeAnimationCue(pqAnimationCue *cue, Module *module,
   return true;
 }
 
+bool Module::serializeAnimationCue(pqAnimationCue *cue, Module *module,
+    pugi::xml_node& ns, const char *helperName /* = nullptr */,
+    vtkSMProxy *realProxy /* = nullptr */)
+{
+  vtkSMProxy *animated = cue->getAnimatedProxy();
+  std::string proxy = module->getStringForProxy(realProxy ? realProxy : animated);
+  return serializeAnimationCue(cue, proxy.c_str(), ns, helperName);
+}
+
 bool Module::deserializeAnimationCue(Module *module, const pugi::xml_node& ns)
 {
   const pugi::xml_node &cueNode = ns.child("cue");
-  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
   std::string proxy = cueNode.attribute("proxy").value();
-  const char *property = cueNode.attribute("property").value();
-  int propertyIndex = cueNode.attribute("propertyIndex").as_int();
   vtkSMProxy* proxyObj = module->getProxyForString(proxy);
+  return deserializeAnimationCue(proxyObj, ns);
+}
+
+bool Module::deserializeAnimationCue(vtkSMProxy *proxyObj, const pugi::xml_node& ns)
+{
   if (proxyObj == nullptr)
   {
     return false;
   }
+  const pugi::xml_node &cueNode = ns.child("cue");
+  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  const char *property = cueNode.attribute("property").value();
+  int propertyIndex = cueNode.attribute("propertyIndex").as_int();
   if (cueNode.attribute("onHelper"))
   {
     const char *helperKey = cueNode.attribute("onHelper").value();
@@ -297,7 +309,17 @@ bool Module::deserializeAnimationCue(Module *module, const pugi::xml_node& ns)
     }
   }
 
-  pqAnimationCue* cue = scene->createCue(proxyObj, property, propertyIndex);
+  const char *type;
+  if (vtkSMRenderViewProxy::SafeDownCast(proxyObj))
+  {
+    type = "CameraAnimationCue";
+  }
+  else
+  {
+    type = "KeyFrameAnimationCue";
+  }
+
+  pqAnimationCue* cue = scene->createCue(proxyObj, property, propertyIndex, type);
   int i = 0;
   for (pugi::xml_node keyframeNode = cueNode.child("keyframe");
       keyframeNode; keyframeNode = keyframeNode.next_sibling("keyframe"))

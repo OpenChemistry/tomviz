@@ -93,10 +93,15 @@ public:
   /// Serialize an animation cue on the given module's proxies.  If the proxy the
   /// cue is animating is a helper proxy of a proxy in the module the helperKey
   /// parameter should be set to the helper key used to find that helper proxy.
+  static bool serializeAnimationCue(pqAnimationCue *cue, const char *proxyName,
+                                    pugi::xml_node& ns, const char *helperKey = nullptr);
+  /// This form uses the module and the proxy to look up a proxy name to pass to the function
+  /// that actually saves the data to the pugixml structure above.
   static bool serializeAnimationCue(pqAnimationCue *cue, Module *module,
                                     pugi::xml_node& ns, const char *helperKey = nullptr,
                                     vtkSMProxy *realProxy = nullptr);
   static bool deserializeAnimationCue(Module *module, const pugi::xml_node& ns);
+  static bool deserializeAnimationCue(vtkSMProxy *proxy, const pugi::xml_node& ns);
 
 public slots:
   /// Set the visibility for this module. Subclasses should override this method

@@ -319,8 +319,11 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
     if (!cueNode.attribute("module_id"))
     {
       cueNode.append_attribute("module_id").set_value(-1);
-      if (cue->getAnimatedProxy()->GetClientSideObject()->GetClassName() == QString("vtkPVRepresentationAnimationHelper"))
-      vtkSMProxy::SafeDownCast(cue->getAnimatedProxy()->GetClientSideObject())->GetClientSideObject()->Print(std::cout);
+      if (cue->getAnimatedProxy() == ActiveObjects::instance().activeView())
+      {
+        cueNode.append_attribute("view_animation").set_value(true);
+        Module::serializeAnimationCue(cue, "View", cueNode);
+      }
     }
   }
 
@@ -586,6 +589,13 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     if (module)
     {
       Module::deserializeAnimationCue(module, cueNode);
+    }
+    else
+    {
+      if (cueNode.attribute("view_animation").as_bool())
+      {
+        Module::deserializeAnimationCue(ActiveObjects::instance().activeView(), cueNode);
+      }
     }
   }
 }
