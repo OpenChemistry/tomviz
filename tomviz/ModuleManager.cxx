@@ -41,6 +41,7 @@
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTimeKeeper.h"
 #include "vtkSMViewProxy.h"
 #include "vtkStdString.h"
 
@@ -293,6 +294,12 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
 
   // save the animations
   pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  pugi::xml_node sceneNode = ns.append_child("AnimationScene");
+  vtkSMPropertyHelper numFrames(scene->getProxy(), "NumberOfFrames");
+  vtkSMPropertyHelper duration(scene->getProxy(), "Duration");
+  sceneNode.append_attribute("number_of_frames").set_value(numFrames.GetAsInt());
+  sceneNode.append_attribute("duration").set_value(duration.GetAsDouble());
+
   QSet< pqAnimationCue *> cues = scene->getCues();
   foreach( pqAnimationCue* cue, cues)
   {
@@ -323,6 +330,11 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
       {
         cueNode.append_attribute("view_animation").set_value(true);
         Module::serializeAnimationCue(cue, "View", cueNode);
+      }
+      else if (vtkSMTimeKeeper::SafeDownCast(cue->getAnimatedProxy()->GetClientSideObject()))
+      {
+        cueNode.append_attribute("timekeeper").set_value(true);
+        tomviz::serialize(cue->getProxy(), cueNode);
       }
     }
   }
@@ -581,6 +593,13 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     }
   }
 
+  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  const pugi::xml_node &sceneNode = ns.child("AnimationScene");
+  vtkSMPropertyHelper numFrames(scene->getProxy(), "NumberOfFrames");
+  vtkSMPropertyHelper duration(scene->getProxy(), "Duration");
+  numFrames.Set(sceneNode.attribute("number_of_frames").as_int());
+  duration.Set(sceneNode.attribute("duration").as_double());
+
   for (pugi::xml_node cueNode = ns.child("Cue"); cueNode;
     cueNode = cueNode.next_sibling("Cue"))
   {
@@ -595,6 +614,22 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
       if (cueNode.attribute("view_animation").as_bool())
       {
         Module::deserializeAnimationCue(ActiveObjects::instance().activeView(), cueNode);
+      }
+      else if (cueNode.attribute("timekeeper").as_bool())
+      {
+        QSet< pqAnimationCue *> cues = scene->getCues();
+        vtkSMProxy *timeKeeperCue = nullptr;
+        foreach (pqAnimationCue *cue, cues)
+        {
+          if (vtkSMTimeKeeper::SafeDownCast(cue->getAnimatedProxy()->GetClientSideObject()))
+          {
+            timeKeeperCue = cue->getProxy();
+          }
+        }
+        if (timeKeeperCue)
+        {
+          tomviz::deserialize(timeKeeperCue, cueNode);
+        }
       }
     }
   }
