@@ -100,7 +100,6 @@ public:
   }
 };
 
-//-----------------------------------------------------------------------------
 PipelineWidget::PipelineWidget(QWidget* parentObject)
    : Superclass(parentObject),
      Internals(new PipelineWidget::PWInternals())
@@ -142,13 +141,11 @@ PipelineWidget::PipelineWidget(QWidget* parentObject)
   this->Internals->Initialized = false;
 }
 
-//-----------------------------------------------------------------------------
 PipelineWidget::~PipelineWidget()
 {
   // this->Internals is a QScopedPointer. No need to delete here.
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::keyPressEvent(QKeyEvent* e)
 {
   QTreeWidget::keyPressEvent(e);
@@ -159,7 +156,6 @@ void PipelineWidget::keyPressEvent(QKeyEvent* e)
   }
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::dataSourceAdded(DataSource* datasource)
 {
   Q_ASSERT(this->Internals->DataProducerItems.contains(datasource) == false);
@@ -181,7 +177,6 @@ void PipelineWidget::dataSourceAdded(DataSource* datasource)
   }
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::dataSourceRemoved(DataSource* datasource)
 {
   if (this->Internals->DataProducerItems.contains(datasource))
@@ -196,7 +191,6 @@ void PipelineWidget::dataSourceRemoved(DataSource* datasource)
   }
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::moduleAdded(Module* module)
 {
   Q_ASSERT(module);
@@ -218,7 +212,6 @@ void PipelineWidget::moduleAdded(Module* module)
   this->Internals->ModuleItems[module] = child;
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::moduleRemoved(Module* module)
 {
   Q_ASSERT(module);
@@ -236,7 +229,6 @@ void PipelineWidget::moduleRemoved(Module* module)
   delete child;
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::onItemClicked(QTreeWidgetItem* item, int col)
 {
   int index = this->indexOfTopLevelItem(item);
@@ -256,7 +248,6 @@ void PipelineWidget::onItemClicked(QTreeWidgetItem* item, int col)
   }
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::currentItemChanged(QTreeWidgetItem* item)
 {
   int index = this->indexOfTopLevelItem(item);
@@ -274,7 +265,6 @@ void PipelineWidget::currentItemChanged(QTreeWidgetItem* item)
   }
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::setCurrent(DataSource* source)
 {
   if (QTreeWidgetItem* item = this->Internals->DataProducerItems.value(source, nullptr))
@@ -283,7 +273,6 @@ void PipelineWidget::setCurrent(DataSource* source)
   }
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::setCurrent(Module* module)
 {
   if (QTreeWidgetItem* item = this->Internals->ModuleItems.value(module, nullptr))
@@ -292,7 +281,6 @@ void PipelineWidget::setCurrent(Module* module)
   }
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::setActiveView(vtkSMViewProxy* view)
 {
   for (PWInternals::ModuleItemsMap::iterator iter =
@@ -311,7 +299,6 @@ void PipelineWidget::setActiveView(vtkSMViewProxy* view)
   }
 }
 
-//-----------------------------------------------------------------------------
 void PipelineWidget::onCustomContextMenu(const QPoint &point)
 {
   QTreeWidgetItem* item = this->itemAt(point);

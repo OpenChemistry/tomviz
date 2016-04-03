@@ -89,6 +89,7 @@ public slots:
 private slots:
   /// Used when loading state
   void onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*);
+
 signals:
   void moduleAdded(Module*);
   void moduleRemoved(Module*);

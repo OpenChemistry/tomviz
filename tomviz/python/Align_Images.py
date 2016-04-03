@@ -1,7 +1,6 @@
-#Align a tomography tilt series using cross correlation
+# Align a tomography tilt series using cross correlation
 #
-#
-#developed as part of the tomviz project (www.tomviz.com)
+# Developed as part of the tomviz project (www.tomviz.com)
 
 def transform_scalars(dataset):
 
@@ -14,11 +13,11 @@ def transform_scalars(dataset):
     
     data_py = utils.get_array(dataset) #get data as numpy array
     
-    if data_py is None: #Check if data exists
+    if data_py is None: # Check if data exists
         raise RuntimeError("No data array found!")    
     
-    if TILT_AXIS == []: #If tilt axis is not given, find it
-    #Find smallest array dimension, assume it is the tilt angle axis
+    if TILT_AXIS == []: # If tilt axis is not given, find it
+    # Find the smallest array dimension, assume it is the tilt angle axis.
         if data_py.ndim == 3:
             TILT_AXIS = np.argmin( data_py.shape )
         elif data_py.ndim == 2:
@@ -27,7 +26,7 @@ def transform_scalars(dataset):
             raise RuntimeError("Data Array is not 2 or 3 dimensions!")
     
     print('Aligning Images by Cross Correlation')
-    for i in range(1,np.size(data_py,TILT_AXIS)):#Align image to previous
+    for i in range(1,np.size(data_py,TILT_AXIS)): # Align image to previous
         if TILT_AXIS == 2:
             im0 = np.fft.fft2(data_py[:,:,i-1])
             im1 = np.fft.fft2(data_py[:,:,i])

@@ -33,7 +33,6 @@ public:
   QPointer<Module> ActiveModule;
 };
 
-//-----------------------------------------------------------------------------
 ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
   : Superclass(parentObject),
     Internals(new ModulePropertiesPanel::MPPInternals())
@@ -63,12 +62,10 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
                 SLOT(colorByLabelMap(bool)));
 }
 
-//-----------------------------------------------------------------------------
 ModulePropertiesPanel::~ModulePropertiesPanel()
 {
 }
 
-//-----------------------------------------------------------------------------
 void ModulePropertiesPanel::setModule(Module* module)
 {
   if (module != this->Internals->ActiveModule)
@@ -109,14 +106,12 @@ void ModulePropertiesPanel::setModule(Module* module)
   ui.Delete->setEnabled(module != nullptr);
 }
 
-//-----------------------------------------------------------------------------
 void ModulePropertiesPanel::setView(vtkSMViewProxy* view)
 {
   this->Internals->Ui.ProxiesWidget->setView(
     tomviz::convert<pqView*>(view));
 }
 
-//-----------------------------------------------------------------------------
 void ModulePropertiesPanel::updatePanel()
 {
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
@@ -130,14 +125,12 @@ void ModulePropertiesPanel::updatePanel()
   }
 }
 
-//-----------------------------------------------------------------------------
 void ModulePropertiesPanel::deleteModule()
 {
   ModuleManager::instance().removeModule(this->Internals->ActiveModule);
   this->render();
 }
 
-//-----------------------------------------------------------------------------
 void ModulePropertiesPanel::render()
 {
   pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
@@ -147,7 +140,6 @@ void ModulePropertiesPanel::render()
   }
 }
 
-//-----------------------------------------------------------------------------
 void ModulePropertiesPanel::detachColorMap(bool val)
 {
   Module* module = this->Internals->ActiveModule;
@@ -159,7 +151,6 @@ void ModulePropertiesPanel::detachColorMap(bool val)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ModulePropertiesPanel::colorByLabelMap(bool val)
 {
   Module* module = this->Internals->ActiveModule;

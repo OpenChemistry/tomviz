@@ -19,8 +19,8 @@
 #include <QObject>
 #include <QPoint>
 
-#include "vtkNew.h"
-#include "vtkVector.h"
+#include <vtkNew.h>
+#include <vtkVector.h>
 
 class pqDataRepresentation;
 class vtkBoxRepresentation;
@@ -37,6 +37,7 @@ class MoveActiveObject : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
   MoveActiveObject(QObject *parent);
   ~MoveActiveObject();
@@ -60,5 +61,7 @@ private:
   bool MoveEnabled;
   bool DataSourceActive;
 };
+
 }
+
 #endif

@@ -208,13 +208,11 @@ void SelectVolumeWidget::updateBounds(int* bounds)
   this->Internals->interactor->GetRenderWindow()->Render();
 }
 
-//-----------------------------------------------------------------------------
 void SelectVolumeWidget::getExtentOfSelection(int extent[6])
 {
   this->Internals->bounds(extent);
 }
 
-//-----------------------------------------------------------------------------
 void SelectVolumeWidget::getBoundsOfSelection(double bounds[6])
 {
   double* boxBounds = this->Internals->boxWidget->GetRepresentation()->GetBounds();
@@ -224,7 +222,6 @@ void SelectVolumeWidget::getBoundsOfSelection(double bounds[6])
   }
 }
 
-//-----------------------------------------------------------------------------
 void SelectVolumeWidget::updateBounds(double *newBounds)
 {
   Ui::SelectVolumeWidget& ui = this->Internals->ui;
@@ -259,7 +256,6 @@ void SelectVolumeWidget::updateBounds(double *newBounds)
   this->Internals->blockSpinnerSignals(false);
 }
 
-//-----------------------------------------------------------------------------
 void SelectVolumeWidget::valueChanged()
 {
   QSpinBox *sBox = qobject_cast<QSpinBox*>(this->sender());

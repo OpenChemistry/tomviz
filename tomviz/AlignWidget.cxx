@@ -107,7 +107,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   // Now to add the controls to the widget.
   QHBoxLayout *viewControls = new QHBoxLayout;
   QPushButton *zoomToBox = new QPushButton(QIcon(":/pqWidgets/Icons/pqZoomToSelection24.png"),"Zoom to Selection");
-  this->connect(zoomToBox, SIGNAL(pressed()), this, SLOT(zoomToSelectionStart()));
+  this->connect(zoomToBox, SIGNAL(pressed()),
+                this, SLOT(zoomToSelectionStart()));
   viewControls->addWidget(zoomToBox);
   QPushButton *resetCamera = new QPushButton(QIcon(":/pqWidgets/Icons/pqResetCamera24.png"), "Reset");
   this->connect(resetCamera, SIGNAL(pressed()), this, SLOT(resetCamera()));
@@ -502,8 +503,7 @@ void AlignWidget::resetCamera()
   camera->SetViewUp(0.0, 1.0, 0.0);
   camera->ParallelProjectionOn();
   double parallelScale;
-  if (bounds[1] - bounds[0] <
-        bounds[3] - bounds[2])
+  if (bounds[1] - bounds[0] < bounds[3] - bounds[2])
   {
     parallelScale = 0.5 * (bounds[3] - bounds[2] + 1);
   }

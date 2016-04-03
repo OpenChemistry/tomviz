@@ -28,6 +28,7 @@ class AddRenderViewContextMenuBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
   AddRenderViewContextMenuBehavior(QObject* p);
   ~AddRenderViewContextMenuBehavior();

@@ -35,7 +35,6 @@ public:
   }
 };
 
-//-----------------------------------------------------------------------------
 ViewPropertiesPanel::ViewPropertiesPanel(QWidget* parentObject)
   : Superclass(parentObject),
     Internals(new ViewPropertiesPanel::VPPInternals())
@@ -54,12 +53,10 @@ ViewPropertiesPanel::ViewPropertiesPanel(QWidget* parentObject)
                 SLOT(render()));
 }
 
-//-----------------------------------------------------------------------------
 ViewPropertiesPanel::~ViewPropertiesPanel()
 {
 }
 
-//-----------------------------------------------------------------------------
 void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
 {
   Ui::ViewPropertiesPanel &ui = this->Internals->Ui;
@@ -72,7 +69,6 @@ void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
   this->updatePanel();
 }
 
-//-----------------------------------------------------------------------------
 void ViewPropertiesPanel::render()
 {
   pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
@@ -82,7 +78,6 @@ void ViewPropertiesPanel::render()
   }
 }
 
-//-----------------------------------------------------------------------------
 void ViewPropertiesPanel::updatePanel()
 {
   Ui::ViewPropertiesPanel &ui = this->Internals->Ui;

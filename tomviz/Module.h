@@ -20,7 +20,9 @@
 #include <QObject>
 #include <QPointer>
 #include <QScopedPointer>
-#include "vtkWeakPointer.h"
+
+#include <vtkWeakPointer.h>
+
 #include <vtk_pugixml.h>
 
 class pqProxiesWidget;

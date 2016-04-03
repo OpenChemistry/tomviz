@@ -24,7 +24,7 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 ConvertToFloatReaction::ConvertToFloatReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
@@ -33,25 +33,22 @@ ConvertToFloatReaction::ConvertToFloatReaction(QAction* parentObject)
   updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 ConvertToFloatReaction::~ConvertToFloatReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void ConvertToFloatReaction::updateEnableState()
 {
   parentAction()->setEnabled(
         ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
-//-----------------------------------------------------------------------------
 void ConvertToFloatReaction::convertToFloat()
 {
   DataSource *source = ActiveObjects::instance().activeDataSource();
   if (!source)
   {
-    qDebug() << "Exiting early - no data :-(";
+    qDebug() << "Exiting early - no data found.";
     return;
   }
   QSharedPointer<Operator> Op(new ConvertToFloatOperator());

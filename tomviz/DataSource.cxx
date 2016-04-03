@@ -17,25 +17,25 @@
 
 #include "OperatorPython.h"
 #include "Utilities.h"
-#include "vtkDataObject.h"
-#include "vtkDoubleArray.h"
-#include "vtkFieldData.h"
-#include "vtkNew.h"
-#include "vtkImageData.h"
-#include "vtkSmartPointer.h"
-#include "vtkSMCoreUtilities.h"
-#include "vtkSMParaViewPipelineController.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMTransferFunctionManager.h"
-#include "vtkTrivialProducer.h"
-#include "vtkTypeInt8Array.h"
-#include "vtkVector.h"
+#include <vtkDataObject.h>
+#include <vtkDoubleArray.h>
+#include <vtkFieldData.h>
+#include <vtkNew.h>
+#include <vtkImageData.h>
+#include <vtkSmartPointer.h>
+#include <vtkSMCoreUtilities.h>
+#include <vtkSMParaViewPipelineController.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMTransferFunctionManager.h>
+#include <vtkTrivialProducer.h>
+#include <vtkTypeInt8Array.h>
+#include <vtkVector.h>
 
-#include "vtkPVArrayInformation.h"
-#include "vtkPVDataInformation.h"
-#include "vtkPVDataSetAttributesInformation.h"
+#include <vtkPVArrayInformation.h>
+#include <vtkPVDataInformation.h>
+#include <vtkPVDataSetAttributesInformation.h>
 
 #include <vtk_pugixml.h>
 
@@ -55,9 +55,8 @@ public:
   vtkSmartPointer<vtkDataArray> TiltAngles;
   vtkVector3d DisplayPosition;
 
-//-----------------------------------------------------------------------------
-// Checks if the tilt angles data array exists on the given VTK data
-// and creates it if it does not exist.
+  // Checks if the tilt angles data array exists on the given VTK data
+  // and creates it if it does not exist.
   void ensureTiltAnglesArrayExists()
   {
     vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
@@ -87,7 +86,6 @@ public:
 
 namespace {
 
-//-----------------------------------------------------------------------------
 // Converts the data type to a string for writing to the save state
 const char* dataSourceTypeToString(DataSource::DataSourceType type)
 {
@@ -103,7 +101,6 @@ const char* dataSourceTypeToString(DataSource::DataSourceType type)
   }
 }
 
-//-----------------------------------------------------------------------------
 // Converts the save state string back to a DataSource::DataSourceType
 // Returns true if the type was successfully converted, false otherwise
 // the result is stored in the output paremeter type.
@@ -122,7 +119,6 @@ bool stringToDataSourceType(const char* str, DataSource::DataSourceType& type)
   return false;
 }
 
-//-----------------------------------------------------------------------------
 void serializeDataArray(pugi::xml_node& ns, vtkDataArray* array)
 {
   ns.append_attribute("components").set_value(array->GetNumberOfComponents());
@@ -141,7 +137,6 @@ void serializeDataArray(pugi::xml_node& ns, vtkDataArray* array)
   text.set(stream.str().c_str());
 }
 
-//-----------------------------------------------------------------------------
 void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
 {
   int components = ns.attribute("components").as_int(1);
@@ -164,7 +159,6 @@ void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
 
 }
 
-//-----------------------------------------------------------------------------
 DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
                       QObject* parentObject)
   : Superclass(parentObject),
@@ -227,7 +221,6 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   this->resetData();
 }
 
-//-----------------------------------------------------------------------------
 DataSource::~DataSource()
 {
   if (this->Internals->Producer)
@@ -237,7 +230,6 @@ DataSource::~DataSource()
   }
 }
 
-//-----------------------------------------------------------------------------
 QString DataSource::filename() const
 {
   vtkSMProxy* dataSource = this->originalDataSource();
@@ -252,7 +244,6 @@ QString DataSource::filename() const
   }
 }
 
-//-----------------------------------------------------------------------------
 bool DataSource::serialize(pugi::xml_node& ns) const
 {
   pugi::xml_node node = ns.append_child("ColorMap");
@@ -285,7 +276,6 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool DataSource::deserialize(const pugi::xml_node& ns)
 {
   tomviz::deserialize(this->colorMap(), ns.child("ColorMap"));
@@ -316,7 +306,8 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
     deserializeDataArray(ns.child("TiltAngles"), this->Internals->TiltAngles);
   }
 
-  for (pugi::xml_node node=ns.child("Operator"); node; node = node.next_sibling("Operator"))
+  for (pugi::xml_node node=ns.child("Operator"); node;
+       node = node.next_sibling("Operator"))
   {
     QSharedPointer<Operator> op(new OperatorPython());
     if (op->deserialize(node))
@@ -327,7 +318,6 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
 {
   DataSource *newClone = nullptr;
@@ -370,32 +360,28 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
   return newClone;
 }
 
-//-----------------------------------------------------------------------------
 vtkSMSourceProxy* DataSource::originalDataSource() const
 {
   return this->Internals->OriginalDataSource;
 }
 
-//-----------------------------------------------------------------------------
 vtkSMSourceProxy* DataSource::producer() const
 {
   return this->Internals->Producer;
 }
 
-//-----------------------------------------------------------------------------
 int DataSource::addOperator(QSharedPointer<Operator>& op)
 {
   int index = this->Internals->Operators.count();
   this->Internals->Operators.push_back(op);
   this->connect(op.data(), SIGNAL(transformModified()),
-    SLOT(operatorTransformModified()));
+                SLOT(operatorTransformModified()));
   emit this->operatorAdded(op.data());
   emit this->operatorAdded(op);
   this->operate(op.data());
   return index;
 }
 
-//-----------------------------------------------------------------------------
 bool DataSource::removeOperator(QSharedPointer<Operator>& op)
 {
   if (op)
@@ -413,7 +399,6 @@ bool DataSource::removeOperator(QSharedPointer<Operator>& op)
   return false;
 }
 
-//-----------------------------------------------------------------------------
 void DataSource::operate(Operator* op)
 {
   Q_ASSERT(op);
@@ -475,13 +460,11 @@ void DataSource::dataModified()
   emit this->dataChanged();
 }
 
-//-----------------------------------------------------------------------------
 const QList<QSharedPointer<Operator> >& DataSource::operators() const
 {
   return this->Internals->Operators;
 }
 
-//-----------------------------------------------------------------------------
 void DataSource::translate(const double deltaPosition[3])
 {
   for (int i = 0; i < 3; ++i)
@@ -493,13 +476,11 @@ void DataSource::translate(const double deltaPosition[3])
                               this->Internals->DisplayPosition[2]);
 }
 
-//-----------------------------------------------------------------------------
 const double *DataSource::displayPosition()
 {
   return this->Internals->DisplayPosition.GetData();
 }
 
-//-----------------------------------------------------------------------------
 void DataSource::setDisplayPosition(const double newPosition[3])
 {
   for (int i = 0; i < 3; ++i)
@@ -511,7 +492,6 @@ void DataSource::setDisplayPosition(const double newPosition[3])
                               this->Internals->DisplayPosition[2]);
 }
 
-//-----------------------------------------------------------------------------
 void DataSource::resetData()
 {
   vtkSMSourceProxy* dataSource = this->Internals->OriginalDataSource;
@@ -556,7 +536,6 @@ void DataSource::resetData()
   emit this->dataChanged();
 }
 
-//-----------------------------------------------------------------------------
 void DataSource::operatorTransformModified()
 {
   bool prev = this->blockSignals(true);
@@ -570,19 +549,16 @@ void DataSource::operatorTransformModified()
   this->dataModified();
 }
 
-//-----------------------------------------------------------------------------
 vtkSMProxy* DataSource::colorMap() const
 {
   return this->Internals->ColorMap;
 }
 
-//-----------------------------------------------------------------------------
 DataSource::DataSourceType DataSource::type() const
 {
   return this->Internals->Type;
 }
 
-//-----------------------------------------------------------------------------
 void DataSource::setType(DataSourceType t)
 {
   this->Internals->Type = t;
@@ -601,14 +577,12 @@ void DataSource::setType(DataSourceType t)
   emit this->dataChanged();
 }
 
-//-----------------------------------------------------------------------------
 bool DataSource::hasTiltAngles()
 {
   vtkDataArray* tiltAngles = this->Internals->TiltAngles;
   return tiltAngles != nullptr;
 }
 
-//-----------------------------------------------------------------------------
 QVector<double> DataSource::getTiltAngles(bool useOriginalDataTiltAngles) const
 {
   QVector<double> result;
@@ -633,7 +607,6 @@ QVector<double> DataSource::getTiltAngles(bool useOriginalDataTiltAngles) const
   return result;
 }
 
-//-----------------------------------------------------------------------------
 void DataSource::setTiltAngles(const QVector<double> &angles)
 {
   vtkDataArray* tiltAngles = this->Internals->TiltAngles;
@@ -655,14 +628,13 @@ void DataSource::setTiltAngles(const QVector<double> &angles)
   emit this->dataChanged();
 }
 
-//-----------------------------------------------------------------------------
 vtkSMProxy* DataSource::opacityMap() const
 {
   return this->Internals->ColorMap?
-  vtkSMPropertyHelper(this->Internals->ColorMap, "ScalarOpacityFunction").GetAsProxy() : nullptr;
+  vtkSMPropertyHelper(this->Internals->ColorMap,
+                      "ScalarOpacityFunction").GetAsProxy() : nullptr;
 }
 
-//-----------------------------------------------------------------------------
 bool DataSource::hasLabelMap()
 {
   vtkSMSourceProxy* dataSource = this->producer();
@@ -680,7 +652,6 @@ bool DataSource::hasLabelMap()
   return labelMapInfo != nullptr;
 }
 
-//-----------------------------------------------------------------------------
 void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.

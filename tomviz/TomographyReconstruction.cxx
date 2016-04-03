@@ -29,7 +29,8 @@
 
 namespace
 {
-// conversion code
+
+// Conversion code
 template<typename T>
 vtkSmartPointer<vtkFloatArray> convertToFloatT(T *data, int len)
 {
@@ -58,10 +59,11 @@ vtkSmartPointer<vtkFloatArray> convertToFloat(vtkImageData* image)
 
 namespace tomviz
 {
+
 namespace TomographyReconstruction
 {
 
-//3D Weighted Back Projection reconstruction
+// 3D Weighted Back Projection reconstruction
 void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
 {
   int extents[6];
@@ -70,7 +72,7 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
   int yDim = extents[3] - extents[2] + 1; //number of rays
   int zDim = extents[5] - extents[4] + 1; //number of tilts
 
-  //Get tilt angles
+  // Get tilt angles
   vtkDataArray *tiltAnglesArray = tiltSeries->GetFieldData()->GetArray("tilt_angles");
   double *tiltAngles = static_cast<double*>(tiltAnglesArray->GetVoidPointer(0));
 
@@ -80,17 +82,17 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
   recon->AllocateScalars(VTK_FLOAT, 1); // 1 is for one component (i.e. not vector)
   float *reconPtr = static_cast<float*>(recon->GetScalarPointer());
 
-  //Reconstruction
-  float *sinogram = new float[yDim*zDim]; //Placeholder for 2D sinogram
-  float *recon2d = new float[yDim*yDim]; //Placeholder for 2D reconstruction (y-z plane)
-  for (int s = 0; s < xDim; ++s) //loop through slices (x-direction)
+  // Reconstruction
+  float *sinogram = new float[yDim*zDim]; // Placeholder for 2D sinogram
+  float *recon2d = new float[yDim*yDim];  // Placeholder for 2D reconstruction (y-z plane)
+  for (int s = 0; s < xDim; ++s) // Loop through slices (x-direction)
   {
-    //Get sinogram
+    // Get sinogram
     TomographyTiltSeries::getSinogram(tiltSeries, s, sinogram);
-    //2D back projection
+    // 2D back projection
     TomographyReconstruction::unweightedBackProjection2(sinogram, tiltAngles, recon2d, zDim, yDim);
-    //Put recon into
-    for (int iy = 0; iy < outputSize[1]; ++iy) //loop through all pixels in reconstructed image (y-z plane)
+    // Put recon into
+    for (int iy = 0; iy < outputSize[1]; ++iy) // Loop through all pixels in reconstructed image (y-z plane)
       for (int iz = 0; iz < outputSize[2]; ++iz)
       {
         reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + s] = recon2d[iy*outputSize[1] + iz];
@@ -98,25 +100,26 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
   }
 }
 
-//2D WBP recon
-void unweightedBackProjection2(float *sinogram, double *tiltAngles, float* image, int numOfTilts, int numOfRays )
+// 2D WBP recon
+void unweightedBackProjection2(float *sinogram, double *tiltAngles,
+                               float* image, int numOfTilts, int numOfRays)
 {
   for (int i = 0; i < numOfRays*numOfRays; ++i)
   {
     image[i] = 0; //Set all pixels to zero
   }
 
-  //2D unweighted Back Projection
-  for (int tt = 0; tt < numOfTilts; ++tt) //loop through tilts
+  // 2D unweighted Back Projection
+  for (int tt = 0; tt < numOfTilts; ++tt) // Loop through tilts
   {
     double angle = tiltAngles[tt]*PI/180;
-    for (int iy = 0; iy < numOfRays; ++iy) //loop through all pixels in reconstructed image (y-z plane for a tilt series)
+    for (int iy = 0; iy < numOfRays; ++iy) // Loop through all pixels in reconstructed image (y-z plane for a tilt series)
       for (int iz = 0; iz < numOfRays; ++iz)
       {
-        //Calcualte y,z coord.
+        // Calcualte y,z coord.
         double y = iy + 0.5 - ((double)numOfRays)/2.0;
         double z = iz + 0.5 - ((double)numOfRays)/2.0;
-        //calculate ray coord.
+        // Calculate ray coord.
         double t = y * cos(angle) + z * sin(angle);
 
         if (t >= -numOfRays/2 && t <= numOfRays/2 )	//check if ray is inside projection
@@ -124,7 +127,7 @@ void unweightedBackProjection2(float *sinogram, double *tiltAngles, float* image
           int rayIndex = floor((t + numOfRays/2));
           if (rayIndex >= 0 && rayIndex <= numOfRays-2)
           {
-            //Linear interpolation
+            // Linear interpolation
             double Q1 = sinogram[tt*numOfRays + rayIndex ];
             double Q2 = sinogram[tt*numOfRays + rayIndex+1 ];
             double QDash = Q1 + (t-double(rayIndex-numOfRays/2))*(Q2-Q1);
@@ -133,6 +136,7 @@ void unweightedBackProjection2(float *sinogram, double *tiltAngles, float* image
         }
       }
   }
+
   double normalizationFactor = PI/double(2*numOfTilts);
   for (int i = 0; i < numOfRays*numOfRays; ++i)
   {

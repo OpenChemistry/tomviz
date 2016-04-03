@@ -84,19 +84,16 @@ void save_settings(pugi::xml_document &doc)
   settings->setValue("recentFiles", stream.str().c_str());
 }
 
-//-------------------------------------------------------------------------
 RecentFilesMenu::RecentFilesMenu(QMenu& menu, QObject* parentObject)
   : Superclass(parentObject)
 {
   this->connect(&menu, SIGNAL(aboutToShow()), SLOT(aboutToShowMenu()));
 }
 
-//-------------------------------------------------------------------------
 RecentFilesMenu::~RecentFilesMenu()
 {
 }
 
-//-------------------------------------------------------------------------
 void RecentFilesMenu::pushDataReader(vtkSMProxy* readerProxy)
 {
   pugi::xml_document settings;
@@ -127,7 +124,6 @@ void RecentFilesMenu::pushDataReader(vtkSMProxy* readerProxy)
   }
 }
 
-//-------------------------------------------------------------------------
 void RecentFilesMenu::pushStateFile(const QString& filename)
 {
   pugi::xml_document settings;
@@ -149,7 +145,6 @@ void RecentFilesMenu::pushStateFile(const QString& filename)
   save_settings(settings);
 }
 
-//-------------------------------------------------------------------------
 void RecentFilesMenu::aboutToShowMenu()
 {
   QMenu* menu = qobject_cast<QMenu*>(this->sender());
@@ -168,7 +163,7 @@ void RecentFilesMenu::aboutToShowMenu()
   }
 
   bool header_added = false;
-  int index=0;
+  int index = 0;
   for (pugi::xml_node node = root.child("DataReader"); node;
        node = node.next_sibling("DataReader"))
   {
@@ -211,7 +206,6 @@ void RecentFilesMenu::aboutToShowMenu()
   }
 }
 
-//-------------------------------------------------------------------------
 void RecentFilesMenu::dataSourceTriggered()
 {
   QAction* actn = qobject_cast<QAction*>(this->sender());
@@ -265,7 +259,6 @@ void RecentFilesMenu::dataSourceTriggered()
   }
 }
 
-//-------------------------------------------------------------------------
 void RecentFilesMenu::stateTriggered()
 {
   QAction* actn = qobject_cast<QAction*>(this->sender());

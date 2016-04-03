@@ -103,7 +103,6 @@ namespace {
 namespace tomviz
 {
 
-//---------------------------------------------------------------------------
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties, const QDir* relDir)
 {
@@ -149,7 +148,6 @@ bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
   return true;
 }
 
-//---------------------------------------------------------------------------
 bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
                  const QDir* relDir, vtkSMProxyLocator* locator)
 {
@@ -186,7 +184,6 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
   return false;
 }
 
-//---------------------------------------------------------------------------
 vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)
 {
   vtkPVDataInformation* dinfo = proxy->GetDataInformation();
@@ -194,8 +191,6 @@ vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)
     vtkDataSetAttributes::SCALARS) : nullptr;
 }
 
-
-//---------------------------------------------------------------------------
 bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
 {
   // rescale the color/opacity maps for the data source.
@@ -221,7 +216,6 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   return false;
 }
 
-//---------------------------------------------------------------------------
 QString readInPythonScript(const QString &scriptName)
 {
   QString path = QApplication::applicationDirPath() + "/../share/tomviz/scripts/";

@@ -47,7 +47,6 @@
 namespace
 {
 
-//----------------------------------------------------------------------------
 bool CheckForError()
 {
   PyObject *exception = PyErr_Occurred();
@@ -60,22 +59,19 @@ bool CheckForError()
   return false;
 }
 
-//----------------------------------------------------------------------------
 class PythonGeneratedDataSource : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-//----------------------------------------------------------------------------
   PythonGeneratedDataSource(const QString &l, QObject* p = nullptr)
     : Superclass(p), label(l)
   {
   }
 
-//----------------------------------------------------------------------------
   ~PythonGeneratedDataSource() {}
 
-//----------------------------------------------------------------------------
   void setScript(const QString &script)
   {
     vtkPythonInterpreter::Initialize();
@@ -128,7 +124,6 @@ public:
     this->pythonScript = script;
   }
 
-//----------------------------------------------------------------------------
   vtkSmartPointer<vtkSMSourceProxy> createDataSource(const int shape[3])
   {
   vtkNew<vtkImageData> image;
@@ -183,13 +178,12 @@ private:
 
 int PythonGeneratedDataSource::number_of_scripts = 0;
 
-//----------------------------------------------------------------------------
 class ShapeWidget : public QWidget
 {
   Q_OBJECT
   typedef QWidget Superclass;
+
 public:
-//----------------------------------------------------------------------------
   ShapeWidget(QWidget *p = nullptr)
     : Superclass(p),
       xSpinBox(new QSpinBox(this)),
@@ -222,25 +216,21 @@ public:
     this->setLayout(boundsLayout);
   }
 
-//----------------------------------------------------------------------------
   ~ShapeWidget() {}
 
-//----------------------------------------------------------------------------
   void getShape(int shape[3])
   {
     shape[0] = xSpinBox->value();
     shape[1] = ySpinBox->value();
     shape[2] = zSpinBox->value();
   }
-    
-//----------------------------------------------------------------------------
+
   void setSpinBoxValue(int newX, int newY, int newZ)
   {
     this->xSpinBox->setValue(newX);
     this->ySpinBox->setValue(newY);
     this->zSpinBox->setValue(newZ);
   }
-//----------------------------------------------------------------------------
 
   void setSpinBoxMaximum(int xmax, int ymax, int zmax)
   {
@@ -270,7 +260,7 @@ public:
   QString scriptLabel;
   QString scriptSource;
 };
-//-----------------------------------------------------------------------------
+
 PythonGeneratedDatasetReaction::PythonGeneratedDatasetReaction(QAction* parentObject,
                                                                const QString &l,
                                                                const QString &s)
@@ -280,12 +270,10 @@ PythonGeneratedDatasetReaction::PythonGeneratedDatasetReaction(QAction* parentOb
   this->Internals->scriptSource = s;
 }
 
-//-----------------------------------------------------------------------------
 PythonGeneratedDatasetReaction::~PythonGeneratedDatasetReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void PythonGeneratedDatasetReaction::addDataset()
 {
   PythonGeneratedDataSource generator(this->Internals->scriptLabel);
@@ -400,7 +388,6 @@ void PythonGeneratedDatasetReaction::addDataset()
     
 }
 
-//-----------------------------------------------------------------------------
 void PythonGeneratedDatasetReaction::dataSourceAdded(vtkSmartPointer<vtkSMSourceProxy> proxy)
 {
   if (!proxy)
@@ -433,7 +420,6 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(vtkSmartPointer<vtkSMSource
   }
 }
 
-//-----------------------------------------------------------------------------
 vtkSmartPointer<vtkSMSourceProxy> PythonGeneratedDatasetReaction::getSourceProxy(
     const QString &label, const QString &script, const int shape[3])
 {

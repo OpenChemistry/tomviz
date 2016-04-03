@@ -21,6 +21,7 @@
 
 namespace tomviz
 {
+
 class DataSource;
 class Operator;
 

@@ -18,6 +18,7 @@
 
 #include <QObject>
 #include <QPointer>
+
 #include "DataSource.h"
 #include "Module.h"
 
@@ -45,20 +46,17 @@ public:
   vtkSMViewProxy* activeView() const;
 
   /// Returns the active data source.
-  DataSource* activeDataSource() const
-    { return this->ActiveDataSource; }
+  DataSource* activeDataSource() const { return this->ActiveDataSource; }
 
   /// Returns the active module.
-  Module* activeModule() const
-    { return this->ActiveModule; }
+  Module* activeModule() const { return this->ActiveModule; }
 
   /// Returns the vtkSMSessionProxyManager from the active server/session.
   /// Provided here for convenience, since we need to access the proxy manager
   /// often.
   vtkSMSessionProxyManager* proxyManager() const;
 
-  bool moveObjectsEnabled()
-    { return this->MoveObjectsEnabled; }
+  bool moveObjectsEnabled() { return this->MoveObjectsEnabled; }
 
 public slots:
   /// Set the active view;
@@ -95,6 +93,7 @@ signals:
 
   /// Fired when the mode changes
   void moveObjectsModeChanged(bool moveObjectsOn);
+
 private slots:
   void viewChanged(pqView*);
   void dataSourceRemoved(DataSource*);
@@ -118,4 +117,5 @@ private:
   Q_DISABLE_COPY(ActiveObjects)
 };
 }
+
 #endif

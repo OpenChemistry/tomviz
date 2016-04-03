@@ -23,7 +23,6 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ProgressBehavior::ProgressBehavior(QWidget* parentWindow)
   : Superclass(parentWindow), ProgressDialog(nullptr)
 {
@@ -35,14 +34,11 @@ ProgressBehavior::ProgressBehavior(QWidget* parentWindow)
                 SLOT(progress(const QString, int)));
 }
 
-//-----------------------------------------------------------------------------
 ProgressBehavior::~ProgressBehavior()
 {
   this->ProgressDialog->deleteLater();
 }
 
-
-//-----------------------------------------------------------------------------
 void ProgressBehavior::initialize()
 {
   if (this->ProgressDialog)
@@ -58,7 +54,6 @@ void ProgressBehavior::initialize()
   this->ProgressDialog->setMinimumDuration(0); // 0 second.
 }
 
-//-----------------------------------------------------------------------------
 void ProgressBehavior::enableProgress(bool enable)
 {
   this->initialize();
@@ -74,7 +69,6 @@ void ProgressBehavior::enableProgress(bool enable)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ProgressBehavior::progress(const QString& message, int progressAmount)
 {
   this->initialize();

@@ -16,7 +16,7 @@
 #ifndef tomvizResetReaction_h
 #define tomvizResetReaction_h
 
-#include "pqReaction.h"
+#include <pqReaction.h>
 
 namespace tomviz
 {

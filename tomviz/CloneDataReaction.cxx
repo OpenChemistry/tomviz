@@ -18,13 +18,13 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
-#include "pqCoreUtilities.h"
+#include <pqCoreUtilities.h>
 
 #include <QInputDialog>
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 CloneDataReaction::CloneDataReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
@@ -34,19 +34,16 @@ CloneDataReaction::CloneDataReaction(QAction* parentObject)
   this->updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 CloneDataReaction::~CloneDataReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void CloneDataReaction::updateEnableState()
 {
   this->parentAction()->setEnabled(
     ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
-//-----------------------------------------------------------------------------
 DataSource* CloneDataReaction::clone(DataSource* toClone)
 {
   toClone = toClone? toClone : ActiveObjects::instance().activeDataSource();

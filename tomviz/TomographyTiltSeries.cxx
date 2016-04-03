@@ -24,9 +24,10 @@
 #include "vtkSmartPointer.h"
 
 #include <QDebug>
-//using namespace std;
+
 namespace
 {
+
 // conversion code
 template<typename T>
 vtkSmartPointer<vtkFloatArray> convertToFloatT(T *data, int len)
@@ -56,32 +57,35 @@ vtkSmartPointer<vtkFloatArray> convertToFloat(vtkImageData* image)
 
 namespace tomviz
 {
+
 namespace TomographyTiltSeries
 {
-
 
 void getSinogram(vtkImageData *tiltSeries, int sliceNumber,float* sinogram)
 {
   int extents[6];
   tiltSeries->GetExtent(extents);
-  int xDim = extents[1] - extents[0] + 1; //number of slices
-  int yDim = extents[3] - extents[2] + 1; //number of rays
-  int zDim = extents[5] - extents[4] + 1; //number of tilts
+  int xDim = extents[1] - extents[0] + 1; // Number of slices
+  int yDim = extents[3] - extents[2] + 1; // Number of rays
+  int zDim = extents[5] - extents[4] + 1; // Number of tilts
 
   //Convert tiltSeries type to float
   vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
-  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); //Get pointer to tilt series (of type float)
+  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); // Get pointer to tilt series (of type float)
 
-  //Extract sinograms from tilt series. Make a deep copy
-  for (int t = 0; t < zDim; ++t) //loop through tilts (z-direction)
-    for (int r = 0; r < yDim; ++r) //loop through rays (y-direction)
+  // Extract sinograms from tilt series. Make a deep copy
+  for (int t = 0; t < zDim; ++t) // Loop through tilts (z-direction)
+  {
+    for (int r = 0; r < yDim; ++r) // Loop through rays (y-direction)
     {
       sinogram[t * yDim + r] = dataPtr[t * xDim * yDim + r * xDim + sliceNumber];
     }
+  }
 }
 
-//Extract sinograms from tilt series
-void getSinogram(vtkImageData *tiltSeries, int sliceNumber, float* sinogram, int Nray, double axisPosition)
+// Extract sinograms from tilt series
+void getSinogram(vtkImageData *tiltSeries, int sliceNumber, float* sinogram,
+                 int Nray, double axisPosition)
 {
   int extents[6];
   tiltSeries->GetExtent(extents);
@@ -89,19 +93,20 @@ void getSinogram(vtkImageData *tiltSeries, int sliceNumber, float* sinogram, int
   int yDim = extents[3] - extents[2] + 1; //number of rays in tilt series
   int zDim = extents[5] - extents[4] + 1; //number of tilts
 
-  //Convert tiltSeries type to float
+  // Convert tiltSeries type to float
   vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
-  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); //Get pointer to tilt series (of type float)
+  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); // Get pointer to tilt series (of type float)
 
   double rayWidth = (double)yDim/(double)Nray;
-  std::vector<float> weight1(Nray); //store weights for linear interpolation
-  std::vector<float> weight2(Nray); //store weights for linear interpolation
-  std::vector<int> index1(Nray); //store indices for linear interpolation
-  std::vector<int> index2(Nray); //store indices for linear interpolation
+  std::vector<float> weight1(Nray); // Store weights for linear interpolation
+  std::vector<float> weight2(Nray); // Store weights for linear interpolation
+  std::vector<int> index1(Nray); // Store indices for linear interpolation
+  std::vector<int> index2(Nray); // Store indices for linear interpolation
 
-  //Extract sinograms from tilt series. Make a deep copy
-  for (int z = 0; z < zDim; ++z) //loop through tilts (z-direction)
-    for (int r = 0; r < Nray; ++r) //loop through rays (y-direction)
+  // Extract sinograms from tilt series. Make a deep copy
+  for (int z = 0; z < zDim; ++z) // Loop through tilts (z-direction)
+  {
+    for (int r = 0; r < Nray; ++r) // Loop through rays (y-direction)
     {
       if (z==0) { //Initialize weights and indicies
         double rayCoord = (double)(r-Nray/2)*rayWidth + axisPosition;
@@ -116,35 +121,39 @@ void getSinogram(vtkImageData *tiltSeries, int sliceNumber, float* sinogram, int
       if (index2[r]>=0 && index2[r]<yDim)
         sinogram[z * Nray + r] += dataPtr[z * xDim * yDim + index2[r] * xDim + sliceNumber] * weight2[r];
     }
+  }
 
-} // end of getSinogram
+}
 
-
-void averageTiltSeries(vtkImageData *tiltSeries, float* average) //Average all tilts
+void averageTiltSeries(vtkImageData *tiltSeries, float* average)
 {
   int extents[6];
   tiltSeries->GetExtent(extents);
-  int xDim = extents[1] - extents[0] + 1; //number of slices
-  int yDim = extents[3] - extents[2] + 1; //number of rays in tilt series
-  int zDim = extents[5] - extents[4] + 1; //number of tilts
+  int xDim = extents[1] - extents[0] + 1; // Number of slices
+  int yDim = extents[3] - extents[2] + 1; // Number of rays in tilt series
+  int zDim = extents[5] - extents[4] + 1; // Number of tilts
 
-  //Convert tiltSeries type to float
+  // Convert tiltSeries type to float
   vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
-  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); //Get pointer to tilt series (of type float)
+  float *dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(0)); // Get pointer to tilt series (of type float)
 
   for (int z = 0; z < zDim; ++z)
+  {
     for (int y = 0; y < yDim; ++y)
+    {
       for (int x = 0; x < xDim; ++x)
       {
-        if (z==0)
-          average[y * xDim + x ] = 0;
-        //Update
-        average[y * xDim + x ] += dataPtr[z * xDim * yDim + y * xDim + x];
+        if (z == 0)
+          average[y * xDim + x] = 0;
 
-        if (z==zDim-1) //Normalize
-          average[y * xDim + x ] /= zDim;
+        average[y * xDim + x] += dataPtr[z * xDim * yDim + y * xDim + x];
+
+        if (z == zDim - 1) //Normalize
+          average[y * xDim + x] /= zDim;
       }
-} //end of averageTiltSeries
+    }
+  }
+}
 
 } // end of namespace TomographyTiltSeries
 } //end of namespace tomviz

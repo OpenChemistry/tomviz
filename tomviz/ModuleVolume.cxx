@@ -30,24 +30,20 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ModuleVolume::ModuleVolume(QObject* parentObject) : Superclass(parentObject)
 {
 }
 
-//-----------------------------------------------------------------------------
 ModuleVolume::~ModuleVolume()
 {
   this->finalize();
 }
 
-//-----------------------------------------------------------------------------
 QIcon ModuleVolume::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqVolumeData16.png");
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
@@ -83,7 +79,6 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleVolume::updateColorMap()
 {
   Q_ASSERT(this->Representation);
@@ -98,7 +93,6 @@ void ModuleVolume::updateColorMap()
   vtkObject::SafeDownCast(this->colorMap()->GetClientSideObject())->Modified();
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleVolume::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -110,7 +104,6 @@ bool ModuleVolume::finalize()
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleVolume::setVisibility(bool val)
 {
   Q_ASSERT(this->Representation);
@@ -119,7 +112,6 @@ bool ModuleVolume::setVisibility(bool val)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleVolume::visibility() const
 {
   Q_ASSERT(this->Representation);
@@ -127,7 +119,6 @@ bool ModuleVolume::visibility() const
                              "Visibility").GetAsInt() != 0;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleVolume::serialize(pugi::xml_node& ns) const
 {
   QStringList list;
@@ -137,7 +128,6 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
   return (tomviz::serialize(this->Representation, nodeR, list) && this->Superclass::serialize(ns));
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleVolume::deserialize(const pugi::xml_node& ns)
 {
   if (!tomviz::deserialize(this->Representation, ns.child("Representation")))
@@ -148,7 +138,6 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
   return this->Superclass::deserialize(ns);
 }
 
-//-----------------------------------------------------------------------------
 void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = {newX, newY, newZ};
