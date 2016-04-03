@@ -74,10 +74,11 @@ public:
   }
 };
 
-Module::Module(QObject* parentObject) : Superclass(parentObject),
-  ColorByLabelMap(false),
-  UseDetachedColorMap(false),
-  Internals(new Module::MInternals())
+Module::Module(QObject* parentObject)
+  : Superclass(parentObject),
+    UseDetachedColorMap(false),
+    ColorByLabelMap(false),
+    Internals(new Module::MInternals())
 {
 }
 
@@ -143,7 +144,8 @@ void Module::setUseDetachedColorMap(bool val)
     this->Internals->OpacityMap = this->Internals->detachedOpacityMap();
 
     tomviz::rescaleColorMap(this->Internals->ColorMap, this->dataSource());
-    pqCoreUtilities::connect(this->Internals->ColorMap, vtkCommand::ModifiedEvent,
+    pqCoreUtilities::connect(this->Internals->ColorMap,
+                             vtkCommand::ModifiedEvent,
                              this, SLOT(onColorMapChanged()));
   }
   else
@@ -178,7 +180,7 @@ bool Module::serialize(pugi::xml_node& ns) const
       pugi::xml_node nodeL = ns.append_child("ColorMap");
       pugi::xml_node nodeS = ns.append_child("OpacityMap");
 
-      // using detached color map, so we need to save the local color map.
+      // Using detached color map, so we need to save the local color map.
       if (tomviz::serialize(this->colorMap(), nodeL) == false ||
         tomviz::serialize(this->opacityMap(), nodeS) == false)
       {
@@ -205,7 +207,8 @@ bool Module::deserialize(const pugi::xml_node& ns)
     }
     if (dcm && ns.child("OpacityMap"))
     {
-      if (!tomviz::deserialize(this->Internals->detachedOpacityMap(), ns.child("OpacityMap")))
+      if (!tomviz::deserialize(this->Internals->detachedOpacityMap(),
+                               ns.child("OpacityMap")))
       {
         qCritical("Failed to deserialze OpacityMap");
         return false;
@@ -234,7 +237,7 @@ bool Module::colorByLabelMap() const
 }
 
 bool Module::serializeAnimationCue(pqAnimationCue *cue, const char *proxyName,
-    pugi::xml_node& ns, const char *helperName /* = nullptr */)
+    pugi::xml_node& ns, const char *helperName)
 {
   vtkSMProperty *property = cue->getAnimatedProperty();
   int propertyIndex = cue->getAnimatedPropertyIndex();
@@ -258,8 +261,7 @@ bool Module::serializeAnimationCue(pqAnimationCue *cue, const char *proxyName,
 }
 
 bool Module::serializeAnimationCue(pqAnimationCue *cue, Module *module,
-    pugi::xml_node& ns, const char *helperName /* = nullptr */,
-    vtkSMProxy *realProxy /* = nullptr */)
+    pugi::xml_node& ns, const char *helperName, vtkSMProxy *realProxy)
 {
   vtkSMProxy *animated = cue->getAnimatedProxy();
   std::string proxy = module->getStringForProxy(realProxy ? realProxy : animated);
@@ -274,20 +276,23 @@ bool Module::deserializeAnimationCue(Module *module, const pugi::xml_node& ns)
   return deserializeAnimationCue(proxyObj, ns);
 }
 
-bool Module::deserializeAnimationCue(vtkSMProxy *proxyObj, const pugi::xml_node& ns)
+bool Module::deserializeAnimationCue(vtkSMProxy *proxyObj,
+                                     const pugi::xml_node& ns)
 {
   if (proxyObj == nullptr)
   {
     return false;
   }
   const pugi::xml_node &cueNode = ns.child("cue");
-  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  pqAnimationScene *scene
+      = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
   const char *property = cueNode.attribute("property").value();
   int propertyIndex = cueNode.attribute("propertyIndex").as_int();
   if (cueNode.attribute("onHelper"))
   {
     const char *helperKey = cueNode.attribute("onHelper").value();
-    QList<vtkSMProxy*> helpers = tomviz::convert<pqProxy*>(proxyObj)->getHelperProxies(helperKey);
+    QList<vtkSMProxy*> helpers
+        = tomviz::convert<pqProxy*>(proxyObj)->getHelperProxies(helperKey);
     if (helpers.size() == 1)
     {
       proxyObj = helpers[0];
@@ -309,7 +314,8 @@ bool Module::deserializeAnimationCue(vtkSMProxy *proxyObj, const pugi::xml_node&
     type = "KeyFrameAnimationCue";
   }
 
-  pqAnimationCue* cue = scene->createCue(proxyObj, property, propertyIndex, type);
+  pqAnimationCue* cue = scene->createCue(proxyObj, property, propertyIndex,
+                                         type);
   int i = 0;
   for (pugi::xml_node keyframeNode = cueNode.child("keyframe");
       keyframeNode; keyframeNode = keyframeNode.next_sibling("keyframe"))
