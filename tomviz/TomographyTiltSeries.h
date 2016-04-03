@@ -22,6 +22,7 @@
 
 namespace tomviz
 {
+
 class DataSource;
 
 namespace TomographyTiltSeries
@@ -41,7 +42,6 @@ void getSinogram(vtkImageData *tiltSeries, int, float* sinogram,  int Nray, doub
 //void generaeTiltSeries(vtkImageData *volume, vtkImageData* tiltSeries);
 
 void averageTiltSeries(vtkImageData *tiltSeries, float* average); //Average all tilts
-
 
 }
 }

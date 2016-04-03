@@ -45,7 +45,7 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 SaveDataReaction::SaveDataReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
@@ -54,19 +54,16 @@ SaveDataReaction::SaveDataReaction(QAction* parentObject)
   updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 SaveDataReaction::~SaveDataReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void SaveDataReaction::updateEnableState()
 {
   parentAction()->setEnabled(
         ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
-//-----------------------------------------------------------------------------
 void SaveDataReaction::onTriggered()
 {
   pqServer* server = pqActiveObjects::instance().activeServer();

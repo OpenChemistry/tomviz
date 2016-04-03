@@ -18,7 +18,6 @@
 
 #include <pqReaction.h>
 
-
 class QMainWindow;
 
 namespace tomviz
@@ -44,4 +43,5 @@ private:
   QMainWindow* mainWindow;
 };
 }
+
 #endif

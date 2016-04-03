@@ -47,26 +47,22 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ModuleSlice::ModuleSlice(QObject* parentObject)
   : Superclass(parentObject)
   , IgnoreSignals(false)
 {
 }
 
-//-----------------------------------------------------------------------------
 ModuleSlice::~ModuleSlice()
 {
   this->finalize();
 }
 
-//-----------------------------------------------------------------------------
 QIcon ModuleSlice::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqSlice24.png");
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
@@ -97,7 +93,6 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PostInitializeProxy(this->PassThrough);
   controller->RegisterPipelineProxy(this->PassThrough);
 
-  //Create the widget
   const bool widgetSetup = this->setupWidget(vtkView, producer);
 
   if(widgetSetup)
@@ -114,9 +109,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   return widgetSetup;
 }
 
-
-//-----------------------------------------------------------------------------
-//should only be called from initialize after the PassThrough has been setup
+//  Should only be called from initialize after the PassThrough has been setup
 bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView, vtkSMSourceProxy* producer)
 {
   vtkAlgorithm* passThroughAlg = vtkAlgorithm::SafeDownCast(
@@ -124,7 +117,7 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView, vtkSMSourceProxy* produce
 
   vtkRenderWindowInteractor* rwi = vtkView->GetRenderWindow()->GetInteractor();
 
-  //determine the name of the property we are coloring by
+  // Determine the name of the property we are coloring by
   const char* propertyName = producer->GetDataInformation()->
                                        GetPointDataInformation()->
                                        GetArrayInformation(0)->
@@ -137,30 +130,30 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView, vtkSMSourceProxy* produce
 
   this->Widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
 
-  //set the interactor on the widget to be what the current
-  //render window is using
+  // Set the interactor on the widget to be what the current
+  // render window is using.
   this->Widget->SetInteractor( rwi );
 
-  //setup the color of the border of the widget
+  // Setup the color of the border of the widget.
   {
   double color[3] = {1, 0, 0};
   this->Widget->GetPlaneProperty()->SetColor(color);
   }
 
-  //turn texture interpolation to be linear
+  // Turn texture interpolation to be linear.
   this->Widget->TextureInterpolateOn();
   this->Widget->SetResliceInterpolateToLinear();
 
-  //Construct the transfer function proxy for the widget
+  // Construct the transfer function proxy for the widget.
   vtkSMProxy* lut = this->colorMap();
 
-  //set the widgets lookup table to be the one that the transfer function
-  //manager is using
+  // Set the widgets lookup table to be the one that the transfer function
+  // manager is using.
   vtkScalarsToColors* stc =
     vtkScalarsToColors::SafeDownCast(lut->GetClientSideObject());
   this->Widget->SetLookupTable(stc);
 
-  //lastly we set up the input connection
+  // Lastly we set up the input connection.
   this->Widget->SetInputConnection(passThroughAlg->GetOutputPort());
 
   Q_ASSERT(rwi);
@@ -169,7 +162,6 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView, vtkSMSourceProxy* produce
   return true;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleSlice::updateColorMap()
 {
   Q_ASSERT(this->Widget);
@@ -184,7 +176,6 @@ void ModuleSlice::updateColorMap()
   this->Widget->SetLookupTable(stc);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -201,7 +192,6 @@ bool ModuleSlice::finalize()
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleSlice::setVisibility(bool val)
 {
   Q_ASSERT(this->Widget);
@@ -219,14 +209,12 @@ bool ModuleSlice::setVisibility(bool val)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleSlice::visibility() const
 {
   Q_ASSERT(this->Widget);
   return this->Widget->GetEnabled() != 0;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleSlice::addToPanel(pqProxiesWidget* panel)
 {
   QStringList properties;
@@ -236,7 +224,6 @@ void ModuleSlice::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
 {
   // Save the state of the arrow's visibility
@@ -273,7 +260,6 @@ bool ModuleSlice::serialize(pugi::xml_node& ns) const
   return this->Superclass::serialize(ns);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 {
 
@@ -322,7 +308,6 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
   return this->Superclass::deserialize(ns);
 }
 
-//-----------------------------------------------------------------------------
 void ModuleSlice::onPropertyChanged()
 {
   // Avoid recursive clobbering of the plane position
@@ -349,7 +334,6 @@ void ModuleSlice::onPropertyChanged()
   this->IgnoreSignals = false;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleSlice::onPlaneChanged()
 {
   // Avoid recursive clobbering of the plane position
@@ -367,7 +351,6 @@ void ModuleSlice::onPlaneChanged()
   this->IgnoreSignals = false;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };

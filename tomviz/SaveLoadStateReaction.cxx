@@ -29,19 +29,16 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 SaveLoadStateReaction::SaveLoadStateReaction(QAction* parentObject, bool load)
   : Superclass(parentObject),
     Load(load)
 {
 }
 
-//-----------------------------------------------------------------------------
 SaveLoadStateReaction::~SaveLoadStateReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void SaveLoadStateReaction::onTriggered()
 {
   if (this->Load)
@@ -54,7 +51,6 @@ void SaveLoadStateReaction::onTriggered()
   }
 }
 
-//-----------------------------------------------------------------------------
 bool SaveLoadStateReaction::saveState()
 {
   pqFileDialog fileDialog(nullptr, pqCoreUtilities::mainWidget(),
@@ -69,7 +65,6 @@ bool SaveLoadStateReaction::saveState()
   return false;
 }
 
-//-----------------------------------------------------------------------------
 bool SaveLoadStateReaction::loadState()
 {
   pqFileDialog fileDialog(nullptr, pqCoreUtilities::mainWidget(),
@@ -84,7 +79,6 @@ bool SaveLoadStateReaction::loadState()
   return false;
 }
 
-//-----------------------------------------------------------------------------
 bool SaveLoadStateReaction::loadState(const QString& filename)
 {
   pugi::xml_document document;
@@ -103,7 +97,6 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
   return false;
 }
 
-//-----------------------------------------------------------------------------
 bool SaveLoadStateReaction::saveState(const QString& filename)
 {
   pugi::xml_document document;

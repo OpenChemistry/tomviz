@@ -14,21 +14,20 @@
 
 ******************************************************************************/
 #include "ActiveObjects.h"
-
 #include "ModuleManager.h"
-#include "pqActiveObjects.h"
-#include "pqApplicationCore.h"
-#include "pqPipelineSource.h"
-#include "pqServer.h"
-#include "pqView.h"
 #include "Utilities.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMViewProxy.h"
+
+#include <pqActiveObjects.h>
+#include <pqApplicationCore.h>
+#include <pqPipelineSource.h>
+#include <pqServer.h>
+#include <pqView.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMViewProxy.h>
 
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ActiveObjects::ActiveObjects()
   : Superclass(),
     ActiveDataSource(nullptr),
@@ -47,38 +46,32 @@ ActiveObjects::ActiveObjects()
                 SLOT(moduleRemoved(Module*)));
 }
 
-//-----------------------------------------------------------------------------
 ActiveObjects::~ActiveObjects()
 {
 }
 
-//-----------------------------------------------------------------------------
 ActiveObjects& ActiveObjects::instance()
 {
   static ActiveObjects theInstance;
   return theInstance;
 }
 
-//-----------------------------------------------------------------------------
 void ActiveObjects::setActiveView(vtkSMViewProxy* view)
 {
   pqActiveObjects::instance().setActiveView(tomviz::convert<pqView*>(view));
 }
 
-//-----------------------------------------------------------------------------
 vtkSMViewProxy* ActiveObjects::activeView() const
 {
   pqView* view = pqActiveObjects::instance().activeView();
   return view ? view->getViewProxy() : nullptr;
 }
 
-//-----------------------------------------------------------------------------
 void ActiveObjects::viewChanged(pqView* view)
 {
   emit this->viewChanged(view ? view->getViewProxy() : nullptr);
 }
 
-//-----------------------------------------------------------------------------
 void ActiveObjects::dataSourceRemoved(DataSource* ds)
 {
   if (this->VoidActiveDataSource == ds)
@@ -87,7 +80,6 @@ void ActiveObjects::dataSourceRemoved(DataSource* ds)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ActiveObjects::moduleRemoved(Module* mdl)
 {
   if (this->VoidActiveModule == mdl)
@@ -96,7 +88,6 @@ void ActiveObjects::moduleRemoved(Module* mdl)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ActiveObjects::setActiveDataSource(DataSource* source)
 {
   if (this->VoidActiveDataSource != source)
@@ -117,7 +108,7 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
   }
   emit this->dataSourceActivated(this->ActiveDataSource);
 }
-//-----------------------------------------------------------------------------
+
 void ActiveObjects::dataSourceChanged()
 {
   if (this->ActiveDataSource->type() != this->ActiveDataSourceType)
@@ -127,14 +118,12 @@ void ActiveObjects::dataSourceChanged()
   }
 }
 
-//-----------------------------------------------------------------------------
 vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
   return server ? server->proxyManager() : nullptr;
 }
 
-//-----------------------------------------------------------------------------
 void ActiveObjects::setActiveModule(Module* module)
 {
   if (this->VoidActiveModule != module)
@@ -151,7 +140,6 @@ void ActiveObjects::setActiveModule(Module* module)
   emit this->moduleActivated(module);
 }
 
-//-----------------------------------------------------------------------------
 void ActiveObjects::setMoveObjectsMode(bool moveObjectsOn)
 {
   if (this->MoveObjectsEnabled != moveObjectsOn)
@@ -161,12 +149,9 @@ void ActiveObjects::setMoveObjectsMode(bool moveObjectsOn)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ActiveObjects::renderAllViews()
 {
   pqApplicationCore::instance()->render();
 }
 
-
-//-----------------------------------------------------------------------------
 } // end of namespace tomviz

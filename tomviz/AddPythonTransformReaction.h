@@ -16,7 +16,7 @@
 #ifndef tomvizAddPythonTransformReaction_h
 #define tomvizAddPythonTransformReaction_h
 
-#include "pqReaction.h"
+#include <pqReaction.h>
 
 namespace tomviz
 {
@@ -44,6 +44,7 @@ public:
 
 protected:
   void updateEnableState() override;
+
   void onTriggered() override { this->addExpression(); }
 
 private slots:

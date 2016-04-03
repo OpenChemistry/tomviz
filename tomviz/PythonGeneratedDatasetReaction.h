@@ -16,8 +16,8 @@
 #ifndef tomvizPythonGeneratedDatasetReaction_h
 #define tomvizPythonGeneratedDatasetReaction_h
 
-#include "pqReaction.h"
-#include "vtkSmartPointer.h"
+#include <pqReaction.h>
+#include <vtkSmartPointer.h>
 
 #include <QScopedPointer>
 

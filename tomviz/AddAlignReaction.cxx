@@ -19,13 +19,14 @@
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
 #include "TranslateAlignOperator.h"
-#include "pqCoreUtilities.h"
+
+#include <pqCoreUtilities.h>
 
 #include <QDebug>
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 AddAlignReaction::AddAlignReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
@@ -34,12 +35,10 @@ AddAlignReaction::AddAlignReaction(QAction* parentObject)
   updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 AddAlignReaction::~AddAlignReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void AddAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(
@@ -47,18 +46,18 @@ void AddAlignReaction::updateEnableState()
         ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries);
 }
 
-//-----------------------------------------------------------------------------
 void AddAlignReaction::align(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source)
   {
-    qDebug() << "Exiting early - no data :-(";
+    qDebug() << "Exiting early - no data found.";
     return;
   }
 
   QSharedPointer<Operator> Op(new TranslateAlignOperator(source));
-  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, pqCoreUtilities::mainWidget());
+  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source,
+                                                      pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
 }

@@ -20,7 +20,7 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 DeleteDataReaction::DeleteDataReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
@@ -29,18 +29,15 @@ DeleteDataReaction::DeleteDataReaction(QAction* parentObject)
   this->updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 DeleteDataReaction::~DeleteDataReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void DeleteDataReaction::updateEnableState()
 {
   this->parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
-//-----------------------------------------------------------------------------
 void DeleteDataReaction::onTriggered()
 {
   DataSource* source = ActiveObjects::instance().activeDataSource();
@@ -49,7 +46,6 @@ void DeleteDataReaction::onTriggered()
   ActiveObjects::instance().renderAllViews();
 }
 
-//-----------------------------------------------------------------------------
 void DeleteDataReaction::deleteDataSource(DataSource* source)
 {
   Q_ASSERT(source);
@@ -58,4 +54,5 @@ void DeleteDataReaction::deleteDataSource(DataSource* source)
   mmgr.removeAllModules(source);
   mmgr.removeDataSource(source);
 }
+
 } // end of namespace tomviz

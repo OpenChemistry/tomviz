@@ -25,7 +25,6 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject) :
   Superclass(parentObject),
   Menu(menu),
@@ -39,12 +38,10 @@ ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject) :
   this->updateActions();
 }
 
-//-----------------------------------------------------------------------------
 ModuleMenu::~ModuleMenu()
 {
 }
 
-//-----------------------------------------------------------------------------
 void ModuleMenu::updateActions()
 {
   QMenu* menu = this->Menu;
@@ -73,7 +70,6 @@ void ModuleMenu::updateActions()
   }
 }
 
-//-----------------------------------------------------------------------------
 void ModuleMenu::triggered(QAction* maction)
 {
   Module* module =

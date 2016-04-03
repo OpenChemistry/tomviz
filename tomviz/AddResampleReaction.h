@@ -16,7 +16,7 @@
 #ifndef tomvizAddResampleReaction_h
 #define tomvizAddResampleReaction_h
 
-#include "pqReaction.h"
+#include <pqReaction.h>
 
 namespace tomviz
 {

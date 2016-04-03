@@ -31,7 +31,7 @@
 
 namespace
 {
-  //----------------------------------------------------------------------------
+
   bool CheckForError()
   {
     PyObject *exception = PyErr_Occurred();
@@ -87,7 +87,6 @@ public:
   vtkSmartPyObject TransformMethod;
 };
 
-//-----------------------------------------------------------------------------
 OperatorPython::OperatorPython(QObject* parentObject) :
   Superclass(parentObject),
   Internals(new OperatorPython::OPInternals()),
@@ -102,25 +101,21 @@ OperatorPython::OperatorPython(QObject* parentObject) :
   }
 }
 
-//-----------------------------------------------------------------------------
 OperatorPython::~OperatorPython()
 {
 }
 
-//-----------------------------------------------------------------------------
 void OperatorPython::setLabel(const QString& txt)
 {
   this->Label = txt;
   emit labelModified();
 }
 
-//-----------------------------------------------------------------------------
 QIcon OperatorPython::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqProgrammableFilter24.png");
 }
 
-//-----------------------------------------------------------------------------
 void OperatorPython::setScript(const QString& str)
 {
   if (this->Script != str)
@@ -164,7 +159,6 @@ void OperatorPython::setScript(const QString& str)
   }
 }
 
-//-----------------------------------------------------------------------------
 bool OperatorPython::transform(vtkDataObject* data)
 {
   if (this->Script.isEmpty()) { return true; }
@@ -192,7 +186,6 @@ bool OperatorPython::transform(vtkDataObject* data)
   return CheckForError() == false;
 }
 
-//-----------------------------------------------------------------------------
 Operator* OperatorPython::clone() const
 {
   OperatorPython* newClone = new OperatorPython();
@@ -201,7 +194,6 @@ Operator* OperatorPython::clone() const
   return newClone;
 }
 
-//-----------------------------------------------------------------------------
 bool OperatorPython::serialize(pugi::xml_node& ns) const
 {
   ns.append_attribute("label").set_value(this->label().toLatin1().data());
@@ -209,7 +201,6 @@ bool OperatorPython::serialize(pugi::xml_node& ns) const
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool OperatorPython::deserialize(const pugi::xml_node& ns)
 {
   this->setLabel(ns.attribute("label").as_string());

@@ -18,12 +18,13 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "OperatorPython.h"
-#include "pqCoreUtilities.h"
 #include "EditOperatorDialog.h"
+
+#include <pqCoreUtilities.h>
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
@@ -33,19 +34,16 @@ AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
   this->updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 AddExpressionReaction::~AddExpressionReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void AddExpressionReaction::updateEnableState()
 {
   this->parentAction()->setEnabled(
     ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
-//-----------------------------------------------------------------------------
 OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
@@ -69,7 +67,6 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
   return nullptr;
 }
 
-//-----------------------------------------------------------------------------
 QString AddExpressionReaction::getDefaultExpression(DataSource *source)
 {
   QString actionString = this->parentAction()->text();

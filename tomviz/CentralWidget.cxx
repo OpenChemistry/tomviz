@@ -71,7 +71,6 @@ Q_DECLARE_METATYPE(vtkSmartPointer<vtkTable>)
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 // This is just here for now - quick and dirty historgram calculations...
 void PopulateHistogram(vtkImageData *input, vtkTable *output)
 {
@@ -157,7 +156,6 @@ void PopulateHistogram(vtkImageData *input, vtkTable *output)
   output->AddColumn(populations.GetPointer());
 }
 
-//-----------------------------------------------------------------------------
 // This is a QObject that will be owned by the background thread
 // and use signals/slots to create histograms
 class HistogramMaker : public QObject
@@ -178,7 +176,6 @@ signals:
                      vtkSmartPointer<vtkTable> output);
 };
 
-//-----------------------------------------------------------------------------
 void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
@@ -191,7 +188,6 @@ void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
   emit histogramDone(input, output);
 }
 
-//-----------------------------------------------------------------------------
 class CentralWidget::CWInternals
 {
 public:
@@ -199,7 +195,6 @@ public:
   QTimer Timer;
 };
 
-//-----------------------------------------------------------------------------
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   : Superclass(parentObject, wflags),
     Internals(new CentralWidget::CWInternals()),
@@ -277,9 +272,9 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->EventLink->Connect(this->ColorTransferControlPointsItem.Get(), vtkControlPointsItem::CurrentPointEditEvent,
                            this, SLOT(onCurrentPointEditEvent()));
 
-  // start the worker thread and give it ownership of the HistogramMaker
-  // object.  Also connect the HistogramMaker's signal to the histogramReady
-  // slot on this object.  This slot will be called on the GUI thread when the
+  // Start the worker thread and give it ownership of the HistogramMaker
+  // object. Also connect the HistogramMaker's signal to the histogramReady
+  // slot on this object. This slot will be called on the GUI thread when the
   // histogram has been finished on the background thread.
   this->Worker->start();
   this->HistogramGen->moveToThread(this->Worker);
@@ -294,7 +289,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->ScalarOpacityFunction = nullptr;
 }
 
-//-----------------------------------------------------------------------------
 CentralWidget::~CentralWidget()
 {
   // disconnect all signals/slots
@@ -312,7 +306,6 @@ CentralWidget::~CentralWidget()
   }
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::setActiveDataSource(DataSource* source)
 {
   if (this->AModule)
@@ -323,7 +316,6 @@ void CentralWidget::setActiveDataSource(DataSource* source)
   this->setDataSource(source);
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::setActiveModule(Module* module)
 {
   if (this->AModule)
@@ -343,7 +335,6 @@ void CentralWidget::setActiveModule(Module* module)
   }
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::setDataSource(DataSource* source)
 {
   if (this->ADataSource)
@@ -439,13 +430,11 @@ void CentralWidget::setDataSource(DataSource* source)
      Q_ARG(vtkSmartPointer<vtkTable>, table));
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::onColorMapUpdated()
 {
   this->onDataSourceChanged();
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::onDataSourceChanged()
 {
   // This starts/restarts the internal timer so that several events occurring
@@ -454,13 +443,11 @@ void CentralWidget::onDataSourceChanged()
   this->Internals->Timer.start();
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::refreshHistogram()
 {
   this->setDataSource(this->ADataSource);
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::onScalarOpacityFunctionChanged()
 {
   pqApplicationCore* core = pqApplicationCore::instance();
@@ -475,7 +462,6 @@ void CentralWidget::onScalarOpacityFunctionChanged()
   this->HistogramView->GetRenderWindow()->Render();
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::onCurrentPointEditEvent()
 {
   vtkIdType currentIdx = this->ColorTransferControlPointsItem->GetCurrentPoint();
@@ -484,7 +470,8 @@ void CentralWidget::onCurrentPointEditEvent()
     return;
   }
 
-  vtkColorTransferFunction* ctf = this->ColorTransferControlPointsItem->GetColorTransferFunction();
+  vtkColorTransferFunction* ctf =
+      this->ColorTransferControlPointsItem->GetColorTransferFunction();
   Q_ASSERT(ctf != nullptr);
 
   double xrgbms[6];
@@ -503,7 +490,6 @@ void CentralWidget::onCurrentPointEditEvent()
   }
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
@@ -527,7 +513,6 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
   this->setHistogramTable(output.Get());
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::histogramClicked(vtkObject *)
 {
   //qDebug() << "Histogram clicked at" << this->Chart->PositionX
@@ -571,7 +556,6 @@ void CentralWidget::histogramClicked(vtkObject *)
   tomviz::convert<pqView*>(view)->render();
 }
 
-//-----------------------------------------------------------------------------
 void CentralWidget::setHistogramTable(vtkTable *table)
 {
   vtkDataArray *arr =

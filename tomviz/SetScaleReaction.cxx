@@ -46,7 +46,6 @@ SetScaleReaction::~SetScaleReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void SetScaleReaction::updateEnableState()
 {
   parentAction()->setEnabled(

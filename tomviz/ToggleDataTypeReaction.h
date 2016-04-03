@@ -16,7 +16,7 @@
 #ifndef tomvizToggleDataTypeReaction_h
 #define tomvizToggleDataTypeReaction_h
 
-#include "pqReaction.h"
+#include <pqReaction.h>
 
 class QMainWindow;
 

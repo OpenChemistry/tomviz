@@ -31,9 +31,11 @@ public:
   ~ConvertToFloatReaction();
 
   void convertToFloat();
+
 protected:
   void updateEnableState() override;
   void onTriggered() override { this->convertToFloat(); }
+
 private:
   Q_DISABLE_COPY(ConvertToFloatReaction)
 };

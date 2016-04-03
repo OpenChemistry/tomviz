@@ -25,7 +25,6 @@
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
-
 namespace tomviz
 {
 class Operator;
@@ -41,6 +40,7 @@ public:
   /// The type of data in the data source.  The data types currently supported
   /// are volumetric data and image stacks representing tilt series.
   enum DataSourceType { Volume, TiltSeries };
+
   /// \c dataSource is the original reader that reads the data into the
   /// application.
   DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,

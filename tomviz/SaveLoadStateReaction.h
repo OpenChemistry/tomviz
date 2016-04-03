@@ -16,7 +16,7 @@
 #ifndef tomvizSaveLoadStateReaction_h
 #define tomvizSaveLoadStateReaction_h
 
-#include "pqReaction.h"
+#include <pqReaction.h>
 
 namespace tomviz
 {

@@ -35,20 +35,17 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 class ModuleContour::Private
 {
 public:
   std::string NonLabelMapArrayName;
 };
 
-//-----------------------------------------------------------------------------
 ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
 {
   this->Internals = new Private;
 }
 
-//-----------------------------------------------------------------------------
 ModuleContour::~ModuleContour()
 {
   this->finalize();
@@ -57,13 +54,11 @@ ModuleContour::~ModuleContour()
   this->Internals = nullptr;
 }
 
-//-----------------------------------------------------------------------------
 QIcon ModuleContour::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqIsosurface24.png");
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
@@ -117,7 +112,6 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleContour::updateColorMap()
 {
   Q_ASSERT(this->ContourRepresentation);
@@ -142,7 +136,6 @@ void ModuleContour::updateColorMap()
   this->ContourRepresentation->UpdateVTKObjects();
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleContour::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -155,7 +148,6 @@ bool ModuleContour::finalize()
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleContour::setVisibility(bool val)
 {
   Q_ASSERT(this->ContourRepresentation);
@@ -165,14 +157,12 @@ bool ModuleContour::setVisibility(bool val)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleContour::visibility() const
 {
   Q_ASSERT(this->ContourRepresentation);
   return vtkSMPropertyHelper(this->ContourRepresentation, "Visibility").GetAsInt() != 0;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleContour::setIsoValues(const QList<double>& values)
 {
   std::vector<double> vectorValues(values.size());
@@ -184,7 +174,6 @@ void ModuleContour::setIsoValues(const QList<double>& values)
   this->ContourFilter->UpdateVTKObjects();
 }
 
-//-----------------------------------------------------------------------------
 void ModuleContour::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(this->ContourFilter);
@@ -204,7 +193,6 @@ void ModuleContour::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleContour::serialize(pugi::xml_node& ns) const
 {
   // save stuff that the user can change.
@@ -236,7 +224,6 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   return this->Superclass::serialize(ns);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleContour::deserialize(const pugi::xml_node& ns)
 {
   return tomviz::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
@@ -244,7 +231,6 @@ bool ModuleContour::deserialize(const pugi::xml_node& ns)
     this->Superclass::deserialize(ns);
 }
 
-//-----------------------------------------------------------------------------
 void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = {newX, newY, newZ};

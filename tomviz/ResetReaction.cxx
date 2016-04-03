@@ -26,18 +26,15 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ResetReaction::ResetReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
 }
 
-//-----------------------------------------------------------------------------
 ResetReaction::~ResetReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void ResetReaction::reset()
 {
   ModuleManager::instance().reset();

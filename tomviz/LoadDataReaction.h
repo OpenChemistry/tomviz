@@ -16,7 +16,7 @@
 #ifndef tomvizLoadDataReaction_h
 #define tomvizLoadDataReaction_h
 
-#include "pqReaction.h"
+#include <pqReaction.h>
 
 class vtkSMProxy;
 
