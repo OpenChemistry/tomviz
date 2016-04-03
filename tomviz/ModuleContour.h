@@ -55,8 +55,12 @@ public:
     this->setIsoValues(values);
   }
 
+  bool isProxyPartOfModule(vtkSMProxy *proxy) override;
+
 protected:
   void updateColorMap() override;
+  std::string getStringForProxy(vtkSMProxy *proxy) override;
+  vtkSMProxy *getProxyForString(const std::string& str) override;
 
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
   vtkWeakPointer<vtkSMProxy>       ContourRepresentation;

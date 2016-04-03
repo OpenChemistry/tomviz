@@ -289,4 +289,54 @@ void ModuleSegment::dataSourceMoved(double newX, double newY, double newZ)
     Set(pos, 3);
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleSegment::isProxyPartOfModule(vtkSMProxy *proxy)
+{
+  return (proxy == this->Internals->ProgrammableFilter.Get()) ||
+         (proxy == this->Internals->ContourFilter.Get()) ||
+         (proxy == this->Internals->ContourRepresentation.Get());
+}
+
+std::string ModuleSegment::getStringForProxy(vtkSMProxy *proxy)
+{
+  if (proxy == this->Internals->ProgrammableFilter.Get())
+  {
+    return "ProgrammableFilter";
+  }
+  else if (proxy == this->Internals->ContourFilter.Get())
+  {
+    return "Contour";
+  }
+  else if (proxy == this->Internals->ContourRepresentation.Get())
+  {
+    return "Representation";
+  }
+  else
+  {
+    qWarning("Unknown proxy passed to module segment in save animation");
+    return "";
+  }
+}
+
+vtkSMProxy *ModuleSegment::getProxyForString(const std::string& str)
+{
+  if (str == "ProgrammableFilter")
+  {
+    return this->Internals->ProgrammableFilter.Get();
+  }
+  else if (str == "ContourFilter")
+  {
+    return this->Internals->ContourFilter.Get();
+  }
+  else if (str == "Representation")
+  {
+    return this->Internals->ContourRepresentation.Get();
+  }
+  else
+  {
+    qWarning("Unknown proxy passed to module segment in save animation");
+    return nullptr;
+  }
+}
+
 }

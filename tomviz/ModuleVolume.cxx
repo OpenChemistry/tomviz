@@ -145,4 +145,44 @@ void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
   this->Representation->UpdateVTKObjects();
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleVolume::isProxyPartOfModule(vtkSMProxy *proxy)
+{
+  return (proxy == this->PassThrough.Get()) ||
+         (proxy == this->Representation.Get());
+}
+
+std::string ModuleVolume::getStringForProxy(vtkSMProxy *proxy)
+{
+  if (proxy == this->PassThrough.Get())
+  {
+    return "PassThrough";
+  }
+  else if (proxy == this->Representation.Get())
+  {
+    return "Representation";
+  }
+  else
+  {
+    qWarning("Unknown proxy passed to module volume in save animation");
+    return "";
+  }
+}
+
+vtkSMProxy *ModuleVolume::getProxyForString(const std::string& str)
+{
+  if (str == "PassThrough")
+  {
+    return this->PassThrough.Get();
+  }
+  else if (str == "Representation")
+  {
+    return this->Representation.Get();
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
 } // end of namespace tomviz

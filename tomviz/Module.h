@@ -26,6 +26,7 @@
 #include <vtk_pugixml.h>
 
 class pqProxiesWidget;
+class pqAnimationCue;
 class vtkSMProxy;
 class vtkSMViewProxy;
 
@@ -87,6 +88,23 @@ public:
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
 
+  /// Returns true if the given proxy is part of the display or data processing
+  /// in this module
+  virtual bool isProxyPartOfModule(vtkSMProxy *proxy) = 0;
+
+  /// Serialize an animation cue on the given module's proxies.  If the proxy the
+  /// cue is animating is a helper proxy of a proxy in the module the helperKey
+  /// parameter should be set to the helper key used to find that helper proxy.
+  static bool serializeAnimationCue(pqAnimationCue *cue, const char *proxyName,
+                                    pugi::xml_node& ns, const char *helperKey = nullptr);
+  /// This form uses the module and the proxy to look up a proxy name to pass to the function
+  /// that actually saves the data to the pugixml structure above.
+  static bool serializeAnimationCue(pqAnimationCue *cue, Module *module,
+                                    pugi::xml_node& ns, const char *helperKey = nullptr,
+                                    vtkSMProxy *realProxy = nullptr);
+  static bool deserializeAnimationCue(Module *module, const pugi::xml_node& ns);
+  static bool deserializeAnimationCue(vtkSMProxy *proxy, const pugi::xml_node& ns);
+
 public slots:
   /// Set the visibility for this module. Subclasses should override this method
   /// show/hide all representations created for this module.
@@ -111,6 +129,14 @@ protected:
   /// called when the color map proxy is changed, for example, when
   /// setUseDetachedColorMap is toggled.
   virtual void updateColorMap() {}
+
+  /// Returns a string for the save file indicating which proxy within the module
+  /// is passed to it.  These should be unique within the module, but different
+  /// modules can reuse common strings such as "representation".  getProxyForString
+  /// is the inverse that should get the proxy given the string returned from
+  /// getStringForProxy.  These are used in saving animations.
+  virtual std::string getStringForProxy(vtkSMProxy *proxy) = 0;
+  virtual vtkSMProxy *getProxyForString(const std::string& str) = 0;
 
 signals:
   /// Emitted when the UseDetachedColorMap state changes or the detatched color

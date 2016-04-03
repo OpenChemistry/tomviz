@@ -24,11 +24,16 @@
 
 #include "pqApplicationCore.h"
 #include "pqActiveObjects.h"
+#include "pqAnimationCue.h"
+#include "pqAnimationManager.h"
+#include "pqAnimationScene.h"
 #include "pqDeleteReaction.h"
+#include "pqPVApplicationCore.h"
 #include "vtkNew.h"
 #include "vtkPVXMLParser.h"
 #include "vtkPVXMLElement.h"
 #include "vtkSmartPointer.h"
+#include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyIterator.h"
 #include "vtkSMProxyLocator.h"
@@ -36,6 +41,7 @@
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTimeKeeper.h"
 #include "vtkSMViewProxy.h"
 #include "vtkStdString.h"
 
@@ -246,8 +252,9 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
   }
 
   // Now serialize each of the modules.
-  foreach (const QPointer<Module>& mdl, this->Internals->Modules)
+  for (int i = 0; i < this->Internals->Modules.size(); ++i)
   {
+    const QPointer<Module>& mdl = this->Internals->Modules[i];
     if (mdl && serializedDataSources.contains(mdl->dataSource()))
     {
       pugi::xml_node mdlnode = ns.append_child("Module");
@@ -256,6 +263,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
         mdl->dataSource()->producer()->GetGlobalIDAsString());
       mdlnode.append_attribute("view").set_value(
         mdl->view()->GetGlobalIDAsString());
+      mdlnode.append_attribute("module_id").set_value(i);
       if (mdl == ActiveObjects::instance().activeModule())
       {
         mdlnode.append_attribute("active").set_value(1);
@@ -267,6 +275,53 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
         continue;
       }
 
+    }
+  }
+
+  // save the animations
+  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  pugi::xml_node sceneNode = ns.append_child("AnimationScene");
+  vtkSMPropertyHelper numFrames(scene->getProxy(), "NumberOfFrames");
+  vtkSMPropertyHelper duration(scene->getProxy(), "Duration");
+  sceneNode.append_attribute("number_of_frames").set_value(numFrames.GetAsInt());
+  sceneNode.append_attribute("duration").set_value(duration.GetAsDouble());
+
+  QSet< pqAnimationCue *> cues = scene->getCues();
+  foreach( pqAnimationCue* cue, cues)
+  {
+    pugi::xml_node cueNode = ns.append_child("Cue");
+    vtkSMProxy *animatedProxy = cue->getAnimatedProxy();
+    QString helperKey;
+    pqProxy* animatedSrcProxy = pqProxy::findProxyWithHelper(animatedProxy, helperKey);
+    for (int i = 0; i < this->Internals->Modules.size(); ++i)
+    {
+      const QPointer<Module>& mdl = this->Internals->Modules[i];
+      if (mdl && mdl->isProxyPartOfModule(animatedProxy))
+      {
+        cueNode.append_attribute("module_id").set_value(i);
+        Module::serializeAnimationCue(cue, mdl, cueNode);
+        break;
+      }
+      else if (mdl && animatedSrcProxy && mdl->isProxyPartOfModule(animatedSrcProxy->getProxy()))
+      {
+        cueNode.append_attribute("module_id").set_value(i);
+        Module::serializeAnimationCue(cue, mdl, cueNode, helperKey.toStdString().c_str(), animatedSrcProxy->getProxy());
+        break;
+      }
+    }
+    if (!cueNode.attribute("module_id"))
+    {
+      cueNode.append_attribute("module_id").set_value(-1);
+      if (cue->getAnimatedProxy() == ActiveObjects::instance().activeView())
+      {
+        cueNode.append_attribute("view_animation").set_value(true);
+        Module::serializeAnimationCue(cue, "View", cueNode);
+      }
+      else if (vtkSMTimeKeeper::SafeDownCast(cue->getAnimatedProxy()->GetClientSideObject()))
+      {
+        cueNode.append_attribute("timekeeper").set_value(true);
+        tomviz::serialize(cue->getProxy(), cueNode);
+      }
     }
   }
 
@@ -489,6 +544,8 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     }
   }
 
+  QMap<int, Module*> modulesById;
+
   // now, deserialize all the modules.
   for (pugi::xml_node mdlnode = ns.child("Module"); mdlnode;
     mdlnode = mdlnode.next_sibling("Module"))
@@ -496,6 +553,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     const char* type = mdlnode.attribute("type").value();
     vtkTypeUInt32 dsid = mdlnode.attribute("data_source").as_uint(0);
     vtkTypeUInt32 viewid = mdlnode.attribute("view").as_uint(0);
+    int moduleId = mdlnode.attribute("module_id").as_int();
     if (dataSources[dsid] == nullptr ||
       vtkSMViewProxy::SafeDownCast(locator->LocateProxy(viewid)) == nullptr)
     {
@@ -513,9 +571,51 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
       continue;
     }
     this->addModule(module);
+    modulesById.insert(moduleId, module);
     if (mdlnode.attribute("active").as_int(0) == 1)
     {
       ActiveObjects::instance().setActiveModule(module);
+    }
+  }
+
+  pqAnimationScene *scene = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  const pugi::xml_node &sceneNode = ns.child("AnimationScene");
+  vtkSMPropertyHelper numFrames(scene->getProxy(), "NumberOfFrames");
+  vtkSMPropertyHelper duration(scene->getProxy(), "Duration");
+  numFrames.Set(sceneNode.attribute("number_of_frames").as_int());
+  duration.Set(sceneNode.attribute("duration").as_double());
+
+  for (pugi::xml_node cueNode = ns.child("Cue"); cueNode;
+    cueNode = cueNode.next_sibling("Cue"))
+  {
+    int idx = cueNode.attribute("module_id").as_int();
+    Module *module = modulesById.value(idx, nullptr);
+    if (module)
+    {
+      Module::deserializeAnimationCue(module, cueNode);
+    }
+    else
+    {
+      if (cueNode.attribute("view_animation").as_bool())
+      {
+        Module::deserializeAnimationCue(ActiveObjects::instance().activeView(), cueNode);
+      }
+      else if (cueNode.attribute("timekeeper").as_bool())
+      {
+        QSet< pqAnimationCue *> cues = scene->getCues();
+        vtkSMProxy *timeKeeperCue = nullptr;
+        foreach (pqAnimationCue *cue, cues)
+        {
+          if (vtkSMTimeKeeper::SafeDownCast(cue->getAnimatedProxy()->GetClientSideObject()))
+          {
+            timeKeeperCue = cue->getProxy();
+          }
+        }
+        if (timeKeeperCue)
+        {
+          tomviz::deserialize(timeKeeperCue, cueNode);
+        }
+      }
     }
   }
 }

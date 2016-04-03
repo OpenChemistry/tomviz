@@ -19,13 +19,19 @@
 #include "DataSource.h"
 #include "Utilities.h"
 
+#include <pqAnimationCue.h>
+#include <pqAnimationManager.h>
+#include <pqAnimationScene.h>
 #include <pqCoreUtilities.h>
 #include <pqProxiesWidget.h>
+#include <pqPVApplicationCore.h>
 #include <pqView.h>
 #include <vtkCommand.h>
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
+#include <vtkSMProperty.h>
 #include <vtkSMPropertyHelper.h>
+#include <vtkSMRenderViewProxy.h>
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMTransferFunctionManager.h>
@@ -68,10 +74,11 @@ public:
   }
 };
 
-Module::Module(QObject* parentObject) : Superclass(parentObject),
-  ColorByLabelMap(false),
-  UseDetachedColorMap(false),
-  Internals(new Module::MInternals())
+Module::Module(QObject* parentObject)
+  : Superclass(parentObject),
+    UseDetachedColorMap(false),
+    ColorByLabelMap(false),
+    Internals(new Module::MInternals())
 {
 }
 
@@ -137,7 +144,8 @@ void Module::setUseDetachedColorMap(bool val)
     this->Internals->OpacityMap = this->Internals->detachedOpacityMap();
 
     tomviz::rescaleColorMap(this->Internals->ColorMap, this->dataSource());
-    pqCoreUtilities::connect(this->Internals->ColorMap, vtkCommand::ModifiedEvent,
+    pqCoreUtilities::connect(this->Internals->ColorMap,
+                             vtkCommand::ModifiedEvent,
                              this, SLOT(onColorMapChanged()));
   }
   else
@@ -172,7 +180,7 @@ bool Module::serialize(pugi::xml_node& ns) const
       pugi::xml_node nodeL = ns.append_child("ColorMap");
       pugi::xml_node nodeS = ns.append_child("OpacityMap");
 
-      // using detached color map, so we need to save the local color map.
+      // Using detached color map, so we need to save the local color map.
       if (tomviz::serialize(this->colorMap(), nodeL) == false ||
         tomviz::serialize(this->opacityMap(), nodeS) == false)
       {
@@ -199,7 +207,8 @@ bool Module::deserialize(const pugi::xml_node& ns)
     }
     if (dcm && ns.child("OpacityMap"))
     {
-      if (!tomviz::deserialize(this->Internals->detachedOpacityMap(), ns.child("OpacityMap")))
+      if (!tomviz::deserialize(this->Internals->detachedOpacityMap(),
+                               ns.child("OpacityMap")))
       {
         qCritical("Failed to deserialze OpacityMap");
         return false;
@@ -225,6 +234,111 @@ void Module::setColorByLabelMap(bool value)
 bool Module::colorByLabelMap() const
 {
   return this->ColorByLabelMap;
+}
+
+bool Module::serializeAnimationCue(pqAnimationCue *cue, const char *proxyName,
+    pugi::xml_node& ns, const char *helperName)
+{
+  vtkSMProperty *property = cue->getAnimatedProperty();
+  int propertyIndex = cue->getAnimatedPropertyIndex();
+  const char *propName = property ? property->GetXMLName() : "";
+
+  pugi::xml_node n = ns.append_child("cue");
+  n.append_attribute("proxy").set_value(proxyName);
+  n.append_attribute("property").set_value(propName);
+  n.append_attribute("propertyIndex").set_value(propertyIndex);
+  if (helperName)
+  {
+    n.append_attribute("onHelper").set_value(helperName);
+  }
+  QList< vtkSMProxy* > keyframes = cue->getKeyFrames();
+  for (int i = 0; i < keyframes.size(); ++i)
+  {
+    pugi::xml_node keyframeNode = n.append_child("keyframe");
+    tomviz::serialize(keyframes[i], keyframeNode);
+  }
+  return true;
+}
+
+bool Module::serializeAnimationCue(pqAnimationCue *cue, Module *module,
+    pugi::xml_node& ns, const char *helperName, vtkSMProxy *realProxy)
+{
+  vtkSMProxy *animated = cue->getAnimatedProxy();
+  std::string proxy = module->getStringForProxy(realProxy ? realProxy : animated);
+  return serializeAnimationCue(cue, proxy.c_str(), ns, helperName);
+}
+
+bool Module::deserializeAnimationCue(Module *module, const pugi::xml_node& ns)
+{
+  const pugi::xml_node &cueNode = ns.child("cue");
+  std::string proxy = cueNode.attribute("proxy").value();
+  vtkSMProxy* proxyObj = module->getProxyForString(proxy);
+  return deserializeAnimationCue(proxyObj, ns);
+}
+
+bool Module::deserializeAnimationCue(vtkSMProxy *proxyObj,
+                                     const pugi::xml_node& ns)
+{
+  if (proxyObj == nullptr)
+  {
+    return false;
+  }
+  const pugi::xml_node &cueNode = ns.child("cue");
+  pqAnimationScene *scene
+      = pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  const char *property = cueNode.attribute("property").value();
+  int propertyIndex = cueNode.attribute("propertyIndex").as_int();
+  if (cueNode.attribute("onHelper"))
+  {
+    const char *helperKey = cueNode.attribute("onHelper").value();
+    QList<vtkSMProxy*> helpers
+        = tomviz::convert<pqProxy*>(proxyObj)->getHelperProxies(helperKey);
+    if (helpers.size() == 1)
+    {
+      proxyObj = helpers[0];
+    }
+    else
+    {
+      qWarning("Not possible to tell which helper proxy needed to load cue");
+      return false;
+    }
+  }
+
+  const char *type;
+  if (vtkSMRenderViewProxy::SafeDownCast(proxyObj))
+  {
+    type = "CameraAnimationCue";
+  }
+  else
+  {
+    type = "KeyFrameAnimationCue";
+  }
+
+  pqAnimationCue* cue = scene->createCue(proxyObj, property, propertyIndex,
+                                         type);
+  int i = 0;
+  for (pugi::xml_node keyframeNode = cueNode.child("keyframe");
+      keyframeNode; keyframeNode = keyframeNode.next_sibling("keyframe"))
+  {
+    vtkSMProxy *keyframe = nullptr;
+    if (i < cue->getNumberOfKeyFrames())
+    {
+      keyframe = cue->getKeyFrame(i);
+    }
+    else
+    {
+      keyframe = cue->insertKeyFrame(i);
+    }
+    if (!tomviz::deserialize(keyframe, keyframeNode))
+    {
+      scene->removeCue(cue);
+      return false;
+    }
+    keyframe->UpdateVTKObjects();
+    ++i;
+  }
+  cue->triggerKeyFramesModified();
+  return true;
 }
 
 } // end of namespace tomviz

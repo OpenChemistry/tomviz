@@ -184,4 +184,44 @@ void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
   this->ThresholdRepresentation->UpdateVTKObjects();
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleThreshold::isProxyPartOfModule(vtkSMProxy *proxy)
+{
+  return (proxy == this->ThresholdFilter.Get()) ||
+         (proxy == this->ThresholdRepresentation.Get());
+}
+
+std::string ModuleThreshold::getStringForProxy(vtkSMProxy *proxy)
+{
+  if (proxy == this->ThresholdFilter.Get())
+  {
+    return "Threshold";
+  }
+  else if (proxy == this->ThresholdRepresentation.Get())
+  {
+    return "Representation";
+  }
+  else
+  {
+    qWarning("Unknown proxy passed to module threshold in save animation");
+    return "";
+  }
+}
+
+vtkSMProxy *ModuleThreshold::getProxyForString(const std::string& str)
+{
+  if (str == "Threshold")
+  {
+    return this->ThresholdFilter.Get();
+  }
+  else if (str == "Representation")
+  {
+    return this->ThresholdRepresentation.Get();
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
 }

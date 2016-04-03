@@ -160,4 +160,43 @@ void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY,
   this->Representation->UpdateVTKObjects();
 }
 
+//-----------------------------------------------------------------------------
+bool ModuleOrthogonalSlice::isProxyPartOfModule(vtkSMProxy *proxy)
+{
+  return (proxy == this->PassThrough.Get()) || (proxy == this->Representation.Get());
+}
+
+std::string ModuleOrthogonalSlice::getStringForProxy(vtkSMProxy *proxy)
+{
+  if (proxy == this->PassThrough.Get())
+  {
+    return "PassThrough";
+  }
+  else if (proxy == this->Representation.Get())
+  {
+    return "Representation";
+  }
+  else
+  {
+    qWarning("Unknown proxy passed to module orthogonal slice in save animation");
+    return "";
+  }
+}
+
+vtkSMProxy *ModuleOrthogonalSlice::getProxyForString(const std::string& str)
+{
+  if (str == "PassThrough")
+  {
+    return this->PassThrough.Get();
+  }
+  else if (str == "Representation")
+  {
+    return this->Representation.Get();
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
 }
