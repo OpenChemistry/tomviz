@@ -17,22 +17,22 @@
 
 #include "AddRenderViewContextMenuBehavior.h"
 #include "MoveActiveObject.h"
-#include "pqAlwaysConnectedBehavior.h"
-#include "pqApplicationCore.h"
-#include "pqDefaultViewBehavior.h"
-#include "pqInterfaceTracker.h"
-#include "pqPersistentMainWindowStateBehavior.h"
-#include "pqPluginManager.h"
-#include "pqQtMessageHandlerBehavior.h"
-#include "pqStandardPropertyWidgetInterface.h"
-#include "pqStandardViewFrameActionsImplementation.h"
-#include "pqViewStreamingBehavior.h"
 #include "ProgressBehavior.h"
-//#include "ScaleActorBehavior.h"
-#include "vtkSMReaderFactory.h"
-#include "vtkSMTransferFunctionPresets.h"
-#include "vtkNew.h"
-#include "vtkSMSettings.h"
+
+#include <pqAlwaysConnectedBehavior.h>
+#include <pqApplicationCore.h>
+#include <pqDefaultViewBehavior.h>
+#include <pqInterfaceTracker.h>
+#include <pqPersistentMainWindowStateBehavior.h>
+#include <pqPluginManager.h>
+#include <pqQtMessageHandlerBehavior.h>
+#include <pqStandardPropertyWidgetInterface.h>
+#include <pqStandardViewFrameActionsImplementation.h>
+#include <pqViewStreamingBehavior.h>
+#include <vtkSMReaderFactory.h>
+#include <vtkSMTransferFunctionPresets.h>
+#include <vtkNew.h>
+#include <vtkSMSettings.h>
 
 #include <QMainWindow>
 #include <QApplication>
@@ -64,7 +64,7 @@ const char* const settings =
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 Behaviors::Behaviors(QMainWindow* mainWindow)
   : Superclass(mainWindow)
 {
@@ -94,7 +94,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   pqApplicationCore::instance()->loadDistributedPlugins();
 
   new pqQtMessageHandlerBehavior(this);
-//  new pqDefaultViewBehavior(this);
+  //new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
   new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
@@ -125,7 +125,6 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
 }
 
-//-----------------------------------------------------------------------------
 Behaviors::~Behaviors()
 {
 }
@@ -138,9 +137,9 @@ QString Behaviors::getMatplotlibColorMapFile()
   {
     return path;
   }
-// On OSX the above doesn't work in a build tree.  It is fine
-// for superbuilds, but the following is needed in the build tree
-// since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
+  // On OSX the above doesn't work in a build tree.  It is fine
+  // for superbuilds, but the following is needed in the build tree
+  // since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
 #ifdef __APPLE__
   else
   {

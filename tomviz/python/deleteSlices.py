@@ -1,6 +1,6 @@
 def transform_scalars(dataset):
     """Delete Slices in Dataset"""
-    
+
     from tomviz import utils
     import numpy as np
     axis = 0;
@@ -9,20 +9,20 @@ def transform_scalars(dataset):
     ###lastSlice###
     ###axis### #Axis along which to delete the subarray
     #---------------------------------#
-    
-    #get current dataset
+
+    # Get the current dataset.
     array = utils.get_array(dataset)
-    
-    #Get indices of the slices to be deleted
+
+    # Get indices of the slices to be deleted.
     indices = np.linspace(firstSlice,lastSlice,lastSlice-firstSlice+1).astype(int)
 
-    # delete slices
+    # Delete the specified slices.
     array = np.delete(array,indices,axis)
 
-    #set the result as the new scalars.
+    # Set the result as the new scalars.
     utils.set_array(dataset, array)
 
-    #Delete corresponding tilt anlges if dataset is a tilt series
+    # Delete corresponding tilt anlges if dataset is a tilt series.
     if axis == 2:
         try:
             tilt_angles = utils.get_tilt_angles(dataset)

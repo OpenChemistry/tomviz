@@ -16,7 +16,7 @@
 #ifndef tomvizDeleteDataReaction_h
 #define tomvizDeleteDataReaction_h
 
-#include "pqReaction.h"
+#include <pqReaction.h>
 
 class vtkSMProxy;
 

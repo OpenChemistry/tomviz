@@ -66,27 +66,23 @@ public:
   QDir dir;
 };
 
-//-----------------------------------------------------------------------------
 ModuleManager::ModuleManager(QObject* parentObject)
   : Superclass(parentObject),
   Internals(new ModuleManager::MMInternals())
 {
 }
 
-//-----------------------------------------------------------------------------
 ModuleManager::~ModuleManager()
 {
   // Internals is a QScopedPointer.
 }
 
-//-----------------------------------------------------------------------------
 ModuleManager& ModuleManager::instance()
 {
   static ModuleManager theInstance;
   return theInstance;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleManager::reset()
 {
   this->removeAllModules();
@@ -94,7 +90,6 @@ void ModuleManager::reset()
   pqDeleteReaction::deleteAll();
 }
 
-//-----------------------------------------------------------------------------
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !this->Internals->DataSources.contains(dataSource))
@@ -105,7 +100,6 @@ void ModuleManager::addDataSource(DataSource* dataSource)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ModuleManager::removeDataSource(DataSource* dataSource)
 {
   if (this->Internals->DataSources.removeOne(dataSource))
@@ -115,7 +109,6 @@ void ModuleManager::removeDataSource(DataSource* dataSource)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ModuleManager::removeAllDataSources()
 {
   foreach (DataSource* dataSource, this->Internals->DataSources)
@@ -126,7 +119,6 @@ void ModuleManager::removeAllDataSources()
   this->Internals->DataSources.clear();
 }
 
-//-----------------------------------------------------------------------------
 void ModuleManager::addModule(Module* module)
 {
   if (!this->Internals->Modules.contains(module))
@@ -137,7 +129,6 @@ void ModuleManager::addModule(Module* module)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ModuleManager::removeModule(Module* module)
 {
   if (this->Internals->Modules.removeOne(module))
@@ -147,7 +138,6 @@ void ModuleManager::removeModule(Module* module)
   }
 }
 
-//-----------------------------------------------------------------------------
 void ModuleManager::removeAllModules()
 {
   foreach (Module* module, this->Internals->Modules)
@@ -158,7 +148,6 @@ void ModuleManager::removeAllModules()
   this->Internals->Modules.clear();
 }
 
-//-----------------------------------------------------------------------------
 void ModuleManager::removeAllModules(DataSource* source)
 {
   Q_ASSERT(source);
@@ -176,7 +165,6 @@ void ModuleManager::removeAllModules(DataSource* source)
   }
 }
 
-//-----------------------------------------------------------------------------
 Module* ModuleManager::createAndAddModule(const QString& type,
                                           DataSource* dataSource,
                                           vtkSMViewProxy* view)
@@ -195,7 +183,6 @@ Module* ModuleManager::createAndAddModule(const QString& type,
   return module;
 }
 
-//-----------------------------------------------------------------------------
 QList<Module*> ModuleManager::findModulesGeneric(DataSource* dataSource,
                                                  vtkSMViewProxy* view)
 {
@@ -211,7 +198,6 @@ QList<Module*> ModuleManager::findModulesGeneric(DataSource* dataSource,
   return modules;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
 {
   QSet<vtkSMSourceProxy*> uniqueOriginalSources;
@@ -391,7 +377,6 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
 {
   this->reset();

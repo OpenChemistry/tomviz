@@ -29,8 +29,9 @@
 
 namespace tomviz
 {
-static void UpdateScale(vtkObject *caller,
-  unsigned long, void *clientData, void *)
+
+static void UpdateScale(vtkObject *caller, unsigned long, void *clientData,
+                        void *)
 {
   vtkAxisActor2D *axis = static_cast<vtkAxisActor2D*>(clientData);
   vtkRenderer *ren = static_cast<vtkRenderer *>(caller);
@@ -86,7 +87,6 @@ static void UpdateScale(vtkObject *caller,
   }
 }
 
-//-----------------------------------------------------------------------------
 ScaleActorBehavior::ScaleActorBehavior(QObject* parentObject)
   : Superclass(parentObject)
 {
@@ -94,12 +94,10 @@ ScaleActorBehavior::ScaleActorBehavior(QObject* parentObject)
   this->connect(smmodel, SIGNAL(viewAdded(pqView*)), SLOT(viewAdded(pqView*)));
 }
 
-//-----------------------------------------------------------------------------
 ScaleActorBehavior::~ScaleActorBehavior()
 {
 }
 
-//-----------------------------------------------------------------------------
 void ScaleActorBehavior::viewAdded(pqView* view)
 {
   if (vtkSMRenderViewProxy* viewProxy = vtkSMRenderViewProxy::SafeDownCast(view->getProxy()))

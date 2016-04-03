@@ -17,24 +17,25 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "pqAnimationCue.h"
-#include "pqAnimationManager.h"
-#include "pqAnimationScene.h"
-#include "pqCoreUtilities.h"
-#include "pqProxiesWidget.h"
-#include "pqPVApplicationCore.h"
-#include "pqView.h"
 #include "Utilities.h"
-#include "vtkCommand.h"
-#include "vtkNew.h"
-#include "vtkSmartPointer.h"
-#include "vtkSMProperty.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMRenderViewProxy.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMTransferFunctionManager.h"
-#include "vtkSMViewProxy.h"
+
+#include <pqAnimationCue.h>
+#include <pqAnimationManager.h>
+#include <pqAnimationScene.h>
+#include <pqCoreUtilities.h>
+#include <pqProxiesWidget.h>
+#include <pqPVApplicationCore.h>
+#include <pqView.h>
+#include <vtkCommand.h>
+#include <vtkNew.h>
+#include <vtkSmartPointer.h>
+#include <vtkSMProperty.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMRenderViewProxy.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMTransferFunctionManager.h>
+#include <vtkSMViewProxy.h>
 
 namespace tomviz
 {
@@ -73,7 +74,6 @@ public:
   }
 };
 
-//-----------------------------------------------------------------------------
 Module::Module(QObject* parentObject) : Superclass(parentObject),
   ColorByLabelMap(false),
   UseDetachedColorMap(false),
@@ -81,12 +81,10 @@ Module::Module(QObject* parentObject) : Superclass(parentObject),
 {
 }
 
-//-----------------------------------------------------------------------------
 Module::~Module()
 {
 }
 
-//-----------------------------------------------------------------------------
 bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   this->View = vtkView;
@@ -96,25 +94,24 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
       this->ADataSource, SIGNAL(dataChanged()), SLOT(render()));
-    this->connect(this->ADataSource, SIGNAL(displayPositionChanged(double, double, double)),
+    this->connect(this->ADataSource, SIGNAL(displayPositionChanged(double,
+                                                                   double,
+                                                                   double)),
                   SLOT(dataSourceMoved(double, double, double)));
   }
   return (this->View && this->ADataSource);
 }
 
-//-----------------------------------------------------------------------------
 vtkSMViewProxy* Module::view() const
 {
   return this->View;
 }
 
-//-----------------------------------------------------------------------------
 DataSource* Module::dataSource() const
 {
   return this->ADataSource;
 }
 
-//-----------------------------------------------------------------------------
 void Module::addToPanel(pqProxiesWidget* panel)
 {
   if (this->UseDetachedColorMap)
@@ -132,7 +129,6 @@ void Module::addToPanel(pqProxiesWidget* panel)
   }
 }
 
-//-----------------------------------------------------------------------------
 void Module::setUseDetachedColorMap(bool val)
 {
   this->UseDetachedColorMap = val;
@@ -159,14 +155,12 @@ void Module::setUseDetachedColorMap(bool val)
   emit colorMapChanged();
 }
 
-//-----------------------------------------------------------------------------
 vtkSMProxy* Module::colorMap() const
 {
   return this->useDetachedColorMap()? this->Internals->ColorMap.GetPointer():
          this->dataSource()->colorMap();
 }
 
-//-----------------------------------------------------------------------------
 vtkSMProxy* Module::opacityMap() const
 {
   Q_ASSERT(this->Internals->ColorMap || !this->UseDetachedColorMap);
@@ -174,7 +168,6 @@ vtkSMProxy* Module::opacityMap() const
          this->dataSource()->opacityMap();
 }
 
-//-----------------------------------------------------------------------------
 bool Module::serialize(pugi::xml_node& ns) const
 {
   if (this->isColorMapNeeded())
@@ -196,7 +189,6 @@ bool Module::serialize(pugi::xml_node& ns) const
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool Module::deserialize(const pugi::xml_node& ns)
 {
   if (this->isColorMapNeeded())
@@ -204,7 +196,8 @@ bool Module::deserialize(const pugi::xml_node& ns)
     bool dcm = ns.attribute("use_detached_colormap").as_int(0) == 1;
     if (dcm && ns.child("ColorMap"))
     {
-      if (!tomviz::deserialize(this->Internals->detachedColorMap(), ns.child("ColorMap")))
+      if (!tomviz::deserialize(this->Internals->detachedColorMap(),
+                               ns.child("ColorMap")))
       {
         qCritical("Failed to deserialze ColorMap");
         return false;
@@ -223,13 +216,11 @@ bool Module::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 void Module::onColorMapChanged()
 {
   emit colorMapChanged();
 }
 
-//-----------------------------------------------------------------------------
 void Module::setColorByLabelMap(bool value)
 {
   this->ColorByLabelMap = value;
@@ -237,7 +228,6 @@ void Module::setColorByLabelMap(bool value)
   emit colorMapChanged();
 }
 
-//-----------------------------------------------------------------------------
 bool Module::colorByLabelMap() const
 {
   return this->ColorByLabelMap;
@@ -344,5 +334,5 @@ bool Module::deserializeAnimationCue(vtkSMProxy *proxyObj, const pugi::xml_node&
   cue->triggerKeyFramesModified();
   return true;
 }
-//-----------------------------------------------------------------------------
+
 } // end of namespace tomviz

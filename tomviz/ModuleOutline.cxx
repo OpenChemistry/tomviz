@@ -30,24 +30,20 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ModuleOutline::ModuleOutline(QObject* parentObject) : Superclass(parentObject)
 {
 }
 
-//-----------------------------------------------------------------------------
 ModuleOutline::~ModuleOutline()
 {
   this->finalize();
 }
 
-//-----------------------------------------------------------------------------
 QIcon ModuleOutline::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqProbeLocation24.png");
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOutline::initialize(DataSource* data,
                                vtkSMViewProxy* vtkView)
 {
@@ -81,7 +77,6 @@ bool ModuleOutline::initialize(DataSource* data,
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOutline::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -93,7 +88,6 @@ bool ModuleOutline::finalize()
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOutline::serialize(pugi::xml_node& ns) const
 {
   // save stuff that the user can change.
@@ -110,14 +104,12 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOutline::deserialize(const pugi::xml_node& ns)
 {
   return tomviz::deserialize(this->OutlineRepresentation,
                           ns.child("OutlineRepresentation"));
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOutline::setVisibility(bool val)
 {
   Q_ASSERT(this->OutlineRepresentation);
@@ -127,7 +119,6 @@ bool ModuleOutline::setVisibility(bool val)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOutline::visibility() const
 {
   Q_ASSERT(this->OutlineRepresentation);
@@ -135,7 +126,6 @@ bool ModuleOutline::visibility() const
                              "Visibility").GetAsInt() != 0;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleOutline::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(panel && this->OutlineRepresentation);
@@ -147,7 +137,6 @@ void ModuleOutline::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
-//-----------------------------------------------------------------------------
 void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = {newX, newY, newZ};

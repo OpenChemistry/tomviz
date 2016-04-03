@@ -18,22 +18,23 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "pqPropertiesPanel.h"
-#include "pqProxyWidget.h"
 #include "SetTiltAnglesReaction.h"
 #include "Utilities.h"
-#include "vtkDataSetAttributes.h"
-#include "vtkPVArrayInformation.h"
-#include "vtkPVDataInformation.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMViewProxy.h"
-#include "pqView.h"
 
-#include "vtkSMSourceProxy.h"
-#include "vtkDataObject.h"
-#include "vtkFieldData.h"
-#include "vtkDataArray.h"
-#include "vtkAlgorithm.h"
+#include <pqPropertiesPanel.h>
+#include <pqProxyWidget.h>
+#include <vtkDataSetAttributes.h>
+#include <vtkPVArrayInformation.h>
+#include <vtkPVDataInformation.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMViewProxy.h>
+#include <pqView.h>
+
+#include <vtkSMSourceProxy.h>
+#include <vtkDataObject.h>
+#include <vtkFieldData.h>
+#include <vtkDataArray.h>
+#include <vtkAlgorithm.h>
 
 #include <QPointer>
 #include <QPushButton>
@@ -105,7 +106,6 @@ public:
 
 };
 
-//-----------------------------------------------------------------------------
 DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   : Superclass(parentObject),
   Internals(new DataPropertiesPanel::DPPInternals(this))
@@ -117,12 +117,10 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
                 SLOT(setTiltAngles()));
 }
 
-//-----------------------------------------------------------------------------
 DataPropertiesPanel::~DataPropertiesPanel()
 {
 }
 
-//-----------------------------------------------------------------------------
 void DataPropertiesPanel::setDataSource(DataSource* dsource)
 {
   if (this->Internals->CurrentDataSource)
@@ -139,6 +137,7 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
 }
 
 namespace {
+
 QString getDataExtentAndRangeString(vtkSMSourceProxy* proxy)
 {
   vtkPVDataInformation* info = proxy->GetDataInformation(0);
@@ -172,9 +171,9 @@ QString getDataTypeString(vtkSMSourceProxy* proxy)
     return QString("Type: ?");
   }
 }
+
 }
 
-//-----------------------------------------------------------------------------
 void DataPropertiesPanel::update()
 {
   this->disconnect(this->Internals->Ui.TiltAnglesTable,
@@ -241,7 +240,6 @@ void DataPropertiesPanel::update()
       SLOT(onTiltAnglesModified(int, int)));
 }
 
-//-----------------------------------------------------------------------------
 void DataPropertiesPanel::render()
 {
   pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
@@ -252,11 +250,11 @@ void DataPropertiesPanel::render()
   emit colorMapUpdated();
 }
 
-//-----------------------------------------------------------------------------
 void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
 {
   DataSource* dsource = this->Internals->CurrentDataSource;
-  QTableWidgetItem* item = this->Internals->Ui.TiltAnglesTable->item(row, column);
+  QTableWidgetItem* item = this->Internals->Ui.TiltAnglesTable->item(row,
+                                                                     column);
   QString str = item->data(Qt::DisplayRole).toString();
   if (dsource->type() == DataSource::TiltSeries)
   {
@@ -275,7 +273,6 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
   }
 }
 
-//-----------------------------------------------------------------------------
 void DataPropertiesPanel::setTiltAngles()
 {
   DataSource* dsource = this->Internals->CurrentDataSource;
@@ -283,5 +280,4 @@ void DataPropertiesPanel::setTiltAngles()
   SetTiltAnglesReaction::showSetTiltAnglesUI(mainWindow, dsource);
 }
 
-//-----------------------------------------------------------------------------
 }

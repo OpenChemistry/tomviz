@@ -27,6 +27,7 @@ class ModuleSegment : public Module
 {
   Q_OBJECT
   typedef Module Superclass;
+
 public:
   ModuleSegment(QObject *parent = nullptr);
   ~ModuleSegment();
@@ -74,8 +75,8 @@ protected:
 
 private slots:
   void onPropertyChanged();
-private:
 
+private:
   void updateColorMap() override;
 
   class MSInternal;

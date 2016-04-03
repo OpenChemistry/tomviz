@@ -36,7 +36,7 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 CropReaction::CropReaction(QAction* parentObject, QMainWindow* mw)
   : pqReaction(parentObject), mainWindow(mw)
 {
@@ -45,19 +45,16 @@ CropReaction::CropReaction(QAction* parentObject, QMainWindow* mw)
   updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 CropReaction::~CropReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void CropReaction::updateEnableState()
 {
   parentAction()->setEnabled(
         ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
-//-----------------------------------------------------------------------------
 void CropReaction::crop(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
@@ -70,10 +67,12 @@ void CropReaction::crop(DataSource* source)
     source->producer()->GetClientSideObject());
   vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-  QSharedPointer<Operator> Op(new CropOperator(image->GetExtent(), image->GetOrigin(),
+  QSharedPointer<Operator> Op(new CropOperator(image->GetExtent(),
+                                               image->GetOrigin(),
                                                image->GetSpacing()));
 
-  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, this->mainWindow);
+  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source,
+                                                      this->mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
 }

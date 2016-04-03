@@ -37,7 +37,6 @@ public:
   bool Initialized;
 };
 
-//-----------------------------------------------------------------------------
 OperatorsWidget::OperatorsWidget(QWidget* parentObject) :
   Superclass(parentObject),
   Internals(new OperatorsWidget::OWInternals())
@@ -52,12 +51,10 @@ OperatorsWidget::OperatorsWidget(QWidget* parentObject) :
   this->Internals->Initialized = false;
 }
 
-//-----------------------------------------------------------------------------
 OperatorsWidget::~OperatorsWidget()
 {
 }
 
-//-----------------------------------------------------------------------------
 void OperatorsWidget::setDataSource(DataSource* ds)
 {
   if (this->Internals->ADataSource == ds)
@@ -84,7 +81,6 @@ void OperatorsWidget::setDataSource(DataSource* ds)
   }
 }
 
-//-----------------------------------------------------------------------------
 void OperatorsWidget::operatorAdded(QSharedPointer<Operator> &op)
 {
   QTreeWidgetItem* item = new QTreeWidgetItem();
@@ -104,7 +100,6 @@ void OperatorsWidget::operatorAdded(QSharedPointer<Operator> &op)
   }
 }
 
-//-----------------------------------------------------------------------------
 void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
 {
   QSharedPointer<Operator> op = this->Internals->ItemMap[item];

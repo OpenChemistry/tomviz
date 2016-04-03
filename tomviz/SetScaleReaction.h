@@ -16,7 +16,7 @@
 #ifndef tomvizSetScaleReaction_h
 #define tomvizSetScaleReaction_h
 
-#include "pqReaction.h"
+#include <pqReaction.h>
 
 namespace tomviz
 {

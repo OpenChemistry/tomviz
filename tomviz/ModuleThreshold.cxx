@@ -30,25 +30,21 @@
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ModuleThreshold::ModuleThreshold(QObject* parentObject)
   : Superclass(parentObject)
 {
 }
 
-//-----------------------------------------------------------------------------
 ModuleThreshold::~ModuleThreshold()
 {
   this->finalize();
 }
 
-//-----------------------------------------------------------------------------
 QIcon ModuleThreshold::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqThreshold24.png");
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
@@ -96,7 +92,6 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleThreshold::updateColorMap()
 {
   Q_ASSERT(this->ThresholdRepresentation);
@@ -110,7 +105,6 @@ void ModuleThreshold::updateColorMap()
   this->ThresholdRepresentation->UpdateVTKObjects();
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleThreshold::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -121,7 +115,6 @@ bool ModuleThreshold::finalize()
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleThreshold::setVisibility(bool val)
 {
   Q_ASSERT(this->ThresholdRepresentation);
@@ -131,7 +124,6 @@ bool ModuleThreshold::setVisibility(bool val)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleThreshold::visibility() const
 {
   Q_ASSERT(this->ThresholdRepresentation);
@@ -139,7 +131,6 @@ bool ModuleThreshold::visibility() const
                              "Visibility").GetAsInt() != 0;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleThreshold::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(this->ThresholdFilter);
@@ -160,7 +151,6 @@ void ModuleThreshold::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleThreshold::serialize(pugi::xml_node& ns) const
 {
   QStringList fprops;
@@ -179,7 +169,6 @@ bool ModuleThreshold::serialize(pugi::xml_node& ns) const
     this->Superclass::serialize(ns);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
 {
   return tomviz::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
@@ -188,7 +177,6 @@ bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
     this->Superclass::deserialize(ns);
 }
 
-//-----------------------------------------------------------------------------
 void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = {newX, newY, newZ};

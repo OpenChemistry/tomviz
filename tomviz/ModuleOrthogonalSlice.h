@@ -17,17 +17,19 @@
 #define tomvizModuleOrthogonalSlice_h
 
 #include "Module.h"
-#include "vtkWeakPointer.h"
+#include <vtkWeakPointer.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
 namespace tomviz
 {
+
 class ModuleOrthogonalSlice : public Module
 {
   Q_OBJECT
   typedef Module Superclass;
+
 public:
   ModuleOrthogonalSlice(QObject* parent=nullptr);
   virtual ~ModuleOrthogonalSlice();

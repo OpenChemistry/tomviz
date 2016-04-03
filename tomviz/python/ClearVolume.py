@@ -12,8 +12,8 @@ def transform_scalars(dataset):
     ###YRANGE###
     ###ZRANGE###
 
-    # transform the dataset
+    # Transform the dataset.
     result = np.copy(array)
     result[XRANGE[0]:XRANGE[1], YRANGE[0]:YRANGE[1], ZRANGE[0]:ZRANGE[1]] = 0
-    # set the result as the new scalars.
+    # Set the result as the new scalars.
     utils.set_array(dataset, result)

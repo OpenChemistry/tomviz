@@ -29,6 +29,7 @@ class Module;
 class ModuleFactory
 {
   typedef QObject Superclass;
+
 public:
   /// Returns a list of module types that can be created for the data source
   /// in the provided view.

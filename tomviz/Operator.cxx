@@ -17,12 +17,11 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 Operator::Operator(QObject* parentObject): Superclass(parentObject)
 {
 }
 
-//-----------------------------------------------------------------------------
 Operator::~Operator()
 {
 }

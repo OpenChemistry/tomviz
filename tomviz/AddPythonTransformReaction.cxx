@@ -18,10 +18,10 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "OperatorPython.h"
-#include "pqCoreUtilities.h"
 #include "SelectVolumeWidget.h"
 #include "EditOperatorDialog.h"
 
+#include <pqCoreUtilities.h>
 #include <vtkImageData.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
@@ -39,12 +39,15 @@
 
 namespace
 {
+
 class SelectSliceRangeWidget : public QWidget
 {
   Q_OBJECT
   typedef QWidget Superclass;
+
 public:
-  SelectSliceRangeWidget(int *ext, bool showAxisSelector = true, QWidget* p = nullptr)
+  SelectSliceRangeWidget(int *ext, bool showAxisSelector = true,
+                         QWidget* p = nullptr)
     : Superclass(p),
       firstSlice(new QSpinBox(this)),
       lastSlice(new QSpinBox(this)),
@@ -97,16 +100,19 @@ public:
     this->connect(axisSelect, SIGNAL(currentIndexChanged(int)),
                   SLOT(onAxisChanged(int)));
   }
+
   ~SelectSliceRangeWidget() {}
 
   int startSlice() const
   {
     return this->firstSlice->value();
   }
+
   int endSlice() const
   {
     return this->lastSlice->value();
   }
+
   int axis() const
   {
     return this->axisSelect->currentIndex();
@@ -149,7 +155,7 @@ private:
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                const QString &l,
                                                const QString &s,
@@ -163,12 +169,10 @@ AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
   updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 AddPythonTransformReaction::~AddPythonTransformReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void AddPythonTransformReaction::updateEnableState()
 {
   bool enable = ActiveObjects::instance().activeDataSource() != nullptr;
@@ -183,8 +187,6 @@ void AddPythonTransformReaction::updateEnableState()
   parentAction()->setEnabled(enable);
 }
 
-
-//-----------------------------------------------------------------------------
 OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
@@ -211,7 +213,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       labelDescription = new QLabel("Threshold image and compute label map of connected components.\n"
                                     "The lower and upper threshold can be specified below.");
     }
-    layout->addWidget(labelDescription,0,0,1,2);
+    layout->addWidget(labelDescription, 0, 0, 1, 2);
 
     QLabel *lowerLabel = new QLabel("Lower Threshold:", &dialog);
     QLabel *upperLabel = new QLabel("Upper Threshold:", &dialog);
@@ -223,10 +225,10 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     upperThreshold->setSingleStep(0.5);
     upperThreshold->setRange(0, 65536);
     upperThreshold->setValue(255);
-    layout->addWidget(lowerLabel,1,0,1,1);
-    layout->addWidget(upperLabel,2,0,1,1);
-    layout->addWidget(lowerThreshold,1,1,1,1);
-    layout->addWidget(upperThreshold,2,1,1,1);
+    layout->addWidget(lowerLabel, 1, 0, 1, 1);
+    layout->addWidget(upperLabel, 2, 0, 1, 1);
+    layout->addWidget(lowerThreshold, 1, 1, 1, 1);
+    layout->addWidget(upperThreshold, 2, 1, 1, 1);
 
     QVBoxLayout *v = new QVBoxLayout;
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
@@ -261,13 +263,13 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     QLabel *label = new QLabel("Shift to apply:", &dialog);
     layout->addWidget(label);
     QSpinBox *spinx = new QSpinBox(&dialog);
-    spinx->setRange(-(extent[1]-extent[0]), extent[1]-extent[0]);
+    spinx->setRange(-(extent[1] - extent[0]), extent[1] - extent[0]);
     spinx->setValue(0);
     QSpinBox *spiny = new QSpinBox(&dialog);
-    spiny->setRange(-(extent[3]-extent[2]), extent[3]-extent[2]);
+    spiny->setRange(-(extent[3] - extent[2]), extent[3] - extent[2]);
     spiny->setValue(0);
     QSpinBox *spinz = new QSpinBox(&dialog);
-    spinz->setRange(-(extent[5]-extent[4]), extent[5]-extent[4]);
+    spinz->setRange(-(extent[5] - extent[4]), extent[5] - extent[4]);
     spinz->setValue(0);
     layout->addWidget(spinx);
     layout->addWidget(spiny);
@@ -362,21 +364,21 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.setWindowTitle("Rotate");
     QGridLayout *layout = new QGridLayout;
     QLabel *labelDescription = new QLabel("Rotate dataset along a given axis.",&dialog);
-    layout->addWidget(labelDescription,0,0,1,2);
+    layout->addWidget(labelDescription, 0, 0, 1, 2);
     QLabel *label = new QLabel("Angle:",&dialog);
-    layout->addWidget(label,1,0,1,2);
+    layout->addWidget(label, 1, 0, 1, 2);
     QDoubleSpinBox *angle = new QDoubleSpinBox(&dialog);
     angle->setRange(0, 360);
     angle->setValue(90);
-    layout->addWidget(angle,1,1,1,1);
+    layout->addWidget(angle, 1, 1, 1, 1);
     label = new QLabel("Axis:", &dialog);
-    layout->addWidget(label,2,0,1,1);
+    layout->addWidget(label, 2, 0, 1, 1);
     QComboBox *axis = new QComboBox(&dialog);
     axis->addItem("X");
     axis->addItem("Y");
     axis->addItem("Z");
     axis->setCurrentIndex(2);
-    layout->addWidget(axis,2,1,1,1);
+    layout->addWidget(axis, 2, 1, 1, 1);
     QVBoxLayout *v = new QVBoxLayout;
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
                                                      | QDialogButtonBox::Cancel,
@@ -448,8 +450,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      sigma->setSingleStep(0.5);
      //sigma->setRange(0, 20);
      sigma->setValue(2);
-     layout->addWidget(label,1,0,1,1);
-     layout->addWidget(sigma,1,1,1,1);
+     layout->addWidget(label, 1, 0, 1, 1);
+     layout->addWidget(sigma, 1, 1, 1, 1);
       
      QVBoxLayout *v = new QVBoxLayout;
      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
@@ -485,8 +487,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
      size->setSingleStep(1);
      size->setMinimum(1);
      size->setValue(2);
-     layout->addWidget(label,1,0,1,1);
-     layout->addWidget(size,1,1,1,1);
+     layout->addWidget(label, 1, 0, 1, 1);
+     layout->addWidget(size, 1, 1, 1, 1);
     
      QVBoxLayout *v = new QVBoxLayout;
      QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok

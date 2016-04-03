@@ -20,6 +20,7 @@
 
 namespace tomviz
 {
+
 class CropOperator : public Operator
 {
   Q_OBJECT

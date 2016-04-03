@@ -30,25 +30,24 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
-ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject) : Superclass(parentObject)
+
+ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject)
+  : Superclass(parentObject)
 {
 }
 
-//-----------------------------------------------------------------------------
 ModuleOrthogonalSlice::~ModuleOrthogonalSlice()
 {
   this->finalize();
 }
 
-//-----------------------------------------------------------------------------
 QIcon ModuleOrthogonalSlice::icon() const
 {
   return QIcon(":/icons/orthoslice.png");
 }
 
-//-----------------------------------------------------------------------------
-bool ModuleOrthogonalSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
+bool ModuleOrthogonalSlice::initialize(DataSource* data,
+                                       vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView))
   {
@@ -84,7 +83,6 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView
   return true;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleOrthogonalSlice::updateColorMap()
 {
   Q_ASSERT(this->Representation);
@@ -96,7 +94,6 @@ void ModuleOrthogonalSlice::updateColorMap()
   this->Representation->UpdateVTKObjects();
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -108,7 +105,6 @@ bool ModuleOrthogonalSlice::finalize()
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::setVisibility(bool val)
 {
   Q_ASSERT(this->Representation);
@@ -117,14 +113,12 @@ bool ModuleOrthogonalSlice::setVisibility(bool val)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::visibility() const
 {
   Q_ASSERT(this->Representation);
   return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() != 0;
 }
 
-//-----------------------------------------------------------------------------
 void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(this->Representation);
@@ -137,7 +131,6 @@ void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
   this->Superclass::addToPanel(panel);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
 {
   QStringList reprProperties;
@@ -150,7 +143,6 @@ bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
     this->Superclass::serialize(ns));
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
 {
   if (!tomviz::deserialize(this->Representation, ns.child("Representation")))
@@ -160,8 +152,8 @@ bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
   return this->Superclass::deserialize(ns);
 }
 
-//-----------------------------------------------------------------------------
-void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY, double newZ)
+void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY,
+                                            double newZ)
 {
   double pos[3] = {newX, newY, newZ};
   vtkSMPropertyHelper(this->Representation, "Position").Set(pos, 3);

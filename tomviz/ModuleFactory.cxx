@@ -27,26 +27,24 @@
 #include "ModuleSlice.h"
 #include "ModuleThreshold.h"
 #include "ModuleVolume.h"
-#include "pqView.h"
 #include "Utilities.h"
-#include "vtkSMViewProxy.h"
+
+#include <pqView.h>
+#include <vtkSMViewProxy.h>
 
 #include <QtAlgorithms>
 
 namespace tomviz
 {
 
-//-----------------------------------------------------------------------------
 ModuleFactory::ModuleFactory()
 {
 }
 
-//-----------------------------------------------------------------------------
 ModuleFactory::~ModuleFactory()
 {
 }
 
-//-----------------------------------------------------------------------------
 QList<QString> ModuleFactory::moduleTypes(
   DataSource* dataSource, vtkSMViewProxy* view)
 {
@@ -67,7 +65,6 @@ QList<QString> ModuleFactory::moduleTypes(
   return reply;
 }
 
-//-----------------------------------------------------------------------------
 Module* ModuleFactory::createModule(
   const QString& type, DataSource* dataSource, vtkSMViewProxy* view)
 {
@@ -131,7 +128,6 @@ Module* ModuleFactory::createModule(
   return module;
 }
 
-//-----------------------------------------------------------------------------
 QIcon ModuleFactory::moduleIcon(const QString& type)
 {
   QIcon icon;
@@ -144,7 +140,6 @@ QIcon ModuleFactory::moduleIcon(const QString& type)
   return icon;
 }
 
-//-----------------------------------------------------------------------------
 const char* ModuleFactory::moduleType(Module* module)
 {
   // WARNING: to ensure the most useful result is returned from this

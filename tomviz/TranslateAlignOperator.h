@@ -25,7 +25,8 @@
 
 namespace tomviz
 {
-  class DataSource;
+
+class DataSource;
 
 class TranslateAlignOperator : public Operator
 {

@@ -18,7 +18,7 @@
 #include "ActiveObjects.h"
 #include "RotateAlignWidget.h"
 #include "DataSource.h"
-#include "pqCoreUtilities.h"
+#include <pqCoreUtilities.h>
 
 #include <QDebug>
 #include <QDialog>
@@ -26,7 +26,7 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 AddRotateAlignReaction::AddRotateAlignReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
@@ -35,12 +35,10 @@ AddRotateAlignReaction::AddRotateAlignReaction(QAction* parentObject)
   updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 AddRotateAlignReaction::~AddRotateAlignReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void AddRotateAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(
@@ -48,7 +46,6 @@ void AddRotateAlignReaction::updateEnableState()
         ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries);
 }
 
-//-----------------------------------------------------------------------------
 void AddRotateAlignReaction::align(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
@@ -65,7 +62,8 @@ void AddRotateAlignReaction::align(DataSource* source)
   layout->addWidget(widget);
   dialog->setLayout(layout);
 
-  QObject::connect(widget, SIGNAL(creatingAlignedData()), dialog, SLOT(accept()));
+  QObject::connect(widget, SIGNAL(creatingAlignedData()), dialog,
+                   SLOT(accept()));
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
   dialog->raise();

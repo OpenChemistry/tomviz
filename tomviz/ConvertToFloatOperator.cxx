@@ -16,13 +16,14 @@
 
 #include "ConvertToFloatOperator.h"
 
-#include "vtkImageData.h"
-#include "vtkPointData.h"
-#include "vtkFloatArray.h"
-#include "vtkNew.h"
+#include <vtkImageData.h>
+#include <vtkPointData.h>
+#include <vtkFloatArray.h>
+#include <vtkNew.h>
 
 namespace
 {
+
 template<typename T>
 void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void *data)
 {
@@ -33,7 +34,9 @@ void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void *data)
     a[i] = (float) d[i];
   }
 }
+
 }
+
 namespace tomviz
 {
 

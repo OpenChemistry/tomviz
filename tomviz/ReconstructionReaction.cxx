@@ -28,7 +28,7 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 ReconstructionReaction::ReconstructionReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
@@ -36,21 +36,18 @@ ReconstructionReaction::ReconstructionReaction(QAction* parentObject)
           SLOT(updateEnableState()));
   updateEnableState();
 }
-    
-//-----------------------------------------------------------------------------
+
 ReconstructionReaction::~ReconstructionReaction()
 {
 }
-    
-//-----------------------------------------------------------------------------
+
 void ReconstructionReaction::updateEnableState()
 {
   parentAction()->setEnabled(
         ActiveObjects::instance().activeDataSource() != NULL &&
         ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries);
 }
-    
-//-----------------------------------------------------------------------------
+
 void ReconstructionReaction::recon(DataSource* input)
 {
   input = input ? input : ActiveObjects::instance().activeDataSource();
@@ -59,13 +56,13 @@ void ReconstructionReaction::recon(DataSource* input)
     qDebug() << "Exiting early - no data :-(";
     return;
   }
-  
-  //Get vtkImageData pointer for input DataSource
+
+  // Get vtkImageData pointer for input DataSource
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
     input->producer()->GetClientSideObject());
   vtkImageData *tiltSeries = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-  //Create output DataSource
+  // Create output DataSource
   DataSource* output = input->clone(true,true);
   QString name = output->producer()->GetAnnotation("tomviz.Label");
   name = "Recon_WBP_" + name;
@@ -78,7 +75,6 @@ void ReconstructionReaction::recon(DataSource* input)
   output->dataModified();
   // Add the new DataSource
   LoadDataReaction::dataSourceAdded(output);
-  
 }
 
 }

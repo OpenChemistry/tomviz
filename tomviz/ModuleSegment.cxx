@@ -274,7 +274,6 @@ void ModuleSegment::onPropertyChanged()
   // TODO
 }
 
-//-----------------------------------------------------------------------------
 void ModuleSegment::updateColorMap()
 {
   Q_ASSERT(this->Internals->ContourRepresentation);
@@ -283,7 +282,6 @@ void ModuleSegment::updateColorMap()
   this->Internals->ContourRepresentation->UpdateVTKObjects();
 }
 
-//-----------------------------------------------------------------------------
 void ModuleSegment::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = {newX, newY, newZ};

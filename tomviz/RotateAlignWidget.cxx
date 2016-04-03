@@ -62,6 +62,7 @@
 
 namespace
 {
+
 void setupRenderer(vtkRenderer *renderer, vtkImageSliceMapper *mapper)
 {
   int axis = mapper->GetOrientation();

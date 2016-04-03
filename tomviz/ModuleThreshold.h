@@ -17,7 +17,7 @@
 #define tomvizModuleThreshold_h
 
 #include "Module.h"
-#include "vtkWeakPointer.h"
+#include <vtkWeakPointer.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;

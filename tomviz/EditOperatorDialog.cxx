@@ -20,16 +20,15 @@
 #include "EditOperatorWidget.h"
 #include "Operator.h"
 
-#include "pqApplicationCore.h"
-#include "pqPythonSyntaxHighlighter.h"
-#include "pqSettings.h"
+#include <pqApplicationCore.h>
+#include <pqPythonSyntaxHighlighter.h>
+#include <pqSettings.h>
 
 #include <QDialogButtonBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QVariant>
 #include <QVBoxLayout>
-
 
 namespace tomviz
 {
@@ -59,7 +58,6 @@ public:
   }
 };
 
-//-----------------------------------------------------------------------------
 EditOperatorDialog::EditOperatorDialog(
   QSharedPointer<Operator> &o,
   DataSource *dataSource,
@@ -98,18 +96,15 @@ EditOperatorDialog::EditOperatorDialog(
   this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
 }
 
-//-----------------------------------------------------------------------------
 EditOperatorDialog::~EditOperatorDialog()
 {
 }
 
-//-----------------------------------------------------------------------------
 QSharedPointer<Operator>& EditOperatorDialog::op()
 {
   return this->Internals->Op;
 }
 
-//-----------------------------------------------------------------------------
 void EditOperatorDialog::onApply()
 {
   this->Internals->Widget->applyChangesToOperator();
@@ -120,7 +115,6 @@ void EditOperatorDialog::onApply()
   }
 }
 
-//-----------------------------------------------------------------------------
 void EditOperatorDialog::onClose()
 {
   this->Internals->savePosition(this->pos());

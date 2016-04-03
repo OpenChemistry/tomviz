@@ -18,13 +18,14 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
+#include "RecentFilesMenu.h"
+#include "Utilities.h"
+
 #include "pqActiveObjects.h"
 #include "pqLoadDataReaction.h"
 #include "pqPipelineSource.h"
 #include "pqProxyWidgetDialog.h"
 #include "pqRenderView.h"
-#include "RecentFilesMenu.h"
-#include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMCoreUtilities.h"
@@ -32,24 +33,21 @@
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
-#include "vtkTrivialProducer.h"
 
 #include <QFileDialog>
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
 }
 
-//-----------------------------------------------------------------------------
 LoadDataReaction::~LoadDataReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void LoadDataReaction::onTriggered()
 {
   loadData();
@@ -113,7 +111,6 @@ DataSource* LoadDataReaction::loadData(const QString &fileName)
   return dataSource;
 }
 
-//-----------------------------------------------------------------------------
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
 {
   // Prompt user for reader configuration.
@@ -140,7 +137,6 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
   return nullptr;
 }
 
-//-----------------------------------------------------------------------------
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
 {
   bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();

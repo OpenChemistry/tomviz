@@ -20,10 +20,12 @@
 
 namespace tomviz
 {
+
 class ConvertToFloatOperator : public Operator
 {
   Q_OBJECT
   typedef Operator Superclass;
+
 public:
   ConvertToFloatOperator(QObject *parent=nullptr);
   virtual ~ConvertToFloatOperator();
@@ -36,6 +38,7 @@ public:
   bool deserialize(const pugi::xml_node& ns) override;
   EditOperatorWidget *getEditorContents(QWidget* parent) override;
   bool hasCustomUI() const override { return false; }
+
 private:
   Q_DISABLE_COPY(ConvertToFloatOperator)
 };

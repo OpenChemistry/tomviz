@@ -1,7 +1,7 @@
 def transform_scalars(dataset):
     """Define this method for Python operators that 
     transform input scalars"""
-    
+
     from tomviz import utils
     import numpy as np
 

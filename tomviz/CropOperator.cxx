@@ -28,10 +28,12 @@
 
 namespace
 {
+
 class CropWidget : public tomviz::EditOperatorWidget
 {
   Q_OBJECT
   typedef tomviz::EditOperatorWidget Superclass;
+
 public:
   CropWidget(tomviz::CropOperator *source, QWidget* p)
     : Superclass(p), Op(source)
@@ -46,6 +48,7 @@ public:
     hboxlayout->addWidget(this->Widget);
     this->setLayout(hboxlayout);
   }
+
   ~CropWidget() {}
 
   void applyChangesToOperator() override
@@ -57,6 +60,7 @@ public:
       this->Op->setCropBounds(bounds);
     }
   }
+
 private:
   QPointer<tomviz::CropOperator> Op;
   tomviz::SelectVolumeWidget* Widget;

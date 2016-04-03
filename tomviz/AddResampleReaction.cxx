@@ -18,12 +18,12 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
-#include "pqCoreUtilities.h"
-#include "vtkImageData.h"
-#include "vtkImageReslice.h"
-#include "vtkNew.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkTrivialProducer.h"
+#include <pqCoreUtilities.h>
+#include <vtkImageData.h>
+#include <vtkImageReslice.h>
+#include <vtkNew.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkTrivialProducer.h>
 
 #include <QDebug>
 #include <QDialog>
@@ -35,7 +35,7 @@
 
 namespace tomviz
 {
-//-----------------------------------------------------------------------------
+
 AddResampleReaction::AddResampleReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
@@ -44,19 +44,16 @@ AddResampleReaction::AddResampleReaction(QAction* parentObject)
   updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 AddResampleReaction::~AddResampleReaction()
 {
 }
 
-//-----------------------------------------------------------------------------
 void AddResampleReaction::updateEnableState()
 {
   parentAction()->setEnabled(
         ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
-//-----------------------------------------------------------------------------
 namespace {
 vtkImageData* imageData(DataSource *source)
 {
@@ -66,7 +63,6 @@ vtkImageData* imageData(DataSource *source)
 }
 }
 
-//-----------------------------------------------------------------------------
 void AddResampleReaction::resample(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
@@ -124,10 +120,10 @@ void AddResampleReaction::resample(DataSource* source)
     int newExtents[6];
     for (int i = 0; i < 3; ++i)
     {
-      newOrigin[i] = origin[i] + extents[2*i] * spacing[i];
-      newExtents[2*i] = 0;
-      newExtents[2*i+1] = newResolution[i] - 1;
-      newSpacing[i] = spacing[i] * (extents[2*i+1] - extents[2*i]) /
+      newOrigin[i] = origin[i] + extents[2 * i] * spacing[i];
+      newExtents[2 * i] = 0;
+      newExtents[2 * i + 1] = newResolution[i] - 1;
+      newSpacing[i] = spacing[i] * (extents[2 * i + 1] - extents[2 * i]) /
                                    (double)(newResolution[i]);
     }
     vtkNew< vtkImageReslice > reslice;
@@ -144,7 +140,8 @@ void AddResampleReaction::resample(DataSource* source)
     DataSource* resampledData = source->clone(true);
     QString name = resampledData->producer()->GetAnnotation("tomviz.Label");
     name = "Downsampled_" + name;
-    resampledData->producer()->SetAnnotation("tomviz.Label", name.toLatin1().data());
+    resampledData->producer()->SetAnnotation("tomviz.Label",
+                                             name.toLatin1().data());
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
       resampledData->producer()->GetClientSideObject());
     t->SetOutput(reslice->GetOutput());

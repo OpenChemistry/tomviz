@@ -17,7 +17,7 @@
 #define tomvizModuleOutline_h
 
 #include "Module.h"
-#include "vtkWeakPointer.h"
+#include <vtkWeakPointer.h>
 
 class vtkSMSourceProxy;
 class vtkSMProxy;

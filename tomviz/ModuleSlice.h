@@ -17,8 +17,8 @@
 #define tomvizModuleSlice_h
 
 #include "Module.h"
-#include "vtkWeakPointer.h"
-#include "vtkSmartPointer.h"
+#include <vtkWeakPointer.h>
+#include <vtkSmartPointer.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
@@ -30,6 +30,7 @@ class ModuleSlice : public Module
 {
   Q_OBJECT
   typedef Module Superclass;
+
 public:
   ModuleSlice(QObject* parent=nullptr);
   virtual ~ModuleSlice();
@@ -59,7 +60,7 @@ private slots:
   void onPlaneChanged();
 
 private:
-  //should only be called from initialize after the PassThrough has been setup
+  // Should only be called from initialize after the PassThrough has been setup.
   bool setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer);
 
   Q_DISABLE_COPY(ModuleSlice)
@@ -71,4 +72,5 @@ private:
 };
 
 }
+
 #endif

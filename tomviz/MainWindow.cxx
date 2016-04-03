@@ -17,17 +17,17 @@
 #include "ui_MainWindow.h"
 #include "ui_AboutDialog.h"
 
-#include "pqFiltersMenuReaction.h"
-#include "pqMacroReaction.h"
-#include "pqProxyGroupMenuManager.h"
-#include "pqProxyGroupMenuManager.h"
-#include "pqPVApplicationCore.h"
-#include "pqPythonShellReaction.h"
-#include "pqSaveAnimationReaction.h"
-#include "pqSaveScreenshotReaction.h"
-#include "pqSaveStateReaction.h"
-#include "vtkPVPlugin.h"
-#include "vtkSMSettings.h"
+#include <pqFiltersMenuReaction.h>
+#include <pqMacroReaction.h>
+#include <pqProxyGroupMenuManager.h>
+#include <pqProxyGroupMenuManager.h>
+#include <pqPVApplicationCore.h>
+#include <pqPythonShellReaction.h>
+#include <pqSaveAnimationReaction.h>
+#include <pqSaveScreenshotReaction.h>
+#include <pqSaveStateReaction.h>
+#include <vtkPVPlugin.h>
+#include <vtkSMSettings.h>
 
 #include "tomvizConfig.h"
 #include "ActiveObjects.h"
@@ -113,7 +113,6 @@ public:
   QTimer *Timer;
 };
 
-//-----------------------------------------------------------------------------
 MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   : Superclass(_parent, _flags),
   Internals(new MainWindow::MWInternals()),
@@ -357,7 +356,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ResetReaction::reset();
 }
 
-//-----------------------------------------------------------------------------
 MainWindow::~MainWindow()
 {
   ModuleManager::instance().reset();
@@ -369,7 +367,6 @@ MainWindow::~MainWindow()
   delete this->Internals;
 }
 
-//-----------------------------------------------------------------------------
 void MainWindow::showAbout()
 {
   if (!this->Internals->AboutDialog)

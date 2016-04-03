@@ -16,14 +16,14 @@
 
 #include "AddRenderViewContextMenuBehavior.h"
 
-#include "pqActiveObjects.h"
-#include "pqApplicationCore.h"
-#include "pqRenderView.h"
-#include "pqServerManagerModel.h"
-#include "pqView.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMProxy.h"
-#include "vtkSMRenderViewProxy.h"
+#include <pqActiveObjects.h>
+#include <pqApplicationCore.h>
+#include <pqRenderView.h>
+#include <pqServerManagerModel.h>
+#include <pqView.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMProxy.h>
+#include <vtkSMRenderViewProxy.h>
 
 #include <QAction>
 #include <QColor>
