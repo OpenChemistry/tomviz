@@ -6,7 +6,7 @@ def transform_scalars(dataset):
 
     data = utils.get_array(dataset)
 
-    data[data<0] = 0 #set negative voxels to zero
+    data[data<0] = 0 # Set negative voxels to zero
 
-    # set the result as the new scalars.
+    # Set the result as the new scalars.
     utils.set_array(dataset, data)

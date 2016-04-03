@@ -12,9 +12,9 @@ def transform_scalars(dataset):
     ###ZRANGE###
     #---------------------------------#
 
-    data_bs = utils.get_array(dataset) #get data as numpy array
+    data_bs = utils.get_array(dataset) # Get data as numpy array.
 
-    data_bs = data_bs.astype(np.float32) #change tilt series type to float
+    data_bs = data_bs.astype(np.float32) # Change tilt series type to float.
 
     if data_bs is None: #Check if data exists
         raise RuntimeError("No data array found!")    

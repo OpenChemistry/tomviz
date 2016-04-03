@@ -1,7 +1,7 @@
 def transform_scalars(dataset):
     """Apply a Median filter to dataset."""
     """ Median filter is a nonlinear filter used to reduce noise."""
-    
+
     #----USER SPECIFIED VARIABLES-----#
     ###Size###    #Specify size of the Median filter
     #---------------------------------#
@@ -12,9 +12,8 @@ def transform_scalars(dataset):
 
     array = utils.get_array(dataset)
 
-    # transform the dataset
+    # Transform the dataset.
     result = scipy.ndimage.filters.median_filter(array,size)
-    
-    # set the result as the new scalars.
+
+    # Set the result as the new scalars.
     utils.set_array(dataset, result)
-    
