@@ -218,6 +218,9 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Internals->Ui.histogramWidget
       ->SetRenderWindow(this->HistogramView->GetRenderWindow());
   vtkChartHistogram* chart = this->Chart.Get();
+  chart->SetHiddenAxisBorder(10);
+  chart->GetAxis(vtkAxis::BOTTOM)->SetMargins(4, 0);
+  chart->GetAxis(vtkAxis::LEFT)->SetMargins(10, 0);
   this->HistogramView->GetScene()->AddItem(chart);
 
   this->EventLink->Connect(chart, vtkCommand::CursorChangedEvent, this,
@@ -230,7 +233,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   vtkNew<vtkChartXY> bottomChart;
   bottomChart->SetBarWidthFraction(1.0);
-  bottomChart->SetHiddenAxisBorder(10);
+  bottomChart->SetHiddenAxisBorder(8);
   bottomChart->SetRenderEmpty(true);
   bottomChart->SetAutoAxes(false);
   bottomChart->ZoomWithMouseWheelOff();
@@ -240,7 +243,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   bottomAxis->SetBehavior(vtkAxis::FIXED);
   bottomAxis->SetVisible(false);
   bottomAxis->SetRange(0, 255);
-  bottomAxis->SetMargins(0, 0);
 
   vtkAxis* leftAxis = bottomChart->GetAxis(vtkAxis::LEFT);
   leftAxis->SetTitle("");
@@ -249,7 +251,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   vtkAxis* topAxis = bottomChart->GetAxis(vtkAxis::TOP);
   topAxis->SetVisible(false);
-  topAxis->SetMargins(0, 0);
 
   bottomChart->GetAxis(vtkAxis::RIGHT)->SetVisible(false);
 
