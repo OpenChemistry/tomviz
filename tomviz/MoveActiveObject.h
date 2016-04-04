@@ -44,7 +44,6 @@ public:
 
 private slots:
   void dataSourceActivated(DataSource *ds);
-  void moduleActivated();
 
   void updateForNewDataSource(DataSource *newDS);
   void hideMoveObjectWidget();
@@ -59,7 +58,6 @@ private:
   vtkNew<vtkEventQtSlotConnect> EventLink;
   vtkVector3d DataLocation;
   bool MoveEnabled;
-  bool DataSourceActive;
 };
 
 }

@@ -63,8 +63,6 @@ MoveActiveObject::MoveActiveObject(QObject *p)
 
   this->connect(&activeObjs, SIGNAL(dataSourceActivated(DataSource*)),
                 SLOT(dataSourceActivated(DataSource*)));
-  this->connect(&activeObjs, SIGNAL(moduleActivated(Module*)),
-                SLOT(moduleActivated()));
   this->connect(&activeObjs, SIGNAL(viewChanged(vtkSMViewProxy*)),
                 SLOT(onViewChanged(vtkSMViewProxy*)));
   this->connect(&activeObjs, SIGNAL(moveObjectsModeChanged(bool)),
@@ -75,7 +73,6 @@ MoveActiveObject::MoveActiveObject(QObject *p)
   {
     this->DataLocation[i] = 0.0;
   }
-  this->DataSourceActive = false;
   this->MoveEnabled = false;
 
 }
@@ -169,7 +166,7 @@ void MoveActiveObject::setMoveEnabled(bool enabled)
   {
     this->hideMoveObjectWidget();
   }
-  else if (this->DataSourceActive)
+  else
   {
     this->updateForNewDataSource(ActiveObjects::instance().activeDataSource());
   }
@@ -177,19 +174,9 @@ void MoveActiveObject::setMoveEnabled(bool enabled)
 
 void MoveActiveObject::dataSourceActivated(DataSource *ds)
 {
-  this->DataSourceActive = true;
   if (this->MoveEnabled)
   {
     this->updateForNewDataSource(ds);
-  }
-}
-
-void MoveActiveObject::moduleActivated()
-{
-  this->DataSourceActive = false;
-  if (this->MoveEnabled)
-  {
-    this->hideMoveObjectWidget();
   }
 }
 
