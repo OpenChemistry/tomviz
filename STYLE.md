@@ -1,14 +1,14 @@
-Please follow these code style guidelines when developing for tomviz.
+This project is developed primarily in C++ and Python. Please follow these
+code style guidelines when contributing code to our project.
 
 * Alphabetize includes
 
 * Use #include "xxx" for local includes, #include <xxx> for external
   includes.
 
-* Do not add comment separators before function definitions as are often
-  seen in VTK and ParaView.
+* Do not add comment separators before function definitions.
 
-* Split long lines to avoid going over 80 characters per line.
+* Split long when reasonable lines to avoid going over 80 characters per line.
 
 * Add a space after the commas in parameter lists, e.g.,
   function(a, b, c), not function(a,b,c)
@@ -24,6 +24,14 @@ Please follow these code style guidelines when developing for tomviz.
     * // A comment
     * \# Python comment
 
+* Use 2 spaces when indenting C++ code, 4 spaces for Python code.
+
+* Do not indent inside namespaces, e.g.,
+
+        namespace tomviz
+        {
+        void foo();
+
 * Curly braces marking the start and end of a code block should be on
   separate lines and aligned vertically with the statement preceding
   the block, e.g.,
@@ -38,10 +46,11 @@ Please follow these code style guidelines when developing for tomviz.
           statement;
         }
 
-  Note that this differs from VTK and ParaView's coding style.
+* Assume that C++11 features are available, and prefer them over legacy
+  macros, defines, etc. A few examples follow, but are not exhaustive.
 
-* Assume that C++11 features are available.
+    * Use override to specify member overrides in derived classes.
+    * Set default values of member variables directly in definitions.
+    * Use nullptr instead of NULL.
 
-* Use nullptr instead of NULL.
-
-* When creating VTK subclasses, follow tomviz style instead of VTK style.
+* When creating VTK subclasses please follow the tomviz style outlined here.
