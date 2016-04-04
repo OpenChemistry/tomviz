@@ -39,6 +39,9 @@ protected:
   vtkCustomPiecewiseControlPointsItem();
   virtual ~vtkCustomPiecewiseControlPointsItem();
 
+  // Utility function to determine whether a position is near the piecewise function.
+  bool PointNearPiecewiseFunction(const double pos[2]);
+
 private:
   vtkCustomPiecewiseControlPointsItem(const vtkCustomPiecewiseControlPointsItem &); // Not implemented.
   void operator=(const vtkCustomPiecewiseControlPointsItem &);   // Not implemented.
