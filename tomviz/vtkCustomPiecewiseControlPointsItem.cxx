@@ -20,20 +20,16 @@
 #include <vtkObjectFactory.h>
 #include <vtkPiecewiseFunction.h>
 
-//-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkCustomPiecewiseControlPointsItem)
 
-//-----------------------------------------------------------------------------
 vtkCustomPiecewiseControlPointsItem::vtkCustomPiecewiseControlPointsItem()
 {
 }
 
-//-----------------------------------------------------------------------------
 vtkCustomPiecewiseControlPointsItem::~vtkCustomPiecewiseControlPointsItem()
 {
 }
 
-//-----------------------------------------------------------------------------
 bool vtkCustomPiecewiseControlPointsItem::MouseButtonPressEvent(const vtkContextMouseEvent & mouse)
 {
   // Ignore middle- and right-click events
@@ -58,7 +54,6 @@ bool vtkCustomPiecewiseControlPointsItem::MouseButtonPressEvent(const vtkContext
   return this->Superclass::MouseButtonPressEvent(mouse);
 }
 
-//-----------------------------------------------------------------------------
 bool vtkCustomPiecewiseControlPointsItem::MouseDoubleClickEvent(const vtkContextMouseEvent & mouse)
 {
   // Ignore middle- and right-click events

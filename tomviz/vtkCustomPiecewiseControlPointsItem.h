@@ -20,7 +20,6 @@
 
 class vtkContextMouseEvent;
 
-//-----------------------------------------------------------------------------
 // Special control points item class that overrides the MouseDoubleClickEvent()
 // event handler to do nothing.
 class vtkCustomPiecewiseControlPointsItem : public vtkPiecewiseControlPointsItem
