@@ -105,13 +105,6 @@ vtkChartHistogram::~vtkChartHistogram()
 //-----------------------------------------------------------------------------
 bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
 {
-  // Return if control button isn't pressed
-  int modifiers = m.GetModifiers();
-  if (!(modifiers & vtkContextMouseEvent::CONTROL_MODIFIER))
-  {
-    return false;
-  }
-
   // Determine the location of the click, and emit something we can listen to!
   vtkPlotBar *histo = nullptr;
   if (this->GetNumberOfPlots() > 0)

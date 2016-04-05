@@ -20,7 +20,6 @@
 
 class vtkContextMouseEvent;
 
-//-----------------------------------------------------------------------------
 // Special control points item class that overrides the MouseDoubleClickEvent()
 // event handler to do nothing.
 class vtkCustomPiecewiseControlPointsItem : public vtkPiecewiseControlPointsItem
@@ -38,6 +37,9 @@ public:
 protected:
   vtkCustomPiecewiseControlPointsItem();
   virtual ~vtkCustomPiecewiseControlPointsItem();
+
+  // Utility function to determine whether a position is near the piecewise function.
+  bool PointNearPiecewiseFunction(const double pos[2]);
 
 private:
   vtkCustomPiecewiseControlPointsItem(const vtkCustomPiecewiseControlPointsItem &); // Not implemented.
