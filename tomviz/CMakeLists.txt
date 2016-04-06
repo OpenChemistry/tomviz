@@ -166,6 +166,8 @@ set(SOURCES
   ViewMenuManager.h
   vtkChartHistogram.cxx
   vtkChartHistogram.h
+  vtkChartHistogramColorOpacityEditor.cxx
+  vtkChartHistogramColorOpacityEditor.h
   vtkCustomPiecewiseControlPointsItem.cxx
   vtkCustomPiecewiseControlPointsItem.h
   vtkNonOrthoImagePlaneWidget.cxx

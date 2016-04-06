@@ -56,13 +56,13 @@ public:
   // Set opacity function from a transfer function
   virtual void SetOpacityFunction(vtkPiecewiseFunction * opacityFunction);
 
-  // Set the x-position of the marker
-  vtkSetMacro(PositionX, double)
-  vtkGetMacro(PositionX, double)
+  // Set the contour value from the contour marker
+  vtkSetMacro(ContourValue, double)
+  vtkGetMacro(ContourValue, double)
 
 protected:
   vtkNew<vtkTransform2D> Transform;
-  double PositionX;
+  double ContourValue;
   vtkNew<vtkHistogramMarker> Marker;
 
   vtkNew<vtkPlotBar>                          HistogramPlotBar;
@@ -74,4 +74,4 @@ private:
   virtual ~vtkChartHistogram();
 };
 
-#endif // tomvizvtkCharHistogram_h
+#endif // tomvizvtkChartHistogram_h
