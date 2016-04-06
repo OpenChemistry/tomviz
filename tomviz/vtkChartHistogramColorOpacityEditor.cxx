@@ -240,7 +240,8 @@ bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
 
     // Add the width of the left axis to x to make room for y labels
     this->GetHistogramAxis(vtkAxis::LEFT)->Update();
-    float leftAxisWidth = this->GetHistogramAxis(vtkAxis::LEFT)->GetBoundingRect(painter).GetWidth();
+    float leftAxisWidth = this->GetHistogramAxis(vtkAxis::LEFT)->
+      GetBoundingRect(painter).GetWidth();
     x += leftAxisWidth;
 
     float colorBarThickness = 20;
@@ -249,8 +250,10 @@ bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
     vtkRectf colorTransferFunctionChartSize(x, y, plotWidth, colorBarThickness);
     this->ColorTransferFunctionChart->SetSize(colorTransferFunctionChartSize);
 
-    float verticalMargin = 20;
-    y += colorBarThickness + verticalMargin; // add a little margin
+    float bottomAxisHeight = this->GetHistogramAxis(vtkAxis::BOTTOM)->
+      GetBoundingRect(painter).GetHeight();
+    float verticalMargin = bottomAxisHeight;
+    y += colorBarThickness + verticalMargin - 5;
     vtkRectf histogramChart(x, y, plotWidth, sceneHeight - y - this->Borders[vtkAxis::TOP]);
     this->HistogramChart->SetSize(histogramChart);
   }
