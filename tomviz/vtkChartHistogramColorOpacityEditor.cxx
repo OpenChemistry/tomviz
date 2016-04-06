@@ -34,7 +34,7 @@
 class vtkChartHistogramColorOpacityEditor::PIMPL
 {
 public:
-  PIMPL() : Geometry(0, 0) {}
+  PIMPL() : Geometry(0, 0), NeedsUpdate(true) {}
   ~PIMPL() {}
 
   void ForwardEvent(vtkObject* vtkNotUsed(object),
@@ -46,6 +46,9 @@ public:
 
   // Cached geometry of the chart
   vtkVector2i Geometry;
+
+  // Dirty bit
+  bool NeedsUpdate;
 
   // Reference to owner of the PIMPL
   vtkChartHistogramColorOpacityEditor* Self;
@@ -122,6 +125,10 @@ void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(vtkTable* table,
                                                                 const char* yAxisColumn)
 {
   this->HistogramChart->SetHistogramInputData(table, xAxisColumn, yAxisColumn);
+
+  // The data range may change and cause the labels to change. Hence, update
+  // the geometry.
+  this->Private->NeedsUpdate = true;
 }
 
 void vtkChartHistogramColorOpacityEditor::SetColorTransferFunction(vtkColorTransferFunction* ctf)
@@ -218,9 +225,12 @@ bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
   vtkContextScene* scene = this->GetScene();
   int sceneWidth = scene->GetSceneWidth();
   int sceneHeight = scene->GetSceneHeight();
-  if (sceneWidth != this->Private->Geometry.GetX() ||
+  if (this->Private->NeedsUpdate ||
+      sceneWidth != this->Private->Geometry.GetX() ||
       sceneHeight != this->Private->Geometry.GetY())
   {
+    this->Private->NeedsUpdate = false;
+
     // Update the geometry size cache
     this->Private->Geometry.Set(sceneWidth, sceneHeight);
 
