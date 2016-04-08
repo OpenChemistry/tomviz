@@ -70,7 +70,7 @@
   <customwidget>
    <class>QVTKWidget</class>
    <extends>QWidget</extends>
-   <header location="global">qvtkwidget.h</header>
+   <header>QVTKWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
