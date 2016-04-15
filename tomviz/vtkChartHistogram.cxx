@@ -20,6 +20,7 @@
 #include <vtkContext2D.h>
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
+#include <vtkDataArray.h>
 #include <vtkObjectFactory.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPiecewiseFunctionItem.h>
@@ -120,8 +121,8 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   vtkVector2f pos;
   this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
                                           1);
-  this->PositionX = pos.GetX();
-  this->Marker->PositionX = this->PositionX;
+  this->ContourValue = pos.GetX();
+  this->Marker->PositionX = this->ContourValue;
   this->Marker->Modified();
   this->Scene->SetDirty(true);
   if (this->GetNumberOfPlots() > 0)
@@ -141,6 +142,31 @@ void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
                                               const char* yAxisColumn)
 {
   this->HistogramPlotBar->SetInputData(table, xAxisColumn, yAxisColumn);
+
+  // Set the range of the axes
+  vtkDataArray* yArray =
+      vtkDataArray::SafeDownCast(table->GetColumnByName(yAxisColumn));
+  if (!yArray)
+  {
+    return;
+  }
+
+  double max = log10(yArray->GetRange()[1]);
+  vtkAxis* leftAxis = this->GetAxis(vtkAxis::LEFT);
+  leftAxis->SetUnscaledMinimum(1.0);
+  leftAxis->SetMaximumLimit(max + 2.0);
+  leftAxis->SetMaximum(static_cast<int>(max) + 1.0);
+
+  vtkDataArray* xArray = vtkDataArray::SafeDownCast(table->GetColumnByName(xAxisColumn));
+  if (xArray && xArray->GetNumberOfTuples() > 2)
+  {
+    double range[2];
+    xArray->GetRange(range);
+    double halfInc = (xArray->GetTuple1(1) - xArray->GetTuple1(0)) / 2.0;
+    vtkAxis* bottomAxis = this->GetAxis(vtkAxis::BOTTOM);
+    bottomAxis->SetBehavior(vtkAxis::FIXED);
+    bottomAxis->SetRange(range[0] - halfInc , range[1] + halfInc);
+  }
 }
 
 //-----------------------------------------------------------------------------
