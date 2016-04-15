@@ -134,6 +134,7 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
     // we don't add anything for ParaView since, ParaView takes care of that.
     PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/");
+    PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/python2.7/site-packages");
     }
   }
 
