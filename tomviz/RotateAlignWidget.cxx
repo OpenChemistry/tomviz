@@ -60,63 +60,6 @@
 #include <QPointer>
 #include <QDoubleSpinBox>
 
-namespace
-{
-
-void setupRenderer(vtkRenderer *renderer, vtkImageSliceMapper *mapper)
-{
-  int axis = mapper->GetOrientation();
-  int horizontal;
-  int vertical;
-  if (axis == 2)
-  {
-    horizontal = 0;
-    vertical = 1;
-  }
-  else if (axis == 0)
-  {
-    horizontal = 1;
-    vertical = 2;
-  }
-  else
-  {
-    horizontal = 0;
-    vertical = 2;
-  }
-  renderer->SetBackground(1.0, 1.0, 1.0);
-  vtkCamera *camera = renderer->GetActiveCamera();
-  renderer->SetViewport(0.0, 0.0,
-                        1.0, 1.0);
-
-  double *bounds = mapper->GetBounds();
-  vtkVector3d point;
-  point[0] = 0.5 * (bounds[0] + bounds[1]);
-  point[1] = 0.5 * (bounds[2] + bounds[3]);
-  point[2] = 0.5 * (bounds[4] + bounds[5]);
-  camera->SetFocalPoint(point.GetData());
-  point[axis] += 50 + 0.5 * (bounds[axis * 2 + 1] - bounds[axis * 2]);
-  camera->SetPosition(point.GetData());
-  double viewUp[3] = { 0.0, 0.0, 0.0 };
-  viewUp[vertical] = 1.0;
-  camera->SetViewUp(viewUp);
-  camera->ParallelProjectionOn();
-  double parallelScale;
-  if (bounds[horizontal * 2 + 1] - bounds[horizontal * 2] <
-        bounds[vertical * 2 + 1] - bounds[vertical * 2])
-  {
-    parallelScale = 0.5 * (bounds[vertical * 2 + 1] - bounds[vertical * 2] + 1);
-  }
-  else
-  {
-    parallelScale = 0.5 * (bounds[horizontal * 2 + 1] - bounds[horizontal * 2] + 1);
-  }
-  camera->SetParallelScale(parallelScale);
-  double clippingRange[2];
-  camera->GetClippingRange(clippingRange);
-  clippingRange[1] = clippingRange[0] + (bounds[axis * 2 + 1] - bounds[axis * 2] + 50);
-  camera->SetClippingRange(clippingRange);
-}
-}
 
 namespace tomviz
 {
@@ -140,10 +83,10 @@ public:
 
   void setupCameras()
   {
-    setupRenderer(this->mainRenderer.Get(), this->mainSliceMapper.Get());
-    setupRenderer(this->reconRenderer[0].Get(), this->reconSliceMapper[0].Get());
-    setupRenderer(this->reconRenderer[1].Get(), this->reconSliceMapper[1].Get());
-    setupRenderer(this->reconRenderer[2].Get(), this->reconSliceMapper[2].Get());
+    tomviz::setupRenderer(this->mainRenderer.Get(), this->mainSliceMapper.Get());
+    tomviz::setupRenderer(this->reconRenderer[0].Get(), this->reconSliceMapper[0].Get());
+    tomviz::setupRenderer(this->reconRenderer[1].Get(), this->reconSliceMapper[1].Get());
+    tomviz::setupRenderer(this->reconRenderer[2].Get(), this->reconSliceMapper[2].Get());
   }
 
   void setupRotationAxisLine()

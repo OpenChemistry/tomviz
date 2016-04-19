@@ -22,9 +22,12 @@
 #include <vtkTrivialProducer.h>
 #include <vtkSMSourceProxy.h>
 
+#include "ReconstructionWidget.h"
 #include "TomographyReconstruction.h"
 
 #include <QDebug>
+#include <QDialog>
+#include <QHBoxLayout>
 
 namespace tomviz
 {
@@ -57,24 +60,14 @@ void ReconstructionReaction::recon(DataSource* input)
     return;
   }
 
-  // Get vtkImageData pointer for input DataSource
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-    input->producer()->GetClientSideObject());
-  vtkImageData *tiltSeries = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  QDialog d;
+  d.setLayout(new QHBoxLayout);
+  ReconstructionWidget *reconWidget = new ReconstructionWidget(input, &d);
+  d.layout()->addWidget(reconWidget);
+  d.connect(reconWidget, SIGNAL(reconstructionCancelled()), SLOT(reject()));
+  d.connect(reconWidget, SIGNAL(reconstructionFinished()), SLOT(accept()));
+  d.exec();
 
-  // Create output DataSource
-  DataSource* output = input->clone(true,true);
-  QString name = output->producer()->GetAnnotation("tomviz.Label");
-  name = "Recon_WBP_" + name;
-  output->producer()->SetAnnotation("tomviz.Label", name.toLatin1().data());
-  t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
-  vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-
-  TomographyReconstruction::weightedBackProjection3(tiltSeries,recon);
-
-  output->dataModified();
-  // Add the new DataSource
-  LoadDataReaction::dataSourceAdded(output);
 }
 
 }

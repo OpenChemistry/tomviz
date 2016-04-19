@@ -139,6 +139,8 @@ set(SOURCES
   RecentFilesMenu.h
   ReconstructionReaction.h
   ReconstructionReaction.cxx
+  ReconstructionWidget.h
+  ReconstructionWidget.cxx
   ResetReaction.cxx
   ResetReaction.h
   RotateAlignWidget.cxx
@@ -249,6 +251,7 @@ qt5_wrap_ui(UI_SOURCES
   MainWindow.ui
   ModulePropertiesPanel.ui
   RotateAlignWidget.ui
+  ReconstructionWidget.ui
   ViewPropertiesPanel.ui
   )
 qt5_add_resources(RCC_SOURCES resources.qrc)
