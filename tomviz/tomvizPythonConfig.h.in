@@ -71,8 +71,9 @@ void PythonAppInitPrependPathWindows(const std::string& exe_dir)
     // since exe_dir in <PREFiX>/bin, we do a  /../
     PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
 
-    // we don't add anything for ParaView since, ParaView takes care of that.
-    PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/");
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/paraview/site-packages");
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/paraview/site-packages/vtk");
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/itk/site-packages");
     }
   }
 
@@ -135,6 +136,7 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
     // we don't add anything for ParaView since, ParaView takes care of that.
     PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/");
+    PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/python2.7/site-packages");
     }
   }
 
