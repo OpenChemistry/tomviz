@@ -15,7 +15,8 @@
 ******************************************************************************/
 #include "DataSource.h"
 
-#include "OperatorPython.h"
+#include "Operator.h"
+#include "OperatorFactory.h"
 #include "Utilities.h"
 #include <vtkDataObject.h>
 #include <vtkDoubleArray.h>
@@ -267,6 +268,8 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
   {
     pugi::xml_node operatorNode = ns.append_child("Operator");
+    operatorNode.append_attribute("operator_type").set_value(
+        OperatorFactory::operatorType(op.data()));
     if (!op->serialize(operatorNode))
     {
       qWarning("failed to serialize Operator. Skipping it.");
@@ -309,10 +312,14 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   for (pugi::xml_node node=ns.child("Operator"); node;
        node = node.next_sibling("Operator"))
   {
-    QSharedPointer<Operator> op(new OperatorPython());
-    if (op->deserialize(node))
+    QSharedPointer<Operator> op(OperatorFactory::createOperator(
+          node.attribute("operator_type").value(), this));
+    if (op)
     {
-      this->addOperator(op);
+      if (op->deserialize(node))
+      {
+        this->addOperator(op);
+      }
     }
   }
   return true;
