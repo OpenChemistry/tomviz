@@ -32,12 +32,14 @@ public:
 
   QString label() const override { return "Convert to Float"; }
   QIcon icon() const override;
-  bool transform(vtkDataObject *data) override;
   Operator *clone() const override;
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
   EditOperatorWidget *getEditorContents(QWidget* parent) override;
   bool hasCustomUI() const override { return false; }
+
+protected:
+  bool applyTransform(vtkDataObject *data) override;
 
 private:
   Q_DISABLE_COPY(ConvertToFloatOperator)

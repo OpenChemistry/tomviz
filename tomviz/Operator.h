@@ -42,8 +42,7 @@ public:
   /// Returns an icon to use for this operator.
   virtual QIcon icon() const = 0;
 
-  /// Method to transform a dataset in-place.
-  virtual bool transform(vtkDataObject* data) = 0;
+  bool transform(vtkDataObject *data);
 
   /// Return a new clone.
   virtual Operator* clone() const = 0;
@@ -55,6 +54,18 @@ public:
   virtual EditOperatorWidget* getEditorContents(QWidget* parent) = 0;
   virtual bool hasCustomUI() const { return false; }
 
+  /// If the operator has some custom progress UI, then return that UI from this
+  /// function.  This custom UI must be parented to the given widget and should have
+  /// its signal/slot connections set up to show the progress of the operator.
+  /// If there is no need for custom progress UI, then leave this default implementation
+  /// and a default QProgressBar will be created instead.
+  virtual QWidget* getCustomProgressWidget(QWidget*) const { return nullptr; }
+  /// Return the total number of progress updates (assuming each update increments
+  /// the progress from 0 to some maximum.  If the operator doesn't support
+  /// incremental progress updates, leave this default implementation so that
+  /// QProgressBar interprets the progress as unknown.
+  virtual int totalProgressSteps() const { return 0; }
+
 signals:
   /// Emit this signal with the operation is updated/modified
   /// implying that the data needs to be reprocessed.
@@ -62,6 +73,20 @@ signals:
   /// Emit this signal to indicate that the operator's label changed
   /// and the GUI needs to refresh its display of the Operator.
   void labelModified();
+
+  /// Returns the number of steps the operator has finished.  The total number of
+  /// steps is returned by totalProgressSteps and should be emitted as a finished
+  /// signal when all work in the operator is done.
+  void updateProgress(int);
+  /// Emitted when the operator starts transforming the data
+  void transformingStarted();
+  /// Emitted when the operator is done transforming the data.  The parameter is the
+  /// return value from the transform() function.  True for success, false for failure.
+  void transformingDone(bool result);
+
+protected:
+  /// Method to transform a dataset in-place.
+  virtual bool applyTransform(vtkDataObject* data) = 0;
 
 private:
   Q_DISABLE_COPY(Operator)

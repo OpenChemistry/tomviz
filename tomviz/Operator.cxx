@@ -26,4 +26,11 @@ Operator::~Operator()
 {
 }
 
+bool Operator::transform(vtkDataObject *data)
+{
+  emit this->transformingStarted();
+  bool result = this->applyTransform(data);
+  emit this->transformingDone(result);
+  return result;
+}
 }
