@@ -13,25 +13,34 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "Operator.h"
+#ifndef tomvizProgressDialogManager_h
+#define tomvizProgressDialogManager_h
 
-namespace tomviz
-{
+#include <QObject>
 
-Operator::Operator(QObject* parentObject): Superclass(parentObject)
-{
-}
+class QMainWindow;
 
-Operator::~Operator()
-{
-}
+namespace tomviz {
+class Operator;
+class DataSource;
 
-bool Operator::transform(vtkDataObject *data)
+class ProgressDialogManager : public QObject
 {
-  emit this->transformingStarted();
-  emit this->updateProgress(0);
-  bool result = this->applyTransform(data);
-  emit this->transformingDone(result);
-  return result;
+  Q_OBJECT
+
+  typedef QObject Superclass;
+public:
+  ProgressDialogManager(QMainWindow* mw);
+  virtual ~ProgressDialogManager();
+
+private slots:
+  void operationStarted();
+  void operationProgress(int progress);
+  void operatorAdded(Operator *op);
+  void dataSourceAdded(DataSource *ds);
+private:
+  QMainWindow *mainWindow;
+  Q_DISABLE_COPY(ProgressDialogManager)
+};
 }
-}
+#endif

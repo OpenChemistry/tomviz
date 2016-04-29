@@ -133,6 +133,8 @@ set(SOURCES
   PipelineWidget.h
   ProgressBehavior.cxx
   ProgressBehavior.h
+  ProgressDialogManager.cxx
+  ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx
   PythonGeneratedDatasetReaction.h
   RecentFilesMenu.cxx

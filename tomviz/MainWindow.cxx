@@ -47,6 +47,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "RecentFilesMenu.h"
 #include "ReconstructionReaction.h"
@@ -351,6 +352,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 #endif
 
   ResetReaction::reset();
+  // Initialize worker manager
+  new ProgressDialogManager(this);
 }
 
 MainWindow::~MainWindow()
