@@ -123,6 +123,8 @@ set(SOURCES
   MoveActiveObject.h
   Operator.cxx
   Operator.h
+  OperatorFactory.cxx
+  OperatorFactory.h
   OperatorPython.cxx
   OperatorPython.h
   OperatorsWidget.cxx
