@@ -24,7 +24,6 @@
 #include "pqPipelineSource.h"
 #include "pqProxyWidgetDialog.h"
 #include "pqFileDialog.h"
-#include "pqWriterDialog.h"
 #include "vtkDataObject.h"
 #include "vtkDataArray.h"
 #include "vtkImageData.h"
@@ -127,11 +126,15 @@ bool SaveDataReaction::saveData(const QString &filename)
     }
   }
 
-  pqWriterDialog dialog(writer);
+  pqProxyWidgetDialog dialog(writer, pqCoreUtilities::mainWidget());
+  dialog.setObjectName("WriterSettingsDialog");
+  dialog.setEnableSearchBar(true);
+  dialog.setWindowTitle(
+    QString("Configure Writer (%1)").arg(writer->GetXMLLabel()));
 
   // Check to see if this writer has any properties that can be configured by
   // the user. If it does, display the dialog.
-  if (dialog.hasConfigurableProperties())
+  if (dialog.hasVisibleWidgets())
   {
     dialog.exec();
     if(dialog.result() == QDialog::Rejected)
