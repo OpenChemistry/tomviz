@@ -69,6 +69,9 @@ public:
   bool cancelled;
   bool started;
 
+  QElapsedTimer timer;
+  int totalSlicesToProcess;
+
   void setupCurrentSliceLine(int sliceNum)
   {
     vtkTrivialProducer *t =
@@ -128,9 +131,10 @@ ReconstructionWidget::ReconstructionWidget(DataSource *source, QWidget *p)
   }
   int extent[6];
   imageData->GetExtent(extent);
+  this->Internals->totalSlicesToProcess = extent[1] - extent[0] + 1;
   this->Internals->dataSliceMapper->SetSliceNumber(extent[0] + (extent[1] - extent[0]) / 2);
   this->Internals->dataSliceMapper->Update();
-  int extent2[6] = {extent[0], extent[1], extent[2], extent[3], extent[2], extent[3]};
+  int extent2[6] = {0, 0, extent[2], extent[3], extent[2], extent[3]};
   this->Internals->reconstruction->SetExtent(extent2);
   this->Internals->reconstruction->AllocateScalars(VTK_FLOAT, 1);
   vtkDataArray *darray = this->Internals->reconstruction->GetPointData()->GetScalars();
@@ -181,11 +185,6 @@ ReconstructionWidget::ReconstructionWidget(DataSource *source, QWidget *p)
                         this->Internals->sinogramMapper.Get());
   tomviz::setupRenderer(this->Internals->reconstructionSliceRenderer.Get(),
                         this->Internals->reconstructionSliceMapper.Get());
-
-  this->connect(this->Internals->Ui.startButton, SIGNAL(pressed()),
-                SLOT(startReconstruction()));
-  this->connect(this->Internals->Ui.cancelButton, SIGNAL(pressed()),
-                SLOT(cancelReconstruction()));
 }
 
 ReconstructionWidget::~ReconstructionWidget()
@@ -195,80 +194,43 @@ ReconstructionWidget::~ReconstructionWidget()
 
 void ReconstructionWidget::startReconstruction()
 {
-  this->Internals->started = true;
-  DataSource *source = this->Internals->dataSource;
-  Ui::ReconstructionWidget &ui = this->Internals->Ui;
-  if (!source)
-  {
-    return;
-  }
-  vtkTrivialProducer *t =
-    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-  vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-  int extent[6];
-  imageData->GetExtent(extent);
-  int numXSlices = extent[1] - extent[0] + 1;
-  int numYSlices = extent[3] - extent[2] + 1;
-  int numZSlices = extent[5] - extent[4] + 1;
-  ui.statusLabel->setText(QString("Slice # 0 out of %1\nTime remaining: unknown").arg(numXSlices));
-  QElapsedTimer timer;
-  timer.start();
-  std::vector<float> sinogramPtr(numYSlices * numZSlices);
-  std::vector<float> reconstructionPtr(numYSlices * numYSlices);
-  QVector<double> tiltAngles = source->getTiltAngles();
-  vtkDataArray *darray = this->Internals->reconstruction->GetPointData()->GetScalars();
-  // TODO: talk to Dave Lonie about how to do this in new data array API
-  float *reconstruction = (float*)darray->GetVoidPointer(0);
-  for (int i = 0; i < numXSlices && !this->Internals->cancelled; ++i)
-  {
-    QCoreApplication::processEvents();
-    this->Internals->setupCurrentSliceLine(i);
-    ui.currentSliceView->GetRenderWindow()->Render();
-    this->Internals->sinogramMapper->SetSliceNumber(
-      this->Internals->sinogramMapper->GetSliceNumberMinValue() + i);
-    ui.sinogramView->GetRenderWindow()->Render();
-    TomographyTiltSeries::getSinogram(imageData, i, &sinogramPtr[0]);
-    TomographyReconstruction::unweightedBackProjection2(
-      &sinogramPtr[0], tiltAngles.data(), &reconstructionPtr[0], numZSlices, numYSlices);
-    for (int j = 0; j < numYSlices; ++j) {
-      for (int k = 0; k < numYSlices; ++k) {
-        reconstruction[j * (numYSlices * numXSlices) + k * numXSlices + i] = reconstructionPtr[k * numYSlices + j];
-      }
-    }
-    this->Internals->reconstruction->Modified();
-    this->Internals->reconstructionSliceMapper->SetSliceNumber(i);
-    this->Internals->reconstructionSliceMapper->Update();
-    ui.currentReconstructionView->GetRenderWindow()->Render();
-    ui.statusLabel->setText(QString("Slice # %1 out of %2\nTime remaining: %3 seconds")
-        .arg(i+1).arg(numXSlices).arg((timer.elapsed() / (1000.0*(i+1))) * (numXSlices - i)));
-  }
-  if (!this->Internals->cancelled)
-  {
-    DataSource* output = source->clone(true,true);
-    QString name = output->producer()->GetAnnotation("tomviz.Label");
-    name = "Recon_WBP_" + name;
-    output->producer()->SetAnnotation("tomviz.Label", name.toLatin1().data());
-    t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
-    t->SetOutput(this->Internals->reconstruction.Get());
-    output->dataModified();
-    LoadDataReaction::dataSourceAdded(output);
-    emit this->reconstructionFinished();
-  }
-  else
-  {
-    emit this->reconstructionCancelled();
-  }
+  Ui::ReconstructionWidget& ui = this->Internals->Ui;
+  ui.statusLabel->setText(QString("Slice # 0 out of %1\nTime remaining: unknown")
+      .arg(this->Internals->totalSlicesToProcess));
+  this->Internals->timer.start();
 }
 
-void ReconstructionWidget::cancelReconstruction()
+void ReconstructionWidget::updateProgress(int progress)
 {
-  if (this->Internals->started)
+  // with the new setup this may happen.  The initial estimates may be off, but this
+  // will keep garbage from populating the time remaining field.
+  if (! this->Internals->timer.isValid())
   {
-    this->Internals->cancelled = true;
+    this->Internals->timer.start();
   }
-  else
+  Ui::ReconstructionWidget& ui = this->Internals->Ui;
+  this->Internals->setupCurrentSliceLine(progress);
+  ui.currentSliceView->GetRenderWindow()->Render();
+  this->Internals->sinogramMapper->SetSliceNumber(
+    this->Internals->sinogramMapper->GetSliceNumberMinValue() + progress);
+  ui.sinogramView->GetRenderWindow()->Render();
+  ui.statusLabel->setText(QString("Slice # %1 out of %2\nTime remaining: %3 seconds")
+      .arg(progress + 1).arg(this->Internals->totalSlicesToProcess)
+      .arg((this->Internals->timer.elapsed() / (1000.0*(progress+1))) *
+           (this->Internals->totalSlicesToProcess - progress)));
+}
+
+void ReconstructionWidget::updateIntermediateResults(std::vector<float> reconSlice)
+{
+  vtkDataArray *array = this->Internals->reconstruction->GetPointData()->GetScalars();
+  float *image = (float*) array->GetVoidPointer(0);
+  for (size_t i = 0; i < reconSlice.size(); ++i)
   {
-    emit this->reconstructionCancelled();
+    image[i] = reconSlice[i];
   }
+  this->Internals->reconstruction->Modified();
+  this->Internals->reconstructionSliceMapper->Update();
+  Ui::ReconstructionWidget& ui = this->Internals->Ui;
+  ui.currentReconstructionView->GetRenderWindow()->Render();
 }
 }

@@ -33,7 +33,8 @@ public:
 public slots:
 
   void startReconstruction();
-  void cancelReconstruction();
+  void updateProgress(int progress);
+  void updateIntermediateResults(std::vector<float> reconSlice);
 
 signals:
   void reconstructionFinished();

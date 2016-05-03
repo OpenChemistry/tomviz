@@ -22,12 +22,10 @@
 #include <vtkTrivialProducer.h>
 #include <vtkSMSourceProxy.h>
 
-#include "ReconstructionWidget.h"
-#include "TomographyReconstruction.h"
+#include "ReconstructionOperator.h"
 
 #include <QDebug>
-#include <QDialog>
-#include <QHBoxLayout>
+#include <QSharedPointer>
 
 namespace tomviz
 {
@@ -60,14 +58,8 @@ void ReconstructionReaction::recon(DataSource* input)
     return;
   }
 
-  QDialog d;
-  d.setLayout(new QHBoxLayout);
-  ReconstructionWidget *reconWidget = new ReconstructionWidget(input, &d);
-  d.layout()->addWidget(reconWidget);
-  d.connect(reconWidget, SIGNAL(reconstructionCancelled()), SLOT(reject()));
-  d.connect(reconWidget, SIGNAL(reconstructionFinished()), SLOT(accept()));
-  d.exec();
-
+  QSharedPointer<Operator> op(new ReconstructionOperator(input));
+  input->addOperator(op);
 }
 
 }

@@ -139,8 +139,10 @@ set(SOURCES
   PythonGeneratedDatasetReaction.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
-  ReconstructionReaction.h
+  ReconstructionOperator.cxx
+  ReconstructionOperator.h
   ReconstructionReaction.cxx
+  ReconstructionReaction.h
   ReconstructionWidget.h
   ReconstructionWidget.cxx
   ResetReaction.cxx

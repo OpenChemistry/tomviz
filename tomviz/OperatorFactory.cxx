@@ -19,6 +19,7 @@
 #include "CropOperator.h"
 #include "DataSource.h"
 #include "OperatorPython.h"
+#include "ReconstructionOperator.h"
 #include "TranslateAlignOperator.h"
 
 #include "vtkImageData.h"
@@ -39,7 +40,7 @@ OperatorFactory::~OperatorFactory()
 QList<QString> OperatorFactory::operatorTypes()
 {
   QList<QString> reply;
-  reply << "Python" << "ConvertToFloat" << "Crop" << "TranslateAlign";
+  reply << "Python" << "ConvertToFloat" << "Crop" << "CxxReconstruction" << "TranslateAlign";
   qSort(reply);
   return reply;
 }
@@ -65,6 +66,10 @@ Operator* OperatorFactory::createOperator(const QString &type, DataSource *ds)
                           image->GetOrigin(),
                           image->GetSpacing());
   }
+  else if (type == "CxxReconstruction")
+  {
+    op = new ReconstructionOperator(ds);
+  }
   else if (type == "TranslateAlign")
   {
     op = new TranslateAlignOperator(ds);
@@ -85,6 +90,10 @@ const char* OperatorFactory::operatorType(Operator* op)
   if (qobject_cast<CropOperator*>(op))
   {
     return "Crop";
+  }
+  if (qobject_cast<ReconstructionOperator*>(op))
+  {
+    return "CxxReconstruction";
   }
   if (qobject_cast<TranslateAlignOperator*>(op))
   {
