@@ -126,6 +126,15 @@ void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(vtkTable* table,
 {
   this->HistogramChart->SetHistogramInputData(table, xAxisColumn, yAxisColumn);
 
+  // The histogram chart bottom axis range was updated in the call above.
+  // Set the same range for the color bar bottom axis here.
+  vtkAxis* histogramBottomAxis = this->HistogramChart->GetAxis(vtkAxis::BOTTOM);
+  double axisRange[2];
+  histogramBottomAxis->GetRange(axisRange);
+
+  vtkAxis* bottomAxis = this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
+  bottomAxis->SetRange(axisRange);
+
   // The data range may change and cause the labels to change. Hence, update
   // the geometry.
   this->Private->NeedsUpdate = true;
