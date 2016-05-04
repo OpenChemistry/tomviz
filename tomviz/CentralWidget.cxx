@@ -520,6 +520,7 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     this->HistogramColorOpacityEditor->SetColorTransferFunction(this->LUT);
     this->HistogramColorOpacityEditor->SelectColorArray("image_extents");
   }
+  this->HistogramView->Render();
 }
 
 } // end of namespace tomviz
