@@ -246,7 +246,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(connectedComponentsAction,
                                  "Connected Components", readInPythonScript("ConnectedComponents"));
   new AddPythonTransformReaction(shiftUniformAction,
-                                 "Shift Uniformly", readInPythonScript("Shift_Stack_Uniformly"));
+                                 "Shift Volume", readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,
                                    "Delete Slices", readInPythonScript("deleteSlices"));
   new AddPythonTransformReaction(downsampleByTwoAction,
@@ -330,11 +330,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   connect(tiltAction, SIGNAL(triggered()), SLOT(openTilt()));
   sampleDataMenu->addSeparator();
 #endif
-  QAction* constantDataAction = sampleDataMenu->addAction("Constant Dataset");
+  QAction* constantDataAction = sampleDataMenu->addAction("Generate Constant Dataset");
   new PythonGeneratedDatasetReaction(constantDataAction, "Constant Dataset",
       readInPythonScript("ConstantDataset"));
-  sampleDataMenu->addSeparator();
-  QAction* randomParticlesAction = sampleDataMenu->addAction("Random Particles");
+  QAction* randomParticlesAction = sampleDataMenu->addAction("Generate Random Particles");
   new PythonGeneratedDatasetReaction(randomParticlesAction, "Random Particles",
       readInPythonScript("RandomParticles"));
 
