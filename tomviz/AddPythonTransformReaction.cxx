@@ -284,6 +284,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     v->addLayout(layout);
     v->addWidget(buttons);
     dialog.setLayout(v);
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
 
     if (dialog.exec() == QDialog::Accepted)
     {
@@ -345,7 +346,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     v->addLayout(layout2);
     v->addWidget(buttons);
     dialog.setLayout(v);
-
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
     if (dialog.exec() == QDialog::Accepted)
     {
       QMap<QString, QString> substitutions;
@@ -784,8 +785,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout->addWidget(selectionWidget);
     layout->addWidget(buttons);
     dialog->setLayout(layout);
+    
     this->connect(dialog, SIGNAL(accepted()), SLOT(addExpressionFromNonModalDialog()));
     dialog->show();
+    dialog->layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+
   }
     
   else if (scriptLabel == "Background Subtraction (Manual)")
