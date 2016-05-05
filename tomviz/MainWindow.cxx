@@ -175,19 +175,19 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // Build Data Transforms menu
   // ################################################################
   QAction *customPythonAction = ui.menuData->addAction("Custom Transform");
-  QAction *customPythonITKAction = ui.menuData->addAction("Custom ITK Transform");
   QAction *cropDataAction = ui.menuData->addAction("Crop");
   QAction *convertDataAction = ui.menuData->addAction("Convert To Float");
   ui.menuData->addSeparator();
-  
+  QAction *customPythonITKAction = ui.menuData->addAction("Custom ITK Transform");
   QAction *binaryThresholdAction = ui.menuData->addAction("Binary Threshold");
   QAction *connectedComponentsAction = ui.menuData->addAction("Connected Components");
-  QAction *shiftUniformAction = ui.menuData->addAction("Shift Uniformly");
+  ui.menuData->addSeparator();
+  QAction *shiftUniformAction = ui.menuData->addAction("Shift Volume");
   QAction *deleteSliceAction = ui.menuData->addAction("Delete Slices");
   QAction *downsampleByTwoAction = ui.menuData->addAction("Downsample x2");
   QAction *resampleAction = ui.menuData->addAction("Resample");
   QAction *rotateAction = ui.menuData->addAction("Rotate");
-  QAction *clearAction = ui.menuData->addAction("Clear Volume");
+  QAction *clearAction = ui.menuData->addAction("Clear Subvolume");
   ui.menuData->addSeparator();
   QAction *setNegativeVoxelsToZeroAction = ui.menuData->addAction("Set Negative Voxels To Zero");
   QAction *squareRootAction = ui.menuData->addAction("Square Root Data");
@@ -197,13 +197,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *laplaceFilterAction = ui.menuData->addAction("Laplace Filter");
   QAction *gaussianFilterAction = ui.menuData->addAction("Gaussian Filter");
   QAction *medianFilterAction = ui.menuData->addAction("Median Filter");
-    
-
   ui.menuData->addSeparator();
 
   QAction *cloneAction = ui.menuData->addAction("Clone");
   QAction *deleteDataAction = ui.menuData->addAction(
-      QIcon(":/QtWidgets/Icons/pqDelete32.png"), "Delete Data & Modules");
+      QIcon(":/QtWidgets/Icons/pqDelete32.png"), "Delete Data and Modules");
   deleteDataAction->setToolTip("Delete Data");
 
   // Build Tomography menu
@@ -218,8 +216,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   dataProcessingLabel->setEnabled(false);
   QAction *autoSubtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Auto)");
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
-  QAction *normalizationAction = ui.menuTomography->addAction("Normalization");
-  QAction *gradientMagnitude2DSobelAction = ui.menuTomography->addAction("Gradient Magnitude");
+  QAction *normalizationAction = ui.menuTomography->addAction("Normalize Average Image Intensity");
+  QAction *gradientMagnitude2DSobelAction = ui.menuTomography->addAction("2D Gradient Magnitude");
   QAction *autoAlignAction = ui.menuTomography->addAction("Image Alignment (Auto)");
   QAction *alignAction = ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction *rotateAlignAction = ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
@@ -326,8 +324,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QMenu *sampleDataMenu = new QMenu("Sample Data", this);
   ui.menubar->insertMenu(ui.menuHelp->menuAction(), sampleDataMenu);
 #ifdef TOMVIZ_DATA
-  QAction *reconAction = sampleDataMenu->addAction("Reconstruction");
-  QAction *tiltAction = sampleDataMenu->addAction("Tilt Series");
+  QAction *reconAction = sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
+  QAction *tiltAction = sampleDataMenu->addAction("Star Nanoparticle (Tilt Series)");
   connect(reconAction, SIGNAL(triggered()), SLOT(openRecon()));
   connect(tiltAction, SIGNAL(triggered()), SLOT(openTilt()));
   sampleDataMenu->addSeparator();
