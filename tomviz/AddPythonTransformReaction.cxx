@@ -251,7 +251,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);    
     }
   }
-  else if (scriptLabel == "Shift Uniformly")
+  else if (scriptLabel == "Shift Volume")
   {
     vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
@@ -259,6 +259,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     int *extent = data->GetExtent();
 
     QDialog dialog(pqCoreUtilities::mainWidget());
+    dialog.setWindowTitle("Shift Volume");
+
     QHBoxLayout *layout = new QHBoxLayout;
     QLabel *label = new QLabel("Shift to apply:", &dialog);
     layout->addWidget(label);

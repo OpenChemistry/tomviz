@@ -280,7 +280,7 @@ void PythonGeneratedDatasetReaction::addDataset()
   if (this->Internals->scriptLabel == "Constant Dataset")
   {
     QDialog dialog;
-    dialog.setWindowTitle("Set Parameters");
+    dialog.setWindowTitle("Generate Constant Dataset");
     ShapeWidget *shapeWidget = new ShapeWidget(&dialog);
 
     QLabel *label = new QLabel("Value: ", &dialog);
@@ -317,7 +317,7 @@ void PythonGeneratedDatasetReaction::addDataset()
   else if (this->Internals->scriptLabel == "Random Particles")
   {
     QDialog dialog;
-    dialog.setWindowTitle("Random Particles");
+    dialog.setWindowTitle("Generate Random Particles");
     QVBoxLayout* layout = new QVBoxLayout; //overall layout
     //Guide
     QLabel *guide = new QLabel;

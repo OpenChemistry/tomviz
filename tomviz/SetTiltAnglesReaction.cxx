@@ -124,6 +124,7 @@ void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow *window, DataSource 
 
   layout->addWidget(buttons, 3, 0, 1, 4, Qt::AlignCenter);
   dialog.setLayout(layout);
+  dialog.setWindowTitle("Set Tilt Angles");
 
   if (dialog.exec() == QDialog::Accepted)
   {
