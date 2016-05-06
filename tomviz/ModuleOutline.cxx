@@ -94,7 +94,7 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
   pugi::xml_node reprNode = ns.append_child("OutlineRepresentation");
 
   QStringList properties;
-  properties << "CubeAxesVisibility" << "Visibility" << "DiffuseColor";
+  properties << "Visibility" << "DiffuseColor";
   if (tomviz::serialize(this->OutlineRepresentation, reprNode, properties) == false)
   {
     qWarning("Failed to serialize ModuleOutline.");
@@ -130,8 +130,7 @@ void ModuleOutline::addToPanel(pqProxiesWidget* panel)
 {
   Q_ASSERT(panel && this->OutlineRepresentation);
   QStringList properties;
-  properties << "CubeAxesVisibility"
-      << "DiffuseColor";
+  properties << "DiffuseColor";
   panel->addProxy(
     this->OutlineRepresentation, "Annotations", properties, true);
   this->Superclass::addToPanel(panel);
