@@ -34,8 +34,11 @@ class DataPropertiesPanel : public QWidget
   typedef QWidget Superclass;
 
 public:
-  DataPropertiesPanel(QWidget* parent=nullptr);
-  virtual ~DataPropertiesPanel();
+  DataPropertiesPanel(QWidget* parent = nullptr);
+  virtual ~DataPropertiesPanel() override;
+
+protected:
+  void paintEvent(QPaintEvent *) override;
 
 private slots:
   void setDataSource(DataSource*);
@@ -43,6 +46,7 @@ private slots:
   void render();
   void onTiltAnglesModified(int row, int column);
   void setTiltAngles();
+  void scheduleUpdate();
 
 signals:
   void colorMapUpdated();
@@ -52,6 +56,8 @@ private:
 
   class DPPInternals;
   const QScopedPointer<DPPInternals> Internals;
+
+  bool updateNeeded = true;
 };
 
 }

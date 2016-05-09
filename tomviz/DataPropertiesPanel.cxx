@@ -121,6 +121,12 @@ DataPropertiesPanel::~DataPropertiesPanel()
 {
 }
 
+void DataPropertiesPanel::paintEvent(QPaintEvent *e)
+{
+  this->update();
+  QWidget::paintEvent(e);
+}
+
 void DataPropertiesPanel::setDataSource(DataSource* dsource)
 {
   if (this->Internals->CurrentDataSource)
@@ -130,10 +136,10 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
   this->Internals->CurrentDataSource = dsource;
   if (dsource)
   {
-    this->connect(dsource, SIGNAL(dataChanged()), SLOT(update()),
+    this->connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
                   Qt::UniqueConnection);
   }
-  this->update();
+  this->updateNeeded = true;
 }
 
 namespace {
@@ -176,6 +182,11 @@ QString getDataTypeString(vtkSMSourceProxy* proxy)
 
 void DataPropertiesPanel::update()
 {
+  if (!this->updateNeeded)
+  {
+    return;
+  }
+
   this->disconnect(this->Internals->Ui.TiltAnglesTable,
       SIGNAL(cellChanged(int, int)), this,
       SLOT(onTiltAnglesModified(int, int)));
@@ -238,6 +249,8 @@ void DataPropertiesPanel::update()
   this->connect(this->Internals->Ui.TiltAnglesTable,
       SIGNAL(cellChanged(int, int)),
       SLOT(onTiltAnglesModified(int, int)));
+
+  this->updateNeeded = false;
 }
 
 void DataPropertiesPanel::render()
@@ -278,6 +291,11 @@ void DataPropertiesPanel::setTiltAngles()
   DataSource* dsource = this->Internals->CurrentDataSource;
   QMainWindow* mainWindow = qobject_cast<QMainWindow*>(this->window());
   SetTiltAnglesReaction::showSetTiltAnglesUI(mainWindow, dsource);
+}
+
+void DataPropertiesPanel::scheduleUpdate()
+{
+  this->updateNeeded = true;
 }
 
 }
