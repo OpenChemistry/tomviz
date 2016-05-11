@@ -57,7 +57,7 @@ public:
 
   /// Add/remove operators.
   int addOperator(QSharedPointer<Operator>& op);
-  bool removeOperator(QSharedPointer<Operator>& op);
+  bool removeOperator(const QSharedPointer<Operator>& op);
 
   /// Creates a new clone from this DataSource. If cloneOperators then clone
   /// the operators too, if cloneTransformedOnly clone the transformed data.
