@@ -29,6 +29,7 @@
 #include "vtkImageData.h"
 #include "vtkImageSlice.h"
 #include "vtkImageProperty.h"
+#include "vtkInteractorStyleRubberBand2D.h"
 #include "vtkLineSource.h"
 #include "vtkNew.h"
 #include "vtkPointData.h"
@@ -178,6 +179,16 @@ ReconstructionWidget::ReconstructionWidget(DataSource *source, QWidget *p)
     this->Internals->reconstructionSliceRenderer.Get());
   this->Internals->Ui.sinogramView->GetRenderWindow()->AddRenderer(
     this->Internals->sinogramRenderer.Get());
+
+  vtkNew<vtkInteractorStyleRubberBand2D> interactorStyle;
+  interactorStyle->SetRenderOnMouseMove(true);
+
+  this->Internals->Ui.currentSliceView->GetRenderWindow()->GetInteractor()
+    ->SetInteractorStyle(interactorStyle.Get());
+  this->Internals->Ui.currentReconstructionView->GetRenderWindow()->GetInteractor()
+    ->SetInteractorStyle(interactorStyle.Get());
+  this->Internals->Ui.sinogramView->GetRenderWindow()->GetInteractor()
+    ->SetInteractorStyle(interactorStyle.Get());
 
   tomviz::setupRenderer(this->Internals->dataSliceRenderer.Get(),
                         this->Internals->dataSliceMapper.Get());
