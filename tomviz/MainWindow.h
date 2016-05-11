@@ -58,9 +58,6 @@ private:
   Q_DISABLE_COPY(MainWindow)
   class MWInternals;
   MWInternals* Internals;
-
-  DataPropertiesPanel *DataPropertiesWidget;
-  ModulePropertiesPanel *ModulePropertiesWidget;
 };
 
 }
