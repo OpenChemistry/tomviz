@@ -115,9 +115,7 @@ public:
 
 MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   : Superclass(_parent, _flags),
-  Internals(new MainWindow::MWInternals()),
-  DataPropertiesWidget(new DataPropertiesPanel(this)),
-  ModulePropertiesWidget(new ModulePropertiesPanel(this))
+  Internals(new MainWindow::MWInternals())
 {
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
@@ -141,7 +139,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.centralWidget->connect(&ActiveObjects::instance(),
                             SIGNAL(moduleActivated(Module*)),
                             SLOT(setActiveModule(Module*)));
-  ui.centralWidget->connect(this->DataPropertiesWidget,
+  ui.centralWidget->connect(ui.dataPropertiesPanel,
                             SIGNAL(colorMapUpdated()),
                             SLOT(onColorMapUpdated()));
 
@@ -154,8 +152,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
           SLOT(dataSourceChanged(DataSource*)));
   connect(&ActiveObjects::instance(), SIGNAL(moduleActivated(Module*)),
           SLOT(moduleChanged(Module*)));
-  DataPropertiesWidget->hide();
-  ModulePropertiesWidget->hide();
 
   // Connect the about dialog up too.
   connect(ui.actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
@@ -404,32 +400,14 @@ void MainWindow::openRecon()
 
 void MainWindow::dataSourceChanged(DataSource*)
 {
-  QVBoxLayout *propsLayout =
-      qobject_cast<QVBoxLayout *>(this->Internals->Ui.propertiesPanel->layout());
-  if (!propsLayout)
-  {
-    propsLayout = new QVBoxLayout;
-    this->Internals->Ui.propertiesPanel->setLayout(propsLayout);
-  }
-  propsLayout->removeWidget(this->ModulePropertiesWidget);
-  this->ModulePropertiesWidget->hide();
-  propsLayout->addWidget(this->DataPropertiesWidget);
-  this->DataPropertiesWidget->show();
+  this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
+    this->Internals->Ui.dataPropertiesPanel);
 }
 
 void MainWindow::moduleChanged(Module*)
 {
-  QVBoxLayout *propsLayout =
-      qobject_cast<QVBoxLayout *>(this->Internals->Ui.propertiesPanel->layout());
-  if (!propsLayout)
-  {
-    propsLayout = new QVBoxLayout;
-    this->Internals->Ui.propertiesPanel->setLayout(propsLayout);
-  }
-  propsLayout->removeWidget(this->DataPropertiesWidget);
-  this->DataPropertiesWidget->hide();
-  propsLayout->addWidget(this->ModulePropertiesWidget);
-  this->ModulePropertiesWidget->show();
+  this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
+    this->Internals->Ui.modulePropertiesPanel);
 }
 
 void MainWindow::showEvent(QShowEvent *e)

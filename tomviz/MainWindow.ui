@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>29</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -184,7 +184,7 @@
         <bool>true</bool>
        </property>
        <property name="columnCount">
-        <number>2</number>
+        <number>1</number>
        </property>
        <attribute name="headerVisible">
         <bool>false</bool>
@@ -312,9 +312,21 @@
           <x>0</x>
           <y>0</y>
           <width>300</width>
-          <height>861</height>
+          <height>907</height>
          </rect>
         </property>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QStackedWidget" name="propertiesPanelStackedWidget">
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="empty"/>
+           <widget class="tomviz::DataPropertiesPanel" name="dataPropertiesPanel"/>
+           <widget class="tomviz::ModulePropertiesPanel" name="modulePropertiesPanel"/>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
      </item>
@@ -450,6 +462,18 @@
    <class>tomviz::OperatorsWidget</class>
    <extends>QTreeWidget</extends>
    <header>OperatorsWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::DataPropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>DataPropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::ModulePropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>ModulePropertiesPanel.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
