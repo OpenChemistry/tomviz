@@ -42,6 +42,8 @@ private slots:
   /// called when the current data source changes.
   void setDataSource(DataSource*);
 
+  void updateTransforms();
+
   void itemDoubleClicked(QTreeWidgetItem*);
 
   void updateOperatorLabel();

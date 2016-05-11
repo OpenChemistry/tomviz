@@ -66,7 +66,7 @@ public:
   vtkNew<vtkLineSource> currentSliceLine;
   vtkNew<vtkActor> currentSliceActor;
   QPointer<DataSource> dataSource;
-  bool cancelled;
+  bool canceled;
   bool started;
 
   QElapsedTimer timer;
@@ -110,7 +110,7 @@ ReconstructionWidget::ReconstructionWidget(DataSource *source, QWidget *p)
 {
   this->Internals->Ui.setupUi(this);
   this->Internals->dataSource = source;
-  this->Internals->cancelled = false;
+  this->Internals->canceled = false;
   this->Internals->started = false;
 
   vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(

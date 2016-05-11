@@ -18,7 +18,8 @@
 namespace tomviz
 {
 
-Operator::Operator(QObject* parentObject): Superclass(parentObject)
+Operator::Operator(QObject* parentObject)
+  : Superclass(parentObject), supportsCancel(false)
 {
 }
 

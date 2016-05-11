@@ -60,6 +60,10 @@ public:
   /// If there is no need for custom progress UI, then leave this default implementation
   /// and a default QProgressBar will be created instead.
   virtual QWidget* getCustomProgressWidget(QWidget*) const { return nullptr; }
+  /// Returns true if the operation supports canceling midway through the applyTransform
+  /// function via the cancelTransform slot.  Defaults to false, can be set by the
+  /// setSupportsCancel(bool) method by subclasses.
+  bool supportsCancelingMidTransform() const { return this->supportsCancel; }
   /// Return the total number of progress updates (assuming each update increments
   /// the progress from 0 to some maximum.  If the operator doesn't support
   /// incremental progress updates, leave this default implementation so that
@@ -84,11 +88,21 @@ signals:
   /// return value from the transform() function.  True for success, false for failure.
   void transformingDone(bool result);
 
+public slots:
+  /// Called when the 'Cancel' button is pressed on the progress dialog.
+  /// Operators should override this if they support canceling the operation midway.
+  virtual void cancelTransform() { /* Unsupported */ };
+
 protected:
   /// Method to transform a dataset in-place.
   virtual bool applyTransform(vtkDataObject* data) = 0;
+  /// Method to set whether the operator supports canceling midway through the transform
+  /// method call.  If you set this to true, you should also override the cancelTransform
+  /// slot to listen for the cancel signal and handle it.
+  void setSupportsCancel(bool b) { this-> supportsCancel = b; }
 
 private:
+  bool supportsCancel;
   Q_DISABLE_COPY(Operator)
 };
 
