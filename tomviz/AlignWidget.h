@@ -23,6 +23,7 @@
 
 #include <QVector>
 #include <QPointer>
+#include <QScopedPointer>
 
 class QLabel;
 class QSpinBox;
@@ -45,6 +46,7 @@ namespace tomviz
 
 class DataSource;
 class TranslateAlignOperator;
+class ViewMode;
 
 class AlignWidget : public EditOperatorWidget
 {
@@ -60,7 +62,7 @@ public:
   void applyChangesToOperator() override;
 
 protected slots:
-  void changeSlice();
+  void onTimeout();
   void changeSlice(int delta);
   void setSlice(int slice, bool resetInc = true);
   void updateReference();
@@ -100,6 +102,12 @@ protected:
   int frameRate;
   int referenceSlice;
   int observerId;
+
+  int maxSliceNum;
+  int minSliceNum;
+  double bounds[6];
+
+  QScopedPointer<ViewMode> mode;
 
   QVector<vtkVector2i> offsets;
   QPointer<TranslateAlignOperator> Op;
