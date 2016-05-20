@@ -332,7 +332,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* randomParticlesAction = sampleDataMenu->addAction("Generate Random Particles");
   new PythonGeneratedDatasetReaction(randomParticlesAction, "Random Particles",
       readInPythonScript("RandomParticles"));
-  QAction* probeFunctionAction = sampleDataMenu->addAction("Electron Beam Shape");
+  QAction* probeFunctionAction = sampleDataMenu->addAction("Generate Electron Beam Shape");
   new PythonGeneratedDatasetReaction(probeFunctionAction, "Electron Beam Shape",
                                      readInPythonScript("STEM_probe"));
 
