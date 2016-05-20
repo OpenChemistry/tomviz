@@ -22,9 +22,10 @@
 #include <vtkTrivialProducer.h>
 #include <vtkSMSourceProxy.h>
 
-#include "TomographyReconstruction.h"
+#include "ReconstructionOperator.h"
 
 #include <QDebug>
+#include <QSharedPointer>
 
 namespace tomviz
 {
@@ -57,24 +58,8 @@ void ReconstructionReaction::recon(DataSource* input)
     return;
   }
 
-  // Get vtkImageData pointer for input DataSource
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-    input->producer()->GetClientSideObject());
-  vtkImageData *tiltSeries = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-
-  // Create output DataSource
-  DataSource* output = input->clone(true,true);
-  QString name = output->producer()->GetAnnotation("tomviz.Label");
-  name = "Recon_WBP_" + name;
-  output->producer()->SetAnnotation("tomviz.Label", name.toLatin1().data());
-  t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
-  vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-
-  TomographyReconstruction::weightedBackProjection3(tiltSeries,recon);
-
-  output->dataModified();
-  // Add the new DataSource
-  LoadDataReaction::dataSourceAdded(output);
+  QSharedPointer<Operator> op(new ReconstructionOperator(input));
+  input->addOperator(op);
 }
 
 }

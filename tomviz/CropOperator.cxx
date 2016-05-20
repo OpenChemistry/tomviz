@@ -95,7 +95,7 @@ QIcon CropOperator::icon() const
   return QIcon(":/pqWidgets/Icons/pqExtractGrid24.png");
 }
 
-bool CropOperator::transform(vtkDataObject* data)
+bool CropOperator::applyTransform(vtkDataObject* data)
 {
   vtkImageData *imageData = vtkImageData::SafeDownCast(data);
   imageData->GetExtent(this->InputDataExtent);

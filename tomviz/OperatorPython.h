@@ -36,9 +36,6 @@ public:
   /// Returns an icon to use for this operator.
   QIcon icon() const override;
 
-  /// Method to transform a dataset in-place.
-  bool transform(vtkDataObject* data) override;
-
   /// return a new clone.
   Operator* clone() const override;
 
@@ -50,6 +47,9 @@ public:
 
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
   bool hasCustomUI() const override { return true; }
+
+protected:
+  bool applyTransform(vtkDataObject* data) override;
 
 private:
   Q_DISABLE_COPY(OperatorPython)

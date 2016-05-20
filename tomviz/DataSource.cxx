@@ -389,7 +389,7 @@ int DataSource::addOperator(QSharedPointer<Operator>& op)
   return index;
 }
 
-bool DataSource::removeOperator(QSharedPointer<Operator>& op)
+bool DataSource::removeOperator(const QSharedPointer<Operator>& op)
 {
   if (op)
   {

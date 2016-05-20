@@ -35,8 +35,6 @@ public:
 
   QIcon icon() const override;
 
-  bool transform(vtkDataObject* data) override;
-
   Operator* clone() const override;
 
   bool serialize(pugi::xml_node& ns) const override;
@@ -56,6 +54,9 @@ public:
   const double *inputDataOrigin() const { return this->InputDataOrigin; }
   void inputDataSpacing(double *spacing);
   const double *inputDataSpacing() const { return this->InputDataSpacing; }
+
+protected:
+  bool applyTransform(vtkDataObject* data) override;
 
 private:
   int CropBounds[6];

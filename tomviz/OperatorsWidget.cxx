@@ -74,8 +74,20 @@ void OperatorsWidget::setDataSource(DataSource* ds)
 
   this->connect(ds, SIGNAL(operatorAdded(QSharedPointer<Operator>&)),
                 SLOT(operatorAdded(QSharedPointer<Operator>&)));
+  // This is the only signal that something removed an operator...
+  this->connect(ds, SIGNAL(dataChanged()),
+                SLOT(updateTransforms()));
 
   foreach (QSharedPointer<Operator> op, ds->operators())
+  {
+    this->operatorAdded(op);
+  }
+}
+
+void OperatorsWidget::updateTransforms()
+{
+  this->clear();
+  foreach (QSharedPointer<Operator> op, this->Internals->ADataSource->operators())
   {
     this->operatorAdded(op);
   }
@@ -121,8 +133,8 @@ void OperatorsWidget::onItemClicked(QTreeWidgetItem *item, int col)
   Q_ASSERT(op);
   if (col == 1 && op)
   {
-    this->Internals->ADataSource->removeOperator(op);
     this->takeTopLevelItem(this->indexOfTopLevelItem(item));
+    this->Internals->ADataSource->removeOperator(op);
   }
 }
 

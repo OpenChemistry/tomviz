@@ -98,6 +98,8 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon)
         reconPtr[iz*outputSize[0]*outputSize[1] + iy*outputSize[0] + s] = recon2d[iy*outputSize[1] + iz];
       }
   }
+  delete [] recon2d;
+  delete [] sinogram;
 }
 
 // 2D WBP recon
