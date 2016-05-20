@@ -370,10 +370,11 @@ void PythonGeneratedDatasetReaction::addDataset()
     layout->addWidget(buttons);
     dialog.setLayout(layout);
     dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
-
+    
     // substitute values
     if (dialog.exec() == QDialog::Accepted)
       {
+        
         QString pythonScript = this->Internals->scriptSource;
         pythonScript.replace("###p_in###", QString("p_in = %1").arg(innerStructureParameter->value()));
         pythonScript.replace("###p_s###", QString("p_s = %1").arg(shapeParameter->value()));
@@ -384,8 +385,171 @@ void PythonGeneratedDatasetReaction::addDataset()
         shapeLayout->getShape(shape);
         this->dataSourceAdded(generator.createDataSource(shape));
       }
-    }
     
+  }
+  else if (this->Internals->scriptLabel == "Electron Beam Shape")
+  {
+    QDialog dialog;
+    dialog.setWindowTitle("Generate Electron Beam Shape");
+    QVBoxLayout* layout = new QVBoxLayout; //overall layout
+    //Guide
+    QLabel *guide = new QLabel;
+    guide->setText("Generate STEM probe function... ");
+    guide->setWordWrap(true);
+    layout->addWidget(guide);
+    
+    //Parameter Layout
+    QGridLayout *parametersLayout = new QGridLayout;
+    
+    QLabel *label = new QLabel("Beam energy (keV): ", &dialog);
+    parametersLayout->addWidget(label,0,1,1,1);
+    QDoubleSpinBox *voltage = new QDoubleSpinBox(&dialog);
+    voltage->setRange(1, 500);
+    voltage->setValue(300);
+    voltage->setSingleStep(50);
+    parametersLayout->addWidget(voltage,0,2,1,1);
+
+    label = new QLabel("Semi-convergence angle (mrad): ", &dialog);
+    parametersLayout->addWidget(label,0,3,1,1);
+    QDoubleSpinBox *alpha_max = new QDoubleSpinBox(&dialog);
+    alpha_max->setRange(0, 500);
+    alpha_max->setValue(30);
+    alpha_max->setSingleStep(0.5);
+    parametersLayout->addWidget(alpha_max,0,4,1,1);
+
+    
+    label = new QLabel("Transerve plane (x-y): ", &dialog);
+    parametersLayout->addWidget(label,1,0,1,1);
+    label = new QLabel("Number of pixels: ", &dialog);
+    parametersLayout->addWidget(label,1,1,1,1);
+    QSpinBox *Nxy = new QSpinBox(&dialog);
+    Nxy->setRange(64, 512);
+    Nxy->setValue(128);
+    Nxy->setSingleStep(1);
+    parametersLayout->addWidget(Nxy,1,2,1,1);
+    label = new QLabel("Pixel size (angstrom): ", &dialog);
+    parametersLayout->addWidget(label,1,3,1,1);
+    QDoubleSpinBox *dxy = new QDoubleSpinBox(&dialog);
+    dxy->setRange(0, 100);
+    dxy->setValue(0.1);
+    dxy->setSingleStep(0.1);
+    parametersLayout->addWidget(dxy,1,4,1,1);
+
+    label = new QLabel("Propagation direction (z): ", &dialog);
+    parametersLayout->addWidget(label,2,0,1,1);
+    label = new QLabel("Number of planes: ", &dialog);
+    parametersLayout->addWidget(label,2,1,1,1);
+    QSpinBox *Nz = new QSpinBox(&dialog);
+    Nz->setRange(1, 512);
+    Nz->setValue(128);
+    Nz->setSingleStep(1);
+    parametersLayout->addWidget(Nz,2,2,1,1);
+    label = new QLabel("Defocus change (angstrom): ", &dialog);
+    parametersLayout->addWidget(label,2,3,1,1);
+    QDoubleSpinBox *ddf = new QDoubleSpinBox(&dialog);
+    ddf->setValue(1.0);
+    ddf->setSingleStep(1.0);
+    parametersLayout->addWidget(ddf,2,4,1,1);
+    
+    label = new QLabel("Spherical aberration: ", &dialog);
+    parametersLayout->addWidget(label,3,0,1,1);
+    label = new QLabel("Third-order (mm): ", &dialog);
+    parametersLayout->addWidget(label,3,1,1,1);
+    QDoubleSpinBox *c3 = new QDoubleSpinBox(&dialog);
+    c3->setValue(0.0);
+    c3->setSingleStep(0.01);
+    parametersLayout->addWidget(c3,3,2,1,1);
+    label = new QLabel("Fifth-order (mm): ", &dialog);
+    parametersLayout->addWidget(label,3,3,1,1);
+    QDoubleSpinBox *c5 = new QDoubleSpinBox(&dialog);
+    c5->setValue(0.0);
+    c5->setSingleStep(0.1);
+    parametersLayout->addWidget(c5,3,4,1,1);
+
+    label = new QLabel("Twofold astigmatism: ", &dialog);
+    parametersLayout->addWidget(label,4,0,1,1);
+    label = new QLabel("Value (nm): ", &dialog);
+    parametersLayout->addWidget(label,4,1,1,1);
+    QDoubleSpinBox *f_a2 = new QDoubleSpinBox(&dialog);
+    f_a2->setValue(0.0);
+    f_a2->setSingleStep(1);
+    parametersLayout->addWidget(f_a2,4,2,1,1);
+    label = new QLabel("Orientation (rad): ", &dialog);
+    parametersLayout->addWidget(label,4,3,1,1);
+    QDoubleSpinBox *phi_a2 = new QDoubleSpinBox(&dialog);
+    phi_a2->setValue(0.0);
+    phi_a2->setSingleStep(0.1);
+    parametersLayout->addWidget(phi_a2,4,4,1,1);
+
+    label = new QLabel("Threefold astigmatism: ", &dialog);
+    parametersLayout->addWidget(label,5,0,1,1);
+    label = new QLabel("Value (nm): ", &dialog);
+    parametersLayout->addWidget(label,5,1,1,1);
+    QDoubleSpinBox *f_a3 = new QDoubleSpinBox(&dialog);
+    f_a3->setValue(0.0);
+    f_a3->setSingleStep(1);
+    parametersLayout->addWidget(f_a3,5,2,1,1);
+    label = new QLabel("Orientation (rad): ", &dialog);
+    parametersLayout->addWidget(label,5,3,1,1);
+    QDoubleSpinBox *phi_a3 = new QDoubleSpinBox(&dialog);
+    phi_a3->setValue(0.0);
+    phi_a3->setSingleStep(0.1);
+    parametersLayout->addWidget(phi_a3,5,4,1,1);
+
+    label = new QLabel("Coma: ", &dialog);
+    parametersLayout->addWidget(label,6,0,1,1);
+    label = new QLabel("Value (nm): ", &dialog);
+    parametersLayout->addWidget(label,6,1,1,1);
+    QDoubleSpinBox *f_c3 = new QDoubleSpinBox(&dialog);
+    f_c3->setMaximum(1000000);
+    f_c3->setValue(0.0);
+    f_c3->setSingleStep(1);
+    parametersLayout->addWidget(f_c3,6,2,1,1);
+    label = new QLabel("Orientation (rad): ", &dialog);
+    parametersLayout->addWidget(label,6,3,1,1);
+    QDoubleSpinBox *phi_c3 = new QDoubleSpinBox(&dialog);
+    phi_c3->setValue(0.0);
+    phi_c3->setSingleStep(0.1);
+    parametersLayout->addWidget(phi_c3,6,4,1,1);
+    
+    
+    //Buttons
+    QDialogButtonBox* buttons = new QDialogButtonBox(
+                                                     QDialogButtonBox::Cancel|QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
+    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    
+    layout->addItem(parametersLayout);
+    layout->addWidget(buttons);
+    dialog.setLayout(layout);
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
+    
+    // substitute values
+    if (dialog.exec() == QDialog::Accepted)
+    {
+      QString pythonScript = this->Internals->scriptSource;
+      pythonScript.replace("###voltage###", QString("voltage = %1").arg(voltage->value()));
+      pythonScript.replace("###alpha_max###", QString("alpha_max = %1").arg(alpha_max->value()));
+      pythonScript.replace("###Nxy###", QString("Nxy = %1").arg(Nxy->value()));
+      pythonScript.replace("###Nz###", QString("Nz = %1").arg(Nz->value()));
+      pythonScript.replace("###dxy###", QString("dxy = %1").arg(dxy->value()));
+      pythonScript.replace("###ddf###", QString("ddf = %1").arg(ddf->value()));
+      pythonScript.replace("###c3###", QString("c3 = %1").arg(c3->value()));
+      pythonScript.replace("###c5###", QString("c5 = %1").arg(c5->value()));
+      pythonScript.replace("###f_a2###", QString("f_a2 = %1").arg(f_a2->value()));
+      pythonScript.replace("###phi_a2###", QString("phi_a2 = %1").arg(phi_a2->value()));
+      pythonScript.replace("###f_a3###", QString("f_a3 = %1").arg(f_a3->value()));
+      pythonScript.replace("###phi_a3###", QString("phi_a3 = %1").arg(phi_a3->value()));
+      pythonScript.replace("###f_c3###", QString("f_c3 = %1").arg(f_c3->value()));
+      pythonScript.replace("###phi_c3###", QString("phi_c3 = %1").arg(phi_c3->value()));
+      
+      generator.setScript(pythonScript);
+      const int shape[3] = {Nxy->value(),Nxy->value(),Nz->value()};
+      this->dataSourceAdded(generator.createDataSource(shape));
+    }
+  
+    }
+  
 }
 
 void PythonGeneratedDatasetReaction::dataSourceAdded(vtkSmartPointer<vtkSMSourceProxy> proxy)
