@@ -103,7 +103,7 @@ TranslateAlignOperator::TranslateAlignOperator(DataSource *ds, QObject *p)
 
 QIcon TranslateAlignOperator::icon() const { return QIcon(""); }
 
-bool TranslateAlignOperator::transform(vtkDataObject *data)
+bool TranslateAlignOperator::applyTransform(vtkDataObject *data)
 {
   vtkNew<vtkImageData> outImage;
   vtkImageData *inImage = vtkImageData::SafeDownCast(data);

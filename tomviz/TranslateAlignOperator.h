@@ -38,7 +38,6 @@ public:
   
   QString label() const override { return "Translation Align"; }
   QIcon icon() const override;
-  bool transform(vtkDataObject* data) override;
   Operator* clone() const override;
 
   bool serialize(pugi::xml_node& ns) const override;
@@ -52,6 +51,9 @@ public:
   DataSource *getDataSource() const { return this->dataSource; }
 
   bool hasCustomUI() const override { return true; }
+
+protected:
+  bool applyTransform(vtkDataObject* data) override;
 
 private:
   QVector<vtkVector2i> offsets;
