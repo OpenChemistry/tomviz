@@ -370,11 +370,10 @@ void PythonGeneratedDatasetReaction::addDataset()
     layout->addWidget(buttons);
     dialog.setLayout(layout);
     dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
-    
+
     // substitute values
     if (dialog.exec() == QDialog::Accepted)
       {
-        
         QString pythonScript = this->Internals->scriptSource;
         pythonScript.replace("###p_in###", QString("p_in = %1").arg(innerStructureParameter->value()));
         pythonScript.replace("###p_s###", QString("p_s = %1").arg(shapeParameter->value()));
@@ -385,7 +384,6 @@ void PythonGeneratedDatasetReaction::addDataset()
         shapeLayout->getShape(shape);
         this->dataSourceAdded(generator.createDataSource(shape));
       }
-    
   }
   else if (this->Internals->scriptLabel == "Electron Beam Shape")
   {
@@ -397,10 +395,10 @@ void PythonGeneratedDatasetReaction::addDataset()
     guide->setText("Generate a convergent electron beam in 3D. This represents the 3D probe used for atomic resolution imaging in a scanning transmission electron microscope.");
     guide->setWordWrap(true);
     layout->addWidget(guide);
-    
+
     //Parameter Layout
     QGridLayout *parametersLayout = new QGridLayout;
-    
+
     QLabel *label = new QLabel("Beam energy (keV): ", &dialog);
     parametersLayout->addWidget(label,0,0,1,2);
     QDoubleSpinBox *voltage = new QDoubleSpinBox(&dialog);
@@ -416,7 +414,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     alpha_max->setValue(30);
     alpha_max->setSingleStep(0.5);
     parametersLayout->addWidget(alpha_max,1,2,1,1);
- 
+
     label = new QLabel("Transerve plane (x-y): ", &dialog);
     parametersLayout->addWidget(label,2,0,1,1);
     label = new QLabel("Number of pixels: ", &dialog);
@@ -426,7 +424,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     Nxy->setValue(256);
     Nxy->setSingleStep(1);
     parametersLayout->addWidget(Nxy,2,2,1,1);
-    
+
     label = new QLabel("x-y pixel size (angstrom): ", &dialog);
     parametersLayout->addWidget(label,3,1,1,1);
     QDoubleSpinBox *dxy = new QDoubleSpinBox(&dialog);
@@ -444,7 +442,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     Nz->setValue(512);
     Nz->setSingleStep(1);
     parametersLayout->addWidget(Nz,4,2,1,1);
-    
+
     label = new QLabel("Minimum defocus (nm): ", &dialog);
     parametersLayout->addWidget(label,5,1,1,1);
     QDoubleSpinBox *df_min = new QDoubleSpinBox(&dialog);
@@ -452,7 +450,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     df_min->setValue(-50.0);
     df_min->setSingleStep(5.0);
     parametersLayout->addWidget(df_min,5,2,1,1);
-    
+
     label = new QLabel("Maximum defocus (nm): ", &dialog);
     parametersLayout->addWidget(label,6,1,1,1);
     QDoubleSpinBox *df_max = new QDoubleSpinBox(&dialog);
@@ -460,8 +458,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     df_max->setValue(100.0);
     df_max->setSingleStep(5.0);
     parametersLayout->addWidget(df_max,6,2,1,1);
-    
-    
+
     label = new QLabel("Third-order spherical aberration (mm): ", &dialog);
     parametersLayout->addWidget(label,0,3,1,2);
     QDoubleSpinBox *c3 = new QDoubleSpinBox(&dialog);
@@ -469,7 +466,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     c3->setValue(0.2);
     c3->setSingleStep(0.1);
     parametersLayout->addWidget(c3,0,5,1,1);
-    
+
     label = new QLabel("Twofold astigmatism: ", &dialog);
     parametersLayout->addWidget(label,1,3,1,1);
     label = new QLabel("Value (nm): ", &dialog);
@@ -485,7 +482,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     phi_a2->setValue(0.0);
     phi_a2->setSingleStep(0.1);
     parametersLayout->addWidget(phi_a2,2,5,1,1);
-    
+
     label = new QLabel("Threefold astigmatism: ", &dialog);
     parametersLayout->addWidget(label,3,3,1,1);
     label = new QLabel("Value (nm): ", &dialog);
@@ -501,7 +498,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     phi_a3->setValue(0.0);
     phi_a3->setSingleStep(0.1);
     parametersLayout->addWidget(phi_a3,4,5,1,1);
-    
+
     label = new QLabel("Coma: ", &dialog);
     parametersLayout->addWidget(label,5,3,1,1);
     label = new QLabel("Value (nm): ", &dialog);
@@ -517,18 +514,18 @@ void PythonGeneratedDatasetReaction::addDataset()
     phi_c3->setValue(0.0);
     phi_c3->setSingleStep(0.1);
     parametersLayout->addWidget(phi_c3,6,5,1,1);
-    
+
     //Buttons
     QDialogButtonBox* buttons = new QDialogButtonBox(
                                                      QDialogButtonBox::Cancel|QDialogButtonBox::Ok, Qt::Horizontal, &dialog);
     QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
     QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    
+
     layout->addItem(parametersLayout);
     layout->addWidget(buttons);
     dialog.setLayout(layout);
     dialog.layout()->setSizeConstraint(QLayout::SetFixedSize); //Make the UI non-resizeable
-    
+
     // substitute values
     if (dialog.exec() == QDialog::Accepted)
     {
@@ -551,9 +548,8 @@ void PythonGeneratedDatasetReaction::addDataset()
       const int shape[3] = {Nxy->value(),Nxy->value(),Nz->value()};
       this->dataSourceAdded(generator.createDataSource(shape));
     }
-  
+
     } //end of else if
-  
 }
 
 void PythonGeneratedDatasetReaction::dataSourceAdded(vtkSmartPointer<vtkSMSourceProxy> proxy)
