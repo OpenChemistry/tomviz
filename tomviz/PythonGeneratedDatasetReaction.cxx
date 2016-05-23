@@ -528,28 +528,27 @@ void PythonGeneratedDatasetReaction::addDataset()
 
     // substitute values
     if (dialog.exec() == QDialog::Accepted)
-    {
-      QString pythonScript = this->Internals->scriptSource;
-      pythonScript.replace("###voltage###", QString("voltage = %1").arg(voltage->value()));
-      pythonScript.replace("###alpha_max###", QString("alpha_max = %1").arg(alpha_max->value()));
-      pythonScript.replace("###Nxy###", QString("Nxy = %1").arg(Nxy->value()));
-      pythonScript.replace("###Nz###", QString("Nz = %1").arg(Nz->value()));
-      pythonScript.replace("###dxy###", QString("dxy = %1").arg(dxy->value()));
-      pythonScript.replace("###df_min###", QString("df_min = %1").arg(df_min->value()));
-      pythonScript.replace("###df_max###", QString("df_max = %1").arg(df_max->value()));
-      pythonScript.replace("###c3###", QString("c3 = %1").arg(c3->value()));
-      pythonScript.replace("###f_a2###", QString("f_a2 = %1").arg(f_a2->value()));
-      pythonScript.replace("###phi_a2###", QString("phi_a2 = %1").arg(phi_a2->value()));
-      pythonScript.replace("###f_a3###", QString("f_a3 = %1").arg(f_a3->value()));
-      pythonScript.replace("###phi_a3###", QString("phi_a3 = %1").arg(phi_a3->value()));
-      pythonScript.replace("###f_c3###", QString("f_c3 = %1").arg(f_c3->value()));
-      pythonScript.replace("###phi_c3###", QString("phi_c3 = %1").arg(phi_c3->value()));
-      generator.setScript(pythonScript);
-      const int shape[3] = {Nxy->value(),Nxy->value(),Nz->value()};
-      this->dataSourceAdded(generator.createDataSource(shape));
-    }
-
-    } //end of else if
+      {
+        QString pythonScript = this->Internals->scriptSource;
+        pythonScript.replace("###voltage###", QString("voltage = %1").arg(voltage->value()));
+        pythonScript.replace("###alpha_max###", QString("alpha_max = %1").arg(alpha_max->value()));
+        pythonScript.replace("###Nxy###", QString("Nxy = %1").arg(Nxy->value()));
+        pythonScript.replace("###Nz###", QString("Nz = %1").arg(Nz->value()));
+        pythonScript.replace("###dxy###", QString("dxy = %1").arg(dxy->value()));
+        pythonScript.replace("###df_min###", QString("df_min = %1").arg(df_min->value()));
+        pythonScript.replace("###df_max###", QString("df_max = %1").arg(df_max->value()));
+        pythonScript.replace("###c3###", QString("c3 = %1").arg(c3->value()));
+        pythonScript.replace("###f_a2###", QString("f_a2 = %1").arg(f_a2->value()));
+        pythonScript.replace("###phi_a2###", QString("phi_a2 = %1").arg(phi_a2->value()));
+        pythonScript.replace("###f_a3###", QString("f_a3 = %1").arg(f_a3->value()));
+        pythonScript.replace("###phi_a3###", QString("phi_a3 = %1").arg(phi_a3->value()));
+        pythonScript.replace("###f_c3###", QString("f_c3 = %1").arg(f_c3->value()));
+        pythonScript.replace("###phi_c3###", QString("phi_c3 = %1").arg(phi_c3->value()));
+        generator.setScript(pythonScript);
+        const int shape[3] = {Nxy->value(),Nxy->value(),Nz->value()};
+        this->dataSourceAdded(generator.createDataSource(shape));
+      }
+  } //end of else if
 }
 
 void PythonGeneratedDatasetReaction::dataSourceAdded(vtkSmartPointer<vtkSMSourceProxy> proxy)
