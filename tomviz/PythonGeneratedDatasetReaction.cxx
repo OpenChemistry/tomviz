@@ -428,7 +428,8 @@ void PythonGeneratedDatasetReaction::addDataset()
     label = new QLabel("x-y pixel size (angstrom): ", &dialog);
     parametersLayout->addWidget(label,3,1,1,1);
     QDoubleSpinBox *dxy = new QDoubleSpinBox(&dialog);
-    dxy->setRange(0, 100);
+    dxy->setDecimals(4);
+    dxy->setMinimum(0.0001);
     dxy->setValue(0.1);
     dxy->setSingleStep(0.1);
     parametersLayout->addWidget(dxy,3,2,1,1);
