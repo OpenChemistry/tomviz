@@ -52,6 +52,7 @@
 #include <vtkInteractorStyleRubberBandZoom.h>
 
 #include <QTimer>
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -297,27 +298,42 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
 
   // Grab the image data from the data source...
   vtkTrivialProducer *t =
-      vtkTrivialProducer::SafeDownCast(this->unalignedData->producer()->GetClientSideObject());
+    vtkTrivialProducer::SafeDownCast(this->unalignedData->producer()->GetClientSideObject());
+  vtkScalarsToColors *lut =
+    vtkScalarsToColors::SafeDownCast(this->unalignedData->colorMap()->GetClientSideObject());
 
   // Set up the rendering pipeline
   if (t)
   {
     vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    this->mode.reset(new ShowDifferenceImageMode(image));
-    this->mode->update();
-    image->GetBounds(this->bounds);
+    if (image != nullptr)
+    {
+      this->modes.push_back(
+          new ToggleSliceShownViewMode(image, lut));
+      this->modes.push_back(
+          new ShowDifferenceImageMode(image));
+      this->modes[0]->addToView(this->renderer.Get());
+      this->modes[0]->update();
     int extent[6];
-    image->GetExtent(extent);
-    this->minSliceNum = extent[4];
-    this->maxSliceNum = extent[5];
+      image->GetExtent(extent);
+      this->minSliceNum = extent[4];
+      this->maxSliceNum = extent[5];
+    }
+    else
+    {
+      this->minSliceNum = 0;
+      this->maxSliceNum = 1;
+    }
   }
   else
   {
     this->minSliceNum = 0;
     this->maxSliceNum = 1;
   }
-  this->mode->addToView(this->renderer.Get());
   this->widget->GetRenderWindow()->AddRenderer(this->renderer.Get());
+  this->renderer->SetBackground(1.0, 1.0, 1.0);
+  this->renderer->SetViewport(0.0, 0.0,
+                        1.0, 1.0);
 
   // Set up render window interaction.
   this->defaultInteractorStyle->SetRenderOnMouseMove(true);
@@ -341,6 +357,14 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   this->connect(resetCamera, SIGNAL(pressed()), this, SLOT(resetCamera()));
   viewControls->addWidget(resetCamera);
   v->addLayout(viewControls);
+
+  this->currentMode = 0;
+  this->modeSelect = new QComboBox;
+  this->modeSelect->addItem("Toggle Images");
+  this->modeSelect->addItem("Show Difference");
+  this->modeSelect->setCurrentIndex(0);
+  this->connect(this->modeSelect, SIGNAL(currentIndexChanged(int)), this, SLOT(changeMode(int)));
+  v->addWidget(this->modeSelect);
 
   QGridLayout *grid = new QGridLayout;
   int gridrow = 0;
@@ -484,6 +508,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
 
 AlignWidget::~AlignWidget()
 {
+  qDeleteAll(this->modes);
+  this->modes.clear();
 }
 
 bool AlignWidget::eventFilter(QObject *object, QEvent *e)
@@ -509,7 +535,10 @@ bool AlignWidget::eventFilter(QObject *object, QEvent *e)
 
 void AlignWidget::onTimeout()
 {
-  this->mode->timeout();
+  if (this->modes.length() > 0)
+  {
+    this->modes[this->currentMode]->timeout();
+  }
   this->widget->update();
 }
 
@@ -575,7 +604,11 @@ void AlignWidget::updateReference()
     refSlice = max;
   }
   this->referenceSlice = refSlice;
-  this->mode->referenceSliceUpdated(refSlice, this->offsets[refSlice]);
+  for (int i = 0; i < this->modes.length(); ++i)
+  {
+    this->modes[i]->referenceSliceUpdated(
+        referenceSlice, this->offsets[referenceSlice]);
+  }
 }
 
 void AlignWidget::setFrameRate(int rate)
@@ -644,6 +677,19 @@ void AlignWidget::widgetKeyPress(QKeyEvent *key)
   this->applySliceOffset();
 }
 
+void AlignWidget::changeMode(int mode)
+{
+  if (this->modes.length() == 0)
+  {
+    return;
+  }
+  this->modes[this->currentMode]->removeFromView(this->renderer.Get());
+  this->currentMode = mode;
+  this->modes[this->currentMode]->addToView(this->renderer.Get());
+  this->modes[this->currentMode]->update();
+  this->resetCamera();
+}
+
 void AlignWidget::applySliceOffset(int sliceNumber)
 {
   vtkVector2i offset(0, 0);
@@ -658,7 +704,10 @@ void AlignWidget::applySliceOffset(int sliceNumber)
   {
     offset = this->offsets[sliceNumber];
   }
-  this->mode->currentSliceUpdated(sliceNumber, offset);
+  for (int i = 0; i < this->modes.length(); ++i)
+  {
+    this->modes[i]->currentSliceUpdated(sliceNumber, offset);
+  }
 }
 
 void AlignWidget::startAlign()
@@ -705,29 +754,34 @@ void AlignWidget::applyChangesToOperator()
 
 void AlignWidget::resetCamera()
 {
+  if (this->modes.length() == 0)
+  {
+    return;
+  }
   vtkCamera *camera = this->renderer->GetActiveCamera();
+  double *bounds = this->modes[this->currentMode]->bounds();
   vtkVector3d point;
-  point[0] = 0.5 * (this->bounds[0] + this->bounds[1]);
-  point[1] = 0.5 * (this->bounds[2] + this->bounds[3]);
-  point[2] = 0.5 * (this->bounds[4] + this->bounds[5]);
+  point[0] = 0.5 * (bounds[0] + bounds[1]);
+  point[1] = 0.5 * (bounds[2] + bounds[3]);
+  point[2] = 0.5 * (bounds[4] + bounds[5]);
   camera->SetFocalPoint(point.GetData());
-  point[2] += 50 + 0.5 * (this->bounds[4] + this->bounds[5]);
+  point[2] += 50 + 0.5 * (bounds[4] + bounds[5]);
   camera->SetPosition(point.GetData());
   camera->SetViewUp(0.0, 1.0, 0.0);
   camera->ParallelProjectionOn();
   double parallelScale;
-  if (this->bounds[1] - this->bounds[0] < this->bounds[3] - this->bounds[2])
+  if (bounds[1] - bounds[0] < bounds[3] - bounds[2])
   {
-    parallelScale = 0.5 * (this->bounds[3] - this->bounds[2] + 1);
+    parallelScale = 0.5 * (bounds[3] - bounds[2] + 1);
   }
   else
   {
-    parallelScale = 0.5 * (this->bounds[1] - this->bounds[0] + 1);
+    parallelScale = 0.5 * (bounds[1] - bounds[0] + 1);
   }
   camera->SetParallelScale(parallelScale);
   double clippingRange[2];
   camera->GetClippingRange(clippingRange);
-  clippingRange[1] = clippingRange[0] + (this->bounds[5] - this->bounds[4] + 50);
+  clippingRange[1] = clippingRange[0] + (bounds[5] - bounds[4] + 50);
   camera->SetClippingRange(clippingRange);
 }
 

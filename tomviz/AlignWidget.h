@@ -23,9 +23,9 @@
 
 #include <QVector>
 #include <QPointer>
-#include <QScopedPointer>
 
 class QLabel;
+class QComboBox;
 class QSpinBox;
 class QTimer;
 class QKeyEvent;
@@ -62,6 +62,7 @@ public:
   void applyChangesToOperator() override;
 
 protected slots:
+  void changeMode(int mode);
   void onTimeout();
   void changeSlice(int delta);
   void setSlice(int slice, bool resetInc = true);
@@ -87,6 +88,7 @@ protected:
   vtkNew<vtkInteractorStyleRubberBandZoom> zoomToBoxInteractorStyle;
   QVTKWidget *widget;
 
+  QComboBox *modeSelect;
   QTimer *timer;
   QSpinBox *currentSlice;
   QLabel *currentSliceOffset;
@@ -105,9 +107,9 @@ protected:
 
   int maxSliceNum;
   int minSliceNum;
-  double bounds[6];
 
-  QScopedPointer<ViewMode> mode;
+  QVector<ViewMode*> modes;
+  int currentMode;
 
   QVector<vtkVector2i> offsets;
   QPointer<TranslateAlignOperator> Op;
