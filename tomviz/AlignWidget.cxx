@@ -16,18 +16,30 @@
 
 #include "AlignWidget.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "TranslateAlignOperator.h"
+#include "Utilities.h"
+
+#include "vtk_jsoncpp.h"
 
 #include <QVTKWidget.h>
+#include <vtkArrayDispatch.h>
+#include <vtkAssume.h>
 #include <vtkCamera.h>
+#include <vtkDataArrayAccessor.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
+#include <vtkPVArrayInformation.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMTransferFunctionManager.h>
+#include <vtkSMTransferFunctionPresets.h>
+#include <vtkSMTransferFunctionProxy.h>
 #include <vtkTrivialProducer.h>
 #include <vtkScalarsToColors.h>
 #include <vtkSmartPointer.h>
@@ -85,6 +97,7 @@ public:
     this->update();
   }
   virtual void timeout() {}
+  virtual double *bounds() const = 0;
   virtual void update() = 0;
 protected:
   vtkSmartPointer<vtkImageData> originalData;
@@ -138,10 +151,130 @@ public:
         this->referenceSliceOffset[1], 0);
     }
   }
+  double *bounds() const override
+  {
+    return this->imageSliceMapper->GetBounds();
+  }
 private:
   vtkNew<vtkImageSlice> imageSlice;
   vtkNew<vtkImageSliceMapper> imageSliceMapper;
   bool showingCurrentSlice;
+};
+
+class ShowDifferenceImageMode : public ViewMode
+{
+public:
+  ShowDifferenceImageMode(vtkImageData *data)
+    : ViewMode(data)
+  {
+    int extent[6];
+    data->GetExtent(extent);
+    extent[4] = 0;
+    extent[5] = 0;
+    this->xSize = extent[1] - extent[0] + 1;
+    this->ySize = extent[3] - extent[2] + 1;
+    this->diffImage->SetExtent(extent);
+    this->diffImage->AllocateScalars(VTK_FLOAT, 1);
+    this->imageSliceMapper->SetInputData(this->diffImage.Get());
+    this->imageSliceMapper->Update();
+    this->imageSlice->SetMapper(this->imageSliceMapper.Get());
+    vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
+
+    vtkNew<vtkSMTransferFunctionManager> tfmgr;
+    vtkSMProxy *lut = tfmgr->GetColorTransferFunction("AlignWidgetLUT", pxm);
+    vtkScalarsToColors *dataLUT = vtkScalarsToColors::SafeDownCast(lut->GetClientSideObject());
+    vtkSmartPointer<vtkSMProxy> source;
+    source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
+    vtkTrivialProducer::SafeDownCast(source->GetClientSideObject())->SetOutput(data);
+    vtkPVArrayInformation* ainfo = tomviz::scalarArrayInformation(
+        vtkSMSourceProxy::SafeDownCast(source.Get()));
+    if (ainfo != nullptr)
+    {
+      double range[2];
+      ainfo->GetComponentRange(0, range);
+      double lutRange[2] = { std::min(range[0], -range[1]),
+                             std::max(range[1], -range[0]) };
+      vtkNew<vtkSMTransferFunctionPresets> presets;
+      vtkSMTransferFunctionProxy::ApplyPreset(lut, presets->GetFirstPresetWithName("Cool to Warm"));
+      vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, lutRange);
+    }
+    this->imageSlice->GetProperty()->SetLookupTable(dataLUT);
+  }
+  void addToView(vtkRenderer *renderer) override
+  {
+    renderer->AddViewProp(this->imageSlice.Get());
+  }
+  void removeFromView(vtkRenderer* renderer) override
+  {
+    renderer->RemoveViewProp(this->imageSlice.Get());
+  }
+  void update() override
+  {
+    int extent[6];
+    this->originalData->GetExtent(extent);
+    typedef vtkArrayDispatch::Dispatch2ByValueType
+      <
+        vtkArrayDispatch::AllTypes,
+        vtkArrayDispatch::Reals
+      > Dispatcher;
+    if (!Dispatcher::Execute(this->originalData->GetPointData()->GetScalars(),
+          this->diffImage->GetPointData()->GetScalars(), *this))
+    {
+      (*this)(this->originalData->GetPointData()->GetScalars(),
+          this->diffImage->GetPointData()->GetScalars());
+    }
+    this->diffImage->Modified();
+    this->imageSliceMapper->Update();
+  }
+  double *bounds() const override
+  {
+    return this->imageSliceMapper->GetBounds();
+  }
+  // Operator so that *this can be used with vtkArrayDispatch to compute the
+  // difference image
+  template <typename InputArray, typename OutputArray>
+  void operator()(InputArray *input, OutputArray *output)
+  {
+    VTK_ASSUME(input->GetNumberOfComponents() == 1);
+    VTK_ASSUME(output->GetNumberOfComponents() == 1);
+
+    vtkDataArrayAccessor<InputArray> in(input);
+    vtkDataArrayAccessor<OutputArray> out(output);
+
+    for (vtkIdType j = 0; j < this->ySize; ++j)
+    {
+      for (vtkIdType i = 0; i < this->xSize; ++i)
+      {
+        vtkIdType destIdx = j * this->xSize + i;
+        if (j + this->currentSliceOffset[1] < ySize &&
+            j + currentSliceOffset[1] >= 0 &&
+            i + this->currentSliceOffset[0] < this->xSize &&
+            i + this->currentSliceOffset[0] >= 0)
+        {
+          // Index of the point in the current slice that corresponds to the given position
+          vtkIdType currentSliceIdx = this->currentSlice * this->ySize * this->xSize +
+            (j + this->currentSliceOffset[1]) * this->xSize + (i + this->currentSliceOffset[0]);
+          // Index in the reference slice that corresponds to the given position
+          vtkIdType referenceSliceIdx = this->referenceSlice * this->ySize * this->xSize +
+            (j + this->referenceSliceOffset[1]) * this->xSize + (i + this->referenceSliceOffset[0]);
+          // Compute the difference and set it to the output at the position
+          out.Set(destIdx, 0, in.Get(currentSliceIdx, 0) -
+              in.Get(referenceSliceIdx, 0));
+        }
+        else
+        {
+          // TODO - figure out what to do fort this region
+          out.Set(destIdx, 0, 0);
+        }
+      }
+    }
+  }
+private:
+  vtkNew<vtkImageData> diffImage;
+  vtkNew<vtkImageSliceMapper> imageSliceMapper;
+  vtkNew<vtkImageSlice> imageSlice;
+  vtkIdType xSize;
+  vtkIdType ySize;
 };
 
 AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
@@ -165,14 +298,13 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   // Grab the image data from the data source...
   vtkTrivialProducer *t =
       vtkTrivialProducer::SafeDownCast(this->unalignedData->producer()->GetClientSideObject());
-  vtkScalarsToColors *lut =
-      vtkScalarsToColors::SafeDownCast(this->unalignedData->colorMap()->GetClientSideObject());
 
   // Set up the rendering pipeline
   if (t)
   {
     vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    this->mode.reset(new ToggleSliceShownViewMode(image, lut));
+    this->mode.reset(new ShowDifferenceImageMode(image));
+    this->mode->update();
     image->GetBounds(this->bounds);
     int extent[6];
     image->GetExtent(extent);
