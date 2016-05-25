@@ -208,6 +208,7 @@ set(python_files
   RandomParticles.py
   TiltSeries.py
   SetNegativeVoxelsToZero.py
+  STEM_probe.py
   )
 
 set(resource_files

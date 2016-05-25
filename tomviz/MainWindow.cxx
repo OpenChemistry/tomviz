@@ -332,6 +332,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* randomParticlesAction = sampleDataMenu->addAction("Generate Random Particles");
   new PythonGeneratedDatasetReaction(randomParticlesAction, "Random Particles",
       readInPythonScript("RandomParticles"));
+  QAction* probeShapeAction = sampleDataMenu->addAction("Generate Electron Beam Shape");
+  new PythonGeneratedDatasetReaction(probeShapeAction, "Electron Beam Shape",
+      readInPythonScript("STEM_probe"));
 
   QAction *moveObjects = ui.toolBar->addAction(QIcon(":/icons/move_objects"), "MoveObjects");
   moveObjects->setToolTip("Enable to allow moving of the selected dataset in the scene");
