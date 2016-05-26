@@ -32,7 +32,7 @@ class SelectVolumeWidget : public QWidget
 public:
   SelectVolumeWidget(const double origin[3], const double spacing[3],
                      const int extent[6], const int currentVolume[6],
-                     QWidget* parent = nullptr);
+                     const double position[3], QWidget* parent = nullptr);
   virtual ~SelectVolumeWidget();
 
   // Gets the bounds of the selection in real space (taking into account
@@ -42,6 +42,9 @@ public:
   // the region of interest in terms of the extent given in the input
   // without the origin and spacing factored in.
   void getExtentOfSelection(int extent[6]);
+
+public slots:
+  void dataMoved(double newX, double newY, double newZ);
 
 private slots:
   void interactionEnd(vtkObject* caller);

@@ -38,11 +38,13 @@ public:
   CropWidget(tomviz::CropOperator *source, QWidget* p)
     : Superclass(p), Op(source)
   {
+    double displayPosition[3] = { 0, 0, 0 };
     this->Widget = new tomviz::SelectVolumeWidget(
                          source->inputDataOrigin(),
                          source->inputDataSpacing(),
                          source->inputDataExtent(),
                          source->cropBounds(),
+                         displayPosition,
                          this);
     QHBoxLayout *hboxlayout = new QHBoxLayout;
     hboxlayout->addWidget(this->Widget);
@@ -59,6 +61,11 @@ public:
     {
       this->Op->setCropBounds(bounds);
     }
+  }
+
+  void dataSourceMoved(double newX, double newY, double newZ) override
+  {
+    this->Widget->dataMoved(newX, newY, newZ);
   }
 
 private:

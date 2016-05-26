@@ -32,6 +32,16 @@ public:
   EditOperatorWidget(QWidget* parent);
   ~EditOperatorWidget();
 
+  // Called when the user interacts to move the data source while the widget
+  // is active.
+  // By default this emits the signal which can be attached to subwidgets' slots,
+  // but it can be overridden for custom handling.
+  virtual void dataSourceMoved(double newX, double newY, double newZ)
+  { emit dataMoved(newX, newY, newZ); }
+
+signals:
+  void dataMoved(double, double, double);
+
 public slots:
   // Called when the dialog should apply its changes to the operator
   virtual void applyChangesToOperator() = 0;
