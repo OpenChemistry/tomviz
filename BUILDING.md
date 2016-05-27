@@ -1,7 +1,7 @@
 Building tomviz
 ===============
 
-The tomviz project reuses a number of components from Python, VTK, and
+The tomviz project reuses a number of components from Python, VTK, ITK, and
 ParaView, so these dependencies will need to be compiled first in order to
 build tomviz. There is a superbuild that automates most of this when building
 binaries. We recommend using these binaries where available if you wish to
@@ -48,14 +48,39 @@ prerequisites installed:
 
 This will clone all source code needed, configure and build a minimal ParaView,
 the Ninja generator is recommended to build faster, but optional, on Windows
-you will need to specify the correct generator for the installed compiler. Now,
+you will need to specify the correct generator for the installed compiler.
+
+    cd ..
+    git clone git://itk.org/ITK.git
+    cd ITK
+    git checkout v4.9.0
+    cd ..
+    mkdir itk-build
+    cd itk-build
+    cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+      -DITK_LEGACY_REMOVE:BOOL=ON \
+      -DITK_LEGACY_SILENT:BOOL=ON \
+      -DITK_USE_FFTWD:BOOL=ON \
+      -DITK_USE_FFTWF:BOOL=ON \
+      -DModule_BridgeNumPy:BOOL=ON \
+      -DBUILD_TESTING:BOOL=OFF \
+      -DITK_WRAP_PYTHON:BOOL=ON \
+      -DBUILD_EXAMPLES:BOOL=OFF \
+      -DBUILD_SHARED_LIBS:BOOL=ON \
+      ../ITK
+    cmake --build .
+
+This will build ITK with the its python wrapping turned on.  ITK, while not
+required for building tomviz, is required for the executable to run. Now,
 to build tomviz:
 
     cd ..
     mkdir tomviz-build
     cd tomviz-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
-      -DParaView_DIR:PATH=../paraview-build ../tomviz
+      -DParaView_DIR:PATH=../paraview-build \
+      -DITK_DIR:PATH=../itk-build \
+      ../tomviz
     cmake --build .
 
 Running tomviz
