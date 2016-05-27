@@ -17,11 +17,7 @@
 #include "ui_MainWindow.h"
 #include "ui_AboutDialog.h"
 
-#include <pqFiltersMenuReaction.h>
 #include <pqMacroReaction.h>
-#include <pqProxyGroupMenuManager.h>
-#include <pqProxyGroupMenuManager.h>
-#include <pqPVApplicationCore.h>
 #include <pqPythonShellReaction.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSaveScreenshotReaction.h>
