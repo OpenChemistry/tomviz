@@ -209,6 +209,7 @@ set(python_files
   TiltSeries.py
   SetNegativeVoxelsToZero.py
   STEM_probe.py
+  InvertData.py
   )
 
 set(resource_files
