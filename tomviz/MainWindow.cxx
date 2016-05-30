@@ -186,6 +186,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *clearAction = ui.menuData->addAction("Clear Subvolume");
   ui.menuData->addSeparator();
   QAction *setNegativeVoxelsToZeroAction = ui.menuData->addAction("Set Negative Voxels To Zero");
+  QAction *invertDataAction = ui.menuData->addAction("Invert Data");
   QAction *squareRootAction = ui.menuData->addAction("Square Root Data");
   QAction *hannWindowAction = ui.menuData->addAction("Hann Window");
   QAction *fftAbsLogAction = ui.menuData->addAction("FFT (abs log)");
@@ -254,6 +255,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(clearAction, "Clear Volume", readInPythonScript("ClearVolume"));
   new AddPythonTransformReaction(setNegativeVoxelsToZeroAction,
                                  "Set Negative Voxels to Zero", readInPythonScript("SetNegativeVoxelsToZero"));
+  new AddPythonTransformReaction(invertDataAction, "Invert Data",
+                                 readInPythonScript("InvertData"));
   new AddPythonTransformReaction(squareRootAction,
                                  "Square Root Data", readInPythonScript("Square_Root_Data"));
   new AddPythonTransformReaction(hannWindowAction,
