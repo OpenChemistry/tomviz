@@ -77,13 +77,20 @@ EditOperatorDialog::EditOperatorDialog(
   }
 
   QVBoxLayout* vLayout = new QVBoxLayout(this);
-  EditOperatorWidget* opWidget = o->getEditorContents(this);
-  vLayout->addWidget(opWidget);
+  if (o->hasCustomUI())
+  {
+    EditOperatorWidget* opWidget = o->getEditorContents(this);
+    vLayout->addWidget(opWidget);
+    this->Internals->Widget = opWidget;
+  }
+  else
+  {
+    this->Internals->Widget = nullptr;
+  }
   QDialogButtonBox* dialogButtons = new QDialogButtonBox(
       QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok,
       Qt::Horizontal, this);
   vLayout->addWidget(dialogButtons);
-  this->Internals->Widget = opWidget;
 
   this->setLayout(vLayout);
   this->connect(dialogButtons, SIGNAL(accepted()), SLOT(accept()));
@@ -107,7 +114,10 @@ QSharedPointer<Operator>& EditOperatorDialog::op()
 
 void EditOperatorDialog::onApply()
 {
-  this->Internals->Widget->applyChangesToOperator();
+  if (this->Internals->Widget)
+  {
+    this->Internals->Widget->applyChangesToOperator();
+  }
   if (this->Internals->needsToBeAdded && this->Internals->dataSource != nullptr)
   {
     this->Internals->dataSource->addOperator(this->Internals->Op);

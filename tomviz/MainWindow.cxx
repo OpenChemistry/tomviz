@@ -47,6 +47,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "RecentFilesMenu.h"
 #include "ReconstructionReaction.h"
@@ -224,7 +225,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   reconLabel->setEnabled(false);
   QAction *reconDFMAction = ui.menuTomography->addAction("Direct Fourier Method");
   QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection");
-  //QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
+  QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
   QAction *reconARTAction = ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
 
   ui.menuTomography->addSeparator();
@@ -303,7 +304,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Reconstruct (ART)",
                                  readInPythonScript("Recon_ART"), true);
   
-  //new ReconstructionReaction(reconWBP_CAction);
+  new ReconstructionReaction(reconWBP_CAction);
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
@@ -353,6 +354,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 #endif
 
   ResetReaction::reset();
+  // Initialize worker manager
+  new ProgressDialogManager(this);
 }
 
 MainWindow::~MainWindow()

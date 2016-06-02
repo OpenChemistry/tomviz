@@ -133,12 +133,18 @@ set(SOURCES
   PipelineWidget.h
   ProgressBehavior.cxx
   ProgressBehavior.h
+  ProgressDialogManager.cxx
+  ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx
   PythonGeneratedDatasetReaction.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
-  ReconstructionReaction.h
+  ReconstructionOperator.cxx
+  ReconstructionOperator.h
   ReconstructionReaction.cxx
+  ReconstructionReaction.h
+  ReconstructionWidget.h
+  ReconstructionWidget.cxx
   ResetReaction.cxx
   ResetReaction.h
   RotateAlignWidget.cxx
@@ -251,6 +257,7 @@ qt5_wrap_ui(UI_SOURCES
   MainWindow.ui
   ModulePropertiesPanel.ui
   RotateAlignWidget.ui
+  ReconstructionWidget.ui
   ViewPropertiesPanel.ui
   )
 qt5_add_resources(RCC_SOURCES resources.qrc)

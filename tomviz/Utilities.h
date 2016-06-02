@@ -29,6 +29,8 @@
 
 class pqAnimationScene;
 
+class vtkImageSliceMapper;
+class vtkRenderer;
 class vtkSMProxyLocator;
 class vtkSMRenderViewProxy;
 class vtkPVArrayInformation;
@@ -135,6 +137,11 @@ QString readInPythonScript(const QString &scriptName);
 // Create a camera orbit animation for the given renderview around the given object
 void createCameraOrbit(vtkSMSourceProxy *data, vtkSMRenderViewProxy *renderView);
 
+// Set up the renderer to show the given slice in parallel projection
+// This function attempts to zoom the renderer so that the enitire slice is visible
+// while minimizing the empty regions of the view (zoom so the slice's largets
+// dimension barely fits in the view.
+void setupRenderer(vtkRenderer *renderer, vtkImageSliceMapper *mapper);
 }
 
 #endif

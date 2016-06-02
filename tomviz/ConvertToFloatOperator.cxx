@@ -54,7 +54,7 @@ QIcon ConvertToFloatOperator::icon() const
   return QIcon();
 }
 
-bool ConvertToFloatOperator::transform(vtkDataObject* data)
+bool ConvertToFloatOperator::applyTransform(vtkDataObject* data)
 {
   vtkImageData *imageData = vtkImageData::SafeDownCast(data);
   // sanity check

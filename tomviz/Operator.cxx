@@ -18,7 +18,8 @@
 namespace tomviz
 {
 
-Operator::Operator(QObject* parentObject): Superclass(parentObject)
+Operator::Operator(QObject* parentObject)
+  : Superclass(parentObject), supportsCancel(false)
 {
 }
 
@@ -26,4 +27,12 @@ Operator::~Operator()
 {
 }
 
+bool Operator::transform(vtkDataObject *data)
+{
+  emit this->transformingStarted();
+  emit this->updateProgress(0);
+  bool result = this->applyTransform(data);
+  emit this->transformingDone(result);
+  return result;
+}
 }

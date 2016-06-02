@@ -159,7 +159,7 @@ void OperatorPython::setScript(const QString& str)
   }
 }
 
-bool OperatorPython::transform(vtkDataObject* data)
+bool OperatorPython::applyTransform(vtkDataObject* data)
 {
   if (this->Script.isEmpty()) { return true; }
   if (!this->Internals->OperatorModule || !this->Internals->TransformMethod)
