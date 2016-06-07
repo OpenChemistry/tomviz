@@ -59,6 +59,7 @@ public:
   int dataExtent[6];
   double dataOrigin[3];
   double dataSpacing[3];
+  double dataPosition[3];
   vtkBoundingBox dataBoundingBox;
 
   void bounds(int bs[6]) const
@@ -87,6 +88,7 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
                                        const double spacing[3],
                                        const int extent[6],
                                        const int currentVolume[6],
+                                       const double position[3],
                                        QWidget* p)
   : Superclass(p), Internals(new SelectVolumeWidget::CWInternals())
 {
@@ -100,13 +102,15 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
     this->Internals->dataSpacing[i] = spacing[i];
     this->Internals->dataExtent[2 * i] = extent[2 * i];
     this->Internals->dataExtent[2 * i + 1] = extent[2 * i + 1];
+    this->Internals->dataPosition[i] = position[i];
   }
 
   double bounds[6];
   for (int i = 0; i < 6; ++i)
   {
     bounds[i] = this->Internals->dataOrigin[i >> 1] +
-      this->Internals->dataSpacing[i >> 1] * this->Internals->dataExtent[i];
+      this->Internals->dataSpacing[i >> 1] * this->Internals->dataExtent[i] +
+      this->Internals->dataPosition[i];
   }
   vtkNew< vtkBoxRepresentation > boxRep;
   boxRep->SetPlaceFactor(1.0);
@@ -195,12 +199,13 @@ void SelectVolumeWidget::updateBounds(int* bounds)
 {
   double* spacing = this->Internals->dataSpacing;
   double* origin = this->Internals->dataOrigin;
+  double* position = this->Internals->dataPosition;
   double newBounds[6];
 
   int dim = 0;
   for (int i = 0; i < 6; i++)
   {
-    newBounds[i] =  (bounds[i] * spacing[dim]) + origin[dim];
+    newBounds[i] =  (bounds[i] * spacing[dim]) + origin[dim] + position[dim];
     dim += i % 2 ? 1 : 0;
   }
 
@@ -228,7 +233,13 @@ void SelectVolumeWidget::updateBounds(double *newBounds)
 
   this->Internals->blockSpinnerSignals(true);
 
-  vtkBoundingBox newBoundingBox(newBounds);
+  double bnds[6];
+  for (int i = 0; i < 3; ++i)
+  {
+    bnds[2 * i] = newBounds[2 * i] - this->Internals->dataPosition[i];
+    bnds[2 * i + 1] = newBounds[2 * i] - this->Internals->dataPosition[i];
+  }
+  vtkBoundingBox newBoundingBox(bnds);
 
   if (this->Internals->dataBoundingBox.Intersects(newBoundingBox))
   {
@@ -291,6 +302,18 @@ void SelectVolumeWidget::valueChanged()
       }
     }
   }
+  int cropVolume[6];
+
+  this->Internals->bounds(cropVolume);
+
+  this->updateBounds(cropVolume);
+}
+
+void SelectVolumeWidget::dataMoved(double x, double y, double z)
+{
+  this->Internals->dataPosition[0] = x;
+  this->Internals->dataPosition[1] = y;
+  this->Internals->dataPosition[2] = z;
   int cropVolume[6];
 
   this->Internals->bounds(cropVolume);

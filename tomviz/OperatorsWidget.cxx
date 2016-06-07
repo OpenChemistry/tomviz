@@ -123,6 +123,8 @@ void OperatorsWidget::itemDoubleClicked(QTreeWidgetItem* item)
     EditOperatorDialog *dialog =
       new EditOperatorDialog(op, nullptr, pqCoreUtilities::mainWidget());
     dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+    QObject::connect(this->Internals->ADataSource, SIGNAL(displayPositionChanged(double, double, double)),
+        dialog, SLOT(dataSourceMoved(double, double, double)));
     dialog->show();
   }
 }

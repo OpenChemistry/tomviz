@@ -82,6 +82,12 @@ EditOperatorDialog::EditOperatorDialog(
     EditOperatorWidget* opWidget = o->getEditorContents(this);
     vLayout->addWidget(opWidget);
     this->Internals->Widget = opWidget;
+    if (dataSource)
+    {
+      const double *dsPosition = dataSource->displayPosition();
+      opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
+      QObject::connect(dataSource, &DataSource::displayPositionChanged, opWidget, &EditOperatorWidget::dataSourceMoved);
+    }
   }
   else
   {

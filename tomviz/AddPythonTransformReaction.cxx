@@ -779,7 +779,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     image->GetExtent(extent);
 
     QVBoxLayout *layout = new QVBoxLayout();
-    SelectVolumeWidget *selectionWidget = new SelectVolumeWidget(origin, spacing, extent, extent, dialog);
+    SelectVolumeWidget *selectionWidget = new SelectVolumeWidget(origin, spacing, extent, extent, source->displayPosition(), dialog);
+    QObject::connect(source, &DataSource::displayPositionChanged, selectionWidget, &SelectVolumeWidget::dataMoved);
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
                                                        | QDialogButtonBox::Cancel);
     connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
@@ -830,7 +831,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout->addWidget(label);
 
     
-    SelectVolumeWidget *selectionWidget = new SelectVolumeWidget(origin, spacing, extent, currentVolume, dialog);
+    SelectVolumeWidget *selectionWidget = new SelectVolumeWidget(origin, spacing, extent, currentVolume, source->displayPosition(), dialog);
+    QObject::connect(source, &DataSource::displayPositionChanged, selectionWidget, &SelectVolumeWidget::dataMoved);
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
                                                      | QDialogButtonBox::Cancel);
     connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
