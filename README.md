@@ -35,7 +35,8 @@ A Quick Tutorial
 
 Publications using tomviz
 ------------
-[Graphene kirigami, M.K. Blees et al., Nature (2015)](http://www.nature.com/nature/journal/v524/n7564/full/nature14588.html)
+- [Nanomaterial datasets to advance tomography in scanning transmission electron microscopy, B. Levin et al., Nature Scientific Data (2016)](http://www.nature.com/articles/sdata201641)
+- [Graphene kirigami, M.K. Blees et al., Nature (2015)](http://www.nature.com/nature/journal/v524/n7564/full/nature14588.html)
 
 Contributing
 ------------
