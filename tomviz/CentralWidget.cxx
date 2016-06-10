@@ -223,11 +223,14 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->HistogramView->GetScene()->AddItem(this->HistogramColorOpacityEditor.Get());
 
   // Connect events from the histogram color/opacity editor to slots in this file.
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(), vtkCommand::CursorChangedEvent,
+  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
+                           vtkCommand::CursorChangedEvent,
                            this, SLOT(histogramClicked(vtkObject*)));
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(), vtkCommand::EndEvent,
+  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
+                           vtkCommand::EndEvent,
                            this, SLOT(onScalarOpacityFunctionChanged()));
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(), vtkControlPointsItem::CurrentPointEditEvent,
+  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
+                           vtkControlPointsItem::CurrentPointEditEvent,
                            this, SLOT(onCurrentPointEditEvent()));
 
   // Start the worker thread and give it ownership of the HistogramMaker
@@ -511,12 +514,14 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     return;
   }
 
-  this->HistogramColorOpacityEditor->SetHistogramInputData(table, "image_extents", "image_pops");
+  this->HistogramColorOpacityEditor->SetHistogramInputData(table,
+                                                           "image_extents",
+                                                           "image_pops");
   this->HistogramColorOpacityEditor->SetOpacityFunction(this->ScalarOpacityFunction);
 
   if (this->LUT)
   {
-    this->HistogramColorOpacityEditor->ScalarVisibilityOn();
+    this->HistogramColorOpacityEditor->SetScalarVisibility(true);
     this->HistogramColorOpacityEditor->SetColorTransferFunction(this->LUT);
     this->HistogramColorOpacityEditor->SelectColorArray("image_extents");
   }
