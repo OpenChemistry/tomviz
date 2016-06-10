@@ -47,8 +47,6 @@ public:
 
   // Enable or disable scalar visibility.
   virtual void SetScalarVisibility(bool visible);
-  virtual void ScalarVisibilityOn();
-  virtual void ScalarVisibilityOff();
 
   // Set the name of the array by which the histogram should be colored.
   virtual void SelectColorArray(const char* arrayName);
@@ -87,7 +85,7 @@ protected:
 
 private:
   vtkChartHistogramColorOpacityEditor();
-  virtual ~vtkChartHistogramColorOpacityEditor();
+  ~vtkChartHistogramColorOpacityEditor() override;
 
   class PIMPL;
   PIMPL *Private;

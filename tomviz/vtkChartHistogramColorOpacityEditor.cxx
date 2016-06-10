@@ -152,16 +152,6 @@ void vtkChartHistogramColorOpacityEditor::SetScalarVisibility(bool visible)
   this->HistogramChart->SetScalarVisibility(visible);
 }
 
-void vtkChartHistogramColorOpacityEditor::ScalarVisibilityOn()
-{
-  this->HistogramChart->SetScalarVisibility(true);
-}
-
-void vtkChartHistogramColorOpacityEditor::ScalarVisibilityOff()
-{
-  this->HistogramChart->SetScalarVisibility(false);
-}
-
 void vtkChartHistogramColorOpacityEditor::SelectColorArray(const char* arrayName)
 {
   this->HistogramChart->SelectColorArray(arrayName);
