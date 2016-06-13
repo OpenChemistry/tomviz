@@ -90,6 +90,8 @@ set(SOURCES
   EditOperatorDialog.h
   EditOperatorWidget.cxx
   EditOperatorWidget.h
+  HistogramWidget.h
+  HistogramWidget.cxx
   LoadDataReaction.cxx
   LoadDataReaction.h
   main.cxx

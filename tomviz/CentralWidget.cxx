@@ -16,37 +16,22 @@
 #include "CentralWidget.h"
 #include "ui_CentralWidget.h"
 
-#include <pqView.h>
-#include <vtkContextScene.h>
-#include <vtkContextView.h>
-#include <vtkEventQtSlotConnect.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkIntArray.h>
-#include <vtkMathUtilities.h>
 #include <vtkObjectFactory.h>
-#include <vtkPiecewiseControlPointsItem.h>
-#include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
 #include <vtkPVDiscretizableColorTransferFunction.h>
-#include <vtkRenderWindow.h>
-#include <vtkSMSourceProxy.h>
-#include <vtkSMViewProxy.h>
 #include <vtkTable.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
 
-#include "vtkChartHistogramColorOpacityEditor.h"
-
-#include <QColor>
-#include <QColorDialog>
 #include <QThread>
 #include <QTimer>
 
-#include "ActiveObjects.h"
 #include "ComputeHistogram.h"
 #include "DataSource.h"
-#include "ModuleContour.h"
+#include "Module.h"
 #include "ModuleManager.h"
 #include "Utilities.h"
 
@@ -201,25 +186,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Internals->Ui.splitter->setStretchFactor(0, 0);
   this->Internals->Ui.splitter->setStretchFactor(1, 1);
 
-  // Set up our little chart.
-  this->HistogramView
-      ->SetInteractor(this->Internals->Ui.histogramWidget->GetInteractor());
-  this->Internals->Ui.histogramWidget
-      ->SetRenderWindow(this->HistogramView->GetRenderWindow());
-
-  this->HistogramView->GetScene()->AddItem(this->HistogramColorOpacityEditor.Get());
-
-  // Connect events from the histogram color/opacity editor to slots in this file.
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
-                           vtkCommand::CursorChangedEvent,
-                           this, SLOT(histogramClicked(vtkObject*)));
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
-                           vtkCommand::EndEvent,
-                           this, SLOT(onScalarOpacityFunctionChanged()));
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
-                           vtkControlPointsItem::CurrentPointEditEvent,
-                           this, SLOT(onCurrentPointEditEvent()));
-
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady
   // slot on this object. This slot will be called on the GUI thread when the
@@ -234,7 +200,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->connect(&this->Internals->Timer, SIGNAL(timeout()), SLOT(refreshHistogram()));
 
   this->LUT = nullptr;
-  this->ScalarOpacityFunction = nullptr;
 }
 
 CentralWidget::~CentralWidget()
@@ -333,17 +298,7 @@ void CentralWidget::setDataSource(DataSource* source)
 
   if (this->LUT)
   {
-    if (this->ScalarOpacityFunction)
-    {
-      // Remove connection
-      this->EventLink->Disconnect(this->ScalarOpacityFunction, vtkCommand::ModifiedEvent,
-                                  this, SLOT(onScalarOpacityFunctionChanged()));
-    }
-    this->ScalarOpacityFunction = this->LUT->GetScalarOpacityFunction();
-
-    // Connect opacity function to update render view
-    this->EventLink->Connect(this->ScalarOpacityFunction, vtkCommand::ModifiedEvent,
-                             this, SLOT(onScalarOpacityFunctionChanged()));
+    this->Internals->Ui.histogramWidget->setLUT(this->LUT);
   }
 
   // Check our cache, and use that if appopriate (or update it).
@@ -363,8 +318,7 @@ void CentralWidget::setDataSource(DataSource* source)
   }
 
   // Calculate a histogram.
-  vtkSmartPointer<vtkTable> table =
-    vtkSmartPointer<vtkTable>::New();
+  vtkSmartPointer<vtkTable> table = vtkSmartPointer<vtkTable>::New();
   this->HistogramCache[image] = table.Get();
   vtkSmartPointer<vtkImageData> const imageSP = image;
 
@@ -396,39 +350,6 @@ void CentralWidget::refreshHistogram()
   this->setDataSource(this->ADataSource);
 }
 
-void CentralWidget::onScalarOpacityFunctionChanged()
-{
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqServerManagerModel* smModel = core->getServerManagerModel();
-  QList<pqView*> views = smModel->findItems<pqView*>();
-  foreach(pqView* view, views)
-  {
-    view->render();
-  }
-
-  // Update the histogram
-  this->HistogramView->GetRenderWindow()->Render();
-}
-
-void CentralWidget::onCurrentPointEditEvent()
-{
-  double rgb[3];
-  if (this->HistogramColorOpacityEditor->GetCurrentControlPointColor(rgb))
-  {
-    QColor color = QColorDialog::getColor(
-      QColor::fromRgbF(rgb[0], rgb[1], rgb[2]), this,
-      "Select Color for Control Point", QColorDialog::DontUseNativeDialog);
-    if (color.isValid())
-    {
-      rgb[0] = color.redF();
-      rgb[1] = color.greenF();
-      rgb[2] = color.blueF();
-      this->HistogramColorOpacityEditor->SetCurrentControlPointColor(rgb);
-      this->onScalarOpacityFunctionChanged();
-    }
-  }
-}
-
 void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
@@ -452,46 +373,6 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
   this->setHistogramTable(output.Get());
 }
 
-void CentralWidget::histogramClicked(vtkObject *)
-{
-  Q_ASSERT(this->ADataSource);
-
-  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
-  if (!view)
-  {
-    return;
-  }
-
-  // Use active ModuleContour is possible. Otherwise, find the first existing
-  // ModuleContour instance or just create a new one, if none exists.
-#ifdef DAX_DEVICE_ADAPTER
-  typedef ModuleStreamingContour ModuleContourType;
-#else
-  typedef ModuleContour ModuleContourType;
-#endif
-
-  ModuleContourType* contour = qobject_cast<ModuleContourType*>(
-    ActiveObjects::instance().activeModule());
-  if (!contour)
-  {
-    QList<ModuleContourType*> contours =
-      ModuleManager::instance().findModules<ModuleContourType*>(this->ADataSource, view);
-    if (contours.size() == 0)
-    {
-      contour = qobject_cast<ModuleContourType*>(ModuleManager::instance().createAndAddModule(
-          "Contour", this->ADataSource, view));
-    }
-    else
-    {
-      contour = contours[0];
-    }
-    ActiveObjects::instance().setActiveModule(contour);
-  }
-  Q_ASSERT(contour);
-  contour->setIsoValue(this->HistogramColorOpacityEditor->GetContourValue());
-  tomviz::convert<pqView*>(view)->render();
-}
-
 void CentralWidget::setHistogramTable(vtkTable *table)
 {
   vtkDataArray *arr =
@@ -501,18 +382,9 @@ void CentralWidget::setHistogramTable(vtkTable *table)
     return;
   }
 
-  this->HistogramColorOpacityEditor->SetHistogramInputData(table,
-                                                           "image_extents",
-                                                           "image_pops");
-  this->HistogramColorOpacityEditor->SetOpacityFunction(this->ScalarOpacityFunction);
-
-  if (this->LUT)
-  {
-    this->HistogramColorOpacityEditor->SetScalarVisibility(true);
-    this->HistogramColorOpacityEditor->SetColorTransferFunction(this->LUT);
-    this->HistogramColorOpacityEditor->SelectColorArray("image_extents");
-  }
-  this->HistogramView->Render();
+  this->Internals->Ui.histogramWidget->setInputData(table,
+                                                    "image_extents",
+                                                    "image_pops");
 }
 
 } // end of namespace tomviz

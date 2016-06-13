@@ -20,23 +20,11 @@
 #include <QWidget>
 #include <QMap>
 #include <QPointer>
-#include <vtkNew.h>
-#include <vtkWeakPointer.h>
 #include <vtkSmartPointer.h>
 
-class vtkChartHistogramColorOpacityEditor;
-class vtkChartMatrix;
-class vtkColorTransferControlPointsItem;
-class vtkColorTransferFunctionItem;
-class vtkObject;
-class vtkSMSourceProxy;
-class vtkContextView;
-class vtkEventQtSlotConnect;
 class vtkImageData;
-class vtkPiecewiseFunction;
 class vtkPVDiscretizableColorTransferFunction;
 class vtkTable;
-class vtkChartHistogram;
 
 class QThread;
 
@@ -71,11 +59,8 @@ public slots:
 
 private slots:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
-  void histogramClicked(vtkObject *caller);
   void onDataSourceChanged();
   void refreshHistogram();
-  void onScalarOpacityFunctionChanged();
-  void onCurrentPointEditEvent();
 
 private:
   Q_DISABLE_COPY(CentralWidget)
@@ -87,17 +72,13 @@ private:
 
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
-  vtkNew<vtkChartHistogramColorOpacityEditor> HistogramColorOpacityEditor;
-  vtkNew<vtkContextView> HistogramView;
 
-  vtkNew<vtkEventQtSlotConnect> EventLink;
   QPointer<DataSource> ADataSource;
   QPointer<Module> AModule;
   HistogramMaker *HistogramGen;
   QThread *Worker;
   QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
   vtkPVDiscretizableColorTransferFunction *LUT;
-  vtkPiecewiseFunction *ScalarOpacityFunction;
 };
 
 }
