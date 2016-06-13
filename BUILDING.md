@@ -43,6 +43,7 @@ prerequisites installed:
       -DVTK_RENDERING_BACKEND:STRING=OpenGL2 \
       -DVTK_SMP_IMPLEMENTATION_TYPE:STRING=TBB \
       -DPARAVIEW_ENABLE_WEB:BOOL=OFF \
+      -DBUILD_TESTING:BOOL=OFF \
       ../paraview
     cmake --build .
 
@@ -75,11 +76,12 @@ required for building tomviz, is required for the executable to run. Now,
 to build tomviz:
 
     cd ..
+    export build_root=`pwd`
     mkdir tomviz-build
     cd tomviz-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
-      -DParaView_DIR:PATH=../paraview-build \
-      -DITK_DIR:PATH=../itk-build \
+      -DParaView_DIR:PATH=$build_root/paraview-build \
+      -DITK_DIR:PATH=$build_root/itk-build \
       ../tomviz
     cmake --build .
 
