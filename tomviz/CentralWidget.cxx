@@ -17,15 +17,8 @@
 #include "ui_CentralWidget.h"
 
 #include <pqView.h>
-#include <vtkAxis.h>
-#include <vtkChartXY.h>
-#include <vtkColorTransferControlPointsItem.h>
-#include <vtkColorTransferFunctionItem.h>
-#include <vtkCompositeControlPointsItem.h>
-#include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
-#include <vtkDiscretizableColorTransferFunction.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
@@ -34,25 +27,19 @@
 #include <vtkObjectFactory.h>
 #include <vtkPiecewiseControlPointsItem.h>
 #include <vtkPiecewiseFunction.h>
-#include <vtkPiecewiseFunctionItem.h>
-#include <vtkPlotBar.h>
 #include <vtkPointData.h>
 #include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkRenderWindow.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTable.h>
-#include <vtkTransform2D.h>
 #include <vtkTrivialProducer.h>
-#include <vtkContext2D.h>
-#include <vtkPen.h>
 #include <vtkVector.h>
 
 #include "vtkChartHistogramColorOpacityEditor.h"
 
 #include <QColor>
 #include <QColorDialog>
-#include <QtDebug>
 #include <QThread>
 #include <QTimer>
 
