@@ -63,7 +63,7 @@ public:
   /// properties.
   /// Subclasses should override to add proxies and relevant properties to the
   /// panel.
-  void addToPanel(pqProxiesWidget* panel) override;
+  void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 

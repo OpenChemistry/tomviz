@@ -38,7 +38,7 @@ public:
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
-  void addToPanel(pqProxiesWidget*) override;
+  void addToPanel(QWidget*) override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
   bool serialize(pugi::xml_node& ns) const override;
@@ -68,6 +68,11 @@ protected:
 
   class Private;
   Private* Internals;
+
+  QString Representation;
+
+private slots:
+  void dataUpdated();
 
 private:
   Q_DISABLE_COPY(ModuleContour)

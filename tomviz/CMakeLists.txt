@@ -86,6 +86,8 @@ set(SOURCES
   DataSource.h
   DeleteDataReaction.cxx
   DeleteDataReaction.h
+  DoubleSliderWidget.cxx
+  DoubleSliderWidget.h
   EditOperatorDialog.cxx
   EditOperatorDialog.h
   EditOperatorWidget.cxx

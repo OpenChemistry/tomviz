@@ -27,6 +27,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
+#include <QHBoxLayout>
 namespace tomviz
 {
 
@@ -131,24 +132,32 @@ bool ModuleThreshold::visibility() const
                              "Visibility").GetAsInt() != 0;
 }
 
-void ModuleThreshold::addToPanel(pqProxiesWidget* panel)
+void ModuleThreshold::addToPanel(QWidget* panel)
 {
   Q_ASSERT(this->ThresholdFilter);
   Q_ASSERT(this->ThresholdRepresentation);
 
+  if (panel->layout()) {
+    delete panel->layout();
+  }
+
+  QHBoxLayout *layout = new QHBoxLayout;
+  panel->setLayout(layout);
+  pqProxiesWidget *proxiesWidget = new pqProxiesWidget(panel);
+  layout->addWidget(proxiesWidget);
+
   QStringList fprops;
   fprops << "SelectInputScalars" << "ThresholdBetween";
 
-  panel->addProxy(this->ThresholdFilter, "Threshold", fprops, true);
+  proxiesWidget->addProxy(this->ThresholdFilter, "Threshold", fprops, true);
 
   QStringList representationProperties;
   representationProperties
     << "Representation"
     << "Opacity"
     << "Specular";
-  panel->addProxy(this->ThresholdRepresentation, "Appearance", representationProperties, true);
-
-  this->Superclass::addToPanel(panel);
+  proxiesWidget->addProxy(this->ThresholdRepresentation, "Appearance", representationProperties, true);
+  proxiesWidget->updateLayout();
 }
 
 bool ModuleThreshold::serialize(pugi::xml_node& ns) const

@@ -25,7 +25,7 @@
 
 #include <vtk_pugixml.h>
 
-class pqProxiesWidget;
+class QWidget;
 class pqAnimationCue;
 class vtkSMProxy;
 class vtkSMViewProxy;
@@ -118,7 +118,7 @@ public slots:
   /// properties.
   /// Subclasses should override to add proxies and relevant properties to the
   /// panel.
-  virtual void addToPanel(pqProxiesWidget* panel);
+  virtual void addToPanel(QWidget* panel);
 
   /// This method is called when the data source's display position changes.
   virtual void dataSourceMoved(double newX, double newY, double newZ) = 0;
