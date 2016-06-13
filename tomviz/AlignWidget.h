@@ -25,6 +25,7 @@
 #include <QPointer>
 
 class QLabel;
+class QComboBox;
 class QSpinBox;
 class QTimer;
 class QKeyEvent;
@@ -45,6 +46,7 @@ namespace tomviz
 
 class DataSource;
 class TranslateAlignOperator;
+class ViewMode;
 
 class AlignWidget : public EditOperatorWidget
 {
@@ -60,7 +62,8 @@ public:
   void applyChangesToOperator() override;
 
 protected slots:
-  void changeSlice();
+  void changeMode(int mode);
+  void onTimeout();
   void changeSlice(int delta);
   void setSlice(int slice, bool resetInc = true);
   void updateReference();
@@ -85,6 +88,7 @@ protected:
   vtkNew<vtkInteractorStyleRubberBandZoom> zoomToBoxInteractorStyle;
   QVTKWidget *widget;
 
+  QComboBox *modeSelect;
   QTimer *timer;
   QSpinBox *currentSlice;
   QLabel *currentSliceOffset;
@@ -100,6 +104,12 @@ protected:
   int frameRate;
   int referenceSlice;
   int observerId;
+
+  int maxSliceNum;
+  int minSliceNum;
+
+  QVector<ViewMode*> modes;
+  int currentMode;
 
   QVector<vtkVector2i> offsets;
   QPointer<TranslateAlignOperator> Op;
