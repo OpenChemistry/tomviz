@@ -75,12 +75,6 @@ public:
       pqProxyWidget::newGroupLabelWidget("Tilt Angles", parent);
     l->insertWidget(l->indexOf(ui.SetTiltAnglesButton), this->TiltAnglesSeparator);
 
-    // set icons for save/restore buttons.
-    ui.ColorMapSaveAsDefaults->setIcon(
-      ui.ColorMapSaveAsDefaults->style()->standardIcon(QStyle::SP_DialogSaveButton));
-    ui.ColorMapRestoreDefaults->setIcon(
-      ui.ColorMapRestoreDefaults->style()->standardIcon(QStyle::SP_BrowserReload));
-
     this->clear();
   }
 
@@ -208,21 +202,6 @@ void DataPropertiesPanel::update()
         dsource->producer()));
   ui.TransformedDataType->setText(getDataTypeString(
         dsource->producer()));
-
-  pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap(), this);
-  colorMapWidget->setApplyChangesImmediately(true);
-  colorMapWidget->updatePanel();
-  ui.verticalLayout->insertWidget(ui.verticalLayout->indexOf(ui.SetTiltAnglesButton)-1,
-                                  colorMapWidget);
-  colorMapWidget->connect(ui.ColorMapExpander, SIGNAL(toggled(bool)),
-                          SLOT(setVisible(bool)));
-  colorMapWidget->setVisible(ui.ColorMapExpander->checked());
-  colorMapWidget->connect(ui.ColorMapSaveAsDefaults, SIGNAL(clicked()),
-                          SLOT(saveAsDefaults()));
-  colorMapWidget->connect(ui.ColorMapRestoreDefaults, SIGNAL(clicked()),
-                          SLOT(restoreDefaults()));
-  this->connect(colorMapWidget, SIGNAL(changeFinished()), SLOT(render()));
-  this->Internals->ColorMapWidget = colorMapWidget;
 
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries)
