@@ -279,11 +279,13 @@ void CentralWidget::setDataSource(DataSource* source)
   vtkPVDiscretizableColorTransferFunction *lut;
   if (this->AModule)
   {
+    this->Internals->Ui.histogramWidget->setLUTProxy(this->AModule->colorMap());
     vtkObjectBase* colorMapObject = this->AModule->colorMap()->GetClientSideObject();
     lut = vtkPVDiscretizableColorTransferFunction::SafeDownCast(colorMapObject);
   }
   else
   {
+    this->Internals->Ui.histogramWidget->setLUTProxy(source->colorMap());
     vtkObjectBase* colorMapObject = source->colorMap()->GetClientSideObject();
     lut = vtkPVDiscretizableColorTransferFunction::SafeDownCast(colorMapObject);
   }

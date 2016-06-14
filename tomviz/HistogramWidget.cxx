@@ -33,14 +33,22 @@
 #include <QVTKWidget.h>
 
 #include <pqApplicationCore.h>
+#include <pqCoreUtilities.h>
+#include <pqPresetDialog.h>
 #include <pqServerManagerModel.h>
 #include <pqView.h>
 
 #include <vtkPVDiscretizableColorTransferFunction.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QColorDialog>
 #include <QHBoxLayout>
+#include <QToolButton>
+#include <QVBoxLayout>
+
+#include <QDebug>
 
 namespace tomviz
 {
@@ -66,6 +74,15 @@ HistogramWidget::HistogramWidget(QWidget *parent) : QWidget(parent),
 
   QHBoxLayout *hLayout = new QHBoxLayout(this);
   hLayout->addWidget(this->qvtk);
+  QVBoxLayout *vLayout = new QVBoxLayout;
+  hLayout->addLayout(vLayout);
+
+  QToolButton *button = new QToolButton;
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites16.png"));
+  button->setToolTip("Choose preset color map");
+  connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
+  vLayout->addWidget(button);
+
   this->setLayout(hLayout);
 }
 
@@ -88,6 +105,14 @@ void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction *lut)
     this->EventLink->Connect(this->ScalarOpacityFunction,
                              vtkCommand::ModifiedEvent,
                              this, SLOT(onScalarOpacityFunctionChanged()));
+  }
+}
+
+void HistogramWidget::setLUTProxy(vtkSMProxy *proxy)
+{
+  if (this->LUTProxy != proxy)
+  {
+    this->LUTProxy = proxy;
   }
 }
 
@@ -172,6 +197,74 @@ void HistogramWidget::histogramClicked(vtkObject *)
   Q_ASSERT(contour);
   contour->setIsoValue(this->HistogramColorOpacityEditor->GetContourValue());
   tomviz::convert<pqView*>(view)->render();
+}
+
+void HistogramWidget::onPresetClicked()
+{
+  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
+                        pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
+  dialog.setCustomizableLoadColors(true);
+  dialog.setCustomizableLoadOpacities(true);
+  dialog.setCustomizableUsePresetRange(true);
+  dialog.setCustomizableLoadAnnotations(false);
+  connect(&dialog, SIGNAL(applyPreset(const Json::Value&)),
+          SLOT(applyCurrentPreset()));
+  dialog.exec();
+}
+
+void HistogramWidget::applyCurrentPreset()
+{
+  pqPresetDialog* dialog = qobject_cast<pqPresetDialog*>(this->sender());
+  Q_ASSERT(dialog);
+
+  vtkSMProxy* lut = this->LUTProxy;
+  if (!lut)
+  {
+    return;
+  }
+
+  if (dialog->loadColors() || dialog->loadOpacities())
+  {
+    vtkSMProxy* sof = vtkSMPropertyHelper(lut,
+                                          "ScalarOpacityFunction",
+                                          true).GetAsProxy();
+    if (dialog->loadColors())
+    {
+      vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
+                                              !dialog->usePresetRange());
+    }
+    if (dialog->loadOpacities())
+    {
+      if (sof)
+      {
+        vtkSMTransferFunctionProxy::ApplyPreset(
+          sof, dialog->currentPreset(), !dialog->usePresetRange());
+      }
+      else
+      {
+        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not present.");
+      }
+    }
+
+    // We need to take extra care to avoid the color and opacity function ranges
+    // from straying away from each other. This can happen if only one of them is
+    // getting a preset and we're using the preset range.
+    if (dialog->usePresetRange()
+        && (dialog->loadColors() ^ dialog->loadOpacities()) && sof)
+    {
+      double range[2];
+      if (dialog->loadColors()
+          && vtkSMTransferFunctionProxy::GetRange(lut, range))
+      {
+        vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range);
+      }
+      else if (dialog->loadOpacities()
+               && vtkSMTransferFunctionProxy::GetRange(sof, range))
+      {
+        vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
+      }
+    }
+  }
 }
 
 }

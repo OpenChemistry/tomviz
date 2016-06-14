@@ -30,6 +30,7 @@ class vtkTable;
 class QVTKWidget;
 
 class vtkPVDiscretizableColorTransferFunction;
+class vtkSMProxy;
 
 namespace tomviz
 {
@@ -43,6 +44,7 @@ public:
   ~HistogramWidget() override;
 
   void setLUT(vtkPVDiscretizableColorTransferFunction *lut);
+  void setLUTProxy(vtkSMProxy *proxy);
 
   void setInputData(vtkTable *table, const char* x, const char* y);
 
@@ -53,6 +55,9 @@ public slots:
   void onCurrentPointEditEvent();
   void histogramClicked(vtkObject *);
 
+  void onPresetClicked();
+  void applyCurrentPreset();
+
 private:
   vtkNew<vtkChartHistogramColorOpacityEditor> HistogramColorOpacityEditor;
   vtkNew<vtkContextView> HistogramView;
@@ -60,6 +65,7 @@ private:
 
   vtkPVDiscretizableColorTransferFunction *LUT = nullptr;
   vtkPiecewiseFunction *ScalarOpacityFunction = nullptr;
+  vtkSMProxy *LUTProxy = nullptr;
 
   QVTKWidget *qvtk;
 };
