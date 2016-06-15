@@ -117,7 +117,7 @@ DataPropertiesPanel::~DataPropertiesPanel()
 
 void DataPropertiesPanel::paintEvent(QPaintEvent *e)
 {
-  this->update();
+  this->updateData();
   QWidget::paintEvent(e);
 }
 
@@ -174,7 +174,7 @@ QString getDataTypeString(vtkSMSourceProxy* proxy)
 
 }
 
-void DataPropertiesPanel::update()
+void DataPropertiesPanel::updateData()
 {
   if (!this->updateNeeded)
   {
@@ -230,16 +230,6 @@ void DataPropertiesPanel::update()
       SLOT(onTiltAnglesModified(int, int)));
 
   this->updateNeeded = false;
-}
-
-void DataPropertiesPanel::render()
-{
-  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  if (view)
-  {
-    view->render();
-  }
-  emit colorMapUpdated();
 }
 
 void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
