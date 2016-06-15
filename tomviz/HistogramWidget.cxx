@@ -241,6 +241,8 @@ void HistogramWidget::onCustomRangeClicked()
                                                         dialog.getMinimum(),
                                                         dialog.getMaximum());
     }
+  this->renderViews();
+  emit colorMapUpdated();
 }
 
 void HistogramWidget::onPresetClicked()
@@ -308,6 +310,17 @@ void HistogramWidget::applyCurrentPreset()
         vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
       }
     }
+    this->renderViews();
+    emit colorMapUpdated();
+  }
+}
+
+void HistogramWidget::renderViews()
+{
+  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view)
+  {
+    view->render();
   }
 }
 

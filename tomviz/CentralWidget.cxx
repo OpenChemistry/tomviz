@@ -186,6 +186,9 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Internals->Ui.splitter->setStretchFactor(0, 0);
   this->Internals->Ui.splitter->setStretchFactor(1, 1);
 
+  this->connect(this->Internals->Ui.histogramWidget, SIGNAL(colorMapUpdated()),
+                SLOT(onColorMapUpdated()));
+
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady
   // slot on this object. This slot will be called on the GUI thread when the

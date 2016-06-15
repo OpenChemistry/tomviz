@@ -49,6 +49,7 @@ public:
   void setInputData(vtkTable *table, const char* x, const char* y);
 
 signals:
+  void colorMapUpdated();
 
 public slots:
   void onScalarOpacityFunctionChanged();
@@ -61,6 +62,7 @@ public slots:
   void applyCurrentPreset();
 
 private:
+  void renderViews();
   vtkNew<vtkChartHistogramColorOpacityEditor> HistogramColorOpacityEditor;
   vtkNew<vtkContextView> HistogramView;
   vtkNew<vtkEventQtSlotConnect> EventLink;
