@@ -104,6 +104,7 @@ void ViewMenuManager::buildMenu()
   this->showAxisGridAction = this->Menu->addAction("Show Axis Grid");
   this->showAxisGridAction->setCheckable(true);
   this->showAxisGridAction->setChecked(axisGridIsShowing);
+  this->showAxisGridAction->setEnabled(this->View && this->View->GetProperty("AxesGrid")); 
   this->connect(this->showAxisGridAction, SIGNAL(triggered(bool)),
                 SLOT(setShowAxisGrid(bool)));
 
@@ -136,6 +137,10 @@ void ViewMenuManager::viewPropertiesDialogHidden()
 
 void ViewMenuManager::setProjectionModeToPerspective()
 {
+  if (!this->View->GetProperty("CameraParallelProjection"))
+  {
+    return;
+  }
   int parallel = vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
   if (parallel)
   {
@@ -151,6 +156,10 @@ void ViewMenuManager::setProjectionModeToPerspective()
 
 void ViewMenuManager::setProjectionModeToOrthographic()
 {
+  if (!this->View->GetProperty("CameraParallelProjection"))
+  {
+    return;
+  }
   int parallel = vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
   if (!parallel)
   {
@@ -170,6 +179,10 @@ void ViewMenuManager::onViewPropertyChanged()
   {
     return;
   }
+  if (!this->View->GetProperty("CameraParallelProjection"))
+  {
+    return;
+  }
   int parallel = vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
   if (parallel && this->perspectiveProjectionAction->isChecked())
   {
@@ -185,12 +198,15 @@ void ViewMenuManager::onViewChanged()
 {
   if (this->View)
   {
-    vtkSMProxy *grid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
-    if (grid)
+    if (this->View->GetProperty("AxesGrid"))
     {
-      grid->RemoveObserver(this->AxesGridObserverId);
+      vtkSMProxy *grid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
+      if (grid)
+      {
+        grid->RemoveObserver(this->AxesGridObserverId);
+      }
+      this->View->RemoveObserver(this->ViewObserverId);
     }
-    this->View->RemoveObserver(this->ViewObserverId);
   }
   this->View = ActiveObjects::instance().activeView();
   if (this->View)
@@ -198,23 +214,43 @@ void ViewMenuManager::onViewChanged()
     this->ViewObserverId = pqCoreUtilities::connect(
         this->View, vtkCommand::PropertyModifiedEvent,
         this, SLOT(onViewPropertyChanged()));
-    vtkSMPropertyHelper axesGridProp(this->View, "AxesGrid");
-    vtkSMProxy *proxy = axesGridProp.GetAsProxy();
-    if (!proxy)
+    if (this->View->GetProperty("AxesGrid"))
     {
-      vtkSMSessionProxyManager* pxm = this->View->GetSessionProxyManager();
-      proxy = pxm->NewProxy("annotations", "GridAxes3DActor");
-      axesGridProp.Set(proxy);
-      this->View->UpdateVTKObjects();
-      proxy->Delete();
+      vtkSMPropertyHelper axesGridProp(this->View, "AxesGrid");
+      vtkSMProxy *proxy = axesGridProp.GetAsProxy();
+      if (!proxy)
+      {
+        vtkSMSessionProxyManager* pxm = this->View->GetSessionProxyManager();
+        proxy = pxm->NewProxy("annotations", "GridAxes3DActor");
+        axesGridProp.Set(proxy);
+        this->View->UpdateVTKObjects();
+        proxy->Delete();
+      }
+      this->AxesGridObserverId = pqCoreUtilities::connect(proxy,
+          vtkCommand::PropertyModifiedEvent, this, SLOT(onAxesGridChanged()));
     }
-    this->AxesGridObserverId = pqCoreUtilities::connect(proxy,
-        vtkCommand::PropertyModifiedEvent, this, SLOT(onAxesGridChanged()));
+  }
+  bool enableAxesGrid = (this->View && this->View->GetProperty("AxesGrid"));
+  // We have to check since this can be called before buildMenu
+  if (this->showAxisGridAction)
+  {
+    this->showAxisGridAction->setEnabled(enableAxesGrid);
+  }
+  bool enableProjectionModes = (this->View && this->View->GetProperty("CameraParallelProjection"));
+  // We have to check since this can be called before buildMenu
+  if (this->orthographicProjectionAction && this->perspectiveProjectionAction)
+  {
+    this->orthographicProjectionAction->setEnabled(enableProjectionModes);
+    this->perspectiveProjectionAction->setEnabled(enableProjectionModes);
   }
 }
 
 void ViewMenuManager::setShowAxisGrid(bool show)
 {
+  if (!this->View->GetProperty("AxesGrid"))
+  {
+    return;
+  }
   vtkSMProxy *axesGrid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
   int showing = vtkSMPropertyHelper(axesGrid, "Visibility").GetAsInt();
   if (showing && !show)
