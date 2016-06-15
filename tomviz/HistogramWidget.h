@@ -55,6 +55,8 @@ public slots:
   void onCurrentPointEditEvent();
   void histogramClicked(vtkObject *);
 
+  void onResetRangeClicked();
+  void onCustomRangeClicked();
   void onPresetClicked();
   void applyCurrentPreset();
 

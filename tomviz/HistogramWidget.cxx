@@ -29,12 +29,15 @@
 #include <vtkEventQtSlotConnect.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
+#include <vtkVector.h>
 
 #include <QVTKWidget.h>
 
 #include <pqApplicationCore.h>
 #include <pqCoreUtilities.h>
 #include <pqPresetDialog.h>
+#include <pqRescaleRange.h>
+#include <pqResetScalarRangeReaction.h>
 #include <pqServerManagerModel.h>
 #include <pqView.h>
 
@@ -77,11 +80,27 @@ HistogramWidget::HistogramWidget(QWidget *parent) : QWidget(parent),
   QVBoxLayout *vLayout = new QVBoxLayout;
   hLayout->addLayout(vLayout);
 
+  vLayout->addStretch(1);
+
   QToolButton *button = new QToolButton;
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRange24.png"));
+  button->setToolTip("Reset data range");
+  connect(button, SIGNAL(clicked()), this, SLOT(onResetRangeClicked()));
+  vLayout->addWidget(button);
+
+  button = new QToolButton;
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRangeCustom24.png"));
+  button->setToolTip("Specify data range");
+  connect(button, SIGNAL(clicked()), this, SLOT(onCustomRangeClicked()));
+  vLayout->addWidget(button);
+
+  button = new QToolButton;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites16.png"));
   button->setToolTip("Choose preset color map");
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
   vLayout->addWidget(button);
+
+  vLayout->addStretch(1);
 
   this->setLayout(hLayout);
 }
@@ -197,6 +216,31 @@ void HistogramWidget::histogramClicked(vtkObject *)
   Q_ASSERT(contour);
   contour->setIsoValue(this->HistogramColorOpacityEditor->GetContourValue());
   tomviz::convert<pqView*>(view)->render();
+}
+
+void HistogramWidget::onResetRangeClicked()
+{
+  pqResetScalarRangeReaction::resetScalarRangeToData(nullptr);
+}
+
+void HistogramWidget::onCustomRangeClicked()
+{
+  vtkVector2d range;
+  vtkDiscretizableColorTransferFunction *discFunc =
+      vtkDiscretizableColorTransferFunction::SafeDownCast(this->LUTProxy->GetClientSideObject());
+  if (!discFunc)
+  {
+    return;
+  }
+  discFunc->GetRange(range.GetData());
+  pqRescaleRange dialog(pqCoreUtilities::mainWidget());
+  dialog.setRange(range[0], range[1]);
+  if (dialog.exec() == QDialog::Accepted)
+    {
+    vtkSMTransferFunctionProxy::RescaleTransferFunction(this->LUTProxy,
+                                                        dialog.getMinimum(),
+                                                        dialog.getMaximum());
+    }
 }
 
 void HistogramWidget::onPresetClicked()
