@@ -28,7 +28,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QVTKWidget" name="histogramWidget" native="true">
+        <widget class="tomviz::HistogramWidget" name="histogramWidget" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -68,9 +68,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QVTKWidget</class>
+   <class>tomviz::HistogramWidget</class>
    <extends>QWidget</extends>
-   <header>QVTKWidget.h</header>
+   <header>HistogramWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

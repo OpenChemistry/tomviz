@@ -34,16 +34,15 @@ class DataPropertiesPanel : public QWidget
   typedef QWidget Superclass;
 
 public:
-  DataPropertiesPanel(QWidget* parent = nullptr);
+  explicit DataPropertiesPanel(QWidget* parent = nullptr);
   virtual ~DataPropertiesPanel() override;
 
 protected:
   void paintEvent(QPaintEvent *) override;
+  void updateData();
 
 private slots:
   void setDataSource(DataSource*);
-  void update();
-  void render();
   void onTiltAnglesModified(int row, int column);
   void setTiltAngles();
   void scheduleUpdate();

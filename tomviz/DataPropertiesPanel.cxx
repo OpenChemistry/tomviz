@@ -75,12 +75,6 @@ public:
       pqProxyWidget::newGroupLabelWidget("Tilt Angles", parent);
     l->insertWidget(l->indexOf(ui.SetTiltAnglesButton), this->TiltAnglesSeparator);
 
-    // set icons for save/restore buttons.
-    ui.ColorMapSaveAsDefaults->setIcon(
-      ui.ColorMapSaveAsDefaults->style()->standardIcon(QStyle::SP_DialogSaveButton));
-    ui.ColorMapRestoreDefaults->setIcon(
-      ui.ColorMapRestoreDefaults->style()->standardIcon(QStyle::SP_BrowserReload));
-
     this->clear();
   }
 
@@ -123,7 +117,7 @@ DataPropertiesPanel::~DataPropertiesPanel()
 
 void DataPropertiesPanel::paintEvent(QPaintEvent *e)
 {
-  this->update();
+  this->updateData();
   QWidget::paintEvent(e);
 }
 
@@ -180,7 +174,7 @@ QString getDataTypeString(vtkSMSourceProxy* proxy)
 
 }
 
-void DataPropertiesPanel::update()
+void DataPropertiesPanel::updateData()
 {
   if (!this->updateNeeded)
   {
@@ -209,21 +203,6 @@ void DataPropertiesPanel::update()
   ui.TransformedDataType->setText(getDataTypeString(
         dsource->producer()));
 
-  pqProxyWidget* colorMapWidget = new pqProxyWidget(dsource->colorMap(), this);
-  colorMapWidget->setApplyChangesImmediately(true);
-  colorMapWidget->updatePanel();
-  ui.verticalLayout->insertWidget(ui.verticalLayout->indexOf(ui.SetTiltAnglesButton)-1,
-                                  colorMapWidget);
-  colorMapWidget->connect(ui.ColorMapExpander, SIGNAL(toggled(bool)),
-                          SLOT(setVisible(bool)));
-  colorMapWidget->setVisible(ui.ColorMapExpander->checked());
-  colorMapWidget->connect(ui.ColorMapSaveAsDefaults, SIGNAL(clicked()),
-                          SLOT(saveAsDefaults()));
-  colorMapWidget->connect(ui.ColorMapRestoreDefaults, SIGNAL(clicked()),
-                          SLOT(restoreDefaults()));
-  this->connect(colorMapWidget, SIGNAL(changeFinished()), SLOT(render()));
-  this->Internals->ColorMapWidget = colorMapWidget;
-
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries)
   {
@@ -251,16 +230,6 @@ void DataPropertiesPanel::update()
       SLOT(onTiltAnglesModified(int, int)));
 
   this->updateNeeded = false;
-}
-
-void DataPropertiesPanel::render()
-{
-  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  if (view)
-  {
-    view->render();
-  }
-  emit colorMapUpdated();
 }
 
 void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
