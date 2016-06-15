@@ -185,8 +185,11 @@ void ViewMenuManager::onViewChanged()
 {
   if (this->View)
   {
-    vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy()
-      ->RemoveObserver(this->AxesGridObserverId);
+    vtkSMProxy *grid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
+    if (grid)
+    {
+      grid->RemoveObserver(this->AxesGridObserverId);
+    }
     this->View->RemoveObserver(this->ViewObserverId);
   }
   this->View = ActiveObjects::instance().activeView();
