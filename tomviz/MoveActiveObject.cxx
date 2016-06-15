@@ -124,7 +124,7 @@ void MoveActiveObject::hideMoveObjectWidget()
 
 void MoveActiveObject::onViewChanged(vtkSMViewProxy *view)
 {
-  if (view)
+  if (view && view->GetRenderWindow())
   {
     vtkRenderWindowInteractor *iren =
       view->GetRenderWindow()->GetInteractor();
