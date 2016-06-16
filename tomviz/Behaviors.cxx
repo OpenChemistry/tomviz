@@ -18,6 +18,7 @@
 #include "AddRenderViewContextMenuBehavior.h"
 #include "MoveActiveObject.h"
 #include "ProgressBehavior.h"
+#include "ViewFrameActions.h"
 
 #include <pqAlwaysConnectedBehavior.h>
 #include <pqApplicationCore.h>
@@ -87,9 +88,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   // * add support for ParaView properties panel widgets.
   pgm->addInterface(new pqStandardPropertyWidgetInterface(pgm));
 
-  // * register standard types of view-frame actions.
-  pgm->addInterface(new pqStandardViewFrameActionsImplementation(pgm));
-
+  pgm->addInterface(new ViewFrameActions(pgm));
   // Load plugins distributed with application.
   pqApplicationCore::instance()->loadDistributedPlugins();
 
