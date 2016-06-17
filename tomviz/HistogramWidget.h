@@ -58,6 +58,7 @@ public slots:
 
   void onResetRangeClicked();
   void onCustomRangeClicked();
+  void onInvertClicked();
   void onPresetClicked();
   void applyCurrentPreset();
 

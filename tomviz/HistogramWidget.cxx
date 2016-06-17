@@ -95,6 +95,12 @@ HistogramWidget::HistogramWidget(QWidget *parent) : QWidget(parent),
   vLayout->addWidget(button);
 
   button = new QToolButton;
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqInvert24.png"));
+  button->setToolTip("Invert color map");
+  connect(button, SIGNAL(clicked()), this, SLOT(onInvertClicked()));
+  vLayout->addWidget(button);
+
+  button = new QToolButton;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites16.png"));
   button->setToolTip("Choose preset color map");
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
@@ -241,6 +247,13 @@ void HistogramWidget::onCustomRangeClicked()
                                                         dialog.getMinimum(),
                                                         dialog.getMaximum());
     }
+  this->renderViews();
+  emit colorMapUpdated();
+}
+
+void HistogramWidget::onInvertClicked()
+{
+  vtkSMTransferFunctionProxy::InvertTransferFunction(this->LUTProxy);
   this->renderViews();
   emit colorMapUpdated();
 }
