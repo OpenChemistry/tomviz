@@ -47,6 +47,11 @@ private slots:
   void setTiltAngles();
   void scheduleUpdate();
 
+  void setUnits();
+  void updateXLength();
+  void updateYLength();
+  void updateZLength();
+
 signals:
   void colorMapUpdated();
 

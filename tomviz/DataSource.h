@@ -114,6 +114,18 @@ public:
   void setDisplayPosition(const double newPosition[3]);
 
   vtkSmartPointer<vtkImageData> getCopyOfImagePriorTo(QSharedPointer<Operator>& op);
+  /// Returns the extent of the transformed dataset
+  void getExtent(int extent[6]);
+  /// Returns the spacing of the transformed dataset
+  void getSpacing(double spacing[3]) const;
+  /// Sets the scale factor (ratio between units and spacing)
+  /// one component per axis
+  void setSpacing(const double scaleFactor[3]);
+  /// Returns a string describing the units for the given axis of the data
+  QString getUnits(int axis);
+  /// Set the string describing the units
+  void setUnits(const QString& units);
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
