@@ -295,6 +295,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   this->setMinimumWidth(800);
   this->setMinimumHeight(600);
   this->setWindowTitle("Align data");
+  this->currentMode = 0;
 
   // Grab the image data from the data source...
   vtkTrivialProducer *t =
