@@ -133,7 +133,7 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
     this->connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
                   Qt::UniqueConnection);
   }
-  this->updateNeeded = true;
+  this->scheduleUpdate();
 }
 
 namespace {
@@ -265,6 +265,10 @@ void DataPropertiesPanel::setTiltAngles()
 void DataPropertiesPanel::scheduleUpdate()
 {
   this->updateNeeded = true;
+  if (this->isVisible())
+  {
+    this->updateData();
+  }
 }
 
 }
