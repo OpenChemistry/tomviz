@@ -610,6 +610,11 @@ void AlignWidget::updateReference()
     this->modes[i]->referenceSliceUpdated(
         referenceSlice, this->offsets[referenceSlice]);
   }
+  if (this->modes.length() > 0)
+  {
+    this->modes[this->currentMode]->update();
+  }
+  this->widget->update();
 }
 
 void AlignWidget::setFrameRate(int rate)
@@ -709,6 +714,11 @@ void AlignWidget::applySliceOffset(int sliceNumber)
   {
     this->modes[i]->currentSliceUpdated(sliceNumber, offset);
   }
+  if (this->modes.length() > 0)
+  {
+    this->modes[this->currentMode]->update();
+  }
+  this->widget->update();
 }
 
 void AlignWidget::startAlign()
