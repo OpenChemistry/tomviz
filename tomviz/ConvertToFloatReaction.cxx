@@ -19,7 +19,6 @@
 
 #include "ActiveObjects.h"
 #include "ConvertToFloatOperator.h"
-#include "EditOperatorDialog.h"
 #include "DataSource.h"
 
 namespace tomviz
