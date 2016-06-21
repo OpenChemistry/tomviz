@@ -61,6 +61,7 @@ public:
 EditOperatorDialog::EditOperatorDialog(
   QSharedPointer<Operator> &o,
   DataSource *dataSource,
+  bool needToAddOperator,
   QWidget* parentObject)
   : Superclass(parentObject),
   Internals (new EditOperatorDialog::EODInternals())
@@ -68,7 +69,7 @@ EditOperatorDialog::EditOperatorDialog(
   Q_ASSERT(o);
   this->Internals->Op = o;
   this->Internals->dataSource = dataSource;
-  this->Internals->needsToBeAdded = (dataSource != nullptr);
+  this->Internals->needsToBeAdded = needToAddOperator;
 
   QVariant position = this->Internals->loadPosition();
   if (!position.isNull())
@@ -79,15 +80,13 @@ EditOperatorDialog::EditOperatorDialog(
   QVBoxLayout* vLayout = new QVBoxLayout(this);
   if (o->hasCustomUI())
   {
-    EditOperatorWidget* opWidget = o->getEditorContents(this);
+    vtkSmartPointer<vtkImageData> snapshotImage = dataSource->getCopyOfImagePriorTo(o);
+    EditOperatorWidget* opWidget = o->getEditorContents(this, snapshotImage);
     vLayout->addWidget(opWidget);
     this->Internals->Widget = opWidget;
-    if (dataSource)
-    {
-      const double *dsPosition = dataSource->displayPosition();
-      opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
-      QObject::connect(dataSource, &DataSource::displayPositionChanged, opWidget, &EditOperatorWidget::dataSourceMoved);
-    }
+    const double *dsPosition = dataSource->displayPosition();
+    opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
+    QObject::connect(dataSource, &DataSource::displayPositionChanged, opWidget, &EditOperatorWidget::dataSourceMoved);
   }
   else
   {
@@ -124,7 +123,7 @@ void EditOperatorDialog::onApply()
   {
     this->Internals->Widget->applyChangesToOperator();
   }
-  if (this->Internals->needsToBeAdded && this->Internals->dataSource != nullptr)
+  if (this->Internals->needsToBeAdded)
   {
     this->Internals->dataSource->addOperator(this->Internals->Op);
     this->Internals->needsToBeAdded = false;

@@ -32,12 +32,12 @@ class EditOperatorDialog : public QDialog
   typedef QDialog Superclass;
 public:
   // Creates an editor dialog for the given operator.  If this is creating a
-  // new operator, then pass in the data source that the operator needs to be
-  // added to and the first time that apply or OK is clicked it will be added
-  // to that data source.
+  // new operator, then pass in true for needToAddOperator and the first time
+  // Apply/Ok is pressed it will be added to the DataSource.
   EditOperatorDialog(QSharedPointer<Operator> &op,
-                     DataSource* dataSource = nullptr,
-                     QWidget* parent = nullptr);
+                     DataSource* dataSource,
+                     bool needToAddOperator,
+                     QWidget* parent);
   virtual ~EditOperatorDialog();
 
   QSharedPointer<Operator>& op();

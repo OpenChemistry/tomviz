@@ -71,7 +71,7 @@ void CropReaction::crop(DataSource* source)
                                                image->GetOrigin(),
                                                image->GetSpacing()));
 
-  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source,
+  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, true,
                                                       this->mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();

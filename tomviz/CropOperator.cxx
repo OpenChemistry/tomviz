@@ -35,14 +35,20 @@ class CropWidget : public tomviz::EditOperatorWidget
   typedef tomviz::EditOperatorWidget Superclass;
 
 public:
-  CropWidget(tomviz::CropOperator *source, QWidget* p)
+  CropWidget(tomviz::CropOperator *source, vtkSmartPointer<vtkImageData> imageData, QWidget* p)
     : Superclass(p), Op(source)
   {
     double displayPosition[3] = { 0, 0, 0 };
+    double origin[3];
+    double spacing[3];
+    int extent[6];
+    imageData->GetOrigin(origin);
+    imageData->GetSpacing(spacing);
+    imageData->GetExtent(extent);
     this->Widget = new tomviz::SelectVolumeWidget(
-                         source->inputDataOrigin(),
-                         source->inputDataSpacing(),
-                         source->inputDataExtent(),
+                         origin,
+                         spacing,
+                         extent,
                          source->cropBounds(),
                          displayPosition,
                          this);
@@ -159,9 +165,9 @@ void CropOperator::setCropBounds(const int bounds[6])
   emit this->transformModified();
 }
 
-EditOperatorWidget *CropOperator::getEditorContents(QWidget *p)
+EditOperatorWidget *CropOperator::getEditorContents(QWidget *p, vtkSmartPointer<vtkImageData> data)
 {
-  return new CropWidget(this, p);
+  return new CropWidget(this, data, p);
 }
 
 void CropOperator::inputDataExtent(int *extent)

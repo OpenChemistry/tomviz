@@ -421,6 +421,28 @@ void DataSource::operate(Operator* op)
   emit this->dataChanged();
 }
 
+vtkSmartPointer<vtkImageData> DataSource::getCopyOfImagePriorTo(QSharedPointer<Operator>& op)
+{
+  vtkSmartPointer<vtkImageData> result = vtkSmartPointer<vtkImageData>::New();
+  if (this->Internals->Operators.contains(op))
+  {
+    vtkAlgorithm* alg = vtkAlgorithm::SafeDownCast(
+      this->Internals->OriginalDataSource->GetClientSideObject());
+    result->DeepCopy(alg->GetOutputDataObject(0));
+    for (int i = 0; i < this->Internals->Operators.size() && this->Internals->Operators[i] != op; ++i)
+    {
+      this->Internals->Operators[i]->transform(result);
+    }
+  }
+  else
+  {
+    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+      this->Internals->Producer->GetClientSideObject());
+    result->DeepCopy(tp->GetOutputDataObject(0));
+  }
+  return result;
+}
+
 void DataSource::dataModified()
 {
   vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
