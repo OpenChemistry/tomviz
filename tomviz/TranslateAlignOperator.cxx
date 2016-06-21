@@ -165,5 +165,6 @@ void TranslateAlignOperator::setAlignOffsets(const QVector<vtkVector2i> &newOffs
 {
   this->offsets.resize(newOffsets.size());
   std::copy(newOffsets.begin(), newOffsets.end(), this->offsets.begin());
+  emit this->transformModified();
 }
 }
