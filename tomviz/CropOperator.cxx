@@ -26,6 +26,8 @@
 #include <QPointer>
 #include <QHBoxLayout>
 
+#include <limits>
+
 namespace
 {
 
@@ -35,14 +37,24 @@ class CropWidget : public tomviz::EditOperatorWidget
   typedef tomviz::EditOperatorWidget Superclass;
 
 public:
-  CropWidget(tomviz::CropOperator *source, QWidget* p)
+  CropWidget(tomviz::CropOperator *source, vtkSmartPointer<vtkImageData> imageData, QWidget* p)
     : Superclass(p), Op(source)
   {
     double displayPosition[3] = { 0, 0, 0 };
+    double origin[3];
+    double spacing[3];
+    int extent[6];
+    imageData->GetOrigin(origin);
+    imageData->GetSpacing(spacing);
+    imageData->GetExtent(extent);
+    if (source->cropBounds()[0] == std::numeric_limits<int>::min())
+    {
+      source->setCropBounds(extent);
+    }
     this->Widget = new tomviz::SelectVolumeWidget(
-                         source->inputDataOrigin(),
-                         source->inputDataSpacing(),
-                         source->inputDataExtent(),
+                         origin,
+                         spacing,
+                         extent,
                          source->cropBounds(),
                          displayPosition,
                          this);
@@ -79,18 +91,14 @@ private:
 namespace tomviz
 {
 
-CropOperator::CropOperator(const int *dataExtent, const double *dataOrigin,
-                           const double *dataSpacing, QObject* p)
+CropOperator::CropOperator(QObject* p)
   : Superclass(p)
 {
   // By default include the entire volume
   for (int i = 0; i < 6; ++i)
   {
-    this->CropBounds[i] = dataExtent[i];
+    this->CropBounds[i] = std::numeric_limits<int>::min();
   }
-  std::copy(dataExtent, dataExtent + 6, this->InputDataExtent);
-  std::copy(dataOrigin, dataOrigin + 3, this->InputDataOrigin);
-  std::copy(dataSpacing, dataSpacing + 3, this->InputDataSpacing);
 }
 
 CropOperator::~CropOperator()
@@ -104,10 +112,6 @@ QIcon CropOperator::icon() const
 
 bool CropOperator::applyTransform(vtkDataObject* data)
 {
-  vtkImageData *imageData = vtkImageData::SafeDownCast(data);
-  imageData->GetExtent(this->InputDataExtent);
-  imageData->GetOrigin(this->InputDataOrigin);
-  imageData->GetSpacing(this->InputDataSpacing);
   vtkNew<vtkExtractVOI> extractor;
   extractor->SetVOI(this->CropBounds);
   extractor->SetInputDataObject(data);
@@ -119,9 +123,7 @@ bool CropOperator::applyTransform(vtkDataObject* data)
 
 Operator* CropOperator::clone() const
 {
-  CropOperator *other = new CropOperator(this->InputDataExtent,
-                                         this->InputDataOrigin,
-                                         this->InputDataSpacing);
+  CropOperator *other = new CropOperator();
   other->setCropBounds(this->CropBounds);
   return other;
 }
@@ -159,24 +161,9 @@ void CropOperator::setCropBounds(const int bounds[6])
   emit this->transformModified();
 }
 
-EditOperatorWidget *CropOperator::getEditorContents(QWidget *p)
+EditOperatorWidget *CropOperator::getEditorContents(QWidget *p, vtkSmartPointer<vtkImageData> data)
 {
-  return new CropWidget(this, p);
-}
-
-void CropOperator::inputDataExtent(int *extent)
-{
-  std::copy(this->InputDataExtent, this->InputDataExtent + 6, extent);
-}
-
-void CropOperator::inputDataOrigin(double *origin)
-{
-  std::copy(this->InputDataOrigin, this->InputDataOrigin + 3, origin);
-}
-
-void CropOperator::inputDataSpacing(double *spacing)
-{
-  std::copy(this->InputDataSpacing, this->InputDataSpacing + 3, spacing);
+  return new CropWidget(this, data, p);
 }
 
 }

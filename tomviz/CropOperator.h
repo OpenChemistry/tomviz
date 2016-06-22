@@ -27,8 +27,7 @@ class CropOperator : public Operator
   typedef Operator Superclass;
 
 public:
-  CropOperator(const int *dataExtent, const double *dataOrigin,
-               const double *dataSpacing, QObject* parent=nullptr);
+  CropOperator(QObject* parent=nullptr);
   virtual ~CropOperator();
 
   QString label() const override { return "Crop"; }
@@ -40,29 +39,19 @@ public:
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 
-  EditOperatorWidget *getEditorContents(QWidget* parent) override;
+  EditOperatorWidget *getEditorContents(QWidget* parent,
+    vtkSmartPointer<vtkImageData> data) override;
   bool hasCustomUI() const override { return true; }
 
   void setCropBounds(const int bounds[6]);
   const int* cropBounds() const
     { return this->CropBounds; }
 
-  // Used for the editor dialog
-  void inputDataExtent(int *extent);
-  const int *inputDataExtent() const { return this->InputDataExtent; }
-  void inputDataOrigin(double *origin);
-  const double *inputDataOrigin() const { return this->InputDataOrigin; }
-  void inputDataSpacing(double *spacing);
-  const double *inputDataSpacing() const { return this->InputDataSpacing; }
-
 protected:
   bool applyTransform(vtkDataObject* data) override;
 
 private:
   int CropBounds[6];
-  int InputDataExtent[6];
-  double InputDataOrigin[3];
-  double InputDataSpacing[3];
   Q_DISABLE_COPY(CropOperator)
 };
 

@@ -63,15 +63,10 @@ void CropReaction::crop(DataSource* source)
     qDebug() << "Exiting early - no data :-(";
     return;
   }
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-    source->producer()->GetClientSideObject());
-  vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-  QSharedPointer<Operator> Op(new CropOperator(image->GetExtent(),
-                                               image->GetOrigin(),
-                                               image->GetSpacing()));
+  QSharedPointer<Operator> Op(new CropOperator());
 
-  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source,
+  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, true,
                                                       this->mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();

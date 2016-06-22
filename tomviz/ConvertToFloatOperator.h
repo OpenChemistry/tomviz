@@ -35,7 +35,8 @@ public:
   Operator *clone() const override;
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
-  EditOperatorWidget *getEditorContents(QWidget* parent) override;
+  EditOperatorWidget *getEditorContents(QWidget* parent,
+    vtkSmartPointer<vtkImageData> data) override;
   bool hasCustomUI() const override { return false; }
 
 protected:

@@ -19,8 +19,10 @@
 #include <QObject>
 #include <QIcon>
 #include <vtk_pugixml.h>
+#include <vtkSmartPointer.h>
 
 class vtkDataObject;
+class vtkImageData;
 class QWidget;
 
 namespace tomviz
@@ -51,7 +53,16 @@ public:
   virtual bool serialize(pugi::xml_node& in) const = 0;
   virtual bool deserialize(const pugi::xml_node& ns) = 0;
 
-  virtual EditOperatorWidget* getEditorContents(QWidget* parent) = 0;
+  /// Should return a widget for editing customizable parameters on this
+  /// operator or nullptr if there is nothing to edit.  The vtkImageData
+  /// is a copy of the DataSource's image with all Operators prior in the
+  /// pipeline applied to it.  This should be used if the widget needs to
+  /// display the VTK data, but modifications to it will not affect the
+  /// DataSource.
+  virtual EditOperatorWidget* getEditorContents(QWidget* parent,
+      vtkSmartPointer<vtkImageData> inputDataForDisplay) = 0;
+  /// Should return true if the Operator has a non-null widget to return from
+  /// getEditorContents.
   virtual bool hasCustomUI() const { return false; }
 
   /// If the operator has some custom progress UI, then return that UI from this

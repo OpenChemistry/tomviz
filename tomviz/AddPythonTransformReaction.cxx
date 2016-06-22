@@ -856,7 +856,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     {
       // Create a non-modal dialog, delete it once it has been closed.
       EditOperatorDialog *dialog =
-          new EditOperatorDialog(op, source, pqCoreUtilities::mainWidget());
+          new EditOperatorDialog(op, source, true, pqCoreUtilities::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
     }

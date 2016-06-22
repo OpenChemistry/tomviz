@@ -278,13 +278,14 @@ private:
   vtkIdType ySize;
 };
 
-AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
+AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageData> imageData, QWidget* p)
   : EditOperatorWidget(p)
 {
   this->timer = new QTimer(this);
   this->frameRate = 5;
   this->Op = op;
   this->unalignedData = op->getDataSource();
+  this->inputData = imageData;
   this->widget = new QVTKWidget(this);
   this->widget->installEventFilter(this);
   QHBoxLayout *myLayout = new QHBoxLayout(this);
@@ -298,33 +299,22 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, QWidget* p)
   this->currentMode = 0;
 
   // Grab the image data from the data source...
-  vtkTrivialProducer *t =
-    vtkTrivialProducer::SafeDownCast(this->unalignedData->producer()->GetClientSideObject());
   vtkScalarsToColors *lut =
     vtkScalarsToColors::SafeDownCast(this->unalignedData->colorMap()->GetClientSideObject());
 
   // Set up the rendering pipeline
-  if (t)
+  if (imageData)
   {
-    vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    if (image != nullptr)
-    {
-      this->modes.push_back(
-          new ToggleSliceShownViewMode(image, lut));
-      this->modes.push_back(
-          new ShowDifferenceImageMode(image));
-      this->modes[0]->addToView(this->renderer.Get());
-      this->modes[0]->update();
+    this->modes.push_back(
+        new ToggleSliceShownViewMode(imageData, lut));
+    this->modes.push_back(
+        new ShowDifferenceImageMode(imageData));
+    this->modes[0]->addToView(this->renderer.Get());
+    this->modes[0]->update();
     int extent[6];
-      image->GetExtent(extent);
-      this->minSliceNum = extent[4];
-      this->maxSliceNum = extent[5];
-    }
-    else
-    {
-      this->minSliceNum = 0;
-      this->maxSliceNum = 1;
-    }
+    imageData->GetExtent(extent);
+    this->minSliceNum = extent[4];
+    this->maxSliceNum = extent[5];
   }
   else
   {

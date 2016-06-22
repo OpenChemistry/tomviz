@@ -62,9 +62,7 @@ Operator* OperatorFactory::createOperator(const QString &type, DataSource *ds)
   }
   else if (type == "Crop")
   {
-    op = new CropOperator(image->GetExtent(),
-                          image->GetOrigin(),
-                          image->GetSpacing());
+    op = new CropOperator();
   }
   else if (type == "CxxReconstruction")
   {

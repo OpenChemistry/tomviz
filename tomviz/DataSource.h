@@ -21,9 +21,11 @@
 #include <QSharedPointer>
 #include <QVector>
 #include <vtk_pugixml.h>
+#include <vtkSmartPointer.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
+class vtkImageData;
 
 namespace tomviz
 {
@@ -111,6 +113,7 @@ public:
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);
 
+  vtkSmartPointer<vtkImageData> getCopyOfImagePriorTo(QSharedPointer<Operator>& op);
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.

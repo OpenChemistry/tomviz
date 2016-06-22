@@ -93,7 +93,7 @@ bool ConvertToFloatOperator::deserialize(const pugi::xml_node&)
   return true;
 }
 
-EditOperatorWidget *ConvertToFloatOperator::getEditorContents(QWidget*)
+EditOperatorWidget *ConvertToFloatOperator::getEditorContents(QWidget*, vtkSmartPointer<vtkImageData>)
 {
   return nullptr;
 }

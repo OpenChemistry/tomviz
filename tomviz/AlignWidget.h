@@ -19,6 +19,7 @@
 #include "EditOperatorWidget.h"
 
 #include <vtkNew.h>
+#include <vtkSmartPointer.h>
 #include <vtkVector.h>
 
 #include <QVector>
@@ -34,6 +35,7 @@ class QPushButton;
 class QRadioButton;
 class QTableWidget;
 
+class vtkImageData;
 class vtkImageSlice;
 class vtkImageSliceMapper;
 class vtkInteractorStyleRubberBand2D;
@@ -53,7 +55,8 @@ class AlignWidget : public EditOperatorWidget
   Q_OBJECT
 
 public:
-  AlignWidget(TranslateAlignOperator *op, QWidget* parent = nullptr);
+  AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageData> data,
+    QWidget* parent = nullptr);
   ~AlignWidget();
 
   // This will filter the QVTKWidget events
@@ -86,6 +89,7 @@ protected:
   vtkNew<vtkRenderer> renderer;
   vtkNew<vtkInteractorStyleRubberBand2D> defaultInteractorStyle;
   vtkNew<vtkInteractorStyleRubberBandZoom> zoomToBoxInteractorStyle;
+  vtkSmartPointer<vtkImageData> inputData;
   QVTKWidget *widget;
 
   QComboBox *modeSelect;
