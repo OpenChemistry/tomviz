@@ -98,6 +98,7 @@ public:
     this->update();
   }
   virtual void timeout() {}
+  virtual void timerStopped() {}
   virtual double *bounds() const = 0;
   virtual void update() = 0;
 protected:
@@ -133,6 +134,11 @@ public:
   void timeout() override
   {
     this->showingCurrentSlice = !this->showingCurrentSlice;
+    this->update();
+  }
+  void timerStopped() override
+  {
+    this->showingCurrentSlice = true;
     this->update();
   }
   void update() override
@@ -634,7 +640,7 @@ void AlignWidget::setFrameRate(int rate)
   }
   else
   {
-    this->timer->stop();
+    this->stopAlign();
   }
 }
 
@@ -737,6 +743,11 @@ void AlignWidget::stopAlign()
   setSlice(this->currentSlice->value());
   this->startButton->setEnabled(true);
   this->stopButton->setEnabled(false);
+  this->timer->stop();
+  for (int i = 0; i < this->modes.size(); ++i)
+  {
+    this->modes[i]->timerStopped();
+  }
 }
 
 void AlignWidget::zoomToSelectionStart()
