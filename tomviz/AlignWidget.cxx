@@ -625,9 +625,9 @@ void AlignWidget::updateReference()
 
 void AlignWidget::setFrameRate(int rate)
 {
-  if (rate < 0)
+  if (rate <= 0)
   {
-    this->frameRate = 0;
+    rate = 0;
   }
   this->frameRate = rate;
   if (this->frameRate > 0)
@@ -729,6 +729,12 @@ void AlignWidget::applySliceOffset(int sliceNumber)
 
 void AlignWidget::startAlign()
 {
+  // frame rate of 0 means nothing ever changes, which is equivalent to stopping
+  if (this->frameRate <= 0)
+  {
+    this->stopAlign();
+    return;
+  }
   if (!this->timer->isActive())
   {
     this->timer->start(1000.0 / this->frameRate);
