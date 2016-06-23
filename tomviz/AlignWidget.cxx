@@ -98,6 +98,7 @@ public:
     this->update();
   }
   virtual void timeout() {}
+  virtual void timerStopped() {}
   virtual double *bounds() const = 0;
   virtual void update() = 0;
 protected:
@@ -133,6 +134,11 @@ public:
   void timeout() override
   {
     this->showingCurrentSlice = !this->showingCurrentSlice;
+    this->update();
+  }
+  void timerStopped() override
+  {
+    this->showingCurrentSlice = true;
     this->update();
   }
   void update() override
@@ -600,13 +606,18 @@ void AlignWidget::updateReference()
     this->modes[i]->referenceSliceUpdated(
         referenceSlice, this->offsets[referenceSlice]);
   }
+  if (this->modes.length() > 0)
+  {
+    this->modes[this->currentMode]->update();
+  }
+  this->widget->update();
 }
 
 void AlignWidget::setFrameRate(int rate)
 {
-  if (rate < 0)
+  if (rate <= 0)
   {
-    this->frameRate = 0;
+    rate = 0;
   }
   this->frameRate = rate;
   if (this->frameRate > 0)
@@ -619,7 +630,7 @@ void AlignWidget::setFrameRate(int rate)
   }
   else
   {
-    this->timer->stop();
+    this->stopAlign();
   }
 }
 
@@ -699,10 +710,21 @@ void AlignWidget::applySliceOffset(int sliceNumber)
   {
     this->modes[i]->currentSliceUpdated(sliceNumber, offset);
   }
+  if (this->modes.length() > 0)
+  {
+    this->modes[this->currentMode]->update();
+  }
+  this->widget->update();
 }
 
 void AlignWidget::startAlign()
 {
+  // frame rate of 0 means nothing ever changes, which is equivalent to stopping
+  if (this->frameRate <= 0)
+  {
+    this->stopAlign();
+    return;
+  }
   if (!this->timer->isActive())
   {
     this->timer->start(1000.0 / this->frameRate);
@@ -717,6 +739,11 @@ void AlignWidget::stopAlign()
   setSlice(this->currentSlice->value());
   this->startButton->setEnabled(true);
   this->stopButton->setEnabled(false);
+  this->timer->stop();
+  for (int i = 0; i < this->modes.size(); ++i)
+  {
+    this->modes[i]->timerStopped();
+  }
 }
 
 void AlignWidget::zoomToSelectionStart()
