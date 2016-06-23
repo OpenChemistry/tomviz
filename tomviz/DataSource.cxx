@@ -72,7 +72,10 @@ public:
       array->SetName("tilt_angles");
       array->SetNumberOfTuples(num_tilt_angles);
       array->FillComponent(0,0.0);
-      fd->AddArray(array.GetPointer());
+      if (!fd->HasArray("tilt_angles"))
+      {
+        fd->AddArray(array.GetPointer());
+      }
       this->TiltAngles = array.Get();
     }
     else
