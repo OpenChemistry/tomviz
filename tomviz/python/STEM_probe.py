@@ -49,6 +49,6 @@ def generate_dataset(array):
         probe[kR<k_min] = 0
           
         probe = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(probe)))
-        probe = probe/np.sum(np.abs(probe)**2)
+        probe = probe/np.sqrt(np.sum(np.abs(probe)**2)*dxy*dxy)
 
         np.copyto(array[:,:,i],np.abs(probe))
