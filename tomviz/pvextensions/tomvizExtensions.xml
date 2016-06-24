@@ -277,7 +277,7 @@
       </IntVectorProperty>
       <DoubleVectorProperty animateable="1"
                             command="SetValue"
-                            label="Isosurfaces"
+                            label="Value"
                             name="ContourValues"
                             number_of_elements="0"
                             number_of_elements_per_command="1"
@@ -298,7 +298,7 @@
         values.</Documentation>
       </DoubleVectorProperty>
 
-      <PropertyGroup label="Isosurfaces">
+      <PropertyGroup label="Value">
         <Property name="ContourValues" />
       </PropertyGroup>
       <!-- End Flying Edges -->
