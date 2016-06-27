@@ -30,6 +30,7 @@
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMTransferFunctionManager.h>
+#include <vtkStringArray.h>
 #include <vtkTrivialProducer.h>
 #include <vtkTypeInt8Array.h>
 #include <vtkVector.h>
@@ -54,6 +55,7 @@ public:
   vtkSmartPointer<vtkSMProxy> ColorMap;
   DataSource::DataSourceType Type;
   vtkSmartPointer<vtkDataArray> TiltAngles;
+  vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
 
   // Checks if the tilt angles data array exists on the given VTK data
@@ -265,6 +267,21 @@ bool DataSource::serialize(pugi::xml_node& ns) const
     serializeDataArray(node, tiltAngles);
   }
 
+  pugi::xml_node scale_node = ns.append_child("Spacing");
+  double spacing[3];
+  this->getSpacing(spacing);
+  scale_node.append_attribute("x").set_value(spacing[0]);
+  scale_node.append_attribute("y").set_value(spacing[1]);
+  scale_node.append_attribute("z").set_value(spacing[2]);
+
+  if (this->Internals->Units)
+  {
+    pugi::xml_node unit_node = ns.append_child("Units");
+    unit_node.append_attribute("x").set_value(this->Internals->Units->GetValue(0));
+    unit_node.append_attribute("y").set_value(this->Internals->Units->GetValue(1));
+    unit_node.append_attribute("z").set_value(this->Internals->Units->GetValue(2));
+  }
+
   foreach (QSharedPointer<Operator> op, this->Internals->Operators)
   {
     pugi::xml_node operatorNode = ns.append_child("Operator");
@@ -307,6 +324,25 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   if (this->type() == TiltSeries)
   {
     deserializeDataArray(ns.child("TiltAngles"), this->Internals->TiltAngles);
+  }
+
+  if (ns.child("Spacing"))
+  {
+    pugi::xml_node scale_node = ns.child("Spacing");
+    double spacing[3];
+    spacing[0] = scale_node.attribute("x").as_double();
+    spacing[1] = scale_node.attribute("y").as_double();
+    spacing[2] = scale_node.attribute("z").as_double();
+    this->setSpacing(spacing);
+  }
+  if (ns.child("Units"))
+  {
+    // Ensure the array exists
+    pugi::xml_node unit_node = ns.child("Units");
+    this->setUnits("nm");
+    this->Internals->Units->SetValue(0, unit_node.attribute("x").value());
+    this->Internals->Units->SetValue(1, unit_node.attribute("y").value());
+    this->Internals->Units->SetValue(2, unit_node.attribute("z").value());
   }
 
   for (pugi::xml_node node=ns.child("Operator"); node;
@@ -375,6 +411,107 @@ vtkSMSourceProxy* DataSource::originalDataSource() const
 vtkSMSourceProxy* DataSource::producer() const
 {
   return this->Internals->Producer;
+}
+
+void DataSource::getExtent(int extent[6])
+{
+  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  if (tp)
+  {
+  vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
+    if (data)
+    {
+      data->GetExtent(extent);
+      return;
+    }
+  }
+  for (int i = 0; i < 6; ++i)
+  {
+    extent[i] = 0;
+  }
+}
+
+void DataSource::getSpacing(double spacing[3]) const
+{
+  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  if (tp)
+  {
+    vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
+    if (data)
+    {
+      data->GetSpacing(spacing);
+      return;
+    }
+  }
+  for (int i = 0; i < 3; ++i)
+  {
+    spacing[i] = 1;
+  }
+}
+
+void DataSource::setSpacing(const double spacing[3])
+{
+  double mySpacing[3] = { spacing[0], spacing[1], spacing[2] };
+  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  if (tp)
+  {
+    vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
+    if (data)
+    {
+      data->SetSpacing(mySpacing);
+    }
+  }
+  tp = vtkAlgorithm::SafeDownCast(
+    this->Internals->OriginalDataSource->GetClientSideObject());
+  if (tp)
+  {
+    vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
+    if (data)
+    {
+      data->SetSpacing(mySpacing);
+    }
+  }
+}
+
+QString DataSource::getUnits(int axis)
+{
+  if (this->Internals->Units)
+  {
+    return QString(this->Internals->Units->GetValue(axis));
+  }
+  else
+  {
+    return "nm";
+  }
+}
+
+void DataSource::setUnits(const QString& units)
+{
+  if (!this->Internals->Units)
+  {
+    this->Internals->Units = vtkSmartPointer<vtkStringArray>::New();
+    this->Internals->Units->SetName("units");
+    this->Internals->Units->SetNumberOfValues(3);
+    this->Internals->Units->SetValue(0, "nm");
+    this->Internals->Units->SetValue(1, "nm");
+    this->Internals->Units->SetValue(2, "nm");
+    vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
+      this->Internals->Producer->GetClientSideObject());
+    if (tp)
+    {
+      vtkDataObject* data = tp->GetOutputDataObject(0);
+      vtkFieldData* fd = data->GetFieldData();
+      fd->AddArray(this->Internals->Units);
+    }
+  }
+  for (int i = 0; i < 3; ++i)
+  {
+    this->Internals->Units->SetValue(i, units.toStdString().c_str());
+  }
+  emit this->dataChanged();
 }
 
 int DataSource::addOperator(QSharedPointer<Operator>& op)
@@ -551,6 +688,10 @@ void DataSource::resetData()
     this->Internals->ensureTiltAnglesArrayExists();
   }
   vtkFieldData *fd = dataClone->GetFieldData();
+  if (this->Internals->Units)
+  {
+    fd->AddArray(this->Internals->Units);
+  }
   vtkSmartPointer<vtkTypeInt8Array> typeArray = vtkTypeInt8Array::SafeDownCast(
       fd->GetArray("tomviz_data_source_type"));
   if (!typeArray)

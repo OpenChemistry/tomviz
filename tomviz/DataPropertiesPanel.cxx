@@ -36,8 +36,11 @@
 #include <vtkDataArray.h>
 #include <vtkAlgorithm.h>
 
+#include <QDebug>
+#include <QDialog>
 #include <QPointer>
 #include <QPushButton>
+#include <QDoubleValidator>
 #include <QMainWindow>
 
 namespace tomviz
@@ -55,6 +58,9 @@ public:
   {
     Ui::DataPropertiesPanel& ui = this->Ui;
     ui.setupUi(parent);
+    ui.xLengthBox->setValidator(new QDoubleValidator(ui.xLengthBox));
+    ui.yLengthBox->setValidator(new QDoubleValidator(ui.yLengthBox));
+    ui.zLengthBox->setValidator(new QDoubleValidator(ui.zLengthBox));
     QVBoxLayout* l = ui.verticalLayout;
 
     l->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
@@ -70,6 +76,10 @@ public:
     separator = pqProxyWidget::newGroupLabelWidget("Transformed Dimensions & Range",
                                                    parent);
     l->insertWidget(l->indexOf(ui.TransformedDataRange), separator);
+
+    separator = pqProxyWidget::newGroupLabelWidget("Units and Size", parent);
+
+    l->insertWidget(l->indexOf(ui.LengthWidget), separator);
 
     this->TiltAnglesSeparator =
       pqProxyWidget::newGroupLabelWidget("Tilt Angles", parent);
@@ -98,6 +108,20 @@ public:
     ui.TiltAnglesTable->hide();
   }
 
+  void updateSpacing(int axis, double newLength)
+  {
+    if (!this->CurrentDataSource)
+    {
+      return;
+    }
+    int extent[6];
+    double spacing[3];
+    this->CurrentDataSource->getExtent(extent);
+    this->CurrentDataSource->getSpacing(spacing);
+    spacing[axis] = newLength / (extent[2 * axis + 1] - extent[2 * axis] + 1);
+    this->CurrentDataSource->setSpacing(spacing);
+  }
+
 };
 
 DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
@@ -109,6 +133,14 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
                 SLOT(setDataSource(DataSource*)));
   this->connect(this->Internals->Ui.SetTiltAnglesButton, SIGNAL(clicked()),
                 SLOT(setTiltAngles()));
+  this->connect(this->Internals->Ui.changeUnitsButton, SIGNAL(clicked()),
+                SLOT(setUnits()));
+  this->connect(this->Internals->Ui.xLengthBox, SIGNAL(editingFinished()),
+                SLOT(updateXLength()));
+  this->connect(this->Internals->Ui.yLengthBox, SIGNAL(editingFinished()),
+                SLOT(updateYLength()));
+  this->connect(this->Internals->Ui.zLengthBox, SIGNAL(editingFinished()),
+                SLOT(updateZLength()));
 }
 
 DataPropertiesPanel::~DataPropertiesPanel()
@@ -203,6 +235,17 @@ void DataPropertiesPanel::updateData()
   ui.TransformedDataType->setText(getDataTypeString(
         dsource->producer()));
 
+  int extent[6];
+  double spacing[3];
+  dsource->getExtent(extent);
+  dsource->getSpacing(spacing);
+  ui.xLengthBox->setText(QString("%1").arg(spacing[0] * (extent[1] - extent[0] + 1)));
+  ui.yLengthBox->setText(QString("%1").arg(spacing[1] * (extent[3] - extent[2] + 1)));
+  ui.zLengthBox->setText(QString("%1").arg(spacing[2] * (extent[5] - extent[4] + 1)));
+  ui.xLabel->setText(QString("X Length (%1)").arg(dsource->getUnits(0)));
+  ui.yLabel->setText(QString("Y Length (%1)").arg(dsource->getUnits(1)));
+  ui.zLabel->setText(QString("Z Length (%1)").arg(dsource->getUnits(2)));
+
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries)
   {
@@ -269,6 +312,64 @@ void DataPropertiesPanel::scheduleUpdate()
   {
     this->updateData();
   }
+}
+
+void DataPropertiesPanel::setUnits()
+{
+  QDialog dialog;
+  QHBoxLayout *layout = new QHBoxLayout;
+  dialog.setLayout(layout);
+  QLineEdit *line = new QLineEdit;
+  layout->addWidget(line);
+  QPushButton *okButton = new QPushButton("Ok");
+  layout->addWidget(okButton);
+  QObject::connect(okButton, SIGNAL(clicked()), &dialog, SLOT(accept()));
+  if (dialog.exec())
+  {
+    this->Internals->CurrentDataSource->setUnits(line->text());
+  }
+}
+
+void DataPropertiesPanel::updateXLength()
+{
+  const QString &text = this->Internals->Ui.xLengthBox->text();
+  bool ok;
+  double newLength = text.toDouble(&ok);
+  if (!ok)
+  {
+    qWarning() << "Failed to parse X Length string";
+    return;
+  }
+  this->Internals->updateSpacing(0, newLength);
+  this->updateData();
+}
+
+void DataPropertiesPanel::updateYLength()
+{
+  const QString &text = this->Internals->Ui.yLengthBox->text();
+  bool ok;
+  double newLength = text.toDouble(&ok);
+  if (!ok)
+  {
+    qWarning() << "Failed to parse Y Length string";
+    return;
+  }
+  this->Internals->updateSpacing(1, newLength);
+  this->updateData();
+}
+
+void DataPropertiesPanel::updateZLength()
+{
+  const QString &text = this->Internals->Ui.zLengthBox->text();
+  bool ok;
+  double newLength = text.toDouble(&ok);
+  if (!ok)
+  {
+    qWarning() << "Failed to parse Z Length string";
+    return;
+  }
+  this->Internals->updateSpacing(2, newLength);
+  this->updateData();
 }
 
 }
