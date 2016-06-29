@@ -41,6 +41,7 @@
 
 #include <QDebug>
 #include <QMessageBox>
+#include <QRegularExpression>
 
 namespace tomviz
 {
@@ -76,10 +77,13 @@ void SaveDataReaction::onTriggered()
     qCritical("Cannot determine writer to use.");
     return;
   }
+  // Remove options to output in JPEG or PNG format since they don't support volumes
+  QRegularExpression re(";;(JPEG|PNG)[^;]*;;");
+  QString filteredFilters = filters.replace(re, ";;");
 
   pqFileDialog fileDialog(server,
                           pqCoreUtilities::mainWidget(),
-                          tr("Save File:"), QString(), filters);
+                          tr("Save File:"), QString(), filteredFilters);
   fileDialog.setObjectName("FileSaveDialog");
   fileDialog.setFileMode(pqFileDialog::AnyFile);
   // Default to saving tiff files
