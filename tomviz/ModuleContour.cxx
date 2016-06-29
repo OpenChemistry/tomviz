@@ -199,6 +199,7 @@ void ModuleContour::addToPanel(QWidget* panel)
   QFormLayout *layout = new QFormLayout;
   
   DoubleSliderWidget *valueSlider = new DoubleSliderWidget(true);
+  valueSlider->setLineEditWidth(50);
   layout->addRow("Value", valueSlider);
 
   QComboBox *representations = new QComboBox;

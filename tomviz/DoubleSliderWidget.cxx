@@ -40,7 +40,7 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
   l->setMargin(0);
   this->Slider = new QSlider(Qt::Horizontal, this);
   this->Slider->setRange(0, this->Resolution);
-  l->addWidget(this->Slider);
+  l->addWidget(this->Slider, 4);
   this->Slider->setObjectName("Slider");
   if (showLineEdit)
   {
@@ -70,6 +70,16 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
 //-----------------------------------------------------------------------------
 DoubleSliderWidget::~DoubleSliderWidget()
 {
+}
+
+void DoubleSliderWidget::setLineEditWidth(int width)
+{
+  if (this->LineEdit)
+  {
+    QSize s = this->LineEdit->sizeHint();
+    QSize newSize(width, s.height());
+    this->LineEdit->setFixedSize(newSize);
+  }
 }
 
 //-----------------------------------------------------------------------------

@@ -46,6 +46,8 @@ public:
 
   int resolution() const;
 
+  void setLineEditWidth(int width);
+
 signals:
   void valueChanged(double);
   void valueEdited(double);
