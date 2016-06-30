@@ -27,7 +27,6 @@ def dfm3(input,angles,Npad):
     # input: aligned data
     # angles: projection angles
     # N_pad: size of padded projection.
-    # Typical choice: twice as the original projection
 
     input = np.double(input)
     (Nx,Ny,Nproj) = input.shape
@@ -38,7 +37,6 @@ def dfm3(input,angles,Npad):
     
     # Initialization
     Nz = Ny
-    
     w = np.zeros((Nx,Ny,np.int(Nz/2+1))) #store weighting factors
     v = pyfftw.n_byte_align_empty((Nx,Ny,Nz/2+1),16,dtype='complex128')
     v = np.zeros(v.shape) + 1j*np.zeros(v.shape)
@@ -87,15 +85,15 @@ def bilinear(kz_new,ky_new,sz,sy,N,p):
         pz = np.floor(kz_new)
         weight = (1-sy)*(1-sz)
     elif p==2:
-        py = np.ceil(ky_new)  # P2
+        py = np.ceil(ky_new)
         pz = np.floor(kz_new)
         weight = sy*(1-sz)
     elif p==3:
-        py = np.floor(ky_new) # P3
+        py = np.floor(ky_new)
         pz = np.ceil(kz_new)
         weight = (1-sy)*sz
     elif p==4:
-        py = np.ceil(ky_new)  # P4
+        py = np.ceil(ky_new)
         pz = np.ceil(kz_new)
         weight = sy*sz
     if py<0:
