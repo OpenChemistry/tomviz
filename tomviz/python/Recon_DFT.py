@@ -34,11 +34,12 @@ def dfm3(input,angles,Npad):
     angles = np.double(angles)
     cen = np.floor(Ny/2)
     cen_pad = np.floor(Npad/2)
-    pad_post = np.ceil((Npad-Ny)/2); pad_pre = np.floor((Npad-Ny)/2)    
-    # Initialize value and weight matrix.
+    pad_post = np.ceil((Npad-Ny)/2); pad_pre = np.floor((Npad-Ny)/2)
+    
+    # Initialization
     Nz = Ny
     
-    w = np.zeros((Nx,Ny,np.int(Nz/2+1)))
+    w = np.zeros((Nx,Ny,np.int(Nz/2+1))) #store weighting factors
     v = pyfftw.n_byte_align_empty((Nx,Ny,Nz/2+1),16,dtype='complex128')
     v = np.zeros(v.shape) + 1j*np.zeros(v.shape)
     recon = pyfftw.n_byte_align_empty((Nx,Ny,Nz),16,dtype='float64')
@@ -53,10 +54,10 @@ def dfm3(input,angles,Npad):
     for a in range(0, Nproj):
         #print angles[a]
         ang = angles[a]*np.pi/180
-        projection = input[:,:,a] #projection
+        projection = input[:,:,a] #2D projection image
         p = np.lib.pad(projection,((0,0),(pad_pre,pad_post)),'constant',constant_values=(0,0)) #pad zeros
         p = np.fft.ifftshift(p) 
-        p_fftw_object.update_arrays(p,pF) #FFTw
+        p_fftw_object.update_arrays(p,pF)
         p_fftw_object()
 
         # Bilinear extrapolation
@@ -74,7 +75,7 @@ def dfm3(input,angles,Npad):
 
     v[w!=0] = v[w!=0]/w[w!=0]
     recon_F = v.copy()
-    recon_fftw_object.update_arrays(v,recon) #FFTw
+    recon_fftw_object.update_arrays(v,recon)
     recon_fftw_object()
     recon = np.fft.fftshift(recon)
     return recon.astype(np.float32)
