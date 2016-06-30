@@ -627,7 +627,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                                "Reconstruct a tilt series using Direct Fourier Method (DFM). \n"
                                "The tilt axis must be parallel to the x-direction and centered in the y-direction.\n"
                                "The size of reconstruction will be (Nx,Ny,Ny).\n"
-                               "Reconstrucing a 512x512x512 tomogram typically takes 70-80 seconds.");
+                               "Reconstrucing a 512x512x512 tomogram typically takes 30-40 seconds.");
     label->setWordWrap(true);
     layout->addWidget(label,0,0,1,2);
 
