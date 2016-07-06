@@ -1,7 +1,12 @@
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.3)
 project(tomviz)
 
 set(CMAKE_MODULE_PATH "${tomviz_SOURCE_DIR}/cmake")
+
+# Request C++11 standard, using new CMake variables.
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS False)
 
 include(BuildType)
 include(BuildLocation)
