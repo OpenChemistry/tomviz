@@ -47,10 +47,10 @@ def dfm3(input,angles,Npad):
     pF = pyfftw.n_byte_align_empty((Nx,Npad/2+1),16,dtype='complex128')
     p_fftw_object = pyfftw.FFTW(p,pF,axes=(0,1))
 
-    dk = np.double(Ny)/np.double(Npad) * 1
-    
+    dk = np.double(Ny)/np.double(Npad)
+
     for a in range(0, Nproj):
-        #print angles[a]
+        print angles[a]
         ang = angles[a]*np.pi/180
         projection = input[:,:,a] #2D projection image
         p = np.lib.pad(projection,((0,0),(pad_pre,pad_post)),'constant',constant_values=(0,0)) #pad zeros
@@ -58,13 +58,18 @@ def dfm3(input,angles,Npad):
         p_fftw_object.update_arrays(p,pF)
         p_fftw_object()
 
+        if ang<0:
+           pF = np.conj(pF)
+           ang = np.pi+ang
+        
         # Bilinear extrapolation
-        for i in range(0, np.int(np.ceil(Npad/2))+1):
+        for i in range(0,np.int(np.ceil(Npad/2))+1):
             ky = i*dk;  #kz = 0;
             ky_new = np.cos(ang)*ky #new coord. after rotation
             kz_new = np.sin(ang)*ky 
             sy = abs(np.floor(ky_new) - ky_new) #calculate weights
             sz = abs(np.floor(kz_new) - kz_new)
+            
             for b in range(1,5): #bilinear extrapolation
                 pz,py,weight = bilinear(kz_new,ky_new,sz,sy,Ny,b)
                 if (py>=0 and py<Ny and pz>=0 and pz<Nz/2+1):
