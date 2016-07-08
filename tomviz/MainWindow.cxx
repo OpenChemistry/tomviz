@@ -223,6 +223,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction *reconWBPAction = ui.menuTomography->addAction("Weighted Back Projection");
   QAction *reconWBP_CAction = ui.menuTomography->addAction("Simple Back Projection (C++)");
   QAction *reconARTAction = ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
+  QAction *reconDFMConstraintAction = ui.menuTomography->addAction("Constraint-based Direct Fourier Method");
 
   ui.menuTomography->addSeparator();
   QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
@@ -299,6 +300,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(reconARTAction,
                                  "Reconstruct (ART)",
                                  readInPythonScript("Recon_ART"), true);
+  new AddPythonTransformReaction(reconDFMConstraintAction,
+                                 "Reconstruct (Constraint-based Direct Fourier)",
+                                 readInPythonScript("Recon_DFT_constraint"), true);
   
   new ReconstructionReaction(reconWBP_CAction);
   //#################################################################
