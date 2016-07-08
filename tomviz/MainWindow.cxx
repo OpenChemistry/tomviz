@@ -177,6 +177,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuData->addSeparator();
   QAction *shiftUniformAction = ui.menuData->addAction("Shift Volume");
   QAction *deleteSliceAction = ui.menuData->addAction("Delete Slices");
+  QAction *padVolumeAction = ui.menuData->addAction("Pad Volume");
   QAction *downsampleByTwoAction = ui.menuData->addAction("Downsample x2");
   QAction *resampleAction = ui.menuData->addAction("Resample");
   QAction *rotateAction = ui.menuData->addAction("Rotate");
@@ -244,6 +245,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Shift Volume", readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,
                                    "Delete Slices", readInPythonScript("deleteSlices"));
+  new AddPythonTransformReaction(padVolumeAction,
+                                 "Pad Volume", readInPythonScript("Pad_Data"));
   new AddPythonTransformReaction(downsampleByTwoAction,
                                    "Downsample x2", readInPythonScript("DownsampleByTwo"));
   new AddPythonTransformReaction(resampleAction,
