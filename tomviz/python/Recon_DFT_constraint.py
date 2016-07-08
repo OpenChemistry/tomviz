@@ -20,8 +20,8 @@ def transform_scalars(dataset):
     (recon,recon_F) = dfm3(tilt_images,tilt_angles,np.size(tilt_images,0)*2)
 
     kr_cutoffs = np.linspace(0.05,0.5,10);
-    I_data = radial_average(tilt_images,kr_cutoffs)
-    print I_data
+    I_data = radial_average(tilt_images,kr_cutoffs) #average Fourier magnitude of tilt series as a function of kr
+
     #Search for solutions that satisfy additional constraints
     recon = difference_map_update(recon_F,nonnegativeVoxels,I_data,kr_cutoffs,Niter,Niter_update_support,supportSigma,supportThreshold)
 
@@ -123,15 +123,9 @@ def radial_average(tiltseries,kr_cutoffs):
     r = pyfftw.n_byte_align_empty((Nx,Ny),16,dtype='float64')
     p_fftw_object = pyfftw.FFTW(r,f,axes=(0,1))
     Ir = np.zeros(kr_cutoffs.size); I = np.zeros(kr_cutoffs.size)
-    
-    #d_kx = 1.0/Nx; d_ky = 1.0/Ny;
-    #kx = np.linspace(-np.floor(Nx/2), np.ceil(Nx/2)-1, Nx); kx = kx*d_kx; kx = np.fft.fftshift(kx)
-    #ky = np.linspace(-np.floor(Ny/2), np.ceil(Ny/2)-1, Ny); ky = ky*d_ky; ky = np.fft.fftshift(ky)
-    #ky = ky[0:(Ny/2+1)]
-    
+
     kx = np.fft.fftfreq(Nx)
     ky = np.fft.fftfreq(Ny)
-    #ky = np.linspace(-np.floor(Ny/2), np.ceil(Ny/2)-1, Ny); ky = ky*d_ky; ky = np.fft.ifftshift(ky)
     ky = ky[0:int(np.ceil(Ny/2)+1)]
 
     kX,kY = np.meshgrid(ky,kx)
@@ -140,7 +134,6 @@ def radial_average(tiltseries,kr_cutoffs):
     for a in range(0,Nproj):
         r = tiltseries[:,:,a].copy().astype('float64')
         p_fftw_object.update_arrays(r,f); p_fftw_object.execute()
-        
         shell = kR<=kr_cutoffs[0]
         I[0] = np.sum(np.absolute(f[shell]))
         I[0] = I[0]/np.sum(shell)
@@ -159,27 +152,26 @@ def difference_map_update(constraint,nonnegativeVoxels,I_data,kr_cutoffs,N_iter,
     r = pyfftw.n_byte_align_empty((Nx,Ny,Ny),16,dtype='float64')
     fft_forward = pyfftw.FFTW(r,f,axes=(0,1,2))
     fft_inverse = pyfftw.FFTW(f,r,direction='FFTW_BACKWARD',axes=(0,1,2))
-    
+
     kx = np.fft.fftfreq(Nx)
     ky = np.fft.fftfreq(Ny)
     kz = ky[0:Nz]
 
     kX,kY,kZ = np.meshgrid(kx,ky,kz)
     kR = np.sqrt(kY**2+kX**2+kZ**2)
-    
+
     sigma = 0.5*supportSigma
     G = np.exp(-kR**2/(2*sigma**2))
-    
+
     #create initial support using sw
     f = constraint * G
     fft_inverse.update_arrays(f,r); fft_inverse.execute()
     cutoff = np.amax(r)*supportThreshold
     support = r>=cutoff
-    
+
     constraint[kR>kr_cutoffs[-1]] = 0
 
     x = np.random.rand(Nx,Ny,Ny) #initial solution
-    
     for i in range(1,N_iter+1):
         #print i
         #image space projection
@@ -187,17 +179,17 @@ def difference_map_update(constraint,nonnegativeVoxels,I_data,kr_cutoffs,N_iter,
 
         if nonnegativeVoxels:
            y1[y1<0] = 0  #non-negative constraint
-        
+
         y1[np.logical_not(support)] = 0 #support constraint
-        
+
         #Fourier space projection
         y2 = 2*y1 - x
 
         r = y2.copy(); fft_forward.update_arrays(r,f); fft_forward.execute()
-        
+
         f[kR>kr_cutoffs[-1]] = 0 #apply low pass filter
         f[constraint!=0] = constraint[constraint!=0] #data constraint
-        
+
         #Fourier magnitude constraint
         #leave the inner shell unchanged
         for j in range(1,kr_cutoffs.size):
