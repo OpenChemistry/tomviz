@@ -1,5 +1,4 @@
-/******************************************************************************
-
+/****************************************************************************** 
   This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
@@ -26,6 +25,8 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSMProperty.h"
+
+#include <QHBoxLayout>
 
 namespace tomviz
 {
@@ -126,14 +127,24 @@ bool ModuleOutline::visibility() const
                              "Visibility").GetAsInt() != 0;
 }
 
-void ModuleOutline::addToPanel(pqProxiesWidget* panel)
+void ModuleOutline::addToPanel(QWidget* panel)
 {
   Q_ASSERT(panel && this->OutlineRepresentation);
+
+  if (panel->layout()) {
+    delete panel->layout();
+  }
+
+  QHBoxLayout *layout = new QHBoxLayout;
+  panel->setLayout(layout);
+  pqProxiesWidget *proxiesWidget = new pqProxiesWidget(panel);
+  layout->addWidget(proxiesWidget);
+
   QStringList properties;
   properties << "DiffuseColor";
-  panel->addProxy(
+  proxiesWidget->addProxy(
     this->OutlineRepresentation, "Annotations", properties, true);
-  this->Superclass::addToPanel(panel);
+  proxiesWidget->updateLayout();
 }
 
 void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)

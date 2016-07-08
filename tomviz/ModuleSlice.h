@@ -44,7 +44,7 @@ public:
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
   bool isColorMapNeeded() const override { return true; }
-  void addToPanel(pqProxiesWidget* panel) override;
+  void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 

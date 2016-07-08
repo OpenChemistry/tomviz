@@ -15,9 +15,15 @@
 ******************************************************************************/
 #include "ModuleContour.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
-#include "pqProxiesWidget.h"
+#include "DoubleSliderWidget.h"
 #include "Utilities.h"
+
+#include "pqPropertyLinks.h"
+#include "pqSignalAdaptors.h"
+#include "pqWidgetRangeDomain.h"
+#include "pqView.h"
 
 #include "vtkDataObject.h"
 #include "vtkNew.h"
@@ -32,6 +38,10 @@
 #include <string>
 #include <vector>
 
+#include <QFormLayout>
+#include <QComboBox>
+#include <QLabel>
+
 namespace tomviz
 {
 
@@ -39,11 +49,13 @@ class ModuleContour::Private
 {
 public:
   std::string NonLabelMapArrayName;
+  pqPropertyLinks Links;
 };
 
 ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
 {
   this->Internals = new Private;
+  this->Internals->Links.setAutoUpdateVTKObjects(true);
 }
 
 ModuleContour::~ModuleContour()
@@ -103,6 +115,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation, "ColorArrayName");
   this->Internals->NonLabelMapArrayName = std::string(colorArrayHelper.GetInputArrayNameToProcess());
+
 
   // use proper color map.
   this->updateColorMap();
@@ -174,11 +187,62 @@ void ModuleContour::setIsoValues(const QList<double>& values)
   this->ContourFilter->UpdateVTKObjects();
 }
 
-void ModuleContour::addToPanel(pqProxiesWidget* panel)
+void ModuleContour::addToPanel(QWidget* panel)
 {
   Q_ASSERT(this->ContourFilter);
   Q_ASSERT(this->ContourRepresentation);
 
+  if (panel->layout()) {
+    delete panel->layout();
+  }
+
+  QFormLayout *layout = new QFormLayout;
+  
+  DoubleSliderWidget *valueSlider = new DoubleSliderWidget(true);
+  valueSlider->setLineEditWidth(50);
+  layout->addRow("Value", valueSlider);
+
+  QComboBox *representations = new QComboBox;
+  representations->addItem("Surface");
+  representations->addItem("Wireframe");
+  representations->addItem("Points");
+  layout->addRow("Representation", representations);
+  // TODO connect to update function
+
+  DoubleSliderWidget *opacitySlider = new DoubleSliderWidget(false);
+  layout->addRow("Opacity", opacitySlider);
+
+  DoubleSliderWidget *specularSlider = new DoubleSliderWidget(false);
+  layout->addRow("Specular", specularSlider);
+
+  pqSignalAdaptorComboBox *adaptor = new pqSignalAdaptorComboBox(representations);
+  //layout->addStretch();
+  
+  panel->setLayout(layout);
+
+  this->Internals->Links.addPropertyLink(valueSlider, "value",
+      SIGNAL(valueEdited(double)), this->ContourFilter,
+      this->ContourFilter->GetProperty("ContourValues"), 0);
+  new pqWidgetRangeDomain(valueSlider, "minimum", "maximum",
+      this->ContourFilter->GetProperty("ContourValues"), 0);
+
+  this->Internals->Links.addPropertyLink(adaptor, "currentText",
+      SIGNAL(currentTextChanged(QString)), this->ContourRepresentation,
+      this->ContourRepresentation->GetProperty("Representation"));
+
+
+  this->Internals->Links.addPropertyLink(opacitySlider, "value",
+      SIGNAL(valueEdited(double)), this->ContourRepresentation,
+      this->ContourRepresentation->GetProperty("Opacity"), 0);
+  this->Internals->Links.addPropertyLink(specularSlider, "value",
+      SIGNAL(valueEdited(double)), this->ContourRepresentation,
+      this->ContourRepresentation->GetProperty("Specular"), 0);
+
+  this->connect(valueSlider, &DoubleSliderWidget::valueEdited, this, &ModuleContour::dataUpdated);
+  this->connect(representations, &QComboBox::currentTextChanged, this, &ModuleContour::dataUpdated);
+  this->connect(opacitySlider, &DoubleSliderWidget::valueEdited, this, &ModuleContour::dataUpdated);
+  this->connect(specularSlider, &DoubleSliderWidget::valueEdited, this, &ModuleContour::dataUpdated);
+/*
   QStringList contourProperties;
   contourProperties << "ContourValues";
   panel->addProxy(this->ContourFilter, "Contour", contourProperties, true);
@@ -191,6 +255,17 @@ void ModuleContour::addToPanel(pqProxiesWidget* panel)
   panel->addProxy(this->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
 
   this->Superclass::addToPanel(panel);
+  */
+}
+
+void ModuleContour::dataUpdated()
+{
+  this->Internals->Links.accept();
+  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view)
+  {
+    view->render();
+  }
 }
 
 bool ModuleContour::serialize(pugi::xml_node& ns) const

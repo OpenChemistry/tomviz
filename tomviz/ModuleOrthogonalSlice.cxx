@@ -28,6 +28,8 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
+#include <QHBoxLayout>
+
 namespace tomviz
 {
 
@@ -119,16 +121,25 @@ bool ModuleOrthogonalSlice::visibility() const
   return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() != 0;
 }
 
-void ModuleOrthogonalSlice::addToPanel(pqProxiesWidget* panel)
+void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
 {
   Q_ASSERT(this->Representation);
+
+  if (panel->layout()) {
+    delete panel->layout();
+  }
+
+  QHBoxLayout *layout = new QHBoxLayout;
+  panel->setLayout(layout);
+  pqProxiesWidget *proxiesWidget = new pqProxiesWidget(panel);
+  layout->addWidget(proxiesWidget);
 
   QStringList reprProperties;
   reprProperties
     << "SliceMode"
     << "Slice";
-  panel->addProxy(this->Representation, "Slice", reprProperties, true);
-  this->Superclass::addToPanel(panel);
+  proxiesWidget->addProxy(this->Representation, "Slice", reprProperties, true);
+  proxiesWidget->updateLayout();
 }
 
 bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const

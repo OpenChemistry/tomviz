@@ -43,6 +43,7 @@
 #include "vtkSMViewProxy.h"
 
 #include <QDebug>
+#include <QHBoxLayout>
 
 namespace tomviz
 {
@@ -215,13 +216,21 @@ bool ModuleSlice::visibility() const
   return this->Widget->GetEnabled() != 0;
 }
 
-void ModuleSlice::addToPanel(pqProxiesWidget* panel)
+void ModuleSlice::addToPanel(QWidget* panel)
 {
+  if (panel->layout()) {
+    delete panel->layout();
+  }
+
+  QHBoxLayout *layout = new QHBoxLayout;
+  panel->setLayout(layout);
+  pqProxiesWidget *proxiesWidget = new pqProxiesWidget(panel);
+  layout->addWidget(proxiesWidget);
+
   QStringList properties;
   properties << "ShowArrow" << "PointOnPlane" << "PlaneNormal";
-  panel->addProxy(this->PropsPanelProxy, "Appearance", properties, true);
-
-  this->Superclass::addToPanel(panel);
+  proxiesWidget->addProxy(this->PropsPanelProxy, "Appearance", properties, true);
+  proxiesWidget->updateLayout();
 }
 
 bool ModuleSlice::serialize(pugi::xml_node& ns) const

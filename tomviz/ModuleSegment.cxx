@@ -31,6 +31,7 @@
 #include "vtkSMSourceProxy.h"
 
 #include <QIcon>
+#include <QHBoxLayout>
 
 namespace tomviz
 {
@@ -213,29 +214,37 @@ bool ModuleSegment::deserialize(const pugi::xml_node &ns)
     this->Superclass::deserialize(ns);
 }
 
-void ModuleSegment::addToPanel(pqProxiesWidget *panel)
+void ModuleSegment::addToPanel(QWidget *panel)
 {
   Q_ASSERT(this->Internals->ProgrammableFilter);
+
+  if (panel->layout()) {
+    delete panel->layout();
+  }
+
+  QHBoxLayout *layout = new QHBoxLayout;
+  panel->setLayout(layout);
+  pqProxiesWidget *proxiesWidget = new pqProxiesWidget(panel);
+  layout->addWidget(proxiesWidget);
+
   QStringList properties;
   properties << "Script";
-  panel->addProxy(this->Internals->SegmentationScript, "Script", properties, true);
+  proxiesWidget->addProxy(this->Internals->SegmentationScript, "Script", properties, true);
 
   Q_ASSERT(this->Internals->ContourFilter);
   Q_ASSERT(this->Internals->ContourRepresentation);
 
   QStringList contourProperties;
   contourProperties << "ContourValues";
-  panel->addProxy(this->Internals->ContourFilter, "Contour", contourProperties, true);
+  proxiesWidget->addProxy(this->Internals->ContourFilter, "Contour", contourProperties, true);
 
   QStringList contourRepresentationProperties;
   contourRepresentationProperties
     << "Representation"
     << "Opacity"
     << "Specular";
-  panel->addProxy(this->Internals->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
-
-
-  this->Superclass::addToPanel(panel);
+  proxiesWidget->addProxy(this->Internals->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
+  proxiesWidget->updateLayout();
 }
 
 void ModuleSegment::onPropertyChanged()

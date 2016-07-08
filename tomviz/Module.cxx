@@ -113,21 +113,8 @@ DataSource* Module::dataSource() const
   return this->ADataSource;
 }
 
-void Module::addToPanel(pqProxiesWidget* panel)
+void Module::addToPanel(QWidget* panel)
 {
-  if (this->UseDetachedColorMap)
-  {
-    // add color map to the panel, since it's detached from the dataSource.
-    vtkSMProxy* lut = this->colorMap();
-    QStringList list;
-    list
-      << "Mapping Data"
-      << "EnableOpacityMapping"
-      << "RGBPoints"
-      << "ScalarOpacityFunction"
-      << "UseLogScale";
-    panel->addProxy(lut, "Module Color Map", list, true);
-  }
 }
 
 void Module::setUseDetachedColorMap(bool val)

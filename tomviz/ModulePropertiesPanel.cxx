@@ -23,6 +23,26 @@
 #include "Utilities.h"
 #include "vtkSMViewProxy.h"
 
+namespace
+{
+  void deleteLayoutContents(QLayout *layout)
+  {
+    while (layout && layout->count() > 0)
+    {
+      QLayoutItem *item = layout->itemAt(0);
+      layout->removeItem(item);
+      if (item) {
+        if (item->widget()) {
+          delete item->widget();
+          delete item;
+        } else if (item->layout()) {
+          deleteLayoutContents(item->layout());
+          delete item->layout();
+        }
+      }
+    }
+  }
+}
 namespace tomviz
 {
 
@@ -53,8 +73,6 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
                 SLOT(updatePanel()));
 */
   this->connect(ui.Delete, SIGNAL(clicked()), SLOT(deleteModule()));
-  this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
-                SLOT(render()));
 
   this->connect(ui.DetachColorMap, SIGNAL(clicked(bool)),
                 SLOT(detachColorMap(bool)));
@@ -85,14 +103,17 @@ void ModulePropertiesPanel::setModule(Module* module)
     }
   }
 
+
   this->Internals->ActiveModule = module;
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
-  ui.ProxiesWidget->clear();
+
+  deleteLayoutContents(ui.PropertiesWidget->layout());
+
   ui.DetachColorMap->setVisible(false);
   ui.ColorByLabelMap->setVisible(false);
   if (module)
   {
-    module->addToPanel(ui.ProxiesWidget);
+    module->addToPanel(ui.PropertiesWidget);
     if (module->isColorMapNeeded())
     {
       ui.DetachColorMap->setVisible(true);
@@ -101,22 +122,18 @@ void ModulePropertiesPanel::setModule(Module* module)
       ui.ColorByLabelMap->setChecked(module->colorByLabelMap());
     }
   }
-  ui.ProxiesWidget->updateLayout();
+  ui.PropertiesWidget->layout()->update();
   this->updatePanel();
   ui.Delete->setEnabled(module != nullptr);
 }
 
 void ModulePropertiesPanel::setView(vtkSMViewProxy* view)
 {
-  this->Internals->Ui.ProxiesWidget->setView(
-    tomviz::convert<pqView*>(view));
 }
 
 void ModulePropertiesPanel::updatePanel()
 {
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
-//  ui.ProxiesWidget->filterWidgets(ui.SearchBox->isAdvancedSearchActive(),
-//                                  ui.SearchBox->text());
 
   if (this->Internals->ActiveModule)
   {

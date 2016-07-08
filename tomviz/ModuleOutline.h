@@ -42,7 +42,7 @@ public:
   bool finalize() override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
-  void addToPanel(pqProxiesWidget*) override;
+  void addToPanel(QWidget*) override;
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 
