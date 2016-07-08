@@ -15,8 +15,10 @@ def transform_scalars(dataset):
     if data_py is None: # Check if data exists.
         raise RuntimeError("No data array found!")
 
+    offset = np.finfo(float).eps #add a small offset to avoid log(0)
+
     # Take log abs FFT
-    data_py = np.fft.fftshift( np.log( np.abs( np.fft.fftn(data_py) ) ) )
+    data_py = np.fft.fftshift( np.log( np.abs( np.fft.fftn(data_py) ) + offset ) )
     # Normalize log abs FFT
     data_py = data_py / np.max(data_py)
 
