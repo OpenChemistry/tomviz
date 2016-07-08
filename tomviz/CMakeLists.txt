@@ -223,6 +223,7 @@ set(python_files
   SetNegativeVoxelsToZero.py
   STEM_probe.py
   InvertData.py
+  Pad_Data.py
   )
 
 set(resource_files
