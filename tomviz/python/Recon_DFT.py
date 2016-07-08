@@ -31,9 +31,9 @@ def dfm3(input,angles,Npad):
     input = np.double(input)
     (Nx,Ny,Nproj) = input.shape
     angles = np.double(angles)
-    cen = np.floor(Ny/2)
-    cen_pad = np.floor(Npad/2)
-    pad_post = np.ceil((Npad-Ny)/2); pad_pre = np.floor((Npad-Ny)/2)
+    cen = np.floor(Ny/2.0)
+    cen_pad = np.floor(Npad/2.0)
+    pad_pre = np.ceil((Npad-Ny)/2.0); pad_post = np.floor((Npad-Ny)/2.0)
     
     # Initialization
     Nz = Ny
@@ -47,8 +47,8 @@ def dfm3(input,angles,Npad):
     pF = pyfftw.n_byte_align_empty((Nx,Npad/2+1),16,dtype='complex128')
     p_fftw_object = pyfftw.FFTW(p,pF,axes=(0,1))
 
-    dk = np.double(Ny)/np.double(Npad) * 1
-    
+    dk = np.double(Ny)/np.double(Npad)
+
     for a in range(0, Nproj):
         #print angles[a]
         ang = angles[a]*np.pi/180
@@ -57,6 +57,12 @@ def dfm3(input,angles,Npad):
         p = np.fft.ifftshift(p) 
         p_fftw_object.update_arrays(p,pF)
         p_fftw_object()
+
+        probjection_f = pF.copy()
+        if ang<0:
+            probjection_f = np.conj(pF.copy())
+            probjection_f[1:,:] = np.flipud(probjection_f[1:,:])
+            ang = np.pi+ang
 
         # Bilinear extrapolation
         for i in range(0, np.int(np.ceil(Npad/2))+1):
@@ -69,7 +75,7 @@ def dfm3(input,angles,Npad):
                 pz,py,weight = bilinear(kz_new,ky_new,sz,sy,Ny,b)
                 if (py>=0 and py<Ny and pz>=0 and pz<Nz/2+1):
                     w[:,py,pz] = w[:,py,pz] + weight
-                    v[:,py,pz] = v[:,py,pz] + weight * pF[:,i]
+                    v[:,py,pz] = v[:,py,pz] + weight * probjection_f[:,i]
 
     v[w!=0] = v[w!=0]/w[w!=0]
     recon_F = v.copy()
