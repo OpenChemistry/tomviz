@@ -127,7 +127,7 @@ void ModulePropertiesPanel::setModule(Module* module)
   ui.Delete->setEnabled(module != nullptr);
 }
 
-void ModulePropertiesPanel::setView(vtkSMViewProxy* view)
+void ModulePropertiesPanel::setView(vtkSMViewProxy* vtkNotUsed(view))
 {
 }
 

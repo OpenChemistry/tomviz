@@ -113,7 +113,7 @@ DataSource* Module::dataSource() const
   return this->ADataSource;
 }
 
-void Module::addToPanel(QWidget* panel)
+void Module::addToPanel(QWidget* vtkNotUsed(panel))
 {
 }
 
