@@ -131,10 +131,10 @@ set(SOURCES
   OperatorFactory.h
   OperatorPython.cxx
   OperatorPython.h
-  OperatorsWidget.cxx
-  OperatorsWidget.h
-  PipelineWidget.cxx
-  PipelineWidget.h
+  PipelineModel.cxx
+  PipelineModel.h
+  PipelineView.cxx
+  PipelineView.h
   ProgressBehavior.cxx
   ProgressBehavior.h
   ProgressDialogManager.cxx

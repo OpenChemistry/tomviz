@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>22</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -110,7 +110,7 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="pipelineBrowserWidget">
-    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,3,0,1">
+    <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,1">
      <property name="leftMargin">
       <number>0</number>
      </property>
@@ -131,7 +131,10 @@
       </widget>
      </item>
      <item>
-      <widget class="tomviz::PipelineWidget" name="treeWidget">
+      <widget class="tomviz::PipelineView" name="treeWidget">
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
        <property name="dragEnabled">
         <bool>true</bool>
        </property>
@@ -139,33 +142,14 @@
         <enum>QAbstractItemView::DragOnly</enum>
        </property>
        <property name="rootIsDecorated">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="uniformRowHeights">
         <bool>true</bool>
        </property>
-       <property name="columnCount">
-        <number>2</number>
-       </property>
        <attribute name="headerVisible">
         <bool>false</bool>
        </attribute>
-       <attribute name="headerDefaultSectionSize">
-        <number>20</number>
-       </attribute>
-       <attribute name="headerMinimumSectionSize">
-        <number>20</number>
-       </attribute>
-       <column>
-        <property name="text">
-         <string notr="true">1</string>
-        </property>
-       </column>
-       <column>
-        <property name="text">
-         <string notr="true">2</string>
-        </property>
-       </column>
       </widget>
      </item>
      <item>
@@ -173,33 +157,6 @@
        <property name="text">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Data Transforms&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="tomviz::OperatorsWidget" name="treeWidget_2">
-       <property name="rootIsDecorated">
-        <bool>false</bool>
-       </property>
-       <property name="uniformRowHeights">
-        <bool>true</bool>
-       </property>
-       <property name="columnCount">
-        <number>2</number>
-       </property>
-       <attribute name="headerVisible">
-        <bool>false</bool>
-       </attribute>
-       <attribute name="headerDefaultSectionSize">
-        <number>20</number>
-       </attribute>
-       <attribute name="headerMinimumSectionSize">
-        <number>20</number>
-       </attribute>
-       <column>
-        <property name="text">
-         <string notr="true">1</string>
-        </property>
-       </column>
       </widget>
      </item>
     </layout>
@@ -333,8 +290,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>300</width>
-          <height>907</height>
+          <width>296</width>
+          <height>874</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -433,11 +390,6 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>tomviz::PipelineWidget</class>
-   <extends>QTreeWidget</extends>
-   <header>PipelineWidget.h</header>
-  </customwidget>
-  <customwidget>
    <class>pqCameraToolbar</class>
    <extends>QToolBar</extends>
    <header>pqCameraToolbar.h</header>
@@ -459,9 +411,9 @@
    <header>pqVCRToolbar.h</header>
   </customwidget>
   <customwidget>
-   <class>tomviz::OperatorsWidget</class>
-   <extends>QTreeWidget</extends>
-   <header>OperatorsWidget.h</header>
+   <class>tomviz::PipelineView</class>
+   <extends>QTreeView</extends>
+   <header>PipelineView.h</header>
   </customwidget>
   <customwidget>
    <class>tomviz::DataPropertiesPanel</class>
