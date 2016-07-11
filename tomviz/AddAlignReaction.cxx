@@ -55,7 +55,7 @@ void AddAlignReaction::align(DataSource* source)
     return;
   }
 
-  QSharedPointer<Operator> Op(new TranslateAlignOperator(source));
+  Operator *Op = new TranslateAlignOperator(source);
   EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, true,
                                                       pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose);

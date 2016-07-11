@@ -36,7 +36,7 @@ namespace tomviz
 class EditOperatorDialog::EODInternals
 {
 public:
-  QSharedPointer<Operator> Op;
+  QPointer<Operator> Op;
   EditOperatorWidget *Widget;
   bool needsToBeAdded;
   DataSource *dataSource;
@@ -58,18 +58,18 @@ public:
   }
 };
 
-EditOperatorDialog::EditOperatorDialog(
-  QSharedPointer<Operator> &o,
-  DataSource *dataSource,
-  bool needToAddOperator,
-  QWidget* parentObject)
-  : Superclass(parentObject),
-  Internals (new EditOperatorDialog::EODInternals())
+EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource *dataSource,
+                                       bool needToAddOperator, QWidget* p)
+  : Superclass(p), Internals(new EditOperatorDialog::EODInternals())
 {
-  Q_ASSERT(o);
-  this->Internals->Op = o;
+  Q_ASSERT(op);
+  this->Internals->Op = op;
   this->Internals->dataSource = dataSource;
   this->Internals->needsToBeAdded = needToAddOperator;
+  if (needToAddOperator)
+  {
+    op->setParent(this);
+  }
 
   QVariant position = this->Internals->loadPosition();
   if (!position.isNull())
@@ -78,15 +78,17 @@ EditOperatorDialog::EditOperatorDialog(
   }
 
   QVBoxLayout* vLayout = new QVBoxLayout(this);
-  if (o->hasCustomUI())
+  if (op->hasCustomUI())
   {
-    vtkSmartPointer<vtkImageData> snapshotImage = dataSource->getCopyOfImagePriorTo(o);
-    EditOperatorWidget* opWidget = o->getEditorContents(this, snapshotImage);
+    vtkSmartPointer<vtkImageData> snapshotImage =
+        dataSource->getCopyOfImagePriorTo(op);
+    EditOperatorWidget* opWidget = op->getEditorContents(this, snapshotImage);
     vLayout->addWidget(opWidget);
     this->Internals->Widget = opWidget;
     const double *dsPosition = dataSource->displayPosition();
     opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
-    QObject::connect(dataSource, &DataSource::displayPositionChanged, opWidget, &EditOperatorWidget::dataSourceMoved);
+    QObject::connect(dataSource, &DataSource::displayPositionChanged, opWidget,
+                     &EditOperatorWidget::dataSourceMoved);
   }
   else
   {
@@ -112,7 +114,7 @@ EditOperatorDialog::~EditOperatorDialog()
 {
 }
 
-QSharedPointer<Operator>& EditOperatorDialog::op()
+Operator* EditOperatorDialog::op()
 {
   return this->Internals->Op;
 }

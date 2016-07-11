@@ -50,7 +50,7 @@ void ConvertToFloatReaction::convertToFloat()
     qDebug() << "Exiting early - no data found.";
     return;
   }
-  QSharedPointer<Operator> Op(new ConvertToFloatOperator());
+  Operator *Op = new ConvertToFloatOperator();
 
   source->addOperator(Op);
 }

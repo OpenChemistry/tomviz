@@ -105,15 +105,14 @@ void ProgressDialogManager::dataSourceAdded(DataSource *ds)
 {
   QObject::connect(ds, SIGNAL(operatorAdded(Operator*)),
                    this, SLOT(operatorAdded(Operator*)));
-  const QList<QSharedPointer<Operator> >& listOfOps = ds->operators();
-  for (QList<QSharedPointer<Operator> >::const_iterator itr = listOfOps.begin();
-      itr != listOfOps.end(); ++itr)
+  auto listOfOps = ds->operators();
+  for (auto itr = listOfOps.begin(); itr != listOfOps.end(); ++itr)
   {
-    this->Internals->opToDataSource.insert((*itr).data(), ds);
+    this->Internals->opToDataSource.insert(*itr, ds);
   }
 }
 
-void ProgressDialogManager::operationProgress(int progress)
+void ProgressDialogManager::operationProgress(int)
 {
   // Probably not strictly neccessary in the long run where we have a background thread.
   // But until then we need this call.
@@ -133,9 +132,8 @@ void ProgressDialogManager::operationDone(bool status)
   if (!status)
   {
     DataSource *ds = this->Internals->opToDataSource.value(op);
-    const QList<QSharedPointer<Operator> >& listOfOps = ds->operators();
-    for (QList<QSharedPointer<Operator> >::const_iterator itr = listOfOps.begin();
-        itr != listOfOps.end(); ++itr)
+    auto listOfOps = ds->operators();
+    for (auto itr = listOfOps.begin(); itr != listOfOps.end(); ++itr)
     {
       // If we've found the shared pointer for this one...
       if (op == *itr)

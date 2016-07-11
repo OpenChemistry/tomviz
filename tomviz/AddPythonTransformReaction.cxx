@@ -848,7 +848,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   else
   {
     OperatorPython *opPython = new OperatorPython();
-    QSharedPointer<Operator> op(opPython);
     opPython->setLabel(scriptLabel);
     opPython->setScript(scriptSource);
 
@@ -856,13 +855,13 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     {
       // Create a non-modal dialog, delete it once it has been closed.
       EditOperatorDialog *dialog =
-          new EditOperatorDialog(op, source, true, pqCoreUtilities::mainWidget());
+          new EditOperatorDialog(opPython, source, true, pqCoreUtilities::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
     }
     else
     {
-      source->addOperator(op);
+      source->addOperator(opPython);
     }
   }
   return nullptr;
@@ -960,10 +959,9 @@ void AddPythonTransformReaction::addPythonOperator(DataSource *source,
   }
   // Create and add the operator
   OperatorPython *opPython = new OperatorPython();
-  QSharedPointer<Operator> op(opPython);
   opPython->setLabel(scriptLabel);
   opPython->setScript(finalScript);
-  source->addOperator(op);
+  source->addOperator(opPython);
 }
 
 }
