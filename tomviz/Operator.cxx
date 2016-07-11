@@ -15,16 +15,22 @@
 ******************************************************************************/
 #include "Operator.h"
 
+#include "DataSource.h"
+
 namespace tomviz
 {
 
-Operator::Operator(QObject* parentObject)
-  : Superclass(parentObject), supportsCancel(false)
+Operator::Operator(QObject* parentObject) : QObject(parentObject)
 {
 }
 
 Operator::~Operator()
 {
+}
+
+DataSource* Operator::dataSource()
+{
+  return qobject_cast<DataSource*>(parent());
 }
 
 bool Operator::transform(vtkDataObject *data)

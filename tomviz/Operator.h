@@ -27,16 +27,19 @@ class QWidget;
 
 namespace tomviz
 {
+class DataSource;
 class EditOperatorWidget;
 
 class Operator : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
-  Operator(QObject* parent=nullptr);
-  virtual ~Operator();
+  Operator(QObject* parent = nullptr);
+  ~Operator() override;
+
+  /// Returns the data source the operator operates on
+  DataSource* dataSource();
 
   /// Returns a label for this operator.
   virtual QString label() const = 0;
@@ -71,10 +74,12 @@ public:
   /// If there is no need for custom progress UI, then leave this default implementation
   /// and a default QProgressBar will be created instead.
   virtual QWidget* getCustomProgressWidget(QWidget*) const { return nullptr; }
+
   /// Returns true if the operation supports canceling midway through the applyTransform
   /// function via the cancelTransform slot.  Defaults to false, can be set by the
   /// setSupportsCancel(bool) method by subclasses.
   bool supportsCancelingMidTransform() const { return this->supportsCancel; }
+
   /// Return the total number of progress updates (assuming each update increments
   /// the progress from 0 to some maximum.  If the operator doesn't support
   /// incremental progress updates, leave this default implementation so that
@@ -85,6 +90,7 @@ signals:
   /// Emit this signal with the operation is updated/modified
   /// implying that the data needs to be reprocessed.
   void transformModified();
+
   /// Emit this signal to indicate that the operator's label changed
   /// and the GUI needs to refresh its display of the Operator.
   void labelModified();
@@ -93,8 +99,10 @@ signals:
   /// steps is returned by totalProgressSteps and should be emitted as a finished
   /// signal when all work in the operator is done.
   void updateProgress(int);
+
   /// Emitted when the operator starts transforming the data
   void transformingStarted();
+
   /// Emitted when the operator is done transforming the data.  The parameter is the
   /// return value from the transform() function.  True for success, false for failure.
   void transformingDone(bool result);
@@ -107,13 +115,14 @@ public slots:
 protected:
   /// Method to transform a dataset in-place.
   virtual bool applyTransform(vtkDataObject* data) = 0;
+
   /// Method to set whether the operator supports canceling midway through the transform
   /// method call.  If you set this to true, you should also override the cancelTransform
   /// slot to listen for the cancel signal and handle it.
   void setSupportsCancel(bool b) { this-> supportsCancel = b; }
 
 private:
-  bool supportsCancel;
+  bool supportsCancel = false;
   Q_DISABLE_COPY(Operator)
 };
 
