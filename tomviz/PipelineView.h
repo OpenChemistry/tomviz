@@ -13,47 +13,41 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizOperatorsWidget_h
-#define tomvizOperatorsWidget_h
+#ifndef tomvizPipelineView_h
+#define tomvizPipelineView_h
 
-#include <QTreeWidget>
-#include <QScopedPointer>
+#include <QTreeView>
 
 namespace tomviz
 {
 
 class DataSource;
+class Module;
 class Operator;
 
-class OperatorsWidget : public QTreeWidget
+class PipelineView : public QTreeView
 {
   Q_OBJECT
-  typedef QTreeWidget Superclass;
 
 public:
-  OperatorsWidget(QWidget* parent=nullptr);
-  virtual ~OperatorsWidget();
+  PipelineView(QWidget *parent = nullptr);
+  ~PipelineView() override;
 
+protected:
+  void keyPressEvent(QKeyEvent*) override;
+  void contextMenuEvent(QContextMenuEvent*) override;
+  void currentChanged(const QModelIndex &current,
+                      const QModelIndex &previous) override;
+  void deleteItem(const QModelIndex &idx);
 private slots:
-  void operatorAdded(QSharedPointer<Operator> &op);
-//  void operatorRemoved(Operator* op);
-  void onItemClicked(QTreeWidgetItem*, int);
+  void rowActivated(const QModelIndex &idx);
+  void rowDoubleClicked(const QModelIndex &idx);
 
-  /// called when the current data source changes.
-  void setDataSource(DataSource*);
-
-  void updateTransforms();
-
-  void itemDoubleClicked(QTreeWidgetItem*);
-
-  void updateOperatorLabel();
-
-private:
-  Q_DISABLE_COPY(OperatorsWidget)
-
-  class OWInternals;
-  QScopedPointer<OWInternals> Internals;
+  void setCurrent(DataSource *dataSource);
+  void setCurrent(Module *module);
+  void setCurrent(Operator* op);
 };
+
 }
 
-#endif
+#endif // tomvizPipelineView_h

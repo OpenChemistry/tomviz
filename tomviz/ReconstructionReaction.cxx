@@ -58,7 +58,7 @@ void ReconstructionReaction::recon(DataSource* input)
     return;
   }
 
-  QSharedPointer<Operator> op(new ReconstructionOperator(input));
+  Operator *op = new ReconstructionOperator(input);
   input->addOperator(op);
 }
 

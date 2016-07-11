@@ -51,7 +51,7 @@ class DataSource::DSInternals
 public:
   vtkSmartPointer<vtkSMSourceProxy> OriginalDataSource;
   vtkWeakPointer<vtkSMSourceProxy> Producer;
-  QList<QSharedPointer<Operator> > Operators;
+  QList<Operator*> Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
   DataSource::DataSourceType Type;
   vtkSmartPointer<vtkDataArray> TiltAngles;
@@ -285,11 +285,11 @@ bool DataSource::serialize(pugi::xml_node& ns) const
     unit_node.append_attribute("z").set_value(this->Internals->Units->GetValue(2));
   }
 
-  foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+  foreach (Operator *op, this->Internals->Operators)
   {
     pugi::xml_node operatorNode = ns.append_child("Operator");
     operatorNode.append_attribute("operator_type").set_value(
-        OperatorFactory::operatorType(op.data()));
+        OperatorFactory::operatorType(op));
     if (!op->serialize(operatorNode))
     {
       qWarning("failed to serialize Operator. Skipping it.");
@@ -351,8 +351,8 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   for (pugi::xml_node node=ns.child("Operator"); node;
        node = node.next_sibling("Operator"))
   {
-    QSharedPointer<Operator> op(OperatorFactory::createOperator(
-          node.attribute("operator_type").value(), this));
+    Operator *op(OperatorFactory::createOperator(
+                   node.attribute("operator_type").value(), this));
     if (op)
     {
       if (op->deserialize(node))
@@ -396,9 +396,9 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
   if (!cloneTransformed && cloneOperators)
   {
     // now, clone the operators.
-    foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+    foreach (Operator *op, this->Internals->Operators)
     {
-      QSharedPointer<Operator> opClone(op->clone());
+      Operator *opClone(op->clone());
       newClone->addOperator(opClone);
     }
     newClone->setTiltAngles(this->getTiltAngles());
@@ -517,26 +517,27 @@ void DataSource::setUnits(const QString& units)
   emit this->dataChanged();
 }
 
-int DataSource::addOperator(QSharedPointer<Operator>& op)
+int DataSource::addOperator(Operator *op)
 {
+  op->setParent(this);
   int index = this->Internals->Operators.count();
   this->Internals->Operators.push_back(op);
-  this->connect(op.data(), SIGNAL(transformModified()),
+  this->connect(op, SIGNAL(transformModified()),
                 SLOT(operatorTransformModified()));
-  emit this->operatorAdded(op.data());
   emit this->operatorAdded(op);
-  this->operate(op.data());
+  this->operate(op);
   return index;
 }
 
-bool DataSource::removeOperator(const QSharedPointer<Operator>& op)
+bool DataSource::removeOperator(Operator *op)
 {
   if (op)
   {
     // We should emit that the operator was removed...
     this->Internals->Operators.removeAll(op);
+    op->deleteLater();
     this->operatorTransformModified();
-    foreach (QSharedPointer<Operator> opPtr, this->Internals->Operators)
+    foreach (Operator *opPtr, this->Internals->Operators)
     {
       cout << "Operator: " << opPtr->label().toLatin1().data() << endl;
     }
@@ -561,7 +562,7 @@ void DataSource::operate(Operator* op)
   emit this->dataChanged();
 }
 
-vtkSmartPointer<vtkImageData> DataSource::getCopyOfImagePriorTo(QSharedPointer<Operator>& op)
+vtkSmartPointer<vtkImageData> DataSource::getCopyOfImagePriorTo(Operator *op)
 {
   vtkSmartPointer<vtkImageData> result = vtkSmartPointer<vtkImageData>::New();
   if (this->Internals->Operators.contains(op))
@@ -629,7 +630,7 @@ void DataSource::dataModified()
   emit this->dataChanged();
 }
 
-const QList<QSharedPointer<Operator> >& DataSource::operators() const
+const QList<Operator*>& DataSource::operators() const
 {
   return this->Internals->Operators;
 }
@@ -714,9 +715,9 @@ void DataSource::operatorTransformModified()
   bool prev = this->blockSignals(true);
 
   this->resetData();
-  foreach (QSharedPointer<Operator> op, this->Internals->Operators)
+  foreach (Operator *op, this->Internals->Operators)
   {
-    this->operate(op.data());
+    this->operate(op);
   }
   this->blockSignals(prev);
   this->dataModified();

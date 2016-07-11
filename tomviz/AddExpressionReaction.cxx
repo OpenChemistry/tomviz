@@ -56,12 +56,12 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
 
   OperatorPython *opPython = new OperatorPython();
   opPython->setScript(script);
-  QSharedPointer<Operator> op(opPython);
   opPython->setLabel("Transform Data");
 
   // Create a non-modal dialog, delete it once it has been closed.
   EditOperatorDialog *dialog =
-      new EditOperatorDialog(op, source, true, pqCoreUtilities::mainWidget());
+      new EditOperatorDialog(opPython, source, true,
+                             pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->show();
   return nullptr;

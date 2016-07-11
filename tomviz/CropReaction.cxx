@@ -64,7 +64,7 @@ void CropReaction::crop(DataSource* source)
     return;
   }
 
-  QSharedPointer<Operator> Op(new CropOperator());
+  Operator *Op = new CropOperator();
 
   EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, true,
                                                       this->mainWindow);

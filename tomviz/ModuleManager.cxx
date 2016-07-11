@@ -105,7 +105,7 @@ void ModuleManager::removeDataSource(DataSource* dataSource)
   if (this->Internals->DataSources.removeOne(dataSource))
   {
     emit this->dataSourceRemoved(dataSource);
-    delete dataSource;
+    dataSource->deleteLater();
   }
 }
 
@@ -114,7 +114,7 @@ void ModuleManager::removeAllDataSources()
   foreach (DataSource* dataSource, this->Internals->DataSources)
   {
     emit this->dataSourceRemoved(dataSource);
-    delete dataSource;
+    dataSource->deleteLater();
   }
   this->Internals->DataSources.clear();
 }
@@ -134,7 +134,7 @@ void ModuleManager::removeModule(Module* module)
   if (this->Internals->Modules.removeOne(module))
   {
     emit this->moduleRemoved(module);
-    delete module;
+    module->deleteLater();
   }
 }
 
@@ -143,7 +143,7 @@ void ModuleManager::removeAllModules()
   foreach (Module* module, this->Internals->Modules)
   {
     emit this->moduleRemoved(module);
-    delete module;
+    module->deleteLater();
   }
   this->Internals->Modules.clear();
 }

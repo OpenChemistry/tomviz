@@ -18,7 +18,6 @@
 
 #include <QObject>
 #include <QScopedPointer>
-#include <QSharedPointer>
 #include <QVector>
 #include <vtk_pugixml.h>
 #include <vtkSmartPointer.h>
@@ -55,11 +54,11 @@ public:
   vtkSMSourceProxy* producer() const;
 
   /// Returns a list of operators added to the DataSource.
-  const QList<QSharedPointer<Operator> >& operators() const;
+  const QList<Operator*>& operators() const;
 
   /// Add/remove operators.
-  int addOperator(QSharedPointer<Operator>& op);
-  bool removeOperator(const QSharedPointer<Operator>& op);
+  int addOperator(Operator *op);
+  bool removeOperator(Operator *op);
 
   /// Creates a new clone from this DataSource. If cloneOperators then clone
   /// the operators too, if cloneTransformedOnly clone the transformed data.
@@ -113,7 +112,7 @@ public:
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);
 
-  vtkSmartPointer<vtkImageData> getCopyOfImagePriorTo(QSharedPointer<Operator>& op);
+  vtkSmartPointer<vtkImageData> getCopyOfImagePriorTo(Operator *op);
   /// Returns the extent of the transformed dataset
   void getExtent(int extent[6]);
   /// Returns the spacing of the transformed dataset
@@ -134,7 +133,6 @@ signals:
   /// This signal is fired every time a new operator is added to this
   /// DataSource.
   void operatorAdded(Operator*);
-  void operatorAdded(QSharedPointer<Operator>&);
 
   /// This signal is fired every time the display position is changed
   /// Any actors based on this DataSource's data should update the position

@@ -34,13 +34,13 @@ public:
   // Creates an editor dialog for the given operator.  If this is creating a
   // new operator, then pass in true for needToAddOperator and the first time
   // Apply/Ok is pressed it will be added to the DataSource.
-  EditOperatorDialog(QSharedPointer<Operator> &op,
+  EditOperatorDialog(Operator *op,
                      DataSource* dataSource,
                      bool needToAddOperator,
                      QWidget* parent);
   virtual ~EditOperatorDialog();
 
-  QSharedPointer<Operator>& op();
+  Operator* op();
 
 private slots:
   void onApply();
