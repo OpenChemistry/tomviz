@@ -153,17 +153,17 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
   ui.endZ->setRange(extent[4], extent[5]);
   ui.endZ->setValue(currentVolume[5]);
 
-  this->connect(ui.startX, SIGNAL(valueChanged(int)),
+  this->connect(ui.startX, SIGNAL(editingFinished()),
                 this, SLOT(valueChanged()));
-  this->connect(ui.startY, SIGNAL(valueChanged(int)),
+  this->connect(ui.startY, SIGNAL(editingFinished()),
                 this, SLOT(valueChanged()));
-  this->connect(ui.startZ, SIGNAL(valueChanged(int)),
+  this->connect(ui.startZ, SIGNAL(editingFinished()),
                 this, SLOT(valueChanged()));
-  this->connect(ui.endX, SIGNAL(valueChanged(int)),
+  this->connect(ui.endX, SIGNAL(editingFinished()),
                 this, SLOT(valueChanged()));
-  this->connect(ui.endY, SIGNAL(valueChanged(int)),
+  this->connect(ui.endY, SIGNAL(editingFinished()),
                 this, SLOT(valueChanged()));
-  this->connect(ui.endZ, SIGNAL(valueChanged(int)),
+  this->connect(ui.endZ, SIGNAL(editingFinished()),
                 this, SLOT(valueChanged()));
   // force through the current values pulled from the operator and set above
   this->valueChanged();
