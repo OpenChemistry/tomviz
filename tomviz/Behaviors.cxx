@@ -108,7 +108,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   bool needToAddMatplotlibColormaps = true;
   for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i)
   {
-    if (presets->GetPresetName(i) == QString("Viridis (matplotlib)"))
+    if (presets->GetPresetName(i) == QString("Viridis_17"))
     {
       needToAddMatplotlibColormaps = false;
       break;
