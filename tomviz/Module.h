@@ -143,6 +143,10 @@ signals:
   /// map is modified
   void colorMapChanged();
 
+  /// Emitted when the module properties are changed in a way that would require a
+  /// re-render of the scene to take effect
+  void renderNeeded();
+
 private slots:
   void onColorMapChanged();
 

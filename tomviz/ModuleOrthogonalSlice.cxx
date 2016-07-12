@@ -140,6 +140,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
     << "Slice";
   proxiesWidget->addProxy(this->Representation, "Slice", reprProperties, true);
   proxiesWidget->updateLayout();
+
+  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+                SIGNAL(renderNeeded()));
 }
 
 bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const

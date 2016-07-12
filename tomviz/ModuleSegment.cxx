@@ -245,6 +245,8 @@ void ModuleSegment::addToPanel(QWidget *panel)
     << "Specular";
   proxiesWidget->addProxy(this->Internals->ContourRepresentation, "Appearance", contourRepresentationProperties, true);
   proxiesWidget->updateLayout();
+  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+                SIGNAL(renderNeeded()));
 }
 
 void ModuleSegment::onPropertyChanged()

@@ -93,6 +93,8 @@ void ModulePropertiesPanel::setModule(Module* module)
       DataSource* dataSource = this->Internals->ActiveModule->dataSource();
       QObject::disconnect(dataSource, SIGNAL(dataChanged()),
                           this, SLOT(updatePanel()));
+      QObject::disconnect(this->Internals->ActiveModule, SIGNAL(renderNeeded()),
+                          this, SLOT(render()));
     }
 
     if (module)
@@ -100,6 +102,8 @@ void ModulePropertiesPanel::setModule(Module* module)
       DataSource* dataSource = module->dataSource();
       QObject::connect(dataSource, SIGNAL(dataChanged()),
                        this, SLOT(updatePanel()));
+      QObject::connect(module, SIGNAL(renderNeeded()),
+                       this, SLOT(render()));
     }
   }
 
