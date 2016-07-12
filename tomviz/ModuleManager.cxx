@@ -362,15 +362,18 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
         ns.remove_child(vnode);
       }
 
-      vtkSMProxy* axesGrid = vtkSMPropertyHelper(view, "AxesGrid").GetAsProxy();
-      pugi::xml_node axesGridNode = vnode.append_child("AxesGrid");
-      axesGridNode.append_attribute("id").set_value(axesGrid->GetGlobalIDAsString());
-      axesGridNode.append_attribute("xmlgroup").set_value(axesGrid->GetXMLGroup());
-      axesGridNode.append_attribute("xmlname").set_value(axesGrid->GetXMLName());
-      if (!tomviz::serialize(axesGrid, axesGridNode))
+      if (view->GetProperty("AxesGrid"))
       {
-        qWarning("Failed to serialize axes grid");
-        ns.remove_child(axesGridNode);
+        vtkSMProxy* axesGrid = vtkSMPropertyHelper(view, "AxesGrid").GetAsProxy();
+        pugi::xml_node axesGridNode = vnode.append_child("AxesGrid");
+        axesGridNode.append_attribute("id").set_value(axesGrid->GetGlobalIDAsString());
+        axesGridNode.append_attribute("xmlgroup").set_value(axesGrid->GetXMLGroup());
+        axesGridNode.append_attribute("xmlname").set_value(axesGrid->GetXMLName());
+        if (!tomviz::serialize(axesGrid, axesGridNode))
+        {
+          qWarning("Failed to serialize axes grid");
+          ns.remove_child(axesGridNode);
+        }
       }
     }
   }
