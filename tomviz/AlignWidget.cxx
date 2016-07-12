@@ -228,7 +228,7 @@ public:
       double lutRange[2] = { std::min(range[0], -range[1]),
                              std::max(range[1], -range[0]) };
       vtkNew<vtkSMTransferFunctionPresets> presets;
-      vtkSMTransferFunctionProxy::ApplyPreset(this->lut, presets->GetFirstPresetWithName("Cool to Warm"));
+      vtkSMTransferFunctionProxy::ApplyPreset(this->lut, presets->GetFirstPresetWithName("Cool to Warm (Extended)"));
       vtkSMTransferFunctionProxy::RescaleTransferFunction(this->lut, lutRange);
     }
     this->imageSlice->GetProperty()->SetLookupTable(dataLUT);
