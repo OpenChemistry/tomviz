@@ -201,6 +201,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   this->Internals->Timer.setInterval(200);
   this->Internals->Timer.setSingleShot(true);
   this->connect(&this->Internals->Timer, SIGNAL(timeout()), SLOT(refreshHistogram()));
+  this->layout()->setMargin(0);
+  this->layout()->setSpacing(0);
 
   this->LUT = nullptr;
 }
