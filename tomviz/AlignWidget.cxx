@@ -24,6 +24,10 @@
 
 #include "vtk_jsoncpp.h"
 
+#include <pqCoreUtilities.h>
+#include <pqPresetDialog.h>
+#include <pqView.h>
+
 #include <QVTKWidget.h>
 #include <vtkArrayDispatch.h>
 #include <vtkAssume.h>
@@ -44,6 +48,8 @@
 #include <vtkScalarsToColors.h>
 #include <vtkSmartPointer.h>
 #include <vtkSMSourceProxy.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMViewProxy.h>
 #include <vtkNew.h>
 #include <vtkVector.h>
 #include <vtkPointData.h>
@@ -66,9 +72,21 @@
 #include <QTableWidgetItem>
 #include <QHeaderView>
 #include <QButtonGroup>
+#include <QToolButton>
 
 namespace tomviz
 {
+
+namespace {
+void renderViews()
+{
+  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view)
+  {
+    view->render();
+  }
+}
+}
 
 class ViewMode {
 public:
@@ -101,6 +119,7 @@ public:
   virtual void timerStopped() {}
   virtual double *bounds() const = 0;
   virtual void update() = 0;
+  virtual vtkSMProxy *getLUT() = 0;
 protected:
   vtkSmartPointer<vtkImageData> originalData;
   int currentSlice;
@@ -112,12 +131,15 @@ protected:
 class ToggleSliceShownViewMode : public ViewMode
 {
 public:
-  ToggleSliceShownViewMode(vtkImageData *data, vtkScalarsToColors *dataLUT)
+  ToggleSliceShownViewMode(vtkImageData *data, vtkSMProxy *lutProxy)
     : ViewMode(data), showingCurrentSlice(false)
   {
     this->imageSliceMapper->SetInputData(data);
     this->imageSliceMapper->Update();
     this->imageSlice->SetMapper(this->imageSliceMapper.Get());
+    this->lut = lutProxy;
+    vtkScalarsToColors *dataLUT =
+      vtkScalarsToColors::SafeDownCast(lutProxy->GetClientSideObject());
     if (dataLUT)
     {
       this->imageSlice->GetProperty()->SetLookupTable(dataLUT);
@@ -162,9 +184,13 @@ public:
   {
     return this->imageSliceMapper->GetBounds();
   }
+  vtkSMProxy *getLUT() override {
+    return lut;
+  }
 private:
   vtkNew<vtkImageSlice> imageSlice;
   vtkNew<vtkImageSliceMapper> imageSliceMapper;
+  vtkSmartPointer<vtkSMProxy> lut;
   bool showingCurrentSlice;
 };
 
@@ -188,8 +214,8 @@ public:
     vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
 
     vtkNew<vtkSMTransferFunctionManager> tfmgr;
-    vtkSMProxy *lut = tfmgr->GetColorTransferFunction("AlignWidgetLUT", pxm);
-    vtkScalarsToColors *dataLUT = vtkScalarsToColors::SafeDownCast(lut->GetClientSideObject());
+    this->lut = tfmgr->GetColorTransferFunction("AlignWidgetLUT", pxm);
+    vtkScalarsToColors *dataLUT = vtkScalarsToColors::SafeDownCast(this->lut->GetClientSideObject());
     vtkSmartPointer<vtkSMProxy> source;
     source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
     vtkTrivialProducer::SafeDownCast(source->GetClientSideObject())->SetOutput(data);
@@ -202,8 +228,8 @@ public:
       double lutRange[2] = { std::min(range[0], -range[1]),
                              std::max(range[1], -range[0]) };
       vtkNew<vtkSMTransferFunctionPresets> presets;
-      vtkSMTransferFunctionProxy::ApplyPreset(lut, presets->GetFirstPresetWithName("Cool to Warm"));
-      vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, lutRange);
+      vtkSMTransferFunctionProxy::ApplyPreset(this->lut, presets->GetFirstPresetWithName("Cool to Warm (Extended)"));
+      vtkSMTransferFunctionProxy::RescaleTransferFunction(this->lut, lutRange);
     }
     this->imageSlice->GetProperty()->SetLookupTable(dataLUT);
   }
@@ -236,6 +262,9 @@ public:
   double *bounds() const override
   {
     return this->imageSliceMapper->GetBounds();
+  }
+  vtkSMProxy *getLUT() override {
+    return lut;
   }
   // Operator so that *this can be used with vtkArrayDispatch to compute the
   // difference image
@@ -280,6 +309,7 @@ private:
   vtkNew<vtkImageData> diffImage;
   vtkNew<vtkImageSliceMapper> imageSliceMapper;
   vtkNew<vtkImageSlice> imageSlice;
+  vtkSmartPointer<vtkSMProxy> lut;
   vtkIdType xSize;
   vtkIdType ySize;
 };
@@ -305,8 +335,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   this->currentMode = 0;
 
   // Grab the image data from the data source...
-  vtkScalarsToColors *lut =
-    vtkScalarsToColors::SafeDownCast(this->unalignedData->colorMap()->GetClientSideObject());
+  vtkSMProxy *lut = this->unalignedData->colorMap();
 
   // Set up the rendering pipeline
   if (imageData)
@@ -356,12 +385,20 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   v->addLayout(viewControls);
 
   this->currentMode = 0;
+  QHBoxLayout *optionsLayout = new QHBoxLayout;
   this->modeSelect = new QComboBox;
   this->modeSelect->addItem("Toggle Images");
   this->modeSelect->addItem("Show Difference");
   this->modeSelect->setCurrentIndex(0);
   this->connect(this->modeSelect, SIGNAL(currentIndexChanged(int)), this, SLOT(changeMode(int)));
-  v->addWidget(this->modeSelect);
+  optionsLayout->addWidget(this->modeSelect);
+
+  QToolButton *presetSelectorButton = new QToolButton;
+  presetSelectorButton->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites16.png"));
+  presetSelectorButton->setToolTip("Choose preset color map");
+  connect(presetSelectorButton, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
+  optionsLayout->addWidget(presetSelectorButton);
+  v->addLayout(optionsLayout);
 
   QGridLayout *grid = new QGridLayout;
   int gridrow = 0;
@@ -820,6 +857,81 @@ void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
   if (slice == this->referenceSlice)
   {
     this->applySliceOffset(this->referenceSlice);
+  }
+}
+
+void AlignWidget::onPresetClicked()
+{
+  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
+                        pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
+  dialog.setCustomizableLoadColors(true);
+  dialog.setCustomizableLoadOpacities(true);
+  dialog.setCustomizableUsePresetRange(true);
+  dialog.setCustomizableLoadAnnotations(false);
+  connect(&dialog, SIGNAL(applyPreset(const Json::Value&)),
+          SLOT(applyCurrentPreset()));
+  dialog.exec();
+}
+
+void AlignWidget::applyCurrentPreset()
+{
+  pqPresetDialog* dialog = qobject_cast<pqPresetDialog*>(this->sender());
+  Q_ASSERT(dialog);
+
+  if (this->modes.length() == 0)
+  {
+    return;
+  }
+
+  vtkSMProxy* lut = this->modes[this->currentMode]->getLUT();
+  if (!lut)
+  {
+    return;
+  }
+
+  if (dialog->loadColors() || dialog->loadOpacities())
+  {
+    vtkSMProxy* sof = vtkSMPropertyHelper(lut,
+                                          "ScalarOpacityFunction",
+                                          true).GetAsProxy();
+    if (dialog->loadColors())
+    {
+      vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
+                                              !dialog->usePresetRange());
+    }
+    if (dialog->loadOpacities())
+    {
+      if (sof)
+      {
+        vtkSMTransferFunctionProxy::ApplyPreset(
+          sof, dialog->currentPreset(), !dialog->usePresetRange());
+      }
+      else
+      {
+        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not present.");
+      }
+    }
+
+    // We need to take extra care to avoid the color and opacity function ranges
+    // from straying away from each other. This can happen if only one of them is
+    // getting a preset and we're using the preset range.
+    if (dialog->usePresetRange()
+        && (dialog->loadColors() ^ dialog->loadOpacities()) && sof)
+    {
+      double range[2];
+      if (dialog->loadColors()
+          && vtkSMTransferFunctionProxy::GetRange(lut, range))
+      {
+        vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range);
+      }
+      else if (dialog->loadOpacities()
+               && vtkSMTransferFunctionProxy::GetRange(sof, range))
+      {
+        vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
+      }
+    }
+    renderViews();
+    this->widget->GetRenderWindow()->Render();
   }
 }
 

@@ -83,6 +83,9 @@ protected slots:
 
   void sliceOffsetEdited(int slice, int offsetComponent);
 
+  void onPresetClicked();
+  void applyCurrentPreset();
+
 protected:
   vtkNew<vtkImageSlice> imageSlice;
   vtkNew<vtkImageSliceMapper> mapper;
