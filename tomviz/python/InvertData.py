@@ -6,5 +6,5 @@ def transform_scalars(dataset):
     if scalars is None:
         raise RuntimeError("No scalars found!")
 
-    result = np.amax(scalars) - scalars
+    result = np.amax(scalars) - np.float32(scalars)
     utils.set_scalars(dataset, result)
