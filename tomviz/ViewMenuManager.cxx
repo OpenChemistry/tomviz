@@ -85,21 +85,22 @@ void ViewMenuManager::buildMenu()
 
   this->Menu->addSeparator();
   // Projection modes
-  QMenu *projectionMenu = this->Menu->addMenu("Projection Mode");
   QActionGroup *projectionGroup = new QActionGroup(this);
 
-  this->perspectiveProjectionAction = projectionMenu->addAction("Perspective");
+  this->perspectiveProjectionAction = this->Menu->addAction("Perspective Projection");
   this->perspectiveProjectionAction->setCheckable(true);
   this->perspectiveProjectionAction->setActionGroup(projectionGroup);
   this->perspectiveProjectionAction->setChecked(perspectiveProjectionChecked);
   this->connect(this->perspectiveProjectionAction, SIGNAL(triggered()),
                 SLOT(setProjectionModeToPerspective()));
-  this->orthographicProjectionAction = projectionMenu->addAction("Orthographic");
+  this->orthographicProjectionAction = this->Menu->addAction("Orthographic Projection");
   this->orthographicProjectionAction->setCheckable(true);
   this->orthographicProjectionAction->setActionGroup(projectionGroup);
   this->orthographicProjectionAction->setChecked(!perspectiveProjectionChecked);
   this->connect(this->orthographicProjectionAction, SIGNAL(triggered()),
                 SLOT(setProjectionModeToOrthographic()));
+
+  this->Menu->addSeparator();
 
   this->showAxisGridAction = this->Menu->addAction("Show Axis Grid");
   this->showAxisGridAction->setCheckable(true);
@@ -109,13 +110,11 @@ void ViewMenuManager::buildMenu()
                 SLOT(setShowAxisGrid(bool)));
 
   // Show view properties
-  this->showViewPropertiesAction = new QAction("View Properties", this->Menu);
+  this->showViewPropertiesAction = this->Menu->addAction("View Properties");
   this->showViewPropertiesAction->setCheckable(true);
   this->showViewPropertiesAction->setChecked(showViewPropertiesChecked);
   this->connect(this->showViewPropertiesAction, SIGNAL(triggered(bool)),
                     SLOT(showViewPropertiesDialog(bool)));
-  this->Menu->addSeparator();
-  this->Menu->addAction(this->showViewPropertiesAction);
 }
 
 void ViewMenuManager::showViewPropertiesDialog(bool show)

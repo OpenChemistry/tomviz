@@ -75,11 +75,11 @@ void ToggleDataTypeReaction::setWidgetText(DataSource* dsource)
 {
   if (dsource->type() == DataSource::Volume)
   {
-      this->parentAction()->setText("Mark As Tilt Series");
+      this->parentAction()->setText("Mark Data As Tilt Series");
   }
   else if (dsource->type() == DataSource::TiltSeries)
   {
-      this->parentAction()->setText("Mark As Volume");
+      this->parentAction()->setText("Mark Data As Volume");
   }
   else
   {
