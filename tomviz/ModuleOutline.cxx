@@ -147,6 +147,8 @@ void ModuleOutline::addToPanel(QWidget* panel)
   proxiesWidget->addProxy(
     this->OutlineRepresentation, "Annotations", properties, true);
   proxiesWidget->updateLayout();
+  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+                SIGNAL(renderNeeded()));
 }
 
 void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)

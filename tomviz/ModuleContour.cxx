@@ -15,7 +15,6 @@
 ******************************************************************************/
 #include "ModuleContour.h"
 
-#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "Utilities.h"
@@ -23,7 +22,6 @@
 #include "pqPropertyLinks.h"
 #include "pqSignalAdaptors.h"
 #include "pqWidgetRangeDomain.h"
-#include "pqView.h"
 
 #include "vtkDataObject.h"
 #include "vtkNew.h"
@@ -261,11 +259,7 @@ void ModuleContour::addToPanel(QWidget* panel)
 void ModuleContour::dataUpdated()
 {
   this->Internals->Links.accept();
-  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  if (view)
-  {
-    view->render();
-  }
+  emit this->renderNeeded();
 }
 
 bool ModuleContour::serialize(pugi::xml_node& ns) const

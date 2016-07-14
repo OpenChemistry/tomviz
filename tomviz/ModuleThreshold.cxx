@@ -158,6 +158,8 @@ void ModuleThreshold::addToPanel(QWidget* panel)
     << "Specular";
   proxiesWidget->addProxy(this->ThresholdRepresentation, "Appearance", representationProperties, true);
   proxiesWidget->updateLayout();
+  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+                SIGNAL(renderNeeded()));
 }
 
 bool ModuleThreshold::serialize(pugi::xml_node& ns) const

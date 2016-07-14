@@ -231,6 +231,8 @@ void ModuleSlice::addToPanel(QWidget* panel)
   properties << "ShowArrow" << "PointOnPlane" << "PlaneNormal";
   proxiesWidget->addProxy(this->PropsPanelProxy, "Appearance", properties, true);
   proxiesWidget->updateLayout();
+  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+                SIGNAL(renderNeeded()));
 }
 
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
