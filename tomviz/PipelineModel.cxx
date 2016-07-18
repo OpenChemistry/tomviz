@@ -449,6 +449,13 @@ void PipelineModel::dataSourceAdded(DataSource *dataSource)
   endInsertRows();
   connect(dataSource, SIGNAL(operatorAdded(Operator*)),
           SLOT(operatorAdded(Operator*)));
+
+  // When restoring a data source from a state file it will have its operators
+  // before we can listen to the signal above. Display those operators.
+  foreach(auto op, dataSource->operators())
+  {
+    this->operatorAdded(op);
+  }
 }
 
 void PipelineModel::moduleAdded(Module *module)
@@ -478,9 +485,9 @@ void PipelineModel::operatorAdded(Operator *op)
 {
   // Operators are special, they operate on all data and are shown in the
   // visualization modules. So there are some moves necessary to show this.
-  auto dataSource = qobject_cast<DataSource*>(sender());
-  Q_ASSERT(dataSource);
   Q_ASSERT(op);
+  auto dataSource = op->dataSource();
+  Q_ASSERT(dataSource);
   connect(op, SIGNAL(labelModified()), this, SLOT(operatorModified()));
   for (int i = 0; i < m_treeItems.count(); ++i) {
     if (m_treeItems[i]->dataSource() == dataSource) {
