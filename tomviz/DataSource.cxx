@@ -92,21 +92,6 @@ public:
 
 namespace {
 
-// Converts the data type to a string for writing to the save state
-const char* dataSourceTypeToString(DataSource::DataSourceType type)
-{
-  switch (type)
-  {
-  case DataSource::Volume:
-    return "volume";
-  case DataSource::TiltSeries:
-    return "tilt-series";
-  default:
-    assert("Unhandled data source type" && false);
-    return "";
-  }
-}
-
 // Converts the save state string back to a DataSource::DataSourceType
 // Returns true if the type was successfully converted, false otherwise
 // the result is stored in the output paremeter type.
@@ -123,24 +108,6 @@ bool stringToDataSourceType(const char* str, DataSource::DataSourceType& type)
     return true;
   }
   return false;
-}
-
-void serializeDataArray(pugi::xml_node& ns, vtkDataArray* array)
-{
-  ns.append_attribute("components").set_value(array->GetNumberOfComponents());
-  ns.append_attribute("tuples").set_value((int)array->GetNumberOfTuples());
-  std::ostringstream stream;
-  for (int i = 0; i < array->GetNumberOfTuples(); ++i)
-  {
-    double* tuple = array->GetTuple(i);
-    for (int j = 0; j < array->GetNumberOfComponents(); ++j)
-    {
-      stream << tuple[j] << " ";
-    }
-    stream << "\n";
-  }
-  pugi::xml_text text = ns.text();
-  text.set(stream.str().c_str());
 }
 
 void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
@@ -261,15 +228,6 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   ns.append_attribute("number_of_operators").set_value(
     static_cast<int>(this->Internals->Operators.size()));
 
-  ns.append_attribute("type").set_value(
-    dataSourceTypeToString(this->type()));
-  if (this->type() == TiltSeries)
-  {
-    vtkDataArray* tiltAngles = this->Internals->TiltAngles;
-    node = ns.append_child("TiltAngles");
-    serializeDataArray(node, tiltAngles);
-  }
-
   pugi::xml_node scale_node = ns.append_child("Spacing");
   double spacing[3];
   this->getSpacing(spacing);
@@ -307,12 +265,13 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
                       "ScalarOpacityFunction").Set(this->opacityMap());
   this->colorMap()->UpdateVTKObjects();
 
+  // We don't save this anymore, but so that we can continue to read legacy files....
+  // It should either be in the original data or in the Operator pipeline.
   DataSourceType dstype;
-  if (!stringToDataSourceType(ns.attribute("type").value(),dstype))
+  if (ns.attribute("type") && stringToDataSourceType(ns.attribute("type").value(),dstype))
   {
-    return false;
+    this->setType(dstype);
   }
-  this->setType(dstype);
 
   int num_operators = ns.attribute("number_of_operators").as_int(-1);
   if (num_operators < 0)
@@ -323,8 +282,9 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   this->Internals->Operators.clear();
   this->resetData();
 
-  // load tilt angles AFTER resetData call.
-  if (this->type() == TiltSeries)
+  // load tilt angles AFTER resetData call.  Again this is no longer saved and the load code
+  // is for legacy support.  This should be saved by the SetTiltAnglesOperator.
+  if (this->type() == TiltSeries && ns.child("TiltAngles"))
   {
     deserializeDataArray(ns.child("TiltAngles"), this->Internals->TiltAngles);
   }
@@ -687,17 +647,21 @@ void DataSource::resetData()
   Q_ASSERT(tp);
   tp->SetOutput(dataClone);
   dataClone->FastDelete();
-  if (this->Internals->Type == TiltSeries)
+  vtkFieldData *fd = dataClone->GetFieldData();
+  vtkSmartPointer<vtkTypeInt8Array> typeArray = vtkTypeInt8Array::SafeDownCast(
+      fd->GetArray("tomviz_data_source_type"));
+  if (typeArray && typeArray->GetTuple1(0) == TiltSeries)
   {
     this->Internals->ensureTiltAnglesArrayExists();
   }
-  vtkFieldData *fd = dataClone->GetFieldData();
+  else
+  {
+    this->Internals->Type = Volume;
+  }
   if (this->Internals->Units)
   {
     fd->AddArray(this->Internals->Units);
   }
-  vtkSmartPointer<vtkTypeInt8Array> typeArray = vtkTypeInt8Array::SafeDownCast(
-      fd->GetArray("tomviz_data_source_type"));
   if (!typeArray)
   {
     typeArray = vtkSmartPointer<vtkTypeInt8Array>::New();
