@@ -31,6 +31,8 @@ public:
   /// Returns a list of module types
   static QList<QString> operatorTypes();
 
+  static Operator* createConvertToVolumeOperator();
+
   /// Creates an operator of the given type
   static Operator* createOperator(const QString& type, DataSource *ds);
 

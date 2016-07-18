@@ -78,8 +78,6 @@ public:
 
   /// Returns the type of data in this DataSource
   DataSourceType type() const;
-  /// Sets the type of data in the DataSource
-  void setType(DataSourceType t);
 
   /// Returns the color map for the DataSource.
   vtkSMProxy* colorMap() const;
@@ -146,6 +144,9 @@ public slots:
 protected:
   void operate(Operator* op);
   void resetData();
+
+  /// Sets the type of data in the DataSource
+  void setType(DataSourceType t);
 
 protected slots:
   void operatorTransformModified();

@@ -18,6 +18,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "OperatorFactory.h"
 #include "SetTiltAnglesReaction.h"
 
 #include <cassert>
@@ -38,26 +39,32 @@ ToggleDataTypeReaction::~ToggleDataTypeReaction()
 {
 }
 
-void ToggleDataTypeReaction::onTriggered()
+void ToggleDataTypeReaction::toggleDataType(QMainWindow *mw, DataSource *dsource)
 {
-  DataSource* dsource = ActiveObjects::instance().activeDataSource();
+  if (dsource == nullptr)
+  {
+    dsource = ActiveObjects::instance().activeDataSource();
+  }
+  // if it is still null, give up
   if (dsource == nullptr)
   {
     return;
   }
   if (dsource->type() == DataSource::Volume)
   {
-    bool needToSetTiltAngles = !dsource->hasTiltAngles();
-    dsource->setType(DataSource::TiltSeries);
-    if (needToSetTiltAngles)
-    {
-      SetTiltAnglesReaction::showSetTiltAnglesUI(this->mainWindow, dsource);
-    }
+    SetTiltAnglesReaction::showSetTiltAnglesUI(mw, dsource);
   }
   else if (dsource->type() == DataSource::TiltSeries)
   {
-    dsource->setType(DataSource::Volume);
+    Operator *op = OperatorFactory::createConvertToVolumeOperator();
+    dsource->addOperator(op);
   }
+}
+
+void ToggleDataTypeReaction::onTriggered()
+{
+  DataSource *dsource = ActiveObjects::instance().activeDataSource();
+  toggleDataType(this->mainWindow, dsource);
   this->setWidgetText(dsource);
 }
 

@@ -18,6 +18,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "SetTiltAnglesOperator.h"
 #include "SetTiltAnglesReaction.h"
 #include "Utilities.h"
 
@@ -278,23 +279,37 @@ void DataPropertiesPanel::updateData()
 void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
 {
   DataSource* dsource = this->Internals->CurrentDataSource;
+  // The table shouldn't be shown if this is not true, so this slot shouldn't be called
+  Q_ASSERT(dsource->type() == DataSource::TiltSeries);
   QTableWidgetItem* item = this->Internals->Ui.TiltAnglesTable->item(row,
                                                                      column);
-  QString str = item->data(Qt::DisplayRole).toString();
-  if (dsource->type() == DataSource::TiltSeries)
+  bool ok;
+  double value = item->data(Qt::DisplayRole).toDouble(&ok);
+  if (ok)
   {
-    QVector<double> tiltAngles = dsource->getTiltAngles();
-    bool ok;
-    double value = str.toDouble(&ok);
-    if (ok)
+    bool needToAdd = false;
+    SetTiltAnglesOperator *op = nullptr;
+    if (dsource->operators().size() > 0)
     {
-      tiltAngles[row] = value;
-      dsource->setTiltAngles(tiltAngles);
+      op = qobject_cast<SetTiltAnglesOperator*>(dsource->operators().last());
     }
-    else
+    if (!op)
     {
-      std::cerr << "Invalid tilt angle: " << str.toStdString() << std::endl;
+      op = new SetTiltAnglesOperator;
+      op->setParent(dsource);
+      needToAdd = true;
     }
+    auto tiltAngles = op->tiltAngles();
+    tiltAngles[row] = value;
+    op->setTiltAngles(tiltAngles);
+    if (needToAdd)
+    {
+      dsource->addOperator(op);
+    }
+  }
+  else
+  {
+    std::cerr << "Invalid tilt angle." << std::endl;
   }
 }
 

@@ -18,18 +18,10 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "vtkDataArray.h"
-#include "vtkImageData.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkTrivialProducer.h"
+#include "EditOperatorDialog.h"
+#include "SetTiltAnglesOperator.h"
 
-#include <QDialog>
-#include <QDoubleSpinBox>
-#include <QGridLayout>
-#include <QLabel>
 #include <QMainWindow>
-#include <QSpinBox>
-#include <QDialogButtonBox>
 
 namespace tomviz
 {
@@ -63,96 +55,21 @@ void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow *window, DataSource 
   {
     return;
   }
-  QDialog dialog(window);
-  QGridLayout *layout = new QGridLayout;
-
-  QString description_string =
-    "A tomographic \"tilt series\" is a set of projection images taken while rotating"
-    " (\"tilting\") the specimen.  Setting the correct angles is needed for accurate"
-    " reconstruction.\n  Set a linearly spaced range of angles by specifying the start"
-    " and end tilt index and start and end angles.  Note, tilt angles can also be set"
-    " in the \"Data Properties\" panel or within Python.";
-
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-    source->producer()->GetClientSideObject());
-  vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-  int extent[6];
-  data->GetExtent(extent);
-  int totalSlices = extent[5] - extent[4] + 1;
-  double angleIncrement = 1.0;
-  if (totalSlices < 60)
+  auto operators = source->operators();
+  SetTiltAnglesOperator *op = nullptr;
+  bool needToAddOp = false;
+  if (operators.size() > 0)
   {
-    angleIncrement = 3.0;
+    op = qobject_cast<SetTiltAnglesOperator*>(operators[operators.size() - 1]);
   }
-  else if (totalSlices < 80)
+  if (!op)
   {
-    angleIncrement = 2.0;
+    op = new SetTiltAnglesOperator;
+    needToAddOp = true;
   }
-  else if (totalSlices < 120)
-  {
-    angleIncrement = 1.5;
-  }
-
-  QLabel *descriptionLabel = new QLabel(description_string);
-  descriptionLabel->setWordWrap(true);
-  layout->addWidget(descriptionLabel, 0, 0, 1, 4, Qt::AlignCenter);
-  layout->addWidget(new QLabel("Start Image #: "), 1, 0, 1, 1, Qt::AlignCenter);
-  QSpinBox *startTilt = new QSpinBox(&dialog);
-  startTilt->setRange(0,totalSlices-1);
-  startTilt->setValue(0);
-  layout->addWidget(startTilt, 1, 1, 1, 1, Qt::AlignCenter);
-  layout->addWidget(new QLabel("End Image #: "), 2, 0, 1, 1, Qt::AlignCenter);
-  QSpinBox *endTilt = new QSpinBox(&dialog);
-  endTilt->setRange(0,totalSlices-1);
-  endTilt->setValue(totalSlices-1);
-  layout->addWidget(endTilt, 2, 1, 1, 1, Qt::AlignCenter);
-  layout->addWidget(new QLabel("Set Start Angle: "), 1, 2, 1, 1, Qt::AlignCenter);
-  QDoubleSpinBox *startAngle = new QDoubleSpinBox(&dialog);
-  startAngle->setRange(-360.0, 360.0);
-  startAngle->setValue(-(totalSlices - 1) * angleIncrement / 2.0);
-  layout->addWidget(startAngle, 1, 3, 1, 1, Qt::AlignCenter);
-  layout->addWidget(new QLabel("Set End Angle: "), 2, 2, 1, 1, Qt::AlignCenter);
-  QDoubleSpinBox *endAngle = new QDoubleSpinBox(&dialog);
-  endAngle->setRange(-360.0, 360.0);
-  endAngle->setValue(startAngle->value() + (totalSlices - 1) * angleIncrement);
-  layout->addWidget(endAngle, 2, 3, 1, 1, Qt::AlignCenter);
-  
-  QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                   | QDialogButtonBox::Cancel);
-  connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-  connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-
-  layout->addWidget(buttons, 3, 0, 1, 4, Qt::AlignCenter);
-  dialog.setLayout(layout);
-  dialog.setWindowTitle("Set Tilt Angles");
-
-  if (dialog.exec() == QDialog::Accepted)
-  {
-    QVector<double> tiltAngles = source->getTiltAngles();
-    int start = startTilt->value();
-    int end = endTilt->value();
-    if (end == start)
-    {
-      tiltAngles[start] = startAngle->value();
-    }
-    else
-    {
-      double delta = (endAngle->value() - startAngle->value()) / (end - start);
-      double baseAngle = startAngle->value();
-      if (delta < 0)
-      {
-        int temp = start;
-        start = end;
-        end = temp;
-        baseAngle = endAngle->value();
-      }
-      for (int i = 0; start + i <= end; ++i)
-      {
-        tiltAngles[start + i] =  baseAngle + delta * i;
-      }
-    }
-    source->setTiltAngles(tiltAngles);
-  }
+  EditOperatorDialog *dialog = new EditOperatorDialog(op, source, needToAddOp, window);
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->show();
 }
 
 }

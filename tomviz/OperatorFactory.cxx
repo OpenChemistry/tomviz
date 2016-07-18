@@ -20,11 +20,61 @@
 #include "DataSource.h"
 #include "OperatorPython.h"
 #include "ReconstructionOperator.h"
+#include "SetTiltAnglesOperator.h"
 #include "TranslateAlignOperator.h"
 
 #include "vtkImageData.h"
+#include "vtkFieldData.h"
+#include "vtkNew.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkTrivialProducer.h"
+#include "vtkTypeInt8Array.h"
+
+namespace
+{
+class ConvertToVolumeOperator : public tomviz::Operator
+{
+  Q_OBJECT
+public:
+  ConvertToVolumeOperator(QObject *p = nullptr) : Operator(p) {}
+  ~ConvertToVolumeOperator() {}
+
+  QString label() const override { return "Mark as Volume"; }
+  QIcon icon() const override { return QIcon(); }
+  bool serialize(pugi::xml_node&) const override { return true; }
+  bool deserialize(const pugi::xml_node&) override { return true; }
+  tomviz::EditOperatorWidget *getEditorContents(QWidget*,
+      vtkSmartPointer<vtkImageData>) override { return nullptr; }
+  bool hasCustomUI() const override { return false; }
+  Operator* clone() const override { return new ConvertToVolumeOperator; }
+
+protected:
+  bool applyTransform(vtkDataObject *data) override
+  {
+    // The array should already exist... but just in case
+    vtkFieldData *fd = data->GetFieldData();
+    // Make sure the data is marked as a tilt series
+    vtkTypeInt8Array *dataType = vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
+    if (!dataType)
+    {
+      vtkNew<vtkTypeInt8Array> array;
+      array->SetNumberOfTuples(1);
+      array->SetName("tomviz_data_source_type");
+      fd->AddArray(array.Get());
+      dataType = array.Get();
+    }
+    // It should already be this value...
+    dataType->SetTuple1(0, tomviz::DataSource::Volume);
+    return true;
+  }
+
+private:
+  Q_DISABLE_COPY(ConvertToVolumeOperator)
+
+};
+
+#include "OperatorFactory.moc"
+}
 
 namespace tomviz
 {
@@ -40,16 +90,18 @@ OperatorFactory::~OperatorFactory()
 QList<QString> OperatorFactory::operatorTypes()
 {
   QList<QString> reply;
-  reply << "Python" << "ConvertToFloat" << "Crop" << "CxxReconstruction" << "TranslateAlign";
+  reply << "Python" << "ConvertToFloat" << "ConvertToVolume" << "Crop" << "CxxReconstruction" << "SetTiltAngles" << "TranslateAlign";
   qSort(reply);
   return reply;
 }
 
+Operator* OperatorFactory::createConvertToVolumeOperator()
+{
+  return new ConvertToVolumeOperator;
+}
+
 Operator* OperatorFactory::createOperator(const QString &type, DataSource *ds)
 {
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-    ds->producer()->GetClientSideObject());
-  vtkImageData *image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   Operator* op = nullptr;
   if (type == "Python")
@@ -60,6 +112,10 @@ Operator* OperatorFactory::createOperator(const QString &type, DataSource *ds)
   {
     op = new ConvertToFloatOperator();
   }
+  else if (type == "ConvertToVolume")
+  {
+    op = new ConvertToVolumeOperator();
+  }
   else if (type == "Crop")
   {
     op = new CropOperator();
@@ -67,6 +123,10 @@ Operator* OperatorFactory::createOperator(const QString &type, DataSource *ds)
   else if (type == "CxxReconstruction")
   {
     op = new ReconstructionOperator(ds);
+  }
+  else if (type == "SetTiltAngles")
+  {
+    op = new SetTiltAnglesOperator();
   }
   else if (type == "TranslateAlign")
   {
@@ -81,6 +141,10 @@ const char* OperatorFactory::operatorType(Operator* op)
   {
     return "Python";
   }
+  if (qobject_cast<ConvertToVolumeOperator*>(op))
+  {
+    return "ConvertToVolume";
+  }
   if (qobject_cast<ConvertToFloatOperator*>(op))
   {
     return "ConvertToFloat";
@@ -92,6 +156,10 @@ const char* OperatorFactory::operatorType(Operator* op)
   if (qobject_cast<ReconstructionOperator*>(op))
   {
     return "CxxReconstruction";
+  }
+  if (qobject_cast<SetTiltAnglesOperator*>(op))
+  {
+    return "SetTiltAngles";
   }
   if (qobject_cast<TranslateAlignOperator*>(op))
   {
