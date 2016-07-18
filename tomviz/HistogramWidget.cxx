@@ -79,8 +79,9 @@ HistogramWidget::HistogramWidget(QWidget *parent) : QWidget(parent),
   hLayout->addWidget(this->qvtk);
   QVBoxLayout *vLayout = new QVBoxLayout;
   hLayout->addLayout(vLayout);
-  hLayout->setMargin(0);
-  vLayout->setMargin(0);
+  hLayout->setContentsMargins(0, 0, 5, 0);
+
+  vLayout->setContentsMargins(0, 0, 0, 0);
   vLayout->addStretch(1);
 
   QToolButton *button = new QToolButton;
