@@ -845,10 +845,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   }
   else if (scriptLabel == "Reconstruct (Constraint-based Direct Fourier)")
   {
-    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-    vtkImageData *data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    int *extent = data->GetExtent();
-    
     QDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle("Constraint-based Direct Fourier Reconstruction");
     
