@@ -44,7 +44,8 @@ QList<pqStandardViewFrameActionsImplementation::ViewType> ViewFrameActions::avai
 bool ViewFrameActions::isButtonVisible(const std::string &buttonName,
                                        pqView *)
 {
-  if (buttonName == "ForwardButton" || buttonName == "BackButton")
+  if (buttonName == "ForwardButton" || buttonName == "BackButton"
+      || buttonName == "ToggleInteractionMode" || buttonName == "AdjustCamera")
   {
     return true;
   }
