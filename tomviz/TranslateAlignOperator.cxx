@@ -156,7 +156,7 @@ bool TranslateAlignOperator::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
-EditOperatorWidget* TranslateAlignOperator::getEditorContents(QWidget* p,
+EditOperatorWidget* TranslateAlignOperator::getEditorContentsWithData(QWidget* p,
   vtkSmartPointer<vtkImageData> data)
 {
   return new AlignWidget(this, data, p);

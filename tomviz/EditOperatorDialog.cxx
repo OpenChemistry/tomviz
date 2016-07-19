@@ -80,9 +80,13 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource *dataSource,
   QVBoxLayout* vLayout = new QVBoxLayout(this);
   if (op->hasCustomUI())
   {
-    vtkSmartPointer<vtkImageData> snapshotImage =
-        dataSource->getCopyOfImagePriorTo(op);
-    EditOperatorWidget* opWidget = op->getEditorContents(this, snapshotImage);
+    EditOperatorWidget* opWidget = op->getEditorContents(this);
+    if (!opWidget)
+    {
+      vtkSmartPointer<vtkImageData> snapshotImage =
+          dataSource->getCopyOfImagePriorTo(op);
+      opWidget = op->getEditorContentsWithData(this, snapshotImage);
+    }
     vLayout->addWidget(opWidget);
     this->Internals->Widget = opWidget;
     const double *dsPosition = dataSource->displayPosition();

@@ -160,6 +160,8 @@ set(SOURCES
   ScaleActorBehavior.h
   SetScaleReaction.cxx
   SetScaleReaction.h
+  SetTiltAnglesOperator.cxx
+  SetTiltAnglesOperator.h
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
   ToggleDataTypeReaction.h

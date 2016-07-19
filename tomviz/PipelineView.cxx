@@ -23,6 +23,7 @@
 #include "ModuleManager.h"
 #include "Operator.h"
 #include "PipelineModel.h"
+#include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 
 #include <pqCoreUtilities.h>
@@ -30,6 +31,7 @@
 #include <vtkSMViewProxy.h>
 
 #include <QKeyEvent>
+#include <QMainWindow>
 #include <QMenu>
 
 namespace tomviz
@@ -95,11 +97,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent *e)
   if (selectedItem == deleteAction) {
     deleteItem(idx);
   } else if (markAsAction != nullptr && markAsAction == selectedItem) {
-    if (dataSource->type() == DataSource::Volume) {
-      dataSource->setType(DataSource::TiltSeries);
-    } else {
-      dataSource->setType(DataSource::Volume);
-    }
+    QMainWindow* mainWindow = qobject_cast<QMainWindow*>(this->window());
+    ToggleDataTypeReaction::toggleDataType(mainWindow, dataSource);
   }
 }
 

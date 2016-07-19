@@ -43,7 +43,7 @@ public:
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 
-  EditOperatorWidget *getEditorContents(QWidget* parent,
+  EditOperatorWidget *getEditorContentsWithData(QWidget* parent,
     vtkSmartPointer<vtkImageData> data) override;
 
   void setAlignOffsets(const QVector<vtkVector2i> &offsets);

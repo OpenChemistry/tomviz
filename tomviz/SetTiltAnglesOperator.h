@@ -13,48 +13,44 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizCropOperator_h
-#define tomvizCropOperator_h
+#ifndef tomvizSetTiltAnglesOperator_h
+#define tomvizSetTiltAnglesOperator_h
 
 #include "Operator.h"
+
+#include <QMap>
 
 namespace tomviz
 {
 
-class CropOperator : public Operator
+class SetTiltAnglesOperator : public Operator
 {
   Q_OBJECT
-  typedef Operator Superclass;
 
 public:
-  CropOperator(QObject* parent=nullptr);
-  virtual ~CropOperator();
+  SetTiltAnglesOperator(QObject *parent = nullptr);
+  ~SetTiltAnglesOperator() override;
 
-  QString label() const override { return "Crop"; }
-
+  QString label() const override { return "Set Tilt Angles"; }
   QIcon icon() const override;
-
-  Operator* clone() const override;
-
+  Operator *clone() const override;
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
-
   EditOperatorWidget *getEditorContentsWithData(QWidget* parent,
-    vtkSmartPointer<vtkImageData> data) override;
+      vtkSmartPointer<vtkImageData> data) override;
   bool hasCustomUI() const override { return true; }
 
-  void setCropBounds(const int bounds[6]);
-  const int* cropBounds() const
-    { return this->CropBounds; }
+  void setTiltAngles(const QMap<size_t, double>& newAngles);
+  const QMap<size_t, double>& tiltAngles() const { return this->TiltAngles; }
 
 protected:
-  bool applyTransform(vtkDataObject* data) override;
+  bool applyTransform(vtkDataObject *data) override;
+
+  QMap<size_t, double> TiltAngles;
 
 private:
-  int CropBounds[6];
-  Q_DISABLE_COPY(CropOperator)
+  Q_DISABLE_COPY(SetTiltAnglesOperator)
 };
-
 }
 
 #endif

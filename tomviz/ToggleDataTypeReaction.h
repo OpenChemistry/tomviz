@@ -34,6 +34,8 @@ public:
   ToggleDataTypeReaction(QAction* action, QMainWindow *mw);
   ~ToggleDataTypeReaction();
 
+  static void toggleDataType(QMainWindow *mw, DataSource *source = nullptr);
+
 protected:
   /// Called when the action is triggered.
   void onTriggered() override;
