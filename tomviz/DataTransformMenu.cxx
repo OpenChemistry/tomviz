@@ -45,7 +45,12 @@ DataTransformMenu::DataTransformMenu(QMainWindow* mainWindow, QMenu* menu)
   : Superclass(mainWindow),
   Internals(new DTInternals(mainWindow, menu))
 {
+  // Build the menu now
   this->buildMenu();
+
+  // Set up the menu to rebuild every mouse click. This gives us a chance
+  // to update the enabled/disabled state of each menu item.
+  QObject::connect(menu, SIGNAL(aboutToShow()), this, SLOT(buildMenu()));
 }
 
 DataTransformMenu::~DataTransformMenu()
@@ -135,6 +140,9 @@ void DataTransformMenu::buildMenu()
     
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
+
+  // TODO - enable/disable menu actions depending on whether the selected DataSource has
+  // the properties required by the Data Transform
 }
 
 void DataTransformMenu::updateActions()

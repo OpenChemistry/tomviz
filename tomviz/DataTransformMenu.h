@@ -41,7 +41,7 @@ public:
 private slots:
   void updateActions();
 
-protected:
+protected slots:
   void buildMenu();
 
 private:
