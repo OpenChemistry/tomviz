@@ -29,16 +29,11 @@
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddRotateAlignReaction.h"
-#include "AddExpressionReaction.h"
 #include "AddPythonTransformReaction.h"
-#include "AddResampleReaction.h"
 #include "AddRotateAlignReaction.h"
 #include "Behaviors.h"
-#include "CropReaction.h"
-#include "ConvertToFloatReaction.h"
-#include "CloneDataReaction.h"
 #include "DataPropertiesPanel.h"
-#include "DeleteDataReaction.h"
+#include "DataTransformMenu.h"
 #include "LoadDataReaction.h"
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
@@ -58,6 +53,7 @@
 
 #include "PipelineModel.h"
 
+#include <QAction>
 #include <QDir>
 #include <QDebug>
 #include <QFileInfo>
@@ -180,38 +176,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new SetScaleReaction(setScaleAction);
 
   // Build Data Transforms menu
-  // ################################################################
-  QAction *customPythonAction = ui.menuData->addAction("Custom Transform");
-  QAction *cropDataAction = ui.menuData->addAction("Crop");
-  QAction *convertDataAction = ui.menuData->addAction("Convert To Float");
-  ui.menuData->addSeparator();
-  QAction *customPythonITKAction = ui.menuData->addAction("Custom ITK Transform");
-  QAction *binaryThresholdAction = ui.menuData->addAction("Binary Threshold");
-  QAction *connectedComponentsAction = ui.menuData->addAction("Connected Components");
-  ui.menuData->addSeparator();
-  QAction *shiftUniformAction = ui.menuData->addAction("Shift Volume");
-  QAction *deleteSliceAction = ui.menuData->addAction("Delete Slices");
-  QAction *padVolumeAction = ui.menuData->addAction("Pad Volume");
-  QAction *downsampleByTwoAction = ui.menuData->addAction("Downsample x2");
-  QAction *resampleAction = ui.menuData->addAction("Resample");
-  QAction *rotateAction = ui.menuData->addAction("Rotate");
-  QAction *clearAction = ui.menuData->addAction("Clear Subvolume");
-  ui.menuData->addSeparator();
-  QAction *setNegativeVoxelsToZeroAction = ui.menuData->addAction("Set Negative Voxels To Zero");
-  QAction *invertDataAction = ui.menuData->addAction("Invert Data");
-  QAction *squareRootAction = ui.menuData->addAction("Square Root Data");
-  QAction *hannWindowAction = ui.menuData->addAction("Hann Window");
-  QAction *fftAbsLogAction = ui.menuData->addAction("FFT (abs log)");
-  QAction *gradientMagnitudeSobelAction = ui.menuData->addAction("Gradient Magnitude");
-  QAction *laplaceFilterAction = ui.menuData->addAction("Laplace Filter");
-  QAction *gaussianFilterAction = ui.menuData->addAction("Gaussian Filter");
-  QAction *medianFilterAction = ui.menuData->addAction("Median Filter");
-  ui.menuData->addSeparator();
-
-  QAction *cloneAction = ui.menuData->addAction("Clone");
-  QAction *deleteDataAction = ui.menuData->addAction(
-      QIcon(":/QtWidgets/Icons/pqDelete32.png"), "Delete Data and Modules");
-  deleteDataAction->setToolTip("Delete Data");
+  new DataTransformMenu(this, ui.menuData);
 
   // Build Tomography menu
   // ################################################################
@@ -243,52 +208,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuTomography->addSeparator();
   QAction *generateTiltSeriesAction = ui.menuTomography->addAction("Generate Tilt Series");
 
-  // Set up reactions for Data Transforms Menu
-  //#################################################################
-
-  // Add our Python script reactions, these compose Python into menu entries.
-  new AddExpressionReaction(customPythonAction);
-  new AddExpressionReaction(customPythonITKAction);
-  new CropReaction(cropDataAction, this);
-  new ConvertToFloatReaction(convertDataAction);
-  new AddPythonTransformReaction(binaryThresholdAction,
-                                 "Binary Threshold", readInPythonScript("BinaryThreshold"));
-  new AddPythonTransformReaction(connectedComponentsAction,
-                                 "Connected Components", readInPythonScript("ConnectedComponents"));
-  new AddPythonTransformReaction(shiftUniformAction,
-                                 "Shift Volume", readInPythonScript("Shift_Stack_Uniformly"));
-  new AddPythonTransformReaction(deleteSliceAction,
-                                   "Delete Slices", readInPythonScript("deleteSlices"));
-  new AddPythonTransformReaction(padVolumeAction,
-                                 "Pad Volume", readInPythonScript("Pad_Data"));
-  new AddPythonTransformReaction(downsampleByTwoAction,
-                                   "Downsample x2", readInPythonScript("DownsampleByTwo"));
-  new AddPythonTransformReaction(resampleAction,
-                                   "Resample", readInPythonScript("Resample"));
-  new AddPythonTransformReaction(rotateAction,
-                                 "Rotate", readInPythonScript("Rotate3D"));
-  new AddPythonTransformReaction(clearAction, "Clear Volume", readInPythonScript("ClearVolume"));
-  new AddPythonTransformReaction(setNegativeVoxelsToZeroAction,
-                                 "Set Negative Voxels to Zero", readInPythonScript("SetNegativeVoxelsToZero"));
-  new AddPythonTransformReaction(invertDataAction, "Invert Data",
-                                 readInPythonScript("InvertData"));
-  new AddPythonTransformReaction(squareRootAction,
-                                 "Square Root Data", readInPythonScript("Square_Root_Data"));
-  new AddPythonTransformReaction(hannWindowAction,
-                                 "Hann Window", readInPythonScript("HannWindow3D"));
-  new AddPythonTransformReaction(fftAbsLogAction,
-                                 "FFT (ABS LOG)", readInPythonScript("FFT_AbsLog"));
-  new AddPythonTransformReaction(gradientMagnitudeSobelAction,
-                                   "Gradient Magnitude", readInPythonScript("GradientMagnitude_Sobel"));
-  new AddPythonTransformReaction(laplaceFilterAction,
-                                   "Laplace Filter", readInPythonScript("LaplaceFilter"));
-  new AddPythonTransformReaction(gaussianFilterAction,
-                                   "Gaussian Filter", readInPythonScript("GaussianFilter"));
-  new AddPythonTransformReaction(medianFilterAction,
-                                   "Median Filter", readInPythonScript("MedianFilter"));
-    
-  new CloneDataReaction(cloneAction);
-  new DeleteDataReaction(deleteDataAction);
   // Set up reactions for Tomography Menu
   //#################################################################
   new ToggleDataTypeReaction(toggleDataTypeAction, this);

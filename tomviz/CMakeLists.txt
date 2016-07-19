@@ -84,6 +84,8 @@ set(SOURCES
   DataPropertiesPanel.h
   DataSource.cxx
   DataSource.h
+  DataTransformMenu.cxx
+  DataTransformMenu.h
   DeleteDataReaction.cxx
   DeleteDataReaction.h
   DoubleSliderWidget.cxx
