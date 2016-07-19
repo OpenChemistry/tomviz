@@ -272,7 +272,7 @@ bool SetTiltAnglesOperator::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
-EditOperatorWidget *SetTiltAnglesOperator::getEditorContents(QWidget *p,
+EditOperatorWidget *SetTiltAnglesOperator::getEditorContentsWithData(QWidget *p,
     vtkSmartPointer<vtkImageData> dataObject)
 {
   return new SetTiltAnglesWidget(this, dataObject, p);

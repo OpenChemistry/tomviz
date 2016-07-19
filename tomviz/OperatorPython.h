@@ -45,8 +45,7 @@ public:
   void setScript(const QString& str);
   const QString& script() const { return this->Script; }
 
-  EditOperatorWidget* getEditorContents(QWidget* parent,
-    vtkSmartPointer<vtkImageData>) override;
+  EditOperatorWidget* getEditorContents(QWidget* parent) override;
   bool hasCustomUI() const override { return true; }
 
 protected:

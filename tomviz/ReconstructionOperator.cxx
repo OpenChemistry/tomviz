@@ -74,12 +74,6 @@ bool ReconstructionOperator::deserialize(const pugi::xml_node&)
   return true;
 }
 
-EditOperatorWidget *ReconstructionOperator::getEditorContents(QWidget*, vtkSmartPointer<vtkImageData>)
-{
-  // No options to set
-  return nullptr;
-}
-
 QWidget *ReconstructionOperator::getCustomProgressWidget(QWidget* p) const
 {
   ReconstructionWidget *widget = new ReconstructionWidget(this->dataSource, p);

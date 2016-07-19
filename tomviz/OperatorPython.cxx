@@ -208,7 +208,7 @@ bool OperatorPython::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
-EditOperatorWidget *OperatorPython::getEditorContents(QWidget *p, vtkSmartPointer<vtkImageData>)
+EditOperatorWidget *OperatorPython::getEditorContents(QWidget *p)
 {
   return new EditPythonOperatorWidget(p, this);
 }

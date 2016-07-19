@@ -20,6 +20,7 @@
 #include <QIcon>
 #include <vtk_pugixml.h>
 #include <vtkSmartPointer.h>
+#include <vtkObject.h>
 
 class vtkDataObject;
 class vtkImageData;
@@ -56,14 +57,22 @@ public:
   virtual bool serialize(pugi::xml_node& in) const = 0;
   virtual bool deserialize(const pugi::xml_node& ns) = 0;
 
+  /// There are two versions of this function, this one and getEditorContentsWithData.
+  /// Subclasses should override this one if their editors do not need the previous
+  /// state of the data.  Subclasses should override the other if they need the data
+  /// just prior to this Operator for the widget to display correctly.  If this data
+  /// is needed, the default implementation to return nullptr should be left for this
+  /// function.
+  virtual EditOperatorWidget* getEditorContents(QWidget* vtkNotUsed(parent)) { return nullptr; }
   /// Should return a widget for editing customizable parameters on this
   /// operator or nullptr if there is nothing to edit.  The vtkImageData
   /// is a copy of the DataSource's image with all Operators prior in the
   /// pipeline applied to it.  This should be used if the widget needs to
   /// display the VTK data, but modifications to it will not affect the
   /// DataSource.
-  virtual EditOperatorWidget* getEditorContents(QWidget* parent,
-      vtkSmartPointer<vtkImageData> inputDataForDisplay) = 0;
+  virtual EditOperatorWidget* getEditorContentsWithData(QWidget* parent,
+      vtkSmartPointer<vtkImageData> vtkNotUsed(inputDataForDisplay))
+  { return this->getEditorContents(parent); }
   /// Should return true if the Operator has a non-null widget to return from
   /// getEditorContents.
   virtual bool hasCustomUI() const { return false; }
