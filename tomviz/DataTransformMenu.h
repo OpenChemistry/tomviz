@@ -41,6 +41,9 @@ public:
 private slots:
   void updateActions();
 
+protected:
+  void buildMenu();
+
 private:
   Q_DISABLE_COPY(DataTransformMenu);
   QPointer<QMenu> Menu;

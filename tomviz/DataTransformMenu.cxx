@@ -33,15 +33,31 @@ namespace tomviz
 class DataTransformMenu::DTInternals
 {
 public:
-  DTInternals(QMenu* menu) : Menu(menu) {}
+  DTInternals(QMainWindow* mainWindow, QMenu* menu) :
+    MainWindow(mainWindow), Menu(menu) {}
   ~DTInternals() {}
+
+  QMainWindow* MainWindow;
   QMenu* Menu;
 };
 
 DataTransformMenu::DataTransformMenu(QMainWindow* mainWindow, QMenu* menu)
   : Superclass(mainWindow),
-  Internals(new DTInternals(menu))
+  Internals(new DTInternals(mainWindow, menu))
 {
+  this->buildMenu();
+}
+
+DataTransformMenu::~DataTransformMenu()
+{
+}
+
+void DataTransformMenu::buildMenu()
+{
+  QMainWindow* mainWindow = this->Internals->MainWindow;
+  QMenu* menu = this->Internals->Menu;
+  menu->clear();
+
   // Build the Data Transforms menu
   QAction *customPythonAction = menu->addAction("Custom Transform");
   
@@ -119,10 +135,6 @@ DataTransformMenu::DataTransformMenu(QMainWindow* mainWindow, QMenu* menu)
     
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
-}
-
-DataTransformMenu::~DataTransformMenu()
-{
 }
 
 void DataTransformMenu::updateActions()
