@@ -72,7 +72,6 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
   this->connect(ui.SearchBox, SIGNAL(textChanged(const QString&)),
                 SLOT(updatePanel()));
 */
-  this->connect(ui.Delete, SIGNAL(clicked()), SLOT(deleteModule()));
 
   this->connect(ui.DetachColorMap, SIGNAL(clicked(bool)),
                 SLOT(detachColorMap(bool)));
@@ -128,7 +127,6 @@ void ModulePropertiesPanel::setModule(Module* module)
   }
   ui.PropertiesWidget->layout()->update();
   this->updatePanel();
-  ui.Delete->setEnabled(module != nullptr);
 }
 
 void ModulePropertiesPanel::setView(vtkSMViewProxy* vtkNotUsed(view))
@@ -144,12 +142,6 @@ void ModulePropertiesPanel::updatePanel()
     DataSource* dataSource = this->Internals->ActiveModule->dataSource();
     ui.ColorByLabelMap->setVisible(dataSource && dataSource->hasLabelMap());
   }
-}
-
-void ModulePropertiesPanel::deleteModule()
-{
-  ModuleManager::instance().removeModule(this->Internals->ActiveModule);
-  this->render();
 }
 
 void ModulePropertiesPanel::render()
