@@ -232,7 +232,7 @@
     <string>Properties</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>2</number>
+    <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
     <property name="sizePolicy">
