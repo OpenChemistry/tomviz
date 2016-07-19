@@ -20,6 +20,7 @@
 #include "OperatorPython.h"
 #include "SelectVolumeWidget.h"
 #include "EditOperatorDialog.h"
+#include "SpinBox.h"
 
 #include <pqCoreUtilities.h>
 #include <vtkImageData.h>
@@ -49,8 +50,8 @@ public:
   SelectSliceRangeWidget(int *ext, bool showAxisSelector = true,
                          QWidget* p = nullptr)
     : Superclass(p),
-      firstSlice(new QSpinBox(this)),
-      lastSlice(new QSpinBox(this)),
+      firstSlice(new tomviz::SpinBox(this)),
+      lastSlice(new tomviz::SpinBox(this)),
       axisSelect(new QComboBox(this))
   {
     for (int i = 0; i < 6; ++i)
@@ -93,10 +94,10 @@ public:
 
     this->setLayout(widgetLayout);
 
-    this->connect(this->firstSlice, SIGNAL(valueChanged(int)),
-                  SLOT(onMinimumChanged(int)));
-    this->connect(this->lastSlice, SIGNAL(valueChanged(int)),
-                  SLOT(onMaximumChanged(int)));
+    QObject::connect(this->firstSlice, SIGNAL(editingFinished()),
+                  this, SLOT(onMinimumChanged()));
+    QObject::connect(this->lastSlice, SIGNAL(editingFinished()),
+                  this, SLOT(onMaximumChanged()));
     this->connect(axisSelect, SIGNAL(currentIndexChanged(int)),
                   SLOT(onAxisChanged(int)));
   }
@@ -119,16 +120,18 @@ public:
   }
 
 public slots:
-  void onMinimumChanged(int val)
+  void onMinimumChanged()
   {
+    int val = this->firstSlice->value();
     if (this->lastSlice->value() < val)
     {
       this->lastSlice->setValue(val);
     }
   }
 
-  void onMaximumChanged(int val)
+  void onMaximumChanged()
   {
+    int val = this->lastSlice->value();
     if (this->firstSlice->value() > val)
     {
       this->firstSlice->setValue(val);
@@ -144,8 +147,8 @@ public slots:
 
 private:
   Q_DISABLE_COPY(SelectSliceRangeWidget)
-  QSpinBox *firstSlice; // delete slices starting at this slice index
-  QSpinBox *lastSlice; // delete slices ending at this slice index
+  tomviz::SpinBox *firstSlice; // delete slices starting at this slice index
+  tomviz::SpinBox *lastSlice; // delete slices ending at this slice index
   QComboBox *axisSelect;
   int Extent[6];
 };

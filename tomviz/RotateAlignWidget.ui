@@ -38,7 +38,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="projection"/>
+          <widget class="tomviz::SpinBox" name="projection"/>
          </item>
         </layout>
        </item>
@@ -52,7 +52,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="rotationAxis"/>
+          <widget class="tomviz::DoubleSpinBox" name="rotationAxis"/>
          </item>
          <item>
           <widget class="QLabel" name="label_6">
@@ -62,7 +62,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QDoubleSpinBox" name="rotationAngle">
+          <widget class="tomviz::DoubleSpinBox" name="rotationAngle">
            <property name="minimum">
             <double>-180.000000000000000</double>
            </property>
@@ -151,7 +151,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="spinBox_1"/>
+          <widget class="tomviz::SpinBox" name="spinBox_1"/>
          </item>
         </layout>
        </item>
@@ -185,7 +185,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="spinBox_2"/>
+          <widget class="tomviz::SpinBox" name="spinBox_2"/>
          </item>
         </layout>
        </item>
@@ -219,7 +219,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="spinBox_3"/>
+          <widget class="tomviz::SpinBox" name="spinBox_3"/>
          </item>
         </layout>
        </item>
@@ -251,6 +251,16 @@
    <extends>QWidget</extends>
    <header>QVTKWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>SpinBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::DoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>DoubleSpinBox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
