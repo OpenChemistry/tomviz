@@ -317,6 +317,10 @@ bool SetTiltAnglesOperator::applyTransform(vtkDataObject *dataObject)
     fd->AddArray(angles.Get());
     dataTiltAngles = angles.Get();
   }
+  else if (dataTiltAngles->GetNumberOfTuples() < totalSlices)
+  {
+    dataTiltAngles->SetNumberOfTuples(totalSlices);
+  }
   for (auto itr = std::begin(this->TiltAngles); itr != std::end(this->TiltAngles); ++itr)
   {
     dataTiltAngles->SetTuple(itr.key(), &itr.value());
