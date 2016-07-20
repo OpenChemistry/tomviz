@@ -104,12 +104,13 @@ namespace tomviz
 class MainWindow::MWInternals
 {
 public:
-  MWInternals() : AboutDialog(nullptr) { ; }
+  MWInternals() : AboutDialog(nullptr), isFirstShow(true) { ; }
 
   Ui::MainWindow Ui;
   Ui::AboutDialog AboutUi;
   QDialog *AboutDialog;
   QTimer *Timer;
+  bool isFirstShow;
 };
 
 MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
@@ -439,7 +440,11 @@ void MainWindow::moduleChanged(Module*)
 void MainWindow::showEvent(QShowEvent *e)
 {
   Superclass::showEvent(e);
-  QTimer::singleShot(1,this,SLOT(checkForAutosaveFile()));
+  if (this->Internals->isFirstShow)
+  {
+    this->Internals->isFirstShow = false;
+    QTimer::singleShot(1,this,SLOT(checkForAutosaveFile()));
+  }
 }
 
 void MainWindow::checkForAutosaveFile()
