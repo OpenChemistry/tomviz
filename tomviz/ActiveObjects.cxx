@@ -101,6 +101,7 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
     {
       QObject::connect(source, SIGNAL(dataChanged()),
                        this, SLOT(dataSourceChanged()));
+      this->ActiveDataSourceType = source->type();
     }
     this->ActiveDataSource = source;
     this->VoidActiveDataSource = source;
