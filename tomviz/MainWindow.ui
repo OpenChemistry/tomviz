@@ -125,9 +125,6 @@
      </property>
      <item>
       <widget class="tomviz::PipelineView" name="treeWidget">
-       <property name="styleSheet">
-        <string notr="true"/>
-       </property>
        <property name="dragEnabled">
         <bool>true</bool>
        </property>
@@ -235,12 +232,6 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
-    <property name="sizePolicy">
-     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
-     </sizepolicy>
-    </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <property name="leftMargin">
       <number>0</number>
@@ -256,12 +247,6 @@
      </property>
      <item>
       <widget class="QScrollArea" name="scrollArea">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
        <property name="frameShape">
         <enum>QFrame::NoFrame</enum>
        </property>
@@ -272,14 +257,6 @@
         <bool>true</bool>
        </property>
        <widget class="QWidget" name="propertiesPanel">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>296</width>
-          <height>874</height>
-         </rect>
-        </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
           <widget class="QStackedWidget" name="propertiesPanelStackedWidget">

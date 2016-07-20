@@ -2,14 +2,6 @@
 <ui version="4.0">
  <class>DataPropertiesPanel</class>
  <widget class="QWidget" name="DataPropertiesPanel">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>330</width>
-    <height>480</height>
-   </rect>
-  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
