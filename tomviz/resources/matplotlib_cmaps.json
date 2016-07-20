@@ -234,7 +234,7 @@
         ]
     },
     {
-        "ColorSpace" : "Diverging",
+        "ColorSpace" : "RGB",
         "Name" : "Viridis_17",
         "NanColor" : [ 1, 1, 1 ],
         "Source" : "https://github.com/BIDS/colormap/blob/master/colormaps.py",
