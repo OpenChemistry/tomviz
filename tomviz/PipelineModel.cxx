@@ -403,20 +403,32 @@ int PipelineModel::columnCount(const QModelIndex &) const
 
 DataSource* PipelineModel::dataSource(const QModelIndex &idx)
 {
+  if (!idx.isValid())
+  {
+    return nullptr;
+  }
   auto treeItem = static_cast<TreeItem*>(idx.internalPointer());
-  return treeItem->dataSource();
+  return (treeItem ? treeItem->dataSource() : nullptr);
 }
 
 Module* PipelineModel::module(const QModelIndex &idx)
 {
+  if (!idx.isValid())
+  {
+    return nullptr;
+  }
   auto treeItem = static_cast<TreeItem*>(idx.internalPointer());
-  return treeItem->module();
+  return (treeItem ? treeItem->module() : nullptr);
 }
 
 Operator* PipelineModel::op(const QModelIndex &idx)
 {
+  if (!idx.isValid())
+  {
+    return nullptr;
+  }
   auto treeItem = static_cast<TreeItem*>(idx.internalPointer());
-  return treeItem->op();
+  return (treeItem ? treeItem->op() : nullptr);
 }
 
 QModelIndex PipelineModel::dataSourceIndex(DataSource *source)
