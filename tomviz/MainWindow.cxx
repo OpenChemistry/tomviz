@@ -427,13 +427,13 @@ void MainWindow::openRecon()
 void MainWindow::dataSourceChanged(DataSource*)
 {
   this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
-    this->Internals->Ui.dataPropertiesPanel);
+    this->Internals->Ui.dataPropertiesScrollArea);
 }
 
 void MainWindow::moduleChanged(Module*)
 {
   this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
-    this->Internals->Ui.modulePropertiesPanel);
+    this->Internals->Ui.modulePropertiesScrollArea);
 }
 
 void MainWindow::showEvent(QShowEvent *e)
