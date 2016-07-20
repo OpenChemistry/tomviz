@@ -150,7 +150,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.treeWidget->header()->setSectionResizeMode(1, QHeaderView::Fixed);
   ui.treeWidget->header()->resizeSection(1, 30);
   // Ensure that items are expanded by default, can be collapsed at will.
-  connect(ui.treeWidget->model(), SIGNAL(rowsInserted(QModelIndex,int,int)),
+  connect(ui.treeWidget->model(), SIGNAL(rowsInserted(QModelIndex, int, int)),
           ui.treeWidget, SLOT(expandAll()));
   connect(ui.treeWidget->model(), SIGNAL(modelReset()),
           ui.treeWidget, SLOT(expandAll()));
@@ -443,7 +443,7 @@ void MainWindow::showEvent(QShowEvent *e)
   if (this->Internals->isFirstShow)
   {
     this->Internals->isFirstShow = false;
-    QTimer::singleShot(1,this,SLOT(checkForAutosaveFile()));
+    QTimer::singleShot(1, this, SLOT(checkForAutosaveFile()));
   }
 }
 
