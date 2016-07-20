@@ -207,10 +207,12 @@ void ModuleContour::addToPanel(QWidget* panel)
   layout->addRow("Representation", representations);
   // TODO connect to update function
 
-  DoubleSliderWidget *opacitySlider = new DoubleSliderWidget(false);
+  DoubleSliderWidget *opacitySlider = new DoubleSliderWidget(true);
+  opacitySlider->setLineEditWidth(50);
   layout->addRow("Opacity", opacitySlider);
 
-  DoubleSliderWidget *specularSlider = new DoubleSliderWidget(false);
+  DoubleSliderWidget *specularSlider = new DoubleSliderWidget(true);
+  specularSlider->setLineEditWidth(50);
   layout->addRow("Specular", specularSlider);
 
   pqSignalAdaptorComboBox *adaptor = new pqSignalAdaptorComboBox(representations);
