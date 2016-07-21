@@ -16,12 +16,12 @@ be used to point to them if they are not found automatically.
 Dependencies
 ------------
 
- * Qt 5.5.1
- * CMake 3.1 (2.8.8 minimum)
+ * Qt 5.5.1 (5.7.0 recommended)
+ * CMake 3.3
  * Python 2.7
  * NumPy 1.8
  * Git 2.1
- * C++ compiler
+ * C++ compiler with C++11 support
  * Intel TBB
 
 Initial Build
@@ -43,6 +43,8 @@ prerequisites installed:
       -DVTK_RENDERING_BACKEND:STRING=OpenGL2 \
       -DVTK_SMP_IMPLEMENTATION_TYPE:STRING=TBB \
       -DPARAVIEW_ENABLE_WEB:BOOL=OFF \
+      -DVTK_USE_CXX11_FEATURES:BOOL=ON\
+      -DPARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION:BOOL=OFF\
       -DBUILD_TESTING:BOOL=OFF \
       ../paraview
     cmake --build .
