@@ -47,6 +47,7 @@ namespace tomviz
 {
 
 class DataSource;
+class SpinBox;
 class TranslateAlignOperator;
 class ViewMode;
 
@@ -64,27 +65,32 @@ public:
 
   void applyChangesToOperator() override;
 
-protected slots:
-  void changeMode(int mode);
-  void onTimeout();
+protected:
   void changeSlice(int delta);
   void setSlice(int slice, bool resetInc = true);
-  void updateReference();
-  void setFrameRate(int rate);
   void widgetKeyPress(QKeyEvent *key);
   void applySliceOffset(int sliceNumber = -1);
+
+  void zoomToSelectionFinished();
+
+protected slots:
+  void changeMode(int mode);
+  void updateReference();
+  void setFrameRate(int rate);
+  void currentSliceEdited();
+
   void startAlign();
   void stopAlign();
+  void onTimeout();
 
   void zoomToSelectionStart();
-  void zoomToSelectionFinished();
 
   void resetCamera();
 
-  void sliceOffsetEdited(int slice, int offsetComponent);
-
   void onPresetClicked();
   void applyCurrentPreset();
+
+  void sliceOffsetEdited(int slice, int offsetComponent);
 
 protected:
   vtkNew<vtkImageSlice> imageSlice;
@@ -97,7 +103,7 @@ protected:
 
   QComboBox *modeSelect;
   QTimer *timer;
-  QSpinBox *currentSlice;
+  SpinBox *currentSlice;
   QLabel *currentSliceOffset;
   QButtonGroup *referenceSliceMode;
   QRadioButton *prevButton;

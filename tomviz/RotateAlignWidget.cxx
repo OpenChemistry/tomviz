@@ -59,6 +59,7 @@
 #include <QSpinBox>
 #include <QPointer>
 #include <QDoubleSpinBox>
+#include <QTimer>
 
 
 namespace tomviz
@@ -297,18 +298,24 @@ RotateAlignWidget::RotateAlignWidget(DataSource *source, QWidget *p)
 
   this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource *)),
                 SLOT(setDataSource(DataSource *)));
-  this->connect(this->Internals->Ui.projection, SIGNAL(valueChanged(int)),
-                SLOT(onProjectionNumberChanged(int)));
-  this->connect(this->Internals->Ui.spinBox_1, SIGNAL(valueChanged(int)),
-                SLOT(onReconSliceChanged(int)));
-  this->connect(this->Internals->Ui.spinBox_2, SIGNAL(valueChanged(int)),
-                SLOT(onReconSliceChanged(int)));
-  this->connect(this->Internals->Ui.spinBox_3, SIGNAL(valueChanged(int)),
-                SLOT(onReconSliceChanged(int)));
-  this->connect(this->Internals->Ui.rotationAxis, SIGNAL(valueChanged(double)),
-                SLOT(onRotationAxisChanged()));
-  this->connect(this->Internals->Ui.rotationAngle, SIGNAL(valueChanged(double)),
-                SLOT(onRotationAxisChanged()));
+
+  QObject::connect(this->Internals->Ui.projection, SIGNAL(editingFinished()),
+                this, SLOT(onProjectionNumberChanged()));
+
+  QObject::connect(this->Internals->Ui.spinBox_1, SIGNAL(editingFinished()),
+                this, SLOT(onReconSlice0Changed()));
+
+  QObject::connect(this->Internals->Ui.spinBox_2, SIGNAL(editingFinished()),
+                this, SLOT(onReconSlice1Changed()));
+
+  QObject::connect(this->Internals->Ui.spinBox_3, SIGNAL(editingFinished()),
+                this, SLOT(onReconSlice2Changed()));
+
+  QObject::connect(this->Internals->Ui.rotationAxis, SIGNAL(editingFinished()),
+                this, SLOT(onRotationAxisChanged()));
+  QObject::connect(this->Internals->Ui.rotationAngle, SIGNAL(editingFinished()),
+                this, SLOT(onRotationAxisChanged()));
+
   this->connect(this->Internals->Ui.pushButton, SIGNAL(pressed()),
                 SLOT(onFinalReconButtonPressed()));
 
@@ -368,8 +375,9 @@ void RotateAlignWidget::setDataSource(DataSource *source)
   updateWidgets();
 }
 
-void RotateAlignWidget::onProjectionNumberChanged(int newVal)
+void RotateAlignWidget::onProjectionNumberChanged()
 {
+  int newVal = this->Internals->Ui.projection->value();
   vtkTrivialProducer *t =
       vtkTrivialProducer::SafeDownCast(this->Internals->Source->producer()->GetClientSideObject());
   if (!t)
@@ -402,27 +410,37 @@ void RotateAlignWidget::onRotationAxisChanged()
   this->Internals->Ui.sliceView_3->update();
 }
 
-void RotateAlignWidget::onReconSliceChanged(int)
+void RotateAlignWidget::onReconSlice0Changed()
 {
-  QSpinBox *sb = qobject_cast<QSpinBox*>(this->sender());
+  this->onReconSliceChanged(0);
+}
+
+void RotateAlignWidget::onReconSlice1Changed()
+{
+  this->onReconSliceChanged(1);
+}
+
+void RotateAlignWidget::onReconSlice2Changed()
+{
+  this->onReconSliceChanged(2);
+}
+
+void RotateAlignWidget::onReconSliceChanged(int idx)
+{
   this->Internals->updateSliceLines();
   this->Internals->Ui.sliceView->update();
-  if (sb == this->Internals->Ui.spinBox_1)
+  this->Internals->updateReconSlice(idx);
+  this->Internals->reconSliceMapper[idx]->Update();
+  if (idx == 0)
   {
-    this->Internals->updateReconSlice(0);
-    this->Internals->reconSliceMapper[0]->Update();
     this->Internals->Ui.sliceView_1->update();
   }
-  else if (sb == this->Internals->Ui.spinBox_2)
+  else if (idx == 1)
   {
-    this->Internals->updateReconSlice(1);
-    this->Internals->reconSliceMapper[1]->Update();
     this->Internals->Ui.sliceView_2->update();
   }
-  else // if (sb == this->Internals->Ui.spinBox_3)
+  else // if (idx == 2)
   {
-    this->Internals->updateReconSlice(2);
-    this->Internals->reconSliceMapper[2]->Update();
     this->Internals->Ui.sliceView_3->update();
   }
 }

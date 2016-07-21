@@ -39,13 +39,18 @@ signals:
   void creatingAlignedData();
 
 protected slots:
-  void onProjectionNumberChanged(int newVal);
+  void onProjectionNumberChanged();
   void onRotationAxisChanged();
-  void onReconSliceChanged(int newSlice);
+  void onReconSlice0Changed();
+  void onReconSlice1Changed();
+  void onReconSlice2Changed();
 
   void updateWidgets();
 
   void onFinalReconButtonPressed();
+
+private:
+  void onReconSliceChanged(int idx);
 
 private:
   Q_DISABLE_COPY(RotateAlignWidget)

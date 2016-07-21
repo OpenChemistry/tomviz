@@ -88,6 +88,8 @@ set(SOURCES
   DeleteDataReaction.h
   DoubleSliderWidget.cxx
   DoubleSliderWidget.h
+  DoubleSpinBox.cxx
+  DoubleSpinBox.h
   EditOperatorDialog.cxx
   EditOperatorDialog.h
   EditOperatorWidget.cxx
@@ -164,6 +166,8 @@ set(SOURCES
   SetTiltAnglesOperator.h
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
+  SpinBox.cxx
+  SpinBox.h
   ToggleDataTypeReaction.h
   ToggleDataTypeReaction.cxx
   TomographyReconstruction.h

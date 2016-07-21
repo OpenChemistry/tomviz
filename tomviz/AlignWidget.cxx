@@ -19,6 +19,7 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "SpinBox.h"
 #include "TranslateAlignOperator.h"
 #include "Utilities.h"
 
@@ -414,12 +415,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   v->addStretch(1);
   QLabel *label = new QLabel("Current image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
-  this->currentSlice = new QSpinBox;
+  this->currentSlice = new SpinBox;
   this->currentSlice->setValue(1);
   this->currentSlice->setRange(this->minSliceNum,
                                           this->maxSliceNum);
-  connect(this->currentSlice, SIGNAL(valueChanged(int)), SLOT(setSlice(int)));
-  connect(this->currentSlice, SIGNAL(valueChanged(int)), SLOT(updateReference()));
+  connect(this->currentSlice, SIGNAL(editingFinished()), this, SLOT(currentSliceEdited()));
   grid->addWidget(this->currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
   label = new QLabel("Shortcut: (A/S)");
   grid->addWidget(label, gridrow, 2, 1, 1, Qt::AlignRight);
@@ -594,6 +594,12 @@ void AlignWidget::changeSlice(int delta)
   }
   this->currentSlice->setValue(i);
   this->setSlice(i, false);
+}
+
+void AlignWidget::currentSliceEdited()
+{
+  this->setSlice(this->currentSlice->value());
+  this->updateReference();
 }
 
 void AlignWidget::setSlice(int slice, bool resetInc)
