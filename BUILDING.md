@@ -16,12 +16,12 @@ be used to point to them if they are not found automatically.
 Dependencies
 ------------
 
- * Qt 5.5.1
- * CMake 3.1 (2.8.8 minimum)
+ * Qt 5.5.1 (5.7.0 recommended)
+ * CMake 3.3
  * Python 2.7
  * NumPy 1.8
  * Git 2.1
- * C++ compiler
+ * C++ compiler with C++11 support
  * Intel TBB
 
 Initial Build
