@@ -192,6 +192,8 @@ set(SOURCES
   vtkCustomPiecewiseControlPointsItem.h
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
+  WelcomeDialog.cxx
+  WelcomeDialog.h
   )
 
 set(python_files
@@ -273,6 +275,7 @@ qt5_wrap_ui(UI_SOURCES
   RotateAlignWidget.ui
   ReconstructionWidget.ui
   ViewPropertiesPanel.ui
+  WelcomeDialog.ui
   )
 qt5_add_resources(RCC_SOURCES resources.qrc)
 

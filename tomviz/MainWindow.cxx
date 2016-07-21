@@ -22,6 +22,7 @@
 #include <pqSaveAnimationReaction.h>
 #include <pqSaveScreenshotReaction.h>
 #include <pqSaveStateReaction.h>
+#include <pqSettings.h>
 #include <vtkPVPlugin.h>
 #include <vtkSMSettings.h>
 
@@ -55,6 +56,7 @@
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 #include "ViewMenuManager.h"
+#include "WelcomeDialog.h"
 
 #include "PipelineModel.h"
 
@@ -455,7 +457,7 @@ void MainWindow::showEvent(QShowEvent *e)
   if (this->Internals->isFirstShow)
   {
     this->Internals->isFirstShow = false;
-    QTimer::singleShot(1, this, SLOT(checkForAutosaveFile()));
+    QTimer::singleShot(1, this, SLOT(onFirstWindowShow()));
   }
 
   // Add a delayed render after the main window is shown.
@@ -467,11 +469,19 @@ void MainWindow::showEvent(QShowEvent *e)
   QTimer::singleShot(250, &ActiveObjects::instance(), SLOT(renderAllViews()));
 }
 
-void MainWindow::checkForAutosaveFile()
+void MainWindow::onFirstWindowShow()
 {
   QFile file(getAutosaveFile());
   if (!file.exists())
   {
+    QSettings* settings = pqApplicationCore::instance()->settings();
+    int showWelcome = settings->value("GeneralSettings.ShowWelcomeDialog", 1).toInt();
+    if (showWelcome)
+    {
+      WelcomeDialog welcomeDialog(this);
+      welcomeDialog.setModal(true);
+      welcomeDialog.exec();
+    }
     return;
   }
   QMessageBox::StandardButton response = QMessageBox::question(
