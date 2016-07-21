@@ -31,6 +31,7 @@
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqViewStreamingBehavior.h>
 #include <vtkSMReaderFactory.h>
+#include <vtkSmartPointer.h>
 #include <vtkSMTransferFunctionPresets.h>
 #include <vtkNew.h>
 #include <vtkSMSettings.h>
@@ -38,6 +39,8 @@
 #include <QMainWindow>
 #include <QApplication>
 #include <QFile>
+
+#include <sstream>
 
 // Import the generated header to load our custom plugin
 #include "pvextensions/tomvizExtensions_Plugin.h"
@@ -51,13 +54,6 @@ const char* const settings =
 "         \"LODThreshold\" : 102400.0,"
 //"         \"ShowAnnotation\" : 1,"
 "         \"UseDisplayLists\" : 1"
-"      }"
-"   },"
-"   \"lookup_tables\" : {"
-"      \"PVLookupTable\" : {"
-"         \"ColorSpace\" : 0,"
-"         \"NanColor\" : [ 1, 0, 0 ],"
-"         \"RGBPoints\" : [ 37.353103637695312, 0, 0, 0, 276.82882690429688, 1, 1, 1 ]"
 "      }"
 "   }"
 "}"
@@ -104,21 +100,8 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
 
   this->MoveActiveBehavior = new tomviz::MoveActiveObject(this);
 
-  vtkNew<vtkSMTransferFunctionPresets> presets;
-  bool needToAddMatplotlibColormaps = true;
-  for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i)
-  {
-    if (presets->GetPresetName(i) == QString("Viridis_17"))
-    {
-      needToAddMatplotlibColormaps = false;
-      break;
-    }
-  }
-  if (needToAddMatplotlibColormaps)
-  {
-    QString colorMapFile = getMatplotlibColorMapFile();
-    presets->ImportPresets(colorMapFile.toStdString().c_str());
-  }
+  // Set the default color map from a preset.
+  this->setDefaultColorMapFromPreset("Plasma_17");
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
@@ -142,12 +125,66 @@ QString Behaviors::getMatplotlibColorMapFile()
 #ifdef __APPLE__
   else
   {
-    path = QApplication::applicationDirPath() + "/../../../../share/tomviz/scripts/matplotlib_cmaps.json";
+    path = QApplication::applicationDirPath() + "/../../../../share/tomviz/matplotlib_cmaps.json";
     return path;
   }
 #else
   return "";
 #endif
+}
+
+vtkSMTransferFunctionPresets* Behaviors::getPresets()
+{
+  vtkSMTransferFunctionPresets* presets = vtkSMTransferFunctionPresets::New();
+  bool needToAddMatplotlibColormaps = true;
+  for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i)
+  {
+    if (presets->GetPresetName(i) == QString("Viridis_17"))
+    {
+      needToAddMatplotlibColormaps = false;
+      break;
+    }
+  }
+  if (needToAddMatplotlibColormaps)
+  {
+    QString colorMapFile = getMatplotlibColorMapFile();
+    presets->ImportPresets(colorMapFile.toStdString().c_str());
+  }
+
+  return presets;
+}
+
+void Behaviors::setDefaultColorMapFromPreset(const char* name)
+{
+  // We need to search for the preset index.
+  vtkSmartPointer<vtkSMTransferFunctionPresets> presets;
+  presets.TakeReference(this->getPresets());
+
+  unsigned int presetIndex = presets->GetNumberOfPresets();
+  for (unsigned int i = 0; i < presets->GetNumberOfPresets(); ++i)
+  {
+    vtkStdString presetName = presets->GetPresetName(i);
+    if (presetName == name)
+    {
+      presetIndex = i;
+    }
+  }
+
+  // If the index is valid, a preset was found, and we use it.
+  if (presetIndex < presets->GetNumberOfPresets())
+  {
+    // Construct settings JSON for the default color map
+    vtkStdString defaultColorMapJSON = presets->GetPresetAsString(presetIndex);
+    std::ostringstream ss;
+    ss << "{\n"
+      << "  \"lookup_tables\" : {\n"
+      << "    \"PVLookupTable\" : \n"
+      << defaultColorMapJSON
+      << "}\n}\n";
+
+    // Add a settings collection for this
+    vtkSMSettings::GetInstance()->AddCollectionFromString(ss.str().c_str(), 1.0);
+  }
 }
 
 } // end of namespace tomviz
