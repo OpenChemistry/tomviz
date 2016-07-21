@@ -445,6 +445,14 @@ void MainWindow::showEvent(QShowEvent *e)
     this->Internals->isFirstShow = false;
     QTimer::singleShot(1, this, SLOT(checkForAutosaveFile()));
   }
+
+  // Add a delayed render after the main window is shown.
+  // This is an attempt to work around a problem with Mac render
+  // windows not repainting appropriately.
+  //
+  // NOTE: remove this once painting events in QVTKWidget or
+  // it successor work better with Qt 5.
+  QTimer::singleShot(250, &ActiveObjects::instance(), SLOT(renderAllViews()));
 }
 
 void MainWindow::checkForAutosaveFile()
