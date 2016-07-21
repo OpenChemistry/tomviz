@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 {
   QCoreApplication::setApplicationName("tomviz");
   QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);
-  QCoreApplication::setOrganizationName("Kitware");
+  QCoreApplication::setOrganizationName("tomviz");
 
   tomviz::InitializePythonEnvironment(argc, argv);
 
