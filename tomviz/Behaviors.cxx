@@ -31,6 +31,7 @@
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqViewStreamingBehavior.h>
 #include <vtkSMReaderFactory.h>
+#include <vtkSmartPointer.h>
 #include <vtkSMTransferFunctionPresets.h>
 #include <vtkNew.h>
 #include <vtkSMSettings.h>
@@ -99,22 +100,6 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
 
   this->MoveActiveBehavior = new tomviz::MoveActiveObject(this);
 
-  vtkNew<vtkSMTransferFunctionPresets> presets;
-  bool needToAddMatplotlibColormaps = true;
-  for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i)
-  {
-    if (presets->GetPresetName(i) == QString("Viridis_17"))
-    {
-      needToAddMatplotlibColormaps = false;
-      break;
-    }
-  }
-  if (needToAddMatplotlibColormaps)
-  {
-    QString colorMapFile = getMatplotlibColorMapFile();
-    presets->ImportPresets(colorMapFile.toStdString().c_str());
-  }
-
   // Set the default color map from a preset.
   this->setDefaultColorMapFromPreset("Plasma_17");
 
@@ -140,7 +125,7 @@ QString Behaviors::getMatplotlibColorMapFile()
 #ifdef __APPLE__
   else
   {
-    path = QApplication::applicationDirPath() + "/../../../../share/tomviz/scripts/matplotlib_cmaps.json";
+    path = QApplication::applicationDirPath() + "/../../../../share/tomviz/matplotlib_cmaps.json";
     return path;
   }
 #else
@@ -148,10 +133,33 @@ QString Behaviors::getMatplotlibColorMapFile()
 #endif
 }
 
+vtkSMTransferFunctionPresets* Behaviors::getPresets()
+{
+  vtkSMTransferFunctionPresets* presets = vtkSMTransferFunctionPresets::New();
+  bool needToAddMatplotlibColormaps = true;
+  for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i)
+  {
+    if (presets->GetPresetName(i) == QString("Viridis_17"))
+    {
+      needToAddMatplotlibColormaps = false;
+      break;
+    }
+  }
+  if (needToAddMatplotlibColormaps)
+  {
+    QString colorMapFile = getMatplotlibColorMapFile();
+    presets->ImportPresets(colorMapFile.toStdString().c_str());
+  }
+
+  return presets;
+}
+
 void Behaviors::setDefaultColorMapFromPreset(const char* name)
 {
   // We need to search for the preset index.
-  vtkNew<vtkSMTransferFunctionPresets> presets;
+  vtkSmartPointer<vtkSMTransferFunctionPresets> presets;
+  presets.TakeReference(this->getPresets());
+
   unsigned int presetIndex = presets->GetNumberOfPresets();
   for (unsigned int i = 0; i < presets->GetNumberOfPresets(); ++i)
   {
