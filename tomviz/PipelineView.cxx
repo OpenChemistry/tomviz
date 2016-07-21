@@ -45,7 +45,7 @@ PipelineView::PipelineView(QWidget *p) : QTreeView(p)
   setItemsExpandable(false);
 
   QString customStyle = "QTreeView::branch { background-color: white; }";
-  //this->setStyleSheet(customStyle);
+  this->setStyleSheet(customStyle);
   setAlternatingRowColors(true);
   setSelectionBehavior(QAbstractItemView::SelectRows);
 
