@@ -116,7 +116,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   }
 
   // Set the default color map from a preset.
-  this->setDefaultColorMapFromPreset("Grayscale");
+  this->setDefaultColorMapFromPreset("Plasma_17");
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
