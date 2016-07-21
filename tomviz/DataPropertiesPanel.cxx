@@ -243,9 +243,6 @@ void DataPropertiesPanel::updateData()
   ui.xLengthBox->setText(QString("%1").arg(spacing[0] * (extent[1] - extent[0] + 1)));
   ui.yLengthBox->setText(QString("%1").arg(spacing[1] * (extent[3] - extent[2] + 1)));
   ui.zLengthBox->setText(QString("%1").arg(spacing[2] * (extent[5] - extent[4] + 1)));
-  ui.xLabel->setText(QString("X Length (%1)").arg(dsource->getUnits(0)));
-  ui.yLabel->setText(QString("Y Length (%1)").arg(dsource->getUnits(1)));
-  ui.zLabel->setText(QString("Z Length (%1)").arg(dsource->getUnits(2)));
 
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries)
