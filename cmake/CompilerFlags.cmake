@@ -1,11 +1,7 @@
 if (UNIX)
   include(CheckCXXCompilerFlag)
-  check_cxx_compiler_flag("-std=c++11" tomviz_have_cxx11)
 
-  if (NOT tomviz_have_cxx11)
-    message(FATAL_ERROR "Your compiler does not support C++11.  Try again with a newer compiler")
-  endif()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pedantic -Wshadow -Wextra")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wshadow -Wextra")
 elseif (WIN32)
   if (MSVC AND MSVC12)
     set(CMAKE_CXX_FLAGS_STD_CPP)
