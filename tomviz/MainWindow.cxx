@@ -437,6 +437,10 @@ void MainWindow::openRecon()
   {
     LoadDataReaction::loadData(info.canonicalFilePath());
   }
+  else
+  {
+    QMessageBox::warning(this, "Sample Data not found", QString("The data file \"%1\" was not found.").arg(path));
+  }
 }
 
 void MainWindow::dataSourceChanged(DataSource*)
