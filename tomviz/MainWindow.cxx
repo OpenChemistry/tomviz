@@ -132,6 +132,18 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QIcon icon(":/icons/tomviz.png");
   setWindowIcon(icon);
 
+  // Tweak the initial sizes of the dock widgets.
+  QList<QDockWidget*> docks;
+  docks << this->Internals->Ui.dockWidget << this->Internals->Ui.dockWidget_5;
+  QList<int> dockSizes;
+  dockSizes << 250 << 250;
+  this->resizeDocks(docks, dockSizes, Qt::Horizontal);
+  docks.clear();
+  dockSizes.clear();
+  docks << this->Internals->Ui.dockWidget_3;
+  dockSizes << 200;
+  this->resizeDocks(docks, dockSizes, Qt::Vertical);
+
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
                             SIGNAL(dataSourceActivated(DataSource*)),
