@@ -454,7 +454,7 @@ QModelIndex PipelineModel::moduleIndex(Module *module)
 
 void PipelineModel::dataSourceAdded(DataSource *dataSource)
 {
-  beginInsertRows(QModelIndex(), 0, 1);
+  beginInsertRows(QModelIndex(), 0, 0);
   m_dataSources.append(dataSource);
   auto treeItem = new PipelineModel::TreeItem(PipelineModel::Item(dataSource));
   m_treeItems.append(treeItem);
@@ -476,7 +476,7 @@ void PipelineModel::moduleAdded(Module *module)
   int idx = m_dataSources.indexOf(module->dataSource());
 
   Q_ASSERT(idx != -1);
-  beginInsertRows(index(idx, 0, QModelIndex()), 0, 1);
+  beginInsertRows(index(idx, 0, QModelIndex()), 0, 0);
 
   for (int i = 0; i < m_treeItems.count(); ++i) {
     if (module->dataSource() == m_treeItems[i]->dataSource()) {
@@ -503,7 +503,7 @@ void PipelineModel::operatorAdded(Operator *op)
   connect(op, SIGNAL(labelModified()), this, SLOT(operatorModified()));
   for (int i = 0; i < m_treeItems.count(); ++i) {
     if (m_treeItems[i]->dataSource() == dataSource) {
-      beginInsertRows(index(i, 0, QModelIndex()), 0, 1);
+      beginInsertRows(index(i, 0, QModelIndex()), 0, 0);
       auto dataSourceItem = m_treeItems[i];
       dataSourceItem->appendAndMoveChildren(PipelineModel::Item(op));
       endInsertRows();
