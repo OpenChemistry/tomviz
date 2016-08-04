@@ -26,6 +26,8 @@
 #include "AddPythonTransformReaction.h"
 #include "Utilities.h"
 
+#include "pqCoreUtilities.h"
+#include "pqPresetDialog.h"
 #include "QVTKWidget.h"
 #include "vtkCamera.h"
 #include "vtkDataArray.h"
@@ -43,7 +45,10 @@
 #include "vtkRenderer.h"
 #include "vtkRenderWindow.h"
 #include "vtkScalarsToColors.h"
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTransferFunctionManager.h"
+#include "vtkSMTransferFunctionProxy.h"
 #include "vtkTransform.h"
 #include "vtkTrivialProducer.h"
 #include "vtkVector.h"
@@ -81,6 +86,7 @@ public:
   vtkNew<vtkActor> axisActor;
   vtkNew<vtkLineSource> reconSliceLine[3];
   vtkNew<vtkActor> reconSliceLineActor[3];
+  vtkSmartPointer<vtkSMProxy> ReconColorMap[3];
 
   void setupCameras()
   {
@@ -88,6 +94,18 @@ public:
     tomviz::setupRenderer(this->reconRenderer[0].Get(), this->reconSliceMapper[0].Get());
     tomviz::setupRenderer(this->reconRenderer[1].Get(), this->reconSliceMapper[1].Get());
     tomviz::setupRenderer(this->reconRenderer[2].Get(), this->reconSliceMapper[2].Get());
+  }
+
+  void setupColorMaps()
+  {
+    vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
+
+    vtkNew<vtkSMTransferFunctionManager> tfmgr;
+    for (int i = 0; i < 3; ++i)
+    {
+      this->ReconColorMap[i] = tfmgr->GetColorTransferFunction(QString("RotateAlignWidgetColorMap%1")
+                                                               .arg(i).toLatin1().data(),pxm);
+    }
   }
 
   void setupRotationAxisLine()
@@ -197,6 +215,12 @@ public:
       this->reconSliceMapper[i]->SetInputData(this->reconImage[i].GetPointer());
       this->reconSliceMapper[i]->SetSliceNumber(0);
       this->reconSliceMapper[i]->Update();
+
+      double range[2];
+      reconArray->GetRange(range);
+      vtkSMTransferFunctionProxy::RescaleTransferFunction(this->ReconColorMap[i], range);
+      this->reconSlice[i]->GetProperty()->SetLookupTable(vtkScalarsToColors::SafeDownCast(
+            this->ReconColorMap[i]->GetClientSideObject()));
     }
   }
 
@@ -239,6 +263,15 @@ RotateAlignWidget::RotateAlignWidget(DataSource *source, QWidget *p)
   : Superclass(p), Internals(new RAWInternal)
 {
   this->Internals->Ui.setupUi(this);
+  this->Internals->setupColorMaps();
+  QIcon setColorMapIcon(":/pqWidgets/Icons/pqFavorites16.png");
+  this->Internals->Ui.colorMapButton_1->setIcon(setColorMapIcon);
+  this->Internals->Ui.colorMapButton_2->setIcon(setColorMapIcon);
+  this->Internals->Ui.colorMapButton_3->setIcon(setColorMapIcon);
+  this->connect(this->Internals->Ui.colorMapButton_1, SIGNAL(clicked()), this, SLOT(showChangeColorMapDialog0()));
+  this->connect(this->Internals->Ui.colorMapButton_2, SIGNAL(clicked()), this, SLOT(showChangeColorMapDialog1()));
+  this->connect(this->Internals->Ui.colorMapButton_3, SIGNAL(clicked()), this, SLOT(showChangeColorMapDialog2()));
+
   this->Internals->mainSlice->SetMapper(this->Internals->mainSliceMapper.Get());
   this->Internals->reconSlice[0]->SetMapper(this->Internals->reconSliceMapper[0].Get());
   this->Internals->reconSlice[1]->SetMapper(this->Internals->reconSliceMapper[1].Get());
@@ -411,21 +444,6 @@ void RotateAlignWidget::onRotationAxisChanged()
   this->Internals->Ui.sliceView_3->update();
 }
 
-void RotateAlignWidget::onReconSlice0Changed()
-{
-  this->onReconSliceChanged(0);
-}
-
-void RotateAlignWidget::onReconSlice1Changed()
-{
-  this->onReconSliceChanged(1);
-}
-
-void RotateAlignWidget::onReconSlice2Changed()
-{
-  this->onReconSliceChanged(2);
-}
-
 void RotateAlignWidget::onReconSliceChanged(int idx)
 {
   this->Internals->updateSliceLines();
@@ -443,6 +461,93 @@ void RotateAlignWidget::onReconSliceChanged(int idx)
   else // if (idx == 2)
   {
     this->Internals->Ui.sliceView_3->update();
+  }
+}
+
+namespace
+{
+template< typename T>
+std::array<T, 3> make_array(std::initializer_list<T> list)
+{
+  auto array = std::array<T, 3>();
+  int i = 0;
+  foreach(T t, list)
+  {
+    array[i++] = t;
+  }
+  return array;
+}
+}
+
+void RotateAlignWidget::showChangeColorMapDialog(int reconSlice)
+{
+  auto slotsArray = make_array({ &RotateAlignWidget::changeColorMap0,
+                                 &RotateAlignWidget::changeColorMap1,
+                                 &RotateAlignWidget::changeColorMap2 });
+  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
+                        pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
+  dialog.setCustomizableLoadColors(true);
+  dialog.setCustomizableLoadOpacities(true);
+  dialog.setCustomizableUsePresetRange(true);
+  dialog.setCustomizableLoadAnnotations(false);
+  this->connect(&dialog, &pqPresetDialog::applyPreset,
+          this, slotsArray[reconSlice]);
+  dialog.exec();
+}
+
+void RotateAlignWidget::changeColorMap(int reconSlice)
+{
+  pqPresetDialog* dialog = qobject_cast<pqPresetDialog*>(this->sender());
+  Q_ASSERT(dialog);
+
+  vtkSMProxy* lut = this->Internals->ReconColorMap[reconSlice];
+  if (!lut)
+  {
+    return;
+  }
+
+  if (dialog->loadColors() || dialog->loadOpacities())
+  {
+    vtkSMProxy* sof = vtkSMPropertyHelper(lut,
+                                          "ScalarOpacityFunction",
+                                          true).GetAsProxy();
+    if (dialog->loadColors())
+    {
+      vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
+                                              !dialog->usePresetRange());
+    }
+    if (dialog->loadOpacities())
+    {
+      if (sof)
+      {
+        vtkSMTransferFunctionProxy::ApplyPreset(
+          sof, dialog->currentPreset(), !dialog->usePresetRange());
+      }
+      else
+      {
+        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not present.");
+      }
+    }
+
+    // We need to take extra care to avoid the color and opacity function ranges
+    // from straying away from each other. This can happen if only one of them is
+    // getting a preset and we're using the preset range.
+    if (dialog->usePresetRange()
+        && (dialog->loadColors() ^ dialog->loadOpacities()) && sof)
+    {
+      double range[2];
+      if (dialog->loadColors()
+          && vtkSMTransferFunctionProxy::GetRange(lut, range))
+      {
+        vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range);
+      }
+      else if (dialog->loadOpacities()
+               && vtkSMTransferFunctionProxy::GetRange(sof, range))
+      {
+        vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
+      }
+    }
+    this->updateWidgets();
   }
 }
 

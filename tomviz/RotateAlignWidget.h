@@ -41,16 +41,26 @@ signals:
 protected slots:
   void onProjectionNumberChanged();
   void onRotationAxisChanged();
-  void onReconSlice0Changed();
-  void onReconSlice1Changed();
-  void onReconSlice2Changed();
+  void onReconSlice0Changed() { this->onReconSliceChanged(0); };
+  void onReconSlice1Changed() { this->onReconSliceChanged(1); };
+  void onReconSlice2Changed() { this->onReconSliceChanged(2); };
 
   void updateWidgets();
 
   void onFinalReconButtonPressed();
 
+  void showChangeColorMapDialog0() { this->showChangeColorMapDialog(0); };
+  void showChangeColorMapDialog1() { this->showChangeColorMapDialog(1); };
+  void showChangeColorMapDialog2() { this->showChangeColorMapDialog(2); };
+
+  void changeColorMap0() { this->changeColorMap(0); }
+  void changeColorMap1() { this->changeColorMap(1); }
+  void changeColorMap2() { this->changeColorMap(2); }
+
 private:
   void onReconSliceChanged(int idx);
+  void showChangeColorMapDialog(int reconSlice);
+  void changeColorMap(int reconSlice);
 
 private:
   Q_DISABLE_COPY(RotateAlignWidget)
