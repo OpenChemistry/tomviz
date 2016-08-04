@@ -20,8 +20,17 @@ add_paraview_plugin(tomvizExtensions "1.0"
 )
 target_link_libraries(tomvizExtensions PUBLIC pqApplicationComponents)
 
-install(TARGETS tomvizExtensions
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib"
-	COMPONENT "runtime")
+if (NOT APPLE)
+  install(TARGETS tomvizExtensions
+          RUNTIME DESTINATION "bin"
+          LIBRARY DESTINATION "lib"
+          ARCHIVE DESTINATION "lib"
+          COMPONENT "runtime")
+else()
+  install(TARGETS tomvizExtensions
+          RUNTIME DESTINATION "bin"
+          LIBRARY DESTINATION "Applications/tomviz.app/Contents/Libraries"
+          ARCHIVE DESTINATION "lib"
+          COMPONENT "runtime")
+  set_target_properties(tomvizExtensions PROPERTIES INSTALL_NAME_DIR "@executable_path/../Libraries")
+endif()
