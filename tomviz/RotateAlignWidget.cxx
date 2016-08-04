@@ -336,9 +336,6 @@ void RotateAlignWidget::setDataSource(DataSource *source)
     if (t)
     {
       this->Internals->mainSliceMapper->SetInputConnection(t->GetOutputPort());
-      this->Internals->reconSliceMapper[0]->SetInputConnection(t->GetOutputPort());
-      this->Internals->reconSliceMapper[1]->SetInputConnection(t->GetOutputPort());
-      this->Internals->reconSliceMapper[2]->SetInputConnection(t->GetOutputPort());
     }
     this->Internals->mainSliceMapper->Update();
     vtkScalarsToColors *lut =
@@ -363,6 +360,10 @@ void RotateAlignWidget::setDataSource(DataSource *source)
     this->Internals->Ui.spinBox_1->setValue(vtkMath::Round(0.25 * (extent[1] - extent[0])));
     this->Internals->Ui.spinBox_2->setValue(vtkMath::Round(0.5  * (extent[1] - extent[0])));
     this->Internals->Ui.spinBox_3->setValue(vtkMath::Round(0.75 * (extent[1] - extent[0])));
+
+    this->Internals->updateReconSlice(0);
+    this->Internals->updateReconSlice(1);
+    this->Internals->updateReconSlice(2);
 
     this->Internals->setupCameras();
     this->Internals->setupRotationAxisLine();
