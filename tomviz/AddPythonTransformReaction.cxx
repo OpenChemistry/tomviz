@@ -374,7 +374,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     QLabel *label = new QLabel("Angle:",&dialog);
     layout->addWidget(label, 1, 0, 1, 2);
     QDoubleSpinBox *angle = new QDoubleSpinBox(&dialog);
-    angle->setRange(0, 360);
+    angle->setRange(-360, 360);
     angle->setValue(90);
     layout->addWidget(angle, 1, 1, 1, 1);
     label = new QLabel("Axis:", &dialog);
