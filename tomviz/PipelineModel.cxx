@@ -69,6 +69,7 @@ public:
   bool hasOp(Operator *op);
 
   TreeItem* find(Module *module);
+  TreeItem* find(Operator *op);
 
   DataSource* dataSource() { return m_item.dataSource(); }
   Module* module() { return m_item.module(); }
@@ -229,6 +230,21 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(Module *module)
     }
     foreach(auto childItem, treeItem->m_children) {
       if (childItem->module() == module) {
+        return childItem;
+      }
+    }
+  }
+  return nullptr;
+}
+
+PipelineModel::TreeItem* PipelineModel::TreeItem::find(Operator *op)
+{
+  foreach(auto treeItem, m_children) {
+    if (treeItem->op() == op) {
+      return treeItem;
+    }
+    foreach(auto childItem, treeItem->m_children) {
+      if (childItem->op() == op) {
         return childItem;
       }
     }
@@ -447,6 +463,17 @@ QModelIndex PipelineModel::moduleIndex(Module *module)
     auto moduleItem = treeItem->find(module);
     if (moduleItem) {
       return createIndex(moduleItem->childIndex(), 0, moduleItem);
+    }
+  }
+  return QModelIndex();
+}
+
+QModelIndex PipelineModel::operatorIndex(Operator *op)
+{
+  foreach(auto treeItem, m_treeItems) {
+    auto operatorItem = treeItem->find(op);
+    if (operatorItem) {
+      return createIndex(operatorItem->childIndex(), 0, operatorItem);
     }
   }
   return QModelIndex();
