@@ -482,9 +482,15 @@ void MainWindow::onFirstWindowShow()
     int showWelcome = settings->value("GeneralSettings.ShowWelcomeDialog", 1).toInt();
     if (showWelcome)
     {
-      WelcomeDialog welcomeDialog(this);
-      welcomeDialog.setModal(true);
-      welcomeDialog.exec();
+      QString path = QApplication::applicationDirPath() + "/../share/tomviz/Data";
+      path += "/Recon_NanoParticle_doi_10.1021-nl103400a.tif";
+      QFileInfo info(path);
+      if (info.exists())
+      {
+        WelcomeDialog welcomeDialog(this);
+        welcomeDialog.setModal(true);
+        welcomeDialog.exec();
+      }
     }
     return;
   }
