@@ -17,7 +17,9 @@
 #include "WelcomeDialog.h"
 #include "ui_WelcomeDialog.h"
 
+#include "ActiveObjects.h"
 #include "MainWindow.h"
+#include "ModuleManager.h"
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
@@ -46,6 +48,15 @@ void WelcomeDialog::onLoadSampleDataClicked()
 {
   MainWindow *mw = qobject_cast<MainWindow*>(this->parent());
   mw->openRecon();
+  ModuleManager &mm = ModuleManager::instance();
+  ActiveObjects &ao = ActiveObjects::instance();
+  // Remove the orthogonal slice that is automatically created
+  mm.removeModule(ao.activeModule());
+  // Add a volume module
+  if (Module *module = mm.createAndAddModule("Volume", ao.activeDataSource(), ao.activeView()))
+  {
+    ao.setActiveModule(module);
+  }
   this->hide();
 }
 
