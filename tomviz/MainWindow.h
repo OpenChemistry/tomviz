@@ -40,17 +40,19 @@ public:
 protected:
   void showEvent(QShowEvent* event) override;
 
+public slots:
+  void openRecon();
+
 private slots:
   void showAbout();
   void openTilt();
-  void openRecon();
 
   /// Change the active data source in the UI.
   void dataSourceChanged(DataSource *source);
   /// Change the active module displayed in the UI.
   void moduleChanged(Module *module);
 
-  void checkForAutosaveFile();
+  void onFirstWindowShow();
 
   void autosave();
 
