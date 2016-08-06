@@ -135,6 +135,8 @@ set(SOURCES
   OperatorFactory.h
   OperatorPython.cxx
   OperatorPython.h
+  OperatorResult.cxx
+  OperatorResult.h
   PipelineModel.cxx
   PipelineModel.h
   PipelineView.cxx
