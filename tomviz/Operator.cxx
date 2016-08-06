@@ -16,16 +16,21 @@
 #include "Operator.h"
 
 #include "DataSource.h"
+#include "OperatorResult.h"
+
+#include <QList>
 
 namespace tomviz
 {
 
-Operator::Operator(QObject* parentObject) : QObject(parentObject)
+Operator::Operator(QObject* parentObject) :
+  QObject(parentObject)
 {
 }
 
 Operator::~Operator()
 {
+  setNumberOfResults(0);
 }
 
 DataSource* Operator::dataSource()
@@ -41,4 +46,54 @@ bool Operator::transform(vtkDataObject *data)
   emit this->transformingDone(result);
   return result;
 }
+
+void Operator::setNumberOfResults(int n)
+{
+  int previousSize = m_results.size();
+  if (previousSize < n)
+  {
+    // Resize the list 
+    m_results.reserve(n);
+    for (int i = previousSize; i < n; ++i)
+    {
+      auto oa = new OperatorResult(this);
+      m_results.append(oa);
+    }
+  } else {
+    for (int i = n; i < previousSize; ++i) {
+      OperatorResult* result = m_results.takeLast();
+      delete result;
+    }
+  }
+}
+
+int Operator::numberOfResults() const
+{
+  return m_results.size();
+}
+
+bool Operator::setResult(int index, vtkDataObject* object)
+{
+  if (index < 0 || index >= numberOfResults())
+  {
+    return false;
+  }
+
+  auto result = m_results[index];
+  Q_ASSERT(result);
+  result->setDataObject(object);
+  m_results[index] = result;
+
+  return true;
+}
+
+OperatorResult* Operator::resultAt(int i) const
+{
+  if (i < 0 || i >= m_results.size())
+  {
+    return nullptr;
+  }
+  return m_results[i];
+}
+
 }

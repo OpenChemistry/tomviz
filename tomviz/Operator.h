@@ -18,6 +18,7 @@
 
 #include <QObject>
 #include <QIcon>
+
 #include <vtk_pugixml.h>
 #include <vtkSmartPointer.h>
 #include <vtkObject.h>
@@ -30,6 +31,7 @@ namespace tomviz
 {
 class DataSource;
 class EditOperatorWidget;
+class OperatorResult;
 
 class Operator : public QObject
 {
@@ -52,6 +54,18 @@ public:
 
   /// Return a new clone.
   virtual Operator* clone() const = 0;
+
+  /// Set the number of results produced by this operator.
+  virtual void setNumberOfResults(int n);
+
+  /// Get number of output results
+  virtual int numberOfResults() const;
+
+  /// Add additional output result from this operator
+  virtual bool setResult(int index, vtkDataObject* object);
+
+  /// Get output result at index.
+  virtual OperatorResult* resultAt(int index) const;
 
   /// Save/Restore state.
   virtual bool serialize(pugi::xml_node& in) const = 0;
@@ -116,6 +130,9 @@ signals:
   /// return value from the transform() function.  True for success, false for failure.
   void transformingDone(bool result);
 
+  /// Emitted when an result is added.
+  void resultAdded(OperatorResult* result);
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Operators should override this if they support canceling the operation midway.
@@ -133,6 +150,8 @@ protected:
 private:
   bool supportsCancel = false;
   Q_DISABLE_COPY(Operator)
+
+  QList<OperatorResult*> m_results;
 };
 
 }
