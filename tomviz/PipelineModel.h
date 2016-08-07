@@ -50,6 +50,7 @@ public:
 
   QModelIndex dataSourceIndex(DataSource *source);
   QModelIndex moduleIndex(Module *module);
+  QModelIndex operatorIndex(Operator *op);
 
   bool removeDataSource(DataSource *dataSource);
   bool removeModule(Module *module);

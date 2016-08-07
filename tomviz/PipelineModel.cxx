@@ -69,6 +69,7 @@ public:
   bool hasOp(Operator *op);
 
   TreeItem* find(Module *module);
+  TreeItem* find(Operator *op);
 
   DataSource* dataSource() { return m_item.dataSource(); }
   Module* module() { return m_item.module(); }
@@ -236,6 +237,21 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(Module *module)
   return nullptr;
 }
 
+PipelineModel::TreeItem* PipelineModel::TreeItem::find(Operator *op)
+{
+  foreach(auto treeItem, m_children) {
+    if (treeItem->op() == op) {
+      return treeItem;
+    }
+    foreach(auto childItem, treeItem->m_children) {
+      if (childItem->op() == op) {
+        return childItem;
+      }
+    }
+  }
+  return nullptr;
+}
+
 PipelineModel::PipelineModel(QObject *p) : QAbstractItemModel(p)
 {
   connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
@@ -260,6 +276,7 @@ QVariant PipelineModel::data(const QModelIndex &index, int role) const
   if (!index.isValid() || index.column() > 2)
     return QVariant();
 
+  // Data source
   if (!index.parent().isValid()) {
     auto treeItem = static_cast<TreeItem *>(index.internalPointer());
     auto source = treeItem->dataSource();
@@ -278,6 +295,7 @@ QVariant PipelineModel::data(const QModelIndex &index, int role) const
     }
   }
   else {
+    // Module or operator
     auto treeItem = static_cast<TreeItem *>(index.internalPointer());
     auto module = treeItem->module();
     auto op = treeItem->op();
@@ -363,8 +381,10 @@ QModelIndex PipelineModel::index(int row, int column,
                                  const QModelIndex &parent) const
 {
   if (!parent.isValid() && row < m_treeItems.count()) {
+    // Data source
     return createIndex(row, column, m_treeItems[row]);
   } else {
+    // Module or operator
     auto treeItem = static_cast<TreeItem *>(parent.internalPointer());
     if (treeItem && row < treeItem->childCount()) {
       return createIndex(row, column, treeItem->child(row));
@@ -452,11 +472,22 @@ QModelIndex PipelineModel::moduleIndex(Module *module)
   return QModelIndex();
 }
 
+QModelIndex PipelineModel::operatorIndex(Operator *op)
+{
+  foreach(auto treeItem, m_treeItems) {
+    auto operatorItem = treeItem->find(op);
+    if (operatorItem) {
+      return createIndex(operatorItem->childIndex(), 0, operatorItem);
+    }
+  }
+  return QModelIndex();
+}
+
 void PipelineModel::dataSourceAdded(DataSource *dataSource)
 {
-  beginInsertRows(QModelIndex(), 0, 0);
   m_dataSources.append(dataSource);
   auto treeItem = new PipelineModel::TreeItem(PipelineModel::Item(dataSource));
+  beginInsertRows(QModelIndex(), 0, 0);
   m_treeItems.append(treeItem);
   endInsertRows();
   connect(dataSource, SIGNAL(operatorAdded(Operator*)),
@@ -476,21 +507,32 @@ void PipelineModel::moduleAdded(Module *module)
   int idx = m_dataSources.indexOf(module->dataSource());
 
   Q_ASSERT(idx != -1);
-  beginInsertRows(index(idx, 0, QModelIndex()), 0, 0);
 
   for (int i = 0; i < m_treeItems.count(); ++i) {
     if (module->dataSource() == m_treeItems[i]->dataSource()) {
-      auto dataItem = m_treeItems[i];
-      if (dataItem->childCount() && dataItem->child(0)->op()) {
-        dataItem->child(dataItem->childCount() - 1)
-            ->appendChild(PipelineModel::Item(module));
+      auto dataSourceItem = m_treeItems[i];
+      if (dataSourceItem->childCount() && dataSourceItem->child(0)->op()) {
+        // The data source has at least one operator as a child.
+        // Set the module as a child of the last child operator.
+        auto operatorItem = dataSourceItem->child(dataSourceItem->childCount() - 1);
+        auto op = operatorItem->op();
+        Q_ASSERT(op);
+        auto parentIndex = operatorIndex(op);
+        Q_ASSERT(parentIndex.isValid());
+        auto row = operatorItem->childCount();
+        beginInsertRows(parentIndex, row, row);
+        operatorItem->appendChild(PipelineModel::Item(module));
+        endInsertRows();
       } else {
-        dataItem->appendChild(PipelineModel::Item(module));
+        // No operators have been applied. Append directly to the data source item.
+        auto row = dataSourceItem->childCount();
+        beginInsertRows(dataSourceIndex(module->dataSource()), row, row);
+        dataSourceItem->appendChild(PipelineModel::Item(module));
+        endInsertRows();
       }
       break;
     }
   }
-  endInsertRows();
 }
 
 void PipelineModel::operatorAdded(Operator *op)
@@ -503,10 +545,27 @@ void PipelineModel::operatorAdded(Operator *op)
   connect(op, SIGNAL(labelModified()), this, SLOT(operatorModified()));
   for (int i = 0; i < m_treeItems.count(); ++i) {
     if (m_treeItems[i]->dataSource() == dataSource) {
-      beginInsertRows(index(i, 0, QModelIndex()), 0, 0);
       auto dataSourceItem = m_treeItems[i];
-      dataSourceItem->appendAndMoveChildren(PipelineModel::Item(op));
-      endInsertRows();
+      if (dataSourceItem->childCount() && dataSourceItem->child(0)->op()) {
+        // An operator already exists - add the new one to the end
+        auto lastOperatorItem = dataSourceItem->child(dataSourceItem->childCount() - 1);
+        auto lastOperator = lastOperatorItem->op();
+        Q_ASSERT(lastOperator);
+        auto parentIndex = operatorIndex(lastOperator);
+        Q_ASSERT(parentIndex.isValid());
+        auto row = lastOperatorItem->childCount();
+        beginInsertRows(parentIndex, row, row);
+        dataSourceItem->appendAndMoveChildren(PipelineModel::Item(op));
+        endInsertRows();
+      } else {
+        // Only modules exist so far - add operator to data source and move the modules
+        // to be children of the operator.
+        auto parentIndex = dataSourceIndex(dataSource);
+        auto row = dataSourceItem->childCount();
+        beginInsertRows(parentIndex, row, row);;
+        dataSourceItem->appendAndMoveChildren(PipelineModel::Item(op));
+        endInsertRows();
+      }
     }
   }
 }
