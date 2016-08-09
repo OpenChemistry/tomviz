@@ -68,6 +68,7 @@ public:
 
   bool hasOp(Operator *op);
 
+  /// Recursively search entire tree for given object.
   TreeItem* find(Module *module);
   TreeItem* find(Operator *op);
 
@@ -224,13 +225,13 @@ bool PipelineModel::TreeItem::hasOp(Operator *o)
 
 PipelineModel::TreeItem* PipelineModel::TreeItem::find(Module *module)
 {
-  foreach(auto treeItem, m_children) {
-    if (treeItem->module() == module) {
-      return treeItem;
-    }
-    foreach(auto childItem, treeItem->m_children) {
-      if (childItem->module() == module) {
-        return childItem;
+  if (this->module() == module) {
+    return this;
+  } else {
+    foreach(auto childItem, m_children) {
+      auto moduleItem = childItem->find(module);
+      if (moduleItem) {
+        return moduleItem;
       }
     }
   }
@@ -239,13 +240,13 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(Module *module)
 
 PipelineModel::TreeItem* PipelineModel::TreeItem::find(Operator *op)
 {
-  foreach(auto treeItem, m_children) {
-    if (treeItem->op() == op) {
-      return treeItem;
-    }
-    foreach(auto childItem, treeItem->m_children) {
-      if (childItem->op() == op) {
-        return childItem;
+  if (this->op() == op) {
+    return this;
+  } else {
+    foreach(auto childItem, m_children) {
+      auto operatorItem = childItem->find(op);
+      if (operatorItem) {
+        return operatorItem;
       }
     }
   }
