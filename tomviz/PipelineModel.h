@@ -69,7 +69,6 @@ private:
   struct Item;
   class TreeItem;
   QList<TreeItem *> m_treeItems;
-  QList<DataSource *> m_dataSources;
 };
 
 } // tomviz namespace
