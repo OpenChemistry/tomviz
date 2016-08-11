@@ -1,0 +1,9 @@
+dist: precise
+ addons:
+    apt:
+      packages:
+      - clang-format-3.8
+script:
+- cd $TRAVIS_BUILD_DIR
+- ./scripts/run_clang_format_diff.sh $TRAVIS_BRANCH 
+ 
