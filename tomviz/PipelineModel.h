@@ -24,6 +24,7 @@ namespace tomviz
 class DataSource;
 class Module;
 class Operator;
+class OperatorResult;
 
 class PipelineModel : public QAbstractItemModel
 {
@@ -47,14 +48,17 @@ public:
   DataSource* dataSource(const QModelIndex &index);
   Module* module(const QModelIndex &index);
   Operator* op(const QModelIndex &index);
+  OperatorResult* result(const QModelIndex &index);
 
   QModelIndex dataSourceIndex(DataSource *source);
   QModelIndex moduleIndex(Module *module);
   QModelIndex operatorIndex(Operator *op);
+  QModelIndex resultIndex(OperatorResult* result);
 
   bool removeDataSource(DataSource *dataSource);
   bool removeModule(Module *module);
   bool removeOp(Operator *op);
+  bool removeResult(OperatorResult *result);
 
 public slots:
   void dataSourceAdded(DataSource *dataSource);

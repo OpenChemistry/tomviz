@@ -20,6 +20,7 @@
 #include <QtDebug>
 
 #include "EditOperatorWidget.h"
+#include "OperatorResult.h"
 #include "pqPythonSyntaxHighlighter.h"
 #include "vtkDataObject.h"
 #include "vtkPythonInterpreter.h"
