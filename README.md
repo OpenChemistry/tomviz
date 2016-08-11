@@ -1,4 +1,4 @@
-![tomviz_logo]
+ ![tomviz_logo]
 
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12723.svg)](http://dx.doi.org/10.5281/zenodo.12723)
 The [tomviz project][tomviz] is developing a cross platform, open source

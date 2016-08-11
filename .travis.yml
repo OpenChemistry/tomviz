@@ -4,7 +4,7 @@ dist: precise
 addons:
   apt:
     sources:
-    - llvm-toolchain-precise-3.7
+    - llvm-toolchain-precise-3.8
     packages:
     - clang-format-3.8
 
