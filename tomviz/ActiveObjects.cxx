@@ -25,17 +25,12 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
-namespace tomviz
-{
+namespace tomviz {
 
 ActiveObjects::ActiveObjects()
-  : Superclass(),
-    ActiveDataSource(nullptr),
-    VoidActiveDataSource(nullptr),
-    ActiveDataSourceType(DataSource::Volume),
-    ActiveModule(nullptr),
-    VoidActiveModule(nullptr),
-    MoveObjectsEnabled(false)
+  : Superclass(), ActiveDataSource(nullptr), VoidActiveDataSource(nullptr),
+    ActiveDataSourceType(DataSource::Volume), ActiveModule(nullptr),
+    VoidActiveModule(nullptr), MoveObjectsEnabled(false)
 {
   this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
                 SLOT(viewChanged(pqView*)));
@@ -74,33 +69,28 @@ void ActiveObjects::viewChanged(pqView* view)
 
 void ActiveObjects::dataSourceRemoved(DataSource* ds)
 {
-  if (this->VoidActiveDataSource == ds)
-  {
+  if (this->VoidActiveDataSource == ds) {
     this->setActiveDataSource(nullptr);
   }
 }
 
 void ActiveObjects::moduleRemoved(Module* mdl)
 {
-  if (this->VoidActiveModule == mdl)
-  {
+  if (this->VoidActiveModule == mdl) {
     this->setActiveModule(nullptr);
   }
 }
 
 void ActiveObjects::setActiveDataSource(DataSource* source)
 {
-  if (this->VoidActiveDataSource != source)
-  {
-    if (this->ActiveDataSource)
-    {
-      QObject::disconnect(this->ActiveDataSource, SIGNAL(dataChanged()),
-                          this, SLOT(dataSourceChanged()));
+  if (this->VoidActiveDataSource != source) {
+    if (this->ActiveDataSource) {
+      QObject::disconnect(this->ActiveDataSource, SIGNAL(dataChanged()), this,
+                          SLOT(dataSourceChanged()));
     }
-    if (source)
-    {
-      QObject::connect(source, SIGNAL(dataChanged()),
-                       this, SLOT(dataSourceChanged()));
+    if (source) {
+      QObject::connect(source, SIGNAL(dataChanged()), this,
+                       SLOT(dataSourceChanged()));
       this->ActiveDataSourceType = source->type();
     }
     this->ActiveDataSource = source;
@@ -112,8 +102,7 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
 
 void ActiveObjects::dataSourceChanged()
 {
-  if (this->ActiveDataSource->type() != this->ActiveDataSourceType)
-  {
+  if (this->ActiveDataSource->type() != this->ActiveDataSourceType) {
     this->ActiveDataSourceType = this->ActiveDataSource->type();
     emit this->dataSourceChanged(this->ActiveDataSource);
   }
@@ -127,12 +116,10 @@ vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 
 void ActiveObjects::setActiveModule(Module* module)
 {
-  if (this->VoidActiveModule != module)
-  {
+  if (this->VoidActiveModule != module) {
     this->VoidActiveModule = module;
     this->ActiveModule = module;
-    if (module)
-    {
+    if (module) {
       this->setActiveView(module->view());
       this->setActiveDataSource(module->dataSource());
     }
@@ -143,8 +130,7 @@ void ActiveObjects::setActiveModule(Module* module)
 
 void ActiveObjects::setMoveObjectsMode(bool moveObjectsOn)
 {
-  if (this->MoveObjectsEnabled != moveObjectsOn)
-  {
+  if (this->MoveObjectsEnabled != moveObjectsOn) {
     this->MoveObjectsEnabled = moveObjectsOn;
     emit this->moveObjectsModeChanged(moveObjectsOn);
   }
