@@ -1,0 +1,17 @@
+sudo: required
+language: cpp
+dist: precise
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise-3.8
+    packages:
+#    - g++-4.9
+    - clang-format-3.8
+
+script:
+- cd $TRAVIS_BUILD_DIR
+- git fetch origin master:master
+- ./scripts/travis/run_clang_format_diff.sh master $TRAVIS_BRANCH
+ 
