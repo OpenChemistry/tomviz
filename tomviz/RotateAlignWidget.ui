@@ -153,6 +153,13 @@
          <item>
           <widget class="tomviz::SpinBox" name="spinBox_1"/>
          </item>
+         <item>
+          <widget class="QToolButton" name="colorMapButton_1">
+           <property name="text">
+            <string>...</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
@@ -187,6 +194,13 @@
          <item>
           <widget class="tomviz::SpinBox" name="spinBox_2"/>
          </item>
+         <item>
+          <widget class="QToolButton" name="colorMapButton_2">
+           <property name="text">
+            <string>...</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
@@ -220,6 +234,13 @@
          </item>
          <item>
           <widget class="tomviz::SpinBox" name="spinBox_3"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="colorMapButton_3">
+           <property name="text">
+            <string>...</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
