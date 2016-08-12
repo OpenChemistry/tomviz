@@ -306,6 +306,7 @@ set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
 target_link_libraries(tomviz
   pqApplicationComponents
   vtkPVServerManagerRendering
+  vtkjsoncpp
   vtkpugixml
   tomvizExtensions)
 if(WIN32)

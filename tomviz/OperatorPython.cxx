@@ -28,6 +28,8 @@
 #include "vtkSmartPyObject.h"
 #include <sstream>
 
+#include "vtk_jsoncpp.h"
+
 #include "ui_EditPythonOperatorWidget.h"
 
 namespace
@@ -117,6 +119,55 @@ QIcon OperatorPython::icon() const
   return QIcon(":/pqWidgets/Icons/pqProgrammableFilter24.png");
 }
 
+void OperatorPython::setJSONDescription(const QString& str)
+{
+  if (this->jsonDescription == str) {
+    return;
+  }
+
+  Json::Value root;
+  Json::Reader reader;
+  bool parsingSuccessful = reader.parse(str.toStdString().c_str(), root);
+  if (!parsingSuccessful) {
+    qCritical() << "Failed to parse operator JSON";
+    qCritical() << str;
+    return;
+  }
+
+  // Get the label for the operator
+  Json::Value labelNode = root["label"];
+  if (!labelNode.isNull()) {
+    setLabel(labelNode.asCString());
+  }
+
+  // Get the number of results
+  Json::Value resultsNode = root["results"];
+  if (!resultsNode.isNull()) {
+    Json::Value::ArrayIndex numResults = resultsNode.size();
+    setNumberOfResults(numResults);
+
+    for (Json::Value::ArrayIndex i = 0; i < numResults; ++i) {
+      OperatorResult* oa = resultAt(i);
+      if (!oa) {
+        Q_ASSERT(oa != nullptr);
+      }
+      Json::Value nameValue = resultsNode[i]["name"];
+      if (!nameValue.isNull()) {
+        oa->setName(nameValue.asCString());
+      }
+      Json::Value labelValue = resultsNode[i]["label"];
+      if (!labelValue.isNull()) {
+        oa->setLabel(labelValue.asCString());
+      }
+    }
+  }
+}
+
+const QString& OperatorPython::JSONDescription() const
+{
+  return this->jsonDescription;
+}
+
 void OperatorPython::setScript(const QString& str)
 {
   if (this->Script != str)
@@ -184,6 +235,28 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     return false;
   }
 
+  // TODO - check if there are results but no settings for them in
+  // the output from the script.
+
+  // Look for additional outputs from the filter returned in a dictionary
+  PyObject* outputDict = result.GetPointer();
+  if (PyDict_Check(outputDict)) {
+    for (int i = 0; i < numberOfResults(); ++i) {
+      OperatorResult *operatorResult = resultAt(i);
+      std::string resultName = operatorResult->name().toStdString();
+      PyObject* pyDataObject = PyDict_GetItemString(outputDict, resultName.c_str());
+      if (pyDataObject) {
+        vtkObjectBase* vtkobject = vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
+        if (vtkobject) {
+          setResult(i, vtkDataObject::SafeDownCast(vtkobject));
+        }
+      } else {
+        qCritical() << "No result named" << ("'" + resultName + "'").c_str()
+                    << "defined in output dictionary from 'transform_scalars' script.";
+      }
+    }
+  }
+
   return CheckForError() == false;
 }
 
@@ -192,6 +265,7 @@ Operator* OperatorPython::clone() const
   OperatorPython* newClone = new OperatorPython();
   newClone->setLabel(this->label());
   newClone->setScript(this->script());
+  newClone->setJSONDescription(this->JSONDescription());
   return newClone;
 }
 
