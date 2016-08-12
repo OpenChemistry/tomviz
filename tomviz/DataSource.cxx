@@ -41,6 +41,8 @@
 
 #include <vtk_pugixml.h>
 
+#include <QMap>
+
 #include <sstream>
 
 namespace tomviz
@@ -57,6 +59,7 @@ public:
   vtkSmartPointer<vtkDataArray> TiltAngles;
   vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
+  QMap<Operator*, vtkWeakPointer<vtkImageData> > CachedPreOpStates;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -541,6 +544,7 @@ vtkSmartPointer<vtkImageData> DataSource::getCopyOfImagePriorTo(Operator *op)
       this->Internals->Producer->GetClientSideObject());
     result->DeepCopy(tp->GetOutputDataObject(0));
   }
+  this->Internals->CachedPreOpStates[op] = result;
   return result;
 }
 
@@ -676,12 +680,32 @@ void DataSource::resetData()
 
 void DataSource::operatorTransformModified()
 {
+  Operator *srcOp = qobject_cast<Operator*>(this->sender());
   bool prev = this->blockSignals(true);
 
-  this->resetData();
-  foreach (Operator *op, this->Internals->Operators)
+  vtkSmartPointer<vtkImageData> cachedState;
+  if (srcOp && this->Internals->CachedPreOpStates.contains(srcOp))
   {
-    this->operate(op);
+    cachedState = this->Internals->CachedPreOpStates[srcOp];
+  }
+  if (cachedState)
+  {
+    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+      this->Internals->Producer->GetClientSideObject());
+    tp->SetOutput(cachedState);
+    for (auto itr = this->Internals->Operators.begin() + this->Internals->Operators.indexOf(srcOp);
+        itr != this->Internals->Operators.end(); ++itr)
+    {
+      this->operate(*itr);
+    }
+  }
+  else
+  {
+    this->resetData();
+    foreach (Operator *op, this->Internals->Operators)
+    {
+      this->operate(op);
+    }
   }
   this->blockSignals(prev);
   this->dataModified();
