@@ -389,7 +389,7 @@ QModelIndex PipelineModel::parent(const QModelIndex &index) const
   if (!treeItem->parent()) {
     return QModelIndex();
   }
-  return createIndex(treeItem->childIndex(), 0, treeItem->parent());
+  return createIndex(treeItem->parent()->childIndex(), 0, treeItem->parent());
 }
 
 int PipelineModel::rowCount(const QModelIndex &parent) const
