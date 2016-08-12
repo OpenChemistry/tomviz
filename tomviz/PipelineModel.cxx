@@ -182,6 +182,9 @@ bool PipelineModel::TreeItem::remove(Module *module)
   foreach(auto childItem, m_children) {
     if (childItem->module() == module) {
       removeChild(childItem->childIndex());
+      // Not sure I like this, an alternative is to make TreeItem a
+      // QObject and use a signal?
+      ModuleManager::instance().removeModule(module);
       return true;
     }
   }
@@ -478,20 +481,15 @@ void PipelineModel::moduleAdded(Module *module)
 {
   Q_ASSERT(module);
   auto dataSource = module->dataSource();
-
-  for (int i = 0; i < m_treeItems.count(); ++i) {
-    if (dataSource == m_treeItems[i]->dataSource()) {
-      auto dataSourceItem = m_treeItems[i];
-
-      // Modules are placed at the bottom of the list. Let's just append it
-      // to the data source item.
-      auto row = dataSourceItem->childCount();
-      beginInsertRows(dataSourceIndex(dataSource), row, row);
-      dataSourceItem->appendChild(PipelineModel::Item(module));
-      endInsertRows();
-
-      break;
-    }
+  auto index = this->dataSourceIndex(dataSource);
+  if (index.isValid()) {
+    auto dataSourceItem = this->treeItem(index);
+    // Modules are placed at the bottom of the list. Let's just append it
+    // to the data source item.
+    auto row = dataSourceItem->childCount();
+    beginInsertRows(index, row, row);
+    dataSourceItem->appendChild(PipelineModel::Item(module));
+    endInsertRows();
   }
 }
 
@@ -504,75 +502,58 @@ void PipelineModel::operatorAdded(Operator *op)
   Q_ASSERT(dataSource);
   connect(op, SIGNAL(labelModified()), this, SLOT(operatorModified()));
 
-  for (int i = 0; i < m_treeItems.count(); ++i) {
-    if (m_treeItems[i]->dataSource() == dataSource) {
-      auto dataSourceItem = m_treeItems[i];
-
-      // Find the last operator if there is one, and insert the operator there.
-      int insertionRow = 0;
-      for (int j = 0; j < dataSourceItem->childCount(); ++j) {
-        if (!dataSourceItem->child(j)->op()) {
-          insertionRow = j;
-          break;
-        }
-      }
-
-      beginInsertRows(dataSourceIndex(op->dataSource()), insertionRow, insertionRow);
-      dataSourceItem->insertChild(insertionRow, PipelineModel::Item(op));
-      endInsertRows();
+  auto index = this->dataSourceIndex(dataSource);
+  auto dataSourceItem = this->treeItem(index);
+  // Find the last operator if there is one, and insert the operator there.
+  int insertionRow = 0;
+  for (int j = 0; j < dataSourceItem->childCount(); ++j) {
+    if (!dataSourceItem->child(j)->op()) {
+      insertionRow = j;
+      break;
     }
   }
+
+  beginInsertRows(index, insertionRow, insertionRow);
+  dataSourceItem->insertChild(insertionRow, PipelineModel::Item(op));
+  endInsertRows();
 }
 
 void PipelineModel::operatorModified()
 {
   auto op = qobject_cast<Operator*>(sender());
   Q_ASSERT(op);
-  /// TODO: Find the index, and update correctly.
-  beginResetModel();
-  endResetModel();
+
+  auto index = this->operatorIndex(op);
+  dataChanged(index, index);
 }
 
 void PipelineModel::dataSourceRemoved(DataSource *source)
 {
-  foreach(auto item, m_treeItems) {
-    if (item->dataSource() == source) {
-      beginResetModel();
-      item->remove(source);
-      m_treeItems.removeAll(item);
-      endResetModel();
-      return;
-    }
+  auto index = this->dataSourceIndex(source);
+
+  if (index.isValid()) {
+    auto item = this->treeItem(index);
+    beginRemoveRows(this->parent(index), index.row(), index.row());
+    item->remove(source);
+    m_treeItems.removeAll(item);
+    endRemoveRows();
   }
 }
 
 void PipelineModel::moduleRemoved(Module *module)
 {
-  foreach(auto item, m_treeItems) {
-    if (item->dataSource() == module->dataSource()) {
-      beginResetModel();
-      item->remove(module);
-      endResetModel();
-      return;
-    }
+  auto index = this->moduleIndex(module);
+
+  if (index.isValid()) {
+    beginRemoveRows(this->parent(index), index.row(), index.row());
+    auto item = this->treeItem(index);
+    item->parent()->remove(module);
+    endRemoveRows();
   }
 }
 
 bool PipelineModel::removeDataSource(DataSource *source)
 {
-  foreach(auto item, m_treeItems) {
-    if (item->dataSource() == source) {
-      foreach(auto childItem, item->children()) {
-        if (childItem->op() && childItem->childCount()) {
-          foreach(auto moduleItem, childItem->children()) {
-            removeModule(moduleItem->module());
-          }
-        } else if (childItem->module()) {
-          removeModule(childItem->module());
-        }
-      }
-    }
-  }
   dataSourceRemoved(source);
   ModuleManager::instance().removeDataSource(source);
   return true;
@@ -581,35 +562,33 @@ bool PipelineModel::removeDataSource(DataSource *source)
 bool PipelineModel::removeModule(Module *module)
 {
   moduleRemoved(module);
-  ModuleManager::instance().removeModule(module);
   return true;
-
-  foreach(auto item, m_treeItems) {
-    if (item->dataSource() == module->dataSource()) {
-      beginResetModel();
-      item->remove(module);
-      endResetModel();
-      ModuleManager::instance().removeModule(module);
-      return true;
-    }
-  }
-  return false;
 }
 
 bool PipelineModel::removeOp(Operator *o)
 {
-  foreach(TreeItem *item, m_treeItems) {
-    if (item->hasOp(o)) {
-      // Should circle back to this, but removing an operator potentially moves
-      // the children up a level, or to the final operator in the chain.
-      beginResetModel();
-      item->remove(o);
-      endResetModel();
-      o->dataSource()->removeOperator(o);
-      return true;
-    }
+  auto index = this->operatorIndex(o);
+
+  if (index.isValid()) {
+    beginRemoveRows(this->parent(index), index.row(), index.row());
+    auto item = this->treeItem(index);
+    item->parent()->remove(o);
+    endRemoveRows();
+    o->dataSource()->removeOperator(o);
+
+    return true;
   }
+
   return false;
+}
+
+PipelineModel::TreeItem* PipelineModel::treeItem(const QModelIndex &index) const
+{
+  if (!index.isValid()) {
+    return nullptr;
+  }
+
+  return static_cast<PipelineModel::TreeItem*>(index.internalPointer());
 }
 
 } // tomviz namespace
