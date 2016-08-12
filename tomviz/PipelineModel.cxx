@@ -282,7 +282,7 @@ QVariant PipelineModel::data(const QModelIndex &index, int role) const
     }
   } else {
     // Module or operator
-    auto treeItem = static_cast<TreeItem *>(index.internalPointer());
+    auto treeItem = this->treeItem(index);
     auto module = treeItem->module();
     auto op = treeItem->op();
     if (module) {
@@ -335,7 +335,7 @@ bool PipelineModel::setData(const QModelIndex &index, const QVariant &value,
     return false;
   }
 
-  auto treeItem = static_cast<TreeItem*>(index.internalPointer());
+  auto treeItem = this->treeItem(index);
   if (index.column() == 1 && treeItem->module()) {
     treeItem->module()->setVisibility(value == Qt::Checked);
     emit dataChanged(index, index);
@@ -348,7 +348,7 @@ Qt::ItemFlags PipelineModel::flags(const QModelIndex &index) const
   if (!index.isValid())
     return 0;
 
-  auto treeItem = static_cast<TreeItem*>(index.internalPointer());
+  auto treeItem = this->treeItem(index);
   auto module = treeItem->module();
   auto view = ActiveObjects::instance().activeView();
 
@@ -371,7 +371,7 @@ QModelIndex PipelineModel::index(int row, int column,
     return createIndex(row, column, m_treeItems[row]);
   } else {
     // Module or operator
-    auto treeItem = static_cast<TreeItem *>(parent.internalPointer());
+    auto treeItem = this->treeItem(parent);
     if (treeItem && row < treeItem->childCount()) {
       return createIndex(row, column, treeItem->child(row));
     }
@@ -385,7 +385,7 @@ QModelIndex PipelineModel::parent(const QModelIndex &index) const
   if (!index.isValid()) {
     return QModelIndex();
   }
-  auto treeItem = static_cast<TreeItem *>(index.internalPointer());
+  auto treeItem = this->treeItem(index);
   if (!treeItem->parent()) {
     return QModelIndex();
   }
@@ -397,7 +397,7 @@ int PipelineModel::rowCount(const QModelIndex &parent) const
   if (!parent.isValid()) {
     return m_treeItems.count();
   } else {
-    auto treeItem = static_cast<TreeItem*>(parent.internalPointer());
+    auto treeItem = this->treeItem(parent);
     return treeItem->childCount();
   }
 }
@@ -409,31 +409,19 @@ int PipelineModel::columnCount(const QModelIndex &) const
 
 DataSource* PipelineModel::dataSource(const QModelIndex &idx)
 {
-  if (!idx.isValid())
-  {
-    return nullptr;
-  }
-  auto treeItem = static_cast<TreeItem*>(idx.internalPointer());
+  auto treeItem = this->treeItem(idx);
   return (treeItem ? treeItem->dataSource() : nullptr);
 }
 
 Module* PipelineModel::module(const QModelIndex &idx)
 {
-  if (!idx.isValid())
-  {
-    return nullptr;
-  }
-  auto treeItem = static_cast<TreeItem*>(idx.internalPointer());
+  auto treeItem = this->treeItem(idx);
   return (treeItem ? treeItem->module() : nullptr);
 }
 
 Operator* PipelineModel::op(const QModelIndex &idx)
 {
-  if (!idx.isValid())
-  {
-    return nullptr;
-  }
-  auto treeItem = static_cast<TreeItem*>(idx.internalPointer());
+  auto treeItem = this->treeItem(idx);
   return (treeItem ? treeItem->op() : nullptr);
 }
 

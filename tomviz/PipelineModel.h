@@ -68,6 +68,9 @@ public slots:
 private:
   struct Item;
   class TreeItem;
+
+  TreeItem* treeItem(const QModelIndex &index) const;
+
   QList<TreeItem *> m_treeItems;
 };
 
