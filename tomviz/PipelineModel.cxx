@@ -576,19 +576,6 @@ bool PipelineModel::removeDataSource(DataSource *source)
   dataSourceRemoved(source);
   ModuleManager::instance().removeDataSource(source);
   return true;
-
-  foreach(auto item, m_treeItems) {
-    if (item->dataSource() == source) {
-      beginResetModel();
-      item->remove(source);
-      m_treeItems.removeAll(item);
-      endResetModel();
-
-      return true;
-    }
-  }
-
-  return false;
 }
 
 bool PipelineModel::removeModule(Module *module)
