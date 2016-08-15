@@ -1,0 +1,25 @@
+{
+  "name" : "ConnectedComponents",
+  "label" : "Connected Components",
+  "results" : [
+    {
+      "name" : "component_statistics",
+      "label" : "Component Statistics",
+      "type" : "table"
+    }
+  ],
+  "parameters" : [
+    {
+      "name" : "lowerThreshold",
+      "label" : "Lower Threshold",
+      "type" : "double",
+      "components" : "1"
+    },
+    {
+      "name" : "upperThreshold",
+      "label" : "Upper Threshold",
+      "type" : "double",
+      "components" : "1"
+    }
+  ]
+}

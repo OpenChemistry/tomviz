@@ -239,6 +239,10 @@ set(python_files
   BinTiltSeriesByTwo.py
   )
 
+set(json_files
+  ConnectedComponents.json
+  )
+
 set(resource_files
   matplotlib_cmaps.json
   )
@@ -251,6 +255,15 @@ else()
 endif()
 make_directory("${tomviz_BINARY_DIR}/share/tomviz/scripts")
 foreach(file ${python_files})
+  list(APPEND SOURCES "python/${file}")
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/${file}"
+    "${tomviz_BINARY_DIR}/share/tomviz/scripts/${file}")
+  install(FILES "python/${file}"
+    DESTINATION "${tomviz_data_install_dir}/scripts"
+    COMPONENT "Scripts")
+endforeach()
+foreach(file ${json_files})
   list(APPEND SOURCES "python/${file}")
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
     "${tomviz_SOURCE_DIR}/tomviz/python/${file}"
