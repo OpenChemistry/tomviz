@@ -66,6 +66,7 @@
 #include <QDoubleSpinBox>
 #include <QTimer>
 
+#include <array>
 
 namespace tomviz
 {
