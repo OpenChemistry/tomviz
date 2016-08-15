@@ -44,17 +44,6 @@ vtkSmartPointer<vtkFloatArray> convertToFloatT(T *data, int len)
   return array;
 }
 
-vtkSmartPointer<vtkFloatArray> convertToFloat(vtkImageData* image)
-{
-  vtkDataArray *scalars = image->GetPointData()->GetScalars();
-  int len = scalars->GetNumberOfTuples();
-  vtkSmartPointer<vtkFloatArray> array;
-  switch(scalars->GetDataType())
-  {
-    vtkTemplateMacro(array = convertToFloatT(static_cast<VTK_TT*>(scalars->GetVoidPointer(0)), len););
-  }
-  return array;
-}
 }
 
 namespace tomviz
