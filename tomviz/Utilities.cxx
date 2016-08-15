@@ -218,10 +218,10 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   return false;
 }
 
-QString readInPythonScript(const QString &scriptName)
+QString readInTextFile(const QString &fileName, const QString &extension)
 {
   QString path = QApplication::applicationDirPath() + "/../share/tomviz/scripts/";
-  path += scriptName + ".py";
+  path += fileName + extension;
   QFile file(path);
   if (file.open(QIODevice::ReadOnly))
   {
@@ -235,7 +235,7 @@ QString readInPythonScript(const QString &scriptName)
   else
   {
     path = QApplication::applicationDirPath() + "/../../../../share/tomviz/scripts/";
-    path += scriptName + ".py";
+    path += fileName + extension;
     QFile file2(path);
     if (file2.open(QIODevice::ReadOnly))
     {
@@ -244,8 +244,18 @@ QString readInPythonScript(const QString &scriptName)
     }
   }
 #endif
-  qCritical() << "Error: Could not find script file: " << scriptName;
+  qCritical() << "Error: Could not find script file: " << fileName + extension;
   return "raise IOError(\"Couldn't read script file\")\n";
+}
+
+QString readInPythonScript(const QString &scriptName)
+{
+  return readInTextFile(scriptName, ".py");
+}
+
+QString readInJSONDescription(const QString &fileName)
+{
+  return readInTextFile(fileName, ".json");
 }
 
 void createCameraOrbit(vtkSMSourceProxy *data, vtkSMRenderViewProxy *renderView)

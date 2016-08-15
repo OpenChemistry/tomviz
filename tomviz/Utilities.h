@@ -129,10 +129,19 @@ vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy);
 /// on the colorMap i.e. if user locked the scalar range, it won't be rescaled.
 bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource);
 
+// Given the root of a file and an extension, reades the file fileName + extension
+// and returns the content in a QString.
+QString readInTextFile(const QString &fileName, const QString &extension);
+
 // Given the name of a python script, find the script file and return the contents
 // This assumes that the given script is one of the built-in tomviz python operator
 // scripts.
 QString readInPythonScript(const QString &scriptName);
+
+// Given the name of an operator python script, find the JSON description
+// file and return the contents. This assumes that the given script is one
+// of the built-in tomviz python operator scripts.
+QString readInJSONDescription(const QString &scriptName);
 
 // Create a camera orbit animation for the given renderview around the given object
 void createCameraOrbit(vtkSMSourceProxy *data, vtkSMRenderViewProxy *renderView);
