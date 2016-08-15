@@ -35,7 +35,7 @@ class DataTransformMenu : public QObject
   typedef QObject Superclass;
 
 public:
-  DataTransformMenu(QMainWindow* mainWindow=nullptr, QMenu* menu=nullptr);
+  DataTransformMenu(QMainWindow* mainWindow = nullptr, QMenu* menu = nullptr);
   virtual ~DataTransformMenu();
 
 private slots:
@@ -45,7 +45,7 @@ protected slots:
   void buildMenu();
 
 private:
-  Q_DISABLE_COPY(DataTransformMenu);
+  Q_DISABLE_COPY(DataTransformMenu)
   QPointer<QMenu> Menu;
 
   class DTInternals;
