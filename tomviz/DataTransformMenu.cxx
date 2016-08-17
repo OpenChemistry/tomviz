@@ -76,7 +76,7 @@ void DataTransformMenu::buildMenu()
   QAction *shiftUniformAction = menu->addAction("Shift Volume");
   QAction *deleteSliceAction = menu->addAction("Delete Slices");
   QAction *padVolumeAction = menu->addAction("Pad Volume");
-  QAction *downsampleByTwoAction = menu->addAction("Downsample x2");
+  QAction *downsampleByTwoAction = menu->addAction("Bin Volume x2");
   QAction *resampleAction = menu->addAction("Resample");
   QAction *rotateAction = menu->addAction("Rotate");
   QAction *clearAction = menu->addAction("Clear Subvolume");
