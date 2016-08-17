@@ -203,6 +203,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction *dataProcessingLabel = ui.menuTomography->addAction("Pre-reconstruction Processing:");
   dataProcessingLabel->setEnabled(false);
+  QAction *downsampleByTwoAction = ui.menuTomography->addAction("Bin Tilt Images x2");
   QAction *autoSubtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Auto)");
   QAction *subtractBackgroundAction = ui.menuTomography->addAction("Background Subtraction (Manual)");
   QAction *normalizationAction = ui.menuTomography->addAction("Normalize Average Image Intensity");
@@ -231,6 +232,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Generate Tilt Series", readInPythonScript("TiltSeries"),
                                  false, true);
   new AddAlignReaction(alignAction);
+  new AddPythonTransformReaction(downsampleByTwoAction, "Bin Tilt Image x2",
+                                 readInPythonScript("BinTiltSeriesByTwo"), true);
   new AddPythonTransformReaction(autoSubtractBackgroundAction, "Background Subtraction (Auto)",
                                  readInPythonScript("Subtract_TiltSer_Background_Auto"), true);
   new AddPythonTransformReaction(subtractBackgroundAction, "Background Subtraction (Manual)",

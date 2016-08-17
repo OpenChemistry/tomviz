@@ -113,7 +113,7 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(padVolumeAction,
                                  "Pad Volume", readInPythonScript("Pad_Data"));
   new AddPythonTransformReaction(downsampleByTwoAction,
-                                   "Downsample x2", readInPythonScript("DownsampleByTwo"));
+                                   "Bin Volume x2", readInPythonScript("BinVolumeByTwo"));
   new AddPythonTransformReaction(resampleAction,
                                    "Resample", readInPythonScript("Resample"));
   new AddPythonTransformReaction(rotateAction,

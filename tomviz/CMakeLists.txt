@@ -208,7 +208,6 @@ set(python_files
   Recon_WBP.py
   Recon_ART.py
   Crop_Data.py
-  DownsampleByTwo.py
   FFT_AbsLog.py
   Shift_Stack_Uniformly.py
   Shift3D.py
@@ -234,6 +233,8 @@ set(python_files
   STEM_probe.py
   InvertData.py
   Pad_Data.py
+  BinVolumeByTwo.py
+  BinTiltSeriesByTwo.py
   )
 
 set(resource_files
