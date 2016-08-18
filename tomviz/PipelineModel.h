@@ -68,9 +68,10 @@ public slots:
 private:
   struct Item;
   class TreeItem;
+
+  TreeItem* treeItem(const QModelIndex &index) const;
+
   QList<TreeItem *> m_treeItems;
-  QList<DataSource *> m_dataSources;
-  QMap<DataSource *, QList<Module *> > m_modules;
 };
 
 } // tomviz namespace
