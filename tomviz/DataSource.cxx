@@ -262,11 +262,6 @@ bool DataSource::serialize(pugi::xml_node& ns) const
 
 bool DataSource::deserialize(const pugi::xml_node& ns)
 {
-  tomviz::deserialize(this->colorMap(), ns.child("ColorMap"));
-  tomviz::deserialize(this->opacityMap(), ns.child("OpacityMap"));
-  vtkSMPropertyHelper(this->colorMap(),
-                      "ScalarOpacityFunction").Set(this->opacityMap());
-  this->colorMap()->UpdateVTKObjects();
 
   // We don't save this anymore, but so that we can continue to read legacy files....
   // It should either be in the original data or in the Operator pipeline.
@@ -284,6 +279,13 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
 
   this->Internals->Operators.clear();
   this->resetData();
+
+  // load the color map here to avoid resetData clobbering its range
+  tomviz::deserialize(this->colorMap(), ns.child("ColorMap"));
+  tomviz::deserialize(this->opacityMap(), ns.child("OpacityMap"));
+  vtkSMPropertyHelper(this->colorMap(),
+                      "ScalarOpacityFunction").Set(this->opacityMap());
+  this->colorMap()->UpdateVTKObjects();
 
   // load tilt angles AFTER resetData call.  Again this is no longer saved and the load code
   // is for legacy support.  This should be saved by the SetTiltAnglesOperator.
