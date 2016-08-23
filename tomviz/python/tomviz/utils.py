@@ -246,3 +246,29 @@ def mark_as_tiltseries(dataobject):
         arr.SetName("tomviz_data_source_type")
         fd.AddArray(arr)
     arr.SetTuple1(0, 1)
+
+def make_spreadsheet(column_names, table):
+    # column_names is a list of strings
+    # table is a 2D numpy.ndarray
+    # returns a vtkTable object that stores the table content
+
+    # Create a vtkTable to store the output.
+    rows = table.shape[0]
+
+    if (table.shape[1] != len(column_names)):
+        print('Warning: table number of columns differs from number of column names')
+        return
+
+    from vtk import vtkTable, vtkFloatArray
+    vtk_table = vtkTable()
+    for (column, name) in enumerate(column_names):
+        array = vtkFloatArray()
+        array.SetName(name)
+        array.SetNumberOfComponents(1)
+        array.SetNumberOfTuples(rows)
+        vtk_table.AddColumn(array)
+
+        for row in xrange(0, rows):
+            array.InsertValue(row, table[row, column])
+
+    return vtk_table

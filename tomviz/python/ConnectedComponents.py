@@ -81,36 +81,26 @@ def transform_scalars(dataset):
         # Set up arrays to hold the shape attribute data
         label_map = shape_filter.GetOutput()
         num_label_objects = label_map.GetNumberOfLabelObjects()
- 
-        # Convenience function for creating shape attribute arrays
-        def create_attribute_array(name):
-            array = vtk.vtkDoubleArray()
-            array.SetName(name)
-            array.SetNumberOfComponents(1)
-            array.SetNumberOfTuples(num_label_objects)
-            return array
 
-        area_array = create_attribute_array('SurfaceArea')
-        volume_array = create_attribute_array('Volume')
-        surface_volume_ratio_array = create_attribute_array('SurfaceAreaToVolumeRatio')
+        column_names = ['SurfaceArea', 'Volume', 'SurfaceAreaToVolumeRatio']
+        import numpy as np
+        # num_label_objects rows, 3 columns
+        table = np.zeros((num_label_objects, len(column_names)))
 
         for i in xrange(0, num_label_objects):
             label_object = label_map.GetNthLabelObject(i)
             surface_area = label_object.GetPerimeter()
-            area_array.InsertValue(i, surface_area)
+            table[i, 0] = surface_area
             volume = label_object.GetPhysicalSize()
-            volume_array.InsertValue(i, volume)
-            surface_volume_ratio_array.InsertValue(i, surface_area / volume)
+            table[i, 1] = volume
+            table[i, 2] = surface_area / volume
 
-        # Create a vtkTable to store the output. This is an result
-        # of this operator.
-        table = vtk.vtkTable()
-        table.AddColumn(area_array)
-        table.AddColumn(volume_array)
-        table.AddColumn(surface_volume_ratio_array)
+        # Create a spreadsheet data set from table data
+        spreadsheet = utils.make_spreadsheet(column_names, table)
 
+        # Set up dictionary to return operator results
         returnValues = {}
-        returnValues["component_statistics"] = table
+        returnValues["component_statistics"] = spreadsheet
 
     except Exception as exc:
         print("Exception encountered while running ConnectedComponents")
