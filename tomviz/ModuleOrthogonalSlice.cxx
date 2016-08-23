@@ -16,7 +16,10 @@
 #include "ModuleOrthogonalSlice.h"
 
 #include "DataSource.h"
-#include "pqProxiesWidget.h"
+#include "IntSliderWidget.h"
+#include "pqPropertyLinks.h"
+#include "pqSignalAdaptors.h"
+#include "pqWidgetRangeDomain.h"
 #include "Utilities.h"
 #include "vtkNew.h"
 #include "vtkSmartPointer.h"
@@ -28,7 +31,8 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 
-#include <QHBoxLayout>
+#include <QFormLayout>
+#include <QComboBox>
 
 namespace tomviz
 {
@@ -129,20 +133,42 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
     delete panel->layout();
   }
 
-  QHBoxLayout *layout = new QHBoxLayout;
+  QFormLayout *layout = new QFormLayout;
+
+  QComboBox *direction = new QComboBox;
+  direction->addItem("XY Plane");
+  direction->addItem("YZ Plane");
+  direction->addItem("XZ Plane");
+
+  layout->addRow("Direction", direction);
+
+  pqSignalAdaptorComboBox *adaptor = new pqSignalAdaptorComboBox(direction);
+
+  IntSliderWidget *sliceIndex = new IntSliderWidget(true);
+  sliceIndex->setLineEditWidth(50);
+  sliceIndex->setPageStep(1);
+  layout->addRow("Slice", sliceIndex);
+
   panel->setLayout(layout);
-  pqProxiesWidget *proxiesWidget = new pqProxiesWidget(panel);
-  layout->addWidget(proxiesWidget);
 
-  QStringList reprProperties;
-  reprProperties
-    << "SliceMode"
-    << "Slice";
-  proxiesWidget->addProxy(this->Representation, "Slice", reprProperties, true);
-  proxiesWidget->updateLayout();
+  this->Links.addPropertyLink(sliceIndex, "value",
+      SIGNAL(valueEdited(int)), this->Representation,
+      this->Representation->GetProperty("Slice"), 0);
+  new pqWidgetRangeDomain(sliceIndex, "minimum", "maximum",
+      this->Representation->GetProperty("Slice"), 0);
 
-  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
-                SIGNAL(renderNeeded()));
+  this->Links.addPropertyLink(adaptor, "currentText",
+      SIGNAL(currentTextChanged(QString)), this->Representation,
+      this->Representation->GetProperty("SliceMode"));
+
+  this->connect(sliceIndex, &IntSliderWidget::valueEdited, this, &ModuleOrthogonalSlice::dataUpdated);
+  this->connect(direction, &QComboBox::currentTextChanged, this, &ModuleOrthogonalSlice::dataUpdated);
+}
+
+void ModuleOrthogonalSlice::dataUpdated()
+{
+  this->Links.accept();
+  emit this->renderNeeded();
 }
 
 bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
