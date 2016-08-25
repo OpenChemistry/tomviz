@@ -16,19 +16,18 @@
 #ifndef tomvizOperator_h
 #define tomvizOperator_h
 
-#include <QObject>
 #include <QIcon>
+#include <QObject>
 
-#include <vtk_pugixml.h>
-#include <vtkSmartPointer.h>
 #include <vtkObject.h>
+#include <vtkSmartPointer.h>
+#include <vtk_pugixml.h>
 
 class vtkDataObject;
 class vtkImageData;
 class QWidget;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 class EditOperatorWidget;
 class OperatorResult;
@@ -50,7 +49,7 @@ public:
   /// Returns an icon to use for this operator.
   virtual QIcon icon() const = 0;
 
-  bool transform(vtkDataObject *data);
+  bool transform(vtkDataObject* data);
 
   /// Return a new clone.
   virtual Operator* clone() const = 0;
@@ -77,16 +76,22 @@ public:
   /// just prior to this Operator for the widget to display correctly.  If this data
   /// is needed, the default implementation to return nullptr should be left for this
   /// function.
-  virtual EditOperatorWidget* getEditorContents(QWidget* vtkNotUsed(parent)) { return nullptr; }
+  virtual EditOperatorWidget* getEditorContents(QWidget* vtkNotUsed(parent))
+  {
+    return nullptr;
+  }
   /// Should return a widget for editing customizable parameters on this
   /// operator or nullptr if there is nothing to edit.  The vtkImageData
   /// is a copy of the DataSource's image with all Operators prior in the
   /// pipeline applied to it.  This should be used if the widget needs to
   /// display the VTK data, but modifications to it will not affect the
   /// DataSource.
-  virtual EditOperatorWidget* getEditorContentsWithData(QWidget* parent,
-      vtkSmartPointer<vtkImageData> vtkNotUsed(inputDataForDisplay))
-  { return this->getEditorContents(parent); }
+  virtual EditOperatorWidget* getEditorContentsWithData(
+    QWidget* parent,
+    vtkSmartPointer<vtkImageData> vtkNotUsed(inputDataForDisplay))
+  {
+    return this->getEditorContents(parent);
+  }
   /// Should return true if the Operator has a non-null widget to return from
   /// getEditorContents.
   virtual bool hasCustomUI() const { return false; }
@@ -135,8 +140,9 @@ signals:
 
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
-  /// Operators should override this if they support canceling the operation midway.
-  virtual void cancelTransform() { /* Unsupported */ };
+  /// Operators should override this if they support canceling the operation
+  /// midway.
+  virtual void cancelTransform(){ /* Unsupported */ };
 
 protected:
   /// Method to transform a dataset in-place.
@@ -145,7 +151,7 @@ protected:
   /// Method to set whether the operator supports canceling midway through the transform
   /// method call.  If you set this to true, you should also override the cancelTransform
   /// slot to listen for the cancel signal and handle it.
-  void setSupportsCancel(bool b) { this-> supportsCancel = b; }
+  void setSupportsCancel(bool b) { this->supportsCancel = b; }
 
 private:
   bool supportsCancel = false;
@@ -153,7 +159,6 @@ private:
 
   QList<OperatorResult*> m_results;
 };
-
 }
 
 #endif

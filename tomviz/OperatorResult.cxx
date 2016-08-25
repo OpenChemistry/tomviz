@@ -17,16 +17,16 @@
 
 #include <vtkDataObject.h>
 #include <vtkNew.h>
-#include <vtkSMSessionProxyManager.h>
 #include <vtkSMParaViewPipelineController.h>
 #include <vtkSMProxyManager.h>
+#include <vtkSMSessionProxyManager.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
 
 namespace tomviz {
 
-OperatorResult::OperatorResult(QObject* parent) :
-  Superclass(parent), m_name(tr("Unnamed"))
+OperatorResult::OperatorResult(QObject* parent)
+  : Superclass(parent), m_name(tr("Unnamed"))
 {
 }
 
@@ -35,22 +35,22 @@ OperatorResult::~OperatorResult()
   finalize();
 }
 
-void OperatorResult::setName(const QString &name)
+void OperatorResult::setName(const QString& name)
 {
   m_name = name;
 }
 
-const QString & OperatorResult::name()
+const QString& OperatorResult::name()
 {
   return m_name;
 }
 
-void OperatorResult::setLabel(const QString &label)
+void OperatorResult::setLabel(const QString& label)
 {
   m_label = label;
 }
 
-const QString & OperatorResult::label()
+const QString& OperatorResult::label()
 {
   return m_label;
 }

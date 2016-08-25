@@ -24,8 +24,7 @@
 class vtkDataObject;
 class vtkSMSourceProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 // Output result from an operator. Such results may include label maps or
 // tables. This class wraps a single vtkDataObject produced by an operator.
@@ -35,15 +34,15 @@ class OperatorResult : public QObject
   typedef QObject Superclass;
 
 public:
-  OperatorResult(QObject* parent=nullptr);
+  OperatorResult(QObject* parent = nullptr);
   virtual ~OperatorResult() override;
 
   /// Set name of object.
-  void setName(const QString &name);
+  void setName(const QString& name);
   const QString& name();
 
   /// Set label of object.
-  void setLabel(const QString &label);
+  void setLabel(const QString& label);
   const QString& label();
 
   /// Clean up object, releasing the data object and the proxy created

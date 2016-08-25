@@ -20,11 +20,9 @@
 
 #include <QList>
 
-namespace tomviz
-{
+namespace tomviz {
 
-Operator::Operator(QObject* parentObject) :
-  QObject(parentObject)
+Operator::Operator(QObject* parentObject) : QObject(parentObject)
 {
 }
 
@@ -38,7 +36,7 @@ DataSource* Operator::dataSource()
   return qobject_cast<DataSource*>(parent());
 }
 
-bool Operator::transform(vtkDataObject *data)
+bool Operator::transform(vtkDataObject* data)
 {
   emit this->transformingStarted();
   emit this->updateProgress(0);
@@ -50,12 +48,10 @@ bool Operator::transform(vtkDataObject *data)
 void Operator::setNumberOfResults(int n)
 {
   int previousSize = m_results.size();
-  if (previousSize < n)
-  {
-    // Resize the list 
+  if (previousSize < n) {
+    // Resize the list
     m_results.reserve(n);
-    for (int i = previousSize; i < n; ++i)
-    {
+    for (int i = previousSize; i < n; ++i) {
       auto oa = new OperatorResult(this);
       m_results.append(oa);
     }
@@ -74,8 +70,7 @@ int Operator::numberOfResults() const
 
 bool Operator::setResult(int index, vtkDataObject* object)
 {
-  if (index < 0 || index >= numberOfResults())
-  {
+  if (index < 0 || index >= numberOfResults()) {
     return false;
   }
 
@@ -89,11 +84,9 @@ bool Operator::setResult(int index, vtkDataObject* object)
 
 OperatorResult* Operator::resultAt(int i) const
 {
-  if (i < 0 || i >= m_results.size())
-  {
+  if (i < 0 || i >= m_results.size()) {
     return nullptr;
   }
   return m_results[i];
 }
-
 }
