@@ -20,7 +20,6 @@
 #include <pqMacroReaction.h>
 #include <pqPythonShellReaction.h>
 #include <pqSaveAnimationReaction.h>
-#include <pqSaveScreenshotReaction.h>
 #include <pqSaveStateReaction.h>
 #include <pqSettings.h>
 #include <vtkPVPlugin.h>
@@ -46,6 +45,7 @@
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
+#include "SaveScreenshotReaction.h"
 #include "SetScaleReaction.h"
 #include "SetTiltAnglesReaction.h"
 #include "ToggleDataTypeReaction.h"
@@ -265,7 +265,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new pqSaveStateReaction(ui.actionSaveDebuggingState);
 
   new SaveDataReaction(ui.actionSaveData);
-  new pqSaveScreenshotReaction(ui.actionSaveScreenshot);
+  new SaveScreenshotReaction(ui.actionSaveScreenshot, this);
   new pqSaveAnimationReaction(ui.actionSaveMovie);
 
   new SaveLoadStateReaction(ui.actionSaveState);

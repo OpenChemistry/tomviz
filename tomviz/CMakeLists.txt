@@ -160,6 +160,8 @@ set(SOURCES
   SaveDataReaction.cxx
   SaveLoadStateReaction.cxx
   SaveLoadStateReaction.h
+  SaveScreenshotReaction.cxx
+  SaveScreenshotReaction.h
   ScaleActorBehavior.cxx
   ScaleActorBehavior.h
   SetScaleReaction.cxx
