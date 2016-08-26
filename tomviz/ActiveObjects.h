@@ -26,14 +26,13 @@ class pqView;
 class vtkSMSessionProxyManager;
 class vtkSMViewProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 /// ActiveObjects keeps track of active objects in tomviz.
 /// This is similar to pqActiveObjects in ParaView, however it tracks objects
 /// relevant to tomviz.
 class ActiveObjects : public QObject
-  {
+{
   Q_OBJECT
 
   typedef QObject Superclass;
@@ -71,7 +70,7 @@ public slots:
   /// Renders all views.
   void renderAllViews();
 
-  /// Set the active mode (true for the mode where objects can 
+  /// Set the active mode (true for the mode where objects can
   /// be moved via MoveActiveObject)
   void setMoveObjectsMode(bool moveObjectsOn);
 
@@ -82,7 +81,8 @@ signals:
   /// fired whenever the active data source changes (or changes type).
   void dataSourceChanged(DataSource*);
 
-  /// Fired whenever the data source is activated, i.e. selected in the pipeline.
+  /// Fired whenever the data source is activated, i.e. selected in the
+  /// pipeline.
   void dataSourceActivated(DataSource*);
 
   /// fired whenever the active module changes.
