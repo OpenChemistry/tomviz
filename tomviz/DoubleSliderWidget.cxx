@@ -67,7 +67,6 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
   
 }
 
-//-----------------------------------------------------------------------------
 DoubleSliderWidget::~DoubleSliderWidget()
 {
 }
@@ -82,13 +81,11 @@ void DoubleSliderWidget::setLineEditWidth(int width)
   }
 }
 
-//-----------------------------------------------------------------------------
 int DoubleSliderWidget::resolution() const
 {
   return this->Resolution;
 }
 
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::setResolution(int val)
 {
   this->Resolution = val;
@@ -96,13 +93,11 @@ void DoubleSliderWidget::setResolution(int val)
   this->updateSlider();
 }
 
-//-----------------------------------------------------------------------------
 double DoubleSliderWidget::value() const
 {
   return this->Value;
 }
 
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::setValue(double val)
 {
   if(this->Value == val)
@@ -130,13 +125,11 @@ void DoubleSliderWidget::setValue(double val)
   emit this->valueChanged(this->Value);
 }
 
-//-----------------------------------------------------------------------------
 double DoubleSliderWidget::maximum() const
 {
   return this->Maximum;
 }
 
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::setMaximum(double val)
 {
   this->Maximum = val;
@@ -144,13 +137,11 @@ void DoubleSliderWidget::setMaximum(double val)
   this->updateSlider();
 }
 
-//-----------------------------------------------------------------------------
 double DoubleSliderWidget::minimum() const
 {
   return this->Minimum;
 }
 
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::setMinimum(double val)
 {
   this->Minimum = val;
@@ -158,7 +149,6 @@ void DoubleSliderWidget::setMinimum(double val)
   this->updateSlider();
 }
 
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::updateValidator()
 {
   if (!this->LineEdit)
@@ -176,7 +166,6 @@ void DoubleSliderWidget::updateValidator()
   }
 }
 
-//-----------------------------------------------------------------------------
 bool DoubleSliderWidget::strictRange() const
 {
   if (!this->LineEdit)
@@ -194,7 +183,6 @@ void DoubleSliderWidget::setStrictRange(bool s)
   this->updateValidator();
 }
 
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::sliderChanged(int val)
 {
   if(!this->BlockUpdate)
@@ -213,7 +201,6 @@ void DoubleSliderWidget::sliderChanged(int val)
   }
 }
 
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::textChanged(const QString& text)
 {
   if(!this->BlockUpdate)
@@ -229,13 +216,11 @@ void DoubleSliderWidget::textChanged(const QString& text)
   }
 }
   
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::editingFinished()
 {
   emit this->valueEdited(this->Value);
 }
 
-//-----------------------------------------------------------------------------
 void DoubleSliderWidget::updateSlider()
 {
   this->Slider->blockSignals(true);
