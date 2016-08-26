@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "DoubleSliderWidget.h"
+#include "IntSliderWidget.h"
 
 #include "vtkPVConfig.h"
 #include "pqLineEdit.h"
@@ -21,25 +21,24 @@
 // Qt includes
 #include <QSlider>
 #include <QHBoxLayout>
-#include <QDoubleValidator>
+#include <QIntValidator>
 
 namespace tomviz
 {
 
-DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
+IntSliderWidget::IntSliderWidget(bool showLineEdit, QWidget* p)
   : QWidget(p) 
 {
   this->BlockUpdate = false;
   this->Value = 0;
   this->Minimum = 0;
   this->Maximum = 1;
-  this->Resolution = 100;
   this->StrictRange = false;
 
   QHBoxLayout* l = new QHBoxLayout(this);
   l->setMargin(0);
   this->Slider = new QSlider(Qt::Horizontal, this);
-  this->Slider->setRange(0, this->Resolution);
+  this->Slider->setRange(this->Minimum, this->Maximum);
   l->addWidget(this->Slider, 4);
   this->Slider->setObjectName("Slider");
   if (showLineEdit)
@@ -47,7 +46,7 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
     this->LineEdit = new pqLineEdit(this);
     l->addWidget(this->LineEdit);
     this->LineEdit->setObjectName("LineEdit");
-    this->LineEdit->setValidator(new QDoubleValidator(this->LineEdit));
+    this->LineEdit->setValidator(new QIntValidator(this->LineEdit));
     this->LineEdit->setTextAndResetCursor(QString().setNum(this->Value));
   }
   else
@@ -67,11 +66,11 @@ DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
   
 }
 
-DoubleSliderWidget::~DoubleSliderWidget()
+IntSliderWidget::~IntSliderWidget()
 {
 }
 
-void DoubleSliderWidget::setLineEditWidth(int width)
+void IntSliderWidget::setLineEditWidth(int width)
 {
   if (this->LineEdit)
   {
@@ -81,24 +80,18 @@ void DoubleSliderWidget::setLineEditWidth(int width)
   }
 }
 
-int DoubleSliderWidget::resolution() const
+void IntSliderWidget::setPageStep(int step)
 {
-  return this->Resolution;
+  this->Slider->setPageStep(step);
 }
 
-void DoubleSliderWidget::setResolution(int val)
-{
-  this->Resolution = val;
-  this->Slider->setRange(0, this->Resolution);
-  this->updateSlider();
-}
 
-double DoubleSliderWidget::value() const
+int IntSliderWidget::value() const
 {
   return this->Value;
 }
 
-void DoubleSliderWidget::setValue(double val)
+void IntSliderWidget::setValue(int val)
 {
   if(this->Value == val)
   {
@@ -116,8 +109,7 @@ void DoubleSliderWidget::setValue(double val)
     if (this->LineEdit)
     {
       this->BlockUpdate = true;
-      this->LineEdit->setTextAndResetCursor(QString().setNum(
-        val,'g',DEFAULT_DOUBLE_PRECISION_VALUE));
+      this->LineEdit->setTextAndResetCursor(QString().setNum(val));
       this->BlockUpdate = false;
     }
   }
@@ -125,31 +117,31 @@ void DoubleSliderWidget::setValue(double val)
   emit this->valueChanged(this->Value);
 }
 
-double DoubleSliderWidget::maximum() const
+int IntSliderWidget::maximum() const
 {
   return this->Maximum;
 }
 
-void DoubleSliderWidget::setMaximum(double val)
+void IntSliderWidget::setMaximum(int val)
 {
   this->Maximum = val;
   this->updateValidator();
   this->updateSlider();
 }
 
-double DoubleSliderWidget::minimum() const
+int IntSliderWidget::minimum() const
 {
   return this->Minimum;
 }
 
-void DoubleSliderWidget::setMinimum(double val)
+void IntSliderWidget::setMinimum(int val)
 {
   this->Minimum = val;
   this->updateValidator();
   this->updateSlider();
 }
 
-void DoubleSliderWidget::updateValidator()
+void IntSliderWidget::updateValidator()
 {
   if (!this->LineEdit)
   {
@@ -157,79 +149,74 @@ void DoubleSliderWidget::updateValidator()
   }
   if(this->StrictRange)
   {
-    this->LineEdit->setValidator(new QDoubleValidator(this->minimum(),
-        this->maximum(), 100, this->LineEdit));
+    this->LineEdit->setValidator(new QIntValidator(this->minimum(),
+        this->maximum(), this->LineEdit));
   }
   else
   {
-    this->LineEdit->setValidator(new QDoubleValidator(this->LineEdit));
+    this->LineEdit->setValidator(new QIntValidator(this->LineEdit));
   }
 }
 
-bool DoubleSliderWidget::strictRange() const
+bool IntSliderWidget::strictRange() const
 {
   if (!this->LineEdit)
   {
     return true;
   }
-  const QDoubleValidator* dv =
-    qobject_cast<const QDoubleValidator*>(this->LineEdit->validator());
+  const QIntValidator* dv =
+    qobject_cast<const QIntValidator*>(this->LineEdit->validator());
   return dv->bottom() == this->minimum() && dv->top() == this->maximum();
 }
 
-void DoubleSliderWidget::setStrictRange(bool s)
+void IntSliderWidget::setStrictRange(bool s)
 {
   this->StrictRange = s;
   this->updateValidator();
 }
 
-void DoubleSliderWidget::sliderChanged(int val)
+void IntSliderWidget::sliderChanged(int val)
 {
   if(!this->BlockUpdate)
   {
-    double fraction = val / static_cast<double>(this->Resolution);
-    double range = this->Maximum - this->Minimum;
-    double v = (fraction * range) + this->Minimum;
     this->BlockUpdate = true;
     if (this->LineEdit)
     {
-      this->LineEdit->setTextAndResetCursor(QString().setNum(v));
+      this->LineEdit->setTextAndResetCursor(QString().setNum(val));
     }
-    this->setValue(v);
-    emit this->valueEdited(v);
+    this->setValue(val);
+    emit this->valueEdited(val);
     this->BlockUpdate = false;
   }
 }
 
-void DoubleSliderWidget::textChanged(const QString& text)
+void IntSliderWidget::textChanged(const QString& text)
 {
   if(!this->BlockUpdate)
   {
-    double val = text.toDouble();
+    int val = text.toInt();
     this->BlockUpdate = true;
-    double range = this->Maximum - this->Minimum;
-    double fraction = (val - this->Minimum) / range;
-    int sliderVal = qRound(fraction * static_cast<double>(this->Resolution));
+    int sliderVal = val - this->Minimum;
     this->Slider->setValue(sliderVal);
     this->setValue(val);
     this->BlockUpdate = false;
   }
 }
   
-void DoubleSliderWidget::editingFinished()
+void IntSliderWidget::editingFinished()
 {
   emit this->valueEdited(this->Value);
 }
 
-void DoubleSliderWidget::updateSlider()
+void IntSliderWidget::updateSlider()
 {
   this->Slider->blockSignals(true);
-  double range = this->Maximum - this->Minimum;
-  double fraction = (this->Value - this->Minimum) / range;
-  int v = qRound(fraction * static_cast<double>(this->Resolution));
+  int v = this->Value - this->Minimum;
+  this->Slider->setRange(this->Minimum, this->Maximum);
   this->Slider->setValue(v);
   this->Slider->blockSignals(false);
 }
 
 }
+
 

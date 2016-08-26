@@ -98,6 +98,8 @@ set(SOURCES
   EditOperatorWidget.h
   HistogramWidget.h
   HistogramWidget.cxx
+  IntSliderWidget.cxx
+  IntSliderWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   main.cxx
