@@ -20,10 +20,9 @@
 
 /*
  * This class is a QDoubleSpinBox that fires its editingFinished() signal
- * whenever the
- * value is modified from the up and down arrow buttons in addition to when it
- * loses
- * focus.  We want to update in response to both of these.
+ * whenever the value is modified from the up and down arrow buttons in
+ * addition to when it loses focus.  We want to update in response to both of
+ * these.
  */
 
 namespace tomviz {

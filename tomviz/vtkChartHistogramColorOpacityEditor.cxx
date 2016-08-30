@@ -55,7 +55,7 @@ public:
 
 vtkStandardNewMacro(vtkChartHistogramColorOpacityEditor)
 
-  vtkChartHistogramColorOpacityEditor::vtkChartHistogramColorOpacityEditor()
+vtkChartHistogramColorOpacityEditor::vtkChartHistogramColorOpacityEditor()
 {
   this->Private = new PIMPL();
   this->Private->Self = this;

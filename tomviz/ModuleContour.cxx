@@ -329,7 +329,6 @@ void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
   this->ContourRepresentation->UpdateVTKObjects();
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleContour::isProxyPartOfModule(vtkSMProxy* proxy)
 {
   return (proxy == this->ContourFilter.Get()) ||

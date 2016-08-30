@@ -53,7 +53,7 @@
 
 vtkStandardNewMacro(vtkNonOrthoImagePlaneWidget)
 
-  namespace detail
+namespace detail
 {
 
   // goal is to make an extent value that is a power of 2 and
@@ -79,16 +79,16 @@ vtkStandardNewMacro(vtkNonOrthoImagePlaneWidget)
 }
 
 vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
-  vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedPlaneProperty,
-                       vtkProperty)
-    vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, ArrowProperty,
-                         vtkProperty)
-      vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedArrowProperty,
-                           vtkProperty)
-        vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, TexturePlaneProperty,
-                             vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedPlaneProperty,
+                     vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, ArrowProperty,
+                     vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedArrowProperty,
+                     vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, TexturePlaneProperty,
+                     vtkProperty)
 
-          vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
+vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
   : vtkPolyDataSourceWidget()
 {
   this->State = vtkNonOrthoImagePlaneWidget::Start;
@@ -108,7 +108,6 @@ vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
   this->DisplayTransform = vtkTransform::New();
 
   // Represent the plane's outline
-  //
   this->PlaneSource = vtkPlaneSource::New();
   this->PlaneSource->SetXResolution(1);
   this->PlaneSource->SetYResolution(1);
@@ -116,7 +115,6 @@ vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
   this->PlaneOutlineActor = vtkActor::New();
 
   // Represent the resliced image plane
-  //
   this->Reslice = vtkImageReslice::New();
   this->Reslice->TransformInputSamplingOff();
   this->Reslice->AutoCropOutputOff();
@@ -130,7 +128,6 @@ vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
   this->LookupTable = nullptr;
 
   // Represent the positioning arrow
-  //
   this->LineSource = vtkLineSource::New();
   this->LineActor = vtkActor::New();
 
@@ -147,7 +144,6 @@ vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
   this->SphereActor = vtkActor::New();
 
   // Define some default point coordinates
-  //
   double bounds[6];
   bounds[0] = -0.5;
   bounds[1] = 0.5;
@@ -157,7 +153,6 @@ vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
   bounds[5] = 0.5;
 
   // Initial creation of the widget, serves to initialize it
-  //
   this->GeneratePlaneOutline();
   this->GenerateTexturePlane();
   this->GenerateArrow();
@@ -165,14 +160,12 @@ vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
   this->PlaceWidget(bounds);
 
   // Manage the picking stuff
-  //
   this->PlanePicker = nullptr;
   vtkNew<vtkCellPicker> picker;
   picker->SetTolerance(0.005); // need some fluff
   this->SetPicker(picker.GetPointer());
 
   // Set up the initial properties
-  //
   this->PlaneProperty = nullptr;
   this->SelectedPlaneProperty = nullptr;
   this->ArrowProperty = nullptr;
@@ -893,11 +886,9 @@ void vtkNonOrthoImagePlaneWidget::SetPlaneOrientation(int i)
   // Generate a XY plane if i = 2, z-normal
   // or a YZ plane if i = 0, x-normal
   // or a ZX plane if i = 1, y-normal
-  //
   this->PlaneOrientation = i;
 
   // This method must be called _after_ SetInput
-  //
   if (!this->ImageData) {
     vtkErrorMacro(<< "SetInput() before setting plane orientation.");
     return;
@@ -914,7 +905,6 @@ void vtkNonOrthoImagePlaneWidget::SetPlaneOrientation(int i)
   outInfo->Get(vtkDataObject::SPACING(), spacing);
 
   // Prevent obscuring voxels by offsetting the plane geometry
-  //
   double xbounds[] = { origin[0] + spacing[0] * (extent[0] - 0.5),
                        origin[0] + spacing[0] * (extent[1] + 0.5) };
   double ybounds[] = { origin[1] + spacing[1] * (extent[2] - 0.5),
@@ -984,7 +974,6 @@ void vtkNonOrthoImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
   if (!this->ImageData) {
     // If NULL is passed, remove any reference that Reslice had
     // on the old ImageData
-    //
     this->Reslice->SetInputData(nullptr);
     return;
   }
@@ -1026,7 +1015,6 @@ void vtkNonOrthoImagePlaneWidget::UpdatePlane()
 
   for (int i = 0; i < 3; i++) {
     // Force the plane to lie within the true image bounds along its normal
-    //
     if (planeCenter[i] > bounds[2 * i + 1]) {
       planeCenter[i] = bounds[2 * i + 1];
     } else if (planeCenter[i] < bounds[2 * i]) {
@@ -1094,7 +1082,6 @@ void vtkNonOrthoImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
                                                   double bounds[6])
 {
   // Calculate appropriate pixel spacing for the reslicing
-  //
   double spacing[3];
   outInfo->Get(vtkDataObject::SPACING(), spacing);
   double origin[3];
@@ -1295,14 +1282,11 @@ void vtkNonOrthoImagePlaneWidget::SetSlicePosition(double position)
   double planeOrigin[3];
   this->PlaneSource->GetOrigin(planeOrigin);
 
-  if (this->PlaneOrientation == 2) // z axis
-  {
+  if (this->PlaneOrientation == 2) {
     amount = position - planeOrigin[2];
-  } else if (this->PlaneOrientation == 0) // x axis
-  {
+  } else if (this->PlaneOrientation == 0) {
     amount = position - planeOrigin[0];
-  } else if (this->PlaneOrientation == 1) // y axis
-  {
+  } else if (this->PlaneOrientation == 1) {
     amount = position - planeOrigin[1];
   } else {
     vtkGenericWarningMacro(

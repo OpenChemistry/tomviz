@@ -30,7 +30,6 @@ class vtkPlotBar;
 class vtkScalarsToColors;
 class vtkTable;
 
-//-----------------------------------------------------------------------------
 class vtkChartHistogram : public vtkChartXY
 {
 public:

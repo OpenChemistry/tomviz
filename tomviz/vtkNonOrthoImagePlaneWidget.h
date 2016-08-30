@@ -21,8 +21,7 @@
 // event, then all other registered observers (including the interactor
 // style) have an opportunity to process the event. Otherwise, the
 // vtkNonOrthoImagePlaneWidget will terminate the processing of the event that
-// it
-// handles.
+// it handles.
 //
 // The core functionality of the widget is provided by a vtkImageReslice
 // object which passes its output onto a texture mapping pipeline for fast
@@ -207,7 +206,7 @@ public:
   // Description:
   // Set the interpolation to use when texturing the plane.
   void SetResliceInterpolate(int);
-  vtkGetMacro(ResliceInterpolate, int);
+  vtkGetMacro(ResliceInterpolate, int)
   void SetResliceInterpolateToNearestNeighbour()
   {
     this->SetResliceInterpolate(VTK_NEAREST_RESLICE);
@@ -230,16 +229,16 @@ public:
   // reslice interpolation is nearest neighbour regardless of how the
   // interpolation is set through the API. Set before setting the
   // vtkImageData input. Default is On.
-  vtkSetMacro(TextureInterpolate, int);
-  vtkGetMacro(TextureInterpolate, int);
-  vtkBooleanMacro(TextureInterpolate, int);
+  vtkSetMacro(TextureInterpolate, int)
+  vtkGetMacro(TextureInterpolate, int)
+  vtkBooleanMacro(TextureInterpolate, int)
 
   // Description:
   // Control the visibility of the actual texture mapped reformatted plane.
   // in some cases you may only want the plane outline for example.
   virtual void SetTextureVisibility(int);
-  vtkGetMacro(TextureVisibility, int);
-  vtkBooleanMacro(TextureVisibility, int);
+  vtkGetMacro(TextureVisibility, int)
+  vtkBooleanMacro(TextureVisibility, int)
 
   // Description:
   // Grab the polydata (including points) that defines the plane.  The
@@ -271,23 +270,23 @@ public:
   // Set/Get the plane's outline properties. The properties of the plane's
   // outline when selected and unselected can be manipulated.
   virtual void SetPlaneProperty(vtkProperty*);
-  vtkGetObjectMacro(PlaneProperty, vtkProperty);
+  vtkGetObjectMacro(PlaneProperty, vtkProperty)
   virtual void SetSelectedPlaneProperty(vtkProperty*);
-  vtkGetObjectMacro(SelectedPlaneProperty, vtkProperty);
+  vtkGetObjectMacro(SelectedPlaneProperty, vtkProperty)
 
   // Description:
   // Set/Get the arrows's outline properties. The properties of the arrow's
   // outline when selected and unselected can be manipulated.
   virtual void SetArrowProperty(vtkProperty*);
-  vtkGetObjectMacro(ArrowProperty, vtkProperty);
+  vtkGetObjectMacro(ArrowProperty, vtkProperty)
   virtual void SetSelectedArrowProperty(vtkProperty*);
-  vtkGetObjectMacro(SelectedArrowProperty, vtkProperty);
+  vtkGetObjectMacro(SelectedArrowProperty, vtkProperty)
 
   // Description:
   // Convenience method sets the plane orientation normal to the
   // x, y, or z axes.  Default is XAxes (0).
   void SetPlaneOrientation(int);
-  vtkGetMacro(PlaneOrientation, int);
+  vtkGetMacro(PlaneOrientation, int)
   void SetPlaneOrientationToXAxes() { this->SetPlaneOrientation(0); }
   void SetPlaneOrientationToYAxes() { this->SetPlaneOrientation(1); }
   void SetPlaneOrientationToZAxes() { this->SetPlaneOrientation(2); }
@@ -304,17 +303,17 @@ public:
   // alternatively, to the lut of another vtkImgePlaneWidget.  The default
   // internal lut can be re- set/allocated by setting to 0 (NULL).
   virtual void SetLookupTable(vtkScalarsToColors*);
-  vtkGetObjectMacro(LookupTable, vtkScalarsToColors);
+  vtkGetObjectMacro(LookupTable, vtkScalarsToColors)
 
   // Description:
   // Set/Get the property for the resliced image.
   virtual void SetTexturePlaneProperty(vtkProperty*);
-  vtkGetObjectMacro(TexturePlaneProperty, vtkProperty);
+  vtkGetObjectMacro(TexturePlaneProperty, vtkProperty)
 
   // Description:
   // Get the current reslice class and reslice axes
-  vtkGetObjectMacro(ResliceAxes, vtkMatrix4x4);
-  vtkGetObjectMacro(Reslice, vtkImageReslice);
+  vtkGetObjectMacro(ResliceAxes, vtkMatrix4x4)
+  vtkGetObjectMacro(Reslice, vtkImageReslice)
 
   // Description:
   // Enable/disable mouse interaction so the widget remains on display.
@@ -341,14 +340,14 @@ public:
   };
   // ETX
   vtkSetClampMacro(LeftButtonAction, int, VTK_NO_ACTION,
-                   VTK_SLICE_MOTION_ACTION);
-  vtkGetMacro(LeftButtonAction, int);
+                   VTK_SLICE_MOTION_ACTION)
+  vtkGetMacro(LeftButtonAction, int)
   vtkSetClampMacro(MiddleButtonAction, int, VTK_NO_ACTION,
-                   VTK_SLICE_MOTION_ACTION);
-  vtkGetMacro(MiddleButtonAction, int);
+                   VTK_SLICE_MOTION_ACTION)
+  vtkGetMacro(MiddleButtonAction, int)
   vtkSetClampMacro(RightButtonAction, int, VTK_NO_ACTION,
-                   VTK_SLICE_MOTION_ACTION);
-  vtkGetMacro(RightButtonAction, int);
+                   VTK_SLICE_MOTION_ACTION)
+  vtkGetMacro(RightButtonAction, int)
 
 protected:
   vtkNonOrthoImagePlaneWidget();
@@ -485,8 +484,7 @@ protected:
 
   void HighlightArrow(int highlight);
   void GenerateArrow(); // generate the default arrow
-  void
-  UpdateArrowSize(); // update the arrow so it is visible based on camera pos
+  void UpdateArrowSize(); // update the arrow to be visible based on camera pos
 
 private:
   vtkNonOrthoImagePlaneWidget(

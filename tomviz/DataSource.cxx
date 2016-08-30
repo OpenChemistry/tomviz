@@ -267,8 +267,8 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   this->colorMap()->UpdateVTKObjects();
 
   // load tilt angles AFTER resetData call.  Again this is no longer saved and
-  // the load code
-  // is for legacy support.  This should be saved by the SetTiltAnglesOperator.
+  // the load code is for legacy support.  This should be saved by the
+  // SetTiltAnglesOperator.
   if (this->type() == TiltSeries && ns.child("TiltAngles")) {
     deserializeDataArray(ns.child("TiltAngles"), this->Internals->TiltAngles);
   }

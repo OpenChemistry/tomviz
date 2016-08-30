@@ -31,6 +31,7 @@ void deleteLayoutContents(QLayout* layout)
     layout->removeItem(item);
     if (item) {
       if (item->widget()) {
+          //-----------------------------------------------------------------------------
         delete item->widget();
         delete item;
       } else if (item->layout()) {

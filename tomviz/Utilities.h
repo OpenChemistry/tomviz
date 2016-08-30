@@ -131,15 +131,12 @@ vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy);
 bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource);
 
 // Given the root of a file and an extension, reades the file fileName +
-// extension
-// and returns the content in a QString.
+// extension and returns the content in a QString.
 QString readInTextFile(const QString& fileName, const QString& extension);
 
 // Given the name of a python script, find the script file and return the
-// contents
-// This assumes that the given script is one of the built-in tomviz python
-// operator
-// scripts.
+// contents. This assumes that the given script is one of the built-in tomviz
+// Python operator scripts.
 QString readInPythonScript(const QString& scriptName);
 
 // Given the name of an operator python script, find the JSON description
@@ -154,9 +151,8 @@ void createCameraOrbit(vtkSMSourceProxy* data,
 
 // Set up the renderer to show the given slice in parallel projection
 // This function attempts to zoom the renderer so that the enitire slice is
-// visible
-// while minimizing the empty regions of the view (zoom so the slice's largets
-// dimension barely fits in the view.
+// visible while minimizing the empty regions of the view (zoom so the slice's
+// target dimension barely fits in the view).
 void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
 }
 

@@ -50,11 +50,9 @@ protected:
   bool applyTransform(vtkDataObject* data) override;
 
 signals:
-  // emitted after each slice is reconstructed, use to display intermediate
-  // results
-  // the first vector contains the sinogram reconstructed, the second contains
-  // the
-  // slice of the resulting image.
+  /// Emitted after each slice is reconstructed, use to display intermediate
+  /// results the first vector contains the sinogram reconstructed, the second
+  /// contains the slice of the resulting image.
   void intermediateResults(std::vector<float> resultSlice);
 
 private:

@@ -23,7 +23,6 @@ class DataSource;
 
 /// SaveDataReaction handles the "Save Data" action in tomviz. On trigger,
 /// this will save the data file.
-///
 class SaveDataReaction : public pqReaction
 {
   Q_OBJECT

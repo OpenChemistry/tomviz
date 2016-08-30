@@ -100,11 +100,9 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
 
     // ParaView tries to take care of this, but its assumption is that the
-    // executable is
-    // a shared-forwarded executable in INSTALL_DIR/lib/paraview-X.Y/paraview.
-    // In our case
-    // the exectuable is in INSTALL_DIR/bin, so ParaView's baked-in paths do not
-    // work.
+    // executable is a shared-forwarded executable in
+    // INSTALL_DIR/lib/paraview-X.Y/paraview. In our case the exectuable is in
+    // INSTALL_DIR/bin, so ParaView's baked-in paths do not work.
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/paraview/site-packages");
     PythonAppInitPrependPythonPath(exe_dir +
                                    "/../lib/paraview/site-packages/vtk");

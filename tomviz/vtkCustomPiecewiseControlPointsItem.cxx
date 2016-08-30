@@ -22,7 +22,7 @@
 
 vtkStandardNewMacro(vtkCustomPiecewiseControlPointsItem)
 
-  vtkCustomPiecewiseControlPointsItem::vtkCustomPiecewiseControlPointsItem()
+vtkCustomPiecewiseControlPointsItem::vtkCustomPiecewiseControlPointsItem()
 {
 }
 
@@ -76,10 +76,8 @@ bool vtkCustomPiecewiseControlPointsItem::PointNearPiecewiseFunction(
   }
 
   // Evaluate the piewewise function at the given point and get the y position.
-  // If we are within
-  // a small distance of the piecewise function, return true. Otherwise, we are
-  // too far away from
-  // the line, and return false.
+  // If we are within a small distance of the piecewise function, return true.
+  // Otherwise, we are too far away from the line, and return false.
   pwf->GetTable(x, x, 1, &y, 1);
   return (fabs(y - position[1]) < 0.05);
 }

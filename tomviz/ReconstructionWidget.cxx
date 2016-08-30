@@ -222,8 +222,7 @@ void ReconstructionWidget::startReconstruction()
 void ReconstructionWidget::updateProgress(int progress)
 {
   // with the new setup this may happen.  The initial estimates may be off, but
-  // this
-  // will keep garbage from populating the time remaining field.
+  // this will keep garbage from populating the time remaining field.
   if (!this->Internals->timer.isValid()) {
     this->Internals->timer.start();
   }

@@ -35,7 +35,7 @@ public:
   /// Returns an icon to use for this operator.
   QIcon icon() const override;
 
-  /// return a new clone.
+  /// Return a new clone.
   Operator* clone() const override;
 
   bool serialize(pugi::xml_node& in) const override;

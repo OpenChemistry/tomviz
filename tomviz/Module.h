@@ -99,8 +99,7 @@ public:
                                     pugi::xml_node& ns,
                                     const char* helperKey = nullptr);
   /// This form uses the module and the proxy to look up a proxy name to pass to
-  /// the function
-  /// that actually saves the data to the pugixml structure above.
+  /// the function that actually saves the data to the pugixml structure above.
   static bool serializeAnimationCue(pqAnimationCue* cue, Module* module,
                                     pugi::xml_node& ns,
                                     const char* helperKey = nullptr,
@@ -119,9 +118,8 @@ public slots:
 
   /// This method is called add the proxies in this module to a
   /// pqProxiesWidget instance. Default implementation simply adds the view
-  /// properties.
-  /// Subclasses should override to add proxies and relevant properties to the
-  /// panel.
+  /// properties. Subclasses should override to add proxies and relevant
+  /// properties to the panel.
   virtual void addToPanel(QWidget* panel);
 
   /// This method is called when the data source's display position changes.
@@ -135,12 +133,11 @@ protected:
   virtual void updateColorMap() {}
 
   /// Returns a string for the save file indicating which proxy within the
-  /// module
-  /// is passed to it.  These should be unique within the module, but different
-  /// modules can reuse common strings such as "representation".
-  /// getProxyForString
-  /// is the inverse that should get the proxy given the string returned from
-  /// getStringForProxy.  These are used in saving animations.
+  /// module is passed to it.  These should be unique within the module, but
+  /// different modules can reuse common strings such as "representation".
+  /// getProxyForString is the inverse that should get the proxy given the
+  /// string returned from getStringForProxy.  These are used in saving
+  ///  animations.
   virtual std::string getStringForProxy(vtkSMProxy* proxy) = 0;
   virtual vtkSMProxy* getProxyForString(const std::string& str) = 0;
 
@@ -150,8 +147,7 @@ signals:
   void colorMapChanged();
 
   /// Emitted when the module properties are changed in a way that would require
-  /// a
-  /// re-render of the scene to take effect
+  /// a re-render of the scene to take effect.
   void renderNeeded();
 
 private slots:

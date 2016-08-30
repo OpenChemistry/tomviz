@@ -549,8 +549,7 @@ void RotateAlignWidget::changeColorMap(int reconSlice)
 
     // We need to take extra care to avoid the color and opacity function ranges
     // from straying away from each other. This can happen if only one of them
-    // is
-    // getting a preset and we're using the preset range.
+    // is getting a preset and we're using the preset range.
     if (dialog->usePresetRange() &&
         (dialog->loadColors() ^ dialog->loadOpacities()) && sof) {
       double range[2];

@@ -144,10 +144,8 @@ public:
         this->previousTiltAngles[i] = 0;
       }
       // deliberate non-else-if.  We want to override with the previous value
-      // from
-      // the operator, but we need the previousTiltAngles array set correctly,
-      // so the
-      // above condition has to be separate.
+      // from the operator, but we need the previousTiltAngles array set
+      // correctly, so the above condition has to be separate.
       if (tiltAngles.contains(i)) {
         angle = tiltAngles[i];
       }

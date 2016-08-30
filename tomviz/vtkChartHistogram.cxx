@@ -33,7 +33,6 @@
 
 #include "vtkCustomPiecewiseControlPointsItem.h"
 
-//-----------------------------------------------------------------------------
 class vtkHistogramMarker : public vtkPlot
 {
 public:
@@ -50,13 +49,12 @@ public:
     return true;
   }
 };
+
 vtkStandardNewMacro(vtkHistogramMarker)
 
-  //-----------------------------------------------------------------------------
-  vtkStandardNewMacro(vtkChartHistogram)
+vtkStandardNewMacro(vtkChartHistogram)
 
-  //-----------------------------------------------------------------------------
-  vtkChartHistogram::vtkChartHistogram()
+vtkChartHistogram::vtkChartHistogram()
 {
   this->SetBarWidthFraction(1.0);
   this->SetRenderEmpty(true);
@@ -101,12 +99,10 @@ vtkStandardNewMacro(vtkHistogramMarker)
   this->SetPlotCorner(this->OpacityControlPointsItem.Get(), 1);
 }
 
-//-----------------------------------------------------------------------------
 vtkChartHistogram::~vtkChartHistogram()
 {
 }
 
-//-----------------------------------------------------------------------------
 bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent& m)
 {
   // Determine the location of the click, and emit something we can listen to!
@@ -136,7 +132,6 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent& m)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
                                               const char* xAxisColumn,
                                               const char* yAxisColumn)
@@ -168,31 +163,26 @@ void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
   }
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SetScalarVisibility(bool visible)
 {
   this->HistogramPlotBar->SetScalarVisibility(visible);
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::ScalarVisibilityOn()
 {
   this->HistogramPlotBar->ScalarVisibilityOn();
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SetLookupTable(vtkScalarsToColors* lut)
 {
   this->HistogramPlotBar->SetLookupTable(lut);
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SelectColorArray(const char* arrayName)
 {
   this->HistogramPlotBar->SelectColorArray(arrayName);
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SetOpacityFunction(
   vtkPiecewiseFunction* opacityFunction)
 {

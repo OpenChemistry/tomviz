@@ -59,9 +59,8 @@ public:
 
   /// This method is called add the proxies in this module to a
   /// pqProxiesWidget instance. Default implementation simply adds the view
-  /// properties.
-  /// Subclasses should override to add proxies and relevant properties to the
-  /// panel.
+  /// properties. Subclasses should override to add proxies and relevant
+  /// properties to the panel.
   void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
