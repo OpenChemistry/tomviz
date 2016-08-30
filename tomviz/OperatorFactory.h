@@ -18,8 +18,7 @@
 
 #include <QObject>
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 class Operator;
 
@@ -34,7 +33,7 @@ public:
   static Operator* createConvertToVolumeOperator();
 
   /// Creates an operator of the given type
-  static Operator* createOperator(const QString& type, DataSource *ds);
+  static Operator* createOperator(const QString& type, DataSource* ds);
 
   /// Returns the type for an operator instance.
   static const char* operatorType(Operator* module);
@@ -44,7 +43,6 @@ private:
   ~OperatorFactory();
   Q_DISABLE_COPY(OperatorFactory)
 };
-
 }
 
 #endif

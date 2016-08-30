@@ -20,15 +20,15 @@
 #include <pqReaction.h>
 #include <vtkImageData.h>
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
-namespace TomographyReconstruction
-{
+namespace TomographyReconstruction {
 
-// This takes an image tiltSeries and a vtkImageData in which to place the output (recon)
-void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon); //3D WBP recon
+// This takes an image tiltSeries and a vtkImageData in which to place the
+// output (recon)
+void weightedBackProjection3(vtkImageData* tiltSeries,
+                             vtkImageData* recon); // 3D WBP recon
 
 // This function takes a y-z slice (sinogram) and the tilt angles as input and
 // creates a slice throught the reconstruction space.  The numOfTilts parameter
@@ -39,9 +39,9 @@ void weightedBackProjection3(vtkImageData *tiltSeries,vtkImageData *recon); //3D
 //
 // The output image will be stored in recon and will be square with size
 // numOfRays by numOfRays.
-void unweightedBackProjection2(float *sinogram, double *tiltAngles,
-                               float *recon,int numOfTilts, int numOfRays); //2D WBP recon
-
+void unweightedBackProjection2(float* sinogram, double* tiltAngles,
+                               float* recon, int numOfTilts,
+                               int numOfRays); // 2D WBP recon
 }
 }
 

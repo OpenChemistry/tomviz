@@ -22,8 +22,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkVector.h>
 
-#include <QVector>
 #include <QPointer>
+#include <QVector>
 
 class QLabel;
 class QComboBox;
@@ -43,8 +43,7 @@ class vtkInteractorStyleRubberBandZoom;
 class vtkRenderer;
 class QVTKWidget;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class DataSource;
 class SpinBox;
@@ -56,19 +55,19 @@ class AlignWidget : public EditOperatorWidget
   Q_OBJECT
 
 public:
-  AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageData> data,
-    QWidget* parent = nullptr);
+  AlignWidget(TranslateAlignOperator* op, vtkSmartPointer<vtkImageData> data,
+              QWidget* parent = nullptr);
   ~AlignWidget();
 
   // This will filter the QVTKWidget events
-  bool eventFilter(QObject *object, QEvent *event) override;
+  bool eventFilter(QObject* object, QEvent* event) override;
 
   void applyChangesToOperator() override;
 
 protected:
   void changeSlice(int delta);
   void setSlice(int slice, bool resetInc = true);
-  void widgetKeyPress(QKeyEvent *key);
+  void widgetKeyPress(QKeyEvent* key);
   void applySliceOffset(int sliceNumber = -1);
 
   void zoomToSelectionFinished();
@@ -99,20 +98,20 @@ protected:
   vtkNew<vtkInteractorStyleRubberBand2D> defaultInteractorStyle;
   vtkNew<vtkInteractorStyleRubberBandZoom> zoomToBoxInteractorStyle;
   vtkSmartPointer<vtkImageData> inputData;
-  QVTKWidget *widget;
+  QVTKWidget* widget;
 
-  QComboBox *modeSelect;
-  QTimer *timer;
-  SpinBox *currentSlice;
-  QLabel *currentSliceOffset;
-  QButtonGroup *referenceSliceMode;
-  QRadioButton *prevButton;
-  QRadioButton *nextButton;
-  QRadioButton *statButton;
-  QSpinBox *statRefNum;
-  QPushButton *startButton;
-  QPushButton *stopButton;
-  QTableWidget *offsetTable;
+  QComboBox* modeSelect;
+  QTimer* timer;
+  SpinBox* currentSlice;
+  QLabel* currentSliceOffset;
+  QButtonGroup* referenceSliceMode;
+  QRadioButton* prevButton;
+  QRadioButton* nextButton;
+  QRadioButton* statButton;
+  QSpinBox* statRefNum;
+  QPushButton* startButton;
+  QPushButton* stopButton;
+  QTableWidget* offsetTable;
 
   int frameRate;
   int referenceSlice;
@@ -126,10 +125,9 @@ protected:
 
   QVector<vtkVector2i> offsets;
   QPointer<TranslateAlignOperator> Op;
-  DataSource *unalignedData;
-  DataSource *alignedData;
+  DataSource* unalignedData;
+  DataSource* alignedData;
 };
-
 }
 
 #endif // tomvizAlignWidget

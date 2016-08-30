@@ -22,19 +22,16 @@
 #include <QMenu>
 #include <QToolBar>
 
-namespace tomviz
-{
+namespace tomviz {
 
-ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject) :
-  Superclass(parentObject),
-  Menu(menu),
-  ToolBar(toolBar)
+ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject)
+  : Superclass(parentObject), Menu(menu), ToolBar(toolBar)
 {
   Q_ASSERT(menu);
   Q_ASSERT(toolBar);
   this->connect(menu, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
-  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateActions()));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(DataSource*)), SLOT(updateActions()));
   this->updateActions();
 }
 
@@ -52,18 +49,14 @@ void ModuleMenu::updateActions()
   menu->clear();
   toolBar->clear();
   QList<QString> modules =
-      ModuleFactory::moduleTypes(ActiveObjects::instance().activeDataSource(),
-                                 ActiveObjects::instance().activeView());
-  if (modules.size() > 0)
-  {
-    foreach (const QString& txt, modules)
-    {
+    ModuleFactory::moduleTypes(ActiveObjects::instance().activeDataSource(),
+                               ActiveObjects::instance().activeView());
+  if (modules.size() > 0) {
+    foreach (const QString& txt, modules) {
       QAction* actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
       toolBar->addAction(actn);
     }
-  }
-  else
-  {
+  } else {
     QAction* action = menu->addAction("No modules available");
     action->setEnabled(false);
     toolBar->addAction(action);
@@ -72,16 +65,12 @@ void ModuleMenu::updateActions()
 
 void ModuleMenu::triggered(QAction* maction)
 {
-  Module* module =
-    ModuleManager::instance().createAndAddModule(maction->text(),
-      ActiveObjects::instance().activeDataSource(),
-      ActiveObjects::instance().activeView());
-  if (module)
-  {
+  Module* module = ModuleManager::instance().createAndAddModule(
+    maction->text(), ActiveObjects::instance().activeDataSource(),
+    ActiveObjects::instance().activeView());
+  if (module) {
     ActiveObjects::instance().setActiveModule(module);
-  }
-  else
-  {
+  } else {
     qCritical("Failed to create requested module.");
   }
 }

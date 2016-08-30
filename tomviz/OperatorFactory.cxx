@@ -23,20 +23,19 @@
 #include "SetTiltAnglesOperator.h"
 #include "TranslateAlignOperator.h"
 
-#include "vtkImageData.h"
 #include "vtkFieldData.h"
+#include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkTrivialProducer.h"
 #include "vtkTypeInt8Array.h"
 
-namespace
-{
+namespace {
 class ConvertToVolumeOperator : public tomviz::Operator
 {
   Q_OBJECT
 public:
-  ConvertToVolumeOperator(QObject *p = nullptr) : Operator(p) {}
+  ConvertToVolumeOperator(QObject* p = nullptr) : Operator(p) {}
   ~ConvertToVolumeOperator() {}
 
   QString label() const override { return "Mark as Volume"; }
@@ -47,14 +46,14 @@ public:
   Operator* clone() const override { return new ConvertToVolumeOperator; }
 
 protected:
-  bool applyTransform(vtkDataObject *data) override
+  bool applyTransform(vtkDataObject* data) override
   {
     // The array should already exist... but just in case
-    vtkFieldData *fd = data->GetFieldData();
+    vtkFieldData* fd = data->GetFieldData();
     // Make sure the data is marked as a tilt series
-    vtkTypeInt8Array *dataType = vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
-    if (!dataType)
-    {
+    vtkTypeInt8Array* dataType =
+      vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
+    if (!dataType) {
       vtkNew<vtkTypeInt8Array> array;
       array->SetNumberOfTuples(1);
       array->SetName("tomviz_data_source_type");
@@ -68,14 +67,12 @@ protected:
 
 private:
   Q_DISABLE_COPY(ConvertToVolumeOperator)
-
 };
 
 #include "OperatorFactory.moc"
 }
 
-namespace tomviz
-{
+namespace tomviz {
 
 OperatorFactory::OperatorFactory()
 {
@@ -88,7 +85,13 @@ OperatorFactory::~OperatorFactory()
 QList<QString> OperatorFactory::operatorTypes()
 {
   QList<QString> reply;
-  reply << "Python" << "ConvertToFloat" << "ConvertToVolume" << "Crop" << "CxxReconstruction" << "SetTiltAngles" << "TranslateAlign";
+  reply << "Python"
+        << "ConvertToFloat"
+        << "ConvertToVolume"
+        << "Crop"
+        << "CxxReconstruction"
+        << "SetTiltAngles"
+        << "TranslateAlign";
   qSort(reply);
   return reply;
 }
@@ -98,36 +101,23 @@ Operator* OperatorFactory::createConvertToVolumeOperator()
   return new ConvertToVolumeOperator;
 }
 
-Operator* OperatorFactory::createOperator(const QString &type, DataSource *ds)
+Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
 {
 
   Operator* op = nullptr;
-  if (type == "Python")
-  {
+  if (type == "Python") {
     op = new OperatorPython();
-  }
-  else if (type == "ConvertToFloat")
-  {
+  } else if (type == "ConvertToFloat") {
     op = new ConvertToFloatOperator();
-  }
-  else if (type == "ConvertToVolume")
-  {
+  } else if (type == "ConvertToVolume") {
     op = new ConvertToVolumeOperator();
-  }
-  else if (type == "Crop")
-  {
+  } else if (type == "Crop") {
     op = new CropOperator();
-  }
-  else if (type == "CxxReconstruction")
-  {
+  } else if (type == "CxxReconstruction") {
     op = new ReconstructionOperator(ds);
-  }
-  else if (type == "SetTiltAngles")
-  {
+  } else if (type == "SetTiltAngles") {
     op = new SetTiltAnglesOperator();
-  }
-  else if (type == "TranslateAlign")
-  {
+  } else if (type == "TranslateAlign") {
     op = new TranslateAlignOperator(ds);
   }
   return op;
@@ -135,35 +125,27 @@ Operator* OperatorFactory::createOperator(const QString &type, DataSource *ds)
 
 const char* OperatorFactory::operatorType(Operator* op)
 {
-  if (qobject_cast<OperatorPython*>(op))
-  {
+  if (qobject_cast<OperatorPython*>(op)) {
     return "Python";
   }
-  if (qobject_cast<ConvertToVolumeOperator*>(op))
-  {
+  if (qobject_cast<ConvertToVolumeOperator*>(op)) {
     return "ConvertToVolume";
   }
-  if (qobject_cast<ConvertToFloatOperator*>(op))
-  {
+  if (qobject_cast<ConvertToFloatOperator*>(op)) {
     return "ConvertToFloat";
   }
-  if (qobject_cast<CropOperator*>(op))
-  {
+  if (qobject_cast<CropOperator*>(op)) {
     return "Crop";
   }
-  if (qobject_cast<ReconstructionOperator*>(op))
-  {
+  if (qobject_cast<ReconstructionOperator*>(op)) {
     return "CxxReconstruction";
   }
-  if (qobject_cast<SetTiltAnglesOperator*>(op))
-  {
+  if (qobject_cast<SetTiltAnglesOperator*>(op)) {
     return "SetTiltAngles";
   }
-  if (qobject_cast<TranslateAlignOperator*>(op))
-  {
+  if (qobject_cast<TranslateAlignOperator*>(op)) {
     return "TranslateAlign";
   }
   return nullptr;
 }
-
 }

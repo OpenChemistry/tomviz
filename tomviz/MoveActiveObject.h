@@ -29,8 +29,7 @@ class vtkEventQtSlotConnect;
 class vtkObject;
 class vtkSMViewProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 class MoveActiveObject : public QObject
@@ -39,16 +38,16 @@ class MoveActiveObject : public QObject
   typedef QObject Superclass;
 
 public:
-  MoveActiveObject(QObject *parent);
+  MoveActiveObject(QObject* parent);
   ~MoveActiveObject();
 
 private slots:
-  void dataSourceActivated(DataSource *ds);
+  void dataSourceActivated(DataSource* ds);
 
-  void updateForNewDataSource(DataSource *newDS);
+  void updateForNewDataSource(DataSource* newDS);
   void hideMoveObjectWidget();
-  void onViewChanged(vtkSMViewProxy *newView);
-  void interactionEnd(vtkObject *obj);
+  void onViewChanged(vtkSMViewProxy* newView);
+  void interactionEnd(vtkObject* obj);
   void setMoveEnabled(bool enable);
 
 private:
@@ -59,7 +58,6 @@ private:
   vtkVector3d DataLocation;
   bool MoveEnabled;
 };
-
 }
 
 #endif

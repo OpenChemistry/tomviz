@@ -20,11 +20,9 @@
 #include <QStyle>
 #include <QStyleOptionSpinBox>
 
-namespace tomviz
-{
+namespace tomviz {
 
-SpinBox::SpinBox(QWidget *p)
-  : QSpinBox(p), pressInUp(false), pressInDown(false)
+SpinBox::SpinBox(QWidget* p) : QSpinBox(p), pressInUp(false), pressInDown(false)
 {
 }
 
@@ -35,51 +33,50 @@ void SpinBox::mousePressEvent(QMouseEvent* event)
   QStyleOptionSpinBox opt;
   this->initStyleOption(&opt);
 
-  if (this->style()->subControlRect(QStyle::CC_SpinBox, &opt, QStyle::SC_SpinBoxUp).contains(event->pos()))
-  {
+  if (this->style()
+        ->subControlRect(QStyle::CC_SpinBox, &opt, QStyle::SC_SpinBoxUp)
+        .contains(event->pos())) {
     this->pressInUp = true;
-  }
-  else if (this->style()->subControlRect(QStyle::CC_SpinBox, &opt, QStyle::SC_SpinBoxDown).contains(event->pos()))
-  {
+  } else if (this->style()
+               ->subControlRect(QStyle::CC_SpinBox, &opt,
+                                QStyle::SC_SpinBoxDown)
+               .contains(event->pos())) {
     this->pressInDown = true;
-  }
-  else
-  {
+  } else {
     this->pressInUp = this->pressInDown = false;
   }
-  if (this->pressInUp || this->pressInDown)
-  {
-    this->connect(this, SIGNAL(valueChanged(int)), this, SIGNAL(editingFinished()));
+  if (this->pressInUp || this->pressInDown) {
+    this->connect(this, SIGNAL(valueChanged(int)), this,
+                  SIGNAL(editingFinished()));
   }
 }
 
-void SpinBox::mouseReleaseEvent(QMouseEvent *event)
+void SpinBox::mouseReleaseEvent(QMouseEvent* event)
 {
   QSpinBox::mouseReleaseEvent(event);
 
-  if (this->pressInUp || this->pressInDown)
-  {
-    this->disconnect(this, SIGNAL(valueChanged(int)), this, SIGNAL(editingFinished()));
+  if (this->pressInUp || this->pressInDown) {
+    this->disconnect(this, SIGNAL(valueChanged(int)), this,
+                     SIGNAL(editingFinished()));
   }
 
   QStyleOptionSpinBox opt;
   this->initStyleOption(&opt);
 
-  if (this->style()->subControlRect(QStyle::CC_SpinBox, &opt, QStyle::SC_SpinBoxUp).contains(event->pos()))
-  {
-    if (this->pressInUp)
-    {
+  if (this->style()
+        ->subControlRect(QStyle::CC_SpinBox, &opt, QStyle::SC_SpinBoxUp)
+        .contains(event->pos())) {
+    if (this->pressInUp) {
       emit this->editingFinished();
     }
-  }
-  else if (this->style()->subControlRect(QStyle::CC_SpinBox, &opt, QStyle::SC_SpinBoxDown).contains(event->pos()))
-  {
-    if (this->pressInDown)
-    {
+  } else if (this->style()
+               ->subControlRect(QStyle::CC_SpinBox, &opt,
+                                QStyle::SC_SpinBoxDown)
+               .contains(event->pos())) {
+    if (this->pressInDown) {
       emit this->editingFinished();
     }
   }
   this->pressInUp = this->pressInDown = false;
 }
-
 }

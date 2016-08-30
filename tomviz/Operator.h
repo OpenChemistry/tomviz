@@ -70,11 +70,16 @@ public:
   virtual bool serialize(pugi::xml_node& in) const = 0;
   virtual bool deserialize(const pugi::xml_node& ns) = 0;
 
-  /// There are two versions of this function, this one and getEditorContentsWithData.
-  /// Subclasses should override this one if their editors do not need the previous
-  /// state of the data.  Subclasses should override the other if they need the data
-  /// just prior to this Operator for the widget to display correctly.  If this data
-  /// is needed, the default implementation to return nullptr should be left for this
+  /// There are two versions of this function, this one and
+  /// getEditorContentsWithData.
+  /// Subclasses should override this one if their editors do not need the
+  /// previous
+  /// state of the data.  Subclasses should override the other if they need the
+  /// data
+  /// just prior to this Operator for the widget to display correctly.  If this
+  /// data
+  /// is needed, the default implementation to return nullptr should be left for
+  /// this
   /// function.
   virtual EditOperatorWidget* getEditorContents(QWidget* vtkNotUsed(parent))
   {
@@ -97,18 +102,23 @@ public:
   virtual bool hasCustomUI() const { return false; }
 
   /// If the operator has some custom progress UI, then return that UI from this
-  /// function.  This custom UI must be parented to the given widget and should have
+  /// function.  This custom UI must be parented to the given widget and should
+  /// have
   /// its signal/slot connections set up to show the progress of the operator.
-  /// If there is no need for custom progress UI, then leave this default implementation
+  /// If there is no need for custom progress UI, then leave this default
+  /// implementation
   /// and a default QProgressBar will be created instead.
   virtual QWidget* getCustomProgressWidget(QWidget*) const { return nullptr; }
 
-  /// Returns true if the operation supports canceling midway through the applyTransform
-  /// function via the cancelTransform slot.  Defaults to false, can be set by the
+  /// Returns true if the operation supports canceling midway through the
+  /// applyTransform
+  /// function via the cancelTransform slot.  Defaults to false, can be set by
+  /// the
   /// setSupportsCancel(bool) method by subclasses.
   bool supportsCancelingMidTransform() const { return this->supportsCancel; }
 
-  /// Return the total number of progress updates (assuming each update increments
+  /// Return the total number of progress updates (assuming each update
+  /// increments
   /// the progress from 0 to some maximum.  If the operator doesn't support
   /// incremental progress updates, leave this default implementation so that
   /// QProgressBar interprets the progress as unknown.
@@ -123,16 +133,20 @@ signals:
   /// and the GUI needs to refresh its display of the Operator.
   void labelModified();
 
-  /// Returns the number of steps the operator has finished.  The total number of
-  /// steps is returned by totalProgressSteps and should be emitted as a finished
+  /// Returns the number of steps the operator has finished.  The total number
+  /// of
+  /// steps is returned by totalProgressSteps and should be emitted as a
+  /// finished
   /// signal when all work in the operator is done.
   void updateProgress(int);
 
   /// Emitted when the operator starts transforming the data
   void transformingStarted();
 
-  /// Emitted when the operator is done transforming the data.  The parameter is the
-  /// return value from the transform() function.  True for success, false for failure.
+  /// Emitted when the operator is done transforming the data.  The parameter is
+  /// the
+  /// return value from the transform() function.  True for success, false for
+  /// failure.
   void transformingDone(bool result);
 
   /// Emitted when an result is added.
@@ -148,8 +162,10 @@ protected:
   /// Method to transform a dataset in-place.
   virtual bool applyTransform(vtkDataObject* data) = 0;
 
-  /// Method to set whether the operator supports canceling midway through the transform
-  /// method call.  If you set this to true, you should also override the cancelTransform
+  /// Method to set whether the operator supports canceling midway through the
+  /// transform
+  /// method call.  If you set this to true, you should also override the
+  /// cancelTransform
   /// slot to listen for the cancel signal and handle it.
   void setSupportsCancel(bool b) { this->supportsCancel = b; }
 

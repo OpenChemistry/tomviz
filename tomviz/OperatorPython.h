@@ -19,15 +19,14 @@
 #include "Operator.h"
 #include <QScopedPointer>
 
-namespace tomviz
-{
+namespace tomviz {
 class OperatorPython : public Operator
 {
   Q_OBJECT
   typedef Operator Superclass;
 
 public:
-  OperatorPython(QObject* parent=nullptr);
+  OperatorPython(QObject* parent = nullptr);
   virtual ~OperatorPython();
 
   QString label() const override { return this->Label; }
@@ -63,6 +62,5 @@ private:
   QString jsonDescription;
   QString Script;
 };
-
 }
 #endif

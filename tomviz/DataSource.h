@@ -19,15 +19,14 @@
 #include <QObject>
 #include <QScopedPointer>
 #include <QVector>
-#include <vtk_pugixml.h>
 #include <vtkSmartPointer.h>
+#include <vtk_pugixml.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
 
-namespace tomviz
-{
+namespace tomviz {
 class Operator;
 
 /// Encapsulation for a DataSource. This class manages a data source, including
@@ -40,12 +39,16 @@ class DataSource : public QObject
 public:
   /// The type of data in the data source.  The data types currently supported
   /// are volumetric data and image stacks representing tilt series.
-  enum DataSourceType { Volume, TiltSeries };
+  enum DataSourceType
+  {
+    Volume,
+    TiltSeries
+  };
 
   /// \c dataSource is the original reader that reads the data into the
   /// application.
   DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
-             QObject* parent=nullptr);
+             QObject* parent = nullptr);
   virtual ~DataSource();
 
   /// Returns the data producer proxy to insert in ParaView pipelines.
@@ -57,8 +60,8 @@ public:
   const QList<Operator*>& operators() const;
 
   /// Add/remove operators.
-  int addOperator(Operator *op);
-  bool removeOperator(Operator *op);
+  int addOperator(Operator* op);
+  bool removeOperator(Operator* op);
 
   /// Creates a new clone from this DataSource. If cloneOperators then clone
   /// the operators too, if cloneTransformedOnly clone the transformed data.
@@ -99,18 +102,18 @@ public:
   QVector<double> getTiltAngles(bool useOriginalDataTiltAngles = false) const;
 
   /// Set the tilt angles to the values in the given QVector
-  void setTiltAngles(const QVector<double> &angles);
+  void setTiltAngles(const QVector<double>& angles);
 
   /// Moves the displayPosition of the DataSource by detlaPosition
   void translate(const double deltaPosition[3]);
 
   /// Gets the display position of the data source
-  const double *displayPosition();
+  const double* displayPosition();
 
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);
 
-  vtkSmartPointer<vtkImageData> getCopyOfImagePriorTo(Operator *op);
+  vtkSmartPointer<vtkImageData> getCopyOfImagePriorTo(Operator* op);
   /// Returns the extent of the transformed dataset
   void getExtent(int extent[6]);
   /// Returns the spacing of the transformed dataset
@@ -160,7 +163,6 @@ private:
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;
 };
-
 }
 
 #endif

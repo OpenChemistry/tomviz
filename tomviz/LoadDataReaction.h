@@ -20,8 +20,7 @@
 
 class vtkSMProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 /// LoadDataReaction handles the "Load Data" action in tomviz. On trigger,
@@ -44,7 +43,7 @@ public:
   static QList<DataSource*> loadData();
 
   /// Load a data file from the specified location.
-  static DataSource* loadData(const QString &fileName);
+  static DataSource* loadData(const QString& fileName);
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource*);
@@ -56,6 +55,5 @@ protected:
 private:
   Q_DISABLE_COPY(LoadDataReaction)
 };
-
 }
 #endif

@@ -22,8 +22,7 @@
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class ModuleThreshold : public Module
 {
@@ -31,10 +30,10 @@ class ModuleThreshold : public Module
   typedef Module Superclass;
 
 public:
-  ModuleThreshold(QObject* parent=nullptr);
+  ModuleThreshold(QObject* parent = nullptr);
   virtual ~ModuleThreshold();
 
-  QString label() const override { return  "Threshold"; }
+  QString label() const override { return "Threshold"; }
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
@@ -47,19 +46,18 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy *proxy) override;
+  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy *proxy) override;
-  vtkSMProxy *getProxyForString(const std::string& str) override;
+  std::string getStringForProxy(vtkSMProxy* proxy) override;
+  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private:
   Q_DISABLE_COPY(ModuleThreshold)
   vtkWeakPointer<vtkSMSourceProxy> ThresholdFilter;
   vtkWeakPointer<vtkSMProxy> ThresholdRepresentation;
 };
-
 }
 
 #endif

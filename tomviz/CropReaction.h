@@ -20,8 +20,7 @@
 
 class QMainWindow;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 class CropReaction : public pqReaction

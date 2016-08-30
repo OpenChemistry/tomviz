@@ -15,23 +15,21 @@
 ******************************************************************************/
 #include "SaveLoadStateReaction.h"
 
-#include "pqFileDialog.h"
 #include "pqCoreUtilities.h"
+#include "pqFileDialog.h"
 #include <vtk_pugixml.h>
 
 #include "ModuleManager.h"
 #include "RecentFilesMenu.h"
 #include "vtkSMProxyManager.h"
 
-#include <QtDebug>
 #include <QDir>
+#include <QtDebug>
 
-namespace tomviz
-{
+namespace tomviz {
 
 SaveLoadStateReaction::SaveLoadStateReaction(QAction* parentObject, bool load)
-  : Superclass(parentObject),
-    Load(load)
+  : Superclass(parentObject), Load(load)
 {
 }
 
@@ -41,12 +39,9 @@ SaveLoadStateReaction::~SaveLoadStateReaction()
 
 void SaveLoadStateReaction::onTriggered()
 {
-  if (this->Load)
-  {
+  if (this->Load) {
     this->loadState();
-  }
-  else
-  {
+  } else {
     this->saveState();
   }
 }
@@ -58,8 +53,7 @@ bool SaveLoadStateReaction::saveState()
                           "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
   fileDialog.setFileMode(pqFileDialog::AnyFile);
-  if (fileDialog.exec() == QDialog::Accepted)
-  {
+  if (fileDialog.exec() == QDialog::Accepted) {
     return SaveLoadStateReaction::saveState(fileDialog.getSelectedFiles()[0]);
   }
   return false;
@@ -72,8 +66,7 @@ bool SaveLoadStateReaction::loadState()
                           "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");
   fileDialog.setFileMode(pqFileDialog::ExistingFile);
-  if (fileDialog.exec() == QDialog::Accepted)
-  {
+  if (fileDialog.exec() == QDialog::Accepted) {
     return SaveLoadStateReaction::loadState(fileDialog.getSelectedFiles()[0]);
   }
   return false;
@@ -82,15 +75,13 @@ bool SaveLoadStateReaction::loadState()
 bool SaveLoadStateReaction::loadState(const QString& filename)
 {
   pugi::xml_document document;
-  if (!document.load_file(filename.toLatin1().data()))
-  {
+  if (!document.load_file(filename.toLatin1().data())) {
     qCritical() << "Failed to read file (or file not valid xml) :" << filename;
     return false;
   }
 
   if (ModuleManager::instance().deserialize(document.child("tomvizState"),
-                                            QFileInfo(filename).dir()))
-  {
+                                            QFileInfo(filename).dir())) {
     RecentFilesMenu::pushStateFile(filename);
     return true;
   }
@@ -102,15 +93,18 @@ bool SaveLoadStateReaction::saveState(const QString& filename)
   pugi::xml_document document;
   pugi::xml_node root = document.append_child("tomvizState");
   root.append_attribute("version").set_value("0.0a");
-  root.append_attribute("paraview_version").set_value(
-    QString("%1.%2.%3")
-        .arg(vtkSMProxyManager::GetVersionMajor())
-        .arg(vtkSMProxyManager::GetVersionMinor())
-        .arg(vtkSMProxyManager::GetVersionPatch()).toLatin1().data());
+  root.append_attribute("paraview_version")
+    .set_value(QString("%1.%2.%3")
+                 .arg(vtkSMProxyManager::GetVersionMajor())
+                 .arg(vtkSMProxyManager::GetVersionMinor())
+                 .arg(vtkSMProxyManager::GetVersionPatch())
+                 .toLatin1()
+                 .data());
 
   QFileInfo info(filename);
 
-  return (ModuleManager::instance().serialize(root, info.dir()) &&
+  return (
+    ModuleManager::instance().serialize(root, info.dir()) &&
     document.save_file(/*path*/ filename.toLatin1().data(), /*indent*/ "  "));
 }
 

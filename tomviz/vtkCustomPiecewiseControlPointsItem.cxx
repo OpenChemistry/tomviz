@@ -22,7 +22,7 @@
 
 vtkStandardNewMacro(vtkCustomPiecewiseControlPointsItem)
 
-vtkCustomPiecewiseControlPointsItem::vtkCustomPiecewiseControlPointsItem()
+  vtkCustomPiecewiseControlPointsItem::vtkCustomPiecewiseControlPointsItem()
 {
 }
 
@@ -30,11 +30,11 @@ vtkCustomPiecewiseControlPointsItem::~vtkCustomPiecewiseControlPointsItem()
 {
 }
 
-bool vtkCustomPiecewiseControlPointsItem::MouseButtonPressEvent(const vtkContextMouseEvent & mouse)
+bool vtkCustomPiecewiseControlPointsItem::MouseButtonPressEvent(
+  const vtkContextMouseEvent& mouse)
 {
   // Ignore middle- and right-click events
-  if (mouse.GetButton() != vtkContextMouseEvent::LEFT_BUTTON)
-  {
+  if (mouse.GetButton() != vtkContextMouseEvent::LEFT_BUTTON) {
     return false;
   }
 
@@ -45,8 +45,7 @@ bool vtkCustomPiecewiseControlPointsItem::MouseButtonPressEvent(const vtkContext
   pos[1] = vpos.GetY();
 
   bool pointOnFunction = this->PointNearPiecewiseFunction(pos);
-  if (!pointOnFunction)
-  {
+  if (!pointOnFunction) {
     this->SetCurrentPoint(-1);
     return false;
   }
@@ -54,30 +53,32 @@ bool vtkCustomPiecewiseControlPointsItem::MouseButtonPressEvent(const vtkContext
   return this->Superclass::MouseButtonPressEvent(mouse);
 }
 
-bool vtkCustomPiecewiseControlPointsItem::MouseDoubleClickEvent(const vtkContextMouseEvent & mouse)
+bool vtkCustomPiecewiseControlPointsItem::MouseDoubleClickEvent(
+  const vtkContextMouseEvent& mouse)
 {
   // Ignore middle- and right-click events
-  if (mouse.GetButton() != vtkContextMouseEvent::LEFT_BUTTON)
-  {
+  if (mouse.GetButton() != vtkContextMouseEvent::LEFT_BUTTON) {
     return false;
   }
 
   return this->Superclass::MouseDoubleClickEvent(mouse);
 }
 
-bool vtkCustomPiecewiseControlPointsItem::PointNearPiecewiseFunction(const double position[2])
+bool vtkCustomPiecewiseControlPointsItem::PointNearPiecewiseFunction(
+  const double position[2])
 {
   double x = position[0];
   double y = 0.0;
 
   vtkPiecewiseFunction* pwf = this->GetPiecewiseFunction();
-  if (!pwf)
-  {
+  if (!pwf) {
     return false;
   }
 
-  // Evaluate the piewewise function at the given point and get the y position. If we are within
-  // a small distance of the piecewise function, return true. Otherwise, we are too far away from
+  // Evaluate the piewewise function at the given point and get the y position.
+  // If we are within
+  // a small distance of the piecewise function, return true. Otherwise, we are
+  // too far away from
   // the line, and return false.
   pwf->GetTable(x, x, 1, &y, 1);
   return (fabs(y - position[1]) < 0.05);

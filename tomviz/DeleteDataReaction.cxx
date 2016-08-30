@@ -18,14 +18,14 @@
 #include "ActiveObjects.h"
 #include "ModuleManager.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
 DeleteDataReaction::DeleteDataReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
-  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-    SLOT(updateEnableState()));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(DataSource*)),
+                SLOT(updateEnableState()));
   this->updateEnableState();
 }
 
@@ -35,7 +35,8 @@ DeleteDataReaction::~DeleteDataReaction()
 
 void DeleteDataReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() != nullptr);
+  this->parentAction()->setEnabled(
+    ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
 void DeleteDataReaction::onTriggered()
@@ -50,7 +51,7 @@ void DeleteDataReaction::deleteDataSource(DataSource* source)
 {
   Q_ASSERT(source);
 
-  ModuleManager &mmgr = ModuleManager::instance();
+  ModuleManager& mmgr = ModuleManager::instance();
   mmgr.removeAllModules(source);
   mmgr.removeDataSource(source);
 }

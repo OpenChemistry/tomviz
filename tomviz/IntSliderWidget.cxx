@@ -15,19 +15,17 @@
 ******************************************************************************/
 #include "IntSliderWidget.h"
 
-#include "vtkPVConfig.h"
 #include "pqLineEdit.h"
+#include "vtkPVConfig.h"
 
 // Qt includes
-#include <QSlider>
 #include <QHBoxLayout>
 #include <QIntValidator>
+#include <QSlider>
 
-namespace tomviz
-{
+namespace tomviz {
 
-IntSliderWidget::IntSliderWidget(bool showLineEdit, QWidget* p)
-  : QWidget(p) 
+IntSliderWidget::IntSliderWidget(bool showLineEdit, QWidget* p) : QWidget(p)
 {
   this->BlockUpdate = false;
   this->Value = 0;
@@ -41,29 +39,24 @@ IntSliderWidget::IntSliderWidget(bool showLineEdit, QWidget* p)
   this->Slider->setRange(this->Minimum, this->Maximum);
   l->addWidget(this->Slider, 4);
   this->Slider->setObjectName("Slider");
-  if (showLineEdit)
-  {
+  if (showLineEdit) {
     this->LineEdit = new pqLineEdit(this);
     l->addWidget(this->LineEdit);
     this->LineEdit->setObjectName("LineEdit");
     this->LineEdit->setValidator(new QIntValidator(this->LineEdit));
     this->LineEdit->setTextAndResetCursor(QString().setNum(this->Value));
-  }
-  else
-  {
+  } else {
     this->LineEdit = nullptr;
   }
 
-  QObject::connect(this->Slider, SIGNAL(valueChanged(int)),
-                   this, SLOT(sliderChanged(int)));
-  if (showLineEdit)
-  {
-    QObject::connect(this->LineEdit, SIGNAL(textChanged(const QString&)),
-                     this, SLOT(textChanged(const QString&)));
+  QObject::connect(this->Slider, SIGNAL(valueChanged(int)), this,
+                   SLOT(sliderChanged(int)));
+  if (showLineEdit) {
+    QObject::connect(this->LineEdit, SIGNAL(textChanged(const QString&)), this,
+                     SLOT(textChanged(const QString&)));
     QObject::connect(this->LineEdit, SIGNAL(textChangedAndEditingFinished()),
                      this, SLOT(editingFinished()));
   }
-  
 }
 
 IntSliderWidget::~IntSliderWidget()
@@ -72,8 +65,7 @@ IntSliderWidget::~IntSliderWidget()
 
 void IntSliderWidget::setLineEditWidth(int width)
 {
-  if (this->LineEdit)
-  {
+  if (this->LineEdit) {
     QSize s = this->LineEdit->sizeHint();
     QSize newSize(width, s.height());
     this->LineEdit->setFixedSize(newSize);
@@ -85,7 +77,6 @@ void IntSliderWidget::setPageStep(int step)
   this->Slider->setPageStep(step);
 }
 
-
 int IntSliderWidget::value() const
 {
   return this->Value;
@@ -93,21 +84,18 @@ int IntSliderWidget::value() const
 
 void IntSliderWidget::setValue(int val)
 {
-  if(this->Value == val)
-  {
+  if (this->Value == val) {
     return;
   }
-  
+
   this->Value = val;
 
-  if(!this->BlockUpdate)
-  {
-    // set the slider 
+  if (!this->BlockUpdate) {
+    // set the slider
     this->updateSlider();
 
     // set the text
-    if (this->LineEdit)
-    {
+    if (this->LineEdit) {
       this->BlockUpdate = true;
       this->LineEdit->setTextAndResetCursor(QString().setNum(val));
       this->BlockUpdate = false;
@@ -143,25 +131,20 @@ void IntSliderWidget::setMinimum(int val)
 
 void IntSliderWidget::updateValidator()
 {
-  if (!this->LineEdit)
-  {
+  if (!this->LineEdit) {
     return;
   }
-  if(this->StrictRange)
-  {
-    this->LineEdit->setValidator(new QIntValidator(this->minimum(),
-        this->maximum(), this->LineEdit));
-  }
-  else
-  {
+  if (this->StrictRange) {
+    this->LineEdit->setValidator(
+      new QIntValidator(this->minimum(), this->maximum(), this->LineEdit));
+  } else {
     this->LineEdit->setValidator(new QIntValidator(this->LineEdit));
   }
 }
 
 bool IntSliderWidget::strictRange() const
 {
-  if (!this->LineEdit)
-  {
+  if (!this->LineEdit) {
     return true;
   }
   const QIntValidator* dv =
@@ -177,11 +160,9 @@ void IntSliderWidget::setStrictRange(bool s)
 
 void IntSliderWidget::sliderChanged(int val)
 {
-  if(!this->BlockUpdate)
-  {
+  if (!this->BlockUpdate) {
     this->BlockUpdate = true;
-    if (this->LineEdit)
-    {
+    if (this->LineEdit) {
       this->LineEdit->setTextAndResetCursor(QString().setNum(val));
     }
     this->setValue(val);
@@ -192,8 +173,7 @@ void IntSliderWidget::sliderChanged(int val)
 
 void IntSliderWidget::textChanged(const QString& text)
 {
-  if(!this->BlockUpdate)
-  {
+  if (!this->BlockUpdate) {
     int val = text.toInt();
     this->BlockUpdate = true;
     int sliderVal = val - this->Minimum;
@@ -202,7 +182,7 @@ void IntSliderWidget::textChanged(const QString& text)
     this->BlockUpdate = false;
   }
 }
-  
+
 void IntSliderWidget::editingFinished()
 {
   emit this->valueEdited(this->Value);
@@ -216,7 +196,4 @@ void IntSliderWidget::updateSlider()
   this->Slider->setValue(v);
   this->Slider->blockSignals(false);
 }
-
 }
-
-

@@ -16,20 +16,19 @@
 
 #include "CropOperator.h"
 
-#include "SelectVolumeWidget.h"
 #include "EditOperatorWidget.h"
+#include "SelectVolumeWidget.h"
 #include "vtkDataObject.h"
 #include "vtkExtractVOI.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
 
-#include <QPointer>
 #include <QHBoxLayout>
+#include <QPointer>
 
 #include <limits>
 
-namespace
-{
+namespace {
 
 class CropWidget : public tomviz::EditOperatorWidget
 {
@@ -37,7 +36,8 @@ class CropWidget : public tomviz::EditOperatorWidget
   typedef tomviz::EditOperatorWidget Superclass;
 
 public:
-  CropWidget(tomviz::CropOperator *source, vtkSmartPointer<vtkImageData> imageData, QWidget* p)
+  CropWidget(tomviz::CropOperator* source,
+             vtkSmartPointer<vtkImageData> imageData, QWidget* p)
     : Superclass(p), Op(source)
   {
     double displayPosition[3] = { 0, 0, 0 };
@@ -47,18 +47,12 @@ public:
     imageData->GetOrigin(origin);
     imageData->GetSpacing(spacing);
     imageData->GetExtent(extent);
-    if (source->cropBounds()[0] == std::numeric_limits<int>::min())
-    {
+    if (source->cropBounds()[0] == std::numeric_limits<int>::min()) {
       source->setCropBounds(extent);
     }
     this->Widget = new tomviz::SelectVolumeWidget(
-                         origin,
-                         spacing,
-                         extent,
-                         source->cropBounds(),
-                         displayPosition,
-                         this);
-    QHBoxLayout *hboxlayout = new QHBoxLayout;
+      origin, spacing, extent, source->cropBounds(), displayPosition, this);
+    QHBoxLayout* hboxlayout = new QHBoxLayout;
     hboxlayout->addWidget(this->Widget);
     this->setLayout(hboxlayout);
   }
@@ -69,8 +63,7 @@ public:
   {
     int bounds[6];
     this->Widget->getExtentOfSelection(bounds);
-    if (this->Op)
-    {
+    if (this->Op) {
       this->Op->setCropBounds(bounds);
     }
   }
@@ -88,15 +81,12 @@ private:
 
 #include "CropOperator.moc"
 
-namespace tomviz
-{
+namespace tomviz {
 
-CropOperator::CropOperator(QObject* p)
-  : Superclass(p)
+CropOperator::CropOperator(QObject* p) : Superclass(p)
 {
   // By default include the entire volume
-  for (int i = 0; i < 6; ++i)
-  {
+  for (int i = 0; i < 6; ++i) {
     this->CropBounds[i] = std::numeric_limits<int>::min();
   }
 }
@@ -123,7 +113,7 @@ bool CropOperator::applyTransform(vtkDataObject* data)
 
 Operator* CropOperator::clone() const
 {
-  CropOperator *other = new CropOperator();
+  CropOperator* other = new CropOperator();
   other->setCropBounds(this->CropBounds);
   return other;
 }
@@ -154,16 +144,15 @@ bool CropOperator::deserialize(const pugi::xml_node& ns)
 
 void CropOperator::setCropBounds(const int bounds[6])
 {
-  for (int i = 0; i < 6; ++i)
-  {
+  for (int i = 0; i < 6; ++i) {
     this->CropBounds[i] = bounds[i];
   }
   emit this->transformModified();
 }
 
-EditOperatorWidget *CropOperator::getEditorContentsWithData(QWidget *p, vtkSmartPointer<vtkImageData> data)
+EditOperatorWidget* CropOperator::getEditorContentsWithData(
+  QWidget* p, vtkSmartPointer<vtkImageData> data)
 {
   return new CropWidget(this, data, p);
 }
-
 }

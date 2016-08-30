@@ -19,27 +19,23 @@
 #include "ActiveObjects.h"
 #include "Utilities.h"
 #include "pqProxiesWidget.h"
-#include "vtkSMViewProxy.h"
 #include "pqView.h"
+#include "vtkSMViewProxy.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
 class ViewPropertiesPanel::VPPInternals
 {
 public:
   Ui::ViewPropertiesPanel Ui;
 
-  VPPInternals()
-  {
-  }
+  VPPInternals() {}
 };
 
 ViewPropertiesPanel::ViewPropertiesPanel(QWidget* parentObject)
-  : Superclass(parentObject),
-    Internals(new ViewPropertiesPanel::VPPInternals())
+  : Superclass(parentObject), Internals(new ViewPropertiesPanel::VPPInternals())
 {
-  Ui::ViewPropertiesPanel &ui = this->Internals->Ui;
+  Ui::ViewPropertiesPanel& ui = this->Internals->Ui;
   ui.setupUi(this);
 
   this->connect(ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
@@ -59,10 +55,9 @@ ViewPropertiesPanel::~ViewPropertiesPanel()
 
 void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
 {
-  Ui::ViewPropertiesPanel &ui = this->Internals->Ui;
+  Ui::ViewPropertiesPanel& ui = this->Internals->Ui;
   ui.ProxiesWidget->clear();
-  if (view)
-  {
+  if (view) {
     ui.ProxiesWidget->addProxy(view, view->GetXMLLabel(), QStringList(), true);
   }
   ui.ProxiesWidget->updateLayout();
@@ -71,19 +66,17 @@ void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
 
 void ViewPropertiesPanel::render()
 {
-  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  if (view)
-  {
+  pqView* view =
+    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view) {
     view->render();
   }
 }
 
 void ViewPropertiesPanel::updatePanel()
 {
-  Ui::ViewPropertiesPanel &ui = this->Internals->Ui;
-  ui.ProxiesWidget->filterWidgets(
-    ui.SearchBox->isAdvancedSearchActive(),
-    ui.SearchBox->text());
+  Ui::ViewPropertiesPanel& ui = this->Internals->Ui;
+  ui.ProxiesWidget->filterWidgets(ui.SearchBox->isAdvancedSearchActive(),
+                                  ui.SearchBox->text());
 }
-
 }

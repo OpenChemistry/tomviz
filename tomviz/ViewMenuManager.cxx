@@ -34,8 +34,7 @@
 #include "Utilities.h"
 #include "ViewPropertiesPanel.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
 ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   : pqViewMenuManager(mainWindow, menu), perspectiveProjectionAction(nullptr),
@@ -43,57 +42,59 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
 {
   this->viewPropertiesDialog = new QDialog(mainWindow);
   this->viewPropertiesDialog->setWindowTitle("View Properties");
-  ViewPropertiesPanel* panel = new ViewPropertiesPanel(this->viewPropertiesDialog);
-  QHBoxLayout *layout = new QHBoxLayout;
+  ViewPropertiesPanel* panel =
+    new ViewPropertiesPanel(this->viewPropertiesDialog);
+  QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(panel);
   this->viewPropertiesDialog->setLayout(layout);
   this->connect(this->viewPropertiesDialog, SIGNAL(finished(int)),
-                    SLOT(viewPropertiesDialogHidden()));
+                SLOT(viewPropertiesDialogHidden()));
 
   this->showViewPropertiesAction = new QAction("View Properties", this->Menu);
   this->showViewPropertiesAction->setCheckable(true);
   this->connect(this->showViewPropertiesAction, SIGNAL(triggered(bool)),
-                    SLOT(showViewPropertiesDialog(bool)));
+                SLOT(showViewPropertiesDialog(bool)));
   this->View = ActiveObjects::instance().activeView();
-  if (this->View)
-  {
-    this->ViewObserverId = pqCoreUtilities::connect(
-        this->View, vtkCommand::PropertyModifiedEvent,
-        this, SLOT(onViewPropertyChanged()));
+  if (this->View) {
+    this->ViewObserverId =
+      pqCoreUtilities::connect(this->View, vtkCommand::PropertyModifiedEvent,
+                               this, SLOT(onViewPropertyChanged()));
   }
-  this->connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
-                SLOT(onViewChanged()));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(viewChanged(vtkSMViewProxy*)), SLOT(onViewChanged()));
 }
 
 void ViewMenuManager::buildMenu()
 {
   bool showViewPropertiesChecked = this->showViewPropertiesAction->isChecked();
   bool perspectiveProjectionChecked = true;
-  if (this->perspectiveProjectionAction)
-  {
-    perspectiveProjectionChecked = this->perspectiveProjectionAction->isChecked();
+  if (this->perspectiveProjectionAction) {
+    perspectiveProjectionChecked =
+      this->perspectiveProjectionAction->isChecked();
   }
   bool axisGridIsShowing = false;
-  if (this->showAxisGridAction)
-  {
+  if (this->showAxisGridAction) {
     axisGridIsShowing = this->showAxisGridAction->isChecked();
   }
   this->showViewPropertiesAction = nullptr; // The object is about to be deleted
   this->perspectiveProjectionAction = nullptr;
   this->orthographicProjectionAction = nullptr;
-  pqViewMenuManager::buildMenu(); // deletes all prior menu items and repopulates menu
+  pqViewMenuManager::buildMenu(); // deletes all prior menu items and
+                                  // repopulates menu
 
   this->Menu->addSeparator();
   // Projection modes
-  QActionGroup *projectionGroup = new QActionGroup(this);
+  QActionGroup* projectionGroup = new QActionGroup(this);
 
-  this->perspectiveProjectionAction = this->Menu->addAction("Perspective Projection");
+  this->perspectiveProjectionAction =
+    this->Menu->addAction("Perspective Projection");
   this->perspectiveProjectionAction->setCheckable(true);
   this->perspectiveProjectionAction->setActionGroup(projectionGroup);
   this->perspectiveProjectionAction->setChecked(perspectiveProjectionChecked);
   this->connect(this->perspectiveProjectionAction, SIGNAL(triggered()),
                 SLOT(setProjectionModeToPerspective()));
-  this->orthographicProjectionAction = this->Menu->addAction("Orthographic Projection");
+  this->orthographicProjectionAction =
+    this->Menu->addAction("Orthographic Projection");
   this->orthographicProjectionAction->setCheckable(true);
   this->orthographicProjectionAction->setActionGroup(projectionGroup);
   this->orthographicProjectionAction->setChecked(!perspectiveProjectionChecked);
@@ -105,7 +106,8 @@ void ViewMenuManager::buildMenu()
   this->showAxisGridAction = this->Menu->addAction("Show Axis Grid");
   this->showAxisGridAction->setCheckable(true);
   this->showAxisGridAction->setChecked(axisGridIsShowing);
-  this->showAxisGridAction->setEnabled(this->View && this->View->GetProperty("AxesGrid")); 
+  this->showAxisGridAction->setEnabled(this->View &&
+                                       this->View->GetProperty("AxesGrid"));
   this->connect(this->showAxisGridAction, SIGNAL(triggered(bool)),
                 SLOT(setShowAxisGrid(bool)));
 
@@ -114,17 +116,14 @@ void ViewMenuManager::buildMenu()
   this->showViewPropertiesAction->setCheckable(true);
   this->showViewPropertiesAction->setChecked(showViewPropertiesChecked);
   this->connect(this->showViewPropertiesAction, SIGNAL(triggered(bool)),
-                    SLOT(showViewPropertiesDialog(bool)));
+                SLOT(showViewPropertiesDialog(bool)));
 }
 
 void ViewMenuManager::showViewPropertiesDialog(bool show)
 {
-  if (show)
-  {
+  if (show) {
     this->viewPropertiesDialog->show();
-  }
-  else
-  {
+  } else {
     this->viewPropertiesDialog->accept();
   }
 }
@@ -136,18 +135,16 @@ void ViewMenuManager::viewPropertiesDialogHidden()
 
 void ViewMenuManager::setProjectionModeToPerspective()
 {
-  if (!this->View->GetProperty("CameraParallelProjection"))
-  {
+  if (!this->View->GetProperty("CameraParallelProjection")) {
     return;
   }
-  int parallel = vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
-  if (parallel)
-  {
+  int parallel =
+    vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
+  if (parallel) {
     vtkSMPropertyHelper(this->View, "CameraParallelProjection").Set(0);
     this->View->UpdateVTKObjects();
     pqView* view = tomviz::convert<pqView*>(this->View);
-    if (view)
-    {
+    if (view) {
       view->render();
     }
   }
@@ -155,18 +152,16 @@ void ViewMenuManager::setProjectionModeToPerspective()
 
 void ViewMenuManager::setProjectionModeToOrthographic()
 {
-  if (!this->View->GetProperty("CameraParallelProjection"))
-  {
+  if (!this->View->GetProperty("CameraParallelProjection")) {
     return;
   }
-  int parallel = vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
-  if (!parallel)
-  {
+  int parallel =
+    vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
+  if (!parallel) {
     vtkSMPropertyHelper(this->View, "CameraParallelProjection").Set(1);
     this->View->UpdateVTKObjects();
     pqView* view = tomviz::convert<pqView*>(this->View);
-    if (view)
-    {
+    if (view) {
       view->render();
     }
   }
@@ -174,71 +169,63 @@ void ViewMenuManager::setProjectionModeToOrthographic()
 
 void ViewMenuManager::onViewPropertyChanged()
 {
-  if (!this->perspectiveProjectionAction || !this->orthographicProjectionAction)
-  {
+  if (!this->perspectiveProjectionAction ||
+      !this->orthographicProjectionAction) {
     return;
   }
-  if (!this->View->GetProperty("CameraParallelProjection"))
-  {
+  if (!this->View->GetProperty("CameraParallelProjection")) {
     return;
   }
-  int parallel = vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
-  if (parallel && this->perspectiveProjectionAction->isChecked())
-  {
+  int parallel =
+    vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
+  if (parallel && this->perspectiveProjectionAction->isChecked()) {
     this->orthographicProjectionAction->setChecked(true);
-  }
-  else if (!parallel && this->orthographicProjectionAction->isChecked())
-  {
+  } else if (!parallel && this->orthographicProjectionAction->isChecked()) {
     this->perspectiveProjectionAction->setChecked(true);
   }
 }
 
 void ViewMenuManager::onViewChanged()
 {
-  if (this->View)
-  {
-    if (this->View->GetProperty("AxesGrid"))
-    {
-      vtkSMProxy *grid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
-      if (grid)
-      {
+  if (this->View) {
+    if (this->View->GetProperty("AxesGrid")) {
+      vtkSMProxy* grid =
+        vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
+      if (grid) {
         grid->RemoveObserver(this->AxesGridObserverId);
       }
       this->View->RemoveObserver(this->ViewObserverId);
     }
   }
   this->View = ActiveObjects::instance().activeView();
-  if (this->View)
-  {
-    this->ViewObserverId = pqCoreUtilities::connect(
-        this->View, vtkCommand::PropertyModifiedEvent,
-        this, SLOT(onViewPropertyChanged()));
-    if (this->View->GetProperty("AxesGrid"))
-    {
+  if (this->View) {
+    this->ViewObserverId =
+      pqCoreUtilities::connect(this->View, vtkCommand::PropertyModifiedEvent,
+                               this, SLOT(onViewPropertyChanged()));
+    if (this->View->GetProperty("AxesGrid")) {
       vtkSMPropertyHelper axesGridProp(this->View, "AxesGrid");
-      vtkSMProxy *proxy = axesGridProp.GetAsProxy();
-      if (!proxy)
-      {
+      vtkSMProxy* proxy = axesGridProp.GetAsProxy();
+      if (!proxy) {
         vtkSMSessionProxyManager* pxm = this->View->GetSessionProxyManager();
         proxy = pxm->NewProxy("annotations", "GridAxes3DActor");
         axesGridProp.Set(proxy);
         this->View->UpdateVTKObjects();
         proxy->Delete();
       }
-      this->AxesGridObserverId = pqCoreUtilities::connect(proxy,
-          vtkCommand::PropertyModifiedEvent, this, SLOT(onAxesGridChanged()));
+      this->AxesGridObserverId =
+        pqCoreUtilities::connect(proxy, vtkCommand::PropertyModifiedEvent, this,
+                                 SLOT(onAxesGridChanged()));
     }
   }
   bool enableAxesGrid = (this->View && this->View->GetProperty("AxesGrid"));
   // We have to check since this can be called before buildMenu
-  if (this->showAxisGridAction)
-  {
+  if (this->showAxisGridAction) {
     this->showAxisGridAction->setEnabled(enableAxesGrid);
   }
-  bool enableProjectionModes = (this->View && this->View->GetProperty("CameraParallelProjection"));
+  bool enableProjectionModes =
+    (this->View && this->View->GetProperty("CameraParallelProjection"));
   // We have to check since this can be called before buildMenu
-  if (this->orthographicProjectionAction && this->perspectiveProjectionAction)
-  {
+  if (this->orthographicProjectionAction && this->perspectiveProjectionAction) {
     this->orthographicProjectionAction->setEnabled(enableProjectionModes);
     this->perspectiveProjectionAction->setEnabled(enableProjectionModes);
   }
@@ -246,40 +233,33 @@ void ViewMenuManager::onViewChanged()
 
 void ViewMenuManager::setShowAxisGrid(bool show)
 {
-  if (!this->View->GetProperty("AxesGrid"))
-  {
+  if (!this->View->GetProperty("AxesGrid")) {
     return;
   }
-  vtkSMProxy *axesGrid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
+  vtkSMProxy* axesGrid =
+    vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
   int showing = vtkSMPropertyHelper(axesGrid, "Visibility").GetAsInt();
-  if (showing && !show)
-  {
+  if (showing && !show) {
     vtkSMPropertyHelper(axesGrid, "Visibility").Set(0);
-  }
-  else if (!showing && show)
-  {
+  } else if (!showing && show) {
     vtkSMPropertyHelper(axesGrid, "Visibility").Set(1);
   }
   axesGrid->UpdateVTKObjects();
   pqView* view = tomviz::convert<pqView*>(this->View);
-  if (view)
-  {
+  if (view) {
     view->render();
   }
 }
 
 void ViewMenuManager::onAxesGridChanged()
 {
-  vtkSMProxy *axesGrid = vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
+  vtkSMProxy* axesGrid =
+    vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
   int showing = vtkSMPropertyHelper(axesGrid, "Visibility").GetAsInt();
-  if (showing && !this->showAxisGridAction->isChecked())
-  {
+  if (showing && !this->showAxisGridAction->isChecked()) {
     this->showAxisGridAction->setChecked(true);
-  }
-  else if (!showing && this->showAxisGridAction->isChecked())
-  {
+  } else if (!showing && this->showAxisGridAction->isChecked()) {
     this->showAxisGridAction->setChecked(false);
   }
 }
-
 }

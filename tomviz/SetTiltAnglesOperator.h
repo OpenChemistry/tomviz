@@ -20,31 +20,30 @@
 
 #include <QMap>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class SetTiltAnglesOperator : public Operator
 {
   Q_OBJECT
 
 public:
-  SetTiltAnglesOperator(QObject *parent = nullptr);
+  SetTiltAnglesOperator(QObject* parent = nullptr);
   ~SetTiltAnglesOperator() override;
 
   QString label() const override { return "Set Tilt Angles"; }
   QIcon icon() const override;
-  Operator *clone() const override;
+  Operator* clone() const override;
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
-  EditOperatorWidget *getEditorContentsWithData(QWidget* parent,
-      vtkSmartPointer<vtkImageData> data) override;
+  EditOperatorWidget* getEditorContentsWithData(
+    QWidget* parent, vtkSmartPointer<vtkImageData> data) override;
   bool hasCustomUI() const override { return true; }
 
   void setTiltAngles(const QMap<size_t, double>& newAngles);
   const QMap<size_t, double>& tiltAngles() const { return this->TiltAngles; }
 
 protected:
-  bool applyTransform(vtkDataObject *data) override;
+  bool applyTransform(vtkDataObject* data) override;
 
   QMap<size_t, double> TiltAngles;
 

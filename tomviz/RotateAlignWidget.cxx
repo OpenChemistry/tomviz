@@ -22,13 +22,13 @@
 #include "TomographyReconstruction.h"
 #include "TomographyTiltSeries.h"
 #define PI 3.14159265359
-#include <math.h>
 #include "AddPythonTransformReaction.h"
 #include "Utilities.h"
+#include <math.h>
 
+#include "QVTKWidget.h"
 #include "pqCoreUtilities.h"
 #include "pqPresetDialog.h"
-#include "QVTKWidget.h"
 #include "vtkCamera.h"
 #include "vtkDataArray.h"
 #include "vtkImageData.h"
@@ -42,34 +42,33 @@
 #include "vtkPointData.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkProperty.h"
-#include "vtkRenderer.h"
 #include "vtkRenderWindow.h"
-#include "vtkScalarsToColors.h"
+#include "vtkRenderer.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMTransferFunctionManager.h"
 #include "vtkSMTransferFunctionProxy.h"
+#include "vtkScalarsToColors.h"
 #include "vtkTransform.h"
 #include "vtkTrivialProducer.h"
 #include "vtkVector.h"
 
 #include "ui_RotateAlignWidget.h"
 
+#include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QLabel>
-#include <QPushButton>
 #include <QLineEdit>
-#include <QSpinBox>
 #include <QPointer>
-#include <QDoubleSpinBox>
+#include <QPushButton>
+#include <QSpinBox>
 #include <QTimer>
+#include <QVBoxLayout>
 
 #include <array>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class RotateAlignWidget::RAWInternal
 {
@@ -91,10 +90,14 @@ public:
 
   void setupCameras()
   {
-    tomviz::setupRenderer(this->mainRenderer.Get(), this->mainSliceMapper.Get());
-    tomviz::setupRenderer(this->reconRenderer[0].Get(), this->reconSliceMapper[0].Get());
-    tomviz::setupRenderer(this->reconRenderer[1].Get(), this->reconSliceMapper[1].Get());
-    tomviz::setupRenderer(this->reconRenderer[2].Get(), this->reconSliceMapper[2].Get());
+    tomviz::setupRenderer(this->mainRenderer.Get(),
+                          this->mainSliceMapper.Get());
+    tomviz::setupRenderer(this->reconRenderer[0].Get(),
+                          this->reconSliceMapper[0].Get());
+    tomviz::setupRenderer(this->reconRenderer[1].Get(),
+                          this->reconSliceMapper[1].Get());
+    tomviz::setupRenderer(this->reconRenderer[2].Get(),
+                          this->reconSliceMapper[2].Get());
   }
 
   void setupColorMaps()
@@ -102,31 +105,30 @@ public:
     vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
 
     vtkNew<vtkSMTransferFunctionManager> tfmgr;
-    for (int i = 0; i < 3; ++i)
-    {
-      this->ReconColorMap[i] = tfmgr->GetColorTransferFunction(QString("RotateAlignWidgetColorMap%1")
-                                                               .arg(i).toLatin1().data(),pxm);
+    for (int i = 0; i < 3; ++i) {
+      this->ReconColorMap[i] = tfmgr->GetColorTransferFunction(
+        QString("RotateAlignWidgetColorMap%1").arg(i).toLatin1().data(), pxm);
     }
   }
 
   void setupRotationAxisLine()
   {
-    vtkTrivialProducer *t =
-        vtkTrivialProducer::SafeDownCast(this->Source->producer()->GetClientSideObject());
-    if (!t)
-    {
+    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+      this->Source->producer()->GetClientSideObject());
+    if (!t) {
       return;
     }
-    vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    if (imageData)
-    {
+    vtkImageData* imageData =
+      vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (imageData) {
       int extent[6];
       imageData->GetExtent(extent);
       double spacing[3];
       imageData->GetSpacing(spacing);
       this->Ui.projection->setMaximum(extent[5] - extent[4]);
       int yslices = extent[3] - extent[2] + 1;
-      this->Ui.rotationAxis->setRange(-yslices * spacing[1] / 2.0, yslices * spacing[1] / 2.0);
+      this->Ui.rotationAxis->setRange(-yslices * spacing[1] / 2.0,
+                                      yslices * spacing[1] / 2.0);
       double bounds[6];
       imageData->GetBounds(bounds);
       double point1[3], point2[3];
@@ -147,24 +149,23 @@ public:
 
   void moveRotationAxisLine()
   {
-    vtkTransform *tform = vtkTransform::SafeDownCast(this->axisActor->GetUserTransform());
-    if (!tform)
-    {
+    vtkTransform* tform =
+      vtkTransform::SafeDownCast(this->axisActor->GetUserTransform());
+    if (!tform) {
       vtkNew<vtkTransform> t;
       t->PreMultiply();
       tform = t.Get();
       this->axisActor->SetUserTransform(t.Get());
     }
-    vtkTrivialProducer *t =
-        vtkTrivialProducer::SafeDownCast(this->Source->producer()->GetClientSideObject());
-    if (!t)
-    {
+    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+      this->Source->producer()->GetClientSideObject());
+    if (!t) {
       return;
     }
     double centerOfRotation[3] = { 0.0, 0.0, 0.0 };
-    vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    if (imageData)
-    {
+    vtkImageData* imageData =
+      vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (imageData) {
       double bounds[6];
       imageData->GetBounds(bounds);
       centerOfRotation[0] = (bounds[0] + bounds[1]) / 2.0;
@@ -175,78 +176,89 @@ public:
     tform->Translate(0, this->Ui.rotationAxis->value(), 0);
     tform->Translate(centerOfRotation);
     tform->RotateZ(this->Ui.rotationAngle->value());
-    tform->Translate(-centerOfRotation[0], -centerOfRotation[1], -centerOfRotation[2]);
+    tform->Translate(-centerOfRotation[0], -centerOfRotation[1],
+                     -centerOfRotation[2]);
     this->Ui.sliceView->update();
   }
 
   void updateReconSlice(int i)
   {
-    vtkTrivialProducer *t =
-        vtkTrivialProducer::SafeDownCast(this->Source->producer()->GetClientSideObject());
-    if (!t)
-    {
+    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+      this->Source->producer()->GetClientSideObject());
+    if (!t) {
       return;
     }
-    vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    if (imageData)
-    {
+    vtkImageData* imageData =
+      vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (imageData) {
       int extent[6];
       imageData->GetExtent(extent);
-      int dims[3] = { extent[1] - extent[0] + 1,
-                      extent[3] - extent[2] + 1,
+      int dims[3] = { extent[1] - extent[0] + 1, extent[3] - extent[2] + 1,
                       extent[5] - extent[4] + 1 };
-      QSpinBox *spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2, this->Ui.spinBox_3 };
+      QSpinBox* spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2,
+                                 this->Ui.spinBox_3 };
       int sliceNum = spinBoxes[i]->value();
 
-      int Nray = 256; //Size of 2D reconstruction. Fixed for all tilt series
+      int Nray = 256; // Size of 2D reconstruction. Fixed for all tilt series
       std::vector<float> sinogram(Nray * dims[2]);
-      //Approximate in-plance rotation as a shift in y-direction
-      double shift = this->Ui.rotationAxis->value() + sin(this->Ui.rotationAngle->value()*PI/180)*(sliceNum-dims[0]/2);
-      
-      TomographyTiltSeries::getSinogram(imageData, sliceNum, &sinogram[0], Nray, shift); //Get a sinogram from tilt series
-      this->reconImage[i]->SetExtent(0, Nray-1, 0, Nray-1, 0, 0);
+      // Approximate in-plance rotation as a shift in y-direction
+      double shift = this->Ui.rotationAxis->value() +
+                     sin(this->Ui.rotationAngle->value() * PI / 180) *
+                       (sliceNum - dims[0] / 2);
+
+      TomographyTiltSeries::getSinogram(
+        imageData, sliceNum, &sinogram[0], Nray,
+        shift); // Get a sinogram from tilt series
+      this->reconImage[i]->SetExtent(0, Nray - 1, 0, Nray - 1, 0, 0);
       this->reconImage[i]->AllocateScalars(VTK_FLOAT, 1);
-      vtkDataArray *reconArray = this->reconImage[i]->GetPointData()->GetScalars();
-      float *reconPtr = static_cast<float*>(reconArray->GetVoidPointer(0));
+      vtkDataArray* reconArray =
+        this->reconImage[i]->GetPointData()->GetScalars();
+      float* reconPtr = static_cast<float*>(reconArray->GetVoidPointer(0));
 
-      vtkDataArray *tiltAnglesArray = imageData->GetFieldData()->GetArray("tilt_angles");
-      double *tiltAngles = static_cast<double*>(tiltAnglesArray->GetVoidPointer(0));
+      vtkDataArray* tiltAnglesArray =
+        imageData->GetFieldData()->GetArray("tilt_angles");
+      double* tiltAngles =
+        static_cast<double*>(tiltAnglesArray->GetVoidPointer(0));
 
-      TomographyReconstruction::unweightedBackProjection2(&sinogram[0], tiltAngles, reconPtr, dims[2], Nray);
+      TomographyReconstruction::unweightedBackProjection2(
+        &sinogram[0], tiltAngles, reconPtr, dims[2], Nray);
       this->reconSliceMapper[i]->SetInputData(this->reconImage[i].GetPointer());
       this->reconSliceMapper[i]->SetSliceNumber(0);
       this->reconSliceMapper[i]->Update();
 
       double range[2];
       reconArray->GetRange(range);
-      vtkSMTransferFunctionProxy::RescaleTransferFunction(this->ReconColorMap[i], range);
-      this->reconSlice[i]->GetProperty()->SetLookupTable(vtkScalarsToColors::SafeDownCast(
-            this->ReconColorMap[i]->GetClientSideObject()));
+      vtkSMTransferFunctionProxy::RescaleTransferFunction(
+        this->ReconColorMap[i], range);
+      this->reconSlice[i]->GetProperty()->SetLookupTable(
+        vtkScalarsToColors::SafeDownCast(
+          this->ReconColorMap[i]->GetClientSideObject()));
     }
   }
 
   void updateSliceLines()
   {
-    vtkTrivialProducer *t =
-        vtkTrivialProducer::SafeDownCast(this->Source->producer()->GetClientSideObject());
-    if (!t)
-    {
+    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+      this->Source->producer()->GetClientSideObject());
+    if (!t) {
       return;
     }
-    vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    if (imageData)
-    {
+    vtkImageData* imageData =
+      vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (imageData) {
       double bounds[6];
       imageData->GetBounds(bounds);
       int extent[6];
       imageData->GetExtent(extent);
       double maxSlices = extent[1] - extent[0] + 1;
-      QSpinBox *spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2, this->Ui.spinBox_3 };
-      for (int i = 0; i < 3; ++i)
-      {
+      QSpinBox* spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2,
+                                 this->Ui.spinBox_3 };
+      for (int i = 0; i < 3; ++i) {
         double p1[3], p2[3];
-        p1[0] = bounds[0] + (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / maxSlices);
-        p2[0] = bounds[0] + (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / maxSlices);
+        p1[0] = bounds[0] +
+                (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / maxSlices);
+        p2[0] = bounds[0] +
+                (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / maxSlices);
         p1[1] = bounds[2];
         p2[1] = bounds[3];
         p1[2] = bounds[5];
@@ -260,7 +272,7 @@ public:
   }
 };
 
-RotateAlignWidget::RotateAlignWidget(DataSource *source, QWidget *p)
+RotateAlignWidget::RotateAlignWidget(DataSource* source, QWidget* p)
   : Superclass(p), Internals(new RAWInternal)
 {
   this->Internals->Ui.setupUi(this);
@@ -269,38 +281,51 @@ RotateAlignWidget::RotateAlignWidget(DataSource *source, QWidget *p)
   this->Internals->Ui.colorMapButton_1->setIcon(setColorMapIcon);
   this->Internals->Ui.colorMapButton_2->setIcon(setColorMapIcon);
   this->Internals->Ui.colorMapButton_3->setIcon(setColorMapIcon);
-  this->connect(this->Internals->Ui.colorMapButton_1, SIGNAL(clicked()), this, SLOT(showChangeColorMapDialog0()));
-  this->connect(this->Internals->Ui.colorMapButton_2, SIGNAL(clicked()), this, SLOT(showChangeColorMapDialog1()));
-  this->connect(this->Internals->Ui.colorMapButton_3, SIGNAL(clicked()), this, SLOT(showChangeColorMapDialog2()));
+  this->connect(this->Internals->Ui.colorMapButton_1, SIGNAL(clicked()), this,
+                SLOT(showChangeColorMapDialog0()));
+  this->connect(this->Internals->Ui.colorMapButton_2, SIGNAL(clicked()), this,
+                SLOT(showChangeColorMapDialog1()));
+  this->connect(this->Internals->Ui.colorMapButton_3, SIGNAL(clicked()), this,
+                SLOT(showChangeColorMapDialog2()));
 
   this->Internals->mainSlice->SetMapper(this->Internals->mainSliceMapper.Get());
-  this->Internals->reconSlice[0]->SetMapper(this->Internals->reconSliceMapper[0].Get());
-  this->Internals->reconSlice[1]->SetMapper(this->Internals->reconSliceMapper[1].Get());
-  this->Internals->reconSlice[2]->SetMapper(this->Internals->reconSliceMapper[2].Get());
+  this->Internals->reconSlice[0]->SetMapper(
+    this->Internals->reconSliceMapper[0].Get());
+  this->Internals->reconSlice[1]->SetMapper(
+    this->Internals->reconSliceMapper[1].Get());
+  this->Internals->reconSlice[2]->SetMapper(
+    this->Internals->reconSliceMapper[2].Get());
   this->Internals->mainRenderer->AddViewProp(this->Internals->mainSlice.Get());
-  this->Internals->reconRenderer[0]->AddViewProp(this->Internals->reconSlice[0].Get());
-  this->Internals->reconRenderer[1]->AddViewProp(this->Internals->reconSlice[1].Get());
-  this->Internals->reconRenderer[2]->AddViewProp(this->Internals->reconSlice[2].Get());
+  this->Internals->reconRenderer[0]->AddViewProp(
+    this->Internals->reconSlice[0].Get());
+  this->Internals->reconRenderer[1]->AddViewProp(
+    this->Internals->reconSlice[1].Get());
+  this->Internals->reconRenderer[2]->AddViewProp(
+    this->Internals->reconSlice[2].Get());
   this->Internals->Ui.sliceView->GetRenderWindow()->AddRenderer(
-      this->Internals->mainRenderer.Get());
+    this->Internals->mainRenderer.Get());
   this->Internals->Ui.sliceView_1->GetRenderWindow()->AddRenderer(
-      this->Internals->reconRenderer[0].Get());
+    this->Internals->reconRenderer[0].Get());
   this->Internals->Ui.sliceView_2->GetRenderWindow()->AddRenderer(
-      this->Internals->reconRenderer[1].Get());
+    this->Internals->reconRenderer[1].Get());
   this->Internals->Ui.sliceView_3->GetRenderWindow()->AddRenderer(
-      this->Internals->reconRenderer[2].Get());
+    this->Internals->reconRenderer[2].Get());
 
   vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
   interatorStyle->SetRenderOnMouseMove(true);
 
-  this->Internals->Ui.sliceView->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-      interatorStyle.Get());
-  this->Internals->Ui.sliceView_1->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-      interatorStyle.Get());
-  this->Internals->Ui.sliceView_2->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-      interatorStyle.Get());
-  this->Internals->Ui.sliceView_3->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-      interatorStyle.Get());
+  this->Internals->Ui.sliceView->GetRenderWindow()
+    ->GetInteractor()
+    ->SetInteractorStyle(interatorStyle.Get());
+  this->Internals->Ui.sliceView_1->GetRenderWindow()
+    ->GetInteractor()
+    ->SetInteractorStyle(interatorStyle.Get());
+  this->Internals->Ui.sliceView_2->GetRenderWindow()
+    ->GetInteractor()
+    ->SetInteractorStyle(interatorStyle.Get());
+  this->Internals->Ui.sliceView_3->GetRenderWindow()
+    ->GetInteractor()
+    ->SetInteractorStyle(interatorStyle.Get());
   this->Internals->setupCameras();
 
   this->Internals->rotationAxis->SetPoint1(0, 0, 0);
@@ -309,46 +334,50 @@ RotateAlignWidget::RotateAlignWidget(DataSource *source, QWidget *p)
 
   vtkNew<vtkPolyDataMapper> mapper;
   mapper->SetInputConnection(this->Internals->rotationAxis->GetOutputPort());
-  
+
   this->Internals->axisActor->SetMapper(mapper.Get());
   this->Internals->axisActor->GetProperty()->SetColor(1, 1, 0); // yellow
   this->Internals->axisActor->GetProperty()->SetLineWidth(2.5);
   this->Internals->mainRenderer->AddActor(this->Internals->axisActor.Get());
 
-  for (int i = 0; i < 3; ++i)
-  {
+  for (int i = 0; i < 3; ++i) {
     this->Internals->reconSliceLine[i]->Update();
     vtkNew<vtkPolyDataMapper> sMapper;
-    sMapper->SetInputConnection(this->Internals->reconSliceLine[i]->GetOutputPort());
+    sMapper->SetInputConnection(
+      this->Internals->reconSliceLine[i]->GetOutputPort());
     this->Internals->reconSliceLineActor[i]->SetMapper(sMapper.Get());
     this->Internals->reconSliceLineActor[i]->GetProperty()->SetColor(1, 0, 0);
     this->Internals->reconSliceLineActor[i]->GetProperty()->SetLineWidth(2.0);
-    this->Internals->reconSliceLineActor[i]->GetProperty()->SetLineStipplePattern(0xFF00);
-    this->Internals->mainRenderer->AddActor(this->Internals->reconSliceLineActor[i].Get());
+    this->Internals->reconSliceLineActor[i]
+      ->GetProperty()
+      ->SetLineStipplePattern(0xFF00);
+    this->Internals->mainRenderer->AddActor(
+      this->Internals->reconSliceLineActor[i].Get());
   }
   this->Internals->Ui.spinBox_1->setValue(25);
   this->Internals->Ui.spinBox_2->setValue(50);
   this->Internals->Ui.spinBox_3->setValue(75);
 
-  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource *)),
-                SLOT(setDataSource(DataSource *)));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(DataSource*)),
+                SLOT(setDataSource(DataSource*)));
 
   QObject::connect(this->Internals->Ui.projection, SIGNAL(editingFinished()),
-                this, SLOT(onProjectionNumberChanged()));
+                   this, SLOT(onProjectionNumberChanged()));
 
   QObject::connect(this->Internals->Ui.spinBox_1, SIGNAL(editingFinished()),
-                this, SLOT(onReconSlice0Changed()));
+                   this, SLOT(onReconSlice0Changed()));
 
   QObject::connect(this->Internals->Ui.spinBox_2, SIGNAL(editingFinished()),
-                this, SLOT(onReconSlice1Changed()));
+                   this, SLOT(onReconSlice1Changed()));
 
   QObject::connect(this->Internals->Ui.spinBox_3, SIGNAL(editingFinished()),
-                this, SLOT(onReconSlice2Changed()));
+                   this, SLOT(onReconSlice2Changed()));
 
   QObject::connect(this->Internals->Ui.rotationAxis, SIGNAL(editingFinished()),
-                this, SLOT(onRotationAxisChanged()));
+                   this, SLOT(onRotationAxisChanged()));
   QObject::connect(this->Internals->Ui.rotationAngle, SIGNAL(editingFinished()),
-                this, SLOT(onRotationAxisChanged()));
+                   this, SLOT(onRotationAxisChanged()));
 
   this->connect(this->Internals->Ui.pushButton, SIGNAL(pressed()),
                 SLOT(onFinalReconButtonPressed()));
@@ -360,40 +389,43 @@ RotateAlignWidget::~RotateAlignWidget()
 {
 }
 
-void RotateAlignWidget::setDataSource(DataSource *source)
+void RotateAlignWidget::setDataSource(DataSource* source)
 {
   this->Internals->Source = source;
-  if (source)
-  {
-    vtkTrivialProducer *t =
-        vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-    if (t)
-    {
+  if (source) {
+    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+      source->producer()->GetClientSideObject());
+    if (t) {
       this->Internals->mainSliceMapper->SetInputConnection(t->GetOutputPort());
     }
     this->Internals->mainSliceMapper->Update();
-    vtkScalarsToColors *lut =
-        vtkScalarsToColors::SafeDownCast(source->colorMap()->GetClientSideObject());
-    if (lut)
-    {
+    vtkScalarsToColors* lut = vtkScalarsToColors::SafeDownCast(
+      source->colorMap()->GetClientSideObject());
+    if (lut) {
       this->Internals->mainSlice->GetProperty()->SetLookupTable(lut);
       this->Internals->reconSlice[0]->GetProperty()->SetLookupTable(lut);
       this->Internals->reconSlice[1]->GetProperty()->SetLookupTable(lut);
       this->Internals->reconSlice[2]->GetProperty()->SetLookupTable(lut);
     }
-    vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    vtkImageData* imageData =
+      vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int extent[6];
     imageData->GetExtent(extent);
-    this->Internals->Ui.xSizeLabel->setText(QString::number(extent[1] - extent[0]));
-    this->Internals->Ui.ySizeLabel->setText(QString::number(extent[3] - extent[2]));
+    this->Internals->Ui.xSizeLabel->setText(
+      QString::number(extent[1] - extent[0]));
+    this->Internals->Ui.ySizeLabel->setText(
+      QString::number(extent[3] - extent[2]));
 
     this->Internals->Ui.projection->setValue((extent[5] - extent[4]) / 2);
     this->Internals->Ui.spinBox_1->setRange(0, extent[1] - extent[0]);
     this->Internals->Ui.spinBox_2->setRange(0, extent[1] - extent[0]);
     this->Internals->Ui.spinBox_3->setRange(0, extent[1] - extent[0]);
-    this->Internals->Ui.spinBox_1->setValue(vtkMath::Round(0.25 * (extent[1] - extent[0])));
-    this->Internals->Ui.spinBox_2->setValue(vtkMath::Round(0.5  * (extent[1] - extent[0])));
-    this->Internals->Ui.spinBox_3->setValue(vtkMath::Round(0.75 * (extent[1] - extent[0])));
+    this->Internals->Ui.spinBox_1->setValue(
+      vtkMath::Round(0.25 * (extent[1] - extent[0])));
+    this->Internals->Ui.spinBox_2->setValue(
+      vtkMath::Round(0.5 * (extent[1] - extent[0])));
+    this->Internals->Ui.spinBox_3->setValue(
+      vtkMath::Round(0.75 * (extent[1] - extent[0])));
 
     this->Internals->updateReconSlice(0);
     this->Internals->updateReconSlice(1);
@@ -401,9 +433,7 @@ void RotateAlignWidget::setDataSource(DataSource *source)
 
     this->Internals->setupCameras();
     this->Internals->setupRotationAxisLine();
-  }
-  else
-  {
+  } else {
     this->Internals->mainSliceMapper->SetInputConnection(NULL);
     this->Internals->mainSliceMapper->Update();
   }
@@ -413,14 +443,14 @@ void RotateAlignWidget::setDataSource(DataSource *source)
 void RotateAlignWidget::onProjectionNumberChanged()
 {
   int newVal = this->Internals->Ui.projection->value();
-  vtkTrivialProducer *t =
-      vtkTrivialProducer::SafeDownCast(this->Internals->Source->producer()->GetClientSideObject());
-  if (!t)
-  {
+  vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Source->producer()->GetClientSideObject());
+  if (!t) {
     std::cout << "Failed to get trivail producer" << std::endl;
     return;
   }
-  vtkImageData *imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  vtkImageData* imageData =
+    vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   int extent[6];
   imageData->GetExtent(extent);
   this->Internals->mainSliceMapper->SetSliceNumber(newVal + extent[4]);
@@ -431,7 +461,7 @@ void RotateAlignWidget::onProjectionNumberChanged()
 void RotateAlignWidget::onRotationAxisChanged()
 {
   this->Internals->moveRotationAxisLine();
-  //Update recon windows
+  // Update recon windows
   this->Internals->updateReconSlice(0);
   this->Internals->reconSliceMapper[0]->Update();
   this->Internals->Ui.sliceView_1->update();
@@ -451,29 +481,23 @@ void RotateAlignWidget::onReconSliceChanged(int idx)
   this->Internals->Ui.sliceView->update();
   this->Internals->updateReconSlice(idx);
   this->Internals->reconSliceMapper[idx]->Update();
-  if (idx == 0)
-  {
+  if (idx == 0) {
     this->Internals->Ui.sliceView_1->update();
-  }
-  else if (idx == 1)
-  {
+  } else if (idx == 1) {
     this->Internals->Ui.sliceView_2->update();
-  }
-  else // if (idx == 2)
+  } else // if (idx == 2)
   {
     this->Internals->Ui.sliceView_3->update();
   }
 }
 
-namespace
-{
-template< typename T>
+namespace {
+template <typename T>
 std::array<T, 3> make_array(std::initializer_list<T> list)
 {
   auto array = std::array<T, 3>();
   int i = 0;
-  foreach(T t, list)
-  {
+  foreach (T t, list) {
     array[i++] = t;
   }
   return array;
@@ -491,8 +515,8 @@ void RotateAlignWidget::showChangeColorMapDialog(int reconSlice)
   dialog.setCustomizableLoadOpacities(true);
   dialog.setCustomizableUsePresetRange(true);
   dialog.setCustomizableLoadAnnotations(false);
-  this->connect(&dialog, &pqPresetDialog::applyPreset,
-          this, slotsArray[reconSlice]);
+  this->connect(&dialog, &pqPresetDialog::applyPreset, this,
+                slotsArray[reconSlice]);
   dialog.exec();
 }
 
@@ -502,49 +526,39 @@ void RotateAlignWidget::changeColorMap(int reconSlice)
   Q_ASSERT(dialog);
 
   vtkSMProxy* lut = this->Internals->ReconColorMap[reconSlice];
-  if (!lut)
-  {
+  if (!lut) {
     return;
   }
 
-  if (dialog->loadColors() || dialog->loadOpacities())
-  {
-    vtkSMProxy* sof = vtkSMPropertyHelper(lut,
-                                          "ScalarOpacityFunction",
-                                          true).GetAsProxy();
-    if (dialog->loadColors())
-    {
+  if (dialog->loadColors() || dialog->loadOpacities()) {
+    vtkSMProxy* sof =
+      vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
+    if (dialog->loadColors()) {
       vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
                                               !dialog->usePresetRange());
     }
-    if (dialog->loadOpacities())
-    {
-      if (sof)
-      {
-        vtkSMTransferFunctionProxy::ApplyPreset(
-          sof, dialog->currentPreset(), !dialog->usePresetRange());
-      }
-      else
-      {
-        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not present.");
+    if (dialog->loadOpacities()) {
+      if (sof) {
+        vtkSMTransferFunctionProxy::ApplyPreset(sof, dialog->currentPreset(),
+                                                !dialog->usePresetRange());
+      } else {
+        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not "
+                 "present.");
       }
     }
 
     // We need to take extra care to avoid the color and opacity function ranges
-    // from straying away from each other. This can happen if only one of them is
+    // from straying away from each other. This can happen if only one of them
+    // is
     // getting a preset and we're using the preset range.
-    if (dialog->usePresetRange()
-        && (dialog->loadColors() ^ dialog->loadOpacities()) && sof)
-    {
+    if (dialog->usePresetRange() &&
+        (dialog->loadColors() ^ dialog->loadOpacities()) && sof) {
       double range[2];
-      if (dialog->loadColors()
-          && vtkSMTransferFunctionProxy::GetRange(lut, range))
-      {
+      if (dialog->loadColors() &&
+          vtkSMTransferFunctionProxy::GetRange(lut, range)) {
         vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range);
-      }
-      else if (dialog->loadOpacities()
-               && vtkSMTransferFunctionProxy::GetRange(sof, range))
-      {
+      } else if (dialog->loadOpacities() &&
+                 vtkSMTransferFunctionProxy::GetRange(sof, range)) {
         vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
       }
     }
@@ -562,44 +576,47 @@ void RotateAlignWidget::updateWidgets()
 
 void RotateAlignWidget::onFinalReconButtonPressed()
 {
-  DataSource *source = this->Internals->Source;
-  if (!source)
-  {
+  DataSource* source = this->Internals->Source;
+  if (!source) {
     return;
   }
-/*
-  DataSource* output = source->clone(true,true);
-  QString name = output->producer()->GetAnnotation("tomviz.Label");
-  name = "Rotation_Aligned_" + name;
-  output->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
-  t = vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
-  vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  /*
+    DataSource* output = source->clone(true,true);
+    QString name = output->producer()->GetAnnotation("tomviz.Label");
+    name = "Rotation_Aligned_" + name;
+    output->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
+    t =
+    vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
+    vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
-  LoadDataReaction::dataSourceAdded(output);
- 
-  */
-  //Apply python transform
-  //Apply shift (in y-direction)
+    LoadDataReaction::dataSourceAdded(output);
+
+    */
+  // Apply python transform
+  // Apply shift (in y-direction)
   QMap<QString, QString> substitutions;
   substitutions.insert("###SHIFT###",
-                       QString("SHIFT = [%1, %2, %3]").arg(0)
-                       .arg(-this->Internals->Ui.rotationAxis->value()).arg(0));
+                       QString("SHIFT = [%1, %2, %3]")
+                         .arg(0)
+                         .arg(-this->Internals->Ui.rotationAxis->value())
+                         .arg(0));
 
   QString scriptLabel = "Shift";
   QString scriptSource = readInPythonScript("Shift3D");
-  AddPythonTransformReaction::addPythonOperator(this->Internals->Source, scriptLabel, scriptSource, substitutions);
+  AddPythonTransformReaction::addPythonOperator(
+    this->Internals->Source, scriptLabel, scriptSource, substitutions);
   substitutions.clear();
-  
-  //Apply in-plane rotation
+
+  // Apply in-plane rotation
   scriptLabel = "Rotate";
   scriptSource = readInPythonScript("Rotate3D");
-  substitutions.insert("###ROT_AXIS###",
-                       QString("ROT_AXIS = %1").arg(2) );
-  substitutions.insert("###ROT_ANGLE###",
-                       QString("ROT_ANGLE = %1").arg(-this->Internals->Ui.rotationAngle->value()) );
+  substitutions.insert("###ROT_AXIS###", QString("ROT_AXIS = %1").arg(2));
+  substitutions.insert(
+    "###ROT_ANGLE###",
+    QString("ROT_ANGLE = %1").arg(-this->Internals->Ui.rotationAngle->value()));
 
-  AddPythonTransformReaction::addPythonOperator(this->Internals->Source, scriptLabel, scriptSource, substitutions);
+  AddPythonTransformReaction::addPythonOperator(
+    this->Internals->Source, scriptLabel, scriptSource, substitutions);
   emit creatingAlignedData();
 }
-
 }

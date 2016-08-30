@@ -18,8 +18,7 @@
 
 #include <pqReaction.h>
 
-namespace tomviz
-{
+namespace tomviz {
 class ResetReaction : public pqReaction
 {
   Q_OBJECT
@@ -37,6 +36,5 @@ protected:
 private:
   Q_DISABLE_COPY(ResetReaction)
 };
-
 }
 #endif

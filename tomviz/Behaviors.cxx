@@ -30,15 +30,15 @@
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqViewStreamingBehavior.h>
-#include <vtkSMReaderFactory.h>
-#include <vtkSmartPointer.h>
-#include <vtkSMTransferFunctionPresets.h>
 #include <vtkNew.h>
+#include <vtkSMReaderFactory.h>
 #include <vtkSMSettings.h>
+#include <vtkSMTransferFunctionPresets.h>
+#include <vtkSmartPointer.h>
 
-#include <QMainWindow>
 #include <QApplication>
 #include <QFile>
+#include <QMainWindow>
 
 #include <sstream>
 
@@ -47,23 +47,19 @@
 
 PV_PLUGIN_IMPORT_INIT(tomvizExtensions)
 
-const char* const settings =
-"{"
-"   \"settings\" : {"
-"      \"RenderViewSettings\" : {"
-"         \"LODThreshold\" : 102400.0,"
-//"         \"ShowAnnotation\" : 1,"
-"         \"UseDisplayLists\" : 1"
-"      }"
-"   }"
-"}"
-;
+const char* const settings = "{"
+                             "   \"settings\" : {"
+                             "      \"RenderViewSettings\" : {"
+                             "         \"LODThreshold\" : 102400.0,"
+                             //"         \"ShowAnnotation\" : 1,"
+                             "         \"UseDisplayLists\" : 1"
+                             "      }"
+                             "   }"
+                             "}";
 
-namespace tomviz
-{
+namespace tomviz {
 
-Behaviors::Behaviors(QMainWindow* mainWindow)
-  : Superclass(mainWindow)
+Behaviors::Behaviors(QMainWindow* mainWindow) : Superclass(mainWindow)
 {
   Q_ASSERT(mainWindow);
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "JPEGSeriesReader");
@@ -89,12 +85,12 @@ Behaviors::Behaviors(QMainWindow* mainWindow)
   pqApplicationCore::instance()->loadDistributedPlugins();
 
   new pqQtMessageHandlerBehavior(this);
-  //new pqDefaultViewBehavior(this);
+  // new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
   new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
   new tomviz::ProgressBehavior(mainWindow);
-  //new tomviz::ScaleActorBehavior(this);
+  // new tomviz::ScaleActorBehavior(this);
 
   new tomviz::AddRenderViewContextMenuBehavior(this);
 
@@ -113,19 +109,19 @@ Behaviors::~Behaviors()
 
 QString Behaviors::getMatplotlibColorMapFile()
 {
-  QString path = QApplication::applicationDirPath() + "/../share/tomviz/matplotlib_cmaps.json";
+  QString path = QApplication::applicationDirPath() +
+                 "/../share/tomviz/matplotlib_cmaps.json";
   QFile file(path);
-  if (file.exists())
-  {
+  if (file.exists()) {
     return path;
   }
-  // On OSX the above doesn't work in a build tree.  It is fine
-  // for superbuilds, but the following is needed in the build tree
-  // since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
+// On OSX the above doesn't work in a build tree.  It is fine
+// for superbuilds, but the following is needed in the build tree
+// since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
 #ifdef __APPLE__
-  else
-  {
-    path = QApplication::applicationDirPath() + "/../../../../share/tomviz/matplotlib_cmaps.json";
+  else {
+    path = QApplication::applicationDirPath() +
+           "/../../../../share/tomviz/matplotlib_cmaps.json";
     return path;
   }
 #else
@@ -137,16 +133,13 @@ vtkSMTransferFunctionPresets* Behaviors::getPresets()
 {
   vtkSMTransferFunctionPresets* presets = vtkSMTransferFunctionPresets::New();
   bool needToAddMatplotlibColormaps = true;
-  for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i)
-  {
-    if (presets->GetPresetName(i) == QString("Viridis_17"))
-    {
+  for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i) {
+    if (presets->GetPresetName(i) == QString("Viridis_17")) {
       needToAddMatplotlibColormaps = false;
       break;
     }
   }
-  if (needToAddMatplotlibColormaps)
-  {
+  if (needToAddMatplotlibColormaps) {
     QString colorMapFile = getMatplotlibColorMapFile();
     presets->ImportPresets(colorMapFile.toStdString().c_str());
   }
@@ -161,29 +154,26 @@ void Behaviors::setDefaultColorMapFromPreset(const char* name)
   presets.TakeReference(this->getPresets());
 
   unsigned int presetIndex = presets->GetNumberOfPresets();
-  for (unsigned int i = 0; i < presets->GetNumberOfPresets(); ++i)
-  {
+  for (unsigned int i = 0; i < presets->GetNumberOfPresets(); ++i) {
     vtkStdString presetName = presets->GetPresetName(i);
-    if (presetName == name)
-    {
+    if (presetName == name) {
       presetIndex = i;
     }
   }
 
   // If the index is valid, a preset was found, and we use it.
-  if (presetIndex < presets->GetNumberOfPresets())
-  {
+  if (presetIndex < presets->GetNumberOfPresets()) {
     // Construct settings JSON for the default color map
     vtkStdString defaultColorMapJSON = presets->GetPresetAsString(presetIndex);
     std::ostringstream ss;
     ss << "{\n"
-      << "  \"lookup_tables\" : {\n"
-      << "    \"PVLookupTable\" : \n"
-      << defaultColorMapJSON
-      << "}\n}\n";
+       << "  \"lookup_tables\" : {\n"
+       << "    \"PVLookupTable\" : \n"
+       << defaultColorMapJSON << "}\n}\n";
 
     // Add a settings collection for this
-    vtkSMSettings::GetInstance()->AddCollectionFromString(ss.str().c_str(), 1.0);
+    vtkSMSettings::GetInstance()->AddCollectionFromString(ss.str().c_str(),
+                                                          1.0);
   }
 }
 

@@ -34,12 +34,12 @@ class vtkTable;
 class vtkChartHistogramColorOpacityEditor : public vtkAbstractContextItem
 {
 public:
-  vtkTypeMacro(vtkChartHistogramColorOpacityEditor, vtkAbstractContextItem)
-  static vtkChartHistogramColorOpacityEditor * New();
+  vtkTypeMacro(
+    vtkChartHistogramColorOpacityEditor,
+    vtkAbstractContextItem) static vtkChartHistogramColorOpacityEditor* New();
 
   // Set the input data.
-  void SetHistogramInputData(vtkTable* table,
-                             const char* xAxisColumn,
+  void SetHistogramInputData(vtkTable* table, const char* xAxisColumn,
                              const char* yAxisColumn);
 
   // Set the lookup table.
@@ -88,7 +88,7 @@ private:
   ~vtkChartHistogramColorOpacityEditor() override;
 
   class PIMPL;
-  PIMPL *Private;
+  PIMPL* Private;
 
   float Borders[4];
 };

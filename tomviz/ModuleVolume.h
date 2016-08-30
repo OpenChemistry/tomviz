@@ -22,8 +22,7 @@
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class ModuleVolume : public Module
 {
@@ -32,10 +31,10 @@ class ModuleVolume : public Module
   typedef Module Superclass;
 
 public:
-  ModuleVolume(QObject* parent=nullptr);
+  ModuleVolume(QObject* parent = nullptr);
   virtual ~ModuleVolume();
 
-  QString label() const override { return  "Volume"; }
+  QString label() const override { return "Volume"; }
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
@@ -47,19 +46,18 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy *proxy) override;
+  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy *proxy) override;
-  vtkSMProxy *getProxyForString(const std::string& str) override;
+  std::string getStringForProxy(vtkSMProxy* proxy) override;
+  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private:
   Q_DISABLE_COPY(ModuleVolume)
   vtkWeakPointer<vtkSMSourceProxy> PassThrough;
   vtkWeakPointer<vtkSMProxy> Representation;
 };
-
 }
 
 #endif

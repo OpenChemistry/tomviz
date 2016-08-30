@@ -17,14 +17,13 @@
 #define tomvizModuleOrthogonalSlice_h
 
 #include "Module.h"
-#include <vtkWeakPointer.h>
 #include <pqPropertyLinks.h>
+#include <vtkWeakPointer.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class ModuleOrthogonalSlice : public Module
 {
@@ -32,10 +31,10 @@ class ModuleOrthogonalSlice : public Module
   typedef Module Superclass;
 
 public:
-  ModuleOrthogonalSlice(QObject* parent=nullptr);
+  ModuleOrthogonalSlice(QObject* parent = nullptr);
   virtual ~ModuleOrthogonalSlice();
 
-  QString label() const override { return  "Orthogonal Slice"; }
+  QString label() const override { return "Orthogonal Slice"; }
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
@@ -48,12 +47,12 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy *proxy) override;
+  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy *proxy) override;
-  vtkSMProxy *getProxyForString(const std::string& str) override;
+  std::string getStringForProxy(vtkSMProxy* proxy) override;
+  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private slots:
   void dataUpdated();
@@ -65,6 +64,5 @@ private:
 
   pqPropertyLinks Links;
 };
-
 }
 #endif

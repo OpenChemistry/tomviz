@@ -18,8 +18,7 @@
 
 #include <pqReaction.h>
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 /// SaveDataReaction handles the "Save Data" action in tomviz. On trigger,
@@ -36,7 +35,7 @@ public:
   virtual ~SaveDataReaction();
 
   /// Save the file
-  bool saveData(const QString &filename);
+  bool saveData(const QString& filename);
 
 protected:
   /// Called when the data changes to enable/disable the menu item
@@ -47,6 +46,5 @@ protected:
 private:
   Q_DISABLE_COPY(SaveDataReaction)
 };
-
 }
 #endif

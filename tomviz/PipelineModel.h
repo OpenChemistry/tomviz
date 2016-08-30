@@ -18,8 +18,7 @@
 
 #include <QAbstractItemModel>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class DataSource;
 class Module;
@@ -31,51 +30,52 @@ class PipelineModel : public QAbstractItemModel
   Q_OBJECT
 
 public:
-  explicit PipelineModel(QObject *parent = 0);
+  explicit PipelineModel(QObject* parent = 0);
   ~PipelineModel();
 
-  QVariant data(const QModelIndex &index, int role) const override;
-  bool setData(const QModelIndex &index, const QVariant &value, int role) override;
-  Qt::ItemFlags flags(const QModelIndex &index) const override;
+  QVariant data(const QModelIndex& index, int role) const override;
+  bool setData(const QModelIndex& index, const QVariant& value,
+               int role) override;
+  Qt::ItemFlags flags(const QModelIndex& index) const override;
   QVariant headerData(int section, Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const override;
   QModelIndex index(int row, int column,
-                    const QModelIndex &parent = QModelIndex()) const override;
-  QModelIndex parent(const QModelIndex &index) const override;
-  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+                    const QModelIndex& parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex& index) const override;
+  int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+  int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
-  DataSource* dataSource(const QModelIndex &index);
-  Module* module(const QModelIndex &index);
-  Operator* op(const QModelIndex &index);
-  OperatorResult* result(const QModelIndex &index);
+  DataSource* dataSource(const QModelIndex& index);
+  Module* module(const QModelIndex& index);
+  Operator* op(const QModelIndex& index);
+  OperatorResult* result(const QModelIndex& index);
 
-  QModelIndex dataSourceIndex(DataSource *source);
-  QModelIndex moduleIndex(Module *module);
-  QModelIndex operatorIndex(Operator *op);
+  QModelIndex dataSourceIndex(DataSource* source);
+  QModelIndex moduleIndex(Module* module);
+  QModelIndex operatorIndex(Operator* op);
   QModelIndex resultIndex(OperatorResult* result);
 
-  bool removeDataSource(DataSource *dataSource);
-  bool removeModule(Module *module);
-  bool removeOp(Operator *op);
-  bool removeResult(OperatorResult *result);
+  bool removeDataSource(DataSource* dataSource);
+  bool removeModule(Module* module);
+  bool removeOp(Operator* op);
+  bool removeResult(OperatorResult* result);
 
 public slots:
-  void dataSourceAdded(DataSource *dataSource);
-  void moduleAdded(Module *module);
-  void operatorAdded(Operator *op);
+  void dataSourceAdded(DataSource* dataSource);
+  void moduleAdded(Module* module);
+  void operatorAdded(Operator* op);
   void operatorModified();
 
-  void dataSourceRemoved(DataSource *dataSource);
-  void moduleRemoved(Module *module);
+  void dataSourceRemoved(DataSource* dataSource);
+  void moduleRemoved(Module* module);
 
 private:
   struct Item;
   class TreeItem;
 
-  TreeItem* treeItem(const QModelIndex &index) const;
+  TreeItem* treeItem(const QModelIndex& index) const;
 
-  QList<TreeItem *> m_treeItems;
+  QList<TreeItem*> m_treeItems;
 };
 
 } // tomviz namespace

@@ -16,16 +16,15 @@
 #include "AddRotateAlignReaction.h"
 
 #include "ActiveObjects.h"
-#include "RotateAlignWidget.h"
 #include "DataSource.h"
+#include "RotateAlignWidget.h"
 #include <pqCoreUtilities.h>
 
 #include <QDebug>
 #include <QDialog>
 #include <QHBoxLayout>
 
-namespace tomviz
-{
+namespace tomviz {
 
 AddRotateAlignReaction::AddRotateAlignReaction(QAction* parentObject)
   : pqReaction(parentObject)
@@ -42,23 +41,23 @@ AddRotateAlignReaction::~AddRotateAlignReaction()
 void AddRotateAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != NULL &&
-        ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries);
+    ActiveObjects::instance().activeDataSource() != NULL &&
+    ActiveObjects::instance().activeDataSource()->type() ==
+      DataSource::TiltSeries);
 }
 
 void AddRotateAlignReaction::align(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
-  if (!source)
-  {
+  if (!source) {
     qDebug() << "Exiting early - no data :-(";
     return;
   }
 
-  QDialog *dialog = new QDialog(pqCoreUtilities::mainWidget());
+  QDialog* dialog = new QDialog(pqCoreUtilities::mainWidget());
   dialog->setWindowTitle("Determine Axis of Rotation");
-  RotateAlignWidget *widget = new RotateAlignWidget(source, dialog);
-  QHBoxLayout *layout = new QHBoxLayout();
+  RotateAlignWidget* widget = new RotateAlignWidget(source, dialog);
+  QHBoxLayout* layout = new QHBoxLayout();
   layout->addWidget(widget);
   dialog->setLayout(layout);
 
@@ -68,5 +67,4 @@ void AddRotateAlignReaction::align(DataSource* source)
   dialog->show();
   dialog->raise();
 }
-
 }

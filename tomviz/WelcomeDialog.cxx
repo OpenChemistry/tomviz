@@ -24,20 +24,17 @@
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 
-namespace tomviz
-{
+namespace tomviz {
 
 WelcomeDialog::WelcomeDialog(MainWindow* mw)
-  : QDialog(mw),
-    ui(new Ui::WelcomeDialog)
+  : QDialog(mw), ui(new Ui::WelcomeDialog)
 {
   ui->setupUi(this);
-  this->connect(this->ui->doNotShowAgain, SIGNAL(stateChanged(int)),
-                this, SLOT(onDoNotShowAgainStateChanged(int)));
-  this->connect(this->ui->noButton, SIGNAL(clicked()),
-                this, SLOT(hide()));
-  this->connect(this->ui->yesButton, SIGNAL(clicked()),
-                this, SLOT(onLoadSampleDataClicked()));
+  this->connect(this->ui->doNotShowAgain, SIGNAL(stateChanged(int)), this,
+                SLOT(onDoNotShowAgainStateChanged(int)));
+  this->connect(this->ui->noButton, SIGNAL(clicked()), this, SLOT(hide()));
+  this->connect(this->ui->yesButton, SIGNAL(clicked()), this,
+                SLOT(onLoadSampleDataClicked()));
 }
 
 WelcomeDialog::~WelcomeDialog()
@@ -46,15 +43,15 @@ WelcomeDialog::~WelcomeDialog()
 
 void WelcomeDialog::onLoadSampleDataClicked()
 {
-  MainWindow *mw = qobject_cast<MainWindow*>(this->parent());
+  MainWindow* mw = qobject_cast<MainWindow*>(this->parent());
   mw->openRecon();
-  ModuleManager &mm = ModuleManager::instance();
-  ActiveObjects &ao = ActiveObjects::instance();
+  ModuleManager& mm = ModuleManager::instance();
+  ActiveObjects& ao = ActiveObjects::instance();
   // Remove the orthogonal slice that is automatically created
   mm.removeModule(ao.activeModule());
   // Add a volume module
-  if (Module *module = mm.createAndAddModule("Volume", ao.activeDataSource(), ao.activeView()))
-  {
+  if (Module* module = mm.createAndAddModule("Volume", ao.activeDataSource(),
+                                             ao.activeView())) {
     ao.setActiveModule(module);
   }
   this->hide();

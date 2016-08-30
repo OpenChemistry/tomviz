@@ -28,31 +28,37 @@ namespace tomviz {
 
 struct PipelineModel::Item
 {
-  Item(DataSource *source) : tag(DATASOURCE), s(source) { }
-  Item(Module *module) : tag(MODULE), m(module) { }
-  Item(Operator *op) : tag(OPERATOR), o(op) { }
-  Item(OperatorResult *result) : tag(RESULT), r(result) { }
+  Item(DataSource* source) : tag(DATASOURCE), s(source) {}
+  Item(Module* module) : tag(MODULE), m(module) {}
+  Item(Operator* op) : tag(OPERATOR), o(op) {}
+  Item(OperatorResult* result) : tag(RESULT), r(result) {}
 
   DataSource* dataSource() { return tag == DATASOURCE ? s : nullptr; }
   Module* module() { return tag == MODULE ? m : nullptr; }
   Operator* op() { return tag == OPERATOR ? o : nullptr; }
   OperatorResult* result() { return tag == RESULT ? r : nullptr; }
 
-  enum { DATASOURCE, MODULE, OPERATOR, RESULT } tag;
+  enum
+  {
+    DATASOURCE,
+    MODULE,
+    OPERATOR,
+    RESULT
+  } tag;
   union
   {
-    DataSource *s;
-    Module *m;
-    Operator *o;
-    OperatorResult *r;
+    DataSource* s;
+    Module* m;
+    Operator* o;
+    OperatorResult* r;
   };
 };
 
 class PipelineModel::TreeItem
 {
 public:
-  explicit TreeItem(const PipelineModel::Item &item,
-                    TreeItem *parent = nullptr);
+  explicit TreeItem(const PipelineModel::Item& item,
+                    TreeItem* parent = nullptr);
   ~TreeItem();
 
   TreeItem* parent() { return m_parent; }
@@ -60,21 +66,21 @@ public:
   int childCount() const { return m_children.count(); }
   QList<TreeItem*>& children() { return m_children; }
   int childIndex() const;
-  bool appendChild(const PipelineModel::Item &item);
-  bool appendAndMoveChildren(const PipelineModel::Item &item);
-  bool insertChild(int position, const PipelineModel::Item &item);
+  bool appendChild(const PipelineModel::Item& item);
+  bool appendAndMoveChildren(const PipelineModel::Item& item);
+  bool insertChild(int position, const PipelineModel::Item& item);
   bool removeChild(int position);
-  bool moveChildren(TreeItem *newParent);
+  bool moveChildren(TreeItem* newParent);
 
-  bool remove(DataSource *source);
-  bool remove(Module *module);
-  bool remove(Operator *op);
+  bool remove(DataSource* source);
+  bool remove(Module* module);
+  bool remove(Operator* op);
 
-  bool hasOp(Operator *op);
+  bool hasOp(Operator* op);
 
   /// Recursively search entire tree for given object.
-  TreeItem* find(Module *module);
-  TreeItem* find(Operator *op);
+  TreeItem* find(Module* module);
+  TreeItem* find(Operator* op);
   TreeItem* find(OperatorResult* result);
 
   DataSource* dataSource() { return m_item.dataSource(); }
@@ -85,10 +91,10 @@ public:
 private:
   QList<TreeItem*> m_children;
   PipelineModel::Item m_item;
-  TreeItem *m_parent;
+  TreeItem* m_parent;
 };
 
-PipelineModel::TreeItem::TreeItem(const PipelineModel::Item &i, TreeItem *p)
+PipelineModel::TreeItem::TreeItem(const PipelineModel::Item& i, TreeItem* p)
   : m_item(i), m_parent(p)
 {
 }
@@ -112,24 +118,25 @@ int PipelineModel::TreeItem::childIndex() const
 }
 
 bool PipelineModel::TreeItem::insertChild(int pos,
-                                          const PipelineModel::Item &item)
+                                          const PipelineModel::Item& item)
 {
   if (pos < 0 || pos >= m_children.size()) {
     return false;
   }
-  TreeItem *treeItem = new TreeItem(item, this);
+  TreeItem* treeItem = new TreeItem(item, this);
   m_children.insert(pos, treeItem);
   return true;
 }
 
-bool PipelineModel::TreeItem::appendChild(const PipelineModel::Item &item)
+bool PipelineModel::TreeItem::appendChild(const PipelineModel::Item& item)
 {
-  TreeItem *treeItem = new TreeItem(item, this);
+  TreeItem* treeItem = new TreeItem(item, this);
   m_children.append(treeItem);
   return true;
 }
 
-bool PipelineModel::TreeItem::appendAndMoveChildren(const PipelineModel::Item &item)
+bool PipelineModel::TreeItem::appendAndMoveChildren(
+  const PipelineModel::Item& item)
 {
   auto treeItem = new TreeItem(item, this);
   // This enforces our desired hierarchy, if modules then move all to the
@@ -152,17 +159,17 @@ bool PipelineModel::TreeItem::removeChild(int pos)
   return true;
 }
 
-bool PipelineModel::TreeItem::moveChildren(TreeItem *newParent)
+bool PipelineModel::TreeItem::moveChildren(TreeItem* newParent)
 {
   newParent->m_children.append(m_children);
-  foreach(TreeItem *item, m_children) {
+  foreach (TreeItem* item, m_children) {
     item->m_parent = newParent;
   }
   m_children.clear();
   return true;
 }
 
-bool PipelineModel::TreeItem::remove(DataSource *source)
+bool PipelineModel::TreeItem::remove(DataSource* source)
 {
   if (source != dataSource()) {
     return false;
@@ -183,9 +190,9 @@ bool PipelineModel::TreeItem::remove(DataSource *source)
   return false;
 }
 
-bool PipelineModel::TreeItem::remove(Module *module)
+bool PipelineModel::TreeItem::remove(Module* module)
 {
-  foreach(auto childItem, m_children) {
+  foreach (auto childItem, m_children) {
     if (childItem->module() == module) {
       removeChild(childItem->childIndex());
       // Not sure I like this, an alternative is to make TreeItem a
@@ -197,12 +204,12 @@ bool PipelineModel::TreeItem::remove(Module *module)
   return false;
 }
 
-bool PipelineModel::TreeItem::remove(Operator *o)
+bool PipelineModel::TreeItem::remove(Operator* o)
 {
-  foreach(auto childItem, m_children) {
+  foreach (auto childItem, m_children) {
     if (childItem->op() == o) {
       // Remove results
-      foreach(auto resultItem, childItem->children()) {
+      foreach (auto resultItem, childItem->children()) {
         childItem->removeChild(resultItem->childIndex());
       }
       removeChild(childItem->childIndex());
@@ -212,9 +219,9 @@ bool PipelineModel::TreeItem::remove(Operator *o)
   return false;
 }
 
-bool PipelineModel::TreeItem::hasOp(Operator *o)
+bool PipelineModel::TreeItem::hasOp(Operator* o)
 {
-  foreach(auto childItem, m_children) {
+  foreach (auto childItem, m_children) {
     if (childItem->op() == o) {
       return true;
     }
@@ -222,12 +229,12 @@ bool PipelineModel::TreeItem::hasOp(Operator *o)
   return false;
 }
 
-PipelineModel::TreeItem* PipelineModel::TreeItem::find(Module *module)
+PipelineModel::TreeItem* PipelineModel::TreeItem::find(Module* module)
 {
   if (this->module() == module) {
     return this;
   } else {
-    foreach(auto childItem, m_children) {
+    foreach (auto childItem, m_children) {
       auto moduleItem = childItem->find(module);
       if (moduleItem) {
         return moduleItem;
@@ -237,12 +244,12 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(Module *module)
   return nullptr;
 }
 
-PipelineModel::TreeItem* PipelineModel::TreeItem::find(Operator *op)
+PipelineModel::TreeItem* PipelineModel::TreeItem::find(Operator* op)
 {
   if (this->op() == op) {
     return this;
   } else {
-    foreach(auto childItem, m_children) {
+    foreach (auto childItem, m_children) {
       auto operatorItem = childItem->find(op);
       if (operatorItem) {
         return operatorItem;
@@ -252,12 +259,12 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(Operator *op)
   return nullptr;
 }
 
-PipelineModel::TreeItem* PipelineModel::TreeItem::find(OperatorResult *result)
+PipelineModel::TreeItem* PipelineModel::TreeItem::find(OperatorResult* result)
 {
   if (this->result() == result) {
     return this;
   } else {
-    foreach(auto childItem, m_children) {
+    foreach (auto childItem, m_children) {
       auto resultItem = childItem->find(result);
       if (resultItem) {
         return resultItem;
@@ -267,7 +274,7 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(OperatorResult *result)
   return nullptr;
 }
 
-PipelineModel::PipelineModel(QObject *p) : QAbstractItemModel(p)
+PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
 {
   connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
           SLOT(dataSourceAdded(DataSource*)));
@@ -286,14 +293,14 @@ PipelineModel::~PipelineModel()
 {
 }
 
-QVariant PipelineModel::data(const QModelIndex &index, int role) const
+QVariant PipelineModel::data(const QModelIndex& index, int role) const
 {
   if (!index.isValid() || index.column() > 2)
     return QVariant();
 
   // Data source
   if (!index.parent().isValid()) {
-    auto treeItem = static_cast<TreeItem *>(index.internalPointer());
+    auto treeItem = static_cast<TreeItem*>(index.internalPointer());
     auto source = treeItem->dataSource();
 
     if (index.column() == 0) {
@@ -370,7 +377,7 @@ QVariant PipelineModel::data(const QModelIndex &index, int role) const
   return QVariant();
 }
 
-bool PipelineModel::setData(const QModelIndex &index, const QVariant &value,
+bool PipelineModel::setData(const QModelIndex& index, const QVariant& value,
                             int role)
 {
   if (role != Qt::CheckStateRole) {
@@ -385,7 +392,7 @@ bool PipelineModel::setData(const QModelIndex &index, const QVariant &value,
   return true;
 }
 
-Qt::ItemFlags PipelineModel::flags(const QModelIndex &index) const
+Qt::ItemFlags PipelineModel::flags(const QModelIndex& index) const
 {
   if (!index.isValid())
     return 0;
@@ -406,7 +413,7 @@ QVariant PipelineModel::headerData(int, Qt::Orientation, int) const
 }
 
 QModelIndex PipelineModel::index(int row, int column,
-                                 const QModelIndex &parent) const
+                                 const QModelIndex& parent) const
 {
   if (!parent.isValid() && row < m_treeItems.count()) {
     // Data source
@@ -422,7 +429,7 @@ QModelIndex PipelineModel::index(int row, int column,
   return QModelIndex();
 }
 
-QModelIndex PipelineModel::parent(const QModelIndex &index) const
+QModelIndex PipelineModel::parent(const QModelIndex& index) const
 {
   if (!index.isValid()) {
     return QModelIndex();
@@ -434,7 +441,7 @@ QModelIndex PipelineModel::parent(const QModelIndex &index) const
   return createIndex(treeItem->parent()->childIndex(), 0, treeItem->parent());
 }
 
-int PipelineModel::rowCount(const QModelIndex &parent) const
+int PipelineModel::rowCount(const QModelIndex& parent) const
 {
   if (!parent.isValid()) {
     return m_treeItems.count();
@@ -444,30 +451,30 @@ int PipelineModel::rowCount(const QModelIndex &parent) const
   }
 }
 
-int PipelineModel::columnCount(const QModelIndex &) const
+int PipelineModel::columnCount(const QModelIndex&) const
 {
   return 2;
 }
 
-DataSource* PipelineModel::dataSource(const QModelIndex &idx)
+DataSource* PipelineModel::dataSource(const QModelIndex& idx)
 {
   auto treeItem = this->treeItem(idx);
   return (treeItem ? treeItem->dataSource() : nullptr);
 }
 
-Module* PipelineModel::module(const QModelIndex &idx)
+Module* PipelineModel::module(const QModelIndex& idx)
 {
   auto treeItem = this->treeItem(idx);
   return (treeItem ? treeItem->module() : nullptr);
 }
 
-Operator* PipelineModel::op(const QModelIndex &idx)
+Operator* PipelineModel::op(const QModelIndex& idx)
 {
   auto treeItem = this->treeItem(idx);
   return (treeItem ? treeItem->op() : nullptr);
 }
 
-OperatorResult* PipelineModel::result(const QModelIndex &idx)
+OperatorResult* PipelineModel::result(const QModelIndex& idx)
 {
   if (!idx.isValid()) {
     return nullptr;
@@ -476,7 +483,7 @@ OperatorResult* PipelineModel::result(const QModelIndex &idx)
   return (treeItem ? treeItem->result() : nullptr);
 }
 
-QModelIndex PipelineModel::dataSourceIndex(DataSource *source)
+QModelIndex PipelineModel::dataSourceIndex(DataSource* source)
 {
   for (int i = 0; i < m_treeItems.count(); ++i) {
     if (m_treeItems[i]->dataSource() == source) {
@@ -486,9 +493,9 @@ QModelIndex PipelineModel::dataSourceIndex(DataSource *source)
   return QModelIndex();
 }
 
-QModelIndex PipelineModel::moduleIndex(Module *module)
+QModelIndex PipelineModel::moduleIndex(Module* module)
 {
-  foreach(auto treeItem, m_treeItems) {
+  foreach (auto treeItem, m_treeItems) {
     auto moduleItem = treeItem->find(module);
     if (moduleItem) {
       return createIndex(moduleItem->childIndex(), 0, moduleItem);
@@ -497,9 +504,9 @@ QModelIndex PipelineModel::moduleIndex(Module *module)
   return QModelIndex();
 }
 
-QModelIndex PipelineModel::operatorIndex(Operator *op)
+QModelIndex PipelineModel::operatorIndex(Operator* op)
 {
-  foreach(auto treeItem, m_treeItems) {
+  foreach (auto treeItem, m_treeItems) {
     auto operatorItem = treeItem->find(op);
     if (operatorItem) {
       return createIndex(operatorItem->childIndex(), 0, operatorItem);
@@ -508,8 +515,9 @@ QModelIndex PipelineModel::operatorIndex(Operator *op)
   return QModelIndex();
 }
 
-QModelIndex PipelineModel::resultIndex(OperatorResult* result) {
-  foreach(auto treeItem, m_treeItems) {
+QModelIndex PipelineModel::resultIndex(OperatorResult* result)
+{
+  foreach (auto treeItem, m_treeItems) {
     auto resultItem = treeItem->find(result);
     if (resultItem) {
       return createIndex(resultItem->childIndex(), 0, resultItem);
@@ -518,7 +526,7 @@ QModelIndex PipelineModel::resultIndex(OperatorResult* result) {
   return QModelIndex();
 }
 
-void PipelineModel::dataSourceAdded(DataSource *dataSource)
+void PipelineModel::dataSourceAdded(DataSource* dataSource)
 {
   auto treeItem = new PipelineModel::TreeItem(PipelineModel::Item(dataSource));
   beginInsertRows(QModelIndex(), 0, 0);
@@ -529,13 +537,12 @@ void PipelineModel::dataSourceAdded(DataSource *dataSource)
 
   // When restoring a data source from a state file it will have its operators
   // before we can listen to the signal above. Display those operators.
-  foreach(auto op, dataSource->operators())
-  {
+  foreach (auto op, dataSource->operators()) {
     this->operatorAdded(op);
   }
 }
 
-void PipelineModel::moduleAdded(Module *module)
+void PipelineModel::moduleAdded(Module* module)
 {
   Q_ASSERT(module);
   auto dataSource = module->dataSource();
@@ -551,7 +558,7 @@ void PipelineModel::moduleAdded(Module *module)
   }
 }
 
-void PipelineModel::operatorAdded(Operator *op)
+void PipelineModel::operatorAdded(Operator* op)
 {
   // Operators are special, they operate on all data and are shown in the
   // visualization modules. So there are some moves necessary to show this.
@@ -583,7 +590,7 @@ void PipelineModel::operatorAdded(Operator *op)
 
     beginInsertRows(operatorIndex, 0, numResults);
     for (int j = 0; j < numResults; ++j) {
-      OperatorResult *result = op->resultAt(j);
+      OperatorResult* result = op->resultAt(j);
       operatorTreeItem->appendChild(PipelineModel::Item(result));
     }
     endInsertRows();
@@ -599,7 +606,7 @@ void PipelineModel::operatorModified()
   dataChanged(index, index);
 }
 
-void PipelineModel::dataSourceRemoved(DataSource *source)
+void PipelineModel::dataSourceRemoved(DataSource* source)
 {
   auto index = this->dataSourceIndex(source);
 
@@ -612,7 +619,7 @@ void PipelineModel::dataSourceRemoved(DataSource *source)
   }
 }
 
-void PipelineModel::moduleRemoved(Module *module)
+void PipelineModel::moduleRemoved(Module* module)
 {
   auto index = this->moduleIndex(module);
 
@@ -624,20 +631,20 @@ void PipelineModel::moduleRemoved(Module *module)
   }
 }
 
-bool PipelineModel::removeDataSource(DataSource *source)
+bool PipelineModel::removeDataSource(DataSource* source)
 {
   dataSourceRemoved(source);
   ModuleManager::instance().removeDataSource(source);
   return true;
 }
 
-bool PipelineModel::removeModule(Module *module)
+bool PipelineModel::removeModule(Module* module)
 {
   moduleRemoved(module);
   return true;
 }
 
-bool PipelineModel::removeOp(Operator *o)
+bool PipelineModel::removeOp(Operator* o)
 {
   auto index = this->operatorIndex(o);
 
@@ -654,7 +661,7 @@ bool PipelineModel::removeOp(Operator *o)
   return false;
 }
 
-PipelineModel::TreeItem* PipelineModel::treeItem(const QModelIndex &index) const
+PipelineModel::TreeItem* PipelineModel::treeItem(const QModelIndex& index) const
 {
   if (!index.isValid()) {
     return nullptr;

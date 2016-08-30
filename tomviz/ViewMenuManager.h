@@ -23,8 +23,7 @@ class QAction;
 
 class vtkSMViewProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class ViewMenuManager : public pqViewMenuManager
 {
@@ -54,11 +53,10 @@ private:
   QAction* orthographicProjectionAction;
   QAction* showAxisGridAction;
 
-  vtkSMViewProxy *View;
+  vtkSMViewProxy* View;
   unsigned long ViewObserverId;
   unsigned long AxesGridObserverId;
 };
-
 }
 
 #endif

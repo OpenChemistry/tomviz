@@ -20,8 +20,7 @@
 
 class QMainWindow;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class DataSource;
 
@@ -31,10 +30,10 @@ class ToggleDataTypeReaction : public pqReaction
   typedef pqReaction Superclass;
 
 public:
-  ToggleDataTypeReaction(QAction* action, QMainWindow *mw);
+  ToggleDataTypeReaction(QAction* action, QMainWindow* mw);
   ~ToggleDataTypeReaction();
 
-  static void toggleDataType(QMainWindow *mw, DataSource *source = nullptr);
+  static void toggleDataType(QMainWindow* mw, DataSource* source = nullptr);
 
 protected:
   /// Called when the action is triggered.
@@ -44,11 +43,10 @@ protected:
 private:
   void setWidgetText(DataSource* dsource);
 
-  QMainWindow *mainWindow;
+  QMainWindow* mainWindow;
 
   Q_DISABLE_COPY(ToggleDataTypeReaction)
 };
-
 }
 
 #endif

@@ -33,8 +33,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
-namespace tomviz
-{
+namespace tomviz {
 
 AddResampleReaction::AddResampleReaction(QAction* parentObject)
   : pqReaction(parentObject)
@@ -50,15 +49,15 @@ AddResampleReaction::~AddResampleReaction()
 
 void AddResampleReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != nullptr);
+  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+                             nullptr);
 }
 
 namespace {
-vtkImageData* imageData(DataSource *source)
+vtkImageData* imageData(DataSource* source)
 {
-  vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
-    source->producer()->GetClientSideObject());
+  vtkTrivialProducer* t =
+    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
   return vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 }
 }
@@ -66,50 +65,48 @@ vtkImageData* imageData(DataSource *source)
 void AddResampleReaction::resample(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
-  if (!source)
-  {
+  if (!source) {
     qDebug() << "Exiting early - no data :-(";
     return;
   }
   vtkImageData* originalData = imageData(source);
   int extents[6];
   originalData->GetExtent(extents);
-  int resolution[3] = {
-                      extents[1] - extents[0] + 1,
-                      extents[3] - extents[2] + 1,
-                      extents[5] - extents[4] + 1
-                      };
+  int resolution[3] = { extents[1] - extents[0] + 1,
+                        extents[3] - extents[2] + 1,
+                        extents[5] - extents[4] + 1 };
 
   // Find out how big they want to resample it
   QDialog dialog(pqCoreUtilities::mainWidget());
-  QHBoxLayout *layout = new QHBoxLayout;
-  QLabel *label0 = new QLabel(QString("Current resolution: %1, %2, %3")
-      .arg(resolution[0]).arg(resolution[1]).arg(resolution[2]));
-  QLabel *label1 = new QLabel("New resolution:");
+  QHBoxLayout* layout = new QHBoxLayout;
+  QLabel* label0 = new QLabel(QString("Current resolution: %1, %2, %3")
+                                .arg(resolution[0])
+                                .arg(resolution[1])
+                                .arg(resolution[2]));
+  QLabel* label1 = new QLabel("New resolution:");
   layout->addWidget(label1);
-  QSpinBox *spinx = new QSpinBox;
-  spinx->setRange(2,resolution[0]);
+  QSpinBox* spinx = new QSpinBox;
+  spinx->setRange(2, resolution[0]);
   spinx->setValue(resolution[0]);
-  QSpinBox *spiny = new QSpinBox;
-  spiny->setRange(2,resolution[1]);
+  QSpinBox* spiny = new QSpinBox;
+  spiny->setRange(2, resolution[1]);
   spiny->setValue(resolution[1]);
-  QSpinBox *spinz = new QSpinBox;
-  spinz->setRange(2,resolution[2]);
+  QSpinBox* spinz = new QSpinBox;
+  spinz->setRange(2, resolution[2]);
   spinz->setValue(resolution[2]);
   layout->addWidget(spinx);
   layout->addWidget(spiny);
   layout->addWidget(spinz);
-  QVBoxLayout *v = new QVBoxLayout;
-  QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok
-                                                   | QDialogButtonBox::Cancel);
+  QVBoxLayout* v = new QVBoxLayout;
+  QDialogButtonBox* buttons =
+    new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
   connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
   v->addWidget(label0);
   v->addLayout(layout);
   v->addWidget(buttons);
   dialog.setLayout(v);
-  if (dialog.exec() == QDialog::Accepted)
-  {
+  if (dialog.exec() == QDialog::Accepted) {
     // Compute the resampled data
     double origin[3];
     double spacing[3];
@@ -118,15 +115,14 @@ void AddResampleReaction::resample(DataSource* source)
     int newResolution[3] = { spinx->value(), spiny->value(), spinz->value() };
     double newOrigin[3], newSpacing[3];
     int newExtents[6];
-    for (int i = 0; i < 3; ++i)
-    {
+    for (int i = 0; i < 3; ++i) {
       newOrigin[i] = origin[i] + extents[2 * i] * spacing[i];
       newExtents[2 * i] = 0;
       newExtents[2 * i + 1] = newResolution[i] - 1;
       newSpacing[i] = spacing[i] * (extents[2 * i + 1] - extents[2 * i]) /
-                                   (double)(newResolution[i]);
+                      (double)(newResolution[i]);
     }
-    vtkNew< vtkImageReslice > reslice;
+    vtkNew<vtkImageReslice> reslice;
     reslice->SetInputData(originalData);
     reslice->SetInterpolationModeToLinear(); // for now
     reslice->SetOutputExtent(newExtents);
@@ -142,7 +138,7 @@ void AddResampleReaction::resample(DataSource* source)
     name = "Downsampled_" + name;
     resampledData->producer()->SetAnnotation("tomviz.Label",
                                              name.toLatin1().data());
-    vtkTrivialProducer *t = vtkTrivialProducer::SafeDownCast(
+    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
       resampledData->producer()->GetClientSideObject());
     t->SetOutput(reslice->GetOutput());
     resampledData->dataModified();
@@ -151,5 +147,4 @@ void AddResampleReaction::resample(DataSource* source)
     LoadDataReaction::dataSourceAdded(resampledData);
   }
 }
-
 }

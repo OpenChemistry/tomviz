@@ -8,8 +8,8 @@ class pqDoubleSliderPropertyWidget : public pqPropertyWidget
   Q_OBJECT
 
 public:
-  pqDoubleSliderPropertyWidget(
-    vtkSMProxy *smProxy, vtkSMProperty *smproperty, QWidget *parentObject=nullptr);
+  pqDoubleSliderPropertyWidget(vtkSMProxy* smProxy, vtkSMProperty* smproperty,
+                               QWidget* parentObject = nullptr);
   virtual ~pqDoubleSliderPropertyWidget();
 
 private:

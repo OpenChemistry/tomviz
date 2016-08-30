@@ -20,8 +20,7 @@
 
 class vtkSMProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 /// DeleteDataReaction handles the "Delete Data" action in tomviz. On trigger,
@@ -30,6 +29,7 @@ class DeleteDataReaction : public pqReaction
 {
   Q_OBJECT
   typedef pqReaction Superclass;
+
 public:
   DeleteDataReaction(QAction* parentAction);
   virtual ~DeleteDataReaction();
@@ -45,6 +45,5 @@ protected:
 private:
   Q_DISABLE_COPY(DeleteDataReaction)
 };
-
 }
 #endif

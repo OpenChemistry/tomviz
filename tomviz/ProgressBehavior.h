@@ -22,8 +22,7 @@
 class QProgressDialog;
 class QWidget;
 
-namespace tomviz
-{
+namespace tomviz {
 
 /// Behavior to show a progress dialog for ParaView progress events.
 class ProgressBehavior : public QObject

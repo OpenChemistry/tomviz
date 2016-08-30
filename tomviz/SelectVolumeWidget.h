@@ -16,13 +16,12 @@
 #ifndef tomvizSelectVolumeWidget_h
 #define tomvizSelectVolumeWidget_h
 
-#include <QWidget>
 #include <QScopedPointer>
+#include <QWidget>
 
 class vtkObject;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class SelectVolumeWidget : public QWidget
 {
@@ -50,14 +49,12 @@ private slots:
   void interactionEnd(vtkObject* caller);
   void valueChanged();
   void updateBounds(int* bounds);
-  void updateBounds(double *bounds);
+  void updateBounds(double* bounds);
 
 private:
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
-
 };
-
 }
 
 #endif

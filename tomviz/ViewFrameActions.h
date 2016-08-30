@@ -19,8 +19,7 @@
 
 #include <pqStandardViewFrameActionsImplementation.h>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class ViewFrameActions : public pqStandardViewFrameActionsImplementation
 {
@@ -28,17 +27,16 @@ class ViewFrameActions : public pqStandardViewFrameActionsImplementation
   Q_INTERFACES(pqViewFrameActionsInterface)
 
 public:
-  explicit ViewFrameActions(QObject *parent = nullptr);
+  explicit ViewFrameActions(QObject* parent = nullptr);
   ~ViewFrameActions() override;
 
 protected:
   QList<ViewType> availableViewTypes() override;
-  bool isButtonVisible(const std::string &buttonName, pqView *view) override;
+  bool isButtonVisible(const std::string& buttonName, pqView* view) override;
 
 private:
   Q_DISABLE_COPY(ViewFrameActions)
 };
-
 }
 
 #endif // tomvizViewFrameActions_h

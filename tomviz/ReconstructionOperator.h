@@ -18,8 +18,7 @@
 
 #include "Operator.h"
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 class ReconstructionOperator : public Operator
@@ -28,7 +27,7 @@ class ReconstructionOperator : public Operator
   typedef Operator Superclass;
 
 public:
-  ReconstructionOperator(DataSource *source, QObject* parent=nullptr);
+  ReconstructionOperator(DataSource* source, QObject* parent = nullptr);
   virtual ~ReconstructionOperator();
 
   QString label() const override { return "Reconstruction"; }
@@ -42,27 +41,28 @@ public:
 
   bool hasCustomUI() const override { return false; }
 
-  QWidget *getCustomProgressWidget(QWidget*) const override;
+  QWidget* getCustomProgressWidget(QWidget*) const override;
   int totalProgressSteps() const override;
 
   void cancelTransform() override;
+
 protected:
   bool applyTransform(vtkDataObject* data) override;
 
 signals:
-  // emitted after each slice is reconstructed, use to display intermediate results
-  // the first vector contains the sinogram reconstructed, the second contains the
+  // emitted after each slice is reconstructed, use to display intermediate
+  // results
+  // the first vector contains the sinogram reconstructed, the second contains
+  // the
   // slice of the resulting image.
   void intermediateResults(std::vector<float> resultSlice);
 
 private:
-  DataSource *dataSource;
+  DataSource* dataSource;
   int extent[6];
   bool canceled;
   Q_DISABLE_COPY(ReconstructionOperator)
 };
-
 }
 
 #endif
-

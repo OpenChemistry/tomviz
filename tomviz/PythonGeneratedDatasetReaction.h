@@ -23,8 +23,7 @@
 
 class vtkSMSourceProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 class PythonGeneratedDatasetReaction : public pqReaction
@@ -33,14 +32,15 @@ class PythonGeneratedDatasetReaction : public pqReaction
   typedef pqReaction Superclass;
 
 public:
-  PythonGeneratedDatasetReaction(QAction* parent, const QString &label,
-                                 const QString &source);
+  PythonGeneratedDatasetReaction(QAction* parent, const QString& label,
+                                 const QString& source);
   ~PythonGeneratedDatasetReaction();
 
   void addDataset();
 
-  static vtkSmartPointer<vtkSMSourceProxy> getSourceProxy(
-      const QString &label, const QString &script, const int shape[3]);
+  static vtkSmartPointer<vtkSMSourceProxy> getSourceProxy(const QString& label,
+                                                          const QString& script,
+                                                          const int shape[3]);
 
 protected:
   void onTriggered() override { this->addDataset(); }

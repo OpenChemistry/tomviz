@@ -16,32 +16,27 @@
 
 #include "ConvertToFloatOperator.h"
 
-#include <vtkImageData.h>
-#include <vtkPointData.h>
 #include <vtkFloatArray.h>
+#include <vtkImageData.h>
 #include <vtkNew.h>
+#include <vtkPointData.h>
 
-namespace
-{
+namespace {
 
-template<typename T>
-void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void *data)
+template <typename T>
+void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void* data)
 {
   T* d = static_cast<T*>(data);
-  float *a = static_cast<float*>(fArray->GetVoidPointer(0));
-  for (int i = 0; i < nComps * nTuples; ++i)
-  {
-    a[i] = (float) d[i];
+  float* a = static_cast<float*>(fArray->GetVoidPointer(0));
+  for (int i = 0; i < nComps * nTuples; ++i) {
+    a[i] = (float)d[i];
   }
 }
-
 }
 
-namespace tomviz
-{
+namespace tomviz {
 
-ConvertToFloatOperator::ConvertToFloatOperator(QObject *p)
-  : Superclass(p)
+ConvertToFloatOperator::ConvertToFloatOperator(QObject* p) : Superclass(p)
 {
 }
 
@@ -56,29 +51,27 @@ QIcon ConvertToFloatOperator::icon() const
 
 bool ConvertToFloatOperator::applyTransform(vtkDataObject* data)
 {
-  vtkImageData *imageData = vtkImageData::SafeDownCast(data);
+  vtkImageData* imageData = vtkImageData::SafeDownCast(data);
   // sanity check
-  if (!imageData)
-  {
+  if (!imageData) {
     return false;
   }
-  vtkDataArray *scalars = imageData->GetPointData()->GetScalars();
+  vtkDataArray* scalars = imageData->GetPointData()->GetScalars();
   vtkNew<vtkFloatArray> floatArray;
   floatArray->SetNumberOfComponents(scalars->GetNumberOfComponents());
   floatArray->SetNumberOfTuples(scalars->GetNumberOfTuples());
   floatArray->SetName(scalars->GetName());
-  switch (scalars->GetDataType())
-  {
+  switch (scalars->GetDataType()) {
     vtkTemplateMacro(convertToFloat<VTK_TT>(
-          floatArray.Get(), scalars->GetNumberOfComponents(),
-          scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0)));
+      floatArray.Get(), scalars->GetNumberOfComponents(),
+      scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0)));
   }
   imageData->GetPointData()->RemoveArray(scalars->GetName());
   imageData->GetPointData()->SetScalars(floatArray.Get());
   return true;
 }
 
-Operator *ConvertToFloatOperator::clone() const
+Operator* ConvertToFloatOperator::clone() const
 {
   return new ConvertToFloatOperator();
 }
@@ -92,5 +85,4 @@ bool ConvertToFloatOperator::deserialize(const pugi::xml_node&)
 {
   return true;
 }
-
 }

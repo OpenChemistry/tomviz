@@ -17,25 +17,24 @@
 #define tomvizModuleSlice_h
 
 #include "Module.h"
-#include <vtkWeakPointer.h>
 #include <vtkSmartPointer.h>
+#include <vtkWeakPointer.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
 
-namespace tomviz
-{
+namespace tomviz {
 class ModuleSlice : public Module
 {
   Q_OBJECT
   typedef Module Superclass;
 
 public:
-  ModuleSlice(QObject* parent=nullptr);
+  ModuleSlice(QObject* parent = nullptr);
   virtual ~ModuleSlice();
 
-  QString label() const override { return  "Slice"; }
+  QString label() const override { return "Slice"; }
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
@@ -48,12 +47,12 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy *proxy) override;
+  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy *proxy) override;
-  vtkSMProxy *getProxyForString(const std::string& str) override;
+  std::string getStringForProxy(vtkSMProxy* proxy) override;
+  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private slots:
   void onPropertyChanged();
@@ -70,7 +69,6 @@ private:
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> Widget;
   bool IgnoreSignals;
 };
-
 }
 
 #endif

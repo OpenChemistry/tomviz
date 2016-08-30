@@ -32,21 +32,20 @@ class QVTKWidget;
 class vtkPVDiscretizableColorTransferFunction;
 class vtkSMProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class HistogramWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  explicit HistogramWidget(QWidget *parent = 0);
+  explicit HistogramWidget(QWidget* parent = 0);
   ~HistogramWidget() override;
 
-  void setLUT(vtkPVDiscretizableColorTransferFunction *lut);
-  void setLUTProxy(vtkSMProxy *proxy);
+  void setLUT(vtkPVDiscretizableColorTransferFunction* lut);
+  void setLUTProxy(vtkSMProxy* proxy);
 
-  void setInputData(vtkTable *table, const char* x, const char* y);
+  void setInputData(vtkTable* table, const char* x, const char* y);
 
 signals:
   void colorMapUpdated();
@@ -54,7 +53,7 @@ signals:
 public slots:
   void onScalarOpacityFunctionChanged();
   void onCurrentPointEditEvent();
-  void histogramClicked(vtkObject *);
+  void histogramClicked(vtkObject*);
 
   void onResetRangeClicked();
   void onCustomRangeClicked();
@@ -68,13 +67,12 @@ private:
   vtkNew<vtkContextView> HistogramView;
   vtkNew<vtkEventQtSlotConnect> EventLink;
 
-  vtkPVDiscretizableColorTransferFunction *LUT = nullptr;
-  vtkPiecewiseFunction *ScalarOpacityFunction = nullptr;
-  vtkSMProxy *LUTProxy = nullptr;
+  vtkPVDiscretizableColorTransferFunction* LUT = nullptr;
+  vtkPiecewiseFunction* ScalarOpacityFunction = nullptr;
+  vtkSMProxy* LUTProxy = nullptr;
 
-  QVTKWidget *qvtk;
+  QVTKWidget* qvtk;
 };
-
 }
 
 #endif // tomvizHistogramWidget_h

@@ -16,8 +16,8 @@
 #include "ModuleFactory.h"
 
 #ifdef DAX_DEVICE_ADAPTER
-# include "dax/ModuleStreamingContour.h"
-# include "dax/ModuleAccelThreshold.h"
+#include "dax/ModuleAccelThreshold.h"
+#include "dax/ModuleStreamingContour.h"
 #endif
 
 #include "ModuleContour.h"
@@ -34,8 +34,7 @@
 
 #include <QtAlgorithms>
 
-namespace tomviz
-{
+namespace tomviz {
 
 ModuleFactory::ModuleFactory()
 {
@@ -45,79 +44,64 @@ ModuleFactory::~ModuleFactory()
 {
 }
 
-QList<QString> ModuleFactory::moduleTypes(
-  DataSource* dataSource, vtkSMViewProxy* view)
+QList<QString> ModuleFactory::moduleTypes(DataSource* dataSource,
+                                          vtkSMViewProxy* view)
 {
   QList<QString> reply;
-  if (dataSource && view)
-  {
+  if (dataSource && view) {
 
     // based on the data type and view, return module types.
     reply << "Outline"
-      << "Volume"
-      << "Contour"
-      << "Threshold"
-      << "Slice"
-      << "Orthogonal Slice";
-//      << "Segmentation";
+          << "Volume"
+          << "Contour"
+          << "Threshold"
+          << "Slice"
+          << "Orthogonal Slice";
+    //      << "Segmentation";
     qSort(reply);
   }
   return reply;
 }
 
-Module* ModuleFactory::createModule(
-  const QString& type, DataSource* dataSource, vtkSMViewProxy* view)
+Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
+                                    vtkSMViewProxy* view)
 {
   Module* module = nullptr;
-  if (type == "Outline")
-  {
+  if (type == "Outline") {
     module = new ModuleOutline();
-  }
-  else if (type == "Contour")
-  {
+  } else if (type == "Contour") {
 #ifdef DAX_DEVICE_ADAPTER
     module = new ModuleStreamingContour();
 #else
     module = new ModuleContour();
 #endif
-  }
-  else if (type == "Volume")
-  {
+  } else if (type == "Volume") {
     module = new ModuleVolume();
-  }
-  else if (type == "Slice")
-  {
+  } else if (type == "Slice") {
     module = new ModuleSlice();
-  }
-  else if (type == "Orthogonal Slice")
-  {
+  } else if (type == "Orthogonal Slice") {
     module = new ModuleOrthogonalSlice();
-  }
-  else if (type == "Threshold")
-  {
+  } else if (type == "Threshold") {
 #ifdef DAX_DEVICE_ADAPTER
     module = new ModuleAccelThreshold();
 #else
     module = new ModuleThreshold();
 #endif
   }
-//  else if (type == "Segmentation")
-//  {
-//    module = new ModuleSegment();
-//  }
+  //  else if (type == "Segmentation")
+  //  {
+  //    module = new ModuleSegment();
+  //  }
 
-  if (module)
-  {
+  if (module) {
     // sanity check.
     Q_ASSERT(type == moduleType(module));
-    if (dataSource == nullptr && view == nullptr)
-    {
+    if (dataSource == nullptr && view == nullptr) {
       // don't initialize module if args are NULL.
       return module;
     }
 
-    if (!module->initialize(dataSource, view))
-    {
+    if (!module->initialize(dataSource, view)) {
       delete module;
       return nullptr;
     }
@@ -132,8 +116,7 @@ QIcon ModuleFactory::moduleIcon(const QString& type)
 {
   QIcon icon;
   Module* mdl = ModuleFactory::createModule(type, nullptr, nullptr);
-  if (mdl)
-  {
+  if (mdl) {
     icon = mdl->icon();
     delete mdl;
   }
@@ -147,8 +130,7 @@ const char* ModuleFactory::moduleType(Module* module)
   // classes are checked before parent classes. Otherwise, the module
   // type may be reported to be a class's parent.
 
-  if (qobject_cast<ModuleOutline*>(module))
-  {
+  if (qobject_cast<ModuleOutline*>(module)) {
     return "Outline";
   }
 #ifdef DAX_DEVICE_ADAPTER
@@ -159,16 +141,13 @@ const char* ModuleFactory::moduleType(Module* module)
   {
     return "Contour";
   }
-  if (qobject_cast<ModuleVolume*>(module))
-  {
+  if (qobject_cast<ModuleVolume*>(module)) {
     return "Volume";
   }
-  if (qobject_cast<ModuleSlice*>(module))
-  {
+  if (qobject_cast<ModuleSlice*>(module)) {
     return "Slice";
   }
-  if (qobject_cast<ModuleOrthogonalSlice*>(module))
-  {
+  if (qobject_cast<ModuleOrthogonalSlice*>(module)) {
     return "Orthogonal Slice";
   }
 #ifdef DAX_DEVICE_ADAPTER
@@ -179,10 +158,10 @@ const char* ModuleFactory::moduleType(Module* module)
   {
     return "Threshold";
   }
-//  if (qobject_cast<ModuleSegment*>(module))
-//  {
-//    return "Segmentation";
-//  }
+  //  if (qobject_cast<ModuleSegment*>(module))
+  //  {
+  //    return "Segmentation";
+  //  }
   return nullptr;
 }
 

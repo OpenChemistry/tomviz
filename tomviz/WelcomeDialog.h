@@ -21,7 +21,7 @@
 #include <QScopedPointer>
 
 namespace Ui {
-  class WelcomeDialog;
+class WelcomeDialog;
 }
 
 namespace tomviz {
@@ -41,6 +41,7 @@ private slots:
 
   // React to checkbox events
   void onDoNotShowAgainStateChanged(int);
+
 private:
   QScopedPointer<Ui::WelcomeDialog> ui;
 };

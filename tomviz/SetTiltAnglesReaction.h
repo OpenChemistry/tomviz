@@ -20,8 +20,7 @@
 
 class QMainWindow;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 class SetTiltAnglesReaction : public pqReaction
@@ -33,7 +32,8 @@ public:
   SetTiltAnglesReaction(QAction* parent, QMainWindow* mw);
   ~SetTiltAnglesReaction();
 
-  static void showSetTiltAnglesUI(QMainWindow *window, DataSource *source = nullptr);
+  static void showSetTiltAnglesUI(QMainWindow* window,
+                                  DataSource* source = nullptr);
 
 protected:
   void updateEnableState() override;
@@ -41,7 +41,7 @@ protected:
 
 private:
   Q_DISABLE_COPY(SetTiltAnglesReaction)
-  QMainWindow *mainWindow;
+  QMainWindow* mainWindow;
 };
 }
 
