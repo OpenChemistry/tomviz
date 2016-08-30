@@ -13,6 +13,15 @@ reformat all the lines in the latest commit
 git diff -U0 HEAD^ | clang-format-diff.py -i -p1
 
 ```
+### clang-format-diff locations by platform
+
+The exact location of the Python script varies by platform/distro. The table
+below provides the location on some common platform/distro's
+
+| Platform/Distro.  | Location                             |
+| ---------------- |:-------------------------------------:|
+| Arch Linux       | /usr/share/clang/clang-format-diff.py |
+| Ubuntu           | /usr/bin/clang-format-diff-3.8        |
 
 Code style
 ----------
