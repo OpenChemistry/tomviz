@@ -28,21 +28,18 @@ code style guidelines when contributing code to our project.
 
 * Do not indent inside namespaces, e.g.,
 
-        namespace tomviz
-        {
+        namespace tomviz {
         void foo();
 
 * Curly braces marking the start and end of a code block should be on
   separate lines and aligned vertically with the statement preceding
   the block, e.g.,
 
-        if (condition)
-        {
+        if (condition) {
           statement;
         }
 
-        for (int i = 0; i < n; ++i)
-        {
+        for (int i = 0; i < n; ++i) {
           statement;
         }
 
