@@ -16,14 +16,13 @@
 #ifndef tomvizRecentFilesMenu_h
 #define tomvizRecentFilesMenu_h
 
-#include <QObject>
 #include <QAction>
+#include <QObject>
 
 class QMenu;
 class vtkSMProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 /// Extends pqRecentFilesMenu to add support to open a data file customized for
 /// tomviz.
@@ -33,7 +32,7 @@ class RecentFilesMenu : public QObject
   typedef QObject Superclass;
 
 public:
-  RecentFilesMenu(QMenu& menu, QObject* parent=nullptr);
+  RecentFilesMenu(QMenu& menu, QObject* parent = nullptr);
   virtual ~RecentFilesMenu();
 
   /// Pushes a reader on the recent files stack.
@@ -48,6 +47,5 @@ private slots:
 private:
   Q_DISABLE_COPY(RecentFilesMenu)
 };
-
 }
 #endif

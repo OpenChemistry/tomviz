@@ -33,65 +33,65 @@
 #include <vtkArrayDispatch.h>
 #include <vtkAssume.h>
 #include <vtkCamera.h>
+#include <vtkDataArray.h>
 #include <vtkDataArrayAccessor.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
+#include <vtkInteractorStyleRubberBand2D.h>
+#include <vtkInteractorStyleRubberBandZoom.h>
+#include <vtkNew.h>
 #include <vtkPVArrayInformation.h>
-#include <vtkRenderer.h>
+#include <vtkPointData.h>
 #include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkSMPropertyHelper.h>
 #include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionPresets.h>
 #include <vtkSMTransferFunctionProxy.h>
-#include <vtkTrivialProducer.h>
+#include <vtkSMViewProxy.h>
 #include <vtkScalarsToColors.h>
 #include <vtkSmartPointer.h>
-#include <vtkSMSourceProxy.h>
-#include <vtkSMPropertyHelper.h>
-#include <vtkSMViewProxy.h>
-#include <vtkNew.h>
+#include <vtkTrivialProducer.h>
 #include <vtkVector.h>
-#include <vtkPointData.h>
-#include <vtkDataArray.h>
-#include <vtkInteractorStyleRubberBand2D.h>
-#include <vtkInteractorStyleRubberBandZoom.h>
 
-#include <QTimer>
+#include <QButtonGroup>
 #include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
+#include <QHeaderView>
+#include <QKeyEvent>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QLineEdit>
 #include <QSpinBox>
-#include <QKeyEvent>
 #include <QTableWidget>
 #include <QTableWidgetItem>
-#include <QHeaderView>
-#include <QButtonGroup>
+#include <QTimer>
 #include <QToolButton>
+#include <QVBoxLayout>
 
-namespace tomviz
-{
+namespace tomviz {
 
 namespace {
 void renderViews()
 {
-  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  if (view)
-  {
+  pqView* view =
+    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view) {
     view->render();
   }
 }
 }
 
-class ViewMode {
+class ViewMode
+{
 public:
-  ViewMode(vtkImageData *data)
+  ViewMode(vtkImageData* data)
     : originalData(data), currentSlice(1), referenceSlice(0)
   {
     this->currentSliceOffset[0] = 0;
@@ -118,9 +118,10 @@ public:
   }
   virtual void timeout() {}
   virtual void timerStopped() {}
-  virtual double *bounds() const = 0;
+  virtual double* bounds() const = 0;
   virtual void update() = 0;
-  virtual vtkSMProxy *getLUT() = 0;
+  virtual vtkSMProxy* getLUT() = 0;
+
 protected:
   vtkSmartPointer<vtkImageData> originalData;
   int currentSlice;
@@ -132,17 +133,16 @@ protected:
 class ToggleSliceShownViewMode : public ViewMode
 {
 public:
-  ToggleSliceShownViewMode(vtkImageData *data, vtkSMProxy *lutProxy)
+  ToggleSliceShownViewMode(vtkImageData* data, vtkSMProxy* lutProxy)
     : ViewMode(data), showingCurrentSlice(false)
   {
     this->imageSliceMapper->SetInputData(data);
     this->imageSliceMapper->Update();
     this->imageSlice->SetMapper(this->imageSliceMapper.Get());
     this->lut = lutProxy;
-    vtkScalarsToColors *dataLUT =
+    vtkScalarsToColors* dataLUT =
       vtkScalarsToColors::SafeDownCast(lutProxy->GetClientSideObject());
-    if (dataLUT)
-    {
+    if (dataLUT) {
       this->imageSlice->GetProperty()->SetLookupTable(dataLUT);
     }
   }
@@ -166,28 +166,24 @@ public:
   }
   void update() override
   {
-    if (this->showingCurrentSlice)
-    {
+    if (this->showingCurrentSlice) {
       this->imageSliceMapper->SetSliceNumber(this->currentSlice);
       this->imageSliceMapper->Update();
       this->imageSlice->SetPosition(this->currentSliceOffset[0],
-        this->currentSliceOffset[1], 0);
-    }
-    else // showing reference slice
+                                    this->currentSliceOffset[1], 0);
+    } else // showing reference slice
     {
       this->imageSliceMapper->SetSliceNumber(this->referenceSlice);
       this->imageSliceMapper->Update();
       this->imageSlice->SetPosition(this->referenceSliceOffset[0],
-        this->referenceSliceOffset[1], 0);
+                                    this->referenceSliceOffset[1], 0);
     }
   }
-  double *bounds() const override
+  double* bounds() const override
   {
     return this->imageSliceMapper->GetBounds();
   }
-  vtkSMProxy *getLUT() override {
-    return lut;
-  }
+  vtkSMProxy* getLUT() override { return lut; }
 private:
   vtkNew<vtkImageSlice> imageSlice;
   vtkNew<vtkImageSliceMapper> imageSliceMapper;
@@ -198,8 +194,7 @@ private:
 class ShowDifferenceImageMode : public ViewMode
 {
 public:
-  ShowDifferenceImageMode(vtkImageData *data)
-    : ViewMode(data)
+  ShowDifferenceImageMode(vtkImageData* data) : ViewMode(data)
   {
     int extent[6];
     data->GetExtent(extent);
@@ -216,25 +211,27 @@ public:
 
     vtkNew<vtkSMTransferFunctionManager> tfmgr;
     this->lut = tfmgr->GetColorTransferFunction("AlignWidgetLUT", pxm);
-    vtkScalarsToColors *dataLUT = vtkScalarsToColors::SafeDownCast(this->lut->GetClientSideObject());
+    vtkScalarsToColors* dataLUT =
+      vtkScalarsToColors::SafeDownCast(this->lut->GetClientSideObject());
     vtkSmartPointer<vtkSMProxy> source;
     source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-    vtkTrivialProducer::SafeDownCast(source->GetClientSideObject())->SetOutput(data);
+    vtkTrivialProducer::SafeDownCast(source->GetClientSideObject())
+      ->SetOutput(data);
     vtkPVArrayInformation* ainfo = tomviz::scalarArrayInformation(
-        vtkSMSourceProxy::SafeDownCast(source.Get()));
-    if (ainfo != nullptr)
-    {
+      vtkSMSourceProxy::SafeDownCast(source.Get()));
+    if (ainfo != nullptr) {
       double range[2];
       ainfo->GetComponentRange(0, range);
       double lutRange[2] = { std::min(range[0], -range[1]),
                              std::max(range[1], -range[0]) };
       vtkNew<vtkSMTransferFunctionPresets> presets;
-      vtkSMTransferFunctionProxy::ApplyPreset(this->lut, presets->GetFirstPresetWithName("Cool to Warm (Extended)"));
+      vtkSMTransferFunctionProxy::ApplyPreset(
+        this->lut, presets->GetFirstPresetWithName("Cool to Warm (Extended)"));
       vtkSMTransferFunctionProxy::RescaleTransferFunction(this->lut, lutRange);
     }
     this->imageSlice->GetProperty()->SetLookupTable(dataLUT);
   }
-  void addToView(vtkRenderer *renderer) override
+  void addToView(vtkRenderer* renderer) override
   {
     renderer->AddViewProp(this->imageSlice.Get());
   }
@@ -246,31 +243,27 @@ public:
   {
     int extent[6];
     this->originalData->GetExtent(extent);
-    typedef vtkArrayDispatch::Dispatch2ByValueType
-      <
-        vtkArrayDispatch::AllTypes,
-        vtkArrayDispatch::Reals
-      > Dispatcher;
+    typedef vtkArrayDispatch::Dispatch2ByValueType<vtkArrayDispatch::AllTypes,
+                                                   vtkArrayDispatch::Reals>
+      Dispatcher;
     if (!Dispatcher::Execute(this->originalData->GetPointData()->GetScalars(),
-          this->diffImage->GetPointData()->GetScalars(), *this))
-    {
+                             this->diffImage->GetPointData()->GetScalars(),
+                             *this)) {
       (*this)(this->originalData->GetPointData()->GetScalars(),
-          this->diffImage->GetPointData()->GetScalars());
+              this->diffImage->GetPointData()->GetScalars());
     }
     this->diffImage->Modified();
     this->imageSliceMapper->Update();
   }
-  double *bounds() const override
+  double* bounds() const override
   {
     return this->imageSliceMapper->GetBounds();
   }
-  vtkSMProxy *getLUT() override {
-    return lut;
-  }
+  vtkSMProxy* getLUT() override { return lut; }
   // Operator so that *this can be used with vtkArrayDispatch to compute the
   // difference image
   template <typename InputArray, typename OutputArray>
-  void operator()(InputArray *input, OutputArray *output)
+  void operator()(InputArray* input, OutputArray* output)
   {
     VTK_ASSUME(input->GetNumberOfComponents() == 1);
     VTK_ASSUME(output->GetNumberOfComponents() == 1);
@@ -278,34 +271,35 @@ public:
     vtkDataArrayAccessor<InputArray> in(input);
     vtkDataArrayAccessor<OutputArray> out(output);
 
-    for (vtkIdType j = 0; j < this->ySize; ++j)
-    {
-      for (vtkIdType i = 0; i < this->xSize; ++i)
-      {
+    for (vtkIdType j = 0; j < this->ySize; ++j) {
+      for (vtkIdType i = 0; i < this->xSize; ++i) {
         vtkIdType destIdx = j * this->xSize + i;
         if (j + this->currentSliceOffset[1] < ySize &&
             j + currentSliceOffset[1] >= 0 &&
             i + this->currentSliceOffset[0] < this->xSize &&
-            i + this->currentSliceOffset[0] >= 0)
-        {
-          // Index of the point in the current slice that corresponds to the given position
-          vtkIdType currentSliceIdx = this->currentSlice * this->ySize * this->xSize +
-            (j + this->currentSliceOffset[1]) * this->xSize + (i + this->currentSliceOffset[0]);
+            i + this->currentSliceOffset[0] >= 0) {
+          // Index of the point in the current slice that corresponds to the
+          // given position
+          vtkIdType currentSliceIdx =
+            this->currentSlice * this->ySize * this->xSize +
+            (j + this->currentSliceOffset[1]) * this->xSize +
+            (i + this->currentSliceOffset[0]);
           // Index in the reference slice that corresponds to the given position
-          vtkIdType referenceSliceIdx = this->referenceSlice * this->ySize * this->xSize +
-            (j + this->referenceSliceOffset[1]) * this->xSize + (i + this->referenceSliceOffset[0]);
+          vtkIdType referenceSliceIdx =
+            this->referenceSlice * this->ySize * this->xSize +
+            (j + this->referenceSliceOffset[1]) * this->xSize +
+            (i + this->referenceSliceOffset[0]);
           // Compute the difference and set it to the output at the position
-          out.Set(destIdx, 0, in.Get(currentSliceIdx, 0) -
-              in.Get(referenceSliceIdx, 0));
-        }
-        else
-        {
+          out.Set(destIdx, 0,
+                  in.Get(currentSliceIdx, 0) - in.Get(referenceSliceIdx, 0));
+        } else {
           // TODO - figure out what to do fort this region
           out.Set(destIdx, 0, 0);
         }
       }
     }
   }
+
 private:
   vtkNew<vtkImageData> diffImage;
   vtkNew<vtkImageSliceMapper> imageSliceMapper;
@@ -315,7 +309,8 @@ private:
   vtkIdType ySize;
 };
 
-AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageData> imageData, QWidget* p)
+AlignWidget::AlignWidget(TranslateAlignOperator* op,
+                         vtkSmartPointer<vtkImageData> imageData, QWidget* p)
   : EditOperatorWidget(p)
 {
   this->timer = new QTimer(this);
@@ -325,9 +320,9 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   this->inputData = imageData;
   this->widget = new QVTKWidget(this);
   this->widget->installEventFilter(this);
-  QHBoxLayout *myLayout = new QHBoxLayout(this);
+  QHBoxLayout* myLayout = new QHBoxLayout(this);
   myLayout->addWidget(this->widget);
-  QVBoxLayout *v = new QVBoxLayout;
+  QVBoxLayout* v = new QVBoxLayout;
   myLayout->addLayout(v);
   this->setLayout(myLayout);
   this->setMinimumWidth(800);
@@ -336,90 +331,88 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   this->currentMode = 0;
 
   // Grab the image data from the data source...
-  vtkSMProxy *lut = this->unalignedData->colorMap();
+  vtkSMProxy* lut = this->unalignedData->colorMap();
 
   // Set up the rendering pipeline
-  if (imageData)
-  {
-    this->modes.push_back(
-        new ToggleSliceShownViewMode(imageData, lut));
-    this->modes.push_back(
-        new ShowDifferenceImageMode(imageData));
+  if (imageData) {
+    this->modes.push_back(new ToggleSliceShownViewMode(imageData, lut));
+    this->modes.push_back(new ShowDifferenceImageMode(imageData));
     this->modes[0]->addToView(this->renderer.Get());
     this->modes[0]->update();
     int extent[6];
     imageData->GetExtent(extent);
     this->minSliceNum = extent[4];
     this->maxSliceNum = extent[5];
-  }
-  else
-  {
+  } else {
     this->minSliceNum = 0;
     this->maxSliceNum = 1;
   }
   this->widget->GetRenderWindow()->AddRenderer(this->renderer.Get());
   this->renderer->SetBackground(1.0, 1.0, 1.0);
-  this->renderer->SetViewport(0.0, 0.0,
-                        1.0, 1.0);
+  this->renderer->SetViewport(0.0, 0.0, 1.0, 1.0);
 
   // Set up render window interaction.
   this->defaultInteractorStyle->SetRenderOnMouseMove(true);
 
   this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-      this->defaultInteractorStyle.Get());
+    this->defaultInteractorStyle.Get());
 
   this->renderer->SetBackground(1.0, 1.0, 1.0);
-  this->renderer->SetViewport(0.0, 0.0,
-                        1.0, 1.0);
+  this->renderer->SetViewport(0.0, 0.0, 1.0, 1.0);
 
   this->resetCamera();
 
   // Now to add the controls to the widget.
-  QHBoxLayout *viewControls = new QHBoxLayout;
-  QPushButton *zoomToBox = new QPushButton(QIcon(":/pqWidgets/Icons/pqZoomToSelection24.png"),"Zoom to Selection");
-  this->connect(zoomToBox, SIGNAL(pressed()),
-                this, SLOT(zoomToSelectionStart()));
+  QHBoxLayout* viewControls = new QHBoxLayout;
+  QPushButton* zoomToBox = new QPushButton(
+    QIcon(":/pqWidgets/Icons/pqZoomToSelection24.png"), "Zoom to Selection");
+  this->connect(zoomToBox, SIGNAL(pressed()), this,
+                SLOT(zoomToSelectionStart()));
   viewControls->addWidget(zoomToBox);
-  QPushButton *resetCamera = new QPushButton(QIcon(":/pqWidgets/Icons/pqResetCamera24.png"), "Reset");
+  QPushButton* resetCamera =
+    new QPushButton(QIcon(":/pqWidgets/Icons/pqResetCamera24.png"), "Reset");
   this->connect(resetCamera, SIGNAL(pressed()), this, SLOT(resetCamera()));
   viewControls->addWidget(resetCamera);
   v->addLayout(viewControls);
 
   this->currentMode = 0;
-  QHBoxLayout *optionsLayout = new QHBoxLayout;
+  QHBoxLayout* optionsLayout = new QHBoxLayout;
   this->modeSelect = new QComboBox;
   this->modeSelect->addItem("Toggle Images");
   this->modeSelect->addItem("Show Difference");
   this->modeSelect->setCurrentIndex(0);
-  this->connect(this->modeSelect, SIGNAL(currentIndexChanged(int)), this, SLOT(changeMode(int)));
+  this->connect(this->modeSelect, SIGNAL(currentIndexChanged(int)), this,
+                SLOT(changeMode(int)));
   optionsLayout->addWidget(this->modeSelect);
 
-  QToolButton *presetSelectorButton = new QToolButton;
+  QToolButton* presetSelectorButton = new QToolButton;
   presetSelectorButton->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites16.png"));
   presetSelectorButton->setToolTip("Choose preset color map");
-  connect(presetSelectorButton, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
+  connect(presetSelectorButton, SIGNAL(clicked()), this,
+          SLOT(onPresetClicked()));
   optionsLayout->addWidget(presetSelectorButton);
   v->addLayout(optionsLayout);
 
-  QGridLayout *grid = new QGridLayout;
+  QGridLayout* grid = new QGridLayout;
   int gridrow = 0;
   v->addStretch(1);
-  QLabel *keyGuide = new QLabel;
-  keyGuide->setText("1. Pick an object, use the arrow\nkeys to minimize the wobble.\n"
-                    "2. Use the S to move to the next\nslice, A to return to previous slice.\n"
-                    "3. Repeat steps 1 and 2.\n\n"
-                    "Note: The same object/point must\nbe used for all slices.");
+  QLabel* keyGuide = new QLabel;
+  keyGuide->setText(
+    "1. Pick an object, use the arrow\nkeys to minimize the wobble.\n"
+    "2. Use the S to move to the next\nslice, A to return to previous slice.\n"
+    "3. Repeat steps 1 and 2.\n\n"
+    "Note: The same object/point must\nbe used for all slices.");
   v->addWidget(keyGuide);
   v->addStretch(1);
   v->addLayout(grid);
   v->addStretch(1);
-  QLabel *label = new QLabel("Current image:");
+  QLabel* label = new QLabel("Current image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   this->currentSlice = new SpinBox;
   this->currentSlice->setValue(1);
-  this->currentSlice->setRange(this->minSliceNum,
-                                          this->maxSliceNum);
-  connect(this->currentSlice, SIGNAL(editingFinished()), this, SLOT(currentSliceEdited()));
+  this->currentSlice->setRange(this->minSliceNum, this->maxSliceNum);
+  connect(this->currentSlice, SIGNAL(editingFinished()), this,
+          SLOT(currentSliceEdited()));
   grid->addWidget(this->currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
   label = new QLabel("Shortcut: (A/S)");
   grid->addWidget(label, gridrow, 2, 1, 1, Qt::AlignRight);
@@ -427,7 +420,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   ++gridrow;
   label = new QLabel("Frame rate (fps):");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
-  QSpinBox *spin = new QSpinBox;
+  QSpinBox* spin = new QSpinBox;
   spin->setRange(0, 50);
   spin->setValue(5);
   connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
@@ -449,12 +442,12 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   grid->addWidget(this->statButton, gridrow, 1, 1, 1, Qt::AlignLeft);
   this->statRefNum = new QSpinBox;
   this->statRefNum->setValue(0);
-  this->statRefNum->setRange(this->minSliceNum,
-                       this->maxSliceNum);
+  this->statRefNum->setRange(this->minSliceNum, this->maxSliceNum);
   connect(this->statRefNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
   grid->addWidget(this->statRefNum, gridrow, 2, 1, 1, Qt::AlignLeft);
   this->statRefNum->setEnabled(false);
-  connect(this->statButton, SIGNAL(toggled(bool)), this->statRefNum, SLOT(setEnabled(bool)));
+  connect(this->statButton, SIGNAL(toggled(bool)), this->statRefNum,
+          SLOT(setEnabled(bool)));
 
   this->referenceSliceMode = new QButtonGroup;
   this->referenceSliceMode->addButton(this->prevButton);
@@ -462,16 +455,18 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   this->referenceSliceMode->addButton(this->statButton);
   this->referenceSliceMode->setExclusive(true);
   this->prevButton->setChecked(true);
-  connect(this->referenceSliceMode, SIGNAL(buttonClicked(int)), SLOT(updateReference()));
+  connect(this->referenceSliceMode, SIGNAL(buttonClicked(int)),
+          SLOT(updateReference()));
 
   // Slice offsets
   ++gridrow;
-  this->currentSliceOffset = new QLabel("Image shift (Shortcut: arrow keys): (0, 0)");
+  this->currentSliceOffset =
+    new QLabel("Image shift (Shortcut: arrow keys): (0, 0)");
   grid->addWidget(this->currentSliceOffset, gridrow, 0, 1, 3, Qt::AlignLeft);
 
   // Add our buttons.
   ++gridrow;
-  QHBoxLayout *buttonLayout = new QHBoxLayout;
+  QHBoxLayout* buttonLayout = new QHBoxLayout;
   this->startButton = new QPushButton("Start");
   connect(this->startButton, SIGNAL(clicked()), SLOT(startAlign()));
   buttonLayout->addWidget(this->startButton);
@@ -487,31 +482,29 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
   grid->addWidget(this->offsetTable, gridrow, 0, 1, 3, Qt::AlignCenter);
   this->offsets.fill(vtkVector2i(0, 0), this->maxSliceNum + 1);
 
-  const QVector<vtkVector2i> &oldOffsets = this->Op->getAlignOffsets();
+  const QVector<vtkVector2i>& oldOffsets = this->Op->getAlignOffsets();
 
   this->offsetTable->setRowCount(this->offsets.size());
   this->offsetTable->setColumnCount(4);
   QTableWidgetItem* item = new QTableWidgetItem();
   item->setText("Slice #");
-  this->offsetTable->setHorizontalHeaderItem(0,item);
+  this->offsetTable->setHorizontalHeaderItem(0, item);
   item = new QTableWidgetItem();
   item->setText("X offset");
-  this->offsetTable->setHorizontalHeaderItem(1,item);
+  this->offsetTable->setHorizontalHeaderItem(1, item);
   item = new QTableWidgetItem();
   item->setText("Y offset");
-  this->offsetTable->setHorizontalHeaderItem(2,item);
+  this->offsetTable->setHorizontalHeaderItem(2, item);
   item = new QTableWidgetItem();
   item->setText("Tilt angle");
-  this->offsetTable->setHorizontalHeaderItem(3,item);
-  for (int i = 0; i < oldOffsets.size(); ++i)
-  {
+  this->offsetTable->setHorizontalHeaderItem(3, item);
+  for (int i = 0; i < oldOffsets.size(); ++i) {
     this->offsets[i] = oldOffsets[i];
   }
 
   QVector<double> tiltAngles = this->unalignedData->getTiltAngles();
 
-  for (int i = 0; i < this->offsets.size(); ++i)
-  {
+  for (int i = 0; i < this->offsets.size(); ++i) {
     item = new QTableWidgetItem();
     item->setData(Qt::DisplayRole, QString::number(i));
     item->setFlags(Qt::ItemIsEnabled);
@@ -531,12 +524,14 @@ AlignWidget::AlignWidget(TranslateAlignOperator *op, vtkSmartPointer<vtkImageDat
     this->offsetTable->setItem(i, 3, item);
   }
   this->offsetTable->resizeColumnsToContents();
-  this->currentSliceOffset->setText(QString("Image shift (Shortcut: arrow keys): (%1, %2)")
+  this->currentSliceOffset->setText(
+    QString("Image shift (Shortcut: arrow keys): (%1, %2)")
       .arg(this->offsets[this->currentSlice->value()][0])
       .arg(this->offsets[this->currentSlice->value()][1]));
 
   connect(this->timer, SIGNAL(timeout()), SLOT(onTimeout()));
-  connect(this->offsetTable, SIGNAL(cellChanged(int, int)), SLOT(sliceOffsetEdited(int, int)));
+  connect(this->offsetTable, SIGNAL(cellChanged(int, int)),
+          SLOT(sliceOffsetEdited(int, int)));
   this->timer->start(200);
 }
 
@@ -546,31 +541,26 @@ AlignWidget::~AlignWidget()
   this->modes.clear();
 }
 
-bool AlignWidget::eventFilter(QObject *object, QEvent *e)
+bool AlignWidget::eventFilter(QObject* object, QEvent* e)
 {
-  if (object == this->widget)
-  {
-    switch (e->type())
-    {
+  if (object == this->widget) {
+    switch (e->type()) {
       case QEvent::KeyPress:
-        widgetKeyPress(static_cast<QKeyEvent *>(e));
+        widgetKeyPress(static_cast<QKeyEvent*>(e));
         return true;
       case QEvent::KeyRelease:
         return true;
       default:
         return false;
     }
-  }
-  else
-  {
+  } else {
     return false;
   }
 }
 
 void AlignWidget::onTimeout()
 {
-  if (this->modes.length() > 0)
-  {
+  if (this->modes.length() > 0) {
     this->modes[this->currentMode]->timeout();
   }
   this->widget->update();
@@ -584,12 +574,9 @@ void AlignWidget::changeSlice(int delta)
   int i = this->currentSlice->value() + delta;
 
   // This makes stack circular.
-  if (i > max)
-  {
+  if (i > max) {
     i = min;
-  }
-  else if (i < min)
-  {
+  } else if (i < min) {
     i = max;
   }
   this->currentSlice->setValue(i);
@@ -605,11 +592,11 @@ void AlignWidget::currentSliceEdited()
 void AlignWidget::setSlice(int slice, bool resetInc)
 {
   // Does not change currentSlice, display only.
-  if (resetInc)
-  {
-    this->currentSliceOffset->setText(QString(
-          "Image shift (Shortcut: arrow keys): (%1, %2)")
-           .arg(this->offsets[slice][0]).arg(this->offsets[slice][1]));
+  if (resetInc) {
+    this->currentSliceOffset->setText(
+      QString("Image shift (Shortcut: arrow keys): (%1, %2)")
+        .arg(this->offsets[slice][0])
+        .arg(this->offsets[slice][1]));
   }
   this->applySliceOffset(slice);
 }
@@ -621,36 +608,26 @@ void AlignWidget::updateReference()
 
   int refSlice = 0;
 
-  if (this->prevButton->isChecked())
-  {
+  if (this->prevButton->isChecked()) {
     refSlice = this->currentSlice->value() - 1;
-  }
-  else if (this->nextButton->isChecked())
-  {
+  } else if (this->nextButton->isChecked()) {
     refSlice = this->currentSlice->value() + 1;
-  }
-  else if (this->statButton->isChecked())
-  {
+  } else if (this->statButton->isChecked()) {
     refSlice = this->statRefNum->value();
   }
 
   // This makes the stack circular.
-  if (refSlice > max)
-  {
+  if (refSlice > max) {
     refSlice = min;
-  }
-  else if (refSlice < min)
-  {
+  } else if (refSlice < min) {
     refSlice = max;
   }
   this->referenceSlice = refSlice;
-  for (int i = 0; i < this->modes.length(); ++i)
-  {
-    this->modes[i]->referenceSliceUpdated(
-        referenceSlice, this->offsets[referenceSlice]);
+  for (int i = 0; i < this->modes.length(); ++i) {
+    this->modes[i]->referenceSliceUpdated(referenceSlice,
+                                          this->offsets[referenceSlice]);
   }
-  if (this->modes.length() > 0)
-  {
+  if (this->modes.length() > 0) {
     this->modes[this->currentMode]->update();
   }
   this->widget->update();
@@ -658,63 +635,56 @@ void AlignWidget::updateReference()
 
 void AlignWidget::setFrameRate(int rate)
 {
-  if (rate <= 0)
-  {
+  if (rate <= 0) {
     rate = 0;
   }
   this->frameRate = rate;
-  if (this->frameRate > 0)
-  {
+  if (this->frameRate > 0) {
     this->timer->setInterval(1000.0 / this->frameRate);
-    if (!this->timer->isActive())
-    {
+    if (!this->timer->isActive()) {
       this->timer->start();
     }
-  }
-  else
-  {
+  } else {
     this->stopAlign();
   }
 }
 
-void AlignWidget::widgetKeyPress(QKeyEvent *key)
+void AlignWidget::widgetKeyPress(QKeyEvent* key)
 {
-  vtkVector2i &offset = this->offsets[this->currentSlice->value()];
+  vtkVector2i& offset = this->offsets[this->currentSlice->value()];
   bool updateTable = false;
-  switch (key->key())
-  {
-  case Qt::Key_Left:
-    offset[0] -= 1;
-    updateTable = true;
-    break;
-  case Qt::Key_Right:
-    offset[0] += 1;
-    updateTable = true;
-    break;
-  case Qt::Key_Up:
-    offset[1] += 1;
-    updateTable = true;
-    break;
-  case Qt::Key_Down:
-    offset[1] -= 1;
-    updateTable = true;
-    break;
-  case Qt::Key_K:
-  case Qt::Key_S:
-    changeSlice(1);
-    return;
-  case Qt::Key_J:
-  case Qt::Key_A:
-    changeSlice(-1);
-    return;
-  default:
-    // Nothing
-    break;
+  switch (key->key()) {
+    case Qt::Key_Left:
+      offset[0] -= 1;
+      updateTable = true;
+      break;
+    case Qt::Key_Right:
+      offset[0] += 1;
+      updateTable = true;
+      break;
+    case Qt::Key_Up:
+      offset[1] += 1;
+      updateTable = true;
+      break;
+    case Qt::Key_Down:
+      offset[1] -= 1;
+      updateTable = true;
+      break;
+    case Qt::Key_K:
+    case Qt::Key_S:
+      changeSlice(1);
+      return;
+    case Qt::Key_J:
+    case Qt::Key_A:
+      changeSlice(-1);
+      return;
+    default:
+      // Nothing
+      break;
   }
-  if (updateTable)
-  {
+  if (updateTable) {
     int sliceNumber = this->currentSlice->value();
-    QTableWidgetItem *item = this->offsetTable->item(sliceNumber, 1);
+    QTableWidgetItem* item = this->offsetTable->item(sliceNumber, 1);
     item->setData(Qt::DisplayRole, QString::number(offset[0]));
     item = this->offsetTable->item(sliceNumber, 2);
     item->setData(Qt::DisplayRole, QString::number(offset[1]));
@@ -724,8 +694,7 @@ void AlignWidget::widgetKeyPress(QKeyEvent *key)
 
 void AlignWidget::changeMode(int mode)
 {
-  if (this->modes.length() == 0)
-  {
+  if (this->modes.length() == 0) {
     return;
   }
   this->modes[this->currentMode]->removeFromView(this->renderer.Get());
@@ -738,23 +707,20 @@ void AlignWidget::changeMode(int mode)
 void AlignWidget::applySliceOffset(int sliceNumber)
 {
   vtkVector2i offset(0, 0);
-  if (sliceNumber == -1)
-  {
+  if (sliceNumber == -1) {
     sliceNumber = this->currentSlice->value();
     offset = this->offsets[this->currentSlice->value()];
-    this->currentSliceOffset->setText(QString("Image shift (Shortcut: arrow keys): (%1, %2)").arg(offset[0])
+    this->currentSliceOffset->setText(
+      QString("Image shift (Shortcut: arrow keys): (%1, %2)")
+        .arg(offset[0])
         .arg(offset[1]));
-  }
-  else
-  {
+  } else {
     offset = this->offsets[sliceNumber];
   }
-  for (int i = 0; i < this->modes.length(); ++i)
-  {
+  for (int i = 0; i < this->modes.length(); ++i) {
     this->modes[i]->currentSliceUpdated(sliceNumber, offset);
   }
-  if (this->modes.length() > 0)
-  {
+  if (this->modes.length() > 0) {
     this->modes[this->currentMode]->update();
   }
   this->widget->update();
@@ -763,13 +729,11 @@ void AlignWidget::applySliceOffset(int sliceNumber)
 void AlignWidget::startAlign()
 {
   // frame rate of 0 means nothing ever changes, which is equivalent to stopping
-  if (this->frameRate <= 0)
-  {
+  if (this->frameRate <= 0) {
     this->stopAlign();
     return;
   }
-  if (!this->timer->isActive())
-  {
+  if (!this->timer->isActive()) {
     this->timer->start(1000.0 / this->frameRate);
   }
   this->startButton->setEnabled(false);
@@ -783,8 +747,7 @@ void AlignWidget::stopAlign()
   this->startButton->setEnabled(true);
   this->stopButton->setEnabled(false);
   this->timer->stop();
-  for (int i = 0; i < this->modes.size(); ++i)
-  {
+  for (int i = 0; i < this->modes.size(); ++i) {
     this->modes[i]->timerStopped();
   }
 }
@@ -792,35 +755,35 @@ void AlignWidget::stopAlign()
 void AlignWidget::zoomToSelectionStart()
 {
   this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-      this->zoomToBoxInteractorStyle.Get());
-  this->observerId = this->widget->GetRenderWindow()->GetInteractor()->AddObserver(
-      vtkCommand::LeftButtonReleaseEvent, this, &AlignWidget::zoomToSelectionFinished);
+    this->zoomToBoxInteractorStyle.Get());
+  this->observerId =
+    this->widget->GetRenderWindow()->GetInteractor()->AddObserver(
+      vtkCommand::LeftButtonReleaseEvent, this,
+      &AlignWidget::zoomToSelectionFinished);
 }
 
 void AlignWidget::zoomToSelectionFinished()
 {
-  this->widget->GetRenderWindow()->GetInteractor()
-      ->RemoveObserver(this->observerId);
+  this->widget->GetRenderWindow()->GetInteractor()->RemoveObserver(
+    this->observerId);
   this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
-      this->defaultInteractorStyle.Get());
+    this->defaultInteractorStyle.Get());
 }
 
 void AlignWidget::applyChangesToOperator()
 {
-  if (this->Op)
-  {
+  if (this->Op) {
     this->Op->setAlignOffsets(this->offsets);
   }
 }
 
 void AlignWidget::resetCamera()
 {
-  if (this->modes.length() == 0)
-  {
+  if (this->modes.length() == 0) {
     return;
   }
-  vtkCamera *camera = this->renderer->GetActiveCamera();
-  double *bounds = this->modes[this->currentMode]->bounds();
+  vtkCamera* camera = this->renderer->GetActiveCamera();
+  double* bounds = this->modes[this->currentMode]->bounds();
   vtkVector3d point;
   point[0] = 0.5 * (bounds[0] + bounds[1]);
   point[1] = 0.5 * (bounds[2] + bounds[3]);
@@ -831,12 +794,9 @@ void AlignWidget::resetCamera()
   camera->SetViewUp(0.0, 1.0, 0.0);
   camera->ParallelProjectionOn();
   double parallelScale;
-  if (bounds[1] - bounds[0] < bounds[3] - bounds[2])
-  {
+  if (bounds[1] - bounds[0] < bounds[3] - bounds[2]) {
     parallelScale = 0.5 * (bounds[3] - bounds[2] + 1);
-  }
-  else
-  {
+  } else {
     parallelScale = 0.5 * (bounds[1] - bounds[0] + 1);
   }
   camera->SetParallelScale(parallelScale);
@@ -852,16 +812,13 @@ void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
   QString str = item->data(Qt::DisplayRole).toString();
   bool ok;
   int offset = str.toInt(&ok);
-  if (ok)
-  {
+  if (ok) {
     this->offsets[slice][offsetComponent - 1] = offset;
   }
-  if (slice == this->currentSlice->value())
-  {
+  if (slice == this->currentSlice->value()) {
     this->applySliceOffset();
   }
-  if (slice == this->referenceSlice)
-  {
+  if (slice == this->referenceSlice) {
     this->applySliceOffset(this->referenceSlice);
   }
 }
@@ -884,55 +841,43 @@ void AlignWidget::applyCurrentPreset()
   pqPresetDialog* dialog = qobject_cast<pqPresetDialog*>(this->sender());
   Q_ASSERT(dialog);
 
-  if (this->modes.length() == 0)
-  {
+  if (this->modes.length() == 0) {
     return;
   }
 
   vtkSMProxy* lut = this->modes[this->currentMode]->getLUT();
-  if (!lut)
-  {
+  if (!lut) {
     return;
   }
 
-  if (dialog->loadColors() || dialog->loadOpacities())
-  {
-    vtkSMProxy* sof = vtkSMPropertyHelper(lut,
-                                          "ScalarOpacityFunction",
-                                          true).GetAsProxy();
-    if (dialog->loadColors())
-    {
+  if (dialog->loadColors() || dialog->loadOpacities()) {
+    vtkSMProxy* sof =
+      vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
+    if (dialog->loadColors()) {
       vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
                                               !dialog->usePresetRange());
     }
-    if (dialog->loadOpacities())
-    {
-      if (sof)
-      {
-        vtkSMTransferFunctionProxy::ApplyPreset(
-          sof, dialog->currentPreset(), !dialog->usePresetRange());
-      }
-      else
-      {
-        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not present.");
+    if (dialog->loadOpacities()) {
+      if (sof) {
+        vtkSMTransferFunctionProxy::ApplyPreset(sof, dialog->currentPreset(),
+                                                !dialog->usePresetRange());
+      } else {
+        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not "
+                 "present.");
       }
     }
 
     // We need to take extra care to avoid the color and opacity function ranges
-    // from straying away from each other. This can happen if only one of them is
-    // getting a preset and we're using the preset range.
-    if (dialog->usePresetRange()
-        && (dialog->loadColors() ^ dialog->loadOpacities()) && sof)
-    {
+    // from straying away from each other. This can happen if only one of them
+    // is getting a preset and we're using the preset range.
+    if (dialog->usePresetRange() &&
+        (dialog->loadColors() ^ dialog->loadOpacities()) && sof) {
       double range[2];
-      if (dialog->loadColors()
-          && vtkSMTransferFunctionProxy::GetRange(lut, range))
-      {
+      if (dialog->loadColors() &&
+          vtkSMTransferFunctionProxy::GetRange(lut, range)) {
         vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range);
-      }
-      else if (dialog->loadOpacities()
-               && vtkSMTransferFunctionProxy::GetRange(sof, range))
-      {
+      } else if (dialog->loadOpacities() &&
+                 vtkSMTransferFunctionProxy::GetRange(sof, range)) {
         vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
       }
     }
@@ -940,5 +885,4 @@ void AlignWidget::applyCurrentPreset()
     this->widget->GetRenderWindow()->Render();
   }
 }
-
 }

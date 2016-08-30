@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "vtkPython.h"
 #include "OperatorPython.h"
+#include "vtkPython.h"
 
 #include <QPointer>
 #include <QtDebug>
@@ -32,55 +32,52 @@
 
 #include "ui_EditPythonOperatorWidget.h"
 
-namespace
-{
+namespace {
 
-  bool CheckForError()
+bool CheckForError()
+{
+  PyObject* exception = PyErr_Occurred();
+  if (exception) {
+    PyErr_Print();
+    PyErr_Clear();
+    return true;
+  }
+  return false;
+}
+
+class EditPythonOperatorWidget : public tomviz::EditOperatorWidget
+{
+  Q_OBJECT
+  typedef tomviz::EditOperatorWidget Superclass;
+
+public:
+  EditPythonOperatorWidget(QWidget* p, tomviz::OperatorPython* o)
+    : Superclass(p), Op(o), Ui()
   {
-    PyObject *exception = PyErr_Occurred();
-    if (exception)
-    {
-      PyErr_Print();
-      PyErr_Clear();
-      return true;
+    this->Ui.setupUi(this);
+    this->Ui.name->setText(o->label());
+    if (!o->script().isEmpty()) {
+      this->Ui.script->setPlainText(o->script());
     }
-    return false;
+    new pqPythonSyntaxHighlighter(this->Ui.script, this);
+  }
+  void applyChangesToOperator() override
+  {
+    if (this->Op) {
+      this->Op->setLabel(this->Ui.name->text());
+      this->Op->setScript(this->Ui.script->toPlainText());
+    }
   }
 
-  class EditPythonOperatorWidget : public tomviz::EditOperatorWidget
-  {
-    Q_OBJECT
-    typedef tomviz::EditOperatorWidget Superclass;
-  public:
-    EditPythonOperatorWidget(QWidget *p, tomviz::OperatorPython *o)
-      : Superclass(p), Op(o), Ui()
-    {
-      this->Ui.setupUi(this);
-      this->Ui.name->setText(o->label());
-      if (!o->script().isEmpty())
-      {
-        this->Ui.script->setPlainText(o->script());
-      }
-      new pqPythonSyntaxHighlighter(this->Ui.script, this);
-    }
-    void applyChangesToOperator() override
-    {
-      if (this->Op)
-      {
-        this->Op->setLabel(this->Ui.name->text());
-        this->Op->setScript(this->Ui.script->toPlainText());
-      }
-    }
-  private:
-    QPointer<tomviz::OperatorPython> Op;
-    Ui::EditPythonOperatorWidget Ui;
-  };
+private:
+  QPointer<tomviz::OperatorPython> Op;
+  Ui::EditPythonOperatorWidget Ui;
+};
 
 #include "OperatorPython.moc"
 }
 
-namespace tomviz
-{
+namespace tomviz {
 
 class OperatorPython::OPInternals
 {
@@ -90,15 +87,14 @@ public:
   vtkSmartPyObject TransformMethod;
 };
 
-OperatorPython::OperatorPython(QObject* parentObject) :
-  Superclass(parentObject),
-  Internals(new OperatorPython::OPInternals()),
-  Label("Python Operator")
+OperatorPython::OperatorPython(QObject* parentObject)
+  : Superclass(parentObject), Internals(new OperatorPython::OPInternals()),
+    Label("Python Operator")
 {
   vtkPythonInterpreter::Initialize();
-  this->Internals->OperatorModule.TakeReference(PyImport_ImportModule("tomviz.utils"));
-  if (!this->Internals->OperatorModule)
-  {
+  this->Internals->OperatorModule.TakeReference(
+    PyImport_ImportModule("tomviz.utils"));
+  if (!this->Internals->OperatorModule) {
     qCritical() << "Failed to import tomviz.utils module.";
     CheckForError();
   }
@@ -170,29 +166,26 @@ const QString& OperatorPython::JSONDescription() const
 
 void OperatorPython::setScript(const QString& str)
 {
-  if (this->Script != str)
-  {
+  if (this->Script != str) {
     this->Script = str;
     this->Internals->Code.TakeReference(nullptr);
     this->Internals->TransformMethod.TakeReference(nullptr);
 
     this->Internals->Code.TakeReference(Py_CompileString(
-        this->Script.toLatin1().data(),
-        this->label().toLatin1().data(),
-        Py_file_input/*Py_eval_input*/));
-    if (!this->Internals->Code)
-    {
+      this->Script.toLatin1().data(), this->label().toLatin1().data(),
+      Py_file_input /*Py_eval_input*/));
+    if (!this->Internals->Code) {
       CheckForError();
-      qCritical("Invalid script. Please check the traceback message for details");
+      qCritical(
+        "Invalid script. Please check the traceback message for details");
       return;
     }
 
     vtkSmartPyObject module;
     module.TakeReference(PyImport_ExecCodeModule(
-        QString("tomviz_%1").arg(this->label()).toLatin1().data(),
-        this->Internals->Code));
-    if (!module)
-    {
+      QString("tomviz_%1").arg(this->label()).toLatin1().data(),
+      this->Internals->Code));
+    if (!module) {
       CheckForError();
       qCritical("Failed to create module.");
       return;
@@ -200,8 +193,7 @@ void OperatorPython::setScript(const QString& str)
 
     this->Internals->TransformMethod.TakeReference(
       PyObject_GetAttrString(module, "transform_scalars"));
-    if (!this->Internals->TransformMethod)
-    {
+    if (!this->Internals->TransformMethod) {
       CheckForError();
       qWarning("Script doesn't have any 'transform_scalars' function.");
       return;
@@ -213,9 +205,10 @@ void OperatorPython::setScript(const QString& str)
 
 bool OperatorPython::applyTransform(vtkDataObject* data)
 {
-  if (this->Script.isEmpty()) { return true; }
-  if (!this->Internals->OperatorModule || !this->Internals->TransformMethod)
-  {
+  if (this->Script.isEmpty()) {
+    return true;
+  }
+  if (!this->Internals->OperatorModule || !this->Internals->TransformMethod) {
     return true;
   }
 
@@ -226,10 +219,9 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
 
   vtkSmartPyObject result;
-  result.TakeReference(PyObject_Call(this->Internals->TransformMethod, args,
-                                     nullptr));
-  if (!result)
-  {
+  result.TakeReference(
+    PyObject_Call(this->Internals->TransformMethod, args, nullptr));
+  if (!result) {
     qCritical("Failed to execute the script.");
     CheckForError();
     return false;
@@ -242,17 +234,20 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   PyObject* outputDict = result.GetPointer();
   if (PyDict_Check(outputDict)) {
     for (int i = 0; i < numberOfResults(); ++i) {
-      OperatorResult *operatorResult = resultAt(i);
+      OperatorResult* operatorResult = resultAt(i);
       std::string resultName = operatorResult->name().toStdString();
-      PyObject* pyDataObject = PyDict_GetItemString(outputDict, resultName.c_str());
+      PyObject* pyDataObject =
+        PyDict_GetItemString(outputDict, resultName.c_str());
       if (pyDataObject) {
-        vtkObjectBase* vtkobject = vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
+        vtkObjectBase* vtkobject =
+          vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
         if (vtkobject) {
           setResult(i, vtkDataObject::SafeDownCast(vtkobject));
         }
       } else {
-        qCritical() << "No result named" << ("'" + resultName + "'").c_str()
-                    << "defined in output dictionary from 'transform_scalars' script.";
+        qCritical()
+          << "No result named" << ("'" + resultName + "'").c_str()
+          << "defined in output dictionary from 'transform_scalars' script.";
       }
     }
   }
@@ -283,9 +278,8 @@ bool OperatorPython::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
-EditOperatorWidget *OperatorPython::getEditorContents(QWidget *p)
+EditOperatorWidget* OperatorPython::getEditorContents(QWidget* p)
 {
   return new EditPythonOperatorWidget(p, this);
 }
-
 }

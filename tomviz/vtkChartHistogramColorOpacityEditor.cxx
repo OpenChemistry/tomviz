@@ -17,9 +17,9 @@
 
 #include <vtkAxis.h>
 #include <vtkChart.h>
+#include <vtkColorTransferControlPointsItem.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkColorTransferFunctionItem.h>
-#include <vtkColorTransferControlPointsItem.h>
 #include <vtkContextItem.h>
 #include <vtkContextScene.h>
 #include <vtkObjectFactory.h>
@@ -37,9 +37,8 @@ public:
   PIMPL() : Geometry(0, 0), NeedsUpdate(true) {}
   ~PIMPL() {}
 
-  void ForwardEvent(vtkObject* vtkNotUsed(object),
-                    unsigned long eventId,
-                    void * vtkNotUsed(data))
+  void ForwardEvent(vtkObject* vtkNotUsed(object), unsigned long eventId,
+                    void* vtkNotUsed(data))
   {
     this->Self->InvokeEvent(eventId);
   }
@@ -83,12 +82,17 @@ vtkChartHistogramColorOpacityEditor::vtkChartHistogramColorOpacityEditor()
   this->ColorTransferControlPointsItem->SetEndPointsRemovable(false);
   this->ColorTransferControlPointsItem->SelectableOff();
 
-  this->ColorTransferFunctionChart->AddPlot(this->ColorTransferFunctionItem.Get());
-  this->ColorTransferFunctionChart->SetPlotCorner(this->ColorTransferFunctionItem.Get(), 1);
-  this->ColorTransferFunctionChart->AddPlot(this->ColorTransferControlPointsItem.Get());
-  this->ColorTransferFunctionChart->SetPlotCorner(this->ColorTransferControlPointsItem.Get(), 1);
+  this->ColorTransferFunctionChart->AddPlot(
+    this->ColorTransferFunctionItem.Get());
+  this->ColorTransferFunctionChart->SetPlotCorner(
+    this->ColorTransferFunctionItem.Get(), 1);
+  this->ColorTransferFunctionChart->AddPlot(
+    this->ColorTransferControlPointsItem.Get());
+  this->ColorTransferFunctionChart->SetPlotCorner(
+    this->ColorTransferControlPointsItem.Get(), 1);
 
-  vtkAxis* bottomAxis = this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
+  vtkAxis* bottomAxis =
+    this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
   bottomAxis->SetTitle("");
   bottomAxis->SetBehavior(vtkAxis::FIXED);
   bottomAxis->SetVisible(false);
@@ -106,13 +110,13 @@ vtkChartHistogramColorOpacityEditor::vtkChartHistogramColorOpacityEditor()
   this->AddItem(this->ColorTransferFunctionChart.Get());
 
   // Forward events from internal charts to observers of this object
-  this->HistogramChart->
-    AddObserver(vtkCommand::CursorChangedEvent, this->Private, &PIMPL::ForwardEvent);
-  this->ColorTransferControlPointsItem->
-    AddObserver(vtkCommand::EndEvent, this->Private, &PIMPL::ForwardEvent);
-  this->ColorTransferControlPointsItem->
-    AddObserver(vtkControlPointsItem::CurrentPointEditEvent,
-                this->Private, &PIMPL::ForwardEvent);
+  this->HistogramChart->AddObserver(vtkCommand::CursorChangedEvent,
+                                    this->Private, &PIMPL::ForwardEvent);
+  this->ColorTransferControlPointsItem->AddObserver(
+    vtkCommand::EndEvent, this->Private, &PIMPL::ForwardEvent);
+  this->ColorTransferControlPointsItem->AddObserver(
+    vtkControlPointsItem::CurrentPointEditEvent, this->Private,
+    &PIMPL::ForwardEvent);
 }
 
 vtkChartHistogramColorOpacityEditor::~vtkChartHistogramColorOpacityEditor()
@@ -120,9 +124,8 @@ vtkChartHistogramColorOpacityEditor::~vtkChartHistogramColorOpacityEditor()
   delete this->Private;
 }
 
-void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(vtkTable* table,
-                                                                const char* xAxisColumn,
-                                                                const char* yAxisColumn)
+void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(
+  vtkTable* table, const char* xAxisColumn, const char* yAxisColumn)
 {
   this->HistogramChart->SetHistogramInputData(table, xAxisColumn, yAxisColumn);
 
@@ -132,7 +135,8 @@ void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(vtkTable* table,
   double axisRange[2];
   histogramBottomAxis->GetRange(axisRange);
 
-  vtkAxis* bottomAxis = this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
+  vtkAxis* bottomAxis =
+    this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
   bottomAxis->SetRange(axisRange);
 
   // The data range may change and cause the labels to change. Hence, update
@@ -140,7 +144,8 @@ void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(vtkTable* table,
   this->Private->NeedsUpdate = true;
 }
 
-void vtkChartHistogramColorOpacityEditor::SetColorTransferFunction(vtkColorTransferFunction* ctf)
+void vtkChartHistogramColorOpacityEditor::SetColorTransferFunction(
+  vtkColorTransferFunction* ctf)
 {
   this->HistogramChart->SetLookupTable(ctf);
   this->ColorTransferFunctionItem->SetColorTransferFunction(ctf);
@@ -152,12 +157,14 @@ void vtkChartHistogramColorOpacityEditor::SetScalarVisibility(bool visible)
   this->HistogramChart->SetScalarVisibility(visible);
 }
 
-void vtkChartHistogramColorOpacityEditor::SelectColorArray(const char* arrayName)
+void vtkChartHistogramColorOpacityEditor::SelectColorArray(
+  const char* arrayName)
 {
   this->HistogramChart->SelectColorArray(arrayName);
 }
 
-void vtkChartHistogramColorOpacityEditor::SetOpacityFunction(vtkPiecewiseFunction* opacityFunction)
+void vtkChartHistogramColorOpacityEditor::SetOpacityFunction(
+  vtkPiecewiseFunction* opacityFunction)
 {
   this->HistogramChart->SetOpacityFunction(opacityFunction);
 }
@@ -167,18 +174,18 @@ vtkAxis* vtkChartHistogramColorOpacityEditor::GetHistogramAxis(int axis)
   return this->HistogramChart->GetAxis(axis);
 }
 
-bool vtkChartHistogramColorOpacityEditor::GetCurrentControlPointColor(double rgb[3])
+bool vtkChartHistogramColorOpacityEditor::GetCurrentControlPointColor(
+  double rgb[3])
 {
   vtkColorTransferFunction* ctf =
     this->ColorTransferControlPointsItem->GetColorTransferFunction();
-  if (!ctf)
-  {
+  if (!ctf) {
     return false;
   }
 
-  vtkIdType currentIdx = this->ColorTransferControlPointsItem->GetCurrentPoint();
-  if (currentIdx < 0)
-  {
+  vtkIdType currentIdx =
+    this->ColorTransferControlPointsItem->GetCurrentPoint();
+  if (currentIdx < 0) {
     return false;
   }
 
@@ -191,18 +198,18 @@ bool vtkChartHistogramColorOpacityEditor::GetCurrentControlPointColor(double rgb
   return true;
 }
 
-void vtkChartHistogramColorOpacityEditor::SetCurrentControlPointColor(const double rgb[3])
+void vtkChartHistogramColorOpacityEditor::SetCurrentControlPointColor(
+  const double rgb[3])
 {
   vtkColorTransferFunction* ctf =
     this->ColorTransferControlPointsItem->GetColorTransferFunction();
-  if (!ctf)
-  {
+  if (!ctf) {
     return;
   }
 
-  vtkIdType currentIdx = this->ColorTransferControlPointsItem->GetCurrentPoint();
-  if (currentIdx < 0)
-  {
+  vtkIdType currentIdx =
+    this->ColorTransferControlPointsItem->GetCurrentPoint();
+  if (currentIdx < 0) {
     return;
   }
 
@@ -226,8 +233,7 @@ bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
   int sceneHeight = scene->GetSceneHeight();
   if (this->Private->NeedsUpdate ||
       sceneWidth != this->Private->Geometry.GetX() ||
-      sceneHeight != this->Private->Geometry.GetY())
-  {
+      sceneHeight != this->Private->Geometry.GetY()) {
     this->Private->NeedsUpdate = false;
 
     // Update the geometry size cache
@@ -239,8 +245,9 @@ bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
 
     // Add the width of the left axis to x to make room for y labels
     this->GetHistogramAxis(vtkAxis::LEFT)->Update();
-    float leftAxisWidth = this->GetHistogramAxis(vtkAxis::LEFT)->
-      GetBoundingRect(painter).GetWidth();
+    float leftAxisWidth = this->GetHistogramAxis(vtkAxis::LEFT)
+                            ->GetBoundingRect(painter)
+                            .GetWidth();
     x += leftAxisWidth;
 
     float colorBarThickness = 20;
@@ -249,11 +256,13 @@ bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
     vtkRectf colorTransferFunctionChartSize(x, y, plotWidth, colorBarThickness);
     this->ColorTransferFunctionChart->SetSize(colorTransferFunctionChartSize);
 
-    float bottomAxisHeight = this->GetHistogramAxis(vtkAxis::BOTTOM)->
-      GetBoundingRect(painter).GetHeight();
+    float bottomAxisHeight = this->GetHistogramAxis(vtkAxis::BOTTOM)
+                               ->GetBoundingRect(painter)
+                               .GetHeight();
     float verticalMargin = bottomAxisHeight;
     y += colorBarThickness + verticalMargin - 5;
-    vtkRectf histogramChart(x, y, plotWidth, sceneHeight - y - this->Borders[vtkAxis::TOP]);
+    vtkRectf histogramChart(x, y, plotWidth,
+                            sceneHeight - y - this->Borders[vtkAxis::TOP]);
     this->HistogramChart->SetSize(histogramChart);
   }
 

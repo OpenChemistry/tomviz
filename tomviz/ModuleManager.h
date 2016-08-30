@@ -27,8 +27,7 @@ class vtkSMProxyLocator;
 class vtkSMRepresentationProxy;
 class QDir;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 class Module;
 
@@ -51,10 +50,8 @@ public:
   {
     QList<T> modulesT;
     QList<Module*> modules = this->findModulesGeneric(dataSource, view);
-    foreach (Module* module, modules)
-    {
-      if (T moduleT = qobject_cast<T>(module))
-      {
+    foreach (Module* module, modules) {
+      if (T moduleT = qobject_cast<T>(module)) {
         modulesT.push_back(moduleT);
       }
     }
@@ -62,7 +59,8 @@ public:
   }
 
   /// save the application state as xml.
-  /// Parameter stateDir: the location to use as the base of all relative file paths
+  /// Parameter stateDir: the location to use as the base of all relative file
+  /// paths
   bool serialize(pugi::xml_node& ns, const QDir& stateDir) const;
   bool deserialize(const pugi::xml_node& ns, const QDir& stateDir);
 
@@ -99,17 +97,15 @@ signals:
 
 private:
   Q_DISABLE_COPY(ModuleManager)
-  ModuleManager(QObject* parent=nullptr);
+  ModuleManager(QObject* parent = nullptr);
   ~ModuleManager();
 
-  QList<Module*> findModulesGeneric(
-    DataSource* dataSource, vtkSMViewProxy* view);
+  QList<Module*> findModulesGeneric(DataSource* dataSource,
+                                    vtkSMViewProxy* view);
 
   class MMInternals;
   QScopedPointer<MMInternals> Internals;
-
 };
-
 }
 
 #endif

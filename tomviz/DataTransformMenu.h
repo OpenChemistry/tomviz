@@ -23,8 +23,7 @@
 class QMainWindow;
 class QMenu;
 
-namespace tomviz
-{
+namespace tomviz {
 
 // DataTransformMenu is the manager for the Data Transform menu.
 // It is responsible for enabling and disabling Data Transforms based
@@ -51,7 +50,6 @@ private:
   class DTInternals;
   QScopedPointer<DTInternals> Internals;
 };
-
 }
 
 #endif

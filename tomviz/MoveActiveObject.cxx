@@ -37,13 +37,11 @@
 #include "vtkWidgetEvent.h"
 #include "vtkWidgetEventTranslator.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
-MoveActiveObject::MoveActiveObject(QObject *p)
-  : Superclass(p)
+MoveActiveObject::MoveActiveObject(QObject* p) : Superclass(p)
 {
-  ActiveObjects &activeObjs = ActiveObjects::instance();
+  ActiveObjects& activeObjs = ActiveObjects::instance();
   this->BoxRep->SetPlaceFactor(1.0);
   this->BoxRep->HandlesOff();
 
@@ -52,13 +50,15 @@ MoveActiveObject::MoveActiveObject(QObject *p)
   this->BoxWidget->SetRotationEnabled(0);
   this->BoxWidget->SetMoveFacesEnabled(0);
   this->BoxWidget->SetRepresentation(this->BoxRep.GetPointer());
-  vtkWidgetEventTranslator *translator = this->BoxWidget->GetEventTranslator();
+  vtkWidgetEventTranslator* translator = this->BoxWidget->GetEventTranslator();
   translator->RemoveTranslation(vtkCommand::LeftButtonPressEvent);
   translator->RemoveTranslation(vtkCommand::LeftButtonReleaseEvent);
-  translator->SetTranslation(vtkCommand::LeftButtonPressEvent, vtkEvent::NoModifier,
-                             0, 0, NULL, vtkWidgetEvent::Translate);
-  translator->SetTranslation(vtkCommand::LeftButtonReleaseEvent, vtkEvent::NoModifier,
-                             0, 0, NULL, vtkWidgetEvent::EndTranslate);
+  translator->SetTranslation(vtkCommand::LeftButtonPressEvent,
+                             vtkEvent::NoModifier, 0, 0, NULL,
+                             vtkWidgetEvent::Translate);
+  translator->SetTranslation(vtkCommand::LeftButtonReleaseEvent,
+                             vtkEvent::NoModifier, 0, 0, NULL,
+                             vtkWidgetEvent::EndTranslate);
   this->BoxWidget->SetPriority(1);
 
   this->connect(&activeObjs, SIGNAL(dataSourceActivated(DataSource*)),
@@ -67,83 +67,73 @@ MoveActiveObject::MoveActiveObject(QObject *p)
                 SLOT(onViewChanged(vtkSMViewProxy*)));
   this->connect(&activeObjs, SIGNAL(moveObjectsModeChanged(bool)),
                 SLOT(setMoveEnabled(bool)));
-  this->EventLink->Connect(this->BoxWidget.GetPointer(), vtkCommand::InteractionEvent,
-                           this, SLOT(interactionEnd(vtkObject*)));
-  for (int i = 0; i < 3; ++i)
-  {
+  this->EventLink->Connect(this->BoxWidget.GetPointer(),
+                           vtkCommand::InteractionEvent, this,
+                           SLOT(interactionEnd(vtkObject*)));
+  for (int i = 0; i < 3; ++i) {
     this->DataLocation[i] = 0.0;
   }
   this->MoveEnabled = false;
-
 }
 
 MoveActiveObject::~MoveActiveObject()
 {
 }
 
-void MoveActiveObject::updateForNewDataSource(DataSource *source)
+void MoveActiveObject::updateForNewDataSource(DataSource* source)
 {
-  vtkRenderWindowInteractor *iren = this->BoxWidget->GetInteractor();
-  if (!source)
-  {
+  vtkRenderWindowInteractor* iren = this->BoxWidget->GetInteractor();
+  if (!source) {
     this->BoxWidget->EnabledOff();
-    if (iren)
-    {
+    if (iren) {
       iren->GetRenderWindow()->Render();
     }
     return;
   }
-  vtkDataObject *data = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject())->GetOutputDataObject(0);
+  vtkDataObject* data =
+    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject())
+      ->GetOutputDataObject(0);
   double dataBounds[6];
   vtkImageData::SafeDownCast(data)->GetBounds(dataBounds);
-  const double *displayPosition = source->displayPosition();
-  for (int i = 0; i < 3; ++i)
-  {
+  const double* displayPosition = source->displayPosition();
+  for (int i = 0; i < 3; ++i) {
     this->DataLocation[i] = dataBounds[i * 2];
     dataBounds[2 * i] += displayPosition[i];
     dataBounds[2 * i + 1] += displayPosition[i];
   }
   this->BoxRep->PlaceWidget(dataBounds);
   this->BoxWidget->EnabledOn();
-  if (iren)
-  {
+  if (iren) {
     iren->GetRenderWindow()->Render();
   }
 }
 
 void MoveActiveObject::hideMoveObjectWidget()
 {
-  vtkRenderWindowInteractor *iren = this->BoxWidget->GetInteractor();
+  vtkRenderWindowInteractor* iren = this->BoxWidget->GetInteractor();
   this->BoxWidget->EnabledOff();
-  if (iren)
-  {
+  if (iren) {
     iren->GetRenderWindow()->Render();
   }
 }
 
-void MoveActiveObject::onViewChanged(vtkSMViewProxy *view)
+void MoveActiveObject::onViewChanged(vtkSMViewProxy* view)
 {
-  if (view && view->GetRenderWindow())
-  {
-    vtkRenderWindowInteractor *iren =
-      view->GetRenderWindow()->GetInteractor();
+  if (view && view->GetRenderWindow()) {
+    vtkRenderWindowInteractor* iren = view->GetRenderWindow()->GetInteractor();
     this->BoxWidget->SetInteractor(iren);
     view->GetRenderWindow()->Render();
-  }
-  else
-  {
-    vtkRenderWindowInteractor *iren = this->BoxWidget->GetInteractor();
+  } else {
+    vtkRenderWindowInteractor* iren = this->BoxWidget->GetInteractor();
     this->BoxWidget->SetInteractor(nullptr);
     this->BoxWidget->EnabledOff();
-    if (iren)
-    {
+    if (iren) {
       iren->GetRenderWindow()->Render();
     }
   }
 }
 
-void MoveActiveObject::interactionEnd(vtkObject *caller)
+void MoveActiveObject::interactionEnd(vtkObject* caller)
 {
   Q_UNUSED(caller);
 
@@ -151,33 +141,28 @@ void MoveActiveObject::interactionEnd(vtkObject *caller)
 
   double displayPosition[3];
 
-  for (int i = 0; i < 3; ++i)
-  {
+  for (int i = 0; i < 3; ++i) {
     displayPosition[i] = boxBounds[i * 2] - this->DataLocation[i];
   }
 
-  ActiveObjects::instance().activeDataSource()->setDisplayPosition(displayPosition);
+  ActiveObjects::instance().activeDataSource()->setDisplayPosition(
+    displayPosition);
 }
 
 void MoveActiveObject::setMoveEnabled(bool enabled)
 {
   this->MoveEnabled = enabled;
-  if (!enabled)
-  {
+  if (!enabled) {
     this->hideMoveObjectWidget();
-  }
-  else
-  {
+  } else {
     this->updateForNewDataSource(ActiveObjects::instance().activeDataSource());
   }
 }
 
-void MoveActiveObject::dataSourceActivated(DataSource *ds)
+void MoveActiveObject::dataSourceActivated(DataSource* ds)
 {
-  if (this->MoveEnabled)
-  {
+  if (this->MoveEnabled) {
     this->updateForNewDataSource(ds);
   }
 }
-
 }

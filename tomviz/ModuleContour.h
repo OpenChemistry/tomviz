@@ -21,8 +21,7 @@
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
-namespace tomviz
-{
+namespace tomviz {
 
 class ModuleContour : public Module
 {
@@ -31,10 +30,10 @@ class ModuleContour : public Module
   typedef Module Superclass;
 
 public:
-  ModuleContour(QObject* parent=nullptr);
+  ModuleContour(QObject* parent = nullptr);
   virtual ~ModuleContour();
 
-  QString label() const override { return  "Contour"; }
+  QString label() const override { return "Contour"; }
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
@@ -55,15 +54,15 @@ public:
     this->setIsoValues(values);
   }
 
-  bool isProxyPartOfModule(vtkSMProxy *proxy) override;
+  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy *proxy) override;
-  vtkSMProxy *getProxyForString(const std::string& str) override;
+  std::string getStringForProxy(vtkSMProxy* proxy) override;
+  vtkSMProxy* getProxyForString(const std::string& str) override;
 
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
-  vtkWeakPointer<vtkSMProxy>       ContourRepresentation;
+  vtkWeakPointer<vtkSMProxy> ContourRepresentation;
   vtkWeakPointer<vtkSMSourceProxy> ResampleFilter;
 
   class Private;
@@ -77,7 +76,6 @@ private slots:
 private:
   Q_DISABLE_COPY(ModuleContour)
 };
-
 }
 
 #endif

@@ -22,8 +22,7 @@
 class vtkSMSourceProxy;
 class vtkSMProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 
 /// A simple module to show the outline for any dataset.
 class ModuleOutline : public Module
@@ -33,10 +32,10 @@ class ModuleOutline : public Module
   typedef Module Superclass;
 
 public:
-  ModuleOutline(QObject* parent=nullptr);
+  ModuleOutline(QObject* parent = nullptr);
   virtual ~ModuleOutline();
 
-  QString label() const override { return  "Outline"; }
+  QString label() const override { return "Outline"; }
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
@@ -48,18 +47,17 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy *proxy) override;
+  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
 protected:
-  std::string getStringForProxy(vtkSMProxy *proxy) override;
-  vtkSMProxy *getProxyForString(const std::string& str) override;
+  std::string getStringForProxy(vtkSMProxy* proxy) override;
+  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private:
   Q_DISABLE_COPY(ModuleOutline)
   vtkWeakPointer<vtkSMSourceProxy> OutlineFilter;
   vtkWeakPointer<vtkSMProxy> OutlineRepresentation;
 };
-
 }
 
 #endif

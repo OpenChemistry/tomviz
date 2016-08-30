@@ -19,32 +19,30 @@
 #include "ActiveObjects.h"
 #include "Module.h"
 #include "ModuleManager.h"
-#include "pqView.h"
 #include "Utilities.h"
+#include "pqView.h"
 #include "vtkSMViewProxy.h"
 
-namespace
+namespace {
+void deleteLayoutContents(QLayout* layout)
 {
-  void deleteLayoutContents(QLayout *layout)
-  {
-    while (layout && layout->count() > 0)
-    {
-      QLayoutItem *item = layout->itemAt(0);
-      layout->removeItem(item);
-      if (item) {
-        if (item->widget()) {
-          delete item->widget();
-          delete item;
-        } else if (item->layout()) {
-          deleteLayoutContents(item->layout());
-          delete item->layout();
-        }
+  while (layout && layout->count() > 0) {
+    QLayoutItem* item = layout->itemAt(0);
+    layout->removeItem(item);
+    if (item) {
+      if (item->widget()) {
+          //-----------------------------------------------------------------------------
+        delete item->widget();
+        delete item;
+      } else if (item->layout()) {
+        deleteLayoutContents(item->layout());
+        delete item->layout();
       }
     }
   }
 }
-namespace tomviz
-{
+}
+namespace tomviz {
 
 class ModulePropertiesPanel::MPPInternals
 {
@@ -63,15 +61,16 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
   // Show active module in the "Module Properties" panel.
   this->connect(&ActiveObjects::instance(), SIGNAL(moduleChanged(Module*)),
                 SLOT(setModule(Module*)));
-  this->connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(viewChanged(vtkSMViewProxy*)),
                 SLOT(setView(vtkSMViewProxy*)));
 
-/* Disabled the search box for now, uncomment to enable again.
-  this->connect(ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
-                SLOT(updatePanel()));
-  this->connect(ui.SearchBox, SIGNAL(textChanged(const QString&)),
-                SLOT(updatePanel()));
-*/
+  /* Disabled the search box for now, uncomment to enable again.
+    this->connect(ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
+                  SLOT(updatePanel()));
+    this->connect(ui.SearchBox, SIGNAL(textChanged(const QString&)),
+                  SLOT(updatePanel()));
+  */
 
   this->connect(ui.DetachColorMap, SIGNAL(clicked(bool)),
                 SLOT(detachColorMap(bool)));
@@ -85,27 +84,22 @@ ModulePropertiesPanel::~ModulePropertiesPanel()
 
 void ModulePropertiesPanel::setModule(Module* module)
 {
-  if (module != this->Internals->ActiveModule)
-  {
-    if (this->Internals->ActiveModule)
-    {
+  if (module != this->Internals->ActiveModule) {
+    if (this->Internals->ActiveModule) {
       DataSource* dataSource = this->Internals->ActiveModule->dataSource();
-      QObject::disconnect(dataSource, SIGNAL(dataChanged()),
-                          this, SLOT(updatePanel()));
+      QObject::disconnect(dataSource, SIGNAL(dataChanged()), this,
+                          SLOT(updatePanel()));
       QObject::disconnect(this->Internals->ActiveModule, SIGNAL(renderNeeded()),
                           this, SLOT(render()));
     }
 
-    if (module)
-    {
+    if (module) {
       DataSource* dataSource = module->dataSource();
-      QObject::connect(dataSource, SIGNAL(dataChanged()),
-                       this, SLOT(updatePanel()));
-      QObject::connect(module, SIGNAL(renderNeeded()),
-                       this, SLOT(render()));
+      QObject::connect(dataSource, SIGNAL(dataChanged()), this,
+                       SLOT(updatePanel()));
+      QObject::connect(module, SIGNAL(renderNeeded()), this, SLOT(render()));
     }
   }
-
 
   this->Internals->ActiveModule = module;
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
@@ -114,11 +108,9 @@ void ModulePropertiesPanel::setModule(Module* module)
 
   ui.DetachColorMap->setVisible(false);
   ui.ColorByLabelMap->setVisible(false);
-  if (module)
-  {
+  if (module) {
     module->addToPanel(ui.PropertiesWidget);
-    if (module->isColorMapNeeded())
-    {
+    if (module->isColorMapNeeded()) {
       ui.DetachColorMap->setVisible(true);
       ui.DetachColorMap->setChecked(module->useDetachedColorMap());
       ui.ColorByLabelMap->setVisible(true);
@@ -137,8 +129,7 @@ void ModulePropertiesPanel::updatePanel()
 {
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
 
-  if (this->Internals->ActiveModule)
-  {
+  if (this->Internals->ActiveModule) {
     DataSource* dataSource = this->Internals->ActiveModule->dataSource();
     ui.ColorByLabelMap->setVisible(dataSource && dataSource->hasLabelMap());
   }
@@ -146,9 +137,9 @@ void ModulePropertiesPanel::updatePanel()
 
 void ModulePropertiesPanel::render()
 {
-  pqView* view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  if (view)
-  {
+  pqView* view =
+    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view) {
     view->render();
   }
 }
@@ -156,8 +147,7 @@ void ModulePropertiesPanel::render()
 void ModulePropertiesPanel::detachColorMap(bool val)
 {
   Module* module = this->Internals->ActiveModule;
-  if (module)
-  {
+  if (module) {
     module->setUseDetachedColorMap(val);
     this->setModule(module); // refreshes the module.
     this->render();
@@ -167,12 +157,10 @@ void ModulePropertiesPanel::detachColorMap(bool val)
 void ModulePropertiesPanel::colorByLabelMap(bool val)
 {
   Module* module = this->Internals->ActiveModule;
-  if (module)
-  {
+  if (module) {
     module->setColorByLabelMap(val);
     this->setModule(module); // refreshs the module.
     this->render();
   }
 }
-
 }

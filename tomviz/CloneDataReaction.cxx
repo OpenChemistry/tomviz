@@ -22,8 +22,7 @@
 
 #include <QInputDialog>
 
-namespace tomviz
-{
+namespace tomviz {
 
 CloneDataReaction::CloneDataReaction(QAction* parentObject)
   : Superclass(parentObject)
@@ -46,9 +45,8 @@ void CloneDataReaction::updateEnableState()
 
 DataSource* CloneDataReaction::clone(DataSource* toClone)
 {
-  toClone = toClone? toClone : ActiveObjects::instance().activeDataSource();
-  if (!toClone)
-  {
+  toClone = toClone ? toClone : ActiveObjects::instance().activeDataSource();
+  if (!toClone) {
     return nullptr;
   }
 
@@ -58,23 +56,19 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
         << "Transformed data only";
 
   bool user_okayed;
-  QString	selection = QInputDialog::getItem(
-    pqCoreUtilities::mainWidget(),
-    "Clone Data Options",
-    "Select what should be cloned",
-    items,
-    /*current=*/0,
-    /*editable=*/false,
-    /*ok*/&user_okayed);
+  QString selection =
+    QInputDialog::getItem(pqCoreUtilities::mainWidget(), "Clone Data Options",
+                          "Select what should be cloned", items,
+                          /*current=*/0,
+                          /*editable=*/false,
+                          /*ok*/ &user_okayed);
 
-  if (user_okayed)
-  {
-    DataSource* newClone = toClone->clone(selection == items[1],
-                                          selection == items[2]);
+  if (user_okayed) {
+    DataSource* newClone =
+      toClone->clone(selection == items[1], selection == items[2]);
     LoadDataReaction::dataSourceAdded(newClone);
     return newClone;
   }
   return nullptr;
 }
-
 }

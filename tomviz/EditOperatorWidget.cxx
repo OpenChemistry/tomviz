@@ -16,16 +16,13 @@
 
 #include "EditOperatorWidget.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
-EditOperatorWidget::EditOperatorWidget(QWidget* p)
-  : Superclass(p)
+EditOperatorWidget::EditOperatorWidget(QWidget* p) : Superclass(p)
 {
 }
 
 EditOperatorWidget::~EditOperatorWidget()
 {
 }
-
 }

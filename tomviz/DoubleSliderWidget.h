@@ -21,8 +21,7 @@
 class QSlider;
 class pqLineEdit;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class DoubleSliderWidget : public QWidget
 {
@@ -34,7 +33,7 @@ class DoubleSliderWidget : public QWidget
   Q_PROPERTY(int resolution READ resolution WRITE setResolution)
 
 public:
-  DoubleSliderWidget(bool showLineEdit, QWidget *parent = nullptr);
+  DoubleSliderWidget(bool showLineEdit, QWidget* parent = nullptr);
   ~DoubleSliderWidget();
 
   double value() const;
@@ -71,11 +70,10 @@ private:
   double Value;
   double Minimum;
   double Maximum;
-  QSlider *Slider;
-  pqLineEdit *LineEdit;
+  QSlider* Slider;
+  pqLineEdit* LineEdit;
   bool StrictRange;
   bool BlockUpdate;
 };
-
 }
 #endif

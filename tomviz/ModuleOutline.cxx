@@ -1,4 +1,4 @@
-/****************************************************************************** 
+/******************************************************************************
   This source file is part of the tomviz project.
 
   Copyright Kitware, Inc.
@@ -15,21 +15,20 @@
 #include "ModuleOutline.h"
 
 #include "DataSource.h"
-#include "pqProxiesWidget.h"
 #include "Utilities.h"
+#include "pqProxiesWidget.h"
 #include "vtkNew.h"
-#include "vtkSmartPointer.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
+#include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
-#include "vtkSMProperty.h"
+#include "vtkSmartPointer.h"
 
 #include <QHBoxLayout>
 
-namespace tomviz
-{
+namespace tomviz {
 
 ModuleOutline::ModuleOutline(QObject* parentObject) : Superclass(parentObject)
 {
@@ -45,11 +44,9 @@ QIcon ModuleOutline::icon() const
   return QIcon(":/pqWidgets/Icons/pqProbeLocation24.png");
 }
 
-bool ModuleOutline::initialize(DataSource* data,
-                               vtkSMViewProxy* vtkView)
+bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView))
-  {
+  if (!this->Superclass::initialize(data, vtkView)) {
     return false;
   }
 
@@ -69,12 +66,15 @@ bool ModuleOutline::initialize(DataSource* data,
   controller->RegisterPipelineProxy(this->OutlineFilter);
 
   // Create the representation for it.
-  this->OutlineRepresentation = controller->Show(this->OutlineFilter, 0, vtkView);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "Position").Set(data->displayPosition(), 3);
+  this->OutlineRepresentation =
+    controller->Show(this->OutlineFilter, 0, vtkView);
+  vtkSMPropertyHelper(this->OutlineRepresentation, "Position")
+    .Set(data->displayPosition(), 3);
   double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
-  vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor").Set(offWhite, 3);
+  vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor")
+    .Set(offWhite, 3);
   Q_ASSERT(this->OutlineRepresentation);
-  //vtkSMPropertyHelper(this->OutlineRepresentation,
+  // vtkSMPropertyHelper(this->OutlineRepresentation,
   //                    "Representation").Set("Outline");
   this->OutlineRepresentation->UpdateVTKObjects();
   return true;
@@ -97,9 +97,10 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
   pugi::xml_node reprNode = ns.append_child("OutlineRepresentation");
 
   QStringList properties;
-  properties << "Visibility" << "DiffuseColor";
-  if (tomviz::serialize(this->OutlineRepresentation, reprNode, properties) == false)
-  {
+  properties << "Visibility"
+             << "DiffuseColor";
+  if (tomviz::serialize(this->OutlineRepresentation, reprNode, properties) ==
+      false) {
     qWarning("Failed to serialize ModuleOutline.");
     ns.remove_child(reprNode);
     return false;
@@ -110,14 +111,14 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
 bool ModuleOutline::deserialize(const pugi::xml_node& ns)
 {
   return tomviz::deserialize(this->OutlineRepresentation,
-                          ns.child("OutlineRepresentation"));
+                             ns.child("OutlineRepresentation"));
 }
 
 bool ModuleOutline::setVisibility(bool val)
 {
   Q_ASSERT(this->OutlineRepresentation);
-  vtkSMPropertyHelper(this->OutlineRepresentation,
-                      "Visibility").Set(val ? 1 : 0);
+  vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
+    .Set(val ? 1 : 0);
   this->OutlineRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -125,8 +126,8 @@ bool ModuleOutline::setVisibility(bool val)
 bool ModuleOutline::visibility() const
 {
   Q_ASSERT(this->OutlineRepresentation);
-  return vtkSMPropertyHelper(this->OutlineRepresentation,
-                             "Visibility").GetAsInt() != 0;
+  return vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
+           .GetAsInt() != 0;
 }
 
 void ModuleOutline::addToPanel(QWidget* panel)
@@ -137,15 +138,15 @@ void ModuleOutline::addToPanel(QWidget* panel)
     delete panel->layout();
   }
 
-  QHBoxLayout *layout = new QHBoxLayout;
+  QHBoxLayout* layout = new QHBoxLayout;
   panel->setLayout(layout);
-  pqProxiesWidget *proxiesWidget = new pqProxiesWidget(panel);
+  pqProxiesWidget* proxiesWidget = new pqProxiesWidget(panel);
   layout->addWidget(proxiesWidget);
 
   QStringList properties;
   properties << "DiffuseColor";
-  proxiesWidget->addProxy(
-    this->OutlineRepresentation, "Annotations", properties, true);
+  proxiesWidget->addProxy(this->OutlineRepresentation, "Annotations",
+                          properties, true);
   proxiesWidget->updateLayout();
   this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
                 SIGNAL(renderNeeded()));
@@ -153,46 +154,37 @@ void ModuleOutline::addToPanel(QWidget* panel)
 
 void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
 {
-  double pos[3] = {newX, newY, newZ};
+  double pos[3] = { newX, newY, newZ };
   vtkSMPropertyHelper(this->OutlineRepresentation, "Position").Set(pos, 3);
   this->OutlineRepresentation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleOutline::isProxyPartOfModule(vtkSMProxy *proxy)
+bool ModuleOutline::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == this->OutlineFilter.Get()) || (proxy == this->OutlineRepresentation.Get());
+  return (proxy == this->OutlineFilter.Get()) ||
+         (proxy == this->OutlineRepresentation.Get());
 }
 
-std::string ModuleOutline::getStringForProxy(vtkSMProxy *proxy)
+std::string ModuleOutline::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == this->OutlineFilter.Get())
-  {
+  if (proxy == this->OutlineFilter.Get()) {
     return "Outline";
-  }
-  else if (proxy == this->OutlineRepresentation.Get())
-  {
+  } else if (proxy == this->OutlineRepresentation.Get()) {
     return "Representation";
-  }
-  else
-  {
+  } else {
     qWarning("Unknown proxy passed to module outline in save animation");
     return "";
   }
 }
 
-vtkSMProxy *ModuleOutline::getProxyForString(const std::string& str)
+vtkSMProxy* ModuleOutline::getProxyForString(const std::string& str)
 {
-  if (str == "Outline")
-  {
+  if (str == "Outline") {
     return this->OutlineFilter.Get();
-  }
-  else if (str == "Representation")
-  {
+  } else if (str == "Representation") {
     return this->OutlineRepresentation.Get();
-  }
-  else
-  {
+  } else {
     return nullptr;
   }
 }

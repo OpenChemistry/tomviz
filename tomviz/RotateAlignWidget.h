@@ -20,20 +20,20 @@
 
 #include <QScopedPointer>
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 class RotateAlignWidget : public QWidget
 {
   Q_OBJECT
   typedef QWidget Superclass;
+
 public:
-  RotateAlignWidget(DataSource *data, QWidget* parent = NULL);
+  RotateAlignWidget(DataSource* data, QWidget* parent = NULL);
   ~RotateAlignWidget();
 
 public slots:
-  void setDataSource(DataSource *source);
+  void setDataSource(DataSource* source);
 
 signals:
   void creatingAlignedData();
@@ -68,6 +68,5 @@ private:
   class RAWInternal;
   QScopedPointer<RAWInternal> Internals;
 };
-
 }
 #endif

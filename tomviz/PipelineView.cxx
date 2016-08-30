@@ -34,10 +34,9 @@
 #include <QMainWindow>
 #include <QMenu>
 
-namespace tomviz
-{
+namespace tomviz {
 
-PipelineView::PipelineView(QWidget *p) : QTreeView(p)
+PipelineView::PipelineView(QWidget* p) : QTreeView(p)
 {
   connect(this, SIGNAL(clicked(QModelIndex)), SLOT(rowActivated(QModelIndex)));
   setIndentation(20);
@@ -69,7 +68,7 @@ void PipelineView::keyPressEvent(QKeyEvent* e)
   }
 }
 
-void PipelineView::contextMenuEvent(QContextMenuEvent *e)
+void PipelineView::contextMenuEvent(QContextMenuEvent* e)
 {
   auto idx = this->indexAt(e->pos());
   if (!idx.isValid()) {
@@ -102,7 +101,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent *e)
   }
 }
 
-void PipelineView::deleteItem(const QModelIndex &idx)
+void PipelineView::deleteItem(const QModelIndex& idx)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
   Q_ASSERT(pipelineModel);
@@ -119,7 +118,7 @@ void PipelineView::deleteItem(const QModelIndex &idx)
   ActiveObjects::instance().renderAllViews();
 }
 
-void PipelineView::rowActivated(const QModelIndex &idx)
+void PipelineView::rowActivated(const QModelIndex& idx)
 {
   if (idx.isValid() && idx.column() == 1) {
     auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
@@ -137,24 +136,23 @@ void PipelineView::rowActivated(const QModelIndex &idx)
   }
 }
 
-void PipelineView::rowDoubleClicked(const QModelIndex &idx)
+void PipelineView::rowDoubleClicked(const QModelIndex& idx)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
   Q_ASSERT(pipelineModel);
   if (auto op = pipelineModel->op(idx)) {
     if (op->hasCustomUI()) {
       // Create a non-modal dialog, delete it once it has been closed.
-      EditOperatorDialog *dialog =
-        new EditOperatorDialog(op, op->dataSource(),
-                               false, pqCoreUtilities::mainWidget());
+      EditOperatorDialog* dialog = new EditOperatorDialog(
+        op, op->dataSource(), false, pqCoreUtilities::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
     }
   }
 }
 
-void PipelineView::currentChanged(const QModelIndex &current,
-                                  const QModelIndex &)
+void PipelineView::currentChanged(const QModelIndex& current,
+                                  const QModelIndex&)
 {
   if (!current.isValid()) {
     return;
@@ -165,26 +163,24 @@ void PipelineView::currentChanged(const QModelIndex &current,
   auto module = pipelineModel->module(current);
   if (dataSource) {
     ActiveObjects::instance().setActiveDataSource(dataSource);
-  }
-  else if (module) {
+  } else if (module) {
     ActiveObjects::instance().setActiveModule(module);
   }
 }
 
-void PipelineView::setCurrent(DataSource *dataSource)
+void PipelineView::setCurrent(DataSource* dataSource)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   this->setCurrentIndex(pipelineModel->dataSourceIndex(dataSource));
 }
 
-void PipelineView::setCurrent(Module *module)
+void PipelineView::setCurrent(Module* module)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   this->setCurrentIndex(pipelineModel->moduleIndex(module));
 }
 
-void PipelineView::setCurrent(Operator *)
+void PipelineView::setCurrent(Operator*)
 {
 }
-
 }

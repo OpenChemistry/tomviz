@@ -27,14 +27,13 @@
 #include "vtkVector.h"
 #include "vtkVectorOperators.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
-static void UpdateScale(vtkObject *caller, unsigned long, void *clientData,
-                        void *)
+static void UpdateScale(vtkObject* caller, unsigned long, void* clientData,
+                        void*)
 {
-  vtkAxisActor2D *axis = static_cast<vtkAxisActor2D*>(clientData);
-  vtkRenderer *ren = static_cast<vtkRenderer *>(caller);
+  vtkAxisActor2D* axis = static_cast<vtkAxisActor2D*>(clientData);
+  vtkRenderer* ren = static_cast<vtkRenderer*>(caller);
 
   vtkVector3d pos1(axis->GetPoint1()[0], axis->GetPoint1()[1], 0);
   vtkVector3d pos2(axis->GetPoint2()[0], axis->GetPoint2()[1], 0);
@@ -47,50 +46,50 @@ static void UpdateScale(vtkObject *caller, unsigned long, void *clientData,
   double distance = vtkVector3d(pos2 - pos1).Norm();
 
   int scale = floor(log10(distance) - 0.7);
-  //cout << "Scale: " << scale << ", Distance: " << distance << endl;
-  switch (scale)
-  {
-  case -7:
-  case -8:
-  case -9:
-    axis->SetTitle("nm");
-    axis->SetRange(0, distance * 1e9);
-    break;
-  case -4:
-  case -5:
-  case -6:
-    axis->SetTitle("microns");
-    axis->SetRange(0, distance * 1e6);
-    break;
-  case -1:
-  case -2:
-  case -3:
-    axis->SetTitle("mm");
-    axis->SetRange(0, distance * 1e3);
-    break;
-  case 2:
-  case 1:
-  case 0:
-    axis->SetTitle("m");
-    axis->SetRange(0, distance);
-    break;
-  case 5:
-  case 4:
-  case 3:
-    axis->SetTitle("km");
-    axis->SetRange(0, distance * 1e-3);
-    break;
-  default:
-    axis->SetTitle("out of range");
-    axis->SetRange(0, 1.0);
-    break;
+  // cout << "Scale: " << scale << ", Distance: " << distance << endl;
+  switch (scale) {
+    case -7:
+    case -8:
+    case -9:
+      axis->SetTitle("nm");
+      axis->SetRange(0, distance * 1e9);
+      break;
+    case -4:
+    case -5:
+    case -6:
+      axis->SetTitle("microns");
+      axis->SetRange(0, distance * 1e6);
+      break;
+    case -1:
+    case -2:
+    case -3:
+      axis->SetTitle("mm");
+      axis->SetRange(0, distance * 1e3);
+      break;
+    case 2:
+    case 1:
+    case 0:
+      axis->SetTitle("m");
+      axis->SetRange(0, distance);
+      break;
+    case 5:
+    case 4:
+    case 3:
+      axis->SetTitle("km");
+      axis->SetRange(0, distance * 1e-3);
+      break;
+    default:
+      axis->SetTitle("out of range");
+      axis->SetRange(0, 1.0);
+      break;
   }
 }
 
 ScaleActorBehavior::ScaleActorBehavior(QObject* parentObject)
   : Superclass(parentObject)
 {
-  pqServerManagerModel* smmodel = pqApplicationCore::instance()->getServerManagerModel();
+  pqServerManagerModel* smmodel =
+    pqApplicationCore::instance()->getServerManagerModel();
   this->connect(smmodel, SIGNAL(viewAdded(pqView*)), SLOT(viewAdded(pqView*)));
 }
 
@@ -100,10 +99,11 @@ ScaleActorBehavior::~ScaleActorBehavior()
 
 void ScaleActorBehavior::viewAdded(pqView* view)
 {
-  if (vtkSMRenderViewProxy* viewProxy = vtkSMRenderViewProxy::SafeDownCast(view->getProxy()))
-  {
-    vtkRenderer* ren = vtkPVRenderView::SafeDownCast(viewProxy->GetClientSideObject())
-                       ->GetNonCompositedRenderer();
+  if (vtkSMRenderViewProxy* viewProxy =
+        vtkSMRenderViewProxy::SafeDownCast(view->getProxy())) {
+    vtkRenderer* ren =
+      vtkPVRenderView::SafeDownCast(viewProxy->GetClientSideObject())
+        ->GetNonCompositedRenderer();
     Q_ASSERT(ren);
 
     vtkNew<vtkAxisActor2D> axis;
@@ -122,5 +122,4 @@ void ScaleActorBehavior::viewAdded(pqView* view)
     ren->AddActor(axis.GetPointer());
   }
 }
-
 }

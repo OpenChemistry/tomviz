@@ -18,8 +18,7 @@
 
 #include <QMainWindow>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class DataPropertiesPanel;
 class DataSource;
@@ -34,7 +33,7 @@ class MainWindow : public QMainWindow
   typedef QMainWindow Superclass;
 
 public:
-  MainWindow(QWidget* parent=nullptr, Qt::WindowFlags flags=nullptr);
+  MainWindow(QWidget* parent = nullptr, Qt::WindowFlags flags = nullptr);
   virtual ~MainWindow();
 
 protected:
@@ -48,9 +47,9 @@ private slots:
   void openTilt();
 
   /// Change the active data source in the UI.
-  void dataSourceChanged(DataSource *source);
+  void dataSourceChanged(DataSource* source);
   /// Change the active module displayed in the UI.
-  void moduleChanged(Module *module);
+  void moduleChanged(Module* module);
 
   void onFirstWindowShow();
 
@@ -61,6 +60,5 @@ private:
   class MWInternals;
   MWInternals* Internals;
 };
-
 }
 #endif

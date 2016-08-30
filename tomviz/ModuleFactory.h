@@ -16,13 +16,12 @@
 #ifndef tomvizModuleFactory_h
 #define tomvizModuleFactory_h
 
-#include <QObject>
 #include <QIcon>
+#include <QObject>
 
 class vtkSMViewProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 class Module;
 
@@ -51,7 +50,6 @@ private:
   ~ModuleFactory();
   Q_DISABLE_COPY(ModuleFactory)
 };
-
 }
 
 #endif

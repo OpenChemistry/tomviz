@@ -20,8 +20,7 @@
 
 #include <QProgressDialog>
 
-namespace tomviz
-{
+namespace tomviz {
 
 ProgressBehavior::ProgressBehavior(QWidget* parentWindow)
   : Superclass(parentWindow), ProgressDialog(nullptr)
@@ -41,14 +40,12 @@ ProgressBehavior::~ProgressBehavior()
 
 void ProgressBehavior::initialize()
 {
-  if (this->ProgressDialog)
-  {
+  if (this->ProgressDialog) {
     return;
   }
 
-  this->ProgressDialog = new QProgressDialog("In progress...", "Cancel",
-                                             0, 100,
-                                             qobject_cast<QWidget*>(this->parent()));
+  this->ProgressDialog = new QProgressDialog(
+    "In progress...", "Cancel", 0, 100, qobject_cast<QWidget*>(this->parent()));
   this->ProgressDialog->setAutoClose(true);
   this->ProgressDialog->setAutoReset(false);
   this->ProgressDialog->setMinimumDuration(0); // 0 second.
@@ -59,12 +56,9 @@ void ProgressBehavior::enableProgress(bool enable)
   this->initialize();
   Q_ASSERT(this->ProgressDialog);
 
-  if (enable)
-  {
+  if (enable) {
     this->ProgressDialog->setValue(0);
-  }
-  else
-  {
+  } else {
     this->ProgressDialog->reset();
   }
 }
@@ -77,5 +71,4 @@ void ProgressBehavior::progress(const QString& message, int progressAmount)
   this->ProgressDialog->setLabelText(message);
   this->ProgressDialog->setValue(progressAmount);
 }
-
 }

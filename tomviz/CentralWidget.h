@@ -16,10 +16,10 @@
 #ifndef tomvizCentralWidget_h
 #define tomvizCentralWidget_h
 
-#include <QScopedPointer>
-#include <QWidget>
 #include <QMap>
 #include <QPointer>
+#include <QScopedPointer>
+#include <QWidget>
 #include <vtkSmartPointer.h>
 
 class vtkImageData;
@@ -28,8 +28,7 @@ class vtkTable;
 
 class QThread;
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 class HistogramMaker;
 class Module;
@@ -68,19 +67,18 @@ private:
   /// Set the data source to from which the data is "histogrammed" and shown
   /// in the histogram view.
   void setDataSource(DataSource*);
-  void setHistogramTable(vtkTable *table);
+  void setHistogramTable(vtkTable* table);
 
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
 
   QPointer<DataSource> ADataSource;
   QPointer<Module> AModule;
-  HistogramMaker *HistogramGen;
-  QThread *Worker;
-  QMap<vtkImageData *, vtkSmartPointer<vtkTable> > HistogramCache;
-  vtkPVDiscretizableColorTransferFunction *LUT;
+  HistogramMaker* HistogramGen;
+  QThread* Worker;
+  QMap<vtkImageData*, vtkSmartPointer<vtkTable>> HistogramCache;
+  vtkPVDiscretizableColorTransferFunction* LUT;
 };
-
 }
 
 #endif

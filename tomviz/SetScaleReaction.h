@@ -18,8 +18,7 @@
 
 #include <pqReaction.h>
 
-namespace tomviz
-{
+namespace tomviz {
 class SetScaleReaction : public pqReaction
 {
   Q_OBJECT
@@ -38,6 +37,5 @@ protected:
 private:
   Q_DISABLE_COPY(SetScaleReaction)
 };
-
 }
 #endif

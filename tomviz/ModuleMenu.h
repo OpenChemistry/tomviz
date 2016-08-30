@@ -23,8 +23,7 @@ class QAction;
 class QMenu;
 class QToolBar;
 
-namespace tomviz
-{
+namespace tomviz {
 
 /// ModuleMenu is manager for the Modules menu. It fills it up with actions
 /// and handles their triggers based on available modules reported by
@@ -35,7 +34,7 @@ class ModuleMenu : public QObject
   typedef QObject Superclass;
 
 public:
-  ModuleMenu(QToolBar* toolBar, QMenu* parentMenu, QObject* parent=nullptr);
+  ModuleMenu(QToolBar* toolBar, QMenu* parentMenu, QObject* parent = nullptr);
   virtual ~ModuleMenu();
 
 private slots:
@@ -47,7 +46,6 @@ private:
   QPointer<QMenu> Menu;
   QPointer<QToolBar> ToolBar;
 };
-
 }
 
 #endif

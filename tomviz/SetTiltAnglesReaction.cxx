@@ -23,13 +23,13 @@
 
 #include <QMainWindow>
 
-namespace tomviz
-{
+namespace tomviz {
 
-SetTiltAnglesReaction::SetTiltAnglesReaction(QAction *p, QMainWindow *mw)
+SetTiltAnglesReaction::SetTiltAnglesReaction(QAction* p, QMainWindow* mw)
   : Superclass(p), mainWindow(mw)
 {
-  this->connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(DataSource*)),
                 SLOT(updateEnableState()));
   updateEnableState();
 }
@@ -41,35 +41,33 @@ SetTiltAnglesReaction::~SetTiltAnglesReaction()
 void SetTiltAnglesReaction::updateEnableState()
 {
   bool enable = ActiveObjects::instance().activeDataSource() != nullptr;
-  if (enable)
-  {
-    enable = ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries;
+  if (enable) {
+    enable = ActiveObjects::instance().activeDataSource()->type() ==
+             DataSource::TiltSeries;
   }
   parentAction()->setEnabled(enable);
 }
 
-void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow *window, DataSource *source)
+void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow* window,
+                                                DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
-  if (!source)
-  {
+  if (!source) {
     return;
   }
   auto operators = source->operators();
-  SetTiltAnglesOperator *op = nullptr;
+  SetTiltAnglesOperator* op = nullptr;
   bool needToAddOp = false;
-  if (operators.size() > 0)
-  {
+  if (operators.size() > 0) {
     op = qobject_cast<SetTiltAnglesOperator*>(operators[operators.size() - 1]);
   }
-  if (!op)
-  {
+  if (!op) {
     op = new SetTiltAnglesOperator;
     needToAddOp = true;
   }
-  EditOperatorDialog *dialog = new EditOperatorDialog(op, source, needToAddOp, window);
+  EditOperatorDialog* dialog =
+    new EditOperatorDialog(op, source, needToAddOp, window);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
 }
-
 }

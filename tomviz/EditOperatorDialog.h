@@ -21,8 +21,7 @@
 #include <QScopedPointer>
 #include <QSharedPointer>
 
-namespace tomviz
-{
+namespace tomviz {
 class Operator;
 class DataSource;
 
@@ -30,14 +29,13 @@ class EditOperatorDialog : public QDialog
 {
   Q_OBJECT
   typedef QDialog Superclass;
+
 public:
   // Creates an editor dialog for the given operator.  If this is creating a
   // new operator, then pass in true for needToAddOperator and the first time
   // Apply/Ok is pressed it will be added to the DataSource.
-  EditOperatorDialog(Operator *op,
-                     DataSource* dataSource,
-                     bool needToAddOperator,
-                     QWidget* parent);
+  EditOperatorDialog(Operator* op, DataSource* dataSource,
+                     bool needToAddOperator, QWidget* parent);
   virtual ~EditOperatorDialog();
 
   Operator* op();
@@ -51,7 +49,6 @@ private:
   class EODInternals;
   QScopedPointer<EODInternals> Internals;
 };
-
 }
 
 #endif

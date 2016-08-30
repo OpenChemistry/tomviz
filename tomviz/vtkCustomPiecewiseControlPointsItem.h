@@ -25,26 +25,29 @@ class vtkContextMouseEvent;
 class vtkCustomPiecewiseControlPointsItem : public vtkPiecewiseControlPointsItem
 {
 public:
-  vtkTypeMacro(vtkCustomPiecewiseControlPointsItem, vtkPiecewiseControlPointsItem)
-  static vtkCustomPiecewiseControlPointsItem * New();
+  vtkTypeMacro(
+    vtkCustomPiecewiseControlPointsItem,
+    vtkPiecewiseControlPointsItem) static vtkCustomPiecewiseControlPointsItem* New();
 
   // Override to ignore button presses if the control modifier key is pressed.
-  bool MouseButtonPressEvent(const vtkContextMouseEvent & mouse) override;
+  bool MouseButtonPressEvent(const vtkContextMouseEvent& mouse) override;
 
   // Override to avoid catching double-click events
-  bool MouseDoubleClickEvent(const vtkContextMouseEvent & mouse) override;
+  bool MouseDoubleClickEvent(const vtkContextMouseEvent& mouse) override;
 
 protected:
   vtkCustomPiecewiseControlPointsItem();
   virtual ~vtkCustomPiecewiseControlPointsItem();
 
-  // Utility function to determine whether a position is near the piecewise function.
+  // Utility function to determine whether a position is near the piecewise
+  // function.
   bool PointNearPiecewiseFunction(const double pos[2]);
 
 private:
-  vtkCustomPiecewiseControlPointsItem(const vtkCustomPiecewiseControlPointsItem &); // Not implemented.
-  void operator=(const vtkCustomPiecewiseControlPointsItem &);   // Not implemented.
-
-};  
+  vtkCustomPiecewiseControlPointsItem(
+    const vtkCustomPiecewiseControlPointsItem&); // Not implemented.
+  void operator=(
+    const vtkCustomPiecewiseControlPointsItem&); // Not implemented.
+};
 
 #endif // tomvizvtkCustomPiecewiseControlPointsItem_h

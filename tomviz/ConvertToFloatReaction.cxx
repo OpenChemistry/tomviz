@@ -21,8 +21,7 @@
 #include "ConvertToFloatOperator.h"
 #include "DataSource.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
 ConvertToFloatReaction::ConvertToFloatReaction(QAction* parentObject)
   : pqReaction(parentObject)
@@ -38,19 +37,18 @@ ConvertToFloatReaction::~ConvertToFloatReaction()
 
 void ConvertToFloatReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != nullptr);
+  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+                             nullptr);
 }
 
 void ConvertToFloatReaction::convertToFloat()
 {
-  DataSource *source = ActiveObjects::instance().activeDataSource();
-  if (!source)
-  {
+  DataSource* source = ActiveObjects::instance().activeDataSource();
+  if (!source) {
     qDebug() << "Exiting early - no data found.";
     return;
   }
-  Operator *Op = new ConvertToFloatOperator();
+  Operator* Op = new ConvertToFloatOperator();
 
   source->addOperator(Op);
 }

@@ -18,8 +18,7 @@
 
 #include <QTreeView>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class DataSource;
 class Module;
@@ -30,24 +29,23 @@ class PipelineView : public QTreeView
   Q_OBJECT
 
 public:
-  PipelineView(QWidget *parent = nullptr);
+  PipelineView(QWidget* parent = nullptr);
   ~PipelineView() override;
 
 protected:
   void keyPressEvent(QKeyEvent*) override;
   void contextMenuEvent(QContextMenuEvent*) override;
-  void currentChanged(const QModelIndex &current,
-                      const QModelIndex &previous) override;
-  void deleteItem(const QModelIndex &idx);
+  void currentChanged(const QModelIndex& current,
+                      const QModelIndex& previous) override;
+  void deleteItem(const QModelIndex& idx);
 private slots:
-  void rowActivated(const QModelIndex &idx);
-  void rowDoubleClicked(const QModelIndex &idx);
+  void rowActivated(const QModelIndex& idx);
+  void rowDoubleClicked(const QModelIndex& idx);
 
-  void setCurrent(DataSource *dataSource);
-  void setCurrent(Module *module);
+  void setCurrent(DataSource* dataSource);
+  void setCurrent(Module* module);
   void setCurrent(Operator* op);
 };
-
 }
 
 #endif // tomvizPipelineView_h

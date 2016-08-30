@@ -27,17 +27,16 @@
 #include "pqProxyWidgetDialog.h"
 #include "pqRenderView.h"
 #include "vtkNew.h"
-#include "vtkSmartPointer.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSmartPointer.h"
 
 #include <QFileDialog>
 
-namespace tomviz
-{
+namespace tomviz {
 
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
   : Superclass(parentObject)
@@ -75,11 +74,9 @@ QList<DataSource*> LoadDataReaction::loadData()
   dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
 
   QList<DataSource*> dataSources;
-  if (dialog.exec())
-  {
+  if (dialog.exec()) {
     QStringList filenames = dialog.selectedFiles();
-    foreach(QString file, filenames)
-    {
+    foreach (QString file, filenames) {
       dataSources << loadData(file);
     }
   }
@@ -87,22 +84,20 @@ QList<DataSource*> LoadDataReaction::loadData()
   return dataSources;
 }
 
-DataSource* LoadDataReaction::loadData(const QString &fileName)
+DataSource* LoadDataReaction::loadData(const QString& fileName)
 {
   vtkNew<vtkSMParaViewPipelineController> controller;
   QStringList files;
   files << fileName;
   pqPipelineSource* reader = pqLoadDataReaction::loadData(files);
 
-  if (!reader)
-  {
+  if (!reader) {
     return nullptr;
   }
 
   DataSource* dataSource = createDataSource(reader->getProxy());
   // dataSource may be NULL if user cancelled the action.
-  if (dataSource)
-  {
+  if (dataSource) {
     // add the file to recent files menu.
     RecentFilesMenu::pushDataReader(reader->getProxy());
   }
@@ -117,19 +112,21 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
   pqProxyWidgetDialog dialog(reader);
   dialog.setObjectName("ConfigureReaderDialog");
   dialog.setWindowTitle("Configure Reader Parameters");
-  if (dialog.hasVisibleWidgets() == false || dialog.exec() == QDialog::Accepted)
-  {
-    DataSource* previousActiveDataSource = ActiveObjects::instance().activeDataSource();
+  if (dialog.hasVisibleWidgets() == false ||
+      dialog.exec() == QDialog::Accepted) {
+    DataSource* previousActiveDataSource =
+      ActiveObjects::instance().activeDataSource();
 
-    DataSource* dataSource = new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
+    DataSource* dataSource =
+      new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
     // do whatever we need to do with a new data source.
     LoadDataReaction::dataSourceAdded(dataSource);
-    if (!previousActiveDataSource)
-    {
-      pqRenderView *renderView = qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
-      if (renderView)
-      {
-        tomviz::createCameraOrbit(dataSource->producer(), renderView->getRenderViewProxy());
+    if (!previousActiveDataSource) {
+      pqRenderView* renderView =
+        qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+      if (renderView) {
+        tomviz::createCameraOrbit(dataSource->producer(),
+                                  renderView->getRenderViewProxy());
       }
     }
     return dataSource;
@@ -146,13 +143,11 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
   // Create an outline module for the source in the active view.
   if (Module* module = ModuleManager::instance().createAndAddModule(
-      "Outline", dataSource, view))
-  {
+        "Outline", dataSource, view)) {
     ActiveObjects::instance().setActiveModule(module);
   }
   if (Module* module = ModuleManager::instance().createAndAddModule(
-        "Orthogonal Slice", dataSource, view))
-  {
+        "Orthogonal Slice", dataSource, view)) {
     ActiveObjects::instance().setActiveModule(module);
   }
   ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);

@@ -18,8 +18,7 @@
 
 #include <pqReaction.h>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class SaveLoadStateReaction : public pqReaction
 {
@@ -27,7 +26,7 @@ class SaveLoadStateReaction : public pqReaction
   typedef pqReaction Superclass;
 
 public:
-  SaveLoadStateReaction(QAction* action, bool load=false);
+  SaveLoadStateReaction(QAction* action, bool load = false);
   virtual ~SaveLoadStateReaction();
 
   static bool saveState();
@@ -42,7 +41,6 @@ private:
   Q_DISABLE_COPY(SaveLoadStateReaction)
   bool Load;
 };
-
 }
 
 #endif

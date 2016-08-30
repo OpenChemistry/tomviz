@@ -19,23 +19,23 @@
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
-#include <vtkSmartVolumeMapper.h>
 #include <vtkBoundingBox.h>
-#include <vtkBoxWidget2.h>
 #include <vtkBoxRepresentation.h>
+#include <vtkBoxWidget2.h>
 #include <vtkCommand.h>
 #include <vtkEventQtSlotConnect.h>
-#include <vtkInteractorObserver.h>
 #include <vtkImageData.h>
+#include <vtkInteractorObserver.h>
 #include <vtkMath.h>
 #include <vtkNew.h>
-#include <vtkRenderWindowInteractor.h>
 #include <vtkRenderWindow.h>
-#include <vtkRendererCollection.h>
+#include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
-#include <vtkSmartPointer.h>
+#include <vtkRendererCollection.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
+#include <vtkSmartPointer.h>
+#include <vtkSmartVolumeMapper.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVolume.h>
 #include <vtkVolumeProperty.h>
@@ -45,14 +45,13 @@
 
 #include "ActiveObjects.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
 class SelectVolumeWidget::CWInternals
 {
 public:
-  vtkNew< vtkBoxWidget2 > boxWidget;
-  vtkSmartPointer< vtkRenderWindowInteractor > interactor;
+  vtkNew<vtkBoxWidget2> boxWidget;
+  vtkSmartPointer<vtkRenderWindowInteractor> interactor;
   vtkNew<vtkEventQtSlotConnect> eventLink;
 
   Ui::SelectVolumeWidget ui;
@@ -88,16 +87,14 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
                                        const double spacing[3],
                                        const int extent[6],
                                        const int currentVolume[6],
-                                       const double position[3],
-                                       QWidget* p)
+                                       const double position[3], QWidget* p)
   : Superclass(p), Internals(new SelectVolumeWidget::CWInternals())
 {
-  vtkRenderWindowInteractor *iren =
+  vtkRenderWindowInteractor* iren =
     ActiveObjects::instance().activeView()->GetRenderWindow()->GetInteractor();
   this->Internals->interactor = iren;
 
-  for (int i = 0; i < 3; ++i)
-  {
+  for (int i = 0; i < 3; ++i) {
     this->Internals->dataOrigin[i] = origin[i];
     this->Internals->dataSpacing[i] = spacing[i];
     this->Internals->dataExtent[2 * i] = extent[2 * i];
@@ -106,13 +103,13 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
   }
 
   double bounds[6];
-  for (int i = 0; i < 6; ++i)
-  {
-    bounds[i] = this->Internals->dataOrigin[i >> 1] +
+  for (int i = 0; i < 6; ++i) {
+    bounds[i] =
+      this->Internals->dataOrigin[i >> 1] +
       this->Internals->dataSpacing[i >> 1] * this->Internals->dataExtent[i] +
       this->Internals->dataPosition[i];
   }
-  vtkNew< vtkBoxRepresentation > boxRep;
+  vtkNew<vtkBoxRepresentation> boxRep;
   boxRep->SetPlaceFactor(1.0);
   boxRep->PlaceWidget(bounds);
   boxRep->HandlesOn();
@@ -126,8 +123,9 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
   this->Internals->boxWidget->SetPriority(1);
   this->Internals->boxWidget->EnabledOn();
 
-  this->Internals->eventLink->Connect(this->Internals->boxWidget.GetPointer(), vtkCommand::InteractionEvent,
-                           this, SLOT(interactionEnd(vtkObject*)));
+  this->Internals->eventLink->Connect(this->Internals->boxWidget.GetPointer(),
+                                      vtkCommand::InteractionEvent, this,
+                                      SLOT(interactionEnd(vtkObject*)));
 
   iren->GetRenderWindow()->Render();
 
@@ -135,7 +133,7 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
   ui.setupUi(this);
 
   double e[6];
-  std::copy(extent, extent+6, e);
+  std::copy(extent, extent + 6, e);
   this->Internals->dataBoundingBox.SetBounds(e);
 
   // Set ranges and default values
@@ -153,18 +151,15 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
   ui.endZ->setRange(extent[4], extent[5]);
   ui.endZ->setValue(currentVolume[5]);
 
-  this->connect(ui.startX, SIGNAL(editingFinished()),
-                this, SLOT(valueChanged()));
-  this->connect(ui.startY, SIGNAL(editingFinished()),
-                this, SLOT(valueChanged()));
-  this->connect(ui.startZ, SIGNAL(editingFinished()),
-                this, SLOT(valueChanged()));
-  this->connect(ui.endX, SIGNAL(editingFinished()),
-                this, SLOT(valueChanged()));
-  this->connect(ui.endY, SIGNAL(editingFinished()),
-                this, SLOT(valueChanged()));
-  this->connect(ui.endZ, SIGNAL(editingFinished()),
-                this, SLOT(valueChanged()));
+  this->connect(ui.startX, SIGNAL(editingFinished()), this,
+                SLOT(valueChanged()));
+  this->connect(ui.startY, SIGNAL(editingFinished()), this,
+                SLOT(valueChanged()));
+  this->connect(ui.startZ, SIGNAL(editingFinished()), this,
+                SLOT(valueChanged()));
+  this->connect(ui.endX, SIGNAL(editingFinished()), this, SLOT(valueChanged()));
+  this->connect(ui.endY, SIGNAL(editingFinished()), this, SLOT(valueChanged()));
+  this->connect(ui.endZ, SIGNAL(editingFinished()), this, SLOT(valueChanged()));
   // force through the current values pulled from the operator and set above
   this->valueChanged();
 }
@@ -175,20 +170,20 @@ SelectVolumeWidget::~SelectVolumeWidget()
   this->Internals->interactor->GetRenderWindow()->Render();
 }
 
-void SelectVolumeWidget::interactionEnd(vtkObject *caller)
+void SelectVolumeWidget::interactionEnd(vtkObject* caller)
 {
   Q_UNUSED(caller);
 
-  double* boxBounds = this->Internals->boxWidget->GetRepresentation()->GetBounds();
+  double* boxBounds =
+    this->Internals->boxWidget->GetRepresentation()->GetBounds();
 
   double* spacing = this->Internals->dataSpacing;
   double* origin = this->Internals->dataOrigin;
   double dataBounds[6];
 
   int dim = 0;
-  for (int i = 0; i < 6; i++)
-  {
-    dataBounds[i] =  (boxBounds[i] - origin[dim]) / spacing[dim] ;
+  for (int i = 0; i < 6; i++) {
+    dataBounds[i] = (boxBounds[i] - origin[dim]) / spacing[dim];
     dim += i % 2 ? 1 : 0;
   }
 
@@ -203,9 +198,8 @@ void SelectVolumeWidget::updateBounds(int* bounds)
   double newBounds[6];
 
   int dim = 0;
-  for (int i = 0; i < 6; i++)
-  {
-    newBounds[i] =  (bounds[i] * spacing[dim]) + origin[dim] + position[dim];
+  for (int i = 0; i < 6; i++) {
+    newBounds[i] = (bounds[i] * spacing[dim]) + origin[dim] + position[dim];
     dim += i % 2 ? 1 : 0;
   }
 
@@ -220,29 +214,27 @@ void SelectVolumeWidget::getExtentOfSelection(int extent[6])
 
 void SelectVolumeWidget::getBoundsOfSelection(double bounds[6])
 {
-  double* boxBounds = this->Internals->boxWidget->GetRepresentation()->GetBounds();
-  for (int i = 0; i < 6; ++i)
-  {
+  double* boxBounds =
+    this->Internals->boxWidget->GetRepresentation()->GetBounds();
+  for (int i = 0; i < 6; ++i) {
     bounds[i] = boxBounds[i];
   }
 }
 
-void SelectVolumeWidget::updateBounds(double *newBounds)
+void SelectVolumeWidget::updateBounds(double* newBounds)
 {
   Ui::SelectVolumeWidget& ui = this->Internals->ui;
 
   this->Internals->blockSpinnerSignals(true);
 
   double bnds[6];
-  for (int i = 0; i < 3; ++i)
-  {
+  for (int i = 0; i < 3; ++i) {
     bnds[2 * i] = newBounds[2 * i] - this->Internals->dataPosition[i];
     bnds[2 * i + 1] = newBounds[2 * i] - this->Internals->dataPosition[i];
   }
   vtkBoundingBox newBoundingBox(bnds);
 
-  if (this->Internals->dataBoundingBox.Intersects(newBoundingBox))
-  {
+  if (this->Internals->dataBoundingBox.Intersects(newBoundingBox)) {
     ui.startX->setValue(vtkMath::Round(newBounds[0]));
     ui.startY->setValue(vtkMath::Round(newBounds[2]));
     ui.startZ->setValue(vtkMath::Round(newBounds[4]));
@@ -252,8 +244,7 @@ void SelectVolumeWidget::updateBounds(double *newBounds)
     ui.endZ->setValue(vtkMath::Round(newBounds[5]));
   }
   // If there is no intersection use data extent
-  else
-  {
+  else {
     ui.startX->setValue(this->Internals->dataExtent[0]);
     ui.startY->setValue(this->Internals->dataExtent[2]);
     ui.startZ->setValue(this->Internals->dataExtent[4]);
@@ -261,7 +252,6 @@ void SelectVolumeWidget::updateBounds(double *newBounds)
     ui.endX->setValue(this->Internals->dataExtent[1]);
     ui.endY->setValue(this->Internals->dataExtent[3]);
     ui.endZ->setValue(this->Internals->dataExtent[5]);
-
   }
 
   this->Internals->blockSpinnerSignals(false);
@@ -269,36 +259,32 @@ void SelectVolumeWidget::updateBounds(double *newBounds)
 
 void SelectVolumeWidget::valueChanged()
 {
-  QSpinBox *sBox = qobject_cast<QSpinBox*>(this->sender());
+  QSpinBox* sBox = qobject_cast<QSpinBox*>(this->sender());
 
-  if (sBox)
-  {
+  if (sBox) {
     Ui::SelectVolumeWidget& ui = this->Internals->ui;
 
-    QSpinBox *inputBoxes[6] = { ui.startX, ui.endX, ui.startY,
-                                ui.endY, ui.startZ, ui.endZ };
+    QSpinBox* inputBoxes[6] = { ui.startX, ui.endX,   ui.startY,
+                                ui.endY,   ui.startZ, ui.endZ };
     int senderIndex = -1;
-    for (int i = 0; i < 6; ++i)
-    {
-      if (inputBoxes[i] == sBox)
-      {
+    for (int i = 0; i < 6; ++i) {
+      if (inputBoxes[i] == sBox) {
         senderIndex = i;
       }
     }
     int component = senderIndex / 2;
     int end = senderIndex % 2;
-    if (end == 0)
-    {
-      if (inputBoxes[component * 2]->value() > inputBoxes[component * 2 + 1]->value())
-      {
-        inputBoxes[component * 2 + 1]->setValue(inputBoxes[component * 2]->value());
+    if (end == 0) {
+      if (inputBoxes[component * 2]->value() >
+          inputBoxes[component * 2 + 1]->value()) {
+        inputBoxes[component * 2 + 1]->setValue(
+          inputBoxes[component * 2]->value());
       }
-    }
-    else
-    {
-      if (inputBoxes[component * 2]->value() > inputBoxes[component * 2 + 1]->value())
-      {
-        inputBoxes[component * 2]->setValue(inputBoxes[component * 2 + 1]->value());
+    } else {
+      if (inputBoxes[component * 2]->value() >
+          inputBoxes[component * 2 + 1]->value()) {
+        inputBoxes[component * 2]->setValue(
+          inputBoxes[component * 2 + 1]->value());
       }
     }
   }
@@ -320,5 +306,4 @@ void SelectVolumeWidget::dataMoved(double x, double y, double z)
 
   this->updateBounds(cropVolume);
 }
-
 }

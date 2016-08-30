@@ -18,8 +18,7 @@
 
 #include <pqReaction.h>
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 
 class AddAlignReaction : public pqReaction

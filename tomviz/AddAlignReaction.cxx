@@ -24,8 +24,7 @@
 
 #include <QDebug>
 
-namespace tomviz
-{
+namespace tomviz {
 
 AddAlignReaction::AddAlignReaction(QAction* parentObject)
   : pqReaction(parentObject)
@@ -42,25 +41,24 @@ AddAlignReaction::~AddAlignReaction()
 void AddAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != nullptr &&
-        ActiveObjects::instance().activeDataSource()->type() == DataSource::TiltSeries);
+    ActiveObjects::instance().activeDataSource() != nullptr &&
+    ActiveObjects::instance().activeDataSource()->type() ==
+      DataSource::TiltSeries);
 }
 
 void AddAlignReaction::align(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
-  if (!source)
-  {
+  if (!source) {
     qDebug() << "Exiting early - no data found.";
     return;
   }
 
-  Operator *Op = new TranslateAlignOperator(source);
-  EditOperatorDialog *dialog = new EditOperatorDialog(Op, source, true,
-                                                      pqCoreUtilities::mainWidget());
+  Operator* Op = new TranslateAlignOperator(source);
+  EditOperatorDialog* dialog =
+    new EditOperatorDialog(Op, source, true, pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->setWindowTitle("Manual Image Alignment");
   dialog->show();
 }
-
 }

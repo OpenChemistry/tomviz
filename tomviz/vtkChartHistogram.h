@@ -30,17 +30,15 @@ class vtkPlotBar;
 class vtkScalarsToColors;
 class vtkTable;
 
-//-----------------------------------------------------------------------------
 class vtkChartHistogram : public vtkChartXY
 {
 public:
-  static vtkChartHistogram * New();
+  static vtkChartHistogram* New();
 
-  bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse) override;
+  bool MouseDoubleClickEvent(const vtkContextMouseEvent& mouse) override;
 
   // Set input for histogram
-  virtual void SetHistogramInputData(vtkTable* table,
-                                     const char* xAxisColumn,
+  virtual void SetHistogramInputData(vtkTable* table, const char* xAxisColumn,
                                      const char* yAxisColumn);
 
   // Set scalar visibility in the histogram plot bar
@@ -54,19 +52,17 @@ public:
   virtual void SelectColorArray(const char* arrayName);
 
   // Set opacity function from a transfer function
-  virtual void SetOpacityFunction(vtkPiecewiseFunction * opacityFunction);
+  virtual void SetOpacityFunction(vtkPiecewiseFunction* opacityFunction);
 
   // Set the contour value from the contour marker
-  vtkSetMacro(ContourValue, double)
-  vtkGetMacro(ContourValue, double)
+  vtkSetMacro(ContourValue, double) vtkGetMacro(ContourValue, double)
 
-protected:
-  vtkNew<vtkTransform2D> Transform;
+    protected : vtkNew<vtkTransform2D> Transform;
   double ContourValue;
   vtkNew<vtkHistogramMarker> Marker;
 
-  vtkNew<vtkPlotBar>                          HistogramPlotBar;
-  vtkNew<vtkPiecewiseFunctionItem>            OpacityFunctionItem;
+  vtkNew<vtkPlotBar> HistogramPlotBar;
+  vtkNew<vtkPiecewiseFunctionItem> OpacityFunctionItem;
   vtkNew<vtkCustomPiecewiseControlPointsItem> OpacityControlPointsItem;
 
 private:

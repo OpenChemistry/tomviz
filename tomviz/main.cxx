@@ -32,15 +32,17 @@ class TomvizOptions : public pqOptions
 {
 public:
   static TomvizOptions* New();
-  vtkTypeMacro(TomvizOptions, pqOptions)
-  int GetEnableStreaming() override { return 1; }
+  vtkTypeMacro(TomvizOptions, pqOptions) int GetEnableStreaming() override
+  {
+    return 1;
+  }
 
 protected:
   TomvizOptions() : pqOptions() { ; }
 };
 vtkStandardNewMacro(TomvizOptions)
 
-int main(int argc, char** argv)
+  int main(int argc, char** argv)
 {
   QCoreApplication::setApplicationName("tomviz");
   QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);

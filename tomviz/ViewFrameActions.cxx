@@ -16,23 +16,22 @@
 
 #include "ViewFrameActions.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
-ViewFrameActions::ViewFrameActions(QObject *p)
+ViewFrameActions::ViewFrameActions(QObject* p)
   : pqStandardViewFrameActionsImplementation(p)
 {
 }
 
 ViewFrameActions::~ViewFrameActions() = default;
 
-QList<pqStandardViewFrameActionsImplementation::ViewType> ViewFrameActions::availableViewTypes()
+QList<pqStandardViewFrameActionsImplementation::ViewType>
+ViewFrameActions::availableViewTypes()
 {
   QList<ViewType> views;
   QList<ViewType> availableViews =
-      pqStandardViewFrameActionsImplementation::availableViewTypes();
-  foreach (ViewType viewType, availableViews)
-  {
+    pqStandardViewFrameActionsImplementation::availableViewTypes();
+  foreach (ViewType viewType, availableViews) {
     if (viewType.Name == "RenderView")
       views.push_back(viewType);
     else if (viewType.Name == "SpreadSheetView")
@@ -41,15 +40,12 @@ QList<pqStandardViewFrameActionsImplementation::ViewType> ViewFrameActions::avai
   return views;
 }
 
-bool ViewFrameActions::isButtonVisible(const std::string &buttonName,
-                                       pqView *)
+bool ViewFrameActions::isButtonVisible(const std::string& buttonName, pqView*)
 {
-  if (buttonName == "ForwardButton" || buttonName == "BackButton"
-      || buttonName == "ToggleInteractionMode" || buttonName == "AdjustCamera")
-  {
+  if (buttonName == "ForwardButton" || buttonName == "BackButton" ||
+      buttonName == "ToggleInteractionMode" || buttonName == "AdjustCamera") {
     return true;
   }
   return false;
 }
-
 }

@@ -22,8 +22,7 @@
 class QMenu;
 class pqView;
 
-namespace tomviz
-{
+namespace tomviz {
 class AddRenderViewContextMenuBehavior : public QObject
 {
   Q_OBJECT
@@ -44,7 +43,6 @@ protected:
   QPoint position;
   QMenu* menu;
 };
-
 }
 
 #endif

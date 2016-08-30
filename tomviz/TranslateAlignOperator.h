@@ -23,8 +23,7 @@
 #include <QPointer>
 #include <QVector>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class DataSource;
 
@@ -34,8 +33,8 @@ class TranslateAlignOperator : public Operator
   typedef Operator Superclass;
 
 public:
-  TranslateAlignOperator(DataSource *dataSource, QObject* parent = nullptr);
-  
+  TranslateAlignOperator(DataSource* dataSource, QObject* parent = nullptr);
+
   QString label() const override { return "Translation Align"; }
   QIcon icon() const override;
   Operator* clone() const override;
@@ -43,13 +42,13 @@ public:
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 
-  EditOperatorWidget *getEditorContentsWithData(QWidget* parent,
-    vtkSmartPointer<vtkImageData> data) override;
+  EditOperatorWidget* getEditorContentsWithData(
+    QWidget* parent, vtkSmartPointer<vtkImageData> data) override;
 
-  void setAlignOffsets(const QVector<vtkVector2i> &offsets);
-  const QVector<vtkVector2i> &getAlignOffsets() const { return offsets; }
+  void setAlignOffsets(const QVector<vtkVector2i>& offsets);
+  const QVector<vtkVector2i>& getAlignOffsets() const { return offsets; }
 
-  DataSource *getDataSource() const { return this->dataSource; }
+  DataSource* getDataSource() const { return this->dataSource; }
 
   bool hasCustomUI() const override { return true; }
 

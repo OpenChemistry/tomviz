@@ -16,21 +16,21 @@
 #ifndef tomvizModulePropertiesPanel_h
 #define tomvizModulePropertiesPanel_h
 
-#include <QWidget>
 #include <QScopedPointer>
+#include <QWidget>
 
 class vtkSMViewProxy;
 
-namespace tomviz
-{
+namespace tomviz {
 class Module;
 
 class ModulePropertiesPanel : public QWidget
 {
   Q_OBJECT
   typedef QWidget Superclass;
+
 public:
-  ModulePropertiesPanel(QWidget* parent=nullptr);
+  ModulePropertiesPanel(QWidget* parent = nullptr);
   virtual ~ModulePropertiesPanel();
 
 private slots:
@@ -47,7 +47,6 @@ private:
   class MPPInternals;
   const QScopedPointer<MPPInternals> Internals;
 };
-
 }
 
 #endif

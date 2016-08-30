@@ -20,8 +20,7 @@
 
 #include <QScopedPointer>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class ModuleSegment : public Module
 {
@@ -29,7 +28,7 @@ class ModuleSegment : public Module
   typedef Module Superclass;
 
 public:
-  ModuleSegment(QObject *parent = nullptr);
+  ModuleSegment(QObject* parent = nullptr);
   ~ModuleSegment();
 
   /// Returns a  label for this module.
@@ -60,18 +59,17 @@ public:
 
   /// This method is called add the proxies in this module to a
   /// pqProxiesWidget instance. Default implementation simply adds the view
-  /// properties.
-  /// Subclasses should override to add proxies and relevant properties to the
-  /// panel.
+  /// properties. Subclasses should override to add proxies and relevant
+  /// properties to the panel.
   void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy *proxy) override;
+  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
 protected:
-  std::string getStringForProxy(vtkSMProxy *proxy) override;
-  vtkSMProxy *getProxyForString(const std::string& str) override;
+  std::string getStringForProxy(vtkSMProxy* proxy) override;
+  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private slots:
   void onPropertyChanged();
@@ -82,7 +80,6 @@ private:
   class MSInternal;
   QScopedPointer<MSInternal> Internals;
 };
-
 }
 
 #endif

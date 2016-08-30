@@ -41,8 +41,8 @@
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkProperty.h"
-#include "vtkRenderer.h"
 #include "vtkRenderWindowInteractor.h"
+#include "vtkRenderer.h"
 #include "vtkScalarsToColors.h"
 #include "vtkSphereSource.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
@@ -56,45 +56,51 @@ vtkStandardNewMacro(vtkNonOrthoImagePlaneWidget)
 namespace detail
 {
 
-  //goal is to make an extent value that is a power of 2 and
-  //is greater or equal size to the real extent
+  // goal is to make an extent value that is a power of 2 and
+  // is greater or equal size to the real extent
   int make_extent(double planeSize, double spacing)
   {
-  // make sure we're working with valid values
-  double realExtent = ( spacing == 0 ) ? VTK_INT_MAX : planeSize / spacing;
+    // make sure we're working with valid values
+    double realExtent = (spacing == 0) ? VTK_INT_MAX : planeSize / spacing;
 
-  int extent = 0;
-  // Sanity check the input data:
-  // * if realExtent is too large, extent will wrap
-  // * if spacing is 0, things will blow up.
-  if (realExtent < (VTK_INT_MAX >> 1))
-    {
-    extent = 1;
-    //compute the largest power of 2 that is greater or equal to realExtent
-    while (extent < realExtent)
-      { extent = extent << 1; }
+    int extent = 0;
+    // Sanity check the input data:
+    // * if realExtent is too large, extent will wrap
+    // * if spacing is 0, things will blow up.
+    if (realExtent < (VTK_INT_MAX >> 1)) {
+      extent = 1;
+      // compute the largest power of 2 that is greater or equal to realExtent
+      while (extent < realExtent) {
+        extent = extent << 1;
+      }
     }
-  return extent;
+    return extent;
   }
 }
 
 vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, PlaneProperty, vtkProperty)
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedPlaneProperty, vtkProperty)
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, ArrowProperty, vtkProperty)
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedArrowProperty, vtkProperty)
-vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, TexturePlaneProperty, vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedPlaneProperty,
+                     vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, ArrowProperty,
+                     vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, SelectedArrowProperty,
+                     vtkProperty)
+vtkCxxSetObjectMacro(vtkNonOrthoImagePlaneWidget, TexturePlaneProperty,
+                     vtkProperty)
 
-vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWidget()
+vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
+  : vtkPolyDataSourceWidget()
 {
   this->State = vtkNonOrthoImagePlaneWidget::Start;
-  this->EventCallbackCommand->SetCallback(vtkNonOrthoImagePlaneWidget::ProcessEvents);
+  this->EventCallbackCommand->SetCallback(
+    vtkNonOrthoImagePlaneWidget::ProcessEvents);
 
-  this->Interaction              = 1;
-  this->ArrowVisibility          = 1;
-  this->PlaneOrientation         = 0;
-  this->PlaceFactor              = 1.0;
-  this->TextureInterpolate       = 1;
-  this->ResliceInterpolate       = VTK_LINEAR_RESLICE;
+  this->Interaction = 1;
+  this->ArrowVisibility = 1;
+  this->PlaneOrientation = 0;
+  this->PlaceFactor = 1.0;
+  this->TextureInterpolate = 1;
+  this->ResliceInterpolate = VTK_LINEAR_RESLICE;
 
   this->DisplayOffset[0] = 0;
   this->DisplayOffset[1] = 0;
@@ -102,29 +108,26 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWi
   this->DisplayTransform = vtkTransform::New();
 
   // Represent the plane's outline
-  //
   this->PlaneSource = vtkPlaneSource::New();
   this->PlaneSource->SetXResolution(1);
   this->PlaneSource->SetYResolution(1);
   this->PlaneOutlinePolyData = vtkPolyData::New();
-  this->PlaneOutlineActor    = vtkActor::New();
+  this->PlaneOutlineActor = vtkActor::New();
 
   // Represent the resliced image plane
-  //
-  this->Reslice            = vtkImageReslice::New();
+  this->Reslice = vtkImageReslice::New();
   this->Reslice->TransformInputSamplingOff();
   this->Reslice->AutoCropOutputOff();
   this->Reslice->MirrorOff();
 
-  this->ResliceAxes        = vtkMatrix4x4::New();
-  this->Texture            = vtkTexture::New();
-  this->TexturePlaneActor  = vtkActor::New();
-  this->Transform          = vtkTransform::New();
-  this->ImageData          = nullptr;
-  this->LookupTable        = nullptr;
+  this->ResliceAxes = vtkMatrix4x4::New();
+  this->Texture = vtkTexture::New();
+  this->TexturePlaneActor = vtkActor::New();
+  this->Transform = vtkTransform::New();
+  this->ImageData = nullptr;
+  this->LookupTable = nullptr;
 
   // Represent the positioning arrow
-  //
   this->LineSource = vtkLineSource::New();
   this->LineActor = vtkActor::New();
 
@@ -140,39 +143,34 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget() : vtkPolyDataSourceWi
   this->Sphere = vtkSphereSource::New();
   this->SphereActor = vtkActor::New();
 
-
   // Define some default point coordinates
-  //
   double bounds[6];
   bounds[0] = -0.5;
-  bounds[1] =  0.5;
+  bounds[1] = 0.5;
   bounds[2] = -0.5;
-  bounds[3] =  0.5;
+  bounds[3] = 0.5;
   bounds[4] = -0.5;
-  bounds[5] =  0.5;
+  bounds[5] = 0.5;
 
   // Initial creation of the widget, serves to initialize it
-  //
   this->GeneratePlaneOutline();
   this->GenerateTexturePlane();
   this->GenerateArrow();
-  //GenerateArrow needs to before placeWidget
+  // GenerateArrow needs to before placeWidget
   this->PlaceWidget(bounds);
 
   // Manage the picking stuff
-  //
   this->PlanePicker = nullptr;
   vtkNew<vtkCellPicker> picker;
-  picker->SetTolerance(0.005); //need some fluff
+  picker->SetTolerance(0.005); // need some fluff
   this->SetPicker(picker.GetPointer());
 
   // Set up the initial properties
-  //
-  this->PlaneProperty         = nullptr;
+  this->PlaneProperty = nullptr;
   this->SelectedPlaneProperty = nullptr;
-  this->ArrowProperty         = nullptr;
+  this->ArrowProperty = nullptr;
   this->SelectedArrowProperty = nullptr;
-  this->TexturePlaneProperty  = nullptr;
+  this->TexturePlaneProperty = nullptr;
   this->CreateDefaultProperties();
 
   // Set up actions
@@ -199,30 +197,25 @@ vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
   this->PlaneOutlinePolyData->Delete();
   this->PlaneSource->Delete();
 
-  if ( this->PlanePicker )
-    {
+  if (this->PlanePicker) {
     this->PlanePicker->UnRegister(this);
-    }
+  }
 
-  if ( this->PlaneProperty )
-    {
+  if (this->PlaneProperty) {
     this->PlaneProperty->Delete();
-    }
+  }
 
-  if ( this->SelectedPlaneProperty )
-    {
+  if (this->SelectedPlaneProperty) {
     this->SelectedPlaneProperty->Delete();
-    }
+  }
 
-  if ( this->ArrowProperty )
-    {
+  if (this->ArrowProperty) {
     this->ArrowProperty->Delete();
-    }
+  }
 
-  if ( this->SelectedArrowProperty )
-    {
+  if (this->SelectedArrowProperty) {
     this->SelectedArrowProperty->Delete();
-    }
+  }
 
   this->DisplayTransform->Delete();
 
@@ -230,25 +223,22 @@ vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
   this->Transform->Delete();
   this->Reslice->Delete();
 
-  if ( this->LookupTable )
-    {
+  if (this->LookupTable) {
     this->LookupTable->UnRegister(this);
-    }
+  }
 
   this->TexturePlaneActor->Delete();
   this->Texture->Delete();
 
-  if ( this->TexturePlaneProperty )
-    {
+  if (this->TexturePlaneProperty) {
     this->TexturePlaneProperty->Delete();
-    }
+  }
 
-  if ( this->ImageData )
-    {
+  if (this->ImageData) {
     this->ImageData = nullptr;
-    }
+  }
 
-  //delete everything related to the arrow
+  // delete everything related to the arrow
   this->LineSource->Delete();
   this->LineActor->Delete();
   this->ConeSource->Delete();
@@ -263,24 +253,19 @@ vtkNonOrthoImagePlaneWidget::~vtkNonOrthoImagePlaneWidget()
 
 void vtkNonOrthoImagePlaneWidget::SetTextureVisibility(int vis)
 {
-  if (this->TextureVisibility == vis)
-    {
+  if (this->TextureVisibility == vis) {
     return;
-    }
+  }
 
   this->TextureVisibility = vis;
 
-  if ( this->Enabled )
-    {
-    if (this->TextureVisibility)
-      {
+  if (this->Enabled) {
+    if (this->TextureVisibility) {
       this->CurrentRenderer->AddViewProp(this->TexturePlaneActor);
-      }
-    else
-      {
+    } else {
       this->CurrentRenderer->RemoveViewProp(this->TexturePlaneActor);
-      }
     }
+  }
 
   this->Modified();
 }
@@ -288,54 +273,48 @@ void vtkNonOrthoImagePlaneWidget::SetTextureVisibility(int vis)
 void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
 {
 
-  if ( ! this->Interactor )
-    {
-    vtkErrorMacro(<<"The interactor must be set prior to enabling/disabling widget");
+  if (!this->Interactor) {
+    vtkErrorMacro(
+      << "The interactor must be set prior to enabling/disabling widget");
     return;
+  }
+
+  if (enabling) {
+    vtkDebugMacro(<< "Enabling plane widget");
+
+    if (this->Enabled) // already enabled, just return
+    {
+      return;
     }
 
-  if ( enabling )
-    {
-    vtkDebugMacro(<<"Enabling plane widget");
-
-    if ( this->Enabled ) //already enabled, just return
-      {
-      return;
-      }
-
-    if ( ! this->CurrentRenderer )
-      {
+    if (!this->CurrentRenderer) {
       this->SetCurrentRenderer(this->Interactor->FindPokedRenderer(
         this->Interactor->GetLastEventPosition()[0],
         this->Interactor->GetLastEventPosition()[1]));
-      if (this->CurrentRenderer == nullptr)
-        {
+      if (this->CurrentRenderer == nullptr) {
         return;
-        }
       }
+    }
 
     this->Enabled = 1;
 
     // we have to honour this ivar: it could be that this->Interaction was
     // set to off when we were disabled
-    if (this->Interaction)
-    {
+    if (this->Interaction) {
       this->AddObservers();
     }
 
     // Add the plane
     if (this->PlaneProperty->GetOpacity() != 0 ||
-        this->SelectedPlaneProperty->GetOpacity() != 0)
-      {
+        this->SelectedPlaneProperty->GetOpacity() != 0) {
       this->CurrentRenderer->AddViewProp(this->PlaneOutlineActor);
-      }
+    }
     this->PlaneOutlineActor->SetProperty(this->PlaneProperty);
 
-    //add the TexturePlaneActor
-    if (this->TextureVisibility)
-      {
+    // add the TexturePlaneActor
+    if (this->TextureVisibility) {
       this->CurrentRenderer->AddViewProp(this->TexturePlaneActor);
-      }
+    }
     this->TexturePlaneActor->SetProperty(this->TexturePlaneProperty);
 
     // add the default arrow properties
@@ -358,17 +337,16 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
     this->ConeActor2->PickableOn();
     this->SphereActor->PickableOn();
 
-    this->InvokeEvent(vtkCommand::EnableEvent,nullptr);
-    }
+    this->InvokeEvent(vtkCommand::EnableEvent, nullptr);
+  }
 
-  else
+  else {
+    vtkDebugMacro(<< "Disabling plane widget");
+
+    if (!this->Enabled) // already disabled, just return
     {
-    vtkDebugMacro(<<"Disabling plane widget");
-
-    if ( ! this->Enabled ) //already disabled, just return
-      {
       return;
-      }
+    }
 
     this->Enabled = 0;
 
@@ -378,10 +356,10 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
     // turn off the plane
     this->CurrentRenderer->RemoveViewProp(this->PlaneOutlineActor);
 
-    //turn off the texture plane
+    // turn off the texture plane
     this->CurrentRenderer->RemoveViewProp(this->TexturePlaneActor);
 
-    //turn off the arrow
+    // turn off the arrow
     this->CurrentRenderer->RemoveViewProp(this->LineActor);
     this->CurrentRenderer->RemoveViewProp(this->ConeActor);
     this->CurrentRenderer->RemoveViewProp(this->LineActor2);
@@ -395,26 +373,25 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
     this->ConeActor2->PickableOff();
     this->SphereActor->PickableOff();
 
-    this->InvokeEvent(vtkCommand::DisableEvent,nullptr);
+    this->InvokeEvent(vtkCommand::DisableEvent, nullptr);
     this->SetCurrentRenderer(nullptr);
-    }
+  }
 
   this->Interactor->Render();
 }
 
 void vtkNonOrthoImagePlaneWidget::ProcessEvents(vtkObject* vtkNotUsed(object),
-                                        unsigned long event,
-                                        void* clientdata,
-                                        void* vtkNotUsed(calldata))
+                                                unsigned long event,
+                                                void* clientdata,
+                                                void* vtkNotUsed(calldata))
 {
   vtkNonOrthoImagePlaneWidget* self =
-    reinterpret_cast<vtkNonOrthoImagePlaneWidget *>( clientdata );
+    reinterpret_cast<vtkNonOrthoImagePlaneWidget*>(clientdata);
 
   self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_NO_BUTTON;
 
-  //okay, let's do the right thing
-  switch ( event )
-    {
+  // okay, let's do the right thing
+  switch (event) {
     case vtkCommand::LeftButtonPressEvent:
       self->LastButtonPressed = vtkNonOrthoImagePlaneWidget::VTK_LEFT_BUTTON;
       self->OnLeftButtonDown();
@@ -444,165 +421,132 @@ void vtkNonOrthoImagePlaneWidget::ProcessEvents(vtkObject* vtkNotUsed(object),
       break;
     case vtkCommand::CharEvent:
       break;
-    }
+  }
 }
 
 void vtkNonOrthoImagePlaneWidget::AddObservers(void)
 {
   // listen for the following events
-  vtkRenderWindowInteractor *i = this->Interactor;
-  if (i)
-    {
+  vtkRenderWindowInteractor* i = this->Interactor;
+  if (i) {
     i->AddObserver(vtkCommand::MouseMoveEvent, this->EventCallbackCommand,
-                       this->Priority);
-    i->AddObserver(vtkCommand::LeftButtonPressEvent,
-                       this->EventCallbackCommand, this->Priority);
+                   this->Priority);
+    i->AddObserver(vtkCommand::LeftButtonPressEvent, this->EventCallbackCommand,
+                   this->Priority);
     i->AddObserver(vtkCommand::LeftButtonReleaseEvent,
-                       this->EventCallbackCommand, this->Priority);
+                   this->EventCallbackCommand, this->Priority);
     i->AddObserver(vtkCommand::MiddleButtonPressEvent,
-                       this->EventCallbackCommand, this->Priority);
+                   this->EventCallbackCommand, this->Priority);
     i->AddObserver(vtkCommand::MiddleButtonReleaseEvent,
-                       this->EventCallbackCommand, this->Priority);
+                   this->EventCallbackCommand, this->Priority);
     i->AddObserver(vtkCommand::RightButtonPressEvent,
-                       this->EventCallbackCommand, this->Priority);
+                   this->EventCallbackCommand, this->Priority);
     i->AddObserver(vtkCommand::RightButtonReleaseEvent,
-                       this->EventCallbackCommand, this->Priority);
-    i->AddObserver(vtkCommand::CharEvent,
-                       this->EventCallbackCommand, this->Priority);
-    }
+                   this->EventCallbackCommand, this->Priority);
+    i->AddObserver(vtkCommand::CharEvent, this->EventCallbackCommand,
+                   this->Priority);
+  }
 }
 
 void vtkNonOrthoImagePlaneWidget::SetInteraction(int interact)
 {
-  if (this->Interactor && this->Enabled)
-    {
-    if (this->Interaction == interact)
-      {
+  if (this->Interactor && this->Enabled) {
+    if (this->Interaction == interact) {
       return;
-      }
-    if (interact == 0)
-      {
+    }
+    if (interact == 0) {
       this->Interactor->RemoveObserver(this->EventCallbackCommand);
-      }
-    else
-      {
-        this->AddObservers();
-      }
+    } else {
+      this->AddObservers();
+    }
     this->Interaction = interact;
-    }
-  else
-    {
-    vtkGenericWarningMacro(<<"set interactor and Enabled before changing interaction...");
-    }
+  } else {
+    vtkGenericWarningMacro(
+      << "set interactor and Enabled before changing interaction...");
+  }
 }
 
 void vtkNonOrthoImagePlaneWidget::SetArrowVisibility(int visible)
 {
-  if (this->Interactor && this->Enabled)
-    {
-    if (this->ArrowVisibility == visible)
-      {
+  if (this->Interactor && this->Enabled) {
+    if (this->ArrowVisibility == visible) {
       return;
-      }
+    }
     this->LineActor->SetVisibility(visible);
     this->ConeActor->SetVisibility(visible);
     this->LineActor2->SetVisibility(visible);
     this->ConeActor2->SetVisibility(visible);
     this->SphereActor->SetVisibility(visible);
     this->ArrowVisibility = visible;
-    }
-  else
-    {
-    vtkGenericWarningMacro(<<"set interactor and Enabled before changing visibility...");
-    }
+  } else {
+    vtkGenericWarningMacro(
+      << "set interactor and Enabled before changing visibility...");
+  }
 }
 
 void vtkNonOrthoImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 
-  if ( this->PlaneProperty )
-    {
+  if (this->PlaneProperty) {
     os << indent << "Plane Property:\n";
-    this->PlaneProperty->PrintSelf(os,indent.GetNextIndent());
-    }
-  else
-    {
+    this->PlaneProperty->PrintSelf(os, indent.GetNextIndent());
+  } else {
     os << indent << "Plane Property: (none)\n";
-    }
+  }
 
-  if ( this->SelectedPlaneProperty )
-    {
+  if (this->SelectedPlaneProperty) {
     os << indent << "Selected Plane Property:\n";
-    this->SelectedPlaneProperty->PrintSelf(os,indent.GetNextIndent());
-    }
-  else
-    {
+    this->SelectedPlaneProperty->PrintSelf(os, indent.GetNextIndent());
+  } else {
     os << indent << "Selected Plane Property: (none)\n";
-    }
+  }
 
-  if ( this->LookupTable )
-    {
+  if (this->LookupTable) {
     os << indent << "LookupTable:\n";
-    this->LookupTable->PrintSelf(os,indent.GetNextIndent());
-    }
-  else
-    {
+    this->LookupTable->PrintSelf(os, indent.GetNextIndent());
+  } else {
     os << indent << "LookupTable: (none)\n";
-    }
+  }
 
-  if ( this->TexturePlaneProperty )
-    {
+  if (this->TexturePlaneProperty) {
     os << indent << "TexturePlane Property:\n";
-    this->TexturePlaneProperty->PrintSelf(os,indent.GetNextIndent());
-    }
-  else
-    {
+    this->TexturePlaneProperty->PrintSelf(os, indent.GetNextIndent());
+  } else {
     os << indent << "TexturePlane Property: (none)\n";
-    }
+  }
 
-  if ( this->Reslice )
-    {
+  if (this->Reslice) {
     os << indent << "Reslice:\n";
-    this->Reslice->PrintSelf(os,indent.GetNextIndent());
-    }
-  else
-    {
+    this->Reslice->PrintSelf(os, indent.GetNextIndent());
+  } else {
     os << indent << "Reslice: (none)\n";
-    }
+  }
 
-  if ( this->ResliceAxes )
-    {
+  if (this->ResliceAxes) {
     os << indent << "ResliceAxes:\n";
-    this->ResliceAxes->PrintSelf(os,indent.GetNextIndent());
-    }
-  else
-    {
+    this->ResliceAxes->PrintSelf(os, indent.GetNextIndent());
+  } else {
     os << indent << "ResliceAxes: (none)\n";
-    }
+  }
 
-  double *o = this->PlaneSource->GetOrigin();
-  double *pt1 = this->PlaneSource->GetPoint1();
-  double *pt2 = this->PlaneSource->GetPoint2();
+  double* o = this->PlaneSource->GetOrigin();
+  double* pt1 = this->PlaneSource->GetPoint1();
+  double* pt2 = this->PlaneSource->GetPoint2();
 
-  os << indent << "Origin: (" << o[0] << ", "
-     << o[1] << ", "
-     << o[2] << ")\n";
-  os << indent << "Point 1: (" << pt1[0] << ", "
-     << pt1[1] << ", "
-     << pt1[2] << ")\n";
-  os << indent << "Point 2: (" << pt2[0] << ", "
-     << pt2[1] << ", "
-     << pt2[2] << ")\n";
+  os << indent << "Origin: (" << o[0] << ", " << o[1] << ", " << o[2] << ")\n";
+  os << indent << "Point 1: (" << pt1[0] << ", " << pt1[1] << ", " << pt1[2]
+     << ")\n";
+  os << indent << "Point 2: (" << pt2[0] << ", " << pt2[1] << ", " << pt2[2]
+     << ")\n";
 
   os << indent << "Plane Orientation: " << this->PlaneOrientation << "\n";
   os << indent << "Reslice Interpolate: " << this->ResliceInterpolate << "\n";
   os << indent << "Texture Interpolate: "
-     << (this->TextureInterpolate ? "On\n" : "Off\n") ;
-  os << indent << "Texture Visibility: "
-     << (this->TextureVisibility ? "On\n" : "Off\n") ;
-  os << indent << "Interaction: "
-     << (this->Interaction ? "On\n" : "Off\n") ;
+     << (this->TextureInterpolate ? "On\n" : "Off\n");
+  os << indent
+     << "Texture Visibility: " << (this->TextureVisibility ? "On\n" : "Off\n");
+  os << indent << "Interaction: " << (this->Interaction ? "On\n" : "Off\n");
   os << indent << "LeftButtonAction: " << this->LeftButtonAction << endl;
   os << indent << "MiddleButtonAction: " << this->MiddleButtonAction << endl;
   os << indent << "RightButtonAction: " << this->RightButtonAction << endl;
@@ -611,37 +555,35 @@ void vtkNonOrthoImagePlaneWidget::PrintSelf(ostream& os, vtkIndent indent)
 void vtkNonOrthoImagePlaneWidget::BuildRepresentation()
 {
   this->PlaneSource->Update();
-  double *origin = this->PlaneSource->GetOrigin();
-  double *normal = this->PlaneSource->GetNormal();
-  double *pt1 = this->PlaneSource->GetPoint1();
-  double *pt2 = this->PlaneSource->GetPoint2();
+  double* origin = this->PlaneSource->GetOrigin();
+  double* normal = this->PlaneSource->GetNormal();
+  double* pt1 = this->PlaneSource->GetPoint1();
+  double* pt2 = this->PlaneSource->GetPoint2();
 
   double x[3];
-  x[0] = origin[0] + (pt1[0]-origin[0]) + (pt2[0]-origin[0]);
-  x[1] = origin[1] + (pt1[1]-origin[1]) + (pt2[1]-origin[1]);
-  x[2] = origin[2] + (pt1[2]-origin[2]) + (pt2[2]-origin[2]);
+  x[0] = origin[0] + (pt1[0] - origin[0]) + (pt2[0] - origin[0]);
+  x[1] = origin[1] + (pt1[1] - origin[1]) + (pt2[1] - origin[1]);
+  x[2] = origin[2] + (pt1[2] - origin[2]) + (pt2[2] - origin[2]);
 
   vtkPoints* points = this->PlaneOutlinePolyData->GetPoints();
-  points->SetPoint(0,origin);
-  points->SetPoint(1,pt1);
-  points->SetPoint(2,x);
-  points->SetPoint(3,pt2);
+  points->SetPoint(0, origin);
+  points->SetPoint(1, pt1);
+  points->SetPoint(2, x);
+  points->SetPoint(3, pt2);
   points->GetData()->Modified();
   this->PlaneOutlinePolyData->Modified();
 
-
-  //setup the diagonal distance, i am lazy so use box to calculate it.
+  // setup the diagonal distance, i am lazy so use box to calculate it.
   vtkBoundingBox box;
-  box.AddPoint(origin[0],origin[1],origin[2]);
-  box.AddPoint(x[0],x[1],x[2]);
-  double d = box.GetDiagonalLength()/2.0;
+  box.AddPoint(origin[0], origin[1], origin[2]);
+  box.AddPoint(x[0], x[1], x[2]);
+  double d = box.GetDiagonalLength() / 2.0;
 
-
-  //compute the center of the plane
+  // compute the center of the plane
   double center[3];
-  center[0] = origin[0] + ((pt1[0]-origin[0]) + (pt2[0]-origin[0]))/2.0;
-  center[1] = origin[1] + ((pt1[1]-origin[1]) + (pt2[1]-origin[1]))/2.0;
-  center[2] = origin[2] + ((pt1[2]-origin[2]) + (pt2[2]-origin[2]))/2.0;
+  center[0] = origin[0] + ((pt1[0] - origin[0]) + (pt2[0] - origin[0])) / 2.0;
+  center[1] = origin[1] + ((pt1[1] - origin[1]) + (pt2[1] - origin[1])) / 2.0;
+  center[2] = origin[2] + ((pt1[2] - origin[2]) + (pt2[2] - origin[2])) / 2.0;
 
   double p1[3];
   p1[0] = center[0] + 0.30 * d * normal[0];
@@ -658,27 +600,26 @@ void vtkNonOrthoImagePlaneWidget::BuildRepresentation()
   p2[1] = center[1] - 0.30 * d * normal[1];
   p2[2] = center[2] - 0.30 * d * normal[2];
 
-  this->LineSource2->SetPoint1(center[0],center[1],center[2]);
+  this->LineSource2->SetPoint1(center[0], center[1], center[2]);
   this->LineSource2->SetPoint2(p2);
   this->ConeSource2->SetCenter(p2);
-  this->ConeSource2->SetDirection(normal[0],normal[1],normal[2]);
+  this->ConeSource2->SetDirection(normal[0], normal[1], normal[2]);
 
   // Set up the position handle
-  this->Sphere->SetCenter(center[0],center[1],center[2]);
+  this->Sphere->SetCenter(center[0], center[1], center[2]);
 
   this->UpdateArrowSize();
 }
 
 void vtkNonOrthoImagePlaneWidget::UpdateArrowSize()
 {
-  //we only want to rescale once we have an active camera, otherwise the
-  //initial arrow takes up the entire render window
-  if ( !this->CurrentRenderer || !this->CurrentRenderer->GetActiveCamera() )
-    {
+  // we only want to rescale once we have an active camera, otherwise the
+  // initial arrow takes up the entire render window
+  if (!this->CurrentRenderer || !this->CurrentRenderer->GetActiveCamera()) {
     return;
-    }
+  }
 
-  //hard code the controls for now
+  // hard code the controls for now
   const double handleSize = 5.0;
   const double factor = 1.5;
   double* pos = this->Sphere->GetCenter();
@@ -690,68 +631,60 @@ void vtkNonOrthoImagePlaneWidget::UpdateArrowSize()
   this->ComputeWorldToDisplay(pos[0], pos[1], pos[2], focalPoint);
   const double z = focalPoint[2];
 
-  double x = focalPoint[0] - handleSize/2.0;
-  double y = focalPoint[1] - handleSize/2.0;
-  this->ComputeDisplayToWorld(x,y,z,lowerLeft);
+  double x = focalPoint[0] - handleSize / 2.0;
+  double y = focalPoint[1] - handleSize / 2.0;
+  this->ComputeDisplayToWorld(x, y, z, lowerLeft);
 
-  x = focalPoint[0] + handleSize/2.0;
-  y = focalPoint[1] + handleSize/2.0;
-  this->ComputeDisplayToWorld(x,y,z,upperRight);
+  x = focalPoint[0] + handleSize / 2.0;
+  y = focalPoint[1] + handleSize / 2.0;
+  this->ComputeDisplayToWorld(x, y, z, upperRight);
 
   double scaledRadius = factor;
   {
-  double radius=0.0;
-  for (int i=0; i<3; i++)
-    {
-    radius += (upperRight[i] - lowerLeft[i]) * (upperRight[i] - lowerLeft[i]);
+    double radius = 0.0;
+    for (int i = 0; i < 3; i++) {
+      radius += (upperRight[i] - lowerLeft[i]) * (upperRight[i] - lowerLeft[i]);
     }
-  scaledRadius = factor * (sqrt(radius) / 2.0);
-  } //scope this so nobody uses radius
+    scaledRadius = factor * (sqrt(radius) / 2.0);
+  } // scope this so nobody uses radius
 
-
-  this->ConeSource->SetHeight(2.0*scaledRadius);
+  this->ConeSource->SetHeight(2.0 * scaledRadius);
   this->ConeSource->SetRadius(scaledRadius);
-  this->ConeSource2->SetHeight(2.0*scaledRadius);
+  this->ConeSource2->SetHeight(2.0 * scaledRadius);
   this->ConeSource2->SetRadius(scaledRadius);
   this->Sphere->SetRadius(scaledRadius);
-
 }
 
 void vtkNonOrthoImagePlaneWidget::HighlightPlane(int highlight)
 {
-  if ( highlight )
-    {
+  if (highlight) {
     this->PlaneOutlineActor->SetProperty(this->SelectedPlaneProperty);
     this->PlanePicker->GetPickPosition(this->LastPickPosition);
-    }
-  else
-    {
+  } else {
     this->PlaneOutlineActor->SetProperty(this->PlaneProperty);
-    }
+  }
 }
 
-void vtkNonOrthoImagePlaneWidget::OnButtonDown(int *btn)
+void vtkNonOrthoImagePlaneWidget::OnButtonDown(int* btn)
 {
-  switch (*btn)
-    {
+  switch (*btn) {
     case vtkNonOrthoImagePlaneWidget::VTK_NO_ACTION:
       break;
     case vtkNonOrthoImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
       this->StartSliceMotion();
       break;
-    }
+  }
 }
 
-void vtkNonOrthoImagePlaneWidget::OnButtonUp(int *btn)
+void vtkNonOrthoImagePlaneWidget::OnButtonUp(int* btn)
 {
-  switch (*btn)
-    {
+  switch (*btn) {
     case vtkNonOrthoImagePlaneWidget::VTK_NO_ACTION:
       break;
     case vtkNonOrthoImagePlaneWidget::VTK_SLICE_MOTION_ACTION:
       this->StopSliceMotion();
       break;
-    }
+  }
 }
 
 void vtkNonOrthoImagePlaneWidget::StartSliceMotion()
@@ -760,58 +693,51 @@ void vtkNonOrthoImagePlaneWidget::StartSliceMotion()
   int Y = this->Interactor->GetEventPosition()[1];
 
   // Okay, make sure that the pick is in the current renderer
-  if (!this->CurrentRenderer || !this->CurrentRenderer->IsInViewport(X, Y))
-    {
+  if (!this->CurrentRenderer || !this->CurrentRenderer->IsInViewport(X, Y)) {
     this->State = vtkNonOrthoImagePlaneWidget::Outside;
     return;
-    }
+  }
 
   // Okay, we can process this. If anything is picked, then we
   // can start pushing or check for adjusted states.
   bool stateFound = false;
   vtkAssemblyPath* path = this->GetAssemblyPath(X, Y, 0., this->PlanePicker);
-  if ( path != nullptr ) // Not picking this widget
-    {
-    vtkProp *prop = path->GetFirstNode()->GetViewProp();
-    if ( prop == this->ConeActor || prop == this->LineActor ||
-         prop == this->ConeActor2 || prop == this->LineActor2 )
-      {
+  if (path != nullptr) // Not picking this widget
+  {
+    vtkProp* prop = path->GetFirstNode()->GetViewProp();
+    if (prop == this->ConeActor || prop == this->LineActor ||
+        prop == this->ConeActor2 || prop == this->LineActor2) {
       this->State = vtkNonOrthoImagePlaneWidget::Rotating;
       this->HighlightPlane(1);
       this->HighlightArrow(1);
       stateFound = true;
-      }
-    else if(prop == this->TexturePlaneActor ||
-            prop == this->SphereActor)
-      {
+    } else if (prop == this->TexturePlaneActor || prop == this->SphereActor) {
       this->State = vtkNonOrthoImagePlaneWidget::Pushing;
       this->HighlightPlane(1);
       this->HighlightArrow(1);
       stateFound = true;
-      }
     }
-  if(!stateFound)
-    {
+  }
+  if (!stateFound) {
     this->State = vtkNonOrthoImagePlaneWidget::Outside;
     this->HighlightPlane(0);
     this->HighlightArrow(0);
     return;
-    }
+  }
 
   this->EventCallbackCommand->SetAbortFlag(1);
   this->StartInteraction();
-  this->InvokeEvent(vtkCommand::StartInteractionEvent,nullptr);
+  this->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
   this->Interactor->Render();
   return;
 }
 
 void vtkNonOrthoImagePlaneWidget::StopSliceMotion()
 {
-  if ( this->State == vtkNonOrthoImagePlaneWidget::Outside ||
-       this->State == vtkNonOrthoImagePlaneWidget::Start )
-    {
+  if (this->State == vtkNonOrthoImagePlaneWidget::Outside ||
+      this->State == vtkNonOrthoImagePlaneWidget::Start) {
     return;
-    }
+  }
 
   this->State = vtkNonOrthoImagePlaneWidget::Start;
   this->HighlightPlane(0);
@@ -819,7 +745,7 @@ void vtkNonOrthoImagePlaneWidget::StopSliceMotion()
 
   this->EventCallbackCommand->SetAbortFlag(1);
   this->EndInteraction();
-  this->InvokeEvent(vtkCommand::EndInteractionEvent,nullptr);
+  this->InvokeEvent(vtkCommand::EndInteractionEvent, nullptr);
   this->Interactor->Render();
 }
 
@@ -827,11 +753,10 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
 {
   // See whether we're active
   //
-  if ( this->State == vtkNonOrthoImagePlaneWidget::Outside ||
-       this->State == vtkNonOrthoImagePlaneWidget::Start )
-    {
+  if (this->State == vtkNonOrthoImagePlaneWidget::Outside ||
+      this->State == vtkNonOrthoImagePlaneWidget::Start) {
     return;
-    }
+  }
 
   int X = this->Interactor->GetEventPosition()[0];
   int Y = this->Interactor->GetEventPosition()[1];
@@ -842,11 +767,10 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
   double focalPoint[4], pickPoint[4], prevPickPoint[4];
   double z, vpn[3];
 
-  vtkCamera *camera = this->CurrentRenderer->GetActiveCamera();
-  if ( ! camera )
-    {
+  vtkCamera* camera = this->CurrentRenderer->GetActiveCamera();
+  if (!camera) {
     return;
-    }
+  }
 
   // Compute the two points defining the motion vector
   //
@@ -857,88 +781,75 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
 
   this->ComputeDisplayToWorld(
     double(this->Interactor->GetLastEventPosition()[0]),
-    double(this->Interactor->GetLastEventPosition()[1]),
-    z, prevPickPoint);
+    double(this->Interactor->GetLastEventPosition()[1]), z, prevPickPoint);
 
   this->ComputeDisplayToWorld(double(X), double(Y), z, pickPoint);
 
-  if ( this->State == vtkNonOrthoImagePlaneWidget::Pushing )
-    {
+  if (this->State == vtkNonOrthoImagePlaneWidget::Pushing) {
     this->Push(prevPickPoint, pickPoint);
     this->UpdatePlacement();
-    }
-  else if ( this->State == vtkNonOrthoImagePlaneWidget::Rotating )
-    {
+  } else if (this->State == vtkNonOrthoImagePlaneWidget::Rotating) {
     camera->GetViewPlaneNormal(vpn);
     this->Rotate(double(X), double(Y), prevPickPoint, pickPoint, vpn);
     this->UpdatePlacement();
-    }
+  }
 
   // Interact, if desired
   //
   this->EventCallbackCommand->SetAbortFlag(1);
-  this->InvokeEvent(vtkCommand::InteractionEvent,nullptr);
+  this->InvokeEvent(vtkCommand::InteractionEvent, nullptr);
 
   this->Interactor->Render();
 }
 
-void vtkNonOrthoImagePlaneWidget::Push(double *p1, double *p2)
+void vtkNonOrthoImagePlaneWidget::Push(double* p1, double* p2)
 {
   // Get the motion vector
   //
-  const double v[3] = {
-                      p2[0] - p1[0],
-                      p2[1] - p1[1],
-                      p2[2] - p1[2]
-                      };
+  const double v[3] = { p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2] };
 
-  //take only the primary component of the motion vector
+  // take only the primary component of the motion vector
   double norm[3];
   this->PlaneSource->GetNormal(norm);
-  const float dotV = vtkMath::Dot( v, norm  );
+  const float dotV = vtkMath::Dot(v, norm);
 
-  this->PlaneSource->Push( dotV );
+  this->PlaneSource->Push(dotV);
 }
 
 void vtkNonOrthoImagePlaneWidget::CreateDefaultProperties()
 {
-  if ( ! this->PlaneProperty )
-    {
-    //we are going to make sure the border is hidden
-    //when not selected
+  if (!this->PlaneProperty) {
+    // we are going to make sure the border is hidden
+    // when not selected
     this->PlaneProperty = vtkProperty::New();
     this->PlaneProperty->SetOpacity(0);
     this->PlaneProperty->SetRepresentationToWireframe();
-    }
+  }
 
-  if ( ! this->SelectedPlaneProperty )
-    {
+  if (!this->SelectedPlaneProperty) {
     this->SelectedPlaneProperty = vtkProperty::New();
     this->SelectedPlaneProperty->SetOpacity(0);
-    this->SelectedPlaneProperty->SetColor(0,1,0);
+    this->SelectedPlaneProperty->SetColor(0, 1, 0);
     this->SelectedPlaneProperty->SetRepresentationToWireframe();
-    }
+  }
 
-  if ( ! this->ArrowProperty )
-    {
+  if (!this->ArrowProperty) {
     this->ArrowProperty = vtkProperty::New();
-    this->ArrowProperty->SetColor(1,1,1);
+    this->ArrowProperty->SetColor(1, 1, 1);
     this->ArrowProperty->SetLineWidth(2);
-    }
+  }
 
-  if ( ! this->SelectedArrowProperty )
-    {
+  if (!this->SelectedArrowProperty) {
     this->SelectedArrowProperty = vtkProperty::New();
     this->ArrowProperty->SetLineWidth(2);
-    this->SelectedArrowProperty->SetColor(0,0,1);
-    }
+    this->SelectedArrowProperty->SetColor(0, 0, 1);
+  }
 
-  if ( ! this->TexturePlaneProperty )
-    {
+  if (!this->TexturePlaneProperty) {
     this->TexturePlaneProperty = vtkProperty::New();
     this->TexturePlaneProperty->SetAmbient(1);
     this->TexturePlaneProperty->SetInterpolationToFlat();
-    }
+  }
 }
 
 void vtkNonOrthoImagePlaneWidget::PlaceWidget(double bds[6])
@@ -947,29 +858,25 @@ void vtkNonOrthoImagePlaneWidget::PlaceWidget(double bds[6])
 
   this->AdjustBounds(bds, bounds, center);
 
-  if ( this->PlaneOrientation == 1 )
-    {
-    this->PlaneSource->SetOrigin(bounds[0],center[1],bounds[4]);
-    this->PlaneSource->SetPoint1(bounds[1],center[1],bounds[4]);
-    this->PlaneSource->SetPoint2(bounds[0],center[1],bounds[5]);
-    this->LineSource->SetPoint2(0,1,0);
-    }
-  else if ( this->PlaneOrientation == 2 )
-    {
-    this->PlaneSource->SetOrigin(bounds[0],bounds[2],center[2]);
-    this->PlaneSource->SetPoint1(bounds[1],bounds[2],center[2]);
-    this->PlaneSource->SetPoint2(bounds[0],bounds[3],center[2]);
-    this->LineSource->SetPoint2(0,0,1);
-    }
-  else //default or x-normal
-    {
-    this->PlaneSource->SetOrigin(center[0],bounds[2],bounds[4]);
-    this->PlaneSource->SetPoint1(center[0],bounds[3],bounds[4]);
-    this->PlaneSource->SetPoint2(center[0],bounds[2],bounds[5]);
-    this->LineSource->SetPoint2(1,0,0);
-    }
+  if (this->PlaneOrientation == 1) {
+    this->PlaneSource->SetOrigin(bounds[0], center[1], bounds[4]);
+    this->PlaneSource->SetPoint1(bounds[1], center[1], bounds[4]);
+    this->PlaneSource->SetPoint2(bounds[0], center[1], bounds[5]);
+    this->LineSource->SetPoint2(0, 1, 0);
+  } else if (this->PlaneOrientation == 2) {
+    this->PlaneSource->SetOrigin(bounds[0], bounds[2], center[2]);
+    this->PlaneSource->SetPoint1(bounds[1], bounds[2], center[2]);
+    this->PlaneSource->SetPoint2(bounds[0], bounds[3], center[2]);
+    this->LineSource->SetPoint2(0, 0, 1);
+  } else // default or x-normal
+  {
+    this->PlaneSource->SetOrigin(center[0], bounds[2], bounds[4]);
+    this->PlaneSource->SetPoint1(center[0], bounds[3], bounds[4]);
+    this->PlaneSource->SetPoint2(center[0], bounds[2], bounds[5]);
+    this->LineSource->SetPoint2(1, 0, 0);
+  }
 
-    this->LineSource->SetPoint1(this->PlaneSource->GetOrigin());
+  this->LineSource->SetPoint1(this->PlaneSource->GetOrigin());
 
   this->UpdatePlacement();
 }
@@ -979,16 +886,13 @@ void vtkNonOrthoImagePlaneWidget::SetPlaneOrientation(int i)
   // Generate a XY plane if i = 2, z-normal
   // or a YZ plane if i = 0, x-normal
   // or a ZX plane if i = 1, y-normal
-  //
   this->PlaneOrientation = i;
 
   // This method must be called _after_ SetInput
-  //
-  if ( !this->ImageData )
-    {
-    vtkErrorMacro(<<"SetInput() before setting plane orientation.");
+  if (!this->ImageData) {
+    vtkErrorMacro(<< "SetInput() before setting plane orientation.");
     return;
-    }
+  }
 
   vtkAlgorithm* inpAlg = this->Reslice->GetInputAlgorithm();
   inpAlg->UpdateInformation();
@@ -1001,40 +905,36 @@ void vtkNonOrthoImagePlaneWidget::SetPlaneOrientation(int i)
   outInfo->Get(vtkDataObject::SPACING(), spacing);
 
   // Prevent obscuring voxels by offsetting the plane geometry
-  //
-  double xbounds[] = {origin[0] + spacing[0] * (extent[0] - 0.5),
-                     origin[0] + spacing[0] * (extent[1] + 0.5)};
-  double ybounds[] = {origin[1] + spacing[1] * (extent[2] - 0.5),
-                     origin[1] + spacing[1] * (extent[3] + 0.5)};
-  double zbounds[] = {origin[2] + spacing[2] * (extent[4] - 0.5),
-                     origin[2] + spacing[2] * (extent[5] + 0.5)};
+  double xbounds[] = { origin[0] + spacing[0] * (extent[0] - 0.5),
+                       origin[0] + spacing[0] * (extent[1] + 0.5) };
+  double ybounds[] = { origin[1] + spacing[1] * (extent[2] - 0.5),
+                       origin[1] + spacing[1] * (extent[3] + 0.5) };
+  double zbounds[] = { origin[2] + spacing[2] * (extent[4] - 0.5),
+                       origin[2] + spacing[2] * (extent[5] + 0.5) };
 
-  //handle negative spacing
-  if ( spacing[0] < 0.0 )
-    {
+  // handle negative spacing
+  if (spacing[0] < 0.0) {
     double t = xbounds[0];
     xbounds[0] = xbounds[1];
     xbounds[1] = t;
-    }
-  if ( spacing[1] < 0.0 )
-    {
+  }
+  if (spacing[1] < 0.0) {
     double t = ybounds[0];
     ybounds[0] = ybounds[1];
     ybounds[1] = t;
-    }
-  if ( spacing[2] < 0.0 )
-    {
+  }
+  if (spacing[2] < 0.0) {
     double t = zbounds[0];
     zbounds[0] = zbounds[1];
     zbounds[1] = t;
-    }
+  }
 
-  //push the bounds out by the diagonal length
+  // push the bounds out by the diagonal length
   vtkBoundingBox box;
-  box.AddPoint(xbounds[0],ybounds[0],zbounds[0]);
-  box.AddPoint(xbounds[1],ybounds[1],zbounds[1]);
+  box.AddPoint(xbounds[0], ybounds[0], zbounds[0]);
+  box.AddPoint(xbounds[1], ybounds[1], zbounds[1]);
 
-  double padding = box.GetDiagonalLength()/2.0;
+  double padding = box.GetDiagonalLength() / 2.0;
   xbounds[0] -= padding;
   ybounds[0] -= padding;
   zbounds[0] -= padding;
@@ -1043,24 +943,22 @@ void vtkNonOrthoImagePlaneWidget::SetPlaneOrientation(int i)
   ybounds[1] += padding;
   zbounds[1] += padding;
 
-  if ( i == 2 ) //XY, z-normal
-    {
-    this->PlaneSource->SetOrigin(xbounds[0],ybounds[0],zbounds[0]);
-    this->PlaneSource->SetPoint1(xbounds[1],ybounds[0],zbounds[0]);
-    this->PlaneSource->SetPoint2(xbounds[0],ybounds[1],zbounds[0]);
-    }
-  else if ( i == 0 ) //YZ, x-normal
-    {
-    this->PlaneSource->SetOrigin(xbounds[0],ybounds[0],zbounds[0]);
-    this->PlaneSource->SetPoint1(xbounds[0],ybounds[1],zbounds[0]);
-    this->PlaneSource->SetPoint2(xbounds[0],ybounds[0],zbounds[1]);
-    }
-  else  //ZX, y-normal
-    {
-    this->PlaneSource->SetOrigin(xbounds[0],ybounds[0],zbounds[0]);
-    this->PlaneSource->SetPoint1(xbounds[0],ybounds[0],zbounds[1]);
-    this->PlaneSource->SetPoint2(xbounds[1],ybounds[0],zbounds[0]);
-    }
+  if (i == 2) // XY, z-normal
+  {
+    this->PlaneSource->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
+    this->PlaneSource->SetPoint1(xbounds[1], ybounds[0], zbounds[0]);
+    this->PlaneSource->SetPoint2(xbounds[0], ybounds[1], zbounds[0]);
+  } else if (i == 0) // YZ, x-normal
+  {
+    this->PlaneSource->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
+    this->PlaneSource->SetPoint1(xbounds[0], ybounds[1], zbounds[0]);
+    this->PlaneSource->SetPoint2(xbounds[0], ybounds[0], zbounds[1]);
+  } else // ZX, y-normal
+  {
+    this->PlaneSource->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
+    this->PlaneSource->SetPoint1(xbounds[0], ybounds[0], zbounds[1]);
+    this->PlaneSource->SetPoint2(xbounds[1], ybounds[0], zbounds[0]);
+  }
 
   this->UpdatePlacement();
   this->Modified();
@@ -1071,17 +969,14 @@ void vtkNonOrthoImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
   this->Superclass::SetInputConnection(aout);
 
   this->ImageData = vtkImageData::SafeDownCast(
-    aout->GetProducer()->GetOutputDataObject(
-      aout->GetIndex()));
+    aout->GetProducer()->GetOutputDataObject(aout->GetIndex()));
 
-  if( !this->ImageData )
-    {
+  if (!this->ImageData) {
     // If NULL is passed, remove any reference that Reslice had
     // on the old ImageData
-    //
     this->Reslice->SetInputData(nullptr);
     return;
-    }
+  }
 
   this->Reslice->SetInputConnection(aout);
   int interpolate = this->ResliceInterpolate;
@@ -1098,10 +993,9 @@ void vtkNonOrthoImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
 
 void vtkNonOrthoImagePlaneWidget::UpdatePlane()
 {
-  if ( !this->Reslice || !this->ImageData )
-    {
+  if (!this->Reslice || !this->ImageData) {
     return;
-    }
+  }
 
   vtkAlgorithm* inpAlg = this->Reslice->GetInputAlgorithm();
   inpAlg->UpdateInformation();
@@ -1113,25 +1007,20 @@ void vtkNonOrthoImagePlaneWidget::UpdatePlane()
   double spacing[3];
   outInfo->Get(vtkDataObject::SPACING(), spacing);
 
-  //setup the clip bounds
+  // setup the clip bounds
   this->UpdateClipBounds(bounds, spacing);
 
   double planeCenter[3];
   this->PlaneSource->GetCenter(planeCenter);
 
-  for (int i = 0; i < 3; i++ )
-    {
+  for (int i = 0; i < 3; i++) {
     // Force the plane to lie within the true image bounds along its normal
-    //
-    if ( planeCenter[i] > bounds[2*i+1] )
-      {
-      planeCenter[i] = bounds[2*i+1];
-      }
-    else if ( planeCenter[i] < bounds[2*i] )
-      {
-      planeCenter[i] = bounds[2*i];
-      }
+    if (planeCenter[i] > bounds[2 * i + 1]) {
+      planeCenter[i] = bounds[2 * i + 1];
+    } else if (planeCenter[i] < bounds[2 * i]) {
+      planeCenter[i] = bounds[2 * i];
     }
+  }
 
   double normal[3];
   this->PlaneSource->GetNormal(normal);
@@ -1150,12 +1039,11 @@ void vtkNonOrthoImagePlaneWidget::UpdatePlane()
   // Generate the slicing matrix
   //
   this->ResliceAxes->Identity();
-  for (int i = 0; i < 3; i++ )
-     {
-     this->ResliceAxes->SetElement(0,i,planeAxis1[i]);
-     this->ResliceAxes->SetElement(1,i,planeAxis2[i]);
-     this->ResliceAxes->SetElement(2,i,normal[i]);
-     }
+  for (int i = 0; i < 3; i++) {
+    this->ResliceAxes->SetElement(0, i, planeAxis1[i]);
+    this->ResliceAxes->SetElement(1, i, planeAxis2[i]);
+    this->ResliceAxes->SetElement(2, i, normal[i]);
+  }
 
   double planeOrigin[4];
   this->PlaneSource->GetOrigin(planeOrigin);
@@ -1163,38 +1051,37 @@ void vtkNonOrthoImagePlaneWidget::UpdatePlane()
   planeOrigin[3] = 1.0;
 
   this->ResliceAxes->Transpose();
-  this->ResliceAxes->SetElement(0,3,planeOrigin[0]);
-  this->ResliceAxes->SetElement(1,3,planeOrigin[1]);
-  this->ResliceAxes->SetElement(2,3,planeOrigin[2]);
+  this->ResliceAxes->SetElement(0, 3, planeOrigin[0]);
+  this->ResliceAxes->SetElement(1, 3, planeOrigin[1]);
+  this->ResliceAxes->SetElement(2, 3, planeOrigin[2]);
 
   this->Reslice->SetResliceAxes(this->ResliceAxes);
 
-  double spacingX = fabs(planeAxis1[0]*spacing[0])+
-                    fabs(planeAxis1[1]*spacing[1])+
-                    fabs(planeAxis1[2]*spacing[2]);
+  double spacingX = fabs(planeAxis1[0] * spacing[0]) +
+                    fabs(planeAxis1[1] * spacing[1]) +
+                    fabs(planeAxis1[2] * spacing[2]);
 
-  double spacingY = fabs(planeAxis2[0]*spacing[0])+
-                    fabs(planeAxis2[1]*spacing[1])+
-                    fabs(planeAxis2[2]*spacing[2]);
+  double spacingY = fabs(planeAxis2[0] * spacing[0]) +
+                    fabs(planeAxis2[1] * spacing[1]) +
+                    fabs(planeAxis2[2] * spacing[2]);
 
   // Pad extent up to a power of two for efficient texture mapping
-  int extentX = detail::make_extent(planeSizeX,spacingX);
-  int extentY = detail::make_extent(planeSizeY,spacingY);
+  int extentX = detail::make_extent(planeSizeX, spacingX);
+  int extentY = detail::make_extent(planeSizeY, spacingY);
 
-  double outputSpacingX = (planeSizeX == 0) ? 1.0 : planeSizeX/extentX;
-  double outputSpacingY = (planeSizeY == 0) ? 1.0 : planeSizeY/extentY;
+  double outputSpacingX = (planeSizeX == 0) ? 1.0 : planeSizeX / extentX;
+  double outputSpacingY = (planeSizeY == 0) ? 1.0 : planeSizeY / extentY;
 
   this->PlaneSource->SetCenter(planeCenter);
   this->Reslice->SetOutputSpacing(outputSpacingX, outputSpacingY, 1);
-  this->Reslice->SetOutputOrigin(0.5*outputSpacingX, 0.5*outputSpacingY, 0);
-  this->Reslice->SetOutputExtent(0, extentX-1, 0, extentY-1, 0, 0);
+  this->Reslice->SetOutputOrigin(0.5 * outputSpacingX, 0.5 * outputSpacingY, 0);
+  this->Reslice->SetOutputExtent(0, extentX - 1, 0, extentY - 1, 0, 0);
 }
 
 void vtkNonOrthoImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
-                                               double bounds[6])
+                                                  double bounds[6])
 {
   // Calculate appropriate pixel spacing for the reslicing
-  //
   double spacing[3];
   outInfo->Get(vtkDataObject::SPACING(), spacing);
   double origin[3];
@@ -1204,73 +1091,73 @@ void vtkNonOrthoImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
 
   int i;
 
-  double orig_bounds[] = {origin[0] + spacing[0]*extent[0], //xmin
-                          origin[0] + spacing[0]*extent[1], //xmax
-                          origin[1] + spacing[1]*extent[2], //ymin
-                          origin[1] + spacing[1]*extent[3], //ymax
-                          origin[2] + spacing[2]*extent[4], //zmin
-                          origin[2] + spacing[2]*extent[5]};//zmax
+  double orig_bounds[] = { origin[0] + spacing[0] * extent[0],   // xmin
+                           origin[0] + spacing[0] * extent[1],   // xmax
+                           origin[1] + spacing[1] * extent[2],   // ymin
+                           origin[1] + spacing[1] * extent[3],   // ymax
+                           origin[2] + spacing[2] * extent[4],   // zmin
+                           origin[2] + spacing[2] * extent[5] }; // zmax
 
-  for ( i = 0; i <= 4; i += 2 ) // reverse bounds if necessary
-    {
-    if ( orig_bounds[i] > orig_bounds[i+1] )
-      {
-      double t = orig_bounds[i+1];
-      orig_bounds[i+1] = orig_bounds[i];
+  for (i = 0; i <= 4; i += 2) // reverse bounds if necessary
+  {
+    if (orig_bounds[i] > orig_bounds[i + 1]) {
+      double t = orig_bounds[i + 1];
+      orig_bounds[i + 1] = orig_bounds[i];
       orig_bounds[i] = t;
-      }
     }
+  }
 
-  //update the bounds
-  bounds[0]=orig_bounds[0];
-  bounds[1]=orig_bounds[1];
-  bounds[2]=orig_bounds[2];
-  bounds[3]=orig_bounds[3];
-  bounds[4]=orig_bounds[4];
-  bounds[5]=orig_bounds[5];
+  // update the bounds
+  bounds[0] = orig_bounds[0];
+  bounds[1] = orig_bounds[1];
+  bounds[2] = orig_bounds[2];
+  bounds[3] = orig_bounds[3];
+  bounds[4] = orig_bounds[4];
+  bounds[5] = orig_bounds[5];
 }
 
 void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6],
-                                                double spacing[3])
+                                                   double spacing[3])
 {
-  //todo: we need to cache this so we don't redo this every frame
+  // todo: we need to cache this so we don't redo this every frame
 
-  //setup custom clip planes for the texture mapper so that it doesn't
-  //draw outside the box
+  // setup custom clip planes for the texture mapper so that it doesn't
+  // draw outside the box
   vtkNew<vtkPlaneCollection> clippingPlanes;
 
-  //we push the bounds out by two voxels by using the spacing
-  double clip_bounds[6] = { bounds[0] - (2 *spacing[0]) + this->DisplayOffset[0],
-                            bounds[1] + (2 *spacing[0]) + this->DisplayOffset[0],
-                            bounds[2] - (2 *spacing[1]) + this->DisplayOffset[1],
-                            bounds[3] + (2 *spacing[1]) + this->DisplayOffset[1],
-                            bounds[4] - (2 *spacing[2]) + this->DisplayOffset[2],
-                            bounds[5] + (2 *spacing[2]) + this->DisplayOffset[2]
-                          };
+  // we push the bounds out by two voxels by using the spacing
+  double clip_bounds[6] = {
+    bounds[0] - (2 * spacing[0]) + this->DisplayOffset[0],
+    bounds[1] + (2 * spacing[0]) + this->DisplayOffset[0],
+    bounds[2] - (2 * spacing[1]) + this->DisplayOffset[1],
+    bounds[3] + (2 * spacing[1]) + this->DisplayOffset[1],
+    bounds[4] - (2 * spacing[2]) + this->DisplayOffset[2],
+    bounds[5] + (2 * spacing[2]) + this->DisplayOffset[2]
+  };
 
   vtkNew<vtkPlane> minXPlane;
-  minXPlane->SetOrigin(clip_bounds[0],clip_bounds[2],clip_bounds[4]);
-  minXPlane->SetNormal(1,0,0); //clip everything on low x
+  minXPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
+  minXPlane->SetNormal(1, 0, 0); // clip everything on low x
 
   vtkNew<vtkPlane> maxXPlane;
-  maxXPlane->SetOrigin(clip_bounds[1],clip_bounds[3],clip_bounds[5]);
-  maxXPlane->SetNormal(-1,0,0); //clip everything on high x
+  maxXPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
+  maxXPlane->SetNormal(-1, 0, 0); // clip everything on high x
 
   vtkNew<vtkPlane> minYPlane;
-  minYPlane->SetOrigin(clip_bounds[0],clip_bounds[2],clip_bounds[4]);
-  minYPlane->SetNormal(0,1,0); //clip everything on low y
+  minYPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
+  minYPlane->SetNormal(0, 1, 0); // clip everything on low y
 
   vtkNew<vtkPlane> maxYPlane;
-  maxYPlane->SetOrigin(clip_bounds[1],clip_bounds[3],clip_bounds[5]);
-  maxYPlane->SetNormal(0,-1,0); //clip everything on high y
+  maxYPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
+  maxYPlane->SetNormal(0, -1, 0); // clip everything on high y
 
   vtkNew<vtkPlane> minZPlane;
-  minZPlane->SetOrigin(clip_bounds[0],clip_bounds[2],clip_bounds[4]);
-  minZPlane->SetNormal(0,0,1); //clip everything on low y
+  minZPlane->SetOrigin(clip_bounds[0], clip_bounds[2], clip_bounds[4]);
+  minZPlane->SetNormal(0, 0, 1); // clip everything on low y
 
   vtkNew<vtkPlane> maxZPlane;
-  maxZPlane->SetOrigin(clip_bounds[1],clip_bounds[3],clip_bounds[5]);
-  maxZPlane->SetNormal(0,0,-1); //clip everything on high y
+  maxZPlane->SetOrigin(clip_bounds[1], clip_bounds[3], clip_bounds[5]);
+  maxZPlane->SetNormal(0, 0, -1); // clip everything on high y
 
   clippingPlanes->AddItem(minXPlane.GetPointer());
   clippingPlanes->AddItem(maxXPlane.GetPointer());
@@ -1282,38 +1169,34 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6],
   clippingPlanes->AddItem(maxZPlane.GetPointer());
 
   this->TexturePlaneActor->GetMapper()->SetClippingPlanes(
-                                              clippingPlanes.GetPointer());
+    clippingPlanes.GetPointer());
 }
 
 vtkImageData* vtkNonOrthoImagePlaneWidget::GetResliceOutput()
 {
-  if ( ! this->Reslice )
-    {
+  if (!this->Reslice) {
     return nullptr;
-    }
+  }
   return this->Reslice->GetOutput();
 }
 
 void vtkNonOrthoImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
 {
   // we have to have a picker for slice motion, window level and cursor to work
-  if (this->PlanePicker != picker)
-    {
+  if (this->PlanePicker != picker) {
     // to avoid destructor recursion
-    vtkAbstractPropPicker *temp = this->PlanePicker;
+    vtkAbstractPropPicker* temp = this->PlanePicker;
     this->PlanePicker = picker;
-    if (temp != nullptr)
-      {
+    if (temp != nullptr) {
       temp->UnRegister(this);
-      }
+    }
 
     int delPicker = 0;
-    if (this->PlanePicker == nullptr)
-      {
+    if (this->PlanePicker == nullptr) {
       this->PlanePicker = vtkCellPicker::New();
       vtkCellPicker::SafeDownCast(this->PlanePicker)->SetTolerance(0.005);
       delPicker = 1;
-      }
+    }
 
     this->PlanePicker->Register(this);
     this->PlanePicker->AddPickList(this->TexturePlaneActor);
@@ -1324,39 +1207,31 @@ void vtkNonOrthoImagePlaneWidget::SetPicker(vtkAbstractPropPicker* picker)
     this->PlanePicker->AddPickList(this->SphereActor);
     this->PlanePicker->PickFromListOn();
 
-    if ( delPicker )
-      {
+    if (delPicker) {
       this->PlanePicker->Delete();
-      }
     }
+  }
 }
 
 void vtkNonOrthoImagePlaneWidget::SetResliceInterpolate(int i)
 {
-  if ( this->ResliceInterpolate == i )
-    {
+  if (this->ResliceInterpolate == i) {
     return;
-    }
+  }
   this->ResliceInterpolate = i;
   this->Modified();
 
-  if ( !this->Reslice )
-    {
+  if (!this->Reslice) {
     return;
-    }
+  }
 
-  if ( i == VTK_NEAREST_RESLICE )
-    {
+  if (i == VTK_NEAREST_RESLICE) {
     this->Reslice->SetInterpolationModeToNearestNeighbor();
-    }
-  else if ( i == VTK_LINEAR_RESLICE)
-    {
+  } else if (i == VTK_LINEAR_RESLICE) {
     this->Reslice->SetInterpolationModeToLinear();
-    }
-  else
-    {
+  } else {
     this->Reslice->SetInterpolationModeToCubic();
-    }
+  }
   this->Texture->SetInterpolate(this->TextureInterpolate);
 }
 
@@ -1365,72 +1240,61 @@ vtkScalarsToColors* vtkNonOrthoImagePlaneWidget::CreateDefaultLookupTable()
   vtkLookupTable* lut = vtkLookupTable::New();
   lut->Register(this);
   lut->Delete();
-  lut->SetNumberOfColors( 256);
-  lut->SetHueRange( 0, 0);
-  lut->SetSaturationRange( 0, 0);
-  lut->SetValueRange( 0 ,1);
-  lut->SetAlphaRange( 1, 1);
+  lut->SetNumberOfColors(256);
+  lut->SetHueRange(0, 0);
+  lut->SetSaturationRange(0, 0);
+  lut->SetValueRange(0, 1);
+  lut->SetAlphaRange(1, 1);
   lut->Build();
   return lut;
 }
 
 void vtkNonOrthoImagePlaneWidget::SetLookupTable(vtkScalarsToColors* table)
 {
-  if (this->LookupTable != table)
-    {
+  if (this->LookupTable != table) {
     // to avoid destructor recursion
-    vtkScalarsToColors *temp = this->LookupTable;
+    vtkScalarsToColors* temp = this->LookupTable;
     this->LookupTable = table;
-    if (temp != nullptr)
-      {
+    if (temp != nullptr) {
       temp->UnRegister(this);
-      }
-    if (this->LookupTable != nullptr)
-      {
-      this->LookupTable->Register(this);
-      }
-    else  //create a default lut
-      {
-      this->LookupTable = this->CreateDefaultLookupTable();
-      }
     }
+    if (this->LookupTable != nullptr) {
+      this->LookupTable->Register(this);
+    } else // create a default lut
+    {
+      this->LookupTable = this->CreateDefaultLookupTable();
+    }
+  }
 
   this->Texture->SetLookupTable(this->LookupTable);
 
-  if(this->ImageData)
-    {
+  if (this->ImageData) {
     double range[2];
     this->ImageData->GetScalarRange(range);
 
     this->LookupTable->Build();
-    }
+  }
 }
 
 void vtkNonOrthoImagePlaneWidget::SetSlicePosition(double position)
 {
   double amount = 0.0;
   double planeOrigin[3];
-  this->PlaneSource->GetOrigin( planeOrigin );
+  this->PlaneSource->GetOrigin(planeOrigin);
 
-  if ( this->PlaneOrientation == 2 ) // z axis
-    {
+  if (this->PlaneOrientation == 2) {
     amount = position - planeOrigin[2];
-    }
-  else if ( this->PlaneOrientation == 0 ) // x axis
-    {
+  } else if (this->PlaneOrientation == 0) {
     amount = position - planeOrigin[0];
-    }
-  else if ( this->PlaneOrientation == 1 )  //y axis
-    {
+  } else if (this->PlaneOrientation == 1) {
     amount = position - planeOrigin[1];
-    }
-  else
-    {
-    vtkGenericWarningMacro("only works for ortho planes: set plane orientation first");
+  } else {
+    vtkGenericWarningMacro(
+      "only works for ortho planes: set plane orientation first");
     return;
-    }
+  }
 
-  this->PlaneSource->Push( amount );
+  this->PlaneSource->Push(amount);
   this->UpdatePlacement();
   this->Modified();
 }
@@ -1438,38 +1302,30 @@ void vtkNonOrthoImagePlaneWidget::SetSlicePosition(double position)
 double vtkNonOrthoImagePlaneWidget::GetSlicePosition()
 {
   double planeOrigin[3];
-  this->PlaneSource->GetOrigin( planeOrigin);
+  this->PlaneSource->GetOrigin(planeOrigin);
 
-  if ( this->PlaneOrientation == 2 )
-    {
+  if (this->PlaneOrientation == 2) {
     return planeOrigin[2];
-    }
-  else if ( this->PlaneOrientation == 1 )
-    {
+  } else if (this->PlaneOrientation == 1) {
     return planeOrigin[1];
-    }
-  else if ( this->PlaneOrientation == 0 )
-    {
+  } else if (this->PlaneOrientation == 0) {
     return planeOrigin[0];
-    }
-  else
-    {
-    vtkGenericWarningMacro("only works for ortho planes: set plane orientation first");
-    }
+  } else {
+    vtkGenericWarningMacro(
+      "only works for ortho planes: set plane orientation first");
+  }
 
   return 0.0;
 }
 
 void vtkNonOrthoImagePlaneWidget::SetSliceIndex(int index)
 {
-  if ( !this->Reslice )
-    {
-      return;
-    }
-  if ( !this->ImageData )
-    {
+  if (!this->Reslice) {
     return;
-    }
+  }
+  if (!this->ImageData) {
+    return;
+  }
   vtkAlgorithm* inpAlg = this->Reslice->GetInputAlgorithm();
   inpAlg->UpdateInformation();
   vtkInformation* outInfo = inpAlg->GetOutputInformation(0);
@@ -1484,29 +1340,23 @@ void vtkNonOrthoImagePlaneWidget::SetSliceIndex(int index)
   double pt2[3];
   this->PlaneSource->GetPoint2(pt2);
 
-  if ( this->PlaneOrientation == 2 )
-    {
-    planeOrigin[2] = origin[2] + index*spacing[2];
+  if (this->PlaneOrientation == 2) {
+    planeOrigin[2] = origin[2] + index * spacing[2];
     pt1[2] = planeOrigin[2];
     pt2[2] = planeOrigin[2];
-    }
-  else if ( this->PlaneOrientation == 1 )
-    {
-    planeOrigin[1] = origin[1] + index*spacing[1];
+  } else if (this->PlaneOrientation == 1) {
+    planeOrigin[1] = origin[1] + index * spacing[1];
     pt1[1] = planeOrigin[1];
     pt2[1] = planeOrigin[1];
-    }
-  else if ( this->PlaneOrientation == 0 )
-    {
-    planeOrigin[0] = origin[0] + index*spacing[0];
+  } else if (this->PlaneOrientation == 0) {
+    planeOrigin[0] = origin[0] + index * spacing[0];
     pt1[0] = planeOrigin[0];
     pt2[0] = planeOrigin[0];
-    }
-  else
-    {
-    vtkGenericWarningMacro("only works for ortho planes: set plane orientation first");
+  } else {
+    vtkGenericWarningMacro(
+      "only works for ortho planes: set plane orientation first");
     return;
-    }
+  }
 
   this->PlaneSource->SetOrigin(planeOrigin);
   this->PlaneSource->SetPoint1(pt1);
@@ -1517,14 +1367,12 @@ void vtkNonOrthoImagePlaneWidget::SetSliceIndex(int index)
 
 int vtkNonOrthoImagePlaneWidget::GetSliceIndex()
 {
-  if ( ! this->Reslice )
-    {
+  if (!this->Reslice) {
     return 0;
-    }
-  if ( ! this->ImageData )
-    {
+  }
+  if (!this->ImageData) {
     return 0;
-    }
+  }
   vtkAlgorithm* inpAlg = this->Reslice->GetInputAlgorithm();
   inpAlg->UpdateInformation();
   vtkInformation* outInfo = inpAlg->GetOutputInformation(0);
@@ -1535,29 +1383,23 @@ int vtkNonOrthoImagePlaneWidget::GetSliceIndex()
   double planeOrigin[3];
   this->PlaneSource->GetOrigin(planeOrigin);
 
-  if ( this->PlaneOrientation == 2 )
-    {
-    return vtkMath::Round((planeOrigin[2]-origin[2])/spacing[2]);
-    }
-  else if ( this->PlaneOrientation == 1 )
-    {
-    return vtkMath::Round((planeOrigin[1]-origin[1])/spacing[1]);
-    }
-  else if ( this->PlaneOrientation == 0 )
-    {
-    return vtkMath::Round((planeOrigin[0]-origin[0])/spacing[0]);
-    }
-  else
-    {
-    vtkGenericWarningMacro("only works for ortho planes: set plane orientation first");
-    }
+  if (this->PlaneOrientation == 2) {
+    return vtkMath::Round((planeOrigin[2] - origin[2]) / spacing[2]);
+  } else if (this->PlaneOrientation == 1) {
+    return vtkMath::Round((planeOrigin[1] - origin[1]) / spacing[1]);
+  } else if (this->PlaneOrientation == 0) {
+    return vtkMath::Round((planeOrigin[0] - origin[0]) / spacing[0]);
+  } else {
+    vtkGenericWarningMacro(
+      "only works for ortho planes: set plane orientation first");
+  }
 
   return 0;
 }
 
 void vtkNonOrthoImagePlaneWidget::SetOrigin(double x, double y, double z)
 {
-  this->PlaneSource->SetOrigin(x,y,z);
+  this->PlaneSource->SetOrigin(x, y, z);
   this->Modified();
 }
 
@@ -1579,7 +1421,7 @@ void vtkNonOrthoImagePlaneWidget::GetOrigin(double xyz[3])
 
 void vtkNonOrthoImagePlaneWidget::SetPoint1(double x, double y, double z)
 {
-  this->PlaneSource->SetPoint1(x,y,z);
+  this->PlaneSource->SetPoint1(x, y, z);
   this->Modified();
 }
 
@@ -1601,7 +1443,7 @@ void vtkNonOrthoImagePlaneWidget::GetPoint1(double xyz[3])
 
 void vtkNonOrthoImagePlaneWidget::SetPoint2(double x, double y, double z)
 {
-  this->PlaneSource->SetPoint2(x,y,z);
+  this->PlaneSource->SetPoint2(x, y, z);
   this->Modified();
 }
 
@@ -1655,8 +1497,7 @@ void vtkNonOrthoImagePlaneWidget::GetNormal(double xyz[3])
 
 void vtkNonOrthoImagePlaneWidget::SetDisplayOffset(const double xyz[3])
 {
-  for (int i = 0; i < 3; ++i)
-  {
+  for (int i = 0; i < 3; ++i) {
     this->DisplayOffset[i] = xyz[i];
   }
   this->DisplayTransform->Identity();
@@ -1672,18 +1513,17 @@ const double* vtkNonOrthoImagePlaneWidget::GetDisplayOffset()
 
 void vtkNonOrthoImagePlaneWidget::GetDisplayOffset(double xyz[3])
 {
-  for (int i = 0; i < 3; ++i)
-  {
+  for (int i = 0; i < 3; ++i) {
     xyz[i] = this->DisplayOffset[i];
   }
 }
 
-void vtkNonOrthoImagePlaneWidget::GetPolyData(vtkPolyData *pd)
+void vtkNonOrthoImagePlaneWidget::GetPolyData(vtkPolyData* pd)
 {
   pd->ShallowCopy(this->PlaneSource->GetOutput());
 }
 
-vtkPolyDataAlgorithm *vtkNonOrthoImagePlaneWidget::GetPolyDataAlgorithm()
+vtkPolyDataAlgorithm* vtkNonOrthoImagePlaneWidget::GetPolyDataAlgorithm()
 {
   return this->PlaneSource;
 }
@@ -1702,7 +1542,7 @@ vtkTexture* vtkNonOrthoImagePlaneWidget::GetTexture()
 void vtkNonOrthoImagePlaneWidget::GetVector1(double v1[3])
 {
   double* p1 = this->PlaneSource->GetPoint1();
-  double* o =  this->PlaneSource->GetOrigin();
+  double* o = this->PlaneSource->GetOrigin();
   v1[0] = p1[0] - o[0];
   v1[1] = p1[1] - o[1];
   v1[2] = p1[2] - o[2];
@@ -1711,73 +1551,76 @@ void vtkNonOrthoImagePlaneWidget::GetVector1(double v1[3])
 void vtkNonOrthoImagePlaneWidget::GetVector2(double v2[3])
 {
   double* p2 = this->PlaneSource->GetPoint2();
-  double* o =  this->PlaneSource->GetOrigin();
+  double* o = this->PlaneSource->GetOrigin();
   v2[0] = p2[0] - o[0];
   v2[1] = p2[1] - o[1];
   v2[2] = p2[2] - o[2];
 }
 
-void vtkNonOrthoImagePlaneWidget::Rotate(double X, double Y,
-                                      double *p1, double *p2, double *vpn)
+void vtkNonOrthoImagePlaneWidget::Rotate(double X, double Y, double* p1,
+                                         double* p2, double* vpn)
 {
-  double v[3]; //vector of motion
-  double axis[3]; //axis of rotation
-  double theta; //rotation angle
+  double v[3];    // vector of motion
+  double axis[3]; // axis of rotation
+  double theta;   // rotation angle
 
   // mouse motion vector in world space
   v[0] = p2[0] - p1[0];
   v[1] = p2[1] - p1[1];
   v[2] = p2[2] - p1[2];
 
-  double *origin = this->PlaneSource->GetOrigin();
-  double *normal = this->PlaneSource->GetNormal();
+  double* origin = this->PlaneSource->GetOrigin();
+  double* normal = this->PlaneSource->GetNormal();
 
   // Create axis of rotation and angle of rotation
-  vtkMath::Cross(vpn,v,axis);
-  if ( vtkMath::Normalize(axis) == 0.0 )
-    {
+  vtkMath::Cross(vpn, v, axis);
+  if (vtkMath::Normalize(axis) == 0.0) {
     return;
-    }
-  int *const int_lastPos = this->Interactor->GetLastEventPosition();
-  const double lastPos[2]={(double)int_lastPos[0],(double)int_lastPos[1]};
+  }
+  int* const int_lastPos = this->Interactor->GetLastEventPosition();
+  const double lastPos[2] = { (double)int_lastPos[0], (double)int_lastPos[1] };
 
-  int *size = this->CurrentRenderer->GetSize();
-  double l2 = (X-lastPos[0])*(X-lastPos[0]) + (Y-lastPos[1])*(Y-lastPos[1]);
-  theta = 360.0 * sqrt(l2/(size[0]*size[0]+size[1]*size[1]));
+  int* size = this->CurrentRenderer->GetSize();
+  double l2 =
+    (X - lastPos[0]) * (X - lastPos[0]) + (Y - lastPos[1]) * (Y - lastPos[1]);
+  theta = 360.0 * sqrt(l2 / (size[0] * size[0] + size[1] * size[1]));
 
-  //Manipulate the transform to reflect the rotation
+  // Manipulate the transform to reflect the rotation
   this->Transform->Identity();
-  this->Transform->Translate(origin[0],origin[1],origin[2]);
-  this->Transform->RotateWXYZ(theta,axis);
-  this->Transform->Translate(-origin[0],-origin[1],-origin[2]);
+  this->Transform->Translate(origin[0], origin[1], origin[2]);
+  this->Transform->RotateWXYZ(theta, axis);
+  this->Transform->Translate(-origin[0], -origin[1], -origin[2]);
 
-  //Set the new normal
+  // Set the new normal
   double new_normal[3];
-  this->Transform->TransformNormal(normal,new_normal);
+  this->Transform->TransformNormal(normal, new_normal);
   this->PlaneSource->SetNormal(new_normal);
 }
 
 void vtkNonOrthoImagePlaneWidget::GeneratePlaneOutline()
 {
-  vtkPoints* points   = vtkPoints::New(VTK_DOUBLE);
+  vtkPoints* points = vtkPoints::New(VTK_DOUBLE);
   points->SetNumberOfPoints(4);
   int i;
-  for (i = 0; i < 4; i++)
-    {
-    points->SetPoint(i,0.0,0.0,0.0);
-    }
+  for (i = 0; i < 4; i++) {
+    points->SetPoint(i, 0.0, 0.0, 0.0);
+  }
 
-  vtkCellArray *cells = vtkCellArray::New();
-  cells->Allocate(cells->EstimateSize(4,2));
+  vtkCellArray* cells = vtkCellArray::New();
+  cells->Allocate(cells->EstimateSize(4, 2));
   vtkIdType pts[2];
-  pts[0] = 3; pts[1] = 2;       // top edge
-  cells->InsertNextCell(2,pts);
-  pts[0] = 0; pts[1] = 1;       // bottom edge
-  cells->InsertNextCell(2,pts);
-  pts[0] = 0; pts[1] = 3;       // left edge
-  cells->InsertNextCell(2,pts);
-  pts[0] = 1; pts[1] = 2;       // right edge
-  cells->InsertNextCell(2,pts);
+  pts[0] = 3;
+  pts[1] = 2; // top edge
+  cells->InsertNextCell(2, pts);
+  pts[0] = 0;
+  pts[1] = 1; // bottom edge
+  cells->InsertNextCell(2, pts);
+  pts[0] = 0;
+  pts[1] = 3; // left edge
+  cells->InsertNextCell(2, pts);
+  pts[0] = 1;
+  pts[1] = 2; // right edge
+  cells->InsertNextCell(2, pts);
 
   this->PlaneOutlinePolyData->SetPoints(points);
   points->Delete();
@@ -1785,7 +1628,7 @@ void vtkNonOrthoImagePlaneWidget::GeneratePlaneOutline()
   cells->Delete();
 
   vtkPolyDataMapper* planeOutlineMapper = vtkPolyDataMapper::New();
-  planeOutlineMapper->SetInputData( this->PlaneOutlinePolyData );
+  planeOutlineMapper->SetInputData(this->PlaneOutlinePolyData);
   planeOutlineMapper->SetResolveCoincidentTopologyToPolygonOffset();
 
   this->PlaneOutlineActor->SetMapper(planeOutlineMapper);
@@ -1805,8 +1648,7 @@ void vtkNonOrthoImagePlaneWidget::GenerateTexturePlane()
   this->LookupTable = this->CreateDefaultLookupTable();
 
   vtkNew<vtkPolyDataMapper> texturePlaneMapper;
-  texturePlaneMapper->SetInputConnection(
-    this->PlaneSource->GetOutputPort());
+  texturePlaneMapper->SetInputConnection(this->PlaneSource->GetOutputPort());
 
   this->Texture->SetQualityTo32Bit();
   this->Texture->MapColorScalarsThroughLookupTableOn();
@@ -1840,7 +1682,6 @@ void vtkNonOrthoImagePlaneWidget::GenerateArrow()
   lineMapper2->SetInputConnection(this->LineSource2->GetOutputPort());
   this->LineActor2->SetMapper(lineMapper2.GetPointer());
 
-
   this->ConeSource2->SetResolution(12);
   this->ConeSource2->SetAngle(25.0);
   vtkNew<vtkPolyDataMapper> coneMapper2;
@@ -1857,20 +1698,17 @@ void vtkNonOrthoImagePlaneWidget::GenerateArrow()
 
 void vtkNonOrthoImagePlaneWidget::HighlightArrow(int highlight)
 {
-  if ( highlight )
-    {
+  if (highlight) {
     this->LineActor->SetProperty(this->SelectedArrowProperty);
     this->ConeActor->SetProperty(this->SelectedArrowProperty);
     this->LineActor2->SetProperty(this->SelectedArrowProperty);
     this->ConeActor2->SetProperty(this->SelectedArrowProperty);
     this->SphereActor->SetProperty(this->SelectedArrowProperty);
-    }
-  else
-    {
+  } else {
     this->LineActor->SetProperty(this->ArrowProperty);
     this->ConeActor->SetProperty(this->ArrowProperty);
     this->LineActor2->SetProperty(this->ArrowProperty);
     this->ConeActor2->SetProperty(this->ArrowProperty);
     this->SphereActor->SetProperty(this->ArrowProperty);
-    }
+  }
 }

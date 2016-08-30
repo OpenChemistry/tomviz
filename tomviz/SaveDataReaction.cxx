@@ -20,12 +20,12 @@
 #include "ModuleManager.h"
 #include "pqActiveObjects.h"
 #include "pqCoreUtilities.h"
-#include "pqSaveDataReaction.h"
+#include "pqFileDialog.h"
 #include "pqPipelineSource.h"
 #include "pqProxyWidgetDialog.h"
-#include "pqFileDialog.h"
-#include "vtkDataObject.h"
+#include "pqSaveDataReaction.h"
 #include "vtkDataArray.h"
+#include "vtkDataObject.h"
 #include "vtkImageData.h"
 #include "vtkPointData.h"
 #include "vtkSMCoreUtilities.h"
@@ -43,8 +43,7 @@
 #include <QMessageBox>
 #include <QRegularExpression>
 
-namespace tomviz
-{
+namespace tomviz {
 
 SaveDataReaction::SaveDataReaction(QAction* parentObject)
   : Superclass(parentObject)
@@ -60,70 +59,68 @@ SaveDataReaction::~SaveDataReaction()
 
 void SaveDataReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-        ActiveObjects::instance().activeDataSource() != nullptr);
+  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+                             nullptr);
 }
 
 void SaveDataReaction::onTriggered()
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
-  DataSource *source = ActiveObjects::instance().activeDataSource();
+  DataSource* source = ActiveObjects::instance().activeDataSource();
   assert(source);
   vtkSMWriterFactory* writerFactory =
-      vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
+    vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   QString filters = writerFactory->GetSupportedFileTypes(source->producer());
-  if (filters.isEmpty())
-  {
+  if (filters.isEmpty()) {
     qCritical("Cannot determine writer to use.");
     return;
   }
-  // Remove options to output in JPEG or PNG format since they don't support volumes
+  // Remove options to output in JPEG or PNG format since they don't support
+  // volumes
   QRegularExpression re(";;(JPEG|PNG)[^;]*;;");
   QString filteredFilters = filters.replace(re, ";;");
 
-  pqFileDialog fileDialog(server,
-                          pqCoreUtilities::mainWidget(),
+  pqFileDialog fileDialog(server, pqCoreUtilities::mainWidget(),
                           tr("Save File:"), QString(), filteredFilters);
   fileDialog.setObjectName("FileSaveDialog");
   fileDialog.setFileMode(pqFileDialog::AnyFile);
   // Default to saving tiff files
   fileDialog.setRecentlyUsedExtension(".tiff");
-  if (fileDialog.exec() == QDialog::Accepted)
-  {
+  if (fileDialog.exec() == QDialog::Accepted) {
     this->saveData(fileDialog.getSelectedFiles()[0]);
   }
 }
 
-bool SaveDataReaction::saveData(const QString &filename)
+bool SaveDataReaction::saveData(const QString& filename)
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
-  DataSource *source = ActiveObjects::instance().activeDataSource();
-  if (!server || !source)
-  {
+  DataSource* source = ActiveObjects::instance().activeDataSource();
+  if (!server || !source) {
     qCritical("No active source located.");
     return false;
   }
 
-  vtkSMWriterFactory* writerFactory = vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
+  vtkSMWriterFactory* writerFactory =
+    vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(writerFactory->CreateWriter(filename.toLatin1().data(),
-                      source->producer()));
+                                                  source->producer()));
   vtkSMSourceProxy* writer = vtkSMSourceProxy::SafeDownCast(proxy);
-  if (!writer)
-  {
+  if (!writer) {
     qCritical() << "Failed to create writer for: " << filename;
     return false;
   }
-  if (strcmp(writer->GetClientSideObject()->GetClassName(),"vtkTIFFWriter") == 0)
-  {
-    vtkTrivialProducer *t =
-        vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-    vtkImageData* imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    if (imageData->GetPointData()->GetScalars()->GetDataType() == VTK_DOUBLE)
-    {
+  if (strcmp(writer->GetClientSideObject()->GetClassName(), "vtkTIFFWriter") ==
+      0) {
+    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+      source->producer()->GetClientSideObject());
+    vtkImageData* imageData =
+      vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (imageData->GetPointData()->GetScalars()->GetDataType() == VTK_DOUBLE) {
       QMessageBox messageBox;
       messageBox.setWindowTitle("Unsupported data type");
-      messageBox.setText("Tiff files do not support writing data of type double.");
+      messageBox.setText(
+        "Tiff files do not support writing data of type double.");
       messageBox.setIcon(QMessageBox::Critical);
       messageBox.exec();
       return false;
@@ -138,11 +135,9 @@ bool SaveDataReaction::saveData(const QString &filename)
 
   // Check to see if this writer has any properties that can be configured by
   // the user. If it does, display the dialog.
-  if (dialog.hasVisibleWidgets())
-  {
+  if (dialog.hasVisibleWidgets()) {
     dialog.exec();
-    if(dialog.result() == QDialog::Rejected)
-    {
+    if (dialog.result() == QDialog::Rejected) {
       // The user pressed Cancel so don't write
       return false;
     }

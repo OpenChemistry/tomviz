@@ -22,9 +22,9 @@
 #include <vtkContextScene.h>
 #include <vtkDataArray.h>
 #include <vtkObjectFactory.h>
+#include <vtkPen.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPiecewiseFunctionItem.h>
-#include <vtkPen.h>
 #include <vtkPlot.h>
 #include <vtkPlotBar.h>
 #include <vtkScalarsToColors.h>
@@ -33,14 +33,13 @@
 
 #include "vtkCustomPiecewiseControlPointsItem.h"
 
-//-----------------------------------------------------------------------------
 class vtkHistogramMarker : public vtkPlot
 {
 public:
-  static vtkHistogramMarker * New();
+  static vtkHistogramMarker* New();
   double PositionX;
 
-  bool Paint(vtkContext2D *painter) override
+  bool Paint(vtkContext2D* painter) override
   {
     vtkNew<vtkPen> pen;
     pen->SetColor(255, 0, 0, 255);
@@ -50,12 +49,11 @@ public:
     return true;
   }
 };
+
 vtkStandardNewMacro(vtkHistogramMarker)
 
-//-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkChartHistogram)
 
-//-----------------------------------------------------------------------------
 vtkChartHistogram::vtkChartHistogram()
 {
   this->SetBarWidthFraction(1.0);
@@ -83,7 +81,8 @@ vtkChartHistogram::vtkChartHistogram()
   this->HistogramPlotBar->SetSelectable(false);
 
   // Set up and add the opacity editor chart items
-  this->OpacityFunctionItem->SetOpacity(0.0); // don't show the transfer function
+  this->OpacityFunctionItem->SetOpacity(
+    0.0); // don't show the transfer function
   this->AddPlot(this->OpacityFunctionItem.Get());
   this->SetPlotCorner(this->OpacityFunctionItem.Get(), 1);
 
@@ -100,35 +99,30 @@ vtkChartHistogram::vtkChartHistogram()
   this->SetPlotCorner(this->OpacityControlPointsItem.Get(), 1);
 }
 
-//-----------------------------------------------------------------------------
 vtkChartHistogram::~vtkChartHistogram()
 {
 }
 
-//-----------------------------------------------------------------------------
-bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
+bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent& m)
 {
   // Determine the location of the click, and emit something we can listen to!
-  vtkPlotBar *histo = nullptr;
-  if (this->GetNumberOfPlots() > 0)
-  {
+  vtkPlotBar* histo = nullptr;
+  if (this->GetNumberOfPlots() > 0) {
     histo = vtkPlotBar::SafeDownCast(this->GetPlot(0));
   }
-  if (!histo)
-  {
+  if (!histo) {
     return false;
   }
   this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
                                        this->Transform.Get());
   vtkVector2f pos;
-  this->Transform->InverseTransformPoints(m.GetScenePos().GetData(), pos.GetData(),
-                                          1);
+  this->Transform->InverseTransformPoints(m.GetScenePos().GetData(),
+                                          pos.GetData(), 1);
   this->ContourValue = pos.GetX();
   this->Marker->PositionX = this->ContourValue;
   this->Marker->Modified();
   this->Scene->SetDirty(true);
-  if (this->GetNumberOfPlots() > 0)
-  {
+  if (this->GetNumberOfPlots() > 0) {
     // Work around a bug in the charts - ensure corner is invalid for the plot.
     this->Marker->SetXAxis(nullptr);
     this->Marker->SetYAxis(nullptr);
@@ -138,7 +132,6 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent &m)
   return true;
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
                                               const char* xAxisColumn,
                                               const char* yAxisColumn)
@@ -147,9 +140,8 @@ void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
 
   // Set the range of the axes
   vtkDataArray* yArray =
-      vtkDataArray::SafeDownCast(table->GetColumnByName(yAxisColumn));
-  if (!yArray)
-  {
+    vtkDataArray::SafeDownCast(table->GetColumnByName(yAxisColumn));
+  if (!yArray) {
     return;
   }
 
@@ -159,44 +151,40 @@ void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
   leftAxis->SetMaximumLimit(max + 2.0);
   leftAxis->SetMaximum(static_cast<int>(max) + 1.0);
 
-  vtkDataArray* xArray = vtkDataArray::SafeDownCast(table->GetColumnByName(xAxisColumn));
-  if (xArray && xArray->GetNumberOfTuples() > 2)
-  {
+  vtkDataArray* xArray =
+    vtkDataArray::SafeDownCast(table->GetColumnByName(xAxisColumn));
+  if (xArray && xArray->GetNumberOfTuples() > 2) {
     double range[2];
     xArray->GetRange(range);
     double halfInc = (xArray->GetTuple1(1) - xArray->GetTuple1(0)) / 2.0;
     vtkAxis* bottomAxis = this->GetAxis(vtkAxis::BOTTOM);
     bottomAxis->SetBehavior(vtkAxis::FIXED);
-    bottomAxis->SetRange(range[0] - halfInc , range[1] + halfInc);
+    bottomAxis->SetRange(range[0] - halfInc, range[1] + halfInc);
   }
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SetScalarVisibility(bool visible)
 {
   this->HistogramPlotBar->SetScalarVisibility(visible);
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::ScalarVisibilityOn()
 {
   this->HistogramPlotBar->ScalarVisibilityOn();
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SetLookupTable(vtkScalarsToColors* lut)
 {
   this->HistogramPlotBar->SetLookupTable(lut);
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartHistogram::SelectColorArray(const char* arrayName)
 {
   this->HistogramPlotBar->SelectColorArray(arrayName);
 }
 
-//-----------------------------------------------------------------------------
-void vtkChartHistogram::SetOpacityFunction(vtkPiecewiseFunction* opacityFunction)
+void vtkChartHistogram::SetOpacityFunction(
+  vtkPiecewiseFunction* opacityFunction)
 {
   this->OpacityFunctionItem->SetPiecewiseFunction(opacityFunction);
   this->OpacityControlPointsItem->SetPiecewiseFunction(opacityFunction);

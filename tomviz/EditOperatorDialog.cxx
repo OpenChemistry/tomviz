@@ -27,38 +27,37 @@
 #include <QDialogButtonBox>
 #include <QPointer>
 #include <QPushButton>
-#include <QVariant>
 #include <QVBoxLayout>
+#include <QVariant>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class EditOperatorDialog::EODInternals
 {
 public:
   QPointer<Operator> Op;
-  EditOperatorWidget *Widget;
+  EditOperatorWidget* Widget;
   bool needsToBeAdded;
-  DataSource *dataSource;
+  DataSource* dataSource;
 
   void savePosition(const QPoint& pos)
   {
-    QSettings *settings = pqApplicationCore::instance()->settings();
-    QString settingName = QString("Edit%1OperatorDialogPosition")
-                          .arg(Op->label());
+    QSettings* settings = pqApplicationCore::instance()->settings();
+    QString settingName =
+      QString("Edit%1OperatorDialogPosition").arg(Op->label());
     settings->setValue(settingName, QVariant(pos));
   }
 
   QVariant loadPosition()
   {
-    QSettings *settings = pqApplicationCore::instance()->settings();
-    QString settingName = QString("Edit%1OperatorDialogPosition")
-                          .arg(Op->label());
+    QSettings* settings = pqApplicationCore::instance()->settings();
+    QString settingName =
+      QString("Edit%1OperatorDialogPosition").arg(Op->label());
     return settings->value(settingName);
   }
 };
 
-EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource *dataSource,
+EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
                                        bool needToAddOperator, QWidget* p)
   : Superclass(p), Internals(new EditOperatorDialog::EODInternals())
 {
@@ -66,49 +65,43 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource *dataSource,
   this->Internals->Op = op;
   this->Internals->dataSource = dataSource;
   this->Internals->needsToBeAdded = needToAddOperator;
-  if (needToAddOperator)
-  {
+  if (needToAddOperator) {
     op->setParent(this);
   }
 
   QVariant position = this->Internals->loadPosition();
-  if (!position.isNull())
-  {
+  if (!position.isNull()) {
     this->move(position.toPoint());
   }
 
   QVBoxLayout* vLayout = new QVBoxLayout(this);
-  if (op->hasCustomUI())
-  {
+  if (op->hasCustomUI()) {
     EditOperatorWidget* opWidget = op->getEditorContents(this);
-    if (!opWidget)
-    {
+    if (!opWidget) {
       vtkSmartPointer<vtkImageData> snapshotImage =
-          dataSource->getCopyOfImagePriorTo(op);
+        dataSource->getCopyOfImagePriorTo(op);
       opWidget = op->getEditorContentsWithData(this, snapshotImage);
     }
     vLayout->addWidget(opWidget);
     this->Internals->Widget = opWidget;
-    const double *dsPosition = dataSource->displayPosition();
+    const double* dsPosition = dataSource->displayPosition();
     opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
     QObject::connect(dataSource, &DataSource::displayPositionChanged, opWidget,
                      &EditOperatorWidget::dataSourceMoved);
-  }
-  else
-  {
+  } else {
     this->Internals->Widget = nullptr;
   }
   QDialogButtonBox* dialogButtons = new QDialogButtonBox(
-      QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok,
-      Qt::Horizontal, this);
+    QDialogButtonBox::Apply | QDialogButtonBox::Cancel | QDialogButtonBox::Ok,
+    Qt::Horizontal, this);
   vLayout->addWidget(dialogButtons);
 
   this->setLayout(vLayout);
   this->connect(dialogButtons, SIGNAL(accepted()), SLOT(accept()));
   this->connect(dialogButtons, SIGNAL(rejected()), SLOT(reject()));
 
-  this->connect(dialogButtons->button(QDialogButtonBox::Apply), SIGNAL(clicked()),
-                   SLOT(onApply()));
+  this->connect(dialogButtons->button(QDialogButtonBox::Apply),
+                SIGNAL(clicked()), SLOT(onApply()));
   this->connect(this, SIGNAL(accepted()), SLOT(onApply()));
   this->connect(this, SIGNAL(accepted()), SLOT(onClose()));
   this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
@@ -125,12 +118,10 @@ Operator* EditOperatorDialog::op()
 
 void EditOperatorDialog::onApply()
 {
-  if (this->Internals->Widget)
-  {
+  if (this->Internals->Widget) {
     this->Internals->Widget->applyChangesToOperator();
   }
-  if (this->Internals->needsToBeAdded)
-  {
+  if (this->Internals->needsToBeAdded) {
     this->Internals->dataSource->addOperator(this->Internals->Op);
     this->Internals->needsToBeAdded = false;
   }
@@ -140,5 +131,4 @@ void EditOperatorDialog::onClose()
 {
   this->Internals->savePosition(this->pos());
 }
-
 }

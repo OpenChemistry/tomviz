@@ -18,8 +18,7 @@
 
 #include "Operator.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
 class CropOperator : public Operator
 {
@@ -27,7 +26,7 @@ class CropOperator : public Operator
   typedef Operator Superclass;
 
 public:
-  CropOperator(QObject* parent=nullptr);
+  CropOperator(QObject* parent = nullptr);
   virtual ~CropOperator();
 
   QString label() const override { return "Crop"; }
@@ -39,13 +38,12 @@ public:
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 
-  EditOperatorWidget *getEditorContentsWithData(QWidget* parent,
-    vtkSmartPointer<vtkImageData> data) override;
+  EditOperatorWidget* getEditorContentsWithData(
+    QWidget* parent, vtkSmartPointer<vtkImageData> data) override;
   bool hasCustomUI() const override { return true; }
 
   void setCropBounds(const int bounds[6]);
-  const int* cropBounds() const
-    { return this->CropBounds; }
+  const int* cropBounds() const { return this->CropBounds; }
 
 protected:
   bool applyTransform(vtkDataObject* data) override;
@@ -54,7 +52,6 @@ private:
   int CropBounds[6];
   Q_DISABLE_COPY(CropOperator)
 };
-
 }
 
 #endif

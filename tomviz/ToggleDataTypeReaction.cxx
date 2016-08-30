@@ -23,10 +23,9 @@
 
 #include <cassert>
 
-namespace tomviz
-{
+namespace tomviz {
 
-ToggleDataTypeReaction::ToggleDataTypeReaction(QAction* action, QMainWindow *mw)
+ToggleDataTypeReaction::ToggleDataTypeReaction(QAction* action, QMainWindow* mw)
   : pqReaction(action), mainWindow(mw)
 {
   this->connect(&ActiveObjects::instance(),
@@ -39,31 +38,27 @@ ToggleDataTypeReaction::~ToggleDataTypeReaction()
 {
 }
 
-void ToggleDataTypeReaction::toggleDataType(QMainWindow *mw, DataSource *dsource)
+void ToggleDataTypeReaction::toggleDataType(QMainWindow* mw,
+                                            DataSource* dsource)
 {
-  if (dsource == nullptr)
-  {
+  if (dsource == nullptr) {
     dsource = ActiveObjects::instance().activeDataSource();
   }
   // if it is still null, give up
-  if (dsource == nullptr)
-  {
+  if (dsource == nullptr) {
     return;
   }
-  if (dsource->type() == DataSource::Volume)
-  {
+  if (dsource->type() == DataSource::Volume) {
     SetTiltAnglesReaction::showSetTiltAnglesUI(mw, dsource);
-  }
-  else if (dsource->type() == DataSource::TiltSeries)
-  {
-    Operator *op = OperatorFactory::createConvertToVolumeOperator();
+  } else if (dsource->type() == DataSource::TiltSeries) {
+    Operator* op = OperatorFactory::createConvertToVolumeOperator();
     dsource->addOperator(op);
   }
 }
 
 void ToggleDataTypeReaction::onTriggered()
 {
-  DataSource *dsource = ActiveObjects::instance().activeDataSource();
+  DataSource* dsource = ActiveObjects::instance().activeDataSource();
   toggleDataType(this->mainWindow, dsource);
   this->setWidgetText(dsource);
 }
@@ -72,26 +67,19 @@ void ToggleDataTypeReaction::updateEnableState()
 {
   DataSource* dsource = ActiveObjects::instance().activeDataSource();
   this->parentAction()->setEnabled(dsource != nullptr);
-  if (dsource != nullptr)
-  {
+  if (dsource != nullptr) {
     this->setWidgetText(dsource);
   }
 }
 
 void ToggleDataTypeReaction::setWidgetText(DataSource* dsource)
 {
-  if (dsource->type() == DataSource::Volume)
-  {
-      this->parentAction()->setText("Mark Data As Tilt Series");
-  }
-  else if (dsource->type() == DataSource::TiltSeries)
-  {
-      this->parentAction()->setText("Mark Data As Volume");
-  }
-  else
-  {
+  if (dsource->type() == DataSource::Volume) {
+    this->parentAction()->setText("Mark Data As Tilt Series");
+  } else if (dsource->type() == DataSource::TiltSeries) {
+    this->parentAction()->setText("Mark Data As Volume");
+  } else {
     assert("Unknown data source type" && false);
   }
 }
-
 }

@@ -20,14 +20,14 @@
 
 class pqView;
 
-namespace tomviz
-{
+namespace tomviz {
 class ScaleActorBehavior : public QObject
 {
   Q_OBJECT
   typedef QObject Superclass;
+
 public:
-  ScaleActorBehavior(QObject* parent=nullptr);
+  ScaleActorBehavior(QObject* parent = nullptr);
   ~ScaleActorBehavior();
 private slots:
   void viewAdded(pqView*);

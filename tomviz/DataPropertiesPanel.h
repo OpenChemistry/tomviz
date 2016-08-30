@@ -16,11 +16,10 @@
 #ifndef tomvizDataPropertiesPanel_h
 #define tomvizDataPropertiesPanel_h
 
-#include <QWidget>
 #include <QScopedPointer>
+#include <QWidget>
 
-namespace tomviz
-{
+namespace tomviz {
 
 class DataSource;
 
@@ -38,7 +37,7 @@ public:
   virtual ~DataPropertiesPanel() override;
 
 protected:
-  void paintEvent(QPaintEvent *) override;
+  void paintEvent(QPaintEvent*) override;
   void updateData();
 
 private slots:
@@ -63,7 +62,6 @@ private:
 
   bool updateNeeded = true;
 };
-
 }
 
 #endif

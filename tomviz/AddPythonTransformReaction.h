@@ -18,8 +18,7 @@
 
 #include <pqReaction.h>
 
-namespace tomviz
-{
+namespace tomviz {
 class DataSource;
 class OperatorPython;
 
@@ -29,20 +28,21 @@ class AddPythonTransformReaction : public pqReaction
   typedef pqReaction Superclass;
 
 public:
-  AddPythonTransformReaction(QAction* parent, const QString &label,
-                         const QString &source, bool requiresTiltSeries = false,
-                         bool requiresVolume = false,
-                         const QString &json = QString());
+  AddPythonTransformReaction(QAction* parent, const QString& label,
+                             const QString& source,
+                             bool requiresTiltSeries = false,
+                             bool requiresVolume = false,
+                             const QString& json = QString());
   ~AddPythonTransformReaction();
 
   OperatorPython* addExpression(DataSource* source = nullptr);
 
   void setInteractive(bool isInteractive) { interactive = isInteractive; }
 
-  static void addPythonOperator(DataSource *source, const QString &scriptLabel,
-                                const QString &scriptBaseString,
+  static void addPythonOperator(DataSource* source, const QString& scriptLabel,
+                                const QString& scriptBaseString,
                                 const QMap<QString, QString> substitutions,
-                                const QString &jsonString = QString());
+                                const QString& jsonString = QString());
 
 protected:
   void updateEnableState() override;
@@ -62,7 +62,6 @@ private:
   bool interactive;
   bool requiresTiltSeries;
   bool requiresVolume;
-
 };
 }
 

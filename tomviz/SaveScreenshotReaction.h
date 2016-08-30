@@ -18,8 +18,7 @@
 
 #include <pqReaction.h>
 
-namespace tomviz
-{
+namespace tomviz {
 class MainWindow;
 
 class SaveScreenshotReaction : public pqReaction
@@ -27,11 +26,12 @@ class SaveScreenshotReaction : public pqReaction
   Q_OBJECT
 
   typedef pqReaction Superclass;
+
 public:
-  SaveScreenshotReaction(QAction *a, MainWindow *mw);
+  SaveScreenshotReaction(QAction* a, MainWindow* mw);
   virtual ~SaveScreenshotReaction();
 
-  static void saveScreenshot(MainWindow *mw);
+  static void saveScreenshot(MainWindow* mw);
 
 protected:
   void onTriggered() override { this->saveScreenshot(this->mainWindow); }
@@ -39,9 +39,8 @@ protected:
 private:
   Q_DISABLE_COPY(SaveScreenshotReaction)
 
-  MainWindow *mainWindow;
+  MainWindow* mainWindow;
 };
-
 }
 
 #endif

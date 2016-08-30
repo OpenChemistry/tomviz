@@ -18,8 +18,7 @@
 
 #include "Operator.h"
 
-namespace tomviz
-{
+namespace tomviz {
 
 class ConvertToFloatOperator : public Operator
 {
@@ -27,18 +26,18 @@ class ConvertToFloatOperator : public Operator
   typedef Operator Superclass;
 
 public:
-  ConvertToFloatOperator(QObject *parent=nullptr);
+  ConvertToFloatOperator(QObject* parent = nullptr);
   virtual ~ConvertToFloatOperator();
 
   QString label() const override { return "Convert to Float"; }
   QIcon icon() const override;
-  Operator *clone() const override;
+  Operator* clone() const override;
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
   bool hasCustomUI() const override { return false; }
 
 protected:
-  bool applyTransform(vtkDataObject *data) override;
+  bool applyTransform(vtkDataObject* data) override;
 
 private:
   Q_DISABLE_COPY(ConvertToFloatOperator)
