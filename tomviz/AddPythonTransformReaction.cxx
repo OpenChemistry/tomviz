@@ -163,9 +163,11 @@ AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                const QString &l,
                                                const QString &s,
                                                bool rts,
-                                               bool rv)
+                                               bool rv,
+                                               const QString &json)
   : Superclass(parentObject), scriptLabel(l), scriptSource(s),
-    interactive(false), requiresTiltSeries(rts), requiresVolume(rv)
+    interactive(false), requiresTiltSeries(rts), requiresVolume(rv),
+    jsonSource(json)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -251,7 +253,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                            QString("lower_threshold = %1").arg(lowerThreshold->value()));
       substitutions.insert("###UPPERTHRESHOLD###",
                            QString("upper_threshold = %1").arg(upperThreshold->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions);    
+      addPythonOperator(source, this->scriptLabel, this->scriptSource, substitutions,
+                        jsonSource);    
     }
   }
   else if (scriptLabel == "Shift Volume")
@@ -1105,7 +1108,8 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
 void AddPythonTransformReaction::addPythonOperator(DataSource *source,
                                                    const QString &scriptLabel,
                                                    const QString &scriptBaseString,
-                                                   const QMap<QString, QString> substitutions)
+                                                   const QMap<QString, QString> substitutions,
+                                                   const QString &jsonString)
 {
   // Substitute the values into the script
   QString finalScript = scriptBaseString;
@@ -1115,6 +1119,7 @@ void AddPythonTransformReaction::addPythonOperator(DataSource *source,
   }
   // Create and add the operator
   OperatorPython *opPython = new OperatorPython();
+  opPython->setJSONDescription(jsonString);
   opPython->setLabel(scriptLabel);
   opPython->setScript(finalScript);
   source->addOperator(opPython);

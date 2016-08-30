@@ -20,6 +20,7 @@
 #include "Module.h"
 #include "ModuleManager.h"
 #include "Operator.h"
+#include "OperatorResult.h"
 
 #include <QFileInfo>
 
@@ -30,17 +31,20 @@ struct PipelineModel::Item
   Item(DataSource *source) : tag(DATASOURCE), s(source) { }
   Item(Module *module) : tag(MODULE), m(module) { }
   Item(Operator *op) : tag(OPERATOR), o(op) { }
+  Item(OperatorResult *result) : tag(RESULT), r(result) { }
 
   DataSource* dataSource() { return tag == DATASOURCE ? s : nullptr; }
   Module* module() { return tag == MODULE ? m : nullptr; }
   Operator* op() { return tag == OPERATOR ? o : nullptr; }
+  OperatorResult* result() { return tag == RESULT ? r : nullptr; }
 
-  enum { DATASOURCE, MODULE, OPERATOR } tag;
+  enum { DATASOURCE, MODULE, OPERATOR, RESULT } tag;
   union
   {
     DataSource *s;
     Module *m;
     Operator *o;
+    OperatorResult *r;
   };
 };
 
@@ -71,10 +75,12 @@ public:
   /// Recursively search entire tree for given object.
   TreeItem* find(Module *module);
   TreeItem* find(Operator *op);
+  TreeItem* find(OperatorResult* result);
 
   DataSource* dataSource() { return m_item.dataSource(); }
   Module* module() { return m_item.module(); }
   Operator* op() { return m_item.op(); }
+  OperatorResult* result() { return m_item.result(); }
 
 private:
   QList<TreeItem*> m_children;
@@ -195,6 +201,10 @@ bool PipelineModel::TreeItem::remove(Operator *o)
 {
   foreach(auto childItem, m_children) {
     if (childItem->op() == o) {
+      // Remove results
+      foreach(auto resultItem, childItem->children()) {
+        childItem->removeChild(resultItem->childIndex());
+      }
       removeChild(childItem->childIndex());
       return true;
     }
@@ -236,6 +246,21 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(Operator *op)
       auto operatorItem = childItem->find(op);
       if (operatorItem) {
         return operatorItem;
+      }
+    }
+  }
+  return nullptr;
+}
+
+PipelineModel::TreeItem* PipelineModel::TreeItem::find(OperatorResult *result)
+{
+  if (this->result() == result) {
+    return this;
+  } else {
+    foreach(auto childItem, m_children) {
+      auto resultItem = childItem->find(result);
+      if (resultItem) {
+        return resultItem;
       }
     }
   }
@@ -288,6 +313,7 @@ QVariant PipelineModel::data(const QModelIndex &index, int role) const
     auto treeItem = this->treeItem(index);
     auto module = treeItem->module();
     auto op = treeItem->op();
+    auto result = treeItem->result();
     if (module) {
       if (index.column() == 0) {
         switch (role) {
@@ -324,6 +350,19 @@ QVariant PipelineModel::data(const QModelIndex &index, int role) const
       } else if (index.column() == 1) {
         if (role == Qt::DecorationRole) {
           return QIcon(":/QtWidgets/Icons/pqDelete32.png");
+        }
+      }
+    } else if (result) {
+      if (index.column() == 0) {
+        switch (role) {
+          case Qt::DecorationRole:
+            return tr("Result decoration");
+          case Qt::DisplayRole:
+            return result->label();
+          case Qt::ToolTipRole:
+            return tr("Result tooltip role");
+          default:
+            return QVariant();
         }
       }
     }
@@ -428,6 +467,15 @@ Operator* PipelineModel::op(const QModelIndex &idx)
   return (treeItem ? treeItem->op() : nullptr);
 }
 
+OperatorResult* PipelineModel::result(const QModelIndex &idx)
+{
+  if (!idx.isValid()) {
+    return nullptr;
+  }
+  auto treeItem = this->treeItem(idx);
+  return (treeItem ? treeItem->result() : nullptr);
+}
+
 QModelIndex PipelineModel::dataSourceIndex(DataSource *source)
 {
   for (int i = 0; i < m_treeItems.count(); ++i) {
@@ -455,6 +503,16 @@ QModelIndex PipelineModel::operatorIndex(Operator *op)
     auto operatorItem = treeItem->find(op);
     if (operatorItem) {
       return createIndex(operatorItem->childIndex(), 0, operatorItem);
+    }
+  }
+  return QModelIndex();
+}
+
+QModelIndex PipelineModel::resultIndex(OperatorResult* result) {
+  foreach(auto treeItem, m_treeItems) {
+    auto resultItem = treeItem->find(result);
+    if (resultItem) {
+      return createIndex(resultItem->childIndex(), 0, resultItem);
     }
   }
   return QModelIndex();
@@ -516,6 +574,20 @@ void PipelineModel::operatorAdded(Operator *op)
   beginInsertRows(index, insertionRow, insertionRow);
   dataSourceItem->insertChild(insertionRow, PipelineModel::Item(op));
   endInsertRows();
+
+  // Insert operator results in the operator tree item
+  int numResults = op->numberOfResults();
+  if (numResults) {
+    auto operatorTreeItem = dataSourceItem->find(op);
+    auto operatorIndex = this->operatorIndex(op);
+
+    beginInsertRows(operatorIndex, 0, numResults);
+    for (int j = 0; j < numResults; ++j) {
+      OperatorResult *result = op->resultAt(j);
+      operatorTreeItem->appendChild(PipelineModel::Item(result));
+    }
+    endInsertRows();
+  }
 }
 
 void PipelineModel::operatorModified()

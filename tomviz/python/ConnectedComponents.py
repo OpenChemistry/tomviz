@@ -18,6 +18,9 @@ def transform_scalars(dataset):
     ###UPPERTHRESHOLD### # Specify upper threshold
     background_value = 0
 
+    # Return values
+    returnValues = None
+
     # Add a try/except around the ITK portion. ITK exceptions are
     # passed up to the Python layer, so we can at least report what
     # went wrong with the script, e.g,, unsupported image type.
@@ -69,6 +72,38 @@ def transform_scalars(dataset):
 
         utils.add_vtk_array_from_itk_image(relabel_filter.GetOutput(), dataset, 'LabelMap')
 
+        # Now take the connected components results and compute things like volume
+        # and surface area.
+        shape_filter = itk.LabelImageToShapeLabelMapFilter.IUS3LM3.New()
+        shape_filter.SetInput(relabel_filter.GetOutput())
+        shape_filter.Update()
+ 
+        # Set up arrays to hold the shape attribute data
+        label_map = shape_filter.GetOutput()
+        num_label_objects = label_map.GetNumberOfLabelObjects()
+
+        column_names = ['SurfaceArea', 'Volume', 'SurfaceAreaToVolumeRatio']
+        import numpy as np
+        # num_label_objects rows, 3 columns
+        table = np.zeros((num_label_objects, len(column_names)))
+
+        for i in xrange(0, num_label_objects):
+            label_object = label_map.GetNthLabelObject(i)
+            surface_area = label_object.GetPerimeter()
+            table[i, 0] = surface_area
+            volume = label_object.GetPhysicalSize()
+            table[i, 1] = volume
+            table[i, 2] = surface_area / volume
+
+        # Create a spreadsheet data set from table data
+        spreadsheet = utils.make_spreadsheet(column_names, table)
+
+        # Set up dictionary to return operator results
+        returnValues = {}
+        returnValues["component_statistics"] = spreadsheet
+
     except Exception as exc:
         print("Exception encountered while running ConnectedComponents")
         print(exc)
+
+    return returnValues

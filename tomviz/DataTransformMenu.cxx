@@ -105,7 +105,10 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(binaryThresholdAction,
                                  "Binary Threshold", readInPythonScript("BinaryThreshold"));
   new AddPythonTransformReaction(connectedComponentsAction,
-                                 "Connected Components", readInPythonScript("ConnectedComponents"));
+                                 "Connected Components",
+                                 readInPythonScript("ConnectedComponents"),
+                                 false, false,
+                                 readInJSONDescription("ConnectedComponents"));
   new AddPythonTransformReaction(shiftUniformAction,
                                  "Shift Volume", readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction,

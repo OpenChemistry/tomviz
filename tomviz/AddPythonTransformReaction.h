@@ -31,7 +31,8 @@ class AddPythonTransformReaction : public pqReaction
 public:
   AddPythonTransformReaction(QAction* parent, const QString &label,
                          const QString &source, bool requiresTiltSeries = false,
-                         bool requiresVolume = false);
+                         bool requiresVolume = false,
+                         const QString &json = QString());
   ~AddPythonTransformReaction();
 
   OperatorPython* addExpression(DataSource* source = nullptr);
@@ -40,7 +41,8 @@ public:
 
   static void addPythonOperator(DataSource *source, const QString &scriptLabel,
                                 const QString &scriptBaseString,
-                                const QMap<QString, QString> substitutions);
+                                const QMap<QString, QString> substitutions,
+                                const QString &jsonString = QString());
 
 protected:
   void updateEnableState() override;
@@ -53,6 +55,7 @@ private slots:
 private:
   Q_DISABLE_COPY(AddPythonTransformReaction)
 
+  QString jsonSource;
   QString scriptLabel;
   QString scriptSource;
 

@@ -42,6 +42,9 @@ public:
   bool serialize(pugi::xml_node& in) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 
+  void setJSONDescription(const QString& str);
+  const QString& JSONDescription() const;
+
   void setScript(const QString& str);
   const QString& script() const { return this->Script; }
 
@@ -57,6 +60,7 @@ private:
   class OPInternals;
   const QScopedPointer<OPInternals> Internals;
   QString Label;
+  QString jsonDescription;
   QString Script;
 };
 
