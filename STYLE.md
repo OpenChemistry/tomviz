@@ -2,11 +2,11 @@ clang-format
 ------------
 
 We use [clang-format](http://llvm.org/releases/3.8.0/tools/clang/docs/ClangFormatStyleOptions.html)
-to keep formatting in the code base consistently. Please run clang-format
+to keep formatting in the code base consistent. Please run clang-format
 on your patches before submitting.
 
 clang-format ships with a python script ```clang/tools/clang-format-diff.py``
-that can be using to reformat patchs. For example the following command will
+that can be used to reformat patches. For example the following command will
 reformat all the lines in the latest commit
 
 ```shell
