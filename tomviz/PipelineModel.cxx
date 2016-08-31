@@ -79,6 +79,7 @@ public:
   TreeItem* find(Operator* op);
   TreeItem* find(OperatorResult* result);
 
+  void setItem(const PipelineModel::Item& item) { m_item = item; }
   DataSource* dataSource() { return m_item.dataSource(); }
   Module* module() { return m_item.module(); }
   Operator* op() { return m_item.op(); }
