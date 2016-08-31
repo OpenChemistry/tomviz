@@ -66,6 +66,13 @@ public:
   /// Get output result at index.
   virtual OperatorResult* resultAt(int index) const;
 
+  /// Set the child DataSource. If nullptr, this operator produces no
+  /// child data set.
+  virtual void setChildDataSource(DataSource* source);
+
+  /// Get the child DataSource.
+  virtual DataSource* childDataSource() const;
+
   /// Save/Restore state.
   virtual bool serialize(pugi::xml_node& in) const = 0;
   virtual bool deserialize(const pugi::xml_node& ns) = 0;
@@ -159,6 +166,7 @@ private:
   Q_DISABLE_COPY(Operator)
 
   QList<OperatorResult*> m_results;
+  DataSource* m_childDataSource;
 };
 }
 
