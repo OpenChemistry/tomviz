@@ -23,7 +23,8 @@
 namespace tomviz {
 
 Operator::Operator(QObject* parentObject)
-  : QObject(parentObject), m_childDataSource(nullptr)
+  : QObject(parentObject), m_hasChildDataSource(false),
+    m_childDataSource(nullptr)
 {
 }
 
@@ -89,6 +90,16 @@ OperatorResult* Operator::resultAt(int i) const
     return nullptr;
   }
   return m_results[i];
+}
+
+void Operator::setHasChildDataSource(bool value)
+{
+  m_hasChildDataSource = value;
+}
+
+bool Operator::hasChildDataSource() const
+{
+  return m_hasChildDataSource;
 }
 
 void Operator::setChildDataSource(DataSource* source)

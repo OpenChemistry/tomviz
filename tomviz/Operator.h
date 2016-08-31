@@ -66,8 +66,13 @@ public:
   /// Get output result at index.
   virtual OperatorResult* resultAt(int index) const;
 
-  /// Set the child DataSource. If nullptr, this operator produces no
-  /// child data set.
+  /// Set whether the operator is expected to produce a child DataSource.
+  virtual void setHasChildDataSource(bool value);
+
+  /// Get whether the operator is expected to produce a child DataSource.
+  virtual bool hasChildDataSource() const;
+
+  /// Set the child DataSource. Can be nullptr.
   virtual void setChildDataSource(DataSource* source);
 
   /// Get the child DataSource.
@@ -166,6 +171,7 @@ private:
   Q_DISABLE_COPY(Operator)
 
   QList<OperatorResult*> m_results;
+  bool m_hasChildDataSource;
   DataSource* m_childDataSource;
 };
 }
