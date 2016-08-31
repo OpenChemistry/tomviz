@@ -185,11 +185,8 @@ def set_label_map(dataobject, labelarray):
         print '...done.'
 
     # Now add the label array to the image data
-    vtkarray = np_s.numpy_to_vtk(arr)
-    vtkarray.Association = dsa.ArrayAssociation.POINT
     do = dsa.WrapDataObject(dataobject)
     do.PointData.append(arr, "LabelMap")
-    do.PointData.AddArray(vtkarray)
 
 def get_tilt_angles(dataobject):
     # Get the tilt angles array
