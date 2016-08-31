@@ -187,6 +187,8 @@ def set_label_map(dataobject, labelarray):
     # Now add the label array to the image data
     do = dsa.WrapDataObject(dataobject)
     do.PointData.append(arr, "LabelMap")
+    pd = dataobject.GetPointData()
+    pd.SetScalars(pd.GetArray("LabelMap"))
 
 def get_tilt_angles(dataobject):
     # Get the tilt angles array
