@@ -67,16 +67,12 @@ public:
   QList<TreeItem*>& children() { return m_children; }
   int childIndex() const;
   bool appendChild(const PipelineModel::Item& item);
-  bool appendAndMoveChildren(const PipelineModel::Item& item);
   bool insertChild(int position, const PipelineModel::Item& item);
   bool removeChild(int position);
-  bool moveChildren(TreeItem* newParent);
 
   bool remove(DataSource* source);
   bool remove(Module* module);
   bool remove(Operator* op);
-
-  bool hasOp(Operator* op);
 
   /// Recursively search entire tree for given object.
   TreeItem* find(Module* module);
@@ -135,37 +131,12 @@ bool PipelineModel::TreeItem::appendChild(const PipelineModel::Item& item)
   return true;
 }
 
-bool PipelineModel::TreeItem::appendAndMoveChildren(
-  const PipelineModel::Item& item)
-{
-  auto treeItem = new TreeItem(item, this);
-  // This enforces our desired hierarchy, if modules then move all to the
-  // operator added, otherwise if already operators move to the last operator.
-  if (childCount() && child(0)->module()) {
-    moveChildren(treeItem);
-  } else if (childCount() && child(0)->op()) {
-    child(childCount() - 1)->moveChildren(treeItem);
-  }
-  m_children.append(treeItem);
-  return true;
-}
-
 bool PipelineModel::TreeItem::removeChild(int pos)
 {
   if (pos < 0 || pos >= m_children.size()) {
     return false;
   }
   delete m_children.takeAt(pos);
-  return true;
-}
-
-bool PipelineModel::TreeItem::moveChildren(TreeItem* newParent)
-{
-  newParent->m_children.append(m_children);
-  foreach (TreeItem* item, m_children) {
-    item->m_parent = newParent;
-  }
-  m_children.clear();
   return true;
 }
 
@@ -213,16 +184,6 @@ bool PipelineModel::TreeItem::remove(Operator* o)
         childItem->removeChild(resultItem->childIndex());
       }
       removeChild(childItem->childIndex());
-      return true;
-    }
-  }
-  return false;
-}
-
-bool PipelineModel::TreeItem::hasOp(Operator* o)
-{
-  foreach (auto childItem, m_children) {
-    if (childItem->op() == o) {
       return true;
     }
   }
