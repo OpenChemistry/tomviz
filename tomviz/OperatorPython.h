@@ -61,6 +61,9 @@ private:
   QString Label;
   QString jsonDescription;
   QString Script;
+
+  QList<QString> m_resultNames;
+  QList<QString> m_childDataSourceNames;
 };
 }
 #endif
