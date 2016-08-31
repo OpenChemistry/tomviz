@@ -2,6 +2,8 @@ def transform_scalars(dataset):
     """This filter computes a binary threshold on the data set and
     stores the result in a label map in the data set."""
 
+    returnValue = None
+
     # Try imports to make sure we have everything that is needed
     try:
         import itk
@@ -38,8 +40,26 @@ def transform_scalars(dataset):
         threshold_filter.SetInput(itk_image)
         threshold_filter.Update()
 
-        utils.add_vtk_array_from_itk_image(threshold_filter.GetOutput(), dataset, 'LabelMap')
+        #utils.add_vtk_array_from_itk_image(threshold_filter.GetOutput(), dataset, 'LabelMap')
+
+        # Set the output as a new child data object of the current data set
+        itk_image_data = threshold_filter.GetOutput()
+        label_buffer = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
+        label_map_data_set = vtk.vtkImageData()
+        label_map_data_set.CopyStructure(dataset)
+
+        utils.set_label_map(label_map_data_set, label_buffer)
+        returnValue = \
+          {
+            "children" : {
+              "thresholded_segmentation" : {
+                "data_set" : label_map_data_set
+              }
+            }
+          }
 
     except Exception as exc:
         print("Exception encountered while running BinaryThreshold");
         print(exc);
+
+    return returnValue
