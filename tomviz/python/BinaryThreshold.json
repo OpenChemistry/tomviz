@@ -1,12 +1,13 @@
 {
   "name" : "BinaryThreshold",
   "label" : "Binary Threshold",
-  "children" : {
-    "thresholded_segmentation" : {
+  "children" : [
+    {
+      "name" : "thresholded_segmentation",
       "label" : "Thresholded Segmentation",
       "type" : "label_map"
     }
-  },
+  ],
   "parameters" : [
     {
       "name" : "lowerThreshold",
