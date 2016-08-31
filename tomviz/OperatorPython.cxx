@@ -19,13 +19,22 @@
 #include <QPointer>
 #include <QtDebug>
 
+#include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
 #include "pqPythonSyntaxHighlighter.h"
+
 #include "vtkDataObject.h"
+#include "vtkNew.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
+#include "vtkSMParaViewPipelineController.h"
+#include "vtkSMProxy.h"
+#include "vtkSMProxyManager.h"
+#include "vtkSMSessionProxyManager.h"
+#include "vtkSMSourceProxy.h"
 #include "vtkSmartPyObject.h"
+#include "vtkTrivialProducer.h"
 #include <sstream>
 
 #include "vtk_jsoncpp.h"
@@ -233,6 +242,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   // Look for additional outputs from the filter returned in a dictionary
   PyObject* outputDict = result.GetPointer();
   if (PyDict_Check(outputDict)) {
+
+    // Results (tables, etc.)
     for (int i = 0; i < numberOfResults(); ++i) {
       OperatorResult* operatorResult = resultAt(i);
       std::string resultName = operatorResult->name().toStdString();
@@ -247,8 +258,60 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       } else {
         qCritical()
           << "No result named" << ("'" + resultName + "'").c_str()
-          << "defined in output dictionary from 'transform_scalars' script.";
+          << "defined in output dictionary from 'transform_scalars' function.";
       }
+    }
+
+    // Segmentations (label maps, etc.)
+    PyObject* children = PyDict_GetItemString(outputDict, "children");
+    if (children && PyDict_Check(children)) {
+      PyObject *key, *value;
+      Py_ssize_t pos = 0;
+      while (PyDict_Next(children, &pos, &key, &value)) {
+        const char* name = PyString_AsString(key);
+        if (!PyDict_Check(value)) {
+          qWarning() << "value is not a dict. It is a"
+                     << value->ob_type->tp_name << "instead" << endl;
+          continue;
+        }
+        PyObject* dataSetObject = PyDict_GetItemString(value, "data_set");
+        if (!dataSetObject) {
+          qWarning() << "no 'data_set' defined in child object";
+          continue;
+        }
+        vtkObjectBase* vtkobject =
+          vtkPythonUtil::GetPointerFromObject(dataSetObject, "vtkDataObject");
+        vtkDataObject* childData = vtkDataObject::SafeDownCast(vtkobject);
+        if (childData) {
+          cout << "data_set is " << *childData << endl;
+
+          vtkSMProxyManager* proxyManager =
+            vtkSMProxyManager::GetProxyManager();
+          vtkSMSessionProxyManager* sessionProxyManager =
+            proxyManager->GetActiveSessionProxyManager();
+
+          vtkSmartPointer<vtkSMProxy> producerProxy;
+          producerProxy.TakeReference(
+            sessionProxyManager->NewProxy("sources", "TrivialProducer"));
+          producerProxy->UpdateVTKObjects();
+
+          vtkTrivialProducer* producer = vtkTrivialProducer::SafeDownCast(
+            producerProxy->GetClientSideObject());
+          if (!producer) {
+            qWarning() << "Could not get TrivialProducer from proxy";
+            return false;
+          }
+
+          producer->SetOutput(childData);
+
+          DataSource* childDS =
+            new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
+                           DataSource::Volume, this);
+          setChildDataSource(childDS);
+        }
+      }
+    } else if (children != nullptr) {
+      qWarning() << "'children' entry was not a dictionary, but must be";
     }
   }
 

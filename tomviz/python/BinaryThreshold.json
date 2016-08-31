@@ -1,0 +1,24 @@
+{
+  "name" : "BinaryThreshold",
+  "label" : "Binary Threshold",
+  "children" : {
+    "thresholded_segmentation" : {
+      "label" : "Thresholded Segmentation",
+      "type" : "label_map"
+    }
+  },
+  "parameters" : [
+    {
+      "name" : "lowerThreshold",
+      "label" : "Lower Threshold",
+      "type" : "double",
+      "components" : "1"
+    },
+    {
+      "name" : "upperThreshold",
+      "label" : "Upper Threshold",
+      "type" : "double",
+      "components" : "1"
+    }
+  ]
+}
