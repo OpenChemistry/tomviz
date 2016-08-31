@@ -84,6 +84,21 @@ bool Operator::setResult(int index, vtkDataObject* object)
   return true;
 }
 
+bool Operator::setResult(const char* name, vtkDataObject* object)
+{
+  bool valueSet = false;
+  QString qname(name);
+  foreach (auto result, m_results) {
+    if (result->name() == qname) {
+      result->setDataObject(object);
+      valueSet = true;
+      break;
+    }
+  }
+
+  return valueSet;
+}
+
 OperatorResult* Operator::resultAt(int i) const
 {
   if (i < 0 || i >= m_results.size()) {

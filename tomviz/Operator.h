@@ -60,8 +60,11 @@ public:
   /// Get number of output results
   virtual int numberOfResults() const;
 
-  /// Add additional output result from this operator
+  /// Set the result at the given index to the object.
   virtual bool setResult(int index, vtkDataObject* object);
+
+  /// Set the result with the given name to the object.
+  virtual bool setResult(const char* name, vtkDataObject* object);
 
   /// Get output result at index.
   virtual OperatorResult* resultAt(int index) const;
