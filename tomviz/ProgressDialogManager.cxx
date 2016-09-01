@@ -101,6 +101,10 @@ void ProgressDialogManager::operationStarted()
   progressDialog->setWindowTitle(QString("%1 Progress").arg(op->label()));
   progressDialog->setLayout(layout);
   progressDialog->adjustSize();
+  // Increase size of dialog so we can see title, not sure there is a better
+  // way.
+  auto height = progressDialog->height();
+  progressDialog->resize(300, height);
   progressDialog->show();
   QCoreApplication::processEvents();
 }
