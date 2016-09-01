@@ -74,8 +74,7 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     this->move(position.toPoint());
   }
 
-  if (op->hasCustomUI())
-  {
+  if (op->hasCustomUI()) {
     EditOperatorWidget* opWidget = op->getEditorContents(this);
     if (opWidget != nullptr) {
       this->setupUI(opWidget);

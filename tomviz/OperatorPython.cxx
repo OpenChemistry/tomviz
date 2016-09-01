@@ -204,8 +204,7 @@ void OperatorPython::setScript(const QString& str)
     }
 
     module.TakeReference(pyObj);
-    if (!module)
-    {
+    if (!module) {
       CheckForError();
       qCritical("Failed to create module.");
       return;
@@ -217,8 +216,7 @@ void OperatorPython::setScript(const QString& str)
     }
 
     this->Internals->TransformMethod.TakeReference(pyObj);
-    if (!this->Internals->TransformMethod)
-    {
+    if (!this->Internals->TransformMethod) {
       CheckForError();
       qWarning("Script doesn't have any 'transform_scalars' function.");
       return;
@@ -253,8 +251,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     pyObj = PyObject_Call(this->Internals->TransformMethod, args, nullptr);
   }
   vtkSmartPyObject result(pyObj);
-  if (!result)
-  {
+  if (!result) {
     qCritical("Failed to execute the script.");
     CheckForError();
     return false;

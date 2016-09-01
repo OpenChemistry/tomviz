@@ -57,9 +57,9 @@ void ProgressDialogManager::operationStarted()
   QDialog* progressDialog = new QDialog(this->mainWindow);
   progressDialog->setAttribute(Qt::WA_DeleteOnClose);
 
-  Operator *op = qobject_cast<Operator*>(this->sender());
-  QObject::connect(op, &Operator::transformingDone,
-                   progressDialog, &QDialog::accept);
+  Operator* op = qobject_cast<Operator*>(this->sender());
+  QObject::connect(op, &Operator::transformingDone, progressDialog,
+                   &QDialog::accept);
 
   // We have to check after we have connected to the signal as otherwise we
   // might miss the state transition as its occurring on another thread.

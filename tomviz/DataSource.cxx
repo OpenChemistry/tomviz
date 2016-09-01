@@ -60,7 +60,7 @@ public:
   vtkSmartPointer<vtkDataArray> TiltAngles;
   vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
-  QMap<Operator*, vtkWeakPointer<vtkImageData> > CachedPreOpStates;
+  QMap<Operator*, vtkWeakPointer<vtkImageData>> CachedPreOpStates;
   PipelineWorker* Worker;
   PipelineWorker::Future* Future;
 
@@ -528,8 +528,7 @@ DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator* op)
 {
   vtkSmartPointer<vtkImageData> result = vtkSmartPointer<vtkImageData>::New();
   ImageFuture* imageFuture;
-  if (this->Internals->Operators.contains(op))
-  {
+  if (this->Internals->Operators.contains(op)) {
     vtkAlgorithm* alg = vtkAlgorithm::SafeDownCast(
       this->Internals->OriginalDataSource->GetClientSideObject());
     result->DeepCopy(alg->GetOutputDataObject(0));
@@ -540,9 +539,7 @@ DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator* op)
 
     imageFuture = new ImageFuture(op, result, future);
     connect(imageFuture, SIGNAL(finished()), this, SLOT(updateCache()));
-  }
-  else
-  {
+  } else {
     vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
       this->Internals->Producer->GetClientSideObject());
     result->DeepCopy(tp->GetOutputDataObject(0));
@@ -736,9 +733,7 @@ void DataSource::operatorTransformModified()
             SLOT(pipelineFinished()));
     connect(this->Internals->Future, SIGNAL(canceled()), this,
             SLOT(pipelineCanceled()));
-  }
-  else
-  {
+  } else {
     auto data = this->copyOriginalData();
 
     // We have no operators to run so just update the data and signal that
@@ -873,8 +868,10 @@ bool DataSource::hasLabelMap()
   // We could just as easily go to the client side VTK object to get this info,
   // but we'll go the ParaView route for now.
   vtkPVDataInformation* dataInfo = dataSource->GetDataInformation();
-  vtkPVDataSetAttributesInformation* pointDataInfo = dataInfo->GetPointDataInformation();
-   vtkPVArrayInformation* labelMapInfo = pointDataInfo->GetArrayInformation("LabelMap");
+  vtkPVDataSetAttributesInformation* pointDataInfo =
+    dataInfo->GetPointDataInformation();
+  vtkPVArrayInformation* labelMapInfo =
+    pointDataInfo->GetArrayInformation("LabelMap");
 
   return labelMapInfo != nullptr;
 }
