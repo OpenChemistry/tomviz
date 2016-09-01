@@ -20,7 +20,7 @@ def transform_scalars(dataset):
     tiltSeries = np.zeros((Nslice, N ,Nproj))
     for i in range(Nproj):
         # Rotate the volume.
-        rotatedArray = scipy.ndimage.interpolation.rotate(array, angles[i],axes=(0,1),reshape=False)
+        rotatedArray = scipy.ndimage.interpolation.rotate(array, angles[i],axes=(0,1),reshape=False,order=1)
         # Calculate projection.
         tiltSeries[:,:,i] = np.sum(rotatedArray,axis=0).transpose()
 
