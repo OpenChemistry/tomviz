@@ -260,79 +260,75 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
   if (!index.isValid() || index.column() > 2)
     return QVariant();
 
-  // Data source
-  if (!index.parent().isValid()) {
-    auto treeItem = static_cast<TreeItem*>(index.internalPointer());
-    auto source = treeItem->dataSource();
+  auto treeItem = this->treeItem(index);
+  auto dataSource = treeItem->dataSource();
+  auto module = treeItem->module();
+  auto op = treeItem->op();
+  auto result = treeItem->result();
 
+  // Data source
+  if (dataSource) {
     if (index.column() == 0) {
       switch (role) {
         case Qt::DecorationRole:
           return QIcon(":/pqWidgets/Icons/pqInspect22.png");
         case Qt::DisplayRole:
-          return QFileInfo(source->filename()).baseName();
+          return QFileInfo(dataSource->filename()).baseName();
         case Qt::ToolTipRole:
-          return source->filename();
+          return dataSource->filename();
         default:
           return QVariant();
       }
     }
-  } else {
-    // Module or operator
-    auto treeItem = this->treeItem(index);
-    auto module = treeItem->module();
-    auto op = treeItem->op();
-    auto result = treeItem->result();
-    if (module) {
-      if (index.column() == 0) {
-        switch (role) {
-          case Qt::DecorationRole:
-            return module->icon();
-          case Qt::DisplayRole:
-            return module->label();
-          case Qt::ToolTipRole:
-            return module->label();
-          default:
-            return QVariant();
-        }
-      } else if (index.column() == 1) {
-        if (role == Qt::DecorationRole) {
-          if (module->visibility()) {
-            return QIcon(":/pqWidgets/Icons/pqEyeball16.png");
-          } else {
-            return QIcon(":/pqWidgets/Icons/pqEyeballd16.png");
-          }
+  } else if (module) {
+    if (index.column() == 0) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return module->icon();
+        case Qt::DisplayRole:
+          return module->label();
+        case Qt::ToolTipRole:
+          return module->label();
+        default:
+          return QVariant();
+      }
+    } else if (index.column() == 1) {
+      if (role == Qt::DecorationRole) {
+        if (module->visibility()) {
+          return QIcon(":/pqWidgets/Icons/pqEyeball16.png");
+        } else {
+          return QIcon(":/pqWidgets/Icons/pqEyeballd16.png");
         }
       }
-    } else if (op) {
-      if (index.column() == 0) {
-        switch (role) {
-          case Qt::DecorationRole:
-            return op->icon();
-          case Qt::DisplayRole:
-            return op->label();
-          case Qt::ToolTipRole:
-            return op->label();
-          default:
-            return QVariant();
-        }
-      } else if (index.column() == 1) {
-        if (role == Qt::DecorationRole) {
-          return QIcon(":/QtWidgets/Icons/pqDelete32.png");
-        }
+    }
+  } else if (op) {
+    if (index.column() == 0) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return op->icon();
+        case Qt::DisplayRole:
+          return op->label();
+        case Qt::ToolTipRole:
+          return op->label();
+        default:
+          return QVariant();
       }
-    } else if (result) {
-      if (index.column() == 0) {
-        switch (role) {
-          case Qt::DecorationRole:
-            return tr("Result decoration");
-          case Qt::DisplayRole:
-            return result->label();
-          case Qt::ToolTipRole:
-            return tr("Result tooltip role");
-          default:
-            return QVariant();
-        }
+    } else if (index.column() == 1) {
+      if (role == Qt::DecorationRole) {
+        return QIcon(":/QtWidgets/Icons/pqDelete32.png");
+      }
+    }
+  } else if (result) {
+    if (index.column() == 0) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return tr("Result decoration");
+        case Qt::DisplayRole:
+          return result->label();
+        case Qt::ToolTipRole:
+          return tr("Result tooltip role");
+        default:
+          return QVariant();
       }
     }
   }
