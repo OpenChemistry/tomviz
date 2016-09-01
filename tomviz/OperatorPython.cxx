@@ -184,8 +184,8 @@ void OperatorPython::setJSONDescription(const QString& str)
       Json::Value nameValue = childDatasetNode[0]["name"];
       Json::Value labelValue = childDatasetNode[0]["label"];
       if (!nameValue.isNull() && !labelValue.isNull()) {
-        QPair<QString, QString> nameLabelPair(nameValue.asCString(),
-                                              labelValue.asCString());
+        QPair<QString, QString> nameLabelPair(QString(nameValue.asCString()),
+                                              QString(labelValue.asCString()));
         m_childDataSourceNamesAndLabels.append(nameLabelPair);
       } else if (nameValue.isNull()) {
         qCritical() << "No name given for child DataSet";
@@ -298,13 +298,13 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
       QPair<QString, QString> nameLabelPair =
         m_childDataSourceNamesAndLabels[i];
-      const char* name = nameLabelPair.first.toLatin1().data();
-      const char* label = nameLabelPair.second.toLatin1().data();
-      PyObject* child = PyDict_GetItemString(outputDict, name);
+      QString name(nameLabelPair.first);
+      QString label(nameLabelPair.second);
+      PyObject* child = PyDict_GetItemString(outputDict, name.toLatin1().data());
       if (!child) {
         errorEncountered = true;
         qCritical() << "No child data source named '"
-                    << nameLabelPair.first << "' defined in output dictionary.\n";
+                    << name << "' defined in output dictionary.\n";
         continue;
       }
 
@@ -333,7 +333,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         DataSource* childDS =
           new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
                          DataSource::Volume, this);
-        childDS->setFilename(label);
+        childDS->setFilename(label.toLatin1().data());
         setChildDataSource(childDS);
       }
     }
