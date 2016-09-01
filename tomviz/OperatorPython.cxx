@@ -189,7 +189,7 @@ void OperatorPython::setJSONDescription(const QString& str)
         m_childDataSourceNamesAndLabels.append(nameLabelPair);
       } else if (nameValue.isNull()) {
         qCritical() << "No name given for child DataSet";
-      } else if (nameValue.isNull()) {
+      } else if (labelValue.isNull()) {
         qCritical() << "No label given for child DataSet";
       }
     }
