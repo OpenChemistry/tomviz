@@ -554,6 +554,14 @@ void PipelineModel::operatorAdded(Operator* op)
     }
     endInsertRows();
   }
+
+  // Insert child DataSources
+  if (op->hasChildDataSource()) {
+    beginInsertRows(index, 0, 0);
+    DataSource* childDataSource = op->childDataSource();
+    dataSourceItem->appendChild(PipelineModel::Item(childDataSource));
+    endInsertRows();
+  }
 }
 
 void PipelineModel::operatorModified()
