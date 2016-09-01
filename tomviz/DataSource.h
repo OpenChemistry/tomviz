@@ -16,14 +16,13 @@
 #ifndef tomvizDataSource_h
 #define tomvizDataSource_h
 
+#include "PipelineWorker.h"
 #include <QObject>
 #include <QScopedPointer>
 #include <QVector>
 
 #include <vtkSmartPointer.h>
 #include <vtk_pugixml.h>
-
-#include "PipelineWorker.h"
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
@@ -157,9 +156,10 @@ protected:
   /// Reset the data output of the trivial producer to original data object.
   void resetData();
 
-  /// Set data output of trivial producer to new data object, the trivial producer
+  /// Set data output of trivial producer to new data object, the trivial
+  /// producer
   /// takes over ownership of the data object.
-  void setData(vtkDataObject *newData);
+  void setData(vtkDataObject* newData);
 
   /// Create copy of current data object, caller is responsible for ownership
   vtkDataObject* copyData();

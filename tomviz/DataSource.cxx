@@ -515,27 +515,28 @@ void DataSource::operate(Operator* op)
   }
   // We need to initiate a new run
   else {
-    vtkDataObject *copy = this->copyData();
+    vtkDataObject* copy = this->copyData();
     this->Internals->Future = this->Internals->Worker->run(copy, op);
-    connect(this->Internals->Future, SIGNAL(finished()),
-        this, SLOT(pipelineFinished()));
-    connect(this->Internals->Future, SIGNAL(canceled()),
-            this, SLOT(pipelineCanceled()));
+    connect(this->Internals->Future, SIGNAL(finished()), this,
+            SLOT(pipelineFinished()));
+    connect(this->Internals->Future, SIGNAL(canceled()), this,
+            SLOT(pipelineCanceled()));
   }
 }
 
-DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator *op)
+DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator* op)
 {
   vtkSmartPointer<vtkImageData> result = vtkSmartPointer<vtkImageData>::New();
-  ImageFuture *imageFuture;
+  ImageFuture* imageFuture;
   if (this->Internals->Operators.contains(op))
   {
     vtkAlgorithm* alg = vtkAlgorithm::SafeDownCast(
       this->Internals->OriginalDataSource->GetClientSideObject());
     result->DeepCopy(alg->GetOutputDataObject(0));
 
-    auto future = this->Internals->Worker->run(result,
-            this->Internals->Operators.mid(0, this->Internals->Operators.indexOf(op)-1));
+    auto future = this->Internals->Worker->run(
+      result, this->Internals->Operators.mid(
+                0, this->Internals->Operators.indexOf(op) - 1));
 
     imageFuture = new ImageFuture(op, result, future);
     connect(imageFuture, SIGNAL(finished()), this, SLOT(updateCache()));
@@ -547,9 +548,7 @@ DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator *op)
     result->DeepCopy(tp->GetOutputDataObject(0));
     imageFuture = new ImageFuture(op, result);
     // Delay emitting signal until next event loop
-    QTimer::singleShot(0, [=] {
-      emit imageFuture->finished();
-    });
+    QTimer::singleShot(0, [=] { emit imageFuture->finished(); });
   }
 
   return imageFuture;
@@ -557,8 +556,8 @@ DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator *op)
 
 void DataSource::updateCache()
 {
-  DataSource::ImageFuture* future
-    = qobject_cast<DataSource::ImageFuture*>(this->sender());
+  DataSource::ImageFuture* future =
+    qobject_cast<DataSource::ImageFuture*>(this->sender());
   this->Internals->CachedPreOpStates[future->op()] = future->result();
 }
 
@@ -641,7 +640,7 @@ vtkDataObject* DataSource::copyData()
   vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
     this->Internals->Producer->GetClientSideObject());
   Q_ASSERT(tp);
-  vtkDataObject *data = tp->GetOutputDataObject(0);
+  vtkDataObject* data = tp->GetOutputDataObject(0);
   vtkDataObject* copy = data->NewInstance();
   copy->DeepCopy(data);
 
@@ -655,8 +654,8 @@ vtkDataObject* DataSource::copyOriginalData()
   Q_ASSERT(dataSource);
 
   dataSource->UpdatePipeline();
-  vtkAlgorithm* vtkalgorithm = vtkAlgorithm::SafeDownCast(
-  dataSource->GetClientSideObject());
+  vtkAlgorithm* vtkalgorithm =
+    vtkAlgorithm::SafeDownCast(dataSource->GetClientSideObject());
   Q_ASSERT(vtkalgorithm);
 
   vtkSMSourceProxy* source = this->Internals->Producer;
@@ -737,7 +736,9 @@ void DataSource::operatorTransformModified()
             SLOT(pipelineFinished()));
     connect(this->Internals->Future, SIGNAL(canceled()), this,
             SLOT(pipelineCanceled()));
-  } else {
+  }
+  else
+  {
     auto data = this->copyOriginalData();
 
     // We have no operators to run so just update the data and signal that
@@ -769,8 +770,10 @@ void DataSource::pipelineFinished()
   this->dataModified();
 }
 
-void DataSource::pipelineCanceled() {
-  PipelineWorker::Future *future = qobject_cast<PipelineWorker::Future*>(this->sender());
+void DataSource::pipelineCanceled()
+{
+  PipelineWorker::Future* future =
+    qobject_cast<PipelineWorker::Future*>(this->sender());
   future->result()->Delete();
   future->deleteLater();
   if (this->Internals->Future == future) {

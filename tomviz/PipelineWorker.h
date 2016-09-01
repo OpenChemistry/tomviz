@@ -16,14 +16,13 @@
 #ifndef tomvizPipelineWorker_h
 #define tomvizPipelineWorker_h
 
+#include <QList>
 #include <QObject>
 #include <QRunnable>
-#include <QList>
 
 class vtkDataObject;
 
-namespace tomviz
-{
+namespace tomviz {
 
 class Operator;
 
@@ -35,14 +34,15 @@ class PipelineWorker : public QObject
 
 public:
   class Future;
-  PipelineWorker(QObject *parent = nullptr);
-  Future* run(vtkDataObject *data, Operator *op);
-  Future* run(vtkDataObject *data, QList<Operator *> ops);
+  PipelineWorker(QObject* parent = nullptr);
+  Future* run(vtkDataObject* data, Operator* op);
+  Future* run(vtkDataObject* data, QList<Operator*> ops);
 
 private:
   class RunnableOperator;
   class Run;
-  class ConfigureThreadPool {
+  class ConfigureThreadPool
+  {
   public:
     ConfigureThreadPool();
   };
@@ -50,16 +50,19 @@ private:
   ConfigureThreadPool configure;
 };
 
-class PipelineWorker::Future: public QObject {
+class PipelineWorker::Future : public QObject
+{
   Q_OBJECT
   friend class PipelineWorker::Run;
+
 public:
   /// Clear all Operators from the queue and attempts to cancel the
   /// running Operator.
   void cancel();
-  /// Returns true if the operator was successfully removed from the queue before
+  /// Returns true if the operator was successfully removed from the queue
+  /// before
   /// it was run, false otherwise.
-  bool cancel(Operator *op);
+  bool cancel(Operator* op);
   /// Returns true if we are currently running the operator pipeline, false
   /// otherwise.
   bool isRunning();
@@ -68,7 +71,7 @@ public:
 
   /// If the execution of the pipeline is still in progress then add this
   /// operator to it. Return true is
-  bool addOperator(Operator *op);
+  bool addOperator(Operator* op);
 
   ~Future();
 
@@ -76,15 +79,14 @@ signals:
   void canceled();
   void finished();
   void progressRangeChanged(int minimum, int maximum);
-  void progressTextChanged(const QString &progressText);
+  void progressTextChanged(const QString& progressText);
   void progressValueChanged(int progressValue);
 
 private:
-  Future(Run *run, QObject *parent = nullptr);
+  Future(Run* run, QObject* parent = nullptr);
 
-  Run *m_run;
+  Run* m_run;
 };
-
 }
 
 #endif

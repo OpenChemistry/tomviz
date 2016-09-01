@@ -23,9 +23,9 @@
 #include "OperatorResult.h"
 #include "pqPythonSyntaxHighlighter.h"
 #include "vtkDataObject.h"
+#include "vtkPython.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
-#include "vtkPython.h"
 #include "vtkSmartPyObject.h"
 #include <sstream>
 
@@ -199,8 +199,8 @@ void OperatorPython::setScript(const QString& str)
     {
       vtkPythonScopeGilEnsurer gilEnsurer(true);
       pyObj = PyImport_ExecCodeModule(
-          QString("tomviz_%1").arg(this->label()).toLatin1().data(),
-          this->Internals->Code);
+        QString("tomviz_%1").arg(this->label()).toLatin1().data(),
+        this->Internals->Code);
     }
 
     module.TakeReference(pyObj);
@@ -210,7 +210,6 @@ void OperatorPython::setScript(const QString& str)
       qCritical("Failed to create module.");
       return;
     }
-
 
     {
       vtkPythonScopeGilEnsurer gilEnsurer(true);
@@ -241,7 +240,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   Q_ASSERT(data);
 
   vtkSmartPyObject pydata(vtkPythonUtil::GetObjectFromPointer(data));
-  PyObject *pyObj = nullptr;
+  PyObject* pyObj = nullptr;
   {
     vtkPythonScopeGilEnsurer gilEnsurer(true);
     pyObj = PyTuple_New(1);
@@ -251,8 +250,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   {
     vtkPythonScopeGilEnsurer gilEnsurer(true);
     PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
-    pyObj = PyObject_Call(this->Internals->TransformMethod, args,
-        nullptr);
+    pyObj = PyObject_Call(this->Internals->TransformMethod, args, nullptr);
   }
   vtkSmartPyObject result(pyObj);
   if (!result)
@@ -271,17 +269,20 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     PyObject* outputDict = result.GetPointer();
     if (PyDict_Check(outputDict)) {
       for (int i = 0; i < numberOfResults(); ++i) {
-        OperatorResult *operatorResult = resultAt(i);
+        OperatorResult* operatorResult = resultAt(i);
         std::string resultName = operatorResult->name().toStdString();
-        PyObject* pyDataObject = PyDict_GetItemString(outputDict, resultName.c_str());
+        PyObject* pyDataObject =
+          PyDict_GetItemString(outputDict, resultName.c_str());
         if (pyDataObject) {
-          vtkObjectBase* vtkobject = vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
+          vtkObjectBase* vtkobject =
+            vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
           if (vtkobject) {
             setResult(i, vtkDataObject::SafeDownCast(vtkobject));
           }
         } else {
-          qCritical() << "No result named" << ("'" + resultName + "'").c_str()
-                      << "defined in output dictionary from 'transform_scalars' script.";
+          qCritical()
+            << "No result named" << ("'" + resultName + "'").c_str()
+            << "defined in output dictionary from 'transform_scalars' script.";
         }
       }
     }

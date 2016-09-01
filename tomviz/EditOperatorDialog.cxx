@@ -82,12 +82,11 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     }
     // We need the image data for call the datasource to run the pipeline
     else {
-      DataSource::ImageFuture *future = dataSource->getCopyOfImagePriorTo(op);
-      connect(future, SIGNAL(finished()),
-          this, SLOT(getCopyOfImagePriorToFinished()));
+      DataSource::ImageFuture* future = dataSource->getCopyOfImagePriorTo(op);
+      connect(future, SIGNAL(finished()), this,
+              SLOT(getCopyOfImagePriorToFinished()));
     }
-  }
-  else {
+  } else {
     this->setupUI();
   }
 }
@@ -117,45 +116,44 @@ void EditOperatorDialog::onClose()
   this->Internals->savePosition(this->pos());
 }
 
-void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget) {
+void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
+{
   QVBoxLayout* vLayout = new QVBoxLayout(this);
-  if (this->Internals->Op->hasCustomUI())
-  {
+  if (this->Internals->Op->hasCustomUI()) {
     vLayout->addWidget(opWidget);
     this->Internals->Widget = opWidget;
-    const double *dsPosition = this->Internals->dataSource->displayPosition();
+    const double* dsPosition = this->Internals->dataSource->displayPosition();
     opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
-    QObject::connect(this->Internals->dataSource, &DataSource::displayPositionChanged, opWidget,
+    QObject::connect(this->Internals->dataSource,
+                     &DataSource::displayPositionChanged, opWidget,
                      &EditOperatorWidget::dataSourceMoved);
-  }
-  else
-  {
+  } else {
     this->Internals->Widget = nullptr;
   }
   QDialogButtonBox* dialogButtons = new QDialogButtonBox(
-      QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok,
-      Qt::Horizontal, this);
+    QDialogButtonBox::Apply | QDialogButtonBox::Cancel | QDialogButtonBox::Ok,
+    Qt::Horizontal, this);
   vLayout->addWidget(dialogButtons);
 
   this->setLayout(vLayout);
   this->connect(dialogButtons, SIGNAL(accepted()), SLOT(accept()));
   this->connect(dialogButtons, SIGNAL(rejected()), SLOT(reject()));
 
-  this->connect(dialogButtons->button(QDialogButtonBox::Apply), SIGNAL(clicked()),
-                   SLOT(onApply()));
+  this->connect(dialogButtons->button(QDialogButtonBox::Apply),
+                SIGNAL(clicked()), SLOT(onApply()));
   this->connect(this, SIGNAL(accepted()), SLOT(onApply()));
   this->connect(this, SIGNAL(accepted()), SLOT(onClose()));
   this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
 }
 
-void  EditOperatorDialog::getCopyOfImagePriorToFinished() {
-  DataSource::ImageFuture *future
-    = qobject_cast<DataSource::ImageFuture *>(this->sender());
+void EditOperatorDialog::getCopyOfImagePriorToFinished()
+{
+  DataSource::ImageFuture* future =
+    qobject_cast<DataSource::ImageFuture*>(this->sender());
 
-  auto opWidget = this->Internals->Op->getEditorContentsWithData(this,
-      future->result());
+  auto opWidget =
+    this->Internals->Op->getEditorContentsWithData(this, future->result());
   this->setupUI(opWidget);
   future->deleteLater();
 }
-
 }
