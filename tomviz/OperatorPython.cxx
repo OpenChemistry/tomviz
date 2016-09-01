@@ -25,6 +25,7 @@
 #include "vtkDataObject.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
+#include "vtkPython.h"
 #include "vtkSmartPyObject.h"
 #include <sstream>
 
@@ -36,6 +37,7 @@ namespace {
 
 bool CheckForError()
 {
+  vtkPythonScopeGilEnsurer gilEnsurer(true);
   PyObject* exception = PyErr_Occurred();
   if (exception) {
     PyErr_Print();
@@ -92,8 +94,14 @@ OperatorPython::OperatorPython(QObject* parentObject)
     Label("Python Operator")
 {
   vtkPythonInterpreter::Initialize();
-  this->Internals->OperatorModule.TakeReference(
-    PyImport_ImportModule("tomviz.utils"));
+
+  PyObject* pyObj = nullptr;
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    pyObj = PyImport_ImportModule("tomviz.utils");
+  }
+
+  this->Internals->OperatorModule.TakeReference(pyObj);
   if (!this->Internals->OperatorModule) {
     qCritical() << "Failed to import tomviz.utils module.";
     CheckForError();
@@ -171,9 +179,15 @@ void OperatorPython::setScript(const QString& str)
     this->Internals->Code.TakeReference(nullptr);
     this->Internals->TransformMethod.TakeReference(nullptr);
 
-    this->Internals->Code.TakeReference(Py_CompileString(
-      this->Script.toLatin1().data(), this->label().toLatin1().data(),
-      Py_file_input /*Py_eval_input*/));
+    PyObject* pyObj = nullptr;
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      pyObj = Py_CompileString(this->Script.toLatin1().data(),
+                               this->label().toLatin1().data(),
+                               Py_file_input /*Py_eval_input*/);
+    }
+
+    this->Internals->Code.TakeReference(pyObj);
     if (!this->Internals->Code) {
       CheckForError();
       qCritical(
@@ -182,18 +196,30 @@ void OperatorPython::setScript(const QString& str)
     }
 
     vtkSmartPyObject module;
-    module.TakeReference(PyImport_ExecCodeModule(
-      QString("tomviz_%1").arg(this->label()).toLatin1().data(),
-      this->Internals->Code));
-    if (!module) {
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      pyObj = PyImport_ExecCodeModule(
+          QString("tomviz_%1").arg(this->label()).toLatin1().data(),
+          this->Internals->Code);
+    }
+
+    module.TakeReference(pyObj);
+    if (!module)
+    {
       CheckForError();
       qCritical("Failed to create module.");
       return;
     }
 
-    this->Internals->TransformMethod.TakeReference(
-      PyObject_GetAttrString(module, "transform_scalars"));
-    if (!this->Internals->TransformMethod) {
+
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      pyObj = PyObject_GetAttrString(module, "transform_scalars");
+    }
+
+    this->Internals->TransformMethod.TakeReference(pyObj);
+    if (!this->Internals->TransformMethod)
+    {
       CheckForError();
       qWarning("Script doesn't have any 'transform_scalars' function.");
       return;
@@ -215,13 +241,22 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   Q_ASSERT(data);
 
   vtkSmartPyObject pydata(vtkPythonUtil::GetObjectFromPointer(data));
-  vtkSmartPyObject args(PyTuple_New(1));
-  PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
+  PyObject *pyObj = nullptr;
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    pyObj = PyTuple_New(1);
+  }
+  vtkSmartPyObject args(pyObj);
 
-  vtkSmartPyObject result;
-  result.TakeReference(
-    PyObject_Call(this->Internals->TransformMethod, args, nullptr));
-  if (!result) {
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
+    pyObj = PyObject_Call(this->Internals->TransformMethod, args,
+        nullptr);
+  }
+  vtkSmartPyObject result(pyObj);
+  if (!result)
+  {
     qCritical("Failed to execute the script.");
     CheckForError();
     return false;
@@ -231,23 +266,23 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   // the output from the script.
 
   // Look for additional outputs from the filter returned in a dictionary
-  PyObject* outputDict = result.GetPointer();
-  if (PyDict_Check(outputDict)) {
-    for (int i = 0; i < numberOfResults(); ++i) {
-      OperatorResult* operatorResult = resultAt(i);
-      std::string resultName = operatorResult->name().toStdString();
-      PyObject* pyDataObject =
-        PyDict_GetItemString(outputDict, resultName.c_str());
-      if (pyDataObject) {
-        vtkObjectBase* vtkobject =
-          vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
-        if (vtkobject) {
-          setResult(i, vtkDataObject::SafeDownCast(vtkobject));
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    PyObject* outputDict = result.GetPointer();
+    if (PyDict_Check(outputDict)) {
+      for (int i = 0; i < numberOfResults(); ++i) {
+        OperatorResult *operatorResult = resultAt(i);
+        std::string resultName = operatorResult->name().toStdString();
+        PyObject* pyDataObject = PyDict_GetItemString(outputDict, resultName.c_str());
+        if (pyDataObject) {
+          vtkObjectBase* vtkobject = vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
+          if (vtkobject) {
+            setResult(i, vtkDataObject::SafeDownCast(vtkobject));
+          }
+        } else {
+          qCritical() << "No result named" << ("'" + resultName + "'").c_str()
+                      << "defined in output dictionary from 'transform_scalars' script.";
         }
-      } else {
-        qCritical()
-          << "No result named" << ("'" + resultName + "'").c_str()
-          << "defined in output dictionary from 'transform_scalars' script.";
       }
     }
   }
