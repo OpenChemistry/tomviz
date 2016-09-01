@@ -19,12 +19,16 @@
 #include <QObject>
 #include <QScopedPointer>
 #include <QVector>
+
 #include <vtkSmartPointer.h>
 #include <vtk_pugixml.h>
+
+#include "PipelineWorker.h"
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
+class vtkDataObject;
 
 namespace tomviz {
 class Operator;
@@ -146,7 +150,19 @@ public slots:
 
 protected:
   void operate(Operator* op);
+
+  /// Reset the data output of the trivial producer to original data object.
   void resetData();
+
+  /// Set data output of trivial producer to new data object, the trivial producer
+  /// takes over ownership of the data object.
+  void setData(vtkDataObject *newData);
+
+  /// Create copy of current data object, caller is responsible for ownership
+  vtkDataObject* copyData();
+
+  /// Create copy of original data object, caller is responsible for ownership
+  vtkDataObject* copyOriginalData();
 
   /// Sets the type of data in the DataSource
   void setType(DataSourceType t);
@@ -156,6 +172,13 @@ protected slots:
 
   /// update the color map range.
   void updateColorMap();
+
+  /// The pipeline worker is finished
+  void pipelineFinished();
+
+  /// The pipeline worker is has been canceled
+  void pipelineCanceled();
+  void updateCache();
 
 private:
   Q_DISABLE_COPY(DataSource)
