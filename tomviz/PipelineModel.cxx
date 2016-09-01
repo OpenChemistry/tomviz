@@ -444,10 +444,18 @@ OperatorResult* PipelineModel::result(const QModelIndex& idx)
 QModelIndex PipelineModel::dataSourceIndex(DataSource* source)
 {
   for (int i = 0; i < m_treeItems.count(); ++i) {
-    if (m_treeItems[i]->dataSource() == source) {
-      return createIndex(i, 0, m_treeItems[i]);
+    auto treeItem = m_treeItems[i];
+    auto numChildren = treeItem->childCount();
+    if (treeItem->dataSource() == source) {
+      return createIndex(i, 0, treeItem);
+    } else if (numChildren > 0 &&
+               treeItem->child(numChildren - 1)->dataSource()) {
+      // No matching DataSource at the top level. Drop down a level and look at
+      // child datasets of Operators.
+      return createIndex(numChildren - 1, 0, treeItem->child(numChildren - 1));
     }
   }
+
   return QModelIndex();
 }
 
@@ -524,7 +532,8 @@ void PipelineModel::operatorAdded(Operator* op)
   auto dataSource = op->dataSource();
   Q_ASSERT(dataSource);
   connect(op, SIGNAL(labelModified()), this, SLOT(operatorModified()));
-  connect(op, SIGNAL(transformingDone(bool)), this, SLOT(operatorTransformDone()));
+  connect(op, SIGNAL(transformingDone(bool)), this,
+          SLOT(operatorTransformDone()));
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
