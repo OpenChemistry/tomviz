@@ -74,37 +74,22 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     this->move(position.toPoint());
   }
 
-  QVBoxLayout* vLayout = new QVBoxLayout(this);
-  if (op->hasCustomUI()) {
+  if (op->hasCustomUI())
+  {
     EditOperatorWidget* opWidget = op->getEditorContents(this);
-    if (!opWidget) {
-      vtkSmartPointer<vtkImageData> snapshotImage =
-        dataSource->getCopyOfImagePriorTo(op);
-      opWidget = op->getEditorContentsWithData(this, snapshotImage);
+    if (opWidget != nullptr) {
+      this->setupUI(opWidget);
     }
-    vLayout->addWidget(opWidget);
-    this->Internals->Widget = opWidget;
-    const double* dsPosition = dataSource->displayPosition();
-    opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
-    QObject::connect(dataSource, &DataSource::displayPositionChanged, opWidget,
-                     &EditOperatorWidget::dataSourceMoved);
-  } else {
-    this->Internals->Widget = nullptr;
+    // We need the image data for call the datasource to run the pipeline
+    else {
+      DataSource::ImageFuture *future = dataSource->getCopyOfImagePriorTo(op);
+      connect(future, SIGNAL(finished()),
+          this, SLOT(getCopyOfImagePriorToFinished()));
+    }
   }
-  QDialogButtonBox* dialogButtons = new QDialogButtonBox(
-    QDialogButtonBox::Apply | QDialogButtonBox::Cancel | QDialogButtonBox::Ok,
-    Qt::Horizontal, this);
-  vLayout->addWidget(dialogButtons);
-
-  this->setLayout(vLayout);
-  this->connect(dialogButtons, SIGNAL(accepted()), SLOT(accept()));
-  this->connect(dialogButtons, SIGNAL(rejected()), SLOT(reject()));
-
-  this->connect(dialogButtons->button(QDialogButtonBox::Apply),
-                SIGNAL(clicked()), SLOT(onApply()));
-  this->connect(this, SIGNAL(accepted()), SLOT(onApply()));
-  this->connect(this, SIGNAL(accepted()), SLOT(onClose()));
-  this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
+  else {
+    this->setupUI();
+  }
 }
 
 EditOperatorDialog::~EditOperatorDialog()
@@ -131,4 +116,46 @@ void EditOperatorDialog::onClose()
 {
   this->Internals->savePosition(this->pos());
 }
+
+void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget) {
+  QVBoxLayout* vLayout = new QVBoxLayout(this);
+  if (this->Internals->Op->hasCustomUI())
+  {
+    vLayout->addWidget(opWidget);
+    this->Internals->Widget = opWidget;
+    const double *dsPosition = this->Internals->dataSource->displayPosition();
+    opWidget->dataSourceMoved(dsPosition[0], dsPosition[1], dsPosition[2]);
+    QObject::connect(this->Internals->dataSource, &DataSource::displayPositionChanged, opWidget,
+                     &EditOperatorWidget::dataSourceMoved);
+  }
+  else
+  {
+    this->Internals->Widget = nullptr;
+  }
+  QDialogButtonBox* dialogButtons = new QDialogButtonBox(
+      QDialogButtonBox::Apply|QDialogButtonBox::Cancel|QDialogButtonBox::Ok,
+      Qt::Horizontal, this);
+  vLayout->addWidget(dialogButtons);
+
+  this->setLayout(vLayout);
+  this->connect(dialogButtons, SIGNAL(accepted()), SLOT(accept()));
+  this->connect(dialogButtons, SIGNAL(rejected()), SLOT(reject()));
+
+  this->connect(dialogButtons->button(QDialogButtonBox::Apply), SIGNAL(clicked()),
+                   SLOT(onApply()));
+  this->connect(this, SIGNAL(accepted()), SLOT(onApply()));
+  this->connect(this, SIGNAL(accepted()), SLOT(onClose()));
+  this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
+}
+
+void  EditOperatorDialog::getCopyOfImagePriorToFinished() {
+  DataSource::ImageFuture *future
+    = qobject_cast<DataSource::ImageFuture *>(this->sender());
+
+  auto opWidget = this->Internals->Op->getEditorContentsWithData(this,
+      future->result());
+  this->setupUI(opWidget);
+  future->deleteLater();
+}
+
 }
