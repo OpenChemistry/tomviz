@@ -40,8 +40,6 @@ def transform_scalars(dataset):
         threshold_filter.SetInput(itk_image)
         threshold_filter.Update()
 
-        #utils.add_vtk_array_from_itk_image(threshold_filter.GetOutput(), dataset, 'LabelMap')
-
         # Set the output as a new child data object of the current data set
         itk_image_data = threshold_filter.GetOutput()
         label_buffer = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
