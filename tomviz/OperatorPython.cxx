@@ -267,14 +267,16 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   // Look for additional outputs from the filter returned in a dictionary
   PyObject* outputDict = result.GetPointer();
   if (PyDict_Check(outputDict)) {
+    bool errorEncountered = false;
 
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
       const char* name = m_resultNames[i].toLatin1().data();
       PyObject* pyDataObject = PyDict_GetItemString(outputDict, name);
       if (!pyDataObject) {
+        errorEncountered = true;
         qCritical() << "No result named" << m_resultNames[i]
-                    << "defined in output dictionary.";
+                    << "defined in output dictionary.\n";
         continue;
       }
       vtkObjectBase* vtkobject =
@@ -300,9 +302,9 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       const char* label = nameLabelPair.second.toLatin1().data();
       PyObject* child = PyDict_GetItemString(outputDict, name);
       if (!child) {
+        errorEncountered = true;
         qCritical() << "No child data source named '"
-                    << m_childDataSourceNamesAndLabels[i]
-                    << "' defined in output dictionary";
+                    << nameLabelPair.first << "' defined in output dictionary.\n";
         continue;
       }
 
@@ -334,6 +336,14 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         childDS->setFilename(label);
         setChildDataSource(childDS);
       }
+    }
+
+    if (errorEncountered) {
+      PyObject* objectRepr = PyObject_Repr(outputDict);
+      const char* objectReprString = PyString_AsString(objectRepr);
+      qCritical() << "Dictionary return from Python script is:\n"
+                  << objectReprString;
+
     }
   }
 
