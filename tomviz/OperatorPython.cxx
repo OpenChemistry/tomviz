@@ -146,7 +146,7 @@ void OperatorPython::setJSONDescription(const QString& str)
   }
 
   m_resultNames.clear();
-  m_childDataSourceNames.clear();
+  m_childDataSourceNamesAndLabels.clear();
 
   // Get the number of results
   Json::Value resultsNode = root["results"];
@@ -182,8 +182,15 @@ void OperatorPython::setJSONDescription(const QString& str)
     if (size > 0) {
       setHasChildDataSource(true);
       Json::Value nameValue = childDatasetNode[0]["name"];
-      if (!nameValue.isNull()) {
-        m_childDataSourceNames.append(nameValue.asCString());
+      Json::Value labelValue = childDatasetNode[0]["label"];
+      if (!nameValue.isNull() && !labelValue.isNull()) {
+        QPair<QString, QString> nameLabelPair(nameValue.asCString(),
+                                              labelValue.asCString());
+        m_childDataSourceNamesAndLabels.append(nameLabelPair);
+      } else if (nameValue.isNull()) {
+        qCritical() << "No name given for child DataSet";
+      } else if (nameValue.isNull()) {
+        qCritical() << "No label given for child DataSet";
       }
     }
   }
@@ -286,12 +293,16 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     }
 
     // Segmentations, reconstructions, etc.
-    for (int i = 0; i < m_childDataSourceNames.size(); ++i) {
-      const char* name = m_childDataSourceNames[i].toStdString().c_str();
-      PyObject* child = PyDict_GetItemString(outputDict, name);
+    for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
+      QPair<QString, QString> nameLabelPair =
+        m_childDataSourceNamesAndLabels[i];
+      std::string name = nameLabelPair.first.toStdString();
+      std::string label = nameLabelPair.second.toStdString();
+      PyObject* child = PyDict_GetItemString(outputDict, name.c_str());
       if (!child) {
-        qCritical() << "No child data source named" << m_childDataSourceNames[i]
-                    << "defined in output dictionary";
+        qCritical() << "No child data source named '"
+                    << m_childDataSourceNamesAndLabels[i]
+                    << "' defined in output dictionary";
         continue;
       }
 
@@ -320,6 +331,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         DataSource* childDS =
           new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
                          DataSource::Volume, this);
+        childDS->setFilename(label.c_str());
         setChildDataSource(childDS);
       }
     }

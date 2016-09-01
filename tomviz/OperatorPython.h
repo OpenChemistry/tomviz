@@ -63,7 +63,7 @@ private:
   QString Script;
 
   QList<QString> m_resultNames;
-  QList<QString> m_childDataSourceNames;
+  QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;
 };
 }
 #endif
