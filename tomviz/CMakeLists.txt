@@ -234,7 +234,7 @@ set(python_files
   ClearVolume.py
   ConstantDataset.py
   RandomParticles.py
-  TiltSeries.py
+  GenerateTiltSeries.py
   SetNegativeVoxelsToZero.py
   STEM_probe.py
   InvertData.py
