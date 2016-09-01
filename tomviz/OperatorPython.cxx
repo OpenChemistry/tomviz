@@ -132,7 +132,7 @@ void OperatorPython::setJSONDescription(const QString& str)
 
   Json::Value root;
   Json::Reader reader;
-  bool parsingSuccessful = reader.parse(str.toStdString().c_str(), root);
+  bool parsingSuccessful = reader.parse(str.toLatin1().data(), root);
   if (!parsingSuccessful) {
     qCritical() << "Failed to parse operator JSON";
     qCritical() << str;
@@ -270,7 +270,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
-      const char* name = m_resultNames[i].toStdString().c_str();
+      const char* name = m_resultNames[i].toLatin1().data();
       PyObject* pyDataObject = PyDict_GetItemString(outputDict, name);
       if (!pyDataObject) {
         qCritical() << "No result named" << m_resultNames[i]
@@ -296,9 +296,9 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
       QPair<QString, QString> nameLabelPair =
         m_childDataSourceNamesAndLabels[i];
-      std::string name = nameLabelPair.first.toStdString();
-      std::string label = nameLabelPair.second.toStdString();
-      PyObject* child = PyDict_GetItemString(outputDict, name.c_str());
+      const char* name = nameLabelPair.first.toLatin1().data();
+      const char* label = nameLabelPair.second.toLatin1().data();
+      PyObject* child = PyDict_GetItemString(outputDict, name);
       if (!child) {
         qCritical() << "No child data source named '"
                     << m_childDataSourceNamesAndLabels[i]
@@ -331,7 +331,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         DataSource* childDS =
           new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
                          DataSource::Volume, this);
-        childDS->setFilename(label.c_str());
+        childDS->setFilename(label);
         setChildDataSource(childDS);
       }
     }
