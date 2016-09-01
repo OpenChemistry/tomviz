@@ -65,6 +65,7 @@ public slots:
   void moduleAdded(Module* module);
   void operatorAdded(Operator* op);
   void operatorModified();
+  void operatorTransformDone();
 
   void dataSourceRemoved(DataSource* dataSource);
   void moduleRemoved(Module* module);

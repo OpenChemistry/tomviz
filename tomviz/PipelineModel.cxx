@@ -528,6 +528,7 @@ void PipelineModel::operatorAdded(Operator* op)
   auto dataSource = op->dataSource();
   Q_ASSERT(dataSource);
   connect(op, SIGNAL(labelModified()), this, SLOT(operatorModified()));
+  connect(op, SIGNAL(transformingDone(bool)), this, SLOT(operatorTransformDone()));
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
@@ -566,6 +567,41 @@ void PipelineModel::operatorModified()
 
   auto index = this->operatorIndex(op);
   dataChanged(index, index);
+}
+
+void PipelineModel::operatorTransformDone()
+{
+  auto op = qobject_cast<Operator*>(sender());
+  Q_ASSERT(op);
+
+  // Find tree item for the operator
+  TreeItem* operatorItem = nullptr;
+  foreach (auto child, m_treeItems) {
+    auto foundChild = child->find(op);
+    if (foundChild) {
+      operatorItem = foundChild;
+      break;
+    }
+  }
+
+  if (op->hasChildDataSource()) {
+    auto childDataSource = op->childDataSource();
+    if (childDataSource) {
+      // The Operator's child data set is null initially. We need to set it
+      // after the Operator has been run. We also assume that the operator item
+      // has a single child, the child DataSource.
+      auto dataSourceItem = operatorItem->parent();
+      if (dataSourceItem->childCount() > 0) {
+
+        // Child DataSource is the last child of the parent DataSource.
+        auto childIndex = dataSourceItem->childCount() - 1;
+        auto childDataSourceItem = dataSourceItem->child(childIndex);
+        childDataSourceItem->setItem(PipelineModel::Item(childDataSource));
+      } else {
+        cout << "Null datasourceitem" << endl;
+      }
+    }
+  }
 }
 
 void PipelineModel::dataSourceRemoved(DataSource* source)
