@@ -519,7 +519,13 @@ void PipelineModel::moduleAdded(Module* module)
     // to the data source item.
     auto row = dataSourceItem->childCount();
     beginInsertRows(index, row, row);
-    dataSourceItem->appendChild(PipelineModel::Item(module));
+    auto childCount = dataSourceItem->childCount();
+    if (childCount > 0 && dataSourceItem->child(childCount - 1)->dataSource()) {
+      // Last item is a child DataSource, so insert the new module in front of it.
+      dataSourceItem->insertChild(childCount - 1, PipelineModel::Item(module));
+    } else {
+      dataSourceItem->appendChild(PipelineModel::Item(module));
+    }
     endInsertRows();
   }
 }
