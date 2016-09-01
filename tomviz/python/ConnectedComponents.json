@@ -8,6 +8,13 @@
       "type" : "table"
     }
   ],
+  "children" : [
+    {
+      "name" : "label_map",
+      "label" : "Label Map",
+      "type" : "label_map"
+    }
+  ],
   "parameters" : [
     {
       "name" : "lowerThreshold",
