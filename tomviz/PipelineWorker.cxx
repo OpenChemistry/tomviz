@@ -16,7 +16,6 @@
 #include "PipelineWorker.h"
 #include "Operator.h"
 
-#include <QDebug>
 #include <QObject>
 #include <QQueue>
 #include <QRunnable>
@@ -131,7 +130,6 @@ PipelineWorker::ConfigureThreadPool::ConfigureThreadPool()
 PipelineWorker::Run::Run(vtkDataObject* data, QList<Operator*> operators)
   : m_data(data)
 {
-  qDebug() << "Run called\n";
   foreach (auto op, operators) {
     m_runnableOperators.enqueue(new RunnableOperator(op, this->m_data, this));
   }
@@ -169,10 +167,8 @@ void PipelineWorker::Run::operatorComplete()
     this->startNextOperator();
   } else {
     if (!this->m_canceled) {
-      qDebug() << "Finished\n";
       emit finished();
     } else {
-      qDebug() << "Canceled\n";
       emit canceled();
     }
   }
