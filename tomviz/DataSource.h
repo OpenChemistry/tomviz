@@ -41,6 +41,8 @@ class DataSource : public QObject
   typedef QObject Superclass;
 
 public:
+  class ImageFuture;
+
   /// The type of data in the data source.  The data types currently supported
   /// are volumetric data and image stacks representing tilt series.
   enum DataSourceType
@@ -117,7 +119,8 @@ public:
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);
 
-  vtkSmartPointer<vtkImageData> getCopyOfImagePriorTo(Operator* op);
+  ImageFuture* getCopyOfImagePriorTo(Operator* op);
+
   /// Returns the extent of the transformed dataset
   void getExtent(int extent[6]);
   /// Returns the spacing of the transformed dataset
@@ -185,6 +188,31 @@ private:
 
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;
+};
+
+/// Return from getCopyOfImagePriorTo for caller to track async operation.
+class DataSource::ImageFuture : public QObject
+{
+  Q_OBJECT
+
+public:
+  friend class DataSource;
+
+  vtkSmartPointer<vtkImageData> result() { return this->m_imageData; };
+  Operator* op() { return this->m_operator; };
+
+signals:
+  void finished();
+  void canceled();
+
+private:
+  ImageFuture(Operator* op, vtkSmartPointer<vtkImageData> m_imageData,
+              PipelineWorker::Future* future = nullptr,
+              QObject* parent = nullptr);
+  ~ImageFuture();
+  Operator* m_operator;
+  vtkSmartPointer<vtkImageData> m_imageData;
+  PipelineWorker::Future* m_future;
 };
 }
 

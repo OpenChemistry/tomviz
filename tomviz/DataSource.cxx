@@ -43,6 +43,7 @@
 #include <vtk_pugixml.h>
 
 #include <QMap>
+#include <QTimer>
 
 #include <sstream>
 
@@ -124,6 +125,26 @@ void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
   }
   delete[] data;
 }
+}
+
+DataSource::ImageFuture::ImageFuture(Operator* op,
+                                     vtkSmartPointer<vtkImageData> imageData,
+                                     PipelineWorker::Future* future,
+                                     QObject* parent)
+  : QObject(parent), m_operator(op), m_imageData(imageData), m_future(future)
+{
+
+  if (m_future != nullptr) {
+    connect(m_future, SIGNAL(finished()), this, SIGNAL(finished()));
+    connect(m_future, SIGNAL(canceled()), this, SIGNAL(canceled()));
+  }
+}
+
+DataSource::ImageFuture::~ImageFuture()
+{
+  if (this->m_future != nullptr) {
+    this->m_future->deleteLater();
+  }
 }
 
 DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
@@ -487,35 +508,58 @@ void DataSource::operate(Operator* op)
 {
   Q_ASSERT(op);
 
-  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-    this->Internals->Producer->GetClientSideObject());
-  Q_ASSERT(tp);
-  if (op->transform(tp->GetOutputDataObject(0))) {
-    this->dataModified();
+  // If we are currently executing the pipeline, just add the operator
+  if (this->Internals->Future != nullptr &&
+      this->Internals->Future->isRunning()) {
+    this->Internals->Future->addOperator(op);
   }
-
-  emit this->dataChanged();
+  // We need to initiate a new run
+  else {
+    vtkDataObject *copy = this->copyData();
+    this->Internals->Future = this->Internals->Worker->run(copy, op);
+    connect(this->Internals->Future, SIGNAL(finished()),
+        this, SLOT(pipelineFinished()));
+    connect(this->Internals->Future, SIGNAL(canceled()),
+            this, SLOT(pipelineCanceled()));
+  }
 }
 
-vtkSmartPointer<vtkImageData> DataSource::getCopyOfImagePriorTo(Operator* op)
+DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator *op)
 {
   vtkSmartPointer<vtkImageData> result = vtkSmartPointer<vtkImageData>::New();
-  if (this->Internals->Operators.contains(op)) {
+  ImageFuture *imageFuture;
+  if (this->Internals->Operators.contains(op))
+  {
     vtkAlgorithm* alg = vtkAlgorithm::SafeDownCast(
       this->Internals->OriginalDataSource->GetClientSideObject());
     result->DeepCopy(alg->GetOutputDataObject(0));
-    for (int i = 0; i < this->Internals->Operators.size() &&
-                    this->Internals->Operators[i] != op;
-         ++i) {
-      this->Internals->Operators[i]->transform(result);
-    }
-  } else {
+
+    auto future = this->Internals->Worker->run(result,
+            this->Internals->Operators.mid(0, this->Internals->Operators.indexOf(op)-1));
+
+    imageFuture = new ImageFuture(op, result, future);
+    connect(imageFuture, SIGNAL(finished()), this, SLOT(updateCache()));
+  }
+  else
+  {
     vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
       this->Internals->Producer->GetClientSideObject());
     result->DeepCopy(tp->GetOutputDataObject(0));
+    imageFuture = new ImageFuture(op, result);
+    // Delay emitting signal until next event loop
+    QTimer::singleShot(0, [=] {
+      emit imageFuture->finished();
+    });
   }
-  this->Internals->CachedPreOpStates[op] = result;
-  return result;
+
+  return imageFuture;
+}
+
+void DataSource::updateCache()
+{
+  DataSource::ImageFuture* future
+    = qobject_cast<DataSource::ImageFuture*>(this->sender());
+  this->Internals->CachedPreOpStates[future->op()] = future->result();
 }
 
 void DataSource::dataModified()
