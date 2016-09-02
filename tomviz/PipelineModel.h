@@ -78,8 +78,10 @@ private:
 
   QList<TreeItem*> m_treeItems;
 
-  QModelIndex dataSourceIndexHelper(PipelineModel::TreeItem* treeItem, DataSource* source);
-  QModelIndex operatorIndexHelper(PipelineModel::TreeItem* treeItem, Operator* op);
+  QModelIndex dataSourceIndexHelper(PipelineModel::TreeItem* treeItem,
+                                    DataSource* source);
+  QModelIndex operatorIndexHelper(PipelineModel::TreeItem* treeItem,
+                                  Operator* op);
 };
 
 } // tomviz namespace
