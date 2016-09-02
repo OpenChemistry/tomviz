@@ -70,7 +70,12 @@ def transform_scalars(dataset):
         relabel_filter.SortByObjectSizeOn()
         relabel_filter.Update()
 
-        utils.add_vtk_array_from_itk_image(relabel_filter.GetOutput(), dataset, 'LabelMap')
+        itk_image_data = relabel_filter.GetOutput()
+        label_buffer = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
+        label_map_data_set = vtk.vtkImageData()
+        label_map_data_set.CopyStructure(dataset)
+
+        utils.set_label_map(label_map_data_set, label_buffer)
 
         # Now take the connected components results and compute things like volume
         # and surface area.
@@ -101,6 +106,7 @@ def transform_scalars(dataset):
         # Set up dictionary to return operator results
         returnValues = {}
         returnValues["component_statistics"] = spreadsheet
+        returnValues["label_map"] = label_map_data_set
 
     except Exception as exc:
         print("Exception encountered while running ConnectedComponents")
