@@ -300,11 +300,12 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         m_childDataSourceNamesAndLabels[i];
       QString name(nameLabelPair.first);
       QString label(nameLabelPair.second);
-      PyObject* child = PyDict_GetItemString(outputDict, name.toLatin1().data());
+      PyObject* child =
+        PyDict_GetItemString(outputDict, name.toLatin1().data());
       if (!child) {
         errorEncountered = true;
-        qCritical() << "No child data source named '"
-                    << name << "' defined in output dictionary.\n";
+        qCritical() << "No child data source named '" << name
+                    << "' defined in output dictionary.\n";
         continue;
       }
 
@@ -343,7 +344,6 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       const char* objectReprString = PyString_AsString(objectRepr);
       qCritical() << "Dictionary return from Python script is:\n"
                   << objectReprString;
-
     }
   }
 

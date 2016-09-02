@@ -450,7 +450,8 @@ OperatorResult* PipelineModel::result(const QModelIndex& idx)
   return (treeItem ? treeItem->result() : nullptr);
 }
 
-QModelIndex PipelineModel::dataSourceIndexHelper(PipelineModel::TreeItem* treeItem, DataSource* source)
+QModelIndex PipelineModel::dataSourceIndexHelper(
+  PipelineModel::TreeItem* treeItem, DataSource* source)
 {
   Q_ASSERT(treeItem != nullptr);
   if (!source) {
@@ -459,7 +460,7 @@ QModelIndex PipelineModel::dataSourceIndexHelper(PipelineModel::TreeItem* treeIt
     return createIndex(treeItem->childIndex(), 0, treeItem);
   } else {
     // Recurse on children
-    foreach(auto childItem, treeItem->children()) {
+    foreach (auto childItem, treeItem->children()) {
       QModelIndex childIndex = dataSourceIndexHelper(childItem, source);
       if (childIndex.isValid()) {
         return childIndex;
@@ -492,7 +493,8 @@ QModelIndex PipelineModel::moduleIndex(Module* module)
   return QModelIndex();
 }
 
-QModelIndex PipelineModel::operatorIndexHelper(PipelineModel::TreeItem* treeItem, Operator* op)
+QModelIndex PipelineModel::operatorIndexHelper(
+  PipelineModel::TreeItem* treeItem, Operator* op)
 {
   Q_ASSERT(treeItem != nullptr);
   if (!op) {
@@ -501,7 +503,7 @@ QModelIndex PipelineModel::operatorIndexHelper(PipelineModel::TreeItem* treeItem
     return createIndex(treeItem->childIndex(), 0, treeItem);
   } else {
     // Recurse on children
-    foreach(auto childItem, treeItem->children()) {
+    foreach (auto childItem, treeItem->children()) {
       QModelIndex childIndex = operatorIndexHelper(childItem, op);
       if (childIndex.isValid()) {
         return childIndex;
@@ -650,7 +652,7 @@ void PipelineModel::operatorTransformDone()
     if (childDataSource) {
       // The Operator's child data set is null initially. We need to set it
       // after the Operator has been run. We also assume that the operator item
-      // has a single child, the child DataSource, and it is the last child of 
+      // has a single child, the child DataSource, and it is the last child of
       // the operator tree item.
       auto childItem = operatorItem->lastChild();
       if (childItem) {
