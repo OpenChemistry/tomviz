@@ -115,6 +115,11 @@ OperatorPython::OperatorPython(QObject* parentObject)
     qCritical() << "Failed to import tomviz.utils module.";
     CheckForError();
   }
+
+  // This connection is needed so we can create new child data sources in the UI
+  // thread from a pipeline worker threads.
+  connect(this, SIGNAL(newChildDataSource(const QString&, pqSMProxy)), this,
+          SLOT(createNewChildDataSource(const QString&, pqSMProxy)));
 }
 
 OperatorPython::~OperatorPython()
@@ -361,7 +366,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         vtkSMSessionProxyManager* sessionProxyManager =
           proxyManager->GetActiveSessionProxyManager();
 
-        vtkSmartPointer<vtkSMProxy> producerProxy;
+        pqSMProxy producerProxy;
         producerProxy.TakeReference(
           sessionProxyManager->NewProxy("sources", "TrivialProducer"));
         producerProxy->UpdateVTKObjects();
@@ -375,11 +380,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
         producer->SetOutput(childData);
 
-        DataSource* childDS =
-          new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
-                         DataSource::Volume, this);
-        childDS->setFilename(label.toLatin1().data());
-        setChildDataSource(childDS);
+        emit newChildDataSource(label, producerProxy);
       }
     }
 
@@ -424,5 +425,16 @@ bool OperatorPython::deserialize(const pugi::xml_node& ns)
 EditOperatorWidget* OperatorPython::getEditorContents(QWidget* p)
 {
   return new EditPythonOperatorWidget(p, this);
+}
+
+void OperatorPython::createNewChildDataSource(
+  const QString& label, vtkSmartPointer<vtkSMProxy> producerProxy)
+{
+
+  DataSource* childDS = new DataSource(
+    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume);
+
+  childDS->setFilename(label.toLatin1().data());
+  this->setChildDataSource(childDS);
 }
 }

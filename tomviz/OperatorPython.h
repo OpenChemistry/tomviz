@@ -18,6 +18,7 @@
 
 #include "Operator.h"
 #include <QScopedPointer>
+#include <pqSMProxy.h>
 
 namespace tomviz {
 class OperatorPython : public Operator
@@ -50,8 +51,17 @@ public:
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
   bool hasCustomUI() const override { return true; }
 
+signals:
+  // Signal used to request the creation of a new data source. Needed to
+  // ensure the initialization of the new DataSource is performed on UI thread
+  void newChildDataSource(const QString&, pqSMProxy);
+
 protected:
   bool applyTransform(vtkDataObject* data) override;
+
+private slots:
+  // Create a new child datasource and set it on this operator
+  void createNewChildDataSource(const QString& label, pqSMProxy producerProxy);
 
 private:
   Q_DISABLE_COPY(OperatorPython)
