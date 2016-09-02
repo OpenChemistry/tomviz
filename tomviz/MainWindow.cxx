@@ -240,7 +240,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   //#################################################################
   new ToggleDataTypeReaction(toggleDataTypeAction, this);
   new SetTiltAnglesReaction(setTiltAnglesAction, this);
-  
   new AddPythonTransformReaction(generateTiltSeriesAction,
                                  "Generate Tilt Series",
                                  readInPythonScript("GenerateTiltSeries"),false,
