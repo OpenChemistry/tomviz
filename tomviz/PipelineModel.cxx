@@ -63,6 +63,7 @@ public:
 
   TreeItem* parent() { return m_parent; }
   TreeItem* child(int index);
+  TreeItem* lastChild();
   int childCount() const { return m_children.count(); }
   QList<TreeItem*>& children() { return m_children; }
   int childIndex() const;
@@ -104,6 +105,14 @@ PipelineModel::TreeItem::~TreeItem()
 PipelineModel::TreeItem* PipelineModel::TreeItem::child(int index)
 {
   return m_children.value(index);
+}
+
+PipelineModel::TreeItem* PipelineModel::TreeItem::lastChild()
+{
+  if (childCount() == 0) {
+    return nullptr;
+  }
+  return child(childCount() - 1);
 }
 
 int PipelineModel::TreeItem::childIndex() const
@@ -441,18 +450,31 @@ OperatorResult* PipelineModel::result(const QModelIndex& idx)
   return (treeItem ? treeItem->result() : nullptr);
 }
 
+QModelIndex PipelineModel::dataSourceIndexHelper(PipelineModel::TreeItem* treeItem, DataSource* source)
+{
+  Q_ASSERT(treeItem != nullptr);
+  if (!source) {
+    return QModelIndex();
+  } else if (treeItem->dataSource() == source) {
+    return createIndex(treeItem->childIndex(), 0, treeItem);
+  } else {
+    // Recurse on children
+    foreach(auto childItem, treeItem->children()) {
+      QModelIndex childIndex = dataSourceIndexHelper(childItem, source);
+      if (childIndex.isValid()) {
+        return childIndex;
+      }
+    }
+  }
+  return QModelIndex();
+}
+
 QModelIndex PipelineModel::dataSourceIndex(DataSource* source)
 {
   for (int i = 0; i < m_treeItems.count(); ++i) {
-    auto treeItem = m_treeItems[i];
-    auto numChildren = treeItem->childCount();
-    if (treeItem->dataSource() == source) {
-      return createIndex(i, 0, treeItem);
-    } else if (numChildren > 0 &&
-               treeItem->child(numChildren - 1)->dataSource()) {
-      // No matching DataSource at the top level. Drop down a level and look at
-      // child datasets of Operators.
-      return createIndex(numChildren - 1, 0, treeItem->child(numChildren - 1));
+    QModelIndex index = dataSourceIndexHelper(m_treeItems[i], source);
+    if (index.isValid()) {
+      return index;
     }
   }
 
@@ -465,6 +487,25 @@ QModelIndex PipelineModel::moduleIndex(Module* module)
     auto moduleItem = treeItem->find(module);
     if (moduleItem) {
       return createIndex(moduleItem->childIndex(), 0, moduleItem);
+    }
+  }
+  return QModelIndex();
+}
+
+QModelIndex PipelineModel::operatorIndexHelper(PipelineModel::TreeItem* treeItem, Operator* op)
+{
+  Q_ASSERT(treeItem != nullptr);
+  if (!op) {
+    return QModelIndex();
+  } else if (treeItem->op() == op) {
+    return createIndex(treeItem->childIndex(), 0, treeItem);
+  } else {
+    // Recurse on children
+    foreach(auto childItem, treeItem->children()) {
+      QModelIndex childIndex = operatorIndexHelper(childItem, op);
+      if (childIndex.isValid()) {
+        return childIndex;
+      }
     }
   }
   return QModelIndex();
@@ -558,12 +599,12 @@ void PipelineModel::operatorAdded(Operator* op)
   endInsertRows();
 
   // Insert operator results in the operator tree item
+  auto operatorTreeItem = dataSourceItem->find(op);
+  auto operatorIndex = this->operatorIndex(op);
   int numResults = op->numberOfResults();
   if (numResults) {
-    auto operatorTreeItem = dataSourceItem->find(op);
-    auto operatorIndex = this->operatorIndex(op);
 
-    beginInsertRows(operatorIndex, 0, numResults);
+    beginInsertRows(operatorIndex, 0, numResults - 1);
     for (int j = 0; j < numResults; ++j) {
       OperatorResult* result = op->resultAt(j);
       operatorTreeItem->appendChild(PipelineModel::Item(result));
@@ -571,11 +612,11 @@ void PipelineModel::operatorAdded(Operator* op)
     endInsertRows();
   }
 
-  // Insert child DataSources
+  // Insert child DataSource. We support just one for now.
   if (op->hasChildDataSource()) {
-    beginInsertRows(index, 0, 0);
+    beginInsertRows(operatorIndex, numResults, numResults);
     DataSource* childDataSource = op->childDataSource();
-    dataSourceItem->appendChild(PipelineModel::Item(childDataSource));
+    operatorTreeItem->appendChild(PipelineModel::Item(childDataSource));
     endInsertRows();
   }
 }
@@ -609,16 +650,11 @@ void PipelineModel::operatorTransformDone()
     if (childDataSource) {
       // The Operator's child data set is null initially. We need to set it
       // after the Operator has been run. We also assume that the operator item
-      // has a single child, the child DataSource.
-      auto dataSourceItem = operatorItem->parent();
-      if (dataSourceItem->childCount() > 0) {
-
-        // Child DataSource is the last child of the parent DataSource.
-        auto childIndex = dataSourceItem->childCount() - 1;
-        auto childDataSourceItem = dataSourceItem->child(childIndex);
-        childDataSourceItem->setItem(PipelineModel::Item(childDataSource));
-      } else {
-        cout << "Null datasourceitem" << endl;
+      // has a single child, the child DataSource, and it is the last child of 
+      // the operator tree item.
+      auto childItem = operatorItem->lastChild();
+      if (childItem) {
+        childItem->setItem(PipelineModel::Item(childDataSource));
       }
     }
   }

@@ -77,6 +77,9 @@ private:
   TreeItem* treeItem(const QModelIndex& index) const;
 
   QList<TreeItem*> m_treeItems;
+
+  QModelIndex dataSourceIndexHelper(PipelineModel::TreeItem* treeItem, DataSource* source);
+  QModelIndex operatorIndexHelper(PipelineModel::TreeItem* treeItem, Operator* op);
 };
 
 } // tomviz namespace
