@@ -24,6 +24,11 @@
 
 #include <QFileInfo>
 
+#include <vtkRectilinearGrid.h>
+#include <vtkStructuredGrid.h>
+#include <vtkTable.h>
+#include <vtkUnstructuredGrid.h>
+
 namespace tomviz {
 
 struct PipelineModel::Item
@@ -264,6 +269,23 @@ PipelineModel::~PipelineModel()
 {
 }
 
+namespace {
+QIcon iconForDataObject(vtkDataObject* dataObject)
+{
+  if (vtkTable::SafeDownCast(dataObject)) {
+    return QIcon(":/pqWidgets/Icons/pqSpreadsheet16.png");
+  } else if (vtkUnstructuredGrid::SafeDownCast(dataObject)) {
+    return QIcon(":/pqWidgets/Icons/pqUnstructuredGrid16.png");
+  } else if (vtkStructuredGrid::SafeDownCast(dataObject)) {
+    return QIcon(":/pqWidgets/Icons/pqStructuredGrid16.png");
+  } else if (vtkUnstructuredGrid::SafeDownCast(dataObject)) {
+    return QIcon(":/pqWidgets/Icons/pqRectilinearGrid16.png");
+  }
+
+  return QIcon(":/pqWidgets/Icons/pqView22.png");
+}
+}
+
 QVariant PipelineModel::data(const QModelIndex& index, int role) const
 {
   if (!index.isValid() || index.column() > 2)
@@ -331,7 +353,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
     if (index.column() == 0) {
       switch (role) {
         case Qt::DecorationRole:
-          return tr("Result decoration");
+          return iconForDataObject(result->dataObject());
         case Qt::DisplayRole:
           return result->label();
         case Qt::ToolTipRole:
