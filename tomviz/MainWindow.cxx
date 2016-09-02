@@ -244,7 +244,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Generate Tilt Series",
                                  readInPythonScript("GenerateTiltSeries"),false,
                                  true);
-
+  new AddPythonTransformReaction(generateTiltSeriesAction,
+                                 "Generate Tilt Series",
+                                 readInPythonScript("GenerateTiltSeries"),false,
+                                 true);
+  
   new AddAlignReaction(alignAction);
   new AddPythonTransformReaction(downsampleByTwoAction, "Bin Tilt Image x2",
                                  readInPythonScript("BinTiltSeriesByTwo"),
