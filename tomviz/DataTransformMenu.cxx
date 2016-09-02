@@ -104,7 +104,9 @@ void DataTransformMenu::buildMenu()
   new CropReaction(cropDataAction, mainWindow);
   new ConvertToFloatReaction(convertDataAction);
   new AddPythonTransformReaction(binaryThresholdAction, "Binary Threshold",
-                                 readInPythonScript("BinaryThreshold"));
+                                 readInPythonScript("BinaryThreshold"), false,
+                                 false,
+                                 readInJSONDescription("BinaryThreshold"));
   new AddPythonTransformReaction(
     connectedComponentsAction, "Connected Components",
     readInPythonScript("ConnectedComponents"), false, false,

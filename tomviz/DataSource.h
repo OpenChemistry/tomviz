@@ -81,6 +81,9 @@ public:
   /// visualization pipelines on directly. Use producer() instead.
   vtkSMSourceProxy* originalDataSource() const;
 
+  /// Override the filename.
+  void setFilename(const QString& filename);
+
   /// Returns the name of the filename used from the originalDataSource.
   QString filename() const;
 

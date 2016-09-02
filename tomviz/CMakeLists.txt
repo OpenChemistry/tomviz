@@ -246,6 +246,7 @@ set(python_files
   )
 
 set(json_files
+  BinaryThreshold.json
   ConnectedComponents.json
   )
 

@@ -1,17 +1,10 @@
 {
-  "name" : "ConnectedComponents",
-  "label" : "Connected Components",
-  "results" : [
-    {
-      "name" : "component_statistics",
-      "label" : "Component Statistics",
-      "type" : "table"
-    }
-  ],
+  "name" : "BinaryThreshold",
+  "label" : "Binary Threshold",
   "children" : [
     {
-      "name" : "label_map",
-      "label" : "Label Map",
+      "name" : "thresholded_segmentation",
+      "label" : "Thresholded Segmentation",
       "type" : "label_map"
     }
   ],

@@ -63,6 +63,7 @@ public:
 
   TreeItem* parent() { return m_parent; }
   TreeItem* child(int index);
+  TreeItem* lastChild();
   int childCount() const { return m_children.count(); }
   QList<TreeItem*>& children() { return m_children; }
   int childIndex() const;
@@ -79,6 +80,7 @@ public:
   TreeItem* find(Operator* op);
   TreeItem* find(OperatorResult* result);
 
+  void setItem(const PipelineModel::Item& item) { m_item = item; }
   DataSource* dataSource() { return m_item.dataSource(); }
   Module* module() { return m_item.module(); }
   Operator* op() { return m_item.op(); }
@@ -103,6 +105,14 @@ PipelineModel::TreeItem::~TreeItem()
 PipelineModel::TreeItem* PipelineModel::TreeItem::child(int index)
 {
   return m_children.value(index);
+}
+
+PipelineModel::TreeItem* PipelineModel::TreeItem::lastChild()
+{
+  if (childCount() == 0) {
+    return nullptr;
+  }
+  return child(childCount() - 1);
 }
 
 int PipelineModel::TreeItem::childIndex() const
@@ -259,79 +269,75 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
   if (!index.isValid() || index.column() > 2)
     return QVariant();
 
-  // Data source
-  if (!index.parent().isValid()) {
-    auto treeItem = static_cast<TreeItem*>(index.internalPointer());
-    auto source = treeItem->dataSource();
+  auto treeItem = this->treeItem(index);
+  auto dataSource = treeItem->dataSource();
+  auto module = treeItem->module();
+  auto op = treeItem->op();
+  auto result = treeItem->result();
 
+  // Data source
+  if (dataSource) {
     if (index.column() == 0) {
       switch (role) {
         case Qt::DecorationRole:
           return QIcon(":/pqWidgets/Icons/pqInspect22.png");
         case Qt::DisplayRole:
-          return QFileInfo(source->filename()).baseName();
+          return QFileInfo(dataSource->filename()).baseName();
         case Qt::ToolTipRole:
-          return source->filename();
+          return dataSource->filename();
         default:
           return QVariant();
       }
     }
-  } else {
-    // Module or operator
-    auto treeItem = this->treeItem(index);
-    auto module = treeItem->module();
-    auto op = treeItem->op();
-    auto result = treeItem->result();
-    if (module) {
-      if (index.column() == 0) {
-        switch (role) {
-          case Qt::DecorationRole:
-            return module->icon();
-          case Qt::DisplayRole:
-            return module->label();
-          case Qt::ToolTipRole:
-            return module->label();
-          default:
-            return QVariant();
-        }
-      } else if (index.column() == 1) {
-        if (role == Qt::DecorationRole) {
-          if (module->visibility()) {
-            return QIcon(":/pqWidgets/Icons/pqEyeball16.png");
-          } else {
-            return QIcon(":/pqWidgets/Icons/pqEyeballd16.png");
-          }
+  } else if (module) {
+    if (index.column() == 0) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return module->icon();
+        case Qt::DisplayRole:
+          return module->label();
+        case Qt::ToolTipRole:
+          return module->label();
+        default:
+          return QVariant();
+      }
+    } else if (index.column() == 1) {
+      if (role == Qt::DecorationRole) {
+        if (module->visibility()) {
+          return QIcon(":/pqWidgets/Icons/pqEyeball16.png");
+        } else {
+          return QIcon(":/pqWidgets/Icons/pqEyeballd16.png");
         }
       }
-    } else if (op) {
-      if (index.column() == 0) {
-        switch (role) {
-          case Qt::DecorationRole:
-            return op->icon();
-          case Qt::DisplayRole:
-            return op->label();
-          case Qt::ToolTipRole:
-            return op->label();
-          default:
-            return QVariant();
-        }
-      } else if (index.column() == 1) {
-        if (role == Qt::DecorationRole) {
-          return QIcon(":/QtWidgets/Icons/pqDelete32.png");
-        }
+    }
+  } else if (op) {
+    if (index.column() == 0) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return op->icon();
+        case Qt::DisplayRole:
+          return op->label();
+        case Qt::ToolTipRole:
+          return op->label();
+        default:
+          return QVariant();
       }
-    } else if (result) {
-      if (index.column() == 0) {
-        switch (role) {
-          case Qt::DecorationRole:
-            return tr("Result decoration");
-          case Qt::DisplayRole:
-            return result->label();
-          case Qt::ToolTipRole:
-            return tr("Result tooltip role");
-          default:
-            return QVariant();
-        }
+    } else if (index.column() == 1) {
+      if (role == Qt::DecorationRole) {
+        return QIcon(":/QtWidgets/Icons/pqDelete32.png");
+      }
+    }
+  } else if (result) {
+    if (index.column() == 0) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return tr("Result decoration");
+        case Qt::DisplayRole:
+          return result->label();
+        case Qt::ToolTipRole:
+          return tr("Result tooltip role");
+        default:
+          return QVariant();
       }
     }
   }
@@ -444,13 +450,35 @@ OperatorResult* PipelineModel::result(const QModelIndex& idx)
   return (treeItem ? treeItem->result() : nullptr);
 }
 
+QModelIndex PipelineModel::dataSourceIndexHelper(
+  PipelineModel::TreeItem* treeItem, DataSource* source)
+{
+  Q_ASSERT(treeItem != nullptr);
+  if (!source) {
+    return QModelIndex();
+  } else if (treeItem->dataSource() == source) {
+    return createIndex(treeItem->childIndex(), 0, treeItem);
+  } else {
+    // Recurse on children
+    foreach (auto childItem, treeItem->children()) {
+      QModelIndex childIndex = dataSourceIndexHelper(childItem, source);
+      if (childIndex.isValid()) {
+        return childIndex;
+      }
+    }
+  }
+  return QModelIndex();
+}
+
 QModelIndex PipelineModel::dataSourceIndex(DataSource* source)
 {
   for (int i = 0; i < m_treeItems.count(); ++i) {
-    if (m_treeItems[i]->dataSource() == source) {
-      return createIndex(i, 0, m_treeItems[i]);
+    QModelIndex index = dataSourceIndexHelper(m_treeItems[i], source);
+    if (index.isValid()) {
+      return index;
     }
   }
+
   return QModelIndex();
 }
 
@@ -460,6 +488,26 @@ QModelIndex PipelineModel::moduleIndex(Module* module)
     auto moduleItem = treeItem->find(module);
     if (moduleItem) {
       return createIndex(moduleItem->childIndex(), 0, moduleItem);
+    }
+  }
+  return QModelIndex();
+}
+
+QModelIndex PipelineModel::operatorIndexHelper(
+  PipelineModel::TreeItem* treeItem, Operator* op)
+{
+  Q_ASSERT(treeItem != nullptr);
+  if (!op) {
+    return QModelIndex();
+  } else if (treeItem->op() == op) {
+    return createIndex(treeItem->childIndex(), 0, treeItem);
+  } else {
+    // Recurse on children
+    foreach (auto childItem, treeItem->children()) {
+      QModelIndex childIndex = operatorIndexHelper(childItem, op);
+      if (childIndex.isValid()) {
+        return childIndex;
+      }
     }
   }
   return QModelIndex();
@@ -514,7 +562,14 @@ void PipelineModel::moduleAdded(Module* module)
     // to the data source item.
     auto row = dataSourceItem->childCount();
     beginInsertRows(index, row, row);
-    dataSourceItem->appendChild(PipelineModel::Item(module));
+    auto childCount = dataSourceItem->childCount();
+    if (childCount > 0 && dataSourceItem->child(childCount - 1)->dataSource()) {
+      // Last item is a child DataSource, so insert the new module in front of
+      // it.
+      dataSourceItem->insertChild(childCount - 1, PipelineModel::Item(module));
+    } else {
+      dataSourceItem->appendChild(PipelineModel::Item(module));
+    }
     endInsertRows();
   }
 }
@@ -527,6 +582,8 @@ void PipelineModel::operatorAdded(Operator* op)
   auto dataSource = op->dataSource();
   Q_ASSERT(dataSource);
   connect(op, SIGNAL(labelModified()), this, SLOT(operatorModified()));
+  connect(op, SIGNAL(transformingDone(bool)), this,
+          SLOT(operatorTransformDone()));
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
@@ -544,16 +601,24 @@ void PipelineModel::operatorAdded(Operator* op)
   endInsertRows();
 
   // Insert operator results in the operator tree item
+  auto operatorTreeItem = dataSourceItem->find(op);
+  auto operatorIndex = this->operatorIndex(op);
   int numResults = op->numberOfResults();
   if (numResults) {
-    auto operatorTreeItem = dataSourceItem->find(op);
-    auto operatorIndex = this->operatorIndex(op);
 
-    beginInsertRows(operatorIndex, 0, numResults);
+    beginInsertRows(operatorIndex, 0, numResults - 1);
     for (int j = 0; j < numResults; ++j) {
       OperatorResult* result = op->resultAt(j);
       operatorTreeItem->appendChild(PipelineModel::Item(result));
     }
+    endInsertRows();
+  }
+
+  // Insert child DataSource. We support just one for now.
+  if (op->hasChildDataSource()) {
+    beginInsertRows(operatorIndex, numResults, numResults);
+    DataSource* childDataSource = op->childDataSource();
+    operatorTreeItem->appendChild(PipelineModel::Item(childDataSource));
     endInsertRows();
   }
 }
@@ -565,6 +630,36 @@ void PipelineModel::operatorModified()
 
   auto index = this->operatorIndex(op);
   dataChanged(index, index);
+}
+
+void PipelineModel::operatorTransformDone()
+{
+  auto op = qobject_cast<Operator*>(sender());
+  Q_ASSERT(op);
+
+  // Find tree item for the operator
+  TreeItem* operatorItem = nullptr;
+  foreach (auto child, m_treeItems) {
+    auto foundChild = child->find(op);
+    if (foundChild) {
+      operatorItem = foundChild;
+      break;
+    }
+  }
+
+  if (op->hasChildDataSource()) {
+    auto childDataSource = op->childDataSource();
+    if (childDataSource) {
+      // The Operator's child data set is null initially. We need to set it
+      // after the Operator has been run. We also assume that the operator item
+      // has a single child, the child DataSource, and it is the last child of
+      // the operator tree item.
+      auto childItem = operatorItem->lastChild();
+      if (childItem) {
+        childItem->setItem(PipelineModel::Item(childDataSource));
+      }
+    }
+  }
 }
 
 void PipelineModel::dataSourceRemoved(DataSource* source)
