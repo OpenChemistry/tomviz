@@ -22,7 +22,9 @@
 
 namespace tomviz {
 
-Operator::Operator(QObject* parentObject) : QObject(parentObject)
+Operator::Operator(QObject* parentObject)
+  : QObject(parentObject), m_hasChildDataSource(false),
+    m_childDataSource(nullptr)
 {
 }
 
@@ -82,11 +84,46 @@ bool Operator::setResult(int index, vtkDataObject* object)
   return true;
 }
 
+bool Operator::setResult(const char* name, vtkDataObject* object)
+{
+  bool valueSet = false;
+  QString qname(name);
+  foreach (auto result, m_results) {
+    if (result->name() == qname) {
+      result->setDataObject(object);
+      valueSet = true;
+      break;
+    }
+  }
+
+  return valueSet;
+}
+
 OperatorResult* Operator::resultAt(int i) const
 {
   if (i < 0 || i >= m_results.size()) {
     return nullptr;
   }
   return m_results[i];
+}
+
+void Operator::setHasChildDataSource(bool value)
+{
+  m_hasChildDataSource = value;
+}
+
+bool Operator::hasChildDataSource() const
+{
+  return m_hasChildDataSource;
+}
+
+void Operator::setChildDataSource(DataSource* source)
+{
+  m_childDataSource = source;
+}
+
+DataSource* Operator::childDataSource() const
+{
+  return m_childDataSource;
 }
 }

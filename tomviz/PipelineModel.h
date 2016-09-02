@@ -65,6 +65,7 @@ public slots:
   void moduleAdded(Module* module);
   void operatorAdded(Operator* op);
   void operatorModified();
+  void operatorTransformDone();
 
   void dataSourceRemoved(DataSource* dataSource);
   void moduleRemoved(Module* module);
@@ -76,6 +77,11 @@ private:
   TreeItem* treeItem(const QModelIndex& index) const;
 
   QList<TreeItem*> m_treeItems;
+
+  QModelIndex dataSourceIndexHelper(PipelineModel::TreeItem* treeItem,
+                                    DataSource* source);
+  QModelIndex operatorIndexHelper(PipelineModel::TreeItem* treeItem,
+                                  Operator* op);
 };
 
 } // tomviz namespace

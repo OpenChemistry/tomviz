@@ -19,13 +19,22 @@
 #include <QPointer>
 #include <QtDebug>
 
+#include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
 #include "pqPythonSyntaxHighlighter.h"
+
 #include "vtkDataObject.h"
+#include "vtkNew.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
+#include "vtkSMParaViewPipelineController.h"
+#include "vtkSMProxy.h"
+#include "vtkSMProxyManager.h"
+#include "vtkSMSessionProxyManager.h"
+#include "vtkSMSourceProxy.h"
 #include "vtkSmartPyObject.h"
+#include "vtkTrivialProducer.h"
 #include <sstream>
 
 #include "vtk_jsoncpp.h"
@@ -123,7 +132,7 @@ void OperatorPython::setJSONDescription(const QString& str)
 
   Json::Value root;
   Json::Reader reader;
-  bool parsingSuccessful = reader.parse(str.toStdString().c_str(), root);
+  bool parsingSuccessful = reader.parse(str.toLatin1().data(), root);
   if (!parsingSuccessful) {
     qCritical() << "Failed to parse operator JSON";
     qCritical() << str;
@@ -135,6 +144,9 @@ void OperatorPython::setJSONDescription(const QString& str)
   if (!labelNode.isNull()) {
     setLabel(labelNode.asCString());
   }
+
+  m_resultNames.clear();
+  m_childDataSourceNamesAndLabels.clear();
 
   // Get the number of results
   Json::Value resultsNode = root["results"];
@@ -150,10 +162,35 @@ void OperatorPython::setJSONDescription(const QString& str)
       Json::Value nameValue = resultsNode[i]["name"];
       if (!nameValue.isNull()) {
         oa->setName(nameValue.asCString());
+        m_resultNames.append(nameValue.asCString());
       }
       Json::Value labelValue = resultsNode[i]["label"];
       if (!labelValue.isNull()) {
         oa->setLabel(labelValue.asCString());
+      }
+    }
+  }
+
+  // Get child dataset information
+  Json::Value childDatasetNode = root["children"];
+  if (!childDatasetNode.isNull()) {
+    Json::Value::ArrayIndex size = childDatasetNode.size();
+    if (size != 1) {
+      qCritical() << "Only one child dataset is supported for now. Found"
+                  << size << " but only the first will be used";
+    }
+    if (size > 0) {
+      setHasChildDataSource(true);
+      Json::Value nameValue = childDatasetNode[0]["name"];
+      Json::Value labelValue = childDatasetNode[0]["label"];
+      if (!nameValue.isNull() && !labelValue.isNull()) {
+        QPair<QString, QString> nameLabelPair(QString(nameValue.asCString()),
+                                              QString(labelValue.asCString()));
+        m_childDataSourceNamesAndLabels.append(nameLabelPair);
+      } else if (nameValue.isNull()) {
+        qCritical() << "No name given for child DataSet";
+      } else if (labelValue.isNull()) {
+        qCritical() << "No label given for child DataSet";
       }
     }
   }
@@ -227,28 +264,86 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     return false;
   }
 
-  // TODO - check if there are results but no settings for them in
-  // the output from the script.
-
   // Look for additional outputs from the filter returned in a dictionary
   PyObject* outputDict = result.GetPointer();
   if (PyDict_Check(outputDict)) {
-    for (int i = 0; i < numberOfResults(); ++i) {
-      OperatorResult* operatorResult = resultAt(i);
-      std::string resultName = operatorResult->name().toStdString();
-      PyObject* pyDataObject =
-        PyDict_GetItemString(outputDict, resultName.c_str());
-      if (pyDataObject) {
-        vtkObjectBase* vtkobject =
-          vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
-        if (vtkobject) {
-          setResult(i, vtkDataObject::SafeDownCast(vtkobject));
+    bool errorEncountered = false;
+
+    // Results (tables, etc.)
+    for (int i = 0; i < m_resultNames.size(); ++i) {
+      const char* name = m_resultNames[i].toLatin1().data();
+      PyObject* pyDataObject = PyDict_GetItemString(outputDict, name);
+      if (!pyDataObject) {
+        errorEncountered = true;
+        qCritical() << "No result named" << m_resultNames[i]
+                    << "defined in output dictionary.\n";
+        continue;
+      }
+      vtkObjectBase* vtkobject =
+        vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
+      vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
+      if (dataObject) {
+        bool resultWasSet = setResult(name, dataObject);
+        if (!resultWasSet) {
+          qCritical() << "Could not set result '" << name << "'";
+          continue;
         }
       } else {
-        qCritical()
-          << "No result named" << ("'" + resultName + "'").c_str()
-          << "defined in output dictionary from 'transform_scalars' script.";
+        qCritical() << "Result named '" << name << "' is not a vtkDataObject";
+        continue;
       }
+    }
+
+    // Segmentations, reconstructions, etc.
+    for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
+      QPair<QString, QString> nameLabelPair =
+        m_childDataSourceNamesAndLabels[i];
+      QString name(nameLabelPair.first);
+      QString label(nameLabelPair.second);
+      PyObject* child =
+        PyDict_GetItemString(outputDict, name.toLatin1().data());
+      if (!child) {
+        errorEncountered = true;
+        qCritical() << "No child data source named '" << name
+                    << "' defined in output dictionary.\n";
+        continue;
+      }
+
+      vtkObjectBase* vtkobject =
+        vtkPythonUtil::GetPointerFromObject(child, "vtkDataObject");
+      vtkDataObject* childData = vtkDataObject::SafeDownCast(vtkobject);
+      if (childData) {
+        vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
+        vtkSMSessionProxyManager* sessionProxyManager =
+          proxyManager->GetActiveSessionProxyManager();
+
+        vtkSmartPointer<vtkSMProxy> producerProxy;
+        producerProxy.TakeReference(
+          sessionProxyManager->NewProxy("sources", "TrivialProducer"));
+        producerProxy->UpdateVTKObjects();
+
+        vtkTrivialProducer* producer = vtkTrivialProducer::SafeDownCast(
+          producerProxy->GetClientSideObject());
+        if (!producer) {
+          qWarning() << "Could not get TrivialProducer from proxy";
+          return false;
+        }
+
+        producer->SetOutput(childData);
+
+        DataSource* childDS =
+          new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
+                         DataSource::Volume, this);
+        childDS->setFilename(label.toLatin1().data());
+        setChildDataSource(childDS);
+      }
+    }
+
+    if (errorEncountered) {
+      PyObject* objectRepr = PyObject_Repr(outputDict);
+      const char* objectReprString = PyString_AsString(objectRepr);
+      qCritical() << "Dictionary return from Python script is:\n"
+                  << objectReprString;
     }
   }
 

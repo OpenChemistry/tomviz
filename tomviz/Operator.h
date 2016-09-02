@@ -60,11 +60,26 @@ public:
   /// Get number of output results
   virtual int numberOfResults() const;
 
-  /// Add additional output result from this operator
+  /// Set the result at the given index to the object.
   virtual bool setResult(int index, vtkDataObject* object);
+
+  /// Set the result with the given name to the object.
+  virtual bool setResult(const char* name, vtkDataObject* object);
 
   /// Get output result at index.
   virtual OperatorResult* resultAt(int index) const;
+
+  /// Set whether the operator is expected to produce a child DataSource.
+  virtual void setHasChildDataSource(bool value);
+
+  /// Get whether the operator is expected to produce a child DataSource.
+  virtual bool hasChildDataSource() const;
+
+  /// Set the child DataSource. Can be nullptr.
+  virtual void setChildDataSource(DataSource* source);
+
+  /// Get the child DataSource.
+  virtual DataSource* childDataSource() const;
 
   /// Save/Restore state.
   virtual bool serialize(pugi::xml_node& in) const = 0;
@@ -159,6 +174,8 @@ private:
   Q_DISABLE_COPY(Operator)
 
   QList<OperatorResult*> m_results;
+  bool m_hasChildDataSource;
+  DataSource* m_childDataSource;
 };
 }
 
