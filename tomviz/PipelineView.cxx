@@ -22,6 +22,7 @@
 #include "Module.h"
 #include "ModuleManager.h"
 #include "Operator.h"
+#include "OperatorResult.h"
 #include "PipelineModel.h"
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
@@ -77,6 +78,14 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
 
   auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
   auto dataSource = pipelineModel->dataSource(idx);
+  auto result = pipelineModel->result(idx);
+
+  bool childData =
+    (dataSource && qobject_cast<Operator*>(dataSource->parent())) ||
+    (result && qobject_cast<Operator*>(result->parent()));
+  if (childData) {
+    return;
+  }
 
   QMenu contextMenu;
   QAction* cloneAction = nullptr;
@@ -93,6 +102,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* deleteAction = contextMenu.addAction("Delete");
   auto globalPoint = mapToGlobal(e->pos());
   QAction* selectedItem = contextMenu.exec(globalPoint);
+  // Some action was selected, so process it.
   if (selectedItem == deleteAction) {
     deleteItem(idx);
   } else if (markAsAction != nullptr && markAsAction == selectedItem) {
