@@ -187,6 +187,12 @@ DataSource::~DataSource()
   }
 }
 
+void DataSource::setFilename(const QString& filename)
+{
+  vtkSMProxy* dataSource = this->originalDataSource();
+  dataSource->SetAnnotation("filename", filename.toStdString().c_str());
+}
+
 QString DataSource::filename() const
 {
   vtkSMProxy* dataSource = this->originalDataSource();
