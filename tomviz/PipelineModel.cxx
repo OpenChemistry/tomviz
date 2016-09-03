@@ -131,7 +131,7 @@ int PipelineModel::TreeItem::childIndex() const
 bool PipelineModel::TreeItem::insertChild(int pos,
                                           const PipelineModel::Item& item)
 {
-  if (pos < 0 || pos >= m_children.size()) {
+  if (pos < 0 || pos > m_children.size()) {
     return false;
   }
   TreeItem* treeItem = new TreeItem(item, this);
@@ -610,7 +610,7 @@ void PipelineModel::operatorAdded(Operator* op)
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
   // Find the last operator if there is one, and insert the operator there.
-  int insertionRow = 0;
+  int insertionRow = dataSourceItem->childCount();
   for (int j = 0; j < dataSourceItem->childCount(); ++j) {
     if (!dataSourceItem->child(j)->op()) {
       insertionRow = j;
@@ -680,6 +680,8 @@ void PipelineModel::operatorTransformDone()
       if (childItem) {
         childItem->setItem(PipelineModel::Item(childDataSource));
       }
+      connect(childDataSource, SIGNAL(operatorAdded(Operator*)),
+              SLOT(operatorAdded(Operator*)), Qt::UniqueConnection);
     }
   }
 }
