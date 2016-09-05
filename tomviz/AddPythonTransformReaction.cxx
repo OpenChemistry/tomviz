@@ -625,8 +625,10 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     QGridLayout* layout = new QGridLayout;
 
-    QLabel* label = new QLabel(
-      "Generate electron tomography tilt series from volume dataset:");
+    QLabel* label =
+      new QLabel("Generate electron tomography tilt series from volume "
+                 "dataset. \nObject is rotated about the x-axis and "
+                 "projected along the z-axis.");
     label->setWordWrap(true);
     layout->addWidget(label, 0, 0, 1, 2);
 
