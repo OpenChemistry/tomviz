@@ -160,8 +160,7 @@ protected:
   void resetData();
 
   /// Set data output of trivial producer to new data object, the trivial
-  /// producer
-  /// takes over ownership of the data object.
+  /// producer takes over ownership of the data object.
   void setData(vtkDataObject* newData);
 
   /// Create copy of current data object, caller is responsible for ownership
