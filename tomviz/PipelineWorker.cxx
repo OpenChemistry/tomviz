@@ -55,14 +55,13 @@ class PipelineWorker::Run : public QObject
 public:
   Run(vtkDataObject* data, QList<Operator*> operators);
 
-  // Start the next operator is in the queue
+  // Start the next operator in the queue
   void startNextOperator();
   /// Clear all Operators from the queue and attempts to cancel the
   /// running Operator.
   void cancel();
   /// Returns true if the operator was successfully removed from the queue
-  /// before
-  /// it was run, false otherwise.
+  /// before it was run, false otherwise.
   bool cancel(Operator* op);
   /// Returns true if we are currently running the operator pipeline, false
   /// otherwise.
