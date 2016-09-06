@@ -231,7 +231,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
   QAction* reconDFMConstraintAction =
     ui.menuTomography->addAction("Constraint-based Direct Fourier Method");
-
+  QAction* reconTVMinimizationAction =
+    ui.menuTomography->addAction("TV Minimization Method");
   ui.menuTomography->addSeparator();
   QAction* generateTiltSeriesAction =
     ui.menuTomography->addAction("Generate Tilt Series");
@@ -274,6 +275,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(
     reconDFMConstraintAction, "Reconstruct (Constraint-based Direct Fourier)",
     readInPythonScript("Recon_DFT_constraint"), true);
+  new AddPythonTransformReaction(
+    reconTVMinimizationAction, "Reconstruct (TV Minimization)",
+    readInPythonScript("Recon_TV_minimization"), true);
 
   new ReconstructionReaction(reconWBP_CAction);
   //#################################################################
