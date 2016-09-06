@@ -72,9 +72,21 @@ def transform_scalars(dataset):
 
         itk_image_data = relabel_filter.GetOutput()
         label_buffer = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
+
+        # Flip the labels so that the largest component has the highest label
+        # value, e.g., the labeling ordering by size goes from [1, 2, ... N] to
+        # [N, N-1, N-2, ..., 1]. Note that zero is the background value, so we
+        # do not want to change it.
+        import numpy as np
+        minimum = 1 # Minimum label is always 1, background is 0
+        maximum = np.max(label_buffer)
+
+        # Try more memory-efficient approach
+        gt_zero = label_buffer > 0
+        label_buffer[gt_zero] = minimum - label_buffer[gt_zero] + maximum
+
         label_map_data_set = vtk.vtkImageData()
         label_map_data_set.CopyStructure(dataset)
-
         utils.set_label_map(label_map_data_set, label_buffer)
 
         # Now take the connected components results and compute things like volume
