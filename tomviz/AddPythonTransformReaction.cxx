@@ -835,6 +835,50 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
+  } else if (scriptLabel == "Reconstruct (TV Minimization)") {
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    dialog.setWindowTitle("TV Minimization Reconstruction");
+    
+    QGridLayout* layout = new QGridLayout;
+    // Description
+    QLabel* label =
+    new QLabel("Reconstruct a tilt series using TV Minimization. \n"
+               "The tilt axis must be parallel to the x-direction and "
+               "centered in the y-direction.\n"
+               "The size of reconstruction will be (Nx,Ny,Ny). The number of "
+               "iterations can be specified below.\n"
+               "Reconstrucing a 256x256x256 tomogram typically takes more "
+               "than 100 mins with 5 iterations.");
+    label->setWordWrap(true);
+    layout->addWidget(label, 0, 0, 1, 2);
+    
+    label = new QLabel("Number of Iterations:");
+    layout->addWidget(label, 1, 0, 1, 1);
+    
+    QSpinBox* Niter = new QSpinBox;
+    Niter->setValue(1);
+    Niter->setMinimum(1);
+    
+    layout->addWidget(Niter, 1, 1, 1, 1);
+    
+    QVBoxLayout* v = new QVBoxLayout;
+    QDialogButtonBox* buttons =
+    new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    dialog.layout()->setSizeConstraint(
+      QLayout::SetFixedSize); // Make the UI non-resizeable
+    if (dialog.exec() == QDialog::Accepted) {
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###Niter###",
+                           QString("Niter = %1").arg(Niter->value()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource,
+                        substitutions);
+    }
   } else if (scriptLabel == "Reconstruct (Constraint-based Direct Fourier)") {
     QDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle("Constraint-based Direct Fourier Reconstruction");
