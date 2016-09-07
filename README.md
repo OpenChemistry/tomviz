@@ -32,6 +32,9 @@ A Quick Tutorial
 - 2.	Create a 3D volumetric visualization by clicking “Visualization > Volume” at the top menubar.
 - 3.	Interact with your volume in the center panel titled “RenderView”.
 
+User Guide
+----------
+The [tomviz user guide](../../OpenChemistry/tomviz/docs/TomvizBasicUserGuide.pdf) is available for more detailed information to get started.
 
 Publications using tomviz
 ------------
