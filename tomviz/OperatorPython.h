@@ -17,8 +17,13 @@
 #define tomvizOperatorPython_h
 
 #include "Operator.h"
+#include <QMetaType>
 #include <QScopedPointer>
 #include <pqSMProxy.h>
+#include <vtkDataObject.h>
+#include <vtkSmartPointer.h>
+
+Q_DECLARE_METATYPE(vtkSmartPointer<vtkDataObject>)
 
 namespace tomviz {
 class OperatorPython : public Operator
@@ -54,14 +59,18 @@ public:
 signals:
   // Signal used to request the creation of a new data source. Needed to
   // ensure the initialization of the new DataSource is performed on UI thread
-  void newChildDataSource(const QString&, pqSMProxy);
+  void newChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>);
+  void newOperatorResult(const char*, vtkSmartPointer<vtkDataObject>);
 
 protected:
   bool applyTransform(vtkDataObject* data) override;
 
 private slots:
   // Create a new child datasource and set it on this operator
-  void createNewChildDataSource(const QString& label, pqSMProxy producerProxy);
+  void createNewChildDataSource(const QString& label,
+                                vtkSmartPointer<vtkDataObject>);
+  void setOperatorResult(const char* name,
+                         vtkSmartPointer<vtkDataObject> result);
 
 private:
   Q_DISABLE_COPY(OperatorPython)

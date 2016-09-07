@@ -85,7 +85,6 @@ private:
   Ui::EditPythonOperatorWidget Ui;
 };
 
-#include "OperatorPython.moc"
 }
 
 namespace tomviz {
@@ -102,6 +101,7 @@ OperatorPython::OperatorPython(QObject* parentObject)
   : Superclass(parentObject), Internals(new OperatorPython::OPInternals()),
     Label("Python Operator")
 {
+  qRegisterMetaType<vtkSmartPointer<vtkDataObject>>();
   vtkPythonInterpreter::Initialize();
 
   PyObject* pyObj = nullptr;
@@ -118,8 +118,14 @@ OperatorPython::OperatorPython(QObject* parentObject)
 
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
-  connect(this, SIGNAL(newChildDataSource(const QString&, pqSMProxy)), this,
-          SLOT(createNewChildDataSource(const QString&, pqSMProxy)));
+  connect(this, SIGNAL(newChildDataSource(const QString&,
+                                          vtkSmartPointer<vtkDataObject>)),
+          this, SLOT(createNewChildDataSource(const QString&,
+                                              vtkSmartPointer<vtkDataObject>)));
+  connect(
+    this,
+    SIGNAL(newOperatorResult(const char*, vtkSmartPointer<vtkDataObject>)),
+    this, SLOT(setOperatorResult(const char*, vtkSmartPointer<vtkDataObject>)));
 }
 
 OperatorPython::~OperatorPython()
@@ -329,11 +335,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
       vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
       if (dataObject) {
-        bool resultWasSet = setResult(name, dataObject);
-        if (!resultWasSet) {
-          qCritical() << "Could not set result '" << name << "'";
-          continue;
-        }
+        // Emit signal so we switch back to UI thread
+        emit newOperatorResult(name, dataObject);
       } else {
         qCritical() << "Result named '" << name << "' is not a vtkDataObject";
         continue;
@@ -360,27 +363,10 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
       vtkObjectBase* vtkobject =
         vtkPythonUtil::GetPointerFromObject(child, "vtkDataObject");
-      vtkDataObject* childData = vtkDataObject::SafeDownCast(vtkobject);
+      vtkSmartPointer<vtkDataObject> childData =
+        vtkDataObject::SafeDownCast(vtkobject);
       if (childData) {
-        vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
-        vtkSMSessionProxyManager* sessionProxyManager =
-          proxyManager->GetActiveSessionProxyManager();
-
-        pqSMProxy producerProxy;
-        producerProxy.TakeReference(
-          sessionProxyManager->NewProxy("sources", "TrivialProducer"));
-        producerProxy->UpdateVTKObjects();
-
-        vtkTrivialProducer* producer = vtkTrivialProducer::SafeDownCast(
-          producerProxy->GetClientSideObject());
-        if (!producer) {
-          qWarning() << "Could not get TrivialProducer from proxy";
-          return false;
-        }
-
-        producer->SetOutput(childData);
-
-        emit newChildDataSource(label, producerProxy);
+        emit newChildDataSource(label, childData);
       }
     }
 
@@ -428,8 +414,26 @@ EditOperatorWidget* OperatorPython::getEditorContents(QWidget* p)
 }
 
 void OperatorPython::createNewChildDataSource(
-  const QString& label, vtkSmartPointer<vtkSMProxy> producerProxy)
+  const QString& label, vtkSmartPointer<vtkDataObject> childData)
 {
+
+  vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
+  vtkSMSessionProxyManager* sessionProxyManager =
+    proxyManager->GetActiveSessionProxyManager();
+
+  pqSMProxy producerProxy;
+  producerProxy.TakeReference(
+    sessionProxyManager->NewProxy("sources", "TrivialProducer"));
+  producerProxy->UpdateVTKObjects();
+
+  vtkTrivialProducer* producer =
+    vtkTrivialProducer::SafeDownCast(producerProxy->GetClientSideObject());
+  if (!producer) {
+    qWarning() << "Could not get TrivialProducer from proxy";
+    return;
+  }
+
+  producer->SetOutput(childData);
 
   DataSource* childDS = new DataSource(
     vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this);
@@ -437,4 +441,15 @@ void OperatorPython::createNewChildDataSource(
   childDS->setFilename(label.toLatin1().data());
   this->setChildDataSource(childDS);
 }
+
+void OperatorPython::setOperatorResult(const char* name,
+                                       vtkSmartPointer<vtkDataObject> result)
+{
+  bool resultWasSet = this->setResult(name, result);
+  if (!resultWasSet) {
+    qCritical() << "Could not set result '" << name << "'";
+  }
 }
+}
+
+#include "OperatorPython.moc"
