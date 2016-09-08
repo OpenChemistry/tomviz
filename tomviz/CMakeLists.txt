@@ -215,6 +215,7 @@ set(python_files
   Recon_DFT_constraint.py
   Recon_WBP.py
   Recon_ART.py
+  Recon_TV_minimization.py
   Crop_Data.py
   FFT_AbsLog.py
   Shift_Stack_Uniformly.py
