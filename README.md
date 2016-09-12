@@ -34,7 +34,7 @@ A Quick Tutorial
 
 User Guide
 ----------
-The [tomviz user guide](../../OpenChemistry/tomviz/docs/TomvizBasicUserGuide.pdf) is available for more detailed information to get started.
+The [tomviz user guide](/docs/TomvizBasicUserGuide.pdf) is available for more detailed information to get started.
 
 Publications using tomviz
 ------------
