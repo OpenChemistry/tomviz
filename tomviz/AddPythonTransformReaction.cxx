@@ -838,18 +838,18 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   } else if (scriptLabel == "Reconstruct (SIRT)") {
     QDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle("SIRT Reconstruction");
-    
+
     QGridLayout* layout = new QGridLayout;
     // Description
     QLabel* label =
-    new QLabel("Reconstruct a tilt series using Simultaneous Iterative "
-               "Reconstruction Techniques Technique (SIRT). \n"
-               "The tilt axis must be parallel to the x-direction and "
-               "centered in the y-direction.\n"
-               "The size of reconstruction will be (Nx,Ny,Ny). The number of "
-               "iterations can be specified below.\n"
-               "Reconstrucing a 256x256x256 tomogram typically takes more "
-               "than 100 mins with 5 iterations.");
+      new QLabel("Reconstruct a tilt series using Simultaneous Iterative "
+                 "Reconstruction Techniques Technique (SIRT). \n"
+                 "The tilt axis must be parallel to the x-direction and "
+                 "centered in the y-direction.\n"
+                 "The size of reconstruction will be (Nx,Ny,Ny). The number of "
+                 "iterations can be specified below.\n"
+                 "Reconstrucing a 256x256x256 tomogram typically takes more "
+                 "than 100 mins with 5 iterations.");
     label->setWordWrap(true);
     layout->addWidget(label, 0, 0, 1, 2);
 
@@ -863,14 +863,14 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout->addWidget(Niter, 1, 1, 1, 1);
     label = new QLabel("Update step size:");
     layout->addWidget(label, 2, 0, 1, 1);
-    
+
     QDoubleSpinBox* updateStepSize = new QDoubleSpinBox;
     updateStepSize->setDecimals(5);
     updateStepSize->setValue(0.0001);
     updateStepSize->setMinimum(0);
     updateStepSize->setSingleStep(0.0001);
     layout->addWidget(updateStepSize, 2, 1, 1, 1);
-    
+
     label = new QLabel("Update method:");
     layout->addWidget(label, 3, 0, 1, 1);
 
@@ -886,7 +886,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
     connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    
+
     v->addLayout(layout);
     v->addWidget(buttons);
     dialog.setLayout(v);
