@@ -84,7 +84,6 @@ private:
   QPointer<tomviz::OperatorPython> Op;
   Ui::EditPythonOperatorWidget Ui;
 };
-
 }
 
 namespace tomviz {
@@ -125,7 +124,8 @@ OperatorPython::OperatorPython(QObject* parentObject)
   connect(
     this,
     SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
-    this, SLOT(setOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)));
+    this,
+    SLOT(setOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)));
 }
 
 OperatorPython::~OperatorPython()
