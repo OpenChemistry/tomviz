@@ -60,7 +60,7 @@ signals:
   // Signal used to request the creation of a new data source. Needed to
   // ensure the initialization of the new DataSource is performed on UI thread
   void newChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>);
-  void newOperatorResult(const char*, vtkSmartPointer<vtkDataObject>);
+  void newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>);
 
 protected:
   bool applyTransform(vtkDataObject* data) override;
@@ -69,7 +69,7 @@ private slots:
   // Create a new child datasource and set it on this operator
   void createNewChildDataSource(const QString& label,
                                 vtkSmartPointer<vtkDataObject>);
-  void setOperatorResult(const char* name,
+  void setOperatorResult(const QString& name,
                          vtkSmartPointer<vtkDataObject> result);
 
 private:

@@ -124,8 +124,8 @@ OperatorPython::OperatorPython(QObject* parentObject)
                                               vtkSmartPointer<vtkDataObject>)));
   connect(
     this,
-    SIGNAL(newOperatorResult(const char*, vtkSmartPointer<vtkDataObject>)),
-    this, SLOT(setOperatorResult(const char*, vtkSmartPointer<vtkDataObject>)));
+    SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
+    this, SLOT(setOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)));
 }
 
 OperatorPython::~OperatorPython()
@@ -336,7 +336,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
       if (dataObject) {
         // Emit signal so we switch back to UI thread
-        emit newOperatorResult(name, dataObject);
+        emit newOperatorResult(QString(name), dataObject);
       } else {
         qCritical() << "Result named '" << name << "' is not a vtkDataObject";
         continue;
@@ -442,10 +442,10 @@ void OperatorPython::createNewChildDataSource(
   this->setChildDataSource(childDS);
 }
 
-void OperatorPython::setOperatorResult(const char* name,
+void OperatorPython::setOperatorResult(const QString& name,
                                        vtkSmartPointer<vtkDataObject> result)
 {
-  bool resultWasSet = this->setResult(name, result);
+  bool resultWasSet = this->setResult(name.toLatin1().data(), result);
   if (!resultWasSet) {
     qCritical() << "Could not set result '" << name << "'";
   }
