@@ -319,7 +319,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
-      const char* name = m_resultNames[i].toLatin1().data();
+      QByteArray byteArray = m_resultNames[i].toLatin1();
+      const char* name = byteArray.data();
       PyObject* pyDataObject = nullptr;
       {
         vtkPythonScopeGilEnsurer gilEnsurer(true);
@@ -336,7 +337,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
       if (dataObject) {
         // Emit signal so we switch back to UI thread
-        emit newOperatorResult(QString(name), dataObject);
+        emit newOperatorResult(m_resultNames[i], dataObject);
       } else {
         qCritical() << "Result named '" << name << "' is not a vtkDataObject";
         continue;
