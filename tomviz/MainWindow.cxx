@@ -229,6 +229,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     ui.menuTomography->addAction("Simple Back Projection (C++)");
   QAction* reconARTAction =
     ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
+  QAction* reconSIRTAction = ui.menuTomography->addAction(
+    "Simultaneous Iterative Reconstruction Technique (SIRT)");
   QAction* reconDFMConstraintAction =
     ui.menuTomography->addAction("Constraint-based Direct Fourier Method");
   QAction* reconTVMinimizationAction =
@@ -272,6 +274,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  readInPythonScript("Recon_WBP"), true);
   new AddPythonTransformReaction(reconARTAction, "Reconstruct (ART)",
                                  readInPythonScript("Recon_ART"), true);
+  new AddPythonTransformReaction(reconSIRTAction, "Reconstruct (SIRT)",
+                                 readInPythonScript("Recon_SIRT"), true);
   new AddPythonTransformReaction(
     reconDFMConstraintAction, "Reconstruct (Constraint-based Direct Fourier)",
     readInPythonScript("Recon_DFT_constraint"), true);
