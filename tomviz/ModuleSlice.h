@@ -20,6 +20,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
 
+#include <pqPropertyLinks.h>
+
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
@@ -58,6 +60,8 @@ private slots:
   void onPropertyChanged();
   void onPlaneChanged();
 
+  void dataUpdated();
+
 private:
   // Should only be called from initialize after the PassThrough has been setup.
   bool setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer);
@@ -68,6 +72,8 @@ private:
   vtkSmartPointer<vtkSMProxy> PropsPanelProxy;
   vtkSmartPointer<vtkNonOrthoImagePlaneWidget> Widget;
   bool IgnoreSignals;
+
+  pqPropertyLinks m_Links;
 };
 }
 

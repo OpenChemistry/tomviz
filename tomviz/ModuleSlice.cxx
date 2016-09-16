@@ -18,6 +18,8 @@
 #include "DataSource.h"
 #include "Utilities.h"
 #include "pqCoreUtilities.h"
+#include "pqDoubleVectorPropertyWidget.h"
+#include "pqLineEdit.h"
 #include "pqProxiesWidget.h"
 
 #include "vtkAlgorithm.h"
@@ -42,8 +44,12 @@
 #include "vtkSMViewProxy.h"
 #include "vtkScalarsToColors.h"
 
+#include <QCheckBox>
 #include <QDebug>
+#include <QDoubleValidator>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QVBoxLayout>
 
 namespace tomviz {
 
@@ -215,20 +221,62 @@ void ModuleSlice::addToPanel(QWidget* panel)
     delete panel->layout();
   }
 
-  QHBoxLayout* layout = new QHBoxLayout;
-  panel->setLayout(layout);
-  pqProxiesWidget* proxiesWidget = new pqProxiesWidget(panel);
-  layout->addWidget(proxiesWidget);
+  QVBoxLayout* layout = new QVBoxLayout;
 
-  QStringList properties;
-  properties << "ShowArrow"
-             << "PointOnPlane"
-             << "PlaneNormal";
-  proxiesWidget->addProxy(this->PropsPanelProxy, "Appearance", properties,
-                          true);
-  proxiesWidget->updateLayout();
-  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
-                SIGNAL(renderNeeded()));
+  QCheckBox* showArrow = new QCheckBox("Show Arrow");
+  layout->addWidget(showArrow);
+  m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
+                          this->PropsPanelProxy,
+                          this->PropsPanelProxy->GetProperty("ShowArrow"), 0);
+  this->connect(showArrow, &QCheckBox::toggled, this,
+                &ModuleSlice::dataUpdated);
+
+  QLabel* label = new QLabel("Point on Plane");
+  layout->addWidget(label);
+  QHBoxLayout* row = new QHBoxLayout;
+  const char* labels[] = { "X:", "Y:", "Z:" };
+  for (int i = 0; i < 3; ++i) {
+    label = new QLabel(labels[i]);
+    row->addWidget(label);
+    pqLineEdit* inputBox = new pqLineEdit;
+    inputBox->setValidator(new QDoubleValidator(inputBox));
+    m_Links.addPropertyLink(
+      inputBox, "text2", SIGNAL(textChanged(const QString&)),
+      this->PropsPanelProxy, this->PropsPanelProxy->GetProperty("PointOnPlane"),
+      i);
+    this->connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
+                  &ModuleSlice::dataUpdated);
+    row->addWidget(inputBox);
+  }
+  layout->addItem(row);
+
+  label = new QLabel("Plane Normal");
+  layout->addWidget(label);
+  row = new QHBoxLayout;
+  for (int i = 0; i < 3; ++i) {
+    label = new QLabel(labels[i]);
+    row->addWidget(label);
+    pqLineEdit* inputBox = new pqLineEdit;
+    inputBox->setValidator(new QDoubleValidator(inputBox));
+    m_Links.addPropertyLink(
+      inputBox, "text2", SIGNAL(textChanged(const QString&)),
+      this->PropsPanelProxy, this->PropsPanelProxy->GetProperty("PlaneNormal"),
+      i);
+    this->connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
+                  &ModuleSlice::dataUpdated);
+    row->addWidget(inputBox);
+  }
+  layout->addItem(row);
+
+  layout->addStretch();
+
+  panel->setLayout(layout);
+}
+
+void ModuleSlice::dataUpdated()
+{
+  m_Links.accept();
+  emit this->renderNeeded();
 }
 
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
