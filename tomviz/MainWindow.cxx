@@ -57,12 +57,12 @@
 
 #include <QAction>
 #include <QDebug>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
 #include <QIcon>
 #include <QMessageBox>
 #include <QTimer>
-#include <QDesktopServices>
 #include <QUrl>
 
 #if QT_VERSION >= 0x050000
@@ -332,7 +332,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                      readInPythonScript("STEM_probe"));
   sampleDataMenu->addSeparator();
   QAction* sampleDataLinkAction =
-  sampleDataMenu->addAction("Download More Datasets");
+    sampleDataMenu->addAction("Download More Datasets");
   connect(sampleDataLinkAction, SIGNAL(triggered()), SLOT(openDataLink()));
 
   QAction* moveObjects =
