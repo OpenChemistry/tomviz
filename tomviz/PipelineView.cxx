@@ -29,6 +29,7 @@
 
 #include <pqCoreUtilities.h>
 #include <pqSpreadSheetView.h>
+#include <pqXYChartView.h>
 #include <pqView.h>
 #include <vtkNew.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
@@ -165,9 +166,11 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
       auto view = ActiveObjects::instance().activeView();
-      if (tomviz::convert<pqSpreadSheetView*>(view)) {
+      if (tomviz::convert<pqSpreadSheetView*>(view) ||
+          tomviz::convert<pqXYChartView*>(view)) {
         vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
         controller->Show(result->producerProxy(), 0, view);
+        ActiveObjects::instance().renderAllViews();
       }
     }
   }
