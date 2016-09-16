@@ -31,11 +31,15 @@ ViewFrameActions::availableViewTypes()
   QList<ViewType> views;
   QList<ViewType> availableViews =
     pqStandardViewFrameActionsImplementation::availableViewTypes();
+  QStringList supportedViewTypes;
+  supportedViewTypes << "RenderView"
+                     << "SpreadSheetView"
+                     << "XYChartView"
+                     << "XYHistogramChartView";
   foreach (ViewType viewType, availableViews) {
-    if (viewType.Name == "RenderView")
+    if (supportedViewTypes.contains(viewType.Name)) {
       views.push_back(viewType);
-    else if (viewType.Name == "SpreadSheetView")
-      views.push_back(viewType);
+    }
   }
   return views;
 }
