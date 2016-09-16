@@ -165,10 +165,8 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
       auto view = ActiveObjects::instance().activeView();
-      if (tomviz::convert<pqSpreadSheetView*>(view)) {
-        vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-        controller->Show(result->producerProxy(), 0, view);
-      }
+      vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+      controller->ShowInPreferredView(result->producerProxy(), 0, view);
     }
   }
 }
