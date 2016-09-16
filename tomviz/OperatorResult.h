@@ -53,6 +53,8 @@ public:
   virtual vtkDataObject* dataObject();
   virtual void setDataObject(vtkDataObject* dataObject);
 
+  virtual vtkSMSourceProxy* producerProxy();
+
 private:
   Q_DISABLE_COPY(OperatorResult)
 

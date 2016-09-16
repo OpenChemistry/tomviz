@@ -97,6 +97,12 @@ void OperatorResult::setDataObject(vtkDataObject* object)
   producer->SetOutput(object);
 }
 
+vtkSMSourceProxy* OperatorResult::producerProxy()
+{
+  createProxyIfNeeded();
+  return m_producerProxy;
+}
+
 void OperatorResult::createProxyIfNeeded()
 {
   if (!m_producerProxy.Get()) {

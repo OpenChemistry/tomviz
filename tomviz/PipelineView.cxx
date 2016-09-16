@@ -28,8 +28,12 @@
 #include "Utilities.h"
 
 #include <pqCoreUtilities.h>
+#include <pqSpreadSheetView.h>
 #include <pqView.h>
+#include <vtkNew.h>
+#include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMViewProxy.h>
+#include <vtkTable.h>
 
 #include <QKeyEvent>
 #include <QMainWindow>
@@ -157,6 +161,14 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
         op, op->dataSource(), false, pqCoreUtilities::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
+    }
+  } else if (auto result = pipelineModel->result(idx)) {
+    if (vtkTable::SafeDownCast(result->dataObject())) {
+      auto view = ActiveObjects::instance().activeView();
+      if (tomviz::convert<pqSpreadSheetView*>(view)) {
+        vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+        controller->Show(result->producerProxy(), 0, view);
+      }
     }
   }
 }

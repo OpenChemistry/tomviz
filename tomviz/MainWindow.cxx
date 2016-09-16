@@ -215,6 +215,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     ui.menuTomography->addAction("Image Alignment (Auto)");
   QAction* alignAction =
     ui.menuTomography->addAction("Image Alignment (Manual)");
+  QAction* autoRotateAlignAction =
+    ui.menuTomography->addAction("Tilt Axis Alignment (Auto)");
   QAction* rotateAlignAction =
     ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
@@ -265,6 +267,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
     readInPythonScript("GradientMagnitude2D_Sobel"), true);
   new AddRotateAlignReaction(rotateAlignAction);
+  new AddPythonTransformReaction(autoRotateAlignAction, "Auto Tilt Axis Align",
+                                 readInPythonScript("AutoTiltAxisAlignment"),
+                                 true);
   new AddPythonTransformReaction(autoAlignAction, "Auto Align (XCORR)",
                                  readInPythonScript("Align_Images"), true);
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
