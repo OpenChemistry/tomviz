@@ -20,6 +20,7 @@
 #include <QQueue>
 #include <QRunnable>
 #include <QThreadPool>
+#include <QTimer>
 
 #include <vtkDataObject.h>
 
@@ -55,8 +56,6 @@ class PipelineWorker::Run : public QObject
 public:
   Run(vtkDataObject* data, QList<Operator*> operators);
 
-  // Start the next operator in the queue
-  void startNextOperator();
   /// Clear all Operators from the queue and attempts to cancel the
   /// running Operator.
   void cancel();
@@ -79,6 +78,9 @@ public:
 
 public slots:
   void operatorComplete();
+
+  // Start the next operator in the queue
+  void startNextOperator();
 
 signals:
   void finished();
@@ -136,11 +138,11 @@ PipelineWorker::Run::Run(vtkDataObject* data, QList<Operator*> operators)
 
 PipelineWorker::Future* PipelineWorker::Run::start()
 {
-  this->startNextOperator();
-
   auto future = new PipelineWorker::Future(this);
   connect(this, SIGNAL(finished()), future, SIGNAL(finished()));
   connect(this, SIGNAL(canceled()), future, SIGNAL(canceled()));
+
+  QTimer::singleShot(0, this, SLOT(startNextOperator()));
 
   return future;
 }
