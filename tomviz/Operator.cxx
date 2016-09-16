@@ -40,9 +40,11 @@ DataSource* Operator::dataSource()
 
 bool Operator::transform(vtkDataObject* data)
 {
+  this->m_finished = false;
   emit this->transformingStarted();
   emit this->updateProgress(0);
   bool result = this->applyTransform(data);
+  this->m_finished = true;
   emit this->transformingDone(result);
   return result;
 }

@@ -60,6 +60,14 @@ void ProgressDialogManager::operationStarted()
   Operator* op = qobject_cast<Operator*>(this->sender());
   QObject::connect(op, &Operator::transformingDone, progressDialog,
                    &QDialog::accept);
+
+  // We have to check after we have connected to the signal as otherwise we
+  // might miss the state transition as its occurring on another thread.
+  if (op->isFinished()) {
+    progressDialog->deleteLater();
+    return;
+  }
+
   this->Internals->currentOp = op;
   QObject::connect(op, &Operator::transformingDone, this,
                    &ProgressDialogManager::operationDone);
@@ -93,6 +101,10 @@ void ProgressDialogManager::operationStarted()
   progressDialog->setWindowTitle(QString("%1 Progress").arg(op->label()));
   progressDialog->setLayout(layout);
   progressDialog->adjustSize();
+  // Increase size of dialog so we can see title, not sure there is a better
+  // way.
+  auto height = progressDialog->height();
+  progressDialog->resize(300, height);
   progressDialog->show();
   QCoreApplication::processEvents();
 }

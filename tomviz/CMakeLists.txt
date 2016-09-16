@@ -143,6 +143,8 @@ set(SOURCES
   PipelineModel.h
   PipelineView.cxx
   PipelineView.h
+  PipelineWorker.cxx
+  PipelineWorker.h
   ProgressBehavior.cxx
   ProgressBehavior.h
   ProgressDialogManager.cxx

@@ -160,6 +160,8 @@ public slots:
   /// midway.
   virtual void cancelTransform(){ /* Unsupported */ };
 
+  bool isFinished() { return m_finished; };
+
 protected:
   /// Method to transform a dataset in-place.
   virtual bool applyTransform(vtkDataObject* data) = 0;
@@ -172,8 +174,8 @@ protected:
 private:
   bool supportsCancel = false;
   Q_DISABLE_COPY(Operator)
-
   QList<OperatorResult*> m_results;
+  bool m_finished = false;
   bool m_hasChildDataSource;
   DataSource* m_childDataSource;
 };

@@ -16,15 +16,18 @@
 #ifndef tomvizDataSource_h
 #define tomvizDataSource_h
 
+#include "PipelineWorker.h"
 #include <QObject>
 #include <QScopedPointer>
 #include <QVector>
+
 #include <vtkSmartPointer.h>
 #include <vtk_pugixml.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
+class vtkDataObject;
 
 namespace tomviz {
 class Operator;
@@ -37,6 +40,8 @@ class DataSource : public QObject
   typedef QObject Superclass;
 
 public:
+  class ImageFuture;
+
   /// The type of data in the data source.  The data types currently supported
   /// are volumetric data and image stacks representing tilt series.
   enum DataSourceType
@@ -116,7 +121,8 @@ public:
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);
 
-  vtkSmartPointer<vtkImageData> getCopyOfImagePriorTo(Operator* op);
+  ImageFuture* getCopyOfImagePriorTo(Operator* op);
+
   /// Returns the extent of the transformed dataset
   void getExtent(int extent[6]);
   /// Returns the spacing of the transformed dataset
@@ -149,7 +155,19 @@ public slots:
 
 protected:
   void operate(Operator* op);
+
+  /// Reset the data output of the trivial producer to original data object.
   void resetData();
+
+  /// Set data output of trivial producer to new data object, the trivial
+  /// producer takes over ownership of the data object.
+  void setData(vtkDataObject* newData);
+
+  /// Create copy of current data object, caller is responsible for ownership
+  vtkDataObject* copyData();
+
+  /// Create copy of original data object, caller is responsible for ownership
+  vtkDataObject* copyOriginalData();
 
   /// Sets the type of data in the DataSource
   void setType(DataSourceType t);
@@ -160,11 +178,43 @@ protected slots:
   /// update the color map range.
   void updateColorMap();
 
+  /// The pipeline worker is finished
+  void pipelineFinished();
+
+  /// The pipeline worker is has been canceled
+  void pipelineCanceled();
+  void updateCache();
+
 private:
   Q_DISABLE_COPY(DataSource)
 
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;
+};
+
+/// Return from getCopyOfImagePriorTo for caller to track async operation.
+class DataSource::ImageFuture : public QObject
+{
+  Q_OBJECT
+
+public:
+  friend class DataSource;
+
+  vtkSmartPointer<vtkImageData> result() { return this->m_imageData; };
+  Operator* op() { return this->m_operator; };
+
+signals:
+  void finished();
+  void canceled();
+
+private:
+  ImageFuture(Operator* op, vtkSmartPointer<vtkImageData> m_imageData,
+              PipelineWorker::Future* future = nullptr,
+              QObject* parent = nullptr);
+  ~ImageFuture();
+  Operator* m_operator;
+  vtkSmartPointer<vtkImageData> m_imageData;
+  PipelineWorker::Future* m_future;
 };
 }
 

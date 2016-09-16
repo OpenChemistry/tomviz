@@ -26,6 +26,7 @@
 
 #include "vtkDataObject.h"
 #include "vtkNew.h"
+#include "vtkPython.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
 #include "vtkSMParaViewPipelineController.h"
@@ -45,6 +46,7 @@ namespace {
 
 bool CheckForError()
 {
+  vtkPythonScopeGilEnsurer gilEnsurer(true);
   PyObject* exception = PyErr_Occurred();
   if (exception) {
     PyErr_Print();
@@ -82,8 +84,6 @@ private:
   QPointer<tomviz::OperatorPython> Op;
   Ui::EditPythonOperatorWidget Ui;
 };
-
-#include "OperatorPython.moc"
 }
 
 namespace tomviz {
@@ -100,13 +100,32 @@ OperatorPython::OperatorPython(QObject* parentObject)
   : Superclass(parentObject), Internals(new OperatorPython::OPInternals()),
     Label("Python Operator")
 {
+  qRegisterMetaType<vtkSmartPointer<vtkDataObject>>();
   vtkPythonInterpreter::Initialize();
-  this->Internals->OperatorModule.TakeReference(
-    PyImport_ImportModule("tomviz.utils"));
+
+  PyObject* pyObj = nullptr;
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    pyObj = PyImport_ImportModule("tomviz.utils");
+  }
+
+  this->Internals->OperatorModule.TakeReference(pyObj);
   if (!this->Internals->OperatorModule) {
     qCritical() << "Failed to import tomviz.utils module.";
     CheckForError();
   }
+
+  // This connection is needed so we can create new child data sources in the UI
+  // thread from a pipeline worker threads.
+  connect(this, SIGNAL(newChildDataSource(const QString&,
+                                          vtkSmartPointer<vtkDataObject>)),
+          this, SLOT(createNewChildDataSource(const QString&,
+                                              vtkSmartPointer<vtkDataObject>)));
+  connect(
+    this,
+    SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
+    this,
+    SLOT(setOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)));
 }
 
 OperatorPython::~OperatorPython()
@@ -208,9 +227,15 @@ void OperatorPython::setScript(const QString& str)
     this->Internals->Code.TakeReference(nullptr);
     this->Internals->TransformMethod.TakeReference(nullptr);
 
-    this->Internals->Code.TakeReference(Py_CompileString(
-      this->Script.toLatin1().data(), this->label().toLatin1().data(),
-      Py_file_input /*Py_eval_input*/));
+    PyObject* pyObj = nullptr;
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      pyObj = Py_CompileString(this->Script.toLatin1().data(),
+                               this->label().toLatin1().data(),
+                               Py_file_input /*Py_eval_input*/);
+    }
+
+    this->Internals->Code.TakeReference(pyObj);
     if (!this->Internals->Code) {
       CheckForError();
       qCritical(
@@ -219,17 +244,26 @@ void OperatorPython::setScript(const QString& str)
     }
 
     vtkSmartPyObject module;
-    module.TakeReference(PyImport_ExecCodeModule(
-      QString("tomviz_%1").arg(this->label()).toLatin1().data(),
-      this->Internals->Code));
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      pyObj = PyImport_ExecCodeModule(
+        QString("tomviz_%1").arg(this->label()).toLatin1().data(),
+        this->Internals->Code);
+    }
+
+    module.TakeReference(pyObj);
     if (!module) {
       CheckForError();
       qCritical("Failed to create module.");
       return;
     }
 
-    this->Internals->TransformMethod.TakeReference(
-      PyObject_GetAttrString(module, "transform_scalars"));
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      pyObj = PyObject_GetAttrString(module, "transform_scalars");
+    }
+
+    this->Internals->TransformMethod.TakeReference(pyObj);
     if (!this->Internals->TransformMethod) {
       CheckForError();
       qWarning("Script doesn't have any 'transform_scalars' function.");
@@ -252,12 +286,19 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   Q_ASSERT(data);
 
   vtkSmartPyObject pydata(vtkPythonUtil::GetObjectFromPointer(data));
-  vtkSmartPyObject args(PyTuple_New(1));
-  PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
+  PyObject* pyObj = nullptr;
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    pyObj = PyTuple_New(1);
+  }
+  vtkSmartPyObject args(pyObj);
 
-  vtkSmartPyObject result;
-  result.TakeReference(
-    PyObject_Call(this->Internals->TransformMethod, args, nullptr));
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
+    pyObj = PyObject_Call(this->Internals->TransformMethod, args, nullptr);
+  }
+  vtkSmartPyObject result(pyObj);
   if (!result) {
     qCritical("Failed to execute the script.");
     CheckForError();
@@ -266,13 +307,25 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
   // Look for additional outputs from the filter returned in a dictionary
   PyObject* outputDict = result.GetPointer();
-  if (PyDict_Check(outputDict)) {
+
+  int check = 0;
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    check = PyDict_Check(outputDict);
+  }
+
+  if (check) {
     bool errorEncountered = false;
 
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
-      const char* name = m_resultNames[i].toLatin1().data();
-      PyObject* pyDataObject = PyDict_GetItemString(outputDict, name);
+      QByteArray byteArray = m_resultNames[i].toLatin1();
+      const char* name = byteArray.data();
+      PyObject* pyDataObject = nullptr;
+      {
+        vtkPythonScopeGilEnsurer gilEnsurer(true);
+        pyDataObject = PyDict_GetItemString(outputDict, name);
+      }
       if (!pyDataObject) {
         errorEncountered = true;
         qCritical() << "No result named" << m_resultNames[i]
@@ -283,11 +336,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
       vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
       if (dataObject) {
-        bool resultWasSet = setResult(name, dataObject);
-        if (!resultWasSet) {
-          qCritical() << "Could not set result '" << name << "'";
-          continue;
-        }
+        // Emit signal so we switch back to UI thread
+        emit newOperatorResult(m_resultNames[i], dataObject);
       } else {
         qCritical() << "Result named '" << name << "' is not a vtkDataObject";
         continue;
@@ -300,8 +350,11 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         m_childDataSourceNamesAndLabels[i];
       QString name(nameLabelPair.first);
       QString label(nameLabelPair.second);
-      PyObject* child =
-        PyDict_GetItemString(outputDict, name.toLatin1().data());
+      PyObject* child = nullptr;
+      {
+        vtkPythonScopeGilEnsurer gilEnsurer(true);
+        child = PyDict_GetItemString(outputDict, name.toLatin1().data());
+      }
       if (!child) {
         errorEncountered = true;
         qCritical() << "No child data source named '" << name
@@ -311,37 +364,20 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
       vtkObjectBase* vtkobject =
         vtkPythonUtil::GetPointerFromObject(child, "vtkDataObject");
-      vtkDataObject* childData = vtkDataObject::SafeDownCast(vtkobject);
+      vtkSmartPointer<vtkDataObject> childData =
+        vtkDataObject::SafeDownCast(vtkobject);
       if (childData) {
-        vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
-        vtkSMSessionProxyManager* sessionProxyManager =
-          proxyManager->GetActiveSessionProxyManager();
-
-        vtkSmartPointer<vtkSMProxy> producerProxy;
-        producerProxy.TakeReference(
-          sessionProxyManager->NewProxy("sources", "TrivialProducer"));
-        producerProxy->UpdateVTKObjects();
-
-        vtkTrivialProducer* producer = vtkTrivialProducer::SafeDownCast(
-          producerProxy->GetClientSideObject());
-        if (!producer) {
-          qWarning() << "Could not get TrivialProducer from proxy";
-          return false;
-        }
-
-        producer->SetOutput(childData);
-
-        DataSource* childDS =
-          new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
-                         DataSource::Volume, this);
-        childDS->setFilename(label.toLatin1().data());
-        setChildDataSource(childDS);
+        emit newChildDataSource(label, childData);
       }
     }
 
     if (errorEncountered) {
-      PyObject* objectRepr = PyObject_Repr(outputDict);
-      const char* objectReprString = PyString_AsString(objectRepr);
+      const char* objectReprString = nullptr;
+      {
+        vtkPythonScopeGilEnsurer gilEnsurer(true);
+        PyObject* objectRepr = PyObject_Repr(outputDict);
+        objectReprString = PyString_AsString(objectRepr);
+      }
       qCritical() << "Dictionary return from Python script is:\n"
                   << objectReprString;
     }
@@ -377,4 +413,44 @@ EditOperatorWidget* OperatorPython::getEditorContents(QWidget* p)
 {
   return new EditPythonOperatorWidget(p, this);
 }
+
+void OperatorPython::createNewChildDataSource(
+  const QString& label, vtkSmartPointer<vtkDataObject> childData)
+{
+
+  vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
+  vtkSMSessionProxyManager* sessionProxyManager =
+    proxyManager->GetActiveSessionProxyManager();
+
+  pqSMProxy producerProxy;
+  producerProxy.TakeReference(
+    sessionProxyManager->NewProxy("sources", "TrivialProducer"));
+  producerProxy->UpdateVTKObjects();
+
+  vtkTrivialProducer* producer =
+    vtkTrivialProducer::SafeDownCast(producerProxy->GetClientSideObject());
+  if (!producer) {
+    qWarning() << "Could not get TrivialProducer from proxy";
+    return;
+  }
+
+  producer->SetOutput(childData);
+
+  DataSource* childDS = new DataSource(
+    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this);
+
+  childDS->setFilename(label.toLatin1().data());
+  this->setChildDataSource(childDS);
 }
+
+void OperatorPython::setOperatorResult(const QString& name,
+                                       vtkSmartPointer<vtkDataObject> result)
+{
+  bool resultWasSet = this->setResult(name.toLatin1().data(), result);
+  if (!resultWasSet) {
+    qCritical() << "Could not set result '" << name << "'";
+  }
+}
+}
+
+#include "OperatorPython.moc"

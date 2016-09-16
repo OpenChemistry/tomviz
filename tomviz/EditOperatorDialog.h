@@ -24,6 +24,7 @@
 namespace tomviz {
 class Operator;
 class DataSource;
+class EditOperatorWidget;
 
 class EditOperatorDialog : public QDialog
 {
@@ -43,8 +44,10 @@ public:
 private slots:
   void onApply();
   void onClose();
+  void getCopyOfImagePriorToFinished();
 
 private:
+  void setupUI(EditOperatorWidget* opWidget = nullptr);
   Q_DISABLE_COPY(EditOperatorDialog)
   class EODInternals;
   QScopedPointer<EODInternals> Internals;
