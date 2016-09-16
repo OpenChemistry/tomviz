@@ -87,11 +87,11 @@ signals:
   void canceled();
 
 private:
-  RunnableOperator* m_running;
+  RunnableOperator* m_running = nullptr;
   vtkDataObject* m_data;
   QQueue<RunnableOperator*> m_runnableOperators;
   QList<RunnableOperator*> m_complete;
-  bool m_canceled;
+  bool m_canceled = false;
 };
 
 #include "PipelineWorker.moc"
