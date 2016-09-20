@@ -74,3 +74,10 @@ if(ITK_FOUND AND NOT ITK_WRAP_PYTHON)
 endif()
 
 add_subdirectory(tomviz)
+
+option(ENABLE_TESTING "Enable testing and building the tests." OFF)
+if(ENABLE_TESTING)
+  include(CTest)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
