@@ -22,6 +22,8 @@ endif()
 
 add_subdirectory(pvextensions)
 
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
+
 set(SOURCES
   ActiveObjects.cxx
   ActiveObjects.h
@@ -353,3 +355,5 @@ if(ENABLE_DAX_ACCELERATION)
   set_target_properties(tomvizlib PROPERTIES COMPILE_DEFINITIONS
     "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
 endif()
+
+add_subdirectory(pybind11)
