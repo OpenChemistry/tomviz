@@ -57,11 +57,13 @@
 
 #include <QAction>
 #include <QDebug>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
 #include <QIcon>
 #include <QMessageBox>
 #include <QTimer>
+#include <QUrl>
 
 #if QT_VERSION >= 0x050000
 #include <QStandardPaths>
@@ -328,6 +330,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     sampleDataMenu->addAction("Generate Electron Beam Shape");
   new PythonGeneratedDatasetReaction(probeShapeAction, "Electron Beam Shape",
                                      readInPythonScript("STEM_probe"));
+  sampleDataMenu->addSeparator();
+  QAction* sampleDataLinkAction =
+    sampleDataMenu->addAction("Download More Datasets");
+  connect(sampleDataLinkAction, SIGNAL(triggered()), SLOT(openDataLink()));
 
   QAction* moveObjects =
     ui.toolBar->addAction(QIcon(":/icons/move_objects"), "MoveObjects");
@@ -396,6 +402,12 @@ void MainWindow::openRecon()
       this, "Sample Data not found",
       QString("The data file \"%1\" was not found.").arg(path));
   }
+}
+
+void MainWindow::openDataLink()
+{
+  QString link = "http://www.nature.com/articles/sdata201641";
+  QDesktopServices::openUrl(QUrl(link));
 }
 
 void MainWindow::dataSourceChanged(DataSource*)
