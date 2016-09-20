@@ -56,6 +56,9 @@ public:
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
   bool hasCustomUI() const override { return true; }
 
+  void cancelTransform() override { m_canceled = true; };
+  bool canceled() { return m_canceled ; };
+
 signals:
   // Signal used to request the creation of a new data source. Needed to
   // ensure the initialization of the new DataSource is performed on UI thread
@@ -83,6 +86,8 @@ private:
 
   QList<QString> m_resultNames;
   QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;
+  bool m_canceled = false;
+
 };
 }
 #endif
