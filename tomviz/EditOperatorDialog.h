@@ -44,7 +44,7 @@ public:
 private slots:
   void onApply();
   void onClose();
-  void getCopyOfImagePriorToFinished();
+  void getCopyOfImagePriorToFinished(bool result);
 
 private:
   void setupUI(EditOperatorWidget* opWidget = nullptr);

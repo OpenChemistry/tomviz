@@ -41,7 +41,7 @@ public:
   void cancel();
 
 signals:
-  void complete();
+  void complete(bool result);
 
 private:
   Operator* m_operator;
@@ -77,13 +77,13 @@ public:
   Future* start();
 
 public slots:
-  void operatorComplete();
+  void operatorComplete(bool result);
 
   // Start the next operator in the queue
   void startNextOperator();
 
 signals:
-  void finished();
+  void finished(bool result);
   void canceled();
 
 private:
@@ -107,8 +107,8 @@ PipelineWorker::RunnableOperator::RunnableOperator(Operator* op,
 void PipelineWorker::RunnableOperator::run()
 {
 
-  m_operator->transform(this->m_data);
-  emit complete();
+  bool result = m_operator->transform(this->m_data);
+  emit complete(result);
 }
 
 void PipelineWorker::RunnableOperator::cancel()
@@ -139,7 +139,7 @@ PipelineWorker::Run::Run(vtkDataObject* data, QList<Operator*> operators)
 PipelineWorker::Future* PipelineWorker::Run::start()
 {
   auto future = new PipelineWorker::Future(this);
-  connect(this, SIGNAL(finished()), future, SIGNAL(finished()));
+  connect(this, SIGNAL(finished(bool)), future, SIGNAL(finished(bool)));
   connect(this, SIGNAL(canceled()), future, SIGNAL(canceled()));
 
   QTimer::singleShot(0, this, SLOT(startNextOperator()));
@@ -152,23 +152,26 @@ void PipelineWorker::Run::startNextOperator()
 
   if (!this->m_runnableOperators.isEmpty()) {
     this->m_running = this->m_runnableOperators.dequeue();
-    connect(this->m_running, SIGNAL(complete()), this,
-            SLOT(operatorComplete()));
+    connect(this->m_running, SIGNAL(complete(bool)), this,
+            SLOT(operatorComplete(bool)));
     QThreadPool::globalInstance()->start(this->m_running);
   }
 }
 
-void PipelineWorker::Run::operatorComplete()
+void PipelineWorker::Run::operatorComplete(bool result)
 {
   auto runnableOperator = qobject_cast<RunnableOperator*>(this->sender());
 
   this->m_complete.append(runnableOperator);
 
-  if (!this->m_runnableOperators.isEmpty()) {
+  if (!result) {
+    emit finished(result);
+  }
+  else if (!this->m_runnableOperators.isEmpty()) {
     this->startNextOperator();
   } else {
     if (!this->m_canceled) {
-      emit finished();
+      emit finished(result);
     } else {
       emit canceled();
     }

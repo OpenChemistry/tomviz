@@ -77,7 +77,7 @@ public:
 
 signals:
   void canceled();
-  void finished();
+  void finished(bool result);
   void progressRangeChanged(int minimum, int maximum);
   void progressTextChanged(const QString& progressText);
   void progressValueChanged(int progressValue);

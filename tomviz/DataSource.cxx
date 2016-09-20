@@ -135,7 +135,7 @@ DataSource::ImageFuture::ImageFuture(Operator* op,
 {
 
   if (m_future != nullptr) {
-    connect(m_future, SIGNAL(finished()), this, SIGNAL(finished()));
+    connect(m_future, SIGNAL(finished(bool)), this, SIGNAL(finished(bool)));
     connect(m_future, SIGNAL(canceled()), this, SIGNAL(canceled()));
   }
 }
@@ -523,8 +523,8 @@ void DataSource::operate(Operator* op)
   else {
     vtkDataObject* copy = this->copyData();
     this->Internals->Future = this->Internals->Worker->run(copy, op);
-    connect(this->Internals->Future, SIGNAL(finished()), this,
-            SLOT(pipelineFinished()));
+    connect(this->Internals->Future, SIGNAL(finished(bool)), this,
+            SLOT(pipelineFinished(bool)));
     connect(this->Internals->Future, SIGNAL(canceled()), this,
             SLOT(pipelineCanceled()));
   }
@@ -544,14 +544,14 @@ DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator* op)
                 0, this->Internals->Operators.indexOf(op) - 1));
 
     imageFuture = new ImageFuture(op, result, future);
-    connect(imageFuture, SIGNAL(finished()), this, SLOT(updateCache()));
+    connect(imageFuture, SIGNAL(finished(bool)), this, SLOT(updateCache()));
   } else {
     vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
       this->Internals->Producer->GetClientSideObject());
     result->DeepCopy(tp->GetOutputDataObject(0));
     imageFuture = new ImageFuture(op, result);
     // Delay emitting signal until next event loop
-    QTimer::singleShot(0, [=] { emit imageFuture->finished(); });
+    QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
   }
 
   return imageFuture;
@@ -736,8 +736,8 @@ void DataSource::operatorTransformModified()
     this->Internals->Future = this->Internals->Worker->run(
       cachedState, this->Internals->Operators.mid(
                      0, this->Internals->Operators.indexOf(srcOp)));
-    connect(this->Internals->Future, SIGNAL(finished()), this,
-            SLOT(pipelineFinished()));
+    connect(this->Internals->Future, SIGNAL(finished(bool)), this,
+            SLOT(pipelineFinished(bool)));
     connect(this->Internals->Future, SIGNAL(canceled()), this,
             SLOT(pipelineCanceled()));
   } else {
@@ -751,19 +751,24 @@ void DataSource::operatorTransformModified()
     } else {
       this->Internals->Future =
         this->Internals->Worker->run(data, this->Internals->Operators);
-      connect(this->Internals->Future, SIGNAL(finished()), this,
-              SLOT(pipelineFinished()));
+      connect(this->Internals->Future, SIGNAL(finished(bool)), this,
+              SLOT(pipelineFinished(bool)));
       connect(this->Internals->Future, SIGNAL(canceled()), this,
               SLOT(pipelineCanceled()));
     }
   }
 }
 
-void DataSource::pipelineFinished()
+void DataSource::pipelineFinished(bool result)
 {
   PipelineWorker::Future* future =
     qobject_cast<PipelineWorker::Future*>(this->sender());
-  this->setData(future->result());
+  if (result) {
+    this->setData(future->result());
+  }
+  else {
+    future->result()->Delete();
+  }
   future->deleteLater();
   if (this->Internals->Future == future) {
     this->Internals->Future = nullptr;
