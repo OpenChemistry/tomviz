@@ -36,13 +36,12 @@ else()
   set(_separator ":")
 endif()
 
-set(_pythonpath "${PROJECT_SOURCE_DIR}/tomviz/python${_separator}")
+set(_pythonpath "${tomviz_python_binary_dir}${_separator}")
 set(_pythonpath "${_pythonpath}${_separator}${PROJECT_BINARY_DIR}/lib")
 set(_pythonpath "${_pythonpath}${_separator}${ParaView_DIR}/lib/site-packages")
 set(_pythonpath "${_pythonpath}${_separator}${ParaView_DIR}/lib")
 set(_pythonpath "${_pythonpath}${_separator}${ITK_DIR}/lib")
 set(_pythonpath "${_pythonpath}${_separator}${ITK_DIR}/Wrapping/Generators/Python")
-
 
 # Add the test cases
 add_cxx_test(OperatorPython PYTHONPATH ${_pythonpath})

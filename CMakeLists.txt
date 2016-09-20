@@ -37,6 +37,9 @@ if(APPLE)
   set(tomviz_python_install_dir "Applications/tomviz.app/Contents/Python")
 endif()
 
+# Location where python modules will be copied to in binary tree.
+set(tomviz_python_binary_dir "${tomviz_BINARY_DIR}/lib/site-packages")
+
 # Location where sample data will be installed.
 set(tomviz_data_install_dir "share/tomviz")
 if(APPLE)

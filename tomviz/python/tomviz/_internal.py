@@ -1,5 +1,5 @@
 import tomviz.operators
-import _tomviz
+import tomviz._wrapping
 import inspect
 
 def find_operator_class(transform_module):
@@ -46,7 +46,7 @@ def find_transform_scalars(transform_module, op):
             raise Exception('Unable to locate transform_function.')
 
         o = cls()
-        o._operator_wrapper = _tomviz.OperatorPythonWrapper(op)
+        o._operator_wrapper = tomviz._wrapping.OperatorPythonWrapper(op)
         transform_function = o.transform_scalars
 
     if transform_function is None:

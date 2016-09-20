@@ -16,8 +16,8 @@ function(add_python_test case)
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMAND "${PYTHON_EXECUTABLE}" -m unittest -v ${module}
   )
-  set(_pythonpath "${PROJECT_SOURCE_DIR}/tomviz/python")
-  set(_pythonpath "${_pythonpath}${_separator}${fn_PYTHONPATH}") 
+  set(_pythonpath "${tomviz_python_binary_dir}")
+  set(_pythonpath "${_pythonpath}${_separator}${fn_PYTHONPATH}")
   set_property(TEST ${name} PROPERTY ENVIRONMENT
     "PYTHONPATH=$ENV{PYTHONPATH}${_separator}${_pythonpath}"
   )

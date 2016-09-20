@@ -177,12 +177,12 @@ set(SOURCES
   vtkNonOrthoImagePlaneWidget.h
   )
 
-set(exec_sources 
-  main.cxx  
+set(exec_sources
+  main.cxx
   MainWindow.cxx
-  MainWindow.h 
+  MainWindow.h
   WelcomeDialog.cxx
-  WelcomeDialog.h   
+  WelcomeDialog.h
 )
 
 set(python_files
@@ -242,7 +242,7 @@ if(UNIX)
 else()
   set(script_cmd "copy_if_different")
 endif()
-make_directory("${tomviz_BINARY_DIR}/share/tomviz/scripts")
+file(MAKE_DIRECTORY "${tomviz_BINARY_DIR}/share/tomviz/scripts")
 foreach(file ${python_files})
   list(APPEND SOURCES "python/${file}")
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
@@ -270,6 +270,26 @@ foreach(file ${resource_files})
     DESTINATION "${tomviz_data_install_dir}"
     COMPONENT runtime)
 endforeach()
+
+set(tomviz_python_modules
+  __init__.py
+  _internal.py
+  operators.py
+  utils.py
+)
+
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
+foreach(file ${tomviz_python_modules})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/${file}"
+    "${tomviz_python_binary_dir}/tomviz/${file}")
+endforeach()
+
+# Install the tomviz Python files.
+install(DIRECTORY ${tomviz_python_binary_dir}/tomviz
+       DESTINATION "${tomviz_python_install_dir}"
+       USE_SOURCE_PERMISSIONS
+       COMPONENT runtime)
 
 qt5_wrap_ui(UI_SOURCES
   AboutDialog.ui
@@ -331,11 +351,6 @@ else()
   install(TARGETS tomviz DESTINATION bin COMPONENT runtime)
 endif()
 
-# Install the tomviz Python files.
-install(DIRECTORY python/tomviz
-       DESTINATION "${tomviz_python_install_dir}"
-       USE_SOURCE_PERMISSIONS
-       COMPONENT runtime)
 if(tomviz_data_DIR)
   add_definitions(-DTOMVIZ_DATA)
   install(DIRECTORY "${tomviz_data_DIR}"
@@ -357,3 +372,4 @@ if(ENABLE_DAX_ACCELERATION)
 endif()
 
 add_subdirectory(pybind11)
+
