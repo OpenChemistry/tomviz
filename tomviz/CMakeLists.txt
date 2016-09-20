@@ -76,9 +76,6 @@ set(SOURCES
   IntSliderWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
-  main.cxx
-  MainWindow.cxx
-  MainWindow.h
   Module.cxx
   Module.h
   ModuleContour.cxx
@@ -176,9 +173,15 @@ set(SOURCES
   vtkCustomPiecewiseControlPointsItem.h
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
-  WelcomeDialog.cxx
-  WelcomeDialog.h
   )
+
+set(exec_sources 
+  main.cxx  
+  MainWindow.cxx
+  MainWindow.h 
+  WelcomeDialog.cxx
+  WelcomeDialog.h   
+)
 
 set(python_files
   BinaryThreshold.py
@@ -272,13 +275,15 @@ qt5_wrap_ui(UI_SOURCES
   SelectVolumeWidget.ui
   DataPropertiesPanel.ui
   EditPythonOperatorWidget.ui
-  MainWindow.ui
   ModulePropertiesPanel.ui
   RotateAlignWidget.ui
   ReconstructionWidget.ui
   ViewPropertiesPanel.ui
-  WelcomeDialog.ui
   )
+qt5_wrap_ui(exec_ui_source
+  MainWindow.ui
+  WelcomeDialog.ui
+)
 qt5_add_resources(RCC_SOURCES resources.qrc)
 
 if(APPLE)
@@ -296,18 +301,27 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}
+add_library(tomvizlib STATIC ${SOURCES} ${UI_SOURCES}
   ${RCC_SOURCES} ${accel_srcs})
+set_target_properties(tomvizlib
+  PROPERTIES OUTPUT_NAME tomviz)
 
+set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources} ${exec_ui_sources})
+target_link_libraries(tomviz tomvizlib)
+
+set_target_properties(tomvizlib PROPERTIES AUTOMOC TRUE)
 set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
-target_link_libraries(tomviz
+
+target_link_libraries(tomvizlib
   pqApplicationComponents
   vtkPVServerManagerRendering
   vtkjsoncpp
   vtkpugixml
   tomvizExtensions)
 if(WIN32)
-  target_link_libraries(tomviz Qt5::WinMain)
+  target_link_libraries(tomvizlib Qt5::WinMain)
 endif()
 if(APPLE)
   install(TARGETS tomviz DESTINATION Applications COMPONENT runtime)
@@ -329,13 +343,13 @@ if(tomviz_data_DIR)
 endif()
 
 if(ENABLE_DAX_ACCELERATION)
-  target_link_libraries(tomviz
+  target_link_libraries(tomvizlib
       tomvizStreaming
       tomvizThreshold
       ${TBB_LIBRARIES})
 
   #set the dax backend to tbb explicitly as the histogram is
   #computed using dax.
-  set_target_properties(tomviz PROPERTIES COMPILE_DEFINITIONS
+  set_target_properties(tomvizlib PROPERTIES COMPILE_DEFINITIONS
     "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
 endif()
