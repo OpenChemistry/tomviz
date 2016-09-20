@@ -43,4 +43,34 @@ if(APPLE)
   set(tomviz_data_install_dir "Applications/tomviz.app/Contents/share/tomviz")
 endif()
 
+set(PYBIND11_PYTHON_VERSION "2.7")
+add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
+
+# These dependencies are inherited from ParaView, we will ideally trim away
+# Help and UiTools in the future (at least UiTools).
+find_package(Qt5 REQUIRED COMPONENTS Help Network Widgets UiTools)
+find_package(ParaView REQUIRED)
+
+if(NOT PARAVIEW_BUILD_QT_GUI)
+  message(FATAL_ERROR
+    "Tomviz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
+    "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE.")
+endif()
+if(NOT PARAVIEW_ENABLE_PYTHON)
+  message(FATAL_ERROR
+    "Tomviz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
+    "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
+endif()
+if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
+  message(FATAL_ERROR
+    "Tomviz requires PARAVIEW_QT_VERSION to be 5, please rebuild ParaView.")
+endif()
+
+find_package(ITK 4.9)
+if(ITK_FOUND AND NOT ITK_WRAP_PYTHON)
+  message(FATAL_ERROR
+    "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
+    "Please rebuild ITK with ITK_WRAP_PYTHON set to TRUE.")
+endif()
+
 add_subdirectory(tomviz)
