@@ -13,10 +13,26 @@
 
 using namespace tomviz;
 
-TEST(OperatorPythonTest, transform_function)
+class OperatorPythonTest : public ::testing::Test {
+protected:
+
+  void SetUp() override {
+    dataObject = vtkDataObject::New();
+    pythonOperator = new OperatorPython();
+  }
+
+  void TearDown() override {
+    dataObject->Delete();
+    pythonOperator->deleteLater();
+  }
+
+  vtkDataObject *dataObject;
+  OperatorPython *pythonOperator;
+};
+
+
+TEST_F(OperatorPythonTest, transform_function)
 {
-  vtkDataObject *dataObject = vtkDataObject::New();
-  OperatorPython *pythonOperator = new OperatorPython();
   pythonOperator->setLabel("transform_function");
   QFile file(QString("%1/fixtures/function.py").arg(SOURCE_DIR));
    if (file.open(QIODevice::ReadOnly)) {
@@ -29,15 +45,10 @@ TEST(OperatorPythonTest, transform_function)
    else {
        FAIL() << "Unable to load script.";
    }
-
-   dataObject->Delete();
-   pythonOperator->deleteLater();
 }
 
-TEST(OperatorPythonTest, operator_transform)
+TEST_F(OperatorPythonTest, operator_transform)
 {
-  vtkDataObject *dataObject = vtkDataObject::New();
-  OperatorPython *pythonOperator = new OperatorPython();
   pythonOperator->setLabel("operator_transform");
   QFile file(QString("%1/fixtures/operator.py").arg(SOURCE_DIR));
    if (file.open(QIODevice::ReadOnly)) {
@@ -50,15 +61,10 @@ TEST(OperatorPythonTest, operator_transform)
    else {
        FAIL() << "Unable to load script.";
    }
-
-   dataObject->Delete();
-   pythonOperator->deleteLater();
 }
 
-TEST(OperatorPythonTest, cancelable_operator_transform)
+TEST_F(OperatorPythonTest, cancelable_operator_transform)
 {
-  vtkDataObject *dataObject = vtkDataObject::New();
-  OperatorPython *pythonOperator = new OperatorPython();
   pythonOperator->setLabel("cancelable_operator_transform");
   QFile file(QString("%1/fixtures/cancelable.py").arg(SOURCE_DIR));
    if (file.open(QIODevice::ReadOnly)) {
@@ -75,7 +81,4 @@ TEST(OperatorPythonTest, cancelable_operator_transform)
    else {
        FAIL() << "Unable to load script.";
    }
-
-   dataObject->Delete();
-   pythonOperator->deleteLater();
 }
