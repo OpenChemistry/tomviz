@@ -696,6 +696,7 @@ void DataSource::setData(vtkDataObject* newData)
     vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
   if (typeArray && typeArray->GetTuple1(0) == TiltSeries) {
     this->Internals->ensureTiltAnglesArrayExists();
+    this->Internals->Type = TiltSeries;
   } else {
     this->Internals->Type = Volume;
   }
