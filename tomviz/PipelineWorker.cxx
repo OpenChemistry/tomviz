@@ -166,8 +166,7 @@ void PipelineWorker::Run::operatorComplete(bool result)
 
   if (!result) {
     emit finished(result);
-  }
-  else if (!this->m_runnableOperators.isEmpty()) {
+  } else if (!this->m_runnableOperators.isEmpty()) {
     this->startNextOperator();
   } else {
     if (!this->m_canceled) {

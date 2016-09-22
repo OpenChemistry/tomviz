@@ -24,12 +24,12 @@
 #include <pqPythonSyntaxHighlighter.h>
 #include <pqSettings.h>
 
+#include <QDebug>
 #include <QDialogButtonBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QVariant>
-#include <QDebug>
 
 namespace tomviz {
 
@@ -155,8 +155,7 @@ void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)
     auto opWidget =
       this->Internals->Op->getEditorContentsWithData(this, future->result());
     this->setupUI(opWidget);
-  }
-  else {
+  } else {
     qWarning() << "Error occured running operators.";
   }
   future->deleteLater();

@@ -765,8 +765,7 @@ void DataSource::pipelineFinished(bool result)
     qobject_cast<PipelineWorker::Future*>(this->sender());
   if (result) {
     this->setData(future->result());
-  }
-  else {
+  } else {
     future->result()->Delete();
   }
   future->deleteLater();

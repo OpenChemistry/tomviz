@@ -57,7 +57,7 @@ public:
   bool hasCustomUI() const override { return true; }
 
   void cancelTransform() override { m_canceled = true; };
-  bool canceled() { return m_canceled ; };
+  bool canceled() { return m_canceled; };
 
 signals:
   // Signal used to request the creation of a new data source. Needed to
@@ -87,7 +87,6 @@ private:
   QList<QString> m_resultNames;
   QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;
   bool m_canceled = false;
-
 };
 }
 #endif

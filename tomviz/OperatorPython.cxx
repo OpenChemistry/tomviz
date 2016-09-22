@@ -36,7 +36,6 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSmartPyObject.h"
 #include "vtkTrivialProducer.h"
-#include <sstream>
 #include <pybind11/pybind11.h>
 
 #include "vtk_jsoncpp.h"
@@ -103,7 +102,6 @@ public:
   vtkSmartPyObject InternalModule;
   vtkSmartPyObject FindTransformScalarsFunction;
   vtkSmartPyObject IsCancelableFunction;
-
 };
 
 OperatorPython::OperatorPython(QObject* parentObject)
@@ -316,11 +314,11 @@ void OperatorPython::setScript(const QString& str)
 
     vtkSmartPyObject result;
     {
-       vtkPythonScopeGilEnsurer gilEnsurer(true);
-       vtkSmartPyObject args(PyTuple_New(1));
-       PyTuple_SET_ITEM(args.GetPointer(), 0, this->Internals->TransformModule);
-       result.TakeReference(
-         PyObject_Call(this->Internals->IsCancelableFunction, args, nullptr));
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      vtkSmartPyObject args(PyTuple_New(1));
+      PyTuple_SET_ITEM(args.GetPointer(), 0, this->Internals->TransformModule);
+      result.TakeReference(
+        PyObject_Call(this->Internals->IsCancelableFunction, args, nullptr));
     }
     if (!result) {
       qCritical("Error calling is_cancelable.");
@@ -352,7 +350,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     vtkSmartPyObject args(PyTuple_New(1));
     PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
     result.TakeReference(
-        PyObject_Call(this->Internals->TransformMethod, args, nullptr));
+      PyObject_Call(this->Internals->TransformMethod, args, nullptr));
   }
 
   if (!result) {
