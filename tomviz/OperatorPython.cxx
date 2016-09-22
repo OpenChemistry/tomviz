@@ -299,7 +299,9 @@ void OperatorPython::setScript(const QString& str)
       vtkPythonScopeGilEnsurer gilEnsurer(true);
       vtkSmartPyObject args(PyTuple_New(2));
       pybind11::capsule op(this);
-      // TODO is this needed
+      // Increment ref count as the pybind11::capsule destructor will decrement
+      // and we need the capsule to stay around. The PyTuple_SET_ITEM will
+      // steal the other reference.
       op.inc_ref();
       PyTuple_SET_ITEM(args.GetPointer(), 0, this->Internals->TransformModule);
       PyTuple_SET_ITEM(args.GetPointer(), 1, op.ptr());
