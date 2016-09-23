@@ -16,6 +16,7 @@
 #include "ModuleOrthogonalSlice.h"
 
 #include "DataSource.h"
+#include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
 #include "Utilities.h"
 #include "pqPropertyLinks.h"
@@ -149,6 +150,10 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   sliceIndex->setPageStep(1);
   layout->addRow("Slice", sliceIndex);
 
+  DoubleSliderWidget* opacitySlider = new DoubleSliderWidget(true);
+  opacitySlider->setLineEditWidth(50);
+  layout->addRow("Opacity", opacitySlider);
+
   panel->setLayout(layout);
 
   this->Links.addPropertyLink(sliceIndex, "value", SIGNAL(valueEdited(int)),
@@ -156,6 +161,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
                               this->Representation->GetProperty("Slice"), 0);
   new pqWidgetRangeDomain(sliceIndex, "minimum", "maximum",
                           this->Representation->GetProperty("Slice"), 0);
+  this->Links.addPropertyLink(opacitySlider, "value",
+                              SIGNAL(valueEdited(double)), this->Representation,
+                              this->Representation->GetProperty("Opacity"), 0);
 
   this->Links.addPropertyLink(
     adaptor, "currentText", SIGNAL(currentTextChanged(QString)),
@@ -164,6 +172,8 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   this->connect(sliceIndex, &IntSliderWidget::valueEdited, this,
                 &ModuleOrthogonalSlice::dataUpdated);
   this->connect(direction, &QComboBox::currentTextChanged, this,
+                &ModuleOrthogonalSlice::dataUpdated);
+  this->connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleOrthogonalSlice::dataUpdated);
 }
 
@@ -178,6 +188,7 @@ bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
   QStringList reprProperties;
   reprProperties << "SliceMode"
                  << "Slice"
+                 << "Opacity"
                  << "Visibility";
   pugi::xml_node nodeR = ns.append_child("Representation");
   return (tomviz::serialize(this->Representation, nodeR, reprProperties) &&
