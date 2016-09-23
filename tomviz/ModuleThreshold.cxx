@@ -16,18 +16,25 @@
 #include "ModuleThreshold.h"
 
 #include "DataSource.h"
+#include "DoubleSliderWidget.h"
 #include "Utilities.h"
+#include "pqDoubleRangeSliderPropertyWidget.h"
 #include "pqProxiesWidget.h"
+#include "pqSignalAdaptors.h"
+#include "pqStringVectorPropertyWidget.h"
 #include "vtkNew.h"
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 
-#include <QHBoxLayout>
+#include <QComboBox>
+#include <QFormLayout>
+#include <QVBoxLayout>
 namespace tomviz {
 
 ModuleThreshold::ModuleThreshold(QObject* parentObject)
@@ -140,26 +147,79 @@ void ModuleThreshold::addToPanel(QWidget* panel)
     delete panel->layout();
   }
 
-  QHBoxLayout* layout = new QHBoxLayout;
+  QVBoxLayout* layout = new QVBoxLayout;
+
+  pqStringVectorPropertyWidget* arraySelection =
+    new pqStringVectorPropertyWidget(
+      this->ThresholdFilter->GetProperty("SelectInputScalars"),
+      this->ThresholdFilter.Get());
+  layout->addWidget(arraySelection);
+
+  pqDoubleRangeSliderPropertyWidget* range =
+    new pqDoubleRangeSliderPropertyWidget(
+      this->ThresholdFilter.Get(),
+      this->ThresholdFilter->GetProperty("ThresholdBetween"));
+  range->setProperty(this->ThresholdFilter->GetProperty("ThresholdBetween"));
+  layout->addWidget(range);
+
+  QFormLayout* formLayout = new QFormLayout;
+  formLayout->setHorizontalSpacing(5);
+  layout->addItem(formLayout);
+
+  QComboBox* representations = new QComboBox;
+  representations->addItem("Surface");
+  representations->addItem("Wireframe");
+  representations->addItem("Points");
+  formLayout->addRow("Representation", representations);
+
+  DoubleSliderWidget* opacitySlider = new DoubleSliderWidget(true);
+  opacitySlider->setLineEditWidth(50);
+  formLayout->addRow("Opacity", opacitySlider);
+
+  DoubleSliderWidget* specularSlider = new DoubleSliderWidget(true);
+  specularSlider->setLineEditWidth(50);
+  formLayout->addRow("Specular", specularSlider);
+
+  layout->addStretch();
   panel->setLayout(layout);
-  pqProxiesWidget* proxiesWidget = new pqProxiesWidget(panel);
-  layout->addWidget(proxiesWidget);
 
-  QStringList fprops;
-  fprops << "SelectInputScalars"
-         << "ThresholdBetween";
+  pqSignalAdaptorComboBox* adaptor =
+    new pqSignalAdaptorComboBox(representations);
 
-  proxiesWidget->addProxy(this->ThresholdFilter, "Threshold", fprops, true);
+  m_links.addPropertyLink(
+    adaptor, "currentText", SIGNAL(currentTextChanged(QString)),
+    this->ThresholdRepresentation,
+    this->ThresholdRepresentation->GetProperty("Representation"));
 
-  QStringList representationProperties;
-  representationProperties << "Representation"
-                           << "Opacity"
-                           << "Specular";
-  proxiesWidget->addProxy(this->ThresholdRepresentation, "Appearance",
-                          representationProperties, true);
-  proxiesWidget->updateLayout();
-  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
-                SIGNAL(renderNeeded()));
+  m_links.addPropertyLink(opacitySlider, "value", SIGNAL(valueEdited(double)),
+                          this->ThresholdRepresentation,
+                          this->ThresholdRepresentation->GetProperty("Opacity"),
+                          0);
+  m_links.addPropertyLink(
+    specularSlider, "value", SIGNAL(valueEdited(double)),
+    this->ThresholdRepresentation,
+    this->ThresholdRepresentation->GetProperty("Specular"), 0);
+
+  this->connect(arraySelection, &pqPropertyWidget::changeFinished,
+                arraySelection, &pqPropertyWidget::apply);
+  this->connect(arraySelection, &pqPropertyWidget::changeFinished, this,
+                &Module::renderNeeded);
+  this->connect(range, &pqPropertyWidget::changeFinished, range,
+                &pqPropertyWidget::apply);
+  this->connect(range, &pqPropertyWidget::changeFinished, this,
+                &Module::renderNeeded);
+  this->connect(representations, &QComboBox::currentTextChanged, this,
+                &ModuleThreshold::dataUpdated);
+  this->connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
+                &ModuleThreshold::dataUpdated);
+  this->connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
+                &ModuleThreshold::dataUpdated);
+}
+
+void ModuleThreshold::dataUpdated()
+{
+  m_links.accept();
+  emit this->renderNeeded();
 }
 
 bool ModuleThreshold::serialize(pugi::xml_node& ns) const
