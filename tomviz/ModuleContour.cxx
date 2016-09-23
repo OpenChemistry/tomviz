@@ -260,21 +260,6 @@ void ModuleContour::addToPanel(QWidget* panel)
                 &ModuleContour::dataUpdated);
   this->connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleContour::dataUpdated);
-  /*
-    QStringList contourProperties;
-    contourProperties << "ContourValues";
-    panel->addProxy(this->ContourFilter, "Contour", contourProperties, true);
-
-    QStringList contourRepresentationProperties;
-    contourRepresentationProperties
-      << "Representation"
-      << "Opacity"
-      << "Specular";
-    panel->addProxy(this->ContourRepresentation, "Appearance",
-    contourRepresentationProperties, true);
-
-    this->Superclass::addToPanel(panel);
-    */
 }
 
 void ModuleContour::dataUpdated()
