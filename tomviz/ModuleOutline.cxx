@@ -25,8 +25,11 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
+#include <pqColorChooserButton.h>
 
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QVBoxLayout>
 
 namespace tomviz {
 
@@ -139,17 +142,31 @@ void ModuleOutline::addToPanel(QWidget* panel)
   }
 
   QHBoxLayout* layout = new QHBoxLayout;
-  panel->setLayout(layout);
-  pqProxiesWidget* proxiesWidget = new pqProxiesWidget(panel);
-  layout->addWidget(proxiesWidget);
+  QLabel* label = new QLabel("Color");
+  layout->addWidget(label);
+  layout->addStretch();
+  pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
+  colorSelector->setShowAlphaChannel(false);
+  layout->addWidget(colorSelector);
 
-  QStringList properties;
-  properties << "DiffuseColor";
-  proxiesWidget->addProxy(this->OutlineRepresentation, "Annotations",
-                          properties, true);
-  proxiesWidget->updateLayout();
-  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
-                SIGNAL(renderNeeded()));
+  QVBoxLayout* panelLayout = new QVBoxLayout;
+  panelLayout->addItem(layout);
+  panelLayout->addStretch();
+  panel->setLayout(panelLayout);
+
+  m_links.addPropertyLink(
+    colorSelector, "chosenColorRgbF", SIGNAL(chosenColorChanged(const QColor&)),
+    this->OutlineRepresentation,
+    this->OutlineRepresentation->GetProperty("DiffuseColor"));
+
+  this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
+                &ModuleOutline::dataUpdated);
+}
+
+void ModuleOutline::dataUpdated()
+{
+  m_links.accept();
+  emit this->renderNeeded();
 }
 
 void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
