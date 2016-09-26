@@ -301,7 +301,11 @@ void OperatorPython::setScript(const QString& str)
       // and we need the capsule to stay around. The PyTuple_SET_ITEM will
       // steal the other reference.
       op.inc_ref();
-      PyTuple_SET_ITEM(args.GetPointer(), 0, this->Internals->TransformModule);
+      // Note we use GetAndIncreaseReferenceCount to increment ref count
+      // as PyTuple_SET_ITEM will "steal" the reference.
+      PyTuple_SET_ITEM(
+        args.GetPointer(), 0,
+        this->Internals->TransformModule.GetAndIncreaseReferenceCount());
       PyTuple_SET_ITEM(args.GetPointer(), 1, op.ptr());
       this->Internals->TransformMethod.TakeReference(PyObject_Call(
         this->Internals->FindTransformScalarsFunction, args, nullptr));
@@ -316,7 +320,11 @@ void OperatorPython::setScript(const QString& str)
     {
       vtkPythonScopeGilEnsurer gilEnsurer(true);
       vtkSmartPyObject args(PyTuple_New(1));
-      PyTuple_SET_ITEM(args.GetPointer(), 0, this->Internals->TransformModule);
+      // Note we use GetAndIncreaseReferenceCount to increment ref count
+      // as PyTuple_SET_ITEM will "steal" the reference.
+      PyTuple_SET_ITEM(
+        args.GetPointer(), 0,
+        this->Internals->TransformModule.GetAndIncreaseReferenceCount());
       result.TakeReference(
         PyObject_Call(this->Internals->IsCancelableFunction, args, nullptr));
     }
