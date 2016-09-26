@@ -55,6 +55,7 @@ void ModuleMenu::updateActions()
     foreach (const QString& txt, modules) {
       QAction* actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
       toolBar->addAction(actn);
+      actn->setData(txt);
     }
   } else {
     QAction* action = menu->addAction("No modules available");
@@ -66,7 +67,7 @@ void ModuleMenu::updateActions()
 void ModuleMenu::triggered(QAction* maction)
 {
   Module* module = ModuleManager::instance().createAndAddModule(
-    maction->text(), ActiveObjects::instance().activeDataSource(),
+    maction->data().toString(), ActiveObjects::instance().activeDataSource(),
     ActiveObjects::instance().activeView());
   if (module) {
     ActiveObjects::instance().setActiveModule(module);
