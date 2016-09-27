@@ -73,6 +73,9 @@ protected:
 private slots:
   void dataUpdated();
 
+  // The parameter should really be a bool, but the signal gives an int
+  void setUseSolidColor(int useSolidColor);
+
 private:
   Q_DISABLE_COPY(ModuleContour)
 };
