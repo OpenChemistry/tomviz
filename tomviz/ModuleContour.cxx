@@ -19,6 +19,7 @@
 #include "DoubleSliderWidget.h"
 #include "Utilities.h"
 
+#include "pqColorChooserButton.h"
 #include "pqPropertyLinks.h"
 #include "pqSignalAdaptors.h"
 #include "pqWidgetRangeDomain.h"
@@ -119,6 +120,9 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   this->Internals->NonLabelMapArrayName =
     std::string(colorArrayHelper.GetInputArrayNameToProcess());
 
+  vtkSMPropertyHelper colorHelper(this->ContourRepresentation, "DiffuseColor");
+  double white[3] = { 1.0, 1.0, 1.0 };
+  colorHelper.Set(white, 3);
   // use proper color map.
   this->updateColorMap();
 
@@ -145,8 +149,7 @@ void ModuleContour::updateColorMap()
       .Set(this->ResampleFilter);
   } else {
     colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS,
-      this->Internals->NonLabelMapArrayName.c_str());
+      vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
     vtkSMPropertyHelper(this->ContourRepresentation, "Input")
       .Set(this->ContourFilter);
   }
@@ -230,6 +233,13 @@ void ModuleContour::addToPanel(QWidget* panel)
     new pqSignalAdaptorComboBox(representations);
   // layout->addStretch();
 
+  QHBoxLayout* rowLayout = new QHBoxLayout;
+  rowLayout->addStretch();
+  pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
+  colorSelector->setShowAlphaChannel(false);
+  rowLayout->addWidget(colorSelector);
+  layout->addRow("Color", rowLayout);
+
   panel->setLayout(layout);
 
   this->Internals->Links.addPropertyLink(
@@ -252,6 +262,11 @@ void ModuleContour::addToPanel(QWidget* panel)
     this->ContourRepresentation,
     this->ContourRepresentation->GetProperty("Specular"), 0);
 
+  this->Internals->Links.addPropertyLink(
+    colorSelector, "chosenColorRgbF", SIGNAL(chosenColorChanged(const QColor&)),
+    this->ContourRepresentation,
+    this->ContourRepresentation->GetProperty("DiffuseColor"));
+
   this->connect(valueSlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleContour::dataUpdated);
   this->connect(representations, &QComboBox::currentTextChanged, this,
@@ -259,6 +274,8 @@ void ModuleContour::addToPanel(QWidget* panel)
   this->connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleContour::dataUpdated);
   this->connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
+                &ModuleContour::dataUpdated);
+  this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
                 &ModuleContour::dataUpdated);
 }
 
