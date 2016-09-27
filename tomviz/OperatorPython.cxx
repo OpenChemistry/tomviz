@@ -445,13 +445,17 @@ Operator* OperatorPython::clone() const
 
 bool OperatorPython::serialize(pugi::xml_node& ns) const
 {
+  ns.append_attribute("json_description")
+    .set_value(this->JSONDescription().toLatin1().data());
   ns.append_attribute("label").set_value(this->label().toLatin1().data());
   ns.append_attribute("script").set_value(this->script().toLatin1().data());
+
   return true;
 }
 
 bool OperatorPython::deserialize(const pugi::xml_node& ns)
 {
+  this->setJSONDescription(ns.attribute("json_description").as_string());
   this->setLabel(ns.attribute("label").as_string());
   this->setScript(ns.attribute("script").as_string());
   return true;
