@@ -277,10 +277,16 @@ void ModuleContour::addToPanel(QWidget* panel)
     this->ContourRepresentation,
     this->ContourRepresentation->GetProperty("Specular"), 0);
 
+  // Surface uses DiffuseColor and Wireframe uses AmbientColor so we have to set
+  // both
   this->Internals->Links.addPropertyLink(
     colorSelector, "chosenColorRgbF", SIGNAL(chosenColorChanged(const QColor&)),
     this->ContourRepresentation,
     this->ContourRepresentation->GetProperty("DiffuseColor"));
+  this->Internals->Links.addPropertyLink(
+    colorSelector, "chosenColorRgbF", SIGNAL(chosenColorChanged(const QColor&)),
+    this->ContourRepresentation,
+    this->ContourRepresentation->GetProperty("AmbientColor"));
 
   this->connect(valueSlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleContour::dataUpdated);
