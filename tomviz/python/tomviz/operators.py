@@ -17,12 +17,32 @@
 ###############################################################################
 
 class Operator:
+    """
+    The base operator class from which all operators should be derived.
+    """
     def transform_scalars(self, data):
+        """
+        This method should be overriden by subclasses to implement the operations
+        the operator should perform.
+        """
         raise NotImplementedError('Must be implemented by subclass')
 
 class CancelableOperator(Operator):
+    """
+    A cancelable operator allows the user to interrupt the execution of the
+    operator. The canceled property can be using in the transform_scalars(...)
+    method to break out when the operator is canceled. The basic structure of
+    the transform_scalars(...) might look something like this:
 
+    def transform_scalars(self, data):
+        while(not self.canceled):
+            # Do work
+
+    """
     @property
     def canceled(self):
+        """
+        :returns True if the operator has been canceled, False otherwise.
+        """
         return self._operator_wrapper.canceled
 
