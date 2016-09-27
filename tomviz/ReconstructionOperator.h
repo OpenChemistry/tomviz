@@ -44,8 +44,6 @@ public:
   QWidget* getCustomProgressWidget(QWidget*) const override;
   int totalProgressSteps() const override;
 
-  void cancelTransform() override;
-
 protected:
   bool applyTransform(vtkDataObject* data) override;
 
@@ -58,7 +56,6 @@ signals:
 private:
   DataSource* dataSource;
   int extent[6];
-  bool canceled;
   Q_DISABLE_COPY(ReconstructionOperator)
 };
 }

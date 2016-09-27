@@ -32,7 +32,7 @@
 
 namespace tomviz {
 ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
-  : Superclass(p), dataSource(source), canceled(false)
+  : Superclass(p), dataSource(source)
 {
   qRegisterMetaType<std::vector<float>>();
   vtkTrivialProducer* t =
@@ -88,11 +88,6 @@ int ReconstructionOperator::totalProgressSteps() const
   return this->extent[1] - this->extent[0] + 1;
 }
 
-void ReconstructionOperator::cancelTransform()
-{
-  this->canceled = true;
-}
-
 bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
 {
   vtkImageData* imageData = vtkImageData::SafeDownCast(dataObject);
@@ -125,7 +120,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
 
   // TODO: talk to Dave Lonie about how to do this in new data array API
   float* reconstruction = (float*)darray->GetVoidPointer(0);
-  for (int i = 0; i < numXSlices && !this->canceled; ++i) {
+  for (int i = 0; i < numXSlices && !this->isCanceled(); ++i) {
     QCoreApplication::processEvents();
     TomographyTiltSeries::getSinogram(imageData, i, &sinogramPtr[0]);
     TomographyReconstruction::unweightedBackProjection2(
@@ -140,7 +135,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
     emit this->intermediateResults(reconstructionPtr);
     emit this->updateProgress(i);
   }
-  if (this->canceled) {
+  if (this->isCanceled()) {
     return false;
   }
   imageData->ShallowCopy(reconstructionImage.Get());
