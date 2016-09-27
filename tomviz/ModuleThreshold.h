@@ -17,6 +17,8 @@
 #define tomvizModuleThreshold_h
 
 #include "Module.h"
+
+#include <pqPropertyLinks.h>
 #include <vtkWeakPointer.h>
 
 class vtkSMProxy;
@@ -53,7 +55,11 @@ protected:
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
 
+private slots:
+  void dataUpdated();
+
 private:
+  pqPropertyLinks m_links;
   Q_DISABLE_COPY(ModuleThreshold)
   vtkWeakPointer<vtkSMSourceProxy> ThresholdFilter;
   vtkWeakPointer<vtkSMProxy> ThresholdRepresentation;

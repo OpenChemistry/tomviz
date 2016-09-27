@@ -19,6 +19,8 @@
 #include "Module.h"
 #include <vtkWeakPointer.h>
 
+#include <pqPropertyLinks.h>
+
 class vtkSMSourceProxy;
 class vtkSMProxy;
 
@@ -53,10 +55,14 @@ protected:
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
 
+private slots:
+  void dataUpdated();
+
 private:
   Q_DISABLE_COPY(ModuleOutline)
   vtkWeakPointer<vtkSMSourceProxy> OutlineFilter;
   vtkWeakPointer<vtkSMProxy> OutlineRepresentation;
+  pqPropertyLinks m_links;
 };
 }
 
