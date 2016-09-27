@@ -318,7 +318,8 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   contourRepresentationProperties << "Representation"
                                   << "Opacity"
                                   << "Specular"
-                                  << "Visibility";
+                                  << "Visibility"
+                                  << "DiffuseColor";
 
   node = ns.append_child("ContourRepresentation");
   if (tomviz::serialize(this->ContourRepresentation, node,
