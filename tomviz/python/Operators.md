@@ -52,4 +52,3 @@ class MyCancelableOperator(tomviz.operators.CancelableOperator):
             # Do work here
 
 ```
-

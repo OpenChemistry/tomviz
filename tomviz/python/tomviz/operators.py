@@ -45,4 +45,3 @@ class CancelableOperator(Operator):
         :returns True if the operator has been canceled, False otherwise.
         """
         return self._operator_wrapper.canceled
-

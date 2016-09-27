@@ -56,4 +56,3 @@ class OperatorTestCase(unittest.TestCase):
 
         with self.assertRaises(Exception):
             is_cancelable(unittest)
-

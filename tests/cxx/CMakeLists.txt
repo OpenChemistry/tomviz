@@ -48,7 +48,3 @@ add_cxx_test(OperatorPython PYTHONPATH ${_pythonpath})
 
 # Generate the executable
 create_test_executable(tomvizTests)
-
-
-
-
