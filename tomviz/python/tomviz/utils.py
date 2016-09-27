@@ -44,7 +44,7 @@ def vtk_itk_map():
             pass
 
         try:
-            _vtk_to_itk_types['vtFloatArray'] = itk.Image.F3
+            _vtk_to_itk_types['vtkFloatArray'] = itk.Image.F3
         except:
             pass
 
