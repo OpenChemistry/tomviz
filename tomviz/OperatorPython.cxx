@@ -149,6 +149,8 @@ void OperatorPython::setJSONDescription(const QString& str)
     return;
   }
 
+  this->jsonDescription = str;
+
   Json::Value root;
   Json::Reader reader;
   bool parsingSuccessful = reader.parse(str.toLatin1().data(), root);
