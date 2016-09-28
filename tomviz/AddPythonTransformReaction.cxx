@@ -181,7 +181,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     return nullptr;
   }
 
-  // Shift uniformly, crop, both have custom gui
+  // Handle transforms with custom UIs
   if (scriptLabel == "Binary Threshold" ||
       scriptLabel == "Connected Components") {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -232,6 +232,40 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       substitutions.insert(
         "###UPPERTHRESHOLD###",
         QString("upper_threshold = %1").arg(upperThreshold->value()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource,
+                        substitutions, jsonSource);
+    }
+  } else if (scriptLabel == "Otsu Multiple Threshold") {
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    dialog.setWindowTitle(scriptLabel);
+    QGridLayout* layout = new QGridLayout;
+    QLabel* labelDescription = new QLabel(
+      "Use Otsu multiple threshold algorithm to automatically determine\n"
+      "thresholds separating voxels into different classes based on\n"
+      "image intensity.");
+    layout->addWidget(labelDescription, 0, 0, 1, 2);
+
+    QLabel* numThresholdsLabel = new QLabel("Number of Thresholds:", &dialog);
+    QSpinBox* numThresholds = new QSpinBox(&dialog);
+    numThresholds->setValue(1);
+    numThresholds->setRange(0, 1000);
+    layout->addWidget(numThresholdsLabel, 1, 0, 1, 1);
+    layout->addWidget(numThresholds, 2, 0, 1, 1);
+
+    QVBoxLayout* v = new QVBoxLayout;
+    QDialogButtonBox* buttons = new QDialogButtonBox(
+      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize);
+    if (dialog.exec() == QDialog::Accepted) {
+      QMap<QString, QString> substitutions;
+      substitutions.insert(
+        "###NUMBEROFTHRESHOLDS###",
+        QString("number_of_thresholds = %1").arg(numThresholds->value()));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions, jsonSource);
     }

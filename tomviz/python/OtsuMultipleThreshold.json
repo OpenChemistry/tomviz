@@ -1,0 +1,19 @@
+{
+  "name" : "OtsuMultipleThreshold",
+  "label" : "Otsu Multiple Threshold",
+  "children" : [
+    {
+      "name" : "label_map",
+      "label" : "Label Map",
+      "type" : "label_map"
+    }
+  ],
+  "parameters" : [
+    {
+      "name" : "numberOfThresholds",
+      "label" : "Number of Threshold",
+      "type" : "int",
+      "components" : "1"
+    }
+  ]
+}

@@ -188,6 +188,7 @@ set(exec_sources
 set(python_files
   BinaryThreshold.py
   ConnectedComponents.py
+  OtsuMultipleThreshold.py
   MisalignImgs_Uniform.py
   Align_Images.py
   AutoTiltAxisAlignment.py
@@ -230,6 +231,7 @@ set(python_files
 set(json_files
   BinaryThreshold.json
   ConnectedComponents.json
+  OtsuMultipleThreshold.json
   )
 
 set(resource_files
