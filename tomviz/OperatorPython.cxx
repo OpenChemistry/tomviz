@@ -22,6 +22,7 @@
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
+#include "Utilities.h"
 #include "pqPythonSyntaxHighlighter.h"
 
 #include "vtkDataObject.h"
@@ -43,22 +44,6 @@
 #include "ui_EditPythonOperatorWidget.h"
 
 namespace {
-
-bool CheckForError()
-{
-  vtkPythonScopeGilEnsurer gilEnsurer(true);
-  PyObject* exception = PyErr_Occurred();
-  if (exception) {
-    // We use PyErr_PrintEx(0) to prevent sys.last_traceback being set
-    // which holds a reference to any parameters passed to PyObject_Call.
-    // This can cause a temporary "leak" until sys.last_traceback is reset.
-    // This can be a problem i the object in question is a VTK object that
-    // holds a reference to a large memory allocation.
-    PyErr_PrintEx(0);
-    return true;
-  }
-  return false;
-}
 
 class EditPythonOperatorWidget : public tomviz::EditOperatorWidget
 {
@@ -118,7 +103,7 @@ OperatorPython::OperatorPython(QObject* parentObject)
   }
   if (!this->Internals->OperatorModule) {
     qCritical() << "Failed to import tomviz.utils module.";
-    CheckForError();
+    checkForPythonError();
   }
 
   {
@@ -128,7 +113,7 @@ OperatorPython::OperatorPython(QObject* parentObject)
   }
   if (!this->Internals->InternalModule) {
     qCritical() << "Failed to import tomviz._internal module.";
-    CheckForError();
+    checkForPythonError();
   }
 
   {
@@ -137,7 +122,7 @@ OperatorPython::OperatorPython(QObject* parentObject)
       PyObject_GetAttrString(this->Internals->InternalModule, "is_cancelable"));
   }
   if (!this->Internals->IsCancelableFunction) {
-    CheckForError();
+    checkForPythonError();
     qCritical() << "Unable to locate is_cancelable.";
   }
 
@@ -148,7 +133,7 @@ OperatorPython::OperatorPython(QObject* parentObject)
                              "find_transform_scalars"));
   }
   if (!this->Internals->FindTransformScalarsFunction) {
-    CheckForError();
+    checkForPythonError();
     qCritical() << "Unable to locate find_transform_scalars.";
   }
 
@@ -274,7 +259,7 @@ void OperatorPython::setScript(const QString& str)
         Py_file_input /*Py_eval_input*/));
     }
     if (!this->Internals->Code) {
-      CheckForError();
+      checkForPythonError();
       qCritical(
         "Invalid script. Please check the traceback message for details");
       return;
@@ -286,8 +271,9 @@ void OperatorPython::setScript(const QString& str)
         QString("tomviz_%1").arg(this->label()).toLatin1().data(),
         this->Internals->Code));
     }
+
     if (!this->Internals->TransformModule) {
-      CheckForError();
+      checkForPythonError();
       qCritical("Failed to create module.");
       return;
     }
@@ -312,7 +298,7 @@ void OperatorPython::setScript(const QString& str)
     }
     if (!this->Internals->TransformMethod) {
       qCritical("Script doesn't have any 'transform_scalars' function.");
-      CheckForError();
+      checkForPythonError();
       return;
     }
 
@@ -330,7 +316,7 @@ void OperatorPython::setScript(const QString& str)
     }
     if (!result) {
       qCritical("Error calling is_cancelable.");
-      CheckForError();
+      checkForPythonError();
       return;
     }
     this->setSupportsCancel(result == Py_True);
@@ -363,7 +349,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
   if (!result) {
     qCritical("Failed to execute the script.");
-    CheckForError();
+    checkForPythonError();
     return false;
   }
 
@@ -445,7 +431,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     }
   }
 
-  return CheckForError() == false;
+  return !checkForPythonError();
 }
 
 Operator* OperatorPython::clone() const

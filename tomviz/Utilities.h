@@ -154,6 +154,10 @@ void createCameraOrbit(vtkSMSourceProxy* data,
 // visible while minimizing the empty regions of the view (zoom so the slice's
 // target dimension barely fits in the view).
 void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
+
+/// Check for Python error. Prints error and clears it if an error has occurred.
+/// Return true if an error has occurred, false otherwise.
+bool checkForPythonError();
 }
 
 #endif

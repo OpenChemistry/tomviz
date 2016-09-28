@@ -46,17 +46,6 @@
 
 namespace {
 
-bool CheckForError()
-{
-  PyObject* exception = PyErr_Occurred();
-  if (exception) {
-    PyErr_Print();
-    PyErr_Clear();
-    return true;
-  }
-  return false;
-}
-
 class PythonGeneratedDataSource : public QObject
 {
   Q_OBJECT
@@ -73,52 +62,68 @@ public:
   void setScript(const QString& script)
   {
     vtkPythonInterpreter::Initialize();
-    this->OperatorModule.TakeReference(PyImport_ImportModule("tomviz.utils"));
+
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      this->OperatorModule.TakeReference(PyImport_ImportModule("tomviz.utils"));
+    }
     if (!this->OperatorModule) {
       qCritical() << "Failed to import tomviz.utils module.";
-      CheckForError();
+      tomviz::checkForPythonError();
     }
 
-    this->Code.TakeReference(Py_CompileString(script.toLatin1().data(),
-                                              this->label.toLatin1().data(),
-                                              Py_file_input /*Py_eval_input*/));
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      this->Code.TakeReference(Py_CompileString(
+        script.toLatin1().data(), this->label.toLatin1().data(),
+        Py_file_input /*Py_eval_input*/));
+    }
     if (!this->Code) {
-      CheckForError();
+      tomviz::checkForPythonError();
       qCritical()
         << "Invalid script. Please check the traceback message for details.";
       return;
     }
 
     vtkSmartPyObject module;
-    module.TakeReference(PyImport_ExecCodeModule(
-      // Don't let these be the same, even for similar scripts.  Seems to cause
-      // python crashes.
-      QString("tomviz_%1%2")
-        .arg(this->label)
-        .arg(number_of_scripts++)
-        .toLatin1()
-        .data(),
-      this->Code));
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      module.TakeReference(PyImport_ExecCodeModule(
+        // Don't let these be the same, even for similar scripts.  Seems to
+        // cause python crashes.
+        QString("tomviz_%1%2")
+          .arg(this->label)
+          .arg(number_of_scripts++)
+          .toLatin1()
+          .data(),
+        this->Code));
+    }
     if (!module) {
-      CheckForError();
+      tomviz::checkForPythonError();
       qCritical() << "Failed to create module.";
       return;
     }
-    this->GenerateFunction.TakeReference(
-      PyObject_GetAttrString(module, "generate_dataset"));
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      this->GenerateFunction.TakeReference(
+        PyObject_GetAttrString(module, "generate_dataset"));
+    }
     if (!this->GenerateFunction) {
-      CheckForError();
+      tomviz::checkForPythonError();
       qCritical() << "Script does not have a 'generate_dataset' function.";
       return;
     }
-    this->MakeDatasetFunction.TakeReference(
-      PyObject_GetAttrString(this->OperatorModule, "make_dataset"));
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      this->MakeDatasetFunction.TakeReference(
+        PyObject_GetAttrString(this->OperatorModule, "make_dataset"));
+    }
     if (!this->MakeDatasetFunction) {
-      CheckForError();
+      tomviz::checkForPythonError();
       qCritical() << "Could not find make_dataset function in tomviz.utils";
       return;
     }
-    CheckForError();
+    tomviz::checkForPythonError();
     this->pythonScript = script;
   }
 
@@ -126,21 +131,24 @@ public:
   {
     vtkNew<vtkImageData> image;
     vtkSmartPointer<vtkSMSourceProxy> retVal;
-    vtkSmartPyObject args(PyTuple_New(5));
-    PyTuple_SET_ITEM(args.GetPointer(), 0, PyInt_FromLong(shape[0]));
-    PyTuple_SET_ITEM(args.GetPointer(), 1, PyInt_FromLong(shape[1]));
-    PyTuple_SET_ITEM(args.GetPointer(), 2, PyInt_FromLong(shape[2]));
-    PyTuple_SET_ITEM(args.GetPointer(), 3,
-                     vtkPythonUtil::GetObjectFromPointer(image.Get()));
-    PyTuple_SET_ITEM(args.GetPointer(), 4, this->GenerateFunction);
-
+    vtkSmartPyObject args;
     vtkSmartPyObject result;
-    result.TakeReference(
-      PyObject_Call(this->MakeDatasetFunction, args, nullptr));
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      args.TakeReference(PyTuple_New(5));
+      PyTuple_SET_ITEM(args.GetPointer(), 0, PyInt_FromLong(shape[0]));
+      PyTuple_SET_ITEM(args.GetPointer(), 1, PyInt_FromLong(shape[1]));
+      PyTuple_SET_ITEM(args.GetPointer(), 2, PyInt_FromLong(shape[2]));
+      PyTuple_SET_ITEM(args.GetPointer(), 3,
+                       vtkPythonUtil::GetObjectFromPointer(image.Get()));
+      PyTuple_SET_ITEM(args.GetPointer(), 4, this->GenerateFunction);
 
+      result.TakeReference(
+        PyObject_Call(this->MakeDatasetFunction, args, nullptr));
+    }
     if (!result) {
       qCritical() << "Failed to execute script.";
-      CheckForError();
+      tomviz::checkForPythonError();
       return retVal;
     }
 
@@ -164,7 +172,7 @@ public:
     source->SetAnnotation("tomviz.Python_Source.Z",
                           QString::number(shape[2]).toLatin1().data());
 
-    CheckForError();
+    tomviz::checkForPythonError();
 
     retVal = vtkSMSourceProxy::SafeDownCast(source.Get());
     return retVal;
