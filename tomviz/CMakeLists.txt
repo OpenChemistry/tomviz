@@ -301,8 +301,6 @@ qt5_wrap_ui(UI_SOURCES
   RotateAlignWidget.ui
   ReconstructionWidget.ui
   ViewPropertiesPanel.ui
-  )
-qt5_wrap_ui(exec_ui_source
   MainWindow.ui
   WelcomeDialog.ui
 )
@@ -330,7 +328,7 @@ set_target_properties(tomvizlib
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
-add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources} ${exec_ui_sources})
+add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources})
 target_link_libraries(tomviz tomvizlib)
 
 set_target_properties(tomvizlib PROPERTIES AUTOMOC TRUE)
