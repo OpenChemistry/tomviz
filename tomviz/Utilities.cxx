@@ -32,6 +32,7 @@
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
 #include "vtkPoints.h"
+#include "vtkPython.h"
 #include "vtkRenderer.h"
 #include "vtkSMNamedPropertyIterator.h"
 #include "vtkSMPropertyHelper.h"
@@ -341,5 +342,17 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper)
   clippingRange[1] =
     clippingRange[0] + (bounds[axis * 2 + 1] - bounds[axis * 2] + 50);
   camera->SetClippingRange(clippingRange);
+}
+
+bool checkForPythonError()
+{
+  vtkPythonScopeGilEnsurer gilEnsurer(true);
+  PyObject* exception = PyErr_Occurred();
+  if (exception) {
+    PyErr_Print();
+    PyErr_Clear();
+    return true;
+  }
+  return false;
 }
 }

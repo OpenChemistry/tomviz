@@ -22,6 +22,7 @@
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
+#include "Utilities.h"
 #include "pqPythonSyntaxHighlighter.h"
 
 #include "vtkDataObject.h"
@@ -43,18 +44,6 @@
 #include "ui_EditPythonOperatorWidget.h"
 
 namespace {
-
-bool CheckForError()
-{
-  vtkPythonScopeGilEnsurer gilEnsurer(true);
-  PyObject* exception = PyErr_Occurred();
-  if (exception) {
-    PyErr_Print();
-    PyErr_Clear();
-    return true;
-  }
-  return false;
-}
 
 class EditPythonOperatorWidget : public tomviz::EditOperatorWidget
 {
@@ -112,7 +101,7 @@ OperatorPython::OperatorPython(QObject* parentObject)
   this->Internals->OperatorModule.TakeReference(pyObj);
   if (!this->Internals->OperatorModule) {
     qCritical() << "Failed to import tomviz.utils module.";
-    CheckForError();
+    checkForPythonError();
   }
 
   // This connection is needed so we can create new child data sources in the UI
@@ -239,7 +228,7 @@ void OperatorPython::setScript(const QString& str)
 
     this->Internals->Code.TakeReference(pyObj);
     if (!this->Internals->Code) {
-      CheckForError();
+      checkForPythonError();
       qCritical(
         "Invalid script. Please check the traceback message for details");
       return;
@@ -255,7 +244,7 @@ void OperatorPython::setScript(const QString& str)
 
     module.TakeReference(pyObj);
     if (!module) {
-      CheckForError();
+      checkForPythonError();
       qCritical("Failed to create module.");
       return;
     }
@@ -267,11 +256,11 @@ void OperatorPython::setScript(const QString& str)
 
     this->Internals->TransformMethod.TakeReference(pyObj);
     if (!this->Internals->TransformMethod) {
-      CheckForError();
+      checkForPythonError();
       qWarning("Script doesn't have any 'transform_scalars' function.");
       return;
     }
-    CheckForError();
+    checkForPythonError();
     emit this->transformModified();
   }
 }
@@ -303,7 +292,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   vtkSmartPyObject result(pyObj);
   if (!result) {
     qCritical("Failed to execute the script.");
-    CheckForError();
+    checkForPythonError();
     return false;
   }
 
@@ -385,7 +374,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     }
   }
 
-  return CheckForError() == false;
+  return checkForPythonError() == false;
 }
 
 Operator* OperatorPython::clone() const
