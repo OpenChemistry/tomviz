@@ -27,6 +27,7 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -252,6 +253,12 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout->addWidget(numThresholdsLabel, 1, 0, 1, 1);
     layout->addWidget(numThresholds, 2, 0, 1, 1);
 
+    QLabel* enableValleyEmphasisLabel =
+      new QLabel("Enable Valley Emphasis:", &dialog);
+    QCheckBox* enableValleyEmphasis = new QCheckBox(&dialog);
+    layout->addWidget(enableValleyEmphasisLabel, 3, 0, 1, 1);
+    layout->addWidget(enableValleyEmphasis, 4, 0, 1, 1);
+
     QVBoxLayout* v = new QVBoxLayout;
     QDialogButtonBox* buttons = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
@@ -266,6 +273,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       substitutions.insert(
         "###NUMBEROFTHRESHOLDS###",
         QString("number_of_thresholds = %1").arg(numThresholds->value()));
+      substitutions.insert(
+        "###ENABLEVALLEYEMPHASIS###",
+        QString("enable_valley_emphasis = %1")
+          .arg(enableValleyEmphasis->checkState() != Qt::Unchecked ? "True"
+                                                                   : "False"));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions, jsonSource);
     }

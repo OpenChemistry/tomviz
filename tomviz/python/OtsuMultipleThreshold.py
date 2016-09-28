@@ -15,6 +15,7 @@ def transform_scalars(dataset):
 
     #----USER SPECIFIED VARIABLES----#
     ###NUMBEROFTHRESHOLDS### # Specify number of thresholds between classes
+    ###ENABLEVALLEYEMPHASIS### # Enable valley emphasis.
 
     # Return values
     returnValues = None
@@ -36,6 +37,7 @@ def transform_scalars(dataset):
         # Otsu multiple threshold filter
         otsu_filter = itk.OtsuMultipleThresholdsImageFilter[itk_input_image_type, itk_threshold_image_type].New()
         otsu_filter.SetNumberOfThresholds(number_of_thresholds)
+        otsu_filter.SetValleyEmphasis(enable_valley_emphasis);
         otsu_filter.SetInput(itk_image)
         otsu_filter.Update()
 
