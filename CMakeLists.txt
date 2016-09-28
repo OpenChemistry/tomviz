@@ -46,7 +46,8 @@ if(APPLE)
   set(tomviz_data_install_dir "Applications/tomviz.app/Contents/share/tomviz")
 endif()
 
-set(PYBIND11_PYTHON_VERSION "2.7")
+set(PYBIND11_PYTHON_VERSION "2.7" CACHE STRING "")
+set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
 # These dependencies are inherited from ParaView, we will ideally trim away
