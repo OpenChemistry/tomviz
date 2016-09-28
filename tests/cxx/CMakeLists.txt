@@ -1,13 +1,12 @@
 include(CxxTests.cmake)
 
 find_package(GTest REQUIRED)
-include_directories(SYSTEM
-  ${QtCore_INCLUDE_DIRS})
 
-include_directories(SYSTEM ${PARAVIEW_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR}/tomviz)
-include_directories(SYSTEM
+include_directories(SYSTEM $
+  {QtCore_INCLUDE_DIRS}
+  ${PARAVIEW_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/tomviz)
 
 include(CheckIncludeFileCXX)
 include(CheckCXXSymbolExists)
