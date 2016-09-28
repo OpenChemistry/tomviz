@@ -374,7 +374,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     }
   }
 
-  return checkForPythonError() == false;
+  return !checkForPythonError();
 }
 
 Operator* OperatorPython::clone() const
