@@ -14,6 +14,7 @@
 
 ******************************************************************************/
 #include "Utilities.h"
+#include "vtkPython.h" // must be first
 
 #include "DataSource.h"
 #include "pqAnimationCue.h"
@@ -32,7 +33,6 @@
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
 #include "vtkPoints.h"
-#include "vtkPython.h"
 #include "vtkRenderer.h"
 #include "vtkSMNamedPropertyIterator.h"
 #include "vtkSMPropertyHelper.h"
