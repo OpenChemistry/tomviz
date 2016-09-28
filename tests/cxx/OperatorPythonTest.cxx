@@ -15,6 +15,8 @@
 ******************************************************************************/
 #include <gtest/gtest.h>
 
+#include <thread>
+
 #include <vtkDataObject.h>
 
 #include <QByteArray>
@@ -88,8 +90,15 @@ TEST_F(OperatorPythonTest, cancelable_operator_transform)
     pythonOperator->setScript(script);
     ASSERT_TRUE(pythonOperator->transform(dataObject));
 
-    pythonOperator->cancelTransform();
-    ASSERT_FALSE(pythonOperator->transform(dataObject));
+    // Mimic user canceling operator
+    std::thread canceler([this]() {
+      while (!pythonOperator->isCanceled()) {
+        pythonOperator->cancelTransform();
+      }
+    });
+    bool result = pythonOperator->transform(dataObject);
+    canceler.join();
+    ASSERT_FALSE(result);
 
   } else {
     FAIL() << "Unable to load script.";
