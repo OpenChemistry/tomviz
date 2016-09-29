@@ -10,7 +10,7 @@ def transform_scalars(dataset):
     from tomviz import utils
     import numpy as np
 
-    data_py = utils.get_array(dataset) 
+    data_py = utils.get_array(dataset)
 
     if data_py is None: # Check if data exists.
         raise RuntimeError("No data array found!")

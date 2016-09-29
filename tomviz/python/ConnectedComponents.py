@@ -94,7 +94,7 @@ def transform_scalars(dataset):
         shape_filter = itk.LabelImageToShapeLabelMapFilter.IUS3LM3.New()
         shape_filter.SetInput(relabel_filter.GetOutput())
         shape_filter.Update()
- 
+
         # Set up arrays to hold the shape attribute data
         label_map = shape_filter.GetOutput()
         num_label_objects = label_map.GetNumberOfLabelObjects()

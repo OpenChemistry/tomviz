@@ -3,7 +3,7 @@
 #
 # Developed as part of the tomviz project (www.tomviz.com)
 
-def transform_scalars(dataset):        
+def transform_scalars(dataset):
     from tomviz import utils
     import numpy as np
 
@@ -14,9 +14,9 @@ def transform_scalars(dataset):
     #---------------------------------#
 
     data_py = utils.get_array(dataset) # Get data as numpy array.
-    
+
     if data_py is None: # Check if data exists.
-        raise RuntimeError("No data array found!")    
+        raise RuntimeError("No data array found!")
 
     if TILT_AXIS == []: # If tilt axis is not given, find it.
     # Find the smallest array dimension, assume it is the tilt angle axis.
@@ -24,7 +24,7 @@ def transform_scalars(dataset):
             TILT_AXIS = np.argmin( data_py.shape )
         elif data_py.ndim == 2:
             raise RuntimeError("Data Array is 2 dimensions, it should be 3!")
-        else: 
+        else:
             raise RuntimeError("Data Array is not 2 or 3 dimensions!")
 
     for i in range(0,np.size(data_py,TILT_AXIS)-1):

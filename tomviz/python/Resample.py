@@ -12,7 +12,7 @@ def transform_scalars(dataset):
 
     # Transform the dataset.
     result = scipy.ndimage.interpolation.zoom(array, resampingFactor)
-    
+
     # Set the result as the new scalars.
     utils.set_array(dataset, result)
 

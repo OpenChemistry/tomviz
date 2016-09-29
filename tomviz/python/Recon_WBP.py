@@ -21,7 +21,7 @@ def transform_scalars(dataset):
 
     # Set the result as the new scalars.
     utils.set_array(dataset, recon)
-    
+
     # Mark dataset as volume.
     utils.mark_as_volume(dataset)
 
@@ -76,7 +76,7 @@ def wbp2(sinogram,angles,N=None,filter="ramp",interp="linear"):
     # Create Fourier filter
     F = makeFilter(Nray,filter)
     # Pad sinogram for filtering
-    s = np.lib.pad(sinogram,((0,F.size-Nray),(0,0)),'constant',constant_values=(0,0)) 
+    s = np.lib.pad(sinogram,((0,F.size-Nray),(0,0)),'constant',constant_values=(0,0))
     # Apply Fourier filter
     s = np.fft.fft(s,axis=0) * F
     s = np.real(np.fft.ifft(s,axis=0))
@@ -93,7 +93,7 @@ def wbp2(sinogram,angles,N=None,filter="ramp",interp="linear"):
     for j in range(Nproj):
         t = ypr * np.cos(ang[j]) - xpr * np.sin(ang[j])
         x = np.arange(Nray) - center_proj
-        if interp == 'linear': 
+        if interp == 'linear':
             bp = np.interp(t,x,s[:,j],left=0,right=0)
         elif interp == 'spline':
             interpolant = interp1d(x,s[:,j],kind='slinear',bounds_error=False,fill_value=0)

@@ -4,16 +4,16 @@ from tomviz import utils
 
 def transform_scalars(dataset):
     """3D Reconstruct from a tilt series using simple TV minimzation"""
-    
+
     ###Niter###
 
     # Get Tilt angles
     tiltAngles = utils.get_tilt_angles(dataset)
-    
+
     #remove zero tilt anlges
     if np.count_nonzero(tiltAngles) < tiltAngles.size:
         tiltAngles = tiltAngles + 0.001
-    
+
     # Get Tilt Series
     tiltSeries = utils.get_array(dataset)
     (Nslice,Nray,Nproj) = tiltSeries.shape
@@ -29,19 +29,19 @@ def transform_scalars(dataset):
 
     # Set the result as the new scalars.
     utils.set_array(dataset, recon)
-  
+
     # Mark dataset as volume
     utils.mark_as_volume(dataset)
 
 #TV minimization using asd_pocs
 def tv_minimization(A,tiltSeries,recon,iterNum=1):
     (Nslice,Nray,Nproj) = tiltSeries.shape
-    
+
     (Nrow,Ncol) = A.shape
     rowInnerProduct = np.zeros(Nrow);
     row = np.zeros(Ncol)
     f = np.zeros(Ncol) # Placeholder for 2d image
-    
+
     alpha = 0.2
     ng = 30
     beta_red = 0.995
@@ -65,7 +65,7 @@ def tv_minimization(A,tiltSeries,recon,iterNum=1):
             recon[s,:,:] = f.reshape((Nray,Nray))
 
         recon[recon<0] = 0 #Positivity constraint
-         
+
         #calculate tomogram change due to POCS
         dPOCS = np.linalg.norm(recon_temp - recon)
 
@@ -103,7 +103,7 @@ def parallelRay(Nside,pixelWidth,angles,Nray,rayWidth):
     np.seterr(all='ignore')
     print 'Generating parallel-beam measurement matrix using ray-driven model'
     Nproj = angles.size # Number of projections
-    
+
     # Ray coordinates at 0 degrees.
     offsets = np.linspace(-(Nray*1.0-1)/2,(Nray*1.0-1)/2,Nray)*rayWidth
     # Intersection lines/grid Coordinates
@@ -116,7 +116,7 @@ def parallelRay(Nside,pixelWidth,angles,Nray,rayWidth):
     cols = np.zeros(2*Nside*Nproj*Nray)
     vals = np.zeros(2*Nside*Nproj*Nray)
     idxend = 0
-    
+
     for i in range(0,Nproj): # Loop over projection angles
         ang = angles[i]*np.pi/180.
         # Points passed by rays at current angles
@@ -124,16 +124,16 @@ def parallelRay(Nside,pixelWidth,angles,Nray,rayWidth):
         yrayRotated = np.sin(ang)*offsets
         xrayRotated[np.abs(xrayRotated)<1e-8]=0
         yrayRotated[np.abs(yrayRotated)<1e-8]=0
-        
+
         a = -np.sin(ang); a = rmepsilon(a)
         b = np.cos(ang); b = rmepsilon(b)
-        
+
         for j in range(0,Nray): # Loop rays in current projection
             #print xrayRotated[j],yrayRotated[j]
             #Ray: y = tx * x + intercept
             t_xgrid = (xgrid - xrayRotated[j])/a
             y_xgrid = b*t_xgrid + yrayRotated[j]
-            
+
             t_ygrid = (ygrid - yrayRotated[j])/b
             x_ygrid = a*t_ygrid + xrayRotated[j]
             # Collect all points
@@ -144,13 +144,13 @@ def parallelRay(Nside,pixelWidth,angles,Nray,rayWidth):
             I = np.argsort(t_grid)
             xx = xx[I]
             yy = yy[I]
-            
+
             # Get rid of points that are outside the image grid
             Ix = np.logical_and(xx>=-Nside/2.0*pixelWidth,xx<=Nside/2.0*pixelWidth)
             Iy = np.logical_and(yy>=-Nside/2.0*pixelWidth,yy<=Nside/2.0*pixelWidth)
             I = np.logical_and(Ix,Iy)
             xx = xx[I]; yy = yy[I]
-            
+
             # If the ray pass through the image grid
             if (xx.size!=0 and yy.size!=0):
                 # Get rid of double counted points
@@ -159,18 +159,18 @@ def parallelRay(Nside,pixelWidth,angles,Nray,rayWidth):
                 I2[0:-1]= I
                 xx = xx[np.logical_not(I2)]
                 yy = yy[np.logical_not(I2)]
-                
+
                 # Calculate the length within the cell
                 length = np.sqrt(np.diff(xx)**2+np.diff(yy)**2)
                 #Count number of cells the ray passes through
                 numvals = length.size
-                
+
                 # Remove the rays that are on the boundary of the box in the
                 # top or to the right of the image grid
                 check1 = np.logical_and(b==0,np.absolute(yrayRotated[j]-Nside/2*pixelWidth)<1e-15)
                 check2 = np.logical_and(a==0,np.absolute(xrayRotated[j]-Nside/2*pixelWidth)<1e-15)
                 check = np.logical_not(np.logical_or(check1,check2))
-                
+
                 if np.logical_and(numvals>0,check):
                     # Calculate corresponding indices in measurement matrix
                     # First, calculate the mid points coord. between two

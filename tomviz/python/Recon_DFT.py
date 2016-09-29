@@ -32,7 +32,7 @@ def dfm3(input,angles,Npad):
     (Nx,Ny,Nproj) = input.shape
     angles = np.double(angles)
     pad_pre = np.ceil((Npad-Ny)/2.0); pad_post = np.floor((Npad-Ny)/2.0)
-    
+
     # Initialization
     Nz = Ny
     w = np.zeros((Nx,Ny,np.int(Nz/2+1))) #store weighting factors
@@ -52,7 +52,7 @@ def dfm3(input,angles,Npad):
         ang = angles[a]*np.pi/180
         projection = input[:,:,a] #2D projection image
         p = np.lib.pad(projection,((0,0),(pad_pre,pad_post)),'constant',constant_values=(0,0)) #pad zeros
-        p = np.fft.ifftshift(p) 
+        p = np.fft.ifftshift(p)
         p_fftw_object.update_arrays(p,pF)
         p_fftw_object()
 
@@ -66,7 +66,7 @@ def dfm3(input,angles,Npad):
         for i in range(0, np.int(np.ceil(Npad/2))+1):
             ky = i*dk;  #kz = 0;
             ky_new = np.cos(ang)*ky #new coord. after rotation
-            kz_new = np.sin(ang)*ky 
+            kz_new = np.sin(ang)*ky
             sy = abs(np.floor(ky_new) - ky_new) #calculate weights
             sz = abs(np.floor(kz_new) - kz_new)
             for b in range(1,5): #bilinear extrapolation

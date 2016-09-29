@@ -2,7 +2,7 @@ def transform_scalars(dataset):
     """Pad dataset"""
     from tomviz import utils
     import numpy as np
-    
+
     #----USER SPECIFIED VARIABLES-----#
     ###padWidthX###
     ###padWidthY###
@@ -12,10 +12,10 @@ def transform_scalars(dataset):
     padModes = ['constant','edge','wrap','minimum','median']
     padMode = padModes[padMode_index]
     array = utils.get_array(dataset) #get data as numpy array
-    
+
     if array is None: #Check if data exists
         raise RuntimeError("No data array found!")
-    
+
     pad_width = (padWidthX,padWidthY,padWidthZ)
 
     # pad the data.

@@ -7,24 +7,24 @@ def transform_scalars(dataset):
     #----USER SPECIFIED VARIABLES-----#
     TILT_AXIS  = []  #Specify Tilt Axis Dimensions x=0, y=1, z=2
     #---------------------------------#
-        
+
     from tomviz import utils
     import numpy as np
-    
+
     data_py = utils.get_array(dataset) #get data as numpy array
-    
+
     if data_py is None: # Check if data exists
-        raise RuntimeError("No data array found!")    
-    
+        raise RuntimeError("No data array found!")
+
     if TILT_AXIS == []: # If tilt axis is not given, find it
     # Find the smallest array dimension, assume it is the tilt angle axis.
         if data_py.ndim == 3:
             TILT_AXIS = np.argmin( data_py.shape )
         elif data_py.ndim == 2:
             raise RuntimeError("Data Array is 2 dimensions, it should be 3!")
-        else: 
+        else:
             raise RuntimeError("Data Array is not 2 or 3 dimensions!")
-    
+
     print('Aligning Images by Cross Correlation')
     for i in range(1,np.size(data_py,TILT_AXIS)): # Align image to previous
         if TILT_AXIS == 2:
@@ -55,6 +55,6 @@ def transform_scalars(dataset):
             data_py[i,:,:] = np.roll( data_py[i,:,:], shift[2], axis = 2)
         else:
             raise RuntimeError("Python Transform Error: Unknown TILT_AXIS.")
-    
+
     utils.set_array(dataset, data_py)
     print('Align Images Complete')

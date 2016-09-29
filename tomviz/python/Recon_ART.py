@@ -59,7 +59,7 @@ def parallelRay(Nside,pixelWidth,angles,Nray,rayWidth):
     np.seterr(all='ignore')
     print 'Generating parallel-beam measurement matrix using ray-driven model'
     Nproj = angles.size # Number of projections
-    
+
     # Ray coordinates at 0 degrees.
     offsets = np.linspace(-(Nray*1.0-1)/2,(Nray*1.0-1)/2,Nray)*rayWidth
     # Intersection lines/grid Coordinates

@@ -8,7 +8,7 @@ def transform_scalars(dataset):
     ###supportSigma###
     ###supportThreshold### #percent
     supportThreshold = supportThreshold/100.0
-    
+
     nonnegativeVoxels = True
     tilt_angles = utils.get_tilt_angles(dataset) #Get Tilt angles
 
@@ -41,7 +41,7 @@ def dfm3(input,angles,Npad):
     (Nx,Ny,Nproj) = input.shape
     angles = np.double(angles)
     pad_pre = np.ceil((Npad-Ny)/2.0); pad_post = np.floor((Npad-Ny)/2.0)
-    
+
     # Initialization
     Nz = np.int(Ny/2.0+1)
     w = np.zeros((Nx,Ny,Nz)) #store weighting factors
@@ -49,7 +49,7 @@ def dfm3(input,angles,Npad):
     v = np.zeros(v.shape) + 1j*np.zeros(v.shape)
     recon = pyfftw.n_byte_align_empty((Nx,Ny,Ny),16,dtype='float64')
     recon_fftw_object = pyfftw.FFTW(v,recon,direction='FFTW_BACKWARD',axes=(0,1,2))
-    
+
     p = pyfftw.n_byte_align_empty((Nx,Npad),16,dtype='float64')
     pF = pyfftw.n_byte_align_empty((Nx,Npad/2+1),16,dtype='complex128')
     p_fftw_object = pyfftw.FFTW(p,pF,axes=(0,1))
@@ -82,7 +82,7 @@ def dfm3(input,angles,Npad):
                 if (py>=0 and py<Ny and pz>=0 and pz<Nz/2+1):
                     w[:,py,pz] = w[:,py,pz] + weight
                     v[:,py,pz] = v[:,py,pz] + weight * probjection_f[:,i]
-    
+
     v[w!=0] = v[w!=0]/w[w!=0]
     recon_F = v.copy()
     recon_fftw_object.update_arrays(v,recon)

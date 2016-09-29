@@ -17,6 +17,6 @@ def transform_scalars(dataset):
     # This is where you operate on your data
     result = array
     #result = window
-    
+
     # This is where the transformed data is set, it will display in tomviz.
     utils.set_array(dataset, result)
