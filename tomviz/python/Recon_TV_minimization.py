@@ -78,7 +78,7 @@ def tv_minimization(A, tiltSeries, recon, iterNum=1):
             v1n = 3 * r - np.roll(r, 1, axis=0) - \
                                   np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2) # noqa TODO reformat this
             v1d = np.sqrt(1e-8 + (r - np.roll(r, 1, axis=0))**2 + (r -
-                          np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2)
+                          np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2) # noqa TODO reformat this
 
             v2n = r - np.roll(r, -1, axis=0)
             v2d = np.sqrt(1e-8 + (np.roll(r, -1, axis=0) - r)**2
@@ -198,9 +198,9 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     #print 'midpoints_x is:',midpoints_x
                     #print 'midpoints_y is:',midpoints_y
                     #Calculate the pixel index for mid points
-                    pixelIndicex = (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \
-                        Nside + (np.floor(midpoints_x /
-                                          pixelWidth + Nside / 2.0))
+                    pixelIndicex = (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \ # noqa TODO reformat this
+                    Nside + (np.floor(midpoints_x /
+                                      pixelWidth + Nside / 2.0))
                     #print 'pixelIndicex is:', pixelIndicex
                     # Create the indices to store the values to the measurement
                     # matrix
@@ -212,7 +212,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     cols[idx] = pixelIndicex
                     vals[idx] = length
             else:
-                print "Ray No.", j + 1, "at", angles[i], "degree is out of image grid!"
+                print ("Ray No.", j + 1, "at", angles[i],
+                       "degree is out of image grid!")
     # Truncate excess zeros.
     rows = rows[:idxend]
     cols = cols[:idxend]

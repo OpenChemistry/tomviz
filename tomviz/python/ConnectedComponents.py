@@ -94,8 +94,8 @@ def transform_scalars(dataset):
         label_map_data_set.CopyStructure(dataset)
         utils.set_label_map(label_map_data_set, label_buffer)
 
-        # Now take the connected components results and compute things like volume
-        # and surface area.
+        # Now take the connected components results and compute things like
+        # volume and surface area.
         shape_filter = itk.LabelImageToShapeLabelMapFilter.IUS3LM3.New()
         shape_filter.SetInput(relabel_filter.GetOutput())
         shape_filter.Update()

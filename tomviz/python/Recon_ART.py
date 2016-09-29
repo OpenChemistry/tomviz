@@ -4,7 +4,10 @@ from tomviz import utils
 
 
 def transform_scalars(dataset):
-    """3D Reconstruct from a tilt series using Algebraic Reconstruction Technique (ART)"""
+    """
+    3D Reconstruct from a tilt series using Algebraic Reconstruction Technique
+    (ART)
+    """
     ###Niter###
 
     # Get Tilt angles
@@ -149,7 +152,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     #print 'midpoints_x is:',midpoints_x
                     #print 'midpoints_y is:',midpoints_y
                     #Calculate the pixel index for mid points
-                    pixelIndicex = (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \
+                    pixelIndicex = \
+                        (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \
                         Nside + (np.floor(midpoints_x /
                                           pixelWidth + Nside / 2.0))
                     #print 'pixelIndicex is:', pixelIndicex
@@ -163,7 +167,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     cols[idx] = pixelIndicex
                     vals[idx] = length
             else:
-                print "Ray No.", j + 1, "at", angles[i], "degree is out of image grid!"
+                print ("Ray No.", j + 1, "at", angles[i],
+                       "degree is out of image grid!")
 
     # Truncate excess zeros.
     rows = rows[:idxend]

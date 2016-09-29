@@ -28,7 +28,8 @@ def transform_scalars(dataset):
     pad_z_pre = np.ceil((N - Nz) / 2.0)
     pad_z_post = np.floor((N - Nz) / 2.0)
     volume_pad = np.lib.pad(
-        volume, ((0, 0), (pad_y_pre, pad_y_post), (pad_z_pre, pad_z_post)), 'constant')
+        volume, ((0, 0), (pad_y_pre, pad_y_post), (pad_z_pre, pad_z_post)),
+        'constant')
 
     Nslice = volume.shape[0] # Number of slices along rotation axis.
     tiltSeries = np.zeros((Nslice, N, Nproj))

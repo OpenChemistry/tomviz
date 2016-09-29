@@ -3,7 +3,10 @@ import numpy as np
 
 
 def transform_scalars(dataset):
-    """3D Reconstruct from a tilt series using constraint-based Direct Fourier Method"""
+    """
+    3D Reconstruct from a tilt series using constraint-based Direct Fourier
+    Method
+    """
 
     from tomviz import utils
     import numpy as np
@@ -21,15 +24,17 @@ def transform_scalars(dataset):
         raise RuntimeError("No scalars found!")
 
     #Direct Fourier recon without constraints
-    (recon, recon_F) = dfm3(tilt_images, tilt_angles, np.size(tilt_images, 0) * 2)
+    (recon, recon_F) \
+        = dfm3(tilt_images, tilt_angles, np.size(tilt_images, 0) * 2)
 
     kr_cutoffs = np.linspace(0.05, 0.5, 10)
     #average Fourier magnitude of tilt series as a function of kr
     I_data = radial_average(tilt_images, kr_cutoffs)
 
     #Search for solutions that satisfy additional constraints
-    recon = difference_map_update(recon_F, nonnegativeVoxels, I_data, kr_cutoffs,
-                                  Niter, Niter_update_support, supportSigma, supportThreshold)
+    recon = difference_map_update(recon_F, nonnegativeVoxels, I_data,
+                                  kr_cutoffs, Niter, Niter_update_support,
+                                  supportSigma, supportThreshold)
 
     print('Reconsruction Complete')
 
@@ -158,7 +163,9 @@ def radial_average(tiltseries, kr_cutoffs):
     return Ir
 
 
-def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs, N_iter, N_update_support, supportSigma, supportThreshold):
+def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs,
+                          N_iter, N_update_support, supportSigma,
+                          supportThreshold):
     (Nx, Ny, Nz) = constraint.shape
     #Note: Nz = np.int(Ny/2+1)
     Ntot = Nx * Ny * Ny

@@ -76,7 +76,9 @@ def vtk_itk_map():
 
 
 def get_itk_image_type(vtk_image_data):
-    """Get an ITK image type corresponding to the provided vtkImageData object."""
+    """
+    Get an ITK image type corresponding to the provided vtkImageData object.
+    """
     image_type = None
 
     # Get the scalars
@@ -183,7 +185,8 @@ def set_array(dataobject, newarray):
     if np.isfortran(newarray):
         arr = newarray.reshape(-1, order='F')
     else:
-        print 'Warning, array does not have Fortran order, making deep copy and fixing...'
+        print ('Warning, array does not have Fortran order, making deep copy '
+               'and fixing...')
         tmp = np.asfortranarray(newarray)
         arr = tmp.reshape(-1, order='F')
         print '...done.'
@@ -210,7 +213,8 @@ def set_label_map(dataobject, labelarray):
     if np.isfortran(labelarray):
         arr = labelarray.reshape(-1, order='F')
     else:
-        print 'Warning, array does not have Fortran order, making deep copy and fixing...'
+        print ('Warning, array does not have Fortran order, making deep copy '
+               'and fixing...')
         tmp = np.asfortranarray(labelarray)
         arr = tmp.reshape(-1, order='F')
         print '...done.'
@@ -292,7 +296,8 @@ def make_spreadsheet(column_names, table):
     rows = table.shape[0]
 
     if (table.shape[1] != len(column_names)):
-        print('Warning: table number of columns differs from number of column names')
+        print('Warning: table number of columns differs from number of '
+              'column names')
         return
 
     from vtk import vtkTable, vtkFloatArray

@@ -55,7 +55,8 @@ def is_cancelable(transform_module):
     if cls is None and function is None:
         raise Exception('Unable to locate function or operator class.')
 
-    return cls is not None and issubclass(cls, tomviz.operators.CancelableOperator)
+    return cls is not None and issubclass(cls,
+                                          tomviz.operators.CancelableOperator)
 
 
 def find_transform_scalars(transform_module, op):
