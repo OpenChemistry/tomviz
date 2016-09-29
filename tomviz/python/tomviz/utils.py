@@ -233,11 +233,11 @@ def set_tilt_angles(dataobject, newarray):
 
 def make_dataset(x, y, z, dataset, generate_data_function):
     from vtk import VTK_DOUBLE
-    array = np.zeros((x,y,z), order='F')
+    array = np.zeros((x, y, z), order='F')
     generate_data_function(array)
-    dataset.SetOrigin(0,0,0)
-    dataset.SetSpacing(1,1,1)
-    dataset.SetExtent(0, x-1, 0, y-1, 0, z-1)
+    dataset.SetOrigin(0, 0, 0)
+    dataset.SetSpacing(1, 1, 1)
+    dataset.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)
     flat_array = array.reshape(-1, order='F')
     vtkarray = np_s.numpy_to_vtk(flat_array, deep=1, array_type=VTK_DOUBLE)
     vtkarray.SetName("generated_scalars")

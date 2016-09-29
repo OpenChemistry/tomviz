@@ -56,7 +56,7 @@ def transform_scalars(dataset):
         itk_output_image_type = itk_threshold_image_type
 
         # ConnectedComponentImageFilter
-        connected_filter = itk.ConnectedComponentImageFilter[itk_threshold_image_type,itk_output_image_type].New()
+        connected_filter = itk.ConnectedComponentImageFilter[itk_threshold_image_type, itk_output_image_type].New()
         connected_filter.SetBackgroundValue(background_value)
         connected_filter.SetInput(threshold_filter.GetOutput())
 

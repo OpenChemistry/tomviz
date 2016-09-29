@@ -20,7 +20,7 @@ def transform_scalars(dataset):
     #---------------------------------#
 
     # Crop the data.
-    data_cropped = data_py[START_CROP[0]:END_CROP[0],START_CROP[1]:END_CROP[1],START_CROP[2]:END_CROP[2]]
+    data_cropped = data_py[START_CROP[0]:END_CROP[0], START_CROP[1]:END_CROP[1], START_CROP[2]:END_CROP[2]]
 
     # Set the data so that it is visible in the application.
     utils.set_array(dataset, data_cropped)

@@ -12,7 +12,7 @@ def transform_scalars(dataset):
     array = utils.get_array(dataset)
 
     # Transform the dataset.
-    result = scipy.ndimage.filters.gaussian_filter(array,sigma)
+    result = scipy.ndimage.filters.gaussian_filter(array, sigma)
 
     # Set the result as the new scalars.
     utils.set_array(dataset, result)

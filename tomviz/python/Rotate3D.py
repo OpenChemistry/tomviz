@@ -21,7 +21,7 @@ def transform_scalars(dataset):
     if ROT_AXIS == []: #If tilt axis is not given, assign one.
     # Find the smallest array dimension, assume it is the tilt angle axis.
         if data_py.ndim >= 2:
-            ROT_AXIS = np.argmin( data_py.shape )
+            ROT_AXIS = np.argmin(data_py.shape)
         else:
             raise RuntimeError("Data Array is not 2 or 3 dimensions!")
 
@@ -30,7 +30,7 @@ def transform_scalars(dataset):
 
     print('Rotating Dataset...')
 
-    data_py_return = ndimage.interpolation.rotate( data_py, ROT_ANGLE, axes=((ROT_AXIS+1)%3, (ROT_AXIS+2)%3) )
+    data_py_return = ndimage.interpolation.rotate(data_py, ROT_ANGLE, axes=((ROT_AXIS + 1) % 3, (ROT_AXIS + 2) % 3))
 
     utils.set_array(dataset, data_py_return)
     print('Rotation Complete')
