@@ -33,7 +33,7 @@ you are in a directory you would like to place the source and builds with all
 prerequisites installed:
 
     git clone --recursive git://github.com/kitware/paraview.git
-    git clone git://github.com/openchemistry/tomviz.git
+    git clone --recursive git://github.com/openchemistry/tomviz.git
     mkdir paraview-build
     cd paraview-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
@@ -112,6 +112,6 @@ trees and rebuild the latest version of each:
     cd ../paraview-build
     cmake --build .
     cd ../tomviz
-    git pull
+    git pull && git submodule update
     cd ../tomviz-build
     cmake --build .

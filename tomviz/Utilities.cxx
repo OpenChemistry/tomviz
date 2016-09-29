@@ -349,8 +349,12 @@ bool checkForPythonError()
   vtkPythonScopeGilEnsurer gilEnsurer(true);
   PyObject* exception = PyErr_Occurred();
   if (exception) {
-    PyErr_Print();
-    PyErr_Clear();
+    // We use PyErr_PrintEx(0) to prevent sys.last_traceback being set
+    // which holds a reference to any parameters passed to PyObject_Call.
+    // This can cause a temporary "leak" until sys.last_traceback is reset.
+    // This can be a problem i the object in question is a VTK object that
+    // holds a reference to a large memory allocation.
+    PyErr_PrintEx(0);
     return true;
   }
   return false;

@@ -22,7 +22,7 @@
 // directory.
 #define PARAVIEW_BUILD_DIR "@ParaView_DIR@"
 #define ITK_BUILD_DIR "@ITK_DIR@"
-#define TOMVIZ_PYTHON_SOURCE_DIR "@tomviz_SOURCE_DIR@/tomviz/python"
+#define TOMVIZ_PYTHON_SOURCE_DIR "@tomviz_python_binary_dir@"
 #define TOMVIZ_DATA_SOURCE_DIR "@tomviz_data_DIR@/Data"
 
 // For install builds: these are paths when running from an installed location.

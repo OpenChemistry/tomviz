@@ -156,10 +156,10 @@ signals:
 
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
-  /// Operators should override this if they support canceling the operation
-  /// midway.
-  virtual void cancelTransform(){ /* Unsupported */ };
-
+  /// Subclasses overriding this method should call the base implementation
+  /// to ensure the m_canceled flag is set.
+  virtual void cancelTransform() { m_canceled = true; };
+  bool isCanceled() { return m_canceled; }
   bool isFinished() { return m_finished; };
 
 protected:
@@ -178,6 +178,7 @@ private:
   bool m_finished = false;
   bool m_hasChildDataSource;
   DataSource* m_childDataSource;
+  bool m_canceled = false;
 };
 }
 

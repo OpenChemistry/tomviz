@@ -24,6 +24,7 @@
 #include <pqPythonSyntaxHighlighter.h>
 #include <pqSettings.h>
 
+#include <QDebug>
 #include <QDialogButtonBox>
 #include <QPointer>
 #include <QPushButton>
@@ -82,8 +83,8 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     // We need the image data for call the datasource to run the pipeline
     else {
       DataSource::ImageFuture* future = dataSource->getCopyOfImagePriorTo(op);
-      connect(future, SIGNAL(finished()), this,
-              SLOT(getCopyOfImagePriorToFinished()));
+      connect(future, SIGNAL(finished(bool)), this,
+              SLOT(getCopyOfImagePriorToFinished(bool)));
     }
   } else {
     this->setupUI();
@@ -145,14 +146,18 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
 }
 
-void EditOperatorDialog::getCopyOfImagePriorToFinished()
+void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)
 {
   DataSource::ImageFuture* future =
     qobject_cast<DataSource::ImageFuture*>(this->sender());
 
-  auto opWidget =
-    this->Internals->Op->getEditorContentsWithData(this, future->result());
-  this->setupUI(opWidget);
+  if (result) {
+    auto opWidget =
+      this->Internals->Op->getEditorContentsWithData(this, future->result());
+    this->setupUI(opWidget);
+  } else {
+    qWarning() << "Error occured running operators.";
+  }
   future->deleteLater();
 }
 }

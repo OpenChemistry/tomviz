@@ -179,7 +179,7 @@ protected slots:
   void updateColorMap();
 
   /// The pipeline worker is finished
-  void pipelineFinished();
+  void pipelineFinished(bool result);
 
   /// The pipeline worker is has been canceled
   void pipelineCanceled();
@@ -204,7 +204,7 @@ public:
   Operator* op() { return this->m_operator; };
 
 signals:
-  void finished();
+  void finished(bool result);
   void canceled();
 
 private:

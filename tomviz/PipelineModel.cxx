@@ -23,6 +23,7 @@
 #include "OperatorResult.h"
 
 #include <QFileInfo>
+#include <QFont>
 
 #include <vtkRectilinearGrid.h>
 #include <vtkStructuredGrid.h>
@@ -340,7 +341,19 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         case Qt::DisplayRole:
           return op->label();
         case Qt::ToolTipRole:
-          return op->label();
+          if (op->isCanceled()) {
+            return "Operator was canceled";
+          } else {
+            return op->label();
+          }
+        case Qt::FontRole:
+          if (op->isCanceled()) {
+            QFont font;
+            font.setStrikeOut(true);
+            return font;
+          } else {
+            return QVariant();
+          }
         default:
           return QVariant();
       }

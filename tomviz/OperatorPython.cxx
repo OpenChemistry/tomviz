@@ -37,7 +37,7 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSmartPyObject.h"
 #include "vtkTrivialProducer.h"
-#include <sstream>
+#include <pybind11/pybind11.h>
 
 #include "vtk_jsoncpp.h"
 
@@ -82,7 +82,11 @@ class OperatorPython::OPInternals
 public:
   vtkSmartPyObject OperatorModule;
   vtkSmartPyObject Code;
+  vtkSmartPyObject TransformModule;
   vtkSmartPyObject TransformMethod;
+  vtkSmartPyObject InternalModule;
+  vtkSmartPyObject FindTransformScalarsFunction;
+  vtkSmartPyObject IsCancelableFunction;
 };
 
 OperatorPython::OperatorPython(QObject* parentObject)
@@ -92,16 +96,45 @@ OperatorPython::OperatorPython(QObject* parentObject)
   qRegisterMetaType<vtkSmartPointer<vtkDataObject>>();
   vtkPythonInterpreter::Initialize();
 
-  PyObject* pyObj = nullptr;
   {
     vtkPythonScopeGilEnsurer gilEnsurer(true);
-    pyObj = PyImport_ImportModule("tomviz.utils");
+    this->Internals->OperatorModule.TakeReference(
+      PyImport_ImportModule("tomviz.utils"));
   }
-
-  this->Internals->OperatorModule.TakeReference(pyObj);
   if (!this->Internals->OperatorModule) {
     qCritical() << "Failed to import tomviz.utils module.";
     checkForPythonError();
+  }
+
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    this->Internals->InternalModule.TakeReference(
+      PyImport_ImportModule("tomviz._internal"));
+  }
+  if (!this->Internals->InternalModule) {
+    qCritical() << "Failed to import tomviz._internal module.";
+    checkForPythonError();
+  }
+
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    this->Internals->IsCancelableFunction.TakeReference(
+      PyObject_GetAttrString(this->Internals->InternalModule, "is_cancelable"));
+  }
+  if (!this->Internals->IsCancelableFunction) {
+    checkForPythonError();
+    qCritical() << "Unable to locate is_cancelable.";
+  }
+
+  {
+    vtkPythonScopeGilEnsurer gilEnsurer(true);
+    this->Internals->FindTransformScalarsFunction.TakeReference(
+      PyObject_GetAttrString(this->Internals->InternalModule,
+                             "find_transform_scalars"));
+  }
+  if (!this->Internals->FindTransformScalarsFunction) {
+    checkForPythonError();
+    qCritical() << "Unable to locate find_transform_scalars.";
   }
 
   // This connection is needed so we can create new child data sources in the UI
@@ -216,17 +249,15 @@ void OperatorPython::setScript(const QString& str)
   if (this->Script != str) {
     this->Script = str;
     this->Internals->Code.TakeReference(nullptr);
+    this->Internals->TransformModule.TakeReference(nullptr);
     this->Internals->TransformMethod.TakeReference(nullptr);
 
-    PyObject* pyObj = nullptr;
     {
       vtkPythonScopeGilEnsurer gilEnsurer(true);
-      pyObj = Py_CompileString(this->Script.toLatin1().data(),
-                               this->label().toLatin1().data(),
-                               Py_file_input /*Py_eval_input*/);
+      this->Internals->Code.TakeReference(Py_CompileString(
+        this->Script.toLatin1().data(), this->label().toLatin1().data(),
+        Py_file_input /*Py_eval_input*/));
     }
-
-    this->Internals->Code.TakeReference(pyObj);
     if (!this->Internals->Code) {
       checkForPythonError();
       qCritical(
@@ -234,33 +265,62 @@ void OperatorPython::setScript(const QString& str)
       return;
     }
 
-    vtkSmartPyObject module;
     {
       vtkPythonScopeGilEnsurer gilEnsurer(true);
-      pyObj = PyImport_ExecCodeModule(
+      this->Internals->TransformModule.TakeReference(PyImport_ExecCodeModule(
         QString("tomviz_%1").arg(this->label()).toLatin1().data(),
-        this->Internals->Code);
+        this->Internals->Code));
     }
 
-    module.TakeReference(pyObj);
-    if (!module) {
+    if (!this->Internals->TransformModule) {
       checkForPythonError();
       qCritical("Failed to create module.");
       return;
     }
 
+    // Create capsule to hold the pointer to the operator in the python world
     {
       vtkPythonScopeGilEnsurer gilEnsurer(true);
-      pyObj = PyObject_GetAttrString(module, "transform_scalars");
+      vtkSmartPyObject args(PyTuple_New(2));
+      pybind11::capsule op(this);
+      // Increment ref count as the pybind11::capsule destructor will decrement
+      // and we need the capsule to stay around. The PyTuple_SET_ITEM will
+      // steal the other reference.
+      op.inc_ref();
+      // Note we use GetAndIncreaseReferenceCount to increment ref count
+      // as PyTuple_SET_ITEM will "steal" the reference.
+      PyTuple_SET_ITEM(
+        args.GetPointer(), 0,
+        this->Internals->TransformModule.GetAndIncreaseReferenceCount());
+      PyTuple_SET_ITEM(args.GetPointer(), 1, op.ptr());
+      this->Internals->TransformMethod.TakeReference(PyObject_Call(
+        this->Internals->FindTransformScalarsFunction, args, nullptr));
     }
-
-    this->Internals->TransformMethod.TakeReference(pyObj);
     if (!this->Internals->TransformMethod) {
+      qCritical("Script doesn't have any 'transform_scalars' function.");
       checkForPythonError();
-      qWarning("Script doesn't have any 'transform_scalars' function.");
       return;
     }
-    checkForPythonError();
+
+    vtkSmartPyObject result;
+    {
+      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      vtkSmartPyObject args(PyTuple_New(1));
+      // Note we use GetAndIncreaseReferenceCount to increment ref count
+      // as PyTuple_SET_ITEM will "steal" the reference.
+      PyTuple_SET_ITEM(
+        args.GetPointer(), 0,
+        this->Internals->TransformModule.GetAndIncreaseReferenceCount());
+      result.TakeReference(
+        PyObject_Call(this->Internals->IsCancelableFunction, args, nullptr));
+    }
+    if (!result) {
+      qCritical("Error calling is_cancelable.");
+      checkForPythonError();
+      return;
+    }
+    this->setSupportsCancel(result == Py_True);
+
     emit this->transformModified();
   }
 }
@@ -277,19 +337,16 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   Q_ASSERT(data);
 
   vtkSmartPyObject pydata(vtkPythonUtil::GetObjectFromPointer(data));
-  PyObject* pyObj = nullptr;
-  {
-    vtkPythonScopeGilEnsurer gilEnsurer(true);
-    pyObj = PyTuple_New(1);
-  }
-  vtkSmartPyObject args(pyObj);
 
+  vtkSmartPyObject result;
   {
     vtkPythonScopeGilEnsurer gilEnsurer(true);
+    vtkSmartPyObject args(PyTuple_New(1));
     PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
-    pyObj = PyObject_Call(this->Internals->TransformMethod, args, nullptr);
+    result.TakeReference(
+      PyObject_Call(this->Internals->TransformMethod, args, nullptr));
   }
-  vtkSmartPyObject result(pyObj);
+
   if (!result) {
     qCritical("Failed to execute the script.");
     checkForPythonError();

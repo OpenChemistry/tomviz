@@ -1,36 +1,10 @@
-# These dependencies are inherited from ParaView, we will ideally trim away
-# Help and UiTools in the future (at least UiTools).
-find_package(Qt5 REQUIRED COMPONENTS Help Network Widgets UiTools)
 include_directories(SYSTEM
   ${Qt5Help_INCLUDE_DIRS}
   ${Qt5Network_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
   ${Qt5UiTools_INCLUDE_DIRS})
 
-find_package(ParaView REQUIRED)
-
-if(NOT PARAVIEW_BUILD_QT_GUI)
-  message(FATAL_ERROR
-    "Tomviz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
-    "Please rebuild ParaView with PARAVIEW_BUILD_QT_GUI set to TRUE.")
-endif()
-if(NOT PARAVIEW_ENABLE_PYTHON)
-  message(FATAL_ERROR
-    "Tomviz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
-    "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
-endif()
-if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
-  message(FATAL_ERROR
-    "Tomviz requires PARAVIEW_QT_VERSION to be 5, please rebuild ParaView.")
-endif()
 include_directories(SYSTEM ${PARAVIEW_INCLUDE_DIRS})
-
-find_package(ITK 4.9)
-if(ITK_FOUND AND NOT ITK_WRAP_PYTHON)
-  message(FATAL_ERROR
-    "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
-    "Please rebuild ITK with ITK_WRAP_PYTHON set to TRUE.")
-endif()
 
 option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
@@ -47,6 +21,8 @@ if(ENABLE_DAX_ACCELERATION)
 endif()
 
 add_subdirectory(pvextensions)
+
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
 set(SOURCES
   ActiveObjects.cxx
@@ -102,9 +78,6 @@ set(SOURCES
   IntSliderWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
-  main.cxx
-  MainWindow.cxx
-  MainWindow.h
   Module.cxx
   Module.h
   ModuleContour.cxx
@@ -202,9 +175,15 @@ set(SOURCES
   vtkCustomPiecewiseControlPointsItem.h
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
+  )
+
+set(exec_sources
+  main.cxx
+  MainWindow.cxx
+  MainWindow.h
   WelcomeDialog.cxx
   WelcomeDialog.h
-  )
+)
 
 set(python_files
   BinaryThreshold.py
@@ -263,7 +242,7 @@ if(UNIX)
 else()
   set(script_cmd "copy_if_different")
 endif()
-make_directory("${tomviz_BINARY_DIR}/share/tomviz/scripts")
+file(MAKE_DIRECTORY "${tomviz_BINARY_DIR}/share/tomviz/scripts")
 foreach(file ${python_files})
   list(APPEND SOURCES "python/${file}")
   execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
@@ -292,19 +271,39 @@ foreach(file ${resource_files})
     COMPONENT runtime)
 endforeach()
 
+set(tomviz_python_modules
+  __init__.py
+  _internal.py
+  operators.py
+  utils.py
+)
+
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
+foreach(file ${tomviz_python_modules})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/${file}"
+    "${tomviz_python_binary_dir}/tomviz/${file}")
+endforeach()
+
+# Install the tomviz Python files.
+install(DIRECTORY ${tomviz_python_binary_dir}/tomviz
+       DESTINATION "${tomviz_python_install_dir}"
+       USE_SOURCE_PERMISSIONS
+       COMPONENT runtime)
+
 qt5_wrap_ui(UI_SOURCES
   AboutDialog.ui
   CentralWidget.ui
   SelectVolumeWidget.ui
   DataPropertiesPanel.ui
   EditPythonOperatorWidget.ui
-  MainWindow.ui
   ModulePropertiesPanel.ui
   RotateAlignWidget.ui
   ReconstructionWidget.ui
   ViewPropertiesPanel.ui
+  MainWindow.ui
   WelcomeDialog.ui
-  )
+)
 qt5_add_resources(RCC_SOURCES resources.qrc)
 
 if(APPLE)
@@ -322,18 +321,27 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_executable(tomviz WIN32 MACOSX_BUNDLE ${SOURCES} ${UI_SOURCES}
+add_library(tomvizlib STATIC ${SOURCES} ${UI_SOURCES}
   ${RCC_SOURCES} ${accel_srcs})
+set_target_properties(tomvizlib
+  PROPERTIES OUTPUT_NAME tomviz)
 
+set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+
+add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources})
+target_link_libraries(tomviz tomvizlib)
+
+set_target_properties(tomvizlib PROPERTIES AUTOMOC TRUE)
 set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
-target_link_libraries(tomviz
+
+target_link_libraries(tomvizlib
   pqApplicationComponents
   vtkPVServerManagerRendering
   vtkjsoncpp
   vtkpugixml
   tomvizExtensions)
 if(WIN32)
-  target_link_libraries(tomviz Qt5::WinMain)
+  target_link_libraries(tomvizlib Qt5::WinMain)
 endif()
 if(APPLE)
   install(TARGETS tomviz DESTINATION Applications COMPONENT runtime)
@@ -341,11 +349,6 @@ else()
   install(TARGETS tomviz DESTINATION bin COMPONENT runtime)
 endif()
 
-# Install the tomviz Python files.
-install(DIRECTORY python/tomviz
-       DESTINATION "${tomviz_python_install_dir}"
-       USE_SOURCE_PERMISSIONS
-       COMPONENT runtime)
 if(tomviz_data_DIR)
   add_definitions(-DTOMVIZ_DATA)
   install(DIRECTORY "${tomviz_data_DIR}"
@@ -355,13 +358,15 @@ if(tomviz_data_DIR)
 endif()
 
 if(ENABLE_DAX_ACCELERATION)
-  target_link_libraries(tomviz
+  target_link_libraries(tomvizlib
       tomvizStreaming
       tomvizThreshold
       ${TBB_LIBRARIES})
 
   #set the dax backend to tbb explicitly as the histogram is
   #computed using dax.
-  set_target_properties(tomviz PROPERTIES COMPILE_DEFINITIONS
+  set_target_properties(tomvizlib PROPERTIES COMPILE_DEFINITIONS
     "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
 endif()
+
+add_subdirectory(pybind11)
