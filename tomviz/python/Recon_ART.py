@@ -140,8 +140,8 @@ def parallelRay(Nside,pixelWidth,angles,Nray,rayWidth):
                     #print 'pixelIndicex is:', pixelIndicex
                     # Create the indices to store the values to the measurement matrix
                     idxstart = idxend
-               	    idxend = idxstart + numvals
-               	    idx = np.arange(idxstart,idxend)
+                    idxend = idxstart + numvals
+                    idx = np.arange(idxstart,idxend)
                     # Store row numbers, column numbers and values
                     rows[idx] = i*Nray + j
                     cols[idx] = pixelIndicex
