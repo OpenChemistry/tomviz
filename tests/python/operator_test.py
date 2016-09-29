@@ -31,11 +31,13 @@ class OperatorTestCase(unittest.TestCase):
         self.assertIsNone(find_transform_scalars_function(simple))
 
         # Module with a function
-        self.assertEqual(find_transform_scalars_function(function), function.transform_scalars)
+        self.assertEqual(find_transform_scalars_function(
+            function), function.transform_scalars)
 
     def test_find_transform_scalars(self):
         # Module with a function
-        self.assertEqual(find_transform_scalars(function, None), function.transform_scalars)
+        self.assertEqual(find_transform_scalars(
+            function, None), function.transform_scalars)
 
         # Module with operator class
         func = find_transform_scalars(simple, None)

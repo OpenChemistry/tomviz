@@ -10,7 +10,8 @@ def transform_scalars(dataset):
 
     #----USER SPECIFIED VARIABLES-----#
     TILT_AXIS = []    # Specify Tilt Axis Dimensions x=0, y=1, z=2
-    SHIFT_MAX = 0.15   # Specify the Max Random Fractional Image Shift (0.0 to 1.0)
+    # Specify the Max Random Fractional Image Shift (0.0 to 1.0)
+    SHIFT_MAX = 0.15
     np.random.seed(12) # Set a new seed to get different random alignments
     #---------------------------------#
 

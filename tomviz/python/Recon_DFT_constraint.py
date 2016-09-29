@@ -20,10 +20,12 @@ def transform_scalars(dataset):
     (recon, recon_F) = dfm3(tilt_images, tilt_angles, np.size(tilt_images, 0) * 2)
 
     kr_cutoffs = np.linspace(0.05, 0.5, 10);
-    I_data = radial_average(tilt_images, kr_cutoffs) #average Fourier magnitude of tilt series as a function of kr
+    #average Fourier magnitude of tilt series as a function of kr
+    I_data = radial_average(tilt_images, kr_cutoffs)
 
     #Search for solutions that satisfy additional constraints
-    recon = difference_map_update(recon_F, nonnegativeVoxels, I_data, kr_cutoffs, Niter, Niter_update_support, supportSigma, supportThreshold)
+    recon = difference_map_update(recon_F, nonnegativeVoxels, I_data, kr_cutoffs,
+                                  Niter, Niter_update_support, supportSigma, supportThreshold)
 
     print('Reconsruction Complete')
 
@@ -41,7 +43,8 @@ def dfm3(input, angles, Npad):
     input = np.double(input)
     (Nx, Ny, Nproj) = input.shape
     angles = np.double(angles)
-    pad_pre = np.ceil((Npad - Ny) / 2.0); pad_post = np.floor((Npad - Ny) / 2.0)
+    pad_pre = np.ceil(
+        (Npad - Ny) / 2.0); pad_post = np.floor((Npad - Ny) / 2.0)
 
     # Initialization
     Nz = np.int(Ny / 2.0 + 1)
@@ -49,7 +52,8 @@ def dfm3(input, angles, Npad):
     v = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='complex128')
     v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
     recon = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype='float64')
-    recon_fftw_object = pyfftw.FFTW(v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
+    recon_fftw_object = pyfftw.FFTW(
+        v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
 
     p = pyfftw.n_byte_align_empty((Nx, Npad), 16, dtype='float64')
     pF = pyfftw.n_byte_align_empty((Nx, Npad / 2 + 1), 16, dtype='complex128')
@@ -60,7 +64,8 @@ def dfm3(input, angles, Npad):
     for a in range(0, Nproj):
         ang = angles[a] * np.pi / 180
         projection = input[:, :, a] #2D projection image
-        p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)), 'constant', constant_values=(0, 0)) #pad zeros
+        p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)),
+                       'constant', constant_values=(0, 0)) #pad zeros
         p = np.fft.ifftshift(p)
         p_fftw_object.update_arrays(p, pF)
         p_fftw_object()
@@ -201,7 +206,9 @@ def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs, N_i
             I = np.sum(np.absolute(f[shell]))
             if I != 0:
                 I = I / np.sum(shell)
-                f[shell] = f[shell] / I * I_data[j] * 0.5 #lower magnitude for high frequency information to reduce artifacts
+                # lower magnitude for high frequency information to reduce
+                # artifacts
+                f[shell] = f[shell] / I * I_data[j] * 0.5
 
         fft_inverse.update_arrays(f, r); fft_inverse.execute()
         y2 = r.copy() / Ntot

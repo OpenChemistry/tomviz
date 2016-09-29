@@ -41,11 +41,13 @@ def transform_scalars(dataset):
         # Cast the image to unsigned chars. Probably want floats at
         # some point, but this is known to work for this sequence of
         # operations.
-        cast_filter = itk.CastImageFilter[itk_input_image_type, itk_threshold_image_type].New()
+        cast_filter = itk.CastImageFilter[
+            itk_input_image_type, itk_threshold_image_type].New()
         cast_filter.SetInput(itk_image)
 
         # Binary threshold filter
-        threshold_filter = itk.BinaryThresholdImageFilter[itk_threshold_image_type, itk_threshold_image_type].New()
+        threshold_filter = itk.BinaryThresholdImageFilter[
+            itk_threshold_image_type, itk_threshold_image_type].New()
         threshold_filter.SetLowerThreshold(lower_threshold)
         threshold_filter.SetUpperThreshold(upper_threshold)
         threshold_filter.SetInput(cast_filter.GetOutput())
@@ -56,7 +58,8 @@ def transform_scalars(dataset):
         itk_output_image_type = itk_threshold_image_type
 
         # ConnectedComponentImageFilter
-        connected_filter = itk.ConnectedComponentImageFilter[itk_threshold_image_type, itk_output_image_type].New()
+        connected_filter = itk.ConnectedComponentImageFilter[
+            itk_threshold_image_type, itk_output_image_type].New()
         connected_filter.SetBackgroundValue(background_value)
         connected_filter.SetInput(threshold_filter.GetOutput())
 
@@ -65,13 +68,15 @@ def transform_scalars(dataset):
         # labels. It will also sort the components from largest to
         # smallest, where the largest component has label 1, the
         # second largest has label 2, and so on...
-        relabel_filter = itk.RelabelComponentImageFilter[itk_output_image_type, itk_output_image_type].New()
+        relabel_filter = itk.RelabelComponentImageFilter[
+            itk_output_image_type, itk_output_image_type].New()
         relabel_filter.SetInput(connected_filter.GetOutput())
         relabel_filter.SortByObjectSizeOn()
         relabel_filter.Update()
 
         itk_image_data = relabel_filter.GetOutput()
-        label_buffer = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
+        label_buffer = itk.PyBuffer[
+            itk_output_image_type].GetArrayFromImage(itk_image_data)
 
         # Flip the labels so that the largest component has the highest label
         # value, e.g., the labeling ordering by size goes from [1, 2, ... N] to

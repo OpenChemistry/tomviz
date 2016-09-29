@@ -75,12 +75,15 @@ def tv_minimization(A, tiltSeries, recon, iterNum=1):
         #3D TV minimization
         for j in range(0, ng):
             r = np.lib.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
-            v1n = 3 * r - np.roll(r, 1, axis=0) - np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2)
-            v1d = np.sqrt(1e-8 + (r - np.roll(r, 1, axis=0))**2 + (r - np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2)
+            v1n = 3 * r - np.roll(r, 1, axis=0) - \
+                                  np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2)
+            v1d = np.sqrt(1e-8 + (r - np.roll(r, 1, axis=0))**2 + (r - \
+                          np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2)
 
             v2n = r - np.roll(r, -1, axis=0)
             v2d = np.sqrt(1e-8 + (np.roll(r, -1, axis=0) - r)**2
-                          + (np.roll(r, -1, axis=0) - np.roll(np.roll(r, -1, axis=0), 1, axis=1))**2
+                          + (np.roll(r, -1, axis=0) - \
+                             np.roll(np.roll(r, -1, axis=0), 1, axis=1))**2
                           + (np.roll(r, -1, axis=0) - np.roll(np.roll(r, -1, axis=0), 1, axis=2))**2)
 
             v3n = r - np.roll(r, -1, axis=1)
@@ -90,7 +93,8 @@ def tv_minimization(A, tiltSeries, recon, iterNum=1):
 
             v4n = r - np.roll(r, -1, axis=2)
             v4d = np.sqrt(1e-8 + (np.roll(r, -1, axis=2) - np.roll(np.roll(r, -1, axis=2), 1, axis=0))**2
-                          + (np.roll(r, -1, axis=2) - np.roll(np.roll(r, -1, axis=1), 1, axis=1))**2
+                          + (np.roll(r, -1, axis=2) - \
+                             np.roll(np.roll(r, -1, axis=1), 1, axis=1))**2
                           + (np.roll(r, -1, axis=2) - r)**2)
 
             v = v1n / v1d + v2n / v2d + v3n / v3d + v4n / v4d
@@ -109,13 +113,15 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     Nproj = angles.size # Number of projections
 
     # Ray coordinates at 0 degrees.
-    offsets = np.linspace(-(Nray * 1.0 - 1) / 2, (Nray * 1.0 - 1) / 2, Nray) * rayWidth
+    offsets = np.linspace(-(Nray * 1.0 - 1) / 2,
+                          (Nray * 1.0 - 1) / 2, Nray) * rayWidth
     # Intersection lines/grid Coordinates
     xgrid = np.linspace(-Nside * 0.5, Nside * 0.5, Nside + 1) * pixelWidth
     ygrid = np.linspace(-Nside * 0.5, Nside * 0.5, Nside + 1) * pixelWidth
     #print xgrid
     #print ygrid
-    # Initialize vectors that contain matrix elements and corresponding row/column numbers
+    # Initialize vectors that contain matrix elements and corresponding
+    # row/column numbers
     rows = np.zeros(2 * Nside * Nproj * Nray)
     cols = np.zeros(2 * Nside * Nproj * Nray)
     vals = np.zeros(2 * Nside * Nproj * Nray)
@@ -150,15 +156,18 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
             yy = yy[I]
 
             # Get rid of points that are outside the image grid
-            Ix = np.logical_and(xx >= -Nside / 2.0 * pixelWidth, xx <= Nside / 2.0 * pixelWidth)
-            Iy = np.logical_and(yy >= -Nside / 2.0 * pixelWidth, yy <= Nside / 2.0 * pixelWidth)
+            Ix = np.logical_and(xx >= -Nside / 2.0 * pixelWidth,
+                                xx <= Nside / 2.0 * pixelWidth)
+            Iy = np.logical_and(yy >= -Nside / 2.0 * pixelWidth,
+                                yy <= Nside / 2.0 * pixelWidth)
             I = np.logical_and(Ix, Iy)
             xx = xx[I]; yy = yy[I]
 
             # If the ray pass through the image grid
             if (xx.size != 0 and yy.size != 0):
                 # Get rid of double counted points
-                I = np.logical_and(np.abs(np.diff(xx)) <= 1e-8, np.abs(np.diff(yy)) <= 1e-8)
+                I = np.logical_and(np.abs(np.diff(xx)) <=
+                                   1e-8, np.abs(np.diff(yy)) <= 1e-8)
                 I2 = np.zeros(I.size + 1)
                 I2[0:-1] = I
                 xx = xx[np.logical_not(I2)]
@@ -171,8 +180,10 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
 
                 # Remove the rays that are on the boundary of the box in the
                 # top or to the right of the image grid
-                check1 = np.logical_and(b == 0, np.absolute(yrayRotated[j] - Nside / 2 * pixelWidth) < 1e-15)
-                check2 = np.logical_and(a == 0, np.absolute(xrayRotated[j] - Nside / 2 * pixelWidth) < 1e-15)
+                check1 = np.logical_and(b == 0, np.absolute(
+                    yrayRotated[j] - Nside / 2 * pixelWidth) < 1e-15)
+                check2 = np.logical_and(a == 0, np.absolute(
+                    xrayRotated[j] - Nside / 2 * pixelWidth) < 1e-15)
                 check = np.logical_not(np.logical_or(check1, check2))
 
                 if np.logical_and(numvals > 0, check):
@@ -184,9 +195,12 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     #print 'midpoints_x is:',midpoints_x
                     #print 'midpoints_y is:',midpoints_y
                     #Calculate the pixel index for mid points
-                    pixelIndicex = (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * Nside + (np.floor(midpoints_x / pixelWidth + Nside / 2.0))
+                    pixelIndicex = (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \
+                                    Nside + (np.floor(midpoints_x / \
+                                             pixelWidth + Nside / 2.0))
                     #print 'pixelIndicex is:', pixelIndicex
-                    # Create the indices to store the values to the measurement matrix
+                    # Create the indices to store the values to the measurement
+                    # matrix
                     idxstart = idxend
                     idxend = idxstart + numvals
                     idx = np.arange(idxstart, idxend)

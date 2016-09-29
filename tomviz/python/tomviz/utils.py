@@ -140,7 +140,8 @@ def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     #vtk_image_data.GetPointData().AddArray(new_array)
     #------------------------------------------
     import itk
-    result = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
+    result = itk.PyBuffer[
+        itk_output_image_type].GetArrayFromImage(itk_image_data)
     set_label_map(vtk_image_data, result)
 
 

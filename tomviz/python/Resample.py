@@ -20,7 +20,8 @@ def transform_scalars(dataset):
     if resampingFactor[2] != 1:
         try:
             tilt_angles = utils.get_tilt_angles(dataset)
-            tilt_angles = scipy.ndimage.interpolation.zoom(tilt_angles, resampingFactor[2])
+            tilt_angles = scipy.ndimage.interpolation.zoom(
+                tilt_angles, resampingFactor[2])
             utils.set_tilt_angles(dataset, tilt_angles)
         except:
             pass

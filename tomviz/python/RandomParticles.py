@@ -17,14 +17,16 @@ def generate_dataset(array):
 
     # Create inner structure.
     A = np.exp(-p_in * kr) # Generate amplitude
-    phase = np.random.randn(arrayShape[0], arrayShape[1], arrayShape[2]) # Generate phase
+    phase = np.random.randn(arrayShape[0], arrayShape[
+                            1], arrayShape[2]) # Generate phase
     F = A * np.exp(2 * np.pi * 1j * phase) # Combine amplitude and phase
     f = np.fft.ifftn(F) # Inverse FFT
     f_in = np.absolute(f).copy().flatten()
 
     # Create shape
     A = np.exp(-p_s * kr) # Generate amplitude
-    phase = np.random.randn(arrayShape[0], arrayShape[1], arrayShape[2]) # Generate phase
+    phase = np.random.randn(arrayShape[0], arrayShape[
+                            1], arrayShape[2]) # Generate phase
     F = A * np.exp(2 * np.pi * 1j * phase) # Combine amplitude and phase
     f = np.fft.ifftn(F) # Inverse FFT
     f_shape = np.absolute(f)
@@ -32,7 +34,8 @@ def generate_dataset(array):
     # Impose sparsity (% of non-zero voxels)
     f_shape = np.argsort(f_shape, axis=None) # Sort the shape image
     f_shape = f_shape.flatten()
-    N_zero = np.int(np.round((array.size * (1 - sparsity)))) # Number of zero voxels
+    # Number of zero voxels
+    N_zero = np.int(np.round((array.size * (1 - sparsity))))
     f_shape[N_zero:] = f_shape[N_zero]
     f_in[f_shape] = 0
 

@@ -20,7 +20,8 @@ def transform_scalars(dataset):
         raise RuntimeError("No data array found!")
 
     for i in range(ZRANGE[0], ZRANGE[1]):
-        a = data_bs[:, :, i] - np.average(data_bs[XRANGE[0]:XRANGE[1], YRANGE[0]:YRANGE[1], i])
+        a = data_bs[:, :, i] - \
+            np.average(data_bs[XRANGE[0]:XRANGE[1], YRANGE[0]:YRANGE[1], i])
         data_bs[:, :, i] = a
 
     utils.set_array(dataset, data_bs)

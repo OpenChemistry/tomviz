@@ -32,7 +32,8 @@ def dfm3(input, angles, Npad):
     input = np.double(input)
     (Nx, Ny, Nproj) = input.shape
     angles = np.double(angles)
-    pad_pre = np.ceil((Npad - Ny) / 2.0); pad_post = np.floor((Npad - Ny) / 2.0)
+    pad_pre = np.ceil(
+        (Npad - Ny) / 2.0); pad_post = np.floor((Npad - Ny) / 2.0)
 
     # Initialization
     Nz = Ny
@@ -40,7 +41,8 @@ def dfm3(input, angles, Npad):
     v = pyfftw.n_byte_align_empty((Nx, Ny, Nz / 2 + 1), 16, dtype='complex128')
     v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
     recon = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='float64')
-    recon_fftw_object = pyfftw.FFTW(v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
+    recon_fftw_object = pyfftw.FFTW(
+        v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
 
     p = pyfftw.n_byte_align_empty((Nx, Npad), 16, dtype='float64')
     pF = pyfftw.n_byte_align_empty((Nx, Npad / 2 + 1), 16, dtype='complex128')
@@ -52,7 +54,8 @@ def dfm3(input, angles, Npad):
         #print angles[a]
         ang = angles[a] * np.pi / 180
         projection = input[:, :, a] #2D projection image
-        p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)), 'constant', constant_values=(0, 0)) #pad zeros
+        p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)),
+                       'constant', constant_values=(0, 0)) #pad zeros
         p = np.fft.ifftshift(p)
         p_fftw_object.update_arrays(p, pF)
         p_fftw_object()

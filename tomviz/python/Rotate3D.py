@@ -31,7 +31,8 @@ def transform_scalars(dataset):
 
     print('Rotating Dataset...')
 
-    data_py_return = ndimage.interpolation.rotate(data_py, ROT_ANGLE, axes=((ROT_AXIS + 1) % 3, (ROT_AXIS + 2) % 3))
+    data_py_return = ndimage.interpolation.rotate(
+        data_py, ROT_ANGLE, axes=((ROT_AXIS + 1) % 3, (ROT_AXIS + 2) % 3))
 
     utils.set_array(dataset, data_py_return)
     print('Rotation Complete')

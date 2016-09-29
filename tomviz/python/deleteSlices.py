@@ -14,7 +14,8 @@ def transform_scalars(dataset):
     array = utils.get_array(dataset)
 
     # Get indices of the slices to be deleted.
-    indices = np.linspace(firstSlice, lastSlice, lastSlice - firstSlice + 1).astype(int)
+    indices = np.linspace(firstSlice, lastSlice,
+                          lastSlice - firstSlice + 1).astype(int)
 
     # Delete the specified slices.
     array = np.delete(array, indices, axis)

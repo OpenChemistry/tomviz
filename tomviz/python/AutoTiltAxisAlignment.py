@@ -38,7 +38,8 @@ def transform_scalars(dataset):
     angles = np.arange(rot_ang - coarse_step, rot_ang + coarse_step, fine_step)
     rot_ang = find_min_line(Intensity_var, angles)
     print "rotate tilt series by", -rot_ang, "degrees"
-    tiltSeries_rot = ndimage.interpolation.rotate(tiltSeries, -rot_ang, axes=((0, 1)))
+    tiltSeries_rot = ndimage.interpolation.rotate(
+        tiltSeries, -rot_ang, axes=((0, 1)))
 
     # Set the result as the new scalars.
     utils.set_array(dataset, tiltSeries_rot)
