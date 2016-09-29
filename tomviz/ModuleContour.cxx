@@ -37,6 +37,7 @@
 #include <string>
 #include <vector>
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
 #include <QLabel>
@@ -47,6 +48,7 @@ class ModuleContour::Private
 {
 public:
   std::string NonLabelMapArrayName;
+  bool UseSolidColor;
   pqPropertyLinks Links;
 };
 
@@ -54,6 +56,7 @@ ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
 {
   this->Internals = new Private;
   this->Internals->Links.setAutoUpdateVTKObjects(true);
+  this->Internals->UseSolidColor = false;
 }
 
 ModuleContour::~ModuleContour()
@@ -148,8 +151,14 @@ void ModuleContour::updateColorMap()
     vtkSMPropertyHelper(this->ContourRepresentation, "Input")
       .Set(this->ResampleFilter);
   } else {
-    colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
+    if (this->Internals->UseSolidColor) {
+      colorArrayHelper.SetInputArrayToProcess(
+        vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
+    } else {
+      colorArrayHelper.SetInputArrayToProcess(
+        vtkDataObject::FIELD_ASSOCIATION_POINTS,
+        this->Internals->NonLabelMapArrayName.c_str());
+    }
     vtkSMPropertyHelper(this->ContourRepresentation, "Input")
       .Set(this->ContourFilter);
   }
@@ -210,6 +219,12 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
+  QCheckBox* useSolidColor = new QCheckBox;
+  useSolidColor->setChecked(this->Internals->UseSolidColor);
+  QObject::connect(useSolidColor, &QCheckBox::stateChanged, this,
+                   &ModuleContour::setUseSolidColor);
+  layout->addRow("Use Solid Color", useSolidColor);
+
   DoubleSliderWidget* valueSlider = new DoubleSliderWidget(true);
   valueSlider->setLineEditWidth(50);
   layout->addRow("Value", valueSlider);
@@ -262,10 +277,16 @@ void ModuleContour::addToPanel(QWidget* panel)
     this->ContourRepresentation,
     this->ContourRepresentation->GetProperty("Specular"), 0);
 
+  // Surface uses DiffuseColor and Wireframe uses AmbientColor so we have to set
+  // both
   this->Internals->Links.addPropertyLink(
     colorSelector, "chosenColorRgbF", SIGNAL(chosenColorChanged(const QColor&)),
     this->ContourRepresentation,
     this->ContourRepresentation->GetProperty("DiffuseColor"));
+  this->Internals->Links.addPropertyLink(
+    colorSelector, "chosenColorRgbF", SIGNAL(chosenColorChanged(const QColor&)),
+    this->ContourRepresentation,
+    this->ContourRepresentation->GetProperty("AmbientColor"));
 
   this->connect(valueSlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleContour::dataUpdated);
@@ -287,6 +308,7 @@ void ModuleContour::dataUpdated()
 
 bool ModuleContour::serialize(pugi::xml_node& ns) const
 {
+  ns.append_attribute("solid_color").set_value(this->Internals->UseSolidColor);
   // save stuff that the user can change.
   pugi::xml_node node = ns.append_child("ContourFilter");
   QStringList contourProperties;
@@ -302,7 +324,8 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   contourRepresentationProperties << "Representation"
                                   << "Opacity"
                                   << "Specular"
-                                  << "Visibility";
+                                  << "Visibility"
+                                  << "DiffuseColor";
 
   node = ns.append_child("ContourRepresentation");
   if (tomviz::serialize(this->ContourRepresentation, node,
@@ -317,6 +340,9 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
 
 bool ModuleContour::deserialize(const pugi::xml_node& ns)
 {
+  if (ns.attribute("solid_color")) {
+    this->Internals->UseSolidColor = ns.attribute("solid_color").as_bool();
+  }
   return tomviz::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
          tomviz::deserialize(this->ContourRepresentation,
                              ns.child("ContourRepresentation")) &&
@@ -363,6 +389,13 @@ vtkSMProxy* ModuleContour::getProxyForString(const std::string& str)
   } else {
     return nullptr;
   }
+}
+
+void ModuleContour::setUseSolidColor(int useSolidColor)
+{
+  this->Internals->UseSolidColor = (useSolidColor != 0);
+  this->updateColorMap();
+  emit this->renderNeeded();
 }
 
 } // end of namespace tomviz
