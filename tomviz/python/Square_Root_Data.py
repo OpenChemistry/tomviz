@@ -24,7 +24,7 @@ class SquareRootOperator(tomviz.operators.CancelableOperator):
             result = np.float32(scalars)
             for chunk in np.array_split(result, NUMBER_OF_CHUNKS):
                 if self.canceled:
-                   return
+                    return
                 np.sqrt(chunk, chunk)
 
             # set the result as the new scalars.

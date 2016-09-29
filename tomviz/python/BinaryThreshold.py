@@ -49,7 +49,7 @@ def transform_scalars(dataset):
         utils.set_label_map(label_map_data_set, label_buffer)
         returnValue = \
           {
-            "thresholded_segmentation" : label_map_data_set
+              "thresholded_segmentation" : label_map_data_set
           }
 
     except Exception as exc:

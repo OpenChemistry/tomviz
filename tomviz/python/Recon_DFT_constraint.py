@@ -176,7 +176,7 @@ def difference_map_update(constraint,nonnegativeVoxels,I_data,kr_cutoffs,N_iter,
         y1 = x.copy()
 
         if nonnegativeVoxels:
-           y1[y1<0] = 0  #non-negative constraint
+            y1[y1<0] = 0  #non-negative constraint
 
         y1[np.logical_not(support)] = 0 #support constraint
 

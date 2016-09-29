@@ -14,7 +14,7 @@ def transform_scalars(dataset):
     data_py = utils.get_array(dataset) # Get data as numpy array.
 
     if data_py is None: #Check if data exists
-      raise RuntimeError("No data array found!")
+        raise RuntimeError("No data array found!")
 
     print('Shifting Images...')
 
