@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 language: cpp
 dist: precise
 addons:
@@ -7,10 +7,12 @@ addons:
     - ubuntu-toolchain-r-test
     - llvm-toolchain-precise-3.8
     packages:
-#    - g++-4.9
     - clang-format-3.8
-
+install: 
+  - pip install --user flake8
 script:
 - cd $TRAVIS_BUILD_DIR
 - ./scripts/travis/run_clang_format_diff.sh master $TRAVIS_COMMIT
+- git checkout $TRAVIS_PULL_REQUEST_SHA
+- ~/.local/bin/flake8 --config=flake8.cfg .
  
