@@ -30,5 +30,6 @@ def transform_scalars(dataset):
             tilt_angles = utils.get_tilt_angles(dataset)
             tilt_angles = np.lib.pad(tilt_angles, padWidthZ, padMode)
             utils.set_tilt_angles(dataset, tilt_angles)
-        except:
+        except: # noqa
+            # TODO What exception are we ignoring?
             pass

@@ -34,42 +34,42 @@ def vtk_itk_map():
         _vtk_to_itk_types = {}
         try:
             _vtk_to_itk_types['vtkUnsignedCharArray'] = itk.Image.UC3
-        except:
+        except KeyError:
             pass
 
         try:
             _vtk_to_itk_types['vtkCharArray'] = itk.Image.SC3
-        except:
+        except KeyError:
             pass
 
         try:
             _vtk_to_itk_types['vtkUnsignedShortArray'] = itk.Image.US3
-        except:
+        except KeyError:
             pass
 
         try:
             _vtk_to_itk_types['vtkShortArray'] = itk.Image.SS3
-        except:
+        except KeyError:
             pass
 
         try:
             _vtk_to_itk_types['vtkUnsignedIntArray'] = itk.Image.UI3
-        except:
+        except KeyError:
             pass
 
         try:
             _vtk_to_itk_types['vtkIntArray'] = itk.Image.SI3
-        except:
+        except KeyError:
             pass
 
         try:
             _vtk_to_itk_types['vtkFloatArray'] = itk.Image.F3
-        except:
+        except KeyError:
             pass
 
         try:
             _vtk_to_itk_types['vtkDoubleArray'] = itk.Image.D3
-        except:
+        except KeyError:
             pass
 
     return _vtk_to_itk_types
@@ -87,7 +87,7 @@ def get_itk_image_type(vtk_image_data):
 
     try:
         image_type = vtk_itk_map()[vtk_class_name]
-    except:
+    except KeyError:
         raise Exception('No ITK type known for %s' % vtk_class_name)
 
     return image_type

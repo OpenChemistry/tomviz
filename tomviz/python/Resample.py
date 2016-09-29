@@ -23,5 +23,6 @@ def transform_scalars(dataset):
             tilt_angles = scipy.ndimage.interpolation.zoom(
                 tilt_angles, resampingFactor[2])
             utils.set_tilt_angles(dataset, tilt_angles)
-        except:
+        except: # noqa
+            # TODO What exception are we ignoring?
             pass

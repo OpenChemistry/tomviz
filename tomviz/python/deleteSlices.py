@@ -29,5 +29,6 @@ def transform_scalars(dataset):
             tilt_angles = utils.get_tilt_angles(dataset)
             tilt_angles = np.delete(tilt_angles, indices)
             utils.set_tilt_angles(dataset, tilt_angles)
-        except:
+        except: # noqa
+            # TODO what exception are we ignoring here?
             pass
