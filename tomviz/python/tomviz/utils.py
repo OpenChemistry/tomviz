@@ -232,7 +232,7 @@ def set_tilt_angles(dataobject, newarray):
     do.FieldData.AddArray(vtkarray)
 
 def make_dataset(x, y, z, dataset, generate_data_function):
-    from vtk import vtkImageData, VTK_DOUBLE
+    from vtk import VTK_DOUBLE
     array = np.zeros((x,y,z), order='F')
     generate_data_function(array)
     dataset.SetOrigin(0,0,0)

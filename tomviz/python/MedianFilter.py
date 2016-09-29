@@ -7,7 +7,6 @@ def transform_scalars(dataset):
     #---------------------------------#
 
     from tomviz import utils
-    import numpy as np
     import scipy.ndimage
 
     array = utils.get_array(dataset)

@@ -2,7 +2,6 @@ def transform_scalars(dataset):
     """Resample dataset"""
 
     from tomviz import utils
-    import numpy as np
     import scipy.ndimage
 
     #----USER SPECIFIED VARIABLES-----#

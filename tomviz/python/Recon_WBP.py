@@ -2,7 +2,6 @@ def transform_scalars(dataset):
     """3D Reconstruct from a tilt series using Weighted Back-projection Method"""
 
     from tomviz import utils
-    import numpy as np
     interpolation_methods = ('linear','nearest','spline','cubic')
     filter_methods = ('none','ramp','shepp-logan','cosine','hamming','hann')
 

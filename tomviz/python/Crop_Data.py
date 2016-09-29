@@ -4,7 +4,6 @@
 
 def transform_scalars(dataset):
     from tomviz import utils
-    import numpy as np
     
     data_py = utils.get_array(dataset) #get data as numpy array
     

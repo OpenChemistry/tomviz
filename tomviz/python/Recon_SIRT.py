@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.sparse as ss
-from scipy.sparse import linalg
 from tomviz import utils
 
 def transform_scalars(dataset):

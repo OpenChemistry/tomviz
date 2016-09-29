@@ -2,7 +2,6 @@ def transform_scalars(dataset):
     """Downsample tilt images by a factor of 2"""
 
     from tomviz import utils
-    import numpy as np
     import scipy.ndimage
 
     array = utils.get_array(dataset)
