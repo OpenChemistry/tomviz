@@ -9,7 +9,9 @@ import tomviz
 # Mock out the wrapping as the library requires symbols in tomviz
 tomviz._wrapping = mock.MagicMock()
 sys.modules['tomviz._wrapping'] = mock.MagicMock()
-from tomviz._internal import *
+from tomviz._internal import find_operator_class
+from tomviz._internal import find_transform_scalars_function
+from tomviz._internal import find_transform_scalars, is_cancelable
 
 
 class OperatorTestCase(unittest.TestCase):
