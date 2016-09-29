@@ -38,7 +38,7 @@ def wbp3(input, angles, N=None, filter="ramp", interp="linear"):
     if Nproj != angles.size:
         raise ValueError('Data does not match angles!')
     interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
-    if not interp in interpolation_methods:
+    if interp not in interpolation_methods:
         raise ValueError("Unknown interpolation: %s" % interp)
     if not N: #if ouput size is not given
         N = int(np.floor(np.sqrt(Nray**2 / 2.0)))
@@ -71,7 +71,7 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
         raise ValueError('Sinogram does not match angles!')
 
     interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
-    if not interp in interpolation_methods:
+    if interp not in interpolation_methods:
         raise ValueError("Unknown interpolation: %s" % interp)
     if not N: #if ouput size is not given
         N = int(np.floor(np.sqrt(Nray**2 / 2.0)))
