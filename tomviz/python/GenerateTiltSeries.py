@@ -12,7 +12,7 @@ def transform_scalars(dataset):
     #---------------------------------#
 
     # Generate Tilt Angles.
-    angles = np.linspace(startAngle, startAngle + \
+    angles = np.linspace(startAngle, startAngle +
                          (Nproj - 1) * angleIncrement, Nproj)
 
     volume = utils.get_array(dataset)
