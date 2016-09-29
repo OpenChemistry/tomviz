@@ -1,3 +1,7 @@
+import pyfftw
+import numpy as np
+
+
 def transform_scalars(dataset):
     """3D Reconstruct from a tilt series using Direct Fourier Method"""
 
@@ -19,9 +23,6 @@ def transform_scalars(dataset):
 
     # Mark dataset as volume
     utils.mark_as_volume(dataset)
-
-import pyfftw
-import numpy as np
 
 
 def dfm3(input, angles, Npad):

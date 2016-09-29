@@ -1,3 +1,7 @@
+import numpy as np
+from scipy.interpolate import interp1d
+
+
 def transform_scalars(dataset):
     """3D Reconstruct from a tilt series using Weighted Back-projection Method"""
 
@@ -26,9 +30,6 @@ def transform_scalars(dataset):
 
     # Mark dataset as volume.
     utils.mark_as_volume(dataset)
-
-import numpy as np
-from scipy.interpolate import interp1d
 
 
 def wbp3(input, angles, N=None, filter="ramp", interp="linear"):
