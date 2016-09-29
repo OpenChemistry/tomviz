@@ -47,7 +47,6 @@ def find_min_line(Intensity_var,angles):
     cenx = np.floor(Nx/2); ceny = np.floor(Ny/2)
 
     N = np.round(np.min([Nx,Ny])/3)
-    cen = np.floor(N/2)
     Intensity_line = np.zeros((angles.size,N))
     for a in range(0,angles.size):
         ang = angles[a]*np.pi/180

@@ -31,8 +31,6 @@ def dfm3(input,angles,Npad):
     input = np.double(input)
     (Nx,Ny,Nproj) = input.shape
     angles = np.double(angles)
-    cen = np.floor(Ny/2.0)
-    cen_pad = np.floor(Npad/2.0)
     pad_pre = np.ceil((Npad-Ny)/2.0); pad_post = np.floor((Npad-Ny)/2.0)
     
     # Initialization
@@ -78,7 +76,6 @@ def dfm3(input,angles,Npad):
                     v[:,py,pz] = v[:,py,pz] + weight * probjection_f[:,i]
 
     v[w!=0] = v[w!=0]/w[w!=0]
-    recon_F = v.copy()
     recon_fftw_object.update_arrays(v,recon)
     recon_fftw_object()
     recon = np.fft.fftshift(recon)

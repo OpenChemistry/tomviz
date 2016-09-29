@@ -109,7 +109,6 @@ def wbp2(sinogram,angles,N=None,filter="ramp",interp="linear"):
 
 # Filter (1D) projections.
 def makeFilter(Nray,filterMethod="ramp"):
-    filter_methods = ('none','ramp','shepp-logan','cosine','hamming','hann')
     # Calculate next power of 2
     N2 = 2**np.ceil(np.log2(Nray))
     # Make a ramp filter.

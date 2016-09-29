@@ -38,7 +38,6 @@ def tv_minimization(A,tiltSeries,recon,iterNum=1):
     (Nslice,Nray,Nproj) = tiltSeries.shape
     
     (Nrow,Ncol) = A.shape
-    Nside = Nray
     rowInnerProduct = np.zeros(Nrow);
     row = np.zeros(Ncol)
     f = np.zeros(Ncol) # Placeholder for 2d image

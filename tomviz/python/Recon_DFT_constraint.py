@@ -40,8 +40,6 @@ def dfm3(input,angles,Npad):
     input = np.double(input)
     (Nx,Ny,Nproj) = input.shape
     angles = np.double(angles)
-    cen = np.floor(Ny/2.0)
-    cen_pad = np.floor(Npad/2.0)
     pad_pre = np.ceil((Npad-Ny)/2.0); pad_post = np.floor((Npad-Ny)/2.0)
     
     # Initialization
