@@ -1,5 +1,4 @@
 def generate_dataset(array):
-    import numpy as np
     """Generate STEM probe function"""
 
     import numpy as np
