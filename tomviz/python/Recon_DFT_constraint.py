@@ -19,7 +19,7 @@ def transform_scalars(dataset):
     #Direct Fourier recon without constraints
     (recon, recon_F) = dfm3(tilt_images, tilt_angles, np.size(tilt_images, 0) * 2)
 
-    kr_cutoffs = np.linspace(0.05, 0.5, 10);
+    kr_cutoffs = np.linspace(0.05, 0.5, 10)
     #average Fourier magnitude of tilt series as a function of kr
     I_data = radial_average(tilt_images, kr_cutoffs)
 
@@ -44,7 +44,8 @@ def dfm3(input, angles, Npad):
     (Nx, Ny, Nproj) = input.shape
     angles = np.double(angles)
     pad_pre = np.ceil(
-        (Npad - Ny) / 2.0); pad_post = np.floor((Npad - Ny) / 2.0)
+        (Npad - Ny) / 2.0)
+    pad_post = np.floor((Npad - Ny) / 2.0)
 
     # Initialization
     Nz = np.int(Ny / 2.0 + 1)
@@ -78,7 +79,8 @@ def dfm3(input, angles, Npad):
 
         # Bilinear extrapolation
         for i in range(0, np.int(np.ceil(Npad / 2)) + 1):
-            ky = i * dk;  #kz = 0;
+            ky = i * dk
+            #kz = 0
             ky_new = np.cos(ang) * ky #new coord. after rotation
             kz_new = np.sin(ang) * ky
             sy = abs(np.floor(ky_new) - ky_new) #calculate weights
@@ -129,7 +131,8 @@ def radial_average(tiltseries, kr_cutoffs):
     f = pyfftw.n_byte_align_empty((Nx, Ny / 2 + 1), 16, dtype='complex128')
     r = pyfftw.n_byte_align_empty((Nx, Ny), 16, dtype='float64')
     p_fftw_object = pyfftw.FFTW(r, f, axes=(0, 1))
-    Ir = np.zeros(kr_cutoffs.size); I = np.zeros(kr_cutoffs.size)
+    Ir = np.zeros(kr_cutoffs.size)
+    I = np.zeros(kr_cutoffs.size)
 
     kx = np.fft.fftfreq(Nx)
     ky = np.fft.fftfreq(Ny)
@@ -140,7 +143,8 @@ def radial_average(tiltseries, kr_cutoffs):
 
     for a in range(0, Nproj):
         r = tiltseries[:, :, a].copy().astype('float64')
-        p_fftw_object.update_arrays(r, f); p_fftw_object.execute()
+        p_fftw_object.update_arrays(r, f)
+        p_fftw_object.execute()
         shell = kR <= kr_cutoffs[0]
         I[0] = np.sum(np.absolute(f[shell]))
         I[0] = I[0] / np.sum(shell)
@@ -154,7 +158,8 @@ def radial_average(tiltseries, kr_cutoffs):
 
 
 def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs, N_iter, N_update_support, supportSigma, supportThreshold):
-    (Nx, Ny, Nz) = constraint.shape;     #Note: Nz = np.int(Ny/2+1)
+    (Nx, Ny, Nz) = constraint.shape
+    #Note: Nz = np.int(Ny/2+1)
     Ntot = Nx * Ny * Ny
     f = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='complex128')
     r = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype='float64')
@@ -173,7 +178,8 @@ def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs, N_i
 
     #create initial support using sw
     f = constraint * G
-    fft_inverse.update_arrays(f, r); fft_inverse.execute()
+    fft_inverse.update_arrays(f, r)
+    fft_inverse.execute()
     cutoff = np.amax(r) * supportThreshold
     support = r >= cutoff
 
@@ -193,7 +199,9 @@ def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs, N_i
         #Fourier space projection
         y2 = 2 * y1 - x
 
-        r = y2.copy(); fft_forward.update_arrays(r, f); fft_forward.execute()
+        r = y2.copy()
+        fft_forward.update_arrays(r, f)
+        fft_forward.execute()
 
         f[kR > kr_cutoffs[-1]] = 0 #apply low pass filter
         f[constraint != 0] = constraint[constraint != 0] #data constraint
@@ -210,7 +218,8 @@ def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs, N_i
                 # artifacts
                 f[shell] = f[shell] / I * I_data[j] * 0.5
 
-        fft_inverse.update_arrays(f, r); fft_inverse.execute()
+        fft_inverse.update_arrays(f, r)
+        fft_inverse.execute()
         y2 = r.copy() / Ntot
 
         #update
@@ -220,9 +229,12 @@ def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs, N_i
         if (i < N_iter and np.mod(i, N_update_support) == 0):
             print "updating support"
             recon = (y2 + y1) / 2
-            r = recon.copy(); fft_forward.update_arrays(r, f); fft_forward.execute()
+            r = recon.copy()
+            fft_forward.update_arrays(r, f)
+            fft_forward.execute()
             f = f * G
-            fft_inverse.update_arrays(f, r); fft_inverse.execute()
+            fft_inverse.update_arrays(f, r)
+            fft_inverse.execute()
             cutoff = np.amax(r) * supportThreshold
             support = r >= cutoff
 

@@ -55,7 +55,7 @@ def transform_scalars(dataset):
           }
 
     except Exception as exc:
-        print("Exception encountered while running BinaryThreshold");
-        print(exc);
+        print("Exception encountered while running BinaryThreshold")
+        print(exc)
 
     return returnValue

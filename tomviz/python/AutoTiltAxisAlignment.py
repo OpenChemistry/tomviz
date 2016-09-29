@@ -46,8 +46,10 @@ def transform_scalars(dataset):
 
 
 def find_min_line(Intensity_var, angles):
-    Nx = Intensity_var.shape[0]; Ny = Intensity_var.shape[1]
-    cenx = np.floor(Nx / 2); ceny = np.floor(Ny / 2)
+    Nx = Intensity_var.shape[0]
+    Ny = Intensity_var.shape[1]
+    cenx = np.floor(Nx / 2)
+    ceny = np.floor(Ny / 2)
 
     N = np.round(np.min([Nx, Ny]) / 3)
     Intensity_line = np.zeros((angles.size, N))
@@ -56,21 +58,27 @@ def find_min_line(Intensity_var, angles):
         w = np.zeros(N)
         v = np.zeros(N)
         for i in range(0, N):
-            x = i * np.cos(ang); y = i * np.sin(ang);
-            sx = abs(np.floor(x) - x); sy = abs(np.floor(y) - y)
-            px = np.floor(x) + cenx; py = np.floor(y) + ceny
+            x = i * np.cos(ang)
+            y = i * np.sin(ang)
+            sx = abs(np.floor(x) - x)
+            sy = abs(np.floor(y) - y)
+            px = np.floor(x) + cenx
+            py = np.floor(y) + ceny
             if (px >= 0 and px < Nx and py >= 0 and py < Ny):
                 w[i] = w[i] + (1 - sx) * (1 - sy)
                 v[i] = v[i] + (1 - sx) * (1 - sy) * Intensity_var[px, py]
-            px = np.ceil(x) + cenx; py = np.floor(y) + ceny
+            px = np.ceil(x) + cenx
+            py = np.floor(y) + ceny
             if (px >= 0 and px < Nx and py >= 0 and py < Ny):
                 w[i] = w[i] + sx * (1 - sy)
                 v[i] = v[i] + sx * (1 - sy) * Intensity_var[px, py]
-            px = np.floor(x) + cenx; py = np.ceil(y) + ceny
+            px = np.floor(x) + cenx
+            py = np.ceil(y) + ceny
             if (px >= 0 and px < Nx and py >= 0 and py < Ny):
                 w[i] = w[i] + (1 - sx) * sy
                 v[i] = v[i] + (1 - sx) * sy * Intensity_var[px, py]
-            px = np.ceil(x) + cenx; py = np.ceil(y) + ceny
+            px = np.ceil(x) + cenx
+            py = np.ceil(y) + ceny
             if (px >= 0 and px < Nx and py >= 0 and py < Ny):
                 w[i] = w[i] + sx * sy
                 v[i] = v[i] + sx * sy * Intensity_var[px, py]

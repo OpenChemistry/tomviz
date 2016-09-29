@@ -33,7 +33,8 @@ def dfm3(input, angles, Npad):
     (Nx, Ny, Nproj) = input.shape
     angles = np.double(angles)
     pad_pre = np.ceil(
-        (Npad - Ny) / 2.0); pad_post = np.floor((Npad - Ny) / 2.0)
+        (Npad - Ny) / 2.0)
+    pad_post = np.floor((Npad - Ny) / 2.0)
 
     # Initialization
     Nz = Ny
@@ -68,7 +69,8 @@ def dfm3(input, angles, Npad):
 
         # Bilinear extrapolation
         for i in range(0, np.int(np.ceil(Npad / 2)) + 1):
-            ky = i * dk;  #kz = 0;
+            ky = i * dk
+            #kz = 0
             ky_new = np.cos(ang) * ky #new coord. after rotation
             kz_new = np.sin(ang) * ky
             sy = abs(np.floor(ky_new) - ky_new) #calculate weights

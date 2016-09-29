@@ -27,7 +27,7 @@ def transform_scalars(dataset):
             raise RuntimeError("Data Array is not 2 or 3 dimensions!")
 
     if ROT_ANGLE == []: # If tilt axis is not given, assign it to 90 degrees.
-        ROT_ANGLE = 90;
+        ROT_ANGLE = 90
 
     print('Rotating Dataset...')
 

@@ -13,11 +13,11 @@ def transform_scalars(dataset):
 
     # Generate Tilt Angles.
     angles = np.linspace(startAngle, startAngle + \
-                         (Nproj - 1) * angleIncrement, Nproj);
+                         (Nproj - 1) * angleIncrement, Nproj)
 
     volume = utils.get_array(dataset)
-    Ny = volume.shape[1];
-    Nz = volume.shape[2];
+    Ny = volume.shape[1]
+    Nz = volume.shape[2]
     #calculate the size s.t. it contains the entire volume
     N = np.round(np.sqrt(Ny**2 + Nz**2))
     N = int(np.floor(N / 2.0) * 2 + 1) #make the size an odd integer
@@ -30,7 +30,7 @@ def transform_scalars(dataset):
     volume_pad = np.lib.pad(
         volume, ((0, 0), (pad_y_pre, pad_y_post), (pad_z_pre, pad_z_post)), 'constant')
 
-    Nslice = volume.shape[0]; # Number of slices along rotation axis.
+    Nslice = volume.shape[0] # Number of slices along rotation axis.
     tiltSeries = np.zeros((Nslice, N, Nproj))
 
     for i in range(Nproj):

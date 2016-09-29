@@ -34,7 +34,7 @@ def art3(A, tiltSeries, recon, iterNum=1, beta=1.0):
     (Nslice, Nray, Nproj) = tiltSeries.shape
 
     (Nrow, Ncol) = A.shape
-    rowInnerProduct = np.zeros(Nrow);
+    rowInnerProduct = np.zeros(Nrow)
     row = np.zeros(Ncol)
     f = np.zeros(Ncol) # Placeholder for 2d image
 
@@ -44,7 +44,7 @@ def art3(A, tiltSeries, recon, iterNum=1, beta=1.0):
         rowInnerProduct[j] = np.dot(row, row)
 
     for s in range(Nslice):
-        f[:] = 0;
+        f[:] = 0
         b = tiltSeries[s, :, :].transpose().flatten()
         for i in range(iterNum):
             for j in range(Nrow):
@@ -86,8 +86,10 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
         xrayRotated[np.abs(xrayRotated) < 1e-8] = 0
         yrayRotated[np.abs(yrayRotated) < 1e-8] = 0
 
-        a = -np.sin(ang); a = rmepsilon(a)
-        b = np.cos(ang); b = rmepsilon(b)
+        a = -np.sin(ang)
+        a = rmepsilon(a)
+        b = np.cos(ang)
+        b = rmepsilon(b)
 
         for j in range(0, Nray): # Loop rays in current projection
             #print xrayRotated[j],yrayRotated[j]
@@ -112,7 +114,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
             Iy = np.logical_and(yy >= -Nside / 2.0 * pixelWidth,
                                 yy <= Nside / 2.0 * pixelWidth)
             I = np.logical_and(Ix, Iy)
-            xx = xx[I]; yy = yy[I]
+            xx = xx[I]
+            yy = yy[I]
 
             # If the ray pass through the image grid
             if (xx.size != 0 and yy.size != 0):
@@ -172,7 +175,7 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
 
 def rmepsilon(input):
     if (input.size > 1):
-        input[np.abs(input) < 1e-10] = 0;
+        input[np.abs(input) < 1e-10] = 0
     else:
         if np.abs(input) < 1e-10:
             input = 0

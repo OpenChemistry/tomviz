@@ -3,7 +3,7 @@ def transform_scalars(dataset):
 
     from tomviz import utils
     import numpy as np
-    axis = 0;
+    axis = 0
     #----USER SPECIFIED VARIABLES-----#
     ###firstSlice###
     ###lastSlice###

@@ -35,7 +35,8 @@ def generate_dataset(array):
 
     kx = np.linspace(-np.floor(Nxy / 2.0), np.ceil(Nxy / 2.0) - 1, Nxy)
     [kY, kX] = np.meshgrid(kx, kx)
-    kX = kX * dk; kY = kY * dk;
+    kX = kX * dk
+    kY = kY * dk
     kR = np.sqrt(kX**2 + kY**2)
     phi = np.arctan2(kY, kX)
     df = np.linspace(df_min, df_max, Nz)
