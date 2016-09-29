@@ -18,7 +18,7 @@ def transform_scalars(dataset):
         raise RuntimeError("No data array found!")
 
     if TILT_AXIS == []: # If tilt axis is not given, find it
-    # Find the smallest array dimension, assume it is the tilt angle axis.
+        # Find the smallest array dimension, assume it is the tilt angle axis.
         if data_py.ndim == 3:
             TILT_AXIS = np.argmin(data_py.shape)
         elif data_py.ndim == 2:
