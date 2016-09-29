@@ -76,7 +76,7 @@ def tv_minimization(A, tiltSeries, recon, iterNum=1):
         for j in range(0, ng):
             r = np.lib.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
             v1n = 3 * r - np.roll(r, 1, axis=0) - \
-                                  np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2)
+                                  np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2) # noqa TODO reformat this
             v1d = np.sqrt(1e-8 + (r - np.roll(r, 1, axis=0))**2 + (r - \
                           np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2)
 
@@ -199,8 +199,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     #print 'midpoints_y is:',midpoints_y
                     #Calculate the pixel index for mid points
                     pixelIndicex = (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \
-                                    Nside + (np.floor(midpoints_x / \
-                                             pixelWidth + Nside / 2.0))
+                        Nside + (np.floor(midpoints_x / \
+                                          pixelWidth + Nside / 2.0))
                     #print 'pixelIndicex is:', pixelIndicex
                     # Create the indices to store the values to the measurement
                     # matrix

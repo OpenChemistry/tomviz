@@ -228,8 +228,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     #print 'midpoints_y is:',midpoints_y
                     #Calculate the pixel index for mid points
                     pixelIndicex = (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \
-                                    Nside + (np.floor(midpoints_x / \
-                                             pixelWidth + Nside / 2.0))
+                        Nside + (np.floor(midpoints_x / \
+                                          pixelWidth + Nside / 2.0))
                     #print 'pixelIndicex is:', pixelIndicex
                     # Create the indices to store the values to the measurement
                     # matrix
