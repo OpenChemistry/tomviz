@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
 
+
 def transform_scalars(dataset):
     """3D Reconstruct from a tilt series using Simultaneous Iterative Reconstruction Techniques (SIRT)"""
 
@@ -44,6 +45,7 @@ def transform_scalars(dataset):
     # Mark dataset as volume
     utils.mark_as_volume(dataset)
 
+
 def sirt3_landweber(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
     """L. Landweber, Amer. J. Math., 73 (1951), pp. 615–624"""
 
@@ -61,6 +63,7 @@ def sirt3_landweber(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
             f = f + a * stepSize
         recon[s, :, :] = f.reshape((Nray, Nray))
     return recon
+
 
 def sirt3_cimmino(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
     """G. Cimmino, La Ric. Sci., XVI, Ser. II, Anno IX, 1 (1938), pp. 326–333"""
@@ -91,6 +94,7 @@ def sirt3_cimmino(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
             f = f + a * stepSize / Nrow
         recon[s, :, :] = f.reshape((Nray, Nray))
     return recon
+
 
 def sirt3_component_avg(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
     """Y. Censor et al, Parallel Comput., 27 (2001), pp. 777–808"""
@@ -129,6 +133,7 @@ def sirt3_component_avg(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
             f = f + a * stepSize
         recon[s, :, :] = f.reshape((Nray, Nray))
     return recon
+
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     # Suppress warning messages that pops up when dividing zeros
@@ -231,6 +236,7 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     vals = vals[:idxend]
     A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2))
     return A
+
 
 def rmepsilon(input):
     if (input.size > 1):

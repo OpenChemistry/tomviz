@@ -4,6 +4,7 @@ NUMBER_OF_CHUNKS = 10
 
 
 class SquareRootOperator(tomviz.operators.CancelableOperator):
+
     def transform_scalars(self, dataset):
         """Define this method for Python operators that
         transform input scalars"""

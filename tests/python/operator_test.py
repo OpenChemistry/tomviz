@@ -11,7 +11,9 @@ tomviz._wrapping = mock.MagicMock()
 sys.modules['tomviz._wrapping'] = mock.MagicMock()
 from tomviz._internal import *
 
+
 class OperatorTestCase(unittest.TestCase):
+
     def test_find_operator_class(self):
 
         # Module with no operators

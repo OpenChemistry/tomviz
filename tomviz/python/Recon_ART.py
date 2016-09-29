@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
 
+
 def transform_scalars(dataset):
     """3D Reconstruct from a tilt series using Algebraic Reconstruction Technique (ART)"""
     ###Niter###
@@ -28,6 +29,7 @@ def transform_scalars(dataset):
     # Mark dataset as volume
     utils.mark_as_volume(dataset)
 
+
 def art3(A, tiltSeries, recon, iterNum=1, beta=1.0):
     (Nslice, Nray, Nproj) = tiltSeries.shape
 
@@ -53,6 +55,7 @@ def art3(A, tiltSeries, recon, iterNum=1, beta=1.0):
         recon[s, :, :] = f.reshape((Nray, Nray))
 
     return recon
+
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     # Suppress warning messages that pops up when dividing zeros
@@ -155,6 +158,7 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     vals = vals[:idxend]
     A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2))
     return A
+
 
 def rmepsilon(input):
     if (input.size > 1):

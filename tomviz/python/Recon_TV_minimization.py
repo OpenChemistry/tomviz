@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
 
+
 def transform_scalars(dataset):
     """3D Reconstruct from a tilt series using simple TV minimzation"""
 
@@ -34,6 +35,8 @@ def transform_scalars(dataset):
     utils.mark_as_volume(dataset)
 
 #TV minimization using asd_pocs
+
+
 def tv_minimization(A, tiltSeries, recon, iterNum=1):
     (Nslice, Nray, Nproj) = tiltSeries.shape
 
@@ -97,6 +100,7 @@ def tv_minimization(A, tiltSeries, recon, iterNum=1):
 
         #adjust parameters
         beta = beta * beta_red
+
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     # Suppress warning messages that pops up when dividing zeros
@@ -199,6 +203,7 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2))
     return A
 
+
 def rmepsilon(input):
     if (input.size > 1):
         input[np.abs(input) < 1e-10] = 0;
@@ -206,6 +211,3 @@ def rmepsilon(input):
         if np.abs(input) < 1e-10:
             input = 0
     return input
-
-
-

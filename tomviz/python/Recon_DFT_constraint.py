@@ -36,6 +36,7 @@ def transform_scalars(dataset):
 import pyfftw
 import numpy as np
 
+
 def dfm3(input, angles, Npad):
     input = np.double(input)
     (Nx, Ny, Nproj) = input.shape
@@ -91,6 +92,8 @@ def dfm3(input, angles, Npad):
     return (recon, recon_F)
 
 # Bilinear extrapolation
+
+
 def bilinear(kz_new, ky_new, sz, sy, N, p):
     if p == 1:
         py = np.floor(ky_new)
@@ -113,6 +116,7 @@ def bilinear(kz_new, ky_new, sz, sy, N, p):
     else:
         py = py
     return (pz, py, weight)
+
 
 def radial_average(tiltseries, kr_cutoffs):
     (Nx, Ny, Nproj) = tiltseries.shape
@@ -142,6 +146,7 @@ def radial_average(tiltseries, kr_cutoffs):
         Ir = Ir + I
     Ir = Ir / Nproj
     return Ir
+
 
 def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs, N_iter, N_update_support, supportSigma, supportThreshold):
     (Nx, Ny, Nz) = constraint.shape;     #Note: Nz = np.int(Ny/2+1)

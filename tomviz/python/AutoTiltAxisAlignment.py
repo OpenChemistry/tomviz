@@ -2,6 +2,7 @@ from tomviz import utils
 import numpy as np
 from scipy import ndimage
 
+
 def transform_scalars(dataset):
     """Automatic align the tilt axis of tilt series to the center of images"""
 
@@ -41,6 +42,7 @@ def transform_scalars(dataset):
 
     # Set the result as the new scalars.
     utils.set_array(dataset, tiltSeries_rot)
+
 
 def find_min_line(Intensity_var, angles):
     Nx = Intensity_var.shape[0]; Ny = Intensity_var.shape[1]

@@ -23,6 +23,7 @@ def transform_scalars(dataset):
 import pyfftw
 import numpy as np
 
+
 def dfm3(input, angles, Npad):
     # input: aligned data
     # angles: projection angles
@@ -82,6 +83,8 @@ def dfm3(input, angles, Npad):
     return recon.astype(np.float32)
 
 # Bilinear extrapolation
+
+
 def bilinear(kz_new, ky_new, sz, sy, N, p):
     if p == 1:
         py = np.floor(ky_new)

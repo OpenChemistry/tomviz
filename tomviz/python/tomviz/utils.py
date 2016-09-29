@@ -23,6 +23,7 @@ import vtk.util.numpy_support as np_s
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
 
+
 def vtk_itk_map():
     """Try to set up mappings between VTK image types and ITK image types.
     Not all ITK image types may be available, hence the try statements."""
@@ -73,6 +74,7 @@ def vtk_itk_map():
 
     return _vtk_to_itk_types
 
+
 def get_itk_image_type(vtk_image_data):
     """Get an ITK image type corresponding to the provided vtkImageData object."""
     image_type = None
@@ -89,6 +91,7 @@ def get_itk_image_type(vtk_image_data):
         raise Exception('No ITK type known for %s' % vtk_class_name)
 
     return image_type
+
 
 def convert_vtk_to_itk_image(vtk_image_data):
     """Get an ITK image from the provided vtkImageData object.
@@ -109,6 +112,7 @@ def convert_vtk_to_itk_image(vtk_image_data):
     itk_image = itk_converter.GetImageFromArray(array)
 
     return itk_image
+
 
 def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     """Add an array from an ITK image to a vtkImageData with a given name."""
@@ -139,6 +143,7 @@ def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     result = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
     set_label_map(vtk_image_data, result)
 
+
 def get_scalars(dataobject):
     do = dsa.WrapDataObject(dataobject)
     # get the first
@@ -146,6 +151,7 @@ def get_scalars(dataobject):
     vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
     vtkarray.Association = dsa.ArrayAssociation.POINT
     return vtkarray
+
 
 def set_scalars(dataobject, newscalars):
     do = dsa.WrapDataObject(dataobject)
@@ -162,11 +168,13 @@ def set_scalars(dataobject, newscalars):
     do.PointData.append(newscalars, name)
     do.PointData.SetActiveScalars(name)
 
+
 def get_array(dataobject):
     scalars_array = get_scalars(dataobject)
     scalars_array3d = np.reshape(scalars_array, (dataobject.GetDimensions()),
                                  order='F')
     return scalars_array3d
+
 
 def set_array(dataobject, newarray):
     # Ensure we have Fortran ordered flat array to assign to image data. This
@@ -194,6 +202,7 @@ def set_array(dataobject, newarray):
     do.PointData.append(arr, name)
     do.PointData.SetActiveScalars(name)
 
+
 def set_label_map(dataobject, labelarray):
     # Ensure we have Fortran ordered flat array to assign to image data. This
     # is ideally done without additional copies, but if C order we must copy.
@@ -211,6 +220,7 @@ def set_label_map(dataobject, labelarray):
     pd = dataobject.GetPointData()
     pd.SetScalars(pd.GetArray("LabelMap"))
 
+
 def get_tilt_angles(dataobject):
     # Get the tilt angles array
     do = dsa.WrapDataObject(dataobject)
@@ -218,6 +228,7 @@ def get_tilt_angles(dataobject):
     vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
     vtkarray.Association = dsa.ArrayAssociation.FIELD
     return vtkarray
+
 
 def set_tilt_angles(dataobject, newarray):
     # replace the tilt angles with the new array
@@ -231,6 +242,7 @@ def set_tilt_angles(dataobject, newarray):
     do.FieldData.RemoveArray('tilt_angles')
     do.FieldData.AddArray(vtkarray)
 
+
 def make_dataset(x, y, z, dataset, generate_data_function):
     from vtk import VTK_DOUBLE
     array = np.zeros((x, y, z), order='F')
@@ -242,6 +254,7 @@ def make_dataset(x, y, z, dataset, generate_data_function):
     vtkarray = np_s.numpy_to_vtk(flat_array, deep=1, array_type=VTK_DOUBLE)
     vtkarray.SetName("generated_scalars")
     dataset.GetPointData().SetScalars(vtkarray)
+
 
 def mark_as_volume(dataobject):
     from vtk import vtkTypeInt8Array
@@ -255,6 +268,7 @@ def mark_as_volume(dataobject):
         fd.AddArray(arr)
     arr.SetTuple1(0, 0)
 
+
 def mark_as_tiltseries(dataobject):
     from vtk import vtkTypeInt8Array
     fd = dataobject.GetFieldData()
@@ -266,6 +280,7 @@ def mark_as_tiltseries(dataobject):
         arr.SetName("tomviz_data_source_type")
         fd.AddArray(arr)
     arr.SetTuple1(0, 1)
+
 
 def make_spreadsheet(column_names, table):
     # column_names is a list of strings

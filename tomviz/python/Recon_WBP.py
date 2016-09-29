@@ -28,6 +28,7 @@ def transform_scalars(dataset):
 import numpy as np
 from scipy.interpolate import interp1d
 
+
 def wbp3(input, angles, N=None, filter="ramp", interp="linear"):
     print "you are using 3D back-projection reconstruction method"
     input = np.double(input)
@@ -55,6 +56,7 @@ def wbp3(input, angles, N=None, filter="ramp", interp="linear"):
 #        "none","ramp","shepp-logan","cosine","hamming","hann". Default: "ramp"
 # interp: back projection interpolation method. Default: linear
 #        "linear","nearest","spline","cubic". Default: "linear"
+
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     #print "Sinogram size is:", sinogram.shape
@@ -108,6 +110,8 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     return recon
 
 # Filter (1D) projections.
+
+
 def makeFilter(Nray, filterMethod="ramp"):
     # Calculate next power of 2
     N2 = 2**np.ceil(np.log2(Nray))
