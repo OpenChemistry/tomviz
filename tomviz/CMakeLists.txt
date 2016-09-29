@@ -321,14 +321,13 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_library(tomvizlib STATIC ${SOURCES} ${UI_SOURCES}
-  ${RCC_SOURCES} ${accel_srcs})
+add_library(tomvizlib STATIC ${SOURCES} ${UI_SOURCES} ${accel_srcs})
 set_target_properties(tomvizlib
   PROPERTIES OUTPUT_NAME tomviz)
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
-add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources})
+add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources} ${RCC_SOURCES})
 target_link_libraries(tomviz tomvizlib)
 
 set_target_properties(tomvizlib PROPERTIES AUTOMOC TRUE)
