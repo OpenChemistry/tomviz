@@ -32,45 +32,23 @@ def vtk_itk_map():
     if _vtk_to_itk_types is None:
         import itk
         _vtk_to_itk_types = {}
-        try:
-            _vtk_to_itk_types['vtkUnsignedCharArray'] = itk.Image.UC3
-        except KeyError:
-            pass
 
-        try:
-            _vtk_to_itk_types['vtkCharArray'] = itk.Image.SC3
-        except KeyError:
-            pass
+        type_map = {
+            'vtkUnsignedCharArray': 'UC3',
+            'vtkCharArray': 'SC3',
+            'vtkUnsignedShortArray': 'US3',
+            'vtkShortArray': 'SS3',
+            'vtkUnsignedIntArray': 'UI3',
+            'vtkIntArray': 'SI3',
+            'vtkFloatArray': 'F3',
+            'vtkDoubleArray': 'D3'
+        }
 
-        try:
-            _vtk_to_itk_types['vtkUnsignedShortArray'] = itk.Image.US3
-        except KeyError:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkShortArray'] = itk.Image.SS3
-        except KeyError:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkUnsignedIntArray'] = itk.Image.UI3
-        except KeyError:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkIntArray'] = itk.Image.SI3
-        except KeyError:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkFloatArray'] = itk.Image.F3
-        except KeyError:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkDoubleArray'] = itk.Image.D3
-        except KeyError:
-            pass
+        for (vtk_type, image_type) in type_map.iteritems():
+            try:
+                _vtk_to_itk_types[vtk_type] = getattr(itk.Image, image_type)
+            except AttributeError:
+                pass
 
     return _vtk_to_itk_types
 
