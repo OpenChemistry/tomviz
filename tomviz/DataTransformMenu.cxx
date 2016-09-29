@@ -71,6 +71,8 @@ void DataTransformMenu::buildMenu()
   menu->addSeparator();
   QAction* customPythonITKAction = menu->addAction("Custom ITK Transform");
   QAction* binaryThresholdAction = menu->addAction("Binary Threshold");
+  QAction* otsuMultipleThresholdAction =
+    menu->addAction("Otsu Multiple Threshold");
   QAction* connectedComponentsAction = menu->addAction("Connected Components");
   menu->addSeparator();
   QAction* shiftUniformAction = menu->addAction("Shift Volume");
@@ -107,6 +109,10 @@ void DataTransformMenu::buildMenu()
                                  readInPythonScript("BinaryThreshold"), false,
                                  false,
                                  readInJSONDescription("BinaryThreshold"));
+  new AddPythonTransformReaction(
+    otsuMultipleThresholdAction, "Otsu Multiple Threshold",
+    readInPythonScript("OtsuMultipleThreshold"), false, false,
+    readInJSONDescription("OtsuMultipleThreshold"));
   new AddPythonTransformReaction(
     connectedComponentsAction, "Connected Components",
     readInPythonScript("ConnectedComponents"), false, false,
