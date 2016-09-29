@@ -514,6 +514,16 @@ void DataSource::operate(Operator* op)
 {
   Q_ASSERT(op);
 
+  // See if we have any canceled operators in the pipeline, if so start from
+  // there.
+  for (auto itr = this->Internals->Operators.begin(); *itr != op; ++itr) {
+    auto currentOp = *itr;
+    if (currentOp->isCanceled()) {
+      emit currentOp->transformModified();
+      return;
+    }
+  }
+
   // If we are currently executing the pipeline, just add the operator
   if (this->Internals->Future != nullptr &&
       this->Internals->Future->isRunning()) {
