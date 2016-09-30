@@ -1,0 +1,20 @@
+{
+  "name" : "BinaryDilate",
+  "label" : "Binary Dilate",
+  "description" : "Dilate segmented objects with a given label by a given radius.",
+  "parameters" : [
+    {
+      "name" : "radius",
+      "label" : "Radius",
+      "type" : "int",
+      "default" : 1,
+      "minimum" : 1
+    },
+    {
+      "name" : "object_label",
+      "label" : "Object Label",
+      "type" : "int",
+      "default" : 1
+    }
+  ]
+}

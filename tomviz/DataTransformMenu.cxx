@@ -74,6 +74,7 @@ void DataTransformMenu::buildMenu()
   QAction* otsuMultipleThresholdAction =
     menu->addAction("Otsu Multiple Threshold");
   QAction* connectedComponentsAction = menu->addAction("Connected Components");
+  QAction* binaryDilateAction = menu->addAction("Binary Dilate");
   menu->addSeparator();
   QAction* shiftUniformAction = menu->addAction("Shift Volume");
   QAction* deleteSliceAction = menu->addAction("Delete Slices");
@@ -119,6 +120,10 @@ void DataTransformMenu::buildMenu()
     connectedComponentsAction, "Connected Components",
     readInPythonScript("ConnectedComponents"), false, false,
     readInJSONDescription("ConnectedComponents"));
+  new AddPythonTransformReaction(
+    binaryDilateAction, "Binary Dilate",
+    readInPythonScript("BinaryDilate"), false, false,
+    readInJSONDescription("BinaryDilate"));
   new AddPythonTransformReaction(shiftUniformAction, "Shift Volume",
                                  readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction, "Delete Slices",
