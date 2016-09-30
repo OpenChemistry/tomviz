@@ -3,7 +3,7 @@ def transform_scalars(dataset):
     """Gaussian Filter blurs the image and reduces the noise and details."""
 
     #----USER SPECIFIED VARIABLES-----#
-    ###Sigma###    #Specify sigma of the Gaussian Function
+    ###sigma###    #Specify sigma of the Gaussian Function
     #---------------------------------#
 
     from tomviz import utils
