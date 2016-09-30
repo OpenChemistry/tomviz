@@ -108,6 +108,8 @@ set(SOURCES
   MoveActiveObject.h
   Operator.cxx
   Operator.h
+  OperatorDialog.cxx
+  OperatorDialog.h
   OperatorFactory.cxx
   OperatorFactory.h
   OperatorPython.cxx
