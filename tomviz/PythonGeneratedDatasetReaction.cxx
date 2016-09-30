@@ -141,7 +141,11 @@ public:
       PyTuple_SET_ITEM(args.GetPointer(), 2, PyInt_FromLong(shape[2]));
       PyTuple_SET_ITEM(args.GetPointer(), 3,
                        vtkPythonUtil::GetObjectFromPointer(image.Get()));
-      PyTuple_SET_ITEM(args.GetPointer(), 4, this->GenerateFunction);
+      // PyTuple_SET_ITEM will "steal" a reference to this->GenerateFunction so
+      // we need to increment the reference count before calling
+      // PyTuple_SET_ITEM.
+      PyTuple_SET_ITEM(args.GetPointer(), 4,
+                       this->GenerateFunction.GetAndIncreaseReferenceCount());
 
       result.TakeReference(
         PyObject_Call(this->MakeDatasetFunction, args, nullptr));
