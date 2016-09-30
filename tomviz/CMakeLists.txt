@@ -239,6 +239,7 @@ set(json_files
   GaussianFilter.json
   MedianFilter.json
   GenerateTiltSeries.json
+  Recon_ART.json
   )
 
 set(resource_files
