@@ -237,6 +237,7 @@ set(json_files
   ConnectedComponents.json
   OtsuMultipleThreshold.json
   GaussianFilter.json
+  MedianFilter.json
   )
 
 set(resource_files
