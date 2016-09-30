@@ -238,6 +238,7 @@ set(json_files
   OtsuMultipleThreshold.json
   GaussianFilter.json
   MedianFilter.json
+  GenerateTiltSeries.json
   )
 
 set(resource_files
