@@ -18,6 +18,8 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
+#include "InterfaceBuilder.h"
+#include "OperatorDialog.h"
 #include "OperatorPython.h"
 #include "SelectVolumeWidget.h"
 #include "SpinBox.h"
@@ -184,100 +186,34 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
   // Handle transforms with custom UIs
   if (scriptLabel == "Binary Threshold" ||
-      scriptLabel == "Connected Components") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
+      scriptLabel == "Connected Components" ||
+      scriptLabel == "Otsu Multiple Threshold") {
+    OperatorDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle(scriptLabel);
-    QGridLayout* layout = new QGridLayout;
-    QLabel* labelDescription;
-    if (scriptLabel == "BinaryThreshold") {
-      labelDescription =
-        new QLabel("Threshold image. Voxels with values between minimum and "
-                   "maximum intensities\n"
-                   "will be considered object, others background.");
-    } else {
-      labelDescription = new QLabel(
-        "Threshold image and compute label map of connected components.\n"
-        "The lower and upper threshold can be specified below.");
-    }
-    layout->addWidget(labelDescription, 0, 0, 1, 2);
+    dialog.setJSONDescription(this->jsonSource);
 
-    QLabel* lowerLabel = new QLabel("Lower Threshold:", &dialog);
-    QLabel* upperLabel = new QLabel("Upper Threshold:", &dialog);
-    QDoubleSpinBox* lowerThreshold = new QDoubleSpinBox(&dialog);
-    lowerThreshold->setSingleStep(0.5);
-    lowerThreshold->setRange(0, 65536);
-    lowerThreshold->setValue(40);
-    QDoubleSpinBox* upperThreshold = new QDoubleSpinBox(&dialog);
-    upperThreshold->setSingleStep(0.5);
-    upperThreshold->setRange(0, 65536);
-    upperThreshold->setValue(255);
-    layout->addWidget(lowerLabel, 1, 0, 1, 1);
-    layout->addWidget(upperLabel, 2, 0, 1, 1);
-    layout->addWidget(lowerThreshold, 1, 1, 1, 1);
-    layout->addWidget(upperThreshold, 2, 1, 1, 1);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize);
     if (dialog.exec() == QDialog::Accepted) {
+      QMap<QString, QVariant> parameterValues = dialog.values();
+
+      // Iterate over the map entries to generate a substitution map
       QMap<QString, QString> substitutions;
-      substitutions.insert(
-        "###LOWERTHRESHOLD###",
-        QString("lower_threshold = %1").arg(lowerThreshold->value()));
-      substitutions.insert(
-        "###UPPERTHRESHOLD###",
-        QString("upper_threshold = %1").arg(upperThreshold->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions, jsonSource);
-    }
-  } else if (scriptLabel == "Otsu Multiple Threshold") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle(scriptLabel);
-    QGridLayout* layout = new QGridLayout;
-    QLabel* labelDescription = new QLabel(
-      "Use Otsu multiple threshold algorithm to automatically determine\n"
-      "thresholds separating voxels into different classes based on\n"
-      "image intensity.");
-    layout->addWidget(labelDescription, 0, 0, 1, 2);
+      QMap<QString, QVariant>::const_iterator iter = parameterValues.constBegin();
+      for ( ; iter != parameterValues.constEnd(); ++iter) {
+        QString key = "###" + iter.key() + "###";
+        QString parameterValue = iter.value().toString();
 
-    QLabel* numThresholdsLabel = new QLabel("Number of Thresholds:", &dialog);
-    QSpinBox* numThresholds = new QSpinBox(&dialog);
-    numThresholds->setValue(1);
-    numThresholds->setRange(0, 1000);
-    layout->addWidget(numThresholdsLabel, 1, 0, 1, 1);
-    layout->addWidget(numThresholds, 2, 0, 1, 1);
+        // Convert to Python True/False values
+        if (parameterValue[0] == 't') {
+          parameterValue[0] = 'T';
+        }
+        if (parameterValue[0] == 'f') {
+          parameterValue[0] = 'F';
+        }        
+        QString value = QString("%1 = %2").arg(iter.key()).arg(parameterValue);
 
-    QLabel* enableValleyEmphasisLabel =
-      new QLabel("Enable Valley Emphasis:", &dialog);
-    QCheckBox* enableValleyEmphasis = new QCheckBox(&dialog);
-    layout->addWidget(enableValleyEmphasisLabel, 3, 0, 1, 1);
-    layout->addWidget(enableValleyEmphasis, 4, 0, 1, 1);
+        substitutions.insert(key, value);
+      }
 
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize);
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert(
-        "###NUMBEROFTHRESHOLDS###",
-        QString("number_of_thresholds = %1").arg(numThresholds->value()));
-      substitutions.insert(
-        "###ENABLEVALLEYEMPHASIS###",
-        QString("enable_valley_emphasis = %1")
-          .arg(enableValleyEmphasis->checkState() != Qt::Unchecked ? "True"
-                                                                   : "False"));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions, jsonSource);
     }
