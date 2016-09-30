@@ -14,8 +14,8 @@ def transform_scalars(dataset):
         print(exc)
 
     #----USER SPECIFIED VARIABLES----#
-    ###NUMBEROFTHRESHOLDS### # Specify number of thresholds between classes
-    ###ENABLEVALLEYEMPHASIS### # Enable valley emphasis.
+    ###number_of_thresholds### # Specify number of thresholds between classes
+    ###enable_valley_emphasis### # Enable valley emphasis.
 
     # Return values
     returnValues = None

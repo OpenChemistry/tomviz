@@ -14,8 +14,8 @@ def transform_scalars(dataset):
         print(exc)
 
     #----USER SPECIFIED VARIABLES-----#
-    ###LOWERTHRESHOLD### # Specify lower threshold
-    ###UPPERTHRESHOLD### # Specify upper threshold
+    ###lower_threshold### # Specify lower threshold
+    ###upper_threshold### # Specify upper threshold
     background_value = 0
 
     # Return values

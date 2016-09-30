@@ -1,6 +1,7 @@
 {
   "name" : "OtsuMultipleThreshold",
   "label" : "Otsu Multiple Threshold",
+  "description" : "Use Otsu multiple threshold algorithm to automatically determine\nthresholds separating voxels into different classes based on\nimage intensity.",
   "children" : [
     {
       "name" : "label_map",
@@ -10,16 +11,17 @@
   ],
   "parameters" : [
     {
-      "name" : "numberOfThresholds",
+      "name" : "number_of_thresholds",
       "label" : "Number of Threshold",
       "type" : "int",
-      "components" : "1"
+      "default" : 1,
+      "minimum" : 1
     },
     {
-      "name" : "valleyEmphasis",
-      "label" : "Enable Value Emphasis",
+      "name" : "enable_valley_emphasis",
+      "label" : "Enable Valley Emphasis",
       "type" : "bool",
-      "components" : "1"
+      "default" : false
     }
   ]
 }
