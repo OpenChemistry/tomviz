@@ -1,8 +1,8 @@
 def transform_scalars(dataset):
     """This filter performs semi-automatic multithresholding of a data set.
-    Voxels are automatically classified into a chosen number of classes such that
-    inter-class variance of the voxel values is minimized. The output is a label
-    map with one label per voxel class.
+    Voxels are automatically classified into a chosen number of classes such
+    that inter-class variance of the voxel values is minimized. The output is a
+    label map with one label per voxel class.
     """
 
     try:
@@ -35,20 +35,22 @@ def transform_scalars(dataset):
         itk_threshold_image_type = itk_input_image_type
 
         # Otsu multiple threshold filter
-        otsu_filter = itk.OtsuMultipleThresholdsImageFilter[itk_input_image_type, itk_threshold_image_type].New()
+        otsu_filter = itk.OtsuMultipleThresholdsImageFilter[
+            itk_input_image_type, itk_threshold_image_type].New()
         otsu_filter.SetNumberOfThresholds(number_of_thresholds)
-        otsu_filter.SetValleyEmphasis(enable_valley_emphasis);
+        otsu_filter.SetValleyEmphasis(enable_valley_emphasis)
         otsu_filter.SetInput(itk_image)
         otsu_filter.Update()
 
         print("Otsu threshold(s): %s" % (otsu_filter.GetThresholds(),))
 
         itk_image_data = otsu_filter.GetOutput()
-        label_buffer = itk.PyBuffer[itk_threshold_image_type].GetArrayFromImage(itk_image_data)
+        label_buffer = itk.PyBuffer[itk_threshold_image_type] \
+            .GetArrayFromImage(itk_image_data)
 
         label_map_data_set = vtk.vtkImageData()
         label_map_data_set.CopyStructure(dataset)
-        utils.set_label_map(label_map_data_set, label_buffer);
+        utils.set_label_map(label_map_data_set, label_buffer)
 
         # Set up dictionary to return operator results
         returnValues = {}
