@@ -12,10 +12,9 @@ def transform_scalars(dataset):
         print(exc)
 
     #----USER SPECIFIED VARIABLES-----#
+    ###structuring_element_id### # (0 - Box, 1 - Ball, 2 - Cross)
     ###radius### # Specify the radius of the cube structuring element
     ###object_label### # Specify the label designating the segmented objects
-    print("radius %d" % radius)
-    print("object_label %d" % object_label)
 
     # Add a try/except around the ITK portion. ITK exceptions are
     # passed up to the Python layer, so we can at least report what
@@ -26,7 +25,14 @@ def transform_scalars(dataset):
         itk_input_image_type = type(itk_image)
 
         itk_kernel_type = itk.FlatStructuringElement[3]
-        itk_kernel = itk_kernel_type.Box(radius)
+        if (structuring_element_id == 0):
+          itk_kernel = itk_kernel_type.Box(radius)
+        elif (structuring_element_id == 1):
+          itk_kernel = itk_kernel_type.Ball(radius)
+        elif (structuring_element_id == 2):
+          itk_kernel = itk_kernel_type.Cross(radius)
+        else:
+          raise Exception('Invalid kernel shape id %d' % structuring_element_id)
 
         dilate_filter = itk.BinaryDilateImageFilter[itk_input_image_type,
                                                     itk_input_image_type,

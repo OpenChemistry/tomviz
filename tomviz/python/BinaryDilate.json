@@ -4,6 +4,17 @@
   "description" : "Dilate segmented objects with a given label by a given radius.",
   "parameters" : [
     {
+      "name" : "structuring_element_id",
+      "label" : "Structuring Element",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Box" : 0},
+        {"Ball" : 1},
+        {"Cross" : 2}
+      ]
+    },
+    {
       "name" : "radius",
       "label" : "Radius",
       "type" : "int",

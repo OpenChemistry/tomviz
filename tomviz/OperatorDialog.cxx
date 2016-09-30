@@ -20,6 +20,7 @@
 #include "SpinBox.h"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QVBoxLayout>
 
@@ -71,6 +72,12 @@ QMap<QString, QVariant> OperatorDialog::values() const
     this->findChildren<tomviz::DoubleSpinBox*>();
   for (int i = 0; i < doubleSpinBoxes.size(); ++i) {
     map[doubleSpinBoxes[i]->objectName()] = doubleSpinBoxes[i]->value();
+  }
+
+  QList<QComboBox*> comboBoxes = this->findChildren<QComboBox*>();
+  for (int i = 0; i < comboBoxes.size(); ++i) {
+    int currentIndex = comboBoxes[i]->currentIndex();
+    map[comboBoxes[i]->objectName()] = comboBoxes[i]->itemData(currentIndex);
   }
 
   return map;

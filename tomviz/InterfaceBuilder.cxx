@@ -19,6 +19,7 @@
 #include "SpinBox.h"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDebug>
 #include <QLabel>
 #include <QSpinBox>
@@ -145,6 +146,51 @@ void addDoubleWidget(QGridLayout* layout, int row,
   layout->addWidget(spinBox, row, 1, 1, 1);
 }
 
+void addEnumerationWidget(QGridLayout* layout, int row,
+                          const Json::Value& parameterNode)
+{
+  Json::Value nameValue = parameterNode["name"];
+  Json::Value labelValue = parameterNode["label"];
+
+  if (nameValue.isNull()) {
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(parameterNode.toStyledString().c_str());
+    return;
+  }
+
+  QLabel* label = new QLabel(nameValue.asCString());
+  if (!labelValue.isNull()) {
+    label->setText(labelValue.asCString());
+  }
+  layout->addWidget(label, row, 0, 1, 1);
+
+  int defaultOption = 0;
+  Json::Value defaultNode = parameterNode["default"];
+  if (!defaultNode.isNull() && defaultNode.isInt()) {
+    defaultOption = defaultNode.asInt();
+  }
+
+  QComboBox* comboBox = new QComboBox();
+  comboBox->setObjectName(nameValue.asCString());
+  Json::Value optionsNode = parameterNode["options"];
+  if (!optionsNode.isNull()) {
+    for (Json::Value::ArrayIndex i = 0; i < optionsNode.size(); ++i) {
+      std::string optionName = optionsNode[i].getMemberNames()[0];
+      Json::Value optionValueNode = optionsNode[i][optionName];
+      int optionValue = 0;
+      if (optionValueNode.isInt()) {
+        optionValue = optionValueNode.asInt();
+      } else {
+        qWarning() << "Option value is not an int. Skipping";
+        continue;
+      }
+      comboBox->addItem(optionName.c_str(), optionValue);
+    }
+  }
+
+  layout->addWidget(comboBox, row, 1, 1, 1);
+}
+
 } // end anonymous namespace
 
 namespace tomviz {
@@ -218,6 +264,8 @@ QLayout* InterfaceBuilder::buildInterface() const
       addIntWidget(layout, i + 1, parameterNode);
     } else if (typeString == "double") {
       addDoubleWidget(layout, i + 1, parameterNode);
+    } else if (typeString == "enumeration") {
+      addEnumerationWidget(layout, i + 1, parameterNode);
     }
   }
 
