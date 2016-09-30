@@ -74,6 +74,8 @@ set(SOURCES
   EditOperatorWidget.h
   HistogramWidget.h
   HistogramWidget.cxx
+  InterfaceBuilder.h
+  InterfaceBuilder.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
   LoadDataReaction.cxx
