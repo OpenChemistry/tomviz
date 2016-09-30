@@ -188,8 +188,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   if (scriptLabel == "Binary Threshold" ||
       scriptLabel == "Connected Components" ||
       scriptLabel == "Otsu Multiple Threshold" ||
-      scriptLabel == "Gaussian Filter" ||
-      scriptLabel == "Median Filter" ||
+      scriptLabel == "Gaussian Filter" || scriptLabel == "Median Filter" ||
       scriptLabel == "Generate Tilt Series" ||
       scriptLabel == "Reconstruct (ART)") {
     OperatorDialog dialog(pqCoreUtilities::mainWidget());
@@ -201,8 +200,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
       // Iterate over the map entries to generate a substitution map
       QMap<QString, QString> substitutions;
-      QMap<QString, QVariant>::const_iterator iter = parameterValues.constBegin();
-      for ( ; iter != parameterValues.constEnd(); ++iter) {
+      QMap<QString, QVariant>::const_iterator iter =
+        parameterValues.constBegin();
+      for (; iter != parameterValues.constEnd(); ++iter) {
         QString key = "###" + iter.key() + "###";
         QString parameterValue = iter.value().toString();
 
@@ -212,7 +212,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
         }
         if (parameterValue[0] == 'f') {
           parameterValue[0] = 'F';
-        }        
+        }
         QString value = QString("%1 = %2").arg(iter.key()).arg(parameterValue);
 
         substitutions.insert(key, value);

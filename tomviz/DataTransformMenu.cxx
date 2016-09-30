@@ -153,8 +153,7 @@ void DataTransformMenu::buildMenu()
                                  readInJSONDescription("GaussianFilter"));
   new AddPythonTransformReaction(medianFilterAction, "Median Filter",
                                  readInPythonScript("MedianFilter"), false,
-                                 false,
-                                 readInJSONDescription("MedianFilter"));
+                                 false, readInJSONDescription("MedianFilter"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);

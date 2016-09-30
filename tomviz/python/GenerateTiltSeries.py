@@ -12,7 +12,7 @@ def transform_scalars(dataset):
     #---------------------------------#
 
     # Generate Tilt Angles.
-    angles = np.linspace(start_angle, start_angle + 
+    angles = np.linspace(start_angle, start_angle +
                          (num_tilts - 1) * angle_increment, num_tilts)
 
     volume = utils.get_array(dataset)
@@ -32,7 +32,7 @@ def transform_scalars(dataset):
         'constant')
 
     Nslice = volume.shape[0] # Number of slices along rotation axis.
-    tiltSeries = np.zeros((Nslice, N , num_tilts))
+    tiltSeries = np.zeros((Nslice, N, num_tilts))
 
     for i in range(num_tilts):
         # Rotate volume about x-axis

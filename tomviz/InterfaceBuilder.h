@@ -35,7 +35,6 @@ public:
   /// Set the JSON description
   void setJSONDescription(const QString& description);
 
-
   /// Get the JSON description
   const QString& JSONDescription() const;
 

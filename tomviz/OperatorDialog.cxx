@@ -25,8 +25,7 @@
 
 namespace tomviz {
 
-OperatorDialog::OperatorDialog(QWidget* parentObject)
-  : Superclass(parentObject)
+OperatorDialog::OperatorDialog(QWidget* parentObject) : Superclass(parentObject)
 {
 }
 
@@ -59,7 +58,8 @@ QMap<QString, QVariant> OperatorDialog::values() const
   // and stuffing them into the map.
   QList<QCheckBox*> checkBoxes = this->findChildren<QCheckBox*>();
   for (int i = 0; i < checkBoxes.size(); ++i) {
-    map[checkBoxes[i]->objectName()] = (checkBoxes[i]->checkState() == Qt::Checked);
+    map[checkBoxes[i]->objectName()] =
+      (checkBoxes[i]->checkState() == Qt::Checked);
   }
 
   QList<tomviz::SpinBox*> spinBoxes = this->findChildren<tomviz::SpinBox*>();
@@ -67,12 +67,12 @@ QMap<QString, QVariant> OperatorDialog::values() const
     map[spinBoxes[i]->objectName()] = spinBoxes[i]->value();
   }
 
-  QList<tomviz::DoubleSpinBox*> doubleSpinBoxes = this->findChildren<tomviz::DoubleSpinBox*>();
+  QList<tomviz::DoubleSpinBox*> doubleSpinBoxes =
+    this->findChildren<tomviz::DoubleSpinBox*>();
   for (int i = 0; i < doubleSpinBoxes.size(); ++i) {
     map[doubleSpinBoxes[i]->objectName()] = doubleSpinBoxes[i]->value();
   }
 
   return map;
 }
-
 }

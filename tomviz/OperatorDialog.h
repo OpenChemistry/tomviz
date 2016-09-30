@@ -41,7 +41,6 @@ public:
 private:
   Q_DISABLE_COPY(OperatorDialog)
 };
-
 }
 
 #endif

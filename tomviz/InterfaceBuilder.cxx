@@ -28,13 +28,15 @@
 
 namespace {
 
-void addBoolWidget(QGridLayout* layout, int row, const Json::Value& parameterNode)
+void addBoolWidget(QGridLayout* layout, int row,
+                   const Json::Value& parameterNode)
 {
   Json::Value nameValue = parameterNode["name"];
   Json::Value labelValue = parameterNode["label"];
 
   if (nameValue.isNull()) {
-    qWarning() << QString("Parameter %1 has no name. Skipping.").arg(parameterNode.toStyledString().c_str());
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(parameterNode.toStyledString().c_str());
     return;
   }
 
@@ -57,13 +59,15 @@ void addBoolWidget(QGridLayout* layout, int row, const Json::Value& parameterNod
   layout->addWidget(checkBox, row, 1, 1, 1);
 }
 
-void addIntWidget(QGridLayout* layout, int row, const Json::Value& parameterNode)
+void addIntWidget(QGridLayout* layout, int row,
+                  const Json::Value& parameterNode)
 {
   Json::Value nameValue = parameterNode["name"];
   Json::Value labelValue = parameterNode["label"];
 
   if (nameValue.isNull()) {
-    qWarning() << QString("Parameter %1 has no name. Skipping.").arg(parameterNode.toStyledString().c_str());
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(parameterNode.toStyledString().c_str());
     return;
   }
 
@@ -98,13 +102,15 @@ void addIntWidget(QGridLayout* layout, int row, const Json::Value& parameterNode
   layout->addWidget(spinBox, row, 1, 1, 1);
 }
 
-void addDoubleWidget(QGridLayout* layout, int row, const Json::Value& parameterNode)
+void addDoubleWidget(QGridLayout* layout, int row,
+                     const Json::Value& parameterNode)
 {
   Json::Value nameValue = parameterNode["name"];
   Json::Value labelValue = parameterNode["label"];
 
   if (nameValue.isNull()) {
-    qWarning() << QString("Parameter %1 has no name. Skipping.").arg(parameterNode.toStyledString().c_str());
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(parameterNode.toStyledString().c_str());
     return;
   }
 
@@ -143,8 +149,8 @@ void addDoubleWidget(QGridLayout* layout, int row, const Json::Value& parameterN
 
 namespace tomviz {
 
-InterfaceBuilder::InterfaceBuilder(QObject* parentObject) :
-  Superclass(parentObject)
+InterfaceBuilder::InterfaceBuilder(QObject* parentObject)
+  : Superclass(parentObject)
 {
 }
 
@@ -207,14 +213,13 @@ QLayout* InterfaceBuilder::buildInterface() const
 
     std::string typeString = typeValue.asString();
     if (typeString == "bool") {
-      addBoolWidget(layout, i+1, parameterNode);
+      addBoolWidget(layout, i + 1, parameterNode);
     } else if (typeString == "int") {
-      addIntWidget(layout, i+1, parameterNode);
+      addIntWidget(layout, i + 1, parameterNode);
     } else if (typeString == "double") {
-      addDoubleWidget(layout, i+1, parameterNode);
+      addDoubleWidget(layout, i + 1, parameterNode);
     }
-
-   }
+  }
 
   return layout;
 }
