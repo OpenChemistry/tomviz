@@ -1,7 +1,7 @@
 {
   "name" : "BinaryDilate",
   "label" : "Binary Dilate",
-  "description" : "Dilate segmented objects with a given label by a given radius.",
+  "description" : "Dilate segmented objects with a given label by a spherically symmetric\nstructuring element of a given radius.",
   "parameters" : [
     {
       "name" : "structuring_element_id",

@@ -1,6 +1,6 @@
 def transform_scalars(dataset):
-    """Dilate segmented objects with a given label by a cubic structuring element
-    with a given radius.
+    """Dilate segmented objects with a given label by a spherically symmetric
+    structuring element with a given radius.
     """
 
     try:
