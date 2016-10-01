@@ -77,6 +77,7 @@ void DataTransformMenu::buildMenu()
   QAction* binaryDilateAction = menu->addAction("Binary Dilate");
   QAction* binaryErodeAction = menu->addAction("Binary Erode");
   QAction* binaryOpenAction = menu->addAction("Binary Open");
+  QAction* binaryCloseAction = menu->addAction("Binary Close");
   menu->addSeparator();
   QAction* shiftUniformAction = menu->addAction("Shift Volume");
   QAction* deleteSliceAction = menu->addAction("Delete Slices");
@@ -134,6 +135,10 @@ void DataTransformMenu::buildMenu()
     binaryOpenAction, "Binary Open",
     readInPythonScript("BinaryOpen"), false, false,
     readInJSONDescription("BinaryOpen"));
+  new AddPythonTransformReaction(
+    binaryCloseAction, "Binary Close",
+    readInPythonScript("BinaryClose"), false, false,
+    readInJSONDescription("BinaryClose"));
   new AddPythonTransformReaction(shiftUniformAction, "Shift Volume",
                                  readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction, "Delete Slices",

@@ -190,6 +190,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       scriptLabel == "Binary Dilate" ||
       scriptLabel == "Binary Erode" ||
       scriptLabel == "Binary Open" ||
+      scriptLabel == "Binary Close" ||
       scriptLabel == "Gaussian Filter" ||
       scriptLabel == "Perona-Malik Anisotropic Diffusion" ||
       scriptLabel == "Median Filter" || scriptLabel == "Generate Tilt Series" ||

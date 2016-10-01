@@ -196,6 +196,7 @@ set(python_files
   BinaryDilate.py
   BinaryErode.py
   BinaryOpen.py
+  BinaryClose.py
   MisalignImgs_Uniform.py
   Align_Images.py
   AutoTiltAxisAlignment.py
@@ -243,6 +244,7 @@ set(json_files
   BinaryDilate.json
   BinaryErode.json
   BinaryOpen.json
+  BinaryClose.json
   GaussianFilter.json
   PeronaMalikAnisotropicDiffusion.json
   MedianFilter.json
