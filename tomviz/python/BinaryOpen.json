@@ -1,0 +1,31 @@
+{
+  "name" : "BinaryOpen",
+  "label" : "Binary Open",
+  "description" : "Perform morphological opening on segmented objects with a\ngiven label by a spherically symmetricstructuring element of a given radius.",
+  "parameters" : [
+    {
+      "name" : "structuring_element_id",
+      "label" : "Structuring Element",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Box" : 0},
+        {"Ball" : 1},
+        {"Cross" : 2}
+      ]
+    },
+    {
+      "name" : "radius",
+      "label" : "Radius",
+      "type" : "int",
+      "default" : 1,
+      "minimum" : 1
+    },
+    {
+      "name" : "object_label",
+      "label" : "Object Label",
+      "type" : "int",
+      "default" : 1
+    }
+  ]
+}
