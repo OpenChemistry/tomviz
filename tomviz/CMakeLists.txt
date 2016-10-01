@@ -194,6 +194,7 @@ set(python_files
   ConnectedComponents.py
   OtsuMultipleThreshold.py
   BinaryDilate.py
+  BinaryErode.py
   MisalignImgs_Uniform.py
   Align_Images.py
   AutoTiltAxisAlignment.py
@@ -239,6 +240,7 @@ set(json_files
   ConnectedComponents.json
   OtsuMultipleThreshold.json
   BinaryDilate.json
+  BinaryErode.json
   GaussianFilter.json
   PeronaMalikAnisotropicDiffusion.json
   MedianFilter.json

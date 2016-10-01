@@ -188,6 +188,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       scriptLabel == "Connected Components" ||
       scriptLabel == "Otsu Multiple Threshold" ||
       scriptLabel == "Binary Dilate" ||
+      scriptLabel == "Binary Erode" ||
       scriptLabel == "Gaussian Filter" ||
       scriptLabel == "Perona-Malik Anisotropic Diffusion" ||
       scriptLabel == "Median Filter" || scriptLabel == "Generate Tilt Series" ||
