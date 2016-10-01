@@ -123,22 +123,18 @@ void DataTransformMenu::buildMenu()
     connectedComponentsAction, "Connected Components",
     readInPythonScript("ConnectedComponents"), false, false,
     readInJSONDescription("ConnectedComponents"));
-  new AddPythonTransformReaction(
-    binaryDilateAction, "Binary Dilate",
-    readInPythonScript("BinaryDilate"), false, false,
-    readInJSONDescription("BinaryDilate"));
-  new AddPythonTransformReaction(
-    binaryErodeAction, "Binary Erode",
-    readInPythonScript("BinaryErode"), false, false,
-    readInJSONDescription("BinaryErode"));
-  new AddPythonTransformReaction(
-    binaryOpenAction, "Binary Open",
-    readInPythonScript("BinaryOpen"), false, false,
-    readInJSONDescription("BinaryOpen"));
-  new AddPythonTransformReaction(
-    binaryCloseAction, "Binary Close",
-    readInPythonScript("BinaryClose"), false, false,
-    readInJSONDescription("BinaryClose"));
+  new AddPythonTransformReaction(binaryDilateAction, "Binary Dilate",
+                                 readInPythonScript("BinaryDilate"), false,
+                                 false, readInJSONDescription("BinaryDilate"));
+  new AddPythonTransformReaction(binaryErodeAction, "Binary Erode",
+                                 readInPythonScript("BinaryErode"), false,
+                                 false, readInJSONDescription("BinaryErode"));
+  new AddPythonTransformReaction(binaryOpenAction, "Binary Open",
+                                 readInPythonScript("BinaryOpen"), false, false,
+                                 readInJSONDescription("BinaryOpen"));
+  new AddPythonTransformReaction(binaryCloseAction, "Binary Close",
+                                 readInPythonScript("BinaryClose"), false,
+                                 false, readInJSONDescription("BinaryClose"));
   new AddPythonTransformReaction(shiftUniformAction, "Shift Volume",
                                  readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction, "Delete Slices",
