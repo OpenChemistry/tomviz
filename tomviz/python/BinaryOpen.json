@@ -1,7 +1,7 @@
 {
   "name" : "BinaryOpen",
   "label" : "Binary Open",
-  "description" : "Perform morphological opening on segmented objects with a\ngiven label by a spherically symmetricstructuring element of a given radius.",
+  "description" : "Perform morphological opening on segmented objects with a\ngiven label by a spherically symmetric\nstructuring element of a given radius.",
   "parameters" : [
     {
       "name" : "structuring_element_id",
