@@ -52,7 +52,7 @@ def transform_scalars(dataset):
 
         label_buffer = itk.PyBuffer[itk_input_image_type].GetArrayFromImage(itk_image_data)
 
-        utils.set_label_map(dataset, label_buffer)
+        utils.set_array(dataset, label_buffer)
     except Exception as exc:
         print("Exception encountered while running BinaryErode")
         print(exc)
