@@ -5,7 +5,6 @@ def transform_scalars(dataset):
 
     try:
         import itk
-        import vtk
         from tomviz import utils
     except Exception as exc:
         print("Could not import necessary module(s) itk and vtk")
@@ -27,19 +26,20 @@ def transform_scalars(dataset):
 
         itk_kernel_type = itk.FlatStructuringElement[3]
         if (structuring_element_id == 0):
-          itk_kernel = itk_kernel_type.Box(radius)
+            itk_kernel = itk_kernel_type.Box(radius)
         elif (structuring_element_id == 1):
-          itk_kernel = itk_kernel_type.Ball(radius)
+            itk_kernel = itk_kernel_type.Ball(radius)
         elif (structuring_element_id == 2):
-          itk_kernel = itk_kernel_type.Cross(radius)
+            itk_kernel = itk_kernel_type.Cross(radius)
         else:
-          raise Exception('Invalid kernel shape id %d' % structuring_element_id)
+            raise Exception('Invalid kernel shape id %d' %
+                            structuring_element_id)
 
         dilate_filter = itk.BinaryDilateImageFilter[itk_input_image_type,
                                                     itk_input_image_type,
                                                     itk_kernel_type].New()
         dilate_filter.SetDilateValue(object_label)
-        dilate_filter.SetBackgroundValue(background_label);
+        dilate_filter.SetBackgroundValue(background_label)
         dilate_filter.SetKernel(itk_kernel)
         dilate_filter.SetInput(itk_image)
         dilate_filter.Update()
@@ -54,7 +54,8 @@ def transform_scalars(dataset):
 
         itk_image_data = erode_filter.GetOutput()
 
-        label_buffer = itk.PyBuffer[itk_input_image_type].GetArrayFromImage(itk_image_data)
+        PyBufferType = itk.PyBuffer[itk_input_image_type]
+        label_buffer = PyBufferType.GetArrayFromImage(itk_image_data)
 
         utils.set_array(dataset, label_buffer)
     except Exception as exc:
