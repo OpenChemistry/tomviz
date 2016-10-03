@@ -187,8 +187,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   if (scriptLabel == "Binary Threshold" ||
       scriptLabel == "Connected Components" ||
       scriptLabel == "Otsu Multiple Threshold" ||
-      scriptLabel == "Gaussian Filter" || scriptLabel == "Median Filter" ||
-      scriptLabel == "Generate Tilt Series" ||
+      scriptLabel == "Gaussian Filter" ||
+      scriptLabel == "Perona-Malik Anisotropic Diffusion" ||
+      scriptLabel == "Median Filter" || scriptLabel == "Generate Tilt Series" ||
       scriptLabel == "Reconstruct (ART)") {
     OperatorDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle(scriptLabel);

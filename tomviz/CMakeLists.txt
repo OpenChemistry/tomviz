@@ -217,6 +217,7 @@ set(python_files
   GradientMagnitude2D_Sobel.py
   LaplaceFilter.py
   GaussianFilter.py
+  PeronaMalikAnisotropicDiffusion.py
   MedianFilter.py
   Resample.py
   deleteSlices.py
@@ -237,6 +238,7 @@ set(json_files
   ConnectedComponents.json
   OtsuMultipleThreshold.json
   GaussianFilter.json
+  PeronaMalikAnisotropicDiffusion.json
   MedianFilter.json
   GenerateTiltSeries.json
   Recon_ART.json
