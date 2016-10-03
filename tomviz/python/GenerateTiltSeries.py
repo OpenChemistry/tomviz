@@ -6,14 +6,14 @@ def transform_scalars(dataset):
     import scipy.ndimage
 
     #----USER SPECIFIED VARIABLES-----#
-    ###startAngle###    #Starting angle
-    ###angleIncrement###   #Angle increment
-    ###Nproj### #Number of tilts
+    ###start_angle###    #Starting angle
+    ###angle_increment###   #Angle increment
+    ###num_tilts### #Number of tilts
     #---------------------------------#
 
     # Generate Tilt Angles.
-    angles = np.linspace(startAngle, startAngle +
-                         (Nproj - 1) * angleIncrement, Nproj)
+    angles = np.linspace(start_angle, start_angle +
+                         (num_tilts - 1) * angle_increment, num_tilts)
 
     volume = utils.get_array(dataset)
     Ny = volume.shape[1]
@@ -32,9 +32,9 @@ def transform_scalars(dataset):
         'constant')
 
     Nslice = volume.shape[0] # Number of slices along rotation axis.
-    tiltSeries = np.zeros((Nslice, N, Nproj))
+    tiltSeries = np.zeros((Nslice, N, num_tilts))
 
-    for i in range(Nproj):
+    for i in range(num_tilts):
         # Rotate volume about x-axis
         rotatedVolume = scipy.ndimage.interpolation.rotate(
             volume_pad, angles[i], axes=(1, 2), reshape=False, order=1)

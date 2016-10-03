@@ -250,7 +250,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new AddPythonTransformReaction(
     generateTiltSeriesAction, "Generate Tilt Series",
-    readInPythonScript("GenerateTiltSeries"), false, true);
+    readInPythonScript("GenerateTiltSeries"), false, true,
+    readInJSONDescription("GenerateTiltSeries"));
 
   new AddAlignReaction(alignAction);
   new AddPythonTransformReaction(downsampleByTwoAction, "Bin Tilt Image x2",
@@ -280,7 +281,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  "Reconstruct (Back Projection)",
                                  readInPythonScript("Recon_WBP"), true);
   new AddPythonTransformReaction(reconARTAction, "Reconstruct (ART)",
-                                 readInPythonScript("Recon_ART"), true);
+                                 readInPythonScript("Recon_ART"), true, false,
+                                 readInJSONDescription("Recon_ART"));
   new AddPythonTransformReaction(reconSIRTAction, "Reconstruct (SIRT)",
                                  readInPythonScript("Recon_SIRT"), true);
   new AddPythonTransformReaction(

@@ -18,6 +18,8 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
+#include "InterfaceBuilder.h"
+#include "OperatorDialog.h"
 #include "OperatorPython.h"
 #include "SelectVolumeWidget.h"
 #include "SpinBox.h"
@@ -184,100 +186,38 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
   // Handle transforms with custom UIs
   if (scriptLabel == "Binary Threshold" ||
-      scriptLabel == "Connected Components") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
+      scriptLabel == "Connected Components" ||
+      scriptLabel == "Otsu Multiple Threshold" ||
+      scriptLabel == "Gaussian Filter" || scriptLabel == "Median Filter" ||
+      scriptLabel == "Generate Tilt Series" ||
+      scriptLabel == "Reconstruct (ART)") {
+    OperatorDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle(scriptLabel);
-    QGridLayout* layout = new QGridLayout;
-    QLabel* labelDescription;
-    if (scriptLabel == "BinaryThreshold") {
-      labelDescription =
-        new QLabel("Threshold image. Voxels with values between minimum and "
-                   "maximum intensities\n"
-                   "will be considered object, others background.");
-    } else {
-      labelDescription = new QLabel(
-        "Threshold image and compute label map of connected components.\n"
-        "The lower and upper threshold can be specified below.");
-    }
-    layout->addWidget(labelDescription, 0, 0, 1, 2);
+    dialog.setJSONDescription(this->jsonSource);
 
-    QLabel* lowerLabel = new QLabel("Lower Threshold:", &dialog);
-    QLabel* upperLabel = new QLabel("Upper Threshold:", &dialog);
-    QDoubleSpinBox* lowerThreshold = new QDoubleSpinBox(&dialog);
-    lowerThreshold->setSingleStep(0.5);
-    lowerThreshold->setRange(0, 65536);
-    lowerThreshold->setValue(40);
-    QDoubleSpinBox* upperThreshold = new QDoubleSpinBox(&dialog);
-    upperThreshold->setSingleStep(0.5);
-    upperThreshold->setRange(0, 65536);
-    upperThreshold->setValue(255);
-    layout->addWidget(lowerLabel, 1, 0, 1, 1);
-    layout->addWidget(upperLabel, 2, 0, 1, 1);
-    layout->addWidget(lowerThreshold, 1, 1, 1, 1);
-    layout->addWidget(upperThreshold, 2, 1, 1, 1);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize);
     if (dialog.exec() == QDialog::Accepted) {
+      QMap<QString, QVariant> parameterValues = dialog.values();
+
+      // Iterate over the map entries to generate a substitution map
       QMap<QString, QString> substitutions;
-      substitutions.insert(
-        "###LOWERTHRESHOLD###",
-        QString("lower_threshold = %1").arg(lowerThreshold->value()));
-      substitutions.insert(
-        "###UPPERTHRESHOLD###",
-        QString("upper_threshold = %1").arg(upperThreshold->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions, jsonSource);
-    }
-  } else if (scriptLabel == "Otsu Multiple Threshold") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle(scriptLabel);
-    QGridLayout* layout = new QGridLayout;
-    QLabel* labelDescription = new QLabel(
-      "Use Otsu multiple threshold algorithm to automatically determine\n"
-      "thresholds separating voxels into different classes based on\n"
-      "image intensity.");
-    layout->addWidget(labelDescription, 0, 0, 1, 2);
+      QMap<QString, QVariant>::const_iterator iter =
+        parameterValues.constBegin();
+      for (; iter != parameterValues.constEnd(); ++iter) {
+        QString key = "###" + iter.key() + "###";
+        QString parameterValue = iter.value().toString();
 
-    QLabel* numThresholdsLabel = new QLabel("Number of Thresholds:", &dialog);
-    QSpinBox* numThresholds = new QSpinBox(&dialog);
-    numThresholds->setValue(1);
-    numThresholds->setRange(0, 1000);
-    layout->addWidget(numThresholdsLabel, 1, 0, 1, 1);
-    layout->addWidget(numThresholds, 2, 0, 1, 1);
+        // Convert to Python True/False values
+        if (parameterValue[0] == 't') {
+          parameterValue[0] = 'T';
+        }
+        if (parameterValue[0] == 'f') {
+          parameterValue[0] = 'F';
+        }
+        QString value = QString("%1 = %2").arg(iter.key()).arg(parameterValue);
 
-    QLabel* enableValleyEmphasisLabel =
-      new QLabel("Enable Valley Emphasis:", &dialog);
-    QCheckBox* enableValleyEmphasis = new QCheckBox(&dialog);
-    layout->addWidget(enableValleyEmphasisLabel, 3, 0, 1, 1);
-    layout->addWidget(enableValleyEmphasis, 4, 0, 1, 1);
+        substitutions.insert(key, value);
+      }
 
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(QLayout::SetFixedSize);
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert(
-        "###NUMBEROFTHRESHOLDS###",
-        QString("number_of_thresholds = %1").arg(numThresholds->value()));
-      substitutions.insert(
-        "###ENABLEVALLEYEMPHASIS###",
-        QString("enable_valley_emphasis = %1")
-          .arg(enableValleyEmphasis->checkState() != Qt::Unchecked ? "True"
-                                                                   : "False"));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions, jsonSource);
     }
@@ -548,78 +488,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
-  } else if (scriptLabel == "Gaussian Filter") // UI for Gaussian Filter
-  {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Apply Gaussian filter");
-    QGridLayout* layout = new QGridLayout;
-    QLabel* labelDescription =
-      new QLabel("Apply an isotropic Gaussian filter. \nThe standard deviation "
-                 "(sigma) can be specified below:");
-    layout->addWidget(labelDescription, 0, 0, 1, 2);
-
-    QLabel* label = new QLabel("Sigma:", &dialog);
-    layout->addWidget(label);
-    QDoubleSpinBox* sigma = new QDoubleSpinBox(&dialog);
-    sigma->setSingleStep(0.5);
-    // sigma->setRange(0, 20);
-    sigma->setValue(2);
-    layout->addWidget(label, 1, 0, 1, 1);
-    layout->addWidget(sigma, 1, 1, 1, 1);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###Sigma###",
-                           QString("sigma = %1").arg(sigma->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
-  } else if (scriptLabel == "Median Filter") // UI for Median Filter
-  {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Apply Median filter");
-    QGridLayout* layout = new QGridLayout;
-    QLabel* labelDescription =
-      new QLabel("Apply an isotropic median filter. \nThe window size can be "
-                 "specified below:");
-    layout->addWidget(labelDescription, 0, 0, 1, 2);
-
-    QLabel* label = new QLabel("Size:", &dialog);
-    layout->addWidget(label);
-    QSpinBox* size = new QSpinBox(&dialog);
-    size->setSingleStep(1);
-    size->setMinimum(1);
-    size->setValue(2);
-    layout->addWidget(label, 1, 0, 1, 1);
-    layout->addWidget(size, 1, 1, 1, 1);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###Size###",
-                           QString("size = %1").arg(size->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
   } else if (scriptLabel == "Resample") {
     QDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle("Resample");
@@ -662,68 +530,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                              .arg(spinx->value())
                              .arg(spiny->value())
                              .arg(spinz->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
-  } else if (scriptLabel == "Generate Tilt Series") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Generate Tilt Series");
-
-    QGridLayout* layout = new QGridLayout;
-
-    QLabel* label =
-      new QLabel("Generate electron tomography tilt series from volume "
-                 "dataset. \nObject is rotated about the x-axis and "
-                 "projected along the z-axis.");
-    label->setWordWrap(true);
-    layout->addWidget(label, 0, 0, 1, 2);
-
-    label = new QLabel("Start Angle:");
-    layout->addWidget(label, 1, 0, 1, 1);
-
-    QDoubleSpinBox* startAngle = new QDoubleSpinBox;
-    startAngle->setSingleStep(1);
-    startAngle->setValue(0);
-    startAngle->setRange(-180, 180);
-    layout->addWidget(startAngle, 1, 1, 1, 1);
-
-    label = new QLabel("Angle Increment:");
-    layout->addWidget(label, 2, 0, 1, 1);
-
-    QDoubleSpinBox* angleIncrement = new QDoubleSpinBox;
-    angleIncrement->setSingleStep(0.5);
-    angleIncrement->setValue(6);
-    angleIncrement->setRange(-180, 180);
-    layout->addWidget(angleIncrement, 2, 1, 1, 1);
-
-    label = new QLabel("Number of Tilts:");
-    layout->addWidget(label, 3, 0, 1, 1);
-
-    QSpinBox* numberOfTilts = new QSpinBox;
-    numberOfTilts->setSingleStep(1);
-    numberOfTilts->setValue(30);
-    layout->addWidget(numberOfTilts, 3, 1, 1, 1);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###startAngle###",
-                           QString("startAngle = %1").arg(startAngle->value()));
-      substitutions.insert(
-        "###angleIncrement###",
-        QString("angleIncrement = %1").arg(angleIncrement->value()));
-      substitutions.insert("###Nproj###",
-                           QString("Nproj = %1").arg(numberOfTilts->value()));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
@@ -833,51 +639,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       substitutions.insert(
         "###interp###",
         QString("interp = %1").arg(interpMethods->currentIndex()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
-  } else if (scriptLabel == "Reconstruct (ART)") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("ART Reconstruction");
-
-    QGridLayout* layout = new QGridLayout;
-    // Description
-    QLabel* label =
-      new QLabel("Reconstruct a tilt series using Algebraic Reconstruction "
-                 "Technique (ART). \n"
-                 "The tilt axis must be parallel to the x-direction and "
-                 "centered in the y-direction.\n"
-                 "The size of reconstruction will be (Nx,Ny,Ny). The number of "
-                 "iterations can be specified below.\n"
-                 "Reconstrucing a 256x256x256 tomogram typically takes more "
-                 "than 100 mins with 5 iterations.");
-    label->setWordWrap(true);
-    layout->addWidget(label, 0, 0, 1, 2);
-
-    label = new QLabel("Number of Iterations:");
-    layout->addWidget(label, 1, 0, 1, 1);
-
-    QSpinBox* Niter = new QSpinBox;
-    Niter->setValue(1);
-    Niter->setMinimum(1);
-
-    layout->addWidget(Niter, 1, 1, 1, 1);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###Niter###",
-                           QString("Niter = %1").arg(Niter->value()));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }

@@ -1,0 +1,30 @@
+{
+  "name" : "GenerateTiltSeries",
+  "label" : "Generate Tilt Series",
+  "description" : "Generate electron tomography tilt series from volume dataset.\nObject is rotated about the x-axis and\nprojected along the z-axis.",
+  "parameters" : [
+    {
+      "name" : "start_angle",
+      "label" : "Start Angle",
+      "type" : "double",
+      "default" : 0.0,
+      "minimum" : -180.0,
+      "maximum" : 180.0
+    },
+    {
+      "name" : "angle_increment",
+      "label" : "Angle Increment",
+      "type" : "double",
+      "default" : 6.0,
+      "minimum" : -180.0,
+      "maximum" : 180.0
+    },
+    {
+      "name" : "num_tilts",
+      "label" : "Number of Tilts",
+      "type" : "int",
+      "default" : 30,
+      "minimum" : 1
+    }
+  ]
+}

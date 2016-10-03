@@ -74,6 +74,8 @@ set(SOURCES
   EditOperatorWidget.h
   HistogramWidget.h
   HistogramWidget.cxx
+  InterfaceBuilder.h
+  InterfaceBuilder.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
   LoadDataReaction.cxx
@@ -106,6 +108,8 @@ set(SOURCES
   MoveActiveObject.h
   Operator.cxx
   Operator.h
+  OperatorDialog.cxx
+  OperatorDialog.h
   OperatorFactory.cxx
   OperatorFactory.h
   OperatorPython.cxx
@@ -232,6 +236,10 @@ set(json_files
   BinaryThreshold.json
   ConnectedComponents.json
   OtsuMultipleThreshold.json
+  GaussianFilter.json
+  MedianFilter.json
+  GenerateTiltSeries.json
+  Recon_ART.json
   )
 
 set(resource_files

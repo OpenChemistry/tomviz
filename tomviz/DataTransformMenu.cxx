@@ -148,9 +148,12 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(laplaceFilterAction, "Laplace Filter",
                                  readInPythonScript("LaplaceFilter"));
   new AddPythonTransformReaction(gaussianFilterAction, "Gaussian Filter",
-                                 readInPythonScript("GaussianFilter"));
+                                 readInPythonScript("GaussianFilter"), false,
+                                 false,
+                                 readInJSONDescription("GaussianFilter"));
   new AddPythonTransformReaction(medianFilterAction, "Median Filter",
-                                 readInPythonScript("MedianFilter"));
+                                 readInPythonScript("MedianFilter"), false,
+                                 false, readInJSONDescription("MedianFilter"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
