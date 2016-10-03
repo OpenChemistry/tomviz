@@ -9,7 +9,8 @@ def transform_scalars(dataset):
     array = array.astype(np.float32)
 
     # Transform the dataset
-    result = scipy.ndimage.filters.generic_gradient_magnitude(array, scipy.ndimage.filters.sobel)
-    
+    result = scipy.ndimage.filters.generic_gradient_magnitude(
+        array, scipy.ndimage.filters.sobel)
+
     # Set the result as the new scalars.
     utils.set_array(dataset, result)

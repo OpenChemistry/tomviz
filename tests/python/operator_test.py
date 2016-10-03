@@ -9,9 +9,13 @@ import tomviz
 # Mock out the wrapping as the library requires symbols in tomviz
 tomviz._wrapping = mock.MagicMock()
 sys.modules['tomviz._wrapping'] = mock.MagicMock()
-from tomviz._internal import *
+from tomviz._internal import find_operator_class # noqa
+from tomviz._internal import find_transform_scalars_function # noqa
+from tomviz._internal import find_transform_scalars, is_cancelable # noqa
+
 
 class OperatorTestCase(unittest.TestCase):
+
     def test_find_operator_class(self):
 
         # Module with no operators
@@ -29,11 +33,13 @@ class OperatorTestCase(unittest.TestCase):
         self.assertIsNone(find_transform_scalars_function(simple))
 
         # Module with a function
-        self.assertEqual(find_transform_scalars_function(function), function.transform_scalars)
+        self.assertEqual(find_transform_scalars_function(
+            function), function.transform_scalars)
 
     def test_find_transform_scalars(self):
         # Module with a function
-        self.assertEqual(find_transform_scalars(function, None), function.transform_scalars)
+        self.assertEqual(find_transform_scalars(
+            function, None), function.transform_scalars)
 
         # Module with operator class
         func = find_transform_scalars(simple, None)

@@ -4,6 +4,7 @@ NUMBER_OF_CHUNKS = 10
 
 
 class SquareRootOperator(tomviz.operators.CancelableOperator):
+
     def transform_scalars(self, dataset):
         """Define this method for Python operators that
         transform input scalars"""
@@ -24,7 +25,7 @@ class SquareRootOperator(tomviz.operators.CancelableOperator):
             result = np.float32(scalars)
             for chunk in np.array_split(result, NUMBER_OF_CHUNKS):
                 if self.canceled:
-                   return
+                    return
                 np.sqrt(chunk, chunk)
 
             # set the result as the new scalars.

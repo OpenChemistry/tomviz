@@ -4,6 +4,7 @@ NUMBER_OF_CHUNKS = 10
 
 
 class InvertOperator(tomviz.operators.CancelableOperator):
+
     def transform_scalars(self, dataset):
         from tomviz import utils
         import numpy as np

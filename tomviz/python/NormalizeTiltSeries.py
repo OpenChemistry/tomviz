@@ -1,5 +1,7 @@
 def transform_scalars(dataset):
-    '''Normalize tilt series so that each tilt image has the same total intensity.'''
+    """
+    Normalize tilt series so that each tilt image has the same total intensity.
+    """
 
     from tomviz import utils
     import numpy as np
@@ -12,10 +14,10 @@ def transform_scalars(dataset):
     data = data.astype(np.float32) # Change tilt series type to float.
 
     # Calculate average intensity of tilt series.
-    intensity = np.sum(np.average(data,2))
+    intensity = np.sum(np.average(data, 2))
 
-    for i in range(0,data.shape[2]):
+    for i in range(0, data.shape[2]):
         # Normalize each tilt image.
-        data[:,:,i] = data[:,:,i]/np.sum(data[:,:,i])*intensity
+        data[:, :, i] = data[:, :, i] / np.sum(data[:, :, i]) * intensity
 
     utils.set_array(dataset, data)

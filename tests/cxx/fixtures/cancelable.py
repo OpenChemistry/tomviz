@@ -1,6 +1,7 @@
 import tomviz.operators
 import time
 
+
 class TestOperator(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, data):

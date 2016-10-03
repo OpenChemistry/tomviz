@@ -32,7 +32,8 @@ def transform_scalars(dataset):
         itk_output_image_type = itk.Image.UC3
 
         # ITK's BinaryThresholdImageFilter does the hard work
-        threshold_filter = itk.BinaryThresholdImageFilter[itk_input_image_type,itk_output_image_type].New()
+        threshold_filter = itk.BinaryThresholdImageFilter[
+            itk_input_image_type, itk_output_image_type].New()
         threshold_filter.SetLowerThreshold(lower_threshold)
         threshold_filter.SetUpperThreshold(upper_threshold)
         threshold_filter.SetInsideValue(1)
@@ -42,18 +43,18 @@ def transform_scalars(dataset):
 
         # Set the output as a new child data object of the current data set
         itk_image_data = threshold_filter.GetOutput()
-        label_buffer = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
+        label_buffer = itk.PyBuffer[
+            itk_output_image_type].GetArrayFromImage(itk_image_data)
         label_map_data_set = vtk.vtkImageData()
         label_map_data_set.CopyStructure(dataset)
 
         utils.set_label_map(label_map_data_set, label_buffer)
-        returnValue = \
-          {
-            "thresholded_segmentation" : label_map_data_set
-          }
+        returnValue = {
+            "thresholded_segmentation": label_map_data_set
+        }
 
     except Exception as exc:
-        print("Exception encountered while running BinaryThreshold");
-        print(exc);
+        print("Exception encountered while running BinaryThreshold")
+        print(exc)
 
     return returnValue

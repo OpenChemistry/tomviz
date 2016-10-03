@@ -23,6 +23,7 @@ import vtk.util.numpy_support as np_s
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
 
+
 def vtk_itk_map():
     """Try to set up mappings between VTK image types and ITK image types.
     Not all ITK image types may be available, hence the try statements."""
@@ -31,50 +32,31 @@ def vtk_itk_map():
     if _vtk_to_itk_types is None:
         import itk
         _vtk_to_itk_types = {}
-        try:
-            _vtk_to_itk_types['vtkUnsignedCharArray'] = itk.Image.UC3
-        except:
-            pass
 
-        try:
-            _vtk_to_itk_types['vtkCharArray'] = itk.Image.SC3
-        except:
-            pass
+        type_map = {
+            'vtkUnsignedCharArray': 'UC3',
+            'vtkCharArray': 'SC3',
+            'vtkUnsignedShortArray': 'US3',
+            'vtkShortArray': 'SS3',
+            'vtkUnsignedIntArray': 'UI3',
+            'vtkIntArray': 'SI3',
+            'vtkFloatArray': 'F3',
+            'vtkDoubleArray': 'D3'
+        }
 
-        try:
-            _vtk_to_itk_types['vtkUnsignedShortArray'] = itk.Image.US3
-        except:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkShortArray'] = itk.Image.SS3
-        except:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkUnsignedIntArray'] = itk.Image.UI3
-        except:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkIntArray'] = itk.Image.SI3
-        except:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkFloatArray'] = itk.Image.F3
-        except:
-            pass
-
-        try:
-            _vtk_to_itk_types['vtkDoubleArray'] = itk.Image.D3
-        except:
-            pass
+        for (vtk_type, image_type) in type_map.iteritems():
+            try:
+                _vtk_to_itk_types[vtk_type] = getattr(itk.Image, image_type)
+            except AttributeError:
+                pass
 
     return _vtk_to_itk_types
 
+
 def get_itk_image_type(vtk_image_data):
-    """Get an ITK image type corresponding to the provided vtkImageData object."""
+    """
+    Get an ITK image type corresponding to the provided vtkImageData object.
+    """
     image_type = None
 
     # Get the scalars
@@ -85,10 +67,11 @@ def get_itk_image_type(vtk_image_data):
 
     try:
         image_type = vtk_itk_map()[vtk_class_name]
-    except:
+    except KeyError:
         raise Exception('No ITK type known for %s' % vtk_class_name)
 
     return image_type
+
 
 def convert_vtk_to_itk_image(vtk_image_data):
     """Get an ITK image from the provided vtkImageData object.
@@ -109,6 +92,7 @@ def convert_vtk_to_itk_image(vtk_image_data):
     itk_image = itk_converter.GetImageFromArray(array)
 
     return itk_image
+
 
 def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     """Add an array from an ITK image to a vtkImageData with a given name."""
@@ -136,8 +120,10 @@ def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     #vtk_image_data.GetPointData().AddArray(new_array)
     #------------------------------------------
     import itk
-    result = itk.PyBuffer[itk_output_image_type].GetArrayFromImage(itk_image_data)
+    result = itk.PyBuffer[
+        itk_output_image_type].GetArrayFromImage(itk_image_data)
     set_label_map(vtk_image_data, result)
+
 
 def get_scalars(dataobject):
     do = dsa.WrapDataObject(dataobject)
@@ -146,6 +132,7 @@ def get_scalars(dataobject):
     vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
     vtkarray.Association = dsa.ArrayAssociation.POINT
     return vtkarray
+
 
 def set_scalars(dataobject, newscalars):
     do = dsa.WrapDataObject(dataobject)
@@ -162,11 +149,13 @@ def set_scalars(dataobject, newscalars):
     do.PointData.append(newscalars, name)
     do.PointData.SetActiveScalars(name)
 
+
 def get_array(dataobject):
     scalars_array = get_scalars(dataobject)
     scalars_array3d = np.reshape(scalars_array, (dataobject.GetDimensions()),
                                  order='F')
     return scalars_array3d
+
 
 def set_array(dataobject, newarray):
     # Ensure we have Fortran ordered flat array to assign to image data. This
@@ -174,7 +163,8 @@ def set_array(dataobject, newarray):
     if np.isfortran(newarray):
         arr = newarray.reshape(-1, order='F')
     else:
-        print 'Warning, array does not have Fortran order, making deep copy and fixing...'
+        print ('Warning, array does not have Fortran order, making deep copy '
+               'and fixing...')
         tmp = np.asfortranarray(newarray)
         arr = tmp.reshape(-1, order='F')
         print '...done.'
@@ -194,13 +184,15 @@ def set_array(dataobject, newarray):
     do.PointData.append(arr, name)
     do.PointData.SetActiveScalars(name)
 
+
 def set_label_map(dataobject, labelarray):
     # Ensure we have Fortran ordered flat array to assign to image data. This
     # is ideally done without additional copies, but if C order we must copy.
     if np.isfortran(labelarray):
         arr = labelarray.reshape(-1, order='F')
     else:
-        print 'Warning, array does not have Fortran order, making deep copy and fixing...'
+        print ('Warning, array does not have Fortran order, making deep copy '
+               'and fixing...')
         tmp = np.asfortranarray(labelarray)
         arr = tmp.reshape(-1, order='F')
         print '...done.'
@@ -211,6 +203,7 @@ def set_label_map(dataobject, labelarray):
     pd = dataobject.GetPointData()
     pd.SetScalars(pd.GetArray("LabelMap"))
 
+
 def get_tilt_angles(dataobject):
     # Get the tilt angles array
     do = dsa.WrapDataObject(dataobject)
@@ -218,6 +211,7 @@ def get_tilt_angles(dataobject):
     vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
     vtkarray.Association = dsa.ArrayAssociation.FIELD
     return vtkarray
+
 
 def set_tilt_angles(dataobject, newarray):
     # replace the tilt angles with the new array
@@ -231,17 +225,19 @@ def set_tilt_angles(dataobject, newarray):
     do.FieldData.RemoveArray('tilt_angles')
     do.FieldData.AddArray(vtkarray)
 
+
 def make_dataset(x, y, z, dataset, generate_data_function):
-    from vtk import vtkImageData, VTK_DOUBLE
-    array = np.zeros((x,y,z), order='F')
+    from vtk import VTK_DOUBLE
+    array = np.zeros((x, y, z), order='F')
     generate_data_function(array)
-    dataset.SetOrigin(0,0,0)
-    dataset.SetSpacing(1,1,1)
-    dataset.SetExtent(0, x-1, 0, y-1, 0, z-1)
+    dataset.SetOrigin(0, 0, 0)
+    dataset.SetSpacing(1, 1, 1)
+    dataset.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)
     flat_array = array.reshape(-1, order='F')
     vtkarray = np_s.numpy_to_vtk(flat_array, deep=1, array_type=VTK_DOUBLE)
     vtkarray.SetName("generated_scalars")
     dataset.GetPointData().SetScalars(vtkarray)
+
 
 def mark_as_volume(dataobject):
     from vtk import vtkTypeInt8Array
@@ -255,6 +251,7 @@ def mark_as_volume(dataobject):
         fd.AddArray(arr)
     arr.SetTuple1(0, 0)
 
+
 def mark_as_tiltseries(dataobject):
     from vtk import vtkTypeInt8Array
     fd = dataobject.GetFieldData()
@@ -267,6 +264,7 @@ def mark_as_tiltseries(dataobject):
         fd.AddArray(arr)
     arr.SetTuple1(0, 1)
 
+
 def make_spreadsheet(column_names, table):
     # column_names is a list of strings
     # table is a 2D numpy.ndarray
@@ -276,7 +274,8 @@ def make_spreadsheet(column_names, table):
     rows = table.shape[0]
 
     if (table.shape[1] != len(column_names)):
-        print('Warning: table number of columns differs from number of column names')
+        print('Warning: table number of columns differs from number of '
+              'column names')
         return
 
     from vtk import vtkTable, vtkFloatArray

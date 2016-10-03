@@ -2,7 +2,6 @@ def transform_scalars(dataset):
     """Resample dataset"""
 
     from tomviz import utils
-    import numpy as np
     import scipy.ndimage
 
     #----USER SPECIFIED VARIABLES-----#
@@ -13,7 +12,7 @@ def transform_scalars(dataset):
 
     # Transform the dataset.
     result = scipy.ndimage.interpolation.zoom(array, resampingFactor)
-    
+
     # Set the result as the new scalars.
     utils.set_array(dataset, result)
 
@@ -21,7 +20,9 @@ def transform_scalars(dataset):
     if resampingFactor[2] != 1:
         try:
             tilt_angles = utils.get_tilt_angles(dataset)
-            tilt_angles = scipy.ndimage.interpolation.zoom(tilt_angles, resampingFactor[2])
+            tilt_angles = scipy.ndimage.interpolation.zoom(
+                tilt_angles, resampingFactor[2])
             utils.set_tilt_angles(dataset, tilt_angles)
-        except:
+        except: # noqa
+            # TODO What exception are we ignoring?
             pass

@@ -16,16 +16,19 @@
 #
 ###############################################################################
 
+
 class Operator:
     """
     The base operator class from which all operators should be derived.
     """
+
     def transform_scalars(self, data):
         """
-        This method should be overriden by subclasses to implement the operations
-        the operator should perform.
+        This method should be overriden by subclasses to implement the
+        operations the operator should perform.
         """
         raise NotImplementedError('Must be implemented by subclass')
+
 
 class CancelableOperator(Operator):
     """
