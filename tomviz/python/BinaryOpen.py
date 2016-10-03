@@ -15,6 +15,7 @@ def transform_scalars(dataset):
     ###structuring_element_id### # (0 - Box, 1 - Ball, 2 - Cross)
     ###radius### # Specify the radius of the cube structuring element
     ###object_label### # Specify the label designating the segmented objects
+    ###background_label### # Specify the label designating the background.
 
     # Add a try/except around the ITK portion. ITK exceptions are
     # passed up to the Python layer, so we can at least report what
@@ -38,6 +39,7 @@ def transform_scalars(dataset):
                                                   itk_input_image_type,
                                                   itk_kernel_type].New()
         erode_filter.SetErodeValue(object_label)
+        erode_filter.SetBackgroundValue(background_label)
         erode_filter.SetKernel(itk_kernel)
         erode_filter.SetInput(itk_image)
 
@@ -45,6 +47,7 @@ def transform_scalars(dataset):
                                                     itk_input_image_type,
                                                     itk_kernel_type].New()
         dilate_filter.SetDilateValue(object_label)
+        dilate_filter.SetBackgroundValue(background_label)
         dilate_filter.SetKernel(itk_kernel)
         dilate_filter.SetInput(erode_filter.GetOutput())
         dilate_filter.Update()

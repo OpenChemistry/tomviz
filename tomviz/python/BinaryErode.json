@@ -26,6 +26,12 @@
       "label" : "Object Label",
       "type" : "int",
       "default" : 1
+    },
+    {
+      "name" : "background_label",
+      "label" : "Background Label",
+      "type" : "int",
+      "default" : 0
     }
   ]
 }
