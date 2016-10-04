@@ -38,16 +38,10 @@ private slots:
   void operationStarted();
   void operationProgress(int progress);
   void operatorAdded(Operator* op);
-  void dataSourceAdded(DataSource* ds);
-  void operationCanceled();
-  void operationDone(bool status);
 
 private:
   QMainWindow* mainWindow;
   Q_DISABLE_COPY(ProgressDialogManager)
-
-  class PDMInternal;
-  PDMInternal* Internals;
 };
 }
 #endif
