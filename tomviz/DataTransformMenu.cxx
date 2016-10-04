@@ -92,6 +92,8 @@ void DataTransformMenu::buildMenu()
   QAction* gradientMagnitudeSobelAction = menu->addAction("Gradient Magnitude");
   QAction* laplaceFilterAction = menu->addAction("Laplace Filter");
   QAction* gaussianFilterAction = menu->addAction("Gaussian Filter");
+  QAction* peronaMalikeAnisotropicDiffusionAction =
+    menu->addAction("Perona-Malik Anisotropic Diffusion");
   QAction* medianFilterAction = menu->addAction("Median Filter");
   menu->addSeparator();
 
@@ -151,6 +153,11 @@ void DataTransformMenu::buildMenu()
                                  readInPythonScript("GaussianFilter"), false,
                                  false,
                                  readInJSONDescription("GaussianFilter"));
+  new AddPythonTransformReaction(
+    peronaMalikeAnisotropicDiffusionAction,
+    "Perona-Malik Anisotropic Diffusion",
+    readInPythonScript("PeronaMalikAnisotropicDiffusion"), false, false,
+    readInJSONDescription("PeronaMalikAnisotropicDiffusion"));
   new AddPythonTransformReaction(medianFilterAction, "Median Filter",
                                  readInPythonScript("MedianFilter"), false,
                                  false, readInJSONDescription("MedianFilter"));

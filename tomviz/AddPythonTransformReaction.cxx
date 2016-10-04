@@ -150,9 +150,8 @@ AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                        const QString& s,
                                                        bool rts, bool rv,
                                                        const QString& json)
-  : Superclass(parentObject), scriptLabel(l), scriptSource(s),
-    interactive(false), requiresTiltSeries(rts), requiresVolume(rv),
-    jsonSource(json)
+  : Superclass(parentObject), jsonSource(json), scriptLabel(l), scriptSource(s),
+    interactive(false), requiresTiltSeries(rts), requiresVolume(rv)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -188,8 +187,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
   if (scriptLabel == "Binary Threshold" ||
       scriptLabel == "Connected Components" ||
       scriptLabel == "Otsu Multiple Threshold" ||
-      scriptLabel == "Gaussian Filter" || scriptLabel == "Median Filter" ||
-      scriptLabel == "Generate Tilt Series" ||
+      scriptLabel == "Gaussian Filter" ||
+      scriptLabel == "Perona-Malik Anisotropic Diffusion" ||
+      scriptLabel == "Median Filter" || scriptLabel == "Generate Tilt Series" ||
       scriptLabel == "Reconstruct (ART)") {
     OperatorDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle(scriptLabel);

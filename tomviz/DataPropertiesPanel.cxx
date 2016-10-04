@@ -131,8 +131,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
                 SLOT(setDataSource(DataSource*)));
   this->connect(this->Internals->Ui.SetTiltAnglesButton, SIGNAL(clicked()),
                 SLOT(setTiltAngles()));
-  this->connect(this->Internals->Ui.changeUnitsButton, SIGNAL(clicked()),
-                SLOT(setUnits()));
+  this->connect(this->Internals->Ui.unitBox, SIGNAL(editingFinished()),
+                SLOT(updateUnits()));
   this->connect(this->Internals->Ui.xLengthBox, SIGNAL(editingFinished()),
                 SLOT(updateXLength()));
   this->connect(this->Internals->Ui.yLengthBox, SIGNAL(editingFinished()),
@@ -235,6 +235,7 @@ void DataPropertiesPanel::updateData()
     QString("%1").arg(spacing[1] * (extent[3] - extent[2] + 1)));
   ui.zLengthBox->setText(
     QString("%1").arg(spacing[2] * (extent[5] - extent[4] + 1)));
+  ui.unitBox->setText(this->Internals->CurrentDataSource->getUnits(0));
 
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries) {
@@ -308,19 +309,10 @@ void DataPropertiesPanel::scheduleUpdate()
   }
 }
 
-void DataPropertiesPanel::setUnits()
+void DataPropertiesPanel::updateUnits()
 {
-  QDialog dialog;
-  QHBoxLayout* layout = new QHBoxLayout;
-  dialog.setLayout(layout);
-  QLineEdit* line = new QLineEdit;
-  layout->addWidget(line);
-  QPushButton* okButton = new QPushButton("Ok");
-  layout->addWidget(okButton);
-  QObject::connect(okButton, SIGNAL(clicked()), &dialog, SLOT(accept()));
-  if (dialog.exec()) {
-    this->Internals->CurrentDataSource->setUnits(line->text());
-  }
+  const QString& text = this->Internals->Ui.unitBox->text();
+  this->Internals->CurrentDataSource->setUnits(text);
 }
 
 void DataPropertiesPanel::updateXLength()
