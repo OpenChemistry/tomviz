@@ -32,23 +32,13 @@
 
 namespace tomviz {
 
-class ProgressDialogManager::PDMInternal
-{
-public:
-  QMap<Operator*, DataSource*> opToDataSource;
-};
-
 ProgressDialogManager::ProgressDialogManager(QMainWindow* mw)
-  : Superclass(mw), mainWindow(mw), Internals(new PDMInternal)
+  : Superclass(mw), mainWindow(mw)
 {
-  ModuleManager& mm = ModuleManager::instance();
-  QObject::connect(&mm, SIGNAL(dataSourceAdded(DataSource*)), this,
-                   SLOT(dataSourceAdded(DataSource*)));
 }
 
 ProgressDialogManager::~ProgressDialogManager()
 {
-  delete this->Internals;
 }
 
 void ProgressDialogManager::operationStarted()
@@ -66,11 +56,6 @@ void ProgressDialogManager::operationStarted()
     progressDialog->deleteLater();
     return;
   }
-
-  QObject::connect(op, &Operator::transformingDone, this,
-                   &ProgressDialogManager::operationDone);
-  QObject::connect(progressDialog, &QDialog::rejected, this,
-                   &ProgressDialogManager::operationCanceled);
 
   QLayout* layout = new QVBoxLayout();
   QWidget* progressWidget = op->getCustomProgressWidget(progressDialog);
@@ -109,20 +94,8 @@ void ProgressDialogManager::operationStarted()
 
 void ProgressDialogManager::operatorAdded(Operator* op)
 {
-  DataSource* source = qobject_cast<DataSource*>(this->sender());
   QObject::connect(op, &Operator::transformingStarted, this,
                    &ProgressDialogManager::operationStarted);
-  this->Internals->opToDataSource.insert(op, source);
-}
-
-void ProgressDialogManager::dataSourceAdded(DataSource* ds)
-{
-  QObject::connect(ds, SIGNAL(operatorAdded(Operator*)), this,
-                   SLOT(operatorAdded(Operator*)));
-  auto listOfOps = ds->operators();
-  for (auto itr = listOfOps.begin(); itr != listOfOps.end(); ++itr) {
-    this->Internals->opToDataSource.insert(*itr, ds);
-  }
 }
 
 void ProgressDialogManager::operationProgress(int)
@@ -130,28 +103,5 @@ void ProgressDialogManager::operationProgress(int)
   // Probably not strictly neccessary in the long run where we have a background
   // thread, until then we need this call.
   QCoreApplication::processEvents();
-}
-
-void ProgressDialogManager::operationCanceled()
-{
-}
-
-void ProgressDialogManager::operationDone(bool status)
-{
-  Operator* op = qobject_cast<Operator*>(this->sender());
-  // assume cancelled for now, need more info to determine that though.
-  if (!status) {
-    DataSource* ds = this->Internals->opToDataSource.value(op);
-    auto listOfOps = ds->operators();
-    for (auto itr = listOfOps.begin(); itr != listOfOps.end(); ++itr) {
-      // If we've found the shared pointer for this one...
-      if (op == *itr) {
-        ds->removeOperator(*itr);
-        this->Internals->opToDataSource.erase(
-          this->Internals->opToDataSource.find(op));
-        break;
-      }
-    }
-  }
 }
 }
