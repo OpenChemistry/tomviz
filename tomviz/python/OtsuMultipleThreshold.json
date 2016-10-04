@@ -12,7 +12,7 @@
   "parameters" : [
     {
       "name" : "number_of_thresholds",
-      "label" : "Number of Threshold",
+      "label" : "Number of Thresholds",
       "type" : "int",
       "default" : 1,
       "minimum" : 1
