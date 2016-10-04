@@ -1,0 +1,37 @@
+{
+  "name" : "BinaryDilate",
+  "label" : "Binary Dilate",
+  "description" : "Dilate segmented objects with a given label by a spherically symmetric\nstructuring element of a given radius.",
+  "parameters" : [
+    {
+      "name" : "structuring_element_id",
+      "label" : "Structuring Element",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Box" : 0},
+        {"Ball" : 1},
+        {"Cross" : 2}
+      ]
+    },
+    {
+      "name" : "radius",
+      "label" : "Radius",
+      "type" : "int",
+      "default" : 1,
+      "minimum" : 1
+    },
+    {
+      "name" : "object_label",
+      "label" : "Object Label",
+      "type" : "int",
+      "default" : 1
+    },
+    {
+      "name" : "background_label",
+      "label" : "Background Label",
+      "type" : "int",
+      "default" : 0
+    }
+  ]
+}

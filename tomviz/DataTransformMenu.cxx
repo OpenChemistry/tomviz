@@ -74,6 +74,10 @@ void DataTransformMenu::buildMenu()
   QAction* otsuMultipleThresholdAction =
     menu->addAction("Otsu Multiple Threshold");
   QAction* connectedComponentsAction = menu->addAction("Connected Components");
+  QAction* binaryDilateAction = menu->addAction("Binary Dilate");
+  QAction* binaryErodeAction = menu->addAction("Binary Erode");
+  QAction* binaryOpenAction = menu->addAction("Binary Open");
+  QAction* binaryCloseAction = menu->addAction("Binary Close");
   menu->addSeparator();
   QAction* shiftUniformAction = menu->addAction("Shift Volume");
   QAction* deleteSliceAction = menu->addAction("Delete Slices");
@@ -119,6 +123,18 @@ void DataTransformMenu::buildMenu()
     connectedComponentsAction, "Connected Components",
     readInPythonScript("ConnectedComponents"), false, false,
     readInJSONDescription("ConnectedComponents"));
+  new AddPythonTransformReaction(binaryDilateAction, "Binary Dilate",
+                                 readInPythonScript("BinaryDilate"), false,
+                                 false, readInJSONDescription("BinaryDilate"));
+  new AddPythonTransformReaction(binaryErodeAction, "Binary Erode",
+                                 readInPythonScript("BinaryErode"), false,
+                                 false, readInJSONDescription("BinaryErode"));
+  new AddPythonTransformReaction(binaryOpenAction, "Binary Open",
+                                 readInPythonScript("BinaryOpen"), false, false,
+                                 readInJSONDescription("BinaryOpen"));
+  new AddPythonTransformReaction(binaryCloseAction, "Binary Close",
+                                 readInPythonScript("BinaryClose"), false,
+                                 false, readInJSONDescription("BinaryClose"));
   new AddPythonTransformReaction(shiftUniformAction, "Shift Volume",
                                  readInPythonScript("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction, "Delete Slices",
