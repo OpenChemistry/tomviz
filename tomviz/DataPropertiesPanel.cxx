@@ -236,7 +236,7 @@ void DataPropertiesPanel::updateData()
   ui.zLengthBox->setText(
     QString("%1").arg(spacing[2] * (extent[5] - extent[4] + 1)));
   ui.unitBox->setText(this->Internals->CurrentDataSource->getUnits(0));
-  
+
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries) {
     this->Internals->TiltAnglesSeparator->show();
