@@ -100,43 +100,33 @@ OperatorPython::OperatorPython(QObject* parentObject)
     vtkPythonScopeGilEnsurer gilEnsurer(true);
     this->Internals->OperatorModule.TakeReference(
       PyImport_ImportModule("tomviz.utils"));
-  }
-  if (!this->Internals->OperatorModule) {
-    qCritical() << "Failed to import tomviz.utils module.";
-    checkForPythonError();
-  }
+    if (!this->Internals->OperatorModule) {
+      qCritical() << "Failed to import tomviz.utils module.";
+      checkForPythonError();
+    }
 
-  {
-    vtkPythonScopeGilEnsurer gilEnsurer(true);
     this->Internals->InternalModule.TakeReference(
       PyImport_ImportModule("tomviz._internal"));
-  }
-  if (!this->Internals->InternalModule) {
-    qCritical() << "Failed to import tomviz._internal module.";
-    checkForPythonError();
-  }
+    if (!this->Internals->InternalModule) {
+      qCritical() << "Failed to import tomviz._internal module.";
+      checkForPythonError();
+    }
 
-  {
-    vtkPythonScopeGilEnsurer gilEnsurer(true);
     this->Internals->IsCancelableFunction.TakeReference(
       PyObject_GetAttrString(this->Internals->InternalModule, "is_cancelable"));
-  }
-  if (!this->Internals->IsCancelableFunction) {
-    checkForPythonError();
-    qCritical() << "Unable to locate is_cancelable.";
-  }
+    if (!this->Internals->IsCancelableFunction) {
+      checkForPythonError();
+      qCritical() << "Unable to locate is_cancelable.";
+    }
 
-  {
-    vtkPythonScopeGilEnsurer gilEnsurer(true);
     this->Internals->FindTransformScalarsFunction.TakeReference(
       PyObject_GetAttrString(this->Internals->InternalModule,
                              "find_transform_scalars"));
+    if (!this->Internals->FindTransformScalarsFunction) {
+      checkForPythonError();
+      qCritical() << "Unable to locate find_transform_scalars.";
+    }
   }
-  if (!this->Internals->FindTransformScalarsFunction) {
-    checkForPythonError();
-    qCritical() << "Unable to locate find_transform_scalars.";
-  }
-
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
   connect(this, SIGNAL(newChildDataSource(const QString&,
@@ -252,35 +242,29 @@ void OperatorPython::setScript(const QString& str)
     this->Internals->TransformModule.TakeReference(nullptr);
     this->Internals->TransformMethod.TakeReference(nullptr);
 
+    vtkSmartPyObject result;
     {
       vtkPythonScopeGilEnsurer gilEnsurer(true);
       this->Internals->Code.TakeReference(Py_CompileString(
         this->Script.toLatin1().data(), this->label().toLatin1().data(),
         Py_file_input /*Py_eval_input*/));
-    }
-    if (!this->Internals->Code) {
-      checkForPythonError();
-      qCritical(
-        "Invalid script. Please check the traceback message for details");
-      return;
-    }
+      if (!this->Internals->Code) {
+        checkForPythonError();
+        qCritical(
+            "Invalid script. Please check the traceback message for details");
+        return;
+      }
 
-    {
-      vtkPythonScopeGilEnsurer gilEnsurer(true);
       this->Internals->TransformModule.TakeReference(PyImport_ExecCodeModule(
         QString("tomviz_%1").arg(this->label()).toLatin1().data(),
         this->Internals->Code));
-    }
+      if (!this->Internals->TransformModule) {
+        checkForPythonError();
+        qCritical("Failed to create module.");
+        return;
+      }
 
-    if (!this->Internals->TransformModule) {
-      checkForPythonError();
-      qCritical("Failed to create module.");
-      return;
-    }
-
-    // Create capsule to hold the pointer to the operator in the python world
-    {
-      vtkPythonScopeGilEnsurer gilEnsurer(true);
+      // Create capsule to hold the pointer to the operator in the python world
       vtkSmartPyObject args(PyTuple_New(2));
       pybind11::capsule op(this);
       // Increment ref count as the pybind11::capsule destructor will decrement
@@ -295,17 +279,13 @@ void OperatorPython::setScript(const QString& str)
       PyTuple_SET_ITEM(args.GetPointer(), 1, op.ptr());
       this->Internals->TransformMethod.TakeReference(PyObject_Call(
         this->Internals->FindTransformScalarsFunction, args, nullptr));
-    }
-    if (!this->Internals->TransformMethod) {
-      qCritical("Script doesn't have any 'transform_scalars' function.");
-      checkForPythonError();
-      return;
-    }
+      if (!this->Internals->TransformMethod) {
+        qCritical("Script doesn't have any 'transform_scalars' function.");
+        checkForPythonError();
+        return;
+      }
 
-    vtkSmartPyObject result;
-    {
-      vtkPythonScopeGilEnsurer gilEnsurer(true);
-      vtkSmartPyObject args(PyTuple_New(1));
+      args.TakeReference(PyTuple_New(1));
       // Note we use GetAndIncreaseReferenceCount to increment ref count
       // as PyTuple_SET_ITEM will "steal" the reference.
       PyTuple_SET_ITEM(
@@ -313,12 +293,13 @@ void OperatorPython::setScript(const QString& str)
         this->Internals->TransformModule.GetAndIncreaseReferenceCount());
       result.TakeReference(
         PyObject_Call(this->Internals->IsCancelableFunction, args, nullptr));
+      if (!result) {
+        qCritical("Error calling is_cancelable.");
+        checkForPythonError();
+        return;
+      }
     }
-    if (!result) {
-      qCritical("Error calling is_cancelable.");
-      checkForPythonError();
-      return;
-    }
+
     this->setSupportsCancel(result == Py_True);
 
     emit this->transformModified();
@@ -345,12 +326,11 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
     result.TakeReference(
       PyObject_Call(this->Internals->TransformMethod, args, nullptr));
-  }
-
-  if (!result) {
-    qCritical("Failed to execute the script.");
-    checkForPythonError();
-    return false;
+    if (!result) {
+      qCritical("Failed to execute the script.");
+      checkForPythonError();
+      return false;
+    }
   }
 
   // Look for additional outputs from the filter returned in a dictionary
@@ -362,8 +342,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     check = PyDict_Check(outputDict);
   }
 
+  bool errorEncountered = false;
   if (check) {
-    bool errorEncountered = false;
 
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
@@ -431,7 +411,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     }
   }
 
-  return !checkForPythonError();
+  return !errorEncountered;
 }
 
 Operator* OperatorPython::clone() const
