@@ -251,7 +251,7 @@ void OperatorPython::setScript(const QString& str)
       if (!this->Internals->Code) {
         checkForPythonError();
         qCritical(
-            "Invalid script. Please check the traceback message for details");
+          "Invalid script. Please check the traceback message for details");
         return;
       }
 

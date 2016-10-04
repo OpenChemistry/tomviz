@@ -83,21 +83,21 @@ public:
 
       vtkSmartPyObject module;
       module.TakeReference(PyImport_ExecCodeModule(
-          // Don't let these be the same, even for similar scripts.  Seems to
-          // cause python crashes.
-          QString("tomviz_%1%2")
-            .arg(this->label)
-            .arg(number_of_scripts++)
-            .toLatin1()
-            .data(),
-          this->Code));
+        // Don't let these be the same, even for similar scripts.  Seems to
+        // cause python crashes.
+        QString("tomviz_%1%2")
+          .arg(this->label)
+          .arg(number_of_scripts++)
+          .toLatin1()
+          .data(),
+        this->Code));
       if (!module) {
         tomviz::checkForPythonError();
         qCritical() << "Failed to create module.";
         return;
       }
       this->GenerateFunction.TakeReference(
-          PyObject_GetAttrString(module, "generate_dataset"));
+        PyObject_GetAttrString(module, "generate_dataset"));
       if (!this->GenerateFunction) {
         tomviz::checkForPythonError();
         qCritical() << "Script does not have a 'generate_dataset' function.";
@@ -105,7 +105,7 @@ public:
       }
 
       this->MakeDatasetFunction.TakeReference(
-          PyObject_GetAttrString(this->OperatorModule, "make_dataset"));
+        PyObject_GetAttrString(this->OperatorModule, "make_dataset"));
       if (!this->MakeDatasetFunction) {
         tomviz::checkForPythonError();
         qCritical() << "Could not find make_dataset function in tomviz.utils";

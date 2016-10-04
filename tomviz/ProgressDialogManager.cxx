@@ -39,7 +39,6 @@ ProgressDialogManager::ProgressDialogManager(QMainWindow* mw)
 
 ProgressDialogManager::~ProgressDialogManager()
 {
-
 }
 
 void ProgressDialogManager::operationStarted()
