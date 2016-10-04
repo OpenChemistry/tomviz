@@ -46,7 +46,7 @@ private slots:
   void setTiltAngles();
   void scheduleUpdate();
 
-  void setUnits();
+  void updateUnits();
   void updateXLength();
   void updateYLength();
   void updateZLength();
