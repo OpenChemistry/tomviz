@@ -36,7 +36,6 @@ class ProgressDialogManager::PDMInternal
 {
 public:
   QMap<Operator*, DataSource*> opToDataSource;
-  Operator* currentOp;
 };
 
 ProgressDialogManager::ProgressDialogManager(QMainWindow* mw)
@@ -68,7 +67,6 @@ void ProgressDialogManager::operationStarted()
     return;
   }
 
-  this->Internals->currentOp = op;
   QObject::connect(op, &Operator::transformingDone, this,
                    &ProgressDialogManager::operationDone);
   QObject::connect(progressDialog, &QDialog::rejected, this,
@@ -141,9 +139,6 @@ void ProgressDialogManager::operationCanceled()
 void ProgressDialogManager::operationDone(bool status)
 {
   Operator* op = qobject_cast<Operator*>(this->sender());
-  // make sure we are in a sane state, two operators running at once is not
-  // handled right now
-  assert(op == this->Internals->currentOp);
   // assume cancelled for now, need more info to determine that though.
   if (!status) {
     DataSource* ds = this->Internals->opToDataSource.value(op);
