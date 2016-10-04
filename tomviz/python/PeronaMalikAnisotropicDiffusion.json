@@ -1,0 +1,28 @@
+{
+  "name" : "PeronaMalikAnisotropicDiffusion",
+  "label" : "Perona-Malik Anistropic Diffusion",
+  "description" : "This filter performs anisotropic diffusion on an image using\nthe classic Perona-Malik, gradient magnitude-based equation.",
+  "parameters" : [
+    {
+      "name" : "conductance",
+      "label" : "Conductance",
+      "type" : "double",
+      "default" : 1.0,
+      "minimum" : 0.0
+    },
+    {
+      "name" : "iterations",
+      "label" : "Number of Iterations",
+      "type" : "int",
+      "default" : 100,
+      "minimum" : 0
+    },
+    {
+      "name" : "timestep",
+      "label" : "Time Step",
+      "type" : "double",
+      "default" : 0.125,
+      "minimum" : 0.0
+    }
+  ]
+}
