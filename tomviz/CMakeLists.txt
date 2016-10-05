@@ -306,7 +306,7 @@ foreach(file ${tomviz_python_modules})
 endforeach()
 
 # Install the tomviz Python files.
-install(DIRECTORY ${tomviz_python_binary_dir}/tomviz
+install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
        DESTINATION "${tomviz_python_install_dir}"
        USE_SOURCE_PERMISSIONS
        COMPONENT runtime)
