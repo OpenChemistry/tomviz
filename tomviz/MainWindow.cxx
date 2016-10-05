@@ -290,7 +290,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     readInPythonScript("Recon_DFT_constraint"), true);
   new AddPythonTransformReaction(
     reconTVMinimizationAction, "Reconstruct (TV Minimization)",
-    readInPythonScript("Recon_TV_minimization"), true);
+    readInPythonScript("Recon_TV_minimization"), true, false,
+    readInJSONDescription("Recon_TV_minimization"));
 
   new ReconstructionReaction(reconWBP_CAction);
   //#################################################################

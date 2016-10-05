@@ -251,6 +251,7 @@ set(json_files
   Rotate3D.json
   GenerateTiltSeries.json
   Recon_ART.json
+  Recon_TV_minimization.json
   )
 
 set(resource_files
