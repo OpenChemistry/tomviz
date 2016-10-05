@@ -85,29 +85,63 @@ void addIntWidget(QGridLayout* layout, int row,
   }
   layout->addWidget(label, row, 0, 1, 1);
 
-  int defaultValue = 0;
+  std::vector<int> defaultValues;
   if (parameterNode.isMember("default")) {
     Json::Value defaultNode = parameterNode["default"];
     if (defaultNode.isInt()) {
-      defaultValue = defaultNode.asInt();
+      defaultValues.push_back(defaultNode.asInt());
+    } else if (defaultNode.isArray()) {
+      for (Json::Value::ArrayIndex i = 0; i < defaultNode.size(); ++i) {
+        defaultValues.push_back(defaultNode[i].asInt());
+      }
     }
   }
-  tomviz::SpinBox* spinBox = new tomviz::SpinBox();
-  spinBox->setObjectName(nameValue.asCString());
-  spinBox->setSingleStep(1);
-  spinBox->setMinimum(std::numeric_limits<int>::min());
-  spinBox->setMaximum(std::numeric_limits<int>::max());
-  spinBox->setValue(defaultValue);
 
-  if (parameterNode.isMember("minimum")) {
-    int minimum = parameterNode["minimum"].asInt();
-    spinBox->setMinimum(minimum);
+  std::vector<int> minValues(defaultValues.size(),
+                             std::numeric_limits<int>::min());
+  Json::Value minNode = parameterNode["minimum"];
+  if (minNode.isInt()) {
+    minValues[0] = minNode.asInt();
+  } else if (minNode.isArray()) {
+    for (Json::Value::ArrayIndex i = 0; i < minNode.size(); ++i) {
+      minValues[i] = minNode[i].asInt();
+    }
   }
-  if (parameterNode.isMember("maximum")) {
-    int maximum = parameterNode["maximum"].asInt();
-    spinBox->setMaximum(maximum);
+
+  std::vector<int> maxValues(defaultValues.size(),
+                             std::numeric_limits<int>::max());
+  Json::Value maxNode = parameterNode["maximum"];
+  if (maxNode.isInt()) {
+    maxValues[0] = maxNode.asInt();
+  } else if (maxNode.isArray()) {
+    for (Json::Value::ArrayIndex i = 0; i < maxNode.size(); ++i) {
+      maxValues[i] = maxNode[i].asInt();
+    }
   }
-  layout->addWidget(spinBox, row, 1, 1, 1);
+
+  QHBoxLayout* horizontalLayout = new QHBoxLayout();
+  horizontalLayout->setContentsMargins(0, 0, 0, 0);
+  QWidget* horizontalWidget = new QWidget;
+  horizontalWidget->setLayout(horizontalLayout);
+  layout->addWidget(horizontalWidget, row, 1, 1, 1);
+
+  for (size_t i = 0; i < defaultValues.size(); ++i) {
+    QString name(nameValue.asCString());
+    if (defaultValues.size() > 1) {
+      // Multi-element parameters are named with the pattern 'basename#XXX'
+      // where 'basename' is the name of the parameter and 'XXX' is the
+      // element number.
+      name.append("#%1");
+      name = name.arg(i, 3, 10, QLatin1Char('0'));
+    }
+    tomviz::SpinBox* spinBox = new tomviz::SpinBox();
+    spinBox->setObjectName(name);
+    spinBox->setSingleStep(1);
+    spinBox->setMinimum(minValues[i]);
+    spinBox->setMaximum(maxValues[i]);
+    spinBox->setValue(defaultValues[i]);
+    horizontalLayout->addWidget(spinBox);
+  }
 }
 
 void addDoubleWidget(QGridLayout* layout, int row,
@@ -128,29 +162,63 @@ void addDoubleWidget(QGridLayout* layout, int row,
   }
   layout->addWidget(label, row, 0, 1, 1);
 
-  double defaultValue = 0.0;
+  std::vector<double> defaultValues;
   if (parameterNode.isMember("default")) {
     Json::Value defaultNode = parameterNode["default"];
     if (defaultNode.isDouble()) {
-      defaultValue = defaultNode.asDouble();
+      defaultValues.push_back(defaultNode.asDouble());
+    } else if (defaultNode.isArray()) {
+      for (Json::Value::ArrayIndex i = 0; i < defaultNode.size(); ++i) {
+        defaultValues.push_back(defaultNode[i].asDouble());
+      }
     }
   }
-  tomviz::DoubleSpinBox* spinBox = new tomviz::DoubleSpinBox();
-  spinBox->setObjectName(nameValue.asCString());
-  spinBox->setSingleStep(0.5);
-  spinBox->setMinimum(std::numeric_limits<double>::min());
-  spinBox->setMaximum(std::numeric_limits<double>::max());
-  spinBox->setValue(defaultValue);
 
-  if (parameterNode.isMember("minimum")) {
-    int minimum = parameterNode["minimum"].asInt();
-    spinBox->setMinimum(minimum);
+  std::vector<double> minValues(defaultValues.size(),
+                                std::numeric_limits<double>::min());
+  Json::Value minNode = parameterNode["minimum"];
+  if (minNode.isDouble()) {
+    minValues[0] = minNode.asDouble();
+  } else if (minNode.isArray()) {
+    for (Json::Value::ArrayIndex i = 0; i < minNode.size(); ++i) {
+      minValues[i] = minNode[i].asDouble();
+    }
   }
-  if (parameterNode.isMember("maximum")) {
-    int maximum = parameterNode["maximum"].asInt();
-    spinBox->setMaximum(maximum);
+
+  std::vector<double> maxValues(defaultValues.size(),
+                                std::numeric_limits<double>::max());
+  Json::Value maxNode = parameterNode["maximum"];
+  if (maxNode.isDouble()) {
+    maxValues[0] = maxNode.asInt();
+  } else if (maxNode.isArray()) {
+    for (Json::Value::ArrayIndex i = 0; i < maxNode.size(); ++i) {
+      maxValues[i] = maxNode[i].asDouble();
+    }
   }
-  layout->addWidget(spinBox, row, 1, 1, 1);
+
+  QHBoxLayout* horizontalLayout = new QHBoxLayout();
+  horizontalLayout->setContentsMargins(0, 0, 0, 0);
+  QWidget* horizontalWidget = new QWidget;
+  horizontalWidget->setLayout(horizontalLayout);
+  layout->addWidget(horizontalWidget, row, 1, 1, 1);
+
+  for (size_t i = 0; i < defaultValues.size(); ++i) {
+    QString name(nameValue.asCString());
+    if (defaultValues.size() > 1) {
+      // Multi-element parameters are named with the pattern 'basename#XXX'
+      // where 'basename' is the name of the parameter and 'XXX' is the
+      // element number.
+      name.append("#%1");
+      name = name.arg(i, 3, 10, QLatin1Char('0'));
+    }
+    tomviz::DoubleSpinBox* spinBox = new tomviz::DoubleSpinBox();
+    spinBox->setObjectName(name);
+    spinBox->setSingleStep(0.5);
+    spinBox->setMinimum(minValues[i]);
+    spinBox->setMaximum(maxValues[i]);
+    spinBox->setValue(defaultValues[i]);
+    horizontalLayout->addWidget(spinBox);
+  }
 }
 
 void addEnumerationWidget(QGridLayout* layout, int row,
