@@ -188,6 +188,8 @@ void addEnumerationWidget(QGridLayout* layout, int row,
     }
   }
 
+  comboBox->setCurrentIndex(defaultOption);
+
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
 
