@@ -268,6 +268,26 @@ void addEnumerationWidget(QGridLayout* layout, int row,
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
 
+void addXYZHeaderWidget(QGridLayout* layout, int row,
+                        const Json::Value&)
+{
+  QHBoxLayout* horizontalLayout = new QHBoxLayout;
+  horizontalLayout->setContentsMargins(0, 0, 0, 0);
+  QWidget* horizontalWidget = new QWidget;
+  horizontalWidget->setLayout(horizontalLayout);
+  layout->addWidget(horizontalWidget, row, 1, 1, 1);
+
+  QLabel* xLabel = new QLabel("X");
+  xLabel->setAlignment(Qt::AlignCenter);
+  horizontalLayout->addWidget(xLabel);
+  QLabel* yLabel = new QLabel("Y");
+  yLabel->setAlignment(Qt::AlignCenter);
+  horizontalLayout->addWidget(yLabel);
+  QLabel* zLabel = new QLabel("Z");
+  zLabel->setAlignment(Qt::AlignCenter);
+  horizontalLayout->addWidget(zLabel);
+}
+
 } // end anonymous namespace
 
 namespace tomviz {
@@ -343,6 +363,8 @@ QLayout* InterfaceBuilder::buildInterface() const
       addDoubleWidget(layout, i + 1, parameterNode);
     } else if (typeString == "enumeration") {
       addEnumerationWidget(layout, i + 1, parameterNode);
+    } else if (typeString =="xyz_header") {
+      addXYZHeaderWidget(layout, i + 1, parameterNode);
     }
   }
 
