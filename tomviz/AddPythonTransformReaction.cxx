@@ -183,16 +183,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     return nullptr;
   }
 
-  // Handle transforms with custom UIs
-  if (scriptLabel == "Binary Threshold" ||
-      scriptLabel == "Connected Components" ||
-      scriptLabel == "Otsu Multiple Threshold" ||
-      scriptLabel == "Binary Dilate" || scriptLabel == "Binary Erode" ||
-      scriptLabel == "Binary Open" || scriptLabel == "Binary Close" ||
-      scriptLabel == "Gaussian Filter" ||
-      scriptLabel == "Perona-Malik Anisotropic Diffusion" ||
-      scriptLabel == "Median Filter" || scriptLabel == "Generate Tilt Series" ||
-      scriptLabel == "Reconstruct (ART)") {
+  bool hasJson = this->jsonSource.size() > 0;
+  if (hasJson) {
+    // Use JSON to build the interface via the OperatorDialog
     OperatorDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle(scriptLabel);
     dialog.setJSONDescription(this->jsonSource);
@@ -223,6 +216,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions, jsonSource);
     }
+    // Handle transforms with custom UIs
   } else if (scriptLabel == "Shift Volume") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
