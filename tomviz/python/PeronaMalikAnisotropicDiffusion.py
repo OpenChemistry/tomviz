@@ -7,7 +7,7 @@ def transform_scalars(dataset):
         import itk
         from tomviz import utils
     except Exception as exc:
-        print("Could not import necessary module(s) itk and vtk")
+        print("Could not import necessary module(s)")
         print(exc)
 
     #----USER SPECIFIED VARIABLES-----#
