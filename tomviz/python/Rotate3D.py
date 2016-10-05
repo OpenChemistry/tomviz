@@ -6,8 +6,8 @@
 def transform_scalars(dataset):
 
     #----USER SPECIFIED VARIABLES-----#
-    ###ROT_AXIS###    #Specify Tilt Axis Dimensions x=0, y=1, z=2
-    ###ROT_ANGLE###   #Rotate the dataset by an Angle (in degrees)
+    ###rotation_axis###    #Specify Tilt Axis Dimensions x=0, y=1, z=2
+    ###rotation_angle###   #Rotate the dataset by an Angle (in degrees)
     #---------------------------------#
 
     from tomviz import utils
@@ -19,20 +19,22 @@ def transform_scalars(dataset):
     if data_py is None: #Check if data exists
         raise RuntimeError("No data array found!")
 
-    if ROT_AXIS == []: #If tilt axis is not given, assign one.
+    if rotation_axis == []: #If tilt axis is not given, assign one.
         # Find the smallest array dimension, assume it is the tilt angle axis.
         if data_py.ndim >= 2:
-            ROT_AXIS = np.argmin(data_py.shape)
+            rotation_axis = np.argmin(data_py.shape)
         else:
             raise RuntimeError("Data Array is not 2 or 3 dimensions!")
 
-    if ROT_ANGLE == []: # If tilt axis is not given, assign it to 90 degrees.
-        ROT_ANGLE = 90
+    if rotation_angle == []: # If tilt angle not given, assign it to 90 degrees.
+        rotation_angle = 90
 
     print('Rotating Dataset...')
 
+    axis1 = (rotation_axis + 1) % 3
+    axis2 = (rotation_axis + 2) % 3
     data_py_return = ndimage.interpolation.rotate(
-        data_py, ROT_ANGLE, axes=((ROT_AXIS + 1) % 3, (ROT_AXIS + 2) % 3))
+        data_py, rotation_angle, axes=(axis1, axis2))
 
     utils.set_array(dataset, data_py_return)
     print('Rotation Complete')

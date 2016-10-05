@@ -146,7 +146,8 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(resampleAction, "Resample",
                                  readInPythonScript("Resample"));
   new AddPythonTransformReaction(rotateAction, "Rotate",
-                                 readInPythonScript("Rotate3D"));
+                                 readInPythonScript("Rotate3D"), false, false,
+                                 readInJSONDescription("Rotate3D"));
   new AddPythonTransformReaction(clearAction, "Clear Volume",
                                  readInPythonScript("ClearVolume"));
   new AddPythonTransformReaction(setNegativeVoxelsToZeroAction,

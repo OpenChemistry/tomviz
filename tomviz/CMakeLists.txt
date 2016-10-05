@@ -248,6 +248,7 @@ set(json_files
   GaussianFilter.json
   PeronaMalikAnisotropicDiffusion.json
   MedianFilter.json
+  Rotate3D.json
   GenerateTiltSeries.json
   Recon_ART.json
   )

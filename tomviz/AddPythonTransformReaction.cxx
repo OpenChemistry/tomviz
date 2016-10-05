@@ -325,46 +325,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
-  } else if (scriptLabel == "Rotate") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Rotate");
-    QGridLayout* layout = new QGridLayout;
-    QLabel* labelDescription =
-      new QLabel("Rotate dataset along a given axis.", &dialog);
-    layout->addWidget(labelDescription, 0, 0, 1, 2);
-    QLabel* label = new QLabel("Angle:", &dialog);
-    layout->addWidget(label, 1, 0, 1, 2);
-    QDoubleSpinBox* angle = new QDoubleSpinBox(&dialog);
-    angle->setRange(-360, 360);
-    angle->setValue(90);
-    layout->addWidget(angle, 1, 1, 1, 1);
-    label = new QLabel("Axis:", &dialog);
-    layout->addWidget(label, 2, 0, 1, 1);
-    QComboBox* axis = new QComboBox(&dialog);
-    axis->addItem("X");
-    axis->addItem("Y");
-    axis->addItem("Z");
-    axis->setCurrentIndex(2);
-    layout->addWidget(axis, 2, 1, 1, 1);
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###ROT_AXIS###",
-                           QString("ROT_AXIS = %1").arg(axis->currentIndex()));
-      substitutions.insert("###ROT_ANGLE###",
-                           QString("ROT_ANGLE = %1").arg(angle->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
   } else if (scriptLabel == "Delete Slices") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
