@@ -3,11 +3,10 @@ if (UNIX)
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wshadow -Wextra")
 elseif (WIN32)
-  if (MSVC AND MSVC12)
+  if (MSVC AND MSVC14)
     set(CMAKE_CXX_FLAGS_STD_CPP)
   else()
-    # ParaView doesn't support MSVC 2015 yet
-    message(FATAL_ERROR "Only the MSVC 2013 compiler is supported on windows.")
+    message(FATAL_ERROR "Only the MSVC 2015 compiler is supported on windows.")
   endif()
 endif()
 
