@@ -99,9 +99,9 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   if (dataSource != nullptr) {
     cloneAction = contextMenu.addAction("Clone");
     new CloneDataReaction(cloneAction);
+    saveDataAction = contextMenu.addAction("Save Data");
+    new SaveDataReaction(saveDataAction);
     if (dataSource->type() == DataSource::Volume) {
-      saveDataAction = contextMenu.addAction("Save Data");
-      new SaveDataReaction(saveDataAction);
       markAsAction = contextMenu.addAction("Mark as Tilt Series");
     } else {
       markAsAction = contextMenu.addAction("Mark as Volume");
