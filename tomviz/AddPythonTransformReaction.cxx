@@ -373,51 +373,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
-  } else if (scriptLabel == "Resample") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Resample");
-    QGridLayout* layout = new QGridLayout;
-    // Add labels
-    QLabel* labelx = new QLabel("x:");
-    layout->addWidget(labelx, 0, 1, 1, 1, Qt::AlignCenter);
-    QLabel* labely = new QLabel("y:");
-    layout->addWidget(labely, 0, 2, 1, 1, Qt::AlignCenter);
-    QLabel* labelz = new QLabel("z:");
-    layout->addWidget(labelz, 0, 3, 1, 1, Qt::AlignCenter);
-    QLabel* label = new QLabel("Scale Factors:");
-    layout->addWidget(label, 1, 0, 1, 1);
-    QDoubleSpinBox* spinx = new QDoubleSpinBox;
-    spinx->setSingleStep(0.5);
-    spinx->setValue(1);
-    QDoubleSpinBox* spiny = new QDoubleSpinBox;
-    spiny->setSingleStep(0.5);
-    spiny->setValue(1);
-    QDoubleSpinBox* spinz = new QDoubleSpinBox;
-    spinz->setSingleStep(0.5);
-    spinz->setValue(1);
-    layout->addWidget(spinx, 1, 1, 1, 1);
-    layout->addWidget(spiny, 1, 2, 1, 1);
-    layout->addWidget(spinz, 1, 3, 1, 1);
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###resampingFactor###",
-                           QString("resampingFactor = [%1, %2, %3]")
-                             .arg(spinx->value())
-                             .arg(spiny->value())
-                             .arg(spinz->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
   } else if (scriptLabel == "Reconstruct (Direct Fourier)") {
     QDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle("Direct Fourier Reconstruction");

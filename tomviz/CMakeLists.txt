@@ -247,6 +247,7 @@ set(json_files
   BinaryClose.json
   Shift_Stack_Uniformly.json
   Pad_Data.json
+  Resample.json
   GaussianFilter.json
   PeronaMalikAnisotropicDiffusion.json
   MedianFilter.json

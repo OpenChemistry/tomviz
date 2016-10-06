@@ -147,7 +147,8 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(downsampleByTwoAction, "Bin Volume x2",
                                  readInPythonScript("BinVolumeByTwo"));
   new AddPythonTransformReaction(resampleAction, "Resample",
-                                 readInPythonScript("Resample"));
+                                 readInPythonScript("Resample"), false, false,
+                                 readInJSONDescription("Resample"));
   new AddPythonTransformReaction(rotateAction, "Rotate",
                                  readInPythonScript("Rotate3D"), false, false,
                                  readInJSONDescription("Rotate3D"));
