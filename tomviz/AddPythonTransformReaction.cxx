@@ -199,7 +199,19 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
         parameterValues.constBegin();
       for (; iter != parameterValues.constEnd(); ++iter) {
         QString key = "###" + iter.key() + "###";
-        QString parameterValue = iter.value().toString();
+        QVariant parameterVariant = iter.value();
+        QString parameterValue = parameterVariant.toString();
+        if (parameterVariant.type() == QVariant::List) {
+          parameterValue = "(";
+          QList<QVariant> list = parameterVariant.toList();
+          for (int i = 0; i < list.size(); ++i) {
+            parameterValue.append(list[i].toString());
+            if (i < list.size() - 1) {
+              parameterValue.append(", ");
+            }
+          }
+          parameterValue.append(")");
+        }
 
         // Convert to Python True/False values
         if (parameterValue[0] == 't') {
