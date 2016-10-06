@@ -245,6 +245,7 @@ set(json_files
   BinaryErode.json
   BinaryOpen.json
   BinaryClose.json
+  Shift_Stack_Uniformly.json
   Pad_Data.json
   GaussianFilter.json
   PeronaMalikAnisotropicDiffusion.json

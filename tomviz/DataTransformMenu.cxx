@@ -135,8 +135,10 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(binaryCloseAction, "Binary Close",
                                  readInPythonScript("BinaryClose"), false,
                                  false, readInJSONDescription("BinaryClose"));
-  new AddPythonTransformReaction(shiftUniformAction, "Shift Volume",
-                                 readInPythonScript("Shift_Stack_Uniformly"));
+  new AddPythonTransformReaction(
+    shiftUniformAction, "Shift Volume",
+    readInPythonScript("Shift_Stack_Uniformly"), false, false,
+    readInJSONDescription("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction, "Delete Slices",
                                  readInPythonScript("deleteSlices"));
   new AddPythonTransformReaction(padVolumeAction, "Pad Volume",
