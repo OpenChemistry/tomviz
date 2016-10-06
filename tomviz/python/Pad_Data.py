@@ -4,17 +4,21 @@ def transform_scalars(dataset):
     import numpy as np
 
     #----USER SPECIFIED VARIABLES-----#
-    ###padWidthX###
-    ###padWidthY###
-    ###padWidthZ###
-    ###padMode_index###
+    ###pad_size_before###
+    ###pad_size_after###
+    ###pad_mode_index###
+
     #---------------------------------#
     padModes = ['constant', 'edge', 'wrap', 'minimum', 'median']
-    padMode = padModes[padMode_index]
+    padMode = padModes[pad_mode_index]
     array = utils.get_array(dataset) #get data as numpy array
 
     if array is None: #Check if data exists
         raise RuntimeError("No data array found!")
+
+    padWidthX = (pad_size_before[0], pad_size_after[0])
+    padWidthY = (pad_size_before[1], pad_size_after[1])
+    padWidthZ = (pad_size_before[2], pad_size_after[2])
 
     pad_width = (padWidthX, padWidthY, padWidthZ)
 

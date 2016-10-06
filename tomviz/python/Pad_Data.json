@@ -1,0 +1,42 @@
+{
+  "name" : "PadVolume",
+  "label" : "Pad Volume",
+  "description" : "Enlarge the volume by padding it with additional voxels.",
+  "parameters" : [
+    {
+      "type" : "xyz_header"
+    },
+    {
+      "name" : "pad_size_before",
+      "label" : "Pad Size Before",
+      "description" : "Additional padding on the lower-index side of each dimension.",
+      "type" : "int",
+      "default" : [0, 0, 0],
+      "minimum" : [0, 0, 0],
+      "maximum" : [999, 999, 999]
+    },
+    {
+      "name" : "pad_size_after",
+      "label" : "Pad Size After",
+      "description" : "Additional padding on the higher-index side of each dimension.",
+      "type" : "int",
+      "default" : [0, 0, 0],
+      "minimum" : [0, 0, 0],
+      "maximum" : [999, 999, 999]
+    },
+    {
+      "name" : "pad_mode_index",
+      "label" : "Pad Mode",
+      "description" : "Padding mode",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Constant Zero" : 0},
+        {"Edge" :          1},
+        {"Wrap" :          2},
+        {"Minimum" :       3},
+        {"Median" :        4}
+      ]
+    }
+  ]
+}

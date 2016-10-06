@@ -140,7 +140,8 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(deleteSliceAction, "Delete Slices",
                                  readInPythonScript("deleteSlices"));
   new AddPythonTransformReaction(padVolumeAction, "Pad Volume",
-                                 readInPythonScript("Pad_Data"));
+                                 readInPythonScript("Pad_Data"), false, false,
+                                 readInJSONDescription("Pad_Data"));
   new AddPythonTransformReaction(downsampleByTwoAction, "Bin Volume x2",
                                  readInPythonScript("BinVolumeByTwo"));
   new AddPythonTransformReaction(resampleAction, "Resample",
