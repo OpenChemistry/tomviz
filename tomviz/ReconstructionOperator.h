@@ -42,7 +42,6 @@ public:
   bool hasCustomUI() const override { return false; }
 
   QWidget* getCustomProgressWidget(QWidget*) const override;
-  int totalProgressSteps() const override;
 
 protected:
   bool applyTransform(vtkDataObject* data) override;

@@ -45,6 +45,7 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
     this->extent[i] = dataExtent[i];
   }
   this->setSupportsCancel(true);
+  this->setTotalProgressSteps(this->extent[1] - this->extent[0] + 1);
 }
 
 ReconstructionOperator::~ReconstructionOperator()
@@ -83,11 +84,6 @@ QWidget* ReconstructionOperator::getCustomProgressWidget(QWidget* p) const
   return widget;
 }
 
-int ReconstructionOperator::totalProgressSteps() const
-{
-  return this->extent[1] - this->extent[0] + 1;
-}
-
 bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
 {
   vtkImageData* imageData = vtkImageData::SafeDownCast(dataObject);
@@ -103,6 +99,8 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
       this->extent[i] = dataExtent[i];
     }
   }
+  this->setTotalProgressSteps(this->extent[1] - this->extent[0] + 1);
+
   int numXSlices = dataExtent[1] - dataExtent[0] + 1;
   int numYSlices = dataExtent[3] - dataExtent[2] + 1;
   int numZSlices = dataExtent[5] - dataExtent[4] + 1;
