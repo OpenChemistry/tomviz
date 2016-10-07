@@ -24,6 +24,7 @@
 #include "Operator.h"
 #include "OperatorResult.h"
 #include "PipelineModel.h"
+#include "SaveDataReaction.h"
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 
@@ -94,9 +95,12 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QMenu contextMenu;
   QAction* cloneAction = nullptr;
   QAction* markAsAction = nullptr;
+  QAction* saveDataAction = nullptr;
   if (dataSource != nullptr) {
     cloneAction = contextMenu.addAction("Clone");
     new CloneDataReaction(cloneAction);
+    saveDataAction = contextMenu.addAction("Save Data");
+    new SaveDataReaction(saveDataAction);
     if (dataSource->type() == DataSource::Volume) {
       markAsAction = contextMenu.addAction("Mark as Tilt Series");
     } else {
