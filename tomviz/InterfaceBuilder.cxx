@@ -25,6 +25,13 @@
 #include <QSpinBox>
 #include <QWidget>
 
+// Has to be included before vtk_jsoncpp.h
+// vtk_jsoncpp.h needs VTK_BUILD_SHARED_LIBS to be set correctly in order to
+// define the export macros for MSVC right. Otherwise you don't get the
+// dllimport on all the jsoncpp symbols. This was causing duplicate
+// symbol errors.
+#include "vtkConfigure.h"
+
 #include "vtk_jsoncpp.h"
 
 namespace {
