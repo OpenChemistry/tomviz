@@ -38,6 +38,7 @@ private slots:
   void operationStarted();
   void operationProgress(int progress);
   void operatorAdded(Operator* op);
+  void dataSourceAdded(DataSource* ds);
 
 private:
   QMainWindow* mainWindow;
