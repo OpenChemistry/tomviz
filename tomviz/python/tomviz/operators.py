@@ -16,11 +16,41 @@
 #
 ###############################################################################
 
+class Progress(object):
+    """
+    Class used to update operator progress.
+    """
 
-class Operator:
+    def __init__(self, operator):
+        self._operator = operator
+
+    @property
+    def maximum(self):
+        """
+        Property defining the maxium progress value
+        """
+
+        return self._operator._operator_wrapper.max_progress
+
+    @maximum.setter
+    def maximum(self, value):
+        self._operator._operator_wrapper.max_progress = value
+
+    def update(self, value):
+        """
+        Updates the progress of the the operator.
+
+        :param value The current progress value.
+        :type value: int
+        """
+        self._operator._operator_wrapper.update_progress(value)
+
+class Operator(object):
     """
     The base operator class from which all operators should be derived.
     """
+    def __init__(self):
+        self.progress = Progress(self)
 
     def transform_scalars(self, data):
         """
