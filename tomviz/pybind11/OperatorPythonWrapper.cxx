@@ -23,6 +23,12 @@ struct OperatorPythonWrapper
 {
   OperatorPythonWrapper(OperatorPython* o) { this->op = o; };
   bool canceled() { return this->op->isCanceled(); }
+  void setTotalProgressSteps(int progress)
+  {
+    this->op->setTotalProgressSteps(progress);
+  }
+  int totalProgressSteps() { return this->op->totalProgressSteps(); }
+  void updateProgress(int progress) { this->op->updateProgress(progress); }
   OperatorPython* op;
 };
 
@@ -38,7 +44,10 @@ PYBIND11_PLUGIN(_wrapping)
            new (&instance)
              OperatorPythonWrapper(static_cast<OperatorPython*>(op));
          })
-    .def_property_readonly("canceled", &OperatorPythonWrapper::canceled);
+    .def_property_readonly("canceled", &OperatorPythonWrapper::canceled)
+    .def_property("max_progress", &OperatorPythonWrapper::totalProgressSteps,
+                  &OperatorPythonWrapper::setTotalProgressSteps)
+    .def("update_progress", &OperatorPythonWrapper::updateProgress);
 
   return m.ptr();
 }
