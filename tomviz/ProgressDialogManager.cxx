@@ -35,6 +35,9 @@ namespace tomviz {
 ProgressDialogManager::ProgressDialogManager(QMainWindow* mw)
   : Superclass(mw), mainWindow(mw)
 {
+  ModuleManager& mm = ModuleManager::instance();
+  QObject::connect(&mm, SIGNAL(dataSourceAdded(DataSource*)), this,
+                   SLOT(dataSourceAdded(DataSource*)));
 }
 
 ProgressDialogManager::~ProgressDialogManager()
@@ -96,6 +99,12 @@ void ProgressDialogManager::operatorAdded(Operator* op)
 {
   QObject::connect(op, &Operator::transformingStarted, this,
                    &ProgressDialogManager::operationStarted);
+}
+
+void ProgressDialogManager::dataSourceAdded(DataSource* ds)
+{
+  QObject::connect(ds, SIGNAL(operatorAdded(Operator*)), this,
+                   SLOT(operatorAdded(Operator*)));
 }
 
 void ProgressDialogManager::operationProgress(int)
