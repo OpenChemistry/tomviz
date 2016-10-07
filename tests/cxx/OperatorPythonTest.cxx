@@ -23,6 +23,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QIODevice>
+#include <QSignalSpy>
 #include <QString>
 
 #include "OperatorPython.h"
@@ -99,6 +100,51 @@ TEST_F(OperatorPythonTest, cancelable_operator_transform)
     bool result = pythonOperator->transform(dataObject);
     canceler.join();
     ASSERT_FALSE(result);
+
+  } else {
+    FAIL() << "Unable to load script.";
+  }
+}
+
+TEST_F(OperatorPythonTest, set_max_progress)
+{
+  pythonOperator->setLabel("set_max_progress");
+  QFile file(QString("%1/fixtures/set_max_progress.py").arg(SOURCE_DIR));
+  if (file.open(QIODevice::ReadOnly)) {
+    QByteArray array = file.readAll();
+    QString script(array);
+    file.close();
+    pythonOperator->setScript(script);
+
+    bool result = pythonOperator->transform(dataObject);
+    ASSERT_TRUE(result);
+    ASSERT_EQ(pythonOperator->totalProgressSteps(), 10);
+
+  } else {
+    FAIL() << "Unable to load script.";
+  }
+}
+
+TEST_F(OperatorPythonTest, update_progress)
+{
+  pythonOperator->setLabel("update_progress");
+  QFile file(QString("%1/fixtures/update_progress.py").arg(SOURCE_DIR));
+  if (file.open(QIODevice::ReadOnly)) {
+    QByteArray array = file.readAll();
+    QString script(array);
+    file.close();
+    pythonOperator->setScript(script);
+
+    QSignalSpy spy(pythonOperator, SIGNAL(updateProgress(int)));
+    bool result = pythonOperator->transform(dataObject);
+    ASSERT_TRUE(result);
+
+    // One from applyTransform() and one from our python code
+    ASSERT_EQ(spy.count(), 2);
+
+    // Take the signal emission from our python code
+    QList<QVariant> args = spy.takeAt(1);
+    ASSERT_EQ(args.at(0).toInt(), 100);
 
   } else {
     FAIL() << "Unable to load script.";
