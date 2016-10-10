@@ -98,7 +98,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   // Set up a data resampler to add LabelMap values on the contour
   vtkSmartPointer<vtkSMProxy> probeProxy;
-  probeProxy.TakeReference(pxm->NewProxy("filters", "Probe"));
+  probeProxy.TakeReference(pxm->NewProxy("filters", "ResampleWithDataset"));
 
   this->ResampleFilter = vtkSMSourceProxy::SafeDownCast(probeProxy);
   Q_ASSERT(this->ResampleFilter);
