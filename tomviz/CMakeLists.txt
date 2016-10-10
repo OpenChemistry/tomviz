@@ -327,7 +327,7 @@ qt5_wrap_ui(UI_SOURCES
 qt5_add_resources(RCC_SOURCES resources.qrc)
 
 if(APPLE)
-  list(APPEND SOURCES icons/tomviz.icns)
+  list(APPEND exec_sources icons/tomviz.icns)
   set(MACOSX_BUNDLE_ICON_FILE tomviz.icns)
   set(MACOSX_BUNDLE_BUNDLE_VERSION "${tomviz_version}")
   set_source_files_properties(icons/tomviz.icns PROPERTIES
