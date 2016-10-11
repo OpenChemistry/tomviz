@@ -23,19 +23,18 @@ class Progress(object):
 
     def __init__(self, operator):
         self._operator = operator
-
+        
     @property
     def maximum(self):
         """
         Property defining the maxium progress value
         """
-
         return self._operator._operator_wrapper.max_progress
-
+        
     @maximum.setter
     def maximum(self, value):
         self._operator._operator_wrapper.max_progress = value
-
+            
     def update(self, value):
         """
         Updates the progress of the the operator.
@@ -49,9 +48,12 @@ class Operator(object):
     """
     The base operator class from which all operators should be derived.
     """
-    def __init__(self):
-        self.progress = Progress(self)
-
+    def __new__(cls, *args, **kwargs):
+        obj = super(Operator, cls).__new__(cls)
+        obj.progress = Progress(obj)
+        
+        return obj
+        
     def transform_scalars(self, data):
         """
         This method should be overriden by subclasses to implement the
