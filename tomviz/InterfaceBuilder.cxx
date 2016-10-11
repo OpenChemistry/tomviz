@@ -21,67 +21,62 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QLabel>
 #include <QSpinBox>
 #include <QWidget>
 
-// Has to be included before vtk_jsoncpp.h
-// vtk_jsoncpp.h needs VTK_BUILD_SHARED_LIBS to be set correctly in order to
-// define the export macros for MSVC right. Otherwise you don't get the
-// dllimport on all the jsoncpp symbols. This was causing duplicate
-// symbol errors.
-#include "vtkConfigure.h"
-
-#include "vtk_jsoncpp.h"
-
 namespace {
 
-// Templated query of Json::Value type
+// Templated query of QJsonValue type
 template <typename T>
-bool isType(const Json::Value&)
+bool isType(const QJsonValue&)
 {
   return false;
 }
 
 template <>
-bool isType<int>(const Json::Value& value)
-{
-  return value.isInt();
-}
-
-template <>
-bool isType<double>(const Json::Value& value)
+bool isType<int>(const QJsonValue& value)
 {
   return value.isDouble();
 }
 
-// Templated accessor of Json::Value value
+template <>
+bool isType<double>(const QJsonValue& value)
+{
+  return value.isDouble();
+}
+
+// Templated accessor of QJsonValue value
 template <typename T>
-T getAs(const Json::Value&)
+T getAs(const QJsonValue&)
 {
   return 0;
 }
 
 template <>
-int getAs(const Json::Value& value)
+int getAs(const QJsonValue& value)
 {
   int iValue = 0;
   try {
-    iValue = value.asInt();
+    iValue = value.toInt();
   } catch (...) {
-    qCritical() << "Could not get int from Json::Value";
+    qCritical() << "Could not get int from QJsonValue";
   }
   return iValue;
 }
 
 template <>
-double getAs(const Json::Value& value)
+double getAs(const QJsonValue& value)
 {
   double dValue = 0.0;
   try {
-    dValue = value.asDouble();
+    dValue = value.toDouble();
   } catch (...) {
-    qCritical() << "Could not get double from Json::Value";
+    qCritical() << "Could not get double from QJsonValue";
   }
   return dValue;
 }
@@ -115,85 +110,92 @@ QWidget* getNumericWidget(double defaultValue, double rangeMin, double rangeMax)
   return spinBox;
 }
 
-void addBoolWidget(QGridLayout* layout, int row,
-                   const Json::Value& parameterNode)
+void addBoolWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 {
-  Json::Value nameValue = parameterNode["name"];
-  Json::Value labelValue = parameterNode["label"];
+  QJsonValueRef nameValue = parameterNode["name"];
+  QJsonValueRef labelValue = parameterNode["label"];
 
-  if (nameValue.isNull()) {
+  if (nameValue.isUndefined()) {
+    QJsonDocument document(parameterNode);
     qWarning() << QString("Parameter %1 has no name. Skipping.")
-                    .arg(parameterNode.toStyledString().c_str());
+                    .arg(document.toJson().data());
     return;
   }
 
-  QLabel* label = new QLabel(nameValue.asCString());
-  if (!labelValue.isNull()) {
-    label->setText(labelValue.asCString());
+  QLabel* label = new QLabel(nameValue.toString());
+  if (!labelValue.isUndefined()) {
+    label->setText(labelValue.toString());
   }
   layout->addWidget(label, row, 0, 1, 1);
 
   bool defaultValue = false;
-  if (parameterNode.isMember("default")) {
-    Json::Value defaultNode = parameterNode["default"];
+  if (parameterNode.contains("default")) {
+    QJsonValueRef defaultNode = parameterNode["default"];
     if (defaultNode.isBool()) {
-      defaultValue = defaultNode.asBool();
+      defaultValue = defaultNode.toBool();
     }
   }
   QCheckBox* checkBox = new QCheckBox();
-  checkBox->setObjectName(nameValue.asCString());
+  checkBox->setObjectName(nameValue.toString());
   checkBox->setCheckState(defaultValue ? Qt::Checked : Qt::Unchecked);
   layout->addWidget(checkBox, row, 1, 1, 1);
 }
 
 template <typename T>
-void addNumericWidget(QGridLayout* layout, int row,
-                      const Json::Value& parameterNode)
+void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 {
-  Json::Value nameValue = parameterNode["name"];
-  Json::Value labelValue = parameterNode["label"];
+  QJsonValueRef nameValue = parameterNode["name"];
+  QJsonValueRef labelValue = parameterNode["label"];
 
-  if (nameValue.isNull()) {
+  if (nameValue.isUndefined()) {
+    QJsonDocument document(parameterNode);
     qWarning() << QString("Parameter %1 has no name. Skipping.")
-                    .arg(parameterNode.toStyledString().c_str());
+                    .arg(document.toJson().data());
     return;
   }
 
-  QLabel* label = new QLabel(nameValue.asCString());
-  if (!labelValue.isNull()) {
-    label->setText(labelValue.asCString());
+  QLabel* label = new QLabel(nameValue.toString());
+  if (!labelValue.isUndefined()) {
+    label->setText(labelValue.toString());
   }
   layout->addWidget(label, row, 0, 1, 1);
 
   std::vector<T> defaultValues;
-  if (parameterNode.isMember("default")) {
-    Json::Value defaultNode = parameterNode["default"];
+  if (parameterNode.contains("default")) {
+    QJsonValueRef defaultNode = parameterNode["default"];
     if (isType<T>(defaultNode)) {
       defaultValues.push_back(getAs<T>(defaultNode));
     } else if (defaultNode.isArray()) {
-      for (Json::Value::ArrayIndex i = 0; i < defaultNode.size(); ++i) {
-        defaultValues.push_back(getAs<T>(defaultNode[i]));
+      QJsonArray defaultArray = defaultNode.toArray();
+      for (QJsonObject::size_type i = 0; i < defaultArray.size(); ++i) {
+        defaultValues.push_back(getAs<T>(defaultArray[i]));
       }
     }
   }
 
   std::vector<T> minValues(defaultValues.size(), std::numeric_limits<T>::min());
-  Json::Value minNode = parameterNode["minimum"];
-  if (isType<T>(minNode)) {
-    minValues[0] = getAs<T>(minNode);
-  } else if (minNode.isArray()) {
-    for (Json::Value::ArrayIndex i = 0; i < minNode.size(); ++i) {
-      minValues[i] = getAs<T>(minNode[i]);
+  if (parameterNode.contains("minimum")) {
+    QJsonValueRef minNode = parameterNode["minimum"];
+    if (isType<T>(minNode)) {
+      minValues[0] = getAs<T>(minNode);
+    } else if (minNode.isArray()) {
+      QJsonArray minArray = minNode.toArray();
+      for (QJsonObject::size_type i = 0; i < minArray.size(); ++i) {
+        minValues[i] = getAs<T>(minArray[i]);
+      }
     }
   }
 
   std::vector<T> maxValues(defaultValues.size(), std::numeric_limits<T>::max());
-  Json::Value maxNode = parameterNode["maximum"];
-  if (isType<T>(maxNode)) {
-    maxValues[0] = getAs<T>(maxNode);
-  } else if (maxNode.isArray()) {
-    for (Json::Value::ArrayIndex i = 0; i < maxNode.size(); ++i) {
-      maxValues[i] = getAs<T>(maxNode[i]);
+  if (parameterNode.contains("maximum")) {
+    QJsonValueRef maxNode = parameterNode["maximum"];
+    if (isType<T>(maxNode)) {
+      maxValues[0] = getAs<T>(maxNode);
+    } else if (maxNode.isArray()) {
+      QJsonArray maxArray = maxNode.toArray();
+      for (QJsonObject::size_type i = 0; i < maxArray.size(); ++i) {
+        maxValues[i] = getAs<T>(maxArray[i]);
+      }
     }
   }
 
@@ -204,7 +206,7 @@ void addNumericWidget(QGridLayout* layout, int row,
   layout->addWidget(horizontalWidget, row, 1, 1, 1);
 
   for (size_t i = 0; i < defaultValues.size(); ++i) {
-    QString name(nameValue.asCString());
+    QString name = nameValue.toString();
     if (defaultValues.size() > 1) {
       // Multi-element parameters are named with the pattern 'basename#XXX'
       // where 'basename' is the name of the parameter and 'XXX' is the
@@ -221,44 +223,46 @@ void addNumericWidget(QGridLayout* layout, int row,
 }
 
 void addEnumerationWidget(QGridLayout* layout, int row,
-                          const Json::Value& parameterNode)
+                          QJsonObject& parameterNode)
 {
-  Json::Value nameValue = parameterNode["name"];
-  Json::Value labelValue = parameterNode["label"];
+  QJsonValueRef nameValue = parameterNode["name"];
+  QJsonValueRef labelValue = parameterNode["label"];
 
-  if (nameValue.isNull()) {
+  if (nameValue.isUndefined()) {
+    QJsonDocument document(parameterNode);
     qWarning() << QString("Parameter %1 has no name. Skipping.")
-                    .arg(parameterNode.toStyledString().c_str());
+                    .arg(document.toJson().data());
     return;
   }
 
-  QLabel* label = new QLabel(nameValue.asCString());
-  if (!labelValue.isNull()) {
-    label->setText(labelValue.asCString());
+  QLabel* label = new QLabel(nameValue.toString());
+  if (!labelValue.isUndefined()) {
+    label->setText(labelValue.toString());
   }
   layout->addWidget(label, row, 0, 1, 1);
 
   int defaultOption = 0;
-  Json::Value defaultNode = parameterNode["default"];
-  if (!defaultNode.isNull() && defaultNode.isInt()) {
-    defaultOption = defaultNode.asInt();
+  QJsonValueRef defaultNode = parameterNode["default"];
+  if (!defaultNode.isUndefined() && isType<int>(defaultNode)) {
+    defaultOption = getAs<int>(defaultNode);
   }
 
   QComboBox* comboBox = new QComboBox();
-  comboBox->setObjectName(nameValue.asCString());
-  Json::Value optionsNode = parameterNode["options"];
-  if (!optionsNode.isNull()) {
-    for (Json::Value::ArrayIndex i = 0; i < optionsNode.size(); ++i) {
-      std::string optionName = optionsNode[i].getMemberNames()[0];
-      Json::Value optionValueNode = optionsNode[i][optionName];
+  comboBox->setObjectName(nameValue.toString());
+  QJsonValueRef optionsNode = parameterNode["options"];
+  if (!optionsNode.isUndefined()) {
+    QJsonArray optionsArray = optionsNode.toArray();
+    for (QJsonObject::size_type i = 0; i < optionsArray.size(); ++i) {
+      QString optionName = optionsArray[i].toObject().keys()[0];
+      QJsonValueRef optionValueNode = optionsArray[i].toObject()[optionName];
       int optionValue = 0;
-      if (optionValueNode.isInt()) {
-        optionValue = optionValueNode.asInt();
+      if (isType<int>(optionValueNode)) {
+        optionValue = optionValueNode.toInt();
       } else {
         qWarning() << "Option value is not an int. Skipping";
         continue;
       }
-      comboBox->addItem(optionName.c_str(), optionValue);
+      comboBox->addItem(optionName, optionValue);
     }
   }
 
@@ -267,7 +271,7 @@ void addEnumerationWidget(QGridLayout* layout, int row,
   layout->addWidget(comboBox, row, 1, 1, 1);
 }
 
-void addXYZHeaderWidget(QGridLayout* layout, int row, const Json::Value&)
+void addXYZHeaderWidget(QGridLayout* layout, int row, const QJsonValue&)
 {
   QHBoxLayout* horizontalLayout = new QHBoxLayout;
   horizontalLayout->setContentsMargins(0, 0, 0, 0);
@@ -313,56 +317,57 @@ QLayout* InterfaceBuilder::buildInterface() const
 {
   QGridLayout* layout = new QGridLayout;
 
-  Json::Value root;
-  Json::Reader reader;
-  bool parsingSuccessful = reader.parse(m_json.toLatin1().data(), root);
-  if (!parsingSuccessful) {
+  QJsonDocument document = QJsonDocument::fromJson(m_json.toLatin1());
+  if (!document.isObject()) {
     qCritical() << "Failed to parse operator JSON";
     qCritical() << m_json;
     return layout;
   }
+  QJsonObject root = document.object();
 
   QLabel* descriptionLabel = new QLabel("No description provided in JSON");
-  Json::Value descriptionValue = root["description"];
-  if (!descriptionValue.isNull()) {
-    descriptionLabel->setText(descriptionValue.asCString());
+  QJsonValueRef descriptionValue = root["description"];
+  if (!descriptionValue.isUndefined()) {
+    descriptionLabel->setText(descriptionValue.toString());
   }
   layout->addWidget(descriptionLabel, 0, 0, 1, 2);
 
   // Get the label for the operator
   QString operatorLabel;
-  Json::Value labelNode = root["label"];
-  if (!labelNode.isNull()) {
-    operatorLabel = QString(labelNode.asCString());
+  QJsonValueRef labelNode = root["label"];
+  if (!labelNode.isUndefined()) {
+    operatorLabel = QString(labelNode.toString());
   }
 
   // Get the parameters for the operator
-  Json::Value parametersNode = root["parameters"];
-  if (parametersNode.isNull()) {
+  QJsonValueRef parametersNode = root["parameters"];
+  if (parametersNode.isUndefined()) {
     return layout;
   }
 
-  Json::Value::ArrayIndex numParameters = parametersNode.size();
-  for (Json::Value::ArrayIndex i = 0; i < numParameters; ++i) {
-    Json::Value parameterNode = parametersNode[i];
-    Json::Value typeValue = parameterNode["type"];
+  QJsonArray parametersArray = parametersNode.toArray();
+  QJsonObject::size_type numParameters = parametersArray.size();
+  for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
+    QJsonValueRef parameterNode = parametersArray[i];
+    QJsonObject parameterObject = parameterNode.toObject();
+    QJsonValueRef typeValue = parameterObject["type"];
 
-    if (typeValue.isNull()) {
+    if (typeValue.isUndefined()) {
       qWarning() << tr("Parameter has no type entry");
       continue;
     }
 
-    std::string typeString = typeValue.asString();
+    QString typeString = typeValue.toString();
     if (typeString == "bool") {
-      addBoolWidget(layout, i + 1, parameterNode);
+      addBoolWidget(layout, i + 1, parameterObject);
     } else if (typeString == "int") {
-      addNumericWidget<int>(layout, i + 1, parameterNode);
+      addNumericWidget<int>(layout, i + 1, parameterObject);
     } else if (typeString == "double") {
-      addNumericWidget<double>(layout, i + 1, parameterNode);
+      addNumericWidget<double>(layout, i + 1, parameterObject);
     } else if (typeString == "enumeration") {
-      addEnumerationWidget(layout, i + 1, parameterNode);
+      addEnumerationWidget(layout, i + 1, parameterObject);
     } else if (typeString == "xyz_header") {
-      addXYZHeaderWidget(layout, i + 1, parameterNode);
+      addXYZHeaderWidget(layout, i + 1, parameterObject);
     }
   }
 
