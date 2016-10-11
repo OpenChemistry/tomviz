@@ -245,11 +245,16 @@ set(json_files
   BinaryErode.json
   BinaryOpen.json
   BinaryClose.json
+  Shift_Stack_Uniformly.json
+  Pad_Data.json
+  Resample.json
   GaussianFilter.json
   PeronaMalikAnisotropicDiffusion.json
   MedianFilter.json
+  Rotate3D.json
   GenerateTiltSeries.json
   Recon_ART.json
+  Recon_TV_minimization.json
   )
 
 set(resource_files

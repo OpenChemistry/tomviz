@@ -6,7 +6,7 @@ from tomviz import utils
 def transform_scalars(dataset):
     """3D Reconstruct from a tilt series using simple TV minimzation"""
 
-    ###Niter###
+    ###num_iterations###
 
     # Get Tilt angles
     tiltAngles = utils.get_tilt_angles(dataset)
@@ -26,7 +26,7 @@ def transform_scalars(dataset):
     A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
     recon = np.zeros((Nslice, Nray, Nray)) #allocate reconstruction matrix
 
-    tv_minimization(A.todense(), tiltSeries, recon, Niter)
+    tv_minimization(A.todense(), tiltSeries, recon, num_iterations)
 
     # Set the result as the new scalars.
     utils.set_array(dataset, recon)
@@ -81,21 +81,21 @@ def tv_minimization(A, tiltSeries, recon, iterNum=1):
                           np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2) # noqa TODO reformat this
 
             v2n = r - np.roll(r, -1, axis=0)
-            v2d = np.sqrt(1e-8 + (np.roll(r, -1, axis=0) - r)**2
-                          + (np.roll(r, -1, axis=0) - \ # noqa TODO reformat this
-                             np.roll(np.roll(r, -1, axis=0), 1, axis=1))**2
-                          + (np.roll(r, -1, axis=0) - np.roll(np.roll(r, -1, axis=0), 1, axis=2))**2) # noqa TODO reformat this
+            v2d = np.sqrt(1e-8 + (np.roll(r, -1, axis=0) - r)**2 +
+                          (np.roll(r, -1, axis=0) -  # noqa TODO reformat this
+                             np.roll(np.roll(r, -1, axis=0), 1, axis=1))**2 +
+                          (np.roll(r, -1, axis=0) - np.roll(np.roll(r, -1, axis=0), 1, axis=2))**2) # noqa TODO reformat this
 
             v3n = r - np.roll(r, -1, axis=1)
-            v3d = np.sqrt(1e-8 + (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=0))**2 # noqa TODO reformat this
-                          + (np.roll(r, -1, axis=1) - r)**2 # noqa TODO reformat this
-                          + (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=2))**2) # noqa TODO reformat this
+            v3d = np.sqrt(1e-8 + (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=0))**2 + # noqa TODO reformat this
+                          (np.roll(r, -1, axis=1) - r)**2 + # noqa TODO reformat this
+                          (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=2))**2) # noqa TODO reformat this
 
             v4n = r - np.roll(r, -1, axis=2)
-            v4d = np.sqrt(1e-8 + (np.roll(r, -1, axis=2) - np.roll(np.roll(r, -1, axis=2), 1, axis=0))**2 # noqa TODO reformat this
-                          + (np.roll(r, -1, axis=2) - \ # noqa TODO reformat this
-                             np.roll(np.roll(r, -1, axis=1), 1, axis=1))**2
-                          + (np.roll(r, -1, axis=2) - r)**2) # noqa TODO reformat this
+            v4d = np.sqrt(1e-8 + (np.roll(r, -1, axis=2) - np.roll(np.roll(r, -1, axis=2), 1, axis=0))**2 + # noqa TODO reformat this
+                          (np.roll(r, -1, axis=2) -  # noqa TODO reformat this
+                             np.roll(np.roll(r, -1, axis=1), 1, axis=1))**2 +
+                          (np.roll(r, -1, axis=2) - r)**2) # noqa TODO reformat this
 
             v = v1n / v1d + v2n / v2d + v3n / v3d + v4n / v4d
             v = v[1:-1, 1:-1, 1:-1]
@@ -198,9 +198,9 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     #print 'midpoints_x is:',midpoints_x
                     #print 'midpoints_y is:',midpoints_y
                     #Calculate the pixel index for mid points
-                    pixelIndicex = (np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * \ # noqa TODO reformat this
-                    Nside + (np.floor(midpoints_x /
-                                      pixelWidth + Nside / 2.0))
+                    pixelIndicex = ((np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * # noqa TODO reformat this
+                        Nside + (np.floor(midpoints_x /
+                        pixelWidth + Nside / 2.0)))
                     #print 'pixelIndicex is:', pixelIndicex
                     # Create the indices to store the values to the measurement
                     # matrix

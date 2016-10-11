@@ -1,0 +1,28 @@
+{
+  "name" : "Rotate",
+  "label" : "Rotate",
+  "description" : "Rotate dataset along a given axis.",
+  "parameters" : [
+    {
+      "name" : "rotation_angle",
+      "label" : "Angle",
+      "description" : "Rotation angle in degrees.",
+      "type" : "double",
+      "default" : 90.0,
+      "minimum" : -360.0,
+      "maximum" : 360.0
+    },
+    {
+      "name" : "rotation_axis",
+      "label" : "Axis",
+      "description" : "Axis of rotation.",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"X" : 0},
+        {"Y" : 1},
+        {"Z" : 2}
+      ]
+    }
+  ]
+}

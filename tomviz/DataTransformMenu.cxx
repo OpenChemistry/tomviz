@@ -135,18 +135,23 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(binaryCloseAction, "Binary Close",
                                  readInPythonScript("BinaryClose"), false,
                                  false, readInJSONDescription("BinaryClose"));
-  new AddPythonTransformReaction(shiftUniformAction, "Shift Volume",
-                                 readInPythonScript("Shift_Stack_Uniformly"));
+  new AddPythonTransformReaction(
+    shiftUniformAction, "Shift Volume",
+    readInPythonScript("Shift_Stack_Uniformly"), false, false,
+    readInJSONDescription("Shift_Stack_Uniformly"));
   new AddPythonTransformReaction(deleteSliceAction, "Delete Slices",
                                  readInPythonScript("deleteSlices"));
   new AddPythonTransformReaction(padVolumeAction, "Pad Volume",
-                                 readInPythonScript("Pad_Data"));
+                                 readInPythonScript("Pad_Data"), false, false,
+                                 readInJSONDescription("Pad_Data"));
   new AddPythonTransformReaction(downsampleByTwoAction, "Bin Volume x2",
                                  readInPythonScript("BinVolumeByTwo"));
   new AddPythonTransformReaction(resampleAction, "Resample",
-                                 readInPythonScript("Resample"));
+                                 readInPythonScript("Resample"), false, false,
+                                 readInJSONDescription("Resample"));
   new AddPythonTransformReaction(rotateAction, "Rotate",
-                                 readInPythonScript("Rotate3D"));
+                                 readInPythonScript("Rotate3D"), false, false,
+                                 readInJSONDescription("Rotate3D"));
   new AddPythonTransformReaction(clearAction, "Clear Volume",
                                  readInPythonScript("ClearVolume"));
   new AddPythonTransformReaction(setNegativeVoxelsToZeroAction,

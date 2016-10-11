@@ -183,16 +183,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     return nullptr;
   }
 
-  // Handle transforms with custom UIs
-  if (scriptLabel == "Binary Threshold" ||
-      scriptLabel == "Connected Components" ||
-      scriptLabel == "Otsu Multiple Threshold" ||
-      scriptLabel == "Binary Dilate" || scriptLabel == "Binary Erode" ||
-      scriptLabel == "Binary Open" || scriptLabel == "Binary Close" ||
-      scriptLabel == "Gaussian Filter" ||
-      scriptLabel == "Perona-Malik Anisotropic Diffusion" ||
-      scriptLabel == "Median Filter" || scriptLabel == "Generate Tilt Series" ||
-      scriptLabel == "Reconstruct (ART)") {
+  bool hasJson = this->jsonSource.size() > 0;
+  if (hasJson) {
+    // Use JSON to build the interface via the OperatorDialog
     OperatorDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle(scriptLabel);
     dialog.setJSONDescription(this->jsonSource);
@@ -206,7 +199,19 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
         parameterValues.constBegin();
       for (; iter != parameterValues.constEnd(); ++iter) {
         QString key = "###" + iter.key() + "###";
-        QString parameterValue = iter.value().toString();
+        QVariant parameterVariant = iter.value();
+        QString parameterValue = parameterVariant.toString();
+        if (parameterVariant.type() == QVariant::List) {
+          parameterValue = "(";
+          QList<QVariant> list = parameterVariant.toList();
+          for (int i = 0; i < list.size(); ++i) {
+            parameterValue.append(list[i].toString());
+            if (i < list.size() - 1) {
+              parameterValue.append(", ");
+            }
+          }
+          parameterValue.append(")");
+        }
 
         // Convert to Python True/False values
         if (parameterValue[0] == 't') {
@@ -223,6 +228,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions, jsonSource);
     }
+    // Handle transforms with custom UIs
   } else if (scriptLabel == "Shift Volume") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
@@ -331,46 +337,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
-  } else if (scriptLabel == "Rotate") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Rotate");
-    QGridLayout* layout = new QGridLayout;
-    QLabel* labelDescription =
-      new QLabel("Rotate dataset along a given axis.", &dialog);
-    layout->addWidget(labelDescription, 0, 0, 1, 2);
-    QLabel* label = new QLabel("Angle:", &dialog);
-    layout->addWidget(label, 1, 0, 1, 2);
-    QDoubleSpinBox* angle = new QDoubleSpinBox(&dialog);
-    angle->setRange(-360, 360);
-    angle->setValue(90);
-    layout->addWidget(angle, 1, 1, 1, 1);
-    label = new QLabel("Axis:", &dialog);
-    layout->addWidget(label, 2, 0, 1, 1);
-    QComboBox* axis = new QComboBox(&dialog);
-    axis->addItem("X");
-    axis->addItem("Y");
-    axis->addItem("Z");
-    axis->setCurrentIndex(2);
-    layout->addWidget(axis, 2, 1, 1, 1);
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###ROT_AXIS###",
-                           QString("ROT_AXIS = %1").arg(axis->currentIndex()));
-      substitutions.insert("###ROT_ANGLE###",
-                           QString("ROT_ANGLE = %1").arg(angle->value()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
   } else if (scriptLabel == "Delete Slices") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
@@ -404,134 +370,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
         QString("lastSlice = %1").arg(sliceRange->endSlice()));
       substitutions.insert("###axis###",
                            QString("axis = %1").arg(sliceRange->axis()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
-  } else if (scriptLabel == "Pad Volume") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Pad Volume");
-    QGridLayout* layout = new QGridLayout;
-    // Add labels
-    QLabel* labelx = new QLabel("x:");
-    layout->addWidget(labelx, 0, 1, 1, 1, Qt::AlignCenter);
-    QLabel* labely = new QLabel("y:");
-    layout->addWidget(labely, 0, 2, 1, 1, Qt::AlignCenter);
-    QLabel* labelz = new QLabel("z:");
-    layout->addWidget(labelz, 0, 3, 1, 1, Qt::AlignCenter);
-    QLabel* label = new QLabel("Pad size before:");
-    layout->addWidget(label, 1, 0, 1, 1);
-    QSpinBox* padSizeBeforeX = new QSpinBox;
-    padSizeBeforeX->setSingleStep(1);
-    padSizeBeforeX->setRange(0, 999);
-    padSizeBeforeX->setValue(0);
-    QSpinBox* padSizeBeforeY = new QSpinBox;
-    padSizeBeforeY->setSingleStep(1);
-    padSizeBeforeY->setRange(0, 999);
-    padSizeBeforeY->setValue(0);
-    QSpinBox* padSizeBeforeZ = new QSpinBox;
-    padSizeBeforeZ->setSingleStep(1);
-    padSizeBeforeZ->setRange(0, 999);
-    padSizeBeforeZ->setValue(0);
-    layout->addWidget(padSizeBeforeX, 1, 1, 1, 1);
-    layout->addWidget(padSizeBeforeY, 1, 2, 1, 1);
-    layout->addWidget(padSizeBeforeZ, 1, 3, 1, 1);
-    label = new QLabel("Pad size after:");
-    layout->addWidget(label, 2, 0, 1, 1);
-    QSpinBox* padSizeAfterX = new QSpinBox;
-    padSizeAfterX->setSingleStep(1);
-    padSizeAfterX->setRange(0, 999);
-    padSizeAfterX->setValue(0);
-    QSpinBox* padSizeAfterY = new QSpinBox;
-    padSizeAfterY->setSingleStep(1);
-    padSizeAfterY->setRange(0, 999);
-    padSizeAfterY->setValue(0);
-    QSpinBox* padSizeAfterZ = new QSpinBox;
-    padSizeAfterZ->setSingleStep(1);
-    padSizeAfterZ->setRange(0, 999);
-    padSizeAfterZ->setValue(0);
-    layout->addWidget(padSizeAfterX, 2, 1, 1, 1);
-    layout->addWidget(padSizeAfterY, 2, 2, 1, 1);
-    layout->addWidget(padSizeAfterZ, 2, 3, 1, 1);
-    label = new QLabel("Pad mode:");
-    layout->addWidget(label, 3, 0, 1, 1);
-    QComboBox* padMode = new QComboBox(&dialog);
-    padMode->addItem("Constant Zero");
-    padMode->addItem("Edge");
-    padMode->addItem("Wrap");
-    padMode->addItem("Minimum");
-    padMode->addItem("Median");
-    padMode->setCurrentIndex(0);
-    layout->addWidget(padMode, 3, 1, 1, 2);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###padWidthX###", QString("padWidthX = (%1,%2)")
-                                                .arg(padSizeBeforeX->value())
-                                                .arg(padSizeAfterX->value()));
-      substitutions.insert("###padWidthY###", QString("padWidthY = (%1,%2)")
-                                                .arg(padSizeBeforeY->value())
-                                                .arg(padSizeAfterY->value()));
-      substitutions.insert("###padWidthZ###", QString("padWidthZ = (%1,%2)")
-                                                .arg(padSizeBeforeZ->value())
-                                                .arg(padSizeAfterZ->value()));
-      substitutions.insert(
-        "###padMode_index###",
-        QString("padMode_index = %1").arg(padMode->currentIndex()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
-  } else if (scriptLabel == "Resample") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Resample");
-    QGridLayout* layout = new QGridLayout;
-    // Add labels
-    QLabel* labelx = new QLabel("x:");
-    layout->addWidget(labelx, 0, 1, 1, 1, Qt::AlignCenter);
-    QLabel* labely = new QLabel("y:");
-    layout->addWidget(labely, 0, 2, 1, 1, Qt::AlignCenter);
-    QLabel* labelz = new QLabel("z:");
-    layout->addWidget(labelz, 0, 3, 1, 1, Qt::AlignCenter);
-    QLabel* label = new QLabel("Scale Factors:");
-    layout->addWidget(label, 1, 0, 1, 1);
-    QDoubleSpinBox* spinx = new QDoubleSpinBox;
-    spinx->setSingleStep(0.5);
-    spinx->setValue(1);
-    QDoubleSpinBox* spiny = new QDoubleSpinBox;
-    spiny->setSingleStep(0.5);
-    spiny->setValue(1);
-    QDoubleSpinBox* spinz = new QDoubleSpinBox;
-    spinz->setSingleStep(0.5);
-    spinz->setValue(1);
-    layout->addWidget(spinx, 1, 1, 1, 1);
-    layout->addWidget(spiny, 1, 2, 1, 1);
-    layout->addWidget(spinz, 1, 3, 1, 1);
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###resampingFactor###",
-                           QString("resampingFactor = [%1, %2, %3]")
-                             .arg(spinx->value())
-                             .arg(spiny->value())
-                             .arg(spinz->value()));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
@@ -711,50 +549,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       substitutions.insert(
         "###updateMethodIndex###",
         QString("updateMethodIndex = %1").arg(updateMethod->currentIndex()));
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
-    }
-  } else if (scriptLabel == "Reconstruct (TV Minimization)") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("TV Minimization Reconstruction");
-
-    QGridLayout* layout = new QGridLayout;
-    // Description
-    QLabel* label =
-      new QLabel("Reconstruct a tilt series using TV Minimization. \n"
-                 "The tilt axis must be parallel to the x-direction and "
-                 "centered in the y-direction.\n"
-                 "The size of reconstruction will be (Nx,Ny,Ny). The number of "
-                 "iterations can be specified below.\n"
-                 "Reconstrucing a 256x256x256 tomogram typically takes more "
-                 "than 100 mins with 5 iterations.");
-    label->setWordWrap(true);
-    layout->addWidget(label, 0, 0, 1, 2);
-
-    label = new QLabel("Number of Iterations:");
-    layout->addWidget(label, 1, 0, 1, 1);
-
-    QSpinBox* Niter = new QSpinBox;
-    Niter->setValue(1);
-    Niter->setMinimum(1);
-
-    layout->addWidget(Niter, 1, 1, 1, 1);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###Niter###",
-                           QString("Niter = %1").arg(Niter->value()));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }

@@ -22,7 +22,11 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QMap>
+#include <QSet>
+#include <QString>
 #include <QVBoxLayout>
+#include <QVariant>
 
 namespace tomviz {
 
@@ -78,6 +82,39 @@ QMap<QString, QVariant> OperatorDialog::values() const
   for (int i = 0; i < comboBoxes.size(); ++i) {
     int currentIndex = comboBoxes[i]->currentIndex();
     map[comboBoxes[i]->objectName()] = comboBoxes[i]->itemData(currentIndex);
+  }
+
+  // Assemble multi-component properties into single properties in the map.
+  QMap<QString, QVariant>::iterator iter = map.begin();
+  while (iter != map.end()) {
+    QString name = iter.key();
+    QVariant value = iter.value();
+    int poundIndex = name.indexOf(tr("#"));
+    if (poundIndex >= 0) {
+      QString indexString = name.mid(poundIndex + 1);
+
+      // Keep the part of the name to the left of the '#'
+      name = name.left(poundIndex);
+
+      QList<QVariant> valueList;
+      QMap<QString, QVariant>::iterator findIter = map.find(name);
+      if (findIter != map.end()) {
+        valueList = map[name].toList();
+      }
+
+      // The QMap keeps entries sorted by lexicographic order, so we
+      // can just append to the list and the elements will be inserted
+      // in the correct order.
+      valueList.append(value);
+      map[name] = valueList;
+
+      // Delete the individual component map entry. Doing so increments the
+      // iterator.
+      iter = map.erase(iter);
+    } else {
+      // Single-element parameter, nothing to do
+      ++iter;
+    }
   }
 
   return map;

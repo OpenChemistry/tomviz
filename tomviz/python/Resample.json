@@ -1,0 +1,16 @@
+{
+  "name" : "Resample",
+  "label" : "Resample",
+  "description" : "Rescale the voxel spacing according to a resampling factor.",
+  "parameters" : [
+    {
+      "type" : "xyz_header"
+    },
+    {
+      "name" : "resampling_factor",
+      "label" : "Resampling Factor",
+      "type" : "double",
+      "default" : [1, 1, 1]
+    }
+  ]
+}
