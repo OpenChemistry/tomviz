@@ -156,6 +156,9 @@ signals:
   /// Emitted when an result is added.
   void resultAdded(OperatorResult* result);
 
+  /// Emitted when the total progress steps has changed.
+  void totalProgressStepsChanged(int steps);
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
