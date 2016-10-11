@@ -92,7 +92,6 @@ QMap<QString, QVariant> OperatorDialog::values() const
     int poundIndex = name.indexOf(tr("#"));
     if (poundIndex >= 0) {
       QString indexString = name.mid(poundIndex + 1);
-      int index = indexString.toInt();
 
       // Keep the part of the name to the left of the '#'
       name = name.left(poundIndex);

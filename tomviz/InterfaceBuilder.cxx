@@ -71,7 +71,7 @@ int getAs(const Json::Value& value)
   } catch (...) {
     qCritical() << "Could not get int from Json::Value";
   }
-  return value.asInt();
+  return iValue;
 }
 
 template <>
