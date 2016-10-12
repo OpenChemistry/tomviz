@@ -11,6 +11,7 @@ class SquareRootOperator(tomviz.operators.CancelableOperator):
 
         from tomviz import utils
         import numpy as np
+        self.progress.maximum = NUMBER_OF_CHUNKS
 
         scalars = utils.get_scalars(dataset)
         if scalars is None:
@@ -23,10 +24,13 @@ class SquareRootOperator(tomviz.operators.CancelableOperator):
             # Process dataset in chunks so the user gets an opportunity to
             # cancel.
             result = np.float32(scalars)
+            step = 0
             for chunk in np.array_split(result, NUMBER_OF_CHUNKS):
                 if self.canceled:
                     return
                 np.sqrt(chunk, chunk)
+                step += 1
+                self.progress.update(step)
 
             # set the result as the new scalars.
             utils.set_scalars(dataset, result)
