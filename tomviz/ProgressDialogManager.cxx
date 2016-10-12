@@ -70,7 +70,7 @@ void ProgressDialogManager::operationStarted()
     QObject::connect(op, &Operator::updateProgress, progressBar,
                      &QProgressBar::setValue);
     QObject::connect(op, &Operator::totalProgressStepsChanged, progressBar,
-                         &QProgressBar::setMaximum);
+                     &QProgressBar::setMaximum);
     QObject::connect(op, &Operator::updateProgress, this,
                      &ProgressDialogManager::operationProgress);
     layout->addWidget(progressBar);
