@@ -4,7 +4,7 @@ NUMBER_OF_CHUNKS = 10
 
 
 class InvertOperator(tomviz.operators.CancelableOperator):
-        
+
     def transform_scalars(self, dataset):
         from tomviz import utils
         import numpy as np
@@ -23,6 +23,5 @@ class InvertOperator(tomviz.operators.CancelableOperator):
             chunk[:] = max - chunk
             step += 1
             self.progress.update(step)
-            
 
         utils.set_scalars(dataset, result)
