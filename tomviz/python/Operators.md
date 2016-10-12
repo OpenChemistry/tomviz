@@ -33,7 +33,7 @@ class MyOperator(tomviz.operators.Operator):
 ```
 
 Subclassing tomviz.operators.CancelableOperator
---------------------
+-----------------------------------------------
 
 To implement an operator that can be canceled the operator should be derived
 from ```tomviz.operators.CancelableOperator```. This provides an additional
@@ -51,6 +51,28 @@ class MyCancelableOperator(tomviz.operators.CancelableOperator):
          while(not self.canceled):
             # Do work here
 
+```
+
+Operator progress
+-----------------
+
+Instances of ```tomviz.operators.Operator``` have a ```progress``` attribute that can be used to
+report the progress of an operator. The maximum number of steps the operator will report is held
+in the ```progress.maximum``` property and the current progress can be updated using ```progress.update(currrent_value)```
+
+
+
+```python
+
+import tomviz.operators
+
+class MyProgressOperator(tomviz.operators.Operator):
+    current_progress = 0
+    def transform_scalar(self, data):
+        self.progress.maximum = 100
+        # Do work here
+        current_progress += 1
+        self.progress.update(current_progress)
 ```
 
 Generating the user interface automatically
