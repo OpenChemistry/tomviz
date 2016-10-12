@@ -748,6 +748,13 @@ bool PipelineModel::removeOp(Operator* o)
     endRemoveRows();
     o->dataSource()->removeOperator(o);
 
+    if (o->hasChildDataSource()) {
+      auto childDataSource = o->childDataSource();
+      if (childDataSource) {
+        ModuleManager::instance().removeAllModules(childDataSource);
+      }
+    }
+
     return true;
   }
 
