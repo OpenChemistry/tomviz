@@ -740,20 +740,20 @@ bool PipelineModel::removeModule(Module* module)
 bool PipelineModel::removeOp(Operator* o)
 {
   auto index = this->operatorIndex(o);
-
   if (index.isValid()) {
+    // Remove child data source
+    if (o->hasChildDataSource()) {
+      auto childDataSource = o->childDataSource();
+      if (childDataSource) {
+        childDataSource->removeAllOperators();
+      }
+    }
+
     beginRemoveRows(this->parent(index), index.row(), index.row());
     auto item = this->treeItem(index);
     item->parent()->remove(o);
     endRemoveRows();
     o->dataSource()->removeOperator(o);
-
-    if (o->hasChildDataSource()) {
-      auto childDataSource = o->childDataSource();
-      if (childDataSource) {
-        ModuleManager::instance().removeAllModules(childDataSource);
-      }
-    }
 
     return true;
   }
