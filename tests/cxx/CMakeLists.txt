@@ -1,9 +1,11 @@
 include(CxxTests.cmake)
 
 find_package(GTest REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Test)
 
-include_directories(SYSTEM $
-  {QtCore_INCLUDE_DIRS}
+include_directories(SYSTEM 
+  ${QtCore_INCLUDE_DIRS}
+  ${Qt5Test_INCLUDE_DIRS} 
   ${PARAVIEW_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/tomviz)
@@ -47,3 +49,5 @@ add_cxx_test(OperatorPython PYTHONPATH ${_pythonpath})
 
 # Generate the executable
 create_test_executable(tomvizTests)
+
+target_link_libraries(tomvizTests Qt5::Test)

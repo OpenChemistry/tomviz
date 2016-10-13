@@ -125,9 +125,11 @@ public:
 
   /// Return the total number of progress updates (assuming each update
   /// increments the progress from 0 to some maximum.  If the operator doesn't
-  /// support incremental progress updates, leave this default implementation so
+  /// support incremental progress updates, leave value set to zero
   /// that QProgressBar interprets the progress as unknown.
-  virtual int totalProgressSteps() const { return 0; }
+  int totalProgressSteps() const { return m_totalProgressSteps; }
+
+  void setTotalProgressSteps(int steps) { m_totalProgressSteps = steps; }
 
 signals:
   /// Emit this signal with the operation is updated/modified
@@ -154,6 +156,9 @@ signals:
   /// Emitted when an result is added.
   void resultAdded(OperatorResult* result);
 
+  /// Emitted when the total progress steps has changed.
+  void totalProgressStepsChanged(int steps);
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
@@ -179,6 +184,7 @@ private:
   bool m_hasChildDataSource;
   DataSource* m_childDataSource;
   bool m_canceled = false;
+  int m_totalProgressSteps = 0;
 };
 }
 

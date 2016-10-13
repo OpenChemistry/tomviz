@@ -67,8 +67,14 @@ def find_transform_scalars(transform_module, op):
         if cls is None:
             raise Exception('Unable to locate transform_function.')
 
-        o = cls()
+        # We call __new__ and __init__ manually here so we can inject the
+        # wrapper OperatorPython instance before __init__ is called so that
+        # any code in __init__ can access the wrapper.
+        o = cls.__new__(cls)
+        # Set the wrapped OperatorPython instance
         o._operator_wrapper = tomviz._wrapping.OperatorPythonWrapper(op)
+        cls.__init__(o)
+
         transform_function = o.transform_scalars
 
     if transform_function is None:
