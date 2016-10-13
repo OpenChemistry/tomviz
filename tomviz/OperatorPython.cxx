@@ -16,6 +16,10 @@
 #include "OperatorPython.h"
 #include "vtkPython.h"
 
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QPointer>
 #include <QtDebug>
 
@@ -38,8 +42,6 @@
 #include "vtkSmartPyObject.h"
 #include "vtkTrivialProducer.h"
 #include <pybind11/pybind11.h>
-
-#include "vtk_jsoncpp.h"
 
 #include "ui_EditPythonOperatorWidget.h"
 
@@ -163,62 +165,65 @@ void OperatorPython::setJSONDescription(const QString& str)
 
   this->jsonDescription = str;
 
-  Json::Value root;
-  Json::Reader reader;
-  bool parsingSuccessful = reader.parse(str.toLatin1().data(), root);
-  if (!parsingSuccessful) {
+  QJsonDocument document = QJsonDocument::fromJson(jsonDescription.toLatin1());
+  if (!document.isObject()) {
     qCritical() << "Failed to parse operator JSON";
-    qCritical() << str;
+    qCritical() << jsonDescription;
     return;
   }
 
+  QJsonObject root = document.object();
+
   // Get the label for the operator
-  Json::Value labelNode = root["label"];
-  if (!labelNode.isNull()) {
-    setLabel(labelNode.asCString());
+  QJsonValueRef labelNode = root["label"];
+  if (!labelNode.isUndefined() && !labelNode.isNull()) {
+    setLabel(labelNode.toString());
   }
 
   m_resultNames.clear();
   m_childDataSourceNamesAndLabels.clear();
 
   // Get the number of results
-  Json::Value resultsNode = root["results"];
-  if (!resultsNode.isNull()) {
-    Json::Value::ArrayIndex numResults = resultsNode.size();
+  QJsonValueRef resultsNode = root["results"];
+  if (!resultsNode.isUndefined() && !resultsNode.isNull()) {
+    QJsonArray resultsArray = resultsNode.toArray();
+    QJsonObject::size_type numResults = resultsArray.size();
     setNumberOfResults(numResults);
 
-    for (Json::Value::ArrayIndex i = 0; i < numResults; ++i) {
+    for (QJsonObject::size_type i = 0; i < numResults; ++i) {
       OperatorResult* oa = resultAt(i);
       if (!oa) {
         Q_ASSERT(oa != nullptr);
       }
-      Json::Value nameValue = resultsNode[i]["name"];
-      if (!nameValue.isNull()) {
-        oa->setName(nameValue.asCString());
-        m_resultNames.append(nameValue.asCString());
+      QJsonValueRef nameValue = resultsArray[i].toObject()["name"];
+      if (!nameValue.isUndefined() && !nameValue.isNull()) {
+        oa->setName(nameValue.toString());
+        m_resultNames.append(nameValue.toString());
       }
-      Json::Value labelValue = resultsNode[i]["label"];
-      if (!labelValue.isNull()) {
-        oa->setLabel(labelValue.asCString());
+      QJsonValueRef labelValue = resultsArray[i].toObject()["label"];
+      if (!labelValue.isUndefined() && !labelValue.isNull()) {
+        oa->setLabel(labelValue.toString());
       }
     }
   }
 
   // Get child dataset information
-  Json::Value childDatasetNode = root["children"];
-  if (!childDatasetNode.isNull()) {
-    Json::Value::ArrayIndex size = childDatasetNode.size();
+  QJsonValueRef childDatasetNode = root["children"];
+  if (!childDatasetNode.isUndefined() && !childDatasetNode.isNull()) {
+    QJsonArray childDatasetArray = childDatasetNode.toArray();
+    QJsonObject::size_type size = childDatasetArray.size();
     if (size != 1) {
       qCritical() << "Only one child dataset is supported for now. Found"
                   << size << " but only the first will be used";
     }
     if (size > 0) {
       setHasChildDataSource(true);
-      Json::Value nameValue = childDatasetNode[0]["name"];
-      Json::Value labelValue = childDatasetNode[0]["label"];
-      if (!nameValue.isNull() && !labelValue.isNull()) {
-        QPair<QString, QString> nameLabelPair(QString(nameValue.asCString()),
-                                              QString(labelValue.asCString()));
+      QJsonValueRef nameValue = childDatasetArray[0].toObject()["name"];
+      QJsonValueRef labelValue = childDatasetArray[0].toObject()["label"];
+      if (!nameValue.isUndefined() && !nameValue.isNull() &&
+          !labelValue.isUndefined() && !labelValue.isNull()) {
+        QPair<QString, QString> nameLabelPair(QString(nameValue.toString()),
+                                              QString(labelValue.toString()));
         m_childDataSourceNamesAndLabels.append(nameLabelPair);
       } else if (nameValue.isNull()) {
         qCritical() << "No name given for child DataSet";
