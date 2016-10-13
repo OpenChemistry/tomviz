@@ -67,6 +67,7 @@ public:
   /// Add/remove operators.
   int addOperator(Operator* op);
   bool removeOperator(Operator* op);
+  bool removeAllOperators();
 
   /// Creates a new clone from this DataSource. If cloneOperators then clone
   /// the operators too, if cloneTransformedOnly clone the transformed data.

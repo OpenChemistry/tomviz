@@ -15,10 +15,12 @@
 ******************************************************************************/
 #include "DataSource.h"
 
+#include "ModuleManager.h"
 #include "Operator.h"
 #include "OperatorFactory.h"
 #include "PipelineWorker.h"
 #include "Utilities.h"
+
 #include <vtkDataObject.h>
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
@@ -508,6 +510,34 @@ bool DataSource::removeOperator(Operator* op)
     return true;
   }
   return false;
+}
+
+bool DataSource::removeAllOperators()
+{
+  // TODO - return false if the pipeline is running
+  bool success = true;
+
+  while (this->Internals->Operators.size() > 0) {
+    Operator* lastOperator = this->Internals->Operators.takeLast();
+
+    if (lastOperator->hasChildDataSource()) {
+      DataSource* childDataSource = lastOperator->childDataSource();
+
+      // Recurse on the child data source
+      success = childDataSource->removeAllOperators();
+      if (!success) {
+        break;
+      }
+    }
+
+    lastOperator->deleteLater();
+  }
+
+  if (success) {
+    ModuleManager::instance().removeAllModules(this);
+  }
+
+  return success;
 }
 
 void DataSource::operate(Operator* op)
