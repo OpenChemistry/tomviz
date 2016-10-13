@@ -13,6 +13,43 @@ reformat all the lines in the latest commit
 git diff -U0 HEAD^ | clang-format-diff.py -i -p1
 
 ```
+
+flake8
+------
+
+We use [flake8](https://pypi.python.org/pypi/flake8) to test for Python style compliance. The tests
+are run when a PR is raised against the repository. You can also run flake8 locally to
+reveal problems before you push a branch. First you need to install flake8, the simplest
+way todo this is using pip.
+
+```shell
+pip install flake8
+```
+
+To run flake8 using the project configuration file.
+
+```shell
+cd <tomviz_source_dir>
+flake8 --config=flake8.cfg .
+# Or a specific file
+flake8 --config=flake8.cfg tomviz/python/InvertData.py
+```
+
+There is also [autopep8](https://pypi.python.org/pypi/autopep8) that can be using to automatically
+fix many of the problems raised by flake8. Again is can be install using pip.
+
+```shell
+pip install autopep8
+```
+
+To run autopep8 using the project configuration file.
+
+```shell
+cd <tomviz_source_dir>
+# It is recommended to run it on specfic file(s) you have changed, for example.
+autopep8 --global-config flake8.cfg --in-place tomviz/python/InvertData.py
+```
+
 ### clang-format-diff locations by platform
 
 The exact location of the Python script varies by platform/distro. The table
