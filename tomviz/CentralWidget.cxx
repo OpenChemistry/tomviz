@@ -191,8 +191,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
                 SLOT(refreshHistogram()));
   this->layout()->setMargin(0);
   this->layout()->setSpacing(0);
-
-  this->LUT = nullptr;
 }
 
 CentralWidget::~CentralWidget()
@@ -259,25 +257,10 @@ void CentralWidget::setDataSource(DataSource* source)
   }
 
   // Get the current color map
-  vtkPVDiscretizableColorTransferFunction* lut;
   if (this->AModule) {
     this->Internals->Ui.histogramWidget->setLUTProxy(this->AModule->colorMap());
-    vtkObjectBase* colorMapObject =
-      this->AModule->colorMap()->GetClientSideObject();
-    lut = vtkPVDiscretizableColorTransferFunction::SafeDownCast(colorMapObject);
   } else {
     this->Internals->Ui.histogramWidget->setLUTProxy(source->colorMap());
-    vtkObjectBase* colorMapObject = source->colorMap()->GetClientSideObject();
-    lut = vtkPVDiscretizableColorTransferFunction::SafeDownCast(colorMapObject);
-  }
-  if (lut) {
-    this->LUT = lut;
-  } else {
-    this->LUT = nullptr;
-  }
-
-  if (this->LUT) {
-    this->Internals->Ui.histogramWidget->setLUT(this->LUT);
   }
 
   // Check our cache, and use that if appopriate (or update it).
