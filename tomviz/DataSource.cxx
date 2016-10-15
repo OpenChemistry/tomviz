@@ -26,6 +26,7 @@
 #include <vtkFieldData.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
+#include <vtkPiecewiseFunction.h>
 #include <vtkSMCoreUtilities.h>
 #include <vtkSMParaViewPipelineController.h>
 #include <vtkSMPropertyHelper.h>
@@ -44,6 +45,7 @@
 
 #include <vtk_pugixml.h>
 
+#include <QDebug>
 #include <QMap>
 #include <QTimer>
 
@@ -239,6 +241,29 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   tomviz::serialize(this->colorMap(), node);
 
   node = ns.append_child("OpacityMap");
+
+  // Update the proxy values from the VTK object.
+  // TODO - find a nicer way to ensure these values are synchronized.
+  vtkSMProxy* opacityMapProxy = this->opacityMap();
+
+  vtkSMPropertyHelper pointsHelper(opacityMapProxy, "Points");
+  vtkObjectBase* opacityMapObject = opacityMapProxy->GetClientSideObject();
+  vtkPiecewiseFunction* pwf =
+    vtkPiecewiseFunction::SafeDownCast(opacityMapObject);
+  if (pwf) {
+    pointsHelper.SetNumberOfElements(4 * pwf->GetSize());
+    for (int i = 0; i < pwf->GetSize(); ++i) {
+      double value[4];
+      pwf->GetNodeValue(i, value);
+      pointsHelper.Set(4 * i + 0, value[0]);
+      pointsHelper.Set(4 * i + 1, value[1]);
+      pointsHelper.Set(4 * i + 2, value[2]);
+      pointsHelper.Set(4 * i + 3, value[3]);
+    }
+    opacityMapProxy->UpdateVTKObjects();
+  } else {
+    qWarning() << "Could not update ScalarOpacityFunction values";
+  }
   tomviz::serialize(this->opacityMap(), node);
 
   ns.append_attribute("number_of_operators")
