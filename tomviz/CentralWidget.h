@@ -77,7 +77,6 @@ private:
   HistogramMaker* HistogramGen;
   QThread* Worker;
   QMap<vtkImageData*, vtkSmartPointer<vtkTable>> HistogramCache;
-  vtkPVDiscretizableColorTransferFunction* LUT;
 };
 }
 
