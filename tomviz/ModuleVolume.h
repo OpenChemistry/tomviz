@@ -17,10 +17,18 @@
 #define tomvizModuleVolume_h
 
 #include "Module.h"
+
+#include <vtkNew.h>
 #include <vtkWeakPointer.h>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
+
+class vtkPVRenderView;
+
+class vtkSmartVolumeMapper;
+class vtkVolumeProperty;
+class vtkVolume;
 
 namespace tomviz {
 
@@ -43,6 +51,7 @@ public:
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
   bool isColorMapNeeded() const override { return true; }
+  void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
@@ -55,8 +64,15 @@ protected:
 
 private:
   Q_DISABLE_COPY(ModuleVolume)
-  vtkWeakPointer<vtkSMSourceProxy> PassThrough;
-  vtkWeakPointer<vtkSMProxy> Representation;
+
+  vtkWeakPointer<vtkPVRenderView> m_view;
+  vtkNew<vtkVolume> m_volume;
+  vtkNew<vtkSmartVolumeMapper> m_volumeMapper;
+  vtkNew<vtkVolumeProperty> m_volumeProperty;
+
+private slots:
+  void setLighting(bool val);
+  void setMaximumIntensity(bool val);
 };
 }
 

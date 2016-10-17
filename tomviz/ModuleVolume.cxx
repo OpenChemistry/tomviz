@@ -17,17 +17,36 @@
 
 #include "DataSource.h"
 #include "Utilities.h"
-#include "pqProxiesWidget.h"
-#include "vtkNew.h"
-#include "vtkSMPVRepresentationProxy.h"
-#include "vtkSMParaViewPipelineControllerWithRendering.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMViewProxy.h"
-#include "vtkSmartPointer.h"
+
+#include <vtkColorTransferFunction.h>
+#include <vtkImageData.h>
+#include <vtkImageShiftScale.h>
+#include <vtkNew.h>
+#include <vtkPiecewiseFunction.h>
+#include <vtkSmartPointer.h>
+#include <vtkSmartVolumeMapper.h>
+#include <vtkTrivialProducer.h>
+#include <vtkVector.h>
+#include <vtkView.h>
+#include <vtkVolume.h>
+#include <vtkVolumeProperty.h>
+
+#include <pqProxiesWidget.h>
+#include <vtkPVRenderView.h>
+#include <vtkSMPVRepresentationProxy.h>
+#include <vtkSMParaViewPipelineControllerWithRendering.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMViewProxy.h>
+
+#include <QCheckBox>
+#include <QVBoxLayout>
 
 namespace tomviz {
+
+using pugi::xml_attribute;
+using pugi::xml_node;
 
 ModuleVolume::ModuleVolume(QObject* parentObject) : Superclass(parentObject)
 {
@@ -49,42 +68,32 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  vtkNew<vtkImageShiftScale> t;
 
-  vtkSMSessionProxyManager* pxm = data->producer()->GetSessionProxyManager();
+  vtkTrivialProducer* trv =
+    vtkTrivialProducer::SafeDownCast(data->producer()->GetClientSideObject());
+  vtkImageData* im = vtkImageData::SafeDownCast(trv->GetOutputDataObject(0));
 
-  // Create the pass through filter.
-  vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(pxm->NewProxy("filters", "PassThrough"));
+  t->SetInputData(im);
 
-  this->PassThrough = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->PassThrough);
-  controller->PreInitializeProxy(this->PassThrough);
-  vtkSMPropertyHelper(this->PassThrough, "Input").Set(data->producer());
-  controller->PostInitializeProxy(this->PassThrough);
-  controller->RegisterPipelineProxy(this->PassThrough);
-
-  // Create the representation for it.
-  this->Representation = controller->Show(this->PassThrough, 0, vtkView);
-  Q_ASSERT(this->Representation);
-  vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
-                                                  "Volume");
-  vtkSMPropertyHelper(this->Representation, "Position")
-    .Set(data->displayPosition(), 3);
+  m_volumeMapper->SetInputConnection(t->GetOutputPort());
+  m_volume->SetMapper(m_volumeMapper.Get());
+  m_volume->SetProperty(m_volumeProperty.Get());
 
   this->updateColorMap();
-  this->Representation->UpdateVTKObjects();
+
+  m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
+  m_view->AddPropToRenderer(m_volume.Get());
+
   return true;
 }
 
 void ModuleVolume::updateColorMap()
 {
-  Q_ASSERT(this->Representation);
-  vtkSMPropertyHelper(this->Representation, "LookupTable")
-    .Set(this->colorMap());
-  vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction")
-    .Set(this->opacityMap());
-  this->Representation->UpdateVTKObjects();
+  m_volumeProperty->SetScalarOpacity(
+    vtkPiecewiseFunction::SafeDownCast(opacityMap()->GetClientSideObject()));
+  m_volumeProperty->SetColor(
+    vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject()));
 
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
@@ -93,84 +102,122 @@ void ModuleVolume::updateColorMap()
 
 bool ModuleVolume::finalize()
 {
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(this->Representation);
-  controller->UnRegisterProxy(this->PassThrough);
+  if (m_view) {
+    m_view->RemovePropFromRenderer(m_volume.Get());
+  }
 
-  this->PassThrough = nullptr;
-  this->Representation = nullptr;
   return true;
 }
 
 bool ModuleVolume::setVisibility(bool val)
 {
-  Q_ASSERT(this->Representation);
-  vtkSMPropertyHelper(this->Representation, "Visibility").Set(val ? 1 : 0);
-  this->Representation->UpdateVTKObjects();
+  m_volume->SetVisibility(val ? 1 : 0);
   return true;
 }
 
 bool ModuleVolume::visibility() const
 {
-  Q_ASSERT(this->Representation);
-  return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() !=
-         0;
+  return m_volume->GetVisibility() != 0;
 }
 
 bool ModuleVolume::serialize(pugi::xml_node& ns) const
 {
-  QStringList list;
-  list << "Visibility"
-       << "ScalarOpacityUnitDistance";
-  pugi::xml_node nodeR = ns.append_child("Representation");
-  return (tomviz::serialize(this->Representation, nodeR, list) &&
-          this->Superclass::serialize(ns));
+  xml_node rootNode = ns.append_child("properties");
+  xml_node lightingNode = rootNode.append_child("lighting");
+  lightingNode.append_attribute("enabled") = m_volumeProperty->GetShade() == 1;
+  xml_node maxIntensityNode = rootNode.append_child("maxIntensity");
+  bool maxIntensity =
+    m_volumeMapper->GetBlendMode() == vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND;
+  maxIntensityNode.append_attribute("enabled") = maxIntensity;
+  return true;
 }
 
 bool ModuleVolume::deserialize(const pugi::xml_node& ns)
 {
-  if (!tomviz::deserialize(this->Representation, ns.child("Representation"))) {
+  xml_node rootNode = ns.child("properties");
+  if (!rootNode) {
     return false;
+  }
+
+  xml_node node = rootNode.child("lighting");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      setLighting(att.as_bool());
+    }
+  }
+  node = rootNode.child("maxIntensity");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      setMaximumIntensity(att.as_bool());
+    }
   }
 
   return this->Superclass::deserialize(ns);
 }
 
+void ModuleVolume::addToPanel(QWidget* panel)
+{
+  if (panel->layout()) {
+    delete panel->layout();
+  }
+
+  QVBoxLayout* layout = new QVBoxLayout;
+  QCheckBox* lighting = new QCheckBox("Enable lighting");
+  layout->addWidget(lighting);
+  panel->setLayout(layout);
+  QCheckBox* maxIntensity = new QCheckBox("Maximum intensity");
+  layout->addWidget(maxIntensity);
+  layout->addStretch();
+
+  lighting->setChecked(m_volumeProperty->GetShade() == 1);
+  maxIntensity->setChecked(m_volumeMapper->GetBlendMode() ==
+                           vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND);
+
+  connect(lighting, SIGNAL(clicked(bool)), SLOT(setLighting(bool)));
+  connect(maxIntensity, SIGNAL(clicked(bool)), SLOT(setMaximumIntensity(bool)));
+}
+
 void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
 {
-  double pos[3] = { newX, newY, newZ };
-  vtkSMPropertyHelper(this->Representation, "Position").Set(pos, 3);
-  this->Representation->UpdateVTKObjects();
+  vtkVector3d pos(newX, newY, newZ);
+  m_volume->SetPosition(pos.GetData());
 }
 
-//-----------------------------------------------------------------------------
-bool ModuleVolume::isProxyPartOfModule(vtkSMProxy* proxy)
+bool ModuleVolume::isProxyPartOfModule(vtkSMProxy*)
 {
-  return (proxy == this->PassThrough.Get()) ||
-         (proxy == this->Representation.Get());
+  return false;
 }
 
-std::string ModuleVolume::getStringForProxy(vtkSMProxy* proxy)
+std::string ModuleVolume::getStringForProxy(vtkSMProxy*)
 {
-  if (proxy == this->PassThrough.Get()) {
-    return "PassThrough";
-  } else if (proxy == this->Representation.Get()) {
-    return "Representation";
+  qWarning("Unknown proxy passed to module volume in save animation");
+  return "";
+}
+
+vtkSMProxy* ModuleVolume::getProxyForString(const std::string&)
+{
+  return nullptr;
+}
+
+void ModuleVolume::setLighting(bool val)
+{
+  m_volumeProperty->SetShade(val ? 1 : 0);
+  m_volumeProperty->SetAmbient(0.0);
+  m_volumeProperty->SetDiffuse(1.0);
+  m_volumeProperty->SetSpecularPower(100.0);
+  emit renderNeeded();
+}
+
+void ModuleVolume::setMaximumIntensity(bool val)
+{
+  if (val) {
+    m_volumeMapper->SetBlendMode(vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND);
   } else {
-    qWarning("Unknown proxy passed to module volume in save animation");
-    return "";
+    m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
   }
-}
-
-vtkSMProxy* ModuleVolume::getProxyForString(const std::string& str)
-{
-  if (str == "PassThrough") {
-    return this->PassThrough.Get();
-  } else if (str == "Representation") {
-    return this->Representation.Get();
-  } else {
-    return nullptr;
-  }
+  emit renderNeeded();
 }
 
 } // end of namespace tomviz
