@@ -45,6 +45,9 @@
 
 namespace tomviz {
 
+using pugi::xml_attribute;
+using pugi::xml_node;
+
 ModuleVolume::ModuleVolume(QObject* parentObject) : Superclass(parentObject)
 {
 }
@@ -117,13 +120,40 @@ bool ModuleVolume::visibility() const
   return m_volume->GetVisibility() != 0;
 }
 
-bool ModuleVolume::serialize(pugi::xml_node&) const
+bool ModuleVolume::serialize(pugi::xml_node& ns) const
 {
-  return false;
+  xml_node rootNode = ns.append_child("properties");
+  xml_node lightingNode = rootNode.append_child("lighting");
+  lightingNode.append_attribute("enabled") = m_volumeProperty->GetShade() == 1;
+  xml_node maxIntensityNode = rootNode.append_child("maxIntensity");
+  bool maxIntensity =
+    m_volumeMapper->GetBlendMode() == vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND;
+  maxIntensityNode.append_attribute("enabled") = maxIntensity;
+  return true;
 }
 
 bool ModuleVolume::deserialize(const pugi::xml_node& ns)
 {
+  xml_node rootNode = ns.child("properties");
+  if (!rootNode) {
+    return false;
+  }
+
+  xml_node node = rootNode.child("lighting");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      setLighting(att.as_bool());
+    }
+  }
+  node = rootNode.child("maxIntensity");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      setMaximumIntensity(att.as_bool());
+    }
+  }
+
   return this->Superclass::deserialize(ns);
 }
 
