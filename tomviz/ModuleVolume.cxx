@@ -141,6 +141,10 @@ void ModuleVolume::addToPanel(QWidget* panel)
   layout->addWidget(maxIntensity);
   layout->addStretch();
 
+  lighting->setChecked(m_volumeProperty->GetShade() == 1);
+  maxIntensity->setChecked(m_volumeMapper->GetBlendMode() ==
+                           vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND);
+
   connect(lighting, SIGNAL(clicked(bool)), SLOT(setLighting(bool)));
   connect(maxIntensity, SIGNAL(clicked(bool)), SLOT(setMaximumIntensity(bool)));
 }
