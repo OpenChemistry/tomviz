@@ -253,6 +253,9 @@ void ViewMenuManager::setShowAxisGrid(bool show)
 
 void ViewMenuManager::onAxesGridChanged()
 {
+  if (!this->showAxisGridAction) {
+    return;
+  }
   vtkSMProxy* axesGrid =
     vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
   int showing = vtkSMPropertyHelper(axesGrid, "Visibility").GetAsInt();
