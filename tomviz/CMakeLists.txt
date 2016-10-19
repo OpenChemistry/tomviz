@@ -213,6 +213,7 @@ set(python_files
   Square_Root_Data.py
   Subtract_TiltSer_Background.py
   Subtract_TiltSer_Background_Auto.py
+  MedianFilterTiltSeries.py
   MisalignImgs_Gaussian.py
   NormalizeTiltSeries.py
   Rotate3D.py
@@ -245,6 +246,7 @@ set(json_files
   BinaryErode.json
   BinaryOpen.json
   BinaryClose.json
+  MedianFilterTiltSeries.json
   Shift_Stack_Uniformly.json
   Pad_Data.json
   Resample.json
