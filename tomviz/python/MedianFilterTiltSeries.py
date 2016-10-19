@@ -3,7 +3,7 @@ def transform_scalars(dataset):
     """ Median filter is a nonlinear filter used to reduce noise."""
 
     #----USER SPECIFIED VARIABLES-----#
-    ###size###    #Specify size of the Median filter
+    # size###    #Specify size of the Median filter
     #---------------------------------#
 
     from tomviz import utils
@@ -13,8 +13,9 @@ def transform_scalars(dataset):
 
     # Transform the dataset.
     for i in range(tiltSeries.shape[2]):
-      tiltSeries[:,:,i] = scipy.ndimage.filters.median_filter(tiltSeries[:,:,i],
-                                                              size)
+        tiltSeries[:, :, i] = scipy.ndimage.filters.median_filter(
+            tiltSeries[:, :, i],
+            size)
 
     # Set the result as the new scalars.
     utils.set_array(dataset, tiltSeries)

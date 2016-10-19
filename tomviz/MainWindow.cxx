@@ -205,8 +205,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   dataProcessingLabel->setEnabled(false);
   QAction* downsampleByTwoAction =
     ui.menuTomography->addAction("Bin Tilt Images x2");
-  QAction* medianFilterAction =
-    ui.menuTomography->addAction("Median Filter");
+  QAction* medianFilterAction = ui.menuTomography->addAction("Median Filter");
   QAction* autoSubtractBackgroundAction =
     ui.menuTomography->addAction("Background Subtraction (Auto)");
   QAction* subtractBackgroundAction =
