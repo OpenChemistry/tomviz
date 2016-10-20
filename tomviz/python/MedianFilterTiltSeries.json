@@ -1,0 +1,14 @@
+{
+  "name" : "MedianFilter",
+  "label" : "Median Filter",
+  "description" : "Apply an isotropic median filter to each tilt image. \nThe window size can be specified below:",
+  "parameters" : [
+    {
+      "name" : "size",
+      "label" : "Size",
+      "type" : "int",
+      "default" : 2,
+      "minimum" : 1
+    }
+  ]
+}
