@@ -158,6 +158,9 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
 /// Check for Python error. Prints error and clears it if an error has occurred.
 /// Return true if an error has occurred, false otherwise.
 bool checkForPythonError();
+
+extern double offWhite[3];
+
 }
 
 #endif

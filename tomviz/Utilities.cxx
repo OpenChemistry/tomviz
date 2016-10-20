@@ -358,4 +358,6 @@ bool checkForPythonError()
   }
   return false;
 }
+
+double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
 }
