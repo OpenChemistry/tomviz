@@ -1,41 +1,59 @@
 import numpy as np
 from scipy.interpolate import interp1d
+import tomviz.operators
 
 
-def transform_scalars(dataset):
-    """
-    3D Reconstruct from a tilt series using Weighted Back-projection Method
-    """
+class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
-    from tomviz import utils
-    interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
-    filter_methods = ('none', 'ramp', 'shepp-logan',
-                      'cosine', 'hamming', 'hann')
+    def transform_scalars(self, dataset):
+        """
+        3D Reconstruct from a tilt series using Weighted Back-projection Method
+        """
 
-    ###Nrecon###
-    ###filter###
-    ###interp###
+        from tomviz import utils
+        interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
+        filter_methods = ('none', 'ramp', 'shepp-logan',
+                          'cosine', 'hamming', 'hann')
 
-    # Get Tilt angles
-    tilt_angles = utils.get_tilt_angles(dataset)
+        ###Nrecon###
+        ###filter###
+        ###interp###
 
-    data_py = utils.get_array(dataset)
-    if data_py is None:
-        raise RuntimeError("No scalars found!")
+        # Get Tilt angles
+        tilt_angles = utils.get_tilt_angles(dataset)
 
-    recon = wbp3(data_py, tilt_angles, Nrecon, filter_methods[
-                 filter], interpolation_methods[interp])
-    print('Reconsruction Complete')
+        tiltSeries = utils.get_array(dataset)
+        if tiltSeries is None:
+            raise RuntimeError("No scalars found!")
 
-    # Set the result as the new scalars.
-    utils.set_array(dataset, recon)
+        N_slice = tiltSeries.shape[0]
 
-    # Mark dataset as volume.
-    utils.mark_as_volume(dataset)
+        NUMBER_OF_CHUNKS = int(np.floor(np.sqrt(N_slice)))
+        self.progress.maximum = NUMBER_OF_CHUNKS
+        step = 0
+        N_slice_per_chunk = int(np.ceil(N_slice * 1.0 / NUMBER_OF_CHUNKS))
+
+        recon = np.zeros((N_slice, Nrecon, Nrecon))
+        for i in range(NUMBER_OF_CHUNKS):
+            if self.canceled:
+                return
+            index_x_start = i * N_slice_per_chunk
+            index_x_end = np.min([(i + 1) * N_slice_per_chunk, N_slice])
+            recon[index_x_start:index_x_end, :, :] = wbp3(tiltSeries[
+                                                          index_x_start:index_x_end, :, :], tilt_angles, Nrecon, filter_methods[filter], interpolation_methods[interp])
+            step += 1
+            self.progress.update(step)
+
+        print('Reconsruction Complete')
+
+        # Set the result as the new scalars.
+        utils.set_array(dataset, recon)
+
+        # Mark dataset as volume.
+        utils.mark_as_volume(dataset)
 
 
 def wbp3(input, angles, N=None, filter="ramp", interp="linear"):
-    print "you are using 3D back-projection reconstruction method"
     input = np.double(input)
     (Nslice, Nray, Nproj) = input.shape
     if Nproj != angles.size:
@@ -43,30 +61,17 @@ def wbp3(input, angles, N=None, filter="ramp", interp="linear"):
     interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
     if interp not in interpolation_methods:
         raise ValueError("Unknown interpolation: %s" % interp)
-    if not N: #if ouput size is not given
+    if not N:  # if ouput size is not given
         N = int(np.floor(np.sqrt(Nray**2 / 2.0)))
 
     recon = np.zeros((Nslice, N, N))
     for i in range(Nslice):
-        #print "slice No.", i+1
+        # print "slice No.", i+1
         recon[i, :, :] = wbp2(input[i, :, :], angles, N, filter, interp)
     return recon
 
-# Weighted back projection reconstruction for 2D image
-# Inputs:
-# Sinogram: dimension: 2D array
-# angles: in degrees
-# N: output size. Default:
-# filter: Fourier filter:
-#        "none","ramp","shepp-logan","cosine","hamming","hann". Default: "ramp"
-# interp: back projection interpolation method. Default: linear
-#        "linear","nearest","spline","cubic". Default: "linear"
-
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
-    #print "Sinogram size is:", sinogram.shape
-    #print "Angles size is:", angles.shape
-    # Check inputs
     if sinogram.ndim != 2:
         raise ValueError('Sinogram must be 2D')
     (Nray, Nproj) = sinogram.shape
@@ -76,7 +81,7 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
     if interp not in interpolation_methods:
         raise ValueError("Unknown interpolation: %s" % interp)
-    if not N: #if ouput size is not given
+    if not N:  # if ouput size is not given
         N = int(np.floor(np.sqrt(Nray**2 / 2.0)))
 
     ang = np.double(angles) * np.pi / 180.0
@@ -93,7 +98,7 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
 
     # Back projection
     recon = np.zeros((N, N))
-    center_proj = Nray // 2 # Index of center of projection
+    center_proj = Nray // 2  # Index of center of projection
     [X, Y] = np.mgrid[0:N, 0:N]
     xpr = X - int(N) // 2
     ypr = Y - int(N) // 2
