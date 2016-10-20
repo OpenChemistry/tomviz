@@ -198,8 +198,8 @@ set(python_files
   BinaryOpen.py
   BinaryClose.py
   MisalignImgs_Uniform.py
-  Align_Images.py
   AutoTiltAxisAlignment.py
+  AutoTiltImageAlignment.py
   Recon_DFT.py
   Recon_DFT_constraint.py
   Recon_WBP.py
