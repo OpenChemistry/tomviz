@@ -1,5 +1,4 @@
 include_directories(SYSTEM
-  ${Qt5Help_INCLUDE_DIRS}
   ${Qt5Network_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
   ${Qt5UiTools_INCLUDE_DIRS})
