@@ -278,8 +278,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new AddPythonTransformReaction(autoRotateAlignAction, "Auto Tilt Axis Align",
                                  readInPythonScript("AutoTiltAxisAlignment"),
                                  true);
-  new AddPythonTransformReaction(autoAlignAction, "Auto Align (XCORR)",
-                                 readInPythonScript("Align_Images"), true);
+  new AddPythonTransformReaction(
+    autoAlignAction, "Auto Tilt Image Align (XCORR)",
+    readInPythonScript("AutoTiltImageAlignment"), true);
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true);
   new AddPythonTransformReaction(reconWBPAction,
