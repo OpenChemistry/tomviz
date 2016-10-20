@@ -40,7 +40,8 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
             index_x_start = i * N_slice_per_chunk
             index_x_end = np.min([(i + 1) * N_slice_per_chunk, N_slice])
             recon[index_x_start:index_x_end, :, :] = wbp3(tiltSeries[
-                                                          index_x_start:index_x_end, :, :], tilt_angles, Nrecon, filter_methods[filter], interpolation_methods[interp])
+                index_x_start:index_x_end, :, :], tilt_angles, Nrecon,
+                filter_methods[filter], interpolation_methods[interp])
             step += 1
             self.progress.update(step)
 
