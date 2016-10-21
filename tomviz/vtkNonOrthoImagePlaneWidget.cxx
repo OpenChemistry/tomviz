@@ -51,6 +51,8 @@
 #include "vtkTexture.h"
 #include "vtkTransform.h"
 
+#include "Utilities.h"
+
 vtkStandardNewMacro(vtkNonOrthoImagePlaneWidget)
 
 namespace detail
@@ -835,7 +837,7 @@ void vtkNonOrthoImagePlaneWidget::CreateDefaultProperties()
 
   if (!this->ArrowProperty) {
     this->ArrowProperty = vtkProperty::New();
-    this->ArrowProperty->SetColor(1, 1, 1);
+    this->ArrowProperty->SetColor(tomviz::offWhite);
     this->ArrowProperty->SetLineWidth(2);
   }
 

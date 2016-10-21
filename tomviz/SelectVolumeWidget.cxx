@@ -28,6 +28,7 @@
 #include <vtkInteractorObserver.h>
 #include <vtkMath.h>
 #include <vtkNew.h>
+#include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
@@ -44,6 +45,7 @@
 #include <QSettings>
 
 #include "ActiveObjects.h"
+#include "Utilities.h"
 
 namespace tomviz {
 
@@ -110,6 +112,12 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
       this->Internals->dataPosition[i];
   }
   vtkNew<vtkBoxRepresentation> boxRep;
+  boxRep->GetOutlineProperty()->SetColor(offWhite);
+  boxRep->GetOutlineProperty()->SetAmbient(0.0);
+  boxRep->GetOutlineProperty()->SetLighting(false);
+  boxRep->GetSelectedOutlineProperty()->SetColor(offWhite);
+  boxRep->GetSelectedOutlineProperty()->SetAmbient(0.0);
+  boxRep->GetSelectedOutlineProperty()->SetLighting(false);
   boxRep->SetPlaceFactor(1.0);
   boxRep->PlaceWidget(bounds);
   boxRep->HandlesOn();

@@ -73,7 +73,6 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     controller->Show(this->OutlineFilter, 0, vtkView);
   vtkSMPropertyHelper(this->OutlineRepresentation, "Position")
     .Set(data->displayPosition(), 3);
-  double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
   vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor")
     .Set(offWhite, 3);
   Q_ASSERT(this->OutlineRepresentation);

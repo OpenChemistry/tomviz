@@ -18,12 +18,16 @@
 #include "ui_MainWindow.h"
 
 #include <pqMacroReaction.h>
+#include <pqObjectBuilder.h>
 #include <pqPythonShellReaction.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSaveStateReaction.h>
 #include <pqSettings.h>
+#include <pqView.h>
 #include <vtkPVPlugin.h>
+#include <vtkPVRenderView.h>
 #include <vtkSMSettings.h>
+#include <vtkSMViewProxy.h>
 
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
@@ -149,6 +153,18 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                             SLOT(setActiveModule(Module*)));
   ui.centralWidget->connect(ui.dataPropertiesPanel, SIGNAL(colorMapUpdated()),
                             SLOT(onColorMapUpdated()));
+
+  // When a new renderview is created ensure that the orientation axes labels
+  // are set to off white.
+  connect(pqApplicationCore::instance()->getObjectBuilder(),
+          &pqObjectBuilder::viewCreated, [=](pqView* view) {
+            auto renderView = vtkPVRenderView::SafeDownCast(
+              view->getViewProxy()->GetClientSideView());
+            if (renderView) {
+              renderView->SetOrientationAxesLabelColor(offWhite[0], offWhite[1],
+                                                       offWhite[2]);
+            }
+          });
 
   ui.treeWidget->setModel(new PipelineModel(this));
   ui.treeWidget->header()->setStretchLastSection(false);
