@@ -22,6 +22,8 @@
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMViewProxy.h"
+#include "vtkGridAxes3DActor.h"
+#include "vtkTextProperty.h"
 
 #include <QAction>
 #include <QActionGroup>
@@ -243,6 +245,14 @@ void ViewMenuManager::setShowAxisGrid(bool show)
     vtkSMPropertyHelper(axesGrid, "Visibility").Set(0);
   } else if (!showing && show) {
     vtkSMPropertyHelper(axesGrid, "Visibility").Set(1);
+
+    auto actor =
+        vtkGridAxes3DActor::SafeDownCast(axesGrid->GetClientSideObject());
+
+    for( int i : {0, 1, 2}) {
+      actor->GetTitleTextProperty(i)->SetColor(offWhite);
+      actor->GetLabelTextProperty(i)->SetColor(offWhite);
+    }
   }
   axesGrid->UpdateVTKObjects();
   pqView* view = tomviz::convert<pqView*>(this->View);
