@@ -68,11 +68,12 @@ PipelineView::~PipelineView() = default;
 
 void PipelineView::keyPressEvent(QKeyEvent* e)
 {
-  QTreeView::keyPressEvent(e);
   if (e->key() == Qt::Key_Delete || e->key() == Qt::Key_Backspace) {
     if (currentIndex().isValid()) {
       deleteItem(currentIndex());
     }
+  } else {
+    QTreeView::keyPressEvent(e);
   }
 }
 
