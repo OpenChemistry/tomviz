@@ -219,12 +219,28 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
+  
+  QHBoxLayout* rowLayout = new QHBoxLayout;
+  rowLayout->addStretch();
+  pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
+  colorSelector->setShowAlphaChannel(false);
+  //layout->addRow("Color", rowLayout);
+
+  
   QCheckBox* useSolidColor = new QCheckBox;
   useSolidColor->setChecked(this->Internals->UseSolidColor);
   QObject::connect(useSolidColor, &QCheckBox::stateChanged, this,
                    &ModuleContour::setUseSolidColor);
-  layout->addRow("Use Solid Color", useSolidColor);
+  rowLayout->addWidget(useSolidColor);
+  QLabel* label = new QLabel("Select Color");
 
+  rowLayout->addWidget(label);
+
+  rowLayout->addWidget(colorSelector);
+
+  layout->addRow("", rowLayout);
+  
+  
   DoubleSliderWidget* valueSlider = new DoubleSliderWidget(true);
   valueSlider->setLineEditWidth(50);
   layout->addRow("Value", valueSlider);
@@ -233,7 +249,7 @@ void ModuleContour::addToPanel(QWidget* panel)
   representations->addItem("Surface");
   representations->addItem("Wireframe");
   representations->addItem("Points");
-  layout->addRow("Representation", representations);
+  layout->addRow("", representations);
   // TODO connect to update function
 
   DoubleSliderWidget* opacitySlider = new DoubleSliderWidget(true);
@@ -248,12 +264,7 @@ void ModuleContour::addToPanel(QWidget* panel)
     new pqSignalAdaptorComboBox(representations);
   // layout->addStretch();
 
-  QHBoxLayout* rowLayout = new QHBoxLayout;
-  rowLayout->addStretch();
-  pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
-  colorSelector->setShowAlphaChannel(false);
-  rowLayout->addWidget(colorSelector);
-  layout->addRow("Color", rowLayout);
+  
 
   panel->setLayout(layout);
 
