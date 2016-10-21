@@ -219,7 +219,7 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
-  //Solid color
+  // Solid color
   QHBoxLayout* colorLayout = new QHBoxLayout;
   colorLayout->addStretch();
 
@@ -259,8 +259,6 @@ void ModuleContour::addToPanel(QWidget* panel)
   pqSignalAdaptorComboBox* adaptor =
     new pqSignalAdaptorComboBox(representations);
   // layout->addStretch();
-
-  
 
   panel->setLayout(layout);
 
