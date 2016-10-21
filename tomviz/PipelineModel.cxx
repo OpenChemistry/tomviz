@@ -460,29 +460,42 @@ int PipelineModel::columnCount(const QModelIndex&) const
 
 DataSource* PipelineModel::dataSource(const QModelIndex& idx)
 {
-  auto treeItem = this->treeItem(idx);
-  return (treeItem ? treeItem->dataSource() : nullptr);
+  if (idx.isValid()) {
+    auto treeItem = this->treeItem(idx);
+    return (treeItem ? treeItem->dataSource() : nullptr);
+  } else {
+    return nullptr;
+  }
 }
 
 Module* PipelineModel::module(const QModelIndex& idx)
 {
-  auto treeItem = this->treeItem(idx);
-  return (treeItem ? treeItem->module() : nullptr);
+  if (idx.isValid()) {
+    auto treeItem = this->treeItem(idx);
+    return (treeItem ? treeItem->module() : nullptr);
+  } else {
+    return nullptr;
+  }
 }
 
 Operator* PipelineModel::op(const QModelIndex& idx)
 {
-  auto treeItem = this->treeItem(idx);
-  return (treeItem ? treeItem->op() : nullptr);
+  if (idx.isValid()) {
+    auto treeItem = this->treeItem(idx);
+    return (treeItem ? treeItem->op() : nullptr);
+  } else {
+    return nullptr;
+  }
 }
 
 OperatorResult* PipelineModel::result(const QModelIndex& idx)
 {
-  if (!idx.isValid()) {
+  if (idx.isValid()) {
+    auto treeItem = this->treeItem(idx);
+    return (treeItem ? treeItem->result() : nullptr);
+  } else {
     return nullptr;
   }
-  auto treeItem = this->treeItem(idx);
-  return (treeItem ? treeItem->result() : nullptr);
 }
 
 QModelIndex PipelineModel::dataSourceIndexHelper(
