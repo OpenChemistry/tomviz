@@ -160,7 +160,6 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
 bool checkForPythonError();
 
 extern double offWhite[3];
-
 }
 
 #endif

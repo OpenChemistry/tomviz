@@ -28,6 +28,7 @@
 #include <vtkInteractorObserver.h>
 #include <vtkMath.h>
 #include <vtkNew.h>
+#include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
@@ -39,8 +40,6 @@
 #include <vtkTrivialProducer.h>
 #include <vtkVolume.h>
 #include <vtkVolumeProperty.h>
-#include <vtkProperty.h>
-
 
 #include <QHBoxLayout>
 #include <QSettings>

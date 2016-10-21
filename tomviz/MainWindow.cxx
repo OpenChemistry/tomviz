@@ -18,15 +18,15 @@
 #include "ui_MainWindow.h"
 
 #include <pqMacroReaction.h>
+#include <pqObjectBuilder.h>
 #include <pqPythonShellReaction.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSaveStateReaction.h>
 #include <pqSettings.h>
-#include <pqObjectBuilder.h>
 #include <pqView.h>
 #include <vtkPVPlugin.h>
-#include <vtkSMSettings.h>
 #include <vtkPVRenderView.h>
+#include <vtkSMSettings.h>
 #include <vtkSMViewProxy.h>
 
 #include "ActiveObjects.h"
@@ -157,12 +157,14 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // When a new renderview is created ensure that the orientation axes labels
   // are set to off white.
   connect(pqApplicationCore::instance()->getObjectBuilder(),
-      &pqObjectBuilder::viewCreated, [=](pqView *view) {
-            auto renderView = vtkPVRenderView::SafeDownCast(view->getViewProxy()->GetClientSideView());
+          &pqObjectBuilder::viewCreated, [=](pqView* view) {
+            auto renderView = vtkPVRenderView::SafeDownCast(
+              view->getViewProxy()->GetClientSideView());
             if (renderView) {
-              renderView->SetOrientationAxesLabelColor(offWhite[0], offWhite[1], offWhite[2]);
+              renderView->SetOrientationAxesLabelColor(offWhite[0], offWhite[1],
+                                                       offWhite[2]);
             }
-  });
+          });
 
   ui.treeWidget->setModel(new PipelineModel(this));
   ui.treeWidget->header()->setStretchLastSection(false);
