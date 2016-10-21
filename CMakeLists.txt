@@ -50,9 +50,8 @@ set(PYBIND11_PYTHON_VERSION "2.7" CACHE STRING "")
 set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
-# These dependencies are inherited from ParaView, we will ideally trim away
-# UiTools in the future.
-find_package(Qt5 REQUIRED COMPONENTS Network Widgets UiTools)
+# These dependencies are inherited from ParaView.
+find_package(Qt5 REQUIRED COMPONENTS Network Widgets)
 find_package(ParaView REQUIRED)
 
 if(NOT PARAVIEW_BUILD_QT_GUI)
