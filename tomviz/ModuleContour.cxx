@@ -219,28 +219,24 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
-  
-  QHBoxLayout* rowLayout = new QHBoxLayout;
-  rowLayout->addStretch();
-  pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
-  colorSelector->setShowAlphaChannel(false);
-  //layout->addRow("Color", rowLayout);
+  //Solid color
+  QHBoxLayout* colorLayout = new QHBoxLayout;
+  colorLayout->addStretch();
 
-  
   QCheckBox* useSolidColor = new QCheckBox;
   useSolidColor->setChecked(this->Internals->UseSolidColor);
   QObject::connect(useSolidColor, &QCheckBox::stateChanged, this,
                    &ModuleContour::setUseSolidColor);
-  rowLayout->addWidget(useSolidColor);
-  QLabel* label = new QLabel("Select Color");
-
-  rowLayout->addWidget(label);
-
-  rowLayout->addWidget(colorSelector);
-
-  layout->addRow("", rowLayout);
+  colorLayout->addWidget(useSolidColor);
   
+  QLabel* colorLabel = new QLabel("Select Color");
+  colorLayout->addWidget(colorLabel);
   
+  pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
+  colorLayout->addWidget(colorSelector);
+  layout->addRow("", colorLayout);
+  
+  colorSelector->setShowAlphaChannel(false);
   DoubleSliderWidget* valueSlider = new DoubleSliderWidget(true);
   valueSlider->setLineEditWidth(50);
   layout->addRow("Value", valueSlider);
