@@ -55,9 +55,9 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   setSelectionBehavior(QAbstractItemView::SelectRows);
 
   // track selection to update ActiveObjects.
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+  connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
           SLOT(setCurrent(DataSource*)));
-  connect(&ActiveObjects::instance(), SIGNAL(moduleChanged(Module*)),
+  connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
           SLOT(setCurrent(Module*)));
 
   connect(this, SIGNAL(doubleClicked(QModelIndex)),
