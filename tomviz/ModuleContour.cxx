@@ -228,14 +228,14 @@ void ModuleContour::addToPanel(QWidget* panel)
   QObject::connect(useSolidColor, &QCheckBox::stateChanged, this,
                    &ModuleContour::setUseSolidColor);
   colorLayout->addWidget(useSolidColor);
-  
+
   QLabel* colorLabel = new QLabel("Select Color");
   colorLayout->addWidget(colorLabel);
-  
+
   pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
   colorLayout->addWidget(colorSelector);
   layout->addRow("", colorLayout);
-  
+
   colorSelector->setShowAlphaChannel(false);
   DoubleSliderWidget* valueSlider = new DoubleSliderWidget(true);
   valueSlider->setLineEditWidth(50);
