@@ -417,6 +417,7 @@ void RotateAlignWidget::setDataSource(DataSource* source)
       QString::number(extent[3] - extent[2]));
 
     this->Internals->Ui.projection->setValue((extent[5] - extent[4]) / 2);
+    this->onProjectionNumberChanged();
     this->Internals->Ui.spinBox_1->setRange(0, extent[1] - extent[0]);
     this->Internals->Ui.spinBox_2->setRange(0, extent[1] - extent[0]);
     this->Internals->Ui.spinBox_3->setRange(0, extent[1] - extent[0]);
