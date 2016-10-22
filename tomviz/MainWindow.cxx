@@ -222,6 +222,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* downsampleByTwoAction =
     ui.menuTomography->addAction("Bin Tilt Images x2");
   QAction* medianFilterAction = ui.menuTomography->addAction("Median Filter");
+  QAction* gaussianFilterAction =
+    ui.menuTomography->addAction("Gaussian Filter");
   QAction* autoSubtractBackgroundAction =
     ui.menuTomography->addAction("Background Subtraction (Auto)");
   QAction* subtractBackgroundAction =
@@ -278,6 +280,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     medianFilterAction, "Median Filter Tilt Series",
     readInPythonScript("MedianFilterTiltSeries"), true, false,
     readInJSONDescription("MedianFilterTiltSeries"));
+  new AddPythonTransformReaction(
+    gaussianFilterAction, "Gaussian Filter Tilt Series",
+    readInPythonScript("GaussianFilterTiltSeries"), true, false,
+    readInJSONDescription("GaussianFilterTiltSeries"));
   new AddPythonTransformReaction(
     autoSubtractBackgroundAction, "Background Subtraction (Auto)",
     readInPythonScript("Subtract_TiltSer_Background_Auto"), true);

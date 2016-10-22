@@ -1,0 +1,14 @@
+{
+  "name" : "GaussianFilterTiltSeries”,
+  "label" : "Gaussian Filter Tilt Series”,
+  "description" : "Apply an isotropic Gaussian filter to tilt images. \nThe standard deviation\n(sigma) can be specified below:",
+  "parameters" : [
+    {
+      "name" : "sigma",
+      "label" : "Sigma",
+      "type" : "double",
+      "default" : 2.0,
+      "minimum" : 0.0
+    }
+  ]
+}

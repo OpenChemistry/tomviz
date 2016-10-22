@@ -1,5 +1,5 @@
 def transform_scalars(dataset):
-    """Apply a Gaussian filter to volume dataset."""
+    """Apply a Gaussian filter to tilt images."""
     """Gaussian Filter blurs the image and reduces the noise and details."""
 
     #----USER SPECIFIED VARIABLES-----#
@@ -9,10 +9,10 @@ def transform_scalars(dataset):
     from tomviz import utils
     import scipy.ndimage
 
-    array = utils.get_array(dataset)
+    tiltSeries = utils.get_array(dataset)
 
     # Transform the dataset.
-    result = scipy.ndimage.filters.gaussian_filter(array, sigma)
+    result = scipy.ndimage.filters.gaussian_filter(tiltSeries, [sigma, sigma, 0])
 
     # Set the result as the new scalars.
     utils.set_array(dataset, result)

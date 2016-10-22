@@ -221,6 +221,7 @@ set(python_files
   GradientMagnitude2D_Sobel.py
   LaplaceFilter.py
   GaussianFilter.py
+  GaussianFilterTiltSeries.py
   PeronaMalikAnisotropicDiffusion.py
   MedianFilter.py
   Resample.py
@@ -250,6 +251,7 @@ set(json_files
   Pad_Data.json
   Resample.json
   GaussianFilter.json
+  GaussianFilterTiltSeries.json
   PeronaMalikAnisotropicDiffusion.json
   MedianFilter.json
   Rotate3D.json
