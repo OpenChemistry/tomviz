@@ -61,7 +61,7 @@ public:
       "rotating"
       " (\"tilting\") the specimen.  Setting the correct angles is needed for "
       "accurate"
-      " reconstruction.\n  Set a linearly spaced range of angles by specifying "
+      " reconstruction.\nSet a linearly spaced range of angles by specifying "
       "the start"
       " and end tilt index and start and end angles.  Note, tilt angles can "
       "also be set"
@@ -157,6 +157,9 @@ public:
 
     this->tabWidget->addTab(setAutomaticPanel, "Set by Range");
     this->tabWidget->addTab(setFromTablePanel, "Set Individually");
+
+    baseLayout->setSizeConstraint(QLayout::SetFixedSize);
+    p->setFixedSize(670,330);
   }
 
   void applyChangesToOperator() override
