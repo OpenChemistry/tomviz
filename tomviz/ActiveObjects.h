@@ -35,8 +35,6 @@ class ActiveObjects : public QObject
 {
   Q_OBJECT
 
-  typedef QObject Superclass;
-
 public:
   /// Returns reference to the singleton instance.
   static ActiveObjects& instance();
@@ -104,12 +102,12 @@ protected:
   ActiveObjects();
   virtual ~ActiveObjects();
 
-  QPointer<DataSource> m_activeDataSource;
-  DataSource::DataSourceType m_activeDataSourceType;
+  QPointer<DataSource> m_activeDataSource = nullptr;
+  DataSource::DataSourceType m_activeDataSourceType = DataSource::Volume;
 
-  QPointer<Module> m_activeModule;
+  QPointer<Module> m_activeModule = nullptr;
 
-  bool m_moveObjectsEnabled;
+  bool m_moveObjectsEnabled = false;
 
 private:
   Q_DISABLE_COPY(ActiveObjects)

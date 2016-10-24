@@ -27,10 +27,7 @@
 
 namespace tomviz {
 
-ActiveObjects::ActiveObjects()
-  : Superclass(), m_activeDataSource(nullptr),
-    m_activeDataSourceType(DataSource::Volume), m_activeModule(nullptr),
-    m_moveObjectsEnabled(false)
+ActiveObjects::ActiveObjects() : QObject()
 {
   connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
           SLOT(viewChanged(pqView*)));
