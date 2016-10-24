@@ -50,7 +50,7 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   setItemsExpandable(false);
 
   QString customStyle = "QTreeView::branch { background-color: white; }";
-  this->setStyleSheet(customStyle);
+  setStyleSheet(customStyle);
   setAlternatingRowColors(true);
   setSelectionBehavior(QAbstractItemView::SelectRows);
 
@@ -79,12 +79,12 @@ void PipelineView::keyPressEvent(QKeyEvent* e)
 
 void PipelineView::contextMenuEvent(QContextMenuEvent* e)
 {
-  auto idx = this->indexAt(e->pos());
+  auto idx = indexAt(e->pos());
   if (!idx.isValid()) {
     return;
   }
 
-  auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
+  auto pipelineModel = qobject_cast<PipelineModel*>(model());
   auto dataSource = pipelineModel->dataSource(idx);
   auto result = pipelineModel->result(idx);
 
@@ -110,21 +110,21 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
       markAsAction = contextMenu.addAction("Mark as Volume");
     }
   }
-  QAction* deleteAction = contextMenu.addAction("Delete");
+  auto deleteAction = contextMenu.addAction("Delete");
   auto globalPoint = mapToGlobal(e->pos());
-  QAction* selectedItem = contextMenu.exec(globalPoint);
+  auto selectedItem = contextMenu.exec(globalPoint);
   // Some action was selected, so process it.
   if (selectedItem == deleteAction) {
     deleteItem(idx);
   } else if (markAsAction != nullptr && markAsAction == selectedItem) {
-    QMainWindow* mainWindow = qobject_cast<QMainWindow*>(this->window());
+    auto mainWindow = qobject_cast<QMainWindow*>(window());
     ToggleDataTypeReaction::toggleDataType(mainWindow, dataSource);
   }
 }
 
 void PipelineView::deleteItem(const QModelIndex& idx)
 {
-  auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
+  auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
   auto dataSource = pipelineModel->dataSource(idx);
   auto module = pipelineModel->module(idx);
@@ -142,7 +142,7 @@ void PipelineView::deleteItem(const QModelIndex& idx)
 void PipelineView::rowActivated(const QModelIndex& idx)
 {
   if (idx.isValid() && idx.column() == 1) {
-    auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
+    auto pipelineModel = qobject_cast<PipelineModel*>(model());
     if (pipelineModel) {
       if (auto module = pipelineModel->module(idx)) {
         module->setVisibility(!module->visibility());
@@ -159,7 +159,7 @@ void PipelineView::rowActivated(const QModelIndex& idx)
 
 void PipelineView::rowDoubleClicked(const QModelIndex& idx)
 {
-  auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
+  auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
   if (auto op = pipelineModel->op(idx)) {
     if (op->hasCustomUI()) {
@@ -198,13 +198,13 @@ void PipelineView::currentChanged(const QModelIndex& current,
 void PipelineView::setCurrent(DataSource* dataSource)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
-  this->setCurrentIndex(pipelineModel->dataSourceIndex(dataSource));
+  setCurrentIndex(pipelineModel->dataSourceIndex(dataSource));
 }
 
 void PipelineView::setCurrent(Module* module)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
-  this->setCurrentIndex(pipelineModel->moduleIndex(module));
+  setCurrentIndex(pipelineModel->moduleIndex(module));
 }
 
 void PipelineView::setCurrent(Operator*)
