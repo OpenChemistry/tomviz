@@ -25,14 +25,14 @@
 namespace tomviz {
 
 ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject)
-  : Superclass(parentObject), Menu(menu), ToolBar(toolBar)
+  : QObject(parentObject), m_menu(menu), m_toolBar(toolBar)
 {
   Q_ASSERT(menu);
   Q_ASSERT(toolBar);
-  this->connect(menu, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)), SLOT(updateActions()));
-  this->updateActions();
+  connect(menu, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
+  connect(&ActiveObjects::instance(),
+          SIGNAL(dataSourceChanged(DataSource*)), SLOT(updateActions()));
+  updateActions();
 }
 
 ModuleMenu::~ModuleMenu()
@@ -41,8 +41,8 @@ ModuleMenu::~ModuleMenu()
 
 void ModuleMenu::updateActions()
 {
-  QMenu* menu = this->Menu;
-  QToolBar* toolBar = this->ToolBar;
+  QMenu* menu = m_menu;
+  QToolBar* toolBar = m_toolBar;
   Q_ASSERT(menu);
   Q_ASSERT(toolBar);
 
@@ -53,12 +53,12 @@ void ModuleMenu::updateActions()
                                ActiveObjects::instance().activeView());
   if (modules.size() > 0) {
     foreach (const QString& txt, modules) {
-      QAction* actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
+      auto actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
       toolBar->addAction(actn);
       actn->setData(txt);
     }
   } else {
-    QAction* action = menu->addAction("No modules available");
+    auto action = menu->addAction("No modules available");
     action->setEnabled(false);
     toolBar->addAction(action);
   }
@@ -66,7 +66,7 @@ void ModuleMenu::updateActions()
 
 void ModuleMenu::triggered(QAction* maction)
 {
-  Module* module = ModuleManager::instance().createAndAddModule(
+  auto module = ModuleManager::instance().createAndAddModule(
     maction->data().toString(), ActiveObjects::instance().activeDataSource(),
     ActiveObjects::instance().activeView());
   if (module) {
