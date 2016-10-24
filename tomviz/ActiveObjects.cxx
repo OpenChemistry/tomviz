@@ -28,17 +28,17 @@
 namespace tomviz {
 
 ActiveObjects::ActiveObjects()
-  : Superclass(), ActiveDataSource(nullptr),
-    ActiveDataSourceType(DataSource::Volume), ActiveModule(nullptr),
-    MoveObjectsEnabled(false)
+  : Superclass(), m_activeDataSource(nullptr),
+    m_activeDataSourceType(DataSource::Volume), m_activeModule(nullptr),
+    m_moveObjectsEnabled(false)
 {
-  this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
-                SLOT(viewChanged(pqView*)));
-  this->connect(&ModuleManager::instance(),
-                SIGNAL(dataSourceRemoved(DataSource*)),
-                SLOT(dataSourceRemoved(DataSource*)));
-  this->connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
-                SLOT(moduleRemoved(Module*)));
+  connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
+          SLOT(viewChanged(pqView*)));
+  connect(&ModuleManager::instance(),
+          SIGNAL(dataSourceRemoved(DataSource*)),
+          SLOT(dataSourceRemoved(DataSource*)));
+  connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
+          SLOT(moduleRemoved(Module*)));
 }
 
 ActiveObjects::~ActiveObjects()
@@ -64,46 +64,46 @@ vtkSMViewProxy* ActiveObjects::activeView() const
 
 void ActiveObjects::viewChanged(pqView* view)
 {
-  emit this->viewChanged(view ? view->getViewProxy() : nullptr);
+  emit viewChanged(view ? view->getViewProxy() : nullptr);
 }
 
 void ActiveObjects::dataSourceRemoved(DataSource* ds)
 {
-  if (this->ActiveDataSource == ds) {
-    this->setActiveDataSource(nullptr);
+  if (m_activeDataSource == ds) {
+    setActiveDataSource(nullptr);
   }
 }
 
 void ActiveObjects::moduleRemoved(Module* mdl)
 {
-  if (this->ActiveModule == mdl) {
-    this->setActiveModule(nullptr);
+  if (m_activeModule == mdl) {
+    setActiveModule(nullptr);
   }
 }
 
 void ActiveObjects::setActiveDataSource(DataSource* source)
 {
-  if (this->ActiveDataSource != source) {
-    if (this->ActiveDataSource) {
-      QObject::disconnect(this->ActiveDataSource, SIGNAL(dataChanged()), this,
-                          SLOT(dataSourceChanged()));
+  if (m_activeDataSource != source) {
+    if (m_activeDataSource) {
+      disconnect(m_activeDataSource, SIGNAL(dataChanged()), this,
+                 SLOT(dataSourceChanged()));
     }
     if (source) {
-      QObject::connect(source, SIGNAL(dataChanged()), this,
-                       SLOT(dataSourceChanged()));
-      this->ActiveDataSourceType = source->type();
+      connect(source, SIGNAL(dataChanged()), this,
+              SLOT(dataSourceChanged()));
+      m_activeDataSourceType = source->type();
     }
-    this->ActiveDataSource = source;
-    emit this->dataSourceChanged(this->ActiveDataSource);
+    m_activeDataSource = source;
+    emit dataSourceChanged(m_activeDataSource);
   }
-  emit this->dataSourceActivated(this->ActiveDataSource);
+  emit dataSourceActivated(m_activeDataSource);
 }
 
 void ActiveObjects::dataSourceChanged()
 {
-  if (this->ActiveDataSource->type() != this->ActiveDataSourceType) {
-    this->ActiveDataSourceType = this->ActiveDataSource->type();
-    emit this->dataSourceChanged(this->ActiveDataSource);
+  if (m_activeDataSource->type() != m_activeDataSourceType) {
+    m_activeDataSourceType = m_activeDataSource->type();
+    emit dataSourceChanged(m_activeDataSource);
   }
 }
 
@@ -115,22 +115,22 @@ vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 
 void ActiveObjects::setActiveModule(Module* module)
 {
-  if (this->ActiveModule != module) {
-    this->ActiveModule = module;
+  if (m_activeModule != module) {
+    m_activeModule = module;
     if (module) {
-      this->setActiveView(module->view());
-      this->setActiveDataSource(module->dataSource());
+      setActiveView(module->view());
+      setActiveDataSource(module->dataSource());
     }
-    emit this->moduleChanged(module);
+    emit moduleChanged(module);
   }
-  emit this->moduleActivated(module);
+  emit moduleActivated(module);
 }
 
 void ActiveObjects::setMoveObjectsMode(bool moveObjectsOn)
 {
-  if (this->MoveObjectsEnabled != moveObjectsOn) {
-    this->MoveObjectsEnabled = moveObjectsOn;
-    emit this->moveObjectsModeChanged(moveObjectsOn);
+  if (m_moveObjectsEnabled != moveObjectsOn) {
+    m_moveObjectsEnabled = moveObjectsOn;
+    emit moveObjectsModeChanged(moveObjectsOn);
   }
 }
 

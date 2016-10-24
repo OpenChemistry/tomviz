@@ -45,17 +45,17 @@ public:
   vtkSMViewProxy* activeView() const;
 
   /// Returns the active data source.
-  DataSource* activeDataSource() const { return this->ActiveDataSource; }
+  DataSource* activeDataSource() const { return m_activeDataSource; }
 
   /// Returns the active module.
-  Module* activeModule() const { return this->ActiveModule; }
+  Module* activeModule() const { return m_activeModule; }
 
   /// Returns the vtkSMSessionProxyManager from the active server/session.
   /// Provided here for convenience, since we need to access the proxy manager
   /// often.
   vtkSMSessionProxyManager* proxyManager() const;
 
-  bool moveObjectsEnabled() { return this->MoveObjectsEnabled; }
+  bool moveObjectsEnabled() { return m_moveObjectsEnabled; }
 
 public slots:
   /// Set the active view;
@@ -104,12 +104,12 @@ protected:
   ActiveObjects();
   virtual ~ActiveObjects();
 
-  QPointer<DataSource> ActiveDataSource;
-  DataSource::DataSourceType ActiveDataSourceType;
+  QPointer<DataSource> m_activeDataSource;
+  DataSource::DataSourceType m_activeDataSourceType;
 
-  QPointer<Module> ActiveModule;
+  QPointer<Module> m_activeModule;
 
-  bool MoveObjectsEnabled;
+  bool m_moveObjectsEnabled;
 
 private:
   Q_DISABLE_COPY(ActiveObjects)
