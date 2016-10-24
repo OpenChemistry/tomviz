@@ -43,7 +43,7 @@ private slots:
   void onDoNotShowAgainStateChanged(int);
 
 private:
-  QScopedPointer<Ui::WelcomeDialog> ui;
+  QScopedPointer<Ui::WelcomeDialog> m_ui;
 };
 }
 
