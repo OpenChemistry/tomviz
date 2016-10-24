@@ -105,11 +105,9 @@ protected:
   virtual ~ActiveObjects();
 
   QPointer<DataSource> ActiveDataSource;
-  void* VoidActiveDataSource;
   DataSource::DataSourceType ActiveDataSourceType;
 
   QPointer<Module> ActiveModule;
-  void* VoidActiveModule;
 
   bool MoveObjectsEnabled;
 

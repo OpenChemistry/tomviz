@@ -28,9 +28,9 @@
 namespace tomviz {
 
 ActiveObjects::ActiveObjects()
-  : Superclass(), ActiveDataSource(nullptr), VoidActiveDataSource(nullptr),
+  : Superclass(), ActiveDataSource(nullptr),
     ActiveDataSourceType(DataSource::Volume), ActiveModule(nullptr),
-    VoidActiveModule(nullptr), MoveObjectsEnabled(false)
+    MoveObjectsEnabled(false)
 {
   this->connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
                 SLOT(viewChanged(pqView*)));
@@ -69,21 +69,21 @@ void ActiveObjects::viewChanged(pqView* view)
 
 void ActiveObjects::dataSourceRemoved(DataSource* ds)
 {
-  if (this->VoidActiveDataSource == ds) {
+  if (this->ActiveDataSource == ds) {
     this->setActiveDataSource(nullptr);
   }
 }
 
 void ActiveObjects::moduleRemoved(Module* mdl)
 {
-  if (this->VoidActiveModule == mdl) {
+  if (this->ActiveModule == mdl) {
     this->setActiveModule(nullptr);
   }
 }
 
 void ActiveObjects::setActiveDataSource(DataSource* source)
 {
-  if (this->VoidActiveDataSource != source) {
+  if (this->ActiveDataSource != source) {
     if (this->ActiveDataSource) {
       QObject::disconnect(this->ActiveDataSource, SIGNAL(dataChanged()), this,
                           SLOT(dataSourceChanged()));
@@ -94,7 +94,6 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
       this->ActiveDataSourceType = source->type();
     }
     this->ActiveDataSource = source;
-    this->VoidActiveDataSource = source;
     emit this->dataSourceChanged(this->ActiveDataSource);
   }
   emit this->dataSourceActivated(this->ActiveDataSource);
@@ -116,8 +115,7 @@ vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 
 void ActiveObjects::setActiveModule(Module* module)
 {
-  if (this->VoidActiveModule != module) {
-    this->VoidActiveModule = module;
+  if (this->ActiveModule != module) {
     this->ActiveModule = module;
     if (module) {
       this->setActiveView(module->view());
