@@ -26,7 +26,10 @@ def transform_scalars(dataset):
     array = np.lib.pad(array, pad_width, padMode)
 
     # Set the data so that it is visible in the application.
-    utils.set_array(dataset, array)
+    extent = list(dataset.GetExtent())
+    start = [x - y for (x, y) in zip(extent[0::2], pad_size_before)]
+
+    utils.set_array(dataset, array, start)
 
     # If dataset is marked as tilt series, update tilt angles
     if padWidthZ[0] + padWidthZ[1] > 0:

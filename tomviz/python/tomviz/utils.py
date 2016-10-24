@@ -157,7 +157,7 @@ def get_array(dataobject):
     return scalars_array3d
 
 
-def set_array(dataobject, newarray):
+def set_array(dataobject, newarray, minextent=None):
     # Ensure we have Fortran ordered flat array to assign to image data. This
     # is ideally done without additional copies, but if C order we must copy.
     if np.isfortran(newarray):
@@ -169,10 +169,19 @@ def set_array(dataobject, newarray):
         arr = tmp.reshape(-1, order='F')
         print '...done.'
 
-    # Set the extents (they may have changed).
-    dataobject.SetExtent(0, newarray.shape[0] - 1,
-                         0, newarray.shape[1] - 1,
-                         0, newarray.shape[2] - 1)
+    # Set the extent if needed, i.e. if the minextent is not the same as
+    # the data object starting index, or if the newarray shape is not the same
+    # as the size of the dataobject.
+    if minextent is None:
+        minextent = dataobject.GetExtent()[::2]
+    sameindex = list(minextent) == list(dataobject.GetExtent()[::2])
+    sameshape = list(newarray.shape) == list(dataobject.GetDimensions())
+    if not sameindex or not sameshape:
+        extent = 6*[0]
+        extent[::2] = minextent
+        extent[1::2] = \
+            [x + y - 1 for (x, y) in zip(minextent, newarray.shape)]
+        dataobject.SetExtent(extent)
 
     # Now replace the scalars array with the new array.
     vtkarray = np_s.numpy_to_vtk(arr)
