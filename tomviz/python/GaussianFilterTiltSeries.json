@@ -1,7 +1,7 @@
 {
   "name" : "GaussianFilter",
   "label" : "Gaussian Filter",
-  "description" : "Apply an isotropic Gaussian filter to 3D volume. \nThe standard deviation\n(sigma) can be specified below:",
+  "description" : "Apply a 2D isotropic Gaussian filter to each tilt image. \nThe standard deviation\n(sigma) can be specified below:",
   "parameters" : [
     {
       "name" : "sigma",
