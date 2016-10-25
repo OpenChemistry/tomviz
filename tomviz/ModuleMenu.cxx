@@ -30,8 +30,8 @@ ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject)
   Q_ASSERT(menu);
   Q_ASSERT(toolBar);
   connect(menu, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
-  connect(&ActiveObjects::instance(),
-          SIGNAL(dataSourceChanged(DataSource*)), SLOT(updateActions()));
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateActions()));
   updateActions();
 }
 

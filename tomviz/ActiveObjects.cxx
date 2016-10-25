@@ -31,8 +31,7 @@ ActiveObjects::ActiveObjects() : QObject()
 {
   connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
           SLOT(viewChanged(pqView*)));
-  connect(&ModuleManager::instance(),
-          SIGNAL(dataSourceRemoved(DataSource*)),
+  connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
           SLOT(dataSourceRemoved(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
           SLOT(moduleRemoved(Module*)));
@@ -86,8 +85,7 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
                  SLOT(dataSourceChanged()));
     }
     if (source) {
-      connect(source, SIGNAL(dataChanged()), this,
-              SLOT(dataSourceChanged()));
+      connect(source, SIGNAL(dataChanged()), this, SLOT(dataSourceChanged()));
       m_activeDataSourceType = source->type();
     }
     m_activeDataSource = source;

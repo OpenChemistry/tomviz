@@ -33,8 +33,7 @@ WelcomeDialog::WelcomeDialog(MainWindow* mw)
   connect(m_ui->doNotShowAgain, SIGNAL(stateChanged(int)),
           SLOT(onDoNotShowAgainStateChanged(int)));
   connect(m_ui->noButton, SIGNAL(clicked()), SLOT(hide()));
-  connect(m_ui->yesButton, SIGNAL(clicked()),
-          SLOT(onLoadSampleDataClicked()));
+  connect(m_ui->yesButton, SIGNAL(clicked()), SLOT(onLoadSampleDataClicked()));
 }
 
 WelcomeDialog::~WelcomeDialog() = default;
