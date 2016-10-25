@@ -217,7 +217,8 @@ public:
   }
 
 public slots:
-  void updateAngleIncrement() {
+  void updateAngleIncrement()
+  {
     angleIncrement = (endAngle->value() - startAngle->value()) /
                      (endTilt->value() - startTilt->value());
     if (std::isfinite(angleIncrement)) {
@@ -235,7 +236,7 @@ private:
   QDoubleSpinBox* endAngle;
   QTableWidget* tableWidget;
   QTabWidget* tabWidget;
-  QLabel *angleIncrementLabel;
+  QLabel* angleIncrementLabel;
   double angleIncrement;
 
   QPointer<tomviz::SetTiltAnglesOperator> Op;
