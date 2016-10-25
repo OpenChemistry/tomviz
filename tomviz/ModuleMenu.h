@@ -31,7 +31,6 @@ namespace tomviz {
 class ModuleMenu : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
   ModuleMenu(QToolBar* toolBar, QMenu* parentMenu, QObject* parent = nullptr);
@@ -43,8 +42,8 @@ private slots:
 
 private:
   Q_DISABLE_COPY(ModuleMenu)
-  QPointer<QMenu> Menu;
-  QPointer<QToolBar> ToolBar;
+  QPointer<QMenu> m_menu;
+  QPointer<QToolBar> m_toolBar;
 };
 }
 

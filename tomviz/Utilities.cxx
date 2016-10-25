@@ -17,31 +17,33 @@
 #include "vtkPython.h" // must be first
 
 #include "DataSource.h"
-#include "pqAnimationCue.h"
-#include "pqAnimationManager.h"
-#include "pqAnimationScene.h"
-#include "pqPVApplicationCore.h"
-#include "pqSMAdaptor.h"
-#include "vtkBoundingBox.h"
-#include "vtkCamera.h"
-#include "vtkImageData.h"
-#include "vtkImageSliceMapper.h"
-#include "vtkNew.h"
-#include "vtkPVArrayInformation.h"
-#include "vtkPVDataInformation.h"
-#include "vtkPVDataSetAttributesInformation.h"
-#include "vtkPVXMLElement.h"
-#include "vtkPVXMLParser.h"
-#include "vtkPoints.h"
-#include "vtkRenderer.h"
-#include "vtkSMNamedPropertyIterator.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMRenderViewProxy.h"
-#include "vtkSMTransferFunctionProxy.h"
-#include "vtkSMUtilities.h"
-#include "vtkSmartPointer.h"
-#include "vtkStringList.h"
-#include "vtkTrivialProducer.h"
+
+#include <pqAnimationCue.h>
+#include <pqAnimationManager.h>
+#include <pqAnimationScene.h>
+#include <pqPVApplicationCore.h>
+#include <pqSMAdaptor.h>
+#include <vtkSMNamedPropertyIterator.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMRenderViewProxy.h>
+#include <vtkSMTransferFunctionProxy.h>
+#include <vtkSMUtilities.h>
+
+#include <vtkBoundingBox.h>
+#include <vtkCamera.h>
+#include <vtkImageData.h>
+#include <vtkImageSliceMapper.h>
+#include <vtkNew.h>
+#include <vtkPVArrayInformation.h>
+#include <vtkPVDataInformation.h>
+#include <vtkPVDataSetAttributesInformation.h>
+#include <vtkPVXMLElement.h>
+#include <vtkPVXMLParser.h>
+#include <vtkPoints.h>
+#include <vtkRenderer.h>
+#include <vtkSmartPointer.h>
+#include <vtkStringList.h>
+#include <vtkTrivialProducer.h>
 
 #include <sstream>
 
@@ -259,8 +261,7 @@ void createCameraOrbit(vtkSMSourceProxy* data, vtkSMRenderViewProxy* renderView)
   if (!t) {
     return;
   }
-  vtkImageData* imageData =
-    vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   double data_bounds[6];
   imageData->GetBounds(data_bounds);
   vtkBoundingBox box;

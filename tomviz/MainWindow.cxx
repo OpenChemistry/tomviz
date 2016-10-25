@@ -105,13 +105,11 @@ namespace tomviz {
 class MainWindow::MWInternals
 {
 public:
-  MWInternals() : AboutDialog(nullptr), isFirstShow(true) { ; }
-
   Ui::MainWindow Ui;
   Ui::AboutDialog AboutUi;
-  QDialog* AboutDialog;
-  QTimer* Timer;
-  bool isFirstShow;
+  QDialog* AboutDialog = nullptr;
+  QTimer* Timer = nullptr;
+  bool isFirstShow = true;
 };
 
 MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)

@@ -26,7 +26,6 @@ namespace tomviz {
 class AddRenderViewContextMenuBehavior : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
   AddRenderViewContextMenuBehavior(QObject* p);
@@ -40,8 +39,8 @@ protected slots:
 protected:
   bool eventFilter(QObject* caller, QEvent* e) override;
 
-  QPoint position;
-  QMenu* menu;
+  QPoint m_position;
+  QMenu* m_menu;
 };
 }
 

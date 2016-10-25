@@ -35,8 +35,6 @@ class ActiveObjects : public QObject
 {
   Q_OBJECT
 
-  typedef QObject Superclass;
-
 public:
   /// Returns reference to the singleton instance.
   static ActiveObjects& instance();
@@ -45,17 +43,17 @@ public:
   vtkSMViewProxy* activeView() const;
 
   /// Returns the active data source.
-  DataSource* activeDataSource() const { return this->ActiveDataSource; }
+  DataSource* activeDataSource() const { return m_activeDataSource; }
 
   /// Returns the active module.
-  Module* activeModule() const { return this->ActiveModule; }
+  Module* activeModule() const { return m_activeModule; }
 
   /// Returns the vtkSMSessionProxyManager from the active server/session.
   /// Provided here for convenience, since we need to access the proxy manager
   /// often.
   vtkSMSessionProxyManager* proxyManager() const;
 
-  bool moveObjectsEnabled() { return this->MoveObjectsEnabled; }
+  bool moveObjectsEnabled() { return m_moveObjectsEnabled; }
 
 public slots:
   /// Set the active view;
@@ -104,14 +102,12 @@ protected:
   ActiveObjects();
   virtual ~ActiveObjects();
 
-  QPointer<DataSource> ActiveDataSource;
-  void* VoidActiveDataSource;
-  DataSource::DataSourceType ActiveDataSourceType;
+  QPointer<DataSource> m_activeDataSource = nullptr;
+  DataSource::DataSourceType m_activeDataSourceType = DataSource::Volume;
 
-  QPointer<Module> ActiveModule;
-  void* VoidActiveModule;
+  QPointer<Module> m_activeModule = nullptr;
 
-  bool MoveObjectsEnabled;
+  bool m_moveObjectsEnabled = false;
 
 private:
   Q_DISABLE_COPY(ActiveObjects)

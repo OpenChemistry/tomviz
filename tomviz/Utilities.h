@@ -18,14 +18,15 @@
 
 // Collection of miscellaneous utility functions.
 
-#include "pqApplicationCore.h"
-#include "pqProxy.h"
-#include "pqServerManagerModel.h"
-#include "vtkSMSourceProxy.h"
+#include <pqApplicationCore.h>
+#include <pqProxy.h>
+#include <pqServerManagerModel.h>
+#include <vtkSMSourceProxy.h>
+
+#include <vtk_pugixml.h>
 
 #include <QFileInfo>
 #include <QStringList>
-#include <vtk_pugixml.h>
 
 class pqAnimationScene;
 
@@ -57,7 +58,7 @@ T convert(vtkSMProxy* proxy)
   return smmodel->findItem<T>(proxy);
 }
 
-/// convert a pqProxy to vtkSMProxy.
+/// Convert a pqProxy to vtkSMProxy.
 inline vtkSMProxy* convert(pqProxy* pqproxy)
 {
   return pqproxy ? pqproxy->getProxy() : nullptr;
