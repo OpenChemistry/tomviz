@@ -34,20 +34,18 @@
 
 namespace tomviz {
 AddRenderViewContextMenuBehavior::AddRenderViewContextMenuBehavior(QObject* p)
-  : Superclass(p)
+  : QObject(p)
 {
-  QObject::connect(pqApplicationCore::instance()->getServerManagerModel(),
-                   SIGNAL(viewAdded(pqView*)), this,
-                   SLOT(onViewAdded(pqView*)));
-  this->menu = new QMenu();
-  QAction* bgColorAction = this->menu->addAction("Set Background Color");
-  QObject::connect(bgColorAction, SIGNAL(triggered()), this,
-                   SLOT(onSetBackgroundColor()));
+  connect(pqApplicationCore::instance()->getServerManagerModel(),
+          SIGNAL(viewAdded(pqView*)), SLOT(onViewAdded(pqView*)));
+  m_menu = new QMenu();
+  QAction* bgColorAction = m_menu->addAction("Set Background Color");
+  connect(bgColorAction, SIGNAL(triggered()), SLOT(onSetBackgroundColor()));
 }
 
 AddRenderViewContextMenuBehavior::~AddRenderViewContextMenuBehavior()
 {
-  delete this->menu;
+  delete m_menu;
 }
 
 void AddRenderViewContextMenuBehavior::onViewAdded(pqView* view)
@@ -61,8 +59,7 @@ void AddRenderViewContextMenuBehavior::onViewAdded(pqView* view)
 void AddRenderViewContextMenuBehavior::onSetBackgroundColor()
 {
   pqView* view = pqActiveObjects::instance().activeView();
-  vtkSMRenderViewProxy* proxy =
-    vtkSMRenderViewProxy::SafeDownCast(view->getProxy());
+  auto proxy = vtkSMRenderViewProxy::SafeDownCast(view->getProxy());
   vtkSMPropertyHelper helper(proxy, "Background");
   double colorComps[3];
   helper.Get(colorComps, 3);
@@ -89,27 +86,27 @@ void AddRenderViewContextMenuBehavior::onSetBackgroundColor()
 bool AddRenderViewContextMenuBehavior::eventFilter(QObject* caller, QEvent* e)
 {
   if (e->type() == QEvent::MouseButtonPress) {
-    QMouseEvent* me = static_cast<QMouseEvent*>(e);
+    auto me = static_cast<QMouseEvent*>(e);
     if (me->button() & Qt::RightButton) {
-      this->position = me->pos();
+      m_position = me->pos();
     }
   } else if (e->type() == QEvent::MouseButtonRelease) {
     QMouseEvent* me = static_cast<QMouseEvent*>(e);
-    if (me->button() & Qt::RightButton && !this->position.isNull()) {
+    if (me->button() & Qt::RightButton && !m_position.isNull()) {
       QPoint newPos = static_cast<QMouseEvent*>(e)->pos();
-      QPoint delta = newPos - this->position;
+      QPoint delta = newPos - m_position;
       QWidget* senderWidget = qobject_cast<QWidget*>(caller);
       if (delta.manhattanLength() < 3 && senderWidget != nullptr) {
         pqRenderView* view =
           qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
         if (view) {
-          this->menu->popup(senderWidget->mapToGlobal(newPos));
+          m_menu->popup(senderWidget->mapToGlobal(newPos));
         }
       }
-      this->position = QPoint();
+      m_position = QPoint();
     }
   }
 
-  return Superclass::eventFilter(caller, e);
+  return QObject::eventFilter(caller, e);
 }
 }
