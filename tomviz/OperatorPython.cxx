@@ -195,12 +195,13 @@ void OperatorPython::setJSONDescription(const QString& str)
       if (!oa) {
         Q_ASSERT(oa != nullptr);
       }
-      QJsonValueRef nameValue = resultsArray[i].toObject()["name"];
+      QJsonObject resultNode = resultsArray[i].toObject();
+      QJsonValueRef nameValue = resultNode["name"];
       if (!nameValue.isUndefined() && !nameValue.isNull()) {
         oa->setName(nameValue.toString());
         m_resultNames.append(nameValue.toString());
       }
-      QJsonValueRef labelValue = resultsArray[i].toObject()["label"];
+      QJsonValueRef labelValue = resultNode["label"];
       if (!labelValue.isUndefined() && !labelValue.isNull()) {
         oa->setLabel(labelValue.toString());
       }
@@ -218,8 +219,9 @@ void OperatorPython::setJSONDescription(const QString& str)
     }
     if (size > 0) {
       setHasChildDataSource(true);
-      QJsonValueRef nameValue = childDatasetArray[0].toObject()["name"];
-      QJsonValueRef labelValue = childDatasetArray[0].toObject()["label"];
+      QJsonObject dataSourceNode = childDatasetArray[0].toObject();
+      QJsonValueRef nameValue = dataSourceNode["name"];
+      QJsonValueRef labelValue = dataSourceNode["label"];
       if (!nameValue.isUndefined() && !nameValue.isNull() &&
           !labelValue.isUndefined() && !labelValue.isNull()) {
         QPair<QString, QString> nameLabelPair(QString(nameValue.toString()),
