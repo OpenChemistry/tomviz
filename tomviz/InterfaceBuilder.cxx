@@ -253,8 +253,9 @@ void addEnumerationWidget(QGridLayout* layout, int row,
   if (!optionsNode.isUndefined()) {
     QJsonArray optionsArray = optionsNode.toArray();
     for (QJsonObject::size_type i = 0; i < optionsArray.size(); ++i) {
-      QString optionName = optionsArray[i].toObject().keys()[0];
-      QJsonValueRef optionValueNode = optionsArray[i].toObject()[optionName];
+      QJsonObject optionNode = optionsArray[i].toObject();
+      QString optionName = optionNode.keys()[0];
+      QJsonValueRef optionValueNode = optionNode[optionName];
       int optionValue = 0;
       if (isType<int>(optionValueNode)) {
         optionValue = optionValueNode.toInt();
