@@ -1,22 +1,24 @@
 def transform_scalars(dataset):
-    """Apply a Median filter to dataset."""
-    """ Median filter is a nonlinear filter used to reduce noise."""
+    """Remove bad pixels in tilt series."""
 
     #----USER SPECIFIED VARIABLES-----#
-    ###size###    #Specify size of the Median filter
+    ###s###
     #---------------------------------#
 
     from tomviz import utils
     import scipy.ndimage
-
+    import numpy as np
+    
     tiltSeries = utils.get_array(dataset)
-
-    # Transform the dataset.
+    
     for i in range(tiltSeries.shape[2]):
-        medianFilterImage = scipy.ndimage.filters.median_filter(
-            tiltSeries[:, :, i], 2)
-        differenceImage = abs(tiltSeries[:, :, i] - medianFilterImage)
-        
+        tiltImage = tiltSeries[:, :, i]
+        medianFilteredImage = scipy.ndimage.filters.median_filter(tiltImage, 2)
+        differenceImage = tiltImage - medianFilteredImage
+        sigma = np.std(differenceImage.flatten())
+        badPixelsMask = abs(tiltSeries[:, :, i]) > s * sigma
+        tiltImage[badPixelsMask] = medianFilteredImage[badPixelsMask]
+        tiltSeries[:, :, i] = tiltImage
 
     # Set the result as the new scalars.
     utils.set_array(dataset, tiltSeries)

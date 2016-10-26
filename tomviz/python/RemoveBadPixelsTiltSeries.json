@@ -1,14 +1,14 @@
 {
-  "name" : "MedianFilter",
-  "label" : "Median Filter",
-  "description" : "Apply an isotropic median filter to each tilt image. \nThe window size can be specified below:",
+  "name" : "RemoveBadPixelsTiltSeries",
+  "label" : "Remove Bad Pixels Tilt Series",
+  "description" : "Remove bad pixels in each tilt image each tilt image. \nThe bad pixels are replaced by size can be specified below:",
   "parameters" : [
     {
-      "name" : "size",
-      "label" : "Size",
-      "type" : "int",
-      "default" : 2,
-      "minimum" : 1
+      "name" : "s",
+      "label" : "s",
+      "type" : "double",
+      "default" : 3.0,
+      "minimum" : 0
     }
   ]
 }
