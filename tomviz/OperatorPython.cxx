@@ -218,8 +218,9 @@ void OperatorPython::setJSONDescription(const QString& str)
     }
     if (size > 0) {
       setHasChildDataSource(true);
-      QJsonValueRef nameValue = childDatasetArray[0].toObject()["name"];
-      QJsonValueRef labelValue = childDatasetArray[0].toObject()["label"];
+      QJsonObject dataSourceNode = childDatasetArray[0].toObject();
+      QJsonValueRef nameValue = dataSourceNode["name"];
+      QJsonValueRef labelValue = dataSourceNode["label"];
       if (!nameValue.isUndefined() && !nameValue.isNull() &&
           !labelValue.isUndefined() && !labelValue.isNull()) {
         QPair<QString, QString> nameLabelPair(QString(nameValue.toString()),
