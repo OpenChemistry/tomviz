@@ -13,9 +13,10 @@ def transform_scalars(dataset):
 
     # Transform the dataset.
     for i in range(tiltSeries.shape[2]):
-        tiltSeries[:, :, i] = scipy.ndimage.filters.median_filter(
-            tiltSeries[:, :, i],
-            size)
+        medianFilterImage = scipy.ndimage.filters.median_filter(
+            tiltSeries[:, :, i], 2)
+        differenceImage = abs(tiltSeries[:, :, i] - medianFilterImage)
+        
 
     # Set the result as the new scalars.
     utils.set_array(dataset, tiltSeries)
