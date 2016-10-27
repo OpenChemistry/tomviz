@@ -42,7 +42,11 @@ bool Operator::transform(vtkDataObject* data)
   emit transformingStarted();
   emit updateProgress(0);
   bool result = this->applyTransform(data);
-  this->m_state = result ? OperatorState::COMPLETE : OperatorState::ERROR;
+  // TODO we may want to change the return type applyTransform
+  // to OperatorState so we don't have todo this.
+  if (this->m_state != OperatorState::CANCELED) {
+    this->m_state = result ? OperatorState::COMPLETE : OperatorState::ERROR;
+  }
   emit transformingDone(result);
   return result;
 }
