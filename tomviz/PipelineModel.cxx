@@ -290,15 +290,16 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
 {
   switch (state) {
     case OperatorState::RUNNING:
-      return QIcon();
+      return QIcon(":/pqWidgets/Icons/PluginGreen.png");
     case OperatorState::COMPLETE:
-      return QIcon();
+      return QIcon(":/pqWidgets/Icons/pqUpdate16.png");
     case OperatorState::QUEUED:
-      return QIcon();
+      cout << "queued\n";
+      return QIcon(":/pqWidgets/Icons/pvIcon32.png");
     case OperatorState::ERROR:
-      return QIcon();
+      return QIcon(":/pqWidgets/Icons/PluginRed.png");
     case OperatorState::CANCELED:
-      return QIcon();
+      return QIcon(":/pqWidgets/Icons/PluginYellow.png");
   }
 
   return QIcon();
