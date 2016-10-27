@@ -33,9 +33,11 @@
 #include <QLabel>
 #include <QPointer>
 #include <QSpinBox>
+#include <QString>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <cmath>
 
 namespace {
 class SetTiltAnglesWidget : public tomviz::EditOperatorWidget
@@ -61,7 +63,7 @@ public:
       "rotating"
       " (\"tilting\") the specimen.  Setting the correct angles is needed for "
       "accurate"
-      " reconstruction.\n  Set a linearly spaced range of angles by specifying "
+      " reconstruction.\nSet a linearly spaced range of angles by specifying "
       "the start"
       " and end tilt index and start and end angles.  Note, tilt angles can "
       "also be set"
@@ -74,7 +76,6 @@ public:
     image->GetExtent(extent);
     int totalSlices = extent[5] - extent[4] + 1;
     this->previousTiltAngles.resize(totalSlices);
-    double angleIncrement = 1.0;
     if (totalSlices < 60) {
       angleIncrement = 3.0;
     } else if (totalSlices < 80) {
@@ -118,6 +119,21 @@ public:
     endAngle->setValue(endAngleValue);
     layout->addWidget(endAngle, 2, 3, 1, 1, Qt::AlignCenter);
 
+    layout->addWidget(new QLabel("Angle Increment: "), 3, 2, 1, 1,
+                      Qt::AlignCenter);
+
+    QString s = QString::number(angleIncrement, 'f', 2);
+    this->angleIncrementLabel = new QLabel(s);
+    connect(startTilt, SIGNAL(valueChanged(int)), this,
+            SLOT(updateAngleIncrement()));
+    connect(endTilt, SIGNAL(valueChanged(int)), this,
+            SLOT(updateAngleIncrement()));
+    connect(startAngle, SIGNAL(valueChanged(double)), this,
+            SLOT(updateAngleIncrement()));
+    connect(endAngle, SIGNAL(valueChanged(double)), this,
+            SLOT(updateAngleIncrement()));
+    layout->addWidget(angleIncrementLabel, 3, 3, 1, 1, Qt::AlignCenter);
+
     setAutomaticPanel->setLayout(layout);
 
     QWidget* setFromTablePanel = new QWidget;
@@ -157,6 +173,9 @@ public:
 
     this->tabWidget->addTab(setAutomaticPanel, "Set by Range");
     this->tabWidget->addTab(setFromTablePanel, "Set Individually");
+
+    baseLayout->setSizeConstraint(QLayout::SetFixedSize);
+    p->setFixedSize(670, 330);
   }
 
   void applyChangesToOperator() override
@@ -197,6 +216,19 @@ public:
     }
   }
 
+public slots:
+  void updateAngleIncrement()
+  {
+    angleIncrement = (endAngle->value() - startAngle->value()) /
+                     (endTilt->value() - startTilt->value());
+    if (std::isfinite(angleIncrement)) {
+      QString s = QString::number(angleIncrement, 'f', 2);
+      this->angleIncrementLabel->setText(s);
+    } else {
+      this->angleIncrementLabel->setText("Invalid inputs!");
+    }
+  }
+
 private:
   QSpinBox* startTilt;
   QSpinBox* endTilt;
@@ -204,6 +236,8 @@ private:
   QDoubleSpinBox* endAngle;
   QTableWidget* tableWidget;
   QTabWidget* tabWidget;
+  QLabel* angleIncrementLabel;
+  double angleIncrement;
 
   QPointer<tomviz::SetTiltAnglesOperator> Op;
   QVector<double> previousTiltAngles;

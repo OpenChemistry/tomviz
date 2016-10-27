@@ -68,6 +68,7 @@ void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow* window,
   EditOperatorDialog* dialog =
     new EditOperatorDialog(op, source, needToAddOp, window);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->setWindowTitle("Set Tilt Angles");
   dialog->show();
 }
 }
