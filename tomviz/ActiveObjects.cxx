@@ -19,9 +19,14 @@
 
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
+#include <pqObjectBuilder.h>
 #include <pqPipelineSource.h>
 #include <pqServer.h>
 #include <pqView.h>
+
+#include <vtkNew.h>
+#include <vtkSMProxyIterator.h>
+#include <vtkSMRenderViewProxy.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
@@ -119,6 +124,40 @@ void ActiveObjects::setActiveModule(Module* module)
     emit moduleChanged(module);
   }
   emit moduleActivated(module);
+}
+
+void ActiveObjects::createRenderViewIfNeeded()
+{
+  vtkNew<vtkSMProxyIterator> iter;
+  iter->SetSessionProxyManager(proxyManager());
+  iter->SetModeToOneGroup();
+  for (iter->Begin("views"); !iter->IsAtEnd(); iter->Next()) {
+    vtkSMRenderViewProxy* renderView =
+      vtkSMRenderViewProxy::SafeDownCast(iter->GetProxy());
+    if (renderView) {
+      return;
+    }
+  }
+
+  // If we get here, there was no existing view, so create one.
+  pqObjectBuilder* builder = pqApplicationCore::instance()->getObjectBuilder();
+  pqServer* server = pqApplicationCore::instance()->getActiveServer();
+  builder->createView("RenderView", server);
+}
+
+void ActiveObjects::setActiveViewToFirstRenderView()
+{
+  vtkNew<vtkSMProxyIterator> iter;
+  iter->SetSessionProxyManager(proxyManager());
+  iter->SetModeToOneGroup();
+  for (iter->Begin("views"); !iter->IsAtEnd(); iter->Next()) {
+    vtkSMRenderViewProxy* renderView =
+      vtkSMRenderViewProxy::SafeDownCast(iter->GetProxy());
+    if (renderView) {
+      setActiveView(renderView);
+      break;
+    }
+  }
 }
 
 void ActiveObjects::setMoveObjectsMode(bool moveObjectsOn)

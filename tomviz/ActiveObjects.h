@@ -65,6 +65,12 @@ public slots:
   /// Set the active module.
   void setActiveModule(Module* module);
 
+  /// Create a render view if needed.
+  void createRenderViewIfNeeded();
+
+  /// Set first existing render view to be active.
+  void setActiveViewToFirstRenderView();
+
   /// Renders all views.
   void renderAllViews();
 

@@ -27,6 +27,8 @@
 #include "vtkNew.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
+#include "vtkSMProxyIterator.h"
+#include "vtkSMRenderViewProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSmartPointer.h"
@@ -575,7 +577,11 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
   DataSource* dataSource = new DataSource(proxy);
   ModuleManager::instance().addDataSource(dataSource);
 
+  ActiveObjects::instance().createRenderViewIfNeeded();
+  ActiveObjects::instance().setActiveViewToFirstRenderView();
+
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+
   // Create an outline module for the source in the active view.
   if (Module* module = ModuleManager::instance().createAndAddModule(
         "Outline", dataSource, view)) {
