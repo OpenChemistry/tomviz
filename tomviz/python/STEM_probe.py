@@ -42,9 +42,11 @@ def generate_dataset(array):
 
     for i in range(0, Nz):
         defocus = df[i]
-        chi = -np.pi * wavelength * kR**2 * defocus + np.pi / 2 * c3 * wavelength**3 * kR**4 + np.pi * f_a2 * wavelength * kR**2 * \ # noqa TODO reformat this
-            np.sin(2 * (phi - phi_a2)) + f_a3 * wavelength**2 * kR**3 * np.sin(3 * (phi - # noqa TODO reformat this
-                   phi_a3)) + 2 * np.pi / 3 * f_c3 * wavelength**2 * kR**3 * np.sin(phi - phi_c3) # noqa TODO fix formating
+        chi = (-np.pi * wavelength * kR**2 * defocus + np.pi / 2 * c3 *
+               wavelength**3 * kR**4 + np.pi * f_a2 * wavelength * kR**2 *
+               np.sin(2 * (phi - phi_a2)) + f_a3 * wavelength**2 * kR**3 *
+               np.sin(3 * (phi - phi_a3)) + 2 * np.pi / 3 * f_c3 *
+               wavelength**2 * kR**3 * np.sin(phi - phi_c3))
 
         probe = np.exp(-1j * chi)
         probe[kR > k_max] = 0
