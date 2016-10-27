@@ -142,8 +142,8 @@ void PipelineView::deleteItem(const QModelIndex& idx)
 
 void PipelineView::rowActivated(const QModelIndex& idx)
 {
-  if (idx.isValid() && idx.column() == 1) {
-    auto pipelineModel = qobject_cast<PipelineModel*>(model());
+  if (idx.isValid() && idx.column() == 2) {
+    auto pipelineModel = qobject_cast<PipelineModel*>(this->model());
     if (pipelineModel) {
       if (auto module = pipelineModel->module(idx)) {
         module->setVisibility(!module->visibility());
