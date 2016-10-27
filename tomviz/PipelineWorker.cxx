@@ -39,6 +39,7 @@ public:
   Operator* op() { return m_operator; };
   void run() override;
   void cancel();
+  bool isCanceled();
 
 signals:
   void complete(bool result);
@@ -116,6 +117,11 @@ void PipelineWorker::RunnableOperator::cancel()
   this->m_operator->cancelTransform();
 }
 
+bool PipelineWorker::RunnableOperator::isCanceled()
+{
+  return this->m_operator->isCanceled();
+}
+
 PipelineWorker::ConfigureThreadPool::ConfigureThreadPool()
 {
   auto threads = QThread::idealThreadCount();
@@ -164,16 +170,21 @@ void PipelineWorker::Run::operatorComplete(bool result)
 
   this->m_complete.append(runnableOperator);
 
-  if (!result) {
+  // Canceled
+  if(this->m_canceled || runnableOperator->isCanceled()) {
+    emit canceled();
+  }
+  // Error
+  else if (!result) {
     emit finished(result);
-  } else if (!this->m_runnableOperators.isEmpty()) {
+  }
+  // Run next operator
+  else if (!this->m_runnableOperators.isEmpty()) {
     this->startNextOperator();
-  } else {
-    if (!this->m_canceled && !runnableOperator->op()->isCanceled()) {
-      emit finished(result);
-    } else {
-      emit canceled();
-    }
+  }
+  // We are done
+  else {
+    emit finished(result);
   }
 
   runnableOperator->deleteLater();
