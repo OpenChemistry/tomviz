@@ -573,6 +573,7 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
     return;
   }
   DataSource* dataSource = new DataSource(proxy);
+  dataSource->setFilename(proxy->GetAnnotation("tomviz.Label"));
   ModuleManager::instance().addDataSource(dataSource);
 
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
