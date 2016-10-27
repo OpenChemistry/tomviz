@@ -50,7 +50,7 @@ def transform_scalars(dataset):
 
         label_map_data_set = vtk.vtkImageData()
         label_map_data_set.CopyStructure(dataset)
-        utils.set_label_map(label_map_data_set, label_buffer)
+        utils.set_array(label_map_data_set, label_buffer)
 
         # Set up dictionary to return operator results
         returnValues = {}

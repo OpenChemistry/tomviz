@@ -122,7 +122,7 @@ def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     import itk
     result = itk.PyBuffer[
         itk_output_image_type].GetArrayFromImage(itk_image_data)
-    set_label_map(vtk_image_data, result)
+    set_array(vtk_image_data, result)
 
 
 def get_scalars(dataobject):
@@ -179,29 +179,12 @@ def set_array(dataobject, newarray):
     vtkarray.Association = dsa.ArrayAssociation.POINT
     do = dsa.WrapDataObject(dataobject)
     oldscalars = do.PointData.GetScalars()
-    name = oldscalars.GetName()
+    arrayname = "Scalars"
+    if oldscalars is not None:
+        arrayname = oldscalars.GetName()
     del oldscalars
-    do.PointData.append(arr, name)
-    do.PointData.SetActiveScalars(name)
-
-
-def set_label_map(dataobject, labelarray):
-    # Ensure we have Fortran ordered flat array to assign to image data. This
-    # is ideally done without additional copies, but if C order we must copy.
-    if np.isfortran(labelarray):
-        arr = labelarray.reshape(-1, order='F')
-    else:
-        print ('Warning, array does not have Fortran order, making deep copy '
-               'and fixing...')
-        tmp = np.asfortranarray(labelarray)
-        arr = tmp.reshape(-1, order='F')
-        print '...done.'
-
-    # Now add the label array to the image data
-    do = dsa.WrapDataObject(dataobject)
-    do.PointData.append(arr, "LabelMap")
-    pd = dataobject.GetPointData()
-    pd.SetScalars(pd.GetArray("LabelMap"))
+    do.PointData.append(arr, arrayname)
+    do.PointData.SetActiveScalars(arrayname)
 
 
 def get_tilt_angles(dataobject):
