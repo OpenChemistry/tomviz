@@ -140,7 +140,11 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
   ActiveObjects::instance().setMoveObjectsMode(false);
   ModuleManager::instance().addDataSource(dataSource);
 
+  ActiveObjects::instance().createRenderViewIfNeeded();
+  ActiveObjects::instance().setActiveViewToFirstRenderView();
+
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+
   // Create an outline module for the source in the active view.
   if (Module* module = ModuleManager::instance().createAndAddModule(
         "Outline", dataSource, view)) {
