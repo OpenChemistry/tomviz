@@ -126,6 +126,15 @@ void ActiveObjects::setActiveModule(Module* module)
   emit moduleActivated(module);
 }
 
+void ActiveObjects::setActiveOperator(Operator *op)
+{
+  if (m_activeOperator != op) {
+    m_activeOperator = op;
+    emit operatorChanged(op);
+  }
+  emit operatorActivated(op);
+}
+
 void ActiveObjects::createRenderViewIfNeeded()
 {
   vtkNew<vtkSMProxyIterator> iter;
