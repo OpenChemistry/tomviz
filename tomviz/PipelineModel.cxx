@@ -322,8 +322,6 @@ QString tooltipForOperatorState(tomviz::OperatorState state)
 
   return "";
 }
-
-
 }
 
 QVariant PipelineModel::data(const QModelIndex& index, int role) const
@@ -401,14 +399,14 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         return QIcon(":/QtWidgets/Icons/pqDelete32.png");
       }
     } else if (index.column() == 0) {
-        switch (role) {
-          case Qt::DecorationRole:
-            return iconForOperatorState(op->state()) ;
-          case Qt::ToolTipRole:
-            return tooltipForOperatorState(op->state());
-          default:
-            return QVariant();
-        }
+      switch (role) {
+        case Qt::DecorationRole:
+          return iconForOperatorState(op->state());
+        case Qt::ToolTipRole:
+          return tooltipForOperatorState(op->state());
+        default:
+          return QVariant();
+      }
     }
   } else if (result) {
     if (index.column() == 1) {

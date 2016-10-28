@@ -171,7 +171,7 @@ void PipelineWorker::Run::operatorComplete(bool result)
   this->m_complete.append(runnableOperator);
 
   // Canceled
-  if(this->m_canceled || runnableOperator->isCanceled()) {
+  if (this->m_canceled || runnableOperator->isCanceled()) {
     emit canceled();
   }
   // Error
@@ -251,7 +251,7 @@ PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data,
                                             QList<Operator*> operators)
 {
   // Set all the operators in the queued state
-  foreach(Operator *op, operators) {
+  foreach (Operator* op, operators) {
     op->resetState();
   }
 
