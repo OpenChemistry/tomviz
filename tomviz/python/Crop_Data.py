@@ -26,5 +26,5 @@ def transform_scalars(dataset):
                            START_CROP[2]:END_CROP[2]]
 
     # Set the data so that it is visible in the application.
-    utils.set_array(dataset, data_cropped)
+    utils.set_array(dataset, data_cropped, START_CROP)
     print('Data has been cropped.')
