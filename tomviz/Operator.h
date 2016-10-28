@@ -169,7 +169,7 @@ public slots:
   /// to ensure the operator is marked as canceled.
   virtual void cancelTransform() { m_state = OperatorState::CANCELED; };
   bool isCanceled() { return m_state == OperatorState::CANCELED; };
-  bool isFinished() { return m_state == OperatorState::COMPLETE; };
+  bool isFinished() { return m_state == OperatorState::COMPLETE ||  m_state == OperatorState::ERROR; };
   OperatorState state() { return m_state; };
   void resetState() { m_state = OperatorState::QUEUED; };
 
