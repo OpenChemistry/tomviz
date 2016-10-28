@@ -78,10 +78,6 @@ public:
   void setUseDetachedColorMap(bool);
   bool useDetachedColorMap() const { return this->UseDetachedColorMap; }
 
-  /// Flag indicating whether the module displays label map colors.
-  void setColorByLabelMap(bool);
-  bool colorByLabelMap() const;
-
   /// This will either return the maps from the data source or detached ones
   /// based on the UseDetachedColorMap flag.
   vtkSMProxy* colorMap() const;
@@ -158,7 +154,6 @@ private:
   QPointer<DataSource> ADataSource;
   vtkWeakPointer<vtkSMViewProxy> View;
   bool UseDetachedColorMap;
-  bool ColorByLabelMap;
 
   class MInternals;
   const QScopedPointer<MInternals> Internals;

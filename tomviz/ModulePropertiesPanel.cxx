@@ -74,8 +74,6 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
 
   this->connect(ui.DetachColorMap, SIGNAL(clicked(bool)),
                 SLOT(detachColorMap(bool)));
-  this->connect(ui.ColorByLabelMap, SIGNAL(clicked(bool)),
-                SLOT(colorByLabelMap(bool)));
 }
 
 ModulePropertiesPanel::~ModulePropertiesPanel()
@@ -107,14 +105,11 @@ void ModulePropertiesPanel::setModule(Module* module)
   deleteLayoutContents(ui.PropertiesWidget->layout());
 
   ui.DetachColorMap->setVisible(false);
-  ui.ColorByLabelMap->setVisible(false);
   if (module) {
     module->addToPanel(ui.PropertiesWidget);
     if (module->isColorMapNeeded()) {
       ui.DetachColorMap->setVisible(true);
       ui.DetachColorMap->setChecked(module->useDetachedColorMap());
-      ui.ColorByLabelMap->setVisible(true);
-      ui.ColorByLabelMap->setChecked(module->colorByLabelMap());
     }
   }
   ui.PropertiesWidget->layout()->update();
@@ -127,12 +122,6 @@ void ModulePropertiesPanel::setView(vtkSMViewProxy* vtkNotUsed(view))
 
 void ModulePropertiesPanel::updatePanel()
 {
-  Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
-
-  if (this->Internals->ActiveModule) {
-    DataSource* dataSource = this->Internals->ActiveModule->dataSource();
-    ui.ColorByLabelMap->setVisible(dataSource && dataSource->hasLabelMap());
-  }
 }
 
 void ModulePropertiesPanel::render()
@@ -154,13 +143,4 @@ void ModulePropertiesPanel::detachColorMap(bool val)
   }
 }
 
-void ModulePropertiesPanel::colorByLabelMap(bool val)
-{
-  Module* module = this->Internals->ActiveModule;
-  if (module) {
-    module->setColorByLabelMap(val);
-    this->setModule(module); // refreshs the module.
-    this->render();
-  }
-}
 }

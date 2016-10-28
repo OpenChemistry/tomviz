@@ -47,7 +47,7 @@ namespace tomviz {
 class ModuleContour::Private
 {
 public:
-  std::string NonLabelMapArrayName;
+  std::string ColorArrayName;
   bool UseSolidColor;
   pqPropertyLinks Links;
 };
@@ -120,7 +120,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation,
                                        "ColorArrayName");
-  this->Internals->NonLabelMapArrayName =
+  this->Internals->ColorArrayName =
     std::string(colorArrayHelper.GetInputArrayNameToProcess());
 
   vtkSMPropertyHelper colorHelper(this->ContourRepresentation, "DiffuseColor");
@@ -142,26 +142,16 @@ void ModuleContour::updateColorMap()
   vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation,
                                        "ColorArrayName");
 
-  if (this->colorByLabelMap()) {
-    this->Internals->NonLabelMapArrayName =
-      std::string(colorArrayHelper.GetInputArrayNameToProcess());
+  if (this->Internals->UseSolidColor) {
     colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS, "LabelMap");
-
-    vtkSMPropertyHelper(this->ContourRepresentation, "Input")
-      .Set(this->ResampleFilter);
+      vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
   } else {
-    if (this->Internals->UseSolidColor) {
-      colorArrayHelper.SetInputArrayToProcess(
-        vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
-    } else {
-      colorArrayHelper.SetInputArrayToProcess(
-        vtkDataObject::FIELD_ASSOCIATION_POINTS,
-        this->Internals->NonLabelMapArrayName.c_str());
-    }
-    vtkSMPropertyHelper(this->ContourRepresentation, "Input")
-      .Set(this->ContourFilter);
+    colorArrayHelper.SetInputArrayToProcess(
+      vtkDataObject::FIELD_ASSOCIATION_POINTS,
+      this->Internals->ColorArrayName.c_str());
   }
+  vtkSMPropertyHelper(this->ContourRepresentation, "Input")
+    .Set(this->ContourFilter);
 
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility")
     .Set(this->visibility() ? 1 : 0);
