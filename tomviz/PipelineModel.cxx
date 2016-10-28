@@ -285,6 +285,44 @@ QIcon iconForDataObject(vtkDataObject* dataObject)
 
   return QIcon(":/pqWidgets/Icons/pqView22.png");
 }
+
+QIcon iconForOperatorState(tomviz::OperatorState state)
+{
+  switch (state) {
+    case OperatorState::RUNNING:
+      return QIcon();
+    case OperatorState::COMPLETE:
+      return QIcon();
+    case OperatorState::QUEUED:
+      return QIcon();
+    case OperatorState::ERROR:
+      return QIcon();
+    case OperatorState::CANCELED:
+      return QIcon();
+  }
+
+  return QIcon();
+}
+
+QString tooltipForOperatorState(tomviz::OperatorState state)
+{
+  switch (state) {
+    case OperatorState::RUNNING:
+      return QString("Running");
+    case OperatorState::COMPLETE:
+      return QString("Complete");
+    case OperatorState::QUEUED:
+      return QString("Queued");
+    case OperatorState::ERROR:
+      return QString("Error");
+    case OperatorState::CANCELED:
+      return QString("Canceled");
+  }
+
+  return "";
+}
+
+
 }
 
 QVariant PipelineModel::data(const QModelIndex& index, int role) const
@@ -362,8 +400,13 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         return QIcon(":/QtWidgets/Icons/pqDelete32.png");
       }
     } else if (index.column() == 0) {
-        if (role == Qt::DecorationRole) {
-          return QIcon(":/pqWidgets/Icons/pqInspect22.png");
+        switch (role) {
+          case Qt::DecorationRole:
+            return iconForOperatorState(op->state()) ;
+          case Qt::ToolTipRole:
+            return tooltipForOperatorState(op->state());
+          default:
+            return QVariant();
         }
     }
   } else if (result) {
