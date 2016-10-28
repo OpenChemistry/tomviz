@@ -111,6 +111,8 @@ set(SOURCES
   OperatorDialog.h
   OperatorFactory.cxx
   OperatorFactory.h
+  OperatorPropertiesPanel.cxx
+  OperatorPropertiesPanel.h
   OperatorPython.cxx
   OperatorPython.h
   OperatorResult.cxx
