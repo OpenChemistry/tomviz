@@ -221,12 +221,15 @@ public slots:
   {
     angleIncrement = (endAngle->value() - startAngle->value()) /
                      (endTilt->value() - startTilt->value());
+    QString s;
     if (std::isfinite(angleIncrement)) {
-      QString s = QString::number(angleIncrement, 'f', 2);
-      this->angleIncrementLabel->setText(s);
+      s = QString::number(angleIncrement, 'f', 2);
+    } else if (endAngle->value() == startAngle->value() ){
+      s = QString::number(0, 'f', 2);
     } else {
-      this->angleIncrementLabel->setText("Invalid inputs!");
+      s = "Invalid inputs!";
     }
+    this->angleIncrementLabel->setText(s);
   }
 
 private:
