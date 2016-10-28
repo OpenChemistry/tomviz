@@ -53,7 +53,7 @@ def vtk_itk_map():
     return _vtk_to_itk_types
 
 
-def get_itk_image_type(vtk_image_data):
+def _get_itk_image_type(vtk_image_data):
     """
     Get an ITK image type corresponding to the provided vtkImageData object.
     """
@@ -76,7 +76,7 @@ def get_itk_image_type(vtk_image_data):
 def convert_vtk_to_itk_image(vtk_image_data):
     """Get an ITK image from the provided vtkImageData object.
     This image can be passed to ITK filters."""
-    image_type = get_itk_image_type(vtk_image_data)
+    image_type = _get_itk_image_type(vtk_image_data)
 
     # Save the VTKGlue optimization for later
     #------------------------------------------
