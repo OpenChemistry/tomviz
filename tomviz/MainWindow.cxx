@@ -167,9 +167,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.treeWidget->setModel(new PipelineModel(this));
   ui.treeWidget->header()->setStretchLastSection(false);
   ui.treeWidget->header()->setVisible(false);
-  ui.treeWidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-  ui.treeWidget->header()->setSectionResizeMode(1, QHeaderView::Fixed);
-  ui.treeWidget->header()->resizeSection(1, 30);
+  ui.treeWidget->header()->setSectionResizeMode(0, QHeaderView::Fixed);
+  ui.treeWidget->header()->setSectionResizeMode(1, QHeaderView::Stretch);
+  ui.treeWidget->header()->setSectionResizeMode(2, QHeaderView::Fixed);
+  ui.treeWidget->header()->resizeSection(0, 70);
+  ui.treeWidget->header()->resizeSection(2, 30);
+
   // Ensure that items are expanded by default, can be collapsed at will.
   connect(ui.treeWidget->model(), SIGNAL(rowsInserted(QModelIndex, int, int)),
           ui.treeWidget, SLOT(expandAll()));

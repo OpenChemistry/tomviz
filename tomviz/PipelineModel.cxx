@@ -300,7 +300,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
 
   // Data source
   if (dataSource) {
-    if (index.column() == 0) {
+    if (index.column() == 1) {
       switch (role) {
         case Qt::DecorationRole:
           return QIcon(":/pqWidgets/Icons/pqInspect22.png");
@@ -313,7 +313,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
       }
     }
   } else if (module) {
-    if (index.column() == 0) {
+    if (index.column() == 1) {
       switch (role) {
         case Qt::DecorationRole:
           return module->icon();
@@ -324,7 +324,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         default:
           return QVariant();
       }
-    } else if (index.column() == 1) {
+    } else if (index.column() == 2) {
       if (role == Qt::DecorationRole) {
         if (module->visibility()) {
           return QIcon(":/pqWidgets/Icons/pqEyeball16.png");
@@ -334,7 +334,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
       }
     }
   } else if (op) {
-    if (index.column() == 0) {
+    if (index.column() == 1) {
       switch (role) {
         case Qt::DecorationRole:
           return op->icon();
@@ -357,13 +357,17 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         default:
           return QVariant();
       }
-    } else if (index.column() == 1) {
+    } else if (index.column() == 2) {
       if (role == Qt::DecorationRole) {
         return QIcon(":/QtWidgets/Icons/pqDelete32.png");
       }
+    } else if (index.column() == 0) {
+        if (role == Qt::DecorationRole) {
+          return QIcon(":/pqWidgets/Icons/pqInspect22.png");
+        }
     }
   } else if (result) {
-    if (index.column() == 0) {
+    if (index.column() == 1) {
       switch (role) {
         case Qt::DecorationRole:
           return iconForDataObject(result->dataObject());
@@ -387,7 +391,7 @@ bool PipelineModel::setData(const QModelIndex& index, const QVariant& value,
   }
 
   auto treeItem = this->treeItem(index);
-  if (index.column() == 1 && treeItem->module()) {
+  if (index.column() == 2 && treeItem->module()) {
     treeItem->module()->setVisibility(value == Qt::Checked);
     emit dataChanged(index, index);
   }
@@ -455,7 +459,7 @@ int PipelineModel::rowCount(const QModelIndex& parent) const
 
 int PipelineModel::columnCount(const QModelIndex&) const
 {
-  return 2;
+  return 3;
 }
 
 DataSource* PipelineModel::dataSource(const QModelIndex& idx)
