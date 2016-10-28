@@ -204,12 +204,13 @@ void PipelineView::currentChanged(const QModelIndex& current,
   }
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
-  auto dataSource = pipelineModel->dataSource(current);
-  auto module = pipelineModel->module(current);
-  if (dataSource) {
+
+  if (auto dataSource = pipelineModel->dataSource(current)) {
     ActiveObjects::instance().setActiveDataSource(dataSource);
-  } else if (module) {
+  } else if (auto module = pipelineModel->module(current)) {
     ActiveObjects::instance().setActiveModule(module);
+  } else if (auto op = pipelineModel->op(current)) {
+    ActiveObjects::instance().setActiveOperator(op);
   }
 }
 
