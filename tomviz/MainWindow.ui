@@ -268,8 +268,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>100</width>
-             <height>30</height>
+             <width>254</width>
+             <height>397</height>
             </rect>
            </property>
           </widget>
@@ -289,8 +289,29 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>100</width>
-             <height>30</height>
+             <width>254</width>
+             <height>397</height>
+            </rect>
+           </property>
+          </widget>
+         </widget>
+         <widget class="QScrollArea" name="operatorPropertiesScrollArea">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="tomviz::OperatorPropertiesPanel" name="operatorPropertiesPanel">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>254</width>
+             <height>397</height>
             </rect>
            </property>
           </widget>
@@ -415,6 +436,12 @@
    <class>tomviz::ModulePropertiesPanel</class>
    <extends>QWidget</extends>
    <header>ModulePropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::OperatorPropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>OperatorPropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
