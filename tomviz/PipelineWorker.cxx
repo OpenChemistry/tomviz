@@ -239,6 +239,11 @@ PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data, Operator* op)
 PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data,
                                             QList<Operator*> operators)
 {
+  // Set all the operators in the queued state
+  foreach(Operator *op, operators) {
+    op->resetState();
+  }
+
   Run* run = new Run(data, operators);
 
   return run->start();

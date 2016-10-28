@@ -32,6 +32,8 @@ class DataSource;
 class EditOperatorWidget;
 class OperatorResult;
 
+enum class OperatorState {QUEUED, RUNNING, COMPLETE, CANCELED, ERROR};
+
 class Operator : public QObject
 {
   Q_OBJECT
@@ -164,10 +166,12 @@ signals:
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
-  /// to ensure the m_canceled flag is set.
-  virtual void cancelTransform() { m_canceled = true; }
-  bool isCanceled() { return m_canceled; }
-  bool isFinished() { return m_finished; }
+  /// to ensure the operator is marked as canceled.
+  virtual void cancelTransform() { m_state = OperatorState::CANCELED; };
+  bool isCanceled() { return m_state == OperatorState::CANCELED; };
+  bool isFinished() { return m_state == OperatorState::COMPLETE; };
+  OperatorState state() { return m_state; };
+  void resetState() { m_state = OperatorState::QUEUED; };
 
 protected:
   /// Method to transform a dataset in-place.
@@ -183,11 +187,10 @@ private:
 
   QList<OperatorResult*> m_results;
   bool m_supportsCancel = false;
-  bool m_finished = false;
   bool m_hasChildDataSource = false;
   DataSource* m_childDataSource = nullptr;
-  bool m_canceled = false;
   int m_totalProgressSteps = 0;
+  OperatorState m_state = OperatorState::QUEUED;
 };
 }
 

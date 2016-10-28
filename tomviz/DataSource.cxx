@@ -556,6 +556,9 @@ void DataSource::operate(Operator* op)
     }
   }
 
+  // Reset operator state
+  op->resetState();
+
   // If we are currently executing the pipeline, just add the operator
   if (this->Internals->Future != nullptr &&
       this->Internals->Future->isRunning()) {
