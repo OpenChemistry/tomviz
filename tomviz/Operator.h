@@ -95,6 +95,7 @@ public:
   {
     return nullptr;
   }
+
   /// Should return a widget for editing customizable parameters on this
   /// operator or nullptr if there is nothing to edit.  The vtkImageData
   /// is a copy of the DataSource's image with all Operators prior in the
@@ -107,6 +108,7 @@ public:
   {
     return this->getEditorContents(parent);
   }
+
   /// Should return true if the Operator has a non-null widget to return from
   /// getEditorContents.
   virtual bool hasCustomUI() const { return false; }
@@ -121,7 +123,7 @@ public:
   /// Returns true if the operation supports canceling midway through the
   /// applyTransform function via the cancelTransform slot.  Defaults to false,
   /// can be set by the setSupportsCancel(bool) method by subclasses.
-  bool supportsCancelingMidTransform() const { return this->supportsCancel; }
+  bool supportsCancelingMidTransform() const { return m_supportsCancel; }
 
   /// Return the total number of progress updates (assuming each update
   /// increments the progress from 0 to some maximum.  If the operator doesn't
@@ -163,9 +165,9 @@ public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
   /// to ensure the m_canceled flag is set.
-  virtual void cancelTransform() { m_canceled = true; };
+  virtual void cancelTransform() { m_canceled = true; }
   bool isCanceled() { return m_canceled; }
-  bool isFinished() { return m_finished; };
+  bool isFinished() { return m_finished; }
 
 protected:
   /// Method to transform a dataset in-place.
@@ -174,15 +176,16 @@ protected:
   /// Method to set whether the operator supports canceling midway through the
   /// transform method call.  If you set this to true, you should also override
   /// the cancelTransform slot to listen for the cancel signal and handle it.
-  void setSupportsCancel(bool b) { this->supportsCancel = b; }
+  void setSupportsCancel(bool b) { m_supportsCancel = b; }
 
 private:
-  bool supportsCancel = false;
   Q_DISABLE_COPY(Operator)
+
   QList<OperatorResult*> m_results;
+  bool m_supportsCancel = false;
   bool m_finished = false;
-  bool m_hasChildDataSource;
-  DataSource* m_childDataSource;
+  bool m_hasChildDataSource = false;
+  DataSource* m_childDataSource = nullptr;
   bool m_canceled = false;
   int m_totalProgressSteps = 0;
 };

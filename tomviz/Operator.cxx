@@ -22,9 +22,7 @@
 
 namespace tomviz {
 
-Operator::Operator(QObject* parentObject)
-  : QObject(parentObject), m_hasChildDataSource(false),
-    m_childDataSource(nullptr)
+Operator::Operator(QObject* parentObject) : QObject(parentObject)
 {
 }
 
@@ -40,13 +38,13 @@ DataSource* Operator::dataSource()
 
 bool Operator::transform(vtkDataObject* data)
 {
-  this->m_finished = false;
-  this->m_canceled = false;
-  emit this->transformingStarted();
-  emit this->updateProgress(0);
+  m_finished = false;
+  m_canceled = false;
+  emit transformingStarted();
+  emit updateProgress(0);
   bool result = this->applyTransform(data);
-  this->m_finished = true;
-  emit this->transformingDone(result);
+  m_finished = true;
+  emit transformingDone(result);
   return result;
 }
 
@@ -62,7 +60,7 @@ void Operator::setNumberOfResults(int n)
     }
   } else {
     for (int i = n; i < previousSize; ++i) {
-      OperatorResult* result = m_results.takeLast();
+      auto result = m_results.takeLast();
       delete result;
     }
   }
