@@ -33,6 +33,7 @@
 #include <pqView.h>
 #include <vtkNew.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
+#include <vtkSMProxyIterator.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTable.h>
 
@@ -172,8 +173,25 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
       auto view = ActiveObjects::instance().activeView();
+
+      // If the view is not a SpreadSheetView, look for the first one and
+      // use it if possible.
+      vtkNew<vtkSMProxyIterator> iter;
+      iter->SetSessionProxyManager(ActiveObjects::instance().proxyManager());
+      iter->SetModeToOneGroup();
+      for (iter->Begin("views"); !iter->IsAtEnd(); iter->Next()) {
+        auto viewProxy = vtkSMViewProxy::SafeDownCast(iter->GetProxy());
+        if (std::string(viewProxy->GetXMLName()) == "SpreadSheetView") {
+          view = viewProxy;
+          break;
+        }
+      }
+
+      // If a spreadsheet view wasn't found, controller->ShowInPreferredView()
+      // will create one.
       vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-      controller->ShowInPreferredView(result->producerProxy(), 0, view);
+      view = controller->ShowInPreferredView(result->producerProxy(), 0, view);
+      ActiveObjects::instance().setActiveView(view);
     }
   }
 }
