@@ -126,7 +126,7 @@ void ActiveObjects::setActiveModule(Module* module)
   emit moduleActivated(module);
 }
 
-void ActiveObjects::setActiveOperator(Operator *op)
+void ActiveObjects::setActiveOperator(Operator* op)
 {
   if (m_activeOperator != op) {
     m_activeOperator = op;

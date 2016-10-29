@@ -23,8 +23,7 @@
 
 namespace tomviz {
 
-OperatorPropertiesPanel::OperatorPropertiesPanel(QWidget* p)
-  : QWidget(p)
+OperatorPropertiesPanel::OperatorPropertiesPanel(QWidget* p) : QWidget(p)
 {
   // Show active module in the "Module Properties" panel.
   connect(&ActiveObjects::instance(), SIGNAL(operatorChanged(Operator*)),
@@ -59,5 +58,4 @@ void OperatorPropertiesPanel::updatePanel()
 {
   m_description->setText(m_activeOperator->label());
 }
-
 }
