@@ -111,7 +111,16 @@
    </attribute>
    <widget class="QWidget" name="pipelineBrowserWidget">
     <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
-     <property name="margin">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
       <number>0</number>
      </property>
      <item>
@@ -224,54 +233,92 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout_2">
-     <property name="margin">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
       <number>0</number>
      </property>
      <item>
-       <widget class="QWidget" name="propertiesPanel">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>300</width>
-          <height>427</height>
-         </rect>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
-          <widget class="QStackedWidget" name="propertiesPanelStackedWidget">
-           <property name="currentIndex">
-            <number>0</number>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QStackedWidget" name="propertiesPanelStackedWidget">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="empty"/>
+         <widget class="QScrollArea" name="dataPropertiesScrollArea">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="tomviz::DataPropertiesPanel" name="dataPropertiesPanel">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>254</width>
+             <height>397</height>
+            </rect>
            </property>
-           <widget class="QWidget" name="empty"/>
-           <widget class="QScrollArea" name="dataPropertiesScrollArea">
-            <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
-            </property>
-            <property name="horizontalScrollBarPolicy">
-             <enum>Qt::ScrollBarAlwaysOff</enum>
-            </property>
-            <property name="widgetResizable">
-             <bool>true</bool>
-            </property>
-            <widget class="tomviz::DataPropertiesPanel" name="dataPropertiesPanel"/>
-           </widget>
-           <widget class="QScrollArea" name="modulePropertiesScrollArea">
-            <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
-            </property>
-            <property name="horizontalScrollBarPolicy">
-             <enum>Qt::ScrollBarAlwaysOff</enum>
-            </property>
-            <property name="widgetResizable">
-             <bool>true</bool>
-            </property>
-            <widget class="tomviz::ModulePropertiesPanel" name="modulePropertiesPanel"/>
-           </widget>
           </widget>
-         </item>
-        </layout>
-       </widget>
+         </widget>
+         <widget class="QScrollArea" name="modulePropertiesScrollArea">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="tomviz::ModulePropertiesPanel" name="modulePropertiesPanel">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>254</width>
+             <height>397</height>
+            </rect>
+           </property>
+          </widget>
+         </widget>
+         <widget class="QScrollArea" name="operatorPropertiesScrollArea">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="tomviz::OperatorPropertiesPanel" name="operatorPropertiesPanel">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>254</width>
+             <height>397</height>
+            </rect>
+           </property>
+          </widget>
+         </widget>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </widget>
@@ -389,6 +436,12 @@
    <class>tomviz::ModulePropertiesPanel</class>
    <extends>QWidget</extends>
    <header>ModulePropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::OperatorPropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>OperatorPropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -185,6 +185,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
           SLOT(dataSourceChanged(DataSource*)));
   connect(&ActiveObjects::instance(), SIGNAL(moduleActivated(Module*)),
           SLOT(moduleChanged(Module*)));
+  connect(&ActiveObjects::instance(), SIGNAL(operatorActivated(Operator*)),
+          SLOT(operatorChanged(Operator*)));
 
   // Connect the about dialog up too.
   connect(ui.actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
@@ -449,6 +451,12 @@ void MainWindow::moduleChanged(Module*)
 {
   this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
     this->Internals->Ui.modulePropertiesScrollArea);
+}
+
+void MainWindow::operatorChanged(Operator*)
+{
+  this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
+    this->Internals->Ui.operatorPropertiesScrollArea);
 }
 
 void MainWindow::showEvent(QShowEvent* e)

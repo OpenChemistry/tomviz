@@ -21,6 +21,7 @@
 
 #include "DataSource.h"
 #include "Module.h"
+#include "Operator.h"
 
 class pqView;
 class vtkSMSessionProxyManager;
@@ -65,6 +66,9 @@ public slots:
   /// Set the active module.
   void setActiveModule(Module* module);
 
+  /// Set the active operator.
+  void setActiveOperator(Operator* op);
+
   /// Create a render view if needed.
   void createRenderViewIfNeeded();
 
@@ -79,21 +83,27 @@ public slots:
   void setMoveObjectsMode(bool moveObjectsOn);
 
 signals:
-  /// fired whenever the active view changes.
+  /// Fired whenever the active view changes.
   void viewChanged(vtkSMViewProxy*);
 
-  /// fired whenever the active data source changes (or changes type).
+  /// Fired whenever the active data source changes (or changes type).
   void dataSourceChanged(DataSource*);
 
   /// Fired whenever the data source is activated, i.e. selected in the
   /// pipeline.
   void dataSourceActivated(DataSource*);
 
-  /// fired whenever the active module changes.
+  /// Fired whenever the active module changes.
   void moduleChanged(Module*);
 
   /// Fired whenever a module is activated, i.e. selected in the pipeline.
   void moduleActivated(Module*);
+
+  /// Fired whenever the active operator changes.
+  void operatorChanged(Operator*);
+
+  /// Fired whenever an operator is activated, i.e. selected in the pipeline.
+  void operatorActivated(Operator*);
 
   /// Fired when the mode changes
   void moveObjectsModeChanged(bool moveObjectsOn);
@@ -112,6 +122,8 @@ protected:
   DataSource::DataSourceType m_activeDataSourceType = DataSource::Volume;
 
   QPointer<Module> m_activeModule = nullptr;
+
+  QPointer<Operator> m_activeOperator = nullptr;
 
   bool m_moveObjectsEnabled = false;
 
