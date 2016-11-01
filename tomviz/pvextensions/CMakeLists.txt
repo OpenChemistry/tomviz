@@ -1,3 +1,7 @@
+# Do not use automoc, autouic, and autorcc for ParaView extensions.
+set(CMAKE_AUTOMOC OFF)
+set(CMAKE_AUTOUIC OFF)
+set(CMAKE_AUTORCC OFF)
 
 include(${PARAVIEW_USE_FILE})
 

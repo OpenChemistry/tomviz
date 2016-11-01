@@ -54,6 +54,11 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 find_package(Qt5 REQUIRED COMPONENTS Network Widgets)
 find_package(ParaView REQUIRED)
 
+# Use automoc, autouic, and autorcc for our Qt code.
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+
 if(NOT PARAVIEW_BUILD_QT_GUI)
   message(FATAL_ERROR
     "Tomviz requires PARAVIEW_BUILD_QT_GUI to be enabled. "
