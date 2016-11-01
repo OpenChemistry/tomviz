@@ -129,7 +129,7 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
   bool maxIntensity =
     m_volumeMapper->GetBlendMode() == vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND;
   maxIntensityNode.append_attribute("enabled") = maxIntensity;
-  return true;
+  return Module::serialize(ns);
 }
 
 bool ModuleVolume::deserialize(const pugi::xml_node& ns)
@@ -154,7 +154,7 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
     }
   }
 
-  return this->Superclass::deserialize(ns);
+  return Module::deserialize(ns);
 }
 
 void ModuleVolume::addToPanel(QWidget* panel)
