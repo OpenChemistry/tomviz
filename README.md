@@ -34,6 +34,8 @@ A Quick Tutorial
 
 User Guide
 ----------
+Start by watching this short video to [see tomviz in action](https://vimeo.com/189945022).
+
 The [tomviz user guide](/docs/TomvizBasicUserGuide.pdf) is available for more detailed information to get started.
 
 Publications using tomviz
