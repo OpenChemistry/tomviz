@@ -68,6 +68,8 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
+  connect(data, SIGNAL(dataChanged()), SLOT(dataChanged()));
+
   vtkNew<vtkImageShiftScale> t;
 
   vtkTrivialProducer* trv =
@@ -188,6 +190,20 @@ void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
 bool ModuleVolume::isProxyPartOfModule(vtkSMProxy*)
 {
   return false;
+}
+
+void ModuleVolume::dataChanged()
+{
+  // The volume was not updating, ensure it does, this involves ensuring we are
+  // using the right input as the threaded operators cause new object creation.
+  auto data = qobject_cast<DataSource*>(sender());
+  if (!data) {
+    return;
+  }
+  auto trv =
+    vtkTrivialProducer::SafeDownCast(data->producer()->GetClientSideObject());
+  auto im = vtkImageData::SafeDownCast(trv->GetOutputDataObject(0));
+  m_volumeMapper->GetInputAlgorithm()->SetInputDataObject(im);
 }
 
 std::string ModuleVolume::getStringForProxy(vtkSMProxy*)
