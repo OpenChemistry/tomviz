@@ -23,10 +23,10 @@ def transform_scalars(dataset):
     N = int(np.floor(N / 2.0) * 2 + 1) #make the size an odd integer
 
     #pad volume
-    pad_y_pre = np.ceil((N - Ny) / 2.0)
-    pad_y_post = np.floor((N - Ny) / 2.0)
-    pad_z_pre = np.ceil((N - Nz) / 2.0)
-    pad_z_post = np.floor((N - Nz) / 2.0)
+    pad_y_pre = int(np.ceil((N - Ny) / 2.0))
+    pad_y_post = int(np.floor((N - Ny) / 2.0))
+    pad_z_pre = int(np.ceil((N - Nz) / 2.0))
+    pad_z_post = int(np.floor((N - Nz) / 2.0))
     volume_pad = np.lib.pad(
         volume, ((0, 0), (pad_y_pre, pad_y_post), (pad_z_pre, pad_z_post)),
         'constant')
