@@ -131,7 +131,8 @@ public:
   /// that QProgressBar interprets the progress as unknown.
   int totalProgressSteps() const { return m_totalProgressSteps; }
 
-  void setTotalProgressSteps(int steps) { m_totalProgressSteps = steps; }
+  void setTotalProgressSteps(int steps) { m_totalProgressSteps = steps;
+    emit totalProgressStepsChanged(steps);}
 
 signals:
   /// Emit this signal with the operation is updated/modified
