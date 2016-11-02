@@ -20,6 +20,8 @@
 
 namespace tomviz {
 
+class AboutDialog;
+class DataPropertiesPanel;
 class DataSource;
 class Module;
 class Operator;
@@ -61,6 +63,8 @@ private slots:
 
 private:
   Q_DISABLE_COPY(MainWindow)
+
+  AboutDialog* m_aboutDialog = nullptr;
   class MWInternals;
   MWInternals* Internals;
 };

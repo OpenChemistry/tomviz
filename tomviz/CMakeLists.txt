@@ -24,6 +24,8 @@ add_subdirectory(pvextensions)
 include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
 set(SOURCES
+  AboutDialog.h
+  AboutDialog.cxx
   ActiveObjects.cxx
   ActiveObjects.h
   AddAlignReaction.cxx

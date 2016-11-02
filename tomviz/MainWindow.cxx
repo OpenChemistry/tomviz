@@ -14,7 +14,6 @@
 
 ******************************************************************************/
 #include "MainWindow.h"
-#include "ui_AboutDialog.h"
 #include "ui_MainWindow.h"
 
 #include <pqMacroReaction.h>
@@ -29,6 +28,7 @@
 #include <vtkSMSettings.h>
 #include <vtkSMViewProxy.h>
 
+#include "AboutDialog.h"
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
@@ -106,8 +106,6 @@ class MainWindow::MWInternals
 {
 public:
   Ui::MainWindow Ui;
-  Ui::AboutDialog AboutUi;
-  QDialog* AboutDialog = nullptr;
   QTimer* Timer = nullptr;
   bool isFirstShow = true;
 };
@@ -399,17 +397,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::showAbout()
 {
-  if (!this->Internals->AboutDialog) {
-    this->Internals->AboutDialog = new QDialog(this);
-    this->Internals->AboutUi.setupUi(this->Internals->AboutDialog);
-    QString version(TOMVIZ_VERSION);
-    if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)
-      version.append("-").append(TOMVIZ_VERSION_EXTRA);
-    QString versionString =
-      this->Internals->AboutUi.version->text().replace("#VERSION", version);
-    this->Internals->AboutUi.version->setText(versionString);
+  if (!m_aboutDialog) {
+    m_aboutDialog = new AboutDialog(this);
   }
-  this->Internals->AboutDialog->show();
+  m_aboutDialog->show();
 }
 
 void MainWindow::openTilt()

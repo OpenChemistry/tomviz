@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>520</width>
-    <height>400</height>
+    <width>774</width>
+    <height>548</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,6 +21,9 @@
      </property>
      <property name="pixmap">
       <pixmap resource="resources.qrc">:/icons/tomvizfull.png</pixmap>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </item>
