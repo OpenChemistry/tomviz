@@ -1,13 +1,13 @@
 {
   "name" : "RemoveBadPixelsTiltSeries",
   "label" : "Remove Bad Pixels Tilt Series",
-  "description" : "Remove bad pixels in each tilt image each tilt image. \nThe bad pixels are replaced by size can be specified below:",
+  "description" : "Remove bad pixels in each tilt image. \nThe threshold can be specified below:",
   "parameters" : [
     {
-      "name" : "s",
-      "label" : "s",
+      "name" : "threshold",
+      "label" : "threshold",
       "type" : "double",
-      "default" : 3.0,
+      "default" : 5.0,
       "minimum" : 0
     }
   ]
