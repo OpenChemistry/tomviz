@@ -221,7 +221,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   dataProcessingLabel->setEnabled(false);
   QAction* downsampleByTwoAction =
     ui.menuTomography->addAction("Bin Tilt Images x2");
-  QAction* medianFilterAction = ui.menuTomography->addAction("Median Filter");
+  QAction* removeBadPixelsAction =
+    ui.menuTomography->addAction("Remove Bad Pixels");
   QAction* gaussianFilterAction =
     ui.menuTomography->addAction("Gaussian Filter");
   QAction* autoSubtractBackgroundAction =
@@ -277,9 +278,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  readInPythonScript("BinTiltSeriesByTwo"),
                                  true);
   new AddPythonTransformReaction(
-    medianFilterAction, "Median Filter Tilt Series",
-    readInPythonScript("MedianFilterTiltSeries"), true, false,
-    readInJSONDescription("MedianFilterTiltSeries"));
+    removeBadPixelsAction, "Remove Bad Pixels",
+    readInPythonScript("RemoveBadPixelsTiltSeries"), true, false,
+    readInJSONDescription("RemoveBadPixelsTiltSeries"));
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Filter Tilt Series",
     readInPythonScript("GaussianFilterTiltSeries"), true, false,
