@@ -2,6 +2,7 @@ import pyfftw
 import numpy as np
 import tomviz.operators
 
+
 class ReconDFMOperator(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset):
@@ -28,23 +29,29 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         # Initialization
         Nz = Ny
         w = np.zeros((Nx, Ny, np.int(Nz / 2 + 1))) #store weighting factors
-        v = pyfftw.n_byte_align_empty((Nx, Ny, Nz / 2 + 1), 16, dtype='complex128')
+        v = pyfftw.n_byte_align_empty(
+            (Nx, Ny, Nz / 2 + 1), 16, dtype='complex128')
         v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
         recon = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='float64')
         recon_fftw_object = pyfftw.FFTW(
-                v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
+            v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
 
         p = pyfftw.n_byte_align_empty((Nx, Npad), 16, dtype='float64')
-        pF = pyfftw.n_byte_align_empty((Nx, Npad / 2 + 1), 16, dtype='complex128')
+        pF = pyfftw.n_byte_align_empty(
+            (Nx, Npad / 2 + 1), 16, dtype='complex128')
         p_fftw_object = pyfftw.FFTW(p, pF, axes=(0, 1))
 
         dk = np.double(Ny) / np.double(Npad)
-        NUMBER_OF_CHUNKS = int(10)
-        self.progress.maximum = NUMBER_OF_CHUNKS
+
+        self.progress.maximum = Nproj
         step = 0
+        print step
+
         for a in range(Nproj):
             if self.canceled:
                 return
+            step += 1
+            self.progress.update(step)
 
             #print angles[a]
             ang = tiltAngles[a] * np.pi / 180
@@ -73,27 +80,22 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
                     pz, py, weight = bilinear(kz_new, ky_new, sz, sy, Ny, b)
                     if (py >= 0 and py < Ny and pz >= 0 and pz < Nz / 2 + 1):
                         w[:, py, pz] = w[:, py, pz] + weight
-                        v[:, py, pz] = v[:, py, pz] + weight * probjection_f[:, i]
-            step += 1
-            self.progress.update(step)
+                        v[:, py, pz] = v[:, py, pz] + \
+                            weight * probjection_f[:, i]
 
         v[w != 0] = v[w != 0] / w[w != 0]
         recon_fftw_object.update_arrays(v, recon)
         recon_fftw_object()
         recon = np.fft.fftshift(recon)
-        step += 1
-        self.progress.update(step)
-        
+
         # Set the result as the new scalars.
         utils.set_array(dataset, recon)
-    
+
         # Mark dataset as volume
         utils.mark_as_volume(dataset)
 
 
 # Bilinear extrapolation
-
-
 def bilinear(kz_new, ky_new, sz, sy, N, p):
     if p == 1:
         py = np.floor(ky_new)
