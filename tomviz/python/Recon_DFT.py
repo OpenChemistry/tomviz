@@ -10,6 +10,9 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
 
         from tomviz import utils
         import numpy as np
+        # Set to non zero value so the bar doesn't shows a busy indicator
+        # instead of a percentage. Its set to the correct value below.
+        self.progress.maximum = 1
 
         # Get Tilt angles
         tiltAngles = utils.get_tilt_angles(dataset)
