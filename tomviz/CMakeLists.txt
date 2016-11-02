@@ -321,21 +321,6 @@ install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
        USE_SOURCE_PERMISSIONS
        COMPONENT runtime)
 
-qt5_wrap_ui(UI_SOURCES
-  AboutDialog.ui
-  CentralWidget.ui
-  SelectVolumeWidget.ui
-  DataPropertiesPanel.ui
-  EditPythonOperatorWidget.ui
-  ModulePropertiesPanel.ui
-  RotateAlignWidget.ui
-  ReconstructionWidget.ui
-  ViewPropertiesPanel.ui
-  MainWindow.ui
-  WelcomeDialog.ui
-)
-qt5_add_resources(RCC_SOURCES resources.qrc)
-
 if(APPLE)
   list(APPEND exec_sources icons/tomviz.icns)
   set(MACOSX_BUNDLE_ICON_FILE tomviz.icns)
@@ -351,17 +336,13 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_library(tomvizlib STATIC ${SOURCES} ${UI_SOURCES} ${accel_srcs})
-set_target_properties(tomvizlib
-  PROPERTIES OUTPUT_NAME tomviz)
+add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
+set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
-add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources} ${RCC_SOURCES})
+add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources} resources.qrc)
 target_link_libraries(tomviz tomvizlib)
-
-set_target_properties(tomvizlib PROPERTIES AUTOMOC TRUE)
-set_target_properties(tomviz PROPERTIES AUTOMOC TRUE)
 
 target_link_libraries(tomvizlib
   pqApplicationComponents
