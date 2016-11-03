@@ -1,48 +1,142 @@
 import pyfftw
 import numpy as np
+import tomviz.operators
 
 
-def transform_scalars(dataset):
-    """
-    3D Reconstruct from a tilt series using constraint-based Direct Fourier
-    Method
-    """
+class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
-    from tomviz import utils
-    import numpy as np
-    ###Niter###
-    ###Niter_update_support###
-    ###supportSigma###
-    ###supportThreshold### #percent
-    supportThreshold = supportThreshold / 100.0
+    def transform_scalars(self, dataset):
+        """
+        3D Reconstruct from a tilt series using constraint-based Direct Fourier
+        Method
+        """
+        self.progress.maximum = 1
 
-    nonnegativeVoxels = True
-    tilt_angles = utils.get_tilt_angles(dataset) #Get Tilt angles
+        from tomviz import utils
+        import numpy as np
 
-    tilt_images = utils.get_array(dataset)
-    if tilt_images is None:
-        raise RuntimeError("No scalars found!")
+        ###Niter###
+        ###Niter_update_support###
+        ###supportSigma###
+        ###supportThreshold### #percent
 
-    #Direct Fourier recon without constraints
-    (recon, recon_F) \
-        = dfm3(tilt_images, tilt_angles, np.size(tilt_images, 0) * 2)
+        supportThreshold = supportThreshold / 100.0
 
-    kr_cutoffs = np.linspace(0.05, 0.5, 10)
-    #average Fourier magnitude of tilt series as a function of kr
-    I_data = radial_average(tilt_images, kr_cutoffs)
+        nonnegativeVoxels = True
+        tiltAngles = utils.get_tilt_angles(dataset) #Get Tilt angles
 
-    #Search for solutions that satisfy additional constraints
-    recon = difference_map_update(recon_F, nonnegativeVoxels, I_data,
-                                  kr_cutoffs, Niter, Niter_update_support,
-                                  supportSigma, supportThreshold)
+        tiltSeries = utils.get_array(dataset)
+        if tiltSeries is None:
+            raise RuntimeError("No scalars found!")
 
-    print('Reconsruction Complete')
+        #Direct Fourier recon without constraints
+        (recon, recon_F) \
+            = dfm3(tiltSeries, tiltAngles, np.size(tiltSeries, 0) * 2)
 
-    # Set the result as the new scalars.
-    utils.set_array(dataset, recon)
+        kr_cutoffs = np.linspace(0.05, 0.5, 10)
+        #average Fourier magnitude of tilt series as a function of kr
+        I_data = radial_average(tiltSeries, kr_cutoffs)
 
-    # Mark dataset as volume
-    utils.mark_as_volume(dataset)
+        (Nx, Ny, Nz) = recon_F.shape
+        #Note: Nz = np.int(Ny/2+1)
+        Ntot = Nx * Ny * Ny
+        f = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='complex128')
+        r = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype='float64')
+        fft_forward = pyfftw.FFTW(r, f, axes=(0, 1, 2))
+        fft_inverse = pyfftw.FFTW(
+            f, r, direction='FFTW_BACKWARD', axes=(0, 1, 2))
+
+        kx = np.fft.fftfreq(Nx)
+        ky = np.fft.fftfreq(Ny)
+        kz = ky[0:Nz]
+
+        kX, kY, kZ = np.meshgrid(ky, kx, kz)
+        kR = np.sqrt(kY**2 + kX**2 + kZ**2)
+
+        sigma = 0.5 * supportSigma
+        G = np.exp(-kR**2 / (2 * sigma**2))
+
+        #create initial support using sw
+        f = recon_F * G
+        fft_inverse.update_arrays(f, r)
+        fft_inverse.execute()
+        cutoff = np.amax(r) * supportThreshold
+        support = r >= cutoff
+
+        recon_F[kR > kr_cutoffs[-1]] = 0
+
+        x = np.random.rand(Nx, Ny, Ny) #initial solution
+
+        self.progress.maximum = Niter
+        step = 0
+
+        for i in range(Niter):
+            if self.canceled:
+                return
+
+            #image space projection
+            y1 = x.copy()
+
+            if nonnegativeVoxels:
+                y1[y1 < 0] = 0  #non-negative constraint
+
+            y1[np.logical_not(support)] = 0 #support constraint
+
+            #Fourier space projection
+            y2 = 2 * y1 - x
+
+            r = y2.copy()
+            fft_forward.update_arrays(r, f)
+            fft_forward.execute()
+
+            f[kR > kr_cutoffs[-1]] = 0 #apply low pass filter
+            f[recon_F != 0] = recon_F[recon_F != 0] #data constraint
+
+            #Fourier magnitude constraint
+            #leave the inner shell unchanged
+            for j in range(1, kr_cutoffs.size):
+                shell = np.logical_and(
+                    kR > kr_cutoffs[j - 1], kR <= kr_cutoffs[j])
+                shell[recon_F != 0] = False
+                I = np.sum(np.absolute(f[shell]))
+                if I != 0:
+                    I = I / np.sum(shell)
+                    # lower magnitude for high frequency information to reduce
+                    # artifacts
+                    f[shell] = f[shell] / I * I_data[j] * 0.5
+
+            fft_inverse.update_arrays(f, r)
+            fft_inverse.execute()
+            y2 = r.copy() / Ntot
+
+            #update
+            x = x + y2 - y1
+
+            #update support
+            if (i < Niter and np.mod(i, Niter_update_support) == 0):
+                print "updating support"
+                recon = (y2 + y1) / 2
+                r = recon.copy()
+                fft_forward.update_arrays(r, f)
+                fft_forward.execute()
+                f = f * G
+                fft_inverse.update_arrays(f, r)
+                fft_inverse.execute()
+                cutoff = np.amax(r) * supportThreshold
+                support = r >= cutoff
+            step += 1
+            self.progress.update(step)
+
+        recon = (y2 + y1) / 2
+        recon = np.fft.fftshift(recon)
+
+        print('Reconsruction Complete')
+
+        # Set the result as the new scalars.
+        utils.set_array(dataset, recon)
+
+        # Mark dataset as volume
+        utils.mark_as_volume(dataset)
 
 
 def dfm3(input, angles, Npad):
@@ -160,90 +254,3 @@ def radial_average(tiltseries, kr_cutoffs):
         Ir = Ir + I
     Ir = Ir / Nproj
     return Ir
-
-
-def difference_map_update(constraint, nonnegativeVoxels, I_data, kr_cutoffs,
-                          N_iter, N_update_support, supportSigma,
-                          supportThreshold):
-    (Nx, Ny, Nz) = constraint.shape
-    #Note: Nz = np.int(Ny/2+1)
-    Ntot = Nx * Ny * Ny
-    f = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='complex128')
-    r = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype='float64')
-    fft_forward = pyfftw.FFTW(r, f, axes=(0, 1, 2))
-    fft_inverse = pyfftw.FFTW(f, r, direction='FFTW_BACKWARD', axes=(0, 1, 2))
-
-    kx = np.fft.fftfreq(Nx)
-    ky = np.fft.fftfreq(Ny)
-    kz = ky[0:Nz]
-
-    kX, kY, kZ = np.meshgrid(kx, ky, kz)
-    kR = np.sqrt(kY**2 + kX**2 + kZ**2)
-
-    sigma = 0.5 * supportSigma
-    G = np.exp(-kR**2 / (2 * sigma**2))
-
-    #create initial support using sw
-    f = constraint * G
-    fft_inverse.update_arrays(f, r)
-    fft_inverse.execute()
-    cutoff = np.amax(r) * supportThreshold
-    support = r >= cutoff
-
-    constraint[kR > kr_cutoffs[-1]] = 0
-
-    x = np.random.rand(Nx, Ny, Ny) #initial solution
-    for i in range(1, N_iter + 1):
-        #print i
-        #image space projection
-        y1 = x.copy()
-
-        if nonnegativeVoxels:
-            y1[y1 < 0] = 0  #non-negative constraint
-
-        y1[np.logical_not(support)] = 0 #support constraint
-
-        #Fourier space projection
-        y2 = 2 * y1 - x
-
-        r = y2.copy()
-        fft_forward.update_arrays(r, f)
-        fft_forward.execute()
-
-        f[kR > kr_cutoffs[-1]] = 0 #apply low pass filter
-        f[constraint != 0] = constraint[constraint != 0] #data constraint
-
-        #Fourier magnitude constraint
-        #leave the inner shell unchanged
-        for j in range(1, kr_cutoffs.size):
-            shell = np.logical_and(kR > kr_cutoffs[j - 1], kR <= kr_cutoffs[j])
-            shell[constraint != 0] = False
-            I = np.sum(np.absolute(f[shell]))
-            if I != 0:
-                I = I / np.sum(shell)
-                # lower magnitude for high frequency information to reduce
-                # artifacts
-                f[shell] = f[shell] / I * I_data[j] * 0.5
-
-        fft_inverse.update_arrays(f, r)
-        fft_inverse.execute()
-        y2 = r.copy() / Ntot
-
-        #update
-        x = x + y2 - y1
-        #print np.linalg.norm((y2-y1).flatten())/np.sqrt(Ntot)
-        #update support
-        if (i < N_iter and np.mod(i, N_update_support) == 0):
-            print "updating support"
-            recon = (y2 + y1) / 2
-            r = recon.copy()
-            fft_forward.update_arrays(r, f)
-            fft_forward.execute()
-            f = f * G
-            fft_inverse.update_arrays(f, r)
-            fft_inverse.execute()
-            cutoff = np.amax(r) * supportThreshold
-            support = r >= cutoff
-
-    recon = (y2 + y1) / 2
-    return np.fft.fftshift(recon)

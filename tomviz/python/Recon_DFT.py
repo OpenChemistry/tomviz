@@ -47,7 +47,6 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
 
         self.progress.maximum = Nproj + 1
         step = 0
-        print step
 
         for a in range(Nproj):
             if self.canceled:
