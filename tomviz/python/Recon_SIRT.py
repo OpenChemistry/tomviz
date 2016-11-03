@@ -4,7 +4,7 @@ from tomviz import utils
 import tomviz.operators
 
 
-class ReconSIRTOperator(tomviz.operators.CancelableOperator):
+class ReconSirtOperator(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset):
         """
@@ -63,7 +63,8 @@ class ReconSIRTOperator(tomviz.operators.CancelableOperator):
                 self.progress.update(step)
 
         elif update_methods[updateMethodIndex] == 'cimmino':
-            """G. Cimmino, La Ric. Sci., XVI, Ser. II, Anno IX, 1 (1938), pp. 326–333"""
+            """G. Cimmino, La Ric. Sci., XVI, Ser. II, Anno IX, 1 (1938), 
+              pp. 326–333"""
 
             A = A.todense() #make matrix dense to increase recon speed
             (Nrow, Ncol) = A.shape

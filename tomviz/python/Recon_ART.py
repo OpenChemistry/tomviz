@@ -8,8 +8,7 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset):
         """
-        3D Reconstruct from a tilt series using Algebraic Reconstruction Technique
-        (ART)
+        3D Reconstruction using Algebraic Reconstruction Technique (ART)
         """
         self.progress.maximum = 1
 
@@ -47,7 +46,6 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
         for s in range(Nslice):
             if self.canceled:
                 return
-            
             f[:] = 0
             b = tiltSeries[s, :, :].transpose().flatten()
             for i in range(Niter):
@@ -67,6 +65,7 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
 
         # Mark dataset as volume
         utils.mark_as_volume(dataset)
+
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     # Suppress warning messages that pops up when dividing zeros
