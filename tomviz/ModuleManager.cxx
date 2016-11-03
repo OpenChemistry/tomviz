@@ -21,6 +21,7 @@
 #include "ModuleFactory.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "Utilities.h"
+#include "tomvizConfig.h"
 
 #include "pqActiveObjects.h"
 #include "pqAnimationCue.h"
@@ -186,6 +187,15 @@ QList<Module*> ModuleManager::findModulesGeneric(DataSource* dataSource,
 bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
 {
   QSet<vtkSMSourceProxy*> uniqueOriginalSources;
+
+  // Populate some high level version information.
+  pugi::xml_node versionInfo = ns.append_child("version");
+  versionInfo.append_attribute("full").set_value(
+    std::string(TOMVIZ_VERSION).c_str());
+  if (QString(TOMVIZ_VERSION_EXTRA).size() > 0) {
+    versionInfo.append_attribute("extra").set_value(
+      std::string(TOMVIZ_VERSION_EXTRA).c_str());
+  }
 
   // Build a list of unique original data sources. These are the data readers.
   foreach (const QPointer<DataSource>& ds, this->Internals->DataSources) {
