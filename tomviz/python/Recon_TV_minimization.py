@@ -1,40 +1,114 @@
 import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
+import tomviz.operators
 
 
-def transform_scalars(dataset):
-    """3D Reconstruct from a tilt series using simple TV minimzation"""
+class ReconTVOperator(tomviz.operators.CancelableOperator):
 
-    ###num_iterations###
+    def transform_scalars(self, dataset):
+        """3D Reconstruct from a tilt series using simple TV minimzation"""
+        self.progress.maximum = 1
 
-    # Get Tilt angles
-    tiltAngles = utils.get_tilt_angles(dataset)
+        ###Niter###
 
-    #remove zero tilt anlges
-    if np.count_nonzero(tiltAngles) < tiltAngles.size:
-        tiltAngles = tiltAngles + 0.001
+        # Get Tilt angles
+        tiltAngles = utils.get_tilt_angles(dataset)
 
-    # Get Tilt Series
-    tiltSeries = utils.get_array(dataset)
-    (Nslice, Nray, Nproj) = tiltSeries.shape
+        #remove zero tilt anlges
+        if np.count_nonzero(tiltAngles) < tiltAngles.size:
+            tiltAngles = tiltAngles + 0.001
 
-    if tiltSeries is None:
-        raise RuntimeError("No scalars found!")
+        # Get Tilt Series
+        tiltSeries = utils.get_array(dataset)
+        (Nslice, Nray, Nproj) = tiltSeries.shape
 
-    # Generate measurement matrix
-    A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-    recon = np.zeros((Nslice, Nray, Nray)) #allocate reconstruction matrix
+        if tiltSeries is None:
+            raise RuntimeError("No scalars found!")
 
-    tv_minimization(A.todense(), tiltSeries, recon, num_iterations)
+        # Generate measurement matrix
+        A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
+        recon = np.zeros((Nslice, Nray, Nray)) #allocate reconstruction matrix
+        A = A.todense()
 
-    # Set the result as the new scalars.
-    utils.set_array(dataset, recon)
+        (Nslice, Nray, Nproj) = tiltSeries.shape
+        (Nrow, Ncol) = A.shape
+        rowInnerProduct = np.zeros(Nrow)
+        row = np.zeros(Ncol)
+        f = np.zeros(Ncol) # Placeholder for 2d image
 
-    # Mark dataset as volume
-    utils.mark_as_volume(dataset)
+        alpha = 0.2
+        ng = 30
+        beta_red = 0.995
+        beta = 1.0
+        # Calculate row inner product, preparation for ART recon
+        for j in range(Nrow):
+            row[:] = A[j, ].copy()
+            rowInnerProduct[j] = np.dot(row, row)
 
-#TV minimization using asd_pocs
+        self.progress.maximum = Niter
+        step = 0
+        for i in range(Niter): #main loop
+            if self.canceled:
+                return
+
+            recon_temp = recon.copy()
+            #ART recon
+            for s in range(Nslice): #
+                f[:] = 0
+                b = tiltSeries[s, :, :].transpose().flatten()
+                for j in range(Nrow):
+                    row[:] = A[j, ].copy()
+                    row_f_product = np.dot(row, f)
+                    a = (b[j] - row_f_product) / rowInnerProduct[j]
+                    f = f + row * a * beta
+                recon[s, :, :] = f.reshape((Nray, Nray))
+
+            recon[recon < 0] = 0 #Positivity constraint
+
+            #calculate tomogram change due to POCS
+            dPOCS = np.linalg.norm(recon_temp - recon)
+
+            #3D TV minimization
+            for j in range(ng):
+                r = np.lib.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
+                v1n = 3 * r - np.roll(r, 1, axis=0) - \
+                                      np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2) # noqa TODO reformat this
+                v1d = np.sqrt(1e-8 + (r - np.roll(r, 1, axis=0))**2 + (r -
+                              np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2) # noqa TODO reformat this
+
+                v2n = r - np.roll(r, -1, axis=0)
+                v2d = np.sqrt(1e-8 + (np.roll(r, -1, axis=0) - r)**2 +
+                        (np.roll(r, -1, axis=0) -  # noqa TODO reformat this
+                         np.roll(np.roll(r, -1, axis=0), 1, axis=1))**2 +
+                        (np.roll(r, -1, axis=0) - np.roll(np.roll(r, -1, axis=0), 1, axis=2))**2) # noqa TODO reformat this
+
+                v3n = r - np.roll(r, -1, axis=1)
+                v3d = np.sqrt(1e-8 + (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=0))**2 + # noqa TODO reformat this
+                              (np.roll(r, -1, axis=1) - r)**2 + # noqa TODO reformat this
+                              (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=2))**2) # noqa TODO reformat this
+
+                v4n = r - np.roll(r, -1, axis=2)
+                v4d = np.sqrt(1e-8 + (np.roll(r, -1, axis=2) - np.roll(np.roll(r, -1, axis=2), 1, axis=0))**2 + # noqa TODO reformat this
+                              (np.roll(r, -1, axis=2) -  # noqa TODO reformat this
+                              np.roll(np.roll(r, -1, axis=1), 1, axis=1))**2 +
+                              (np.roll(r, -1, axis=2) - r)**2) # noqa TODO reformat this
+
+                v = v1n / v1d + v2n / v2d + v3n / v3d + v4n / v4d
+                v = v[1:-1, 1:-1, 1:-1]
+                v = v / np.linalg.norm(v)
+                recon = recon - alpha * dPOCS * v
+
+            #adjust parameters
+            beta = beta * beta_red
+            step += 1
+            self.progress.update(step)
+
+        # Set the result as the new scalars.
+        utils.set_array(dataset, recon)
+
+        # Mark dataset as volume
+        utils.mark_as_volume(dataset)
 
 
 def tv_minimization(A, tiltSeries, recon, iterNum=1):
