@@ -37,6 +37,7 @@ IntSliderWidget::IntSliderWidget(bool showLineEdit, QWidget* p) : QWidget(p)
   l->setMargin(0);
   this->Slider = new QSlider(Qt::Horizontal, this);
   this->Slider->setRange(this->Minimum, this->Maximum);
+  this->Slider->setFocusPolicy(Qt::StrongFocus);
   l->addWidget(this->Slider, 4);
   this->Slider->setObjectName("Slider");
   if (showLineEdit) {
