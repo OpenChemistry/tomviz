@@ -329,7 +329,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         if (module->visibility()) {
           return QIcon(":/pqWidgets/Icons/pqEyeball16.png");
         } else {
-          return QIcon(":/pqWidgets/Icons/pqEyeballd16.png");
+          return QIcon(":/icons/pqEyeballClosed16.png");
         }
       }
     }
