@@ -4,5 +4,6 @@
     <file>icons/tomvizfull.png</file>
     <file>icons/orthoslice.png</file>
     <file>icons/move_objects.png</file>
+    <file>icons/pqEyeballClosed16.png</file>
   </qresource>
 </RCC>
