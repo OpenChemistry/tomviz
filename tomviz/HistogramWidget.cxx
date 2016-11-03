@@ -169,6 +169,35 @@ void HistogramWidget::onScalarOpacityFunctionChanged()
 
   // Update the histogram
   this->HistogramView->GetRenderWindow()->Render();
+
+  // Update the scalar opacity function proxy as it does not update it's
+  // internal state when the VTK object changes.
+  if (!this->LUTProxy) {
+    return;
+  }
+
+  vtkSMProxy* opacityMapProxy =
+    vtkSMPropertyHelper(this->LUTProxy, "ScalarOpacityFunction", true)
+      .GetAsProxy();
+  if (!opacityMapProxy) {
+    return;
+  }
+
+  vtkSMPropertyHelper pointsHelper(opacityMapProxy, "Points");
+  vtkObjectBase* opacityMapObject = opacityMapProxy->GetClientSideObject();
+  vtkPiecewiseFunction* pwf =
+    vtkPiecewiseFunction::SafeDownCast(opacityMapObject);
+  if (pwf) {
+    pointsHelper.SetNumberOfElements(4 * pwf->GetSize());
+    for (int i = 0; i < pwf->GetSize(); ++i) {
+      double value[4];
+      pwf->GetNodeValue(i, value);
+      pointsHelper.Set(4 * i + 0, value[0]);
+      pointsHelper.Set(4 * i + 1, value[1]);
+      pointsHelper.Set(4 * i + 2, value[2]);
+      pointsHelper.Set(4 * i + 3, value[3]);
+    }
+  }
 }
 
 void HistogramWidget::onCurrentPointEditEvent()
