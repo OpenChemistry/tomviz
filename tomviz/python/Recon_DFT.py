@@ -8,11 +8,10 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
     def transform_scalars(self, dataset):
         """3D Reconstruct from a tilt series using Direct Fourier Method"""
 
+        self.progress.maximum = 1
+
         from tomviz import utils
         import numpy as np
-        # Set to non zero value so the bar doesn't shows a busy indicator
-        # instead of a percentage. Its set to the correct value below.
-        self.progress.maximum = 1
 
         # Get Tilt angles
         tiltAngles = utils.get_tilt_angles(dataset)
@@ -46,16 +45,13 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
 
         dk = np.double(Ny) / np.double(Npad)
 
-        self.progress.maximum = Nproj
+        self.progress.maximum = Nproj + 1
         step = 0
         print step
 
         for a in range(Nproj):
             if self.canceled:
                 return
-            step += 1
-            self.progress.update(step)
-
             #print angles[a]
             ang = tiltAngles[a] * np.pi / 180
             projection = tiltSeries[:, :, a] #2D projection image
@@ -85,11 +81,16 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
                         w[:, py, pz] = w[:, py, pz] + weight
                         v[:, py, pz] = v[:, py, pz] + \
                             weight * probjection_f[:, i]
+            step += 1
+            self.progress.update(step)
 
         v[w != 0] = v[w != 0] / w[w != 0]
         recon_fftw_object.update_arrays(v, recon)
         recon_fftw_object()
         recon = np.fft.fftshift(recon)
+
+        step += 1
+        self.progress.update(step)
 
         # Set the result as the new scalars.
         utils.set_array(dataset, recon)
