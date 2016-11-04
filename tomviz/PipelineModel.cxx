@@ -496,7 +496,7 @@ int PipelineModel::rowCount(const QModelIndex& parent) const
 
 int PipelineModel::columnCount(const QModelIndex&) const
 {
-  return 3;
+  return 2;
 }
 
 DataSource* PipelineModel::dataSource(const QModelIndex& idx)
