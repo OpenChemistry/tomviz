@@ -285,11 +285,47 @@ QIcon iconForDataObject(vtkDataObject* dataObject)
 
   return QIcon(":/pqWidgets/Icons/pqView22.png");
 }
+
+QIcon iconForOperatorState(tomviz::OperatorState state)
+{
+  switch (state) {
+    case OperatorState::RUNNING:
+      return QIcon(":/icons/progress_spinner_32.gif");
+    case OperatorState::COMPLETE:
+      return QIcon(":/icons/check_32.png");
+    case OperatorState::QUEUED:
+      return QIcon(":/icons/question_32.png");
+    case OperatorState::ERROR:
+      return QIcon(":/icons/error_notification_32.png");
+    case OperatorState::CANCELED:
+      return QIcon(":/icons/red_cross_32.png");
+  }
+
+  return QIcon();
+}
+
+QString tooltipForOperatorState(tomviz::OperatorState state)
+{
+  switch (state) {
+    case OperatorState::RUNNING:
+      return QString("Running");
+    case OperatorState::COMPLETE:
+      return QString("Complete");
+    case OperatorState::QUEUED:
+      return QString("Queued");
+    case OperatorState::ERROR:
+      return QString("Error");
+    case OperatorState::CANCELED:
+      return QString("Canceled");
+  }
+
+  return "";
+}
 }
 
 QVariant PipelineModel::data(const QModelIndex& index, int role) const
 {
-  if (!index.isValid() || index.column() > 2)
+  if (!index.isValid() || index.column() > Column::state)
     return QVariant();
 
   auto treeItem = this->treeItem(index);
@@ -300,7 +336,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
 
   // Data source
   if (dataSource) {
-    if (index.column() == 0) {
+    if (index.column() == Column::label) {
       switch (role) {
         case Qt::DecorationRole:
           return QIcon(":/pqWidgets/Icons/pqInspect22.png");
@@ -313,7 +349,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
       }
     }
   } else if (module) {
-    if (index.column() == 0) {
+    if (index.column() == Column::label) {
       switch (role) {
         case Qt::DecorationRole:
           return module->icon();
@@ -324,7 +360,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         default:
           return QVariant();
       }
-    } else if (index.column() == 1) {
+    } else if (index.column() == Column::state) {
       if (role == Qt::DecorationRole) {
         if (module->visibility()) {
           return QIcon(":/pqWidgets/Icons/pqEyeball16.png");
@@ -334,7 +370,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
       }
     }
   } else if (op) {
-    if (index.column() == 0) {
+    if (index.column() == Column::label) {
       switch (role) {
         case Qt::DecorationRole:
           return op->icon();
@@ -357,13 +393,18 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         default:
           return QVariant();
       }
-    } else if (index.column() == 1) {
-      if (role == Qt::DecorationRole) {
-        return QIcon(":/QtWidgets/Icons/pqDelete32.png");
+    } else if (index.column() == Column::state) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return iconForOperatorState(op->state());
+        case Qt::ToolTipRole:
+          return tooltipForOperatorState(op->state());
+        default:
+          return QVariant();
       }
     }
   } else if (result) {
-    if (index.column() == 0) {
+    if (index.column() == Column::label) {
       switch (role) {
         case Qt::DecorationRole:
           return iconForDataObject(result->dataObject());
@@ -387,7 +428,7 @@ bool PipelineModel::setData(const QModelIndex& index, const QVariant& value,
   }
 
   auto treeItem = this->treeItem(index);
-  if (index.column() == 1 && treeItem->module()) {
+  if (index.column() == Column::state && treeItem->module()) {
     treeItem->module()->setVisibility(value == Qt::Checked);
     emit dataChanged(index, index);
   }

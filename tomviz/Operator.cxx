@@ -38,12 +38,15 @@ DataSource* Operator::dataSource()
 
 bool Operator::transform(vtkDataObject* data)
 {
-  m_finished = false;
-  m_canceled = false;
+  this->m_state = OperatorState::RUNNING;
   emit transformingStarted();
   emit updateProgress(0);
   bool result = this->applyTransform(data);
-  m_finished = true;
+  // TODO we may want to change the return type applyTransform
+  // to OperatorState so we don't have todo this.
+  if (m_state != OperatorState::CANCELED) {
+    m_state = result ? OperatorState::COMPLETE : OperatorState::ERROR;
+  }
   emit transformingDone(result);
   return result;
 }

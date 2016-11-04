@@ -39,6 +39,7 @@ public:
   Operator* op() { return m_operator; };
   void run() override;
   void cancel();
+  bool isCanceled();
 
 signals:
   void complete(bool result);
@@ -113,7 +114,12 @@ void PipelineWorker::RunnableOperator::run()
 
 void PipelineWorker::RunnableOperator::cancel()
 {
-  this->m_operator->cancelTransform();
+  m_operator->cancelTransform();
+}
+
+bool PipelineWorker::RunnableOperator::isCanceled()
+{
+  return m_operator->isCanceled();
 }
 
 PipelineWorker::ConfigureThreadPool::ConfigureThreadPool()
@@ -164,16 +170,21 @@ void PipelineWorker::Run::operatorComplete(bool result)
 
   this->m_complete.append(runnableOperator);
 
-  if (!result) {
+  // Canceled
+  if (this->m_canceled || runnableOperator->isCanceled()) {
+    emit canceled();
+  }
+  // Error
+  else if (!result) {
     emit finished(result);
-  } else if (!this->m_runnableOperators.isEmpty()) {
+  }
+  // Run next operator
+  else if (!this->m_runnableOperators.isEmpty()) {
     this->startNextOperator();
-  } else {
-    if (!this->m_canceled) {
-      emit finished(result);
-    } else {
-      emit canceled();
-    }
+  }
+  // We are done
+  else {
+    emit finished(result);
   }
 
   runnableOperator->deleteLater();
@@ -239,6 +250,11 @@ PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data, Operator* op)
 PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data,
                                             QList<Operator*> operators)
 {
+  // Set all the operators in the queued state
+  foreach (Operator* op, operators) {
+    op->resetState();
+  }
+
   Run* run = new Run(data, operators);
 
   return run->start();

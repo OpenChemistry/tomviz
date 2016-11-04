@@ -142,7 +142,7 @@ void PipelineView::deleteItem(const QModelIndex& idx)
 
 void PipelineView::rowActivated(const QModelIndex& idx)
 {
-  if (idx.isValid() && idx.column() == 1) {
+  if (idx.isValid() && idx.column() == Column::state) {
     auto pipelineModel = qobject_cast<PipelineModel*>(model());
     if (pipelineModel) {
       if (auto module = pipelineModel->module(idx)) {
@@ -150,9 +150,6 @@ void PipelineView::rowActivated(const QModelIndex& idx)
         if (pqView* view = tomviz::convert<pqView*>(module->view())) {
           view->render();
         }
-      } else if (auto op = pipelineModel->op(idx)) {
-        pipelineModel->removeOp(op);
-        expandAll();
       }
     }
   }

@@ -56,6 +56,7 @@ void ProgressDialogManager::operationStarted()
   // We have to check after we have connected to the signal as otherwise we
   // might miss the state transition as its occurring on another thread.
   if (op->isFinished()) {
+    progressDialog->accept();
     progressDialog->deleteLater();
     return;
   }

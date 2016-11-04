@@ -18,6 +18,15 @@
 
 #include <QAbstractItemModel>
 
+namespace {
+
+enum Column
+{
+  label,
+  state
+};
+}
+
 namespace tomviz {
 
 class DataSource;
