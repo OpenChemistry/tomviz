@@ -177,7 +177,6 @@ public:
     this->tabWidget->addTab(setFromTablePanel, "Set Individually");
 
     baseLayout->setSizeConstraint(QLayout::SetFixedSize);
-    p->setFixedSize(670, 330);
   }
 
   void applyChangesToOperator() override
