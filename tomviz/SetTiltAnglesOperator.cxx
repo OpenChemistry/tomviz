@@ -82,6 +82,8 @@ public:
       angleIncrement = 2.0;
     } else if (totalSlices < 120) {
       angleIncrement = 1.5;
+    } else {
+      angleIncrement = 1.0;
     }
 
     double startAngleValue = -(totalSlices - 1) * angleIncrement / 2.0;
