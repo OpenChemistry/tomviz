@@ -125,6 +125,8 @@ bool ModuleVolume::visibility() const
 bool ModuleVolume::serialize(pugi::xml_node& ns) const
 {
   xml_node rootNode = ns.append_child("properties");
+  xml_node visibilityNode = rootNode.append_child("visibility");
+  visibilityNode.append_attribute("enabled") = visibility();
   xml_node lightingNode = rootNode.append_child("lighting");
   lightingNode.append_attribute("enabled") = m_volumeProperty->GetShade() == 1;
   xml_node maxIntensityNode = rootNode.append_child("maxIntensity");
@@ -141,7 +143,14 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
     return false;
   }
 
-  xml_node node = rootNode.child("lighting");
+  xml_node node = rootNode.child("visibility");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      setVisibility(att.as_bool());
+    }
+  }
+  node = rootNode.child("lighting");
   if (node) {
     xml_attribute att = node.attribute("enabled");
     if (att) {
