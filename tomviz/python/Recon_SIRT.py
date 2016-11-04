@@ -1,140 +1,138 @@
 import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
+import tomviz.operators
 
 
-def transform_scalars(dataset):
-    """
-    3D Reconstruct from a tilt series using Simultaneous Iterative
-    Reconstruction Techniques (SIRT)"""
+class ReconSirtOperator(tomviz.operators.CancelableOperator):
 
-    update_methods = ('landweber', 'cimmino', 'component averaging')
+    def transform_scalars(self, dataset):
+        """
+        3D Reconstruct from a tilt series using Simultaneous Iterative
+        Reconstruction Techniques (SIRT)"""
+        self.progress.maximum = 1
 
-    ###Niter###
-    ###stepSize###
-    ###updateMethodIndex###
+        update_methods = ('landweber', 'cimmino', 'component averaging')
+        #reference
+        """L. Landweber, Amer. J. Math., 73 (1951), pp. 615–624"""
+        """G. Cimmino, La Ric. Sci., XVI, Ser. II, Anno IX, 1 (1938),
+        pp. 326–333
+        """
+        """Y. Censor et al, Parallel Comput., 27 (2001), pp. 777–808"""
 
-    # Get Tilt angles
-    tiltAngles = utils.get_tilt_angles(dataset)
+        ###Niter###
+        ###stepSize###
+        ###updateMethodIndex###
 
-    #remove zero tilt anlges
-    if np.count_nonzero(tiltAngles) < tiltAngles.size:
-        tiltAngles = tiltAngles + 0.001
+        # Get Tilt angles
+        tiltAngles = utils.get_tilt_angles(dataset)
 
-    # Get Tilt Series
-    tiltSeries = utils.get_array(dataset)
-    (Nslice, Nray, Nproj) = tiltSeries.shape
+        #remove zero tilt anlges
+        if np.count_nonzero(tiltAngles) < tiltAngles.size:
+            tiltAngles = tiltAngles + 0.001
 
-    if tiltSeries is None:
-        raise RuntimeError("No scalars found!")
+        # Get Tilt Series
+        tiltSeries = utils.get_array(dataset)
+        (Nslice, Nray, Nproj) = tiltSeries.shape
 
-    # Generate measurement matrix
-    A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-    recon = np.zeros((Nslice, Nray, Nray))
+        if tiltSeries is None:
+            raise RuntimeError("No scalars found!")
 
-    print "step size = ", stepSize
-    print "Update method:", update_methods[updateMethodIndex]
-    if update_methods[updateMethodIndex] == 'landweber':
-        sirt3_landweber(A, tiltSeries, recon, Niter, stepSize)
-    elif update_methods[updateMethodIndex] == 'cimmino':
-        sirt3_cimmino(A, tiltSeries, recon, Niter, stepSize)
-    elif update_methods[updateMethodIndex] == 'component averaging':
-        sirt3_component_avg(A, tiltSeries, recon, Niter, stepSize)
+        # Generate measurement matrix
+        A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
+        recon = np.zeros((Nslice, Nray, Nray))
 
-    # Set the result as the new scalars.
-    utils.set_array(dataset, recon)
+        self.progress.maximum = Nslice + 1
+        step = 0
 
-    # Mark dataset as volume
-    utils.mark_as_volume(dataset)
+        #create a reconstruction object
+        r = SIRT(A, update_methods[updateMethodIndex])
+        r.initialize()
+        step += 1
+        self.progress.update(step)
 
+        for s in range(Nslice):
+            if self.canceled:
+                return
+            b = tiltSeries[s, :, :].transpose().flatten()
+            recon[s, :, :] = r.recon2(b, Niter, stepSize).reshape((Nray, Nray))
+            step += 1
+            self.progress.update(step)
 
-def sirt3_landweber(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
-    """L. Landweber, Amer. J. Math., 73 (1951), pp. 615–624"""
+        # Set the result as the new scalars.
+        utils.set_array(dataset, recon)
 
-    (Nslice, Nray, Nproj) = tiltSeries.shape
-    (Nrow, Ncol) = A.shape
-
-    f = np.zeros(Ncol) # Placeholder for 2d image
-    AT = A.transpose()
-    for s in range(Nslice):
-        f[:] = 0
-        b = tiltSeries[s, :, :].transpose().flatten()
-        for i in range(iterNum):
-            g = A.dot(f)
-            a = AT.dot(b - g)
-            f = f + a * stepSize
-        recon[s, :, :] = f.reshape((Nray, Nray))
-    return recon
+        # Mark dataset as volume
+        utils.mark_as_volume(dataset)
 
 
-def sirt3_cimmino(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
-    """G. Cimmino, La Ric. Sci., XVI, Ser. II, Anno IX, 1 (1938), pp. 326–333"""
+class SIRT:
 
-    A = A.todense() #make matrix dense to increase recon speed
-    (Nslice, Nray, Nproj) = tiltSeries.shape
-    (Nrow, Ncol) = A.shape
+    def __init__(self, A, method):
+        self.A = A
+        self.method = method
+        (self.Nrow, self.Ncol) = self.A.shape
+        self.f = np.zeros(self.Ncol) # Placeholder for 2d image
 
-    rowInnerProduct = np.zeros(Nrow)
-    f = np.zeros(Ncol) # Placeholder for 2d image
-    a = np.zeros(Ncol)
+    def initialize(self):
+        if self.method == 'landweber':
+            self.AT = self.A.transpose()
+        elif self.method == 'cimmino':
+            self.A = self.A.todense()
+            self.rowInnerProduct = np.zeros(self.Nrow)
+            self.a = np.zeros(self.Ncol)
+            # Calculate row inner product
+            self.row = np.zeros(self.Ncol) #placeholder for matrix rows
+            for i in range(self.Nrow):
+                self.row[:] = self.A[i, ].copy()
+                self.rowInnerProduct[i] = np.dot(self.row, self.row)
+        elif self.method == 'component averaging':
+            self.A = self.A.todense()
+            self.weightedRowProduct = np.zeros(self.Nrow)
+            self.a = np.zeros(self.Ncol)
 
-    # Calculate row inner product
-    row = np.zeros(Ncol) #placeholder for matrix rows
-    for j in range(Nrow):
-        row[:] = A[j, ].copy()
-        rowInnerProduct[j] = np.dot(row, row)
+            # Calculate number of non-zero elements in each column
+            s = np.zeros(self.Ncol)
+            col = np.zeros(self.Nrow) #placeholder for matrix columns
 
-    for s in range(Nslice):
-        f[:] = 0
-        b = tiltSeries[s, :, :].transpose().flatten()
-        for i in range(iterNum):
-            a[:] = 0
-            for j in range(Nrow):
-                row[:] = A[j, ].copy()
-                row_f_product = np.dot(row, f)
-                a = a + (b[j] - row_f_product) / rowInnerProduct[j] * row
-            f = f + a * stepSize / Nrow
-        recon[s, :, :] = f.reshape((Nray, Nray))
-    return recon
+            for i in range(self.Ncol):
+                col[:] = np.squeeze(self.A[:, i])
+                s[i] = np.count_nonzero(col)
 
+            # Calculate weighted row product
+            self.row = np.zeros(self.Ncol) #placeholder for matrix rows
+            for i in range(self.Nrow):
+                self.row[:] = self.A[i, ].copy()
+                self.weightedRowProduct[i] = np.sum(self.row * self.row * s)
+        else:
+            print "Invalid update method!"
 
-def sirt3_component_avg(A, tiltSeries, recon, iterNum=1, stepSize=1.0):
-    """Y. Censor et al, Parallel Comput., 27 (2001), pp. 777–808"""
-    A = A.todense() #make matrix dense to increase recon speed
-    (Nslice, Nray, Nproj) = tiltSeries.shape
-    (Nrow, Ncol) = A.shape
-
-    weightedRowProduct = np.zeros(Nrow)
-
-    f = np.zeros(Ncol) # Placeholder for 2d image
-    a = np.zeros(Ncol)
-
-    # Calculate number of non-zero elements in each column
-    s = np.zeros(Ncol)
-    col = np.zeros(Nrow) #placeholder for matrix columns
-
-    for j in range(Ncol):
-        col[:] = np.squeeze(A[:, j])
-        s[j] = np.count_nonzero(col)
-
-    # Calculate weighted row product
-    row = np.zeros(Ncol) #placeholder for matrix rows
-    for j in range(Nrow):
-        row[:] = A[j, ].copy()
-        weightedRowProduct[j] = np.sum(row * row * s)
-
-    for s in range(Nslice):
-        f[:] = 0
-        b = tiltSeries[s, :, :].transpose().flatten()
-        for i in range(iterNum):
-            a[:] = 0
-            for j in range(Nrow):
-                row[:] = A[j, ].copy()
-                row_f_product = np.dot(row, f)
-                a = a + (b[j] - row_f_product) / weightedRowProduct[j] * row
-            f = f + a * stepSize
-        recon[s, :, :] = f.reshape((Nray, Nray))
-    return recon
+    def recon2(self, b, Niter, stepSize):
+        self.f[:] = 0
+        for i in range(Niter):
+            if self.method == 'landweber':
+                g = self.A.dot(self.f)
+                a = self.AT.dot(b - g)
+                self.f = self.f + a * stepSize
+            elif self.method == 'cimmino':
+                self.a[:] = 0
+                for j in range(self.Nrow):
+                    self.row[:] = self.A[j, ].copy()
+                    row_f_product = np.dot(self.row, self.f)
+                    self.a = self.a + (b[j] - row_f_product) / \
+                        self.rowInnerProduct[j] * self.row
+                self.f = self.f + self.a * stepSize / self.Nrow
+            elif self.method == 'component averaging':
+                self.a[:] = 0
+                for j in range(self.Nrow):
+                    self.row[:] = self.A[j, ].copy()
+                    row_f_product = np.dot(self.row, self.f)
+                    self.a = self.a + (b[j] - row_f_product) / \
+                        self.weightedRowProduct[j] * self.row
+                self.f = self.f + self.a * stepSize
+            else:
+                print "Invalid update method!"
+        return self.f
 
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):

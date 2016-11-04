@@ -13,7 +13,7 @@ Reconstrucing a 256x256x256 tomogram typically takes more
 than 100 mins with 5 iterations.",
   "parameters" : [
     {
-      "name" : "num_iterations",
+      "name" : "Niter",
       "label" : "Number of Iterations",
       "type" : "int",
       "default" : 1,

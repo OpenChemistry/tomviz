@@ -1,63 +1,70 @@
 import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
+import tomviz.operators
 
 
-def transform_scalars(dataset):
-    """
-    3D Reconstruct from a tilt series using Algebraic Reconstruction Technique
-    (ART)
-    """
-    ###Niter###
+class ReconARTOperator(tomviz.operators.CancelableOperator):
 
-    # Get Tilt angles
-    tiltAngles = utils.get_tilt_angles(dataset)
+    def transform_scalars(self, dataset):
+        """
+        3D Reconstruction using Algebraic Reconstruction Technique (ART)
+        """
+        self.progress.maximum = 1
 
-    # Get Tilt Series
-    tiltSeries = utils.get_array(dataset)
-    (Nslice, Nray, Nproj) = tiltSeries.shape
+        ###Niter###
 
-    if tiltSeries is None:
-        raise RuntimeError("No scalars found!")
+        # Get Tilt angles
+        tiltAngles = utils.get_tilt_angles(dataset)
 
-    # Generate measurement matrix
-    A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-    recon = np.zeros((Nslice, Nray, Nray))
+        # Get Tilt Series
+        tiltSeries = utils.get_array(dataset)
+        (Nslice, Nray, Nproj) = tiltSeries.shape
 
-    art3(A.todense(), tiltSeries, recon, Niter)
+        if tiltSeries is None:
+            raise RuntimeError("No scalars found!")
 
-    # Set the result as the new scalars.
-    utils.set_array(dataset, recon)
+        # Generate measurement matrix
+        A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
+        recon = np.zeros((Nslice, Nray, Nray))
 
-    # Mark dataset as volume
-    utils.mark_as_volume(dataset)
+        A = A.todense()
+        (Nslice, Nray, Nproj) = tiltSeries.shape
+        (Nrow, Ncol) = A.shape
+        rowInnerProduct = np.zeros(Nrow)
+        row = np.zeros(Ncol)
+        f = np.zeros(Ncol) # Placeholder for 2d image
+        beta = 1.0
+        # Calculate row inner product
+        for j in range(Nrow):
+            row[:] = A[j, ].copy()
+            rowInnerProduct[j] = np.dot(row, row)
 
+        self.progress.maximum = Nslice
+        step = 0
 
-def art3(A, tiltSeries, recon, iterNum=1, beta=1.0):
-    (Nslice, Nray, Nproj) = tiltSeries.shape
+        for s in range(Nslice):
+            if self.canceled:
+                return
+            f[:] = 0
+            b = tiltSeries[s, :, :].transpose().flatten()
+            for i in range(Niter):
+                for j in range(Nrow):
+                    row[:] = A[j, ].copy()
+                    row_f_product = np.dot(row, f)
+                    a = (b[j] - row_f_product) / rowInnerProduct[j]
+                    f = f + row * a * beta
 
-    (Nrow, Ncol) = A.shape
-    rowInnerProduct = np.zeros(Nrow)
-    row = np.zeros(Ncol)
-    f = np.zeros(Ncol) # Placeholder for 2d image
+            recon[s, :, :] = f.reshape((Nray, Nray))
 
-    # Calculate row inner product
-    for j in range(Nrow):
-        row[:] = A[j, ].copy()
-        rowInnerProduct[j] = np.dot(row, row)
+            step += 1
+            self.progress.update(step)
 
-    for s in range(Nslice):
-        f[:] = 0
-        b = tiltSeries[s, :, :].transpose().flatten()
-        for i in range(iterNum):
-            for j in range(Nrow):
-                row[:] = A[j, ].copy()
-                row_f_product = np.dot(row, f)
-                a = (b[j] - row_f_product) / rowInnerProduct[j]
-                f = f + row * a * beta
-        recon[s, :, :] = f.reshape((Nray, Nray))
+        # Set the result as the new scalars.
+        utils.set_array(dataset, recon)
 
-    return recon
+        # Mark dataset as volume
+        utils.mark_as_volume(dataset)
 
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
