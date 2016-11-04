@@ -44,8 +44,8 @@ bool Operator::transform(vtkDataObject* data)
   bool result = this->applyTransform(data);
   // TODO we may want to change the return type applyTransform
   // to OperatorState so we don't have todo this.
-  if (this->m_state != OperatorState::CANCELED) {
-    this->m_state = result ? OperatorState::COMPLETE : OperatorState::ERROR;
+  if (m_state != OperatorState::CANCELED) {
+    m_state = result ? OperatorState::COMPLETE : OperatorState::ERROR;
   }
   emit transformingDone(result);
   return result;

@@ -114,12 +114,12 @@ void PipelineWorker::RunnableOperator::run()
 
 void PipelineWorker::RunnableOperator::cancel()
 {
-  this->m_operator->cancelTransform();
+  m_operator->cancelTransform();
 }
 
 bool PipelineWorker::RunnableOperator::isCanceled()
 {
-  return this->m_operator->isCanceled();
+  return m_operator->isCanceled();
 }
 
 PipelineWorker::ConfigureThreadPool::ConfigureThreadPool()
