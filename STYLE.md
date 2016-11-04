@@ -14,6 +14,14 @@ git diff -U0 HEAD^ | clang-format-diff.py -i -p1
 
 ```
 
+clang-format also provides [git-clang-format](https://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/git-clang-format), a script that more closely integrates with git. If you add this script to your path you can using
+the following command to reformat all the lines in the latest commit.
+
+```shell
+git clang-format HEAD~1
+
+```
+
 flake8
 ------
 
