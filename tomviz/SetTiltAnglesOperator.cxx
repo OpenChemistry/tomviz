@@ -225,7 +225,7 @@ public slots:
     QString s;
     if (std::isfinite(angleIncrement)) {
       s = QString::number(angleIncrement, 'f', 2);
-    } else if (endAngle->value() == startAngle->value() ){
+    } else if (endAngle->value() == startAngle->value()){
       s = QString::number(0, 'f', 2);
     } else {
       s = "Invalid inputs!";
