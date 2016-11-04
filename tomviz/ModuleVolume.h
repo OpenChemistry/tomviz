@@ -26,7 +26,7 @@ class vtkSMSourceProxy;
 
 class vtkPVRenderView;
 
-class vtkSmartVolumeMapper;
+class vtkGPUVolumeRayCastMapper;
 class vtkVolumeProperty;
 class vtkVolume;
 
@@ -70,12 +70,13 @@ private:
 
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkVolume> m_volume;
-  vtkNew<vtkSmartVolumeMapper> m_volumeMapper;
+  vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
 
 private slots:
   void setLighting(bool val);
   void setMaximumIntensity(bool val);
+  void setJittering(bool val);
 };
 }
 
