@@ -51,6 +51,8 @@ private slots:
   void updateYLength();
   void updateZLength();
 
+  void updateAxesGridLabels();
+
 signals:
   void colorMapUpdated();
 

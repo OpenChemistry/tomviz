@@ -28,6 +28,7 @@
 #include <vtkDataSetAttributes.h>
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
+#include <vtkSMPropertyHelper.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
@@ -129,6 +130,12 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   this->connect(&ActiveObjects::instance(),
                 SIGNAL(dataSourceChanged(DataSource*)),
                 SLOT(setDataSource(DataSource*)));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(dataSourceChanged(DataSource*)),
+                SLOT(updateAxesGridLabels()));
+  this->connect(&ActiveObjects::instance(),
+                SIGNAL(viewChanged(vtkSMViewProxy*)),
+                SLOT(updateAxesGridLabels()));
   this->connect(this->Internals->Ui.SetTiltAnglesButton, SIGNAL(clicked()),
                 SLOT(setTiltAngles()));
   this->connect(this->Internals->Ui.unitBox, SIGNAL(editingFinished()),
@@ -313,6 +320,7 @@ void DataPropertiesPanel::updateUnits()
 {
   const QString& text = this->Internals->Ui.unitBox->text();
   this->Internals->CurrentDataSource->setUnits(text);
+  this->updateAxesGridLabels();
 }
 
 void DataPropertiesPanel::updateXLength()
@@ -352,5 +360,31 @@ void DataPropertiesPanel::updateZLength()
   }
   this->Internals->updateSpacing(2, newLength);
   this->updateData();
+}
+
+void DataPropertiesPanel::updateAxesGridLabels()
+{
+  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  if (!view) {
+    return;
+  }
+  vtkSMProxy* axesGrid = vtkSMPropertyHelper(view, "AxesGrid").GetAsProxy();
+  DataSource* ds = ActiveObjects::instance().activeDataSource();
+  if (!axesGrid || !ds) {
+    return;
+  }
+  QString xTitle = QString("X (%1)").arg(ds->getUnits(0));
+  QString yTitle = QString("Y (%1)").arg(ds->getUnits(1));
+  QString zTitle = QString("Z (%1)").arg(ds->getUnits(2));
+  vtkSMPropertyHelper(axesGrid, "XTitle").Set(xTitle.toUtf8().data());
+  vtkSMPropertyHelper(axesGrid, "YTitle").Set(yTitle.toUtf8().data());
+  vtkSMPropertyHelper(axesGrid, "ZTitle").Set(zTitle.toUtf8().data());
+  axesGrid->UpdateVTKObjects();
+
+  pqView* qtView =
+    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (qtView) {
+    qtView->render();
+  }
 }
 }
