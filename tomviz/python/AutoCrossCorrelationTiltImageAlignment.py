@@ -4,7 +4,15 @@ def transform_scalars(dataset):
     from tomviz import utils
     import numpy as np
 
-    tiltSeries = utils.get_array(dataset)  # get data as numpy array
+    tiltSeries = utils.get_array(dataset)
+    tiltAngles = utils.get_tilt_angles(dataset)
+
+    #determine reference image
+    zeroDegreeTiltImage = np.where(tiltAngles == 0)[0]
+    if zeroDegreeTiltImage:
+        referenceTiltImage = tiltSeries[:,:,zeroDegreeTiltImage[0]]
+    else:
+        referenceTiltImage = tiltSeries[:,:,tiltSeries.shape[2] // 2]
 
     for i in range(1, np.size(tiltSeries, 2)):
         im0 = np.fft.fft2(tiltSeries[:, :, i - 1])
