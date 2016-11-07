@@ -82,6 +82,8 @@ public:
       angleIncrement = 2.0;
     } else if (totalSlices < 120) {
       angleIncrement = 1.5;
+    } else {
+      angleIncrement = 1.0;
     }
 
     double startAngleValue = -(totalSlices - 1) * angleIncrement / 2.0;
@@ -175,7 +177,6 @@ public:
     this->tabWidget->addTab(setFromTablePanel, "Set Individually");
 
     baseLayout->setSizeConstraint(QLayout::SetFixedSize);
-    p->setFixedSize(670, 330);
   }
 
   void applyChangesToOperator() override
@@ -221,12 +222,15 @@ public slots:
   {
     angleIncrement = (endAngle->value() - startAngle->value()) /
                      (endTilt->value() - startTilt->value());
+    QString s;
     if (std::isfinite(angleIncrement)) {
-      QString s = QString::number(angleIncrement, 'f', 2);
-      this->angleIncrementLabel->setText(s);
+      s = QString::number(angleIncrement, 'f', 2);
+    } else if (endAngle->value() == startAngle->value()) {
+      s = QString::number(0, 'f', 2);
     } else {
-      this->angleIncrementLabel->setText("Invalid inputs!");
+      s = "Invalid inputs!";
     }
+    this->angleIncrementLabel->setText(s);
   }
 
 private:
