@@ -241,7 +241,7 @@ private:
   QTableWidget* tableWidget;
   QTabWidget* tabWidget;
   QLabel* angleIncrementLabel;
-  double angleIncrement;
+  double angleIncrement = 1.0;
 
   QPointer<tomviz::SetTiltAnglesOperator> Op;
   QVector<double> previousTiltAngles;
