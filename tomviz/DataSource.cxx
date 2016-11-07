@@ -783,9 +783,11 @@ void DataSource::operatorTransformModified()
     // TODO Should we not copy this?
     tp->SetOutput(cachedState);
 
+    // Use cached result and run the pipeline from the operator which we have
+    // the data before it was applied.
     this->Internals->Future = this->Internals->Worker->run(
       cachedState, this->Internals->Operators.mid(
-                     0, this->Internals->Operators.indexOf(srcOp)));
+                     this->Internals->Operators.indexOf(srcOp)));
     connect(this->Internals->Future, SIGNAL(finished(bool)), this,
             SLOT(pipelineFinished(bool)));
     connect(this->Internals->Future, SIGNAL(canceled()), this,
