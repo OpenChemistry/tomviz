@@ -1,8 +1,14 @@
 def transform_scalars(dataset):
-    """Automatically align tilt images by cross-correlation"""
+    """Automatically align tilt images by center of mass method"""
 
     from tomviz import utils
     import numpy as np
+    
+    #----USER SPECIFIED VARIABLES-----#
+    ###XRANGE###
+    ###YRANGE###
+    ###ZRANGE###
+    #---------------------------------#
 
     tiltSeries = utils.get_array(dataset)  # get data as numpy array
 
