@@ -40,6 +40,9 @@ public:
 protected:
   void showEvent(QShowEvent* event) override;
 
+  /// Check the system at runtime to see for an appropriate OpenGL version.
+  bool checkOpenGL();
+
 public slots:
   void openRecon();
 

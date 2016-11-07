@@ -66,6 +66,9 @@
 #include <QFileInfo>
 #include <QIcon>
 #include <QMessageBox>
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include <QSurfaceFormat>
 #include <QTimer>
 #include <QUrl>
 
@@ -113,6 +116,7 @@ public:
 MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   : Superclass(_parent, _flags), Internals(new MainWindow::MWInternals())
 {
+  checkOpenGL();
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
   this->Internals->Timer = new QTimer(this);
@@ -466,6 +470,27 @@ void MainWindow::showEvent(QShowEvent* e)
   // NOTE: remove this once painting events in QVTKWidget or
   // it successor work better with Qt 5.
   QTimer::singleShot(250, &ActiveObjects::instance(), SLOT(renderAllViews()));
+}
+
+bool MainWindow::checkOpenGL()
+{
+  // Check for required OpenGL version, and pop up a warning dialog if needed.
+  QSurfaceFormat format;
+  format.setVersion(3, 2);
+  QOffscreenSurface offScreen;
+  offScreen.setFormat(format);
+  offScreen.create();
+  QOpenGLContext context;
+  context.setFormat(format);
+  context.create();
+  context.makeCurrent(&offScreen);
+  if (!context.isValid() || context.format().version() < qMakePair(3, 2)) {
+    QMessageBox::critical(this, "Tomviz",
+                          "This system does not support OpenGL 3.2 or higher. "
+                          "The application is unlikely to function correctly.");
+    return false;
+  }
+  return true;
 }
 
 void MainWindow::onFirstWindowShow()
