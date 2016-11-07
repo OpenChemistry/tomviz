@@ -231,8 +231,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     ui.menuTomography->addAction("Normalize Average Image Intensity");
   QAction* gradientMagnitude2DSobelAction =
     ui.menuTomography->addAction("2D Gradient Magnitude");
-  QAction* autoAlignAction =
-    ui.menuTomography->addAction("Image Alignment (Auto)");
+  QAction* autoAlignCCAction =
+    ui.menuTomography->addAction("Image Alignment (Auto: Cross Correlation)");
+  QAction* autoAlignCOMAction =
+    ui.menuTomography->addAction("Image Alignment (Auto: Center of Mass)");
   QAction* alignAction =
     ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction* autoRotateAlignAction =
@@ -300,8 +302,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  readInPythonScript("AutoTiltAxisAlignment"),
                                  true);
   new AddPythonTransformReaction(
-    autoAlignAction, "Auto Tilt Image Align (XCORR)",
-    readInPythonScript("AutoTiltImageAlignment"), true);
+    autoAlignCCAction, "Auto Tilt Image Align (XCORR)",
+    readInPythonScript("AutoCrossCorrelationTiltImageAlignment"), true);
+  new AddPythonTransformReaction(
+    autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
+    readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true);
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true);
   new AddPythonTransformReaction(reconWBPAction,
