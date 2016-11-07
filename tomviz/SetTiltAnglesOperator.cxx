@@ -241,7 +241,7 @@ private:
   QTableWidget* tableWidget;
   QTabWidget* tabWidget;
   QLabel* angleIncrementLabel;
-  double angleIncrement;
+  double angleIncrement = 1.0;
 
   QPointer<tomviz::SetTiltAnglesOperator> Op;
   QVector<double> previousTiltAngles;
@@ -331,6 +331,7 @@ bool SetTiltAnglesOperator::applyTransform(vtkDataObject* dataObject)
   if (!dataTiltAngles) {
     vtkNew<vtkDoubleArray> angles;
     angles->SetNumberOfTuples(totalSlices);
+    angles->FillComponent(0, 0.0);
     angles->SetName("tilt_angles");
     fd->AddArray(angles.Get());
     dataTiltAngles = angles.Get();
