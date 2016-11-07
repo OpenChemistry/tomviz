@@ -584,20 +584,25 @@ DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator* op)
       this->Internals->OriginalDataSource->GetClientSideObject());
     result->DeepCopy(alg->GetOutputDataObject(0));
 
-    auto future = this->Internals->Worker->run(
-      result, this->Internals->Operators.mid(
-                0, this->Internals->Operators.indexOf(op) - 1));
+    auto index = this->Internals->Operators.indexOf(op);
+    // Only run operators if we have some to run
+    if (index > 0) {
+      auto future = this->Internals->Worker->run(
+        result, this->Internals->Operators.mid(0, index));
 
-    imageFuture = new ImageFuture(op, result, future);
-    connect(imageFuture, SIGNAL(finished(bool)), this, SLOT(updateCache()));
-  } else {
-    vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-      this->Internals->Producer->GetClientSideObject());
-    result->DeepCopy(tp->GetOutputDataObject(0));
-    imageFuture = new ImageFuture(op, result);
-    // Delay emitting signal until next event loop
-    QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
+      imageFuture = new ImageFuture(op, result, future);
+      connect(imageFuture, SIGNAL(finished(bool)), this, SLOT(updateCache()));
+
+      return imageFuture;
+    }
   }
+
+  vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  result->DeepCopy(tp->GetOutputDataObject(0));
+  imageFuture = new ImageFuture(op, result);
+  // Delay emitting signal until next event loop
+  QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
 
   return imageFuture;
 }
