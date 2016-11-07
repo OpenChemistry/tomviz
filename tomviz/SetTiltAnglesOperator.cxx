@@ -208,10 +208,7 @@ public:
       QMap<size_t, double> tiltAngles;
       for (vtkIdType i = 0; i < this->tableWidget->rowCount(); ++i) {
         QTableWidgetItem* item = this->tableWidget->item(i, 0);
-        double val = item->data(Qt::DisplayRole).toDouble();
-        if (val != this->previousTiltAngles[i]) {
-          tiltAngles[i] = val;
-        }
+        tiltAngles[i] = item->data(Qt::DisplayRole).toDouble();
       }
       this->Op->setTiltAngles(tiltAngles);
     }
