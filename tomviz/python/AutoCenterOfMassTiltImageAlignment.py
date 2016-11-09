@@ -1,31 +1,46 @@
-def transform_scalars(dataset):
-    """Automatically align tilt images by center of mass method"""
+from tomviz import utils
+import numpy as np
+import tomviz.operators
 
-    from tomviz import utils
-    import numpy as np
-    
-    #----USER SPECIFIED VARIABLES-----#
-    ###XRANGE###
-    ###YRANGE###
-    ###ZRANGE###
-    #---------------------------------#
 
-    tiltSeries = utils.get_array(dataset)  # get data as numpy array
-    
-    croppedTiltSeries = tiltSeries[XRANGE[0]:XRANGE[1], YRANGE[0]:YRANGE[1], ZRANGE[0]:ZRANGE[1]]
+class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    referenceIndex = tiltSeries[2]
-    for i in range(ZRANGE[0], ZRANGE[1]):
-        croppedImage = tiltSeries[XRANGE[0]:XRANGE[1], YRANGE[0]:YRANGE[1], i]
-    
-    for i in range(ZRANGE[0], ZRANGE[1]-1):
-        im0 = np.fft.fft2(tiltSeries[XRANGE[0]:XRANGE[1], YRANGE[0]:YRANGE[1], i - 1])
-        im1 = np.fft.fft2(tiltSeries[XRANGE[0]:XRANGE[1], YRANGE[0]:YRANGE[1], i])
-        xcor = abs(np.fft.ifft2((im0 * im1.conjugate())))
-        
-        shifts = np.unravel_index(xcor.argmax(), xcor.shape)
-        tiltSeries[:, :, i] = np.roll(tiltSeries[:, :, i], shifts[0], axis=0)
-        tiltSeries[:, :, i] = np.roll(tiltSeries[:, :, i], shifts[1], axis=1)
+    def transform_scalars(self, dataset):
+        """Automatically align tilt images by center of mass method"""
+        self.progress.maximum = 1
 
-    utils.set_array(dataset, tiltSeries)
-    print('Align Images Complete')
+        tiltSeries = utils.get_array(dataset).astype(float)
+        tiltAngles = utils.get_tilt_angles(dataset)
+
+        self.progress.maximum = tiltSeries.shape[2]
+        step = 0
+
+        for i in range(tiltSeries.shape[2]):
+            if self.canceled:
+                return
+            tiltSeries[:, :, i] = centerOfMassAlign(tiltSeries[:, :, i])
+
+            step += 1
+            self.progress.update(step)
+
+        utils.set_array(dataset, tiltSeries)
+
+
+def centerOfMassAlign(image):
+    """Shift image so that the center of mass of is at origin"""
+    (Nx, Ny) = image.shape
+    # set up coordinate
+    y = np.linspace(0, Ny - 1, Ny)
+    x = np.linspace(0, Nx - 1, Nx)
+    [X, Y] = np.meshgrid(y, x)
+
+    imageCOM_x = int(np.sum(image * X) / np.sum(image))
+    imageCOM_y = int(np.sum(image * Y) / np.sum(image))
+
+    sx = -(imageCOM_x - Nx // 2)
+    sy = -(imageCOM_y - Ny // 2)
+
+    output = np.roll(image,  sx, axis=1)
+    output = np.roll(output, sy, axis=0)
+
+    return output

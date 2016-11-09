@@ -667,49 +667,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog->layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
 
-  } else if (scriptLabel == "Auto Tilt Image Align (CoM)") {
-    QDialog* dialog = new QDialog(pqCoreUtilities::mainWidget());
-    dialog->setWindowTitle("Center of mass tilt image alignment");
-    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-    
-    double origin[3];
-    double spacing[3];
-    int extent[6];
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
-    vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    image->GetOrigin(origin);
-    image->GetSpacing(spacing);
-    image->GetExtent(extent);
-    
-    QVBoxLayout* layout = new QVBoxLayout();
-    // Description
-    QLabel* descriptionLabel = new QLabel("Tilt series should be rotated to "
-      "have tilt axis vertical before using this function. Background should "
-      "have average value 0 for correct alignment and no features should enter "
-      "or leave the field of.");
-    descriptionLabel->setWordWrap(true);
-
-    SelectVolumeWidget* selectionWidget = new SelectVolumeWidget(
-      origin, spacing, extent, extent, source->displayPosition(), dialog);
-    QObject::connect(source, &DataSource::displayPositionChanged,
-                     selectionWidget, &SelectVolumeWidget::dataMoved);
-    
-    
-    QDialogButtonBox* buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), dialog, SLOT(reject()));
-    layout->addWidget(descriptionLabel);
-    layout->addWidget(selectionWidget);
-    layout->addWidget(buttons);
-    dialog->setLayout(layout);
-    
-    this->connect(dialog, SIGNAL(accepted()),
-                  SLOT(addExpressionFromNonModalDialog()));
-    dialog->show();
-    dialog->layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
   } else if (scriptLabel == "Background Subtraction (Manual)") {
     QDialog* dialog = new QDialog(pqCoreUtilities::mainWidget());
     dialog->setWindowTitle("Background Subtraction (Manual)");

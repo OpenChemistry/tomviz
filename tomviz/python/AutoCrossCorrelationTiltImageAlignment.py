@@ -55,7 +55,6 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             self.progress.update(step)
 
         utils.set_array(dataset, tiltSeries)
-        print('Align Images Complete')
 
 
 def corssCorrelationAlign(image, reference, rFilter, kFilter):
