@@ -209,7 +209,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* toggleDataTypeAction =
     ui.menuTomography->addAction("Toggle Data Type");
   QAction* generateTiltSeriesAction =
-  ui.menuTomography->addAction("Generate Tilt Series");
+    ui.menuTomography->addAction("Generate Tilt Series");
   ui.menuTomography->addSeparator();
 
   QAction* setTiltAnglesAction =
@@ -262,7 +262,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* reconTVMinimizationAction =
     ui.menuTomography->addAction("TV Minimization Method");
   ui.menuTomography->addSeparator();
-  
+
   QAction* simulationLabel = ui.menuTomography->addAction("Simulation:");
   simulationLabel->setEnabled(false);
   QAction* randomShiftsAction =

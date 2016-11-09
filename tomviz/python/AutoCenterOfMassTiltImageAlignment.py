@@ -10,7 +10,6 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = 1
 
         tiltSeries = utils.get_array(dataset).astype(float)
-        tiltAngles = utils.get_tilt_angles(dataset)
 
         self.progress.maximum = tiltSeries.shape[2]
         step = 0

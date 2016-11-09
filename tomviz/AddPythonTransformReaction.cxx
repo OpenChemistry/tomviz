@@ -788,7 +788,7 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     addPythonOperator(source, this->scriptLabel, this->scriptSource,
                       substitutions);
   }
-  if (this->scriptLabel == "Background Subtraction (Manual)" or this->scriptLabel == "Auto Tilt Image Align (CoM)") {
+  if (this->scriptLabel == "Background Subtraction (Manual)") {
     QLayout* layout = dialog->layout();
     SelectVolumeWidget* volumeWidget = nullptr;
     for (int i = 0; i < layout->count(); ++i) {
