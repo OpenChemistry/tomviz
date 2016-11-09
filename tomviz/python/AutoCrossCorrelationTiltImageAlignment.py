@@ -1,47 +1,74 @@
-def transform_scalars(dataset):
-    """Automatically align tilt images by cross-correlation"""
+from tomviz import utils
+import numpy as np
+import tomviz.operators
 
-    from tomviz import utils
-    import numpy as np
 
-    tiltSeries = utils.get_array(dataset).astype(float)
-    tiltAngles = utils.get_tilt_angles(dataset)
+class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    #determine reference image
-    zeroDegreeTiltImage = np.where(tiltAngles == 0)[0]
-    if zeroDegreeTiltImage:
-        referenceIndex = zeroDegreeTiltImage[0]
-    else:
-        referenceIndex = tiltSeries.shape[2] // 2
-    referenceImage = tiltSeries[:,:,referenceIndex]
+    def transform_scalars(self, dataset):
+        """Automatically align tilt images by cross-correlation"""
+        self.progress.maximum = 1
 
-    #create Fourier space filter
-    filterCutoff = 4
-    (Ny, Nx) = referenceImage.shape
-    ky = np.fft.fftfreq(Ny)
-    kx = np.fft.fftfreq(Nx)
-    [kX,kY] = np.meshgrid(kx,ky)
-    kR = np.sqrt(kX**2 + kY**2)
-    kFilter = (kR <= (0.5/filterCutoff)) * np.sin(2*filterCutoff*np.pi*kR)**2
+        tiltSeries = utils.get_array(dataset).astype(float)
+        tiltAngles = utils.get_tilt_angles(dataset)
 
-    #create real sapce filter to remove edge discontinuities
-    y = np.linspace(1,Ny,Ny)
-    x = np.linspace(1,Nx,Nx)
-    [X,Y] = np.meshgrid(x,y)
-    rFilter = (np.sin(np.pi*X/Nx) *np.sin(np.pi*Y/Ny)) ** 2
+        # determine reference image index
+        zeroDegreeTiltImage = np.where(tiltAngles == 0)[0]
+        if zeroDegreeTiltImage:
+            referenceIndex = zeroDegreeTiltImage[0]
+        else:
+            referenceIndex = tiltSeries.shape[2] // 2
 
-    referenceImage = (referenceImage - np.mean(referenceImage)) * rFilter
-    referenceImageF = np.fft.fft2(referenceImage)
-    for i in range(tiltSeries.shape[2]):
-        if i != referenceIndex:
-            currentImage = tiltSeries[:, :, i ]
-            currentImage = (currentImage - np.mean(currentImage ))* rFilter
-            currentImageF = np.fft.fft2(currentImage)
-            xcor = np.fft.fftshift(abs(np.fft.ifft2(np.conj(currentImageF)*referenceImageF*kFilter)))
-            shifts = np.unravel_index(xcor.argmax(), xcor.shape)
-            print shifts
-            tiltSeries[:, :, i] = np.roll(tiltSeries[:, :, i], -shifts[0], axis=0)
-            tiltSeries[:, :, i] = np.roll(tiltSeries[:, :, i], -shifts[1], axis=1)
+        # create Fourier space filter
+        filterCutoff = 4
+        (Ny, Nx, Nproj) = tiltSeries.shape
+        ky = np.fft.fftfreq(Ny)
+        kx = np.fft.fftfreq(Nx)
+        [kX, kY] = np.meshgrid(kx, ky)
+        kR = np.sqrt(kX**2 + kY**2)
+        kFilter = (kR <= (0.5 / filterCutoff)) * \
+            np.sin(2 * filterCutoff * np.pi * kR)**2
 
-    utils.set_array(dataset, tiltSeries)
-    print('Align Images Complete')
+        # create real sapce filter to remove edge discontinuities
+        y = np.linspace(1, Ny, Ny)
+        x = np.linspace(1, Nx, Nx)
+        [X, Y] = np.meshgrid(x, y)
+        rFilter = (np.sin(np.pi * X / Nx) * np.sin(np.pi * Y / Ny)) ** 2
+
+        self.progress.maximum = tiltSeries.shape[2] - 1
+        step = 0
+
+        for i in range(referenceIndex, Nproj - 1):
+            if self.canceled:
+                return
+            tiltSeries[:, :, i + 1] = corssCorrelationAlign(
+                tiltSeries[:, :, i + 1], tiltSeries[:, :, i], rFilter, kFilter)
+            step += 1
+            self.progress.update(step)
+
+        for i in range(referenceIndex, 0, -1):
+            if self.canceled:
+                return
+            tiltSeries[:, :, i - 1] = corssCorrelationAlign(
+                tiltSeries[:, :, i - 1], tiltSeries[:, :, i], rFilter, kFilter)
+            step += 1
+            self.progress.update(step)
+
+        utils.set_array(dataset, tiltSeries)
+        print('Align Images Complete')
+
+
+def corssCorrelationAlign(image, reference, rFilter, kFilter):
+    """Align image to reference by cross-correlation"""
+
+    image_f = np.fft.fft2((image - np.mean(image)) * rFilter)
+    reference_f = np.fft.fft2((reference - np.mean(reference)) * rFilter)
+
+    xcor = abs(np.fft.ifft2(np.conj(image_f) * reference_f * kFilter))
+    shifts = np.unravel_index(xcor.argmax(), xcor.shape)
+
+    # shift image
+    output = np.roll(image, shifts[0], axis=0)
+    output = np.roll(output, shifts[1], axis=1)
+
+    return output

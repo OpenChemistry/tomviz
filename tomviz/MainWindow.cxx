@@ -208,6 +208,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // ################################################################
   QAction* toggleDataTypeAction =
     ui.menuTomography->addAction("Toggle Data Type");
+  QAction* generateTiltSeriesAction =
+  ui.menuTomography->addAction("Generate Tilt Series");
   ui.menuTomography->addSeparator();
 
   QAction* setTiltAnglesAction =
@@ -260,8 +262,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* reconTVMinimizationAction =
     ui.menuTomography->addAction("TV Minimization Method");
   ui.menuTomography->addSeparator();
-  QAction* generateTiltSeriesAction =
-    ui.menuTomography->addAction("Generate Tilt Series");
+  
+  QAction* simulationLabel = ui.menuTomography->addAction("Simulation:");
+  simulationLabel->setEnabled(false);
+  QAction* randomShiftsAction =
+    ui.menuTomography->addAction("Shift Tilt Series Randomly");
 
   // Set up reactions for Tomography Menu
   //#################################################################
@@ -326,6 +331,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     readInJSONDescription("Recon_TV_minimization"));
 
   new ReconstructionReaction(reconWBP_CAction);
+
+  new AddPythonTransformReaction(
+    randomShiftsAction, "Shift Tilt Series Randomly",
+    readInPythonScript("ShiftTiltSeriesRandomly"), true, false,
+    readInJSONDescription("ShiftTiltSeriesRandomly"));
+
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);

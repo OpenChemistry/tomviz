@@ -684,8 +684,12 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     
     QVBoxLayout* layout = new QVBoxLayout();
     // Description
-    QLabel* descriptionLabel = new QLabel("ddddd.");
-    
+    QLabel* descriptionLabel = new QLabel("Tilt series should be rotated to "
+      "have tilt axis vertical before using this function. Background should "
+      "have average value 0 for correct alignment and no features should enter "
+      "or leave the field of.");
+    descriptionLabel->setWordWrap(true);
+
     SelectVolumeWidget* selectionWidget = new SelectVolumeWidget(
       origin, spacing, extent, extent, source->displayPosition(), dialog);
     QObject::connect(source, &DataSource::displayPositionChanged,

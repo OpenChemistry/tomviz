@@ -236,6 +236,7 @@ set(python_files
   RandomParticles.py
   GenerateTiltSeries.py
   SetNegativeVoxelsToZero.py
+  ShiftTiltSeriesRandomly.py
   STEM_probe.py
   InvertData.py
   Pad_Data.py
@@ -263,6 +264,7 @@ set(json_files
   GenerateTiltSeries.json
   Recon_ART.json
   Recon_TV_minimization.json
+  ShiftTiltSeriesRandomly.json
   )
 
 set(resource_files
