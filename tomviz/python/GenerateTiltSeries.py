@@ -4,7 +4,7 @@ import scipy.ndimage
 import tomviz.operators
 
 
-class ReconARTOperator(tomviz.operators.CancelableOperator):
+class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset):
         """Generate Tilt Series from Volume"""
