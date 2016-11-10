@@ -233,8 +233,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     ui.menuTomography->addAction("2D Gradient Magnitude");
 
   ui.menuTomography->addSeparator();
-  QAction* alignmentLabel =
-    ui.menuTomography->addAction("Alignment:");
+  QAction* alignmentLabel = ui.menuTomography->addAction("Alignment:");
   alignmentLabel->setEnabled(false);
   QAction* autoAlignCCAction =
     ui.menuTomography->addAction("Image Alignment (Auto: Cross Correlation)");
