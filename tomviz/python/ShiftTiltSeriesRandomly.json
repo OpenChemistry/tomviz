@@ -5,7 +5,7 @@
   "parameters" : [
       {
       "name" : "maxShift",
-      "label" : "max shift",
+      "label" : "Maximum shift",
       "description" : "Max shift to apply",
       "type" : "int",
       "default" : 1,

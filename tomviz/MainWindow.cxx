@@ -208,8 +208,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // ################################################################
   QAction* toggleDataTypeAction =
     ui.menuTomography->addAction("Toggle Data Type");
-  QAction* generateTiltSeriesAction =
-    ui.menuTomography->addAction("Generate Tilt Series");
   ui.menuTomography->addSeparator();
 
   QAction* setTiltAnglesAction =
@@ -217,7 +215,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuTomography->addSeparator();
 
   QAction* dataProcessingLabel =
-    ui.menuTomography->addAction("Pre-reconstruction Processing:");
+    ui.menuTomography->addAction("Pre-processing:");
   dataProcessingLabel->setEnabled(false);
   QAction* downsampleByTwoAction =
     ui.menuTomography->addAction("Bin Tilt Images x2");
@@ -233,6 +231,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     ui.menuTomography->addAction("Normalize Average Image Intensity");
   QAction* gradientMagnitude2DSobelAction =
     ui.menuTomography->addAction("2D Gradient Magnitude");
+
+  ui.menuTomography->addSeparator();
+  QAction* alignmentLabel =
+    ui.menuTomography->addAction("Alignment:");
+  alignmentLabel->setEnabled(false);
   QAction* autoAlignCCAction =
     ui.menuTomography->addAction("Image Alignment (Auto: Cross Correlation)");
   QAction* autoAlignCOMAction =
@@ -256,7 +259,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* reconARTAction =
     ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
   QAction* reconSIRTAction = ui.menuTomography->addAction(
-    "Simultaneous Iterative Reconstruction Technique (SIRT)");
+    "Simultaneous Iterative Recon. Technique (SIRT)");
   QAction* reconDFMConstraintAction =
     ui.menuTomography->addAction("Constraint-based Direct Fourier Method");
   QAction* reconTVMinimizationAction =
@@ -265,6 +268,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction* simulationLabel = ui.menuTomography->addAction("Simulation:");
   simulationLabel->setEnabled(false);
+  QAction* generateTiltSeriesAction =
+    ui.menuTomography->addAction("Project Tilt Series from Volume");
+
   QAction* randomShiftsAction =
     ui.menuTomography->addAction("Shift Tilt Series Randomly");
 
