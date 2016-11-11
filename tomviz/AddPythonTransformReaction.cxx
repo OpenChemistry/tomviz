@@ -285,7 +285,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     layout->addWidget(threshold);
     label = new QLabel("times local standard deviation from local median.");
     layout->addWidget(label);
-    
+
     QVBoxLayout* v = new QVBoxLayout;
     QDialogButtonBox* buttons = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
@@ -296,10 +296,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.setLayout(v);
     dialog.layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
-    
+
     if (dialog.exec() == QDialog::Accepted) {
       QMap<QString, QString> substitutions;
-      substitutions.insert("###threshold###", QString("threshold = %1").arg(threshold->value()));
+      substitutions.insert("###threshold###",
+                           QString("threshold = %1").arg(threshold->value()));
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
