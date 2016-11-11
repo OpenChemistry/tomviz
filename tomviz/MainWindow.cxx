@@ -293,8 +293,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  true);
   new AddPythonTransformReaction(
     removeBadPixelsAction, "Remove Bad Pixels",
-    readInPythonScript("RemoveBadPixelsTiltSeries"), true, false,
-    readInJSONDescription("RemoveBadPixelsTiltSeries"));
+    readInPythonScript("RemoveBadPixelsTiltSeries"), true, false);
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Filter Tilt Series",
     readInPythonScript("GaussianFilterTiltSeries"), true, false,
