@@ -202,7 +202,8 @@ set(python_files
   BinaryClose.py
   MisalignImgs_Uniform.py
   AutoTiltAxisAlignment.py
-  AutoTiltImageAlignment.py
+  AutoCenterOfMassTiltImageAlignment.py
+  AutoCrossCorrelationTiltImageAlignment.py
   Recon_DFT.py
   Recon_DFT_constraint.py
   Recon_WBP.py
@@ -235,6 +236,7 @@ set(python_files
   RandomParticles.py
   GenerateTiltSeries.py
   SetNegativeVoxelsToZero.py
+  ShiftTiltSeriesRandomly.py
   STEM_probe.py
   InvertData.py
   Pad_Data.py
@@ -262,6 +264,7 @@ set(json_files
   GenerateTiltSeries.json
   Recon_ART.json
   Recon_TV_minimization.json
+  ShiftTiltSeriesRandomly.json
   )
 
 set(resource_files

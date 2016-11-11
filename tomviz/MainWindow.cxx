@@ -219,7 +219,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ui.menuTomography->addSeparator();
 
   QAction* dataProcessingLabel =
-    ui.menuTomography->addAction("Pre-reconstruction Processing:");
+    ui.menuTomography->addAction("Pre-processing:");
   dataProcessingLabel->setEnabled(false);
   QAction* downsampleByTwoAction =
     ui.menuTomography->addAction("Bin Tilt Images x2");
@@ -235,8 +235,14 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     ui.menuTomography->addAction("Normalize Average Image Intensity");
   QAction* gradientMagnitude2DSobelAction =
     ui.menuTomography->addAction("2D Gradient Magnitude");
-  QAction* autoAlignAction =
-    ui.menuTomography->addAction("Image Alignment (Auto)");
+
+  ui.menuTomography->addSeparator();
+  QAction* alignmentLabel = ui.menuTomography->addAction("Alignment:");
+  alignmentLabel->setEnabled(false);
+  QAction* autoAlignCCAction =
+    ui.menuTomography->addAction("Image Alignment (Auto: Cross Correlation)");
+  QAction* autoAlignCOMAction =
+    ui.menuTomography->addAction("Image Alignment (Auto: Center of Mass)");
   QAction* alignAction =
     ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction* autoRotateAlignAction =
@@ -256,14 +262,20 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* reconARTAction =
     ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
   QAction* reconSIRTAction = ui.menuTomography->addAction(
-    "Simultaneous Iterative Reconstruction Technique (SIRT)");
+    "Simultaneous Iterative Recon. Technique (SIRT)");
   QAction* reconDFMConstraintAction =
     ui.menuTomography->addAction("Constraint-based Direct Fourier Method");
   QAction* reconTVMinimizationAction =
     ui.menuTomography->addAction("TV Minimization Method");
   ui.menuTomography->addSeparator();
+
+  QAction* simulationLabel = ui.menuTomography->addAction("Simulation:");
+  simulationLabel->setEnabled(false);
   QAction* generateTiltSeriesAction =
-    ui.menuTomography->addAction("Generate Tilt Series");
+    ui.menuTomography->addAction("Project Tilt Series from Volume");
+
+  QAction* randomShiftsAction =
+    ui.menuTomography->addAction("Shift Tilt Series Randomly");
 
   // Set up reactions for Tomography Menu
   //#################################################################
@@ -304,8 +316,11 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  readInPythonScript("AutoTiltAxisAlignment"),
                                  true);
   new AddPythonTransformReaction(
-    autoAlignAction, "Auto Tilt Image Align (XCORR)",
-    readInPythonScript("AutoTiltImageAlignment"), true);
+    autoAlignCCAction, "Auto Tilt Image Align (XCORR)",
+    readInPythonScript("AutoCrossCorrelationTiltImageAlignment"), true);
+  new AddPythonTransformReaction(
+    autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
+    readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true);
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true);
   new AddPythonTransformReaction(reconWBPAction,
@@ -325,6 +340,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     readInJSONDescription("Recon_TV_minimization"));
 
   new ReconstructionReaction(reconWBP_CAction);
+
+  new AddPythonTransformReaction(
+    randomShiftsAction, "Shift Tilt Series Randomly",
+    readInPythonScript("ShiftTiltSeriesRandomly"), true, false,
+    readInJSONDescription("ShiftTiltSeriesRandomly"));
+
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
   new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
