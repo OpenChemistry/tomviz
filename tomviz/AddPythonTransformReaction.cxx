@@ -273,6 +273,36 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         substitutions);
     }
+  } else if (scriptLabel == "Remove Bad Pixels") {
+    QDialog dialog(pqCoreUtilities::mainWidget());
+    dialog.setWindowTitle("Remove Bad Pixels");
+    QHBoxLayout* layout = new QHBoxLayout;
+    QLabel* label = new QLabel("Remove bad pixels that are ", &dialog);
+    layout->addWidget(label);
+    QDoubleSpinBox* threshold = new QDoubleSpinBox(&dialog);
+    threshold->setMinimum(0);
+    threshold->setValue(5);
+    layout->addWidget(threshold);
+    label = new QLabel("times local standard deviation from local median.");
+    layout->addWidget(label);
+    
+    QVBoxLayout* v = new QVBoxLayout;
+    QDialogButtonBox* buttons = new QDialogButtonBox(
+      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    v->addLayout(layout);
+    v->addWidget(buttons);
+    dialog.setLayout(v);
+    dialog.layout()->setSizeConstraint(
+      QLayout::SetFixedSize); // Make the UI non-resizeable
+    
+    if (dialog.exec() == QDialog::Accepted) {
+      QMap<QString, QString> substitutions;
+      substitutions.insert("###threshold###", QString("threshold = %1").arg(threshold->value()));
+      addPythonOperator(source, this->scriptLabel, this->scriptSource,
+                        substitutions);
+    }
   } else if (scriptLabel == "Crop") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
