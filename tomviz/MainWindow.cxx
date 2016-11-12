@@ -116,7 +116,7 @@ public:
 MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   : Superclass(_parent, _flags), Internals(new MainWindow::MWInternals())
 {
-  checkOpenGL();
+  // checkOpenGL();
   Ui::MainWindow& ui = this->Internals->Ui;
   ui.setupUi(this);
   this->Internals->Timer = new QTimer(this);
