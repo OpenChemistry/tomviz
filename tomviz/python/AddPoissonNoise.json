@@ -1,0 +1,15 @@
+{
+  "name" : "AddPoissonNoise",
+  "label" : "Add Poisson Noise to Tilt Images",
+  "description" : "Add Poisson noise to tilt imgage. \nThe number of counts (N) per tilt image can be specified below. \nThe signal-to-noise ratio is square root of N.",
+  "parameters" : [
+      {
+      "name" : "N",
+      "label" : "Number of counts per tilt image (N):",
+      "description" : "Number of counts per tilt image",
+      "type" : "int",
+      "default" : 25,
+      "minimum" : 0
+     }
+  ]
+}
