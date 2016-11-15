@@ -347,8 +347,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     readInPythonScript("ShiftTiltSeriesRandomly"), true, false,
     readInJSONDescription("ShiftTiltSeriesRandomly"));
   new AddPythonTransformReaction(addPoissonNoiseAction, "Add Poisson Noise",
-    readInPythonScript("AddPoissonNoise"), true, false,
-    readInJSONDescription("AddPoissonNoise"));
+                                 readInPythonScript("AddPoissonNoise"), true,
+                                 false,
+                                 readInJSONDescription("AddPoissonNoise"));
 
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
