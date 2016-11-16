@@ -610,10 +610,11 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   // Apply in-plane rotation
   scriptLabel = "Rotate";
   scriptSource = readInPythonScript("Rotate3D");
-  substitutions.insert("###ROT_AXIS###", QString("ROT_AXIS = %1").arg(2));
-  substitutions.insert(
-    "###ROT_ANGLE###",
-    QString("ROT_ANGLE = %1").arg(-this->Internals->Ui.rotationAngle->value()));
+  substitutions.insert("###rotation_axis###",
+                       QString("rotation_axis = %1").arg(2));
+  substitutions.insert("###rotation_angle###",
+                       QString("rotation_angle = %1")
+                         .arg(-this->Internals->Ui.rotationAngle->value()));
 
   AddPythonTransformReaction::addPythonOperator(
     this->Internals->Source, scriptLabel, scriptSource, substitutions);
