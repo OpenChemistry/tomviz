@@ -22,24 +22,25 @@ class QMainWindow;
 class vtkSMTransferFunctionPresets;
 
 namespace tomviz {
+
 class MoveActiveObject;
+
 /// Behaviors instantiates tomviz relevant ParaView behaviors (and any new
 /// ones) as needed.
+
 class Behaviors : public QObject
 {
   Q_OBJECT
-
-  typedef QObject Superclass;
 
 public:
   Behaviors(QMainWindow* mainWindow);
   virtual ~Behaviors();
 
-  MoveActiveObject* moveActiveBehavior() { return this->MoveActiveBehavior; }
+  MoveActiveObject* moveActiveBehavior() { return m_moveActiveBehavior; }
 private:
   Q_DISABLE_COPY(Behaviors)
 
-  MoveActiveObject* MoveActiveBehavior;
+  MoveActiveObject* m_moveActiveBehavior;
 
   QString getMatplotlibColorMapFile();
 

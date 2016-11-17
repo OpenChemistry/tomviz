@@ -20,6 +20,9 @@
 #include "ProgressBehavior.h"
 #include "ViewFrameActions.h"
 
+#include <vtkNew.h>
+#include <vtkSmartPointer.h>
+
 #include <pqAlwaysConnectedBehavior.h>
 #include <pqApplicationCore.h>
 #include <pqDefaultViewBehavior.h>
@@ -30,11 +33,9 @@
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqViewStreamingBehavior.h>
-#include <vtkNew.h>
 #include <vtkSMReaderFactory.h>
 #include <vtkSMSettings.h>
 #include <vtkSMTransferFunctionPresets.h>
-#include <vtkSmartPointer.h>
 
 #include <QApplication>
 #include <QFile>
@@ -60,7 +61,7 @@ const char* const settings = "{"
 
 namespace tomviz {
 
-Behaviors::Behaviors(QMainWindow* mainWindow) : Superclass(mainWindow)
+Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 {
   Q_ASSERT(mainWindow);
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "JPEGSeriesReader");
@@ -76,7 +77,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : Superclass(mainWindow)
   vtkSMSettings::GetInstance()->AddCollectionFromString(settings, 0.0);
 
   // Register ParaView interfaces.
-  pqInterfaceTracker* pgm = pqApplicationCore::instance()->interfaceTracker();
+  auto pgm = pqApplicationCore::instance()->interfaceTracker();
 
   // * add support for ParaView properties panel widgets.
   pgm->addInterface(new pqStandardPropertyWidgetInterface(pgm));
@@ -95,18 +96,16 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : Superclass(mainWindow)
 
   new tomviz::AddRenderViewContextMenuBehavior(this);
 
-  this->MoveActiveBehavior = new tomviz::MoveActiveObject(this);
+  m_moveActiveBehavior = new tomviz::MoveActiveObject(this);
 
   // Set the default color map from a preset.
-  this->setDefaultColorMapFromPreset("Plasma_17");
+  setDefaultColorMapFromPreset("Plasma_17");
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
 }
 
-Behaviors::~Behaviors()
-{
-}
+Behaviors::~Behaviors() = default;
 
 QString Behaviors::getMatplotlibColorMapFile()
 {
@@ -116,9 +115,9 @@ QString Behaviors::getMatplotlibColorMapFile()
   if (file.exists()) {
     return path;
   }
-// On OSX the above doesn't work in a build tree.  It is fine
-// for superbuilds, but the following is needed in the build tree
-// since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
+  // On OSX the above doesn't work in a build tree.  It is fine
+  // for superbuilds, but the following is needed in the build tree
+  // since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
 #ifdef __APPLE__
   else {
     path = QApplication::applicationDirPath() +
@@ -132,8 +131,8 @@ QString Behaviors::getMatplotlibColorMapFile()
 
 vtkSMTransferFunctionPresets* Behaviors::getPresets()
 {
-  vtkSMTransferFunctionPresets* presets = vtkSMTransferFunctionPresets::New();
-  bool needToAddMatplotlibColormaps = true;
+  auto presets = vtkSMTransferFunctionPresets::New();
+  auto needToAddMatplotlibColormaps = true;
   for (unsigned i = 0; i < presets->GetNumberOfPresets(); ++i) {
     if (presets->GetPresetName(i) == QString("Viridis_17")) {
       needToAddMatplotlibColormaps = false;
@@ -142,7 +141,7 @@ vtkSMTransferFunctionPresets* Behaviors::getPresets()
   }
   if (needToAddMatplotlibColormaps) {
     QString colorMapFile = getMatplotlibColorMapFile();
-    presets->ImportPresets(colorMapFile.toStdString().c_str());
+    presets->ImportPresets(colorMapFile.toLatin1().data());
   }
 
   return presets;
@@ -152,7 +151,7 @@ void Behaviors::setDefaultColorMapFromPreset(const char* name)
 {
   // We need to search for the preset index.
   vtkSmartPointer<vtkSMTransferFunctionPresets> presets;
-  presets.TakeReference(this->getPresets());
+  presets.TakeReference(getPresets());
 
   unsigned int presetIndex = presets->GetNumberOfPresets();
   for (unsigned int i = 0; i < presets->GetNumberOfPresets(); ++i) {
