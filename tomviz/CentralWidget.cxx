@@ -20,11 +20,12 @@
 #include <vtkImageData.h>
 #include <vtkIntArray.h>
 #include <vtkObjectFactory.h>
-#include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkPointData.h>
 #include <vtkTable.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
+
+#include <vtkPVDiscretizableColorTransferFunction.h>
 
 #include <QThread>
 #include <QTimer>
@@ -88,7 +89,7 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     populations->SetName(vtkStdString("image_pops").c_str());
   }
   populations->SetNumberOfTuples(numberOfBins);
-  int* pops = static_cast<int*>(populations->GetVoidPointer(0));
+  auto pops = static_cast<int*>(populations->GetVoidPointer(0));
   for (int k = 0; k < numberOfBins; ++k) {
     pops[k] = 0;
   }
@@ -113,8 +114,8 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     cout << "Warning: NaN or infinite value in dataset" << endl;
   }
 
-  output->AddColumn(extents.GetPointer());
-  output->AddColumn(populations.GetPointer());
+  output->AddColumn(extents.Get());
+  output->AddColumn(populations.Get());
 }
 
 // This is a QObject that will be owned by the background thread
@@ -148,99 +149,90 @@ void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
   emit histogramDone(input, output);
 }
 
-class CentralWidget::CWInternals
-{
-public:
-  Ui::CentralWidget Ui;
-  QTimer Timer;
-};
-
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
-  : Superclass(parentObject, wflags),
-    Internals(new CentralWidget::CWInternals()),
-    HistogramGen(new HistogramMaker), Worker(new QThread(this))
+  : QWidget(parentObject, wflags), m_ui(new Ui::CentralWidget),
+    m_timer(new QTimer(this)), m_histogramGen(new HistogramMaker),
+    m_worker(new QThread(this))
 {
-  this->Internals->Ui.setupUi(this);
+  m_ui->setupUi(this);
 
   qRegisterMetaType<vtkSmartPointer<vtkImageData>>();
   qRegisterMetaType<vtkSmartPointer<vtkTable>>();
 
   QList<int> sizes;
   sizes << 200 << 200;
-  this->Internals->Ui.splitter->setSizes(sizes);
-  this->Internals->Ui.splitter->setStretchFactor(0, 0);
-  this->Internals->Ui.splitter->setStretchFactor(1, 1);
+  m_ui->splitter->setSizes(sizes);
+  m_ui->splitter->setStretchFactor(0, 0);
+  m_ui->splitter->setStretchFactor(1, 1);
 
-  this->connect(this->Internals->Ui.histogramWidget, SIGNAL(colorMapUpdated()),
-                SLOT(onColorMapUpdated()));
+  connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
+          SLOT(onColorMapUpdated()));
 
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady
   // slot on this object. This slot will be called on the GUI thread when the
   // histogram has been finished on the background thread.
-  this->Worker->start();
-  this->HistogramGen->moveToThread(this->Worker);
-  this->connect(this->HistogramGen,
-                SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,
-                                     vtkSmartPointer<vtkTable>)),
-                SLOT(histogramReady(vtkSmartPointer<vtkImageData>,
-                                    vtkSmartPointer<vtkTable>)));
-  this->Internals->Timer.setInterval(200);
-  this->Internals->Timer.setSingleShot(true);
-  this->connect(&this->Internals->Timer, SIGNAL(timeout()),
-                SLOT(refreshHistogram()));
-  this->layout()->setMargin(0);
-  this->layout()->setSpacing(0);
+  m_worker->start();
+  m_histogramGen->moveToThread(m_worker);
+  connect(m_histogramGen,
+          SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,
+                               vtkSmartPointer<vtkTable>)),
+          SLOT(histogramReady(vtkSmartPointer<vtkImageData>,
+                              vtkSmartPointer<vtkTable>)));
+  m_timer->setInterval(200);
+  m_timer->setSingleShot(true);
+  connect(m_timer.data(), SIGNAL(timeout()), SLOT(refreshHistogram()));
+  layout()->setMargin(0);
+  layout()->setSpacing(0);
 }
 
 CentralWidget::~CentralWidget()
 {
   // disconnect all signals/slots
-  QObject::disconnect(this->HistogramGen, nullptr, nullptr, nullptr);
+  disconnect(m_histogramGen, nullptr, nullptr, nullptr);
   // when the HistogramMaker is deleted, kill the background thread
-  QObject::connect(this->HistogramGen, SIGNAL(destroyed()), this->Worker,
-                   SLOT(quit()));
+  connect(m_histogramGen, SIGNAL(destroyed()), m_worker, SLOT(quit()));
   // I can't remember if deleteLater must be called on the owning thread
   // play it safe and let the owning thread call it.
-  QMetaObject::invokeMethod(this->HistogramGen, "deleteLater");
+  QMetaObject::invokeMethod(m_histogramGen, "deleteLater");
   // Wait for the background thread to clean up the object and quit
-  while (this->Worker->isRunning()) {
+  while (m_worker->isRunning()) {
     QCoreApplication::processEvents();
   }
 }
 
 void CentralWidget::setActiveDataSource(DataSource* source)
 {
-  if (this->AModule) {
-    this->AModule->disconnect(this);
-    this->AModule = nullptr;
+  if (m_activeModule) {
+    m_activeModule->disconnect(this);
+    m_activeModule = nullptr;
   }
-  this->setDataSource(source);
+  setDataSource(source);
 }
 
 void CentralWidget::setActiveModule(Module* module)
 {
-  if (this->AModule) {
-    this->AModule->disconnect(this);
+  if (m_activeModule) {
+    m_activeModule->disconnect(this);
   }
-  this->AModule = module;
-  if (this->AModule) {
-    this->connect(this->AModule, SIGNAL(colorMapChanged()),
-                  SLOT(onDataSourceChanged()));
-    this->setDataSource(module->dataSource());
+  m_activeModule = module;
+  if (m_activeModule) {
+    connect(m_activeModule, SIGNAL(colorMapChanged()),
+            SLOT(onDataSourceChanged()));
+    setDataSource(module->dataSource());
   } else {
-    this->setDataSource(nullptr);
+    setDataSource(nullptr);
   }
 }
 
 void CentralWidget::setDataSource(DataSource* source)
 {
-  if (this->ADataSource) {
-    this->ADataSource->disconnect(this);
+  if (m_activeDataSource) {
+    m_activeDataSource->disconnect(this);
   }
-  this->ADataSource = source;
+  m_activeDataSource = source;
   if (source) {
-    this->connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
+    connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
   }
 
   if (!source) {
@@ -248,43 +240,43 @@ void CentralWidget::setDataSource(DataSource* source)
   }
 
   // Get the actual data source, build a histogram out of it.
-  vtkTrivialProducer* t =
+  auto t =
     vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-  vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   if (image->GetPointData()->GetScalars() == nullptr) {
     return;
   }
 
   // Get the current color map
-  if (this->AModule) {
-    this->Internals->Ui.histogramWidget->setLUTProxy(this->AModule->colorMap());
+  if (m_activeModule) {
+    m_ui->histogramWidget->setLUTProxy(m_activeModule->colorMap());
   } else {
-    this->Internals->Ui.histogramWidget->setLUTProxy(source->colorMap());
+    m_ui->histogramWidget->setLUTProxy(source->colorMap());
   }
 
   // Check our cache, and use that if appopriate (or update it).
-  if (this->HistogramCache.contains(image)) {
-    vtkTable* cachedTable = this->HistogramCache[image];
+  if (m_histogramCache.contains(image)) {
+    auto cachedTable = m_histogramCache[image];
     if (cachedTable->GetMTime() > image->GetMTime()) {
-      this->setHistogramTable(cachedTable);
+      setHistogramTable(cachedTable);
       return;
     } else {
       // Need to recalculate, clear the plots, and remove the cached data.
-      this->HistogramCache.remove(image);
+      m_histogramCache.remove(image);
     }
   }
 
   // Calculate a histogram.
-  vtkSmartPointer<vtkTable> table = vtkSmartPointer<vtkTable>::New();
-  this->HistogramCache[image] = table.Get();
+  auto table = vtkSmartPointer<vtkTable>::New();
+  m_histogramCache[image] = table.Get();
   vtkSmartPointer<vtkImageData> const imageSP = image;
 
   // This fakes a Qt signal to the background thread (without exposing the
   // class internals as a signal).  The background thread will then call
   // makeHistogram on the HistogramMaker object with the parameters we
   // gave here.
-  QMetaObject::invokeMethod(this->HistogramGen, "makeHistogram",
+  QMetaObject::invokeMethod(m_histogramGen, "makeHistogram",
                             Q_ARG(vtkSmartPointer<vtkImageData>, imageSP),
                             Q_ARG(vtkSmartPointer<vtkTable>, table));
 }
@@ -299,47 +291,49 @@ void CentralWidget::onDataSourceChanged()
   // This starts/restarts the internal timer so that several events occurring
   // within a few milliseconds of each other only result in one call to
   // refreshHistogram()
-  this->Internals->Timer.start();
+  m_timer->start();
 }
 
 void CentralWidget::refreshHistogram()
 {
-  this->setDataSource(this->ADataSource);
+  setDataSource(m_activeDataSource);
 }
 
 void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
-  if (!input || !output)
+  if (!input || !output) {
     return;
+  }
 
   // If we no longer have an active datasource, ignore showing the histogram
   // since the data has been deleted
-  if (!this->ADataSource)
+  if (!m_activeDataSource) {
     return;
+  }
 
-  vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-    this->ADataSource->producer()->GetClientSideObject());
-  vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto t = vtkTrivialProducer::SafeDownCast(
+    m_activeDataSource->producer()->GetClientSideObject());
+  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   // The current dataset has changed since the histogram was requested,
   // ignore this histogram and wait for the next one queued...
-  if (image != input.Get())
+  if (image != input.Get()) {
     return;
+  }
 
-  this->setHistogramTable(output.Get());
+  setHistogramTable(output.Get());
 }
 
 void CentralWidget::setHistogramTable(vtkTable* table)
 {
-  vtkDataArray* arr =
+  auto arr =
     vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
   if (!arr) {
     return;
   }
 
-  this->Internals->Ui.histogramWidget->setInputData(table, "image_extents",
-                                                    "image_pops");
+  m_ui->histogramWidget->setInputData(table, "image_extents", "image_pops");
 }
 
 } // end of namespace tomviz
