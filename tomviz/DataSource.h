@@ -37,7 +37,6 @@ class Operator;
 class DataSource : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
   class ImageFuture;
@@ -54,7 +53,7 @@ public:
   /// application.
   DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
              QObject* parent = nullptr);
-  virtual ~DataSource();
+  ~DataSource() override;
 
   /// Returns the data producer proxy to insert in ParaView pipelines.
   /// This proxy instance doesn't change over the lifetime of a DataSource even
@@ -201,8 +200,8 @@ class DataSource::ImageFuture : public QObject
 public:
   friend class DataSource;
 
-  vtkSmartPointer<vtkImageData> result() { return this->m_imageData; };
-  Operator* op() { return this->m_operator; };
+  vtkSmartPointer<vtkImageData> result() { return this->m_imageData; }
+  Operator* op() { return this->m_operator; }
 
 signals:
   void finished(bool result);
