@@ -63,15 +63,15 @@ public slots:
 
 private:
   void renderViews();
-  vtkNew<vtkChartHistogramColorOpacityEditor> HistogramColorOpacityEditor;
-  vtkNew<vtkContextView> HistogramView;
-  vtkNew<vtkEventQtSlotConnect> EventLink;
+  vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;
+  vtkNew<vtkContextView> m_histogramView;
+  vtkNew<vtkEventQtSlotConnect> m_eventLink;
 
-  vtkPVDiscretizableColorTransferFunction* LUT = nullptr;
-  vtkPiecewiseFunction* ScalarOpacityFunction = nullptr;
-  vtkSMProxy* LUTProxy = nullptr;
+  vtkPVDiscretizableColorTransferFunction* m_LUT = nullptr;
+  vtkPiecewiseFunction* m_scalarOpacityFunction = nullptr;
+  vtkSMProxy* m_LUTProxy = nullptr;
 
-  QVTKWidget* qvtk;
+  QVTKWidget* m_qvtk;
 };
 }
 
