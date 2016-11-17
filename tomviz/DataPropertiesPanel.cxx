@@ -39,113 +39,61 @@
 #include <vtkSMSourceProxy.h>
 
 #include <QDebug>
-#include <QDialog>
 #include <QDoubleValidator>
 #include <QMainWindow>
-#include <QPointer>
-#include <QPushButton>
 
 namespace tomviz {
 
-class DataPropertiesPanel::DPPInternals
-{
-public:
-  Ui::DataPropertiesPanel Ui;
-  QPointer<DataSource> CurrentDataSource;
-  QPointer<pqProxyWidget> ColorMapWidget;
-  QPointer<QWidget> TiltAnglesSeparator;
-
-  DPPInternals(QWidget* parent)
-  {
-    Ui::DataPropertiesPanel& ui = this->Ui;
-    ui.setupUi(parent);
-    ui.xLengthBox->setValidator(new QDoubleValidator(ui.xLengthBox));
-    ui.yLengthBox->setValidator(new QDoubleValidator(ui.yLengthBox));
-    ui.zLengthBox->setValidator(new QDoubleValidator(ui.zLengthBox));
-    QVBoxLayout* l = ui.verticalLayout;
-
-    l->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
-
-    // add separator labels.
-    QWidget* separator = pqProxyWidget::newGroupLabelWidget("Filename", parent);
-    l->insertWidget(l->indexOf(ui.FileName), separator);
-
-    separator =
-      pqProxyWidget::newGroupLabelWidget("Original Dimensions & Range", parent);
-    l->insertWidget(l->indexOf(ui.OriginalDataRange), separator);
-
-    separator = pqProxyWidget::newGroupLabelWidget(
-      "Transformed Dimensions & Range", parent);
-    l->insertWidget(l->indexOf(ui.TransformedDataRange), separator);
-
-    separator = pqProxyWidget::newGroupLabelWidget("Units and Size", parent);
-
-    l->insertWidget(l->indexOf(ui.LengthWidget), separator);
-
-    this->TiltAnglesSeparator =
-      pqProxyWidget::newGroupLabelWidget("Tilt Angles", parent);
-    l->insertWidget(l->indexOf(ui.SetTiltAnglesButton),
-                    this->TiltAnglesSeparator);
-
-    this->clear();
-  }
-
-  void clear()
-  {
-    Ui::DataPropertiesPanel& ui = this->Ui;
-    ui.FileName->setText("");
-    ui.OriginalDataRange->setText("");
-    ui.OriginalDataType->setText("Type:");
-    ui.TransformedDataRange->setText("");
-    ui.TransformedDataType->setText("Type:");
-    if (this->ColorMapWidget) {
-      ui.verticalLayout->removeWidget(this->ColorMapWidget);
-      delete this->ColorMapWidget;
-    }
-    this->TiltAnglesSeparator->hide();
-    ui.SetTiltAnglesButton->hide();
-    ui.TiltAnglesTable->clear();
-    ui.TiltAnglesTable->setRowCount(0);
-    ui.TiltAnglesTable->hide();
-  }
-
-  void updateSpacing(int axis, double newLength)
-  {
-    if (!this->CurrentDataSource) {
-      return;
-    }
-    int extent[6];
-    double spacing[3];
-    this->CurrentDataSource->getExtent(extent);
-    this->CurrentDataSource->getSpacing(spacing);
-    spacing[axis] = newLength / (extent[2 * axis + 1] - extent[2 * axis] + 1);
-    this->CurrentDataSource->setSpacing(spacing);
-  }
-};
-
 DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
-  : Superclass(parentObject),
-    Internals(new DataPropertiesPanel::DPPInternals(this))
+  : QWidget(parentObject), m_ui(new Ui::DataPropertiesPanel)
 {
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(setDataSource(DataSource*)));
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateAxesGridLabels()));
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(viewChanged(vtkSMViewProxy*)),
-                SLOT(updateAxesGridLabels()));
-  this->connect(this->Internals->Ui.SetTiltAnglesButton, SIGNAL(clicked()),
-                SLOT(setTiltAngles()));
-  this->connect(this->Internals->Ui.unitBox, SIGNAL(editingFinished()),
-                SLOT(updateUnits()));
-  this->connect(this->Internals->Ui.xLengthBox, SIGNAL(editingFinished()),
-                SLOT(updateXLength()));
-  this->connect(this->Internals->Ui.yLengthBox, SIGNAL(editingFinished()),
-                SLOT(updateYLength()));
-  this->connect(this->Internals->Ui.zLengthBox, SIGNAL(editingFinished()),
-                SLOT(updateZLength()));
+  m_ui->setupUi(this);
+  m_ui->xLengthBox->setValidator(new QDoubleValidator(m_ui->xLengthBox));
+  m_ui->yLengthBox->setValidator(new QDoubleValidator(m_ui->yLengthBox));
+  m_ui->zLengthBox->setValidator(new QDoubleValidator(m_ui->zLengthBox));
+  QVBoxLayout* l = m_ui->verticalLayout;
+
+  l->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
+
+  // add separator labels.
+  QWidget* separator = pqProxyWidget::newGroupLabelWidget("Filename", this);
+  l->insertWidget(l->indexOf(m_ui->FileName), separator);
+
+  separator =
+    pqProxyWidget::newGroupLabelWidget("Original Dimensions & Range", this);
+  l->insertWidget(l->indexOf(m_ui->OriginalDataRange), separator);
+
+  separator = pqProxyWidget::newGroupLabelWidget(
+    "Transformed Dimensions & Range", this);
+  l->insertWidget(l->indexOf(m_ui->TransformedDataRange), separator);
+
+  separator = pqProxyWidget::newGroupLabelWidget("Units and Size", this);
+
+  l->insertWidget(l->indexOf(m_ui->LengthWidget), separator);
+
+  m_tiltAnglesSeparator =
+    pqProxyWidget::newGroupLabelWidget("Tilt Angles", this);
+  l->insertWidget(l->indexOf(m_ui->SetTiltAnglesButton),
+                  m_tiltAnglesSeparator);
+
+  clear();
+
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(setDataSource(DataSource*)));
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateAxesGridLabels()));
+  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
+          SLOT(updateAxesGridLabels()));
+  connect(m_ui->SetTiltAnglesButton, SIGNAL(clicked()),
+          SLOT(setTiltAngles()));
+  connect(m_ui->unitBox, SIGNAL(editingFinished()),
+          SLOT(updateUnits()));
+  connect(m_ui->xLengthBox, SIGNAL(editingFinished()),
+          SLOT(updateXLength()));
+  connect(m_ui->yLengthBox, SIGNAL(editingFinished()),
+          SLOT(updateYLength()));
+  connect(m_ui->zLengthBox, SIGNAL(editingFinished()),
+          SLOT(updateZLength()));
 }
 
 DataPropertiesPanel::~DataPropertiesPanel()
@@ -154,21 +102,21 @@ DataPropertiesPanel::~DataPropertiesPanel()
 
 void DataPropertiesPanel::paintEvent(QPaintEvent* e)
 {
-  this->updateData();
+  updateData();
   QWidget::paintEvent(e);
 }
 
 void DataPropertiesPanel::setDataSource(DataSource* dsource)
 {
-  if (this->Internals->CurrentDataSource) {
-    this->disconnect(this->Internals->CurrentDataSource);
+  if (m_currentDataSource) {
+    disconnect(m_currentDataSource);
   }
-  this->Internals->CurrentDataSource = dsource;
+  m_currentDataSource = dsource;
   if (dsource) {
-    this->connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
-                  Qt::UniqueConnection);
+    connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
+            Qt::UniqueConnection);
   }
-  this->scheduleUpdate();
+  scheduleUpdate();
 }
 
 namespace {
@@ -208,79 +156,77 @@ QString getDataTypeString(vtkSMSourceProxy* proxy)
 
 void DataPropertiesPanel::updateData()
 {
-  if (!this->updateNeeded) {
+  if (!m_updateNeeded) {
     return;
   }
 
-  this->disconnect(this->Internals->Ui.TiltAnglesTable,
-                   SIGNAL(cellChanged(int, int)), this,
-                   SLOT(onTiltAnglesModified(int, int)));
-  this->Internals->clear();
+  disconnect(m_ui->TiltAnglesTable,
+             SIGNAL(cellChanged(int, int)), this,
+             SLOT(onTiltAnglesModified(int, int)));
+  clear();
 
-  DataSource* dsource = this->Internals->CurrentDataSource;
+  DataSource* dsource = m_currentDataSource;
   if (!dsource) {
     return;
   }
-  Ui::DataPropertiesPanel& ui = this->Internals->Ui;
-  ui.FileName->setText(dsource->filename());
 
-  ui.OriginalDataRange->setText(
+  m_ui->FileName->setText(dsource->filename());
+
+  m_ui->OriginalDataRange->setText(
     getDataExtentAndRangeString(dsource->originalDataSource()));
-  ui.OriginalDataType->setText(
+  m_ui->OriginalDataType->setText(
     getDataTypeString(dsource->originalDataSource()));
-  ui.TransformedDataRange->setText(
+  m_ui->TransformedDataRange->setText(
     getDataExtentAndRangeString(dsource->producer()));
-  ui.TransformedDataType->setText(getDataTypeString(dsource->producer()));
+  m_ui->TransformedDataType->setText(getDataTypeString(dsource->producer()));
 
   int extent[6];
   double spacing[3];
   dsource->getExtent(extent);
   dsource->getSpacing(spacing);
-  ui.xLengthBox->setText(
+  m_ui->xLengthBox->setText(
     QString("%1").arg(spacing[0] * (extent[1] - extent[0] + 1)));
-  ui.yLengthBox->setText(
+  m_ui->yLengthBox->setText(
     QString("%1").arg(spacing[1] * (extent[3] - extent[2] + 1)));
-  ui.zLengthBox->setText(
+  m_ui->zLengthBox->setText(
     QString("%1").arg(spacing[2] * (extent[5] - extent[4] + 1)));
-  ui.unitBox->setText(this->Internals->CurrentDataSource->getUnits(0));
+  m_ui->unitBox->setText(m_currentDataSource->getUnits(0));
 
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries) {
-    this->Internals->TiltAnglesSeparator->show();
-    ui.SetTiltAnglesButton->show();
-    ui.TiltAnglesTable->show();
+    m_tiltAnglesSeparator->show();
+    m_ui->SetTiltAnglesButton->show();
+    m_ui->TiltAnglesTable->show();
     QVector<double> tiltAngles = dsource->getTiltAngles();
-    ui.TiltAnglesTable->setRowCount(tiltAngles.size());
-    ui.TiltAnglesTable->setColumnCount(1);
+    m_ui->TiltAnglesTable->setRowCount(tiltAngles.size());
+    m_ui->TiltAnglesTable->setColumnCount(1);
     for (int i = 0; i < tiltAngles.size(); ++i) {
       QTableWidgetItem* item = new QTableWidgetItem();
       item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
-      ui.TiltAnglesTable->setItem(i, 0, item);
+      m_ui->TiltAnglesTable->setItem(i, 0, item);
     }
   } else {
-    this->Internals->TiltAnglesSeparator->hide();
-    ui.SetTiltAnglesButton->hide();
-    ui.TiltAnglesTable->hide();
+    m_tiltAnglesSeparator->hide();
+    m_ui->SetTiltAnglesButton->hide();
+    m_ui->TiltAnglesTable->hide();
   }
-  this->connect(this->Internals->Ui.TiltAnglesTable,
-                SIGNAL(cellChanged(int, int)),
-                SLOT(onTiltAnglesModified(int, int)));
+  connect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)),
+          SLOT(onTiltAnglesModified(int, int)));
 
-  this->updateNeeded = false;
+  m_updateNeeded = false;
 }
 
 void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
 {
-  DataSource* dsource = this->Internals->CurrentDataSource;
+  DataSource* dsource = m_currentDataSource;
   // The table shouldn't be shown if this is not true, so this slot shouldn't be
   // called
   Q_ASSERT(dsource->type() == DataSource::TiltSeries);
-  QTableWidgetItem* item =
-    this->Internals->Ui.TiltAnglesTable->item(row, column);
-  bool ok;
-  double value = item->data(Qt::DisplayRole).toDouble(&ok);
+  QTableWidgetItem* item = m_ui->TiltAnglesTable->item(row, column);
+  auto ok = false;
+  auto value = item->data(Qt::DisplayRole).toDouble(&ok);
   if (ok) {
-    bool needToAdd = false;
+    auto needToAdd = false;
     SetTiltAnglesOperator* op = nullptr;
     if (dsource->operators().size() > 0) {
       op = qobject_cast<SetTiltAnglesOperator*>(dsource->operators().last());
@@ -303,63 +249,63 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
 
 void DataPropertiesPanel::setTiltAngles()
 {
-  DataSource* dsource = this->Internals->CurrentDataSource;
-  QMainWindow* mainWindow = qobject_cast<QMainWindow*>(this->window());
+  DataSource* dsource = m_currentDataSource;
+  auto mainWindow = qobject_cast<QMainWindow*>(window());
   SetTiltAnglesReaction::showSetTiltAnglesUI(mainWindow, dsource);
 }
 
 void DataPropertiesPanel::scheduleUpdate()
 {
-  this->updateNeeded = true;
-  if (this->isVisible()) {
-    this->updateData();
+  m_updateNeeded = true;
+  if (isVisible()) {
+    updateData();
   }
 }
 
 void DataPropertiesPanel::updateUnits()
 {
-  const QString& text = this->Internals->Ui.unitBox->text();
-  this->Internals->CurrentDataSource->setUnits(text);
-  this->updateAxesGridLabels();
+  const QString& text = m_ui->unitBox->text();
+  m_currentDataSource->setUnits(text);
+  updateAxesGridLabels();
 }
 
 void DataPropertiesPanel::updateXLength()
 {
-  const QString& text = this->Internals->Ui.xLengthBox->text();
-  bool ok;
+  const QString& text = m_ui->xLengthBox->text();
+  auto ok = false;
   double newLength = text.toDouble(&ok);
   if (!ok) {
     qWarning() << "Failed to parse X Length string";
     return;
   }
-  this->Internals->updateSpacing(0, newLength);
-  this->updateData();
+  updateSpacing(0, newLength);
+  updateData();
 }
 
 void DataPropertiesPanel::updateYLength()
 {
-  const QString& text = this->Internals->Ui.yLengthBox->text();
-  bool ok;
+  const QString& text = m_ui->yLengthBox->text();
+  auto ok = false;
   double newLength = text.toDouble(&ok);
   if (!ok) {
     qWarning() << "Failed to parse Y Length string";
     return;
   }
-  this->Internals->updateSpacing(1, newLength);
-  this->updateData();
+  updateSpacing(1, newLength);
+  updateData();
 }
 
 void DataPropertiesPanel::updateZLength()
 {
-  const QString& text = this->Internals->Ui.zLengthBox->text();
-  bool ok;
+  const QString& text = m_ui->zLengthBox->text();
+  auto ok = false;
   double newLength = text.toDouble(&ok);
   if (!ok) {
     qWarning() << "Failed to parse Z Length string";
     return;
   }
-  this->Internals->updateSpacing(2, newLength);
-  this->updateData();
+  updateSpacing(2, newLength);
+  updateData();
 }
 
 void DataPropertiesPanel::updateAxesGridLabels()
@@ -386,5 +332,36 @@ void DataPropertiesPanel::updateAxesGridLabels()
   if (qtView) {
     qtView->render();
   }
+}
+
+void DataPropertiesPanel::clear()
+{
+  m_ui->FileName->setText("");
+  m_ui->OriginalDataRange->setText("");
+  m_ui->OriginalDataType->setText("Type:");
+  m_ui->TransformedDataRange->setText("");
+  m_ui->TransformedDataType->setText("Type:");
+  if (m_colorMapWidget) {
+    m_ui->verticalLayout->removeWidget(m_colorMapWidget);
+    delete m_colorMapWidget;
+  }
+  m_tiltAnglesSeparator->hide();
+  m_ui->SetTiltAnglesButton->hide();
+  m_ui->TiltAnglesTable->clear();
+  m_ui->TiltAnglesTable->setRowCount(0);
+  m_ui->TiltAnglesTable->hide();
+}
+
+void DataPropertiesPanel::updateSpacing(int axis, double newLength)
+{
+  if (!m_currentDataSource) {
+    return;
+  }
+  int extent[6];
+  double spacing[3];
+  m_currentDataSource->getExtent(extent);
+  m_currentDataSource->getSpacing(spacing);
+  spacing[axis] = newLength / (extent[2 * axis + 1] - extent[2 * axis] + 1);
+  m_currentDataSource->setSpacing(spacing);
 }
 }
