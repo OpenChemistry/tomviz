@@ -1,20 +1,14 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, structuring_element_id=0, radius=1,
+                      object_label=1, background_label=0):
     """Perform morphological closing on segmented objects with a given label by
     a spherically symmetric structuring element with a given radius.
     """
-
     try:
         import itk
         from tomviz import utils
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
-
-    #----USER SPECIFIED VARIABLES-----#
-    ###structuring_element_id### # (0 - Box, 1 - Ball, 2 - Cross)
-    ###radius### # Specify the radius of the cube structuring element
-    ###object_label### # Specify the label designating the segmented objects
-    ###background_label### # Specify the label designating the background.
 
     # Add a try/except around the ITK portion. ITK exceptions are
     # passed up to the Python layer, so we can at least report what

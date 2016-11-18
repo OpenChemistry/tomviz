@@ -18,6 +18,7 @@
 
 // Collection of miscellaneous utility functions.
 
+#include <Python.h>
 #include <pqApplicationCore.h>
 #include <pqProxy.h>
 #include <pqServerManagerModel.h>
@@ -159,6 +160,15 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
 /// Check for Python error. Prints error and clears it if an error has occurred.
 /// Return true if an error has occurred, false otherwise.
 bool checkForPythonError();
+
+/// Convert a QString to a Python string
+PyObject* toPyObject(const QString& str);
+
+/// Convert a QVariant object into the appropriate Python type
+PyObject* toPyObject(const QVariant& value);
+
+// Convert a QVariantList into a Python list
+PyObject* toPyObject(const QVariantList& list);
 
 extern double offWhite[3];
 }

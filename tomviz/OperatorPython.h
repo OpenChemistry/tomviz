@@ -17,6 +17,7 @@
 #define tomvizOperatorPython_h
 
 #include "Operator.h"
+#include <QMap>
 #include <QMetaType>
 #include <QScopedPointer>
 #include <pqSMProxy.h>
@@ -56,6 +57,9 @@ public:
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
   bool hasCustomUI() const override { return true; }
 
+  /// Add argument to pass to the transform_scalars function
+  void addArgument(const QString& name, const QVariant& value);
+
 signals:
   // Signal used to request the creation of a new data source. Needed to
   // ensure the initialization of the new DataSource is performed on UI thread
@@ -83,6 +87,7 @@ private:
 
   QList<QString> m_resultNames;
   QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;
+  QMap<QString, QVariant> m_arguments;
 };
 }
 #endif

@@ -1,4 +1,4 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset,  XRANGE=None, YRANGE=None, ZRANGE=None):
     """Define this method for Python operators that
     transform input scalars"""
 
@@ -8,9 +8,6 @@ def transform_scalars(dataset):
     array = utils.get_array(dataset)
     if array is None:
         raise RuntimeError("No scalars found!")
-    ###XRANGE###
-    ###YRANGE###
-    ###ZRANGE###
 
     # Transform the dataset.
     result = np.copy(array)

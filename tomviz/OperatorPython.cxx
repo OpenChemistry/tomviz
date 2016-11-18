@@ -331,8 +331,18 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     vtkPythonScopeGilEnsurer gilEnsurer(true);
     vtkSmartPyObject args(PyTuple_New(1));
     PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
+
+    vtkSmartPyObject kwargs(PyDict_New());
+    foreach (QString key, m_arguments.keys()) {
+      QVariant value = m_arguments[key];
+      vtkSmartPyObject pyValue(toPyObject(value));
+      vtkSmartPyObject pyKey(toPyObject(key));
+      PyDict_SetItem(kwargs.GetPointer(), pyKey.GetPointer(),
+                     pyValue.GetPointer());
+    }
+
     result.TakeReference(
-      PyObject_Call(this->Internals->TransformMethod, args, nullptr));
+      PyObject_Call(this->Internals->TransformMethod, args, kwargs));
     if (!result) {
       qCritical("Failed to execute the script.");
       checkForPythonError();
@@ -490,6 +500,10 @@ void OperatorPython::setOperatorResult(const QString& name,
     qCritical() << "Could not set result '" << name << "'";
   }
 }
-}
 
+void OperatorPython::addArgument(const QString& name, const QVariant& value)
+{
+  m_arguments[name] = value;
+}
+}
 #include "OperatorPython.moc"

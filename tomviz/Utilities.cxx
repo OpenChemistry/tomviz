@@ -360,5 +360,47 @@ bool checkForPythonError()
   return false;
 }
 
+PyObject* toPyObject(const QString& str)
+{
+  return PyUnicode_DecodeUTF16((const char*)str.utf16(), str.length() * 2, NULL,
+                               NULL);
+}
+
+PyObject* toPyObject(const QVariant& value)
+{
+
+  switch (value.type()) {
+    case QVariant::Int:
+      return PyInt_FromLong(value.toInt());
+    case QVariant::Double:
+      return PyFloat_FromDouble(value.toDouble());
+    case QVariant::String: {
+      QString str = value.toString();
+      return toPyObject(str);
+    }
+    case QVariant::List: {
+      QVariantList list = value.toList();
+      return toPyObject(list);
+    }
+    default:
+      qCritical() << "Unsupported type";
+  }
+
+  return nullptr;
+}
+
+PyObject* toPyObject(const QVariantList& list)
+{
+  PyObject* pyList = PyTuple_New(list.count());
+  int i = 0;
+
+  foreach (QVariant value, list) {
+    PyTuple_SET_ITEM(pyList, i, toPyObject(value));
+    i++;
+  }
+
+  return pyList;
+}
+
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
 }

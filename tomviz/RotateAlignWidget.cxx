@@ -594,30 +594,26 @@ void RotateAlignWidget::onFinalReconButtonPressed()
     */
   // Apply python transform
   // Apply shift (in y-direction)
-  QMap<QString, QString> substitutions;
-  substitutions.insert("###SHIFT###",
-                       QString("SHIFT = [%1, %2, %3]")
-                         .arg(0)
-                         .arg(-this->Internals->Ui.rotationAxis->value())
-                         .arg(0));
+  QMap<QString, QVariant> arguments;
+  QList<QVariant> value;
+  value << 0 << -this->Internals->Ui.rotationAxis->value() << 0;
+  arguments.insert("SHIFT", value);
 
   QString scriptLabel = "Shift";
   QString scriptSource = readInPythonScript("Shift3D");
   AddPythonTransformReaction::addPythonOperator(
-    this->Internals->Source, scriptLabel, scriptSource, substitutions);
-  substitutions.clear();
+    this->Internals->Source, scriptLabel, scriptSource, arguments);
+  arguments.clear();
 
   // Apply in-plane rotation
   scriptLabel = "Rotate";
   scriptSource = readInPythonScript("Rotate3D");
-  substitutions.insert("###rotation_axis###",
-                       QString("rotation_axis = %1").arg(2));
-  substitutions.insert("###rotation_angle###",
-                       QString("rotation_angle = %1")
-                         .arg(-this->Internals->Ui.rotationAngle->value()));
+  arguments.insert("rotation_axis", 2.0);
+  arguments.insert("rotation_angle",
+                   -this->Internals->Ui.rotationAngle->value());
 
   AddPythonTransformReaction::addPythonOperator(
-    this->Internals->Source, scriptLabel, scriptSource, substitutions);
+    this->Internals->Source, scriptLabel, scriptSource, arguments);
   emit creatingAlignedData();
 }
 }
