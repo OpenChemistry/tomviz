@@ -16,8 +16,16 @@
 #ifndef tomvizDataPropertiesPanel_h
 #define tomvizDataPropertiesPanel_h
 
-#include <QScopedPointer>
 #include <QWidget>
+
+#include <QPointer>
+#include <QScopedPointer>
+
+class pqProxyWidget;
+
+namespace Ui {
+class DataPropertiesPanel;
+}
 
 namespace tomviz {
 
@@ -30,11 +38,10 @@ class DataSource;
 class DataPropertiesPanel : public QWidget
 {
   Q_OBJECT
-  typedef QWidget Superclass;
 
 public:
   explicit DataPropertiesPanel(QWidget* parent = nullptr);
-  virtual ~DataPropertiesPanel() override;
+  ~DataPropertiesPanel() override;
 
 protected:
   void paintEvent(QPaintEvent*) override;
@@ -59,10 +66,14 @@ signals:
 private:
   Q_DISABLE_COPY(DataPropertiesPanel)
 
-  class DPPInternals;
-  const QScopedPointer<DPPInternals> Internals;
+  bool m_updateNeeded = true;
+  QScopedPointer<Ui::DataPropertiesPanel> m_ui;
+  QPointer<DataSource> m_currentDataSource;
+  QPointer<pqProxyWidget> m_colorMapWidget;
+  QPointer<QWidget> m_tiltAnglesSeparator;
 
-  bool updateNeeded = true;
+  void clear();
+  void updateSpacing(int axis, double newLength);
 };
 }
 

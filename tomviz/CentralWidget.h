@@ -20,6 +20,7 @@
 #include <QPointer>
 #include <QScopedPointer>
 #include <QWidget>
+
 #include <vtkSmartPointer.h>
 
 class vtkImageData;
@@ -27,6 +28,11 @@ class vtkPVDiscretizableColorTransferFunction;
 class vtkTable;
 
 class QThread;
+class QTimer;
+
+namespace Ui {
+class CentralWidget;
+}
 
 namespace tomviz {
 class DataSource;
@@ -40,16 +46,15 @@ class CentralWidget : public QWidget
 {
   Q_OBJECT
 
-  typedef QWidget Superclass;
-
 public:
   CentralWidget(QWidget* parent = nullptr, Qt::WindowFlags f = nullptr);
-  virtual ~CentralWidget();
+  ~CentralWidget() override;
 
 public slots:
   /// Set the data source that is shown and color by the data source's
   /// color map
   void setActiveDataSource(DataSource*);
+
   /// Set the data source that is shown to the module's data source and color
   /// by the module's color map
   void setActiveModule(Module*);
@@ -69,14 +74,14 @@ private:
   void setDataSource(DataSource*);
   void setHistogramTable(vtkTable* table);
 
-  class CWInternals;
-  QScopedPointer<CWInternals> Internals;
+  QScopedPointer<Ui::CentralWidget> m_ui;
+  QScopedPointer<QTimer> m_timer;
 
-  QPointer<DataSource> ADataSource;
-  QPointer<Module> AModule;
-  HistogramMaker* HistogramGen;
-  QThread* Worker;
-  QMap<vtkImageData*, vtkSmartPointer<vtkTable>> HistogramCache;
+  QPointer<DataSource> m_activeDataSource;
+  QPointer<Module> m_activeModule;
+  HistogramMaker* m_histogramGen;
+  QThread* m_worker;
+  QMap<vtkImageData*, vtkSmartPointer<vtkTable>> m_histogramCache;
 };
 }
 

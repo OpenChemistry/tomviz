@@ -56,35 +56,34 @@
 namespace tomviz {
 
 HistogramWidget::HistogramWidget(QWidget* parent)
-  : QWidget(parent), qvtk(new QVTKWidget(this))
+  : QWidget(parent), m_qvtk(new QVTKWidget(this))
 {
   // Set up our little chart.
-  this->HistogramView->SetInteractor(this->qvtk->GetInteractor());
-  this->qvtk->SetRenderWindow(this->HistogramView->GetRenderWindow());
-  this->HistogramView->GetScene()->AddItem(
-    this->HistogramColorOpacityEditor.Get());
+  m_histogramView->SetInteractor(m_qvtk->GetInteractor());
+  m_qvtk->SetRenderWindow(m_histogramView->GetRenderWindow());
+  m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor.Get());
 
   // Connect events from the histogram color/opacity editor.
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
-                           vtkCommand::CursorChangedEvent, this,
-                           SLOT(histogramClicked(vtkObject*)));
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
-                           vtkCommand::EndEvent, this,
-                           SLOT(onScalarOpacityFunctionChanged()));
-  this->EventLink->Connect(this->HistogramColorOpacityEditor.Get(),
-                           vtkControlPointsItem::CurrentPointEditEvent, this,
-                           SLOT(onCurrentPointEditEvent()));
+  m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
+                       vtkCommand::CursorChangedEvent, this,
+                       SLOT(histogramClicked(vtkObject*)));
+  m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
+                       vtkCommand::EndEvent, this,
+                       SLOT(onScalarOpacityFunctionChanged()));
+  m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
+                       vtkControlPointsItem::CurrentPointEditEvent, this,
+                       SLOT(onCurrentPointEditEvent()));
 
-  QHBoxLayout* hLayout = new QHBoxLayout(this);
-  hLayout->addWidget(this->qvtk);
-  QVBoxLayout* vLayout = new QVBoxLayout;
+  auto hLayout = new QHBoxLayout(this);
+  hLayout->addWidget(m_qvtk);
+  auto vLayout = new QVBoxLayout;
   hLayout->addLayout(vLayout);
   hLayout->setContentsMargins(0, 0, 5, 0);
 
   vLayout->setContentsMargins(0, 0, 0, 0);
   vLayout->addStretch(1);
 
-  QToolButton* button = new QToolButton;
+  auto button = new QToolButton;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRange24.png"));
   button->setToolTip("Reset data range");
   connect(button, SIGNAL(clicked()), this, SLOT(onResetRangeClicked()));
@@ -110,83 +109,77 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
   vLayout->addStretch(1);
 
-  this->setLayout(hLayout);
+  setLayout(hLayout);
 }
 
-HistogramWidget::~HistogramWidget()
-{
-}
+HistogramWidget::~HistogramWidget() = default;
 
 void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction* lut)
 {
-  if (this->LUT != lut) {
-    if (this->ScalarOpacityFunction) {
-      this->EventLink->Disconnect(this->ScalarOpacityFunction,
-                                  vtkCommand::ModifiedEvent, this,
-                                  SLOT(onScalarOpacityFunctionChanged()));
+  if (m_LUT != lut) {
+    if (m_scalarOpacityFunction) {
+      m_eventLink->Disconnect(m_scalarOpacityFunction,
+                              vtkCommand::ModifiedEvent, this,
+                              SLOT(onScalarOpacityFunctionChanged()));
     }
-    this->LUT = lut;
-    this->ScalarOpacityFunction = this->LUT->GetScalarOpacityFunction();
-    this->EventLink->Connect(this->ScalarOpacityFunction,
-                             vtkCommand::ModifiedEvent, this,
-                             SLOT(onScalarOpacityFunctionChanged()));
+    m_LUT = lut;
+    m_scalarOpacityFunction = m_LUT->GetScalarOpacityFunction();
+    m_eventLink->Connect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent,
+                         this, SLOT(onScalarOpacityFunctionChanged()));
   }
 }
 
 void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
 {
-  if (this->LUTProxy != proxy) {
-    this->LUTProxy = proxy;
+  if (m_LUTProxy != proxy) {
+    m_LUTProxy = proxy;
     vtkPVDiscretizableColorTransferFunction* lut =
       vtkPVDiscretizableColorTransferFunction::SafeDownCast(
         proxy->GetClientSideObject());
-    this->setLUT(lut);
+    setLUT(lut);
   }
 }
 
 void HistogramWidget::setInputData(vtkTable* table, const char* x,
                                    const char* y)
 {
-  this->HistogramColorOpacityEditor->SetHistogramInputData(table, x, y);
-  this->HistogramColorOpacityEditor->SetOpacityFunction(
-    this->ScalarOpacityFunction);
-  if (this->LUT) {
-    this->HistogramColorOpacityEditor->SetScalarVisibility(true);
-    this->HistogramColorOpacityEditor->SetColorTransferFunction(this->LUT);
-    this->HistogramColorOpacityEditor->SelectColorArray("image_extents");
+  m_histogramColorOpacityEditor->SetHistogramInputData(table, x, y);
+  m_histogramColorOpacityEditor->SetOpacityFunction(m_scalarOpacityFunction);
+  if (m_LUT) {
+    m_histogramColorOpacityEditor->SetScalarVisibility(true);
+    m_histogramColorOpacityEditor->SetColorTransferFunction(m_LUT);
+    m_histogramColorOpacityEditor->SelectColorArray("image_extents");
   }
-  this->HistogramView->Render();
+  m_histogramView->Render();
 }
 
 void HistogramWidget::onScalarOpacityFunctionChanged()
 {
-  pqApplicationCore* core = pqApplicationCore::instance();
-  pqServerManagerModel* smModel = core->getServerManagerModel();
+  auto core = pqApplicationCore::instance();
+  auto smModel = core->getServerManagerModel();
   QList<pqView*> views = smModel->findItems<pqView*>();
   foreach (pqView* view, views) {
     view->render();
   }
 
   // Update the histogram
-  this->HistogramView->GetRenderWindow()->Render();
+  m_histogramView->GetRenderWindow()->Render();
 
   // Update the scalar opacity function proxy as it does not update it's
   // internal state when the VTK object changes.
-  if (!this->LUTProxy) {
+  if (!m_LUTProxy) {
     return;
   }
 
   vtkSMProxy* opacityMapProxy =
-    vtkSMPropertyHelper(this->LUTProxy, "ScalarOpacityFunction", true)
-      .GetAsProxy();
+    vtkSMPropertyHelper(m_LUTProxy, "ScalarOpacityFunction", true).GetAsProxy();
   if (!opacityMapProxy) {
     return;
   }
 
   vtkSMPropertyHelper pointsHelper(opacityMapProxy, "Points");
   vtkObjectBase* opacityMapObject = opacityMapProxy->GetClientSideObject();
-  vtkPiecewiseFunction* pwf =
-    vtkPiecewiseFunction::SafeDownCast(opacityMapObject);
+  auto pwf = vtkPiecewiseFunction::SafeDownCast(opacityMapObject);
   if (pwf) {
     pointsHelper.SetNumberOfElements(4 * pwf->GetSize());
     for (int i = 0; i < pwf->GetSize(); ++i) {
@@ -203,7 +196,7 @@ void HistogramWidget::onScalarOpacityFunctionChanged()
 void HistogramWidget::onCurrentPointEditEvent()
 {
   double rgb[3];
-  if (this->HistogramColorOpacityEditor->GetCurrentControlPointColor(rgb)) {
+  if (m_histogramColorOpacityEditor->GetCurrentControlPointColor(rgb)) {
     QColor color = QColorDialog::getColor(
       QColor::fromRgbF(rgb[0], rgb[1], rgb[2]), this,
       "Select Color for Control Point", QColorDialog::DontUseNativeDialog);
@@ -211,18 +204,18 @@ void HistogramWidget::onCurrentPointEditEvent()
       rgb[0] = color.redF();
       rgb[1] = color.greenF();
       rgb[2] = color.blueF();
-      this->HistogramColorOpacityEditor->SetCurrentControlPointColor(rgb);
-      this->onScalarOpacityFunctionChanged();
+      m_histogramColorOpacityEditor->SetCurrentControlPointColor(rgb);
+      onScalarOpacityFunctionChanged();
     }
   }
 }
 
 void HistogramWidget::histogramClicked(vtkObject*)
 {
-  DataSource* activeDataSource = ActiveObjects::instance().activeDataSource();
+  auto activeDataSource = ActiveObjects::instance().activeDataSource();
   Q_ASSERT(activeDataSource);
 
-  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  auto view = ActiveObjects::instance().activeView();
   if (!view) {
     return;
   }
@@ -231,7 +224,7 @@ void HistogramWidget::histogramClicked(vtkObject*)
   // ModuleContour instance or just create a new one, if none exists.
   typedef ModuleContour ModuleContourType;
 
-  ModuleContourType* contour =
+  auto contour =
     qobject_cast<ModuleContourType*>(ActiveObjects::instance().activeModule());
   if (!contour) {
     QList<ModuleContourType*> contours =
@@ -247,7 +240,7 @@ void HistogramWidget::histogramClicked(vtkObject*)
     ActiveObjects::instance().setActiveModule(contour);
   }
   Q_ASSERT(contour);
-  contour->setIsoValue(this->HistogramColorOpacityEditor->GetContourValue());
+  contour->setIsoValue(m_histogramColorOpacityEditor->GetContourValue());
   tomviz::convert<pqView*>(view)->render();
 }
 
@@ -261,7 +254,7 @@ void HistogramWidget::onCustomRangeClicked()
   vtkVector2d range;
   vtkDiscretizableColorTransferFunction* discFunc =
     vtkDiscretizableColorTransferFunction::SafeDownCast(
-      this->LUTProxy->GetClientSideObject());
+      m_LUTProxy->GetClientSideObject());
   if (!discFunc) {
     return;
   }
@@ -270,16 +263,16 @@ void HistogramWidget::onCustomRangeClicked()
   dialog.setRange(range[0], range[1]);
   if (dialog.exec() == QDialog::Accepted) {
     vtkSMTransferFunctionProxy::RescaleTransferFunction(
-      this->LUTProxy, dialog.getMinimum(), dialog.getMaximum());
+      m_LUTProxy, dialog.getMinimum(), dialog.getMaximum());
   }
-  this->renderViews();
+  renderViews();
   emit colorMapUpdated();
 }
 
 void HistogramWidget::onInvertClicked()
 {
-  vtkSMTransferFunctionProxy::InvertTransferFunction(this->LUTProxy);
-  this->renderViews();
+  vtkSMTransferFunctionProxy::InvertTransferFunction(m_LUTProxy);
+  renderViews();
   emit colorMapUpdated();
 }
 
@@ -298,10 +291,10 @@ void HistogramWidget::onPresetClicked()
 
 void HistogramWidget::applyCurrentPreset()
 {
-  pqPresetDialog* dialog = qobject_cast<pqPresetDialog*>(this->sender());
+  auto dialog = qobject_cast<pqPresetDialog*>(sender());
   Q_ASSERT(dialog);
 
-  vtkSMProxy* lut = this->LUTProxy;
+  vtkSMProxy* lut = m_LUTProxy;
   if (!lut) {
     return;
   }
@@ -337,7 +330,7 @@ void HistogramWidget::applyCurrentPreset()
         vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
       }
     }
-    this->renderViews();
+    renderViews();
     emit colorMapUpdated();
   }
 }

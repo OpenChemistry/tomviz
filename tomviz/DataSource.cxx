@@ -72,16 +72,15 @@ public:
   // and creates it if it does not exist.
   void ensureTiltAnglesArrayExists()
   {
-    vtkAlgorithm* tp =
-      vtkAlgorithm::SafeDownCast(this->Producer->GetClientSideObject());
-    vtkDataObject* data = tp->GetOutputDataObject(0);
-    vtkFieldData* fd = data->GetFieldData();
+    auto tp = vtkAlgorithm::SafeDownCast(this->Producer->GetClientSideObject());
+    auto data = tp->GetOutputDataObject(0);
+    auto fd = data->GetFieldData();
     if (!this->TiltAngles) {
       int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
-      int num_tilt_angles = extent[5] - extent[4] + 1;
+      int numTiltAngles = extent[5] - extent[4] + 1;
       vtkNew<vtkDoubleArray> array;
       array->SetName("tilt_angles");
-      array->SetNumberOfTuples(num_tilt_angles);
+      array->SetNumberOfTuples(numTiltAngles);
       array->FillComponent(0, 0.0);
       if (!fd->HasArray("tilt_angles")) {
         fd->AddArray(array.GetPointer());
@@ -139,21 +138,21 @@ DataSource::ImageFuture::ImageFuture(Operator* op,
 {
 
   if (m_future != nullptr) {
-    connect(m_future, SIGNAL(finished(bool)), this, SIGNAL(finished(bool)));
-    connect(m_future, SIGNAL(canceled()), this, SIGNAL(canceled()));
+    connect(m_future, SIGNAL(finished(bool)), SIGNAL(finished(bool)));
+    connect(m_future, SIGNAL(canceled()), SIGNAL(canceled()));
   }
 }
 
 DataSource::ImageFuture::~ImageFuture()
 {
-  if (this->m_future != nullptr) {
-    this->m_future->deleteLater();
+  if (m_future != nullptr) {
+    m_future->deleteLater();
   }
 }
 
 DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
                        QObject* parentObject)
-  : Superclass(parentObject), Internals(new DataSource::DSInternals())
+  : QObject(parentObject), Internals(new DataSource::DSInternals())
 {
   Q_ASSERT(dataSource);
   this->Internals->OriginalDataSource = dataSource;
@@ -194,7 +193,7 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
 
   // Setup color map for this data-source.
   static unsigned int colorMapCounter = 0;
-  colorMapCounter++;
+  ++colorMapCounter;
 
   vtkNew<vtkSMTransferFunctionManager> tfmgr;
   this->Internals->ColorMap = tfmgr->GetColorTransferFunction(
