@@ -61,8 +61,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   // Set up our little chart.
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
   m_qvtk->SetRenderWindow(m_histogramView->GetRenderWindow());
-  m_histogramView->GetScene()->AddItem(
-    m_histogramColorOpacityEditor.Get());
+  m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor.Get());
 
   // Connect events from the histogram color/opacity editor.
   m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
@@ -125,9 +124,8 @@ void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction* lut)
     }
     m_LUT = lut;
     m_scalarOpacityFunction = m_LUT->GetScalarOpacityFunction();
-    m_eventLink->Connect(m_scalarOpacityFunction,
-                         vtkCommand::ModifiedEvent, this,
-                         SLOT(onScalarOpacityFunctionChanged()));
+    m_eventLink->Connect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent,
+                         this, SLOT(onScalarOpacityFunctionChanged()));
   }
 }
 

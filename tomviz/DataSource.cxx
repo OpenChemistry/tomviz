@@ -72,8 +72,7 @@ public:
   // and creates it if it does not exist.
   void ensureTiltAnglesArrayExists()
   {
-    auto tp =
-      vtkAlgorithm::SafeDownCast(this->Producer->GetClientSideObject());
+    auto tp = vtkAlgorithm::SafeDownCast(this->Producer->GetClientSideObject());
     auto data = tp->GetOutputDataObject(0);
     auto fd = data->GetFieldData();
     if (!this->TiltAngles) {

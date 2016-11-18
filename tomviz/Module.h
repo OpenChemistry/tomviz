@@ -76,7 +76,7 @@ public:
   /// Flag indicating whether the module uses a "detached" color map or not.
   /// This is only applicable when isColorMapNeeded() return true.
   void setUseDetachedColorMap(bool);
-  bool useDetachedColorMap() const { return this->UseDetachedColorMap; }
+  bool useDetachedColorMap() const { return this->m_useDetachedColorMap; }
 
   /// This will either return the maps from the data source or detached ones
   /// based on the UseDetachedColorMap flag.
@@ -151,9 +151,9 @@ private slots:
 
 private:
   Q_DISABLE_COPY(Module)
-  QPointer<DataSource> ADataSource;
-  vtkWeakPointer<vtkSMViewProxy> View;
-  bool UseDetachedColorMap;
+  QPointer<DataSource> m_activeDataSource;
+  vtkWeakPointer<vtkSMViewProxy> m_view;
+  bool m_useDetachedColorMap = false;
 
   class MInternals;
   const QScopedPointer<MInternals> Internals;

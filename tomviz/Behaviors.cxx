@@ -115,9 +115,9 @@ QString Behaviors::getMatplotlibColorMapFile()
   if (file.exists()) {
     return path;
   }
-  // On OSX the above doesn't work in a build tree.  It is fine
-  // for superbuilds, but the following is needed in the build tree
-  // since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
+// On OSX the above doesn't work in a build tree.  It is fine
+// for superbuilds, but the following is needed in the build tree
+// since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
 #ifdef __APPLE__
   else {
     path = QApplication::applicationDirPath() +

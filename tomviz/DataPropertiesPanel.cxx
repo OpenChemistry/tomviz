@@ -63,8 +63,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
     pqProxyWidget::newGroupLabelWidget("Original Dimensions & Range", this);
   l->insertWidget(l->indexOf(m_ui->OriginalDataRange), separator);
 
-  separator = pqProxyWidget::newGroupLabelWidget(
-    "Transformed Dimensions & Range", this);
+  separator =
+    pqProxyWidget::newGroupLabelWidget("Transformed Dimensions & Range", this);
   l->insertWidget(l->indexOf(m_ui->TransformedDataRange), separator);
 
   separator = pqProxyWidget::newGroupLabelWidget("Units and Size", this);
@@ -73,8 +73,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
 
   m_tiltAnglesSeparator =
     pqProxyWidget::newGroupLabelWidget("Tilt Angles", this);
-  l->insertWidget(l->indexOf(m_ui->SetTiltAnglesButton),
-                  m_tiltAnglesSeparator);
+  l->insertWidget(l->indexOf(m_ui->SetTiltAnglesButton), m_tiltAnglesSeparator);
 
   clear();
 
@@ -84,16 +83,11 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
           SLOT(updateAxesGridLabels()));
   connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
           SLOT(updateAxesGridLabels()));
-  connect(m_ui->SetTiltAnglesButton, SIGNAL(clicked()),
-          SLOT(setTiltAngles()));
-  connect(m_ui->unitBox, SIGNAL(editingFinished()),
-          SLOT(updateUnits()));
-  connect(m_ui->xLengthBox, SIGNAL(editingFinished()),
-          SLOT(updateXLength()));
-  connect(m_ui->yLengthBox, SIGNAL(editingFinished()),
-          SLOT(updateYLength()));
-  connect(m_ui->zLengthBox, SIGNAL(editingFinished()),
-          SLOT(updateZLength()));
+  connect(m_ui->SetTiltAnglesButton, SIGNAL(clicked()), SLOT(setTiltAngles()));
+  connect(m_ui->unitBox, SIGNAL(editingFinished()), SLOT(updateUnits()));
+  connect(m_ui->xLengthBox, SIGNAL(editingFinished()), SLOT(updateXLength()));
+  connect(m_ui->yLengthBox, SIGNAL(editingFinished()), SLOT(updateYLength()));
+  connect(m_ui->zLengthBox, SIGNAL(editingFinished()), SLOT(updateZLength()));
 }
 
 DataPropertiesPanel::~DataPropertiesPanel()
@@ -160,8 +154,7 @@ void DataPropertiesPanel::updateData()
     return;
   }
 
-  disconnect(m_ui->TiltAnglesTable,
-             SIGNAL(cellChanged(int, int)), this,
+  disconnect(m_ui->TiltAnglesTable, SIGNAL(cellChanged(int, int)), this,
              SLOT(onTiltAnglesModified(int, int)));
   clear();
 

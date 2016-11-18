@@ -174,9 +174,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   // histogram has been finished on the background thread.
   m_worker->start();
   m_histogramGen->moveToThread(m_worker);
-  connect(m_histogramGen,
-          SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,
-                               vtkSmartPointer<vtkTable>)),
+  connect(m_histogramGen, SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,
+                                               vtkSmartPointer<vtkTable>)),
           SLOT(histogramReady(vtkSmartPointer<vtkImageData>,
                               vtkSmartPointer<vtkTable>)));
   m_timer->setInterval(200);
@@ -327,8 +326,7 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
 
 void CentralWidget::setHistogramTable(vtkTable* table)
 {
-  auto arr =
-    vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
+  auto arr = vtkDataArray::SafeDownCast(table->GetColumnByName("image_pops"));
   if (!arr) {
     return;
   }
