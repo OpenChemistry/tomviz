@@ -37,11 +37,68 @@
 #include <vtkSMViewProxy.h>
 #include <vtkTable.h>
 
+#include <QApplication>
+#include <QItemDelegate>
 #include <QKeyEvent>
 #include <QMainWindow>
 #include <QMenu>
+#include <QMovie>
+#include <QPainter>
 
 namespace tomviz {
+
+class OperatorRunningDelegate : public QItemDelegate
+{
+
+public:
+  OperatorRunningDelegate(QWidget* parent = 0);
+
+  void paint(QPainter* painter, const QStyleOptionViewItem& option,
+             const QModelIndex& index) const;
+
+private:
+  QMovie* m_movie;
+  PipelineView* m_view;
+};
+
+OperatorRunningDelegate::OperatorRunningDelegate(QWidget* parent)
+  : QItemDelegate(parent)
+{
+  m_view = qobject_cast<PipelineView*>(parent);
+  m_movie = new QMovie(":/icons/progress_spinner_32.gif");
+  m_movie->start();
+  connect(m_movie, SIGNAL(frameChanged(int)), m_view->viewport(),
+          SLOT(update()));
+}
+
+void OperatorRunningDelegate::paint(QPainter* painter,
+                                    const QStyleOptionViewItem& option,
+                                    const QModelIndex& index) const
+{
+
+  auto pipelineModel = qobject_cast<PipelineModel*>(m_view->model());
+  auto op = pipelineModel->op(index);
+
+  if (op && index.column() == Column::state) {
+    if (op->state() == OperatorState::RUNNING) {
+      // Get the current pixel map
+      QPixmap pixmap = m_movie->currentPixmap();
+      // Scale it to the correct size
+      pixmap = pixmap.scaled(option.rect.height(), option.rect.height());
+
+      // Calculate the correct location to draw based on margin. The margin
+      // calculation is taken from QItemDelegate::doLayout(...), I couldn't
+      // find an API call that would give this to me directly.
+      auto leftMargin =
+        QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+      QPoint topLeft = option.rect.topLeft();
+      topLeft += QPoint(leftMargin, 0);
+
+      painter->drawPixmap(topLeft, pixmap);
+    }
+  }
+  QItemDelegate::paint(painter, option, index);
+}
 
 PipelineView::PipelineView(QWidget* p) : QTreeView(p)
 {
@@ -54,6 +111,7 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   setStyleSheet(customStyle);
   setAlternatingRowColors(true);
   setSelectionBehavior(QAbstractItemView::SelectRows);
+  setItemDelegate(new OperatorRunningDelegate(this));
 
   // track selection to update ActiveObjects.
   connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
