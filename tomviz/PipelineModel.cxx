@@ -289,8 +289,6 @@ QIcon iconForDataObject(vtkDataObject* dataObject)
 QIcon iconForOperatorState(tomviz::OperatorState state)
 {
   switch (state) {
-    case OperatorState::RUNNING:
-      return QIcon(":/icons/progress_spinner_32.gif");
     case OperatorState::COMPLETE:
       return QIcon(":/icons/check_32.png");
     case OperatorState::QUEUED:
@@ -299,6 +297,9 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
       return QIcon(":/icons/error_notification_32.png");
     case OperatorState::CANCELED:
       return QIcon(":/icons/red_cross_32.png");
+    case OperatorState::RUNNING:
+      // Our subclass of QItemDelegate will take care of this animated icon
+      break;
   }
 
   return QIcon();
