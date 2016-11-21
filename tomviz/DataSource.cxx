@@ -792,21 +792,7 @@ void DataSource::operatorTransformModified()
     connect(this->Internals->Future, SIGNAL(canceled()), this,
             SLOT(pipelineCanceled()));
   } else {
-    auto data = this->copyOriginalData();
-
-    // We have no operators to run so just update the data and signal that
-    // data has changed
-    if (this->Internals->Operators.isEmpty()) {
-      this->setData(data);
-      this->dataModified();
-    } else {
-      this->Internals->Future =
-        this->Internals->Worker->run(data, this->Internals->Operators);
-      connect(this->Internals->Future, SIGNAL(finished(bool)), this,
-              SLOT(pipelineFinished(bool)));
-      connect(this->Internals->Future, SIGNAL(canceled()), this,
-              SLOT(pipelineCanceled()));
-    }
+    this->executeOperators();
   }
 }
 
@@ -942,5 +928,30 @@ void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.
   tomviz::rescaleColorMap(this->colorMap(), this);
+}
+
+void DataSource::executeOperators()
+{
+  // Cancel any running operators
+  if (this->Internals->Future != nullptr &&
+      this->Internals->Future->isRunning()) {
+    this->Internals->Future->cancel();
+  }
+
+  auto data = this->copyOriginalData();
+
+  // We have no operators to run so just update the data and signal that
+  // data has changed
+  if (this->Internals->Operators.isEmpty()) {
+    this->setData(data);
+    this->dataModified();
+  } else {
+    this->Internals->Future =
+      this->Internals->Worker->run(data, this->Internals->Operators);
+    connect(this->Internals->Future, SIGNAL(finished(bool)), this,
+            SLOT(pipelineFinished(bool)));
+    connect(this->Internals->Future, SIGNAL(canceled()), this,
+            SLOT(pipelineCanceled()));
+  }
 }
 }

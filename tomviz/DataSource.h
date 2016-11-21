@@ -135,6 +135,9 @@ public:
   /// Set the string describing the units
   void setUnits(const QString& units);
 
+  /// Execute the operator pipeline associate with the datasource
+  void executeOperators();
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.

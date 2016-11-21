@@ -158,6 +158,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* cloneAction = nullptr;
   QAction* markAsAction = nullptr;
   QAction* saveDataAction = nullptr;
+  QAction* executeAction = nullptr;
+  bool allowReExecute = false;
   if (dataSource != nullptr) {
     cloneAction = contextMenu.addAction("Clone");
     new CloneDataReaction(cloneAction);
@@ -168,13 +170,37 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     } else {
       markAsAction = contextMenu.addAction("Mark as Volume");
     }
+
+    // Add option to re-execute the pipeline is we have a canceled operator
+    // in our pipeline.
+    foreach (Operator* op, dataSource->operators()) {
+      if (op->isCanceled()) {
+        allowReExecute = true;
+        break;
+      }
+    }
   }
   auto deleteAction = contextMenu.addAction("Delete");
+
+  // Allow pipeline to be re-executed if we are dealing with a canceled
+  // operator.
+  auto op = pipelineModel->op(idx);
+  allowReExecute = allowReExecute || (op && op->isCanceled());
+
+  if (allowReExecute) {
+    executeAction = contextMenu.addAction("Re-execute pipeline");
+  }
+
   auto globalPoint = mapToGlobal(e->pos());
   auto selectedItem = contextMenu.exec(globalPoint);
   // Some action was selected, so process it.
   if (selectedItem == deleteAction) {
     deleteItem(idx);
+  } else if (executeAction && selectedItem == executeAction) {
+    if (!dataSource) {
+      dataSource = op->dataSource();
+    }
+    dataSource->executeOperators();
   } else if (markAsAction != nullptr && markAsAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());
     ToggleDataTypeReaction::toggleDataType(mainWindow, dataSource);
