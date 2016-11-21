@@ -817,9 +817,8 @@ void AddPythonTransformReaction::addPythonOperator(
   opPython->setJSONDescription(jsonString);
   opPython->setLabel(scriptLabel);
   opPython->setScript(scriptBaseString);
-  foreach (QString key, arguments.keys()) {
-    opPython->addArgument(key, arguments.value(key));
-  }
+  opPython->setArguments(arguments);
+
   source->addOperator(opPython);
 }
 }

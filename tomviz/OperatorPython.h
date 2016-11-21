@@ -57,8 +57,11 @@ public:
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
   bool hasCustomUI() const override { return true; }
 
-  /// Add argument to pass to the transform_scalars function
-  void addArgument(const QString& name, const QVariant& value);
+  /// Set the arguments to pass to the transform_scalars function
+  void setArguments(QMap<QString, QVariant> args);
+
+  /// Returns the argument that will be passed to transform_scalars
+  QMap<QString, QVariant> arguments() const;
 
 signals:
   // Signal used to request the creation of a new data source. Needed to

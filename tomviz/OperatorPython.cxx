@@ -501,9 +501,14 @@ void OperatorPython::setOperatorResult(const QString& name,
   }
 }
 
-void OperatorPython::addArgument(const QString& name, const QVariant& value)
+void OperatorPython::setArguments(QMap<QString, QVariant> args)
 {
-  m_arguments[name] = value;
+  m_arguments = args;
+}
+
+QMap<QString, QVariant> OperatorPython::arguments() const
+{
+  return m_arguments;
 }
 }
 #include "OperatorPython.moc"
