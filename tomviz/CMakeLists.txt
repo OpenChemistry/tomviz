@@ -193,6 +193,7 @@ set(exec_sources
 )
 
 set(python_files
+  AddPoissonNoise.py
   BinaryThreshold.py
   ConnectedComponents.py
   OtsuMultipleThreshold.py
@@ -245,6 +246,7 @@ set(python_files
   )
 
 set(json_files
+  AddPoissonNoise.json
   BinaryThreshold.json
   ConnectedComponents.json
   OtsuMultipleThreshold.json

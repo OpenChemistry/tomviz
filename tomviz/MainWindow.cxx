@@ -276,6 +276,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QAction* randomShiftsAction =
     ui.menuTomography->addAction("Shift Tilt Series Randomly");
+  QAction* addPoissonNoiseAction =
+    ui.menuTomography->addAction("Add Poisson Noise");
 
   // Set up reactions for Tomography Menu
   //#################################################################
@@ -344,6 +346,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     randomShiftsAction, "Shift Tilt Series Randomly",
     readInPythonScript("ShiftTiltSeriesRandomly"), true, false,
     readInJSONDescription("ShiftTiltSeriesRandomly"));
+  new AddPythonTransformReaction(addPoissonNoiseAction, "Add Poisson Noise",
+                                 readInPythonScript("AddPoissonNoise"), true,
+                                 false,
+                                 readInJSONDescription("AddPoissonNoise"));
 
   //#################################################################
   new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
