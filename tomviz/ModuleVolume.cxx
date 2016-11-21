@@ -19,12 +19,12 @@
 #include "Utilities.h"
 
 #include <vtkColorTransferFunction.h>
+#include <vtkGPUVolumeRayCastMapper.h>
 #include <vtkImageData.h>
 #include <vtkImageShiftScale.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSmartPointer.h>
-#include <vtkGPUVolumeRayCastMapper.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
 #include <vtkView.h>
@@ -133,6 +133,9 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
   bool maxIntensity =
     m_volumeMapper->GetBlendMode() == vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND;
   maxIntensityNode.append_attribute("enabled") = maxIntensity;
+  xml_node jitteringNode = rootNode.append_child("jittering");
+  jitteringNode.append_attribute("enabled") =
+    m_volumeMapper->GetUseJittering() == 1;
   return Module::serialize(ns);
 }
 
@@ -162,6 +165,13 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
     xml_attribute att = node.attribute("enabled");
     if (att) {
       setMaximumIntensity(att.as_bool());
+    }
+  }
+  node = rootNode.child("jittering");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      setJittering(att.as_bool());
     }
   }
 
