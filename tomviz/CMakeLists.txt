@@ -131,6 +131,8 @@ set(SOURCES
   ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx
   PythonGeneratedDatasetReaction.h
+  PythonUtilities.cxx
+  PythonUtilities.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
   ReconstructionOperator.cxx

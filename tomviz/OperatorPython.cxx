@@ -26,6 +26,7 @@
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
+#include "PythonUtilities.h"
 #include "Utilities.h"
 #include "pqPythonSyntaxHighlighter.h"
 
