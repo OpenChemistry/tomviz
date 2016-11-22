@@ -29,8 +29,9 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
         # ITK's BinaryThresholdImageFilter does the hard work
         threshold_filter = itk.BinaryThresholdImageFilter[
             itk_input_image_type, itk_output_image_type].New()
-        threshold_filter.SetLowerThreshold(lower_threshold)
-        threshold_filter.SetUpperThreshold(upper_threshold)
+        python_cast = utils.get_python_voxel_type(itk_image)
+        threshold_filter.SetLowerThreshold(python_cast(lower_threshold))
+        threshold_filter.SetUpperThreshold(python_cast(upper_threshold))
         threshold_filter.SetInsideValue(1)
         threshold_filter.SetOutsideValue(0)
         threshold_filter.SetInput(itk_image)
