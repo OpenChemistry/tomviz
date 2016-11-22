@@ -715,6 +715,20 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
 void AddPythonTransformReaction::addExpressionFromNonModalDialog()
 {
+  auto addRanges = [](QMap<QString, QVariant>& arguments, int* indices) {
+    QList<QVariant> range;
+    range << indices[0] << indices[1];
+    arguments.insert("XRANGE", range);
+    range.clear();
+
+    range << indices[2] << indices[3];
+    arguments.insert("YRANGE", range);
+    range.clear();
+
+    range << indices[4] << indices[5];
+    arguments.insert("ZRANGE", range);
+  };
+
   DataSource* source = ActiveObjects::instance().activeDataSource();
   QDialog* dialog = qobject_cast<QDialog*>(this->sender());
   if (this->scriptLabel == "Clear Volume") {
@@ -750,17 +764,7 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     indices[5] = selection_extent[5] - image_extent[4] + 1;
 
     QMap<QString, QVariant> arguments;
-    QList<QVariant> range;
-    range << indices[0] << indices[1];
-    arguments.insert("XRANGE", range);
-    range.clear();
-
-    range << indices[2] << indices[3];
-    arguments.insert("YRANGE", range);
-    range.clear();
-
-    range << indices[4] << indices[5];
-    arguments.insert("ZRANGE", range);
+    addRanges(arguments, indices);
     addPythonOperator(source, this->scriptLabel, this->scriptSource, arguments);
   }
   if (this->scriptLabel == "Background Subtraction (Manual)") {
@@ -791,18 +795,7 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     indices[5] = selection_extent[5] - image_extent[4] + 1;
 
     QMap<QString, QVariant> arguments;
-    QList<QVariant> range;
-    range << indices[0] << indices[1];
-    arguments.insert("XRANGE", range);
-    range.clear();
-
-    range << indices[2] << indices[3];
-    arguments.insert("YRANGE", range);
-    range.clear();
-
-    range << indices[4] << indices[5];
-    arguments.insert("ZRANGE", range);
-
+    addRanges(arguments, indices);
     addPythonOperator(source, this->scriptLabel, this->scriptSource, arguments);
   }
 }
