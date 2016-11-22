@@ -35,6 +35,7 @@ _itkctype_to_python_types = None
 # Map between VTK data type and python type
 _vtk_to_python_types = None
 
+
 def vtk_itk_type_map():
     """Try to set up mappings between VTK image types and ITK image types.
     Not all ITK image types may be available, hence the try statements."""
@@ -171,7 +172,7 @@ def get_python_voxel_type(dataset):
         # Set up map between VTK data type and Python type
         global _vtk_to_python_types
 
-        if _vtk_to_python_types == None:
+        if _vtk_to_python_types is None:
             import vtk
             _vtk_to_python_types = {
                 vtk.VTK_UNSIGNED_CHAR: int,
@@ -198,8 +199,8 @@ def get_python_voxel_type(dataset):
         # Set up map between ITK ctype and Python type.
         global _itkctype_to_python_types
 
-        if _itkctype_to_python_types == None:
-            import itk, itkTypes
+        if _itkctype_to_python_types is None:
+            import itkTypes
 
             _itkctype_to_python_types = {
                 itkTypes.F: float,
