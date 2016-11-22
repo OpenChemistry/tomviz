@@ -14,7 +14,6 @@
 
 ******************************************************************************/
 #include "Utilities.h"
-#include "vtkPython.h" // must be first
 
 #include "DataSource.h"
 
