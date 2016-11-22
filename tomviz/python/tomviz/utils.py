@@ -191,7 +191,7 @@ def get_python_voxel_type(dataset):
         scalars = pd.GetScalars()
 
         return _vtk_to_python_types[scalars.GetDataType()]
-    except:
+    except AttributeError as attribute_error:
         pass
 
     # If the above fails, treat dataset as an ITK image.
@@ -222,9 +222,9 @@ def get_python_voxel_type(dataset):
         # Incantation for obtaining voxel type in ITK image
         ctype = itkExtras.template(type(dataset))[1][0]
         return _itkctype_to_python_types[ctype]
-    except Exception as exc:
+    except AttributeError as attribute_error:
         print("Could not get Python voxel type for dataset %s" % type(dataset))
-        print(exc)
+        print(attribute_error)
 
 
 def _get_itk_image_type(vtk_image_data):
