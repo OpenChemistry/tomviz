@@ -20,6 +20,7 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
+#include "PythonUtilities.h"
 #include "Utilities.h"
 #include "pqActiveObjects.h"
 #include "pqRenderView.h"

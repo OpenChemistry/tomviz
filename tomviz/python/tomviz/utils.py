@@ -28,6 +28,13 @@ _vtk_to_itk_types = None
 # to converting them to ITK images.
 _vtk_cast_types = None
 
+# Dictionary mapping from ITK image type to Python numeric type.
+# Used for casting Python values to a suitable type for certain filters.
+_itkctype_to_python_types = None
+
+# Map between VTK data type and python type
+_vtk_to_python_types = None
+
 
 def vtk_itk_type_map():
     """Try to set up mappings between VTK image types and ITK image types.
@@ -152,6 +159,72 @@ def vtk_cast_map():
                     break
 
     return _vtk_cast_types
+
+
+def get_python_voxel_type(dataset):
+    """
+    Return the Python type that can represent the voxel type in the dataset.
+    The dataset can be either a VTK dataset or an ITK image.
+    """
+
+    # Try treating dataset as a VTK data set first.
+    try:
+        # Set up map between VTK data type and Python type
+        global _vtk_to_python_types
+
+        if _vtk_to_python_types is None:
+            import vtk
+            _vtk_to_python_types = {
+                vtk.VTK_UNSIGNED_CHAR: int,
+                vtk.VTK_CHAR: int,
+                vtk.VTK_UNSIGNED_SHORT: int,
+                vtk.VTK_SHORT: int,
+                vtk.VTK_UNSIGNED_INT: int,
+                vtk.VTK_INT: int,
+                vtk.VTK_UNSIGNED_LONG: long,
+                vtk.VTK_LONG: long,
+                vtk.VTK_FLOAT: float,
+                vtk.VTK_DOUBLE: float
+            }
+
+        pd = dataset.GetPointData()
+        scalars = pd.GetScalars()
+
+        return _vtk_to_python_types[scalars.GetDataType()]
+    except AttributeError as attribute_error:
+        pass
+
+    # If the above fails, treat dataset as an ITK image.
+    try:
+        # Set up map between ITK ctype and Python type.
+        global _itkctype_to_python_types
+
+        if _itkctype_to_python_types is None:
+            import itkTypes
+
+            _itkctype_to_python_types = {
+                itkTypes.F: float,
+                itkTypes.D: float,
+                itkTypes.LD: float,
+                itkTypes.UC: int,
+                itkTypes.US: int,
+                itkTypes.UI: int,
+                itkTypes.UL: long,
+                itkTypes.SC: int,
+                itkTypes.SS: int,
+                itkTypes.SI: int,
+                itkTypes.SL: long,
+                itkTypes.B: int
+            }
+
+        import itkExtras
+
+        # Incantation for obtaining voxel type in ITK image
+        ctype = itkExtras.template(type(dataset))[1][0]
+        return _itkctype_to_python_types[ctype]
+    except AttributeError as attribute_error:
+        print("Could not get Python voxel type for dataset %s" % type(dataset))
+        print(attribute_error)
 
 
 def _get_itk_image_type(vtk_image_data):

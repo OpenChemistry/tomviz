@@ -5,12 +5,8 @@ import tomviz.operators
 
 class RandomTiltSeriesShiftOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform_scalars(self, dataset, maxShift=1):
         """Apply random integer shifts to tilt images"""
-
-        #----USER SPECIFIED VARIABLES-----#
-        ###maxShift###
-        #---------------------------------#
 
         tiltSeries = utils.get_array(dataset)
         if tiltSeries is None:

@@ -5,13 +5,9 @@ import tomviz.operators
 
 class AddPoissonNoiseOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform_scalars(self, dataset, N=25):
         """Add Poisson noise to tilt images"""
         self.progress.maximum = 1
-
-        #----USER SPECIFIED VARIABLES-----#
-        ###N###
-        #---------------------------------#
 
         tiltSeries = utils.get_array(dataset).astype(float)
         if tiltSeries is None:

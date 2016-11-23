@@ -6,7 +6,8 @@ import tomviz.operators
 
 class ReconSirtOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform_scalars(self, dataset, Niter=None, stepSize=None,
+                          updateMethodIndex=None):
         """
         3D Reconstruct from a tilt series using Simultaneous Iterative
         Reconstruction Techniques (SIRT)"""
@@ -19,10 +20,6 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         pp. 326–333
         """
         """Y. Censor et al, Parallel Comput., 27 (2001), pp. 777–808"""
-
-        ###Niter###
-        ###stepSize###
-        ###updateMethodIndex###
 
         # Get Tilt angles
         tiltAngles = utils.get_tilt_angles(dataset)

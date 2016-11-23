@@ -41,7 +41,7 @@ public:
 
   static void addPythonOperator(DataSource* source, const QString& scriptLabel,
                                 const QString& scriptBaseString,
-                                const QMap<QString, QString> substitutions,
+                                const QMap<QString, QVariant> arguments,
                                 const QString& jsonString = QString());
 
 protected:

@@ -1,4 +1,4 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
     """This filter computes a binary threshold on the data set and
     stores the result in a label map in the data set."""
 
@@ -12,11 +12,6 @@ def transform_scalars(dataset):
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
-
-    # Set some filter parameters
-    #----USER SPECIFIED VARIABLES-----#
-    ###lower_threshold### # Specify lower threshold
-    ###upper_threshold### # Specify upper threshold
 
     # Add a try/except around the ITK portion. ITK exceptions are
     # passed up to the Python layer, so we can at least report what
@@ -34,8 +29,9 @@ def transform_scalars(dataset):
         # ITK's BinaryThresholdImageFilter does the hard work
         threshold_filter = itk.BinaryThresholdImageFilter[
             itk_input_image_type, itk_output_image_type].New()
-        threshold_filter.SetLowerThreshold(lower_threshold)
-        threshold_filter.SetUpperThreshold(upper_threshold)
+        python_cast = utils.get_python_voxel_type(itk_image)
+        threshold_filter.SetLowerThreshold(python_cast(lower_threshold))
+        threshold_filter.SetUpperThreshold(python_cast(upper_threshold))
         threshold_filter.SetInsideValue(1)
         threshold_filter.SetOutsideValue(0)
         threshold_filter.SetInput(itk_image)

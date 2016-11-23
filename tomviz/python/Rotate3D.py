@@ -3,12 +3,7 @@
 # Developed as part of the tomviz project (www.tomviz.com).
 
 
-def transform_scalars(dataset):
-
-    #----USER SPECIFIED VARIABLES-----#
-    ###rotation_axis###    #Specify Tilt Axis Dimensions x=0, y=1, z=2
-    ###rotation_angle###   #Rotate the dataset by an Angle (in degrees)
-    #---------------------------------#
+def transform_scalars(dataset, rotation_angle=90.0, rotation_axis=0):
 
     from tomviz import utils
     import numpy as np

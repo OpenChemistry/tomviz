@@ -1,14 +1,8 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, firstSlice=None, lastSlice=None, axis=2):
     """Delete Slices in Dataset"""
 
     from tomviz import utils
     import numpy as np
-    axis = 0
-    #----USER SPECIFIED VARIABLES-----#
-    ###firstSlice###
-    ###lastSlice###
-    ###axis### #Axis along which to delete the subarray
-    #---------------------------------#
 
     # Get the current dataset.
     array = utils.get_array(dataset)

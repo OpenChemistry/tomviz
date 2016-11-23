@@ -1,10 +1,6 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, sigma=2.0):
     """Apply a Gaussian filter to volume dataset."""
     """Gaussian Filter blurs the image and reduces the noise and details."""
-
-    #----USER SPECIFIED VARIABLES-----#
-    ###sigma###    #Specify sigma of the Gaussian Function
-    #---------------------------------#
 
     from tomviz import utils
     import scipy.ndimage

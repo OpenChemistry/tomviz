@@ -1,9 +1,5 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, threshold=None):
     """Remove bad pixels in tilt series."""
-
-    #----USER SPECIFIED VARIABLES-----#
-    ###threshold###
-    #---------------------------------#
 
     from tomviz import utils
     import scipy.ndimage

@@ -192,41 +192,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     if (dialog.exec() == QDialog::Accepted) {
       QMap<QString, QVariant> parameterValues = dialog.values();
-
-      // Iterate over the map entries to generate a substitution map
-      QMap<QString, QString> substitutions;
-      QMap<QString, QVariant>::const_iterator iter =
-        parameterValues.constBegin();
-      for (; iter != parameterValues.constEnd(); ++iter) {
-        QString key = "###" + iter.key() + "###";
-        QVariant parameterVariant = iter.value();
-        QString parameterValue = parameterVariant.toString();
-        if (parameterVariant.type() == QVariant::List) {
-          parameterValue = "(";
-          QList<QVariant> list = parameterVariant.toList();
-          for (int i = 0; i < list.size(); ++i) {
-            parameterValue.append(list[i].toString());
-            if (i < list.size() - 1) {
-              parameterValue.append(", ");
-            }
-          }
-          parameterValue.append(")");
-        }
-
-        // Convert to Python True/False values
-        if (parameterValue[0] == 't') {
-          parameterValue[0] = 'T';
-        }
-        if (parameterValue[0] == 'f') {
-          parameterValue[0] = 'F';
-        }
-        QString value = QString("%1 = %2").arg(iter.key()).arg(parameterValue);
-
-        substitutions.insert(key, value);
-      }
-
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions, jsonSource);
+                        parameterValues, jsonSource);
     }
     // Handle transforms with custom UIs
   } else if (scriptLabel == "Shift Volume") {
@@ -265,13 +232,13 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QLayout::SetFixedSize); // Make the UI non-resizeable
 
     if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###SHIFT###", QString("SHIFT = [%1, %2, %3]")
-                                            .arg(spinx->value())
-                                            .arg(spiny->value())
-                                            .arg(spinz->value()));
+      QMap<QString, QVariant> arguments;
+      QList<QVariant> values;
+      values << spinx->value() << spiny->value() << spinz->value();
+      arguments.insert("SHIFT", values);
+
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
+                        arguments);
     }
   } else if (scriptLabel == "Remove Bad Pixels") {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -298,11 +265,10 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QLayout::SetFixedSize); // Make the UI non-resizeable
 
     if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###threshold###",
-                           QString("threshold = %1").arg(threshold->value()));
+      QMap<QString, QVariant> arguments;
+      arguments.insert("threshold", threshold->value());
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
+                        arguments);
     }
   } else if (scriptLabel == "Crop") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
@@ -355,18 +321,16 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
     if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###START_CROP###",
-                           QString("START_CROP = [%1, %2, %3]")
-                             .arg(spinx->value())
-                             .arg(spiny->value())
-                             .arg(spinz->value()));
-      substitutions.insert("###END_CROP###", QString("END_CROP = [%1, %2, %3]")
-                                               .arg(spinxx->value())
-                                               .arg(spinyy->value())
-                                               .arg(spinzz->value()));
+      QMap<QString, QVariant> arguments;
+      QList<QVariant> values;
+      values << spinx->value() << spiny->value() << spinz->value();
+      arguments.insert("START_CROP", values);
+      values.clear();
+
+      values << spinxx->value() << spinyy->value() << spinzz->value();
+      arguments.insert("END_CROP", values);
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
+                        arguments);
     }
   } else if (scriptLabel == "Delete Slices") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
@@ -392,17 +356,12 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QLayout::SetFixedSize); // Make the UI non-resizeable
 
     if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert(
-        "###firstSlice###",
-        QString("firstSlice = %1").arg(sliceRange->startSlice()));
-      substitutions.insert(
-        "###lastSlice###",
-        QString("lastSlice = %1").arg(sliceRange->endSlice()));
-      substitutions.insert("###axis###",
-                           QString("axis = %1").arg(sliceRange->axis()));
+      QMap<QString, QVariant> arguments;
+      arguments.insert("firstSlice", sliceRange->startSlice());
+      arguments.insert("lastSlice", sliceRange->endSlice());
+      arguments.insert("axis", sliceRange->axis());
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
+                        arguments);
     }
   } else if (scriptLabel == "Reconstruct (Direct Fourier)") {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -431,9 +390,9 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
     if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
+      QMap<QString, QVariant> arguments;
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
+                        arguments);
     }
   } else if (scriptLabel == "Reconstruct (Back Projection)") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
@@ -502,16 +461,12 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
     if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###Nrecon###",
-                           QString("Nrecon = %1").arg(reconSize->value()));
-      substitutions.insert("###filter###",
-                           QString("filter = %1").arg(filters->currentIndex()));
-      substitutions.insert(
-        "###interp###",
-        QString("interp = %1").arg(interpMethods->currentIndex()));
+      QMap<QString, QVariant> arguments;
+      arguments.insert("Nrecon", reconSize->value());
+      arguments.insert("filter", filters->currentIndex());
+      arguments.insert("interp", interpMethods->currentIndex());
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
+                        arguments);
     }
   } else if (scriptLabel == "Reconstruct (SIRT)") {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -571,17 +526,12 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
     if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###Niter###",
-                           QString("Niter = %1").arg(Niter->value()));
-      substitutions.insert(
-        "###stepSize###",
-        QString("stepSize = %1").arg(updateStepSize->value()));
-      substitutions.insert(
-        "###updateMethodIndex###",
-        QString("updateMethodIndex = %1").arg(updateMethod->currentIndex()));
+      QMap<QString, QVariant> arguments;
+      arguments.insert("Niter", Niter->value());
+      arguments.insert("stepSize", updateStepSize->value());
+      arguments.insert("updateMethodIndex", updateMethod->currentIndex());
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
+                        arguments);
     }
   } else if (scriptLabel == "Reconstruct (Constraint-based Direct Fourier)") {
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -649,20 +599,13 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     dialog.layout()->setSizeConstraint(
       QLayout::SetFixedSize); // Make the UI non-resizeable
     if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QString> substitutions;
-      substitutions.insert("###Niter###",
-                           QString("Niter = %1").arg(Niter->value()));
-      substitutions.insert("###Niter_update_support###",
-                           QString("Niter_update_support = %1")
-                             .arg(supportUpdateIteration->value()));
-      substitutions.insert(
-        "###supportSigma###",
-        QString("supportSigma = %1").arg(supportSigma->value()));
-      substitutions.insert(
-        "###supportThreshold###",
-        QString("supportThreshold = %1").arg(supportThreshold->value()));
+      QMap<QString, QVariant> arguments;
+      arguments.insert("Niter", Niter->value());
+      arguments.insert("Niter_update_support", supportUpdateIteration->value());
+      arguments.insert("supportSigma", supportSigma->value());
+      arguments.insert("supportThreshold", supportThreshold->value());
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        substitutions);
+                        arguments);
     }
   } else if (scriptLabel == "Clear Volume") {
     QDialog* dialog = new QDialog(pqCoreUtilities::mainWidget());
@@ -772,6 +715,20 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
 void AddPythonTransformReaction::addExpressionFromNonModalDialog()
 {
+  auto addRanges = [](QMap<QString, QVariant>& arguments, int* indices) {
+    QList<QVariant> range;
+    range << indices[0] << indices[1];
+    arguments.insert("XRANGE", range);
+    range.clear();
+
+    range << indices[2] << indices[3];
+    arguments.insert("YRANGE", range);
+    range.clear();
+
+    range << indices[4] << indices[5];
+    arguments.insert("ZRANGE", range);
+  };
+
   DataSource* source = ActiveObjects::instance().activeDataSource();
   QDialog* dialog = qobject_cast<QDialog*>(this->sender());
   if (this->scriptLabel == "Clear Volume") {
@@ -806,18 +763,9 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     indices[4] = selection_extent[4] - image_extent[4];
     indices[5] = selection_extent[5] - image_extent[4] + 1;
 
-    QMap<QString, QString> substitutions;
-    substitutions.insert(
-      "###XRANGE###",
-      QString("XRANGE = [%1, %2]").arg(indices[0]).arg(indices[1]));
-    substitutions.insert(
-      "###YRANGE###",
-      QString("YRANGE = [%1, %2]").arg(indices[2]).arg(indices[3]));
-    substitutions.insert(
-      "###ZRANGE###",
-      QString("ZRANGE = [%1, %2]").arg(indices[4]).arg(indices[5]));
-    addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                      substitutions);
+    QMap<QString, QVariant> arguments;
+    addRanges(arguments, indices);
+    addPythonOperator(source, this->scriptLabel, this->scriptSource, arguments);
   }
   if (this->scriptLabel == "Background Subtraction (Manual)") {
     QLayout* layout = dialog->layout();
@@ -846,36 +794,24 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     indices[4] = selection_extent[4] - image_extent[4];
     indices[5] = selection_extent[5] - image_extent[4] + 1;
 
-    QMap<QString, QString> substitutions;
-    substitutions.insert(
-      "###XRANGE###",
-      QString("XRANGE = [%1, %2]").arg(indices[0]).arg(indices[1]));
-    substitutions.insert(
-      "###YRANGE###",
-      QString("YRANGE = [%1, %2]").arg(indices[2]).arg(indices[3]));
-    substitutions.insert(
-      "###ZRANGE###",
-      QString("ZRANGE = [%1, %2]").arg(indices[4]).arg(indices[5]));
-    addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                      substitutions);
+    QMap<QString, QVariant> arguments;
+    addRanges(arguments, indices);
+    addPythonOperator(source, this->scriptLabel, this->scriptSource, arguments);
   }
 }
 
 void AddPythonTransformReaction::addPythonOperator(
   DataSource* source, const QString& scriptLabel,
-  const QString& scriptBaseString, const QMap<QString, QString> substitutions,
+  const QString& scriptBaseString, const QMap<QString, QVariant> arguments,
   const QString& jsonString)
 {
-  // Substitute the values into the script
-  QString finalScript = scriptBaseString;
-  foreach (QString key, substitutions.keys()) {
-    finalScript.replace(key, substitutions.value(key));
-  }
   // Create and add the operator
   OperatorPython* opPython = new OperatorPython();
   opPython->setJSONDescription(jsonString);
   opPython->setLabel(scriptLabel);
-  opPython->setScript(finalScript);
+  opPython->setScript(scriptBaseString);
+  opPython->setArguments(arguments);
+
   source->addOperator(opPython);
 }
 }

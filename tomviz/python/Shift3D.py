@@ -3,11 +3,7 @@
 # Developed as part of the tomviz project (www.tomviz.com).
 
 
-def transform_scalars(dataset):
-
-    #----USER SPECIFIED VARIABLES-----#
-    ###SHIFT###   #Specify the shifts (x,y,z) applied to data
-    #---------------------------------#
+def transform_scalars(dataset, SHIFT=None):
 
     from tomviz import utils
     from scipy import ndimage

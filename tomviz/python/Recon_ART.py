@@ -6,13 +6,11 @@ import tomviz.operators
 
 class ReconARTOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform_scalars(self, dataset, Niter=1):
         """
         3D Reconstruction using Algebraic Reconstruction Technique (ART)
         """
         self.progress.maximum = 1
-
-        ###Niter###
 
         # Get Tilt angles
         tiltAngles = utils.get_tilt_angles(dataset)

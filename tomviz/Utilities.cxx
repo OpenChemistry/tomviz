@@ -14,7 +14,6 @@
 
 ******************************************************************************/
 #include "Utilities.h"
-#include "vtkPython.h" // must be first
 
 #include "DataSource.h"
 
@@ -343,21 +342,6 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper)
   clippingRange[1] =
     clippingRange[0] + (bounds[axis * 2 + 1] - bounds[axis * 2] + 50);
   camera->SetClippingRange(clippingRange);
-}
-
-bool checkForPythonError()
-{
-  PyObject* exception = PyErr_Occurred();
-  if (exception) {
-    // We use PyErr_PrintEx(0) to prevent sys.last_traceback being set
-    // which holds a reference to any parameters passed to PyObject_Call.
-    // This can cause a temporary "leak" until sys.last_traceback is reset.
-    // This can be a problem if the object in question is a VTK object that
-    // holds a reference to a large memory allocation.
-    PyErr_PrintEx(0);
-    return true;
-  }
-  return false;
 }
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
