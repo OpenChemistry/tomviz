@@ -11,8 +11,11 @@ def transform_scalars(dataset, conductance=1.0, iterations=100, timestep=0.125):
         print(exc)
 
     try:
-        # Get the ITK image
-        itk_image = utils.convert_vtk_to_itk_image(dataset)
+        # Get the ITK image. The itk.GradientAnisotropicDiffusionImageFilter
+        # is templated over float pixel types only, so explicitly request a
+        # float ITK image type.
+        import itkTypes
+        itk_image = utils.convert_vtk_to_itk_image(dataset, itkTypes.F)
         itk_image_type = type(itk_image)
 
         DiffusionFilterType = \
