@@ -30,6 +30,8 @@
 #include "pqApplicationCore.h"
 #include "pqDeleteReaction.h"
 #include "pqPVApplicationCore.h"
+
+#include "vtkCamera.h"
 #include "vtkNew.h"
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
@@ -38,6 +40,7 @@
 #include "vtkSMProxyIterator.h"
 #include "vtkSMProxyLocator.h"
 #include "vtkSMProxyManager.h"
+#include "vtkSMRenderViewProxy.h"
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
@@ -61,6 +64,7 @@ class ModuleManager::MMInternals
 public:
   QList<QPointer<DataSource>> DataSources;
   QList<QPointer<Module>> Modules;
+  QMap<vtkSMProxy*, vtkSmartPointer<vtkCamera>> RenderViewCameras;
   // only used by onPVStateLoaded for the second half of deserialize
   pugi::xml_node node;
   QDir dir;
@@ -440,6 +444,28 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
                    SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
   this->Internals->node = pugi::xml_node();
   this->Internals->dir = QDir();
+
+  // Restore cameras for each view to settings stored in state file
+  for (QMap<vtkSMProxy*, vtkSmartPointer<vtkCamera>>::const_iterator iter =
+         this->Internals->RenderViewCameras.begin();
+       iter != this->Internals->RenderViewCameras.end(); ++iter) {
+    vtkSMRenderViewProxy* viewProxy =
+      vtkSMRenderViewProxy::SafeDownCast(iter.key());
+    vtkSmartPointer<vtkCamera> camera = iter.value();
+
+    double doubles[3];
+    camera->GetPosition(doubles);
+    vtkSMPropertyHelper(viewProxy, "CameraPosition").Set(doubles, 3);
+    camera->GetFocalPoint(doubles);
+    vtkSMPropertyHelper(viewProxy, "CameraFocalPoint").Set(doubles, 3);
+    camera->GetViewUp(doubles);
+    vtkSMPropertyHelper(viewProxy, "CameraViewUp").Set(doubles, 3);
+    vtkSMPropertyHelper(viewProxy, "CameraViewAngle")
+      .Set(camera->GetViewAngle());
+    vtkSMPropertyHelper(viewProxy, "EyeAngle").Set(camera->GetEyeAngle());
+    viewProxy->UpdateVTKObjects();
+  }
+
   return true;
 }
 
@@ -543,6 +569,35 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     modulesById.insert(moduleId, module);
     if (mdlnode.attribute("active").as_int(0) == 1) {
       ActiveObjects::instance().setActiveModule(module);
+    }
+  }
+
+  // Save camera settings for each view
+  vtkNew<vtkSMProxyIterator> iter;
+  iter->SetSessionProxyManager(pxm);
+  iter->SetModeToOneGroup();
+  for (iter->Begin("views"); !iter->IsAtEnd(); iter->Next()) {
+    // if (xmlName == "RenderView") {
+    vtkSMRenderViewProxy* viewProxy =
+      vtkSMRenderViewProxy::SafeDownCast(iter->GetProxy());
+    if (viewProxy) {
+      vtkSmartPointer<vtkCamera> camera = vtkSmartPointer<vtkCamera>::New();
+
+      std::vector<double> doubles;
+      doubles =
+        vtkSMPropertyHelper(viewProxy, "CameraPosition").GetDoubleArray();
+      camera->SetPosition(&doubles[0]);
+      doubles =
+        vtkSMPropertyHelper(viewProxy, "CameraFocalPoint").GetDoubleArray();
+      camera->SetFocalPoint(&doubles[0]);
+      doubles = vtkSMPropertyHelper(viewProxy, "CameraViewUp").GetDoubleArray();
+      camera->SetViewUp(&doubles[0]);
+      doubles =
+        vtkSMPropertyHelper(viewProxy, "CameraViewAngle").GetDoubleArray();
+      camera->SetViewAngle(doubles[0]);
+      doubles = vtkSMPropertyHelper(viewProxy, "EyeAngle").GetDoubleArray();
+      camera->SetEyeAngle(doubles[0]);
+      this->Internals->RenderViewCameras.insert(viewProxy, camera);
     }
   }
 
