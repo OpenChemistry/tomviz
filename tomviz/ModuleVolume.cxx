@@ -19,12 +19,12 @@
 #include "Utilities.h"
 
 #include <vtkColorTransferFunction.h>
+#include <vtkGPUVolumeRayCastMapper.h>
 #include <vtkImageData.h>
 #include <vtkImageShiftScale.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSmartPointer.h>
-#include <vtkSmartVolumeMapper.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
 #include <vtkView.h>
@@ -133,6 +133,9 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
   bool maxIntensity =
     m_volumeMapper->GetBlendMode() == vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND;
   maxIntensityNode.append_attribute("enabled") = maxIntensity;
+  xml_node jitteringNode = rootNode.append_child("jittering");
+  jitteringNode.append_attribute("enabled") =
+    m_volumeMapper->GetUseJittering() == 1;
   return Module::serialize(ns);
 }
 
@@ -164,6 +167,13 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
       setMaximumIntensity(att.as_bool());
     }
   }
+  node = rootNode.child("jittering");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      setJittering(att.as_bool());
+    }
+  }
 
   return Module::deserialize(ns);
 }
@@ -180,14 +190,18 @@ void ModuleVolume::addToPanel(QWidget* panel)
   panel->setLayout(layout);
   QCheckBox* maxIntensity = new QCheckBox("Maximum intensity");
   layout->addWidget(maxIntensity);
+  QCheckBox* jittering = new QCheckBox("Jittering");
+  layout->addWidget(jittering);
   layout->addStretch();
 
   lighting->setChecked(m_volumeProperty->GetShade() == 1);
   maxIntensity->setChecked(m_volumeMapper->GetBlendMode() ==
                            vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND);
+  jittering->setChecked(m_volumeMapper->GetUseJittering() == 1);
 
   connect(lighting, SIGNAL(clicked(bool)), SLOT(setLighting(bool)));
   connect(maxIntensity, SIGNAL(clicked(bool)), SLOT(setMaximumIntensity(bool)));
+  connect(jittering, SIGNAL(clicked(bool)), SLOT(setJittering(bool)));
 }
 
 void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
@@ -242,6 +256,12 @@ void ModuleVolume::setMaximumIntensity(bool val)
   } else {
     m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
   }
+  emit renderNeeded();
+}
+
+void ModuleVolume::setJittering(bool val)
+{
+  m_volumeMapper->SetUseJittering(val ? 1 : 0);
   emit renderNeeded();
 }
 
