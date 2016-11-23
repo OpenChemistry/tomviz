@@ -48,6 +48,8 @@ PyObject* toPyObject(const QVariant& value)
       return PyInt_FromLong(value.toInt());
     case QVariant::Double:
       return PyFloat_FromDouble(value.toDouble());
+    case QVariant::Bool:
+      return value.toBool() ? Py_True : Py_False;
     case QVariant::String: {
       QString str = value.toString();
       return toPyObject(str);
