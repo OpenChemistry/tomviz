@@ -247,7 +247,7 @@ def _get_itk_image_type(vtk_image_data):
     return image_type
 
 
-def convert_vtk_to_itk_image(vtk_image_data):
+def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     """Get an ITK image from the provided vtkImageData object.
     This image can be passed to ITK filters."""
 
@@ -260,12 +260,32 @@ def convert_vtk_to_itk_image(vtk_image_data):
     #itk_image.DisconnectPipeline()
     #------------------------------------------
     import itk
+    import itkTypes
+    import vtk
+
+    itk_to_vtk_type_map = {
+        itkTypes.F: vtk.VTK_FLOAT,
+        itkTypes.D: vtk.VTK_DOUBLE,
+        itkTypes.LD: vtk.VTK_DOUBLE,
+        itkTypes.UC: vtk.VTK_UNSIGNED_CHAR,
+        itkTypes.US: vtk.VTK_UNSIGNED_SHORT,
+        itkTypes.UI: vtk.VTK_UNSIGNED_INT,
+        itkTypes.UL: vtk.VTK_UNSIGNED_LONG,
+        itkTypes.SC: vtk.VTK_CHAR,
+        itkTypes.SS: vtk.VTK_SHORT,
+        itkTypes.SI: vtk.VTK_INT,
+        itkTypes.SL: vtk.VTK_LONG,
+        itkTypes.B: vtk.VTK_INT
+    }
 
     # See if we need to cast to a wrapped type in ITK.
     src_type = vtk_image_data.GetScalarType()
-    dst_type = vtk_cast_map()[src_type]
+
+    if itk_pixel_type is None:
+        dst_type = vtk_cast_map()[src_type]
+    else:
+        dst_type = vtk_cast_map()[itk_to_vtk_type_map[itk_pixel_type]]
     if src_type != dst_type:
-        import vtk
         caster = vtk.vtkImageCast()
         caster.SetOutputScalarType(dst_type)
         caster.ClampOverflowOn()
