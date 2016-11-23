@@ -1,4 +1,4 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, conductance=1.0, iterations=100, timestep=0.125):
     """This filter performs anisotropic diffusion on an image using
     the classic Perona-Malik, gradient magnitude-based equation.
     """
@@ -9,11 +9,6 @@ def transform_scalars(dataset):
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
-
-    #----USER SPECIFIED VARIABLES-----#
-    ###conductance### # Conductance parameter controlling sensitivity to edges.
-    ###iterations### # Number of iterations to run
-    ###timestep### # Time step used for solving the diffusion equation
 
     try:
         # Get the ITK image

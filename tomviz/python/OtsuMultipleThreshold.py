@@ -1,4 +1,5 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, number_of_thresholds=1,
+                      enable_valley_emphasis=False):
     """This filter performs semi-automatic multithresholding of a data set.
     Voxels are automatically classified into a chosen number of classes such
     that inter-class variance of the voxel values is minimized. The output is a
@@ -12,10 +13,6 @@ def transform_scalars(dataset):
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
-
-    #----USER SPECIFIED VARIABLES----#
-    ###number_of_thresholds### # Specify number of thresholds between classes
-    ###enable_valley_emphasis### # Enable valley emphasis.
 
     # Return values
     returnValues = None

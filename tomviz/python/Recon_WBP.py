@@ -5,7 +5,7 @@ import tomviz.operators
 
 class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform_scalars(self, dataset, Nrecon=None, filter=None, interp=None):
         """
         3D Reconstruct from a tilt series using Weighted Back-projection Method
         """
@@ -14,10 +14,6 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
         filter_methods = ('none', 'ramp', 'shepp-logan',
                           'cosine', 'hamming', 'hann')
-
-        ###Nrecon###
-        ###filter###
-        ###interp###
 
         # Get Tilt angles
         tilt_angles = utils.get_tilt_angles(dataset)

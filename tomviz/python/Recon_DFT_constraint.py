@@ -5,7 +5,8 @@ import tomviz.operators
 
 class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset):
+    def transform_scalars(self, dataset, Niter=None, Niter_update_support=None,
+                          supportSigma=None, supportThreshold=None):
         """
         3D Reconstruct from a tilt series using constraint-based Direct Fourier
         Method
@@ -14,11 +15,6 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
         from tomviz import utils
         import numpy as np
-
-        ###Niter###
-        ###Niter_update_support###
-        ###supportSigma###
-        ###supportThreshold### #percent
 
         supportThreshold = supportThreshold / 100.0
 

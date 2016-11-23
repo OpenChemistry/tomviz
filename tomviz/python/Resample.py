@@ -1,13 +1,9 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, resampling_factor=[1, 1, 1]):
     """Resample dataset"""
 
     from tomviz import utils
     import scipy.ndimage
 
-    #----USER SPECIFIED VARIABLES-----#
-    #resampling_factor  = [1,1,1]  #Specify the shifts (x,y,z) applied to data
-    ###resampling_factor###
-    #---------------------------------#
     array = utils.get_array(dataset)
 
     # Transform the dataset.

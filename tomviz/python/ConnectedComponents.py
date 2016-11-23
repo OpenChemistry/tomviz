@@ -1,4 +1,4 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
     """This filter thresholds an image input, marking voxels within a
     lower and upper intensity range provided as foreground and the
     remaining as background, then generates a label map from the
@@ -13,9 +13,6 @@ def transform_scalars(dataset):
         print("Could not import necessary module(s)")
         print(exc)
 
-    #----USER SPECIFIED VARIABLES-----#
-    ###lower_threshold### # Specify lower threshold
-    ###upper_threshold### # Specify upper threshold
     background_value = 0
 
     # Return values
@@ -45,11 +42,12 @@ def transform_scalars(dataset):
             itk_input_image_type, itk_threshold_image_type].New()
         cast_filter.SetInput(itk_image)
 
+        python_cast = utils.get_python_voxel_type(itk_image)
         # Binary threshold filter
         threshold_filter = itk.BinaryThresholdImageFilter[
             itk_threshold_image_type, itk_threshold_image_type].New()
-        threshold_filter.SetLowerThreshold(lower_threshold)
-        threshold_filter.SetUpperThreshold(upper_threshold)
+        threshold_filter.SetLowerThreshold(python_cast(lower_threshold))
+        threshold_filter.SetUpperThreshold(python_cast(upper_threshold))
         threshold_filter.SetInput(cast_filter.GetOutput())
 
         # We'll make the output image type for the connected

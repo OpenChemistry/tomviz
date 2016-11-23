@@ -1,14 +1,10 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, pad_size_before=[0, 0, 0],
+                      pad_size_after=[0, 0, 0], pad_mode_index=0):
+
     """Pad dataset"""
     from tomviz import utils
     import numpy as np
 
-    #----USER SPECIFIED VARIABLES-----#
-    ###pad_size_before###
-    ###pad_size_after###
-    ###pad_mode_index###
-
-    #---------------------------------#
     padModes = ['constant', 'edge', 'wrap', 'minimum', 'median']
     padMode = padModes[pad_mode_index]
     array = utils.get_array(dataset) #get data as numpy array

@@ -3,14 +3,9 @@
 # Developed as part of the tomviz project (www.tomviz.com).
 
 
-def transform_scalars(dataset):
+def transform_scalars(dataset, shift=[0, 0, 0]):
     from tomviz import utils
     import numpy as np
-
-    #----USER SPECIFIED VARIABLES-----#
-    #shift  = [0,0,0]  #Specify the shifts (x,y,z) applied to data
-    ###shift###
-    #---------------------------------#
 
     data_py = utils.get_array(dataset) # Get data as numpy array.
 

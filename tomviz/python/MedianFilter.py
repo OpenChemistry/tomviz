@@ -1,10 +1,6 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, size=2):
     """Apply a Median filter to dataset."""
     """ Median filter is a nonlinear filter used to reduce noise."""
-
-    #----USER SPECIFIED VARIABLES-----#
-    ###size###    #Specify size of the Median filter
-    #---------------------------------#
 
     from tomviz import utils
     import scipy.ndimage
