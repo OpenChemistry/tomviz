@@ -18,7 +18,6 @@
 
 // Collection of miscellaneous utility functions.
 
-#include "vtkPython.h" // must be first
 #include <pqApplicationCore.h>
 #include <pqProxy.h>
 #include <pqServerManagerModel.h>
