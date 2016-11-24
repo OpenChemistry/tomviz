@@ -43,6 +43,9 @@ public:
 
   void savePosition(const QPoint& pos)
   {
+    if (Op.isNull()) {
+      return;
+    }
     QSettings* settings = pqApplicationCore::instance()->settings();
     QString settingName =
       QString("Edit%1OperatorDialogPosition").arg(Op->label());
@@ -51,6 +54,9 @@ public:
 
   QVariant loadPosition()
   {
+    if (Op.isNull()) {
+      return QVariant();
+    }
     QSettings* settings = pqApplicationCore::instance()->settings();
     QString settingName =
       QString("Edit%1OperatorDialogPosition").arg(Op->label());
@@ -102,6 +108,10 @@ Operator* EditOperatorDialog::op()
 
 void EditOperatorDialog::onApply()
 {
+  if (this->Internals->Op.isNull()) {
+    return;
+  }
+
   if (this->Internals->Widget) {
     this->Internals->Widget->applyChangesToOperator();
   }
@@ -118,6 +128,10 @@ void EditOperatorDialog::onClose()
 
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
 {
+  if (this->Internals->Op.isNull()) {
+    return;
+  }
+
   QVBoxLayout* vLayout = new QVBoxLayout(this);
   if (this->Internals->Op->hasCustomUI()) {
     vLayout->addWidget(opWidget);
@@ -148,6 +162,10 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
 
 void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)
 {
+  if (this->Internals->Op.isNull()) {
+    return;
+  }
+
   DataSource::ImageFuture* future =
     qobject_cast<DataSource::ImageFuture*>(this->sender());
 
