@@ -706,6 +706,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
         opPython, source, true, pqCoreUtilities::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
+      connect(opPython, SIGNAL(destroyed()), dialog, SIGNAL(reject()));
     } else {
       source->addOperator(opPython);
     }

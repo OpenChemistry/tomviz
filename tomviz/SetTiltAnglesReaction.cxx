@@ -70,5 +70,6 @@ void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow* window,
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->setWindowTitle("Set Tilt Angles");
   dialog->show();
+  connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
 }
 }

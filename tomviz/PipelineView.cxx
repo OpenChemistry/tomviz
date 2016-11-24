@@ -250,6 +250,9 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
         op, op->dataSource(), false, pqCoreUtilities::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
+
+      // Close the dialog if the Operator is destroyed.
+      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
     }
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
