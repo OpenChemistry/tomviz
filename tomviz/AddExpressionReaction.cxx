@@ -61,6 +61,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     opPython, source, true, pqCoreUtilities::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->show();
+  connect(opPython, SIGNAL(destroyed()), dialog, SLOT(reject()));
   return nullptr;
 }
 

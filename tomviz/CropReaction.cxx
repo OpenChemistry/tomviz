@@ -67,5 +67,6 @@ void CropReaction::crop(DataSource* source)
     new EditOperatorDialog(Op, source, true, this->mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
+  connect(Op, SIGNAL(destroyed()), dialog, SLOT(reject()));
 }
 }
