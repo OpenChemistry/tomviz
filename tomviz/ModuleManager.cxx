@@ -577,7 +577,6 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
   iter->SetSessionProxyManager(pxm);
   iter->SetModeToOneGroup();
   for (iter->Begin("views"); !iter->IsAtEnd(); iter->Next()) {
-    // if (xmlName == "RenderView") {
     vtkSMRenderViewProxy* viewProxy =
       vtkSMRenderViewProxy::SafeDownCast(iter->GetProxy());
     if (viewProxy) {
