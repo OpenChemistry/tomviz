@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "Operator.h"
+#include "OperatorWidget.h"
 
 #include <QLabel>
 #include <QVBoxLayout>
@@ -25,14 +26,12 @@ namespace tomviz {
 
 OperatorPropertiesPanel::OperatorPropertiesPanel(QWidget* p) : QWidget(p)
 {
-  // Show active module in the "Module Properties" panel.
+  // Show active module in the "Operator Properties" panel.
   connect(&ActiveObjects::instance(), SIGNAL(operatorChanged(Operator*)),
           SLOT(setOperator(Operator*)));
 
   // Set up a very simple layout with a description label widget.
   auto layout = new QVBoxLayout;
-  m_description = new QLabel("None");
-  layout->addWidget(m_description);
   layout->addStretch();
   setLayout(layout);
 }
@@ -46,6 +45,8 @@ void OperatorPropertiesPanel::setOperator(Operator* op)
       disconnect(op, SIGNAL(labelModified()), this, SLOT(updatePanel()));
     }
     if (op) {
+      // CAST TO Python operator ...
+      layout()->addWidget(new OperatorWidget(this, op));
       connect(op, SIGNAL(labelModified()), SLOT(updatePanel()));
     }
   }

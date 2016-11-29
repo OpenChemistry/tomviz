@@ -13,28 +13,26 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizOperatorDialog_h
-#define tomvizOperatorDialog_h
+#ifndef tomvizOperatorWidget_h
+#define tomvizOperatorWidget_h
 
 #include <OperatorPython.h>
 
-#include <QDialog>
 #include <QMap>
 #include <QString>
 #include <QVariant>
+#include <QWidget>
 
 namespace tomviz {
 
-class OperatorWidget;
-
-class OperatorDialog : public QDialog
+class OperatorWidget : public QWidget
 {
   Q_OBJECT
-  typedef QDialog Superclass;
+  typedef QWidget Superclass;
 
 public:
-  OperatorDialog(QWidget* parent = nullptr, OperatorPython* op = nullptr);
-  ~OperatorDialog() override;
+  OperatorWidget(QWidget* parent = nullptr, OperatorPython* op = nullptr);
+  ~OperatorWidget() override;
 
   /// Set the JSON description of the operator
   void setJSONDescription(const QString& json);
@@ -43,8 +41,7 @@ public:
   QMap<QString, QVariant> values() const;
 
 private:
-  Q_DISABLE_COPY(OperatorDialog)
-  OperatorWidget* m_ui = nullptr;
+  Q_DISABLE_COPY(OperatorWidget)
   OperatorPython* m_operator = nullptr;
 };
 }
