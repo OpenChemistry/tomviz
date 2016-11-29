@@ -359,6 +359,18 @@ QLayout* InterfaceBuilder::buildInterface() const
     }
 
     QString typeString = typeValue.toString();
+
+    // See if we have a parameter value the we need to set the default
+    // to.
+    QJsonValueRef nameValue = parameterObject["name"];
+    if (!nameValue.isUndefined()) {
+      QString parameterName = nameValue.toString();
+      if (m_parameterValues.contains(parameterName)) {
+        QVariant parameterValue = m_parameterValues[parameterName];
+        parameterObject["default"] = QJsonValue::fromVariant(parameterValue);
+      }
+    }
+
     if (typeString == "bool") {
       addBoolWidget(layout, i + 1, parameterObject);
     } else if (typeString == "int") {
@@ -373,6 +385,12 @@ QLayout* InterfaceBuilder::buildInterface() const
   }
 
   return layout;
+}
+
+void InterfaceBuilder::setParameterValues(QMap<QString, QVariant> values)
+{
+  ;
+  m_parameterValues = values;
 }
 
 } // namespace tomviz

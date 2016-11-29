@@ -17,7 +17,9 @@
 #define tomvizInterfaceBuilder_h
 
 #include <QLayout>
+#include <QMap>
 #include <QObject>
+#include <QVariant>
 
 namespace tomviz {
 
@@ -41,10 +43,14 @@ public:
   /// Build the interface, returning it in a QWidget.
   QLayout* buildInterface() const;
 
+  /// Set the parameter values
+  void setParameterValues(QMap<QString, QVariant> values);
+
 private:
   Q_DISABLE_COPY(InterfaceBuilder)
 
   QString m_json;
+  QMap<QString, QVariant> m_parameterValues;
 };
 
 } // namespace tomviz
