@@ -37,6 +37,7 @@ class vtkSMRenderViewProxy;
 class vtkPVArrayInformation;
 
 class QDir;
+class QLayout;
 
 namespace tomviz {
 
@@ -155,6 +156,9 @@ void createCameraOrbit(vtkSMSourceProxy* data,
 // visible while minimizing the empty regions of the view (zoom so the slice's
 // target dimension barely fits in the view).
 void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
+
+// Delete all widgets within a layout
+void deleteLayoutContents(QLayout* layout);
 
 extern double offWhite[3];
 }

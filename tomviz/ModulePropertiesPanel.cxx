@@ -23,25 +23,7 @@
 #include "pqView.h"
 #include "vtkSMViewProxy.h"
 
-namespace {
-void deleteLayoutContents(QLayout* layout)
-{
-  while (layout && layout->count() > 0) {
-    QLayoutItem* item = layout->itemAt(0);
-    layout->removeItem(item);
-    if (item) {
-      if (item->widget()) {
-          //-----------------------------------------------------------------------------
-        delete item->widget();
-        delete item;
-      } else if (item->layout()) {
-        deleteLayoutContents(item->layout());
-        delete item->layout();
-      }
-    }
-  }
-}
-}
+
 namespace tomviz {
 
 class ModulePropertiesPanel::MPPInternals

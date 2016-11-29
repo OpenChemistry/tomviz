@@ -51,6 +51,7 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QString>
+#include <QLayout>
 
 namespace {
 
@@ -342,6 +343,24 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper)
   clippingRange[1] =
     clippingRange[0] + (bounds[axis * 2 + 1] - bounds[axis * 2] + 50);
   camera->SetClippingRange(clippingRange);
+}
+
+void deleteLayoutContents(QLayout* layout)
+{
+  while (layout && layout->count() > 0) {
+    QLayoutItem* item = layout->itemAt(0);
+    layout->removeItem(item);
+    if (item) {
+      if (item->widget()) {
+          //-----------------------------------------------------------------------------
+        delete item->widget();
+        delete item;
+      } else if (item->layout()) {
+        deleteLayoutContents(item->layout());
+        delete item->layout();
+      }
+    }
+  }
 }
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };

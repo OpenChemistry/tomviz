@@ -18,6 +18,7 @@
 #include "ActiveObjects.h"
 #include "Operator.h"
 #include "OperatorWidget.h"
+#include "Utilities.h"
 
 #include <QLabel>
 #include <QVBoxLayout>
