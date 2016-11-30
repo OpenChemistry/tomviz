@@ -389,7 +389,6 @@ QLayout* InterfaceBuilder::buildInterface() const
 
 void InterfaceBuilder::setParameterValues(QMap<QString, QVariant> values)
 {
-  ;
   m_parameterValues = values;
 }
 
