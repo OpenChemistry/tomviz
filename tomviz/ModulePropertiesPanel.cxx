@@ -23,7 +23,6 @@
 #include "pqView.h"
 #include "vtkSMViewProxy.h"
 
-
 namespace tomviz {
 
 class ModulePropertiesPanel::MPPInternals

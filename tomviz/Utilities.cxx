@@ -49,9 +49,9 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QLayout>
 #include <QMessageBox>
 #include <QString>
-#include <QLayout>
 
 namespace {
 
@@ -352,7 +352,7 @@ void deleteLayoutContents(QLayout* layout)
     layout->removeItem(item);
     if (item) {
       if (item->widget()) {
-          //-----------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------
         delete item->widget();
         delete item;
       } else if (item->layout()) {
