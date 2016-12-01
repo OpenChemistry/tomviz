@@ -5,6 +5,8 @@ def transform_scalars(dataset, conductance=1.0, iterations=100, timestep=0.125):
 
     try:
         import itk
+        import itkTypes
+        from tomviz import itkutils
         from tomviz import utils
     except Exception as exc:
         print("Could not import necessary module(s)")
@@ -14,8 +16,7 @@ def transform_scalars(dataset, conductance=1.0, iterations=100, timestep=0.125):
         # Get the ITK image. The itk.GradientAnisotropicDiffusionImageFilter
         # is templated over float pixel types only, so explicitly request a
         # float ITK image type.
-        import itkTypes
-        itk_image = utils.convert_vtk_to_itk_image(dataset, itkTypes.F)
+        itk_image = itkutils.convert_vtk_to_itk_image(dataset, itkTypes.F)
         itk_image_type = type(itk_image)
 
         DiffusionFilterType = \
