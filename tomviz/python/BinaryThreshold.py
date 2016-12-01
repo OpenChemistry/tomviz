@@ -1,6 +1,7 @@
 def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
     """This filter computes a binary threshold on the data set and
-    stores the result in a label map in the data set."""
+    stores the result in a child data set. It does not modify the dataset
+    passed in."""
 
     returnValue = None
 
