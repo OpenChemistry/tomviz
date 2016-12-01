@@ -21,9 +21,12 @@
 #include <QPointer>
 
 class QLabel;
+class QVBoxLayout;
 
 namespace tomviz {
 class Operator;
+class OperatorPython;
+class OperatorWidget;
 
 class OperatorPropertiesPanel : public QWidget
 {
@@ -35,13 +38,15 @@ public:
 
 private slots:
   void setOperator(Operator*);
-  void updatePanel();
+  void setOperator(OperatorPython*);
+  void apply();
 
 private:
   Q_DISABLE_COPY(OperatorPropertiesPanel)
 
   QPointer<Operator> m_activeOperator = nullptr;
-  QLabel* m_description = nullptr;
+  QVBoxLayout* m_layout = nullptr;
+  OperatorWidget* m_operatorWidget = nullptr;
 };
 }
 
