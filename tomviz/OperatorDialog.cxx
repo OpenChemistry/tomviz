@@ -22,10 +22,9 @@
 
 namespace tomviz {
 
-OperatorDialog::OperatorDialog(QWidget* parentObject, OperatorPython* op)
-  : Superclass(parentObject), m_operator(op)
+OperatorDialog::OperatorDialog(QWidget* parentObject) : Superclass(parentObject)
 {
-  m_ui = new OperatorWidget(this, op);
+  m_ui = new OperatorWidget(this);
   QVBoxLayout* layout = new QVBoxLayout(this);
   QDialogButtonBox* buttons = new QDialogButtonBox(
     QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, this);
@@ -42,7 +41,7 @@ OperatorDialog::~OperatorDialog()
 
 void OperatorDialog::setJSONDescription(const QString& json)
 {
-  m_ui->setJSONDescription(json);
+  m_ui->setupUI(json);
 }
 
 QMap<QString, QVariant> OperatorDialog::values() const

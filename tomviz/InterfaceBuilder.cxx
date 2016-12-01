@@ -360,7 +360,7 @@ QLayout* InterfaceBuilder::buildInterface() const
 
     QString typeString = typeValue.toString();
 
-    // See if we have a parameter value the we need to set the default
+    // See if we have a parameter value that we need to set the default
     // to.
     QJsonValueRef nameValue = parameterObject["name"];
     if (!nameValue.isUndefined()) {

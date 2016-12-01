@@ -25,17 +25,19 @@
 
 namespace tomviz {
 
+class InterfaceBuilder;
+
 class OperatorWidget : public QWidget
 {
   Q_OBJECT
   typedef QWidget Superclass;
 
 public:
-  OperatorWidget(QWidget* parent = nullptr, OperatorPython* op = nullptr);
+  OperatorWidget(QWidget* parent = nullptr);
   ~OperatorWidget() override;
 
-  /// Set the JSON description of the operator
-  void setJSONDescription(const QString& json);
+  void setupUI(const QString& json);
+  void setupUI(OperatorPython* op);
 
   /// Get parameter values
   QMap<QString, QVariant> values() const;
@@ -43,6 +45,7 @@ public:
 private:
   Q_DISABLE_COPY(OperatorWidget)
   OperatorPython* m_operator = nullptr;
+  void buildInterface(InterfaceBuilder* builder);
 };
 }
 

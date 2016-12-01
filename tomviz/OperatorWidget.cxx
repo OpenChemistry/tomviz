@@ -30,8 +30,7 @@
 
 namespace tomviz {
 
-OperatorWidget::OperatorWidget(QWidget* parentObject, OperatorPython* op)
-  : Superclass(parentObject), m_operator(op)
+OperatorWidget::OperatorWidget(QWidget* parentObject) : Superclass(parentObject)
 {
 }
 
@@ -39,18 +38,25 @@ OperatorWidget::~OperatorWidget()
 {
 }
 
-void OperatorWidget::setJSONDescription(const QString& json)
+void OperatorWidget::setupUI(OperatorPython* op)
+{
+  InterfaceBuilder* ib = new InterfaceBuilder(this);
+  ib->setJSONDescription(op->JSONDescription());
+  ib->setParameterValues(op->arguments());
+  buildInterface(ib);
+}
+
+void OperatorWidget::setupUI(const QString& json)
 {
   InterfaceBuilder* ib = new InterfaceBuilder(this);
   ib->setJSONDescription(json);
+  buildInterface(ib);
+}
 
-  if (m_operator) {
-    ib->setParameterValues(m_operator->arguments());
-  }
-
-  QLayout* layout = ib->buildInterface();
+void OperatorWidget::buildInterface(InterfaceBuilder* builder)
+{
+  QLayout* layout = builder->buildInterface();
   this->setLayout(layout);
-  this->layout()->setSizeConstraint(QLayout::SetFixedSize);
 }
 
 QMap<QString, QVariant> OperatorWidget::values() const

@@ -71,8 +71,8 @@ void OperatorPropertiesPanel::setOperator(Operator* op)
 
 void OperatorPropertiesPanel::setOperator(OperatorPython* op)
 {
-  m_operatorWidget = new OperatorWidget(this, op);
-  m_operatorWidget->setJSONDescription(op->JSONDescription());
+  m_operatorWidget = new OperatorWidget(this);
+  m_operatorWidget->setupUI(op);
 
   // Check if we have any UI for this operator, there is probably a nicer
   // way todo this.

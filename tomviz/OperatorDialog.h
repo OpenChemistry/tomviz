@@ -16,8 +16,6 @@
 #ifndef tomvizOperatorDialog_h
 #define tomvizOperatorDialog_h
 
-#include <OperatorPython.h>
-
 #include <QDialog>
 #include <QMap>
 #include <QString>
@@ -33,7 +31,7 @@ class OperatorDialog : public QDialog
   typedef QDialog Superclass;
 
 public:
-  OperatorDialog(QWidget* parent = nullptr, OperatorPython* op = nullptr);
+  OperatorDialog(QWidget* parent = nullptr);
   ~OperatorDialog() override;
 
   /// Set the JSON description of the operator
@@ -45,7 +43,6 @@ public:
 private:
   Q_DISABLE_COPY(OperatorDialog)
   OperatorWidget* m_ui = nullptr;
-  OperatorPython* m_operator = nullptr;
 };
 }
 
