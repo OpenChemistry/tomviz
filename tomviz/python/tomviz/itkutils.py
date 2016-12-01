@@ -19,22 +19,22 @@
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
 
-# Dictionary mapping from VTK array type to the VTK array type supported
-# by the ITK wrapping. Used to cast data sets to a supported type prior
-# to converting them to ITK images.
+# Dictionary mapping from VTK array numeric type to the VTK array numeric type
+# supported by the ITK wrapping. Used to cast data sets to a supported type
+# prior to converting them to ITK images.
 _vtk_cast_types = None
 
 # Dictionary mapping from ITK image type to Python numeric type.
 # Used for casting Python values to a suitable type for certain filters.
 _itkctype_to_python_types = None
 
-# Map between VTK data type and python type
+# Map between VTK numeric type and Python numeric type
 _vtk_to_python_types = None
 
 
 def vtk_itk_type_map():
-    """Try to set up mappings between VTK image types and ITK image types.
-    Not all ITK image types may be available, hence the try statements."""
+    """Set up mappings between VTK image types and available ITK image
+    types."""
     global _vtk_to_itk_types
 
     if _vtk_to_itk_types is None:
@@ -62,7 +62,9 @@ def vtk_itk_type_map():
 
 
 def vtk_cast_map():
-    """Set up mapping between VTK image types and ITK ctypes."""
+    """Set up mapping between VTK array numeric types to VTK numeric types
+    that correspond to supported ITK numeric ctypes supported by the ITK
+    wrapping."""
     global _vtk_cast_types
 
     if _vtk_cast_types is None:
@@ -146,7 +148,7 @@ def vtk_cast_map():
             'double': vtk.VTK_DOUBLE
         }
 
-        # Select the best-supported type available
+        # Select the best supported type available in the wrapping.
         for (vtk_type, possible_image_types) in type_map.iteritems():
             type_map[vtk_type] = None
             for possible_type in possible_image_types:
@@ -158,8 +160,7 @@ def vtk_cast_map():
 
 
 def get_python_voxel_type(dataset):
-    """
-    Return the Python type that can represent the voxel type in the dataset.
+    """Return the Python type that can represent the voxel type in the dataset.
     The dataset can be either a VTK dataset or an ITK image.
     """
 
