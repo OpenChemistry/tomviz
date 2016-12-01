@@ -98,7 +98,6 @@ void OperatorPropertiesPanel::setOperator(OperatorPython* op)
 
 void OperatorPropertiesPanel::apply()
 {
-  cout << "here" << endl;
   if (m_operatorWidget) {
     auto values = m_operatorWidget->values();
     OperatorPython* pythonOperator =
