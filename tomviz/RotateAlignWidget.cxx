@@ -608,7 +608,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   // Apply in-plane rotation
   scriptLabel = "Rotate";
   scriptSource = readInPythonScript("Rotate3D");
-  arguments.insert("rotation_axis", 2.0);
+  arguments.insert("rotation_axis", 2);
   arguments.insert("rotation_angle",
                    -this->Internals->Ui.rotationAngle->value());
 
