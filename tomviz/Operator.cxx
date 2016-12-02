@@ -24,6 +24,7 @@ namespace tomviz {
 
 Operator::Operator(QObject* parentObject) : QObject(parentObject)
 {
+  qRegisterMetaType<TransformResult>("TransformResult");
 }
 
 Operator::~Operator()
@@ -36,19 +37,24 @@ DataSource* Operator::dataSource()
   return qobject_cast<DataSource*>(parent());
 }
 
-bool Operator::transform(vtkDataObject* data)
+TransformResult Operator::transform(vtkDataObject* data)
 {
   this->m_state = OperatorState::RUNNING;
   emit transformingStarted();
   emit updateProgress(0);
   bool result = this->applyTransform(data);
-  // TODO we may want to change the return type applyTransform
-  // to OperatorState so we don't have todo this.
-  if (m_state != OperatorState::CANCELED) {
-    m_state = result ? OperatorState::COMPLETE : OperatorState::ERROR;
+  TransformResult transformResult =
+    result ? TransformResult::COMPLETE : TransformResult::ERROR;
+  // If the user requested the operator to be canceled then when it returns
+  // we should treat is as canceled.
+  if (isCanceled()) {
+    transformResult = TransformResult::CANCELED;
+  } else {
+    m_state = static_cast<OperatorState>(transformResult);
   }
-  emit transformingDone(result);
-  return result;
+  emit transformingDone(transformResult);
+
+  return transformResult;
 }
 
 void Operator::setNumberOfResults(int n)

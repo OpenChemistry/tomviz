@@ -317,10 +317,10 @@ void OperatorPython::setScript(const QString& str)
 bool OperatorPython::applyTransform(vtkDataObject* data)
 {
   if (this->Script.isEmpty()) {
-    return true;
+    return false;
   }
   if (!this->Internals->OperatorModule || !this->Internals->TransformMethod) {
-    return true;
+    return false;
   }
 
   Q_ASSERT(data);

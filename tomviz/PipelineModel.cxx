@@ -671,9 +671,9 @@ void PipelineModel::operatorAdded(Operator* op)
   Q_ASSERT(op);
   auto dataSource = op->dataSource();
   Q_ASSERT(dataSource);
-  connect(op, SIGNAL(labelModified()), this, SLOT(operatorModified()));
-  connect(op, SIGNAL(transformingDone(bool)), this,
-          SLOT(operatorTransformDone()));
+  connect(op, &Operator::labelModified, this, &PipelineModel::operatorModified);
+  connect(op, &Operator::transformingDone, this,
+          &PipelineModel::operatorTransformDone);
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);

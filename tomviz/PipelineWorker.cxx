@@ -42,7 +42,7 @@ public:
   bool isCanceled();
 
 signals:
-  void complete(bool result);
+  void complete(TransformResult result);
 
 private:
   Operator* m_operator;
@@ -78,7 +78,7 @@ public:
   Future* start();
 
 public slots:
-  void operatorComplete(bool result);
+  void operatorComplete(TransformResult result);
 
   // Start the next operator in the queue
   void startNextOperator();
@@ -108,7 +108,7 @@ PipelineWorker::RunnableOperator::RunnableOperator(Operator* op,
 void PipelineWorker::RunnableOperator::run()
 {
 
-  bool result = m_operator->transform(this->m_data);
+  TransformResult result = m_operator->transform(this->m_data);
   emit complete(result);
 }
 
@@ -158,18 +158,19 @@ void PipelineWorker::Run::startNextOperator()
 
   if (!this->m_runnableOperators.isEmpty()) {
     this->m_running = this->m_runnableOperators.dequeue();
-    connect(this->m_running, SIGNAL(complete(bool)), this,
-            SLOT(operatorComplete(bool)));
+    connect(this->m_running, &RunnableOperator::complete, this,
+            &PipelineWorker::Run::operatorComplete);
     QThreadPool::globalInstance()->start(this->m_running);
   }
 }
 
-void PipelineWorker::Run::operatorComplete(bool result)
+void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
 {
   auto runnableOperator = qobject_cast<RunnableOperator*>(this->sender());
 
   this->m_complete.append(runnableOperator);
 
+  bool result = transformResult == TransformResult::COMPLETE;
   // Canceled
   if (this->m_canceled || runnableOperator->isCanceled()) {
     emit canceled();

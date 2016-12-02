@@ -73,7 +73,7 @@ TEST_F(OperatorPythonTest, operator_transform)
     QByteArray array = file.readAll();
     QString script(array);
     pythonOperator->setScript(script);
-    ASSERT_TRUE(pythonOperator->transform(dataObject));
+    ASSERT_EQ(pythonOperator->transform(dataObject), TransformResult::COMPLETE);
     file.close();
   } else {
     FAIL() << "Unable to load script.";
@@ -89,7 +89,7 @@ TEST_F(OperatorPythonTest, cancelable_operator_transform)
     QString script(array);
     file.close();
     pythonOperator->setScript(script);
-    ASSERT_TRUE(pythonOperator->transform(dataObject));
+    ASSERT_EQ(pythonOperator->transform(dataObject), TransformResult::COMPLETE);
 
     // Mimic user canceling operator
     std::thread canceler([this]() {
@@ -97,9 +97,9 @@ TEST_F(OperatorPythonTest, cancelable_operator_transform)
         pythonOperator->cancelTransform();
       }
     });
-    bool result = pythonOperator->transform(dataObject);
+    TransformResult result = pythonOperator->transform(dataObject);
     canceler.join();
-    ASSERT_FALSE(result);
+    ASSERT_EQ(result, TransformResult::CANCELED);
 
   } else {
     FAIL() << "Unable to load script.";
@@ -116,8 +116,8 @@ TEST_F(OperatorPythonTest, set_max_progress)
     file.close();
     pythonOperator->setScript(script);
 
-    bool result = pythonOperator->transform(dataObject);
-    ASSERT_TRUE(result);
+    TransformResult result = pythonOperator->transform(dataObject);
+    ASSERT_EQ(result, TransformResult::COMPLETE);
     ASSERT_EQ(pythonOperator->totalProgressSteps(), 10);
 
   } else {
@@ -136,8 +136,8 @@ TEST_F(OperatorPythonTest, update_progress)
     pythonOperator->setScript(script);
 
     QSignalSpy spy(pythonOperator, SIGNAL(updateProgress(int)));
-    bool result = pythonOperator->transform(dataObject);
-    ASSERT_TRUE(result);
+    TransformResult result = pythonOperator->transform(dataObject);
+    ASSERT_EQ(result, TransformResult::COMPLETE);
 
     // One from applyTransform() and one from our python code
     ASSERT_EQ(spy.count(), 2);
