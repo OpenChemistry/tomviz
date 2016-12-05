@@ -139,8 +139,17 @@ public:
       PyTuple_SET_ITEM(args.GetPointer(), 4,
                        this->GenerateFunction.GetAndIncreaseReferenceCount());
 
+      vtkSmartPyObject kwargs(PyDict_New());
+      foreach (QString key, this->arguments.keys()) {
+        QVariant value = this->arguments[key];
+        vtkSmartPyObject pyValue(tomviz::toPyObject(value));
+        vtkSmartPyObject pyKey(tomviz::toPyObject(key));
+        PyDict_SetItem(kwargs.GetPointer(), pyKey.GetPointer(),
+                       pyValue.GetPointer());
+      }
+
       result.TakeReference(
-        PyObject_Call(this->MakeDatasetFunction, args, nullptr));
+        PyObject_Call(this->MakeDatasetFunction, args, kwargs));
       if (!result) {
         qCritical() << "Failed to execute script.";
         tomviz::checkForPythonError();
@@ -172,6 +181,8 @@ public:
     return retVal;
   }
 
+  void setArguments(QMap<QString, QVariant> args) { this->arguments = args; }
+
 private:
   vtkSmartPyObject OperatorModule;
   vtkSmartPyObject Code;
@@ -179,6 +190,7 @@ private:
   vtkSmartPyObject MakeDatasetFunction;
   QString label;
   QString pythonScript;
+  QMap<QString, QVariant> arguments;
   static int number_of_scripts;
 };
 
@@ -304,11 +316,12 @@ void PythonGeneratedDatasetReaction::addDataset()
     if (dialog.exec() != QDialog::Accepted) {
       return;
     }
-    // substitute values
-    QString localScript = this->Internals->scriptSource.replace(
-      "###CONSTANT###", QString("CONSTANT = %1").arg(constant->value()));
 
-    generator.setScript(localScript);
+    generator.setScript(this->Internals->scriptSource);
+    QMap<QString, QVariant> args;
+    args["CONSTANT"] = constant->value();
+    generator.setArguments(args);
+
     int shape[3];
     shapeWidget->getShape(shape);
     this->dataSourceAdded(generator.createDataSource(shape));
@@ -376,17 +389,13 @@ void PythonGeneratedDatasetReaction::addDataset()
 
     // substitute values
     if (dialog.exec() == QDialog::Accepted) {
-      QString pythonScript = this->Internals->scriptSource;
-      pythonScript.replace(
-        "###p_in###",
-        QString("p_in = %1").arg(innerStructureParameter->value()));
-      pythonScript.replace("###p_s###",
-                           QString("p_s = %1").arg(shapeParameter->value()));
-      pythonScript.replace(
-        "###sparsity###",
-        QString("sparsity = %1").arg(sparsityParameter->value()));
+      generator.setScript(this->Internals->scriptSource);
+      QMap<QString, QVariant> args;
+      args["p_in"] = innerStructureParameter->value();
+      args["p_s"] = shapeParameter->value();
+      args["sparsity"] = sparsityParameter->value();
+      generator.setArguments(args);
 
-      generator.setScript(pythonScript);
       int shape[3];
       shapeLayout->getShape(shape);
       this->dataSourceAdded(generator.createDataSource(shape));
@@ -537,32 +546,24 @@ void PythonGeneratedDatasetReaction::addDataset()
 
     // substitute values
     if (dialog.exec() == QDialog::Accepted) {
-      QString pythonScript = this->Internals->scriptSource;
-      pythonScript.replace("###voltage###",
-                           QString("voltage = %1").arg(voltage->value()));
-      pythonScript.replace("###alpha_max###",
-                           QString("alpha_max = %1").arg(alpha_max->value()));
-      pythonScript.replace("###Nxy###", QString("Nxy = %1").arg(Nxy->value()));
-      pythonScript.replace("###Nz###", QString("Nz = %1").arg(Nz->value()));
-      pythonScript.replace("###dxy###", QString("dxy = %1").arg(dxy->value()));
-      pythonScript.replace("###df_min###",
-                           QString("df_min = %1").arg(df_min->value()));
-      pythonScript.replace("###df_max###",
-                           QString("df_max = %1").arg(df_max->value()));
-      pythonScript.replace("###c3###", QString("c3 = %1").arg(c3->value()));
-      pythonScript.replace("###f_a2###",
-                           QString("f_a2 = %1").arg(f_a2->value()));
-      pythonScript.replace("###phi_a2###",
-                           QString("phi_a2 = %1").arg(phi_a2->value()));
-      pythonScript.replace("###f_a3###",
-                           QString("f_a3 = %1").arg(f_a3->value()));
-      pythonScript.replace("###phi_a3###",
-                           QString("phi_a3 = %1").arg(phi_a3->value()));
-      pythonScript.replace("###f_c3###",
-                           QString("f_c3 = %1").arg(f_c3->value()));
-      pythonScript.replace("###phi_c3###",
-                           QString("phi_c3 = %1").arg(phi_c3->value()));
-      generator.setScript(pythonScript);
+      generator.setScript(this->Internals->scriptSource);
+      QMap<QString, QVariant> args;
+      args["voltage"] = voltage->value();
+      args["alpha_max"] = alpha_max->value();
+      args["Nxy"] = Nxy->value();
+      args["Nz"] = Nz->value();
+      args["dxy"] = dxy->value();
+      args["df_min"] = df_min->value();
+      args["df_max"] = df_max->value();
+      args["c3"] = c3->value();
+      args["f_a2"] = f_a2->value();
+      args["phi_a2"] = phi_a2->value();
+      args["f_a3"] = f_a3->value();
+      args["phi_a3"] = phi_a3->value();
+      args["f_c3"] = f_c3->value();
+      args["phi_c3"] = phi_c3->value();
+      generator.setArguments(args);
+
       const int shape[3] = { Nxy->value(), Nxy->value(), Nz->value() };
       this->dataSourceAdded(generator.createDataSource(shape));
     }
