@@ -39,7 +39,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
                 index_x_start:index_x_end, :, :], tilt_angles, Nrecon,
                 filter_methods[filter], interpolation_methods[interp])
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         print('Reconsruction Complete')
 

@@ -32,6 +32,6 @@ class AddPoissonNoiseOperator(tomviz.operators.CancelableOperator):
             print snr
             tiltSeries[:, :, i] = tiltImage.copy()
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         utils.set_array(dataset, tiltSeries)

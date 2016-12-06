@@ -22,6 +22,6 @@ class InvertOperator(tomviz.operators.CancelableOperator):
                 return
             chunk[:] = max - chunk
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         utils.set_scalars(dataset, result)

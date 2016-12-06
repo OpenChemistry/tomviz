@@ -30,7 +30,7 @@ class SquareRootOperator(tomviz.operators.CancelableOperator):
                     return
                 np.sqrt(chunk, chunk)
                 step += 1
-                self.progress.update(step)
+                self.progress.value = step
 
             # set the result as the new scalars.
             utils.set_scalars(dataset, result)

@@ -49,7 +49,7 @@ class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
             tiltSeries[:, :, i] = np.sum(rotatedVolume, axis=2)
 
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         # Set the result as the new scalars.
         utils.set_array(dataset, tiltSeries)

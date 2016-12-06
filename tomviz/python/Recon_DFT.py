@@ -81,7 +81,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
                         v[:, py, pz] = v[:, py, pz] + \
                             weight * probjection_f[:, i]
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         v[w != 0] = v[w != 0] / w[w != 0]
         recon_fftw_object.update_arrays(v, recon)
@@ -89,7 +89,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         recon = np.fft.fftshift(recon)
 
         step += 1
-        self.progress.update(step)
+        self.progress.value = step
 
         # Set the result as the new scalars.
         utils.set_array(dataset, recon)

@@ -23,6 +23,6 @@ class RandomTiltSeriesShiftOperator(tomviz.operators.CancelableOperator):
             tiltSeries[:, :, i] = np.roll(
                 tiltSeries[:, :, i], int(shifts[1]), axis=1)
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         utils.set_array(dataset, tiltSeries)
