@@ -135,14 +135,14 @@ TEST_F(OperatorPythonTest, update_progress)
     file.close();
     pythonOperator->setScript(script);
 
-    QSignalSpy spy(pythonOperator, SIGNAL(updateProgress(int)));
+    QSignalSpy spy(pythonOperator, SIGNAL(progressStepChanged(int)));
     TransformResult result = pythonOperator->transform(dataObject);
     ASSERT_EQ(result, TransformResult::COMPLETE);
 
     // One from applyTransform() and one from our python code
     ASSERT_EQ(spy.count(), 2);
 
-    // Take the signal emission from our python code
+    // Take the signal emitted from our python code
     QList<QVariant> args = spy.takeAt(1);
     ASSERT_EQ(args.at(0).toInt(), 100);
 

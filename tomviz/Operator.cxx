@@ -41,7 +41,7 @@ TransformResult Operator::transform(vtkDataObject* data)
 {
   this->m_state = OperatorState::RUNNING;
   emit transformingStarted();
-  emit updateProgress(0);
+  setProgressStep(0);
   bool result = this->applyTransform(data);
   TransformResult transformResult =
     result ? TransformResult::COMPLETE : TransformResult::ERROR;

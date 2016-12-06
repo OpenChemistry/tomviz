@@ -28,7 +28,16 @@ struct OperatorPythonWrapper
     this->op->setTotalProgressSteps(progress);
   }
   int totalProgressSteps() { return this->op->totalProgressSteps(); }
-  void updateProgress(int progress) { this->op->updateProgress(progress); }
+  void setProgressStep(int progress) { this->op->setProgressStep(progress); }
+  int progressStep() { return this->op->progressStep(); }
+  void setProgressMessage(const std::string &message) {
+    QString msg = QString::fromStdString(message);
+    cout << "settomg\n";
+    cout << message << endl;
+    this->op->setProgressMessage(msg);
+  }
+  std::string progressMessage() { return this->op->progressMessage().toStdString();  }
+
   OperatorPython* op;
 };
 
