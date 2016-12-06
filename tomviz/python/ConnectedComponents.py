@@ -1,8 +1,8 @@
-def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
-    """This filter thresholds an image input, marking voxels within a
-    lower and upper intensity range provided as foreground and the
-    remaining as background, then generates a label map from the
-    connected components in the foreground.
+def transform_scalars(dataset):
+    """This filter generates a label map of connected components of foreground
+    voxels in the input image. Foreground voxels have non-zero values. Input
+    images are expected to have integral voxel types, i.e., no float or
+    double voxels.
     """
 
     try:
