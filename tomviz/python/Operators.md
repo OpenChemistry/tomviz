@@ -58,7 +58,7 @@ Operator progress
 
 Instances of ```tomviz.operators.Operator``` have a ```progress``` attribute that can be used to
 report the progress of an operator. The maximum number of steps the operator will report is held
-in the ```progress.maximum``` property and the current progress can be updated using ```progress.update(currrent_value)```
+in the ```progress.maximum``` property and the current progress can be updated using ```progress.value = currrent_value```. A status message can also be set on the progress object to give future feedback to the use ```progress.message = msg```
 
 
 
@@ -72,7 +72,7 @@ class MyProgressOperator(tomviz.operators.Operator):
         self.progress.maximum = 100
         # Do work here
         current_progress += 1
-        self.progress.update(current_progress)
+        self.progress.value = current_progress
 ```
 
 Generating the user interface automatically

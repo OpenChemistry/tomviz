@@ -54,9 +54,10 @@ PYBIND11_PLUGIN(_wrapping)
              OperatorPythonWrapper(static_cast<OperatorPython*>(op));
          })
     .def_property_readonly("canceled", &OperatorPythonWrapper::canceled)
-    .def_property("max_progress", &OperatorPythonWrapper::totalProgressSteps,
+    .def_property("progress_maximum", &OperatorPythonWrapper::totalProgressSteps,
                   &OperatorPythonWrapper::setTotalProgressSteps)
-    .def("update_progress", &OperatorPythonWrapper::updateProgress);
+    .def_property("progress_value", &OperatorPythonWrapper::progressStep, &OperatorPythonWrapper::setProgressStep)
+    .def_property("progress_message", &OperatorPythonWrapper::progressMessage, &OperatorPythonWrapper::setProgressMessage);
 
   return m.ptr();
 }

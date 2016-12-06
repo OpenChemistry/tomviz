@@ -30,20 +30,47 @@ class Progress(object):
         """
         Property defining the maxium progress value
         """
-        return self._operator._operator_wrapper.max_progress
+        return self._operator._operator_wrapper.progress_maximum
 
     @maximum.setter
     def maximum(self, value):
-        self._operator._operator_wrapper.max_progress = value
+        self._operator._operator_wrapper.progress_maximum = value
 
-    def update(self, value):
+
+    @property
+    def value(self):
+        """
+        Property defining the current progress value
+        """
+        return self._operator._operator_wrapper.progress_value
+
+    @value.setter
+    def value(self, value):
         """
         Updates the progress of the the operator.
 
         :param value The current progress value.
         :type value: int
         """
-        self._operator._operator_wrapper.update_progress(value)
+        self._operator._operator_wrapper.progress_value = value
+
+    @property
+    def message(self):
+        """
+        Property defining the current progress message
+        """
+        return self._operator._operator_wrapper.progress_message
+
+    @message.setter
+    def message(self, msg):
+        """
+        Updates the progress message of the the operator.
+
+        :param msg The current progress message.
+        :type msg: str
+        """
+        self._operator._operator_wrapper.progress_message = msg
+
 
 
 class Operator(object):
