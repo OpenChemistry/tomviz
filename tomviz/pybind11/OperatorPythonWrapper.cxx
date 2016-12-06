@@ -30,13 +30,17 @@ struct OperatorPythonWrapper
   int totalProgressSteps() { return this->op->totalProgressSteps(); }
   void setProgressStep(int progress) { this->op->setProgressStep(progress); }
   int progressStep() { return this->op->progressStep(); }
-  void setProgressMessage(const std::string &message) {
+  void setProgressMessage(const std::string& message)
+  {
     QString msg = QString::fromStdString(message);
     cout << "settomg\n";
     cout << message << endl;
     this->op->setProgressMessage(msg);
   }
-  std::string progressMessage() { return this->op->progressMessage().toStdString();  }
+  std::string progressMessage()
+  {
+    return this->op->progressMessage().toStdString();
+  }
 
   OperatorPython* op;
 };
@@ -54,10 +58,13 @@ PYBIND11_PLUGIN(_wrapping)
              OperatorPythonWrapper(static_cast<OperatorPython*>(op));
          })
     .def_property_readonly("canceled", &OperatorPythonWrapper::canceled)
-    .def_property("progress_maximum", &OperatorPythonWrapper::totalProgressSteps,
+    .def_property("progress_maximum",
+                  &OperatorPythonWrapper::totalProgressSteps,
                   &OperatorPythonWrapper::setTotalProgressSteps)
-    .def_property("progress_value", &OperatorPythonWrapper::progressStep, &OperatorPythonWrapper::setProgressStep)
-    .def_property("progress_message", &OperatorPythonWrapper::progressMessage, &OperatorPythonWrapper::setProgressMessage);
+    .def_property("progress_value", &OperatorPythonWrapper::progressStep,
+                  &OperatorPythonWrapper::setProgressStep)
+    .def_property("progress_message", &OperatorPythonWrapper::progressMessage,
+                  &OperatorPythonWrapper::setProgressMessage);
 
   return m.ptr();
 }

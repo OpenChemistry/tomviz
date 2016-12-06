@@ -36,7 +36,6 @@ class Progress(object):
     def maximum(self, value):
         self._operator._operator_wrapper.progress_maximum = value
 
-
     @property
     def value(self):
         """
@@ -70,7 +69,6 @@ class Progress(object):
         :type msg: str
         """
         self._operator._operator_wrapper.progress_message = msg
-
 
 
 class Operator(object):

@@ -74,15 +74,17 @@ void ProgressDialogManager::operationStarted()
                      &QProgressBar::setMaximum);
     QObject::connect(op, &Operator::progressStepChanged, this,
                      &ProgressDialogManager::operationProgress);
-    QObject::connect(op, &Operator::progressMessageChanged, [progressDialog, op](const QString& message) {
-      if (!message.isNull()) {
-        QString title = QString("%1 Progress").arg(op->label());
-        if (!message.isEmpty()) {
-          title = QString("%1 Progress - %2").arg(op->label()).arg(message);
+    QObject::connect(
+      op, &Operator::progressMessageChanged,
+      [progressDialog, op](const QString& message) {
+        if (!message.isNull()) {
+          QString title = QString("%1 Progress").arg(op->label());
+          if (!message.isEmpty()) {
+            title = QString("%1 Progress - %2").arg(op->label()).arg(message);
+          }
+          progressDialog->setWindowTitle(title);
         }
-        progressDialog->setWindowTitle(title);
-      }
-    });
+      });
 
     layout->addWidget(progressBar);
   }
@@ -126,5 +128,4 @@ void ProgressDialogManager::operationProgress(int)
   // thread, until then we need this call.
   QCoreApplication::processEvents();
 }
-
 }

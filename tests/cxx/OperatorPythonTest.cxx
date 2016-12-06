@@ -161,14 +161,16 @@ TEST_F(OperatorPythonTest, update_progress_message)
     file.close();
     pythonOperator->setScript(script);
 
-    QSignalSpy spy(pythonOperator, SIGNAL(progressMessageChanged(const QString&)));
+    QSignalSpy spy(pythonOperator,
+                   SIGNAL(progressMessageChanged(const QString&)));
     bool result = pythonOperator->transform(dataObject);
     ASSERT_TRUE(result);
 
     ASSERT_EQ(spy.count(), 1);
 
     QList<QVariant> args = spy.takeAt(0);
-    ASSERT_STREQ(args.at(0).toString().toLatin1().constData(), "Is there anyone out there?");
+    ASSERT_STREQ(args.at(0).toString().toLatin1().constData(),
+                 "Is there anyone out there?");
 
   } else {
     FAIL() << "Unable to load script.";
