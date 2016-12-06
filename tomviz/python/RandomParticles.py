@@ -1,11 +1,5 @@
-def generate_dataset(array):
+def generate_dataset(array, p_in=30.0, p_s=60.0, sparsity=0.20):
     import numpy as np
-
-    #------USER SPECIFIED VARIABLES-----#
-    ###p_in### #internal structure factor.
-    ###p_s### #shape factor.
-    ###sparsity###  #sparsity: percentage of non-zero pixels. Range:[0,1]
-    #-----------------------------------#
 
     arrayShape = array.shape
     x = np.fft.fftfreq(arrayShape[0])

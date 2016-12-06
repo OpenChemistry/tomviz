@@ -1,22 +1,11 @@
-def generate_dataset(array):
+
+
+def generate_dataset(array, voltage=300.0, alpha_max=30.0, Nxy=256, Nz=512,
+                     dxy=0.1, df_min=-50.0, df_max=100.0, c3=0.20, f_a2=0.0,
+                     phi_a2=0.0, f_a3=0.0, phi_a3=0.0, f_c3=1500.0, phi_c3=0.0):
     """Generate STEM probe function"""
 
     import numpy as np
-    #----USER SPECIFIED VARIABLES-----#
-    ###voltage###
-    ###alpha_max###
-    ###Nxy###
-    ###Nz###
-    ###dxy###
-    ###df_min###
-    ###df_max###
-    ###c3###
-    ###f_a2###
-    ###phi_a2###
-    ###f_a3###
-    ###phi_a3###
-    ###f_c3###
-    ###phi_c3###
 
     #---------------------------------#
     #Convert all units to angstrom
