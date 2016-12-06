@@ -20,6 +20,11 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
     # Return values
     returnValues = None
 
+    scalarType = dataset.GetScalarType()
+    if scalarType == vtk.VTK_FLOAT or scalarType == vtk.VTK_DOUBLE:
+        raise Exception(
+            "Connected Components works only on images with integral types.")
+
     # Add a try/except around the ITK portion. ITK exceptions are
     # passed up to the Python layer, so we can at least report what
     # went wrong with the script, e.g,, unsupported image type.
