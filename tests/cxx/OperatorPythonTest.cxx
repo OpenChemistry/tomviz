@@ -150,3 +150,27 @@ TEST_F(OperatorPythonTest, update_progress)
     FAIL() << "Unable to load script.";
   }
 }
+
+TEST_F(OperatorPythonTest, update_progress_message)
+{
+  pythonOperator->setLabel("update_progress_message");
+  QFile file(QString("%1/fixtures/update_progress_message.py").arg(SOURCE_DIR));
+  if (file.open(QIODevice::ReadOnly)) {
+    QByteArray array = file.readAll();
+    QString script(array);
+    file.close();
+    pythonOperator->setScript(script);
+
+    QSignalSpy spy(pythonOperator, SIGNAL(progressMessageChanged(const QString&)));
+    bool result = pythonOperator->transform(dataObject);
+    ASSERT_TRUE(result);
+
+    ASSERT_EQ(spy.count(), 1);
+
+    QList<QVariant> args = spy.takeAt(0);
+    ASSERT_STREQ(args.at(0).toString().toLatin1().constData(), "Is there anyone out there?");
+
+  } else {
+    FAIL() << "Unable to load script.";
+  }
+}
