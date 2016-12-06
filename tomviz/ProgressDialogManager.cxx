@@ -74,6 +74,16 @@ void ProgressDialogManager::operationStarted()
                      &QProgressBar::setMaximum);
     QObject::connect(op, &Operator::progressStepChanged, this,
                      &ProgressDialogManager::operationProgress);
+    QObject::connect(op, &Operator::progressMessageChanged, [progressDialog, op](const QString& message) {
+      if (!message.isNull()) {
+        QString title = QString("%1 Progress").arg(op->label());
+        if (!message.isEmpty()) {
+          title = QString("%1 Progress - %2").arg(op->label()).arg(message);
+        }
+        progressDialog->setWindowTitle(title);
+      }
+    });
+
     layout->addWidget(progressBar);
   }
   layout->addWidget(progressWidget);
@@ -93,7 +103,7 @@ void ProgressDialogManager::operationStarted()
   // Increase size of dialog so we can see title, not sure there is a better
   // way.
   auto height = progressDialog->height();
-  progressDialog->resize(300, height);
+  progressDialog->resize(500, height);
   progressDialog->show();
   QCoreApplication::processEvents();
 }
@@ -116,4 +126,5 @@ void ProgressDialogManager::operationProgress(int)
   // thread, until then we need this call.
   QCoreApplication::processEvents();
 }
+
 }
