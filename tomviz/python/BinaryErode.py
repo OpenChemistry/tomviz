@@ -6,6 +6,7 @@ def transform_scalars(dataset, structuring_element_id=0, radius=1,
 
     try:
         import itk
+        from tomviz import itkutils
         from tomviz import utils
     except Exception as exc:
         print("Could not import necessary module(s)")
@@ -16,7 +17,7 @@ def transform_scalars(dataset, structuring_element_id=0, radius=1,
     # went wrong with the script, e.g,, unsupported image type.
     try:
         # Get the ITK image
-        itk_image = utils.convert_vtk_to_itk_image(dataset)
+        itk_image = itkutils.convert_vtk_to_itk_image(dataset)
         itk_input_image_type = type(itk_image)
 
         itk_kernel_type = itk.FlatStructuringElement[3]

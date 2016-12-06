@@ -8,6 +8,7 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
     try:
         import itk
         import vtk
+        from tomviz import itkutils
         from tomviz import utils
     except Exception as exc:
         print("Could not import necessary module(s)")
@@ -23,7 +24,7 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
     # went wrong with the script, e.g,, unsupported image type.
     try:
         # Get the ITK image
-        itk_image = utils.convert_vtk_to_itk_image(dataset)
+        itk_image = itkutils.convert_vtk_to_itk_image(dataset)
         itk_input_image_type = type(itk_image)
 
         # Set the output type for the binary threshold filter to
@@ -42,7 +43,7 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
             itk_input_image_type, itk_threshold_image_type].New()
         cast_filter.SetInput(itk_image)
 
-        python_cast = utils.get_python_voxel_type(itk_image)
+        python_cast = itkutils.get_python_voxel_type(itk_image)
         # Binary threshold filter
         threshold_filter = itk.BinaryThresholdImageFilter[
             itk_threshold_image_type, itk_threshold_image_type].New()
