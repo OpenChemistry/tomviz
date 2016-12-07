@@ -43,9 +43,9 @@ enum class OperatorState
 
 enum class TransformResult
 {
-  COMPLETE = OperatorState::COMPLETE,
-  CANCELED = OperatorState::CANCELED,
-  ERROR = OperatorState::ERROR
+  COMPLETE = static_cast<int>(OperatorState::COMPLETE),
+  CANCELED = static_cast<int>(OperatorState::CANCELED),
+  ERROR = static_cast<int>(OperatorState::ERROR)
 };
 
 class Operator : public QObject
