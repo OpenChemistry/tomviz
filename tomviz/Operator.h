@@ -41,6 +41,13 @@ enum class OperatorState
   ERROR
 };
 
+enum class TransformResult
+{
+  COMPLETE = static_cast<int>(OperatorState::COMPLETE),
+  CANCELED = static_cast<int>(OperatorState::CANCELED),
+  ERROR = static_cast<int>(OperatorState::ERROR)
+};
+
 class Operator : public QObject
 {
   Q_OBJECT
@@ -58,7 +65,7 @@ public:
   /// Returns an icon to use for this operator.
   virtual QIcon icon() const = 0;
 
-  bool transform(vtkDataObject* data);
+  TransformResult transform(vtkDataObject* data);
 
   /// Return a new clone.
   virtual Operator* clone() const = 0;
@@ -166,7 +173,7 @@ signals:
   /// Emitted when the operator is done transforming the data.  The parameter is
   /// the return value from the transform() function.  True for success, false
   /// for failure.
-  void transformingDone(bool result);
+  void transformingDone(TransformResult result);
 
   /// Emitted when an result is added.
   void resultAdded(OperatorResult* result);
