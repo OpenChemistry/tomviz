@@ -83,6 +83,7 @@ void ProgressDialogManager::operationStarted()
             title = QString("%1 Progress - %2").arg(op->label()).arg(message);
           }
           progressDialog->setWindowTitle(title);
+          QCoreApplication::processEvents();
         }
       });
 
