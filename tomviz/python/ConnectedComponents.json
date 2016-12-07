@@ -1,12 +1,5 @@
 {
   "name" : "ConnectedComponents",
   "label" : "Connected Components",
-  "description" : "Compute label map of connected components.\nThe components are relabeled in order of increasing volume\nin the output.",
-  "results" : [
-    {
-      "name" : "component_statistics",
-      "label" : "Component Statistics",
-      "type" : "table"
-    }
-  ]
+  "description" : "Compute label map of connected components.\nThe components are relabeled in order of increasing volume\nin the output."
 }

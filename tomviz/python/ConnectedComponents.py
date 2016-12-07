@@ -1,8 +1,11 @@
 def transform_scalars(dataset):
-    """This filter generates a label map of connected components of foreground
-    voxels in the input image. Foreground voxels have non-zero values. Input
-    images are expected to have integral voxel types, i.e., no float or
-    double voxels.
+    """Converts a label map of connected components of foreground-valued
+    voxels in the input image to a label map where each connected component
+    has a unique label. Non-zero values in the input are considered foreground.
+    Input images are expected to have integral voxel types, i.e., no float or
+    double voxels. The connected component labels are ordered such that the
+    smallest connected components have the lowest label values and the largest
+    connected components have the highest label values.
     """
 
     try:
@@ -14,8 +17,6 @@ def transform_scalars(dataset):
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
-
-    background_value = 0
 
     # Return values
     returnValues = None
@@ -32,14 +33,15 @@ def transform_scalars(dataset):
         # Get the ITK image. The input is assumed to have an integral type.
         # Take care of casting to an unsigned short image so we can store up
         # to 65,535 connected components (the number of connected components
-        # is limited to the maximum representable number in the input image
-        # voxel type).
+        # is limited to the maximum representable number in the voxel type
+        # of the input image in the ConnectedComponentsFilter).
         itk_image = itkutils.convert_vtk_to_itk_image(dataset, itkTypes.US)
         itk_image_type = type(itk_image)
 
         # ConnectedComponentImageFilter
         connected_filter = itk.ConnectedComponentImageFilter[
             itk_image_type, itk_image_type].New()
+        background_value = 0
         connected_filter.SetBackgroundValue(background_value)
         connected_filter.SetInput(itk_image)
 
@@ -71,36 +73,6 @@ def transform_scalars(dataset):
         label_buffer[gt_zero] = minimum - label_buffer[gt_zero] + maximum
 
         utils.set_array(dataset, label_buffer)
-
-        # Now take the connected components results and compute things like
-        # volume and surface area.
-        shape_filter = itk.LabelImageToShapeLabelMapFilter.IUS3LM3.New()
-        shape_filter.SetInput(relabel_filter.GetOutput())
-        shape_filter.Update()
-
-        # Set up arrays to hold the shape attribute data
-        label_map = shape_filter.GetOutput()
-        num_label_objects = label_map.GetNumberOfLabelObjects()
-
-        column_names = ['SurfaceArea', 'Volume', 'SurfaceAreaToVolumeRatio']
-        import numpy as np
-        # num_label_objects rows, 3 columns
-        table = np.zeros((num_label_objects, len(column_names)))
-
-        for i in xrange(0, num_label_objects):
-            label_object = label_map.GetNthLabelObject(i)
-            surface_area = label_object.GetPerimeter()
-            table[i, 0] = surface_area
-            volume = label_object.GetPhysicalSize()
-            table[i, 1] = volume
-            table[i, 2] = surface_area / volume
-
-        # Create a spreadsheet data set from table data
-        spreadsheet = utils.make_spreadsheet(column_names, table)
-
-        # Set up dictionary to return operator results
-        returnValues = {}
-        returnValues["component_statistics"] = spreadsheet
 
     except Exception as exc:
         print("Exception encountered while running ConnectedComponents")

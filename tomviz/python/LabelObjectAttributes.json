@@ -1,0 +1,12 @@
+{
+  "name" : "LabelObjectAttributes",
+  "label" : "Label Object Attributes",
+  "description" : "Creates a child dataset containing attributes of labeled\nobjects in a labeled dataset. The input dataset is unmodified.",
+  "results" : [
+    {
+      "name" : "component_statistics",
+      "label" : "Component Statistics",
+      "type" : "table"
+    }
+  ]
+}
