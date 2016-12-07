@@ -33,8 +33,6 @@ struct OperatorPythonWrapper
   void setProgressMessage(const std::string& message)
   {
     QString msg = QString::fromStdString(message);
-    cout << "settomg\n";
-    cout << message << endl;
     this->op->setProgressMessage(msg);
   }
   std::string progressMessage()
