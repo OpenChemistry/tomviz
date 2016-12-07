@@ -1,12 +1,13 @@
-def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
-    """This filter thresholds an image input, marking voxels within a
-    lower and upper intensity range provided as foreground and the
-    remaining as background, then generates a label map from the
-    connected components in the foreground.
+def transform_scalars(dataset):
+    """This filter generates a label map of connected components of foreground
+    voxels in the input image. Foreground voxels have non-zero values. Input
+    images are expected to have integral voxel types, i.e., no float or
+    double voxels.
     """
 
     try:
         import itk
+        import itkTypes
         import vtk
         from tomviz import itkutils
         from tomviz import utils
@@ -19,48 +20,28 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
     # Return values
     returnValues = None
 
+    scalarType = dataset.GetScalarType()
+    if scalarType == vtk.VTK_FLOAT or scalarType == vtk.VTK_DOUBLE:
+        raise Exception(
+            "Connected Components works only on images with integral types.")
+
     # Add a try/except around the ITK portion. ITK exceptions are
     # passed up to the Python layer, so we can at least report what
     # went wrong with the script, e.g,, unsupported image type.
     try:
-        # Get the ITK image
-        itk_image = itkutils.convert_vtk_to_itk_image(dataset)
-        itk_input_image_type = type(itk_image)
-
-        # Set the output type for the binary threshold filter to
-        # unsigned short (US). The maximum number representable by the
-        # input pixel type in the connected components filter below
-        # determines how many connected components can be extracted
-        # from the binary image - if the type's maximum value is less
-        # than the extracted components, the filter will throw an
-        # exception.
-        itk_threshold_image_type = itk.Image.US3
-
-        # Cast the image to unsigned chars. Probably want floats at
-        # some point, but this is known to work for this sequence of
-        # operations.
-        cast_filter = itk.CastImageFilter[
-            itk_input_image_type, itk_threshold_image_type].New()
-        cast_filter.SetInput(itk_image)
-
-        python_cast = itkutils.get_python_voxel_type(itk_image)
-        # Binary threshold filter
-        threshold_filter = itk.BinaryThresholdImageFilter[
-            itk_threshold_image_type, itk_threshold_image_type].New()
-        threshold_filter.SetLowerThreshold(python_cast(lower_threshold))
-        threshold_filter.SetUpperThreshold(python_cast(upper_threshold))
-        threshold_filter.SetInput(cast_filter.GetOutput())
-
-        # We'll make the output image type for the connected
-        # components filter be the same as that of the threshold
-        # output image.
-        itk_output_image_type = itk_threshold_image_type
+        # Get the ITK image. The input is assumed to have an integral type.
+        # Take care of casting to an unsigned short image so we can store up
+        # to 65,535 connected components (the number of connected components
+        # is limited to the maximum representable number in the input image
+        # voxel type).
+        itk_image = itkutils.convert_vtk_to_itk_image(dataset, itkTypes.US)
+        itk_image_type = type(itk_image)
 
         # ConnectedComponentImageFilter
         connected_filter = itk.ConnectedComponentImageFilter[
-            itk_threshold_image_type, itk_output_image_type].New()
+            itk_image_type, itk_image_type].New()
         connected_filter.SetBackgroundValue(background_value)
-        connected_filter.SetInput(threshold_filter.GetOutput())
+        connected_filter.SetInput(itk_image)
 
         # Relabel filter. This will compress the label numbers to a
         # continugous range between 1 and n where n is the number of
@@ -68,14 +49,14 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
         # smallest, where the largest component has label 1, the
         # second largest has label 2, and so on...
         relabel_filter = itk.RelabelComponentImageFilter[
-            itk_output_image_type, itk_output_image_type].New()
+            itk_image_type, itk_image_type].New()
         relabel_filter.SetInput(connected_filter.GetOutput())
         relabel_filter.SortByObjectSizeOn()
         relabel_filter.Update()
 
         itk_image_data = relabel_filter.GetOutput()
         label_buffer = itk.PyBuffer[
-            itk_output_image_type].GetArrayFromImage(itk_image_data)
+            itk_image_type].GetArrayFromImage(itk_image_data)
 
         # Flip the labels so that the largest component has the highest label
         # value, e.g., the labeling ordering by size goes from [1, 2, ... N] to
@@ -89,9 +70,7 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
         gt_zero = label_buffer > 0
         label_buffer[gt_zero] = minimum - label_buffer[gt_zero] + maximum
 
-        label_map_data_set = vtk.vtkImageData()
-        label_map_data_set.CopyStructure(dataset)
-        utils.set_array(label_map_data_set, label_buffer)
+        utils.set_array(dataset, label_buffer)
 
         # Now take the connected components results and compute things like
         # volume and surface area.
@@ -122,7 +101,6 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
         # Set up dictionary to return operator results
         returnValues = {}
         returnValues["component_statistics"] = spreadsheet
-        returnValues["label_map"] = label_map_data_set
 
     except Exception as exc:
         print("Exception encountered while running ConnectedComponents")

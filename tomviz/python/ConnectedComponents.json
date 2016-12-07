@@ -1,33 +1,12 @@
 {
   "name" : "ConnectedComponents",
   "label" : "Connected Components",
-  "description" : "Threshold image and compute label map of connected components.\nThe lower and upper threshold can be specified below.",
+  "description" : "Compute label map of connected components.\nThe components are relabeled in order of increasing volume\nin the output.",
   "results" : [
     {
       "name" : "component_statistics",
       "label" : "Component Statistics",
       "type" : "table"
-    }
-  ],
-  "children" : [
-    {
-      "name" : "label_map",
-      "label" : "Label Map",
-      "type" : "label_map"
-    }
-  ],
-  "parameters" : [
-    {
-      "name" : "lower_threshold",
-      "label" : "Lower Threshold",
-      "type" : "double",
-      "default" : 40.0
-    },
-    {
-      "name" : "upper_threshold",
-      "label" : "Upper Threshold",
-      "type" : "double",
-      "default" : 255.0
     }
   ]
 }
