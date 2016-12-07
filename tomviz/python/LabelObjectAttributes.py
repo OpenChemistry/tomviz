@@ -25,8 +25,8 @@ def transform_scalars(dataset):
 
         # Get an appropriate LabelImageToShapelLabelMapFilter type for the
         # input.
-        filterTypeIndex = [inputOutputPair[0] for inputOutputPair in
-            itk.LabelImageToShapeLabelMapFilter.keys()].index(itk_image_type)
+        inputTypes = [x[0] for x in itk.LabelImageToShapeLabelMapFilter.keys()]
+        filterTypeIndex = inputTypes.index(itk_image_type)
         if filterTypeIndex < 0:
             raise Exception("No suitable filter type for input type %s" %
                             type(itk_image_type))

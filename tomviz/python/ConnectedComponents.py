@@ -1,11 +1,11 @@
-def transform_scalars(dataset):
+def transform_scalars(dataset, background_value=0):
     """Converts a label map of connected components of foreground-valued
     voxels in the input image to a label map where each connected component
-    has a unique label. Non-zero values in the input are considered foreground.
-    Input images are expected to have integral voxel types, i.e., no float or
-    double voxels. The connected component labels are ordered such that the
-    smallest connected components have the lowest label values and the largest
-    connected components have the highest label values.
+    has a unique label. Foreground voxels have any value other than the
+    background value. Input images are expected to have integral voxel types,
+    i.e., no float or double voxels. The connected component labels are ordered
+    such that the smallest connected components have the lowest label values and
+    the largest connected components have the highest label values.
     """
 
     try:
@@ -41,7 +41,6 @@ def transform_scalars(dataset):
         # ConnectedComponentImageFilter
         connected_filter = itk.ConnectedComponentImageFilter[
             itk_image_type, itk_image_type].New()
-        background_value = 0
         connected_filter.SetBackgroundValue(background_value)
         connected_filter.SetInput(itk_image)
 
