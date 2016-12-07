@@ -163,8 +163,8 @@ TEST_F(OperatorPythonTest, update_progress_message)
 
     QSignalSpy spy(pythonOperator,
                    SIGNAL(progressMessageChanged(const QString&)));
-    bool result = pythonOperator->transform(dataObject);
-    ASSERT_TRUE(result);
+    TransformResult result = pythonOperator->transform(dataObject);
+    ASSERT_EQ(result, TransformResult::COMPLETE);
 
     ASSERT_EQ(spy.count(), 1);
 
