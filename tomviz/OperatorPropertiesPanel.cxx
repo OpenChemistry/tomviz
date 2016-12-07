@@ -76,7 +76,7 @@ void OperatorPropertiesPanel::setOperator(OperatorPython* op)
 
   // Check if we have any UI for this operator, there is probably a nicer
   // way todo this.
-  if (m_operatorWidget->layout()->count() == 0) {
+  if (!m_operatorWidget->layout() || m_operatorWidget->layout()->count() == 0) {
     m_operatorWidget->deleteLater();
     m_operatorWidget = nullptr;
     return;
