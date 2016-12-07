@@ -1,7 +1,2 @@
-def generate_dataset(array):
-    #------USER SPECIFIED VARIABLES-----#
-    # CONSTANT = the constant value to fill the dataset with
-    ###CONSTANT###
-    #-----------------------------------#
-
+def generate_dataset(array, CONSTANT=0.0):
     array.fill(CONSTANT)

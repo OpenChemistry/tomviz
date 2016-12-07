@@ -114,10 +114,10 @@ def set_tilt_angles(dataobject, newarray):
     do.FieldData.AddArray(vtkarray)
 
 
-def make_dataset(x, y, z, dataset, generate_data_function):
+def make_dataset(x, y, z, dataset, generate_data_function, **kwargs):
     from vtk import VTK_DOUBLE
     array = np.zeros((x, y, z), order='F')
-    generate_data_function(array)
+    generate_data_function(array, **kwargs)
     dataset.SetOrigin(0, 0, 0)
     dataset.SetSpacing(1, 1, 1)
     dataset.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)
