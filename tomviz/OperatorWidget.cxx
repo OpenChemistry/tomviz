@@ -40,10 +40,13 @@ OperatorWidget::~OperatorWidget()
 
 void OperatorWidget::setupUI(OperatorPython* op)
 {
-  InterfaceBuilder* ib = new InterfaceBuilder(this);
-  ib->setJSONDescription(op->JSONDescription());
-  ib->setParameterValues(op->arguments());
-  buildInterface(ib);
+  QString json = op->JSONDescription();
+  if (!json.isNull()) {
+    InterfaceBuilder* ib = new InterfaceBuilder(this);
+    ib->setJSONDescription(json);
+    ib->setParameterValues(op->arguments());
+    buildInterface(ib);
+  }
 }
 
 void OperatorWidget::setupUI(const QString& json)
