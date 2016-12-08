@@ -25,6 +25,7 @@
 #include <QMainWindow>
 #include <QMap>
 #include <QProgressBar>
+#include <QStatusBar>
 #include <QVBoxLayout>
 
 #include <cassert>
@@ -83,9 +84,11 @@ void ProgressDialogManager::operationStarted()
             title = QString("%1 Progress - %2").arg(op->label()).arg(message);
           }
           progressDialog->setWindowTitle(title);
-          QCoreApplication::processEvents();
         }
       });
+
+    connect(op, &Operator::progressMessageChanged, this,
+            &ProgressDialogManager::showStatusBarMessage);
 
     layout->addWidget(progressBar);
   }
@@ -128,5 +131,10 @@ void ProgressDialogManager::operationProgress(int)
   // Probably not strictly neccessary in the long run where we have a background
   // thread, until then we need this call.
   QCoreApplication::processEvents();
+}
+
+void ProgressDialogManager::showStatusBarMessage(const QString& message)
+{
+  this->mainWindow->statusBar()->showMessage(message, 3000);
 }
 }
