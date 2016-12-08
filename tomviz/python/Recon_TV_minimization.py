@@ -100,7 +100,7 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
             #adjust parameters
             beta = beta * beta_red
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         # Set the result as the new scalars.
         utils.set_array(dataset, recon)

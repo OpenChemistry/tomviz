@@ -44,7 +44,7 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             tiltSeries[:, :, i + 1] = corssCorrelationAlign(
                 tiltSeries[:, :, i + 1], tiltSeries[:, :, i], rFilter, kFilter)
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         for i in range(referenceIndex, 0, -1):
             if self.canceled:
@@ -52,7 +52,7 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             tiltSeries[:, :, i - 1] = corssCorrelationAlign(
                 tiltSeries[:, :, i - 1], tiltSeries[:, :, i], rFilter, kFilter)
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         utils.set_array(dataset, tiltSeries)
 

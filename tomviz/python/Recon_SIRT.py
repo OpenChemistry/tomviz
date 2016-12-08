@@ -46,7 +46,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         r = SIRT(A, update_methods[updateMethodIndex])
         r.initialize()
         step += 1
-        self.progress.update(step)
+        self.progress.value = step
 
         for s in range(Nslice):
             if self.canceled:
@@ -54,7 +54,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
             b = tiltSeries[s, :, :].transpose().flatten()
             recon[s, :, :] = r.recon2(b, Niter, stepSize).reshape((Nray, Nray))
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         # Set the result as the new scalars.
         utils.set_array(dataset, recon)

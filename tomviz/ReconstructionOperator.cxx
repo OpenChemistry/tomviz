@@ -77,7 +77,7 @@ bool ReconstructionOperator::deserialize(const pugi::xml_node&)
 QWidget* ReconstructionOperator::getCustomProgressWidget(QWidget* p) const
 {
   ReconstructionWidget* widget = new ReconstructionWidget(this->dataSource, p);
-  QObject::connect(this, &Operator::updateProgress, widget,
+  QObject::connect(this, &Operator::progressStepChanged, widget,
                    &ReconstructionWidget::updateProgress);
   QObject::connect(this, &ReconstructionOperator::intermediateResults, widget,
                    &ReconstructionWidget::updateIntermediateResults);
@@ -131,7 +131,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
       }
     }
     emit this->intermediateResults(reconstructionPtr);
-    emit this->updateProgress(i);
+    this->setProgressStep(i);
   }
   if (this->isCanceled()) {
     return false;

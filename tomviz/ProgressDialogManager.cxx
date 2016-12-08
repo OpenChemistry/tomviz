@@ -25,6 +25,7 @@
 #include <QMainWindow>
 #include <QMap>
 #include <QProgressBar>
+#include <QStatusBar>
 #include <QVBoxLayout>
 
 #include <cassert>
@@ -68,12 +69,27 @@ void ProgressDialogManager::operationStarted()
     progressBar->setMinimum(0);
     progressBar->setMaximum(op->totalProgressSteps());
     progressWidget = progressBar;
-    QObject::connect(op, &Operator::updateProgress, progressBar,
+    QObject::connect(op, &Operator::progressStepChanged, progressBar,
                      &QProgressBar::setValue);
     QObject::connect(op, &Operator::totalProgressStepsChanged, progressBar,
                      &QProgressBar::setMaximum);
-    QObject::connect(op, &Operator::updateProgress, this,
+    QObject::connect(op, &Operator::progressStepChanged, this,
                      &ProgressDialogManager::operationProgress);
+    QObject::connect(
+      op, &Operator::progressMessageChanged,
+      [progressDialog, op](const QString& message) {
+        if (!message.isNull()) {
+          QString title = QString("%1 Progress").arg(op->label());
+          if (!message.isEmpty()) {
+            title = QString("%1 Progress - %2").arg(op->label()).arg(message);
+          }
+          progressDialog->setWindowTitle(title);
+        }
+      });
+
+    connect(op, &Operator::progressMessageChanged, this,
+            &ProgressDialogManager::showStatusBarMessage);
+
     layout->addWidget(progressBar);
   }
   layout->addWidget(progressWidget);
@@ -93,7 +109,7 @@ void ProgressDialogManager::operationStarted()
   // Increase size of dialog so we can see title, not sure there is a better
   // way.
   auto height = progressDialog->height();
-  progressDialog->resize(300, height);
+  progressDialog->resize(500, height);
   progressDialog->show();
   QCoreApplication::processEvents();
 }
@@ -115,5 +131,10 @@ void ProgressDialogManager::operationProgress(int)
   // Probably not strictly neccessary in the long run where we have a background
   // thread, until then we need this call.
   QCoreApplication::processEvents();
+}
+
+void ProgressDialogManager::showStatusBarMessage(const QString& message)
+{
+  this->mainWindow->statusBar()->showMessage(message, 3000);
 }
 }

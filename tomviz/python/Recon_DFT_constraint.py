@@ -121,7 +121,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
                 cutoff = np.amax(r) * supportThreshold
                 support = r >= cutoff
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         recon = (y2 + y1) / 2
         recon = np.fft.fftshift(recon)

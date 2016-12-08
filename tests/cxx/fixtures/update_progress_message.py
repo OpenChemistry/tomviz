@@ -4,4 +4,4 @@ import tomviz.operators
 class TestOperator(tomviz.operators.Operator):
 
     def transform_scalars(self, data):
-        self.progress.value = 100
+        self.progress.message = 'Is there anyone out there?'

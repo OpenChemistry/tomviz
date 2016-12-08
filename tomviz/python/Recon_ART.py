@@ -56,7 +56,7 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
             recon[s, :, :] = f.reshape((Nray, Nray))
 
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         # Set the result as the new scalars.
         utils.set_array(dataset, recon)

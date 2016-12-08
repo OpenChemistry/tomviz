@@ -135,16 +135,42 @@ TEST_F(OperatorPythonTest, update_progress)
     file.close();
     pythonOperator->setScript(script);
 
-    QSignalSpy spy(pythonOperator, SIGNAL(updateProgress(int)));
+    QSignalSpy spy(pythonOperator, SIGNAL(progressStepChanged(int)));
     TransformResult result = pythonOperator->transform(dataObject);
     ASSERT_EQ(result, TransformResult::COMPLETE);
 
     // One from applyTransform() and one from our python code
     ASSERT_EQ(spy.count(), 2);
 
-    // Take the signal emission from our python code
+    // Take the signal emitted from our python code
     QList<QVariant> args = spy.takeAt(1);
     ASSERT_EQ(args.at(0).toInt(), 100);
+
+  } else {
+    FAIL() << "Unable to load script.";
+  }
+}
+
+TEST_F(OperatorPythonTest, update_progress_message)
+{
+  pythonOperator->setLabel("update_progress_message");
+  QFile file(QString("%1/fixtures/update_progress_message.py").arg(SOURCE_DIR));
+  if (file.open(QIODevice::ReadOnly)) {
+    QByteArray array = file.readAll();
+    QString script(array);
+    file.close();
+    pythonOperator->setScript(script);
+
+    QSignalSpy spy(pythonOperator,
+                   SIGNAL(progressMessageChanged(const QString&)));
+    TransformResult result = pythonOperator->transform(dataObject);
+    ASSERT_EQ(result, TransformResult::COMPLETE);
+
+    ASSERT_EQ(spy.count(), 1);
+
+    QList<QVariant> args = spy.takeAt(0);
+    ASSERT_STREQ(args.at(0).toString().toLatin1().constData(),
+                 "Is there anyone out there?");
 
   } else {
     FAIL() << "Unable to load script.";

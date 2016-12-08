@@ -147,10 +147,32 @@ public:
   /// that QProgressBar interprets the progress as unknown.
   int totalProgressSteps() const { return m_totalProgressSteps; }
 
+  /// Set the total number of progress steps
   void setTotalProgressSteps(int steps)
   {
     m_totalProgressSteps = steps;
     emit totalProgressStepsChanged(steps);
+  }
+
+  /// Returns the current progress step
+  int progressStep() const { return m_progressStep; }
+
+  /// Set the current progress step
+  void setProgressStep(int step)
+  {
+    m_progressStep = step;
+    emit progressStepChanged(step);
+  }
+
+  /// Returns the current progress message
+  QString progressMessage() const { return m_progressMessage; }
+
+  /// Set the current progress message which will appear in the progress dialog
+  /// title.
+  void setProgressMessage(const QString& message)
+  {
+    m_progressMessage = message;
+    emit progressMessageChanged(message);
   }
 
 signals:
@@ -162,10 +184,11 @@ signals:
   /// and the GUI needs to refresh its display of the Operator.
   void labelModified();
 
-  /// Returns the number of steps the operator has finished.  The total number
-  /// of steps is returned by totalProgressSteps and should be emitted as a
-  /// finished signal when all work in the operator is done.
-  void updateProgress(int);
+  /// Emitted to indicate that the progress step has changed.
+  void progressStepChanged(int);
+
+  /// Emitted to indicate that the progress message has changed.
+  void progressMessageChanged(const QString& message);
 
   /// Emitted when the operator starts transforming the data
   void transformingStarted();
@@ -212,6 +235,8 @@ private:
   bool m_hasChildDataSource = false;
   DataSource* m_childDataSource = nullptr;
   int m_totalProgressSteps = 0;
+  int m_progressStep = 0;
+  QString m_progressMessage;
   OperatorState m_state = OperatorState::QUEUED;
 };
 }

@@ -20,7 +20,7 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
             tiltSeries[:, :, i] = centerOfMassAlign(tiltSeries[:, :, i])
 
             step += 1
-            self.progress.update(step)
+            self.progress.value = step
 
         utils.set_array(dataset, tiltSeries)
 

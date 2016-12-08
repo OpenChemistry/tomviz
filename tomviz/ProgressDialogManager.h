@@ -39,6 +39,7 @@ private slots:
   void operationProgress(int progress);
   void operatorAdded(Operator* op);
   void dataSourceAdded(DataSource* ds);
+  void showStatusBarMessage(const QString& message);
 
 private:
   QMainWindow* mainWindow;
