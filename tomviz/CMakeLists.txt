@@ -205,6 +205,7 @@ set(python_files
   BinaryErode.py
   BinaryOpen.py
   BinaryClose.py
+  LabelObjectAttributes.py
   MisalignImgs_Uniform.py
   AutoTiltAxisAlignment.py
   AutoCenterOfMassTiltImageAlignment.py
@@ -258,6 +259,7 @@ set(json_files
   BinaryErode.json
   BinaryOpen.json
   BinaryClose.json
+  LabelObjectAttributes.json
   Shift_Stack_Uniformly.json
   Pad_Data.json
   Resample.json

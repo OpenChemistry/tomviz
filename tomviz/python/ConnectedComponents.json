@@ -2,11 +2,12 @@
   "name" : "ConnectedComponents",
   "label" : "Connected Components",
   "description" : "Compute label map of connected components.\nThe components are relabeled in order of increasing volume\nin the output.",
-  "results" : [
+  "parameters" : [
     {
-      "name" : "component_statistics",
-      "label" : "Component Statistics",
-      "type" : "table"
+      "name" : "background_value",
+      "label" : "Background Value",
+      "type" : "int",
+      "default" : 0
     }
   ]
 }
