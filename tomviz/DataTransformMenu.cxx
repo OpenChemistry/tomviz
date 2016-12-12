@@ -78,6 +78,9 @@ void DataTransformMenu::buildMenu()
   QAction* binaryErodeAction = menu->addAction("Binary Erode");
   QAction* binaryOpenAction = menu->addAction("Binary Open");
   QAction* binaryCloseAction = menu->addAction("Binary Close");
+  menu->addSeparator();
+  QAction* labelObjectPrincipalAxesAction =
+    menu->addAction("Label Object Principal Axes");
   QAction* labelObjectAttributesAction =
     menu->addAction("Label Object Attributes");
   menu->addSeparator();
@@ -137,6 +140,16 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(binaryCloseAction, "Binary Close",
                                  readInPythonScript("BinaryClose"), false,
                                  false, readInJSONDescription("BinaryClose"));
+
+  new AddPythonTransformReaction(
+    labelObjectPrincipalAxesAction, "Label Object Principal Axes",
+    readInPythonScript("LabelObjectPrincipalAxes"), false, false,
+    readInJSONDescription("LabelObjectPrincipalAxes"));
+
+  new AddPythonTransformReaction(
+    labelObjectAttributesAction, "Label Object Attributes",
+    readInPythonScript("LabelObjectAttributes"), false, false,
+    readInJSONDescription("LabelObjectAttributes"));
   new AddPythonTransformReaction(
     labelObjectAttributesAction, "Label Object Attributes",
     readInPythonScript("LabelObjectAttributes"), false, false,

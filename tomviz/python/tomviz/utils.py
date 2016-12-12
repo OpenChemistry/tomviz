@@ -114,6 +114,27 @@ def set_tilt_angles(dataobject, newarray):
     do.FieldData.AddArray(vtkarray)
 
 
+def get_coordinate_arrays(dataset):
+    """Returns a triple of Numpy arrays containing x, y, and z coordinates for
+    each point in the dataset. This can be used to evaluate a function at each
+    point, for instance.
+    """
+    assert dataset.IsA("vtkImageData"), "Dataset must be a vtkImageData"
+
+    # Create meshgrid for image
+    spacing = dataset.GetSpacing()
+    origin = dataset.GetOrigin()
+    dims = dataset.GetDimensions()
+    x = [origin[0] + (spacing[0] * i) for i in range(dims[0])]
+    y = [origin[1] + (spacing[1] * i) for i in range(dims[1])]
+    z = [origin[2] + (spacing[2] * i) for i in range(dims[2])]
+
+    # The funny ordering is to match VTK's convention for point storage
+    yy, xx, zz = np.meshgrid(y, x, z)
+
+    return (xx, yy, zz)
+
+
 def make_dataset(x, y, z, dataset, generate_data_function, **kwargs):
     from vtk import VTK_DOUBLE
     array = np.zeros((x, y, z), order='F')
