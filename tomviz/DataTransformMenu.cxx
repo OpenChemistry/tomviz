@@ -79,10 +79,12 @@ void DataTransformMenu::buildMenu()
   QAction* binaryOpenAction = menu->addAction("Binary Open");
   QAction* binaryCloseAction = menu->addAction("Binary Close");
   menu->addSeparator();
-  QAction* labelObjectPrincipalAxesAction =
-    menu->addAction("Label Object Principal Axes");
   QAction* labelObjectAttributesAction =
     menu->addAction("Label Object Attributes");
+  QAction* labelObjectPrincipalAxesAction =
+    menu->addAction("Label Object Principal Axes");
+  QAction* distanceFromAxisAction =
+    menu->addAction("Label Object Distance From Axis");
   menu->addSeparator();
   QAction* shiftUniformAction = menu->addAction("Shift Volume");
   QAction* deleteSliceAction = menu->addAction("Delete Slices");
@@ -141,19 +143,19 @@ void DataTransformMenu::buildMenu()
                                  readInPythonScript("BinaryClose"), false,
                                  false, readInJSONDescription("BinaryClose"));
 
+ new AddPythonTransformReaction(
+    labelObjectAttributesAction, "Label Object Attributes",
+    readInPythonScript("LabelObjectAttributes"), false, false,
+    readInJSONDescription("LabelObjectAttributes"));
   new AddPythonTransformReaction(
     labelObjectPrincipalAxesAction, "Label Object Principal Axes",
     readInPythonScript("LabelObjectPrincipalAxes"), false, false,
     readInJSONDescription("LabelObjectPrincipalAxes"));
+ new AddPythonTransformReaction(
+    distanceFromAxisAction, "Label Object Distance From Principal Axis",
+    readInPythonScript("LabelObjectDistanceFromPrincipalAxis"), false, false,
+    readInJSONDescription("LabelObjectDistanceFromPrincipalAxis"));
 
-  new AddPythonTransformReaction(
-    labelObjectAttributesAction, "Label Object Attributes",
-    readInPythonScript("LabelObjectAttributes"), false, false,
-    readInJSONDescription("LabelObjectAttributes"));
-  new AddPythonTransformReaction(
-    labelObjectAttributesAction, "Label Object Attributes",
-    readInPythonScript("LabelObjectAttributes"), false, false,
-    readInJSONDescription("LabelObjectAttributes"));
   new AddPythonTransformReaction(
     shiftUniformAction, "Shift Volume",
     readInPythonScript("Shift_Stack_Uniformly"), false, false,

@@ -207,6 +207,7 @@ set(python_files
   BinaryClose.py
   LabelObjectAttributes.py
   LabelObjectPrincipalAxes.py
+  LabelObjectDistanceFromPrincipalAxis.py
   MisalignImgs_Uniform.py
   AutoTiltAxisAlignment.py
   AutoCenterOfMassTiltImageAlignment.py
@@ -262,6 +263,7 @@ set(json_files
   BinaryClose.json
   LabelObjectAttributes.json
   LabelObjectPrincipalAxes.json
+  LabelObjectDistanceFromPrincipalAxis.json
   Shift_Stack_Uniformly.json
   Pad_Data.json
   Resample.json
