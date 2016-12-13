@@ -144,7 +144,8 @@ def label_object_principal_axes(dataset, label_value):
 
     data = np.zeros((num_voxels, 3))
     selection = labels == label_value
-    assert np.any(selection), "No voxels with label %d in label map" % label_value
+    assert np.any(selection), \
+        "No voxels with label %d in label map" % label_value
     data[:, 0] = xx[selection]
     data[:, 1] = yy[selection]
     data[:, 2] = zz[selection]
