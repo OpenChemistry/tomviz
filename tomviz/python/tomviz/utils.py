@@ -135,6 +135,33 @@ def get_coordinate_arrays(dataset):
     return (xx, yy, zz)
 
 
+def label_object_principal_axes(dataset, label_value):
+    import numpy as np
+    from tomviz import utils
+    labels = utils.get_array(dataset)
+    num_voxels = np.sum(labels == label_value)
+    xx, yy, zz = utils.get_coordinate_arrays(dataset)
+
+    data = np.zeros((num_voxels, 3))
+    selection = labels == label_value
+    assert np.any(selection), "No voxels with label %d in label map" % label_value
+    data[:, 0] = xx[selection]
+    data[:, 1] = yy[selection]
+    data[:, 2] = zz[selection]
+
+    # Compute PCA on coordinates
+    from scipy import linalg as la
+    m, n = data.shape
+    center = data.mean(axis=0)
+    data -= center
+    R = np.cov(data, rowvar=False)
+    evals, evecs = la.eigh(R)
+    idx = np.argsort(evals)[::-1]
+    evecs = evecs[:, idx]
+    evals = evals[idx]
+    return (evecs, center)
+
+
 def make_dataset(x, y, z, dataset, generate_data_function, **kwargs):
     from vtk import VTK_DOUBLE
     array = np.zeros((x, y, z), order='F')
