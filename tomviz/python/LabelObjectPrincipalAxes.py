@@ -1,29 +1,3 @@
-def principal_axes(dataset, label_value):
-    import numpy as np
-    from tomviz import utils
-    labels = utils.get_array(dataset)
-    num_voxels = np.sum(labels == label_value)
-    xx, yy, zz = utils.get_coordinate_arrays(dataset)
-
-    data = np.zeros((num_voxels, 3))
-    selection = labels == label_value
-    data[:, 0] = xx[selection]
-    data[:, 1] = yy[selection]
-    data[:, 2] = zz[selection]
-
-    # Compute PCA on coordinates
-    from scipy import linalg as la
-    m, n = data.shape
-    center = data.mean(axis=0)
-    data -= center
-    R = np.cov(data, rowvar=False)
-    evals, evecs = la.eigh(R)
-    idx = np.argsort(evals)[::-1]
-    evecs = evecs[:, idx]
-    evals = evals[idx]
-    return (evecs, center)
-
-
 def transform_scalars(dataset, label_value=1):
     """Computes the principal axes of an object with the label value passed in
     as the parameter label_value. The principal axes are added to the field
@@ -36,11 +10,12 @@ def transform_scalars(dataset, label_value=1):
     locations to determine the principal axes.
     """
 
+    from tomviz import utils
     import vtk
 
     fd = dataset.GetFieldData()
 
-    (axes, center) = principal_axes(dataset, label_value)
+    (axes, center) = utils.label_object_principal_axes(dataset, label_value)
     print(axes)
     print(center)
     axis_array = vtk.vtkFloatArray()
