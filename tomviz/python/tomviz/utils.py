@@ -114,6 +114,55 @@ def set_tilt_angles(dataobject, newarray):
     do.FieldData.AddArray(vtkarray)
 
 
+def get_coordinate_arrays(dataset):
+    """Returns a triple of Numpy arrays containing x, y, and z coordinates for
+    each point in the dataset. This can be used to evaluate a function at each
+    point, for instance.
+    """
+    assert dataset.IsA("vtkImageData"), "Dataset must be a vtkImageData"
+
+    # Create meshgrid for image
+    spacing = dataset.GetSpacing()
+    origin = dataset.GetOrigin()
+    dims = dataset.GetDimensions()
+    x = [origin[0] + (spacing[0] * i) for i in range(dims[0])]
+    y = [origin[1] + (spacing[1] * i) for i in range(dims[1])]
+    z = [origin[2] + (spacing[2] * i) for i in range(dims[2])]
+
+    # The funny ordering is to match VTK's convention for point storage
+    yy, xx, zz = np.meshgrid(y, x, z)
+
+    return (xx, yy, zz)
+
+
+def label_object_principal_axes(dataset, label_value):
+    import numpy as np
+    from tomviz import utils
+    labels = utils.get_array(dataset)
+    num_voxels = np.sum(labels == label_value)
+    xx, yy, zz = utils.get_coordinate_arrays(dataset)
+
+    data = np.zeros((num_voxels, 3))
+    selection = labels == label_value
+    assert np.any(selection), \
+        "No voxels with label %d in label map" % label_value
+    data[:, 0] = xx[selection]
+    data[:, 1] = yy[selection]
+    data[:, 2] = zz[selection]
+
+    # Compute PCA on coordinates
+    from scipy import linalg as la
+    m, n = data.shape
+    center = data.mean(axis=0)
+    data -= center
+    R = np.cov(data, rowvar=False)
+    evals, evecs = la.eigh(R)
+    idx = np.argsort(evals)[::-1]
+    evecs = evecs[:, idx]
+    evals = evals[idx]
+    return (evecs, center)
+
+
 def make_dataset(x, y, z, dataset, generate_data_function, **kwargs):
     from vtk import VTK_DOUBLE
     array = np.zeros((x, y, z), order='F')
