@@ -320,10 +320,9 @@ def get_label_object_attributes(dataset):
     an ITK shape label map.
     """
 
-    import itk
-    import vtk
-
     try:
+        import itk
+
         # Get an ITK image from the data set
         itk_image = convert_vtk_to_itk_image(dataset)
         itk_image_type = type(itk_image)
