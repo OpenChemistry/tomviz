@@ -4,7 +4,6 @@ def transform_scalars(dataset):
     """
 
     try:
-        import itk
         import vtk
         from tomviz import itkutils
         from tomviz import utils
@@ -18,7 +17,7 @@ def transform_scalars(dataset):
         raise Exception(
             "Label Object Attributes works only on images with integral types.")
 
-    try:        
+    try:
         # Set up arrays to hold the shape attribute data
         shape_label_map = itkutils.get_label_object_attributes(dataset)
 

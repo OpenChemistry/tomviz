@@ -7,24 +7,29 @@ def transform_scalars(dataset, label_value=1, principal_axis=0):
     """
 
     import numpy as np
-    import itk
-    import vtk
     from tomviz import itkutils
     from tomviz import utils
 
     fd = dataset.GetFieldData()
     axis_array = fd.GetArray('PrincipalAxes')
-    assert axis_array is not None, "Dataset does not have a PrincipalAxes field data array"
-    assert axis_array.GetNumberOfTuples() == 3, "PrincipalAxes array requires 3 tuples"
-    assert axis_array.GetNumberOfComponents() == 3, "PrincipalAxes array requires 3 components"
-    assert principal_axis >= 0 and principal_axis <= 2, "Invalid principal axis. Must be in range [0, 2]."
+    assert axis_array is not None, \
+        "Dataset does not have a PrincipalAxes field data array"
+    assert axis_array.GetNumberOfTuples() == 3, \
+        "PrincipalAxes array requires 3 tuples"
+    assert axis_array.GetNumberOfComponents() == 3, \
+        "PrincipalAxes array requires 3 components"
+    assert principal_axis >= 0 and principal_axis <= 2, \
+        "Invalid principal axis. Must be in range [0, 2]."
 
     axis = np.array(axis_array.GetTuple(principal_axis))
 
     center_array = fd.GetArray('Center')
-    assert center_array is not None, "Dataset does not have a Center field data array"
-    assert center_array.GetNumberOfTuples() == 1, "Center array requires 1 tuple"
-    assert center_array.GetNumberOfComponents() == 3, "Center array requires 3 components"
+    assert center_array is not None, \
+        "Dataset does not have a Center field data array"
+    assert center_array.GetNumberOfTuples() == 1, \
+        "Center array requires 1 tuple"
+    assert center_array.GetNumberOfComponents() == 3, \
+        "Center array requires 3 components"
 
     center = np.array(center_array.GetTuple(0))
 
