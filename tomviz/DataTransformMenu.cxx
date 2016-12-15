@@ -143,7 +143,7 @@ void DataTransformMenu::buildMenu()
                                  readInPythonScript("BinaryClose"), false,
                                  false, readInJSONDescription("BinaryClose"));
 
- new AddPythonTransformReaction(
+  new AddPythonTransformReaction(
     labelObjectAttributesAction, "Label Object Attributes",
     readInPythonScript("LabelObjectAttributes"), false, false,
     readInJSONDescription("LabelObjectAttributes"));
@@ -151,7 +151,7 @@ void DataTransformMenu::buildMenu()
     labelObjectPrincipalAxesAction, "Label Object Principal Axes",
     readInPythonScript("LabelObjectPrincipalAxes"), false, false,
     readInJSONDescription("LabelObjectPrincipalAxes"));
- new AddPythonTransformReaction(
+  new AddPythonTransformReaction(
     distanceFromAxisAction, "Label Object Distance From Principal Axis",
     readInPythonScript("LabelObjectDistanceFromPrincipalAxis"), false, false,
     readInJSONDescription("LabelObjectDistanceFromPrincipalAxis"));
