@@ -1,9 +1,8 @@
 include_directories(SYSTEM
   ${Qt5Network_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
-  ${Qt5UiTools_INCLUDE_DIRS})
-
-include_directories(SYSTEM ${PARAVIEW_INCLUDE_DIRS})
+  ${PARAVIEW_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
 option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
 if(ENABLE_DAX_ACCELERATION)
@@ -20,8 +19,6 @@ if(ENABLE_DAX_ACCELERATION)
 endif()
 
 add_subdirectory(pvextensions)
-
-include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
 set(SOURCES
   AboutDialog.h
