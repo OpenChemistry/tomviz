@@ -1,7 +1,15 @@
-def transform_scalars(dataset, label_value=1, axis=0):
+def transform_scalars(dataset, label_value=1, principal_axis=0):
+    """Compute the distance from the centroid of each connected component in
+    the label object with the given label_value to the given and store that
+    distance in each voxel of the label object connected component. A
+    principal_axis of 0 is first principal axis, 1 is the second, and 2 is
+    third.
+    """
 
+    import numpy as np
     import itk
     import vtk
+    from tomviz import itkutils
     from tomviz import utils
 
     fd = dataset.GetFieldData()
@@ -9,37 +17,50 @@ def transform_scalars(dataset, label_value=1, axis=0):
     assert axis_array is not None, "Dataset does not have a PrincipalAxes field data array"
     assert axis_array.GetNumberOfTuples() == 3, "PrincipalAxes array requires 3 tuples"
     assert axis_array.GetNumberOfComponents() == 3, "PrincipalAxes array requires 3 components"
-    assert axis >= 0 and axis <= 2, "Invalid axis. Must be in range [0, 2]."
+    assert principal_axis >= 0 and principal_axis <= 2, "Invalid principal axis. Must be in range [0, 2]."
 
-    axis = axis_array.GetTuple(axis)
+    axis = np.array(axis_array.GetTuple(principal_axis))
 
     center_array = fd.GetArray('Center')
     assert center_array is not None, "Dataset does not have a Center field data array"
     assert center_array.GetNumberOfTuples() == 1, "Center array requires 1 tuple"
     assert center_array.GetNumberOfComponents() == 3, "Center array requires 3 components"
 
-    center = center_array.GetTuple(0)
+    center = np.array(center_array.GetTuple(0))
 
-    import numpy as np
+    # Blank out the undesired label values
+    scalars = utils.get_scalars(dataset)
+    scalars[scalars != label_value] = 0
+    utils.set_scalars(dataset, scalars)
 
-    # The funny ordering is to match VTK's convention for point storage
-    #yy, xx, zz = np.meshgrid(y, x, z)
-    xx, yy, zz = utils.get_coordinate_arrays(dataset)
-    amp_x = center[0] - xx
-    amp_y = center[1] - yy
-    amp_z = center[2] - zz
+    # Get connected components of voxels labeled by label value
+    utils.connected_components(dataset, 0)
 
-    dot = (amp_x * axis[0]) + (amp_y * axis[1]) + (amp_z * axis[2])
-    distance = np.sqrt(np.square(amp_x - (dot * axis[0])) +
-                       np.square(amp_y - (dot * axis[1])) +
-                       np.square(amp_z - (dot * axis[2])))
+    # Get shape attributes
+    shape_label_map = itkutils.get_label_object_attributes(dataset)
+    num_label_objects = shape_label_map.GetNumberOfLabelObjects()
 
-    # Check label values and store the distance only for those with labels > 0,
-    # which represent non-background values.
-    labels = utils.get_array(dataset)
-    distance[labels != label_value] = 0
+    # Map from label value to distance from principal axis. Used later to fill
+    # in distance array.
+    labels = utils.get_scalars(dataset)
+    max_label = np.max(labels)
+    label_value_to_distance = [0 for i in range(max_label + 1)]
+    for i in range(0, num_label_objects):
+        label_object = shape_label_map.GetNthLabelObject(i)
+        # Flip the centroid. I have verified that the x and z coordinates
+        # of the centroid coming out of the shape label objects are swapped,
+        # so I reverse it here.
+        centroid = np.flipud(np.array(label_object.GetCentroid()))
+        v = center - centroid
+        dot = np.dot(v, axis)
+        d = np.linalg.norm(v - dot*axis)
+        label_value_to_distance[label_object.GetLabel()] = d
+
+    distance = np.zeros(dataset.GetNumberOfPoints())
+    for i in xrange(len(labels)):
+        distance[i] = label_value_to_distance[labels[i]]
 
     import vtk.util.numpy_support as np_s
-    distance_array = np_s.numpy_to_vtk(distance.reshape(-1, order='F'), deep=1)
+    distance_array = np_s.numpy_to_vtk(distance, deep=1)
     distance_array.SetName('Distance')
     dataset.GetPointData().SetScalars(distance_array)

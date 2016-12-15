@@ -11,15 +11,15 @@
       "default" : 1
     },
     {
-      "name" : "axis",
-      "label" : "Axis",
+      "name" : "principal_axis",
+      "label" : "Principal Axis",
       "description" : "Principal axis to use",
       "type" : "enumeration",
       "default" : 0,
       "options" : [
-        {"X" : 0},
-        {"Y" : 1},
-        {"Z" : 2}
+        {"First" : 0},
+        {"Second" : 1},
+        {"Third" : 2}
       ]
     }
   ]
