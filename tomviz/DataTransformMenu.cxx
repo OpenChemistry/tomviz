@@ -84,7 +84,7 @@ void DataTransformMenu::buildMenu()
   QAction* labelObjectPrincipalAxesAction =
     menu->addAction("Label Object Principal Axes");
   QAction* distanceFromAxisAction =
-    menu->addAction("Label Object Distance From Axis");
+    menu->addAction("Label Object Distance From Principal Axis");
   menu->addSeparator();
   QAction* shiftUniformAction = menu->addAction("Shift Volume");
   QAction* deleteSliceAction = menu->addAction("Delete Slices");
