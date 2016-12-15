@@ -1,7 +1,7 @@
 def transform_scalars(dataset, label_value=1, principal_axis=0):
-    """Compute the distance from the centroid of each connected component in
-    the label object with the given label_value to the given and store that
-    distance in each voxel of the label object connected component. A
+    """Computes the distance from the centroid of each connected component in
+    the label object with the given label_value to the given principal axis and
+    store that distance in each voxel of the label object connected component. A
     principal_axis of 0 is first principal axis, 1 is the second, and 2 is
     third.
     """
