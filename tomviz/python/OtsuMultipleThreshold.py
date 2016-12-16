@@ -46,13 +46,13 @@ def transform_scalars(dataset, number_of_thresholds=1,
         label_buffer = itk.PyBuffer[itk_threshold_image_type] \
             .GetArrayFromImage(itk_image_data)
 
-        label_map_data_set = vtk.vtkImageData()
-        label_map_data_set.CopyStructure(dataset)
-        utils.set_array(label_map_data_set, label_buffer)
+        label_map_dataset = vtk.vtkImageData()
+        label_map_dataset.CopyStructure(dataset)
+        utils.set_array(label_map_dataset, label_buffer)
 
         # Set up dictionary to return operator results
         returnValues = {}
-        returnValues["label_map"] = label_map_data_set
+        returnValues["label_map"] = label_map_dataset
 
     except Exception as exc:
         print("Exception encountered while running OtsuMultipleThreshold")
