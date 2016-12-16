@@ -172,6 +172,94 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
   return false;
 }
 
+bool serialize(const QVariant& value, pugi::xml_node& out)
+{
+  switch (value.type()) {
+    case QVariant::Int:
+      out.append_attribute("type").set_value("int");
+      out.append_attribute("value").set_value(value.toInt());
+      return true;
+    case QVariant::Double:
+      out.append_attribute("type").set_value("double");
+      out.append_attribute("value").set_value(value.toDouble());
+      return true;
+    case QVariant::Bool:
+      out.append_attribute("type").set_value("bool");
+      out.append_attribute("value").set_value(value.toBool());
+      return true;
+    case QVariant::String: {
+      out.append_attribute("type").set_value("string");
+      out.append_attribute("value").set_value(
+        value.toString().toLatin1().data());
+      return true;
+    }
+    case QVariant::List: {
+      out.append_attribute("type").set_value("list");
+      QVariantList list = value.toList();
+      for (auto itr = list.begin(); itr != list.end(); ++itr) {
+        pugi::xml_node child = out.append_child("variant");
+        serialize(*itr, child);
+      }
+      return true;
+    }
+    default:
+      qCritical() << "Unsupported type";
+      return false;
+  }
+}
+
+bool serialize(const QVariantMap& map, pugi::xml_node& out)
+{
+  bool result = true;
+  for (auto itr = map.begin(); itr != map.end(); ++itr) {
+    pugi::xml_node child = out.append_child("variant");
+    child.append_attribute("name").set_value(itr.key().toLatin1().data());
+    result &= serialize(itr.value(), child);
+  }
+  return result;
+}
+
+bool deserialize(QVariant& variant, const pugi::xml_node& in)
+{
+  QString type = in.attribute("type").as_string();
+  if (type == "int") {
+    variant = QVariant(in.attribute("value").as_int());
+  } else if (type == "double") {
+    variant = QVariant(in.attribute("value").as_double());
+  } else if (type == "bool") {
+    variant = QVariant(in.attribute("value").as_bool());
+  } else if (type == "string") {
+    variant = QVariant(in.attribute("value").as_string());
+  } else if (type == "list") {
+    QVariantList list;
+    bool result = true;
+    for (pugi::xml_node child = in.child("variant"); child;
+         child = child.next_sibling("variant")) {
+      QVariant tmp;
+      result &= deserialize(tmp, child);
+      list.push_back(tmp);
+    }
+    variant = QVariant(list);
+    return result;
+  } else {
+    return false;
+  }
+  return true;
+}
+
+bool deserialize(QVariantMap& map, const pugi::xml_node& in)
+{
+  bool result = true;
+  for (pugi::xml_node child = in.child("variant"); child;
+       child = child.next_sibling("variant")) {
+    QString key = child.attribute("name").as_string();
+    QVariant value;
+    result &= deserialize(value, child);
+    map.insert(key, value);
+  }
+  return result;
+}
+
 vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)
 {
   vtkPVDataInformation* dinfo = proxy->GetDataInformation();
