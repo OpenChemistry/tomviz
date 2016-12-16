@@ -284,10 +284,10 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     return itk_image
 
 
-def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
-    """Add an array from an ITK image to a vtkImageData with a given name."""
+def set_array_from_itk_image(dataset, itk_image):
+    """Set dataset array from an ITK image."""
 
-    itk_output_image_type = type(itk_image_data)
+    itk_output_image_type = type(itk_image)
 
     # Save the VTKGlue optimization for later
     #------------------------------------------
@@ -305,14 +305,12 @@ def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     #new_array = filter_array.NewInstance()
     #new_array.DeepCopy(filter_array) # Should be able to shallow copy?
     #new_array.SetName(name)
-
-    # Set a new point data array in the dataset
-    #vtk_image_data.GetPointData().AddArray(new_array)
     #------------------------------------------
     import itk
+    import utils
     result = itk.PyBuffer[
-        itk_output_image_type].GetArrayFromImage(itk_image_data)
-    set_array(vtk_image_data, result)
+        itk_output_image_type].GetArrayFromImage(itk_image)
+    utils.set_array(dataset, result)
 
 
 def get_label_object_attributes(dataset):
