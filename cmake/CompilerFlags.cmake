@@ -10,7 +10,7 @@ elseif (WIN32)
   endif()
 endif()
 
-if(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 
   include(CheckCXXCompilerFlag)
 
