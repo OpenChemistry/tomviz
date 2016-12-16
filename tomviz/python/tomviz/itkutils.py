@@ -315,6 +315,40 @@ def add_vtk_array_from_itk_image(itk_image_data, vtk_image_data, name):
     set_array(vtk_image_data, result)
 
 
+def get_label_object_attributes(dataset):
+    """Compute shape attributes of integer-labeled objects in a dataset. Returns
+    an ITK shape label map.
+    """
+
+    try:
+        import itk
+
+        # Get an ITK image from the data set
+        itk_image = convert_vtk_to_itk_image(dataset)
+        itk_image_type = type(itk_image)
+
+        # Get an appropriate LabelImageToShapelLabelMapFilter type for the
+        # input.
+        inputTypes = [x[0] for x in itk.LabelImageToShapeLabelMapFilter.keys()]
+        filterTypeIndex = inputTypes.index(itk_image_type)
+        if filterTypeIndex < 0:
+            raise Exception("No suitable filter type for input type %s" %
+                            type(itk_image_type))
+
+        # Now take the connected components results and compute things like
+        # volume and surface area.
+        shape_filter = \
+            itk.LabelImageToShapeLabelMapFilter.values()[filterTypeIndex].New()
+        shape_filter.SetInput(itk_image)
+        shape_filter.Update()
+
+        label_map = shape_filter.GetOutput()
+        return label_map
+    except Exception as exc:
+        print("Exception encountered while running label_object_attributes")
+        raise(exc)
+
+
 def _get_itk_image_type(vtk_image_data):
     """
     Get an ITK image type corresponding to the provided vtkImageData object.
