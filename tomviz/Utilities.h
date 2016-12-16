@@ -123,6 +123,13 @@ bool deserialize(vtkSMProxy* proxy, const pugi::xml_node& in,
                  const QDir* relDir = nullptr,
                  vtkSMProxyLocator* locator = nullptr);
 
+/// Serialize/deserialize a QVariant to a pugi::xml node
+bool serialize(const QVariant& variant, pugi::xml_node& out);
+bool deserialize(QVariant& variant, const pugi::xml_node& in);
+/// Serialize/deserialize a QVariantMap to a pugi::xml node
+bool serialize(const QVariantMap& map, pugi::xml_node& out);
+bool deserialize(QVariantMap& map, const pugi::xml_node& in);
+
 /// Returns the vtkPVArrayInformation for scalars array produced by the given
 /// source proxy.
 vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy);
