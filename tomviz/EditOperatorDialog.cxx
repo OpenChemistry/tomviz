@@ -133,6 +133,8 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   }
 
   QVBoxLayout* vLayout = new QVBoxLayout(this);
+  vLayout->setContentsMargins(5, 5, 5, 5);
+  vLayout->setSpacing(5);
   if (this->Internals->Op->hasCustomUI()) {
     vLayout->addWidget(opWidget);
     this->Internals->Widget = opWidget;
