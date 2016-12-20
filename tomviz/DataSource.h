@@ -16,13 +16,16 @@
 #ifndef tomvizDataSource_h
 #define tomvizDataSource_h
 
-#include "PipelineWorker.h"
 #include <QObject>
+
 #include <QScopedPointer>
 #include <QVector>
 
 #include <vtkSmartPointer.h>
+
 #include <vtk_pugixml.h>
+
+#include "PipelineWorker.h"
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
@@ -203,8 +206,8 @@ class DataSource::ImageFuture : public QObject
 public:
   friend class DataSource;
 
-  vtkSmartPointer<vtkImageData> result() { return this->m_imageData; }
-  Operator* op() { return this->m_operator; }
+  vtkSmartPointer<vtkImageData> result() { return m_imageData; }
+  Operator* op() { return m_operator; }
 
 signals:
   void finished(bool result);
@@ -214,7 +217,7 @@ private:
   ImageFuture(Operator* op, vtkSmartPointer<vtkImageData> m_imageData,
               PipelineWorker::Future* future = nullptr,
               QObject* parent = nullptr);
-  ~ImageFuture();
+  ~ImageFuture() override;
   Operator* m_operator;
   vtkSmartPointer<vtkImageData> m_imageData;
   PipelineWorker::Future* m_future;

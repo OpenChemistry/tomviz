@@ -25,22 +25,19 @@
 namespace tomviz {
 
 CloneDataReaction::CloneDataReaction(QAction* parentObject)
-  : Superclass(parentObject)
+  : pqReaction(parentObject)
 {
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateEnableState()));
-  this->updateEnableState();
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateEnableState()));
+  updateEnableState();
 }
 
-CloneDataReaction::~CloneDataReaction()
-{
-}
+CloneDataReaction::~CloneDataReaction() = default;
 
 void CloneDataReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != nullptr);
+  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+                             nullptr);
 }
 
 DataSource* CloneDataReaction::clone(DataSource* toClone)

@@ -27,12 +27,6 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
-#include <vtkSMCoreUtilities.h>
-#include <vtkSMParaViewPipelineController.h>
-#include <vtkSMPropertyHelper.h>
-#include <vtkSMSessionProxyManager.h>
-#include <vtkSMSourceProxy.h>
-#include <vtkSMTransferFunctionManager.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTrivialProducer.h>
@@ -42,8 +36,12 @@
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
-
-#include <vtk_pugixml.h>
+#include <vtkSMCoreUtilities.h>
+#include <vtkSMParaViewPipelineController.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMTransferFunctionManager.h>
 
 #include <QDebug>
 #include <QMap>
@@ -201,9 +199,9 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
     pxm);
 
   // every time the data changes, we should update the color map.
-  this->connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
+  connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
 
-  this->resetData();
+  resetData();
 
   this->Internals->Worker = new PipelineWorker(this);
 }
@@ -218,13 +216,13 @@ DataSource::~DataSource()
 
 void DataSource::setFilename(const QString& filename)
 {
-  vtkSMProxy* dataSource = this->originalDataSource();
+  vtkSMProxy* dataSource = originalDataSource();
   dataSource->SetAnnotation("filename", filename.toStdString().c_str());
 }
 
 QString DataSource::filename() const
 {
-  vtkSMProxy* dataSource = this->originalDataSource();
+  vtkSMProxy* dataSource = originalDataSource();
   if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != nullptr) {
     return vtkSMPropertyHelper(
              dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource))
@@ -237,17 +235,17 @@ QString DataSource::filename() const
 bool DataSource::serialize(pugi::xml_node& ns) const
 {
   pugi::xml_node node = ns.append_child("ColorMap");
-  tomviz::serialize(this->colorMap(), node);
+  tomviz::serialize(colorMap(), node);
 
   node = ns.append_child("OpacityMap");
-  tomviz::serialize(this->opacityMap(), node);
+  tomviz::serialize(opacityMap(), node);
 
   ns.append_attribute("number_of_operators")
     .set_value(static_cast<int>(this->Internals->Operators.size()));
 
   pugi::xml_node scale_node = ns.append_child("Spacing");
   double spacing[3];
-  this->getSpacing(spacing);
+  getSpacing(spacing);
   scale_node.append_attribute("x").set_value(spacing[0]);
   scale_node.append_attribute("y").set_value(spacing[1]);
   scale_node.append_attribute("z").set_value(spacing[2]);
@@ -283,7 +281,7 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   DataSourceType dstype;
   if (ns.attribute("type") &&
       stringToDataSourceType(ns.attribute("type").value(), dstype)) {
-    this->setType(dstype);
+    setType(dstype);
   }
 
   int num_operators = ns.attribute("number_of_operators").as_int(-1);
@@ -292,19 +290,18 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   }
 
   this->Internals->Operators.clear();
-  this->resetData();
+  resetData();
 
   // load the color map here to avoid resetData clobbering its range
-  tomviz::deserialize(this->colorMap(), ns.child("ColorMap"));
-  tomviz::deserialize(this->opacityMap(), ns.child("OpacityMap"));
-  vtkSMPropertyHelper(this->colorMap(), "ScalarOpacityFunction")
-    .Set(this->opacityMap());
-  this->colorMap()->UpdateVTKObjects();
+  tomviz::deserialize(colorMap(), ns.child("ColorMap"));
+  tomviz::deserialize(opacityMap(), ns.child("OpacityMap"));
+  vtkSMPropertyHelper(colorMap(), "ScalarOpacityFunction").Set(opacityMap());
+  colorMap()->UpdateVTKObjects();
 
   // load tilt angles AFTER resetData call.  Again this is no longer saved and
   // the load code is for legacy support.  This should be saved by the
   // SetTiltAnglesOperator.
-  if (this->type() == TiltSeries && ns.child("TiltAngles")) {
+  if (type() == TiltSeries && ns.child("TiltAngles")) {
     deserializeDataArray(ns.child("TiltAngles"), this->Internals->TiltAngles);
   }
 
@@ -314,12 +311,12 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
     spacing[0] = scale_node.attribute("x").as_double();
     spacing[1] = scale_node.attribute("y").as_double();
     spacing[2] = scale_node.attribute("z").as_double();
-    this->setSpacing(spacing);
+    setSpacing(spacing);
   }
   if (ns.child("Units")) {
     // Ensure the array exists
     pugi::xml_node unit_node = ns.child("Units");
-    this->setUnits("nm");
+    setUnits("nm");
     this->Internals->Units->SetValue(0, unit_node.attribute("x").value());
     this->Internals->Units->SetValue(1, unit_node.attribute("y").value());
     this->Internals->Units->SetValue(2, unit_node.attribute("z").value());
@@ -331,7 +328,7 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
       node.attribute("operator_type").value(), this));
     if (op) {
       if (op->deserialize(node)) {
-        this->addOperator(op);
+        addOperator(op);
       }
     }
   }
@@ -352,7 +349,7 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
       this->Internals->Producer->SetAnnotation("filename", originalFilename);
     } else {
       this->Internals->Producer->SetAnnotation(
-        "filename", this->originalDataSource()->GetAnnotation("filename"));
+        "filename", originalDataSource()->GetAnnotation("filename"));
     }
     newClone = new DataSource(this->Internals->Producer, this->Internals->Type);
   } else {
@@ -360,7 +357,7 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
                               this->Internals->Type);
   }
   if (this->Internals->Type == TiltSeries) {
-    newClone->setTiltAngles(this->getTiltAngles(!cloneTransformed));
+    newClone->setTiltAngles(getTiltAngles(!cloneTransformed));
   }
   if (!cloneTransformed && cloneOperators) {
     // now, clone the operators.
@@ -368,7 +365,7 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
       Operator* opClone(op->clone());
       newClone->addOperator(opClone);
     }
-    newClone->setTiltAngles(this->getTiltAngles());
+    newClone->setTiltAngles(getTiltAngles());
   }
   return newClone;
 }
@@ -465,7 +462,7 @@ void DataSource::setUnits(const QString& units)
   for (int i = 0; i < 3; ++i) {
     this->Internals->Units->SetValue(i, units.toStdString().c_str());
   }
-  emit this->dataChanged();
+  emit dataChanged();
 }
 
 int DataSource::addOperator(Operator* op)
@@ -473,10 +470,9 @@ int DataSource::addOperator(Operator* op)
   op->setParent(this);
   int index = this->Internals->Operators.count();
   this->Internals->Operators.push_back(op);
-  this->connect(op, SIGNAL(transformModified()),
-                SLOT(operatorTransformModified()));
-  emit this->operatorAdded(op);
-  this->operate(op);
+  connect(op, SIGNAL(transformModified()), SLOT(operatorTransformModified()));
+  emit operatorAdded(op);
+  operate(op);
   return index;
 }
 
@@ -494,11 +490,10 @@ bool DataSource::removeOperator(Operator* op)
       // If we can't safely cancel the execution then trigger the rerun of the
       // pipeline.
       if (!this->Internals->Future->cancel(op)) {
-        this->operatorTransformModified();
+        operatorTransformModified();
       }
-    }
-    // Trigger the pipeline to run
-    else {
+    } else {
+      // Trigger the pipeline to run
       this->operatorTransformModified();
     }
 
@@ -565,7 +560,7 @@ void DataSource::operate(Operator* op)
   }
   // We need to initiate a new run
   else {
-    vtkDataObject* copy = this->copyData();
+    vtkDataObject* copy = copyData();
     this->Internals->Future = this->Internals->Worker->run(copy, op);
     connect(this->Internals->Future, SIGNAL(finished(bool)), this,
             SLOT(pipelineFinished(bool)));
@@ -609,7 +604,7 @@ DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator* op)
 void DataSource::updateCache()
 {
   DataSource::ImageFuture* future =
-    qobject_cast<DataSource::ImageFuture*>(this->sender());
+    qobject_cast<DataSource::ImageFuture*>(sender());
   this->Internals->CachedPreOpStates[future->op()] = future->result();
 }
 
@@ -629,15 +624,14 @@ void DataSource::dataModified()
       vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
 
     // Casting is a bit hacky here, but it *should* work
-    this->setType((DataSourceType)(int)typeArray->GetTuple1(0));
+    setType((DataSourceType)(int)typeArray->GetTuple1(0));
   } else {
-    vtkSmartPointer<vtkTypeInt8Array> typeArray =
-      vtkSmartPointer<vtkTypeInt8Array>::New();
+    vtkNew<vtkTypeInt8Array> typeArray;
     typeArray->SetNumberOfComponents(1);
     typeArray->SetNumberOfTuples(1);
     typeArray->SetName("tomviz_data_source_type");
     typeArray->SetTuple1(0, this->Internals->Type);
-    fd->AddArray(typeArray);
+    fd->AddArray(typeArray.Get());
   }
 
   // This indirection is necessary to overcome a bug in VTK/ParaView when
@@ -653,7 +647,7 @@ void DataSource::dataModified()
   filter->UpdatePipeline();
   filter->Delete();
 
-  emit this->dataChanged();
+  emit dataChanged();
 }
 
 const QList<Operator*>& DataSource::operators() const
@@ -725,9 +719,9 @@ vtkDataObject* DataSource::copyOriginalData()
 
 void DataSource::resetData()
 {
-  auto data = this->copyOriginalData();
-  this->setData(data);
-  this->emit dataChanged();
+  auto data = copyOriginalData();
+  setData(data);
+  emit dataChanged();
 }
 
 void DataSource::setData(vtkDataObject* newData)
@@ -764,7 +758,7 @@ void DataSource::setData(vtkDataObject* newData)
 
 void DataSource::operatorTransformModified()
 {
-  Operator* srcOp = qobject_cast<Operator*>(this->sender());
+  Operator* srcOp = qobject_cast<Operator*>(sender());
 
   vtkSmartPointer<vtkImageData> cachedState;
   if (srcOp && this->Internals->CachedPreOpStates.contains(srcOp)) {
@@ -792,16 +786,16 @@ void DataSource::operatorTransformModified()
     connect(this->Internals->Future, SIGNAL(canceled()), this,
             SLOT(pipelineCanceled()));
   } else {
-    this->executeOperators();
+    executeOperators();
   }
 }
 
 void DataSource::pipelineFinished(bool result)
 {
   PipelineWorker::Future* future =
-    qobject_cast<PipelineWorker::Future*>(this->sender());
+    qobject_cast<PipelineWorker::Future*>(sender());
   if (result) {
-    this->setData(future->result());
+    setData(future->result());
   } else {
     future->result()->Delete();
   }
@@ -810,13 +804,13 @@ void DataSource::pipelineFinished(bool result)
     this->Internals->Future = nullptr;
   }
 
-  this->dataModified();
+  dataModified();
 }
 
 void DataSource::pipelineCanceled()
 {
   PipelineWorker::Future* future =
-    qobject_cast<PipelineWorker::Future*>(this->sender());
+    qobject_cast<PipelineWorker::Future*>(sender());
   future->result()->Delete();
   future->deleteLater();
   if (this->Internals->Future == future) {
@@ -848,7 +842,7 @@ void DataSource::setType(DataSourceType t)
   if (t == TiltSeries) {
     this->Internals->ensureTiltAnglesArrayExists();
   }
-  emit this->dataChanged();
+  emit dataChanged();
 }
 
 bool DataSource::hasTiltAngles()
@@ -894,7 +888,7 @@ void DataSource::setTiltAngles(const QVector<double>& angles)
       tiltAngles->SetTuple1(i, angles[i]);
     }
   }
-  emit this->dataChanged();
+  emit dataChanged();
 }
 
 vtkSMProxy* DataSource::opacityMap() const
@@ -908,7 +902,7 @@ vtkSMProxy* DataSource::opacityMap() const
 
 bool DataSource::hasLabelMap()
 {
-  vtkSMSourceProxy* dataSource = this->producer();
+  vtkSMSourceProxy* dataSource = producer();
   if (!dataSource) {
     return false;
   }
@@ -927,7 +921,7 @@ bool DataSource::hasLabelMap()
 void DataSource::updateColorMap()
 {
   // rescale the color/opacity maps for the data source.
-  tomviz::rescaleColorMap(this->colorMap(), this);
+  tomviz::rescaleColorMap(colorMap(), this);
 }
 
 void DataSource::executeOperators()
@@ -938,13 +932,13 @@ void DataSource::executeOperators()
     this->Internals->Future->cancel();
   }
 
-  auto data = this->copyOriginalData();
+  auto data = copyOriginalData();
 
   // We have no operators to run so just update the data and signal that
   // data has changed
   if (this->Internals->Operators.isEmpty()) {
-    this->setData(data);
-    this->dataModified();
+    setData(data);
+    dataModified();
   } else {
     this->Internals->Future =
       this->Internals->Worker->run(data, this->Internals->Operators);
