@@ -36,8 +36,8 @@ CloneDataReaction::~CloneDataReaction() = default;
 
 void CloneDataReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != nullptr);
+  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+                             nullptr);
 }
 
 DataSource* CloneDataReaction::clone(DataSource* toClone)

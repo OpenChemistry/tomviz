@@ -49,9 +49,8 @@ public:
     if (source->cropBounds()[0] == std::numeric_limits<int>::min()) {
       source->setCropBounds(extent);
     }
-    m_widget = new tomviz::SelectVolumeWidget(origin, spacing, extent,
-                                              source->cropBounds(),
-                                              displayPosition, this);
+    m_widget = new tomviz::SelectVolumeWidget(
+      origin, spacing, extent, source->cropBounds(), displayPosition, this);
     QHBoxLayout* hboxlayout = new QHBoxLayout;
     hboxlayout->addWidget(m_widget);
     setLayout(hboxlayout);
