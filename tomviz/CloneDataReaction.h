@@ -24,11 +24,10 @@ class DataSource;
 class CloneDataReaction : public pqReaction
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
 
 public:
   CloneDataReaction(QAction* action);
-  virtual ~CloneDataReaction();
+  ~CloneDataReaction() override;
 
   static DataSource* clone(DataSource* toClone = nullptr);
 
