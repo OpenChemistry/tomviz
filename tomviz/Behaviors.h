@@ -34,9 +34,10 @@ class Behaviors : public QObject
 
 public:
   Behaviors(QMainWindow* mainWindow);
-  virtual ~Behaviors();
+  ~Behaviors() override;
 
   MoveActiveObject* moveActiveBehavior() { return m_moveActiveBehavior; }
+
 private:
   Q_DISABLE_COPY(Behaviors)
 
