@@ -27,7 +27,7 @@ class ConvertToFloatReaction : public pqReaction
 
 public:
   ConvertToFloatReaction(QAction* parent);
-  ~ConvertToFloatReaction();
+  ~ConvertToFloatReaction() override;
 
   void convertToFloat();
 

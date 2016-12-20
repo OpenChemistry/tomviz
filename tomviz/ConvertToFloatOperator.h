@@ -23,11 +23,10 @@ namespace tomviz {
 class ConvertToFloatOperator : public Operator
 {
   Q_OBJECT
-  typedef Operator Superclass;
 
 public:
   ConvertToFloatOperator(QObject* parent = nullptr);
-  virtual ~ConvertToFloatOperator();
+  ~ConvertToFloatOperator() override;
 
   QString label() const override { return "Convert to Float"; }
   QIcon icon() const override;

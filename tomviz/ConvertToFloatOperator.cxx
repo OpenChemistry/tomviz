@@ -36,7 +36,7 @@ void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void* data)
 
 namespace tomviz {
 
-ConvertToFloatOperator::ConvertToFloatOperator(QObject* p) : Superclass(p)
+ConvertToFloatOperator::ConvertToFloatOperator(QObject* p) : Operator(p)
 {
 }
 
