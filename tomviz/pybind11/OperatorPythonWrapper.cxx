@@ -21,7 +21,7 @@ using namespace tomviz;
 
 struct OperatorPythonWrapper
 {
-  OperatorPythonWrapper(OperatorPython* o) { this->op = o; };
+  OperatorPythonWrapper(OperatorPython* o) { this->op = o; }
   bool canceled() { return this->op->isCanceled(); }
   void setTotalProgressSteps(int progress)
   {
