@@ -23,11 +23,10 @@ namespace tomviz {
 class CropOperator : public Operator
 {
   Q_OBJECT
-  typedef Operator Superclass;
 
 public:
   CropOperator(QObject* parent = nullptr);
-  virtual ~CropOperator();
+  ~CropOperator() override;
 
   QString label() const override { return "Crop"; }
 
@@ -43,13 +42,13 @@ public:
   bool hasCustomUI() const override { return true; }
 
   void setCropBounds(const int bounds[6]);
-  const int* cropBounds() const { return this->CropBounds; }
+  const int* cropBounds() const { return m_bounds; }
 
 protected:
   bool applyTransform(vtkDataObject* data) override;
 
 private:
-  int CropBounds[6];
+  int m_bounds[6];
   Q_DISABLE_COPY(CropOperator)
 };
 }

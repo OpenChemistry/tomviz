@@ -33,12 +33,11 @@ namespace {
 class CropWidget : public tomviz::EditOperatorWidget
 {
   Q_OBJECT
-  typedef tomviz::EditOperatorWidget Superclass;
 
 public:
   CropWidget(tomviz::CropOperator* source,
              vtkSmartPointer<vtkImageData> imageData, QWidget* p)
-    : Superclass(p), Op(source)
+    : tomviz::EditOperatorWidget(p), m_operator(source)
   {
     double displayPosition[3] = { 0, 0, 0 };
     double origin[3];
@@ -50,32 +49,31 @@ public:
     if (source->cropBounds()[0] == std::numeric_limits<int>::min()) {
       source->setCropBounds(extent);
     }
-    this->Widget = new tomviz::SelectVolumeWidget(
-      origin, spacing, extent, source->cropBounds(), displayPosition, this);
+    m_widget = new tomviz::SelectVolumeWidget(origin, spacing, extent,
+                                              source->cropBounds(),
+                                              displayPosition, this);
     QHBoxLayout* hboxlayout = new QHBoxLayout;
-    hboxlayout->addWidget(this->Widget);
-    this->setLayout(hboxlayout);
+    hboxlayout->addWidget(m_widget);
+    setLayout(hboxlayout);
   }
-
-  ~CropWidget() {}
 
   void applyChangesToOperator() override
   {
     int bounds[6];
-    this->Widget->getExtentOfSelection(bounds);
-    if (this->Op) {
-      this->Op->setCropBounds(bounds);
+    m_widget->getExtentOfSelection(bounds);
+    if (m_operator) {
+      m_operator->setCropBounds(bounds);
     }
   }
 
   void dataSourceMoved(double newX, double newY, double newZ) override
   {
-    this->Widget->dataMoved(newX, newY, newZ);
+    m_widget->dataMoved(newX, newY, newZ);
   }
 
 private:
-  QPointer<tomviz::CropOperator> Op;
-  tomviz::SelectVolumeWidget* Widget;
+  QPointer<tomviz::CropOperator> m_operator;
+  tomviz::SelectVolumeWidget* m_widget;
 };
 }
 
@@ -83,17 +81,15 @@ private:
 
 namespace tomviz {
 
-CropOperator::CropOperator(QObject* p) : Superclass(p)
+CropOperator::CropOperator(QObject* p) : Operator(p)
 {
   // By default include the entire volume
   for (int i = 0; i < 6; ++i) {
-    this->CropBounds[i] = std::numeric_limits<int>::min();
+    m_bounds[i] = std::numeric_limits<int>::min();
   }
 }
 
-CropOperator::~CropOperator()
-{
-}
+CropOperator::~CropOperator() = default;
 
 QIcon CropOperator::icon() const
 {
@@ -103,7 +99,7 @@ QIcon CropOperator::icon() const
 bool CropOperator::applyTransform(vtkDataObject* data)
 {
   vtkNew<vtkExtractVOI> extractor;
-  extractor->SetVOI(this->CropBounds);
+  extractor->SetVOI(m_bounds);
   extractor->SetInputDataObject(data);
   extractor->Update();
   extractor->UpdateWholeExtent();
@@ -114,18 +110,18 @@ bool CropOperator::applyTransform(vtkDataObject* data)
 Operator* CropOperator::clone() const
 {
   CropOperator* other = new CropOperator();
-  other->setCropBounds(this->CropBounds);
+  other->setCropBounds(m_bounds);
   return other;
 }
 
 bool CropOperator::serialize(pugi::xml_node& ns) const
 {
-  ns.append_attribute("boundsXmin").set_value(this->CropBounds[0]);
-  ns.append_attribute("boundsXmax").set_value(this->CropBounds[1]);
-  ns.append_attribute("boundsYmin").set_value(this->CropBounds[2]);
-  ns.append_attribute("boundsYmax").set_value(this->CropBounds[3]);
-  ns.append_attribute("boundsZmin").set_value(this->CropBounds[4]);
-  ns.append_attribute("boundsZmax").set_value(this->CropBounds[5]);
+  ns.append_attribute("boundsXmin").set_value(m_bounds[0]);
+  ns.append_attribute("boundsXmax").set_value(m_bounds[1]);
+  ns.append_attribute("boundsYmin").set_value(m_bounds[2]);
+  ns.append_attribute("boundsYmax").set_value(m_bounds[3]);
+  ns.append_attribute("boundsZmin").set_value(m_bounds[4]);
+  ns.append_attribute("boundsZmax").set_value(m_bounds[5]);
   return true;
 }
 
@@ -138,16 +134,16 @@ bool CropOperator::deserialize(const pugi::xml_node& ns)
   bounds[3] = ns.attribute("boundsYmax").as_int();
   bounds[4] = ns.attribute("boundsZmin").as_int();
   bounds[5] = ns.attribute("boundsZmax").as_int();
-  this->setCropBounds(bounds);
+  setCropBounds(bounds);
   return true;
 }
 
 void CropOperator::setCropBounds(const int bounds[6])
 {
   for (int i = 0; i < 6; ++i) {
-    this->CropBounds[i] = bounds[i];
+    m_bounds[i] = bounds[i];
   }
-  emit this->transformModified();
+  emit transformModified();
 }
 
 EditOperatorWidget* CropOperator::getEditorContentsWithData(
