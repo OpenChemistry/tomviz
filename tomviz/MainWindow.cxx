@@ -60,6 +60,7 @@
 #include "PipelineModel.h"
 
 #include <QAction>
+#include <QCloseEvent>
 #include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
@@ -496,6 +497,13 @@ void MainWindow::showEvent(QShowEvent* e)
   // NOTE: remove this once painting events in QVTKWidget or
   // it successor work better with Qt 5.
   QTimer::singleShot(250, &ActiveObjects::instance(), SLOT(renderAllViews()));
+}
+
+void MainWindow::closeEvent(QCloseEvent* e)
+{
+  ModuleManager::instance().removeAllModules();
+  ModuleManager::instance().removeAllDataSources();
+  e->accept();
 }
 
 bool MainWindow::checkOpenGL()
