@@ -448,7 +448,7 @@ bool OperatorPython::serialize(pugi::xml_node& ns) const
   ns.append_attribute("label").set_value(this->label().toLatin1().data());
   ns.append_attribute("script").set_value(this->script().toLatin1().data());
   pugi::xml_node argsNode = ns.append_child("arguments");
-  return tomviz::serialize(this->m_arguments, argsNode);
+  return tomviz::serialize(m_arguments, argsNode);
 }
 
 bool OperatorPython::deserialize(const pugi::xml_node& ns)
@@ -456,8 +456,8 @@ bool OperatorPython::deserialize(const pugi::xml_node& ns)
   this->setJSONDescription(ns.attribute("json_description").as_string());
   this->setLabel(ns.attribute("label").as_string());
   this->setScript(ns.attribute("script").as_string());
-  this->m_arguments.clear();
-  return tomviz::deserialize(this->m_arguments, ns.child("arguments"));
+  m_arguments.clear();
+  return tomviz::deserialize(m_arguments, ns.child("arguments"));
 }
 
 EditOperatorWidget* OperatorPython::getEditorContents(QWidget* p)
