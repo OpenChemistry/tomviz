@@ -76,7 +76,7 @@ public:
   /// Flag indicating whether the module uses a "detached" color map or not.
   /// This is only applicable when isColorMapNeeded() return true.
   void setUseDetachedColorMap(bool);
-  bool useDetachedColorMap() const { return this->m_useDetachedColorMap; }
+  bool useDetachedColorMap() const { return m_useDetachedColorMap; }
 
   /// This will either return the maps from the data source or detached ones
   /// based on the UseDetachedColorMap flag.

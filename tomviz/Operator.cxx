@@ -39,7 +39,7 @@ DataSource* Operator::dataSource()
 
 TransformResult Operator::transform(vtkDataObject* data)
 {
-  this->m_state = OperatorState::RUNNING;
+  m_state = OperatorState::RUNNING;
   emit transformingStarted();
   setProgressStep(0);
   bool result = this->applyTransform(data);

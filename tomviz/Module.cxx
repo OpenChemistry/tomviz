@@ -85,27 +85,27 @@ Module::~Module()
 
 bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  this->m_view = vtkView;
-  this->m_activeDataSource = data;
-  if (this->m_view && this->m_activeDataSource) {
+  m_view = vtkView;
+  m_activeDataSource = data;
+  if (m_view && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
-      this->m_activeDataSource, SIGNAL(dataChanged()), SLOT(render()));
-    this->connect(this->m_activeDataSource,
+      m_activeDataSource, SIGNAL(dataChanged()), SLOT(render()));
+    this->connect(m_activeDataSource,
                   SIGNAL(displayPositionChanged(double, double, double)),
                   SLOT(dataSourceMoved(double, double, double)));
   }
-  return (this->m_view && this->m_activeDataSource);
+  return (m_view && m_activeDataSource);
 }
 
 vtkSMViewProxy* Module::view() const
 {
-  return this->m_view;
+  return m_view;
 }
 
 DataSource* Module::dataSource() const
 {
-  return this->m_activeDataSource;
+  return m_activeDataSource;
 }
 
 void Module::addToPanel(QWidget* vtkNotUsed(panel))
@@ -114,12 +114,12 @@ void Module::addToPanel(QWidget* vtkNotUsed(panel))
 
 void Module::setUseDetachedColorMap(bool val)
 {
-  this->m_useDetachedColorMap = val;
+  m_useDetachedColorMap = val;
   if (this->isColorMapNeeded() == false) {
     return;
   }
 
-  if (this->m_useDetachedColorMap) {
+  if (m_useDetachedColorMap) {
     this->Internals->ColorMap = this->Internals->detachedColorMap();
     this->Internals->OpacityMap = this->Internals->detachedOpacityMap();
 
@@ -143,7 +143,7 @@ vtkSMProxy* Module::colorMap() const
 
 vtkSMProxy* Module::opacityMap() const
 {
-  Q_ASSERT(this->Internals->ColorMap || !this->m_useDetachedColorMap);
+  Q_ASSERT(this->Internals->ColorMap || !m_useDetachedColorMap);
   return this->useDetachedColorMap() ? this->Internals->OpacityMap.GetPointer()
                                      : this->dataSource()->opacityMap();
 }
@@ -152,8 +152,8 @@ bool Module::serialize(pugi::xml_node& ns) const
 {
   if (this->isColorMapNeeded()) {
     ns.append_attribute("use_detached_colormap")
-      .set_value(this->m_useDetachedColorMap ? 1 : 0);
-    if (this->m_useDetachedColorMap) {
+      .set_value(m_useDetachedColorMap ? 1 : 0);
+    if (m_useDetachedColorMap) {
       pugi::xml_node nodeL = ns.append_child("ColorMap");
       pugi::xml_node nodeS = ns.append_child("OpacityMap");
 
