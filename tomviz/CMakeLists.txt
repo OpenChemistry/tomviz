@@ -94,6 +94,8 @@ set(SOURCES
   ModuleOutline.h
   ModulePropertiesPanel.cxx
   ModulePropertiesPanel.h
+  ModuleRuler.cxx
+  ModuleRuler.h
   ModuleSegment.cxx
   ModuleSegment.h
   ModuleSlice.cxx
