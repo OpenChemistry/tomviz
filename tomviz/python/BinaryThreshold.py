@@ -10,7 +10,6 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
         import itk
         import vtk
         from tomviz import itkutils
-        from tomviz import utils
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
@@ -40,15 +39,14 @@ def transform_scalars(dataset, lower_threshold=40.0, upper_threshold=255.0):
         threshold_filter.Update()
 
         # Set the output as a new child data object of the current data set
-        label_map_data_set = vtk.vtkImageData()
-        label_map_data_set.CopyStructure(dataset)
+        label_map_dataset = vtk.vtkImageData()
+        label_map_dataset.CopyStructure(dataset)
 
-        itk_image_data = threshold_filter.GetOutput()
-        label_buffer = itk.PyBuffer[
-            itk_output_image_type].GetArrayFromImage(itk_image_data)
-        utils.set_array(label_map_data_set, label_buffer)
+        itkutils.set_array_from_itk_image(label_map_dataset,
+                                          threshold_filter.GetOutput())
+
         returnValue = {
-            "thresholded_segmentation": label_map_data_set
+            "thresholded_segmentation": label_map_dataset
         }
 
     except Exception as exc:

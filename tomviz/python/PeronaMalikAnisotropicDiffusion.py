@@ -7,7 +7,6 @@ def transform_scalars(dataset, conductance=1.0, iterations=100, timestep=0.125):
         import itk
         import itkTypes
         from tomviz import itkutils
-        from tomviz import utils
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
@@ -28,13 +27,7 @@ def transform_scalars(dataset, conductance=1.0, iterations=100, timestep=0.125):
         diffusion_filter.SetTimeStep(timestep)
         diffusion_filter.SetInput(itk_image)
         diffusion_filter.Update()
-
-        diffusion_image = diffusion_filter.GetOutput()
-
-        PyBufferType = itk.PyBuffer[itk_image_type]
-        new_scalars = PyBufferType.GetArrayFromImage(diffusion_image)
-        utils.set_array(dataset, new_scalars)
-
+        itkutils.set_array_from_itk_image(dataset, diffusion_filter.GetOutput())
     except Exception as exc:
         print("Exception encountered while running"
               "PeronaMalikAnisotropicDiffusion")

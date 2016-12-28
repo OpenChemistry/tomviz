@@ -7,7 +7,6 @@ def transform_scalars(dataset, structuring_element_id=0, radius=1,
     try:
         import itk
         from tomviz import itkutils
-        from tomviz import utils
     except Exception as exc:
         print("Could not import necessary module(s)")
         print(exc)
@@ -39,12 +38,7 @@ def transform_scalars(dataset, structuring_element_id=0, radius=1,
         erode_filter.SetKernel(itk_kernel)
         erode_filter.SetInput(itk_image)
         erode_filter.Update()
-        itk_image_data = erode_filter.GetOutput()
-
-        PyBufferType = itk.PyBuffer[itk_input_image_type]
-        label_buffer = PyBufferType.GetArrayFromImage(itk_image_data)
-
-        utils.set_array(dataset, label_buffer)
+        itkutils.set_array_from_itk_image(dataset, erode_filter.GetOutput())
     except Exception as exc:
         print("Exception encountered while running BinaryErode")
         print(exc)
