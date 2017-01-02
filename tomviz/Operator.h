@@ -204,6 +204,9 @@ signals:
   /// Emitted when the total progress steps has changed.
   void totalProgressStepsChanged(int steps);
 
+  /// Emitted when a child data source is create by this operator.
+  void newChildDataSource(DataSource*);
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation

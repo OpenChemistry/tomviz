@@ -116,8 +116,11 @@ void ProgressDialogManager::operationStarted()
 
 void ProgressDialogManager::operatorAdded(Operator* op)
 {
-  QObject::connect(op, &Operator::transformingStarted, this,
-                   &ProgressDialogManager::operationStarted);
+  connect(op, &Operator::transformingStarted, this,
+          &ProgressDialogManager::operationStarted);
+
+  connect(op, &Operator::newChildDataSource, this,
+          &ProgressDialogManager::dataSourceAdded);
 }
 
 void ProgressDialogManager::dataSourceAdded(DataSource* ds)

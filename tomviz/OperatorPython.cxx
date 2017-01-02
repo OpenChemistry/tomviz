@@ -492,6 +492,7 @@ void OperatorPython::createNewChildDataSource(
 
   childDS->setFilename(label.toLatin1().data());
   this->setChildDataSource(childDS);
+  emit Operator::newChildDataSource(childDS);
 }
 
 void OperatorPython::setOperatorResult(const QString& name,
