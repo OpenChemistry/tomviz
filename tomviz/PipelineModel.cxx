@@ -24,6 +24,7 @@
 
 #include <QFileInfo>
 #include <QFont>
+#include <cassert>
 
 #include <vtkRectilinearGrid.h>
 #include <vtkStructuredGrid.h>
@@ -674,6 +675,8 @@ void PipelineModel::operatorAdded(Operator* op)
   connect(op, &Operator::labelModified, this, &PipelineModel::operatorModified);
   connect(op, &Operator::transformingDone, this,
           &PipelineModel::operatorTransformDone);
+  connect(op, &Operator::newChildDataSource, this,
+          &PipelineModel::childDataSourceAdded);
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
@@ -701,14 +704,6 @@ void PipelineModel::operatorAdded(Operator* op)
       OperatorResult* result = op->resultAt(j);
       operatorTreeItem->appendChild(PipelineModel::Item(result));
     }
-    endInsertRows();
-  }
-
-  // Insert child DataSource. We support just one for now.
-  if (op->hasChildDataSource()) {
-    beginInsertRows(operatorIndex, numResults, numResults);
-    DataSource* childDataSource = op->childDataSource();
-    operatorTreeItem->appendChild(PipelineModel::Item(childDataSource));
     endInsertRows();
   }
 }
@@ -823,6 +818,30 @@ PipelineModel::TreeItem* PipelineModel::treeItem(const QModelIndex& index) const
   }
 
   return static_cast<PipelineModel::TreeItem*>(index.internalPointer());
+}
+
+void PipelineModel::childDataSourceAdded(DataSource* dataSource)
+{
+  if (Operator* op = qobject_cast<Operator*>(this->sender())) {
+    assert(op->hasChildDataSource());
+
+    auto index = this->dataSourceIndex(op->dataSource());
+    auto dataSourceItem = this->treeItem(index);
+    auto operatorTreeItem = dataSourceItem->find(op);
+    auto numResults = op->numberOfResults();
+    auto operatorIndex = this->operatorIndex(op);
+
+    // If the last child is already a data source when we just want to set the
+    // item rather than inserting a new row.
+    auto last = operatorTreeItem->lastChild();
+    if (last && last->dataSource()) {
+      last->setItem(PipelineModel::Item(dataSource));
+    } else {
+      beginInsertRows(operatorIndex, numResults, numResults);
+      operatorTreeItem->appendChild(PipelineModel::Item(dataSource));
+      endInsertRows();
+    }
+  }
 }
 
 } // tomviz namespace
