@@ -14,7 +14,6 @@
 
 ******************************************************************************/
 #include "OperatorPython.h"
-#include "vtkPython.h"
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -32,9 +31,6 @@
 
 #include "vtkDataObject.h"
 #include "vtkNew.h"
-#include "vtkPython.h"
-#include "vtkPythonInterpreter.h"
-#include "vtkPythonUtil.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyManager.h"
@@ -42,7 +38,6 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSmartPyObject.h"
 #include "vtkTrivialProducer.h"
-#include <pybind11/pybind11.h>
 
 #include "ui_EditPythonOperatorWidget.h"
 
@@ -83,13 +78,12 @@ namespace tomviz {
 class OperatorPython::OPInternals
 {
 public:
-  vtkSmartPyObject OperatorModule;
-  vtkSmartPyObject Code;
-  vtkSmartPyObject TransformModule;
-  vtkSmartPyObject TransformMethod;
-  vtkSmartPyObject InternalModule;
-  vtkSmartPyObject FindTransformScalarsFunction;
-  vtkSmartPyObject IsCancelableFunction;
+  Python::Module OperatorModule;
+  Python::Module TransformModule;
+  Python::Function TransformMethod;
+  Python::Module InternalModule;
+  Python::Function FindTransformScalarsFunction;
+  Python::Function IsCancelableFunction;
 };
 
 OperatorPython::OperatorPython(QObject* parentObject)
@@ -97,36 +91,29 @@ OperatorPython::OperatorPython(QObject* parentObject)
     Label("Python Operator")
 {
   qRegisterMetaType<vtkSmartPointer<vtkDataObject>>();
-  vtkPythonInterpreter::Initialize();
+  Python::initialize();
 
   {
-    vtkPythonScopeGilEnsurer gilEnsurer(true);
-    this->Internals->OperatorModule.TakeReference(
-      PyImport_ImportModule("tomviz.utils"));
-    if (!this->Internals->OperatorModule) {
+    Python python;
+    this->Internals->OperatorModule = python.import("tomviz.utils");
+    if (!this->Internals->OperatorModule.isValid()) {
       qCritical() << "Failed to import tomviz.utils module.";
-      checkForPythonError();
     }
 
-    this->Internals->InternalModule.TakeReference(
-      PyImport_ImportModule("tomviz._internal"));
-    if (!this->Internals->InternalModule) {
+    this->Internals->InternalModule = python.import("tomviz._internal");
+    if (!this->Internals->InternalModule.isValid()) {
       qCritical() << "Failed to import tomviz._internal module.";
-      checkForPythonError();
     }
 
-    this->Internals->IsCancelableFunction.TakeReference(
-      PyObject_GetAttrString(this->Internals->InternalModule, "is_cancelable"));
-    if (!this->Internals->IsCancelableFunction) {
-      checkForPythonError();
+    this->Internals->IsCancelableFunction =
+      this->Internals->InternalModule.findFunction("is_cancelable");
+    if (!this->Internals->IsCancelableFunction.isValid()) {
       qCritical() << "Unable to locate is_cancelable.";
     }
 
-    this->Internals->FindTransformScalarsFunction.TakeReference(
-      PyObject_GetAttrString(this->Internals->InternalModule,
-                             "find_transform_scalars"));
-    if (!this->Internals->FindTransformScalarsFunction) {
-      checkForPythonError();
+    this->Internals->FindTransformScalarsFunction =
+      this->Internals->InternalModule.findFunction("find_transform_scalars");
+    if (!this->Internals->FindTransformScalarsFunction.isValid()) {
       qCritical() << "Unable to locate find_transform_scalars.";
     }
   }
@@ -246,69 +233,42 @@ void OperatorPython::setScript(const QString& str)
 {
   if (this->Script != str) {
     this->Script = str;
-    this->Internals->Code.TakeReference(nullptr);
-    this->Internals->TransformModule.TakeReference(nullptr);
-    this->Internals->TransformMethod.TakeReference(nullptr);
 
-    vtkSmartPyObject result;
+    Python::Object result;
     {
-      vtkPythonScopeGilEnsurer gilEnsurer(true);
-      this->Internals->Code.TakeReference(Py_CompileString(
-        this->Script.toLatin1().data(), this->label().toLatin1().data(),
-        Py_file_input /*Py_eval_input*/));
-      if (!this->Internals->Code) {
-        checkForPythonError();
-        qCritical(
-          "Invalid script. Please check the traceback message for details");
-        return;
-      }
-
-      this->Internals->TransformModule.TakeReference(PyImport_ExecCodeModule(
-        QString("tomviz_%1").arg(this->label()).toLatin1().data(),
-        this->Internals->Code));
-      if (!this->Internals->TransformModule) {
-        checkForPythonError();
+      Python python;
+      this->Internals->TransformModule =
+        python.import(this->Script, this->label());
+      if (!this->Internals->TransformModule.isValid()) {
         qCritical("Failed to create module.");
         return;
       }
 
       // Create capsule to hold the pointer to the operator in the python world
-      vtkSmartPyObject args(PyTuple_New(2));
-      pybind11::capsule op(this);
-      // Increment ref count as the pybind11::capsule destructor will decrement
-      // and we need the capsule to stay around. The PyTuple_SET_ITEM will
-      // steal the other reference.
-      op.inc_ref();
-      // Note we use GetAndIncreaseReferenceCount to increment ref count
-      // as PyTuple_SET_ITEM will "steal" the reference.
-      PyTuple_SET_ITEM(
-        args.GetPointer(), 0,
-        this->Internals->TransformModule.GetAndIncreaseReferenceCount());
-      PyTuple_SET_ITEM(args.GetPointer(), 1, op.ptr());
-      this->Internals->TransformMethod.TakeReference(PyObject_Call(
-        this->Internals->FindTransformScalarsFunction, args, nullptr));
-      if (!this->Internals->TransformMethod) {
+      Python::Tuple findArgs(2);
+      Python::Capsule op(this);
+
+      findArgs.set(0, this->Internals->TransformModule);
+      findArgs.set(1, op);
+
+      this->Internals->TransformMethod =
+        this->Internals->FindTransformScalarsFunction.call(findArgs);
+      if (!this->Internals->TransformMethod.isValid()) {
         qCritical("Script doesn't have any 'transform_scalars' function.");
-        checkForPythonError();
         return;
       }
 
-      args.TakeReference(PyTuple_New(1));
-      // Note we use GetAndIncreaseReferenceCount to increment ref count
-      // as PyTuple_SET_ITEM will "steal" the reference.
-      PyTuple_SET_ITEM(
-        args.GetPointer(), 0,
-        this->Internals->TransformModule.GetAndIncreaseReferenceCount());
-      result.TakeReference(
-        PyObject_Call(this->Internals->IsCancelableFunction, args, nullptr));
-      if (!result) {
+      Python::Tuple isArgs(1);
+      isArgs.set(0, this->Internals->TransformModule);
+
+      result = this->Internals->IsCancelableFunction.call(isArgs);
+      if (!result.isValid()) {
         qCritical("Error calling is_cancelable.");
-        checkForPythonError();
         return;
       }
     }
 
-    this->setSupportsCancel(result == Py_True);
+    this->setSupportsCancel(result.toBool());
 
     emit this->transformModified();
   }
@@ -319,73 +279,65 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   if (this->Script.isEmpty()) {
     return false;
   }
-  if (!this->Internals->OperatorModule || !this->Internals->TransformMethod) {
+  if (!this->Internals->OperatorModule.isValid() || !this->Internals->TransformMethod.isValid()) {
     return false;
   }
 
   Q_ASSERT(data);
 
-  vtkSmartPyObject pydata(vtkPythonUtil::GetObjectFromPointer(data));
+  Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
 
-  vtkSmartPyObject result;
+  Python::Object result;
   {
-    vtkPythonScopeGilEnsurer gilEnsurer(true);
-    vtkSmartPyObject args(PyTuple_New(1));
-    PyTuple_SET_ITEM(args.GetPointer(), 0, pydata.ReleaseReference());
+    Python python;
 
-    vtkSmartPyObject kwargs(PyDict_New());
+    Python::Tuple args(1);
+    args.set(0, pydata);
+
+    Python::Dict kwargs;
     foreach (QString key, m_arguments.keys()) {
       QVariant value = m_arguments[key];
-      vtkSmartPyObject pyValue(toPyObject(value));
-      vtkSmartPyObject pyKey(toPyObject(key));
-      PyDict_SetItem(kwargs.GetPointer(), pyKey.GetPointer(),
-                     pyValue.GetPointer());
+      kwargs.set(key, value);
     }
 
-    result.TakeReference(
-      PyObject_Call(this->Internals->TransformMethod, args, kwargs));
-    if (!result) {
+    result = this->Internals->TransformMethod.call(args, kwargs);
+    if (!result.isValid()) {
       qCritical("Failed to execute the script.");
-      checkForPythonError();
       return false;
     }
   }
 
   // Look for additional outputs from the filter returned in a dictionary
-  PyObject* outputDict = result.GetPointer();
-
   int check = 0;
   {
-    vtkPythonScopeGilEnsurer gilEnsurer(true);
-    check = PyDict_Check(outputDict);
+    Python python;
+    check = result.isDict();
   }
 
   bool errorEncountered = false;
   if (check) {
-
+    Python python;
+    Python::Dict outputDict = result.toDict();
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
-      QByteArray byteArray = m_resultNames[i].toLatin1();
-      const char* name = byteArray.data();
-      PyObject* pyDataObject = nullptr;
-      {
-        vtkPythonScopeGilEnsurer gilEnsurer(true);
-        pyDataObject = PyDict_GetItemString(outputDict, name);
-      }
-      if (!pyDataObject) {
+      Python::Object pyDataObject;
+      pyDataObject = outputDict[m_resultNames[i]];
+
+      if (!pyDataObject.isValid()) {
         errorEncountered = true;
         qCritical() << "No result named" << m_resultNames[i]
                     << "defined in output dictionary.\n";
         continue;
       }
       vtkObjectBase* vtkobject =
-        vtkPythonUtil::GetPointerFromObject(pyDataObject, "vtkDataObject");
+        Python::VTK::GetPointerFromObject(pyDataObject, "vtkDataObject");
       vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
       if (dataObject) {
         // Emit signal so we switch back to UI thread
         emit newOperatorResult(m_resultNames[i], dataObject);
       } else {
-        qCritical() << "Result named '" << name << "' is not a vtkDataObject";
+        qCritical() << "Result named '" << m_resultNames[i]
+                    << "' is not a vtkDataObject";
         continue;
       }
     }
@@ -396,12 +348,9 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         m_childDataSourceNamesAndLabels[i];
       QString name(nameLabelPair.first);
       QString label(nameLabelPair.second);
-      PyObject* child = nullptr;
-      {
-        vtkPythonScopeGilEnsurer gilEnsurer(true);
-        child = PyDict_GetItemString(outputDict, name.toLatin1().data());
-      }
-      if (!child) {
+      Python::Object child = outputDict[name];
+
+      if (!child.isValid()) {
         errorEncountered = true;
         qCritical() << "No child data source named '" << name
                     << "' defined in output dictionary.\n";
@@ -409,7 +358,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       }
 
       vtkObjectBase* vtkobject =
-        vtkPythonUtil::GetPointerFromObject(child, "vtkDataObject");
+        Python::VTK::GetPointerFromObject(child, "vtkDataObject");
       vtkSmartPointer<vtkDataObject> childData =
         vtkDataObject::SafeDownCast(vtkobject);
       if (childData) {
@@ -418,14 +367,10 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     }
 
     if (errorEncountered) {
-      const char* objectReprString = nullptr;
-      {
-        vtkPythonScopeGilEnsurer gilEnsurer(true);
-        PyObject* objectRepr = PyObject_Repr(outputDict);
-        objectReprString = PyString_AsString(objectRepr);
-      }
+
       qCritical() << "Dictionary return from Python script is:\n"
-                  << objectReprString;
+          << outputDict;
+
     }
   }
 
