@@ -79,7 +79,7 @@ public:
     virtual ~Object();
 
   protected:
-    vtkSmartPyObject* m_smartPyObject;
+    vtkSmartPyObject* m_smartPyObject = nullptr;
   };
 
   class Module;
