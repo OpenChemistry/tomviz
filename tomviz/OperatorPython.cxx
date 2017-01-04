@@ -36,7 +36,6 @@
 #include "vtkSMProxyManager.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
-#include "vtkSmartPyObject.h"
 #include "vtkTrivialProducer.h"
 
 #include "ui_EditPythonOperatorWidget.h"
