@@ -71,14 +71,14 @@ public:
       this->OperatorModule.TakeReference(PyImport_ImportModule("tomviz.utils"));
       if (!this->OperatorModule) {
         qCritical() << "Failed to import tomviz.utils module.";
-        tomviz::checkForPythonError();
+        tomviz::Python::checkForPythonError();
       }
 
       this->Code.TakeReference(Py_CompileString(
         script.toLatin1().data(), this->label.toLatin1().data(),
         Py_file_input /*Py_eval_input*/));
       if (!this->Code) {
-        tomviz::checkForPythonError();
+        tomviz::Python::checkForPythonError();
         qCritical()
           << "Invalid script. Please check the traceback message for details.";
         return;
@@ -95,14 +95,14 @@ public:
           .data(),
         this->Code));
       if (!module) {
-        tomviz::checkForPythonError();
+        tomviz::Python::checkForPythonError();
         qCritical() << "Failed to create module.";
         return;
       }
       this->GenerateFunction.TakeReference(
         PyObject_GetAttrString(module, "generate_dataset"));
       if (!this->GenerateFunction) {
-        tomviz::checkForPythonError();
+        tomviz::Python::checkForPythonError();
         qCritical() << "Script does not have a 'generate_dataset' function.";
         return;
       }
@@ -110,7 +110,7 @@ public:
       this->MakeDatasetFunction.TakeReference(
         PyObject_GetAttrString(this->OperatorModule, "make_dataset"));
       if (!this->MakeDatasetFunction) {
-        tomviz::checkForPythonError();
+        tomviz::Python::checkForPythonError();
         qCritical() << "Could not find make_dataset function in tomviz.utils";
         return;
       }
@@ -152,7 +152,7 @@ public:
         PyObject_Call(this->MakeDatasetFunction, args, kwargs));
       if (!result) {
         qCritical() << "Failed to execute script.";
-        tomviz::checkForPythonError();
+        tomviz::Python::checkForPythonError();
         return retVal;
       }
     }

@@ -144,15 +144,17 @@ public:
   Module import(const QString& name);
   Module import(const QString& str, const QString& filename);
 
+  /// Check for Python error. Prints error and clears it if an error has
+  /// occurred.
+  /// Return true if an error has occurred, false otherwise.
+  static bool checkForPythonError();
+
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
 
 QDebug operator<<(QDebug dbg, const Python::Dict& dict);
 
-/// Check for Python error. Prints error and clears it if an error has occurred.
-/// Return true if an error has occurred, false otherwise.
-bool checkForPythonError();
 
 /// Convert a QString to a Python string
 PyObject* toPyObject(const QString& str);

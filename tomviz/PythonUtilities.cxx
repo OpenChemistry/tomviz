@@ -344,7 +344,7 @@ QDebug operator<<(QDebug dbg, const Python::Dict& dict)
   return dbg.maybeSpace();
 }
 
-bool checkForPythonError()
+bool Python::checkForPythonError()
 {
   PyObject* exception = PyErr_Occurred();
   if (exception) {
