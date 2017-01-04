@@ -359,13 +359,13 @@ bool Python::checkForPythonError()
   return false;
 }
 
-PyObject* toPyObject(const QString& str)
+PyObject* Python::toPyObject(const QString& str)
 {
   return PyUnicode_DecodeUTF16((const char*)str.utf16(), str.length() * 2, NULL,
                                NULL);
 }
 
-PyObject* toPyObject(const QVariant& value)
+PyObject* Python::toPyObject(const QVariant& value)
 {
 
   switch (value.type()) {
@@ -390,7 +390,7 @@ PyObject* toPyObject(const QVariant& value)
   return nullptr;
 }
 
-PyObject* toPyObject(const QVariantList& list)
+PyObject* Python::toPyObject(const QVariantList& list)
 {
   PyObject* pyList = PyTuple_New(list.count());
   int i = 0;

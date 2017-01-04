@@ -142,8 +142,8 @@ public:
       vtkSmartPyObject kwargs(PyDict_New());
       foreach (QString key, this->arguments.keys()) {
         QVariant value = this->arguments[key];
-        vtkSmartPyObject pyValue(tomviz::toPyObject(value));
-        vtkSmartPyObject pyKey(tomviz::toPyObject(key));
+        vtkSmartPyObject pyValue(tomviz::Python::toPyObject(value));
+        vtkSmartPyObject pyKey(tomviz::Python::toPyObject(key));
         PyDict_SetItem(kwargs.GetPointer(), pyKey.GetPointer(),
                        pyValue.GetPointer());
       }
