@@ -36,6 +36,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
             raise RuntimeError("No scalars found!")
 
         # Generate measurement matrix
+        self.progress.message = 'Generating measurement matrix'
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
         recon = np.zeros((Nslice, Nray, Nray))
 
@@ -52,6 +53,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
             if self.canceled:
                 return
             b = tiltSeries[s, :, :].transpose().flatten()
+            self.progress.message = 'Slice No.%d/%d' % (s + 1, Nslice)
             recon[s, :, :] = r.recon2(b, Niter, stepSize).reshape((Nray, Nray))
             step += 1
             self.progress.value = step

@@ -9,6 +9,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         """
         3D Reconstruct from a tilt series using Weighted Back-projection Method
         """
+        self.progress.maximum = 1
 
         from tomviz import utils
         interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
@@ -22,22 +23,19 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
-        N_slice = tiltSeries.shape[0]
+        Nslice = tiltSeries.shape[0]
 
-        NUMBER_OF_CHUNKS = int(np.floor(np.sqrt(N_slice)))
-        self.progress.maximum = NUMBER_OF_CHUNKS
+        self.progress.maximum = Nslice
         step = 0
-        N_slice_per_chunk = int(np.ceil(N_slice * 1.0 / NUMBER_OF_CHUNKS))
 
-        recon = np.zeros((N_slice, Nrecon, Nrecon))
-        for i in range(NUMBER_OF_CHUNKS):
+        recon = np.zeros((Nslice, Nrecon, Nrecon))
+        for i in range(Nslice):
             if self.canceled:
                 return
-            index_x_start = i * N_slice_per_chunk
-            index_x_end = np.min([(i + 1) * N_slice_per_chunk, N_slice])
-            recon[index_x_start:index_x_end, :, :] = wbp3(tiltSeries[
-                index_x_start:index_x_end, :, :], tilt_angles, Nrecon,
-                filter_methods[filter], interpolation_methods[interp])
+            self.progress.message = 'Slice No.%d/%d' % (i + 1, Nslice)
+            recon[i, :, :] = wbp2(tiltSeries[i, :, :], tilt_angles, Nrecon,
+                                  filter_methods[filter],
+                                  interpolation_methods[interp])
             step += 1
             self.progress.value = step
 
@@ -48,24 +46,6 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
         # Mark dataset as volume.
         utils.mark_as_volume(dataset)
-
-
-def wbp3(input, angles, N=None, filter="ramp", interp="linear"):
-    input = np.double(input)
-    (Nslice, Nray, Nproj) = input.shape
-    if Nproj != angles.size:
-        raise ValueError('Data does not match angles!')
-    interpolation_methods = ('linear', 'nearest', 'spline', 'cubic')
-    if interp not in interpolation_methods:
-        raise ValueError("Unknown interpolation: %s" % interp)
-    if not N:  # if ouput size is not given
-        N = int(np.floor(np.sqrt(Nray**2 / 2.0)))
-
-    recon = np.zeros((Nslice, N, N))
-    for i in range(Nslice):
-        # print "slice No.", i+1
-        recon[i, :, :] = wbp2(input[i, :, :], angles, N, filter, interp)
-    return recon
 
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):

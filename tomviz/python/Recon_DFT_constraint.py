@@ -25,6 +25,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
+        self.progress.message = 'Initialization'
         #Direct Fourier recon without constraints
         (recon, recon_F) \
             = dfm3(tiltSeries, tiltAngles, np.size(tiltSeries, 0) * 2)
@@ -69,6 +70,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         for i in range(Niter):
             if self.canceled:
                 return
+            self.progress.message = 'Iteration No.%d/%d' % (i + 1, Niter)
 
             #image space projection
             y1 = x.copy()
