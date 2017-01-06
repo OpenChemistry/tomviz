@@ -29,6 +29,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         pad_post = int(np.floor((Npad - Ny) / 2.0))
 
         # Initialization
+        self.progress.message = 'Initialization'
         Nz = Ny
         w = np.zeros((Nx, Ny, np.int(Nz / 2 + 1))) #store weighting factors
         v = pyfftw.n_byte_align_empty(
@@ -51,6 +52,8 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         for a in range(Nproj):
             if self.canceled:
                 return
+            self.progress.message = 'Tilt image No.%d/%d' % (a + 1, Nproj)
+
             #print angles[a]
             ang = tiltAngles[a] * np.pi / 180
             projection = tiltSeries[:, :, a] #2D projection image
@@ -83,6 +86,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
+        self.progress.message = 'Inverse Fourier transform'
         v[w != 0] = v[w != 0] / w[w != 0]
         recon_fftw_object.update_arrays(v, recon)
         recon_fftw_object()

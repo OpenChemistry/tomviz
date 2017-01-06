@@ -23,6 +23,7 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
             raise RuntimeError("No scalars found!")
 
         # Generate measurement matrix
+        self.progress.message = 'Generating measurement matrix'
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
         recon = np.zeros((Nslice, Nray, Nray))
 
@@ -33,6 +34,7 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
         row = np.zeros(Ncol)
         f = np.zeros(Ncol) # Placeholder for 2d image
         beta = 1.0
+
         # Calculate row inner product
         for j in range(Nrow):
             row[:] = A[j, ].copy()
@@ -47,6 +49,8 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
             f[:] = 0
             b = tiltSeries[s, :, :].transpose().flatten()
             for i in range(Niter):
+                self.progress.message = 'Slice No.%d/%d, iteration No.%d/%d' % (
+                    s + 1, Nslice, i + 1, Niter)
                 for j in range(Nrow):
                     row[:] = A[j, ].copy()
                     row_f_product = np.dot(row, f)

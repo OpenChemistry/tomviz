@@ -49,7 +49,7 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
         for i in range(Niter): #main loop
             if self.canceled:
                 return
-
+            self.progress.message = 'Iteration No.%d/%d' % (i + 1, Niter)
             recon_temp = recon.copy()
             #ART recon
             for s in range(Nslice): #
