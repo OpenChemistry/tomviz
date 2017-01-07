@@ -15,6 +15,8 @@
 ******************************************************************************/
 #include "SaveDataReaction.h"
 
+#include "EmdFormat.h"
+
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
@@ -40,6 +42,7 @@
 #include <cassert>
 
 #include <QDebug>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QRegularExpression>
 
@@ -79,6 +82,7 @@ void SaveDataReaction::onTriggered()
   // volumes
   QRegularExpression re(";;(JPEG|PNG)[^;]*;;");
   QString filteredFilters = filters.replace(re, ";;");
+  filteredFilters = "EMD format (*.emd *.hdf5);;" + filteredFilters;
 
   pqFileDialog fileDialog(server, pqCoreUtilities::mainWidget(),
                           tr("Save File:"), QString(), filteredFilters);
@@ -98,6 +102,17 @@ bool SaveDataReaction::saveData(const QString& filename)
   if (!server || !source) {
     qCritical("No active source located.");
     return false;
+  }
+
+  QFileInfo info(filename);
+  if (info.suffix() == "emd") {
+    EmdFormat writer;
+    if (!writer.write(filename.toLatin1().data(), source)) {
+      qCritical() << "Failed to write out data.";
+      return false;
+    } else {
+      return true;
+    }
   }
 
   vtkSMWriterFactory* writerFactory =

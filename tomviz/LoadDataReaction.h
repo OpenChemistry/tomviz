@@ -18,6 +18,7 @@
 
 #include <pqReaction.h>
 
+class vtkImageData;
 class vtkSMProxy;
 
 namespace tomviz {
@@ -39,6 +40,9 @@ public:
 
   /// Create a raw data source from the reader.
   static DataSource* createDataSource(vtkSMProxy* reader);
+
+  /// Create a data source that can be populated with data.
+  static DataSource* createDataSource(vtkImageData* imageData);
 
   static QList<DataSource*> loadData();
 
