@@ -18,8 +18,6 @@
 
 // Collection of miscellaneous Python utility functions.
 
-#include <QDebug>
-#include <QList>
 #include "Variant.h"
 #include <QString>
 
@@ -165,8 +163,6 @@ public:
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
-
-QDebug operator<<(QDebug dbg, const Python::Dict& dict);
 
 }
 

@@ -18,8 +18,7 @@
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
 #include "vtkSmartPyObject.h"
-
-#include <QDebug>
+#include "Logger.h"
 
 #include <pybind11/pybind11.h>
 
@@ -318,7 +317,7 @@ Python::Module Python::import(const QString& str, const QString& filename)
                      Py_file_input /*Py_eval_input*/);
   if (!code) {
     checkForPythonError();
-    qCritical("Invalid script. Please check the traceback message for details");
+    Logger::critical("Invalid script. Please check the traceback message for details");
     return module;
   }
 
@@ -326,19 +325,11 @@ Python::Module Python::import(const QString& str, const QString& filename)
     QString("tomviz_%1").arg(filename).toLatin1().data(), code);
   if (!module.isValid()) {
     checkForPythonError();
-    qCritical("Failed to create module.");
+    Logger::critical("Failed to create module.");
     return module;
   }
 
   return module;
-}
-
-QDebug operator<<(QDebug dbg, const Python::Dict& dict)
-{
-  PyObject* objectRepr = PyObject_Repr(dict);
-  dbg.nospace() << PyString_AsString(objectRepr);
-
-  return dbg.maybeSpace();
 }
 
 bool Python::checkForPythonError()
