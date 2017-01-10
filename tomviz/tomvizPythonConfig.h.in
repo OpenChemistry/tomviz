@@ -31,9 +31,10 @@
 #define TOMVIZ_PYTHON_INSTALL_DIR "@tomviz_python_install_dir@"
 #define TOMVIZ_DATA_INSTALL_DIR "@tomviz_data_install_dir@/Data"
 
-#include "vtkPythonInterpreter.h"
 #include <string>
 #include <vtksys/SystemTools.hxx>
+
+#include "PythonUtilities.h"
 
 namespace tomviz {
 void PythonAppInitPrependPythonPath(const std::string& dir)
@@ -42,7 +43,7 @@ void PythonAppInitPrependPythonPath(const std::string& dir)
     std::string collapsed_dir =
       vtksys::SystemTools::CollapseFullPath(dir.c_str());
     if (vtksys::SystemTools::FileIsDirectory(collapsed_dir.c_str())) {
-      vtkPythonInterpreter::PrependPythonPath(collapsed_dir.c_str());
+      Python::prependPythonPath(collapsed_dir);
     }
   }
 }

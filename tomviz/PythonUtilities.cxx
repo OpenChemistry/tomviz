@@ -407,4 +407,9 @@ PyObject* Python::toPyObject(long l)
 {
   return PyInt_FromLong(l);
 }
+
+void Python::prependPythonPath(std::string dir)
+{
+  vtkPythonInterpreter::PrependPythonPath(dir.c_str());
+}
 }

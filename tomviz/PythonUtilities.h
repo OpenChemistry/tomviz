@@ -165,6 +165,10 @@ public:
   // Convert a long to the appropriate Python type
   static PyObject* toPyObject(long l);
 
+  // Prepends the path to the sys.path variable calls
+  // vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.
+  static void prependPythonPath(std::string dir);
+
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
