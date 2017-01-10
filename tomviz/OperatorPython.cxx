@@ -295,7 +295,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
     Python::Dict kwargs;
     foreach (QString key, m_arguments.keys()) {
-      QVariant value = m_arguments[key];
+      Variant value = toVariant(m_arguments[key]);
       kwargs.set(key, value);
     }
 
@@ -368,7 +368,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     if (errorEncountered) {
 
       qCritical() << "Dictionary return from Python script is:\n"
-          << outputDict;
+          << outputDict.toString();
 
     }
   }

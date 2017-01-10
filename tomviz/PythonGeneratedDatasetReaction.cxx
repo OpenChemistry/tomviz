@@ -35,6 +35,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkSmartPyObject.h"
 #include "vtkTrivialProducer.h"
+#include "Variant.h"
 
 #include <QDebug>
 #include <QDialog>
@@ -141,7 +142,7 @@ public:
 
       vtkSmartPyObject kwargs(PyDict_New());
       foreach (QString key, this->arguments.keys()) {
-        QVariant value = this->arguments[key];
+        tomviz::Variant value = tomviz::toVariant(this->arguments[key]);
         vtkSmartPyObject pyValue(tomviz::Python::toPyObject(value));
         vtkSmartPyObject pyKey(tomviz::Python::toPyObject(key));
         PyDict_SetItem(kwargs.GetPointer(), pyKey.GetPointer(),

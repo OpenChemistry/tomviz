@@ -20,8 +20,8 @@
 
 #include <QDebug>
 #include <QList>
+#include "Variant.h"
 #include <QString>
-#include <QVariant>
 
 
 // Forward declare PyObject
@@ -65,8 +65,8 @@ public:
     Object();
     Object(const Object& other);
     Object(const QString& str);
-    Object(const QVariant& value);
-    Object(const QVariantList& list);
+    Object(const Variant& value);
+    //Object(const QVariantList& list);
     Object(PyObject *obj);
     Object& operator=(const Object& other);
     operator PyObject*() const;
@@ -103,9 +103,10 @@ public:
     Dict(const Dict& other);
     Object operator[](const QString& key);
     void set(const QString& key, const Object& value);
-    void set(const QString& key, const QVariant& value);
-    void set(const QString& key, const QString& str);
-    void set(const QString& key, const QVariantList& list);
+    void set(const QString& key, const Variant& value);
+    //void set(const QString& key, const QString& str);
+    //void set(const QString& key, const QVariantList& list);
+    QString toString();
   };
 
   class Function : public Object
@@ -149,14 +150,17 @@ public:
   /// Return true if an error has occurred, false otherwise.
   static bool checkForPythonError();
 
-  /// Convert a QString to a Python string
+  /// Convert a tomviz::Variant to the appropriate Python type
+  static PyObject* toPyObject(const Variant& variant);
+
+  /// Convert a QString to the appropriate Python type
   static PyObject* toPyObject(const QString& str);
 
-  /// Convert a QVariant object into the appropriate Python type
-  static PyObject* toPyObject(const QVariant& value);
+  /// Convert a std::string to the appropriate Python type
+  static PyObject* toPyObject(const std::string& str);
 
-  // Convert a QVariantList into a Python list
-  static PyObject* toPyObject(const QVariantList& list);
+  /// Convert a list of tomviz::Variant to the appropriate Python types
+  static PyObject* toPyObject(const std::vector<Variant>& variants);
 
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;

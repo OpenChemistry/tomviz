@@ -24,9 +24,12 @@
 #include <vtkSMSourceProxy.h>
 
 #include <vtk_pugixml.h>
+#include <Variant.h>
 
 #include <QFileInfo>
 #include <QStringList>
+#include <QVariant>
+
 
 class pqAnimationScene;
 
@@ -167,7 +170,13 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
 // Delete all widgets within a layout
 void deleteLayoutContents(QLayout* layout);
 
+
+Variant toVariant(const QVariant  &value);
+Variant toVariant(const QVariantList  &value);
+
+
 extern double offWhite[3];
+
 }
 
 #endif

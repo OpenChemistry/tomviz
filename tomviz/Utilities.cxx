@@ -45,6 +45,7 @@
 #include <vtkTrivialProducer.h>
 
 #include <sstream>
+#include <vector>
 
 #include <QApplication>
 #include <QDebug>
@@ -450,6 +451,39 @@ void deleteLayoutContents(QLayout* layout)
     }
   }
 }
+
+Variant toVariant(const QVariant  &value) {
+  switch (value.type()) {
+    case QVariant::Int:
+      return Variant(value.toInt());
+    case QVariant::Double:
+      return Variant(value.toDouble());
+    case QVariant::Bool:
+      return Variant(value.toBool());
+    case QVariant::String: {
+      QString str = value.toString();
+      return Variant(str.toStdString());
+    }
+    case QVariant::List: {
+      QVariantList list = value.toList();
+      return toVariant(list);
+    }
+    default:
+      qCritical() << "Unsupported type";
+      return Variant();
+    }
+}
+
+Variant toVariant(const QVariantList  &list) {
+    std::vector<Variant> variantList;
+
+    foreach (QVariant value, list) {
+      variantList.push_back(toVariant(value));
+    }
+
+  return Variant(variantList);
+}
+
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
 }

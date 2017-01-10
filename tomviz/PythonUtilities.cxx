@@ -59,16 +59,18 @@ Python::Object::Object(const QString& str)
   m_smartPyObject = new vtkSmartPyObject(toPyObject(str));
 }
 
-Python::Object::Object(const QVariant& value)
+
+Python::Object::Object(const Variant& value)
 {
   m_smartPyObject = new vtkSmartPyObject(toPyObject(value));
 }
 
+/*
 Python::Object::Object(const QVariantList& list)
 {
   m_smartPyObject = new vtkSmartPyObject(toPyObject(list));
 }
-
+*/
 Python::Object::Object(PyObject *obj)
 {
   m_smartPyObject = new vtkSmartPyObject(obj);
@@ -187,23 +189,18 @@ void Python::Dict::set(const QString& key, const Object& value)
   PyDict_SetItem(m_smartPyObject->GetPointer(), pyKey, value);
 }
 
-void Python::Dict::set(const QString& key, const QVariant& value)
+void Python::Dict::set(const QString& key, const Variant& value)
 {
   Python::Object obj(value);
   set(key, obj);
 }
 
-void Python::Dict::set(const QString& key, const QString& str)
+QString Python::Dict::toString()
 {
-  Python::Object obj(str);
-  set(key, obj);
+  PyObject* objectRepr = PyObject_Repr(*this);
+  return PyString_AsString(objectRepr);
 }
 
-void Python::Dict::set(const QString& key, const QVariantList& list)
-{
-  Python::Object obj(list);
-  set(key, obj);
-}
 
 Python::Function::Function() : Object()
 {
@@ -365,37 +362,41 @@ PyObject* Python::toPyObject(const QString& str)
                                NULL);
 }
 
-PyObject* Python::toPyObject(const QVariant& value)
+PyObject* Python::toPyObject(const std::string& str)
+{
+  return PyString_FromStringAndSize(str.data(), str.size());
+}
+
+PyObject* Python::toPyObject(const Variant& value)
 {
 
   switch (value.type()) {
-    case QVariant::Int:
-      return PyInt_FromLong(value.toInt());
-    case QVariant::Double:
+    case Variant::INTEGER:
+      return PyInt_FromLong(value.toInteger());
+    case Variant::DOUBLE:
       return PyFloat_FromDouble(value.toDouble());
-    case QVariant::Bool:
+    case Variant::BOOL:
       return value.toBool() ? Py_True : Py_False;
-    case QVariant::String: {
-      QString str = value.toString();
-      return toPyObject(str);
+    case Variant::STRING: {
+      return toPyObject(value.toString());
     }
-    case QVariant::List: {
-      QVariantList list = value.toList();
+    case Variant::LIST: {
+      std::vector<Variant> list = value.toList();
       return toPyObject(list);
     }
     default:
-      qCritical() << "Unsupported type";
+      Logger::critical("Unsupported type");
   }
 
   return nullptr;
 }
 
-PyObject* Python::toPyObject(const QVariantList& list)
+PyObject* Python::toPyObject(const std::vector<Variant>& list)
 {
-  PyObject* pyList = PyTuple_New(list.count());
+  PyObject* pyList = PyTuple_New(list.size());
   int i = 0;
 
-  foreach (QVariant value, list) {
+  foreach (Variant value, list) {
     PyTuple_SET_ITEM(pyList, i, toPyObject(value));
     i++;
   }
