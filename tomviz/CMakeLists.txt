@@ -171,6 +171,8 @@ set(SOURCES
   TranslateAlignOperator.cxx
   Utilities.cxx
   Utilities.h
+  Variant.cxx
+  Variant.h
   ViewFrameActions.cxx
   ViewFrameActions.h
   ViewPropertiesPanel.cxx
