@@ -103,6 +103,9 @@ void Variant::copy(const Variant& v)
 {
   m_type = v.type();
   switch (v.type()) {
+    case INVALID:
+      // do nothing
+      break;
     case INTEGER:
       m_value.integerVal = v.toInteger();
       break;
