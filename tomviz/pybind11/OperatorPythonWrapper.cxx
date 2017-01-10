@@ -13,56 +13,49 @@
   limitations under the License.
 
 ******************************************************************************/
-#include <pybind11/pybind11.h>
 
+#include "OperatorPythonWrapper.h"
 #include "OperatorPython.h"
 
 using namespace tomviz;
 
-struct OperatorPythonWrapper
+OperatorPythonWrapper::OperatorPythonWrapper(void* o)
 {
-  OperatorPythonWrapper(OperatorPython* o) { this->op = o; }
-  bool canceled() { return this->op->isCanceled(); }
-  void setTotalProgressSteps(int progress)
-  {
-    this->op->setTotalProgressSteps(progress);
-  }
-  int totalProgressSteps() { return this->op->totalProgressSteps(); }
-  void setProgressStep(int progress) { this->op->setProgressStep(progress); }
-  int progressStep() { return this->op->progressStep(); }
-  void setProgressMessage(const std::string& message)
-  {
-    QString msg = QString::fromStdString(message);
-    this->op->setProgressMessage(msg);
-  }
-  std::string progressMessage()
-  {
-    return this->op->progressMessage().toStdString();
-  }
+  this->op = static_cast<OperatorPython*>(o);
+}
 
-  OperatorPython* op;
-};
-
-namespace py = pybind11;
-
-PYBIND11_PLUGIN(_wrapping)
+bool OperatorPythonWrapper::canceled()
 {
-  py::module m("_wrapping", "tomviz wrapped classes");
+  return this->op->isCanceled();
+}
 
-  py::class_<OperatorPythonWrapper>(m, "OperatorPythonWrapper")
-    .def("__init__",
-         [](OperatorPythonWrapper& instance, void* op) {
-           new (&instance)
-             OperatorPythonWrapper(static_cast<OperatorPython*>(op));
-         })
-    .def_property_readonly("canceled", &OperatorPythonWrapper::canceled)
-    .def_property("progress_maximum",
-                  &OperatorPythonWrapper::totalProgressSteps,
-                  &OperatorPythonWrapper::setTotalProgressSteps)
-    .def_property("progress_value", &OperatorPythonWrapper::progressStep,
-                  &OperatorPythonWrapper::setProgressStep)
-    .def_property("progress_message", &OperatorPythonWrapper::progressMessage,
-                  &OperatorPythonWrapper::setProgressMessage);
+void OperatorPythonWrapper::setTotalProgressSteps(int progress)
+{
+  this->op->setTotalProgressSteps(progress);
+}
 
-  return m.ptr();
+int OperatorPythonWrapper::totalProgressSteps()
+{
+  return this->op->totalProgressSteps();
+}
+
+void OperatorPythonWrapper::setProgressStep(int progress)
+{
+  this->op->setProgressStep(progress);
+}
+
+int OperatorPythonWrapper::progressStep()
+{
+  return this->op->progressStep();
+}
+
+void OperatorPythonWrapper::setProgressMessage(const std::string& message)
+{
+  QString msg = QString::fromStdString(message);
+  this->op->setProgressMessage(msg);
+}
+
+std::string OperatorPythonWrapper::progressMessage()
+{
+  return this->op->progressMessage().toStdString();
 }
