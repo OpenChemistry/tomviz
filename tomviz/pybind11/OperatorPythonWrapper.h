@@ -34,7 +34,7 @@ struct OperatorPythonWrapper
   void setProgressMessage(const std::string& message);
   std::string progressMessage();
 
-  tomviz::OperatorPython* op;
+  tomviz::OperatorPython* op = nullptr;
 };
 
 #endif
