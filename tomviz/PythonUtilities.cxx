@@ -14,8 +14,10 @@
 
 ******************************************************************************/
 #include "PythonUtilities.h"
+
+#include "vtkPython.h" // must be first
+
 #include "Logger.h"
-#include "vtkPython.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
 #include "vtkSmartPyObject.h"
@@ -159,6 +161,12 @@ void Python::Tuple::set(int index, Python::Capsule& capsule)
   // steal the other reference.
   capsule.incrementRefCount();
   PyTuple_SET_ITEM(m_smartPyObject->GetPointer(), index, capsule);
+}
+
+void Python::Tuple::set(int index, const Variant& value)
+{
+  Python::Object pyObj(toPyObject(value));
+  set(index, pyObj);
 }
 
 Python::Dict::Dict() : Object()
@@ -306,7 +314,8 @@ Python::Function Python::Module::findFunction(const QString& name)
   return func;
 }
 
-Python::Module Python::import(const QString& str, const QString& filename)
+Python::Module Python::import(const QString& str, const QString& filename,
+                              const QString& moduleName)
 {
 
   Python::Module module;
@@ -321,8 +330,7 @@ Python::Module Python::import(const QString& str, const QString& filename)
     return module;
   }
 
-  module = PyImport_ExecCodeModule(
-    QString("tomviz_%1").arg(filename).toLatin1().data(), code);
+  module = PyImport_ExecCodeModule(moduleName.toLatin1().data(), code);
   if (!module.isValid()) {
     checkForPythonError();
     Logger::critical("Failed to create module.");
@@ -363,7 +371,7 @@ PyObject* Python::toPyObject(const Variant& value)
 
   switch (value.type()) {
     case Variant::INTEGER:
-      return PyInt_FromLong(value.toInteger());
+      return toPyObject(value.toInteger());
     case Variant::DOUBLE:
       return PyFloat_FromDouble(value.toDouble());
     case Variant::BOOL:
@@ -393,5 +401,10 @@ PyObject* Python::toPyObject(const std::vector<Variant>& list)
   }
 
   return pyList;
+}
+
+PyObject* Python::toPyObject(long l)
+{
+  return PyInt_FromLong(l);
 }
 }

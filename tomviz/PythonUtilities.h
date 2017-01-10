@@ -91,6 +91,7 @@ public:
     void set(int index, Module& obj);
     void set(int index, Capsule& obj);
     void set(int index, Object& obj);
+    void set(int index, const Variant& value);
   };
 
   class Dict : public Object
@@ -141,7 +142,8 @@ public:
   Python();
   ~Python();
   Module import(const QString& name);
-  Module import(const QString& str, const QString& filename);
+  Module import(const QString& str, const QString& filename,
+                const QString& moduleName);
 
   /// Check for Python error. Prints error and clears it if an error has
   /// occurred.
@@ -159,6 +161,9 @@ public:
 
   /// Convert a list of tomviz::Variant to the appropriate Python types
   static PyObject* toPyObject(const std::vector<Variant>& variants);
+
+  // Convert a long to the appropriate Python type
+  static PyObject* toPyObject(long l);
 
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;

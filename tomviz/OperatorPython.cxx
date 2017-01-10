@@ -236,8 +236,9 @@ void OperatorPython::setScript(const QString& str)
     Python::Object result;
     {
       Python python;
+      QString moduleName = QString("tomviz_%1").arg(this->label());
       this->Internals->TransformModule =
-        python.import(this->Script, this->label());
+        python.import(this->Script, this->label(), moduleName);
       if (!this->Internals->TransformModule.isValid()) {
         qCritical("Failed to create module.");
         return;
