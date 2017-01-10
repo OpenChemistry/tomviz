@@ -65,12 +65,6 @@ Python::Object::Object(const Variant& value)
   m_smartPyObject = new vtkSmartPyObject(toPyObject(value));
 }
 
-/*
-Python::Object::Object(const QVariantList& list)
-{
-  m_smartPyObject = new vtkSmartPyObject(toPyObject(list));
-}
-*/
 Python::Object::Object(PyObject *obj)
 {
   m_smartPyObject = new vtkSmartPyObject(obj);
@@ -178,7 +172,6 @@ Python::Dict::Dict(PyObject *obj) : Object(obj)
 {
 
 }
-
 
 Python::Dict::Dict(const Python::Dict& other) : Object(other)
 {

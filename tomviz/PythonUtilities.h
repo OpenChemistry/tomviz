@@ -64,11 +64,12 @@ public:
     Object(const Object& other);
     Object(const QString& str);
     Object(const Variant& value);
-    // Object(const QVariantList& list);
     Object(PyObject *obj);
+
     Object& operator=(const Object& other);
     operator PyObject*() const;
     operator bool() const;
+
     void incrementRefCount();
     bool toBool() const;
     bool isDict() const;
@@ -103,8 +104,6 @@ public:
     Object operator[](const QString& key);
     void set(const QString& key, const Object& value);
     void set(const QString& key, const Variant& value);
-    // void set(const QString& key, const QString& str);
-    // void set(const QString& key, const QVariantList& list);
     QString toString();
   };
 
@@ -162,11 +161,11 @@ public:
   /// Convert a list of tomviz::Variant to the appropriate Python types
   static PyObject* toPyObject(const std::vector<Variant>& variants);
 
-  // Convert a long to the appropriate Python type
+  /// Convert a long to the appropriate Python type
   static PyObject* toPyObject(long l);
 
-  // Prepends the path to the sys.path variable calls
-  // vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.
+  /// Prepends the path to the sys.path variable calls
+  /// vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.
   static void prependPythonPath(std::string dir);
 
 private:
