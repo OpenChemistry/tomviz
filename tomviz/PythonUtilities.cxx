@@ -51,7 +51,7 @@ Python::Object::Object() : m_smartPyObject(new vtkSmartPyObject())
 }
 
 Python::Object::Object(const Python::Object& other)
-: m_smartPyObject(new vtkSmartPyObject(*other.m_smartPyObject))
+  : m_smartPyObject(new vtkSmartPyObject(*other.m_smartPyObject))
 {
 }
 
@@ -65,7 +65,7 @@ Python::Object::Object(const Variant& value)
   m_smartPyObject = new vtkSmartPyObject(toPyObject(value));
 }
 
-Python::Object::Object(PyObject *obj)
+Python::Object::Object(PyObject* obj)
 {
   m_smartPyObject = new vtkSmartPyObject(obj);
 }
@@ -101,7 +101,6 @@ bool Python::Object::isValid() const
 {
   return m_smartPyObject->GetPointer() != nullptr;
 }
-
 
 Python::Dict Python::Object::toDict()
 {
@@ -168,9 +167,8 @@ Python::Dict::Dict() : Object()
   m_smartPyObject->TakeReference(PyDict_New());
 }
 
-Python::Dict::Dict(PyObject *obj) : Object(obj)
+Python::Dict::Dict(PyObject* obj) : Object(obj)
 {
-
 }
 
 Python::Dict::Dict(const Python::Dict& other) : Object(other)
@@ -179,7 +177,9 @@ Python::Dict::Dict(const Python::Dict& other) : Object(other)
 
 Python::Object Python::Dict::operator[](const QString& key)
 {
-  return PyDict_GetItemString(m_smartPyObject->GetPointer(), key.toLatin1().data());;
+  return PyDict_GetItemString(m_smartPyObject->GetPointer(),
+                              key.toLatin1().data());
+  ;
 }
 
 void Python::Dict::set(const QString& key, const Object& value)
@@ -200,15 +200,12 @@ QString Python::Dict::toString()
   return PyString_AsString(objectRepr);
 }
 
-
 Python::Function::Function() : Object()
 {
 }
 
-Python::Function::Function(PyObject *obj)
-  : Object(obj)
+Python::Function::Function(PyObject* obj) : Object(obj)
 {
-
 }
 
 Python::Function::Function(const Python::Function& other) : Object(other)
@@ -218,7 +215,7 @@ Python::Function::Function(const Python::Function& other) : Object(other)
 
 Python::Function& Python::Function::operator=(const Python::Object& other)
 {
-  Object::operator =(other);
+  Object::operator=(other);
 
   return *this;
 }
@@ -231,7 +228,8 @@ Python::Object Python::Function::call(Tuple& args)
 
 Python::Object Python::Function::call(Tuple& args, Dict& kwargs)
 {
-  Python::Object result = PyObject_Call(m_smartPyObject->GetPointer(), args, kwargs);
+  Python::Object result =
+    PyObject_Call(m_smartPyObject->GetPointer(), args, kwargs);
 
   if (!result.isValid()) {
     checkForPythonError();
@@ -279,10 +277,8 @@ Python::Module::Module() : Object()
 {
 }
 
-Python::Module::Module(PyObject *obj)
-  : Object(obj)
+Python::Module::Module(PyObject* obj) : Object(obj)
 {
-
 }
 
 Python::Module::Module(const Python::Module& other) : Object(other)
@@ -299,7 +295,7 @@ Python::Function Python::Module::findFunction(const QString& name)
 {
 
   Python::Function func = PyObject_GetAttrString(m_smartPyObject->GetPointer(),
-                                name.toLatin1().data());
+                                                 name.toLatin1().data());
   if (!func.isValid()) {
     checkForPythonError();
   }

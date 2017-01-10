@@ -279,7 +279,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   if (this->Script.isEmpty()) {
     return false;
   }
-  if (!this->Internals->OperatorModule.isValid() || !this->Internals->TransformMethod.isValid()) {
+  if (!this->Internals->OperatorModule.isValid() ||
+      !this->Internals->TransformMethod.isValid()) {
     return false;
   }
 

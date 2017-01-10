@@ -21,7 +21,6 @@
 #include "Variant.h"
 #include <QString>
 
-
 // Forward declare PyObject
 // See https://mail.python.org/pipermail/python-dev/2003-August/037601.html
 #ifndef PyObject_HEAD
@@ -64,7 +63,7 @@ public:
     Object(const Object& other);
     Object(const QString& str);
     Object(const Variant& value);
-    Object(PyObject *obj);
+    Object(PyObject* obj);
 
     Object& operator=(const Object& other);
     operator PyObject*() const;
@@ -99,7 +98,7 @@ public:
   {
   public:
     Dict();
-    Dict(PyObject *obj);
+    Dict(PyObject* obj);
     Dict(const Dict& other);
     Object operator[](const QString& key);
     void set(const QString& key, const Object& value);
@@ -111,7 +110,7 @@ public:
   {
   public:
     Function();
-    Function(PyObject *obj);
+    Function(PyObject* obj);
     Function(const Function& other);
     Function& operator=(const Object& other);
 
@@ -123,7 +122,7 @@ public:
   {
   public:
     Module();
-    Module(PyObject *obj);
+    Module(PyObject* obj);
     Module(const Module& other);
     Module& operator=(const Module& other);
     Function findFunction(const QString& name);
@@ -171,7 +170,6 @@ public:
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
-
 }
 
 #endif
