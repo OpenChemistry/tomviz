@@ -452,7 +452,8 @@ void deleteLayoutContents(QLayout* layout)
   }
 }
 
-Variant toVariant(const QVariant  &value) {
+Variant toVariant(const QVariant& value)
+{
   switch (value.type()) {
     case QVariant::Int:
       return Variant(value.toInt());
@@ -471,19 +472,19 @@ Variant toVariant(const QVariant  &value) {
     default:
       qCritical() << "Unsupported type";
       return Variant();
-    }
+  }
 }
 
-Variant toVariant(const QVariantList  &list) {
-    std::vector<Variant> variantList;
+Variant toVariant(const QVariantList& list)
+{
+  std::vector<Variant> variantList;
 
-    foreach (QVariant value, list) {
-      variantList.push_back(toVariant(value));
-    }
+  foreach (QVariant value, list) {
+    variantList.push_back(toVariant(value));
+  }
 
   return Variant(variantList);
 }
-
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
 }

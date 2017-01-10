@@ -22,6 +22,7 @@
 #include "ModuleManager.h"
 #include "PythonUtilities.h"
 #include "Utilities.h"
+#include "Variant.h"
 #include "pqActiveObjects.h"
 #include "pqRenderView.h"
 #include "vtkImageData.h"
@@ -35,7 +36,6 @@
 #include "vtkSmartPointer.h"
 #include "vtkSmartPyObject.h"
 #include "vtkTrivialProducer.h"
-#include "Variant.h"
 
 #include <QDebug>
 #include <QDialog>

@@ -5,9 +5,8 @@
 
 namespace tomviz {
 
-void Logger::critical(const QString& msg) {
+void Logger::critical(const QString& msg)
+{
   qCritical() << msg;
 }
-
 }
-

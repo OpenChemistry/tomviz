@@ -20,13 +20,11 @@
 
 namespace tomviz {
 
-
-class Logger {
+class Logger
+{
 public:
   static void critical(const QString& msg);
 };
-
 }
-
 
 #endif

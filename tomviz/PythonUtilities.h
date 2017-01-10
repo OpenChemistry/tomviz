@@ -64,7 +64,7 @@ public:
     Object(const Object& other);
     Object(const QString& str);
     Object(const Variant& value);
-    //Object(const QVariantList& list);
+    // Object(const QVariantList& list);
     Object(PyObject *obj);
     Object& operator=(const Object& other);
     operator PyObject*() const;
@@ -102,8 +102,8 @@ public:
     Object operator[](const QString& key);
     void set(const QString& key, const Object& value);
     void set(const QString& key, const Variant& value);
-    //void set(const QString& key, const QString& str);
-    //void set(const QString& key, const QVariantList& list);
+    // void set(const QString& key, const QString& str);
+    // void set(const QString& key, const QVariantList& list);
     QString toString();
   };
 

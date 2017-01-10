@@ -14,11 +14,11 @@
 
 ******************************************************************************/
 #include "PythonUtilities.h"
+#include "Logger.h"
 #include "vtkPython.h"
 #include "vtkPythonInterpreter.h"
 #include "vtkPythonUtil.h"
 #include "vtkSmartPyObject.h"
-#include "Logger.h"
 
 #include <pybind11/pybind11.h>
 
@@ -57,7 +57,6 @@ Python::Object::Object(const QString& str)
 {
   m_smartPyObject = new vtkSmartPyObject(toPyObject(str));
 }
-
 
 Python::Object::Object(const Variant& value)
 {
@@ -317,7 +316,8 @@ Python::Module Python::import(const QString& str, const QString& filename)
                      Py_file_input /*Py_eval_input*/);
   if (!code) {
     checkForPythonError();
-    Logger::critical("Invalid script. Please check the traceback message for details");
+    Logger::critical(
+      "Invalid script. Please check the traceback message for details");
     return module;
   }
 

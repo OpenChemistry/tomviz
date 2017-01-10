@@ -368,8 +368,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     if (errorEncountered) {
 
       qCritical() << "Dictionary return from Python script is:\n"
-          << outputDict.toString();
-
+                  << outputDict.toString();
     }
   }
 
