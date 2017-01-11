@@ -15,6 +15,8 @@
 ******************************************************************************/
 #include "Variant.h"
 
+using namespace std;
+
 namespace tomviz {
 
 Variant::Variant()
@@ -35,14 +37,14 @@ Variant& Variant::operator=(const Variant& v)
   return *this;
 }
 
-Variant::Variant(const std::string& str) : m_type(Variant::STRING)
+Variant::Variant(const string& str) : m_type(Variant::STRING)
 {
-  new (&m_value.stringVal) std::string(str);
+  new (&m_value.stringVal) string(str);
 }
 
-Variant::Variant(const std::vector<Variant>& l) : m_type(LIST)
+Variant::Variant(const vector<Variant>& l) : m_type(LIST)
 {
-  new (&m_value.listVal) std::vector<Variant>(l);
+  new (&m_value.listVal) vector<Variant>(l);
 }
 
 Variant::Variant(int i) : m_type(Variant::INTEGER)
@@ -63,7 +65,7 @@ Variant::Variant(bool b) : m_type(Variant::BOOL)
 Variant::~Variant()
 {
   if (m_type == Variant::STRING) {
-    m_value.stringVal.std::string::~string();
+    m_value.stringVal.~string();
   } else if (m_type == LIST) {
     m_value.listVal.~vector<Variant>();
   }
@@ -84,12 +86,12 @@ double Variant::toDouble() const
   return m_value.doubleVal;
 }
 
-std::string Variant::toString() const
+string Variant::toString() const
 {
   return m_value.stringVal;
 }
 
-std::vector<Variant> Variant::toList() const
+vector<Variant> Variant::toList() const
 {
   return m_value.listVal;
 }
@@ -116,10 +118,10 @@ void Variant::copy(const Variant& v)
       m_value.boolVal = v.toBool();
       break;
     case STRING:
-      new (&m_value.stringVal) std::string(v.toString());
+      new (&m_value.stringVal) string(v.toString());
       break;
     case LIST:
-      new (&m_value.listVal) std::vector<Variant>(v.toList());
+      new (&m_value.listVal) vector<Variant>(v.toList());
       break;
   }
 }
