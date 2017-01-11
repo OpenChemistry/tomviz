@@ -77,7 +77,7 @@ TEST_F(VariantTest, double)
 
 TEST_F(VariantTest, string)
 {
-  std::string testString("how long is a peice of string?");
+  std::string testString("how long is a piece of string?");
   Variant str(testString);
 
   ASSERT_EQ(str.toString(), testString);
@@ -101,7 +101,7 @@ TEST_F(VariantTest, list)
   Variant integer(intValue);
   double doubleValue = 47.7;
   Variant d(doubleValue);
-  std::string strValue = "how long is a peice of string?";
+  std::string strValue = "how long is a piece of string?";
   Variant str(strValue);
 
   testList.push_back(boo);
