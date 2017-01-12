@@ -51,6 +51,7 @@ class ModuleContour::Private
 public:
   std::string ColorArrayName;
   bool UseSolidColor;
+  QPointer<QComboBox> ColorByComboBox;
   pqPropertyLinks Links;
 };
 
@@ -227,6 +228,11 @@ void ModuleContour::addToPanel(QWidget* panel)
   pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
   colorLayout->addWidget(colorSelector);
   layout->addRow("", colorLayout);
+
+  if (this->Internals->ColorByComboBox.isNull()) {
+    this->Internals->ColorByComboBox = new QComboBox();
+  }
+  layout->addRow("Color By", this->Internals->ColorByComboBox);
 
   colorSelector->setShowAlphaChannel(false);
   DoubleSliderWidget* valueSlider = new DoubleSliderWidget(true);
