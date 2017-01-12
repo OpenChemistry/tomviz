@@ -79,6 +79,7 @@ void OperatorRunningDelegate::paint(QPainter* painter,
   auto pipelineModel = qobject_cast<PipelineModel*>(m_view->model());
   auto op = pipelineModel->op(index);
 
+  QItemDelegate::paint(painter, option, index);
   if (op && index.column() == Column::state) {
     if (op->state() == OperatorState::RUNNING) {
       // Get the current pixel map
@@ -93,11 +94,9 @@ void OperatorRunningDelegate::paint(QPainter* painter,
         QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
       QPoint topLeft = option.rect.topLeft();
       topLeft += QPoint(leftMargin, 0);
-
       painter->drawPixmap(topLeft, pixmap);
     }
   }
-  QItemDelegate::paint(painter, option, index);
 }
 
 PipelineView::PipelineView(QWidget* p) : QTreeView(p)
