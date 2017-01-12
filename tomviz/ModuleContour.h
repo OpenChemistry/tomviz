@@ -60,6 +60,7 @@ protected:
   void updateColorMap() override;
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
+  QList<DataSource*> getChildDataSources();
 
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
   vtkWeakPointer<vtkSMProxy> ContourRepresentation;

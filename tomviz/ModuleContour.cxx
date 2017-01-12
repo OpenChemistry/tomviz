@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
+#include "Operator.h"
 #include "Utilities.h"
 
 #include "pqColorChooserButton.h"
@@ -41,6 +42,7 @@
 #include <QComboBox>
 #include <QFormLayout>
 #include <QLabel>
+#include <QPointer>
 
 namespace tomviz {
 
@@ -386,6 +388,33 @@ vtkSMProxy* ModuleContour::getProxyForString(const std::string& str)
     return nullptr;
   }
 }
+
+QList<DataSource*> ModuleContour::getChildDataSources()
+ {
+   QList<DataSource*> childSources;
+   auto source = dataSource();
+   if (!source) {
+     return childSources;
+   }
+ 
+   // Iterate over Operators and obtain child data sources
+   auto ops = source->operators();
+   for (int i = 0; i < ops.size(); ++i) {
+     auto op = ops[i];
+     if (!op || !op->hasChildDataSource()) {
+       continue;
+     }
+ 
+     auto child = op->childDataSource();
+     if (!child) {
+       continue;
+     }
+ 
+     childSources.append(child);
+   }
+ 
+  return childSources;
+ }
 
 void ModuleContour::setUseSolidColor(int useSolidColor)
 {
