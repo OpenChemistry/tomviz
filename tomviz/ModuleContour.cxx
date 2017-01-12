@@ -53,6 +53,7 @@ public:
   bool UseSolidColor;
   QPointer<QComboBox> ColorByComboBox;
   pqPropertyLinks Links;
+  DataSource* ColorByDataSource;
 };
 
 ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
@@ -60,6 +61,7 @@ ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
   this->Internals = new Private;
   this->Internals->Links.setAutoUpdateVTKObjects(true);
   this->Internals->UseSolidColor = false;
+  this->Internals->ColorByDataSource = nullptr;
 }
 
 ModuleContour::~ModuleContour()
@@ -133,6 +135,9 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   this->updateColorMap();
 
   this->ContourRepresentation->UpdateVTKObjects();
+
+  // Color by the data source by default
+  this->Internals->ColorByDataSource = dataSource();
 
   return true;
 }
@@ -301,11 +306,28 @@ void ModuleContour::addToPanel(QWidget* panel)
                 &ModuleContour::propertyChanged);
   this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
                 &ModuleContour::propertyChanged);
+  this->connect(this->Internals->ColorByComboBox,
+               SIGNAL(currentIndexChanged(int)), this, SLOT(propertyChanged()));
+
+  this->connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));
+
+  updateGUI();
+  propertyChanged();
 }
 
 void ModuleContour::propertyChanged()
 {
   this->Internals->Links.accept();
+
+  int colorByIndex = this->Internals->ColorByComboBox->currentIndex();
+  if (colorByIndex > 0) {
+    auto childDataSources = getChildDataSources();
+    this->Internals->ColorByDataSource = childDataSources[colorByIndex - 1];
+  } else {
+    this->Internals->ColorByDataSource = dataSource();
+  }
+
+
   emit this->renderNeeded();
 }
 
@@ -427,6 +449,27 @@ void ModuleContour::setUseSolidColor(int useSolidColor)
   this->Internals->UseSolidColor = (useSolidColor != 0);
   this->updateColorMap();
   emit this->renderNeeded();
+}
+
+void ModuleContour::updateGUI()
+{
+  QList<DataSource*> childSources = getChildDataSources();
+  QComboBox* combo = this->Internals->ColorByComboBox;
+  if (combo) {
+    combo->blockSignals(true);
+    combo->clear();
+    combo->addItem("This Data");
+    for (int i = 0; i < childSources.size(); ++i) {
+      combo->addItem(childSources[i]->filename());
+    }
+
+    int selected = childSources.indexOf(this->Internals->ColorByDataSource);
+
+    // If data source not found, selected will be -1, so the current index will be
+    // set to 0, which is the right index for this data source.
+    combo->setCurrentIndex(selected + 1);
+    combo->blockSignals(false);
+  }
 }
 
 } // end of namespace tomviz

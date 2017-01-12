@@ -75,8 +75,12 @@ private slots:
   /// invoked whenever a property widget changes
   void propertyChanged();
 
-  // The parameter should really be a bool, but the signal gives an int
+  /// The parameter should really be a bool, but the signal gives an int
   void setUseSolidColor(int useSolidColor);
+
+  /// Reset the UI for widgets not connected to a proxy property
+  void updateGUI();
+
 
 private:
   Q_DISABLE_COPY(ModuleContour)
