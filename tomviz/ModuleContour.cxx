@@ -113,7 +113,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   // Create the representation for it. Show the unresampled contour filter to
   // start.
   this->ContourRepresentation =
-    controller->Show(this->ContourFilter, 0, vtkView);
+    controller->Show(this->ResampleFilter, 0, vtkView);
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation")
     .Set("Surface");
