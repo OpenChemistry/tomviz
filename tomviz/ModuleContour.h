@@ -72,7 +72,8 @@ protected:
   QString Representation;
 
 private slots:
-  void dataUpdated();
+  /// invoked whenever a property widget changes
+  void propertyChanged();
 
   // The parameter should really be a bool, but the signal gives an int
   void setUseSolidColor(int useSolidColor);

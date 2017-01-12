@@ -292,18 +292,18 @@ void ModuleContour::addToPanel(QWidget* panel)
     this->ContourRepresentation->GetProperty("AmbientColor"));
 
   this->connect(valueSlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
   this->connect(representations, &QComboBox::currentTextChanged, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
   this->connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
   this->connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
   this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
 }
 
-void ModuleContour::dataUpdated()
+void ModuleContour::propertyChanged()
 {
   this->Internals->Links.accept();
   emit this->renderNeeded();
