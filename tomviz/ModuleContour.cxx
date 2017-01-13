@@ -53,7 +53,7 @@ public:
   bool UseSolidColor;
   QPointer<QComboBox> ColorByComboBox;
   pqPropertyLinks Links;
-  DataSource* ColorByDataSource;
+  QPointer<DataSource> ColorByDataSource;
 };
 
 ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
