@@ -129,6 +129,15 @@ void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(
 {
   this->HistogramChart->SetHistogramInputData(table, xAxisColumn, yAxisColumn);
 
+  if (!table) {
+    this->ColorTransferFunctionChart->SetVisible(false);
+    return;
+  }
+
+  if (!this->ColorTransferFunctionChart->GetVisible()) {
+    this->ColorTransferFunctionChart->SetVisible(true);
+  }
+
   // The histogram chart bottom axis range was updated in the call above.
   // Set the same range for the color bar bottom axis here.
   vtkAxis* histogramBottomAxis = this->HistogramChart->GetAxis(vtkAxis::BOTTOM);
