@@ -110,6 +110,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PreInitializeProxy(this->ResampleFilter);
   vtkSMPropertyHelper(this->ResampleFilter, "Input").Set(data->producer());
   vtkSMPropertyHelper(this->ResampleFilter, "Source").Set(this->ContourFilter);
+  vtkSMPropertyHelper(this->ResampleFilter, "PassPointArrays").Set(1);
   controller->PostInitializeProxy(this->ResampleFilter);
   controller->RegisterPipelineProxy(this->ResampleFilter);
 
@@ -127,6 +128,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
                                        "ColorArrayName");
   this->Internals->ColorArrayName =
     std::string(colorArrayHelper.GetInputArrayNameToProcess());
+  //std::cout << "ColorArrayName: " << this->Internals->ColorArrayName << std::endl;
 
   vtkSMPropertyHelper colorHelper(this->ContourRepresentation, "DiffuseColor");
   double white[3] = { 1.0, 1.0, 1.0 };
@@ -147,17 +149,9 @@ void ModuleContour::updateColorMap()
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "LookupTable")
     .Set(this->colorMap());
-  vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation,
-                                       "ColorArrayName");
 
-  if (this->Internals->UseSolidColor) {
-    colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
-  } else {
-    colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS,
-      this->Internals->ColorArrayName.c_str());
-  }
+  updateScalarColoring();
+
   vtkSMPropertyHelper(this->ContourRepresentation, "Input")
     .Set(this->ContourFilter);
 
@@ -209,6 +203,7 @@ void ModuleContour::setIsoValues(const QList<double>& values)
 void ModuleContour::addToPanel(QWidget* panel)
 {
   Q_ASSERT(this->ContourFilter);
+  Q_ASSERT(this->ResampleFilter);
   Q_ASSERT(this->ContourRepresentation);
 
   if (panel->layout()) {
@@ -327,6 +322,14 @@ void ModuleContour::propertyChanged()
     this->Internals->ColorByDataSource = dataSource();
   }
 
+  vtkSMPropertyHelper resampleHelper(this->ResampleFilter, "Input");
+  resampleHelper.Set(this->Internals->ColorByDataSource->producer());
+
+  updateScalarColoring();
+
+  this->ResampleFilter->UpdateVTKObjects();
+  this->ContourRepresentation->MarkDirty(this->ContourRepresentation);
+  this->ContourRepresentation->UpdateVTKObjects();
 
   emit this->renderNeeded();
 }
@@ -443,6 +446,24 @@ QList<DataSource*> ModuleContour::getChildDataSources()
  
   return childSources;
  }
+
+void ModuleContour::updateScalarColoring()
+{
+  vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation,
+                                       "ColorArrayName");
+
+  // TODO - handle different scalar arrays here
+  if (this->Internals->UseSolidColor) {
+    colorArrayHelper.SetInputArrayToProcess(
+      vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
+    std::cout << "No color" << std::endl;
+  } else {
+    colorArrayHelper.SetInputArrayToProcess(
+      vtkDataObject::FIELD_ASSOCIATION_POINTS,
+      this->Internals->ColorArrayName.c_str());
+    std::cout << this->Internals->ColorArrayName << std::endl;
+  }
+}
 
 void ModuleContour::setUseSolidColor(int useSolidColor)
 {
