@@ -15,25 +15,22 @@
 ******************************************************************************/
 
 #include "PythonGeneratedDatasetReaction.h"
-#include "vtkPython.h" // must be first
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
 #include "PythonUtilities.h"
 #include "Utilities.h"
+#include "Variant.h"
 #include "pqActiveObjects.h"
 #include "pqRenderView.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
-#include "vtkPythonInterpreter.h"
-#include "vtkPythonUtil.h"
 #include "vtkSMProxyIterator.h"
 #include "vtkSMRenderViewProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSmartPointer.h"
-#include "vtkSmartPyObject.h"
 #include "vtkTrivialProducer.h"
 
 #include <QDebug>
@@ -64,53 +61,36 @@ public:
 
   void setScript(const QString& script)
   {
-    vtkPythonInterpreter::Initialize();
+    tomviz::Python::initialize();
 
     {
-      vtkPythonScopeGilEnsurer gilEnsurer(true);
-      this->OperatorModule.TakeReference(PyImport_ImportModule("tomviz.utils"));
-      if (!this->OperatorModule) {
+      tomviz::Python python;
+      this->OperatorModule = python.import("tomviz.utils");
+      if (!this->OperatorModule.isValid()) {
         qCritical() << "Failed to import tomviz.utils module.";
-        tomviz::checkForPythonError();
       }
 
-      this->Code.TakeReference(Py_CompileString(
-        script.toLatin1().data(), this->label.toLatin1().data(),
-        Py_file_input /*Py_eval_input*/));
-      if (!this->Code) {
-        tomviz::checkForPythonError();
-        qCritical()
-          << "Invalid script. Please check the traceback message for details.";
-        return;
-      }
+      // Don't let these be the same, even for similar scripts.  Seems to
+      // cause python crashes.
+      QString moduleName =
+        QString("tomviz_%1%2").arg(this->label).arg(number_of_scripts++);
 
-      vtkSmartPyObject module;
-      module.TakeReference(PyImport_ExecCodeModule(
-        // Don't let these be the same, even for similar scripts.  Seems to
-        // cause python crashes.
-        QString("tomviz_%1%2")
-          .arg(this->label)
-          .arg(number_of_scripts++)
-          .toLatin1()
-          .data(),
-        this->Code));
-      if (!module) {
-        tomviz::checkForPythonError();
+      tomviz::Python::Module module =
+        python.import(script, this->label, moduleName);
+      if (!module.isValid()) {
         qCritical() << "Failed to create module.";
         return;
       }
-      this->GenerateFunction.TakeReference(
-        PyObject_GetAttrString(module, "generate_dataset"));
-      if (!this->GenerateFunction) {
-        tomviz::checkForPythonError();
+
+      this->GenerateFunction = module.findFunction("generate_dataset");
+      if (!this->GenerateFunction.isValid()) {
         qCritical() << "Script does not have a 'generate_dataset' function.";
         return;
       }
 
-      this->MakeDatasetFunction.TakeReference(
-        PyObject_GetAttrString(this->OperatorModule, "make_dataset"));
-      if (!this->MakeDatasetFunction) {
-        tomviz::checkForPythonError();
+      this->MakeDatasetFunction =
+        this->OperatorModule.findFunction("make_dataset");
+      if (!this->MakeDatasetFunction.isValid()) {
         qCritical() << "Could not find make_dataset function in tomviz.utils";
         return;
       }
@@ -123,36 +103,30 @@ public:
   {
     vtkNew<vtkImageData> image;
     vtkSmartPointer<vtkSMSourceProxy> retVal;
-    vtkSmartPyObject args;
-    vtkSmartPyObject result;
-    {
-      vtkPythonScopeGilEnsurer gilEnsurer(true);
-      args.TakeReference(PyTuple_New(5));
-      PyTuple_SET_ITEM(args.GetPointer(), 0, PyInt_FromLong(shape[0]));
-      PyTuple_SET_ITEM(args.GetPointer(), 1, PyInt_FromLong(shape[1]));
-      PyTuple_SET_ITEM(args.GetPointer(), 2, PyInt_FromLong(shape[2]));
-      PyTuple_SET_ITEM(args.GetPointer(), 3,
-                       vtkPythonUtil::GetObjectFromPointer(image.Get()));
-      // PyTuple_SET_ITEM will "steal" a reference to this->GenerateFunction so
-      // we need to increment the reference count before calling
-      // PyTuple_SET_ITEM.
-      PyTuple_SET_ITEM(args.GetPointer(), 4,
-                       this->GenerateFunction.GetAndIncreaseReferenceCount());
 
-      vtkSmartPyObject kwargs(PyDict_New());
+    {
+      tomviz::Python python;
+
+      tomviz::Python::Object result;
+      tomviz::Python::Tuple args(5);
+
+      args.set(0, shape[0]);
+      args.set(1, shape[1]);
+      args.set(2, shape[2]);
+      tomviz::Python::Object imageData =
+        tomviz::Python::VTK::GetObjectFromPointer(image.Get());
+      args.set(3, imageData);
+      args.set(4, this->GenerateFunction);
+
+      tomviz::Python::Dict kwargs;
       foreach (QString key, this->arguments.keys()) {
-        QVariant value = this->arguments[key];
-        vtkSmartPyObject pyValue(tomviz::toPyObject(value));
-        vtkSmartPyObject pyKey(tomviz::toPyObject(key));
-        PyDict_SetItem(kwargs.GetPointer(), pyKey.GetPointer(),
-                       pyValue.GetPointer());
+        tomviz::Variant value = tomviz::toVariant(this->arguments[key]);
+        kwargs.set(key, value);
       }
 
-      result.TakeReference(
-        PyObject_Call(this->MakeDatasetFunction, args, kwargs));
-      if (!result) {
+      result = this->MakeDatasetFunction.call(args, kwargs);
+      if (!result.isValid()) {
         qCritical() << "Failed to execute script.";
-        tomviz::checkForPythonError();
         return retVal;
       }
     }
@@ -184,10 +158,9 @@ public:
   void setArguments(QMap<QString, QVariant> args) { this->arguments = args; }
 
 private:
-  vtkSmartPyObject OperatorModule;
-  vtkSmartPyObject Code;
-  vtkSmartPyObject GenerateFunction;
-  vtkSmartPyObject MakeDatasetFunction;
+  tomviz::Python::Module OperatorModule;
+  tomviz::Python::Function GenerateFunction;
+  tomviz::Python::Function MakeDatasetFunction;
   QString label;
   QString pythonScript;
   QMap<QString, QVariant> arguments;

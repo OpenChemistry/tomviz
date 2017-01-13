@@ -18,26 +18,158 @@
 
 // Collection of miscellaneous Python utility functions.
 
-#include "vtkPython.h" // must be first
-
-#include <QList>
+#include "Variant.h"
 #include <QString>
-#include <QVariant>
+
+// Forward declare PyObject
+// See https://mail.python.org/pipermail/python-dev/2003-August/037601.html
+#ifndef PyObject_HEAD
+struct _object;
+typedef _object PyObject;
+#endif
+
+class vtkSmartPyObject;
+class vtkObjectBase;
+class vtkPythonScopeGilEnsurer;
+
+namespace pybind11 {
+class capsule;
+}
 
 namespace tomviz {
 
-/// Check for Python error. Prints error and clears it if an error has occurred.
-/// Return true if an error has occurred, false otherwise.
-bool checkForPythonError();
+class Python
+{
 
-/// Convert a QString to a Python string
-PyObject* toPyObject(const QString& str);
+public:
+  class Capsule
+  {
+  public:
+    Capsule(const void* ptr);
+    operator PyObject*() const;
+    void incrementRefCount();
+    ~Capsule();
 
-/// Convert a QVariant object into the appropriate Python type
-PyObject* toPyObject(const QVariant& value);
+  private:
+    pybind11::capsule* m_capsule = nullptr;
+  };
 
-// Convert a QVariantList into a Python list
-PyObject* toPyObject(const QVariantList& list);
+  class Dict;
+
+  class Object
+  {
+  public:
+    Object();
+    Object(const Object& other);
+    Object(const QString& str);
+    Object(const Variant& value);
+    Object(PyObject* obj);
+
+    Object& operator=(const Object& other);
+    operator PyObject*() const;
+    operator bool() const;
+
+    void incrementRefCount();
+    bool toBool() const;
+    bool isDict() const;
+    bool isValid() const;
+    Dict toDict();
+    virtual ~Object();
+
+  protected:
+    vtkSmartPyObject* m_smartPyObject = nullptr;
+  };
+
+  class Module;
+
+  class Tuple : public Object
+  {
+  public:
+    Tuple();
+    Tuple(const Tuple& other);
+    Tuple(int size);
+    void set(int index, Module& obj);
+    void set(int index, Capsule& obj);
+    void set(int index, Object& obj);
+    void set(int index, const Variant& value);
+  };
+
+  class Dict : public Object
+  {
+  public:
+    Dict();
+    Dict(PyObject* obj);
+    Dict(const Dict& other);
+    Object operator[](const QString& key);
+    void set(const QString& key, const Object& value);
+    void set(const QString& key, const Variant& value);
+    QString toString();
+  };
+
+  class Function : public Object
+  {
+  public:
+    Function();
+    Function(PyObject* obj);
+    Function(const Function& other);
+    Function& operator=(const Object& other);
+
+    Object call(Tuple& args);
+    Object call(Tuple& args, Dict& kwargs);
+  };
+
+  class Module : public Object
+  {
+  public:
+    Module();
+    Module(PyObject* obj);
+    Module(const Module& other);
+    Module& operator=(const Module& other);
+    Function findFunction(const QString& name);
+  };
+
+  class VTK
+  {
+  public:
+    static Object GetObjectFromPointer(vtkObjectBase* ptr);
+    static vtkObjectBase* GetPointerFromObject(Object obj,
+                                               const char* classname);
+  };
+
+  static void initialize();
+  Python();
+  ~Python();
+  Module import(const QString& name);
+  Module import(const QString& str, const QString& filename,
+                const QString& moduleName);
+
+  /// Check for Python error. Prints error and clears it if an error has
+  /// occurred.
+  /// Return true if an error has occurred, false otherwise.
+  static bool checkForPythonError();
+
+  /// Convert a tomviz::Variant to the appropriate Python type
+  static PyObject* toPyObject(const Variant& variant);
+
+  /// Convert a QString to the appropriate Python type
+  static PyObject* toPyObject(const QString& str);
+
+  /// Convert a std::string to the appropriate Python type
+  static PyObject* toPyObject(const std::string& str);
+
+  /// Convert a list of tomviz::Variant to the appropriate Python types
+  static PyObject* toPyObject(const std::vector<Variant>& variants);
+
+  /// Convert a long to the appropriate Python type
+  static PyObject* toPyObject(long l);
+
+  /// Prepends the path to the sys.path variable calls
+  /// vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.
+  static void prependPythonPath(std::string dir);
+
+private:
+  vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
+};
 }
 
 #endif

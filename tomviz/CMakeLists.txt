@@ -78,6 +78,8 @@ set(SOURCES
   IntSliderWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
+  Logger.cxx
+  Logger.h
   Module.cxx
   Module.h
   ModuleContour.cxx
@@ -171,6 +173,8 @@ set(SOURCES
   TranslateAlignOperator.cxx
   Utilities.cxx
   Utilities.h
+  Variant.cxx
+  Variant.h
   ViewFrameActions.cxx
   ViewFrameActions.h
   ViewPropertiesPanel.cxx
