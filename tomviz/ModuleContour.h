@@ -82,7 +82,6 @@ private slots:
   /// Reset the UI for widgets not connected to a proxy property
   void updateGUI();
 
-
 private:
   Q_DISABLE_COPY(ModuleContour)
 };

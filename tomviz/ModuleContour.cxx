@@ -30,9 +30,9 @@
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMPropertyHelper.h"
-#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
@@ -302,7 +302,8 @@ void ModuleContour::addToPanel(QWidget* panel)
   this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
                 &ModuleContour::propertyChanged);
   this->connect(this->Internals->ColorByComboBox,
-               SIGNAL(currentIndexChanged(int)), this, SLOT(propertyChanged()));
+                SIGNAL(currentIndexChanged(int)), this,
+                SLOT(propertyChanged()));
 
   this->connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));
 
@@ -421,31 +422,31 @@ vtkSMProxy* ModuleContour::getProxyForString(const std::string& str)
 }
 
 QList<DataSource*> ModuleContour::getChildDataSources()
- {
-   QList<DataSource*> childSources;
-   auto source = dataSource();
-   if (!source) {
-     return childSources;
-   }
- 
-   // Iterate over Operators and obtain child data sources
-   auto ops = source->operators();
-   for (int i = 0; i < ops.size(); ++i) {
-     auto op = ops[i];
-     if (!op || !op->hasChildDataSource()) {
-       continue;
-     }
- 
-     auto child = op->childDataSource();
-     if (!child) {
-       continue;
-     }
- 
-     childSources.append(child);
-   }
- 
+{
+  QList<DataSource*> childSources;
+  auto source = dataSource();
+  if (!source) {
+    return childSources;
+  }
+
+  // Iterate over Operators and obtain child data sources
+  auto ops = source->operators();
+  for (int i = 0; i < ops.size(); ++i) {
+    auto op = ops[i];
+    if (!op || !op->hasChildDataSource()) {
+      continue;
+    }
+
+    auto child = op->childDataSource();
+    if (!child) {
+      continue;
+    }
+
+    childSources.append(child);
+  }
+
   return childSources;
- }
+}
 
 void ModuleContour::updateScalarColoring()
 {
@@ -460,16 +461,16 @@ void ModuleContour::updateScalarColoring()
   vtkPVDataSetAttributesInformation* attributeInfo = nullptr;
   vtkPVArrayInformation* arrayInfo = nullptr;
   if (this->Internals->ColorByDataSource) {
-    dataInfo = this->Internals->ColorByDataSource->producer()->
-      GetDataInformation(0);
+    dataInfo =
+      this->Internals->ColorByDataSource->producer()->GetDataInformation(0);
   }
   if (dataInfo) {
-    attributeInfo = dataInfo->
-      GetAttributeInformation(vtkDataObject::FIELD_ASSOCIATION_POINTS);
+    attributeInfo = dataInfo->GetAttributeInformation(
+      vtkDataObject::FIELD_ASSOCIATION_POINTS);
   }
   if (attributeInfo) {
-    arrayInfo = attributeInfo->
-      GetAttributeInformation(vtkDataSetAttributes::SCALARS);
+    arrayInfo =
+      attributeInfo->GetAttributeInformation(vtkDataSetAttributes::SCALARS);
   }
   if (arrayInfo) {
     arrayName = arrayInfo->GetName();
@@ -482,8 +483,7 @@ void ModuleContour::updateScalarColoring()
       vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
   } else {
     colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS,
-      arrayName.c_str());
+      vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName.c_str());
   }
 }
 
@@ -508,8 +508,8 @@ void ModuleContour::updateGUI()
 
     int selected = childSources.indexOf(this->Internals->ColorByDataSource);
 
-    // If data source not found, selected will be -1, so the current index will be
-    // set to 0, which is the right index for this data source.
+    // If data source not found, selected will be -1, so the current index will
+    // be set to 0, which is the right index for this data source.
     combo->setCurrentIndex(selected + 1);
     combo->blockSignals(false);
   }
