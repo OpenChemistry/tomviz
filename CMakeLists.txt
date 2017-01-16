@@ -51,7 +51,7 @@ set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
 # These dependencies are inherited from ParaView.
-find_package(Qt5 REQUIRED COMPONENTS Network Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Network Widgets Svg)
 find_package(ParaView REQUIRED)
 
 # Use automoc, autouic, and autorcc for our Qt code.

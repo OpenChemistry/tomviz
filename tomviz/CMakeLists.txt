@@ -1,6 +1,7 @@
 include_directories(SYSTEM
   ${Qt5Network_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
+  ${Qt5Svg_INCLUDE_DIRS}
   ${PARAVIEW_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
@@ -365,7 +366,8 @@ target_link_libraries(tomvizlib
   vtkPVServerManagerRendering
   vtkjsoncpp
   vtkpugixml
-  tomvizExtensions)
+  tomvizExtensions
+  Qt5::Svg)
 if(WIN32)
   target_link_libraries(tomvizlib Qt5::WinMain)
 endif()
