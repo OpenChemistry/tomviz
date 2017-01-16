@@ -27,8 +27,12 @@
 
 #include "vtkDataObject.h"
 #include "vtkNew.h"
+#include "vtkPVArrayInformation.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVDataSetAttributesInformation.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMPropertyHelper.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
@@ -128,7 +132,6 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
                                        "ColorArrayName");
   this->Internals->ColorArrayName =
     std::string(colorArrayHelper.GetInputArrayNameToProcess());
-  //std::cout << "ColorArrayName: " << this->Internals->ColorArrayName << std::endl;
 
   vtkSMPropertyHelper colorHelper(this->ContourRepresentation, "DiffuseColor");
   double white[3] = { 1.0, 1.0, 1.0 };
@@ -151,9 +154,6 @@ void ModuleContour::updateColorMap()
     .Set(this->colorMap());
 
   updateScalarColoring();
-
-  vtkSMPropertyHelper(this->ContourRepresentation, "Input")
-    .Set(this->ContourFilter);
 
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility")
     .Set(this->visibility() ? 1 : 0);
@@ -449,19 +449,41 @@ QList<DataSource*> ModuleContour::getChildDataSources()
 
 void ModuleContour::updateScalarColoring()
 {
+  if (!this->Internals->ColorByDataSource) {
+    return;
+  }
+
+  std::string arrayName(this->Internals->ColorArrayName);
+
+  // Get the active point scalars from the resample filter
+  vtkPVDataInformation* dataInfo = nullptr;
+  vtkPVDataSetAttributesInformation* attributeInfo = nullptr;
+  vtkPVArrayInformation* arrayInfo = nullptr;
+  if (this->Internals->ColorByDataSource) {
+    dataInfo = this->Internals->ColorByDataSource->producer()->
+      GetDataInformation(0);
+  }
+  if (dataInfo) {
+    attributeInfo = dataInfo->
+      GetAttributeInformation(vtkDataObject::FIELD_ASSOCIATION_POINTS);
+  }
+  if (attributeInfo) {
+    arrayInfo = attributeInfo->
+      GetAttributeInformation(vtkDataSetAttributes::SCALARS);
+  }
+  if (arrayInfo) {
+    arrayName = arrayInfo->GetName();
+  }
+
   vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation,
                                        "ColorArrayName");
-
-  // TODO - handle different scalar arrays here
   if (this->Internals->UseSolidColor) {
     colorArrayHelper.SetInputArrayToProcess(
       vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
-    std::cout << "No color" << std::endl;
   } else {
     colorArrayHelper.SetInputArrayToProcess(
       vtkDataObject::FIELD_ASSOCIATION_POINTS,
-      this->Internals->ColorArrayName.c_str());
-    std::cout << this->Internals->ColorArrayName << std::endl;
+      arrayName.c_str());
   }
 }
 
