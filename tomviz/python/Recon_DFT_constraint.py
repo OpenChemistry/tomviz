@@ -112,7 +112,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
             #update support
             if (i < Niter and np.mod(i, Niter_update_support) == 0):
-                print "updating support"
+                print ("updating support")
                 recon = (y2 + y1) / 2
                 r = recon.copy()
                 fft_forward.update_arrays(r, f)
