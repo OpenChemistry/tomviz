@@ -42,8 +42,9 @@
 #include <QKeyEvent>
 #include <QMainWindow>
 #include <QMenu>
-#include <QMovie>
 #include <QPainter>
+#include <QSvgRenderer>
+#include <QTimer>
 
 namespace tomviz {
 
@@ -57,18 +58,18 @@ public:
              const QModelIndex& index) const;
 
 private:
-  QMovie* m_movie;
+  QTimer* m_timer;
   PipelineView* m_view;
+  mutable qreal m_angle = 0;
 };
 
 OperatorRunningDelegate::OperatorRunningDelegate(QWidget* parent)
   : QItemDelegate(parent)
 {
   m_view = qobject_cast<PipelineView*>(parent);
-  m_movie = new QMovie(":/icons/progress_spinner_32.gif");
-  m_movie->start();
-  connect(m_movie, SIGNAL(frameChanged(int)), m_view->viewport(),
-          SLOT(update()));
+  m_timer = new QTimer(this);
+  m_timer->start(50);
+  connect(m_timer, SIGNAL(timeout()), m_view->viewport(), SLOT(update()));
 }
 
 void OperatorRunningDelegate::paint(QPainter* painter,
@@ -79,12 +80,11 @@ void OperatorRunningDelegate::paint(QPainter* painter,
   auto pipelineModel = qobject_cast<PipelineModel*>(m_view->model());
   auto op = pipelineModel->op(index);
 
+  QItemDelegate::paint(painter, option, index);
   if (op && index.column() == Column::state) {
     if (op->state() == OperatorState::RUNNING) {
-      // Get the current pixel map
-      QPixmap pixmap = m_movie->currentPixmap();
-      // Scale it to the correct size
-      pixmap = pixmap.scaled(option.rect.height(), option.rect.height());
+      QSvgRenderer renderer(QString(":/icons/spinner.svg"));
+      QPixmap pixmap(option.rect.height(), option.rect.height());
 
       // Calculate the correct location to draw based on margin. The margin
       // calculation is taken from QItemDelegate::doLayout(...), I couldn't
@@ -94,10 +94,17 @@ void OperatorRunningDelegate::paint(QPainter* painter,
       QPoint topLeft = option.rect.topLeft();
       topLeft += QPoint(leftMargin, 0);
 
-      painter->drawPixmap(topLeft, pixmap);
+      QSizeF size(QSize(option.rect.height(), option.rect.height()));
+      QRectF bounds(QPoint(-size.width() / 2, -size.height() / 2), size);
+      painter->save();
+      painter->translate(topLeft.x() + size.width() / 2,
+                         topLeft.y() + size.height() / 2);
+      painter->rotate(m_angle);
+      m_angle += 10;
+      renderer.render(painter, bounds);
+      painter->restore();
     }
   }
-  QItemDelegate::paint(painter, option, index);
 }
 
 PipelineView::PipelineView(QWidget* p) : QTreeView(p)

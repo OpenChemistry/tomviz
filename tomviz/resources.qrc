@@ -7,9 +7,9 @@
     <file>icons/pqEyeballClosed16.png</file>
     <file>icons/completed_output_32.png</file>
     <file>icons/error_notification_32.png</file>
-    <file>icons/progress_spinner_32.gif</file>
     <file>icons/check_32.png</file>
     <file>icons/question_32.png</file>
     <file>icons/red_cross_32.png</file>
+    <file>icons/spinner.svg</file>
   </qresource>
 </RCC>
