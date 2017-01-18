@@ -8,6 +8,8 @@ def transform_scalars(dataset, number_of_thresholds=1,
 
     try:
         import itk
+        import itkExtras
+        import itkTypes
         import vtk
         from tomviz import itkutils
         from tomviz import utils
@@ -28,8 +30,6 @@ def transform_scalars(dataset, number_of_thresholds=1,
 
         # OtsuMultipleThresholdsImageFilter's wrapping requires that the input
         # and output image types be the same.
-        # TODO - handle casting of float image types to some sensible integer
-        # format.
         itk_threshold_image_type = itk_input_image_type
 
         # Otsu multiple threshold filter
@@ -43,7 +43,21 @@ def transform_scalars(dataset, number_of_thresholds=1,
         print("Otsu threshold(s): %s" % (otsu_filter.GetThresholds(),))
 
         itk_image_data = otsu_filter.GetOutput()
-        label_buffer = itk.PyBuffer[itk_threshold_image_type] \
+
+        # Cast threshold output to an integral type if needed.
+        py_buffer_type = itk_threshold_image_type
+        voxel_type = itkExtras.template(itk_threshold_image_type)[1][0]
+        if voxel_type is itkTypes.F or voxel_type is itkTypes.D:
+            # Unsigned char supports 256 labels, or 255 threshold levels.
+            # This should be sufficient for all but the most unusual use cases.
+            py_buffer_type = itk.Image.UC3
+            caster = itk.CastImageFilter[itk_threshold_image_type,
+                                         py_buffer_type].New()
+            caster.SetInput(itk_image_data)
+            caster.Update()
+            itk_image_data = caster.GetOutput()
+
+        label_buffer = itk.PyBuffer[py_buffer_type] \
             .GetArrayFromImage(itk_image_data)
 
         label_map_dataset = vtk.vtkImageData()
@@ -57,5 +71,6 @@ def transform_scalars(dataset, number_of_thresholds=1,
     except Exception as exc:
         print("Exception encountered while running OtsuMultipleThreshold")
         print(exc)
+        raise exc
 
     return returnValues
