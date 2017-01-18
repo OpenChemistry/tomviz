@@ -235,6 +235,7 @@ void CentralWidget::setDataSource(DataSource* source)
   }
 
   if (!source) {
+    m_ui->histogramWidget->setInputData(nullptr, "", "");
     return;
   }
 

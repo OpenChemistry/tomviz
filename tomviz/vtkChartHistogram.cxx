@@ -138,6 +138,29 @@ void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
 {
   this->HistogramPlotBar->SetInputData(table, xAxisColumn, yAxisColumn);
 
+  // vtkPlotBar doesn't seem to behave well when given a null table,
+  // so we just hide the components.
+  auto setItemsVisible = [this](bool vis) {
+    this->HistogramPlotBar->SetVisible(vis);
+    this->OpacityFunctionItem->SetVisible(vis);
+    this->OpacityControlPointsItem->SetVisible(vis);
+  };
+
+  if (!table) {
+    // Set axis
+    this->GetAxis(vtkAxis::LEFT)->SetRange(0, 1.0);
+    this->GetAxis(vtkAxis::BOTTOM)->SetRange(0, 255);
+
+    // Set visiblity of items
+    setItemsVisible(false);
+
+    return;
+  }
+
+  if (!this->HistogramPlotBar->GetVisible()) {
+    setItemsVisible(true);
+  }
+
   // Set the range of the axes
   vtkDataArray* yArray =
     vtkDataArray::SafeDownCast(table->GetColumnByName(yAxisColumn));
