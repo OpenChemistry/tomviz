@@ -69,16 +69,14 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "All files (*.*)";
 
   QFileDialog dialog(nullptr);
-  dialog.setFileMode(QFileDialog::ExistingFile);
+  dialog.setFileMode(QFileDialog::ExistingFiles);
   dialog.setNameFilters(filters);
   dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
 
   QList<DataSource*> dataSources;
   if (dialog.exec()) {
     QStringList filenames = dialog.selectedFiles();
-    foreach (QString file, filenames) {
-      dataSources << loadData(file);
-    }
+    dataSources << loadData(filenames);
   }
 
   return dataSources;
@@ -86,10 +84,16 @@ QList<DataSource*> LoadDataReaction::loadData()
 
 DataSource* LoadDataReaction::loadData(const QString& fileName)
 {
+  QStringList fileNames;
+  fileNames << fileName;
+
+  return loadData(fileNames);
+}
+
+DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
+{
   vtkNew<vtkSMParaViewPipelineController> controller;
-  QStringList files;
-  files << fileName;
-  pqPipelineSource* reader = pqLoadDataReaction::loadData(files);
+  pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
 
   if (!reader) {
     return nullptr;

@@ -45,6 +45,9 @@ public:
   /// Load a data file from the specified location.
   static DataSource* loadData(const QString& fileName);
 
+  /// Load a data files from the specified location.
+  static DataSource* loadData(const QStringList& fileNames);
+
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource*);
 
