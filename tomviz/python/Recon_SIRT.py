@@ -104,7 +104,7 @@ class SIRT:
                 self.row[:] = self.A[i, ].copy()
                 self.weightedRowProduct[i] = np.sum(self.row * self.row * s)
         else:
-            print "Invalid update method!"
+            print ("Invalid update method!")
 
     def recon2(self, b, Niter, stepSize):
         self.f[:] = 0
@@ -130,14 +130,14 @@ class SIRT:
                         self.weightedRowProduct[j] * self.row
                 self.f = self.f + self.a * stepSize
             else:
-                print "Invalid update method!"
+                print ("Invalid update method!")
         return self.f
 
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     # Suppress warning messages that pops up when dividing zeros
     np.seterr(all='ignore')
-    print 'Generating parallel-beam measurement matrix using ray-driven model'
+    print ('Generating parallel-beam measurement matrix using ray-driven model')
     Nproj = angles.size # Number of projections
 
     # Ray coordinates at 0 degrees.
