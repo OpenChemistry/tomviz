@@ -10,6 +10,6 @@
     <file>icons/check_32.png</file>
     <file>icons/question_32.png</file>
     <file>icons/red_cross_32.png</file>
-    <file>icons/spinner.svg</file>
+    <file>icons/spinner.png</file>
   </qresource>
 </RCC>

@@ -43,7 +43,6 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QPainter>
-#include <QSvgRenderer>
 #include <QTimer>
 
 namespace tomviz {
@@ -83,8 +82,7 @@ void OperatorRunningDelegate::paint(QPainter* painter,
   QItemDelegate::paint(painter, option, index);
   if (op && index.column() == Column::state) {
     if (op->state() == OperatorState::RUNNING) {
-      QSvgRenderer renderer(QString(":/icons/spinner.svg"));
-      QPixmap pixmap(option.rect.height(), option.rect.height());
+      QPixmap pixmap(":/icons/spinner.png");
 
       // Calculate the correct location to draw based on margin. The margin
       // calculation is taken from QItemDelegate::doLayout(...), I couldn't
@@ -94,14 +92,14 @@ void OperatorRunningDelegate::paint(QPainter* painter,
       QPoint topLeft = option.rect.topLeft();
       topLeft += QPoint(leftMargin, 0);
 
-      QSizeF size(QSize(option.rect.height(), option.rect.height()));
-      QRectF bounds(QPoint(-size.width() / 2, -size.height() / 2), size);
+      int offset = option.rect.height() / 2;
+      QRect bounds(-offset, -offset, option.rect.height(),
+                   option.rect.height());
       painter->save();
-      painter->translate(topLeft.x() + size.width() / 2,
-                         topLeft.y() + size.height() / 2);
+      painter->translate(topLeft.x() + offset, topLeft.y() + offset);
       painter->rotate(m_angle);
       m_angle += 10;
-      renderer.render(painter, bounds);
+      painter->drawPixmap(bounds, pixmap);
       painter->restore();
     }
   }
