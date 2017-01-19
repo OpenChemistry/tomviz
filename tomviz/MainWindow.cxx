@@ -38,6 +38,7 @@
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
 #include "LoadDataReaction.h"
+#include "LoadPaletteReaction.h"
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
@@ -71,6 +72,7 @@
 #include <QOpenGLContext>
 #include <QSurfaceFormat>
 #include <QTimer>
+#include <QToolButton>
 #include <QUrl>
 
 #if QT_VERSION >= 0x050000
@@ -154,18 +156,6 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                             SLOT(setActiveModule(Module*)));
   ui.centralWidget->connect(ui.dataPropertiesPanel, SIGNAL(colorMapUpdated()),
                             SLOT(onColorMapUpdated()));
-
-  // When a new renderview is created ensure that the orientation axes labels
-  // are set to off white.
-  connect(pqApplicationCore::instance()->getObjectBuilder(),
-          &pqObjectBuilder::viewCreated, [=](pqView* view) {
-            auto renderView = vtkPVRenderView::SafeDownCast(
-              view->getViewProxy()->GetClientSideView());
-            if (renderView) {
-              renderView->SetOrientationAxesLabelColor(offWhite[0], offWhite[1],
-                                                       offWhite[2]);
-            }
-          });
 
   ui.treeWidget->setModel(new PipelineModel(this));
   ui.treeWidget->header()->setStretchLastSection(false);
@@ -404,6 +394,16 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QObject::connect(moveObjects, SIGNAL(triggered(bool)),
                    &ActiveObjects::instance(), SLOT(setMoveObjectsMode(bool)));
+
+  QAction* loadPaletteAction = ui.toolBar->addAction(
+    QIcon(":/pqWidgets/Icons/pqPalette32.png"), "LoadPalette");
+  new LoadPaletteReaction(loadPaletteAction);
+
+  QToolButton* tb =
+    qobject_cast<QToolButton*>(ui.toolBar->widgetForAction(loadPaletteAction));
+  if (tb) {
+    tb->setPopupMode(QToolButton::InstantPopup);
+  }
 
 // now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER

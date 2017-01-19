@@ -78,6 +78,8 @@ set(SOURCES
   IntSliderWidget.h
   LoadDataReaction.cxx
   LoadDataReaction.h
+  LoadPaletteReaction.cxx
+  LoadPaletteReaction.h
   Logger.cxx
   Logger.h
   Module.cxx
