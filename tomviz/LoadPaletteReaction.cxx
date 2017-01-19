@@ -26,6 +26,7 @@
 #include <vtkSMProxy.h>
 #include <vtkSMProxyDefinitionManager.h>
 #include <vtkSMSessionProxyManager.h>
+#include <vtkSMSettings.h>
 #include <vtkSmartPointer.h>
 
 namespace tomviz {
@@ -90,19 +91,19 @@ void LoadPaletteReaction::populateMenu()
       actn->setProperty("PV_XML_NAME", iter->GetProxyName());
     }
   }
+  m_menu->addAction("Make Current Palette Default");
 }
 
-void LoadPaletteReaction::actionTriggered(QAction* actn)
+void LoadPaletteReaction::actionTriggered(QAction* action)
 {
-  if (actn->property("PV_XML_NAME").isValid()) {
-    vtkSMSessionProxyManager* pxm = pqActiveObjects::instance().proxyManager();
-    Q_ASSERT(pxm);
+  vtkSMSessionProxyManager* pxm = pqActiveObjects::instance().proxyManager();
+  Q_ASSERT(pxm);
 
-    vtkSMProxy* paletteProxy =
-      pxm->GetProxy("global_properties", "ColorPalette");
+  vtkSMProxy* paletteProxy = pxm->GetProxy("global_properties", "ColorPalette");
 
+  if (action->property("PV_XML_NAME").isValid()) {
     vtkSMProxy* palettePrototype = pxm->GetPrototypeProxy(
-      "palettes", actn->property("PV_XML_NAME").toString().toLatin1().data());
+      "palettes", action->property("PV_XML_NAME").toString().toLatin1().data());
     Q_ASSERT(palettePrototype);
 
     BEGIN_UNDO_SET("Load color palette");
@@ -111,6 +112,9 @@ void LoadPaletteReaction::actionTriggered(QAction* actn)
     END_UNDO_SET();
 
     pqApplicationCore::instance()->render();
+  } else if (action->text() == tr("Make Current Palette Default")) {
+    vtkSMSettings* settings = vtkSMSettings::GetInstance();
+    settings->SetProxySettings(paletteProxy);
   }
 }
 }
