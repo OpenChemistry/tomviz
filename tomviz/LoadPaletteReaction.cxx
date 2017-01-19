@@ -41,11 +41,10 @@ LoadPaletteReaction::LoadPaletteReaction(QAction* parentObject)
   m_menu = new QMenu();
   m_menu->setObjectName("LoadPaletteMenu");
   parentObject->setMenu(m_menu);
-  this->connect(m_menu, SIGNAL(aboutToShow()), SLOT(populateMenu()));
-  this->connect(&pqActiveObjects::instance(), SIGNAL(serverChanged(pqServer*)),
-                SLOT(updateEnableState()));
-  this->connect(m_menu, SIGNAL(triggered(QAction*)),
-                SLOT(actionTriggered(QAction*)));
+  connect(m_menu, SIGNAL(aboutToShow()), SLOT(populateMenu()));
+  connect(&pqActiveObjects::instance(), SIGNAL(serverChanged(pqServer*)),
+          SLOT(updateEnableState()));
+  connect(m_menu, SIGNAL(triggered(QAction*)), SLOT(actionTriggered(QAction*)));
 }
 
 LoadPaletteReaction::~LoadPaletteReaction()
