@@ -89,6 +89,7 @@ void LoadPaletteReaction::populateMenu()
       actn->setProperty("PV_XML_NAME", iter->GetProxyName());
     }
   }
+  m_menu->addSeparator();
   m_menu->addAction("Make Current Palette Default");
 }
 
