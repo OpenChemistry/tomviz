@@ -18,16 +18,7 @@
 
 #include <pqReaction.h>
 
-#include "pqActiveObjects.h"
-#include "pqApplicationCore.h"
-#include "pqApplicationSettingsReaction.h"
-#include "pqUndoStack.h"
-#include "vtkPVProxyDefinitionIterator.h"
-#include "vtkSMProxy.h"
-#include "vtkSMProxyDefinitionManager.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSmartPointer.h"
-
+#include <QPointer>
 #include <QStringList>
 
 class QAction;
