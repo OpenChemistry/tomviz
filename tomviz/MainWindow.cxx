@@ -16,7 +16,6 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
-#include <pqLoadPaletteReaction.h>
 #include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
 #include <pqPythonShellReaction.h>
@@ -39,6 +38,7 @@
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
 #include "LoadDataReaction.h"
+#include "LoadPaletteReaction.h"
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
@@ -395,14 +395,13 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QObject::connect(moveObjects, SIGNAL(triggered(bool)),
                    &ActiveObjects::instance(), SLOT(setMoveObjectsMode(bool)));
 
-  QAction* loadPaletteAction =
-    ui.toolBar->addAction(QIcon(":/pqWidgets/Icons/pqPalette32.png"),
-                          "LoadPalette");
-  new pqLoadPaletteReaction(loadPaletteAction);
+  QAction* loadPaletteAction = ui.toolBar->addAction(
+    QIcon(":/pqWidgets/Icons/pqPalette32.png"), "LoadPalette");
+  new LoadPaletteReaction(loadPaletteAction);
 
-  QToolButton* tb = qobject_cast<QToolButton*>(ui.toolBar->widgetForAction(loadPaletteAction));
-  if (tb)
-  {
+  QToolButton* tb =
+    qobject_cast<QToolButton*>(ui.toolBar->widgetForAction(loadPaletteAction));
+  if (tb) {
     tb->setPopupMode(QToolButton::InstantPopup);
   }
 
