@@ -16,6 +16,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
+#include <pqLoadPaletteReaction.h>
 #include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
 #include <pqPythonShellReaction.h>
@@ -71,6 +72,7 @@
 #include <QOpenGLContext>
 #include <QSurfaceFormat>
 #include <QTimer>
+#include <QToolButton>
 #include <QUrl>
 
 #if QT_VERSION >= 0x050000
@@ -392,6 +394,17 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QObject::connect(moveObjects, SIGNAL(triggered(bool)),
                    &ActiveObjects::instance(), SLOT(setMoveObjectsMode(bool)));
+
+  QAction* loadPaletteAction =
+    ui.toolBar->addAction(QIcon(":/pqWidgets/Icons/pqPalette32.png"),
+                          "LoadPalette");
+  new pqLoadPaletteReaction(loadPaletteAction);
+
+  QToolButton* tb = qobject_cast<QToolButton*>(ui.toolBar->widgetForAction(loadPaletteAction));
+  if (tb)
+  {
+    tb->setPopupMode(QToolButton::InstantPopup);
+  }
 
 // now init the optional dax plugins
 #ifdef DAX_DEVICE_ADAPTER
