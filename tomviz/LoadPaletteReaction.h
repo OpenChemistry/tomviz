@@ -16,7 +16,17 @@
 #ifndef tomvizLoadPaletteReaction_h
 #define tomvizLoadPaletteReaction_h
 
-#include <pqLoadPaletteReaction.h>
+#include <pqReaction.h>
+
+#include "pqActiveObjects.h"
+#include "pqApplicationCore.h"
+#include "pqApplicationSettingsReaction.h"
+#include "pqUndoStack.h"
+#include "vtkPVProxyDefinitionIterator.h"
+#include "vtkSMProxy.h"
+#include "vtkSMProxyDefinitionManager.h"
+#include "vtkSMSessionProxyManager.h"
+#include "vtkSmartPointer.h"
 
 #include <QStringList>
 
@@ -24,7 +34,7 @@ class QAction;
 
 namespace tomviz {
 
-class LoadPaletteReaction : public pqLoadPaletteReaction
+class LoadPaletteReaction : public pqReaction
 {
   Q_OBJECT
 
@@ -34,10 +44,11 @@ public:
 
 private slots:
   void populateMenu();
+  void actionTriggered(QAction* actn);
 
 private:
   Q_DISABLE_COPY(LoadPaletteReaction)
-
+  QPointer<QMenu> m_menu;
   QStringList m_paletteWhiteList;
 };
 }
