@@ -67,9 +67,8 @@ void LoadPaletteReaction::populateMenu()
   Q_ASSERT(pdmgr);
 
   // Add "DefaultBackground" as the first entry.
-  if (vtkSMProxy* prototype =
-        pxm->GetPrototypeProxy("palettes", "DefaultBackground")) {
-    QAction* actn = menu->addAction(prototype->GetXMLLabel());
+  if (pxm->GetPrototypeProxy("palettes", "DefaultBackground")) {
+    QAction* actn = menu->addAction("Gray Background");
     actn->setProperty("PV_XML_GROUP", "palettes");
     actn->setProperty("PV_XML_NAME", "DefaultBackground");
   }
