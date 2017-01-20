@@ -15,8 +15,12 @@
 ******************************************************************************/
 #include <QApplication>
 
+#include <QSurfaceFormat>
+
 #include <pqOptions.h>
 #include <pqPVApplicationCore.h>
+
+#include <QVTKOpenGLWidget.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 
@@ -44,6 +48,8 @@ vtkStandardNewMacro(TomvizOptions)
 
   int main(int argc, char** argv)
 {
+  QSurfaceFormat::setDefaultFormat(QVTKOpenGLWidget::defaultFormat());
+
   QCoreApplication::setApplicationName("tomviz");
   QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);
   QCoreApplication::setOrganizationName("tomviz");
