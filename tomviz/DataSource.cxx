@@ -172,11 +172,24 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   // locate registered pipeline proxies that are being treated as data sources.
   const char* sourceFilename = nullptr;
 
+  QByteArray fileNameBytes;
   if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != nullptr) {
-    sourceFilename =
-      vtkSMPropertyHelper(dataSource,
-                          vtkSMCoreUtilities::GetFileNameProperty(dataSource))
-        .GetAsString();
+
+    vtkSMPropertyHelper helper(
+      dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource));
+    if (helper.GetNumberOfElements() > 1) {
+      QStringList fileNames;
+      for (unsigned int i = 0; i < helper.GetNumberOfElements(); i++) {
+        fileNames << QString(helper.GetAsString(i));
+      }
+      QString fileName = QString("%1*.tiff").arg(findPrefix(fileNames));
+      fileNameBytes = fileName.toLatin1();
+      sourceFilename = fileNameBytes.data();
+      // Set annotation to override filename
+      dataSource->SetAnnotation(Attributes::FILENAME, sourceFilename);
+    } else {
+      sourceFilename = helper.GetAsString();
+    }
   }
   if (sourceFilename && strlen(sourceFilename)) {
     tomviz::annotateDataProducer(source, sourceFilename);
@@ -218,18 +231,20 @@ DataSource::~DataSource()
 void DataSource::setFilename(const QString& filename)
 {
   vtkSMProxy* dataSource = originalDataSource();
-  dataSource->SetAnnotation("filename", filename.toStdString().c_str());
+  dataSource->SetAnnotation(Attributes::FILENAME,
+                            filename.toStdString().c_str());
 }
 
 QString DataSource::filename() const
 {
   vtkSMProxy* dataSource = originalDataSource();
-  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != nullptr) {
+
+  if (dataSource->HasAnnotation(Attributes::FILENAME)) {
+    return dataSource->GetAnnotation(Attributes::FILENAME);
+  } else {
     return vtkSMPropertyHelper(
              dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource))
       .GetAsString();
-  } else {
-    return dataSource->GetAnnotation("filename");
   }
 }
 

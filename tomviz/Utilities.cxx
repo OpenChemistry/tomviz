@@ -491,5 +491,28 @@ Variant toVariant(const QVariantList& list)
   return Variant(variantList);
 }
 
+QString findPrefix(const QStringList& fileNames)
+{
+
+  QString prefix = fileNames[0];
+
+  // Derived from ParaView pqObjectBuilder::createReader(...)
+  // Find the largest prefix that matches all filenames.
+  for (int i = 1; i < fileNames.size(); i++) {
+    QString nextFile = fileNames[i];
+    if (nextFile.startsWith(prefix))
+      continue;
+    QString commonPrefix = prefix;
+    do {
+      commonPrefix.chop(1);
+    } while (!nextFile.startsWith(commonPrefix) && !commonPrefix.isEmpty());
+    if (commonPrefix.isEmpty())
+      break;
+    prefix = commonPrefix;
+  }
+
+  return prefix;
+}
+
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
 }
