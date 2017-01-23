@@ -91,31 +91,35 @@ RecentFilesMenu::~RecentFilesMenu()
 void RecentFilesMenu::pushDataReader(DataSource* dataSource,
                                      vtkSMProxy* readerProxy)
 {
-  pugi::xml_document settings;
-  get_settings(settings);
+  const char* pname = vtkSMCoreUtilities::GetFileNameProperty(readerProxy);
+  // Only add to list if the data source is associated with file(s)
+  if (pname) {
+    pugi::xml_document settings;
+    get_settings(settings);
 
-  pugi::xml_node root = settings.root();
-  QByteArray labelBytes = dataSource->filename().toLatin1();
-  const char* filename = labelBytes.data();
+    pugi::xml_node root = settings.root();
+    QByteArray labelBytes = dataSource->filename().toLatin1();
+    const char* filename = labelBytes.data();
 
-  for (pugi::xml_node node = root.child("DataReader"); node;
-       node = node.next_sibling("DataReader")) {
-    if (strcmp(node.attribute("filename0").as_string(""), filename) == 0) {
-      root.remove_child(node);
-      break;
+    for (pugi::xml_node node = root.child("DataReader"); node;
+         node = node.next_sibling("DataReader")) {
+      if (strcmp(node.attribute("filename0").as_string(""), filename) == 0) {
+        root.remove_child(node);
+        break;
+      }
     }
-  }
 
-  pugi::xml_node node = root.prepend_child("DataReader");
-  node.append_attribute("filename0").set_value(filename);
-  node.append_attribute("xmlgroup").set_value(readerProxy->GetXMLGroup());
-  node.append_attribute("xmlname").set_value(readerProxy->GetXMLName());
-  if (dataSource->isImageStack()) {
-    node.append_attribute("stack").set_value(true);
-  }
-  tomviz::serialize(readerProxy, node);
+    pugi::xml_node node = root.prepend_child("DataReader");
+    node.append_attribute("filename0").set_value(filename);
+    node.append_attribute("xmlgroup").set_value(readerProxy->GetXMLGroup());
+    node.append_attribute("xmlname").set_value(readerProxy->GetXMLName());
+    if (dataSource->isImageStack()) {
+      node.append_attribute("stack").set_value(true);
+    }
+    tomviz::serialize(readerProxy, node);
 
-  save_settings(settings);
+    save_settings(settings);
+  }
 }
 
 void RecentFilesMenu::pushStateFile(const QString& filename)
