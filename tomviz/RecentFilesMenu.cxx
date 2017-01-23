@@ -88,31 +88,34 @@ RecentFilesMenu::~RecentFilesMenu()
 {
 }
 
-void RecentFilesMenu::pushDataReader(vtkSMProxy* readerProxy)
+void RecentFilesMenu::pushDataReader(DataSource* dataSource,
+                                     vtkSMProxy* readerProxy)
 {
   pugi::xml_document settings;
   get_settings(settings);
 
   pugi::xml_node root = settings.root();
-  const char* pname = vtkSMCoreUtilities::GetFileNameProperty(readerProxy);
-  if (pname) {
-    const char* filename =
-      vtkSMPropertyHelper(readerProxy, pname).GetAsString(0);
-    for (pugi::xml_node node = root.child("DataReader"); node;
-         node = node.next_sibling("DataReader")) {
-      if (strcmp(node.attribute("filename0").as_string(""), filename) == 0) {
-        root.remove_child(node);
-        break;
-      }
-    }
-    pugi::xml_node node = root.prepend_child("DataReader");
-    node.append_attribute("filename0").set_value(filename);
-    node.append_attribute("xmlgroup").set_value(readerProxy->GetXMLGroup());
-    node.append_attribute("xmlname").set_value(readerProxy->GetXMLName());
-    tomviz::serialize(readerProxy, node);
+  QByteArray labelBytes = dataSource->filename().toLatin1();
+  const char* filename = labelBytes.data();
 
-    save_settings(settings);
+  for (pugi::xml_node node = root.child("DataReader"); node;
+       node = node.next_sibling("DataReader")) {
+    if (strcmp(node.attribute("filename0").as_string(""), filename) == 0) {
+      root.remove_child(node);
+      break;
+    }
   }
+
+  pugi::xml_node node = root.prepend_child("DataReader");
+  node.append_attribute("filename0").set_value(filename);
+  node.append_attribute("xmlgroup").set_value(readerProxy->GetXMLGroup());
+  node.append_attribute("xmlname").set_value(readerProxy->GetXMLName());
+  if (dataSource->isImageStack()) {
+    node.append_attribute("stack").set_value(true);
+  }
+  tomviz::serialize(readerProxy, node);
+
+  save_settings(settings);
 }
 
 void RecentFilesMenu::pushStateFile(const QString& filename)
@@ -160,12 +163,15 @@ void RecentFilesMenu::aboutToShowMenu()
       header_added = true;
     }
     QFileInfo checkFile(node.attribute("filename0").as_string("<bug>"));
-    if (checkFile.exists()) {
+    bool stack = node.attribute("stack").as_bool(false);
+    if (checkFile.exists() || stack) {
       QAction* actn =
         menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
                         node.attribute("filename0").as_string("<bug>"));
       actn->setData(index);
-      this->connect(actn, SIGNAL(triggered()), SLOT(dataSourceTriggered()));
+      this->connect(actn, &QAction::triggered, [this, actn, stack]() {
+        dataSourceTriggered(actn, stack);
+      });
     }
     index++;
   }
@@ -190,13 +196,11 @@ void RecentFilesMenu::aboutToShowMenu()
   }
 }
 
-void RecentFilesMenu::dataSourceTriggered()
+void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
 {
-  QAction* actn = qobject_cast<QAction*>(this->sender());
-  Q_ASSERT(actn);
 
   QFileInfo checkFile(actn->iconText());
-  if (!checkFile.exists()) {
+  if (!checkFile.exists() && !stack) {
     // This should never happen since the checks in aboutToShowMenu should
     // prevent it, but just in case...
     qWarning() << "Error: file '" << actn->iconText() << "' does not exist.";

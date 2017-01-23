@@ -24,6 +24,8 @@ class vtkSMProxy;
 
 namespace tomviz {
 
+class DataSource;
+
 /// Extends pqRecentFilesMenu to add support to open a data file customized for
 /// tomviz.
 class RecentFilesMenu : public QObject
@@ -36,12 +38,12 @@ public:
   virtual ~RecentFilesMenu();
 
   /// Pushes a reader on the recent files stack.
-  static void pushDataReader(vtkSMProxy* readerProxy);
+  static void pushDataReader(DataSource* dataSource, vtkSMProxy* readerProxy);
   static void pushStateFile(const QString& filename);
 
 private slots:
   void aboutToShowMenu();
-  void dataSourceTriggered();
+  void dataSourceTriggered(QAction* actn, bool stack = false);
   void stateTriggered();
 
 private:

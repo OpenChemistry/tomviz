@@ -103,7 +103,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
   // dataSource may be NULL if user cancelled the action.
   if (dataSource) {
     // add the file to recent files menu.
-    RecentFilesMenu::pushDataReader(reader->getProxy());
+    RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
   }
   controller->UnRegisterProxy(reader->getProxy());
 
