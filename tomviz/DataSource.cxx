@@ -177,12 +177,16 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
 
     vtkSMPropertyHelper helper(
       dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource));
+    // If we are dealing with an image stack find the prefix to use
+    // when displaying the data source.
     if (helper.GetNumberOfElements() > 1) {
       QStringList fileNames;
       for (unsigned int i = 0; i < helper.GetNumberOfElements(); i++) {
         fileNames << QString(helper.GetAsString(i));
       }
-      QString fileName = QString("%1*.tiff").arg(findPrefix(fileNames));
+      QFileInfo fileInfo(fileNames[0]);
+      QString fileName =
+        QString("%1*.%2").arg(findPrefix(fileNames)).arg(fileInfo.suffix());
       fileNameBytes = fileName.toLatin1();
       sourceFilename = fileNameBytes.data();
       // Set annotation to override filename
