@@ -102,6 +102,11 @@ public:
 
 namespace tomviz {
 
+const char* Attributes::TYPE = "tomviz.Type";
+const char* Attributes::DATASOURCE_FILENAME = "tomviz.DataSource.FileName";
+const char* Attributes::LABEL = "tomviz.Label";
+const char* Attributes::FILENAME = "tomviz.filename";
+
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties, const QDir* relDir)
 {

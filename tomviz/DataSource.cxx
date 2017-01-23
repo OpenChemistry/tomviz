@@ -180,8 +180,9 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   }
   if (sourceFilename && strlen(sourceFilename)) {
     tomviz::annotateDataProducer(source, sourceFilename);
-  } else if (dataSource->HasAnnotation("filename")) {
-    tomviz::annotateDataProducer(source, dataSource->GetAnnotation("filename"));
+  } else if (dataSource->HasAnnotation(Attributes::FILENAME)) {
+    tomviz::annotateDataProducer(
+      source, dataSource->GetAnnotation(Attributes::FILENAME));
   } else {
     tomviz::annotateDataProducer(source, "No filename");
   }
@@ -346,10 +347,12 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
                             vtkSMCoreUtilities::GetFileNameProperty(
                               this->Internals->OriginalDataSource))
           .GetAsString();
-      this->Internals->Producer->SetAnnotation("filename", originalFilename);
+      this->Internals->Producer->SetAnnotation(Attributes::FILENAME,
+                                               originalFilename);
     } else {
       this->Internals->Producer->SetAnnotation(
-        "filename", originalDataSource()->GetAnnotation("filename"));
+        Attributes::FILENAME,
+        originalDataSource()->GetAnnotation(Attributes::FILENAME));
     }
     newClone = new DataSource(this->Internals->Producer, this->Internals->Type);
   } else {

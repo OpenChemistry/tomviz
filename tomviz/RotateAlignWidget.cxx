@@ -582,9 +582,9 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   }
   /*
     DataSource* output = source->clone(true,true);
-    QString name = output->producer()->GetAnnotation("tomviz.Label");
+    QString name = output->producer()->GetAnnotation(Attributes::LABEL);
     name = "Rotation_Aligned_" + name;
-    output->producer()->SetAnnotation("tomviz.Label", name.toAscii().data());
+    output->producer()->SetAnnotation(Attributes::LABEL, name.toAscii().data());
     t =
     vtkTrivialProducer::SafeDownCast(output->producer()->GetClientSideObject());
     vtkImageData *recon = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
