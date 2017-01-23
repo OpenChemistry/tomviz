@@ -951,4 +951,13 @@ void DataSource::executeOperators()
             SLOT(pipelineCanceled()));
   }
 }
+
+bool DataSource::isImageStack()
+{
+  vtkSMPropertyHelper helper(this->Internals->OriginalDataSource,
+                             vtkSMCoreUtilities::GetFileNameProperty(
+                               this->Internals->OriginalDataSource));
+
+  return helper.GetNumberOfElements() > 1;
+}
 }
