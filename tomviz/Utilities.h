@@ -43,6 +43,14 @@ class QLayout;
 
 namespace tomviz {
 
+struct Attributes
+{
+  static const char* TYPE;
+  static const char* DATASOURCE_FILENAME;
+  static const char* LABEL;
+  static const char* FILENAME;
+};
+
 class DataSource;
 
 //===========================================================================
@@ -75,10 +83,11 @@ inline vtkSMProxy* convert(pqProxy* pqproxy)
 inline bool annotateDataProducer(vtkSMProxy* proxy, const char* filename)
 {
   if (proxy) {
-    proxy->SetAnnotation("tomviz.Type", "DataSource");
+    proxy->SetAnnotation(Attributes::TYPE, "DataSource");
     QFileInfo fileInfo(filename);
-    proxy->SetAnnotation("tomviz.DataSource.FileName", filename);
-    proxy->SetAnnotation("tomviz.Label", fileInfo.fileName().toLatin1().data());
+    proxy->SetAnnotation(Attributes::DATASOURCE_FILENAME, "testing/test*");
+    proxy->SetAnnotation(Attributes::LABEL,
+                         fileInfo.fileName().toLatin1().data());
     return true;
   }
   return false;
@@ -93,8 +102,8 @@ inline bool annotateDataProducer(pqProxy* pqproxy, const char* filename)
 // inline bool isDataProducer(vtkSMProxy* proxy)
 //{
 //  return proxy &&
-//      proxy->HasAnnotation("tomviz.Type") &&
-//      (QString("DataSource") == proxy->GetAnnotation("tomviz.Type"));
+//      proxy->HasAnnotation(Attributes::TYPE) &&
+//      (QString("DataSource") == proxy->GetAnnotation(Attributes::TYPE));
 //}
 //
 // inline bool isDataProducer(pqProxy* pqproxy)
@@ -106,8 +115,8 @@ inline bool annotateDataProducer(pqProxy* pqproxy, const char* filename)
 // XML label for it.
 inline QString label(vtkSMProxy* proxy)
 {
-  if (proxy && proxy->HasAnnotation("tomviz.Label")) {
-    return proxy->GetAnnotation("tomviz.Label");
+  if (proxy && proxy->HasAnnotation(Attributes::LABEL)) {
+    return proxy->GetAnnotation(Attributes::LABEL);
   }
   return proxy ? proxy->GetXMLLabel() : nullptr;
 }
@@ -171,6 +180,9 @@ void deleteLayoutContents(QLayout* layout);
 
 Variant toVariant(const QVariant& value);
 Variant toVariant(const QVariantList& value);
+
+/// Find common prefix for collection of file names
+QString findPrefix(const QStringList& fileNames);
 
 extern double offWhite[3];
 }

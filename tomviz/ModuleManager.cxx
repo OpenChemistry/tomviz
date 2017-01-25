@@ -496,9 +496,9 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
       continue;
     }
     proxy->UpdateVTKObjects();
-    if (proxy->GetAnnotation("tomviz.DataSource.FileName") ==
+    if (proxy->GetAnnotation(Attributes::DATASOURCE_FILENAME) ==
         QString("Python Generated Data")) {
-      QString label = proxy->GetAnnotation("tomviz.Label");
+      QString label = proxy->GetAnnotation(Attributes::LABEL);
       QString script = proxy->GetAnnotation("tomviz.Python_Source.Script");
       int shape[3];
       shape[0] = std::atoi(proxy->GetAnnotation("tomviz.Python_Source.X"));

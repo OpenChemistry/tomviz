@@ -138,10 +138,11 @@ public:
     vtkTrivialProducer* tp =
       vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
     tp->SetOutput(image.Get());
-    source->SetAnnotation("tomviz.Type", "DataSource");
+    source->SetAnnotation(tomviz::Attributes::TYPE, "DataSource");
     source->SetAnnotation("tomviz.DataSource.FileName",
                           "Python Generated Data");
-    source->SetAnnotation("tomviz.Label", this->label.toLatin1().data());
+    source->SetAnnotation(tomviz::Attributes::LABEL,
+                          this->label.toLatin1().data());
     source->SetAnnotation("tomviz.Python_Source.Script",
                           this->pythonScript.toLatin1().data());
     source->SetAnnotation("tomviz.Python_Source.X",
@@ -550,7 +551,7 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
     return;
   }
   DataSource* dataSource = new DataSource(proxy);
-  dataSource->setFilename(proxy->GetAnnotation("tomviz.Label"));
+  dataSource->setFilename(proxy->GetAnnotation(Attributes::LABEL));
   ModuleManager::instance().addDataSource(dataSource);
 
   ActiveObjects::instance().createRenderViewIfNeeded();

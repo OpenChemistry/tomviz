@@ -172,16 +172,34 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   // locate registered pipeline proxies that are being treated as data sources.
   const char* sourceFilename = nullptr;
 
+  QByteArray fileNameBytes;
   if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != nullptr) {
-    sourceFilename =
-      vtkSMPropertyHelper(dataSource,
-                          vtkSMCoreUtilities::GetFileNameProperty(dataSource))
-        .GetAsString();
+
+    vtkSMPropertyHelper helper(
+      dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource));
+    // If we are dealing with an image stack find the prefix to use
+    // when displaying the data source.
+    if (helper.GetNumberOfElements() > 1) {
+      QStringList fileNames;
+      for (unsigned int i = 0; i < helper.GetNumberOfElements(); i++) {
+        fileNames << QString(helper.GetAsString(i));
+      }
+      QFileInfo fileInfo(fileNames[0]);
+      QString fileName =
+        QString("%1*.%2").arg(findPrefix(fileNames)).arg(fileInfo.suffix());
+      fileNameBytes = fileName.toLatin1();
+      sourceFilename = fileNameBytes.data();
+      // Set annotation to override filename
+      dataSource->SetAnnotation(Attributes::FILENAME, sourceFilename);
+    } else {
+      sourceFilename = helper.GetAsString();
+    }
   }
   if (sourceFilename && strlen(sourceFilename)) {
     tomviz::annotateDataProducer(source, sourceFilename);
-  } else if (dataSource->HasAnnotation("filename")) {
-    tomviz::annotateDataProducer(source, dataSource->GetAnnotation("filename"));
+  } else if (dataSource->HasAnnotation(Attributes::FILENAME)) {
+    tomviz::annotateDataProducer(
+      source, dataSource->GetAnnotation(Attributes::FILENAME));
   } else {
     tomviz::annotateDataProducer(source, "No filename");
   }
@@ -217,18 +235,20 @@ DataSource::~DataSource()
 void DataSource::setFilename(const QString& filename)
 {
   vtkSMProxy* dataSource = originalDataSource();
-  dataSource->SetAnnotation("filename", filename.toStdString().c_str());
+  dataSource->SetAnnotation(Attributes::FILENAME,
+                            filename.toStdString().c_str());
 }
 
 QString DataSource::filename() const
 {
   vtkSMProxy* dataSource = originalDataSource();
-  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource) != nullptr) {
+
+  if (dataSource->HasAnnotation(Attributes::FILENAME)) {
+    return dataSource->GetAnnotation(Attributes::FILENAME);
+  } else {
     return vtkSMPropertyHelper(
              dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource))
       .GetAsString();
-  } else {
-    return dataSource->GetAnnotation("filename");
   }
 }
 
@@ -346,10 +366,12 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
                             vtkSMCoreUtilities::GetFileNameProperty(
                               this->Internals->OriginalDataSource))
           .GetAsString();
-      this->Internals->Producer->SetAnnotation("filename", originalFilename);
+      this->Internals->Producer->SetAnnotation(Attributes::FILENAME,
+                                               originalFilename);
     } else {
       this->Internals->Producer->SetAnnotation(
-        "filename", originalDataSource()->GetAnnotation("filename"));
+        Attributes::FILENAME,
+        originalDataSource()->GetAnnotation(Attributes::FILENAME));
     }
     newClone = new DataSource(this->Internals->Producer, this->Internals->Type);
   } else {
@@ -947,5 +969,14 @@ void DataSource::executeOperators()
     connect(this->Internals->Future, SIGNAL(canceled()), this,
             SLOT(pipelineCanceled()));
   }
+}
+
+bool DataSource::isImageStack()
+{
+  vtkSMPropertyHelper helper(this->Internals->OriginalDataSource,
+                             vtkSMCoreUtilities::GetFileNameProperty(
+                               this->Internals->OriginalDataSource));
+
+  return helper.GetNumberOfElements() > 1;
 }
 }

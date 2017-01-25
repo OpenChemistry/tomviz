@@ -18,6 +18,7 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "Utilities.h"
 #include <pqCoreUtilities.h>
 #include <vtkImageData.h>
 #include <vtkImageReslice.h>
@@ -134,9 +135,9 @@ void AddResampleReaction::resample(DataSource* source)
     // TODO - cloning here is really expensive memory-wise, we should figure
     // out a different way to do it
     DataSource* resampledData = source->clone(true);
-    QString name = resampledData->producer()->GetAnnotation("tomviz.Label");
+    QString name = resampledData->producer()->GetAnnotation(Attributes::LABEL);
     name = "Downsampled_" + name;
-    resampledData->producer()->SetAnnotation("tomviz.Label",
+    resampledData->producer()->SetAnnotation(Attributes::LABEL,
                                              name.toLatin1().data());
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
       resampledData->producer()->GetClientSideObject());
