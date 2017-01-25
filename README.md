@@ -21,8 +21,8 @@ Installing
 <img align="right" src="https://github.com/OpenChemistry/tomviz/blob/master/docs/images/animation_nponcarbon1_small.gif">
 
 We recommend downloading the current [stable release](../../releases)
-but also provide nightly binaries built by our [dashboards][Dashboard] for Mac OS X
-and Windows.
+but also provide nightly binaries built by our [dashboards][Dashboard] for
+Windows, macOS, and Linux.
 
 __Windows__: Follow the installation instructions, double click on the tomviz icon to launch application. __Mac OS X__: After downloading tomviz double click to launch installation. After reading the License Agreement, drag the tomviz icon into your Applications directory – or anywhere else you would like to store the application. The first time you open tomviz, you will need to right-click on the application icon and select ‘open’. It will ask you if you are sure you wish to open it, click the ‘open’ button. This is only required the first time launching the application. It can be opened by double clicking all future times. __Linux__: A Linux binary (dmg) is provided and tomviz can also be built from source. See [instructions for building](BUILDING.md) found in the BUILDING.md document.
 
