@@ -27,7 +27,7 @@ class vtkPiecewiseFunction;
 class vtkObject;
 class vtkTable;
 
-class QVTKWidget;
+class QVTKOpenGLWidget;
 
 class vtkPVDiscretizableColorTransferFunction;
 class vtkSMProxy;
@@ -71,7 +71,7 @@ private:
   vtkPiecewiseFunction* m_scalarOpacityFunction = nullptr;
   vtkSMProxy* m_LUTProxy = nullptr;
 
-  QVTKWidget* m_qvtk;
+  QVTKOpenGLWidget* m_qvtk;
 };
 }
 

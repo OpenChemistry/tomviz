@@ -27,11 +27,12 @@
 #include <vtkContextView.h>
 #include <vtkControlPointsItem.h>
 #include <vtkEventQtSlotConnect.h>
+#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
 #include <vtkVector.h>
 
-#include <QVTKWidget.h>
+#include <QVTKOpenGLWidget.h>
 
 #include <pqApplicationCore.h>
 #include <pqCoreUtilities.h>
@@ -56,11 +57,13 @@
 namespace tomviz {
 
 HistogramWidget::HistogramWidget(QWidget* parent)
-  : QWidget(parent), m_qvtk(new QVTKWidget(this))
+  : QWidget(parent), m_qvtk(new QVTKOpenGLWidget(this))
 {
   // Set up our little chart.
+  vtkNew<vtkGenericOpenGLRenderWindow> window;
+  m_qvtk->SetRenderWindow(window.Get());
+  m_histogramView->SetRenderWindow(window.Get());
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
-  m_qvtk->SetRenderWindow(m_histogramView->GetRenderWindow());
   m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor.Get());
 
   // Connect events from the histogram color/opacity editor.
