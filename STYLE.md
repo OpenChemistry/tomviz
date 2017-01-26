@@ -1,9 +1,8 @@
 clang-format
 ------------
 
-We use [clang-format](http://llvm.org/releases/3.8.0/tools/clang/docs/ClangFormatStyleOptions.html)
-to keep formatting in the code base consistent. Please run clang-format
-on your patches before submitting.
+We use [clang-format][clang-format] to keep formatting in the code base
+consistent. Please run clang-format on your patches before submitting.
 
 clang-format ships with a python script ```clang/tools/clang-format-diff.py``
 that can be used to reformat patches. For example the following command will
@@ -14,8 +13,9 @@ git diff -U0 HEAD^ | clang-format-diff.py -i -p1
 
 ```
 
-clang-format also provides [git-clang-format](https://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/git-clang-format), a script that more closely integrates with git. If you add this script to your path you can using
-the following command to reformat all the lines in the latest commit.
+clang-format also provides [git-clang-format][git-clang-format], a script that
+more closely integrates with git. If you add this script to your path you can
+using the following command to reformat all the lines in the latest commit.
 
 ```shell
 git clang-format HEAD~1
@@ -25,10 +25,10 @@ git clang-format HEAD~1
 flake8
 ------
 
-We use [flake8](https://pypi.python.org/pypi/flake8) to test for Python style compliance. The tests
-are run when a PR is raised against the repository. You can also run flake8 locally to
-reveal problems before you push a branch. First you need to install flake8, the simplest
-way todo this is using pip.
+We use [flake8][flake8] to test for Python style compliance. The tests are run
+when a PR is raised against the repository. You can also run flake8 locally to
+reveal problems before you push a branch. First you need to install flake8, the
+simplest way todo this is using pip.
 
 ```shell
 pip install flake8
@@ -43,8 +43,9 @@ flake8 --config=flake8.cfg .
 flake8 --config=flake8.cfg tomviz/python/InvertData.py
 ```
 
-There is also [autopep8](https://pypi.python.org/pypi/autopep8) that can be using to automatically
-fix many of the problems raised by flake8. Again is can be install using pip.
+There is also [autopep8](https://pypi.python.org/pypi/autopep8) that can be
+using to automatically fix many of the problems raised by flake8. Again is can
+be install using pip.
 
 ```shell
 pip install autopep8
@@ -68,18 +69,17 @@ below provides the location on some common platform/distro's
 | Arch Linux       | /usr/share/clang/clang-format-diff.py |
 | Ubuntu           | /usr/bin/clang-format-diff-3.8        |
 
-The script can also be downloaded [here](https://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py).
+The script can also be downloaded [here][clang-format-diff].
 
 Code style
 ----------
 
-This project is developed primarily in C++ and Python. Please follow these
-code style guidelines when contributing code to our project.
+This project is developed primarily in C++ and Python. Please follow these code
+style guidelines when contributing code to our project.
 
 * Alphabetize includes
 
-* Use #include "xxx" for local includes, #include <xxx> for external
-  includes.
+* Use #include "xxx" for local includes, #include <xxx> for external includes.
 
 * Do not add comment separators before function definitions.
 
@@ -93,8 +93,7 @@ code style guidelines when contributing code to our project.
 * For local variables, use camelCase, starting variable names with a
   lower-case letter.
 
-* For comments, add a space between // and the beginning of the
-  comment, e.g.,
+* For comments, add a space between // and the beginning of the comment, e.g.,
 
     * // A comment
     * \# Python comment
@@ -118,11 +117,16 @@ code style guidelines when contributing code to our project.
           statement;
         }
 
-* Assume that C++11 features are available, and prefer them over legacy
-  macros, defines, etc. A few examples follow, but are not exhaustive.
+* Assume that C++11 features are available, and prefer them over legacy macros,
+  defines, etc. A few examples follow, but are not exhaustive.
 
     * Use override to specify member overrides in derived classes.
     * Set default values of member variables directly in definitions.
     * Use nullptr instead of NULL.
 
 * When creating VTK subclasses please follow the tomviz style outlined here.
+
+[clang-format]: http://llvm.org/releases/3.8.0/tools/clang/docs/ClangFormatStyleOptions.html
+[git-clang-format]: https://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/git-clang-format
+[flake8]: https://pypi.python.org/pypi/flake8
+[clang-format-diff]: https://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py
