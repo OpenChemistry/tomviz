@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "InterfaceBuilder.h"
 
+#include "DataSource.h"
 #include "DoubleSpinBox.h"
 #include "SpinBox.h"
 
@@ -142,7 +143,8 @@ void addBoolWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 }
 
 template <typename T>
-void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
+void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
+                      tomviz::DataSource* dataSource)
 {
   QJsonValueRef nameValue = parameterNode["name"];
   QJsonValueRef labelValue = parameterNode["label"];
@@ -170,6 +172,20 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
       for (QJsonObject::size_type i = 0; i < defaultArray.size(); ++i) {
         defaultValues.push_back(getAs<T>(defaultArray[i]));
       }
+    }
+  } else if (parameterNode.contains("data-default")) {
+    if (!dataSource) {
+      return;
+    }
+    QJsonValueRef defaultNode = parameterNode["data-default"];
+    int extent[6];
+    dataSource->getExtent(extent);
+    if (defaultNode.toString() == "num-voxels-x") {
+      defaultValues.push_back(extent[1] - extent[0] + 1);
+    } else if (defaultNode.toString() == "num-voxels-y") {
+      defaultValues.push_back(extent[3] - extent[2] + 1);
+    } else if (defaultNode.toString() == "num-voxels-z") {
+      defaultValues.push_back(extent[5] - extent[4] + 1);
     }
   }
 
@@ -295,8 +311,8 @@ void addXYZHeaderWidget(QGridLayout* layout, int row, const QJsonValue&)
 
 namespace tomviz {
 
-InterfaceBuilder::InterfaceBuilder(QObject* parentObject)
-  : Superclass(parentObject)
+InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
+  : Superclass(parentObject), m_dataSource(ds)
 {
 }
 
@@ -374,9 +390,10 @@ QLayout* InterfaceBuilder::buildInterface() const
     if (typeString == "bool") {
       addBoolWidget(layout, i + 1, parameterObject);
     } else if (typeString == "int") {
-      addNumericWidget<int>(layout, i + 1, parameterObject);
+      addNumericWidget<int>(layout, i + 1, parameterObject, this->m_dataSource);
     } else if (typeString == "double") {
-      addNumericWidget<double>(layout, i + 1, parameterObject);
+      addNumericWidget<double>(layout, i + 1, parameterObject,
+                               this->m_dataSource);
     } else if (typeString == "enumeration") {
       addEnumerationWidget(layout, i + 1, parameterObject);
     } else if (typeString == "xyz_header") {

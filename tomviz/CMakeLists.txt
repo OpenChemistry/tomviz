@@ -284,6 +284,7 @@ set(json_files
   GenerateTiltSeries.json
   Recon_ART.json
   Recon_TV_minimization.json
+  Recon_WBP.json
   ShiftTiltSeriesRandomly.json
   )
 

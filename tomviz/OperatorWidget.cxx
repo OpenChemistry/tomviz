@@ -15,6 +15,8 @@
 ******************************************************************************/
 #include "OperatorWidget.h"
 
+#include "ActiveObjects.h"
+#include "DataSource.h"
 #include "DoubleSpinBox.h"
 #include "InterfaceBuilder.h"
 #include "SpinBox.h"
@@ -42,7 +44,11 @@ void OperatorWidget::setupUI(OperatorPython* op)
 {
   QString json = op->JSONDescription();
   if (!json.isNull()) {
-    InterfaceBuilder* ib = new InterfaceBuilder(this);
+    DataSource* dataSource = qobject_cast<DataSource*>(op->parent());
+    if (!dataSource) {
+      dataSource = ActiveObjects::instance().activeDataSource();
+    }
+    InterfaceBuilder* ib = new InterfaceBuilder(this, dataSource);
     ib->setJSONDescription(json);
     ib->setParameterValues(op->arguments());
     buildInterface(ib);
@@ -51,7 +57,8 @@ void OperatorWidget::setupUI(OperatorPython* op)
 
 void OperatorWidget::setupUI(const QString& json)
 {
-  InterfaceBuilder* ib = new InterfaceBuilder(this);
+  InterfaceBuilder* ib =
+    new InterfaceBuilder(this, ActiveObjects::instance().activeDataSource());
   ib->setJSONDescription(json);
   buildInterface(ib);
 }

@@ -1,0 +1,48 @@
+{
+  "name" : "ReconstructWBP",
+  "label" : "Weighted Back Projection",
+  "description" : "Reconstruct a tilt series using Weighted Back Projection (WBP) method. \nThe tilt axis must be parallel to the x-direction and centered in the y-direction.\nThe size of reconstruction will be (Nx,N,N), where Nx is the number of pixels in x-direction and N can be specified below. The maximum N allowed is 4096.\nReconstrucing a 512x512x512 tomogram typically takes 7-10 mins.",
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ],
+  "parameters" : [
+    {
+      "name" : "Nrecon",
+      "label" : "Reconstruction Size",
+      "type" : "int",
+      "data-default" : "num-voxels-y",
+      "minimum" : 1,
+      "maximum" : 4096
+    },
+    {
+      "name" : "filter",
+      "label" : "Fourier Weighting Filter",
+      "type" : "enumeration",
+      "default" : 1,
+      "options" : [
+        {"None" : 0},
+        {"Ramp" : 1},
+        {"Shepp-Logan" : 2},
+        {"Cosine" : 3},
+        {"Hamming" : 4},
+        {"Hann" : 5}
+      ]
+    },
+    {
+      "name" : "interp",
+      "label" : "Back Projection Interpolation Method",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Linear" : 0},
+        {"Nearest" : 1},
+        {"Spline" : 2},
+        {"Cubic" : 3}
+      ]
+    }
+  ]
+}

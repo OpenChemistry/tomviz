@@ -41,11 +41,16 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
         print('Reconsruction Complete')
 
-        # Set the result as the new scalars.
-        utils.set_array(dataset, recon)
+        # Set up the output dataset
+        from vtk import vtkImageData
+        recon_dataset = vtkImageData()
+        recon_dataset.CopyStructure(dataset)
+        utils.set_array(recon_dataset, recon)
+        utils.mark_as_volume(recon_dataset)
 
-        # Mark dataset as volume.
-        utils.mark_as_volume(dataset)
+        returnValues = {}
+        returnValues["reconstruction"] = recon_dataset
+        return returnValues
 
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):

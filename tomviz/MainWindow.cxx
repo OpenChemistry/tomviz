@@ -323,7 +323,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  readInPythonScript("Recon_DFT"), true);
   new AddPythonTransformReaction(reconWBPAction,
                                  "Reconstruct (Back Projection)",
-                                 readInPythonScript("Recon_WBP"), true);
+                                 readInPythonScript("Recon_WBP"), true, false,
+                                 readInJSONDescription("Recon_WBP"));
   new AddPythonTransformReaction(reconARTAction, "Reconstruct (ART)",
                                  readInPythonScript("Recon_ART"), true, false,
                                  readInJSONDescription("Recon_ART"));
