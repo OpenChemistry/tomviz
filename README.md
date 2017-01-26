@@ -24,23 +24,35 @@ We recommend downloading the current [stable release](../../releases)
 but also provide nightly binaries built by our [dashboards][Dashboard] for
 Windows, macOS, and Linux.
 
-__Windows__: Follow the installation instructions, double click on the tomviz icon to launch application. __Mac OS X__: After downloading tomviz double click to launch installation. After reading the License Agreement, drag the tomviz icon into your Applications directory – or anywhere else you would like to store the application. The first time you open tomviz, you will need to right-click on the application icon and select ‘open’. It will ask you if you are sure you wish to open it, click the ‘open’ button. This is only required the first time launching the application. It can be opened by double clicking all future times. __Linux__: A Linux binary (dmg) is provided and tomviz can also be built from source. See [instructions for building](BUILDING.md) found in the BUILDING.md document.
+__Windows__: Follow the installation instructions, double click on the tomviz
+icon to launch application. __Mac OS X__: After downloading tomviz double click
+to launch installation. After reading the License Agreement, drag the tomviz
+icon into your Applications directory – or anywhere else you would like to store
+the application. The first time you open tomviz, you will need to right-click on
+the application icon and select ‘open’. It will ask you if you are sure you wish
+to open it, click the ‘open’ button. This is only required the first time
+launching the application. It can be opened by double clicking all future times.
+__Linux__: A Linux binary (dmg) is provided and tomviz can also be built from
+source. See [instructions for building](BUILDING.md) found in the BUILDING.md
+document.
 
 A Quick Tutorial
 ----------
-- 1.	Open a sample dataset by clicking “Sample Menu > Reconstruction ” at the top menubar.
-- 2.	Create a 3D volumetric visualization by clicking “Visualization > Volume” at the top menubar.
-- 3.	Interact with your volume in the center panel titled “RenderView”.
+  1. Open a sample dataset by clicking “Sample Menu > Reconstruction ” at the
+     top menubar.
+  2. Create a 3D volumetric visualization by clicking “Visualization > Volume” at the top menubar.
+  3. Interact with your volume in the center panel titled “RenderView”.
 
 User Guide
 ----------
-Start by watching this short video to [see tomviz in action](https://vimeo.com/189945022).
+Start by watching this short video to [see tomviz in action][tomviz_in_action].
 
 The [tomviz user guide](/docs/TomvizBasicUserGuide.pdf) is available for more detailed information to get started.
 
 Publications using tomviz
-------------
-- [Nanomaterial datasets to advance tomography in scanning transmission electron microscopy, B. Levin et al., Nature Scientific Data (2016)](http://www.nature.com/articles/sdata201641)
+-------------------------
+- [Nanomaterial datasets to advance tomography in scanning transmission electron
+  microscopy, B. Levin et al., Nature Scientific Data (2016)](http://www.nature.com/articles/sdata201641)
 - [Graphene kirigami, M.K. Blees et al., Nature (2015)](http://www.nature.com/nature/journal/v524/n7564/full/nature14588.html)
 
 Contributing
@@ -54,6 +66,7 @@ pull request if you would like us to consider your patch for inclusion.
   [tomviz]: http://tomviz.org/ "The tomviz project"
   [tomviz_logo]: https://github.com/OpenChemistry/tomviz/blob/master/tomviz/icons/tomvizfull.png "tomviz"
   [tomviz_screenshot]: https://github.com/OpenChemistry/tomviz/blob/master/docs/images/screencap_mac_wide_v0.6.0.gif "tomviz screenshot v0.6.0"
+  [tomviz_in_action]: https://vimeo.com/189945022 "Tomviz in action"
   [Kitware]: http://kitware.com/ "Kitware, Inc."
   [KitwareLogo]: http://www.kitware.com/img/small_logo_over.png "Kitware"
   [Cornell]: http://www.aep.cornell.edu/
@@ -61,7 +74,7 @@ pull request if you would like us to consider your patch for inclusion.
   [Ayachit]: http://www.kitware.com/company/team/ayachit.html
   [Muller]: http://muller.research.engineering.cornell.edu/
   [Hovden]: http://www.roberthovden.com/
-  [Dashboard]: http://open.cdash.org/index.php?project=TomViz "tomviz dashboard"
+  [Dashboard]: http://open.cdash.org/index.php?project=tomviz "tomviz dashboard"
 
 Known Issues
 ------------
