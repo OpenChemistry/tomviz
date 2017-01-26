@@ -18,6 +18,7 @@
 
 #include <QObject>
 #include <QPoint>
+#include <QPointer>
 
 #include <vtkNew.h>
 #include <vtkVector.h>
@@ -28,6 +29,7 @@ class vtkBoxWidget2;
 class vtkEventQtSlotConnect;
 class vtkObject;
 class vtkSMViewProxy;
+class pqView;
 
 namespace tomviz {
 class DataSource;
@@ -55,6 +57,7 @@ private:
   vtkNew<vtkBoxRepresentation> BoxRep;
   vtkNew<vtkBoxWidget2> BoxWidget;
   vtkNew<vtkEventQtSlotConnect> EventLink;
+  QPointer<pqView> View;
   vtkVector3d DataLocation;
   bool MoveEnabled;
 };
