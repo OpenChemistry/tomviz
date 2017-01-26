@@ -20,7 +20,9 @@
 #include "DataSource.h"
 #include "Module.h"
 #include "ModuleManager.h"
+#include "Utilities.h"
 
+#include "pqView.h"
 #include "vtkBoundingBox.h"
 #include "vtkBoxRepresentation.h"
 #include "vtkBoxWidget2.h"
@@ -82,11 +84,10 @@ MoveActiveObject::~MoveActiveObject()
 
 void MoveActiveObject::updateForNewDataSource(DataSource* source)
 {
-  vtkRenderWindowInteractor* iren = this->BoxWidget->GetInteractor();
   if (!source) {
     this->BoxWidget->EnabledOff();
-    if (iren) {
-      iren->GetRenderWindow()->Render();
+    if (this->View) {
+      this->View->render();
     }
     return;
   }
@@ -103,34 +104,38 @@ void MoveActiveObject::updateForNewDataSource(DataSource* source)
   }
   this->BoxRep->PlaceWidget(dataBounds);
   this->BoxWidget->EnabledOn();
-  if (iren) {
-    iren->GetRenderWindow()->Render();
+  if (this->View) {
+    this->View->render();
   }
 }
 
 void MoveActiveObject::hideMoveObjectWidget()
 {
-  vtkRenderWindowInteractor* iren = this->BoxWidget->GetInteractor();
   this->BoxWidget->EnabledOff();
-  if (iren) {
-    iren->GetRenderWindow()->Render();
+  if (this->View) {
+    this->View->render();
   }
 }
 
 void MoveActiveObject::onViewChanged(vtkSMViewProxy* view)
 {
+  pqView* pqview = tomviz::convert<pqView*>(view);
+  if (this->View == pqview) {
+    return;
+  }
+
   if (view && view->GetRenderWindow()) {
-    vtkRenderWindowInteractor* iren = view->GetRenderWindow()->GetInteractor();
-    this->BoxWidget->SetInteractor(iren);
-    view->GetRenderWindow()->Render();
+    this->BoxWidget->SetInteractor(view->GetRenderWindow()->GetInteractor());
+    pqview->render();
   } else {
-    vtkRenderWindowInteractor* iren = this->BoxWidget->GetInteractor();
     this->BoxWidget->SetInteractor(nullptr);
     this->BoxWidget->EnabledOff();
-    if (iren) {
-      iren->GetRenderWindow()->Render();
-    }
   }
+
+  if (this->View) {
+    this->View->render();
+  }
+  this->View = pqview;
 }
 
 void MoveActiveObject::interactionEnd(vtkObject* caller)
@@ -139,7 +144,7 @@ void MoveActiveObject::interactionEnd(vtkObject* caller)
 
   double* boxBounds = this->BoxRep->GetBounds();
 
-  double displayPosition[3];
+  double displayPosition[4];
 
   for (int i = 0; i < 3; ++i) {
     displayPosition[i] = boxBounds[i * 2] - this->DataLocation[i];
