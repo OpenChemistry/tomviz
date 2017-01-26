@@ -35,7 +35,9 @@ ProgressBehavior::ProgressBehavior(QWidget* parentWindow)
 
 ProgressBehavior::~ProgressBehavior()
 {
-  this->ProgressDialog->deleteLater();
+  if (this->ProgressDialog) {
+    this->ProgressDialog->deleteLater();
+  }
 }
 
 void ProgressBehavior::initialize()
