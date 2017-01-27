@@ -320,7 +320,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
     readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true);
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
-                                 readInPythonScript("Recon_DFT"), true);
+                                 readInPythonScript("Recon_DFT"), true, false,
+                                 readInJSONDescription("Recon_DFT"));
   new AddPythonTransformReaction(reconWBPAction,
                                  "Reconstruct (Back Projection)",
                                  readInPythonScript("Recon_WBP"), true, false,

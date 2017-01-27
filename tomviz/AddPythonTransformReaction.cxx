@@ -363,37 +363,6 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
                         arguments);
     }
-  } else if (scriptLabel == "Reconstruct (Direct Fourier)") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle("Direct Fourier Reconstruction");
-
-    QGridLayout* layout = new QGridLayout;
-    // Description
-    QLabel* label = new QLabel(
-      "Reconstruct a tilt series using Direct Fourier Method (DFM). \n"
-      "The tilt axis must be parallel to the x-direction and centered in the "
-      "y-direction.\n"
-      "The size of reconstruction will be (Nx,Ny,Ny).\n"
-      "Reconstrucing a 512x512x512 tomogram typically takes 30-40 seconds.");
-    label->setWordWrap(true);
-    layout->addWidget(label, 0, 0, 1, 2);
-
-    QVBoxLayout* v = new QVBoxLayout;
-    QDialogButtonBox* buttons =
-      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-    connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
-
-    v->addLayout(layout);
-    v->addWidget(buttons);
-    dialog.setLayout(v);
-    dialog.layout()->setSizeConstraint(
-      QLayout::SetFixedSize); // Make the UI non-resizeable
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QVariant> arguments;
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        arguments);
-    }
   } else if (scriptLabel == "Reconstruct (Constraint-based Direct Fourier)") {
     QDialog dialog(pqCoreUtilities::mainWidget());
     dialog.setWindowTitle("Constraint-based Direct Fourier Reconstruction");
