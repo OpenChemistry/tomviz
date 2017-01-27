@@ -1,0 +1,41 @@
+{
+  "name" : "ReconstructSIRT",
+  "label" : "SIRT Reconstruction",
+  "description" : "Reconstruct a tilt series using Simultaneous Iterative Reconstruction Techniques Technique (SIRT). \nThe tilt axis must be parallel to the x-direction and centered in the y-direction.\nThe size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.\nReconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 iterations.",
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ],
+  "parameters" : [
+    {
+      "name" : "Niter",
+      "label" : "Number Of Iterations",
+      "type" : "int",
+      "default" : 10,
+      "minimum" : 1
+    },
+    {
+      "name" : "stepSize",
+      "label" : "Update step size",
+      "type" : "double",
+      "precision": 5,
+      "step" : 0.0001,
+      "default" : 0.0001,
+      "minimum" : 0
+    },
+    {
+      "name" : "updateMethodIndex",
+      "label" : "Update method",
+      "type" : "enumeration",
+      "default" : 0,
+      "options" : [
+        {"Landweber": 0},
+        {"Cimmino": 1},
+        {"Component average": 2}
+      ]
+    }
+  ]
+}

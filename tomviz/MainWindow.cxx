@@ -329,7 +329,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                                  readInPythonScript("Recon_ART"), true, false,
                                  readInJSONDescription("Recon_ART"));
   new AddPythonTransformReaction(reconSIRTAction, "Reconstruct (SIRT)",
-                                 readInPythonScript("Recon_SIRT"), true);
+                                 readInPythonScript("Recon_SIRT"), true, false,
+                                 readInJSONDescription("Recon_SIRT"));
   new AddPythonTransformReaction(
     reconDFMConstraintAction, "Reconstruct (Constraint-based Direct Fourier)",
     readInPythonScript("Recon_DFT_constraint"), true);

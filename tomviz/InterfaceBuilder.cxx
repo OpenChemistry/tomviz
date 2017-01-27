@@ -84,16 +84,21 @@ double getAs(const QJsonValue& value)
 
 // Templated generation of numeric editing widgets.
 template <typename T>
-QWidget* getNumericWidget(T, T, T)
+QWidget* getNumericWidget(T, T, T, int, T)
 {
   return nullptr;
 }
 
 template <>
-QWidget* getNumericWidget(int defaultValue, int rangeMin, int rangeMax)
+QWidget* getNumericWidget(int defaultValue, int rangeMin, int rangeMax,
+                          int /*precision*/, int step)
 {
   tomviz::SpinBox* spinBox = new tomviz::SpinBox();
-  spinBox->setSingleStep(1);
+  if (step == -1) {
+    spinBox->setSingleStep(1);
+  } else {
+    spinBox->setSingleStep(step);
+  }
   spinBox->setMinimum(rangeMin);
   spinBox->setMaximum(rangeMax);
   spinBox->setValue(defaultValue);
@@ -101,10 +106,18 @@ QWidget* getNumericWidget(int defaultValue, int rangeMin, int rangeMax)
 }
 
 template <>
-QWidget* getNumericWidget(double defaultValue, double rangeMin, double rangeMax)
+QWidget* getNumericWidget(double defaultValue, double rangeMin, double rangeMax,
+                          int precision, double step)
 {
   tomviz::DoubleSpinBox* spinBox = new tomviz::DoubleSpinBox();
-  spinBox->setSingleStep(0.5);
+  if (step == -1) {
+    spinBox->setSingleStep(0.5);
+  } else {
+    spinBox->setSingleStep(step);
+  }
+  if (precision != -1) {
+    spinBox->setDecimals(precision);
+  }
   spinBox->setMinimum(rangeMin);
   spinBox->setMaximum(rangeMax);
   spinBox->setValue(defaultValue);
@@ -215,6 +228,21 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
     }
   }
 
+  int precision = -1;
+  if (parameterNode.contains("precision")) {
+    QJsonValueRef precNode = parameterNode["precision"];
+    if (isType<int>(precNode)) {
+      precision = getAs<int>(precNode);
+    }
+  }
+  T step = -1;
+  if (parameterNode.contains("step")) {
+    QJsonValueRef stepNode = parameterNode["step"];
+    if (isType<T>(stepNode)) {
+      step = getAs<T>(stepNode);
+    }
+  }
+
   QHBoxLayout* horizontalLayout = new QHBoxLayout();
   horizontalLayout->setContentsMargins(0, 0, 0, 0);
   QWidget* horizontalWidget = new QWidget;
@@ -231,8 +259,8 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
       name = name.arg(i, 3, 10, QLatin1Char('0'));
     }
 
-    QWidget* spinBox =
-      getNumericWidget(defaultValues[i], minValues[i], maxValues[i]);
+    QWidget* spinBox = getNumericWidget(defaultValues[i], minValues[i],
+                                        maxValues[i], precision, step);
     spinBox->setObjectName(name);
     horizontalLayout->addWidget(spinBox);
   }
