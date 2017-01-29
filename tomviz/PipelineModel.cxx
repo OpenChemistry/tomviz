@@ -291,13 +291,13 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
 {
   switch (state) {
     case OperatorState::COMPLETE:
-      return QIcon(":/icons/check_32.png");
+      return QIcon(":/icons/check.png");
     case OperatorState::QUEUED:
-      return QIcon(":/icons/question_32.png");
+      return QIcon(":/icons/question.png");
     case OperatorState::ERROR:
-      return QIcon(":/icons/error_notification_32.png");
+      return QIcon(":/icons/error_notification.png");
     case OperatorState::CANCELED:
-      return QIcon(":/icons/red_cross_32.png");
+      return QIcon(":/icons/red_cross.png");
     case OperatorState::RUNNING:
       // Our subclass of QItemDelegate will take care of this animated icon
       break;
