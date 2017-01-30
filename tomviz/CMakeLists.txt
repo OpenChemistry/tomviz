@@ -155,6 +155,7 @@ set(SOURCES
   SaveLoadStateReaction.h
   SaveScreenshotReaction.cxx
   SaveScreenshotReaction.h
+  SaveWebReaction.cxx
   ScaleActorBehavior.cxx
   ScaleActorBehavior.h
   SetScaleReaction.cxx
@@ -329,6 +330,7 @@ set(tomviz_python_modules
   itkutils.py
   utils.py
   py2to3.py
+  web.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")
