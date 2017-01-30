@@ -50,6 +50,7 @@
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
 #include "SaveScreenshotReaction.h"
+#include "SaveWebReaction.h"
 #include "SetScaleReaction.h"
 #include "SetTiltAnglesReaction.h"
 #include "ToggleDataTypeReaction.h"
@@ -349,6 +350,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new SaveDataReaction(ui.actionSaveData);
   new SaveScreenshotReaction(ui.actionSaveScreenshot, this);
   new pqSaveAnimationReaction(ui.actionSaveMovie);
+  new SaveWebReaction(ui.actionSaveWeb);
 
   new SaveLoadStateReaction(ui.actionSaveState);
   new SaveLoadStateReaction(ui.actionLoadState, /*load*/ true);
