@@ -319,6 +319,7 @@ set(json_files
   GenerateTiltSeries.json
   Recon_ART.json
   Recon_DFT.json
+  Recon_DFT_constraint.json
   Recon_TV_minimization.json
   Recon_SIRT.json
   Recon_WBP.json
