@@ -5,24 +5,24 @@ set(CMAKE_AUTORCC OFF)
 
 include(${PARAVIEW_USE_FILE})
 
-set(outsrcs0)
-set(outifaces0)
-add_paraview_property_widget(outifaces0 outsrcs0
-  TYPE "double_slider_widget"
-  CLASS_NAME "pqDoubleSliderPropertyWidget")
+#set(outsrcs0)
+#set(outifaces0)
+#add_paraview_property_widget(outifaces0 outsrcs0
+#  TYPE "double_slider_widget"
+#  CLASS_NAME "pqDoubleSliderPropertyWidget")
 
-qt5_wrap_cpp(moc_srcs
-  pqDoubleSliderPropertyWidget.h
-)
+#qt5_wrap_cpp(moc_srcs
+#  pqDoubleSliderPropertyWidget.h
+#)
 
 add_paraview_plugin(tomvizExtensions "1.0"
   SERVER_MANAGER_XML tomvizExtensions.xml
-  GUI_INTERFACES ${outifaces0}
-  SOURCES ${outsrcs0}
-          ${moc_srcs}
-          pqDoubleSliderPropertyWidget.cxx
+#  GUI_INTERFACES ${outifaces0}
+#  SOURCES ${outsrcs0}
+#          ${moc_srcs}
+#          pqDoubleSliderPropertyWidget.cxx
 )
-target_link_libraries(tomvizExtensions PUBLIC pqApplicationComponents)
+#target_link_libraries(tomvizExtensions PUBLIC pqApplicationComponents)
 
 if (NOT APPLE)
   install(TARGETS tomvizExtensions
