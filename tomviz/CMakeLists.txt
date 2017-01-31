@@ -376,6 +376,9 @@ if(WIN32)
   target_link_libraries(tomvizlib Qt5::WinMain)
 endif()
 if(APPLE)
+  set_target_properties(tomviz
+    PROPERTIES
+      MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/tomviz.plist.in)
   install(TARGETS tomviz DESTINATION Applications COMPONENT runtime)
 else()
   install(TARGETS tomviz DESTINATION bin COMPONENT runtime)
