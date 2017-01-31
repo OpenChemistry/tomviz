@@ -501,6 +501,15 @@ void MainWindow::showEvent(QShowEvent* e)
 
 void MainWindow::closeEvent(QCloseEvent* e)
 {
+  if (ModuleManager::instance().hasRunningOperators()) {
+    QMessageBox::StandardButton response = QMessageBox::question(
+      this, "Close tomviz?", "You have transforms that are not completed. Are "
+                             "you sure you want to exit?");
+    if (response == QMessageBox::No) {
+      e->ignore();
+      return;
+    }
+  }
   ModuleManager::instance().removeAllModules();
   ModuleManager::instance().removeAllDataSources();
   e->accept();
