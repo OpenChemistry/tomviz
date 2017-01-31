@@ -41,7 +41,7 @@ class vtkImageSliceMapper;
 class vtkInteractorStyleRubberBand2D;
 class vtkInteractorStyleRubberBandZoom;
 class vtkRenderer;
-class QVTKWidget;
+class QVTKOpenGLWidget;
 
 namespace tomviz {
 
@@ -59,7 +59,7 @@ public:
               QWidget* parent = nullptr);
   ~AlignWidget();
 
-  // This will filter the QVTKWidget events
+  // This will filter the QVTKOpenGLWidget events
   bool eventFilter(QObject* object, QEvent* event) override;
 
   void applyChangesToOperator() override;
@@ -98,7 +98,7 @@ protected:
   vtkNew<vtkInteractorStyleRubberBand2D> defaultInteractorStyle;
   vtkNew<vtkInteractorStyleRubberBandZoom> zoomToBoxInteractorStyle;
   vtkSmartPointer<vtkImageData> inputData;
-  QVTKWidget* widget;
+  QVTKOpenGLWidget* widget;
 
   QComboBox* modeSelect;
   QTimer* timer;
