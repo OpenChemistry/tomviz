@@ -184,7 +184,8 @@ ReconstructionWidget::ReconstructionWidget(DataSource* source, QWidget* p)
     this->Internals->dataSliceRenderer.Get());
 
   vtkNew<vtkGenericOpenGLRenderWindow> crWindow;
-  this->Internals->Ui.currentReconstructionView->SetRenderWindow(crWindow.Get());
+  this->Internals->Ui.currentReconstructionView->SetRenderWindow(
+    crWindow.Get());
   this->Internals->Ui.currentReconstructionView->GetRenderWindow()->AddRenderer(
     this->Internals->reconstructionSliceRenderer.Get());
 

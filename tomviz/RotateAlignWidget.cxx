@@ -325,14 +325,14 @@ RotateAlignWidget::RotateAlignWidget(DataSource* source, QWidget* p)
   vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
   interatorStyle->SetRenderOnMouseMove(true);
 
-  this->Internals->Ui.sliceView->GetInteractor()
-    ->SetInteractorStyle(interatorStyle.Get());
-  this->Internals->Ui.sliceView_1->GetInteractor()
-    ->SetInteractorStyle(interatorStyle.Get());
-  this->Internals->Ui.sliceView_2->GetInteractor()
-    ->SetInteractorStyle(interatorStyle.Get());
-  this->Internals->Ui.sliceView_3->GetInteractor()
-    ->SetInteractorStyle(interatorStyle.Get());
+  this->Internals->Ui.sliceView->GetInteractor()->SetInteractorStyle(
+    interatorStyle.Get());
+  this->Internals->Ui.sliceView_1->GetInteractor()->SetInteractorStyle(
+    interatorStyle.Get());
+  this->Internals->Ui.sliceView_2->GetInteractor()->SetInteractorStyle(
+    interatorStyle.Get());
+  this->Internals->Ui.sliceView_3->GetInteractor()->SetInteractorStyle(
+    interatorStyle.Get());
   this->Internals->setupCameras();
 
   this->Internals->rotationAxis->SetPoint1(0, 0, 0);
