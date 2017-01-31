@@ -29,12 +29,13 @@
 #include <pqPresetDialog.h>
 #include <pqView.h>
 
-#include <QVTKWidget.h>
+#include <QVTKOpenGLWidget.h>
 #include <vtkArrayDispatch.h>
 #include <vtkAssume.h>
 #include <vtkCamera.h>
 #include <vtkDataArray.h>
 #include <vtkDataArrayAccessor.h>
+#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
@@ -318,7 +319,9 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->Op = op;
   this->unalignedData = op->getDataSource();
   this->inputData = imageData;
-  this->widget = new QVTKWidget(this);
+  this->widget = new QVTKOpenGLWidget(this);
+  vtkNew<vtkGenericOpenGLRenderWindow> window;
+  this->widget->SetRenderWindow(window.Get());
   this->widget->installEventFilter(this);
   QHBoxLayout* myLayout = new QHBoxLayout(this);
   myLayout->addWidget(this->widget);
@@ -354,7 +357,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   // Set up render window interaction.
   this->defaultInteractorStyle->SetRenderOnMouseMove(true);
 
-  this->widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+  this->widget->GetInteractor()->SetInteractorStyle(
     this->defaultInteractorStyle.Get());
 
   this->renderer->SetBackground(1.0, 1.0, 1.0);
