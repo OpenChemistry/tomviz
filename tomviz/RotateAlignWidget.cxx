@@ -26,11 +26,11 @@
 #include "Utilities.h"
 #include <math.h>
 
-#include "QVTKWidget.h"
 #include "pqCoreUtilities.h"
 #include "pqPresetDialog.h"
 #include "vtkCamera.h"
 #include "vtkDataArray.h"
+#include "vtkGenericOpenGLRenderWindow.h"
 #include "vtkImageData.h"
 #include "vtkImageProperty.h"
 #include "vtkImageSlice.h"
@@ -276,6 +276,16 @@ RotateAlignWidget::RotateAlignWidget(DataSource* source, QWidget* p)
   : Superclass(p), Internals(new RAWInternal)
 {
   this->Internals->Ui.setupUi(this);
+
+  vtkNew<vtkGenericOpenGLRenderWindow> sWindow;
+  this->Internals->Ui.sliceView->SetRenderWindow(sWindow.Get());
+  vtkNew<vtkGenericOpenGLRenderWindow> sWindow1;
+  this->Internals->Ui.sliceView_1->SetRenderWindow(sWindow1.Get());
+  vtkNew<vtkGenericOpenGLRenderWindow> sWindow2;
+  this->Internals->Ui.sliceView_2->SetRenderWindow(sWindow2.Get());
+  vtkNew<vtkGenericOpenGLRenderWindow> sWindow3;
+  this->Internals->Ui.sliceView_3->SetRenderWindow(sWindow3.Get());
+
   this->Internals->setupColorMaps();
   QIcon setColorMapIcon(":/pqWidgets/Icons/pqFavorites16.png");
   this->Internals->Ui.colorMapButton_1->setIcon(setColorMapIcon);
@@ -302,6 +312,7 @@ RotateAlignWidget::RotateAlignWidget(DataSource* source, QWidget* p)
     this->Internals->reconSlice[1].Get());
   this->Internals->reconRenderer[2]->AddViewProp(
     this->Internals->reconSlice[2].Get());
+
   this->Internals->Ui.sliceView->GetRenderWindow()->AddRenderer(
     this->Internals->mainRenderer.Get());
   this->Internals->Ui.sliceView_1->GetRenderWindow()->AddRenderer(
@@ -314,17 +325,13 @@ RotateAlignWidget::RotateAlignWidget(DataSource* source, QWidget* p)
   vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle;
   interatorStyle->SetRenderOnMouseMove(true);
 
-  this->Internals->Ui.sliceView->GetRenderWindow()
-    ->GetInteractor()
+  this->Internals->Ui.sliceView->GetInteractor()
     ->SetInteractorStyle(interatorStyle.Get());
-  this->Internals->Ui.sliceView_1->GetRenderWindow()
-    ->GetInteractor()
+  this->Internals->Ui.sliceView_1->GetInteractor()
     ->SetInteractorStyle(interatorStyle.Get());
-  this->Internals->Ui.sliceView_2->GetRenderWindow()
-    ->GetInteractor()
+  this->Internals->Ui.sliceView_2->GetInteractor()
     ->SetInteractorStyle(interatorStyle.Get());
-  this->Internals->Ui.sliceView_3->GetRenderWindow()
-    ->GetInteractor()
+  this->Internals->Ui.sliceView_3->GetInteractor()
     ->SetInteractorStyle(interatorStyle.Get());
   this->Internals->setupCameras();
 
