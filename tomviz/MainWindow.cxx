@@ -502,8 +502,10 @@ void MainWindow::closeEvent(QCloseEvent* e)
 {
   if (ModuleManager::instance().hasRunningOperators()) {
     QMessageBox::StandardButton response = QMessageBox::question(
-      this, "Close tomviz?", "You have transforms that are not completed. Are "
-                             "you sure you want to exit?");
+      this, "Close tomviz?", "You have transforms that are not completed "
+                             "running in the background. These may not exit "
+                             "cleanly. Are "
+                             "you sure you want to try exiting anyway?");
     if (response == QMessageBox::No) {
       e->ignore();
       return;
