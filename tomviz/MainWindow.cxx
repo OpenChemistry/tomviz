@@ -170,8 +170,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
           SLOT(expandAll()));
 
   // connect quit.
-  pqApplicationCore::instance()->connect(ui.actionExit, SIGNAL(triggered()),
-                                         SLOT(quit()));
+  this->connect(ui.actionExit, SIGNAL(triggered()), SLOT(close()));
 
   // Connect up the module/data changed to the appropriate slots.
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceActivated(DataSource*)),
