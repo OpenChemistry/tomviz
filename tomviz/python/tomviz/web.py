@@ -2,6 +2,27 @@ from paraview import simple
 from paraview.web.dataset_builder import *
 
 # -----------------------------------------------------------------------------
+# Main function
+# -----------------------------------------------------------------------------
+
+def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
+    dest = '%s/data' % destinationPath
+    camera =  {'type': 'spherical', 'phi': range(0, 360, deltaPhi), 'theta': range(-deltaTheta, deltaTheta + 1, deltaTheta)}
+    
+    print camera
+
+    # Choose export mode:
+    if exportType == 0: 
+        print('Export images')
+        export_images(dest, camera)
+
+    if exportType == 1:
+        print('Export layers')
+        export_layers(dest, camera)
+
+    copy_viewer(destinationPath)
+    
+# -----------------------------------------------------------------------------
 # Helpers 
 # -----------------------------------------------------------------------------
 
@@ -63,20 +84,6 @@ def add_scene_item(scene, name, proxy, view):
 
     scene['scene'].append({ 'name': name, 'source': source, 'colors': colors, 'representation': representation })
 
-# -----------------------------------------------------------------------------
-# Main function
-# -----------------------------------------------------------------------------
-
-def web_export(destinationPath):
-    dest = '%s/data' % destinationPath
-    camera =  {'type': 'spherical', 'phi': range(0, 360, 30), 'theta': range(-60, 61, 60)}
-    
-    # Choose export mode:
-    # export_images(dest, camera)
-    export_layers(dest, camera)
-
-    copy_viewer(destinationPath)
-    
 
 # -----------------------------------------------------------------------------
 # Image based exporter

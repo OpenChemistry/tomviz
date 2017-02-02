@@ -32,7 +32,7 @@ public:
   virtual ~SaveWebReaction();
 
   /// Save the file
-  bool saveWeb(const QString& filename);
+  bool saveWeb(const QString& filename, int type, int deltaPhi, int deltaTheta);
 
 protected:
   /// Called when the data changes to enable/disable the menu item

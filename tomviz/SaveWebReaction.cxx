@@ -23,11 +23,14 @@
 #include "pqCoreUtilities.h"
 #include "pqFileDialog.h"
 
+#include "WebExportWidget.h"
+
 #include "PythonUtilities.h"
 #include "Utilities.h"
 
 #include <cassert>
 
+#include <QDialog>
 #include <QDebug>
 #include <QMessageBox>
 #include <QRegularExpression>
@@ -54,17 +57,13 @@ void SaveWebReaction::updateEnableState()
 
 void SaveWebReaction::onTriggered()
 {
-  pqServer* server = pqActiveObjects::instance().activeServer();
-  pqFileDialog fileDialog(server, pqCoreUtilities::mainWidget(),
-                          tr("Save Scene for Web:"), QString(), "");
-  fileDialog.setObjectName("DirectorySaveDialog");
-  fileDialog.setFileMode(pqFileDialog::Directory);
-  if (fileDialog.exec() == QDialog::Accepted) {
-    this->saveWeb(fileDialog.getSelectedFiles()[0]);
-  }
+    WebExportWidget dialog;
+    if (dialog.exec() == QDialog::Accepted) {
+        this->saveWeb(dialog.getOutputPath(), dialog.getExportType(), dialog.getDeltaPhi(), dialog.getDeltaTheta());
+    }
 }
 
-bool SaveWebReaction::saveWeb(const QString& filename)
+bool SaveWebReaction::saveWeb(const QString& filename, int type, int deltaPhi, int deltaTheta)
 {
   cout << "Generate" << filename.toLatin1().data() << endl;
   Python::initialize();
@@ -81,8 +80,11 @@ bool SaveWebReaction::saveWeb(const QString& filename)
   }
 
   Python::Dict kwargs;
-  Python::Tuple args(1);
+  Python::Tuple args(4);
   args.set(0, toVariant(QVariant(filename)));
+  args.set(1, toVariant(QVariant(type)));
+  args.set(2, toVariant(QVariant(deltaPhi)));
+  args.set(3, toVariant(QVariant(deltaTheta)));
 
   Python::Object result = webExport.call(args, kwargs);
   if (!result.isValid()) {
