@@ -192,6 +192,8 @@ set(SOURCES
   vtkCustomPiecewiseControlPointsItem.h
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
+  WebExportWidget.cxx
+  WebExportWidget.h
   )
 
 set(exec_sources
