@@ -979,4 +979,10 @@ bool DataSource::isImageStack()
 
   return helper.GetNumberOfElements() > 1;
 }
+
+bool DataSource::isRunningAnOperator()
+{
+  return this->Internals->Future != nullptr &&
+         this->Internals->Future->isRunning();
+}
 }

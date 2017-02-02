@@ -64,6 +64,9 @@ public:
   bool serialize(pugi::xml_node& ns, const QDir& stateDir) const;
   bool deserialize(const pugi::xml_node& ns, const QDir& stateDir);
 
+  /// Test if any data source has running operators
+  bool hasRunningOperators();
+
 public slots:
   void addModule(Module*);
 

@@ -170,8 +170,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
           SLOT(expandAll()));
 
   // connect quit.
-  pqApplicationCore::instance()->connect(ui.actionExit, SIGNAL(triggered()),
-                                         SLOT(quit()));
+  this->connect(ui.actionExit, SIGNAL(triggered()), SLOT(close()));
 
   // Connect up the module/data changed to the appropriate slots.
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceActivated(DataSource*)),
@@ -501,6 +500,17 @@ void MainWindow::showEvent(QShowEvent* e)
 
 void MainWindow::closeEvent(QCloseEvent* e)
 {
+  if (ModuleManager::instance().hasRunningOperators()) {
+    QMessageBox::StandardButton response = QMessageBox::question(
+      this, "Close tomviz?", "You have transforms that are not completed "
+                             "running in the background. These may not exit "
+                             "cleanly. Are "
+                             "you sure you want to try exiting anyway?");
+    if (response == QMessageBox::No) {
+      e->ignore();
+      return;
+    }
+  }
   ModuleManager::instance().removeAllModules();
   ModuleManager::instance().removeAllDataSources();
   e->accept();

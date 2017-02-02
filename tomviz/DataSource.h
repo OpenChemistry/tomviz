@@ -144,6 +144,9 @@ public:
   /// Return true is datasource is an image stack, false otherwise
   bool isImageStack();
 
+  /// Return true if an operator is running in this DataSource's worker
+  bool isRunningAnOperator();
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.

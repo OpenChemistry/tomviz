@@ -93,6 +93,16 @@ void ModuleManager::reset()
   pqDeleteReaction::deleteAll();
 }
 
+bool ModuleManager::hasRunningOperators()
+{
+  for (QPointer<DataSource> dsource : this->Internals->DataSources) {
+    if (dsource->isRunningAnOperator()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !this->Internals->DataSources.contains(dataSource)) {
