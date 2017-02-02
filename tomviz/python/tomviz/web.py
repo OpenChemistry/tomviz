@@ -1,3 +1,4 @@
+import os, shutil
 from paraview import simple
 from paraview.web.dataset_builder import *
 
@@ -8,16 +9,12 @@ from paraview.web.dataset_builder import *
 def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
     dest = '%s/data' % destinationPath
     camera =  {'type': 'spherical', 'phi': range(0, 360, deltaPhi), 'theta': range(-deltaTheta, deltaTheta + 1, deltaTheta)}
-    
-    print camera
 
     # Choose export mode:
     if exportType == 0: 
-        print('Export images')
         export_images(dest, camera)
 
     if exportType == 1:
-        print('Export layers')
         export_layers(dest, camera)
 
     copy_viewer(destinationPath)
@@ -31,7 +28,15 @@ def get_proxy(id):
     return simple.servermanager._getPyProxy(remoteObj)
 
 def copy_viewer(destinationPath):
-    # FIXME: Copy Web viewer
+    # FIXME !!!
+    # searchPath = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../..'))
+    # print 'search from', searchPath
+    # for root, dirs, files in os.walk(searchPath):
+    #     print root
+    #     if 'index.html' in files:
+    #         print 'copy', root, 'to', destinationPath
+    #         shutil.copytree(os.join(root, 'tomviz'), os.join(destinationPath, 'tomviz'))
+    #         return
     pass
 
 def add_scene_item(scene, name, proxy, view):
@@ -79,7 +84,6 @@ def add_scene_item(scene, name, proxy, view):
         source = surfaceWithNormals
 
     if not hasColor or rep.Representation == 'Outline':
-        print 'got outline'
         colors = { 'solid': { 'constant': 0 } }
 
     scene['scene'].append({ 'name': name, 'source': source, 'colors': colors, 'representation': representation })

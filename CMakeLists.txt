@@ -89,3 +89,21 @@ if(ENABLE_TESTING)
   enable_testing()
   add_subdirectory(tests)
 endif()
+
+# -----------------------------------------------------------------------------
+# Add web application
+# -----------------------------------------------------------------------------
+set(tomviz_web_install_dir "share/tomviz/web")
+if(APPLE)
+  set(tomviz_web_install_dir "Applications/tomviz.app/Contents/share/tomviz/web")
+endif()
+
+install(
+  DIRECTORY "${tomviz_SOURCE_DIR}/web/www/tomviz"
+  DESTINATION "${tomviz_web_install_dir}"
+  COMPONENT runtime)
+
+install(
+  FILES "${tomviz_SOURCE_DIR}/web/www/index.html"
+  DESTINATION "${tomviz_web_install_dir}"
+  COMPONENT runtime)
