@@ -26,7 +26,13 @@ def acquisition_server():
     srv.daemon = True
     srv.start()
     # Wait for bottle to start
-    time.sleep(0.5)
+    while True:
+        try:
+            requests.get(base_url)
+            break
+        except requests.ConnectionError:
+            time.sleep(0.1)
+
     yield server
 
 
