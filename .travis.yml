@@ -19,3 +19,6 @@ script:
   - if [ -n "${PY2}" ]; then ./scripts/travis/run_clang_format_diff.sh master $TRAVIS_COMMIT; fi
   - git checkout $TRAVIS_PULL_REQUEST_SHA
   - flake8 --config=flake8.cfg .
+  - cd "${TRAVIS_BUILD_DIR}/acquisition"
+  - pip install -r requirements-dev.txt
+  - pytest -s
