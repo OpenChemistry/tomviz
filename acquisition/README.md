@@ -9,7 +9,7 @@
   "jsonrpc": "2.0",
   "id": "<id>",
   "method": "set_tilt_angle",
-  "params": [<angle>]
+  "params": ["<angle>"]
 }
 
 ```
