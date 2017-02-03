@@ -15,6 +15,7 @@
 #  limitations under the License.
 #
 ###############################################################################
+from tomviz import py2to3
 
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
@@ -52,7 +53,7 @@ def vtk_itk_type_map():
             'vtkDoubleArray': 'D3'
         }
 
-        for (vtk_type, image_type) in type_map.iteritems():
+        for (vtk_type, image_type) in py2to3.iteritems(type_map):
             try:
                 _vtk_to_itk_types[vtk_type] = getattr(itk.Image, image_type)
             except AttributeError:
@@ -149,7 +150,7 @@ def vtk_cast_map():
         }
 
         # Select the best supported type available in the wrapping.
-        for (vtk_type, possible_image_types) in type_map.iteritems():
+        for (vtk_type, possible_image_types) in py2to3.iteritems(type_map):
             type_map[vtk_type] = None
             for possible_type in possible_image_types:
                 if itk.ctype(possible_type) in itk.WrapITKBuildOptions.SCALARS:
