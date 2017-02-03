@@ -1,3 +1,22 @@
+# Installing development dependencies
+
+```bash
+cd <tomviz_repo>/acquisition
+pip install requirements-dev.txt
+
+```
+
+# Starting the server
+
+```bash
+cd <tomviz_repo>/acquisition
+python -m tomviz
+
+```
+
+This will start the server using a mock API for testing.
+
+
 # Acquistion JSON-RPC interface
 
 ## Setting tilt angle
