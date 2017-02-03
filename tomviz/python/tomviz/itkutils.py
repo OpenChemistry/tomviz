@@ -221,7 +221,8 @@ def get_python_voxel_type(dataset):
         ctype = itkExtras.template(type(dataset))[1][0]
         return _itkctype_to_python_types[ctype]
     except AttributeError as attribute_error:
-        print(("Could not get Python voxel type for dataset %s" % type(dataset)))
+        print(("Could not get Python voxel type for dataset %s"
+               % type(dataset)))
         print(attribute_error)
 
 
@@ -328,7 +329,7 @@ def get_label_object_attributes(dataset):
 
         # Get an appropriate LabelImageToShapelLabelMapFilter type for the
         # input.
-        inputTypes = [x[0] for x in list(itk.LabelImageToShapeLabelMapFilter.keys())]
+        inputTypes = [x[0] for x in list(itk.LabelImageToShapeLabelMapFilter.keys())] # noqa
         filterTypeIndex = inputTypes.index(itk_image_type)
         if filterTypeIndex < 0:
             raise Exception("No suitable filter type for input type %s" %
@@ -337,7 +338,7 @@ def get_label_object_attributes(dataset):
         # Now take the connected components results and compute things like
         # volume and surface area.
         shape_filter = \
-            list(itk.LabelImageToShapeLabelMapFilter.values())[filterTypeIndex].New()
+            list(itk.LabelImageToShapeLabelMapFilter.values())[filterTypeIndex].New() # noqa
         shape_filter.SetInput(itk_image)
         shape_filter.Update()
 
