@@ -1,10 +1,13 @@
 import importlib
+import inspect
 import logging
 import bottle
+import sys
 from bottle import run, route
 
 from tomviz import jsonrpc
 from tomviz.utility import inject
+from tomviz.acquisition import AbstractSource
 
 adapter = 'tests.mock.source.ApiAdapter'
 host = 'localhost'
@@ -23,12 +26,20 @@ def setup_app():
         raise
 
     try:
-        constructor = getattr(imported, cls)
+        cls = getattr(imported, cls)
     except AttributeError:
         logger.error('Unable to get constructor for: %s', adapter)
         raise
 
-    source_adapter = constructor()
+    # Ensure that the adapter implements the interface
+    bases = inspect.getmro(cls)
+    if len(bases) < 2 or bases[1] != AbstractSource:
+        logger.error('Adapter %s, does not derive from %s', adapter,
+                     '.'.join([AbstractSource.__module__,
+                               AbstractSource.__name__]))
+        sys.exit(-1)
+
+    source_adapter = cls()
     slices = {}
 
     @jsonrpc.endpoint(path='/acquisition')
