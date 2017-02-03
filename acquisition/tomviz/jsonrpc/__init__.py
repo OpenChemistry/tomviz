@@ -5,8 +5,8 @@ from bottle import post
 
 endpoint_map = {}
 
-# Invalid JSON was received by the server. An error occurred on the server while
-# parsing the JSON text.
+# Invalid JSON was received by the server. An error occurred on the server
+# while parsing the JSON text.
 PARSE_ERROR = -32700
 # The JSON sent is not a valid Request object.
 INVALID_REQUEST = -32600
@@ -17,6 +17,13 @@ INVALID_PARAMS = -32602
 # Internal JSON-RPC error.
 INTERNAL_ERROR = -32603
 # -32000 to -32099 Server error
+JSONRPC_VERSION = '2.0'
+
+
+def jsonrpc_message(message):
+    message['jsonrpc'] = JSONRPC_VERSION
+
+    return message
 
 
 class JsonRpcError(Exception):
@@ -78,7 +85,7 @@ class JsonRpcHandler(object):
         params = request.get('params', {})
 
         try:
-            if jsonrpc != '2.0' or not id or not method:
+            if jsonrpc != JSONRPC_VERSION or not id or not method:
                 raise InvalidRequest()
 
             if method not in self._methods:
@@ -96,13 +103,14 @@ class JsonRpcHandler(object):
 
             return self._response(id, result)
         except JsonRpcError as err:
-            return {
+            return jsonrpc_message({
                 'id': id,
                 'error': err.to_json()
-            }
+            })
 
     def _response(self, id, result):
         response = {
+            'jsonrpc': JSONRPC_VERSION,
             'id': id,
             'result': result
         }
@@ -153,10 +161,10 @@ class endpoint(object):
 
                     return response
                 except JsonRpcError as err:
-                    return {
+                    return jsonrpc_message({
                         'id': json_body.get('id'),
                         'error': err.to_json()
-                    }
+                    })
 
             post(path, callback=handle_rpc)
             endpoint_map[path] = self._endpoint
