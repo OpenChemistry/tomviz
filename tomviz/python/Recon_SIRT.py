@@ -241,8 +241,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     cols[idx] = pixelIndicex
                     vals[idx] = length
             else:
-                print ("Ray No.", j + 1, "at", angles[i],
-                       "degree is out of image grid!")
+                print(("Ray No.", j + 1, "at", angles[i],
+                       "degree is out of image grid!"))
 
     # Truncate excess zeros.
     rows = rows[:idxend]

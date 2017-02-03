@@ -40,7 +40,7 @@ def transform_scalars(dataset, number_of_thresholds=1,
         otsu_filter.SetInput(itk_image)
         otsu_filter.Update()
 
-        print("Otsu threshold(s): %s" % (otsu_filter.GetThresholds(),))
+        print(("Otsu threshold(s): %s" % (otsu_filter.GetThresholds(),)))
 
         itk_image_data = otsu_filter.GetOutput()
 

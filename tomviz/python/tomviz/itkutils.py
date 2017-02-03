@@ -221,7 +221,7 @@ def get_python_voxel_type(dataset):
         ctype = itkExtras.template(type(dataset))[1][0]
         return _itkctype_to_python_types[ctype]
     except AttributeError as attribute_error:
-        print("Could not get Python voxel type for dataset %s" % type(dataset))
+        print(("Could not get Python voxel type for dataset %s" % type(dataset)))
         print(attribute_error)
 
 
