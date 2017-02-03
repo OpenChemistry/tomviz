@@ -308,7 +308,7 @@ def set_array_from_itk_image(dataset, itk_image):
     #new_array.SetName(name)
     #------------------------------------------
     import itk
-    import utils
+    from . import utils
     result = itk.PyBuffer[
         itk_output_image_type].GetArrayFromImage(itk_image)
     utils.set_array(dataset, result)
