@@ -328,7 +328,7 @@ def get_label_object_attributes(dataset):
 
         # Get an appropriate LabelImageToShapelLabelMapFilter type for the
         # input.
-        inputTypes = [x[0] for x in itk.LabelImageToShapeLabelMapFilter.keys()]
+        inputTypes = [x[0] for x in list(itk.LabelImageToShapeLabelMapFilter.keys())]
         filterTypeIndex = inputTypes.index(itk_image_type)
         if filterTypeIndex < 0:
             raise Exception("No suitable filter type for input type %s" %
@@ -337,7 +337,7 @@ def get_label_object_attributes(dataset):
         # Now take the connected components results and compute things like
         # volume and surface area.
         shape_filter = \
-            itk.LabelImageToShapeLabelMapFilter.values()[filterTypeIndex].New()
+            list(itk.LabelImageToShapeLabelMapFilter.values())[filterTypeIndex].New()
         shape_filter.SetInput(itk_image)
         shape_filter.Update()
 
