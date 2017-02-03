@@ -1,4 +1,5 @@
 import importlib
+import logging
 import bottle
 from bottle import run, route
 
@@ -8,22 +9,23 @@ from tomviz.utility import inject
 adapter = 'tests.mock.source.ApiAdapter'
 host = 'localhost'
 port = 8080
+logger = logging.getLogger('tomviz')
 
 
 def setup_app():
-
+    logger.info('Loading adapter: %s', adapter)
     # First load the chosen adapter
     module, cls = adapter.rsplit('.', 1)
     try:
         imported = importlib.import_module(module)
     except ImportError:
-        # TODO add logging
+        logger.error('Unable to load module: %s', module)
         raise
 
     try:
         constructor = getattr(imported, cls)
     except AttributeError:
-        # TODO add logging
+        logger.error('Unable to get constructor for: %s', adapter)
         raise
 
     source_adapter = constructor()
@@ -64,6 +66,7 @@ def setup_app():
         return slices[id]
 
 
-def start():
+def start(debug=True):
     setup_app()
-    run(host='localhost', port=port, debug=True)
+    logger.info('Starting HTTP server')
+    run(host='localhost', port=port, debug=debug)

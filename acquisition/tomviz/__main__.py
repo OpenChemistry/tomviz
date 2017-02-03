@@ -1,4 +1,5 @@
 import argparse
+import tomviz
 from tomviz.acquisition import server
 
 
@@ -10,6 +11,9 @@ def main():
                         help="on what interface the server should run")
     parser.add_argument("-p", "--port",
                         help="on what port the server should run")
+    parser.add_argument("-d", "--debug", help="turn on debug mode",
+                        action='store_true')
+
     args = parser.parse_args()
 
     if args.port:
@@ -18,8 +22,12 @@ def main():
         server.host = args.interface
     if args.adapter:
         server.adapter = args.adapter
+    debug = False
+    if args.debug:
+        debug = args.debug
 
-    server.start()
+    tomviz.setupLogger(debug)
+    server.start(debug)
 
 
 if __name__ == '__main__':
