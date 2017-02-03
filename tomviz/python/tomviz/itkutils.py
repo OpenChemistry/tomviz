@@ -239,7 +239,7 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     import itk
     import itkTypes
     import vtk
-    import utils
+    from tomviz import utils
 
     itk_to_vtk_type_map = {
         itkTypes.F: vtk.VTK_FLOAT,
