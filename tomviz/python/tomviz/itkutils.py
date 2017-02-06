@@ -179,8 +179,8 @@ def get_python_voxel_type(dataset):
                 vtk.VTK_SHORT: int,
                 vtk.VTK_UNSIGNED_INT: int,
                 vtk.VTK_INT: int,
-                vtk.VTK_UNSIGNED_LONG: py2to3.long_type,
-                vtk.VTK_LONG: py2to3.long_type,
+                vtk.VTK_UNSIGNED_LONG: int,
+                vtk.VTK_LONG: int,
                 vtk.VTK_FLOAT: float,
                 vtk.VTK_DOUBLE: float
             }
@@ -207,11 +207,11 @@ def get_python_voxel_type(dataset):
                 itkTypes.UC: int,
                 itkTypes.US: int,
                 itkTypes.UI: int,
-                itkTypes.UL: py2to3.long_type,
+                itkTypes.UL: int,
                 itkTypes.SC: int,
                 itkTypes.SS: int,
                 itkTypes.SI: int,
-                itkTypes.SL: py2to3.long_type,
+                itkTypes.SL: int,
                 itkTypes.B: int
             }
 
