@@ -15,6 +15,7 @@
 #  limitations under the License.
 #
 ###############################################################################
+from tomviz import py2to3
 
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
@@ -52,7 +53,7 @@ def vtk_itk_type_map():
             'vtkDoubleArray': 'D3'
         }
 
-        for (vtk_type, image_type) in type_map.iteritems():
+        for (vtk_type, image_type) in py2to3.iteritems(type_map):
             try:
                 _vtk_to_itk_types[vtk_type] = getattr(itk.Image, image_type)
             except AttributeError:
@@ -149,7 +150,7 @@ def vtk_cast_map():
         }
 
         # Select the best supported type available in the wrapping.
-        for (vtk_type, possible_image_types) in type_map.iteritems():
+        for (vtk_type, possible_image_types) in py2to3.iteritems(type_map):
             type_map[vtk_type] = None
             for possible_type in possible_image_types:
                 if itk.ctype(possible_type) in itk.WrapITKBuildOptions.SCALARS:
@@ -178,8 +179,8 @@ def get_python_voxel_type(dataset):
                 vtk.VTK_SHORT: int,
                 vtk.VTK_UNSIGNED_INT: int,
                 vtk.VTK_INT: int,
-                vtk.VTK_UNSIGNED_LONG: long,
-                vtk.VTK_LONG: long,
+                vtk.VTK_UNSIGNED_LONG: int,
+                vtk.VTK_LONG: int,
                 vtk.VTK_FLOAT: float,
                 vtk.VTK_DOUBLE: float
             }
@@ -206,11 +207,11 @@ def get_python_voxel_type(dataset):
                 itkTypes.UC: int,
                 itkTypes.US: int,
                 itkTypes.UI: int,
-                itkTypes.UL: long,
+                itkTypes.UL: int,
                 itkTypes.SC: int,
                 itkTypes.SS: int,
                 itkTypes.SI: int,
-                itkTypes.SL: long,
+                itkTypes.SL: int,
                 itkTypes.B: int
             }
 
@@ -220,7 +221,8 @@ def get_python_voxel_type(dataset):
         ctype = itkExtras.template(type(dataset))[1][0]
         return _itkctype_to_python_types[ctype]
     except AttributeError as attribute_error:
-        print("Could not get Python voxel type for dataset %s" % type(dataset))
+        print("Could not get Python voxel type for dataset %s"
+              % type(dataset))
         print(attribute_error)
 
 
@@ -239,7 +241,7 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     import itk
     import itkTypes
     import vtk
-    import utils
+    from tomviz import utils
 
     itk_to_vtk_type_map = {
         itkTypes.F: vtk.VTK_FLOAT,
@@ -307,7 +309,7 @@ def set_array_from_itk_image(dataset, itk_image):
     #new_array.SetName(name)
     #------------------------------------------
     import itk
-    import utils
+    from . import utils
     result = itk.PyBuffer[
         itk_output_image_type].GetArrayFromImage(itk_image)
     utils.set_array(dataset, result)
@@ -327,7 +329,7 @@ def get_label_object_attributes(dataset):
 
         # Get an appropriate LabelImageToShapelLabelMapFilter type for the
         # input.
-        inputTypes = [x[0] for x in itk.LabelImageToShapeLabelMapFilter.keys()]
+        inputTypes = [x[0] for x in list(itk.LabelImageToShapeLabelMapFilter.keys())] # noqa
         filterTypeIndex = inputTypes.index(itk_image_type)
         if filterTypeIndex < 0:
             raise Exception("No suitable filter type for input type %s" %
@@ -336,7 +338,7 @@ def get_label_object_attributes(dataset):
         # Now take the connected components results and compute things like
         # volume and surface area.
         shape_filter = \
-            itk.LabelImageToShapeLabelMapFilter.values()[filterTypeIndex].New()
+            list(itk.LabelImageToShapeLabelMapFilter.values())[filterTypeIndex].New() # noqa
         shape_filter.SetInput(itk_image)
         shape_filter.Update()
 

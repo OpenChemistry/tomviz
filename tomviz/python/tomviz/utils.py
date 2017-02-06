@@ -291,7 +291,7 @@ def make_spreadsheet(column_names, table):
         array.SetNumberOfTuples(rows)
         vtk_table.AddColumn(array)
 
-        for row in xrange(0, rows):
+        for row in range(0, rows):
             array.InsertValue(row, table[row, column])
 
     return vtk_table

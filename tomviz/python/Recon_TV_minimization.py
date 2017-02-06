@@ -181,7 +181,7 @@ def tv_minimization(A, tiltSeries, recon, iterNum=1):
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     # Suppress warning messages that pops up when dividing zeros
     np.seterr(all='ignore')
-    print 'Generating parallel-beam measurement matrix using ray-driven model'
+    print('Generating parallel-beam measurement matrix using ray-driven model')
     Nproj = angles.size # Number of projections
 
     # Ray coordinates at 0 degrees.
@@ -284,8 +284,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     cols[idx] = pixelIndicex
                     vals[idx] = length
             else:
-                print ("Ray No.", j + 1, "at", angles[i],
-                       "degree is out of image grid!")
+                print(("Ray No.", j + 1, "at", angles[i],
+                       "degree is out of image grid!"))
     # Truncate excess zeros.
     rows = rows[:idxend]
     cols = cols[:idxend]

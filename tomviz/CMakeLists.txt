@@ -328,6 +328,7 @@ set(tomviz_python_modules
   operators.py
   itkutils.py
   utils.py
+  py2to3.py
 )
 
 file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz")

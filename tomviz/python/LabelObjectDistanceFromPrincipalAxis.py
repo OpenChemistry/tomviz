@@ -62,7 +62,7 @@ def transform_scalars(dataset, label_value=1, principal_axis=0):
         label_value_to_distance[label_object.GetLabel()] = d
 
     distance = np.zeros(dataset.GetNumberOfPoints())
-    for i in xrange(len(labels)):
+    for i in range(len(labels)):
         distance[i] = label_value_to_distance[labels[i]]
 
     import vtk.util.numpy_support as np_s

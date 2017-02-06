@@ -28,7 +28,7 @@ def transform_scalars(dataset):
         # num_label_objects rows, 3 columns
         table = np.zeros((num_label_objects, len(column_names)))
 
-        for i in xrange(0, num_label_objects):
+        for i in range(0, num_label_objects):
             label_object = shape_label_map.GetNthLabelObject(i)
             surface_area = label_object.GetPerimeter()
             table[i, 0] = surface_area
