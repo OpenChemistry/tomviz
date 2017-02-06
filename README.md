@@ -24,6 +24,8 @@ We recommend downloading the current [stable release](../../releases)
 but also provide nightly binaries built by our [dashboards][Dashboard] for
 Windows, macOS, and Linux.
 
+It is best to ensure your operating system is up to date before installing tomviz.
+
 __Windows__: Follow the installation instructions, double click on the tomviz
 icon to launch application. __Mac OS X__: After downloading tomviz double click
 to launch installation. After reading the License Agreement, drag the tomviz
