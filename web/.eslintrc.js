@@ -12,5 +12,10 @@ module.exports = {
     'react/prefer-es6-class': 0,
     'react/forbid-prop-types': 0,
     'jsx-a11y/no-static-element-interactions': 0,
-  }
+
+    'no-console': 0,
+  },
+  env: {
+    browser: true,
+  },
 };
