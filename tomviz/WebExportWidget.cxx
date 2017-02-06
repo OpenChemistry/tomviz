@@ -36,8 +36,7 @@
 
 namespace tomviz {
 
-WebExportWidget::WebExportWidget(QWidget* p)
-  : QDialog(p)
+WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 {
   QVBoxLayout* v = new QVBoxLayout(this);
   this->setMinimumWidth(500);
@@ -106,7 +105,8 @@ WebExportWidget::WebExportWidget(QWidget* p)
   v->addLayout(actionGroup);
 
   // UI binding
-  this->connect(this->outputPath, SIGNAL(textChanged(const QString &)), this, SLOT(onPathChange()));
+  this->connect(this->outputPath, SIGNAL(textChanged(const QString&)), this,
+                SLOT(onPathChange()));
   this->connect(this->browseButton, SIGNAL(pressed()), this, SLOT(onBrowse()));
   this->connect(this->exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
   this->connect(this->cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
@@ -118,25 +118,25 @@ WebExportWidget::~WebExportWidget()
 
 void WebExportWidget::onBrowse()
 {
-    pqServer* server = pqActiveObjects::instance().activeServer();
-    pqFileDialog fileDialog(server, pqCoreUtilities::mainWidget(),
-                            tr("Save Scene for Web:"), QString(), "");
-    fileDialog.setObjectName("DirectorySaveDialog");
-    fileDialog.setFileMode(pqFileDialog::Directory);
-    if (fileDialog.exec() == QDialog::Accepted) {
-        this->outputPath->setText(fileDialog.getSelectedFiles()[0]);
-        this->exportButton->setDisabled(false);
-    }
+  pqServer* server = pqActiveObjects::instance().activeServer();
+  pqFileDialog fileDialog(server, pqCoreUtilities::mainWidget(),
+                          tr("Save Scene for Web:"), QString(), "");
+  fileDialog.setObjectName("DirectorySaveDialog");
+  fileDialog.setFileMode(pqFileDialog::Directory);
+  if (fileDialog.exec() == QDialog::Accepted) {
+    this->outputPath->setText(fileDialog.getSelectedFiles()[0]);
+    this->exportButton->setDisabled(false);
+  }
 }
 
 void WebExportWidget::onPathChange()
 {
-    this->exportButton->setDisabled(!(this->outputPath->text().length() > 3));
+  this->exportButton->setDisabled(!(this->outputPath->text().length() > 3));
 }
 
 void WebExportWidget::onExport()
 {
-    this->accept();
+  this->accept();
 }
 
 void WebExportWidget::onCancel()
@@ -146,21 +146,21 @@ void WebExportWidget::onCancel()
 
 QString WebExportWidget::getOutputPath()
 {
-    return this->outputPath->text();
+  return this->outputPath->text();
 }
 
 int WebExportWidget::getExportType()
 {
-    return this->exportType->currentIndex();
+  return this->exportType->currentIndex();
 }
 
 int WebExportWidget::getDeltaPhi()
 {
-    return this->deltaPhi->value();
+  return this->deltaPhi->value();
 }
 
 int WebExportWidget::getDeltaTheta()
 {
-    return this->deltaTheta->value();
+  return this->deltaTheta->value();
 }
 }
