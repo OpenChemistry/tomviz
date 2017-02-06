@@ -59,11 +59,11 @@ def set_array(dataobject, newarray, minextent=None):
     if np.isfortran(newarray):
         arr = newarray.reshape(-1, order='F')
     else:
-        print ('Warning, array does not have Fortran order, making deep copy '
-               'and fixing...')
+        print('Warning, array does not have Fortran order, making deep copy '
+              'and fixing...')
         tmp = np.asfortranarray(newarray)
         arr = tmp.reshape(-1, order='F')
-        print ('...done.')
+        print('...done.')
 
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
