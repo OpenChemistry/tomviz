@@ -99,11 +99,6 @@ if(APPLE)
 endif()
 
 install(
-  DIRECTORY "${tomviz_SOURCE_DIR}/web/www/tomviz"
-  DESTINATION "${tomviz_web_install_dir}"
-  COMPONENT runtime)
-
-install(
-  FILES "${tomviz_SOURCE_DIR}/web/www/index.html"
+  FILES "${tomviz_SOURCE_DIR}/web/www/TomViz.html"
   DESTINATION "${tomviz_web_install_dir}"
   COMPONENT runtime)

@@ -38,11 +38,8 @@ def get_proxy(id):
 def copy_viewer(destinationPath):
     searchPath = os.getcwd()
     for root, dirs, files in os.walk(searchPath):
-        if 'index.html' in files:
-            shutil.copytree(os.path.join(root, 'tomviz'),
-                            os.path.join(destinationPath, 'tomviz'))
-            shutil.copy(os.path.join(root, 'index.html'),
-                        destinationPath)
+        if 'TomViz.html' in files:
+            shutil.copy(os.path.join(root, 'TomViz.html'), destinationPath)
             return
 
 
