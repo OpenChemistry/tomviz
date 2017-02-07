@@ -1,7 +1,7 @@
 import pytest
 import requests
 import time
-import md5
+import hashlib
 from threading import Thread
 
 from tomviz.acquisition import server
@@ -135,7 +135,10 @@ def test_preview_scan(acquisition_server):
 
     assert response.status_code == 200
     expected = '1b9723cd7e9ecd54f28c7dae13e38511'
-    assert md5.new(response.content).hexdigest() == expected
+
+    md5 = hashlib.md5()
+    md5.update(response.content)
+    assert md5.hexdigest() == expected
 
 
 def test_stem_acquire(acquisition_server):
@@ -163,4 +166,7 @@ def test_stem_acquire(acquisition_server):
 
     assert response.status_code == 200
     expected = '2dbadcaa028e763a0a69efd371b48c9d'
-    assert md5.new(response.content).hexdigest() == expected
+
+    md5 = hashlib.md5()
+    md5.update(response.content)
+    assert md5.hexdigest() == expected
