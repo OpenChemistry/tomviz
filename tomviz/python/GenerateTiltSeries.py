@@ -6,11 +6,12 @@ import tomviz.operators
 
 class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, start_angle=0.0, angle_increment=6.0,
-                          num_tilts=30):
+    def transform_scalars(self, dataset, start_angle=0.0, angle_increment=3.0,
+                          num_tilts=60):
         """Generate Tilt Series from Volume"""
         self.progress.maximum = 1
 
+        self.progress.message = 'Initialization'
         # Generate Tilt Angles.
         angles = np.linspace(start_angle, start_angle +
                              (num_tilts - 1) * angle_increment, num_tilts)
@@ -40,6 +41,8 @@ class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
         for i in range(num_tilts):
             if self.canceled:
                 return
+            self.progress.message = 'Generating tilt image No.%d/%d' % (
+                i + 1, num_tilts)
 
             # Rotate volume about x-axis
             rotatedVolume = scipy.ndimage.interpolation.rotate(
