@@ -41,8 +41,8 @@ public:
 
   QString getOutputPath();
   int getExportType();
-  int getDeltaPhi();
-  int getDeltaTheta();
+  int getNumberOfPhi();
+  int getNumberOfTheta();
 
 protected slots:
   void onPathChange();
@@ -54,8 +54,8 @@ protected:
   QLineEdit* outputPath;
   QPushButton* browseButton;
   QComboBox* exportType;
-  QSpinBox* deltaPhi;
-  QSpinBox* deltaTheta;
+  QSpinBox* nbPhi;
+  QSpinBox* nbTheta;
   QPushButton* exportButton;
   QPushButton* cancelButton;
 };

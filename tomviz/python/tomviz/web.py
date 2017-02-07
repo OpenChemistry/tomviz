@@ -7,8 +7,17 @@ from paraview.web.dataset_builder import ImageDataSetBuilder
 from paraview.web.dataset_builder import CompositeDataSetBuilder
 
 
-def web_export(executionPath, destPath, exportType, deltaPhi, deltaTheta):
+def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
+    # Destination directory for data
     dest = '%s/data' % destPath
+
+    # Extract initial setting for view
+    view = simple.GetRenderView()
+    cp = tuple(view.CameraPosition)
+
+    # Camera handling
+    deltaPhi = 360 / nbPhi
+    deltaTheta = int(180 / nbTheta)
     thetaMax = deltaTheta
     while thetaMax + deltaTheta < 90:
         thetaMax += deltaTheta
@@ -23,6 +32,12 @@ def web_export(executionPath, destPath, exportType, deltaPhi, deltaTheta):
         export_images(dest, camera)
 
     if exportType == 1:
+        export_volume_exploration_images(dest, camera)
+
+    if exportType == 2:
+        export_contour_exploration_images(dest, camera)
+
+    if exportType == 3:
         export_layers(dest, camera)
 
     # Zip data directory
@@ -30,6 +45,9 @@ def web_export(executionPath, destPath, exportType, deltaPhi, deltaTheta):
 
     # Copy application
     copy_viewer(destPath, executionPath)
+
+    # Restore initial parameters
+    view.CameraPosition = cp
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -39,15 +57,17 @@ def web_export(executionPath, destPath, exportType, deltaPhi, deltaTheta):
 def zipData(destinationPath):
     dstFile = os.path.join(destinationPath, 'data.tomviz')
     dataDir = os.path.join(destinationPath, 'data')
-    with zipfile.ZipFile(dstFile, mode='w') as zf:
-        for dirName, subdirList, fileList in os.walk(dataDir):
-            for fname in fileList:
-                fullPath = os.path.join(dirName, fname)
-                relPath = 'data/%s' % (os.path.relpath(fullPath, dataDir))
-                zf.write(fullPath, arcname=relPath,
-                         compress_type=zipfile.ZIP_STORED)
 
-    shutil.rmtree(dataDir)
+    if os.path.exists(dataDir):
+        with zipfile.ZipFile(dstFile, mode='w') as zf:
+            for dirName, subdirList, fileList in os.walk(dataDir):
+                for fname in fileList:
+                    fullPath = os.path.join(dirName, fname)
+                    relPath = 'data/%s' % (os.path.relpath(fullPath, dataDir))
+                    zf.write(fullPath, arcname=relPath,
+                             compress_type=zipfile.ZIP_STORED)
+
+        shutil.rmtree(dataDir)
 
 
 def get_proxy(id):
@@ -126,6 +146,19 @@ def add_scene_item(scene, name, proxy, view):
         'representation': representation
     })
 
+def get_volume_piecewise(view):
+    renderer = view.GetClientSideObject().GetRenderer()
+    for volume in renderer.GetVolumes():
+        if volume.GetClassName() == 'vtkVolume':
+            return volume.GetProperty().GetScalarOpacity()
+    return None
+
+def get_contour():
+    for key, value in simple.GetSources().iteritems():
+        if 'FlyingEdges' in key[0]:
+            return value
+    return None
+
 # -----------------------------------------------------------------------------
 # Image based exporter
 # -----------------------------------------------------------------------------
@@ -137,6 +170,53 @@ def export_images(destinationPath, camera):
     idb.start(view)
     idb.writeImages()
     idb.stop()
+
+# -----------------------------------------------------------------------------
+# Image based Volume exploration
+# -----------------------------------------------------------------------------
+
+
+def export_volume_exploration_images(destinationPath, camera):
+    view = simple.GetRenderView()
+    pvw = get_volume_piecewise(view)
+    maxOpacity = 0.5
+    nbSteps = 10
+    step = 250.0 / float(nbSteps)
+    span = step * 0.4
+    values = [float(v + 1) * step for v in range(0, nbSteps)]
+    if pvw:
+        idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
+        idb.getDataHandler().registerArgument(priority=1, name='volume', values=values, ui='slider', loop='reverse')
+        idb.start(view)
+        for volume in idb.getDataHandler().volume:
+            pvw.RemoveAllPoints()
+            pvw.AddPoint(float(volume) - span, 0)
+            pvw.AddPoint(float(volume), maxOpacity)
+            pvw.AddPoint(float(volume) + span, 0)
+            pvw.AddPoint(255, 0)
+            idb.writeImages()
+        idb.stop()
+
+# -----------------------------------------------------------------------------
+# Image based Contour exploration
+# -----------------------------------------------------------------------------
+
+
+def export_contour_exploration_images(destinationPath, camera):
+    view = simple.GetRenderView()
+    contour = get_contour()
+    nbSteps = 10
+    step = 250.0 / float(nbSteps)
+    span = step * 0.4
+    values = [float(v + 1) * step for v in range(0, nbSteps)]
+    if contour:
+        idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
+        idb.getDataHandler().registerArgument(priority=1, name='contour', values=values, ui='slider', loop='reverse')
+        idb.start(view)
+        for contourValue in idb.getDataHandler().contour:
+            contour.Value = [contourValue]
+            idb.writeImages()
+        idb.stop()
 
 # -----------------------------------------------------------------------------
 # Composite exporter

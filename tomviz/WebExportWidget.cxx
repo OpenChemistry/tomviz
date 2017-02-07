@@ -58,37 +58,39 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   QHBoxLayout* typeGroup = new QHBoxLayout;
   this->exportType = new QComboBox;
   this->exportType->addItem("Images");
-  this->exportType->addItem("Composite surfaces");
+  this->exportType->addItem("Volume exploration");
+  this->exportType->addItem("Contour exploration");
+  // this->exportType->addItem("Composite surfaces"); // specularColor segfault
   this->exportType->setCurrentIndex(0);
   typeGroup->addWidget(outputTypelabel);
   typeGroup->addWidget(this->exportType, 1);
   v->addLayout(typeGroup);
 
   // Camera settings
-  QLabel* cameraGrouplabel = new QLabel("Camera delta angles:");
+  QLabel* cameraGrouplabel = new QLabel("Camera tilts:");
 
   QLabel* phiLabel = new QLabel("Phi");
-  this->deltaPhi = new QSpinBox();
-  this->deltaPhi->setRange(10, 90);
-  this->deltaPhi->setSingleStep(10);
-  this->deltaPhi->setValue(30);
-  this->deltaPhi->setMinimumWidth(100);
+  this->nbPhi = new QSpinBox();
+  this->nbPhi->setRange(4, 72);
+  this->nbPhi->setSingleStep(4);
+  this->nbPhi->setValue(36);
+  this->nbPhi->setMinimumWidth(100);
 
   QLabel* thetaLabel = new QLabel("Theta");
-  this->deltaTheta = new QSpinBox();
-  this->deltaTheta->setRange(10, 60);
-  this->deltaTheta->setSingleStep(5);
-  this->deltaTheta->setValue(30);
-  this->deltaTheta->setMinimumWidth(100);
+  this->nbTheta = new QSpinBox();
+  this->nbTheta->setRange(1, 20);
+  this->nbTheta->setSingleStep(1);
+  this->nbTheta->setValue(5);
+  this->nbTheta->setMinimumWidth(100);
 
   QHBoxLayout* cameraGroup = new QHBoxLayout;
   cameraGroup->addWidget(cameraGrouplabel);
   cameraGroup->addStretch();
   cameraGroup->addWidget(phiLabel);
-  cameraGroup->addWidget(deltaPhi);
+  cameraGroup->addWidget(nbPhi);
   cameraGroup->addSpacing(30);
   cameraGroup->addWidget(thetaLabel);
-  cameraGroup->addWidget(deltaTheta);
+  cameraGroup->addWidget(nbTheta);
   v->addLayout(cameraGroup);
 
   v->addStretch();
@@ -154,13 +156,13 @@ int WebExportWidget::getExportType()
   return this->exportType->currentIndex();
 }
 
-int WebExportWidget::getDeltaPhi()
+int WebExportWidget::getNumberOfPhi()
 {
-  return this->deltaPhi->value();
+  return this->nbPhi->value();
 }
 
-int WebExportWidget::getDeltaTheta()
+int WebExportWidget::getNumberOfTheta()
 {
-  return this->deltaTheta->value();
+  return this->nbTheta->value();
 }
 }

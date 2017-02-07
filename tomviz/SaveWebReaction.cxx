@@ -61,12 +61,12 @@ void SaveWebReaction::onTriggered()
   WebExportWidget dialog;
   if (dialog.exec() == QDialog::Accepted) {
     this->saveWeb(dialog.getOutputPath(), dialog.getExportType(),
-                  dialog.getDeltaPhi(), dialog.getDeltaTheta());
+                  dialog.getNumberOfPhi(), dialog.getNumberOfTheta());
   }
 }
 
-bool SaveWebReaction::saveWeb(const QString& filename, int type, int deltaPhi,
-                              int deltaTheta)
+bool SaveWebReaction::saveWeb(const QString& filename, int type, int nbPhi,
+                              int nbTheta)
 {
   Python::initialize();
 
@@ -86,8 +86,8 @@ bool SaveWebReaction::saveWeb(const QString& filename, int type, int deltaPhi,
   args.set(0, toVariant(QVariant(QCoreApplication::applicationDirPath())));
   args.set(1, toVariant(QVariant(filename)));
   args.set(2, toVariant(QVariant(type)));
-  args.set(3, toVariant(QVariant(deltaPhi)));
-  args.set(4, toVariant(QVariant(deltaTheta)));
+  args.set(3, toVariant(QVariant(nbPhi)));
+  args.set(4, toVariant(QVariant(nbTheta)));
 
   Python::Object result = webExport.call(args, kwargs);
   if (!result.isValid()) {
