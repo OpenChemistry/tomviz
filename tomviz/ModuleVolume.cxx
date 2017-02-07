@@ -79,6 +79,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   t->SetInputData(im);
 
   m_volumeMapper->SetInputConnection(t->GetOutputPort());
+  m_volumeMapper->UseJitteringOn();
   m_volume->SetMapper(m_volumeMapper.Get());
   m_volume->SetProperty(m_volumeProperty.Get());
 
