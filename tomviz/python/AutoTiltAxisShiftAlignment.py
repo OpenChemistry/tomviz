@@ -2,9 +2,10 @@ import numpy as np
 from scipy.interpolate import interp1d
 import tomviz.operators
 
+
 def transform_scalars(dataset):
     """Automatic align the tilt axis to the center of images"""
-    
+
     from tomviz import utils
     # Get Tilt angles
     tilt_angles = utils.get_tilt_angles(dataset)
@@ -15,31 +16,33 @@ def transform_scalars(dataset):
 
     Nx, Ny, Nz = tiltSeries.shape
 
-    shifts = (np.linspace(-20,20,41)).astype('int')
+    shifts = (np.linspace(-20, 20, 41)).astype('int')
     numberOfSlices = 5 #number of slices used for recon
 
     #randomly choose slices with top 50% total intensities
-    tiltSeriesSum = np.sum(tiltSeries,axis=(1,2))
+    tiltSeriesSum = np.sum(tiltSeries, axis=(1, 2))
     temp = tiltSeriesSum.argsort()[Nx // 2:]
     slices = temp[np.random.permutation(temp.size)[:numberOfSlices]]
     print(slices)
 
     I = np.zeros(shifts.size)
-    
+
     for i in range(shifts.size):
-        shiftedTiltSeries = np.roll(tiltSeries[slices,:,:,], shifts[i], axis=1)
+        shiftedTiltSeries = np.roll(
+            tiltSeries[slices, :, :, ], shifts[i], axis=1)
         for s in range(numberOfSlices):
             recon = wbp2(shiftedTiltSeries[s, :, :],
-                         tilt_angles, Ny, 'ramp','linear')
+                         tilt_angles, Ny, 'ramp', 'linear')
             I[i] = I[i] + np.amax(recon)
 
         print shifts[i], I[i]
     print shifts[np.argmax(I)]
 
-    result  = np.roll(tiltSeries, shifts[np.argmax(I)], axis=1)
+    result = np.roll(tiltSeries, shifts[np.argmax(I)], axis=1)
 
     # Set the result as the new scalars.
     utils.set_array(dataset, result)
+
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     if sinogram.ndim != 2:
@@ -93,6 +96,8 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     return recon
 
 # Filter (1D) projections.
+
+
 def makeFilter(Nray, filterMethod="ramp"):
     # Calculate next power of 2
     N2 = 2**np.ceil(np.log2(Nray))
