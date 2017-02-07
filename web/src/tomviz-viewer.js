@@ -108,7 +108,7 @@ function createUI(viewer, container, callback) {
 
 // Expose viewer factory method -----------------------------------------------
 
-export function load(container, zipFile) {
+export function load(container, zipFile, options) {
   const rootQueryDataModel = new QueryDataModel({
     type: [],
     arguments: {},
@@ -134,12 +134,15 @@ export function load(container, zipFile) {
       createUI(viewer, container);
     });
   });
-  rootQueryDataModel.useZipContent(zipFile).then((dm) => {
+  rootQueryDataModel.useZipContent(zipFile, options).then((dm) => {
     rootQueryDataModel.fetchData();
   });
 }
 
 // Be ready for file drop -----------------------------------------------------
+const container = document.querySelector('.react-content');
+const fileSelector = document.querySelector('.fileSelector');
+
 const bodyStyle = document.querySelector('body').style;
 bodyStyle.background = `url(${background})`;
 bodyStyle.backgroundRepeat = 'no-repeat';
@@ -148,12 +151,9 @@ bodyStyle.position = 'absolute';
 bodyStyle.width = '100vw';
 bodyStyle.height = '100vh';
 
-const fileSelector = document.querySelector('.fileSelector');
-
 function handleFile(e) {
   var files = this.files;
   if (files.length === 1) {
-    const container = document.querySelector('.react-content');
     container.removeChild(fileSelector);
     load(container, files[0]);
   }
@@ -162,6 +162,12 @@ function handleFile(e) {
 const linkImageSelector = document.querySelector('.linkImage');
 linkImageSelector.src = link;
 
+if (fileSelector) {
+  fileSelector.onchange = handleFile;
+}
 
-fileSelector.onchange = handleFile;
+// Manage data if already available -----------------------------------------------------
 
+if (global.data) {
+  load(container, global.data, { base64: true });
+}
