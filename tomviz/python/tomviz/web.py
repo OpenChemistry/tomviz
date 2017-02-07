@@ -7,12 +7,15 @@ from paraview.web.dataset_builder import ImageDataSetBuilder
 from paraview.web.dataset_builder import CompositeDataSetBuilder
 
 
-def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
+def web_export(executionPath, destinationPath, exportType, deltaPhi, deltaTheta):
     dest = '%s/data' % destinationPath
+    thetaMax = deltaTheta
+    while thetaMax + deltaTheta < 90:
+        thetaMax += deltaTheta
     camera = {
         'type': 'spherical',
         'phi': range(0, 360, deltaPhi),
-        'theta': range(-deltaTheta, deltaTheta + 1, deltaTheta)
+        'theta': range(-thetaMax, thetaMax + 1, deltaTheta)
     }
 
     # Choose export mode:
@@ -26,7 +29,7 @@ def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
     zipData(destinationPath)
 
     # Copy application
-    copy_viewer(destinationPath)
+    copy_viewer(destinationPath, executionPath)
 
 # -----------------------------------------------------------------------------
 # Helpers
@@ -53,13 +56,15 @@ def get_proxy(id):
     return simple.servermanager._getPyProxy(remoteObj)
 
 
-def copy_viewer(destinationPath):
-    searchPath = os.getcwd()
-    for root, dirs, files in os.walk(searchPath):
-        if 'tomviz.html' in files and root != destinationPath:
-            srcFile = os.path.join(root, 'tomviz.html')
-            shutil.copy(srcFile, destinationPath)
-            return
+def copy_viewer(destinationPath, executionPath):
+    searchPath = executionPath
+    for upDirTry in range(4):
+        searchPath = os.path.normpath(os.path.join(searchPath, '..'))
+        for root, dirs, files in os.walk(searchPath):
+            if 'tomviz.html' in files and root != destinationPath:
+                srcFile = os.path.join(root, 'tomviz.html')
+                shutil.copy(srcFile, destinationPath)
+                return
 
 
 def add_scene_item(scene, name, proxy, view):

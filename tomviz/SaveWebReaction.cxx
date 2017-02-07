@@ -30,6 +30,7 @@
 
 #include <cassert>
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QDialog>
 #include <QMessageBox>
@@ -81,11 +82,12 @@ bool SaveWebReaction::saveWeb(const QString& filename, int type, int deltaPhi,
   }
 
   Python::Dict kwargs;
-  Python::Tuple args(4);
-  args.set(0, toVariant(QVariant(filename)));
-  args.set(1, toVariant(QVariant(type)));
-  args.set(2, toVariant(QVariant(deltaPhi)));
-  args.set(3, toVariant(QVariant(deltaTheta)));
+  Python::Tuple args(5);
+  args.set(0, toVariant(QVariant(QCoreApplication::applicationDirPath())));
+  args.set(1, toVariant(QVariant(filename)));
+  args.set(2, toVariant(QVariant(type)));
+  args.set(3, toVariant(QVariant(deltaPhi)));
+  args.set(4, toVariant(QVariant(deltaTheta)));
 
   Python::Object result = webExport.call(args, kwargs);
   if (!result.isValid()) {
