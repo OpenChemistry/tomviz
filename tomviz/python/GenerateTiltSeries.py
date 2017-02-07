@@ -6,7 +6,7 @@ import tomviz.operators
 
 class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, start_angle=0.0, angle_increment=3.0,
+    def transform_scalars(self, dataset, start_angle=-90.0, angle_increment=3.0,
                           num_tilts=60):
         """Generate Tilt Series from Volume"""
         self.progress.maximum = 1
