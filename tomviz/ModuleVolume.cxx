@@ -14,6 +14,7 @@
 
 ******************************************************************************/
 #include "ModuleVolume.h"
+#include "ModuleVolumeWidget.h"
 
 #include "DataSource.h"
 #include "Utilities.h"
@@ -78,10 +79,17 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   t->SetInputData(im);
 
+  // Default parameters
   m_volumeMapper->SetInputConnection(t->GetOutputPort());
-  m_volumeMapper->UseJitteringOn();
   m_volume->SetMapper(m_volumeMapper.Get());
   m_volume->SetProperty(m_volumeProperty.Get());
+  m_volumeMapper->UseJitteringOn();
+  m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
+  m_volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
+  m_volumeProperty->SetAmbient(0.0);
+  m_volumeProperty->SetDiffuse(1.0);
+  m_volumeProperty->SetSpecular(1.0);
+  m_volumeProperty->SetSpecularPower(100.0);
 
   this->updateColorMap();
 
@@ -126,17 +134,29 @@ bool ModuleVolume::visibility() const
 bool ModuleVolume::serialize(pugi::xml_node& ns) const
 {
   xml_node rootNode = ns.append_child("properties");
+
   xml_node visibilityNode = rootNode.append_child("visibility");
   visibilityNode.append_attribute("enabled") = visibility();
+
   xml_node lightingNode = rootNode.append_child("lighting");
   lightingNode.append_attribute("enabled") = m_volumeProperty->GetShade() == 1;
-  xml_node maxIntensityNode = rootNode.append_child("maxIntensity");
-  bool maxIntensity =
-    m_volumeMapper->GetBlendMode() == vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND;
-  maxIntensityNode.append_attribute("enabled") = maxIntensity;
+  lightingNode.append_attribute("ambient") = m_volumeProperty->GetAmbient();
+  lightingNode.append_attribute("diffuse") = m_volumeProperty->GetDiffuse();
+  lightingNode.append_attribute("specular") = m_volumeProperty->GetSpecular();
+  lightingNode.append_attribute("specular_power") =
+    m_volumeProperty->GetSpecularPower();
+
+  xml_node interpNode = rootNode.append_child("interpolation");
+  interpNode.append_attribute("type") =
+    m_volumeProperty->GetInterpolationType();
+
+  xml_node blendingNode = rootNode.append_child("blending");
+  blendingNode.append_attribute("mode") = m_volumeMapper->GetBlendMode();
+
   xml_node jitteringNode = rootNode.append_child("jittering");
   jitteringNode.append_attribute("enabled") =
     m_volumeMapper->GetUseJittering() == 1;
+
   return Module::serialize(ns);
 }
 
@@ -160,12 +180,35 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
     if (att) {
       setLighting(att.as_bool());
     }
-  }
-  node = rootNode.child("maxIntensity");
-  if (node) {
-    xml_attribute att = node.attribute("enabled");
+    att = node.attribute("ambient");
     if (att) {
-      setMaximumIntensity(att.as_bool());
+      onAmbientChanged(att.as_double());
+    }
+    att = node.attribute("diffuse");
+    if (att) {
+      onDiffuseChanged(att.as_double());
+    }
+    att = node.attribute("specular");
+    if (att) {
+      onSpecularChanged(att.as_double());
+    }
+    att = node.attribute("specular_power");
+    if (att) {
+      onSpecularPowerChanged(att.as_double());
+    }
+  }
+  node = rootNode.child("blending");
+  if (node) {
+    xml_attribute att = node.attribute("mode");
+    if (att) {
+      setBlendingMode(att.as_int());
+    }
+  }
+  node = rootNode.child("interpolation");
+  if (node) {
+    xml_attribute att = node.attribute("type");
+    if (att) {
+      onInterpolationChanged(att.as_int());
     }
   }
   node = rootNode.child("jittering");
@@ -186,23 +229,68 @@ void ModuleVolume::addToPanel(QWidget* panel)
   }
 
   QVBoxLayout* layout = new QVBoxLayout;
-  QCheckBox* lighting = new QCheckBox("Enable lighting");
-  layout->addWidget(lighting);
   panel->setLayout(layout);
-  QCheckBox* maxIntensity = new QCheckBox("Maximum intensity");
-  layout->addWidget(maxIntensity);
-  QCheckBox* jittering = new QCheckBox("Jittering");
-  layout->addWidget(jittering);
-  layout->addStretch();
 
-  lighting->setChecked(m_volumeProperty->GetShade() == 1);
-  maxIntensity->setChecked(m_volumeMapper->GetBlendMode() ==
-                           vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND);
-  jittering->setChecked(m_volumeMapper->GetUseJittering() == 1);
+  // Create, update and connect
+  m_controllers = new ModuleVolumeWidget;
+  layout->addWidget(m_controllers);
 
-  connect(lighting, SIGNAL(clicked(bool)), SLOT(setLighting(bool)));
-  connect(maxIntensity, SIGNAL(clicked(bool)), SLOT(setMaximumIntensity(bool)));
-  connect(jittering, SIGNAL(clicked(bool)), SLOT(setJittering(bool)));
+  m_controllers->setJittering(
+    static_cast<bool>(m_volumeMapper->GetUseJittering()));
+  m_controllers->setLighting(static_cast<bool>(m_volumeProperty->GetShade()));
+  m_controllers->setBlendingMode(m_volumeMapper->GetBlendMode());
+  m_controllers->setAmbient(m_volumeProperty->GetAmbient());
+  m_controllers->setDiffuse(m_volumeProperty->GetDiffuse());
+  m_controllers->setSpecular(m_volumeProperty->GetSpecular());
+  m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
+  m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
+
+  connect(m_controllers, SIGNAL(jitteringToggled(const bool)), this,
+          SLOT(setJittering(const bool)));
+  connect(m_controllers, SIGNAL(lightingToggled(const bool)), this,
+          SLOT(setLighting(const bool)));
+  connect(m_controllers, SIGNAL(blendingChanged(const int)), this,
+          SLOT(setBlendingMode(const int)));
+  connect(m_controllers, SIGNAL(interpolationChanged(const int)), this,
+          SLOT(onInterpolationChanged(const int)));
+  connect(m_controllers, SIGNAL(ambientChanged(const double)), this,
+          SLOT(onAmbientChanged(const double)));
+  connect(m_controllers, SIGNAL(diffuseChanged(const double)), this,
+          SLOT(onDiffuseChanged(const double)));
+  connect(m_controllers, SIGNAL(specularChanged(const double)), this,
+          SLOT(onSpecularChanged(const double)));
+  connect(m_controllers, SIGNAL(specularPowerChanged(const double)), this,
+          SLOT(onSpecularPowerChanged(const double)));
+}
+
+void ModuleVolume::onAmbientChanged(const double value)
+{
+  m_volumeProperty->SetAmbient(value);
+  emit renderNeeded();
+}
+
+void ModuleVolume::onDiffuseChanged(const double value)
+{
+  m_volumeProperty->SetDiffuse(value);
+  emit renderNeeded();
+}
+
+void ModuleVolume::onSpecularChanged(const double value)
+{
+  m_volumeProperty->SetSpecular(value);
+  emit renderNeeded();
+}
+
+void ModuleVolume::onSpecularPowerChanged(const double value)
+{
+  m_volumeProperty->SetSpecularPower(value);
+  emit renderNeeded();
+}
+
+void ModuleVolume::onInterpolationChanged(const int type)
+{
+  m_volumeProperty->SetInterpolationType(type);
+  emit renderNeeded();
 }
 
 void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
@@ -241,26 +329,19 @@ vtkSMProxy* ModuleVolume::getProxyForString(const std::string&)
   return nullptr;
 }
 
-void ModuleVolume::setLighting(bool val)
+void ModuleVolume::setLighting(const bool val)
 {
   m_volumeProperty->SetShade(val ? 1 : 0);
-  m_volumeProperty->SetAmbient(0.0);
-  m_volumeProperty->SetDiffuse(1.0);
-  m_volumeProperty->SetSpecularPower(100.0);
   emit renderNeeded();
 }
 
-void ModuleVolume::setMaximumIntensity(bool val)
+void ModuleVolume::setBlendingMode(const int mode)
 {
-  if (val) {
-    m_volumeMapper->SetBlendMode(vtkVolumeMapper::MAXIMUM_INTENSITY_BLEND);
-  } else {
-    m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
-  }
+  m_volumeMapper->SetBlendMode(mode);
   emit renderNeeded();
 }
 
-void ModuleVolume::setJittering(bool val)
+void ModuleVolume::setJittering(const bool val)
 {
   m_volumeMapper->SetUseJittering(val ? 1 : 0);
   emit renderNeeded();

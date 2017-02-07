@@ -32,6 +32,8 @@ class vtkVolume;
 
 namespace tomviz {
 
+class ModuleVolumeWidget;
+
 class ModuleVolume : public Module
 {
   Q_OBJECT
@@ -72,11 +74,21 @@ private:
   vtkNew<vtkVolume> m_volume;
   vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
+  ModuleVolumeWidget* m_controllers = nullptr;
 
 private slots:
-  void setLighting(bool val);
-  void setMaximumIntensity(bool val);
-  void setJittering(bool val);
+  /**
+   * Actuator methods for m_volumeMapper.  These slots should be connected to
+   * the appropriate UI signals.
+   */
+  void setLighting(const bool val);
+  void setBlendingMode(const int mode);
+  void onInterpolationChanged(const int type);
+  void setJittering(const bool val);
+  void onAmbientChanged(const double value);
+  void onDiffuseChanged(const double value);
+  void onSpecularChanged(const double value);
+  void onSpecularPowerChanged(const double value);
 };
 }
 
