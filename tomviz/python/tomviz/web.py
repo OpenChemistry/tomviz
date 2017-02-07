@@ -15,9 +15,6 @@ def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
         'theta': range(-deltaTheta, deltaTheta + 1, deltaTheta)
     }
 
-    # Copy application
-    copy_viewer(destinationPath)
-
     # Choose export mode:
     if exportType == 0:
         export_images(dest, camera)
@@ -28,6 +25,9 @@ def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
     # Zip data directory
     zipData(destinationPath)
 
+    # Copy application
+    copy_viewer(destinationPath)
+
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
@@ -36,16 +36,14 @@ def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
 def zipData(destinationPath):
     dstFile = os.path.join(destinationPath, 'data.tomviz')
     dataDir = os.path.join(destinationPath, 'data')
-    zf = zipfile.ZipFile(dstFile, mode='w')
-    try:
+    with zipfile.ZipFile(dstFile, mode='w') as zf
         for dirName, subdirList, fileList in os.walk(dataDir):
             for fname in fileList:
                 fullPath = os.path.join(dirName, fname)
                 relPath = 'data/%s' % (os.path.relpath(fullPath, dataDir))
                 zf.write(fullPath, arcname=relPath,
                          compress_type=zipfile.ZIP_STORED)
-    finally:
-        zf.close()
+
 
     shutil.rmtree(dataDir)
 
@@ -59,8 +57,9 @@ def get_proxy(id):
 def copy_viewer(destinationPath):
     searchPath = os.getcwd()
     for root, dirs, files in os.walk(searchPath):
-        if 'Tomviz.html' in files:
-            shutil.copy(os.path.join(root, 'Tomviz.html'), destinationPath)
+        if 'tomviz.html' in files and root != destinationPath:
+            srcFile = os.path.join(root, 'tomviz.html')
+            shutil.copy(srcFile, destinationPath)
             return
 
 
@@ -71,8 +70,8 @@ def add_scene_item(scene, name, proxy, view):
     representation = {}
     rep = simple.GetRepresentation(proxy, view)
 
-    # Skip volume
-    if rep.Visibility == 0 or rep.Representation == 'Volume':
+    # Skip hidden object or volume
+    if not rep.Visibility or rep.Representation == 'Volume':
         return
 
     for prop in ['Representation']:
@@ -80,7 +79,7 @@ def add_scene_item(scene, name, proxy, view):
 
     pdInfo = proxy.GetPointDataInformation()
     numberOfPointArrays = pdInfo.GetNumberOfArrays()
-    for idx in xrange(numberOfPointArrays):
+    for idx in range(numberOfPointArrays):
         array = pdInfo.GetArray(idx)
         rangeValues = array.GetRange(-1)
         if array.Name == 'Normals':
@@ -98,7 +97,7 @@ def add_scene_item(scene, name, proxy, view):
     # Get information about cell data arrays
     cdInfo = proxy.GetCellDataInformation()
     numberOfCellArrays = cdInfo.GetNumberOfArrays()
-    for idx in xrange(numberOfCellArrays):
+    for idx in range(numberOfCellArrays):
         array = cdInfo.GetArray(idx)
         hasColor = True
         colors[array.Name] = {

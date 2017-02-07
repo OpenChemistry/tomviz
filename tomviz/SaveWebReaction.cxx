@@ -67,7 +67,6 @@ void SaveWebReaction::onTriggered()
 bool SaveWebReaction::saveWeb(const QString& filename, int type, int deltaPhi,
                               int deltaTheta)
 {
-  cout << "Generate" << filename.toLatin1().data() << endl;
   Python::initialize();
 
   Python python;

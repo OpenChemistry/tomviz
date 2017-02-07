@@ -7,7 +7,7 @@ var fs = require('fs');
 
 var templatePath = path.resolve(__dirname, './template.html');
 var destPath = path.resolve(__dirname, '../www');
-var outputFile = path.join(destPath, 'Tomviz.html');
+var outputFile = path.join(destPath, 'tomviz.html');
 
 function bundleIntoSingleHtml() {
   var htmlTemplate = fs.readFileSync(templatePath, { encoding: 'utf8', flag: 'r' });
