@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.interpolate import interp1d
-import tomviz.operators
 
 
 def transform_scalars(dataset):
@@ -35,8 +34,8 @@ def transform_scalars(dataset):
                          tilt_angles, Ny, 'ramp', 'linear')
             I[i] = I[i] + np.amax(recon)
 
-        print shifts[i], I[i]
-    print shifts[np.argmax(I)]
+    #    print shifts[i], I[i]
+    #print shifts[np.argmax(I)]
 
     result = np.roll(tiltSeries, shifts[np.argmax(I)], axis=1)
 
