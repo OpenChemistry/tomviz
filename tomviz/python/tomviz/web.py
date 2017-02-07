@@ -1,5 +1,12 @@
 import os
 import shutil
+import zipfile
+
+try:
+  import zlib
+  compression = zipfile.ZIP_DEFLATED
+except:
+  compression = zipfile.ZIP_STORED
 
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
@@ -24,10 +31,27 @@ def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
     if exportType == 1:
         export_layers(dest, camera)
 
+    # Zip data directory
+    zipData(destinationPath)
+
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
 
+def zipData(destinationPath):
+    dstFile = os.path.join(destinationPath, 'data.tomviz')
+    dataDir = os.path.join(destinationPath, 'data')
+    zf = zipfile.ZipFile(dstFile, mode='w')
+    try:
+      for dirName, subdirList, fileList in os.walk(dataDir):
+        for fname in fileList:
+          fullPath = os.path.join(dirName, fname)
+          relPath = 'data/%s' % (os.path.relpath(fullPath, dataDir))
+          zf.write(fullPath, arcname=relPath, compress_type=compression)
+    finally:
+        zf.close()
+
+    shutil.rmtree(dataDir)
 
 def get_proxy(id):
     session = simple.servermanager.ActiveConnection.Session
