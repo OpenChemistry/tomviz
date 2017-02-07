@@ -36,14 +36,13 @@ def web_export(destinationPath, exportType, deltaPhi, deltaTheta):
 def zipData(destinationPath):
     dstFile = os.path.join(destinationPath, 'data.tomviz')
     dataDir = os.path.join(destinationPath, 'data')
-    with zipfile.ZipFile(dstFile, mode='w') as zf
+    with zipfile.ZipFile(dstFile, mode='w') as zf:
         for dirName, subdirList, fileList in os.walk(dataDir):
             for fname in fileList:
                 fullPath = os.path.join(dirName, fname)
                 relPath = 'data/%s' % (os.path.relpath(fullPath, dataDir))
                 zf.write(fullPath, arcname=relPath,
                          compress_type=zipfile.ZIP_STORED)
-
 
     shutil.rmtree(dataDir)
 
