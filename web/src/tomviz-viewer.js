@@ -20,7 +20,8 @@ import SortedCompositeViewer     from 'arctic-viewer/lib/types/SortedComposite';
 
 // Background image -----------------------------------------------------------
 
-import background from './TomVizDrop.png';
+import background from './tomvizDrop.png';
+import link from './tomvizLink.png';
 
 // Global variables -----------------------------------------------------------
 
@@ -157,6 +158,10 @@ function handleFile(e) {
     load(container, files[0]);
   }
 }
+
+const linkImageSelector = document.querySelector('.linkImage');
+linkImageSelector.src = link;
+
 
 fileSelector.onchange = handleFile;
 
