@@ -305,8 +305,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
     readInPythonScript("GradientMagnitude2D_Sobel"), true);
   new AddRotateAlignReaction(rotateAlignAction);
-  new AddPythonTransformReaction(autoRotateAlignAction, "Auto Tilt Axis Align",
-    readInPythonScript("AutoTiltAxisRotationAlignment"),true);
+  new AddPythonTransformReaction(
+    autoRotateAlignAction, "Auto Tilt Axis Align",
+    readInPythonScript("AutoTiltAxisRotationAlignment"), true);
   new AddPythonTransformReaction(
     autoRotateAlignShiftAction, "Auto Tilt Axis Shift Align",
     readInPythonScript("AutoTiltAxisShiftAlignment"), true);
