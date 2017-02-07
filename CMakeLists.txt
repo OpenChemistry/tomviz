@@ -102,3 +102,5 @@ install(
   FILES "${tomviz_SOURCE_DIR}/web/www/Tomviz.html"
   DESTINATION "${tomviz_web_install_dir}"
   COMPONENT runtime)
+
+file(COPY "${tomviz_SOURCE_DIR}/web/www/Tomviz.html" DESTINATION "${CMAKE_BINARY_DIR}/web")
