@@ -203,7 +203,6 @@ set(exec_sources
 
 set(python_files
   AddPoissonNoise.py
-  AutoTiltAxisShiftAlignment.py
   BinaryThreshold.py
   ConnectedComponents.py
   OtsuMultipleThreshold.py
@@ -215,7 +214,8 @@ set(python_files
   LabelObjectPrincipalAxes.py
   LabelObjectDistanceFromPrincipalAxis.py
   MisalignImgs_Uniform.py
-  AutoTiltAxisAlignment.py
+  AutoTiltAxisRotationAlignment.py
+  AutoTiltAxisShiftAlignment.py
   AutoCenterOfMassTiltImageAlignment.py
   AutoCrossCorrelationTiltImageAlignment.py
   Recon_DFT.py
