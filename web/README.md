@@ -10,5 +10,5 @@ $ npm run bundle
 Then the following file should be dropped along the exported data
 
 ```
-${tomviz_src}/web/www/TomViz.html
+${tomviz_src}/web/www/Tomviz.html
 ```
