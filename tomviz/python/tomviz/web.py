@@ -100,9 +100,14 @@ def copy_viewer(destinationPath, executionPath):
 
 
 def create_standalone_html(destinationPath):
+    dataPath = os.path.join(destinationPath, DATA_FILENAME)
     tmpData = os.path.join(destinationPath, BASE64_DATA_FILENAME)
+
+    if not os.path.exists(dataPath):
+        return
+
     with file(tmpData, mode='w') as dataOut:
-        with file(os.path.join(destinationPath, DATA_FILENAME)) as dataIn:
+        with file(dataPath) as dataIn:
             base64.encode(dataIn, dataOut)
 
     srcHtmlPath = os.path.join(destinationPath, HTML_FILENAME)
@@ -238,6 +243,8 @@ def export_volume_exploration_images(destinationPath, camera):
             pvw.AddPoint(255, 0)
             idb.writeImages()
         idb.stop()
+    else:
+        print('No Volume module available')
 
 # -----------------------------------------------------------------------------
 # Image based Contour exploration
@@ -260,6 +267,8 @@ def export_contour_exploration_images(destinationPath, camera):
             contour.Value = [contourValue]
             idb.writeImages()
         idb.stop()
+    else:
+        print('No contour module available')
 
 # -----------------------------------------------------------------------------
 # Composite exporter
