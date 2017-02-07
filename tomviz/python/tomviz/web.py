@@ -7,8 +7,8 @@ from paraview.web.dataset_builder import ImageDataSetBuilder
 from paraview.web.dataset_builder import CompositeDataSetBuilder
 
 
-def web_export(executionPath, destinationPath, exportType, deltaPhi, deltaTheta):
-    dest = '%s/data' % destinationPath
+def web_export(executionPath, destPath, exportType, deltaPhi, deltaTheta):
+    dest = '%s/data' % destPath
     thetaMax = deltaTheta
     while thetaMax + deltaTheta < 90:
         thetaMax += deltaTheta
@@ -26,10 +26,10 @@ def web_export(executionPath, destinationPath, exportType, deltaPhi, deltaTheta)
         export_layers(dest, camera)
 
     # Zip data directory
-    zipData(destinationPath)
+    zipData(destPath)
 
     # Copy application
-    copy_viewer(destinationPath, executionPath)
+    copy_viewer(destPath, executionPath)
 
 # -----------------------------------------------------------------------------
 # Helpers
