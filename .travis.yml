@@ -1,5 +1,9 @@
 sudo: false
-language: cpp
+language: python
+python:
+    - "2.7"
+    - "3.4"
+
 dist: precise
 addons:
   apt:
@@ -9,10 +13,9 @@ addons:
     packages:
     - clang-format-3.8
 install: 
-  - pip install --user flake8
+  - pip install flake8
 script:
-- cd $TRAVIS_BUILD_DIR
-- ./scripts/travis/run_clang_format_diff.sh master $TRAVIS_COMMIT
-- git checkout $TRAVIS_PULL_REQUEST_SHA
-- ~/.local/bin/flake8 --config=flake8.cfg .
- 
+  - cd $TRAVIS_BUILD_DIR
+  - if [ -n "${PY2}" ]; then ./scripts/travis/run_clang_format_diff.sh master $TRAVIS_COMMIT; fi
+  - git checkout $TRAVIS_PULL_REQUEST_SHA
+  - flake8 --config=flake8.cfg .
