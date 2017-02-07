@@ -119,7 +119,11 @@ bool ModuleRuler::setVisibility(bool val)
 
 bool ModuleRuler::visibility() const
 {
-  return vtkSMPropertyHelper(m_Representation, "Visibility").GetAsInt() != 0;
+  if (m_Representation) {
+    return vtkSMPropertyHelper(m_Representation, "Visibility").GetAsInt() != 0;
+  } else {
+    return false;
+  }
 }
 
 bool ModuleRuler::serialize(pugi::xml_node& ns) const

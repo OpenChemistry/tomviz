@@ -211,8 +211,11 @@ bool ModuleSlice::setVisibility(bool val)
 
 bool ModuleSlice::visibility() const
 {
-  Q_ASSERT(this->Widget);
-  return this->Widget->GetEnabled() != 0;
+  if (this->Widget) {
+    return this->Widget->GetEnabled() != 0;
+  } else {
+    return false;
+  }
 }
 
 void ModuleSlice::addToPanel(QWidget* panel)

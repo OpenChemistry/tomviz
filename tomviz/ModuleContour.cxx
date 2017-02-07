@@ -182,9 +182,12 @@ bool ModuleContour::setVisibility(bool val)
 
 bool ModuleContour::visibility() const
 {
-  Q_ASSERT(this->ContourRepresentation);
-  return vtkSMPropertyHelper(this->ContourRepresentation, "Visibility")
-           .GetAsInt() != 0;
+  if (this->ContourRepresentation) {
+    return vtkSMPropertyHelper(this->ContourRepresentation, "Visibility")
+             .GetAsInt() != 0;
+  } else {
+    return false;
+  }
 }
 
 void ModuleContour::setIsoValues(const QList<double>& values)
