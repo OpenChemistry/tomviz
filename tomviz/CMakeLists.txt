@@ -203,6 +203,7 @@ set(exec_sources
 
 set(python_files
   AddPoissonNoise.py
+  AutoTiltAxisShiftAlignment.py
   BinaryThreshold.py
   ConnectedComponents.py
   OtsuMultipleThreshold.py
