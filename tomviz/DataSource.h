@@ -147,6 +147,13 @@ public:
   /// Return true if an operator is running in this DataSource's worker
   bool isRunningAnOperator();
 
+  // Pause the automatic exection of the operator pipeline
+  void pausePipeline();
+
+  // Resume the automatic execution of the operator pipeline, will execution the
+  // existing pipeline.
+  void resumePipeline();
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
