@@ -37,7 +37,7 @@ protected:
   void contextMenuEvent(QContextMenuEvent*) override;
   void currentChanged(const QModelIndex& current,
                       const QModelIndex& previous) override;
-  void deleteItem(const QModelIndex& idx);
+  void deleteItems(const QModelIndexList& idxs);
 
 private slots:
   void rowActivated(const QModelIndex& idx);

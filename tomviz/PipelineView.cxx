@@ -116,6 +116,7 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   setStyleSheet(customStyle);
   setAlternatingRowColors(true);
   setSelectionBehavior(QAbstractItemView::SelectRows);
+  setSelectionMode(QAbstractItemView::ExtendedSelection);
   setItemDelegate(new OperatorRunningDelegate(this));
 
   // track selection to update ActiveObjects.
@@ -133,9 +134,7 @@ PipelineView::~PipelineView() = default;
 void PipelineView::keyPressEvent(QKeyEvent* e)
 {
   if (e->key() == Qt::Key_Delete || e->key() == Qt::Key_Backspace) {
-    if (currentIndex().isValid()) {
-      deleteItem(currentIndex());
-    }
+    deleteItems(selectedIndexes());
   } else {
     QTreeView::keyPressEvent(e);
   }
@@ -200,7 +199,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   auto selectedItem = contextMenu.exec(globalPoint);
   // Some action was selected, so process it.
   if (selectedItem == deleteAction) {
-    deleteItem(idx);
+    deleteItems(selectedIndexes());
   } else if (executeAction && selectedItem == executeAction) {
     if (!dataSource) {
       dataSource = op->dataSource();
@@ -212,20 +211,54 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   }
 }
 
-void PipelineView::deleteItem(const QModelIndex& idx)
+void PipelineView::deleteItems(const QModelIndexList& idxs)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
-  auto dataSource = pipelineModel->dataSource(idx);
-  auto module = pipelineModel->module(idx);
-  auto op = pipelineModel->op(idx);
-  if (dataSource) {
-    pipelineModel->removeDataSource(dataSource);
-  } else if (module) {
-    pipelineModel->removeModule(module);
-  } else if (op) {
-    pipelineModel->removeOp(op);
+
+  QList<DataSource*> dataSources;
+  QList<Operator*> operators;
+  QList<Module*> modules;
+
+  foreach (QModelIndex idx, idxs) {
+    auto dataSource = pipelineModel->dataSource(idx);
+    auto module = pipelineModel->module(idx);
+    auto op = pipelineModel->op(idx);
+    if (dataSource) {
+      dataSources.push_back(dataSource);
+    } else if (module) {
+      modules.push_back(module);
+    } else if (op) {
+      operators.push_back(op);
+    }
   }
+
+  foreach (Module* module, modules) {
+    // If the datasource is being remove don't bother removing the module
+    if (!dataSources.contains(module->dataSource())) {
+      pipelineModel->removeModule(module);
+    }
+  }
+
+  QList<DataSource*> paused;
+  foreach (Operator* op, operators) {
+    // If the datasource is being remove don't bother removing the operator
+    if (!dataSources.contains(op->dataSource())) {
+      op->dataSource()->pausePipeline();
+      paused.push_back(op->dataSource());
+      pipelineModel->removeOp(op);
+    }
+  }
+
+  foreach (DataSource* dataSource, dataSources) {
+    pipelineModel->removeDataSource(dataSource);
+  }
+
+  // Now resume the pipelines
+  foreach (DataSource* dataSource, paused) {
+    dataSource->resumePipeline();
+  }
+
   ActiveObjects::instance().renderAllViews();
 }
 

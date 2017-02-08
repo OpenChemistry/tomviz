@@ -65,6 +65,7 @@ public:
   QMap<Operator*, vtkWeakPointer<vtkImageData>> CachedPreOpStates;
   PipelineWorker* Worker;
   PipelineWorker::Future* Future;
+  bool PipelinePaused = false;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -562,6 +563,10 @@ void DataSource::operate(Operator* op)
 {
   Q_ASSERT(op);
 
+  if (this->Internals->PipelinePaused) {
+    return;
+  }
+
   // See if we have any canceled operators in the pipeline, if so start from
   // there.
   for (auto itr = this->Internals->Operators.begin(); *itr != op; ++itr) {
@@ -780,6 +785,10 @@ void DataSource::setData(vtkDataObject* newData)
 
 void DataSource::operatorTransformModified()
 {
+  if (this->Internals->PipelinePaused) {
+    return;
+  }
+
   Operator* srcOp = qobject_cast<Operator*>(sender());
 
   vtkSmartPointer<vtkImageData> cachedState;
@@ -948,6 +957,10 @@ void DataSource::updateColorMap()
 
 void DataSource::executeOperators()
 {
+  if (this->Internals->PipelinePaused) {
+    return;
+  }
+
   // Cancel any running operators
   if (this->Internals->Future != nullptr &&
       this->Internals->Future->isRunning()) {
@@ -984,5 +997,16 @@ bool DataSource::isRunningAnOperator()
 {
   return this->Internals->Future != nullptr &&
          this->Internals->Future->isRunning();
+}
+
+void DataSource::pausePipeline()
+{
+  this->Internals->PipelinePaused = true;
+}
+
+void DataSource::resumePipeline()
+{
+  this->Internals->PipelinePaused = false;
+  executeOperators();
 }
 }
