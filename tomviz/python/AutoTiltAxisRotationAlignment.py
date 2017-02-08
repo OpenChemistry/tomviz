@@ -4,11 +4,11 @@ from scipy import ndimage
 import tomviz.operators
 
 
-class AutoTiltAxisRotationAlignmentOperator(tomviz.operators.CancelableOperator):
+class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset):
         """
-          Automatic align the tilt axis to horizontal direction (parallel to x-axis)
+          Automatic align the tilt axis to horizontal direction (x-axis)
         """
         self.progress.maximum = 1
 
@@ -27,8 +27,8 @@ class AutoTiltAxisRotationAlignmentOperator(tomviz.operators.CancelableOperator)
         self.progress.message = 'Initialization'
         #take FFT of all projections
         for i in range(Nproj):
-            self.progress.message = 'Taking Fourier transofrm of tilt image No.%d/%d' % (
-                i + 1, Nproj)
+            self.progress.message =
+              'Taking Fourier transofrm of tilt image No.%d/%d' % (i + 1, Nproj)
             tiltImage = tiltSeries[:, :, i]
             tiltImage_F = np.abs(np.fft.fft2(tiltImage))
             if (i == 0):
@@ -56,8 +56,9 @@ class AutoTiltAxisRotationAlignmentOperator(tomviz.operators.CancelableOperator)
         for a in range(coarseAngles.size):
             if self.canceled:
                 return
-            self.progress.message = 'Calculating line intensity at angle %f degree' % (
-                coarseAngles[a])
+            self.progress.message =
+              'Calculating line intensity at angle %f degree' %
+              (coarseAngles[a])
             I[a, :] = calculateLineIntensity(Intensity_var, coarseAngles[a], N)
             step += 1
             self.progress.value = step
@@ -75,8 +76,9 @@ class AutoTiltAxisRotationAlignmentOperator(tomviz.operators.CancelableOperator)
         for a in range(fineAngles.size):
             if self.canceled:
                 return
-            self.progress.message = 'Calculating line intensity at angle %f degree' % (fineAngles[
-                                                                                       a])
+            self.progress.message =
+              'Calculating line intensity at angle %f degree' % (fineAngles[a])
+
             I[a, :] = calculateLineIntensity(Intensity_var, fineAngles[a], N)
             step += 1
             self.progress.value = step

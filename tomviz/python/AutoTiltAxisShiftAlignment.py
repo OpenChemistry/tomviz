@@ -20,9 +20,9 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
         Nx, Ny, Nz = tiltSeries.shape
 
         shifts = (np.linspace(-20, 20, 41)).astype('int')
-        numberOfSlices = 5 #number of slices used for recon
+        numberOfSlices = 5  # number of slices used for recon
 
-        #randomly choose slices with top 50% total intensities
+        # randomly choose slices with top 50% total intensities
         tiltSeriesSum = np.sum(tiltSeries, axis=(1, 2))
         temp = tiltSeriesSum.argsort()[Nx // 2:]
         slices = temp[np.random.permutation(temp.size)[:numberOfSlices]]
@@ -40,8 +40,9 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
             shiftedTiltSeries = np.roll(
                 tiltSeries[slices, :, :, ], shifts[i], axis=1)
             for s in range(numberOfSlices):
-                self.progress.message = 'Reconstructing slice No.%d with %d pixels shift' % (
-                    slices[s], shifts[i])
+                self.progress.message =
+                    'Reconstructing slice No.%d with %d pixels shift' %
+                    (slices[s], shifts[i])
                 recon = wbp2(shiftedTiltSeries[s, :, :],
                              tilt_angles, Ny, 'ramp', 'linear')
                 I[i] = I[i] + np.amax(recon)
