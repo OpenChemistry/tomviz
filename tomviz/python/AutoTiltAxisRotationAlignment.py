@@ -28,7 +28,8 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
         #take FFT of all projections
         for i in range(Nproj):
             self.progress.message =
-              'Taking Fourier transofrm of tilt image No.%d/%d' % (i + 1, Nproj)
+                'Taking Fourier transofrm of tilt image No.%d/%d' % (
+                    i + 1, Nproj)
             tiltImage = tiltSeries[:, :, i]
             tiltImage_F = np.abs(np.fft.fft2(tiltImage))
             if (i == 0):
@@ -57,8 +58,8 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
             if self.canceled:
                 return
             self.progress.message =
-              'Calculating line intensity at angle %f degree' %
-              (coarseAngles[a])
+                'Calculating line intensity at angle %f degree' %
+                (coarseAngles[a])
             I[a, :] = calculateLineIntensity(Intensity_var, coarseAngles[a], N)
             step += 1
             self.progress.value = step
@@ -77,7 +78,8 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
             if self.canceled:
                 return
             self.progress.message =
-              'Calculating line intensity at angle %f degree' % (fineAngles[a])
+                'Calculating line intensity at angle %f degree' % (fineAngles[
+                                                                   a])
 
             I[a, :] = calculateLineIntensity(Intensity_var, fineAngles[a], N)
             step += 1

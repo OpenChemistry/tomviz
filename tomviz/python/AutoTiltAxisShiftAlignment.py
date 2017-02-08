@@ -42,7 +42,7 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
             for s in range(numberOfSlices):
                 self.progress.message =
                     'Reconstructing slice No.%d with %d pixels shift' %
-                    (slices[s], shifts[i])
+                   (slices[s], shifts[i])
                 recon = wbp2(shiftedTiltSeries[s, :, :],
                              tilt_angles, Ny, 'ramp', 'linear')
                 I[i] = I[i] + np.amax(recon)
