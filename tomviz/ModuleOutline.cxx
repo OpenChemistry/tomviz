@@ -127,9 +127,12 @@ bool ModuleOutline::setVisibility(bool val)
 
 bool ModuleOutline::visibility() const
 {
-  Q_ASSERT(this->OutlineRepresentation);
-  return vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
-           .GetAsInt() != 0;
+  if (this->OutlineRepresentation) {
+    return vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
+             .GetAsInt() != 0;
+  } else {
+    return false;
+  }
 }
 
 void ModuleOutline::addToPanel(QWidget* panel)

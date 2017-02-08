@@ -121,9 +121,12 @@ bool ModuleOrthogonalSlice::setVisibility(bool val)
 
 bool ModuleOrthogonalSlice::visibility() const
 {
-  Q_ASSERT(this->Representation);
-  return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() !=
-         0;
+  if (this->Representation) {
+    return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() !=
+           0;
+  } else {
+    return false;
+  }
 }
 
 void ModuleOrthogonalSlice::addToPanel(QWidget* panel)

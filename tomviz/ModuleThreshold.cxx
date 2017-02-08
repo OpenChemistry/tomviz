@@ -133,9 +133,12 @@ bool ModuleThreshold::setVisibility(bool val)
 
 bool ModuleThreshold::visibility() const
 {
-  Q_ASSERT(this->ThresholdRepresentation);
-  return vtkSMPropertyHelper(this->ThresholdRepresentation, "Visibility")
-           .GetAsInt() != 0;
+  if (this->ThresholdRepresentation) {
+    return vtkSMPropertyHelper(this->ThresholdRepresentation, "Visibility")
+             .GetAsInt() != 0;
+  } else {
+    return false;
+  }
 }
 
 void ModuleThreshold::addToPanel(QWidget* panel)
