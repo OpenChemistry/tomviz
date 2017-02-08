@@ -93,7 +93,7 @@ class AutoTiltAxisRotationAlignmentOperator(tomviz.operators.CancelableOperator)
         print("rotate tilt series by %f degrees" % -rot_ang)
 
         # Set the result as the new scalars.
-        utils.set_array(dataset, tiltSeries)
+        utils.set_array(dataset, result)
 
 
 def calculateLineIntensity(Intensity_var, angle_d, N):
