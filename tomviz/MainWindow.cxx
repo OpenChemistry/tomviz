@@ -236,7 +236,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QAction* alignAction =
     ui.menuTomography->addAction("Image Alignment (Manual)");
   QAction* autoRotateAlignAction =
-    ui.menuTomography->addAction("Tilt Axis Alignment (Auto)");
+    ui.menuTomography->addAction("Tilt Axis Rotation Alignment (Auto)");
+  QAction* autoRotateAlignShiftAction =
+    ui.menuTomography->addAction("Tilt Axis Shift Alignment (Auto)");
   QAction* rotateAlignAction =
     ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
   ui.menuTomography->addSeparator();
@@ -303,9 +305,13 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
     readInPythonScript("GradientMagnitude2D_Sobel"), true);
   new AddRotateAlignReaction(rotateAlignAction);
-  new AddPythonTransformReaction(autoRotateAlignAction, "Auto Tilt Axis Align",
-                                 readInPythonScript("AutoTiltAxisAlignment"),
-                                 true);
+  new AddPythonTransformReaction(
+    autoRotateAlignAction, "Auto Tilt Axis Align",
+    readInPythonScript("AutoTiltAxisRotationAlignment"), true);
+  new AddPythonTransformReaction(
+    autoRotateAlignShiftAction, "Auto Tilt Axis Shift Align",
+    readInPythonScript("AutoTiltAxisShiftAlignment"), true);
+
   new AddPythonTransformReaction(
     autoAlignCCAction, "Auto Tilt Image Align (XCORR)",
     readInPythonScript("AutoCrossCorrelationTiltImageAlignment"), true);

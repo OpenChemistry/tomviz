@@ -214,7 +214,8 @@ set(python_files
   LabelObjectPrincipalAxes.py
   LabelObjectDistanceFromPrincipalAxis.py
   MisalignImgs_Uniform.py
-  AutoTiltAxisAlignment.py
+  AutoTiltAxisRotationAlignment.py
+  AutoTiltAxisShiftAlignment.py
   AutoCenterOfMassTiltImageAlignment.py
   AutoCrossCorrelationTiltImageAlignment.py
   Recon_DFT.py

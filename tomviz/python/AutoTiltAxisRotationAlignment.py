@@ -4,7 +4,9 @@ from scipy import ndimage
 
 
 def transform_scalars(dataset):
-    """Automatic align the tilt axis of tilt series to the center of images"""
+    """
+      Automatic align the tilt axis to horizontal direction (parallel to x-axis)
+    """
 
     # Get Tilt Series
     tiltSeries = utils.get_array(dataset)
