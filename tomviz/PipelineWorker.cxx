@@ -54,6 +54,14 @@ class PipelineWorker::Run : public QObject
 {
   Q_OBJECT
 
+  enum class State
+  {
+    CREATED,
+    RUNNING,
+    CANCELED,
+    COMPLETE
+  };
+
 public:
   Run(vtkDataObject* data, QList<Operator*> operators);
 
@@ -92,7 +100,7 @@ private:
   vtkDataObject* m_data;
   QQueue<RunnableOperator*> m_runnableOperators;
   QList<RunnableOperator*> m_complete;
-  bool m_canceled = false;
+  State m_state = State::CREATED;
 };
 
 #include "PipelineWorker.moc"
@@ -150,6 +158,8 @@ PipelineWorker::Future* PipelineWorker::Run::start()
 
   QTimer::singleShot(0, this, SLOT(startNextOperator()));
 
+  m_state = State::RUNNING;
+
   return future;
 }
 
@@ -172,7 +182,7 @@ void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
 
   bool result = transformResult == TransformResult::COMPLETE;
   // Canceled
-  if (m_canceled || runnableOperator->isCanceled()) {
+  if (m_state == State::CANCELED || runnableOperator->isCanceled()) {
     emit canceled();
   }
   // Error
@@ -185,6 +195,7 @@ void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
   }
   // We are done
   else {
+    m_state = State::COMPLETE;
     emit finished(result);
   }
 
@@ -199,7 +210,7 @@ void PipelineWorker::Run::cancel()
     m_running->cancel();
     m_running = nullptr;
   }
-  m_canceled = true;
+  m_state = State::CANCELED;
   emit canceled();
 }
 
@@ -225,7 +236,7 @@ bool PipelineWorker::Run::cancel(Operator* op)
 
 bool PipelineWorker::Run::isRunning()
 {
-  return m_running != nullptr && !m_canceled;
+  return m_state == State::RUNNING;
 }
 
 bool PipelineWorker::Run::addOperator(Operator* op)
