@@ -89,3 +89,18 @@ if(ENABLE_TESTING)
   enable_testing()
   add_subdirectory(tests)
 endif()
+
+# -----------------------------------------------------------------------------
+# Add web application
+# -----------------------------------------------------------------------------
+set(tomviz_web_install_dir "share/tomviz/web")
+if(APPLE)
+  set(tomviz_web_install_dir "Applications/tomviz.app/Contents/share/tomviz/web")
+endif()
+
+install(
+  FILES "${tomviz_SOURCE_DIR}/web/www/tomviz.html"
+  DESTINATION "${tomviz_web_install_dir}"
+  COMPONENT runtime)
+
+file(COPY "${tomviz_SOURCE_DIR}/web/www/tomviz.html" DESTINATION "${CMAKE_BINARY_DIR}/web")
