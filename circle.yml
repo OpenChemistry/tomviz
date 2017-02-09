@@ -1,0 +1,21 @@
+machine:
+  services:
+    - docker
+  python:
+    version: 2.7.12
+
+dependencies:
+  cache_directories:
+    - ~/docker
+  override:
+    - pip install scikit-ci-addons==0.11.0
+    - ci_addons docker load-pull-save tomviz/tomviz-builder:latest
+
+checkout:
+  post:
+    - git submodule sync
+    - git submodule update --init
+
+test:
+  override:
+    - docker run --name tomviz -v ~/tomviz:/tomviz tomviz/tomviz-builder:latest
