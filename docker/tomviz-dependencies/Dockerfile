@@ -1,8 +1,6 @@
 FROM library/ubuntu:16.04
 MAINTAINER Chris Harris <chris.harris@kitware.com>
 
-ENV NINJA_VERSION v1.7.2
-
 RUN apt-get update && apt-get -y install \
   git \
   wget \
@@ -20,16 +18,17 @@ RUN pip install -U pip && \
   pip install numpy
 
 # Build and install ninja.
-RUN git clone https://github.com/martine/ninja.git && \
+ARG NINJA_VERSION=v1.7.2
+RUN git clone -b $NINJA_VERSION https://github.com/martine/ninja.git && \
   cd ninja && \
-  git checkout $NINJA_VERSION && \
   ./configure.py --bootstrap && \
   mv ninja /usr/bin/ && \
   cd .. && \
   rm -rf ninja
 
 # Build and install googletest
-RUN git clone https://github.com/google/googletest.git && \
+ARG GTEST_VERSION=release-1.8.0
+RUN git clone -b $GTEST_VERSION https://github.com/google/googletest.git && \
   mkdir googletest-build && \
   cd googletest-build && \
   cmake -DCMAKE_INSTALL_PREFIX:PATH=/opt/googletest ../googletest && \
@@ -71,12 +70,9 @@ RUN wget $QT_DOWNLOAD_URL && \
   cd .. && \
   rm -rf $QT_DIR
 
-ARG ITK_VERSION=v4.9.0
 # Build and install ITK
-RUN git clone git://itk.org/ITK.git && \
-  cd ITK && \
-  git checkout $ITK_VERSION && \
-  cd .. && \
+ARG ITK_VERSION=v4.9.0
+RUN git clone -b $ITK_VERSION git://itk.org/ITK.git && \
   mkdir itk-build && \
   cd itk-build && \
   cmake -G Ninja -DCMAKE_BUILD_TYPE:STRING=Release \
@@ -98,9 +94,8 @@ RUN git clone git://itk.org/ITK.git && \
 
 # Build and install ParaView
 ARG PARAVIEW_VERSION=f38113aa2a2a7a7549e1aa5033b546586c07bb74
-RUN git clone --recursive git://github.com/kitware/paraview.git && \
+RUN git clone -b $PARAVIEW_VERSION --recursive git://github.com/kitware/paraview.git && \
   cd paraview && \
-  git checkout $PARAVIEW_VERSION && \
   git submodule update && \
   cd .. && \
   mkdir paraview-build && \
