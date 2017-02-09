@@ -17,6 +17,9 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
         for i in range(tiltSeries.shape[2]):
             if self.canceled:
                 return
+            self.progress.message = 'Processing tilt image No.%d/%d' % (
+                i + 1, tiltSeries.shape[2])
+
             tiltSeries[:, :, i] = centerOfMassAlign(tiltSeries[:, :, i])
 
             step += 1
@@ -39,7 +42,7 @@ def centerOfMassAlign(image):
     sx = -(imageCOM_x - Nx // 2)
     sy = -(imageCOM_y - Ny // 2)
 
-    output = np.roll(image,  sx, axis=1)
+    output = np.roll(image, sx, axis=1)
     output = np.roll(output, sy, axis=0)
 
     return output

@@ -1,46 +1,62 @@
 import numpy as np
 from scipy.interpolate import interp1d
+import tomviz.operators
 
 
-def transform_scalars(dataset):
-    """Automatic align the tilt axis to the center of images"""
+class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
-    from tomviz import utils
-    # Get Tilt angles
-    tilt_angles = utils.get_tilt_angles(dataset)
+    def transform_scalars(self, dataset):
+        """Automatic align the tilt axis to the center of images"""
+        self.progress.maximum = 1
 
-    tiltSeries = utils.get_array(dataset)
-    if tiltSeries is None:
-        raise RuntimeError("No scalars found!")
+        from tomviz import utils
+        # Get Tilt angles
+        tilt_angles = utils.get_tilt_angles(dataset)
 
-    Nx, Ny, Nz = tiltSeries.shape
+        tiltSeries = utils.get_array(dataset)
+        if tiltSeries is None:
+            raise RuntimeError("No scalars found!")
 
-    shifts = (np.linspace(-20, 20, 41)).astype('int')
-    numberOfSlices = 5 #number of slices used for recon
+        Nx, Ny, Nz = tiltSeries.shape
 
-    #randomly choose slices with top 50% total intensities
-    tiltSeriesSum = np.sum(tiltSeries, axis=(1, 2))
-    temp = tiltSeriesSum.argsort()[Nx // 2:]
-    slices = temp[np.random.permutation(temp.size)[:numberOfSlices]]
-    print(slices)
+        shifts = (np.linspace(-20, 20, 41)).astype('int')
+        numberOfSlices = 5  # number of slices used for recon
 
-    I = np.zeros(shifts.size)
+        # randomly choose slices with top 50% total intensities
+        tiltSeriesSum = np.sum(tiltSeries, axis=(1, 2))
+        temp = tiltSeriesSum.argsort()[Nx // 2:]
+        slices = temp[np.random.permutation(temp.size)[:numberOfSlices]]
+        print('Reconstruction slices:')
+        print(slices)
 
-    for i in range(shifts.size):
-        shiftedTiltSeries = np.roll(
-            tiltSeries[slices, :, :, ], shifts[i], axis=1)
-        for s in range(numberOfSlices):
-            recon = wbp2(shiftedTiltSeries[s, :, :],
-                         tilt_angles, Ny, 'ramp', 'linear')
-            I[i] = I[i] + np.amax(recon)
+        I = np.zeros(shifts.size)
 
-    #    print shifts[i], I[i]
-    #print shifts[np.argmax(I)]
+        self.progress.maximum = shifts.size - 1
+        step = 0
 
-    result = np.roll(tiltSeries, shifts[np.argmax(I)], axis=1)
+        for i in range(shifts.size):
+            if self.canceled:
+                return
+            shiftedTiltSeries = np.roll(
+                tiltSeries[slices, :, :, ], shifts[i], axis=1)
+            for s in range(numberOfSlices):
+                self.progress.message = ('Reconstructing slice No.%d with %d'
+                                         'pixels shift' %
+                                         (slices[s], shifts[i]))
 
-    # Set the result as the new scalars.
-    utils.set_array(dataset, result)
+                recon = wbp2(shiftedTiltSeries[s, :, :],
+                             tilt_angles, Ny, 'ramp', 'linear')
+                I[i] = I[i] + np.amax(recon)
+
+            step += 1
+            self.progress.value = step
+
+        print('shift: %d' % shifts[np.argmax(I)])
+
+        result = np.roll(tiltSeries, shifts[np.argmax(I)], axis=1)
+
+        # Set the result as the new scalars.
+        utils.set_array(dataset, result)
 
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
