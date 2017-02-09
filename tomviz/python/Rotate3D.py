@@ -28,8 +28,9 @@ def transform_scalars(dataset, rotation_angle=90.0, rotation_axis=0):
 
     axis1 = (rotation_axis + 1) % 3
     axis2 = (rotation_axis + 2) % 3
-    data_py_return = ndimage.interpolation.rotate(
-        data_py, rotation_angle, axes=(axis1, axis2))
+    data_py_return = np.empty_like(data_py)
+    ndimage.interpolation.rotate(
+        data_py, rotation_angle, output=data_py_return, axes=(axis1, axis2))
 
     utils.set_array(dataset, data_py_return)
     print('Rotation Complete')
