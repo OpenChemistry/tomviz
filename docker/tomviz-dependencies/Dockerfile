@@ -100,7 +100,7 @@ RUN git clone -b $PARAVIEW_VERSION --recursive git://github.com/kitware/paraview
   cd .. && \
   mkdir paraview-build && \
   cd paraview-build && \
-  cmake -G Ninja -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+  cmake -G Ninja -DCMAKE_BUILD_TYPE:STRING=Release \
     -DBUILD_TESTING:BOOL=OFF \
     -DPARAVIEW_ENABLE_CATALYST:BOOL=OFF \
     -DPARAVIEW_ENABLE_PYTHON:BOOL=ON \
