@@ -45,8 +45,10 @@ class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
                 i + 1, num_tilts)
 
             # Rotate volume about x-axis
-            rotatedVolume = scipy.ndimage.interpolation.rotate(
-                volume_pad, angles[i], axes=(1, 2), reshape=False, order=1)
+            rotatedVolume np.empty_like(volume_pad)
+            scipy.ndimage.interpolation.rotate(
+                volume_pad, angles[i], axes=(1, 2), reshape=False, order=1,
+                output=rotatedVolume)
             # Calculate projection
             tiltSeries[:, :, i] = np.sum(rotatedVolume, axis=2)
 
