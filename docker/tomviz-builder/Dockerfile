@@ -3,20 +3,8 @@ MAINTAINER Chris Harris <chris.harris@kitware.com>
 
 RUN echo "#!/bin/bash" > build.sh && \
   echo "set -e" >> build.sh && \
-  echo "mkdir tomviz-build" >> build.sh && \
-  echo "cd tomviz-build" >> build.sh && \
-  echo "cmake -G Ninja -DCMAKE_BUILD_TYPE:STRING=Release \\" >> build.sh && \
-  echo "  -DENABLE_TESTING:BOOL=ON \\" >> build.sh && \
-  echo "  -DParaView_DIR:PATH=$PARAVIEW_DIR \\" >> build.sh && \
-  echo "  -DITK_DIR:PATH=$ITK_DIR \\" >> build.sh && \
-  echo "  -DQt5_DIR:PATH=$QT5_DIR \\" >> build.sh && \
-  echo "  -DGTEST_LIBRARY:PATH=$GTEST_LIBRARY \\" >> build.sh && \
-  echo "  -DGTEST_MAIN_LIBRARY:PATH=$GTEST_MAIN_LIBRARY \\" >> build.sh && \
-  echo "  -DGTEST_INCLUDE_DIR:PATH=$GTEST_INCLUDE_DIR \\" >> build.sh && \
-  echo "  ../tomviz" >> build.sh && \
-  echo "ninja -j \$(nproc)" >> build.sh && \
   echo "pip install -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
-  echo "ctest -V" >> build.sh && \
+  echo "ctest -VV -S /tomviz/cmake/CircleContinuous.cmake" >> build.sh && \
   chmod u+x build.sh
 
 ENTRYPOINT ["/build.sh"]
