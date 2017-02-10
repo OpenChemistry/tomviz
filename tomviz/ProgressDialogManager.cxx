@@ -86,6 +86,10 @@ void ProgressDialogManager::operationStarted()
           progressDialog->setWindowTitle(title);
         }
       });
+    QObject::connect(progressDialog, &QDialog::rejected, [op]() {
+      QObject::disconnect(op, &Operator::progressMessageChanged, nullptr,
+                          nullptr);
+    });
 
     connect(op, &Operator::progressMessageChanged, this,
             &ProgressDialogManager::showStatusBarMessage);
@@ -98,7 +102,7 @@ void ProgressDialogManager::operationStarted()
     QDialogButtonBox* dialogButtons = new QDialogButtonBox(
       QDialogButtonBox::Cancel, Qt::Horizontal, progressDialog);
     layout->addWidget(dialogButtons);
-    QObject::connect(dialogButtons, &QDialogButtonBox::rejected, op,
+    QObject::connect(progressDialog, &QDialog::rejected, op,
                      &Operator::cancelTransform);
     QObject::connect(dialogButtons, &QDialogButtonBox::rejected, progressDialog,
                      &QDialog::reject);
