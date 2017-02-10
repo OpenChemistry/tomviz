@@ -86,6 +86,10 @@ void ProgressDialogManager::operationStarted()
           progressDialog->setWindowTitle(title);
         }
       });
+    QObject::connect(progressDialog, &QDialog::rejected, [op]() {
+      QObject::disconnect(op, &Operator::progressMessageChanged, nullptr,
+                          nullptr);
+    });
 
     connect(op, &Operator::progressMessageChanged, this,
             &ProgressDialogManager::showStatusBarMessage);
