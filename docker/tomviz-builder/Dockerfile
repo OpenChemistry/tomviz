@@ -14,7 +14,7 @@ RUN echo "#!/bin/bash" > build.sh && \
   echo "  -DGTEST_MAIN_LIBRARY:PATH=$GTEST_MAIN_LIBRARY \\" >> build.sh && \
   echo "  -DGTEST_INCLUDE_DIR:PATH=$GTEST_INCLUDE_DIR \\" >> build.sh && \
   echo "  ../tomviz" >> build.sh && \
-  echo "cmake --build ." >> build.sh && \
+  echo "ninja -j \$(nproc)" >> build.sh && \
   echo "pip install -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
   echo "ctest -V" >> build.sh && \
   chmod u+x build.sh
