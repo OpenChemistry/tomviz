@@ -3,14 +3,20 @@ def transform_scalars(dataset):
 
     from tomviz import utils
     import scipy.ndimage
+    import numpy as np
 
     array = utils.get_array(dataset)
 
     # Downsample the dataset x2 using order 1 spline (linear)
-    result = scipy.ndimage.interpolation.zoom(array, (0.5, 0.5, 0.5),
-                                              output=None, order=1,
-                                              mode='constant', cval=0.0,
-                                              prefilter=False)
+    # Calculate out array shape
+    zoom = (0.5, 0.5, 0.5)
+    result_shape = tuple(
+            [int(round(i * j)) for i, j in zip(array.shape, zoom)])
+    result = np.empty(result_shape, array.dtype, order='F')
+    scipy.ndimage.interpolation.zoom(array, zoom,
+                                     output=result, order=1,
+                                     mode='constant', cval=0.0,
+                                     prefilter=False)
 
     # Set the result as the new scalars.
     utils.set_array(dataset, result)
