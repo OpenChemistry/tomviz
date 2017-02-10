@@ -94,8 +94,9 @@ RUN git clone -b $ITK_VERSION git://itk.org/ITK.git && \
 
 # Build and install ParaView
 ARG PARAVIEW_VERSION=f38113aa2a2a7a7549e1aa5033b546586c07bb74
-RUN git clone -b $PARAVIEW_VERSION --recursive git://github.com/kitware/paraview.git && \
+RUN git clone --recursive git://github.com/kitware/paraview.git && \
   cd paraview && \
+  git checkout $PARAVIEW_VERSION && \
   git submodule update && \
   cd .. && \
   mkdir paraview-build && \
