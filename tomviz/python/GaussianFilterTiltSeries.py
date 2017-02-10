@@ -4,12 +4,14 @@ def transform_scalars(dataset, sigma=2.0):
 
     from tomviz import utils
     import scipy.ndimage
+    import numpy as np
 
     tiltSeries = utils.get_array(dataset)
 
     # Transform the dataset.
-    result = scipy.ndimage.filters.gaussian_filter(
-        tiltSeries, [sigma, sigma, 0])
+    result = np.empty_like(tiltSeries)
+    scipy.ndimage.filters.gaussian_filter(
+        tiltSeries, [sigma, sigma, 0], output=result)
 
     # Set the result as the new scalars.
     utils.set_array(dataset, result)
