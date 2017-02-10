@@ -106,10 +106,11 @@ SelectVolumeWidget::SelectVolumeWidget(const double origin[3],
 
   double bounds[6];
   for (int i = 0; i < 6; ++i) {
+
     bounds[i] =
       this->Internals->dataOrigin[i >> 1] +
       this->Internals->dataSpacing[i >> 1] * this->Internals->dataExtent[i] +
-      this->Internals->dataPosition[i];
+      this->Internals->dataPosition[i >> 1];
   }
   vtkNew<vtkBoxRepresentation> boxRep;
   boxRep->GetOutlineProperty()->SetColor(offWhite);
