@@ -321,3 +321,18 @@ def make_spreadsheet(column_names, table):
             array.InsertValue(row, table[row, column])
 
     return vtk_table
+
+def zoom_shape(input, zoom):
+    """
+    Returns the shape of the output array for scipy.ndimage.interpolation.zoom
+    :param input The input array
+    :type input: ndarray
+    :param zoom The zoom factor
+    :type zoom: ndarray
+    """
+
+    if isinstance(zoom, (int, float,)):
+        zoom = [zoom] * input.ndim
+
+    return tuple(
+            [int(round(i * j)) for i, j in zip(input.shape, zoom)])
