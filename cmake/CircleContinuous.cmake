@@ -4,7 +4,7 @@ set(CTEST_BINARY_DIRECTORY "/tomviz-build")
 set(CTEST_COMMAND ctest)
 include(${CTEST_SOURCE_DIRECTORY}/CTestConfig.cmake)
 set(CTEST_SITE "CircleCI")
-set(CTEST_BUILD_NAME "Linux-$ENV{CIRCLE_BRANCH}")
+set(CTEST_BUILD_NAME "$ENV{CIRCLE_BRANCH}-#$ENV{CIRCLE_BUILD_NUM}")
 set(CTEST_CMAKE_GENERATOR "Ninja")
 set(cfg_options
   -DCMAKE_BUILD_TYPE:STRING=Release
