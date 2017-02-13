@@ -4,11 +4,13 @@ def transform_scalars(dataset, size=2):
 
     from tomviz import utils
     import scipy.ndimage
+    import numpy as np
 
     array = utils.get_array(dataset)
 
     # Transform the dataset.
-    result = scipy.ndimage.filters.median_filter(array, size)
+    result = np.empty_like(array)
+    scipy.ndimage.filters.median_filter(array, size, output=result)
 
     # Set the result as the new scalars.
     utils.set_array(dataset, result)
