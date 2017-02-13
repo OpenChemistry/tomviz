@@ -322,6 +322,7 @@ def make_spreadsheet(column_names, table):
 
     return vtk_table
 
+
 def zoom_shape(input, zoom):
     """
     Returns the shape of the output array for scipy.ndimage.interpolation.zoom
@@ -335,4 +336,4 @@ def zoom_shape(input, zoom):
         zoom = [zoom] * input.ndim
 
     return tuple(
-            [int(round(i * j)) for i, j in zip(input.shape, zoom)])
+        [int(round(i * j)) for i, j in zip(input.shape, zoom)])
