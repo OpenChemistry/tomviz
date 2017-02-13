@@ -31,9 +31,9 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         # Initialization
         self.progress.message = 'Initialization'
         Nz = Ny
-        w = np.zeros((Nx, Ny, np.int(Nz / 2 + 1))) #store weighting factors
+        w = np.zeros((Nx, Ny, Nz // 2 + 1)) #store weighting factors
         v = pyfftw.n_byte_align_empty(
-            (Nx, Ny, Nz / 2 + 1), 16, dtype='complex128')
+            (Nx, Ny, Nz // 2 + 1), 16, dtype='complex128')
         v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
         recon = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='float64')
         recon_fftw_object = pyfftw.FFTW(
@@ -41,7 +41,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
 
         p = pyfftw.n_byte_align_empty((Nx, Npad), 16, dtype='float64')
         pF = pyfftw.n_byte_align_empty(
-            (Nx, Npad / 2 + 1), 16, dtype='complex128')
+            (Nx, Npad // 2 + 1), 16, dtype='complex128')
         p_fftw_object = pyfftw.FFTW(p, pF, axes=(0, 1))
 
         dk = np.double(Ny) / np.double(Npad)

@@ -145,7 +145,7 @@ def dfm3(input, angles, Npad):
     pad_post = int(np.floor((Npad - Ny) / 2.0))
 
     # Initialization
-    Nz = np.int(Ny / 2.0 + 1)
+    Nz = Ny // 2 + 1
     w = np.zeros((Nx, Ny, Nz)) #store weighting factors
     v = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='complex128')
     v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
@@ -154,7 +154,7 @@ def dfm3(input, angles, Npad):
         v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
 
     p = pyfftw.n_byte_align_empty((Nx, Npad), 16, dtype='float64')
-    pF = pyfftw.n_byte_align_empty((Nx, Npad / 2 + 1), 16, dtype='complex128')
+    pF = pyfftw.n_byte_align_empty((Nx, Npad // 2 + 1), 16, dtype='complex128')
     p_fftw_object = pyfftw.FFTW(p, pF, axes=(0, 1))
 
     dk = np.double(Ny) / np.double(Npad)
@@ -225,7 +225,7 @@ def bilinear(kz_new, ky_new, sz, sy, N, p):
 def radial_average(tiltseries, kr_cutoffs):
     (Nx, Ny, Nproj) = tiltseries.shape
 
-    f = pyfftw.n_byte_align_empty((Nx, Ny / 2 + 1), 16, dtype='complex128')
+    f = pyfftw.n_byte_align_empty((Nx, Ny // 2 + 1), 16, dtype='complex128')
     r = pyfftw.n_byte_align_empty((Nx, Ny), 16, dtype='float64')
     p_fftw_object = pyfftw.FFTW(r, f, axes=(0, 1))
     Ir = np.zeros(kr_cutoffs.size)
