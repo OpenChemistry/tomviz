@@ -7,6 +7,7 @@ def transform_scalars(dataset, SHIFT=None):
 
     from tomviz import utils
     from scipy import ndimage
+    import numpy as np
 
     data_py = utils.get_array(dataset) # Get data as numpy array.
 
@@ -15,7 +16,8 @@ def transform_scalars(dataset, SHIFT=None):
 
     print('Shifting Images...')
 
-    data_py_return = ndimage.interpolation.shift(data_py, SHIFT, order=0)
+    data_py_return = np.empty_like(data_py)
+    ndimage.interpolation.shift(data_py, SHIFT, order=0, output=data_py_return)
 
     utils.set_array(dataset, data_py_return)
     print('Shifting Complete')
