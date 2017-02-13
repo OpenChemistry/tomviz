@@ -49,7 +49,7 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
 
         Nx = Intensity_var.shape[0]
         Ny = Intensity_var.shape[1]
-        N = np.round(np.min([Nx, Ny]) / 3)
+        N = np.round(np.min([Nx, Ny]) // 3)
 
         #coarse search
         I = np.zeros((coarseAngles.size, N))
