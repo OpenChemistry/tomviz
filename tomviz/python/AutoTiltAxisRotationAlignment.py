@@ -87,8 +87,9 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
         rot_ang = coarseAngles[minIntensityIndex]
 
         self.progress.message = 'Rotating tilt series'
-        result = ndimage.interpolation.rotate(
-            tiltSeries, -rot_ang, axes=((0, 1)))
+        result = np.empty_like(tiltSeries)
+        ndimage.interpolation.rotate(
+            tiltSeries, -rot_ang, axes=((0, 1)), output=result)
         #step += 1
         #self.progress.value = step
         print("rotate tilt series by %f degrees" % -rot_ang)
