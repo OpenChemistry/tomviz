@@ -219,7 +219,7 @@ def bilinear(kz_new, ky_new, sz, sy, N, p):
         py = N + py
     else:
         py = py
-    return (pz, py, weight)
+    return (int(pz), int(py), weight)
 
 
 def radial_average(tiltseries, kr_cutoffs):
