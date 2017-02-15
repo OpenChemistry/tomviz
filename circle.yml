@@ -1,0 +1,21 @@
+machine:
+  services:
+    - docker
+  python:
+    version: 2.7.12
+
+dependencies:
+  cache_directories:
+    - ~/docker
+  override:
+    - pip install scikit-ci-addons==0.11.0
+    - ci_addons docker load-pull-save tomviz/tomviz-builder:latest
+
+checkout:
+  post:
+    - git submodule sync
+    - git submodule update --init
+
+test:
+  override:
+    - docker run -e "CIRCLE_BRANCH=${CIRCLE_BRANCH}" -e "CIRCLE_BUILD_NUM=${CIRCLE_BUILD_NUM}" --name tomviz -v ~/tomviz:/tomviz tomviz/tomviz-builder:latest
