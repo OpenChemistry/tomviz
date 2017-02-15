@@ -15,6 +15,11 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
         from tomviz import itkutils
         from tomviz import utils
 
+        self.progress.maximum = 100
+        self.progress.value = 0
+
+        STEP_PCT = [20, 60, 80, 100]
+
         fd = dataset.GetFieldData()
         axis_array = fd.GetArray('PrincipalAxes')
         assert axis_array is not None, \
@@ -42,12 +47,24 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
         scalars = utils.get_scalars(dataset)
         scalars[scalars != label_value] = 0
         utils.set_scalars(dataset, scalars)
+        self.progress.value = STEP_PCT[0]
 
         # Get connected components of voxels labeled by label value
-        utils.connected_components(dataset, 0)
+        def connected_progress_func(fraction):
+            self.progress.value = \
+                int(fraction * (STEP_PCT[1] - STEP_PCT[0]) + STEP_PCT[0])
+            return self.canceled
+
+        utils.connected_components(dataset, 0, connected_progress_func)
 
         # Get shape attributes
-        shape_label_map = itkutils.get_label_object_attributes(dataset)
+        def label_progress_func(fraction):
+            self.progress.value = \
+                int(fraction * (STEP_PCT[2] - STEP_PCT[1]) + STEP_PCT[1])
+            return self.canceled
+
+        shape_label_map = \
+            itkutils.get_label_object_attributes(dataset, label_progress_func)
         num_label_objects = shape_label_map.GetNumberOfLabelObjects()
 
         # Map from label value to distance from principal axis. Used later to
@@ -69,6 +86,8 @@ class LabelObjectDistanceFromPrincipalAxis(tomviz.operators.CancelableOperator):
         distance = np.zeros(dataset.GetNumberOfPoints())
         for i in range(len(labels)):
             distance[i] = label_value_to_distance[labels[i]]
+
+        self.progress.value = STEP_PCT[3]
 
         import vtk.util.numpy_support as np_s
         distance_array = np_s.numpy_to_vtk(distance, deep=1)
