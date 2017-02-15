@@ -1,7 +1,7 @@
 import tomviz.operators
 
 
-class BinaryThresholdOperator(tomviz.operators.CancelableOperator):
+class BinaryThreshold(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset, lower_threshold=40.0,
                           upper_threshold=255.0):
