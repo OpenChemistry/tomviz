@@ -315,9 +315,12 @@ def set_array_from_itk_image(dataset, itk_image):
     utils.set_array(dataset, result)
 
 
-def get_label_object_attributes(dataset):
+def get_label_object_attributes(dataset, progress_callback=None):
     """Compute shape attributes of integer-labeled objects in a dataset. Returns
-    an ITK shape label map.
+    an ITK shape label map. An optional progress_callback function can be passed
+    in. This callback is expected to take one argument, a floating-point number
+    in the range [0, 1] that represents the progress amount. It returns a value
+    indicating whether the caller should be cancelled.
     """
 
     try:
@@ -340,12 +343,28 @@ def get_label_object_attributes(dataset):
         shape_filter = \
             list(itk.LabelImageToShapeLabelMapFilter.values())[filterTypeIndex].New() # noqa
         shape_filter.SetInput(itk_image)
-        shape_filter.Update()
+        
+        def progress_func():
+            progress = shape_filter.GetProgress()
+            if progress_callback is not None:
+                abort = progress_callback(progress)
+                if abort:
+                    shape_filter.AbortGenerateDataOn()
+
+        import itk
+        progress_observer = itk.PyCommand.New()
+        progress_observer.SetCommandCallable(progress_func)
+        shape_filter.AddObserver(itk.ProgressEvent(), progress_observer)
+
+        try:
+            shape_filter.Update()
+        except RuntimeError:
+            return None
 
         label_map = shape_filter.GetOutput()
         return label_map
     except Exception as exc:
-        print("Exception encountered while running label_object_attributes")
+        print("Problem encountered while running label_object_attributes")
         raise(exc)
 
 
