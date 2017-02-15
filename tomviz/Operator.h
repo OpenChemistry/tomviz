@@ -119,10 +119,10 @@ public:
   /// display the VTK data, but modifications to it will not affect the
   /// DataSource.
   virtual EditOperatorWidget* getEditorContentsWithData(
-    QWidget* parent,
+    QWidget* parent_,
     vtkSmartPointer<vtkImageData> vtkNotUsed(inputDataForDisplay))
   {
-    return this->getEditorContents(parent);
+    return this->getEditorContents(parent_);
   }
 
   /// Should return true if the Operator has a non-null widget to return from

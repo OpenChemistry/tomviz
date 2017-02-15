@@ -108,6 +108,8 @@ set(SOURCES
   ModuleThreshold.h
   ModuleVolume.cxx
   ModuleVolume.h
+  ModuleVolumeWidget.cxx
+  ModuleVolumeWidget.h
   MoveActiveObject.cxx
   MoveActiveObject.h
   Operator.cxx
