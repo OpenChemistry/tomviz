@@ -1,5 +1,7 @@
 ![tomviz_logo]
 
+![Travis build status] (https://travis-ci.org/OpenChemistry/tomviz.svg?branch=master) ![Circle build status](https://circleci.com/gh/OpenChemistry/tomviz.png?style=shield)
+
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12723.svg)](http://dx.doi.org/10.5281/zenodo.12723)
 The [tomviz project][tomviz] is developing a cross platform, open source
 application for the processing, visualization, and analysis of 3D tomography
