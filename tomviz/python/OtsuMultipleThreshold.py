@@ -11,6 +11,14 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
         is a label map with one label per voxel class.
         """
 
+        # Initial progress
+        self.progress.value = 0
+        self.progress.maximum = 100
+
+        # Approximate percentage of work completed after each step in the
+        # transform
+        STEP_PCT = [10, 20, 70, 90, 100]
+
         try:
             import itk
             import itkExtras
@@ -29,6 +37,9 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
         # passed up to the Python layer, so we can at least report what
         # went wrong with the script, e.g,, unsupported image type.
         try:
+            self.progress.value = STEP_PCT[0]
+            self.progress.message = "Converting data to ITK image"
+
             # Get the ITK image
             itk_image = itkutils.convert_vtk_to_itk_image(dataset)
             itk_input_image_type = type(itk_image)
@@ -43,7 +54,13 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             otsu_filter.SetNumberOfThresholds(number_of_thresholds)
             otsu_filter.SetValleyEmphasis(enable_valley_emphasis)
             otsu_filter.SetInput(itk_image)
-            otsu_filter.Update()
+            itkutils.observe_filter_progress(self, otsu_filter,
+                                             STEP_PCT[1], STEP_PCT[2])
+
+            try:
+                otsu_filter.Update()
+            except RuntimeError:
+                return
 
             print("Otsu threshold(s): %s" % (otsu_filter.GetThresholds(),))
 
@@ -53,6 +70,8 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             py_buffer_type = itk_threshold_image_type
             voxel_type = itkExtras.template(itk_threshold_image_type)[1][0]
             if voxel_type is itkTypes.F or voxel_type is itkTypes.D:
+                self.progress.message = "Casting output to integral type"
+
                 # Unsigned char supports 256 labels, or 255 threshold levels.
                 # This should be sufficient for all but the most unusual use
                 # cases.
@@ -60,8 +79,18 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
                 caster = itk.CastImageFilter[itk_threshold_image_type,
                                              py_buffer_type].New()
                 caster.SetInput(itk_image_data)
-                caster.Update()
+                itkutils.observe_filter_progress(self, caster,
+                                                 STEP_PCT[2], STEP_PCT[3])
+
+                try:
+                    caster.Update()
+                except RuntimeError:
+                    return
+
                 itk_image_data = caster.GetOutput()
+
+            self.progress.value = STEP_PCT[3]
+            self.progress.message = "Saving results"
 
             label_buffer = itk.PyBuffer[py_buffer_type] \
                 .GetArrayFromImage(itk_image_data)
@@ -69,6 +98,8 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             label_map_dataset = vtk.vtkImageData()
             label_map_dataset.CopyStructure(dataset)
             utils.set_array(label_map_dataset, label_buffer)
+
+            self.progress.value = STEP_PCT[4]
 
             # Set up dictionary to return operator results
             returnValues = {}

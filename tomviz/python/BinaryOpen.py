@@ -9,6 +9,14 @@ class BinaryOpen(tomviz.operators.CancelableOperator):
         a spherically symmetric structuring element with a given radius.
         """
 
+        # Initial progress
+        self.progress.value = 0
+        self.progress.maximum = 100
+
+        # Approximate percentage of work completed after each step in the
+        # transform
+        STEP_PCT = [10, 30, 60, 90, 100]
+
         try:
             import itk
             from tomviz import itkutils
@@ -20,6 +28,9 @@ class BinaryOpen(tomviz.operators.CancelableOperator):
         # passed up to the Python layer, so we can at least report what
         # went wrong with the script, e.g,, unsupported image type.
         try:
+            self.progress.value = STEP_PCT[0]
+            self.progress.message = "Converting data to ITK image"
+
             # Get the ITK image
             itk_image = itkutils.convert_vtk_to_itk_image(dataset)
             itk_input_image_type = type(itk_image)
@@ -35,6 +46,9 @@ class BinaryOpen(tomviz.operators.CancelableOperator):
                 raise Exception('Invalid kernel shape id %d' %
                                 structuring_element_id)
 
+            self.progress.value = STEP_PCT[1]
+            self.progress.message = "Running filter"
+
             erode_filter = itk.BinaryErodeImageFilter[itk_input_image_type,
                                                       itk_input_image_type,
                                                       itk_kernel_type].New()
@@ -42,6 +56,8 @@ class BinaryOpen(tomviz.operators.CancelableOperator):
             erode_filter.SetBackgroundValue(background_label)
             erode_filter.SetKernel(itk_kernel)
             erode_filter.SetInput(itk_image)
+            itkutils.observe_filter_progress(self, erode_filter,
+                                             STEP_PCT[1], STEP_PCT[2])
 
             dilate_filter = itk.BinaryDilateImageFilter[itk_input_image_type,
                                                         itk_input_image_type,
@@ -50,9 +66,20 @@ class BinaryOpen(tomviz.operators.CancelableOperator):
             dilate_filter.SetBackgroundValue(background_label)
             dilate_filter.SetKernel(itk_kernel)
             dilate_filter.SetInput(erode_filter.GetOutput())
-            dilate_filter.Update()
+            itkutils.observe_filter_progress(self, dilate_filter,
+                                             STEP_PCT[2], STEP_PCT[3])
+
+            try:
+                dilate_filter.Update()
+            except RuntimeError:
+                return
+
+            self.progress.message = "Saving results"
+
             itkutils.set_array_from_itk_image(dataset,
                                               dilate_filter.GetOutput())
+
+            self.progress.value = STEP_PCT[4]
         except Exception as exc:
             print("Problem encountered while running %s" %
                   self.__class__.__name__)
