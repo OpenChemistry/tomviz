@@ -22,8 +22,6 @@ ctest_build()
 ctest_test(RETURN_VALUE rv)
 ctest_submit()
 
-file(REMOVE "${CTEST_BINARY_DIRECTORY}/failure")
 if(NOT rv EQUAL 0)
-  file(WRITE "${CTEST_BINARY_DIRECTORY}/failure" "${rv}")
   message(FATAL_ERROR "Test failures occurred.")
 endif()
