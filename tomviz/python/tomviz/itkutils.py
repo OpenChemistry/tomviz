@@ -343,7 +343,7 @@ def get_label_object_attributes(dataset, progress_callback=None):
         shape_filter = \
             list(itk.LabelImageToShapeLabelMapFilter.values())[filterTypeIndex].New() # noqa
         shape_filter.SetInput(itk_image)
-        
+
         def progress_func():
             progress = shape_filter.GetProgress()
             if progress_callback is not None:
@@ -351,7 +351,6 @@ def get_label_object_attributes(dataset, progress_callback=None):
                 if abort:
                     shape_filter.AbortGenerateDataOn()
 
-        import itk
         progress_observer = itk.PyCommand.New()
         progress_observer.SetCommandCallable(progress_func)
         shape_filter.AddObserver(itk.ProgressEvent(), progress_observer)
