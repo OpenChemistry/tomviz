@@ -1,44 +1,42 @@
 #!/usr/bin/env python
 import os
-import zipfile
 import hashlib
 import requests
 import subprocess
 import sys
 
 downloads = [{
-        '_id': '58a20cdb8d777f0721a48b8c',
-        'name': 'paraview.zip',
-        'target': '.',
-    }, {
-        '_id': '58a2709a8d777f0721a57c39',
-        'name': 'vtkpugixml.zip',
-        'target': 'paraview-install/include',
-    }, {
-        '_id': '58a21ab58d777f0721a4b212',
-        'name': 'itk-4.9.0-windows-64bit.zip',
-        'target': 'itk',
-    }, {
-        '_id': '58a220818d777f0721a4cc4a',
-        'name': 'tbb.zip',
-        'target': '.',
-    }, {
-        '_id': '58a2ff998d777f0721a57c3c',
-        'name': 'python-2.7.5.zip',
-        'target': '.',
-    }, {
-        '_id': '58a3436c8d777f0721a61036',
-        'name': 'googletest-install.zip',
-        'target': '.',
-    },
-    {
-        '_id': '58a3819a8d777f0721a659ea',
-        'name': 'numpy.zip',
-        'target': 'python\\bin\\Lib\\site-packages',
-    }
-]
+    '_id': '58a20cdb8d777f0721a48b8c',
+    'name': 'paraview.zip',
+    'target': '.',
+}, {
+    '_id': '58a2709a8d777f0721a57c39',
+    'name': 'vtkpugixml.zip',
+    'target': 'paraview-install/include',
+}, {
+    '_id': '58a21ab58d777f0721a4b212',
+    'name': 'itk-4.9.0-windows-64bit.zip',
+    'target': 'itk',
+}, {
+    '_id': '58a220818d777f0721a4cc4a',
+    'name': 'tbb.zip',
+    'target': '.',
+}, {
+    '_id': '58a2ff998d777f0721a57c3c',
+    'name': 'python-2.7.5.zip',
+    'target': '.',
+}, {
+    '_id': '58a3436c8d777f0721a61036',
+    'name': 'googletest-install.zip',
+    'target': '.',
+}, {
+    '_id': '58a3819a8d777f0721a659ea',
+    'name': 'numpy.zip',
+    'target': 'python\\bin\\Lib\\site-packages',
+}]
 
 girder_url = 'https://data.kitware.com/api/v1'
+
 
 def is_cached(id):
     sha_path = '%s.sha512' % download['name']
@@ -54,6 +52,7 @@ def is_cached(id):
 
     return False
 
+
 def extract(download):
     target = download['target']
     name = download['name']
@@ -62,6 +61,8 @@ def extract(download):
     if not os.path.exists(target):
         os.makedirs(target)
 
+    # Call out to 7z, zipfile seems to be very slow for this sort of network
+    # filesystem.
     cmd = ['7z', 'x', name, '-o%s' % target]
     print('Extract command: %s' % cmd)
     process = subprocess.Popen(cmd)
@@ -71,6 +72,8 @@ def extract(download):
 
 
 CHUNK_SIZE = 16 * 1024
+
+
 def cache_download(download):
     url = '%s/file/%s/download' % (girder_url, download['_id'])
     response = requests.get(url, stream=True)
@@ -99,4 +102,3 @@ for download in downloads:
         print('Using cache for %s' % download['name'])
 
     extract(download)
-
