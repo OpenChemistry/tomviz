@@ -367,3 +367,19 @@ def _get_itk_image_type(vtk_image_data):
         raise Exception('No ITK type known for %s' % vtk_class_name)
 
     return image_type
+
+
+def observe_filter_progress(transform, filter, start_pct, end_pct):
+    assert start_pct < end_pct
+    pct_diff = end_pct - start_pct
+
+    def progress_func():
+        progress = filter.GetProgress()
+        transform.progress.value = start_pct + int(progress * pct_diff)
+        if transform.canceled:
+            filter.AbortGenerateDataOn()
+
+    import itk
+    progress_observer = itk.PyCommand.New()
+    progress_observer.SetCommandCallable(progress_func)
+    filter.AddObserver(itk.ProgressEvent(), progress_observer)
