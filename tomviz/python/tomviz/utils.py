@@ -135,7 +135,7 @@ def get_coordinate_arrays(dataset):
     return (xx, yy, zz)
 
 
-def connected_components(dataset, background_value=0):
+def connected_components(dataset, background_value=0, progress_callback=None):
     try:
         import itk
         import itkTypes
@@ -168,6 +168,18 @@ def connected_components(dataset, background_value=0):
         connected_filter.SetBackgroundValue(background_value)
         connected_filter.SetInput(itk_image)
 
+        if progress_callback is not None:
+
+            def connected_progress_func():
+                progress = connected_filter.GetProgress()
+                abort = progress_callback(progress * 0.5)
+                connected_filter.SetAbortGenerateData(abort)
+
+            connected_observer = itk.PyCommand.New()
+            connected_observer.SetCommandCallable(connected_progress_func)
+            connected_filter.AddObserver(itk.ProgressEvent(),
+                                         connected_observer)
+
         # Relabel filter. This will compress the label numbers to a
         # continugous range between 1 and n where n is the number of
         # labels. It will also sort the components from largest to
@@ -177,7 +189,22 @@ def connected_components(dataset, background_value=0):
             itk_image_type, itk_image_type].New()
         relabel_filter.SetInput(connected_filter.GetOutput())
         relabel_filter.SortByObjectSizeOn()
-        relabel_filter.Update()
+
+        if progress_callback is not None:
+
+            def relabel_progress_func():
+                progress = relabel_filter.GetProgress()
+                abort = progress_callback(progress * 0.5 + 0.5)
+                relabel_filter.SetAbortGenerateData(abort)
+
+            relabel_observer = itk.PyCommand.New()
+            relabel_observer.SetCommandCallable(relabel_progress_func)
+            relabel_filter.AddObserver(itk.ProgressEvent(), relabel_observer)
+
+        try:
+            relabel_filter.Update()
+        except RuntimeError:
+            return
 
         itk_image_data = relabel_filter.GetOutput()
         label_buffer = itk.PyBuffer[
@@ -197,8 +224,7 @@ def connected_components(dataset, background_value=0):
 
         set_array(dataset, label_buffer)
     except Exception as exc:
-        print("Exception encountered while running ConnectedComponents")
-        print(exc)
+        print("Problem encountered while running ConnectedComponents")
         raise exc
 
 
