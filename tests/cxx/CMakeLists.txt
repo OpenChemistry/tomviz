@@ -43,6 +43,7 @@ set(_pythonpath "${_pythonpath}${_separator}${ParaView_DIR}/lib/site-packages")
 set(_pythonpath "${_pythonpath}${_separator}${ParaView_DIR}/lib")
 set(_pythonpath "${_pythonpath}${_separator}${ITK_DIR}/lib")
 set(_pythonpath "${_pythonpath}${_separator}${ITK_DIR}/Wrapping/Generators/Python")
+set(_pythonpath "${_pythonpath}${_separator}$ENV{PYTHONPATH}")
 
 # Add the test cases
 add_cxx_test(OperatorPython PYTHONPATH ${_pythonpath})
