@@ -14,7 +14,7 @@ class BinaryErode(tomviz.operators.CancelableOperator):
             from tomviz import itkutils
         except Exception as exc:
             print("Could not import necessary module(s)")
-            print(exc)
+            raise exc
 
         # Add a try/except around the ITK portion. ITK exceptions are
         # passed up to the Python layer, so we can at least report what
@@ -45,5 +45,6 @@ class BinaryErode(tomviz.operators.CancelableOperator):
             erode_filter.Update()
             itkutils.set_array_from_itk_image(dataset, erode_filter.GetOutput())
         except Exception as exc:
-            print("Exception encountered while running BinaryErode")
-            print(exc)
+            print("Problem encountered while running %s" %
+                  self.__class__.__name__)
+            raise exc

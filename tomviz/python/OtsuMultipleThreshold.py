@@ -20,7 +20,7 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             from tomviz import utils
         except Exception as exc:
             print("Could not import necessary module(s)")
-            print(exc)
+            raise exc
 
         # Return values
         returnValues = None
@@ -75,8 +75,8 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             returnValues["label_map"] = label_map_dataset
 
         except Exception as exc:
-            print("Exception encountered while running OtsuMultipleThreshold")
-            print(exc)
+            print("Problem encountered while running %s" %
+                  self.__class__.__name__)
             raise exc
 
         return returnValues

@@ -13,6 +13,7 @@ class LabelObjectAttributes(tomviz.operators.CancelableOperator):
             from tomviz import itkutils
             from tomviz import utils
         except Exception as exc:
+            print("Could not import necessary module(s)")
             raise exc
 
         returnValues = None
@@ -49,8 +50,8 @@ class LabelObjectAttributes(tomviz.operators.CancelableOperator):
             returnValues = {}
             returnValues["component_statistics"] = spreadsheet
         except Exception as exc:
-            print("Exception encountered while running Label Object Attributes")
-            print(exc)
-            raise(exc)
+            print("Problem encountered while running %s" %
+                  self.__class__.__name__)
+            raise exc
 
         return returnValues

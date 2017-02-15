@@ -15,7 +15,7 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
             from tomviz import itkutils
         except Exception as exc:
             print("Could not import necessary module(s)")
-            print(exc)
+            raise exc
 
         try:
             # Get the ITK image. The itk.GradientAnisotropicDiffusionImageFilter
@@ -36,6 +36,6 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
             itkutils.set_array_from_itk_image(dataset,
                                               diffusion_filter.GetOutput())
         except Exception as exc:
-            print("Exception encountered while running"
-                  "PeronaMalikAnisotropicDiffusion")
-            print(exc)
+            print("Problem encountered while running %s" %
+                  self.__class__.__name__)
+            raise exc
