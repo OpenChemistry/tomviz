@@ -150,6 +150,11 @@ vtkSMProxy* Module::opacityMap() const
                                      : this->dataSource()->opacityMap();
 }
 
+vtkPiecewiseFunction* Module::gradientOpacityMap() const
+{
+  return this->dataSource()->gradientOpacityMap();
+}
+
 bool Module::serialize(pugi::xml_node& ns) const
 {
   if (this->isColorMapNeeded()) {

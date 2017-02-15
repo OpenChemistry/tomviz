@@ -167,6 +167,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
           SLOT(onColorMapUpdated()));
+  connect(m_ui->opacityWidget, SIGNAL(mapUpdated()),
+          SLOT(onColorMapUpdated()));
 
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady
@@ -236,6 +238,7 @@ void CentralWidget::setDataSource(DataSource* source)
 
   if (!source) {
     m_ui->histogramWidget->setInputData(nullptr, "", "");
+    m_ui->opacityWidget->setInputData(nullptr, "", "");
     return;
   }
 
@@ -254,6 +257,7 @@ void CentralWidget::setDataSource(DataSource* source)
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
   }
+  m_ui->opacityWidget->setLUT(source->gradientOpacityMap());
 
   // Check our cache, and use that if appopriate (or update it).
   if (m_histogramCache.contains(image)) {
@@ -333,6 +337,7 @@ void CentralWidget::setHistogramTable(vtkTable* table)
   }
 
   m_ui->histogramWidget->setInputData(table, "image_extents", "image_pops");
+  m_ui->opacityWidget->setInputData(table, "image_extents", "image_pops");
 }
 
 } // end of namespace tomviz

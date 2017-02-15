@@ -31,6 +31,7 @@ class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
 class vtkDataObject;
+class vtkPiecewiseFunction;
 
 namespace tomviz {
 class Operator;
@@ -96,6 +97,7 @@ public:
   /// Returns the color map for the DataSource.
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
+  vtkPiecewiseFunction* gradientOpacityMap() const;
 
   /// Indicates whether the DataSource has a label map of the voxels.
   bool hasLabelMap();

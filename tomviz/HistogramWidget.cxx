@@ -146,10 +146,10 @@ void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
   }
 }
 
-void HistogramWidget::setInputData(vtkTable* table, const char* x,
-                                   const char* y)
+void HistogramWidget::setInputData(vtkTable* table, const char* x_,
+                                   const char* y_)
 {
-  m_histogramColorOpacityEditor->SetHistogramInputData(table, x, y);
+  m_histogramColorOpacityEditor->SetHistogramInputData(table, x_, y_);
   m_histogramColorOpacityEditor->SetOpacityFunction(m_scalarOpacityFunction);
   if (m_LUT) {
     m_histogramColorOpacityEditor->SetScalarVisibility(true);

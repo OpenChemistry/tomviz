@@ -29,6 +29,7 @@ class QWidget;
 class pqAnimationCue;
 class vtkSMProxy;
 class vtkSMViewProxy;
+class vtkPiecewiseFunction;
 
 namespace tomviz {
 class DataSource;
@@ -82,6 +83,7 @@ public:
   /// based on the UseDetachedColorMap flag.
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
+  vtkPiecewiseFunction* gradientOpacityMap() const;
 
   /// Returns true if the given proxy is part of the display or data processing
   /// in this module

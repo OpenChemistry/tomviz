@@ -21,12 +21,6 @@
      </property>
      <widget class="QWidget" name="widget" native="true">
       <layout class="QVBoxLayout" name="verticalLayout">
-       <property name="spacing">
-        <number>0</number>
-       </property>
-       <property name="margin">
-        <number>0</number>
-       </property>
        <item>
         <widget class="tomviz::HistogramWidget" name="histogramWidget" native="true">
          <property name="sizePolicy">
@@ -43,6 +37,22 @@
          </property>
          <property name="autoFillBackground">
           <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="tomviz::GradientOpacityWidget" name="opacityWidget" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>200</width>
+           <height>130</height>
+          </size>
          </property>
         </widget>
        </item>
@@ -77,6 +87,12 @@
    <class>pqTabbedMultiViewWidget</class>
    <extends>QWidget</extends>
    <header>pqTabbedMultiViewWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::GradientOpacityWidget</class>
+   <extends>QWidget</extends>
+   <header>GradientOpacityWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

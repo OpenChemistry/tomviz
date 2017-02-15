@@ -39,13 +39,13 @@ class HistogramWidget : public QWidget
   Q_OBJECT
 
 public:
-  explicit HistogramWidget(QWidget* parent = 0);
+  explicit HistogramWidget(QWidget* parent_ = nullptr);
   ~HistogramWidget() override;
 
   void setLUT(vtkPVDiscretizableColorTransferFunction* lut);
   void setLUTProxy(vtkSMProxy* proxy);
 
-  void setInputData(vtkTable* table, const char* x, const char* y);
+  void setInputData(vtkTable* table, const char* x_, const char* y_);
 
 signals:
   void colorMapUpdated();

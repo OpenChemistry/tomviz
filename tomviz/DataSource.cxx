@@ -54,6 +54,7 @@ namespace tomviz {
 class DataSource::DSInternals
 {
 public:
+  vtkNew<vtkPiecewiseFunction> GradientOpacityMap;
   vtkSmartPointer<vtkSMSourceProxy> OriginalDataSource;
   vtkWeakPointer<vtkSMSourceProxy> Producer;
   QList<Operator*> Operators;
@@ -935,6 +936,11 @@ vtkSMProxy* DataSource::opacityMap() const
                                  "ScalarOpacityFunction")
                .GetAsProxy()
            : nullptr;
+}
+
+vtkPiecewiseFunction* DataSource::gradientOpacityMap() const
+{
+  return this->Internals->GradientOpacityMap.GetPointer();
 }
 
 bool DataSource::hasLabelMap()

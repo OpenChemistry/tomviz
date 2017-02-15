@@ -101,10 +101,12 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
 void ModuleVolume::updateColorMap()
 {
+//  std::cout << "->>> updating color map !\n";
   m_volumeProperty->SetScalarOpacity(
     vtkPiecewiseFunction::SafeDownCast(opacityMap()->GetClientSideObject()));
   m_volumeProperty->SetColor(
     vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject()));
+  m_volumeProperty->SetGradientOpacity(gradientOpacityMap());
 
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
