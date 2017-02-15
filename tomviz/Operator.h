@@ -16,6 +16,8 @@
 #ifndef tomvizOperator_h
 #define tomvizOperator_h
 
+#include <atomic>
+
 #include <QIcon>
 #include <QObject>
 
@@ -240,7 +242,7 @@ private:
   int m_totalProgressSteps = 0;
   int m_progressStep = 0;
   QString m_progressMessage;
-  OperatorState m_state = OperatorState::QUEUED;
+  std::atomic<OperatorState> m_state {OperatorState::QUEUED};
 };
 }
 
