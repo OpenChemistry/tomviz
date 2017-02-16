@@ -20,7 +20,7 @@ install:
   - cd ..
   # Restore our cached deps
   - python -m pip install requests
-  - python C:\projects\tomviz\scripts\appveyor\cache_restore.py
+  - python %APPVEYOR_BUILD_FOLDER%\scripts\appveyor\cache_restore.py
 
 
 build_script:
@@ -42,4 +42,4 @@ build_script:
   - set PYTHONPATH=C:/projects/paraview-install/lib/paraview-5.2/site-packages;%PYTHONPATH%
   - set PYTHONPATH=C:/projects/paraview-build/lib;%PYTHONPATH%
   # Now call ctest
-  - ctest -VV -S C:\projects\tomviz\cmake\AppVeyorContinuous.cmake
+  - ctest -VV -S %APPVEYOR_BUILD_FOLDER%\cmake\AppVeyorContinuous.cmake
