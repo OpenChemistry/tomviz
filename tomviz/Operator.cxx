@@ -25,6 +25,7 @@ namespace tomviz {
 Operator::Operator(QObject* parentObject) : QObject(parentObject)
 {
   qRegisterMetaType<TransformResult>("TransformResult");
+  qRegisterMetaType<vtkSmartPointer<vtkDataObject>>();
 }
 
 Operator::~Operator()

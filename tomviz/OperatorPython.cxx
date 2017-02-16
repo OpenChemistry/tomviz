@@ -89,7 +89,6 @@ OperatorPython::OperatorPython(QObject* parentObject)
   : Superclass(parentObject), Internals(new OperatorPython::OPInternals()),
     Label("Python Operator")
 {
-  qRegisterMetaType<vtkSmartPointer<vtkDataObject>>();
   Python::initialize();
 
   {
