@@ -1,6 +1,6 @@
 ![tomviz_logo]
 
-[![Travis build Status](https://travis-ci.org/OpenChemistry/tomviz.svg?branch=master)](https://travis-ci.org/OpenChemistry/tomviz) [![Circle build status](https://circleci.com/gh/OpenChemistry/tomviz.png?style=shield)](https://circleci.com/gh/OpenChemistry/tomviz)
+[![Travis build Status](https://travis-ci.org/OpenChemistry/tomviz.svg?branch=master "Travis")](https://travis-ci.org/OpenChemistry/tomviz) [![Circle build status](https://circleci.com/gh/OpenChemistry/tomviz.png?style=shield "CircleCI")](https://circleci.com/gh/OpenChemistry/tomviz)
 
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12723.svg)](http://dx.doi.org/10.5281/zenodo.12723)
 The [tomviz project][tomviz] is developing a cross platform, open source
