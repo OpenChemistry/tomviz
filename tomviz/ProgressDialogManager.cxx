@@ -76,7 +76,7 @@ void ProgressDialogManager::operationStarted()
     QObject::connect(op, &Operator::progressStepChanged, this,
                      &ProgressDialogManager::operationProgress);
     QObject::connect(
-      op, &Operator::progressMessageChanged,
+      op, &Operator::progressMessageChanged, progressDialog,
       [progressDialog, op](const QString& message) {
         if (!message.isNull()) {
           QString title = QString("%1 Progress").arg(op->label());
