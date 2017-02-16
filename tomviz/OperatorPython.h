@@ -22,9 +22,6 @@
 #include <QScopedPointer>
 #include <pqSMProxy.h>
 #include <vtkDataObject.h>
-#include <vtkSmartPointer.h>
-
-Q_DECLARE_METATYPE(vtkSmartPointer<vtkDataObject>)
 
 namespace tomviz {
 class OperatorPython : public Operator

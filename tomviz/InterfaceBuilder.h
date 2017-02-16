@@ -23,6 +23,8 @@
 
 namespace tomviz {
 
+class DataSource;
+
 /// The InterfaceBuilder creates a Qt widget containing controls defined
 /// by a JSON description.
 class InterfaceBuilder : public QObject
@@ -31,7 +33,7 @@ class InterfaceBuilder : public QObject
   typedef QObject Superclass;
 
 public:
-  InterfaceBuilder(QObject* parent = nullptr);
+  InterfaceBuilder(QObject* parent = nullptr, DataSource* ds = nullptr);
   ~InterfaceBuilder() override;
 
   /// Set the JSON description
@@ -51,6 +53,7 @@ private:
 
   QString m_json;
   QMap<QString, QVariant> m_parameterValues;
+  DataSource* m_dataSource;
 };
 
 } // namespace tomviz

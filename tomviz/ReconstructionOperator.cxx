@@ -21,14 +21,18 @@
 #include "TomographyReconstruction.h"
 #include "TomographyTiltSeries.h"
 
+#include "pqSMProxy.h"
 #include "vtkDataArray.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkPointData.h"
+#include "vtkSMProxyManager.h"
+#include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkTrivialProducer.h"
 
 #include <QCoreApplication>
+#include <QDebug>
 
 namespace tomviz {
 ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
@@ -46,6 +50,10 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
   }
   this->setSupportsCancel(true);
   this->setTotalProgressSteps(this->extent[1] - this->extent[0] + 1);
+  this->setNumberOfResults(1);
+  this->setHasChildDataSource(true);
+  QObject::connect(this, &ReconstructionOperator::newChildDataSource, this, &ReconstructionOperator::createNewChildDataSource);
+  QObject::connect(this, &ReconstructionOperator::newOperatorResult, this, &ReconstructionOperator::setOperatorResult);
 }
 
 ReconstructionOperator::~ReconstructionOperator()
@@ -136,7 +144,45 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   if (this->isCanceled()) {
     return false;
   }
-  imageData->ShallowCopy(reconstructionImage.Get());
+  emit this->newOperatorResult(reconstructionImage.Get());
+  emit this->newChildDataSource("Reconstruction", reconstructionImage.Get());
   return true;
+}
+
+void ReconstructionOperator::createNewChildDataSource(
+  const QString& label, vtkSmartPointer<vtkDataObject> childData)
+{
+
+  vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
+  vtkSMSessionProxyManager* sessionProxyManager =
+    proxyManager->GetActiveSessionProxyManager();
+
+  pqSMProxy producerProxy;
+  producerProxy.TakeReference(
+    sessionProxyManager->NewProxy("sources", "TrivialProducer"));
+  producerProxy->UpdateVTKObjects();
+
+  vtkTrivialProducer* producer =
+    vtkTrivialProducer::SafeDownCast(producerProxy->GetClientSideObject());
+  if (!producer) {
+    qWarning() << "Could not get TrivialProducer from proxy";
+    return;
+  }
+
+  producer->SetOutput(childData);
+
+  DataSource* childDS = new DataSource(
+    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this);
+
+  childDS->setFilename(label.toLatin1().data());
+  this->setChildDataSource(childDS);
+}
+
+void ReconstructionOperator::setOperatorResult(vtkSmartPointer<vtkDataObject> result)
+{
+  bool resultWasSet = this->setResult(0, result);
+  if (!resultWasSet) {
+    qCritical() << "Could not set result 0";
+  }
 }
 }

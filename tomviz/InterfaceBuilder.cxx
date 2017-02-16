@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "InterfaceBuilder.h"
 
+#include "DataSource.h"
 #include "DoubleSpinBox.h"
 #include "SpinBox.h"
 
@@ -83,16 +84,21 @@ double getAs(const QJsonValue& value)
 
 // Templated generation of numeric editing widgets.
 template <typename T>
-QWidget* getNumericWidget(T, T, T)
+QWidget* getNumericWidget(T, T, T, int, T)
 {
   return nullptr;
 }
 
 template <>
-QWidget* getNumericWidget(int defaultValue, int rangeMin, int rangeMax)
+QWidget* getNumericWidget(int defaultValue, int rangeMin, int rangeMax,
+                          int /*precision*/, int step)
 {
   tomviz::SpinBox* spinBox = new tomviz::SpinBox();
-  spinBox->setSingleStep(1);
+  if (step == -1) {
+    spinBox->setSingleStep(1);
+  } else {
+    spinBox->setSingleStep(step);
+  }
   spinBox->setMinimum(rangeMin);
   spinBox->setMaximum(rangeMax);
   spinBox->setValue(defaultValue);
@@ -100,10 +106,18 @@ QWidget* getNumericWidget(int defaultValue, int rangeMin, int rangeMax)
 }
 
 template <>
-QWidget* getNumericWidget(double defaultValue, double rangeMin, double rangeMax)
+QWidget* getNumericWidget(double defaultValue, double rangeMin, double rangeMax,
+                          int precision, double step)
 {
   tomviz::DoubleSpinBox* spinBox = new tomviz::DoubleSpinBox();
-  spinBox->setSingleStep(0.5);
+  if (step == -1) {
+    spinBox->setSingleStep(0.5);
+  } else {
+    spinBox->setSingleStep(step);
+  }
+  if (precision != -1) {
+    spinBox->setDecimals(precision);
+  }
   spinBox->setMinimum(rangeMin);
   spinBox->setMaximum(rangeMax);
   spinBox->setValue(defaultValue);
@@ -142,7 +156,8 @@ void addBoolWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
 }
 
 template <typename T>
-void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
+void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
+                      tomviz::DataSource* dataSource)
 {
   QJsonValueRef nameValue = parameterNode["name"];
   QJsonValueRef labelValue = parameterNode["label"];
@@ -170,6 +185,20 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
       for (QJsonObject::size_type i = 0; i < defaultArray.size(); ++i) {
         defaultValues.push_back(getAs<T>(defaultArray[i]));
       }
+    }
+  } else if (parameterNode.contains("data-default")) {
+    if (!dataSource) {
+      return;
+    }
+    QJsonValueRef defaultNode = parameterNode["data-default"];
+    int extent[6];
+    dataSource->getExtent(extent);
+    if (defaultNode.toString() == "num-voxels-x") {
+      defaultValues.push_back(extent[1] - extent[0] + 1);
+    } else if (defaultNode.toString() == "num-voxels-y") {
+      defaultValues.push_back(extent[3] - extent[2] + 1);
+    } else if (defaultNode.toString() == "num-voxels-z") {
+      defaultValues.push_back(extent[5] - extent[4] + 1);
     }
   }
 
@@ -199,6 +228,21 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
     }
   }
 
+  int precision = -1;
+  if (parameterNode.contains("precision")) {
+    QJsonValueRef precNode = parameterNode["precision"];
+    if (isType<int>(precNode)) {
+      precision = getAs<int>(precNode);
+    }
+  }
+  T step = -1;
+  if (parameterNode.contains("step")) {
+    QJsonValueRef stepNode = parameterNode["step"];
+    if (isType<T>(stepNode)) {
+      step = getAs<T>(stepNode);
+    }
+  }
+
   QHBoxLayout* horizontalLayout = new QHBoxLayout();
   horizontalLayout->setContentsMargins(0, 0, 0, 0);
   QWidget* horizontalWidget = new QWidget;
@@ -215,8 +259,8 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode)
       name = name.arg(i, 3, 10, QLatin1Char('0'));
     }
 
-    QWidget* spinBox =
-      getNumericWidget(defaultValues[i], minValues[i], maxValues[i]);
+    QWidget* spinBox = getNumericWidget(defaultValues[i], minValues[i],
+                                        maxValues[i], precision, step);
     spinBox->setObjectName(name);
     horizontalLayout->addWidget(spinBox);
   }
@@ -295,8 +339,8 @@ void addXYZHeaderWidget(QGridLayout* layout, int row, const QJsonValue&)
 
 namespace tomviz {
 
-InterfaceBuilder::InterfaceBuilder(QObject* parentObject)
-  : Superclass(parentObject)
+InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
+  : Superclass(parentObject), m_dataSource(ds)
 {
 }
 
@@ -374,9 +418,10 @@ QLayout* InterfaceBuilder::buildInterface() const
     if (typeString == "bool") {
       addBoolWidget(layout, i + 1, parameterObject);
     } else if (typeString == "int") {
-      addNumericWidget<int>(layout, i + 1, parameterObject);
+      addNumericWidget<int>(layout, i + 1, parameterObject, this->m_dataSource);
     } else if (typeString == "double") {
-      addNumericWidget<double>(layout, i + 1, parameterObject);
+      addNumericWidget<double>(layout, i + 1, parameterObject,
+                               this->m_dataSource);
     } else if (typeString == "enumeration") {
       addEnumerationWidget(layout, i + 1, parameterObject);
     } else if (typeString == "xyz_header") {

@@ -29,6 +29,8 @@ class vtkDataObject;
 class vtkImageData;
 class QWidget;
 
+Q_DECLARE_METATYPE(vtkSmartPointer<vtkDataObject>)
+
 namespace tomviz {
 class DataSource;
 class EditOperatorWidget;

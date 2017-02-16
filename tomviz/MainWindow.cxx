@@ -320,15 +320,18 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
     readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true);
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
-                                 readInPythonScript("Recon_DFT"), true);
+                                 readInPythonScript("Recon_DFT"), true, false,
+                                 readInJSONDescription("Recon_DFT"));
   new AddPythonTransformReaction(reconWBPAction,
                                  "Reconstruct (Back Projection)",
-                                 readInPythonScript("Recon_WBP"), true);
+                                 readInPythonScript("Recon_WBP"), true, false,
+                                 readInJSONDescription("Recon_WBP"));
   new AddPythonTransformReaction(reconARTAction, "Reconstruct (ART)",
                                  readInPythonScript("Recon_ART"), true, false,
                                  readInJSONDescription("Recon_ART"));
   new AddPythonTransformReaction(reconSIRTAction, "Reconstruct (SIRT)",
-                                 readInPythonScript("Recon_SIRT"), true);
+                                 readInPythonScript("Recon_SIRT"), true, false,
+                                 readInJSONDescription("Recon_SIRT"));
   new AddPythonTransformReaction(
     reconDFMConstraintAction, "Reconstruct (Constraint-based Direct Fourier)",
     readInPythonScript("Recon_DFT_constraint"), true);

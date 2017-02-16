@@ -2,6 +2,13 @@
   "name" : "ReconstructART",
   "label" : "Reconstruct (ART)",
   "description" : "Reconstruct a tilt series using Algebraic Reconstruction\nTechnique (ART). \nThe tilt axis must be parallel to the x-direction and centered in the y-direction.\nThe size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.\nReconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 iterations.",
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }
+  ],
   "parameters" : [
     {
       "name" : "Niter",
