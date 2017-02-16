@@ -1,7 +1,7 @@
 import tomviz.operators
 
 
-class BinaryThresholdOperator(tomviz.operators.CancelableOperator):
+class BinaryThreshold(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset, lower_threshold=40.0,
                           upper_threshold=255.0):
@@ -80,7 +80,8 @@ class BinaryThresholdOperator(tomviz.operators.CancelableOperator):
             }
 
         except Exception as exc:
-            print("Problem encountered while running BinaryThreshold")
+            print("Problem encountered while running %s" %
+                  self.__class__.__name__)
             raise exc
 
         return returnValue
