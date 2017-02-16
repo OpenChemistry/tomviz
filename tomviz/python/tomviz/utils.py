@@ -16,6 +16,7 @@
 #
 ###############################################################################
 
+import math
 import numpy as np
 import vtk.numpy_interface.dataset_adapter as dsa
 import vtk.util.numpy_support as np_s
@@ -321,3 +322,95 @@ def make_spreadsheet(column_names, table):
             array.InsertValue(row, table[row, column])
 
     return vtk_table
+
+
+def zoom_shape(input, zoom):
+    """
+    Returns the shape of the output array for scipy.ndimage.interpolation.zoom
+    :param input The input array
+    :type input: ndarray
+    :param zoom The zoom factor
+    :type zoom: ndarray
+    """
+
+    if isinstance(zoom, (int, float,)):
+        zoom = [zoom] * input.ndim
+
+    return tuple(
+        [int(round(i * j)) for i, j in zip(input.shape, zoom)])
+
+
+def _minmax(coor, minc, maxc):
+    if coor[0] < minc[0]:
+        minc[0] = coor[0]
+    if coor[0] > maxc[0]:
+        maxc[0] = coor[0]
+    if coor[1] < minc[1]:
+        minc[1] = coor[1]
+    if coor[1] > maxc[1]:
+        maxc[1] = coor[1]
+
+    return minc, maxc
+
+
+def rotate_shape(input, angle, axes):
+    """
+    Returns the shape of the output array for scipy.ndimage.interpolation.rotate
+    derived from: https://github.com/scipy/scipy/blob/v0.16.1/scipy/ndimage/ \
+    interpolation.py #L578. We are duplicating the code here so we can generate
+    an array of the right shape and array order to pass into the rotate
+    function.
+
+    :param input The input array
+    :type: ndarray
+    :param angle The rotation angle in degrees.
+    :type: float
+    :param axes The two axes that define the plane of rotation.
+                Default is the first two axes.
+    :type: tuple of 2 ints
+    """
+
+    axes = list(axes)
+    rank = input.ndim
+    if axes[0] < 0:
+        axes[0] += rank
+    if axes[1] < 0:
+        axes[1] += rank
+    if axes[0] < 0 or axes[1] < 0 or axes[0] > rank or axes[1] > rank:
+        raise RuntimeError('invalid rotation plane specified')
+    if axes[0] > axes[1]:
+        axes = axes[1], axes[0]
+    angle = np.pi / 180 * angle
+    m11 = math.cos(angle)
+    m12 = math.sin(angle)
+    m21 = -math.sin(angle)
+    m22 = math.cos(angle)
+    matrix = np.array([[m11, m12],
+                       [m21, m22]], dtype=np.float64)
+    iy = input.shape[axes[0]]
+    ix = input.shape[axes[1]]
+    mtrx = np.array([[m11, -m21],
+                     [-m12, m22]], dtype=np.float64)
+    minc = [0, 0]
+    maxc = [0, 0]
+    coor = np.dot(mtrx, [0, ix])
+    minc, maxc = _minmax(coor, minc, maxc)
+    coor = np.dot(mtrx, [iy, 0])
+    minc, maxc = _minmax(coor, minc, maxc)
+    coor = np.dot(mtrx, [iy, ix])
+    minc, maxc = _minmax(coor, minc, maxc)
+    oy = int(maxc[0] - minc[0] + 0.5)
+    ox = int(maxc[1] - minc[1] + 0.5)
+    offset = np.zeros((2,), dtype=np.float64)
+    offset[0] = float(oy) / 2.0 - 0.5
+    offset[1] = float(ox) / 2.0 - 0.5
+    offset = np.dot(matrix, offset)
+    tmp = np.zeros((2,), dtype=np.float64)
+    tmp[0] = float(iy) / 2.0 - 0.5
+    tmp[1] = float(ix) / 2.0 - 0.5
+    offset = tmp - offset
+    output_shape = list(input.shape)
+    output_shape[axes[0]] = oy
+    output_shape[axes[1]] = ox
+
+    return output_shape

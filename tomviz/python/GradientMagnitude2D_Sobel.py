@@ -9,8 +9,12 @@ def transform_scalars(dataset):
     array = array.astype(np.float32)
 
     # Transform the dataset along the third axis.
-    aaSobelX = scipy.ndimage.filters.sobel(array, axis=0) # 1D X-axis sobel
-    aaSobelY = scipy.ndimage.filters.sobel(array, axis=1) # 1D Y-axis sobel
+    aaSobelX = np.empty_like(array)
+    # 1D X-axis sobel
+    scipy.ndimage.filters.sobel(array, axis=0, output=aaSobelX)
+    aaSobelY = np.empty_like(array)
+    # 1D Y-axis sobel
+    scipy.ndimage.filters.sobel(array, axis=1, output=aaSobelY)
 
     # Calculate 2D sobel for each image slice.
     result = np.hypot(aaSobelX, aaSobelY)
