@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/OpenChemistry/tomviz.png?label=ready&title=Ready)](https://waffle.io/OpenChemistry/tomviz)
 ![tomviz_logo]
 
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12723.svg)](http://dx.doi.org/10.5281/zenodo.12723)
