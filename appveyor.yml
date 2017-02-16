@@ -1,0 +1,45 @@
+os: Visual Studio 2015
+platform: x64
+cache:
+  - C:\projects\paraview.zip
+  - C:\projects\paraview.zip.sha512
+  - C:\projects\vtkpugixml.zip
+  - C:\projects\vtkpugixml.zip.sha512
+  - C:\projects\itk-4.9.0-windows-64bit.zip
+  - C:\projects\itk-4.9.0-windows-64bit.zip.sha512
+  - C:\projects\tbb.zip
+  - C:\projects\tbb.zip.sha512
+  - C:\projects\python-2.7.5.zip
+  - C:\projects\python-2.7.5.zip.sha512
+  - C:\projects\googletest-install.zip
+  - C:\projects\googletest-install.zip.sha512
+install:
+  # Take care of submodules
+  - git submodule sync
+  - git submodule update --init
+  - cd ..
+  # Restore our cached deps
+  - python -m pip install requests
+  - python C:\projects\tomviz\scripts\appveyor\cache_restore.py
+
+
+build_script:
+  # Setup PATH
+  - set PATH=C:\projects\tomviz-build\lib\site-packages\tomviz;%PATH%
+  - set PATH=C:\projects\python\bin;%PATH%
+  - set PATH=c:\projects\python;%PATH%
+  - set PATH=C:\projects\paraview-install\lib\paraview-5.2;%PATH%
+  - set PATH=C:\projects\paraview-install\bin;%PATH%
+  - set PATH=C:\projects\tbb\bin\intel64\vc14;%PATH%
+  - set PATH=C:\projects\paraview-build\lib;%PATH%
+  - set PATH=C:\projects\paraview-build\bin;%PATH%
+  - set PATH=C:\Qt\5.7\msvc2015_64\bin;%PATH%
+  # Setup PYTHONPATH
+  - set PYTHONPATH=C:/projects/python/bin/Lib/site-packages
+  - set PYTHONPATH=C:/projects/paraview-build/bin;%PYTHONPATH%
+  - set PYTHONPATH=C:/projects/tomviz-build/lib/site-packages;%PYTHONPATH%
+  - set PYTHONPATH=C:/projects/paraview-build/lib/site-packages;%PYTHONPATH%
+  - set PYTHONPATH=C:/projects/paraview-install/lib/paraview-5.2/site-packages;%PYTHONPATH%
+  - set PYTHONPATH=C:/projects/paraview-build/lib;%PYTHONPATH%
+  # Now call ctest
+  - ctest -VV -S C:\projects\tomviz\cmake\AppVeyorContinuous.cmake

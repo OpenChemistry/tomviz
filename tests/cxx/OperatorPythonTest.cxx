@@ -94,7 +94,10 @@ TEST_F(OperatorPythonTest, cancelable_operator_transform)
     // Mimic user canceling operator
     std::thread canceler([this]() {
       while (!pythonOperator->isCanceled()) {
-        pythonOperator->cancelTransform();
+        // Wait until we are running to cancel
+        if (pythonOperator->state() == OperatorState::RUNNING) {
+          pythonOperator->cancelTransform();
+        }
       }
     });
     TransformResult result = pythonOperator->transform(dataObject);

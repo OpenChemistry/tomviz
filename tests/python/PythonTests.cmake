@@ -18,7 +18,12 @@ function(add_python_test case)
   )
   set(_pythonpath "${tomviz_python_binary_dir}")
   set(_pythonpath "${_pythonpath}${_separator}${fn_PYTHONPATH}")
+  set(_pythonpath "$ENV{PYTHONPATH}${_separator}${_pythonpath}")
+  if (WIN32)
+    string(REPLACE "\\;" ";" _pythonpath "${_pythonpath}")
+    string(REPLACE ";" "\\;" _pythonpath "${_pythonpath}")
+  endif()
   set_property(TEST ${name} PROPERTY ENVIRONMENT
-    "PYTHONPATH=$ENV{PYTHONPATH}${_separator}${_pythonpath}"
+    "PYTHONPATH=${_pythonpath}"
   )
 endfunction()
