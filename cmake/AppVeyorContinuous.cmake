@@ -1,4 +1,4 @@
-set(CTEST_SOURCE_DIRECTORY "C:/projects/tomviz")
+set(CTEST_SOURCE_DIRECTORY "$ENV{APPVEYOR_BUILD_FOLDER}")
 set(CTEST_BINARY_DIRECTORY "C:/projects/tomviz-build")
 # We need to set this otherwise we yet 255 as our return code!
 set(CTEST_COMMAND ctest)
