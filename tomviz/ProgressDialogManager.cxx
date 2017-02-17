@@ -76,7 +76,7 @@ void ProgressDialogManager::operationStarted()
     QObject::connect(op, &Operator::progressStepChanged, this,
                      &ProgressDialogManager::operationProgress);
     QObject::connect(
-      op, &Operator::progressMessageChanged,
+      op, &Operator::progressMessageChanged, progressDialog,
       [progressDialog, op](const QString& message) {
         if (!message.isNull()) {
           QString title = QString("%1 Progress").arg(op->label());
@@ -86,10 +86,6 @@ void ProgressDialogManager::operationStarted()
           progressDialog->setWindowTitle(title);
         }
       });
-    QObject::connect(progressDialog, &QDialog::rejected, [op]() {
-      QObject::disconnect(op, &Operator::progressMessageChanged, nullptr,
-                          nullptr);
-    });
 
     connect(op, &Operator::progressMessageChanged, this,
             &ProgressDialogManager::showStatusBarMessage);
