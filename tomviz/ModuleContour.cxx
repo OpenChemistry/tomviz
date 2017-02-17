@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
+#include "Operator.h"
 #include "Utilities.h"
 
 #include "pqColorChooserButton.h"
@@ -26,6 +27,10 @@
 
 #include "vtkDataObject.h"
 #include "vtkNew.h"
+#include "vtkPVArrayInformation.h"
+#include "vtkPVDataInformation.h"
+#include "vtkPVDataSetAttributesInformation.h"
+#include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
@@ -41,6 +46,7 @@
 #include <QComboBox>
 #include <QFormLayout>
 #include <QLabel>
+#include <QPointer>
 
 namespace tomviz {
 
@@ -49,7 +55,9 @@ class ModuleContour::Private
 public:
   std::string ColorArrayName;
   bool UseSolidColor;
+  QPointer<QComboBox> ColorByComboBox;
   pqPropertyLinks Links;
+  QPointer<DataSource> ColorByDataSource;
 };
 
 ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
@@ -57,6 +65,7 @@ ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
   this->Internals = new Private;
   this->Internals->Links.setAutoUpdateVTKObjects(true);
   this->Internals->UseSolidColor = false;
+  this->Internals->ColorByDataSource = nullptr;
 }
 
 ModuleContour::~ModuleContour()
@@ -105,13 +114,14 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PreInitializeProxy(this->ResampleFilter);
   vtkSMPropertyHelper(this->ResampleFilter, "Input").Set(data->producer());
   vtkSMPropertyHelper(this->ResampleFilter, "Source").Set(this->ContourFilter);
+  vtkSMPropertyHelper(this->ResampleFilter, "PassPointArrays").Set(1);
   controller->PostInitializeProxy(this->ResampleFilter);
   controller->RegisterPipelineProxy(this->ResampleFilter);
 
   // Create the representation for it. Show the unresampled contour filter to
   // start.
   this->ContourRepresentation =
-    controller->Show(this->ContourFilter, 0, vtkView);
+    controller->Show(this->ResampleFilter, 0, vtkView);
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation")
     .Set("Surface");
@@ -131,6 +141,9 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   this->ContourRepresentation->UpdateVTKObjects();
 
+  // Color by the data source by default
+  this->Internals->ColorByDataSource = dataSource();
+
   return true;
 }
 
@@ -139,19 +152,8 @@ void ModuleContour::updateColorMap()
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "LookupTable")
     .Set(this->colorMap());
-  vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation,
-                                       "ColorArrayName");
 
-  if (this->Internals->UseSolidColor) {
-    colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
-  } else {
-    colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS,
-      this->Internals->ColorArrayName.c_str());
-  }
-  vtkSMPropertyHelper(this->ContourRepresentation, "Input")
-    .Set(this->ContourFilter);
+  updateScalarColoring();
 
   vtkSMPropertyHelper(this->ContourRepresentation, "Visibility")
     .Set(this->visibility() ? 1 : 0);
@@ -204,6 +206,7 @@ void ModuleContour::setIsoValues(const QList<double>& values)
 void ModuleContour::addToPanel(QWidget* panel)
 {
   Q_ASSERT(this->ContourFilter);
+  Q_ASSERT(this->ResampleFilter);
   Q_ASSERT(this->ContourRepresentation);
 
   if (panel->layout()) {
@@ -228,6 +231,11 @@ void ModuleContour::addToPanel(QWidget* panel)
   pqColorChooserButton* colorSelector = new pqColorChooserButton(panel);
   colorLayout->addWidget(colorSelector);
   layout->addRow("", colorLayout);
+
+  if (this->Internals->ColorByComboBox.isNull()) {
+    this->Internals->ColorByComboBox = new QComboBox();
+  }
+  layout->addRow("Color By", this->Internals->ColorByComboBox);
 
   colorSelector->setShowAlphaChannel(false);
   DoubleSliderWidget* valueSlider = new DoubleSliderWidget(true);
@@ -287,20 +295,46 @@ void ModuleContour::addToPanel(QWidget* panel)
     this->ContourRepresentation->GetProperty("AmbientColor"));
 
   this->connect(valueSlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
   this->connect(representations, &QComboBox::currentTextChanged, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
   this->connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
   this->connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
   this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
-                &ModuleContour::dataUpdated);
+                &ModuleContour::propertyChanged);
+  this->connect(this->Internals->ColorByComboBox,
+                SIGNAL(currentIndexChanged(int)), this,
+                SLOT(propertyChanged()));
+
+  this->connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));
+
+  updateGUI();
+  propertyChanged();
 }
 
-void ModuleContour::dataUpdated()
+void ModuleContour::propertyChanged()
 {
   this->Internals->Links.accept();
+
+  int colorByIndex = this->Internals->ColorByComboBox->currentIndex();
+  if (colorByIndex > 0) {
+    auto childDataSources = getChildDataSources();
+    this->Internals->ColorByDataSource = childDataSources[colorByIndex - 1];
+  } else {
+    this->Internals->ColorByDataSource = dataSource();
+  }
+
+  vtkSMPropertyHelper resampleHelper(this->ResampleFilter, "Input");
+  resampleHelper.Set(this->Internals->ColorByDataSource->producer());
+
+  updateScalarColoring();
+
+  this->ResampleFilter->UpdateVTKObjects();
+  this->ContourRepresentation->MarkDirty(this->ContourRepresentation);
+  this->ContourRepresentation->UpdateVTKObjects();
+
   emit this->renderNeeded();
 }
 
@@ -390,11 +424,98 @@ vtkSMProxy* ModuleContour::getProxyForString(const std::string& str)
   }
 }
 
+QList<DataSource*> ModuleContour::getChildDataSources()
+{
+  QList<DataSource*> childSources;
+  auto source = dataSource();
+  if (!source) {
+    return childSources;
+  }
+
+  // Iterate over Operators and obtain child data sources
+  auto ops = source->operators();
+  for (int i = 0; i < ops.size(); ++i) {
+    auto op = ops[i];
+    if (!op || !op->hasChildDataSource()) {
+      continue;
+    }
+
+    auto child = op->childDataSource();
+    if (!child) {
+      continue;
+    }
+
+    childSources.append(child);
+  }
+
+  return childSources;
+}
+
+void ModuleContour::updateScalarColoring()
+{
+  if (!this->Internals->ColorByDataSource) {
+    return;
+  }
+
+  std::string arrayName(this->Internals->ColorArrayName);
+
+  // Get the active point scalars from the resample filter
+  vtkPVDataInformation* dataInfo = nullptr;
+  vtkPVDataSetAttributesInformation* attributeInfo = nullptr;
+  vtkPVArrayInformation* arrayInfo = nullptr;
+  if (this->Internals->ColorByDataSource) {
+    dataInfo =
+      this->Internals->ColorByDataSource->producer()->GetDataInformation(0);
+  }
+  if (dataInfo) {
+    attributeInfo = dataInfo->GetAttributeInformation(
+      vtkDataObject::FIELD_ASSOCIATION_POINTS);
+  }
+  if (attributeInfo) {
+    arrayInfo =
+      attributeInfo->GetAttributeInformation(vtkDataSetAttributes::SCALARS);
+  }
+  if (arrayInfo) {
+    arrayName = arrayInfo->GetName();
+  }
+
+  vtkSMPropertyHelper colorArrayHelper(this->ContourRepresentation,
+                                       "ColorArrayName");
+  if (this->Internals->UseSolidColor) {
+    colorArrayHelper.SetInputArrayToProcess(
+      vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
+  } else {
+    colorArrayHelper.SetInputArrayToProcess(
+      vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName.c_str());
+  }
+}
+
 void ModuleContour::setUseSolidColor(int useSolidColor)
 {
   this->Internals->UseSolidColor = (useSolidColor != 0);
   this->updateColorMap();
   emit this->renderNeeded();
+}
+
+void ModuleContour::updateGUI()
+{
+  QList<DataSource*> childSources = getChildDataSources();
+  QComboBox* combo = this->Internals->ColorByComboBox;
+  if (combo) {
+    combo->blockSignals(true);
+    combo->clear();
+    combo->addItem("This Data");
+    for (int i = 0; i < childSources.size(); ++i) {
+      combo->addItem(childSources[i]->filename());
+    }
+
+    int selected = childSources.indexOf(this->Internals->ColorByDataSource);
+
+    // If data source not found, selected will be -1, so the current index will
+    // be set to 0, which is the right index for this data source.
+    combo->setCurrentIndex(selected + 1);
+    combo->blockSignals(false);
+  }
 }
 
 } // end of namespace tomviz

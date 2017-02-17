@@ -60,6 +60,8 @@ protected:
   void updateColorMap() override;
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
+  QList<DataSource*> getChildDataSources();
+  void updateScalarColoring();
 
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
   vtkWeakPointer<vtkSMProxy> ContourRepresentation;
@@ -71,10 +73,14 @@ protected:
   QString Representation;
 
 private slots:
-  void dataUpdated();
+  /// invoked whenever a property widget changes
+  void propertyChanged();
 
-  // The parameter should really be a bool, but the signal gives an int
+  /// The parameter should really be a bool, but the signal gives an int
   void setUseSolidColor(int useSolidColor);
+
+  /// Reset the UI for widgets not connected to a proxy property
+  void updateGUI();
 
 private:
   Q_DISABLE_COPY(ModuleContour)

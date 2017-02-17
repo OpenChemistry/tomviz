@@ -138,6 +138,9 @@ protected:
   virtual vtkSMProxy* getProxyForString(const std::string& str) = 0;
 
 signals:
+  /// Emitted when the represented DataSource is updated.
+  void dataSourceChanged();
+
   /// Emitted when the UseDetachedColorMap state changes or the detatched color
   /// map is modified
   void colorMapChanged();
