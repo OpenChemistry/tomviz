@@ -19,7 +19,10 @@ This will start the server using a mock API for testing.
 
 # Acquistion JSON-RPC interface
 
-## Setting tilt angle
+## Describe
+
+This method returns a description of the parameters that a particular method
+supports for the currently loaded adapter.
 
 ### Request
 
@@ -27,18 +30,124 @@ This will start the server using a mock API for testing.
 {
   "jsonrpc": "2.0",
   "id": "<id>",
-  "method": "set_tilt_angle",
-  "params": ["<angle>"]
+  "method": "describe",
+  "params": ['methodName']
 }
-
 ```
-### Reponse
+
+### Response
+
+Returns the parameter description.
 
 ```json
 {
   "jsonrpc": "2.0",
   "id": "<id>",
-  "result": "<angle>"
+  "result": [{...}]
+}
+
+```
+
+## Connect
+
+Connect to the instrument
+
+### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "<id>",
+  "method": "connect",
+  "params": {...}
+}
+```
+
+### Response
+
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "<id>",
+  "result": {...}
+}
+
+```
+
+## Disconnect
+
+Disconnect from the instrument
+
+### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "<id>",
+  "method": "disconnect",
+  "params": {...}
+}
+```
+
+### Response
+
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "<id>",
+  "result": {...}
+}
+
+## Setting tilt parameters
+
+### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "<id>",
+  "method": "tilt_params",
+  "params": {...}
+}
+
+```
+### Reponse
+
+Return the current title parameters
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "<id>",
+  "result": {...}
+}
+
+```
+
+## acquisition_params
+
+### Request
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "<id>",
+  "method": "acquisition_params",
+  "params": {...}
+}
+
+```
+### Reponse
+
+Return the current acquisition parameters
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "<id>",
+  "result": {...}
 }
 
 ```

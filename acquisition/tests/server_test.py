@@ -4,6 +4,7 @@ import time
 import hashlib
 
 from tomviz.jsonrpc import jsonrpc_message
+from tests.mock.source import ApiAdapter
 
 
 def test_invalid_content_type(acquisition_server):
@@ -60,12 +61,14 @@ def test_method_not_found(acquisition_server):
     assert response.json() == expected
 
 
-def test_set_title_angle(acquisition_server):
+def test_tilt_params(acquisition_server):
     id = 1234
     request = jsonrpc_message({
         'id': id,
-        'method': 'set_tilt_angle',
-        'params': [23]
+        'method': 'tilt_params',
+        'params': {
+            'angle': 23
+        }
     })
 
     response = requests.post(acquisition_server.url, json=request)
@@ -82,8 +85,10 @@ def test_preview_scan(acquisition_server):
     id = 1234
     request = jsonrpc_message({
         'id': id,
-        'method': 'set_tilt_angle',
-        'params': [0]
+        'method': 'tilt_params',
+        'params': {
+            'angle': 0
+        }
     })
 
     response = requests.post(acquisition_server.url, json=request)
@@ -113,8 +118,10 @@ def test_stem_acquire(acquisition_server):
     id = 1234
     request = jsonrpc_message({
         'id': id,
-        'method': 'set_tilt_angle',
-        'params': [1]
+        'method': 'tilt_params',
+        'params': {
+            'angle': 1
+        }
     })
 
     response = requests.post(acquisition_server.url, json=request)
@@ -138,3 +145,89 @@ def test_stem_acquire(acquisition_server):
     md5 = hashlib.md5()
     md5.update(response.content)
     assert md5.hexdigest() == expected
+
+
+def test_connection(acquisition_server):
+    id = 1234
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'connect'
+    })
+
+    response = requests.post(acquisition_server.url, json=request)
+    assert response.status_code == 200
+    assert response.json()['result']
+
+    # Now disconnect
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'disconnect'
+    })
+    response = requests.post(acquisition_server.url, json=request)
+    assert response.status_code == 200
+    assert not response.json()['result']
+
+def test_acquisition_params(acquisition_server):
+    id = 1234
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'acquisition_params',
+    })
+    response = requests.post(acquisition_server.url, json=request)
+    assert response.status_code == 200
+    expected = {
+        'test': 1,
+        'foo': 'foo'
+    }
+    assert response.status_code == 200
+    assert response.json()['result'] == expected
+
+    # Now update
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'acquisition_params',
+        'params': {
+            'foo': 'bar'
+        }
+    })
+    response = requests.post(acquisition_server.url, json=request)
+    expected = {
+        'test': 1,
+        'foo': 'bar'
+    }
+    assert response.status_code == 200
+    assert response.json()['result'] == expected
+
+def test_describe(acquisition_server):
+    id = 1234
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'describe',
+        'params': {
+            'method': 'acquisition_params'
+        }
+
+    })
+    response = requests.post(acquisition_server.url, json=request)
+    assert response.status_code == 200
+    assert response.json()['result'] == ApiAdapter.acquisition_params.description
+
+    # Try describing a method that doesn't exist
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'describe',
+        'params': {
+            'method': 'no_where_man'
+        }
+
+    })
+    response = requests.post(acquisition_server.url, json=request)
+    expected = {
+        'message': 'Method no_where_man not found.',
+        'code': -32000
+    }
+    assert response.status_code == 500
+    error = response.json()['error']
+    del error['data']
+    assert error == expected
+

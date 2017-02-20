@@ -17,6 +17,8 @@ INVALID_PARAMS = -32602
 # Internal JSON-RPC error.
 INTERNAL_ERROR = -32603
 # -32000 to -32099 Server error
+SERVER_ERROR = -32000
+
 JSONRPC_VERSION = '2.0'
 
 
@@ -72,6 +74,11 @@ class InternalError(JsonRpcError):
     message = "Internal Error."
 
 
+class ServerError(JsonRpcError):
+    code = SERVER_ERROR
+    message = "Server Error."
+
+
 class JsonRpcHandler(object):
     def __init__(self, path):
         self._path = path
@@ -94,12 +101,16 @@ class JsonRpcHandler(object):
 
             func = self._methods[method]
 
-            if isinstance(params, list):
-                result = func(*params)
-            elif isinstance(params, dict):
-                result = func(**params)
-            else:
-                raise InvalidParams()
+            try:
+                if isinstance(params, list):
+                    result = func(*params)
+                elif isinstance(params, dict):
+                    result = func(**params)
+                else:
+                    raise InvalidParams()
+            except Exception as ex:
+                raise ServerError(message=ex.message,
+                                  data=json.dumps(traceback.format_exc()))
 
             return self._response(id, result)
         except JsonRpcError as err:
@@ -107,6 +118,7 @@ class JsonRpcHandler(object):
                 'id': id,
                 'error': err.to_json()
             })
+
 
     def _response(self, id, result):
         response = {

@@ -44,8 +44,38 @@ def setup_app():
 
     @jsonrpc.endpoint(path='/acquisition')
     @inject(source_adapter)
-    def set_tilt_angle(source_adapter, angle):
-        return source_adapter.set_tilt_angle(angle)
+    def describe(source_adapter, method):
+
+        if not hasattr(source_adapter, method):
+            raise Exception('Method %s not found.' % method)
+
+        func = getattr(source_adapter, method)
+
+        description = []
+        if hasattr(func, 'description'):
+            description = getattr(func, 'description')
+
+        return description
+
+    @jsonrpc.endpoint(path='/acquisition')
+    @inject(source_adapter)
+    def connect(source_adapter, **params):
+        return source_adapter.connect(**params)
+
+    @jsonrpc.endpoint(path='/acquisition')
+    @inject(source_adapter)
+    def disconnect(source_adapter, **params):
+        return source_adapter.disconnect(**params)
+
+    @jsonrpc.endpoint(path='/acquisition')
+    @inject(source_adapter)
+    def tilt_params(source_adapter, **params):
+        return source_adapter.tilt_params(**params)
+
+    @jsonrpc.endpoint(path='/acquisition')
+    @inject(source_adapter)
+    def acquisition_params(source_adapter, **params):
+        return source_adapter.acquisition_params(**params)
 
     def _base_url():
         return '%s://%s' % (bottle.request.urlparts.scheme,
