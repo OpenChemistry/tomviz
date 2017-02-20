@@ -1,8 +1,8 @@
 import importlib
 import inspect
 import logging
-import bottle
 import sys
+import bottle
 from bottle import run, route
 
 from tomviz import jsonrpc
@@ -15,10 +15,13 @@ port = 8080
 logger = logging.getLogger('tomviz')
 
 
-def setup_app():
-    logger.info('Loading adapter: %s', adapter)
-    # First load the chosen adapter
-    module, cls = adapter.rsplit('.', 1)
+def setup_app(source_adapter=None):
+    if source_adapter is None:
+        source_adapter = adapter
+
+    logger.info('Loading source_adapter: %s', source_adapter)
+    # First load the chosen source_adapter
+    module, cls = source_adapter.rsplit('.', 1)
     try:
         imported = importlib.import_module(module)
     except ImportError:
@@ -28,13 +31,13 @@ def setup_app():
     try:
         cls = getattr(imported, cls)
     except AttributeError:
-        logger.error('Unable to get constructor for: %s', adapter)
+        logger.error('Unable to get constructor for: %s', source_adapter)
         raise
 
     # Ensure that the adapter implements the interface
     bases = inspect.getmro(cls)
     if len(bases) < 2 or bases[1] != AbstractSource:
-        logger.error('Adapter %s, does not derive from %s', adapter,
+        logger.error('Adapter %s, does not derive from %s', source_adapter,
                      '.'.join([AbstractSource.__module__,
                                AbstractSource.__name__]))
         sys.exit(-1)
@@ -108,6 +111,6 @@ def setup_app():
 
 
 def start(debug=True):
-    setup_app()
+    setup_app(adapter)
     logger.info('Starting HTTP server')
     run(host='localhost', port=port, debug=debug)
