@@ -7,6 +7,7 @@ def describe(description):
         return func
     return wrap
 
+
 class AbstractSource(object):
     """
     Abstract interface implemented to define an acquistion source.
@@ -78,5 +79,3 @@ class AbstractSource(object):
         for param in required:
             if provided is None or param not in provided:
                 raise Exception('Parameter "%s" is required.' % param)
-
-

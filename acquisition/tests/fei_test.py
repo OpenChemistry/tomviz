@@ -1,6 +1,5 @@
 import pytest
 import requests
-import time
 import hashlib
 
 from tomviz.jsonrpc import jsonrpc_message
@@ -88,6 +87,7 @@ def test_stem_acquire(fei_acquisition_server):
     md5.update(response.content)
     assert md5.hexdigest() == expected
 
+
 def test_acquisition_params(fei_acquisition_server):
     id = 1234
     request = jsonrpc_message({
@@ -128,4 +128,3 @@ def test_acquisition_params(fei_acquisition_server):
     }
     assert response.status_code == 200
     assert response.json()['result'] == expected
-

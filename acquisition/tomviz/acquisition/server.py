@@ -1,7 +1,6 @@
 import importlib
 import inspect
 import logging
-import sys
 import bottle
 from bottle import run, route
 
@@ -15,10 +14,9 @@ port = 8080
 logger = logging.getLogger('tomviz')
 
 
-def setup_app(source_adapter=None):
+def _load_source_adapter(source_adapter):
     if source_adapter is None:
         source_adapter = adapter
-
     logger.info('Loading source_adapter: %s', source_adapter)
     # First load the chosen source_adapter
     module, cls = source_adapter.rsplit('.', 1)
@@ -34,13 +32,18 @@ def setup_app(source_adapter=None):
         logger.error('Unable to get constructor for: %s', source_adapter)
         raise
 
+    return cls
+
+
+def setup_app(source_adapter=None):
+    cls = _load_source_adapter(source_adapter)
+
     # Ensure that the adapter implements the interface
     bases = inspect.getmro(cls)
     if len(bases) < 2 or bases[1] != AbstractSource:
         logger.error('Adapter %s, does not derive from %s', source_adapter,
                      '.'.join([AbstractSource.__module__,
                                AbstractSource.__name__]))
-        sys.exit(-1)
 
     source_adapter = cls()
     slices = {}

@@ -27,5 +27,3 @@ acq.Detectors.AcqParams.DwellTime = 3.1
 image = mock.MagicMock()
 image.AsSafeArray = img.tobytes()
 acq.AcquireImages.return_value = [image]
-
-

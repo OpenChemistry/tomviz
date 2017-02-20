@@ -20,7 +20,7 @@ class ApiAdapter(AbstractSource):
         'description': 'Test params.',
         'type': 'int',
         'default': 1
-    },{
+    }, {
         'name': 'foo',
         'label': 'Foo',
         'description': 'Foo bar',

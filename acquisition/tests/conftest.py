@@ -39,7 +39,6 @@ class Server(Thread):
         self._server.srv.socket.close()
 
 
-
 @pytest.fixture(scope="module")
 def acquisition_server():
     srv = Server()

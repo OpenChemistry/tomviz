@@ -1,6 +1,4 @@
-import pytest
 import requests
-import time
 import hashlib
 
 from tomviz.jsonrpc import jsonrpc_message
@@ -23,7 +21,8 @@ def test_invalid_content_type(acquisition_server):
 
 def test_invalid_json(acquisition_server):
     headers = {'content-type': 'application/json'}
-    response = requests.post(acquisition_server.url, headers=headers, data='test')
+    response = requests.post(acquisition_server.url, headers=headers,
+                             data='test')
 
     expected = jsonrpc_message({
         'id': None,
@@ -167,6 +166,7 @@ def test_connection(acquisition_server):
     assert response.status_code == 200
     assert not response.json()['result']
 
+
 def test_acquisition_params(acquisition_server):
     id = 1234
     request = jsonrpc_message({
@@ -198,6 +198,7 @@ def test_acquisition_params(acquisition_server):
     assert response.status_code == 200
     assert response.json()['result'] == expected
 
+
 def test_describe(acquisition_server):
     id = 1234
     request = jsonrpc_message({
@@ -210,7 +211,8 @@ def test_describe(acquisition_server):
     })
     response = requests.post(acquisition_server.url, json=request)
     assert response.status_code == 200
-    assert response.json()['result'] == ApiAdapter.acquisition_params.description
+    assert response.json()['result'] \
+        == ApiAdapter.acquisition_params.description
 
     # Try describing a method that doesn't exist
     request = jsonrpc_message({
@@ -230,4 +232,3 @@ def test_describe(acquisition_server):
     error = response.json()['error']
     del error['data']
     assert error == expected
-

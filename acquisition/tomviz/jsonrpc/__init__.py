@@ -119,7 +119,6 @@ class JsonRpcHandler(object):
                 'error': err.to_json()
             })
 
-
     def _response(self, id, result):
         response = {
             'jsonrpc': JSONRPC_VERSION,
