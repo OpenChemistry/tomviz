@@ -18,9 +18,8 @@ import LookupTableManager from 'paraviewweb/src/Common/Core/LookupTableManager';
 import ImageQueryDataModelViewer from 'arctic-viewer/lib/types/ImageQueryDataModel';
 import SortedCompositeViewer     from 'arctic-viewer/lib/types/SortedComposite';
 
-// Background image -----------------------------------------------------------
+// Resource images -----------------------------------------------------------
 
-// import background from './tomvizDrop.png';
 import link from './tomvizLink.png';
 
 // Global variables -----------------------------------------------------------
@@ -140,30 +139,14 @@ export function load(container) {
 
 // Be ready for file drop -----------------------------------------------------
 const container = document.querySelector('.react-content');
-const fileSelector = document.querySelector('.fileSelector');
 
 const bodyStyle = document.querySelector('body').style;
-// bodyStyle.background = `url(${background})`;
-// bodyStyle.backgroundRepeat = 'no-repeat';
-// bodyStyle.backgroundPosition = '50% 50%';
 bodyStyle.position = 'absolute';
 bodyStyle.width = '100vw';
 bodyStyle.height = '100vh';
 
-function handleFile(e) {
-  var files = this.files;
-  if (files.length === 1) {
-    container.removeChild(fileSelector);
-    load(container, files[0]);
-  }
-}
-
 const linkImageSelector = document.querySelector('.linkImage');
 linkImageSelector.src = link;
-
-if (fileSelector) {
-  fileSelector.onchange = handleFile;
-}
 
 export function ready() {
   load(container);

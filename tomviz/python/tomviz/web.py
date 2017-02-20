@@ -87,8 +87,8 @@ def bundleDataToHTML(destinationPath):
     webResources.append('<script>ready()</script></body>')
 
     # Create new output file
-    with file(srcHtmlPath) as srcHtml:
-        with file(dstHtmlPath, mode='w') as dstHtml:
+    with open(srcHtmlPath, mode='r') as srcHtml:
+        with open(dstHtmlPath, mode='w') as dstHtml:
             for line in srcHtml:
                 if '</body>' in line:
                     for webResource in webResources:
