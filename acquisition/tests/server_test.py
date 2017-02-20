@@ -2,44 +2,12 @@ import pytest
 import requests
 import time
 import hashlib
-from threading import Thread
 
-from tomviz.acquisition import server
 from tomviz.jsonrpc import jsonrpc_message
 
 
-port = 9999
-base_url = 'http://localhost:%d' % port
-acquisition_url = '%s/acquisition' % base_url
-
-
-class Server(Thread):
-    def __init__(self):
-        super(Server, self).__init__()
-
-    def run(self):
-        server.start()
-
-
-@pytest.fixture(scope="module")
-def acquisition_server():
-    server.port = port
-    srv = Server()
-    srv.daemon = True
-    srv.start()
-    # Wait for bottle to start
-    while True:
-        try:
-            requests.get(base_url)
-            break
-        except requests.ConnectionError:
-            time.sleep(0.1)
-
-    yield server
-
-
 def test_invalid_content_type(acquisition_server):
-    response = requests.post(acquisition_url, data='test')
+    response = requests.post(acquisition_server.url, data='test')
 
     expected = jsonrpc_message({
         'id': None,
@@ -54,7 +22,7 @@ def test_invalid_content_type(acquisition_server):
 
 def test_invalid_json(acquisition_server):
     headers = {'content-type': 'application/json'}
-    response = requests.post(acquisition_url, headers=headers, data='test')
+    response = requests.post(acquisition_server.url, headers=headers, data='test')
 
     expected = jsonrpc_message({
         'id': None,
@@ -78,7 +46,7 @@ def test_method_not_found(acquisition_server):
         'params': [source]
     })
 
-    response = requests.post(acquisition_url, json=request)
+    response = requests.post(acquisition_server.url, json=request)
 
     assert response.status_code == 404
     expected = jsonrpc_message({
@@ -100,7 +68,7 @@ def test_set_title_angle(acquisition_server):
         'params': [23]
     })
 
-    response = requests.post(acquisition_url, json=request)
+    response = requests.post(acquisition_server.url, json=request)
 
     assert response.status_code == 200
     expected = jsonrpc_message({
@@ -118,7 +86,7 @@ def test_preview_scan(acquisition_server):
         'params': [0]
     })
 
-    response = requests.post(acquisition_url, json=request)
+    response = requests.post(acquisition_server.url, json=request)
     assert response.status_code == 200
 
     request = jsonrpc_message({
@@ -126,7 +94,7 @@ def test_preview_scan(acquisition_server):
         'method': 'preview_scan'
     })
 
-    response = requests.post(acquisition_url, json=request)
+    response = requests.post(acquisition_server.url, json=request)
     assert response.status_code == 200
 
     # Now fetch the image
@@ -149,7 +117,7 @@ def test_stem_acquire(acquisition_server):
         'params': [1]
     })
 
-    response = requests.post(acquisition_url, json=request)
+    response = requests.post(acquisition_server.url, json=request)
     assert response.status_code == 200
 
     request = jsonrpc_message({
@@ -157,7 +125,7 @@ def test_stem_acquire(acquisition_server):
         'method': 'stem_acquire'
     })
 
-    response = requests.post(acquisition_url, json=request)
+    response = requests.post(acquisition_server.url, json=request)
     assert response.status_code == 200
 
     # Now fetch the image
