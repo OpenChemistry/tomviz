@@ -8,8 +8,8 @@ dependencies:
   cache_directories:
     - ~/docker
   override:
-    - pip install scikit-ci-addons==0.11.0
-    - ci_addons docker load-pull-save tomviz/tomviz-builder:latest
+    - pip install scikit-ci-addons==0.12.0
+    - ci_addons docker load-pull-save --verbose tomviz/tomviz-builder:latest
 
 checkout:
   post:
