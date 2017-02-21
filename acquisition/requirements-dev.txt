@@ -1,0 +1,8 @@
+pytest==3.0.6
+requests==2.13.0
+Pillow==3.4.2
+# Need this for testing so we can stop there server, change when the required
+# get into a release.
+-e git+git://github.com/bottlepy/bottle.git@master#egg=bottle
+mock==2.0.0
+diskcache==2.3.0
