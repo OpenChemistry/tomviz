@@ -69,6 +69,7 @@ you will need to specify the correct generator for the installed compiler.
       -DITK_USE_FFTWF:BOOL=ON \
       -DModule_BridgeNumPy:BOOL=ON \
       -DBUILD_TESTING:BOOL=OFF \
+      -DITK_WRAP_unsigned_short:BOOL=ON \
       -DITK_WRAP_PYTHON:BOOL=ON \
       -DBUILD_EXAMPLES:BOOL=OFF \
       -DBUILD_SHARED_LIBS:BOOL=ON \
