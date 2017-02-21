@@ -1,15 +1,11 @@
-import base64
 import os
 import shutil
-import zipfile
 
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
 from paraview.web.dataset_builder import CompositeDataSetBuilder
 
 DATA_DIRECTORY = 'data'
-DATA_FILENAME = 'data.tomviz'
-BASE64_DATA_FILENAME = 'data.tomviz.base64'
 HTML_FILENAME = 'tomviz.html'
 HTML_WITH_DATA_FILENAME = 'tomviz_data.html'
 
@@ -49,12 +45,9 @@ def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
     if exportType == 3:
         export_layers(dest, camera)
 
-    # Zip data directory
-    zipData(destPath)
-
-    # Copy application
+    # Setup application
     copy_viewer(destPath, executionPath)
-    create_standalone_html(destPath)
+    bundleDataToHTML(destPath)
 
     # Restore initial parameters
     for prop in viewState:
@@ -65,21 +58,47 @@ def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
 # -----------------------------------------------------------------------------
 
 
-def zipData(destinationPath):
-    dstFile = os.path.join(destinationPath, DATA_FILENAME)
+def bundleDataToHTML(destinationPath):
     dataDir = os.path.join(destinationPath, DATA_DIRECTORY)
+    srcHtmlPath = os.path.join(destinationPath, HTML_FILENAME)
+    dstHtmlPath = os.path.join(destinationPath, HTML_WITH_DATA_FILENAME)
+    webResources = ['<style>.webResource { display: none; }</style>']
 
     if os.path.exists(dataDir):
-        with zipfile.ZipFile(dstFile, mode='w') as zf:
-            for dirName, subdirList, fileList in os.walk(dataDir):
-                for fname in fileList:
-                    fullPath = os.path.join(dirName, fname)
-                    filePath = os.path.relpath(fullPath, dataDir)
-                    relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
-                    zf.write(fullPath, arcname=relPath,
-                             compress_type=zipfile.ZIP_STORED)
+        for dirName, subdirList, fileList in os.walk(dataDir):
+            for fname in fileList:
+                fullPath = os.path.join(dirName, fname)
+                filePath = os.path.relpath(fullPath, dataDir)
+                relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
+                content = ''
 
-        shutil.rmtree(dataDir)
+                if fname.endswith('.jpg'):
+                    with open(fullPath, 'rb') as data:
+                        dataContent = data.read()
+                        content = dataContent.encode("base64").replace('\n', '')
+                else:
+                    with open(fullPath, 'r') as data:
+                        content = data.read()
+
+                webResources.append(
+                    '<div class="webResource" data-url="%s">%s</div>'
+                    % (relPath, content))
+
+    webResources.append('<script>ready()</script></body>')
+
+    # Create new output file
+    with open(srcHtmlPath, mode='r') as srcHtml:
+        with open(dstHtmlPath, mode='w') as dstHtml:
+            for line in srcHtml:
+                if '</body>' in line:
+                    for webResource in webResources:
+                        dstHtml.write(webResource)
+                else:
+                    dstHtml.write(line)
+
+    # Cleanup
+    shutil.rmtree(dataDir)
+    os.remove(srcHtmlPath)
 
 
 def get_proxy(id):
@@ -97,37 +116,6 @@ def copy_viewer(destinationPath, executionPath):
                 srcFile = os.path.join(root, HTML_FILENAME)
                 shutil.copy(srcFile, destinationPath)
                 return
-
-
-def create_standalone_html(destinationPath):
-    dataPath = os.path.join(destinationPath, DATA_FILENAME)
-    tmpData = os.path.join(destinationPath, BASE64_DATA_FILENAME)
-
-    if not os.path.exists(dataPath):
-        return
-
-    with file(tmpData, mode='w') as dataOut:
-        with file(dataPath) as dataIn:
-            base64.encode(dataIn, dataOut)
-
-    srcHtmlPath = os.path.join(destinationPath, HTML_FILENAME)
-    dstHtmlPath = os.path.join(destinationPath, HTML_WITH_DATA_FILENAME)
-    with file(tmpData) as data:
-        with file(srcHtmlPath) as srcHtml:
-            with file(dstHtmlPath, mode='w') as dstHtml:
-                for line in srcHtml:
-                    if '<script type="text/javascript">' in line:
-                        dstHtml.write(line)
-                        dstHtml.write('var data = "')
-                        for dl in data:
-                            dstHtml.write(dl[:-1])
-                        dstHtml.write('";\n')
-                    elif '<input' in line:
-                        pass
-                    else:
-                        dstHtml.write(line)
-
-    os.remove(tmpData)
 
 
 def add_scene_item(scene, name, proxy, view):
