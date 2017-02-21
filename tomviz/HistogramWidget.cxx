@@ -266,7 +266,7 @@ void HistogramWidget::onCustomRangeClicked()
   dialog.setRange(range[0], range[1]);
   if (dialog.exec() == QDialog::Accepted) {
     vtkSMTransferFunctionProxy::RescaleTransferFunction(
-      m_LUTProxy, dialog.getMinimum(), dialog.getMaximum());
+      m_LUTProxy, dialog.minimum(), dialog.maximum());
   }
   renderViews();
   emit colorMapUpdated();

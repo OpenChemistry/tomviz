@@ -3,8 +3,6 @@ platform: x64
 cache:
   - C:\projects\paraview.zip
   - C:\projects\paraview.zip.sha512
-  - C:\projects\vtkpugixml.zip
-  - C:\projects\vtkpugixml.zip.sha512
   - C:\projects\itk-4.9.0-windows-64bit.zip
   - C:\projects\itk-4.9.0-windows-64bit.zip.sha512
   - C:\projects\tbb.zip

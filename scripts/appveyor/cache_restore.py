@@ -10,10 +10,6 @@ downloads = [{
     'name': 'paraview.zip',
     'target': '.',
 }, {
-    '_id': '58a2709a8d777f0721a57c39',
-    'name': 'vtkpugixml.zip',
-    'target': 'paraview-install/include',
-}, {
     '_id': '58a21ab58d777f0721a4b212',
     'name': 'itk-4.9.0-windows-64bit.zip',
     'target': 'itk',
