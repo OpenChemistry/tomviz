@@ -96,6 +96,12 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     .Set(data->displayPosition(), 3);
   this->updateColorMap();
   this->ThresholdRepresentation->UpdateVTKObjects();
+
+  // Give the proxy a friendly name for the GUI/Python world.
+  if (auto p = convert<pqProxy*>(proxy)) {
+    p->rename(label());
+  }
+
   return true;
 }
 

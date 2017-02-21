@@ -86,6 +86,12 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data,
   // pick proper color/opacity maps.
   this->updateColorMap();
   this->Representation->UpdateVTKObjects();
+
+  // Give the proxy a friendly name for the GUI/Python world.
+  if (auto p = convert<pqProxy*>(proxy)) {
+    p->rename(label());
+  }
+
   return true;
 }
 
