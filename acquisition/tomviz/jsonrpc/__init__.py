@@ -106,7 +106,7 @@ class JsonRpcHandler(object):
                 else:
                     raise InvalidParams()
             except Exception as ex:
-                raise ServerError(message=ex.message,
+                raise ServerError(message=str(ex),
                                   data=json.dumps(traceback.format_exc()))
 
             return self._response(id, result)
