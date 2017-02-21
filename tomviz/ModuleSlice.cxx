@@ -97,6 +97,11 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PostInitializeProxy(this->PassThrough);
   controller->RegisterPipelineProxy(this->PassThrough);
 
+  // Give the proxy a friendly name for the GUI/Python world.
+  if (auto p = convert<pqProxy*>(proxy)) {
+    p->rename(label());
+  }
+
   const bool widgetSetup = this->setupWidget(vtkView, producer);
 
   if (widgetSetup) {

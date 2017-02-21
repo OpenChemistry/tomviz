@@ -144,6 +144,11 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   // Color by the data source by default
   this->Internals->ColorByDataSource = dataSource();
 
+  // Give the proxy a friendly name for the GUI/Python world.
+  if (auto p = convert<pqProxy*>(contourProxy)) {
+    p->rename(label());
+  }
+
   return true;
 }
 
