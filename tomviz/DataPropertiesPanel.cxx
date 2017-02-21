@@ -307,7 +307,7 @@ void DataPropertiesPanel::updateAxesGridLabels()
   if (!view) {
     return;
   }
-  vtkSMProxy* axesGrid = vtkSMPropertyHelper(view, "AxesGrid").GetAsProxy();
+  auto axesGrid = vtkSMPropertyHelper(view, "AxesGrid", true).GetAsProxy();
   DataSource* ds = ActiveObjects::instance().activeDataSource();
   if (!axesGrid || !ds) {
     return;
