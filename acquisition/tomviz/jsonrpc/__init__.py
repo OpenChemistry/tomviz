@@ -29,12 +29,9 @@ def jsonrpc_message(message):
 
 
 class JsonRpcError(Exception):
-    code = -32000
-    message = None
-
-    def __init__(self, message=None, data=None):
-        if message is not None:
-            self.message = message
+    def __init__(self, code, message, data=None):
+        self.code = code
+        self.message = message
         self.data = data
 
     def to_json(self):
@@ -50,33 +47,33 @@ class JsonRpcError(Exception):
 
 
 class ParseError(JsonRpcError):
-    code = PARSE_ERROR
-    message = "Parse Error."
+    def __init__(self, message='Parse error.', data=None):
+        super(ParseError, self).__init__(PARSE_ERROR, message, data)
 
 
 class InvalidRequest(JsonRpcError):
-    code = INVALID_REQUEST
-    message = "Invalid Request."
+    def __init__(self, message='Invalid request.', data=None):
+        super(InvalidRequest, self).__init__(INVALID_REQUEST, message, data)
 
 
 class MethodNotFound(JsonRpcError):
-    code = METHOD_NOT_FOUND
-    message = "Method not found."
+    def __init__(self, message='Method not found.', data=None):
+        super(MethodNotFound, self).__init__(METHOD_NOT_FOUND, message, data)
 
 
 class InvalidParams(JsonRpcError):
-    code = INVALID_PARAMS
-    message = "Invalid params."
+    def __init__(self, message='Invalid parameters.', data=None):
+        super(InvalidParams, self).__init__(INVALID_PARAMS, message, data)
 
 
 class InternalError(JsonRpcError):
-    code = INTERNAL_ERROR
-    message = "Internal Error."
+    def __init__(self, message='Internal error.', data=None):
+        super(InternalError, self).__init__(INTERNAL_ERROR, message, data)
 
 
 class ServerError(JsonRpcError):
-    code = SERVER_ERROR
-    message = "Server Error."
+    def __init__(self, message='Server error.', data=None):
+        super(ServerError, self).__init__(SERVER_ERROR, message, data)
 
 
 class JsonRpcHandler(object):

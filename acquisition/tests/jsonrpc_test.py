@@ -14,7 +14,7 @@ def test_invalid_request(handler):
     excepted = jsonrpc_message({
         'id': None,
         'error': {
-            'message': 'Invalid Request.',
+            'message': 'Invalid request.',
             'code': -32600
         }
     })
@@ -28,7 +28,7 @@ def test_invalid_request(handler):
     excepted = jsonrpc_message({
         'id': id,
         'error': {
-            'message': 'Invalid Request.',
+            'message': 'Invalid request.',
             'code': -32600
         }
     })
@@ -42,7 +42,7 @@ def test_invalid_request(handler):
     excepted = jsonrpc_message({
         'id': id,
         'error': {
-            'message': 'Invalid Request.',
+            'message': 'Invalid request.',
             'code': -32600
         }
     })
