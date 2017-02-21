@@ -47,37 +47,41 @@ def set_scalars(dataobject, newscalars):
     do.PointData.SetActiveScalars(name)
 
 
-def get_array(dataobject):
+def get_array(dataobject, order='F'):
     scalars_array = get_scalars(dataobject)
-    scalars_array3d = np.reshape(scalars_array, (dataobject.GetDimensions()),
-                                 order='F')
+    if order == 'F':
+        scalars_array3d = np.reshape(scalars_array,
+                                     (dataobject.GetDimensions()),
+                                     order=order)
+    else:
+        scalars_array3d = np.reshape(scalars_array,
+                                     (dataobject.GetDimensions()[::-1]),
+                                     order=order)
     return scalars_array3d
 
 
 def set_array(dataobject, newarray, minextent=None):
-    # Ensure we have Fortran ordered flat array to assign to image data. This
-    # is ideally done without additional copies, but if C order we must copy.
-    if np.isfortran(newarray):
-        arr = newarray.reshape(-1, order='F')
-    else:
-        print('Warning, array does not have Fortran order, making deep copy '
-              'and fixing...')
-        tmp = np.asfortranarray(newarray)
-        arr = tmp.reshape(-1, order='F')
-        print('...done.')
-
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
     # as the size of the dataobject.
+
+    # Account for indexing and memory layout. VTK uses i,j,k indexing, where i
+    # is the fastest moving index in memory.
+    arr = newarray.ravel(order='A')
+    if newarray.flags.f_contiguous:
+        vtkshape = newarray.shape
+    else:
+        vtkshape = newarray.shape[::-1]
+
     if minextent is None:
         minextent = dataobject.GetExtent()[::2]
     sameindex = list(minextent) == list(dataobject.GetExtent()[::2])
-    sameshape = list(newarray.shape) == list(dataobject.GetDimensions())
+    sameshape = list(vtkshape) == list(dataobject.GetDimensions())
     if not sameindex or not sameshape:
         extent = 6*[0]
         extent[::2] = minextent
         extent[1::2] = \
-            [x + y - 1 for (x, y) in zip(minextent, newarray.shape)]
+            [x + y - 1 for (x, y) in zip(minextent, vtkshape)]
         dataobject.SetExtent(extent)
 
     # Now replace the scalars array with the new array.

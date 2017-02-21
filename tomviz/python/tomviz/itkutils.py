@@ -273,7 +273,7 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
         caster.Update()
         vtk_image_data = caster.GetOutput()
 
-    array = utils.get_array(vtk_image_data)
+    array = utils.get_array(vtk_image_data, order='C')
 
     image_type = _get_itk_image_type(vtk_image_data)
     itk_converter = itk.PyBuffer[image_type]
