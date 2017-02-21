@@ -5,3 +5,4 @@ Pillow==3.4.2
 # get into a release.
 -e git+git://github.com/bottlepy/bottle.git@master#egg=bottle
 mock==2.0.0
+diskcache==2.3.0

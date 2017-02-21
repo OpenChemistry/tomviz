@@ -1,12 +1,8 @@
 import time
-import requests
 from PIL import Image
+from . import test_image
 
-# Get the test data
-response = requests.get(
-    'https://data.kitware.com/api/v1/file/5893921d8d777f07219fca7e/download',
-    stream=True)
-img = Image.open(response.raw)
+img = Image.open(test_image())
 
 connected = False
 

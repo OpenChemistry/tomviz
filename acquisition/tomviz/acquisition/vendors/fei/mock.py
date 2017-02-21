@@ -1,14 +1,11 @@
 from __future__ import absolute_import
 import mock
-import requests
+from tests.mock import test_image
 
 from PIL import Image
 
 # Get the test data
-response = requests.get(
-    'https://data.kitware.com/api/v1/file/5893921d8d777f07219fca7e/download',
-    stream=True)
-img = Image.open(response.raw)
+img = Image.open(test_image())
 
 
 TemScripting = mock.MagicMock()
