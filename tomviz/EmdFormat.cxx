@@ -91,9 +91,11 @@ public:
       // The type of the attribute does not match the requested type.
       cout << "Type determined does not match that requested." << endl;
       cout << type << " -> " << typeId << " : " << H5T_STD_U32LE << endl;
+      H5Aclose(attr);
       return false;
     } else if (H5Tequal(type, typeId) < 0) {
-      cout << "soemthing went really wrong....\n\n";
+      cout << "Something went really wrong....\n\n";
+      H5Aclose(attr);
       return false;
     }
     hid_t status = H5Aread(attr, H5T_NATIVE_INT, value);
@@ -384,6 +386,12 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     return true;
   } else {
     return false;
+  }
+
+  // Close up the file now we are done.
+  if (d->fileId != H5I_INVALID_HID) {
+    H5Fclose(d->fileId);
+    d->fileId = H5I_INVALID_HID;
   }
 
   return true;
