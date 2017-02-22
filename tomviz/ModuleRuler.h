@@ -50,6 +50,9 @@ public:
 
   bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
+protected slots:
+  void updateUnits();
+
 protected:
   void updateColorMap() override {}
   std::string getStringForProxy(vtkSMProxy* proxy) override;

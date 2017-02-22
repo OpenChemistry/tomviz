@@ -25,6 +25,7 @@
 #include <vtkAlgorithm.h>
 #include <vtkDataSet.h>
 #include <vtkNew.h>
+#include <vtkRulerSourceRepresentation.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSessionProxyManager.h>
@@ -75,6 +76,10 @@ bool ModuleRuler::initialize(DataSource* data, vtkSMViewProxy* view)
   m_Representation = controller->Show(m_RulerSource, 0, view);
 
   m_Representation->UpdateVTKObjects();
+
+  updateUnits();
+
+  QObject::connect(data, &DataSource::dataChanged, this, &ModuleRuler::updateUnits);
 
   return m_Representation && m_RulerSource;
 }
@@ -181,5 +186,15 @@ vtkSMProxy* ModuleRuler::getProxyForString(const std::string& str)
   } else {
     return nullptr;
   }
+}
+
+void ModuleRuler::updateUnits()
+{
+  DataSource *source = dataSource();
+  QString units = source->getUnits(0);
+  vtkRulerSourceRepresentation* rep = vtkRulerSourceRepresentation::SafeDownCast(
+      m_Representation->GetClientSideObject());
+  QString labelFormat = "%-#6.3g %1";
+  rep->SetLabelFormat(labelFormat.arg(units).toLatin1().data());
 }
 }
