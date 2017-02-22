@@ -257,9 +257,11 @@ void DataPropertiesPanel::scheduleUpdate()
 
 void DataPropertiesPanel::updateUnits()
 {
-  const QString& text = m_ui->unitBox->text();
-  m_currentDataSource->setUnits(text);
-  updateAxesGridLabels();
+  if (m_currentDataSource) {
+    const QString& text = m_ui->unitBox->text();
+    m_currentDataSource->setUnits(text);
+    updateAxesGridLabels();
+  }
 }
 
 void DataPropertiesPanel::updateXLength()
