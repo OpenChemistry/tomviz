@@ -221,6 +221,11 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
   QList<Module*> modules;
 
   foreach (QModelIndex idx, idxs) {
+    // Make sure we only process one index per row otherwise we try to delete
+    // things twice
+    if (idx.column() != 0) {
+      continue;
+    }
     auto dataSource = pipelineModel->dataSource(idx);
     auto module = pipelineModel->module(idx);
     auto op = pipelineModel->op(idx);
