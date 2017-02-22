@@ -1,3 +1,4 @@
+version: 1.0.{build}-{branch}
 os: Visual Studio 2015
 platform: x64
 cache:
@@ -19,6 +20,7 @@ install:
   - git submodule update --init
   - cd ..
   # Restore our cached deps
+  - set 
   - python -m pip install requests
   - python %APPVEYOR_BUILD_FOLDER%\scripts\appveyor\cache_restore.py
 
