@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "EmdFormat.h"
 #include "ModuleManager.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
@@ -26,6 +27,7 @@
 #include "pqPipelineSource.h"
 #include "pqProxyWidgetDialog.h"
 #include "pqRenderView.h"
+#include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
@@ -33,8 +35,10 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSmartPointer.h"
+#include "vtkTrivialProducer.h"
 
 #include <QFileDialog>
+#include <QFileInfo>
 
 namespace tomviz {
 
@@ -58,8 +62,9 @@ QList<DataSource*> LoadDataReaction::loadData()
 
   QStringList filters;
   filters
-    << "Common file types (*.jpg *.jpeg *.png *.tiff *.tif *.raw"
-       " *.dat *.bin *.txt *.mrc *.st *.rec *.ali *.xmf *.xdmf *.mhd *.mha)"
+    << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
+       " *.dat *.bin *.txt *.mhd *.mha *.mrc *.st *.rec *.ali *.xmf *.xdmf)"
+    << "EMD (*.emd)"
     << "JPeg Image files (*.jpg *.jpeg)"
     << "PNG Image files (*.png)"
     << "TIFF Image files (*.tiff *.tif)"
@@ -94,20 +99,38 @@ DataSource* LoadDataReaction::loadData(const QString& fileName)
 
 DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
 {
-  vtkNew<vtkSMParaViewPipelineController> controller;
-  pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
-
-  if (!reader) {
-    return nullptr;
+  DataSource* dataSource(nullptr);
+  QString fileName;
+  if (fileNames.size() > 0) {
+    fileName = fileNames[0];
   }
+  QFileInfo info(fileName);
+  if (info.suffix() == "emd") {
+    // Load the file using our simple EMD class.
+    EmdFormat emdFile;
+    vtkNew<vtkImageData> imageData;
+    emdFile.read(fileName.toLatin1().data(), imageData.Get());
 
-  DataSource* dataSource = createDataSource(reader->getProxy());
-  // dataSource may be NULL if user cancelled the action.
-  if (dataSource) {
-    // add the file to recent files menu.
-    RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
+    dataSource = createDataSource(imageData.Get());
+    dataSource->originalDataSource()->SetAnnotation(Attributes::FILENAME,
+                                                    fileName.toLatin1().data());
+    LoadDataReaction::dataSourceAdded(dataSource);
+  } else {
+    // Use ParaView's file load infrastructure.
+    pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
+
+    if (!reader) {
+      return nullptr;
+    }
+
+    dataSource = createDataSource(reader->getProxy());
+    // The dataSource may be NULL if the user cancelled the action.
+    if (dataSource) {
+      RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
+    }
+    vtkNew<vtkSMParaViewPipelineController> controller;
+    controller->UnRegisterProxy(reader->getProxy());
   }
-  controller->UnRegisterProxy(reader->getProxy());
 
   return dataSource;
 }
@@ -138,6 +161,19 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
     return dataSource;
   }
   return nullptr;
+}
+
+DataSource* LoadDataReaction::createDataSource(vtkImageData* imageData)
+{
+  auto pxm = tomviz::ActiveObjects::instance().proxyManager();
+  vtkSmartPointer<vtkSMProxy> source;
+  source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
+  auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
+  tp->SetOutput(imageData);
+  source->SetAnnotation("tomviz.Type", "DataSource");
+
+  auto dataSource = new DataSource(vtkSMSourceProxy::SafeDownCast(source));
+  return dataSource;
 }
 
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource)

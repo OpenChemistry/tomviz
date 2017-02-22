@@ -70,6 +70,8 @@ set(SOURCES
   EditOperatorDialog.h
   EditOperatorWidget.cxx
   EditOperatorWidget.h
+  EmdFormat.cxx
+  EmdFormat.h
   HistogramWidget.h
   HistogramWidget.cxx
   InterfaceBuilder.h
