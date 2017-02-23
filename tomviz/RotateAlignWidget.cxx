@@ -609,7 +609,8 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   QString scriptLabel = "Shift";
   QString scriptSource = readInPythonScript("Shift3D");
   AddPythonTransformReaction::addPythonOperator(
-    this->Internals->Source, scriptLabel, scriptSource, arguments);
+    this->Internals->Source, scriptLabel, scriptSource, arguments,
+    readInJSONDescription("Shift3D"));
   arguments.clear();
 
   // Apply in-plane rotation
@@ -620,7 +621,8 @@ void RotateAlignWidget::onFinalReconButtonPressed()
                    -this->Internals->Ui.rotationAngle->value());
 
   AddPythonTransformReaction::addPythonOperator(
-    this->Internals->Source, scriptLabel, scriptSource, arguments);
+    this->Internals->Source, scriptLabel, scriptSource, arguments,
+    readInJSONDescription("Rotate3D"));
   emit creatingAlignedData();
 }
 }
