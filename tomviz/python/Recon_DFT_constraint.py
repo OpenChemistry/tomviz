@@ -28,7 +28,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         self.progress.message = 'Initialization'
         #Direct Fourier recon without constraints
         (recon, recon_F) \
-            = dfm3(tiltSeries, tiltAngles, np.size(tiltSeries, 0) * 2)
+            = dfm3(tiltSeries, tiltAngles, np.size(tiltSeries, 1) * 2)
 
         kr_cutoffs = np.linspace(0.05, 0.5, 10)
         #average Fourier magnitude of tilt series as a function of kr

@@ -20,10 +20,10 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
 
-        Npad = np.size(tiltSeries, 0) * 2
-
         tiltSeries = np.double(tiltSeries)
         (Nx, Ny, Nproj) = tiltSeries.shape
+        Npad = Ny * 2
+
         tiltAngles = np.double(tiltAngles)
         pad_pre = int(np.ceil((Npad - Ny) / 2.0))
         pad_post = int(np.floor((Npad - Ny) / 2.0))
