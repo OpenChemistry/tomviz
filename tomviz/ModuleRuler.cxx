@@ -105,16 +105,16 @@ void ModuleRuler::addToPanel(QWidget* panel)
   }
   QVBoxLayout* layout = new QVBoxLayout;
 
-  pqLinePropertyWidget* widget = new pqLinePropertyWidget(
+  m_Widget = new pqLinePropertyWidget(
     m_RulerSource, m_RulerSource->GetPropertyGroup(0), panel);
-  layout->addWidget(widget);
-  widget->setView(
+  layout->addWidget(m_Widget);
+  m_Widget->setView(
     tomviz::convert<pqView*>(ActiveObjects::instance().activeView()));
-  widget->select();
+  m_Widget->select();
   layout->addStretch();
-  QObject::connect(widget, &pqPropertyWidget::changeFinished, widget,
+  QObject::connect(m_Widget, &pqPropertyWidget::changeFinished, m_Widget,
                    &pqPropertyWidget::apply);
-  QObject::connect(widget, &pqPropertyWidget::changeFinished, this,
+  QObject::connect(m_Widget, &pqPropertyWidget::changeFinished, this,
                    &ModuleRuler::endPointsUpdated);
 
   QLabel* label0 = new QLabel("Point 0 data value: ");
@@ -132,6 +132,9 @@ bool ModuleRuler::setVisibility(bool val)
 {
   vtkSMPropertyHelper(m_Representation, "Visibility").Set(val ? 1 : 0);
   m_Representation->UpdateVTKObjects();
+  if (m_Widget) {
+    m_Widget->setWidgetVisible(val);
+  }
   return true;
 }
 

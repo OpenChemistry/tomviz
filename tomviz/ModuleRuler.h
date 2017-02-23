@@ -24,6 +24,8 @@
 class vtkSMSourceProxy;
 class vtkSMProxy;
 
+class pqLinePropertyWidget;
+
 namespace tomviz {
 
 class ModuleRuler : public Module
@@ -64,6 +66,7 @@ protected:
 
   vtkSmartPointer<vtkSMSourceProxy> m_RulerSource;
   vtkSmartPointer<vtkSMProxy> m_Representation;
+  QPointer<pqLinePropertyWidget> m_Widget;
 
 private:
   Q_DISABLE_COPY(ModuleRuler)
