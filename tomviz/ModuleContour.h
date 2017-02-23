@@ -66,6 +66,7 @@ protected:
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
   vtkWeakPointer<vtkSMProxy> ContourRepresentation;
   vtkWeakPointer<vtkSMSourceProxy> ResampleFilter;
+  vtkWeakPointer<vtkSMSourceProxy> PointDataToCellDataFilter;
 
   class Private;
   Private* Internals;
