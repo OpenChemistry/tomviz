@@ -23,8 +23,11 @@
 #include <pqLinePropertyWidget.h>
 #include <pqView.h>
 #include <vtkAlgorithm.h>
+#include <vtkDataArray.h>
 #include <vtkDataSet.h>
+#include <vtkImageData.h>
 #include <vtkNew.h>
+#include <vtkPointData.h>
 #include <vtkRulerSourceRepresentation.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMPropertyHelper.h>
@@ -32,7 +35,8 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
-#include <QHBoxLayout>
+#include <QLabel>
+#include <QVBoxLayout>
 #include <QWidget>
 
 namespace tomviz {
@@ -99,7 +103,7 @@ void ModuleRuler::addToPanel(QWidget* panel)
   if (panel->layout()) {
     delete panel->layout();
   }
-  QHBoxLayout* layout = new QHBoxLayout;
+  QVBoxLayout* layout = new QVBoxLayout;
 
   pqLinePropertyWidget* widget = new pqLinePropertyWidget(
     m_RulerSource, m_RulerSource->GetPropertyGroup(0), panel);
@@ -111,7 +115,16 @@ void ModuleRuler::addToPanel(QWidget* panel)
   QObject::connect(widget, &pqPropertyWidget::changeFinished, widget,
                    &pqPropertyWidget::apply);
   QObject::connect(widget, &pqPropertyWidget::changeFinished, this,
-                   &Module::renderNeeded);
+                   &ModuleRuler::endPointsUpdated);
+
+  QLabel* label0 = new QLabel("Point 0 data value: ");
+  QLabel* label1 = new QLabel("Point 1 data value: ");
+  QObject::connect(this, &ModuleRuler::newEndpointData, label0, [label0, label1](double val0, double val1) {
+      label0->setText(QString("Point 0 data value: %1").arg(val0));
+      label1->setText(QString("Point 1 data value: %1").arg(val1));
+      });
+  layout->addWidget(label0);
+  layout->addWidget(label1);
   panel->setLayout(layout);
 }
 
@@ -196,5 +209,21 @@ void ModuleRuler::updateUnits()
       m_Representation->GetClientSideObject());
   QString labelFormat = "%-#6.3g %1";
   rep->SetLabelFormat(labelFormat.arg(units).toLatin1().data());
+}
+
+void ModuleRuler::endPointsUpdated()
+{
+  double point1[3];
+  double point2[3];
+  vtkSMPropertyHelper(m_RulerSource, "Point1").Get(point1, 3);
+  vtkSMPropertyHelper(m_RulerSource, "Point2").Get(point2, 3);
+  DataSource *source = dataSource();
+  vtkImageData *img = vtkImageData::SafeDownCast(vtkAlgorithm::SafeDownCast(source->producer()->GetClientSideObject())->GetOutputDataObject(0));
+  vtkIdType p1 = img->FindPoint(point1);
+  vtkIdType p2 = img->FindPoint(point2);
+  double v1 = img->GetPointData()->GetScalars()->GetTuple1(p1);
+  double v2 = img->GetPointData()->GetScalars()->GetTuple1(p2);
+  emit newEndpointData(v1, v2);
+  renderNeeded();
 }
 }

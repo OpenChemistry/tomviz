@@ -52,6 +52,10 @@ public:
 
 protected slots:
   void updateUnits();
+  void endPointsUpdated();
+
+signals: 
+  void newEndpointData(double val1, double val2);
 
 protected:
   void updateColorMap() override {}
@@ -63,6 +67,8 @@ protected:
 
 private:
   Q_DISABLE_COPY(ModuleRuler)
+
+  bool ShowArrow;
 };
 }
 
