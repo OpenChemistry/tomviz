@@ -83,7 +83,8 @@ bool ModuleRuler::initialize(DataSource* data, vtkSMViewProxy* view)
 
   updateUnits();
 
-  QObject::connect(data, &DataSource::dataChanged, this, &ModuleRuler::updateUnits);
+  QObject::connect(data, &DataSource::dataChanged, this,
+                   &ModuleRuler::updateUnits);
 
   return m_Representation && m_RulerSource;
 }
@@ -119,10 +120,12 @@ void ModuleRuler::addToPanel(QWidget* panel)
 
   QLabel* label0 = new QLabel("Point 0 data value: ");
   QLabel* label1 = new QLabel("Point 1 data value: ");
-  QObject::connect(this, &ModuleRuler::newEndpointData, label0, [label0, label1](double val0, double val1) {
+  QObject::connect(
+    this, &ModuleRuler::newEndpointData, label0,
+    [label0, label1](double val0, double val1) {
       label0->setText(QString("Point 0 data value: %1").arg(val0));
       label1->setText(QString("Point 1 data value: %1").arg(val1));
-      });
+    });
   layout->addWidget(label0);
   layout->addWidget(label1);
   panel->setLayout(layout);
@@ -206,9 +209,10 @@ vtkSMProxy* ModuleRuler::getProxyForString(const std::string& str)
 
 void ModuleRuler::updateUnits()
 {
-  DataSource *source = dataSource();
+  DataSource* source = dataSource();
   QString units = source->getUnits(0);
-  vtkRulerSourceRepresentation* rep = vtkRulerSourceRepresentation::SafeDownCast(
+  vtkRulerSourceRepresentation* rep =
+    vtkRulerSourceRepresentation::SafeDownCast(
       m_Representation->GetClientSideObject());
   QString labelFormat = "%-#6.3g %1";
   rep->SetLabelFormat(labelFormat.arg(units).toLatin1().data());
@@ -220,8 +224,10 @@ void ModuleRuler::endPointsUpdated()
   double point2[3];
   vtkSMPropertyHelper(m_RulerSource, "Point1").Get(point1, 3);
   vtkSMPropertyHelper(m_RulerSource, "Point2").Get(point2, 3);
-  DataSource *source = dataSource();
-  vtkImageData *img = vtkImageData::SafeDownCast(vtkAlgorithm::SafeDownCast(source->producer()->GetClientSideObject())->GetOutputDataObject(0));
+  DataSource* source = dataSource();
+  vtkImageData* img = vtkImageData::SafeDownCast(
+    vtkAlgorithm::SafeDownCast(source->producer()->GetClientSideObject())
+      ->GetOutputDataObject(0));
   vtkIdType p1 = img->FindPoint(point1);
   vtkIdType p2 = img->FindPoint(point2);
   double v1 = img->GetPointData()->GetScalars()->GetTuple1(p1);

@@ -56,7 +56,7 @@ protected slots:
   void updateUnits();
   void endPointsUpdated();
 
-signals: 
+signals:
   void newEndpointData(double val1, double val2);
 
 protected:
