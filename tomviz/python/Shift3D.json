@@ -1,0 +1,15 @@
+{
+  "name" : "Shift3D",
+  "label" : "Shift",
+  "description" : "Shift a dataset.",
+  "parameters" : [
+    {
+      "name" : "SHIFT",
+      "label" : "Shift",
+      "description" : "Amount to shift by.",
+      "type" : "double",
+      "default" : [0.0, 0.0, 0.0]
+    }
+  ]
+}
+
