@@ -43,6 +43,7 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QPainter>
+#include <QSet>
 #include <QTimer>
 
 namespace tomviz {
@@ -245,12 +246,12 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
     }
   }
 
-  QList<DataSource*> paused;
+  QSet<DataSource*> paused;
   foreach (Operator* op, operators) {
     // If the datasource is being remove don't bother removing the operator
     if (!dataSources.contains(op->dataSource())) {
       op->dataSource()->pausePipeline();
-      paused.push_back(op->dataSource());
+      paused.insert(op->dataSource());
       pipelineModel->removeOp(op);
     }
   }
