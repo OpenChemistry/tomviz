@@ -12,9 +12,11 @@ def transform_scalars(dataset, shift=[0, 0, 0]):
     if data_py is None: #Check if data exists
         raise RuntimeError("No data array found!")
 
-    data_py = np.roll(data_py, shift[0], axis=0)
-    data_py = np.roll(data_py, shift[1], axis=1)
-    data_py = np.roll(data_py, shift[2], axis=2)
+    result = np.empty_like(data_py)
 
-    utils.set_array(dataset, data_py)
+    result[:] = np.roll(data_py, shift[0], axis=0)
+    result[:] = np.roll(result, shift[1], axis=1)
+    result[:] = np.roll(result, shift[2], axis=2)
+
+    utils.set_array(dataset, result)
     print('Data has been shifted uniformly.')
