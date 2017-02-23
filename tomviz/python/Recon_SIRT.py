@@ -38,7 +38,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         # Generate measurement matrix
         self.progress.message = 'Generating measurement matrix'
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-        recon = np.empty([Nslice, Nray, Nray], dtype=float, order = 'F')
+        recon = np.empty([Nslice, Nray, Nray], dtype=float, order='F')
 
         self.progress.maximum = Nslice + 1
         step = 0
