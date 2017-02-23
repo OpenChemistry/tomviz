@@ -1,6 +1,5 @@
 def transform_scalars(dataset, pad_size_before=[0, 0, 0],
                       pad_size_after=[0, 0, 0], pad_mode_index=0):
-
     """Pad dataset"""
     from tomviz import utils
     import numpy as np
@@ -18,14 +17,21 @@ def transform_scalars(dataset, pad_size_before=[0, 0, 0],
 
     pad_width = (padWidthX, padWidthY, padWidthZ)
 
+    result_shape = np.zeros(3, dtype=int)
+    result_shape[0] = array.shape[0] + pad_size_before[0] + pad_size_after[0]
+    result_shape[1] = array.shape[1] + pad_size_before[1] + pad_size_after[1]
+    result_shape[2] = array.shape[2] + pad_size_before[2] + pad_size_after[2]
+
+    result = np.empty(result_shape, array.dtype, order='F')
+
     # pad the data.
-    array = np.lib.pad(array, pad_width, padMode)
+    result[:] = np.lib.pad(array, pad_width, padMode)
 
     # Set the data so that it is visible in the application.
     extent = list(dataset.GetExtent())
     start = [x - y for (x, y) in zip(extent[0::2], pad_size_before)]
 
-    utils.set_array(dataset, array, start)
+    utils.set_array(dataset, result, start)
 
     # If dataset is marked as tilt series, update tilt angles
     if padWidthZ[0] + padWidthZ[1] > 0:
