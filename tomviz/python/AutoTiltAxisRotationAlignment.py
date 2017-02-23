@@ -84,7 +84,7 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
 
         I_sum = np.sum(I, axis=1)
         minIntensityIndex = np.argmin(I_sum)
-        rot_ang = coarseAngles[minIntensityIndex]
+        rot_ang = fineAngles[minIntensityIndex]
 
         self.progress.message = 'Rotating tilt series'
         axes = ((0, 1))
