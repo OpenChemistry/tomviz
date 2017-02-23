@@ -202,7 +202,7 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
     }
   }
 
-  std::vector<T> minValues(defaultValues.size(), std::numeric_limits<T>::min());
+  std::vector<T> minValues(defaultValues.size(), std::numeric_limits<T>::lowest());
   if (parameterNode.contains("minimum")) {
     QJsonValueRef minNode = parameterNode["minimum"];
     if (isType<T>(minNode)) {
