@@ -2,7 +2,10 @@
     <qresource prefix="/">
         <file>icons/tomviz.png</file>
         <file>icons/tomvizfull.png</file>
-        <file>icons/pqEyeballClosed16.png</file>
+	<file>icons/pqEyeballClosed.png</file>
+	<file>icons/pqEyeballClosed@2x.png</file>
+	<file>icons/pqEyeball.png</file>
+	<file>icons/pqEyeball@2x.png</file>
         <file>icons/spinner.png</file>
         <file>icons/orthoslice.png</file>
         <file>icons/orthoslice@2x.png</file>

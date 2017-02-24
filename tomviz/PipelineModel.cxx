@@ -365,9 +365,9 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
     } else if (index.column() == Column::state) {
       if (role == Qt::DecorationRole) {
         if (module->visibility()) {
-          return QIcon(":/pqWidgets/Icons/pqEyeball16.png");
+          return QIcon(":/icons/pqEyeball.png");
         } else {
-          return QIcon(":/icons/pqEyeballClosed16.png");
+          return QIcon(":/icons/pqEyeballClosed.png");
         }
       }
     }
