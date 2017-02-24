@@ -42,5 +42,5 @@ def preview_scan():
 
 
 def stem_acquire():
-    time.sleep(5)
+    time.sleep(3)
     return img.tobytes()
