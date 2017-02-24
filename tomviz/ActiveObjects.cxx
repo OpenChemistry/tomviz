@@ -115,12 +115,12 @@ vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 
 void ActiveObjects::setActiveModule(Module* module)
 {
+  if (module) {
+    setActiveView(module->view());
+    setActiveDataSource(module->dataSource());
+  }
   if (m_activeModule != module) {
     m_activeModule = module;
-    if (module) {
-      setActiveView(module->view());
-      setActiveDataSource(module->dataSource());
-    }
     emit moduleChanged(module);
   }
   emit moduleActivated(module);
@@ -128,6 +128,9 @@ void ActiveObjects::setActiveModule(Module* module)
 
 void ActiveObjects::setActiveOperator(Operator* op)
 {
+  if (op) {
+    setActiveDataSource(op->dataSource());
+  }
   if (m_activeOperator != op) {
     m_activeOperator = op;
     emit operatorChanged(op);
