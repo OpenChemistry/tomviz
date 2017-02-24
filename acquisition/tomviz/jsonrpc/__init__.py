@@ -89,7 +89,7 @@ class JsonRpcHandler(object):
         params = request.get('params', {})
 
         try:
-            if jsonrpc != JSONRPC_VERSION or not id or not method:
+            if jsonrpc != JSONRPC_VERSION or id is None or method is None:
                 raise InvalidRequest()
 
             if method not in self._methods:
