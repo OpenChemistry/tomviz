@@ -33,6 +33,9 @@ var loaders = [
     test: /\.html$/,
     loader: 'html-loader',
   }, {
+    test: /\.glsl$/,
+    loader: 'shader',
+  }, {
     test: /\.js$/,
     include: /node_modules(\/|\\)paraviewweb(\/|\\)/,
     loader: 'babel?presets[]=es2015,presets[]=react',
