@@ -159,6 +159,10 @@ signals:
   /// new/updated data.
   void dataChanged();
 
+  /// This signal is fired to notify the world that the data's properties may
+  /// have changed.
+  void dataPropertiesChanged();
+
   /// This signal is fired every time a new operator is added to this
   /// DataSource.
   void operatorAdded(Operator*);
