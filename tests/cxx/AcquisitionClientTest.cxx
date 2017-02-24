@@ -19,14 +19,16 @@
 #include <QEventLoop>
 #include <QFile>
 #include <QIODevice>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QProcess>
+#include <QProcessEnvironment>
 #include <QSignalSpy>
 #include <QString>
 #include <QTest>
-#include <QProcessEnvironment>
 
 #include "AcquisitionClient.h"
 #include "OperatorPython.h"
@@ -198,6 +200,42 @@ private slots:
     QCryptographicHash hash(QCryptographicHash::Algorithm::Md5);
     hash.addData(data);
     QCOMPARE(hash.result().toHex().data(), "1b9723cd7e9ecd54f28c7dae13e38511");
+  }
+
+  void describeTest()
+  {
+    AcquisitionClient client(this->url);
+    AcquisitionClientRequest* request = client.describe("acquisition_params");
+    QSignalSpy error(request, &AcquisitionClientRequest::error);
+    QSignalSpy finished(request, &AcquisitionClientRequest::finished);
+    finished.wait();
+
+    if (!error.isEmpty()) {
+      qDebug() << error;
+    }
+    QVERIFY(error.isEmpty());
+    QCOMPARE(finished.size(), 1);
+    QList<QVariant> arguments = finished.takeFirst();
+    QJsonArray array = arguments.at(0).toJsonValue().toArray();
+    QCOMPARE(array.size(), 2);
+    QJsonValue testDescription = array.at(0).toObject();
+    QJsonObject testExpected =
+      QJsonDocument::fromJson(
+        "{\"default\":1,\"description\":\"Test "
+        "params.\",\"label\":\"test\",\"name\":\"test\",\"type\":\"int\" \
+            "
+        "}")
+        .object();
+    QCOMPARE(testDescription.toObject(), testExpected);
+
+    QJsonValue fooDescription = array.at(1).toObject();
+    QJsonObject fooExpected =
+      QJsonDocument::fromJson(
+        "{\"default\":\"foo\",\"description\":\"Foo "
+        "bar\",\"label\":\"Foo\",\"name\":\"foo\",\"type\":\"string"
+        "\"}")
+        .object();
+    QCOMPARE(fooDescription.toObject(), fooExpected);
   }
 
 private:

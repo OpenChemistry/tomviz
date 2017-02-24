@@ -63,6 +63,14 @@ AcquisitionClientImageRequest* AcquisitionClient::stem_acquire()
   return makeImageRequest("stem_acquire");
 }
 
+AcquisitionClientRequest* AcquisitionClient::describe(const QString& method)
+{
+  QJsonObject params;
+  params["method"] = method;
+
+  return makeRequest("describe", params);
+}
+
 AcquisitionClientRequest* AcquisitionClient::makeRequest(
   const QString& method, const QJsonObject& params)
 {

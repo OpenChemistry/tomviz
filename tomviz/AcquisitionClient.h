@@ -84,6 +84,8 @@ public slots:
 
   AcquisitionClientImageRequest* stem_acquire();
 
+  AcquisitionClientRequest* describe(const QString& method);
+
 private slots:
 
   AcquisitionClientRequest* makeRequest(const QString& method,
