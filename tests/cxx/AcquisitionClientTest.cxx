@@ -71,10 +71,12 @@ private slots:
 
                      });
 
-    while (!this->serverStarted) {
+    int tries = 10;
+    while (!this->serverStarted && tries != 0) {
       manager->get(QNetworkRequest(QUrl("http://localhost:8080")));
       QCoreApplication::processEvents();
       QThread::currentThread()->sleep(1);
+      tries--;
     }
   }
 
