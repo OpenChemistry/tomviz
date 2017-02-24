@@ -16,13 +16,16 @@
 #include "LoadPaletteReaction.h"
 
 #include <QAction>
+#include <QDebug>
 #include <QMenu>
 
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
 #include <pqApplicationSettingsReaction.h>
 #include <pqUndoStack.h>
+
 #include <vtkPVProxyDefinitionIterator.h>
+#include <vtkSMGlobalPropertiesProxy.h>
 #include <vtkSMProxy.h>
 #include <vtkSMProxyDefinitionManager.h>
 #include <vtkSMSessionProxyManager.h>
@@ -101,6 +104,25 @@ void LoadPaletteReaction::actionTriggered(QAction* action)
   vtkSMProxy* paletteProxy = pxm->GetProxy("global_properties", "ColorPalette");
 
   if (action->property("PV_XML_NAME").isValid()) {
+    // Setting the color property unlinks the global palette background property
+    // from the view background property. As a result, changes to the palette
+    // do not update the view background. To solve this, we re-link the global
+    // palette background color property to the background.
+    vtkSMGlobalPropertiesProxy* gbPaletteProxy =
+      vtkSMGlobalPropertiesProxy::SafeDownCast(paletteProxy);
+    Q_ASSERT(gbPaletteProxy);
+
+    auto view = pqActiveObjects::instance().activeView();
+    auto viewProxy = view->getProxy();
+
+    auto linkedPropertyName =
+      gbPaletteProxy->GetLinkedPropertyName(viewProxy, "Background");
+    if (!linkedPropertyName) {
+      if (!gbPaletteProxy->Link("BackgroundColor", viewProxy, "Background")) {
+        qWarning() << "Failed to setup Background property link.";
+      }
+    }
+
     vtkSMProxy* palettePrototype = pxm->GetPrototypeProxy(
       "palettes", action->property("PV_XML_NAME").toString().toLatin1().data());
     Q_ASSERT(palettePrototype);
