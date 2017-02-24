@@ -26,6 +26,7 @@
 #include <QSignalSpy>
 #include <QString>
 #include <QTest>
+#include <QProcessEnvironment>
 
 #include "AcquisitionClient.h"
 #include "OperatorPython.h"
@@ -40,7 +41,13 @@ class AcquisitionClientTest : public QObject
 private slots:
   void initTestCase()
   {
+
     QString python = "python";
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    if (env.contains("TOMVIZ_TEST_PYTHON_EXECUTABLE")) {
+      python = env.value("TOMVIZ_TEST_PYTHON_EXECUTABLE");
+    }
+
     QStringList arguments;
     arguments << "-m"
               << "tomviz";

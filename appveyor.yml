@@ -17,7 +17,8 @@ install:
   - git submodule update --init
   - cd ..
   # Restore our cached deps
-  - python -m pip install requests
+  - set TOMVIZ_TEST_PYTHON_EXECUTABLE=C:\Python27\python.exe
+  - python -m pip install -r %APPVEYOR_BUILD_FOLDER%\acquisition\requirements-dev.txt
   - python %APPVEYOR_BUILD_FOLDER%\scripts\appveyor\cache_restore.py
   # Get the GitHub branch name
   - ps: $env:GITHUB_PR_BRANCH = python $env:APPVEYOR_BUILD_FOLDER\scripts\common\pr_number_to_ref.py $env:APPVEYOR_PULL_REQUEST_NUMBER
