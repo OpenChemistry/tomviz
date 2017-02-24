@@ -73,14 +73,14 @@ private slots:
 
     int tries = 10;
     while (!this->serverStarted && tries != 0) {
-      manager->get(QNetworkRequest(QUrl("http://localhost:8080")));
+      manager->get(QNetworkRequest(QUrl(this->url)));
       QCoreApplication::processEvents();
       QThread::currentThread()->sleep(1);
       tries--;
     }
   }
 
-  void cleanupTestCase() { server->kill(); }
+  void cleanupTestCase() { this->server->kill(); }
 
   void connectTest() { this->connect(); }
 
@@ -89,7 +89,7 @@ private slots:
     // Connect first
     this->connect();
 
-    AcquisitionClient client("http://localhost:8080/acquisition/");
+    AcquisitionClient client(this->url);
     QJsonObject params;
     AcquisitionClientRequest* request = client.disconnect(params);
 
@@ -108,7 +108,7 @@ private slots:
 
   void acquisitionParamsGetTest()
   {
-    AcquisitionClient client("http://localhost:8080/acquisition/");
+    AcquisitionClient client(this->url);
 
     QJsonObject params;
 
@@ -132,7 +132,7 @@ private slots:
 
   void acquisitionParamsSetTest()
   {
-    AcquisitionClient client("http://localhost:8080/acquisition/");
+    AcquisitionClient client(this->url);
 
     QJsonObject params;
     params["foo"] = "bar";
@@ -158,7 +158,7 @@ private slots:
   void acquisitionPreviewScanTest()
   {
     setTiltAngle(0.0);
-    AcquisitionClient client("http://localhost:8080/acquisition/");
+    AcquisitionClient client(this->url);
 
     AcquisitionClientImageRequest* request = client.preview_scan();
     QSignalSpy error(request, &AcquisitionClientImageRequest::error);
@@ -181,7 +181,7 @@ private slots:
   void stemAcquireScanTest()
   {
     setTiltAngle(0.0);
-    AcquisitionClient client("http://localhost:8080/acquisition/");
+    AcquisitionClient client(this->url);
     AcquisitionClientImageRequest* request = client.stem_acquire();
     QSignalSpy error(request, &AcquisitionClientImageRequest::error);
     QSignalSpy finished(request, &AcquisitionClientImageRequest::finished);
@@ -203,10 +203,11 @@ private slots:
 private:
   QProcess* server;
   bool serverStarted = false;
+  QString url = "http://localhost:8080/acquisition/";
 
   void connect()
   {
-    AcquisitionClient client("http://localhost:8080/acquisition/");
+    AcquisitionClient client(this->url);
     QJsonObject params;
     AcquisitionClientRequest* request = client.connect(params);
 
@@ -223,7 +224,7 @@ private:
 
   void setTiltAngle(double angle)
   {
-    AcquisitionClient client("http://localhost:8080/acquisition/");
+    AcquisitionClient client(this->url);
 
     QJsonObject params;
     params["angle"] = angle;
