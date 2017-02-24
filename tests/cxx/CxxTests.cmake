@@ -11,6 +11,33 @@ macro(add_cxx_test name)
   endif()
 endmacro()
 
+macro(add_cxx_qtest name)
+  set(_one_value_args PYTHONPATH)
+  cmake_parse_arguments(fn "" "" "${_one_value_args}" "" ${ARGN})
+
+  if(fn_PYTHONPATH)
+    set(_pythonpath "${fn_PYTHONPATH}")
+    message("PYTHONPATH for ${name}: ${_pythonpath})")
+  endif()
+
+  set(_test_src ${name}Test.cxx)
+  message(STATUS "Test source file: ${_test_src}")
+
+  set(_executable_name "qtest${name}")
+  add_executable(${_executable_name} ${_test_src})
+  target_link_libraries(${_executable_name} tomvizlib Qt5::Test)
+
+  add_test(NAME "${name}" COMMAND ${_executable_name})
+  if(_pythonpath)
+    if (WIN32)
+      string(REPLACE "\\;" ";" "_pythonpath" "${_pythonpath}")
+      string(REPLACE ";" "\\;" "_pythonpath" "${_pythonpath}")
+    endif()
+    set_tests_properties(${name}
+      PROPERTIES ENVIRONMENT "PYTHONPATH=${_pythonpath}")
+  endif()
+endmacro()
+
 macro(create_test_executable name)
   set(_test_srcs "")
 
@@ -38,3 +65,4 @@ macro(create_test_executable name)
     endif()
   endforeach()
 endmacro()
+

@@ -48,6 +48,8 @@ set(_pythonpath "${_pythonpath}${_separator}$ENV{PYTHONPATH}")
 # Add the test cases
 add_cxx_test(OperatorPython PYTHONPATH ${_pythonpath})
 add_cxx_test(Variant)
+add_cxx_qtest(AcquisitionClient)
+
 
 # Generate the executable
 create_test_executable(tomvizTests)
