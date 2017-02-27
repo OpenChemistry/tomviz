@@ -170,6 +170,8 @@ void DataTransformMenu::buildSegmentation()
     menu->addAction("Label Object Principal Axes");
   auto distanceFromAxisAction =
     menu->addAction("Label Object Distance From Principal Axis");
+  menu->addSeparator();
+  auto segmentParticlesAction = menu->addAction("Segment Particles");
 
   new AddExpressionReaction(customPythonITKAction);
   new AddPythonTransformReaction(binaryThresholdAction, "Binary Threshold",
@@ -213,6 +215,10 @@ void DataTransformMenu::buildSegmentation()
     distanceFromAxisAction, "Label Object Distance From Principal Axis",
     readInPythonScript("LabelObjectDistanceFromPrincipalAxis"), false, false,
     readInJSONDescription("LabelObjectDistanceFromPrincipalAxis"));
+
+  new AddPythonTransformReaction(segmentParticlesAction, "Segment Particles",
+                                 readInPythonScript("SegmentParticles"), false,
+                                 false, readInJSONDescription("SegmentParticles"));
 }
 
 void DataTransformMenu::updateActions()

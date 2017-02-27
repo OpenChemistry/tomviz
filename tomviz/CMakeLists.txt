@@ -288,6 +288,7 @@ set(python_files
   DefaultITKTransform.py
   BinaryMinMaxCurvatureFlow.py
   ReinterpretSignedToUnsigned.py
+  SegmentParticles.py
   )
 
 set(json_files
@@ -319,6 +320,7 @@ set(json_files
   Shift3D.json
   ShiftTiltSeriesRandomly.json
   BinaryMinMaxCurvatureFlow.json
+  SegmentParticles.json
   )
 
 set(resource_files
