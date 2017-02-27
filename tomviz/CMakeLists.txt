@@ -267,6 +267,7 @@ set(python_files
   Pad_Data.py
   BinVolumeByTwo.py
   BinTiltSeriesByTwo.py
+  DefaultITKTransform.py
   )
 
 set(json_files
