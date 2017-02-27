@@ -22,7 +22,6 @@
 #include "ModuleManager.h"
 #include "pqActiveObjects.h"
 #include "pqCoreUtilities.h"
-#include "pqFileDialog.h"
 #include "pqPipelineSource.h"
 #include "pqProxyWidgetDialog.h"
 #include "pqSaveDataReaction.h"
@@ -42,9 +41,11 @@
 #include <cassert>
 
 #include <QDebug>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QStringList>
 
 namespace tomviz {
 
@@ -68,30 +69,42 @@ void SaveDataReaction::updateEnableState()
 
 void SaveDataReaction::onTriggered()
 {
-  pqServer* server = pqActiveObjects::instance().activeServer();
-  DataSource* source = ActiveObjects::instance().activeDataSource();
-  assert(source);
-  vtkSMWriterFactory* writerFactory =
-    vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
-  QString filters = writerFactory->GetSupportedFileTypes(source->producer());
-  if (filters.isEmpty()) {
-    qCritical("Cannot determine writer to use.");
-    return;
-  }
-  // Remove options to output in JPEG or PNG format since they don't support
-  // volumes
-  QRegularExpression re(";;(JPEG|PNG)[^;]*;;");
-  QString filteredFilters = filters.replace(re, ";;");
-  filteredFilters = "EMD format (*.emd *.hdf5);;" + filteredFilters;
+  QStringList filters;
+  filters << "TIFF format (*.tiff)"
+          << "EMD format (*.emd *.hdf5)"
+          << "CSV File (*.csv)"
+          << "Exodus II File (*.e *.ex2 *.ex2v2 *.exo *.exoII *.exoii *.g)"
+          << "Legacy VTK Files (*.vtk)"
+          << "Meta Image Files (*.mhd)"
+          << "ParaView Data Files (*.pvd)"
+          << "VTK ImageData Fiels (*.vti)"
+          << "XDMF Data File (*.xmf)"
+          << "JSON Image Files (*.json)";
 
-  pqFileDialog fileDialog(server, pqCoreUtilities::mainWidget(),
-                          tr("Save File:"), QString(), filteredFilters);
-  fileDialog.setObjectName("FileSaveDialog");
-  fileDialog.setFileMode(pqFileDialog::AnyFile);
-  // Default to saving tiff files
-  fileDialog.setRecentlyUsedExtension(".tiff");
-  if (fileDialog.exec() == QDialog::Accepted) {
-    this->saveData(fileDialog.getSelectedFiles()[0]);
+  QFileDialog dialog(nullptr);
+  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setNameFilters(filters);
+  dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
+
+  if (dialog.exec() == QDialog::Accepted) {
+    QStringList filenames = dialog.selectedFiles();
+    QString format = dialog.selectedNameFilter();
+    QString filename = filenames[0];
+    int startPos = format.indexOf("(") + 1;
+    int n = format.indexOf(")") - startPos;
+    QString extensionString = format.mid(startPos, n);
+    QStringList extensions = extensionString.split(QRegularExpression(" ?\\*"),
+                                                   QString::SkipEmptyParts);
+    bool hasExtension = false;
+    for (QString& str : extensions) {
+      if (filename.endsWith(str)) {
+        hasExtension = true;
+      }
+    }
+    if (!hasExtension) {
+      filename = QString("%1%2").arg(filename, extensions[0]);
+    }
+    saveData(filename);
   }
 }
 
