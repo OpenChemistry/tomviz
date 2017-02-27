@@ -291,6 +291,7 @@ set(python_files
   SegmentParticles.py
   UnsharpMask.py
   AddConstant.py
+  SegmentPores.py
   )
 
 set(json_files
@@ -325,6 +326,7 @@ set(json_files
   SegmentParticles.json
   UnsharpMask.json
   AddConstant.json
+  SegmentPores.json
   )
 
 set(resource_files

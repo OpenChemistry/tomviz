@@ -76,7 +76,6 @@ void DataTransformMenu::buildTransforms()
     menu->addAction("Perona-Malik Anisotropic Diffusion");
   auto medianFilterAction = menu->addAction("Median Filter");
   menu->addSeparator();
-
   auto cloneAction = menu->addAction("Clone");
   auto deleteDataAction = menu->addAction(
     QIcon(":/QtWidgets/Icons/pqDelete32.png"), "Delete Data and Modules");
@@ -177,6 +176,7 @@ void DataTransformMenu::buildSegmentation()
     menu->addAction("Label Object Distance From Principal Axis");
   menu->addSeparator();
   auto segmentParticlesAction = menu->addAction("Segment Particles");
+  auto segmentPoresAction = menu->addAction("Segment Pores");
 
   new AddExpressionReaction(customPythonITKAction);
   new AddPythonTransformReaction(binaryThresholdAction, "Binary Threshold",
@@ -225,6 +225,9 @@ void DataTransformMenu::buildSegmentation()
                                  readInPythonScript("SegmentParticles"), false,
                                  false,
                                  readInJSONDescription("SegmentParticles"));
+  new AddPythonTransformReaction(segmentPoresAction, "Segment Pores",
+                                 readInPythonScript("SegmentPores"), false,
+                                 false, readInJSONDescription("SegmentPores"));
 }
 
 void DataTransformMenu::updateActions()
