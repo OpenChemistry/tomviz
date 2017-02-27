@@ -1,33 +1,55 @@
-def transform_scalars(dataset):
-    """Define this method for Python operators that
-    transform the input array."""
-    from tomviz import utils
-    import numpy as np
-    import itk
+import tomviz.operators
 
-    # Get the current volume as a numpy array.
-    array = utils.get_array(dataset)
 
-    # Set up some ITK variables
-    itk_image_type = itk.Image.F3
-    itk_converter = itk.PyBuffer[itk_image_type]
+class DefaultITKTransform(tomviz.operators.CancelableOperator):
 
-    # Read the image into ITK
-    itk_image = itk_converter.GetImageFromArray(array)
+    def transform_scalars(self, dataset):
+        """Define this method for Python operators that transform the input
+        array. This example uses an ITK filter to add 10 to each voxel value."""
 
-    # ITK filter (I have no idea if this is right)
-    filter = \
-        itk.ConfidenceConnectedImageFilter[itk_image_type,itk.Image.SS3].New()
-    filter.SetInitialNeighborhoodRadius(3)
-    filter.SetMultiplier(3)
-    filter.SetNumberOfIterations(25)
-    filter.SetReplaceValue(255)
-    filter.SetSeed((24,65,37))
-    filter.SetInput(itk_image)
-    filter.Update()
+        # Try imports to make sure we have everything that is needed
+        try:
+            from tomviz import itkutils
+            import itk
+        except Exception as exc:
+            print("Could not import necessary module(s)")
+            raise exc
 
-    # Get the image back from ITK (result is a numpy image)
-    result = itk.PyBuffer[itk.Image.SS3].GetArrayFromImage(filter.GetOutput())
+        self.progress.value = 0
+        self.progress.maximum = 100
 
-    # This is where the transformed data is set, it will display in tomviz.
-    utils.set_array(dataset, result)
+        # Add a try/except around the ITK portion. ITK exceptions are
+        # passed up to the Python layer, so we can at least report what
+        # went wrong with the script, e.g., unsupported image type.
+        try:
+            self.progress.value = 0
+            self.progress.message = "Converting data to ITK image"
+
+            # Get the ITK image
+            itk_image = itkutils.convert_vtk_to_itk_image(dataset)
+            itk_input_image_type = type(itk_image)
+            self.progress.value = 30
+            self.progress.message = "Running filter"
+
+            # ITK filter
+            filter = itk.AddImageFilter[itk_input_image_type, # Input 1
+                                        itk_input_image_type, # Input 2
+                                        itk_input_image_type].New() # Output
+            filter.SetInput1(itk_image)
+            filter.SetConstant2(10)
+            itkutils.observe_filter_progress(self, filter, 30, 70)
+
+            try:
+                filter.Update()
+            except RuntimeError: # Exception thrown when ITK filter is aborted
+                return
+
+            self.progress.message = "Saving results"
+
+            itkutils.set_array_from_itk_image(dataset, filter.GetOutput())
+
+            self.progress.value = 100
+        except Exception as exc:
+            print("Problem encountered while running %s" %
+                  self.__class__.__name__)
+            raise exc
