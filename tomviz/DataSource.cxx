@@ -454,6 +454,7 @@ void DataSource::setSpacing(const double spacing[3])
       data->SetSpacing(mySpacing);
     }
   }
+  emit dataPropertiesChanged();
 }
 
 QString DataSource::getUnits(int axis)
@@ -485,7 +486,7 @@ void DataSource::setUnits(const QString& units)
   for (int i = 0; i < 3; ++i) {
     this->Internals->Units->SetValue(i, units.toStdString().c_str());
   }
-  emit dataChanged();
+  emit dataPropertiesChanged();
 }
 
 int DataSource::addOperator(Operator* op)
