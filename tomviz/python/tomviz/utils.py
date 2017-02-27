@@ -60,18 +60,31 @@ def get_array(dataobject, order='F'):
     return scalars_array3d
 
 
-def set_array(dataobject, newarray, minextent=None):
+def set_array(dataobject, newarray, minextent=None, isFortran=True):
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
     # as the size of the dataobject.
+    # isFortran indicates whether the NumPy array has Fortran-order indexing, i.e.
+    # i,j,k indexing. If isFortran is False, then the NumPy array uses C-order
+    # indexing, i.e. k,j,i indexing.
 
-    # Account for indexing and memory layout. VTK uses i,j,k indexing, where i
-    # is the fastest moving index in memory.
-    arr = newarray.ravel(order='A')
-    if newarray.flags.f_contiguous:
+    if isFortran is False:
+        # Flatten according to array.flags
+        arr = newarray.ravel(order='A')
+        if newarray.flags.f_contiguous:
+            vtkshape = newarray.shape
+        else:
+            vtkshape = newarray.shape[::-1]
+    elif np.isfortran(newarray):
+        arr = newarray.reshape(-1, order='F')
         vtkshape = newarray.shape
     else:
-        vtkshape = newarray.shape[::-1]
+        print('Warning, array does not have Fortran order, making deep copy '
+              'and fixing...')
+        vtkshape = newarray.shape
+        tmp = np.asfortranarray(newarray)
+        arr = tmp.reshape(-1, order='F')
+        print('...done.')
 
     if minextent is None:
         minextent = dataobject.GetExtent()[::2]
