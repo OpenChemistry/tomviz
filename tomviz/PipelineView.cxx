@@ -135,7 +135,7 @@ PipelineView::~PipelineView() = default;
 void PipelineView::keyPressEvent(QKeyEvent* e)
 {
   if (e->key() == Qt::Key_Delete || e->key() == Qt::Key_Backspace) {
-    deleteItems(selectedIndexes());
+    deleteItemsConfirm(selectedIndexes());
   } else {
     QTreeView::keyPressEvent(e);
   }
@@ -200,7 +200,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   auto selectedItem = contextMenu.exec(globalPoint);
   // Some action was selected, so process it.
   if (selectedItem == deleteAction) {
-    deleteItems(selectedIndexes());
+    deleteItemsConfirm(selectedIndexes());
   } else if (executeAction && selectedItem == executeAction) {
     if (!dataSource) {
       dataSource = op->dataSource();
@@ -356,5 +356,15 @@ void PipelineView::setCurrent(Module* module)
 
 void PipelineView::setCurrent(Operator*)
 {
+}
+
+void PipelineView::deleteItemsConfirm(const QModelIndexList& idxs)
+{
+  QMessageBox::StandardButton response = QMessageBox::question(
+         this, "Delete pipeline elements?",
+         "Are you sure you want to delete the selected pipeline elements");
+     if (response == QMessageBox::Yes) {
+       deleteItems(idxs);
+     }
 }
 }
