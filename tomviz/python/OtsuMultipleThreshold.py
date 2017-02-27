@@ -97,7 +97,7 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
 
             label_map_dataset = vtk.vtkImageData()
             label_map_dataset.CopyStructure(dataset)
-            utils.set_array(label_map_dataset, label_buffer)
+            utils.set_array(label_map_dataset, label_buffer, isFortran=False)
 
             self.progress.value = STEP_PCT[4]
 
