@@ -1,6 +1,139 @@
 import tomviz.operators
 
 
+def median_filter(operator, step_pct, input_image):
+    import itk
+    from tomviz import itkutils
+
+    median_filter = \
+        itk.MedianImageFilter.New(Input=input_image)
+    median_radius = itk.Size[3]()
+    median_radius.Fill(1)
+    median_filter.SetRadius(median_radius)
+
+    operator.progress.message = "Median filter"
+    progress = operator.progress.value
+    itkutils.observe_filter_progress(operator, median_filter,
+                                     progress, progress + next(step_pct))
+    try:
+        median_filter.Update()
+    except RuntimeError:
+        return
+
+    return median_filter.GetOutput()
+
+
+def opening_by_reconstruction(operator, step_pct, input_image,
+                              structuring_element):
+    import itk
+    from tomviz import itkutils
+
+    opening = \
+        itk.OpeningByReconstructionImageFilter.New(Input=input_image)
+    opening.SetKernel(structuring_element)
+
+    operator.progress.message = "Opening by reconstruction"
+    progress = operator.progress.value
+    itkutils.observe_filter_progress(operator, opening,
+                                     progress, progress + next(step_pct))
+
+    try:
+        opening.Update()
+    except RuntimeError:
+        return
+
+    return opening.GetOutput()
+
+
+def threshold(operator, step_pct, input_image):
+    import itk
+    from tomviz import itkutils
+    import itkExtras
+    import itkTypes
+
+    otsu_filter = \
+        itk.OtsuMultipleThresholdsImageFilter.New(Input=input_image)
+    otsu_filter.SetNumberOfThresholds(1)
+    operator.progress.message = "Otsu threshold"
+    progress = operator.progress.value
+    itkutils.observe_filter_progress(operator, otsu_filter,
+                                     progress, progress + next(step_pct))
+
+    try:
+        otsu_filter.Update()
+    except RuntimeError:
+        return
+
+    # Cast threshold output to an integral type if needed.
+    input_image_type = type(input_image)
+    voxel_type = itkExtras.template(input_image_type)[1][0]
+    if voxel_type is itkTypes.F or voxel_type is itkTypes.D:
+        operator.progress.message = "Casting output to integral type"
+
+        # Unsigned char supports 256 labels, or 255 threshold levels.
+        # This should be sufficient for all but the most unusual use
+        # cases.
+        py_buffer_type = itk.Image.UC3
+        caster = itk.CastImageFilter[input_image_type,
+                                     py_buffer_type].New()
+        caster.SetInput(thresholded)
+        progress = operator.progress.value
+        itkutils.observe_filter_progress(operator, caster,
+                                         progress, progress + next(step_pct))
+
+        try:
+            caster.Update()
+        except RuntimeError:
+            return
+
+        thresholded = caster.GetOutput()
+
+    thresholded = otsu_filter.GetOutput()
+    return thresholded
+
+
+def morphological_closing(operator, step_pct, input_image, radius):
+    import itk
+    from tomviz import itkutils
+
+    closer = \
+        itk.GrayscaleMorphologicalClosingImageFilter.New(Input=input_image)
+    StructuringElementType = itk.FlatStructuringElement[3]
+    closing_structuring_element = \
+        StructuringElementType.Ball(int(radius * 3. / 4.))
+    closer.SetKernel(closing_structuring_element)
+    operator.progress.message = "Morphological closing"
+    progress = operator.progress.value
+    itkutils.observe_filter_progress(operator, closer,
+                                     progress, progress + next(step_pct))
+
+    try:
+        closer.Update()
+    except RuntimeError:
+        return
+
+    return closer.GetOutput()
+
+
+def fill_holes(operator, step_pct, input_image):
+    import itk
+    from tomviz import itkutils
+
+    fill_hole = \
+        itk.GrayscaleFillholeImageFilter.New(Input=input_image)
+    operator.progress.message = "Fill holes"
+    progress = operator.progress.value
+    itkutils.observe_filter_progress(operator, fill_hole,
+                                     progress, progress + next(step_pct))
+
+    try:
+        fill_hole.Update()
+    except RuntimeError:
+        return
+
+    return fill_hole.GetOutput()
+
+
 class SegmentParticles(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset, minimum_radius=4):
@@ -15,12 +148,10 @@ class SegmentParticles(tomviz.operators.CancelableOperator):
 
         # Approximate percentage of work completed after each step in the
         # transform
-        STEP_PCT = [10, 20, 30, 40, 50, 60, 80, 90, 100]
+        step_pct = iter([10, 10, 10, 10, 10, 20, 10, 10, 10])
 
         try:
             import itk
-            import itkExtras
-            import itkTypes
             import vtk
             from tomviz import itkutils
             from tomviz import utils
@@ -39,148 +170,44 @@ class SegmentParticles(tomviz.operators.CancelableOperator):
 
             # Get the ITK image
             itk_input_image = itkutils.convert_vtk_to_itk_image(dataset)
-            itk_input_image_type = type(itk_input_image)
-            self.progress.value = STEP_PCT[0]
+            self.progress.value = next(step_pct)
+
+            smoothed = median_filter(self, step_pct, itk_input_image)
 
             Dimension = 3
-
-            median_filter = \
-                itk.MedianImageFilter.New(Input=itk_input_image)
-            median_radius = itk.Size[Dimension]()
-            median_radius.Fill(1)
-            median_filter.SetRadius(median_radius)
-
-            self.progress.message = "Median filter"
-            itkutils.observe_filter_progress(self, median_filter,
-                                             STEP_PCT[0], STEP_PCT[1])
-            try:
-                median_filter.Update()
-                self.progress.value = STEP_PCT[1]
-            except RuntimeError:
-                return
-
             StructuringElementType = itk.FlatStructuringElement[Dimension]
             structuring_element = StructuringElementType.Ball(minimum_radius)
 
             # Reduces reconstruction streak artifact effects and artifacts far
             # from the center of the image.
-            opening = \
-                itk.OpeningByReconstructionImageFilter[
-                    itk_input_image_type,
-                    itk_input_image_type,
-                    StructuringElementType].New()
-            opening.SetInput(itk_input_image)
-            opening.SetKernel(structuring_element)
+            opened = opening_by_reconstruction(self, step_pct, smoothed,
+                                               structuring_element)
 
-            self.progress.message = "Opening by reconstruction"
-            itkutils.observe_filter_progress(self, opening,
-                                             STEP_PCT[1], STEP_PCT[2])
+            thresholded = threshold(self, step_pct, opened)
 
-            try:
-                opening.Update()
-                self.progress.value = STEP_PCT[2]
-            except RuntimeError:
-                return
-
-            opened = opening.GetOutput()
-            otsu_filter = \
-                itk.OtsuMultipleThresholdsImageFilter.New(Input=opened)
-            otsu_filter.SetNumberOfThresholds(1)
-            self.progress.message = "Otsu threshold"
-            itkutils.observe_filter_progress(self, otsu_filter,
-                                             STEP_PCT[2], STEP_PCT[3])
-
-            try:
-                otsu_filter.Update()
-                self.progress.value = STEP_PCT[3]
-            except RuntimeError:
-                return
-
-            # Cast threshold output to an integral type if needed.
-            py_buffer_type = itk_input_image_type
-            voxel_type = itkExtras.template(itk_input_image_type)[1][0]
-            if voxel_type is itkTypes.F or voxel_type is itkTypes.D:
-                self.progress.message = "Casting output to integral type"
-
-                # Unsigned char supports 256 labels, or 255 threshold levels.
-                # This should be sufficient for all but the most unusual use
-                # cases.
-                py_buffer_type = itk.Image.UC3
-                caster = itk.CastImageFilter[itk_input_image_type,
-                                             py_buffer_type].New()
-                caster.SetInput(thresholded)
-                itkutils.observe_filter_progress(self, caster,
-                                                 STEP_PCT[3], STEP_PCT[4])
-
-                try:
-                    caster.Update()
-                    self.progress.value = STEP_PCT[4]
-                except RuntimeError:
-                    return
-
-                thresholded = caster.GetOutput()
-
-            thresholded = otsu_filter.GetOutput()
             # Removes structures smaller than the structuring element while
             # retaining particle shape
             # Grayscale implementation is faster than binary
-            binary_opening_by_reconstruction = \
-                itk.OpeningByReconstructionImageFilter.New(Input=thresholded)
-            binary_opening_by_reconstruction.SetKernel(structuring_element)
-            self.progress.message = "Binary opening by reconstruction"
-            itkutils.observe_filter_progress(self,
-                                             binary_opening_by_reconstruction,
-                                             STEP_PCT[4], STEP_PCT[5])
+            cleaned = opening_by_reconstruction(self, step_pct, thresholded,
+                                                structuring_element)
 
-            try:
-                binary_opening_by_reconstruction.Update()
-                self.progress.value = STEP_PCT[5]
-            except RuntimeError:
-                return
-
-            cleaned = binary_opening_by_reconstruction.GetOutput()
             # Fill in pores
             # Grayscale implementation is faster than binary
-            closer = \
-                itk.GrayscaleMorphologicalClosingImageFilter.New(Input=cleaned)
-            closing_structuring_element = \
-                StructuringElementType.Ball(int(minimum_radius * 3. / 4.))
-            closer.SetKernel(closing_structuring_element)
-            self.progress.message = "Morphological closing"
-            itkutils.observe_filter_progress(self, closer,
-                                             STEP_PCT[5], STEP_PCT[6])
+            radius = int(minimum_radius * 3. / 4.)
+            closed = morphological_closing(self, step_pct, cleaned, radius)
 
-            try:
-                closer.Update()
-                self.progress.value = STEP_PCT[6]
-            except RuntimeError:
-                return
-
-            closed = closer.GetOutput()
             # Fill in pores
             # Grayscale implementation is faster than binary
-            fill_hole = \
-                itk.GrayscaleFillholeImageFilter.New(Input=closed)
-            self.progress.message = "Fill holes"
-            itkutils.observe_filter_progress(self, fill_hole,
-                                             STEP_PCT[6], STEP_PCT[7])
-
-            try:
-                fill_hole.Update()
-                self.progress.value = STEP_PCT[7]
-            except RuntimeError:
-                return
+            filled = fill_holes(self, step_pct, closed)
 
             self.progress.message = "Saving results"
 
-            label_buffer = itk.PyBuffer[py_buffer_type] \
-                .GetArrayFromImage(fill_hole.GetOutput())
+            label_buffer = itk.PyBuffer[type(itk_input_image)] \
+                .GetArrayFromImage(filled)
 
             label_map_dataset = vtk.vtkImageData()
             label_map_dataset.CopyStructure(dataset)
             utils.set_array(label_map_dataset, label_buffer, isFortran=False)
-
-            self.progress.value = STEP_PCT[8]
 
             # Set up dictionary to return operator results
             returnValues = {}
