@@ -255,6 +255,7 @@ void ModuleMeasurementCube::setAdaptiveScaling(const bool val)
 void ModuleMeasurementCube::setSideLength(const double length)
 {
   m_cubeRep->SetSideLength(length);
+  emit renderNeeded();
 }
 
 void ModuleMeasurementCube::setLengthUnit()
