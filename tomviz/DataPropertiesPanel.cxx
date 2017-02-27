@@ -260,7 +260,6 @@ void DataPropertiesPanel::updateUnits()
   const QString& text = m_ui->unitBox->text();
   m_currentDataSource->setUnits(text);
   updateAxesGridLabels();
-  m_currentDataSource->dataPropertiesChanged();
 }
 
 void DataPropertiesPanel::updateXLength()
@@ -274,7 +273,6 @@ void DataPropertiesPanel::updateXLength()
   }
   updateSpacing(0, newLength);
   updateData();
-  m_currentDataSource->dataPropertiesChanged();
 }
 
 void DataPropertiesPanel::updateYLength()
@@ -288,7 +286,6 @@ void DataPropertiesPanel::updateYLength()
   }
   updateSpacing(1, newLength);
   updateData();
-  m_currentDataSource->dataPropertiesChanged();
 }
 
 void DataPropertiesPanel::updateZLength()
@@ -302,7 +299,6 @@ void DataPropertiesPanel::updateZLength()
   }
   updateSpacing(2, newLength);
   updateData();
-  m_currentDataSource->dataPropertiesChanged();
 }
 
 void DataPropertiesPanel::updateAxesGridLabels()
