@@ -64,9 +64,9 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
     # as the size of the dataobject.
-    # isFortran indicates whether the NumPy array has Fortran-order indexing, i.e.
-    # i,j,k indexing. If isFortran is False, then the NumPy array uses C-order
-    # indexing, i.e. k,j,i indexing.
+    # isFortran indicates whether the NumPy array has Fortran-order indexing,
+    # i.e. i,j,k indexing. If isFortran is False, then the NumPy array uses
+    # C-order indexing, i.e. k,j,i indexing.
 
     if isFortran is False:
         # Flatten according to array.flags
