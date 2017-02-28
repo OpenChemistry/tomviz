@@ -92,16 +92,13 @@ def threshold(operator, step_pct, input_image):
     return thresholded
 
 
-def morphological_closing(operator, step_pct, input_image, radius):
+def morphological_closing(operator, step_pct, input_image, structuring_element):
     import itk
     from tomviz import itkutils
 
     closer = \
         itk.GrayscaleMorphologicalClosingImageFilter.New(Input=input_image)
-    StructuringElementType = itk.FlatStructuringElement[3]
-    closing_structuring_element = \
-        StructuringElementType.Ball(int(radius * 3. / 4.))
-    closer.SetKernel(closing_structuring_element)
+    closer.SetKernel(structuring_element)
     operator.progress.message = "Morphological closing"
     progress = operator.progress.value
     itkutils.observe_filter_progress(operator, closer,
@@ -113,6 +110,26 @@ def morphological_closing(operator, step_pct, input_image, radius):
         return
 
     return closer.GetOutput()
+
+
+def morphological_opening(operator, step_pct, input_image, structuring_element):
+    import itk
+    from tomviz import itkutils
+
+    opener = \
+        itk.GrayscaleMorphologicalOpeningImageFilter.New(Input=input_image)
+    opener.SetKernel(structuring_element)
+    operator.progress.message = "Morphological opening"
+    progress = operator.progress.value
+    itkutils.observe_filter_progress(operator, opener,
+                                     progress, progress + next(step_pct))
+
+    try:
+        opener.Update()
+    except RuntimeError:
+        return
+
+    return opener.GetOutput()
 
 
 def fill_holes(operator, step_pct, input_image):
@@ -148,7 +165,7 @@ class SegmentParticles(tomviz.operators.CancelableOperator):
 
         # Approximate percentage of work completed after each step in the
         # transform
-        step_pct = iter([10, 10, 10, 10, 10, 20, 10, 10, 10])
+        step_pct = iter([10, 10, 10, 10, 10, 10, 10, 10, 10, 10])
 
         try:
             import itk
@@ -193,17 +210,21 @@ class SegmentParticles(tomviz.operators.CancelableOperator):
 
             # Fill in pores
             # Grayscale implementation is faster than binary
-            radius = int(minimum_radius * 3. / 4.)
-            closed = morphological_closing(self, step_pct, cleaned, radius)
+            closed = morphological_closing(self, step_pct, cleaned,
+                                           structuring_element)
 
             # Fill in pores
             # Grayscale implementation is faster than binary
             filled = fill_holes(self, step_pct, closed)
 
+            # Disconnect separate particles and reduce reconstruction
+            opening = morphological_opening(self, step_pct, filled,
+                                            structuring_element)
+
             self.progress.message = "Saving results"
 
             label_buffer = itk.PyBuffer[type(itk_input_image)] \
-                .GetArrayFromImage(filled)
+                .GetArrayFromImage(opening)
 
             label_map_dataset = vtk.vtkImageData()
             label_map_dataset.CopyStructure(dataset)
