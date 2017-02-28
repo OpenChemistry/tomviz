@@ -33,7 +33,7 @@ class GenerateTiltSeriesOperator(tomviz.operators.CancelableOperator):
             'constant')
 
         Nslice = volume.shape[0]  # Number of slices along rotation axis.
-        tiltSeries = np.zeros((Nslice, N, num_tilts))
+        tiltSeries = np.empty([Nslice, N, num_tilts], dtype=float, order='F')
 
         self.progress.maximum = num_tilts
         step = 0

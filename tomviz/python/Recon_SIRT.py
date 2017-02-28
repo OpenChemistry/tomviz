@@ -38,7 +38,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         # Generate measurement matrix
         self.progress.message = 'Generating measurement matrix'
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-        recon = np.zeros((Nslice, Nray, Nray))
+        recon = np.empty([Nslice, Nray, Nray], dtype=float, order='F')
 
         self.progress.maximum = Nslice + 1
         step = 0
@@ -141,7 +141,6 @@ class SIRT:
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     # Suppress warning messages that pops up when dividing zeros
     np.seterr(all='ignore')
-    print('Generating parallel-beam measurement matrix using ray-driven model')
     Nproj = angles.size # Number of projections
 
     # Ray coordinates at 0 degrees.

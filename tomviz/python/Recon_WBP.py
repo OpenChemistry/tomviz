@@ -28,7 +28,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = Nslice
         step = 0
 
-        recon = np.zeros((Nslice, Nrecon, Nrecon))
+        recon = np.empty([Nslice, Nrecon, Nrecon], dtype=float, order='F')
         for i in range(Nslice):
             if self.canceled:
                 return

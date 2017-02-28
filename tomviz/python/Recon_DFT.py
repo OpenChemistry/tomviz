@@ -35,7 +35,8 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         v = pyfftw.n_byte_align_empty(
             (Nx, Ny, Nz // 2 + 1), 16, dtype='complex128')
         v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
-        recon = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='float64')
+        recon = pyfftw.n_byte_align_empty(
+            (Nx, Ny, Nz), 16, dtype='float64', order='F')
         recon_fftw_object = pyfftw.FFTW(
             v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
 
@@ -90,7 +91,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         v[w != 0] = v[w != 0] / w[w != 0]
         recon_fftw_object.update_arrays(v, recon)
         recon_fftw_object()
-        recon = np.fft.fftshift(recon)
+        recon[:] = np.fft.fftshift(recon)
 
         step += 1
         self.progress.value = step

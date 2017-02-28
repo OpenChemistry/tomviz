@@ -26,6 +26,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
             raise RuntimeError("No scalars found!")
 
         self.progress.message = 'Initialization'
+
         #Direct Fourier recon without constraints
         (recon, recon_F) \
             = dfm3(tiltSeries, tiltAngles, np.size(tiltSeries, 1) * 2)
@@ -113,7 +114,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
             #update support
             if (i < Niter and np.mod(i, Niter_update_support) == 0):
                 print("updating support")
-                recon = (y2 + y1) / 2
+                recon[:] = (y2 + y1) / 2
                 r = recon.copy()
                 fft_forward.update_arrays(r, f)
                 fft_forward.execute()
@@ -125,8 +126,8 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        recon = (y2 + y1) / 2
-        recon = np.fft.fftshift(recon)
+        recon[:] = (y2 + y1) / 2
+        recon[:] = np.fft.fftshift(recon)
 
         print('Reconsruction Complete')
 
@@ -149,7 +150,8 @@ def dfm3(input, angles, Npad):
     w = np.zeros((Nx, Ny, Nz)) #store weighting factors
     v = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='complex128')
     v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
-    recon = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype='float64')
+    recon = pyfftw.n_byte_align_empty(
+        (Nx, Ny, Ny), 16, dtype='float64', order='F')
     recon_fftw_object = pyfftw.FFTW(
         v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
 
@@ -192,7 +194,7 @@ def dfm3(input, angles, Npad):
     recon_F = v.copy()
     recon_fftw_object.update_arrays(v, recon)
     recon_fftw_object()
-    recon = np.fft.fftshift(recon)
+    recon[:] = np.fft.fftshift(recon)
     return (recon, recon_F)
 
 # Bilinear extrapolation
