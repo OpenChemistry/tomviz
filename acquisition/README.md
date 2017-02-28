@@ -31,7 +31,7 @@ supports for the currently loaded adapter.
   "jsonrpc": "2.0",
   "id": "<id>",
   "method": "describe",
-  "params": ['methodName']
+  "params": ["<methodName>"]
 }
 ```
 

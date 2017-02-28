@@ -25,6 +25,8 @@ set(SOURCES
   AboutDialog.cxx
   ActiveObjects.cxx
   ActiveObjects.h
+  AcquisitionClient.cxx
+  AcquisitionClient.h
   AddAlignReaction.cxx
   AddAlignReaction.h
   AddExpressionReaction.cxx
@@ -78,6 +80,8 @@ set(SOURCES
   InterfaceBuilder.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
+  JsonRpcClient.cxx
+  JsonRpcClient.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   LoadPaletteReaction.cxx
@@ -390,7 +394,8 @@ target_link_libraries(tomvizlib
   vtkPVServerManagerRendering
   vtkjsoncpp
   vtkpugixml
-  tomvizExtensions)
+  tomvizExtensions
+  Qt5::Network)
 if(WIN32)
   target_link_libraries(tomvizlib Qt5::WinMain)
 endif()

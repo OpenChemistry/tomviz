@@ -49,6 +49,9 @@ set(_pythonpath "${_pythonpath}${_separator}$ENV{PYTHONPATH}")
 add_cxx_test(OperatorPython PYTHONPATH ${_pythonpath})
 add_cxx_test(Variant)
 
+add_cxx_qtest(AcquisitionClient PYTHONPATH "${CMAKE_SOURCE_DIR}/acquisition")
+
+
 # Generate the executable
 create_test_executable(tomvizTests)
 

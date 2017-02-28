@@ -89,7 +89,7 @@ class JsonRpcHandler(object):
         params = request.get('params', {})
 
         try:
-            if jsonrpc != JSONRPC_VERSION or not id or not method:
+            if jsonrpc != JSONRPC_VERSION or id is None or method is None:
                 raise InvalidRequest()
 
             if method not in self._methods:
@@ -175,6 +175,12 @@ class endpoint(object):
                     })
 
             post(path, callback=handle_rpc)
+
+            # In bottle /path/ and /path are two different routes, because of
+            # http://www.ietf.org/rfc/rfc3986.txt, so register them both
+            if path[-1] != '/' and path[-1] != '>':
+                post('%s/' % path, callback=handle_rpc)
+
             endpoint_map[path] = self._endpoint
         else:
             self._endpoint = endpoint_map[path]
