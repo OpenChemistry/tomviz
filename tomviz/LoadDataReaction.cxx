@@ -30,6 +30,8 @@
 #include "pqSMAdaptor.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
+#include "vtkPointData.h"
+#include "vtkDataArray.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMPropertyHelper.h"
@@ -39,6 +41,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkTrivialProducer.h"
 
+#include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
 
@@ -152,6 +155,45 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
   return dataSource;
 }
 
+namespace {
+bool hasData(vtkSMProxy* reader) {
+  vtkSMSourceProxy* dataSource = vtkSMSourceProxy::SafeDownCast(reader);
+  if (!dataSource) {
+    return false;
+  }
+
+  dataSource->UpdatePipeline();
+  vtkAlgorithm* vtkalgorithm =
+    vtkAlgorithm::SafeDownCast(dataSource->GetClientSideObject());
+  if (!vtkalgorithm) {
+    return false;
+  }
+
+  // Create a clone and release the reader data.
+  vtkImageData* data = vtkImageData::SafeDownCast(vtkalgorithm->GetOutputDataObject(0));
+  if (!data) {
+    return false;
+  }
+
+  int extent[6];
+  data->GetExtent(extent);
+  if (extent[0] > extent[1] || extent[2] > extent[3] || extent[4] > extent[5]) {
+    return false;
+  }
+
+  vtkPointData* pd = data->GetPointData();
+  if (!pd) {
+    return false;
+  }
+
+  vtkDataArray* scalars = pd->GetScalars();
+  if (!scalars || scalars->GetNumberOfTuples() == 0) {
+    return false;
+  }
+  return true;
+}
+}
+
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
 {
   // Prompt user for reader configuration.
@@ -162,6 +204,11 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
       dialog.exec() == QDialog::Accepted) {
     DataSource* previousActiveDataSource =
       ActiveObjects::instance().activeDataSource();
+
+    if (!hasData(reader)) {
+      qCritical() << "Error: failed to load file!";
+      return nullptr;
+    }
 
     DataSource* dataSource =
       new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
