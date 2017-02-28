@@ -190,6 +190,9 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   // Allow pipeline to be re-executed if we are dealing with a canceled
   // operator.
   auto op = pipelineModel->op(idx);
+  if (op && op->dataSource()->isRunningAnOperator()) {
+    deleteAction->setEnabled(false);
+  }
   allowReExecute = allowReExecute || (op && op->isCanceled());
 
   if (allowReExecute) {
