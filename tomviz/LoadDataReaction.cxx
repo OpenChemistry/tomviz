@@ -27,6 +27,7 @@
 #include "pqPipelineSource.h"
 #include "pqProxyWidgetDialog.h"
 #include "pqRenderView.h"
+#include "pqSMAdaptor.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkSMCoreUtilities.h"
@@ -34,6 +35,7 @@
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMStringVectorProperty.h"
 #include "vtkSmartPointer.h"
 #include "vtkTrivialProducer.h"
 
@@ -68,6 +70,7 @@ QList<DataSource*> LoadDataReaction::loadData()
     << "JPeg Image files (*.jpg *.jpeg)"
     << "PNG Image files (*.png)"
     << "TIFF Image files (*.tiff *.tif)"
+    << "OME-TIFF Image files (*.ome.tif)"
     << "Raw data files (*.raw *.dat *.bin)"
     << "Meta Image files (*.mhd *.mha)"
     << "MRC files (*.mrc *.st *.rec *.ali)"
@@ -115,6 +118,20 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
     dataSource->originalDataSource()->SetAnnotation(Attributes::FILENAME,
                                                     fileName.toLatin1().data());
     LoadDataReaction::dataSourceAdded(dataSource);
+  } else if (info.completeSuffix().endsWith("ome.tif")) {
+    auto pxm = tomviz::ActiveObjects::instance().proxyManager();
+    vtkSmartPointer<vtkSMProxy> source;
+    source.TakeReference(pxm->NewProxy("sources", "OMETIFFReader"));
+    QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
+    vtkSMStringVectorProperty *prop = vtkSMStringVectorProperty::SafeDownCast(source->GetProperty(pname.toUtf8().data()));
+    pqSMAdaptor::setElementProperty(prop, fileName);
+    source->UpdateVTKObjects();
+
+    dataSource = createDataSource(source);
+    // The dataSource may be NULL if the user cancelled the action.
+    if (dataSource) {
+      RecentFilesMenu::pushDataReader(dataSource, source);
+    }
   } else {
     // Use ParaView's file load infrastructure.
     pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);

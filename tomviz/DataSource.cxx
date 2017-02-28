@@ -771,7 +771,10 @@ void DataSource::setData(vtkDataObject* newData)
   } else {
     this->Internals->Type = Volume;
   }
-  if (this->Internals->Units) {
+  if (fd->HasArray("units")) {
+    this->Internals->Units =
+      vtkStringArray::SafeDownCast(fd->GetAbstractArray("units"));
+  } else if (this->Internals->Units) {
     fd->AddArray(this->Internals->Units);
   }
   if (!typeArray) {

@@ -145,6 +145,29 @@
       </IntVectorProperty>
       <!-- End ImageReader -->
     </SourceProxy>
+    <SourceProxy class="vtkOMETiffReader"
+                 label="OME-TIFF Reader"
+                 name="OMETIFFReader">
+      <Documentation long_help="Reads an OME-TIFF file into an image data."
+                     short_help="Read an OME-TIFF file.">The TIFF reader reads OME-TIFF
+                     files, and the output is a
+                     uniform rectilinear (image/volume) dataset. The default
+                     file extension is .tiff.</Documentation>
+      <StringVectorProperty animateable="0"
+                            command="SetFileName"
+                            name="FileName"
+                            number_of_elements="1"
+                            panel_visibility="never">
+        <FileListDomain name="files" />
+        <Documentation>This property specifies the file name for the OME-TIFF
+        reader.</Documentation>
+      </StringVectorProperty>
+      <Hints>
+        <ReaderFactory extensions="ome.tif"
+                       file_description="OME-TIFF Image Files" />
+      </Hints>
+      <!-- End TIFFReader -->
+    </SourceProxy>
   </ProxyGroup>
   <ProxyGroup name="tomviz_proxies">
     <Proxy name="NonOrthogonalSlice">

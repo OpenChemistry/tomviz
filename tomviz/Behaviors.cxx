@@ -64,16 +64,18 @@ namespace tomviz {
 Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 {
   Q_ASSERT(mainWindow);
+
+  PV_PLUGIN_IMPORT(tomvizExtensions)
+
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "JPEGSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "PNGSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TIFFSeriesReader");
+  vtkSMReaderFactory::AddReaderToWhitelist("sources", "OMETIFFReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TVRawImageReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "MRCSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "XdmfReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "CSVReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "MetaImageReader");
-
-  PV_PLUGIN_IMPORT(tomvizExtensions)
 
   vtkSMSettings::GetInstance()->AddCollectionFromString(settings, 0.0);
 
