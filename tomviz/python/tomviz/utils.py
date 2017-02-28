@@ -240,7 +240,7 @@ def connected_components(dataset, background_value=0, progress_callback=None):
         gt_zero = label_buffer > 0
         label_buffer[gt_zero] = minimum - label_buffer[gt_zero] + maximum
 
-        set_array(dataset, label_buffer)
+        set_array(dataset, label_buffer, isFortran=False)
     except Exception as exc:
         print("Problem encountered while running ConnectedComponents")
         raise exc
