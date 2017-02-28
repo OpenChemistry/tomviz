@@ -18,6 +18,8 @@
 
 #include <pqReaction.h>
 
+#include <QPointer>
+
 class vtkSMProxy;
 
 namespace tomviz {
@@ -42,8 +44,13 @@ protected:
   void onTriggered() override;
   void updateEnableState() override;
 
+private slots:
+  void activeDataSourceChanged();
+
 private:
   Q_DISABLE_COPY(DeleteDataReaction)
+
+  QPointer<DataSource> m_activeDataSource;
 };
 }
 #endif

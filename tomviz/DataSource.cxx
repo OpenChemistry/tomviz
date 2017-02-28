@@ -588,6 +588,7 @@ void DataSource::operate(Operator* op)
   }
   // We need to initiate a new run
   else {
+    emit operatorStarted();
     vtkDataObject* copy = copyData();
     this->Internals->Future = this->Internals->Worker->run(copy, op);
     connect(this->Internals->Future, SIGNAL(finished(bool)), this,
@@ -834,6 +835,7 @@ void DataSource::pipelineFinished(bool result)
   future->deleteLater();
   if (this->Internals->Future == future) {
     this->Internals->Future = nullptr;
+    emit allOperatorsFinished();
   }
 
   dataModified();

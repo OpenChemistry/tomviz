@@ -25,7 +25,8 @@ DeleteDataReaction::DeleteDataReaction(QAction* parentObject)
 {
   this->connect(&ActiveObjects::instance(),
                 SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateEnableState()));
+                SLOT(activeDataSourceChanged()));
+  m_activeDataSource = ActiveObjects::instance().activeDataSource();
   this->updateEnableState();
 }
 
@@ -35,8 +36,11 @@ DeleteDataReaction::~DeleteDataReaction()
 
 void DeleteDataReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != nullptr);
+  bool enabled = (m_activeDataSource != nullptr);
+  if (enabled) {
+    enabled = !m_activeDataSource->isRunningAnOperator();
+  }
+  this->parentAction()->setEnabled(enabled);
 }
 
 void DeleteDataReaction::onTriggered()
@@ -54,6 +58,26 @@ void DeleteDataReaction::deleteDataSource(DataSource* source)
   ModuleManager& mmgr = ModuleManager::instance();
   mmgr.removeAllModules(source);
   mmgr.removeDataSource(source);
+}
+
+void DeleteDataReaction::activeDataSourceChanged()
+{
+  DataSource* source = ActiveObjects::instance().activeDataSource();
+  if (m_activeDataSource != source) {
+    if (m_activeDataSource) {
+      QObject::disconnect(m_activeDataSource.data(),
+                          &DataSource::operatorStarted, this, nullptr);
+      QObject::disconnect(m_activeDataSource.data(),
+                          &DataSource::allOperatorsFinished, this, nullptr);
+    }
+    m_activeDataSource = source;
+    QObject::connect(m_activeDataSource.data(), &DataSource::operatorStarted,
+                     this, &DeleteDataReaction::updateEnableState);
+    QObject::connect(m_activeDataSource.data(),
+                     &DataSource::allOperatorsFinished, this,
+                     &DeleteDataReaction::updateEnableState);
+  }
+  updateEnableState();
 }
 
 } // end of namespace tomviz
