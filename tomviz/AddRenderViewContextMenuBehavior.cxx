@@ -19,6 +19,7 @@
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
 #include <pqCameraLinkReaction.h>
+#include <pqManageLinksReaction.h>
 #include <pqRenderView.h>
 #include <pqServerManagerModel.h>
 #include <pqSetName.h>
@@ -47,6 +48,8 @@ AddRenderViewContextMenuBehavior::AddRenderViewContextMenuBehavior(QObject* p)
   // Support camera linking/unlinking
   new pqCameraLinkReaction(
     m_menu->addAction("Add Camera Link...") << pqSetName("actionToolsAddCameraLink"));
+  new pqManageLinksReaction(
+    m_menu->addAction("Manage Camera Links...") << pqSetName("actionToolsManageCameraLinks"));
 }
 
 AddRenderViewContextMenuBehavior::~AddRenderViewContextMenuBehavior()
