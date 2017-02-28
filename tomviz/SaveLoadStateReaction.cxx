@@ -16,7 +16,6 @@
 #include "SaveLoadStateReaction.h"
 
 #include "pqCoreUtilities.h"
-#include "pqFileDialog.h"
 #include <vtk_pugixml.h>
 
 #include "ModuleManager.h"
@@ -24,6 +23,7 @@
 #include "vtkSMProxyManager.h"
 
 #include <QDir>
+#include <QFileDialog>
 #include <QtDebug>
 
 namespace tomviz {
@@ -48,26 +48,32 @@ void SaveLoadStateReaction::onTriggered()
 
 bool SaveLoadStateReaction::saveState()
 {
-  pqFileDialog fileDialog(nullptr, pqCoreUtilities::mainWidget(),
-                          tr("Save State File"), QString(),
-                          "tomviz state files (*.tvsm);;All files (*)");
+  QFileDialog fileDialog(pqCoreUtilities::mainWidget(), tr("Save State File"),
+                         QString(),
+                         "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
-  fileDialog.setFileMode(pqFileDialog::AnyFile);
+  fileDialog.setFileMode(QFileDialog::AnyFile);
   if (fileDialog.exec() == QDialog::Accepted) {
-    return SaveLoadStateReaction::saveState(fileDialog.getSelectedFiles()[0]);
+    QString filename = fileDialog.selectedFiles()[0];
+    QString format = fileDialog.selectedNameFilter();
+    if (!filename.endsWith(".tvsm") &&
+        format == "tomviz state files (*.tvsm)") {
+      filename = QString("%1%2").arg(filename, ".tvsm");
+    }
+    return SaveLoadStateReaction::saveState(filename);
   }
   return false;
 }
 
 bool SaveLoadStateReaction::loadState()
 {
-  pqFileDialog fileDialog(nullptr, pqCoreUtilities::mainWidget(),
-                          tr("Load State File"), QString(),
-                          "tomviz state files (*.tvsm);;All files (*)");
+  QFileDialog fileDialog(pqCoreUtilities::mainWidget(), tr("Load State File"),
+                         QString(),
+                         "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");
-  fileDialog.setFileMode(pqFileDialog::ExistingFile);
+  fileDialog.setFileMode(QFileDialog::ExistingFile);
   if (fileDialog.exec() == QDialog::Accepted) {
-    return SaveLoadStateReaction::loadState(fileDialog.getSelectedFiles()[0]);
+    return SaveLoadStateReaction::loadState(fileDialog.selectedFiles()[0]);
   }
   return false;
 }
