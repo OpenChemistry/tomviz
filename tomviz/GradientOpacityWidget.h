@@ -27,12 +27,6 @@
  *
  */
 
-//// TODO
-//1. Review need for side buttons (range, etc.).
-//2. Set default tf to all ones (no gradient thresholding).
-//3. Serialize/ deserialize.
-//4. Remove setInputData (if unnecessary). 
-
 class vtkChartGradientOpacityEditor; 
 class vtkContextView;
 class vtkEventQtSlotConnect;

@@ -262,6 +262,9 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   node = ns.append_child("OpacityMap");
   tomviz::serialize(opacityMap(), node);
 
+  node = ns.append_child("GradientOpacityMap");
+  tomviz::serialize(gradientOpacityMap(), node);
+
   ns.append_attribute("number_of_operators")
     .set_value(static_cast<int>(this->Internals->Operators.size()));
 
@@ -317,6 +320,9 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   // load the color map here to avoid resetData clobbering its range
   tomviz::deserialize(colorMap(), ns.child("ColorMap"));
   tomviz::deserialize(opacityMap(), ns.child("OpacityMap"));
+  tomviz::deserialize(gradientOpacityMap(),
+    ns.child("GradientOpacityMap")); 
+
   vtkSMPropertyHelper(colorMap(), "ScalarOpacityFunction").Set(opacityMap());
   colorMap()->UpdateVTKObjects();
 
