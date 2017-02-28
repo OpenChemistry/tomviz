@@ -52,6 +52,7 @@ bool SaveLoadStateReaction::saveState()
                          QString(),
                          "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
+  fileDialog.setAcceptMode(QFileDialog::AcceptSave);
   fileDialog.setFileMode(QFileDialog::AnyFile);
   if (fileDialog.exec() == QDialog::Accepted) {
     QString filename = fileDialog.selectedFiles()[0];
