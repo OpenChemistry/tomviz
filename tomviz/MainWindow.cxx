@@ -51,6 +51,7 @@
 #include "SaveLoadStateReaction.h"
 #include "SaveScreenshotReaction.h"
 #include "SaveWebReaction.h"
+#include "ScaleLegend.h"
 #include "SetScaleReaction.h"
 #include "SetTiltAnglesReaction.h"
 #include "ToggleDataTypeReaction.h"
@@ -366,7 +367,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   new ResetReaction(ui.actionReset);
 
-  new ViewMenuManager(this, ui.menuView);
+  ViewMenuManager* viewMenuManager = new ViewMenuManager(this, ui.menuView);
 
   QMenu* sampleDataMenu = new QMenu("Sample Data", this);
   ui.menubar->insertMenu(ui.menuHelp->menuAction(), sampleDataMenu);
@@ -424,6 +425,15 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ResetReaction::reset();
   // Initialize worker manager
   new ProgressDialogManager(this);
+
+  // Initialize scale legend
+  ScaleLegend* scaleLegend = new ScaleLegend(this);
+
+  QObject::connect(viewMenuManager,
+                   SIGNAL(setScaleLegendStyle(ScaleLegendStyle)),
+                   scaleLegend, SLOT(setStyle(ScaleLegendStyle)));
+  QObject::connect(viewMenuManager, SIGNAL(setScaleLegendVisibility(bool)),
+                   scaleLegend, SLOT(setVisibility(bool)));
 }
 
 MainWindow::~MainWindow()

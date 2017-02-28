@@ -25,11 +25,17 @@ class vtkSMViewProxy;
 
 namespace tomviz {
 
+enum class ScaleLegendStyle : unsigned int;
+
 class ViewMenuManager : public pqViewMenuManager
 {
   Q_OBJECT
 public:
   ViewMenuManager(QMainWindow* mainWindow, QMenu* menu);
+
+signals:
+  void setScaleLegendStyle(ScaleLegendStyle);
+  void setScaleLegendVisibility(bool);
 
 protected:
   // Override to add 'show View Properties dialog'
@@ -52,6 +58,9 @@ private:
   QAction* perspectiveProjectionAction;
   QAction* orthographicProjectionAction;
   QAction* showAxisGridAction;
+  QAction* scaleLegendCubeAction;
+  QAction* scaleLegendRulerAction;
+  QAction* hideScaleLegendAction;
 
   vtkSMViewProxy* View;
   unsigned long ViewObserverId;
