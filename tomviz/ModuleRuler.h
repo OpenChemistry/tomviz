@@ -24,6 +24,8 @@
 class vtkSMSourceProxy;
 class vtkSMProxy;
 
+class pqLinePropertyWidget;
+
 namespace tomviz {
 
 class ModuleRuler : public Module
@@ -50,6 +52,13 @@ public:
 
   bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
+protected slots:
+  void updateUnits();
+  void endPointsUpdated();
+
+signals:
+  void newEndpointData(double val1, double val2);
+
 protected:
   void updateColorMap() override {}
   std::string getStringForProxy(vtkSMProxy* proxy) override;
@@ -57,9 +66,12 @@ protected:
 
   vtkSmartPointer<vtkSMSourceProxy> m_RulerSource;
   vtkSmartPointer<vtkSMProxy> m_Representation;
+  QPointer<pqLinePropertyWidget> m_Widget;
 
 private:
   Q_DISABLE_COPY(ModuleRuler)
+
+  bool ShowArrow;
 };
 }
 
