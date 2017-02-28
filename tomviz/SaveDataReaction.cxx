@@ -85,6 +85,7 @@ void SaveDataReaction::onTriggered()
   dialog.setFileMode(QFileDialog::AnyFile);
   dialog.setNameFilters(filters);
   dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
 
   if (dialog.exec() == QDialog::Accepted) {
     QStringList filenames = dialog.selectedFiles();
