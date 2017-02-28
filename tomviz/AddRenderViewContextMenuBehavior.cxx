@@ -45,6 +45,9 @@ AddRenderViewContextMenuBehavior::AddRenderViewContextMenuBehavior(QObject* p)
   QAction* bgColorAction = m_menu->addAction("Set Background Color");
   connect(bgColorAction, SIGNAL(triggered()), SLOT(onSetBackgroundColor()));
 
+  // Add separator
+  m_menu->addSeparator();
+
   // Support camera linking/unlinking
   new pqCameraLinkReaction(
     m_menu->addAction("Add Camera Link...") << pqSetName("actionToolsAddCameraLink"));
