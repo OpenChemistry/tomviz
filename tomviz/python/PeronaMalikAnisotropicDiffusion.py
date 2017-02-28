@@ -15,7 +15,7 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
 
         # Approximate percentage of work completed after each step in the
         # transform
-        STEP_PCT = [10, 20, 90, 100]
+        STEP_PCT = [10, 20, 30, 90, 100]
 
         try:
             import itk
@@ -32,8 +32,23 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
             # Get the ITK image. The itk.GradientAnisotropicDiffusionImageFilter
             # is templated over float pixel types only, so explicitly request a
             # float ITK image type.
-            itk_image = itkutils.convert_vtk_to_itk_image(dataset, itkTypes.F)
-            itk_image_type = type(itk_image)
+            itk_image = itkutils.convert_vtk_to_itk_image(dataset)
+            itk_input_image_type = type(itk_image)
+            dimension = itk_image.GetImageDimension()
+            itk_image_type = itk.Image[itkTypes.F, dimension]
+
+            self.progress.message = "Casting input to float type"
+
+            caster = itk.CastImageFilter[itk_input_image_type,
+                                         itk_image_type].New()
+            caster.SetInput(itk_image)
+            itkutils.observe_filter_progress(self, caster,
+                                             STEP_PCT[1], STEP_PCT[2])
+
+            try:
+                caster.Update()
+            except RuntimeError:
+                return
 
             self.progress.value = STEP_PCT[1]
             self.progress.message = "Running filter"
@@ -45,9 +60,9 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
             diffusion_filter.SetConductanceParameter(conductance)
             diffusion_filter.SetNumberOfIterations(iterations)
             diffusion_filter.SetTimeStep(timestep)
-            diffusion_filter.SetInput(itk_image)
+            diffusion_filter.SetInput(caster)
             itkutils.observe_filter_progress(self, diffusion_filter,
-                                             STEP_PCT[1], STEP_PCT[2])
+                                             STEP_PCT[2], STEP_PCT[3])
 
             try:
                 diffusion_filter.Update()
@@ -59,7 +74,7 @@ class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
             itkutils.set_array_from_itk_image(dataset,
                                               diffusion_filter.GetOutput())
 
-            self.progress.value = STEP_PCT[3]
+            self.progress.value = STEP_PCT[4]
         except Exception as exc:
             print("Problem encountered while running %s" %
                   self.__class__.__name__)
