@@ -289,6 +289,7 @@ set(python_files
   BinaryMinMaxCurvatureFlow.py
   ReinterpretSignedToUnsigned.py
   SegmentParticles.py
+  UnsharpMask.py
   )
 
 set(json_files
@@ -321,6 +322,7 @@ set(json_files
   ShiftTiltSeriesRandomly.json
   BinaryMinMaxCurvatureFlow.json
   SegmentParticles.json
+  UnsharpMask.json
   )
 
 set(resource_files

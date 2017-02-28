@@ -1,0 +1,28 @@
+{
+  "name" : "UnsharpMask",
+  "label" : "Unsharp Mask",
+  "description" : "Sharpen the image with the unsharp mask technique.\nsharpened=original+[abs(original-blurred)-threshold]*amount",
+  "parameters" : [
+    {
+      "name" : "amount",
+      "label" : "Amount",
+      "type" : "double",
+      "default" : 0.5,
+      "minimum" : 0.0
+    },
+    {
+      "name" : "threshold",
+      "label" : "Threshold",
+      "type" : "double",
+      "default" : 0.0,
+      "minimum" : 0.0
+    },
+    {
+      "name" : "sigma",
+      "label" : "Sigma",
+      "type" : "double",
+      "default" : 1.0,
+      "minimum" : 0.0
+    }
+  ]
+}
