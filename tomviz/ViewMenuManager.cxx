@@ -34,6 +34,7 @@
 #include <QMenu>
 
 #include "ActiveObjects.h"
+#include "ScaleLegend.h"
 #include "Utilities.h"
 #include "ViewPropertiesPanel.h"
 
@@ -41,7 +42,9 @@ namespace tomviz {
 
 ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   : pqViewMenuManager(mainWindow, menu), perspectiveProjectionAction(nullptr),
-    orthographicProjectionAction(nullptr), showAxisGridAction(nullptr)
+    orthographicProjectionAction(nullptr), showAxisGridAction(nullptr),
+    scaleLegendCubeAction(nullptr), scaleLegendRulerAction(nullptr),
+    hideScaleLegendAction(nullptr)
 {
   this->viewPropertiesDialog = new QDialog(mainWindow);
   this->viewPropertiesDialog->setWindowTitle("View Properties");
@@ -79,9 +82,17 @@ void ViewMenuManager::buildMenu()
   if (this->showAxisGridAction) {
     axisGridIsShowing = this->showAxisGridAction->isChecked();
   }
+  bool hideScaleLegendIsEnabled = false;
+  if (this->hideScaleLegendAction) {
+    hideScaleLegendIsEnabled = this->hideScaleLegendAction->isEnabled();
+  }
   this->showViewPropertiesAction = nullptr; // The object is about to be deleted
   this->perspectiveProjectionAction = nullptr;
   this->orthographicProjectionAction = nullptr;
+  this->scaleLegendCubeAction = nullptr;
+  this->scaleLegendRulerAction = nullptr;
+  this->hideScaleLegendAction = nullptr;
+
   pqViewMenuManager::buildMenu(); // deletes all prior menu items and
                                   // repopulates menu
 
@@ -113,6 +124,31 @@ void ViewMenuManager::buildMenu()
                                        this->View->GetProperty("AxesGrid"));
   this->connect(this->showAxisGridAction, SIGNAL(triggered(bool)),
                 SLOT(setShowAxisGrid(bool)));
+
+  {
+    QMenu* scaleLegendMenu = this->Menu->addMenu("Scale Legend");
+    this->scaleLegendCubeAction =
+      scaleLegendMenu->addAction("Show Legend as Cube");
+    this->scaleLegendRulerAction =
+      scaleLegendMenu->addAction("Show Legend as Ruler");
+    this->hideScaleLegendAction =
+      scaleLegendMenu->addAction("Hide Legend");
+    this->hideScaleLegendAction->setEnabled(hideScaleLegendIsEnabled);
+
+    connect(this->scaleLegendCubeAction, &QAction::triggered, this,
+            [&](){ this->setScaleLegendStyle(ScaleLegendStyle::Cube);
+              this->setScaleLegendVisibility(true);
+              this->hideScaleLegendAction->setEnabled(true); });
+
+    connect(this->scaleLegendRulerAction, &QAction::triggered, this,
+            [&](){ this->setScaleLegendStyle(ScaleLegendStyle::Ruler);
+              this->setScaleLegendVisibility(true);
+              this->hideScaleLegendAction->setEnabled(true); });
+
+    connect(this->hideScaleLegendAction, &QAction::triggered, this,
+            [&](){ this->setScaleLegendVisibility(false);
+              this->hideScaleLegendAction->setDisabled(true); });
+  }
 
   // Show view properties
   this->showViewPropertiesAction = this->Menu->addAction("View Properties");
