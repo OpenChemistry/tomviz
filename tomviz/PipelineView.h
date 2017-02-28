@@ -47,6 +47,7 @@ private slots:
   void setCurrent(Module* module);
   void setCurrent(Operator* op);
   void deleteItemsConfirm(const QModelIndexList& idxs);
+  void setModuleVisibility(const QModelIndexList& idxs, bool visible);
 };
 }
 

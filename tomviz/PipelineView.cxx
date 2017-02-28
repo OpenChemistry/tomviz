@@ -164,6 +164,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* markAsAction = nullptr;
   QAction* saveDataAction = nullptr;
   QAction* executeAction = nullptr;
+  QAction* hideAction = nullptr;
+  QAction* showAction = nullptr;
   bool allowReExecute = false;
   if (dataSource != nullptr) {
     cloneAction = contextMenu.addAction("Clone");
@@ -196,6 +198,20 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     executeAction = contextMenu.addAction("Re-execute pipeline");
   }
 
+  bool allModules = true;
+  foreach (auto i, selectedIndexes()) {
+    auto module = pipelineModel->module(i);
+    if (!module) {
+      allModules = false;
+      break;
+    }
+  }
+
+  if (allModules) {
+    hideAction = contextMenu.addAction("Hide");
+    showAction = contextMenu.addAction("Show");
+  }
+
   auto globalPoint = mapToGlobal(e->pos());
   auto selectedItem = contextMenu.exec(globalPoint);
   // Some action was selected, so process it.
@@ -209,6 +225,10 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (markAsAction != nullptr && markAsAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());
     ToggleDataTypeReaction::toggleDataType(mainWindow, dataSource);
+  } else if (hideAction && selectedItem == hideAction) {
+    setModuleVisibility(selectedIndexes(), false);
+  } else if (showAction && selectedItem == showAction) {
+    setModuleVisibility(selectedIndexes(), true);
   }
 }
 
@@ -366,5 +386,23 @@ void PipelineView::deleteItemsConfirm(const QModelIndexList& idxs)
      if (response == QMessageBox::Yes) {
        deleteItems(idxs);
      }
+}
+
+void PipelineView::setModuleVisibility(const QModelIndexList& idxs,
+                                       bool visible)
+{
+  auto pipelineModel = qobject_cast<PipelineModel*>(model());
+
+  Module* module = nullptr;
+  foreach (auto idx, idxs) {
+    module = pipelineModel->module(idx);
+    module->setVisibility(visible);
+  }
+
+  if (module) {
+    if (pqView* view = tomviz::convert<pqView*>(module->view())) {
+      view->render();
+    }
+  }
 }
 }
