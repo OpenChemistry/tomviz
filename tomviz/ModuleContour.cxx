@@ -105,7 +105,8 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PostInitializeProxy(this->ContourFilter);
   controller->RegisterPipelineProxy(this->ContourFilter);
 
-  // Set up a data resampler to add LabelMap values on the contour
+  // Set up a data resampler to add LabelMap values on the contour, and mark
+  // the LabelMap as categorical
   vtkSmartPointer<vtkSMProxy> probeProxy;
   probeProxy.TakeReference(pxm->NewProxy("filters", "ResampleWithDataset"));
 
@@ -114,14 +115,31 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PreInitializeProxy(this->ResampleFilter);
   vtkSMPropertyHelper(this->ResampleFilter, "Input").Set(data->producer());
   vtkSMPropertyHelper(this->ResampleFilter, "Source").Set(this->ContourFilter);
+  vtkSMPropertyHelper(this->ResampleFilter, "CategoricalData").Set(1);
   vtkSMPropertyHelper(this->ResampleFilter, "PassPointArrays").Set(1);
   controller->PostInitializeProxy(this->ResampleFilter);
   controller->RegisterPipelineProxy(this->ResampleFilter);
 
+  // Set up a point data to cell data filter and set the input data as
+  // categorical
+  vtkSmartPointer<vtkSMProxy> pdToCdProxy;
+  pdToCdProxy.TakeReference(pxm->NewProxy("filters", "PointDataToCellData"));
+
+  this->PointDataToCellDataFilter = vtkSMSourceProxy::SafeDownCast(pdToCdProxy);
+  Q_ASSERT(this->PointDataToCellDataFilter);
+  controller->PreInitializeProxy(this->PointDataToCellDataFilter);
+  vtkSMPropertyHelper(this->PointDataToCellDataFilter, "Input")
+    .Set(this->ResampleFilter);
+  vtkSMPropertyHelper(this->PointDataToCellDataFilter, "PassPointData").Set(1);
+  vtkSMPropertyHelper(this->PointDataToCellDataFilter,
+                      "CategoricalData").Set(1);
+  controller->PostInitializeProxy(this->PointDataToCellDataFilter);
+  controller->RegisterPipelineProxy(this->PointDataToCellDataFilter);
+
   // Create the representation for it. Show the unresampled contour filter to
   // start.
   this->ContourRepresentation =
-    controller->Show(this->ResampleFilter, 0, vtkView);
+    controller->Show(this->PointDataToCellDataFilter, 0, vtkView);
   Q_ASSERT(this->ContourRepresentation);
   vtkSMPropertyHelper(this->ContourRepresentation, "Representation")
     .Set("Surface");
@@ -168,6 +186,7 @@ void ModuleContour::updateColorMap()
 bool ModuleContour::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  controller->UnRegisterProxy(this->PointDataToCellDataFilter);
   controller->UnRegisterProxy(this->ResampleFilter);
   controller->UnRegisterProxy(this->ContourRepresentation);
   controller->UnRegisterProxy(this->ContourFilter);
@@ -337,6 +356,7 @@ void ModuleContour::propertyChanged()
   updateScalarColoring();
 
   this->ResampleFilter->UpdateVTKObjects();
+  this->PointDataToCellDataFilter->UpdateVTKObjects();
   this->ContourRepresentation->MarkDirty(this->ContourRepresentation);
   this->ContourRepresentation->UpdateVTKObjects();
 
@@ -410,6 +430,8 @@ std::string ModuleContour::getStringForProxy(vtkSMProxy* proxy)
     return "Representation";
   } else if (proxy == this->ResampleFilter.Get()) {
     return "Resample";
+  } else if (proxy == this->PointDataToCellDataFilter.Get()) {
+    return "PointDataToCellData";
   } else {
     qWarning("Gave bad proxy to module in save animation state");
     return "";
@@ -424,6 +446,8 @@ vtkSMProxy* ModuleContour::getProxyForString(const std::string& str)
     return this->ContourRepresentation.Get();
   } else if (str == "Contour") {
     return this->ContourFilter.Get();
+  } else if (str == "PointDataToCellData") {
+    return this->PointDataToCellDataFilter.Get();
   } else {
     return nullptr;
   }
@@ -491,7 +515,7 @@ void ModuleContour::updateScalarColoring()
       vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
   } else {
     colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName.c_str());
+      vtkDataObject::FIELD_ASSOCIATION_CELLS, arrayName.c_str());
   }
 }
 
