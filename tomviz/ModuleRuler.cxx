@@ -113,9 +113,9 @@ void ModuleRuler::addToPanel(QWidget* panel)
     tomviz::convert<pqView*>(ActiveObjects::instance().activeView()));
   m_Widget->select();
   layout->addStretch();
-  QObject::connect(m_Widget, &pqPropertyWidget::changeFinished, m_Widget,
+  QObject::connect(m_Widget.data(), &pqPropertyWidget::changeFinished, m_Widget.data(),
                    &pqPropertyWidget::apply);
-  QObject::connect(m_Widget, &pqPropertyWidget::changeFinished, this,
+  QObject::connect(m_Widget.data(), &pqPropertyWidget::changeFinished, this,
                    &ModuleRuler::endPointsUpdated);
 
   QLabel* label0 = new QLabel("Point 0 data value: ");
