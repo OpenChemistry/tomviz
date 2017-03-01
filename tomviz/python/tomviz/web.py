@@ -1,9 +1,12 @@
 import os
 import shutil
+import base64
 
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
 from paraview.web.dataset_builder import CompositeDataSetBuilder
+
+from tomviz import py2to3
 
 DATA_DIRECTORY = 'data'
 HTML_FILENAME = 'tomviz.html'
@@ -21,7 +24,7 @@ def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
         viewState[prop] = tuple(view.GetProperty(prop).GetData())
 
     # Camera handling
-    deltaPhi = 360 / nbPhi
+    deltaPhi = int(360 / nbPhi)
     deltaTheta = int(180 / nbTheta)
     thetaMax = deltaTheta
     while thetaMax + deltaTheta < 90:
@@ -75,7 +78,11 @@ def bundleDataToHTML(destinationPath):
                 if fname.endswith('.jpg'):
                     with open(fullPath, 'rb') as data:
                         dataContent = data.read()
-                        content = dataContent.encode("base64").replace('\n', '')
+                        if hasattr(dataContent, 'encode'):
+                            dataContent = dataContent.encode()
+
+                        content = base64.b64encode(dataContent)
+                        content = content.decode().replace('\n', '')
                 else:
                     with open(fullPath, 'r') as data:
                         content = data.read()
@@ -187,7 +194,7 @@ def get_volume_piecewise(view):
 
 
 def get_contour():
-    for key, value in simple.GetSources().iteritems():
+    for key, value in py2to3.iteritems(simple.GetSources()):
         if 'FlyingEdges' in key[0]:
             return value
     return None
@@ -279,7 +286,7 @@ def export_layers(destinationPath, camera):
         'scene': []
     }
 
-    for key, value in simple.GetSources().iteritems():
+    for key, value in py2to3.iteritems(simple.GetSources()):
         add_scene_item(sceneDescription, key[0], value, view)
 
     # Generate export
