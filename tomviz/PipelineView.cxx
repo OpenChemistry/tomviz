@@ -19,6 +19,7 @@
 #include "ActiveObjects.h"
 #include "CloneDataReaction.h"
 #include "EditOperatorDialog.h"
+#include "LoadDataReaction.h"
 #include "Module.h"
 #include "ModuleManager.h"
 #include "Operator.h"
@@ -152,10 +153,10 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   auto dataSource = pipelineModel->dataSource(idx);
   auto result = pipelineModel->result(idx);
 
-  bool childData =
-    (dataSource && qobject_cast<Operator*>(dataSource->parent())) ||
-    (result && qobject_cast<Operator*>(result->parent()));
-  if (childData) {
+  bool childDataSource =
+    (dataSource && qobject_cast<Operator*>(dataSource->parent()));
+
+  if (result && qobject_cast<Operator*>(result->parent())) {
     return;
   }
 
@@ -166,8 +167,11 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* executeAction = nullptr;
   QAction* hideAction = nullptr;
   QAction* showAction = nullptr;
+  QAction* cloneChildAction = nullptr;
   bool allowReExecute = false;
-  if (dataSource != nullptr) {
+
+  // Data source ( non child )
+  if (dataSource != nullptr && !childDataSource) {
     cloneAction = contextMenu.addAction("Clone");
     new CloneDataReaction(cloneAction);
     saveDataAction = contextMenu.addAction("Save Data");
@@ -186,8 +190,15 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
         break;
       }
     }
+    // Child data source
+  } else if (childDataSource) {
+    cloneChildAction = contextMenu.addAction("Clone");
   }
-  auto deleteAction = contextMenu.addAction("Delete");
+
+  QAction* deleteAction = nullptr;
+  if (!childDataSource) {
+    deleteAction = contextMenu.addAction("Delete");
+  }
 
   // Allow pipeline to be re-executed if we are dealing with a canceled
   // operator.
@@ -214,6 +225,12 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
 
   auto globalPoint = mapToGlobal(e->pos());
   auto selectedItem = contextMenu.exec(globalPoint);
+
+  // Nothing selected
+  if (!selectedItem) {
+    return;
+  }
+
   // Some action was selected, so process it.
   if (selectedItem == deleteAction) {
     deleteItemsConfirm(selectedIndexes());
@@ -229,6 +246,9 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     setModuleVisibility(selectedIndexes(), false);
   } else if (showAction && selectedItem == showAction) {
     setModuleVisibility(selectedIndexes(), true);
+  } else if (cloneChildAction && selectedItem == cloneChildAction) {
+    DataSource* newClone = dataSource->clone(false, true);
+    LoadDataReaction::dataSourceAdded(newClone);
   }
 }
 
