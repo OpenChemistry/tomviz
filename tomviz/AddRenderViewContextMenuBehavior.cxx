@@ -18,8 +18,11 @@
 
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
+#include <pqCameraLinkReaction.h>
+#include <pqManageLinksReaction.h>
 #include <pqRenderView.h>
 #include <pqServerManagerModel.h>
+#include <pqSetName.h>
 #include <pqView.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMProxy.h>
@@ -41,6 +44,15 @@ AddRenderViewContextMenuBehavior::AddRenderViewContextMenuBehavior(QObject* p)
   m_menu = new QMenu();
   QAction* bgColorAction = m_menu->addAction("Set Background Color");
   connect(bgColorAction, SIGNAL(triggered()), SLOT(onSetBackgroundColor()));
+
+  // Add separator
+  m_menu->addSeparator();
+
+  // Support camera linking/unlinking
+  new pqCameraLinkReaction(
+    m_menu->addAction("Add Camera Link...") << pqSetName("actionToolsAddCameraLink"));
+  new pqManageLinksReaction(
+    m_menu->addAction("Manage Camera Links...") << pqSetName("actionToolsManageCameraLinks"));
 }
 
 AddRenderViewContextMenuBehavior::~AddRenderViewContextMenuBehavior()
