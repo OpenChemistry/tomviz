@@ -173,6 +173,13 @@ signals:
   /// to translate the dataset.
   void displayPositionChanged(double newX, double newY, double newZ);
 
+  /// This signal is fired when the return value from isRunningAnOperator
+  /// becomes true
+  void operatorStarted();
+  /// This signal is fired when the return value from isRunningAnOperator
+  /// becomes false
+  void allOperatorsFinished();
+
 public slots:
   void dataModified();
 
