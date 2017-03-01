@@ -24,14 +24,14 @@
  * \brief Similar to HistogramWidget but keeps everything client side
  * (no proxy infrastructure is used). Displays a 1D gradient opacity
  * function.
- *
  */
 
-class vtkChartGradientOpacityEditor; 
+class vtkChartGradientOpacityEditor;
 class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkPiecewiseFunction;
 class vtkObject;
+class vtkSMProxy;
 class vtkTable;
 class QVTKOpenGLWidget;
 
@@ -45,7 +45,11 @@ public:
   explicit GradientOpacityWidget(QWidget* parent_ = nullptr);
   ~GradientOpacityWidget() override;
 
-  void setLUT(vtkPiecewiseFunction* transferFunc);
+  /**
+   * The proxy is only required to set the range. The actual opacity
+   * function for this widget is defined by gradientOpacity.
+   */
+  void setLUT(vtkPiecewiseFunction* gradientOpacity, vtkSMProxy* lut);
 
   virtual void setInputData(vtkTable* table, const char* x_, const char* y_);
 
@@ -56,7 +60,6 @@ public slots:
   virtual void onOpacityFunctionChanged();
 
 protected:
-
   vtkNew<vtkChartGradientOpacityEditor> m_histogramColorOpacityEditor;
   vtkNew<vtkContextView> m_histogramView;
   vtkPiecewiseFunction* m_scalarOpacityFunction = nullptr;
@@ -67,6 +70,5 @@ private:
 
   QVTKOpenGLWidget* m_qvtk;
 };
-
 }
 #endif // tomvizGradientOpacityWidget_h

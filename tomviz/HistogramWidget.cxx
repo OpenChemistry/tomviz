@@ -113,6 +113,15 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
   vLayout->addWidget(button);
 
+  m_gradientOpacityButton = new QToolButton;
+  m_gradientOpacityButton->setCheckable(true);
+  m_gradientOpacityButton->setEnabled(false);
+  m_gradientOpacityButton->setIcon(QIcon(":/icons/gradient_magnitude.png"));
+  m_gradientOpacityButton->setToolTip("Show/Hide Gradient Opacity");
+  connect(m_gradientOpacityButton, SIGNAL(toggled(bool)), this,
+          SIGNAL(enableGradientOpacity(bool)));
+  vLayout->addWidget(m_gradientOpacityButton);
+
   vLayout->addStretch(1);
 
   setLayout(hLayout);
@@ -348,5 +357,16 @@ void HistogramWidget::renderViews()
   if (view) {
     view->render();
   }
+}
+
+void HistogramWidget::setGradientOpacityChecked(bool checked)
+{
+  m_gradientOpacityButton->setChecked(checked);
+  emit m_gradientOpacityButton->toggled(checked);
+}
+
+void HistogramWidget::setGradientOpacityEnabled(bool enable)
+{
+  m_gradientOpacityButton->setEnabled(enable);
 }
 }

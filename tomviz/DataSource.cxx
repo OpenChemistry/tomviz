@@ -320,8 +320,7 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   // load the color map here to avoid resetData clobbering its range
   tomviz::deserialize(colorMap(), ns.child("ColorMap"));
   tomviz::deserialize(opacityMap(), ns.child("OpacityMap"));
-  tomviz::deserialize(gradientOpacityMap(),
-    ns.child("GradientOpacityMap")); 
+  tomviz::deserialize(gradientOpacityMap(), ns.child("GradientOpacityMap"));
 
   vtkSMPropertyHelper(colorMap(), "ScalarOpacityFunction").Set(opacityMap());
   colorMap()->UpdateVTKObjects();
@@ -757,6 +756,7 @@ void DataSource::resetData()
 {
   auto data = copyOriginalData();
   setData(data);
+  this->Internals->GradientOpacityMap->RemoveAllPoints();
   emit dataChanged();
 }
 

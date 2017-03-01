@@ -70,62 +70,49 @@ GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
                        vtkCommand::EndEvent, this,
                        SLOT(onOpacityFunctionChanged()));
 
+  // Offset margins to align with HistogramWidget
   auto hLayout = new QHBoxLayout(this);
   hLayout->addWidget(m_qvtk);
-  auto vLayout = new QVBoxLayout;
-  hLayout->addLayout(vLayout);
-  hLayout->setContentsMargins(0, 0, 5, 0);
-
-  vLayout->setContentsMargins(0, 0, 0, 0);
-  vLayout->addStretch(1);
-
-//  auto button = new QToolButton;
-//  button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRange24.png"));
-//  button->setToolTip("Reset data range");
-//  connect(button, SIGNAL(clicked()), this, SLOT(onResetRangeClicked()));
-//  vLayout->addWidget(button);
-//
-//  button = new QToolButton;
-//  button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRangeCustom24.png"));
-//  button->setToolTip("Specify data range");
-//  connect(button, SIGNAL(clicked()), this, SLOT(onCustomRangeClicked()));
-//  vLayout->addWidget(button);
-//
-//  button = new QToolButton;
-//  button->setIcon(QIcon(":/pqWidgets/Icons/pqInvert24.png"));
-//  button->setToolTip("Invert color map");
-//  connect(button, SIGNAL(clicked()), this, SLOT(onInvertClicked()));
-//  vLayout->addWidget(button);
-//
-//  button = new QToolButton;
-//  button->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites16.png"));
-//  button->setToolTip("Choose preset color map");
-//  connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
-//  vLayout->addWidget(button);
-//
-//  vLayout->addStretch(1);
+  hLayout->setContentsMargins(0, 0, 35, 0);
 
   setLayout(hLayout);
 }
 
 GradientOpacityWidget::~GradientOpacityWidget() = default;
 
-void GradientOpacityWidget::setLUT(vtkPiecewiseFunction* transferFunc)
+void GradientOpacityWidget::setLUT(vtkPiecewiseFunction* gradientOpac,
+                                   vtkSMProxy* proxy)
 {
   if (m_scalarOpacityFunction) {
-    m_eventLink->Disconnect(m_scalarOpacityFunction,
-                            vtkCommand::ModifiedEvent, this,
-                            SLOT(onOpacityFunctionChanged()));
+    m_eventLink->Disconnect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent,
+                            this, SLOT(onOpacityFunctionChanged()));
   }
 
-  m_scalarOpacityFunction = transferFunc;
-  m_eventLink->Connect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent,
-                         this, SLOT(onOpacityFunctionChanged()));
+  m_scalarOpacityFunction = gradientOpac;
+  if (!m_scalarOpacityFunction) {
+    return;
+  }
+
+  m_eventLink->Connect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent, this,
+                       SLOT(onOpacityFunctionChanged()));
+
+  // Set the default if it is an empty function
+  vtkPVDiscretizableColorTransferFunction* lut =
+    vtkPVDiscretizableColorTransferFunction::SafeDownCast(
+      proxy->GetClientSideObject());
+  const int numPoints = m_scalarOpacityFunction->GetSize();
+  if (numPoints == 0) {
+    double range[2];
+    lut->GetRange(range);
+    m_scalarOpacityFunction->AddPoint(range[0], 1.0);
+    m_scalarOpacityFunction->AddPoint(range[1], 1.0);
+  }
 }
 
 void GradientOpacityWidget::setInputData(vtkTable* table, const char* x_,
-                                   const char* y_)
+                                         const char* y_)
 {
+  m_histogramColorOpacityEditor->SetHistogramInputData(table, x_, y_);
   m_histogramColorOpacityEditor->SetOpacityFunction(m_scalarOpacityFunction);
   m_histogramView->Render();
 }
@@ -138,29 +125,7 @@ void GradientOpacityWidget::onOpacityFunctionChanged()
   foreach (pqView* view, views) {
     view->render();
   }
-
-  // Update the histogram
   m_histogramView->GetRenderWindow()->Render();
-
-  // Update the scalarOpacityFunc? TODO
-}
-
-void GradientOpacityWidget::onPresetClicked()
-{
-  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
-                        pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
-  dialog.setCustomizableLoadColors(true);
-  dialog.setCustomizableLoadOpacities(true);
-  dialog.setCustomizableUsePresetRange(true);
-  dialog.setCustomizableLoadAnnotations(false);
-  connect(&dialog, SIGNAL(applyPreset(const Json::Value&)),
-          SLOT(applyCurrentPreset()));
-  dialog.exec();
-}
-
-void GradientOpacityWidget::applyCurrentPreset()
-{
-  // The preset is supposed to be flat ones.
 }
 
 void GradientOpacityWidget::renderViews()

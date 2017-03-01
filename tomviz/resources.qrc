@@ -40,5 +40,6 @@
         <file>icons/pqMeasurementCube.png</file>
         <file>icons/pqPalette.png</file>
         <file>icons/pqPalette@2x.png</file>
+        <file>icons/gradient_opacity.png</file>
     </qresource>
 </RCC>

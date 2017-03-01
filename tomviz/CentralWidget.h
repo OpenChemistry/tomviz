@@ -69,6 +69,10 @@ private slots:
 private:
   Q_DISABLE_COPY(CentralWidget)
 
+  /// Configures the widget to be hidden depending on
+  /// the active module's support.
+  void configureGradientOpacity();
+
   /// Set the data source to from which the data is "histogrammed" and shown
   /// in the histogram view.
   void setDataSource(DataSource*);

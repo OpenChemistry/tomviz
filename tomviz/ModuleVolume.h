@@ -59,6 +59,8 @@ public:
 
   bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
+  bool supportsGradientOpacity() override { return true; }
+
 protected slots:
   void dataChanged();
 
@@ -75,6 +77,7 @@ private:
   vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   ModuleVolumeWidget* m_controllers = nullptr;
+  bool m_gradientOpacityEnabled = true;
 
 private slots:
   /**
@@ -89,6 +92,7 @@ private slots:
   void onDiffuseChanged(const double value);
   void onSpecularChanged(const double value);
   void onSpecularPowerChanged(const double value);
+  void onGradientOpacityChanged(const bool enable);
 };
 }
 

@@ -51,9 +51,6 @@ public:
   // Get an axis from the histogram chart.
   vtkAxis* GetHistogramAxis(int axis);
 
-  // Get the current contour value
-  double GetContourValue();
-
   // Paint event for the editor.
   virtual bool Paint(vtkContext2D* painter) override;
 

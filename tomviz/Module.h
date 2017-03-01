@@ -106,6 +106,8 @@ public:
   static bool deserializeAnimationCue(vtkSMProxy* proxy,
                                       const pugi::xml_node& ns);
 
+  virtual bool supportsGradientOpacity() { return false; }
+
 public slots:
   /// Set the visibility for this module. Subclasses should override this method
   /// show/hide all representations created for this module.

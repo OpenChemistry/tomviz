@@ -33,12 +33,12 @@
 #include <vtkImageData.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkNew.h>
-#include <vtkPiecewiseFunction.h>
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
 #include <vtkPVXMLElement.h>
 #include <vtkPVXMLParser.h>
+#include <vtkPiecewiseFunction.h>
 #include <vtkPoints.h>
 #include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
@@ -276,14 +276,12 @@ bool serialize(vtkPiecewiseFunction* func, pugi::xml_node& out)
   const int numPoints = func->GetSize();
   pugi::xml_node pointsNode = out.append_child("Points");
   pointsNode.append_attribute("number_of_elements") = numPoints;
-  
-  for (int pointIdx = 0; pointIdx < numPoints; pointIdx++)
-  {
-    double values[4] = {0.0};
+
+  for (int pointIdx = 0; pointIdx < numPoints; pointIdx++) {
+    double values[4] = { 0.0 };
     func->GetNodeValue(pointIdx, values);
 
-    for (int valueIdx = 0; valueIdx < 4; valueIdx++)
-    {
+    for (int valueIdx = 0; valueIdx < 4; valueIdx++) {
       pugi::xml_node elemNode = pointsNode.append_child("Element");
       elemNode.append_attribute("index") = pointIdx * 4 + valueIdx;
       elemNode.append_attribute("value") = values[valueIdx];

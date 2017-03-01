@@ -55,7 +55,7 @@ public:
 
 vtkStandardNewMacro(vtkChartGradientOpacityEditor)
 
-vtkChartGradientOpacityEditor::vtkChartGradientOpacityEditor()
+  vtkChartGradientOpacityEditor::vtkChartGradientOpacityEditor()
 {
   this->Private = new PIMPL();
   this->Private->Self = this;
@@ -67,7 +67,6 @@ vtkChartGradientOpacityEditor::vtkChartGradientOpacityEditor()
 
   this->HistogramChart->SetHiddenAxisBorder(10);
   this->HistogramChart->SetLayoutStrategy(vtkChart::AXES_TO_RECT);
-
   this->AddItem(this->HistogramChart.Get());
 
   // Forward events from internal charts to observers of this object
@@ -84,12 +83,9 @@ void vtkChartGradientOpacityEditor::SetHistogramInputData(
   vtkTable* table, const char* xAxisColumn, const char* yAxisColumn)
 {
   this->HistogramChart->SetHistogramInputData(table, xAxisColumn, yAxisColumn);
-
-  // The histogram chart bottom axis range was updated in the call above.
-  // Set the same range for the color bar bottom axis here.
-  vtkAxis* histogramBottomAxis = this->HistogramChart->GetAxis(vtkAxis::BOTTOM);
-  double axisRange[2];
-  histogramBottomAxis->GetRange(axisRange);
+  this->HistogramChart->SetHistogramVisible(false);
+  this->HistogramChart->GetAxis(vtkAxis::LEFT)->SetRange(0.0, 1.0);
+  this->HistogramChart->GetAxis(vtkAxis::LEFT)->SetLogScale(false);
 
   // The data range may change and cause the labels to change. Hence, update
   // the geometry.
@@ -101,8 +97,7 @@ void vtkChartGradientOpacityEditor::SetScalarVisibility(bool visible)
   this->HistogramChart->SetScalarVisibility(visible);
 }
 
-void vtkChartGradientOpacityEditor::SelectColorArray(
-  const char* arrayName)
+void vtkChartGradientOpacityEditor::SelectColorArray(const char* arrayName)
 {
   this->HistogramChart->SelectColorArray(arrayName);
 }
@@ -116,11 +111,6 @@ void vtkChartGradientOpacityEditor::SetOpacityFunction(
 vtkAxis* vtkChartGradientOpacityEditor::GetHistogramAxis(int axis)
 {
   return this->HistogramChart->GetAxis(axis);
-}
-
-double vtkChartGradientOpacityEditor::GetContourValue()
-{
-  return this->HistogramChart->GetContourValue();
 }
 
 bool vtkChartGradientOpacityEditor::Paint(vtkContext2D* painter)
@@ -146,17 +136,14 @@ bool vtkChartGradientOpacityEditor::Paint(vtkContext2D* painter)
                             ->GetBoundingRect(painter)
                             .GetWidth();
     x += leftAxisWidth;
-
-    float colorBarThickness = 20;
     float plotWidth = sceneWidth - x - this->Borders[vtkAxis::RIGHT];
 
-    vtkRectf colorTransferFunctionChartSize(x, y, plotWidth, colorBarThickness);
-
+    this->GetHistogramAxis(vtkAxis::BOTTOM)->Update();
     float bottomAxisHeight = this->GetHistogramAxis(vtkAxis::BOTTOM)
                                ->GetBoundingRect(painter)
                                .GetHeight();
     float verticalMargin = bottomAxisHeight;
-    y += colorBarThickness + verticalMargin - 5;
+    y += verticalMargin - 5;
     vtkRectf histogramChart(x, y, plotWidth,
                             sceneHeight - y - this->Borders[vtkAxis::TOP]);
     this->HistogramChart->SetSize(histogramChart);

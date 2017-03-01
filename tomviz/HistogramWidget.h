@@ -27,6 +27,7 @@ class vtkPiecewiseFunction;
 class vtkObject;
 class vtkTable;
 
+class QToolButton;
 class QVTKOpenGLWidget;
 
 class vtkPVDiscretizableColorTransferFunction;
@@ -47,8 +48,13 @@ public:
 
   void setInputData(vtkTable* table, const char* x_, const char* y_);
 
+  void setGradientOpacityEnabled(bool enable);
+
+  void setGradientOpacityChecked(bool checked);
+
 signals:
   void colorMapUpdated();
+  void enableGradientOpacity(bool);
 
 public slots:
   void onScalarOpacityFunctionChanged();
@@ -70,6 +76,7 @@ private:
   vtkPVDiscretizableColorTransferFunction* m_LUT = nullptr;
   vtkPiecewiseFunction* m_scalarOpacityFunction = nullptr;
   vtkSMProxy* m_LUTProxy = nullptr;
+  QToolButton* m_gradientOpacityButton = nullptr;
 
   QVTKOpenGLWidget* m_qvtk;
 };
