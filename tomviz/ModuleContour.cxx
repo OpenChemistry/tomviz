@@ -78,7 +78,7 @@ ModuleContour::~ModuleContour()
 
 QIcon ModuleContour::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqIsosurface24.png");
+  return QIcon(":/icons/pqIsosurface.png");
 }
 
 bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)

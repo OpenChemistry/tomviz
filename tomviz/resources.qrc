@@ -2,11 +2,10 @@
     <qresource prefix="/">
         <file>icons/tomviz.png</file>
         <file>icons/tomvizfull.png</file>
-	<file>icons/pqEyeballClosed.png</file>
-	<file>icons/pqEyeballClosed@2x.png</file>
-	<file>icons/pqEyeball.png</file>
-	<file>icons/pqEyeball@2x.png</file>
-        <file>icons/spinner.png</file>
+        <file>icons/pqEyeballClosed.png</file>
+        <file>icons/pqEyeballClosed@2x.png</file>
+        <file>icons/pqEyeball.png</file>
+        <file>icons/pqEyeball@2x.png</file>
         <file>icons/orthoslice.png</file>
         <file>icons/orthoslice@2x.png</file>
         <file>icons/move_objects.png</file>
@@ -21,5 +20,19 @@
         <file>icons/question@2x.png</file>
         <file>icons/red_cross.png</file>
         <file>icons/red_cross@2x.png</file>
+        <file>icons/pqVolumeData.png</file>
+        <file>icons/pqVolumeData@2x.png</file>
+        <file>icons/pqIsosurface.png</file>
+        <file>icons/pqIsosurface@2x.png</file>
+        <file>icons/pqProbeLocation.png</file>
+        <file>icons/pqProbeLocation@2x.png</file>
+        <file>icons/pqSlice.png</file>
+        <file>icons/pqSlice@2x.png</file>
+        <file>icons/pqThreshold.png</file>
+        <file>icons/pqThreshold@2x.png</file>
+        <file>icons/pqInspect.png</file>
+        <file>icons/pqInspect@2x.png</file>
+        <file>icons/spinner.png</file>
+        <file>icons/spinner@2x.png</file>
     </qresource>
 </RCC>

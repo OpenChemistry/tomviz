@@ -60,7 +60,7 @@ ModuleVolume::~ModuleVolume()
 
 QIcon ModuleVolume::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqVolumeData16.png");
+  return QIcon(":/icons/pqVolumeData.png");
 }
 
 bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)

@@ -341,7 +341,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
     if (index.column() == Column::label) {
       switch (role) {
         case Qt::DecorationRole:
-          return QIcon(":/pqWidgets/Icons/pqInspect22.png");
+          return QIcon(":/icons/pqInspect.png");
         case Qt::DisplayRole:
           return QFileInfo(dataSource->filename()).baseName();
         case Qt::ToolTipRole:
