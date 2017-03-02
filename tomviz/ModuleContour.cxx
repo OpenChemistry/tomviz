@@ -237,6 +237,19 @@ void ModuleContour::addToPanel(QWidget* panel)
     delete panel->layout();
   }
 
+//  QVBoxLayout* layout = new QVBoxLayout;
+//  panel->setLayout(layout);
+//
+//  m_controllers = new ModuleContourWidget;
+//  layout->addWidget(m_controllers);
+//
+//  m_controllers->setLighting(static_cast<bool>(m_propertyroperty->GetShade()));
+//  m_controllers->setAmbient(m_volumeProperty->GetAmbient());
+//  m_controllers->setDiffuse(m_volumeProperty->GetDiffuse());
+//  m_controllers->setSpecular(m_volumeProperty->GetSpecular());
+//  m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
+
+/////////////////////////////////////
   QFormLayout* layout = new QFormLayout;
 
   // Solid color
@@ -336,6 +349,7 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   updateGUI();
   propertyChanged();
+/////////////////////////////////////
 }
 
 void ModuleContour::propertyChanged()
