@@ -272,6 +272,7 @@ set(python_files
   BinVolumeByTwo.py
   BinTiltSeriesByTwo.py
   DefaultITKTransform.py
+  BinaryMinMaxCurvatureFlow.py
   )
 
 set(json_files
@@ -302,6 +303,7 @@ set(json_files
   Recon_WBP.json
   Shift3D.json
   ShiftTiltSeriesRandomly.json
+  BinaryMinMaxCurvatureFlow.json
   )
 
 set(resource_files

@@ -78,6 +78,7 @@ void DataTransformMenu::buildMenu()
   QAction* binaryErodeAction = menu->addAction("Binary Erode");
   QAction* binaryOpenAction = menu->addAction("Binary Open");
   QAction* binaryCloseAction = menu->addAction("Binary Close");
+  QAction* binaryMinMaxCurvatureFlowAction = menu->addAction("Binary MinMax Curvature Flow");
   menu->addSeparator();
   QAction* labelObjectAttributesAction =
     menu->addAction("Label Object Attributes");
@@ -142,6 +143,9 @@ void DataTransformMenu::buildMenu()
   new AddPythonTransformReaction(binaryCloseAction, "Binary Close",
                                  readInPythonScript("BinaryClose"), false,
                                  false, readInJSONDescription("BinaryClose"));
+  new AddPythonTransformReaction(binaryMinMaxCurvatureFlowAction, "Binary MinMax Curvature Flow",
+                                 readInPythonScript("BinaryMinMaxCurvatureFlow"), false,
+                                 false, readInJSONDescription("BinaryMinMaxCurvatureFlow"));
 
   new AddPythonTransformReaction(
     labelObjectAttributesAction, "Label Object Attributes",
