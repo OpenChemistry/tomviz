@@ -584,6 +584,7 @@ void AlignWidget::changeSlice(int delta)
   }
   this->currentSlice->setValue(i);
   this->setSlice(i, false);
+  updateReference();
 }
 
 void AlignWidget::currentSliceEdited()
