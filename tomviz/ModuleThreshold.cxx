@@ -49,7 +49,7 @@ ModuleThreshold::~ModuleThreshold()
 
 QIcon ModuleThreshold::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqThreshold24.png");
+  return QIcon(":/icons/pqThreshold.png");
 }
 
 bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
