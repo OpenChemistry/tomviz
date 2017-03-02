@@ -17,7 +17,13 @@
 #include "ui_ModuleContourWidget.h"
 #include "ui_LightingParametersForm.h"
 
-#include "vtkVolumeMapper.h"
+#include "vtkSMProxy.h"
+#include "vtkSMSourceProxy.h"
+
+#include "pqPropertyLinks.h"
+#include "pqWidgetRangeDomain.h"
+#include "pqSignalAdaptors.h"
+
 
 namespace tomviz {
 
@@ -29,66 +35,103 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
 
   QWidget* lightingWidget = new QWidget;
   m_uiLighting->setupUi(lightingWidget);
+  m_uiLighting->gbLighting->setCheckable(false);
   QWidget::layout()->addWidget(lightingWidget);
+
+  m_ui->colorChooser->setShowAlphaChannel(false);
+
+  const int leWidth = 50;
+  m_ui->sliValue->setLineEditWidth(leWidth);
+  m_ui->sliOpacity->setLineEditWidth(leWidth);
+  m_uiLighting->sliAmbient->setLineEditWidth(leWidth);
+  m_uiLighting->sliDiffuse->setLineEditWidth(leWidth);
+  m_uiLighting->sliSpecular->setLineEditWidth(leWidth);
+  m_uiLighting->sliSpecularPower->setLineEditWidth(leWidth);
+
+  // TODO Ambient and diffuse are not playing well with coloring by data
+  // (non-solid color).
+  m_uiLighting->sliAmbient->hide();
+  m_uiLighting->laAmbient->hide();
+  m_uiLighting->sliDiffuse->hide();
+  m_uiLighting->laDiffuse->hide();
+
+  m_uiLighting->sliSpecularPower->setMaximum(150);
+  m_uiLighting->sliSpecularPower->setMinimum(1);
+  m_uiLighting->sliSpecularPower->setResolution(200);
 
   QStringList labelsRepre;
   labelsRepre << tr("Surface") << tr("Wireframe") << tr("Points");
   m_ui->cbRepresentation->addItems(labelsRepre);
 
-  connect(m_uiLighting->gbLighting, SIGNAL(toggled(bool)), this,
-          SIGNAL(lightingToggled(const bool)));
-  connect(m_uiLighting->sliAmbient, SIGNAL(sliderChanged(int)), this,
-          SLOT(onAmbientChanged(const int)));
-  connect(m_uiLighting->sliDiffuse, SIGNAL(sliderChanged(int)), this,
-          SLOT(onDiffuseChanged(const int)));
-  connect(m_uiLighting->sliSpecular, SIGNAL(sliderChanged(int)), this,
-          SLOT(onSpecularChanged(const int)));
-  connect(m_uiLighting->sliSpecularPower, SIGNAL(sliderChanged(int)), this,
-          SLOT(onSpecularPowerChanged(const int)));
+  connect(m_uiLighting->sliAmbient, SIGNAL(valueEdited(double)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_uiLighting->sliDiffuse, SIGNAL(valueEdited(double)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_uiLighting->sliSpecular, SIGNAL(valueEdited(double)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_uiLighting->sliSpecularPower, SIGNAL(valueEdited(double)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_ui->sliValue, SIGNAL(valueEdited(double)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_ui->cbRepresentation, SIGNAL(currentTextChanged(const QString&)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_ui->sliOpacity, SIGNAL(valueEdited(double)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_ui->colorChooser, SIGNAL(chosenColorChanged(const QColor&)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_ui->cbColorBy, SIGNAL(currentIndexChanged(int)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_ui->cbSelectColor, SIGNAL(toggled(bool)), this,
+          SIGNAL(useSolidColor(const bool)));
 }
 
-void ModuleContourWidget::setLighting(const bool enable)
+void ModuleContourWidget::addPropertyLinks(pqPropertyLinks& links,
+  vtkSMProxy* contourRepresentation, vtkSMSourceProxy* contourFilter)
 {
-  m_uiLighting->gbLighting->setChecked(enable);
+  links.addPropertyLink(m_ui->sliValue, "value", SIGNAL(valueEdited(double)),
+    contourFilter, contourFilter->GetProperty("ContourValues"), 0);
+  new pqWidgetRangeDomain(m_ui->sliValue, "minimum", "maximum",
+    contourFilter->GetProperty("ContourValues"), 0);
+
+  pqSignalAdaptorComboBox* adaptor = new pqSignalAdaptorComboBox(
+    m_ui->cbRepresentation);
+  links.addPropertyLink(adaptor, "currentText",
+    SIGNAL(currentTextChanged(QString)), contourRepresentation,
+    contourRepresentation->GetProperty("Representation"));
+
+  links.addPropertyLink(m_ui->sliOpacity, "value", SIGNAL(valueEdited(double)),
+    contourRepresentation, contourRepresentation->GetProperty("Opacity"), 0);
+
+  links.addPropertyLink(m_uiLighting->sliAmbient, "value", SIGNAL(valueEdited(double)),
+    contourRepresentation, contourRepresentation->GetProperty("Ambient"), 0);
+
+  links.addPropertyLink(m_uiLighting->sliDiffuse, "value", SIGNAL(valueEdited(double)),
+    contourRepresentation, contourRepresentation->GetProperty("Diffuse"), 0);
+
+  links.addPropertyLink(m_uiLighting->sliSpecular, "value", SIGNAL(valueEdited(double)),
+    contourRepresentation, contourRepresentation->GetProperty("Specular"), 0);
+
+  links.addPropertyLink(m_uiLighting->sliSpecularPower, "value", SIGNAL(valueEdited(double)),
+    contourRepresentation, contourRepresentation->GetProperty("SpecularPower"), 0);
+
+  // Surface uses DiffuseColor and Wireframe uses AmbientColor so we have to set
+  // both
+  links.addPropertyLink(m_ui->colorChooser, "chosenColorRgbF",
+    SIGNAL(chosenColorChanged(const QColor&)), contourRepresentation,
+    contourRepresentation->GetProperty("DiffuseColor"));
+
+  links.addPropertyLink(m_ui->colorChooser, "chosenColorRgbF",
+    SIGNAL(chosenColorChanged(const QColor&)), contourRepresentation,
+    contourRepresentation->GetProperty("AmbientColor"));
 }
 
-void ModuleContourWidget::setAmbient(const double value)
+void ModuleContourWidget::setUseSolidColor(const bool useSolid)
 {
-  m_uiLighting->sliAmbient->setValue(static_cast<int>(value * 100));
+  m_ui->cbSelectColor->setChecked(useSolid);
 }
 
-void ModuleContourWidget::setDiffuse(const double value)
+QComboBox* ModuleContourWidget::getColorByComboBox()
 {
-  m_uiLighting->sliDiffuse->setValue(static_cast<int>(value * 100));
-}
-
-void ModuleContourWidget::setSpecular(const double value)
-{
-  m_uiLighting->sliSpecular->setValue(static_cast<int>(value * 100));
-}
-
-void ModuleContourWidget::setSpecularPower(const double value)
-{
-  m_uiLighting->sliSpecularPower->setValue(static_cast<int>(value * 100));
-}
-
-void ModuleContourWidget::onAmbientChanged(const int value)
-{
-  emit ambientChanged(static_cast<double>(value) / 100.0);
-}
-
-void ModuleContourWidget::onDiffuseChanged(const int value)
-{
-  emit diffuseChanged(static_cast<double>(value) / 100.0);
-}
-
-void ModuleContourWidget::onSpecularChanged(const int value)
-{
-  emit specularChanged(static_cast<double>(value) / 100.0);
-}
-
-void ModuleContourWidget::onSpecularPowerChanged(const int value)
-{
-  emit specularPowerChanged(static_cast<double>(value) / 2.0);
+  return m_ui->cbColorBy;
 }
 }

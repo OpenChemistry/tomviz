@@ -23,6 +23,8 @@ class vtkSMProxy;
 class vtkSMSourceProxy;
 namespace tomviz {
 
+class ModuleContourWidget;
+
 class ModuleContour : public Module
 {
   Q_OBJECT
@@ -71,14 +73,15 @@ protected:
   class Private;
   Private* Internals;
 
+  ModuleContourWidget* m_controllers = nullptr;
+
   QString Representation;
 
 private slots:
   /// invoked whenever a property widget changes
-  void propertyChanged();
+  void onPropertyChanged();
 
-  /// The parameter should really be a bool, but the signal gives an int
-  void setUseSolidColor(int useSolidColor);
+  void setUseSolidColor(const bool useSolidColor);
 
   /// Reset the UI for widgets not connected to a proxy property
   void updateGUI();

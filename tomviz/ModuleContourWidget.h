@@ -23,14 +23,20 @@
 /**
  * \brief UI layer of ModuleContour.
  *
- * Signals are forwarded to the actual actuators on the mapper in ModuleContour
- * This class is intended to contain only logic related to UI actions.
+ * Signals are forwarded to  ModuleContour or the proxies. This class is intended
+ * to contain only logic related to UI actions.
  */
 
 namespace Ui {
 class ModuleContourWidget;
 class LightingParametersForm;
 }
+
+class QComboBox;
+
+class pqPropertyLinks;
+class vtkSMProxy;
+class vtkSMSourceProxy;
 
 namespace tomviz {
 
@@ -44,27 +50,35 @@ public:
 
   //@{
   /**
-   * UI update methods. The actual model state is stored in ModelVolume (either
-   * in the mapper or serialized), so the UI needs to be updated if the state
-   * changes or when constructing the UI.
+   * UI update methods. The actual model state is stored in ModuleContour for
+   * these parameters, so the UI needs to be updated if the state changes or
+   * when constructing the UI.
    */
-  void setLighting(const bool enable);
-  void setAmbient(const double value);
-  void setDiffuse(const double value);
-  void setSpecular(const double value);
-  void setSpecularPower(const double value);
+  void setUseSolidColor(const bool useSolid);
   //@}
+
+  /**
+   * Link proxy properties to UI.
+   */
+  void addPropertyLinks(pqPropertyLinks& links,
+    vtkSMProxy* contourRepresentation, vtkSMSourceProxy* contourFilter);
+
+  /**
+   * Expose 'ColorBy' combo box to be populated by the source. 
+   */
+  QComboBox* getColorByComboBox();
 
 signals:
   //@{
   /**
    * Forwarded signals.
    */
-  void lightingToggled(const bool state);
-  void ambientChanged(const double value);
-  void diffuseChanged(const double value);
-  void specularChanged(const double value);
   void specularPowerChanged(const double value);
+  void useSolidColor(const bool value);
+  /**
+   * All proxy properties should use this signal.
+   */
+  void propertyChanged();
   //@}
 
 private:
@@ -73,12 +87,6 @@ private:
 
   std::shared_ptr<Ui::ModuleContourWidget> m_ui;
   std::shared_ptr<Ui::LightingParametersForm> m_uiLighting;
-
-private slots:
-  void onAmbientChanged(const int value);
-  void onDiffuseChanged(const int value);
-  void onSpecularChanged(const int value);
-  void onSpecularPowerChanged(const int value);
 };
 }
 #endif
