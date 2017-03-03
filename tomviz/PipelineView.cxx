@@ -136,7 +136,9 @@ PipelineView::~PipelineView() = default;
 void PipelineView::keyPressEvent(QKeyEvent* e)
 {
   if (e->key() == Qt::Key_Delete || e->key() == Qt::Key_Backspace) {
-    deleteItemsConfirm(selectedIndexes());
+    if (enableDeleteItems(selectedIndexes())) {
+      deleteItemsConfirm(selectedIndexes());
+    }
   } else {
     QTreeView::keyPressEvent(e);
   }
@@ -199,13 +201,13 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   if (!childDataSource) {
     deleteAction = contextMenu.addAction("Delete");
   }
+  if (deleteAction && !enableDeleteItems(selectedIndexes())) {
+    deleteAction->setEnabled(false);
+  }
 
   // Allow pipeline to be re-executed if we are dealing with a canceled
   // operator.
   auto op = pipelineModel->op(idx);
-  if (op && op->dataSource()->isRunningAnOperator()) {
-    deleteAction->setEnabled(false);
-  }
   allowReExecute = allowReExecute || (op && op->isCanceled());
 
   if (allowReExecute) {
@@ -409,6 +411,22 @@ void PipelineView::deleteItemsConfirm(const QModelIndexList& idxs)
      if (response == QMessageBox::Yes) {
        deleteItems(idxs);
      }
+}
+
+bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
+{
+  auto pipelineModel = qobject_cast<PipelineModel*>(model());
+  for (auto& index : idxs) {
+    auto dataSource = pipelineModel->dataSource(index);
+    if (dataSource && dataSource->isRunningAnOperator()) {
+      return false;
+    }
+    auto op = pipelineModel->op(index);
+    if (op && op->dataSource()->isRunningAnOperator()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void PipelineView::setModuleVisibility(const QModelIndexList& idxs,

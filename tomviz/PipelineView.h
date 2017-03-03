@@ -38,6 +38,7 @@ protected:
   void currentChanged(const QModelIndex& current,
                       const QModelIndex& previous) override;
   void deleteItems(const QModelIndexList& idxs);
+  bool enableDeleteItems(const QModelIndexList& idxs);
 
 private slots:
   void rowActivated(const QModelIndex& idx);
