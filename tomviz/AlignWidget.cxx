@@ -445,15 +445,14 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->prevButton->setCheckable(true);
   this->nextButton->setCheckable(true);
   this->statButton->setCheckable(true);
-  this->statRefNum = new QSpinBox;
-  this->statRefNum->setValue(startRef);
-  this->statRefNum->setRange(this->minSliceNum, this->maxSliceNum);
-  connect(this->statRefNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
-  grid->addWidget(this->statRefNum, gridrow, 1, 1, 1, Qt::AlignLeft);
-  this->statRefNum->setEnabled(false);
-  connect(this->statButton, SIGNAL(toggled(bool)), this->statRefNum,
+  this->refNum = new QSpinBox;
+  this->refNum->setValue(startRef);
+  this->refNum->setRange(this->minSliceNum, this->maxSliceNum);
+  connect(this->refNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
+  grid->addWidget(this->refNum, gridrow, 1, 1, 1, Qt::AlignLeft);
+  this->refNum->setEnabled(false);
+  connect(this->statButton, SIGNAL(toggled(bool)), this->refNum,
           SLOT(setEnabled(bool)));
-  connect(this->statButton, SIGNAL(toggled(bool)), SLOT(updateReference()));
 
   ++gridrow;
   grid->addWidget(this->prevButton, gridrow, 1, 1, 1, Qt::AlignLeft);
@@ -466,7 +465,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->referenceSliceMode->addButton(this->statButton);
   this->referenceSliceMode->setExclusive(true);
   this->prevButton->setChecked(true);
-
+  connect(this->referenceSliceMode, SIGNAL(buttonClicked(int)), SLOT(updateReference()));
 
   // Slice offsets
   ++gridrow;
@@ -626,7 +625,7 @@ void AlignWidget::updateReference()
   } else if (this->nextButton->isChecked()) {
     refSlice = this->currentSlice->value() + 1;
   } else if (this->statButton->isChecked()) {
-    refSlice = this->statRefNum->value();
+    refSlice = this->refNum->value();
   }
 
   // This makes the stack circular.
@@ -636,7 +635,7 @@ void AlignWidget::updateReference()
     refSlice = max;
   }
 
-  this->statRefNum->setValue(refSlice);
+  this->refNum->setValue(refSlice);
 
   this->referenceSlice = refSlice;
   for (int i = 0; i < this->modes.length(); ++i) {
