@@ -418,7 +418,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
           SLOT(currentSliceEdited()));
   grid->addWidget(this->currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
   label = new QLabel("Shortcut: (A/S)");
-  grid->addWidget(label, gridrow, 2, 1, 1, Qt::AlignRight);
+  grid->addWidget(label, gridrow, 2, 1, 1, Qt::AlignLeft);
 
   ++gridrow;
   label = new QLabel("Frame rate (fps):");
@@ -439,18 +439,18 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->prevButton->setCheckable(true);
   this->nextButton->setCheckable(true);
   this->statButton->setCheckable(true);
-  grid->addWidget(this->prevButton, gridrow, 1, 1, 1, Qt::AlignLeft);
-  grid->addWidget(this->nextButton, gridrow, 2, 1, 1, Qt::AlignLeft);
-  ++gridrow;
-  grid->addWidget(this->statButton, gridrow, 1, 1, 1, Qt::AlignLeft);
   this->statRefNum = new QSpinBox;
   this->statRefNum->setValue(0);
   this->statRefNum->setRange(this->minSliceNum, this->maxSliceNum);
   connect(this->statRefNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
-  grid->addWidget(this->statRefNum, gridrow, 2, 1, 1, Qt::AlignLeft);
+  grid->addWidget(this->statRefNum, gridrow, 1, 1, 1, Qt::AlignLeft);
   this->statRefNum->setEnabled(false);
   connect(this->statButton, SIGNAL(toggled(bool)), this->statRefNum,
           SLOT(setEnabled(bool)));
+  ++gridrow;
+  grid->addWidget(this->prevButton, gridrow, 1, 1, 1, Qt::AlignLeft);
+  grid->addWidget(this->nextButton, gridrow, 2, 1, 1, Qt::AlignLeft);
+  grid->addWidget(this->statButton, gridrow, 3, 1, 1, Qt::AlignLeft);
 
   this->referenceSliceMode = new QButtonGroup;
   this->referenceSliceMode->addButton(this->prevButton);
@@ -626,6 +626,9 @@ void AlignWidget::updateReference()
   } else if (refSlice < min) {
     refSlice = max;
   }
+
+  this->statRefNum->setValue(refSlice);
+
   this->referenceSlice = refSlice;
   for (int i = 0; i < this->modes.length(); ++i) {
     this->modes[i]->referenceSliceUpdated(referenceSlice,
