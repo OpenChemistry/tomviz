@@ -20,9 +20,6 @@ install:
   - set TOMVIZ_TEST_PYTHON_EXECUTABLE=C:\Python27\python.exe
   - python -m pip install -r %APPVEYOR_BUILD_FOLDER%\acquisition\requirements-dev.txt
   - python %APPVEYOR_BUILD_FOLDER%\scripts\appveyor\cache_restore.py
-  # Get the GitHub branch name
-  - set GITHUB_PR_BRANCH=master
-  - ps: IF ($env:APPVEYOR_PULL_REQUEST_NUMBER) { $env:GITHUB_PR_BRANCH = python $env:APPVEYOR_BUILD_FOLDER\scripts\common\pr_number_to_ref.py $env:APPVEYOR_PULL_REQUEST_NUMBER }
 
 build_script:
   # Setup PATH
