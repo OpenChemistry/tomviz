@@ -71,11 +71,13 @@ void DeleteDataReaction::activeDataSourceChanged()
                           &DataSource::allOperatorsFinished, this, nullptr);
     }
     m_activeDataSource = source;
-    QObject::connect(m_activeDataSource.data(), &DataSource::operatorStarted,
-                     this, &DeleteDataReaction::updateEnableState);
-    QObject::connect(m_activeDataSource.data(),
-                     &DataSource::allOperatorsFinished, this,
-                     &DeleteDataReaction::updateEnableState);
+    if (m_activeDataSource) {
+      QObject::connect(m_activeDataSource.data(), &DataSource::operatorStarted,
+                       this, &DeleteDataReaction::updateEnableState);
+      QObject::connect(m_activeDataSource.data(),
+                       &DataSource::allOperatorsFinished, this,
+                       &DeleteDataReaction::updateEnableState);
+    }
   }
   updateEnableState();
 }
