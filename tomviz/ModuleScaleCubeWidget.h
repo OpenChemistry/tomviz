@@ -13,32 +13,32 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizModuleMeasurementCubeWidget_h
-#define tomvizModuleMeasurementCubeWidget_h
+#ifndef tomvizModuleScaleCubeWidget_h
+#define tomvizModuleScaleCubeWidget_h
 
 #include <QScopedPointer>
 #include <QWidget>
 
 /**
- * \brief UI layer of ModuleMeasurementCube.
+ * \brief UI layer of ModuleScaleCube.
  *
- * Signals are forwarded to the actual actuators in ModuleMeasurementCube.
+ * Signals are forwarded to the actual actuators in ModuleScaleCube.
  * This class is intended to contain only logic related to UI actions.
  */
 
 namespace Ui {
-class ModuleMeasurementCubeWidget;
+class ModuleScaleCubeWidget;
 }
 
 namespace tomviz {
 
-class ModuleMeasurementCubeWidget : public QWidget
+class ModuleScaleCubeWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  ModuleMeasurementCubeWidget(QWidget* parent_ = nullptr);
-  ~ModuleMeasurementCubeWidget();
+  ModuleScaleCubeWidget(QWidget* parent_ = nullptr);
+  ~ModuleScaleCubeWidget();
 
 signals:
   //@{
@@ -47,16 +47,18 @@ signals:
    */
   void adaptiveScalingToggled(const bool state);
   void sideLengthChanged(const double length);
+  void annotationToggled(const bool state);
   //@}
 
 public slots:
   //@{
   /**
    * UI update methods. The actual module state is stored in
-   * ModuleMeasurementCube, so the UI needs to be updated if the state changes
+   * ModuleScaleCube, so the UI needs to be updated if the state changes
    * or when constructing the UI.
    */
   void setAdaptiveScaling(const bool choice);
+  void setAnnotation(const bool choice);
   void setLengthUnit(const QString unit);
   void setPositionUnit(const QString unit);
   void setSideLength(const double length);
@@ -64,14 +66,15 @@ public slots:
   //@}
 
 private:
-  ModuleMeasurementCubeWidget(const ModuleMeasurementCubeWidget&) = delete;
-  void operator=(const ModuleMeasurementCubeWidget&) = delete;
+  ModuleScaleCubeWidget(const ModuleScaleCubeWidget&) = delete;
+  void operator=(const ModuleScaleCubeWidget&) = delete;
 
-  QScopedPointer<Ui::ModuleMeasurementCubeWidget> m_ui;
+  QScopedPointer<Ui::ModuleScaleCubeWidget> m_ui;
 
 private slots:
   void onAdaptiveScalingChanged(const bool state);
   void onSideLengthChanged(const double length);
+  void onAnnotationChanged(const bool state);
 };
 }
 #endif

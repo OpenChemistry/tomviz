@@ -27,7 +27,7 @@
 #include "ModuleSegment.h"
 #include "ModuleSlice.h"
 #include "ModuleThreshold.h"
-#include "ModuleMeasurementCube.h"
+#include "ModuleScaleCube.h"
 #include "ModuleVolume.h"
 #include "Utilities.h"
 
@@ -59,7 +59,7 @@ QList<QString> ModuleFactory::moduleTypes(DataSource* dataSource,
           << "Threshold"
           << "Slice"
           << "Ruler"
-          << "Measurement Cube"
+          << "Scale Cube"
           << "Orthogonal Slice";
     //      << "Segmentation";
     qSort(reply);
@@ -93,8 +93,8 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
 #endif
   } else if (type == "Ruler") {
     module = new ModuleRuler();
-  } else if (type == "Measurement Cube") {
-    module = new ModuleMeasurementCube();
+  } else if (type == "Scale Cube") {
+    module = new ModuleScaleCube();
   }
   //  else if (type == "Segmentation")
   //  {
@@ -169,8 +169,8 @@ const char* ModuleFactory::moduleType(Module* module)
   if (qobject_cast<ModuleRuler*>(module)) {
     return "Ruler";
   }
-  if (qobject_cast<ModuleMeasurementCube*>(module)) {
-    return "Measurement Cube";
+  if (qobject_cast<ModuleScaleCube*>(module)) {
+    return "Scale Cube";
   }
   //  if (qobject_cast<ModuleSegment*>(module))
   //  {

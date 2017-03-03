@@ -96,10 +96,10 @@ set(SOURCES
   ModuleFactory.h
   ModuleManager.cxx
   ModuleManager.h
-  ModuleMeasurementCube.cxx
-  ModuleMeasurementCube.h
-  ModuleMeasurementCubeWidget.cxx
-  ModuleMeasurementCubeWidget.h
+  ModuleScaleCube.cxx
+  ModuleScaleCube.h
+  ModuleScaleCubeWidget.cxx
+  ModuleScaleCubeWidget.h
   ModuleMenu.cxx
   ModuleMenu.h
   ModuleOrthogonalSlice.cxx
