@@ -48,13 +48,25 @@ public:
 
   void setInputData(vtkTable* table, const char* x_, const char* y_);
 
+  //@{
+  /**
+    * \brief Interface for the gradient opacity button.
+    *
+    * This button controls the visibility and accessibility of the
+    * GradientOpacityWidget. The button was placed within this class
+    * to keep the current layout in the application.
+    */
   void setGradientOpacityEnabled(bool enable);
-
   void setGradientOpacityChecked(bool checked);
+  //@}
 
 signals:
   void colorMapUpdated();
-  void enableGradientOpacity(bool);
+
+  /**
+    * \sa HistogramWidget::setGradientOpacityEnabled
+    */
+  void gradientVisibilityChanged(bool);
 
 public slots:
   void onScalarOpacityFunctionChanged();

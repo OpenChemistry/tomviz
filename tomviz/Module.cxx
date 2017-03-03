@@ -28,6 +28,7 @@
 #include <pqView.h>
 #include <vtkCommand.h>
 #include <vtkNew.h>
+#include <vtkPiecewiseFunction.h>
 #include <vtkSMProperty.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMRenderViewProxy.h>
@@ -47,6 +48,7 @@ class Module::MInternals
 public:
   vtkWeakPointer<vtkSMProxy> ColorMap;
   vtkWeakPointer<vtkSMProxy> OpacityMap;
+  vtkNew<vtkPiecewiseFunction> GradientOpacityMap;
 
   vtkSMProxy* detachedColorMap()
   {
@@ -87,6 +89,7 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   m_view = vtkView;
   m_activeDataSource = data;
+  this->Internals->GradientOpacityMap->RemoveAllPoints();
   if (m_view && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
@@ -152,7 +155,10 @@ vtkSMProxy* Module::opacityMap() const
 
 vtkPiecewiseFunction* Module::gradientOpacityMap() const
 {
-  return this->dataSource()->gradientOpacityMap();
+  Q_ASSERT(!m_useDetachedColorMap);
+  return this->useDetachedColorMap()
+           ? this->Internals->GradientOpacityMap.GetPointer()
+           : this->dataSource()->gradientOpacityMap();
 }
 
 bool Module::serialize(pugi::xml_node& ns) const
@@ -169,6 +175,9 @@ bool Module::serialize(pugi::xml_node& ns) const
           tomviz::serialize(this->opacityMap(), nodeS) == false) {
         return false;
       }
+
+      pugi::xml_node nodeGrad = ns.append_child("GradientOpacityMap");
+      tomviz::serialize(gradientOpacityMap(), nodeGrad);
     }
   }
   return true;
@@ -191,6 +200,11 @@ bool Module::deserialize(const pugi::xml_node& ns)
         qCritical("Failed to deserialze OpacityMap");
         return false;
       }
+    }
+    pugi::xml_node nodeGrad = ns.child("GradientOpacityMap");
+    if (dcm && nodeGrad) {
+      tomviz::deserialize(this->Internals->GradientOpacityMap.GetPointer(),
+                          nodeGrad);
     }
     this->setUseDetachedColorMap(dcm);
   }

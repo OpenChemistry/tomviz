@@ -67,6 +67,7 @@ public:
   PipelineWorker* Worker;
   PipelineWorker::Future* Future;
   bool PipelinePaused = false;
+  bool GradientOpacityVisibility = false;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -265,6 +266,9 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   node = ns.append_child("GradientOpacityMap");
   tomviz::serialize(gradientOpacityMap(), node);
 
+  node.append_attribute("visibility")
+    .set_value(this->Internals->GradientOpacityVisibility);
+
   ns.append_attribute("number_of_operators")
     .set_value(static_cast<int>(this->Internals->Operators.size()));
 
@@ -320,7 +324,15 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   // load the color map here to avoid resetData clobbering its range
   tomviz::deserialize(colorMap(), ns.child("ColorMap"));
   tomviz::deserialize(opacityMap(), ns.child("OpacityMap"));
-  tomviz::deserialize(gradientOpacityMap(), ns.child("GradientOpacityMap"));
+
+  pugi::xml_node nodeGrad = ns.child("GradientOpacityMap");
+  if (nodeGrad) {
+    tomviz::deserialize(gradientOpacityMap(), nodeGrad);
+    pugi::xml_attribute att = nodeGrad.attribute("visibility");
+    if (att) {
+      this->Internals->GradientOpacityVisibility = att.as_bool();
+    }
+  }
 
   vtkSMPropertyHelper(colorMap(), "ScalarOpacityFunction").Set(opacityMap());
   colorMap()->UpdateVTKObjects();
@@ -1026,5 +1038,15 @@ void DataSource::resumePipeline()
 {
   this->Internals->PipelinePaused = false;
   executeOperators();
+}
+
+void DataSource::setGradientOpacityVisibility(const bool visible)
+{
+  this->Internals->GradientOpacityVisibility = visible;
+}
+
+bool DataSource::isGradientOpacityVisible() const
+{
+  return this->Internals->GradientOpacityVisibility;
 }
 }

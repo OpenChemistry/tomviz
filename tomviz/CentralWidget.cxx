@@ -167,7 +167,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
           SLOT(onColorMapUpdated()));
-  connect(m_ui->histogramWidget, SIGNAL(enableGradientOpacity(bool)),
+  connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
           m_ui->gradientOpacityWidget, SLOT(setVisible(bool)));
   connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
           SLOT(onColorMapUpdated()));
@@ -227,17 +227,34 @@ void CentralWidget::setActiveModule(Module* module)
   } else {
     setDataSource(nullptr);
   }
-  configureGradientOpacity();
 }
 
 void CentralWidget::setDataSource(DataSource* source)
 {
   if (m_activeDataSource) {
     m_activeDataSource->disconnect(this);
+    m_ui->histogramWidget->disconnect(m_activeDataSource);
   }
   m_activeDataSource = source;
+
+  // TODO Enabling/Disabling this button needs to be controlled with
+  // signals from the pipeline widget. This way, the button can be
+  // disabled (and GradOpWidg hidden) if the module supporting this
+  // feature is delted. Also, the button can be left enabled globally
+  // within the same dataSource scope.
+  if (m_activeModule && m_activeModule->supportsGradientOpacity()) {
+    m_ui->histogramWidget->setGradientOpacityEnabled(true);
+  } else {
+    m_ui->histogramWidget->setGradientOpacityEnabled(false);
+  }
+  m_ui->histogramWidget->setGradientOpacityChecked(
+    m_activeDataSource->isGradientOpacityVisible());
+
   if (source) {
     connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
+
+    connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
+            source, SLOT(setGradientOpacityVisibility(bool)));
   }
 
   if (!source) {
@@ -258,7 +275,7 @@ void CentralWidget::setDataSource(DataSource* source)
   // Get the current color map
   if (m_activeModule) {
     m_ui->histogramWidget->setLUTProxy(m_activeModule->colorMap());
-    m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap(),
+    m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap(),
                                         m_activeModule->colorMap());
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
@@ -346,16 +363,6 @@ void CentralWidget::setHistogramTable(vtkTable* table)
   m_ui->histogramWidget->setInputData(table, "image_extents", "image_pops");
   m_ui->gradientOpacityWidget->setInputData(table, "image_extents",
                                             "image_pops");
-}
-
-void CentralWidget::configureGradientOpacity()
-{
-  if (m_activeModule && m_activeModule->supportsGradientOpacity()) {
-    m_ui->histogramWidget->setGradientOpacityEnabled(true);
-  } else {
-    m_ui->histogramWidget->setGradientOpacityEnabled(false);
-    m_ui->histogramWidget->setGradientOpacityChecked(false);
-  }
 }
 } // end of namespace tomviz
 
