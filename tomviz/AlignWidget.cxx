@@ -396,7 +396,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   optionsLayout->addWidget(presetSelectorButton);
   v->addLayout(optionsLayout);
 
-  //get tilt angles and determine initial reference image
+  // get tilt angles and determine initial reference image
   QVector<double> tiltAngles = this->unalignedData->getTiltAngles();
   int startRef = tiltAngles.indexOf(0); // use 0-degree image by default
   if (startRef == -1) {
@@ -456,7 +456,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->referenceSliceMode->addButton(this->statButton);
   this->referenceSliceMode->setExclusive(true);
   this->prevButton->setChecked(true);
-  connect(this->referenceSliceMode, SIGNAL(buttonClicked(int)), SLOT(updateReference()));
+  connect(this->referenceSliceMode, SIGNAL(buttonClicked(int)),
+          SLOT(updateReference()));
 
   ++gridrow;
   label = new QLabel("Frame rate (fps):");
@@ -510,8 +511,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   for (int i = 0; i < oldOffsets.size(); ++i) {
     this->offsets[i] = oldOffsets[i];
   }
-  
-  //show initial current and reference image
+
+  // show initial current and reference image
   this->setSlice(this->currentSlice->value());
   this->updateReference();
 
