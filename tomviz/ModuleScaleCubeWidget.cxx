@@ -14,16 +14,16 @@
 
 ******************************************************************************/
 
-#include "ModuleMeasurementCubeWidget.h"
-#include "ui_ModuleMeasurementCubeWidget.h"
+#include "ModuleScaleCubeWidget.h"
+#include "ui_ModuleScaleCubeWidget.h"
 
 #include <QDoubleValidator>
 #include <QTextStream>
 
 namespace tomviz {
 
-ModuleMeasurementCubeWidget::ModuleMeasurementCubeWidget(QWidget* parent_)
-  : QWidget(parent_), m_ui(new Ui::ModuleMeasurementCubeWidget)
+ModuleScaleCubeWidget::ModuleScaleCubeWidget(QWidget* parent_)
+  : QWidget(parent_), m_ui(new Ui::ModuleScaleCubeWidget)
 {
   m_ui->setupUi(this);
   m_ui->leSideLength->setValidator(new QDoubleValidator(this));
@@ -32,26 +32,33 @@ ModuleMeasurementCubeWidget::ModuleMeasurementCubeWidget(QWidget* parent_)
           SIGNAL(adaptiveScalingToggled(const bool)));
   connect(m_ui->leSideLength, &QLineEdit::editingFinished, this,
           [&]{ sideLengthChanged(m_ui->leSideLength->text().toDouble()); });
+  connect(m_ui->chbAnnotation, SIGNAL(toggled(bool)), this,
+          SIGNAL(annotationToggled(const bool)));
 }
 
-ModuleMeasurementCubeWidget::~ModuleMeasurementCubeWidget() = default;
+ModuleScaleCubeWidget::~ModuleScaleCubeWidget() = default;
 
-void ModuleMeasurementCubeWidget::setAdaptiveScaling(const bool choice)
+void ModuleScaleCubeWidget::setAdaptiveScaling(const bool choice)
 {
   m_ui->chbAdaptiveScaling->setChecked(choice);
 }
 
-void ModuleMeasurementCubeWidget::setSideLength(const double length)
+void ModuleScaleCubeWidget::setSideLength(const double length)
 {
   m_ui->leSideLength->setText(QString::number(length));
 }
 
-void ModuleMeasurementCubeWidget::setLengthUnit(const QString unit)
+void ModuleScaleCubeWidget::setAnnotation(const bool choice)
+{
+  m_ui->chbAnnotation->setChecked(choice);
+}
+
+void ModuleScaleCubeWidget::setLengthUnit(const QString unit)
 {
   m_ui->tlLengthUnit->setText(unit);
 }
 
-void ModuleMeasurementCubeWidget::setPosition(const double x, const double y,
+void ModuleScaleCubeWidget::setPosition(const double x, const double y,
 				       const double z)
 {
   QString s;
@@ -62,19 +69,24 @@ void ModuleMeasurementCubeWidget::setPosition(const double x, const double y,
   m_ui->tlPosition->setText(s);
 }
 
-void ModuleMeasurementCubeWidget::setPositionUnit(const QString unit)
+void ModuleScaleCubeWidget::setPositionUnit(const QString unit)
 {
   m_ui->tlPositionUnit->setText(unit);
 }
 
-void ModuleMeasurementCubeWidget::onAdaptiveScalingChanged(const bool state)
+void ModuleScaleCubeWidget::onAdaptiveScalingChanged(const bool state)
 {
   emit adaptiveScalingToggled(state);
 }
 
-void ModuleMeasurementCubeWidget::onSideLengthChanged(const double length)
+void ModuleScaleCubeWidget::onSideLengthChanged(const double length)
 {
   emit sideLengthChanged(length);
+}
+
+void ModuleScaleCubeWidget::onAnnotationChanged(const bool state)
+{
+  emit annotationToggled(state);
 }
 
 }

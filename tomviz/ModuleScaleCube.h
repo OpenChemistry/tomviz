@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizModuleMeasurementCube_h
-#define tomvizModuleMeasurementCube_h
+#ifndef tomvizModuleScaleCube_h
+#define tomvizModuleScaleCube_h
 
 #include "Module.h"
 
@@ -31,19 +31,19 @@ class vtkMeasurementCubeHandleRepresentation3D;
 
 namespace tomviz {
 
-class ModuleMeasurementCubeWidget;
+class ModuleScaleCubeWidget;
 
-class ModuleMeasurementCube : public Module
+class ModuleScaleCube : public Module
 {
   Q_OBJECT
 
   typedef Module Superclass;
 
 public:
-  ModuleMeasurementCube(QObject* parent = nullptr);
-  virtual ~ModuleMeasurementCube();
+  ModuleScaleCube(QObject* parent = nullptr);
+  virtual ~ModuleScaleCube();
 
-  QString label() const override { return "Measurement Cube"; }
+  QString label() const override { return "Scale Cube"; }
   QIcon icon() const override;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
@@ -65,12 +65,12 @@ protected:
   vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private:
-  Q_DISABLE_COPY(ModuleMeasurementCube)
+  Q_DISABLE_COPY(ModuleScaleCube)
 
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkHandleWidget> m_handleWidget;
   vtkNew<vtkMeasurementCubeHandleRepresentation3D> m_cubeRep;
-  ModuleMeasurementCubeWidget* m_controllers = nullptr;
+  ModuleScaleCubeWidget* m_controllers = nullptr;
   unsigned long m_observedPositionId;
   unsigned long m_observedSideLengthId;
 
@@ -97,6 +97,7 @@ private slots:
    */
   void setAdaptiveScaling(const bool);
   void setSideLength(const double);
+  void setAnnotation(const bool);
 
   void setLengthUnit();
   void setPositionUnit();

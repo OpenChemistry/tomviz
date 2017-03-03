@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "ModuleMeasurementCube.h"
-#include "ModuleMeasurementCubeWidget.h"
+#include "ModuleScaleCube.h"
+#include "ModuleScaleCubeWidget.h"
 
 #include "DataSource.h"
 #include "Utilities.h"
@@ -45,7 +45,7 @@ namespace tomviz {
 using pugi::xml_attribute;
 using pugi::xml_node;
 
-ModuleMeasurementCube::ModuleMeasurementCube(QObject* parentObject) :
+ModuleScaleCube::ModuleScaleCube(QObject* parentObject) :
   Superclass(parentObject)
 {
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
@@ -56,7 +56,7 @@ ModuleMeasurementCube::ModuleMeasurementCube(QObject* parentObject) :
 
   // Connect to our "onPositionChanged" signal and emit it with arguments
   connect(this,
-	  (void (ModuleMeasurementCube::*)())(&ModuleMeasurementCube::onPositionChanged),
+	  (void (ModuleScaleCube::*)())(&ModuleScaleCube::onPositionChanged),
 	  this,
 	  [&](){
 	    double p[3];
@@ -72,14 +72,14 @@ ModuleMeasurementCube::ModuleMeasurementCube(QObject* parentObject) :
 
   // Connect to our "onSideLengthChanged" signal and emit it with arguments
   connect(this,
-	  (void (ModuleMeasurementCube::*)())(&ModuleMeasurementCube::onSideLengthChanged),
+	  (void (ModuleScaleCube::*)())(&ModuleScaleCube::onSideLengthChanged),
 	  this,
 	  [&](){
 	    onSideLengthChanged(m_cubeRep->GetSideLength());
 	  });
 }
 
-ModuleMeasurementCube::~ModuleMeasurementCube()
+ModuleScaleCube::~ModuleScaleCube()
 {
   m_cubeRep->RemoveObserver(m_observedPositionId);
   m_cubeRep->RemoveObserver(m_observedSideLengthId);
@@ -87,13 +87,12 @@ ModuleMeasurementCube::~ModuleMeasurementCube()
   this->finalize();
 }
 
-QIcon ModuleMeasurementCube::icon() const
+QIcon ModuleScaleCube::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqElemMapData16.png");
 }
 
-bool ModuleMeasurementCube::initialize(DataSource* data,
-                                       vtkSMViewProxy* vtkView)
+bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!this->Superclass::initialize(data, vtkView)) {
     return false;
@@ -121,24 +120,24 @@ bool ModuleMeasurementCube::initialize(DataSource* data,
   return true;
 }
 
-bool ModuleMeasurementCube::finalize()
+bool ModuleScaleCube::finalize()
 {
   return true;
 }
 
-bool ModuleMeasurementCube::visibility() const
+bool ModuleScaleCube::visibility() const
 {
   return m_cubeRep->GetHandleVisibility() == 1;
 }
 
-bool ModuleMeasurementCube::setVisibility(bool choice)
+bool ModuleScaleCube::setVisibility(bool choice)
 {
   m_cubeRep->SetHandleVisibility(choice ? 1 : 0);
   m_cubeRep->SetLabelVisibility(choice ? 1 : 0);
   return true;
 }
 
-bool ModuleMeasurementCube::serialize(pugi::xml_node& ns) const
+bool ModuleScaleCube::serialize(pugi::xml_node& ns) const
 {
   xml_node rootNode = ns.append_child("properties");
 
@@ -160,10 +159,14 @@ bool ModuleMeasurementCube::serialize(pugi::xml_node& ns) const
   adaptiveScalingNode.append_attribute("enabled") =
     m_cubeRep->GetAdaptiveScaling() == 1;
 
+  xml_node annotationNode = rootNode.append_child("annotation");
+  annotationNode.append_attribute("enabled") =
+    m_cubeRep->GetLabelVisibility() == 1;
+
   return Module::serialize(ns);
 }
 
-bool ModuleMeasurementCube::deserialize(const pugi::xml_node& ns)
+bool ModuleScaleCube::deserialize(const pugi::xml_node& ns)
 {
   xml_node rootNode = ns.child("properties");
   if (!rootNode) {
@@ -200,11 +203,18 @@ bool ModuleMeasurementCube::deserialize(const pugi::xml_node& ns)
       m_cubeRep->SetAdaptiveScaling(static_cast<int>(att.as_bool()));
     }
   }
+  node = rootNode.child("annotation");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      m_cubeRep->SetLabelVisibility(static_cast<int>(att.as_bool()));
+    }
+  }
 
   return Module::deserialize(ns);
 }
 
-void ModuleMeasurementCube::addToPanel(QWidget* panel)
+void ModuleScaleCube::addToPanel(QWidget* panel)
 {
   if (panel->layout()) {
     delete panel->layout();
@@ -214,13 +224,15 @@ void ModuleMeasurementCube::addToPanel(QWidget* panel)
   panel->setLayout(layout);
 
   // Create, update and connect
-  m_controllers = new ModuleMeasurementCubeWidget;
+  m_controllers = new ModuleScaleCubeWidget;
   layout->addWidget(m_controllers);
 
   // Set initial parameters
   m_controllers->setAdaptiveScaling(
     static_cast<bool>(m_cubeRep->GetAdaptiveScaling()));
   m_controllers->setSideLength(m_cubeRep->GetSideLength());
+  m_controllers->setAnnotation(
+    static_cast<bool>(m_cubeRep->GetLabelVisibility()));
   m_controllers->setLengthUnit(QString(m_cubeRep->GetLengthUnit()));
   double worldPosition[3];
   m_cubeRep->GetWorldPosition(worldPosition);
@@ -233,6 +245,8 @@ void ModuleMeasurementCube::addToPanel(QWidget* panel)
           SLOT(setAdaptiveScaling(const bool)));
   connect(m_controllers, SIGNAL(sideLengthChanged(const double)), this,
           SLOT(setSideLength(const double)));
+  connect(m_controllers, SIGNAL(annotationToggled(const bool)), this,
+          SLOT(setAnnotation(const bool)));
 
   // Connect this class' signals to the widget's slots
   connect(this, SIGNAL(onLengthUnitChanged(const QString)),
@@ -247,31 +261,37 @@ void ModuleMeasurementCube::addToPanel(QWidget* panel)
 	  SLOT(setPosition(const double, const double, const double)));
 }
 
-void ModuleMeasurementCube::setAdaptiveScaling(const bool val)
+void ModuleScaleCube::setAdaptiveScaling(const bool val)
 {
   m_cubeRep->SetAdaptiveScaling(val ? 1 : 0);
 }
 
-void ModuleMeasurementCube::setSideLength(const double length)
+void ModuleScaleCube::setSideLength(const double length)
 {
   m_cubeRep->SetSideLength(length);
   emit renderNeeded();
 }
 
-void ModuleMeasurementCube::setLengthUnit()
+void ModuleScaleCube::setAnnotation(const bool val)
+{
+  m_cubeRep->SetLabelVisibility(val ? 1 : 0);
+  emit renderNeeded();
+}
+
+void ModuleScaleCube::setLengthUnit()
 {
   QString s = qobject_cast<DataSource*>(sender())->getUnits(0);
   m_cubeRep->SetLengthUnit(s.toStdString().c_str());
   emit onLengthUnitChanged(s);
 }
 
-void ModuleMeasurementCube::setPositionUnit()
+void ModuleScaleCube::setPositionUnit()
 {
   QString s = qobject_cast<DataSource*>(sender())->getUnits(0);
   emit onLengthUnitChanged(s);
 }
 
-void ModuleMeasurementCube::dataPropertiesChanged()
+void ModuleScaleCube::dataPropertiesChanged()
 {
   DataSource* data = qobject_cast<DataSource*>(sender());
   if (!data) {
@@ -283,18 +303,18 @@ void ModuleMeasurementCube::dataPropertiesChanged()
   emit onPositionUnitChanged(data->getUnits(0));
 }
 
-bool ModuleMeasurementCube::isProxyPartOfModule(vtkSMProxy*)
+bool ModuleScaleCube::isProxyPartOfModule(vtkSMProxy*)
 {
   return false;
 }
 
-std::string ModuleMeasurementCube::getStringForProxy(vtkSMProxy*)
+std::string ModuleScaleCube::getStringForProxy(vtkSMProxy*)
 {
   qWarning("Unknown proxy passed to module volume in save animation");
   return "";
 }
 
-vtkSMProxy* ModuleMeasurementCube::getProxyForString(const std::string&)
+vtkSMProxy* ModuleScaleCube::getProxyForString(const std::string&)
 {
   return nullptr;
 }

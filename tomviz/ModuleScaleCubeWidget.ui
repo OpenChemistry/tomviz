@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>ModuleMeasurementCubeWidget</class>
- <widget class="QWidget" name="ModuleMeasurementCubeWidget">
+ <class>ModuleScaleCubeWidget</class>
+ <widget class="QWidget" name="ModuleScaleCubeWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -112,6 +112,20 @@
      </property>
      <property name="text">
       <string>TextLabel</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QCheckBox" name="chbAnnotation">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>Annotation</string>
      </property>
     </widget>
    </item>
