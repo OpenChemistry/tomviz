@@ -396,6 +396,12 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   optionsLayout->addWidget(presetSelectorButton);
   v->addLayout(optionsLayout);
 
+  QVector<double> tiltAngles = this->unalignedData->getTiltAngles();
+  int startRef = tiltAngles.indexOf(0);
+  if (startRef == -1) {
+    startRef = (this->minSliceNum + this->maxSliceNum) / 2;
+  }
+
   QGridLayout* grid = new QGridLayout;
   int gridrow = 0;
   v->addStretch(1);
@@ -412,7 +418,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   QLabel* label = new QLabel("Current image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   this->currentSlice = new SpinBox;
-  this->currentSlice->setValue(1);
+  this->currentSlice->setValue(startRef+1);
   this->currentSlice->setRange(this->minSliceNum, this->maxSliceNum);
   connect(this->currentSlice, SIGNAL(editingFinished()), this,
           SLOT(currentSliceEdited()));
@@ -440,13 +446,15 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->nextButton->setCheckable(true);
   this->statButton->setCheckable(true);
   this->statRefNum = new QSpinBox;
-  this->statRefNum->setValue(0);
+  this->statRefNum->setValue(startRef);
   this->statRefNum->setRange(this->minSliceNum, this->maxSliceNum);
   connect(this->statRefNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
   grid->addWidget(this->statRefNum, gridrow, 1, 1, 1, Qt::AlignLeft);
   this->statRefNum->setEnabled(false);
   connect(this->statButton, SIGNAL(toggled(bool)), this->statRefNum,
           SLOT(setEnabled(bool)));
+  connect(this->statButton, SIGNAL(toggled(bool)), SLOT(updateReference()));
+
   ++gridrow;
   grid->addWidget(this->prevButton, gridrow, 1, 1, 1, Qt::AlignLeft);
   grid->addWidget(this->nextButton, gridrow, 2, 1, 1, Qt::AlignLeft);
@@ -458,8 +466,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->referenceSliceMode->addButton(this->statButton);
   this->referenceSliceMode->setExclusive(true);
   this->prevButton->setChecked(true);
-  connect(this->referenceSliceMode, SIGNAL(buttonClicked(int)),
-          SLOT(updateReference()));
+
 
   // Slice offsets
   ++gridrow;
@@ -504,8 +511,10 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   for (int i = 0; i < oldOffsets.size(); ++i) {
     this->offsets[i] = oldOffsets[i];
   }
-
-  QVector<double> tiltAngles = this->unalignedData->getTiltAngles();
+  
+  //update initial current and reference image
+  this->setSlice(this->currentSlice->value());
+  this->updateReference();
 
   for (int i = 0; i < this->offsets.size(); ++i) {
     item = new QTableWidgetItem();
