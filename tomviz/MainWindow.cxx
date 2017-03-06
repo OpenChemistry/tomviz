@@ -407,7 +407,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
                    &ActiveObjects::instance(), SLOT(setMoveObjectsMode(bool)));
 
   QAction* loadPaletteAction = ui.toolBar->addAction(
-    QIcon(":/pqWidgets/Icons/pqPalette32.png"), "LoadPalette");
+    QIcon(":/icons/pqPalette.png"), "LoadPalette");
   new LoadPaletteReaction(loadPaletteAction);
 
   QToolButton* tb =

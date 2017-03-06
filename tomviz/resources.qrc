@@ -34,5 +34,11 @@
         <file>icons/pqInspect@2x.png</file>
         <file>icons/spinner.png</file>
         <file>icons/spinner@2x.png</file>
+        <file>icons/pqRuler.png</file>
+        <file>icons/pqRuler@2x.png</file>
+        <file>icons/pqMeasurementCube@2x.png</file>
+        <file>icons/pqMeasurementCube.png</file>
+        <file>icons/pqPalette.png</file>
+        <file>icons/pqPalette@2x.png</file>
     </qresource>
 </RCC>
