@@ -82,15 +82,15 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>pqColorChooserButton</class>
-   <extends>QWidget</extends>
-   <header>pqColorChooserButton.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>tomviz::DoubleSliderWidget</class>
    <extends>QWidget</extends>
    <header>DoubleSliderWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqColorChooserButton</class>
+   <extends>QWidget</extends>
+   <header>pqColorChooserButton.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

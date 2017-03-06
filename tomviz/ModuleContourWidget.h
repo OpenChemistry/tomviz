@@ -16,8 +16,7 @@
 #ifndef tomvizModuleContourWidget_h
 #define tomvizModuleContourWidget_h
 
-#include <memory>
-
+#include <QScopedPointer>
 #include <QWidget>
 
 /**
@@ -46,7 +45,7 @@ class ModuleContourWidget : public QWidget
 
 public:
   ModuleContourWidget(QWidget* parent_ = nullptr);
-  ~ModuleContourWidget() = default;
+  ~ModuleContourWidget() override;
 
   //@{
   /**
@@ -85,8 +84,8 @@ private:
   ModuleContourWidget(const ModuleContourWidget&) = delete;
   void operator=(const ModuleContourWidget&) = delete;
 
-  std::shared_ptr<Ui::ModuleContourWidget> m_ui;
-  std::shared_ptr<Ui::LightingParametersForm> m_uiLighting;
+  QScopedPointer<Ui::ModuleContourWidget> m_ui;
+  QScopedPointer<Ui::LightingParametersForm> m_uiLighting;
 };
 }
 #endif

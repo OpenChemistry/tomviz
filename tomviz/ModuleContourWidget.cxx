@@ -37,6 +37,7 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
   m_uiLighting->setupUi(lightingWidget);
   m_uiLighting->gbLighting->setCheckable(false);
   QWidget::layout()->addWidget(lightingWidget);
+  qobject_cast<QBoxLayout*>(QWidget::layout())->addStretch();
 
   m_ui->colorChooser->setShowAlphaChannel(false);
 
@@ -47,13 +48,6 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
   m_uiLighting->sliDiffuse->setLineEditWidth(leWidth);
   m_uiLighting->sliSpecular->setLineEditWidth(leWidth);
   m_uiLighting->sliSpecularPower->setLineEditWidth(leWidth);
-
-  // TODO Ambient and diffuse are not playing well with coloring by data
-  // (non-solid color).
-  m_uiLighting->sliAmbient->hide();
-  m_uiLighting->laAmbient->hide();
-  m_uiLighting->sliDiffuse->hide();
-  m_uiLighting->laDiffuse->hide();
 
   m_uiLighting->sliSpecularPower->setMaximum(150);
   m_uiLighting->sliSpecularPower->setMinimum(1);
@@ -84,6 +78,8 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
   connect(m_ui->cbSelectColor, SIGNAL(toggled(bool)), this,
           SIGNAL(useSolidColor(const bool)));
 }
+
+ModuleContourWidget::~ModuleContourWidget() = default;
 
 void ModuleContourWidget::addPropertyLinks(pqPropertyLinks& links,
   vtkSMProxy* contourRepresentation, vtkSMSourceProxy* contourFilter)
