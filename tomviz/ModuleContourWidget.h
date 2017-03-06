@@ -22,7 +22,8 @@
 /**
  * \brief UI layer of ModuleContour.
  *
- * Signals are forwarded to  ModuleContour or the proxies. This class is intended
+ * Signals are forwarded to  ModuleContour or the proxies. This class is
+ * intended
  * to contain only logic related to UI actions.
  */
 
@@ -60,10 +61,11 @@ public:
    * Link proxy properties to UI.
    */
   void addPropertyLinks(pqPropertyLinks& links,
-    vtkSMProxy* contourRepresentation, vtkSMSourceProxy* contourFilter);
+                        vtkSMProxy* contourRepresentation,
+                        vtkSMSourceProxy* contourFilter);
 
   /**
-   * Expose 'ColorBy' combo box to be populated by the source. 
+   * Expose 'ColorBy' combo box to be populated by the source.
    */
   QComboBox* getColorByComboBox();
 

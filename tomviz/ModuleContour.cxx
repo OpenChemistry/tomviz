@@ -249,8 +249,8 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   connect(m_controllers, SIGNAL(useSolidColor(const bool)), this,
           SLOT(setUseSolidColor(const bool)));
-  m_controllers->addPropertyLinks(this->Internals->Links,
-    this->ContourRepresentation, this->ContourFilter);
+  m_controllers->addPropertyLinks(
+    this->Internals->Links, this->ContourRepresentation, this->ContourFilter);
   this->connect(m_controllers, SIGNAL(propertyChanged()), this,
                 SLOT(onPropertyChanged()));
   this->connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));

@@ -1,6 +1,6 @@
 #include "ModuleVolumeWidget.h"
-#include "ui_ModuleVolumeWidget.h"
 #include "ui_LightingParametersForm.h"
+#include "ui_ModuleVolumeWidget.h"
 
 #include "vtkVolumeMapper.h"
 
@@ -8,7 +8,7 @@ namespace tomviz {
 
 ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   : QWidget(parent_), m_ui(new Ui::ModuleVolumeWidget),
-  m_uiLighting(new Ui::LightingParametersForm)
+    m_uiLighting(new Ui::LightingParametersForm)
 {
   m_ui->setupUi(this);
 
