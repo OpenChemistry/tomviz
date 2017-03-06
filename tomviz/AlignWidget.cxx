@@ -592,7 +592,7 @@ void AlignWidget::changeSlice(int delta)
     i = max;
   }
   this->currentSlice->setValue(i);
-  this->setSlice(i, false);
+  this->setSlice(i, true);
   updateReference();
 }
 
