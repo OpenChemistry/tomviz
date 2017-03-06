@@ -396,6 +396,13 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   optionsLayout->addWidget(presetSelectorButton);
   v->addLayout(optionsLayout);
 
+  // get tilt angles and determine initial reference image
+  QVector<double> tiltAngles = this->unalignedData->getTiltAngles();
+  int startRef = tiltAngles.indexOf(0); // use 0-degree image by default
+  if (startRef == -1) {
+    startRef = (this->minSliceNum + this->maxSliceNum) / 2;
+  }
+
   QGridLayout* grid = new QGridLayout;
   int gridrow = 0;
   v->addStretch(1);
@@ -412,22 +419,13 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   QLabel* label = new QLabel("Current image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   this->currentSlice = new SpinBox;
-  this->currentSlice->setValue(1);
+  this->currentSlice->setValue(startRef+1);
   this->currentSlice->setRange(this->minSliceNum, this->maxSliceNum);
   connect(this->currentSlice, SIGNAL(editingFinished()), this,
           SLOT(currentSliceEdited()));
   grid->addWidget(this->currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
   label = new QLabel("Shortcut: (A/S)");
-  grid->addWidget(label, gridrow, 2, 1, 1, Qt::AlignRight);
-
-  ++gridrow;
-  label = new QLabel("Frame rate (fps):");
-  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
-  QSpinBox* spin = new QSpinBox;
-  spin->setRange(0, 50);
-  spin->setValue(5);
-  connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
-  grid->addWidget(spin, gridrow, 1, 1, 1, Qt::AlignLeft);
+  grid->addWidget(label, gridrow, 2, 1, 2, Qt::AlignLeft);
 
   // Reference image controls
   ++gridrow;
@@ -435,22 +433,22 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   this->prevButton = new QRadioButton("Prev");
   this->nextButton = new QRadioButton("Next");
-  this->statButton = new QRadioButton("Static:");
+  this->statButton = new QRadioButton("Static");
   this->prevButton->setCheckable(true);
   this->nextButton->setCheckable(true);
   this->statButton->setCheckable(true);
-  grid->addWidget(this->prevButton, gridrow, 1, 1, 1, Qt::AlignLeft);
-  grid->addWidget(this->nextButton, gridrow, 2, 1, 1, Qt::AlignLeft);
-  ++gridrow;
-  grid->addWidget(this->statButton, gridrow, 1, 1, 1, Qt::AlignLeft);
-  this->statRefNum = new QSpinBox;
-  this->statRefNum->setValue(0);
-  this->statRefNum->setRange(this->minSliceNum, this->maxSliceNum);
-  connect(this->statRefNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
-  grid->addWidget(this->statRefNum, gridrow, 2, 1, 1, Qt::AlignLeft);
-  this->statRefNum->setEnabled(false);
-  connect(this->statButton, SIGNAL(toggled(bool)), this->statRefNum,
+  this->refNum = new QSpinBox;
+  this->refNum->setValue(startRef);
+  this->refNum->setRange(this->minSliceNum, this->maxSliceNum);
+  connect(this->refNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
+  grid->addWidget(this->refNum, gridrow, 1, 1, 1, Qt::AlignLeft);
+  this->refNum->setEnabled(false);
+  connect(this->statButton, SIGNAL(toggled(bool)), this->refNum,
           SLOT(setEnabled(bool)));
+
+  grid->addWidget(this->prevButton, gridrow, 2, 1, 1, Qt::AlignLeft);
+  grid->addWidget(this->nextButton, gridrow, 3, 1, 1, Qt::AlignLeft);
+  grid->addWidget(this->statButton, gridrow, 4, 1, 1, Qt::AlignLeft);
 
   this->referenceSliceMode = new QButtonGroup;
   this->referenceSliceMode->addButton(this->prevButton);
@@ -460,6 +458,15 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->prevButton->setChecked(true);
   connect(this->referenceSliceMode, SIGNAL(buttonClicked(int)),
           SLOT(updateReference()));
+
+  ++gridrow;
+  label = new QLabel("Frame rate (fps):");
+  grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
+  QSpinBox* spin = new QSpinBox;
+  spin->setRange(0, 50);
+  spin->setValue(5);
+  connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
+  grid->addWidget(spin, gridrow, 1, 1, 1, Qt::AlignLeft);
 
   // Slice offsets
   ++gridrow;
@@ -505,7 +512,9 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     this->offsets[i] = oldOffsets[i];
   }
 
-  QVector<double> tiltAngles = this->unalignedData->getTiltAngles();
+  // show initial current and reference image
+  this->setSlice(this->currentSlice->value());
+  this->updateReference();
 
   for (int i = 0; i < this->offsets.size(); ++i) {
     item = new QTableWidgetItem();
@@ -617,7 +626,7 @@ void AlignWidget::updateReference()
   } else if (this->nextButton->isChecked()) {
     refSlice = this->currentSlice->value() + 1;
   } else if (this->statButton->isChecked()) {
-    refSlice = this->statRefNum->value();
+    refSlice = this->refNum->value();
   }
 
   // This makes the stack circular.
@@ -626,6 +635,9 @@ void AlignWidget::updateReference()
   } else if (refSlice < min) {
     refSlice = max;
   }
+
+  this->refNum->setValue(refSlice);
+
   this->referenceSlice = refSlice;
   for (int i = 0; i < this->modes.length(); ++i) {
     this->modes[i]->referenceSliceUpdated(referenceSlice,
