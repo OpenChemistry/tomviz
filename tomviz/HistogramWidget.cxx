@@ -62,6 +62,9 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   // Set up our little chart.
   vtkNew<vtkGenericOpenGLRenderWindow> window;
   m_qvtk->SetRenderWindow(window.Get());
+  QSurfaceFormat glFormat = QVTKOpenGLWidget::defaultFormat();
+  glFormat.setSamples(8);
+  m_qvtk->setFormat(glFormat);
   m_histogramView->SetRenderWindow(window.Get());
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
   m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor.Get());
