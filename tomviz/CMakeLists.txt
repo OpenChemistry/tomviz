@@ -170,6 +170,8 @@ set(SOURCES
   SaveWebReaction.cxx
   ScaleActorBehavior.cxx
   ScaleActorBehavior.h
+  ScaleLegend.h
+  ScaleLegend.cxx
   SetScaleReaction.cxx
   SetScaleReaction.h
   SetTiltAnglesOperator.cxx
@@ -202,8 +204,12 @@ set(SOURCES
   vtkChartHistogramColorOpacityEditor.h
   vtkCustomPiecewiseControlPointsItem.cxx
   vtkCustomPiecewiseControlPointsItem.h
+  vtkLengthScaleRepresentation.h
+  vtkLengthScaleRepresentation.cxx
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
+  vtkVolumeScaleRepresentation.h
+  vtkVolumeScaleRepresentation.cxx
   WebExportWidget.cxx
   WebExportWidget.h
   )
