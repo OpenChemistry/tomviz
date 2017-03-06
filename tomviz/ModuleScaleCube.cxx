@@ -89,7 +89,7 @@ ModuleScaleCube::~ModuleScaleCube()
 
 QIcon ModuleScaleCube::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqElemMapData16.png");
+  return QIcon(":/icons/pqMeasurementCube.png");
 }
 
 bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
