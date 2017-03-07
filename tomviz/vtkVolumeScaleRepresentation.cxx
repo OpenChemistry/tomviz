@@ -27,7 +27,7 @@
 
 #include <sstream>
 
-vtkStandardNewMacro(vtkVolumeScaleRepresentation);
+vtkStandardNewMacro(vtkVolumeScaleRepresentation)
 
 //----------------------------------------------------------------------
 vtkVolumeScaleRepresentation::vtkVolumeScaleRepresentation()
