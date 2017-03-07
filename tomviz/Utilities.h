@@ -37,6 +37,7 @@ class vtkRenderer;
 class vtkSMProxyLocator;
 class vtkSMRenderViewProxy;
 class vtkPVArrayInformation;
+class vtkPiecewiseFunction;
 
 class QDir;
 class QLayout;
@@ -140,6 +141,9 @@ bool deserialize(QVariant& variant, const pugi::xml_node& in);
 /// Serialize/deserialize a QVariantMap to a pugi::xml node
 bool serialize(const QVariantMap& map, pugi::xml_node& out);
 bool deserialize(QVariantMap& map, const pugi::xml_node& in);
+/// Serialize/deserialize a vtkPiecewiseFunction
+bool serialize(vtkPiecewiseFunction* func, pugi::xml_node& out);
+bool deserialize(vtkPiecewiseFunction* func, const pugi::xml_node& in);
 
 /// Returns the vtkPVArrayInformation for scalars array produced by the given
 /// source proxy.

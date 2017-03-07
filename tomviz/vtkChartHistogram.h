@@ -45,6 +45,8 @@ public:
   virtual void SetScalarVisibility(bool visible);
   virtual void ScalarVisibilityOn();
 
+  void SetHistogramVisible(bool visible);
+
   // Set lookup table
   virtual void SetLookupTable(vtkScalarsToColors* lut);
 

@@ -35,6 +35,8 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
           SLOT(onSpecularChanged(const int)));
   connect(m_ui->sliSpecularPower, SIGNAL(valueChanged(int)), this,
           SLOT(onSpecularPowerChanged(const int)));
+  connect(m_ui->cbGradientOpac, SIGNAL(toggled(bool)), this,
+          SIGNAL(gradientOpacityChanged(const bool)));
 }
 
 void ModuleVolumeWidget::setJittering(const bool enable)
@@ -76,6 +78,11 @@ void ModuleVolumeWidget::setSpecular(const double value)
 void ModuleVolumeWidget::setSpecularPower(const double value)
 {
   m_ui->sliSpecularPower->setValue(static_cast<int>(value * 100));
+}
+
+void ModuleVolumeWidget::setGradientOpacityEnabled(const bool enabled)
+{
+  m_ui->cbGradientOpac->setChecked(enabled);
 }
 
 void ModuleVolumeWidget::onBlendingChanged(const int mode)

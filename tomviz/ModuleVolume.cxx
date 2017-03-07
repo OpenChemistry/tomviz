@@ -105,10 +105,21 @@ void ModuleVolume::updateColorMap()
     vtkPiecewiseFunction::SafeDownCast(opacityMap()->GetClientSideObject()));
   m_volumeProperty->SetColor(
     vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject()));
+  m_volumeProperty->SetGradientOpacity(
+    m_gradientOpacityEnabled ? gradientOpacityMap() : nullptr);
 
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
   vtkObject::SafeDownCast(this->colorMap()->GetClientSideObject())->Modified();
+}
+
+void ModuleVolume::onGradientOpacityChanged(bool enable)
+{
+  m_gradientOpacityEnabled = enable;
+  vtkPiecewiseFunction* gof = enable ? gradientOpacityMap() : nullptr;
+  m_volumeProperty->SetGradientOpacity(gof);
+
+  emit renderNeeded();
 }
 
 bool ModuleVolume::finalize()
@@ -149,6 +160,9 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
   xml_node interpNode = rootNode.append_child("interpolation");
   interpNode.append_attribute("type") =
     m_volumeProperty->GetInterpolationType();
+
+  xml_node gopNode = rootNode.append_child("gradient_opacity");
+  gopNode.append_attribute("enabled") = m_gradientOpacityEnabled;
 
   xml_node blendingNode = rootNode.append_child("blending");
   blendingNode.append_attribute("mode") = m_volumeMapper->GetBlendMode();
@@ -218,6 +232,13 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
       setJittering(att.as_bool());
     }
   }
+  node = rootNode.child("gradient_opacity");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      m_gradientOpacityEnabled = att.as_bool();
+    }
+  }
 
   return Module::deserialize(ns);
 }
@@ -244,6 +265,7 @@ void ModuleVolume::addToPanel(QWidget* panel)
   m_controllers->setSpecular(m_volumeProperty->GetSpecular());
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
+  m_controllers->setGradientOpacityEnabled(m_gradientOpacityEnabled);
 
   connect(m_controllers, SIGNAL(jitteringToggled(const bool)), this,
           SLOT(setJittering(const bool)));
@@ -261,6 +283,8 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularChanged(const double)));
   connect(m_controllers, SIGNAL(specularPowerChanged(const double)), this,
           SLOT(onSpecularPowerChanged(const double)));
+  connect(m_controllers, SIGNAL(gradientOpacityChanged(const bool)), this,
+          SLOT(onGradientOpacityChanged(const bool)));
 }
 
 void ModuleVolume::onAmbientChanged(const double value)

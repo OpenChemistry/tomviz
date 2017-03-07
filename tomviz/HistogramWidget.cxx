@@ -113,6 +113,14 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
   vLayout->addWidget(button);
 
+  m_gradientOpacityButton = new QToolButton;
+  m_gradientOpacityButton->setCheckable(true);
+  m_gradientOpacityButton->setIcon(QIcon(":/icons/gradient_opacity.png"));
+  m_gradientOpacityButton->setToolTip("Show/Hide Gradient Opacity");
+  connect(m_gradientOpacityButton, SIGNAL(toggled(bool)), this,
+          SIGNAL(gradientVisibilityChanged(bool)));
+  vLayout->addWidget(m_gradientOpacityButton);
+
   vLayout->addStretch(1);
 
   setLayout(hLayout);
@@ -146,10 +154,10 @@ void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
   }
 }
 
-void HistogramWidget::setInputData(vtkTable* table, const char* x,
-                                   const char* y)
+void HistogramWidget::setInputData(vtkTable* table, const char* x_,
+                                   const char* y_)
 {
-  m_histogramColorOpacityEditor->SetHistogramInputData(table, x, y);
+  m_histogramColorOpacityEditor->SetHistogramInputData(table, x_, y_);
   m_histogramColorOpacityEditor->SetOpacityFunction(m_scalarOpacityFunction);
   if (m_LUT) {
     m_histogramColorOpacityEditor->SetScalarVisibility(true);
@@ -348,5 +356,16 @@ void HistogramWidget::renderViews()
   if (view) {
     view->render();
   }
+}
+
+void HistogramWidget::setGradientOpacityChecked(bool checked)
+{
+  m_gradientOpacityButton->setChecked(checked);
+  emit m_gradientOpacityButton->toggled(checked);
+}
+
+void HistogramWidget::setGradientOpacityEnabled(bool enable)
+{
+  m_gradientOpacityButton->setEnabled(enable);
 }
 }

@@ -38,6 +38,7 @@
 #include <vtkPVDataSetAttributesInformation.h>
 #include <vtkPVXMLElement.h>
 #include <vtkPVXMLParser.h>
+#include <vtkPiecewiseFunction.h>
 #include <vtkPoints.h>
 #include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
@@ -264,6 +265,57 @@ bool deserialize(QVariantMap& map, const pugi::xml_node& in)
     map.insert(key, value);
   }
   return result;
+}
+
+bool serialize(vtkPiecewiseFunction* func, pugi::xml_node& out)
+{
+  if (!func) {
+    return false;
+  }
+
+  const int numPoints = func->GetSize();
+  pugi::xml_node pointsNode = out.append_child("Points");
+  pointsNode.append_attribute("number_of_elements") = numPoints;
+
+  for (int pointIdx = 0; pointIdx < numPoints; pointIdx++) {
+    double values[4] = { 0.0 };
+    func->GetNodeValue(pointIdx, values);
+
+    for (int valueIdx = 0; valueIdx < 4; valueIdx++) {
+      pugi::xml_node elemNode = pointsNode.append_child("Element");
+      elemNode.append_attribute("index") = pointIdx * 4 + valueIdx;
+      elemNode.append_attribute("value") = values[valueIdx];
+    }
+  }
+
+  return true;
+}
+
+bool deserialize(vtkPiecewiseFunction* func, const pugi::xml_node& in)
+{
+  if (!func) {
+    return false;
+  }
+
+  pugi::xml_node pointsNode = in.child("Points");
+  if (!pointsNode) {
+    return false;
+  }
+
+  double values[4];
+  int numValues = 0;
+  for (pugi::xml_node child = pointsNode.child("Element"); child;
+       child = child.next_sibling("Element")) {
+    values[numValues] = child.attribute("value").as_double();
+    numValues++;
+
+    if (numValues == 4) {
+      func->AddPoint(values[0], values[1], values[2], values[3]);
+      numValues = 0;
+    }
+  }
+
+  return true;
 }
 
 vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)

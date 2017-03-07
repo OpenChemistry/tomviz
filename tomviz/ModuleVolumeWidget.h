@@ -57,6 +57,7 @@ public:
   void setDiffuse(const double value);
   void setSpecular(const double value);
   void setSpecularPower(const double value);
+  void setGradientOpacityEnabled(const bool enabled);
   //@}
 
 signals:
@@ -72,6 +73,7 @@ signals:
   void diffuseChanged(const double value);
   void specularChanged(const double value);
   void specularPowerChanged(const double value);
+  void gradientOpacityChanged(const bool enabled);
   //@}
 
 private:

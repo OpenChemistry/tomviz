@@ -74,6 +74,8 @@ set(SOURCES
   EditOperatorWidget.h
   EmdFormat.cxx
   EmdFormat.h
+  GradientOpacityWidget.h
+  GradientOpacityWidget.cxx
   HistogramWidget.h
   HistogramWidget.cxx
   InterfaceBuilder.h
@@ -198,6 +200,8 @@ set(SOURCES
   ViewPropertiesPanel.h
   ViewMenuManager.cxx
   ViewMenuManager.h
+  vtkChartGradientOpacityEditor.cxx
+  vtkChartGradientOpacityEditor.h
   vtkChartHistogram.cxx
   vtkChartHistogram.h
   vtkChartHistogramColorOpacityEditor.cxx

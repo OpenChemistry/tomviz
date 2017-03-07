@@ -167,6 +167,11 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
           SLOT(onColorMapUpdated()));
+  connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
+          m_ui->gradientOpacityWidget, SLOT(setVisible(bool)));
+  connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
+          SLOT(onColorMapUpdated()));
+  m_ui->gradientOpacityWidget->hide();
 
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady
@@ -228,14 +233,23 @@ void CentralWidget::setDataSource(DataSource* source)
 {
   if (m_activeDataSource) {
     m_activeDataSource->disconnect(this);
+    m_ui->histogramWidget->disconnect(m_activeDataSource);
   }
   m_activeDataSource = source;
+
   if (source) {
+    m_ui->histogramWidget->setGradientOpacityChecked(
+      source->isGradientOpacityVisible());
+
     connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
+
+    connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
+            source, SLOT(setGradientOpacityVisibility(bool)));
   }
 
   if (!source) {
     m_ui->histogramWidget->setInputData(nullptr, "", "");
+    m_ui->gradientOpacityWidget->setInputData(nullptr, "", "");
     return;
   }
 
@@ -251,8 +265,12 @@ void CentralWidget::setDataSource(DataSource* source)
   // Get the current color map
   if (m_activeModule) {
     m_ui->histogramWidget->setLUTProxy(m_activeModule->colorMap());
+    if (m_activeModule->supportsGradientOpacity()) {
+      m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap());
+    }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
+    m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap());
   }
 
   // Check our cache, and use that if appopriate (or update it).
@@ -333,8 +351,9 @@ void CentralWidget::setHistogramTable(vtkTable* table)
   }
 
   m_ui->histogramWidget->setInputData(table, "image_extents", "image_pops");
+  m_ui->gradientOpacityWidget->setInputData(table, "image_extents",
+                                            "image_pops");
 }
-
 } // end of namespace tomviz
 
 #include "CentralWidget.moc"
