@@ -149,7 +149,6 @@ ScaleLegend::ScaleLegend(QMainWindow* mw)
     m_lengthScaleRep->SetPoint1WorldPosition(p1);
     m_lengthScaleRep->SetPoint2WorldPosition(p2);
 
-    m_lengthScaleRep->GetAxis()->GetProperty()->SetColor(1., 1., 1.);
     m_lengthScaleRep->GetAxis()->SetTickLength(9);
     m_lengthScaleRep->GetLabel()->GetTextProperty()->SetFontSize(30);
     m_lengthScaleRep->SetMinRelativeScreenWidth(.03);
