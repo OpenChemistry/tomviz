@@ -27,7 +27,7 @@
 
 #include <sstream>
 
-vtkStandardNewMacro(vtkLengthScaleRepresentation);
+vtkStandardNewMacro(vtkLengthScaleRepresentation)
 
 //----------------------------------------------------------------------
 vtkLengthScaleRepresentation::vtkLengthScaleRepresentation()
