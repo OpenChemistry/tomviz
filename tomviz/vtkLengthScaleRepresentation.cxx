@@ -23,6 +23,8 @@
 #include "vtkTextProperty.h"
 #include "vtkWindow.h"
 
+#include "Utilities.h"
+
 #include <sstream>
 
 vtkStandardNewMacro(vtkLengthScaleRepresentation);
@@ -32,7 +34,7 @@ vtkLengthScaleRepresentation::vtkLengthScaleRepresentation()
 {
   this->Label = vtkTextActor::New();
   this->Label->SetVisibility(true);
-  this->Label->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+  this->Label->GetTextProperty()->SetColor(tomviz::offWhite);
   this->Label->SetPosition(0, 0);
   this->Label->GetTextProperty()->SetFontSize(40);
   this->Label->GetTextProperty()->SetJustificationToCentered();
@@ -40,6 +42,7 @@ vtkLengthScaleRepresentation::vtkLengthScaleRepresentation()
   this->GetAxis()->SetRulerMode(1);
   this->GetAxis()->SetNumberOfMinorTicks(1);
   this->GetAxis()->SetTitleVisibility(0);
+  this->GetAxis()->GetProperty()->SetColor(tomviz::offWhite);
 
   this->InstantiateHandleRepresentation();
   this->MinRelativeScreenWidth = .03; // 3 % of the total viewier wdith

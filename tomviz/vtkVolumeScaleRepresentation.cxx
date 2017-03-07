@@ -23,6 +23,8 @@
 #include "vtkTextProperty.h"
 #include "vtkWindow.h"
 
+#include "Utilities.h"
+
 #include <sstream>
 
 vtkStandardNewMacro(vtkVolumeScaleRepresentation);
@@ -39,7 +41,7 @@ vtkVolumeScaleRepresentation::vtkVolumeScaleRepresentation()
 
   this->Label = vtkTextActor::New();
   this->Label->SetVisibility(true);
-  this->Label->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+  this->Label->GetTextProperty()->SetColor(tomviz::offWhite);
   this->Label->SetPosition(0, 0);
   this->Label->GetTextProperty()->SetFontSize(40);
   this->Label->GetTextProperty()->SetJustificationToCentered();
