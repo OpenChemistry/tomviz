@@ -49,7 +49,7 @@ public:
    * The proxy is only required to set the range. The actual opacity
    * function for this widget is defined by gradientOpacity.
    */
-  void setLUT(vtkPiecewiseFunction* gradientOpacity, vtkSMProxy* lut);
+  void setLUT(vtkPiecewiseFunction* gradientOpacity);
 
   virtual void setInputData(vtkTable* table, const char* x_, const char* y_);
 

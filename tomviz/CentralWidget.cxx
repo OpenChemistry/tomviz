@@ -237,20 +237,10 @@ void CentralWidget::setDataSource(DataSource* source)
   }
   m_activeDataSource = source;
 
-  // TODO Enabling/Disabling this button needs to be controlled with
-  // signals from the pipeline widget. This way, the button can be
-  // disabled (and GradOpWidg hidden) if the module supporting this
-  // feature is delted. Also, the button can be left enabled globally
-  // within the same dataSource scope.
-  if (m_activeModule && m_activeModule->supportsGradientOpacity()) {
-    m_ui->histogramWidget->setGradientOpacityEnabled(true);
-  } else {
-    m_ui->histogramWidget->setGradientOpacityEnabled(false);
-  }
-  m_ui->histogramWidget->setGradientOpacityChecked(
-    m_activeDataSource->isGradientOpacityVisible());
-
   if (source) {
+    m_ui->histogramWidget->setGradientOpacityChecked(
+      source->isGradientOpacityVisible());
+
     connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
 
     connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
@@ -275,12 +265,12 @@ void CentralWidget::setDataSource(DataSource* source)
   // Get the current color map
   if (m_activeModule) {
     m_ui->histogramWidget->setLUTProxy(m_activeModule->colorMap());
-    m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap(),
-                                        m_activeModule->colorMap());
+    if (m_activeModule->supportsGradientOpacity()) {
+      m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap());
+    }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
-    m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap(),
-                                        source->colorMap());
+    m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap());
   }
 
   // Check our cache, and use that if appopriate (or update it).

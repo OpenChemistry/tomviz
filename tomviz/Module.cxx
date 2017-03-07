@@ -27,6 +27,7 @@
 #include <pqProxiesWidget.h>
 #include <pqView.h>
 #include <vtkCommand.h>
+#include <vtkColorTransferFunction.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSMProperty.h>
@@ -156,9 +157,22 @@ vtkSMProxy* Module::opacityMap() const
 vtkPiecewiseFunction* Module::gradientOpacityMap() const
 {
   Q_ASSERT(!m_useDetachedColorMap);
-  return this->useDetachedColorMap()
+  vtkPiecewiseFunction* gof = this->useDetachedColorMap()
            ? this->Internals->GradientOpacityMap.GetPointer()
            : this->dataSource()->gradientOpacityMap();
+
+  // Set default values
+  const int numPoints = gof->GetSize();
+  if (numPoints == 0) {
+    vtkColorTransferFunction* lut =
+      vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject());
+    double range[2];
+    lut->GetRange(range);
+    gof->AddPoint(range[0], 1.0);
+    gof->AddPoint(range[1], 1.0);
+  }
+
+  return gof;
 }
 
 bool Module::serialize(pugi::xml_node& ns) const

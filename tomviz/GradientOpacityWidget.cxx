@@ -83,8 +83,7 @@ GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
 
 GradientOpacityWidget::~GradientOpacityWidget() = default;
 
-void GradientOpacityWidget::setLUT(vtkPiecewiseFunction* gradientOpac,
-                                   vtkSMProxy* proxy)
+void GradientOpacityWidget::setLUT(vtkPiecewiseFunction* gradientOpac)
 {
   if (m_scalarOpacityFunction) {
     m_eventLink->Disconnect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent,
@@ -98,18 +97,6 @@ void GradientOpacityWidget::setLUT(vtkPiecewiseFunction* gradientOpac,
 
   m_eventLink->Connect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent, this,
                        SLOT(onOpacityFunctionChanged()));
-
-  // Set the default if it is an empty function
-  vtkPVDiscretizableColorTransferFunction* lut =
-    vtkPVDiscretizableColorTransferFunction::SafeDownCast(
-      proxy->GetClientSideObject());
-  const int numPoints = m_scalarOpacityFunction->GetSize();
-  if (numPoints == 0) {
-    double range[2];
-    lut->GetRange(range);
-    m_scalarOpacityFunction->AddPoint(range[0], 1.0);
-    m_scalarOpacityFunction->AddPoint(range[1], 1.0);
-  }
 }
 
 void GradientOpacityWidget::setInputData(vtkTable* table, const char* x_,

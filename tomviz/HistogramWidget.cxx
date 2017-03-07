@@ -115,7 +115,6 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
   m_gradientOpacityButton = new QToolButton;
   m_gradientOpacityButton->setCheckable(true);
-  m_gradientOpacityButton->setEnabled(false);
   m_gradientOpacityButton->setIcon(QIcon(":/icons/gradient_opacity.png"));
   m_gradientOpacityButton->setToolTip("Show/Hide Gradient Opacity");
   connect(m_gradientOpacityButton, SIGNAL(toggled(bool)), this,
