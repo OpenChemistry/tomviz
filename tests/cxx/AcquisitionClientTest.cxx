@@ -99,6 +99,9 @@ private slots:
     QSignalSpy finished(request, &AcquisitionClientRequest::finished);
     finished.wait();
 
+    if (!error.isEmpty()) {
+       qDebug() << error;
+    }
     QVERIFY(error.isEmpty());
     QCOMPARE(finished.size(), 1);
     QList<QVariant> arguments = finished.takeFirst();
@@ -253,6 +256,9 @@ private:
     QSignalSpy finished(request, &AcquisitionClientRequest::finished);
     finished.wait();
 
+    if (!error.isEmpty()) {
+      qDebug() << error;
+    }
     QVERIFY(error.isEmpty());
     QCOMPARE(finished.size(), 1);
     QList<QVariant> arguments = finished.takeFirst();
