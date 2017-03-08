@@ -156,6 +156,9 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 {
   m_ui->setupUi(this);
 
+  // Hide the layout tabs
+  m_ui->tabbedMultiViewWidget->setTabVisibility(false);
+
   qRegisterMetaType<vtkSmartPointer<vtkImageData>>();
   qRegisterMetaType<vtkSmartPointer<vtkTable>>();
 
