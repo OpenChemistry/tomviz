@@ -114,7 +114,6 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
       return nullptr;
     }
     pqView* pqview = tomviz::convert<pqView*>(view);
-    pqview->resetDisplay();
     pqview->render();
   }
   return module;
