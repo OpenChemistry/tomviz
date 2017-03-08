@@ -64,11 +64,14 @@ protected:
   vtkSMProxy* getProxyForString(const std::string& str) override;
   QList<DataSource*> getChildDataSources();
   void updateScalarColoring();
+  void createCategoricalColoringPipeline();
 
   vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
-  vtkWeakPointer<vtkSMProxy> ContourRepresentation;
   vtkWeakPointer<vtkSMSourceProxy> ResampleFilter;
+  vtkWeakPointer<vtkSMProxy> ResampleRepresentation;
   vtkWeakPointer<vtkSMSourceProxy> PointDataToCellDataFilter;
+  vtkWeakPointer<vtkSMProxy> PointDataToCellDataRepresentation;
+  vtkWeakPointer<vtkSMProxy> ActiveRepresentation;
 
   class Private;
   Private* Internals;

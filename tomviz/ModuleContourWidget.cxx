@@ -81,7 +81,7 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
 ModuleContourWidget::~ModuleContourWidget() = default;
 
 void ModuleContourWidget::addPropertyLinks(pqPropertyLinks& links,
-                                           vtkSMProxy* contourRepresentation,
+                                           vtkSMProxy* representation,
                                            vtkSMSourceProxy* contourFilter)
 {
   links.addPropertyLink(m_ui->sliValue, "value", SIGNAL(valueEdited(double)),
@@ -94,40 +94,83 @@ void ModuleContourWidget::addPropertyLinks(pqPropertyLinks& links,
     new pqSignalAdaptorComboBox(m_ui->cbRepresentation);
   links.addPropertyLink(adaptor, "currentText",
                         SIGNAL(currentTextChanged(QString)),
-                        contourRepresentation,
-                        contourRepresentation->GetProperty("Representation"));
+                        representation,
+                        representation->GetProperty("Representation"));
 
   links.addPropertyLink(m_ui->sliOpacity, "value", SIGNAL(valueEdited(double)),
-                        contourRepresentation,
-                        contourRepresentation->GetProperty("Opacity"), 0);
+                        representation,
+                        representation->GetProperty("Opacity"), 0);
 
   links.addPropertyLink(m_uiLighting->sliAmbient, "value",
-                        SIGNAL(valueEdited(double)), contourRepresentation,
-                        contourRepresentation->GetProperty("Ambient"), 0);
+                        SIGNAL(valueEdited(double)), representation,
+                        representation->GetProperty("Ambient"), 0);
 
   links.addPropertyLink(m_uiLighting->sliDiffuse, "value",
-                        SIGNAL(valueEdited(double)), contourRepresentation,
-                        contourRepresentation->GetProperty("Diffuse"), 0);
+                        SIGNAL(valueEdited(double)), representation,
+                        representation->GetProperty("Diffuse"), 0);
 
   links.addPropertyLink(m_uiLighting->sliSpecular, "value",
-                        SIGNAL(valueEdited(double)), contourRepresentation,
-                        contourRepresentation->GetProperty("Specular"), 0);
+                        SIGNAL(valueEdited(double)), representation,
+                        representation->GetProperty("Specular"), 0);
 
   links.addPropertyLink(m_uiLighting->sliSpecularPower, "value",
-                        SIGNAL(valueEdited(double)), contourRepresentation,
-                        contourRepresentation->GetProperty("SpecularPower"), 0);
+                        SIGNAL(valueEdited(double)), representation,
+                        representation->GetProperty("SpecularPower"), 0);
 
   // Surface uses DiffuseColor and Wireframe uses AmbientColor so we have to set
   // both
   links.addPropertyLink(m_ui->colorChooser, "chosenColorRgbF",
                         SIGNAL(chosenColorChanged(const QColor&)),
-                        contourRepresentation,
-                        contourRepresentation->GetProperty("DiffuseColor"));
+                        representation,
+                        representation->GetProperty("DiffuseColor"));
 
   links.addPropertyLink(m_ui->colorChooser, "chosenColorRgbF",
                         SIGNAL(chosenColorChanged(const QColor&)),
-                        contourRepresentation,
-                        contourRepresentation->GetProperty("AmbientColor"));
+                        representation,
+                        representation->GetProperty("AmbientColor"));
+}
+
+void ModuleContourWidget::addCategoricalPropertyLinks(
+  pqPropertyLinks& links, vtkSMProxy* representation)
+{
+  pqSignalAdaptorComboBox* adaptor =
+    new pqSignalAdaptorComboBox(m_ui->cbRepresentation);
+  links.addPropertyLink(adaptor, "currentText",
+                        SIGNAL(currentTextChanged(QString)),
+                        representation,
+                        representation->GetProperty("Representation"));
+
+  links.addPropertyLink(m_ui->sliOpacity, "value", SIGNAL(valueEdited(double)),
+                        representation,
+                        representation->GetProperty("Opacity"), 0);
+
+  links.addPropertyLink(m_uiLighting->sliAmbient, "value",
+                        SIGNAL(valueEdited(double)), representation,
+                        representation->GetProperty("Ambient"), 0);
+
+  links.addPropertyLink(m_uiLighting->sliDiffuse, "value",
+                        SIGNAL(valueEdited(double)), representation,
+                        representation->GetProperty("Diffuse"), 0);
+
+  links.addPropertyLink(m_uiLighting->sliSpecular, "value",
+                        SIGNAL(valueEdited(double)), representation,
+                        representation->GetProperty("Specular"), 0);
+
+  links.addPropertyLink(m_uiLighting->sliSpecularPower, "value",
+                        SIGNAL(valueEdited(double)), representation,
+                        representation->GetProperty("SpecularPower"), 0);
+
+  // Surface uses DiffuseColor and Wireframe uses AmbientColor so we have to set
+  // both
+  links.addPropertyLink(m_ui->colorChooser, "chosenColorRgbF",
+                        SIGNAL(chosenColorChanged(const QColor&)),
+                        representation,
+                        representation->GetProperty("DiffuseColor"));
+
+  links.addPropertyLink(m_ui->colorChooser, "chosenColorRgbF",
+                        SIGNAL(chosenColorChanged(const QColor&)),
+                        representation,
+                        representation->GetProperty("AmbientColor"));
 }
 
 void ModuleContourWidget::setUseSolidColor(const bool useSolid)

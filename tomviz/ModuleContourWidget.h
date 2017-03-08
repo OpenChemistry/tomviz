@@ -61,8 +61,10 @@ public:
    * Link proxy properties to UI.
    */
   void addPropertyLinks(pqPropertyLinks& links,
-                        vtkSMProxy* contourRepresentation,
+                        vtkSMProxy* representation,
                         vtkSMSourceProxy* contourFilter);
+  void addCategoricalPropertyLinks(pqPropertyLinks& links,
+                                   vtkSMProxy* representation);
 
   /**
    * Expose 'ColorBy' combo box to be populated by the source.
