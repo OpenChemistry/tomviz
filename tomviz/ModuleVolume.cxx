@@ -247,6 +247,7 @@ void ModuleVolume::addToPanel(QWidget* panel)
 {
   if (panel->layout()) {
     delete panel->layout();
+    m_controllers = nullptr;
   }
 
   QVBoxLayout* layout = new QVBoxLayout;

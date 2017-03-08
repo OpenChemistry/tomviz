@@ -94,6 +94,8 @@ set(SOURCES
   Module.h
   ModuleContour.cxx
   ModuleContour.h
+  ModuleContourWidget.cxx
+  ModuleContourWidget.h
   ModuleFactory.cxx
   ModuleFactory.h
   ModuleManager.cxx

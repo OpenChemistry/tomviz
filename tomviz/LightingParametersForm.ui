@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LightingParametersForm</class>
+ <widget class="QWidget" name="LightingParametersForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>217</width>
+    <height>138</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="gbLighting">
+     <property name="title">
+      <string>Lighting</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="laAmbient">
+        <property name="text">
+         <string>Ambient</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="laDiffuse">
+        <property name="text">
+         <string>Diffuse</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="laSpecular">
+        <property name="text">
+         <string>Specular</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="laSpecularPower">
+        <property name="text">
+         <string>Sp. Power</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="tomviz::DoubleSliderWidget" name="sliAmbient" native="true"/>
+      </item>
+      <item row="1" column="1">
+       <widget class="tomviz::DoubleSliderWidget" name="sliDiffuse" native="true"/>
+      </item>
+      <item row="2" column="1">
+       <widget class="tomviz::DoubleSliderWidget" name="sliSpecular" native="true"/>
+      </item>
+      <item row="3" column="1">
+       <widget class="tomviz::DoubleSliderWidget" name="sliSpecularPower" native="true"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>tomviz::DoubleSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>DoubleSliderWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

@@ -16,19 +16,19 @@
 #ifndef tomvizModuleVolumeWidget_h
 #define tomvizModuleVolumeWidget_h
 
-#include <memory>
-
+#include <QScopedPointer>
 #include <QWidget>
 
 /**
  * \brief UI layer of ModuleVolume.
  *
- * Signals are forwarded to the actual actuators on the mapper in ModuleVolume.
+ * Signals are forwarded to the actuators on the mapper in ModuleVolume.
  * This class is intended to contain only logic related to UI actions.
  */
 
 namespace Ui {
 class ModuleVolumeWidget;
+class LightingParametersForm;
 }
 
 namespace tomviz {
@@ -39,15 +39,13 @@ class ModuleVolumeWidget : public QWidget
 
 public:
   ModuleVolumeWidget(QWidget* parent_ = nullptr);
-  ~ModuleVolumeWidget() = default;
+  ~ModuleVolumeWidget() override;
 
   //@{
   /**
    * UI update methods. The actual model state is stored in ModelVolume (either
-   * in
-   * the mapper or serialized), so the UI needs to be updated if the state
-   * changes
-   * or when constructing the UI.
+   * in the mapper or serialized), so the UI needs to be updated if the state
+   * changes or when constructing the UI.
    */
   void setJittering(const bool enable);
   void setBlendingMode(const int mode);
@@ -82,13 +80,10 @@ private:
 
   bool usesLighting(const int mode) const;
 
-  std::shared_ptr<Ui::ModuleVolumeWidget> m_ui;
+  QScopedPointer<Ui::ModuleVolumeWidget> m_ui;
+  QScopedPointer<Ui::LightingParametersForm> m_uiLighting;
 
 private slots:
-  void onAmbientChanged(const int value);
-  void onDiffuseChanged(const int value);
-  void onSpecularChanged(const int value);
-  void onSpecularPowerChanged(const int value);
   void onBlendingChanged(const int mode);
 };
 }
