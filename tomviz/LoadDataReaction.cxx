@@ -28,6 +28,7 @@
 #include "pqProxyWidgetDialog.h"
 #include "pqRenderView.h"
 #include "pqSMAdaptor.h"
+#include "pqView.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkPointData.h"
@@ -38,6 +39,7 @@
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMStringVectorProperty.h"
+#include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 #include "vtkTrivialProducer.h"
 
@@ -261,6 +263,10 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
     ActiveObjects::instance().setActiveModule(module);
   }
   ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+
+  pqView* pqview = tomviz::convert<pqView*>(view);
+  pqview->resetDisplay();
+  pqview->render();
 }
 
 } // end of namespace tomviz
