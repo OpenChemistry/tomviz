@@ -90,25 +90,25 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   vLayout->addStretch(1);
 
   auto button = new QToolButton;
-  button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRange24.png"));
+  button->setIcon(QIcon(":/icons/pqResetRange.png"));
   button->setToolTip("Reset data range");
   connect(button, SIGNAL(clicked()), this, SLOT(onResetRangeClicked()));
   vLayout->addWidget(button);
 
   button = new QToolButton;
-  button->setIcon(QIcon(":/pqWidgets/Icons/pqResetRangeCustom24.png"));
+  button->setIcon(QIcon(":/icons/pqResetRangeCustom.png"));
   button->setToolTip("Specify data range");
   connect(button, SIGNAL(clicked()), this, SLOT(onCustomRangeClicked()));
   vLayout->addWidget(button);
 
   button = new QToolButton;
-  button->setIcon(QIcon(":/pqWidgets/Icons/pqInvert24.png"));
+  button->setIcon(QIcon(":/icons/pqInvert.png"));
   button->setToolTip("Invert color map");
   connect(button, SIGNAL(clicked()), this, SLOT(onInvertClicked()));
   vLayout->addWidget(button);
 
   button = new QToolButton;
-  button->setIcon(QIcon(":/pqWidgets/Icons/pqFavorites16.png"));
+  button->setIcon(QIcon(":/icons/pqFavorites.png"));
   button->setToolTip("Choose preset color map");
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
   vLayout->addWidget(button);
