@@ -42,5 +42,13 @@
         <file>icons/pqPalette@2x.png</file>
         <file>icons/gradient_opacity.png</file>
         <file>icons/gradient_opacity@2x.png</file>
+        <file>icons/pqInvert.png</file>
+        <file>icons/pqInvert@2x.png</file>
+        <file>icons/pqFavorites@2x.png</file>
+        <file>icons/pqFavorites.png</file>
+        <file>icons/pqResetRange.png</file>
+        <file>icons/pqResetRange@2x.png</file>
+        <file>icons/pqResetRangeCustom.png</file>
+        <file>icons/pqResetRangeCustom@2x.png</file>
     </qresource>
 </RCC>
