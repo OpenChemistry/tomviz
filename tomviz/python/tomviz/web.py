@@ -88,9 +88,6 @@ def bundleDataToHTML(destinationPath):
                 else:
                     with open(fullPath, 'rb') as data:
                         dataContent = data.read()
-                        if hasattr(dataContent, 'encode'):
-                            dataContent = dataContent.encode()
-
                         content = base64.b64encode(dataContent)
                         content = content.decode().replace('\n', '')
 
