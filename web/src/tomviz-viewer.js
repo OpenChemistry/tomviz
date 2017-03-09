@@ -12,11 +12,13 @@ import React    from 'react';
 import ReactDOM from 'react-dom';
 
 import GenericViewer      from 'paraviewweb/src/React/Viewers/ImageBuilderViewer';
+import GeometryViewer     from 'paraviewweb/src/React/Viewers/GeometryViewer';
 import QueryDataModel     from 'paraviewweb/src/IO/Core/QueryDataModel';
 import LookupTableManager from 'paraviewweb/src/Common/Core/LookupTableManager';
 
 import ImageQueryDataModelViewer from 'arctic-viewer/lib/types/ImageQueryDataModel';
 import SortedCompositeViewer     from 'arctic-viewer/lib/types/SortedComposite';
+import VTKGeometry               from 'arctic-viewer/lib/types/VTKGeometry';
 
 // Resource images -----------------------------------------------------------
 
@@ -24,11 +26,18 @@ import link from './tomvizLink.png';
 
 // Global variables -----------------------------------------------------------
 
+// React UI map
+const ReactClassMap = {
+  GenericViewer,
+  GeometryViewer,
+};
+
 const iOS = /iPad|iPhone|iPod/.test(window.navigator.platform);
 const lookupTableManager = new LookupTableManager();
 const dataViewers = [
   ImageQueryDataModelViewer,
   SortedCompositeViewer,
+  VTKGeometry,
 ];
 
 // Add class to body if iOS device --------------------------------------------
@@ -40,14 +49,14 @@ if (iOS) {
 // ----------------------------------------------------------------------------
 
 function viewerBuilder(basepath, data, config, callback) {
-  var foundViewer = false;
-  var viewerCount = dataViewers.length;
+  let foundViewer = false;
+  let viewerCount = dataViewers.length;
 
   const dataType = data.type;
   const viewer = {
     ui: 'GenericViewer',
     config,
-    allowMagicLens: true,
+    allowMagicLens: false,
   };
 
   // Initializer shared variables
@@ -66,9 +75,12 @@ function viewerBuilder(basepath, data, config, callback) {
   // Find the right viewer and build it
   const args = { basepath, data, callback, viewer, dataType };
   while (viewerCount && !foundViewer) {
+    console.log(viewer.ui);
     viewerCount -= 1;
     foundViewer = dataViewers[viewerCount](args);
   }
+
+  console.log(viewer.ui);
 
   setImmediate(() => callback(viewer));
   return foundViewer;
@@ -100,14 +112,14 @@ function createUI(viewer, container, callback) {
   if (viewer.ui === 'ReactComponent') {
     ReactDOM.render(viewer.component, container, callback);
   } else {
-    ReactDOM.render(React.createElement(GenericViewer, viewer), container, callback);
+    ReactDOM.render(React.createElement(ReactClassMap[viewer.ui], viewer), container, callback);
   }
 }
 
 
 // Expose viewer factory method -----------------------------------------------
 
-export function load(container) {
+export function load(container, useHtml = true) {
   const rootQueryDataModel = new QueryDataModel({
     type: [],
     arguments: {},
@@ -133,7 +145,10 @@ export function load(container) {
       createUI(viewer, container);
     });
   });
-  rootQueryDataModel.useHtmlContent();
+  if (useHtml) {
+    rootQueryDataModel.useHtmlContent();
+  }
+
   rootQueryDataModel.fetchData();
 }
 
@@ -152,4 +167,10 @@ export function ready() {
   load(container);
 }
 
+
+export function loadData() {
+  load(container, false);
+}
+
 global.ready = ready;
+global.loadTomvizData = loadData;

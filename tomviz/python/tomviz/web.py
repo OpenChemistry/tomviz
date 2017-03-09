@@ -5,6 +5,7 @@ import base64
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
 from paraview.web.dataset_builder import CompositeDataSetBuilder
+from paraview.web.dataset_builder import VTKGeometryDataSetBuilder
 
 from tomviz import py2to3
 
@@ -46,6 +47,12 @@ def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
         export_contour_exploration_images(dest, camera)
 
     if exportType == 3:
+        export_contours_geometry(dest)
+
+    if exportType == 4:
+        export_contour_exploration_geometry(dest)
+
+    if exportType == 5:
         export_layers(dest, camera)
 
     # Setup application
@@ -75,17 +82,14 @@ def bundleDataToHTML(destinationPath):
                 relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
                 content = ''
 
-                if fname.endswith('.jpg'):
-                    with open(fullPath, 'rb') as data:
-                        dataContent = data.read()
-                        if hasattr(dataContent, 'encode'):
-                            dataContent = dataContent.encode()
-
-                        content = base64.b64encode(dataContent)
-                        content = content.decode().replace('\n', '')
-                else:
+                if fname.endswith('.json'):
                     with open(fullPath, 'r') as data:
                         content = data.read()
+                else:
+                    with open(fullPath, 'rb') as data:
+                        dataContent = data.read()
+                        content = base64.b64encode(dataContent)
+                        content = content.decode().replace('\n', '')
 
                 webResources.append(
                     '<div class="webResource" data-url="%s">%s</div>'
@@ -149,7 +153,10 @@ def add_scene_item(scene, name, proxy, view):
         if array.Name not in ['vtkValidPointMask', 'Normals']:
             hasColor = True
             if rangeValues[0] == rangeValues[1]:
-                colors[array.Name] = {'constant': rangeValues[0]}
+                colors[array.Name] = {
+                    'constant': rangeValues[0],
+                    'location': 'POINT_DATA'
+                }
             else:
                 colors[array.Name] = {
                     'location': 'POINT_DATA',
@@ -170,8 +177,8 @@ def add_scene_item(scene, name, proxy, view):
     # Make sure Normals are available if lighting by normals
     source = proxy
     if not hasColor or rep.Representation == 'Outline':
-        colors = {'solid': {'constant': 0}}
-    elif 'normal' in scene['light'] and not hasNormal:
+        colors = {'solid': {'constant': 0, 'location': 'POINT_DATA'}}
+    elif 'light' in scene and 'normal' in scene['light'] and not hasNormal:
         rep.Visibility = 0
         surface = simple.ExtractSurface(Input=proxy)
         surfaceWithNormals = simple.GenerateSurfaceNormals(Input=surface)
@@ -264,6 +271,65 @@ def export_contour_exploration_images(destinationPath, camera):
         idb.stop()
     else:
         print('No contour module available')
+
+# -----------------------------------------------------------------------------
+# Contours Geometry export
+# -----------------------------------------------------------------------------
+
+
+def export_contours_geometry(destinationPath):
+    view = simple.GetRenderView()
+    sceneDescription = {'scene': []}
+    for key, value in simple.GetSources().iteritems():
+        if key[0] == 'Contour':
+            add_scene_item(sceneDescription, key[0], value, view)
+
+    count = 1
+    for item in sceneDescription['scene']:
+        item['name'] += ' (%d)' % count
+        count += 1
+
+    # Create geometry Builder
+    dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
+    dsb.start()
+    dsb.writeData(0)
+    dsb.stop()
+
+# -----------------------------------------------------------------------------
+# Contours Geometry export
+# -----------------------------------------------------------------------------
+
+
+def export_contour_exploration_geometry(destinationPath):
+    contour = None
+    for key, value in simple.GetSources().iteritems():
+        if key[0] == 'Contour':
+            contour = value
+
+    if contour:
+        sceneDescription = {
+            'scene': [{
+                'name': 'Contour',
+                'source': contour,
+                'colors': {
+                    'Scalar': {
+                        'constant': 0,
+                        'location': 'POINT_DATA'
+                    }
+                }
+            }]
+        }
+        dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
+        dsb.getDataHandler().registerArgument(priority=1, name='contour',
+                                              values=range(25, 251, 25),
+                                              ui='slider', loop='modulo')
+        dsb.start()
+        scalarContainer = sceneDescription['scene'][0]['colors']['Scalar']
+        for contourValue in dsb.getDataHandler().contour:
+            contour.Value = [contourValue]
+            scalarContainer['constant'] = contourValue
+            dsb.writeData()
+        dsb.stop()
 
 # -----------------------------------------------------------------------------
 # Composite exporter
