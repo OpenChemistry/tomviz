@@ -252,7 +252,7 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
   ActiveObjects::instance().createRenderViewIfNeeded();
   auto view = ActiveObjects::instance().activeView();
 
-  if (QString(view->GetXMLName()) != "RenderView") {
+  if (!view || QString(view->GetXMLName()) != "RenderView") {
     ActiveObjects::instance().setActiveViewToFirstRenderView();
     view = ActiveObjects::instance().activeView();
   }
