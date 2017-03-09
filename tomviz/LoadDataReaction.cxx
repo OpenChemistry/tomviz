@@ -248,23 +248,25 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
   ActiveObjects::instance().setMoveObjectsMode(false);
   ModuleManager::instance().addDataSource(dataSource);
 
+  // Work through pathological cases as necessary, prefer active view.
   ActiveObjects::instance().createRenderViewIfNeeded();
-  ActiveObjects::instance().setActiveViewToFirstRenderView();
+  auto view = ActiveObjects::instance().activeView();
 
-  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  if (!view || QString(view->GetXMLName()) != "RenderView") {
+    ActiveObjects::instance().setActiveViewToFirstRenderView();
+    view = ActiveObjects::instance().activeView();
+  }
 
   // Create an outline module for the source in the active view.
-  if (Module* module = ModuleManager::instance().createAndAddModule(
-        "Outline", dataSource, view)) {
-    ActiveObjects::instance().setActiveModule(module);
-  }
-  if (Module* module = ModuleManager::instance().createAndAddModule(
+  ModuleManager::instance().createAndAddModule("Outline", dataSource, view);
+
+  if (auto module = ModuleManager::instance().createAndAddModule(
         "Orthogonal Slice", dataSource, view)) {
     ActiveObjects::instance().setActiveModule(module);
   }
   ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
 
-  pqView* pqview = tomviz::convert<pqView*>(view);
+  auto pqview = tomviz::convert<pqView*>(view);
   pqview->resetDisplay();
   pqview->render();
 }
