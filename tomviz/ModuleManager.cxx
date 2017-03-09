@@ -73,6 +73,8 @@ public:
 ModuleManager::ModuleManager(QObject* parentObject)
   : Superclass(parentObject), Internals(new ModuleManager::MMInternals())
 {
+  connect(pqApplicationCore::instance()->getServerManagerModel(),
+          SIGNAL(viewRemoved(pqView*)), SLOT(onViewRemoved(pqView*)));
 }
 
 ModuleManager::~ModuleManager()
@@ -642,6 +644,21 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
         }
       }
     }
+  }
+}
+
+void ModuleManager::onViewRemoved(pqView *view)
+{
+  Q_ASSERT(view);
+  auto viewProxy = view->getViewProxy();
+  QList<Module*> modules;
+  foreach (Module* module, this->Internals->Modules) {
+    if (module->view() == viewProxy) {
+      modules.push_back(module);
+    }
+  }
+  foreach (Module* module, modules) {
+    this->removeModule(module);
   }
 }
 
