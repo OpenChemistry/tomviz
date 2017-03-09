@@ -58,6 +58,10 @@ public:
   void paint(QPainter* painter, const QStyleOptionViewItem& option,
              const QModelIndex& index) const;
 
+public slots:
+  void start();
+  void stop();
+
 private:
   QTimer* m_timer;
   PipelineView* m_view;
@@ -69,7 +73,6 @@ OperatorRunningDelegate::OperatorRunningDelegate(QWidget* parent)
 {
   m_view = qobject_cast<PipelineView*>(parent);
   m_timer = new QTimer(this);
-  m_timer->start(50);
   connect(m_timer, SIGNAL(timeout()), m_view->viewport(), SLOT(update()));
 }
 
@@ -107,6 +110,16 @@ void OperatorRunningDelegate::paint(QPainter* painter,
   }
 }
 
+void OperatorRunningDelegate::start()
+{
+  m_timer->start(50);
+}
+
+void OperatorRunningDelegate::stop()
+{
+  m_timer->stop();
+}
+
 PipelineView::PipelineView(QWidget* p) : QTreeView(p)
 {
   connect(this, SIGNAL(clicked(QModelIndex)), SLOT(rowActivated(QModelIndex)));
@@ -119,13 +132,32 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   setAlternatingRowColors(true);
   setSelectionBehavior(QAbstractItemView::SelectRows);
   setSelectionMode(QAbstractItemView::ExtendedSelection);
-  setItemDelegate(new OperatorRunningDelegate(this));
+  OperatorRunningDelegate* delegate = new OperatorRunningDelegate(this);
+  setItemDelegate(delegate);
 
   // track selection to update ActiveObjects.
   connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
           SLOT(setCurrent(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
           SLOT(setCurrent(Module*)));
+
+  // Connect up operators to start and stop delegate
+  // New datasource added
+  connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded, [this, delegate](DataSource *dataSource) {
+    // New operator added
+    connect(dataSource, &DataSource::operatorAdded, delegate, [this, delegate](Operator *op) {
+      // Connect transformingStarted to OperatorRunningDelegate
+      connect(op, &Operator::transformingStarted, delegate, &OperatorRunningDelegate::start);
+      // Connect transformingDone
+      connect(op, &Operator::transformingDone, delegate, [this, delegate]() {
+        delegate->stop();
+        // We need this final update to ensure the status icon is repainted
+        QTimer::singleShot(50, [this]() {
+          this->viewport()->update();
+        });
+      });
+    });
+  });
 
   connect(this, SIGNAL(doubleClicked(QModelIndex)),
           SLOT(rowDoubleClicked(QModelIndex)));
