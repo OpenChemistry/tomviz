@@ -1,4 +1,4 @@
-FROM tomviz/tomviz-dependencies:latest
+FROM tomviz/tomviz-dependencies:py3
 MAINTAINER Chris Harris <chris.harris@kitware.com>
 
 RUN echo "#!/bin/bash" > build.sh && \

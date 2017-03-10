@@ -9,7 +9,7 @@ dependencies:
     - ~/docker
   override:
     - pip install scikit-ci-addons==0.12.0
-    - ci_addons docker load-pull-save --verbose tomviz/tomviz-builder:latest
+    - ci_addons docker load-pull-save --verbose tomviz/tomviz-builder:py3
 
 checkout:
   post:
@@ -18,4 +18,4 @@ checkout:
 
 test:
   override:
-    - docker run -e "CIRCLE_BRANCH=${CIRCLE_BRANCH}" -e "CIRCLE_BUILD_NUM=${CIRCLE_BUILD_NUM}" --name tomviz -v ~/tomviz:/tomviz tomviz/tomviz-builder:latest
+    - docker run -e "CIRCLE_BRANCH=${CIRCLE_BRANCH}" -e "CIRCLE_BUILD_NUM=${CIRCLE_BUILD_NUM}" --name tomviz -v ~/tomviz:/tomviz tomviz/tomviz-builder:py3
