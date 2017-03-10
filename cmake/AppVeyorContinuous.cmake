@@ -18,7 +18,7 @@ set(cfg_options
   -DGTEST_LIBRARY:PATH=C:/projects/googletest-install/lib/gtest.lib
   -DGTEST_MAIN_LIBRARY:PATH=C:/projects/googletest-install/lib/gtest_main.lib
   -DGTEST_INCLUDE_DIR:PATH=C:/projects/googletest-install/include
-  -DPYTHON_EXECUTABLE:PATH=C:/projects/python/bin/python.exe
+  -DPYTHON_EXECUTABLE:PATH=C:/projects/python3/python.exe
   -DENABLE_TESTING:BOOL=ON
   -DCMAKE_BUILD_TYPE:STRING="Release")
 
