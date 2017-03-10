@@ -31,24 +31,23 @@ namespace tomviz {
 class DataTransformMenu : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
-  DataTransformMenu(QMainWindow* mainWindow = nullptr, QMenu* menu = nullptr);
-  virtual ~DataTransformMenu();
+  DataTransformMenu(QMainWindow* mainWindow, QMenu* transform, QMenu* seg);
 
 private slots:
   void updateActions();
 
 protected slots:
-  void buildMenu();
+  void buildTransforms();
+  void buildSegmentation();
 
 private:
   Q_DISABLE_COPY(DataTransformMenu)
-  QPointer<QMenu> Menu;
 
-  class DTInternals;
-  QScopedPointer<DTInternals> Internals;
+  QMenu* m_transformMenu;
+  QMenu* m_segmentationMenu;
+  QMainWindow* m_mainWindow;
 };
 }
 
