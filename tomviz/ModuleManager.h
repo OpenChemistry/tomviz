@@ -20,6 +20,7 @@
 #include <QScopedPointer>
 #include <vtk_pugixml.h>
 
+class pqView;
 class vtkSMSourceProxy;
 class vtkSMViewProxy;
 class vtkPVXMLElement;
@@ -90,6 +91,9 @@ public slots:
 private slots:
   /// Used when loading state
   void onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*);
+
+  /// Delete modules when the view that they are in is removed.
+  void onViewRemoved(pqView*);
 
 signals:
   void moduleAdded(Module*);
