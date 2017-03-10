@@ -104,6 +104,7 @@ if (TOMVIZ_DOWNLOAD_WEB)
       "https://data.kitware.com/api/v1/file/hashsum/sha512/${tomviz_html_sha512}/download"
       "${tomviz_html_path}"
       EXPECTED_HASH SHA512=${tomviz_html_sha512}
+      SHOW_PROGRESS
     )
   endif()
 endif()
