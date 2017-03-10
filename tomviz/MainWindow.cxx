@@ -398,7 +398,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   connect(sampleDataLinkAction, SIGNAL(triggered()), SLOT(openDataLink()));
 
   QAction* moveObjects =
-    ui.toolBar->addAction(QIcon(":/icons/move_objects"), "MoveObjects");
+    ui.utilitiesToolbar->addAction(QIcon(":/icons/move_objects"), "MoveObjects");
   moveObjects->setToolTip(
     "Enable to allow moving of the selected dataset in the scene");
   moveObjects->setCheckable(true);
@@ -406,12 +406,12 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   QObject::connect(moveObjects, SIGNAL(triggered(bool)),
                    &ActiveObjects::instance(), SLOT(setMoveObjectsMode(bool)));
 
-  QAction* loadPaletteAction = ui.toolBar->addAction(
+  QAction* loadPaletteAction = ui.utilitiesToolbar->addAction(
     QIcon(":/icons/pqPalette.png"), "LoadPalette");
   new LoadPaletteReaction(loadPaletteAction);
 
   QToolButton* tb =
-    qobject_cast<QToolButton*>(ui.toolBar->widgetForAction(loadPaletteAction));
+    qobject_cast<QToolButton*>(ui.utilitiesToolbar->widgetForAction(loadPaletteAction));
   if (tb) {
     tb->setPopupMode(QToolButton::InstantPopup);
   }
