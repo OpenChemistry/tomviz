@@ -26,8 +26,6 @@ build_script:
   - set PATH=C:\projects\tomviz-build\lib\site-packages\tomviz;%PATH%
   - set PATH=C:\projects\python3\bin;%PATH%
   - set PATH=c:\projects\python3;%PATH%
-  - set PATH=C:\projects\paraview-install\lib\paraview-5.2;%PATH%
-  - set PATH=C:\projects\paraview-install\bin;%PATH%
   - set PATH=C:\projects\tbb\bin\intel64\vc14;%PATH%
   - set PATH=C:\projects\paraview-build\lib;%PATH%
   - set PATH=C:\projects\paraview-build\bin;%PATH%
@@ -37,7 +35,6 @@ build_script:
   - set PYTHONPATH=C:/projects/paraview-build/bin;%PYTHONPATH%
   - set PYTHONPATH=C:/projects/tomviz-build/lib/site-packages;%PYTHONPATH%
   - set PYTHONPATH=C:/projects/paraview-build/lib/site-packages;%PYTHONPATH%
-  - set PYTHONPATH=C:/projects/paraview-install/lib/paraview-5.2/site-packages;%PYTHONPATH%
   - set PYTHONPATH=C:/projects/paraview-build/lib;%PYTHONPATH%
   # Now call ctest
   - ctest -VV -S %APPVEYOR_BUILD_FOLDER%\cmake\AppVeyorContinuous.cmake
