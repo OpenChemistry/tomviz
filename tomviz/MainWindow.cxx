@@ -198,7 +198,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new SetScaleReaction(setScaleAction);
 
   // Build Data Transforms menu
-  new DataTransformMenu(this, ui.menuData);
+  new DataTransformMenu(this, ui.menuData, ui.menuSegmentation);
 
   // Build Tomography menu
   // ################################################################

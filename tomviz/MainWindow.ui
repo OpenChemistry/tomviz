@@ -88,8 +88,14 @@
      <string>&amp;Tomography</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuSegmentation">
+    <property name="title">
+     <string>Segmentation</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuData"/>
+   <addaction name="menuSegmentation"/>
    <addaction name="menuTomography"/>
    <addaction name="menuModules"/>
    <addaction name="menuView"/>
@@ -269,8 +275,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>254</width>
-             <height>397</height>
+             <width>100</width>
+             <height>30</height>
             </rect>
            </property>
           </widget>
@@ -290,8 +296,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>254</width>
-             <height>397</height>
+             <width>100</width>
+             <height>30</height>
             </rect>
            </property>
           </widget>
@@ -311,8 +317,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>254</width>
-             <height>397</height>
+             <width>100</width>
+             <height>30</height>
             </rect>
            </property>
           </widget>
