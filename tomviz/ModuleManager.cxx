@@ -372,6 +372,19 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
       }
     }
   }
+
+  // Save camera links
+  vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
+  vtkNew<vtkPVXMLElement> linksElement;
+  linksElement->SetName("Links");
+  pxm->SaveRegisteredLinks(linksElement.Get());
+
+  std::ostringstream stream;
+  linksElement->PrintXML(stream, vtkIndent());
+
+  std::string linksStr = stream.str();
+  ns.append_buffer(linksStr.c_str(), linksStr.size());
+
   return true;
 }
 
@@ -430,6 +443,10 @@ bool ModuleManager::deserialize(const pugi::xml_node& ns, const QDir& stateDir)
       layoutSummary.append_attribute("name").set_value(
         QString("Layout%1").arg(++numLayouts).toStdString().c_str());
     }
+  }
+  pugi::xml_node node = ns.child("Links");
+  if (node) {
+    pvState.append_copy(node);
   }
   // This state and connection is cleaned up by onPVStateLoaded.
   this->Internals->node = ns;
