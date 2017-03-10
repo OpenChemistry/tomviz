@@ -174,9 +174,9 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="QToolBar" name="utilitiesToolbar">
    <property name="windowTitle">
-    <string>toolBar</string>
+    <string>Utilities Toolbar</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
