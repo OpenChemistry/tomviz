@@ -555,9 +555,12 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
   ModuleManager::instance().addDataSource(dataSource);
 
   ActiveObjects::instance().createRenderViewIfNeeded();
-  ActiveObjects::instance().setActiveViewToFirstRenderView();
+  auto view = ActiveObjects::instance().activeView();
 
-  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  if (!view || QString(view->GetXMLName()) != "RenderView") {
+    ActiveObjects::instance().setActiveViewToFirstRenderView();
+    view = ActiveObjects::instance().activeView();
+  }
 
   // Create an outline module for the source in the active view.
   if (Module* module = ModuleManager::instance().createAndAddModule(
