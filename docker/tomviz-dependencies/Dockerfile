@@ -72,17 +72,22 @@ RUN wget $QT_DOWNLOAD_URL && \
   rm -rf $QT_DIR
 
 # Build and install ITK
-ARG ITK_VERSION=v4.9.0
+ARG ITK_VERSION=v4.11.0
 RUN git clone -b $ITK_VERSION git://itk.org/ITK.git && \
   mkdir itk-build && \
   cd itk-build && \
   cmake -G Ninja -DCMAKE_BUILD_TYPE:STRING=Release \
     -DITK_LEGACY_REMOVE:BOOL=ON \
     -DITK_LEGACY_SILENT:BOOL=ON \
-    -DITK_USE_FFTWD:BOOL=ON \
-    -DITK_USE_FFTWF:BOOL=ON \
     -DModule_BridgeNumPy:BOOL=ON \
     -DBUILD_TESTING:BOOL=OFF \
+    -DITK_WRAP_unsigned_short:BOOL=ON \
+    -DITK_BUILD_DEFAULT_MODULES:BOOL=OFF \
+    -DITKGroup_Core:BOOL=ON \
+    -DITKGroup_Filtering:BOOL=ON \
+    -DITKGroup_Segmentation:BOOL=ON \
+    -DITKGroup_Registration:BOOL=ON \
+    -DITKGroup_Nonunit:BOOL=ON \
     -DITK_WRAP_PYTHON:BOOL=ON \
     -DBUILD_EXAMPLES:BOOL=OFF \
     -DBUILD_SHARED_LIBS:BOOL=ON \
