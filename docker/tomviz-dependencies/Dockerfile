@@ -6,16 +6,17 @@ RUN apt-get update && apt-get -y install \
   wget \
   cmake \
   python \
-  python-pip \
-  python-dev \
+  python3 \
+  python3-pip \
+  python3-dev \
   g++ \
   libtbb-dev \
   libgl1-mesa-dev \
   libglu1-mesa-dev \
   libxt-dev
 
-RUN pip install -U pip && \
-  pip install numpy
+RUN pip3 install -U pip && \
+  pip3 install numpy
 
 # Build and install ninja.
 ARG NINJA_VERSION=v1.7.2
@@ -86,6 +87,7 @@ RUN git clone -b $ITK_VERSION git://itk.org/ITK.git && \
     -DBUILD_EXAMPLES:BOOL=OFF \
     -DBUILD_SHARED_LIBS:BOOL=ON \
     -DCMAKE_INSTALL_PREFIX:PATH=/opt/itk \
+    -DPYTHON_EXECUTABLE:PATH=/usr/bin/python3 \
     ../ITK && \
   cmake --build . --target install && \
   cd .. && \
@@ -114,6 +116,7 @@ RUN git clone --recursive git://github.com/kitware/paraview.git && \
     -DVTK_PYTHON_FULL_THREADSAFE:BOOL=ON \
     -DVTK_NO_PYTHON_THREADS:BOOL=OFF \
     -DQt5_DIR:PATH=/usr/local/Qt-5.8.0/lib/cmake/Qt5 \
+    -DVTK_PYTHON_VERSION:STRING=3 \
     ../paraview && \
   cmake --build . && \
   cd .. && \
