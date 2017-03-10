@@ -132,7 +132,7 @@ RUN git clone --recursive git://github.com/kitware/paraview.git && \
 # Provide paths to downstream builds
 ONBUILD ENV QT5_DIR /usr/local/Qt-5.8.0/lib/cmake/Qt5
 ONBUILD ENV PARAVIEW_DIR /paraview-build
-ONBUILD ENV ITK_DIR /opt/itk/lib/cmake/ITK-4.9
+ONBUILD ENV ITK_DIR /opt/itk/lib/cmake/ITK-4.11
 ONBUILD ENV GTEST_LIBRARY /opt/googletest/lib/libgtest.a
 ONBUILD ENV GTEST_MAIN_LIBRARY /opt/googletest/lib/libgtest_main.a
 ONBUILD ENV GTEST_INCLUDE_DIR /opt/googletest/include
