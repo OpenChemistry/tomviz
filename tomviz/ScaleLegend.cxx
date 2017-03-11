@@ -172,6 +172,10 @@ ScaleLegend::ScaleLegend(QMainWindow* mw)
 
   // Add our sub-renderer to the main renderer
   vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  if (!view) {
+    // Something is wrong with the view, exit early.
+    return;
+  }
   vtkPVRenderView* renderView =
     vtkPVRenderView::SafeDownCast(view->GetClientSideView());
   renderView->GetRenderWindow()->AddRenderer(m_renderer.Get());
