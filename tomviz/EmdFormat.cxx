@@ -78,12 +78,13 @@ public:
   bool attribute(const std::string& group, const std::string& name, void* value,
                  hid_t typeId)
   {
-    if (H5Aexists_by_name(fileId, group.c_str(), name.c_str(), H5P_DEFAULT) <
+    if (H5Aexists_by_name(fileId, group.c_str(), name.c_str(), H5P_DEFAULT) <=
         0) {
       // The specified attribute does not exist.
       cout << group << name << " not found!" << endl;
       return false;
     }
+
     hid_t attr = H5Aopen_by_name(fileId, group.c_str(), name.c_str(),
                                  H5P_DEFAULT, H5P_DEFAULT);
     hid_t type = H5Aget_type(attr);
@@ -225,12 +226,12 @@ public:
                  vtkImageData* data)
   {
     bool success = true;
-    std::vector<hsize_t> h5dim;
+    hsize_t h5dim[3];
     int dim[3] = { 0, 0, 0 };
     data->GetDimensions(dim);
-    for (size_t i = 0; i < 3; ++i) {
-      h5dim.push_back(static_cast<hsize_t>(dim[i]));
-    }
+    h5dim[0] = dim[2];
+    h5dim[1] = dim[1];
+    h5dim[2] = dim[0];
 
     auto arrayPtr = data->GetPointData()->GetScalars();
     auto dataPtr = static_cast<float*>(arrayPtr->GetVoidPointer(0));
@@ -262,7 +263,7 @@ public:
 
     hid_t groupId = H5Gopen(fileId, group.c_str(), H5P_DEFAULT);
     hid_t dataspaceId =
-      H5Screate_simple(static_cast<int>(h5dim.size()), &h5dim[0], NULL);
+      H5Screate_simple(3, &h5dim[0], NULL);
 
     switch (data->GetScalarType()) {
       vtkTemplateMacro(success =
@@ -308,6 +309,10 @@ public:
       dims.resize(dimCount);
       std::copy(h5dims, h5dims + dimCount, dims.begin());
     }
+    if (dimCount == 3) {
+      dims[0] = h5dims[2];
+      dims[2] = h5dims[0];
+    }
     delete[] h5dims;
 
     // Map the HDF5 types to the VTK types for storage and memory. We should
@@ -319,17 +324,27 @@ public:
     if (H5Tequal(dataTypeId, H5T_IEEE_F32LE)) {
       memTypeId = H5T_NATIVE_FLOAT;
       vtkDataType = VTK_FLOAT;
+    } else if (H5Tequal(dataTypeId, H5T_STD_I32LE)) {
+      memTypeId = H5T_NATIVE_INT;
+      vtkDataType = VTK_INT;
     } else if (H5Tequal(dataTypeId, H5T_STD_U32LE)) {
       memTypeId = H5T_NATIVE_UINT;
       vtkDataType = VTK_UNSIGNED_INT;
+    } else if (H5Tequal(dataTypeId, H5T_STD_I16LE)) {
+      memTypeId = H5T_NATIVE_SHORT;
+      vtkDataType = VTK_SHORT;
     } else if (H5Tequal(dataTypeId, H5T_STD_U16LE)) {
       memTypeId = H5T_NATIVE_USHORT;
       vtkDataType = VTK_UNSIGNED_SHORT;
+    } else if (H5Tequal(dataTypeId, H5T_STD_I8LE)) {
+        memTypeId = H5T_NATIVE_CHAR;
+        vtkDataType = VTK_SIGNED_CHAR;
     } else if (H5Tequal(dataTypeId, H5T_STD_U8LE)) {
       memTypeId = H5T_NATIVE_UCHAR;
       vtkDataType = VTK_UNSIGNED_CHAR;
     } else {
       // Not accounted for, fail for now, should probably improve this soon.
+      std::cout << "Unknown type encountered!" << dataTypeId << std::endl;
       H5Tclose(dataTypeId);
       H5Sclose(dataspaceId);
       H5Dclose(datasetId);
@@ -349,6 +364,48 @@ public:
 
     return true;
   }
+
+  std::vector<std::string> children(const std::string path)
+  {
+    std::vector<std::string> result;
+    hsize_t objCount = 0;
+    constexpr int maxName = 2048;
+    char groupName[maxName];
+    hid_t groupId = H5Gopen(fileId, path.c_str(), H5P_DEFAULT);
+    //H5Iget_name(groupId, groupName, maxName);
+    //std::cout << "group name " << groupName << std::endl;
+    H5Gget_num_objs(groupId, &objCount);
+    for (hsize_t i = 0; i < objCount; ++i) {
+      H5Gget_objname_by_idx(groupId, i, groupName, maxName);
+      result.push_back(groupName);
+    }
+    H5Gclose(groupId);
+    return result;
+  }
+
+  std::string firstEmdNode()
+  {
+    // Find the first valid EMD node, and return its path.
+    int emdVersion = 1;
+    std::vector<std::string> firstLevel = children("/");
+    for (size_t i = 0; i < firstLevel.size(); ++i) {
+      std::vector<std::string> nodes = children("/" + firstLevel[i]);
+      for (size_t j = 0; j < nodes.size(); ++j) {
+        std::string path = "/" + firstLevel[i] + "/" + nodes[j];
+        if (attribute(path, "emd_group_type", emdVersion)) {
+          std::cout << "found EMD node at " << path << std::endl;
+          return path;
+        }
+        // This is a little hackish, some EMDs don't use the attribute.
+        std::vector<std::string> third = children(path);
+        for (size_t k = 0; k < third.size(); ++k) {
+          if (third[k] == "data") {
+            return path;
+          }
+        }
+      }
+    }
+  }
 };
 
 EmdFormat::EmdFormat() : d(new Private)
@@ -367,14 +424,17 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     cout << "Failed to find version_minor" << endl;
   }
 
+  std::string emdNode = d->firstEmdNode();
+  std::string emdDataNode = emdNode + "/data";
+
   // Verify that the path exists in the HDF5 file.
   bool dataLinkExists = false;
-  if (H5Oexists_by_name(d->fileId, "/data/tomography", H5P_DEFAULT) == 1) {
+  if (H5Oexists_by_name(d->fileId, emdNode.c_str(), H5P_DEFAULT) == 1) {
     dataLinkExists = true;
   }
 
   H5O_info_t info;
-  if (H5Oget_info_by_name(d->fileId, "/data/tomography/data", &info,
+  if (H5Oget_info_by_name(d->fileId, emdDataNode.c_str(), &info,
                           H5P_DEFAULT < 0)) {
     dataLinkExists = false;
   } else {
@@ -382,7 +442,7 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
   }
 
   if (dataLinkExists && info.type == H5O_TYPE_DATASET) {
-    d->readData("/data/tomography/data", image);
+    d->readData(emdDataNode, image);
     return true;
   } else {
     return false;
