@@ -33,8 +33,10 @@
 
 #include "vtkCamera.h"
 #include "vtkNew.h"
+#include "vtkPVRenderView.h"
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
+#include "vtkRenderer.h"
 #include "vtkSMProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMProxyIterator.h"
@@ -51,6 +53,7 @@
 
 #include <QDir>
 #include <QMap>
+#include <QMultiMap>
 #include <QPointer>
 #include <QSet>
 #include <QtDebug>
@@ -65,6 +68,11 @@ public:
   QList<QPointer<DataSource>> DataSources;
   QList<QPointer<Module>> Modules;
   QMap<vtkSMProxy*, vtkSmartPointer<vtkCamera>> RenderViewCameras;
+
+  // Map from view proxies to modules. Used to keep track of how many modules
+  // have been added to a view.
+  QMultiMap<vtkSMProxy*, Module*> ViewModules;
+
   // only used by onPVStateLoaded for the second half of deserialize
   pugi::xml_node node;
   QDir dir;
@@ -136,6 +144,15 @@ void ModuleManager::addModule(Module* module)
   if (!this->Internals->Modules.contains(module)) {
     module->setParent(this);
     this->Internals->Modules.push_back(module);
+
+    // Reset display if this is the first module in the view.
+    if (this->Internals->ViewModules.count(module->view()) == 0) {
+      auto pqview = tomviz::convert<pqView*>(module->view());
+      pqview->resetDisplay();
+      pqview->render();
+    }
+    this->Internals->ViewModules.insert(module->view(), module);
+
     emit this->moduleAdded(module);
   }
 }
@@ -143,6 +160,7 @@ void ModuleManager::addModule(Module* module)
 void ModuleManager::removeModule(Module* module)
 {
   if (this->Internals->Modules.removeOne(module)) {
+    this->Internals->ViewModules.remove(module->view(), module);
     emit this->moduleRemoved(module);
     module->deleteLater();
   }
