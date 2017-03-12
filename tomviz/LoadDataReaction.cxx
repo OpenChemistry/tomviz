@@ -29,10 +29,10 @@
 #include "pqRenderView.h"
 #include "pqSMAdaptor.h"
 #include "pqView.h"
+#include "vtkDataArray.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkPointData.h"
-#include "vtkDataArray.h"
 #include "vtkSMCoreUtilities.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMPropertyHelper.h"
@@ -113,22 +113,19 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
     fileName = fileNames[0];
   }
   QFileInfo info(fileName);
-  if (info.suffix() == "emd") {
+  if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
-    EmdFormat emdFile;
-    vtkNew<vtkImageData> imageData;
-    emdFile.read(fileName.toLatin1().data(), imageData.Get());
-
-    dataSource = createDataSource(imageData.Get());
-    dataSource->originalDataSource()->SetAnnotation(Attributes::FILENAME,
-                                                    fileName.toLatin1().data());
-    LoadDataReaction::dataSourceAdded(dataSource);
+    dataSource = createDataSourceLocal(fileName);
+    if (dataSource) {
+      RecentFilesMenu::pushDataReader(dataSource, nullptr);
+    }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
     auto pxm = tomviz::ActiveObjects::instance().proxyManager();
     vtkSmartPointer<vtkSMProxy> source;
     source.TakeReference(pxm->NewProxy("sources", "OMETIFFReader"));
     QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
-    vtkSMStringVectorProperty *prop = vtkSMStringVectorProperty::SafeDownCast(source->GetProperty(pname.toUtf8().data()));
+    vtkSMStringVectorProperty* prop = vtkSMStringVectorProperty::SafeDownCast(
+      source->GetProperty(pname.toUtf8().data()));
     pqSMAdaptor::setElementProperty(prop, fileName);
     source->UpdateVTKObjects();
 
@@ -157,8 +154,27 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
   return dataSource;
 }
 
+DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName)
+{
+  QFileInfo info(fileName);
+  if (info.suffix().toLower() == "emd") {
+    // Load the file using our simple EMD class.
+    EmdFormat emdFile;
+    vtkNew<vtkImageData> imageData;
+    if (emdFile.read(fileName.toLatin1().data(), imageData.Get())) {
+      DataSource* dataSource = createDataSource(imageData.Get());
+      dataSource->originalDataSource()->SetAnnotation(
+        Attributes::FILENAME, fileName.toLatin1().data());
+      LoadDataReaction::dataSourceAdded(dataSource);
+      return dataSource;
+    }
+  }
+  return nullptr;
+}
+
 namespace {
-bool hasData(vtkSMProxy* reader) {
+bool hasData(vtkSMProxy* reader)
+{
   vtkSMSourceProxy* dataSource = vtkSMSourceProxy::SafeDownCast(reader);
   if (!dataSource) {
     return false;
@@ -172,7 +188,8 @@ bool hasData(vtkSMProxy* reader) {
   }
 
   // Create a clone and release the reader data.
-  vtkImageData* data = vtkImageData::SafeDownCast(vtkalgorithm->GetOutputDataObject(0));
+  vtkImageData* data =
+    vtkImageData::SafeDownCast(vtkalgorithm->GetOutputDataObject(0));
   if (!data) {
     return false;
   }

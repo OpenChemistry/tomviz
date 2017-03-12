@@ -44,6 +44,9 @@ public:
   /// Create a data source that can be populated with data.
   static DataSource* createDataSource(vtkImageData* imageData);
 
+  /// Create a data source using Tomviz readers (no proxy).
+  static DataSource* createDataSourceLocal(const QString& fileName);
+
   static QList<DataSource*> loadData();
 
   /// Load a data file from the specified location.
