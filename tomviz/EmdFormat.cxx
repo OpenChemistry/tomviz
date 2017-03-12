@@ -393,7 +393,6 @@ public:
       for (size_t j = 0; j < nodes.size(); ++j) {
         std::string path = "/" + firstLevel[i] + "/" + nodes[j];
         if (attribute(path, "emd_group_type", emdVersion)) {
-          std::cout << "found EMD node at " << path << std::endl;
           return path;
         }
         // This is a little hackish, some EMDs don't use the attribute.
@@ -405,6 +404,7 @@ public:
         }
       }
     }
+    return "";
   }
 };
 
@@ -426,6 +426,11 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 
   std::string emdNode = d->firstEmdNode();
   std::string emdDataNode = emdNode + "/data";
+
+  if (emdNode.length() == 0) {
+    // We couldn't find a valid EMD node, exit early.
+    return false;
+  }
 
   // Verify that the path exists in the HDF5 file.
   bool dataLinkExists = false;
