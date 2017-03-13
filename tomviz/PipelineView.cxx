@@ -17,6 +17,7 @@
 #include "PipelineView.h"
 
 #include "ActiveObjects.h"
+#include "CacheOperator.h"
 #include "CloneDataReaction.h"
 #include "EditOperatorDialog.h"
 #include "LoadDataReaction.h"
@@ -202,6 +203,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* hideAction = nullptr;
   QAction* showAction = nullptr;
   QAction* cloneChildAction = nullptr;
+  QAction* cacheAction = nullptr;
   bool allowReExecute = false;
 
   // Data source ( non child )
@@ -246,6 +248,11 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     executeAction = contextMenu.addAction("Re-execute pipeline");
   }
 
+  // Offer to cache for operators.
+  if (op) {
+    cacheAction = contextMenu.addAction("Cache Data");
+  }
+
   bool allModules = true;
   foreach (auto i, selectedIndexes()) {
     auto module = pipelineModel->module(i);
@@ -286,6 +293,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (cloneChildAction && selectedItem == cloneChildAction) {
     DataSource* newClone = dataSource->clone(false, true);
     LoadDataReaction::dataSourceAdded(newClone);
+  } else if (cacheAction && selectedItem == cacheAction) {
+    op->dataSource()->addOperator(new CacheOperator(op->dataSource()));
   }
 }
 

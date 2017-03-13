@@ -42,6 +42,8 @@ set(SOURCES
   AlignWidget.h
   Behaviors.cxx
   Behaviors.h
+  CacheOperator.h
+  CacheOperator.cxx
   CentralWidget.cxx
   CentralWidget.h
   CloneDataReaction.cxx
