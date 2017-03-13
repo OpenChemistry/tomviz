@@ -91,6 +91,30 @@ RecentFilesMenu::~RecentFilesMenu()
 void RecentFilesMenu::pushDataReader(DataSource* dataSource,
                                      vtkSMProxy* readerProxy)
 {
+  // Add non-proxy based readers separately.
+  if (!readerProxy) {
+    pugi::xml_document settings;
+    get_settings(settings);
+
+    pugi::xml_node root = settings.root();
+    QByteArray labelBytes = dataSource->filename().toLatin1();
+    const char* filename = labelBytes.data();
+    qDebug() << filename;
+
+    for (pugi::xml_node node = root.child("DataReader"); node;
+         node = node.next_sibling("DataReader")) {
+      if (strcmp(node.attribute("filename0").as_string(""), filename) == 0) {
+        root.remove_child(node);
+        break;
+      }
+    }
+
+    pugi::xml_node node = root.prepend_child("DataReader");
+    node.append_attribute("filename0").set_value(filename);
+    save_settings(settings);
+    return;
+  }
+
   const char* pname = vtkSMCoreUtilities::GetFileNameProperty(readerProxy);
   // Only add to list if the data source is associated with file(s)
   if (pname) {
@@ -219,6 +243,21 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
   for (pugi::xml_node node = root.child("DataReader"); node;
        node = node.next_sibling("DataReader"), --index) {
     if (index == 0) {
+      if (node.attribute("xmlgroup").empty()) {
+        // Special node for EMDs that have no proxy.
+        if (LoadDataReaction::createDataSourceLocal(
+              node.attribute("filename0").as_string())) {
+          // reorder the nodes to move the recently opened file to the top.
+          root.prepend_copy(node);
+          root.remove_child(node);
+          save_settings(settings);
+          return;
+        }
+        // failed to create reader, remove the node.
+        root.remove_child(node);
+        save_settings(settings);
+        return;
+      }
       vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
       vtkSmartPointer<vtkSMProxy> reader;
       reader.TakeReference(
