@@ -16,17 +16,7 @@
 #include "CropReaction.h"
 
 #include <QAction>
-#include <QDebug>
 #include <QMainWindow>
-#include <pqCoreUtilities.h>
-#include <vtkCommand.h>
-#include <vtkImageData.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkRendererCollection.h>
-#include <vtkSMSourceProxy.h>
-#include <vtkSMViewProxy.h>
-#include <vtkTrivialProducer.h>
 
 #include "ActiveObjects.h"
 #include "CropOperator.h"
@@ -36,15 +26,11 @@
 namespace tomviz {
 
 CropReaction::CropReaction(QAction* parentObject, QMainWindow* mw)
-  : pqReaction(parentObject), mainWindow(mw)
+  : pqReaction(parentObject), m_mainWindow(mw)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
   updateEnableState();
-}
-
-CropReaction::~CropReaction()
-{
 }
 
 void CropReaction::updateEnableState()
@@ -57,14 +43,13 @@ void CropReaction::crop(DataSource* source)
 {
   source = source ? source : ActiveObjects::instance().activeDataSource();
   if (!source) {
-    qDebug() << "Exiting early - no data :-(";
     return;
   }
 
   Operator* Op = new CropOperator();
 
   EditOperatorDialog* dialog =
-    new EditOperatorDialog(Op, source, true, this->mainWindow);
+    new EditOperatorDialog(Op, source, true, m_mainWindow);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->show();
   connect(Op, SIGNAL(destroyed()), dialog, SLOT(reject()));

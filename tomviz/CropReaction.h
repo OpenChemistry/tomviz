@@ -29,17 +29,16 @@ class CropReaction : public pqReaction
 
 public:
   CropReaction(QAction* parent, QMainWindow* mw);
-  ~CropReaction();
 
   void crop(DataSource* source = nullptr);
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { this->crop(); }
+  void onTriggered() override { crop(); }
 
 private:
   Q_DISABLE_COPY(CropReaction)
-  QMainWindow* mainWindow;
+  QMainWindow* m_mainWindow;
 };
 }
 
