@@ -36,8 +36,7 @@ CacheOperator::CacheOperator(DataSource* source, QObject* p)
 {
   auto t =
     vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-  auto imageData =
-    vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   int dataExtent[6];
   imageData->GetExtent(dataExtent);
   for (int i = 0; i < 6; ++i) {
@@ -46,10 +45,10 @@ CacheOperator::CacheOperator(DataSource* source, QObject* p)
   setSupportsCancel(false);
   setNumberOfResults(1);
   setHasChildDataSource(true);
-  connect(this, &CacheOperator::newChildDataSource,
-          this, &CacheOperator::createNewChildDataSource);
-  connect(this, &CacheOperator::newOperatorResult,
-          this, &CacheOperator::setOperatorResult);
+  connect(this, &CacheOperator::newChildDataSource, this,
+          &CacheOperator::createNewChildDataSource);
+  connect(this, &CacheOperator::newOperatorResult, this,
+          &CacheOperator::setOperatorResult);
 }
 
 QIcon CacheOperator::icon() const
@@ -113,8 +112,7 @@ void CacheOperator::createNewChildDataSource(
   const QString& label, vtkSmartPointer<vtkDataObject> childData)
 {
   auto proxyManager = vtkSMProxyManager::GetProxyManager();
-  auto sessionProxyManager =
-    proxyManager->GetActiveSessionProxyManager();
+  auto sessionProxyManager = proxyManager->GetActiveSessionProxyManager();
 
   pqSMProxy producerProxy;
   producerProxy.TakeReference(
@@ -130,8 +128,8 @@ void CacheOperator::createNewChildDataSource(
 
   producer->SetOutput(childData);
 
-  auto childDS = new DataSource(
-    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this);
+  auto childDS = new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
+                                DataSource::Volume, this);
 
   childDS->setFilename(label.toLatin1().data());
   setChildDataSource(childDS);
