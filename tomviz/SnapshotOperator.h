@@ -13,22 +13,22 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizCacheOperator_h
-#define tomvizCacheOperator_h
+#ifndef tomvizSnapshotOperator_h
+#define tomvizSnapshotOperator_h
 
 #include "Operator.h"
 
 namespace tomviz {
 class DataSource;
 
-class CacheOperator : public Operator
+class SnapshotOperator : public Operator
 {
   Q_OBJECT
 
 public:
-  CacheOperator(DataSource* source, QObject* parent = nullptr);
+  SnapshotOperator(DataSource* source, QObject* parent = nullptr);
 
-  QString label() const override { return "Data Cache"; }
+  QString label() const override { return "Snapshot"; }
 
   QIcon icon() const override;
 
@@ -61,7 +61,7 @@ private slots:
 private:
   DataSource* m_dataSource;
   bool m_updateCache = true; // Update the first time, then freeze.
-  Q_DISABLE_COPY(CacheOperator)
+  Q_DISABLE_COPY(SnapshotOperator)
 };
 }
 

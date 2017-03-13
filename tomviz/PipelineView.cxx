@@ -17,7 +17,6 @@
 #include "PipelineView.h"
 
 #include "ActiveObjects.h"
-#include "CacheOperator.h"
 #include "CloneDataReaction.h"
 #include "EditOperatorDialog.h"
 #include "LoadDataReaction.h"
@@ -27,6 +26,7 @@
 #include "OperatorResult.h"
 #include "PipelineModel.h"
 #include "SaveDataReaction.h"
+#include "SnapshotOperator.h"
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 
@@ -203,7 +203,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* hideAction = nullptr;
   QAction* showAction = nullptr;
   QAction* cloneChildAction = nullptr;
-  QAction* cacheAction = nullptr;
+  QAction* snapshotAction = nullptr;
   bool allowReExecute = false;
 
   // Data source ( non child )
@@ -250,7 +250,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
 
   // Offer to cache for operators.
   if (op) {
-    cacheAction = contextMenu.addAction("Cache Data");
+    snapshotAction = contextMenu.addAction("Snapshot Data");
   }
 
   bool allModules = true;
@@ -293,8 +293,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (cloneChildAction && selectedItem == cloneChildAction) {
     DataSource* newClone = dataSource->clone(false, true);
     LoadDataReaction::dataSourceAdded(newClone);
-  } else if (cacheAction && selectedItem == cacheAction) {
-    op->dataSource()->addOperator(new CacheOperator(op->dataSource()));
+  } else if (snapshotAction && selectedItem == snapshotAction) {
+    op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));
   }
 }
 

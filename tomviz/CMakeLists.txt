@@ -42,8 +42,6 @@ set(SOURCES
   AlignWidget.h
   Behaviors.cxx
   Behaviors.h
-  CacheOperator.h
-  CacheOperator.cxx
   CentralWidget.cxx
   CentralWidget.h
   CloneDataReaction.cxx
@@ -184,6 +182,8 @@ set(SOURCES
   SetTiltAnglesOperator.h
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
+  SnapshotOperator.h
+  SnapshotOperator.cxx
   SpinBox.cxx
   SpinBox.h
   ToggleDataTypeReaction.h

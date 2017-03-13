@@ -14,7 +14,7 @@
 
 ******************************************************************************/
 
-#include "CacheOperator.h"
+#include "SnapshotOperator.h"
 
 #include "DataSource.h"
 
@@ -31,46 +31,46 @@
 #include <QDebug>
 
 namespace tomviz {
-CacheOperator::CacheOperator(DataSource* source, QObject* p)
+SnapshotOperator::SnapshotOperator(DataSource* source, QObject* p)
   : Operator(p), m_dataSource(source)
 {
   setSupportsCancel(false);
   setNumberOfResults(1);
   setHasChildDataSource(true);
-  connect(this, &CacheOperator::newChildDataSource, this,
-          &CacheOperator::createNewChildDataSource);
-  connect(this, &CacheOperator::newOperatorResult, this,
-          &CacheOperator::setOperatorResult);
+  connect(this, &SnapshotOperator::newChildDataSource, this,
+          &SnapshotOperator::createNewChildDataSource);
+  connect(this, &SnapshotOperator::newOperatorResult, this,
+          &SnapshotOperator::setOperatorResult);
 }
 
-QIcon CacheOperator::icon() const
+QIcon SnapshotOperator::icon() const
 {
   return QIcon(":/icons/pqLock.png");
 }
 
-Operator* CacheOperator::clone() const
+Operator* SnapshotOperator::clone() const
 {
-  return new CacheOperator(m_dataSource);
+  return new SnapshotOperator(m_dataSource);
 }
 
-bool CacheOperator::serialize(pugi::xml_node&) const
-{
-  // No state to serialize yet
-  return true;
-}
-
-bool CacheOperator::deserialize(const pugi::xml_node&)
+bool SnapshotOperator::serialize(pugi::xml_node&) const
 {
   // No state to serialize yet
   return true;
 }
 
-QWidget* CacheOperator::getCustomProgressWidget(QWidget*) const
+bool SnapshotOperator::deserialize(const pugi::xml_node&)
+{
+  // No state to serialize yet
+  return true;
+}
+
+QWidget* SnapshotOperator::getCustomProgressWidget(QWidget*) const
 {
   return nullptr;
 }
 
-bool CacheOperator::applyTransform(vtkDataObject* dataObject)
+bool SnapshotOperator::applyTransform(vtkDataObject* dataObject)
 {
   if (!m_updateCache) {
     // We already ran once, now mark as successful and leave child data alone.
@@ -87,11 +87,11 @@ bool CacheOperator::applyTransform(vtkDataObject* dataObject)
   cacheImage->DeepCopy(imageData);
 
   emit newOperatorResult(cacheImage.Get());
-  emit newChildDataSource("Cache", cacheImage.Get());
+  emit newChildDataSource("Snapshot", cacheImage.Get());
   return true;
 }
 
-void CacheOperator::createNewChildDataSource(
+void SnapshotOperator::createNewChildDataSource(
   const QString& label, vtkSmartPointer<vtkDataObject> childData)
 {
   auto proxyManager = vtkSMProxyManager::GetProxyManager();
@@ -118,7 +118,7 @@ void CacheOperator::createNewChildDataSource(
   setChildDataSource(childDS);
 }
 
-void CacheOperator::setOperatorResult(vtkSmartPointer<vtkDataObject> result)
+void SnapshotOperator::setOperatorResult(vtkSmartPointer<vtkDataObject> result)
 {
   bool resultWasSet = setResult(0, result);
   if (!resultWasSet) {
