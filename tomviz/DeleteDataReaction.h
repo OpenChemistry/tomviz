@@ -30,11 +30,9 @@ class DataSource;
 class DeleteDataReaction : public pqReaction
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
 
 public:
   DeleteDataReaction(QAction* parentAction);
-  virtual ~DeleteDataReaction();
 
   /// Create a raw data source from the reader.
   static void deleteDataSource(DataSource*);

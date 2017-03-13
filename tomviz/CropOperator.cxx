@@ -88,8 +88,6 @@ CropOperator::CropOperator(QObject* p) : Operator(p)
   }
 }
 
-CropOperator::~CropOperator() = default;
-
 QIcon CropOperator::icon() const
 {
   return QIcon(":/pqWidgets/Icons/pqExtractGrid24.png");

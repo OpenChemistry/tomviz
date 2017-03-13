@@ -253,10 +253,6 @@ SetTiltAnglesOperator::SetTiltAnglesOperator(QObject* p) : Operator(p)
 {
 }
 
-SetTiltAnglesOperator::~SetTiltAnglesOperator()
-{
-}
-
 QIcon SetTiltAnglesOperator::icon() const
 {
   return QIcon();
@@ -265,14 +261,14 @@ QIcon SetTiltAnglesOperator::icon() const
 Operator* SetTiltAnglesOperator::clone() const
 {
   SetTiltAnglesOperator* op = new SetTiltAnglesOperator;
-  op->setTiltAngles(this->TiltAngles);
+  op->setTiltAngles(m_tiltAngles);
   return op;
 }
 
 bool SetTiltAnglesOperator::serialize(pugi::xml_node& ns) const
 {
-  for (auto itr = std::begin(this->TiltAngles);
-       itr != std::end(this->TiltAngles); ++itr) {
+  for (auto itr = std::begin(m_tiltAngles);
+       itr != std::end(m_tiltAngles); ++itr) {
     pugi::xml_node angleNode = ns.append_child("Angle");
     angleNode.append_attribute("index").set_value((unsigned int)itr.key());
     angleNode.append_attribute("angle").set_value(itr.value());
@@ -283,7 +279,7 @@ bool SetTiltAnglesOperator::serialize(pugi::xml_node& ns) const
 bool SetTiltAnglesOperator::deserialize(const pugi::xml_node& ns)
 {
   for (auto node = ns.child("Angle"); node; node = node.next_sibling("Angle")) {
-    this->TiltAngles.insert(node.attribute("index").as_uint(),
+    m_tiltAngles.insert(node.attribute("index").as_uint(),
                             node.attribute("angle").as_double());
   }
   return true;
@@ -297,8 +293,8 @@ EditOperatorWidget* SetTiltAnglesOperator::getEditorContentsWithData(
 
 void SetTiltAnglesOperator::setTiltAngles(const QMap<size_t, double>& newAngles)
 {
-  this->TiltAngles = newAngles;
-  emit this->transformModified();
+  m_tiltAngles = newAngles;
+  emit transformModified();
 }
 
 bool SetTiltAnglesOperator::applyTransform(vtkDataObject* dataObject)
@@ -335,8 +331,8 @@ bool SetTiltAnglesOperator::applyTransform(vtkDataObject* dataObject)
   } else if (dataTiltAngles->GetNumberOfTuples() < totalSlices) {
     dataTiltAngles->SetNumberOfTuples(totalSlices);
   }
-  for (auto itr = std::begin(this->TiltAngles);
-       itr != std::end(this->TiltAngles); ++itr) {
+  for (auto itr = std::begin(m_tiltAngles);
+       itr != std::end(m_tiltAngles); ++itr) {
     dataTiltAngles->SetTuple(itr.key(), &itr.value());
   }
   return true;

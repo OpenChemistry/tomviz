@@ -50,15 +50,11 @@
 namespace tomviz {
 
 SaveDataReaction::SaveDataReaction(QAction* parentObject)
-  : Superclass(parentObject)
+  : pqReaction(parentObject)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
   updateEnableState();
-}
-
-SaveDataReaction::~SaveDataReaction()
-{
 }
 
 void SaveDataReaction::updateEnableState()
@@ -111,8 +107,8 @@ void SaveDataReaction::onTriggered()
 
 bool SaveDataReaction::saveData(const QString& filename)
 {
-  pqServer* server = pqActiveObjects::instance().activeServer();
-  DataSource* source = ActiveObjects::instance().activeDataSource();
+  auto server = pqActiveObjects::instance().activeServer();
+  auto source = ActiveObjects::instance().activeDataSource();
   if (!server || !source) {
     qCritical("No active source located.");
     return false;
@@ -129,21 +125,21 @@ bool SaveDataReaction::saveData(const QString& filename)
     }
   }
 
-  vtkSMWriterFactory* writerFactory =
+  auto writerFactory =
     vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(writerFactory->CreateWriter(filename.toLatin1().data(),
                                                   source->producer()));
-  vtkSMSourceProxy* writer = vtkSMSourceProxy::SafeDownCast(proxy);
+  auto writer = vtkSMSourceProxy::SafeDownCast(proxy);
   if (!writer) {
     qCritical() << "Failed to create writer for: " << filename;
     return false;
   }
   if (strcmp(writer->GetClientSideObject()->GetClassName(), "vtkTIFFWriter") ==
       0) {
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+    auto t = vtkTrivialProducer::SafeDownCast(
       source->producer()->GetClientSideObject());
-    vtkImageData* imageData =
+    auto imageData =
       vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     if (imageData->GetPointData()->GetScalars()->GetDataType() == VTK_DOUBLE) {
       QMessageBox messageBox;

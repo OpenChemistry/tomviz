@@ -57,6 +57,7 @@ void AddAlignReaction::align(DataSource* source)
   Operator* Op = new TranslateAlignOperator(source);
   EditOperatorDialog* dialog =
     new EditOperatorDialog(Op, source, true, pqCoreUtilities::mainWidget());
+
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->setWindowTitle("Manual Image Alignment");
   dialog->show();

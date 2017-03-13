@@ -26,16 +26,11 @@
 namespace tomviz {
 
 SetTiltAnglesReaction::SetTiltAnglesReaction(QAction* p, QMainWindow* mw)
-  : Superclass(p), mainWindow(mw)
+  : pqReaction(p), m_mainWindow(mw)
 {
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateEnableState()));
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateEnableState()));
   updateEnableState();
-}
-
-SetTiltAnglesReaction::~SetTiltAnglesReaction()
-{
 }
 
 void SetTiltAnglesReaction::updateEnableState()

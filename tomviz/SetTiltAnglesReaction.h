@@ -26,22 +26,20 @@ class DataSource;
 class SetTiltAnglesReaction : public pqReaction
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
 
 public:
   SetTiltAnglesReaction(QAction* parent, QMainWindow* mw);
-  ~SetTiltAnglesReaction();
 
   static void showSetTiltAnglesUI(QMainWindow* window,
                                   DataSource* source = nullptr);
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { showSetTiltAnglesUI(this->mainWindow); }
+  void onTriggered() override { showSetTiltAnglesUI(m_mainWindow); }
 
 private:
   Q_DISABLE_COPY(SetTiltAnglesReaction)
-  QMainWindow* mainWindow;
+  QMainWindow* m_mainWindow;
 };
 }
 

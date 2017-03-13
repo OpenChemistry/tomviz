@@ -36,28 +36,26 @@
 
 namespace tomviz {
 ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
-  : Superclass(p), dataSource(source)
+  : Operator(p), m_dataSource(source)
 {
   qRegisterMetaType<std::vector<float>>();
-  vtkTrivialProducer* t =
+  auto t =
     vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-  vtkImageData* imageData =
+  auto imageData =
     vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   int dataExtent[6];
   imageData->GetExtent(dataExtent);
   for (int i = 0; i < 6; ++i) {
-    this->extent[i] = dataExtent[i];
+    m_extent[i] = dataExtent[i];
   }
-  this->setSupportsCancel(true);
-  this->setTotalProgressSteps(this->extent[1] - this->extent[0] + 1);
-  this->setNumberOfResults(1);
-  this->setHasChildDataSource(true);
-  QObject::connect(this, &ReconstructionOperator::newChildDataSource, this, &ReconstructionOperator::createNewChildDataSource);
-  QObject::connect(this, &ReconstructionOperator::newOperatorResult, this, &ReconstructionOperator::setOperatorResult);
-}
-
-ReconstructionOperator::~ReconstructionOperator()
-{
+  setSupportsCancel(true);
+  setTotalProgressSteps(m_extent[1] - m_extent[0] + 1);
+  setNumberOfResults(1);
+  setHasChildDataSource(true);
+  connect(this, &ReconstructionOperator::newChildDataSource,
+          this, &ReconstructionOperator::createNewChildDataSource);
+  connect(this, &ReconstructionOperator::newOperatorResult,
+          this, &ReconstructionOperator::setOperatorResult);
 }
 
 QIcon ReconstructionOperator::icon() const
@@ -67,7 +65,7 @@ QIcon ReconstructionOperator::icon() const
 
 Operator* ReconstructionOperator::clone() const
 {
-  return new ReconstructionOperator(this->dataSource);
+  return new ReconstructionOperator(m_dataSource);
 }
 
 bool ReconstructionOperator::serialize(pugi::xml_node&) const
@@ -84,7 +82,7 @@ bool ReconstructionOperator::deserialize(const pugi::xml_node&)
 
 QWidget* ReconstructionOperator::getCustomProgressWidget(QWidget* p) const
 {
-  ReconstructionWidget* widget = new ReconstructionWidget(this->dataSource, p);
+  ReconstructionWidget* widget = new ReconstructionWidget(m_dataSource, p);
   QObject::connect(this, &Operator::progressStepChanged, widget,
                    &ReconstructionWidget::updateProgress);
   QObject::connect(this, &ReconstructionOperator::intermediateResults, widget,
@@ -101,23 +99,23 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   int dataExtent[6];
   imageData->GetExtent(dataExtent);
   for (int i = 0; i < 6; ++i) {
-    if (dataExtent[i] != this->extent[i]) {
+    if (dataExtent[i] != m_extent[i]) {
       // Extent changing shouldn't matter, but update so that correct
       // number of steps can be reported.
-      this->extent[i] = dataExtent[i];
+      m_extent[i] = dataExtent[i];
     }
   }
-  this->setTotalProgressSteps(this->extent[1] - this->extent[0] + 1);
+  setTotalProgressSteps(m_extent[1] - m_extent[0] + 1);
 
   int numXSlices = dataExtent[1] - dataExtent[0] + 1;
   int numYSlices = dataExtent[3] - dataExtent[2] + 1;
   int numZSlices = dataExtent[5] - dataExtent[4] + 1;
   std::vector<float> sinogramPtr(numYSlices * numZSlices);
   std::vector<float> reconstructionPtr(numYSlices * numYSlices);
-  QVector<double> tiltAngles = this->dataSource->getTiltAngles();
+  QVector<double> tiltAngles = m_dataSource->getTiltAngles();
 
   vtkNew<vtkImageData> reconstructionImage;
-  int extent2[6] = { dataExtent[0], extent[1],     dataExtent[2],
+  int extent2[6] = { dataExtent[0], m_extent[1],   dataExtent[2],
                      dataExtent[3], dataExtent[2], dataExtent[3] };
   reconstructionImage->SetExtent(extent2);
   reconstructionImage->AllocateScalars(VTK_FLOAT, 1);
@@ -126,7 +124,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
 
   // TODO: talk to Dave Lonie about how to do this in new data array API
   float* reconstruction = (float*)darray->GetVoidPointer(0);
-  for (int i = 0; i < numXSlices && !this->isCanceled(); ++i) {
+  for (int i = 0; i < numXSlices && !isCanceled(); ++i) {
     QCoreApplication::processEvents();
     TomographyTiltSeries::getSinogram(imageData, i, &sinogramPtr[0]);
     TomographyReconstruction::unweightedBackProjection2(
@@ -138,14 +136,14 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
           reconstructionPtr[k * numYSlices + j];
       }
     }
-    emit this->intermediateResults(reconstructionPtr);
-    this->setProgressStep(i);
+    emit intermediateResults(reconstructionPtr);
+    setProgressStep(i);
   }
-  if (this->isCanceled()) {
+  if (isCanceled()) {
     return false;
   }
-  emit this->newOperatorResult(reconstructionImage.Get());
-  emit this->newChildDataSource("Reconstruction", reconstructionImage.Get());
+  emit newOperatorResult(reconstructionImage.Get());
+  emit newChildDataSource("Reconstruction", reconstructionImage.Get());
   return true;
 }
 
@@ -175,12 +173,12 @@ void ReconstructionOperator::createNewChildDataSource(
     vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this);
 
   childDS->setFilename(label.toLatin1().data());
-  this->setChildDataSource(childDS);
+  setChildDataSource(childDS);
 }
 
 void ReconstructionOperator::setOperatorResult(vtkSmartPointer<vtkDataObject> result)
 {
-  bool resultWasSet = this->setResult(0, result);
+  bool resultWasSet = setResult(0, result);
   if (!resultWasSet) {
     qCritical() << "Could not set result 0";
   }

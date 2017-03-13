@@ -25,7 +25,6 @@ class SetScaleReaction : public pqReaction
 
 public:
   SetScaleReaction(QAction* action);
-  virtual ~SetScaleReaction();
 
   static void setScale();
 

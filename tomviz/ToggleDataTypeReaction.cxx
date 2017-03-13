@@ -26,16 +26,11 @@
 namespace tomviz {
 
 ToggleDataTypeReaction::ToggleDataTypeReaction(QAction* action, QMainWindow* mw)
-  : pqReaction(action), mainWindow(mw)
+  : pqReaction(action), m_mainWindow(mw)
 {
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateEnableState()));
-  this->updateEnableState();
-}
-
-ToggleDataTypeReaction::~ToggleDataTypeReaction()
-{
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateEnableState()));
+  updateEnableState();
 }
 
 void ToggleDataTypeReaction::toggleDataType(QMainWindow* mw,
@@ -59,25 +54,25 @@ void ToggleDataTypeReaction::toggleDataType(QMainWindow* mw,
 void ToggleDataTypeReaction::onTriggered()
 {
   DataSource* dsource = ActiveObjects::instance().activeDataSource();
-  toggleDataType(this->mainWindow, dsource);
-  this->setWidgetText(dsource);
+  toggleDataType(m_mainWindow, dsource);
+  setWidgetText(dsource);
 }
 
 void ToggleDataTypeReaction::updateEnableState()
 {
-  DataSource* dsource = ActiveObjects::instance().activeDataSource();
-  this->parentAction()->setEnabled(dsource != nullptr);
+  auto dsource = ActiveObjects::instance().activeDataSource();
+  parentAction()->setEnabled(dsource != nullptr);
   if (dsource != nullptr) {
-    this->setWidgetText(dsource);
+    setWidgetText(dsource);
   }
 }
 
 void ToggleDataTypeReaction::setWidgetText(DataSource* dsource)
 {
   if (dsource->type() == DataSource::Volume) {
-    this->parentAction()->setText("Mark Data As Tilt Series");
+    parentAction()->setText("Mark Data As Tilt Series");
   } else if (dsource->type() == DataSource::TiltSeries) {
-    this->parentAction()->setText("Mark Data As Volume");
+    parentAction()->setText("Mark Data As Volume");
   } else {
     assert("Unknown data source type" && false);
   }

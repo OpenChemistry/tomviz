@@ -27,13 +27,12 @@ class CloneDataReaction : public pqReaction
 
 public:
   CloneDataReaction(QAction* action);
-  ~CloneDataReaction() override;
 
   static DataSource* clone(DataSource* toClone = nullptr);
 
 protected:
   /// Called when the action is triggered.
-  void onTriggered() override { this->clone(); }
+  void onTriggered() override { clone(); }
   void updateEnableState() override;
 
 private:

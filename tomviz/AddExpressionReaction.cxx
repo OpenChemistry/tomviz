@@ -28,19 +28,14 @@ namespace tomviz {
 AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
   : Superclass(parentObject)
 {
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(updateEnableState()));
-  this->updateEnableState();
-}
-
-AddExpressionReaction::~AddExpressionReaction()
-{
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(updateEnableState()));
+  updateEnableState();
 }
 
 void AddExpressionReaction::updateEnableState()
 {
-  this->parentAction()->setEnabled(
+  parentAction()->setEnabled(
     ActiveObjects::instance().activeDataSource() != nullptr);
 }
 
@@ -51,7 +46,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
     return nullptr;
   }
 
-  QString script = this->getDefaultExpression(source);
+  QString script = getDefaultExpression(source);
 
   OperatorPython* opPython = new OperatorPython();
   opPython->setScript(script);
@@ -68,7 +63,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
 
 QString AddExpressionReaction::getDefaultExpression(DataSource* source)
 {
-  QString actionString = this->parentAction()->text();
+  QString actionString = parentAction()->text();
   if (actionString == "Custom ITK Transform") {
     return readInPythonScript("DefaultITKTransform");
   } else {

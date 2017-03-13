@@ -26,7 +26,6 @@ class ConvertToFloatOperator : public Operator
 
 public:
   ConvertToFloatOperator(QObject* parent = nullptr);
-  ~ConvertToFloatOperator() override;
 
   QString label() const override { return "Convert to Float"; }
   QIcon icon() const override;

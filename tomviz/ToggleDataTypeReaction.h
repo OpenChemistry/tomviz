@@ -27,11 +27,9 @@ class DataSource;
 class ToggleDataTypeReaction : public pqReaction
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
 
 public:
   ToggleDataTypeReaction(QAction* action, QMainWindow* mw);
-  ~ToggleDataTypeReaction();
 
   static void toggleDataType(QMainWindow* mw, DataSource* source = nullptr);
 
@@ -43,7 +41,7 @@ protected:
 private:
   void setWidgetText(DataSource* dsource);
 
-  QMainWindow* mainWindow;
+  QMainWindow* m_mainWindow;
 
   Q_DISABLE_COPY(ToggleDataTypeReaction)
 };

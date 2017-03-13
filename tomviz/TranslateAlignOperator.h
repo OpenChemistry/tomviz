@@ -30,7 +30,6 @@ class DataSource;
 class TranslateAlignOperator : public Operator
 {
   Q_OBJECT
-  typedef Operator Superclass;
 
 public:
   TranslateAlignOperator(DataSource* dataSource, QObject* parent = nullptr);

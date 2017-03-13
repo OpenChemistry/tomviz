@@ -52,7 +52,7 @@ LoadPaletteReaction::LoadPaletteReaction(QAction* parentObject)
 
 LoadPaletteReaction::~LoadPaletteReaction()
 {
-  if (QAction* pa = this->parentAction()) {
+  if (QAction* pa = parentAction()) {
     pa->setMenu(nullptr);
   }
   delete m_menu;
@@ -60,18 +60,19 @@ LoadPaletteReaction::~LoadPaletteReaction()
 
 void LoadPaletteReaction::populateMenu()
 {
-  QMenu* menu = qobject_cast<QMenu*>(this->sender());
+  QMenu* menu = qobject_cast<QMenu*>(sender());
+  Q_ASSERT(menu);
   menu->clear();
 
-  vtkSMSessionProxyManager* pxm = pqActiveObjects::instance().proxyManager();
+  auto pxm = pqActiveObjects::instance().proxyManager();
   Q_ASSERT(pxm);
 
-  vtkSMProxyDefinitionManager* pdmgr = pxm->GetProxyDefinitionManager();
+  auto pdmgr = pxm->GetProxyDefinitionManager();
   Q_ASSERT(pdmgr);
 
   // Add "DefaultBackground" as the first entry.
   if (pxm->GetPrototypeProxy("palettes", "DefaultBackground")) {
-    QAction* actn = menu->addAction("Gray Background");
+    auto actn = menu->addAction("Gray Background");
     actn->setProperty("PV_XML_GROUP", "palettes");
     actn->setProperty("PV_XML_NAME", "DefaultBackground");
   }
@@ -80,14 +81,14 @@ void LoadPaletteReaction::populateMenu()
   iter.TakeReference(pdmgr->NewSingleGroupIterator("palettes"));
   for (iter->InitTraversal(); !iter->IsDoneWithTraversal();
        iter->GoToNextItem()) {
-    if (vtkSMProxy* prototype =
+    if (auto prototype =
           pxm->GetPrototypeProxy("palettes", iter->GetProxyName())) {
       if (strcmp(prototype->GetXMLName(), "DefaultBackground") == 0 ||
           m_paletteWhiteList.indexOf(prototype->GetXMLLabel()) < 0) {
         // skip DefaultBackground since already added.
         continue;
       }
-      QAction* actn = menu->addAction(prototype->GetXMLLabel());
+      auto actn = menu->addAction(prototype->GetXMLLabel());
       actn->setProperty("PV_XML_GROUP", "palettes");
       actn->setProperty("PV_XML_NAME", iter->GetProxyName());
     }
@@ -98,17 +99,17 @@ void LoadPaletteReaction::populateMenu()
 
 void LoadPaletteReaction::actionTriggered(QAction* action)
 {
-  vtkSMSessionProxyManager* pxm = pqActiveObjects::instance().proxyManager();
+  auto pxm = pqActiveObjects::instance().proxyManager();
   Q_ASSERT(pxm);
 
-  vtkSMProxy* paletteProxy = pxm->GetProxy("global_properties", "ColorPalette");
+  auto paletteProxy = pxm->GetProxy("global_properties", "ColorPalette");
 
   if (action->property("PV_XML_NAME").isValid()) {
     // Setting the color property unlinks the global palette background property
     // from the view background property. As a result, changes to the palette
     // do not update the view background. To solve this, we re-link the global
     // palette background color property to the background.
-    vtkSMGlobalPropertiesProxy* gbPaletteProxy =
+    auto gbPaletteProxy =
       vtkSMGlobalPropertiesProxy::SafeDownCast(paletteProxy);
     Q_ASSERT(gbPaletteProxy);
 
@@ -123,7 +124,7 @@ void LoadPaletteReaction::actionTriggered(QAction* action)
       }
     }
 
-    vtkSMProxy* palettePrototype = pxm->GetPrototypeProxy(
+    auto palettePrototype = pxm->GetPrototypeProxy(
       "palettes", action->property("PV_XML_NAME").toString().toLatin1().data());
     Q_ASSERT(palettePrototype);
 
@@ -134,7 +135,7 @@ void LoadPaletteReaction::actionTriggered(QAction* action)
 
     pqApplicationCore::instance()->render();
   } else if (action->text() == tr("Make Current Palette Default")) {
-    vtkSMSettings* settings = vtkSMSettings::GetInstance();
+    auto settings = vtkSMSettings::GetInstance();
     settings->SetProxySettings(paletteProxy);
   }
 }

@@ -27,11 +27,8 @@ class SaveDataReaction : public pqReaction
 {
   Q_OBJECT
 
-  typedef pqReaction Superclass;
-
 public:
   SaveDataReaction(QAction* parentAction);
-  virtual ~SaveDataReaction();
 
   /// Save the file
   bool saveData(const QString& filename);
@@ -39,6 +36,7 @@ public:
 protected:
   /// Called when the data changes to enable/disable the menu item
   void updateEnableState() override;
+
   /// Called when the action is triggered.
   void onTriggered() override;
 

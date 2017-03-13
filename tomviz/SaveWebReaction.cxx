@@ -39,15 +39,11 @@
 namespace tomviz {
 
 SaveWebReaction::SaveWebReaction(QAction* parentObject)
-  : Superclass(parentObject)
+  : pqReaction(parentObject)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
   updateEnableState();
-}
-
-SaveWebReaction::~SaveWebReaction()
-{
 }
 
 void SaveWebReaction::updateEnableState()

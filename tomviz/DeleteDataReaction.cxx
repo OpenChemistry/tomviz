@@ -21,17 +21,12 @@
 namespace tomviz {
 
 DeleteDataReaction::DeleteDataReaction(QAction* parentObject)
-  : Superclass(parentObject)
+  : pqReaction(parentObject)
 {
-  this->connect(&ActiveObjects::instance(),
-                SIGNAL(dataSourceChanged(DataSource*)),
-                SLOT(activeDataSourceChanged()));
+  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
+          SLOT(activeDataSourceChanged()));
   m_activeDataSource = ActiveObjects::instance().activeDataSource();
-  this->updateEnableState();
-}
-
-DeleteDataReaction::~DeleteDataReaction()
-{
+  updateEnableState();
 }
 
 void DeleteDataReaction::updateEnableState()
@@ -40,12 +35,12 @@ void DeleteDataReaction::updateEnableState()
   if (enabled) {
     enabled = !m_activeDataSource->isRunningAnOperator();
   }
-  this->parentAction()->setEnabled(enabled);
+  parentAction()->setEnabled(enabled);
 }
 
 void DeleteDataReaction::onTriggered()
 {
-  DataSource* source = ActiveObjects::instance().activeDataSource();
+  auto source = ActiveObjects::instance().activeDataSource();
   Q_ASSERT(source);
   DeleteDataReaction::deleteDataSource(source);
   ActiveObjects::instance().renderAllViews();
@@ -55,28 +50,27 @@ void DeleteDataReaction::deleteDataSource(DataSource* source)
 {
   Q_ASSERT(source);
 
-  ModuleManager& mmgr = ModuleManager::instance();
+  auto& mmgr = ModuleManager::instance();
   mmgr.removeAllModules(source);
   mmgr.removeDataSource(source);
 }
 
 void DeleteDataReaction::activeDataSourceChanged()
 {
-  DataSource* source = ActiveObjects::instance().activeDataSource();
+  auto source = ActiveObjects::instance().activeDataSource();
   if (m_activeDataSource != source) {
     if (m_activeDataSource) {
-      QObject::disconnect(m_activeDataSource.data(),
-                          &DataSource::operatorStarted, this, nullptr);
-      QObject::disconnect(m_activeDataSource.data(),
-                          &DataSource::allOperatorsFinished, this, nullptr);
+      disconnect(m_activeDataSource.data(), &DataSource::operatorStarted,
+                 this, nullptr);
+      disconnect(m_activeDataSource.data(), &DataSource::allOperatorsFinished,
+                 this, nullptr);
     }
     m_activeDataSource = source;
     if (m_activeDataSource) {
-      QObject::connect(m_activeDataSource.data(), &DataSource::operatorStarted,
-                       this, &DeleteDataReaction::updateEnableState);
-      QObject::connect(m_activeDataSource.data(),
-                       &DataSource::allOperatorsFinished, this,
-                       &DeleteDataReaction::updateEnableState);
+      connect(m_activeDataSource.data(), &DataSource::operatorStarted,
+              this, &DeleteDataReaction::updateEnableState);
+      connect(m_activeDataSource.data(), &DataSource::allOperatorsFinished,
+              this, &DeleteDataReaction::updateEnableState);
     }
   }
   updateEnableState();

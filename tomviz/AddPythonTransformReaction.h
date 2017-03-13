@@ -25,7 +25,6 @@ class OperatorPython;
 class AddPythonTransformReaction : public pqReaction
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
 
 public:
   AddPythonTransformReaction(QAction* parent, const QString& label,
@@ -33,7 +32,6 @@ public:
                              bool requiresTiltSeries = false,
                              bool requiresVolume = false,
                              const QString& json = QString());
-  ~AddPythonTransformReaction();
 
   OperatorPython* addExpression(DataSource* source = nullptr);
 
@@ -47,7 +45,7 @@ public:
 protected:
   void updateEnableState() override;
 
-  void onTriggered() override { this->addExpression(); }
+  void onTriggered() override { addExpression(); }
 
 private slots:
   void addExpressionFromNonModalDialog();

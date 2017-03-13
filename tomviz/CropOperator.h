@@ -26,7 +26,6 @@ class CropOperator : public Operator
 
 public:
   CropOperator(QObject* parent = nullptr);
-  ~CropOperator() override;
 
   QString label() const override { return "Crop"; }
 

@@ -26,12 +26,11 @@ class ResetReaction : public pqReaction
 
 public:
   ResetReaction(QAction* action);
-  virtual ~ResetReaction();
 
   static void reset();
 
 protected:
-  void onTriggered() override { this->reset(); }
+  void onTriggered() override { reset(); }
 
 private:
   Q_DISABLE_COPY(ResetReaction)

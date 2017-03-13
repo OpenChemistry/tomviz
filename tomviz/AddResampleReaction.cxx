@@ -44,10 +44,6 @@ AddResampleReaction::AddResampleReaction(QAction* parentObject)
   updateEnableState();
 }
 
-AddResampleReaction::~AddResampleReaction()
-{
-}
-
 void AddResampleReaction::updateEnableState()
 {
   parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
