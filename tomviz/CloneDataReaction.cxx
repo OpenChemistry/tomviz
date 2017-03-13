@@ -32,8 +32,6 @@ CloneDataReaction::CloneDataReaction(QAction* parentObject)
   updateEnableState();
 }
 
-CloneDataReaction::~CloneDataReaction() = default;
-
 void CloneDataReaction::updateEnableState()
 {
   parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=

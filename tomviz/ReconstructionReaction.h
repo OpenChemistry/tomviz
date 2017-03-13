@@ -27,13 +27,12 @@ class ReconstructionReaction : public pqReaction
 
 public:
   ReconstructionReaction(QAction* parent);
-  ~ReconstructionReaction();
 
   void recon(DataSource* input = NULL);
 
 protected:
   void updateEnableState();
-  void onTriggered() { this->recon(); }
+  void onTriggered() { recon(); }
 
 private:
   Q_DISABLE_COPY(ReconstructionReaction)

@@ -37,10 +37,6 @@ ReconstructionReaction::ReconstructionReaction(QAction* parentObject)
   updateEnableState();
 }
 
-ReconstructionReaction::~ReconstructionReaction()
-{
-}
-
 void ReconstructionReaction::updateEnableState()
 {
   parentAction()->setEnabled(

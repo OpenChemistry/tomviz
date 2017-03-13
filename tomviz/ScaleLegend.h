@@ -42,13 +42,11 @@ class ScaleLegend : public QObject
 {
   Q_OBJECT
 
-  typedef QObject Superclass;
-
 public:
   ScaleLegend(QMainWindow* mw);
-  virtual ~ScaleLegend();
+  ~ScaleLegend() override;
 
-  ScaleLegendStyle style() const { return m_style; };
+  ScaleLegendStyle style() const { return m_style; }
 
 public slots:
   void setStyle(ScaleLegendStyle style);
@@ -59,7 +57,7 @@ private slots:
   void dataPropertiesChanged();
 
 private:
-  QMainWindow* mainWindow;
+  QMainWindow* m_mainWindow;
   Q_DISABLE_COPY(ScaleLegend)
 
   void render();
@@ -70,10 +68,10 @@ private:
   vtkNew<vtkLinkCameras> m_linkCameras;
   vtkNew<vtkVolumeScaleRepresentation> m_volumeScaleRep;
   vtkNew<vtkRenderer> m_renderer;
-  ScaleLegendStyle m_style;
+  ScaleLegendStyle m_style = ScaleLegendStyle::Cube;
 
   unsigned long m_linkCamerasId;
-  bool m_visible;
+  bool m_visible = false;
 };
 }
 #endif

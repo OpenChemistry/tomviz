@@ -28,7 +28,6 @@ class SetTiltAnglesOperator : public Operator
 
 public:
   SetTiltAnglesOperator(QObject* parent = nullptr);
-  ~SetTiltAnglesOperator() override;
 
   QString label() const override { return "Set Tilt Angles"; }
   QIcon icon() const override;
@@ -40,12 +39,12 @@ public:
   bool hasCustomUI() const override { return true; }
 
   void setTiltAngles(const QMap<size_t, double>& newAngles);
-  const QMap<size_t, double>& tiltAngles() const { return this->TiltAngles; }
+  const QMap<size_t, double>& tiltAngles() const { return m_tiltAngles; }
 
 protected:
   bool applyTransform(vtkDataObject* data) override;
 
-  QMap<size_t, double> TiltAngles;
+  QMap<size_t, double> m_tiltAngles;
 
 private:
   Q_DISABLE_COPY(SetTiltAnglesOperator)

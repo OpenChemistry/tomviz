@@ -41,10 +41,6 @@ SetScaleReaction::SetScaleReaction(QAction* parentObject)
   updateEnableState();
 }
 
-SetScaleReaction::~SetScaleReaction()
-{
-}
-
 void SetScaleReaction::updateEnableState()
 {
   parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
@@ -54,12 +50,12 @@ void SetScaleReaction::updateEnableState()
 void SetScaleReaction::setScale()
 {
   // Get the extents, use that to set starting size.
-  DataSource* source = ActiveObjects::instance().activeDataSource();
+  auto source = ActiveObjects::instance().activeDataSource();
   Q_ASSERT(source);
-  vtkTrivialProducer* t =
+  auto t =
     vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
   Q_ASSERT(t);
-  vtkImageData* data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   Q_ASSERT(data);
   int* extents = data->GetExtent();
   vtkVector3i extent(extents[1] - extents[0] + 1, extents[3] - extents[2] + 1,
@@ -70,18 +66,18 @@ void SetScaleReaction::setScale()
                      (extent[2] - 1) * spacing[2] * 1e9);
 
   QDialog dialog(pqCoreUtilities::mainWidget());
-  QHBoxLayout* layout = new QHBoxLayout;
-  QLabel* label = new QLabel("Set volume  dimensions (nm):");
+  auto layout = new QHBoxLayout;
+  auto label = new QLabel("Set volume  dimensions (nm):");
   layout->addWidget(label);
-  QLineEdit* linex = new QLineEdit(QString::number(length[0]));
-  QLineEdit* liney = new QLineEdit(QString::number(length[1]));
-  QLineEdit* linez = new QLineEdit(QString::number(length[2]));
+  auto linex = new QLineEdit(QString::number(length[0]));
+  auto liney = new QLineEdit(QString::number(length[1]));
+  auto linez = new QLineEdit(QString::number(length[2]));
 
   layout->addWidget(linex);
   layout->addWidget(liney);
   layout->addWidget(linez);
-  QVBoxLayout* v = new QVBoxLayout;
-  QDialogButtonBox* buttons =
+  auto v = new QVBoxLayout;
+  auto buttons =
     new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
   connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));

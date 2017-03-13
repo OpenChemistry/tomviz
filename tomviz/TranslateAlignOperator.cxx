@@ -82,7 +82,7 @@ void applyImageOffsets(T* in, T* out, vtkImageData* image,
 
 namespace tomviz {
 TranslateAlignOperator::TranslateAlignOperator(DataSource* ds, QObject* p)
-  : Superclass(p), dataSource(ds)
+  : Operator(p), dataSource(ds)
 {
 }
 

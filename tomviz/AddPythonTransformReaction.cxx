@@ -150,16 +150,12 @@ AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
                                                        const QString& s,
                                                        bool rts, bool rv,
                                                        const QString& json)
-  : Superclass(parentObject), jsonSource(json), scriptLabel(l), scriptSource(s),
+  : pqReaction(parentObject), jsonSource(json), scriptLabel(l), scriptSource(s),
     interactive(false), requiresTiltSeries(rts), requiresVolume(rv)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
   updateEnableState();
-}
-
-AddPythonTransformReaction::~AddPythonTransformReaction()
-{
 }
 
 void AddPythonTransformReaction::updateEnableState()

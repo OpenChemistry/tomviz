@@ -46,17 +46,13 @@
 namespace tomviz {
 
 SaveScreenshotReaction::SaveScreenshotReaction(QAction* a, MainWindow* mw)
-  : Superclass(a), mainWindow(mw)
-{
-}
-
-SaveScreenshotReaction::~SaveScreenshotReaction()
+  : pqReaction(a), m_mainWindow(mw)
 {
 }
 
 void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
 {
-  pqView* view = pqActiveObjects::instance().activeView();
+  auto view = pqActiveObjects::instance().activeView();
   if (!view) {
     qDebug() << "Cannnot save image. No active view.";
     return;
@@ -103,14 +99,14 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
 
   ssDialog.setLayout(vLayout);
 
-  vtkSMSessionProxyManager* pxm =
+  auto pxm =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
   if (pxm->GetProxyDefinitionManager()) {
-    vtkPVProxyDefinitionIterator* iter =
+    auto iter =
       pxm->GetProxyDefinitionManager()->NewSingleGroupIterator("palettes");
     for (iter->InitTraversal(); !iter->IsDoneWithTraversal();
          iter->GoToNextItem()) {
-      vtkSMProxy* prototype =
+      auto prototype =
         pxm->GetPrototypeProxy("palettes", iter->GetProxyName());
       if (prototype) {
         paletteBox->addItem(prototype->GetXMLLabel(), prototype->GetXMLName());
@@ -126,7 +122,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
 
   QString lastUsedExt;
   // Load the most recently used file extensions from QSettings, if available.
-  pqSettings* settings = pqApplicationCore::instance()->settings();
+  auto settings = pqApplicationCore::instance()->settings();
   if (settings->contains("extensions/ScreenshotExtension")) {
     lastUsedExt = settings->value("extensions/ScreenshotExtension").toString();
   }
@@ -163,7 +159,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
     vtkSMViewProxy::SetTransparentBackground(1);
   }
 
-  vtkSMProxy* colorPalette = pxm->GetProxy("global_properties", "ColorPalette");
+  auto colorPalette = pxm->GetProxy("global_properties", "ColorPalette");
   vtkSmartPointer<vtkSMProxy> clone;
   if (colorPalette && !palette.isEmpty()) {
     // save current property values
@@ -171,7 +167,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
       pxm->NewProxy(colorPalette->GetXMLGroup(), colorPalette->GetXMLName()));
     clone->Copy(colorPalette);
 
-    vtkSMProxy* chosenPalette =
+    auto chosenPalette =
       pxm->NewProxy("palettes", palette.toLatin1().data());
     colorPalette->Copy(chosenPalette);
     chosenPalette->Delete();

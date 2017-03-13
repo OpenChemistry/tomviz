@@ -25,21 +25,18 @@ class SaveScreenshotReaction : public pqReaction
 {
   Q_OBJECT
 
-  typedef pqReaction Superclass;
-
 public:
   SaveScreenshotReaction(QAction* a, MainWindow* mw);
-  virtual ~SaveScreenshotReaction();
 
   static void saveScreenshot(MainWindow* mw);
 
 protected:
-  void onTriggered() override { this->saveScreenshot(this->mainWindow); }
+  void onTriggered() override { saveScreenshot(m_mainWindow); }
 
 private:
   Q_DISABLE_COPY(SaveScreenshotReaction)
 
-  MainWindow* mainWindow;
+  MainWindow* m_mainWindow;
 };
 }
 

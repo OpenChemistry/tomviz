@@ -29,20 +29,16 @@
 namespace tomviz {
 
 SaveLoadStateReaction::SaveLoadStateReaction(QAction* parentObject, bool load)
-  : Superclass(parentObject), Load(load)
-{
-}
-
-SaveLoadStateReaction::~SaveLoadStateReaction()
+  : pqReaction(parentObject), m_load(load)
 {
 }
 
 void SaveLoadStateReaction::onTriggered()
 {
-  if (this->Load) {
-    this->loadState();
+  if (m_load) {
+    loadState();
   } else {
-    this->saveState();
+    saveState();
   }
 }
 

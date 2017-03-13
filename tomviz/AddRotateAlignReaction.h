@@ -27,13 +27,12 @@ class AddRotateAlignReaction : public pqReaction
 
 public:
   AddRotateAlignReaction(QAction* parent);
-  ~AddRotateAlignReaction();
 
   void align(DataSource* source = NULL);
 
 protected:
-  void updateEnableState();
-  void onTriggered() { this->align(); }
+  void updateEnableState() override;
+  void onTriggered() override { align(); }
 
 private:
   Q_DISABLE_COPY(AddRotateAlignReaction)

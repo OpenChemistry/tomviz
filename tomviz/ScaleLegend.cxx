@@ -121,14 +121,13 @@ private:
 namespace tomviz {
 
 ScaleLegend::ScaleLegend(QMainWindow* mw)
-  : Superclass(mw), mainWindow(mw), m_style(ScaleLegendStyle::Cube),
-    m_visible(false)
+  : QObject(mw), m_mainWindow(mw)
 {
   // Connect the data manager's "dataSourceAdded" to our "dataSourceAdded" slot
   // to allow us to connect to the new data source's length scale information.
   ModuleManager& mm = ModuleManager::instance();
-  QObject::connect(&mm, SIGNAL(dataSourceAdded(DataSource*)), this,
-                   SLOT(dataSourceAdded(DataSource*)));
+  connect(&mm, SIGNAL(dataSourceAdded(DataSource*)),
+          SLOT(dataSourceAdded(DataSource*)));
 
   // Measurement cube
   {
@@ -171,12 +170,12 @@ ScaleLegend::ScaleLegend(QMainWindow* mw)
   m_renderer->AddActor(m_lengthScaleRep.Get());
 
   // Add our sub-renderer to the main renderer
-  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
+  auto view = ActiveObjects::instance().activeView();
   if (!view) {
     // Something is wrong with the view, exit early.
     return;
   }
-  vtkPVRenderView* renderView =
+  auto renderView =
     vtkPVRenderView::SafeDownCast(view->GetClientSideView());
   renderView->GetRenderWindow()->AddRenderer(m_renderer.Get());
 
@@ -199,8 +198,8 @@ ScaleLegend::ScaleLegend(QMainWindow* mw)
 ScaleLegend::~ScaleLegend()
 {
   // Break the connection between the cameras of the two views
-  vtkSMViewProxy* view = ActiveObjects::instance().activeView();
-  vtkPVRenderView* renderView =
+  auto view = ActiveObjects::instance().activeView();
+  auto renderView =
     vtkPVRenderView::SafeDownCast(view->GetClientSideView());
   if (renderView) {
     renderView->GetActiveCamera()->RemoveObserver(m_linkCamerasId);
@@ -240,14 +239,14 @@ void ScaleLegend::dataSourceAdded(DataSource* ds)
 {
   m_volumeScaleRep->SetLengthUnit(ds->getUnits(0).toStdString().c_str());
   m_lengthScaleRep->SetLengthUnit(ds->getUnits(0).toStdString().c_str());
-  QObject::connect(ds, SIGNAL(dataPropertiesChanged()), this,
-                   SLOT(dataPropertiesChanged()));
+  connect(ds, SIGNAL(dataPropertiesChanged()),
+          SLOT(dataPropertiesChanged()));
   render();
 }
 
 void ScaleLegend::dataPropertiesChanged()
 {
-  DataSource* data = qobject_cast<DataSource*>(sender());
+  auto data = qobject_cast<DataSource*>(sender());
   if (!data) {
     return;
   }
@@ -257,7 +256,7 @@ void ScaleLegend::dataPropertiesChanged()
 
 void ScaleLegend::render()
 {
-  pqView* view =
+  auto view =
     tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view) {
     view->render();

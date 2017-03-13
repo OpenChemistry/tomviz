@@ -27,13 +27,12 @@ class AddResampleReaction : public pqReaction
 
 public:
   AddResampleReaction(QAction* parent);
-  ~AddResampleReaction();
 
   void resample(DataSource* source = nullptr);
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { this->resample(); }
+  void onTriggered() override { resample(); }
 
 private:
   Q_DISABLE_COPY(AddResampleReaction)

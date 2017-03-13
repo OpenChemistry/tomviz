@@ -40,10 +40,6 @@ ConvertToFloatOperator::ConvertToFloatOperator(QObject* p) : Operator(p)
 {
 }
 
-ConvertToFloatOperator::~ConvertToFloatOperator()
-{
-}
-
 QIcon ConvertToFloatOperator::icon() const
 {
   return QIcon();

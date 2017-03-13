@@ -23,11 +23,9 @@ namespace tomviz {
 class SaveLoadStateReaction : public pqReaction
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
 
 public:
   SaveLoadStateReaction(QAction* action, bool load = false);
-  virtual ~SaveLoadStateReaction();
 
   static bool saveState();
   static bool saveState(const QString& filename);
@@ -39,7 +37,7 @@ protected:
 
 private:
   Q_DISABLE_COPY(SaveLoadStateReaction)
-  bool Load;
+  bool m_load;
 };
 }
 

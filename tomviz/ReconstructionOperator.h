@@ -24,11 +24,9 @@ class DataSource;
 class ReconstructionOperator : public Operator
 {
   Q_OBJECT
-  typedef Operator Superclass;
 
 public:
   ReconstructionOperator(DataSource* source, QObject* parent = nullptr);
-  virtual ~ReconstructionOperator();
 
   QString label() const override { return "Reconstruction"; }
 
@@ -63,8 +61,8 @@ private slots:
                                 vtkSmartPointer<vtkDataObject>);
   void setOperatorResult(vtkSmartPointer<vtkDataObject> result);
 private:
-  DataSource* dataSource;
-  int extent[6];
+  DataSource* m_dataSource;
+  int m_extent[6];
   Q_DISABLE_COPY(ReconstructionOperator)
 };
 }

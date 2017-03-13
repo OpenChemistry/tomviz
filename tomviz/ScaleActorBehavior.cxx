@@ -86,22 +86,18 @@ static void UpdateScale(vtkObject* caller, unsigned long, void* clientData,
 }
 
 ScaleActorBehavior::ScaleActorBehavior(QObject* parentObject)
-  : Superclass(parentObject)
+  : QObject(parentObject)
 {
   pqServerManagerModel* smmodel =
     pqApplicationCore::instance()->getServerManagerModel();
-  this->connect(smmodel, SIGNAL(viewAdded(pqView*)), SLOT(viewAdded(pqView*)));
-}
-
-ScaleActorBehavior::~ScaleActorBehavior()
-{
+  connect(smmodel, SIGNAL(viewAdded(pqView*)), SLOT(viewAdded(pqView*)));
 }
 
 void ScaleActorBehavior::viewAdded(pqView* view)
 {
-  if (vtkSMRenderViewProxy* viewProxy =
+  if (auto viewProxy =
         vtkSMRenderViewProxy::SafeDownCast(view->getProxy())) {
-    vtkRenderer* ren =
+    auto ren =
       vtkPVRenderView::SafeDownCast(viewProxy->GetClientSideObject())
         ->GetNonCompositedRenderer();
     Q_ASSERT(ren);

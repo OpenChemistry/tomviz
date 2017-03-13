@@ -34,10 +34,6 @@ AddRotateAlignReaction::AddRotateAlignReaction(QAction* parentObject)
   updateEnableState();
 }
 
-AddRotateAlignReaction::~AddRotateAlignReaction()
-{
-}
-
 void AddRotateAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(

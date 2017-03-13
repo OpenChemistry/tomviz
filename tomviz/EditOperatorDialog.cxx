@@ -150,6 +150,7 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
     QDialogButtonBox::Apply | QDialogButtonBox::Cancel | QDialogButtonBox::Ok,
     Qt::Horizontal, this);
   vLayout->addWidget(dialogButtons);
+  dialogButtons->button(QDialogButtonBox::Ok)->setDefault(false);
 
   this->setLayout(vLayout);
   this->connect(dialogButtons, SIGNAL(accepted()), SLOT(accept()));

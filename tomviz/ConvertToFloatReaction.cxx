@@ -31,8 +31,6 @@ ConvertToFloatReaction::ConvertToFloatReaction(QAction* parentObject)
   updateEnableState();
 }
 
-ConvertToFloatReaction::~ConvertToFloatReaction() = default;
-
 void ConvertToFloatReaction::updateEnableState()
 {
   parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=

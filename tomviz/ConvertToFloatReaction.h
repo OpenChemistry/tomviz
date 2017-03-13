@@ -27,13 +27,12 @@ class ConvertToFloatReaction : public pqReaction
 
 public:
   ConvertToFloatReaction(QAction* parent);
-  ~ConvertToFloatReaction() override;
 
   void convertToFloat();
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { this->convertToFloat(); }
+  void onTriggered() override { convertToFloat(); }
 
 private:
   Q_DISABLE_COPY(ConvertToFloatReaction)

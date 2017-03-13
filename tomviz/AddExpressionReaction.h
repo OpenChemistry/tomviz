@@ -29,13 +29,12 @@ class AddExpressionReaction : public pqReaction
 
 public:
   AddExpressionReaction(QAction* parent);
-  virtual ~AddExpressionReaction();
 
   OperatorPython* addExpression(DataSource* source = nullptr);
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { this->addExpression(); }
+  void onTriggered() override { addExpression(); }
 
 private:
   Q_DISABLE_COPY(AddExpressionReaction)
