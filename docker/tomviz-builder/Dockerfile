@@ -3,8 +3,9 @@ MAINTAINER Chris Harris <chris.harris@kitware.com>
 
 RUN echo "#!/bin/bash" > build.sh && \
   echo "set -e" >> build.sh && \
-  echo "pip install -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
-  echo "pip install -r ../tomviz/acquisition/requirements-dev.txt" >> build.sh && \
+  echo "pip2 install -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
+  echo "pip3 install -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
+  echo "pip2 install -r ../tomviz/acquisition/requirements-dev.txt" >> build.sh && \
   echo "ctest -VV -S /tomviz/cmake/CircleContinuous.cmake" >> build.sh && \
   chmod u+x build.sh
 
