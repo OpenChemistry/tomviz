@@ -78,6 +78,14 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>startX</tabstop>
+  <tabstop>startY</tabstop>
+  <tabstop>startZ</tabstop>
+  <tabstop>endX</tabstop>
+  <tabstop>endY</tabstop>
+  <tabstop>endZ</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

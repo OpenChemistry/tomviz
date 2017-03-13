@@ -205,6 +205,15 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>FileName</tabstop>
+  <tabstop>xLengthBox</tabstop>
+  <tabstop>yLengthBox</tabstop>
+  <tabstop>zLengthBox</tabstop>
+  <tabstop>unitBox</tabstop>
+  <tabstop>SetTiltAnglesButton</tabstop>
+  <tabstop>TiltAnglesTable</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
