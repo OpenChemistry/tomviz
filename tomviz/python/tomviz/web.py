@@ -1,6 +1,7 @@
+import base64
+import json
 import os
 import shutil
-import base64
 
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
@@ -53,7 +54,7 @@ def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
         export_contour_exploration_geometry(dest)
 
     if exportType == 5:
-        export_layers(dest, camera)
+        export_volume(dest)
 
     # Setup application
     copy_viewer(destPath, executionPath)
@@ -206,6 +207,13 @@ def get_contour():
             return value
     return None
 
+
+def get_trivial_producer():
+    for key, value in py2to3.iteritems(simple.GetSources()):
+        if 'TrivialProducer' in key[0]:
+            return value
+    return None
+
 # -----------------------------------------------------------------------------
 # Image based exporter
 # -----------------------------------------------------------------------------
@@ -330,6 +338,84 @@ def export_contour_exploration_geometry(destinationPath):
             scalarContainer['constant'] = contourValue
             dsb.writeData()
         dsb.stop()
+
+
+# -----------------------------------------------------------------------------
+# Volume export
+# -----------------------------------------------------------------------------
+
+
+def export_volume(destinationPath):
+    indexJSON = {
+        'type': ['tonic-query-data-model', 'vtk-volume'],
+        'arguments': {},
+        'arguments_order': [],
+        'data': [{
+            'rootFile': True,
+            'name': 'scene',
+            'pattern': 'volume.json',
+            'priority': 0,
+            'type': 'json',
+            'metadata': {}
+        }],
+        'metadata': {}
+    }
+    volumeJSON = {
+        'origin': [0, 0, 0],
+        'spacing': [1, 1, 1],
+        'extent': [0, 1, 0, 1, 0, 1],
+        'vtkClass': 'vtkImageData',
+        'pointData': {
+            'vtkClass': 'vtkDataSetAttributes',
+            'arrays': [{
+                'data': {
+                    'numberOfComponents': 1,
+                    'name': 'Scalars',
+                    'vtkClass': 'vtkDataArray',
+                    'dataType': 'Uint8Array',
+                    'ref': {
+                        'registration': 'setScalars',
+                        'encode': 'LittleEndian',
+                        'basepath': 'data',
+                        'id': 'fieldData'
+                    },
+                    'size': 0
+                }
+            }]
+        }
+    }
+    # Extract scalars
+    producer = get_trivial_producer()
+    if not producer:
+        return
+
+    # create directories if need be
+    dataDir = os.path.join(destinationPath, 'data')
+    if not os.path.exists(dataDir):
+        os.makedirs(dataDir)
+
+    # Extract data
+    imageData = producer.SMProxy.GetClientSideObject().GetOutputDataObject(0)
+    volumeJSON['extent'] = imageData.GetExtent()
+
+    scalars = imageData.GetPointData().GetScalars()
+    arraySize = scalars.GetNumberOfValues()
+    volumeJSON['pointData']['arrays'][0]['data']['size'] = arraySize
+
+    # Index file
+    indexPath = os.path.join(destinationPath, 'index.json')
+    with open(indexPath, 'w') as f:
+        f.write(json.dumps(indexJSON, indent=2))
+
+    # Image Data file
+    volumePath = os.path.join(destinationPath, 'volume.json')
+    with open(volumePath, 'w') as f:
+        f.write(json.dumps(volumeJSON, indent=2))
+
+    # Write data field
+    fieldDataPath = os.path.join(destinationPath, 'data', 'fieldData')
+    with open(fieldDataPath, 'wb') as f:
+        f.write(buffer(scalars))
 
 # -----------------------------------------------------------------------------
 # Composite exporter
