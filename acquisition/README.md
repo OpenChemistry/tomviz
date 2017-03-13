@@ -2,7 +2,7 @@
 
 ```bash
 cd <tomviz_repo>/acquisition
-pip install requirements-dev.txt
+pip install -r requirements-dev.txt
 
 ```
 
