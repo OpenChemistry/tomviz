@@ -50,5 +50,7 @@
         <file>icons/pqResetRange@2x.png</file>
         <file>icons/pqResetRangeCustom.png</file>
         <file>icons/pqResetRangeCustom@2x.png</file>
+        <file>icons/pqLock.png</file>
+        <file>icons/pqLock@2x.png</file>
     </qresource>
 </RCC>

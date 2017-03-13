@@ -28,7 +28,7 @@ class CacheOperator : public Operator
 public:
   CacheOperator(DataSource* source, QObject* parent = nullptr);
 
-  QString label() const override { return "Cache"; }
+  QString label() const override { return "Data Cache"; }
 
   QIcon icon() const override;
 

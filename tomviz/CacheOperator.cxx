@@ -54,7 +54,7 @@ CacheOperator::CacheOperator(DataSource* source, QObject* p)
 
 QIcon CacheOperator::icon() const
 {
-  return QIcon(":/pqWidgets/Icons/pqExtractGrid24.png");
+  return QIcon(":/icons/pqLock.png");
 }
 
 Operator* CacheOperator::clone() const
