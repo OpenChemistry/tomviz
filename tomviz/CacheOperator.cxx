@@ -34,14 +34,6 @@ namespace tomviz {
 CacheOperator::CacheOperator(DataSource* source, QObject* p)
   : Operator(p), m_dataSource(source)
 {
-  auto t =
-    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-  auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-  int dataExtent[6];
-  imageData->GetExtent(dataExtent);
-  for (int i = 0; i < 6; ++i) {
-    m_extent[i] = dataExtent[i];
-  }
   setSupportsCancel(false);
   setNumberOfResults(1);
   setHasChildDataSource(true);
@@ -89,15 +81,6 @@ bool CacheOperator::applyTransform(vtkDataObject* dataObject)
   vtkImageData* imageData = vtkImageData::SafeDownCast(dataObject);
   if (!imageData) {
     return false;
-  }
-  int dataExtent[6];
-  imageData->GetExtent(dataExtent);
-  for (int i = 0; i < 6; ++i) {
-    if (dataExtent[i] != m_extent[i]) {
-      // Extent changing shouldn't matter, but update so that correct
-      // number of steps can be reported.
-      m_extent[i] = dataExtent[i];
-    }
   }
 
   vtkNew<vtkImageData> cacheImage;

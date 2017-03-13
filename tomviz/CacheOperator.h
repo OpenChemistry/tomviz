@@ -60,7 +60,6 @@ private slots:
 
 private:
   DataSource* m_dataSource;
-  int m_extent[6];
   bool m_updateCache = true; // Update the first time, then freeze.
   Q_DISABLE_COPY(CacheOperator)
 };
