@@ -182,6 +182,8 @@ set(SOURCES
   SetTiltAnglesOperator.h
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
+  SnapshotOperator.h
+  SnapshotOperator.cxx
   SpinBox.cxx
   SpinBox.h
   ToggleDataTypeReaction.h

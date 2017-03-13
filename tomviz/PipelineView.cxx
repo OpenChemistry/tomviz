@@ -26,6 +26,7 @@
 #include "OperatorResult.h"
 #include "PipelineModel.h"
 #include "SaveDataReaction.h"
+#include "SnapshotOperator.h"
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 
@@ -202,6 +203,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* hideAction = nullptr;
   QAction* showAction = nullptr;
   QAction* cloneChildAction = nullptr;
+  QAction* snapshotAction = nullptr;
   bool allowReExecute = false;
 
   // Data source ( non child )
@@ -246,6 +248,11 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     executeAction = contextMenu.addAction("Re-execute pipeline");
   }
 
+  // Offer to cache for operators.
+  if (op) {
+    snapshotAction = contextMenu.addAction("Snapshot Data");
+  }
+
   bool allModules = true;
   foreach (auto i, selectedIndexes()) {
     auto module = pipelineModel->module(i);
@@ -286,6 +293,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (cloneChildAction && selectedItem == cloneChildAction) {
     DataSource* newClone = dataSource->clone(false, true);
     LoadDataReaction::dataSourceAdded(newClone);
+  } else if (snapshotAction && selectedItem == snapshotAction) {
+    op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));
   }
 }
 
