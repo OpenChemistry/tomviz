@@ -26,9 +26,7 @@ AcquisitionClient::AcquisitionClient(const QString& url, QObject* parent)
 {
 }
 
-AcquisitionClient::~AcquisitionClient()
-{
-}
+AcquisitionClient::~AcquisitionClient() = default;
 
 AcquisitionClientRequest* AcquisitionClient::connect(const QJsonObject& params)
 {

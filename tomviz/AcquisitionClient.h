@@ -31,8 +31,9 @@ class AcquisitionClientBaseRequest : public QObject
   Q_OBJECT
 
 public:
-  explicit AcquisitionClientBaseRequest(QObject* parent = 0)
-    : QObject(parent){};
+  explicit AcquisitionClientBaseRequest(QObject* parent = 0) : QObject(parent)
+  {
+  }
 
 signals:
   void error(const QString& errorMessage, const QJsonValue& errorData);
@@ -44,7 +45,9 @@ class AcquisitionClientRequest : public AcquisitionClientBaseRequest
 
 public:
   explicit AcquisitionClientRequest(QObject* parent = 0)
-    : AcquisitionClientBaseRequest(parent){};
+    : AcquisitionClientBaseRequest(parent)
+  {
+  }
 
 signals:
   void finished(const QJsonValue& result);
@@ -56,7 +59,9 @@ class AcquisitionClientImageRequest : public AcquisitionClientBaseRequest
 
 public:
   explicit AcquisitionClientImageRequest(QObject* parent = 0)
-    : AcquisitionClientBaseRequest(parent){};
+    : AcquisitionClientBaseRequest(parent)
+  {
+  }
 
 signals:
   void finished(const QString mimeType, const QByteArray& result);
@@ -68,7 +73,7 @@ class AcquisitionClient : public QObject
 
 public:
   explicit AcquisitionClient(const QString& url, QObject* parent = 0);
-  ~AcquisitionClient();
+  ~AcquisitionClient() override;
 
 public slots:
 
