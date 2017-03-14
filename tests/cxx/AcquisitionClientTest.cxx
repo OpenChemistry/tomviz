@@ -180,7 +180,7 @@ private slots:
     QByteArray data = arguments[1].toByteArray();
     QCryptographicHash hash(QCryptographicHash::Algorithm::Md5);
     hash.addData(data);
-    QCOMPARE(hash.result().toHex().data(), "1b9723cd7e9ecd54f28c7dae13e38511");
+    QCOMPARE(hash.result().toHex().data(), "3b3d4b6163f48ec0f665fe114fac0d15");
   }
 
   void stemAcquireScanTest()
@@ -202,7 +202,7 @@ private slots:
     QByteArray data = arguments[1].toByteArray();
     QCryptographicHash hash(QCryptographicHash::Algorithm::Md5);
     hash.addData(data);
-    QCOMPARE(hash.result().toHex().data(), "1b9723cd7e9ecd54f28c7dae13e38511");
+    QCOMPARE(hash.result().toHex().data(), "3b3d4b6163f48ec0f665fe114fac0d15");
   }
 
   void describeTest()

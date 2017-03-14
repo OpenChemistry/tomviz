@@ -81,7 +81,7 @@ def test_stem_acquire(fei_acquisition_server):
     response = requests.get(url)
 
     assert response.status_code == 200
-    expected = '1b9723cd7e9ecd54f28c7dae13e38511'
+    expected = '3b3d4b6163f48ec0f665fe114fac0d15'
 
     md5 = hashlib.md5()
     md5.update(response.content)

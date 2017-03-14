@@ -1,6 +1,7 @@
 import time
 from PIL import Image
 from . import test_image
+from tests.utility import tobytes
 
 img = Image.open(test_image())
 
@@ -38,9 +39,10 @@ def set_acquisition_params(**params):
 
 def preview_scan():
     time.sleep(2)
-    return img.tobytes()
+    img.seek(0)
+    return tobytes(img)
 
 
 def stem_acquire():
     time.sleep(3)
-    return img.tobytes()
+    return tobytes(img)
