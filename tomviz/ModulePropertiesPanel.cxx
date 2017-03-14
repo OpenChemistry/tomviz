@@ -91,6 +91,11 @@ void ModulePropertiesPanel::setModule(Module* module)
     if (module->isColorMapNeeded()) {
       ui.DetachColorMap->setVisible(true);
       ui.DetachColorMap->setChecked(module->useDetachedColorMap());
+
+      this->connect(module, &Module::colorMapChanged, this, [&]() {
+        ui.DetachColorMap->setChecked(
+          this->Internals->ActiveModule->useDetachedColorMap());
+      });
     }
   }
   ui.PropertiesWidget->layout()->update();

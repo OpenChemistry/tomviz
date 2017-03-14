@@ -108,6 +108,9 @@ signals:
   /// Fired when the mode changes
   void moveObjectsModeChanged(bool moveObjectsOn);
 
+  /// Fired whenever the color map has changed
+  void colorMapChanged(DataSource*);
+
 private slots:
   void viewChanged(pqView*);
   void dataSourceRemoved(DataSource*);

@@ -144,7 +144,7 @@ void Module::setUseDetachedColorMap(bool val)
 vtkSMProxy* Module::colorMap() const
 {
   return this->useDetachedColorMap() ? this->Internals->ColorMap.GetPointer()
-                                     : this->dataSource()->colorMap();
+                                     : this->colorMapDataSource()->colorMap();
 }
 
 vtkSMProxy* Module::opacityMap() const
