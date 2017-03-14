@@ -5,7 +5,7 @@
   "dependencies": {
   },
   "devDependencies": {
-    "shelljs": "0.7.5",
+    "shelljs": "0.7.7",
 
     "monologue.js": "0.3.5",
     "mout": "1.0.0",
@@ -20,13 +20,13 @@
     "normalize.css": "5.0.0",
 
     "kw-web-suite": "2.2.1",
-    "kw-doc": "1.0.15",
+    "kw-doc": "1.0.19",
 
-    "babel-polyfill": "6.16.0",
+    "babel-polyfill": "6.23.0",
 
-    "arctic-viewer": "1.5.11",
-    "paraviewweb": "2.2.75",
-    "vtk.js": "2.11.8",
+    "arctic-viewer": "1.5.14",
+    "paraviewweb": "2.2.85",
+    "vtk.js": "2.13.3",
     "jszip": "3.1.3"
   },
   "scripts": {

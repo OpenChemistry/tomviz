@@ -62,6 +62,7 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->exportType->addItem("Contour exploration");
   this->exportType->addItem("Contours Geometry");
   this->exportType->addItem("Contour exploration Geometry");
+  this->exportType->addItem("Volume");
   // this->exportType->addItem("Composite surfaces"); // specularColor segfault
   this->exportType->setCurrentIndex(0);
   typeGroup->addWidget(outputTypelabel);

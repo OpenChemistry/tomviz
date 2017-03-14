@@ -19,6 +19,7 @@ import LookupTableManager from 'paraviewweb/src/Common/Core/LookupTableManager';
 import ImageQueryDataModelViewer from 'arctic-viewer/lib/types/ImageQueryDataModel';
 import SortedCompositeViewer     from 'arctic-viewer/lib/types/SortedComposite';
 import VTKGeometry               from 'arctic-viewer/lib/types/VTKGeometry';
+import VTKVolume                 from 'arctic-viewer/lib/types/VTKVolume';
 
 // Resource images -----------------------------------------------------------
 
@@ -38,6 +39,7 @@ const dataViewers = [
   ImageQueryDataModelViewer,
   SortedCompositeViewer,
   VTKGeometry,
+  VTKVolume,
 ];
 
 // Add class to body if iOS device --------------------------------------------
