@@ -152,10 +152,6 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
       // Connect transformingDone
       connect(op, &Operator::transformingDone, delegate, [this, delegate]() {
         delegate->stop();
-        // We need this final update to ensure the status icon is repainted
-        QTimer::singleShot(50, [this]() {
-          this->viewport()->update();
-        });
       });
     });
   });
