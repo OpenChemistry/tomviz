@@ -361,6 +361,7 @@ void PipelineView::rowActivated(const QModelIndex& idx)
     if (pipelineModel) {
       if (auto module = pipelineModel->module(idx)) {
         module->setVisibility(!module->visibility());
+        emit model()->dataChanged(idx, idx);
         if (pqView* view = tomviz::convert<pqView*>(module->view())) {
           view->render();
         }
