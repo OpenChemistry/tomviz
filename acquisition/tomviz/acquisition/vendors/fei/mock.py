@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import mock
 from tests.mock import test_image
+from tests.utility import tobytes
 
 from PIL import Image
 
@@ -22,5 +23,5 @@ acq.Detectors.AcqParams.Binning = 10
 acq.Detectors.AcqParams.ImageSize = 'FULL'
 acq.Detectors.AcqParams.DwellTime = 3.1
 image = mock.MagicMock()
-image.AsSafeArray = img.tobytes()
+image.AsSafeArray = tobytes(img)
 acq.AcquireImages.return_value = [image]
