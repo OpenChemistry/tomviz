@@ -193,6 +193,20 @@ def add_scene_item(scene, name, proxy, view):
     })
 
 
+def patch_data_range(destinationPath):
+    originalPath = os.path.join(destinationPath, 'index.json')
+    tmpPath = os.path.join(destinationPath, 'index_tmp.json')
+    os.rename(originalPath, tmpPath)
+    with open(originalPath, 'w') as outputJSON:
+        with open(tmpPath, 'r') as inputJSON:
+            content = json.loads(inputJSON.read())
+            # Patch geometry range
+            for fieldName in content['Geometry']['ranges']:
+                content['Geometry']['ranges'][fieldName] = [0, 255]
+            outputJSON.write(json.dumps(content, indent=2))
+    os.remove(tmpPath)
+
+
 def get_volume_piecewise(view):
     renderer = view.GetClientSideObject().GetRenderer()
     for volume in renderer.GetVolumes():
@@ -204,6 +218,8 @@ def get_volume_piecewise(view):
 def get_contour():
     for key, value in py2to3.iteritems(simple.GetSources()):
         if 'FlyingEdges' in key[0]:
+            return value
+        if 'Contour' in key[0]:
             return value
     return None
 
@@ -275,6 +291,7 @@ def export_volume_exploration_images(destinationPath, camera):
 def export_contour_exploration_images(destinationPath, camera):
     view = simple.GetRenderView()
     contour = get_contour()
+    origianlValues = [v for v in contour.Value]
     nbSteps = 10
     step = 250.0 / float(nbSteps)
     values = [float(v + 1) * step for v in range(0, nbSteps)]
@@ -288,6 +305,9 @@ def export_contour_exploration_images(destinationPath, camera):
             contour.Value = [contourValue]
             idb.writeImages()
         idb.stop()
+
+        # Reset to original value
+        contour.Value = origianlValues
     else:
         print('No contour module available')
 
@@ -314,6 +334,9 @@ def export_contours_geometry(destinationPath):
     dsb.writeData(0)
     dsb.stop()
 
+    # Patch data range
+    patch_data_range(destinationPath)
+
 # -----------------------------------------------------------------------------
 # Contours Geometry export
 # -----------------------------------------------------------------------------
@@ -326,6 +349,7 @@ def export_contour_exploration_geometry(destinationPath):
             contour = value
 
     if contour:
+        originalValue = [v for v in contour.Value]
         sceneDescription = {
             'scene': [{
                 'name': 'Contour',
@@ -349,6 +373,12 @@ def export_contour_exploration_geometry(destinationPath):
             scalarContainer['constant'] = contourValue
             dsb.writeData()
         dsb.stop()
+
+        # Patch data range
+        patch_data_range(destinationPath)
+
+        # Reset to original state
+        contour.Value = originalValue
 
 
 # -----------------------------------------------------------------------------
