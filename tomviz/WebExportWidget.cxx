@@ -90,15 +90,18 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->nbTheta->setValue(5);
   this->nbTheta->setMinimumWidth(100);
 
-  QHBoxLayout* cameraGroup = new QHBoxLayout;
-  cameraGroup->addWidget(cameraGrouplabel);
-  cameraGroup->addStretch();
-  cameraGroup->addWidget(phiLabel);
-  cameraGroup->addWidget(nbPhi);
-  cameraGroup->addSpacing(30);
-  cameraGroup->addWidget(thetaLabel);
-  cameraGroup->addWidget(nbTheta);
-  v->addLayout(cameraGroup);
+  QHBoxLayout* cameraGroupLayout = new QHBoxLayout;\
+  cameraGroupLayout->addWidget(cameraGrouplabel);
+  cameraGroupLayout->addStretch();
+  cameraGroupLayout->addWidget(phiLabel);
+  cameraGroupLayout->addWidget(nbPhi);
+  cameraGroupLayout->addSpacing(30);
+  cameraGroupLayout->addWidget(thetaLabel);
+  cameraGroupLayout->addWidget(nbTheta);
+
+  this->cameraGroup = new QWidget();
+  this->cameraGroup->setLayout(cameraGroupLayout);
+  v->addWidget(this->cameraGroup);
 
   v->addStretch();
 
@@ -119,6 +122,7 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->connect(this->browseButton, SIGNAL(pressed()), this, SLOT(onBrowse()));
   this->connect(this->exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
   this->connect(this->cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
+  this->connect(this->exportType, SIGNAL(currentIndexChanged(int)), this, SLOT(onTypeChange(int)));
 }
 
 WebExportWidget::~WebExportWidget()
@@ -136,6 +140,11 @@ void WebExportWidget::onBrowse()
     this->outputPath->setText(fileDialog.getSelectedFiles()[0]);
     this->exportButton->setDisabled(false);
   }
+}
+
+void WebExportWidget::onTypeChange(int index)
+{
+  this->cameraGroup->setVisible(index < 3);
 }
 
 void WebExportWidget::onPathChange()

@@ -21,13 +21,14 @@
 #include "PythonUtilities.h"
 #include "Utilities.h"
 
-class QLabel;
-class QComboBox;
-class QSpinBox;
-class QLineEdit;
-class QTimer;
 class QButtonGroup;
+class QComboBox;
+class QLabel;
+class QLineEdit;
 class QPushButton;
+class QSpinBox;
+class QTimer;
+class QWidget;
 
 namespace tomviz {
 
@@ -45,12 +46,14 @@ public:
   Python::Dict getKeywordArguments();
 
 protected slots:
-  void onPathChange();
   void onBrowse();
   void onCancel();
   void onExport();
+  void onPathChange();
+  void onTypeChange(int);
 
 protected:
+  QWidget* cameraGroup;
   QLineEdit* outputPath;
   QPushButton* browseButton;
   QComboBox* exportType;
