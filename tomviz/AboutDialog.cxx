@@ -98,11 +98,12 @@ AboutDialog::AboutDialog(MainWindow* mw)
 
   AddItem(tree, "Qt Version", QString(QT_VERSION_STR));
 
-  AddPythonAttributeItem(tree, "Python Path", "sys", "prefix");
   AddPythonAttributeItem(tree, "Python Version", "sys", "version");
   AddPythonAttributeItem(tree, "NumPy Version", "numpy", "__version__");
-  AddPythonAttributeItem(tree, "NumPy Path", "numpy", "__file__");
   AddPythonAttributeItem(tree, "SciPy Version", "scipy", "__version__");
+
+  AddPythonAttributeItem(tree, "Python Path", "sys", "prefix");
+  AddPythonAttributeItem(tree, "NumPy Path", "numpy", "__file__");
   AddPythonAttributeItem(tree, "SciPy Path", "scipy", "__file__");
 
   tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
