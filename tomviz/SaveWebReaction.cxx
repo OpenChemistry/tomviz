@@ -30,7 +30,6 @@
 
 #include <cassert>
 
-#include <QCoreApplication>
 #include <QDebug>
 #include <QDialog>
 #include <QMessageBox>
@@ -56,13 +55,11 @@ void SaveWebReaction::onTriggered()
 {
   WebExportWidget dialog;
   if (dialog.exec() == QDialog::Accepted) {
-    this->saveWeb(dialog.getOutputPath(), dialog.getExportType(),
-                  dialog.getNumberOfPhi(), dialog.getNumberOfTheta());
+    this->saveWeb(dialog.getKeywordArguments());
   }
 }
 
-bool SaveWebReaction::saveWeb(const QString& filename, int type, int nbPhi,
-                              int nbTheta)
+bool SaveWebReaction::saveWeb(Python::Dict kwargs)
 {
   Python::initialize();
 
@@ -77,14 +74,7 @@ bool SaveWebReaction::saveWeb(const QString& filename, int type, int nbPhi,
     qCritical() << "Unable to locate webExport.";
   }
 
-  Python::Dict kwargs;
-  Python::Tuple args(5);
-  args.set(0, toVariant(QVariant(QCoreApplication::applicationDirPath())));
-  args.set(1, toVariant(QVariant(filename)));
-  args.set(2, toVariant(QVariant(type)));
-  args.set(3, toVariant(QVariant(nbPhi)));
-  args.set(4, toVariant(QVariant(nbTheta)));
-
+  Python::Tuple args(0);
   Python::Object result = webExport.call(args, kwargs);
   if (!result.isValid()) {
     qCritical("Failed to execute the script.");

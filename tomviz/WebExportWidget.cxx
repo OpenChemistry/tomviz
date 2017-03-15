@@ -22,8 +22,12 @@
 #include "pqCoreUtilities.h"
 #include "pqFileDialog.h"
 
+#include "PythonUtilities.h"
+#include "Utilities.h"
+
 #include <QButtonGroup>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -149,23 +153,17 @@ void WebExportWidget::onCancel()
   this->reject();
 }
 
-QString WebExportWidget::getOutputPath()
+Python::Dict WebExportWidget::getKeywordArguments()
 {
-  return this->outputPath->text();
+  Python::Dict kwargs;
+
+  kwargs.set("executionPath", toVariant(QVariant(QCoreApplication::applicationDirPath())));
+  kwargs.set("destPath", toVariant(QVariant(this->outputPath->text())));
+  kwargs.set("exportType", toVariant(QVariant(this->exportType->currentIndex())));
+  kwargs.set("nbPhi", toVariant(QVariant(this->nbPhi->value())));
+  kwargs.set("nbTheta", toVariant(QVariant(this->nbTheta->value())));
+
+  return kwargs;
 }
 
-int WebExportWidget::getExportType()
-{
-  return this->exportType->currentIndex();
-}
-
-int WebExportWidget::getNumberOfPhi()
-{
-  return this->nbPhi->value();
-}
-
-int WebExportWidget::getNumberOfTheta()
-{
-  return this->nbTheta->value();
-}
 }

@@ -17,6 +17,7 @@
 #define tomvizSaveWebReaction_h
 
 #include <pqReaction.h>
+#include "PythonUtilities.h"
 
 namespace tomviz {
 /// SaveWebReaction handles the "Save Web" action in tomviz. On trigger,
@@ -29,7 +30,7 @@ public:
   SaveWebReaction(QAction* parentAction);
 
   /// Save the file
-  bool saveWeb(const QString& filename, int type, int deltaPhi, int deltaTheta);
+  bool saveWeb(Python::Dict kwargs);
 
 protected:
   /// Called when the data changes to enable/disable the menu item

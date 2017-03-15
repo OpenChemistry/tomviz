@@ -15,7 +15,16 @@ HTML_FILENAME = 'tomviz.html'
 HTML_WITH_DATA_FILENAME = 'tomviz_data.html'
 
 
-def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
+def web_export(*args, **kwargs):
+    # Expecting only kwargs
+    executionPath = kwargs['executionPath']
+    destPath = kwargs['destPath']
+    exportType = kwargs['exportType']
+
+    # Camera properties
+    nbPhi = kwargs['nbPhi']
+    nbTheta = kwargs['nbTheta']
+
     # Destination directory for data
     dest = '%s/data' % destPath
 
@@ -48,13 +57,13 @@ def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
         export_contour_exploration_images(dest, camera)
 
     if exportType == 3:
-        export_contours_geometry(dest)
+        export_contours_geometry(dest, **kwargs)
 
     if exportType == 4:
-        export_contour_exploration_geometry(dest)
+        export_contour_exploration_geometry(dest, **kwargs)
 
     if exportType == 5:
-        export_volume(dest)
+        export_volume(dest, **kwargs)
 
     # Setup application
     copy_viewer(destPath, executionPath)
@@ -316,7 +325,7 @@ def export_contour_exploration_images(destinationPath, camera):
 # -----------------------------------------------------------------------------
 
 
-def export_contours_geometry(destinationPath):
+def export_contours_geometry(destinationPath, **kwargs):
     view = simple.GetRenderView()
     sceneDescription = {'scene': []}
     for key, value in simple.GetSources().iteritems():
@@ -342,7 +351,7 @@ def export_contours_geometry(destinationPath):
 # -----------------------------------------------------------------------------
 
 
-def export_contour_exploration_geometry(destinationPath):
+def export_contour_exploration_geometry(destinationPath, **kwargs):
     contour = None
     for key, value in simple.GetSources().iteritems():
         if key[0] == 'Contour':
@@ -386,7 +395,7 @@ def export_contour_exploration_geometry(destinationPath):
 # -----------------------------------------------------------------------------
 
 
-def export_volume(destinationPath):
+def export_volume(destinationPath, **kwargs):
     indexJSON = {
         'type': ['tonic-query-data-model', 'vtk-volume'],
         'arguments': {},

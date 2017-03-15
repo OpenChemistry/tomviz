@@ -18,6 +18,9 @@
 
 #include <QDialog>
 
+#include "PythonUtilities.h"
+#include "Utilities.h"
+
 class QLabel;
 class QComboBox;
 class QSpinBox;
@@ -39,10 +42,7 @@ public:
   WebExportWidget(QWidget* parent = nullptr);
   ~WebExportWidget();
 
-  QString getOutputPath();
-  int getExportType();
-  int getNumberOfPhi();
-  int getNumberOfTheta();
+  Python::Dict getKeywordArguments();
 
 protected slots:
   void onPathChange();
