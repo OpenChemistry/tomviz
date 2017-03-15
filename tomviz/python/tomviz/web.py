@@ -16,6 +16,7 @@ HTML_FILENAME = 'tomviz.html'
 HTML_WITH_DATA_FILENAME = 'tomviz_data.html'
 DATA_FILENAME = 'data.tomviz'
 
+
 def web_export(*args, **kwargs):
     # Expecting only kwargs
     keepData = kwargs['keepData']
@@ -476,7 +477,7 @@ def export_volume(destinationPath, **kwargs):
         for i in range(pvw.GetSize()):
             pvw.GetNodeValue(i, currentPoints)
             piecewiseNodes.append([v for v in currentPoints])
-        indexJSON['metadata'] = { 'piecewise': piecewiseNodes }
+        indexJSON['metadata'] = {'piecewise': piecewiseNodes}
 
     # Index file
     indexPath = os.path.join(destinationPath, 'index.json')
