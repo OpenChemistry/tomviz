@@ -75,10 +75,40 @@ if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
 endif()
 
 find_package(ITK 4.9)
-if(ITK_FOUND AND NOT ITK_WRAP_PYTHON)
-  message(FATAL_ERROR
-    "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
-    "Please rebuild ITK with ITK_WRAP_PYTHON set to TRUE.")
+if(ITK_FOUND)
+  if(NOT ITK_WRAP_PYTHON)
+    message(FATAL_ERROR
+      "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
+      "Please rebuild ITK with ITK_WRAP_PYTHON set to TRUE.")
+  endif()
+
+  # Verify that the ITK build is using the same Python as the ParaView build
+  load_cache(${ITK_DIR}
+    READ_WITH_PREFIX ITK_
+    PYTHON_INCLUDE_DIR PYTHON_LIBRARY
+  )
+  load_cache(${ParaView_DIR}
+    READ_WITH_PREFIX ParaView_
+    PYTHON_INCLUDE_DIR PYTHON_LIBRARY
+  )
+
+  if (NOT ITK_PYTHON_INCLUDE_DIR STREQUAL ParaView_PYTHON_INCLUDE_DIR)
+    message(FATAL_ERROR
+      "The Python include directory is not the same for both ParaView and ITK. "
+      "Please ensure ParaView and ITK are being built against the same Python. "
+      "ParaView Python include directory: ${ParaView_PYTHON_INCLUDE_DIR}, "
+      "ITK Python include directory: ${ITK_PYTHON_INCLUDE_DIR}"
+    )
+  endif()
+
+  if (NOT ITK_PYTHON_LIBRARY STREQUAL ParaView_PYTHON_LIBRARY)
+    message(FATAL_ERROR
+      "The Python library is not the same for both ParaView and ITK. "
+      "Please ensure ParaView and ITK are being built against the same Python. "
+      "ParaView Python library: ${ParaView_PYTHON_LIBRARY}, "
+      "ITK Python include directory: ${ITK_PYTHON_LIBRARY}"
+    )
+  endif()
 endif()
 
 add_subdirectory(tomviz)
