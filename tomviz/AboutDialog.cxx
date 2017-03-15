@@ -105,11 +105,7 @@ AboutDialog::AboutDialog(MainWindow* mw)
   AddPythonAttributeItem(tree, "SciPy Version", "scipy", "__version__");
   AddPythonAttributeItem(tree, "SciPy Path", "scipy", "__file__");
 
-#if QT_VERSION >= 0x050000
   tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-#else
-  tree->header()->setResizeMode(QHeaderView::ResizeToContents);
-#endif
 }
 
 AboutDialog::~AboutDialog() = default;
