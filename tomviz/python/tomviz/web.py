@@ -240,6 +240,12 @@ def export_volume_exploration_images(destinationPath, camera):
     span = step * 0.4
     values = [float(v + 1) * step for v in range(0, nbSteps)]
     if pvw:
+        savedNodes = []
+        currentPoints = [0, 0, 0, 0]
+        for i in range(pvw.GetSize()):
+            pvw.GetNodeValue(i, currentPoints)
+            savedNodes.append([v for v in currentPoints])
+
         idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
         idb.getDataHandler().registerArgument(priority=1, name='volume',
                                               values=values, ui='slider',
@@ -253,6 +259,11 @@ def export_volume_exploration_images(destinationPath, camera):
             pvw.AddPoint(255, 0)
             idb.writeImages()
         idb.stop()
+
+        # Reset to original piecewise funtion
+        pvw.RemoveAllPoints()
+        for node in savedNodes:
+            pvw.AddPoint(node[0], node[1], node[2], node[3])
     else:
         print('No Volume module available')
 
