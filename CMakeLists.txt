@@ -97,7 +97,7 @@ option(TOMVIZ_DOWNLOAD_WEB  "Enable downloading web application." OFF)
 set(tomviz_html_path "${CMAKE_BINARY_DIR}/web/tomviz.html")
 
 if (TOMVIZ_DOWNLOAD_WEB)
-  set(tomviz_html_sha512 "a729604ae7758db88303e994e023d5bc3fc0404a155c1bd934df067bc095af8c2902622cfd6c02c7f00db01c39b796e2c960f17ac458167cceb84b16f08a1c0e")
+  set(tomviz_html_sha512 "01db2c85636ee4fe8c3031ab680244570b2fb6a962fd7007598aae97cca5eb850abbeec97dd1be3c45d41c75d0df43a38a61ee877eb2fe007e64c24e84692412")
   if (NOT EXISTS "${tomviz_html_path}")
     message(STATUS "Downloading tomviz.html.")
     file(DOWNLOAD
