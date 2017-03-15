@@ -102,7 +102,7 @@ AboutDialog::AboutDialog(MainWindow* mw)
   AddPythonAttributeItem(tree, "NumPy Version", "numpy", "__version__");
   AddPythonAttributeItem(tree, "SciPy Version", "scipy", "__version__");
 
-  AddPythonAttributeItem(tree, "Python Path", "sys", "prefix");
+  AddPythonAttributeItem(tree, "Python Prefix", "sys", "prefix");
   AddPythonAttributeItem(tree, "NumPy Path", "numpy", "__file__");
   AddPythonAttributeItem(tree, "SciPy Path", "scipy", "__file__");
 
