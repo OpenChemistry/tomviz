@@ -152,10 +152,6 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
       // Connect transformingDone
       connect(op, &Operator::transformingDone, delegate, [this, delegate]() {
         delegate->stop();
-        // We need this final update to ensure the status icon is repainted
-        QTimer::singleShot(50, [this]() {
-          this->viewport()->update();
-        });
       });
     });
   });
@@ -361,6 +357,7 @@ void PipelineView::rowActivated(const QModelIndex& idx)
     if (pipelineModel) {
       if (auto module = pipelineModel->module(idx)) {
         module->setVisibility(!module->visibility());
+        emit model()->dataChanged(idx, idx);
         if (pqView* view = tomviz::convert<pqView*>(module->view())) {
           view->render();
         }

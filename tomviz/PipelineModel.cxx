@@ -265,6 +265,8 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
           SLOT(dataSourceRemoved(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
           SLOT(moduleRemoved(Module*)));
+  // Need to register this for cross thread dataChanged signal
+  qRegisterMetaType<QVector<int>>("QVector<int>");
 }
 
 PipelineModel::~PipelineModel()
@@ -677,6 +679,12 @@ void PipelineModel::operatorAdded(Operator* op)
           &PipelineModel::operatorTransformDone);
   connect(op, &Operator::newChildDataSource, this,
           &PipelineModel::childDataSourceAdded);
+  // Make sure dataChange signal is emitted when operator is complete
+  connect(op, &Operator::transformingDone, [this, op]() {
+    auto opIndex = this->operatorIndex(op);
+    auto statusIndex = this->index(opIndex.row(), 1, opIndex.parent());
+    emit this->dataChanged(statusIndex, statusIndex);
+  });
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
