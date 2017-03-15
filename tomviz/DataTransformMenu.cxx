@@ -31,7 +31,7 @@ namespace tomviz {
 
 DataTransformMenu::DataTransformMenu(QMainWindow* mainWindow, QMenu* transform,
                                      QMenu* seg)
-  : QObject(mainWindow), m_transformMenu(transform), m_segmentationMenu(seg)
+  : QObject(mainWindow), m_transformMenu(transform), m_segmentationMenu(seg), m_mainWindow(mainWindow)
 {
   // Build the menu now
   buildTransforms();
