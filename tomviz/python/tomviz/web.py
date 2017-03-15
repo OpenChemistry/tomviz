@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import shutil
+import zipfile
 
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
@@ -13,10 +14,11 @@ from tomviz import py2to3
 DATA_DIRECTORY = 'data'
 HTML_FILENAME = 'tomviz.html'
 HTML_WITH_DATA_FILENAME = 'tomviz_data.html'
-
+DATA_FILENAME = 'data.tomviz'
 
 def web_export(*args, **kwargs):
     # Expecting only kwargs
+    keepData = kwargs['keepData']
     executionPath = kwargs['executionPath']
     destPath = kwargs['destPath']
     exportType = kwargs['exportType']
@@ -67,7 +69,7 @@ def web_export(*args, **kwargs):
 
     # Setup application
     copy_viewer(destPath, executionPath)
-    bundleDataToHTML(destPath)
+    bundleDataToHTML(destPath, keepData)
 
     # Restore initial parameters
     for prop in viewState:
@@ -78,10 +80,11 @@ def web_export(*args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def bundleDataToHTML(destinationPath):
+def bundleDataToHTML(destinationPath, keepData):
     dataDir = os.path.join(destinationPath, DATA_DIRECTORY)
     srcHtmlPath = os.path.join(destinationPath, HTML_FILENAME)
     dstHtmlPath = os.path.join(destinationPath, HTML_WITH_DATA_FILENAME)
+    dstDataPath = os.path.join(destinationPath, DATA_FILENAME)
     webResources = ['<style>.webResource { display: none; }</style>']
 
     if os.path.exists(dataDir):
@@ -117,9 +120,21 @@ def bundleDataToHTML(destinationPath):
                 else:
                     dstHtml.write(line)
 
+    # Generate zip file for the data
+    if keepData:
+        if os.path.exists(dataDir):
+            with zipfile.ZipFile(dstDataPath, mode='w') as zf:
+                for dirName, subdirList, fileList in os.walk(dataDir):
+                    for fname in fileList:
+                        fullPath = os.path.join(dirName, fname)
+                        filePath = os.path.relpath(fullPath, dataDir)
+                        relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
+                        zf.write(fullPath, arcname=relPath,
+                                 compress_type=zipfile.ZIP_STORED)
+
     # Cleanup
-    shutil.rmtree(dataDir)
     os.remove(srcHtmlPath)
+    shutil.rmtree(dataDir)
 
 
 def get_proxy(id):
@@ -300,7 +315,7 @@ def export_volume_exploration_images(destinationPath, camera):
 def export_contour_exploration_images(destinationPath, camera):
     view = simple.GetRenderView()
     contour = get_contour()
-    origianlValues = [v for v in contour.Value]
+    originalValues = [v for v in contour.Value]
     nbSteps = 10
     step = 250.0 / float(nbSteps)
     values = [float(v + 1) * step for v in range(0, nbSteps)]
@@ -316,7 +331,7 @@ def export_contour_exploration_images(destinationPath, camera):
         idb.stop()
 
         # Reset to original value
-        contour.Value = origianlValues
+        contour.Value = originalValues
     else:
         print('No contour module available')
 
@@ -451,6 +466,17 @@ def export_volume(destinationPath, **kwargs):
     scalars = imageData.GetPointData().GetScalars()
     arraySize = scalars.GetNumberOfValues()
     volumeJSON['pointData']['arrays'][0]['data']['size'] = arraySize
+
+    # Extract piecewise function
+    view = simple.GetRenderView()
+    pvw = get_volume_piecewise(view)
+    if pvw:
+        piecewiseNodes = []
+        currentPoints = [0, 0, 0, 0]
+        for i in range(pvw.GetSize()):
+            pvw.GetNodeValue(i, currentPoints)
+            piecewiseNodes.append([v for v in currentPoints])
+        indexJSON['metadata'] = { 'piecewise': piecewiseNodes }
 
     # Index file
     indexPath = os.path.join(destinationPath, 'index.json')

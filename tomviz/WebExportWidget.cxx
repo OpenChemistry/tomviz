@@ -22,10 +22,8 @@
 #include "pqCoreUtilities.h"
 #include "pqFileDialog.h"
 
-#include "PythonUtilities.h"
-#include "Utilities.h"
-
 #include <QButtonGroup>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QGridLayout>
@@ -33,9 +31,12 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMap>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QString>
 #include <QToolButton>
+#include <QVariant>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -107,9 +108,11 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 
   // Action buttons
   QHBoxLayout* actionGroup = new QHBoxLayout;
+  this->keepData = new QCheckBox("Generate data for viewer");
   this->exportButton = new QPushButton("Export");
   this->exportButton->setDisabled(true);
   this->cancelButton = new QPushButton("Cancel");
+  actionGroup->addWidget(this->keepData);
   actionGroup->addStretch();
   actionGroup->addWidget(this->exportButton);
   actionGroup->addSpacing(20);
@@ -162,17 +165,16 @@ void WebExportWidget::onCancel()
   this->reject();
 }
 
-Python::Dict WebExportWidget::getKeywordArguments()
+QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
 {
-  Python::Dict kwargs;
+  this->kwargs["executionPath"] = QVariant(QCoreApplication::applicationDirPath());
+  this->kwargs["destPath"] = QVariant(this->outputPath->text());
+  this->kwargs["exportType"] = QVariant(this->exportType->currentIndex());
+  this->kwargs["nbPhi"] = QVariant(this->nbPhi->value());
+  this->kwargs["nbTheta"] = QVariant(this->nbTheta->value());
+  this->kwargs["keepData"] = QVariant(this->keepData->checkState());
 
-  kwargs.set("executionPath", toVariant(QVariant(QCoreApplication::applicationDirPath())));
-  kwargs.set("destPath", toVariant(QVariant(this->outputPath->text())));
-  kwargs.set("exportType", toVariant(QVariant(this->exportType->currentIndex())));
-  kwargs.set("nbPhi", toVariant(QVariant(this->nbPhi->value())));
-  kwargs.set("nbTheta", toVariant(QVariant(this->nbTheta->value())));
-
-  return kwargs;
+  return &this->kwargs;
 }
 
 }

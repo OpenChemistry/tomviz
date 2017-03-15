@@ -22,6 +22,7 @@
 #include "Utilities.h"
 
 class QButtonGroup;
+class QCheckBox;
 class QComboBox;
 class QLabel;
 class QLineEdit;
@@ -43,7 +44,7 @@ public:
   WebExportWidget(QWidget* parent = nullptr);
   ~WebExportWidget();
 
-  Python::Dict getKeywordArguments();
+  QMap<QString, QVariant>* getKeywordArguments();
 
 protected slots:
   void onBrowse();
@@ -53,14 +54,17 @@ protected slots:
   void onTypeChange(int);
 
 protected:
-  QWidget* cameraGroup;
+  QCheckBox* keepData;
+  QComboBox* exportType;
   QLineEdit* outputPath;
   QPushButton* browseButton;
-  QComboBox* exportType;
+  QPushButton* cancelButton;
+  QPushButton* exportButton;
   QSpinBox* nbPhi;
   QSpinBox* nbTheta;
-  QPushButton* exportButton;
-  QPushButton* cancelButton;
+  QWidget* cameraGroup;
+
+  QMap<QString, QVariant> kwargs;
 };
 }
 

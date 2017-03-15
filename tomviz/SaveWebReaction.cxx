@@ -32,8 +32,11 @@
 
 #include <QDebug>
 #include <QDialog>
+#include <QMap>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QString>
+#include <QVariant>
 
 namespace tomviz {
 
@@ -59,7 +62,7 @@ void SaveWebReaction::onTriggered()
   }
 }
 
-bool SaveWebReaction::saveWeb(Python::Dict kwargs)
+bool SaveWebReaction::saveWeb(QMap<QString, QVariant>* kwargsMap)
 {
   Python::initialize();
 
@@ -75,6 +78,13 @@ bool SaveWebReaction::saveWeb(Python::Dict kwargs)
   }
 
   Python::Tuple args(0);
+  Python::Dict kwargs;
+
+  // Fill kwargs
+  foreach (const QString &str, kwargsMap->keys()) {
+    kwargs.set(str, toVariant(kwargsMap->value(str)));
+  }
+
   Python::Object result = webExport.call(args, kwargs);
   if (!result.isValid()) {
     qCritical("Failed to execute the script.");
