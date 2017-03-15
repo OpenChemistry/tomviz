@@ -93,7 +93,6 @@ bool Python::Object::toBool() const
 
 bool Python::Object::isDict() const
 {
-
   return PyDict_Check(m_smartPyObject->GetPointer());
 }
 
@@ -104,8 +103,20 @@ bool Python::Object::isValid() const
 
 Python::Dict Python::Object::toDict()
 {
-
   return m_smartPyObject->GetPointer();
+}
+
+QString Python::Object::toString() const
+{
+// Function documentation says the caller of either of the functions below
+// is not responsible for deallocating the buffer.
+#if PY_MAJOR_VERSION >= 3
+  const char* cdata = PyUnicode_AsUTF8(m_smartPyObject->GetPointer());
+#else
+  const char* cdata = PyBytes_AsString(m_smartPyObject->GetPointer());
+#endif
+
+  return QString(cdata ? cdata : "");
 }
 
 Python::Object::~Object()

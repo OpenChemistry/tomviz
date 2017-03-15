@@ -73,6 +73,7 @@ public:
     bool toBool() const;
     bool isDict() const;
     bool isValid() const;
+    QString toString() const;
     Dict toDict();
     virtual ~Object();
 
