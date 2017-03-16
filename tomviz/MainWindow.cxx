@@ -400,8 +400,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     sampleDataMenu->addAction("Download More Datasets");
   connect(sampleDataLinkAction, SIGNAL(triggered()), SLOT(openDataLink()));
 
-  QAction* moveObjects =
-    ui.utilitiesToolbar->addAction(QIcon(":/icons/move_objects"), "MoveObjects");
+  QAction* moveObjects = ui.utilitiesToolbar->addAction(
+    QIcon(":/icons/move_objects.png"), "MoveObjects");
   moveObjects->setToolTip(
     "Enable to allow moving of the selected dataset in the scene");
   moveObjects->setCheckable(true);
@@ -413,8 +413,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     QIcon(":/icons/pqPalette.png"), "LoadPalette");
   new LoadPaletteReaction(loadPaletteAction);
 
-  QToolButton* tb =
-    qobject_cast<QToolButton*>(ui.utilitiesToolbar->widgetForAction(loadPaletteAction));
+  QToolButton* tb = qobject_cast<QToolButton*>(
+    ui.utilitiesToolbar->widgetForAction(loadPaletteAction));
   if (tb) {
     tb->setPopupMode(QToolButton::InstantPopup);
   }
@@ -433,8 +433,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   ScaleLegend* scaleLegend = new ScaleLegend(this);
 
   QObject::connect(viewMenuManager,
-                   SIGNAL(setScaleLegendStyle(ScaleLegendStyle)),
-                   scaleLegend, SLOT(setStyle(ScaleLegendStyle)));
+                   SIGNAL(setScaleLegendStyle(ScaleLegendStyle)), scaleLegend,
+                   SLOT(setStyle(ScaleLegendStyle)));
   QObject::connect(viewMenuManager, SIGNAL(setScaleLegendVisibility(bool)),
                    scaleLegend, SLOT(setVisibility(bool)));
 }
