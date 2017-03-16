@@ -34,8 +34,6 @@
 #include <QString>
 #include <QTreeWidget>
 
-#include <itkConfigure.h>
-
 namespace tomviz {
 
 static inline void AddItem(QTreeWidget* tree, const QString& name,
@@ -84,7 +82,6 @@ AboutDialog::AboutDialog(MainWindow* mw)
   AddItem(tree, "Tomviz Version", tomvizVersion);
   AddItem(tree, "ParaView Version", QString(PARAVIEW_VERSION_FULL));
   AddItem(tree, "VTK Version", QString(VTK_VERSION));
-  AddItem(tree, "ITK Version", QString(ITK_VERSION_STRING));
 
   vtkNew<vtkPVOpenGLInformation> OpenGLInfo;
   OpenGLInfo->CopyFromObject(NULL);

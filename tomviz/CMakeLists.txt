@@ -394,10 +394,6 @@ endif()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Needed to include itkConfigure.h
-itk_module_load(ITKCommon)
-include_directories(${ITK_INCLUDE_DIRS})
-
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
