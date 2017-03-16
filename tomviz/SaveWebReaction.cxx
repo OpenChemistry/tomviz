@@ -30,11 +30,13 @@
 
 #include <cassert>
 
-#include <QCoreApplication>
 #include <QDebug>
 #include <QDialog>
+#include <QMap>
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QString>
+#include <QVariant>
 
 namespace tomviz {
 
@@ -56,13 +58,11 @@ void SaveWebReaction::onTriggered()
 {
   WebExportWidget dialog;
   if (dialog.exec() == QDialog::Accepted) {
-    this->saveWeb(dialog.getOutputPath(), dialog.getExportType(),
-                  dialog.getNumberOfPhi(), dialog.getNumberOfTheta());
+    this->saveWeb(dialog.getKeywordArguments());
   }
 }
 
-bool SaveWebReaction::saveWeb(const QString& filename, int type, int nbPhi,
-                              int nbTheta)
+bool SaveWebReaction::saveWeb(QMap<QString, QVariant>* kwargsMap)
 {
   Python::initialize();
 
@@ -77,13 +77,13 @@ bool SaveWebReaction::saveWeb(const QString& filename, int type, int nbPhi,
     qCritical() << "Unable to locate webExport.";
   }
 
+  Python::Tuple args(0);
   Python::Dict kwargs;
-  Python::Tuple args(5);
-  args.set(0, toVariant(QVariant(QCoreApplication::applicationDirPath())));
-  args.set(1, toVariant(QVariant(filename)));
-  args.set(2, toVariant(QVariant(type)));
-  args.set(3, toVariant(QVariant(nbPhi)));
-  args.set(4, toVariant(QVariant(nbTheta)));
+
+  // Fill kwargs
+  foreach (const QString& str, kwargsMap->keys()) {
+    kwargs.set(str, toVariant(kwargsMap->value(str)));
+  }
 
   Python::Object result = webExport.call(args, kwargs);
   if (!result.isValid()) {

@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import shutil
+import zipfile
 
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
@@ -13,9 +14,20 @@ from tomviz import py2to3
 DATA_DIRECTORY = 'data'
 HTML_FILENAME = 'tomviz.html'
 HTML_WITH_DATA_FILENAME = 'tomviz_data.html'
+DATA_FILENAME = 'data.tomviz'
 
 
-def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
+def web_export(*args, **kwargs):
+    # Expecting only kwargs
+    keepData = kwargs['keepData']
+    executionPath = kwargs['executionPath']
+    destPath = kwargs['destPath']
+    exportType = kwargs['exportType']
+
+    # Camera properties
+    nbPhi = kwargs['nbPhi']
+    nbTheta = kwargs['nbTheta']
+
     # Destination directory for data
     dest = '%s/data' % destPath
 
@@ -48,17 +60,17 @@ def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
         export_contour_exploration_images(dest, camera)
 
     if exportType == 3:
-        export_contours_geometry(dest)
+        export_contours_geometry(dest, **kwargs)
 
     if exportType == 4:
-        export_contour_exploration_geometry(dest)
+        export_contour_exploration_geometry(dest, **kwargs)
 
     if exportType == 5:
-        export_volume(dest)
+        export_volume(dest, **kwargs)
 
     # Setup application
     copy_viewer(destPath, executionPath)
-    bundleDataToHTML(destPath)
+    bundleDataToHTML(destPath, keepData)
 
     # Restore initial parameters
     for prop in viewState:
@@ -69,10 +81,11 @@ def web_export(executionPath, destPath, exportType, nbPhi, nbTheta):
 # -----------------------------------------------------------------------------
 
 
-def bundleDataToHTML(destinationPath):
+def bundleDataToHTML(destinationPath, keepData):
     dataDir = os.path.join(destinationPath, DATA_DIRECTORY)
     srcHtmlPath = os.path.join(destinationPath, HTML_FILENAME)
     dstHtmlPath = os.path.join(destinationPath, HTML_WITH_DATA_FILENAME)
+    dstDataPath = os.path.join(destinationPath, DATA_FILENAME)
     webResources = ['<style>.webResource { display: none; }</style>']
 
     if os.path.exists(dataDir):
@@ -108,9 +121,21 @@ def bundleDataToHTML(destinationPath):
                 else:
                     dstHtml.write(line)
 
+    # Generate zip file for the data
+    if keepData:
+        if os.path.exists(dataDir):
+            with zipfile.ZipFile(dstDataPath, mode='w') as zf:
+                for dirName, subdirList, fileList in os.walk(dataDir):
+                    for fname in fileList:
+                        fullPath = os.path.join(dirName, fname)
+                        filePath = os.path.relpath(fullPath, dataDir)
+                        relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
+                        zf.write(fullPath, arcname=relPath,
+                                 compress_type=zipfile.ZIP_STORED)
+
     # Cleanup
-    shutil.rmtree(dataDir)
     os.remove(srcHtmlPath)
+    shutil.rmtree(dataDir)
 
 
 def get_proxy(id):
@@ -193,6 +218,20 @@ def add_scene_item(scene, name, proxy, view):
     })
 
 
+def patch_data_range(destinationPath):
+    originalPath = os.path.join(destinationPath, 'index.json')
+    tmpPath = os.path.join(destinationPath, 'index_tmp.json')
+    os.rename(originalPath, tmpPath)
+    with open(originalPath, 'w') as outputJSON:
+        with open(tmpPath, 'r') as inputJSON:
+            content = json.loads(inputJSON.read())
+            # Patch geometry range
+            for fieldName in content['Geometry']['ranges']:
+                content['Geometry']['ranges'][fieldName] = [0, 255]
+            outputJSON.write(json.dumps(content, indent=2))
+    os.remove(tmpPath)
+
+
 def get_volume_piecewise(view):
     renderer = view.GetClientSideObject().GetRenderer()
     for volume in renderer.GetVolumes():
@@ -204,6 +243,8 @@ def get_volume_piecewise(view):
 def get_contour():
     for key, value in py2to3.iteritems(simple.GetSources()):
         if 'FlyingEdges' in key[0]:
+            return value
+        if 'Contour' in key[0]:
             return value
     return None
 
@@ -240,6 +281,12 @@ def export_volume_exploration_images(destinationPath, camera):
     span = step * 0.4
     values = [float(v + 1) * step for v in range(0, nbSteps)]
     if pvw:
+        savedNodes = []
+        currentPoints = [0, 0, 0, 0]
+        for i in range(pvw.GetSize()):
+            pvw.GetNodeValue(i, currentPoints)
+            savedNodes.append([v for v in currentPoints])
+
         idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
         idb.getDataHandler().registerArgument(priority=1, name='volume',
                                               values=values, ui='slider',
@@ -253,6 +300,11 @@ def export_volume_exploration_images(destinationPath, camera):
             pvw.AddPoint(255, 0)
             idb.writeImages()
         idb.stop()
+
+        # Reset to original piecewise funtion
+        pvw.RemoveAllPoints()
+        for node in savedNodes:
+            pvw.AddPoint(node[0], node[1], node[2], node[3])
     else:
         print('No Volume module available')
 
@@ -264,6 +316,7 @@ def export_volume_exploration_images(destinationPath, camera):
 def export_contour_exploration_images(destinationPath, camera):
     view = simple.GetRenderView()
     contour = get_contour()
+    originalValues = [v for v in contour.Value]
     nbSteps = 10
     step = 250.0 / float(nbSteps)
     values = [float(v + 1) * step for v in range(0, nbSteps)]
@@ -277,6 +330,9 @@ def export_contour_exploration_images(destinationPath, camera):
             contour.Value = [contourValue]
             idb.writeImages()
         idb.stop()
+
+        # Reset to original value
+        contour.Value = originalValues
     else:
         print('No contour module available')
 
@@ -285,7 +341,7 @@ def export_contour_exploration_images(destinationPath, camera):
 # -----------------------------------------------------------------------------
 
 
-def export_contours_geometry(destinationPath):
+def export_contours_geometry(destinationPath, **kwargs):
     view = simple.GetRenderView()
     sceneDescription = {'scene': []}
     for key, value in simple.GetSources().iteritems():
@@ -303,18 +359,22 @@ def export_contours_geometry(destinationPath):
     dsb.writeData(0)
     dsb.stop()
 
+    # Patch data range
+    patch_data_range(destinationPath)
+
 # -----------------------------------------------------------------------------
 # Contours Geometry export
 # -----------------------------------------------------------------------------
 
 
-def export_contour_exploration_geometry(destinationPath):
+def export_contour_exploration_geometry(destinationPath, **kwargs):
     contour = None
     for key, value in simple.GetSources().iteritems():
         if key[0] == 'Contour':
             contour = value
 
     if contour:
+        originalValue = [v for v in contour.Value]
         sceneDescription = {
             'scene': [{
                 'name': 'Contour',
@@ -339,13 +399,19 @@ def export_contour_exploration_geometry(destinationPath):
             dsb.writeData()
         dsb.stop()
 
+        # Patch data range
+        patch_data_range(destinationPath)
+
+        # Reset to original state
+        contour.Value = originalValue
+
 
 # -----------------------------------------------------------------------------
 # Volume export
 # -----------------------------------------------------------------------------
 
 
-def export_volume(destinationPath):
+def export_volume(destinationPath, **kwargs):
     indexJSON = {
         'type': ['tonic-query-data-model', 'vtk-volume'],
         'arguments': {},
@@ -402,6 +468,17 @@ def export_volume(destinationPath):
     arraySize = scalars.GetNumberOfValues()
     volumeJSON['pointData']['arrays'][0]['data']['size'] = arraySize
 
+    # Extract piecewise function
+    view = simple.GetRenderView()
+    pvw = get_volume_piecewise(view)
+    if pvw:
+        piecewiseNodes = []
+        currentPoints = [0, 0, 0, 0]
+        for i in range(pvw.GetSize()):
+            pvw.GetNodeValue(i, currentPoints)
+            piecewiseNodes.append([v for v in currentPoints])
+        indexJSON['metadata'] = {'piecewise': piecewiseNodes}
+
     # Index file
     indexPath = os.path.join(destinationPath, 'index.json')
     with open(indexPath, 'w') as f:
@@ -415,7 +492,7 @@ def export_volume(destinationPath):
     # Write data field
     fieldDataPath = os.path.join(destinationPath, 'data', 'fieldData')
     with open(fieldDataPath, 'wb') as f:
-        f.write(buffer(scalars))
+        f.write(py2to3.buffer(scalars))
 
 # -----------------------------------------------------------------------------
 # Composite exporter

@@ -23,16 +23,21 @@
 #include "pqFileDialog.h"
 
 #include <QButtonGroup>
+#include <QCheckBox>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMap>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QString>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QVariant>
 
 namespace tomviz {
 
@@ -86,23 +91,28 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->nbTheta->setValue(5);
   this->nbTheta->setMinimumWidth(100);
 
-  QHBoxLayout* cameraGroup = new QHBoxLayout;
-  cameraGroup->addWidget(cameraGrouplabel);
-  cameraGroup->addStretch();
-  cameraGroup->addWidget(phiLabel);
-  cameraGroup->addWidget(nbPhi);
-  cameraGroup->addSpacing(30);
-  cameraGroup->addWidget(thetaLabel);
-  cameraGroup->addWidget(nbTheta);
-  v->addLayout(cameraGroup);
+  QHBoxLayout* cameraGroupLayout = new QHBoxLayout;
+  cameraGroupLayout->addWidget(cameraGrouplabel);
+  cameraGroupLayout->addStretch();
+  cameraGroupLayout->addWidget(phiLabel);
+  cameraGroupLayout->addWidget(nbPhi);
+  cameraGroupLayout->addSpacing(30);
+  cameraGroupLayout->addWidget(thetaLabel);
+  cameraGroupLayout->addWidget(nbTheta);
+
+  this->cameraGroup = new QWidget();
+  this->cameraGroup->setLayout(cameraGroupLayout);
+  v->addWidget(this->cameraGroup);
 
   v->addStretch();
 
   // Action buttons
   QHBoxLayout* actionGroup = new QHBoxLayout;
+  this->keepData = new QCheckBox("Generate data for viewer");
   this->exportButton = new QPushButton("Export");
   this->exportButton->setDisabled(true);
   this->cancelButton = new QPushButton("Cancel");
+  actionGroup->addWidget(this->keepData);
   actionGroup->addStretch();
   actionGroup->addWidget(this->exportButton);
   actionGroup->addSpacing(20);
@@ -115,6 +125,8 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->connect(this->browseButton, SIGNAL(pressed()), this, SLOT(onBrowse()));
   this->connect(this->exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
   this->connect(this->cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
+  this->connect(this->exportType, SIGNAL(currentIndexChanged(int)), this,
+                SLOT(onTypeChange(int)));
 }
 
 WebExportWidget::~WebExportWidget()
@@ -134,6 +146,11 @@ void WebExportWidget::onBrowse()
   }
 }
 
+void WebExportWidget::onTypeChange(int index)
+{
+  this->cameraGroup->setVisible(index < 3);
+}
+
 void WebExportWidget::onPathChange()
 {
   this->exportButton->setDisabled(!(this->outputPath->text().length() > 3));
@@ -149,23 +166,16 @@ void WebExportWidget::onCancel()
   this->reject();
 }
 
-QString WebExportWidget::getOutputPath()
+QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
 {
-  return this->outputPath->text();
-}
+  this->kwargs["executionPath"] =
+    QVariant(QCoreApplication::applicationDirPath());
+  this->kwargs["destPath"] = QVariant(this->outputPath->text());
+  this->kwargs["exportType"] = QVariant(this->exportType->currentIndex());
+  this->kwargs["nbPhi"] = QVariant(this->nbPhi->value());
+  this->kwargs["nbTheta"] = QVariant(this->nbTheta->value());
+  this->kwargs["keepData"] = QVariant(this->keepData->checkState());
 
-int WebExportWidget::getExportType()
-{
-  return this->exportType->currentIndex();
-}
-
-int WebExportWidget::getNumberOfPhi()
-{
-  return this->nbPhi->value();
-}
-
-int WebExportWidget::getNumberOfTheta()
-{
-  return this->nbTheta->value();
+  return &this->kwargs;
 }
 }

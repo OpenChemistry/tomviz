@@ -29,7 +29,7 @@ public:
   SaveWebReaction(QAction* parentAction);
 
   /// Save the file
-  bool saveWeb(const QString& filename, int type, int deltaPhi, int deltaTheta);
+  bool saveWeb(QMap<QString, QVariant>* kwargs);
 
 protected:
   /// Called when the data changes to enable/disable the menu item

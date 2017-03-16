@@ -18,13 +18,18 @@
 
 #include <QDialog>
 
-class QLabel;
-class QComboBox;
-class QSpinBox;
-class QLineEdit;
-class QTimer;
+#include "PythonUtilities.h"
+#include "Utilities.h"
+
 class QButtonGroup;
+class QCheckBox;
+class QComboBox;
+class QLabel;
+class QLineEdit;
 class QPushButton;
+class QSpinBox;
+class QTimer;
+class QWidget;
 
 namespace tomviz {
 
@@ -39,25 +44,27 @@ public:
   WebExportWidget(QWidget* parent = nullptr);
   ~WebExportWidget();
 
-  QString getOutputPath();
-  int getExportType();
-  int getNumberOfPhi();
-  int getNumberOfTheta();
+  QMap<QString, QVariant>* getKeywordArguments();
 
 protected slots:
-  void onPathChange();
   void onBrowse();
   void onCancel();
   void onExport();
+  void onPathChange();
+  void onTypeChange(int);
 
 protected:
+  QCheckBox* keepData;
+  QComboBox* exportType;
   QLineEdit* outputPath;
   QPushButton* browseButton;
-  QComboBox* exportType;
+  QPushButton* cancelButton;
+  QPushButton* exportButton;
   QSpinBox* nbPhi;
   QSpinBox* nbTheta;
-  QPushButton* exportButton;
-  QPushButton* cancelButton;
+  QWidget* cameraGroup;
+
+  QMap<QString, QVariant> kwargs;
 };
 }
 
