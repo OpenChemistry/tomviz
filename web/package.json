@@ -25,7 +25,7 @@
     "babel-polyfill": "6.23.0",
 
     "arctic-viewer": "1.5.16",
-    "paraviewweb": "2.2.89",
+    "paraviewweb": "2.2.91",
     "vtk.js": "2.13.3",
     "jszip": "3.1.3"
   },
