@@ -152,10 +152,13 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
                             SIGNAL(dataSourceActivated(DataSource*)),
-                            SLOT(setActiveDataSource(DataSource*)));
+                            SLOT(setActiveColorMapDataSource(DataSource*)));
   ui.centralWidget->connect(&ActiveObjects::instance(),
                             SIGNAL(moduleActivated(Module*)),
                             SLOT(setActiveModule(Module*)));
+  ui.centralWidget->connect(&ActiveObjects::instance(),
+                            SIGNAL(colorMapChanged(DataSource*)),
+                            SLOT(setActiveColorMapDataSource(DataSource*)));
   ui.centralWidget->connect(ui.dataPropertiesPanel, SIGNAL(colorMapUpdated()),
                             SLOT(onColorMapUpdated()));
 

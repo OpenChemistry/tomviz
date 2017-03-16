@@ -66,6 +66,11 @@ public:
   DataSource* dataSource() const;
   vtkSMViewProxy* view() const;
 
+  /// Some modules act on one data source and apply coloring from another data
+  /// source (e.g. ModuleContour). This method allows a module to designate a
+  /// separate data source for coloring, if desired.
+  virtual DataSource* colorMapDataSource() const { return dataSource(); }
+
   /// serialize the state of the module.
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);

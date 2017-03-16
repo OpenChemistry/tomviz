@@ -53,7 +53,7 @@ public:
 public slots:
   /// Set the data source that is shown and color by the data source's
   /// color map
-  void setActiveDataSource(DataSource*);
+  void setActiveColorMapDataSource(DataSource*);
 
   /// Set the data source that is shown to the module's data source and color
   /// by the module's color map
@@ -63,7 +63,7 @@ public slots:
 
 private slots:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
-  void onDataSourceChanged();
+  void onColorMapDataSourceChanged();
   void refreshHistogram();
 
 private:
@@ -71,13 +71,13 @@ private:
 
   /// Set the data source to from which the data is "histogrammed" and shown
   /// in the histogram view.
-  void setDataSource(DataSource*);
+  void setColorMapDataSource(DataSource*);
   void setHistogramTable(vtkTable* table);
 
   QScopedPointer<Ui::CentralWidget> m_ui;
   QScopedPointer<QTimer> m_timer;
 
-  QPointer<DataSource> m_activeDataSource;
+  QPointer<DataSource> m_activeColorMapDataSource;
   QPointer<Module> m_activeModule;
   HistogramMaker* m_histogramGen;
   QThread* m_worker;

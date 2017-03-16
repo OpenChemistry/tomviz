@@ -56,6 +56,8 @@ public:
     this->setIsoValues(values);
   }
 
+  DataSource* colorMapDataSource() const override;
+
   bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
 protected:

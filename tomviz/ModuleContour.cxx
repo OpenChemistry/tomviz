@@ -225,6 +225,8 @@ void ModuleContour::setIsoValues(const QList<double>& values)
   vtkSMPropertyHelper(this->ContourFilter, "ContourValues")
     .Set(&vectorValues[0], values.size());
   this->ContourFilter->UpdateVTKObjects();
+
+  updateScalarColoring();
 }
 
 void ModuleContour::addToPanel(QWidget* panel)
@@ -349,7 +351,7 @@ void ModuleContour::onPropertyChanged()
   vtkSMPropertyHelper resampleHelper(this->ResampleFilter, "Input");
   resampleHelper.Set(this->Internals->ColorByDataSource->producer());
 
-  updateScalarColoring();
+  updateColorMap();
 
   this->ResampleFilter->UpdateVTKObjects();
   if (this->PointDataToCellDataFilter) {
@@ -439,6 +441,13 @@ void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
   vtkSMPropertyHelper(this->ActiveRepresentation, "Position").Set(pos, 3);
   this->ActiveRepresentation->MarkDirty(this->ActiveRepresentation);
   this->ActiveRepresentation->UpdateVTKObjects();
+}
+
+DataSource* ModuleContour::colorMapDataSource() const
+{
+  return this->Internals->ColorByDataSource.data()
+           ? this->Internals->ColorByDataSource.data()
+           : dataSource();
 }
 
 bool ModuleContour::isProxyPartOfModule(vtkSMProxy* proxy)
@@ -556,6 +565,8 @@ void ModuleContour::updateScalarColoring()
     colorArrayHelper.SetInputArrayToProcess(
       vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName.c_str());
   }
+
+  ActiveObjects::instance().colorMapChanged(this->Internals->ColorByDataSource);
 }
 
 void ModuleContour::setUseSolidColor(const bool useSolidColor)

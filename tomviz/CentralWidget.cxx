@@ -208,13 +208,13 @@ CentralWidget::~CentralWidget()
   }
 }
 
-void CentralWidget::setActiveDataSource(DataSource* source)
+void CentralWidget::setActiveColorMapDataSource(DataSource* source)
 {
   if (m_activeModule) {
     m_activeModule->disconnect(this);
     m_activeModule = nullptr;
   }
-  setDataSource(source);
+  setColorMapDataSource(source);
 }
 
 void CentralWidget::setActiveModule(Module* module)
@@ -225,26 +225,26 @@ void CentralWidget::setActiveModule(Module* module)
   m_activeModule = module;
   if (m_activeModule) {
     connect(m_activeModule, SIGNAL(colorMapChanged()),
-            SLOT(onDataSourceChanged()));
-    setDataSource(module->dataSource());
+            SLOT(onColorMapDataSourceChanged()));
+    setColorMapDataSource(module->colorMapDataSource());
   } else {
-    setDataSource(nullptr);
+    setColorMapDataSource(nullptr);
   }
 }
 
-void CentralWidget::setDataSource(DataSource* source)
+void CentralWidget::setColorMapDataSource(DataSource* source)
 {
-  if (m_activeDataSource) {
-    m_activeDataSource->disconnect(this);
-    m_ui->histogramWidget->disconnect(m_activeDataSource);
+  if (m_activeColorMapDataSource) {
+    m_activeColorMapDataSource->disconnect(this);
+    m_ui->histogramWidget->disconnect(m_activeColorMapDataSource);
   }
-  m_activeDataSource = source;
+  m_activeColorMapDataSource = source;
 
   if (source) {
     m_ui->histogramWidget->setGradientOpacityChecked(
       source->isGradientOpacityVisible());
 
-    connect(source, SIGNAL(dataChanged()), SLOT(onDataSourceChanged()));
+    connect(source, SIGNAL(dataChanged()), SLOT(onColorMapDataSourceChanged()));
 
     connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
             source, SLOT(setGradientOpacityVisibility(bool)));
@@ -304,10 +304,10 @@ void CentralWidget::setDataSource(DataSource* source)
 
 void CentralWidget::onColorMapUpdated()
 {
-  this->onDataSourceChanged();
+  this->onColorMapDataSourceChanged();
 }
 
-void CentralWidget::onDataSourceChanged()
+void CentralWidget::onColorMapDataSourceChanged()
 {
   // This starts/restarts the internal timer so that several events occurring
   // within a few milliseconds of each other only result in one call to
@@ -317,7 +317,7 @@ void CentralWidget::onDataSourceChanged()
 
 void CentralWidget::refreshHistogram()
 {
-  setDataSource(m_activeDataSource);
+  setColorMapDataSource(m_activeColorMapDataSource);
 }
 
 void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
@@ -327,14 +327,14 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
     return;
   }
 
-  // If we no longer have an active datasource, ignore showing the histogram
-  // since the data has been deleted
-  if (!m_activeDataSource) {
+  // If we no longer have an active color map datasource, ignore showing the
+  // histogram since the data has been deleted
+  if (!m_activeColorMapDataSource) {
     return;
   }
 
   auto t = vtkTrivialProducer::SafeDownCast(
-    m_activeDataSource->producer()->GetClientSideObject());
+    m_activeColorMapDataSource->producer()->GetClientSideObject());
   auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   // The current dataset has changed since the histogram was requested,
