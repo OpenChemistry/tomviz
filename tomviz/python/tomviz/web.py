@@ -51,13 +51,13 @@ def web_export(*args, **kwargs):
 
     # Choose export mode:
     if exportType == 0:
-        export_images(dest, camera)
+        export_images(dest, camera, **kwargs)
 
     if exportType == 1:
-        export_volume_exploration_images(dest, camera)
+        export_volume_exploration_images(dest, camera, **kwargs)
 
     if exportType == 2:
-        export_contour_exploration_images(dest, camera)
+        export_contour_exploration_images(dest, camera, **kwargs)
 
     if exportType == 3:
         export_contours_geometry(dest, **kwargs)
@@ -109,33 +109,33 @@ def bundleDataToHTML(destinationPath, keepData):
                     '<div class="webResource" data-url="%s">%s</div>'
                     % (relPath, content))
 
-    webResources.append('<script>ready()</script></body>')
+        webResources.append('<script>ready()</script></body>')
 
-    # Create new output file
-    with open(srcHtmlPath, mode='r') as srcHtml:
-        with open(dstHtmlPath, mode='w') as dstHtml:
-            for line in srcHtml:
-                if '</body>' in line:
-                    for webResource in webResources:
-                        dstHtml.write(webResource)
-                else:
-                    dstHtml.write(line)
+        # Create new output file
+        with open(srcHtmlPath, mode='r') as srcHtml:
+            with open(dstHtmlPath, mode='w') as dstHtml:
+                for line in srcHtml:
+                    if '</body>' in line:
+                        for webResource in webResources:
+                            dstHtml.write(webResource)
+                    else:
+                        dstHtml.write(line)
 
-    # Generate zip file for the data
-    if keepData:
-        if os.path.exists(dataDir):
-            with zipfile.ZipFile(dstDataPath, mode='w') as zf:
-                for dirName, subdirList, fileList in os.walk(dataDir):
-                    for fname in fileList:
-                        fullPath = os.path.join(dirName, fname)
-                        filePath = os.path.relpath(fullPath, dataDir)
-                        relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
-                        zf.write(fullPath, arcname=relPath,
-                                 compress_type=zipfile.ZIP_STORED)
+        # Generate zip file for the data
+        if keepData:
+            if os.path.exists(dataDir):
+                with zipfile.ZipFile(dstDataPath, mode='w') as zf:
+                    for dirName, subdirList, fileList in os.walk(dataDir):
+                        for fname in fileList:
+                            fullPath = os.path.join(dirName, fname)
+                            filePath = os.path.relpath(fullPath, dataDir)
+                            relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
+                            zf.write(fullPath, arcname=relPath,
+                                     compress_type=zipfile.ZIP_STORED)
 
-    # Cleanup
-    os.remove(srcHtmlPath)
-    shutil.rmtree(dataDir)
+        # Cleanup
+        os.remove(srcHtmlPath)
+        shutil.rmtree(dataDir)
 
 
 def get_proxy(id):
@@ -260,7 +260,7 @@ def get_trivial_producer():
 # -----------------------------------------------------------------------------
 
 
-def export_images(destinationPath, camera):
+def export_images(destinationPath, camera, **kwargs):
     view = simple.GetRenderView()
     idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
     idb.start(view)
@@ -272,14 +272,13 @@ def export_images(destinationPath, camera):
 # -----------------------------------------------------------------------------
 
 
-def export_volume_exploration_images(destinationPath, camera):
+def export_volume_exploration_images(destinationPath, camera, **kwargs):
+    values = [int(v) for v in kwargs['multiValue'].split(',')]
+    maxOpacity = float(kwargs['maxOpacity']) / 100.0
+    span = float(kwargs['tentWidth']) * 0.5
+
     view = simple.GetRenderView()
     pvw = get_volume_piecewise(view)
-    maxOpacity = 0.5
-    nbSteps = 10
-    step = 250.0 / float(nbSteps)
-    span = step * 0.4
-    values = [float(v + 1) * step for v in range(0, nbSteps)]
     if pvw:
         savedNodes = []
         currentPoints = [0, 0, 0, 0]
@@ -313,13 +312,11 @@ def export_volume_exploration_images(destinationPath, camera):
 # -----------------------------------------------------------------------------
 
 
-def export_contour_exploration_images(destinationPath, camera):
+def export_contour_exploration_images(destinationPath, camera, **kwargs):
+    values = [int(v) for v in kwargs['multiValue'].split(',')]
     view = simple.GetRenderView()
     contour = get_contour()
     originalValues = [v for v in contour.Value]
-    nbSteps = 10
-    step = 250.0 / float(nbSteps)
-    values = [float(v + 1) * step for v in range(0, nbSteps)]
     if contour:
         idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
         idb.getDataHandler().registerArgument(priority=1, name='contour',
@@ -368,6 +365,7 @@ def export_contours_geometry(destinationPath, **kwargs):
 
 
 def export_contour_exploration_geometry(destinationPath, **kwargs):
+    values = [int(v) for v in kwargs['multiValue'].split(',')]
     contour = None
     for key, value in simple.GetSources().iteritems():
         if key[0] == 'Contour':
@@ -389,7 +387,7 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
         }
         dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
         dsb.getDataHandler().registerArgument(priority=1, name='contour',
-                                              values=range(25, 251, 25),
+                                              values=values,
                                               ui='slider', loop='modulo')
         dsb.start()
         scalarContainer = sceneDescription['scene'][0]['colors']['Scalar']
@@ -412,6 +410,7 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
 
 
 def export_volume(destinationPath, **kwargs):
+    scale = float(kwargs['volumeScale']) / 100.0
     indexJSON = {
         'type': ['tonic-query-data-model', 'vtk-volume'],
         'arguments': {},
@@ -460,7 +459,7 @@ def export_volume(destinationPath, **kwargs):
     if not os.path.exists(dataDir):
         os.makedirs(dataDir)
 
-    # Extract data
+    # Extract data - FIXME do something with scale
     imageData = producer.SMProxy.GetClientSideObject().GetOutputDataObject(0)
     volumeJSON['extent'] = imageData.GetExtent()
 

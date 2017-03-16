@@ -57,12 +57,19 @@ protected:
   QCheckBox* keepData;
   QComboBox* exportType;
   QLineEdit* outputPath;
+  QLineEdit* multiValue;
   QPushButton* browseButton;
   QPushButton* cancelButton;
   QPushButton* exportButton;
   QSpinBox* nbPhi;
   QSpinBox* nbTheta;
+  QSpinBox* maxOpacity;
+  QSpinBox* spanValue ;
+  QSpinBox* scale;
   QWidget* cameraGroup;
+  QWidget* valuesGroup;
+  QWidget* volumeExplorationGroup;
+  QWidget* volumeResampleGroup;
 
   QMap<QString, QVariant> kwargs;
 };
