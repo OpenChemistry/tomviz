@@ -81,7 +81,7 @@ bool SaveWebReaction::saveWeb(QMap<QString, QVariant>* kwargsMap)
   Python::Dict kwargs;
 
   // Fill kwargs
-  foreach (const QString &str, kwargsMap->keys()) {
+  foreach (const QString& str, kwargsMap->keys()) {
     kwargs.set(str, toVariant(kwargsMap->value(str)));
   }
 

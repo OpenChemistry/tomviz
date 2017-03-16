@@ -36,8 +36,8 @@
 #include <QSpinBox>
 #include <QString>
 #include <QToolButton>
-#include <QVariant>
 #include <QVBoxLayout>
+#include <QVariant>
 
 namespace tomviz {
 
@@ -91,7 +91,7 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->nbTheta->setValue(5);
   this->nbTheta->setMinimumWidth(100);
 
-  QHBoxLayout* cameraGroupLayout = new QHBoxLayout;\
+  QHBoxLayout* cameraGroupLayout = new QHBoxLayout;
   cameraGroupLayout->addWidget(cameraGrouplabel);
   cameraGroupLayout->addStretch();
   cameraGroupLayout->addWidget(phiLabel);
@@ -125,7 +125,8 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->connect(this->browseButton, SIGNAL(pressed()), this, SLOT(onBrowse()));
   this->connect(this->exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
   this->connect(this->cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
-  this->connect(this->exportType, SIGNAL(currentIndexChanged(int)), this, SLOT(onTypeChange(int)));
+  this->connect(this->exportType, SIGNAL(currentIndexChanged(int)), this,
+                SLOT(onTypeChange(int)));
 }
 
 WebExportWidget::~WebExportWidget()
@@ -167,7 +168,8 @@ void WebExportWidget::onCancel()
 
 QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
 {
-  this->kwargs["executionPath"] = QVariant(QCoreApplication::applicationDirPath());
+  this->kwargs["executionPath"] =
+    QVariant(QCoreApplication::applicationDirPath());
   this->kwargs["destPath"] = QVariant(this->outputPath->text());
   this->kwargs["exportType"] = QVariant(this->exportType->currentIndex());
   this->kwargs["nbPhi"] = QVariant(this->nbPhi->value());
@@ -176,5 +178,4 @@ QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
 
   return &this->kwargs;
 }
-
 }
