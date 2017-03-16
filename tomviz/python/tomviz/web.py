@@ -492,7 +492,7 @@ def export_volume(destinationPath, **kwargs):
     # Write data field
     fieldDataPath = os.path.join(destinationPath, 'data', 'fieldData')
     with open(fieldDataPath, 'wb') as f:
-        f.write(buffer(scalars))
+        f.write(py2to3.buffer(scalars))
 
 # -----------------------------------------------------------------------------
 # Composite exporter
