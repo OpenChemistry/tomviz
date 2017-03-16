@@ -255,6 +255,26 @@ def get_trivial_producer():
             return value
     return None
 
+
+def array_sampler(srcDims, dstDims, scale, inputArray):
+    if scale == 1:
+        return inputArray
+
+    newSize = dstDims[0] * dstDims[1] * dstDims[2]
+    outputArray = inputArray.NewInstance()
+    outputArray.SetNumberOfTuples(newSize)
+    offset = 0
+    for k in range(dstDims[2]):
+        for j in range(dstDims[1]):
+            for i in range(dstDims[0]):
+                srcIdx = (i * scale)
+                srcIdx += (j * scale * srcDims[0])
+                srcIdx += (k * scale * srcDims[0] * srcDims[1])
+                outputArray.SetValue(offset, inputArray.GetValue(srcIdx))
+                offset += 1
+
+    return outputArray
+
 # -----------------------------------------------------------------------------
 # Image based exporter
 # -----------------------------------------------------------------------------
@@ -410,7 +430,7 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
 
 
 def export_volume(destinationPath, **kwargs):
-    scale = float(kwargs['volumeScale']) / 100.0
+    scale = int(kwargs['volumeScale'])
     indexJSON = {
         'type': ['tonic-query-data-model', 'vtk-volume'],
         'arguments': {},
@@ -461,9 +481,15 @@ def export_volume(destinationPath, **kwargs):
 
     # Extract data - FIXME do something with scale
     imageData = producer.SMProxy.GetClientSideObject().GetOutputDataObject(0)
-    volumeJSON['extent'] = imageData.GetExtent()
+    extent = imageData.GetExtent()
+    srcDims = (extent[1] - extent[0] + 1,
+               extent[3] - extent[2] + 1,
+               extent[5] - extent[4] + 1)
+    dstDims = [int(v / scale) for v in srcDims]
+    volumeJSON['extent'] = [0, dstDims[0] - 1, 0, dstDims[1] - 1, 0, dstDims[2] - 1]
 
-    scalars = imageData.GetPointData().GetScalars()
+    scalars = array_sampler(srcDims, dstDims, scale,
+                            imageData.GetPointData().GetScalars())
     arraySize = scalars.GetNumberOfValues()
     volumeJSON['pointData']['arrays'][0]['data']['size'] = arraySize
 

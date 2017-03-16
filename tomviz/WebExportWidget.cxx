@@ -143,11 +143,11 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   v->addWidget(this->valuesGroup);
 
   // Volume down sampling
-  QLabel* scaleLabel = new QLabel("Scale");
+  QLabel* scaleLabel = new QLabel("Sampling stride");
   this->scale = new QSpinBox();
-  this->scale->setRange(5, 100);
-  this->scale->setSingleStep(5);
-  this->scale->setValue(50);
+  this->scale->setRange(1, 5);
+  this->scale->setSingleStep(1);
+  this->scale->setValue(1);
   this->scale->setMinimumWidth(100);
 
   QHBoxLayout* scaleGroupLayout = new QHBoxLayout;
