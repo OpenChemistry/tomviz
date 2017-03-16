@@ -64,7 +64,7 @@ protected:
   QSpinBox* nbPhi;
   QSpinBox* nbTheta;
   QSpinBox* maxOpacity;
-  QSpinBox* spanValue ;
+  QSpinBox* spanValue;
   QSpinBox* scale;
   QWidget* cameraGroup;
   QWidget* valuesGroup;

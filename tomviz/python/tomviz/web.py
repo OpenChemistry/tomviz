@@ -479,14 +479,16 @@ def export_volume(destinationPath, **kwargs):
     if not os.path.exists(dataDir):
         os.makedirs(dataDir)
 
-    # Extract data - FIXME do something with scale
+    # Extract data
     imageData = producer.SMProxy.GetClientSideObject().GetOutputDataObject(0)
     extent = imageData.GetExtent()
     srcDims = (extent[1] - extent[0] + 1,
                extent[3] - extent[2] + 1,
                extent[5] - extent[4] + 1)
     dstDims = [int(v / scale) for v in srcDims]
-    volumeJSON['extent'] = [0, dstDims[0] - 1, 0, dstDims[1] - 1, 0, dstDims[2] - 1]
+    volumeJSON['extent'] = [0, dstDims[0] - 1,
+                            0, dstDims[1] - 1,
+                            0, dstDims[2] - 1]
 
     scalars = array_sampler(srcDims, dstDims, scale,
                             imageData.GetPointData().GetScalars())
