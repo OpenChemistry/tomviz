@@ -95,7 +95,7 @@ endif()
 # -----------------------------------------------------------------------------
 option(TOMVIZ_DOWNLOAD_WEB  "Enable downloading web application." OFF)
 set(tomviz_html_source_path "${CMAKE_SOURCE_DIR}/web/tomviz.html")
-set(tomviz_html_binary_dir "${CMAKE_BINARY_DIR}/web")
+set(tomviz_html_binary_dir "${CMAKE_BINARY_DIR}/web/www")
 set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
 
 
