@@ -137,7 +137,7 @@ void ModuleRuler::addToPanel(QWidget* panel)
   panel->setLayout(layout);
 }
 
-void ModuleRuler::prepareToRemoveFromPanel(QWidget* panel)
+void ModuleRuler::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
 {
   // Disconnect before the panel is removed to avoid m_showLine always being set
   // to false when the signal widgetVisibilityUpdated(bool) is emitted during
@@ -179,18 +179,36 @@ bool ModuleRuler::serialize(pugi::xml_node& ns) const
     qWarning("Failed to serialize ruler");
     return false;
   }
+
+  pugi::xml_node showLine = representationNode.append_child("ShowLine");
+  showLine.append_attribute("value").set_value(m_showLine);
+
   if (!tomviz::serialize(m_Representation, representationNode,
                          representationProperties)) {
     qWarning("Failed to serialize ruler representation");
     return false;
   }
+
   return true;
 }
 
 bool ModuleRuler::deserialize(const pugi::xml_node& ns)
 {
-  return tomviz::deserialize(m_RulerSource, ns.child("Ruler")) &&
-         tomviz::deserialize(m_Representation, ns.child("Representation"));
+  pugi::xml_node representationNode = ns.child("Representation");
+  bool success = tomviz::deserialize(m_RulerSource, ns.child("Ruler")) &&
+    tomviz::deserialize(m_Representation, representationNode);
+
+  if (representationNode) {
+    pugi::xml_node showLineNode = representationNode.child("ShowLine");
+    if (showLineNode) {
+      pugi::xml_attribute valueAttribute = showLineNode.attribute("value");
+      if (valueAttribute) {
+        m_showLine = valueAttribute.as_bool();
+      }
+    }
+  }
+
+  return success;
 }
 
 bool ModuleRuler::isProxyPartOfModule(vtkSMProxy* proxy)
