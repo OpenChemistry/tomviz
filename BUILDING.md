@@ -58,7 +58,8 @@ you will need to specify the correct generator for the installed compiler.
     cd ..
     git clone git://itk.org/ITK.git
     cd ITK
-    git checkout v4.11.0
+    # ITK master 2017-03-17
+    git checkout 99250d305e
     cd ..
     mkdir itk-build
     cd itk-build
@@ -69,6 +70,8 @@ you will need to specify the correct generator for the installed compiler.
       -DModule_BridgeNumPy:BOOL=ON \
       -DBUILD_TESTING:BOOL=OFF \
       -DITK_WRAP_unsigned_short:BOOL=ON \
+      -DITK_WRAP_rgb_unsigned_char:BOOL=OFF \
+      -DITK_WRAP_rgba_unsigned_char:BOOL=OFF \
       -DITK_BUILD_DEFAULT_MODULES:BOOL=OFF \
       -DITKGroup_Core:BOOL=ON \
       -DITKGroup_Filtering:BOOL=ON \
