@@ -80,6 +80,8 @@ set(SOURCES
   GradientOpacityWidget.cxx
   HistogramWidget.h
   HistogramWidget.cxx
+  Histogram2DWidget.h
+  Histogram2DWidget.cxx
   InterfaceBuilder.h
   InterfaceBuilder.cxx
   IntSliderWidget.cxx

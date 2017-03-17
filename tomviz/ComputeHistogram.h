@@ -10,7 +10,7 @@
 #include "vtkMath.h"
 #endif
 #include "vtkImageData.h"
-#include "vtkUnsignedIntArray.h"
+#include "vtkDoubleArray.h"
 
 
 namespace tomviz {
@@ -199,16 +199,16 @@ void Calculate2DHistogram(T* values, const int* dim,
   const int numComp, const double* range, vtkImageData* histogram)
 {
   // Assumes all inputs are valid
-  // Expects histogram image to be 1C unsigned int
+  // Expects histogram image to be 1C double
   vtkDataArray* arr = histogram->GetPointData()->GetScalars();
-  vtkUnsignedIntArray* histogramArr = vtkUnsignedIntArray::SafeDownCast(arr);
+  vtkDoubleArray* histogramArr = vtkDoubleArray::SafeDownCast(arr);
 
   int bins[3];
   histogram->GetDimensions(bins);
   const size_t sizeBins = static_cast<size_t>(bins[0] * bins[1]);
 
   memset(histogramArr->GetVoidPointer(0), 0x0, sizeBins *
-    sizeof(unsigned int));
+    sizeof(double));
 
   const size_t sizeSlice = static_cast<size_t>(dim[0] * dim[1] * numComp);
   std::vector<T> sliceLast(sizeSlice, 0);
@@ -236,8 +236,11 @@ void Calculate2DHistogram(T* values, const int* dim,
           const size_t centerIndex = dim[0] * jIndex + iIndex;
           const size_t deltaXFront = centerIndex + 1;
           const size_t deltaXBack = centerIndex - 1;
+	  // TODO add  '/ 2h' (central differences)
+	  // TODO Scale gradient magnitude to ValueRange/4 (this is what the shader
+          // expects.
           const double Dx = static_cast<double>(sliceCurrent[deltaXFront] -
-            sliceCurrent[deltaXBack]);// TODO add  '/ 2h' (central differences)
+            sliceCurrent[deltaXBack]);
 
           const size_t deltaYFront = dim[0] * (jIndex + 1) + iIndex;
           const size_t deltaYBack = dim[0] * (jIndex - 1) + iIndex;
@@ -273,6 +276,7 @@ void Calculate2DHistogram(T* values, const int* dim,
     std::swap(sliceCurrent, sliceNext);
   }
 
+// TODO
 //  std::cout << "->>> grad mag. max / min: " << gradMagMax << " / " << gradMagMin
 //    << std::endl;
 }
