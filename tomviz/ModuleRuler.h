@@ -42,6 +42,7 @@ public:
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
   void addToPanel(QWidget*) override;
+  void prepareToRemoveFromPanel(QWidget* panel) override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
   bool serialize(pugi::xml_node& ns) const override;
@@ -54,6 +55,7 @@ public:
 
 protected slots:
   void updateUnits();
+  void updateShowLine(bool show);
   void endPointsUpdated();
 
 signals:
@@ -71,7 +73,7 @@ protected:
 private:
   Q_DISABLE_COPY(ModuleRuler)
 
-  bool ShowArrow;
+  bool m_showLine;
 };
 }
 

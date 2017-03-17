@@ -41,7 +41,7 @@
 
 namespace tomviz {
 
-ModuleRuler::ModuleRuler(QObject* p) : Superclass(p)
+ModuleRuler::ModuleRuler(QObject* p) : Superclass(p), m_showLine(true)
 {
 }
 
@@ -112,11 +112,17 @@ void ModuleRuler::addToPanel(QWidget* panel)
   m_Widget->setView(
     tomviz::convert<pqView*>(ActiveObjects::instance().activeView()));
   m_Widget->select();
+  m_Widget->setWidgetVisible(m_showLine);
   layout->addStretch();
   QObject::connect(m_Widget.data(), &pqPropertyWidget::changeFinished, m_Widget.data(),
                    &pqPropertyWidget::apply);
   QObject::connect(m_Widget.data(), &pqPropertyWidget::changeFinished, this,
                    &ModuleRuler::endPointsUpdated);
+  QObject::connect(m_Widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
+                   SLOT(updateShowLine(bool)));
+
+
+  m_Widget->setWidgetVisible(m_showLine);
 
   QLabel* label0 = new QLabel("Point 0 data value: ");
   QLabel* label1 = new QLabel("Point 1 data value: ");
@@ -129,6 +135,15 @@ void ModuleRuler::addToPanel(QWidget* panel)
   layout->addWidget(label0);
   layout->addWidget(label1);
   panel->setLayout(layout);
+}
+
+void ModuleRuler::prepareToRemoveFromPanel(QWidget* panel)
+{
+  // Disconnect before the panel is removed to avoid m_showLine always being set
+  // to false when the signal widgetVisibilityUpdated(bool) is emitted during
+  // the tear down of the pqLinePropertyWidget.
+  QObject::disconnect(m_Widget, SIGNAL(widgetVisibilityUpdated(bool)),
+                      this, SLOT(updateShowLine(bool)));
 }
 
 bool ModuleRuler::setVisibility(bool val)
@@ -216,6 +231,11 @@ void ModuleRuler::updateUnits()
       m_Representation->GetClientSideObject());
   QString labelFormat = "%-#6.3g %1";
   rep->SetLabelFormat(labelFormat.arg(units).toLatin1().data());
+}
+
+void ModuleRuler::updateShowLine(bool show)
+{
+  m_showLine = show;
 }
 
 void ModuleRuler::endPointsUpdated()
