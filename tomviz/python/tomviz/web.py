@@ -325,7 +325,7 @@ def export_volume_exploration_images(destinationPath, camera, **kwargs):
         for node in savedNodes:
             pvw.AddPoint(node[0], node[1], node[2], node[3])
     else:
-        print('No Volume module available')
+        print('Can not export Volume exploration without a Volume')
 
 # -----------------------------------------------------------------------------
 # Image based Contour exploration
@@ -336,8 +336,8 @@ def export_contour_exploration_images(destinationPath, camera, **kwargs):
     values = [int(v) for v in kwargs['multiValue'].split(',')]
     view = simple.GetRenderView()
     contour = get_contour()
-    originalValues = [v for v in contour.Value]
     if contour:
+        originalValues = [v for v in contour.Value]
         idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
         idb.getDataHandler().registerArgument(priority=1, name='contour',
                                               values=values, ui='slider',
@@ -351,7 +351,7 @@ def export_contour_exploration_images(destinationPath, camera, **kwargs):
         # Reset to original value
         contour.Value = originalValues
     else:
-        print('No contour module available')
+        print('Can not export Contour exploration without a Contour.')
 
 # -----------------------------------------------------------------------------
 # Contours Geometry export
@@ -370,14 +370,17 @@ def export_contours_geometry(destinationPath, **kwargs):
         item['name'] += ' (%d)' % count
         count += 1
 
-    # Create geometry Builder
-    dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
-    dsb.start()
-    dsb.writeData(0)
-    dsb.stop()
+    if count > 1:
+        # Create geometry Builder
+        dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
+        dsb.start()
+        dsb.writeData(0)
+        dsb.stop()
 
-    # Patch data range
-    patch_data_range(destinationPath)
+        # Patch data range
+        patch_data_range(destinationPath)
+    else:
+        print('Can not export Contour(s) geometry without at least a Contour.')
 
 # -----------------------------------------------------------------------------
 # Contours Geometry export
@@ -422,6 +425,8 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
 
         # Reset to original state
         contour.Value = originalValue
+    else:
+        print('Can not export Contour geometry without Contour(s)')
 
 
 # -----------------------------------------------------------------------------
