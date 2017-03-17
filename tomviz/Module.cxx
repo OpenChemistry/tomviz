@@ -118,6 +118,10 @@ void Module::addToPanel(QWidget* vtkNotUsed(panel))
 {
 }
 
+void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
+{
+}
+
 void Module::setUseDetachedColorMap(bool val)
 {
   m_useDetachedColorMap = val;

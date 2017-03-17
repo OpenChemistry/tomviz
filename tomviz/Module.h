@@ -127,6 +127,11 @@ public slots:
   /// properties to the panel.
   virtual void addToPanel(QWidget* panel);
 
+  /// This method is called just prior to removing this Module's properties from
+  /// the panel. Subclasses can use it to perform any necessary cleanup such as
+  /// disconnecting some signals and slots.
+  virtual void prepareToRemoveFromPanel(QWidget* panel);
+
   /// This method is called when the data source's display position changes.
   virtual void dataSourceMoved(double newX, double newY, double newZ) = 0;
 
