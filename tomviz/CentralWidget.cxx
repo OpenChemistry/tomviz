@@ -141,14 +141,8 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
     minmax[1] = minmax[0] + 1.0;
   }
 
-  // Allocate output histogram
-  vtkUnsignedIntArray* histogramArray = vtkUnsignedIntArray::New();
-  histogramArray->SetNumberOfComponents(1);
-  histogramArray->SetNumberOfTuples(numberOfBins * numberOfBins);
-  histogramArray->SetName(vtkStdString("2dHistogram").c_str());
   output->SetDimensions(numberOfBins, numberOfBins, 1);
-  output->GetPointData()->SetScalars(histogramArray);
-  histogramArray->Delete();
+  output->AllocateScalars(VTK_DOUBLE, 1);
 
   // Get input parameters
   int dim[3];
@@ -432,22 +426,28 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
 void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkImageData> output)
 {
-  /// TODO Remove image output (only for debugging)
-  vtkDataArray* histo = output->GetPointData()->GetScalars();
-  vtkDataArray* arr = vtkUnsignedShortArray::New();
-  arr->SetNumberOfComponents(3);
-  arr->SetNumberOfTuples(histo->GetNumberOfTuples());
-  arr->CopyComponent(0, histo, 0);
-  arr->CopyComponent(1, histo, 0);
-  arr->CopyComponent(2, histo, 0);
-  output->GetPointData()->SetScalars(arr);
+  // TODO Put these checks in a function to share them with histogramReady(...) 
+  if (!input || !output) {
+    return;
+  }
 
-  vtkPNGWriter* pngWriter = vtkPNGWriter::New();
-  pngWriter->SetInputData(output);
-  pngWriter->SetFileName("/home/alvaro/test2dHistogram.png");
-  pngWriter->Update();
-  pngWriter->Write();
-  pngWriter->Delete();
+  // If we no longer have an active datasource, ignore showing the histogram
+  // since the data has been deleted
+  if (!m_activeDataSource) {
+    return;
+  }
+
+  auto t = vtkTrivialProducer::SafeDownCast(
+    m_activeDataSource->producer()->GetClientSideObject());
+  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+
+  // The current dataset has changed since the histogram was requested,
+  // ignore this histogram and wait for the next one queued...
+  if (image != input.Get()) {
+    return;
+  }
+
+  m_ui->histogram2DWidget->setInputData(output);
 }
 
 void CentralWidget::setHistogramTable(vtkTable* table)
