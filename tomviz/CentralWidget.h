@@ -63,6 +63,8 @@ public slots:
 
 private slots:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
+  void histogram2DReady(vtkSmartPointer<vtkImageData> input,
+                                   vtkSmartPointer<vtkImageData> output);
   void onColorMapDataSourceChanged();
   void refreshHistogram();
 

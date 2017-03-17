@@ -16,6 +16,7 @@
 #include "CentralWidget.h"
 #include "ui_CentralWidget.h"
 
+#include <vtkUnsignedShortArray.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkIntArray.h>
@@ -24,6 +25,7 @@
 #include <vtkTable.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
+#include <vtkPNGWriter.h>
 
 #include <vtkPVDiscretizableColorTransferFunction.h>
 
@@ -118,6 +120,61 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   output->AddColumn(populations.Get());
 }
 
+void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
+{
+  double minmax[2] = { 0.0, 0.0 };
+  const int numberOfBins = 256;
+
+  // Keep the array we are working on around even if the user shallow copies
+  // over the input image data by incrementing the reference count here.
+  vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
+
+  // The bin values are the centers, extending +/- half an inc either side
+  switch (arrayPtr->GetDataType()) {
+    vtkTemplateMacro(tomviz::GetScalarRange(
+      reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
+      input->GetPointData()->GetScalars()->GetNumberOfTuples(), minmax));
+    default:
+      break;
+  }
+  if (minmax[0] == minmax[1]) {
+    minmax[1] = minmax[0] + 1.0;
+  }
+
+  // Allocate output histogram
+  vtkUnsignedIntArray* histogramArray = vtkUnsignedIntArray::New();
+  histogramArray->SetNumberOfComponents(1);
+  histogramArray->SetNumberOfTuples(numberOfBins * numberOfBins);
+  histogramArray->SetName(vtkStdString("2dHistogram").c_str());
+  output->SetDimensions(numberOfBins, numberOfBins, 1);
+  output->GetPointData()->SetScalars(histogramArray);
+  histogramArray->Delete();
+
+  // Get input parameters
+  int dim[3];
+  input->GetDimensions(dim);
+  int numComp = arrayPtr->GetNumberOfComponents();
+
+  switch (arrayPtr->GetDataType()) {
+    vtkTemplateMacro(tomviz::Calculate2DHistogram(
+      reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
+      dim, numComp, minmax, output));
+    default:
+      cout << "UpdateFromFile: Unknown data type" << endl;
+  }
+
+///TODO handle NaN and Inf
+//#ifndef NDEBUG
+//  vtkIdType total = invalid;
+//  for (int i = 0; i < numberOfBins; ++i)
+//    total += pops[i];
+//  assert(total == arrayPtr->GetNumberOfTuples());
+//#endif
+//  if (invalid) {
+//    cout << "Warning: NaN or infinite value in dataset" << endl;
+//  }
+}
+
 // This is a QObject that will be owned by the background thread
 // and use signals/slots to create histograms
 class HistogramMaker : public QObject
@@ -133,9 +190,15 @@ public slots:
   void makeHistogram(vtkSmartPointer<vtkImageData> input,
                      vtkSmartPointer<vtkTable> output);
 
+  void makeHistogram2D(vtkSmartPointer<vtkImageData> input,
+                       vtkSmartPointer<vtkImageData> output);
+
 signals:
   void histogramDone(vtkSmartPointer<vtkImageData> image,
                      vtkSmartPointer<vtkTable> output);
+
+  void histogram2DDone(vtkSmartPointer<vtkImageData> image,
+                     vtkSmartPointer<vtkImageData> output);
 };
 
 void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
@@ -149,6 +212,17 @@ void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
   emit histogramDone(input, output);
 }
 
+void HistogramMaker::makeHistogram2D(vtkSmartPointer<vtkImageData> input,
+                                     vtkSmartPointer<vtkImageData> output)
+{
+  if (input && output) {
+    Populate2DHistogram(input.Get(), output.Get());
+  }
+  emit histogram2DDone(input, output);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   : QWidget(parentObject, wflags), m_ui(new Ui::CentralWidget),
     m_timer(new QTimer(this)), m_histogramGen(new HistogramMaker),
@@ -186,6 +260,10 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
                                                vtkSmartPointer<vtkTable>)),
           SLOT(histogramReady(vtkSmartPointer<vtkImageData>,
                               vtkSmartPointer<vtkTable>)));
+  connect(m_histogramGen, SIGNAL(histogram2DDone(vtkSmartPointer<vtkImageData>,
+                                               vtkSmartPointer<vtkImageData>)),
+          SLOT(histogram2DReady(vtkSmartPointer<vtkImageData>,
+                              vtkSmartPointer<vtkImageData>)));
   m_timer->setInterval(200);
   m_timer->setSingleShot(true);
   connect(m_timer.data(), SIGNAL(timeout()), SLOT(refreshHistogram()));
@@ -300,6 +378,11 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   QMetaObject::invokeMethod(m_histogramGen, "makeHistogram",
                             Q_ARG(vtkSmartPointer<vtkImageData>, imageSP),
                             Q_ARG(vtkSmartPointer<vtkTable>, table));
+
+  auto histogram = vtkSmartPointer<vtkImageData>::New();
+  QMetaObject::invokeMethod(m_histogramGen, "makeHistogram2D",
+                            Q_ARG(vtkSmartPointer<vtkImageData>, imageSP),
+                            Q_ARG(vtkSmartPointer<vtkImageData>, histogram));
 }
 
 void CentralWidget::onColorMapUpdated()
@@ -344,6 +427,27 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
   }
 
   setHistogramTable(output.Get());
+}
+
+void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
+                                   vtkSmartPointer<vtkImageData> output)
+{
+  /// TODO Remove image output (only for debugging)
+  vtkDataArray* histo = output->GetPointData()->GetScalars();
+  vtkDataArray* arr = vtkUnsignedShortArray::New();
+  arr->SetNumberOfComponents(3);
+  arr->SetNumberOfTuples(histo->GetNumberOfTuples());
+  arr->CopyComponent(0, histo, 0);
+  arr->CopyComponent(1, histo, 0);
+  arr->CopyComponent(2, histo, 0);
+  output->GetPointData()->SetScalars(arr);
+
+  vtkPNGWriter* pngWriter = vtkPNGWriter::New();
+  pngWriter->SetInputData(output);
+  pngWriter->SetFileName("/home/alvaro/test2dHistogram.png");
+  pngWriter->Update();
+  pngWriter->Write();
+  pngWriter->Delete();
 }
 
 void CentralWidget::setHistogramTable(vtkTable* table)
