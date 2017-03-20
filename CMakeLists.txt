@@ -94,15 +94,18 @@ endif()
 # Add web application
 # -----------------------------------------------------------------------------
 option(TOMVIZ_DOWNLOAD_WEB  "Enable downloading web application." OFF)
-set(tomviz_html_path "${CMAKE_BINARY_DIR}/web/tomviz.html")
+set(tomviz_html_source_path "${CMAKE_SOURCE_DIR}/web/tomviz.html")
+set(tomviz_html_binary_dir "${CMAKE_BINARY_DIR}/web/www")
+set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
+
 
 if (TOMVIZ_DOWNLOAD_WEB)
   set(tomviz_html_sha512 "01db2c85636ee4fe8c3031ab680244570b2fb6a962fd7007598aae97cca5eb850abbeec97dd1be3c45d41c75d0df43a38a61ee877eb2fe007e64c24e84692412")
-  if (NOT EXISTS "${tomviz_html_path}")
+  if (NOT EXISTS "${tomviz_html_source_path}")
     message(STATUS "Downloading tomviz.html.")
     file(DOWNLOAD
       "https://data.kitware.com/api/v1/file/hashsum/sha512/${tomviz_html_sha512}/download"
-      "${tomviz_html_path}"
+      "${tomviz_html_binary_path}"
       EXPECTED_HASH SHA512=${tomviz_html_sha512}
       SHOW_PROGRESS
     )
@@ -114,9 +117,13 @@ if(APPLE)
   set(tomviz_web_install_dir "Applications/tomviz.app/Contents/share/tomviz/web")
 endif()
 
-if (EXISTS "${tomviz_html_path}")
+if (EXISTS "${tomviz_html_source_path}")
+    file(COPY "${tomviz_html_source_path}" DESTINATION "${tomviz_html_binary_dir}")
+endif()
+
+if(EXISTS "${tomviz_html_binary_path}")
   install(
-    FILES "${tomviz_html_path}"
+    FILES "${tomviz_html_binary_path}"
     DESTINATION "${tomviz_web_install_dir}"
     COMPONENT runtime)
 endif()
