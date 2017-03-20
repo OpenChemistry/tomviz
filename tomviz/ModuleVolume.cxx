@@ -95,6 +95,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_view->AddPropToRenderer(m_volume.Get());
+  m_view->Update();
 
   return true;
 }
