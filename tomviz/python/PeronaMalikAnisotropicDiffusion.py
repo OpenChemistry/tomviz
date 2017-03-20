@@ -4,7 +4,7 @@ import tomviz.operators
 class PeronaMalikAnisotropicDiffusion(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset, conductance=1.0, iterations=100,
-                          timestep=0.125):
+                          timestep=0.0625):
         """This filter performs anisotropic diffusion on an image using
         the classic Perona-Malik, gradient magnitude-based equation.
         """
