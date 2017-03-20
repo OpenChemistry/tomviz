@@ -22,7 +22,6 @@
 #include <vtkColorTransferFunction.h>
 #include <vtkGPUVolumeRayCastMapper.h>
 #include <vtkImageData.h>
-#include <vtkImageShiftScale.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSmartPointer.h>
@@ -71,16 +70,12 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   connect(data, SIGNAL(dataChanged()), SLOT(dataChanged()));
 
-  vtkNew<vtkImageShiftScale> t;
-
   vtkTrivialProducer* trv =
     vtkTrivialProducer::SafeDownCast(data->producer()->GetClientSideObject());
   vtkImageData* im = vtkImageData::SafeDownCast(trv->GetOutputDataObject(0));
 
-  t->SetInputData(im);
-
   // Default parameters
-  m_volumeMapper->SetInputConnection(t->GetOutputPort());
+  m_volumeMapper->SetInputDataObject(im);
   m_volume->SetMapper(m_volumeMapper.Get());
   m_volume->SetProperty(m_volumeProperty.Get());
   m_volumeMapper->UseJitteringOn();
