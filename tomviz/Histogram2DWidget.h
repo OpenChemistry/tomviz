@@ -19,6 +19,7 @@
 #include <QWidget>
 
 #include <vtkNew.h>
+#include <vtkSmartPointer.h>
 
 /**
  * \brief 
@@ -28,6 +29,7 @@ class vtkChartHistogram2D;
 class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkImageData;
+class vtkTransferFunctionBoxItem;
 class QVTKOpenGLWidget;
 
 namespace tomviz {
@@ -42,7 +44,7 @@ public:
 
   void setInputData(vtkImageData* histogram);
 
-  //void addTransferFunctionItem(vtkTransferFunctionItem* item);
+  void addTransferFunction(vtkSmartPointer<vtkTransferFunctionBoxItem> item);
 
 signals:
   void mapUpdated();
