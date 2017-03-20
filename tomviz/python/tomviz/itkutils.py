@@ -283,6 +283,10 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     itk_image.SetSpacing(spacing)
     itk_image.SetOrigin(origin)
 
+    # Persist a reference to the source vtk_image_data, which is necessary since
+    # VTK and ITK are using Python Buffer-Protocol NumPy array views
+    itk_image.vtk_image_data = vtk_image_data
+
     return itk_image
 
 
