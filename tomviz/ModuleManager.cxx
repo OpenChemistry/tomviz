@@ -620,6 +620,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
   }
 
   // Save camera settings for each view
+  this->Internals->RenderViewCameras.clear();
   vtkNew<vtkSMProxyIterator> iter;
   iter->SetSessionProxyManager(pxm);
   iter->SetModeToOneGroup();

@@ -41,7 +41,7 @@
 
 namespace tomviz {
 
-ModuleRuler::ModuleRuler(QObject* p) : Superclass(p)
+ModuleRuler::ModuleRuler(QObject* p) : Superclass(p), m_showLine(true)
 {
 }
 
@@ -112,11 +112,17 @@ void ModuleRuler::addToPanel(QWidget* panel)
   m_Widget->setView(
     tomviz::convert<pqView*>(ActiveObjects::instance().activeView()));
   m_Widget->select();
+  m_Widget->setWidgetVisible(m_showLine);
   layout->addStretch();
   QObject::connect(m_Widget.data(), &pqPropertyWidget::changeFinished, m_Widget.data(),
                    &pqPropertyWidget::apply);
   QObject::connect(m_Widget.data(), &pqPropertyWidget::changeFinished, this,
                    &ModuleRuler::endPointsUpdated);
+  QObject::connect(m_Widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
+                   SLOT(updateShowLine(bool)));
+
+
+  m_Widget->setWidgetVisible(m_showLine);
 
   QLabel* label0 = new QLabel("Point 0 data value: ");
   QLabel* label1 = new QLabel("Point 1 data value: ");
@@ -129,6 +135,15 @@ void ModuleRuler::addToPanel(QWidget* panel)
   layout->addWidget(label0);
   layout->addWidget(label1);
   panel->setLayout(layout);
+}
+
+void ModuleRuler::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
+{
+  // Disconnect before the panel is removed to avoid m_showLine always being set
+  // to false when the signal widgetVisibilityUpdated(bool) is emitted during
+  // the tear down of the pqLinePropertyWidget.
+  QObject::disconnect(m_Widget, SIGNAL(widgetVisibilityUpdated(bool)),
+                      this, SLOT(updateShowLine(bool)));
 }
 
 bool ModuleRuler::setVisibility(bool val)
@@ -164,18 +179,36 @@ bool ModuleRuler::serialize(pugi::xml_node& ns) const
     qWarning("Failed to serialize ruler");
     return false;
   }
+
+  pugi::xml_node showLine = representationNode.append_child("ShowLine");
+  showLine.append_attribute("value").set_value(m_showLine);
+
   if (!tomviz::serialize(m_Representation, representationNode,
                          representationProperties)) {
     qWarning("Failed to serialize ruler representation");
     return false;
   }
+
   return true;
 }
 
 bool ModuleRuler::deserialize(const pugi::xml_node& ns)
 {
-  return tomviz::deserialize(m_RulerSource, ns.child("Ruler")) &&
-         tomviz::deserialize(m_Representation, ns.child("Representation"));
+  pugi::xml_node representationNode = ns.child("Representation");
+  bool success = tomviz::deserialize(m_RulerSource, ns.child("Ruler")) &&
+    tomviz::deserialize(m_Representation, representationNode);
+
+  if (representationNode) {
+    pugi::xml_node showLineNode = representationNode.child("ShowLine");
+    if (showLineNode) {
+      pugi::xml_attribute valueAttribute = showLineNode.attribute("value");
+      if (valueAttribute) {
+        m_showLine = valueAttribute.as_bool();
+      }
+    }
+  }
+
+  return success;
 }
 
 bool ModuleRuler::isProxyPartOfModule(vtkSMProxy* proxy)
@@ -216,6 +249,11 @@ void ModuleRuler::updateUnits()
       m_Representation->GetClientSideObject());
   QString labelFormat = "%-#6.3g %1";
   rep->SetLabelFormat(labelFormat.arg(units).toLatin1().data());
+}
+
+void ModuleRuler::updateShowLine(bool show)
+{
+  m_showLine = show;
 }
 
 void ModuleRuler::endPointsUpdated()
