@@ -45,7 +45,7 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 {
   QVBoxLayout* v = new QVBoxLayout(this);
   this->setMinimumWidth(500);
-  this->setMinimumHeight(200);
+  this->setMinimumHeight(350);
   this->setWindowTitle("Web export data");
 
   // Output directory path
@@ -62,12 +62,12 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   QLabel* outputTypelabel = new QLabel("Output type:");
   QHBoxLayout* typeGroup = new QHBoxLayout;
   this->exportType = new QComboBox;
-  this->exportType->addItem("Images");
-  this->exportType->addItem("Volume exploration");
-  this->exportType->addItem("Contour exploration");
-  this->exportType->addItem("Contours Geometry");
-  this->exportType->addItem("Contour exploration Geometry");
-  this->exportType->addItem("Volume");
+  this->exportType->addItem("Images: Current scene");
+  this->exportType->addItem("Images: Volume exploration");
+  this->exportType->addItem("Images: Contour exploration");
+  this->exportType->addItem("Geometry: Current scene contour(s)");
+  this->exportType->addItem("Geometry: Contour exploration");
+  this->exportType->addItem("Geometry: Volume");
   // this->exportType->addItem("Composite surfaces"); // specularColor segfault
   this->exportType->setCurrentIndex(0);
   typeGroup->addWidget(outputTypelabel);
@@ -104,6 +104,60 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->cameraGroup->setLayout(cameraGroupLayout);
   v->addWidget(this->cameraGroup);
 
+  // Volume exploration
+  QLabel* opacityLabel = new QLabel("Max opacity");
+  this->maxOpacity = new QSpinBox();
+  this->maxOpacity->setRange(10, 100);
+  this->maxOpacity->setSingleStep(10);
+  this->maxOpacity->setValue(50);
+  this->maxOpacity->setMinimumWidth(100);
+
+  QLabel* spanLabel = new QLabel("Tent width");
+  this->spanValue = new QSpinBox();
+  this->spanValue->setRange(1, 200);
+  this->spanValue->setSingleStep(1);
+  this->spanValue->setValue(10);
+  this->spanValue->setMinimumWidth(100);
+
+  QHBoxLayout* volumeExplorationGroupLayout = new QHBoxLayout;
+  volumeExplorationGroupLayout->addWidget(opacityLabel);
+  volumeExplorationGroupLayout->addWidget(maxOpacity);
+  cameraGroupLayout->addStretch();
+  volumeExplorationGroupLayout->addWidget(spanLabel);
+  volumeExplorationGroupLayout->addWidget(spanValue);
+
+  this->volumeExplorationGroup = new QWidget();
+  this->volumeExplorationGroup->setLayout(volumeExplorationGroupLayout);
+  v->addWidget(this->volumeExplorationGroup);
+
+  // Multi-value exploration
+  QLabel* multiValueLabel = new QLabel("Values:");
+  this->multiValue = new QLineEdit("25, 50, 75, 100, 125, 150, 175, 200, 225");
+
+  QHBoxLayout* multiValueGroupLayout = new QHBoxLayout;
+  multiValueGroupLayout->addWidget(multiValueLabel);
+  multiValueGroupLayout->addWidget(this->multiValue);
+
+  this->valuesGroup = new QWidget();
+  this->valuesGroup->setLayout(multiValueGroupLayout);
+  v->addWidget(this->valuesGroup);
+
+  // Volume down sampling
+  QLabel* scaleLabel = new QLabel("Sampling stride");
+  this->scale = new QSpinBox();
+  this->scale->setRange(1, 5);
+  this->scale->setSingleStep(1);
+  this->scale->setValue(1);
+  this->scale->setMinimumWidth(100);
+
+  QHBoxLayout* scaleGroupLayout = new QHBoxLayout;
+  scaleGroupLayout->addWidget(scaleLabel);
+  scaleGroupLayout->addWidget(this->scale);
+
+  this->volumeResampleGroup = new QWidget();
+  this->volumeResampleGroup->setLayout(scaleGroupLayout);
+  v->addWidget(this->volumeResampleGroup);
+
   v->addStretch();
 
   // Action buttons
@@ -127,6 +181,9 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->connect(this->cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
   this->connect(this->exportType, SIGNAL(currentIndexChanged(int)), this,
                 SLOT(onTypeChange(int)));
+
+  // Initialize visibility
+  this->onTypeChange(0);
 }
 
 WebExportWidget::~WebExportWidget()
@@ -149,6 +206,9 @@ void WebExportWidget::onBrowse()
 void WebExportWidget::onTypeChange(int index)
 {
   this->cameraGroup->setVisible(index < 3);
+  this->volumeExplorationGroup->setVisible(index == 1);
+  this->valuesGroup->setVisible(index == 1 || index == 2 || index == 4);
+  this->volumeResampleGroup->setVisible(index == 5);
 }
 
 void WebExportWidget::onPathChange()
@@ -175,6 +235,10 @@ QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
   this->kwargs["nbPhi"] = QVariant(this->nbPhi->value());
   this->kwargs["nbTheta"] = QVariant(this->nbTheta->value());
   this->kwargs["keepData"] = QVariant(this->keepData->checkState());
+  this->kwargs["maxOpacity"] = QVariant(this->maxOpacity->value());
+  this->kwargs["tentWidth"] = QVariant(this->spanValue->value());
+  this->kwargs["volumeScale"] = QVariant(this->scale->value());
+  this->kwargs["multiValue"] = QVariant(this->multiValue->text());
 
   return &this->kwargs;
 }

@@ -51,13 +51,13 @@ def web_export(*args, **kwargs):
 
     # Choose export mode:
     if exportType == 0:
-        export_images(dest, camera)
+        export_images(dest, camera, **kwargs)
 
     if exportType == 1:
-        export_volume_exploration_images(dest, camera)
+        export_volume_exploration_images(dest, camera, **kwargs)
 
     if exportType == 2:
-        export_contour_exploration_images(dest, camera)
+        export_contour_exploration_images(dest, camera, **kwargs)
 
     if exportType == 3:
         export_contours_geometry(dest, **kwargs)
@@ -109,33 +109,33 @@ def bundleDataToHTML(destinationPath, keepData):
                     '<div class="webResource" data-url="%s">%s</div>'
                     % (relPath, content))
 
-    webResources.append('<script>ready()</script></body>')
+        webResources.append('<script>ready()</script></body>')
 
-    # Create new output file
-    with open(srcHtmlPath, mode='r') as srcHtml:
-        with open(dstHtmlPath, mode='w') as dstHtml:
-            for line in srcHtml:
-                if '</body>' in line:
-                    for webResource in webResources:
-                        dstHtml.write(webResource)
-                else:
-                    dstHtml.write(line)
+        # Create new output file
+        with open(srcHtmlPath, mode='r') as srcHtml:
+            with open(dstHtmlPath, mode='w') as dstHtml:
+                for line in srcHtml:
+                    if '</body>' in line:
+                        for webResource in webResources:
+                            dstHtml.write(webResource)
+                    else:
+                        dstHtml.write(line)
 
-    # Generate zip file for the data
-    if keepData:
-        if os.path.exists(dataDir):
-            with zipfile.ZipFile(dstDataPath, mode='w') as zf:
-                for dirName, subdirList, fileList in os.walk(dataDir):
-                    for fname in fileList:
-                        fullPath = os.path.join(dirName, fname)
-                        filePath = os.path.relpath(fullPath, dataDir)
-                        relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
-                        zf.write(fullPath, arcname=relPath,
-                                 compress_type=zipfile.ZIP_STORED)
+        # Generate zip file for the data
+        if keepData:
+            if os.path.exists(dataDir):
+                with zipfile.ZipFile(dstDataPath, mode='w') as zf:
+                    for dirName, subdirList, fileList in os.walk(dataDir):
+                        for fname in fileList:
+                            fullPath = os.path.join(dirName, fname)
+                            filePath = os.path.relpath(fullPath, dataDir)
+                            relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
+                            zf.write(fullPath, arcname=relPath,
+                                     compress_type=zipfile.ZIP_STORED)
 
-    # Cleanup
-    os.remove(srcHtmlPath)
-    shutil.rmtree(dataDir)
+        # Cleanup
+        os.remove(srcHtmlPath)
+        shutil.rmtree(dataDir)
 
 
 def get_proxy(id):
@@ -255,12 +255,32 @@ def get_trivial_producer():
             return value
     return None
 
+
+def array_sampler(srcDims, dstDims, scale, inputArray):
+    if scale == 1:
+        return inputArray
+
+    newSize = dstDims[0] * dstDims[1] * dstDims[2]
+    outputArray = inputArray.NewInstance()
+    outputArray.SetNumberOfTuples(newSize)
+    offset = 0
+    for k in range(dstDims[2]):
+        for j in range(dstDims[1]):
+            for i in range(dstDims[0]):
+                srcIdx = (i * scale)
+                srcIdx += (j * scale * srcDims[0])
+                srcIdx += (k * scale * srcDims[0] * srcDims[1])
+                outputArray.SetValue(offset, inputArray.GetValue(srcIdx))
+                offset += 1
+
+    return outputArray
+
 # -----------------------------------------------------------------------------
 # Image based exporter
 # -----------------------------------------------------------------------------
 
 
-def export_images(destinationPath, camera):
+def export_images(destinationPath, camera, **kwargs):
     view = simple.GetRenderView()
     idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
     idb.start(view)
@@ -272,14 +292,13 @@ def export_images(destinationPath, camera):
 # -----------------------------------------------------------------------------
 
 
-def export_volume_exploration_images(destinationPath, camera):
+def export_volume_exploration_images(destinationPath, camera, **kwargs):
+    values = [int(v) for v in kwargs['multiValue'].split(',')]
+    maxOpacity = float(kwargs['maxOpacity']) / 100.0
+    span = float(kwargs['tentWidth']) * 0.5
+
     view = simple.GetRenderView()
     pvw = get_volume_piecewise(view)
-    maxOpacity = 0.5
-    nbSteps = 10
-    step = 250.0 / float(nbSteps)
-    span = step * 0.4
-    values = [float(v + 1) * step for v in range(0, nbSteps)]
     if pvw:
         savedNodes = []
         currentPoints = [0, 0, 0, 0]
@@ -306,21 +325,19 @@ def export_volume_exploration_images(destinationPath, camera):
         for node in savedNodes:
             pvw.AddPoint(node[0], node[1], node[2], node[3])
     else:
-        print('No Volume module available')
+        print('Can not export Volume exploration without a Volume')
 
 # -----------------------------------------------------------------------------
 # Image based Contour exploration
 # -----------------------------------------------------------------------------
 
 
-def export_contour_exploration_images(destinationPath, camera):
+def export_contour_exploration_images(destinationPath, camera, **kwargs):
+    values = [int(v) for v in kwargs['multiValue'].split(',')]
     view = simple.GetRenderView()
     contour = get_contour()
-    originalValues = [v for v in contour.Value]
-    nbSteps = 10
-    step = 250.0 / float(nbSteps)
-    values = [float(v + 1) * step for v in range(0, nbSteps)]
     if contour:
+        originalValues = [v for v in contour.Value]
         idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
         idb.getDataHandler().registerArgument(priority=1, name='contour',
                                               values=values, ui='slider',
@@ -334,7 +351,7 @@ def export_contour_exploration_images(destinationPath, camera):
         # Reset to original value
         contour.Value = originalValues
     else:
-        print('No contour module available')
+        print('Can not export Contour exploration without a Contour.')
 
 # -----------------------------------------------------------------------------
 # Contours Geometry export
@@ -353,14 +370,17 @@ def export_contours_geometry(destinationPath, **kwargs):
         item['name'] += ' (%d)' % count
         count += 1
 
-    # Create geometry Builder
-    dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
-    dsb.start()
-    dsb.writeData(0)
-    dsb.stop()
+    if count > 1:
+        # Create geometry Builder
+        dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
+        dsb.start()
+        dsb.writeData(0)
+        dsb.stop()
 
-    # Patch data range
-    patch_data_range(destinationPath)
+        # Patch data range
+        patch_data_range(destinationPath)
+    else:
+        print('Can not export Contour(s) geometry without at least a Contour.')
 
 # -----------------------------------------------------------------------------
 # Contours Geometry export
@@ -368,6 +388,7 @@ def export_contours_geometry(destinationPath, **kwargs):
 
 
 def export_contour_exploration_geometry(destinationPath, **kwargs):
+    values = [int(v) for v in kwargs['multiValue'].split(',')]
     contour = None
     for key, value in simple.GetSources().iteritems():
         if key[0] == 'Contour':
@@ -389,7 +410,7 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
         }
         dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
         dsb.getDataHandler().registerArgument(priority=1, name='contour',
-                                              values=range(25, 251, 25),
+                                              values=values,
                                               ui='slider', loop='modulo')
         dsb.start()
         scalarContainer = sceneDescription['scene'][0]['colors']['Scalar']
@@ -404,6 +425,8 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
 
         # Reset to original state
         contour.Value = originalValue
+    else:
+        print('Can not export Contour geometry without Contour(s)')
 
 
 # -----------------------------------------------------------------------------
@@ -412,6 +435,7 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
 
 
 def export_volume(destinationPath, **kwargs):
+    scale = int(kwargs['volumeScale'])
     indexJSON = {
         'type': ['tonic-query-data-model', 'vtk-volume'],
         'arguments': {},
@@ -462,9 +486,17 @@ def export_volume(destinationPath, **kwargs):
 
     # Extract data
     imageData = producer.SMProxy.GetClientSideObject().GetOutputDataObject(0)
-    volumeJSON['extent'] = imageData.GetExtent()
+    extent = imageData.GetExtent()
+    srcDims = (extent[1] - extent[0] + 1,
+               extent[3] - extent[2] + 1,
+               extent[5] - extent[4] + 1)
+    dstDims = [int(v / scale) for v in srcDims]
+    volumeJSON['extent'] = [0, dstDims[0] - 1,
+                            0, dstDims[1] - 1,
+                            0, dstDims[2] - 1]
 
-    scalars = imageData.GetPointData().GetScalars()
+    scalars = array_sampler(srcDims, dstDims, scale,
+                            imageData.GetPointData().GetScalars())
     arraySize = scalars.GetNumberOfValues()
     volumeJSON['pointData']['arrays'][0]['data']['size'] = arraySize
 

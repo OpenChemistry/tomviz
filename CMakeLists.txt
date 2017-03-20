@@ -100,7 +100,7 @@ set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
 
 
 if (TOMVIZ_DOWNLOAD_WEB)
-  set(tomviz_html_sha512 "01db2c85636ee4fe8c3031ab680244570b2fb6a962fd7007598aae97cca5eb850abbeec97dd1be3c45d41c75d0df43a38a61ee877eb2fe007e64c24e84692412")
+  set(tomviz_html_sha512 "d0a54ea61a53d941e22c43cd75394d9f5f8cffd8703b9f4be7f72dc869ec9f41232c88a66cf796bbb9c1c7988bbb8e00e0bf8421e592232000b1e54cccf4a45c")
   if (NOT EXISTS "${tomviz_html_source_path}")
     message(STATUS "Downloading tomviz.html.")
     file(DOWNLOAD
