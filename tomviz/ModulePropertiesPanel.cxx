@@ -70,6 +70,7 @@ void ModulePropertiesPanel::setModule(Module* module)
                           SLOT(updatePanel()));
       QObject::disconnect(this->Internals->ActiveModule, SIGNAL(renderNeeded()),
                           this, SLOT(render()));
+      this->Internals->ActiveModule->prepareToRemoveFromPanel(this);
     }
 
     if (module) {
