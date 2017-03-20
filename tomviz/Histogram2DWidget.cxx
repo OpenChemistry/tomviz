@@ -27,6 +27,7 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
 #include <vtkRenderWindow.h>
+#include <vtkTransferFunctionBoxItem.h>
 #include <vtkVector.h>
 
 #include <QVBoxLayout>
@@ -95,6 +96,12 @@ void Histogram2DWidget::setInputData(vtkImageData* histogram)
   transferFunction->Delete();
 
   m_histogramView->Render();
+}
+
+void Histogram2DWidget::addTransferFunction(
+  vtkSmartPointer<vtkTransferFunctionBoxItem> item)
+{
+  m_chartHistogram2D->AddItem(item);
 }
 
 //void Histogram2DWidget::renderViews()

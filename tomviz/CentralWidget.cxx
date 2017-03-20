@@ -23,6 +23,7 @@
 #include <vtkObjectFactory.h>
 #include <vtkPointData.h>
 #include <vtkTable.h>
+#include <vtkTransferFunctionBoxItem.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
 #include <vtkPNGWriter.h>
@@ -400,23 +401,8 @@ void CentralWidget::refreshHistogram()
 void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
-  if (!input || !output) {
-    return;
-  }
-
-  // If we no longer have an active color map datasource, ignore showing the
-  // histogram since the data has been deleted
-  if (!m_activeColorMapDataSource) {
-    return;
-  }
-
-  auto t = vtkTrivialProducer::SafeDownCast(
-    m_activeColorMapDataSource->producer()->GetClientSideObject());
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-
-  // The current dataset has changed since the histogram was requested,
-  // ignore this histogram and wait for the next one queued...
-  if (image != input.Get()) {
+  vtkImageData* inputIm = getInputImage(input);  
+  if (!inputIm || !output) {
     return;
   }
 
@@ -426,28 +412,43 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
 void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkImageData> output)
 {
-  // TODO Put these checks in a function to share them with histogramReady(...) 
-  if (!input || !output) {
+  vtkImageData* inputIm = getInputImage(input);  
+  if (!inputIm || !output) {
     return;
+  }
+
+  m_ui->histogram2DWidget->setInputData(output);
+
+  typedef vtkSmartPointer<vtkTransferFunctionBoxItem> itemPtr;
+  itemPtr tfItem = itemPtr::New();
+  tfItem->SetDimensions(20, 20, 80 , 40);
+  tfItem->SetLabel("TF 1");
+  m_ui->histogram2DWidget->addTransferFunction(tfItem);
+}
+
+vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)
+{
+  if (!input) {
+    return nullptr;
   }
 
   // If we no longer have an active datasource, ignore showing the histogram
   // since the data has been deleted
-  if (!m_activeDataSource) {
-    return;
+  if (!m_activeColorMapDataSource) {
+    return nullptr;
   }
 
   auto t = vtkTrivialProducer::SafeDownCast(
-    m_activeDataSource->producer()->GetClientSideObject());
+    m_activeColorMapDataSource->producer()->GetClientSideObject());
   auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   // The current dataset has changed since the histogram was requested,
   // ignore this histogram and wait for the next one queued...
   if (image != input.Get()) {
-    return;
+    return nullptr;
   }
 
-  m_ui->histogram2DWidget->setInputData(output);
+  return image;
 }
 
 void CentralWidget::setHistogramTable(vtkTable* table)

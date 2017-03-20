@@ -71,6 +71,9 @@ private slots:
 private:
   Q_DISABLE_COPY(CentralWidget)
 
+  /// Set of input checks shared between 1D and 2D histograms.
+  vtkImageData* getInputImage(vtkSmartPointer<vtkImageData> input);
+
   /// Set the data source to from which the data is "histogrammed" and shown
   /// in the histogram view.
   void setColorMapDataSource(DataSource*);

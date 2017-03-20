@@ -212,6 +212,8 @@ set(SOURCES
   vtkChartHistogram.h
   vtkChartHistogramColorOpacityEditor.cxx
   vtkChartHistogramColorOpacityEditor.h
+  vtkTransferFunctionBoxItem.h
+  vtkTransferFunctionBoxItem.cxx
   vtkCustomPiecewiseControlPointsItem.cxx
   vtkCustomPiecewiseControlPointsItem.h
   vtkLengthScaleRepresentation.h
