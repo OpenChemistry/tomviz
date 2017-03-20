@@ -22,7 +22,8 @@
       "label" : "Time Step",
       "type" : "double",
       "default" : 0.0625,
-      "minimum" : 0.0
+      "minimum" : 0.0,
+      "precision" : 4
     }
   ]
 }
