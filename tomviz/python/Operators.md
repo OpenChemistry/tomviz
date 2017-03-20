@@ -114,6 +114,8 @@ parameter is an array of one or more ints or doubles.
 values specifies the component-wise minimum of a multi-element parameter.
 * `maximum` - Like the `minimum`, but sets the maximum value that a parameter
 may be.
+* `precision` - Optional number of digits past the decimal for `double`
+parameters.
 * `options` - An array of JSON objects, each of which contains a single key/value
 pair where the key is the name of the option and the value is an integer index
 of the options.
@@ -162,7 +164,8 @@ Multi-element `int`
   "type" : "double",
   "default" : 90.0,
   "minimum" : -360.0,
-  "maximum" : 360.0
+  "maximum" : 360.0,
+  "precision" : 1
 }
 ```
 
