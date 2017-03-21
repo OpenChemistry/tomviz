@@ -222,6 +222,9 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   // every time the data changes, we should update the color map.
   connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
 
+  connect(this, &DataSource::dataPropertiesChanged,
+          [this]() { this->producer()->MarkModified(nullptr); });
+
   resetData();
 
   this->Internals->Worker = new PipelineWorker(this);
