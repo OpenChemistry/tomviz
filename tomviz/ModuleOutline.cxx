@@ -26,12 +26,19 @@
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 #include <pqColorChooserButton.h>
+#include <vtkGridAxes3DActor.h>
+#include <vtkPVRenderView.h>
+#include <vtkRenderer.h>
 
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QVBoxLayout>
 
 namespace tomviz {
+
+using pugi::xml_attribute;
+using pugi::xml_node;
 
 ModuleOutline::ModuleOutline(QObject* parentObject) : Superclass(parentObject)
 {
@@ -85,6 +92,9 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     p->rename(label());
   }
 
+  // Init the grid axes
+  initializeGridAxes(data, vtkView);
+
   return true;
 }
 
@@ -94,6 +104,10 @@ bool ModuleOutline::finalize()
   controller->UnRegisterProxy(this->OutlineRepresentation);
   controller->UnRegisterProxy(this->OutlineFilter);
 
+  if (m_view) {
+    m_view->GetRenderer()->RemoveActor(m_gridAxes.Get());
+  }
+
   this->OutlineFilter = nullptr;
   this->OutlineRepresentation = nullptr;
   return true;
@@ -101,25 +115,41 @@ bool ModuleOutline::finalize()
 
 bool ModuleOutline::serialize(pugi::xml_node& ns) const
 {
-  // save stuff that the user can change.
-  pugi::xml_node reprNode = ns.append_child("OutlineRepresentation");
+  xml_node rootNode = ns.append_child("properties");
 
-  QStringList properties;
-  properties << "Visibility"
-             << "DiffuseColor";
-  if (tomviz::serialize(this->OutlineRepresentation, reprNode, properties) ==
-      false) {
-    qWarning("Failed to serialize ModuleOutline.");
-    ns.remove_child(reprNode);
-    return false;
-  }
+  xml_node visibilityNode = rootNode.append_child("visibility");
+  visibilityNode.append_attribute("enabled") = visibility();
+
+  xml_node gridAxesNode = rootNode.append_child("grid_axes");
+  gridAxesNode.append_attribute("enabled") = m_gridAxes->GetVisibility() > 0;
+
   return true;
 }
 
 bool ModuleOutline::deserialize(const pugi::xml_node& ns)
 {
-  return tomviz::deserialize(this->OutlineRepresentation,
-                             ns.child("OutlineRepresentation"));
+  xml_node rootNode = ns.child("properties");
+  if (!rootNode) {
+    return false;
+  }
+
+  xml_node node = rootNode.child("visibility");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      setVisibility(att.as_bool());
+    }
+  }
+
+  node = rootNode.child("grid_axes");
+  if (node) {
+    xml_attribute att = node.attribute("enabled");
+    if (att) {
+      m_gridAxes->SetVisibility(att.as_bool() ? 1 : 0);
+    }
+  }
+
+  return Module::deserialize(ns);
 }
 
 bool ModuleOutline::setVisibility(bool val)
@@ -128,6 +158,7 @@ bool ModuleOutline::setVisibility(bool val)
   vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
     .Set(val ? 1 : 0);
   this->OutlineRepresentation->UpdateVTKObjects();
+  m_gridAxes->SetVisibility(val ? 1 : 0);
   return true;
 }
 
@@ -157,8 +188,20 @@ void ModuleOutline::addToPanel(QWidget* panel)
   colorSelector->setShowAlphaChannel(false);
   layout->addWidget(colorSelector);
 
+  QHBoxLayout* gridAxesLayout = new QHBoxLayout;
+  QCheckBox* showAxesGrid = new QCheckBox(QString("Show Axes Grid"));
+  showAxesGrid->setChecked(m_gridAxes->GetVisibility() == 1);
+
+  connect(showAxesGrid, &QCheckBox::stateChanged, this, [this](int state) {
+    this->m_gridAxes->SetVisibility(state == Qt::Checked);
+    emit this->renderNeeded();
+  });
+
+  gridAxesLayout->addWidget(showAxesGrid);
+
   QVBoxLayout* panelLayout = new QVBoxLayout;
   panelLayout->addItem(layout);
+  panelLayout->addItem(gridAxesLayout);
   panelLayout->addStretch();
   panel->setLayout(panelLayout);
 
@@ -212,6 +255,41 @@ vtkSMProxy* ModuleOutline::getProxyForString(const std::string& str)
   } else {
     return nullptr;
   }
+}
+
+void ModuleOutline::updateGridAxesBounds(DataSource* dataSource)
+{
+  Q_ASSERT(dataSource);
+  double bounds[6];
+  dataSource->getBounds(bounds);
+  m_gridAxes->SetGridBounds(bounds);
+}
+void ModuleOutline::initializeGridAxes(DataSource* data,
+                                       vtkSMViewProxy* vtkView)
+{
+
+  updateGridAxesBounds(data);
+  m_gridAxes->SetVisibility(0);
+
+  // Set the titles
+  QString xTitle = QString("X (%1)").arg(data->getUnits(0));
+  QString yTitle = QString("Y (%1)").arg(data->getUnits(1));
+  QString zTitle = QString("Z (%1)").arg(data->getUnits(2));
+  m_gridAxes->SetXTitle(xTitle.toUtf8().data());
+  m_gridAxes->SetYTitle(yTitle.toUtf8().data());
+  m_gridAxes->SetZTitle(zTitle.toUtf8().data());
+
+  m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
+  m_view->GetRenderer()->AddActor(m_gridAxes.Get());
+
+  connect(data, &DataSource::dataPropertiesChanged, this, [this]() {
+    auto dataSource = qobject_cast<DataSource*>(sender());
+    this->updateGridAxesBounds(dataSource);
+    dataSource->producer()->MarkModified(nullptr);
+    dataSource->producer()->UpdatePipeline();
+    emit this->renderNeeded();
+
+  });
 }
 
 } // end of namespace tomviz
