@@ -437,6 +437,22 @@ void DataSource::getExtent(int extent[6])
   }
 }
 
+void DataSource::getBounds(double bounds[6])
+{
+  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  if (tp) {
+    vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
+    if (data) {
+      data->GetBounds(bounds);
+      return;
+    }
+  }
+  for (int i = 0; i < 6; ++i) {
+    bounds[i] = 0.0;
+  }
+}
+
 void DataSource::getSpacing(double spacing[3]) const
 {
   vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
