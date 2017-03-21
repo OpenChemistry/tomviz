@@ -254,6 +254,64 @@ def get_volume_piecewise(view):
     return None
 
 
+def build_control_points(xrgbArray):
+    minValue = xrgbArray[0]
+    maxValue = xrgbArray[-4]
+    dataRange = maxValue - minValue
+    controlpoints = []
+    offset = 0
+    while offset < len(xrgbArray):
+        controlpoints.append({
+            'x': (xrgbArray[offset] - minValue) / dataRange,
+            'r': xrgbArray[offset + 1],
+            'g': xrgbArray[offset + 2],
+            'b': xrgbArray[offset + 3],
+        })
+        offset += 4
+    return controlpoints
+
+
+def get_volume_lookuptable_section(view):
+    renderer = view.GetClientSideObject().GetRenderer()
+    for volume in renderer.GetVolumes():
+        if volume.GetClassName() == 'vtkVolume':
+            array = volume.GetMapper().GetInput().GetPointData().GetScalars()
+            fielName = array.GetName()
+            lut = volume.GetProperty().GetRGBTransferFunction()
+            controlpoints = []
+            tupleHolder = range(6)
+            for i in range(lut.GetSize()):
+                lut.GetNodeValue(i, tupleHolder)
+                controlpoints.append({
+                    'x': tupleHolder[0],
+                    'r': tupleHolder[1],
+                    'g': tupleHolder[2],
+                    'b': tupleHolder[3],
+                })
+
+            # Need to rescale x between [0, 1] for pvw
+            minValue = controlpoints[0]['x']
+            maxValue = controlpoints[-1]['x']
+            dataRange = maxValue - minValue
+            for node in controlpoints:
+                node['x'] = (node['x'] - minValue) / dataRange
+
+            return {fielName: {'controlpoints': controlpoints}}
+    return {}
+
+
+def get_source_lookuptable_section(source):
+    luts = {}
+    rep = simple.GetRepresentation(source)
+    name = rep.ColorArrayName[1]
+    lut = rep.LookupTable
+    if lut:
+        controlpoints = build_control_points(lut.RGBPoints)
+        luts[name] = {'controlpoints': controlpoints}
+
+    return luts
+
+
 def get_contour():
     for key, value in py2to3.iteritems(simple.GetSources()):
         if 'FlyingEdges' in key[0]:
@@ -385,8 +443,13 @@ def export_contours_geometry(destinationPath, **kwargs):
         count += 1
 
     if count > 1:
+        contour = sceneDescription['scene'][0]['source']
+        sections = {
+            'LookupTables': get_source_lookuptable_section(contour)
+        }
         # Create geometry Builder
-        dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
+        dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription,
+                                        {}, sections)
         dsb.start()
         dsb.writeData(0)
         dsb.stop()
@@ -409,25 +472,28 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
             contour = value
 
     if contour:
+        sections = {'LookupTables': get_source_lookuptable_section(contour)}
+        scalarName = simple.GetRepresentation(contour).ColorArrayName[1]
         originalValue = [v for v in contour.Value]
         sceneDescription = {
             'scene': [{
                 'name': 'Contour',
                 'source': contour,
                 'colors': {
-                    'Scalar': {
+                    scalarName: {
                         'constant': 0,
                         'location': 'POINT_DATA'
                     }
                 }
             }]
         }
-        dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription)
+        dsb = VTKGeometryDataSetBuilder(destinationPath, sceneDescription,
+                                        {}, sections)
         dsb.getDataHandler().registerArgument(priority=1, name='contour',
                                               values=values,
                                               ui='slider', loop='modulo')
         dsb.start()
-        scalarContainer = sceneDescription['scene'][0]['colors']['Scalar']
+        scalarContainer = sceneDescription['scene'][0]['colors'][scalarName]
         for contourValue in dsb.getDataHandler().contour:
             contour.Value = [contourValue]
             scalarContainer['constant'] = contourValue
@@ -449,7 +515,13 @@ def export_contour_exploration_geometry(destinationPath, **kwargs):
 
 
 def export_volume(destinationPath, **kwargs):
+    producer = get_trivial_producer()
+    if not producer:
+        return
+
     scale = int(kwargs['volumeScale'])
+    view = simple.GetRenderView()
+    arraName = producer.GetPointDataInformation().GetArray(0).Name
     indexJSON = {
         'type': ['tonic-query-data-model', 'vtk-volume'],
         'arguments': {},
@@ -474,7 +546,7 @@ def export_volume(destinationPath, **kwargs):
             'arrays': [{
                 'data': {
                     'numberOfComponents': 1,
-                    'name': 'Scalars',
+                    'name': arraName,
                     'vtkClass': 'vtkDataArray',
                     'dataType': 'Uint8Array',
                     'ref': {
@@ -488,10 +560,9 @@ def export_volume(destinationPath, **kwargs):
             }]
         }
     }
-    # Extract scalars
-    producer = get_trivial_producer()
-    if not producer:
-        return
+
+    # Add color map
+    indexJSON['LookupTables'] = get_volume_lookuptable_section(view)
 
     # create directories if need be
     dataDir = os.path.join(destinationPath, 'data')
@@ -515,7 +586,6 @@ def export_volume(destinationPath, **kwargs):
     volumeJSON['pointData']['arrays'][0]['data']['size'] = arraySize
 
     # Extract piecewise function
-    view = simple.GetRenderView()
     pvw = get_volume_piecewise(view)
     if pvw:
         piecewiseNodes = []
