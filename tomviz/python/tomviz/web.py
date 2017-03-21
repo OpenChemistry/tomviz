@@ -13,6 +13,7 @@ from tomviz import py2to3
 
 DATA_DIRECTORY = 'data'
 HTML_FILENAME = 'tomviz.html'
+JS_FILENAME = 'tomviz.js'
 HTML_WITH_DATA_FILENAME = 'tomviz_data.html'
 DATA_FILENAME = 'data.tomviz'
 
@@ -150,9 +151,21 @@ def copy_viewer(destinationPath, executionPath):
         searchPath = os.path.normpath(os.path.join(searchPath, '..'))
         for root, dirs, files in os.walk(searchPath):
             if HTML_FILENAME in files and root != destinationPath:
-                srcFile = os.path.join(root, HTML_FILENAME)
-                shutil.copy(srcFile, destinationPath)
-                return
+                srcHtmlFile = os.path.join(root, HTML_FILENAME)
+                srcJsFile = os.path.join(root, JS_FILENAME)
+                dstHtmlFile = os.path.join(destinationPath, HTML_FILENAME)
+                with open(srcHtmlFile, mode='r') as srcHTML:
+                    with open(srcJsFile, mode='r') as srcJS:
+                        with open(dstHtmlFile, mode='w') as dstHTML:
+                            for line in srcHTML:
+                                if '</body>' in line:
+                                    dstHTML.write('<script type="text/javascript">\n')
+                                    dstHTML.write(srcJS.read())
+                                    dstHTML.write('\n</script>\n</body>\n')
+                                else:
+                                    dstHTML.write(line)
+
+                            return
 
 
 def add_scene_item(scene, name, proxy, view):
