@@ -154,18 +154,17 @@ def copy_viewer(destinationPath, executionPath):
                 srcHtmlFile = os.path.join(root, HTML_FILENAME)
                 srcJsFile = os.path.join(root, JS_FILENAME)
                 dstHtmlFile = os.path.join(destinationPath, HTML_FILENAME)
-                with open(srcHtmlFile, mode='r') as srcHTML:
-                    with open(srcJsFile, mode='r') as srcJS:
-                        with open(dstHtmlFile, mode='w') as dstHTML:
-                            for line in srcHTML:
-                                if '</body>' in line:
-                                    dstHTML.write('<script type="text/javascript">\n')
-                                    dstHTML.write(srcJS.read())
-                                    dstHTML.write('\n</script>\n</body>\n')
-                                else:
-                                    dstHTML.write(line)
-
-                            return
+                with open(srcHtmlFile, mode='r') as srcHTML, \
+                        open(srcJsFile, mode='r') as srcJS, \
+                        open(dstHtmlFile, mode='w') as dstHTML:
+                    for line in srcHTML:
+                        if '</body>' in line:
+                            dstHTML.write('<script type="text/javascript">\n')
+                            dstHTML.write(srcJS.read())
+                            dstHTML.write('\n</script>\n</body>\n')
+                        else:
+                            dstHTML.write(line)
+                    return
 
 
 def add_scene_item(scene, name, proxy, view):
