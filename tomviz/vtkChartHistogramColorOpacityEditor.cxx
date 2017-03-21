@@ -160,6 +160,7 @@ void vtkChartHistogramColorOpacityEditor::SetColorTransferFunction(
   this->HistogramChart->SetLookupTable(ctf);
   this->ColorTransferFunctionItem->SetColorTransferFunction(ctf);
   this->ColorTransferControlPointsItem->SetColorTransferFunction(ctf);
+  this->ColorTransferFunctionChart->RecalculateBounds();
 }
 
 void vtkChartHistogramColorOpacityEditor::SetScalarVisibility(bool visible)
