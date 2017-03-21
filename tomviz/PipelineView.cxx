@@ -377,9 +377,12 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
         m_operatorDialog->reject();
       }
       // Create a non-modal dialog, delete it once it has been closed.
+      QString dialogTitle("Edit - ");
+      dialogTitle.append(op->label());
       m_operatorDialog = new EditOperatorDialog(op, op->dataSource(), false,
                                                 pqCoreUtilities::mainWidget());
       m_operatorDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+      m_operatorDialog->setWindowTitle(dialogTitle);
       m_operatorDialog->show();
 
       // Close the dialog if the Operator is destroyed.
