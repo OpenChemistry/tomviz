@@ -42,8 +42,8 @@
 namespace tomviz {
 
 GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
-  : QWidget(parent_), m_qvtk(new QVTKOpenGLWidget(this))
-  , m_adjustedTable(nullptr)
+  : QWidget(parent_), m_qvtk(new QVTKOpenGLWidget(this)),
+    m_adjustedTable(nullptr)
 {
   // Set up our little chart.
   vtkNew<vtkGenericOpenGLRenderWindow> window_;
@@ -100,7 +100,8 @@ void GradientOpacityWidget::setInputData(vtkTable* table, const char* x_,
   m_histogramView->Render();
 }
 
-void GradientOpacityWidget::prepareAdjustedTable(vtkTable* table, const char* x_)
+void GradientOpacityWidget::prepareAdjustedTable(vtkTable* table,
+                                                 const char* x_)
 {
   m_adjustedTable = vtkSmartPointer<vtkTable>::New();
 
@@ -112,11 +113,18 @@ void GradientOpacityWidget::prepareAdjustedTable(vtkTable* table, const char* x_
   extents->SetName(vtkStdString("image_extents").c_str());
   extents->SetNumberOfComponents(1);
   extents->SetNumberOfTuples(numBins);
-  const float step = static_cast<float>(
-    (range[1] - range[0] + 1.0) / (4.0 * static_cast<double>(numBins)));
+  const float step = static_cast<float>((range[1] - range[0]) /
+                                        (4.0 * static_cast<double>(numBins)));
+
   auto extentsData = static_cast<float*>(extents->GetVoidPointer(0));
   for (vtkIdType i = 0; i < numBins; i++) {
     extentsData[i] = i * step;
+
+    // Add two extra steps in the last table value. This is done to adjust the
+    // range of the chart so that the last point is not occluded.
+    if (i == numBins - 1) {
+      extentsData[i] = (i + 2) * step;
+    }
   }
 
   vtkIntArray* pops = vtkIntArray::New();
@@ -125,7 +133,7 @@ void GradientOpacityWidget::prepareAdjustedTable(vtkTable* table, const char* x_
   pops->SetNumberOfTuples(numBins);
   // Initialize with a value > 1.0 so that the y-axis range displays correctly
   memset(pops->GetVoidPointer(0), 10,
-    sizeof(int) * static_cast<size_t>(numBins));
+         sizeof(int) * static_cast<size_t>(numBins));
 
   m_adjustedTable->AddColumn(extents);
   m_adjustedTable->AddColumn(pops);

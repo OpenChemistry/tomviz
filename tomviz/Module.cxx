@@ -170,11 +170,13 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
   if (numPoints == 0) {
     vtkColorTransferFunction* lut =
       vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject());
+
     double range[2];
     lut->GetRange(range);
+
     // For gradient magnitude, the volume mapper's fragment shader expects a
     // range of [0, DataMax/4].
-    const double maxValue = (range[1] - range[0] + 1.0) / 4.0;
+    const double maxValue = (range[1] - range[0]) / 4.0;
     gof->AddPoint(0.0, 0.0);
     gof->AddPoint(maxValue, 1.0);
   }

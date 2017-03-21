@@ -196,6 +196,11 @@ void vtkChartHistogram::SetHistogramVisible(bool visible)
   this->HistogramPlotBar->SetVisible(visible);
 }
 
+void vtkChartHistogram::SetMarkerVisible(bool visible)
+{
+  this->Marker->SetVisible(visible);
+}
+
 void vtkChartHistogram::ScalarVisibilityOn()
 {
   this->HistogramPlotBar->ScalarVisibilityOn();
