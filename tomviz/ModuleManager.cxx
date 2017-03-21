@@ -154,6 +154,7 @@ void ModuleManager::addModule(Module* module)
     this->Internals->ViewModules.insert(module->view(), module);
 
     emit this->moduleAdded(module);
+    connect(module, &Module::renderNeeded, this, &ModuleManager::render);
   }
 }
 
@@ -695,6 +696,15 @@ void ModuleManager::onViewRemoved(pqView *view)
   }
   foreach (Module* module, modules) {
     this->removeModule(module);
+  }
+}
+
+void ModuleManager::render()
+{
+  pqView* view =
+    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view) {
+    view->render();
   }
 }
 

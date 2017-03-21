@@ -95,6 +95,8 @@ private slots:
   /// Delete modules when the view that they are in is removed.
   void onViewRemoved(pqView*);
 
+  void render();
+
 signals:
   void moduleAdded(Module*);
   void moduleRemoved(Module*);

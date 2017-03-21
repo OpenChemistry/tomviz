@@ -37,7 +37,6 @@ private slots:
   void setModule(Module*);
   void setView(vtkSMViewProxy*);
   void updatePanel();
-  void render();
   void detachColorMap(bool);
 
 private:

@@ -68,8 +68,6 @@ void ModulePropertiesPanel::setModule(Module* module)
       DataSource* dataSource = this->Internals->ActiveModule->dataSource();
       QObject::disconnect(dataSource, SIGNAL(dataChanged()), this,
                           SLOT(updatePanel()));
-      QObject::disconnect(this->Internals->ActiveModule, SIGNAL(renderNeeded()),
-                          this, SLOT(render()));
       this->Internals->ActiveModule->prepareToRemoveFromPanel(this);
     }
 
@@ -77,7 +75,6 @@ void ModulePropertiesPanel::setModule(Module* module)
       DataSource* dataSource = module->dataSource();
       QObject::connect(dataSource, SIGNAL(dataChanged()), this,
                        SLOT(updatePanel()));
-      QObject::connect(module, SIGNAL(renderNeeded()), this, SLOT(render()));
     }
   }
 
@@ -111,14 +108,6 @@ void ModulePropertiesPanel::updatePanel()
 {
 }
 
-void ModulePropertiesPanel::render()
-{
-  pqView* view =
-    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  if (view) {
-    view->render();
-  }
-}
 
 void ModulePropertiesPanel::detachColorMap(bool val)
 {
@@ -126,7 +115,7 @@ void ModulePropertiesPanel::detachColorMap(bool val)
   if (module) {
     module->setUseDetachedColorMap(val);
     this->setModule(module); // refreshes the module.
-    this->render();
+    emit module->renderNeeded();
   }
 }
 
