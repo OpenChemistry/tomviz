@@ -239,7 +239,7 @@ void SelectVolumeWidget::updateBounds(double* newBounds)
   double bnds[6];
   for (int i = 0; i < 3; ++i) {
     bnds[2 * i] = newBounds[2 * i] - this->Internals->dataPosition[i];
-    bnds[2 * i + 1] = newBounds[2 * i] - this->Internals->dataPosition[i];
+    bnds[2 * i + 1] = newBounds[2 * i + 1] - this->Internals->dataPosition[i];
   }
   vtkBoundingBox newBoundingBox(bnds);
 
