@@ -19,6 +19,7 @@
 #include <QWidget>
 
 #include <vtkNew.h>
+#include <vtkSmartPointer.h>
 
 /**
  * \brief Similar to HistogramWidget but keeps everything client side
@@ -68,7 +69,17 @@ protected:
 private:
   void renderViews();
 
+  /**
+   * For gradient magnitude, the volume mapper's fragment shader expects a
+   * range of [0, DataMax/4].  As the gradient magnitude histogram is currently
+   * not being computed, a dummy table is created here just to adjust the range.
+   * This will change once the actual histogram is computed.
+   */
+  void prepareAdjustedTable(vtkTable* table, const char* x_);
+
   QVTKOpenGLWidget* m_qvtk;
+
+  vtkSmartPointer<vtkTable> m_adjustedTable;
 };
 }
 #endif // tomvizGradientOpacityWidget_h
