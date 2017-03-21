@@ -621,20 +621,27 @@ DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator* op)
   vtkSmartPointer<vtkImageData> result = vtkSmartPointer<vtkImageData>::New();
   ImageFuture* imageFuture;
   if (this->Internals->Operators.contains(op)) {
-    vtkAlgorithm* alg = vtkAlgorithm::SafeDownCast(
-      this->Internals->OriginalDataSource->GetClientSideObject());
-    result->DeepCopy(alg->GetOutputDataObject(0));
+    if (this->Internals->Operators.size() > 1) {
+      vtkAlgorithm* alg = vtkAlgorithm::SafeDownCast(
+        this->Internals->OriginalDataSource->GetClientSideObject());
+      result->DeepCopy(alg->GetOutputDataObject(0));
 
-    auto index = this->Internals->Operators.indexOf(op);
-    // Only run operators if we have some to run
-    if (index > 0) {
-      auto future = this->Internals->Worker->run(
-        result, this->Internals->Operators.mid(0, index));
+      auto index = this->Internals->Operators.indexOf(op);
+      // Only run operators if we have some to run
+      if (index > 0) {
+        auto future = this->Internals->Worker->run(
+          result, this->Internals->Operators.mid(0, index));
 
-      imageFuture = new ImageFuture(op, result, future);
-      connect(imageFuture, SIGNAL(finished(bool)), this, SLOT(updateCache()));
+        imageFuture = new ImageFuture(op, result, future);
+        connect(imageFuture, SIGNAL(finished(bool)), this, SLOT(updateCache()));
 
-      return imageFuture;
+        return imageFuture;
+      }
+    } else { // this->Internals->Operators.size() == 1
+      // If there is one operator, copy the original data source to the current
+      // data set. Otherwise, a copy is not needed.
+      auto data = copyOriginalData();
+      setData(data);
     }
   }
 
