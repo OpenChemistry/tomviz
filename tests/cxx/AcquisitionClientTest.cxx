@@ -73,7 +73,7 @@ private slots:
 
                      });
 
-    int tries = 10;
+    int tries = 20;
     while (!this->serverStarted && tries != 0) {
       manager->get(QNetworkRequest(QUrl(this->url)));
       QCoreApplication::processEvents();
