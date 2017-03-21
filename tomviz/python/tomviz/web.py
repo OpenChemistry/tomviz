@@ -71,7 +71,9 @@ def web_export(*args, **kwargs):
 
     # Setup application
     copy_viewer(destPath, executionPath)
-    bundleDataToHTML(destPath, keepData)
+
+    # Compress only geometry data
+    bundleDataToHTML(destPath, keepData, exportType > 2)
 
     # Restore initial parameters
     for prop in viewState:
@@ -82,7 +84,8 @@ def web_export(*args, **kwargs):
 # -----------------------------------------------------------------------------
 
 
-def bundleDataToHTML(destinationPath, keepData):
+def bundleDataToHTML(destinationPath, keepData, compress=False):
+    compression_type = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
     dataDir = os.path.join(destinationPath, DATA_DIRECTORY)
     srcHtmlPath = os.path.join(destinationPath, HTML_FILENAME)
     dstHtmlPath = os.path.join(destinationPath, HTML_WITH_DATA_FILENAME)
@@ -123,16 +126,15 @@ def bundleDataToHTML(destinationPath, keepData):
                         dstHtml.write(line)
 
         # Generate zip file for the data
-        if keepData:
-            if os.path.exists(dataDir):
-                with zipfile.ZipFile(dstDataPath, mode='w') as zf:
-                    for dirName, subdirList, fileList in os.walk(dataDir):
-                        for fname in fileList:
-                            fullPath = os.path.join(dirName, fname)
-                            filePath = os.path.relpath(fullPath, dataDir)
-                            relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
-                            zf.write(fullPath, arcname=relPath,
-                                     compress_type=zipfile.ZIP_STORED)
+        if keepData and os.path.exists(dataDir):
+            with zipfile.ZipFile(dstDataPath, mode='w') as zf:
+                for dirName, subdirList, fileList in os.walk(dataDir):
+                    for fname in fileList:
+                        fullPath = os.path.join(dirName, fname)
+                        filePath = os.path.relpath(fullPath, dataDir)
+                        relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
+                        zf.write(fullPath, arcname=relPath,
+                                 compress_type=compression_type)
 
         # Cleanup
         os.remove(srcHtmlPath)
