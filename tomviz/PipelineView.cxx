@@ -372,14 +372,18 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
   Q_ASSERT(pipelineModel);
   if (auto op = pipelineModel->op(idx)) {
     if (op->hasCustomUI()) {
+      if (m_operatorDialog) {
+        // Close the existing operator dialog if open.
+        m_operatorDialog->reject();
+      }
       // Create a non-modal dialog, delete it once it has been closed.
-      EditOperatorDialog* dialog = new EditOperatorDialog(
-        op, op->dataSource(), false, pqCoreUtilities::mainWidget());
-      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-      dialog->show();
+      m_operatorDialog = new EditOperatorDialog(op, op->dataSource(), false,
+                                                pqCoreUtilities::mainWidget());
+      m_operatorDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+      m_operatorDialog->show();
 
       // Close the dialog if the Operator is destroyed.
-      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+      connect(op, SIGNAL(destroyed()), m_operatorDialog, SLOT(reject()));
     }
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
