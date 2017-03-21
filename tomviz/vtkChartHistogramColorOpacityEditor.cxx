@@ -136,6 +136,7 @@ void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(
 
   if (!this->ColorTransferFunctionChart->GetVisible()) {
     this->ColorTransferFunctionChart->SetVisible(true);
+    this->ColorTransferFunctionChart->RecalculateBounds();
   }
 
   // The histogram chart bottom axis range was updated in the call above.
