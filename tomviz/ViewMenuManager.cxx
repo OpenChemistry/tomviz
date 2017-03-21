@@ -42,9 +42,8 @@ namespace tomviz {
 
 ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   : pqViewMenuManager(mainWindow, menu), perspectiveProjectionAction(nullptr),
-    orthographicProjectionAction(nullptr), showAxisGridAction(nullptr),
-    scaleLegendCubeAction(nullptr), scaleLegendRulerAction(nullptr),
-    hideScaleLegendAction(nullptr)
+    orthographicProjectionAction(nullptr), scaleLegendCubeAction(nullptr),
+    scaleLegendRulerAction(nullptr), hideScaleLegendAction(nullptr)
 {
   this->viewPropertiesDialog = new QDialog(mainWindow);
   this->viewPropertiesDialog->setWindowTitle("View Properties");
@@ -77,10 +76,6 @@ void ViewMenuManager::buildMenu()
   if (this->perspectiveProjectionAction) {
     perspectiveProjectionChecked =
       this->perspectiveProjectionAction->isChecked();
-  }
-  bool axisGridIsShowing = false;
-  if (this->showAxisGridAction) {
-    axisGridIsShowing = this->showAxisGridAction->isChecked();
   }
   bool hideScaleLegendIsEnabled = false;
   if (this->hideScaleLegendAction) {
@@ -116,14 +111,6 @@ void ViewMenuManager::buildMenu()
                 SLOT(setProjectionModeToOrthographic()));
 
   this->Menu->addSeparator();
-
-  this->showAxisGridAction = this->Menu->addAction("Show Axis Grid");
-  this->showAxisGridAction->setCheckable(true);
-  this->showAxisGridAction->setChecked(axisGridIsShowing);
-  this->showAxisGridAction->setEnabled(this->View &&
-                                       this->View->GetProperty("AxesGrid"));
-  this->connect(this->showAxisGridAction, SIGNAL(triggered(bool)),
-                SLOT(setShowAxisGrid(bool)));
 
   {
     QMenu* scaleLegendMenu = this->Menu->addMenu("Scale Legend");
@@ -226,16 +213,6 @@ void ViewMenuManager::onViewPropertyChanged()
 
 void ViewMenuManager::onViewChanged()
 {
-  if (this->View) {
-    if (this->View->GetProperty("AxesGrid")) {
-      vtkSMProxy* grid =
-        vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
-      if (grid) {
-        grid->RemoveObserver(this->AxesGridObserverId);
-      }
-      this->View->RemoveObserver(this->ViewObserverId);
-    }
-  }
   this->View = ActiveObjects::instance().activeView();
   if (this->View) {
     this->ViewObserverId =
@@ -251,15 +228,7 @@ void ViewMenuManager::onViewChanged()
         this->View->UpdateVTKObjects();
         proxy->Delete();
       }
-      this->AxesGridObserverId =
-        pqCoreUtilities::connect(proxy, vtkCommand::PropertyModifiedEvent, this,
-                                 SLOT(onAxesGridChanged()));
     }
-  }
-  bool enableAxesGrid = (this->View && this->View->GetProperty("AxesGrid"));
-  // We have to check since this can be called before buildMenu
-  if (this->showAxisGridAction) {
-    this->showAxisGridAction->setEnabled(enableAxesGrid);
   }
   bool enableProjectionModes =
     (this->View && this->View->GetProperty("CameraParallelProjection"));
@@ -267,41 +236,6 @@ void ViewMenuManager::onViewChanged()
   if (this->orthographicProjectionAction && this->perspectiveProjectionAction) {
     this->orthographicProjectionAction->setEnabled(enableProjectionModes);
     this->perspectiveProjectionAction->setEnabled(enableProjectionModes);
-  }
-}
-
-void ViewMenuManager::setShowAxisGrid(bool show)
-{
-  if (!this->View->GetProperty("AxesGrid")) {
-    return;
-  }
-  vtkSMProxy* axesGrid =
-    vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
-  int showing = vtkSMPropertyHelper(axesGrid, "Visibility").GetAsInt();
-  if (showing && !show) {
-    vtkSMPropertyHelper(axesGrid, "Visibility").Set(0);
-  } else if (!showing && show) {
-    vtkSMPropertyHelper(axesGrid, "Visibility").Set(1);
-  }
-  axesGrid->UpdateVTKObjects();
-  pqView* view = tomviz::convert<pqView*>(this->View);
-  if (view) {
-    view->render();
-  }
-}
-
-void ViewMenuManager::onAxesGridChanged()
-{
-  if (!this->showAxisGridAction) {
-    return;
-  }
-  vtkSMProxy* axesGrid =
-    vtkSMPropertyHelper(this->View, "AxesGrid").GetAsProxy();
-  int showing = vtkSMPropertyHelper(axesGrid, "Visibility").GetAsInt();
-  if (showing && !this->showAxisGridAction->isChecked()) {
-    this->showAxisGridAction->setChecked(true);
-  } else if (!showing && this->showAxisGridAction->isChecked()) {
-    this->showAxisGridAction->setChecked(false);
   }
 }
 }
