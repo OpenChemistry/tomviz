@@ -28,8 +28,8 @@
 #include <pqColorChooserButton.h>
 #include <vtkGridAxes3DActor.h>
 #include <vtkPVRenderView.h>
-#include <vtkRenderer.h>
 #include <vtkProperty.h>
+#include <vtkRenderer.h>
 #include <vtkTextProperty.h>
 
 #include <QCheckBox>
@@ -178,8 +178,6 @@ bool ModuleOutline::deserialize(const pugi::xml_node& ns)
       }
       updateGridAxesColor(rgb);
     }
-
-
   }
 
   return Module::deserialize(ns);
@@ -241,19 +239,19 @@ void ModuleOutline::addToPanel(QWidget* panel)
   if (!showAxes->isChecked()) {
     showGrid->setEnabled(false);
   }
-  connect(showAxes, &QCheckBox::stateChanged, this, [this, showGrid](int state) {
-    this->m_gridAxes->SetVisibility(state == Qt::Checked);
-    // Uncheck "Show Grid" and disable it
-    if (state == Qt::Unchecked) {
-      showGrid->setChecked(false);
-      showGrid->setEnabled(false);
-    }
-    else {
-      showGrid->setEnabled(true);
-    }
+  connect(showAxes, &QCheckBox::stateChanged, this,
+          [this, showGrid](int state) {
+            this->m_gridAxes->SetVisibility(state == Qt::Checked);
+            // Uncheck "Show Grid" and disable it
+            if (state == Qt::Unchecked) {
+              showGrid->setChecked(false);
+              showGrid->setEnabled(false);
+            } else {
+              showGrid->setEnabled(true);
+            }
 
-    emit this->renderNeeded();
-  });
+            emit this->renderNeeded();
+          });
   showAxesLayout->addWidget(showAxes);
 
   QVBoxLayout* panelLayout = new QVBoxLayout;
@@ -268,14 +266,15 @@ void ModuleOutline::addToPanel(QWidget* panel)
     this->OutlineRepresentation,
     this->OutlineRepresentation->GetProperty("DiffuseColor"));
 
-  this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, [this](const QColor& color) {
-    double rgb[3];
-    rgb[0] = color.redF();
-    rgb[1] = color.greenF();
-    rgb[2] = color.blueF();
-    updateGridAxesColor(rgb);
+  this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged,
+                [this](const QColor& color) {
+                  double rgb[3];
+                  rgb[0] = color.redF();
+                  rgb[1] = color.greenF();
+                  rgb[2] = color.blueF();
+                  updateGridAxesColor(rgb);
 
-  });
+                });
   this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
                 &ModuleOutline::dataUpdated);
 }
@@ -363,7 +362,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   });
 }
 
-void ModuleOutline::updateGridAxesColor(double *color)
+void ModuleOutline::updateGridAxesColor(double* color)
 {
   for (int i = 0; i < 6; i++) {
     vtkNew<vtkTextProperty> prop;
@@ -372,7 +371,8 @@ void ModuleOutline::updateGridAxesColor(double *color)
     m_gridAxes->SetLabelTextProperty(i, prop.Get());
   }
   m_gridAxes->GetProperty()->SetDiffuseColor(color);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor").Set(color, 3);
+  vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor")
+    .Set(color, 3);
   this->OutlineRepresentation->UpdateVTKObjects();
 }
 
