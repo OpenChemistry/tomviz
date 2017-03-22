@@ -136,6 +136,7 @@ void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(
 
   if (!this->ColorTransferFunctionChart->GetVisible()) {
     this->ColorTransferFunctionChart->SetVisible(true);
+    this->ColorTransferFunctionChart->RecalculateBounds();
   }
 
   // The histogram chart bottom axis range was updated in the call above.
@@ -159,6 +160,7 @@ void vtkChartHistogramColorOpacityEditor::SetColorTransferFunction(
   this->HistogramChart->SetLookupTable(ctf);
   this->ColorTransferFunctionItem->SetColorTransferFunction(ctf);
   this->ColorTransferControlPointsItem->SetColorTransferFunction(ctf);
+  this->ColorTransferFunctionChart->RecalculateBounds();
 }
 
 void vtkChartHistogramColorOpacityEditor::SetScalarVisibility(bool visible)
