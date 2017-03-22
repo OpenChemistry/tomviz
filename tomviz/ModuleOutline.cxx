@@ -29,6 +29,7 @@
 #include <vtkGridAxes3DActor.h>
 #include <vtkPVRenderView.h>
 #include <vtkRenderer.h>
+#include <vtkProperty.h>
 
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -210,6 +211,9 @@ void ModuleOutline::addToPanel(QWidget* panel)
     this->OutlineRepresentation,
     this->OutlineRepresentation->GetProperty("DiffuseColor"));
 
+  this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, [this](const QColor& color) {
+    m_gridAxes->GetProperty()->SetDiffuseColor(color.redF(), color.greenF(), color.blueF());
+  });
   this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
                 &ModuleOutline::dataUpdated);
 }
@@ -270,6 +274,13 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
 
   updateGridAxesBounds(data);
   m_gridAxes->SetVisibility(0);
+
+  // Work around a bug in vtkGridAxes3DActor. GetProperty() returns the
+  // vtkProperty associated with a single face, so to get a property associated
+  // with all the faces, we need to create a new one and set it.
+  vtkNew<vtkProperty> prop;
+  prop->DeepCopy(m_gridAxes->GetProperty());
+  this->m_gridAxes->SetProperty(prop.Get());
 
   // Set the titles
   QString xTitle = QString("X (%1)").arg(data->getUnits(0));
