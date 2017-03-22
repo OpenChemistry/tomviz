@@ -61,9 +61,6 @@ public:
 
   bool supportsGradientOpacity() override { return true; }
 
-protected slots:
-  void dataChanged();
-
 protected:
   void updateColorMap() override;
   std::string getStringForProxy(vtkSMProxy* proxy) override;
