@@ -23,6 +23,12 @@ ResetReaction::ResetReaction(QAction* parentObject) : Superclass(parentObject)
 {
 }
 
+void ResetReaction::updateEnableState()
+{
+  bool enabled = !ModuleManager::instance().hasRunningOperators();
+  parentAction()->setEnabled(enabled);
+}
+
 void ResetReaction::reset()
 {
   ModuleManager::instance().reset();

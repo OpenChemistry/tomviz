@@ -368,7 +368,9 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   new SaveLoadStateReaction(ui.actionSaveState);
   new SaveLoadStateReaction(ui.actionLoadState, /*load*/ true);
 
-  new ResetReaction(ui.actionReset);
+  auto reaction = new ResetReaction(ui.actionReset);
+  connect(ui.menu_File, &QMenu::aboutToShow, reaction,
+          &ResetReaction::updateEnableState);
 
   ViewMenuManager* viewMenuManager = new ViewMenuManager(this, ui.menuView);
 

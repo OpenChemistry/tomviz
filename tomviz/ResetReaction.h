@@ -29,6 +29,8 @@ public:
 
   static void reset();
 
+  void updateEnableState() override;
+
 protected:
   void onTriggered() override { reset(); }
 
