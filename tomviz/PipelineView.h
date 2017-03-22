@@ -16,6 +16,7 @@
 #ifndef tomvizPipelineView_h
 #define tomvizPipelineView_h
 
+#include <QMap>
 #include <QPointer>
 #include <QTreeView>
 
@@ -52,9 +53,10 @@ private slots:
   void setCurrent(Operator* op);
   void deleteItemsConfirm(const QModelIndexList& idxs);
   void setModuleVisibility(const QModelIndexList& idxs, bool visible);
+  void unmapOperatorDialog(Operator* op);
 
 private:
-  QPointer<EditOperatorDialog> m_operatorDialog;
+  QMap<Operator*, QPointer<EditOperatorDialog>> m_operatorDialogs;
 };
 }
 
