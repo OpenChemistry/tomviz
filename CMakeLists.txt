@@ -104,9 +104,9 @@ set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
 # Section to update when a new version of tomvizweb became available
 # -----------------------------------------------------------------------------
 
-set(tomvizweb_version "1.0.1")
-set(tomviz_js_md5 "750c1650ae9f7662f4310b257d92cb69")
-set(tomviz_html_md5 "15d82bb4ee40d8092c9ae828724d08cd")
+set(tomvizweb_version "1.0.3")
+set(tomviz_js_sha512 "648a1dfa43b584516e2ef0c5dcb0214b78d9e1bebae795d099feca55fa546d903c5d605e1b198e652ec30aa55a83c1e7e5567975df3cec171aeb9f5c76a9cb70")
+set(tomviz_html_sha512 "97d41012baf6300002cd59a6122b1fcedc75014d3ee876fcc9250ce9a6352b00495103473ee9ec28550c275a0038f98b1396306366609197d9901fda4b5d94cd")
 
 # -----------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ if (TOMVIZ_DOWNLOAD_WEB)
   file(DOWNLOAD
     "https://unpkg.com/tomvizweb@${tomvizweb_version}"
     "${tomviz_js_binary_path}"
-    EXPECTED_HASH MD5=${tomviz_js_md5}
+    EXPECTED_HASH SHA512=${tomviz_js_sha512}
     SHOW_PROGRESS
   )
 
@@ -123,7 +123,7 @@ if (TOMVIZ_DOWNLOAD_WEB)
   file(DOWNLOAD
     "https://unpkg.com/tomvizweb@${tomvizweb_version}/Distribution/template.html"
     "${tomviz_html_binary_path}"
-    EXPECTED_HASH MD5=${tomviz_html_md5}
+    EXPECTED_HASH SHA512=${tomviz_html_sha512}
     SHOW_PROGRESS
   )
 endif()
