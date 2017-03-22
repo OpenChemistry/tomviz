@@ -124,6 +124,7 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
 
   xml_node gridAxesNode = rootNode.append_child("grid_axes");
   gridAxesNode.append_attribute("enabled") = m_gridAxes->GetVisibility() > 0;
+  gridAxesNode.append_attribute("grid") = m_gridAxes->GetGenerateGrid();
 
   xml_node color = gridAxesNode.append_child("color");
   double rgb[3];
@@ -155,6 +156,10 @@ bool ModuleOutline::deserialize(const pugi::xml_node& ns)
     xml_attribute att = node.attribute("enabled");
     if (att) {
       m_gridAxes->SetVisibility(att.as_bool() ? 1 : 0);
+    }
+    att = node.attribute("grid");
+    if (att) {
+      m_gridAxes->SetGenerateGrid(att.as_bool());
     }
     xml_node color = node.child("color");
     if (color) {
@@ -216,20 +221,45 @@ void ModuleOutline::addToPanel(QWidget* panel)
   colorSelector->setShowAlphaChannel(false);
   layout->addWidget(colorSelector);
 
-  QHBoxLayout* gridAxesLayout = new QHBoxLayout;
-  QCheckBox* showAxesGrid = new QCheckBox(QString("Show Axes Grid"));
-  showAxesGrid->setChecked(m_gridAxes->GetVisibility() == 1);
+  // Show Grid?
+  QHBoxLayout* showGridLayout = new QHBoxLayout;
+  QCheckBox* showGrid = new QCheckBox(QString("Show Grid"));
+  showGrid->setChecked(m_gridAxes->GetGenerateGrid());
 
-  connect(showAxesGrid, &QCheckBox::stateChanged, this, [this](int state) {
-    this->m_gridAxes->SetVisibility(state == Qt::Checked);
+  connect(showGrid, &QCheckBox::stateChanged, this, [this](int state) {
+    this->m_gridAxes->SetGenerateGrid(state == Qt::Checked);
     emit this->renderNeeded();
   });
 
-  gridAxesLayout->addWidget(showAxesGrid);
+  showGridLayout->addWidget(showGrid);
+
+  // Show Axes?
+  QHBoxLayout* showAxesLayout = new QHBoxLayout;
+  QCheckBox* showAxes = new QCheckBox(QString("Show Axes"));
+  showAxes->setChecked(m_gridAxes->GetVisibility());
+  // Disable "Show Grid" if axes not enabled
+  if (!showAxes->isChecked()) {
+    showGrid->setEnabled(false);
+  }
+  connect(showAxes, &QCheckBox::stateChanged, this, [this, showGrid](int state) {
+    this->m_gridAxes->SetVisibility(state == Qt::Checked);
+    // Uncheck "Show Grid" and disable it
+    if (state == Qt::Unchecked) {
+      showGrid->setChecked(false);
+      showGrid->setEnabled(false);
+    }
+    else {
+      showGrid->setEnabled(true);
+    }
+
+    emit this->renderNeeded();
+  });
+  showAxesLayout->addWidget(showAxes);
 
   QVBoxLayout* panelLayout = new QVBoxLayout;
   panelLayout->addItem(layout);
-  panelLayout->addItem(gridAxesLayout);
+  panelLayout->addItem(showAxesLayout);
+  panelLayout->addItem(showGridLayout);
   panelLayout->addStretch();
   panel->setLayout(panelLayout);
 
@@ -307,6 +337,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
 
   updateGridAxesBounds(data);
   m_gridAxes->SetVisibility(0);
+  m_gridAxes->SetGenerateGrid(false);
 
   // Work around a bug in vtkGridAxes3DActor. GetProperty() returns the
   // vtkProperty associated with a single face, so to get a property associated
