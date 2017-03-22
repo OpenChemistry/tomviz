@@ -132,9 +132,6 @@ void ProgressDialogManager::dataSourceAdded(DataSource* ds)
 
 void ProgressDialogManager::operationProgress(int)
 {
-  // Probably not strictly neccessary in the long run where we have a background
-  // thread, until then we need this call.
-  QCoreApplication::processEvents();
 }
 
 void ProgressDialogManager::showStatusBarMessage(const QString& message)
