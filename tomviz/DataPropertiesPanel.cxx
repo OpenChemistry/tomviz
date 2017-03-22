@@ -275,6 +275,11 @@ void DataPropertiesPanel::updateXLength()
   }
   updateSpacing(0, newLength);
   updateData();
+  DataSource* dsource = m_currentDataSource;
+  if (!dsource) {
+    return;
+  }
+  emit dsource->dataPropertiesChanged();
 }
 
 void DataPropertiesPanel::updateYLength()
@@ -288,6 +293,11 @@ void DataPropertiesPanel::updateYLength()
   }
   updateSpacing(1, newLength);
   updateData();
+  DataSource* dsource = m_currentDataSource;
+  if (!dsource) {
+    return;
+  }
+  emit dsource->dataPropertiesChanged();
 }
 
 void DataPropertiesPanel::updateZLength()
@@ -301,6 +311,11 @@ void DataPropertiesPanel::updateZLength()
   }
   updateSpacing(2, newLength);
   updateData();
+  DataSource* dsource = m_currentDataSource;
+  if (!dsource) {
+    return;
+  }
+  emit dsource->dataPropertiesChanged();
 }
 
 void DataPropertiesPanel::updateAxesGridLabels()

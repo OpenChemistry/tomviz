@@ -23,6 +23,8 @@
 
 class vtkSMSourceProxy;
 class vtkSMProxy;
+class vtkPVRenderView;
+class vtkGridAxes3DActor;
 
 namespace tomviz {
 
@@ -58,10 +60,17 @@ protected:
 private slots:
   void dataUpdated();
 
+  void initializeGridAxes(DataSource* dataSource, vtkSMViewProxy* vtkView);
+  void updateGridAxesBounds(DataSource* dataSource);
+  void updateGridAxesColor(double* color);
+  void updateGridAxesUnit(DataSource* dataSource);
+
 private:
   Q_DISABLE_COPY(ModuleOutline)
   vtkWeakPointer<vtkSMSourceProxy> OutlineFilter;
   vtkWeakPointer<vtkSMProxy> OutlineRepresentation;
+  vtkWeakPointer<vtkPVRenderView> m_view;
+  vtkNew<vtkGridAxes3DActor> m_gridAxes;
   pqPropertyLinks m_links;
 };
 }

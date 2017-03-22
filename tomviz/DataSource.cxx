@@ -222,6 +222,9 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   // every time the data changes, we should update the color map.
   connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
 
+  connect(this, &DataSource::dataPropertiesChanged,
+          [this]() { this->producer()->MarkModified(nullptr); });
+
   resetData();
 
   this->Internals->Worker = new PipelineWorker(this);
@@ -434,6 +437,22 @@ void DataSource::getExtent(int extent[6])
   }
   for (int i = 0; i < 6; ++i) {
     extent[i] = 0;
+  }
+}
+
+void DataSource::getBounds(double bounds[6])
+{
+  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  if (tp) {
+    vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
+    if (data) {
+      data->GetBounds(bounds);
+      return;
+    }
+  }
+  for (int i = 0; i < 6; ++i) {
+    bounds[i] = 0.0;
   }
 }
 
