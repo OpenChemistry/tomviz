@@ -53,8 +53,8 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
             f[:] = 0
             b = tiltSeries[s, :, :].transpose().flatten()
             for i in range(Niter):
-                self.progress.message = 'Slice No.%d/%d, iteration No.%d/%d. ' % (
-                    s + 1, Nslice, i + 1, Niter) + etcMessage
+                self.progress.message = 'Slice No.%d/%d, iteration No.%d/%d. ' \
+                    % (s + 1, Nslice, i + 1, Niter) + etcMessage
                 for j in range(Nrow):
                     row[:] = A[j, ].copy()
                     row_f_product = np.dot(row, f)

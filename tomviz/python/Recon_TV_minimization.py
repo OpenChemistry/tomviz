@@ -48,6 +48,8 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = Niter
         step = 0
         t0 = time.time()
+        counter = 1
+
         etcMessage = 'Estimated time to complete: n/a'
         for i in range(Niter): #main loop
             if self.canceled:
