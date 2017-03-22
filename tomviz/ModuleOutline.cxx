@@ -261,6 +261,7 @@ void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
   double pos[3] = { newX, newY, newZ };
   vtkSMPropertyHelper(this->OutlineRepresentation, "Position").Set(pos, 3);
   this->OutlineRepresentation->UpdateVTKObjects();
+  this->m_gridAxes->SetPosition(newX, newY, newZ);
 }
 
 //-----------------------------------------------------------------------------
