@@ -82,8 +82,6 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     controller->Show(this->OutlineFilter, 0, vtkView);
   vtkSMPropertyHelper(this->OutlineRepresentation, "Position")
     .Set(data->displayPosition(), 3);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor")
-    .Set(offWhite, 3);
   Q_ASSERT(this->OutlineRepresentation);
   // vtkSMPropertyHelper(this->OutlineRepresentation,
   //                    "Representation").Set("Outline");
@@ -96,6 +94,7 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   // Init the grid axes
   initializeGridAxes(data, vtkView);
+  updateGridAxesColor(offWhite);
 
   return true;
 }
