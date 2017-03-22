@@ -215,11 +215,12 @@ bool hasData(vtkSMProxy* reader)
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
 {
-  // Prompt user for reader configuration.
+  // Prompt user for reader configuration, unless it is TIFF.
   pqProxyWidgetDialog dialog(reader);
   dialog.setObjectName("ConfigureReaderDialog");
   dialog.setWindowTitle("Configure Reader Parameters");
-  if (dialog.hasVisibleWidgets() == false ||
+  if (QString(reader->GetXMLName()) == "TIFFSeriesReader" ||
+      dialog.hasVisibleWidgets() == false ||
       dialog.exec() == QDialog::Accepted) {
     DataSource* previousActiveDataSource =
       ActiveObjects::instance().activeDataSource();
