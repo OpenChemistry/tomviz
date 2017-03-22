@@ -315,12 +315,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   this->m_gridAxes->SetProperty(prop.Get());
 
   // Set the titles
-  QString xTitle = QString("X (%1)").arg(data->getUnits(0));
-  QString yTitle = QString("Y (%1)").arg(data->getUnits(1));
-  QString zTitle = QString("Z (%1)").arg(data->getUnits(2));
-  m_gridAxes->SetXTitle(xTitle.toUtf8().data());
-  m_gridAxes->SetYTitle(yTitle.toUtf8().data());
-  m_gridAxes->SetZTitle(zTitle.toUtf8().data());
+  updateGridAxesUnit(data);
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_view->GetRenderer()->AddActor(m_gridAxes.Get());
@@ -328,6 +323,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   connect(data, &DataSource::dataPropertiesChanged, this, [this]() {
     auto dataSource = qobject_cast<DataSource*>(sender());
     this->updateGridAxesBounds(dataSource);
+    this->updateGridAxesUnit(dataSource);
     dataSource->producer()->MarkModified(nullptr);
     dataSource->producer()->UpdatePipeline();
     emit this->renderNeeded();
@@ -346,6 +342,16 @@ void ModuleOutline::updateGridAxesColor(double *color)
   m_gridAxes->GetProperty()->SetDiffuseColor(color);
   vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor").Set(color, 3);
   this->OutlineRepresentation->UpdateVTKObjects();
+}
+
+void ModuleOutline::updateGridAxesUnit(DataSource* dataSource)
+{
+  QString xTitle = QString("X (%1)").arg(dataSource->getUnits(0));
+  QString yTitle = QString("Y (%1)").arg(dataSource->getUnits(1));
+  QString zTitle = QString("Z (%1)").arg(dataSource->getUnits(2));
+  m_gridAxes->SetXTitle(xTitle.toUtf8().data());
+  m_gridAxes->SetYTitle(yTitle.toUtf8().data());
+  m_gridAxes->SetZTitle(zTitle.toUtf8().data());
 }
 
 } // end of namespace tomviz

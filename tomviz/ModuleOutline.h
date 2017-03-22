@@ -59,9 +59,12 @@ protected:
 
 private slots:
   void dataUpdated();
+
+  void initializeGridAxes(DataSource* dataSource, vtkSMViewProxy* vtkView);
   void updateGridAxesBounds(DataSource* dataSource);
   void updateGridAxesColor(double *color);
-  void initializeGridAxes(DataSource* dataSource, vtkSMViewProxy* vtkView);
+  void updateGridAxesUnit(DataSource* dataSource);
+
 
 private:
   Q_DISABLE_COPY(ModuleOutline)
