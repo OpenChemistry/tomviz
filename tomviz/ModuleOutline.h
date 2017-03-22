@@ -60,6 +60,7 @@ protected:
 private slots:
   void dataUpdated();
   void updateGridAxesBounds(DataSource* dataSource);
+  void updateGridAxesColor(double *color);
   void initializeGridAxes(DataSource* dataSource, vtkSMViewProxy* vtkView);
 
 private:

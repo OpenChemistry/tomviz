@@ -30,6 +30,7 @@
 #include <vtkPVRenderView.h>
 #include <vtkRenderer.h>
 #include <vtkProperty.h>
+#include <vtkTextProperty.h>
 
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -170,9 +171,7 @@ bool ModuleOutline::deserialize(const pugi::xml_node& ns)
       if (att) {
         rgb[2] = att.as_double();
       }
-      m_gridAxes->GetProperty()->SetDiffuseColor(rgb);
-      vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor").Set(rgb, 3);
-      this->OutlineRepresentation->UpdateVTKObjects();
+      updateGridAxesColor(rgb);
     }
 
 
@@ -240,7 +239,12 @@ void ModuleOutline::addToPanel(QWidget* panel)
     this->OutlineRepresentation->GetProperty("DiffuseColor"));
 
   this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, [this](const QColor& color) {
-    m_gridAxes->GetProperty()->SetDiffuseColor(color.redF(), color.greenF(), color.blueF());
+    double rgb[3];
+    rgb[0] = color.redF();
+    rgb[1] = color.greenF();
+    rgb[2] = color.blueF();
+    updateGridAxesColor(rgb);
+
   });
   this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
                 &ModuleOutline::dataUpdated);
@@ -329,6 +333,19 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
     emit this->renderNeeded();
 
   });
+}
+
+void ModuleOutline::updateGridAxesColor(double *color)
+{
+  for (int i = 0; i < 6; i++) {
+    vtkNew<vtkTextProperty> prop;
+    prop->SetColor(color);
+    m_gridAxes->SetTitleTextProperty(i, prop.Get());
+    m_gridAxes->SetLabelTextProperty(i, prop.Get());
+  }
+  m_gridAxes->GetProperty()->SetDiffuseColor(color);
+  vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor").Set(color, 3);
+  this->OutlineRepresentation->UpdateVTKObjects();
 }
 
 } // end of namespace tomviz
