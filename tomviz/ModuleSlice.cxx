@@ -110,6 +110,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     this->Widget->SetDisplayOffset(data->displayPosition());
     pqCoreUtilities::connect(this->Widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
+    connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
   }
 
   Q_ASSERT(this->Widget);
@@ -284,6 +285,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
 void ModuleSlice::dataUpdated()
 {
   m_Links.accept();
+  this->Widget->UpdatePlacement();
   emit this->renderNeeded();
 }
 
