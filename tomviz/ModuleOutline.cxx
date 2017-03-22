@@ -124,6 +124,13 @@ bool ModuleOutline::serialize(pugi::xml_node& ns) const
   xml_node gridAxesNode = rootNode.append_child("grid_axes");
   gridAxesNode.append_attribute("enabled") = m_gridAxes->GetVisibility() > 0;
 
+  xml_node color = gridAxesNode.append_child("color");
+  double rgb[3];
+  m_gridAxes->GetProperty()->GetDiffuseColor(rgb);
+  color.append_attribute("r") = rgb[0];
+  color.append_attribute("g") = rgb[1];
+  color.append_attribute("b") = rgb[2];
+
   return true;
 }
 
@@ -148,6 +155,27 @@ bool ModuleOutline::deserialize(const pugi::xml_node& ns)
     if (att) {
       m_gridAxes->SetVisibility(att.as_bool() ? 1 : 0);
     }
+    xml_node color = node.child("color");
+    if (color) {
+      double rgb[3];
+      att = color.attribute("r");
+      if (att) {
+        rgb[0] = att.as_double();
+      }
+      att = color.attribute("g");
+      if (att) {
+        rgb[1] = att.as_double();
+      }
+      att = color.attribute("b");
+      if (att) {
+        rgb[2] = att.as_double();
+      }
+      m_gridAxes->GetProperty()->SetDiffuseColor(rgb);
+      vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor").Set(rgb, 3);
+      this->OutlineRepresentation->UpdateVTKObjects();
+    }
+
+
   }
 
   return Module::deserialize(ns);
