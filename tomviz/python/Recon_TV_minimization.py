@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
 import tomviz.operators
+import time
 
 
 class ReconTVOperator(tomviz.operators.CancelableOperator):
@@ -46,10 +47,13 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
 
         self.progress.maximum = Niter
         step = 0
+        t0 = time.time()
+        etcMessage = 'Estimated time to complete: n/a'
         for i in range(Niter): #main loop
             if self.canceled:
                 return
-            self.progress.message = 'Iteration No.%d/%d' % (i + 1, Niter)
+            self.progress.message = 'Iteration No.%d/%d. ' % (
+                i + 1, Niter) + etcMessage
             recon_temp = recon.copy()
             #ART recon
             for s in range(Nslice): #
@@ -101,6 +105,14 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
             beta = beta * beta_red
             step += 1
             self.progress.value = step
+
+            timeLeft = (time.time() - t0) / counter * \
+                (Nslice * Niter - counter)
+            counter += 1
+            timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+            timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+            etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                timeLeftHour, timeLeftMin, timeLeftSec)
 
         # Set the result as the new scalars.
         utils.set_array(dataset, recon)

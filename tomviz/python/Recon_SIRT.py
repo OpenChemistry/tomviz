@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
 import tomviz.operators
+import time
 
 
 class ReconSirtOperator(tomviz.operators.CancelableOperator):
@@ -49,14 +50,28 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         step += 1
         self.progress.value = step
 
+        t0 = time.time()
+        counter = 1
+        etcMessage = 'Estimated time to complete: n/a'
+
         for s in range(Nslice):
             if self.canceled:
                 return
+            self.progress.message = 'Slice No.%d/%d. ' % (
+                s + 1, Nslice) + etcMessage
+
             b = tiltSeries[s, :, :].transpose().flatten()
-            self.progress.message = 'Slice No.%d/%d' % (s + 1, Nslice)
             recon[s, :, :] = r.recon2(b, Niter, stepSize).reshape((Nray, Nray))
+
             step += 1
             self.progress.value = step
+
+            timeLeft = (time.time() - t0) / counter * (Nslice - counter)
+            counter += 1
+            timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+            timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+            etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                timeLeftHour, timeLeftMin, timeLeftSec)
 
         from vtk import vtkImageData
         recon_dataset = vtkImageData()

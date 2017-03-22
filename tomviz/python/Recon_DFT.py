@@ -1,6 +1,7 @@
 import pyfftw
 import numpy as np
 import tomviz.operators
+import time
 
 
 class ReconDFMOperator(tomviz.operators.CancelableOperator):
@@ -50,10 +51,14 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = Nproj + 1
         step = 0
 
+        t0 = time.time()
+        etcMessage = 'Estimated time to complete: n/a'
+        counter = 1
         for a in range(Nproj):
             if self.canceled:
                 return
-            self.progress.message = 'Tilt image No.%d/%d' % (a + 1, Nproj)
+            self.progress.message = 'Tilt image No.%d/%d. ' % (
+                a + 1, Nproj) + etcMessage
 
             #print angles[a]
             ang = tiltAngles[a] * np.pi / 180
@@ -86,6 +91,12 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
                             weight * probjection_f[:, i]
             step += 1
             self.progress.value = step
+            timeLeft = (time.time() - t0) / counter * (Nproj - counter)
+            counter += 1
+            timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+            timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+            etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                timeLeftHour, timeLeftMin, timeLeftSec)
 
         self.progress.message = 'Inverse Fourier transform'
         v[w != 0] = v[w != 0] / w[w != 0]
