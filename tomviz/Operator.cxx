@@ -31,6 +31,8 @@ Operator::Operator(QObject* parentObject) : QObject(parentObject)
 Operator::~Operator()
 {
   setNumberOfResults(0);
+
+  emit aboutToBeDestroyed(this);
 }
 
 DataSource* Operator::dataSource()

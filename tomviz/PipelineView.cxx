@@ -372,14 +372,29 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
   Q_ASSERT(pipelineModel);
   if (auto op = pipelineModel->op(idx)) {
     if (op->hasCustomUI()) {
-      // Create a non-modal dialog, delete it once it has been closed.
-      EditOperatorDialog* dialog = new EditOperatorDialog(
-        op, op->dataSource(), false, pqCoreUtilities::mainWidget());
-      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-      dialog->show();
+      // See if we already have a dialog open for this operator
+      bool haveDialog = m_operatorDialogs.contains(op) && m_operatorDialogs[op];
+      if (haveDialog) {
+        auto dialog = m_operatorDialogs[op];
+        dialog->show();
+        dialog->raise();
+        dialog->activateWindow();
+      } else {
+        // Create a non-modal dialog, delete it once it has been closed.
+        QString dialogTitle("Edit - ");
+        dialogTitle.append(op->label());
+        auto dialog = new EditOperatorDialog(op, op->dataSource(), false,
+                                             pqCoreUtilities::mainWidget());
+        dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+        dialog->setWindowTitle(dialogTitle);
+        dialog->show();
+        m_operatorDialogs[op] = dialog;
 
-      // Close the dialog if the Operator is destroyed.
-      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+        // Close the dialog if the Operator is destroyed.
+        connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+        connect(op, SIGNAL(aboutToBeDestroyed(Operator*)), this,
+                SLOT(unmapOperatorDialog(Operator*)));
+      }
     }
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
@@ -482,6 +497,13 @@ void PipelineView::setModuleVisibility(const QModelIndexList& idxs,
     if (pqView* view = tomviz::convert<pqView*>(module->view())) {
       view->render();
     }
+  }
+}
+
+void PipelineView::unmapOperatorDialog(Operator* op)
+{
+  if (op && m_operatorDialogs.contains(op)) {
+    m_operatorDialogs.remove(op);
   }
 }
 }

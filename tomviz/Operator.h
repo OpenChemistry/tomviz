@@ -211,6 +211,9 @@ signals:
   /// Emitted when a child data source is create by this operator.
   void newChildDataSource(DataSource*);
 
+  /// Emitted just prior to this object's destruction.
+  void aboutToBeDestroyed(Operator* op);
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
