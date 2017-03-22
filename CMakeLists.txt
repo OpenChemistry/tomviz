@@ -93,23 +93,39 @@ endif()
 # -----------------------------------------------------------------------------
 # Add web application
 # -----------------------------------------------------------------------------
+
 option(TOMVIZ_DOWNLOAD_WEB  "Enable downloading web application." OFF)
-set(tomviz_html_source_path "${CMAKE_SOURCE_DIR}/web/tomviz.html")
-set(tomviz_html_binary_dir "${CMAKE_BINARY_DIR}/web/www")
+
+set(tomviz_html_binary_dir "${CMAKE_BINARY_DIR}/web")
+set(tomviz_js_binary_path "${tomviz_html_binary_dir}/tomviz.js")
 set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
 
+# -----------------------------------------------------------------------------
+# Section to update when a new version of tomvizweb became available
+# -----------------------------------------------------------------------------
+
+set(tomvizweb_version "1.0.3")
+set(tomviz_js_sha512 "648a1dfa43b584516e2ef0c5dcb0214b78d9e1bebae795d099feca55fa546d903c5d605e1b198e652ec30aa55a83c1e7e5567975df3cec171aeb9f5c76a9cb70")
+set(tomviz_html_sha512 "97d41012baf6300002cd59a6122b1fcedc75014d3ee876fcc9250ce9a6352b00495103473ee9ec28550c275a0038f98b1396306366609197d9901fda4b5d94cd")
+
+# -----------------------------------------------------------------------------
 
 if (TOMVIZ_DOWNLOAD_WEB)
-  set(tomviz_html_sha512 "d0a54ea61a53d941e22c43cd75394d9f5f8cffd8703b9f4be7f72dc869ec9f41232c88a66cf796bbb9c1c7988bbb8e00e0bf8421e592232000b1e54cccf4a45c")
-  if (NOT EXISTS "${tomviz_html_source_path}")
-    message(STATUS "Downloading tomviz.html.")
-    file(DOWNLOAD
-      "https://data.kitware.com/api/v1/file/hashsum/sha512/${tomviz_html_sha512}/download"
-      "${tomviz_html_binary_path}"
-      EXPECTED_HASH SHA512=${tomviz_html_sha512}
-      SHOW_PROGRESS
-    )
-  endif()
+  message(STATUS "Downloading tomviz.js")
+  file(DOWNLOAD
+    "https://unpkg.com/tomvizweb@${tomvizweb_version}"
+    "${tomviz_js_binary_path}"
+    EXPECTED_HASH SHA512=${tomviz_js_sha512}
+    SHOW_PROGRESS
+  )
+
+  message(STATUS "Downloading tomviz.html")
+  file(DOWNLOAD
+    "https://unpkg.com/tomvizweb@${tomvizweb_version}/Distribution/template.html"
+    "${tomviz_html_binary_path}"
+    EXPECTED_HASH SHA512=${tomviz_html_sha512}
+    SHOW_PROGRESS
+  )
 endif()
 
 set(tomviz_web_install_dir "share/tomviz/web")
@@ -117,13 +133,16 @@ if(APPLE)
   set(tomviz_web_install_dir "Applications/tomviz.app/Contents/share/tomviz/web")
 endif()
 
-if (EXISTS "${tomviz_html_source_path}")
-    file(COPY "${tomviz_html_source_path}" DESTINATION "${tomviz_html_binary_dir}")
-endif()
-
 if(EXISTS "${tomviz_html_binary_path}")
   install(
     FILES "${tomviz_html_binary_path}"
+    DESTINATION "${tomviz_web_install_dir}"
+    COMPONENT runtime)
+endif()
+
+if(EXISTS "${tomviz_js_binary_path}")
+  install(
+    FILES "${tomviz_js_binary_path}"
     DESTINATION "${tomviz_web_install_dir}"
     COMPONENT runtime)
 endif()
