@@ -344,8 +344,27 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   prop->DeepCopy(m_gridAxes->GetProperty());
   this->m_gridAxes->SetProperty(prop.Get());
 
+  // Set mask to show labels on all axes
+  this->m_gridAxes->SetLabelMask(vtkGridAxes3DActor::LabelMasks::MIN_X |
+                                 vtkGridAxes3DActor::LabelMasks::MIN_Y |
+                                 vtkGridAxes3DActor::LabelMasks::MIN_Z |
+                                 vtkGridAxes3DActor::LabelMasks::MAX_X |
+                                 vtkGridAxes3DActor::LabelMasks::MAX_Y |
+                                 vtkGridAxes3DActor::LabelMasks::MAX_Z);
+
+  // Set mask to render all faces
+  this->m_gridAxes->SetFaceMask(vtkGridAxes3DActor::FaceMasks::MAX_XY |
+                                vtkGridAxes3DActor::FaceMasks::MAX_YZ |
+                                vtkGridAxes3DActor::FaceMasks::MAX_ZX |
+                                vtkGridAxes3DActor::FaceMasks::MIN_XY |
+                                vtkGridAxes3DActor::FaceMasks::MIN_YZ |
+                                vtkGridAxes3DActor::FaceMasks::MIN_ZX);
+
   // Enable front face culling
   prop->SetFrontfaceCulling(1);
+
+  // Disable back face culling
+  prop->SetBackfaceCulling(0);
 
   // Set the titles
   updateGridAxesUnit(data);
