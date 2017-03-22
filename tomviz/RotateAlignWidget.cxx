@@ -58,6 +58,7 @@
 #include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPointer>
@@ -377,20 +378,27 @@ RotateAlignWidget::RotateAlignWidget(DataSource* source, QWidget* p)
 
   QObject::connect(this->Internals->Ui.projection, SIGNAL(editingFinished()),
                    this, SLOT(onProjectionNumberChanged()));
+  this->Internals->Ui.projection->installEventFilter(this);
 
   QObject::connect(this->Internals->Ui.spinBox_1, SIGNAL(editingFinished()),
                    this, SLOT(onReconSlice0Changed()));
+  this->Internals->Ui.spinBox_1->installEventFilter(this);
 
   QObject::connect(this->Internals->Ui.spinBox_2, SIGNAL(editingFinished()),
                    this, SLOT(onReconSlice1Changed()));
+  this->Internals->Ui.spinBox_2->installEventFilter(this);
 
   QObject::connect(this->Internals->Ui.spinBox_3, SIGNAL(editingFinished()),
                    this, SLOT(onReconSlice2Changed()));
+  this->Internals->Ui.spinBox_3->installEventFilter(this);
 
   QObject::connect(this->Internals->Ui.rotationAxis, SIGNAL(editingFinished()),
                    this, SLOT(onRotationAxisChanged()));
+  this->Internals->Ui.rotationAxis->installEventFilter(this);
+
   QObject::connect(this->Internals->Ui.rotationAngle, SIGNAL(editingFinished()),
                    this, SLOT(onRotationAxisChanged()));
+  this->Internals->Ui.rotationAngle->installEventFilter(this);
 
   this->connect(this->Internals->Ui.pushButton, SIGNAL(pressed()),
                 SLOT(onFinalReconButtonPressed()));
@@ -400,6 +408,27 @@ RotateAlignWidget::RotateAlignWidget(DataSource* source, QWidget* p)
 
 RotateAlignWidget::~RotateAlignWidget()
 {
+}
+
+bool RotateAlignWidget::eventFilter(QObject* o, QEvent* e)
+{
+  if (o == this->Internals->Ui.rotationAngle ||
+      o == this->Internals->Ui.rotationAxis ||
+      o == this->Internals->Ui.projection ||
+      o == this->Internals->Ui.spinBox_1 ||
+      o == this->Internals->Ui.spinBox_2 ||
+      o == this->Internals->Ui.spinBox_3) {
+    if (e->type() == QEvent::KeyPress) {
+      QKeyEvent* keyEvent = static_cast<QKeyEvent*>(e);
+      if (keyEvent->key() == Qt::Key_Return ||
+          keyEvent->key() == Qt::Key_Enter) {
+        e->accept();
+        qobject_cast<QWidget*>(o)->clearFocus();
+        return true;
+      }
+    }
+  }
+  return QObject::eventFilter(o, e);
 }
 
 void RotateAlignWidget::setDataSource(DataSource* source)
