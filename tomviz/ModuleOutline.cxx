@@ -344,6 +344,9 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   prop->DeepCopy(m_gridAxes->GetProperty());
   this->m_gridAxes->SetProperty(prop.Get());
 
+  // Enable front face culling
+  prop->SetFrontfaceCulling(1);
+
   // Set the titles
   updateGridAxesUnit(data);
 
