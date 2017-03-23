@@ -64,6 +64,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   m_qvtk->SetRenderWindow(window.Get());
   QSurfaceFormat glFormat = QVTKOpenGLWidget::defaultFormat();
   glFormat.setSamples(8);
+  glFormat.setVersion(3, 1);
   m_qvtk->setFormat(glFormat);
   m_histogramView->SetRenderWindow(window.Get());
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
