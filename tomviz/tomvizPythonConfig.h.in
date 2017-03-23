@@ -109,9 +109,9 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
                                    "/../lib/paraview/site-packages/vtk");
     // Add ITK to the python path
     PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../lib/itk/python2.7/dist-packages");
+                                   "/../lib/itk/python3.6/dist-packages");
     // Add the location for numpy and scipy
-    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python2.7/site-packages");
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.6/site-packages");
   }
 }
 
@@ -136,7 +136,7 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     // we don't add anything for ParaView since, ParaView takes care of that.
     PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/");
     PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Libraries/python2.7/site-packages");
+                                   "/../Libraries/python3.6/site-packages");
   }
 }
 
