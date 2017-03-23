@@ -266,6 +266,7 @@ bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
 
     vtkRectf colorTransferFunctionChartSize(x, y, plotWidth, colorBarThickness);
     this->ColorTransferFunctionChart->SetSize(colorTransferFunctionChartSize);
+    this->ColorTransferFunctionChart->RecalculateBounds();
 
     float bottomAxisHeight = this->GetHistogramAxis(vtkAxis::BOTTOM)
                                ->GetBoundingRect(painter)
