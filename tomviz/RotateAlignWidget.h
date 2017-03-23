@@ -35,6 +35,8 @@ public:
 public slots:
   void setDataSource(DataSource* source);
 
+  bool eventFilter(QObject* o, QEvent* e) override;
+
 signals:
   void creatingAlignedData();
 
