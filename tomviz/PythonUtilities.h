@@ -168,8 +168,12 @@ public:
   /// vtkPythonPythonInterpreter::PrependPythonPath(...)  to do the work.
   static void prependPythonPath(std::string dir);
 
+  /// Sets the PYTHONHOME for the interpreter
+  static void setPythonHome(std::string home);
+
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
+  static std::vector<wchar_t> pythonHome;
 };
 }
 

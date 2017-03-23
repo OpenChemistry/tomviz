@@ -137,12 +137,10 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/");
     PythonAppInitPrependPythonPath(exe_dir +
                                    "/../Libraries/python3.6/site-packages");
-    PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Python");
-    PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Python/lib-dynload");
-    PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Python/site-packages");
+    PythonAppInitPrependPythonPath(exe_dir + "/../Python");
+    PythonAppInitPrependPythonPath(exe_dir + "/../Python/lib-dynload");
+    PythonAppInitPrependPythonPath(exe_dir + "/../Python/site-packages");
+    Python::setPythonHome(exe_dir + "/../Python");
   }
 }
 
