@@ -49,19 +49,30 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
   m_histogramView->GetScene()->AddItem(m_chartHistogram2D.Get());
 
-  vtkAxis* bottomAxis =
-    m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM);
-  bottomAxis->SetTitle("Scalar Value");
-  bottomAxis->SetBehavior(vtkAxis::FIXED);
-  bottomAxis->SetVisible(false);
-  bottomAxis->SetRange(0, 255);
+  //m_chartHistogram2D->ForceAxesToBoundsOn();
+  //m_chartHistogram2D->SelectableOff();
+  m_chartHistogram2D->SetRenderEmpty(true);
+  m_chartHistogram2D->SetAutoAxes(false);
+  m_chartHistogram2D->ZoomWithMouseWheelOff();
+  m_chartHistogram2D->PanningOff();
 
-  vtkAxis* leftAxis =
-    m_chartHistogram2D->GetAxis(vtkAxis::LEFT);
-  leftAxis->SetTitle("Gradient Magnitude");
-  leftAxis->SetBehavior(vtkAxis::FIXED);
-  leftAxis->SetVisible(false);
-  leftAxis->SetRange(0, 255);
+  auto axis = m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM);
+  axis->SetTitle("Scalar Value");
+  axis->SetBehavior(vtkAxis::FIXED);
+  //axis->SetVisible(false);
+  axis->SetRange(0, 255);
+
+  axis = m_chartHistogram2D->GetAxis(vtkAxis::LEFT);
+  axis->SetTitle("Gradient Magnitude");
+  axis->SetBehavior(vtkAxis::FIXED);
+  //axis->SetVisible(false);
+  axis->SetRange(0, 255);
+
+  // This chart is not supposed to be fixed. // TODO Chart not yet fixed
+  m_chartHistogram2D->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
+  m_chartHistogram2D->GetAxis(vtkAxis::RIGHT)->SetBehavior(vtkAxis::FIXED);
+  m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM)->SetBehavior(vtkAxis::FIXED);
+  m_chartHistogram2D->GetAxis(vtkAxis::TOP)->SetBehavior(vtkAxis::FIXED);
 
 //   Connect events from the histogram color/opacity editor.
 //  m_eventLink->Connect(m_chartHistogram2D.Get(),
@@ -81,7 +92,7 @@ void Histogram2DWidget::setInputData(vtkImageData* histogram)
   vtkDataArray* arr = histogram->GetPointData()->GetScalars();
   double range[2];
   arr->GetRange(range, 0);
-  
+
   m_chartHistogram2D->SetInputData(histogram);
 
   // A minimum of 1.0 is used in order to clip off histogram bins with a
@@ -101,7 +112,17 @@ void Histogram2DWidget::setInputData(vtkImageData* histogram)
 void Histogram2DWidget::addTransferFunction(
   vtkSmartPointer<vtkTransferFunctionBoxItem> item)
 {
-  m_chartHistogram2D->AddItem(item);
+  double xRange[2];
+  auto bottomAxis = m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM);
+  bottomAxis->GetRange(xRange);
+
+  double yRange[2];
+  auto leftAxis = m_chartHistogram2D->GetAxis(vtkAxis::LEFT);
+  leftAxis->GetRange(yRange);
+
+  // TODO Check whether this is necessary
+  item->SetValidBounds(xRange[0], xRange[1], yRange[0], yRange[1]);
+  m_chartHistogram2D->AddPlot(item);
 }
 
 //void Histogram2DWidget::renderViews()
