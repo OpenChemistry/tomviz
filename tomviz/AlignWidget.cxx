@@ -151,10 +151,7 @@ public:
                                                           adjustedRange);
     }
   }
-  virtual void range(double r[2])
-  {
-    this->originalData->GetScalarRange(r);
-  }
+  virtual void range(double r[2]) { this->originalData->GetScalarRange(r); }
 
   virtual void timeout() {}
   virtual void timerStopped() {}
@@ -422,9 +419,9 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
 
   v->addLayout(viewControls);
 
-  static const double sliderRange[2] = {0., 100.};
+  static const double sliderRange[2] = { 0., 100. };
 
-  QWidget *brightnessAndContrastWidget = new QWidget;
+  QWidget* brightnessAndContrastWidget = new QWidget;
   QFormLayout* brightnessAndContrastControls = new QFormLayout;
   brightnessAndContrastWidget->setLayout(brightnessAndContrastControls);
   QSlider* brightness = new QSlider(Qt::Horizontal);
@@ -439,7 +436,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
       this->modes[currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
       // set the new values
       this->modes[currentMode]->setBrightnessAndContrast(
-        ((static_cast<double>(i)-sliderRange[0])/sliderRange[1]), bAndC[1]);
+        ((static_cast<double>(i) - sliderRange[0]) / sliderRange[1]), bAndC[1]);
       this->widget->update();
     });
   brightness->setValue(sliderRange[1]);
@@ -448,18 +445,16 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   QSlider* contrast = new QSlider(Qt::Horizontal);
   contrast->setMinimum(sliderRange[0]);
   contrast->setMaximum(sliderRange[1]);
-  this->connect(
-    contrast, &QSlider::valueChanged, this,
-    [&](int i) {
-      double bAndC[2] = { 0.0, 0.0 };
-      this->modes[currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
-      this->modes[currentMode]->setBrightnessAndContrast(
-        bAndC[0], ((static_cast<double>(i)-sliderRange[0])/sliderRange[1]));
-      this->widget->update();
-    });
+  this->connect(contrast, &QSlider::valueChanged, this, [&](int i) {
+    double bAndC[2] = { 0.0, 0.0 };
+    this->modes[currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
+    this->modes[currentMode]->setBrightnessAndContrast(
+      bAndC[0], ((static_cast<double>(i) - sliderRange[0]) / sliderRange[1]));
+    this->widget->update();
+  });
   contrast->setValue(sliderRange[1]);
   brightnessAndContrastControls->addRow("Contrast", contrast);
-  brightnessAndContrastWidget->setMaximumWidth(this->minimumWidth()/2);
+  brightnessAndContrastWidget->setMaximumWidth(this->minimumWidth() / 2);
 
   v->addWidget(brightnessAndContrastWidget);
 
@@ -504,7 +499,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   QLabel* label = new QLabel("Current image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   this->currentSlice = new SpinBox;
-  this->currentSlice->setValue(startRef+1);
+  this->currentSlice->setValue(startRef + 1);
   this->currentSlice->setRange(this->minSliceNum, this->maxSliceNum);
   connect(this->currentSlice, SIGNAL(editingFinished()), this,
           SLOT(currentSliceEdited()));
