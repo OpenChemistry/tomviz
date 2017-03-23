@@ -422,5 +422,4 @@ void Python::setPythonHome(std::string home)
   pythonHome.push_back('\0');
   Py_SetPythonHome(pythonHome.data());
 }
-
 }
