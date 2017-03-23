@@ -421,6 +421,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->currentSlice = new SpinBox;
   this->currentSlice->setValue(startRef+1);
   this->currentSlice->setRange(this->minSliceNum, this->maxSliceNum);
+  this->currentSlice->installEventFilter(this);
   connect(this->currentSlice, SIGNAL(editingFinished()), this,
           SLOT(currentSliceEdited()));
   grid->addWidget(this->currentSlice, gridrow, 1, 1, 1, Qt::AlignLeft);
@@ -440,6 +441,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->refNum = new QSpinBox;
   this->refNum->setValue(startRef);
   this->refNum->setRange(this->minSliceNum, this->maxSliceNum);
+  this->refNum->installEventFilter(this);
   connect(this->refNum, SIGNAL(valueChanged(int)), SLOT(updateReference()));
   grid->addWidget(this->refNum, gridrow, 1, 1, 1, Qt::AlignLeft);
   this->refNum->setEnabled(false);
@@ -465,6 +467,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   QSpinBox* spin = new QSpinBox;
   spin->setRange(0, 50);
   spin->setValue(5);
+  spin->installEventFilter(this);
   connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
   grid->addWidget(spin, gridrow, 1, 1, 1, Qt::AlignLeft);
 
@@ -565,9 +568,17 @@ bool AlignWidget::eventFilter(QObject* object, QEvent* e)
       default:
         return false;
     }
-  } else {
-    return false;
+  } else if (qobject_cast<QSpinBox*>(object)) {
+    if (e->type() == QEvent::KeyPress) {
+      QKeyEvent* ke = static_cast<QKeyEvent*>(e);
+      if (ke->key() == Qt::Key_Enter || ke->key() == Qt::Key_Return) {
+        e->accept();
+        qobject_cast<QWidget*>(object)->clearFocus();
+        return true;
+      }
+    }
   }
+  return false;
 }
 
 void AlignWidget::onTimeout()
