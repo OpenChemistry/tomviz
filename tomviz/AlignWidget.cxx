@@ -61,6 +61,7 @@
 
 #include <QButtonGroup>
 #include <QComboBox>
+#include <QFormLayout>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -69,6 +70,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSlider>
 #include <QSpinBox>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -117,6 +119,40 @@ public:
     this->referenceSliceOffset[1] = offset[1];
     this->update();
   }
+  void brightnessAndContrast(double& brightness, double& contrast)
+  {
+    vtkScalarsToColors* dataLUT =
+      vtkScalarsToColors::SafeDownCast(this->getLUT()->GetClientSideObject());
+    if (dataLUT) {
+      double* adjustedRange = dataLUT->GetRange();
+      double dataRange[2];
+      this->range(dataRange);
+
+      brightness = adjustedRange[1] / dataRange[1];
+      contrast = 1. - (adjustedRange[0] - dataRange[0]) / dataRange[1];
+    }
+  }
+  void setBrightnessAndContrast(double brightness, double contrast)
+  {
+    // clamp brightness and contrast between 0. and 1.
+    brightness = brightness < 0. ? 0. : brightness > 1. ? 1. : brightness;
+    contrast = contrast < 0. ? 0. : contrast > 1. ? 1. : contrast;
+
+    vtkScalarsToColors* dataLUT =
+      vtkScalarsToColors::SafeDownCast(this->getLUT()->GetClientSideObject());
+    if (dataLUT) {
+      double dataRange[2];
+      this->range(dataRange);
+      double adjustedRange[2];
+      adjustedRange[1] = dataRange[1] * brightness;
+      adjustedRange[0] = dataRange[0] + dataRange[1] * (1. - contrast);
+
+      vtkSMTransferFunctionProxy::RescaleTransferFunction(this->getLUT(),
+                                                          adjustedRange);
+    }
+  }
+  virtual void range(double r[2]) { this->originalData->GetScalarRange(r); }
+
   virtual void timeout() {}
   virtual void timerStopped() {}
   virtual double* bounds() const = 0;
@@ -214,22 +250,9 @@ public:
     this->lut = tfmgr->GetColorTransferFunction("AlignWidgetLUT", pxm);
     vtkScalarsToColors* dataLUT =
       vtkScalarsToColors::SafeDownCast(this->lut->GetClientSideObject());
-    vtkSmartPointer<vtkSMProxy> source;
-    source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-    vtkTrivialProducer::SafeDownCast(source->GetClientSideObject())
-      ->SetOutput(data);
-    vtkPVArrayInformation* ainfo = tomviz::scalarArrayInformation(
-      vtkSMSourceProxy::SafeDownCast(source.Get()));
-    if (ainfo != nullptr) {
-      double range[2];
-      ainfo->GetComponentRange(0, range);
-      double lutRange[2] = { std::min(range[0], -range[1]),
-                             std::max(range[1], -range[0]) };
-      vtkNew<vtkSMTransferFunctionPresets> presets;
-      vtkSMTransferFunctionProxy::ApplyPreset(
-        this->lut, presets->GetFirstPresetWithName("Cool to Warm (Extended)"));
-      vtkSMTransferFunctionProxy::RescaleTransferFunction(this->lut, lutRange);
-    }
+    vtkNew<vtkSMTransferFunctionPresets> presets;
+    vtkSMTransferFunctionProxy::ApplyPreset(
+      this->lut, presets->GetFirstPresetWithName("Cool to Warm (Extended)"));
     this->imageSlice->GetProperty()->SetLookupTable(dataLUT);
   }
   void addToView(vtkRenderer* renderer) override
@@ -255,6 +278,23 @@ public:
     }
     this->diffImage->Modified();
     this->imageSliceMapper->Update();
+  }
+  virtual void range(double r[2]) override
+  {
+    vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
+    vtkSmartPointer<vtkSMProxy> source;
+    source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
+    vtkTrivialProducer::SafeDownCast(source->GetClientSideObject())
+      ->SetOutput(originalData);
+    vtkPVArrayInformation* ainfo = tomviz::scalarArrayInformation(
+      vtkSMSourceProxy::SafeDownCast(source.Get()));
+
+    if (ainfo != nullptr) {
+      double range[2];
+      ainfo->GetComponentRange(0, range);
+      r[0] = std::min(range[0], -range[1]);
+      r[1] = std::max(range[1], -range[0]);
+    }
   }
   double* bounds() const override
   {
@@ -376,7 +416,47 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     new QPushButton(QIcon(":/pqWidgets/Icons/pqResetCamera24.png"), "Reset");
   this->connect(resetCamera, SIGNAL(pressed()), this, SLOT(resetCamera()));
   viewControls->addWidget(resetCamera);
+
   v->addLayout(viewControls);
+
+  static const double sliderRange[2] = { 0., 100. };
+
+  QWidget* brightnessAndContrastWidget = new QWidget;
+  QFormLayout* brightnessAndContrastControls = new QFormLayout;
+  brightnessAndContrastWidget->setLayout(brightnessAndContrastControls);
+  QSlider* brightness = new QSlider(Qt::Horizontal);
+  brightness->setMinimum(sliderRange[0]);
+  brightness->setMaximum(sliderRange[1]);
+  this->connect(
+    brightness, &QSlider::valueChanged, this,
+    // use a lambda to convert integer (0,100) to float (0.,1.)
+    [&](int i) {
+      double bAndC[2] = { 0.0, 0.0 };
+      // grab current values
+      this->modes[currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
+      // set the new values
+      this->modes[currentMode]->setBrightnessAndContrast(
+        ((static_cast<double>(i) - sliderRange[0]) / sliderRange[1]), bAndC[1]);
+      this->widget->update();
+    });
+  brightness->setValue(sliderRange[1]);
+  brightnessAndContrastControls->addRow("Brightness", brightness);
+
+  QSlider* contrast = new QSlider(Qt::Horizontal);
+  contrast->setMinimum(sliderRange[0]);
+  contrast->setMaximum(sliderRange[1]);
+  this->connect(contrast, &QSlider::valueChanged, this, [&](int i) {
+    double bAndC[2] = { 0.0, 0.0 };
+    this->modes[currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
+    this->modes[currentMode]->setBrightnessAndContrast(
+      bAndC[0], ((static_cast<double>(i) - sliderRange[0]) / sliderRange[1]));
+    this->widget->update();
+  });
+  contrast->setValue(sliderRange[1]);
+  brightnessAndContrastControls->addRow("Contrast", contrast);
+  brightnessAndContrastWidget->setMaximumWidth(this->minimumWidth() / 2);
+
+  v->addWidget(brightnessAndContrastWidget);
 
   this->currentMode = 0;
   QHBoxLayout* optionsLayout = new QHBoxLayout;
@@ -419,7 +499,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   QLabel* label = new QLabel("Current image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   this->currentSlice = new SpinBox;
-  this->currentSlice->setValue(startRef+1);
+  this->currentSlice->setValue(startRef + 1);
   this->currentSlice->setRange(this->minSliceNum, this->maxSliceNum);
   this->currentSlice->installEventFilter(this);
   connect(this->currentSlice, SIGNAL(editingFinished()), this,
@@ -724,9 +804,14 @@ void AlignWidget::changeMode(int mode)
   if (this->modes.length() == 0) {
     return;
   }
+  // brightness and contrast are not persistent, so grab them from the former
+  // mode and reapply them to the new mode
+  double bc[2] = { 0.0, 0.0 };
+  this->modes[this->currentMode]->brightnessAndContrast(bc[0], bc[1]);
   this->modes[this->currentMode]->removeFromView(this->renderer.Get());
   this->currentMode = mode;
   this->modes[this->currentMode]->addToView(this->renderer.Get());
+  this->modes[this->currentMode]->setBrightnessAndContrast(bc[0], bc[1]);
   this->modes[this->currentMode]->update();
   this->resetCamera();
 }
