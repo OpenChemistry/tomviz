@@ -48,7 +48,9 @@ vtkStandardNewMacro(TomvizOptions)
 
   int main(int argc, char** argv)
 {
-  QSurfaceFormat::setDefaultFormat(QVTKOpenGLWidget::defaultFormat());
+  auto fmt = QVTKOpenGLWidget::defaultFormat();
+  fmt.setVersion(3, 1);
+  QSurfaceFormat::setDefaultFormat(fmt);
 
   QCoreApplication::setApplicationName("tomviz");
   QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);
