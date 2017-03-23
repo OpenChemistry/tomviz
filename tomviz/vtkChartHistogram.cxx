@@ -105,6 +105,7 @@ vtkChartHistogram::vtkChartHistogram()
   pen->SetColor(0, 0, 0);
   pen->SetOpacity(255);
   pen->SetWidth(2.0);
+  ////// This is what chartxy fixed! // TODO Remove
   this->AddPlot(this->OpacityControlPointsItem.Get());
   this->SetPlotCorner(this->OpacityControlPointsItem.Get(), 1);
 }

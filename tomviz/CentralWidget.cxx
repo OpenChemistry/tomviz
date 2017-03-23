@@ -24,6 +24,7 @@
 #include <vtkPointData.h>
 #include <vtkTable.h>
 #include <vtkTransferFunctionBoxItem.h>
+#include <vtkPiecewiseFunction.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVector.h>
 #include <vtkPNGWriter.h>
@@ -419,10 +420,29 @@ void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
 
   m_ui->histogram2DWidget->setInputData(output);
 
+  /// TODO Sample TFBoxItem for debugging
   typedef vtkSmartPointer<vtkTransferFunctionBoxItem> itemPtr;
   itemPtr tfItem = itemPtr::New();
-  tfItem->SetDimensions(20, 20, 80 , 40);
-  tfItem->SetLabel("TF 1");
+
+  vtkSmartPointer<vtkColorTransferFunction> colorTransferFunction =
+    vtkSmartPointer<vtkColorTransferFunction>::New();
+  colorTransferFunction->AddRGBSegment(50.0, 0.0, 0.0, 1.0,
+    85.0, 0.0, 1.0, 0.0);
+  colorTransferFunction->AddRGBSegment(85.0, 0.0, 1.0, 0.0,
+    170.0, 1.0, 1.0, 0.0);
+  colorTransferFunction->AddRGBSegment(170.0, 1.0, 1.0, 0.0,
+    200.0, 1.0, 0.0, 0.0);
+  colorTransferFunction->Build();
+
+  vtkSmartPointer<vtkPiecewiseFunction> scalarOpacity =
+    vtkSmartPointer<vtkPiecewiseFunction>::New();
+  scalarOpacity->AddPoint(0.0, 0.3);
+  scalarOpacity->AddPoint(127.5, 1.0);
+  scalarOpacity->AddPoint(200.0, 0.7);
+
+//  tfItem->SetColorTransferFunction(colorTransferFunction);
+//  tfItem->SetOpacityFunction(scalarOpacity);
+
   m_ui->histogram2DWidget->addTransferFunction(tfItem);
 }
 
