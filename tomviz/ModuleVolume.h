@@ -74,7 +74,7 @@ private:
   vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   ModuleVolumeWidget* m_controllers = nullptr;
-  bool m_gradientOpacityEnabled = true;
+  bool m_gradientOpacityEnabled = false;
 
 private slots:
   /**

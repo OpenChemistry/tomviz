@@ -47,6 +47,8 @@ public:
 
   void SetHistogramVisible(bool visible);
 
+  void SetMarkerVisible(bool visible);
+
   // Set lookup table
   virtual void SetLookupTable(vtkScalarsToColors* lut);
 
