@@ -434,7 +434,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     brightness, &QSlider::valueChanged, this,
     // use a lambda to convert integer (0,100) to float (0.,1.)
     [&](int i) {
-      double bAndC[2];
+      double bAndC[2] = { 0.0, 0.0 };
       // grab current values
       this->modes[currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
       // set the new values
@@ -451,7 +451,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   this->connect(
     contrast, &QSlider::valueChanged, this,
     [&](int i) {
-      double bAndC[2];
+      double bAndC[2] = { 0.0, 0.0 };
       this->modes[currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
       this->modes[currentMode]->setBrightnessAndContrast(
         bAndC[0], ((static_cast<double>(i)-sliderRange[0])/sliderRange[1]));
@@ -800,7 +800,7 @@ void AlignWidget::changeMode(int mode)
   }
   // brightness and contrast are not persistent, so grab them from the former
   // mode and reapply them to the new mode
-  double bc[2];
+  double bc[2] = { 0.0, 0.0 };
   this->modes[this->currentMode]->brightnessAndContrast(bc[0], bc[1]);
   this->modes[this->currentMode]->removeFromView(this->renderer.Get());
   this->currentMode = mode;
