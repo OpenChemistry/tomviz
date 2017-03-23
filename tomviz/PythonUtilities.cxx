@@ -26,6 +26,8 @@
 
 namespace tomviz {
 
+std::vector<wchar_t> Python::pythonHome;
+
 Python::Capsule::Capsule(const void* ptr)
   : m_capsule(new pybind11::capsule(ptr))
 {
@@ -412,4 +414,13 @@ void Python::prependPythonPath(std::string dir)
 {
   vtkPythonInterpreter::PrependPythonPath(dir.c_str());
 }
+
+void Python::setPythonHome(std::string home)
+{
+  pythonHome.empty();
+  std::copy(home.begin(), home.end(), std::back_inserter(pythonHome));
+  pythonHome.push_back('\0');
+  Py_SetPythonHome(pythonHome.data());
+}
+
 }
