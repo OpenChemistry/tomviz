@@ -122,8 +122,7 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(gradientMagnitudeSobelAction,
                                  "Gradient Magnitude",
                                  readInPythonScript("GradientMagnitude_Sobel"));
-  new AddPythonTransformReaction(unsharpMaskAction,
-                                 "Unsharp Mask",
+  new AddPythonTransformReaction(unsharpMaskAction, "Unsharp Mask",
                                  readInPythonScript("UnsharpMask"), false,
                                  false, readInJSONDescription("UnsharpMask"));
   new AddPythonTransformReaction(laplaceFilterAction, "Laplace Filter",
