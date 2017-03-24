@@ -155,6 +155,7 @@ bool ModuleOutline::deserialize(const pugi::xml_node& ns)
     xml_attribute att = node.attribute("enabled");
     if (att) {
       m_gridAxes->SetVisibility(att.as_bool() ? 1 : 0);
+      m_AxesVisibility = att.as_bool();
     }
     att = node.attribute("grid");
     if (att) {
@@ -188,7 +189,9 @@ bool ModuleOutline::setVisibility(bool val)
   vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
     .Set(val ? 1 : 0);
   this->OutlineRepresentation->UpdateVTKObjects();
-  m_gridAxes->SetVisibility(val ? 1 : 0);
+  if (!val || m_AxesVisibility) {
+    m_gridAxes->SetVisibility(val ? 1 : 0);
+  }
   return true;
 }
 
@@ -241,6 +244,7 @@ void ModuleOutline::addToPanel(QWidget* panel)
   connect(showAxes, &QCheckBox::stateChanged, this,
           [this, showGrid](int state) {
             this->m_gridAxes->SetVisibility(state == Qt::Checked);
+            m_AxesVisibility = state == Qt::Checked;
             // Uncheck "Show Grid" and disable it
             if (state == Qt::Unchecked) {
               showGrid->setChecked(false);
