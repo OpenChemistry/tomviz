@@ -68,6 +68,7 @@ void DataTransformMenu::buildTransforms()
   auto hannWindowAction = menu->addAction("Hann Window");
   auto fftAbsLogAction = menu->addAction("FFT (abs log)");
   auto gradientMagnitudeSobelAction = menu->addAction("Gradient Magnitude");
+  auto unsharpMaskAction = menu->addAction("Unsharp Mask");
   auto laplaceFilterAction = menu->addAction("Laplace Filter");
   auto gaussianFilterAction = menu->addAction("Gaussian Filter");
   auto peronaMalikeAnisotropicDiffusionAction =
@@ -121,6 +122,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(gradientMagnitudeSobelAction,
                                  "Gradient Magnitude",
                                  readInPythonScript("GradientMagnitude_Sobel"));
+  new AddPythonTransformReaction(unsharpMaskAction, "Unsharp Mask",
+                                 readInPythonScript("UnsharpMask"), false,
+                                 false, readInJSONDescription("UnsharpMask"));
   new AddPythonTransformReaction(laplaceFilterAction, "Laplace Filter",
                                  readInPythonScript("LaplaceFilter"));
   new AddPythonTransformReaction(gaussianFilterAction, "Gaussian Filter",
