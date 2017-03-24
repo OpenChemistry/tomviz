@@ -148,6 +148,8 @@ bool isBuildDir(const std::string& exeDir)
 #if defined(__APPLE__)
   return vtksys::SystemTools::FileExists(
     (exeDir + "/../../../../CMakeCache.txt").c_str());
+#else
+  (void)exeDir;
 #endif
   return false;
 }
