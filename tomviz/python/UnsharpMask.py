@@ -52,19 +52,14 @@ class UnsharpMask(tomviz.operators.CancelableOperator):
                 unsharp_mask.Update()
             except RuntimeError:
                 return
-            print('update succeeded')
-            print(itk_image)
-            print(unsharp_mask.GetOutput())
 
             self.progress.message = "Saving results"
-            self.progress.value = next(step_pct)
 
             enhanced = unsharp_mask.GetOutput()
             itkutils.set_array_from_itk_image(dataset,
                                               enhanced)
 
             self.progress.value = next(step_pct)
-            print(self.progress.value)
         except Exception as exc:
             print("Problem encountered while running %s" %
                   self.__class__.__name__)
