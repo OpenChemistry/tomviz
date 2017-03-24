@@ -432,7 +432,8 @@ void OperatorPython::createNewChildDataSource(
   producer->SetOutput(childData);
 
   DataSource* childDS = new DataSource(
-    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this);
+    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this,
+      DataSource::PersistenceState::Transient);
 
   childDS->setFilename(label.toLatin1().data());
   this->setChildDataSource(childDS);

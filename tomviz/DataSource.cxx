@@ -402,6 +402,14 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
     newClone = new DataSource(this->Internals->OriginalDataSource,
                               this->Internals->Type);
   }
+
+  if (this->persistenceState() == PersistenceState::Transient ||
+      this->persistenceState() == PersistenceState::Modified ||
+      cloneTransformed)
+  {
+    newClone->setPersistenceState(PersistenceState::Modified);
+  }
+
   if (this->Internals->Type == TiltSeries) {
     newClone->setTiltAngles(getTiltAngles(!cloneTransformed));
   }
