@@ -67,8 +67,8 @@ vtkStandardNewMacro(TomvizOptions)
   if (!tomviz::isBuildDir(exeDir)) {
     QByteArray pythonPath =
       (exeDir + tomviz::PythonInitializationPythonPath()).c_str();
-    qDebug() << "Setting PYTHONPATH:" << pythonPath;
-    qputenv("PYTHONPATH", pythonPath);
+    qDebug() << "Setting PYTHONHOME:" << pythonPath;
+    qputenv("PYTHONHOME", pythonPath);
   }
 #endif
 
