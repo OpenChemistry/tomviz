@@ -57,6 +57,7 @@
 #include <QPointer>
 #include <QSet>
 #include <QtDebug>
+#include <QMessageBox>
 
 #include <sstream>
 
@@ -239,6 +240,45 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
   if (QString(TOMVIZ_VERSION_EXTRA).size() > 0) {
     versionInfo.append_attribute("extra").set_value(
       std::string(TOMVIZ_VERSION_EXTRA).c_str());
+  }
+
+  // Iterate over all data sources and check is there are any that are not
+  // currently saved.
+  int modified = 0;
+  foreach (const QPointer<DataSource>& ds, this->Internals->DataSources) {
+    if (ds != nullptr && ds->persistenceState() == DataSource::PersistenceState::Modified) {
+      modified++;
+    }
+  }
+
+  foreach (const QPointer<DataSource>& ds, this->Internals->ChildDataSources) {
+    if (ds != nullptr && ds->persistenceState() == DataSource::PersistenceState::Modified) {
+      modified++;
+    }
+  }
+
+  if (modified > 0) {
+
+    QMessageBox modifiedMessageBox;
+    modifiedMessageBox.setIcon(QMessageBox::Warning);
+    QString text = "The pipeline contains an unsaved data source.";
+    QString infoText = "The unsaved data source is shown in the pipeline in italics with an asterisk. " \
+        "You may continue to save that state and this data source will be skipped " \
+        " along with any attached operators or modules.";
+    if (modified > 1) {
+      text = QString("The pipeline contains %1 unsaved data sources.").arg(modified);
+      infoText = "The unsaved data sources are shown in the pipeline in italics with an asterisk. " \
+              "You may continue to save that state and these data sources will be skipped " \
+              " along with any attached operators or modules.";
+    }
+    modifiedMessageBox.setText(text);
+    modifiedMessageBox.setInformativeText(infoText);
+    modifiedMessageBox.setStandardButtons(QMessageBox::Save | QMessageBox::Cancel);
+    modifiedMessageBox.setDefaultButton(QMessageBox::Save);
+
+    if (modifiedMessageBox.exec() == QMessageBox::Cancel) {
+      return false;
+    }
   }
 
   // Build a list of unique original data sources. These are the data readers.
