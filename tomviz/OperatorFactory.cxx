@@ -21,8 +21,8 @@
 #include "OperatorPython.h"
 #include "ReconstructionOperator.h"
 #include "SetTiltAnglesOperator.h"
-#include "TranslateAlignOperator.h"
 #include "SnapshotOperator.h"
+#include "TranslateAlignOperator.h"
 
 #include "vtkFieldData.h"
 #include "vtkImageData.h"

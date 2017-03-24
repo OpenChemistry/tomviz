@@ -55,15 +55,16 @@ public:
 
   enum class PersistenceState
   {
-    Transient,  // Doesn't need to written to disk
-    Saved,      // Written to disk
-    Modified    // Needs to be written to disk
+    Transient, // Doesn't need to written to disk
+    Saved,     // Written to disk
+    Modified   // Needs to be written to disk
   };
 
   /// \c dataSource is the original reader that reads the data into the
   /// application.
   DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
-             QObject* parent = nullptr, PersistenceState persistState =  PersistenceState::Saved);
+             QObject* parent = nullptr,
+             PersistenceState persistState = PersistenceState::Saved);
   ~DataSource() override;
 
   /// Returns the data producer proxy to insert in ParaView pipelines.

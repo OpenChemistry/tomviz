@@ -16,8 +16,8 @@
 #include "Operator.h"
 
 #include "DataSource.h"
-#include "OperatorResult.h"
 #include "ModuleManager.h"
+#include "OperatorResult.h"
 
 #include <QList>
 

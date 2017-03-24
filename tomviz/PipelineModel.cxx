@@ -346,7 +346,8 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
           return QIcon(":/icons/pqInspect.png");
         case Qt::DisplayRole: {
           QString label = QFileInfo(dataSource->filename()).baseName();
-          if (dataSource->persistenceState() == DataSource::PersistenceState::Modified) {
+          if (dataSource->persistenceState() ==
+              DataSource::PersistenceState::Modified) {
             label += QString(" *");
           }
           return label;
@@ -354,13 +355,14 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         case Qt::ToolTipRole:
           return dataSource->filename();
         case Qt::FontRole:
-           if (dataSource->persistenceState() == DataSource::PersistenceState::Modified) {
-             QFont font;
-             font.setItalic(true);
-             return font;
-           } else {
-             return QVariant();
-           }
+          if (dataSource->persistenceState() ==
+              DataSource::PersistenceState::Modified) {
+            QFont font;
+            font.setItalic(true);
+            return font;
+          } else {
+            return QVariant();
+          }
         default:
           return QVariant();
       }

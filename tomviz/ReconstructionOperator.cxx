@@ -170,7 +170,8 @@ void ReconstructionOperator::createNewChildDataSource(
   producer->SetOutput(childData);
 
   DataSource* childDS = new DataSource(
-    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this, DataSource::PersistenceState::Transient);
+    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this,
+    DataSource::PersistenceState::Transient);
 
   childDS->setFilename(label.toLatin1().data());
   setChildDataSource(childDS);

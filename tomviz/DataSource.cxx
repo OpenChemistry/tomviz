@@ -405,8 +405,7 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
 
   if (this->persistenceState() == PersistenceState::Transient ||
       this->persistenceState() == PersistenceState::Modified ||
-      cloneTransformed)
-  {
+      cloneTransformed) {
     newClone->setPersistenceState(PersistenceState::Modified);
   }
 
@@ -1092,8 +1091,7 @@ void DataSource::setPersistenceState(DataSource::PersistenceState state)
 }
 
 DataSource::PersistenceState DataSource::persistenceState() const
-  {
+{
   return this->Internals->PersistState;
 }
-
 }
