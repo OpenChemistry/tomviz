@@ -45,7 +45,8 @@ class UnsharpMask(tomviz.operators.CancelableOperator):
             unsharp_mask.SetAmount(amount)
             unsharp_mask.SetThreshold(threshold)
             unsharp_mask.SetSigma(sigma)
-            self.progress.value
+            itkutils.observe_filter_progress(self, unsharp_mask, self.progress.value,
+                    next(step_pct))
 
             try:
                 unsharp_mask.Update()
