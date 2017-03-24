@@ -53,10 +53,17 @@ public:
     TiltSeries
   };
 
+  enum class PersistenceState
+  {
+    Transient,  // Doesn't need to write to disk
+    Saved,      // Written to disk
+    Modified    // Needs to be written to disk
+  };
+
   /// \c dataSource is the original reader that reads the data into the
   /// application.
   DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
-             QObject* parent = nullptr);
+             QObject* parent = nullptr, PersistenceState persistState =  PersistenceState::Saved);
   ~DataSource() override;
 
   /// Returns the data producer proxy to insert in ParaView pipelines.
@@ -158,6 +165,12 @@ public:
   // Resume the automatic execution of the operator pipeline, will execution the
   // existing pipeline.
   void resumePipeline();
+
+  /// Set the persistence state
+  void setPersistenceState(PersistenceState state);
+
+  /// Returns the persistence state
+  PersistenceState persistenceState() const;
 
 signals:
   /// This signal is fired to notify the world that the DataSource may have
