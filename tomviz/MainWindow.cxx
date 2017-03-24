@@ -376,6 +376,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   QMenu* sampleDataMenu = new QMenu("Sample Data", this);
   ui.menubar->insertMenu(ui.menuHelp->menuAction(), sampleDataMenu);
+  QAction* userGuideAction = ui.menuHelp->addAction("User Guide");
+  connect(userGuideAction, SIGNAL(triggered()), SLOT(openUserGuide()));
 #ifdef TOMVIZ_DATA
   QAction* reconAction =
     sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
@@ -489,6 +491,21 @@ void MainWindow::openDataLink()
                  "Nanomaterial_datasets_to_advance_tomography_in_scanning_"
                  "transmission_electron_microscopy/2185342";
   QDesktopServices::openUrl(QUrl(link));
+}
+
+void MainWindow::openUserGuide()
+{
+  QString path = QApplication::applicationDirPath() +
+                 "/../share/tomviz/docs/TomvizBasicUserGuide.pdf";
+  QFileInfo info(path);
+  if (info.exists()) {
+    QUrl userGuideUrl = QUrl::fromLocalFile(path);
+    QDesktopServices::openUrl(userGuideUrl);
+  } else {
+    QMessageBox::warning(
+      this, "User Guide not found",
+      QString("The user guide \"%1\" was not found.").arg(path));
+  }
 }
 
 void MainWindow::dataSourceChanged(DataSource*)
