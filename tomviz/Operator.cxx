@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "OperatorResult.h"
+#include "ModuleManager.h"
 
 #include <QList>
 
@@ -132,6 +133,7 @@ bool Operator::hasChildDataSource() const
 
 void Operator::setChildDataSource(DataSource* source)
 {
+  ModuleManager::instance().addChildDataSource(source);
   m_childDataSource = source;
 }
 

@@ -66,6 +66,7 @@ class ModuleManager::MMInternals
 {
 public:
   QList<QPointer<DataSource>> DataSources;
+  QList<QPointer<DataSource>> ChildDataSources;
   QList<QPointer<Module>> Modules;
   QMap<vtkSMProxy*, vtkSmartPointer<vtkCamera>> RenderViewCameras;
 
@@ -119,6 +120,14 @@ void ModuleManager::addDataSource(DataSource* dataSource)
     dataSource->setParent(this);
     this->Internals->DataSources.push_back(dataSource);
     emit this->dataSourceAdded(dataSource);
+  }
+}
+
+void ModuleManager::addChildDataSource(DataSource* dataSource)
+{
+  if (dataSource && !this->Internals->ChildDataSources.contains(dataSource)) {
+    dataSource->setParent(this);
+    this->Internals->ChildDataSources.push_back(dataSource);
   }
 }
 
