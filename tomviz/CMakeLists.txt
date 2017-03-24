@@ -390,7 +390,7 @@ file(MAKE_DIRECTORY "${tomviz_BINARY_DIR}/share/tomviz/docs")
 execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
   "${tomviz_SOURCE_DIR}/docs/TomvizBasicUserGuide.pdf"
   "${tomviz_BINARY_DIR}/share/tomviz/docs/TomvizBasicUserGuide.pdf")
-install(FILES docs/TomvizBasicUserGuide.pdf
+install(FILES "${tomviz_SOURCE_DIR}/docs/TomvizBasicUserGuide.pdf"
   DESTINATION "${tomviz_data_install_dir}/docs"
   COMPONENT "Documentation")
 
