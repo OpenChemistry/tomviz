@@ -73,6 +73,7 @@ private:
   ModuleScaleCubeWidget* m_controllers = nullptr;
   unsigned long m_observedPositionId;
   unsigned long m_observedSideLengthId;
+  bool m_annotationVisibility = true;
 
 signals:
   /**
