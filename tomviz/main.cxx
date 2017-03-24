@@ -64,7 +64,7 @@ vtkStandardNewMacro(TomvizOptions)
 #if defined(__APPLE__)
   // See if this helps Python initialize itself on macOS.
   std::string exeDir = QApplication::applicationDirPath().toLatin1().data();
-  if (tomviz::isBuildDir(exeDir)) {
+  if (!tomviz::isBuildDir(exeDir)) {
     QByteArray pythonPath =
       (exeDir + tomviz::PythonInitializationPythonPath()).c_str();
     qDebug() << "Setting PYTHONPATH:" << pythonPath;
