@@ -17,6 +17,8 @@
 
 #include <QSurfaceFormat>
 
+#include <QDebug>
+
 #include <pqOptions.h>
 #include <pqPVApplicationCore.h>
 
@@ -58,6 +60,18 @@ vtkStandardNewMacro(TomvizOptions)
   tomviz::InitializePythonEnvironment(argc, argv);
 
   QApplication app(argc, argv);
+
+#if defined(__APPLE__)
+  // See if this helps Python initialize itself on macOS.
+  std::string exeDir = QApplication::applicationDirPath().toLatin1().data();
+  if (tomviz::isBuildDir(exeDir)) {
+    QByteArray pythonPath =
+      (exeDir + tomviz::PythonInitializationPythonPath()).c_str();
+    qDebug() << "Setting PYTHONPATH:" << pythonPath;
+    qputenv("PYTHONPATH", pythonPath);
+  }
+#endif
+
   setlocale(LC_NUMERIC, "C");
   vtkNew<TomvizOptions> options;
   pqPVApplicationCore appCore(argc, argv, options.Get());

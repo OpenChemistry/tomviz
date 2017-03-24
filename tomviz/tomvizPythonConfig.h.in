@@ -137,13 +137,29 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/");
     PythonAppInitPrependPythonPath(exe_dir +
                                    "/../Libraries/python3.6/site-packages");
-    PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Python");
-    PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Python/lib-dynload");
-    PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Python/site-packages");
+    PythonAppInitPrependPythonPath(exe_dir + "/../Python");
+    PythonAppInitPrependPythonPath(exe_dir + "/../Python/lib-dynload");
+    PythonAppInitPrependPythonPath(exe_dir + "/../Python/site-packages");
   }
+}
+
+bool isBuildDir(const std::string& exeDir)
+{
+#if defined(__APPLE__)
+  return vtksys::SystemTools::FileExists(
+    (exeDir + "/../../../../CMakeCache.txt").c_str());
+#endif
+  return false;
+}
+
+std::string PythonInitializationPythonPath()
+{
+  // Return the PYTHONPATH needed upon initializtion of Python.
+  std::string path;
+#if defined(__APPLE__)
+  path = "/../Python";
+#endif
+  return path;
 }
 
 static void InitializePythonEnvironment(int argc, char** argv)
