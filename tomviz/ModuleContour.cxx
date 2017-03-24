@@ -380,11 +380,14 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   {
     QStringList resampleRepresentationProperties;
     resampleRepresentationProperties << "Representation"
-                                    << "Opacity"
-                                    << "Specular"
-                                    << "Visibility"
-                                    << "DiffuseColor"
-                                    << "AmbientColor";
+                                     << "Opacity"
+                                     << "Specular"
+                                     << "Visibility"
+                                     << "DiffuseColor"
+                                     << "AmbientColor"
+                                     << "Ambient"
+                                     << "Diffuse"
+                                     << "SpecularPower";
 
     node = ns.append_child("ResampleRepresentation");
     if (tomviz::serialize(this->ResampleRepresentation, node,
@@ -398,11 +401,14 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   if (this->PointDataToCellDataRepresentation) {
     QStringList pointDataToCellDataRepresentationProperties;
     pointDataToCellDataRepresentationProperties << "Representation"
-                                    << "Opacity"
-                                    << "Specular"
-                                    << "Visibility"
-                                    << "DiffuseColor"
-                                    << "AmbientColor";
+                                                << "Opacity"
+                                                << "Specular"
+                                                << "Visibility"
+                                                << "DiffuseColor"
+                                                << "AmbientColor"
+                                                << "Ambient"
+                                                << "Diffuse"
+                                                << "SpecularPower";
 
     node = ns.append_child("PointDataToCellDataRepresentation");
     if (tomviz::serialize(this->PointDataToCellDataRepresentation, node,
