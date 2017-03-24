@@ -290,6 +290,7 @@ set(python_files
   ReinterpretSignedToUnsigned.py
   SegmentParticles.py
   UnsharpMask.py
+  AddConstant.py
   )
 
 set(json_files
@@ -323,6 +324,7 @@ set(json_files
   BinaryMinMaxCurvatureFlow.json
   SegmentParticles.json
   UnsharpMask.json
+  AddConstant.json
   )
 
 set(resource_files
