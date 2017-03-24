@@ -55,7 +55,7 @@ public:
 
   enum class PersistenceState
   {
-    Transient,  // Doesn't need to write to disk
+    Transient,  // Doesn't need to written to disk
     Saved,      // Written to disk
     Modified    // Needs to be written to disk
   };
