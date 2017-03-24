@@ -1,0 +1,21 @@
+{
+  "name" : "SegmentParticles",
+  "label" : "Segment Particles",
+  "description" : "Segment spherical particles from a homogeneous, dark background.\nEven if the particles have pores, they are segmented as solid structures.",
+  "children" : [
+    {
+      "name" : "label_map",
+      "label" : "Label Map",
+      "type" : "label_map"
+    }
+  ],
+  "parameters" : [
+    {
+      "name" : "minimum_radius",
+      "label" : "Minimum Particle Radius (voxels)",
+      "type" : "int",
+      "default" : 4,
+      "minimum" : 1
+    }
+  ]
+}
