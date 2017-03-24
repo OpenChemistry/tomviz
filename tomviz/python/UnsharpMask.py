@@ -19,7 +19,6 @@ class UnsharpMask(tomviz.operators.CancelableOperator):
 
         try:
             import itk
-            import itkTypes
             from tomviz import itkutils
         except Exception as exc:
             print("Could not import necessary module(s)")
@@ -34,8 +33,6 @@ class UnsharpMask(tomviz.operators.CancelableOperator):
             # float ITK image type.
             itk_image = itkutils.convert_vtk_to_itk_image(dataset)
             self.progress.value = next(step_pct)
-            itk_image_type = type(itk_image)
-
 
             self.progress.message = "Running filter"
             self.progress.value = next(step_pct)
@@ -45,8 +42,9 @@ class UnsharpMask(tomviz.operators.CancelableOperator):
             unsharp_mask.SetAmount(amount)
             unsharp_mask.SetThreshold(threshold)
             unsharp_mask.SetSigma(sigma)
-            itkutils.observe_filter_progress(self, unsharp_mask, self.progress.value,
-                    next(step_pct))
+            itkutils.observe_filter_progress(self, unsharp_mask,
+                                             self.progress.value,
+                                             next(step_pct))
 
             try:
                 unsharp_mask.Update()
