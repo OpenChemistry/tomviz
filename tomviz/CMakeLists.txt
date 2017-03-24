@@ -382,6 +382,15 @@ install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
        USE_SOURCE_PERMISSIONS
        COMPONENT runtime)
 
+# Install documentation (user guide)
+file(MAKE_DIRECTORY "${tomviz_BINARY_DIR}/share/tomviz/docs")
+execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+  "${tomviz_SOURCE_DIR}/docs/TomvizBasicUserGuide.pdf"
+  "${tomviz_BINARY_DIR}/share/tomviz/docs/TomvizBasicUserGuide.pdf")
+install(FILES docs/TomvizBasicUserGuide.pdf
+  DESTINATION "${tomviz_data_install_dir}/docs"
+  COMPONENT "Documentation")
+
 if(APPLE)
   list(APPEND exec_sources icons/tomviz.icns)
   set(MACOSX_BUNDLE_ICON_FILE tomviz.icns)
