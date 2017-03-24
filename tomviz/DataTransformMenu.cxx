@@ -218,7 +218,8 @@ void DataTransformMenu::buildSegmentation()
 
   new AddPythonTransformReaction(segmentParticlesAction, "Segment Particles",
                                  readInPythonScript("SegmentParticles"), false,
-                                 false, readInJSONDescription("SegmentParticles"));
+                                 false,
+                                 readInJSONDescription("SegmentParticles"));
 }
 
 void DataTransformMenu::updateActions()
