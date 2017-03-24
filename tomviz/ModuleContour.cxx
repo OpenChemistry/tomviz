@@ -237,7 +237,6 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   if (panel->layout()) {
     delete panel->layout();
-    m_controllers = nullptr;
   }
 
   QVBoxLayout* layout = new QVBoxLayout;
@@ -318,8 +317,10 @@ void ModuleContour::createCategoricalColoringPipeline()
 
     this->PointDataToCellDataRepresentation->UpdateVTKObjects();
 
-    m_controllers->addCategoricalPropertyLinks(
-      this->Internals->Links, this->PointDataToCellDataRepresentation);
+    if (m_controllers) {
+      m_controllers->addCategoricalPropertyLinks(
+        this->Internals->Links, this->PointDataToCellDataRepresentation);
+    }
   }
 }
 
@@ -564,7 +565,8 @@ void ModuleContour::updateScalarColoring()
   if (this->Internals->UseSolidColor) {
     colorArrayHelper.SetInputArrayToProcess(
       vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
-  } else if (m_controllers->getColorByComboBox()->currentIndex() > 0) {
+  } else if (m_controllers &&
+             m_controllers->getColorByComboBox()->currentIndex() > 0) {
     colorArrayHelper.SetInputArrayToProcess(
       vtkDataObject::FIELD_ASSOCIATION_CELLS, arrayName.c_str());
   } else {
