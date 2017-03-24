@@ -287,6 +287,7 @@ set(python_files
   BinTiltSeriesByTwo.py
   DefaultITKTransform.py
   BinaryMinMaxCurvatureFlow.py
+  ReinterpretSignedToUnsigned.py
   )
 
 set(json_files

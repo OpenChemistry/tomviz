@@ -50,6 +50,8 @@ void DataTransformMenu::buildTransforms()
 
   auto cropDataAction = menu->addAction("Crop");
   auto convertDataAction = menu->addAction("Convert To Float");
+  auto reinterpretSignedToUnignedAction =
+    menu->addAction("Reinterpret Signed to Unsigned");
   menu->addSeparator();
   auto shiftUniformAction = menu->addAction("Shift Volume");
   auto deleteSliceAction = menu->addAction("Delete Slices");
@@ -82,6 +84,9 @@ void DataTransformMenu::buildTransforms()
   new AddExpressionReaction(customPythonAction);
   new CropReaction(cropDataAction, mainWindow);
   new ConvertToFloatReaction(convertDataAction);
+  new AddPythonTransformReaction(
+    reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
+    readInPythonScript("ReinterpretSignedToUnsigned"));
 
   new AddPythonTransformReaction(
     shiftUniformAction, "Shift Volume",
@@ -130,6 +135,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(medianFilterAction, "Median Filter",
                                  readInPythonScript("MedianFilter"), false,
                                  false, readInJSONDescription("MedianFilter"));
+  new AddPythonTransformReaction(
+    reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
+    readInPythonScript("ReinterpretSignedToUnsigned"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
