@@ -74,8 +74,15 @@ if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
     "Tomviz requires PARAVIEW_QT_VERSION to be 5, please rebuild ParaView.")
 endif()
 
+# Most of the time we don't want to skip these checks, default to off.
+option(SKIP_PARAVIEW_ITK_PYTHON_CHECKS
+  "Run checks to ensure ParaView and ITK are build against the same Python"
+  OFF)
+mark_as_advanced(SKIP_PARAVIEW_ITK_PYTHON_CHECKS)
+
 find_package(ITK 4.9)
-if(ITK_FOUND)
+if(ITK_FOUND AND NOT SKIP_PARAVIEW_ITK_PYTHON_CHECKS)
+  message(STATUS "Checking ParaView and ITK were built against the same Python")
   if(NOT ITK_WRAP_PYTHON)
     message(FATAL_ERROR
       "Tomviz requires ITK_WRAP_PYTHON to be enabled. "
