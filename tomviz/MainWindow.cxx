@@ -119,16 +119,16 @@ public:
   bool isFirstShow = true;
 };
 
-MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
-  : Superclass(_parent, _flags), Internals(new MainWindow::MWInternals())
+MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
+  : QMainWindow(parent, flags), d(new MainWindow::MWInternals())
 {
   // checkOpenGL();
-  Ui::MainWindow& ui = this->Internals->Ui;
+  Ui::MainWindow& ui = d->Ui;
   ui.setupUi(this);
-  this->Internals->Timer = new QTimer(this);
-  this->connect(this->Internals->Timer, SIGNAL(timeout()), SLOT(autosave()));
-  this->Internals->Timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *
-                                1000 /*msec per second*/);
+  d->Timer = new QTimer(this);
+  connect(d->Timer, SIGNAL(timeout()), SLOT(autosave()));
+  d->Timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *
+                  1000 /*msec per second*/);
 
   QString version(TOMVIZ_VERSION);
   if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)
@@ -140,15 +140,15 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
 
   // Tweak the initial sizes of the dock widgets.
   QList<QDockWidget*> docks;
-  docks << this->Internals->Ui.dockWidget << this->Internals->Ui.dockWidget_5;
+  docks << d->Ui.dockWidget << d->Ui.dockWidget_5;
   QList<int> dockSizes;
   dockSizes << 250 << 250;
-  this->resizeDocks(docks, dockSizes, Qt::Horizontal);
+  resizeDocks(docks, dockSizes, Qt::Horizontal);
   docks.clear();
   dockSizes.clear();
-  docks << this->Internals->Ui.dockWidget_3;
+  docks << d->Ui.dockWidget_3;
   dockSizes << 200;
-  this->resizeDocks(docks, dockSizes, Qt::Vertical);
+  resizeDocks(docks, dockSizes, Qt::Vertical);
 
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
@@ -176,7 +176,7 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
           SLOT(expandAll()));
 
   // connect quit.
-  this->connect(ui.actionExit, SIGNAL(triggered()), SLOT(close()));
+  connect(ui.actionExit, SIGNAL(triggered()), SLOT(close()));
 
   // Connect up the module/data changed to the appropriate slots.
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceActivated(DataSource*)),
@@ -411,8 +411,8 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
     "Enable to allow moving of the selected dataset in the scene");
   moveObjects->setCheckable(true);
 
-  QObject::connect(moveObjects, SIGNAL(triggered(bool)),
-                   &ActiveObjects::instance(), SLOT(setMoveObjectsMode(bool)));
+  connect(moveObjects, SIGNAL(triggered(bool)), &ActiveObjects::instance(),
+          SLOT(setMoveObjectsMode(bool)));
 
   QAction* loadPaletteAction = ui.utilitiesToolbar->addAction(
     QIcon(":/icons/pqPalette.png"), "LoadPalette");
@@ -437,11 +437,10 @@ MainWindow::MainWindow(QWidget* _parent, Qt::WindowFlags _flags)
   // Initialize scale legend
   ScaleLegend* scaleLegend = new ScaleLegend(this);
 
-  QObject::connect(viewMenuManager,
-                   SIGNAL(setScaleLegendStyle(ScaleLegendStyle)), scaleLegend,
-                   SLOT(setStyle(ScaleLegendStyle)));
-  QObject::connect(viewMenuManager, SIGNAL(setScaleLegendVisibility(bool)),
-                   scaleLegend, SLOT(setVisibility(bool)));
+  connect(viewMenuManager, SIGNAL(setScaleLegendStyle(ScaleLegendStyle)),
+          scaleLegend, SLOT(setStyle(ScaleLegendStyle)));
+  connect(viewMenuManager, SIGNAL(setScaleLegendVisibility(bool)), scaleLegend,
+          SLOT(setVisibility(bool)));
 }
 
 MainWindow::~MainWindow()
@@ -451,7 +450,7 @@ MainWindow::~MainWindow()
   if (QFile::exists(autosaveFile) && !QFile::remove(autosaveFile)) {
     std::cerr << "Failed to remove autosave file." << std::endl;
   }
-  delete this->Internals;
+  delete d;
 }
 
 void MainWindow::showAbout()
@@ -521,27 +520,27 @@ void MainWindow::openUserGuide()
 
 void MainWindow::dataSourceChanged(DataSource*)
 {
-  this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
-    this->Internals->Ui.dataPropertiesScrollArea);
+  d->Ui.propertiesPanelStackedWidget->setCurrentWidget(
+    d->Ui.dataPropertiesScrollArea);
 }
 
 void MainWindow::moduleChanged(Module*)
 {
-  this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
-    this->Internals->Ui.modulePropertiesScrollArea);
+  d->Ui.propertiesPanelStackedWidget->setCurrentWidget(
+    d->Ui.modulePropertiesScrollArea);
 }
 
 void MainWindow::operatorChanged(Operator*)
 {
-  this->Internals->Ui.propertiesPanelStackedWidget->setCurrentWidget(
-    this->Internals->Ui.operatorPropertiesScrollArea);
+  d->Ui.propertiesPanelStackedWidget->setCurrentWidget(
+    d->Ui.operatorPropertiesScrollArea);
 }
 
 void MainWindow::showEvent(QShowEvent* e)
 {
-  Superclass::showEvent(e);
-  if (this->Internals->isFirstShow) {
-    this->Internals->isFirstShow = false;
+  QMainWindow::showEvent(e);
+  if (d->isFirstShow) {
+    d->isFirstShow = false;
     QTimer::singleShot(1, this, SLOT(onFirstWindowShow()));
   }
 }
