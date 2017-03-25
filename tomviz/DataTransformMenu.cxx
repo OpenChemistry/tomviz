@@ -63,6 +63,7 @@ void DataTransformMenu::buildTransforms()
   menu->addSeparator();
   auto setNegativeVoxelsToZeroAction =
     menu->addAction("Set Negative Voxels To Zero");
+  auto addConstantAction = menu->addAction("Add Constant");
   auto invertDataAction = menu->addAction("Invert Data");
   auto squareRootAction = menu->addAction("Square Root Data");
   auto hannWindowAction = menu->addAction("Hann Window");
@@ -111,6 +112,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(setNegativeVoxelsToZeroAction,
                                  "Set Negative Voxels to Zero",
                                  readInPythonScript("SetNegativeVoxelsToZero"));
+  new AddPythonTransformReaction(addConstantAction, "Add a Constant",
+                                 readInPythonScript("AddConstant"), false,
+                                 false, readInJSONDescription("AddConstant"));
   new AddPythonTransformReaction(invertDataAction, "Invert Data",
                                  readInPythonScript("InvertData"));
   new AddPythonTransformReaction(squareRootAction, "Square Root Data",
