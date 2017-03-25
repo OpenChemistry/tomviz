@@ -358,6 +358,7 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
     }
   }
   this->Widget->UpdatePlacement();
+  this->onPlaneChanged();
 
   // Let the superclass do its thing
   return this->Superclass::deserialize(ns);

@@ -73,7 +73,7 @@ protected:
 private:
   Q_DISABLE_COPY(ModuleRuler)
 
-  bool m_showLine;
+  bool m_showLine = true;
 };
 }
 

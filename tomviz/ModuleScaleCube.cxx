@@ -117,6 +117,7 @@ bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   m_handleWidget->SetRepresentation(m_cubeRep.Get());
   m_handleWidget->EnabledOn();
+
   return true;
 }
 
@@ -133,7 +134,9 @@ bool ModuleScaleCube::visibility() const
 bool ModuleScaleCube::setVisibility(bool choice)
 {
   m_cubeRep->SetHandleVisibility(choice ? 1 : 0);
-  m_cubeRep->SetLabelVisibility(choice ? 1 : 0);
+  if (!choice || m_annotationVisibility) {
+    m_cubeRep->SetLabelVisibility(choice ? 1 : 0);
+  }
   return true;
 }
 
@@ -208,6 +211,7 @@ bool ModuleScaleCube::deserialize(const pugi::xml_node& ns)
     xml_attribute att = node.attribute("enabled");
     if (att) {
       m_cubeRep->SetLabelVisibility(static_cast<int>(att.as_bool()));
+      m_annotationVisibility = att.as_bool();
     }
   }
 
@@ -275,6 +279,7 @@ void ModuleScaleCube::setSideLength(const double length)
 void ModuleScaleCube::setAnnotation(const bool val)
 {
   m_cubeRep->SetLabelVisibility(val ? 1 : 0);
+  m_annotationVisibility = val;
   emit renderNeeded();
 }
 

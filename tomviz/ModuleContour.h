@@ -19,6 +19,8 @@
 #include "Module.h"
 #include <vtkWeakPointer.h>
 
+#include <QPointer>
+
 class vtkSMProxy;
 class vtkSMSourceProxy;
 namespace tomviz {
@@ -78,7 +80,7 @@ protected:
   class Private;
   Private* Internals;
 
-  ModuleContourWidget* m_controllers = nullptr;
+  QPointer<ModuleContourWidget> m_controllers;
 
   QString Representation;
 

@@ -72,6 +72,7 @@ private:
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkGridAxes3DActor> m_gridAxes;
   pqPropertyLinks m_links;
+  bool m_AxesVisibility = false;
 };
 }
 

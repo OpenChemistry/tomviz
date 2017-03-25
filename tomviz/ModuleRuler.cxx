@@ -150,8 +150,10 @@ bool ModuleRuler::setVisibility(bool val)
 {
   vtkSMPropertyHelper(m_Representation, "Visibility").Set(val ? 1 : 0);
   m_Representation->UpdateVTKObjects();
-  if (m_Widget) {
+  if (!val || m_showLine) {
+    bool oldValue = m_showLine;
     m_Widget->setWidgetVisible(val);
+    m_showLine = oldValue;
   }
   return true;
 }

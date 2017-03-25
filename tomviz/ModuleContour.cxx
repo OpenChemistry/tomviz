@@ -237,7 +237,6 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   if (panel->layout()) {
     delete panel->layout();
-    m_controllers = nullptr;
   }
 
   QVBoxLayout* layout = new QVBoxLayout;
@@ -318,8 +317,10 @@ void ModuleContour::createCategoricalColoringPipeline()
 
     this->PointDataToCellDataRepresentation->UpdateVTKObjects();
 
-    m_controllers->addCategoricalPropertyLinks(
-      this->Internals->Links, this->PointDataToCellDataRepresentation);
+    if (m_controllers) {
+      m_controllers->addCategoricalPropertyLinks(
+        this->Internals->Links, this->PointDataToCellDataRepresentation);
+    }
   }
 }
 
@@ -380,11 +381,14 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   {
     QStringList resampleRepresentationProperties;
     resampleRepresentationProperties << "Representation"
-                                    << "Opacity"
-                                    << "Specular"
-                                    << "Visibility"
-                                    << "DiffuseColor"
-                                    << "AmbientColor";
+                                     << "Opacity"
+                                     << "Specular"
+                                     << "Visibility"
+                                     << "DiffuseColor"
+                                     << "AmbientColor"
+                                     << "Ambient"
+                                     << "Diffuse"
+                                     << "SpecularPower";
 
     node = ns.append_child("ResampleRepresentation");
     if (tomviz::serialize(this->ResampleRepresentation, node,
@@ -398,11 +402,14 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
   if (this->PointDataToCellDataRepresentation) {
     QStringList pointDataToCellDataRepresentationProperties;
     pointDataToCellDataRepresentationProperties << "Representation"
-                                    << "Opacity"
-                                    << "Specular"
-                                    << "Visibility"
-                                    << "DiffuseColor"
-                                    << "AmbientColor";
+                                                << "Opacity"
+                                                << "Specular"
+                                                << "Visibility"
+                                                << "DiffuseColor"
+                                                << "AmbientColor"
+                                                << "Ambient"
+                                                << "Diffuse"
+                                                << "SpecularPower";
 
     node = ns.append_child("PointDataToCellDataRepresentation");
     if (tomviz::serialize(this->PointDataToCellDataRepresentation, node,
@@ -558,7 +565,8 @@ void ModuleContour::updateScalarColoring()
   if (this->Internals->UseSolidColor) {
     colorArrayHelper.SetInputArrayToProcess(
       vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
-  } else if (m_controllers->getColorByComboBox()->currentIndex() > 0) {
+  } else if (m_controllers &&
+             m_controllers->getColorByComboBox()->currentIndex() > 0) {
     colorArrayHelper.SetInputArrayToProcess(
       vtkDataObject::FIELD_ASSOCIATION_CELLS, arrayName.c_str());
   } else {
