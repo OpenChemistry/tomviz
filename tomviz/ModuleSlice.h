@@ -30,7 +30,6 @@ namespace tomviz {
 class ModuleSlice : public Module
 {
   Q_OBJECT
-  typedef Module Superclass;
 
 public:
   ModuleSlice(QObject* parent = nullptr);
@@ -68,10 +67,10 @@ private:
 
   Q_DISABLE_COPY(ModuleSlice)
 
-  vtkWeakPointer<vtkSMSourceProxy> PassThrough;
-  vtkSmartPointer<vtkSMProxy> PropsPanelProxy;
-  vtkSmartPointer<vtkNonOrthoImagePlaneWidget> Widget;
-  bool IgnoreSignals;
+  vtkWeakPointer<vtkSMSourceProxy> m_passThrough;
+  vtkSmartPointer<vtkSMProxy> m_propsPanelProxy;
+  vtkSmartPointer<vtkNonOrthoImagePlaneWidget> m_widget;
+  bool m_ignoreSignals = false;
 
   pqPropertyLinks m_Links;
 };

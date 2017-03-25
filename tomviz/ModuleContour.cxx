@@ -56,25 +56,23 @@ class ModuleContour::Private
 {
 public:
   std::string ColorArrayName;
-  bool UseSolidColor;
+  bool UseSolidColor = false;
   pqPropertyLinks Links;
-  QPointer<DataSource> ColorByDataSource;
+  QPointer<DataSource> ColorByDataSource = nullptr;
 };
 
-ModuleContour::ModuleContour(QObject* parentObject) : Superclass(parentObject)
+ModuleContour::ModuleContour(QObject* parentObject) : Module(parentObject)
 {
-  this->Internals = new Private;
-  this->Internals->Links.setAutoUpdateVTKObjects(true);
-  this->Internals->UseSolidColor = false;
-  this->Internals->ColorByDataSource = nullptr;
+  d = new Private;
+  d->Links.setAutoUpdateVTKObjects(true);
 }
 
 ModuleContour::~ModuleContour()
 {
-  this->finalize();
+  finalize();
 
-  delete this->Internals;
-  this->Internals = nullptr;
+  delete d;
+  d = nullptr;
 }
 
 QIcon ModuleContour::icon() const
@@ -84,7 +82,7 @@ QIcon ModuleContour::icon() const
 
 bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView)) {
+  if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
@@ -96,63 +94,63 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   vtkSmartPointer<vtkSMProxy> contourProxy;
   contourProxy.TakeReference(pxm->NewProxy("filters", "FlyingEdges"));
 
-  this->ContourFilter = vtkSMSourceProxy::SafeDownCast(contourProxy);
-  Q_ASSERT(this->ContourFilter);
-  controller->PreInitializeProxy(this->ContourFilter);
-  vtkSMPropertyHelper(this->ContourFilter, "Input").Set(producer);
-  vtkSMPropertyHelper(this->ContourFilter, "ComputeScalars", /*quiet*/ true)
+  m_contourFilter = vtkSMSourceProxy::SafeDownCast(contourProxy);
+  Q_ASSERT(m_contourFilter);
+  controller->PreInitializeProxy(m_contourFilter);
+  vtkSMPropertyHelper(m_contourFilter, "Input").Set(producer);
+  vtkSMPropertyHelper(m_contourFilter, "ComputeScalars", /*quiet*/ true)
     .Set(1);
 
-  controller->PostInitializeProxy(this->ContourFilter);
-  controller->RegisterPipelineProxy(this->ContourFilter);
+  controller->PostInitializeProxy(m_contourFilter);
+  controller->RegisterPipelineProxy(m_contourFilter);
 
   // Set up a data resampler to add LabelMap values on the contour, and mark
   // the LabelMap as categorical
   vtkSmartPointer<vtkSMProxy> probeProxy;
   probeProxy.TakeReference(pxm->NewProxy("filters", "ResampleWithDataset"));
 
-  this->ResampleFilter = vtkSMSourceProxy::SafeDownCast(probeProxy);
-  Q_ASSERT(this->ResampleFilter);
-  controller->PreInitializeProxy(this->ResampleFilter);
-  vtkSMPropertyHelper(this->ResampleFilter, "Input").Set(data->producer());
-  vtkSMPropertyHelper(this->ResampleFilter, "Source").Set(this->ContourFilter);
-  vtkSMPropertyHelper(this->ResampleFilter, "CategoricalData").Set(1);
-  vtkSMPropertyHelper(this->ResampleFilter, "PassPointArrays").Set(1);
-  controller->PostInitializeProxy(this->ResampleFilter);
-  controller->RegisterPipelineProxy(this->ResampleFilter);
+  m_resampleFilter = vtkSMSourceProxy::SafeDownCast(probeProxy);
+  Q_ASSERT(m_resampleFilter);
+  controller->PreInitializeProxy(m_resampleFilter);
+  vtkSMPropertyHelper(m_resampleFilter, "Input").Set(data->producer());
+  vtkSMPropertyHelper(m_resampleFilter, "Source").Set(m_contourFilter);
+  vtkSMPropertyHelper(m_resampleFilter, "CategoricalData").Set(1);
+  vtkSMPropertyHelper(m_resampleFilter, "PassPointArrays").Set(1);
+  controller->PostInitializeProxy(m_resampleFilter);
+  controller->RegisterPipelineProxy(m_resampleFilter);
 
   {
     // Create the representation for the resampled data
-    this->ResampleRepresentation =
-      controller->Show(this->ResampleFilter, 0, vtkView);
-    Q_ASSERT(this->ResampleRepresentation);
+    m_resampleRepresentation =
+      controller->Show(m_resampleFilter, 0, vtkView);
+    Q_ASSERT(m_resampleRepresentation);
 
     // Set the active representation to resampled data
-    this->ActiveRepresentation = this->ResampleRepresentation;
+    m_activeRepresentation = m_resampleRepresentation;
 
-    vtkSMPropertyHelper(this->ResampleRepresentation, "Representation")
+    vtkSMPropertyHelper(m_resampleRepresentation, "Representation")
       .Set("Surface");
-    vtkSMPropertyHelper(this->ResampleRepresentation, "Position")
+    vtkSMPropertyHelper(m_resampleRepresentation, "Position")
       .Set(data->displayPosition(), 3);
-    this->ResampleRepresentation->UpdateProperty("Visibility");
+    m_resampleRepresentation->UpdateProperty("Visibility");
 
-    vtkSMPropertyHelper colorArrayHelper(this->ResampleRepresentation,
+    vtkSMPropertyHelper colorArrayHelper(m_resampleRepresentation,
                                          "ColorArrayName");
-    this->Internals->ColorArrayName =
+    d->ColorArrayName =
       std::string(colorArrayHelper.GetInputArrayNameToProcess());
 
-    vtkSMPropertyHelper colorHelper(this->ResampleRepresentation,
+    vtkSMPropertyHelper colorHelper(m_resampleRepresentation,
                                     "DiffuseColor");
     double white[3] = { 1.0, 1.0, 1.0 };
     colorHelper.Set(white, 3);
     // use proper color map.
-    this->updateColorMap();
+    updateColorMap();
 
-    this->ResampleRepresentation->UpdateVTKObjects();
+    m_resampleRepresentation->UpdateVTKObjects();
   }
 
   // Color by the data source by default
-  this->Internals->ColorByDataSource = dataSource();
+  d->ColorByDataSource = dataSource();
 
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(contourProxy)) {
@@ -164,52 +162,52 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
 void ModuleContour::updateColorMap()
 {
-  Q_ASSERT(this->ActiveRepresentation);
-  vtkSMPropertyHelper(this->ActiveRepresentation, "LookupTable")
-    .Set(this->colorMap());
+  Q_ASSERT(m_activeRepresentation);
+  vtkSMPropertyHelper(m_activeRepresentation, "LookupTable")
+    .Set(colorMap());
 
   updateScalarColoring();
 
-  vtkSMPropertyHelper(this->ActiveRepresentation, "Visibility")
-    .Set(this->visibility() ? 1 : 0);
-  this->ActiveRepresentation->UpdateVTKObjects();
+  vtkSMPropertyHelper(m_activeRepresentation, "Visibility")
+    .Set(visibility() ? 1 : 0);
+  m_activeRepresentation->UpdateVTKObjects();
 }
 
 bool ModuleContour::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(this->ResampleFilter);
-  controller->UnRegisterProxy(this->ResampleRepresentation);
-  if (this->PointDataToCellDataFilter) {
-    controller->UnRegisterProxy(this->PointDataToCellDataFilter);
+  controller->UnRegisterProxy(m_resampleFilter);
+  controller->UnRegisterProxy(m_resampleRepresentation);
+  if (m_pointDataToCellDataFilter) {
+    controller->UnRegisterProxy(m_pointDataToCellDataFilter);
   }
-  if (this->PointDataToCellDataRepresentation) {
-    controller->UnRegisterProxy(this->PointDataToCellDataRepresentation);
+  if (m_pointDataToCellDataRepresentation) {
+    controller->UnRegisterProxy(m_pointDataToCellDataRepresentation);
   }
-  controller->UnRegisterProxy(this->ContourFilter);
-  this->ResampleFilter = nullptr;
-  this->ContourFilter = nullptr;
-  this->ResampleRepresentation = nullptr;
-  this->PointDataToCellDataFilter = nullptr;
-  this->PointDataToCellDataRepresentation = nullptr;
-  this->ActiveRepresentation = nullptr;
+  controller->UnRegisterProxy(m_contourFilter);
+  m_resampleFilter = nullptr;
+  m_contourFilter = nullptr;
+  m_resampleRepresentation = nullptr;
+  m_pointDataToCellDataFilter = nullptr;
+  m_pointDataToCellDataRepresentation = nullptr;
+  m_activeRepresentation = nullptr;
   return true;
 }
 
 bool ModuleContour::setVisibility(bool val)
 {
-  Q_ASSERT(this->ActiveRepresentation);
-  vtkSMPropertyHelper(this->ActiveRepresentation, "Visibility")
+  Q_ASSERT(m_activeRepresentation);
+  vtkSMPropertyHelper(m_activeRepresentation, "Visibility")
     .Set(val ? 1 : 0);
-  this->ActiveRepresentation->UpdateVTKObjects();
+  m_activeRepresentation->UpdateVTKObjects();
 
   return true;
 }
 
 bool ModuleContour::visibility() const
 {
-  if (this->ActiveRepresentation) {
-    return vtkSMPropertyHelper(this->ActiveRepresentation, "Visibility")
+  if (m_activeRepresentation) {
+    return vtkSMPropertyHelper(m_activeRepresentation, "Visibility")
              .GetAsInt() != 0;
   } else {
     return false;
@@ -222,18 +220,18 @@ void ModuleContour::setIsoValues(const QList<double>& values)
   std::copy(values.begin(), values.end(), vectorValues.begin());
   vectorValues.push_back(0); // to avoid having to check for 0 size on Windows.
 
-  vtkSMPropertyHelper(this->ContourFilter, "ContourValues")
+  vtkSMPropertyHelper(m_contourFilter, "ContourValues")
     .Set(&vectorValues[0], values.size());
-  this->ContourFilter->UpdateVTKObjects();
+  m_contourFilter->UpdateVTKObjects();
 
   updateScalarColoring();
 }
 
 void ModuleContour::addToPanel(QWidget* panel)
 {
-  Q_ASSERT(this->ContourFilter);
-  Q_ASSERT(this->ResampleFilter);
-  Q_ASSERT(this->ResampleRepresentation);
+  Q_ASSERT(m_contourFilter);
+  Q_ASSERT(m_resampleFilter);
+  Q_ASSERT(m_resampleRepresentation);
 
   if (panel->layout()) {
     delete panel->layout();
@@ -246,15 +244,15 @@ void ModuleContour::addToPanel(QWidget* panel)
   m_controllers = new ModuleContourWidget;
   layout->addWidget(m_controllers);
 
-  m_controllers->setUseSolidColor(this->Internals->UseSolidColor);
+  m_controllers->setUseSolidColor(d->UseSolidColor);
 
   connect(m_controllers, SIGNAL(useSolidColor(const bool)), this,
           SLOT(setUseSolidColor(const bool)));
   m_controllers->addPropertyLinks(
-    this->Internals->Links, this->ResampleRepresentation, this->ContourFilter);
-  this->connect(m_controllers, SIGNAL(propertyChanged()), this,
+    d->Links, m_resampleRepresentation, m_contourFilter);
+  connect(m_controllers, SIGNAL(propertyChanged()), this,
                 SLOT(onPropertyChanged()));
-  this->connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));
+  connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));
 
   updateGUI();
   onPropertyChanged();
@@ -262,116 +260,115 @@ void ModuleContour::addToPanel(QWidget* panel)
 
 void ModuleContour::createCategoricalColoringPipeline()
 {
-  if (this->PointDataToCellDataFilter == nullptr) {
+  if (m_pointDataToCellDataFilter == nullptr) {
 
     // Set up a point data to cell data filter and set the input data as
     // categorical
-    vtkSMSourceProxy* producer =
-      this->Internals->ColorByDataSource->producer();
+    vtkSMSourceProxy* producer = d->ColorByDataSource->producer();
 
     vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
     vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
     vtkSmartPointer<vtkSMProxy> pdToCdProxy;
-    pdToCdProxy.TakeReference(pxm->NewProxy("filters","PointDataToCellData"));
+    pdToCdProxy.TakeReference(pxm->NewProxy("filters", "PointDataToCellData"));
 
-    this->PointDataToCellDataFilter =
+    m_pointDataToCellDataFilter =
       vtkSMSourceProxy::SafeDownCast(pdToCdProxy);
-    Q_ASSERT(this->PointDataToCellDataFilter);
-    controller->PreInitializeProxy(this->PointDataToCellDataFilter);
-    vtkSMPropertyHelper(this->PointDataToCellDataFilter, "Input")
-      .Set(this->ResampleFilter);
-    vtkSMPropertyHelper(this->PointDataToCellDataFilter,
-                        "CategoricalData").Set(1);
-    controller->PostInitializeProxy(this->PointDataToCellDataFilter);
-    controller->RegisterPipelineProxy(this->PointDataToCellDataFilter);
+    Q_ASSERT(m_pointDataToCellDataFilter);
+    controller->PreInitializeProxy(m_pointDataToCellDataFilter);
+    vtkSMPropertyHelper(m_pointDataToCellDataFilter, "Input")
+      .Set(m_resampleFilter);
+    vtkSMPropertyHelper(m_pointDataToCellDataFilter, "CategoricalData")
+      .Set(1);
+    controller->PostInitializeProxy(m_pointDataToCellDataFilter);
+    controller->RegisterPipelineProxy(m_pointDataToCellDataFilter);
   }
 
-  if (this->PointDataToCellDataRepresentation == nullptr) {
+  if (m_pointDataToCellDataRepresentation == nullptr) {
 
     // Create the representation for the point data to cell data
     vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-    this->PointDataToCellDataRepresentation =
-      controller->Show(this->PointDataToCellDataFilter, 0,
+    m_pointDataToCellDataRepresentation =
+      controller->Show(m_pointDataToCellDataFilter, 0,
                        ActiveObjects::instance().activeView());
-    Q_ASSERT(this->PointDataToCellDataRepresentation);
-    vtkSMPropertyHelper(this->PointDataToCellDataRepresentation,
+    Q_ASSERT(m_pointDataToCellDataRepresentation);
+    vtkSMPropertyHelper(m_pointDataToCellDataRepresentation,
                         "Representation")
       .Set("Surface");
-    vtkSMPropertyHelper(this->PointDataToCellDataRepresentation, "Position")
-      .Set(this->Internals->ColorByDataSource->displayPosition(), 3);
+    vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Position")
+      .Set(d->ColorByDataSource->displayPosition(), 3);
 
-    vtkSMPropertyHelper(this->PointDataToCellDataRepresentation,
-                        "Visibility").Set(0);
+    vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Visibility")
+      .Set(0);
 
     vtkSMPropertyHelper colorArrayHelper(
-      this->PointDataToCellDataRepresentation, "ColorArrayName");
-    this->Internals->ColorArrayName =
+      m_pointDataToCellDataRepresentation, "ColorArrayName");
+    d->ColorArrayName =
       std::string(colorArrayHelper.GetInputArrayNameToProcess());
 
-    vtkSMPropertyHelper colorHelper(this->PointDataToCellDataRepresentation,
+    vtkSMPropertyHelper colorHelper(m_pointDataToCellDataRepresentation,
                                     "DiffuseColor");
     double white[3] = { 1.0, 1.0, 1.0 };
     colorHelper.Set(white, 3);
 
-    this->PointDataToCellDataRepresentation->UpdateVTKObjects();
+    m_pointDataToCellDataRepresentation->UpdateVTKObjects();
 
     if (m_controllers) {
       m_controllers->addCategoricalPropertyLinks(
-        this->Internals->Links, this->PointDataToCellDataRepresentation);
+        d->Links, m_pointDataToCellDataRepresentation);
     }
   }
 }
 
 void ModuleContour::onPropertyChanged()
 {
-  this->Internals->Links.accept();
+  d->Links.accept();
 
   int colorByIndex = m_controllers->getColorByComboBox()->currentIndex();
   if (colorByIndex > 0) {
     createCategoricalColoringPipeline();
     auto childDataSources = getChildDataSources();
-    this->Internals->ColorByDataSource = childDataSources[colorByIndex - 1];
-    vtkSMPropertyHelper(this->ResampleFilter, "CategoricalData").Set(1);
-    vtkSMPropertyHelper(this->ResampleRepresentation, "Visibility").Set(0);
-    this->ResampleRepresentation->UpdateProperty("Visibility");
-    this->ActiveRepresentation = this->PointDataToCellDataRepresentation;
+    d->ColorByDataSource = childDataSources[colorByIndex - 1];
+    vtkSMPropertyHelper(m_resampleFilter, "CategoricalData").Set(1);
+    vtkSMPropertyHelper(m_resampleRepresentation, "Visibility").Set(0);
+    m_resampleRepresentation->UpdateProperty("Visibility");
+    m_activeRepresentation = m_pointDataToCellDataRepresentation;
   } else {
-    this->Internals->ColorByDataSource = dataSource();
-    vtkSMPropertyHelper(this->ResampleFilter, "CategoricalData").Set(0);
-    if (this->PointDataToCellDataRepresentation) {
-      vtkSMPropertyHelper(this->PointDataToCellDataRepresentation,
-                          "Visibility").Set(0);
-      this->PointDataToCellDataRepresentation->UpdateProperty("Visibility");
+    d->ColorByDataSource = dataSource();
+    vtkSMPropertyHelper(m_resampleFilter, "CategoricalData").Set(0);
+    if (m_pointDataToCellDataRepresentation) {
+      vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Visibility")
+        .Set(0);
+      m_pointDataToCellDataRepresentation->UpdateProperty("Visibility");
     }
-    this->ActiveRepresentation = this->ResampleRepresentation;
+    m_activeRepresentation = m_resampleRepresentation;
   }
   setVisibility(true);
 
-  vtkSMPropertyHelper resampleHelper(this->ResampleFilter, "Input");
-  resampleHelper.Set(this->Internals->ColorByDataSource->producer());
+  vtkSMPropertyHelper resampleHelper(m_resampleFilter, "Input");
+  resampleHelper.Set(d->ColorByDataSource->producer());
 
   updateColorMap();
 
-  this->ResampleFilter->UpdateVTKObjects();
-  if (this->PointDataToCellDataFilter) {
-    this->PointDataToCellDataFilter->UpdateVTKObjects();
+  m_resampleFilter->UpdateVTKObjects();
+  if (m_pointDataToCellDataFilter) {
+    m_pointDataToCellDataFilter->UpdateVTKObjects();
   }
-  this->ActiveRepresentation->MarkDirty(this->ActiveRepresentation);
-  this->ActiveRepresentation->UpdateVTKObjects();
+  m_activeRepresentation->MarkDirty(m_activeRepresentation);
+  m_activeRepresentation->UpdateVTKObjects();
 
-  emit this->renderNeeded();
+  emit renderNeeded();
 }
 
 bool ModuleContour::serialize(pugi::xml_node& ns) const
 {
-  ns.append_attribute("solid_color").set_value(this->Internals->UseSolidColor);
+  ns.append_attribute("solid_color").set_value(d->UseSolidColor);
   // save stuff that the user can change.
   pugi::xml_node node = ns.append_child("ContourFilter");
   QStringList contourProperties;
   contourProperties << "ContourValues";
-  if (tomviz::serialize(this->ContourFilter, node, contourProperties) ==
+  if (tomviz::serialize(m_contourFilter, node, contourProperties) ==
       false) {
     qWarning("Failed to serialize ContourFilter.");
     ns.remove_child(node);
@@ -391,7 +388,7 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
                                      << "SpecularPower";
 
     node = ns.append_child("ResampleRepresentation");
-    if (tomviz::serialize(this->ResampleRepresentation, node,
+    if (tomviz::serialize(m_resampleRepresentation, node,
                           resampleRepresentationProperties) == false) {
       qWarning("Failed to serialize ResampleRepresentation.");
       ns.remove_child(node);
@@ -399,7 +396,7 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
     }
   }
 
-  if (this->PointDataToCellDataRepresentation) {
+  if (m_pointDataToCellDataRepresentation) {
     QStringList pointDataToCellDataRepresentationProperties;
     pointDataToCellDataRepresentationProperties << "Representation"
                                                 << "Opacity"
@@ -412,73 +409,74 @@ bool ModuleContour::serialize(pugi::xml_node& ns) const
                                                 << "SpecularPower";
 
     node = ns.append_child("PointDataToCellDataRepresentation");
-    if (tomviz::serialize(this->PointDataToCellDataRepresentation, node,
-                          pointDataToCellDataRepresentationProperties)==false) {
+    if (tomviz::serialize(m_pointDataToCellDataRepresentation, node,
+                          pointDataToCellDataRepresentationProperties) ==
+        false) {
       qWarning("Failed to serialize PointDataToCellDataRepresentation.");
       ns.remove_child(node);
       return false;
     }
   }
 
-  return this->Superclass::serialize(ns);
+  return Module::serialize(ns);
 }
 
 bool ModuleContour::deserialize(const pugi::xml_node& ns)
 {
   if (ns.attribute("solid_color")) {
-    this->Internals->UseSolidColor = ns.attribute("solid_color").as_bool();
+    d->UseSolidColor = ns.attribute("solid_color").as_bool();
   }
   if (ns.child("PointDataToCellDataRepresentation")) {
-      createCategoricalColoringPipeline();
-      if (!tomviz::deserialize(this->PointDataToCellDataRepresentation,
-                               ns.child("PointDataToCellDataRepresentation"))) {
-        return false;
-      }
+    createCategoricalColoringPipeline();
+    if (!tomviz::deserialize(m_pointDataToCellDataRepresentation,
+                             ns.child("PointDataToCellDataRepresentation"))) {
+      return false;
     }
+  }
 
-  return tomviz::deserialize(this->ContourFilter, ns.child("ContourFilter")) &&
-         tomviz::deserialize(this->ResampleRepresentation,
+  return tomviz::deserialize(m_contourFilter, ns.child("ContourFilter")) &&
+         tomviz::deserialize(m_resampleRepresentation,
                              ns.child("ResampleRepresentation")) &&
-         this->Superclass::deserialize(ns);
+         Module::deserialize(ns);
 }
 
 void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
-  vtkSMPropertyHelper(this->ActiveRepresentation, "Position").Set(pos, 3);
-  this->ActiveRepresentation->MarkDirty(this->ActiveRepresentation);
-  this->ActiveRepresentation->UpdateVTKObjects();
+  vtkSMPropertyHelper(m_activeRepresentation, "Position").Set(pos, 3);
+  m_activeRepresentation->MarkDirty(m_activeRepresentation);
+  m_activeRepresentation->UpdateVTKObjects();
 }
 
 DataSource* ModuleContour::colorMapDataSource() const
 {
-  return this->Internals->ColorByDataSource.data()
-           ? this->Internals->ColorByDataSource.data()
+  return d->ColorByDataSource.data()
+           ? d->ColorByDataSource.data()
            : dataSource();
 }
 
 bool ModuleContour::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == this->ContourFilter.Get()) ||
-         (proxy == this->ResampleRepresentation.Get()) ||
-         (this->PointDataToCellDataRepresentation &&
-          proxy == this->PointDataToCellDataRepresentation.Get()) ||
-         (proxy == this->ResampleFilter.Get());
+  return (proxy == m_contourFilter.Get()) ||
+         (proxy == m_resampleRepresentation.Get()) ||
+         (m_pointDataToCellDataRepresentation &&
+          proxy == m_pointDataToCellDataRepresentation.Get()) ||
+         (proxy == m_resampleFilter.Get());
 }
 
 std::string ModuleContour::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == this->ContourFilter.Get()) {
+  if (proxy == m_contourFilter.Get()) {
     return "Contour";
-  } else if (proxy == this->ResampleFilter.Get()) {
+  } else if (proxy == m_resampleFilter.Get()) {
     return "Resample";
-  } else if (this->PointDataToCellDataFilter &&
-             proxy == this->PointDataToCellDataFilter.Get()) {
+  } else if (m_pointDataToCellDataFilter &&
+             proxy == m_pointDataToCellDataFilter.Get()) {
     return "PointDataToCellData";
-  } else if (proxy == this->ResampleRepresentation.Get()) {
+  } else if (proxy == m_resampleRepresentation.Get()) {
     return "ResampleRepresentation";
-  } else if (this->PointDataToCellDataRepresentation &&
-             proxy == this->PointDataToCellDataRepresentation.Get()) {
+  } else if (m_pointDataToCellDataRepresentation &&
+             proxy == m_pointDataToCellDataRepresentation.Get()) {
     return "PointDataToCellDataRepresentation";
   } else {
     qWarning("Gave bad proxy to module in save animation state");
@@ -489,17 +487,16 @@ std::string ModuleContour::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleContour::getProxyForString(const std::string& str)
 {
   if (str == "Resample") {
-    return this->ResampleFilter.Get();
+    return m_resampleFilter.Get();
   } else if (str == "Contour") {
-    return this->ContourFilter.Get();
-  } else if (this->PointDataToCellDataFilter &&
-             str == "PointDataToCellData") {
-    return this->PointDataToCellDataFilter.Get();
+    return m_contourFilter.Get();
+  } else if (m_pointDataToCellDataFilter && str == "PointDataToCellData") {
+    return m_pointDataToCellDataFilter.Get();
   } else if (str == "ResampleRepresentation") {
-    return this->ResampleRepresentation.Get();
-  } else if (this->PointDataToCellDataRepresentation &&
+    return m_resampleRepresentation.Get();
+  } else if (m_pointDataToCellDataRepresentation &&
              str == "PointDataToCellDataRepresentation") {
-    return this->PointDataToCellDataRepresentation.Get();
+    return m_pointDataToCellDataRepresentation.Get();
   } else {
     return nullptr;
   }
@@ -534,19 +531,19 @@ QList<DataSource*> ModuleContour::getChildDataSources()
 
 void ModuleContour::updateScalarColoring()
 {
-  if (!this->Internals->ColorByDataSource) {
+  if (!d->ColorByDataSource) {
     return;
   }
 
-  std::string arrayName(this->Internals->ColorArrayName);
+  std::string arrayName(d->ColorArrayName);
 
   // Get the active point scalars from the resample filter
   vtkPVDataInformation* dataInfo = nullptr;
   vtkPVDataSetAttributesInformation* attributeInfo = nullptr;
   vtkPVArrayInformation* arrayInfo = nullptr;
-  if (this->Internals->ColorByDataSource) {
+  if (d->ColorByDataSource) {
     dataInfo =
-      this->Internals->ColorByDataSource->producer()->GetDataInformation(0);
+      d->ColorByDataSource->producer()->GetDataInformation(0);
   }
   if (dataInfo) {
     attributeInfo = dataInfo->GetAttributeInformation(
@@ -560,9 +557,9 @@ void ModuleContour::updateScalarColoring()
     arrayName = arrayInfo->GetName();
   }
 
-  vtkSMPropertyHelper colorArrayHelper(this->ActiveRepresentation,
+  vtkSMPropertyHelper colorArrayHelper(m_activeRepresentation,
                                        "ColorArrayName");
-  if (this->Internals->UseSolidColor) {
+  if (d->UseSolidColor) {
     colorArrayHelper.SetInputArrayToProcess(
       vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
   } else if (m_controllers &&
@@ -574,14 +571,14 @@ void ModuleContour::updateScalarColoring()
       vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName.c_str());
   }
 
-  ActiveObjects::instance().colorMapChanged(this->Internals->ColorByDataSource);
+  ActiveObjects::instance().colorMapChanged(d->ColorByDataSource);
 }
 
 void ModuleContour::setUseSolidColor(const bool useSolidColor)
 {
-  this->Internals->UseSolidColor = useSolidColor;
-  this->updateColorMap();
-  emit this->renderNeeded();
+  d->UseSolidColor = useSolidColor;
+  updateColorMap();
+  emit renderNeeded();
 }
 
 void ModuleContour::updateGUI()
@@ -596,7 +593,7 @@ void ModuleContour::updateGUI()
       combo->addItem(childSources[i]->filename());
     }
 
-    int selected = childSources.indexOf(this->Internals->ColorByDataSource);
+    int selected = childSources.indexOf(d->ColorByDataSource);
 
     // If data source not found, selected will be -1, so the current index will
     // be set to 0, which is the right index for this data source.

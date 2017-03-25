@@ -45,14 +45,13 @@ public:
   bool IsVisible;
 };
 
-ModuleSegment::ModuleSegment(QObject* p)
-  : Superclass(p), Internals(new MSInternal)
+ModuleSegment::ModuleSegment(QObject* p) : Module(p), d(new MSInternal)
 {
 }
 
 ModuleSegment::~ModuleSegment()
 {
-  this->finalize();
+  finalize();
 }
 
 QString ModuleSegment::label() const
@@ -67,7 +66,7 @@ QIcon ModuleSegment::icon() const
 
 bool ModuleSegment::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView)) {
+  if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
@@ -75,9 +74,9 @@ bool ModuleSegment::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   vtkSMSourceProxy* producer = data->producer();
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
-  this->Internals->SegmentationScript.TakeReference(
+  d->SegmentationScript.TakeReference(
     pxm->NewProxy("tomviz_proxies", "PythonProgrammableSegmentation"));
-  vtkSMPropertyHelper(this->Internals->SegmentationScript, "Script")
+  vtkSMPropertyHelper(d->SegmentationScript, "Script")
     .Set(
       "def run_itk_segmentation(itk_image, itk_image_type):\n"
       "    # should return the result image and result image type like this:\n"
@@ -108,54 +107,51 @@ bool ModuleSegment::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   vtkSmartPointer<vtkSMProxy> proxy;
 
   proxy.TakeReference(pxm->NewProxy("filters", "ProgrammableFilter"));
-  this->Internals->ProgrammableFilter = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->Internals->ProgrammableFilter);
+  d->ProgrammableFilter = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(d->ProgrammableFilter);
 
-  pqCoreUtilities::connect(this->Internals->SegmentationScript,
+  pqCoreUtilities::connect(d->SegmentationScript,
                            vtkCommand::PropertyModifiedEvent, this,
                            SLOT(onPropertyChanged()));
 
-  controller->PreInitializeProxy(this->Internals->ProgrammableFilter);
-  vtkSMPropertyHelper(this->Internals->ProgrammableFilter, "Input")
-    .Set(producer);
-  vtkSMPropertyHelper(this->Internals->ProgrammableFilter, "OutputDataSetType")
+  controller->PreInitializeProxy(d->ProgrammableFilter);
+  vtkSMPropertyHelper(d->ProgrammableFilter, "Input").Set(producer);
+  vtkSMPropertyHelper(d->ProgrammableFilter, "OutputDataSetType")
     .Set(/*vtkImageData*/ 6);
-  vtkSMPropertyHelper(this->Internals->ProgrammableFilter, "Script")
+  vtkSMPropertyHelper(d->ProgrammableFilter, "Script")
     .Set("self.GetOutput().ShallowCopy(self.GetInput())\n");
-  controller->PostInitializeProxy(this->Internals->ProgrammableFilter);
-  controller->RegisterPipelineProxy(this->Internals->ProgrammableFilter);
+  controller->PostInitializeProxy(d->ProgrammableFilter);
+  controller->RegisterPipelineProxy(d->ProgrammableFilter);
 
   proxy.TakeReference(pxm->NewProxy("filters", "Contour"));
-  this->Internals->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->Internals->ContourFilter);
+  d->ContourFilter = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(d->ContourFilter);
 
-  controller->PreInitializeProxy(this->Internals->ContourFilter);
-  vtkSMPropertyHelper(this->Internals->ContourFilter, "Input")
-    .Set(this->Internals->ProgrammableFilter);
-  vtkSMPropertyHelper(this->Internals->ContourFilter, "ComputeScalars",
+  controller->PreInitializeProxy(d->ContourFilter);
+  vtkSMPropertyHelper(d->ContourFilter, "Input").Set(d->ProgrammableFilter);
+  vtkSMPropertyHelper(d->ContourFilter, "ComputeScalars",
                       /*quiet*/ true)
     .Set(1);
 
-  controller->PostInitializeProxy(this->Internals->ContourFilter);
-  controller->RegisterPipelineProxy(this->Internals->ContourFilter);
+  controller->PostInitializeProxy(d->ContourFilter);
+  controller->RegisterPipelineProxy(d->ContourFilter);
 
-  vtkAlgorithm* alg = vtkAlgorithm::SafeDownCast(
-    this->Internals->ContourFilter->GetClientSideObject());
+  vtkAlgorithm* alg =
+    vtkAlgorithm::SafeDownCast(d->ContourFilter->GetClientSideObject());
   alg->SetInputArrayToProcess(0, 0, 0, 0, "ImageScalars");
 
-  this->Internals->ContourRepresentation =
-    controller->Show(this->Internals->ContourFilter, 0, vtkView);
-  Q_ASSERT(this->Internals->ContourRepresentation);
-  vtkSMPropertyHelper(this->Internals->ContourRepresentation, "Representation")
+  d->ContourRepresentation = controller->Show(d->ContourFilter, 0, vtkView);
+  Q_ASSERT(d->ContourRepresentation);
+  vtkSMPropertyHelper(d->ContourRepresentation, "Representation")
     .Set("Surface");
-  vtkSMPropertyHelper(this->Internals->ContourRepresentation, "Position")
+  vtkSMPropertyHelper(d->ContourRepresentation, "Position")
     .Set(data->displayPosition(), 3);
 
   updateColorMap();
 
-  this->Internals->ProgrammableFilter->UpdateVTKObjects();
-  this->Internals->ContourFilter->UpdateVTKObjects();
-  this->Internals->ContourRepresentation->UpdateVTKObjects();
+  d->ProgrammableFilter->UpdateVTKObjects();
+  d->ContourFilter->UpdateVTKObjects();
+  d->ContourRepresentation->UpdateVTKObjects();
 
   return true;
 }
@@ -163,29 +159,27 @@ bool ModuleSegment::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 bool ModuleSegment::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(this->Internals->ProgrammableFilter);
-  controller->UnRegisterProxy(this->Internals->ContourRepresentation);
-  controller->UnRegisterProxy(this->Internals->ContourFilter);
-  this->Internals->ProgrammableFilter = nullptr;
-  this->Internals->ContourFilter = nullptr;
-  this->Internals->ContourRepresentation = nullptr;
+  controller->UnRegisterProxy(d->ProgrammableFilter);
+  controller->UnRegisterProxy(d->ContourRepresentation);
+  controller->UnRegisterProxy(d->ContourFilter);
+  d->ProgrammableFilter = nullptr;
+  d->ContourFilter = nullptr;
+  d->ContourRepresentation = nullptr;
   return true;
 }
 
 bool ModuleSegment::visibility() const
 {
-  Q_ASSERT(this->Internals->ContourRepresentation);
-  return vtkSMPropertyHelper(this->Internals->ContourRepresentation,
-                             "Visibility")
+  Q_ASSERT(d->ContourRepresentation);
+  return vtkSMPropertyHelper(d->ContourRepresentation, "Visibility")
            .GetAsInt() != 0;
 }
 
 bool ModuleSegment::setVisibility(bool val)
 {
-  Q_ASSERT(this->Internals->ContourRepresentation);
-  vtkSMPropertyHelper(this->Internals->ContourRepresentation, "Visibility")
-    .Set(val ? 1 : 0);
-  this->Internals->ContourRepresentation->UpdateVTKObjects();
+  Q_ASSERT(d->ContourRepresentation);
+  vtkSMPropertyHelper(d->ContourRepresentation, "Visibility").Set(val ? 1 : 0);
+  d->ContourRepresentation->UpdateVTKObjects();
   return true;
 }
 
@@ -194,8 +188,7 @@ bool ModuleSegment::serialize(pugi::xml_node& ns) const
   pugi::xml_node node = ns.append_child("ITKScript");
   QStringList scriptProps;
   scriptProps << "Script";
-  if (!tomviz::serialize(this->Internals->SegmentationScript, node,
-                         scriptProps)) {
+  if (!tomviz::serialize(d->SegmentationScript, node, scriptProps)) {
     qWarning("Failed to serialize script.");
     ns.remove_child(node);
     return false;
@@ -204,7 +197,7 @@ bool ModuleSegment::serialize(pugi::xml_node& ns) const
   node = ns.append_child("ContourFilter");
   QStringList contourProps;
   contourProps << "ContourValues";
-  if (!tomviz::serialize(this->Internals->ContourFilter, node, contourProps)) {
+  if (!tomviz::serialize(d->ContourFilter, node, contourProps)) {
     qWarning("Failed to serialize contour.");
     ns.remove_child(node);
     return false;
@@ -216,29 +209,26 @@ bool ModuleSegment::serialize(pugi::xml_node& ns) const
                       << "Opacity"
                       << "Specular"
                       << "Visibility";
-  if (!tomviz::serialize(this->Internals->ContourRepresentation, node,
-                         representationProps)) {
+  if (!tomviz::serialize(d->ContourRepresentation, node, representationProps)) {
     qWarning("Failed to serialize ContourRepresentation");
     ns.remove_child(node);
     return false;
   }
-  return this->Superclass::serialize(ns);
+  return Module::serialize(ns);
 }
 
 bool ModuleSegment::deserialize(const pugi::xml_node& ns)
 {
-  return tomviz::deserialize(this->Internals->SegmentationScript,
-                             ns.child("ITKScript")) &&
-         tomviz::deserialize(this->Internals->ContourFilter,
-                             ns.child("ContourFilter")) &&
-         tomviz::deserialize(this->Internals->ContourRepresentation,
+  return tomviz::deserialize(d->SegmentationScript, ns.child("ITKScript")) &&
+         tomviz::deserialize(d->ContourFilter, ns.child("ContourFilter")) &&
+         tomviz::deserialize(d->ContourRepresentation,
                              ns.child("ContourRepresentation")) &&
-         this->Superclass::deserialize(ns);
+         Module::deserialize(ns);
 }
 
 void ModuleSegment::addToPanel(QWidget* panel)
 {
-  Q_ASSERT(this->Internals->ProgrammableFilter);
+  Q_ASSERT(d->ProgrammableFilter);
 
   if (panel->layout()) {
     delete panel->layout();
@@ -251,34 +241,31 @@ void ModuleSegment::addToPanel(QWidget* panel)
 
   QStringList properties;
   properties << "Script";
-  proxiesWidget->addProxy(this->Internals->SegmentationScript, "Script",
-                          properties, true);
+  proxiesWidget->addProxy(d->SegmentationScript, "Script", properties, true);
 
-  Q_ASSERT(this->Internals->ContourFilter);
-  Q_ASSERT(this->Internals->ContourRepresentation);
+  Q_ASSERT(d->ContourFilter);
+  Q_ASSERT(d->ContourRepresentation);
 
   QStringList contourProperties;
   contourProperties << "ContourValues";
-  proxiesWidget->addProxy(this->Internals->ContourFilter, "Contour",
-                          contourProperties, true);
+  proxiesWidget->addProxy(d->ContourFilter, "Contour", contourProperties, true);
 
   QStringList contourRepresentationProperties;
   contourRepresentationProperties << "Representation"
                                   << "Opacity"
                                   << "Specular";
-  proxiesWidget->addProxy(this->Internals->ContourRepresentation, "Appearance",
+  proxiesWidget->addProxy(d->ContourRepresentation, "Appearance",
                           contourRepresentationProperties, true);
   proxiesWidget->updateLayout();
-  this->connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
-                SIGNAL(renderNeeded()));
+  connect(proxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+          SIGNAL(renderNeeded()));
 }
 
 void ModuleSegment::onPropertyChanged()
 {
   std::cout << "Got property changed..." << std::endl;
   QString userScript =
-    vtkSMPropertyHelper(this->Internals->SegmentationScript, "Script")
-      .GetAsString();
+    vtkSMPropertyHelper(d->SegmentationScript, "Script").GetAsString();
   QString segmentScript =
     QString("import vtk\n"
             "from tomviz import utils\n"
@@ -307,42 +294,40 @@ void ModuleSegment::onPropertyChanged()
             "    ido.SetExtent(idi.GetExtent())\n"
             "    ido.SetSpacing(idi.GetSpacing())\n")
       .arg(userScript);
-  vtkSMPropertyHelper(this->Internals->ProgrammableFilter, "Script")
+  vtkSMPropertyHelper(d->ProgrammableFilter, "Script")
     .Set(segmentScript.toLatin1().data());
-  this->Internals->ProgrammableFilter->UpdateVTKObjects();
+  d->ProgrammableFilter->UpdateVTKObjects();
   // TODO
 }
 
 void ModuleSegment::updateColorMap()
 {
-  Q_ASSERT(this->Internals->ContourRepresentation);
-  vtkSMPropertyHelper(this->Internals->ContourRepresentation, "LookupTable")
-    .Set(this->colorMap());
-  this->Internals->ContourRepresentation->UpdateVTKObjects();
+  Q_ASSERT(d->ContourRepresentation);
+  vtkSMPropertyHelper(d->ContourRepresentation, "LookupTable").Set(colorMap());
+  d->ContourRepresentation->UpdateVTKObjects();
 }
 
 void ModuleSegment::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
-  vtkSMPropertyHelper(this->Internals->ContourRepresentation, "Position")
-    .Set(pos, 3);
+  vtkSMPropertyHelper(d->ContourRepresentation, "Position").Set(pos, 3);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleSegment::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == this->Internals->ProgrammableFilter.Get()) ||
-         (proxy == this->Internals->ContourFilter.Get()) ||
-         (proxy == this->Internals->ContourRepresentation.Get());
+  return (proxy == d->ProgrammableFilter.Get()) ||
+         (proxy == d->ContourFilter.Get()) ||
+         (proxy == d->ContourRepresentation.Get());
 }
 
 std::string ModuleSegment::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == this->Internals->ProgrammableFilter.Get()) {
+  if (proxy == d->ProgrammableFilter.Get()) {
     return "ProgrammableFilter";
-  } else if (proxy == this->Internals->ContourFilter.Get()) {
+  } else if (proxy == d->ContourFilter.Get()) {
     return "Contour";
-  } else if (proxy == this->Internals->ContourRepresentation.Get()) {
+  } else if (proxy == d->ContourRepresentation.Get()) {
     return "Representation";
   } else {
     qWarning("Unknown proxy passed to module segment in save animation");
@@ -353,11 +338,11 @@ std::string ModuleSegment::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleSegment::getProxyForString(const std::string& str)
 {
   if (str == "ProgrammableFilter") {
-    return this->Internals->ProgrammableFilter.Get();
+    return d->ProgrammableFilter.Get();
   } else if (str == "ContourFilter") {
-    return this->Internals->ContourFilter.Get();
+    return d->ContourFilter.Get();
   } else if (str == "Representation") {
-    return this->Internals->ContourRepresentation.Get();
+    return d->ContourRepresentation.Get();
   } else {
     qWarning("Unknown proxy passed to module segment in save animation");
     return nullptr;

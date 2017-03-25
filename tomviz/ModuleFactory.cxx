@@ -24,10 +24,10 @@
 #include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
 #include "ModuleRuler.h"
+#include "ModuleScaleCube.h"
 #include "ModuleSegment.h"
 #include "ModuleSlice.h"
 #include "ModuleThreshold.h"
-#include "ModuleScaleCube.h"
 #include "ModuleVolume.h"
 #include "Utilities.h"
 

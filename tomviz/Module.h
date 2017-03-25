@@ -38,11 +38,9 @@ class Module : public QObject
 {
   Q_OBJECT
 
-  typedef QObject Superclass;
-
 public:
   Module(QObject* parent = nullptr);
-  virtual ~Module();
+  ~Module() override;
 
   /// Returns a  label for this module.
   virtual QString label() const = 0;
@@ -118,8 +116,8 @@ public slots:
   /// show/hide all representations created for this module.
   virtual bool setVisibility(bool val) = 0;
 
-  bool show() { return this->setVisibility(true); }
-  bool hide() { return this->setVisibility(false); }
+  bool show() { return setVisibility(true); }
+  bool hide() { return setVisibility(false); }
 
   /// This method is called add the proxies in this module to a
   /// pqProxiesWidget instance. Default implementation simply adds the view
@@ -173,7 +171,7 @@ private:
   bool m_useDetachedColorMap = false;
 
   class MInternals;
-  const QScopedPointer<MInternals> Internals;
+  const QScopedPointer<MInternals> d;
 };
 }
 #endif

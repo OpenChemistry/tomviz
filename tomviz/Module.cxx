@@ -26,8 +26,8 @@
 #include <pqPVApplicationCore.h>
 #include <pqProxiesWidget.h>
 #include <pqView.h>
-#include <vtkCommand.h>
 #include <vtkColorTransferFunction.h>
+#include <vtkCommand.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSMProperty.h>
@@ -43,54 +43,52 @@ namespace tomviz {
 
 class Module::MInternals
 {
-  vtkSmartPointer<vtkSMProxy> DetachedColorMap;
-  vtkSmartPointer<vtkSMProxy> DetachedOpacityMap;
+  vtkSmartPointer<vtkSMProxy> m_detachedColorMap;
+  vtkSmartPointer<vtkSMProxy> m_detachedOpacityMap;
 
 public:
-  vtkWeakPointer<vtkSMProxy> ColorMap;
-  vtkWeakPointer<vtkSMProxy> OpacityMap;
-  vtkNew<vtkPiecewiseFunction> GradientOpacityMap;
+  vtkWeakPointer<vtkSMProxy> m_colorMap;
+  vtkWeakPointer<vtkSMProxy> m_opacityMap;
+  vtkNew<vtkPiecewiseFunction> m_gradientOpacityMap;
 
   vtkSMProxy* detachedColorMap()
   {
-    if (!this->DetachedColorMap) {
+    if (!m_detachedColorMap) {
       static unsigned int colorMapCounter = 0;
-      colorMapCounter++;
+      ++colorMapCounter;
 
-      vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
+      auto pxm = ActiveObjects::instance().proxyManager();
 
       vtkNew<vtkSMTransferFunctionManager> tfmgr;
-      this->DetachedColorMap = tfmgr->GetColorTransferFunction(
+      m_detachedColorMap = tfmgr->GetColorTransferFunction(
         QString("ModuleColorMap%1").arg(colorMapCounter).toLatin1().data(),
         pxm);
-      this->DetachedOpacityMap =
-        vtkSMPropertyHelper(this->DetachedColorMap, "ScalarOpacityFunction")
+      m_detachedOpacityMap =
+        vtkSMPropertyHelper(m_detachedColorMap, "ScalarOpacityFunction")
           .GetAsProxy();
     }
-    return this->DetachedColorMap;
+    return m_detachedColorMap;
   }
 
   vtkSMProxy* detachedOpacityMap()
   {
-    this->detachedColorMap();
-    return this->DetachedOpacityMap;
+    detachedColorMap();
+    return m_detachedOpacityMap;
   }
 };
 
 Module::Module(QObject* parentObject)
-  : QObject(parentObject), Internals(new Module::MInternals())
+  : QObject(parentObject), d(new Module::MInternals())
 {
 }
 
-Module::~Module()
-{
-}
+Module::~Module() = default;
 
 bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   m_view = vtkView;
   m_activeDataSource = data;
-  this->Internals->GradientOpacityMap->RemoveAllPoints();
+  d->m_gradientOpacityMap->RemoveAllPoints();
   if (m_view && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
@@ -125,45 +123,44 @@ void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
 void Module::setUseDetachedColorMap(bool val)
 {
   m_useDetachedColorMap = val;
-  if (this->isColorMapNeeded() == false) {
+  if (isColorMapNeeded() == false) {
     return;
   }
 
   if (m_useDetachedColorMap) {
-    this->Internals->ColorMap = this->Internals->detachedColorMap();
-    this->Internals->OpacityMap = this->Internals->detachedOpacityMap();
+    d->m_colorMap = d->detachedColorMap();
+    d->m_opacityMap = d->detachedOpacityMap();
 
-    tomviz::rescaleColorMap(this->Internals->ColorMap, this->dataSource());
-    pqCoreUtilities::connect(this->Internals->ColorMap,
-                             vtkCommand::ModifiedEvent, this,
+    tomviz::rescaleColorMap(d->m_colorMap, dataSource());
+    pqCoreUtilities::connect(d->m_colorMap, vtkCommand::ModifiedEvent, this,
                              SLOT(onColorMapChanged()));
   } else {
-    this->Internals->ColorMap = nullptr;
-    this->Internals->OpacityMap = nullptr;
+    d->m_colorMap = nullptr;
+    d->m_opacityMap = nullptr;
   }
-  this->updateColorMap();
+  updateColorMap();
   emit colorMapChanged();
 }
 
 vtkSMProxy* Module::colorMap() const
 {
-  return this->useDetachedColorMap() ? this->Internals->ColorMap.GetPointer()
-                                     : this->colorMapDataSource()->colorMap();
+  return useDetachedColorMap() ? d->m_colorMap.GetPointer()
+                               : colorMapDataSource()->colorMap();
 }
 
 vtkSMProxy* Module::opacityMap() const
 {
-  Q_ASSERT(this->Internals->ColorMap || !m_useDetachedColorMap);
-  return this->useDetachedColorMap() ? this->Internals->OpacityMap.GetPointer()
-                                     : this->dataSource()->opacityMap();
+  Q_ASSERT(d->m_colorMap || !m_useDetachedColorMap);
+  return useDetachedColorMap() ? d->m_opacityMap.GetPointer()
+                               : dataSource()->opacityMap();
 }
 
 vtkPiecewiseFunction* Module::gradientOpacityMap() const
 {
   Q_ASSERT(!m_useDetachedColorMap);
-  vtkPiecewiseFunction* gof = this->useDetachedColorMap()
-           ? this->Internals->GradientOpacityMap.GetPointer()
-           : this->dataSource()->gradientOpacityMap();
+  vtkPiecewiseFunction* gof = useDetachedColorMap()
+                                ? d->m_gradientOpacityMap.GetPointer()
+                                : dataSource()->gradientOpacityMap();
 
   // Set default values
   const int numPoints = gof->GetSize();
@@ -186,7 +183,7 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
 
 bool Module::serialize(pugi::xml_node& ns) const
 {
-  if (this->isColorMapNeeded()) {
+  if (isColorMapNeeded()) {
     ns.append_attribute("use_detached_colormap")
       .set_value(m_useDetachedColorMap ? 1 : 0);
     if (m_useDetachedColorMap) {
@@ -194,8 +191,8 @@ bool Module::serialize(pugi::xml_node& ns) const
       pugi::xml_node nodeS = ns.append_child("OpacityMap");
 
       // Using detached color map, so we need to save the local color map.
-      if (tomviz::serialize(this->colorMap(), nodeL) == false ||
-          tomviz::serialize(this->opacityMap(), nodeS) == false) {
+      if (tomviz::serialize(colorMap(), nodeL) == false ||
+          tomviz::serialize(opacityMap(), nodeS) == false) {
         return false;
       }
 
@@ -208,17 +205,16 @@ bool Module::serialize(pugi::xml_node& ns) const
 
 bool Module::deserialize(const pugi::xml_node& ns)
 {
-  if (this->isColorMapNeeded()) {
+  if (isColorMapNeeded()) {
     bool dcm = ns.attribute("use_detached_colormap").as_int(0) == 1;
     if (dcm && ns.child("ColorMap")) {
-      if (!tomviz::deserialize(this->Internals->detachedColorMap(),
-                               ns.child("ColorMap"))) {
+      if (!tomviz::deserialize(d->detachedColorMap(), ns.child("ColorMap"))) {
         qCritical("Failed to deserialze ColorMap");
         return false;
       }
     }
     if (dcm && ns.child("OpacityMap")) {
-      if (!tomviz::deserialize(this->Internals->detachedOpacityMap(),
+      if (!tomviz::deserialize(d->detachedOpacityMap(),
                                ns.child("OpacityMap"))) {
         qCritical("Failed to deserialze OpacityMap");
         return false;
@@ -226,10 +222,9 @@ bool Module::deserialize(const pugi::xml_node& ns)
     }
     pugi::xml_node nodeGrad = ns.child("GradientOpacityMap");
     if (dcm && nodeGrad) {
-      tomviz::deserialize(this->Internals->GradientOpacityMap.GetPointer(),
-                          nodeGrad);
+      tomviz::deserialize(d->m_gradientOpacityMap.GetPointer(), nodeGrad);
     }
-    this->setUseDetachedColorMap(dcm);
+    setUseDetachedColorMap(dcm);
   }
   return true;
 }

@@ -33,11 +33,9 @@ class ModuleOutline : public Module
 {
   Q_OBJECT
 
-  typedef Module Superclass;
-
 public:
   ModuleOutline(QObject* parent = nullptr);
-  virtual ~ModuleOutline();
+  ~ModuleOutline() override;
 
   QString label() const override { return "Outline"; }
   QIcon icon() const override;
@@ -67,12 +65,12 @@ private slots:
 
 private:
   Q_DISABLE_COPY(ModuleOutline)
-  vtkWeakPointer<vtkSMSourceProxy> OutlineFilter;
-  vtkWeakPointer<vtkSMProxy> OutlineRepresentation;
+  vtkWeakPointer<vtkSMSourceProxy> m_outlineFilter;
+  vtkWeakPointer<vtkSMProxy> m_outlineRepresentation;
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkGridAxes3DActor> m_gridAxes;
   pqPropertyLinks m_links;
-  bool m_AxesVisibility = false;
+  bool m_axesVisibility = false;
 };
 }
 

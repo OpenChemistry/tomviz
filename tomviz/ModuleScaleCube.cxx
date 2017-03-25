@@ -45,38 +45,33 @@ namespace tomviz {
 using pugi::xml_attribute;
 using pugi::xml_node;
 
-ModuleScaleCube::ModuleScaleCube(QObject* parentObject) :
-  Superclass(parentObject)
+ModuleScaleCube::ModuleScaleCube(QObject* parentObject) : Module(parentObject)
 {
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
   // "onPositionChanged" signal
-  this->m_observedPositionId = pqCoreUtilities::connect(
-    m_cubeRep.Get(), vtkCommand::ModifiedEvent, this,
-    SIGNAL(onPositionChanged()));
+  m_observedPositionId =
+    pqCoreUtilities::connect(m_cubeRep.Get(), vtkCommand::ModifiedEvent, this,
+                             SIGNAL(onPositionChanged()));
 
   // Connect to our "onPositionChanged" signal and emit it with arguments
   connect(this,
-	  (void (ModuleScaleCube::*)())(&ModuleScaleCube::onPositionChanged),
-	  this,
-	  [&](){
-	    double p[3];
-	    m_cubeRep->GetWorldPosition(p);
-	    onPositionChanged(p[0], p[1], p[2]);
-	  });
+          (void (ModuleScaleCube::*)())(&ModuleScaleCube::onPositionChanged),
+          this, [&]() {
+            double p[3];
+            m_cubeRep->GetWorldPosition(p);
+            onPositionChanged(p[0], p[1], p[2]);
+          });
 
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
   // "onSideLengthChanged" signal
-  this->m_observedSideLengthId = pqCoreUtilities::connect(
-    m_cubeRep.Get(), vtkCommand::ModifiedEvent, this,
-    SIGNAL(onSideLengthChanged()));
+  m_observedSideLengthId =
+    pqCoreUtilities::connect(m_cubeRep.Get(), vtkCommand::ModifiedEvent, this,
+                             SIGNAL(onSideLengthChanged()));
 
   // Connect to our "onSideLengthChanged" signal and emit it with arguments
   connect(this,
-	  (void (ModuleScaleCube::*)())(&ModuleScaleCube::onSideLengthChanged),
-	  this,
-	  [&](){
-	    onSideLengthChanged(m_cubeRep->GetSideLength());
-	  });
+          (void (ModuleScaleCube::*)())(&ModuleScaleCube::onSideLengthChanged),
+          this, [&]() { onSideLengthChanged(m_cubeRep->GetSideLength()); });
 }
 
 ModuleScaleCube::~ModuleScaleCube()
@@ -84,7 +79,7 @@ ModuleScaleCube::~ModuleScaleCube()
   m_cubeRep->RemoveObserver(m_observedPositionId);
   m_cubeRep->RemoveObserver(m_observedSideLengthId);
 
-  this->finalize();
+  finalize();
 }
 
 QIcon ModuleScaleCube::icon() const
@@ -94,21 +89,21 @@ QIcon ModuleScaleCube::icon() const
 
 bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView)) {
+  if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
-  connect(data, SIGNAL(dataPropertiesChanged()),
-	  this, SLOT(dataPropertiesChanged()));
+  connect(data, SIGNAL(dataPropertiesChanged()), this,
+          SLOT(dataPropertiesChanged()));
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_handleWidget->SetInteractor(m_view->GetInteractor());
 
   double bounds[6];
   data->producer()->GetDataInformation()->GetBounds(bounds);
-  double length = std::max(floor((bounds[1]-bounds[0])*.1), 1.);
-  double minPosition[3] = {bounds[0] + length*.5, bounds[2] + length*.5,
-			   bounds[4] + length*.5};
+  double length = std::max(floor((bounds[1] - bounds[0]) * .1), 1.);
+  double minPosition[3] = { bounds[0] + length * .5, bounds[2] + length * .5,
+                            bounds[4] + length * .5 };
   m_cubeRep->SetSideLength(length);
   m_cubeRep->PlaceWidget(minPosition);
   m_cubeRep->SetWorldPosition(minPosition);
@@ -241,7 +236,7 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
   double worldPosition[3];
   m_cubeRep->GetWorldPosition(worldPosition);
   m_controllers->setPosition(worldPosition[0], worldPosition[1],
-			     worldPosition[2]);
+                             worldPosition[2]);
   m_controllers->setPositionUnit(QString(m_cubeRep->GetLengthUnit()));
 
   // Connect the widget's signals to this class' slots
@@ -253,16 +248,15 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
           SLOT(setAnnotation(const bool)));
 
   // Connect this class' signals to the widget's slots
-  connect(this, SIGNAL(onLengthUnitChanged(const QString)),
-	  m_controllers, SLOT(setLengthUnit(const QString)));
-  connect(this, SIGNAL(onPositionUnitChanged(const QString)),
-	  m_controllers, SLOT(setPositionUnit(const QString)));
-  connect(this, SIGNAL(onSideLengthChanged(const double)),
-	  m_controllers, SLOT(setSideLength(const double)));
-  connect(this,
-	  SIGNAL(onPositionChanged(const double, const double, const double)),
-	  m_controllers,
-	  SLOT(setPosition(const double, const double, const double)));
+  connect(this, SIGNAL(onLengthUnitChanged(const QString)), m_controllers,
+          SLOT(setLengthUnit(const QString)));
+  connect(this, SIGNAL(onPositionUnitChanged(const QString)), m_controllers,
+          SLOT(setPositionUnit(const QString)));
+  connect(this, SIGNAL(onSideLengthChanged(const double)), m_controllers,
+          SLOT(setSideLength(const double)));
+  connect(
+    this, SIGNAL(onPositionChanged(const double, const double, const double)),
+    m_controllers, SLOT(setPosition(const double, const double, const double)));
 }
 
 void ModuleScaleCube::setAdaptiveScaling(const bool val)

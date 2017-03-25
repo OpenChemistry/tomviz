@@ -60,8 +60,7 @@ public:
   /**
    * Link proxy properties to UI.
    */
-  void addPropertyLinks(pqPropertyLinks& links,
-                        vtkSMProxy* representation,
+  void addPropertyLinks(pqPropertyLinks& links, vtkSMProxy* representation,
                         vtkSMSourceProxy* contourFilter);
   void addCategoricalPropertyLinks(pqPropertyLinks& links,
                                    vtkSMProxy* representation);

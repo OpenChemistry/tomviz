@@ -37,11 +37,9 @@ class ModuleScaleCube : public Module
 {
   Q_OBJECT
 
-  typedef Module Superclass;
-
 public:
   ModuleScaleCube(QObject* parent = nullptr);
-  virtual ~ModuleScaleCube();
+  ~ModuleScaleCube() override;
 
   QString label() const override { return "Scale Cube"; }
   QIcon icon() const override;

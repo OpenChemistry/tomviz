@@ -31,11 +31,9 @@ class MainWindow : public QMainWindow
 {
   Q_OBJECT
 
-  typedef QMainWindow Superclass;
-
 public:
   MainWindow(QWidget* parent = nullptr, Qt::WindowFlags flags = nullptr);
-  virtual ~MainWindow();
+  ~MainWindow() override;
 
 protected:
   void showEvent(QShowEvent* event) override;
@@ -71,7 +69,7 @@ private:
 
   AboutDialog* m_aboutDialog = nullptr;
   class MWInternals;
-  MWInternals* Internals;
+  MWInternals* d;
 };
 }
 #endif

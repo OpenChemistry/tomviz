@@ -29,11 +29,10 @@ namespace tomviz {
 class ModuleThreshold : public Module
 {
   Q_OBJECT
-  typedef Module Superclass;
 
 public:
   ModuleThreshold(QObject* parent = nullptr);
-  virtual ~ModuleThreshold();
+  ~ModuleThreshold() override;
 
   QString label() const override { return "Threshold"; }
   QIcon icon() const override;
@@ -59,10 +58,11 @@ private slots:
   void dataUpdated();
 
 private:
-  pqPropertyLinks m_links;
   Q_DISABLE_COPY(ModuleThreshold)
-  vtkWeakPointer<vtkSMSourceProxy> ThresholdFilter;
-  vtkWeakPointer<vtkSMProxy> ThresholdRepresentation;
+
+  pqPropertyLinks m_links;
+  vtkWeakPointer<vtkSMSourceProxy> m_thresholdFilter;
+  vtkWeakPointer<vtkSMProxy> m_thresholdRepresentation;
 };
 }
 

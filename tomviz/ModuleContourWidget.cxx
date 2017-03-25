@@ -93,13 +93,12 @@ void ModuleContourWidget::addPropertyLinks(pqPropertyLinks& links,
   pqSignalAdaptorComboBox* adaptor =
     new pqSignalAdaptorComboBox(m_ui->cbRepresentation);
   links.addPropertyLink(adaptor, "currentText",
-                        SIGNAL(currentTextChanged(QString)),
-                        representation,
+                        SIGNAL(currentTextChanged(QString)), representation,
                         representation->GetProperty("Representation"));
 
   links.addPropertyLink(m_ui->sliOpacity, "value", SIGNAL(valueEdited(double)),
-                        representation,
-                        representation->GetProperty("Opacity"), 0);
+                        representation, representation->GetProperty("Opacity"),
+                        0);
 
   links.addPropertyLink(m_uiLighting->sliAmbient, "value",
                         SIGNAL(valueEdited(double)), representation,
@@ -136,13 +135,12 @@ void ModuleContourWidget::addCategoricalPropertyLinks(
   pqSignalAdaptorComboBox* adaptor =
     new pqSignalAdaptorComboBox(m_ui->cbRepresentation);
   links.addPropertyLink(adaptor, "currentText",
-                        SIGNAL(currentTextChanged(QString)),
-                        representation,
+                        SIGNAL(currentTextChanged(QString)), representation,
                         representation->GetProperty("Representation"));
 
   links.addPropertyLink(m_ui->sliOpacity, "value", SIGNAL(valueEdited(double)),
-                        representation,
-                        representation->GetProperty("Opacity"), 0);
+                        representation, representation->GetProperty("Opacity"),
+                        0);
 
   links.addPropertyLink(m_uiLighting->sliAmbient, "value",
                         SIGNAL(valueEdited(double)), representation,

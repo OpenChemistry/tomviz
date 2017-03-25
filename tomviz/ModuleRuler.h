@@ -31,7 +31,6 @@ namespace tomviz {
 class ModuleRuler : public Module
 {
   Q_OBJECT
-  typedef Module Superclass;
 
 public:
   ModuleRuler(QObject* parent = nullptr);
@@ -66,9 +65,9 @@ protected:
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
 
-  vtkSmartPointer<vtkSMSourceProxy> m_RulerSource;
-  vtkSmartPointer<vtkSMProxy> m_Representation;
-  QPointer<pqLinePropertyWidget> m_Widget;
+  vtkSmartPointer<vtkSMSourceProxy> m_rulerSource;
+  vtkSmartPointer<vtkSMProxy> m_representation;
+  QPointer<pqLinePropertyWidget> m_widget;
 
 private:
   Q_DISABLE_COPY(ModuleRuler)

@@ -31,7 +31,7 @@ ModuleScaleCubeWidget::ModuleScaleCubeWidget(QWidget* parent_)
   connect(m_ui->chbAdaptiveScaling, SIGNAL(toggled(bool)), this,
           SIGNAL(adaptiveScalingToggled(const bool)));
   connect(m_ui->leSideLength, &QLineEdit::editingFinished, this,
-          [&]{ sideLengthChanged(m_ui->leSideLength->text().toDouble()); });
+          [&] { sideLengthChanged(m_ui->leSideLength->text().toDouble()); });
   connect(m_ui->chbAnnotation, SIGNAL(toggled(bool)), this,
           SIGNAL(annotationToggled(const bool)));
 }
@@ -59,13 +59,12 @@ void ModuleScaleCubeWidget::setLengthUnit(const QString unit)
 }
 
 void ModuleScaleCubeWidget::setPosition(const double x, const double y,
-				       const double z)
+                                        const double z)
 {
   QString s;
-  QTextStream(&s) << "("
-		  << QString::number(x,'f',4) << ", "
-		  << QString::number(y,'f',4) << ", "
-		  << QString::number(z,'f',4) << ")";
+  QTextStream(&s) << "(" << QString::number(x, 'f', 4) << ", "
+                  << QString::number(y, 'f', 4) << ", "
+                  << QString::number(z, 'f', 4) << ")";
   m_ui->tlPosition->setText(s);
 }
 
@@ -88,5 +87,4 @@ void ModuleScaleCubeWidget::onAnnotationChanged(const bool state)
 {
   emit annotationToggled(state);
 }
-
 }
