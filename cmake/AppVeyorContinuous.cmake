@@ -20,6 +20,7 @@ set(cfg_options
   -DGTEST_INCLUDE_DIR:PATH=C:/projects/googletest-install/include
   -DPYTHON_EXECUTABLE:PATH=C:/projects/python/bin/python.exe
   -DENABLE_TESTING:BOOL=ON
+  -DSKIP_PARAVIEW_ITK_PYTHON_CHECKS:BOOL=ON
   -DCMAKE_BUILD_TYPE:STRING="Release")
 
 ctest_start("Continuous")
