@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as ss
 from tomviz import utils
 import tomviz.operators
+import time
 
 
 class ReconARTOperator(tomviz.operators.CancelableOperator):
@@ -42,20 +43,31 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
 
         self.progress.maximum = Nslice
         step = 0
+        t0 = time.time()
+        etcMessage = 'Estimated time to complete: n/a'
 
+        counter = 1
         for s in range(Nslice):
             if self.canceled:
                 return
             f[:] = 0
             b = tiltSeries[s, :, :].transpose().flatten()
             for i in range(Niter):
-                self.progress.message = 'Slice No.%d/%d, iteration No.%d/%d' % (
-                    s + 1, Nslice, i + 1, Niter)
+                self.progress.message = 'Slice No.%d/%d, iteration No.%d/%d. ' \
+                    % (s + 1, Nslice, i + 1, Niter) + etcMessage
                 for j in range(Nrow):
                     row[:] = A[j, ].copy()
                     row_f_product = np.dot(row, f)
                     a = (b[j] - row_f_product) / rowInnerProduct[j]
                     f = f + row * a * beta
+
+                timeLeft = (time.time() - t0) / counter * \
+                    (Nslice * Niter - counter)
+                counter += 1
+                timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+                timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+                etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                    timeLeftHour, timeLeftMin, timeLeftSec)
 
             recon[s, :, :] = f.reshape((Nray, Nray))
 

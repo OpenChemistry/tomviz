@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import interp1d
 import tomviz.operators
+import time
 
 
 class ReconWBPOperator(tomviz.operators.CancelableOperator):
@@ -29,17 +30,27 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         step = 0
 
         recon = np.empty([Nslice, Nrecon, Nrecon], dtype=float, order='F')
+        t0 = time.time()
+        counter = 1
+        etcMessage = 'Estimated time to complete: n/a'
+
         for i in range(Nslice):
             if self.canceled:
                 return
-            self.progress.message = 'Slice No.%d/%d' % (i + 1, Nslice)
+            self.progress.message = 'Slice No.%d/%d. ' % (
+                i + 1, Nslice) + etcMessage
+
             recon[i, :, :] = wbp2(tiltSeries[i, :, :], tilt_angles, Nrecon,
                                   filter_methods[filter],
                                   interpolation_methods[interp])
             step += 1
             self.progress.value = step
-
-        print('Reconsruction Complete')
+            timeLeft = (time.time() - t0) / counter * (Nslice - counter)
+            counter += 1
+            timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+            timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+            etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                timeLeftHour, timeLeftMin, timeLeftSec)
 
         # Set up the output dataset
         from vtk import vtkImageData

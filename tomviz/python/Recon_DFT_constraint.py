@@ -1,6 +1,7 @@
 import pyfftw
 import numpy as np
 import tomviz.operators
+import time
 
 
 class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
@@ -68,10 +69,15 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = Niter
         step = 0
 
+        t0 = time.time()
+        counter = 1
+        etcMessage = 'Estimated time to complete: n/a'
+
         for i in range(Niter):
             if self.canceled:
                 return
-            self.progress.message = 'Iteration No.%d/%d' % (i + 1, Niter)
+            self.progress.message = 'Iteration No.%d/%d. ' % (
+                i + 1, Niter) + etcMessage
 
             #image space projection
             y1 = x.copy()
@@ -113,7 +119,6 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
             #update support
             if (i < Niter and np.mod(i, Niter_update_support) == 0):
-                print("updating support")
                 recon[:] = (y2 + y1) / 2
                 r = recon.copy()
                 fft_forward.update_arrays(r, f)
@@ -125,11 +130,15 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
                 support = r >= cutoff
             step += 1
             self.progress.value = step
+            timeLeft = (time.time() - t0) / counter * (Niter - counter)
+            counter += 1
+            timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+            timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+            etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                timeLeftHour, timeLeftMin, timeLeftSec)
 
         recon[:] = (y2 + y1) / 2
         recon[:] = np.fft.fftshift(recon)
-
-        print('Reconsruction Complete')
 
         # Set the result as the new scalars.
         utils.set_array(dataset, recon)
