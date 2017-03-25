@@ -25,7 +25,6 @@ namespace tomviz {
 class ModuleSegment : public Module
 {
   Q_OBJECT
-  typedef Module Superclass;
 
 public:
   ModuleSegment(QObject* parent = nullptr);
@@ -78,7 +77,7 @@ private:
   void updateColorMap() override;
 
   class MSInternal;
-  QScopedPointer<MSInternal> Internals;
+  QScopedPointer<MSInternal> d;
 };
 }
 

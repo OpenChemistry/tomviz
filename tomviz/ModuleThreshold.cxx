@@ -38,13 +38,13 @@
 namespace tomviz {
 
 ModuleThreshold::ModuleThreshold(QObject* parentObject)
-  : Superclass(parentObject)
+  : Module(parentObject)
 {
 }
 
 ModuleThreshold::~ModuleThreshold()
 {
-  this->finalize();
+  finalize();
 }
 
 QIcon ModuleThreshold::icon() const
@@ -54,11 +54,11 @@ QIcon ModuleThreshold::icon() const
 
 bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView)) {
+  if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
-  vtkSMSourceProxy* producer = data->producer();
+  auto producer = data->producer();
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
@@ -68,15 +68,15 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(pxm->NewProxy("filters", "Threshold"));
 
-  this->ThresholdFilter = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->ThresholdFilter);
-  controller->PreInitializeProxy(this->ThresholdFilter);
-  vtkSMPropertyHelper(this->ThresholdFilter, "Input").Set(producer);
-  controller->PostInitializeProxy(this->ThresholdFilter);
-  controller->RegisterPipelineProxy(this->ThresholdFilter);
+  m_thresholdFilter = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(m_thresholdFilter);
+  controller->PreInitializeProxy(m_thresholdFilter);
+  vtkSMPropertyHelper(m_thresholdFilter, "Input").Set(producer);
+  controller->PostInitializeProxy(m_thresholdFilter);
+  controller->RegisterPipelineProxy(m_thresholdFilter);
 
   // Update min/max to avoid thresholding the full dataset.
-  vtkSMPropertyHelper rangeProperty(this->ThresholdFilter, "ThresholdBetween");
+  vtkSMPropertyHelper rangeProperty(m_thresholdFilter, "ThresholdBetween");
   double range[2], newRange[2];
   rangeProperty.Get(range, 2);
   double delta = (range[1] - range[0]);
@@ -84,18 +84,18 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   newRange[0] = mid - 0.1 * delta;
   newRange[1] = mid + 0.1 * delta;
   rangeProperty.Set(newRange, 2);
-  this->ThresholdFilter->UpdateVTKObjects();
+  m_thresholdFilter->UpdateVTKObjects();
 
   // Create the representation for it.
-  this->ThresholdRepresentation =
-    controller->Show(this->ThresholdFilter, 0, vtkView);
-  Q_ASSERT(this->ThresholdRepresentation);
-  vtkSMRepresentationProxy::SetRepresentationType(this->ThresholdRepresentation,
+  m_thresholdRepresentation =
+    controller->Show(m_thresholdFilter, 0, vtkView);
+  Q_ASSERT(m_thresholdRepresentation);
+  vtkSMRepresentationProxy::SetRepresentationType(m_thresholdRepresentation,
                                                   "Surface");
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "Position")
+  vtkSMPropertyHelper(m_thresholdRepresentation, "Position")
     .Set(data->displayPosition(), 3);
-  this->updateColorMap();
-  this->ThresholdRepresentation->UpdateVTKObjects();
+  updateColorMap();
+  m_thresholdRepresentation->UpdateVTKObjects();
 
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(proxy)) {
@@ -107,40 +107,40 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
 void ModuleThreshold::updateColorMap()
 {
-  Q_ASSERT(this->ThresholdRepresentation);
+  Q_ASSERT(m_thresholdRepresentation);
 
   // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "LookupTable")
-    .Set(this->colorMap());
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "ScalarOpacityFunction")
-    .Set(this->opacityMap());
+  vtkSMPropertyHelper(m_thresholdRepresentation, "LookupTable")
+    .Set(colorMap());
+  vtkSMPropertyHelper(m_thresholdRepresentation, "ScalarOpacityFunction")
+    .Set(opacityMap());
 
-  this->ThresholdRepresentation->UpdateVTKObjects();
+  m_thresholdRepresentation->UpdateVTKObjects();
 }
 
 bool ModuleThreshold::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(this->ThresholdRepresentation);
-  controller->UnRegisterProxy(this->ThresholdFilter);
-  this->ThresholdFilter = nullptr;
-  this->ThresholdRepresentation = nullptr;
+  controller->UnRegisterProxy(m_thresholdRepresentation);
+  controller->UnRegisterProxy(m_thresholdFilter);
+  m_thresholdFilter = nullptr;
+  m_thresholdRepresentation = nullptr;
   return true;
 }
 
 bool ModuleThreshold::setVisibility(bool val)
 {
-  Q_ASSERT(this->ThresholdRepresentation);
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "Visibility")
+  Q_ASSERT(m_thresholdRepresentation);
+  vtkSMPropertyHelper(m_thresholdRepresentation, "Visibility")
     .Set(val ? 1 : 0);
-  this->ThresholdRepresentation->UpdateVTKObjects();
+  m_thresholdRepresentation->UpdateVTKObjects();
   return true;
 }
 
 bool ModuleThreshold::visibility() const
 {
-  if (this->ThresholdRepresentation) {
-    return vtkSMPropertyHelper(this->ThresholdRepresentation, "Visibility")
+  if (m_thresholdRepresentation) {
+    return vtkSMPropertyHelper(m_thresholdRepresentation, "Visibility")
              .GetAsInt() != 0;
   } else {
     return false;
@@ -149,8 +149,8 @@ bool ModuleThreshold::visibility() const
 
 void ModuleThreshold::addToPanel(QWidget* panel)
 {
-  Q_ASSERT(this->ThresholdFilter);
-  Q_ASSERT(this->ThresholdRepresentation);
+  Q_ASSERT(m_thresholdFilter);
+  Q_ASSERT(m_thresholdRepresentation);
 
   if (panel->layout()) {
     delete panel->layout();
@@ -160,15 +160,15 @@ void ModuleThreshold::addToPanel(QWidget* panel)
 
   pqStringVectorPropertyWidget* arraySelection =
     new pqStringVectorPropertyWidget(
-      this->ThresholdFilter->GetProperty("SelectInputScalars"),
-      this->ThresholdFilter.Get());
+      m_thresholdFilter->GetProperty("SelectInputScalars"),
+      m_thresholdFilter.Get());
   layout->addWidget(arraySelection);
 
   pqDoubleRangeSliderPropertyWidget* range =
     new pqDoubleRangeSliderPropertyWidget(
-      this->ThresholdFilter.Get(),
-      this->ThresholdFilter->GetProperty("ThresholdBetween"));
-  range->setProperty(this->ThresholdFilter->GetProperty("ThresholdBetween"));
+      m_thresholdFilter.Get(),
+      m_thresholdFilter->GetProperty("ThresholdBetween"));
+  range->setProperty(m_thresholdFilter->GetProperty("ThresholdBetween"));
   layout->addWidget(range);
 
   QFormLayout* formLayout = new QFormLayout;
@@ -197,38 +197,38 @@ void ModuleThreshold::addToPanel(QWidget* panel)
 
   m_links.addPropertyLink(
     adaptor, "currentText", SIGNAL(currentTextChanged(QString)),
-    this->ThresholdRepresentation,
-    this->ThresholdRepresentation->GetProperty("Representation"));
+    m_thresholdRepresentation,
+    m_thresholdRepresentation->GetProperty("Representation"));
 
   m_links.addPropertyLink(opacitySlider, "value", SIGNAL(valueEdited(double)),
-                          this->ThresholdRepresentation,
-                          this->ThresholdRepresentation->GetProperty("Opacity"),
+                          m_thresholdRepresentation,
+                          m_thresholdRepresentation->GetProperty("Opacity"),
                           0);
   m_links.addPropertyLink(
     specularSlider, "value", SIGNAL(valueEdited(double)),
-    this->ThresholdRepresentation,
-    this->ThresholdRepresentation->GetProperty("Specular"), 0);
+    m_thresholdRepresentation,
+    m_thresholdRepresentation->GetProperty("Specular"), 0);
 
-  this->connect(arraySelection, &pqPropertyWidget::changeFinished,
+  connect(arraySelection, &pqPropertyWidget::changeFinished,
                 arraySelection, &pqPropertyWidget::apply);
-  this->connect(arraySelection, &pqPropertyWidget::changeFinished, this,
+  connect(arraySelection, &pqPropertyWidget::changeFinished, this,
                 &Module::renderNeeded);
-  this->connect(range, &pqPropertyWidget::changeFinished, range,
+  connect(range, &pqPropertyWidget::changeFinished, range,
                 &pqPropertyWidget::apply);
-  this->connect(range, &pqPropertyWidget::changeFinished, this,
+  connect(range, &pqPropertyWidget::changeFinished, this,
                 &Module::renderNeeded);
-  this->connect(representations, &QComboBox::currentTextChanged, this,
+  connect(representations, &QComboBox::currentTextChanged, this,
                 &ModuleThreshold::dataUpdated);
-  this->connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
+  connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleThreshold::dataUpdated);
-  this->connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
+  connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleThreshold::dataUpdated);
 }
 
 void ModuleThreshold::dataUpdated()
 {
   m_links.accept();
-  emit this->renderNeeded();
+  emit renderNeeded();
 }
 
 bool ModuleThreshold::serialize(pugi::xml_node& ns) const
@@ -244,39 +244,39 @@ bool ModuleThreshold::serialize(pugi::xml_node& ns) const
                            << "Specular"
                            << "Visibility";
   pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
-  return tomviz::serialize(this->ThresholdFilter, tnode, fprops) &&
-         tomviz::serialize(this->ThresholdRepresentation, rnode,
+  return tomviz::serialize(m_thresholdFilter, tnode, fprops) &&
+         tomviz::serialize(m_thresholdRepresentation, rnode,
                            representationProperties) &&
-         this->Superclass::serialize(ns);
+         Module::serialize(ns);
 }
 
 bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
 {
-  return tomviz::deserialize(this->ThresholdFilter, ns.child("Threshold")) &&
-         tomviz::deserialize(this->ThresholdRepresentation,
+  return tomviz::deserialize(m_thresholdFilter, ns.child("Threshold")) &&
+         tomviz::deserialize(m_thresholdRepresentation,
                              ns.child("ThresholdRepresentation")) &&
-         this->Superclass::deserialize(ns);
+         Module::deserialize(ns);
 }
 
 void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
-  vtkSMPropertyHelper(this->ThresholdRepresentation, "Position").Set(pos, 3);
-  this->ThresholdRepresentation->UpdateVTKObjects();
+  vtkSMPropertyHelper(m_thresholdRepresentation, "Position").Set(pos, 3);
+  m_thresholdRepresentation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleThreshold::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == this->ThresholdFilter.Get()) ||
-         (proxy == this->ThresholdRepresentation.Get());
+  return (proxy == m_thresholdFilter.Get()) ||
+         (proxy == m_thresholdRepresentation.Get());
 }
 
 std::string ModuleThreshold::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == this->ThresholdFilter.Get()) {
+  if (proxy == m_thresholdFilter.Get()) {
     return "Threshold";
-  } else if (proxy == this->ThresholdRepresentation.Get()) {
+  } else if (proxy == m_thresholdRepresentation.Get()) {
     return "Representation";
   } else {
     qWarning("Unknown proxy passed to module threshold in save animation");
@@ -287,9 +287,9 @@ std::string ModuleThreshold::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleThreshold::getProxyForString(const std::string& str)
 {
   if (str == "Threshold") {
-    return this->ThresholdFilter.Get();
+    return m_thresholdFilter.Get();
   } else if (str == "Representation") {
-    return this->ThresholdRepresentation.Get();
+    return m_thresholdRepresentation.Get();
   } else {
     return nullptr;
   }

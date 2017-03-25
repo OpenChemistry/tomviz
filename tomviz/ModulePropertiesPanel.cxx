@@ -108,7 +108,6 @@ void ModulePropertiesPanel::updatePanel()
 {
 }
 
-
 void ModulePropertiesPanel::detachColorMap(bool val)
 {
   Module* module = this->Internals->ActiveModule;
@@ -118,5 +117,4 @@ void ModulePropertiesPanel::detachColorMap(bool val)
     emit module->renderNeeded();
   }
 }
-
 }

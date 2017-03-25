@@ -48,13 +48,13 @@ namespace tomviz {
 using pugi::xml_attribute;
 using pugi::xml_node;
 
-ModuleVolume::ModuleVolume(QObject* parentObject) : Superclass(parentObject)
+ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
 {
 }
 
 ModuleVolume::~ModuleVolume()
 {
-  this->finalize();
+  finalize();
 }
 
 QIcon ModuleVolume::icon() const
@@ -64,7 +64,7 @@ QIcon ModuleVolume::icon() const
 
 bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView)) {
+  if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
@@ -82,7 +82,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_volumeProperty->SetSpecular(1.0);
   m_volumeProperty->SetSpecularPower(100.0);
 
-  this->updateColorMap();
+  updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_view->AddPropToRenderer(m_volume.Get());
@@ -102,7 +102,7 @@ void ModuleVolume::updateColorMap()
 
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
-  vtkObject::SafeDownCast(this->colorMap()->GetClientSideObject())->Modified();
+  vtkObject::SafeDownCast(colorMap()->GetClientSideObject())->Modified();
 }
 
 void ModuleVolume::onGradientOpacityChanged(bool enable)

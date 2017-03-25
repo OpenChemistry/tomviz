@@ -38,8 +38,6 @@ class ModuleVolume : public Module
 {
   Q_OBJECT
 
-  typedef Module Superclass;
-
 public:
   ModuleVolume(QObject* parent = nullptr);
   virtual ~ModuleVolume();

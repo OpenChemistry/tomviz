@@ -31,11 +31,9 @@ class ModuleContour : public Module
 {
   Q_OBJECT
 
-  typedef Module Superclass;
-
 public:
   ModuleContour(QObject* parent = nullptr);
-  virtual ~ModuleContour();
+  ~ModuleContour() override;
 
   QString label() const override { return "Contour"; }
   QIcon icon() const override;
@@ -55,7 +53,7 @@ public:
   {
     QList<double> values;
     values << value;
-    this->setIsoValues(values);
+    setIsoValues(values);
   }
 
   DataSource* colorMapDataSource() const override;
@@ -70,19 +68,19 @@ protected:
   void updateScalarColoring();
   void createCategoricalColoringPipeline();
 
-  vtkWeakPointer<vtkSMSourceProxy> ContourFilter;
-  vtkWeakPointer<vtkSMSourceProxy> ResampleFilter;
-  vtkWeakPointer<vtkSMProxy> ResampleRepresentation;
-  vtkWeakPointer<vtkSMSourceProxy> PointDataToCellDataFilter;
-  vtkWeakPointer<vtkSMProxy> PointDataToCellDataRepresentation;
-  vtkWeakPointer<vtkSMProxy> ActiveRepresentation;
+  vtkWeakPointer<vtkSMSourceProxy> m_contourFilter;
+  vtkWeakPointer<vtkSMSourceProxy> m_resampleFilter;
+  vtkWeakPointer<vtkSMProxy> m_resampleRepresentation;
+  vtkWeakPointer<vtkSMSourceProxy> m_pointDataToCellDataFilter;
+  vtkWeakPointer<vtkSMProxy> m_pointDataToCellDataRepresentation;
+  vtkWeakPointer<vtkSMProxy> m_activeRepresentation;
 
   class Private;
-  Private* Internals;
+  Private* d;
 
   QPointer<ModuleContourWidget> m_controllers;
 
-  QString Representation;
+  QString m_representation;
 
 private slots:
   /// invoked whenever a property widget changes

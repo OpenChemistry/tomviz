@@ -66,7 +66,7 @@ void ModuleVolumeWidget::setJittering(const bool enable)
 
 void ModuleVolumeWidget::setBlendingMode(const int mode)
 {
-  m_uiLighting->gbLighting->setEnabled(this->usesLighting(mode));
+  m_uiLighting->gbLighting->setEnabled(usesLighting(mode));
   m_ui->cbBlending->setCurrentIndex(static_cast<int>(mode));
 }
 
@@ -107,7 +107,7 @@ void ModuleVolumeWidget::setGradientOpacityEnabled(const bool enabled)
 
 void ModuleVolumeWidget::onBlendingChanged(const int mode)
 {
-  m_uiLighting->gbLighting->setEnabled(this->usesLighting(mode));
+  m_uiLighting->gbLighting->setEnabled(usesLighting(mode));
   emit blendingChanged(mode);
 }
 

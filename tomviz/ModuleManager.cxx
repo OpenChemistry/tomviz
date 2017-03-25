@@ -684,7 +684,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
   }
 }
 
-void ModuleManager::onViewRemoved(pqView *view)
+void ModuleManager::onViewRemoved(pqView* view)
 {
   Q_ASSERT(view);
   auto viewProxy = view->getViewProxy();

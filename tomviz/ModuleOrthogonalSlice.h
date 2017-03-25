@@ -28,11 +28,10 @@ namespace tomviz {
 class ModuleOrthogonalSlice : public Module
 {
   Q_OBJECT
-  typedef Module Superclass;
 
 public:
   ModuleOrthogonalSlice(QObject* parent = nullptr);
-  virtual ~ModuleOrthogonalSlice();
+  ~ModuleOrthogonalSlice() override;
 
   QString label() const override { return "Orthogonal Slice"; }
   QIcon icon() const override;
@@ -59,10 +58,10 @@ private slots:
 
 private:
   Q_DISABLE_COPY(ModuleOrthogonalSlice)
-  vtkWeakPointer<vtkSMSourceProxy> PassThrough;
-  vtkWeakPointer<vtkSMProxy> Representation;
+  vtkWeakPointer<vtkSMSourceProxy> m_passThrough;
+  vtkWeakPointer<vtkSMProxy> m_representation;
 
-  pqPropertyLinks Links;
+  pqPropertyLinks m_links;
 };
 }
 #endif

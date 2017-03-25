@@ -17,32 +17,33 @@
 
 #include "DataSource.h"
 #include "Utilities.h"
-#include "pqCoreUtilities.h"
-#include "pqDoubleVectorPropertyWidget.h"
-#include "pqLineEdit.h"
-#include "pqProxiesWidget.h"
 
-#include "vtkAlgorithm.h"
-#include "vtkCommand.h"
-#include "vtkDataObject.h"
-#include "vtkNew.h"
-#include "vtkNonOrthoImagePlaneWidget.h"
-#include "vtkPVArrayInformation.h"
-#include "vtkPVDataInformation.h"
-#include "vtkPVDataSetAttributesInformation.h"
-#include "vtkProperty.h"
-#include "vtkRenderWindow.h"
-#include "vtkRenderWindowInteractor.h"
-#include "vtkSMPVRepresentationProxy.h"
-#include "vtkSMParaViewPipelineControllerWithRendering.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMRenderViewProxy.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMTransferFunctionManager.h"
-#include "vtkSMTransferFunctionProxy.h"
-#include "vtkSMViewProxy.h"
-#include "vtkScalarsToColors.h"
+#include <vtkAlgorithm.h>
+#include <vtkCommand.h>
+#include <vtkDataObject.h>
+#include <vtkNew.h>
+#include <vtkNonOrthoImagePlaneWidget.h>
+#include <vtkProperty.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkScalarsToColors.h>
+
+#include <pqCoreUtilities.h>
+#include <pqDoubleVectorPropertyWidget.h>
+#include <pqLineEdit.h>
+#include <pqProxiesWidget.h>
+#include <vtkPVArrayInformation.h>
+#include <vtkPVDataInformation.h>
+#include <vtkPVDataSetAttributesInformation.h>
+#include <vtkSMPVRepresentationProxy.h>
+#include <vtkSMParaViewPipelineControllerWithRendering.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMRenderViewProxy.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMTransferFunctionManager.h>
+#include <vtkSMTransferFunctionProxy.h>
+#include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
 #include <QDebug>
@@ -53,14 +54,13 @@
 
 namespace tomviz {
 
-ModuleSlice::ModuleSlice(QObject* parentObject)
-  : Superclass(parentObject), IgnoreSignals(false)
+ModuleSlice::ModuleSlice(QObject* parentObject) : Module(parentObject)
 {
 }
 
 ModuleSlice::~ModuleSlice()
 {
-  this->finalize();
+  finalize();
 }
 
 QIcon ModuleSlice::icon() const
@@ -70,7 +70,7 @@ QIcon ModuleSlice::icon() const
 
 bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView)) {
+  if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
@@ -83,37 +83,36 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   proxy.TakeReference(pxm->NewProxy("filters", "PassThrough"));
 
   // Create the Properties panel proxy
-  this->PropsPanelProxy.TakeReference(
+  m_propsPanelProxy.TakeReference(
     pxm->NewProxy("tomviz_proxies", "NonOrthogonalSlice"));
 
-  pqCoreUtilities::connect(this->PropsPanelProxy,
-                           vtkCommand::PropertyModifiedEvent, this,
-                           SLOT(onPropertyChanged()));
+  pqCoreUtilities::connect(m_propsPanelProxy, vtkCommand::PropertyModifiedEvent,
+                           this, SLOT(onPropertyChanged()));
 
-  this->PassThrough = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->PassThrough);
-  controller->PreInitializeProxy(this->PassThrough);
-  vtkSMPropertyHelper(this->PassThrough, "Input").Set(producer);
-  controller->PostInitializeProxy(this->PassThrough);
-  controller->RegisterPipelineProxy(this->PassThrough);
+  m_passThrough = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(m_passThrough);
+  controller->PreInitializeProxy(m_passThrough);
+  vtkSMPropertyHelper(m_passThrough, "Input").Set(producer);
+  controller->PostInitializeProxy(m_passThrough);
+  controller->RegisterPipelineProxy(m_passThrough);
 
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(proxy)) {
     p->rename(label());
   }
 
-  const bool widgetSetup = this->setupWidget(vtkView, producer);
+  const bool widgetSetup = setupWidget(vtkView, producer);
 
   if (widgetSetup) {
-    this->Widget->On();
-    this->Widget->InteractionOn();
-    this->Widget->SetDisplayOffset(data->displayPosition());
-    pqCoreUtilities::connect(this->Widget, vtkCommand::InteractionEvent, this,
+    m_widget->On();
+    m_widget->InteractionOn();
+    m_widget->SetDisplayOffset(data->displayPosition());
+    pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
   }
 
-  Q_ASSERT(this->Widget);
+  Q_ASSERT(m_widget);
   return widgetSetup;
 }
 
@@ -122,7 +121,7 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView,
                               vtkSMSourceProxy* producer)
 {
   vtkAlgorithm* passThroughAlg =
-    vtkAlgorithm::SafeDownCast(this->PassThrough->GetClientSideObject());
+    vtkAlgorithm::SafeDownCast(m_passThrough->GetClientSideObject());
 
   vtkRenderWindowInteractor* rwi = vtkView->GetRenderWindow()->GetInteractor();
 
@@ -136,33 +135,33 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView,
     return false;
   }
 
-  this->Widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
+  m_widget = vtkSmartPointer<vtkNonOrthoImagePlaneWidget>::New();
 
   // Set the interactor on the widget to be what the current
   // render window is using.
-  this->Widget->SetInteractor(rwi);
+  m_widget->SetInteractor(rwi);
 
   // Setup the color of the border of the widget.
   {
     double color[3] = { 1, 0, 0 };
-    this->Widget->GetPlaneProperty()->SetColor(color);
+    m_widget->GetPlaneProperty()->SetColor(color);
   }
 
   // Turn texture interpolation to be linear.
-  this->Widget->TextureInterpolateOn();
-  this->Widget->SetResliceInterpolateToLinear();
+  m_widget->TextureInterpolateOn();
+  m_widget->SetResliceInterpolateToLinear();
 
   // Construct the transfer function proxy for the widget.
-  vtkSMProxy* lut = this->colorMap();
+  vtkSMProxy* lut = colorMap();
 
   // Set the widgets lookup table to be the one that the transfer function
   // manager is using.
   vtkScalarsToColors* stc =
     vtkScalarsToColors::SafeDownCast(lut->GetClientSideObject());
-  this->Widget->SetLookupTable(stc);
+  m_widget->SetLookupTable(stc);
 
   // Lastly we set up the input connection.
-  this->Widget->SetInputConnection(passThroughAlg->GetOutputPort());
+  m_widget->SetInputConnection(passThroughAlg->GetOutputPort());
 
   Q_ASSERT(rwi);
   Q_ASSERT(passThroughAlg);
@@ -172,28 +171,28 @@ bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView,
 
 void ModuleSlice::updateColorMap()
 {
-  Q_ASSERT(this->Widget);
+  Q_ASSERT(m_widget);
 
   // Construct the transfer function proxy for the widget
-  vtkSMProxy* lut = this->colorMap();
+  vtkSMProxy* lut = colorMap();
 
   // set the widgets lookup table to be the one that the transfer function
   // manager is using
   vtkScalarsToColors* stc =
     vtkScalarsToColors::SafeDownCast(lut->GetClientSideObject());
-  this->Widget->SetLookupTable(stc);
+  m_widget->SetLookupTable(stc);
 }
 
 bool ModuleSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(this->PassThrough);
+  controller->UnRegisterProxy(m_passThrough);
 
-  this->PassThrough = nullptr;
+  m_passThrough = nullptr;
 
-  if (this->Widget != nullptr) {
-    this->Widget->InteractionOff();
-    this->Widget->Off();
+  if (m_widget != nullptr) {
+    m_widget->InteractionOff();
+    m_widget->Off();
   }
 
   return true;
@@ -201,24 +200,24 @@ bool ModuleSlice::finalize()
 
 bool ModuleSlice::setVisibility(bool val)
 {
-  Q_ASSERT(this->Widget);
-  this->Widget->SetEnabled(val ? 1 : 0);
+  Q_ASSERT(m_widget);
+  m_widget->SetEnabled(val ? 1 : 0);
   // update the state of the arrow as well since it cannot update when the
   // widget is not enabled
   if (val) {
-    vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
+    vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
     // Not this: it hides the plane as well as the arrow...
-    // this->Widget->SetEnabled(showProperty.GetAsInt());
-    this->Widget->SetArrowVisibility(showProperty.GetAsInt());
-    this->Widget->SetInteraction(showProperty.GetAsInt());
+    // Widget->SetEnabled(showProperty.GetAsInt());
+    m_widget->SetArrowVisibility(showProperty.GetAsInt());
+    m_widget->SetInteraction(showProperty.GetAsInt());
   }
   return true;
 }
 
 bool ModuleSlice::visibility() const
 {
-  if (this->Widget) {
-    return this->Widget->GetEnabled() != 0;
+  if (m_widget) {
+    return m_widget->GetEnabled() != 0;
   } else {
     return false;
   }
@@ -235,10 +234,9 @@ void ModuleSlice::addToPanel(QWidget* panel)
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
   layout->addWidget(showArrow);
   m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
-                          this->PropsPanelProxy,
-                          this->PropsPanelProxy->GetProperty("ShowArrow"), 0);
-  this->connect(showArrow, &QCheckBox::toggled, this,
-                &ModuleSlice::dataUpdated);
+                          m_propsPanelProxy,
+                          m_propsPanelProxy->GetProperty("ShowArrow"), 0);
+  connect(showArrow, &QCheckBox::toggled, this, &ModuleSlice::dataUpdated);
 
   QLabel* label = new QLabel("Point on Plane");
   layout->addWidget(label);
@@ -250,11 +248,10 @@ void ModuleSlice::addToPanel(QWidget* panel)
     pqLineEdit* inputBox = new pqLineEdit;
     inputBox->setValidator(new QDoubleValidator(inputBox));
     m_Links.addPropertyLink(
-      inputBox, "text2", SIGNAL(textChanged(const QString&)),
-      this->PropsPanelProxy, this->PropsPanelProxy->GetProperty("PointOnPlane"),
-      i);
-    this->connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
-                  &ModuleSlice::dataUpdated);
+      inputBox, "text2", SIGNAL(textChanged(const QString&)), m_propsPanelProxy,
+      m_propsPanelProxy->GetProperty("PointOnPlane"), i);
+    connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
+            &ModuleSlice::dataUpdated);
     row->addWidget(inputBox);
   }
   layout->addItem(row);
@@ -268,11 +265,10 @@ void ModuleSlice::addToPanel(QWidget* panel)
     pqLineEdit* inputBox = new pqLineEdit;
     inputBox->setValidator(new QDoubleValidator(inputBox));
     m_Links.addPropertyLink(
-      inputBox, "text2", SIGNAL(textChanged(const QString&)),
-      this->PropsPanelProxy, this->PropsPanelProxy->GetProperty("PlaneNormal"),
-      i);
-    this->connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
-                  &ModuleSlice::dataUpdated);
+      inputBox, "text2", SIGNAL(textChanged(const QString&)), m_propsPanelProxy,
+      m_propsPanelProxy->GetProperty("PlaneNormal"), i);
+    connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
+            &ModuleSlice::dataUpdated);
     row->addWidget(inputBox);
   }
   layout->addItem(row);
@@ -285,21 +281,21 @@ void ModuleSlice::addToPanel(QWidget* panel)
 void ModuleSlice::dataUpdated()
 {
   m_Links.accept();
-  this->Widget->UpdatePlacement();
-  emit this->renderNeeded();
+  m_widget->UpdatePlacement();
+  emit renderNeeded();
 }
 
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
 {
   // Save the state of the arrow's visibility
-  vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
+  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
   ns.append_attribute("show_arrow").set_value(showProperty.GetAsInt());
 
   // Serialize the plane
   double point[3];
   pugi::xml_node plane = ns.append_child("Plane");
   pugi::xml_node pointNode;
-  this->Widget->GetOrigin(point);
+  m_widget->GetOrigin(point);
   // Origin of plane
   pointNode = plane.append_child("Point");
   pointNode.append_attribute("index").set_value(0);
@@ -307,14 +303,14 @@ bool ModuleSlice::serialize(pugi::xml_node& ns) const
   pointNode.append_attribute("y").set_value(point[1]);
   pointNode.append_attribute("z").set_value(point[2]);
   // Point 1 of plane
-  this->Widget->GetPoint1(point);
+  m_widget->GetPoint1(point);
   pointNode = plane.append_child("Point");
   pointNode.append_attribute("index").set_value(1);
   pointNode.append_attribute("x").set_value(point[0]);
   pointNode.append_attribute("y").set_value(point[1]);
   pointNode.append_attribute("z").set_value(point[2]);
   // Point 2 of plane
-  this->Widget->GetPoint2(point);
+  m_widget->GetPoint2(point);
   pointNode = plane.append_child("Point");
   pointNode.append_attribute("index").set_value(2);
   pointNode.append_attribute("x").set_value(point[0]);
@@ -322,7 +318,7 @@ bool ModuleSlice::serialize(pugi::xml_node& ns) const
   pointNode.append_attribute("z").set_value(point[2]);
 
   // Let the superclass do its thing
-  return this->Superclass::serialize(ns);
+  return Module::serialize(ns);
 }
 
 bool ModuleSlice::deserialize(const pugi::xml_node& ns)
@@ -332,10 +328,10 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
   if (!plane) {
     // We are reading an older state file from before the change that added
     // the ability to save these...
-    return this->Superclass::deserialize(ns);
+    return Module::deserialize(ns);
   }
   // Deserialize the show arrow state
-  vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
+  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
   showProperty.Set(ns.attribute("show_arrow").as_int());
 
   // Deserialize the plane
@@ -347,81 +343,80 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
     point[2] = pointNode.attribute("z").as_double();
     int index = pointNode.attribute("index").as_int();
     if (index == 0) {
-      this->Widget->SetOrigin(point);
+      m_widget->SetOrigin(point);
     } else if (index == 1) {
-      this->Widget->SetPoint1(point);
+      m_widget->SetPoint1(point);
     } else if (index == 2) {
-      this->Widget->SetPoint2(point);
+      m_widget->SetPoint2(point);
     } else {
       qCritical("Unknown point index for slice plane point");
       return false;
     }
   }
-  this->Widget->UpdatePlacement();
-  this->onPlaneChanged();
+  m_widget->UpdatePlacement();
+  onPlaneChanged();
 
   // Let the superclass do its thing
-  return this->Superclass::deserialize(ns);
+  return Module::deserialize(ns);
 }
 
 void ModuleSlice::onPropertyChanged()
 {
   // Avoid recursive clobbering of the plane position
-  if (this->IgnoreSignals) {
+  if (m_ignoreSignals) {
     return;
   }
-  this->IgnoreSignals = true;
-  vtkSMPropertyHelper showProperty(this->PropsPanelProxy, "ShowArrow");
-  if (this->Widget->GetEnabled()) {
+  m_ignoreSignals = true;
+  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
+  if (m_widget->GetEnabled()) {
     // Not this: it hides the plane as well as the arrow...
-    // this->Widget->SetEnabled(showProperty.GetAsInt());
-    this->Widget->SetArrowVisibility(showProperty.GetAsInt());
-    this->Widget->SetInteraction(showProperty.GetAsInt());
+    // Widget->SetEnabled(showProperty.GetAsInt());
+    m_widget->SetArrowVisibility(showProperty.GetAsInt());
+    m_widget->SetInteraction(showProperty.GetAsInt());
   }
-  vtkSMPropertyHelper pointProperty(this->PropsPanelProxy, "PointOnPlane");
+  vtkSMPropertyHelper pointProperty(m_propsPanelProxy, "PointOnPlane");
   std::vector<double> centerPoint = pointProperty.GetDoubleArray();
-  this->Widget->SetCenter(&centerPoint[0]);
-  vtkSMPropertyHelper normalProperty(this->PropsPanelProxy, "PlaneNormal");
+  m_widget->SetCenter(&centerPoint[0]);
+  vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
   std::vector<double> normalVector = normalProperty.GetDoubleArray();
-  this->Widget->SetNormal(&normalVector[0]);
-  this->Widget->UpdatePlacement();
-  this->IgnoreSignals = false;
+  m_widget->SetNormal(&normalVector[0]);
+  m_widget->UpdatePlacement();
+  m_ignoreSignals = false;
 }
 
 void ModuleSlice::onPlaneChanged()
 {
   // Avoid recursive clobbering of the plane position
-  if (this->IgnoreSignals) {
+  if (m_ignoreSignals) {
     return;
   }
-  this->IgnoreSignals = true;
-  vtkSMPropertyHelper pointProperty(this->PropsPanelProxy, "PointOnPlane");
-  double* centerPoint = this->Widget->GetCenter();
+  m_ignoreSignals = true;
+  vtkSMPropertyHelper pointProperty(m_propsPanelProxy, "PointOnPlane");
+  double* centerPoint = m_widget->GetCenter();
   pointProperty.Set(centerPoint, 3);
-  vtkSMPropertyHelper normalProperty(this->PropsPanelProxy, "PlaneNormal");
-  double* normalVector = this->Widget->GetNormal();
+  vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
+  double* normalVector = m_widget->GetNormal();
   normalProperty.Set(normalVector, 3);
-  this->IgnoreSignals = false;
+  m_ignoreSignals = false;
 }
 
 void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
-  this->Widget->SetDisplayOffset(pos);
+  m_widget->SetDisplayOffset(pos);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleSlice::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == this->PassThrough.Get()) ||
-         (proxy == this->PropsPanelProxy.Get());
+  return (proxy == m_passThrough.Get()) || (proxy == m_propsPanelProxy.Get());
 }
 
 std::string ModuleSlice::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == this->PassThrough.Get()) {
+  if (proxy == m_passThrough.Get()) {
     return "PassThrough";
-  } else if (proxy == this->PropsPanelProxy.Get()) {
+  } else if (proxy == m_propsPanelProxy.Get()) {
     return "NonOrthoSlice";
   } else {
     qWarning(
@@ -433,9 +428,9 @@ std::string ModuleSlice::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleSlice::getProxyForString(const std::string& str)
 {
   if (str == "PassThrough") {
-    return this->PassThrough.Get();
+    return m_passThrough.Get();
   } else if (str == "NonOrthoSlice") {
-    return this->PropsPanelProxy.Get();
+    return m_propsPanelProxy.Get();
   } else {
     return nullptr;
   }

@@ -42,13 +42,13 @@ namespace tomviz {
 using pugi::xml_attribute;
 using pugi::xml_node;
 
-ModuleOutline::ModuleOutline(QObject* parentObject) : Superclass(parentObject)
+ModuleOutline::ModuleOutline(QObject* parentObject) : Module(parentObject)
 {
 }
 
 ModuleOutline::~ModuleOutline()
 {
-  this->finalize();
+  finalize();
 }
 
 QIcon ModuleOutline::icon() const
@@ -58,7 +58,7 @@ QIcon ModuleOutline::icon() const
 
 bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView)) {
+  if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
@@ -70,22 +70,21 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(pxm->NewProxy("filters", "OutlineFilter"));
 
-  this->OutlineFilter = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->OutlineFilter);
-  controller->PreInitializeProxy(this->OutlineFilter);
-  vtkSMPropertyHelper(this->OutlineFilter, "Input").Set(data->producer());
-  controller->PostInitializeProxy(this->OutlineFilter);
-  controller->RegisterPipelineProxy(this->OutlineFilter);
+  m_outlineFilter = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(m_outlineFilter);
+  controller->PreInitializeProxy(m_outlineFilter);
+  vtkSMPropertyHelper(m_outlineFilter, "Input").Set(data->producer());
+  controller->PostInitializeProxy(m_outlineFilter);
+  controller->RegisterPipelineProxy(m_outlineFilter);
 
   // Create the representation for it.
-  this->OutlineRepresentation =
-    controller->Show(this->OutlineFilter, 0, vtkView);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "Position")
+  m_outlineRepresentation = controller->Show(m_outlineFilter, 0, vtkView);
+  vtkSMPropertyHelper(m_outlineRepresentation, "Position")
     .Set(data->displayPosition(), 3);
-  Q_ASSERT(this->OutlineRepresentation);
-  // vtkSMPropertyHelper(this->OutlineRepresentation,
+  Q_ASSERT(m_outlineRepresentation);
+  // vtkSMPropertyHelper(OutlineRepresentation,
   //                    "Representation").Set("Outline");
-  this->OutlineRepresentation->UpdateVTKObjects();
+  m_outlineRepresentation->UpdateVTKObjects();
 
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(proxy)) {
@@ -102,15 +101,15 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 bool ModuleOutline::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(this->OutlineRepresentation);
-  controller->UnRegisterProxy(this->OutlineFilter);
+  controller->UnRegisterProxy(m_outlineRepresentation);
+  controller->UnRegisterProxy(m_outlineFilter);
 
   if (m_view) {
     m_view->GetRenderer()->RemoveActor(m_gridAxes.Get());
   }
 
-  this->OutlineFilter = nullptr;
-  this->OutlineRepresentation = nullptr;
+  m_outlineFilter = nullptr;
+  m_outlineRepresentation = nullptr;
   return true;
 }
 
@@ -155,7 +154,7 @@ bool ModuleOutline::deserialize(const pugi::xml_node& ns)
     xml_attribute att = node.attribute("enabled");
     if (att) {
       m_gridAxes->SetVisibility(att.as_bool() ? 1 : 0);
-      m_AxesVisibility = att.as_bool();
+      m_axesVisibility = att.as_bool();
     }
     att = node.attribute("grid");
     if (att) {
@@ -185,11 +184,10 @@ bool ModuleOutline::deserialize(const pugi::xml_node& ns)
 
 bool ModuleOutline::setVisibility(bool val)
 {
-  Q_ASSERT(this->OutlineRepresentation);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
-    .Set(val ? 1 : 0);
-  this->OutlineRepresentation->UpdateVTKObjects();
-  if (!val || m_AxesVisibility) {
+  Q_ASSERT(m_outlineRepresentation);
+  vtkSMPropertyHelper(m_outlineRepresentation, "Visibility").Set(val ? 1 : 0);
+  m_outlineRepresentation->UpdateVTKObjects();
+  if (!val || m_axesVisibility) {
     m_gridAxes->SetVisibility(val ? 1 : 0);
   }
   return true;
@@ -197,8 +195,8 @@ bool ModuleOutline::setVisibility(bool val)
 
 bool ModuleOutline::visibility() const
 {
-  if (this->OutlineRepresentation) {
-    return vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
+  if (m_outlineRepresentation) {
+    return vtkSMPropertyHelper(m_outlineRepresentation, "Visibility")
              .GetAsInt() != 0;
   } else {
     return false;
@@ -207,7 +205,7 @@ bool ModuleOutline::visibility() const
 
 void ModuleOutline::addToPanel(QWidget* panel)
 {
-  Q_ASSERT(panel && this->OutlineRepresentation);
+  Q_ASSERT(panel && m_outlineRepresentation);
 
   if (panel->layout()) {
     delete panel->layout();
@@ -227,8 +225,8 @@ void ModuleOutline::addToPanel(QWidget* panel)
   showGrid->setChecked(m_gridAxes->GetGenerateGrid());
 
   connect(showGrid, &QCheckBox::stateChanged, this, [this](int state) {
-    this->m_gridAxes->SetGenerateGrid(state == Qt::Checked);
-    emit this->renderNeeded();
+    m_gridAxes->SetGenerateGrid(state == Qt::Checked);
+    emit renderNeeded();
   });
 
   showGridLayout->addWidget(showGrid);
@@ -243,8 +241,8 @@ void ModuleOutline::addToPanel(QWidget* panel)
   }
   connect(showAxes, &QCheckBox::stateChanged, this,
           [this, showGrid](int state) {
-            this->m_gridAxes->SetVisibility(state == Qt::Checked);
-            m_AxesVisibility = state == Qt::Checked;
+            m_gridAxes->SetVisibility(state == Qt::Checked);
+            m_axesVisibility = state == Qt::Checked;
             // Uncheck "Show Grid" and disable it
             if (state == Qt::Unchecked) {
               showGrid->setChecked(false);
@@ -253,7 +251,7 @@ void ModuleOutline::addToPanel(QWidget* panel)
               showGrid->setEnabled(true);
             }
 
-            emit this->renderNeeded();
+            emit renderNeeded();
           });
   showAxesLayout->addWidget(showAxes);
 
@@ -264,50 +262,50 @@ void ModuleOutline::addToPanel(QWidget* panel)
   panelLayout->addStretch();
   panel->setLayout(panelLayout);
 
-  m_links.addPropertyLink(
-    colorSelector, "chosenColorRgbF", SIGNAL(chosenColorChanged(const QColor&)),
-    this->OutlineRepresentation,
-    this->OutlineRepresentation->GetProperty("DiffuseColor"));
+  m_links.addPropertyLink(colorSelector, "chosenColorRgbF",
+                          SIGNAL(chosenColorChanged(const QColor&)),
+                          m_outlineRepresentation,
+                          m_outlineRepresentation->GetProperty("DiffuseColor"));
 
-  this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged,
-                [this](const QColor& color) {
-                  double rgb[3];
-                  rgb[0] = color.redF();
-                  rgb[1] = color.greenF();
-                  rgb[2] = color.blueF();
-                  updateGridAxesColor(rgb);
+  connect(colorSelector, &pqColorChooserButton::chosenColorChanged,
+          [this](const QColor& color) {
+            double rgb[3];
+            rgb[0] = color.redF();
+            rgb[1] = color.greenF();
+            rgb[2] = color.blueF();
+            updateGridAxesColor(rgb);
 
-                });
-  this->connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
-                &ModuleOutline::dataUpdated);
+          });
+  connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
+          &ModuleOutline::dataUpdated);
 }
 
 void ModuleOutline::dataUpdated()
 {
   m_links.accept();
-  emit this->renderNeeded();
+  emit renderNeeded();
 }
 
 void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
-  vtkSMPropertyHelper(this->OutlineRepresentation, "Position").Set(pos, 3);
-  this->OutlineRepresentation->UpdateVTKObjects();
-  this->m_gridAxes->SetPosition(newX, newY, newZ);
+  vtkSMPropertyHelper(m_outlineRepresentation, "Position").Set(pos, 3);
+  m_outlineRepresentation->UpdateVTKObjects();
+  m_gridAxes->SetPosition(newX, newY, newZ);
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleOutline::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == this->OutlineFilter.Get()) ||
-         (proxy == this->OutlineRepresentation.Get());
+  return (proxy == m_outlineFilter.Get()) ||
+         (proxy == m_outlineRepresentation.Get());
 }
 
 std::string ModuleOutline::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == this->OutlineFilter.Get()) {
+  if (proxy == m_outlineFilter.Get()) {
     return "Outline";
-  } else if (proxy == this->OutlineRepresentation.Get()) {
+  } else if (proxy == m_outlineRepresentation.Get()) {
     return "Representation";
   } else {
     qWarning("Unknown proxy passed to module outline in save animation");
@@ -318,9 +316,9 @@ std::string ModuleOutline::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleOutline::getProxyForString(const std::string& str)
 {
   if (str == "Outline") {
-    return this->OutlineFilter.Get();
+    return m_outlineFilter.Get();
   } else if (str == "Representation") {
-    return this->OutlineRepresentation.Get();
+    return m_outlineRepresentation.Get();
   } else {
     return nullptr;
   }
@@ -346,23 +344,23 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   // with all the faces, we need to create a new one and set it.
   vtkNew<vtkProperty> prop;
   prop->DeepCopy(m_gridAxes->GetProperty());
-  this->m_gridAxes->SetProperty(prop.Get());
+  m_gridAxes->SetProperty(prop.Get());
 
   // Set mask to show labels on all axes
-  this->m_gridAxes->SetLabelMask(vtkGridAxes3DActor::LabelMasks::MIN_X |
-                                 vtkGridAxes3DActor::LabelMasks::MIN_Y |
-                                 vtkGridAxes3DActor::LabelMasks::MIN_Z |
-                                 vtkGridAxes3DActor::LabelMasks::MAX_X |
-                                 vtkGridAxes3DActor::LabelMasks::MAX_Y |
-                                 vtkGridAxes3DActor::LabelMasks::MAX_Z);
+  m_gridAxes->SetLabelMask(vtkGridAxes3DActor::LabelMasks::MIN_X |
+                           vtkGridAxes3DActor::LabelMasks::MIN_Y |
+                           vtkGridAxes3DActor::LabelMasks::MIN_Z |
+                           vtkGridAxes3DActor::LabelMasks::MAX_X |
+                           vtkGridAxes3DActor::LabelMasks::MAX_Y |
+                           vtkGridAxes3DActor::LabelMasks::MAX_Z);
 
   // Set mask to render all faces
-  this->m_gridAxes->SetFaceMask(vtkGridAxes3DActor::FaceMasks::MAX_XY |
-                                vtkGridAxes3DActor::FaceMasks::MAX_YZ |
-                                vtkGridAxes3DActor::FaceMasks::MAX_ZX |
-                                vtkGridAxes3DActor::FaceMasks::MIN_XY |
-                                vtkGridAxes3DActor::FaceMasks::MIN_YZ |
-                                vtkGridAxes3DActor::FaceMasks::MIN_ZX);
+  m_gridAxes->SetFaceMask(vtkGridAxes3DActor::FaceMasks::MAX_XY |
+                          vtkGridAxes3DActor::FaceMasks::MAX_YZ |
+                          vtkGridAxes3DActor::FaceMasks::MAX_ZX |
+                          vtkGridAxes3DActor::FaceMasks::MIN_XY |
+                          vtkGridAxes3DActor::FaceMasks::MIN_YZ |
+                          vtkGridAxes3DActor::FaceMasks::MIN_ZX);
 
   // Enable front face culling
   prop->SetFrontfaceCulling(1);
@@ -378,11 +376,11 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
 
   connect(data, &DataSource::dataPropertiesChanged, this, [this]() {
     auto dataSource = qobject_cast<DataSource*>(sender());
-    this->updateGridAxesBounds(dataSource);
-    this->updateGridAxesUnit(dataSource);
+    updateGridAxesBounds(dataSource);
+    updateGridAxesUnit(dataSource);
     dataSource->producer()->MarkModified(nullptr);
     dataSource->producer()->UpdatePipeline();
-    emit this->renderNeeded();
+    emit renderNeeded();
 
   });
 }
@@ -396,9 +394,8 @@ void ModuleOutline::updateGridAxesColor(double* color)
     m_gridAxes->SetLabelTextProperty(i, prop.Get());
   }
   m_gridAxes->GetProperty()->SetDiffuseColor(color);
-  vtkSMPropertyHelper(this->OutlineRepresentation, "DiffuseColor")
-    .Set(color, 3);
-  this->OutlineRepresentation->UpdateVTKObjects();
+  vtkSMPropertyHelper(m_outlineRepresentation, "DiffuseColor").Set(color, 3);
+  m_outlineRepresentation->UpdateVTKObjects();
 }
 
 void ModuleOutline::updateGridAxesUnit(DataSource* dataSource)

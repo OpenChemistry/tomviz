@@ -41,13 +41,13 @@
 
 namespace tomviz {
 
-ModuleRuler::ModuleRuler(QObject* p) : Superclass(p), m_showLine(true)
+ModuleRuler::ModuleRuler(QObject* p) : Module(p)
 {
 }
 
 ModuleRuler::~ModuleRuler()
 {
-  this->finalize();
+  finalize();
 }
 
 QIcon ModuleRuler::icon() const
@@ -57,7 +57,7 @@ QIcon ModuleRuler::icon() const
 
 bool ModuleRuler::initialize(DataSource* data, vtkSMViewProxy* view)
 {
-  if (!this->Superclass::initialize(data, view)) {
+  if (!Module::initialize(data, view)) {
     return false;
   }
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -67,35 +67,34 @@ bool ModuleRuler::initialize(DataSource* data, vtkSMViewProxy* view)
     vtkAlgorithm::SafeDownCast(data->producer()->GetClientSideObject());
   double bounds[6];
   vtkDataSet::SafeDownCast(alg->GetOutputDataObject(0))->GetBounds(bounds);
-  double bounds_min[3] = { bounds[0], bounds[2], bounds[4] };
-  double bounds_max[3] = { bounds[1], bounds[3], bounds[5] };
+  double boundsMin[3] = { bounds[0], bounds[2], bounds[4] };
+  double boundsMax[3] = { bounds[1], bounds[3], bounds[5] };
 
-  m_RulerSource.TakeReference(
+  m_rulerSource.TakeReference(
     vtkSMSourceProxy::SafeDownCast(pxm->NewProxy("sources", "Ruler")));
-  vtkSMPropertyHelper(m_RulerSource, "Point1").Set(bounds_min, 3);
-  vtkSMPropertyHelper(m_RulerSource, "Point2").Set(bounds_max, 3);
-  m_RulerSource->UpdateVTKObjects();
-  controller->RegisterPipelineProxy(m_RulerSource);
+  vtkSMPropertyHelper(m_rulerSource, "Point1").Set(boundsMin, 3);
+  vtkSMPropertyHelper(m_rulerSource, "Point2").Set(boundsMax, 3);
+  m_rulerSource->UpdateVTKObjects();
+  controller->RegisterPipelineProxy(m_rulerSource);
 
-  m_Representation = controller->Show(m_RulerSource, 0, view);
+  m_representation = controller->Show(m_rulerSource, 0, view);
 
-  m_Representation->UpdateVTKObjects();
+  m_representation->UpdateVTKObjects();
 
   updateUnits();
 
-  QObject::connect(data, &DataSource::dataChanged, this,
-                   &ModuleRuler::updateUnits);
+  connect(data, &DataSource::dataChanged, this, &ModuleRuler::updateUnits);
 
-  return m_Representation && m_RulerSource;
+  return m_representation && m_rulerSource;
 }
 
 bool ModuleRuler::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(m_Representation);
-  controller->UnRegisterProxy(m_RulerSource);
-  this->m_Representation = nullptr;
-  this->m_RulerSource = nullptr;
+  controller->UnRegisterProxy(m_representation);
+  controller->UnRegisterProxy(m_rulerSource);
+  m_representation = nullptr;
+  m_rulerSource = nullptr;
   return true;
 }
 
@@ -106,32 +105,30 @@ void ModuleRuler::addToPanel(QWidget* panel)
   }
   QVBoxLayout* layout = new QVBoxLayout;
 
-  m_Widget = new pqLinePropertyWidget(
-    m_RulerSource, m_RulerSource->GetPropertyGroup(0), panel);
-  layout->addWidget(m_Widget);
-  m_Widget->setView(
+  m_widget = new pqLinePropertyWidget(
+    m_rulerSource, m_rulerSource->GetPropertyGroup(0), panel);
+  layout->addWidget(m_widget);
+  m_widget->setView(
     tomviz::convert<pqView*>(ActiveObjects::instance().activeView()));
-  m_Widget->select();
-  m_Widget->setWidgetVisible(m_showLine);
+  m_widget->select();
+  m_widget->setWidgetVisible(m_showLine);
   layout->addStretch();
-  QObject::connect(m_Widget.data(), &pqPropertyWidget::changeFinished, m_Widget.data(),
-                   &pqPropertyWidget::apply);
-  QObject::connect(m_Widget.data(), &pqPropertyWidget::changeFinished, this,
-                   &ModuleRuler::endPointsUpdated);
-  QObject::connect(m_Widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
-                   SLOT(updateShowLine(bool)));
+  connect(m_widget.data(), &pqPropertyWidget::changeFinished, m_widget.data(),
+          &pqPropertyWidget::apply);
+  connect(m_widget.data(), &pqPropertyWidget::changeFinished, this,
+          &ModuleRuler::endPointsUpdated);
+  connect(m_widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
+          SLOT(updateShowLine(bool)));
 
-
-  m_Widget->setWidgetVisible(m_showLine);
+  m_widget->setWidgetVisible(m_showLine);
 
   QLabel* label0 = new QLabel("Point 0 data value: ");
   QLabel* label1 = new QLabel("Point 1 data value: ");
-  QObject::connect(
-    this, &ModuleRuler::newEndpointData, label0,
-    [label0, label1](double val0, double val1) {
-      label0->setText(QString("Point 0 data value: %1").arg(val0));
-      label1->setText(QString("Point 1 data value: %1").arg(val1));
-    });
+  connect(this, &ModuleRuler::newEndpointData, label0,
+          [label0, label1](double val0, double val1) {
+            label0->setText(QString("Point 0 data value: %1").arg(val0));
+            label1->setText(QString("Point 1 data value: %1").arg(val1));
+          });
   layout->addWidget(label0);
   layout->addWidget(label1);
   panel->setLayout(layout);
@@ -142,17 +139,17 @@ void ModuleRuler::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
   // Disconnect before the panel is removed to avoid m_showLine always being set
   // to false when the signal widgetVisibilityUpdated(bool) is emitted during
   // the tear down of the pqLinePropertyWidget.
-  QObject::disconnect(m_Widget, SIGNAL(widgetVisibilityUpdated(bool)),
-                      this, SLOT(updateShowLine(bool)));
+  disconnect(m_widget, SIGNAL(widgetVisibilityUpdated(bool)), this,
+             SLOT(updateShowLine(bool)));
 }
 
 bool ModuleRuler::setVisibility(bool val)
 {
-  vtkSMPropertyHelper(m_Representation, "Visibility").Set(val ? 1 : 0);
-  m_Representation->UpdateVTKObjects();
+  vtkSMPropertyHelper(m_representation, "Visibility").Set(val ? 1 : 0);
+  m_representation->UpdateVTKObjects();
   if (!val || m_showLine) {
     bool oldValue = m_showLine;
-    m_Widget->setWidgetVisible(val);
+    m_widget->setWidgetVisible(val);
     m_showLine = oldValue;
   }
   return true;
@@ -160,8 +157,8 @@ bool ModuleRuler::setVisibility(bool val)
 
 bool ModuleRuler::visibility() const
 {
-  if (m_Representation) {
-    return vtkSMPropertyHelper(m_Representation, "Visibility").GetAsInt() != 0;
+  if (m_representation) {
+    return vtkSMPropertyHelper(m_representation, "Visibility").GetAsInt() != 0;
   } else {
     return false;
   }
@@ -177,7 +174,7 @@ bool ModuleRuler::serialize(pugi::xml_node& ns) const
                   << "Point2";
   QStringList representationProperties;
   representationProperties << "Visibility";
-  if (!tomviz::serialize(m_RulerSource, rulerNode, rulerProperties)) {
+  if (!tomviz::serialize(m_rulerSource, rulerNode, rulerProperties)) {
     qWarning("Failed to serialize ruler");
     return false;
   }
@@ -185,7 +182,7 @@ bool ModuleRuler::serialize(pugi::xml_node& ns) const
   pugi::xml_node showLine = representationNode.append_child("ShowLine");
   showLine.append_attribute("value").set_value(m_showLine);
 
-  if (!tomviz::serialize(m_Representation, representationNode,
+  if (!tomviz::serialize(m_representation, representationNode,
                          representationProperties)) {
     qWarning("Failed to serialize ruler representation");
     return false;
@@ -197,8 +194,8 @@ bool ModuleRuler::serialize(pugi::xml_node& ns) const
 bool ModuleRuler::deserialize(const pugi::xml_node& ns)
 {
   pugi::xml_node representationNode = ns.child("Representation");
-  bool success = tomviz::deserialize(m_RulerSource, ns.child("Ruler")) &&
-    tomviz::deserialize(m_Representation, representationNode);
+  bool success = tomviz::deserialize(m_rulerSource, ns.child("Ruler")) &&
+                 tomviz::deserialize(m_representation, representationNode);
 
   if (representationNode) {
     pugi::xml_node showLineNode = representationNode.child("ShowLine");
@@ -215,15 +212,15 @@ bool ModuleRuler::deserialize(const pugi::xml_node& ns)
 
 bool ModuleRuler::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return proxy == m_RulerSource.GetPointer() ||
-         proxy == m_Representation.GetPointer();
+  return proxy == m_rulerSource.GetPointer() ||
+         proxy == m_representation.GetPointer();
 }
 
 std::string ModuleRuler::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == m_RulerSource.GetPointer()) {
+  if (proxy == m_rulerSource.GetPointer()) {
     return "Ruler";
-  } else if (proxy == m_Representation.GetPointer()) {
+  } else if (proxy == m_representation.GetPointer()) {
     return "Representation";
   } else {
     qWarning("Unknown proxy passed to module ruler in save animation");
@@ -234,9 +231,9 @@ std::string ModuleRuler::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleRuler::getProxyForString(const std::string& str)
 {
   if (str == "Ruler") {
-    return m_RulerSource;
+    return m_rulerSource;
   } else if (str == "Representation") {
-    return m_Representation;
+    return m_representation;
   } else {
     return nullptr;
   }
@@ -248,7 +245,7 @@ void ModuleRuler::updateUnits()
   QString units = source->getUnits(0);
   vtkRulerSourceRepresentation* rep =
     vtkRulerSourceRepresentation::SafeDownCast(
-      m_Representation->GetClientSideObject());
+      m_representation->GetClientSideObject());
   QString labelFormat = "%-#6.3g %1";
   rep->SetLabelFormat(labelFormat.arg(units).toLatin1().data());
 }
@@ -262,8 +259,8 @@ void ModuleRuler::endPointsUpdated()
 {
   double point1[3];
   double point2[3];
-  vtkSMPropertyHelper(m_RulerSource, "Point1").Get(point1, 3);
-  vtkSMPropertyHelper(m_RulerSource, "Point2").Get(point2, 3);
+  vtkSMPropertyHelper(m_rulerSource, "Point1").Get(point1, 3);
+  vtkSMPropertyHelper(m_rulerSource, "Point2").Get(point2, 3);
   DataSource* source = dataSource();
   vtkImageData* img = vtkImageData::SafeDownCast(
     vtkAlgorithm::SafeDownCast(source->producer()->GetClientSideObject())

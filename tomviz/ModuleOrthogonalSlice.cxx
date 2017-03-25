@@ -38,13 +38,13 @@
 namespace tomviz {
 
 ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject)
-  : Superclass(parentObject)
+  : Module(parentObject)
 {
 }
 
 ModuleOrthogonalSlice::~ModuleOrthogonalSlice()
 {
-  this->finalize();
+  finalize();
 }
 
 QIcon ModuleOrthogonalSlice::icon() const
@@ -55,7 +55,7 @@ QIcon ModuleOrthogonalSlice::icon() const
 bool ModuleOrthogonalSlice::initialize(DataSource* data,
                                        vtkSMViewProxy* vtkView)
 {
-  if (!this->Superclass::initialize(data, vtkView)) {
+  if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
@@ -67,25 +67,24 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data,
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(pxm->NewProxy("filters", "PassThrough"));
 
-  this->PassThrough = vtkSMSourceProxy::SafeDownCast(proxy);
-  Q_ASSERT(this->PassThrough);
-  controller->PreInitializeProxy(this->PassThrough);
-  vtkSMPropertyHelper(this->PassThrough, "Input").Set(data->producer());
-  controller->PostInitializeProxy(this->PassThrough);
-  controller->RegisterPipelineProxy(this->PassThrough);
+  m_passThrough = vtkSMSourceProxy::SafeDownCast(proxy);
+  Q_ASSERT(m_passThrough);
+  controller->PreInitializeProxy(m_passThrough);
+  vtkSMPropertyHelper(m_passThrough, "Input").Set(data->producer());
+  controller->PostInitializeProxy(m_passThrough);
+  controller->RegisterPipelineProxy(m_passThrough);
 
   // Create the representation for it.
-  this->Representation = controller->Show(this->PassThrough, 0, vtkView);
-  Q_ASSERT(this->Representation);
+  m_representation = controller->Show(m_passThrough, 0, vtkView);
+  Q_ASSERT(m_representation);
 
-  vtkSMRepresentationProxy::SetRepresentationType(this->Representation,
-                                                  "Slice");
-  vtkSMPropertyHelper(this->Representation, "Position")
+  vtkSMRepresentationProxy::SetRepresentationType(m_representation, "Slice");
+  vtkSMPropertyHelper(m_representation, "Position")
     .Set(data->displayPosition(), 3);
 
   // pick proper color/opacity maps.
-  this->updateColorMap();
-  this->Representation->UpdateVTKObjects();
+  updateColorMap();
+  m_representation->UpdateVTKObjects();
 
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(proxy)) {
@@ -97,39 +96,37 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data,
 
 void ModuleOrthogonalSlice::updateColorMap()
 {
-  Q_ASSERT(this->Representation);
+  Q_ASSERT(m_representation);
 
-  vtkSMPropertyHelper(this->Representation, "LookupTable")
-    .Set(this->colorMap());
-  vtkSMPropertyHelper(this->Representation, "ScalarOpacityFunction")
-    .Set(this->opacityMap());
-  this->Representation->UpdateVTKObjects();
+  vtkSMPropertyHelper(m_representation, "LookupTable").Set(colorMap());
+  vtkSMPropertyHelper(m_representation, "ScalarOpacityFunction")
+    .Set(opacityMap());
+  m_representation->UpdateVTKObjects();
 }
 
 bool ModuleOrthogonalSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(this->Representation);
-  controller->UnRegisterProxy(this->PassThrough);
+  controller->UnRegisterProxy(m_representation);
+  controller->UnRegisterProxy(m_passThrough);
 
-  this->PassThrough = nullptr;
-  this->Representation = nullptr;
+  m_passThrough = nullptr;
+  m_representation = nullptr;
   return true;
 }
 
 bool ModuleOrthogonalSlice::setVisibility(bool val)
 {
-  Q_ASSERT(this->Representation);
-  vtkSMPropertyHelper(this->Representation, "Visibility").Set(val ? 1 : 0);
-  this->Representation->UpdateVTKObjects();
+  Q_ASSERT(m_representation);
+  vtkSMPropertyHelper(m_representation, "Visibility").Set(val ? 1 : 0);
+  m_representation->UpdateVTKObjects();
   return true;
 }
 
 bool ModuleOrthogonalSlice::visibility() const
 {
-  if (this->Representation) {
-    return vtkSMPropertyHelper(this->Representation, "Visibility").GetAsInt() !=
-           0;
+  if (m_representation) {
+    return vtkSMPropertyHelper(m_representation, "Visibility").GetAsInt() != 0;
   } else {
     return false;
   }
@@ -137,7 +134,7 @@ bool ModuleOrthogonalSlice::visibility() const
 
 void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
 {
-  Q_ASSERT(this->Representation);
+  Q_ASSERT(m_representation);
 
   if (panel->layout()) {
     delete panel->layout();
@@ -165,31 +162,31 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
 
   panel->setLayout(layout);
 
-  this->Links.addPropertyLink(sliceIndex, "value", SIGNAL(valueEdited(int)),
-                              this->Representation,
-                              this->Representation->GetProperty("Slice"), 0);
+  m_links.addPropertyLink(sliceIndex, "value", SIGNAL(valueEdited(int)),
+                          m_representation,
+                          m_representation->GetProperty("Slice"), 0);
   new pqWidgetRangeDomain(sliceIndex, "minimum", "maximum",
-                          this->Representation->GetProperty("Slice"), 0);
-  this->Links.addPropertyLink(opacitySlider, "value",
-                              SIGNAL(valueEdited(double)), this->Representation,
-                              this->Representation->GetProperty("Opacity"), 0);
+                          m_representation->GetProperty("Slice"), 0);
+  m_links.addPropertyLink(opacitySlider, "value", SIGNAL(valueEdited(double)),
+                          m_representation,
+                          m_representation->GetProperty("Opacity"), 0);
 
-  this->Links.addPropertyLink(
-    adaptor, "currentText", SIGNAL(currentTextChanged(QString)),
-    this->Representation, this->Representation->GetProperty("SliceMode"));
+  m_links.addPropertyLink(adaptor, "currentText",
+                          SIGNAL(currentTextChanged(QString)), m_representation,
+                          m_representation->GetProperty("SliceMode"));
 
-  this->connect(sliceIndex, &IntSliderWidget::valueEdited, this,
-                &ModuleOrthogonalSlice::dataUpdated);
-  this->connect(direction, &QComboBox::currentTextChanged, this,
-                &ModuleOrthogonalSlice::dataUpdated);
-  this->connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleOrthogonalSlice::dataUpdated);
+  connect(sliceIndex, &IntSliderWidget::valueEdited, this,
+          &ModuleOrthogonalSlice::dataUpdated);
+  connect(direction, &QComboBox::currentTextChanged, this,
+          &ModuleOrthogonalSlice::dataUpdated);
+  connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleOrthogonalSlice::dataUpdated);
 }
 
 void ModuleOrthogonalSlice::dataUpdated()
 {
-  this->Links.accept();
-  emit this->renderNeeded();
+  m_links.accept();
+  emit renderNeeded();
 }
 
 bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
@@ -200,38 +197,37 @@ bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
                  << "Opacity"
                  << "Visibility";
   pugi::xml_node nodeR = ns.append_child("Representation");
-  return (tomviz::serialize(this->Representation, nodeR, reprProperties) &&
-          this->Superclass::serialize(ns));
+  return (tomviz::serialize(m_representation, nodeR, reprProperties) &&
+          Module::serialize(ns));
 }
 
 bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
 {
-  if (!tomviz::deserialize(this->Representation, ns.child("Representation"))) {
+  if (!tomviz::deserialize(m_representation, ns.child("Representation"))) {
     return false;
   }
-  return this->Superclass::deserialize(ns);
+  return Module::deserialize(ns);
 }
 
 void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY,
                                             double newZ)
 {
   double pos[3] = { newX, newY, newZ };
-  vtkSMPropertyHelper(this->Representation, "Position").Set(pos, 3);
-  this->Representation->UpdateVTKObjects();
+  vtkSMPropertyHelper(m_representation, "Position").Set(pos, 3);
+  m_representation->UpdateVTKObjects();
 }
 
 //-----------------------------------------------------------------------------
 bool ModuleOrthogonalSlice::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == this->PassThrough.Get()) ||
-         (proxy == this->Representation.Get());
+  return (proxy == m_passThrough.Get()) || (proxy == m_representation.Get());
 }
 
 std::string ModuleOrthogonalSlice::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == this->PassThrough.Get()) {
+  if (proxy == m_passThrough.Get()) {
     return "PassThrough";
-  } else if (proxy == this->Representation.Get()) {
+  } else if (proxy == m_representation.Get()) {
     return "Representation";
   } else {
     qWarning(
@@ -243,9 +239,9 @@ std::string ModuleOrthogonalSlice::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleOrthogonalSlice::getProxyForString(const std::string& str)
 {
   if (str == "PassThrough") {
-    return this->PassThrough.Get();
+    return m_passThrough.Get();
   } else if (str == "Representation") {
-    return this->Representation.Get();
+    return m_representation.Get();
   } else {
     return nullptr;
   }
