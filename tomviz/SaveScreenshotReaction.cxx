@@ -147,7 +147,15 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
   lastUsedExt = QString("*.") + fileInfo.suffix();
   settings->setValue("extensions/ScreenshotExtension", lastUsedExt);
 
-  QSize size = QSize(width->value(), height->value());
+  // This is working around an issue on macOS, currently saved screenshots are
+  // twice the requested size on a retinal display. The device pixel ratio will
+  // be 1 apart from on a retinal display where it will be 2. This will need to
+  // be removed when this bug is resolved more correctly.
+  int dpr = 1;
+  if (mw) {
+    dpr = mw->devicePixelRatio();
+  }
+  QSize size = QSize(width->value() / dpr, height->value() / dpr);
   QString palette = paletteBox->itemData(paletteBox->currentIndex()).toString();
 
   bool makeTransparentBackground = false;
