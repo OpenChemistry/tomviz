@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>523</width>
-    <height>546</height>
+    <width>699</width>
+    <height>996</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Principal developers: Dr. Marcus D. Hanwell and Mr. Utkarsh Ayachit (&lt;a href=&quot;http://www.kitware.com/&quot;&gt;Kitware, Inc.&lt;/a&gt;), and &lt;a href=&quot;http://muller.research.engineering.cornell.edu/&quot;&gt;Prof. David A. Muller&lt;/a&gt; and &lt;a href=&quot;http://www.roberthovden.com/&quot;&gt;Dr. Robert Hovden&lt;/a&gt; (&lt;a href=&quot;http://www.cornell.edu/&quot;&gt;Cornell University&lt;/a&gt;) under DOE Office of Science contract DE-SC0011385.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tomviz was founded by Dr. Marcus D. Hanwell and Mr. Utkarsh Ayachit (&lt;a href=&quot;http://www.kitware.com/&quot;&gt;Kitware&lt;/a&gt;), &lt;a href=&quot;http://muller.research.engineering.cornell.edu/&quot;&gt;Prof. David A. Muller&lt;/a&gt; (&lt;a href=&quot;http://www.cornell.edu/&quot;&gt;Cornell University&lt;/a&gt;), and &lt;a href=&quot;http://www.roberthovden.com/&quot;&gt;Prof. Robert Hovden&lt;/a&gt; (&lt;a href=&quot;http://umich.edu/&quot;&gt;University of Michigan&lt;/a&gt;) under DOE Office of Science contract DE-SC0011385.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>

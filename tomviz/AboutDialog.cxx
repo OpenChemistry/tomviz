@@ -29,7 +29,6 @@
 #include <vtkNew.h>
 #include <vtkPVConfig.h>
 #include <vtkPVOpenGLInformation.h>
-#include <vtkVersion.h>
 
 #include <QString>
 #include <QTreeWidget>
@@ -81,7 +80,6 @@ AboutDialog::AboutDialog(MainWindow* mw)
   QTreeWidget* tree = m_ui->information;
   AddItem(tree, "Tomviz Version", tomvizVersion);
   AddItem(tree, "ParaView Version", QString(PARAVIEW_VERSION_FULL));
-  AddItem(tree, "VTK Version", QString(VTK_VERSION));
 
   vtkNew<vtkPVOpenGLInformation> OpenGLInfo;
   OpenGLInfo->CopyFromObject(NULL);
