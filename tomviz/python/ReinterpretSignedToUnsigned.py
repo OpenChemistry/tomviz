@@ -9,7 +9,7 @@ def transform_scalars(dataset):
     if scalars is None:
         raise RuntimeError("No scalars found!")
 
-    dtype = scaldars.dtype
+    dtype = scalars.dtype
     dtype = dtype.type
 
     typeMap = {
