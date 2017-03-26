@@ -57,7 +57,7 @@ class AlignWidget : public EditOperatorWidget
 public:
   AlignWidget(TranslateAlignOperator* op, vtkSmartPointer<vtkImageData> data,
               QWidget* parent = nullptr);
-  ~AlignWidget();
+  ~AlignWidget() override;
 
   // This will filter the QVTKOpenGLWidget events
   bool eventFilter(QObject* object, QEvent* event) override;
@@ -92,41 +92,41 @@ protected slots:
   void sliceOffsetEdited(int slice, int offsetComponent);
 
 protected:
-  vtkNew<vtkImageSlice> imageSlice;
-  vtkNew<vtkImageSliceMapper> mapper;
-  vtkNew<vtkRenderer> renderer;
-  vtkNew<vtkInteractorStyleRubberBand2D> defaultInteractorStyle;
-  vtkNew<vtkInteractorStyleRubberBandZoom> zoomToBoxInteractorStyle;
-  vtkSmartPointer<vtkImageData> inputData;
-  QVTKOpenGLWidget* widget;
+  vtkNew<vtkImageSlice> m_imageSlice;
+  vtkNew<vtkImageSliceMapper> m_mapper;
+  vtkNew<vtkRenderer> m_renderer;
+  vtkNew<vtkInteractorStyleRubberBand2D> m_defaultInteractorStyle;
+  vtkNew<vtkInteractorStyleRubberBandZoom> m_zoomToBoxInteractorStyle;
+  vtkSmartPointer<vtkImageData> m_inputData;
+  QVTKOpenGLWidget* m_widget;
 
-  QComboBox* modeSelect;
-  QTimer* timer;
-  SpinBox* currentSlice;
-  QLabel* currentSliceOffset;
-  QButtonGroup* referenceSliceMode;
-  QRadioButton* prevButton;
-  QRadioButton* nextButton;
-  QRadioButton* statButton;
-  QSpinBox* refNum;
-  QPushButton* startButton;
-  QPushButton* stopButton;
-  QTableWidget* offsetTable;
+  QComboBox* m_modeSelect;
+  QTimer* m_timer;
+  SpinBox* m_currentSlice;
+  QLabel* m_currentSliceOffset;
+  QButtonGroup* m_referenceSliceMode;
+  QRadioButton* m_prevButton;
+  QRadioButton* m_nextButton;
+  QRadioButton* m_statButton;
+  QSpinBox* m_refNum;
+  QPushButton* m_startButton;
+  QPushButton* m_stopButton;
+  QTableWidget* m_offsetTable;
 
-  int frameRate;
-  int referenceSlice;
-  int observerId;
+  int m_frameRate;
+  int m_referenceSlice;
+  int m_observerId;
 
-  int maxSliceNum;
-  int minSliceNum;
+  int m_maxSliceNum;
+  int m_minSliceNum;
 
-  QVector<ViewMode*> modes;
-  int currentMode;
+  QVector<ViewMode*> m_modes;
+  int m_currentMode;
 
-  QVector<vtkVector2i> offsets;
-  QPointer<TranslateAlignOperator> Op;
-  DataSource* unalignedData;
-  DataSource* alignedData;
+  QVector<vtkVector2i> m_offsets;
+  QPointer<TranslateAlignOperator> m_operator;
+  DataSource* m_unalignedData;
+  DataSource* m_alignedData;
 };
 }
 
