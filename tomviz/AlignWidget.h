@@ -92,8 +92,6 @@ protected slots:
   void sliceOffsetEdited(int slice, int offsetComponent);
 
 protected:
-  vtkNew<vtkImageSlice> m_imageSlice;
-  vtkNew<vtkImageSliceMapper> m_mapper;
   vtkNew<vtkRenderer> m_renderer;
   vtkNew<vtkInteractorStyleRubberBand2D> m_defaultInteractorStyle;
   vtkNew<vtkInteractorStyleRubberBandZoom> m_zoomToBoxInteractorStyle;
@@ -113,20 +111,19 @@ protected:
   QPushButton* m_stopButton;
   QTableWidget* m_offsetTable;
 
-  int m_frameRate;
-  int m_referenceSlice;
-  int m_observerId;
+  int m_frameRate = 5;
+  int m_referenceSlice = 0;
+  int m_observerId = 0;
 
-  int m_maxSliceNum;
-  int m_minSliceNum;
+  int m_maxSliceNum = 1;
+  int m_minSliceNum = 0;
 
   QVector<ViewMode*> m_modes;
-  int m_currentMode;
+  int m_currentMode = 0;
 
   QVector<vtkVector2i> m_offsets;
   QPointer<TranslateAlignOperator> m_operator;
   DataSource* m_unalignedData;
-  DataSource* m_alignedData;
 };
 }
 

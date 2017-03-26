@@ -348,7 +348,6 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   : EditOperatorWidget(p)
 {
   m_timer = new QTimer(this);
-  m_frameRate = 5;
   m_operator = op;
   m_unalignedData = op->getDataSource();
   m_inputData = imageData;
@@ -356,6 +355,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   vtkNew<vtkGenericOpenGLRenderWindow> window;
   m_widget->SetRenderWindow(window.Get());
   m_widget->installEventFilter(this);
+
+  // Use a horizontal layout, main GUI to the left, controls/text to the right.
   QHBoxLayout* myLayout = new QHBoxLayout(this);
   myLayout->addWidget(m_widget);
   QVBoxLayout* v = new QVBoxLayout;
@@ -364,7 +365,6 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   setMinimumWidth(800);
   setMinimumHeight(600);
   setWindowTitle("Align data");
-  m_currentMode = 0;
 
   // Grab the image data from the data source...
   vtkSMProxy* lut = m_unalignedData->colorMap();
@@ -384,8 +384,6 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     m_maxSliceNum = 1;
   }
   m_widget->GetRenderWindow()->AddRenderer(m_renderer.Get());
-  m_renderer->SetBackground(1.0, 1.0, 1.0);
-  m_renderer->SetViewport(0.0, 0.0, 1.0, 1.0);
 
   // Set up render window interaction.
   m_defaultInteractorStyle->SetRenderOnMouseMove(true);
