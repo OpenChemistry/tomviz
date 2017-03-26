@@ -173,6 +173,7 @@ public:
   ToggleSliceShownViewMode(vtkImageData* data, vtkSMProxy* lutProxy)
     : ViewMode(data), showingCurrentSlice(false)
   {
+    this->imageSlice->GetProperty()->SetInterpolationTypeToNearest();
     this->imageSliceMapper->SetInputData(data);
     this->imageSliceMapper->Update();
     this->imageSlice->SetMapper(this->imageSliceMapper.Get());
