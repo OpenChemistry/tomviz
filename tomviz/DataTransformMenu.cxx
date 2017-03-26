@@ -143,9 +143,6 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(medianFilterAction, "Median Filter",
                                  readInPythonScript("MedianFilter"), false,
                                  false, readInJSONDescription("MedianFilter"));
-  new AddPythonTransformReaction(
-    reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
-    readInPythonScript("ReinterpretSignedToUnsigned"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
