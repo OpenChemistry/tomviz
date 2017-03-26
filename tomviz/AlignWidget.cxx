@@ -358,8 +358,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
 
   // Use a horizontal layout, main GUI to the left, controls/text to the right.
   QHBoxLayout* myLayout = new QHBoxLayout(this);
-  myLayout->addWidget(m_widget);
+  myLayout->addWidget(m_widget, 5);
+  m_widget->setMinimumWidth(400);
+  m_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   QVBoxLayout* v = new QVBoxLayout;
+  v->setSizeConstraint(QLayout::SetMinimumSize);
   myLayout->addLayout(v);
   setLayout(myLayout);
   setMinimumWidth(800);
@@ -443,8 +446,6 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   });
   contrast->setValue(sliderRange[1]);
   brightnessAndContrastControls->addRow("Contrast", contrast);
-  brightnessAndContrastWidget->setMaximumWidth(minimumWidth() / 2);
-
   v->addWidget(brightnessAndContrastWidget);
 
   m_currentMode = 0;
@@ -472,19 +473,20 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     startRef = (m_minSliceNum + m_maxSliceNum) / 2;
   }
 
+  QLabel* keyGuide = new QLabel;
+  keyGuide->setWordWrap(true);
+  keyGuide->setTextFormat(Qt::RichText);
+  keyGuide->setText(
+    "1. Pick an object, use the arrow keys to minimize the wobble.<br />"
+    "2. S moves to the next slice, A returns to the previous slice.<br />"
+    "3. Repeat steps 1 and 2.<br />"
+    "<i>Note: Must use the same object/point all slices.</i>");
+  keyGuide->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+  v->addWidget(keyGuide);
+
   QGridLayout* grid = new QGridLayout;
   int gridrow = 0;
-  v->addStretch(1);
-  QLabel* keyGuide = new QLabel;
-  keyGuide->setText(
-    "1. Pick an object, use the arrow\nkeys to minimize the wobble.\n"
-    "2. Use the S to move to the next\nslice, A to return to previous slice.\n"
-    "3. Repeat steps 1 and 2.\n\n"
-    "Note: The same object/point must\nbe used for all slices.");
-  v->addWidget(keyGuide);
-  v->addStretch(1);
   v->addLayout(grid);
-  v->addStretch(1);
   QLabel* label = new QLabel("Current image:");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
   m_currentSlice = new SpinBox;
@@ -544,11 +546,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   ++gridrow;
   m_currentSliceOffset =
     new QLabel("Image shift (Shortcut: arrow keys): (0, 0)");
-  grid->addWidget(m_currentSliceOffset, gridrow, 0, 1, 3, Qt::AlignLeft);
+  v->addWidget(m_currentSliceOffset);
 
   // Add our buttons.
-  ++gridrow;
   QHBoxLayout* buttonLayout = new QHBoxLayout;
+  buttonLayout->addStretch();
   m_startButton = new QPushButton("Start");
   connect(m_startButton, SIGNAL(clicked()), SLOT(startAlign()));
   buttonLayout->addWidget(m_startButton);
@@ -556,12 +558,12 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   m_stopButton = new QPushButton("Stop");
   connect(m_stopButton, SIGNAL(clicked()), SLOT(stopAlign()));
   buttonLayout->addWidget(m_stopButton);
-  grid->addLayout(buttonLayout, gridrow, 0, 1, 2, Qt::AlignCenter);
+  buttonLayout->addStretch();
+  v->addLayout(buttonLayout);
 
-  gridrow++;
   m_offsetTable = new QTableWidget(this);
   m_offsetTable->verticalHeader()->setVisible(false);
-  grid->addWidget(m_offsetTable, gridrow, 0, 1, 3, Qt::AlignCenter);
+  v->addWidget(m_offsetTable, 2);
   m_offsets.fill(vtkVector2i(0, 0), m_maxSliceNum + 1);
 
   const QVector<vtkVector2i>& oldOffsets = m_operator->getAlignOffsets();
