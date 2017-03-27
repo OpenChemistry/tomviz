@@ -1,25 +1,25 @@
-Building tomviz
+Building Tomviz
 ===============
 
-The tomviz project reuses a number of components from Python, VTK, ITK, and
+The Tomviz project reuses a number of components from Python, VTK, ITK, and
 ParaView, so these dependencies will need to be compiled first in order to
-build tomviz. There is a superbuild that automates most of this when building
+build Tomviz. There is a superbuild that automates most of this when building
 binaries. We recommend using these binaries where available if you wish to
 test, and nightly binaries are made available in addition to releases.
 
-If you wish to develop tomviz, the following sequence of commands will build
-a suitable ParaView, and a tomviz that uses the ParaView just compiled. You
-need to use your package manager/installers/upstream build instructions to
-install out dependencies. CMake will search for these, and the cmake-gui can
-be used to point to them if they are not found automatically.
+If you wish to develop Tomviz, the following sequence of commands will build
+a suitable ParaView, ITK, and a Tomviz that uses these builds. You should use
+your package manager/installers/upstream build instructions to install the
+dependencies. CMake will search for these, and the cmake-gui can be used to
+point to them if they are not found automatically.
 
 Dependencies
 ------------
 
  * Qt 5.6.0 (5.7.0 recommended)
  * CMake 3.3
- * Python 2.7
- * NumPy 1.8
+ * Python 3.6
+ * NumPy 1.12
  * Git 2.1
  * C++ compiler with C++11 support
  * Intel TBB
@@ -27,10 +27,10 @@ Dependencies
 Initial Build
 -------------
 
-You will need the development headers, so please ensure these are installed
+You will need the development headers, so please ensure they are installed
 (several distros use -dev packages not installed with the main package). If
-you are in a directory you would like to place the source and builds with all
-prerequisites installed:
+you are in a directory where you would like to place the source and builds
+with all prerequisites installed:
 
     git clone --recursive git://github.com/kitware/paraview.git
     git clone --recursive git://github.com/openchemistry/tomviz.git
@@ -46,6 +46,7 @@ prerequisites installed:
       -DPARAVIEW_USE_QTHELP:BOOL=OFF \
       -DVTK_RENDERING_BACKEND:STRING=OpenGL2 \
       -DVTK_SMP_IMPLEMENTATION_TYPE:STRING=TBB \
+      -DVTK_PYTHON_VERSION:STRING=3 \
       -DVTK_PYTHON_FULL_THREADSAFE:BOOL=ON \
       -DVTK_NO_PYTHON_THREADS:BOOL=OFF \
       ../paraview
@@ -84,9 +85,12 @@ you will need to specify the correct generator for the installed compiler.
       ../ITK
     cmake --build .
 
-This will build ITK with the its python wrapping turned on.  ITK, while not
-required for building tomviz, is required for the executable to run. Now,
-to build tomviz:
+This will build ITK with the its Python wrapping turned on, you must inspect
+the CMake configuration to ensure it uses the same Python as ParaView. ITK,
+while not required to build Tomviz, is required for any of the ITK-based data
+operators to run.
+
+Now, to build Tomviz:
 
     cd ..
     export build_root=`pwd`
@@ -98,7 +102,7 @@ to build tomviz:
       ../tomviz
     cmake --build .
 
-Running tomviz
+Running Tomviz
 --------------
 
 You should be able to simply execute the binary from the build tree, on Windows
@@ -111,7 +115,7 @@ Updating Source and Rebuilding
 ------------------------------
 
 Once this completes you will have a binary in the 'bin' directory of your build
-tree. It is possible to update the ParaView and/or tomviz source directories
+tree. It is possible to update the ParaView and/or Tomviz source directories
 and rebuild the binaries incrementally. The following would update both source
 trees and rebuild the latest version of each:
 
