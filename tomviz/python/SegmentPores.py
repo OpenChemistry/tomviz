@@ -139,7 +139,6 @@ def threshold(operator, step_pct, input_image):
 def watershed(operator, step_pct, input_image, level):
     import itk
     from tomviz import itkutils
-    import numpy as np
 
     dimension = input_image.GetImageDimension()
     watershed_input_type = itk.Image[itk.F, dimension]
@@ -148,8 +147,9 @@ def watershed(operator, step_pct, input_image, level):
     caster.SetInput(input_image)
 
     watershed_filter = \
-        itk.MorphologicalWatershedImageFilter[watershed_input_type,
-                watershed_output_type].New(Input=caster.GetOutput())
+        itk.MorphologicalWatershedImageFilter[
+            watershed_input_type,
+            watershed_output_type].New(Input=caster.GetOutput())
     watershed_filter.SetLevel(level)
     watershed_filter.SetMarkWatershedLine(True)
     watershed_filter.SetFullyConnected(True)
@@ -168,8 +168,6 @@ def watershed(operator, step_pct, input_image, level):
 
 def apply_mask(operator, step_pct, input_image1, input_image2):
     import itk
-    from tomviz import itkutils
-    import numpy as np
 
     dimension = input_image1.GetImageDimension()
     output_type = itk.Image[itk.US, dimension]
@@ -178,7 +176,8 @@ def apply_mask(operator, step_pct, input_image1, input_image2):
     caster2 = itk.CastImageFilter[type(input_image2), output_type].New()
     caster2.SetInput(input_image2)
     mask_filter = \
-        itk.MultiplyImageFilter.New(Input1=caster1.GetOutput(), Input2=caster2.GetOutput())
+        itk.MultiplyImageFilter.New(Input1=caster1.GetOutput(),
+                                    Input2=caster2.GetOutput())
 
     operator.progress.message = "Apply mask"
     operator.progress.value += next(step_pct)
@@ -191,58 +190,58 @@ def apply_mask(operator, step_pct, input_image1, input_image2):
 
 
 def morphological_closing(operator, step_pct, input_image, structuring_element):
-     import itk
-     from tomviz import itkutils
+    import itk
+    from tomviz import itkutils
 
-     closer = \
-         itk.GrayscaleMorphologicalClosingImageFilter.New(Input=input_image)
-     closer.SetKernel(structuring_element)
-     operator.progress.message = "Morphological closing"
-     progress = operator.progress.value
-     itkutils.observe_filter_progress(operator, closer,
-                                      progress, progress + next(step_pct))
+    closer = \
+        itk.GrayscaleMorphologicalClosingImageFilter.New(Input=input_image)
+    closer.SetKernel(structuring_element)
+    operator.progress.message = "Morphological closing"
+    progress = operator.progress.value
+    itkutils.observe_filter_progress(operator, closer,
+                                     progress, progress + next(step_pct))
 
-     try:
-         closer.Update()
-     except RuntimeError:
-          return
+    try:
+        closer.Update()
+    except RuntimeError:
+        return
 
-     return closer.GetOutput()
+    return closer.GetOutput()
 
 
 def encapsulate(operator, step_pct, input_image, mask, structuring_element):
-     import itk
-     from tomviz import itkutils
+    import itk
+    from tomviz import itkutils
 
-     dilater = \
-         itk.GrayscaleDilateImageFilter.New(Input=input_image)
-     dilater.SetKernel(structuring_element)
-     operator.progress.message = "Encapsulate"
-     progress = operator.progress.value
-     nextprogress = progress + next(step_pct)
-     itkutils.observe_filter_progress(operator, dilater,
-                                      progress, nextprogress)
+    dilater = \
+        itk.GrayscaleDilateImageFilter.New(Input=input_image)
+    dilater.SetKernel(structuring_element)
+    operator.progress.message = "Encapsulate"
+    progress = operator.progress.value
+    nextprogress = progress + next(step_pct)
+    itkutils.observe_filter_progress(operator, dilater,
+                                     progress, nextprogress)
 
-     xor_filter = \
+    xor_filter = \
         itk.XorImageFilter.New(Input1=mask, Input2=dilater.GetOutput())
-     progress = nextprogress
-     nextprogress = progress + next(step_pct)
-     itkutils.observe_filter_progress(operator, xor_filter,
-                                      progress, nextprogress)
+    progress = nextprogress
+    nextprogress = progress + next(step_pct)
+    itkutils.observe_filter_progress(operator, xor_filter,
+                                     progress, nextprogress)
 
-     or_filter = \
+    or_filter = \
         itk.OrImageFilter.New(Input1=input_image, Input2=xor_filter.GetOutput())
-     progress = nextprogress
-     nextprogress = progress + next(step_pct)
-     itkutils.observe_filter_progress(operator, or_filter,
-                                      progress, nextprogress)
+    progress = nextprogress
+    nextprogress = progress + next(step_pct)
+    itkutils.observe_filter_progress(operator, or_filter,
+                                     progress, nextprogress)
 
-     try:
+    try:
         or_filter.Update()
-     except RuntimeError:
-         return
+    except RuntimeError:
+        return
 
-     return or_filter.GetOutput()
+    return or_filter.GetOutput()
 
 
 def opening_by_reconstruction(operator, step_pct, input_image,
@@ -269,7 +268,7 @@ def opening_by_reconstruction(operator, step_pct, input_image,
 
 class SegmentPores(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, minimum_radius=0.5, maximum_radius=6.0):
+    def transform_scalars(self, dataset, minimum_radius=0.5, maximum_radius=6.):
         """Segment pores. The pore size must be greater than the minimum radius
         and less than the maximum radius.  Pores will be separated according to
         the minimum radius."""
@@ -323,11 +322,12 @@ class SegmentPores(tomviz.operators.CancelableOperator):
                     closing_radius[dim] = radius
             StructuringElementType = itk.FlatStructuringElement[dimension]
             structuring_element = \
-               StructuringElementType.Ball(closing_radius)
+                StructuringElementType.Ball(closing_radius)
             particle_mask = morphological_closing(self, step_pct, thresholded,
-                                           structuring_element)
+                                                  structuring_element)
 
-            encapsulated = encapsulate(self, step_pct, thresholded, particle_mask, structuring_element)
+            encapsulated = encapsulate(self, step_pct, thresholded,
+                                       particle_mask, structuring_element)
 
             distance = get_distance(self, step_pct, encapsulated)
 
@@ -350,9 +350,9 @@ class SegmentPores(tomviz.operators.CancelableOperator):
                 if radius > opening_radius[dim]:
                     opening_radius[dim] = radius
             structuring_element = \
-               StructuringElementType.Ball(opening_radius)
+                StructuringElementType.Ball(opening_radius)
             opened = opening_by_reconstruction(self, step_pct, in_particles,
-                    structuring_element)
+                                               structuring_element)
 
             self.progress.message = "Saving results"
 
