@@ -39,24 +39,29 @@ public:
   virtual ~LoadDataReaction();
 
   /// Create a raw data source from the reader.
-  static DataSource* createDataSource(vtkSMProxy* reader);
+  static DataSource* createDataSource(vtkSMProxy* reader,
+                                      bool defaultModules = true);
 
   /// Create a data source that can be populated with data.
   static DataSource* createDataSource(vtkImageData* imageData);
 
   /// Create a data source using Tomviz readers (no proxy).
-  static DataSource* createDataSourceLocal(const QString& fileName);
+  static DataSource* createDataSourceLocal(const QString& fileName,
+                                           bool defaultModules = true);
 
   static QList<DataSource*> loadData();
 
   /// Load a data file from the specified location.
-  static DataSource* loadData(const QString& fileName);
+  static DataSource* loadData(const QString& fileName,
+                              bool defaultModules = true);
 
   /// Load a data files from the specified location.
-  static DataSource* loadData(const QStringList& fileNames);
+  static DataSource* loadData(const QStringList& fileNames,
+                              bool defaultModules = true);
 
   /// Handle creation of a new data source.
-  static void dataSourceAdded(DataSource*);
+  static void dataSourceAdded(DataSource* dataSource,
+                              bool defaultModules = true);
 
 protected:
   /// Called when the action is triggered.
@@ -64,6 +69,8 @@ protected:
 
 private:
   Q_DISABLE_COPY(LoadDataReaction)
+
+  static void addDefaultModules(DataSource* dataSource);
 };
 }
 #endif

@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "LoadDataReaction.h"
 #include "Module.h"
 #include "ModuleFactory.h"
 #include "PythonGeneratedDatasetReaction.h"
@@ -630,7 +631,15 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     }
 
     // create the data source.
-    DataSource* dataSource = new DataSource(originalDataSources[odsid]);
+    DataSource* dataSource = nullptr;
+    vtkSMSourceProxy* srcProxy = originalDataSources[odsid];
+    if (srcProxy->GetAnnotation(Attributes::FILENAME)) {
+      dataSource = LoadDataReaction::loadData(
+        srcProxy->GetAnnotation(Attributes::FILENAME), false);
+    } else {
+      dataSource = new DataSource(srcProxy);
+    }
+
     if (!dataSource->deserialize(dsnode)) {
       qWarning() << "Failed to deserialze DataSource with id " << id
                  << ". Skipping it";
