@@ -21,7 +21,6 @@
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
 #include <pqCoreUtilities.h>
-#include <pqFileDialog.h>
 #include <pqSaveScreenshotReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
@@ -36,6 +35,7 @@
 #include <QDebug>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
@@ -127,23 +127,41 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
     lastUsedExt = settings->value("extensions/ScreenshotExtension").toString();
   }
 
-  QString filters;
-  filters += "PNG image (*.png)";
-  filters += ";;BMP image (*.bmp)";
-  filters += ";;TIFF image (*.tif)";
-  filters += ";;PPM image (*.ppm)";
-  filters += ";;JPG image (*.jpg)";
-  pqFileDialog file_dialog(NULL, pqCoreUtilities::mainWidget(),
-                           tr("Save Screenshot:"), QString(), filters);
-  file_dialog.setRecentlyUsedExtension(lastUsedExt);
+  QStringList filters;
+  filters << "PNG image (*.png)";
+  filters << "BMP image (*.bmp)";
+  filters << "TIFF image (*.tif)";
+  filters << "PPM image (*.ppm)";
+  filters << "JPG image (*.jpg)";
+
+  QFileDialog file_dialog(nullptr, "Save Screenshot:");
+  file_dialog.setFileMode(QFileDialog::AnyFile);
+  file_dialog.setNameFilters(filters);
   file_dialog.setObjectName("FileSaveScreenshotDialog");
-  file_dialog.setFileMode(pqFileDialog::AnyFile);
+  file_dialog.setAcceptMode(QFileDialog::AcceptSave);
+
   if (file_dialog.exec() != QDialog::Accepted) {
     return;
   }
+  QStringList filenames = file_dialog.selectedFiles();
+  QString format = file_dialog.selectedNameFilter();
+  QString filename = filenames[0];
+  int startPos = format.indexOf("(") + 1;
+  int n = format.indexOf(")") - startPos;
+  QString extensionString = format.mid(startPos, n);
+  QStringList extensions =
+    extensionString.split(QRegularExpression(" ?\\*"), QString::SkipEmptyParts);
+  bool hasExtension = false;
+  for (QString& str : extensions) {
+    if (filename.endsWith(str)) {
+      hasExtension = true;
+    }
+  }
+  if (!hasExtension) {
+    filename = QString("%1%2").arg(filename, extensions[0]);
+  }
 
-  QString file = file_dialog.getSelectedFiles()[0];
-  QFileInfo fileInfo = QFileInfo(file);
+  QFileInfo fileInfo = QFileInfo(filename);
   lastUsedExt = QString("*.") + fileInfo.suffix();
   settings->setValue("extensions/ScreenshotExtension", lastUsedExt);
 
@@ -181,7 +199,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
     chosenPalette->Delete();
   }
 
-  pqSaveScreenshotReaction::saveScreenshot(file, size, 100, false);
+  pqSaveScreenshotReaction::saveScreenshot(filename, size, 100, false);
 
   // restore color palette.
   if (clone) {
