@@ -229,14 +229,6 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     cloneChildAction = contextMenu.addAction("Clone");
   }
 
-  QAction* deleteAction = nullptr;
-  if (!childDataSource) {
-    deleteAction = contextMenu.addAction("Delete");
-  }
-  if (deleteAction && !enableDeleteItems(selectedIndexes())) {
-    deleteAction->setEnabled(false);
-  }
-
   // Allow pipeline to be re-executed if we are dealing with a canceled
   // operator.
   auto op = pipelineModel->op(idx);
@@ -256,6 +248,15 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     showInterfaceAction = contextMenu.addAction("View Source");
   } else if (op && op->hasCustomUI()) {
     showInterfaceAction = contextMenu.addAction("Edit");
+  }
+
+  // Keep the delete menu entry at the end of the list of options.
+  QAction* deleteAction = nullptr;
+  if (!childDataSource) {
+    deleteAction = contextMenu.addAction("Delete");
+  }
+  if (deleteAction && !enableDeleteItems(selectedIndexes())) {
+    deleteAction->setEnabled(false);
   }
 
   bool allModules = true;
