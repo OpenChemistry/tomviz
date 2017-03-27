@@ -23,6 +23,7 @@
 #include "Module.h"
 #include "ModuleManager.h"
 #include "Operator.h"
+#include "OperatorPython.h"
 #include "OperatorResult.h"
 #include "PipelineModel.h"
 #include "SaveDataReaction.h"
@@ -200,6 +201,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* showAction = nullptr;
   QAction* cloneChildAction = nullptr;
   QAction* snapshotAction = nullptr;
+  QAction* showInterfaceAction = nullptr;
   bool allowReExecute = false;
 
   // Data source ( non child )
@@ -249,6 +251,13 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     snapshotAction = contextMenu.addAction("Snapshot Data");
   }
 
+  // Add a view source entry when it is a Python-based operator.
+  if (op && qobject_cast<OperatorPython*>(op)) {
+    showInterfaceAction = contextMenu.addAction("View Source");
+  } else if (op && op->hasCustomUI()) {
+    showInterfaceAction = contextMenu.addAction("Edit");
+  }
+
   bool allModules = true;
   foreach (auto i, selectedIndexes()) {
     auto module = pipelineModel->module(i);
@@ -291,6 +300,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     LoadDataReaction::dataSourceAdded(newClone);
   } else if (snapshotAction && selectedItem == snapshotAction) {
     op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));
+  } else if (showInterfaceAction && selectedItem == showInterfaceAction) {
+    showUserInterface(op);
   }
 }
 
@@ -371,31 +382,7 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
   if (auto op = pipelineModel->op(idx)) {
-    if (op->hasCustomUI()) {
-      // See if we already have a dialog open for this operator
-      bool haveDialog = m_operatorDialogs.contains(op) && m_operatorDialogs[op];
-      if (haveDialog) {
-        auto dialog = m_operatorDialogs[op];
-        dialog->show();
-        dialog->raise();
-        dialog->activateWindow();
-      } else {
-        // Create a non-modal dialog, delete it once it has been closed.
-        QString dialogTitle("Edit - ");
-        dialogTitle.append(op->label());
-        auto dialog = new EditOperatorDialog(op, op->dataSource(), false,
-                                             pqCoreUtilities::mainWidget());
-        dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-        dialog->setWindowTitle(dialogTitle);
-        dialog->show();
-        m_operatorDialogs[op] = dialog;
-
-        // Close the dialog if the Operator is destroyed.
-        connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
-        connect(op, SIGNAL(aboutToBeDestroyed(Operator*)), this,
-                SLOT(unmapOperatorDialog(Operator*)));
-      }
-    }
+    showUserInterface(op);
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
       auto view = ActiveObjects::instance().activeView();
@@ -506,4 +493,38 @@ void PipelineView::unmapOperatorDialog(Operator* op)
     m_operatorDialogs.remove(op);
   }
 }
+
+void PipelineView::showUserInterface(Operator *op)
+{
+  if (!op) {
+    return;
+  }
+
+  if (op->hasCustomUI()) {
+    // See if we already have a dialog open for this operator
+    bool haveDialog = m_operatorDialogs.contains(op) && m_operatorDialogs[op];
+    if (haveDialog) {
+      auto dialog = m_operatorDialogs[op];
+      dialog->show();
+      dialog->raise();
+      dialog->activateWindow();
+    } else {
+      // Create a non-modal dialog, delete it once it has been closed.
+      QString dialogTitle("Edit - ");
+      dialogTitle.append(op->label());
+      auto dialog = new EditOperatorDialog(op, op->dataSource(), false,
+                                           pqCoreUtilities::mainWidget());
+      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+      dialog->setWindowTitle(dialogTitle);
+      dialog->show();
+      m_operatorDialogs[op] = dialog;
+
+      // Close the dialog if the Operator is destroyed.
+      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+      connect(op, SIGNAL(aboutToBeDestroyed(Operator*)), this,
+              SLOT(unmapOperatorDialog(Operator*)));
+    }
+  }
+}
+
 }
