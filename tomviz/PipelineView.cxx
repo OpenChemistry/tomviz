@@ -145,17 +145,19 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
 
   // Connect up operators to start and stop delegate
   // New datasource added
-  connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded, [this, delegate](DataSource *dataSource) {
-    // New operator added
-    connect(dataSource, &DataSource::operatorAdded, delegate, [this, delegate](Operator *op) {
-      // Connect transformingStarted to OperatorRunningDelegate
-      connect(op, &Operator::transformingStarted, delegate, &OperatorRunningDelegate::start);
-      // Connect transformingDone
-      connect(op, &Operator::transformingDone, delegate, [this, delegate]() {
-        delegate->stop();
-      });
-    });
-  });
+  connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded,
+          [this, delegate](DataSource* dataSource) {
+            // New operator added
+            connect(dataSource, &DataSource::operatorAdded, delegate,
+                    [this, delegate](Operator* op) {
+                      // Connect transformingStarted to OperatorRunningDelegate
+                      connect(op, &Operator::transformingStarted, delegate,
+                              &OperatorRunningDelegate::start);
+                      // Connect transformingDone
+                      connect(op, &Operator::transformingDone, delegate,
+                              [this, delegate]() { delegate->stop(); });
+                    });
+          });
 
   connect(this, SIGNAL(doubleClicked(QModelIndex)),
           SLOT(rowDoubleClicked(QModelIndex)));
@@ -447,11 +449,11 @@ void PipelineView::setCurrent(Operator*)
 void PipelineView::deleteItemsConfirm(const QModelIndexList& idxs)
 {
   QMessageBox::StandardButton response = QMessageBox::question(
-         this, "Delete pipeline elements?",
-         "Are you sure you want to delete the selected pipeline elements");
-     if (response == QMessageBox::Yes) {
-       deleteItems(idxs);
-     }
+    this, "Delete pipeline elements?",
+    "Are you sure you want to delete the selected pipeline elements");
+  if (response == QMessageBox::Yes) {
+    deleteItems(idxs);
+  }
 }
 
 bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
@@ -495,7 +497,7 @@ void PipelineView::unmapOperatorDialog(Operator* op)
   }
 }
 
-void PipelineView::showUserInterface(Operator *op)
+void PipelineView::showUserInterface(Operator* op)
 {
   if (!op) {
     return;
@@ -527,5 +529,4 @@ void PipelineView::showUserInterface(Operator *op)
     }
   }
 }
-
 }
