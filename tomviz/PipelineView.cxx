@@ -438,6 +438,18 @@ void PipelineView::currentChanged(const QModelIndex& current,
   } else if (auto op = pipelineModel->op(current)) {
     ActiveObjects::instance().setActiveOperator(op);
   }
+
+  // Always change the active OperatorResult. It is possible to have both
+  // a DataSource and an OperatorResult active at the same time, but only
+  // when the OperatorResult is currently selected. If the OperatorResult is
+  // not selected, the current active result should be null.
+  if (auto result = pipelineModel->result(current)) {
+    ActiveObjects::instance().setActiveOperatorResult(result);
+  } else {
+    ActiveObjects::instance().setActiveOperatorResult(nullptr);
+  }
+
+  // Unset active result
 }
 
 void PipelineView::setCurrent(DataSource* dataSource)
