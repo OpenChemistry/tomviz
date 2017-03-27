@@ -60,7 +60,6 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
             self.progress.message = 'Tilt image No.%d/%d. ' % (
                 a + 1, Nproj) + etcMessage
 
-            #print angles[a]
             ang = tiltAngles[a] * np.pi / 180
             projection = tiltSeries[:, :, a] #2D projection image
             p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)),

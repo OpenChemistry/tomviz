@@ -24,8 +24,6 @@ def transform_scalars(dataset, rotation_angle=90.0, rotation_axis=0):
     if rotation_angle == []: # If tilt angle not given, assign it to 90 degrees.
         rotation_angle = 90
 
-    print('Rotating Dataset...')
-
     axis1 = (rotation_axis + 1) % 3
     axis2 = (rotation_axis + 2) % 3
     axes = (axis1, axis2)
@@ -35,4 +33,3 @@ def transform_scalars(dataset, rotation_angle=90.0, rotation_axis=0):
         data_py, rotation_angle, output=data_py_return, axes=axes)
 
     utils.set_array(dataset, data_py_return)
-    print('Rotation Complete')

@@ -29,7 +29,6 @@ class AddPoissonNoiseOperator(tomviz.operators.CancelableOperator):
             #calculate signal-to-noise ratio
             snr = np.mean(tiltSeries[:, :, i]) / \
                 np.std(tiltSeries[:, :, i] - tiltImage)
-            print(snr)
             tiltSeries[:, :, i] = tiltImage.copy()
             step += 1
             self.progress.value = step

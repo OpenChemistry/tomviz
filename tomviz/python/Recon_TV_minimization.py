@@ -203,8 +203,7 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     # Intersection lines/grid Coordinates
     xgrid = np.linspace(-Nside * 0.5, Nside * 0.5, Nside + 1) * pixelWidth
     ygrid = np.linspace(-Nside * 0.5, Nside * 0.5, Nside + 1) * pixelWidth
-    #print xgrid
-    #print ygrid
+
     # Initialize vectors that contain matrix elements and corresponding
     # row/column numbers
     rows = np.zeros(2 * Nside * Nproj * Nray)
@@ -226,7 +225,6 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
         b = rmepsilon(b)
 
         for j in range(0, Nray): # Loop rays in current projection
-            #print xrayRotated[j],yrayRotated[j]
             #Ray: y = tx * x + intercept
             t_xgrid = (xgrid - xrayRotated[j]) / a
             y_xgrid = b * t_xgrid + yrayRotated[j]
@@ -280,13 +278,10 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                     # adjacent grid points
                     midpoints_x = rmepsilon(0.5 * (xx[0:-1] + xx[1:]))
                     midpoints_y = rmepsilon(0.5 * (yy[0:-1] + yy[1:]))
-                    #print 'midpoints_x is:',midpoints_x
-                    #print 'midpoints_y is:',midpoints_y
                     #Calculate the pixel index for mid points
                     pixelIndicex = ((np.floor(Nside / 2.0 - midpoints_y / pixelWidth)) * # noqa TODO reformat this
                         Nside + (np.floor(midpoints_x /
                         pixelWidth + Nside / 2.0)))
-                    #print 'pixelIndicex is:', pixelIndicex
                     # Create the indices to store the values to the measurement
                     # matrix
                     idxstart = idxend

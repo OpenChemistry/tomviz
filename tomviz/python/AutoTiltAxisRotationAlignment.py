@@ -92,8 +92,7 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
         result = np.empty(shape, tiltSeries.dtype, order='F')
         ndimage.interpolation.rotate(
             tiltSeries, -rot_ang, axes=axes, output=result)
-        #step += 1
-        #self.progress.value = step
+
         print("rotate tilt series by %f degrees" % -rot_ang)
 
         # Set the result as the new scalars.

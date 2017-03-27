@@ -242,7 +242,6 @@ set(python_files
   LabelObjectAttributes.py
   LabelObjectPrincipalAxes.py
   LabelObjectDistanceFromPrincipalAxis.py
-  MisalignImgs_Uniform.py
   AutoTiltAxisRotationAlignment.py
   AutoTiltAxisShiftAlignment.py
   AutoCenterOfMassTiltImageAlignment.py
@@ -261,7 +260,6 @@ set(python_files
   Subtract_TiltSer_Background.py
   Subtract_TiltSer_Background_Auto.py
   RemoveBadPixelsTiltSeries.py
-  MisalignImgs_Gaussian.py
   NormalizeTiltSeries.py
   Rotate3D.py
   HannWindow3D.py
