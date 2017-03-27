@@ -159,7 +159,7 @@ void HistogramWidget::setInputData(vtkTable* table, const char* x_,
 {
   m_histogramColorOpacityEditor->SetHistogramInputData(table, x_, y_);
   m_histogramColorOpacityEditor->SetOpacityFunction(m_scalarOpacityFunction);
-  if (m_LUT) {
+  if (m_LUT && table) {
     m_histogramColorOpacityEditor->SetScalarVisibility(true);
     m_histogramColorOpacityEditor->SetColorTransferFunction(m_LUT);
     m_histogramColorOpacityEditor->SelectColorArray("image_extents");
