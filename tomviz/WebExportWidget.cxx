@@ -20,12 +20,12 @@
 
 #include "pqActiveObjects.h"
 #include "pqCoreUtilities.h"
-#include "pqFileDialog.h"
 
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QFileDialog>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -222,13 +222,12 @@ WebExportWidget::~WebExportWidget()
 
 void WebExportWidget::onBrowse()
 {
-  pqServer* server = pqActiveObjects::instance().activeServer();
-  pqFileDialog fileDialog(server, pqCoreUtilities::mainWidget(),
-                          tr("Save Scene for Web:"), QString(), "");
+  QFileDialog fileDialog(pqCoreUtilities::mainWidget(),
+                         tr("Save Scene for Web:"));
   fileDialog.setObjectName("DirectorySaveDialog");
-  fileDialog.setFileMode(pqFileDialog::Directory);
+  fileDialog.setFileMode(QFileDialog::Directory);
   if (fileDialog.exec() == QDialog::Accepted) {
-    this->outputPath->setText(fileDialog.getSelectedFiles()[0]);
+    this->outputPath->setText(fileDialog.selectedFiles()[0]);
     this->exportButton->setDisabled(false);
   }
 }

@@ -21,7 +21,6 @@
 
 #include "pqActiveObjects.h"
 #include "pqCoreUtilities.h"
-#include "pqFileDialog.h"
 
 #include "WebExportWidget.h"
 
