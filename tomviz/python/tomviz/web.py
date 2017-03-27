@@ -35,7 +35,7 @@ def web_export(*args, **kwargs):
     # Extract initial setting for view
     view = simple.GetRenderView()
     viewState = {}
-    for prop in ['CameraViewUp', 'CameraPosition']:
+    for prop in ['CameraViewUp', 'CameraPosition', 'ViewSize']:
         viewState[prop] = tuple(view.GetProperty(prop).GetData())
 
     # Camera handling
@@ -353,7 +353,14 @@ def array_sampler(srcDims, dstDims, scale, inputArray):
 
 
 def export_images(destinationPath, camera, **kwargs):
+    # View size
+    imageWidth = kwargs['imageWidth']
+    imageHeight = kwargs['imageHeight']
+
+    # Configure View
     view = simple.GetRenderView()
+    view.ViewSize = [imageWidth, imageHeight]
+
     idb = ImageDataSetBuilder(destinationPath, 'image/jpg', camera)
     idb.start(view)
     idb.writeImages()
@@ -369,7 +376,14 @@ def export_volume_exploration_images(destinationPath, camera, **kwargs):
     maxOpacity = float(kwargs['maxOpacity']) / 100.0
     span = float(kwargs['tentWidth']) * 0.5
 
+    # View size
+    imageWidth = kwargs['imageWidth']
+    imageHeight = kwargs['imageHeight']
+
+    # Configure View
     view = simple.GetRenderView()
+    view.ViewSize = [imageWidth, imageHeight]
+
     pvw = get_volume_piecewise(view)
     if pvw:
         savedNodes = []
@@ -406,7 +420,15 @@ def export_volume_exploration_images(destinationPath, camera, **kwargs):
 
 def export_contour_exploration_images(destinationPath, camera, **kwargs):
     values = [int(v) for v in kwargs['multiValue'].split(',')]
+
+    # View size
+    imageWidth = kwargs['imageWidth']
+    imageHeight = kwargs['imageHeight']
+
+    # Configure View
     view = simple.GetRenderView()
+    view.ViewSize = [imageWidth, imageHeight]
+
     contour = get_contour()
     if contour:
         originalValues = [v for v in contour.Value]
