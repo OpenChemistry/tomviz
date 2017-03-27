@@ -263,21 +263,13 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
 
     QMessageBox modifiedMessageBox;
     modifiedMessageBox.setIcon(QMessageBox::Warning);
-    QString text = "The pipeline contains an unsaved data source.";
-    QString infoText = "The unsaved data source is shown in the pipeline in "
-                       "italics with an asterisk. "
-                       "You may continue to save that state and this data "
-                       "source will be skipped "
-                       " along with any attached operators or modules.";
-    if (modified > 1) {
-      text =
-        QString("The pipeline contains %1 unsaved data sources.").arg(modified);
-      infoText = "The unsaved data sources are shown in the pipeline in "
-                 "italics with an asterisk. "
-                 "You may continue to save that state and these data sources "
-                 "will be skipped "
-                 " along with any attached operators or modules.";
-    }
+    QString text = QString("Warning: unsaved data - %1 data source%2")
+                     .arg(modified)
+                     .arg(modified > 1 ? "s" : "");
+    QString infoText = "Unsaved data is marked in the pipeline italic text "
+                       "with an asterisk. You may continue to save the state, "
+                       "and any unsaved data (along with operators/modules) "
+                       "will be skipped.";
     modifiedMessageBox.setText(text);
     modifiedMessageBox.setInformativeText(infoText);
     modifiedMessageBox.setStandardButtons(QMessageBox::Save |
