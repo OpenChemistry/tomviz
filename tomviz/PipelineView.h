@@ -54,6 +54,7 @@ private slots:
   void deleteItemsConfirm(const QModelIndexList& idxs);
   void setModuleVisibility(const QModelIndexList& idxs, bool visible);
   void unmapOperatorDialog(Operator* op);
+  void showUserInterface(Operator* op);
 
 private:
   QMap<Operator*, QPointer<EditOperatorDialog>> m_operatorDialogs;
