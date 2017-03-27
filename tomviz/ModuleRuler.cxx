@@ -147,9 +147,13 @@ bool ModuleRuler::setVisibility(bool val)
 {
   vtkSMPropertyHelper(m_representation, "Visibility").Set(val ? 1 : 0);
   m_representation->UpdateVTKObjects();
-  if (!val || m_showLine) {
+  if (m_widget) {
+    // calling setWidgetVisible triggers the signal that updates the value of
+    // m_showLine.  But in this case the user is toggling the whole module so
+    // we don't want m_showLine to update and we cache it locally and restore
+    // it after calling setWidgetVisible.
     bool oldValue = m_showLine;
-    m_widget->setWidgetVisible(val);
+    m_widget->setWidgetVisible(val && m_showLine);
     m_showLine = oldValue;
   }
   return true;
