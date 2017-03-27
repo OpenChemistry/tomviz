@@ -83,15 +83,21 @@ style guidelines when contributing code to our project.
 
 * Do not add comment separators before function definitions.
 
-* Split long when reasonable lines to avoid going over 80 characters per line.
+* Split long lines, when reasonable, to avoid going over 80 characters per line.
 
 * Add a space after the commas in parameter lists, e.g.,
   function(a, b, c), not function(a,b,c)
 
 * Add spaces between operators, e.g. 5 - 2, not 5-2.
 
-* For local variables, use camelCase, starting variable names with a
+* For class names, use CamelCase, starting their names with an upper-case
+  letter.
+
+* For local variables and function names, use camelCase, starting names with a
   lower-case letter.
+
+* For member variables, prefix them with m\_, i.e. m\_camelCase, starting the
+  name with a lower-case letter.
 
 * For comments, add a space between // and the beginning of the comment, e.g.,
 
@@ -124,7 +130,7 @@ style guidelines when contributing code to our project.
     * Set default values of member variables directly in definitions.
     * Use nullptr instead of NULL.
 
-* When creating VTK subclasses please follow the tomviz style outlined here.
+* When creating VTK subclasses please follow the Tomviz style outlined here.
 
 [clang-format]: http://llvm.org/releases/3.8.0/tools/clang/docs/ClangFormatStyleOptions.html
 [git-clang-format]: https://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/git-clang-format
