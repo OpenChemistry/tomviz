@@ -26,9 +26,6 @@ class AddPoissonNoiseOperator(tomviz.operators.CancelableOperator):
             tiltImage = np.random.poisson(tiltImage)
             tiltImage = tiltImage * np.sum(tiltSeries[:, :, i]) / (Ndata * N)
 
-            #calculate signal-to-noise ratio
-            snr = np.mean(tiltSeries[:, :, i]) / \
-                np.std(tiltSeries[:, :, i] - tiltImage)
             tiltSeries[:, :, i] = tiltImage.copy()
             step += 1
             self.progress.value = step
