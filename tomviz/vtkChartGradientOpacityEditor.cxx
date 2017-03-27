@@ -151,6 +151,7 @@ bool vtkChartGradientOpacityEditor::Paint(vtkContext2D* painter)
     vtkRectf histogramChart(x, y, plotWidth,
                             sceneHeight - y - this->Borders[vtkAxis::TOP]);
     this->HistogramChart->SetSize(histogramChart);
+    this->HistogramChart->GetAxis(vtkAxis::LEFT)->Modified();
   }
 
   return this->Superclass::Paint(painter);
