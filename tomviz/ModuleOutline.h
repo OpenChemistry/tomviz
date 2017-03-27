@@ -71,6 +71,7 @@ private:
   vtkWeakPointer<vtkSMProxy> OutlineRepresentation;
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkGridAxes3DActor> m_gridAxes;
+  bool m_showAxes = false;
   pqPropertyLinks m_links;
 };
 }

@@ -159,6 +159,7 @@ bool ModuleOutline::deserialize(const pugi::xml_node& ns)
     att = node.attribute("grid");
     if (att) {
       m_gridAxes->SetGenerateGrid(att.as_bool());
+      m_showAxes = att.as_bool();
     }
     xml_node color = node.child("color");
     if (color) {
@@ -188,7 +189,13 @@ bool ModuleOutline::setVisibility(bool val)
   vtkSMPropertyHelper(this->OutlineRepresentation, "Visibility")
     .Set(val ? 1 : 0);
   this->OutlineRepresentation->UpdateVTKObjects();
-  m_gridAxes->SetVisibility(val ? 1 : 0);
+  // Restore the current visibility of the axes
+  if (val) {
+    m_gridAxes->SetVisibility(m_showAxes ? 1 : 0);
+  } else {
+    m_gridAxes->SetVisibility(val ? 1 : 0);
+  }
+
   return true;
 }
 
@@ -240,7 +247,11 @@ void ModuleOutline::addToPanel(QWidget* panel)
   }
   connect(showAxes, &QCheckBox::stateChanged, this,
           [this, showGrid](int state) {
-            this->m_gridAxes->SetVisibility(state == Qt::Checked);
+            this->m_showAxes = state == Qt::Checked;
+            // Only show the axes if we are currently visable
+            if (this->visibility()) {
+              this->m_gridAxes->SetVisibility(this->m_showAxes);
+            }
             // Uncheck "Show Grid" and disable it
             if (state == Qt::Unchecked) {
               showGrid->setChecked(false);
