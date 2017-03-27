@@ -68,6 +68,7 @@ public:
   PipelineWorker::Future* Future;
   bool PipelinePaused = false;
   bool GradientOpacityVisibility = false;
+  PersistenceState PersistState = PersistenceState::Saved;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -152,12 +153,13 @@ DataSource::ImageFuture::~ImageFuture()
 }
 
 DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
-                       QObject* parentObject)
+                       QObject* parentObject, PersistenceState persistState)
   : QObject(parentObject), Internals(new DataSource::DSInternals())
 {
   Q_ASSERT(dataSource);
   this->Internals->OriginalDataSource = dataSource;
   this->Internals->Type = dataType;
+  this->Internals->PersistState = persistState;
   for (int i = 0; i < 3; ++i) {
     this->Internals->DisplayPosition[i] = 0.0;
   }
@@ -400,6 +402,13 @@ DataSource* DataSource::clone(bool cloneOperators, bool cloneTransformed) const
     newClone = new DataSource(this->Internals->OriginalDataSource,
                               this->Internals->Type);
   }
+
+  if (this->persistenceState() == PersistenceState::Transient ||
+      this->persistenceState() == PersistenceState::Modified ||
+      cloneTransformed) {
+    newClone->setPersistenceState(PersistenceState::Modified);
+  }
+
   if (this->Internals->Type == TiltSeries) {
     newClone->setTiltAngles(getTiltAngles(!cloneTransformed));
   }
@@ -1074,5 +1083,15 @@ void DataSource::setGradientOpacityVisibility(const bool visible)
 bool DataSource::isGradientOpacityVisible() const
 {
   return this->Internals->GradientOpacityVisibility;
+}
+
+void DataSource::setPersistenceState(DataSource::PersistenceState state)
+{
+  this->Internals->PersistState = state;
+}
+
+DataSource::PersistenceState DataSource::persistenceState() const
+{
+  return this->Internals->PersistState;
 }
 }

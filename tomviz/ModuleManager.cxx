@@ -53,6 +53,7 @@
 
 #include <QDir>
 #include <QMap>
+#include <QMessageBox>
 #include <QMultiMap>
 #include <QPointer>
 #include <QSet>
@@ -66,6 +67,7 @@ class ModuleManager::MMInternals
 {
 public:
   QList<QPointer<DataSource>> DataSources;
+  QList<QPointer<DataSource>> ChildDataSources;
   QList<QPointer<Module>> Modules;
   QMap<vtkSMProxy*, vtkSmartPointer<vtkCamera>> RenderViewCameras;
 
@@ -119,6 +121,14 @@ void ModuleManager::addDataSource(DataSource* dataSource)
     dataSource->setParent(this);
     this->Internals->DataSources.push_back(dataSource);
     emit this->dataSourceAdded(dataSource);
+  }
+}
+
+void ModuleManager::addChildDataSource(DataSource* dataSource)
+{
+  if (dataSource && !this->Internals->ChildDataSources.contains(dataSource)) {
+    dataSource->setParent(this);
+    this->Internals->ChildDataSources.push_back(dataSource);
   }
 }
 
@@ -219,7 +229,8 @@ QList<Module*> ModuleManager::findModulesGeneric(DataSource* dataSource,
   return modules;
 }
 
-bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
+bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
+                              bool interactive) const
 {
   QSet<vtkSMSourceProxy*> uniqueOriginalSources;
 
@@ -232,10 +243,54 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
       std::string(TOMVIZ_VERSION_EXTRA).c_str());
   }
 
+  if (interactive) {
+    // Iterate over all data sources and check is there are any that are not
+    // currently saved.
+    int modified = 0;
+    foreach (const QPointer<DataSource>& ds, this->Internals->DataSources) {
+      if (ds != nullptr &&
+          ds->persistenceState() == DataSource::PersistenceState::Modified) {
+        modified++;
+      }
+    }
+
+    foreach (const QPointer<DataSource>& ds,
+             this->Internals->ChildDataSources) {
+      if (ds != nullptr &&
+          ds->persistenceState() == DataSource::PersistenceState::Modified) {
+        modified++;
+      }
+    }
+
+    if (modified > 0) {
+
+      QMessageBox modifiedMessageBox;
+      modifiedMessageBox.setIcon(QMessageBox::Warning);
+      QString text = QString("Warning: unsaved data - %1 data source%2")
+                       .arg(modified)
+                       .arg(modified > 1 ? "s" : "");
+      QString infoText =
+        "Unsaved data is marked in the pipeline italic text "
+        "with an asterisk. You may continue to save the state, "
+        "and any unsaved data (along with operators/modules) "
+        "will be skipped.";
+      modifiedMessageBox.setText(text);
+      modifiedMessageBox.setInformativeText(infoText);
+      modifiedMessageBox.setStandardButtons(QMessageBox::Save |
+                                            QMessageBox::Cancel);
+      modifiedMessageBox.setDefaultButton(QMessageBox::Save);
+
+      if (modifiedMessageBox.exec() == QMessageBox::Cancel) {
+        return false;
+      }
+    }
+  }
+
   // Build a list of unique original data sources. These are the data readers.
   foreach (const QPointer<DataSource>& ds, this->Internals->DataSources) {
     if (ds == nullptr ||
-        uniqueOriginalSources.contains(ds->originalDataSource())) {
+        uniqueOriginalSources.contains(ds->originalDataSource()) ||
+        ds->persistenceState() == DataSource::PersistenceState::Modified) {
       continue;
     }
     vtkSMSourceProxy* reader = ds->originalDataSource();

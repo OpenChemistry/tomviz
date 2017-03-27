@@ -21,6 +21,7 @@
 #include "OperatorPython.h"
 #include "ReconstructionOperator.h"
 #include "SetTiltAnglesOperator.h"
+#include "SnapshotOperator.h"
 #include "TranslateAlignOperator.h"
 
 #include "vtkFieldData.h"
@@ -91,7 +92,8 @@ QList<QString> OperatorFactory::operatorTypes()
         << "Crop"
         << "CxxReconstruction"
         << "SetTiltAngles"
-        << "TranslateAlign";
+        << "TranslateAlign"
+        << "Snapshot";
   qSort(reply);
   return reply;
 }
@@ -119,6 +121,8 @@ Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
     op = new SetTiltAnglesOperator();
   } else if (type == "TranslateAlign") {
     op = new TranslateAlignOperator(ds);
+  } else if (type == "Snapshot") {
+    op = new SnapshotOperator(ds);
   }
   return op;
 }
@@ -145,6 +149,9 @@ const char* OperatorFactory::operatorType(Operator* op)
   }
   if (qobject_cast<TranslateAlignOperator*>(op)) {
     return "TranslateAlign";
+  }
+  if (qobject_cast<SnapshotOperator*>(op)) {
+    return "Snapshot";
   }
   return nullptr;
 }

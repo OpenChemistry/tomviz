@@ -112,7 +112,8 @@ void SnapshotOperator::createNewChildDataSource(
   producer->SetOutput(childData);
 
   auto childDS = new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
-                                DataSource::Volume, this);
+                                DataSource::Volume, this,
+                                DataSource::PersistenceState::Modified);
 
   childDS->setFilename(label.toLatin1().data());
   setChildDataSource(childDS);

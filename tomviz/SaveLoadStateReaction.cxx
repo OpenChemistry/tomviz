@@ -91,7 +91,7 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
   return false;
 }
 
-bool SaveLoadStateReaction::saveState(const QString& filename)
+bool SaveLoadStateReaction::saveState(const QString& filename, bool interactive)
 {
   pugi::xml_document document;
   pugi::xml_node root = document.append_child("tomvizState");
@@ -107,7 +107,7 @@ bool SaveLoadStateReaction::saveState(const QString& filename)
   QFileInfo info(filename);
 
   return (
-    ModuleManager::instance().serialize(root, info.dir()) &&
+    ModuleManager::instance().serialize(root, info.dir(), interactive) &&
     document.save_file(/*path*/ filename.toLatin1().data(), /*indent*/ "  "));
 }
 

@@ -28,7 +28,7 @@ public:
   SaveLoadStateReaction(QAction* action, bool load = false);
 
   static bool saveState();
-  static bool saveState(const QString& filename);
+  static bool saveState(const QString& filename, bool interactive = true);
   static bool loadState();
   static bool loadState(const QString& filename);
 

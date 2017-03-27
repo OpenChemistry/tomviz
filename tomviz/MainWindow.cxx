@@ -615,6 +615,6 @@ void MainWindow::onFirstWindowShow()
 
 void MainWindow::autosave()
 {
-  SaveLoadStateReaction::saveState(getAutosaveFile());
+  SaveLoadStateReaction::saveState(getAutosaveFile(), false);
 }
 }

@@ -344,10 +344,25 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
       switch (role) {
         case Qt::DecorationRole:
           return QIcon(":/icons/pqInspect.png");
-        case Qt::DisplayRole:
-          return QFileInfo(dataSource->filename()).baseName();
+        case Qt::DisplayRole: {
+          QString label = QFileInfo(dataSource->filename()).baseName();
+          if (dataSource->persistenceState() ==
+              DataSource::PersistenceState::Modified) {
+            label += QString(" *");
+          }
+          return label;
+        }
         case Qt::ToolTipRole:
           return dataSource->filename();
+        case Qt::FontRole:
+          if (dataSource->persistenceState() ==
+              DataSource::PersistenceState::Modified) {
+            QFont font;
+            font.setItalic(true);
+            return font;
+          } else {
+            return QVariant();
+          }
         default:
           return QVariant();
       }
