@@ -20,11 +20,11 @@
 #include "pqView.h"
 #include "vtkCommand.h"
 #include "vtkGridAxes3DActor.h"
+#include "vtkProperty.h"
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMViewProxy.h"
 #include "vtkTextProperty.h"
-#include "vtkProperty.h"
 
 #include <QAction>
 #include <QActionGroup>
@@ -112,30 +112,29 @@ void ViewMenuManager::buildMenu()
 
   this->Menu->addSeparator();
 
-  {
-    QMenu* scaleLegendMenu = this->Menu->addMenu("Scale Legend");
-    this->scaleLegendCubeAction =
-      scaleLegendMenu->addAction("Show Legend as Cube");
-    this->scaleLegendRulerAction =
-      scaleLegendMenu->addAction("Show Legend as Ruler");
-    this->hideScaleLegendAction =
-      scaleLegendMenu->addAction("Hide Legend");
-    this->hideScaleLegendAction->setEnabled(hideScaleLegendIsEnabled);
+  this->scaleLegendCubeAction = this->Menu->addAction("Show Legend as Cube");
+  this->scaleLegendRulerAction = this->Menu->addAction("Show Legend as Ruler");
+  this->hideScaleLegendAction = this->Menu->addAction("Hide Legend");
+  this->hideScaleLegendAction->setEnabled(hideScaleLegendIsEnabled);
 
-    connect(this->scaleLegendCubeAction, &QAction::triggered, this,
-            [&](){ this->setScaleLegendStyle(ScaleLegendStyle::Cube);
-              this->setScaleLegendVisibility(true);
-              this->hideScaleLegendAction->setEnabled(true); });
+  connect(this->scaleLegendCubeAction, &QAction::triggered, this, [&]() {
+    this->setScaleLegendStyle(ScaleLegendStyle::Cube);
+    this->setScaleLegendVisibility(true);
+    this->hideScaleLegendAction->setEnabled(true);
+  });
 
-    connect(this->scaleLegendRulerAction, &QAction::triggered, this,
-            [&](){ this->setScaleLegendStyle(ScaleLegendStyle::Ruler);
-              this->setScaleLegendVisibility(true);
-              this->hideScaleLegendAction->setEnabled(true); });
+  connect(this->scaleLegendRulerAction, &QAction::triggered, this, [&]() {
+    this->setScaleLegendStyle(ScaleLegendStyle::Ruler);
+    this->setScaleLegendVisibility(true);
+    this->hideScaleLegendAction->setEnabled(true);
+  });
 
-    connect(this->hideScaleLegendAction, &QAction::triggered, this,
-            [&](){ this->setScaleLegendVisibility(false);
-              this->hideScaleLegendAction->setDisabled(true); });
-  }
+  connect(this->hideScaleLegendAction, &QAction::triggered, this, [&]() {
+    this->setScaleLegendVisibility(false);
+    this->hideScaleLegendAction->setDisabled(true);
+  });
+
+  this->Menu->addSeparator();
 
   // Show view properties
   this->showViewPropertiesAction = this->Menu->addAction("View Properties");
