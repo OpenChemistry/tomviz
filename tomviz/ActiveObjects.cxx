@@ -138,6 +138,19 @@ void ActiveObjects::setActiveOperator(Operator* op)
   emit operatorActivated(op);
 }
 
+void ActiveObjects::setActiveOperatorResult(OperatorResult* result)
+{
+  m_activeOperatorResult = result;
+
+  if (result) {
+    auto op = qobject_cast<Operator*>(result->parent());
+    if (op) {
+      setActiveOperator(op);
+      setActiveDataSource(op->dataSource());
+    }
+  }
+}
+
 void ActiveObjects::createRenderViewIfNeeded()
 {
   vtkNew<vtkSMProxyIterator> iter;

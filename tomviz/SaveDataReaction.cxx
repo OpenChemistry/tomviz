@@ -109,7 +109,14 @@ bool SaveDataReaction::saveData(const QString& filename)
 {
   auto server = pqActiveObjects::instance().activeServer();
   auto source = ActiveObjects::instance().activeDataSource();
-  if (!server || !source) {
+  auto result = ActiveObjects::instance().activeOperatorResult();
+
+  if (!server) {
+    qCritical("No active server located.");
+    return false;
+  }
+
+  if (!source && !result) {
     qCritical("No active source located.");
     return false;
   }
@@ -125,11 +132,20 @@ bool SaveDataReaction::saveData(const QString& filename)
     }
   }
 
+  vtkSMSourceProxy* producer = nullptr;
+  if (source) {
+    producer = source->producer();
+  }
+  // If an operator result is active, save it. Otherwise, save the source.
+  if (result) {
+    producer = result->producerProxy();
+  }
+
   auto writerFactory =
     vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   vtkSmartPointer<vtkSMProxy> proxy;
   proxy.TakeReference(writerFactory->CreateWriter(filename.toLatin1().data(),
-                                                  source->producer()));
+                                                  producer));
   auto writer = vtkSMSourceProxy::SafeDownCast(proxy);
   if (!writer) {
     qCritical() << "Failed to create writer for: " << filename;
@@ -138,7 +154,7 @@ bool SaveDataReaction::saveData(const QString& filename)
   if (strcmp(writer->GetClientSideObject()->GetClassName(), "vtkTIFFWriter") ==
       0) {
     auto t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
+      producer->GetClientSideObject());
     auto imageData =
       vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     if (imageData->GetPointData()->GetScalars()->GetDataType() == VTK_DOUBLE) {

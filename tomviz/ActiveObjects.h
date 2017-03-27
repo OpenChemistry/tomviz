@@ -22,6 +22,7 @@
 #include "DataSource.h"
 #include "Module.h"
 #include "Operator.h"
+#include "OperatorResult.h"
 
 class pqView;
 class vtkSMSessionProxyManager;
@@ -49,6 +50,9 @@ public:
   /// Returns the active module.
   Module* activeModule() const { return m_activeModule; }
 
+  /// Returns the active OperatorResult
+  OperatorResult* activeOperatorResult() const { return m_activeOperatorResult; }
+
   /// Returns the vtkSMSessionProxyManager from the active server/session.
   /// Provided here for convenience, since we need to access the proxy manager
   /// often.
@@ -65,6 +69,9 @@ public slots:
 
   /// Set the active module.
   void setActiveModule(Module* module);
+
+  /// Set the active operator result.
+  void setActiveOperatorResult(OperatorResult* result);
 
   /// Set the active operator.
   void setActiveOperator(Operator* op);
@@ -127,6 +134,8 @@ protected:
   QPointer<Module> m_activeModule = nullptr;
 
   QPointer<Operator> m_activeOperator = nullptr;
+
+  QPointer<OperatorResult> m_activeOperatorResult = nullptr;
 
   bool m_moveObjectsEnabled = false;
 
