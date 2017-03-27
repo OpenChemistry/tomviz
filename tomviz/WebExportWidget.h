@@ -61,12 +61,15 @@ protected:
   QPushButton* browseButton;
   QPushButton* cancelButton;
   QPushButton* exportButton;
+  QSpinBox* imageHeight;
+  QSpinBox* imageWidth;
+  QSpinBox* maxOpacity;
   QSpinBox* nbPhi;
   QSpinBox* nbTheta;
-  QSpinBox* maxOpacity;
-  QSpinBox* spanValue;
   QSpinBox* scale;
+  QSpinBox* spanValue;
   QWidget* cameraGroup;
+  QWidget* imageSizeGroup;
   QWidget* valuesGroup;
   QWidget* volumeExplorationGroup;
   QWidget* volumeResampleGroup;

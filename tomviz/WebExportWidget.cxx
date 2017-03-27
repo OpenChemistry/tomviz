@@ -45,7 +45,7 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 {
   QVBoxLayout* v = new QVBoxLayout(this);
   this->setMinimumWidth(500);
-  this->setMinimumHeight(350);
+  this->setMinimumHeight(400);
   this->setWindowTitle("Web export data");
 
   // Output directory path
@@ -73,6 +73,36 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   typeGroup->addWidget(outputTypelabel);
   typeGroup->addWidget(this->exportType, 1);
   v->addLayout(typeGroup);
+
+  // Image size
+  QLabel* imageSizeGroupLabel = new QLabel("View size:");
+
+  QLabel* imageWidthLabel = new QLabel("Width");
+  this->imageWidth = new QSpinBox();
+  this->imageWidth->setRange(50, 2048);
+  this->imageWidth->setSingleStep(1);
+  this->imageWidth->setValue(500);
+  this->imageWidth->setMinimumWidth(100);
+
+  QLabel* imageHeightLabel = new QLabel("Height");
+  this->imageHeight = new QSpinBox();
+  this->imageHeight->setRange(50, 2048);
+  this->imageHeight->setSingleStep(1);
+  this->imageHeight->setValue(500);
+  this->imageHeight->setMinimumWidth(100);
+
+  QHBoxLayout* imageSizeGroupLayout = new QHBoxLayout;
+  imageSizeGroupLayout->addWidget(imageSizeGroupLabel);
+  imageSizeGroupLayout->addStretch();
+  imageSizeGroupLayout->addWidget(imageWidthLabel);
+  imageSizeGroupLayout->addWidget(imageWidth);
+  imageSizeGroupLayout->addSpacing(30);
+  imageSizeGroupLayout->addWidget(imageHeightLabel);
+  imageSizeGroupLayout->addWidget(imageHeight);
+
+  this->imageSizeGroup = new QWidget();
+  this->imageSizeGroup->setLayout(imageSizeGroupLayout);
+  v->addWidget(this->imageSizeGroup);
 
   // Camera settings
   QLabel* cameraGrouplabel = new QLabel("Camera tilts:");
@@ -205,6 +235,12 @@ void WebExportWidget::onBrowse()
 
 void WebExportWidget::onTypeChange(int index)
 {
+  pqView* view = pqActiveObjects::instance().activeView();
+  QSize size = view->getSize();
+  this->imageWidth->setMaximum(size.width());
+  this->imageHeight->setMaximum(size.height());
+
+  this->imageSizeGroup->setVisible(index < 3);
   this->cameraGroup->setVisible(index < 3);
   this->volumeExplorationGroup->setVisible(index == 1);
   this->valuesGroup->setVisible(index == 1 || index == 2 || index == 4);
@@ -232,6 +268,8 @@ QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
     QVariant(QCoreApplication::applicationDirPath());
   this->kwargs["destPath"] = QVariant(this->outputPath->text());
   this->kwargs["exportType"] = QVariant(this->exportType->currentIndex());
+  this->kwargs["imageWidth"] = QVariant(this->imageWidth->value());
+  this->kwargs["imageHeight"] = QVariant(this->imageHeight->value());
   this->kwargs["nbPhi"] = QVariant(this->nbPhi->value());
   this->kwargs["nbTheta"] = QVariant(this->nbTheta->value());
   this->kwargs["keepData"] = QVariant(this->keepData->checkState());
