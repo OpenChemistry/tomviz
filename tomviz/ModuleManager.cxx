@@ -284,7 +284,8 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir) const
   // Build a list of unique original data sources. These are the data readers.
   foreach (const QPointer<DataSource>& ds, this->Internals->DataSources) {
     if (ds == nullptr ||
-        uniqueOriginalSources.contains(ds->originalDataSource())) {
+        uniqueOriginalSources.contains(ds->originalDataSource()) ||
+        ds->persistenceState() == DataSource::PersistenceState::Modified) {
       continue;
     }
     vtkSMSourceProxy* reader = ds->originalDataSource();
