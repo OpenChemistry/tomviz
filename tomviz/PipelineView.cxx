@@ -188,7 +188,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   auto result = pipelineModel->result(idx);
 
   bool childDataSource =
-    (dataSource && qobject_cast<Operator*>(dataSource->parent()));
+    (dataSource && ModuleManager::instance().isChild(dataSource));
 
   if (result && qobject_cast<Operator*>(result->parent())) {
     return;
@@ -473,7 +473,8 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   for (auto& index : idxs) {
     auto dataSource = pipelineModel->dataSource(index);
-    if (dataSource && dataSource->isRunningAnOperator()) {
+    if (dataSource && (dataSource->isRunningAnOperator() ||
+                       ModuleManager::instance().isChild(dataSource))) {
       return false;
     }
     auto op = pipelineModel->op(index);

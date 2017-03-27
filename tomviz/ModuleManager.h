@@ -69,6 +69,9 @@ public:
   /// Test if any data source has running operators
   bool hasRunningOperators();
 
+  /// Return whether a DataSource is a child DataSource
+  bool isChild(DataSource*);
+
 public slots:
   void addModule(Module*);
 

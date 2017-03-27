@@ -149,6 +149,11 @@ void ModuleManager::removeAllDataSources()
   this->Internals->DataSources.clear();
 }
 
+bool ModuleManager::isChild(DataSource* source)
+{
+  return (this->Internals->ChildDataSources.indexOf(source) >= 0);
+}
+
 void ModuleManager::addModule(Module* module)
 {
   if (!this->Internals->Modules.contains(module)) {
