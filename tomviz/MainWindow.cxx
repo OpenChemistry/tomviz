@@ -497,9 +497,7 @@ void MainWindow::openRecon()
 
 void MainWindow::openDataLink()
 {
-  QString link = "https://figshare.com/collections/"
-                 "Nanomaterial_datasets_to_advance_tomography_in_scanning_"
-                 "transmission_electron_microscopy/2185342";
+  QString link = "http://www.nature.com/articles/sdata201641";
   QDesktopServices::openUrl(QUrl(link));
 }
 
