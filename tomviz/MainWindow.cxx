@@ -52,7 +52,6 @@
 #include "SaveScreenshotReaction.h"
 #include "SaveWebReaction.h"
 #include "ScaleLegend.h"
-#include "SetScaleReaction.h"
 #include "SetTiltAnglesOperator.h"
 #include "SetTiltAnglesReaction.h"
 #include "ToggleDataTypeReaction.h"
@@ -196,10 +195,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new Behaviors(this);
 
   new LoadDataReaction(ui.actionOpen);
-
-  QAction* setScaleAction = new QAction("Set Data Size", this);
-  ui.menuTools->addAction(setScaleAction);
-  new SetScaleReaction(setScaleAction);
 
   // Build Data Transforms menu
   new DataTransformMenu(this, ui.menuData, ui.menuSegmentation);
