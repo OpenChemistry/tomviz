@@ -51,6 +51,9 @@ public:
   // Get an axis from the histogram chart.
   vtkAxis* GetHistogramAxis(int axis);
 
+  // Set the DPI of the chart.
+  void SetDPI(int dpi);
+
   // Paint event for the editor.
   virtual bool Paint(vtkContext2D* painter) override;
 

@@ -67,6 +67,9 @@ public:
   // Get the current contour value
   double GetContourValue();
 
+  // Set the DPI
+  void SetDPI(int);
+
   // Paint event for the editor.
   virtual bool Paint(vtkContext2D* painter) override;
 

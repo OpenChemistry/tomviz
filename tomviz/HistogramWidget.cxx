@@ -124,6 +124,13 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   vLayout->addStretch(1);
 
   setLayout(hLayout);
+
+  // Delay setting of the device pixel ratio until after the QVTKOpenGLWidget
+  // widget has been set up.
+  QTimer::singleShot(0, [=] {
+    int dpi = m_qvtk->physicalDpiX() * m_qvtk->devicePixelRatio();
+    m_histogramColorOpacityEditor->SetDPI(dpi);
+  });
 }
 
 HistogramWidget::~HistogramWidget() = default;

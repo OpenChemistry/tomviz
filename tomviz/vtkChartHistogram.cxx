@@ -27,8 +27,12 @@
 #include <vtkPiecewiseFunctionItem.h>
 #include <vtkPlot.h>
 #include <vtkPlotBar.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
 #include <vtkScalarsToColors.h>
 #include <vtkTable.h>
+#include <vtkTextProperty.h>
+#include <vtkTooltipItem.h>
 #include <vtkTransform2D.h>
 
 #include "vtkCustomPiecewiseControlPointsItem.h"
@@ -73,6 +77,12 @@ vtkChartHistogram::vtkChartHistogram()
   this->GetAxis(vtkAxis::RIGHT)->SetBehavior(vtkAxis::FIXED);
   this->GetAxis(vtkAxis::RIGHT)->SetRange(0.0, 1.0);
   this->GetAxis(vtkAxis::RIGHT)->SetVisible(false);
+
+  int fontSize = 8;
+  this->GetAxis(vtkAxis::LEFT)->GetLabelProperties()->SetFontSize(fontSize);
+  this->GetAxis(vtkAxis::BOTTOM)->GetLabelProperties()->SetFontSize(fontSize);
+  this->GetAxis(vtkAxis::RIGHT)->GetLabelProperties()->SetFontSize(fontSize);
+  this->GetTooltip()->GetTextProperties()->SetFontSize(fontSize);
 
   // Set up the plot bar
   this->AddPlot(this->HistogramPlotBar.Get());
@@ -221,4 +231,14 @@ void vtkChartHistogram::SetOpacityFunction(
 {
   this->OpacityFunctionItem->SetPiecewiseFunction(opacityFunction);
   this->OpacityControlPointsItem->SetPiecewiseFunction(opacityFunction);
+}
+
+void vtkChartHistogram::SetDPI(int dpi)
+{
+  if (this->GetScene()) {
+    vtkRenderer* renderer = this->GetScene()->GetRenderer();
+    if (renderer && renderer->GetRenderWindow()) {
+      renderer->GetRenderWindow()->SetDPI(dpi);
+    }
+  }
 }

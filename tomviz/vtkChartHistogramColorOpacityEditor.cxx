@@ -237,6 +237,13 @@ double vtkChartHistogramColorOpacityEditor::GetContourValue()
   return this->HistogramChart->GetContourValue();
 }
 
+void vtkChartHistogramColorOpacityEditor::SetDPI(int dpi)
+{
+  if (this->HistogramChart.Get()) {
+    this->HistogramChart->SetDPI(dpi);
+  }
+}
+
 bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
 {
   vtkContextScene* scene = this->GetScene();
