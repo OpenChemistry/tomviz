@@ -860,7 +860,8 @@ void DataSource::operatorTransformModified()
     this->Internals->Future->cancel();
   }
 
-  if (cachedState) {
+  // Disable caching for now, issue #1133.
+  if (false && cachedState) {
     vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
       this->Internals->Producer->GetClientSideObject());
     // TODO Should we not copy this?
