@@ -369,6 +369,9 @@
    <property name="text">
     <string>&amp;Save Data</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
   </action>
   <action name="actionSaveScreenshot">
    <property name="text">
