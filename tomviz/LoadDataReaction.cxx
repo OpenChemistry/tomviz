@@ -165,8 +165,7 @@ DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
     EmdFormat emdFile;
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData.Get())) {
-      DataSource* dataSource =
-        createDataSource(imageData.Get());
+      DataSource* dataSource = createDataSource(imageData.Get());
       dataSource->originalDataSource()->SetAnnotation(
         Attributes::FILENAME, fileName.toLatin1().data());
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules);
