@@ -97,15 +97,17 @@ QList<DataSource*> LoadDataReaction::loadData()
   return dataSources;
 }
 
-DataSource* LoadDataReaction::loadData(const QString& fileName)
+DataSource* LoadDataReaction::loadData(const QString& fileName,
+                                       bool defaultModules, bool addToRecent)
 {
   QStringList fileNames;
   fileNames << fileName;
 
-  return loadData(fileNames);
+  return loadData(fileNames, defaultModules, addToRecent);
 }
 
-DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
+DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
+                                       bool defaultModules, bool addToRecent)
 {
   DataSource* dataSource(nullptr);
   QString fileName;
@@ -115,8 +117,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
   QFileInfo info(fileName);
   if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
-    dataSource = createDataSourceLocal(fileName);
-    if (dataSource) {
+    dataSource = createDataSourceLocal(fileName, defaultModules);
+    if (addToRecent && dataSource) {
       RecentFilesMenu::pushDataReader(dataSource, nullptr);
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
@@ -129,9 +131,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
     pqSMAdaptor::setElementProperty(prop, fileName);
     source->UpdateVTKObjects();
 
-    dataSource = createDataSource(source);
+    dataSource = createDataSource(source, defaultModules);
     // The dataSource may be NULL if the user cancelled the action.
-    if (dataSource) {
+    if (addToRecent && dataSource) {
       RecentFilesMenu::pushDataReader(dataSource, source);
     }
   } else {
@@ -142,9 +144,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
       return nullptr;
     }
 
-    dataSource = createDataSource(reader->getProxy());
+    dataSource = createDataSource(reader->getProxy(), defaultModules);
     // The dataSource may be NULL if the user cancelled the action.
-    if (dataSource) {
+    if (addToRecent && dataSource) {
       RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
     }
     vtkNew<vtkSMParaViewPipelineController> controller;
@@ -154,7 +156,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames)
   return dataSource;
 }
 
-DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName)
+DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
+                                                    bool defaultModules)
 {
   QFileInfo info(fileName);
   if (info.suffix().toLower() == "emd") {
@@ -165,7 +168,7 @@ DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName)
       DataSource* dataSource = createDataSource(imageData.Get());
       dataSource->originalDataSource()->SetAnnotation(
         Attributes::FILENAME, fileName.toLatin1().data());
-      LoadDataReaction::dataSourceAdded(dataSource);
+      LoadDataReaction::dataSourceAdded(dataSource, defaultModules);
       return dataSource;
     }
   }
@@ -213,7 +216,8 @@ bool hasData(vtkSMProxy* reader)
 }
 }
 
-DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
+DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
+                                               bool defaultModules)
 {
   // Prompt user for reader configuration, unless it is TIFF.
   pqProxyWidgetDialog dialog(reader);
@@ -233,7 +237,7 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader)
     DataSource* dataSource =
       new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
     // do whatever we need to do with a new data source.
-    LoadDataReaction::dataSourceAdded(dataSource);
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules);
     if (!previousActiveDataSource) {
       pqRenderView* renderView =
         qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
@@ -260,7 +264,8 @@ DataSource* LoadDataReaction::createDataSource(vtkImageData* imageData)
   return dataSource;
 }
 
-void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
+void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
+                                       bool defaultModules)
 {
   bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
   ActiveObjects::instance().setMoveObjectsMode(false);
@@ -274,6 +279,19 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource)
     ActiveObjects::instance().setActiveViewToFirstRenderView();
     view = ActiveObjects::instance().activeView();
   }
+
+  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+
+  if (defaultModules) {
+    addDefaultModules(dataSource);
+  }
+}
+
+void LoadDataReaction::addDefaultModules(DataSource* dataSource)
+{
+  bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
+  ActiveObjects::instance().setMoveObjectsMode(false);
+  auto view = ActiveObjects::instance().activeView();
 
   // Create an outline module for the source in the active view.
   ModuleManager::instance().createAndAddModule("Outline", dataSource, view);
