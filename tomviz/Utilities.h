@@ -86,7 +86,7 @@ inline bool annotateDataProducer(vtkSMProxy* proxy, const char* filename)
   if (proxy) {
     proxy->SetAnnotation(Attributes::TYPE, "DataSource");
     QFileInfo fileInfo(filename);
-    proxy->SetAnnotation(Attributes::DATASOURCE_FILENAME, "testing/test*");
+    proxy->SetAnnotation(Attributes::DATASOURCE_FILENAME, filename);
     proxy->SetAnnotation(Attributes::LABEL,
                          fileInfo.fileName().toLatin1().data());
     return true;
