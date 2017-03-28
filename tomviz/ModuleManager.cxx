@@ -635,7 +635,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     vtkSMSourceProxy* srcProxy = originalDataSources[odsid];
     if (srcProxy->GetAnnotation(Attributes::FILENAME)) {
       dataSource = LoadDataReaction::loadData(
-        srcProxy->GetAnnotation(Attributes::FILENAME), false);
+        srcProxy->GetAnnotation(Attributes::FILENAME), false, false);
     } else {
       dataSource = new DataSource(srcProxy);
     }

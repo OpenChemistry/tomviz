@@ -98,16 +98,16 @@ QList<DataSource*> LoadDataReaction::loadData()
 }
 
 DataSource* LoadDataReaction::loadData(const QString& fileName,
-                                       bool defaultModules)
+                                       bool defaultModules, bool addToRecent)
 {
   QStringList fileNames;
   fileNames << fileName;
 
-  return loadData(fileNames, defaultModules);
+  return loadData(fileNames, defaultModules, addToRecent);
 }
 
 DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
-                                       bool defaultModules)
+                                       bool defaultModules, bool addToRecent)
 {
   DataSource* dataSource(nullptr);
   QString fileName;
@@ -118,7 +118,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
     dataSource = createDataSourceLocal(fileName, defaultModules);
-    if (dataSource) {
+    if (addToRecent && dataSource) {
       RecentFilesMenu::pushDataReader(dataSource, nullptr);
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
@@ -133,7 +133,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource = createDataSource(source, defaultModules);
     // The dataSource may be NULL if the user cancelled the action.
-    if (dataSource) {
+    if (addToRecent && dataSource) {
       RecentFilesMenu::pushDataReader(dataSource, source);
     }
   } else {
@@ -146,7 +146,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource = createDataSource(reader->getProxy(), defaultModules);
     // The dataSource may be NULL if the user cancelled the action.
-    if (dataSource) {
+    if (addToRecent && dataSource) {
       RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
     }
     vtkNew<vtkSMParaViewPipelineController> controller;

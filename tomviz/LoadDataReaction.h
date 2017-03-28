@@ -53,11 +53,13 @@ public:
 
   /// Load a data file from the specified location.
   static DataSource* loadData(const QString& fileName,
-                              bool defaultModules = true);
+                              bool defaultModules = true,
+                              bool addToRecent = true);
 
   /// Load a data files from the specified location.
   static DataSource* loadData(const QStringList& fileNames,
-                              bool defaultModules = true);
+                              bool defaultModules = true,
+                              bool addToRecent = true);
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource* dataSource,
