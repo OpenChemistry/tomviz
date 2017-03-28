@@ -190,7 +190,7 @@ bool SaveDataReaction::saveData(const QString& filename)
   if (!ModuleManager::instance().isChild(source)) {
     source->setPersistenceState(DataSource::PersistenceState::Saved);
     source->originalDataSource()->SetAnnotation(Attributes::FILENAME,
-        filename.toLatin1().data());
+                                                filename.toLatin1().data());
   }
   return true;
 }
