@@ -404,8 +404,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     QIcon(":/pqWidgets/Icons/pqZoomToSelection24.png"), "Zoom to Selection");
   connect(zoomToBox, SIGNAL(pressed()), this, SLOT(zoomToSelectionStart()));
   viewControls->addWidget(zoomToBox);
-  QPushButton* resetCamera =
-    new QPushButton(QIcon(":/pqWidgets/Icons/pqResetCamera24.png"), "Reset");
+  QPushButton* resetCamera = new QPushButton(
+    QIcon(":/pqWidgets/Icons/pqResetCamera24.png"), "Reset View");
   connect(resetCamera, SIGNAL(pressed()), this, SLOT(resetCamera()));
   viewControls->addWidget(resetCamera);
 
