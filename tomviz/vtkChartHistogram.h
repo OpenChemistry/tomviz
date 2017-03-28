@@ -61,7 +61,11 @@ public:
   // Set the contour value from the contour marker
   vtkSetMacro(ContourValue, double) vtkGetMacro(ContourValue, double)
 
-    protected : vtkNew<vtkTransform2D> Transform;
+  // Set the DPI of the chart.
+  void SetDPI(int dpi);
+
+protected:
+  vtkNew<vtkTransform2D> Transform;
   double ContourValue;
   vtkNew<vtkHistogramMarker> Marker;
 

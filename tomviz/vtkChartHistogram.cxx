@@ -27,8 +27,11 @@
 #include <vtkPiecewiseFunctionItem.h>
 #include <vtkPlot.h>
 #include <vtkPlotBar.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
 #include <vtkScalarsToColors.h>
 #include <vtkTable.h>
+#include <vtkTextProperty.h>
 #include <vtkTransform2D.h>
 
 #include "vtkCustomPiecewiseControlPointsItem.h"
@@ -221,4 +224,14 @@ void vtkChartHistogram::SetOpacityFunction(
 {
   this->OpacityFunctionItem->SetPiecewiseFunction(opacityFunction);
   this->OpacityControlPointsItem->SetPiecewiseFunction(opacityFunction);
+}
+
+void vtkChartHistogram::SetDPI(int dpi)
+{
+  if (this->GetScene()) {
+    vtkRenderer* renderer = this->GetScene()->GetRenderer();
+    if (renderer && renderer->GetRenderWindow()) {
+      renderer->GetRenderWindow()->SetDPI(dpi);
+    }
+  }
 }

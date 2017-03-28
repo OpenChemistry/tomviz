@@ -66,6 +66,13 @@ GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
   hLayout->setContentsMargins(0, 0, 35, 0);
 
   setLayout(hLayout);
+
+  // Delay setting of the device pixel ratio until after the QVTKOpenGLWidget
+  // widget has been set up.
+  QTimer::singleShot(0, [=] {
+    int dpi = m_qvtk->physicalDpiX() * m_qvtk->devicePixelRatioF();
+    m_histogramColorOpacityEditor->SetDPI(dpi);
+  });
 }
 
 GradientOpacityWidget::~GradientOpacityWidget() = default;

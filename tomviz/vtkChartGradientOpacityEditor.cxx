@@ -117,6 +117,13 @@ vtkAxis* vtkChartGradientOpacityEditor::GetHistogramAxis(int axis)
   return this->HistogramChart->GetAxis(axis);
 }
 
+void vtkChartGradientOpacityEditor::SetDPI(int dpi)
+{
+  if (this->HistogramChart.Get()) {
+    this->HistogramChart->SetDPI(dpi);
+  }
+}
+
 bool vtkChartGradientOpacityEditor::Paint(vtkContext2D* painter)
 {
   vtkContextScene* scene = this->GetScene();
