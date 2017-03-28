@@ -176,8 +176,6 @@ set(SOURCES
   ScaleActorBehavior.h
   ScaleLegend.h
   ScaleLegend.cxx
-  SetScaleReaction.cxx
-  SetScaleReaction.h
   SetTiltAnglesOperator.cxx
   SetTiltAnglesOperator.h
   SetTiltAnglesReaction.cxx
