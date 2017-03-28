@@ -16,6 +16,7 @@
 #include "SaveDataReaction.h"
 
 #include "EmdFormat.h"
+#include "Utilities.h"
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
@@ -185,6 +186,12 @@ bool SaveDataReaction::saveData(const QString& filename)
   }
   writer->UpdateVTKObjects();
   writer->UpdatePipeline();
+
+  if (!ModuleManager::instance().isChild(source)) {
+    source->setPersistenceState(DataSource::PersistenceState::Saved);
+    source->originalDataSource()->SetAnnotation(Attributes::FILENAME,
+        filename.toLatin1().data());
+  }
   return true;
 }
 

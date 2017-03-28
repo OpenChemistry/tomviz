@@ -69,8 +69,12 @@ public:
   /// Test if any data source has running operators
   bool hasRunningOperators();
 
+<<<<<<< e18ab8edba6d99c67a31c32a54f0f1dfb3729575
   /// Return whether a DataSource is a child DataSource
   bool isChild(DataSource*);
+=======
+  bool isChildDataSource(DataSource *dataSource);
+>>>>>>> Enabled saving clone data source states
 
 public slots:
   void addModule(Module*);
