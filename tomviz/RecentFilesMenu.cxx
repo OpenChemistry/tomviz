@@ -99,7 +99,6 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource,
     pugi::xml_node root = settings.root();
     QByteArray labelBytes = dataSource->filename().toLatin1();
     const char* filename = labelBytes.data();
-    qDebug() << filename;
 
     for (pugi::xml_node node = root.child("DataReader"); node;
          node = node.next_sibling("DataReader")) {
