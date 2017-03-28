@@ -77,6 +77,11 @@ vtkChartHistogram::vtkChartHistogram()
   this->GetAxis(vtkAxis::RIGHT)->SetRange(0.0, 1.0);
   this->GetAxis(vtkAxis::RIGHT)->SetVisible(false);
 
+  int fontSize = 8;
+  this->GetAxis(vtkAxis::LEFT)->GetLabelProperties()->SetFontSize(fontSize);
+  this->GetAxis(vtkAxis::BOTTOM)->GetLabelProperties()->SetFontSize(fontSize);
+  this->GetAxis(vtkAxis::RIGHT)->GetLabelProperties()->SetFontSize(fontSize);
+
   // Set up the plot bar
   this->AddPlot(this->HistogramPlotBar.Get());
   this->HistogramPlotBar->SetColor(0, 0, 255, 255);
