@@ -32,6 +32,7 @@
 #include <vtkScalarsToColors.h>
 #include <vtkTable.h>
 #include <vtkTextProperty.h>
+#include <vtkTooltipItem.h>
 #include <vtkTransform2D.h>
 
 #include "vtkCustomPiecewiseControlPointsItem.h"
@@ -81,6 +82,7 @@ vtkChartHistogram::vtkChartHistogram()
   this->GetAxis(vtkAxis::LEFT)->GetLabelProperties()->SetFontSize(fontSize);
   this->GetAxis(vtkAxis::BOTTOM)->GetLabelProperties()->SetFontSize(fontSize);
   this->GetAxis(vtkAxis::RIGHT)->GetLabelProperties()->SetFontSize(fontSize);
+  this->GetTooltip()->GetTextProperties()->SetFontSize(fontSize);
 
   // Set up the plot bar
   this->AddPlot(this->HistogramPlotBar.Get());
