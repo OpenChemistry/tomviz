@@ -112,6 +112,14 @@ bool SaveDataReaction::saveData(const QString& filename)
   auto source = ActiveObjects::instance().activeDataSource();
   auto result = ActiveObjects::instance().activeOperatorResult();
 
+  auto updateSource = [](QString fileName, DataSource* ds) {
+    if (!ModuleManager::instance().isChild(ds)) {
+      ds->setPersistenceState(DataSource::PersistenceState::Saved);
+      ds->originalDataSource()->SetAnnotation(Attributes::FILENAME,
+                                              fileName.toLatin1().data());
+    }
+  };
+
   if (!server) {
     qCritical("No active server located.");
     return false;
@@ -129,6 +137,7 @@ bool SaveDataReaction::saveData(const QString& filename)
       qCritical() << "Failed to write out data.";
       return false;
     } else {
+      updateSource(filename, source);
       return true;
     }
   }
@@ -187,11 +196,8 @@ bool SaveDataReaction::saveData(const QString& filename)
   writer->UpdateVTKObjects();
   writer->UpdatePipeline();
 
-  if (!ModuleManager::instance().isChild(source)) {
-    source->setPersistenceState(DataSource::PersistenceState::Saved);
-    source->originalDataSource()->SetAnnotation(Attributes::FILENAME,
-                                                filename.toLatin1().data());
-  }
+  updateSource(filename, source);
+
   return true;
 }
 
