@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>40</height>
+     <height>42</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -42,13 +42,14 @@
     <addaction name="actionOpen"/>
     <addaction name="menuRecentlyOpened"/>
     <addaction name="separator"/>
-    <addaction name="actionSaveState"/>
-    <addaction name="actionLoadState"/>
-    <addaction name="separator"/>
     <addaction name="actionSaveData"/>
+    <addaction name="separator"/>
     <addaction name="actionSaveScreenshot"/>
     <addaction name="actionSaveMovie"/>
     <addaction name="actionSaveWeb"/>
+    <addaction name="separator"/>
+    <addaction name="actionLoadState"/>
+    <addaction name="actionSaveState"/>
     <addaction name="separator"/>
     <addaction name="actionSaveDebuggingState"/>
     <addaction name="separator"/>
@@ -332,7 +333,7 @@
   </widget>
   <action name="actionOpen">
    <property name="text">
-    <string>&amp;Open</string>
+    <string>&amp;Open Data</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -340,7 +341,7 @@
   </action>
   <action name="actionSaveDebuggingState">
    <property name="text">
-    <string>&amp;Save Debugging State</string>
+    <string>Save Debugging State</string>
    </property>
    <property name="toolTip">
     <string>Save state with debugging information (advanced)</string>
@@ -366,22 +367,22 @@
   </action>
   <action name="actionSaveData">
    <property name="text">
-    <string>Save &amp;Data</string>
+    <string>&amp;Save Data</string>
    </property>
   </action>
   <action name="actionSaveScreenshot">
    <property name="text">
-    <string>Save S&amp;creenshot</string>
+    <string>Export Screenshot...</string>
    </property>
   </action>
   <action name="actionSaveMovie">
    <property name="text">
-    <string>Save &amp;Movie</string>
+    <string>Export Movie...</string>
    </property>
   </action>
   <action name="actionSaveState">
    <property name="text">
-    <string>Sa&amp;ve State</string>
+    <string>Save State</string>
    </property>
   </action>
   <action name="actionLoadState">
@@ -404,10 +405,10 @@
   </action>
   <action name="actionSaveWeb">
    <property name="text">
-    <string>Save &amp;Web</string>
+    <string>Export to Web...</string>
    </property>
    <property name="toolTip">
-    <string>Save Web</string>
+    <string>Export data to Web</string>
    </property>
   </action>
  </widget>
