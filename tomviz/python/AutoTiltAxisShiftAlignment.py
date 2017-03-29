@@ -54,6 +54,7 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
         print('shift: %d' % shifts[np.argmax(I)])
 
         result = np.roll(tiltSeries, shifts[np.argmax(I)], axis=1)
+        result = np.asfortranarray(result)
 
         # Set the result as the new scalars.
         utils.set_array(dataset, result)
