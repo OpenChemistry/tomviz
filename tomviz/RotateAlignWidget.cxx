@@ -445,9 +445,10 @@ void RotateAlignWidget::setDataSource(DataSource* source)
       source->colorMap()->GetClientSideObject());
     if (lut) {
       this->Internals->mainSlice->GetProperty()->SetLookupTable(lut);
-      this->Internals->reconSlice[0]->GetProperty()->SetLookupTable(lut);
-      this->Internals->reconSlice[1]->GetProperty()->SetLookupTable(lut);
-      this->Internals->reconSlice[2]->GetProperty()->SetLookupTable(lut);
+      for (int i = 0; i < 3; ++i) {
+        this->Internals->ReconColorMap[i]->Copy(source->colorMap());
+        this->Internals->ReconColorMap[i]->UpdateVTKObjects();
+      }
     }
     vtkImageData* imageData =
       vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
