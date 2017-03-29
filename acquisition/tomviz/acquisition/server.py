@@ -1,3 +1,6 @@
+import os
+import sys
+import tempfile
 import importlib
 import inspect
 import logging
@@ -7,7 +10,9 @@ from bottle import run, route
 from tomviz import jsonrpc
 from tomviz.utility import inject
 from tomviz.acquisition import AbstractSource
+import shutil
 
+dev = False
 adapter = 'tests.mock.source.ApiAdapter'
 host = 'localhost'
 port = 8080
@@ -112,8 +117,38 @@ def setup_app(source_adapter=None):
 
         return slices[id]
 
+def deploy_module(name, source):
+    try:
+        tmp_dir = tempfile.mkdtemp()
+
+        sys.path.append(tmp_dir)
+
+
+        module_path = '%s.py' % os.path.join(tmp_dir, name)
+        with open(module_path, 'w') as fp:
+            fp.write(source)
+
+        if name in sys.modules:
+            reload(sys.modules[name])
+        else:
+            importlib.import_module(name)
+
+    finally:
+        sys.path.remove(tmp_dir)
+        shutil.rmtree(tmp_dir)
+
+def deploy_adapter(module, name, source):
+    deploy_module(module, source)
+    adapter_name = '%s.%s' % (module, name)
+    setup_app(adapter_name)
+
+def setup(adapter=None):
+    if dev:
+        jsonrpc.endpoint(path='/dev')(deploy_adapter)
+    else:
+        setup_app(adapter)
 
 def start(debug=True):
-    setup_app(adapter)
+    setup(adapter)
     logger.info('Starting HTTP server')
     run(host='localhost', port=port, debug=debug)
