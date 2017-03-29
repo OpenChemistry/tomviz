@@ -41,25 +41,25 @@ public:
   bool needsToBeAdded;
   DataSource* dataSource;
 
-  void savePosition(const QPoint& pos)
+  void saveGeometry(const QRect& geometry)
   {
     if (Op.isNull()) {
       return;
     }
     QSettings* settings = pqApplicationCore::instance()->settings();
     QString settingName =
-      QString("Edit%1OperatorDialogPosition").arg(Op->label());
-    settings->setValue(settingName, QVariant(pos));
+      QString("Edit%1OperatorDialogGeometry").arg(Op->label());
+    settings->setValue(settingName, QVariant(geometry));
   }
 
-  QVariant loadPosition()
+  QVariant loadGeometry()
   {
     if (Op.isNull()) {
       return QVariant();
     }
     QSettings* settings = pqApplicationCore::instance()->settings();
     QString settingName =
-      QString("Edit%1OperatorDialogPosition").arg(Op->label());
+      QString("Edit%1OperatorDialogGeometry").arg(Op->label());
     return settings->value(settingName);
   }
 };
@@ -76,9 +76,9 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     op->setParent(this);
   }
 
-  QVariant position = this->Internals->loadPosition();
-  if (!position.isNull()) {
-    this->move(position.toPoint());
+  QVariant geometry = this->Internals->loadGeometry();
+  if (!geometry.isNull()) {
+    this->setGeometry(geometry.toRect());
   }
 
   if (op->hasCustomUI()) {
@@ -123,7 +123,7 @@ void EditOperatorDialog::onApply()
 
 void EditOperatorDialog::onClose()
 {
-  this->Internals->savePosition(this->pos());
+  this->Internals->saveGeometry(this->geometry());
 }
 
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
