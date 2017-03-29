@@ -583,6 +583,9 @@ void ModuleContour::setUseSolidColor(const bool useSolidColor)
 
 void ModuleContour::updateGUI()
 {
+  if (!m_controllers) {
+    return;
+  }
   QList<DataSource*> childSources = getChildDataSources();
   QComboBox* combo = m_controllers->getColorByComboBox();
   if (combo) {
