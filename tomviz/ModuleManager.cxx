@@ -644,13 +644,13 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     } else {
       dataSource = new DataSource(srcProxy);
     }
-
+    this->addDataSource(dataSource);
     if (!dataSource->deserialize(dsnode)) {
       qWarning() << "Failed to deserialze DataSource with id " << id
                  << ". Skipping it";
       continue;
     }
-    this->addDataSource(dataSource);
+
     dataSources[id] = dataSource;
 
     if (dsnode.attribute("active").as_int(0) == 1) {
