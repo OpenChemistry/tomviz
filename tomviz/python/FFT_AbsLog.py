@@ -19,9 +19,10 @@ def transform_scalars(dataset):
     offset = np.finfo(float).eps #add a small offset to avoid log(0)
 
     # Take log abs FFT
-    data_py = np.fft.fftshift(np.log(np.abs(np.fft.fftn(data_py)) + offset))
+    output = np.fft.fftshift(np.log(np.abs(np.fft.fftn(data_py)) + offset))
     # Normalize log abs FFT
-    data_py = data_py / np.max(data_py)
+    output = output / np.max(output)
+    output = np.asfortranarray(output)
 
     # Set the result as the new scalars.
-    utils.set_array(dataset, data_py)
+    utils.set_array(dataset, output)
