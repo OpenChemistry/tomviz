@@ -236,12 +236,14 @@ def test_describe(acquisition_server):
     del error['data']
     assert error == expected
 
+
 @pytest.fixture(scope='function')
 def sentinel_path1():
     path = os.path.join(tempfile.tempdir, 'adapter_sentinel1')
     yield path
     if os.path.exists(path):
         os.remove(path)
+
 
 @pytest.fixture(scope='function')
 def sentinel_path2():
@@ -250,15 +252,17 @@ def sentinel_path2():
     if os.path.exists(path):
         os.remove(path)
 
+
 def test_deploy(acquisition_dev_server, sentinel_path1, sentinel_path2):
-    adapter_path = os.path.join(os.path.dirname(__file__), 'fixtures', 'source1.py')
+    adapter_path = os.path.join(os.path.dirname(__file__), 'fixtures',
+                                'source1.py')
     with open(adapter_path) as fp:
         src = fp.read()
 
     request = jsonrpc_message({
-      'id': 1234,
-      'method': 'deploy_adapter',
-      'params': ['foo', 'ApiAdapter1', src]
+        'id': 1234,
+        'method': 'deploy_adapter',
+        'params': ['foo', 'ApiAdapter1', src]
     })
 
     url = '%s/dev' % acquisition_dev_server.base_url
@@ -285,14 +289,15 @@ def test_deploy(acquisition_dev_server, sentinel_path1, sentinel_path2):
         assert fp.read() == magic
 
     # Now redeploy
-    adapter_path = os.path.join(os.path.dirname(__file__), 'fixtures', 'source2.py')
+    adapter_path = os.path.join(os.path.dirname(__file__), 'fixtures',
+                                'source2.py')
     with open(adapter_path) as fp:
         src = fp.read()
 
     request = jsonrpc_message({
-      'id': 1234,
-      'method': 'deploy_adapter',
-      'params': ['foo', 'ApiAdapter2', src]
+        'id': 1234,
+        'method': 'deploy_adapter',
+        'params': ['foo', 'ApiAdapter2', src]
     })
 
     url = '%s/dev' % acquisition_dev_server.base_url
@@ -316,6 +321,4 @@ def test_deploy(acquisition_dev_server, sentinel_path1, sentinel_path2):
 
     assert os.path.exists(sentinel_path2)
     with open(sentinel_path2) as fp:
-        assert fp.read() == '%sx2' %  magic
-
-
+        assert fp.read() == '%sx2' % magic

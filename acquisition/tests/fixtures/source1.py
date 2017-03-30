@@ -1,7 +1,6 @@
 import tempfile
 import os
 from tomviz.acquisition import AbstractSource
-from tomviz.acquisition import describe
 
 
 class ApiAdapter1(AbstractSource):

@@ -1,6 +1,5 @@
 import argparse
 import tomviz
-from tomviz.acquisition import server
 
 
 def main():
@@ -14,6 +13,9 @@ def main():
     parser.add_argument("-d", "--debug", help="turn on debug mode",
                         action='store_true')
     parser.add_argument("-e", "--dev", help="turn on dev mode",
+                        action='store_true')
+    parser.add_argument("-r", "--redirect",
+                        help="redirect stdout/stderr to log",
                         action='store_true')
 
     args = parser.parse_args()
@@ -30,7 +32,12 @@ def main():
     if args.debug:
         debug = args.debug
 
-    tomviz.setupLogger(debug)
+    if args.redirect:
+        tomviz.setup_std_loggers()
+
+    from tomviz.acquisition import server
+
+    tomviz.setup_loggers(debug)
     server.start(debug)
 
 
