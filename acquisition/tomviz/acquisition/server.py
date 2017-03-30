@@ -6,7 +6,7 @@ import inspect
 import logging
 import logging.handlers
 import bottle
-from bottle import run, route, request, HTTPResponse
+from bottle import run, route, request, HTTPResponse, Bottle
 
 import tomviz
 from tomviz import jsonrpc
@@ -21,18 +21,16 @@ except ImportError:
     pass
 
 
-DEV = False
 ADAPTER = 'tests.mock.source.ApiAdapter'
 HOST = 'localhost'
 PORT = 8080
 LOG_BUF_SIZE = 65536
 
 logger = logging.getLogger('tomviz')
+app = Bottle()
 
 
 def _load_source_adapter(source_adapter):
-    if source_adapter is None:
-        source_adapter = ADAPTER
     logger.info('Loading source_adapter: %s', source_adapter)
     # First load the chosen source_adapter
     module, cls = source_adapter.rsplit('.', 1)
@@ -51,7 +49,10 @@ def _load_source_adapter(source_adapter):
     return cls
 
 
-def setup_app(source_adapter=None):
+def _setup_adapter(source_adapter):
+    """
+    Setup up the JSON-RPC endpoints for a give source adapter
+    """
     cls = _load_source_adapter(source_adapter)
 
     # Ensure that the adapter implements the interface
@@ -128,7 +129,7 @@ def setup_app(source_adapter=None):
         return slices[id]
 
 
-def log(log):
+def _log(log):
         bottle.response.headers['Content-Type'] = 'text/plain'
         bytes = request.query.bytes
 
@@ -138,7 +139,7 @@ def log(log):
         path = tomviz.LOG_PATHS[log]
 
         if not os.path.exists(path):
-            raise HTTPResponse(body='Log file does not exist.' % log,
+            raise HTTPResponse(body='Log file does not exist.',
                                status=400)
 
         file_size = os.path.getsize(path)
@@ -174,7 +175,7 @@ def log(log):
         return stream()
 
 
-def deploy_module(name, source):
+def _deploy_module(name, source):
     try:
         tmp_dir = tempfile.mkdtemp()
 
@@ -195,21 +196,25 @@ def deploy_module(name, source):
 
 
 def deploy_adapter(module, name, source):
-    deploy_module(module, source)
+    _deploy_module(module, source)
     adapter_name = '%s.%s' % (module, name)
-    setup_app(adapter_name)
+    _setup_adapter(adapter_name)
 
 
-def setup(adapter=None):
-    if DEV:
+def setup(adapter=None, dev=False):
+    if adapter is None:
+        adapter = ADAPTER
+
+    if dev:
         jsonrpc.endpoint(path='/dev')(deploy_adapter)
     else:
-        setup_app(adapter)
+        _setup_adapter(adapter)
 
-    route('/log/<log>')(log)
+    route('/log/<log>')(_log)
 
 
-def start(debug=True):
-    setup(ADAPTER)
-    logger.info('Starting HTTP server')
-    run(host=HOST, port=PORT, debug=debug)
+def start(host=HOST, port=PORT, debug=True, dev=False, adapter=ADAPTER):
+    with app:
+        setup(adapter, dev)
+        logger.info('Starting HTTP server')
+        run(host=host, port=port, debug=debug)

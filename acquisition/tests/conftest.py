@@ -32,8 +32,7 @@ class Server(Thread):
                 time.sleep(0.1)
 
     def setup(self, adapter=None):
-        server.DEV = self.dev
-        server.setup(adapter)
+        server.setup(dev=self.dev, adapter=adapter)
 
     def stop(self):
         self._server.srv.shutdown()
