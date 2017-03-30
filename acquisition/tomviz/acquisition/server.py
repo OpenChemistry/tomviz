@@ -6,7 +6,7 @@ import inspect
 import logging
 import logging.handlers
 import bottle
-from bottle import run, route, request
+from bottle import run, route, request, HTTPResponse
 
 import tomviz
 from tomviz import jsonrpc
@@ -123,8 +123,7 @@ def setup_app(source_adapter=None):
         bottle.response.headers['Content-Type'] = 'image/tiff'
 
         if id not in slices:
-            bottle.response.status = 404
-            return 'Acquisition data not found.'
+            raise HTTPResponse(body='Acquisition data not found.', status=404)
 
         return slices[id]
 
@@ -134,13 +133,13 @@ def log(log):
         bytes = request.query.bytes
 
         if log not in tomviz.LOG_PATHS:
-            bottle.response.status = 400
-            return 'Invalid log parameter: %s.' % log
+            raise HTTPResponse(body='Invalid log parameter: %s.' % log,
+                               status=400)
         path = tomviz.LOG_PATHS[log]
 
         if not os.path.exists(path):
-            bottle.response.status = 400
-            return 'Log file does not exist.'
+            raise HTTPResponse(body='Log file does not exist.' % log,
+                               status=400)
 
         file_size = os.path.getsize(path)
         length = int(bytes) or file_size
