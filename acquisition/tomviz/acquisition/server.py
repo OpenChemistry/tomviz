@@ -14,6 +14,13 @@ from tomviz.utility import inject
 from tomviz.acquisition import AbstractSource
 import shutil
 
+# For python 3
+try:
+    from imp import reload
+except ImportError:
+    pass
+
+
 DEV = False
 ADAPTER = 'tests.mock.source.ApiAdapter'
 HOST = 'localhost'
