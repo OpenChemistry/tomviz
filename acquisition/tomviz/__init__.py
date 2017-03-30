@@ -11,7 +11,7 @@ LOG_PATH = log_path = os.path.join(os.path.expanduser('~'), '.tomviz', 'logs')
 LOG_PATHS = {
     'stderr': '%s/stderr.log' % LOG_PATH,
     'stdout': '%s/stdout.log' % LOG_PATH,
-    'log': '%s/acquisition.log' % LOG_PATH
+    'debug': '%s/debug.log' % LOG_PATH
 }
 
 try:
