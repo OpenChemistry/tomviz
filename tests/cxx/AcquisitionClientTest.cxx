@@ -109,7 +109,7 @@ private slots:
     QVERIFY(!arguments.at(0).toJsonValue().toBool());
   }
 
-  void tiltParamsTest() { this->setTiltAngle(3.0); }
+  void tiltParamsTest() { this->setTiltAngle(3.0, 3.0); }
 
   void acquisitionParamsGetTest()
   {
@@ -162,7 +162,7 @@ private slots:
 
   void acquisitionPreviewScanTest()
   {
-    setTiltAngle(0.0);
+    setTiltAngle(0.0, 1.0);
     AcquisitionClient client(this->url);
 
     AcquisitionClientImageRequest* request = client.preview_scan();
@@ -180,12 +180,12 @@ private slots:
     QByteArray data = arguments[1].toByteArray();
     QCryptographicHash hash(QCryptographicHash::Algorithm::Md5);
     hash.addData(data);
-    QCOMPARE(hash.result().toHex().data(), "3b3d4b6163f48ec0f665fe114fac0d15");
+    QCOMPARE(hash.result().toHex().data(), "7d185cd48e077baefaf7bc216488ee49");
   }
 
   void stemAcquireScanTest()
   {
-    setTiltAngle(0.0);
+    setTiltAngle(0.0, 1.0);
     AcquisitionClient client(this->url);
     AcquisitionClientImageRequest* request = client.stem_acquire();
     QSignalSpy error(request, &AcquisitionClientImageRequest::error);
@@ -202,7 +202,7 @@ private slots:
     QByteArray data = arguments[1].toByteArray();
     QCryptographicHash hash(QCryptographicHash::Algorithm::Md5);
     hash.addData(data);
-    QCOMPARE(hash.result().toHex().data(), "3b3d4b6163f48ec0f665fe114fac0d15");
+    QCOMPARE(hash.result().toHex().data(), "7d185cd48e077baefaf7bc216488ee49");
   }
 
   void describeTest()
@@ -266,7 +266,7 @@ private:
     QVERIFY(arguments.at(0).toJsonValue().toBool());
   }
 
-  void setTiltAngle(double angle)
+  void setTiltAngle(double angle, double setAngle)
   {
     AcquisitionClient client(this->url);
 
@@ -284,7 +284,7 @@ private:
     QVERIFY(error.isEmpty());
     QCOMPARE(finished.size(), 1);
     QList<QVariant> arguments = finished.takeFirst();
-    QCOMPARE(arguments.at(0).toJsonValue().toDouble(), angle);
+    QCOMPARE(arguments.at(0).toJsonValue().toDouble(), setAngle);
   }
 };
 

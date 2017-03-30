@@ -1,11 +1,13 @@
 import time
 from PIL import Image
-from . import test_image
+from . import test_image, test_black_image, angle_to_page
 from tests.utility import tobytes
 
 img = Image.open(test_image())
+black = test_black_image().read()
 
 connected = False
+current_frame = None
 
 
 def connect():
@@ -21,10 +23,10 @@ def disconnect():
 
 
 def set_tilt_angle(angle):
+    global current_frame
     time.sleep(2)
-    current_frame = max(0, min(angle, img.n_frames-1))
-    img.seek(current_frame)
-    return angle
+    (current_frame, set_angle) = angle_to_page(angle)
+    return set_angle
 
 
 def set_acquisition_params(**params):
@@ -38,11 +40,18 @@ def set_acquisition_params(**params):
 
 
 def preview_scan():
+    data = black
+    if current_frame:
+        img.seek(current_frame)
+        data = tobytes(img)
     time.sleep(2)
-    img.seek(0)
-    return tobytes(img)
+    return data
 
 
 def stem_acquire():
+    data = black
+    if current_frame:
+        img.seek(current_frame)
+        data = tobytes(img)
     time.sleep(3)
-    return tobytes(img)
+    return data

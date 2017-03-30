@@ -109,7 +109,7 @@ def test_preview_scan(acquisition_server):
     response = requests.get(url)
 
     assert response.status_code == 200
-    expected = '3b3d4b6163f48ec0f665fe114fac0d15'
+    expected = '7d185cd48e077baefaf7bc216488ee49'
 
     md5 = hashlib.md5()
     md5.update(response.content)
@@ -122,7 +122,7 @@ def test_stem_acquire(acquisition_server):
         'id': id,
         'method': 'tilt_params',
         'params': {
-            'angle': 1
+            'angle': 0
         }
     })
 
@@ -142,7 +142,7 @@ def test_stem_acquire(acquisition_server):
     response = requests.get(url)
 
     assert response.status_code == 200
-    expected = '832b651589cb6ea5255b9ef4e220a050'
+    expected = '7d185cd48e077baefaf7bc216488ee49'
 
     md5 = hashlib.md5()
     md5.update(response.content)
