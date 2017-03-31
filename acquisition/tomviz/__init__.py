@@ -64,7 +64,7 @@ def setup_loggers(debug=False):
     stream_handler = logging.StreamHandler()
 
     file_handler = logging.handlers.RotatingFileHandler(
-        LOG_PATHS['stdout'], maxBytes=MAX_LOG_SIZE,
+        LOG_PATHS['debug'], maxBytes=MAX_LOG_SIZE,
         backupCount=LOG_BACKUP_COUNT)
     formatter = logging.Formatter(LOG_FORMAT)
     stream_handler.setFormatter(formatter)
