@@ -424,8 +424,8 @@ void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
   typedef vtkSmartPointer<vtkTransferFunctionBoxItem> itemPtr;
   itemPtr tfItem = itemPtr::New();
 
-  vtkSmartPointer<vtkColorTransferFunction> colorTransferFunction =
-    vtkSmartPointer<vtkColorTransferFunction>::New();
+  vtkColorTransferFunction* colorTransferFunction =
+    vtkColorTransferFunction::New();
   colorTransferFunction->AddRGBSegment(50.0, 0.0, 0.0, 1.0,
     85.0, 0.0, 1.0, 0.0);
   colorTransferFunction->AddRGBSegment(85.0, 0.0, 1.0, 0.0,
@@ -434,14 +434,16 @@ void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
     200.0, 1.0, 0.0, 0.0);
   colorTransferFunction->Build();
 
-  vtkSmartPointer<vtkPiecewiseFunction> scalarOpacity =
-    vtkSmartPointer<vtkPiecewiseFunction>::New();
+  vtkPiecewiseFunction* scalarOpacity = vtkPiecewiseFunction::New();
   scalarOpacity->AddPoint(0.0, 0.3);
   scalarOpacity->AddPoint(127.5, 1.0);
   scalarOpacity->AddPoint(200.0, 0.7);
 
-//  tfItem->SetColorTransferFunction(colorTransferFunction);
-//  tfItem->SetOpacityFunction(scalarOpacity);
+  tfItem->SetColorFunction(colorTransferFunction);
+  tfItem->SetOpacityFunction(scalarOpacity);
+
+  colorTransferFunction->Delete();
+  scalarOpacity->Delete();
 
   m_ui->histogram2DWidget->addTransferFunction(tfItem);
 }

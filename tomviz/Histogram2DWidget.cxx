@@ -16,7 +16,7 @@
 #include "Histogram2DWidget.h"
 
 #include <vtkAxis.h>
-#include <vtkChartHistogram2D.h>
+#include <vtkChartTransfer2DEditor.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
@@ -123,6 +123,11 @@ void Histogram2DWidget::addTransferFunction(
   // TODO Check whether this is necessary
   item->SetValidBounds(xRange[0], xRange[1], yRange[0], yRange[1]);
   m_chartHistogram2D->AddPlot(item);
+}
+
+vtkImageData* Histogram2DWidget::getTransfer2D()
+{
+  return m_chartHistogram2D->GetTransfer2D();
 }
 
 //void Histogram2DWidget::renderViews()

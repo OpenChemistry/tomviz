@@ -25,7 +25,7 @@
  * \brief 
  */
 
-class vtkChartHistogram2D;
+class vtkChartTransfer2DEditor;
 class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkImageData;
@@ -46,11 +46,13 @@ public:
 
   void addTransferFunction(vtkSmartPointer<vtkTransferFunctionBoxItem> item);
 
+  vtkImageData* getTransfer2D();
+
 signals:
   void mapUpdated();
 
 protected:
-  vtkNew<vtkChartHistogram2D> m_chartHistogram2D;
+  vtkNew<vtkChartTransfer2DEditor> m_chartHistogram2D;
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
 
