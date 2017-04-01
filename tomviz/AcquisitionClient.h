@@ -75,6 +75,9 @@ public:
   explicit AcquisitionClient(const QString& url, QObject* parent = 0);
   ~AcquisitionClient() override;
 
+  void setUrl(const QString& url);
+  QString url() const;
+
 public slots:
 
   AcquisitionClientRequest* connect(const QJsonObject& params);
