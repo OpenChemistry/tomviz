@@ -8,12 +8,13 @@ from tomviz.acquisition import server
 
 
 class Server(Thread):
-    def __init__(self):
+    def __init__(self, dev=False, port=9999):
         super(Server, self).__init__()
         self.host = 'localhost'
-        self.port = 9999
+        self.port = port
         self.base_url = 'http://%s:%d' % (self.host, self.port)
         self.url = '%s/acquisition' % self.base_url
+        self.dev = dev
         self._server = WSGIRefServer(host=self.host, port=self.port)
 
     def run(self):
@@ -31,7 +32,7 @@ class Server(Thread):
                 time.sleep(0.1)
 
     def setup(self, adapter=None):
-        server.setup_app(adapter)
+        server.setup(dev=self.dev, adapter=adapter)
 
     def stop(self):
         self._server.srv.shutdown()
@@ -42,6 +43,15 @@ class Server(Thread):
 @pytest.fixture(scope="module")
 def acquisition_server():
     srv = Server()
+    srv.start()
+    yield srv
+    srv.stop()
+    srv.join()
+
+
+@pytest.fixture(scope="module")
+def acquisition_dev_server():
+    srv = Server(dev=True, port=9998)
     srv.start()
     yield srv
     srv.stop()

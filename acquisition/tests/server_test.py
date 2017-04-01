@@ -1,5 +1,8 @@
 import requests
 import hashlib
+import os
+import tempfile
+import pytest
 
 from tomviz.jsonrpc import jsonrpc_message
 from tests.mock.source import ApiAdapter
@@ -106,7 +109,7 @@ def test_preview_scan(acquisition_server):
     response = requests.get(url)
 
     assert response.status_code == 200
-    expected = '3b3d4b6163f48ec0f665fe114fac0d15'
+    expected = '7d185cd48e077baefaf7bc216488ee49'
 
     md5 = hashlib.md5()
     md5.update(response.content)
@@ -119,7 +122,7 @@ def test_stem_acquire(acquisition_server):
         'id': id,
         'method': 'tilt_params',
         'params': {
-            'angle': 1
+            'angle': 0
         }
     })
 
@@ -139,7 +142,7 @@ def test_stem_acquire(acquisition_server):
     response = requests.get(url)
 
     assert response.status_code == 200
-    expected = '832b651589cb6ea5255b9ef4e220a050'
+    expected = '7d185cd48e077baefaf7bc216488ee49'
 
     md5 = hashlib.md5()
     md5.update(response.content)
@@ -232,3 +235,90 @@ def test_describe(acquisition_server):
     error = response.json()['error']
     del error['data']
     assert error == expected
+
+
+@pytest.fixture(scope='function')
+def sentinel_path1():
+    path = os.path.join(tempfile.tempdir, 'adapter_sentinel1')
+    yield path
+    if os.path.exists(path):
+        os.remove(path)
+
+
+@pytest.fixture(scope='function')
+def sentinel_path2():
+    path = os.path.join(tempfile.tempdir, 'adapter_sentinel2')
+    yield path
+    if os.path.exists(path):
+        os.remove(path)
+
+
+def test_deploy(acquisition_dev_server, sentinel_path1, sentinel_path2):
+    adapter_path = os.path.join(os.path.dirname(__file__), 'fixtures',
+                                'source1.py')
+    with open(adapter_path) as fp:
+        src = fp.read()
+
+    request = jsonrpc_message({
+        'id': 1234,
+        'method': 'deploy_adapter',
+        'params': ['foo', 'ApiAdapter1', src]
+    })
+
+    url = '%s/dev' % acquisition_dev_server.base_url
+    response = requests.post(url, json=request)
+    assert response.status_code == 200
+
+    magic = '299792458'
+    # Call connect and make sure it writes out a file
+    request = jsonrpc_message({
+        'id': 1234,
+        'method': 'connect',
+        'params': {
+            'magic': magic
+        }
+    })
+
+    assert not os.path.exists(sentinel_path1)
+
+    response = requests.post(acquisition_dev_server.url, json=request)
+    assert response.status_code == 200
+
+    assert os.path.exists(sentinel_path1)
+    with open(sentinel_path1) as fp:
+        assert fp.read() == magic
+
+    # Now redeploy
+    adapter_path = os.path.join(os.path.dirname(__file__), 'fixtures',
+                                'source2.py')
+    with open(adapter_path) as fp:
+        src = fp.read()
+
+    request = jsonrpc_message({
+        'id': 1234,
+        'method': 'deploy_adapter',
+        'params': ['foo', 'ApiAdapter2', src]
+    })
+
+    url = '%s/dev' % acquisition_dev_server.base_url
+    response = requests.post(url, json=request)
+    assert response.status_code == 200
+
+    magic = '299792458'
+    # Call connect and make sure it writes out a file
+    request = jsonrpc_message({
+        'id': 1234,
+        'method': 'connect',
+        'params': {
+            'magic': magic
+        }
+    })
+
+    assert not os.path.exists(sentinel_path2)
+
+    response = requests.post(acquisition_dev_server.url, json=request)
+    assert response.status_code == 200
+
+    assert os.path.exists(sentinel_path2)
+    with open(sentinel_path2) as fp:
+        assert fp.read() == '%sx2' % magic

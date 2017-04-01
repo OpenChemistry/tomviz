@@ -1,33 +1,34 @@
 import argparse
 import tomviz
-from tomviz.acquisition import server
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='Tomviz acquisition server.')
-    parser.add_argument("-a", "--adapter", help="source adapter to install")
-    parser.add_argument("-i", "--interface",
-                        help="on what interface the server should run")
-    parser.add_argument("-p", "--port",
-                        help="on what port the server should run")
-    parser.add_argument("-d", "--debug", help="turn on debug mode",
+    parser.add_argument('-a', '--adapter', help='source adapter to install')
+    parser.add_argument('-i', '--host', default='localhost',
+                        help='on what interface the server should run')
+    parser.add_argument('-p', '--port',
+                        help='on what port the server should run', default=8080)
+    parser.add_argument('-d', '--debug', help='turn on debug mode',
+                        action='store_true')
+    parser.add_argument('-e', '--dev', help='turn on dev mode',
+                        action='store_true')
+    parser.add_argument('-r', '--redirect',
+                        help='redirect stdout/stderr to log',
                         action='store_true')
 
     args = parser.parse_args()
 
-    if args.port:
-        server.port = args.port
-    if args.interface:
-        server.host = args.interface
-    if args.adapter:
-        server.adapter = args.adapter
-    debug = False
-    if args.debug:
-        debug = args.debug
+    if args.redirect:
+        tomviz.setup_std_loggers()
 
-    tomviz.setupLogger(debug)
-    server.start(debug)
+    from tomviz.acquisition import server
+
+    tomviz.setup_loggers(args.debug)
+    server_params = vars(args)
+    del server_params['redirect']
+    server.start(**server_params)
 
 
 if __name__ == '__main__':
