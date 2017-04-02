@@ -148,6 +148,37 @@ def test_stem_acquire(acquisition_server):
     md5.update(response.content)
     assert md5.hexdigest() == expected
 
+    # Try out of range
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'tilt_params',
+        'params': {
+            'angle': 74
+        }
+    })
+
+    response = requests.post(acquisition_server.url, json=request)
+    assert response.status_code == 200
+
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'stem_acquire'
+    })
+
+    response = requests.post(acquisition_server.url, json=request)
+    assert response.status_code == 200
+
+    # Now fetch the image
+    url = response.json()['result']
+    response = requests.get(url)
+
+    assert response.status_code == 200
+    
+    expected = 'ac70e27a7db5710e1433393adeda4940'
+    md5 = hashlib.md5()
+    md5.update(response.content)
+    assert md5.hexdigest() == expected
+
 
 def test_connection(acquisition_server):
     id = 1234
