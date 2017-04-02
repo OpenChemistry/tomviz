@@ -103,6 +103,7 @@ void AcquisitionWidget::acquirePreview(const QJsonValue& result)
 {
   // This should be the actual angle the stage is at.
   if (result.isDouble()) {
+    m_tiltAngle = result.toDouble(-69.99);
     m_ui->tiltAngle->setText(QString::number(result.toDouble(-69.99), 'g', 2));
   }
 
@@ -116,11 +117,24 @@ void AcquisitionWidget::previewReady(QString mimeType,
 {
   qDebug() << "mimeType:" << mimeType;
 
-  QTemporaryFile file(QDir::tempPath() + "/tomviz-XXXXXX.tiff");
-  //file.open(QIODevice::WriteOnly);
-  file.open();
+  QDir dir(QDir::homePath() + "/tomviz-data");
+  if (!dir.exists()) {
+    dir.mkpath(dir.path());
+  }
+
+  QString path = "/tomviz_";
+
+  if (m_tiltAngle > 0.0) {
+    path.append('+');
+  }
+  path.append(QString::number(m_tiltAngle, 'g', 2));
+  path.append(".tiff");
+
+  QFile file(dir.path() + path);
+  file.open(QIODevice::WriteOnly);
+  //file.open();
   file.write(result);
-  qDebug() << "Temp file:" << file.fileName();
+  qDebug() << "Data file:" << file.fileName();
   file.close();
 
   QImage image;

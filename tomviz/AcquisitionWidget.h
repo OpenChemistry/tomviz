@@ -66,7 +66,8 @@ private:
   vtkNew<vtkImageSlice> m_imageSlice;
   vtkNew<vtkImageSliceMapper> m_imageSliceMapper;
   vtkSmartPointer<vtkScalarsToColors> m_lut;
-  //vtkSmartPointer<vtkSMProxy> m_lut;
+
+  double m_tiltAngle = 0.0;
 };
 
 }
