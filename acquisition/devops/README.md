@@ -12,7 +12,7 @@ Where ```<log>``` is one of:
 
 # Deploying a source adapter
 
-If there server is started in dev model source adapter can be deployed remotely
+If the server is started in dev model a source adapter can be deployed remotely
 using a JSON-RPC method.
 
 The server can be started in development mode using the following command:

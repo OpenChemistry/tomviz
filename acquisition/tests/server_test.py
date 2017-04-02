@@ -173,7 +173,7 @@ def test_stem_acquire(acquisition_server):
     response = requests.get(url)
 
     assert response.status_code == 200
-    
+
     expected = 'ac70e27a7db5710e1433393adeda4940'
     md5 = hashlib.md5()
     md5.update(response.content)
