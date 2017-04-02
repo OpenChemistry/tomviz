@@ -47,7 +47,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="tiltAngleLabel">
             <property name="text">
-             <string>Tilt Angle:</string>
+             <string>Tilt Angle (set):</string>
             </property>
            </widget>
           </item>
@@ -64,20 +64,26 @@
           <item row="1" column="0">
            <widget class="QLabel" name="otherLabel">
             <property name="text">
-             <string>Other thing:</string>
+             <string>Tilt Angle (obtained)</string>
             </property>
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QLineEdit" name="otherEdit">
+           <widget class="QLineEdit" name="tiltAngle">
             <property name="text">
              <string/>
             </property>
             <property name="maxLength">
              <number>10</number>
             </property>
-            <property name="clearButtonEnabled">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
+            <property name="readOnly">
              <bool>true</bool>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
             </property>
            </widget>
           </item>

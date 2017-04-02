@@ -85,7 +85,7 @@ void AcquisitionWidget::onConnect()
   QJsonObject params;
   params["angle"] = 0.0;
   auto request = m_client->tilt_params(params);
-  connect(request, SIGNAL(finished(QJsonValue)), SLOT(acquirePreview()));
+  connect(request, SIGNAL(finished(QJsonValue)), SLOT(acquirePreview(QJsonValue)));
 }
 
 void AcquisitionWidget::setTiltAngle()
@@ -93,14 +93,19 @@ void AcquisitionWidget::setTiltAngle()
   QJsonObject params;
   params["angle"] = m_ui->tiltAngleSpinBox->value();
   auto request = m_client->tilt_params(params);
-  connect(request, SIGNAL(finished(QJsonValue)), SLOT(acquirePreview()));
+  connect(request, SIGNAL(finished(QJsonValue)), SLOT(acquirePreview(QJsonValue)));
 
   m_ui->previewButton->setEnabled(false);
   m_ui->acquireButton->setEnabled(false);
 }
 
-void AcquisitionWidget::acquirePreview()
+void AcquisitionWidget::acquirePreview(const QJsonValue& result)
 {
+  // This should be the actual angle the stage is at.
+  if (result.isDouble()) {
+    m_ui->tiltAngle->setText(QString::number(result.toDouble(-69.99), 'g', 2));
+  }
+
   auto request = m_client->preview_scan();
   connect(request, SIGNAL(finished(QString, QByteArray)),
           SLOT(previewReady(QString, QByteArray)));

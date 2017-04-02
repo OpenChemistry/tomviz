@@ -51,7 +51,7 @@ private slots:
   void onConnect();
 
   void setTiltAngle();
-  void acquirePreview();
+  void acquirePreview(const QJsonValue& result);
   void previewReady(QString, QByteArray);
 
   void resetCamera();
