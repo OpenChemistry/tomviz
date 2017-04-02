@@ -23,23 +23,23 @@
 
 #include <vtkSMProxy.h>
 
+#include <vtkCamera.h>
 #include <vtkGenericOpenGLRenderWindow.h>
-#include<vtkInteractorStyleRubberBand2D.h>
-#include <vtkRenderer.h>
 #include <vtkImageData.h>
-#include <vtkTIFFReader.h>
+#include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
-#include <vtkImageProperty.h>
-#include <vtkCamera.h>
+#include <vtkInteractorStyleRubberBand2D.h>
+#include <vtkRenderer.h>
 #include <vtkScalarsToColors.h>
+#include <vtkTIFFReader.h>
 
+#include <QBuffer>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QImage>
 #include <QImageReader>
-#include <QBuffer>
 #include <QTemporaryFile>
 
 namespace tomviz {
@@ -59,7 +59,8 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
   vtkNew<vtkGenericOpenGLRenderWindow> window;
   m_ui->imageWidget->SetRenderWindow(window.Get());
   m_ui->imageWidget->GetRenderWindow()->AddRenderer(m_renderer.Get());
-  m_ui->imageWidget->GetInteractor()->SetInteractorStyle(m_defaultInteractorStyle.Get());
+  m_ui->imageWidget->GetInteractor()->SetInteractorStyle(
+    m_defaultInteractorStyle.Get());
   m_defaultInteractorStyle->SetRenderOnMouseMove(true);
 
   m_renderer->SetBackground(1.0, 1.0, 1.0);
@@ -85,7 +86,8 @@ void AcquisitionWidget::onConnect()
   QJsonObject params;
   params["angle"] = 0.0;
   auto request = m_client->tilt_params(params);
-  connect(request, SIGNAL(finished(QJsonValue)), SLOT(acquirePreview(QJsonValue)));
+  connect(request, SIGNAL(finished(QJsonValue)),
+          SLOT(acquirePreview(QJsonValue)));
 }
 
 void AcquisitionWidget::setTiltAngle()
@@ -93,7 +95,8 @@ void AcquisitionWidget::setTiltAngle()
   QJsonObject params;
   params["angle"] = m_ui->tiltAngleSpinBox->value();
   auto request = m_client->tilt_params(params);
-  connect(request, SIGNAL(finished(QJsonValue)), SLOT(acquirePreview(QJsonValue)));
+  connect(request, SIGNAL(finished(QJsonValue)),
+          SLOT(acquirePreview(QJsonValue)));
 
   m_ui->previewButton->setEnabled(false);
   m_ui->acquireButton->setEnabled(false);
@@ -112,8 +115,7 @@ void AcquisitionWidget::acquirePreview(const QJsonValue& result)
           SLOT(previewReady(QString, QByteArray)));
 }
 
-void AcquisitionWidget::previewReady(QString mimeType,
-                                     QByteArray result)
+void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
 {
   qDebug() << "mimeType:" << mimeType;
 
@@ -132,7 +134,7 @@ void AcquisitionWidget::previewReady(QString mimeType,
 
   QFile file(dir.path() + path);
   file.open(QIODevice::WriteOnly);
-  //file.open();
+  // file.open();
   file.write(result);
   qDebug() << "Data file:" << file.fileName();
   file.close();
@@ -157,7 +159,7 @@ void AcquisitionWidget::previewReady(QString mimeType,
     auto proxy = ActiveObjects::instance().activeDataSource()->colorMap();
     m_lut = vtkScalarsToColors::SafeDownCast(proxy->GetClientSideObject());
   } else {
-//    m_lut = vtkSmartPointer<vtkScalarsToColors>::New();
+    //    m_lut = vtkSmartPointer<vtkScalarsToColors>::New();
   }
   if (m_lut) {
     m_imageSlice->GetProperty()->SetLookupTable(m_lut.Get());
@@ -167,10 +169,10 @@ void AcquisitionWidget::previewReady(QString mimeType,
   m_ui->acquireButton->setEnabled(true);
 
   if (image.load(&stream, "TIFF")) {
-    //m_ui->image->setPixmap(QPixmap::fromImage(image));
+    // m_ui->image->setPixmap(QPixmap::fromImage(image));
   } else {
     qDebug() << "Failed to load image!";
-    //qDebug() << result;
+    // qDebug() << result;
   }
 }
 
@@ -199,5 +201,4 @@ void AcquisitionWidget::resetCamera()
   clippingRange[1] = clippingRange[0] + (bounds[5] - bounds[4] + 50);
   camera->SetClippingRange(clippingRange);
 }
-
 }

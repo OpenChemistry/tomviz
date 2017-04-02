@@ -16,8 +16,8 @@
 #ifndef tomvizAcquisitionWidget_h
 #define tomvizAcquisitionWidget_h
 
-#include <QWidget>
 #include <QScopedPointer>
+#include <QWidget>
 
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
@@ -69,7 +69,6 @@ private:
 
   double m_tiltAngle = 0.0;
 };
-
 }
 
 #endif // tomvizAcquisitionWidget_h

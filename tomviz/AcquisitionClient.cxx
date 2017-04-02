@@ -28,7 +28,7 @@ AcquisitionClient::AcquisitionClient(const QString& url, QObject* parent)
 
 AcquisitionClient::~AcquisitionClient() = default;
 
-void AcquisitionClient::setUrl(const QString &url)
+void AcquisitionClient::setUrl(const QString& url)
 {
   m_jsonRpcClient->setUrl(url);
 }

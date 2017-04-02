@@ -29,8 +29,8 @@
 #include <vtkSMViewProxy.h>
 
 #include "AboutDialog.h"
-#include "ActiveObjects.h"
 #include "AcquisitionWidget.h"
+#include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
 #include "AddRotateAlignReaction.h"
