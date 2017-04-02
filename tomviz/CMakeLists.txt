@@ -25,6 +25,8 @@ set(SOURCES
   AboutDialog.cxx
   ActiveObjects.cxx
   ActiveObjects.h
+  AcquisitionWidget.cxx
+  AcquisitionWidget.h
   AcquisitionClient.cxx
   AcquisitionClient.h
   AddAlignReaction.cxx

@@ -29,6 +29,7 @@
 #include <vtkSMViewProxy.h>
 
 #include "AboutDialog.h"
+#include "AcquisitionWidget.h"
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
@@ -436,6 +437,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           scaleLegend, SLOT(setStyle(ScaleLegendStyle)));
   connect(viewMenuManager, SIGNAL(setScaleLegendVisibility(bool)), scaleLegend,
           SLOT(setVisibility(bool)));
+
+  // Add the acquisition client experimentally.
+  auto acquisitionWidget = new AcquisitionWidget(this);
+  auto acquisitionAction = ui.menuTools->addAction("Acquisition");
+  connect(acquisitionAction, SIGNAL(triggered(bool)), acquisitionWidget,
+          SLOT(show()));
 }
 
 MainWindow::~MainWindow()

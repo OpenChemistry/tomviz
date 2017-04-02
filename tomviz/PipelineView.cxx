@@ -88,7 +88,7 @@ void OperatorRunningDelegate::paint(QPainter* painter,
 
   QItemDelegate::paint(painter, option, index);
   if (op && index.column() == Column::state) {
-    if (op->state() == OperatorState::RUNNING) {
+    if (op->state() == OperatorState::Running) {
       QPixmap pixmap(":/icons/spinner.png");
 
       // Calculate the correct location to draw based on margin. The margin

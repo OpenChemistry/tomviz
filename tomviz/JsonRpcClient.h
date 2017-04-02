@@ -31,7 +31,7 @@ class JsonRpcReply : public QObject
   Q_OBJECT
 
 public:
-  explicit JsonRpcReply(QObject* parent = 0) : QObject(parent){};
+  explicit JsonRpcReply(QObject* parent = 0) : QObject(parent) {}
 
 signals:
 
@@ -54,11 +54,13 @@ class JsonRpcClient : public QObject
   Q_OBJECT
 
 public:
-  explicit JsonRpcClient(const QString& url, QObject* parent_ = 0);
-  ~JsonRpcClient();
+  explicit JsonRpcClient(const QString& url, QObject* parent = 0);
 
-  /// Return the server url.
-  QString url() const;
+  /// Set the server URL.
+  void setUrl(const QString& url) { m_url = url; }
+
+  /// Return the server URL.
+  QString url() const { return m_url; }
 
 public slots:
   ///Send the Json request to the RPC server.
@@ -69,7 +71,7 @@ signals:
   void notificationReceived(QJsonObject message);
 
 protected:
-  unsigned int m_requestCounter;
+  unsigned int m_requestCounter = 0;
   QString m_url;
   QNetworkAccessManager* m_networkAccessManager = nullptr;
 };
