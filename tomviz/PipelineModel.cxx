@@ -292,15 +292,15 @@ QIcon iconForDataObject(vtkDataObject* dataObject)
 QIcon iconForOperatorState(tomviz::OperatorState state)
 {
   switch (state) {
-    case OperatorState::COMPLETE:
+    case OperatorState::Complete:
       return QIcon(":/icons/check.png");
-    case OperatorState::QUEUED:
+    case OperatorState::Queued:
       return QIcon(":/icons/question.png");
-    case OperatorState::ERROR:
+    case OperatorState::Error:
       return QIcon(":/icons/error_notification.png");
-    case OperatorState::CANCELED:
+    case OperatorState::Canceled:
       return QIcon(":/icons/red_cross.png");
-    case OperatorState::RUNNING:
+    case OperatorState::Running:
       // Our subclass of QItemDelegate will take care of this animated icon
       break;
   }
@@ -311,15 +311,15 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
 QString tooltipForOperatorState(tomviz::OperatorState state)
 {
   switch (state) {
-    case OperatorState::RUNNING:
+    case OperatorState::Running:
       return QString("Running");
-    case OperatorState::COMPLETE:
+    case OperatorState::Complete:
       return QString("Complete");
-    case OperatorState::QUEUED:
+    case OperatorState::Queued:
       return QString("Queued");
-    case OperatorState::ERROR:
+    case OperatorState::Error:
       return QString("Error");
-    case OperatorState::CANCELED:
+    case OperatorState::Canceled:
       return QString("Canceled");
   }
 

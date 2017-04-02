@@ -180,7 +180,7 @@ void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
 
   m_complete.append(runnableOperator);
 
-  bool result = transformResult == TransformResult::COMPLETE;
+  bool result = transformResult == TransformResult::Complete;
   // Canceled
   if (m_state == State::CANCELED || runnableOperator->isCanceled()) {
     emit canceled();

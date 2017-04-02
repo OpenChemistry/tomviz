@@ -38,18 +38,18 @@ class OperatorResult;
 
 enum class OperatorState
 {
-  QUEUED,
-  RUNNING,
-  COMPLETE,
-  CANCELED,
-  ERROR
+  Queued,
+  Running,
+  Complete,
+  Canceled,
+  Error
 };
 
 enum class TransformResult
 {
-  COMPLETE = static_cast<int>(OperatorState::COMPLETE),
-  CANCELED = static_cast<int>(OperatorState::CANCELED),
-  ERROR = static_cast<int>(OperatorState::ERROR)
+  Complete = static_cast<int>(OperatorState::Complete),
+  Canceled = static_cast<int>(OperatorState::Canceled),
+  Error = static_cast<int>(OperatorState::Error)
 };
 
 class Operator : public QObject
@@ -218,15 +218,15 @@ public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
   /// to ensure the operator is marked as canceled.
-  virtual void cancelTransform() { m_state = OperatorState::CANCELED; };
-  bool isCanceled() { return m_state == OperatorState::CANCELED; };
+  virtual void cancelTransform() { m_state = OperatorState::Canceled; }
+  bool isCanceled() { return m_state == OperatorState::Canceled; }
   bool isFinished()
   {
-    return m_state == OperatorState::COMPLETE ||
-           m_state == OperatorState::ERROR;
+    return m_state == OperatorState::Complete ||
+           m_state == OperatorState::Error;
   };
   OperatorState state() { return m_state; };
-  void resetState() { m_state = OperatorState::QUEUED; };
+  void resetState() { m_state = OperatorState::Queued; }
 
 protected:
   /// Method to transform a dataset in-place.
@@ -247,7 +247,7 @@ private:
   int m_totalProgressSteps = 0;
   int m_progressStep = 0;
   QString m_progressMessage;
-  std::atomic<OperatorState> m_state {OperatorState::QUEUED};
+  std::atomic<OperatorState> m_state{ OperatorState::Queued };
 };
 }
 

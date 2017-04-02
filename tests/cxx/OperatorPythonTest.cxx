@@ -73,7 +73,7 @@ TEST_F(OperatorPythonTest, operator_transform)
     QByteArray array = file.readAll();
     QString script(array);
     pythonOperator->setScript(script);
-    ASSERT_EQ(pythonOperator->transform(dataObject), TransformResult::COMPLETE);
+    ASSERT_EQ(pythonOperator->transform(dataObject), TransformResult::Complete);
     file.close();
   } else {
     FAIL() << "Unable to load script.";
@@ -89,20 +89,20 @@ TEST_F(OperatorPythonTest, cancelable_operator_transform)
     QString script(array);
     file.close();
     pythonOperator->setScript(script);
-    ASSERT_EQ(pythonOperator->transform(dataObject), TransformResult::COMPLETE);
+    ASSERT_EQ(pythonOperator->transform(dataObject), TransformResult::Complete);
 
     // Mimic user canceling operator
     std::thread canceler([this]() {
       while (!pythonOperator->isCanceled()) {
         // Wait until we are running to cancel
-        if (pythonOperator->state() == OperatorState::RUNNING) {
+        if (pythonOperator->state() == OperatorState::Running) {
           pythonOperator->cancelTransform();
         }
       }
     });
     TransformResult result = pythonOperator->transform(dataObject);
     canceler.join();
-    ASSERT_EQ(result, TransformResult::CANCELED);
+    ASSERT_EQ(result, TransformResult::Canceled);
 
   } else {
     FAIL() << "Unable to load script.";
@@ -120,7 +120,7 @@ TEST_F(OperatorPythonTest, set_max_progress)
     pythonOperator->setScript(script);
 
     TransformResult result = pythonOperator->transform(dataObject);
-    ASSERT_EQ(result, TransformResult::COMPLETE);
+    ASSERT_EQ(result, TransformResult::Complete);
     ASSERT_EQ(pythonOperator->totalProgressSteps(), 10);
 
   } else {
@@ -140,7 +140,7 @@ TEST_F(OperatorPythonTest, update_progress)
 
     QSignalSpy spy(pythonOperator, SIGNAL(progressStepChanged(int)));
     TransformResult result = pythonOperator->transform(dataObject);
-    ASSERT_EQ(result, TransformResult::COMPLETE);
+    ASSERT_EQ(result, TransformResult::Complete);
 
     // One from applyTransform() and one from our python code
     ASSERT_EQ(spy.count(), 2);
@@ -167,7 +167,7 @@ TEST_F(OperatorPythonTest, update_progress_message)
     QSignalSpy spy(pythonOperator,
                    SIGNAL(progressMessageChanged(const QString&)));
     TransformResult result = pythonOperator->transform(dataObject);
-    ASSERT_EQ(result, TransformResult::COMPLETE);
+    ASSERT_EQ(result, TransformResult::Complete);
 
     ASSERT_EQ(spy.count(), 1);
 

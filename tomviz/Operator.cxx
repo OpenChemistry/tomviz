@@ -43,16 +43,16 @@ DataSource* Operator::dataSource()
 
 TransformResult Operator::transform(vtkDataObject* data)
 {
-  m_state = OperatorState::RUNNING;
+  m_state = OperatorState::Running;
   emit transformingStarted();
   setProgressStep(0);
   bool result = this->applyTransform(data);
   TransformResult transformResult =
-    result ? TransformResult::COMPLETE : TransformResult::ERROR;
+    result ? TransformResult::Complete : TransformResult::Error;
   // If the user requested the operator to be canceled then when it returns
   // we should treat is as canceled.
   if (isCanceled()) {
-    transformResult = TransformResult::CANCELED;
+    transformResult = TransformResult::Canceled;
   } else {
     m_state = static_cast<OperatorState>(transformResult);
   }
