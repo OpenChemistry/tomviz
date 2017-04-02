@@ -38,9 +38,6 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
-#include <QImage>
-#include <QImageReader>
-#include <QTemporaryFile>
 
 namespace tomviz {
 
@@ -53,8 +50,6 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
 
   connect(m_ui->connectButton, SIGNAL(clicked(bool)), SLOT(connectToServer()));
   connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
-
-  qDebug() << QImageReader::supportedImageFormats();
 
   vtkNew<vtkGenericOpenGLRenderWindow> window;
   m_ui->imageWidget->SetRenderWindow(window.Get());
@@ -117,7 +112,11 @@ void AcquisitionWidget::acquirePreview(const QJsonValue& result)
 
 void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
 {
-  qDebug() << "mimeType:" << mimeType;
+  if (mimeType != "image/tiff") {
+    qDebug() << "image/tiff is the only supported mime type right now.\n"
+             << mimeType << "\n";
+    return;
+  }
 
   QDir dir(QDir::homePath() + "/tomviz-data");
   if (!dir.exists()) {
@@ -134,14 +133,9 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
 
   QFile file(dir.path() + path);
   file.open(QIODevice::WriteOnly);
-  // file.open();
   file.write(result);
   qDebug() << "Data file:" << file.fileName();
   file.close();
-
-  QImage image;
-  QBuffer stream(&result);
-  stream.open(QIODevice::ReadOnly);
 
   vtkNew<vtkTIFFReader> reader;
   reader->SetFileName(file.fileName().toLatin1());
@@ -167,13 +161,6 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
 
   m_ui->previewButton->setEnabled(true);
   m_ui->acquireButton->setEnabled(true);
-
-  if (image.load(&stream, "TIFF")) {
-    // m_ui->image->setPixmap(QPixmap::fromImage(image));
-  } else {
-    qDebug() << "Failed to load image!";
-    // qDebug() << result;
-  }
 }
 
 void AcquisitionWidget::resetCamera()
