@@ -55,6 +55,7 @@ private slots:
   void previewReady(QString, QByteArray);
 
   void resetCamera();
+  void onError(const QString& errorMessage, const QJsonValue& errorData);
 
 private:
   QScopedPointer<Ui::AcquisitionWidget> m_ui;
