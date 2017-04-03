@@ -173,7 +173,7 @@
              <string>localhost</string>
             </property>
             <property name="maxLength">
-             <number>10</number>
+             <number>15</number>
             </property>
             <property name="clearButtonEnabled">
              <bool>true</bool>
