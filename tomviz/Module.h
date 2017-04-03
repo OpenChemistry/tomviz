@@ -27,6 +27,7 @@
 
 class QWidget;
 class pqAnimationCue;
+class vtkImageData;
 class vtkSMProxy;
 class vtkSMViewProxy;
 class vtkPiecewiseFunction;
@@ -87,6 +88,7 @@ public:
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
   vtkPiecewiseFunction* gradientOpacityMap() const;
+  vtkImageData* transferFunction2D() const;
 
   /// Returns true if the given proxy is part of the display or data processing
   /// in this module

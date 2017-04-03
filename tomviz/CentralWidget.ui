@@ -23,12 +23,15 @@
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <widget class="QTabWidget" name="tabWidget">
+         <property name="tabPosition">
+          <enum>QTabWidget::East</enum>
+         </property>
          <property name="currentIndex">
           <number>1</number>
          </property>
          <widget class="QWidget" name="tab">
           <attribute name="title">
-           <string>Tab 1</string>
+           <string>1D</string>
           </attribute>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
@@ -70,7 +73,7 @@
          </widget>
          <widget class="QWidget" name="tab_2">
           <attribute name="title">
-           <string>Tab 2</string>
+           <string>2D</string>
           </attribute>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
@@ -86,7 +89,7 @@
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_5">
              <item>
-              <widget class="QListView" name="listView"/>
+              <widget class="QListView" name="transfer2DList"/>
              </item>
              <item>
               <widget class="QWidget" name="wTransferFunction" native="true"/>

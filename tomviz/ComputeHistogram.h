@@ -236,9 +236,7 @@ void Calculate2DHistogram(T* values, const int* dim,
           const size_t centerIndex = dim[0] * jIndex + iIndex;
           const size_t deltaXFront = centerIndex + 1;
           const size_t deltaXBack = centerIndex - 1;
-	  // TODO add  '/ 2h' (central differences)
-	  // TODO Scale gradient magnitude to ValueRange/4 (this is what the shader
-          // expects.
+    	  // TODO add  '/ 2h' (central differences)
           const double Dx = static_cast<double>(sliceCurrent[deltaXFront] -
             sliceCurrent[deltaXBack]);
 
@@ -275,10 +273,6 @@ void Calculate2DHistogram(T* values, const int* dim,
     std::swap(sliceLast, sliceCurrent);
     std::swap(sliceCurrent, sliceNext);
   }
-
-// TODO
-//  std::cout << "->>> grad mag. max / min: " << gradMagMax << " / " << gradMagMin
-//    << std::endl;
 }
   
 

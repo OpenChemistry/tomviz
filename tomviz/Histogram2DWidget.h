@@ -22,7 +22,8 @@
 #include <vtkSmartPointer.h>
 
 /**
- * \brief 
+ * \brief Chart to edit a 2D transfer function (scalar value vs. gradient
+ * magnitude). 
  */
 
 class vtkChartTransfer2DEditor;
@@ -42,14 +43,25 @@ public:
   explicit Histogram2DWidget(QWidget* parent_ = nullptr);
   ~Histogram2DWidget() override;
 
-  void setInputData(vtkImageData* histogram);
+  /**
+   * Set the computed 2D histogram.
+   */
+  void setHistogram(vtkImageData* histogram);
 
-  void addTransferFunction(vtkSmartPointer<vtkTransferFunctionBoxItem> item);
+  /**
+   * Add transfer function box items.  These items define a bounded section
+   * in the lookup table. Each of them defines an RGBA transfer function.
+   */
+  void addFunctionItem(vtkSmartPointer<vtkTransferFunctionBoxItem> item);
 
-  vtkImageData* getTransfer2D();
+  /**
+   * Set the vtkImageData object into which the 2D transfer function will be
+   * rastered from the available vtkTransferFunctionBoxItems.
+   */
+  void setTransfer2D(vtkImageData* transfer2D);
 
-signals:
-  void mapUpdated();
+public slots:
+  void onTransfer2DChanged();
 
 protected:
   vtkNew<vtkChartTransfer2DEditor> m_chartHistogram2D;
@@ -57,8 +69,6 @@ protected:
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
 
 private:
-  //void renderViews();
-
   QVTKOpenGLWidget* m_qvtk;
 };
 }
