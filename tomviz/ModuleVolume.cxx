@@ -100,6 +100,12 @@ void ModuleVolume::updateColorMap()
   m_volumeProperty->SetGradientOpacity(
     m_gradientOpacityEnabled ? gradientOpacityMap() : nullptr);
 
+  /// TODO Setting the tf2D forces the property's mode to TF_2D. The module/
+  // source will need to keep a flag with the currently active mode (user
+  // selected).
+  m_volumeProperty->SetTransferFunction2D(
+    m_gradientOpacityEnabled ? transferFunction2D() : nullptr);
+
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
   vtkObject::SafeDownCast(colorMap()->GetClientSideObject())->Modified();

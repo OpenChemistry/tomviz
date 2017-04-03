@@ -30,6 +30,11 @@
 #include <vtkTransferFunctionBoxItem.h>
 #include <vtkVector.h>
 
+#include <pqApplicationCore.h>
+#include <pqServerManagerModel.h>
+#include <pqView.h>
+
+#include <QList>
 #include <QVBoxLayout>
 #include <QVTKOpenGLWidget.h>
 
@@ -49,8 +54,6 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
   m_histogramView->GetScene()->AddItem(m_chartHistogram2D.Get());
 
-  //m_chartHistogram2D->ForceAxesToBoundsOn();
-  //m_chartHistogram2D->SelectableOff();
   m_chartHistogram2D->SetRenderEmpty(true);
   m_chartHistogram2D->SetAutoAxes(false);
   m_chartHistogram2D->ZoomWithMouseWheelOff();
@@ -68,16 +71,14 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   //axis->SetVisible(false);
   axis->SetRange(0, 255);
 
-  // This chart is not supposed to be fixed. // TODO Chart not yet fixed
   m_chartHistogram2D->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
   m_chartHistogram2D->GetAxis(vtkAxis::RIGHT)->SetBehavior(vtkAxis::FIXED);
   m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM)->SetBehavior(vtkAxis::FIXED);
   m_chartHistogram2D->GetAxis(vtkAxis::TOP)->SetBehavior(vtkAxis::FIXED);
 
-//   Connect events from the histogram color/opacity editor.
-//  m_eventLink->Connect(m_chartHistogram2D.Get(),
-//                       vtkCommand::EndEvent, this,
-//                       SLOT(onOpacityFunctionChanged()));
+  m_eventLink->Connect(m_chartHistogram2D.Get(),
+                       vtkCommand::EndEvent, this,
+                       SLOT(onTransfer2DChanged()));
 
   // Offset margins to align with HistogramWidget
   auto hLayout = new QVBoxLayout(this);
@@ -87,7 +88,7 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
 
 Histogram2DWidget::~Histogram2DWidget() = default;
 
-void Histogram2DWidget::setInputData(vtkImageData* histogram)
+void Histogram2DWidget::setHistogram(vtkImageData* histogram)
 {
   vtkDataArray* arr = histogram->GetPointData()->GetScalars();
   double range[2];
@@ -109,7 +110,7 @@ void Histogram2DWidget::setInputData(vtkImageData* histogram)
   m_histogramView->Render();
 }
 
-void Histogram2DWidget::addTransferFunction(
+void Histogram2DWidget::addFunctionItem(
   vtkSmartPointer<vtkTransferFunctionBoxItem> item)
 {
   double xRange[2];
@@ -120,22 +121,27 @@ void Histogram2DWidget::addTransferFunction(
   auto leftAxis = m_chartHistogram2D->GetAxis(vtkAxis::LEFT);
   leftAxis->GetRange(yRange);
 
-  // TODO Check whether this is necessary
+  // Set bounds in the box item so that it can only move within the
+  // histogram's range.
   item->SetValidBounds(xRange[0], xRange[1], yRange[0], yRange[1]);
   m_chartHistogram2D->AddPlot(item);
 }
 
-vtkImageData* Histogram2DWidget::getTransfer2D()
+void Histogram2DWidget::setTransfer2D(vtkImageData* transfer2D)
 {
-  return m_chartHistogram2D->GetTransfer2D();
+  m_chartHistogram2D->SetTransfer2D(transfer2D);
+  m_histogramView->Render();
 }
 
-//void Histogram2DWidget::renderViews()
-//{
-//  pqView* view =
-//    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-//  if (view) {
-//    view->render();
-//  }
-//}
+void Histogram2DWidget::onTransfer2DChanged()
+{
+  auto core = pqApplicationCore::instance();
+  auto smModel = core->getServerManagerModel();
+  QList<pqView*> views = smModel->findItems<pqView*>();
+  foreach (pqView* view, views) {
+    view->render();
+  }
+
+  m_histogramView->GetRenderWindow()->Render();
+}
 }

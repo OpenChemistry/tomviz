@@ -225,6 +225,7 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
     m_worker(new QThread(this))
 {
   m_ui->setupUi(this);
+  m_ui->transfer2DList->hide();
 
   // Hide the layout tabs
   m_ui->tabbedMultiViewWidget->setTabVisibility(false);
@@ -344,10 +345,12 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
     m_ui->histogramWidget->setLUTProxy(m_activeModule->colorMap());
     if (m_activeModule->supportsGradientOpacity()) {
       m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap());
+      m_ui->histogram2DWidget->setTransfer2D(m_activeModule->transferFunction2D());
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
     m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap());
+    //m_ui->histogram2DWidget->setTransfer2D(m_activeModule->transferFunction2D());
   }
 
   // Check our cache, and use that if appopriate (or update it).
@@ -418,34 +421,33 @@ void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
     return;
   }
 
-  m_ui->histogram2DWidget->setInputData(output);
+  m_ui->histogram2DWidget->setHistogram(output);
 
-  /// TODO Sample TFBoxItem for debugging
+  // TODO transferFunctionList (QListView) will create and list various
+  // vtkTransferFunctionBoxItem instances, each containing a different
+  // RGBA map. A BoxItem can be selected from the list to modify its LUT.
   typedef vtkSmartPointer<vtkTransferFunctionBoxItem> itemPtr;
   itemPtr tfItem = itemPtr::New();
 
-  vtkColorTransferFunction* colorTransferFunction =
-    vtkColorTransferFunction::New();
-  colorTransferFunction->AddRGBSegment(50.0, 0.0, 0.0, 1.0,
-    85.0, 0.0, 1.0, 0.0);
-  colorTransferFunction->AddRGBSegment(85.0, 0.0, 1.0, 0.0,
-    170.0, 1.0, 1.0, 0.0);
-  colorTransferFunction->AddRGBSegment(170.0, 1.0, 1.0, 0.0,
-    200.0, 1.0, 0.0, 0.0);
-  colorTransferFunction->Build();
+  vtkColorTransferFunction* colorFunc = vtkColorTransferFunction::New();
+  colorFunc->AddRGBPoint(0.0,  1.0, 0.0, 0.0);
+  colorFunc->AddRGBPoint(0.25, 1.0, 0.4, 0.0);
+  colorFunc->AddRGBPoint(0.5,  1.0, 0.8, 0.0);
+  colorFunc->AddRGBPoint(0.75, 0.1, 0.8, 0.0);
+  colorFunc->AddRGBPoint(1.0,  0.0, 0.3, 1.0);
+  colorFunc->Build();
+  
+  vtkPiecewiseFunction* opacFunc = vtkPiecewiseFunction::New();
+  opacFunc->AddPoint(0.0, 0.0);
+  opacFunc->AddPoint(1.0, 0.3);
 
-  vtkPiecewiseFunction* scalarOpacity = vtkPiecewiseFunction::New();
-  scalarOpacity->AddPoint(0.0, 0.3);
-  scalarOpacity->AddPoint(127.5, 1.0);
-  scalarOpacity->AddPoint(200.0, 0.7);
+  tfItem->SetColorFunction(colorFunc);
+  tfItem->SetOpacityFunction(opacFunc);
 
-  tfItem->SetColorFunction(colorTransferFunction);
-  tfItem->SetOpacityFunction(scalarOpacity);
+  colorFunc->Delete();
+  opacFunc->Delete();
 
-  colorTransferFunction->Delete();
-  scalarOpacity->Delete();
-
-  m_ui->histogram2DWidget->addTransferFunction(tfItem);
+  m_ui->histogram2DWidget->addFunctionItem(tfItem);
 }
 
 vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)

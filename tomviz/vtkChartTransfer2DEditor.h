@@ -14,10 +14,10 @@
 =========================================================================*/
 
 /**
- * @class   vtkChartTransfer2DEditor
- * @brief  
- *
-*/
+ * @class vtkChartTransfer2DEditor
+ * @brief Generates and edits a 2D transfer function (vtkImageData) based
+ * on its current vtkTransferFunctionBoxItems.
+ */
 
 #ifndef vtkChartTransfer2DEditor_h
 #define vtkChartTransfer2DEditor_h
@@ -36,9 +36,11 @@ public:
   vtkTypeMacro(vtkChartTransfer2DEditor, vtkChartHistogram2D)
 
   /**
-   * Get generated 2D transfer function.
+   * Set the vtkImageData on which to raster the 2D transfer function.
    */
-  vtkImageData* GetTransfer2D();
+  void SetTransfer2D(vtkImageData* transfer2D);
+
+  vtkIdType AddPlot(vtkPlot* plot) override;
 
 protected:
   vtkChartTransfer2DEditor();
@@ -48,6 +50,9 @@ protected:
   Private* Storage;
 
   vtkPlot* GetPlot(vtkIdType index) override;
+
+  static void OnBoxItemModified(vtkObject* caller,
+    unsigned long eid, void *clientData, void* callData);
 
 private:
   void GenerateTransfer2D();

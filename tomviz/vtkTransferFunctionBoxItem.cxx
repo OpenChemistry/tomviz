@@ -245,7 +245,9 @@ void vtkTransferFunctionBoxItem::emitEvent(unsigned long event,
 bool vtkTransferFunctionBoxItem::Paint(vtkContext2D* painter)
 {
   // TODO Add lines connecting the points.
-  // TODO Add a quad texture mapping the color transfer function.
+  // TODO Add a quad mapping a texture showing the color/opacity transfer
+  // functions. The quad should render as a blended overlay on top fo the
+  // histogram.
   return Superclass::Paint(painter);
 }
 
@@ -373,6 +375,10 @@ bool vtkTransferFunctionBoxItem::KeyReleaseEvent(const vtkContextKeyEvent &key)
 void vtkTransferFunctionBoxItem::PrintSelf(ostream &os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
+
+  os << indent << "Box [x, y, width, height]: [" << this->Box.GetX() << ", "
+    << this->Box.GetY() << ", " << this->Box.GetWidth() << ", "
+    << this->Box.GetHeight() << "]\n";
 }
 
 const vtkRectd& vtkTransferFunctionBoxItem::GetBox()
@@ -387,6 +393,8 @@ const vtkRectd& vtkTransferFunctionBoxItem::GetBox()
   const double height = upperBound[1] - lowerBound[1];
 
   this->Box.Set(lowerBound[0], lowerBound[1], width, height);
+
+  return this->Box;
 }
 
 vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction, vtkColorTransferFunction)
