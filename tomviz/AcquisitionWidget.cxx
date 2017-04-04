@@ -21,6 +21,8 @@
 #include "AcquisitionClient.h"
 #include "ActiveObjects.h"
 
+#include <pqApplicationCore.h>
+#include <pqSettings.h>
 #include <vtkSMProxy.h>
 
 #include <vtkCamera.h>
@@ -35,6 +37,7 @@
 #include <vtkTIFFReader.h>
 
 #include <QBuffer>
+#include <QCloseEvent>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
@@ -60,9 +63,43 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
 
   m_renderer->SetBackground(1.0, 1.0, 1.0);
   m_renderer->SetViewport(0.0, 0.0, 1.0, 1.0);
+
+  readSettings();
 }
 
 AcquisitionWidget::~AcquisitionWidget() = default;
+
+void AcquisitionWidget::closeEvent(QCloseEvent* event)
+{
+  writeSettings();
+  event->accept();
+}
+
+void AcquisitionWidget::readSettings()
+{
+  auto settings = pqApplicationCore::instance()->settings();
+  if (!settings->contains("acquisition/geometry")) {
+    return;
+  }
+  settings->beginGroup("acquisition");
+  setGeometry(settings->value("geometry").toRect());
+  m_ui->splitter->restoreState(settings->value("splitterSizes").toByteArray());
+  m_ui->hostnameEdit->setText(
+    settings->value("hostname", "localhost").toString());
+  m_ui->portEdit->setText(settings->value("port", "8080").toString());
+  settings->endGroup();
+}
+
+void AcquisitionWidget::writeSettings()
+{
+  auto settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup("acquisition");
+  settings->setValue("geometry", geometry());
+  settings->setValue("splitterSizes", m_ui->splitter->saveState());
+  settings->setValue("hostname", m_ui->hostnameEdit->text());
+  settings->setValue("port", m_ui->portEdit->text());
+  settings->endGroup();
+}
 
 void AcquisitionWidget::connectToServer()
 {
