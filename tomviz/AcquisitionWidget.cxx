@@ -161,6 +161,9 @@ void AcquisitionWidget::acquireParameterResponse(const QJsonValue& result)
       m_calX = resultObject["calY"].toDouble();
     }
     m_ui->statusEdit->setText("Pixel dimensionality received");
+    QString pixelSize = QString::number(m_calX * 1e9) + " x " +
+                        QString::number(m_calY * 1e9) + " nm";
+    m_ui->pixelSize->setText(pixelSize);
   }
 }
 
