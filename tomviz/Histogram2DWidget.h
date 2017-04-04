@@ -23,7 +23,7 @@
 
 /**
  * \brief Chart to edit a 2D transfer function (scalar value vs. gradient
- * magnitude). 
+ * magnitude).
  */
 
 class vtkChartTransfer2DEditor;

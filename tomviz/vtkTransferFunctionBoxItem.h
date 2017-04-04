@@ -17,7 +17,7 @@
 #define tomvizvtkTransferFunctionBoxItem_h
 
 #include <vtkControlPointsItem.h>
-#include <vtkNew.h> // For vtkNew<> members
+#include <vtkNew.h>  // For vtkNew<> members
 #include <vtkRect.h> // For vtkRect
 
 /**
@@ -26,7 +26,7 @@
  * Holds a color/opacity transfer functions. The box or any of its corners
  * can be draged to either change its position or size.  The parent chart
  * uses its defined rectangle and transfer functions to raster a 2D transfer
- * function. This item is intended to be used as a selection item in 
+ * function. This item is intended to be used as a selection item in
  * vtkChartTransfer2DEditor.
  */
 
@@ -41,23 +41,25 @@ public:
   vtkTransferFunctionBoxItem(const vtkTransferFunctionBoxItem&) = delete;
   void operator=(const vtkTransferFunctionBoxItem&) = delete;
 
-  vtkTypeMacro(vtkTransferFunctionBoxItem, vtkControlPointsItem)
-  void PrintSelf(ostream &os, vtkIndent indent) VTK_OVERRIDE;
+  vtkTypeMacro(vtkTransferFunctionBoxItem, vtkControlPointsItem) void PrintSelf(
+    ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
    * Transfer functions represented by this box item.
-   */ 
-  void SetColorFunction(vtkColorTransferFunction* function);
-  vtkGetObjectMacro(ColorFunction, vtkColorTransferFunction)
-  void SetOpacityFunction(vtkPiecewiseFunction* function);
-  vtkGetObjectMacro(OpacityFunction, vtkPiecewiseFunction)
-  //@}
-
-  /**
-   * Returns the curren box as [x0, y0, width, height].
    */
-  const vtkRectd& GetBox();
+  void SetColorFunction(vtkColorTransferFunction* function);
+  vtkGetObjectMacro(
+    ColorFunction,
+    vtkColorTransferFunction) void SetOpacityFunction(vtkPiecewiseFunction*
+                                                        function);
+  vtkGetObjectMacro(OpacityFunction, vtkPiecewiseFunction)
+    //@}
+
+    /**
+     * Returns the curren box as [x0, y0, width, height].
+     */
+    const vtkRectd& GetBox();
 
 protected:
   vtkTransferFunctionBoxItem();
@@ -96,7 +98,7 @@ protected:
   void emitEvent(unsigned long event, void* params = 0) VTK_OVERRIDE;
 
   void MovePoint(const vtkIdType pointId, const double deltaX,
-    const double deltaY);
+                 const double deltaY);
 
   void DragBox(const double deltaX, const double deltaY);
 
@@ -118,19 +120,22 @@ protected:
    * clicking on the control points and moving them. No key events are currently
    * reimplemented.
    */
-  bool MouseButtonPressEvent(const vtkContextMouseEvent &mouse) VTK_OVERRIDE;
-  bool MouseButtonReleaseEvent(const vtkContextMouseEvent &mouse) VTK_OVERRIDE;
-  bool MouseDoubleClickEvent(const vtkContextMouseEvent &mouse) VTK_OVERRIDE;
-  bool MouseMoveEvent(const vtkContextMouseEvent &mouse) VTK_OVERRIDE;
-  bool KeyPressEvent(const vtkContextKeyEvent &key) VTK_OVERRIDE;
-  bool KeyReleaseEvent(const vtkContextKeyEvent &key) VTK_OVERRIDE;
+  bool MouseButtonPressEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
+  bool MouseButtonReleaseEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
+  bool MouseDoubleClickEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
+  bool MouseMoveEvent(const vtkContextMouseEvent& mouse) VTK_OVERRIDE;
+  bool KeyPressEvent(const vtkContextKeyEvent& key) VTK_OVERRIDE;
+  bool KeyReleaseEvent(const vtkContextKeyEvent& key) VTK_OVERRIDE;
   //@}
 
 private:
   /**
-   * Custom method to clamp point positions to valid bounds (chart bounds).  A custom
-   * method was required given that ControlPoints::ClampValidPos() appears to have
-   * bug where it does not not clamp to bounds[2,3].  The side effects of overriding
+   * Custom method to clamp point positions to valid bounds (chart bounds).  A
+   * custom
+   * method was required given that ControlPoints::ClampValidPos() appears to
+   * have
+   * bug where it does not not clamp to bounds[2,3].  The side effects of
+   * overriding
    * that behavior are unclear so for now this custom method is used.
    */
   void ClampToValidPosition(double pos[2]);
@@ -140,7 +145,7 @@ private:
    * displacing pontA by deltaA.
    */
   bool ArePointsCrossing(const vtkIdType pointA, const double* deltaA,
-    const vtkIdType pointB);
+                         const vtkIdType pointB);
 
   /**
    * Points move independently. In order to keep the box rigid when dragging it

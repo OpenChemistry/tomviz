@@ -92,9 +92,9 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_activeDataSource = data;
   d->m_gradientOpacityMap->RemoveAllPoints();
 
-  //TODO Initialize default values
-  this->Internals->Transfer2D->SetDimensions(64, 64, 1);
-  this->Internals->Transfer2D->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
+  // TODO Initialize default values
+  this->d->Transfer2D->SetDimensions(64, 64, 1);
+  this->d->Transfer2D->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
 
   if (m_view && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
@@ -191,7 +191,7 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
 vtkImageData* Module::transferFunction2D() const
 {
   /// TODO Handle detached mode
-  return this->Internals->Transfer2D.GetPointer();
+  return this->d->Transfer2D.GetPointer();
 }
 
 bool Module::serialize(pugi::xml_node& ns) const

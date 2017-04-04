@@ -16,18 +16,18 @@
 #include "CentralWidget.h"
 #include "ui_CentralWidget.h"
 
-#include <vtkUnsignedShortArray.h>
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkIntArray.h>
 #include <vtkObjectFactory.h>
+#include <vtkPNGWriter.h>
+#include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
 #include <vtkTable.h>
 #include <vtkTransferFunctionBoxItem.h>
-#include <vtkPiecewiseFunction.h>
 #include <vtkTrivialProducer.h>
+#include <vtkUnsignedShortArray.h>
 #include <vtkVector.h>
-#include <vtkPNGWriter.h>
 
 #include <vtkPVDiscretizableColorTransferFunction.h>
 
@@ -153,22 +153,22 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
 
   switch (arrayPtr->GetDataType()) {
     vtkTemplateMacro(tomviz::Calculate2DHistogram(
-      reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
-      dim, numComp, minmax, output));
+      reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)), dim, numComp,
+      minmax, output));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
 
-///TODO handle NaN and Inf
-//#ifndef NDEBUG
-//  vtkIdType total = invalid;
-//  for (int i = 0; i < numberOfBins; ++i)
-//    total += pops[i];
-//  assert(total == arrayPtr->GetNumberOfTuples());
-//#endif
-//  if (invalid) {
-//    cout << "Warning: NaN or infinite value in dataset" << endl;
-//  }
+  /// TODO handle NaN and Inf
+  //#ifndef NDEBUG
+  //  vtkIdType total = invalid;
+  //  for (int i = 0; i < numberOfBins; ++i)
+  //    total += pops[i];
+  //  assert(total == arrayPtr->GetNumberOfTuples());
+  //#endif
+  //  if (invalid) {
+  //    cout << "Warning: NaN or infinite value in dataset" << endl;
+  //  }
 }
 
 // This is a QObject that will be owned by the background thread
@@ -194,7 +194,7 @@ signals:
                      vtkSmartPointer<vtkTable> output);
 
   void histogram2DDone(vtkSmartPointer<vtkImageData> image,
-                     vtkSmartPointer<vtkImageData> output);
+                       vtkSmartPointer<vtkImageData> output);
 };
 
 void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
@@ -216,7 +216,6 @@ void HistogramMaker::makeHistogram2D(vtkSmartPointer<vtkImageData> input,
   }
   emit histogram2DDone(input, output);
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
@@ -257,10 +256,11 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
                                                vtkSmartPointer<vtkTable>)),
           SLOT(histogramReady(vtkSmartPointer<vtkImageData>,
                               vtkSmartPointer<vtkTable>)));
-  connect(m_histogramGen, SIGNAL(histogram2DDone(vtkSmartPointer<vtkImageData>,
-                                               vtkSmartPointer<vtkImageData>)),
+  connect(m_histogramGen,
+          SIGNAL(histogram2DDone(vtkSmartPointer<vtkImageData>,
+                                 vtkSmartPointer<vtkImageData>)),
           SLOT(histogram2DReady(vtkSmartPointer<vtkImageData>,
-                              vtkSmartPointer<vtkImageData>)));
+                                vtkSmartPointer<vtkImageData>)));
   m_timer->setInterval(200);
   m_timer->setSingleShot(true);
   connect(m_timer.data(), SIGNAL(timeout()), SLOT(refreshHistogram()));
@@ -345,12 +345,13 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
     m_ui->histogramWidget->setLUTProxy(m_activeModule->colorMap());
     if (m_activeModule->supportsGradientOpacity()) {
       m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap());
-      m_ui->histogram2DWidget->setTransfer2D(m_activeModule->transferFunction2D());
+      m_ui->histogram2DWidget->setTransfer2D(
+        m_activeModule->transferFunction2D());
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
     m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap());
-    //m_ui->histogram2DWidget->setTransfer2D(m_activeModule->transferFunction2D());
+    // m_ui->histogram2DWidget->setTransfer2D(m_activeModule->transferFunction2D());
   }
 
   // Check our cache, and use that if appopriate (or update it).
@@ -405,7 +406,7 @@ void CentralWidget::refreshHistogram()
 void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
                                    vtkSmartPointer<vtkTable> output)
 {
-  vtkImageData* inputIm = getInputImage(input);  
+  vtkImageData* inputIm = getInputImage(input);
   if (!inputIm || !output) {
     return;
   }
@@ -414,9 +415,9 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
 }
 
 void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
-                                   vtkSmartPointer<vtkImageData> output)
+                                     vtkSmartPointer<vtkImageData> output)
 {
-  vtkImageData* inputIm = getInputImage(input);  
+  vtkImageData* inputIm = getInputImage(input);
   if (!inputIm || !output) {
     return;
   }
@@ -430,13 +431,13 @@ void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
   itemPtr tfItem = itemPtr::New();
 
   vtkColorTransferFunction* colorFunc = vtkColorTransferFunction::New();
-  colorFunc->AddRGBPoint(0.0,  1.0, 0.0, 0.0);
+  colorFunc->AddRGBPoint(0.0, 1.0, 0.0, 0.0);
   colorFunc->AddRGBPoint(0.25, 1.0, 0.4, 0.0);
-  colorFunc->AddRGBPoint(0.5,  1.0, 0.8, 0.0);
+  colorFunc->AddRGBPoint(0.5, 1.0, 0.8, 0.0);
   colorFunc->AddRGBPoint(0.75, 0.1, 0.8, 0.0);
-  colorFunc->AddRGBPoint(1.0,  0.0, 0.3, 1.0);
+  colorFunc->AddRGBPoint(1.0, 0.0, 0.3, 1.0);
   colorFunc->Build();
-  
+
   vtkPiecewiseFunction* opacFunc = vtkPiecewiseFunction::New();
   opacFunc->AddPoint(0.0, 0.0);
   opacFunc->AddPoint(1.0, 0.3);
