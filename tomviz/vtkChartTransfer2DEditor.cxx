@@ -12,27 +12,24 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkCallbackCommand.h"
 #include "vtkChartTransfer2DEditor.h"
+#include "vtkCallbackCommand.h"
 #include "vtkColorTransferFunction.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
+#include "vtkPNGWriter.h"
 #include "vtkPiecewiseFunction.h"
 #include "vtkPlotHistogram2D.h"
-#include "vtkPNGWriter.h"
 #include "vtkPointData.h"
 #include "vtkRect.h"
 #include "vtkTransferFunctionBoxItem.h"
 #include "vtkUnsignedCharArray.h"
 
-
 class vtkChartTransfer2DEditor::Private
 {
 public:
-  Private()
-  {
-  };
+  Private(){};
 
   vtkImageData* Transfer2D = nullptr;
   vtkNew<vtkCallbackCommand> Callback;
@@ -42,8 +39,7 @@ public:
 vtkStandardNewMacro(vtkChartTransfer2DEditor);
 
 //-----------------------------------------------------------------------------
-vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
-: Storage(new Private)
+vtkChartTransfer2DEditor::vtkChartTransfer2DEditor() : Storage(new Private)
 {
   this->Storage->Callback->SetClientData(this);
   this->Storage->Callback->SetCallback(
@@ -59,16 +55,13 @@ vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor()
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
 {
-  if (transfer2D != this->Storage->Transfer2D)
-  {
-    if (this->Storage->Transfer2D != nullptr)
-    {
+  if (transfer2D != this->Storage->Transfer2D) {
+    if (this->Storage->Transfer2D != nullptr) {
       this->Storage->Transfer2D->UnRegister(this);
     }
 
     this->Storage->Transfer2D = transfer2D;
-    if (this->Storage->Transfer2D != nullptr)
-    {
+    if (this->Storage->Transfer2D != nullptr) {
       this->Storage->Transfer2D->Register(this);
     }
 
@@ -80,8 +73,7 @@ void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::GenerateTransfer2D()
 {
-  if (!this->Storage->Transfer2D)
-  {
+  if (!this->Storage->Transfer2D) {
     vtkErrorMacro(<< "Failed to generate Transfer2D!");
     return;
   }
@@ -100,12 +92,10 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
 
   // Raster each box into the 2D table
   const vtkIdType numPlots = this->GetNumberOfPlots();
-  for (vtkIdType i = 0; i < numPlots; i++)
-  {
+  for (vtkIdType i = 0; i < numPlots; i++) {
     typedef vtkTransferFunctionBoxItem BoxType;
     BoxType* boxItem = BoxType::SafeDownCast(this->GetPlot(i));
-    if (!boxItem)
-    {
+    if (!boxItem) {
       continue;
     }
 
@@ -122,18 +112,18 @@ vtkPlot* vtkChartTransfer2DEditor::GetPlot(vtkIdType index)
 }
 
 //-----------------------------------------------------------------------------
-void vtkChartTransfer2DEditor::RasterBoxItem(vtkTransferFunctionBoxItem* boxItem)
+void vtkChartTransfer2DEditor::RasterBoxItem(
+  vtkTransferFunctionBoxItem* boxItem)
 {
   const vtkRectd& box = boxItem->GetBox();
   vtkPiecewiseFunction* opacFunc = boxItem->GetOpacityFunction();
   vtkColorTransferFunction* colorFunc = boxItem->GetColorFunction();
-  if (!opacFunc || !colorFunc)
-  {
+  if (!opacFunc || !colorFunc) {
     vtkErrorMacro(<< "BoxItem contains invalid transfer functions!");
     return;
   }
 
-  //GetTransferFunction(to the actual ranges and number of bins)
+  // GetTransferFunction(to the actual ranges and number of bins)
   const vtkIdType width = static_cast<vtkIdType>(box.GetWidth());
   const vtkIdType height = static_cast<vtkIdType>(box.GetHeight());
 
@@ -147,7 +137,7 @@ void vtkChartTransfer2DEditor::RasterBoxItem(vtkTransferFunctionBoxItem* boxItem
   double* dataAlpha = new double[width];
   opacFunc->GetTable(range[0], range[1], width, dataAlpha);
 
-  //Copy the values into this->Transfer2D
+  // Copy the values into this->Transfer2D
   vtkUnsignedCharArray* transfer = vtkUnsignedCharArray::SafeDownCast(
     this->Storage->Transfer2D->GetPointData()->GetScalars());
 
@@ -158,8 +148,7 @@ void vtkChartTransfer2DEditor::RasterBoxItem(vtkTransferFunctionBoxItem* boxItem
   this->Storage->Transfer2D->GetDimensions(bins);
 
   for (vtkIdType j = 0; j < height; j++)
-    for (vtkIdType i = 0; i < width; i++)
-    {
+    for (vtkIdType i = 0; i < width; i++) {
       double color[4];
 
       color[0] = dataRGB[i * 3] * 255.0;
@@ -191,14 +180,16 @@ vtkIdType vtkChartTransfer2DEditor::AddPlot(vtkPlot* plot)
 }
 
 //-----------------------------------------------------------------------------
-void vtkChartTransfer2DEditor::PrintSelf(ostream &os, vtkIndent indent)
+void vtkChartTransfer2DEditor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::OnBoxItemModified(vtkObject* caller,
-  unsigned long eid, void *clientData, void* callData)
+                                                 unsigned long eid,
+                                                 void* clientData,
+                                                 void* callData)
 {
   vtkChartTransfer2DEditor* self =
     reinterpret_cast<vtkChartTransfer2DEditor*>(clientData);

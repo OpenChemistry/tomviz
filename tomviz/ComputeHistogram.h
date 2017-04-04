@@ -9,9 +9,8 @@
 #else
 #include "vtkMath.h"
 #endif
-#include "vtkImageData.h"
 #include "vtkDoubleArray.h"
-
+#include "vtkImageData.h"
 
 namespace tomviz {
 #ifdef DAX_DEVICE_ADAPTER
@@ -195,8 +194,8 @@ void CalculateHistogram(T* values, const vtkIdType n, const float min,
 }
 
 template <typename T>
-void Calculate2DHistogram(T* values, const int* dim,
-  const int numComp, const double* range, vtkImageData* histogram)
+void Calculate2DHistogram(T* values, const int* dim, const int numComp,
+                          const double* range, vtkImageData* histogram)
 {
   // Assumes all inputs are valid
   // Expects histogram image to be 1C double
@@ -207,8 +206,7 @@ void Calculate2DHistogram(T* values, const int* dim,
   histogram->GetDimensions(bins);
   const size_t sizeBins = static_cast<size_t>(bins[0] * bins[1]);
 
-  memset(histogramArr->GetVoidPointer(0), 0x0, sizeBins *
-    sizeof(double));
+  memset(histogramArr->GetVoidPointer(0), 0x0, sizeBins * sizeof(double));
 
   const size_t sizeSlice = static_cast<size_t>(dim[0] * dim[1] * numComp);
   std::vector<T> sliceLast(sizeSlice, 0);
@@ -218,35 +216,31 @@ void Calculate2DHistogram(T* values, const int* dim,
   double gradMagMax = std::numeric_limits<double>::min();
   double gradMagMin = std::numeric_limits<double>::max();
 
-  for (int kIndex = 0; kIndex < dim[2]; kIndex++)
-  {
+  for (int kIndex = 0; kIndex < dim[2]; kIndex++) {
     // Index assumes alignment order in  x -> y -> z.
     // ( z0 * Dx * Dy + y0 * Dx + x0 ) * numComp
-    const size_t strideSlice = static_cast<size_t>(dim[0] * dim[1] * kIndex *
-      numComp);
+    const size_t strideSlice =
+      static_cast<size_t>(dim[0] * dim[1] * kIndex * numComp);
     memcpy(&(sliceNext[0]), values + strideSlice, sizeSlice * sizeof(T));
 
     // Fill up temporary slices during the first two iterations
-    if (kIndex >= 2)
-    {
-      for (int jIndex = 1; jIndex < dim[1] - 1; jIndex++)
-      {
-        for (int iIndex = 1; iIndex < dim[0] - 1; iIndex++)
-        {
+    if (kIndex >= 2) {
+      for (int jIndex = 1; jIndex < dim[1] - 1; jIndex++) {
+        for (int iIndex = 1; iIndex < dim[0] - 1; iIndex++) {
           const size_t centerIndex = dim[0] * jIndex + iIndex;
           const size_t deltaXFront = centerIndex + 1;
           const size_t deltaXBack = centerIndex - 1;
-    	  // TODO add  '/ 2h' (central differences)
+          // TODO add  '/ 2h' (central differences)
           const double Dx = static_cast<double>(sliceCurrent[deltaXFront] -
-            sliceCurrent[deltaXBack]);
+                                                sliceCurrent[deltaXBack]);
 
           const size_t deltaYFront = dim[0] * (jIndex + 1) + iIndex;
           const size_t deltaYBack = dim[0] * (jIndex - 1) + iIndex;
           const double Dy = static_cast<double>(sliceCurrent[deltaYFront] -
-            sliceCurrent[deltaYBack]);
+                                                sliceCurrent[deltaYBack]);
 
           const double Dz = static_cast<double>(sliceNext[centerIndex] -
-            sliceLast[centerIndex]);
+                                                sliceLast[centerIndex]);
 
           double gradMag = sqrt(Dx * Dx + Dy * Dy + Dz * Dz);
           gradMagMax = vtkMath::Max(gradMag, gradMagMax);
@@ -255,12 +249,12 @@ void Calculate2DHistogram(T* values, const int* dim,
           gradMag = floor(gradMag + 0.5);
           gradMag = vtkMath::ClampValue(gradMag, 0.0, range[1]);
 
-          const vtkIdType gradIndex = static_cast<vtkIdType>(gradMag * (bins[1] - 1) /
-            range[1]);
+          const vtkIdType gradIndex =
+            static_cast<vtkIdType>(gradMag * (bins[1] - 1) / range[1]);
 
           const T value = values[strideSlice + centerIndex * numComp];
-          const vtkIdType valueIndex = static_cast<vtkIdType>((value - range[0]) *
-            (bins[1] - 1) / (range[1] - range[0]));
+          const vtkIdType valueIndex = static_cast<vtkIdType>(
+            (value - range[0]) * (bins[1] - 1) / (range[1] - range[0]));
 
           // Update histogram array
           const vtkIdType tupleIndex = gradIndex * bins[0] + valueIndex;
@@ -274,7 +268,6 @@ void Calculate2DHistogram(T* values, const int* dim,
     std::swap(sliceCurrent, sliceNext);
   }
 }
-  
 
 #endif
 }

@@ -24,7 +24,6 @@
 
 #include <vtkChartHistogram2D.h>
 
-
 class vtkImageData;
 class vtkTransferFunctionBoxItem;
 
@@ -32,13 +31,13 @@ class vtkChartTransfer2DEditor : public vtkChartHistogram2D
 {
 public:
   static vtkChartTransfer2DEditor* New();
-  void PrintSelf(ostream &os, vtkIndent indent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkChartTransfer2DEditor, vtkChartHistogram2D)
 
-  /**
-   * Set the vtkImageData on which to raster the 2D transfer function.
-   */
-  void SetTransfer2D(vtkImageData* transfer2D);
+    /**
+     * Set the vtkImageData on which to raster the 2D transfer function.
+     */
+    void SetTransfer2D(vtkImageData* transfer2D);
 
   vtkIdType AddPlot(vtkPlot* plot) override;
 
@@ -51,16 +50,16 @@ protected:
 
   vtkPlot* GetPlot(vtkIdType index) override;
 
-  static void OnBoxItemModified(vtkObject* caller,
-    unsigned long eid, void *clientData, void* callData);
+  static void OnBoxItemModified(vtkObject* caller, unsigned long eid,
+                                void* clientData, void* callData);
 
 private:
   void GenerateTransfer2D();
 
   void RasterBoxItem(vtkTransferFunctionBoxItem* boxItem);
 
-  vtkChartTransfer2DEditor(const vtkChartTransfer2DEditor &) = delete;
-  void operator=(const vtkChartTransfer2DEditor &) = delete;
+  vtkChartTransfer2DEditor(const vtkChartTransfer2DEditor&) = delete;
+  void operator=(const vtkChartTransfer2DEditor&) = delete;
 };
 
-#endif //vtkChartTransfer2DEditor_h
+#endif // vtkChartTransfer2DEditor_h
