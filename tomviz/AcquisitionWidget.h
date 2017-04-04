@@ -46,6 +46,12 @@ public:
   AcquisitionWidget(QWidget* parent = nullptr);
   ~AcquisitionWidget() override;
 
+protected:
+  void closeEvent(QCloseEvent* event) override;
+
+  void readSettings();
+  void writeSettings();
+
 private slots:
   void connectToServer();
   void onConnect();
