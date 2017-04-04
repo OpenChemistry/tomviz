@@ -138,6 +138,7 @@ class FeiAdapter(AbstractSource):
         image_set = self._acq.AcquireImages()
         image = image_set(0)
         data = np.array(image.AsSafeArray)
+        data = np.fliplr(np.rot90(data, 3))
         fp = StringIO.StringIO()
         scipy.misc.imsave(fp, data, 'tiff')
 
