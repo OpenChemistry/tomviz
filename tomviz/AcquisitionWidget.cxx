@@ -117,13 +117,51 @@ void AcquisitionWidget::onConnect()
   m_ui->statusEdit->setText("Connected to " + m_client->url() + "!!!");
   m_ui->connectButton->setEnabled(false);
   m_ui->disconnectButton->setEnabled(true);
-  QJsonObject params;
-  params["angle"] = 0.0;
-  auto request = m_client->tilt_params(params);
-  connect(request, SIGNAL(finished(QJsonValue)),
-          SLOT(acquirePreview(QJsonValue)));
+  setAcquireParameters();
+}
+
+void AcquisitionWidget::disconnectFromServer()
+{
+  m_ui->statusEdit->setText("Disconnecting");
+  auto request = m_client->disconnect(QJsonObject());
+  connect(request, SIGNAL(finished(QJsonValue)), SLOT(onDisconnect()));
   connect(request, &AcquisitionClientRequest::error, this,
           &AcquisitionWidget::onError);
+}
+
+void AcquisitionWidget::onDisconnect()
+{
+  m_ui->statusEdit->setText("Disconnected");
+  m_ui->connectButton->setEnabled(true);
+  m_ui->disconnectButton->setEnabled(false);
+}
+
+void AcquisitionWidget::setAcquireParameters()
+{
+  QJsonObject params;
+  auto request = m_client->acquisition_params(params);
+  connect(request, SIGNAL(finished(QJsonValue)),
+          SLOT(acquireParameterResponse(QJsonValue)));
+  connect(request, &AcquisitionClientRequest::error, this,
+          &AcquisitionWidget::onError);
+}
+
+void AcquisitionWidget::acquireParameterResponse(const QJsonValue& result)
+{
+  if (result.isObject()) {
+    auto resultObject = result.toObject();
+    if (resultObject.contains("units") && resultObject["units"].isString()) {
+      m_units = resultObject["units"].toString();
+    }
+    // Careful, at least in the impllementation examinend, X/Y are in metres.
+    if (resultObject.contains("calX") && resultObject["calX"].isDouble()) {
+      m_calX = resultObject["calX"].toDouble();
+    }
+    if (resultObject.contains("calY") && resultObject["calY"].isDouble()) {
+      m_calX = resultObject["calY"].toDouble();
+    }
+    m_ui->statusEdit->setText("Pixel dimensionality received");
+  }
 }
 
 void AcquisitionWidget::setTiltAngle()
