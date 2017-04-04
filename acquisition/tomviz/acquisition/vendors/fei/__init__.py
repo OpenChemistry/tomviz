@@ -119,12 +119,28 @@ class FeiAdapter(AbstractSource):
         return {
             'binning': self._acq.Detectors.AcqParams.Binning,
             'image_size': self._acq.Detectors.AcqParams.ImageSize,
-            'dwell_time': self._acq.Detectors.AcqParams.DwellTime
+            'dwell_time': self._acq.Detectors.AcqParams.DwellTime,
+            'size': self._pixel_size()
         }
 
     def _stop_acquire(self):
         if self._tia.AcquisitionManager().isAcquiring:
             self._tia.AcquisitionManager().Stop()
+
+    def _pixel_size(self):
+        active_window = self._tia.ActiveDisplayWindow()
+        # Image display object
+        ido = active_window.FindDisplay(active_window.DisplayNames(0))
+        unit = ido.SpatialUnit
+        unit_name = unit.unitstring
+        cal_x = ido.image.calibration.deltaX
+        cal_y = ido.image.calibration.deltaY
+
+        return {
+            'units': unit_name,
+            'calX': cal_x,
+            'calY': cal_y
+        }
 
     def preview_scan(self):
         return self.stem_acquire()
