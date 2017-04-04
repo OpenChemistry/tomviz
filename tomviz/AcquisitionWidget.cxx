@@ -71,6 +71,8 @@ void AcquisitionWidget::connectToServer()
                    m_ui->portEdit->text() + "/acquisition");
   auto request = m_client->connect(QJsonObject());
   connect(request, SIGNAL(finished(QJsonValue)), SLOT(onConnect()));
+  connect(request, &AcquisitionClientRequest::error, this,
+          &AcquisitionWidget::onError);
 }
 
 void AcquisitionWidget::onConnect()
@@ -83,6 +85,8 @@ void AcquisitionWidget::onConnect()
   auto request = m_client->tilt_params(params);
   connect(request, SIGNAL(finished(QJsonValue)),
           SLOT(acquirePreview(QJsonValue)));
+  connect(request, &AcquisitionClientRequest::error, this,
+          &AcquisitionWidget::onError);
 }
 
 void AcquisitionWidget::setTiltAngle()
@@ -92,6 +96,8 @@ void AcquisitionWidget::setTiltAngle()
   auto request = m_client->tilt_params(params);
   connect(request, SIGNAL(finished(QJsonValue)),
           SLOT(acquirePreview(QJsonValue)));
+  connect(request, &AcquisitionClientRequest::error, this,
+          &AcquisitionWidget::onError);
 
   m_ui->previewButton->setEnabled(false);
   m_ui->acquireButton->setEnabled(false);
@@ -108,6 +114,8 @@ void AcquisitionWidget::acquirePreview(const QJsonValue& result)
   auto request = m_client->preview_scan();
   connect(request, SIGNAL(finished(QString, QByteArray)),
           SLOT(previewReady(QString, QByteArray)));
+  connect(request, &AcquisitionClientRequest::error, this,
+          &AcquisitionWidget::onError);
 }
 
 void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
@@ -187,5 +195,12 @@ void AcquisitionWidget::resetCamera()
   camera->GetClippingRange(clippingRange);
   clippingRange[1] = clippingRange[0] + (bounds[5] - bounds[4] + 50);
   camera->SetClippingRange(clippingRange);
+}
+
+void AcquisitionWidget::onError(const QString& errorMessage,
+                                const QJsonValue& errorData)
+{
+  qDebug() << errorMessage;
+  qDebug() << errorData;
 }
 }
