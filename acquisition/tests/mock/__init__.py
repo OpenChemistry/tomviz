@@ -11,7 +11,7 @@ url = 'https://data.kitware.com/api/v1/file'
 def angle_to_page(angle):
 
     if angle < -72 or angle > 73:
-        return None
+        return (None, None)
     angles = range(-73, 74, 2)
 
     index = bisect_left(angles, angle)
