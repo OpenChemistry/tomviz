@@ -71,6 +71,9 @@ GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
   // widget has been set up.
   QTimer::singleShot(0, [=] {
     int dpi = m_qvtk->physicalDpiX() * m_qvtk->devicePixelRatio();
+    // Currently very empirical, scale high DPI so that fonts don't get so big.
+    // In my testing they seem to be quite a bit bigger that the Qt text sizes.
+    dpi = (dpi - 72) * 0.56 + 72;
     m_histogramColorOpacityEditor->SetDPI(dpi);
   });
 }
