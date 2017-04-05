@@ -1,8 +1,15 @@
 import pytest
 import requests
 import hashlib
+import sys
+import os
 
 from tomviz.jsonrpc import jsonrpc_message
+
+# Add mock modules to path
+mock_dir = os.path.join(os.path.dirname(__file__), '..', 'tomviz',
+                        'acquisition', 'vendors', 'fei', 'mock')
+sys.path.append(mock_dir)
 
 
 @pytest.fixture(scope="module")
@@ -38,7 +45,7 @@ def test_tilt_params(fei_acquisition_server):
         'id': id,
         'method': 'tilt_params',
         'params': {
-            'stem_rotation': 2.1
+            'angle': 2.1
         }
     })
 
@@ -61,7 +68,7 @@ def test_stem_acquire(fei_acquisition_server):
         'id': id,
         'method': 'tilt_params',
         'params': {
-            'stem_rotation': 2.1
+            'angle': 2.1
         }
     })
 
@@ -81,7 +88,7 @@ def test_stem_acquire(fei_acquisition_server):
     response = requests.get(url)
 
     assert response.status_code == 200
-    expected = '3b3d4b6163f48ec0f665fe114fac0d15'
+    expected = '0cdcc5139186b0cbb84042eacfca1a13'
 
     md5 = hashlib.md5()
     md5.update(response.content)
@@ -104,27 +111,8 @@ def test_acquisition_params(fei_acquisition_server):
     response = requests.post(fei_acquisition_server.url, json=request)
     assert response.status_code == 200
     expected = {
-        'dwell_time': 3.1,
-        'binning': 10,
-        'image_size': 'FULL'
+        'calX': 1.2e-08,
+        'calY': 1.2e-08,
+        'units': 'nm'
     }
-    assert response.json()['result'] == expected
-
-    # Now update
-    request = jsonrpc_message({
-        'id': id,
-        'method': 'acquisition_params',
-        'params': {
-            'dwell_time': 5.2,
-            'binning': 100,
-            'image_size': 1
-        }
-    })
-    response = requests.post(fei_acquisition_server.url, json=request)
-    expected = {
-        'dwell_time': 5.2,
-        'binning': 100,
-        'image_size': 'ACQIMAGESIZE_HALF'
-    }
-    assert response.status_code == 200
-    assert response.json()['result'] == expected
+    assert response.json()['result']['size'] == expected
