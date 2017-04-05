@@ -56,6 +56,12 @@ private slots:
   void connectToServer();
   void onConnect();
 
+  void disconnectFromServer();
+  void onDisconnect();
+
+  void setAcquireParameters();
+  void acquireParameterResponse(const QJsonValue& result);
+
   void setTiltAngle();
   void acquirePreview(const QJsonValue& result);
   void previewReady(QString, QByteArray);
@@ -75,6 +81,9 @@ private:
   vtkSmartPointer<vtkScalarsToColors> m_lut;
 
   double m_tiltAngle = 0.0;
+  QString m_units = "unknown";
+  double m_calX = 0.0;
+  double m_calY = 0.0;
 };
 }
 
