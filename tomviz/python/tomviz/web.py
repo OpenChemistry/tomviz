@@ -455,7 +455,7 @@ def export_contour_exploration_images(destinationPath, camera, **kwargs):
 def export_contours_geometry(destinationPath, **kwargs):
     view = simple.GetRenderView()
     sceneDescription = {'scene': []}
-    for key, value in simple.GetSources().iteritems():
+    for key, value in py2to3.iteritems(simple.GetSources()):
         if key[0] == 'Contour':
             add_scene_item(sceneDescription, key[0], value, view)
 
@@ -489,7 +489,7 @@ def export_contours_geometry(destinationPath, **kwargs):
 def export_contour_exploration_geometry(destinationPath, **kwargs):
     values = [int(v) for v in kwargs['multiValue'].split(',')]
     contour = None
-    for key, value in simple.GetSources().iteritems():
+    for key, value in py2to3.iteritems(simple.GetSources()):
         if key[0] == 'Contour':
             contour = value
 
