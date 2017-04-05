@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import mock
 from tests.mock import test_image
-from tests.utility import tobytes
 
 from PIL import Image
 
@@ -9,8 +8,8 @@ from PIL import Image
 img = Image.open(test_image())
 
 
-TemScripting = mock.MagicMock()
-microscope = TemScripting.Microscope.return_value
+Microscope = mock.MagicMock()
+microscope = Microscope.return_value
 acq = microscope.m_temScripting.Acquisition
 proj = microscope.m_temScripting.Projection
 ill = microscope.m_temScripting.Illumination
@@ -23,5 +22,5 @@ acq.Detectors.AcqParams.Binning = 10
 acq.Detectors.AcqParams.ImageSize = 'FULL'
 acq.Detectors.AcqParams.DwellTime = 3.1
 image = mock.MagicMock()
-image.AsSafeArray = tobytes(img)
-acq.AcquireImages.return_value = [image]
+image.AsSafeArray = img
+acq.AcquireImages.return_value.return_value = image
