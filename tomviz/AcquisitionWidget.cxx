@@ -52,6 +52,8 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
   this->setWindowFlags(Qt::Dialog);
 
   connect(m_ui->connectButton, SIGNAL(clicked(bool)), SLOT(connectToServer()));
+  connect(m_ui->disconnectButton, SIGNAL(clicked(bool)),
+          SLOT(disconnectFromServer()));
   connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
 
   vtkNew<vtkGenericOpenGLRenderWindow> window;
