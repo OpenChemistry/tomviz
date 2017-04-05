@@ -65,7 +65,7 @@ JsonRpcReply* JsonRpcClient::sendRequest(const QJsonObject& requestBody)
         emit rpcReply->protocolError("Received a request for the client.");
       }
     }
-    if (root["result"] != QJsonValue::Null) {
+    if (root["result"] != QJsonValue::Undefined) {
       emit rpcReply->resultReceived(root);
     } else if (root["error"] != QJsonValue::Null) {
       emit rpcReply->errorReceived(root);
