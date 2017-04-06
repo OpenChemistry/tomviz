@@ -27,6 +27,7 @@
 #include <vtkScalarsToColors.h>
 #include <vtkSmartPointer.h>
 #include <vtkTable.h>
+#include <vtkTextProperty.h>
 #include <vtkVector.h>
 
 #include "vtkChartHistogram.h"
@@ -71,6 +72,7 @@ vtkStandardNewMacro(vtkChartGradientOpacityEditor)
 
   vtkAxis* bottomAxis = this->HistogramChart->GetAxis(vtkAxis::BOTTOM);
   bottomAxis->SetTitle("Gradient Magnitude");
+  bottomAxis->GetTitleProperties()->SetFontSize(8);
 
   // Forward events from internal charts to observers of this object
   this->HistogramChart->AddObserver(vtkCommand::CursorChangedEvent,
