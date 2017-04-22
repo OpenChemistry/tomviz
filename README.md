@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/OpenChemistry/tomviz.png?label=ready&title=Ready)](https://waffle.io/OpenChemistry/tomviz)
 ![tomviz_logo]
 
 [![Stories in Ready](https://badge.waffle.io/OpenChemistry/tomviz.png?label=ready&title=Ready "Waffle")](https://waffle.io/OpenChemistry/tomviz) [![Travis build status](https://travis-ci.org/OpenChemistry/tomviz.svg?branch=master "Travis")](https://travis-ci.org/OpenChemistry/tomviz) [![Circle build status](https://circleci.com/gh/OpenChemistry/tomviz.png?style=shield "CircleCI")](https://circleci.com/gh/OpenChemistry/tomviz) [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/OpenChemistry/tomviz?branch=master&svg=true "AppVeyor")](https://ci.appveyor.com/project/OpenChemistry/tomviz)
