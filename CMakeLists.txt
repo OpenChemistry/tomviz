@@ -46,10 +46,6 @@ if(APPLE)
   set(tomviz_data_install_dir "Applications/tomviz.app/Contents/share/tomviz")
 endif()
 
-set(PYBIND11_PYTHON_VERSION "2.7" CACHE STRING "")
-set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
-add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
-
 # These dependencies are inherited from ParaView.
 find_package(Qt5 REQUIRED COMPONENTS Network Widgets)
 find_package(ParaView REQUIRED)
@@ -73,6 +69,16 @@ if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
   message(FATAL_ERROR
     "Tomviz requires PARAVIEW_QT_VERSION to be 5, please rebuild ParaView.")
 endif()
+
+# We need to use the same Python version a ParaView
+load_cache(${ParaView_DIR}
+  PYTHON_EXECUTABLE
+)
+
+find_package(PythonInterp)
+set(PYBIND11_PYTHON_VERSION ${PYTHON_VERSION_STRING} CACHE STRING "")
+set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
+add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
 # Most of the time we don't want to skip these checks, default to off.
 option(SKIP_PARAVIEW_ITK_PYTHON_CHECKS
