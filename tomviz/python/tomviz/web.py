@@ -17,6 +17,19 @@ JS_FILENAME = 'tomviz.js'
 HTML_WITH_DATA_FILENAME = 'tomviz_data.html'
 DATA_FILENAME = 'data.tomviz'
 
+arrayTypesMapping = '  bBhHiIlLfd'
+jsMapping = {
+    'b': 'Int8Array',
+    'B': 'Uint8Array',
+    'h': 'Int16Array',
+    'H': 'Int16Array',
+    'i': 'Int32Array',
+    'I': 'Uint32Array',
+    'l': 'Int32Array',
+    'L': 'Uint32Array',
+    'f': 'Float32Array',
+    'd': 'Float64Array'
+}
 
 def web_export(*args, **kwargs):
     # Expecting only kwargs
@@ -606,6 +619,7 @@ def export_volume(destinationPath, **kwargs):
                             imageData.GetPointData().GetScalars())
     arraySize = scalars.GetNumberOfValues()
     volumeJSON['pointData']['arrays'][0]['data']['size'] = arraySize
+    volumeJSON['pointData']['arrays'][0]['data']['dataType'] = jsMapping[arrayTypesMapping[scalars.GetDataType()]]
 
     # Extract piecewise function
     pvw = get_volume_piecewise(view)
