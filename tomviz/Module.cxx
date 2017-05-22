@@ -52,7 +52,7 @@ public:
   vtkWeakPointer<vtkSMProxy> m_opacityMap;
   vtkNew<vtkPiecewiseFunction> m_gradientOpacityMap;
 
-  vtkNew<vtkImageData> Transfer2D;
+  vtkNew<vtkImageData> m_transfer2D;
   vtkSMProxy* detachedColorMap()
   {
     if (!m_detachedColorMap) {
@@ -93,8 +93,8 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   d->m_gradientOpacityMap->RemoveAllPoints();
 
   // TODO Initialize default values
-  this->d->Transfer2D->SetDimensions(64, 64, 1);
-  this->d->Transfer2D->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
+  d->m_transfer2D->SetDimensions(64, 64, 1);
+  d->m_transfer2D->AllocateScalars(VTK_FLOAT, 4);
 
   if (m_view && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
@@ -191,7 +191,7 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
 vtkImageData* Module::transferFunction2D() const
 {
   /// TODO Handle detached mode
-  return this->d->Transfer2D.GetPointer();
+  return d->m_transfer2D.GetPointer();
 }
 
 bool Module::serialize(pugi::xml_node& ns) const

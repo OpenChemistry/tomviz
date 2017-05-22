@@ -24,7 +24,7 @@
 #include "vtkPointData.h"
 #include "vtkRect.h"
 #include "vtkTransferFunctionBoxItem.h"
-#include "vtkUnsignedCharArray.h"
+#include "vtkFloatArray.h"
 
 class vtkChartTransfer2DEditor::Private
 {
@@ -82,13 +82,13 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
   int bins[3];
   this->Histogram->GetInputImageData()->GetDimensions(bins);
   this->Storage->Transfer2D->SetDimensions(bins[0], bins[1], 1);
-  this->Storage->Transfer2D->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
+  this->Storage->Transfer2D->AllocateScalars(VTK_FLOAT, 4);
 
   // Initialize as fully transparent
-  vtkUnsignedCharArray* arr = vtkUnsignedCharArray::SafeDownCast(
+  vtkFloatArray* arr = vtkFloatArray::SafeDownCast(
     this->Storage->Transfer2D->GetPointData()->GetScalars());
   void* dataPtr = arr->GetVoidPointer(0);
-  memset(dataPtr, 0, bins[0] * bins[1] * 4 * sizeof(unsigned char));
+  memset(dataPtr, 0, bins[0] * bins[1] * 4 * sizeof(float));
 
   // Raster each box into the 2D table
   const vtkIdType numPlots = this->GetNumberOfPlots();
@@ -138,7 +138,7 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
   opacFunc->GetTable(range[0], range[1], width, dataAlpha);
 
   // Copy the values into this->Transfer2D
-  vtkUnsignedCharArray* transfer = vtkUnsignedCharArray::SafeDownCast(
+  vtkFloatArray* transfer = vtkFloatArray::SafeDownCast(
     this->Storage->Transfer2D->GetPointData()->GetScalars());
 
   const vtkIdType x0 = static_cast<vtkIdType>(box.GetX());
@@ -151,21 +151,22 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
     for (vtkIdType i = 0; i < width; i++) {
       double color[4];
 
-      color[0] = dataRGB[i * 3] * 255.0;
-      color[1] = dataRGB[i * 3 + 1] * 255.0;
-      color[2] = dataRGB[i * 3 + 2] * 255.0;
-      color[3] = dataAlpha[i] * 255.0;
+      color[0] = dataRGB[i * 3];
+      color[1] = dataRGB[i * 3 + 1];
+      color[2] = dataRGB[i * 3 + 2];
+      color[3] = dataAlpha[i];
 
       const vtkIdType index = (y0 + j) * bins[1] + (x0 + i);
       transfer->SetTuple(index, color);
     }
 
-  vtkPNGWriter* pngWriter = vtkPNGWriter::New();
-  pngWriter->SetInputData(this->Storage->Transfer2D);
-  pngWriter->SetFileName("/tmp/transfer2d.png");
-  pngWriter->Update();
-  pngWriter->Write();
-  pngWriter->Delete();
+// PNGWriter only supports uchar.
+//  vtkPNGWriter* pngWriter = vtkPNGWriter::New();
+//  pngWriter->SetInputData(this->Storage->Transfer2D);
+//  pngWriter->SetFileName("/tmp/transfer2d.png");
+//  pngWriter->Update();
+//  pngWriter->Write();
+//  pngWriter->Delete();
 
   // Cleanup
   delete dataRGB;

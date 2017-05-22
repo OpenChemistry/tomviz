@@ -56,7 +56,6 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   m_chartHistogram2D->SetRenderEmpty(true);
   m_chartHistogram2D->SetAutoAxes(false);
   m_chartHistogram2D->ZoomWithMouseWheelOff();
-  m_chartHistogram2D->PanningOff();
 
   auto axis = m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM);
   axis->SetTitle("Scalar Value");
