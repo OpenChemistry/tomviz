@@ -38,6 +38,7 @@
 #include <vtkSMViewProxy.h>
 
 #include <QHBoxLayout>
+#include <QTimer>
 
 namespace tomviz {
 
