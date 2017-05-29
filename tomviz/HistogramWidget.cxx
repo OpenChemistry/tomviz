@@ -134,6 +134,12 @@ HistogramWidget::HistogramWidget(QWidget* parent)
     dpi = (dpi - 72) * 0.56 + 72;
     m_histogramColorOpacityEditor->SetDPI(dpi);
   });
+
+  // New way to do this, although it removes any option for tweaking the DPI,
+  // oddly defaults to off too, so ensure it is set to on (non-retina no effect)
+  // Note that the widget now clobbers any number you might set upon recreatring
+  // the FBO, and so the numbers above will never be seen by the render window.
+  m_qvtk->setEnableHiDPI(true);
 }
 
 HistogramWidget::~HistogramWidget() = default;
