@@ -156,6 +156,8 @@ set(SOURCES
   PythonGeneratedDatasetReaction.h
   PythonUtilities.cxx
   PythonUtilities.h
+  QVTKGLWidget.cxx
+  QVTKGLWidget.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
   ReconstructionOperator.cxx

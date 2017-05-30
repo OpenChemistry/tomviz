@@ -28,12 +28,13 @@ class vtkObject;
 class vtkTable;
 
 class QToolButton;
-class QVTKOpenGLWidget;
 
 class vtkPVDiscretizableColorTransferFunction;
 class vtkSMProxy;
 
 namespace tomviz {
+
+class QVTKGLWidget;
 
 class HistogramWidget : public QWidget
 {
@@ -90,7 +91,7 @@ private:
   vtkSMProxy* m_LUTProxy = nullptr;
   QToolButton* m_gradientOpacityButton = nullptr;
 
-  QVTKOpenGLWidget* m_qvtk;
+  QVTKGLWidget* m_qvtk;
 };
 }
 

@@ -20,6 +20,7 @@
 #include "ModuleContour.h"
 #include "ModuleManager.h"
 #include "Utilities.h"
+#include "QVTKGLWidget.h"
 
 #include "vtkChartHistogramColorOpacityEditor.h"
 
@@ -31,8 +32,6 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
 #include <vtkVector.h>
-
-#include <QVTKOpenGLWidget.h>
 
 #include <pqApplicationCore.h>
 #include <pqCoreUtilities.h>
@@ -57,15 +56,10 @@
 namespace tomviz {
 
 HistogramWidget::HistogramWidget(QWidget* parent)
-  : QWidget(parent), m_qvtk(new QVTKOpenGLWidget(this))
+  : QWidget(parent), m_qvtk(new QVTKGLWidget(this))
 {
   // Set up our little chart.
-  vtkNew<vtkGenericOpenGLRenderWindow> window;
-  m_qvtk->SetRenderWindow(window.Get());
-  QSurfaceFormat glFormat = QVTKOpenGLWidget::defaultFormat();
-  glFormat.setSamples(8);
-  m_qvtk->setFormat(glFormat);
-  m_histogramView->SetRenderWindow(window.Get());
+  m_histogramView->SetRenderWindow(m_qvtk->GetRenderWindow());
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
   m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor.Get());
 
@@ -124,22 +118,6 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   vLayout->addStretch(1);
 
   setLayout(hLayout);
-
-  // Delay setting of the device pixel ratio until after the QVTKOpenGLWidget
-  // widget has been set up.
-  QTimer::singleShot(0, [=] {
-    int dpi = m_qvtk->physicalDpiX() * m_qvtk->devicePixelRatio();
-    // Currently very empirical, scale high DPI so that fonts don't get so big.
-    // In my testing they seem to be quite a bit bigger that the Qt text sizes.
-    dpi = (dpi - 72) * 0.56 + 72;
-    m_histogramColorOpacityEditor->SetDPI(dpi);
-  });
-
-  // New way to do this, although it removes any option for tweaking the DPI,
-  // oddly defaults to off too, so ensure it is set to on (non-retina no effect)
-  // Note that the widget now clobbers any number you might set upon recreatring
-  // the FBO, and so the numbers above will never be seen by the render window.
-  m_qvtk->setEnableHiDPI(true);
 }
 
 HistogramWidget::~HistogramWidget() = default;
