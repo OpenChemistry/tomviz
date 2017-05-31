@@ -154,6 +154,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   dockSizes << 200;
   resizeDocks(docks, dockSizes, Qt::Vertical);
 
+  // raise dockWidgetMessages on error.
+  this->connect(d->Ui.outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
+    SLOT(handleMessage(const QString&, int)));
 
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
@@ -622,4 +625,29 @@ void MainWindow::autosave()
 {
   SaveLoadStateReaction::saveState(getAutosaveFile(), false);
 }
+
+void MainWindow::handleMessage(const QString&, int type)
+{
+  Ui::MainWindow& ui = d->Ui;
+  QDockWidget* dock = ui.dockWidgetMessages;
+  if (!dock->isVisible() && (type == pqOutputWidget::ERROR || type == pqOutputWidget::WARNING))
+  {
+    // if dock is not visible, we always pop it up as a floating dialog. This
+    // avoids causing re-renders which may cause more errors and more confusion.
+    QRect rectApp = this->geometry();
+
+    QRect rectDock(
+      QPoint(0, 0), QSize(static_cast<int>(rectApp.width() * 0.4), dock->sizeHint().height()));
+    rectDock.moveCenter(
+      QPoint(rectApp.center().x(), rectApp.bottom() - dock->sizeHint().height() / 2));
+    dock->setFloating(true);
+    dock->setGeometry(rectDock);
+    dock->show();
+  }
+  if (dock->isVisible())
+  {
+    dock->raise();
+  }
+}
+
 }
