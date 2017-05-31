@@ -19,8 +19,8 @@
 #include "DataSource.h"
 #include "ModuleContour.h"
 #include "ModuleManager.h"
-#include "Utilities.h"
 #include "QVTKGLWidget.h"
+#include "Utilities.h"
 
 #include "vtkChartHistogramColorOpacityEditor.h"
 
@@ -28,7 +28,6 @@
 #include <vtkContextView.h>
 #include <vtkControlPointsItem.h>
 #include <vtkEventQtSlotConnect.h>
-#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
 #include <vtkVector.h>
@@ -65,13 +64,16 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
   // Connect events from the histogram color/opacity editor.
   m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
-                       vtkCommand::CursorChangedEvent, this,
+                       vtkCommand::CursorChangedEvent,
+                       this,
                        SLOT(histogramClicked(vtkObject*)));
   m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
-                       vtkCommand::EndEvent, this,
+                       vtkCommand::EndEvent,
+                       this,
                        SLOT(onScalarOpacityFunctionChanged()));
   m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
-                       vtkControlPointsItem::CurrentPointEditEvent, this,
+                       vtkControlPointsItem::CurrentPointEditEvent,
+                       this,
                        SLOT(onCurrentPointEditEvent()));
 
   auto hLayout = new QHBoxLayout(this);
@@ -111,7 +113,9 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   m_gradientOpacityButton->setCheckable(true);
   m_gradientOpacityButton->setIcon(QIcon(":/icons/gradient_opacity.png"));
   m_gradientOpacityButton->setToolTip("Show/Hide Gradient Opacity");
-  connect(m_gradientOpacityButton, SIGNAL(toggled(bool)), this,
+  connect(m_gradientOpacityButton,
+          SIGNAL(toggled(bool)),
+          this,
           SIGNAL(gradientVisibilityChanged(bool)));
   vLayout->addWidget(m_gradientOpacityButton);
 
@@ -127,13 +131,16 @@ void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction* lut)
   if (m_LUT != lut) {
     if (m_scalarOpacityFunction) {
       m_eventLink->Disconnect(m_scalarOpacityFunction,
-                              vtkCommand::ModifiedEvent, this,
+                              vtkCommand::ModifiedEvent,
+                              this,
                               SLOT(onScalarOpacityFunctionChanged()));
     }
     m_LUT = lut;
     m_scalarOpacityFunction = m_LUT->GetScalarOpacityFunction();
-    m_eventLink->Connect(m_scalarOpacityFunction, vtkCommand::ModifiedEvent,
-                         this, SLOT(onScalarOpacityFunctionChanged()));
+    m_eventLink->Connect(m_scalarOpacityFunction,
+                         vtkCommand::ModifiedEvent,
+                         this,
+                         SLOT(onScalarOpacityFunctionChanged()));
   }
 }
 
@@ -148,7 +155,8 @@ void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
   }
 }
 
-void HistogramWidget::setInputData(vtkTable* table, const char* x_,
+void HistogramWidget::setInputData(vtkTable* table,
+                                   const char* x_,
                                    const char* y_)
 {
   m_histogramColorOpacityEditor->SetHistogramInputData(table, x_, y_);
@@ -205,9 +213,11 @@ void HistogramWidget::onCurrentPointEditEvent()
 {
   double rgb[3];
   if (m_histogramColorOpacityEditor->GetCurrentControlPointColor(rgb)) {
-    QColor color = QColorDialog::getColor(
-      QColor::fromRgbF(rgb[0], rgb[1], rgb[2]), this,
-      "Select Color for Control Point", QColorDialog::DontUseNativeDialog);
+    QColor color =
+      QColorDialog::getColor(QColor::fromRgbF(rgb[0], rgb[1], rgb[2]),
+                             this,
+                             "Select Color for Control Point",
+                             QColorDialog::DontUseNativeDialog);
     if (color.isValid()) {
       rgb[0] = color.redF();
       rgb[1] = color.greenF();
@@ -240,8 +250,8 @@ void HistogramWidget::histogramClicked(vtkObject*)
         activeDataSource, view);
     if (contours.size() == 0) {
       contour = qobject_cast<ModuleContourType*>(
-        ModuleManager::instance().createAndAddModule("Contour",
-                                                     activeDataSource, view));
+        ModuleManager::instance().createAndAddModule(
+          "Contour", activeDataSource, view));
     } else {
       contour = contours[0];
     }
@@ -292,7 +302,8 @@ void HistogramWidget::onPresetClicked()
   dialog.setCustomizableLoadOpacities(true);
   dialog.setCustomizableUsePresetRange(true);
   dialog.setCustomizableLoadAnnotations(false);
-  connect(&dialog, SIGNAL(applyPreset(const Json::Value&)),
+  connect(&dialog,
+          SIGNAL(applyPreset(const Json::Value&)),
           SLOT(applyCurrentPreset()));
   dialog.exec();
 }
@@ -311,13 +322,13 @@ void HistogramWidget::applyCurrentPreset()
     vtkSMProxy* sof =
       vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
     if (dialog->loadColors()) {
-      vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
-                                              !dialog->usePresetRange());
+      vtkSMTransferFunctionProxy::ApplyPreset(
+        lut, dialog->currentPreset(), !dialog->usePresetRange());
     }
     if (dialog->loadOpacities()) {
       if (sof) {
-        vtkSMTransferFunctionProxy::ApplyPreset(sof, dialog->currentPreset(),
-                                                !dialog->usePresetRange());
+        vtkSMTransferFunctionProxy::ApplyPreset(
+          sof, dialog->currentPreset(), !dialog->usePresetRange());
       } else {
         qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not "
                  "present.");
