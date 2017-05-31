@@ -25,7 +25,6 @@
 #include "Utilities.h"
 
 #include "vtkActor.h"
-#include "vtkGenericOpenGLRenderWindow.h"
 #include "vtkImageData.h"
 #include "vtkImageProperty.h"
 #include "vtkImageSlice.h"
@@ -178,19 +177,12 @@ ReconstructionWidget::ReconstructionWidget(DataSource* source, QWidget* p)
   this->Internals->dataSliceRenderer->AddViewProp(
     this->Internals->currentSliceActor.Get());
 
-  vtkNew<vtkGenericOpenGLRenderWindow> csWindow;
-  this->Internals->Ui.currentSliceView->SetRenderWindow(csWindow.Get());
   this->Internals->Ui.currentSliceView->GetRenderWindow()->AddRenderer(
     this->Internals->dataSliceRenderer.Get());
 
-  vtkNew<vtkGenericOpenGLRenderWindow> crWindow;
-  this->Internals->Ui.currentReconstructionView->SetRenderWindow(
-    crWindow.Get());
   this->Internals->Ui.currentReconstructionView->GetRenderWindow()->AddRenderer(
     this->Internals->reconstructionSliceRenderer.Get());
 
-  vtkNew<vtkGenericOpenGLRenderWindow> sWindow;
-  this->Internals->Ui.sinogramView->SetRenderWindow(sWindow.Get());
   this->Internals->Ui.sinogramView->GetRenderWindow()->AddRenderer(
     this->Internals->sinogramRenderer.Get());
 

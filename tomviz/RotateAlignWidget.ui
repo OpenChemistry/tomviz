@@ -83,7 +83,7 @@
       </layout>
      </item>
      <item row="0" column="1">
-      <widget class="QVTKOpenGLWidget" name="sliceView" native="true">
+      <widget class="tomviz::QVTKGLWidget" name="sliceView" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>1</horstretch>
@@ -163,7 +163,7 @@
         </layout>
        </item>
        <item>
-        <widget class="QVTKOpenGLWidget" name="sliceView_1" native="true">
+        <widget class="tomviz::QVTKGLWidget" name="sliceView_1" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -204,7 +204,7 @@
         </layout>
        </item>
        <item>
-        <widget class="QVTKOpenGLWidget" name="sliceView_2" native="true">
+        <widget class="tomviz::QVTKGLWidget" name="sliceView_2" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -245,7 +245,7 @@
         </layout>
        </item>
        <item>
-        <widget class="QVTKOpenGLWidget" name="sliceView_3" native="true">
+        <widget class="tomviz::QVTKGLWidget" name="sliceView_3" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -268,9 +268,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QVTKOpenGLWidget</class>
+   <class>tomviz::QVTKGLWidget</class>
    <extends>QWidget</extends>
-   <header>QVTKOpenGLWidget.h</header>
+   <header>QVTKGLWidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
