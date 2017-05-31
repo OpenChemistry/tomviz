@@ -21,6 +21,7 @@
 #include "LoadDataReaction.h"
 #include "SpinBox.h"
 #include "TranslateAlignOperator.h"
+#include "QVTKGLWidget.h"
 #include "Utilities.h"
 
 #include "vtk_jsoncpp.h"
@@ -37,13 +38,11 @@
 #include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMViewProxy.h>
 
-#include <QVTKOpenGLWidget.h>
 #include <vtkArrayDispatch.h>
 #include <vtkAssume.h>
 #include <vtkCamera.h>
 #include <vtkDataArray.h>
 #include <vtkDataArrayAccessor.h>
-#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
@@ -351,9 +350,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   m_operator = op;
   m_unalignedData = op->getDataSource();
   m_inputData = imageData;
-  m_widget = new QVTKOpenGLWidget(this);
-  vtkNew<vtkGenericOpenGLRenderWindow> window;
-  m_widget->SetRenderWindow(window.Get());
+  m_widget = new QVTKGLWidget(this);
   m_widget->installEventFilter(this);
 
   // Use a horizontal layout, main GUI to the left, controls/text to the right.
@@ -429,7 +426,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
             m_modes[m_currentMode]->setBrightnessAndContrast(
               ((static_cast<double>(i) - sliderRange[0]) / sliderRange[1]),
               bAndC[1]);
-            m_widget->update();
+            m_widget->GetRenderWindow()->Render();
           });
   brightness->setValue(sliderRange[1]);
   brightnessAndContrastControls->addRow("Brightness", brightness);
@@ -442,7 +439,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     m_modes[m_currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
     m_modes[m_currentMode]->setBrightnessAndContrast(
       bAndC[0], ((static_cast<double>(i) - sliderRange[0]) / sliderRange[1]));
-    m_widget->update();
+    m_widget->GetRenderWindow()->Render();
   });
   contrast->setValue(sliderRange[1]);
   brightnessAndContrastControls->addRow("Contrast", contrast);
@@ -657,7 +654,7 @@ void AlignWidget::onTimeout()
   if (m_modes.length() > 0) {
     m_modes[m_currentMode]->timeout();
   }
-  m_widget->update();
+  m_widget->GetRenderWindow()->Render();
 }
 
 void AlignWidget::changeSlice(int delta)
@@ -728,7 +725,7 @@ void AlignWidget::updateReference()
   if (m_modes.length() > 0) {
     m_modes[m_currentMode]->update();
   }
-  m_widget->update();
+  m_widget->GetRenderWindow()->Render();
 }
 
 void AlignWidget::setFrameRate(int rate)
@@ -826,7 +823,7 @@ void AlignWidget::applySliceOffset(int sliceNumber)
   if (m_modes.length() > 0) {
     m_modes[m_currentMode]->update();
   }
-  m_widget->update();
+  m_widget->GetRenderWindow()->Render();
 }
 
 void AlignWidget::startAlign()
