@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>42</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -119,16 +119,7 @@
    </attribute>
    <widget class="QWidget" name="pipelineBrowserWidget">
     <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
+     <property name="margin">
       <number>0</number>
      </property>
      <item>
@@ -241,16 +232,7 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout_2">
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
+     <property name="margin">
       <number>0</number>
      </property>
      <item>
@@ -330,6 +312,15 @@
      </item>
     </layout>
    </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockWidgetMessages">
+   <property name="windowTitle">
+    <string>Messages</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="pqOutputWidget" name="outputWidget"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -464,6 +455,12 @@
    <class>tomviz::OperatorPropertiesPanel</class>
    <extends>QWidget</extends>
    <header>OperatorPropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqOutputWidget</class>
+   <extends>QWidget</extends>
+   <header>pqOutputWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

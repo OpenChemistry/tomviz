@@ -29,7 +29,6 @@
 #include <pqInterfaceTracker.h>
 #include <pqPersistentMainWindowStateBehavior.h>
 #include <pqPluginManager.h>
-#include <pqQtMessageHandlerBehavior.h>
 #include <pqStandardPropertyWidgetInterface.h>
 #include <pqStandardViewFrameActionsImplementation.h>
 #include <pqViewStreamingBehavior.h>
@@ -89,7 +88,6 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
   // Load plugins distributed with application.
   pqApplicationCore::instance()->loadDistributedPlugins();
 
-  new pqQtMessageHandlerBehavior(this);
   new pqDefaultViewBehavior(this);
   new pqAlwaysConnectedBehavior(this);
   new pqViewStreamingBehavior(this);
