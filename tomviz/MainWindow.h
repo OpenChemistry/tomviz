@@ -64,6 +64,9 @@ private slots:
 
   void autosave();
 
+  /// raise output widget on errors.
+  void handleMessage(const QString&, int);
+
 private:
   Q_DISABLE_COPY(MainWindow)
 

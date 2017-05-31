@@ -138,17 +138,22 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   QIcon icon(":/icons/tomviz.png");
   setWindowIcon(icon);
 
+  // tabify output messages widget.
+  this->tabifyDockWidget(d->Ui.dockWidget_3, d->Ui.dockWidgetMessages);
+  d->Ui.dockWidgetMessages->hide();
+
   // Tweak the initial sizes of the dock widgets.
   QList<QDockWidget*> docks;
-  docks << d->Ui.dockWidget << d->Ui.dockWidget_5;
+  docks << d->Ui.dockWidget << d->Ui.dockWidget_5 << d->Ui.dockWidgetMessages;
   QList<int> dockSizes;
-  dockSizes << 250 << 250;
+  dockSizes << 250 << 250 << 250;
   resizeDocks(docks, dockSizes, Qt::Horizontal);
   docks.clear();
   dockSizes.clear();
   docks << d->Ui.dockWidget_3;
   dockSizes << 200;
   resizeDocks(docks, dockSizes, Qt::Vertical);
+
 
   // Link the histogram in the central widget to the active data source.
   ui.centralWidget->connect(&ActiveObjects::instance(),
