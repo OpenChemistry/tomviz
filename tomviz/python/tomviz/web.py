@@ -292,7 +292,7 @@ def get_volume_lookuptable_section(view):
             fielName = array.GetName()
             lut = volume.GetProperty().GetRGBTransferFunction()
             controlpoints = []
-            tupleHolder = range(6)
+            tupleHolder = list(range(6))
             for i in range(lut.GetSize()):
                 lut.GetNodeValue(i, tupleHolder)
                 controlpoints.append({
