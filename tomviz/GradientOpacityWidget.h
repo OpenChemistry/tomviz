@@ -34,9 +34,10 @@ class vtkPiecewiseFunction;
 class vtkObject;
 class vtkSMProxy;
 class vtkTable;
-class QVTKOpenGLWidget;
 
 namespace tomviz {
+
+class QVTKGLWidget;
 
 class GradientOpacityWidget : public QWidget
 {
@@ -77,7 +78,7 @@ private:
    */
   void prepareAdjustedTable(vtkTable* table, const char* x_);
 
-  QVTKOpenGLWidget* m_qvtk;
+  QVTKGLWidget* m_qvtk;
 
   vtkSmartPointer<vtkTable> m_adjustedTable;
 };
