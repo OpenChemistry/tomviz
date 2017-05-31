@@ -26,13 +26,13 @@
 #include <vtkSMProxy.h>
 
 #include <vtkCamera.h>
-#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkInteractorStyleRubberBand2D.h>
 #include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
 #include <vtkScalarsToColors.h>
 #include <vtkTIFFReader.h>
 
@@ -56,8 +56,6 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
           SLOT(disconnectFromServer()));
   connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
 
-  vtkNew<vtkGenericOpenGLRenderWindow> window;
-  m_ui->imageWidget->SetRenderWindow(window.Get());
   m_ui->imageWidget->GetRenderWindow()->AddRenderer(m_renderer.Get());
   m_ui->imageWidget->GetInteractor()->SetInteractorStyle(
     m_defaultInteractorStyle.Get());
@@ -235,7 +233,7 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
   m_imageSlice->SetMapper(m_imageSliceMapper.Get());
   m_renderer->AddViewProp(m_imageSlice.Get());
   resetCamera();
-  m_ui->imageWidget->update();
+  m_ui->imageWidget->GetRenderWindow()->Render();
 
   if (ActiveObjects::instance().activeDataSource()) {
     auto proxy = ActiveObjects::instance().activeDataSource()->colorMap();

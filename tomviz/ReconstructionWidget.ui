@@ -22,7 +22,7 @@
     </widget>
    </item>
    <item row="0" column="0">
-    <widget class="QVTKOpenGLWidget" name="currentSliceView" native="true">
+    <widget class="tomviz::QVTKGLWidget" name="currentSliceView" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
@@ -38,7 +38,7 @@
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QVTKOpenGLWidget" name="currentReconstructionView" native="true">
+    <widget class="tomviz::QVTKGLWidget" name="currentReconstructionView" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
@@ -85,7 +85,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QVTKOpenGLWidget" name="sinogramView" native="true">
+       <widget class="tomviz::QVTKGLWidget" name="sinogramView" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -114,9 +114,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QVTKOpenGLWidget</class>
+   <class>tomvizQVTKGLWidget</class>
    <extends>QWidget</extends>
-   <header>QVTKOpenGLWidget.h</header>
+   <header>QVTKGLWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

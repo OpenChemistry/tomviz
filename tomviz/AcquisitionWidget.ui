@@ -34,7 +34,7 @@
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <widget class="QVTKOpenGLWidget" name="imageWidget" native="true">
+     <widget class="tomviz::QVTKGLWidget" name="imageWidget" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
         <horstretch>5</horstretch>
@@ -331,9 +331,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QVTKOpenGLWidget</class>
+   <class>tomviz::QVTKGLWidget</class>
    <extends>QWidget</extends>
-   <header location="global">QVTKOpenGLWidget.h</header>
+   <header location="global">QVTKGLWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -16,6 +16,7 @@
 #include "GradientOpacityWidget.h"
 
 #include "ActiveObjects.h"
+#include "QVTKGLWidget.h"
 #include "Utilities.h"
 
 #include <vtkChartGradientOpacityEditor.h>
@@ -23,15 +24,12 @@
 #include <vtkContextView.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkFloatArray.h>
-#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkIntArray.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
 #include <vtkStdString.h>
 #include <vtkTable.h>
 #include <vtkVector.h>
-
-#include <QVTKOpenGLWidget.h>
 
 #include <pqApplicationCore.h>
 #include <pqView.h>
@@ -43,16 +41,11 @@
 namespace tomviz {
 
 GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
-  : QWidget(parent_), m_qvtk(new QVTKOpenGLWidget(this)),
+  : QWidget(parent_), m_qvtk(new QVTKGLWidget(this)),
     m_adjustedTable(nullptr)
 {
   // Set up our little chart.
-  vtkNew<vtkGenericOpenGLRenderWindow> window_;
-  m_qvtk->SetRenderWindow(window_.Get());
-  QSurfaceFormat glFormat = QVTKOpenGLWidget::defaultFormat();
-  glFormat.setSamples(8);
-  m_qvtk->setFormat(glFormat);
-  m_histogramView->SetRenderWindow(window_.Get());
+  m_histogramView->SetRenderWindow(m_qvtk->GetRenderWindow());
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
   m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor.Get());
 
@@ -67,16 +60,6 @@ GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
   hLayout->setContentsMargins(0, 0, 35, 0);
 
   setLayout(hLayout);
-
-  // Delay setting of the device pixel ratio until after the QVTKOpenGLWidget
-  // widget has been set up.
-  QTimer::singleShot(0, [=] {
-    int dpi = m_qvtk->physicalDpiX() * m_qvtk->devicePixelRatio();
-    // Currently very empirical, scale high DPI so that fonts don't get so big.
-    // In my testing they seem to be quite a bit bigger that the Qt text sizes.
-    dpi = (dpi - 72) * 0.56 + 72;
-    m_histogramColorOpacityEditor->SetDPI(dpi);
-  });
 }
 
 GradientOpacityWidget::~GradientOpacityWidget() = default;

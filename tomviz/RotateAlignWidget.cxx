@@ -30,7 +30,6 @@
 #include "pqPresetDialog.h"
 #include "vtkCamera.h"
 #include "vtkDataArray.h"
-#include "vtkGenericOpenGLRenderWindow.h"
 #include "vtkImageData.h"
 #include "vtkImageProperty.h"
 #include "vtkImageSlice.h"
@@ -179,7 +178,7 @@ public:
     tform->RotateZ(this->Ui.rotationAngle->value());
     tform->Translate(-centerOfRotation[0], -centerOfRotation[1],
                      -centerOfRotation[2]);
-    this->Ui.sliceView->update();
+    this->Ui.sliceView->GetRenderWindow()->Render();
   }
 
   void updateReconSlice(int i)
@@ -277,15 +276,6 @@ RotateAlignWidget::RotateAlignWidget(DataSource* source, QWidget* p)
   : Superclass(p), Internals(new RAWInternal)
 {
   this->Internals->Ui.setupUi(this);
-
-  vtkNew<vtkGenericOpenGLRenderWindow> sWindow;
-  this->Internals->Ui.sliceView->SetRenderWindow(sWindow.Get());
-  vtkNew<vtkGenericOpenGLRenderWindow> sWindow1;
-  this->Internals->Ui.sliceView_1->SetRenderWindow(sWindow1.Get());
-  vtkNew<vtkGenericOpenGLRenderWindow> sWindow2;
-  this->Internals->Ui.sliceView_2->SetRenderWindow(sWindow2.Get());
-  vtkNew<vtkGenericOpenGLRenderWindow> sWindow3;
-  this->Internals->Ui.sliceView_3->SetRenderWindow(sWindow3.Get());
 
   this->Internals->setupColorMaps();
   QIcon setColorMapIcon(":/pqWidgets/Icons/pqFavorites16.png");
@@ -499,7 +489,7 @@ void RotateAlignWidget::onProjectionNumberChanged()
   imageData->GetExtent(extent);
   this->Internals->mainSliceMapper->SetSliceNumber(newVal + extent[4]);
   this->Internals->mainSliceMapper->Update();
-  this->Internals->Ui.sliceView->update();
+  this->Internals->Ui.sliceView->GetRenderWindow()->Render();
 }
 
 void RotateAlignWidget::onRotationAxisChanged()
@@ -508,30 +498,30 @@ void RotateAlignWidget::onRotationAxisChanged()
   // Update recon windows
   this->Internals->updateReconSlice(0);
   this->Internals->reconSliceMapper[0]->Update();
-  this->Internals->Ui.sliceView_1->update();
+  this->Internals->Ui.sliceView_1->GetRenderWindow()->Render();
 
   this->Internals->updateReconSlice(1);
   this->Internals->reconSliceMapper[1]->Update();
-  this->Internals->Ui.sliceView_2->update();
+  this->Internals->Ui.sliceView_2->GetRenderWindow()->Render();
 
   this->Internals->updateReconSlice(2);
   this->Internals->reconSliceMapper[2]->Update();
-  this->Internals->Ui.sliceView_3->update();
+  this->Internals->Ui.sliceView_3->GetRenderWindow()->Render();
 }
 
 void RotateAlignWidget::onReconSliceChanged(int idx)
 {
   this->Internals->updateSliceLines();
-  this->Internals->Ui.sliceView->update();
+  this->Internals->Ui.sliceView->GetRenderWindow()->Render();
   this->Internals->updateReconSlice(idx);
   this->Internals->reconSliceMapper[idx]->Update();
   if (idx == 0) {
-    this->Internals->Ui.sliceView_1->update();
+    this->Internals->Ui.sliceView_1->GetRenderWindow()->Render();
   } else if (idx == 1) {
-    this->Internals->Ui.sliceView_2->update();
+    this->Internals->Ui.sliceView_2->GetRenderWindow()->Render();
   } else // if (idx == 2)
   {
-    this->Internals->Ui.sliceView_3->update();
+    this->Internals->Ui.sliceView_3->GetRenderWindow()->Render();
   }
 }
 
@@ -611,10 +601,10 @@ void RotateAlignWidget::changeColorMap(int reconSlice)
 
 void RotateAlignWidget::updateWidgets()
 {
-  this->Internals->Ui.sliceView->update();
-  this->Internals->Ui.sliceView_1->update();
-  this->Internals->Ui.sliceView_2->update();
-  this->Internals->Ui.sliceView_3->update();
+  this->Internals->Ui.sliceView->GetRenderWindow()->Render();
+  this->Internals->Ui.sliceView_1->GetRenderWindow()->Render();
+  this->Internals->Ui.sliceView_2->GetRenderWindow()->Render();
+  this->Internals->Ui.sliceView_3->GetRenderWindow()->Render();
 }
 
 void RotateAlignWidget::onFinalReconButtonPressed()
