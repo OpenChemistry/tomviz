@@ -31,6 +31,7 @@ jsMapping = {
     'd': 'Float64Array'
 }
 
+
 def web_export(*args, **kwargs):
     # Expecting only kwargs
     keepData = kwargs['keepData']
@@ -619,7 +620,8 @@ def export_volume(destinationPath, **kwargs):
                             imageData.GetPointData().GetScalars())
     arraySize = scalars.GetNumberOfValues()
     volumeJSON['pointData']['arrays'][0]['data']['size'] = arraySize
-    volumeJSON['pointData']['arrays'][0]['data']['dataType'] = jsMapping[arrayTypesMapping[scalars.GetDataType()]]
+    volumeJSON['pointData']['arrays'][0]['data']['dataType']  \
+        = jsMapping[arrayTypesMapping[scalars.GetDataType()]]
 
     # Extract piecewise function
     pvw = get_volume_piecewise(view)
