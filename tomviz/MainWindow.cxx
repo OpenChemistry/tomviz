@@ -84,6 +84,10 @@
 #include <QDesktopServices>
 #endif
 
+// undef ERROR here as its used in pqOutputWidget!
+#undef ERROR
+#include <pqOutputWidget.h>
+
 // we are building with dax, so we have plugins to import
 #ifdef DAX_DEVICE_ADAPTER
 // Adds required forward declarations.
