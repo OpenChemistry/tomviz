@@ -80,6 +80,8 @@ set(SOURCES
   GradientOpacityWidget.cxx
   HistogramWidget.h
   HistogramWidget.cxx
+  Histogram2DWidget.h
+  Histogram2DWidget.cxx
   InterfaceBuilder.h
   InterfaceBuilder.cxx
   IntSliderWidget.cxx
@@ -212,6 +214,10 @@ set(SOURCES
   vtkChartHistogram.h
   vtkChartHistogramColorOpacityEditor.cxx
   vtkChartHistogramColorOpacityEditor.h
+  vtkChartTransfer2DEditor.cxx
+  vtkChartTransfer2DEditor.h
+  vtkTransferFunctionBoxItem.h
+  vtkTransferFunctionBoxItem.cxx
   vtkCustomPiecewiseControlPointsItem.cxx
   vtkCustomPiecewiseControlPointsItem.h
   vtkLengthScaleRepresentation.h

@@ -28,6 +28,7 @@
 #include <pqView.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkCommand.h>
+#include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSMProperty.h>
@@ -51,6 +52,7 @@ public:
   vtkWeakPointer<vtkSMProxy> m_opacityMap;
   vtkNew<vtkPiecewiseFunction> m_gradientOpacityMap;
 
+  vtkNew<vtkImageData> Transfer2D;
   vtkSMProxy* detachedColorMap()
   {
     if (!m_detachedColorMap) {
@@ -89,6 +91,11 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_view = vtkView;
   m_activeDataSource = data;
   d->m_gradientOpacityMap->RemoveAllPoints();
+
+  // TODO Initialize default values
+  this->d->Transfer2D->SetDimensions(64, 64, 1);
+  this->d->Transfer2D->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
+
   if (m_view && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
@@ -179,6 +186,12 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
   }
 
   return gof;
+}
+
+vtkImageData* Module::transferFunction2D() const
+{
+  /// TODO Handle detached mode
+  return this->d->Transfer2D.GetPointer();
 }
 
 bool Module::serialize(pugi::xml_node& ns) const

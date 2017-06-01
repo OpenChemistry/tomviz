@@ -63,11 +63,16 @@ public slots:
 
 private slots:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
+  void histogram2DReady(vtkSmartPointer<vtkImageData> input,
+                        vtkSmartPointer<vtkImageData> output);
   void onColorMapDataSourceChanged();
   void refreshHistogram();
 
 private:
   Q_DISABLE_COPY(CentralWidget)
+
+  /// Set of input checks shared between 1D and 2D histograms.
+  vtkImageData* getInputImage(vtkSmartPointer<vtkImageData> input);
 
   /// Set the data source to from which the data is "histogrammed" and shown
   /// in the histogram view.
