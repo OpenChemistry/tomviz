@@ -72,6 +72,7 @@ void vtkTransferFunctionBoxItem::DragBox(const double deltaX,
   this->MovePoint(TOP_LEFT, deltaX, deltaY);
 
   this->EndChanges();
+  this->InvokeEvent(vtkCommand::SelectionChangedEvent);
 }
 
 // Points move independently. In order to keep the box rigid when dragging it
@@ -175,6 +176,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
   }
 
   this->EndChanges();
+  this->InvokeEvent(vtkCommand::SelectionChangedEvent);
 }
 
 bool vtkTransferFunctionBoxItem::ArePointsCrossing(const vtkIdType pointA,

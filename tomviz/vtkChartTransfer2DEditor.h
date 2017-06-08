@@ -34,12 +34,16 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkChartTransfer2DEditor, vtkChartHistogram2D)
 
-    /**
-     * Set the vtkImageData on which to raster the 2D transfer function.
-     */
-    void SetTransfer2D(vtkImageData* transfer2D);
+  /**
+   * Set the vtkImageData on which to raster the 2D transfer function.
+   */
+  void SetTransfer2D(vtkImageData* transfer2D);
 
-  vtkIdType AddPlot(vtkPlot* plot) override;
+  /**
+   * Events from added BoxItems (vtkCommand::SelectionChangedEvent) are
+   * observed in order to trigger Transfer2D generation.
+   */
+  vtkIdType AddFunction(vtkTransferFunctionBoxItem* boxItem);
 
 protected:
   vtkChartTransfer2DEditor();
@@ -53,9 +57,24 @@ protected:
   static void OnBoxItemModified(vtkObject* caller, unsigned long eid,
                                 void* clientData, void* callData);
 
+  /**
+   * This chart only supports plots of type vtkTransferFunctionBoxItem.
+   */
+  vtkIdType AddPlot(vtkPlot* plot);
+
 private:
+  /**
+   * Allocates and clears Transfer2D to be updated. Calls RasterBoxItem
+   * for the actual update. It invokes vtkCommand::EndEvent after the update,
+   * this signal should be caught by handlers using the generated 2DTF.
+   * \sa vtkChartTransfer2DEditor::RasterBoxItem
+   */
   void GenerateTransfer2D();
 
+  /**
+   * Rasterizes the transfer function defined within the BoxItem into
+   * the current vtkImageData holding the 2D transfer function (Transfer2D).
+   */
   void RasterBoxItem(vtkTransferFunctionBoxItem* boxItem);
 
   vtkChartTransfer2DEditor(const vtkChartTransfer2DEditor&) = delete;

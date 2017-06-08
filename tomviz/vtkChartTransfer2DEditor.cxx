@@ -127,7 +127,7 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
   const vtkIdType width = static_cast<vtkIdType>(box.GetWidth());
   const vtkIdType height = static_cast<vtkIdType>(box.GetHeight());
 
-  /// TODO This assumes color and opacity share the same data range
+  ///TODO This assumes color and opacity share the same data range
   double range[2];
   colorFunc->GetRange(range);
 
@@ -174,10 +174,19 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
 }
 
 //-----------------------------------------------------------------------------
+vtkIdType vtkChartTransfer2DEditor::AddFunction(
+  vtkTransferFunctionBoxItem* boxItem)
+{
+  boxItem->AddObserver(vtkCommand::SelectionChangedEvent,
+    this->Storage->Callback.GetPointer());
+
+  return this->AddPlot(boxItem);
+}
+
+//-----------------------------------------------------------------------------
 vtkIdType vtkChartTransfer2DEditor::AddPlot(vtkPlot* plot)
 {
-  plot->AddObserver(vtkCommand::EndEvent, this->Storage->Callback.GetPointer());
-  return Superclass::AddPlot(plot);
+  Superclass::AddPlot(plot);
 }
 
 //-----------------------------------------------------------------------------

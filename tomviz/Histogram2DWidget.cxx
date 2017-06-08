@@ -121,7 +121,7 @@ void Histogram2DWidget::addFunctionItem(
   // Set bounds in the box item so that it can only move within the
   // histogram's range.
   item->SetValidBounds(xRange[0], xRange[1], yRange[0], yRange[1]);
-  m_chartHistogram2D->AddPlot(item);
+  m_chartHistogram2D->AddFunction(item);
 }
 
 void Histogram2DWidget::setTransfer2D(vtkImageData* transfer2D)
