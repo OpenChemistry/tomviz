@@ -31,6 +31,7 @@
  */
 
 class vtkColorTransferFunction;
+class vtkPen;
 class vtkPiecewiseFunction;
 class vtkPoints2D;
 
@@ -69,17 +70,22 @@ protected:
   vtkIdType AddPoint(double* pos) VTK_OVERRIDE;
 
   /**
-   *  Box corners are ordered as follows:
-   *  3 ----- 2
-   *  |       |
-   *  0 ----- 1
+   * Box corners are ordered as follows:
+   *      3 ----- 2
+   *      |       |
+   *  (4) 0 ----- 1
+   * 
+   * Point 0 is repeated for rendering purposes (vtkContext2D::DrawPoly
+   * requires it to close the outline). This point is not registered with
+   * vtkControlPointsItem.
    */
   enum BoxCorners
   {
     BOTTOM_LEFT,
     BOTTOM_RIGHT,
     TOP_RIGHT,
-    TOP_LEFT
+    TOP_LEFT,
+    BOTTOM_LEFT_LOOP
   };
 
   /**
@@ -131,12 +137,9 @@ protected:
 private:
   /**
    * Custom method to clamp point positions to valid bounds (chart bounds).  A
-   * custom
-   * method was required given that ControlPoints::ClampValidPos() appears to
-   * have
-   * bug where it does not not clamp to bounds[2,3].  The side effects of
-   * overriding
-   * that behavior are unclear so for now this custom method is used.
+   * custom method was required given that ControlPoints::ClampValidPos() appears
+   * to have bug where it does not not clamp to bounds[2,3].  The side effects of
+   * overriding that behavior are unclear so for now this custom method is used.
    */
   void ClampToValidPosition(double pos[2]);
 
@@ -149,13 +152,16 @@ private:
 
   /**
    * Points move independently. In order to keep the box rigid when dragging it
-   * outside of the edges it is first checked whether it stays within bounds.
+   * outside of the chart edges it is first checked whether it stays within bounds.
    */
   bool BoxIsWithinBounds(const double deltaX, const double deltaY);
 
   vtkNew<vtkPoints2D> BoxPoints;
+  const int NumPoints = 4;
   vtkRectd Box;
   vtkPiecewiseFunction* OpacityFunction = nullptr;
   vtkColorTransferFunction* ColorFunction = nullptr;
+
+  vtkNew<vtkPen> Pen;
 };
 #endif // tomvizvtkTransferFunctionBoxItem_h

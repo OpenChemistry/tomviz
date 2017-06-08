@@ -15,15 +15,17 @@
 ******************************************************************************/
 #include "vtkTransferFunctionBoxItem.h"
 #include <vtkColorTransferFunction.h>
+#include <vtkContext2D.h>
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
 #include <vtkObjectFactory.h>
+#include <vtkPen.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPoints2D.h>
 #include <vtkVectorOperators.h>
 
 namespace {
-bool PointIsWithinBounds2D(double point[2], double bounds[4],
+inline bool PointIsWithinBounds2D(double point[2], double bounds[4],
                            const double delta[2])
 {
   if (!point || !bounds || !delta) {
@@ -54,6 +56,14 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
   this->AddPoint(20.0, 1.0);
   this->AddPoint(20.0, 20.0);
   this->AddPoint(1.0, 20.0);
+
+  // Point 0 is repeated for rendering purposes.
+  this->BoxPoints->InsertNextPoint(1.0, 1.0);
+
+  // Rendering setup
+  this->Pen->SetWidth(2.);
+  this->Pen->SetColor(255, 255, 255);
+  this->Pen->SetLineType(vtkPen::SOLID_LINE);
 }
 
 vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem() = default;
@@ -67,6 +77,7 @@ void vtkTransferFunctionBoxItem::DragBox(const double deltaX,
     return;
 
   this->MovePoint(BOTTOM_LEFT, deltaX, deltaY);
+  this->MovePoint(BOTTOM_LEFT_LOOP, deltaX, deltaY);
   this->MovePoint(BOTTOM_RIGHT, deltaX, deltaY);
   this->MovePoint(TOP_RIGHT, deltaX, deltaY);
   this->MovePoint(TOP_LEFT, deltaX, deltaY);
@@ -75,8 +86,6 @@ void vtkTransferFunctionBoxItem::DragBox(const double deltaX,
   this->InvokeEvent(vtkCommand::SelectionChangedEvent);
 }
 
-// Points move independently. In order to keep the box rigid when dragging it
-// outside of the edges, it is checked first whether it stays within bounds.
 bool vtkTransferFunctionBoxItem::BoxIsWithinBounds(const double deltaX,
                                                    const double deltaY)
 {
@@ -84,8 +93,7 @@ bool vtkTransferFunctionBoxItem::BoxIsWithinBounds(const double deltaX,
   this->GetValidBounds(bounds);
 
   const double delta[2] = { 0.0, 0.0 };
-  const vtkIdType numPoints = this->BoxPoints->GetNumberOfPoints();
-  for (vtkIdType id = 0; id < numPoints; id++) {
+  for (vtkIdType id = 0; id < this->NumPoints; id++) {
     double pos[2];
     this->BoxPoints->GetPoint(id, pos);
     pos[0] += deltaX;
@@ -117,7 +125,7 @@ vtkIdType vtkTransferFunctionBoxItem::AddPoint(const double x, const double y)
 
 vtkIdType vtkTransferFunctionBoxItem::AddPoint(double* pos)
 {
-  if (this->BoxPoints->GetNumberOfPoints() == 4) {
+  if (this->BoxPoints->GetNumberOfPoints() >= 4) {
     return 3;
   }
 
@@ -146,6 +154,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
       if (this->ArePointsCrossing(cornerId, delta, TOP_RIGHT))
         return;
       this->MovePoint(cornerId, delta[0], delta[1]);
+      this->MovePoint(BOTTOM_LEFT_LOOP, delta[0], delta[1]);
       this->MovePoint(TOP_LEFT, delta[0], 0.0);
       this->MovePoint(BOTTOM_RIGHT, 0.0, delta[1]);
       break;
@@ -155,6 +164,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
         return;
       this->MovePoint(cornerId, delta[0], delta[1]);
       this->MovePoint(BOTTOM_LEFT, 0.0, delta[1]);
+      this->MovePoint(BOTTOM_LEFT_LOOP, 0.0, delta[1]);
       this->MovePoint(TOP_RIGHT, delta[0], 0.0);
       break;
 
@@ -172,6 +182,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
       this->MovePoint(cornerId, delta[0], delta[1]);
       this->MovePoint(TOP_RIGHT, 0.0, delta[1]);
       this->MovePoint(BOTTOM_LEFT, delta[0], 0.0);
+      this->MovePoint(BOTTOM_LEFT_LOOP, delta[0], 0.0);
       break;
   }
 
@@ -210,15 +221,14 @@ vtkIdType vtkTransferFunctionBoxItem::RemovePoint(double* pos)
 
 vtkIdType vtkTransferFunctionBoxItem::GetNumberOfPoints() const
 {
-  return this->BoxPoints->GetNumberOfPoints();
+  return static_cast<vtkIdType>(this->NumPoints);
 }
 
 void vtkTransferFunctionBoxItem::GetControlPoint(vtkIdType index,
                                                  double* point) const
 {
-  const vtkIdType numPoints = this->BoxPoints->GetNumberOfPoints();
-  if (numPoints == 0 || index >= numPoints) {
-    // vtkErrorMacro(<< "Wrong point index!");
+  if (index >= this->NumPoints) {
+    //vtkErrorMacro(<< "Wrong point index!");
     return;
   }
 
@@ -242,10 +252,14 @@ void vtkTransferFunctionBoxItem::emitEvent(unsigned long event, void* params)
 
 bool vtkTransferFunctionBoxItem::Paint(vtkContext2D* painter)
 {
-  // TODO Add lines connecting the points.
   // TODO Add a quad mapping a texture showing the color/opacity transfer
   // functions. The quad should render as a blended overlay on top fo the
   // histogram.
+
+  // Draw outline
+  painter->ApplyPen(this->Pen.GetPointer());
+  painter->DrawPoly(this->BoxPoints.GetPointer());
+
   return Superclass::Paint(painter);
 }
 
@@ -267,7 +281,7 @@ bool vtkTransferFunctionBoxItem::Hit(const vtkContextMouseEvent& mouse)
   // maybe the cursor is over the first or last point (which could be outside
   // the bounds because of the screen point size).
   bool isOverPoint = false;
-  for (int i = 0; i < this->GetNumberOfPoints(); ++i) {
+  for (int i = 0; i < this->NumPoints; ++i) {
     isOverPoint = this->IsOverPoint(pos, i);
     if (isOverPoint) {
       break;
