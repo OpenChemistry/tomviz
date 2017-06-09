@@ -31,6 +31,7 @@
  */
 
 class vtkColorTransferFunction;
+class vtkImageData;
 class vtkPen;
 class vtkPiecewiseFunction;
 class vtkPoints2D;
@@ -50,17 +51,15 @@ public:
    * Transfer functions represented by this box item.
    */
   void SetColorFunction(vtkColorTransferFunction* function);
-  vtkGetObjectMacro(
-    ColorFunction,
-    vtkColorTransferFunction) void SetOpacityFunction(vtkPiecewiseFunction*
-                                                        function);
+  vtkGetObjectMacro(ColorFunction,  vtkColorTransferFunction)
+  void SetOpacityFunction(vtkPiecewiseFunction* function);
   vtkGetObjectMacro(OpacityFunction, vtkPiecewiseFunction)
     //@}
 
-    /**
-     * Returns the curren box as [x0, y0, width, height].
-     */
-    const vtkRectd& GetBox();
+  /**
+   * Returns the curren box as [x0, y0, width, height].
+   */
+  const vtkRectd& GetBox();
 
 protected:
   vtkTransferFunctionBoxItem();
@@ -134,6 +133,8 @@ protected:
   bool KeyReleaseEvent(const vtkContextKeyEvent& key) VTK_OVERRIDE;
   //@}
 
+  virtual void ComputeTexture();
+
 private:
   /**
    * Custom method to clamp point positions to valid bounds (chart bounds).  A
@@ -163,5 +164,6 @@ private:
   vtkColorTransferFunction* ColorFunction = nullptr;
 
   vtkNew<vtkPen> Pen;
+  vtkNew<vtkImageData> Texture;
 };
 #endif // tomvizvtkTransferFunctionBoxItem_h

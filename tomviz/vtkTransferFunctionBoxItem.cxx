@@ -14,14 +14,18 @@
 
 ******************************************************************************/
 #include "vtkTransferFunctionBoxItem.h"
+#include <vtkBrush.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkContext2D.h>
 #include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
+#include <vtkImageData.h>
 #include <vtkObjectFactory.h>
 #include <vtkPen.h>
 #include <vtkPiecewiseFunction.h>
+#include <vtkPointData.h>
 #include <vtkPoints2D.h>
+#include <vtkUnsignedCharArray.h>
 #include <vtkVectorOperators.h>
 
 namespace {
@@ -49,9 +53,9 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
   : Superclass()
 {
   // Initialize box, points are ordered as:
-  //  3 ----- 2
-  //  |       |
-  //  0 ----- 1
+  //     3 ----- 2
+  //     |       |
+  // (4) 0 ----- 1
   this->AddPoint(1.0, 1.0);
   this->AddPoint(20.0, 1.0);
   this->AddPoint(20.0, 20.0);
@@ -64,6 +68,10 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
   this->Pen->SetWidth(2.);
   this->Pen->SetColor(255, 255, 255);
   this->Pen->SetLineType(vtkPen::SOLID_LINE);
+
+  const int texSize = 256;
+  this->Texture->SetDimensions(texSize, 1, 1);
+  this->Texture->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
 }
 
 vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem() = default;
@@ -219,6 +227,12 @@ vtkIdType vtkTransferFunctionBoxItem::RemovePoint(double* pos)
   return 0;
 }
 
+void vtkTransferFunctionBoxItem::SetControlPoint(vtkIdType index, double* point)
+{
+  // This method does nothing as this item has a fixed number of points (4).
+  return;
+}
+
 vtkIdType vtkTransferFunctionBoxItem::GetNumberOfPoints() const
 {
   return static_cast<vtkIdType>(this->NumPoints);
@@ -228,7 +242,6 @@ void vtkTransferFunctionBoxItem::GetControlPoint(vtkIdType index,
                                                  double* point) const
 {
   if (index >= this->NumPoints) {
-    //vtkErrorMacro(<< "Wrong point index!");
     return;
   }
 
@@ -240,11 +253,6 @@ vtkMTimeType vtkTransferFunctionBoxItem::GetControlPointsMTime()
   return this->GetMTime();
 }
 
-void vtkTransferFunctionBoxItem::SetControlPoint(vtkIdType index, double* point)
-{
-  // TODO See vtkColorTransferControlPointsItem
-}
-
 void vtkTransferFunctionBoxItem::emitEvent(unsigned long event, void* params)
 {
   this->InvokeEvent(event, params);
@@ -252,15 +260,52 @@ void vtkTransferFunctionBoxItem::emitEvent(unsigned long event, void* params)
 
 bool vtkTransferFunctionBoxItem::Paint(vtkContext2D* painter)
 {
-  // TODO Add a quad mapping a texture showing the color/opacity transfer
-  // functions. The quad should render as a blended overlay on top fo the
-  // histogram.
+  // Prepare brush
+  if (this->Texture->GetMTime() < this->GetMTime())
+  {
+    this->ComputeTexture();
+  }
 
-  // Draw outline
+  auto brush = painter->GetBrush();
+  brush->SetColorF(0.0, 0.0, 0.0, 0.0);
+  brush->SetTexture(this->Texture.GetPointer());
+  brush->SetTextureProperties(vtkBrush::Linear | vtkBrush::Stretch);
+
+  // Prepare outline
   painter->ApplyPen(this->Pen.GetPointer());
-  painter->DrawPoly(this->BoxPoints.GetPointer());
 
+  painter->DrawPolygon(this->BoxPoints.GetPointer());
   return Superclass::Paint(painter);
+}
+
+void vtkTransferFunctionBoxItem::ComputeTexture()
+{
+  double range[2];
+  this->ColorFunction->GetRange(range);
+
+  const int texSize = this->Texture->GetDimensions()[0];
+  auto dataRGB = new double[texSize * 3];
+  this->ColorFunction->GetTable(range[0], range[1], texSize, dataRGB);
+
+  auto dataAlpha = new double[texSize];
+  this->OpacityFunction->GetTable(range[0], range[1], texSize, dataAlpha);
+
+  auto arr = vtkUnsignedCharArray::SafeDownCast(
+    this->Texture->GetPointData()->GetScalars());
+
+    for (vtkIdType i = 0; i < texSize; i++) {
+
+      double color[4];
+      color[0] = dataRGB[i * 3] * 255.0;
+      color[1] = dataRGB[i * 3 + 1] * 255.0;
+      color[2] = dataRGB[i * 3 + 2] * 255.0;
+      color[3] = dataAlpha[i] * 255.0;
+
+      arr->SetTuple(i, color);
+    }
+
+  delete [] dataRGB;
+  delete [] dataAlpha;
 }
 
 bool vtkTransferFunctionBoxItem::Hit(const vtkContextMouseEvent& mouse)
@@ -406,5 +451,5 @@ const vtkRectd& vtkTransferFunctionBoxItem::GetBox()
 vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction,
                      vtkColorTransferFunction)
 
-  vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, OpacityFunction,
+vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, OpacityFunction,
                        vtkPiecewiseFunction)

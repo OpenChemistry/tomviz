@@ -169,8 +169,8 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
 //  pngWriter->Delete();
 
   // Cleanup
-  delete dataRGB;
-  delete dataAlpha;
+  delete [] dataRGB;
+  delete [] dataAlpha;
 }
 
 //-----------------------------------------------------------------------------
