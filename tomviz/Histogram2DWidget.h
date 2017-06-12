@@ -64,6 +64,8 @@ public slots:
   void onTransfer2DChanged();
 
 protected:
+  void showEvent(QShowEvent* event) override;
+
   vtkNew<vtkChartTransfer2DEditor> m_chartHistogram2D;
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;

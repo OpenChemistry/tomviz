@@ -44,6 +44,7 @@ vtkChartTransfer2DEditor::vtkChartTransfer2DEditor() : Storage(new Private)
   this->Storage->Callback->SetClientData(this);
   this->Storage->Callback->SetCallback(
     vtkChartTransfer2DEditor::OnBoxItemModified);
+  ///TODO Disable panning
 }
 
 //-----------------------------------------------------------------------------
@@ -73,7 +74,10 @@ void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::GenerateTransfer2D()
 {
-  if (!this->Storage->Transfer2D) {
+  if (!this->Storage->Transfer2D ||
+    !this->Histogram ||
+    !this->Histogram->GetInputImageData())
+ {
     vtkErrorMacro(<< "Failed to generate Transfer2D!");
     return;
   }
@@ -160,6 +164,7 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
       transfer->SetTuple(index, color);
     }
 
+///TODO Remove
 // PNGWriter only supports uchar.
 //  vtkPNGWriter* pngWriter = vtkPNGWriter::New();
 //  pngWriter->SetInputData(this->Storage->Transfer2D);
@@ -194,6 +199,10 @@ void vtkChartTransfer2DEditor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
+
+///TODO Use linear interpolation for the histogram texture
+//-----------------------------------------------------------------------------
+//vtkChartTransfer2DEditor::Paint
 
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::OnBoxItemModified(vtkObject* caller,

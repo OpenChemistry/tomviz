@@ -43,6 +43,15 @@ public:
   Module(QObject* parent = nullptr);
   ~Module() override;
 
+  /// Transfer function mode (1D or 2D). This enum needs to be synchronized with
+  /// the order of the tabs in ui->tabWidget1D2DTransfer.
+  enum class TransferMode : unsigned char {
+    TF_1D = 0,
+    TF_2D
+  };
+  void setTransferMode(const int mode);
+  int getTransferMode() const;
+
   /// Returns a  label for this module.
   virtual QString label() const = 0;
 

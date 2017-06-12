@@ -60,13 +60,11 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   auto axis = m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM);
   axis->SetTitle("Scalar Value");
   axis->SetBehavior(vtkAxis::FIXED);
-  // axis->SetVisible(false);
   axis->SetRange(0, 255);
 
   axis = m_chartHistogram2D->GetAxis(vtkAxis::LEFT);
   axis->SetTitle("Gradient Magnitude");
   axis->SetBehavior(vtkAxis::FIXED);
-  // axis->SetVisible(false);
   axis->SetRange(0, 255);
 
   m_chartHistogram2D->GetAxis(vtkAxis::LEFT)->SetBehavior(vtkAxis::FIXED);
@@ -99,6 +97,7 @@ void Histogram2DWidget::setHistogram(vtkImageData* histogram)
   vtkColorTransferFunction* transferFunction = vtkColorTransferFunction::New();
   transferFunction->AddRGBSegment(range[0] + 1.0, 0.0, 0.0, 0.0, range[1], 1.0,
                                   1.0, 1.0);
+
   transferFunction->SetScaleToLog10();
   transferFunction->Build();
   m_chartHistogram2D->SetTransferFunction(transferFunction);
@@ -140,5 +139,11 @@ void Histogram2DWidget::onTransfer2DChanged()
   }
 
   m_histogramView->GetRenderWindow()->Render();
+}
+
+void Histogram2DWidget::showEvent(QShowEvent* event)
+{
+  QWidget::showEvent(event);
+  m_chartHistogram2D->GenerateTransfer2D();
 }
 }

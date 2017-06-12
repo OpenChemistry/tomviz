@@ -52,6 +52,7 @@ public:
   vtkWeakPointer<vtkSMProxy> m_opacityMap;
   vtkNew<vtkPiecewiseFunction> m_gradientOpacityMap;
 
+  Module::TransferMode m_transferMode;
   vtkNew<vtkImageData> m_transfer2D;
   vtkSMProxy* detachedColorMap()
   {
@@ -190,8 +191,8 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
 
 vtkImageData* Module::transferFunction2D() const
 {
-  /// TODO Handle detached mode
-  return d->m_transfer2D.GetPointer();
+  return useDetachedColorMap() ? d->m_transfer2D.GetPointer()
+                               : colorMapDataSource()->transferFunction2D();
 }
 
 bool Module::serialize(pugi::xml_node& ns) const
@@ -337,6 +338,18 @@ bool Module::deserializeAnimationCue(vtkSMProxy* proxyObj,
   }
   cue->triggerKeyFramesModified();
   return true;
+}
+
+void Module::setTransferMode(const int mode)
+{
+  d->m_transferMode = static_cast<Module::TransferMode>(mode);
+  this->updateColorMap();
+}
+
+int Module::getTransferMode() const
+{
+  ///TODO handle detached mode
+  return static_cast<int>(d->m_transferMode);
 }
 
 } // end of namespace tomviz

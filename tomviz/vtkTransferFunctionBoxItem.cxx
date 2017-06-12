@@ -61,17 +61,22 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
   this->AddPoint(20.0, 20.0);
   this->AddPoint(1.0, 20.0);
 
-  // Point 0 is repeated for rendering purposes.
+  // Point 0 is repeated for rendering purposes
   this->BoxPoints->InsertNextPoint(1.0, 1.0);
 
-  // Rendering setup
+  // Initialize outline
   this->Pen->SetWidth(2.);
   this->Pen->SetColor(255, 255, 255);
   this->Pen->SetLineType(vtkPen::SOLID_LINE);
 
+  // Initialize texture
+  auto tex = this->Texture.GetPointer();
   const int texSize = 256;
-  this->Texture->SetDimensions(texSize, 1, 1);
-  this->Texture->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
+  tex->SetDimensions(texSize, 1, 1);
+  tex->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
+  auto arr = vtkUnsignedCharArray::SafeDownCast(tex->GetPointData()->GetScalars());
+  const auto dataPtr = arr->GetVoidPointer(0);
+  memset(dataPtr, 0, texSize * 4 * sizeof(unsigned char));
 }
 
 vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem() = default;
@@ -261,7 +266,7 @@ void vtkTransferFunctionBoxItem::emitEvent(unsigned long event, void* params)
 bool vtkTransferFunctionBoxItem::Paint(vtkContext2D* painter)
 {
   // Prepare brush
-  if (this->Texture->GetMTime() < this->GetMTime())
+  if (this->IsInitialized() && this->NeedsTextureUpdate())
   {
     this->ComputeTexture();
   }
@@ -303,6 +308,7 @@ void vtkTransferFunctionBoxItem::ComputeTexture()
 
       arr->SetTuple(i, color);
     }
+  this->Texture->Modified();
 
   delete [] dataRGB;
   delete [] dataAlpha;
@@ -453,3 +459,15 @@ vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction,
 
 vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, OpacityFunction,
                        vtkPiecewiseFunction)
+
+bool vtkTransferFunctionBoxItem::NeedsTextureUpdate()
+{
+  auto tex = this->Texture.GetPointer();
+  return (tex->GetMTime() < this->ColorFunction->GetMTime() ||
+          tex->GetMTime() < this->OpacityFunction->GetMTime());
+}
+
+bool vtkTransferFunctionBoxItem::IsInitialized()
+{
+  return this->ColorFunction && this->OpacityFunction;
+}

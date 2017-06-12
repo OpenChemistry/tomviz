@@ -33,7 +33,9 @@
 
 #include <QThread>
 #include <QTimer>
+#include <QModelIndex>
 
+#include "AbstractDataModel.h"
 #include "ComputeHistogram.h"
 #include "DataSource.h"
 #include "Module.h"
@@ -217,14 +219,74 @@ void HistogramMaker::makeHistogram2D(vtkSmartPointer<vtkImageData> input,
   emit histogram2DDone(input, output);
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+/**
+ * \brief Data model holding a set of vtkTransferFunctionBoxItem instances used to
+ * edit a 2D transfer function.
+ * \note Does not currently support insertion and removal of items.
+ */
+class Transfer2DModel : public AbstractDataModel
+{
+public:
+  using ItemBoxPtr = vtkSmartPointer<vtkTransferFunctionBoxItem>;
+  using DataItemBox = DataItem<ItemBoxPtr>;
+
+  Transfer2DModel(QObject* parent = nullptr) : AbstractDataModel(parent) {
+    this->initializeRootItem();
+    this->populate();
+  };
+
+  ~Transfer2DModel() {
+    delete this->RootItem;
+  };
+
+  void initializeRootItem() {
+    this->RootItem = new DataItemBox;
+    this->RootItem->setData(0, Qt::DisplayRole, "Id");
+    this->RootItem->setData(0, Qt::DisplayRole, "Name");
+  };
+
+  /**
+   * Initializes with a default TFBoxItem, which will be used to hold the
+   * default Module/DataSource transfer functions.
+   */
+  void populate() {
+    auto item = new DataItemBox(this->RootItem);
+    item->setData(0, Qt::DisplayRole, this->RootItem->childCount() + 1);
+    auto itemBox = ItemBoxPtr::New();
+    item->setReferencedData(itemBox);
+  };
+
+  const ItemBoxPtr& get(const QModelIndex& index) {
+    const auto itemBox = static_cast<const DataItemBox*>(this->getItem(index));
+    return itemBox->getReferencedDataConst();
+  };
+
+  /**
+   * Returns the first element of the list which refers to the default
+   * Module/DataSource transfer function box.
+   */
+  const ItemBoxPtr& getDefault() {
+    return this->get(this->index(0, 0, QModelIndex()));
+  };
+
+private:
+  Transfer2DModel(const Transfer2DModel&) = delete;
+  void operator=(const Transfer2DModel&) = delete;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   : QWidget(parentObject, wflags), m_ui(new Ui::CentralWidget),
     m_timer(new QTimer(this)), m_histogramGen(new HistogramMaker),
-    m_worker(new QThread(this))
+    m_worker(new QThread(this)), m_transfer2DModel(new Transfer2DModel(this))
 {
   m_ui->setupUi(this);
-  m_ui->transfer2DList->hide();
+
+  // Setup the view for the list of 2D transfer functions. This functionality
+  // is work-in-progress and currenlty hidden.
+  m_ui->tvTransfer2DSelection->setModel(m_transfer2DModel);
+  m_ui->wTransfer2DSelection->hide();
 
   // Hide the layout tabs
   m_ui->tabbedMultiViewWidget->setTabVisibility(false);
@@ -244,7 +306,10 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
           m_ui->gradientOpacityWidget, SLOT(setVisible(bool)));
   connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
           SLOT(onColorMapUpdated()));
+  connect(m_ui->tabWidget1D2DTransfer, SIGNAL(currentChanged(int)), this,
+          SLOT(onTransferModeChanged(const int)));
   m_ui->gradientOpacityWidget->hide();
+  m_ui->histogram2DWidget->addFunctionItem(m_transfer2DModel->getDefault());
 
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady
@@ -345,13 +410,22 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
     m_ui->histogramWidget->setLUTProxy(m_activeModule->colorMap());
     if (m_activeModule->supportsGradientOpacity()) {
       m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap());
+      m_transfer2DModel->getDefault()->SetColorFunction(
+        vtkColorTransferFunction::SafeDownCast(m_activeModule->colorMap()->GetClientSideObject()));
+      m_transfer2DModel->getDefault()->SetOpacityFunction(
+        vtkPiecewiseFunction::SafeDownCast(m_activeModule->opacityMap()->GetClientSideObject()));
       m_ui->histogram2DWidget->setTransfer2D(
         m_activeModule->transferFunction2D());
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
     m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap());
-    // m_ui->histogram2DWidget->setTransfer2D(m_activeModule->transferFunction2D());
+
+    m_transfer2DModel->getDefault()->SetColorFunction(
+      vtkColorTransferFunction::SafeDownCast(source->colorMap()->GetClientSideObject()));
+    m_transfer2DModel->getDefault()->SetOpacityFunction(
+      vtkPiecewiseFunction::SafeDownCast(source->opacityMap()->GetClientSideObject()));
+    m_ui->histogram2DWidget->setTransfer2D(source->transferFunction2D());
   }
 
   // Check our cache, and use that if appopriate (or update it).
@@ -423,32 +497,6 @@ void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
   }
 
   m_ui->histogram2DWidget->setHistogram(output);
-
-  // TODO transferFunctionList (QListView) will create and list various
-  // vtkTransferFunctionBoxItem instances, each containing a different
-  // RGBA map. A BoxItem can be selected from the list to modify its LUT.
-  typedef vtkSmartPointer<vtkTransferFunctionBoxItem> itemPtr;
-  itemPtr tfItem = itemPtr::New();
-
-  vtkColorTransferFunction* colorFunc = vtkColorTransferFunction::New();
-  colorFunc->AddRGBPoint(0.0, 1.0, 0.0, 0.0);
-  colorFunc->AddRGBPoint(0.25, 1.0, 0.4, 0.0);
-  colorFunc->AddRGBPoint(0.5, 1.0, 0.8, 0.0);
-  colorFunc->AddRGBPoint(0.75, 0.1, 0.8, 0.0);
-  colorFunc->AddRGBPoint(1.0, 0.0, 0.3, 1.0);
-  colorFunc->Build();
-
-  vtkPiecewiseFunction* opacFunc = vtkPiecewiseFunction::New();
-  opacFunc->AddPoint(0.0, 0.0);
-  opacFunc->AddPoint(1.0, 0.3);
-
-  tfItem->SetColorFunction(colorFunc);
-  tfItem->SetOpacityFunction(opacFunc);
-
-  colorFunc->Delete();
-  opacFunc->Delete();
-
-  m_ui->histogram2DWidget->addFunctionItem(tfItem);
 }
 
 vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)
@@ -487,6 +535,19 @@ void CentralWidget::setHistogramTable(vtkTable* table)
   m_ui->gradientOpacityWidget->setInputData(table, "image_extents",
                                             "image_pops");
 }
+
+void CentralWidget::onTransferModeChanged(const int mode)
+{
+  if (!m_activeModule)
+  {
+    return;
+  }
+
+  Module::TransferMode modeTF = static_cast<Module::TransferMode>(mode);
+  ///TODO Handle case: other than ModuleVolume active.
+  m_activeModule->setTransferMode(mode);
+}
+
 } // end of namespace tomviz
 
 #include "CentralWidget.moc"

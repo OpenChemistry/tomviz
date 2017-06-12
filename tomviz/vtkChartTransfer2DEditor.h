@@ -45,6 +45,14 @@ public:
    */
   vtkIdType AddFunction(vtkTransferFunctionBoxItem* boxItem);
 
+  /**
+   * Allocates and clears Transfer2D to be updated. Calls RasterBoxItem
+   * for the actual update. It invokes vtkCommand::EndEvent after the update,
+   * this signal should be caught by handlers using the generated 2DTF.
+   * \sa vtkChartTransfer2DEditor::RasterBoxItem
+   */
+  void GenerateTransfer2D();
+
 protected:
   vtkChartTransfer2DEditor();
   ~vtkChartTransfer2DEditor() override;
@@ -63,13 +71,6 @@ protected:
   vtkIdType AddPlot(vtkPlot* plot);
 
 private:
-  /**
-   * Allocates and clears Transfer2D to be updated. Calls RasterBoxItem
-   * for the actual update. It invokes vtkCommand::EndEvent after the update,
-   * this signal should be caught by handlers using the generated 2DTF.
-   * \sa vtkChartTransfer2DEditor::RasterBoxItem
-   */
-  void GenerateTransfer2D();
 
   /**
    * Rasterizes the transfer function defined within the BoxItem into

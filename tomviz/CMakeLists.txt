@@ -23,6 +23,8 @@ add_subdirectory(pvextensions)
 set(SOURCES
   AboutDialog.h
   AboutDialog.cxx
+  AbstractDataModel.h
+  AbstractDataModel.cxx
   ActiveObjects.cxx
   ActiveObjects.h
   AcquisitionWidget.cxx

@@ -38,6 +38,7 @@ namespace tomviz {
 class DataSource;
 class HistogramMaker;
 class Module;
+class Transfer2DModel;
 
 /// CentralWidget is a QWidget that is used as the central widget
 /// for the application. This include a histogram at the top and a
@@ -68,6 +69,8 @@ private slots:
   void onColorMapDataSourceChanged();
   void refreshHistogram();
 
+  void onTransferModeChanged(const int mode);
+
 private:
   Q_DISABLE_COPY(CentralWidget)
 
@@ -87,6 +90,7 @@ private:
   HistogramMaker* m_histogramGen;
   QThread* m_worker;
   QMap<vtkImageData*, vtkSmartPointer<vtkTable>> m_histogramCache;
+  Transfer2DModel* m_transfer2DModel;
 };
 }
 

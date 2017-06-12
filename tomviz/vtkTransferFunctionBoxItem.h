@@ -157,6 +157,9 @@ private:
    */
   bool BoxIsWithinBounds(const double deltaX, const double deltaY);
 
+  bool IsInitialized();
+  bool NeedsTextureUpdate();
+
   vtkNew<vtkPoints2D> BoxPoints;
   const int NumPoints = 4;
   vtkRectd Box;

@@ -99,11 +99,14 @@ void ModuleVolume::updateColorMap()
     vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject()));
   m_volumeProperty->SetGradientOpacity(
     m_gradientOpacityEnabled ? gradientOpacityMap() : nullptr);
-
-  /// TODO Setting the tf2D forces the property's mode to TF_2D. The module/
-  // source will need to keep a flag with the currently active mode (user
-  // selected).
   m_volumeProperty->SetTransferFunction2D(transferFunction2D());
+
+  const int mode = this->getTransferMode();
+  m_volumeProperty->SetTransferFunctionMode(mode);
+
+  ///TODO Hide/disable gradient-opacity checkbox for TF2D.
+  // this probably goes in addToPanel
+  //this->updateUI()
 
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
