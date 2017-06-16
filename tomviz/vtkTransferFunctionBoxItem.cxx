@@ -226,13 +226,14 @@ bool vtkTransferFunctionBoxItem::ArePointsCrossing(const vtkIdType pointA,
   return false;
 }
 
-vtkIdType vtkTransferFunctionBoxItem::RemovePoint(double* pos)
+vtkIdType vtkTransferFunctionBoxItem::RemovePoint(double* vtkNotUsed(pos))
 {
   // This method does nothing as this item has a fixed number of points (4).
   return 0;
 }
 
-void vtkTransferFunctionBoxItem::SetControlPoint(vtkIdType index, double* point)
+void vtkTransferFunctionBoxItem::SetControlPoint(vtkIdType vtkNotUsed(index),
+  double* vtkNotUsed(point))
 {
   // This method does nothing as this item has a fixed number of points (4).
   return;
@@ -287,11 +288,16 @@ void vtkTransferFunctionBoxItem::ComputeTexture()
 {
   double range[2];
   this->ColorFunction->GetRange(range);
+    std::cout << "->>> Range2D: " << range[0] << ", "
+      << range[1] << "\n";
 
   const int texSize = this->Texture->GetDimensions()[0];
   auto dataRGB = new double[texSize * 3];
   this->ColorFunction->GetTable(range[0], range[1], texSize, dataRGB);
 
+  ///TODO try using a different range (for opacity) opacity func
+  ///TODO try passing the range of the data (array, not the range
+  /// of the lookuptable).
   auto dataAlpha = new double[texSize];
   this->OpacityFunction->GetTable(range[0], range[1], texSize, dataAlpha);
 

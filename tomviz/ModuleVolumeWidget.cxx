@@ -10,7 +10,6 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
   : QWidget(parent_), m_ui(new Ui::ModuleVolumeWidget),
     m_uiLighting(new Ui::LightingParametersForm)
 {
-  std::cout << "->> construct ModVolWidget ...\n";
   m_ui->setupUi(this);
 
   QWidget* lightingWidget = new QWidget;
@@ -60,7 +59,6 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
 
 ModuleVolumeWidget::~ModuleVolumeWidget()
 {
-  std::cout << "->> Destruct ModVolWidget !\n";
 }
 
 void ModuleVolumeWidget::setJittering(const bool enable)

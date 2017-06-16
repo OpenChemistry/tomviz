@@ -122,17 +122,17 @@ private:
 
 template <typename T>
 DataItem<T>::DataItem(QTreeWidgetItem* parent)
-  : QTreeWidgetItem(parent){};
+  : QTreeWidgetItem(parent){}
 
 template <typename T>
 void DataItem<T>::setReferencedData(const T& data)
 {
   m_data = data;
-};
+}
 
 template <typename T>
 const T& DataItem<T>::getReferencedDataConst() const
 {
   return m_data;
-};
+}
 #endif //__AbstractDataModel_h

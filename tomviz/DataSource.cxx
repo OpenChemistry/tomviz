@@ -805,7 +805,7 @@ void DataSource::resetData()
   auto data = copyOriginalData();
   setData(data);
   this->Internals->GradientOpacityMap->RemoveAllPoints();
-  this->Internals->m_transfer2D->SetDimensions(64, 64, 1);
+  this->Internals->m_transfer2D->SetDimensions(1, 1, 1);
   this->Internals->m_transfer2D->AllocateScalars(VTK_FLOAT, 4);
   emit dataChanged();
 }

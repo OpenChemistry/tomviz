@@ -17,6 +17,14 @@
  * @class vtkChartTransfer2DEditor
  * @brief Generates and edits a 2D transfer function (vtkImageData) based
  * on its current vtkTransferFunctionBoxItems.
+ *
+ * Rasters a set of vtkTransferFunctionBoxItems on a vtkImageData instance
+ * which is used as a 2D transfer function. Each of the BoxItems contains
+ * one color and one opacity transfer functions.
+ *
+ * \todo Currently rasterization occurs in this class. In order to support
+ * additional shapes (besides rectangular boxes), much of this functionality
+ * should be moved into the item class.
  */
 
 #ifndef vtkChartTransfer2DEditor_h
@@ -46,12 +54,16 @@ public:
   vtkIdType AddFunction(vtkTransferFunctionBoxItem* boxItem);
 
   /**
-   * Allocates and clears Transfer2D to be updated. Calls RasterBoxItem
-   * for the actual update. It invokes vtkCommand::EndEvent after the update,
-   * this signal should be caught by handlers using the generated 2DTF.
+   * Allocates and clears Transfer2D to be updated, the dimenions of the
+   * histogram (e.g. number of bins) are used as dimensions for the transfer
+   * function. Calls RasterBoxItem for the actual update. It invokes
+   * vtkCommand::EndEvent after the update, this signal should be caught by
+   * handlers using the generated 2DTF.
    * \sa vtkChartTransfer2DEditor::RasterBoxItem
    */
   void GenerateTransfer2D();
+
+  void SetInputData(vtkImageData* data, vtkIdType z = 0) VTK_OVERRIDE;
 
 protected:
   vtkChartTransfer2DEditor();
@@ -66,6 +78,12 @@ protected:
                                 void* clientData, void* callData);
 
   /**
+   * Update bounds of each box item in the chart.
+   */
+  void UpdateItemsBounds(const double xMin, const double xMax,
+    const double yMin, const double yMax);
+
+  /**
    * This chart only supports plots of type vtkTransferFunctionBoxItem.
    */
   vtkIdType AddPlot(vtkPlot* plot);
@@ -73,7 +91,7 @@ protected:
 private:
 
   /**
-   * Rasterizes the transfer function defined within the BoxItem into
+   * Rasterize the transfer function defined within the BoxItem into
    * the current vtkImageData holding the 2D transfer function (Transfer2D).
    */
   void RasterBoxItem(vtkTransferFunctionBoxItem* boxItem);

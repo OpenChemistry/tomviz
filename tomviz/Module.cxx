@@ -94,7 +94,7 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   d->m_gradientOpacityMap->RemoveAllPoints();
 
   // TODO Initialize default values
-  d->m_transfer2D->SetDimensions(64, 64, 1);
+  d->m_transfer2D->SetDimensions(1, 1, 1);
   d->m_transfer2D->AllocateScalars(VTK_FLOAT, 4);
 
   if (m_view && m_activeDataSource) {

@@ -57,6 +57,9 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   // The output table will have the twice the number of columns, they will be
   // the x and y for input column. This is the bin centers, and the population.
   double minmax[2] = { 0.0, 0.0 };
+
+  // This number of bins in the 2D histogram will also be used as the number of
+  // bins in the 2D transfer function for X (scalar value) and Y (gradient mag.)
   const int numberOfBins = 256;
 
   // Keep the array we are working on around even if the user shallow copies
@@ -128,6 +131,8 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
 {
   double minmax[2] = { 0.0, 0.0 };
   const int numberOfBins = 256;
+  //const int numberOfBins = 1024;
+  //const int numberOfBins = 64;
 
   // Keep the array we are working on around even if the user shallow copies
   // over the input image data by incrementing the reference count here.
@@ -152,11 +157,13 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
   int dim[3];
   input->GetDimensions(dim);
   int numComp = arrayPtr->GetNumberOfComponents();
+  double spacing[3];
+  input->GetSpacing(spacing);
 
   switch (arrayPtr->GetDataType()) {
     vtkTemplateMacro(tomviz::Calculate2DHistogram(
       reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)), dim, numComp,
-      minmax, output));
+      minmax, output, spacing));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
@@ -236,9 +243,7 @@ public:
     this->populate();
   };
 
-  ~Transfer2DModel() {
-    delete this->RootItem;
-  };
+  ~Transfer2DModel() = default;
 
   void initializeRootItem() {
     this->RootItem = new DataItemBox;
@@ -543,7 +548,6 @@ void CentralWidget::onTransferModeChanged(const int mode)
     return;
   }
 
-  Module::TransferMode modeTF = static_cast<Module::TransferMode>(mode);
   ///TODO Handle case: other than ModuleVolume active.
   m_activeModule->setTransferMode(mode);
 }
