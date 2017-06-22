@@ -69,6 +69,10 @@ private slots:
   void onColorMapDataSourceChanged();
   void refreshHistogram();
 
+  /// The active transfer mode is tracked through the tab index of the TabWidget
+  /// holding the 1D/2D histograms (tabs are expected to follow the order of
+  /// Module::TransferMode).
+  int getTransferMode();
   void onTransferModeChanged(const int mode);
 
 private:

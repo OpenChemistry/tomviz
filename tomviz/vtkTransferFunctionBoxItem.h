@@ -61,6 +61,13 @@ public:
    */
   const vtkRectd& GetBox();
 
+  //{@
+  /**
+   * Set position and width with respect to corner 0 (BOTTOM_LEFT).
+   */
+  void SetBox(const double x, const double y, const double width, const double height);
+  //@}
+
 protected:
   vtkTransferFunctionBoxItem();
   ~vtkTransferFunctionBoxItem() override;

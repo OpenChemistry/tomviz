@@ -1,4 +1,5 @@
 #include "ModuleVolumeWidget.h"
+#include "Module.h"
 #include "ui_LightingParametersForm.h"
 #include "ui_ModuleVolumeWidget.h"
 
@@ -121,4 +122,18 @@ bool ModuleVolumeWidget::usesLighting(const int mode) const
 
   return false;
 }
+
+void ModuleVolumeWidget::adjustForTransferMode(const int transferMode)
+{
+  switch(transferMode)
+  {
+    case Module::TF_2D:
+      m_ui->cbGradientOpac->setEnabled(false);
+      break;
+    case Module::TF_1D:
+    default:
+      m_ui->cbGradientOpac->setEnabled(true);
+  }
+}
+
 }

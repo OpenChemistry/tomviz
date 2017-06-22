@@ -314,7 +314,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   connect(m_ui->tabWidget1D2DTransfer, SIGNAL(currentChanged(int)), this,
           SLOT(onTransferModeChanged(const int)));
   m_ui->gradientOpacityWidget->hide();
-  m_ui->histogram2DWidget->addFunctionItem(m_transfer2DModel->getDefault());
 
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady
@@ -372,6 +371,7 @@ void CentralWidget::setActiveModule(Module* module)
     connect(m_activeModule, SIGNAL(colorMapChanged()),
             SLOT(onColorMapDataSourceChanged()));
     setColorMapDataSource(module->colorMapDataSource());
+    m_activeModule->setTransferMode(this->getTransferMode());
   } else {
     setColorMapDataSource(nullptr);
   }
@@ -421,6 +421,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
         vtkPiecewiseFunction::SafeDownCast(m_activeModule->opacityMap()->GetClientSideObject()));
       m_ui->histogram2DWidget->setTransfer2D(
         m_activeModule->transferFunction2D());
+      m_activeModule->setTransferMode(this->getTransferMode());
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
@@ -502,6 +503,7 @@ void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
   }
 
   m_ui->histogram2DWidget->setHistogram(output);
+  m_ui->histogram2DWidget->addFunctionItem(m_transfer2DModel->getDefault());
 }
 
 vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)
@@ -550,6 +552,11 @@ void CentralWidget::onTransferModeChanged(const int mode)
 
   ///TODO Handle case: other than ModuleVolume active.
   m_activeModule->setTransferMode(mode);
+}
+
+int CentralWidget::getTransferMode()
+{
+  m_ui->tabWidget1D2DTransfer->currentIndex();
 }
 
 } // end of namespace tomviz

@@ -109,17 +109,6 @@ void Histogram2DWidget::setHistogram(vtkImageData* histogram)
 void Histogram2DWidget::addFunctionItem(
   vtkSmartPointer<vtkTransferFunctionBoxItem> item)
 {
-  double xRange[2];
-  auto bottomAxis = m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM);
-  bottomAxis->GetRange(xRange);
-
-  double yRange[2];
-  auto leftAxis = m_chartHistogram2D->GetAxis(vtkAxis::LEFT);
-  leftAxis->GetRange(yRange);
-
-  // Set bounds in the box item so that it can only move within the
-  // histogram's range.
-  item->SetValidBounds(xRange[0], xRange[1], yRange[0], yRange[1]);
   m_chartHistogram2D->AddFunction(item);
 }
 

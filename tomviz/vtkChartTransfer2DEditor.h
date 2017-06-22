@@ -49,7 +49,8 @@ public:
 
   /**
    * Events from added BoxItems (vtkCommand::SelectionChangedEvent) are
-   * observed in order to trigger Transfer2D generation.
+   * observed in order to trigger Transfer2D generation. A default position
+   * /size is set in the BoxItem.
    */
   vtkIdType AddFunction(vtkTransferFunctionBoxItem* boxItem);
 
@@ -88,7 +89,11 @@ protected:
    */
   vtkIdType AddPlot(vtkPlot* plot);
 
-private:
+  /**
+   * Positions the item in the center of the chart.
+   */
+  void SetDefaultBoxPosition(vtkSmartPointer<vtkTransferFunctionBoxItem> item,
+  const double xRange[2], const double yRange[2]);
 
   /**
    * Rasterize the transfer function defined within the BoxItem into
@@ -96,6 +101,9 @@ private:
    */
   void RasterBoxItem(vtkTransferFunctionBoxItem* boxItem);
 
+  bool IsInitialized();
+
+private:
   vtkChartTransfer2DEditor(const vtkChartTransfer2DEditor&) = delete;
   void operator=(const vtkChartTransfer2DEditor&) = delete;
 };

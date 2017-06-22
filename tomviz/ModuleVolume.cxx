@@ -103,10 +103,10 @@ void ModuleVolume::updateColorMap()
 
   const int mode = this->getTransferMode();
   m_volumeProperty->SetTransferFunctionMode(mode);
-
-  ///TODO Hide/disable gradient-opacity checkbox for TF2D.
-  // this probably goes in addToPanel
-  //this->updateUI()
+  if (m_controllers)
+  {
+    m_controllers->adjustForTransferMode(mode);
+  }
 
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
@@ -267,6 +267,12 @@ void ModuleVolume::addToPanel(QWidget* panel)
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
   m_controllers->setGradientOpacityEnabled(m_gradientOpacityEnabled);
+
+  const int mode = this->getTransferMode();
+  if (m_controllers)
+  {
+    m_controllers->adjustForTransferMode(mode);
+  }
 
   connect(m_controllers, SIGNAL(jitteringToggled(const bool)), this,
           SLOT(setJittering(const bool)));

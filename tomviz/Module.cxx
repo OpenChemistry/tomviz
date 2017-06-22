@@ -349,7 +349,7 @@ void Module::setTransferMode(const int mode)
 int Module::getTransferMode() const
 {
   ///TODO handle detached mode
-  return static_cast<int>(d->m_transferMode);
+  return d->m_transferMode;
 }
 
 } // end of namespace tomviz

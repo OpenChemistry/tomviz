@@ -45,7 +45,7 @@ public:
 
   /// Transfer function mode (1D or 2D). This enum needs to be synchronized with
   /// the order of the tabs in ui->tabWidget1D2DTransfer.
-  enum class TransferMode : unsigned char {
+  enum TransferMode {
     TF_1D = 0,
     TF_2D
   };

@@ -288,16 +288,11 @@ void vtkTransferFunctionBoxItem::ComputeTexture()
 {
   double range[2];
   this->ColorFunction->GetRange(range);
-    std::cout << "->>> Range2D: " << range[0] << ", "
-      << range[1] << "\n";
 
   const int texSize = this->Texture->GetDimensions()[0];
   auto dataRGB = new double[texSize * 3];
   this->ColorFunction->GetTable(range[0], range[1], texSize, dataRGB);
 
-  ///TODO try using a different range (for opacity) opacity func
-  ///TODO try passing the range of the data (array, not the range
-  /// of the lookuptable).
   auto dataAlpha = new double[texSize];
   this->OpacityFunction->GetTable(range[0], range[1], texSize, dataAlpha);
 
@@ -389,9 +384,6 @@ bool vtkTransferFunctionBoxItem::MouseDoubleClickEvent(
 bool vtkTransferFunctionBoxItem::MouseMoveEvent(
   const vtkContextMouseEvent& mouse)
 {
-  vtkVector2f mousePos = mouse.GetPos();
-  this->TransformScreenToData(mousePos, mousePos);
-
   switch (mouse.GetButton()) {
     case vtkContextMouseEvent::LEFT_BUTTON:
       if (this->CurrentPoint == -1) {
@@ -458,6 +450,28 @@ const vtkRectd& vtkTransferFunctionBoxItem::GetBox()
   this->Box.Set(lowerBound[0], lowerBound[1], width, height);
 
   return this->Box;
+}
+
+void vtkTransferFunctionBoxItem::SetBox(const double x, const double y, const double width,
+  const double height)
+{
+  // Delta position
+  double posBottomLeft[2];
+  this->BoxPoints->GetPoint(BOTTOM_LEFT, posBottomLeft);
+
+  vtkVector2f deltaPos(x - posBottomLeft[0], y - posBottomLeft[1]);
+  this->TransformDataToScreen(deltaPos, deltaPos);
+
+  // Delta dimensions
+  double posTopRight[2];
+  this->BoxPoints->GetPoint(TOP_RIGHT, posTopRight);
+
+  double deltaSize[2];
+  deltaSize[0] = width  - (posTopRight[0] - posBottomLeft[0]);
+  deltaSize[1] = height - (posTopRight[1] - posBottomLeft[1]);
+
+  this->DragBox(deltaPos.GetX(), deltaPos.GetY());
+  this->DragCorner(TOP_RIGHT, deltaSize); 
 }
 
 vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction,

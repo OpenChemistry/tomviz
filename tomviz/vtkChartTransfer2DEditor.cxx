@@ -73,13 +73,16 @@ void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
 }
 
 //-----------------------------------------------------------------------------
+bool vtkChartTransfer2DEditor::IsInitialized()
+{
+  return this->Storage->Transfer2D && this->Histogram->GetInputImageData();
+}
+
+//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::GenerateTransfer2D()
 {
-  if (!this->Storage->Transfer2D ||
-    !this->Histogram ||
-    !this->Histogram->GetInputImageData())
- {
-    vtkErrorMacro(<< "Failed to generate Transfer2D!");
+  if (!this->IsInitialized())
+  {
     return;
   }
 
@@ -174,6 +177,23 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
 vtkIdType vtkChartTransfer2DEditor::AddFunction(
   vtkTransferFunctionBoxItem* boxItem)
 {
+  if (!this->IsInitialized())
+  {
+    return -1;
+  }
+
+  double xRange[2];
+  auto bottomAxis = this->GetAxis(vtkAxis::BOTTOM);
+  bottomAxis->GetRange(xRange);
+
+  double yRange[2];
+  auto leftAxis = this->GetAxis(vtkAxis::LEFT);
+  leftAxis->GetRange(yRange);
+
+  // Set bounds in the box item so that it can only move within the
+  // histogram's range.
+  boxItem->SetValidBounds(xRange[0], xRange[1], yRange[0], yRange[1]);
+  this->SetDefaultBoxPosition(boxItem, xRange, yRange);
   boxItem->AddObserver(vtkCommand::SelectionChangedEvent,
     this->Storage->Callback.GetPointer());
 
@@ -247,4 +267,14 @@ void vtkChartTransfer2DEditor::UpdateItemsBounds(const double xMin,
 
     boxItem->SetValidBounds(xMin, xMax, yMin, yMax);
   }
+}
+
+//-----------------------------------------------------------------------------
+void vtkChartTransfer2DEditor::SetDefaultBoxPosition(
+  vtkSmartPointer<vtkTransferFunctionBoxItem> item,
+  const double xRange[2], const double yRange[2])
+{
+  const double deltaX = (xRange[1] - xRange[0]) / 3.0;
+  const double deltaY = (yRange[1] - yRange[0]) / 3.0;
+  item->SetBox(xRange[0] + deltaX, yRange[0] + deltaY, deltaX, deltaY);
 }
