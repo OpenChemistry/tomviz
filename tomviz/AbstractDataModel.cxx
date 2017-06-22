@@ -20,7 +20,6 @@
 
 #include "AbstractDataModel.h"
 
-
 // -----------------------------------------------------------------------------
 AbstractDataModel::AbstractDataModel(QObject* parent_)
   : QAbstractItemModel(parent_)
@@ -49,37 +48,35 @@ int AbstractDataModel::columnCount(const QModelIndex& parent_) const
 }
 
 // -----------------------------------------------------------------------------
-QModelIndex AbstractDataModel::index(int row, int column, const QModelIndex& parent_) const
+QModelIndex AbstractDataModel::index(int row, int column,
+                                     const QModelIndex& parent_) const
 {
-  if (!hasIndex(row, column, parent_))
-  {
+  if (!hasIndex(row, column, parent_)) {
     return QModelIndex();
   }
 
   QTreeWidgetItem* parentItem = this->getItem(parent_);
   QTreeWidgetItem* childItem = parentItem->child(row);
 
-  return (childItem ? this->createIndex(row, column, childItem) : QModelIndex());
+  return (childItem ? this->createIndex(row, column, childItem)
+                    : QModelIndex());
 }
 
 // -----------------------------------------------------------------------------
 QModelIndex AbstractDataModel::parent(const QModelIndex& index_) const
 {
-  if (!index_.isValid())
-  {
+  if (!index_.isValid()) {
     return QModelIndex();
   }
 
   QTreeWidgetItem* childItem = this->getItem(index_);
   QTreeWidgetItem* parentItem = childItem->parent();
 
-  if (parentItem == RootItem)
-  {
+  if (parentItem == RootItem) {
     return QModelIndex();
   }
 
-  if (parentItem == nullptr)
-  {
+  if (parentItem == nullptr) {
     return QModelIndex();
   }
 
@@ -92,8 +89,7 @@ QModelIndex AbstractDataModel::parent(const QModelIndex& index_) const
 // -----------------------------------------------------------------------------
 QVariant AbstractDataModel::data(const QModelIndex& index_, int role) const
 {
-  if (!this->isIndexValidUpperBound(index_))
-  {
+  if (!this->isIndexValidUpperBound(index_)) {
     return QVariant();
   }
 
@@ -101,27 +97,23 @@ QVariant AbstractDataModel::data(const QModelIndex& index_, int role) const
   QTreeWidgetItem* parent_ = this->getItem(parentIndex);
 
   QTreeWidgetItem* item = parent_->child(index_.row());
-  if (role == Qt::DisplayRole)
-  {
+  if (role == Qt::DisplayRole) {
     return item->data(index_.column(), role);
-  }
-  else
-  {
+  } else {
     return QVariant();
   }
 }
 
 // -----------------------------------------------------------------------------
-bool AbstractDataModel::setData(const QModelIndex& index_, const QVariant& value, int role)
+bool AbstractDataModel::setData(const QModelIndex& index_,
+                                const QVariant& value, int role)
 {
-  if (!this->isIndexValidUpperBound(index_))
-  {
+  if (!this->isIndexValidUpperBound(index_)) {
     return false;
   }
 
   QTreeWidgetItem* item = this->getItem(index_);
-  if (role == Qt::DisplayRole)
-  {
+  if (role == Qt::DisplayRole) {
     item->setData(index_.column(), Qt::DisplayRole, value);
     QAbstractItemModel::dataChanged(index_, index_);
     return true;
@@ -131,10 +123,10 @@ bool AbstractDataModel::setData(const QModelIndex& index_, const QVariant& value
 }
 
 // -----------------------------------------------------------------------------
-QVariant AbstractDataModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant AbstractDataModel::headerData(int section, Qt::Orientation orientation,
+                                       int role) const
 {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-  {
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
     return RootItem->data(section, role);
   }
 
@@ -144,8 +136,7 @@ QVariant AbstractDataModel::headerData(int section, Qt::Orientation orientation,
 // -----------------------------------------------------------------------------
 Qt::ItemFlags AbstractDataModel::flags(const QModelIndex& index_) const
 {
-  if (index_.isValid() && index_.column() == 0)
-  {
+  if (index_.isValid() && index_.column() == 0) {
     return (Qt::ItemIsEnabled | Qt::ItemIsSelectable);
   }
 
@@ -155,14 +146,13 @@ Qt::ItemFlags AbstractDataModel::flags(const QModelIndex& index_) const
 // -----------------------------------------------------------------------------
 bool AbstractDataModel::isIndexValidUpperBound(const QModelIndex& index_) const
 {
-  if (!index_.isValid())
-  {
+  if (!index_.isValid()) {
     return false;
   }
 
   QModelIndex const& parent_ = index_.parent();
-  if (index_.row() >= this->rowCount(parent_) || index_.column() >= this->columnCount(parent_))
-  {
+  if (index_.row() >= this->rowCount(parent_) ||
+      index_.column() >= this->columnCount(parent_)) {
     return false;
   }
 
@@ -172,11 +162,10 @@ bool AbstractDataModel::isIndexValidUpperBound(const QModelIndex& index_) const
 // -----------------------------------------------------------------------------
 QTreeWidgetItem* AbstractDataModel::getItem(const QModelIndex& index) const
 {
-  if (index.isValid())
-  {
-    QTreeWidgetItem* item = static_cast<QTreeWidgetItem*>(index.internalPointer());
-    if (item)
-    {
+  if (index.isValid()) {
+    QTreeWidgetItem* item =
+      static_cast<QTreeWidgetItem*>(index.internalPointer());
+    if (item) {
       return item;
     }
   }
@@ -191,18 +180,17 @@ const QModelIndex AbstractDataModel::getDefaultIndex()
 }
 
 // -----------------------------------------------------------------------------
-bool AbstractDataModel::removeRows(int row, int count, const QModelIndex& parent)
+bool AbstractDataModel::removeRows(int row, int count,
+                                   const QModelIndex& parent)
 {
   QTreeWidgetItem* parentItem = this->getItem(parent);
-  if (row < 0 || row + count > parentItem->childCount())
-  {
+  if (row < 0 || row + count > parentItem->childCount()) {
     return false;
   }
 
   QAbstractItemModel::beginRemoveRows(parent, row, row + count - 1);
 
-  for (int i = 0; i < count; i++)
-  {
+  for (int i = 0; i < count; i++) {
     // Shortens the list on every iteration
     delete parentItem->takeChild(row);
   }

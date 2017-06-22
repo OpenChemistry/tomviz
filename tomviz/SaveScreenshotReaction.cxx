@@ -199,7 +199,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
     chosenPalette->Delete();
   }
 
-  //pqSaveScreenshotReaction::saveScreenshot(filename, size, 100, false);
+  pqSaveScreenshotReaction::saveScreenshot(filename, size, 100, false);
 
   // restore color palette.
   if (clone) {

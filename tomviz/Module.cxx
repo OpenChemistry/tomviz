@@ -92,8 +92,6 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_view = vtkView;
   m_activeDataSource = data;
   d->m_gradientOpacityMap->RemoveAllPoints();
-
-  // TODO Initialize default values
   d->m_transfer2D->SetDimensions(1, 1, 1);
   d->m_transfer2D->AllocateScalars(VTK_FLOAT, 4);
 
@@ -348,7 +346,7 @@ void Module::setTransferMode(const int mode)
 
 int Module::getTransferMode() const
 {
-  ///TODO handle detached mode
+  /// TODO handle detached mode
   return d->m_transferMode;
 }
 

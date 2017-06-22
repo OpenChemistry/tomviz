@@ -103,8 +103,7 @@ void ModuleVolume::updateColorMap()
 
   const int mode = this->getTransferMode();
   m_volumeProperty->SetTransferFunctionMode(mode);
-  if (m_controllers)
-  {
+  if (m_controllers) {
     m_controllers->adjustForTransferMode(mode);
   }
 
@@ -269,8 +268,7 @@ void ModuleVolume::addToPanel(QWidget* panel)
   m_controllers->setGradientOpacityEnabled(m_gradientOpacityEnabled);
 
   const int mode = this->getTransferMode();
-  if (m_controllers)
-  {
+  if (m_controllers) {
     m_controllers->adjustForTransferMode(mode);
   }
 

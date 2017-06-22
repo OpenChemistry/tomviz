@@ -44,14 +44,17 @@ protected:
   int rowCount(const QModelIndex& parent_ = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent_ = QModelIndex()) const override;
 
-  QModelIndex index(int row, int column, const QModelIndex& parent_ = QModelIndex()) const override;
+  QModelIndex index(int row, int column,
+                    const QModelIndex& parent_ = QModelIndex()) const override;
 
   QModelIndex parent(const QModelIndex& index_) const override;
-  QVariant data(const QModelIndex& index_, int role = Qt::DisplayRole) const override;
-  bool setData(const QModelIndex& index_, const QVariant& value, int role) override;
+  QVariant data(const QModelIndex& index_,
+                int role = Qt::DisplayRole) const override;
+  bool setData(const QModelIndex& index_, const QVariant& value,
+               int role) override;
 
-  QVariant headerData(
-    int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+  QVariant headerData(int section, Qt::Orientation orientation,
+                      int role = Qt::DisplayRole) const override;
 
   Qt::ItemFlags flags(const QModelIndex& index_) const override;
 
@@ -76,8 +79,10 @@ protected:
   virtual void initializeRootItem() = 0;
 
   /**
-  * More comprehensive validation. In addition to the standard QModelIndex::isValid
-  * it checks the upper bounds. Because it internally calls QModelIndex::parent()
+  * More comprehensive validation. In addition to the standard
+  * QModelIndex::isValid
+  * it checks the upper bounds. Because it internally calls
+  * QModelIndex::parent()
   * (and thus QAbstractItemMode::parent()) it should never be called from within
   * parent().
   */
@@ -121,8 +126,9 @@ private:
 };
 
 template <typename T>
-DataItem<T>::DataItem(QTreeWidgetItem* parent)
-  : QTreeWidgetItem(parent){}
+DataItem<T>::DataItem(QTreeWidgetItem* parent) : QTreeWidgetItem(parent)
+{
+}
 
 template <typename T>
 void DataItem<T>::setReferencedData(const T& data)

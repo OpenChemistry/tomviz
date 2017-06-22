@@ -42,10 +42,10 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkChartTransfer2DEditor, vtkChartHistogram2D)
 
-  /**
-   * Set the vtkImageData on which to raster the 2D transfer function.
-   */
-  void SetTransfer2D(vtkImageData* transfer2D);
+    /**
+     * Set the vtkImageData on which to raster the 2D transfer function.
+     */
+    void SetTransfer2D(vtkImageData* transfer2D);
 
   /**
    * Events from added BoxItems (vtkCommand::SelectionChangedEvent) are
@@ -82,7 +82,7 @@ protected:
    * Update bounds of each box item in the chart.
    */
   void UpdateItemsBounds(const double xMin, const double xMax,
-    const double yMin, const double yMax);
+                         const double yMin, const double yMax);
 
   /**
    * This chart only supports plots of type vtkTransferFunctionBoxItem.
@@ -93,7 +93,7 @@ protected:
    * Positions the item in the center of the chart.
    */
   void SetDefaultBoxPosition(vtkSmartPointer<vtkTransferFunctionBoxItem> item,
-  const double xRange[2], const double yRange[2]);
+                             const double xRange[2], const double yRange[2]);
 
   /**
    * Rasterize the transfer function defined within the BoxItem into

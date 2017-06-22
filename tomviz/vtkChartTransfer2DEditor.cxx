@@ -12,10 +12,11 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkAxis.h"
 #include "vtkChartTransfer2DEditor.h"
+#include "vtkAxis.h"
 #include "vtkCallbackCommand.h"
 #include "vtkColorTransferFunction.h"
+#include "vtkFloatArray.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
@@ -25,7 +26,6 @@
 #include "vtkPointData.h"
 #include "vtkRect.h"
 #include "vtkTransferFunctionBoxItem.h"
-#include "vtkFloatArray.h"
 
 class vtkChartTransfer2DEditor::Private
 {
@@ -45,7 +45,7 @@ vtkChartTransfer2DEditor::vtkChartTransfer2DEditor() : Storage(new Private)
   this->Storage->Callback->SetClientData(this);
   this->Storage->Callback->SetCallback(
     vtkChartTransfer2DEditor::OnBoxItemModified);
-  ///TODO Disable panning
+  /// TODO Disable panning
 }
 
 //-----------------------------------------------------------------------------
@@ -81,8 +81,7 @@ bool vtkChartTransfer2DEditor::IsInitialized()
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::GenerateTransfer2D()
 {
-  if (!this->IsInitialized())
-  {
+  if (!this->IsInitialized()) {
     return;
   }
 
@@ -169,16 +168,15 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
       transfer->SetTuple(index, color);
     }
 
-  delete [] dataRGB;
-  delete [] dataAlpha;
+  delete[] dataRGB;
+  delete[] dataAlpha;
 }
 
 //-----------------------------------------------------------------------------
 vtkIdType vtkChartTransfer2DEditor::AddFunction(
   vtkTransferFunctionBoxItem* boxItem)
 {
-  if (!this->IsInitialized())
-  {
+  if (!this->IsInitialized()) {
     return -1;
   }
 
@@ -195,7 +193,7 @@ vtkIdType vtkChartTransfer2DEditor::AddFunction(
   boxItem->SetValidBounds(xRange[0], xRange[1], yRange[0], yRange[1]);
   this->SetDefaultBoxPosition(boxItem, xRange, yRange);
   boxItem->AddObserver(vtkCommand::SelectionChangedEvent,
-    this->Storage->Callback.GetPointer());
+                       this->Storage->Callback.GetPointer());
 
   return this->AddPlot(boxItem);
 }
@@ -212,9 +210,9 @@ void vtkChartTransfer2DEditor::PrintSelf(ostream& os, vtkIndent indent)
   this->Superclass::PrintSelf(os, indent);
 }
 
-///TODO Use linear interpolation for the histogram texture
+/// TODO Use linear interpolation for the histogram texture
 //-----------------------------------------------------------------------------
-//vtkChartTransfer2DEditor::Paint
+// vtkChartTransfer2DEditor::Paint
 
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::OnBoxItemModified(vtkObject* caller,
@@ -253,15 +251,15 @@ void vtkChartTransfer2DEditor::SetInputData(vtkImageData* data, vtkIdType z)
 
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::UpdateItemsBounds(const double xMin,
-  const double xMax, const double yMin, const double yMax)
+                                                 const double xMax,
+                                                 const double yMin,
+                                                 const double yMax)
 {
   // Set the new bounds to its current box items (plots).
   const vtkIdType numPlots = this->GetNumberOfPlots();
-  for (vtkIdType i = 0; i < numPlots; i++)
-  {
+  for (vtkIdType i = 0; i < numPlots; i++) {
     auto boxItem = vtkControlPointsItem::SafeDownCast(this->GetPlot(i));
-    if (!boxItem)
-    {
+    if (!boxItem) {
       continue;
     }
 
@@ -271,8 +269,8 @@ void vtkChartTransfer2DEditor::UpdateItemsBounds(const double xMin,
 
 //-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::SetDefaultBoxPosition(
-  vtkSmartPointer<vtkTransferFunctionBoxItem> item,
-  const double xRange[2], const double yRange[2])
+  vtkSmartPointer<vtkTransferFunctionBoxItem> item, const double xRange[2],
+  const double yRange[2])
 {
   const double deltaX = (xRange[1] - xRange[0]) / 3.0;
   const double deltaY = (yRange[1] - yRange[0]) / 3.0;

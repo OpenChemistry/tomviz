@@ -30,7 +30,7 @@
 
 namespace {
 inline bool PointIsWithinBounds2D(double point[2], double bounds[4],
-                           const double delta[2])
+                                  const double delta[2])
 {
   if (!point || !bounds || !delta) {
     return false;
@@ -74,7 +74,8 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
   const int texSize = 256;
   tex->SetDimensions(texSize, 1, 1);
   tex->AllocateScalars(VTK_UNSIGNED_CHAR, 4);
-  auto arr = vtkUnsignedCharArray::SafeDownCast(tex->GetPointData()->GetScalars());
+  auto arr =
+    vtkUnsignedCharArray::SafeDownCast(tex->GetPointData()->GetScalars());
   const auto dataPtr = arr->GetVoidPointer(0);
   memset(dataPtr, 0, texSize * 4 * sizeof(unsigned char));
 }
@@ -233,7 +234,7 @@ vtkIdType vtkTransferFunctionBoxItem::RemovePoint(double* vtkNotUsed(pos))
 }
 
 void vtkTransferFunctionBoxItem::SetControlPoint(vtkIdType vtkNotUsed(index),
-  double* vtkNotUsed(point))
+                                                 double* vtkNotUsed(point))
 {
   // This method does nothing as this item has a fixed number of points (4).
   return;
@@ -267,8 +268,7 @@ void vtkTransferFunctionBoxItem::emitEvent(unsigned long event, void* params)
 bool vtkTransferFunctionBoxItem::Paint(vtkContext2D* painter)
 {
   // Prepare brush
-  if (this->IsInitialized() && this->NeedsTextureUpdate())
-  {
+  if (this->IsInitialized() && this->NeedsTextureUpdate()) {
     this->ComputeTexture();
   }
 
@@ -299,20 +299,20 @@ void vtkTransferFunctionBoxItem::ComputeTexture()
   auto arr = vtkUnsignedCharArray::SafeDownCast(
     this->Texture->GetPointData()->GetScalars());
 
-    for (vtkIdType i = 0; i < texSize; i++) {
+  for (vtkIdType i = 0; i < texSize; i++) {
 
-      double color[4];
-      color[0] = dataRGB[i * 3] * 255.0;
-      color[1] = dataRGB[i * 3 + 1] * 255.0;
-      color[2] = dataRGB[i * 3 + 2] * 255.0;
-      color[3] = dataAlpha[i] * 255.0;
+    double color[4];
+    color[0] = dataRGB[i * 3] * 255.0;
+    color[1] = dataRGB[i * 3 + 1] * 255.0;
+    color[2] = dataRGB[i * 3 + 2] * 255.0;
+    color[3] = dataAlpha[i] * 255.0;
 
-      arr->SetTuple(i, color);
-    }
+    arr->SetTuple(i, color);
+  }
   this->Texture->Modified();
 
-  delete [] dataRGB;
-  delete [] dataAlpha;
+  delete[] dataRGB;
+  delete[] dataAlpha;
 }
 
 bool vtkTransferFunctionBoxItem::Hit(const vtkContextMouseEvent& mouse)
@@ -452,8 +452,8 @@ const vtkRectd& vtkTransferFunctionBoxItem::GetBox()
   return this->Box;
 }
 
-void vtkTransferFunctionBoxItem::SetBox(const double x, const double y, const double width,
-  const double height)
+void vtkTransferFunctionBoxItem::SetBox(const double x, const double y,
+                                        const double width, const double height)
 {
   // Delta position
   double posBottomLeft[2];
@@ -467,20 +467,20 @@ void vtkTransferFunctionBoxItem::SetBox(const double x, const double y, const do
   this->BoxPoints->GetPoint(TOP_RIGHT, posTopRight);
 
   double deltaSize[2];
-  deltaSize[0] = width  - (posTopRight[0] - posBottomLeft[0]);
+  deltaSize[0] = width - (posTopRight[0] - posBottomLeft[0]);
   deltaSize[1] = height - (posTopRight[1] - posBottomLeft[1]);
 
   this->DragBox(deltaPos.GetX(), deltaPos.GetY());
-  this->DragCorner(TOP_RIGHT, deltaSize); 
+  this->DragCorner(TOP_RIGHT, deltaSize);
 }
 
 vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction,
                      vtkColorTransferFunction)
 
-vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, OpacityFunction,
+  vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, OpacityFunction,
                        vtkPiecewiseFunction)
 
-bool vtkTransferFunctionBoxItem::NeedsTextureUpdate()
+    bool vtkTransferFunctionBoxItem::NeedsTextureUpdate()
 {
   auto tex = this->Texture.GetPointer();
   return (tex->GetMTime() < this->ColorFunction->GetMTime() ||

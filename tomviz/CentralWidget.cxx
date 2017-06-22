@@ -31,9 +31,9 @@
 
 #include <vtkPVDiscretizableColorTransferFunction.h>
 
+#include <QModelIndex>
 #include <QThread>
 #include <QTimer>
-#include <QModelIndex>
 
 #include "AbstractDataModel.h"
 #include "ComputeHistogram.h"
@@ -131,8 +131,8 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
 {
   double minmax[2] = { 0.0, 0.0 };
   const int numberOfBins = 256;
-  //const int numberOfBins = 1024;
-  //const int numberOfBins = 64;
+  // const int numberOfBins = 1024;
+  // const int numberOfBins = 64;
 
   // Keep the array we are working on around even if the user shallow copies
   // over the input image data by incrementing the reference count here.
@@ -168,16 +168,6 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
 
-  /// TODO handle NaN and Inf
-  //#ifndef NDEBUG
-  //  vtkIdType total = invalid;
-  //  for (int i = 0; i < numberOfBins; ++i)
-  //    total += pops[i];
-  //  assert(total == arrayPtr->GetNumberOfTuples());
-  //#endif
-  //  if (invalid) {
-  //    cout << "Warning: NaN or infinite value in dataset" << endl;
-  //  }
 }
 
 // This is a QObject that will be owned by the background thread
@@ -228,7 +218,8 @@ void HistogramMaker::makeHistogram2D(vtkSmartPointer<vtkImageData> input,
 
 //////////////////////////////////////////////////////////////////////////////////
 /**
- * \brief Data model holding a set of vtkTransferFunctionBoxItem instances used to
+ * \brief Data model holding a set of vtkTransferFunctionBoxItem instances used
+ * to
  * edit a 2D transfer function.
  * \note Does not currently support insertion and removal of items.
  */
@@ -238,14 +229,16 @@ public:
   using ItemBoxPtr = vtkSmartPointer<vtkTransferFunctionBoxItem>;
   using DataItemBox = DataItem<ItemBoxPtr>;
 
-  Transfer2DModel(QObject* parent = nullptr) : AbstractDataModel(parent) {
+  Transfer2DModel(QObject* parent = nullptr) : AbstractDataModel(parent)
+  {
     this->initializeRootItem();
     this->populate();
   };
 
   ~Transfer2DModel() = default;
 
-  void initializeRootItem() {
+  void initializeRootItem()
+  {
     this->RootItem = new DataItemBox;
     this->RootItem->setData(0, Qt::DisplayRole, "Id");
     this->RootItem->setData(0, Qt::DisplayRole, "Name");
@@ -255,14 +248,16 @@ public:
    * Initializes with a default TFBoxItem, which will be used to hold the
    * default Module/DataSource transfer functions.
    */
-  void populate() {
+  void populate()
+  {
     auto item = new DataItemBox(this->RootItem);
     item->setData(0, Qt::DisplayRole, this->RootItem->childCount() + 1);
     auto itemBox = ItemBoxPtr::New();
     item->setReferencedData(itemBox);
   };
 
-  const ItemBoxPtr& get(const QModelIndex& index) {
+  const ItemBoxPtr& get(const QModelIndex& index)
+  {
     const auto itemBox = static_cast<const DataItemBox*>(this->getItem(index));
     return itemBox->getReferencedDataConst();
   };
@@ -271,7 +266,8 @@ public:
    * Returns the first element of the list which refers to the default
    * Module/DataSource transfer function box.
    */
-  const ItemBoxPtr& getDefault() {
+  const ItemBoxPtr& getDefault()
+  {
     return this->get(this->index(0, 0, QModelIndex()));
   };
 
@@ -416,9 +412,11 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
     if (m_activeModule->supportsGradientOpacity()) {
       m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap());
       m_transfer2DModel->getDefault()->SetColorFunction(
-        vtkColorTransferFunction::SafeDownCast(m_activeModule->colorMap()->GetClientSideObject()));
+        vtkColorTransferFunction::SafeDownCast(
+          m_activeModule->colorMap()->GetClientSideObject()));
       m_transfer2DModel->getDefault()->SetOpacityFunction(
-        vtkPiecewiseFunction::SafeDownCast(m_activeModule->opacityMap()->GetClientSideObject()));
+        vtkPiecewiseFunction::SafeDownCast(
+          m_activeModule->opacityMap()->GetClientSideObject()));
       m_ui->histogram2DWidget->setTransfer2D(
         m_activeModule->transferFunction2D());
       m_activeModule->setTransferMode(this->getTransferMode());
@@ -428,9 +426,11 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
     m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap());
 
     m_transfer2DModel->getDefault()->SetColorFunction(
-      vtkColorTransferFunction::SafeDownCast(source->colorMap()->GetClientSideObject()));
+      vtkColorTransferFunction::SafeDownCast(
+        source->colorMap()->GetClientSideObject()));
     m_transfer2DModel->getDefault()->SetOpacityFunction(
-      vtkPiecewiseFunction::SafeDownCast(source->opacityMap()->GetClientSideObject()));
+      vtkPiecewiseFunction::SafeDownCast(
+        source->opacityMap()->GetClientSideObject()));
     m_ui->histogram2DWidget->setTransfer2D(source->transferFunction2D());
   }
 
@@ -545,12 +545,11 @@ void CentralWidget::setHistogramTable(vtkTable* table)
 
 void CentralWidget::onTransferModeChanged(const int mode)
 {
-  if (!m_activeModule)
-  {
+  if (!m_activeModule) {
     return;
   }
 
-  ///TODO Handle case: other than ModuleVolume active.
+  /// TODO Handle case: other than ModuleVolume active.
   m_activeModule->setTransferMode(mode);
 }
 

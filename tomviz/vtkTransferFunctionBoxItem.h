@@ -51,21 +51,24 @@ public:
    * Transfer functions represented by this box item.
    */
   void SetColorFunction(vtkColorTransferFunction* function);
-  vtkGetObjectMacro(ColorFunction,  vtkColorTransferFunction)
-  void SetOpacityFunction(vtkPiecewiseFunction* function);
+  vtkGetObjectMacro(
+    ColorFunction,
+    vtkColorTransferFunction) void SetOpacityFunction(vtkPiecewiseFunction*
+                                                        function);
   vtkGetObjectMacro(OpacityFunction, vtkPiecewiseFunction)
     //@}
 
-  /**
-   * Returns the curren box as [x0, y0, width, height].
-   */
-  const vtkRectd& GetBox();
+    /**
+     * Returns the curren box as [x0, y0, width, height].
+     */
+    const vtkRectd& GetBox();
 
   //{@
   /**
    * Set position and width with respect to corner 0 (BOTTOM_LEFT).
    */
-  void SetBox(const double x, const double y, const double width, const double height);
+  void SetBox(const double x, const double y, const double width,
+              const double height);
   //@}
 
 protected:
@@ -80,7 +83,7 @@ protected:
    *      3 ----- 2
    *      |       |
    *  (4) 0 ----- 1
-   * 
+   *
    * Point 0 is repeated for rendering purposes (vtkContext2D::DrawPoly
    * requires it to close the outline). This point is not registered with
    * vtkControlPointsItem.
@@ -145,8 +148,10 @@ protected:
 private:
   /**
    * Custom method to clamp point positions to valid bounds (chart bounds).  A
-   * custom method was required given that ControlPoints::ClampValidPos() appears
-   * to have bug where it does not not clamp to bounds[2,3].  The side effects of
+   * custom method was required given that ControlPoints::ClampValidPos()
+   * appears
+   * to have bug where it does not not clamp to bounds[2,3].  The side effects
+   * of
    * overriding that behavior are unclear so for now this custom method is used.
    */
   void ClampToValidPosition(double pos[2]);
@@ -160,7 +165,8 @@ private:
 
   /**
    * Points move independently. In order to keep the box rigid when dragging it
-   * outside of the chart edges it is first checked whether it stays within bounds.
+   * outside of the chart edges it is first checked whether it stays within
+   * bounds.
    */
   bool BoxIsWithinBounds(const double deltaX, const double deltaY);
 

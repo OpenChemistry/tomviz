@@ -58,9 +58,7 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
           SIGNAL(specularPowerChanged(const double)));
 }
 
-ModuleVolumeWidget::~ModuleVolumeWidget()
-{
-}
+ModuleVolumeWidget::~ModuleVolumeWidget() = default;
 
 void ModuleVolumeWidget::setJittering(const bool enable)
 {
@@ -125,8 +123,7 @@ bool ModuleVolumeWidget::usesLighting(const int mode) const
 
 void ModuleVolumeWidget::adjustForTransferMode(const int transferMode)
 {
-  switch(transferMode)
-  {
+  switch (transferMode) {
     case Module::TF_2D:
       m_ui->cbGradientOpac->setEnabled(false);
       break;
@@ -135,5 +132,4 @@ void ModuleVolumeWidget::adjustForTransferMode(const int transferMode)
       m_ui->cbGradientOpac->setEnabled(true);
   }
 }
-
 }

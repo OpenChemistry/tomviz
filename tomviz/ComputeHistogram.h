@@ -195,7 +195,8 @@ void CalculateHistogram(T* values, const vtkIdType n, const float min,
 
 template <typename T>
 void Calculate2DHistogram(T* values, const int* dim, const int numComp,
-                          const double* range, vtkImageData* histogram, double spacing[3])
+                          const double* range, vtkImageData* histogram,
+                          double spacing[3])
 {
   // Assumes all inputs are valid
   // Expects histogram image to be 1C double
@@ -206,10 +207,10 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
   histogram->GetDimensions(bins);
   const size_t sizeBins = static_cast<size_t>(bins[0] * bins[1]);
 
-  // Adjust histogram's spacing so that the axis show the actual range in the chart
-  double binSpacing[3] = { (range[1] - range[0])/ bins[0],
-    (range[1] * 0.25)/ bins[1], 
-    1.0 };
+  // Adjust histogram's spacing so that the axis show the actual range in the
+  // chart
+  double binSpacing[3] = { (range[1] - range[0]) / bins[0],
+                           (range[1] * 0.25) / bins[1], 1.0 };
   histogram->SetSpacing(binSpacing);
 
   memset(histogramArr->GetVoidPointer(0), 0x0, sizeBins * sizeof(double));
@@ -224,9 +225,9 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
 
   // Central differences delta (2 * h)
   const double avgSpacing = (spacing[0] + spacing[1] + spacing[2]) / 3.0;
-  const double delta[3] = {spacing[0] * 2 / avgSpacing,
-    spacing[1] * 2 / avgSpacing,
-    spacing[2] * 2 / avgSpacing};
+  const double delta[3] = { spacing[0] * 2 / avgSpacing,
+                            spacing[1] * 2 / avgSpacing,
+                            spacing[2] * 2 / avgSpacing };
 
   for (int kIndex = 0; kIndex < dim[2]; kIndex++) {
     // Index assumes alignment order in  x -> y -> z.
@@ -244,21 +245,25 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
           const size_t deltaXBack = centerIndex - 1;
 
           const double Dx = static_cast<double>(sliceCurrent[deltaXFront] -
-                                                sliceCurrent[deltaXBack]) / delta[0];
+                                                sliceCurrent[deltaXBack]) /
+                            delta[0];
 
           const size_t deltaYFront = dim[0] * (jIndex + 1) + iIndex;
           const size_t deltaYBack = dim[0] * (jIndex - 1) + iIndex;
           const double Dy = static_cast<double>(sliceCurrent[deltaYFront] -
-                                                sliceCurrent[deltaYBack]) / delta[1];
+                                                sliceCurrent[deltaYBack]) /
+                            delta[1];
 
           const double Dz = static_cast<double>(sliceNext[centerIndex] -
-                                                sliceLast[centerIndex]) / delta[2];
+                                                sliceLast[centerIndex]) /
+                            delta[2];
 
           double gradMag = sqrt(Dx * Dx + Dy * Dy + Dz * Dz);
           gradMagMax = vtkMath::Max(gradMag, gradMagMax);
           gradMagMin = vtkMath::Min(gradMag, gradMagMin);
 
-          // Normalize to RangeMax/4. This is what the gradient computation in the
+          // Normalize to RangeMax/4. This is what the gradient computation in
+          // the
           // GPUMapper's fragment shader expects.
           const double maxGradMag = range[1] * 0.25;
           gradMag = floor(gradMag + 0.5);
