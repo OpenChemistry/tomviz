@@ -37,10 +37,11 @@ public:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-vtkStandardNewMacro(vtkChartTransfer2DEditor);
+vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
-//-----------------------------------------------------------------------------
-vtkChartTransfer2DEditor::vtkChartTransfer2DEditor() : Storage(new Private)
+  //-----------------------------------------------------------------------------
+  vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
+  : Storage(new Private)
 {
   this->Storage->Callback->SetClientData(this);
   this->Storage->Callback->SetCallback(
@@ -135,6 +136,10 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
   const vtkIdType width = static_cast<vtkIdType>(box.GetWidth() / spacing[0]);
   const vtkIdType height = static_cast<vtkIdType>(box.GetHeight() / spacing[1]);
 
+  if (width <= 0 || height <= 0) {
+    return;
+  }
+
   // Assume color and opacity share the same data range
   double range[2];
   colorFunc->GetRange(range);
@@ -201,7 +206,7 @@ vtkIdType vtkChartTransfer2DEditor::AddFunction(
 //-----------------------------------------------------------------------------
 vtkIdType vtkChartTransfer2DEditor::AddPlot(vtkPlot* plot)
 {
-  Superclass::AddPlot(plot);
+  return Superclass::AddPlot(plot);
 }
 
 //-----------------------------------------------------------------------------
@@ -215,10 +220,10 @@ void vtkChartTransfer2DEditor::PrintSelf(ostream& os, vtkIndent indent)
 // vtkChartTransfer2DEditor::Paint
 
 //-----------------------------------------------------------------------------
-void vtkChartTransfer2DEditor::OnBoxItemModified(vtkObject* caller,
-                                                 unsigned long eid,
+void vtkChartTransfer2DEditor::OnBoxItemModified(vtkObject* vtkNotUsed(caller),
+                                                 unsigned long vtkNotUsed(eid),
                                                  void* clientData,
-                                                 void* callData)
+                                                 void* vtkNotUsed(callData))
 {
   vtkChartTransfer2DEditor* self =
     reinterpret_cast<vtkChartTransfer2DEditor*>(clientData);

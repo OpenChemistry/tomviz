@@ -555,7 +555,7 @@ void CentralWidget::onTransferModeChanged(const int mode)
 
 int CentralWidget::getTransferMode()
 {
-  m_ui->tabWidget1D2DTransfer->currentIndex();
+  return m_ui->tabWidget1D2DTransfer->currentIndex();
 }
 
 } // end of namespace tomviz

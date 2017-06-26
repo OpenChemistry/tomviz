@@ -173,6 +173,18 @@ private:
   bool IsInitialized();
   bool NeedsTextureUpdate();
 
+  /**
+   * Customized vtkControlPointsItem::FindPoint implementation for this Item.
+   * vtkControlPointsItem::FindPoint stops searching for control points once the
+   * (x-coord of the mouse click) < (current control point x-coord); points are
+   * expected to be in ascending order with respect to x. In this Item, the
+   * corners
+   * of the box are ordered CCW.
+   *
+   * \sa vtkControlPointsItem::FindPoint
+   */
+  vtkIdType FindBoxPoint(double* _pos);
+
   vtkNew<vtkPoints2D> BoxPoints;
   const int NumPoints = 4;
   vtkRectd Box;

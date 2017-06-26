@@ -25,6 +25,7 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
 #include <vtkPoints2D.h>
+#include <vtkTransform2D.h>
 #include <vtkUnsignedCharArray.h>
 #include <vtkVectorOperators.h>
 
@@ -166,7 +167,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
   switch (cornerId) {
     case BOTTOM_LEFT:
       if (this->ArePointsCrossing(cornerId, delta, TOP_RIGHT))
-        return;
+        break;
       this->MovePoint(cornerId, delta[0], delta[1]);
       this->MovePoint(BOTTOM_LEFT_LOOP, delta[0], delta[1]);
       this->MovePoint(TOP_LEFT, delta[0], 0.0);
@@ -175,7 +176,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
 
     case BOTTOM_RIGHT:
       if (this->ArePointsCrossing(cornerId, delta, TOP_LEFT))
-        return;
+        break;
       this->MovePoint(cornerId, delta[0], delta[1]);
       this->MovePoint(BOTTOM_LEFT, 0.0, delta[1]);
       this->MovePoint(BOTTOM_LEFT_LOOP, 0.0, delta[1]);
@@ -184,7 +185,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
 
     case TOP_RIGHT:
       if (this->ArePointsCrossing(cornerId, delta, BOTTOM_LEFT))
-        return;
+        break;
       this->MovePoint(cornerId, delta[0], delta[1]);
       this->MovePoint(BOTTOM_RIGHT, delta[0], 0.0);
       this->MovePoint(TOP_LEFT, 0.0, delta[1]);
@@ -192,7 +193,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
 
     case TOP_LEFT:
       if (this->ArePointsCrossing(cornerId, delta, BOTTOM_RIGHT))
-        return;
+        break;
       this->MovePoint(cornerId, delta[0], delta[1]);
       this->MovePoint(TOP_RIGHT, 0.0, delta[1]);
       this->MovePoint(BOTTOM_LEFT, delta[0], 0.0);
@@ -216,13 +217,17 @@ bool vtkTransferFunctionBoxItem::ArePointsCrossing(const vtkIdType pointA,
 
   const double distXBefore = posA[0] - posB[0];
   const double distXAfter = posA[0] + deltaA[0] - posB[0];
-  if (distXAfter * distXBefore < 0.0) // Sign changed
+  if (distXAfter * distXBefore <= 0.0) // Sign changed
+  {
     return true;
+  }
 
   const double distYBefore = posA[1] - posB[1];
   const double distYAfter = posA[1] + deltaA[1] - posB[1];
-  if (distYAfter * distYBefore < 0.0) // Sign changed
+  if (distYAfter * distYBefore <= 0.0) // Sign changed
+  {
     return true;
+  }
 
   return false;
 }
@@ -354,7 +359,7 @@ bool vtkTransferFunctionBoxItem::MouseButtonPressEvent(
   double pos[2];
   pos[0] = vpos.GetX();
   pos[1] = vpos.GetY();
-  vtkIdType pointUnderMouse = this->FindPoint(pos);
+  vtkIdType pointUnderMouse = this->FindBoxPoint(pos);
 
   if (mouse.GetButton() == vtkContextMouseEvent::LEFT_BUTTON) {
     if (pointUnderMouse != -1) {
@@ -490,4 +495,46 @@ vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction,
 bool vtkTransferFunctionBoxItem::IsInitialized()
 {
   return this->ColorFunction && this->OpacityFunction;
+}
+
+vtkIdType vtkTransferFunctionBoxItem::FindBoxPoint(double* _pos)
+{
+  vtkVector2f vpos(_pos[0], _pos[1]);
+  this->TransformDataToScreen(vpos, vpos);
+  double pos[2] = { vpos.GetX(), vpos.GetY() };
+
+  double tolerance = 1.3;
+  double radius2 =
+    this->ScreenPointRadius * this->ScreenPointRadius * tolerance * tolerance;
+
+  double screenPos[2];
+  this->Transform->TransformPoints(pos, screenPos, 1);
+  vtkIdType pointId = -1;
+  double minDist = VTK_DOUBLE_MAX;
+  const int numberOfPoints = this->GetNumberOfPoints();
+  for (vtkIdType i = 0; i < numberOfPoints; ++i) {
+    double point[4];
+    this->GetControlPoint(i, point);
+    vtkVector2f vpos1(point[0], point[1]);
+    this->TransformDataToScreen(vpos1, vpos1);
+    point[0] = vpos1.GetX();
+    point[1] = vpos1.GetY();
+
+    double screenPoint[2];
+    this->Transform->TransformPoints(point, screenPoint, 1);
+    double distance2 =
+      (screenPoint[0] - screenPos[0]) * (screenPoint[0] - screenPos[0]) +
+      (screenPoint[1] - screenPos[1]) * (screenPoint[1] - screenPos[1]);
+
+    if (distance2 <= radius2) {
+      if (distance2 == 0.) { // we found the best match ever
+        return i;
+      } else if (distance2 < minDist) { // we found something not too bad, maybe
+                                        // we can find closer
+        pointId = i;
+        minDist = distance2;
+      }
+    }
+  }
+  return pointId;
 }

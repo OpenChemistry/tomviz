@@ -87,7 +87,8 @@ protected:
   /**
    * This chart only supports plots of type vtkTransferFunctionBoxItem.
    */
-  vtkIdType AddPlot(vtkPlot* plot);
+  using vtkChartXY::AddPlot;
+  vtkIdType AddPlot(vtkPlot* plot) override;
 
   /**
    * Positions the item in the center of the chart.
