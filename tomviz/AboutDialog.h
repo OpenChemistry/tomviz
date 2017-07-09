@@ -18,6 +18,8 @@
 #define tomvizAboutDialog_h
 
 #include <QDialog>
+
+#include <QJsonObject>
 #include <QScopedPointer>
 
 namespace Ui {
@@ -25,18 +27,18 @@ class AboutDialog;
 }
 
 namespace tomviz {
-class MainWindow;
 
 class AboutDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  explicit AboutDialog(MainWindow* parent);
+  explicit AboutDialog(QWidget* parent);
   ~AboutDialog() override;
 
 private:
   QScopedPointer<Ui::AboutDialog> m_ui;
+  QJsonObject m_details;
 };
 }
 
