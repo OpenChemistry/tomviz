@@ -91,14 +91,13 @@ void Histogram2DWidget::setHistogram(vtkImageData* histogram)
   // A minimum of 1.0 is used in order to clip off histogram bins with a
   // single occurrence. This is also necessary to enable Log10 scale (required
   // to have min > 0)
-  vtkColorTransferFunction* transferFunction = vtkColorTransferFunction::New();
+  vtkNew<vtkColorTransferFunction> transferFunction;
   transferFunction->AddRGBSegment(range[0] + 1.0, 0.0, 0.0, 0.0, range[1], 1.0,
                                   1.0, 1.0);
 
   transferFunction->SetScaleToLog10();
   transferFunction->Build();
-  m_chartHistogram2D->SetTransferFunction(transferFunction);
-  transferFunction->Delete();
+  m_chartHistogram2D->SetTransferFunction(transferFunction.Get());
 
   m_histogramView->Render();
 }
