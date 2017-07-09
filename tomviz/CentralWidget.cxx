@@ -167,7 +167,6 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
-
 }
 
 // This is a QObject that will be owned by the background thread
@@ -266,10 +265,7 @@ public:
    * Returns the first element of the list which refers to the default
    * Module/DataSource transfer function box.
    */
-  const ItemBoxPtr& getDefault()
-  {
-    return get(index(0, 0, QModelIndex()));
-  };
+  const ItemBoxPtr& getDefault() { return get(index(0, 0, QModelIndex())); }
 
 private:
   Transfer2DModel(const Transfer2DModel&) = delete;

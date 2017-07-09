@@ -74,8 +74,8 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
   Transfer2D->AllocateScalars(VTK_FLOAT, 4);
 
   // Initialize as fully transparent
-  vtkFloatArray* arr = vtkFloatArray::SafeDownCast(
-    Transfer2D->GetPointData()->GetScalars());
+  vtkFloatArray* arr =
+    vtkFloatArray::SafeDownCast(Transfer2D->GetPointData()->GetScalars());
   void* dataPtr = arr->GetVoidPointer(0);
   memset(dataPtr, 0, bins[0] * bins[1] * 4 * sizeof(float));
 
@@ -130,8 +130,8 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
   opacFunc->GetTable(range[0], range[1], width, dataAlpha);
 
   // Copy the values into Transfer2D
-  vtkFloatArray* transfer = vtkFloatArray::SafeDownCast(
-    Transfer2D->GetPointData()->GetScalars());
+  vtkFloatArray* transfer =
+    vtkFloatArray::SafeDownCast(Transfer2D->GetPointData()->GetScalars());
 
   const vtkIdType x0 = static_cast<vtkIdType>(box.GetX() / spacing[0]);
   const vtkIdType y0 = static_cast<vtkIdType>(box.GetY() / spacing[1]);

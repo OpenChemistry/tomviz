@@ -48,8 +48,7 @@ QModelIndex AbstractDataModel::index(int row, int column,
 
   QTreeWidgetItem* childItem = getItem(p)->child(row);
 
-  return (childItem ? createIndex(row, column, childItem)
-                    : QModelIndex());
+  return (childItem ? createIndex(row, column, childItem) : QModelIndex());
 }
 
 QModelIndex AbstractDataModel::parent(const QModelIndex& index_) const
