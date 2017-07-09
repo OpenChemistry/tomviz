@@ -31,9 +31,10 @@ class vtkContextView;
 class vtkEventQtSlotConnect;
 class vtkImageData;
 class vtkTransferFunctionBoxItem;
-class QVTKOpenGLWidget;
 
 namespace tomviz {
+
+class QVTKGLWidget;
 
 class Histogram2DWidget : public QWidget
 {
@@ -71,7 +72,7 @@ protected:
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
 
 private:
-  QVTKOpenGLWidget* m_qvtk;
+  QVTKGLWidget* m_qvtk;
 };
 }
 #endif // tomvizHistogram2DWidget_h

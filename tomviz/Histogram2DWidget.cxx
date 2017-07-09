@@ -15,14 +15,16 @@
 ******************************************************************************/
 #include "Histogram2DWidget.h"
 
+#include "QVTKGLWidget.h"
+
 #include <vtkAxis.h>
 #include <vtkChartTransfer2DEditor.h>
 #include <vtkColorTransferFunction.h>
+#include <vtkContextMouseEvent.h>
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
 #include <vtkDataArray.h>
 #include <vtkEventQtSlotConnect.h>
-#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkImageData.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
@@ -36,26 +38,21 @@
 
 #include <QList>
 #include <QVBoxLayout>
-#include <QVTKOpenGLWidget.h>
 
 namespace tomviz {
 
 Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
-  : QWidget(parent_), m_qvtk(new QVTKOpenGLWidget(this))
+  : QWidget(parent_), m_qvtk(new QVTKGLWidget(this))
 {
   // Set up the chart
-  vtkNew<vtkGenericOpenGLRenderWindow> window_;
-  m_qvtk->SetRenderWindow(window_.Get());
-  QSurfaceFormat glFormat = QVTKOpenGLWidget::defaultFormat();
-  glFormat.setSamples(8);
-  m_qvtk->setFormat(glFormat);
-  m_histogramView->SetRenderWindow(window_.Get());
+  m_histogramView->SetRenderWindow(m_qvtk->GetRenderWindow());
   m_histogramView->SetInteractor(m_qvtk->GetInteractor());
   m_histogramView->GetScene()->AddItem(m_chartHistogram2D.Get());
 
   m_chartHistogram2D->SetRenderEmpty(true);
   m_chartHistogram2D->SetAutoAxes(false);
   m_chartHistogram2D->ZoomWithMouseWheelOff();
+  m_chartHistogram2D->SetActionToButton(vtkChart::PAN, -1);
 
   auto axis = m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM);
   axis->SetTitle("Scalar Value");
