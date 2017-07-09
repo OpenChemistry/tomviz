@@ -18,6 +18,12 @@
 
 #include <QMainWindow>
 
+#include <QScopedPointer>
+
+namespace Ui {
+class MainWindow;
+}
+
 namespace tomviz {
 
 class AboutDialog;
@@ -70,9 +76,10 @@ private slots:
 private:
   Q_DISABLE_COPY(MainWindow)
 
+  QScopedPointer<Ui::MainWindow> m_ui;
+  QTimer* m_timer = nullptr;
+  bool m_isFirstShow = true;
   AboutDialog* m_aboutDialog = nullptr;
-  class MWInternals;
-  MWInternals* d;
 };
 }
 #endif
