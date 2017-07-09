@@ -73,16 +73,11 @@
 #include <QMessageBox>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
+#include <QStandardPaths>
 #include <QSurfaceFormat>
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
-
-#if QT_VERSION >= 0x050000
-#include <QStandardPaths>
-#else
-#include <QDesktopServices>
-#endif
 
 // undef ERROR here as its used in pqOutputWidget!
 #undef ERROR
@@ -100,11 +95,7 @@ QString getAutosaveFile()
 {
   // workaround to get user config location
   QString dataPath;
-#if QT_VERSION >= 0x050000
   dataPath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
-#else
-  dataPath = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
-#endif
   QDir dataDir(dataPath);
   if (!dataDir.exists()) {
     dataDir.mkpath(dataPath);
