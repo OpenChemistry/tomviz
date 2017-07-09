@@ -15,6 +15,7 @@
 ******************************************************************************/
 #ifndef __AbstractDataModel_h
 #define __AbstractDataModel_h
+
 #include <QAbstractItemModel>
 #include <QTreeWidgetItem>
 
@@ -35,7 +36,7 @@ public:
 
 protected:
   AbstractDataModel(QObject* parent_ = nullptr);
-  virtual ~AbstractDataModel();
+  ~AbstractDataModel() override;
 
   /**
   * @{
@@ -88,7 +89,8 @@ protected:
   */
   bool isIndexValidUpperBound(const QModelIndex& index_) const;
 
-  QTreeWidgetItem* RootItem = nullptr;
+protected:
+  QTreeWidgetItem* m_rootItem = nullptr;
 
 private:
   void operator=(const AbstractDataModel&) = delete;

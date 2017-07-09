@@ -32,6 +32,9 @@
 
 #include <vtkChartHistogram2D.h>
 
+#include <vtkNew.h>
+
+class vtkCallbackCommand;
 class vtkImageData;
 class vtkTransferFunctionBoxItem;
 
@@ -70,8 +73,8 @@ protected:
   vtkChartTransfer2DEditor();
   ~vtkChartTransfer2DEditor() override;
 
-  class Private;
-  Private* Storage;
+  vtkImageData* Transfer2D = nullptr;
+  vtkNew<vtkCallbackCommand> Callback;
 
   vtkPlot* GetPlot(vtkIdType index) override;
 

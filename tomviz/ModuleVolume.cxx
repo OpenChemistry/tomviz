@@ -101,7 +101,7 @@ void ModuleVolume::updateColorMap()
     m_gradientOpacityEnabled ? gradientOpacityMap() : nullptr);
   m_volumeProperty->SetTransferFunction2D(transferFunction2D());
 
-  const int mode = this->getTransferMode();
+  const int mode = getTransferMode();
   m_volumeProperty->SetTransferFunctionMode(mode);
   if (m_controllers) {
     m_controllers->adjustForTransferMode(mode);
@@ -267,7 +267,7 @@ void ModuleVolume::addToPanel(QWidget* panel)
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
   m_controllers->setGradientOpacityEnabled(m_gradientOpacityEnabled);
 
-  const int mode = this->getTransferMode();
+  const int mode = getTransferMode();
   if (m_controllers) {
     m_controllers->adjustForTransferMode(mode);
   }

@@ -12,114 +12,93 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
 #include "vtkChartTransfer2DEditor.h"
-#include "vtkAxis.h"
-#include "vtkCallbackCommand.h"
-#include "vtkColorTransferFunction.h"
-#include "vtkFloatArray.h"
-#include "vtkImageData.h"
-#include "vtkNew.h"
-#include "vtkObjectFactory.h"
-#include "vtkPNGWriter.h"
-#include "vtkPiecewiseFunction.h"
-#include "vtkPlotHistogram2D.h"
-#include "vtkPointData.h"
-#include "vtkRect.h"
-#include "vtkTransferFunctionBoxItem.h"
 
-class vtkChartTransfer2DEditor::Private
-{
-public:
-  Private(){};
+#include <vtkAxis.h>
+#include <vtkCallbackCommand.h>
+#include <vtkColorTransferFunction.h>
+#include <vtkFloatArray.h>
+#include <vtkImageData.h>
+#include <vtkObjectFactory.h>
+#include <vtkPNGWriter.h>
+#include <vtkPiecewiseFunction.h>
+#include <vtkPlotHistogram2D.h>
+#include <vtkPointData.h>
+#include <vtkRect.h>
+#include <vtkTransferFunctionBoxItem.h>
 
-  vtkImageData* Transfer2D = nullptr;
-  vtkNew<vtkCallbackCommand> Callback;
-};
-
-////////////////////////////////////////////////////////////////////////////////
 vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
-  //-----------------------------------------------------------------------------
-  vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
-  : Storage(new Private)
+vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
 {
-  this->Storage->Callback->SetClientData(this);
-  this->Storage->Callback->SetCallback(
-    vtkChartTransfer2DEditor::OnBoxItemModified);
+  Callback->SetClientData(this);
+  Callback->SetCallback(vtkChartTransfer2DEditor::OnBoxItemModified);
   /// TODO Disable panning
 }
 
-//-----------------------------------------------------------------------------
-vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor()
-{
-  delete Storage;
-}
+vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor() = default;
 
-//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
 {
-  if (transfer2D != this->Storage->Transfer2D) {
-    if (this->Storage->Transfer2D != nullptr) {
-      this->Storage->Transfer2D->UnRegister(this);
+  if (transfer2D != Transfer2D) {
+    if (Transfer2D != nullptr) {
+      Transfer2D->UnRegister(this);
     }
 
-    this->Storage->Transfer2D = transfer2D;
-    if (this->Storage->Transfer2D != nullptr) {
-      this->Storage->Transfer2D->Register(this);
+    Transfer2D = transfer2D;
+    if (Transfer2D != nullptr) {
+      Transfer2D->Register(this);
     }
 
-    this->Modified();
-    this->GenerateTransfer2D();
+    Modified();
+    GenerateTransfer2D();
   }
 }
 
-//-----------------------------------------------------------------------------
 bool vtkChartTransfer2DEditor::IsInitialized()
 {
-  return this->Storage->Transfer2D && this->Histogram->GetInputImageData();
+  return Transfer2D && Histogram->GetInputImageData();
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::GenerateTransfer2D()
 {
-  if (!this->IsInitialized()) {
+  if (!IsInitialized()) {
     return;
   }
 
   // Update size (match the number of bins of the histogram)
   int bins[3];
-  this->Histogram->GetInputImageData()->GetDimensions(bins);
-  this->Storage->Transfer2D->SetDimensions(bins[0], bins[1], 1);
-  this->Storage->Transfer2D->AllocateScalars(VTK_FLOAT, 4);
+  Histogram->GetInputImageData()->GetDimensions(bins);
+  Transfer2D->SetDimensions(bins[0], bins[1], 1);
+  Transfer2D->AllocateScalars(VTK_FLOAT, 4);
 
   // Initialize as fully transparent
   vtkFloatArray* arr = vtkFloatArray::SafeDownCast(
-    this->Storage->Transfer2D->GetPointData()->GetScalars());
+    Transfer2D->GetPointData()->GetScalars());
   void* dataPtr = arr->GetVoidPointer(0);
   memset(dataPtr, 0, bins[0] * bins[1] * 4 * sizeof(float));
 
   // Raster each box into the 2D table
-  const vtkIdType numPlots = this->GetNumberOfPlots();
+  const vtkIdType numPlots = GetNumberOfPlots();
   for (vtkIdType i = 0; i < numPlots; i++) {
     typedef vtkTransferFunctionBoxItem BoxType;
-    BoxType* boxItem = BoxType::SafeDownCast(this->GetPlot(i));
+    BoxType* boxItem = BoxType::SafeDownCast(GetPlot(i));
     if (!boxItem) {
       continue;
     }
 
-    this->RasterBoxItem(boxItem);
+    RasterBoxItem(boxItem);
   }
 
-  this->InvokeEvent(vtkCommand::EndEvent);
+  InvokeEvent(vtkCommand::EndEvent);
 }
 
-//-----------------------------------------------------------------------------
 vtkPlot* vtkChartTransfer2DEditor::GetPlot(vtkIdType index)
 {
   return vtkChartXY::GetPlot(index);
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::RasterBoxItem(
   vtkTransferFunctionBoxItem* boxItem)
 {
@@ -132,7 +111,7 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
   }
 
   double spacing[3];
-  this->Histogram->GetInputImageData()->GetSpacing(spacing);
+  Histogram->GetInputImageData()->GetSpacing(spacing);
   const vtkIdType width = static_cast<vtkIdType>(box.GetWidth() / spacing[0]);
   const vtkIdType height = static_cast<vtkIdType>(box.GetHeight() / spacing[1]);
 
@@ -150,15 +129,15 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
   double* dataAlpha = new double[width];
   opacFunc->GetTable(range[0], range[1], width, dataAlpha);
 
-  // Copy the values into this->Transfer2D
+  // Copy the values into Transfer2D
   vtkFloatArray* transfer = vtkFloatArray::SafeDownCast(
-    this->Storage->Transfer2D->GetPointData()->GetScalars());
+    Transfer2D->GetPointData()->GetScalars());
 
   const vtkIdType x0 = static_cast<vtkIdType>(box.GetX() / spacing[0]);
   const vtkIdType y0 = static_cast<vtkIdType>(box.GetY() / spacing[1]);
 
   int bins[3];
-  this->Storage->Transfer2D->GetDimensions(bins);
+  Transfer2D->GetDimensions(bins);
 
   for (vtkIdType j = 0; j < height; j++)
     for (vtkIdType i = 0; i < width; i++) {
@@ -177,49 +156,44 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
   delete[] dataAlpha;
 }
 
-//-----------------------------------------------------------------------------
 vtkIdType vtkChartTransfer2DEditor::AddFunction(
   vtkTransferFunctionBoxItem* boxItem)
 {
-  if (!this->IsInitialized()) {
+  if (!IsInitialized()) {
     return -1;
   }
 
   double xRange[2];
-  auto bottomAxis = this->GetAxis(vtkAxis::BOTTOM);
+  auto bottomAxis = GetAxis(vtkAxis::BOTTOM);
   bottomAxis->GetRange(xRange);
 
   double yRange[2];
-  auto leftAxis = this->GetAxis(vtkAxis::LEFT);
+  auto leftAxis = GetAxis(vtkAxis::LEFT);
   leftAxis->GetRange(yRange);
 
   // Set bounds in the box item so that it can only move within the
   // histogram's range.
   boxItem->SetValidBounds(xRange[0], xRange[1], yRange[0], yRange[1]);
-  this->SetDefaultBoxPosition(boxItem, xRange, yRange);
+  SetDefaultBoxPosition(boxItem, xRange, yRange);
   boxItem->AddObserver(vtkCommand::SelectionChangedEvent,
-                       this->Storage->Callback.GetPointer());
+                       Callback.GetPointer());
 
-  return this->AddPlot(boxItem);
+  return AddPlot(boxItem);
 }
 
-//-----------------------------------------------------------------------------
 vtkIdType vtkChartTransfer2DEditor::AddPlot(vtkPlot* plot)
 {
   return Superclass::AddPlot(plot);
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os, indent);
+  Superclass::PrintSelf(os, indent);
 }
 
 /// TODO Use linear interpolation for the histogram texture
-//-----------------------------------------------------------------------------
 // vtkChartTransfer2DEditor::Paint
 
-//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::OnBoxItemModified(vtkObject* vtkNotUsed(caller),
                                                  unsigned long vtkNotUsed(eid),
                                                  void* clientData,
@@ -230,7 +204,6 @@ void vtkChartTransfer2DEditor::OnBoxItemModified(vtkObject* vtkNotUsed(caller),
   self->GenerateTransfer2D();
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::SetInputData(vtkImageData* data, vtkIdType z)
 {
   int bins[3];
@@ -245,25 +218,24 @@ void vtkChartTransfer2DEditor::SetInputData(vtkImageData* data, vtkIdType z)
   const double yMin = origin[1];
   const double yMax = bins[1] * spacing[1];
 
-  auto axis = this->GetAxis(vtkAxis::BOTTOM);
+  auto axis = GetAxis(vtkAxis::BOTTOM);
   axis->SetRange(xMin, xMax);
-  axis = this->GetAxis(vtkAxis::LEFT);
+  axis = GetAxis(vtkAxis::LEFT);
   axis->SetRange(yMin, yMax);
 
-  this->UpdateItemsBounds(xMin, xMax, yMin, yMax);
+  UpdateItemsBounds(xMin, xMax, yMin, yMax);
   vtkChartHistogram2D::SetInputData(data, z);
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::UpdateItemsBounds(const double xMin,
                                                  const double xMax,
                                                  const double yMin,
                                                  const double yMax)
 {
   // Set the new bounds to its current box items (plots).
-  const vtkIdType numPlots = this->GetNumberOfPlots();
+  const vtkIdType numPlots = GetNumberOfPlots();
   for (vtkIdType i = 0; i < numPlots; i++) {
-    auto boxItem = vtkControlPointsItem::SafeDownCast(this->GetPlot(i));
+    auto boxItem = vtkControlPointsItem::SafeDownCast(GetPlot(i));
     if (!boxItem) {
       continue;
     }
@@ -272,7 +244,6 @@ void vtkChartTransfer2DEditor::UpdateItemsBounds(const double xMin,
   }
 }
 
-//-----------------------------------------------------------------------------
 void vtkChartTransfer2DEditor::SetDefaultBoxPosition(
   vtkSmartPointer<vtkTransferFunctionBoxItem> item, const double xRange[2],
   const double yRange[2])

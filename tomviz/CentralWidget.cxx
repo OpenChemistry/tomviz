@@ -231,17 +231,17 @@ public:
 
   Transfer2DModel(QObject* parent = nullptr) : AbstractDataModel(parent)
   {
-    this->initializeRootItem();
-    this->populate();
+    initializeRootItem();
+    populate();
   };
 
   ~Transfer2DModel() = default;
 
   void initializeRootItem()
   {
-    this->RootItem = new DataItemBox;
-    this->RootItem->setData(0, Qt::DisplayRole, "Id");
-    this->RootItem->setData(0, Qt::DisplayRole, "Name");
+    m_rootItem = new DataItemBox;
+    m_rootItem->setData(0, Qt::DisplayRole, "Id");
+    m_rootItem->setData(0, Qt::DisplayRole, "Name");
   };
 
   /**
@@ -250,15 +250,15 @@ public:
    */
   void populate()
   {
-    auto item = new DataItemBox(this->RootItem);
-    item->setData(0, Qt::DisplayRole, this->RootItem->childCount() + 1);
+    auto item = new DataItemBox(m_rootItem);
+    item->setData(0, Qt::DisplayRole, m_rootItem->childCount() + 1);
     auto itemBox = ItemBoxPtr::New();
     item->setReferencedData(itemBox);
   };
 
   const ItemBoxPtr& get(const QModelIndex& index)
   {
-    const auto itemBox = static_cast<const DataItemBox*>(this->getItem(index));
+    const auto itemBox = static_cast<const DataItemBox*>(getItem(index));
     return itemBox->getReferencedDataConst();
   };
 
@@ -268,7 +268,7 @@ public:
    */
   const ItemBoxPtr& getDefault()
   {
-    return this->get(this->index(0, 0, QModelIndex()));
+    return get(index(0, 0, QModelIndex()));
   };
 
 private:
@@ -367,7 +367,7 @@ void CentralWidget::setActiveModule(Module* module)
     connect(m_activeModule, SIGNAL(colorMapChanged()),
             SLOT(onColorMapDataSourceChanged()));
     setColorMapDataSource(module->colorMapDataSource());
-    m_activeModule->setTransferMode(this->getTransferMode());
+    m_activeModule->setTransferMode(getTransferMode());
   } else {
     setColorMapDataSource(nullptr);
   }
@@ -419,7 +419,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
           m_activeModule->opacityMap()->GetClientSideObject()));
       m_ui->histogram2DWidget->setTransfer2D(
         m_activeModule->transferFunction2D());
-      m_activeModule->setTransferMode(this->getTransferMode());
+      m_activeModule->setTransferMode(getTransferMode());
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
@@ -467,7 +467,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
 
 void CentralWidget::onColorMapUpdated()
 {
-  this->onColorMapDataSourceChanged();
+  onColorMapDataSourceChanged();
 }
 
 void CentralWidget::onColorMapDataSourceChanged()
