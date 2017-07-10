@@ -73,16 +73,11 @@
 #include <QMessageBox>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
+#include <QStandardPaths>
 #include <QSurfaceFormat>
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
-
-#if QT_VERSION >= 0x050000
-#include <QStandardPaths>
-#else
-#include <QDesktopServices>
-#endif
 
 // undef ERROR here as its used in pqOutputWidget!
 #undef ERROR
@@ -100,11 +95,7 @@ QString getAutosaveFile()
 {
   // workaround to get user config location
   QString dataPath;
-#if QT_VERSION >= 0x050000
   dataPath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
-#else
-  dataPath = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
-#endif
   QDir dataDir(dataPath);
   if (!dataDir.exists()) {
     dataDir.mkpath(dataPath);
@@ -115,24 +106,15 @@ QString getAutosaveFile()
 
 namespace tomviz {
 
-class MainWindow::MWInternals
-{
-public:
-  Ui::MainWindow Ui;
-  QTimer* Timer = nullptr;
-  bool isFirstShow = true;
-};
-
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
-  : QMainWindow(parent, flags), d(new MainWindow::MWInternals())
+  : QMainWindow(parent, flags), m_ui(new Ui::MainWindow)
 {
   // checkOpenGL();
-  Ui::MainWindow& ui = d->Ui;
-  ui.setupUi(this);
-  d->Timer = new QTimer(this);
-  connect(d->Timer, SIGNAL(timeout()), SLOT(autosave()));
-  d->Timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *
-                  1000 /*msec per second*/);
+  m_ui->setupUi(this);
+  m_timer = new QTimer(this);
+  connect(m_timer, SIGNAL(timeout()), SLOT(autosave()));
+  m_timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *
+                 1000 /*msec per second*/);
 
   QString version(TOMVIZ_VERSION);
   if (QString(TOMVIZ_VERSION_EXTRA).size() > 0)
@@ -143,52 +125,54 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   setWindowIcon(icon);
 
   // tabify output messages widget.
-  this->tabifyDockWidget(d->Ui.dockWidget_3, d->Ui.dockWidgetMessages);
-  d->Ui.dockWidgetMessages->hide();
+  tabifyDockWidget(m_ui->dockWidget_3, m_ui->dockWidgetMessages);
+  m_ui->dockWidgetMessages->hide();
 
   // Tweak the initial sizes of the dock widgets.
   QList<QDockWidget*> docks;
-  docks << d->Ui.dockWidget << d->Ui.dockWidget_5 << d->Ui.dockWidgetMessages;
+  docks << m_ui->dockWidget << m_ui->dockWidget_5 << m_ui->dockWidgetMessages;
   QList<int> dockSizes;
   dockSizes << 250 << 250 << 250;
   resizeDocks(docks, dockSizes, Qt::Horizontal);
   docks.clear();
   dockSizes.clear();
-  docks << d->Ui.dockWidget_3;
+  docks << m_ui->dockWidget_3;
   dockSizes << 200;
   resizeDocks(docks, dockSizes, Qt::Vertical);
 
   // raise dockWidgetMessages on error.
-  this->connect(d->Ui.outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
-    SLOT(handleMessage(const QString&, int)));
+  connect(m_ui->outputWidget, SIGNAL(messageDisplayed(const QString&, int)),
+          SLOT(handleMessage(const QString&, int)));
 
   // Link the histogram in the central widget to the active data source.
-  ui.centralWidget->connect(&ActiveObjects::instance(),
-                            SIGNAL(dataSourceActivated(DataSource*)),
-                            SLOT(setActiveColorMapDataSource(DataSource*)));
-  ui.centralWidget->connect(&ActiveObjects::instance(),
-                            SIGNAL(moduleActivated(Module*)),
-                            SLOT(setActiveModule(Module*)));
-  ui.centralWidget->connect(&ActiveObjects::instance(),
-                            SIGNAL(colorMapChanged(DataSource*)),
-                            SLOT(setActiveColorMapDataSource(DataSource*)));
-  ui.centralWidget->connect(ui.dataPropertiesPanel, SIGNAL(colorMapUpdated()),
-                            SLOT(onColorMapUpdated()));
+  m_ui->centralWidget->connect(&ActiveObjects::instance(),
+                               SIGNAL(dataSourceActivated(DataSource*)),
+                               SLOT(setActiveColorMapDataSource(DataSource*)));
+  m_ui->centralWidget->connect(&ActiveObjects::instance(),
+                               SIGNAL(moduleActivated(Module*)),
+                               SLOT(setActiveModule(Module*)));
+  m_ui->centralWidget->connect(&ActiveObjects::instance(),
+                               SIGNAL(colorMapChanged(DataSource*)),
+                               SLOT(setActiveColorMapDataSource(DataSource*)));
+  m_ui->centralWidget->connect(m_ui->dataPropertiesPanel,
+                               SIGNAL(colorMapUpdated()),
+                               SLOT(onColorMapUpdated()));
 
-  ui.treeWidget->setModel(new PipelineModel(this));
-  ui.treeWidget->header()->setStretchLastSection(false);
-  ui.treeWidget->header()->setVisible(false);
-  ui.treeWidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-  ui.treeWidget->header()->setSectionResizeMode(1, QHeaderView::Fixed);
-  ui.treeWidget->header()->resizeSection(1, 30);
+  m_ui->treeWidget->setModel(new PipelineModel(this));
+  m_ui->treeWidget->header()->setStretchLastSection(false);
+  m_ui->treeWidget->header()->setVisible(false);
+  m_ui->treeWidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+  m_ui->treeWidget->header()->setSectionResizeMode(1, QHeaderView::Fixed);
+  m_ui->treeWidget->header()->resizeSection(1, 30);
   // Ensure that items are expanded by default, can be collapsed at will.
-  connect(ui.treeWidget->model(), SIGNAL(rowsInserted(QModelIndex, int, int)),
-          ui.treeWidget, SLOT(expandAll()));
-  connect(ui.treeWidget->model(), SIGNAL(modelReset()), ui.treeWidget,
+  connect(m_ui->treeWidget->model(),
+          SIGNAL(rowsInserted(QModelIndex, int, int)), m_ui->treeWidget,
+          SLOT(expandAll()));
+  connect(m_ui->treeWidget->model(), SIGNAL(modelReset()), m_ui->treeWidget,
           SLOT(expandAll()));
 
   // connect quit.
-  connect(ui.actionExit, SIGNAL(triggered()), SLOT(close()));
+  connect(m_ui->actionExit, SIGNAL(triggered()), SLOT(close()));
 
   // Connect up the module/data changed to the appropriate slots.
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceActivated(DataSource*)),
@@ -199,91 +183,91 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           SLOT(operatorChanged(Operator*)));
 
   // Connect the about dialog up too.
-  connect(ui.actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
+  connect(m_ui->actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
 
-  new pqPythonShellReaction(ui.actionPythonConsole);
-  new pqMacroReaction(ui.actionMacros);
+  new pqPythonShellReaction(m_ui->actionPythonConsole);
+  new pqMacroReaction(m_ui->actionMacros);
 
   // Instantiate tomviz application behavior.
   new Behaviors(this);
 
-  new LoadDataReaction(ui.actionOpen);
+  new LoadDataReaction(m_ui->actionOpen);
 
   // Build Data Transforms menu
-  new DataTransformMenu(this, ui.menuData, ui.menuSegmentation);
+  new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);
 
   // Build Tomography menu
   // ################################################################
   QAction* toggleDataTypeAction =
-    ui.menuTomography->addAction("Toggle Data Type");
-  ui.menuTomography->addSeparator();
+    m_ui->menuTomography->addAction("Toggle Data Type");
+  m_ui->menuTomography->addSeparator();
 
   QAction* setTiltAnglesAction =
-    ui.menuTomography->addAction("Set Tilt Angles");
-  ui.menuTomography->addSeparator();
+    m_ui->menuTomography->addAction("Set Tilt Angles");
+  m_ui->menuTomography->addSeparator();
 
   QAction* dataProcessingLabel =
-    ui.menuTomography->addAction("Pre-processing:");
+    m_ui->menuTomography->addAction("Pre-processing:");
   dataProcessingLabel->setEnabled(false);
   QAction* downsampleByTwoAction =
-    ui.menuTomography->addAction("Bin Tilt Images x2");
+    m_ui->menuTomography->addAction("Bin Tilt Images x2");
   QAction* removeBadPixelsAction =
-    ui.menuTomography->addAction("Remove Bad Pixels");
+    m_ui->menuTomography->addAction("Remove Bad Pixels");
   QAction* gaussianFilterAction =
-    ui.menuTomography->addAction("Gaussian Filter");
+    m_ui->menuTomography->addAction("Gaussian Filter");
   QAction* autoSubtractBackgroundAction =
-    ui.menuTomography->addAction("Background Subtraction (Auto)");
+    m_ui->menuTomography->addAction("Background Subtraction (Auto)");
   QAction* subtractBackgroundAction =
-    ui.menuTomography->addAction("Background Subtraction (Manual)");
+    m_ui->menuTomography->addAction("Background Subtraction (Manual)");
   QAction* normalizationAction =
-    ui.menuTomography->addAction("Normalize Average Image Intensity");
+    m_ui->menuTomography->addAction("Normalize Average Image Intensity");
   QAction* gradientMagnitude2DSobelAction =
-    ui.menuTomography->addAction("2D Gradient Magnitude");
+    m_ui->menuTomography->addAction("2D Gradient Magnitude");
 
-  ui.menuTomography->addSeparator();
-  QAction* alignmentLabel = ui.menuTomography->addAction("Alignment:");
+  m_ui->menuTomography->addSeparator();
+  QAction* alignmentLabel = m_ui->menuTomography->addAction("Alignment:");
   alignmentLabel->setEnabled(false);
-  QAction* autoAlignCCAction =
-    ui.menuTomography->addAction("Image Alignment (Auto: Cross Correlation)");
+  QAction* autoAlignCCAction = m_ui->menuTomography->addAction(
+    "Image Alignment (Auto: Cross Correlation)");
   QAction* autoAlignCOMAction =
-    ui.menuTomography->addAction("Image Alignment (Auto: Center of Mass)");
+    m_ui->menuTomography->addAction("Image Alignment (Auto: Center of Mass)");
   QAction* alignAction =
-    ui.menuTomography->addAction("Image Alignment (Manual)");
+    m_ui->menuTomography->addAction("Image Alignment (Manual)");
   QAction* autoRotateAlignAction =
-    ui.menuTomography->addAction("Tilt Axis Rotation Alignment (Auto)");
+    m_ui->menuTomography->addAction("Tilt Axis Rotation Alignment (Auto)");
   QAction* autoRotateAlignShiftAction =
-    ui.menuTomography->addAction("Tilt Axis Shift Alignment (Auto)");
+    m_ui->menuTomography->addAction("Tilt Axis Shift Alignment (Auto)");
   QAction* rotateAlignAction =
-    ui.menuTomography->addAction("Tilt Axis Alignment (Manual)");
-  ui.menuTomography->addSeparator();
+    m_ui->menuTomography->addAction("Tilt Axis Alignment (Manual)");
+  m_ui->menuTomography->addSeparator();
 
-  QAction* reconLabel = ui.menuTomography->addAction("Reconstruction:");
+  QAction* reconLabel = m_ui->menuTomography->addAction("Reconstruction:");
   reconLabel->setEnabled(false);
   QAction* reconDFMAction =
-    ui.menuTomography->addAction("Direct Fourier Method");
+    m_ui->menuTomography->addAction("Direct Fourier Method");
   QAction* reconWBPAction =
-    ui.menuTomography->addAction("Weighted Back Projection");
+    m_ui->menuTomography->addAction("Weighted Back Projection");
   QAction* reconWBP_CAction =
-    ui.menuTomography->addAction("Simple Back Projection (C++)");
+    m_ui->menuTomography->addAction("Simple Back Projection (C++)");
   QAction* reconARTAction =
-    ui.menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
-  QAction* reconSIRTAction = ui.menuTomography->addAction(
+    m_ui->menuTomography->addAction("Algebraic Reconstruction Technique (ART)");
+  QAction* reconSIRTAction = m_ui->menuTomography->addAction(
     "Simultaneous Iterative Recon. Technique (SIRT)");
   QAction* reconDFMConstraintAction =
-    ui.menuTomography->addAction("Constraint-based Direct Fourier Method");
+    m_ui->menuTomography->addAction("Constraint-based Direct Fourier Method");
   QAction* reconTVMinimizationAction =
-    ui.menuTomography->addAction("TV Minimization Method");
-  ui.menuTomography->addSeparator();
+    m_ui->menuTomography->addAction("TV Minimization Method");
+  m_ui->menuTomography->addSeparator();
 
-  QAction* simulationLabel = ui.menuTomography->addAction("Simulation:");
+  QAction* simulationLabel = m_ui->menuTomography->addAction("Simulation:");
   simulationLabel->setEnabled(false);
   QAction* generateTiltSeriesAction =
-    ui.menuTomography->addAction("Project Tilt Series from Volume");
+    m_ui->menuTomography->addAction("Project Tilt Series from Volume");
 
   QAction* randomShiftsAction =
-    ui.menuTomography->addAction("Shift Tilt Series Randomly");
+    m_ui->menuTomography->addAction("Shift Tilt Series Randomly");
   QAction* addPoissonNoiseAction =
-    ui.menuTomography->addAction("Add Poisson Noise");
+    m_ui->menuTomography->addAction("Add Poisson Noise");
 
   // Set up reactions for Tomography Menu
   //#################################################################
@@ -365,27 +349,27 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                                  readInJSONDescription("AddPoissonNoise"));
 
   //#################################################################
-  new ModuleMenu(ui.modulesToolbar, ui.menuModules, this);
-  new RecentFilesMenu(*ui.menuRecentlyOpened, ui.menuRecentlyOpened);
-  new pqSaveStateReaction(ui.actionSaveDebuggingState);
+  new ModuleMenu(m_ui->modulesToolbar, m_ui->menuModules, this);
+  new RecentFilesMenu(*m_ui->menuRecentlyOpened, m_ui->menuRecentlyOpened);
+  new pqSaveStateReaction(m_ui->actionSaveDebuggingState);
 
-  new SaveDataReaction(ui.actionSaveData);
-  new SaveScreenshotReaction(ui.actionSaveScreenshot, this);
-  new pqSaveAnimationReaction(ui.actionSaveMovie);
-  new SaveWebReaction(ui.actionSaveWeb);
+  new SaveDataReaction(m_ui->actionSaveData);
+  new SaveScreenshotReaction(m_ui->actionSaveScreenshot, this);
+  new pqSaveAnimationReaction(m_ui->actionSaveMovie);
+  new SaveWebReaction(m_ui->actionSaveWeb);
 
-  new SaveLoadStateReaction(ui.actionSaveState);
-  new SaveLoadStateReaction(ui.actionLoadState, /*load*/ true);
+  new SaveLoadStateReaction(m_ui->actionSaveState);
+  new SaveLoadStateReaction(m_ui->actionLoadState, /*load*/ true);
 
-  auto reaction = new ResetReaction(ui.actionReset);
-  connect(ui.menu_File, &QMenu::aboutToShow, reaction,
+  auto reaction = new ResetReaction(m_ui->actionReset);
+  connect(m_ui->menu_File, &QMenu::aboutToShow, reaction,
           &ResetReaction::updateEnableState);
 
-  ViewMenuManager* viewMenuManager = new ViewMenuManager(this, ui.menuView);
+  ViewMenuManager* viewMenuManager = new ViewMenuManager(this, m_ui->menuView);
 
   QMenu* sampleDataMenu = new QMenu("Sample Data", this);
-  ui.menubar->insertMenu(ui.menuHelp->menuAction(), sampleDataMenu);
-  QAction* userGuideAction = ui.menuHelp->addAction("User Guide");
+  m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
+  QAction* userGuideAction = m_ui->menuHelp->addAction("User Guide");
   connect(userGuideAction, SIGNAL(triggered()), SLOT(openUserGuide()));
 #ifdef TOMVIZ_DATA
   QAction* reconAction =
@@ -413,7 +397,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     sampleDataMenu->addAction("Download More Datasets");
   connect(sampleDataLinkAction, SIGNAL(triggered()), SLOT(openDataLink()));
 
-  QAction* moveObjects = ui.utilitiesToolbar->addAction(
+  QAction* moveObjects = m_ui->utilitiesToolbar->addAction(
     QIcon(":/icons/move_objects.png"), "MoveObjects");
   moveObjects->setToolTip(
     "Enable to allow moving of the selected dataset in the scene");
@@ -422,12 +406,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(moveObjects, SIGNAL(triggered(bool)), &ActiveObjects::instance(),
           SLOT(setMoveObjectsMode(bool)));
 
-  QAction* loadPaletteAction = ui.utilitiesToolbar->addAction(
+  QAction* loadPaletteAction = m_ui->utilitiesToolbar->addAction(
     QIcon(":/icons/pqPalette.png"), "LoadPalette");
   new LoadPaletteReaction(loadPaletteAction);
 
   QToolButton* tb = qobject_cast<QToolButton*>(
-    ui.utilitiesToolbar->widgetForAction(loadPaletteAction));
+    m_ui->utilitiesToolbar->widgetForAction(loadPaletteAction));
   if (tb) {
     tb->setPopupMode(QToolButton::InstantPopup);
   }
@@ -452,7 +436,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // Add the acquisition client experimentally.
   auto acquisitionWidget = new AcquisitionWidget(this);
-  auto acquisitionAction = ui.menuTools->addAction("Acquisition");
+  auto acquisitionAction = m_ui->menuTools->addAction("Acquisition");
   connect(acquisitionAction, SIGNAL(triggered(bool)), acquisitionWidget,
           SLOT(show()));
 }
@@ -464,7 +448,6 @@ MainWindow::~MainWindow()
   if (QFile::exists(autosaveFile) && !QFile::remove(autosaveFile)) {
     std::cerr << "Failed to remove autosave file." << std::endl;
   }
-  delete d;
 }
 
 void MainWindow::showAbout()
@@ -532,27 +515,27 @@ void MainWindow::openUserGuide()
 
 void MainWindow::dataSourceChanged(DataSource*)
 {
-  d->Ui.propertiesPanelStackedWidget->setCurrentWidget(
-    d->Ui.dataPropertiesScrollArea);
+  m_ui->propertiesPanelStackedWidget->setCurrentWidget(
+    m_ui->dataPropertiesScrollArea);
 }
 
 void MainWindow::moduleChanged(Module*)
 {
-  d->Ui.propertiesPanelStackedWidget->setCurrentWidget(
-    d->Ui.modulePropertiesScrollArea);
+  m_ui->propertiesPanelStackedWidget->setCurrentWidget(
+    m_ui->modulePropertiesScrollArea);
 }
 
 void MainWindow::operatorChanged(Operator*)
 {
-  d->Ui.propertiesPanelStackedWidget->setCurrentWidget(
-    d->Ui.operatorPropertiesScrollArea);
+  m_ui->propertiesPanelStackedWidget->setCurrentWidget(
+    m_ui->operatorPropertiesScrollArea);
 }
 
 void MainWindow::showEvent(QShowEvent* e)
 {
   QMainWindow::showEvent(e);
-  if (d->isFirstShow) {
-    d->isFirstShow = false;
+  if (m_isFirstShow) {
+    m_isFirstShow = false;
     QTimer::singleShot(1, this, SLOT(onFirstWindowShow()));
   }
 }
@@ -632,24 +615,22 @@ void MainWindow::autosave()
 
 void MainWindow::handleMessage(const QString&, int type)
 {
-  Ui::MainWindow& ui = d->Ui;
-  QDockWidget* dock = ui.dockWidgetMessages;
-  if (!dock->isVisible() && (type == pqOutputWidget::ERROR || type == pqOutputWidget::WARNING))
-  {
+  QDockWidget* dock = m_ui->dockWidgetMessages;
+  if (!dock->isVisible() &&
+      (type == pqOutputWidget::ERROR || type == pqOutputWidget::WARNING)) {
     // if dock is not visible, we always pop it up as a floating dialog. This
     // avoids causing re-renders which may cause more errors and more confusion.
-    QRect rectApp = this->geometry();
+    QRect rectApp = geometry();
 
-    QRect rectDock(
-      QPoint(0, 0), QSize(static_cast<int>(rectApp.width() * 0.4), dock->sizeHint().height()));
-    rectDock.moveCenter(
-      QPoint(rectApp.center().x(), rectApp.bottom() - dock->sizeHint().height() / 2));
+    QRect rectDock(QPoint(0, 0), QSize(static_cast<int>(rectApp.width() * 0.4),
+                                       dock->sizeHint().height()));
+    rectDock.moveCenter(QPoint(
+      rectApp.center().x(), rectApp.bottom() - dock->sizeHint().height() / 2));
     dock->setFloating(true);
     dock->setGeometry(rectDock);
     dock->show();
   }
-  if (dock->isVisible())
-  {
+  if (dock->isVisible()) {
     dock->raise();
   }
 }

@@ -1,3 +1,5 @@
+find_package(OpenGL REQUIRED)
+
 include_directories(SYSTEM
   ${Qt5Network_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
@@ -21,8 +23,6 @@ endif()
 add_subdirectory(pvextensions)
 
 set(SOURCES
-  AboutDialog.h
-  AboutDialog.cxx
   AbstractDataModel.h
   AbstractDataModel.cxx
   ActiveObjects.cxx
@@ -233,6 +233,8 @@ set(SOURCES
   )
 
 set(exec_sources
+  AboutDialog.h
+  AboutDialog.cxx
   main.cxx
   MainWindow.cxx
   MainWindow.h
@@ -299,6 +301,7 @@ set(python_files
   SegmentParticles.py
   UnsharpMask.py
   AddConstant.py
+  SegmentPores.py
   )
 
 set(json_files
@@ -333,6 +336,7 @@ set(json_files
   SegmentParticles.json
   UnsharpMask.json
   AddConstant.json
+  SegmentPores.json
   )
 
 set(resource_files
@@ -427,17 +431,19 @@ set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
 add_executable(tomviz WIN32 MACOSX_BUNDLE ${exec_sources} resources.qrc)
-target_link_libraries(tomviz tomvizlib)
+target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
 
 target_link_libraries(tomvizlib
-  pqApplicationComponents
-  vtkPVServerManagerRendering
-  vtkjsoncpp
-  vtkpugixml
-  tomvizExtensions
-  Qt5::Network)
+  PUBLIC
+    pqApplicationComponents
+    vtkPVServerManagerRendering
+    vtkglew
+    vtkjsoncpp
+    vtkpugixml
+    tomvizExtensions
+    Qt5::Network)
 if(WIN32)
-  target_link_libraries(tomvizlib Qt5::WinMain)
+  target_link_libraries(tomvizlib PUBLIC Qt5::WinMain)
 endif()
 if(APPLE)
   set_target_properties(tomviz
@@ -458,6 +464,7 @@ endif()
 
 if(ENABLE_DAX_ACCELERATION)
   target_link_libraries(tomvizlib
+    PUBLIC
       tomvizStreaming
       tomvizThreshold
       ${TBB_LIBRARIES})
