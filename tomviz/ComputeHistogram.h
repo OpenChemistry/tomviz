@@ -201,7 +201,8 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
   // Assumes all inputs are valid
   // Expects histogram image to be 1C double
   vtkDataArray* arr = histogram->GetPointData()->GetScalars();
-  vtkDoubleArray* histogramArr = vtkDoubleArray::SafeDownCast(arr);
+  using ArrDouble = vtkAOSDataArrayTemplate<double>;
+  ArrDouble* histogramArr = ArrDouble::SafeDownCast(arr);
 
   int bins[3];
   histogram->GetDimensions(bins);
@@ -277,8 +278,8 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
 
           // Update histogram array
           const vtkIdType tupleIndex = gradIndex * bins[0] + valueIndex;
-          double histogramValue = histogramArr->GetTuple1(tupleIndex);
-          histogramArr->SetTuple1(tupleIndex, ++histogramValue);
+          double histogramValue = histogramArr->GetValue(tupleIndex);
+          histogramArr->SetValue(tupleIndex, ++histogramValue);
         }
       }
     }

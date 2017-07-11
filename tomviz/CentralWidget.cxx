@@ -131,8 +131,6 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
 {
   double minmax[2] = { 0.0, 0.0 };
   const int numberOfBins = 256;
-  // const int numberOfBins = 1024;
-  // const int numberOfBins = 64;
 
   // Keep the array we are working on around even if the user shallow copies
   // over the input image data by incrementing the reference count here.
@@ -150,6 +148,7 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
     minmax[1] = minmax[0] + 1.0;
   }
 
+  // vtkPlotHistogram2D expects the histogram array to be VTK_DOUBLE
   output->SetDimensions(numberOfBins, numberOfBins, 1);
   output->AllocateScalars(VTK_DOUBLE, 1);
 
