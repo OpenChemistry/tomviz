@@ -50,8 +50,8 @@ public:
     TF_1D = 0,
     TF_2D
   };
-  void setTransferMode(const int mode);
-  int getTransferMode() const;
+  void setTransferMode(const TransferMode mode);
+  TransferMode getTransferMode() const;
 
   /// Returns a  label for this module.
   virtual QString label() const = 0;

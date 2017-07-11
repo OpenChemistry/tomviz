@@ -338,13 +338,13 @@ bool Module::deserializeAnimationCue(vtkSMProxy* proxyObj,
   return true;
 }
 
-void Module::setTransferMode(const int mode)
+void Module::setTransferMode(const TransferMode mode)
 {
   d->m_transferMode = static_cast<Module::TransferMode>(mode);
   this->updateColorMap();
 }
 
-int Module::getTransferMode() const
+Module::TransferMode Module::getTransferMode() const
 {
   /// TODO handle detached mode
   return d->m_transferMode;

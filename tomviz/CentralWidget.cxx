@@ -362,7 +362,8 @@ void CentralWidget::setActiveModule(Module* module)
     connect(m_activeModule, SIGNAL(colorMapChanged()),
             SLOT(onColorMapDataSourceChanged()));
     setColorMapDataSource(module->colorMapDataSource());
-    m_activeModule->setTransferMode(getTransferMode());
+    m_activeModule->setTransferMode(static_cast<Module::TransferMode>(
+      m_ui->tabWidget1D2DTransfer->currentIndex()));
   } else {
     setColorMapDataSource(nullptr);
   }
@@ -414,7 +415,8 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
           m_activeModule->opacityMap()->GetClientSideObject()));
       m_ui->histogram2DWidget->setTransfer2D(
         m_activeModule->transferFunction2D());
-      m_activeModule->setTransferMode(getTransferMode());
+      m_activeModule->setTransferMode(static_cast<Module::TransferMode>(
+        m_ui->tabWidget1D2DTransfer->currentIndex()));
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
@@ -545,12 +547,7 @@ void CentralWidget::onTransferModeChanged(const int mode)
   }
 
   /// TODO Handle case: other than ModuleVolume active.
-  m_activeModule->setTransferMode(mode);
-}
-
-int CentralWidget::getTransferMode()
-{
-  return m_ui->tabWidget1D2DTransfer->currentIndex();
+  m_activeModule->setTransferMode(static_cast<Module::TransferMode>(mode));
 }
 
 } // end of namespace tomviz

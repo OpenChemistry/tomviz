@@ -30,7 +30,7 @@
 
 vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
-vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
+  vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
 {
   Callback->SetClientData(this);
   Callback->SetCallback(vtkChartTransfer2DEditor::OnBoxItemModified);
