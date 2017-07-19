@@ -56,6 +56,7 @@ public:
   void setSpecular(const double value);
   void setSpecularPower(const double value);
   void setGradientOpacityEnabled(const bool enabled);
+  void adjustForTransferMode(const int transferMode);
   //@}
 
 signals:

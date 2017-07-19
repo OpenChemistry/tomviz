@@ -99,6 +99,13 @@ void ModuleVolume::updateColorMap()
     vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject()));
   m_volumeProperty->SetGradientOpacity(
     m_gradientOpacityEnabled ? gradientOpacityMap() : nullptr);
+  m_volumeProperty->SetTransferFunction2D(transferFunction2D());
+
+  const int mode = getTransferMode();
+  m_volumeProperty->SetTransferFunctionMode(mode);
+  if (m_controllers) {
+    m_controllers->adjustForTransferMode(mode);
+  }
 
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
@@ -259,6 +266,11 @@ void ModuleVolume::addToPanel(QWidget* panel)
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
   m_controllers->setGradientOpacityEnabled(m_gradientOpacityEnabled);
+
+  const int mode = getTransferMode();
+  if (m_controllers) {
+    m_controllers->adjustForTransferMode(mode);
+  }
 
   connect(m_controllers, SIGNAL(jitteringToggled(const bool)), this,
           SLOT(setJittering(const bool)));

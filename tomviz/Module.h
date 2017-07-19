@@ -27,6 +27,7 @@
 
 class QWidget;
 class pqAnimationCue;
+class vtkImageData;
 class vtkSMProxy;
 class vtkSMViewProxy;
 class vtkPiecewiseFunction;
@@ -41,6 +42,16 @@ class Module : public QObject
 public:
   Module(QObject* parent = nullptr);
   ~Module() override;
+
+  /// Transfer function mode (1D or 2D). This enum needs to be synchronized with
+  /// the order of the tabs in ui->tabWidget1D2DTransfer.
+  enum TransferMode
+  {
+    TF_1D = 0,
+    TF_2D
+  };
+  void setTransferMode(const TransferMode mode);
+  TransferMode getTransferMode() const;
 
   /// Returns a  label for this module.
   virtual QString label() const = 0;
@@ -87,6 +98,7 @@ public:
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
   vtkPiecewiseFunction* gradientOpacityMap() const;
+  vtkImageData* transferFunction2D() const;
 
   /// Returns true if the given proxy is part of the display or data processing
   /// in this module

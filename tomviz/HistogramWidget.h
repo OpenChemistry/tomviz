@@ -80,6 +80,9 @@ public slots:
   void onPresetClicked();
   void applyCurrentPreset();
 
+protected:
+  void showEvent(QShowEvent* event) override;
+
 private:
   void renderViews();
   vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;

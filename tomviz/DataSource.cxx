@@ -54,6 +54,7 @@ namespace tomviz {
 class DataSource::DSInternals
 {
 public:
+  vtkNew<vtkImageData> m_transfer2D;
   vtkNew<vtkPiecewiseFunction> GradientOpacityMap;
   vtkSmartPointer<vtkSMSourceProxy> OriginalDataSource;
   vtkWeakPointer<vtkSMSourceProxy> Producer;
@@ -804,6 +805,8 @@ void DataSource::resetData()
   auto data = copyOriginalData();
   setData(data);
   this->Internals->GradientOpacityMap->RemoveAllPoints();
+  this->Internals->m_transfer2D->SetDimensions(1, 1, 1);
+  this->Internals->m_transfer2D->AllocateScalars(VTK_FLOAT, 4);
   emit dataChanged();
 }
 
@@ -995,6 +998,11 @@ vtkSMProxy* DataSource::opacityMap() const
 vtkPiecewiseFunction* DataSource::gradientOpacityMap() const
 {
   return this->Internals->GradientOpacityMap.GetPointer();
+}
+
+vtkImageData* DataSource::transferFunction2D() const
+{
+  return this->Internals->m_transfer2D.GetPointer();
 }
 
 bool DataSource::hasLabelMap()

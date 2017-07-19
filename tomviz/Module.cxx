@@ -28,6 +28,7 @@
 #include <pqView.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkCommand.h>
+#include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkSMProperty.h>
@@ -51,6 +52,8 @@ public:
   vtkWeakPointer<vtkSMProxy> m_opacityMap;
   vtkNew<vtkPiecewiseFunction> m_gradientOpacityMap;
 
+  Module::TransferMode m_transferMode;
+  vtkNew<vtkImageData> m_transfer2D;
   vtkSMProxy* detachedColorMap()
   {
     if (!m_detachedColorMap) {
@@ -89,6 +92,9 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_view = vtkView;
   m_activeDataSource = data;
   d->m_gradientOpacityMap->RemoveAllPoints();
+  d->m_transfer2D->SetDimensions(1, 1, 1);
+  d->m_transfer2D->AllocateScalars(VTK_FLOAT, 4);
+
   if (m_view && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
@@ -179,6 +185,12 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
   }
 
   return gof;
+}
+
+vtkImageData* Module::transferFunction2D() const
+{
+  return useDetachedColorMap() ? d->m_transfer2D.GetPointer()
+                               : colorMapDataSource()->transferFunction2D();
 }
 
 bool Module::serialize(pugi::xml_node& ns) const
@@ -324,6 +336,18 @@ bool Module::deserializeAnimationCue(vtkSMProxy* proxyObj,
   }
   cue->triggerKeyFramesModified();
   return true;
+}
+
+void Module::setTransferMode(const TransferMode mode)
+{
+  d->m_transferMode = static_cast<Module::TransferMode>(mode);
+  this->updateColorMap();
+}
+
+Module::TransferMode Module::getTransferMode() const
+{
+  /// TODO handle detached mode
+  return d->m_transferMode;
 }
 
 } // end of namespace tomviz

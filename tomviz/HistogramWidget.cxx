@@ -373,4 +373,10 @@ void HistogramWidget::setGradientOpacityEnabled(bool enable)
 {
   m_gradientOpacityButton->setEnabled(enable);
 }
+
+void HistogramWidget::showEvent(QShowEvent* event)
+{
+  QWidget::showEvent(event);
+  this->renderViews();
+}
 }
