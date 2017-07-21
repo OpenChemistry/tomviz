@@ -41,6 +41,7 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkPoints.h>
 #include <vtkRenderer.h>
+#include <vtkSMTransferFunctionManager.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringList.h>
 #include <vtkTrivialProducer.h>
@@ -336,7 +337,8 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   vtkPVArrayInformation* ainfo =
     tomviz::scalarArrayInformation(dataSource->producer());
   if (ainfo != nullptr &&
-      vtkSMPropertyHelper(cmap, "LockScalarRange").GetAsInt() == 0) {
+      vtkSMPropertyHelper(cmap, "AutomaticRescaleRangeMode").GetAsInt() !=
+        vtkSMTransferFunctionManager::NEVER) {
     // assuming single component arrays.
     if (ainfo->GetNumberOfComponents() != 1) {
       QMessageBox box;
