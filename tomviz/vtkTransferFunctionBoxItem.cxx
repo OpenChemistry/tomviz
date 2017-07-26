@@ -50,7 +50,13 @@ inline bool PointIsWithinBounds2D(double point[2], double bounds[4],
 ////////////////////////////////////////////////////////////////////////////////
 vtkStandardNewMacro(vtkTransferFunctionBoxItem)
 
-  vtkTransferFunctionBoxItem::vtkTransferFunctionBoxItem()
+  vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction,
+                       vtkColorTransferFunction)
+
+    vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, OpacityFunction,
+                         vtkPiecewiseFunction)
+
+      vtkTransferFunctionBoxItem::vtkTransferFunctionBoxItem()
   : Superclass()
 {
   // Initialize box, points are ordered as:
@@ -81,7 +87,16 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
   memset(dataPtr, 0, texSize * 4 * sizeof(unsigned char));
 }
 
-vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem() = default;
+vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem()
+{
+  if (this->OpacityFunction) {
+    this->OpacityFunction->UnRegister(this);
+  }
+
+  if (this->ColorFunction) {
+    this->ColorFunction->UnRegister(this);
+  }
+}
 
 void vtkTransferFunctionBoxItem::DragBox(const double deltaX,
                                          const double deltaY)
@@ -479,13 +494,7 @@ void vtkTransferFunctionBoxItem::SetBox(const double x, const double y,
   this->DragCorner(TOP_RIGHT, deltaSize);
 }
 
-vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction,
-                     vtkColorTransferFunction)
-
-  vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, OpacityFunction,
-                       vtkPiecewiseFunction)
-
-    bool vtkTransferFunctionBoxItem::NeedsTextureUpdate()
+bool vtkTransferFunctionBoxItem::NeedsTextureUpdate()
 {
   auto tex = this->Texture.GetPointer();
   return (tex->GetMTime() < this->ColorFunction->GetMTime() ||

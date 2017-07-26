@@ -34,21 +34,26 @@ vtkStandardNewMacro(vtkChartTransfer2DEditor)
 {
   Callback->SetClientData(this);
   Callback->SetCallback(vtkChartTransfer2DEditor::OnBoxItemModified);
-  /// TODO Disable panning
 }
 
-vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor() = default;
+vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor()
+{
+  if (this->Transfer2D) {
+    this->Transfer2D->UnRegister(this);
+  }
+}
 
 void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
 {
-  if (transfer2D != Transfer2D) {
-    if (Transfer2D != nullptr) {
-      Transfer2D->UnRegister(this);
+  if (transfer2D != this->Transfer2D) {
+    if (this->Transfer2D) {
+      this->Transfer2D->UnRegister(this);
+      this->Transfer2D = nullptr;
     }
 
-    Transfer2D = transfer2D;
-    if (Transfer2D != nullptr) {
-      Transfer2D->Register(this);
+    this->Transfer2D = transfer2D;
+    if (this->Transfer2D) {
+      this->Transfer2D->Register(this);
     }
 
     Modified();
