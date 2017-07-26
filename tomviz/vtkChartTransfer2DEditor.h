@@ -33,6 +33,7 @@
 #include <vtkChartHistogram2D.h>
 
 #include <vtkNew.h>
+#include <vtkSmartPointer.h>
 
 class vtkCallbackCommand;
 class vtkImageData;
@@ -73,7 +74,7 @@ protected:
   vtkChartTransfer2DEditor();
   ~vtkChartTransfer2DEditor() override;
 
-  vtkImageData* Transfer2D = nullptr;
+  vtkSmartPointer<vtkImageData> Transfer2D;
   vtkNew<vtkCallbackCommand> Callback;
 
   vtkPlot* GetPlot(vtkIdType index) override;

@@ -14,6 +14,7 @@
 
 ******************************************************************************/
 #include "vtkTransferFunctionBoxItem.h"
+
 #include <vtkBrush.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkContext2D.h>
@@ -87,16 +88,7 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
   memset(dataPtr, 0, texSize * 4 * sizeof(unsigned char));
 }
 
-vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem()
-{
-  if (this->OpacityFunction) {
-    this->OpacityFunction->UnRegister(this);
-  }
-
-  if (this->ColorFunction) {
-    this->ColorFunction->UnRegister(this);
-  }
-}
+vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem() = default;
 
 void vtkTransferFunctionBoxItem::DragBox(const double deltaX,
                                          const double deltaY)

@@ -36,25 +36,12 @@ vtkStandardNewMacro(vtkChartTransfer2DEditor)
   Callback->SetCallback(vtkChartTransfer2DEditor::OnBoxItemModified);
 }
 
-vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor()
-{
-  if (this->Transfer2D) {
-    this->Transfer2D->UnRegister(this);
-  }
-}
+vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor() = default;
 
 void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
 {
   if (transfer2D != this->Transfer2D) {
-    if (this->Transfer2D) {
-      this->Transfer2D->UnRegister(this);
-      this->Transfer2D = nullptr;
-    }
-
     this->Transfer2D = transfer2D;
-    if (this->Transfer2D) {
-      this->Transfer2D->Register(this);
-    }
 
     Modified();
     GenerateTransfer2D();

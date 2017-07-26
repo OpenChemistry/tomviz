@@ -17,8 +17,10 @@
 #define tomvizvtkTransferFunctionBoxItem_h
 
 #include <vtkControlPointsItem.h>
+
 #include <vtkNew.h>  // For vtkNew<> members
 #include <vtkRect.h> // For vtkRect
+#include <vtkSmartPointer.h>
 
 /**
  * \brief Box representation of a transfer function.
@@ -188,8 +190,8 @@ private:
   vtkNew<vtkPoints2D> BoxPoints;
   const int NumPoints = 4;
   vtkRectd Box;
-  vtkPiecewiseFunction* OpacityFunction = nullptr;
-  vtkColorTransferFunction* ColorFunction = nullptr;
+  vtkSmartPointer<vtkPiecewiseFunction> OpacityFunction;
+  vtkSmartPointer<vtkColorTransferFunction> ColorFunction;
 
   vtkNew<vtkPen> Pen;
   vtkNew<vtkImageData> Texture;
