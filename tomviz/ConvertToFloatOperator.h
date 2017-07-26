@@ -34,7 +34,6 @@ public:
   bool deserialize(const pugi::xml_node& ns) override;
   bool hasCustomUI() const override { return false; }
 
-protected:
   bool applyTransform(vtkDataObject* data) override;
 
 private:
