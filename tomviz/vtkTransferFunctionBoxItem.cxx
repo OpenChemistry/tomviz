@@ -51,13 +51,7 @@ inline bool PointIsWithinBounds2D(double point[2], double bounds[4],
 ////////////////////////////////////////////////////////////////////////////////
 vtkStandardNewMacro(vtkTransferFunctionBoxItem)
 
-  vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, ColorFunction,
-                       vtkColorTransferFunction)
-
-    vtkCxxSetObjectMacro(vtkTransferFunctionBoxItem, OpacityFunction,
-                         vtkPiecewiseFunction)
-
-      vtkTransferFunctionBoxItem::vtkTransferFunctionBoxItem()
+  vtkTransferFunctionBoxItem::vtkTransferFunctionBoxItem()
   : Superclass()
 {
   // Initialize box, points are ordered as:
@@ -89,6 +83,32 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
 }
 
 vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem() = default;
+
+void vtkTransferFunctionBoxItem::SetColorFunction(vtkColorTransferFunction* f)
+{
+  if (this->ColorFunction != f) {
+    this->ColorFunction = f;
+    this->Modified();
+  }
+}
+
+vtkColorTransferFunction* vtkTransferFunctionBoxItem::GetColorFunction()
+{
+  return this->ColorFunction;
+}
+
+void vtkTransferFunctionBoxItem::SetOpacityFunction(vtkPiecewiseFunction* f)
+{
+  if (this->OpacityFunction != f) {
+    this->OpacityFunction = f;
+    this->Modified();
+  }
+}
+
+vtkPiecewiseFunction* vtkTransferFunctionBoxItem::GetOpacityFunction()
+{
+  return this->OpacityFunction;
+}
 
 void vtkTransferFunctionBoxItem::DragBox(const double deltaX,
                                          const double deltaY)

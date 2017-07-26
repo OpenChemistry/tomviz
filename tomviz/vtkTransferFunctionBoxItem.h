@@ -45,25 +45,25 @@ public:
   vtkTransferFunctionBoxItem(const vtkTransferFunctionBoxItem&) = delete;
   void operator=(const vtkTransferFunctionBoxItem&) = delete;
 
-  vtkTypeMacro(vtkTransferFunctionBoxItem, vtkControlPointsItem) void PrintSelf(
-    ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  vtkTypeMacro(vtkTransferFunctionBoxItem, vtkControlPointsItem)
+
+    void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   //@{
   /**
    * Transfer functions represented by this box item.
    */
   void SetColorFunction(vtkColorTransferFunction* function);
-  vtkGetObjectMacro(
-    ColorFunction,
-    vtkColorTransferFunction) void SetOpacityFunction(vtkPiecewiseFunction*
-                                                        function);
-  vtkGetObjectMacro(OpacityFunction, vtkPiecewiseFunction)
-    //@}
+  vtkColorTransferFunction* GetColorFunction();
 
-    /**
-     * Returns the curren box as [x0, y0, width, height].
-     */
-    const vtkRectd& GetBox();
+  void SetOpacityFunction(vtkPiecewiseFunction* function);
+  vtkPiecewiseFunction* GetOpacityFunction();
+  //@}
+
+  /**
+   * Returns the curren box as [x0, y0, width, height].
+   */
+  const vtkRectd& GetBox();
 
   //{@
   /**
