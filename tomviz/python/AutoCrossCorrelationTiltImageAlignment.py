@@ -44,7 +44,7 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             self.progress.message = 'Processing tilt image No.%d/%d' % (
                 i + 1, Nproj)
 
-            tiltSeries[:, :, i + 1] = corssCorrelationAlign(
+            tiltSeries[:, :, i + 1] = crossCorrelationAlign(
                 tiltSeries[:, :, i + 1], tiltSeries[:, :, i], rFilter, kFilter)
             step += 1
             self.progress.value = step
@@ -54,7 +54,7 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
                 return
             self.progress.message = 'Processing tilt image No.%d/%d' % (
                 i, Nproj)
-            tiltSeries[:, :, i - 1] = corssCorrelationAlign(
+            tiltSeries[:, :, i - 1] = crossCorrelationAlign(
                 tiltSeries[:, :, i - 1], tiltSeries[:, :, i], rFilter, kFilter)
             step += 1
             self.progress.value = step
@@ -62,7 +62,7 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
         utils.set_array(dataset, tiltSeries)
 
 
-def corssCorrelationAlign(image, reference, rFilter, kFilter):
+def crossCorrelationAlign(image, reference, rFilter, kFilter):
     """Align image to reference by cross-correlation"""
 
     image_f = np.fft.fft2((image - np.mean(image)) * rFilter)
