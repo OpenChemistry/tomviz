@@ -21,9 +21,11 @@ import tomviz._wrapping
 import inspect
 import sys
 
+
 def delete_module(name):
     if name in sys.modules:
         del sys.modules[name]
+
 
 def find_operator_class(transform_module):
     operator_class = None
