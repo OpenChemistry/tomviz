@@ -49,7 +49,7 @@ void DataTransformMenu::buildTransforms()
   auto customPythonAction = menu->addAction("Custom Transform");
 
   auto cropDataAction = menu->addAction("Crop");
-  auto convertDataAction = menu->addAction("Convert To Float");
+  auto convertDataAction = menu->addAction("Convert to Float");
   auto reinterpretSignedToUnignedAction =
     menu->addAction("Reinterpret Signed to Unsigned");
   menu->addSeparator();
