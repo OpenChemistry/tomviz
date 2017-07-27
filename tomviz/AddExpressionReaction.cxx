@@ -70,7 +70,8 @@ QString AddExpressionReaction::getDefaultExpression(DataSource* source)
     // Build the default script for the python operator
     // This was done in the Dialog's UI file, but since it needs to change
     // based on the type of dataset, do it here
-    return QString("def transform_scalars(dataset):\n"
+    return QString("# Transform entry point, do not change function name.\n"
+                   "def transform_scalars(dataset):\n"
                    "    \"\"\"Define this method for Python operators that \n"
                    "    transform the input array\"\"\"\n"
                    "\n"
