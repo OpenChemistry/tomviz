@@ -308,20 +308,20 @@ public:
     for (vtkIdType j = 0; j < m_ySize; ++j) {
       for (vtkIdType i = 0; i < m_xSize; ++i) {
         vtkIdType destIdx = j * m_xSize + i;
-        if (j + m_currentSliceOffset[1] < m_ySize &&
-            j + m_currentSliceOffset[1] >= 0 &&
-            i + m_currentSliceOffset[0] < m_xSize &&
-            i + m_currentSliceOffset[0] >= 0) {
+        if (j - m_currentSliceOffset[1] < m_ySize &&
+            j - m_currentSliceOffset[1] >= 0 &&
+            i - m_currentSliceOffset[0] < m_xSize &&
+            i - m_currentSliceOffset[0] >= 0) {
           // Index of the point in the current slice that corresponds to the
           // given position
           vtkIdType currentSliceIdx = m_currentSlice * m_ySize * m_xSize +
-                                      (j + m_currentSliceOffset[1]) * m_xSize +
-                                      (i + m_currentSliceOffset[0]);
+                                      (j - m_currentSliceOffset[1]) * m_xSize +
+                                      (i - m_currentSliceOffset[0]);
           // Index in the reference slice that corresponds to the given position
           vtkIdType referenceSliceIdx =
             m_referenceSlice * m_ySize * m_xSize +
-            (j + m_referenceSliceOffset[1]) * m_xSize +
-            (i + m_referenceSliceOffset[0]);
+            (j - m_referenceSliceOffset[1]) * m_xSize +
+            (i - m_referenceSliceOffset[0]);
           // Compute the difference and set it to the output at the position
           out.Set(destIdx, 0,
                   in.Get(currentSliceIdx, 0) - in.Get(referenceSliceIdx, 0));
