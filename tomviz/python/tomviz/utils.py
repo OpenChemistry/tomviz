@@ -31,18 +31,25 @@ def get_scalars(dataobject):
     return vtkarray
 
 
+def is_numpy_vtk_type(newscalars):
+    # Indicate whether the type is known/supported by VTK to NumPy routines.
+    try:
+        np_s.get_vtk_array_type(newscalars.dtype)
+    except TypeError:
+        return False
+    else:
+        return True
+
+
 def set_scalars(dataobject, newscalars):
     do = dsa.WrapDataObject(dataobject)
     oldscalars = do.PointData.GetScalars()
     name = oldscalars.GetName()
     del oldscalars
 
-    # handle the case if the newscalars array has a type that
-    # cannot be passed on to VTK. In which case, we convert to
-    # convert to float64
-    vtk_typecode = np_s.get_vtk_array_type(newscalars.dtype)
-    if vtk_typecode is None:
-        newscalars = newscalars.astype(np.float64)
+    if not is_numpy_vtk_type(newscalars):
+        newscalars = newscalars.astype(np.float32)
+
     do.PointData.append(newscalars, name)
     do.PointData.SetActiveScalars(name)
 
@@ -85,6 +92,9 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
         tmp = np.asfortranarray(newarray)
         arr = tmp.reshape(-1, order='F')
         print('...done.')
+
+    if not is_numpy_vtk_type(arr):
+        arr = arr.astype(np.float32)
 
     if minextent is None:
         minextent = dataobject.GetExtent()[::2]
