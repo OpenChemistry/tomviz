@@ -83,6 +83,7 @@ public:
   Python::Module InternalModule;
   Python::Function FindTransformScalarsFunction;
   Python::Function IsCancelableFunction;
+  Python::Function DeleteModuleFunction;
 };
 
 OperatorPython::OperatorPython(QObject* parentObject)
@@ -113,6 +114,12 @@ OperatorPython::OperatorPython(QObject* parentObject)
       this->Internals->InternalModule.findFunction("find_transform_scalars");
     if (!this->Internals->FindTransformScalarsFunction.isValid()) {
       qCritical() << "Unable to locate find_transform_scalars.";
+    }
+
+    this->Internals->DeleteModuleFunction =
+      this->Internals->InternalModule.findFunction("delete_module");
+    if (!this->Internals->DeleteModuleFunction.isValid()) {
+      qCritical() << "Unable to locate delete_module.";
     }
   }
   // This connection is needed so we can create new child data sources in the UI
@@ -240,6 +247,16 @@ void OperatorPython::setScript(const QString& str)
         python.import(this->Script, this->label(), moduleName);
       if (!this->Internals->TransformModule.isValid()) {
         qCritical("Failed to create module.");
+        return;
+      }
+
+      // Delete the module from sys.module so we don't reuse it
+      Python::Tuple delArgs(1);
+      Python::Object name(moduleName);
+      delArgs.set(0, name);
+      auto delResult = this->Internals->DeleteModuleFunction.call(delArgs);
+      if (!delResult.isValid()) {
+        qCritical("An error occurred deleting module.");
         return;
       }
 
