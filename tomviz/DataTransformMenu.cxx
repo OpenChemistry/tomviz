@@ -120,7 +120,7 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(squareRootAction, "Square Root Data",
                                  readInPythonScript("Square_Root_Data"));
   new AddPythonTransformReaction(cropEdgesAction, "Clip Edges",
-                                 readInPythonScript("ClipEdges"), false, false,
+                                 readInPythonScript("ClipEdges"), false, true,
                                  readInJSONDescription("ClipEdges"));
   new AddPythonTransformReaction(hannWindowAction, "Hann Window",
                                  readInPythonScript("HannWindow3D"));
