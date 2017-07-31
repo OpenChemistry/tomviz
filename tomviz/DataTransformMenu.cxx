@@ -66,6 +66,7 @@ void DataTransformMenu::buildTransforms()
   auto addConstantAction = menu->addAction("Add Constant");
   auto invertDataAction = menu->addAction("Invert Data");
   auto squareRootAction = menu->addAction("Square Root Data");
+  auto cropEdgesAction = menu->addAction("Clip Edges");
   auto hannWindowAction = menu->addAction("Hann Window");
   auto fftAbsLogAction = menu->addAction("FFT (abs log)");
   auto gradientMagnitudeSobelAction = menu->addAction("Gradient Magnitude");
@@ -118,6 +119,9 @@ void DataTransformMenu::buildTransforms()
                                  readInPythonScript("InvertData"));
   new AddPythonTransformReaction(squareRootAction, "Square Root Data",
                                  readInPythonScript("Square_Root_Data"));
+  new AddPythonTransformReaction(cropEdgesAction, "Clip Edges",
+                                 readInPythonScript("ClipEdges"), false, false,
+                                 readInJSONDescription("ClipEdges"));
   new AddPythonTransformReaction(hannWindowAction, "Hann Window",
                                  readInPythonScript("HannWindow3D"));
   new AddPythonTransformReaction(fftAbsLogAction, "FFT (ABS LOG)",
