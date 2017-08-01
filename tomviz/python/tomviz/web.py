@@ -115,7 +115,7 @@ def bundleDataToHTML(destinationPath, keepData, compress=False):
                 content = ''
 
                 if fname.endswith('.json'):
-                    with open(fullPath, 'r') as data:
+                    with open(fullPath, 'r', encoding='utf8') as data:
                         content = data.read()
                 else:
                     with open(fullPath, 'rb') as data:
@@ -130,8 +130,8 @@ def bundleDataToHTML(destinationPath, keepData, compress=False):
         webResources.append('<script>ready()</script></body>')
 
         # Create new output file
-        with open(srcHtmlPath, mode='r') as srcHtml:
-            with open(dstHtmlPath, mode='w') as dstHtml:
+        with open(srcHtmlPath, mode='r',encoding='utf8') as srcHtml:
+            with open(dstHtmlPath, mode='w', encoding='utf8') as dstHtml:
                 for line in srcHtml:
                     if '</body>' in line:
                         for webResource in webResources:
@@ -170,9 +170,9 @@ def copy_viewer(destinationPath, executionPath):
                 srcHtmlFile = os.path.join(root, HTML_FILENAME)
                 srcJsFile = os.path.join(root, JS_FILENAME)
                 dstHtmlFile = os.path.join(destinationPath, HTML_FILENAME)
-                with open(srcHtmlFile, mode='r') as srcHTML, \
-                        open(srcJsFile, mode='r') as srcJS, \
-                        open(dstHtmlFile, mode='w') as dstHTML:
+                with open(srcHtmlFile, mode='r', encoding='utf8') as srcHTML, \
+                        open(srcJsFile, mode='r', encoding='utf8') as srcJS, \
+                        open(dstHtmlFile, mode='w', encoding='utf8') as dstHTML:
                     for line in srcHTML:
                         if '</body>' in line:
                             dstHTML.write('<script type="text/javascript">\n')
@@ -250,8 +250,8 @@ def patch_data_range(destinationPath):
     originalPath = os.path.join(destinationPath, 'index.json')
     tmpPath = os.path.join(destinationPath, 'index_tmp.json')
     os.rename(originalPath, tmpPath)
-    with open(originalPath, 'w') as outputJSON:
-        with open(tmpPath, 'r') as inputJSON:
+    with open(originalPath, 'w', encoding='utf8') as outputJSON:
+        with open(tmpPath, 'r', encoding='utf8') as inputJSON:
             content = json.loads(inputJSON.read())
             # Patch geometry range
             for fieldName in content['Geometry']['ranges']:
@@ -635,12 +635,12 @@ def export_volume(destinationPath, **kwargs):
 
     # Index file
     indexPath = os.path.join(destinationPath, 'index.json')
-    with open(indexPath, 'w') as f:
+    with open(indexPath, 'w', encoding='utf8') as f:
         f.write(json.dumps(indexJSON, indent=2))
 
     # Image Data file
     volumePath = os.path.join(destinationPath, 'volume.json')
-    with open(volumePath, 'w') as f:
+    with open(volumePath, 'w', encoding='utf8') as f:
         f.write(json.dumps(volumeJSON, indent=2))
 
     # Write data field
