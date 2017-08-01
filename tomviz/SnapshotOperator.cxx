@@ -57,7 +57,9 @@ Operator* SnapshotOperator::clone() const
 bool SnapshotOperator::serialize(pugi::xml_node& ns) const
 {
   Operator::serialize(ns);
-  if (hasChildDataSource() && childDataSource()->persistenceState() == DataSource::PersistenceState::Saved) {
+  if (hasChildDataSource() &&
+      childDataSource()->persistenceState() ==
+        DataSource::PersistenceState::Saved) {
     ns.append_attribute("update").set_value(false);
   }
 
@@ -129,5 +131,4 @@ void SnapshotOperator::createNewChildDataSource(
 
   emit Operator::newChildDataSource(childDS);
 }
-
 }

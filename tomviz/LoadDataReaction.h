@@ -56,19 +56,16 @@ public:
   /// Load a data file from the specified location.
   static DataSource* loadData(const QString& fileName,
                               bool defaultModules = true,
-                              bool addToRecent = true,
-                              bool child = false);
+                              bool addToRecent = true, bool child = false);
 
   /// Load a data files from the specified location.
   static DataSource* loadData(const QStringList& fileNames,
                               bool defaultModules = true,
-                              bool addToRecent = true,
-                              bool child = false);
+                              bool addToRecent = true, bool child = false);
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource* dataSource,
-                              bool defaultModules = true,
-                              bool child = false);
+                              bool defaultModules = true, bool child = false);
 
 protected:
   /// Called when the action is triggered.

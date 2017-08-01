@@ -257,7 +257,7 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
   connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
           SLOT(dataSourceAdded(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(childDataSourceAdded(DataSource*)),
-            SLOT(childDataSourceAdded(DataSource*)));
+          SLOT(childDataSourceAdded(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
           SLOT(moduleAdded(Module*)));
 
@@ -873,7 +873,6 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
   foreach (auto op, dataSource->operators()) {
     this->operatorAdded(op);
   }
-
 }
 
 } // tomviz namespace

@@ -220,8 +220,7 @@ bool hasData(vtkSMProxy* reader)
 }
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
-                                               bool defaultModules,
-                                               bool child)
+                                               bool defaultModules, bool child)
 {
   // Prompt user for reader configuration, unless it is TIFF.
   pqProxyWidgetDialog dialog(reader);
@@ -269,15 +268,13 @@ DataSource* LoadDataReaction::createDataSource(vtkImageData* imageData)
 }
 
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
-                                       bool defaultModules,
-                                       bool child)
+                                       bool defaultModules, bool child)
 {
   bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
   ActiveObjects::instance().setMoveObjectsMode(false);
   if (child) {
     ModuleManager::instance().addChildDataSource(dataSource);
-  }
-  else {
+  } else {
     ModuleManager::instance().addDataSource(dataSource);
   }
 

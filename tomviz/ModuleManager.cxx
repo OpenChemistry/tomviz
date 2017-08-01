@@ -296,7 +296,8 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
   }
 
   // Build a list of unique original data sources. These are the data readers.
-  foreach (const QPointer<DataSource>& ds, this->Internals->ChildDataSources + this->Internals->DataSources) {
+  foreach (const QPointer<DataSource>& ds,
+           this->Internals->ChildDataSources + this->Internals->DataSources) {
     if (ds == nullptr ||
         uniqueOriginalSources.contains(ds->originalDataSource()) ||
         ds->persistenceState() == DataSource::PersistenceState::Modified) {
@@ -320,8 +321,10 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
   // Now serialize each of the data-sources. The data sources don't serialize
   // the original data source since that can be shared among sources.
   QList<DataSource*> serializedDataSources;
-  foreach (const QPointer<DataSource>& ds, this->Internals->ChildDataSources + this->Internals->DataSources) {
-    if (ds && uniqueOriginalSources.contains(ds->originalDataSource()) && ds->persistenceState() == DataSource::PersistenceState::Saved) {
+  foreach (const QPointer<DataSource>& ds,
+           this->Internals->ChildDataSources + this->Internals->DataSources) {
+    if (ds && uniqueOriginalSources.contains(ds->originalDataSource()) &&
+        ds->persistenceState() == DataSource::PersistenceState::Saved) {
       pugi::xml_node dsnode = ns.append_child("DataSource");
       dsnode.append_attribute("id").set_value(
         ds->producer()->GetGlobalIDAsString());
@@ -653,8 +656,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     }
     if (!child) {
       this->addDataSource(dataSource);
-    }
-    else {
+    } else {
       this->addChildDataSource(dataSource);
     }
     if (!dataSource->deserialize(dsnode)) {
