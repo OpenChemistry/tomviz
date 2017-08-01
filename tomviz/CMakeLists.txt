@@ -246,6 +246,7 @@ set(python_files
   AddPoissonNoise.py
   BinaryThreshold.py
   ConnectedComponents.py
+  ClipEdges.py
   OtsuMultipleThreshold.py
   BinaryDilate.py
   BinaryErode.py
@@ -308,6 +309,7 @@ set(json_files
   AddPoissonNoise.json
   BinaryThreshold.json
   ConnectedComponents.json
+  ClipEdges.json
   OtsuMultipleThreshold.json
   BinaryDilate.json
   BinaryErode.json

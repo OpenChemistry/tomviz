@@ -1,0 +1,16 @@
+{
+  "name" : "ClipEdges",
+  "label" : "Clip Edges",
+  "description" : "Sets the value of pixels near the edges of the volume to the minimum value leaving only a circular region with data to avoid artifacts near the edge of the reconstruction.",
+  "parameters" : [
+    {
+      "name" : "clipNum",
+      "label" : "Number to Clip",
+      "description" : "The distance from the edge of the volume to the circular region where data will be untouched.",
+      "type" : "int",
+      "default" : 5,
+      "minimum": 0
+    }
+  ]
+}
+
