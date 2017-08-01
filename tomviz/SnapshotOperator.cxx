@@ -31,16 +31,17 @@
 #include <QDebug>
 
 namespace tomviz {
+
+using pugi::xml_attribute;
+using pugi::xml_node;
+
 SnapshotOperator::SnapshotOperator(DataSource* source, QObject* p)
   : Operator(p), m_dataSource(source)
 {
   setSupportsCancel(false);
-  setNumberOfResults(1);
   setHasChildDataSource(true);
   connect(this, &SnapshotOperator::newChildDataSource, this,
           &SnapshotOperator::createNewChildDataSource);
-  connect(this, &SnapshotOperator::newOperatorResult, this,
-          &SnapshotOperator::setOperatorResult);
 }
 
 QIcon SnapshotOperator::icon() const
@@ -53,14 +54,23 @@ Operator* SnapshotOperator::clone() const
   return new SnapshotOperator(m_dataSource);
 }
 
-bool SnapshotOperator::serialize(pugi::xml_node&) const
+bool SnapshotOperator::serialize(pugi::xml_node& ns) const
 {
-  // No state to serialize yet
+  Operator::serialize(ns);
+  if (hasChildDataSource() && childDataSource()->persistenceState() == DataSource::PersistenceState::Saved) {
+    ns.append_attribute("update").set_value(false);
+  }
+
   return true;
 }
 
-bool SnapshotOperator::deserialize(const pugi::xml_node&)
+bool SnapshotOperator::deserialize(const pugi::xml_node& ns)
 {
+  Operator::deserialize(ns);
+  xml_attribute att = ns.attribute("update");
+  if (att) {
+    m_updateCache = att.as_bool();
+  }
   // No state to serialize yet
   return true;
 }
@@ -86,7 +96,6 @@ bool SnapshotOperator::applyTransform(vtkDataObject* dataObject)
   vtkNew<vtkImageData> cacheImage;
   cacheImage->DeepCopy(imageData);
 
-  emit newOperatorResult(cacheImage.Get());
   emit newChildDataSource("Snapshot", cacheImage.Get());
   return true;
 }
@@ -117,13 +126,8 @@ void SnapshotOperator::createNewChildDataSource(
 
   childDS->setFilename(label.toLatin1().data());
   setChildDataSource(childDS);
+
+  emit Operator::newChildDataSource(childDS);
 }
 
-void SnapshotOperator::setOperatorResult(vtkSmartPointer<vtkDataObject> result)
-{
-  bool resultWasSet = setResult(0, result);
-  if (!resultWasSet) {
-    qCritical() << "Could not set result 0";
-  }
-}
 }
