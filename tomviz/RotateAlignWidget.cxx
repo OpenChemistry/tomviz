@@ -173,9 +173,9 @@ public:
       centerOfRotation[2] = (bounds[4] + bounds[5]) / 2.0;
     }
     tform->Identity();
-    tform->Translate(0, this->Ui.rotationAxis->value(), 0);
+    tform->Translate(0, -this->Ui.rotationAxis->value(), 0);
     tform->Translate(centerOfRotation);
-    tform->RotateZ(this->Ui.rotationAngle->value());
+    tform->RotateZ(-this->Ui.rotationAngle->value());
     tform->Translate(-centerOfRotation[0], -centerOfRotation[1],
                      -centerOfRotation[2]);
     this->Ui.sliceView->GetRenderWindow()->Render();
@@ -202,8 +202,8 @@ public:
       int Nray = 256; // Size of 2D reconstruction. Fixed for all tilt series
       std::vector<float> sinogram(Nray * dims[2]);
       // Approximate in-plance rotation as a shift in y-direction
-      double shift = this->Ui.rotationAxis->value() +
-                     sin(this->Ui.rotationAngle->value() * PI / 180) *
+      double shift = -this->Ui.rotationAxis->value() +
+                     sin(-this->Ui.rotationAngle->value() * PI / 180) *
                        (sliceNum - dims[0] / 2);
 
       TomographyTiltSeries::getSinogram(
@@ -629,7 +629,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   // Apply shift (in y-direction)
   QMap<QString, QVariant> arguments;
   QList<QVariant> value;
-  value << 0 << -this->Internals->Ui.rotationAxis->value() << 0;
+  value << 0 << this->Internals->Ui.rotationAxis->value() << 0;
   arguments.insert("SHIFT", value);
 
   QString scriptLabel = "Shift";
@@ -644,7 +644,7 @@ void RotateAlignWidget::onFinalReconButtonPressed()
   scriptSource = readInPythonScript("Rotate3D");
   arguments.insert("rotation_axis", 2);
   arguments.insert("rotation_angle",
-                   -this->Internals->Ui.rotationAngle->value());
+                   this->Internals->Ui.rotationAngle->value());
 
   AddPythonTransformReaction::addPythonOperator(
     this->Internals->Source, scriptLabel, scriptSource, arguments,
