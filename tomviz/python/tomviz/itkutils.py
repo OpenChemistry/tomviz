@@ -149,11 +149,18 @@ def vtk_cast_map():
             'double': vtk.VTK_DOUBLE
         }
 
+        # Import build options from ITK. Explicitly reference itk.Vector so
+        # that the itk::Vector type information is available when
+        # itk.BuildOptions is imported, otherwise we get an exception when
+        # importing itkBuildOptions. This is a workaround for a bug in ITK.
+        itk.Vector
+        import itkBuildOptions
+
         # Select the best supported type available in the wrapping.
         for (vtk_type, possible_image_types) in py2to3.iteritems(type_map):
             type_map[vtk_type] = None
             for possible_type in possible_image_types:
-                if itk.ctype(possible_type) in itk.WrapITKBuildOptions.SCALARS:
+                if itk.ctype(possible_type) in itkBuildOptions.SCALARS:
                     _vtk_cast_types[vtk_type] = ctype_to_vtk[possible_type]
                     break
 
