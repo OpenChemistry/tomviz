@@ -87,6 +87,17 @@ public:
   vtkNew<vtkLineSource> reconSliceLine[3];
   vtkNew<vtkActor> reconSliceLineActor[3];
   vtkSmartPointer<vtkSMProxy> ReconColorMap[3];
+  bool m_reconSliceDirty[3];
+  QTimer m_updateSlicesTimer;
+
+  RAWInternal()
+  {
+    m_reconSliceDirty[0] = m_reconSliceDirty[1] = m_reconSliceDirty[2] = true;
+    m_updateSlicesTimer.setInterval(500);
+    m_updateSlicesTimer.setSingleShot(true);
+    QObject::connect(&m_updateSlicesTimer, &QTimer::timeout,
+                     [this]() { this->updateDirtyReconSlices(); });
+  }
 
   void setupCameras()
   {
@@ -181,6 +192,16 @@ public:
     this->Ui.sliceView->GetRenderWindow()->Render();
   }
 
+  void updateDirtyReconSlices()
+  {
+    for (int i = 0; i < 3; ++i) {
+      if (m_reconSliceDirty[i]) {
+        this->updateReconSlice(i);
+        m_reconSliceDirty[i] = false;
+      }
+    }
+  }
+
   void updateReconSlice(int i)
   {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
@@ -233,6 +254,12 @@ public:
       this->reconSlice[i]->GetProperty()->SetLookupTable(
         vtkScalarsToColors::SafeDownCast(
           this->ReconColorMap[i]->GetClientSideObject()));
+
+      tomviz::QVTKGLWidget* sliceView[] = { this->Ui.sliceView_1,
+                                            this->Ui.sliceView_2,
+                                            this->Ui.sliceView_3 };
+
+      sliceView[i]->GetRenderWindow()->Render();
     }
   }
 
@@ -461,6 +488,8 @@ void RotateAlignWidget::setDataSource(DataSource* source)
     this->Internals->Ui.spinBox_3->setValue(
       vtkMath::Round(0.75 * (extent[1] - extent[0])));
 
+    // We have to do this here since we need the output to exist so the camera
+    // can be initialized below
     this->Internals->updateReconSlice(0);
     this->Internals->updateReconSlice(1);
     this->Internals->updateReconSlice(2);
@@ -496,33 +525,18 @@ void RotateAlignWidget::onRotationAxisChanged()
 {
   this->Internals->moveRotationAxisLine();
   // Update recon windows
-  this->Internals->updateReconSlice(0);
-  this->Internals->reconSliceMapper[0]->Update();
-  this->Internals->Ui.sliceView_1->GetRenderWindow()->Render();
-
-  this->Internals->updateReconSlice(1);
-  this->Internals->reconSliceMapper[1]->Update();
-  this->Internals->Ui.sliceView_2->GetRenderWindow()->Render();
-
-  this->Internals->updateReconSlice(2);
-  this->Internals->reconSliceMapper[2]->Update();
-  this->Internals->Ui.sliceView_3->GetRenderWindow()->Render();
+  this->Internals->m_reconSliceDirty[0] = true;
+  this->Internals->m_reconSliceDirty[1] = true;
+  this->Internals->m_reconSliceDirty[2] = true;
+  this->Internals->m_updateSlicesTimer.start();
 }
 
 void RotateAlignWidget::onReconSliceChanged(int idx)
 {
   this->Internals->updateSliceLines();
   this->Internals->Ui.sliceView->GetRenderWindow()->Render();
-  this->Internals->updateReconSlice(idx);
-  this->Internals->reconSliceMapper[idx]->Update();
-  if (idx == 0) {
-    this->Internals->Ui.sliceView_1->GetRenderWindow()->Render();
-  } else if (idx == 1) {
-    this->Internals->Ui.sliceView_2->GetRenderWindow()->Render();
-  } else // if (idx == 2)
-  {
-    this->Internals->Ui.sliceView_3->GetRenderWindow()->Render();
-  }
+  this->Internals->m_reconSliceDirty[idx] = true;
+  this->Internals->m_updateSlicesTimer.start();
 }
 
 namespace {
