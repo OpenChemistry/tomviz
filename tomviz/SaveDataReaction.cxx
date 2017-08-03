@@ -115,11 +115,9 @@ bool SaveDataReaction::saveData(const QString& filename)
   auto result = ActiveObjects::instance().activeOperatorResult();
 
   auto updateSource = [](QString fileName, DataSource* ds) {
-    if (!ModuleManager::instance().isChild(ds)) {
       ds->setPersistenceState(DataSource::PersistenceState::Saved);
       ds->originalDataSource()->SetAnnotation(Attributes::FILENAME,
                                               fileName.toLatin1().data());
-    }
   };
 
   if (!server) {

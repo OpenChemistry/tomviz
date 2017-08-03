@@ -79,6 +79,8 @@ public:
   // only used by onPVStateLoaded for the second half of deserialize
   pugi::xml_node node;
   QDir dir;
+
+  QMap<vtkTypeUInt32, DataSource*> DataSourceIdMap;
 };
 
 ModuleManager::ModuleManager(QObject* parentObject)
@@ -130,6 +132,7 @@ void ModuleManager::addChildDataSource(DataSource* dataSource)
   if (dataSource && !this->Internals->ChildDataSources.contains(dataSource)) {
     dataSource->setParent(this);
     this->Internals->ChildDataSources.push_back(dataSource);
+    emit this->childDataSourceAdded(dataSource);
   }
 }
 
@@ -150,7 +153,7 @@ void ModuleManager::removeAllDataSources()
   this->Internals->DataSources.clear();
 }
 
-bool ModuleManager::isChild(DataSource* source)
+bool ModuleManager::isChild(DataSource* source) const
 {
   return (this->Internals->ChildDataSources.indexOf(source) >= 0);
 }
@@ -293,7 +296,8 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
   }
 
   // Build a list of unique original data sources. These are the data readers.
-  foreach (const QPointer<DataSource>& ds, this->Internals->DataSources) {
+  foreach (const QPointer<DataSource>& ds,
+           this->Internals->ChildDataSources + this->Internals->DataSources) {
     if (ds == nullptr ||
         uniqueOriginalSources.contains(ds->originalDataSource()) ||
         ds->persistenceState() == DataSource::PersistenceState::Modified) {
@@ -317,8 +321,10 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
   // Now serialize each of the data-sources. The data sources don't serialize
   // the original data source since that can be shared among sources.
   QList<DataSource*> serializedDataSources;
-  foreach (const QPointer<DataSource>& ds, this->Internals->DataSources) {
-    if (ds && uniqueOriginalSources.contains(ds->originalDataSource())) {
+  foreach (const QPointer<DataSource>& ds,
+           this->Internals->ChildDataSources + this->Internals->DataSources) {
+    if (ds && uniqueOriginalSources.contains(ds->originalDataSource()) &&
+        ds->persistenceState() == DataSource::PersistenceState::Saved) {
       pugi::xml_node dsnode = ns.append_child("DataSource");
       dsnode.append_attribute("id").set_value(
         ds->producer()->GetGlobalIDAsString());
@@ -326,6 +332,9 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
         .set_value(ds->originalDataSource()->GetGlobalIDAsString());
       if (ds == ActiveObjects::instance().activeDataSource()) {
         dsnode.append_attribute("active").set_value(1);
+      }
+      if (isChild(ds)) {
+        dsnode.append_attribute("child").set_value(true);
       }
       if (!ds->serialize(dsnode)) {
         qWarning("Failed to serialize DataSource.");
@@ -619,12 +628,13 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     originalDataSources[id] = vtkSMSourceProxy::SafeDownCast(proxy);
   }
 
+  this->Internals->DataSourceIdMap.clear();
   // now, deserialize all data sources.
-  QMap<vtkTypeUInt32, DataSource*> dataSources;
   for (pugi::xml_node dsnode = ns.child("DataSource"); dsnode;
        dsnode = dsnode.next_sibling("DataSource")) {
     vtkTypeUInt32 id = dsnode.attribute("id").as_uint(0);
     vtkTypeUInt32 odsid = dsnode.attribute("original_data_source").as_uint(0);
+    bool child = dsnode.attribute("child").as_bool(false);
     if (id == 0 || odsid == 0) {
       qWarning() << "Invalid xml for DataSource with id " << id;
       continue;
@@ -640,18 +650,22 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     vtkSMSourceProxy* srcProxy = originalDataSources[odsid];
     if (srcProxy->GetAnnotation(Attributes::FILENAME)) {
       dataSource = LoadDataReaction::loadData(
-        srcProxy->GetAnnotation(Attributes::FILENAME), false, false);
+        srcProxy->GetAnnotation(Attributes::FILENAME), false, false, child);
     } else {
       dataSource = new DataSource(srcProxy);
     }
-    this->addDataSource(dataSource);
+    if (!child) {
+      this->addDataSource(dataSource);
+    } else {
+      this->addChildDataSource(dataSource);
+    }
     if (!dataSource->deserialize(dsnode)) {
       qWarning() << "Failed to deserialze DataSource with id " << id
                  << ". Skipping it";
       continue;
     }
 
-    dataSources[id] = dataSource;
+    this->Internals->DataSourceIdMap[id] = dataSource;
 
     if (dsnode.attribute("active").as_int(0) == 1) {
       ActiveObjects::instance().setActiveDataSource(dataSource);
@@ -667,7 +681,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
     vtkTypeUInt32 dsid = mdlnode.attribute("data_source").as_uint(0);
     vtkTypeUInt32 viewid = mdlnode.attribute("view").as_uint(0);
     int moduleId = mdlnode.attribute("module_id").as_int();
-    if (dataSources[dsid] == nullptr ||
+    if (this->Internals->DataSourceIdMap[dsid] == nullptr ||
         vtkSMViewProxy::SafeDownCast(locator->LocateProxy(viewid)) == nullptr) {
       qWarning() << "Failed to create module: " << type;
       continue;
@@ -675,7 +689,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement* vtkNotUsed(xml),
 
     // Create module.
     Module* module = ModuleFactory::createModule(
-      type, dataSources[dsid],
+      type, this->Internals->DataSourceIdMap[dsid],
       vtkSMViewProxy::SafeDownCast(locator->LocateProxy(viewid)));
     if (!module || !module->deserialize(mdlnode)) {
       qWarning() << "Failed to create module: " << type;
@@ -775,6 +789,11 @@ void ModuleManager::render()
   if (view) {
     view->render();
   }
+}
+
+DataSource* ModuleManager::lookupDataSource(int id)
+{
+  return this->Internals->DataSourceIdMap.value(id);
 }
 
 } // end of namesapce tomviz

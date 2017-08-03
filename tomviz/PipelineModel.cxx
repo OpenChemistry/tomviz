@@ -256,6 +256,8 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
 {
   connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
           SLOT(dataSourceAdded(DataSource*)));
+  connect(&ModuleManager::instance(), SIGNAL(childDataSourceAdded(DataSource*)),
+          SLOT(childDataSourceAdded(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
           SLOT(moduleAdded(Module*)));
 
@@ -864,6 +866,12 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
       operatorTreeItem->appendChild(PipelineModel::Item(dataSource));
       endInsertRows();
     }
+  }
+
+  // When restoring a data source from a state file it will have its operators
+  // before we can listen to the signal above. Display those operators.
+  foreach (auto op, dataSource->operators()) {
+    this->operatorAdded(op);
   }
 }
 
