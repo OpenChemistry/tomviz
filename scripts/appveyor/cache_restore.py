@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 downloads = [{
-    '_id': '58a20cdb8d777f0721a48b8c',
+    '_id': '598359e08d777f7d33e9c05b',
     'name': 'paraview.zip',
     'target': '.',
 }, {
@@ -18,8 +18,8 @@ downloads = [{
     'name': 'tbb.zip',
     'target': '.',
 }, {
-    '_id': '58a2ff998d777f0721a57c3c',
-    'name': 'python-2.7.5.zip',
+    '_id': '598239648d777f16d01ea145',
+    'name': 'python-3.6.0.zip',
     'target': '.',
 }, {
     '_id': '58a3436c8d777f0721a61036',
