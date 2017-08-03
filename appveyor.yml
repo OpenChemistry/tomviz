@@ -18,6 +18,7 @@ install:
   - cd ..
   # Restore our cached deps
   - set TOMVIZ_TEST_PYTHON_EXECUTABLE=C:\Python36\python.exe
+  - C:\Python36\python.exe -m pip install -U pip
   - C:\Python36\python.exe -m pip install -r %APPVEYOR_BUILD_FOLDER%\acquisition\requirements-dev.txt
   - C:\Python36\python.exe %APPVEYOR_BUILD_FOLDER%\scripts\appveyor\cache_restore.py
 
