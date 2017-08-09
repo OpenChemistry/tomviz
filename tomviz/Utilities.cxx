@@ -56,12 +56,34 @@
 #include <QMessageBox>
 #include <QString>
 
+namespace tomviz {
+
+const char* Attributes::TYPE = "tomviz.Type";
+const char* Attributes::DATASOURCE_FILENAME = "tomviz.DataSource.FileName";
+const char* Attributes::LABEL = "tomviz.Label";
+const char* Attributes::FILENAME = "tomviz.filename";
+}
+
 namespace {
 
 // This pugi::xml_tree_walker converts filenames in the xml to and
 // from relative paths.
 class XMLFileNameConverter : public pugi::xml_tree_walker
 {
+  void convertFileName(pugi::xml_attribute& fname)
+  {
+    if (fname) {
+      QString path(fname.value());
+      QString newPath;
+      if (this->toRelative) {
+        newPath = this->rootDir.relativeFilePath(path);
+      } else {
+        newPath = this->rootDir.absoluteFilePath(path);
+      }
+      fname.set_value(newPath.toStdString().c_str());
+    }
+  }
+
 public:
   XMLFileNameConverter(const QDir& dir, bool rel)
     : rootDir(dir), toRelative(rel)
@@ -69,31 +91,28 @@ public:
   }
   bool for_each(pugi::xml_node& node) override
   {
-    if (strcmp(node.name(), "Property") != 0) {
-      return true;
-    }
-    pugi::xml_attribute propName = node.attribute("name");
-    if ((strcmp(propName.value(), "FileNames") != 0) &&
-        (strcmp(propName.value(), "FileName") != 0) &&
-        (strcmp(propName.value(), "FilePrefix") != 0)) {
-      return true;
-    }
-    pugi::xml_node child = node.first_child();
-    while (child) {
-      if (strcmp(child.name(), "Element") == 0) {
-        pugi::xml_attribute xml_fname = child.attribute("value");
-        if (xml_fname) {
-          QString path(xml_fname.value());
-          QString newPath;
-          if (this->toRelative) {
-            newPath = this->rootDir.relativeFilePath(path);
-          } else {
-            newPath = this->rootDir.absoluteFilePath(path);
-          }
-          xml_fname.set_value(newPath.toStdString().c_str());
-        }
+    if (strcmp(node.name(), "Property") == 0) {
+      pugi::xml_attribute propName = node.attribute("name");
+      if ((strcmp(propName.value(), "FileNames") != 0) &&
+          (strcmp(propName.value(), "FileName") != 0) &&
+          (strcmp(propName.value(), "FilePrefix") != 0)) {
+        return true;
       }
-      child = child.next_sibling();
+      pugi::xml_node child = node.first_child();
+      while (child) {
+        if (strcmp(child.name(), "Element") == 0) {
+          pugi::xml_attribute xml_fname = child.attribute("value");
+          this->convertFileName(xml_fname);
+        }
+        child = child.next_sibling();
+      }
+    } else if (strcmp(node.name(), "Annotation") == 0) {
+      pugi::xml_attribute key = node.attribute("key");
+      if (strcmp(key.value(), tomviz::Attributes::FILENAME) == 0 ||
+          strcmp(key.value(), tomviz::Attributes::DATASOURCE_FILENAME) == 0) {
+        pugi::xml_attribute xml_fname = node.attribute("value");
+        this->convertFileName(xml_fname);
+      }
     }
     return true;
   }
@@ -103,11 +122,6 @@ public:
 }
 
 namespace tomviz {
-
-const char* Attributes::TYPE = "tomviz.Type";
-const char* Attributes::DATASOURCE_FILENAME = "tomviz.DataSource.FileName";
-const char* Attributes::LABEL = "tomviz.Label";
-const char* Attributes::FILENAME = "tomviz.filename";
 
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties, const QDir* relDir)
