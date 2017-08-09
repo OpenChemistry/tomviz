@@ -40,6 +40,10 @@ Operator::~Operator()
   setNumberOfResults(0);
 
   emit aboutToBeDestroyed(this);
+
+  if (hasChildDataSource()) {
+    childDataSource()->removeAllOperators();
+  }
 }
 
 DataSource* Operator::dataSource()
