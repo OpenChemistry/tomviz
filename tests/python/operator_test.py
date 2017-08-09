@@ -43,9 +43,8 @@ class OperatorTestCase(unittest.TestCase):
 
         # Module with operator class
         func = find_transform_scalars(simple, None)
-
-        self.assertTrue(isinstance(func.im_self, simple.SimpleOperator))
-        self.assertEqual(func.im_func.__name__, 'transform_scalars')
+        self.assertTrue(isinstance(func.__self__, simple.SimpleOperator))
+        self.assertEqual(func.__func__.__name__, 'transform_scalars')
         self.assertTrue(func(None))
 
         # Module with none
