@@ -26,7 +26,7 @@ downloads = [{
     'name': 'googletest-install.zip',
     'target': '.',
 }, {
-    '_id': '58a3819a8d777f0721a659ea',
+    '_id': '598b11ed8d777f7d33e9c1bf',
     'name': 'numpy.zip',
     'target': 'python\\bin\\Lib\\site-packages',
 }]

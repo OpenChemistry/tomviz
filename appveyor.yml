@@ -11,6 +11,8 @@ cache:
   - C:\projects\python-3.6.0.zip.sha512
   - C:\projects\googletest-install.zip
   - C:\projects\googletest-install.zip.sha512
+  - C:\projects\numpy.zip
+  - C:\projects\numpy.zip.sha512
 install:
   # Take care of submodules
   - git submodule sync
