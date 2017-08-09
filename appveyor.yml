@@ -20,7 +20,7 @@ install:
   - cd ..
   # Restore our cached deps
   - C:\Python36\python.exe -m pip install -U pip
-  - C:\Python36\python.exe -m pip install -r %APPVEYOR_BUILD_FOLDER%\acquisition\requirements-dev.txt
+  - C:\Python36\python.exe -m pip install requests
   - C:\Python36\python.exe %APPVEYOR_BUILD_FOLDER%\scripts\appveyor\cache_restore.py
 
 build_script:
