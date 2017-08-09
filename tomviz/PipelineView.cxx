@@ -361,7 +361,8 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
     dataSource->resumePipeline();
   }
 
-  ActiveObjects::instance().renderAllViews();
+  // Delay rendering until signals have been processed and all modules removed.
+  QTimer::singleShot(0, []() { ActiveObjects::instance().renderAllViews(); });
 }
 
 void PipelineView::rowActivated(const QModelIndex& idx)
