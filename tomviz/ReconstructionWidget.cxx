@@ -234,12 +234,14 @@ void ReconstructionWidget::updateProgress(int progress)
   this->Internals->sinogramMapper->SetSliceNumber(
     this->Internals->sinogramMapper->GetSliceNumberMinValue() + progress);
   ui.sinogramView->GetRenderWindow()->Render();
+  double rem = (this->Internals->timer.elapsed() / (1000.0 * (progress + 1))) *
+    (this->Internals->totalSlicesToProcess - progress);
+
   ui.statusLabel->setText(
     QString("Slice # %1 out of %2\nTime remaining: %3 seconds")
       .arg(progress + 1)
       .arg(this->Internals->totalSlicesToProcess)
-      .arg((this->Internals->timer.elapsed() / (1000.0 * (progress + 1))) *
-           (this->Internals->totalSlicesToProcess - progress)));
+      .arg(QString::number(rem, 'f', 1)));
 }
 
 void ReconstructionWidget::updateIntermediateResults(
