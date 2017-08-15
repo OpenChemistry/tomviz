@@ -464,6 +464,16 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 
 bool EmdFormat::write(const std::string& fileName, DataSource* source)
 {
+  // Now create the tomography data store!
+  auto t =
+    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+
+  return this->write(fileName, image);
+}
+
+bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
+{
   d->fileId =
     H5Fcreate(fileName.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -482,11 +492,6 @@ bool EmdFormat::write(const std::string& fileName, DataSource* source)
   d->setAttribute("/data/tomography", "emd_group_type", 1);
 
   hid_t status;
-
-  // Now create the tomography data store!
-  auto t =
-    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   std::vector<float> imageDimDataX(2);
   std::vector<float> imageDimDataY(2);
