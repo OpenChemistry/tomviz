@@ -27,6 +27,7 @@
 #include "pqSignalAdaptors.h"
 #include "pqWidgetRangeDomain.h"
 
+#include "vtkAlgorithm.h"
 #include "vtkDataObject.h"
 #include "vtkNew.h"
 #include "vtkPVArrayInformation.h"
@@ -464,6 +465,12 @@ bool ModuleContour::isProxyPartOfModule(vtkSMProxy* proxy)
          (m_pointDataToCellDataRepresentation &&
           proxy == m_pointDataToCellDataRepresentation.Get()) ||
          (proxy == m_resampleFilter.Get());
+}
+
+vtkSmartPointer<vtkDataObject> ModuleContour::getDataToExport()
+{
+  return vtkAlgorithm::SafeDownCast(m_contourFilter->GetClientSideObject())
+    ->GetOutputDataObject(0);
 }
 
 std::string ModuleContour::getStringForProxy(vtkSMProxy* proxy)
