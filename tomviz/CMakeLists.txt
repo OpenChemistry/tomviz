@@ -64,6 +64,8 @@ set(SOURCES
   EditOperatorWidget.h
   EmdFormat.cxx
   EmdFormat.h
+  ExportDataReaction.cxx
+  ExportDataReaction.h
   GradientOpacityWidget.h
   GradientOpacityWidget.cxx
   HistogramWidget.h

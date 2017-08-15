@@ -351,4 +351,9 @@ Module::TransferMode Module::getTransferMode() const
   return d->m_transferMode;
 }
 
+vtkSmartPointer<vtkDataObject> Module::getDataToExport()
+{
+  return nullptr;
+}
+
 } // end of namespace tomviz

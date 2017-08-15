@@ -19,6 +19,7 @@
 #include "ActiveObjects.h"
 #include "CloneDataReaction.h"
 #include "EditOperatorDialog.h"
+#include "ExportDataReaction.h"
 #include "LoadDataReaction.h"
 #include "Module.h"
 #include "ModuleManager.h"
@@ -198,6 +199,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* cloneAction = nullptr;
   QAction* markAsAction = nullptr;
   QAction* saveDataAction = nullptr;
+  QAction* exportModuleAction = nullptr;
   QAction* executeAction = nullptr;
   QAction* hideAction = nullptr;
   QAction* showAction = nullptr;
@@ -273,6 +275,16 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   if (allModules) {
     hideAction = contextMenu.addAction("Hide");
     showAction = contextMenu.addAction("Show");
+
+    if (selectedIndexes().size() == 2) {
+      auto module = pipelineModel->module(selectedIndexes()[0]);
+      QString exportType = module->exportDataTypeString();
+      if (exportType.size() > 0) {
+        QString menuActionString = QString("Export as %1").arg(exportType);
+        exportModuleAction = contextMenu.addAction(menuActionString);
+        new ExportDataReaction(exportModuleAction, module);
+      }
+    }
   }
 
   auto globalPoint = mapToGlobal(e->pos());
