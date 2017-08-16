@@ -302,8 +302,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
           m_ui->gradientOpacityWidget, SLOT(setVisible(bool)));
   connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
           SLOT(onColorMapUpdated()));
-  connect(m_ui->tabWidget1D2DTransfer, SIGNAL(currentChanged(int)), this,
-          SLOT(onTransferModeChanged(const int)));
   m_ui->gradientOpacityWidget->hide();
 
   // Start the worker thread and give it ownership of the HistogramMaker
@@ -362,8 +360,9 @@ void CentralWidget::setActiveModule(Module* module)
     connect(m_activeModule, SIGNAL(colorMapChanged()),
             SLOT(onColorMapDataSourceChanged()));
     setColorMapDataSource(module->colorMapDataSource());
-    m_activeModule->setTransferMode(static_cast<Module::TransferMode>(
-      m_ui->tabWidget1D2DTransfer->currentIndex()));
+    connect(m_activeModule, SIGNAL(transferModeChanged(const int)), this,
+            SLOT(onTransferModeChanged(const int)));
+
   } else {
     setColorMapDataSource(nullptr);
   }
@@ -415,8 +414,6 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
           m_activeModule->opacityMap()->GetClientSideObject()));
       m_ui->histogram2DWidget->setTransfer2D(
         m_activeModule->transferFunction2D());
-      m_activeModule->setTransferMode(static_cast<Module::TransferMode>(
-        m_ui->tabWidget1D2DTransfer->currentIndex()));
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
@@ -546,8 +543,20 @@ void CentralWidget::onTransferModeChanged(const int mode)
     return;
   }
 
-  /// TODO Handle case: other than ModuleVolume active.
-  m_activeModule->setTransferMode(static_cast<Module::TransferMode>(mode));
+  int index = 0;
+  switch (static_cast<Module::TransferMode>(mode)) {
+    case Module::SCALAR:
+      m_ui->gradientOpacityWidget->hide();
+      break;
+    case Module::GRADIENT_1D:
+      m_ui->gradientOpacityWidget->show();
+      break;
+    case Module::GRADIENT_2D:
+      index = 1;
+      break;
+  }
+
+  m_ui->swTransferMode->setCurrentIndex(index);
 }
 
 } // end of namespace tomviz

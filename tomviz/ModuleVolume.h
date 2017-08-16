@@ -72,7 +72,6 @@ private:
   vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   ModuleVolumeWidget* m_controllers = nullptr;
-  bool m_gradientOpacityEnabled = false;
 
 private slots:
   /**
@@ -87,7 +86,7 @@ private slots:
   void onDiffuseChanged(const double value);
   void onSpecularChanged(const double value);
   void onSpecularPowerChanged(const double value);
-  void onGradientOpacityChanged(const bool enable);
+  void onTransferModeChanged(const int mode);
 };
 }
 

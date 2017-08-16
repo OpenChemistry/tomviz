@@ -97,28 +97,27 @@ void ModuleVolume::updateColorMap()
     vtkPiecewiseFunction::SafeDownCast(opacityMap()->GetClientSideObject()));
   m_volumeProperty->SetColor(
     vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject()));
-  m_volumeProperty->SetGradientOpacity(
-    m_gradientOpacityEnabled ? gradientOpacityMap() : nullptr);
-  m_volumeProperty->SetTransferFunction2D(transferFunction2D());
 
-  const int mode = getTransferMode();
-  m_volumeProperty->SetTransferFunctionMode(mode);
-  if (m_controllers) {
-    m_controllers->adjustForTransferMode(mode);
+  int propertyMode = vtkVolumeProperty::TF_1D;
+  const Module::TransferMode mode = getTransferMode();
+  switch (mode) {
+    case (Module::SCALAR):
+      m_volumeProperty->SetGradientOpacity(nullptr);
+      break;
+    case (Module::GRADIENT_1D):
+      m_volumeProperty->SetGradientOpacity(gradientOpacityMap());
+      break;
+    case (Module::GRADIENT_2D):
+      propertyMode = vtkVolumeProperty::TF_2D;
+      break;
   }
+
+  m_volumeProperty->SetTransferFunction2D(transferFunction2D());
+  m_volumeProperty->SetTransferFunctionMode(propertyMode);
 
   // BUG: volume mappers don't update property when LUT is changed and has an
   // older Mtime. Fix for now by forcing the LUT to update.
   vtkObject::SafeDownCast(colorMap()->GetClientSideObject())->Modified();
-}
-
-void ModuleVolume::onGradientOpacityChanged(bool enable)
-{
-  m_gradientOpacityEnabled = enable;
-  vtkPiecewiseFunction* gof = enable ? gradientOpacityMap() : nullptr;
-  m_volumeProperty->SetGradientOpacity(gof);
-
-  emit renderNeeded();
 }
 
 bool ModuleVolume::finalize()
@@ -160,8 +159,8 @@ bool ModuleVolume::serialize(pugi::xml_node& ns) const
   interpNode.append_attribute("type") =
     m_volumeProperty->GetInterpolationType();
 
-  xml_node gopNode = rootNode.append_child("gradient_opacity");
-  gopNode.append_attribute("enabled") = m_gradientOpacityEnabled;
+  xml_node gopNode = rootNode.append_child("transfer_function");
+  gopNode.append_attribute("mode") = getTransferMode();
 
   xml_node blendingNode = rootNode.append_child("blending");
   blendingNode.append_attribute("mode") = m_volumeMapper->GetBlendMode();
@@ -231,11 +230,11 @@ bool ModuleVolume::deserialize(const pugi::xml_node& ns)
       setJittering(att.as_bool());
     }
   }
-  node = rootNode.child("gradient_opacity");
+  node = rootNode.child("transfer_function");
   if (node) {
-    xml_attribute att = node.attribute("enabled");
+    xml_attribute att = node.attribute("mode");
     if (att) {
-      m_gradientOpacityEnabled = att.as_bool();
+      setTransferMode(static_cast<Module::TransferMode>(att.as_int()));
     }
   }
 
@@ -265,12 +264,9 @@ void ModuleVolume::addToPanel(QWidget* panel)
   m_controllers->setSpecular(m_volumeProperty->GetSpecular());
   m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
   m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
-  m_controllers->setGradientOpacityEnabled(m_gradientOpacityEnabled);
 
-  const int mode = getTransferMode();
-  if (m_controllers) {
-    m_controllers->adjustForTransferMode(mode);
-  }
+  const auto tfMode = getTransferMode();
+  m_controllers->setTransferMode(tfMode);
 
   connect(m_controllers, SIGNAL(jitteringToggled(const bool)), this,
           SLOT(setJittering(const bool)));
@@ -288,8 +284,19 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularChanged(const double)));
   connect(m_controllers, SIGNAL(specularPowerChanged(const double)), this,
           SLOT(onSpecularPowerChanged(const double)));
-  connect(m_controllers, SIGNAL(gradientOpacityChanged(const bool)), this,
-          SLOT(onGradientOpacityChanged(const bool)));
+  connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
+          SLOT(onTransferModeChanged(const int)));
+
+  this->onTransferModeChanged(static_cast<int>(tfMode));
+}
+
+void ModuleVolume::onTransferModeChanged(const int mode)
+{
+  setTransferMode(static_cast<Module::TransferMode>(mode));
+  updateColorMap();
+
+  emit transferModeChanged(mode);
+  emit renderNeeded();
 }
 
 void ModuleVolume::onAmbientChanged(const double value)
