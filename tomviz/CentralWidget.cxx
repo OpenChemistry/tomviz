@@ -298,8 +298,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
           SLOT(onColorMapUpdated()));
-  connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
-          m_ui->gradientOpacityWidget, SLOT(setVisible(bool)));
   connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
           SLOT(onColorMapUpdated()));
   m_ui->gradientOpacityWidget->hide();
@@ -377,13 +375,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   m_activeColorMapDataSource = source;
 
   if (source) {
-    m_ui->histogramWidget->setGradientOpacityChecked(
-      source->isGradientOpacityVisible());
-
     connect(source, SIGNAL(dataChanged()), SLOT(onColorMapDataSourceChanged()));
-
-    connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
-            source, SLOT(setGradientOpacityVisibility(bool)));
   }
 
   if (!source) {
