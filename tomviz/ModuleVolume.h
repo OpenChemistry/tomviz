@@ -59,6 +59,10 @@ public:
 
   bool supportsGradientOpacity() override { return true; }
 
+  QString exportDataTypeString() { return "Volume"; }
+
+  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+
 protected:
   void updateColorMap() override;
   std::string getStringForProxy(vtkSMProxy* proxy) override;
