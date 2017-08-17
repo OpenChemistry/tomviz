@@ -61,6 +61,11 @@ public:
    */
   void setTransfer2D(vtkImageData* transfer2D);
 
+  /**
+   * Force the chart to regenerate the transfer func.
+   */
+  void updateTransfer2D();
+
 public slots:
   void onTransfer2DChanged();
 

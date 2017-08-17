@@ -132,4 +132,9 @@ void Histogram2DWidget::showEvent(QShowEvent* event)
   QWidget::showEvent(event);
   m_chartHistogram2D->GenerateTransfer2D();
 }
+
+void Histogram2DWidget::updateTransfer2D()
+{
+  m_chartHistogram2D->GenerateTransfer2D();
+}
 }

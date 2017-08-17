@@ -420,6 +420,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
         source->opacityMap()->GetClientSideObject()));
     m_ui->histogram2DWidget->setTransfer2D(source->transferFunction2D());
   }
+  m_ui->histogram2DWidget->updateTransfer2D();
 
   // Check our cache, and use that if appopriate (or update it).
   if (m_histogramCache.contains(image)) {
