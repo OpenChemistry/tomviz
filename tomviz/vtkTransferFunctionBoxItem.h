@@ -108,7 +108,7 @@ protected:
 
   void GetControlPoint(vtkIdType index, double* point) const VTK_OVERRIDE;
 
-  vtkMTimeType GetControlPointsMTime();
+  vtkMTimeType GetControlPointsMTime() VTK_OVERRIDE;
 
   void SetControlPoint(vtkIdType index, double* point) VTK_OVERRIDE;
 

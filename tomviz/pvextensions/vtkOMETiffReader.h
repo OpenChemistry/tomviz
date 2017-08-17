@@ -26,7 +26,7 @@ class vtkOMETiffReader : public vtkImageReader2
 {
 public:
   static vtkOMETiffReader *New();
-  vtkTypeMacro(vtkOMETiffReader, vtkImageReader2);
+  vtkTypeMacro(vtkOMETiffReader, vtkImageReader2)
   void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
   /**
