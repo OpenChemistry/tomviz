@@ -286,8 +286,6 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularPowerChanged(const double)));
   connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
           SLOT(onTransferModeChanged(const int)));
-
-  this->onTransferModeChanged(static_cast<int>(tfMode));
 }
 
 void ModuleVolume::onTransferModeChanged(const int mode)

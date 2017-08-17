@@ -360,6 +360,7 @@ void CentralWidget::setActiveModule(Module* module)
     setColorMapDataSource(module->colorMapDataSource());
     connect(m_activeModule, SIGNAL(transferModeChanged(const int)), this,
             SLOT(onTransferModeChanged(const int)));
+    onTransferModeChanged(static_cast<int>(m_activeModule->getTransferMode()));
 
   } else {
     setColorMapDataSource(nullptr);
