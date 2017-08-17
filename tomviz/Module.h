@@ -44,11 +44,12 @@ public:
   ~Module() override;
 
   /// Transfer function mode (1D or 2D). This enum needs to be synchronized with
-  /// the order of the tabs in ui->tabWidget1D2DTransfer.
+  /// the order of the pages in ui->swTransferMode.
   enum TransferMode
   {
-    TF_1D = 0,
-    TF_2D
+    SCALAR = 0,
+    GRADIENT_1D,
+    GRADIENT_2D
   };
   void setTransferMode(const TransferMode mode);
   TransferMode getTransferMode() const;
@@ -122,6 +123,12 @@ public:
                                       const pugi::xml_node& ns);
 
   virtual bool supportsGradientOpacity() { return false; }
+
+signals:
+
+  /// Emitted when the transfer function mode changed in the concrete
+  /// module (which would require external UI components to be adjusted).
+  void transferModeChanged(const int mode);
 
 public slots:
   /// Set the visibility for this module. Subclasses should override this method

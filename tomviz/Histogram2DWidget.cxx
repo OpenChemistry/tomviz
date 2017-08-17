@@ -75,6 +75,7 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   // Offset margins to align with HistogramWidget
   auto hLayout = new QVBoxLayout(this);
   hLayout->addWidget(m_qvtk);
+  hLayout->setContentsMargins(0, 0, 5, 0);
   setLayout(hLayout);
 }
 
@@ -129,6 +130,11 @@ void Histogram2DWidget::onTransfer2DChanged()
 void Histogram2DWidget::showEvent(QShowEvent* event)
 {
   QWidget::showEvent(event);
+  m_chartHistogram2D->GenerateTransfer2D();
+}
+
+void Histogram2DWidget::updateTransfer2D()
+{
   m_chartHistogram2D->GenerateTransfer2D();
 }
 }

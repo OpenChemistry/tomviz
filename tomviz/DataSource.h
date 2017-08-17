@@ -106,7 +106,6 @@ public:
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
   vtkPiecewiseFunction* gradientOpacityMap() const;
-  bool isGradientOpacityVisible() const;
   vtkImageData* transferFunction2D() const;
 
   /// Indicates whether the DataSource has a label map of the voxels.
@@ -202,8 +201,6 @@ signals:
 
 public slots:
   void dataModified();
-
-  void setGradientOpacityVisibility(const bool visible);
 
 protected:
   void operate(Operator* op);

@@ -64,6 +64,11 @@ public:
 public slots:
   void onTransfer2DChanged();
 
+  /**
+   * Force the chart to regenerate the transfer func.
+   */
+  void updateTransfer2D();
+
 protected:
   void showEvent(QShowEvent* event) override;
 

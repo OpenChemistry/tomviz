@@ -342,11 +342,12 @@ void Module::setTransferMode(const TransferMode mode)
 {
   d->m_transferMode = static_cast<Module::TransferMode>(mode);
   this->updateColorMap();
+
+  emit transferModeChanged(static_cast<int>(mode));
 }
 
 Module::TransferMode Module::getTransferMode() const
 {
-  /// TODO handle detached mode
   return d->m_transferMode;
 }
 

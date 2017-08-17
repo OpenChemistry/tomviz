@@ -298,13 +298,11 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
           SLOT(onColorMapUpdated()));
-  connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
-          m_ui->gradientOpacityWidget, SLOT(setVisible(bool)));
   connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
           SLOT(onColorMapUpdated()));
-  connect(m_ui->tabWidget1D2DTransfer, SIGNAL(currentChanged(int)), this,
-          SLOT(onTransferModeChanged(const int)));
   m_ui->gradientOpacityWidget->hide();
+  connect(m_ui->histogramWidget, SIGNAL(opacityChanged()),
+          m_ui->histogram2DWidget, SLOT(updateTransfer2D()));
 
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady
@@ -362,8 +360,10 @@ void CentralWidget::setActiveModule(Module* module)
     connect(m_activeModule, SIGNAL(colorMapChanged()),
             SLOT(onColorMapDataSourceChanged()));
     setColorMapDataSource(module->colorMapDataSource());
-    m_activeModule->setTransferMode(static_cast<Module::TransferMode>(
-      m_ui->tabWidget1D2DTransfer->currentIndex()));
+    connect(m_activeModule, SIGNAL(transferModeChanged(const int)), this,
+            SLOT(onTransferModeChanged(const int)));
+    onTransferModeChanged(static_cast<int>(m_activeModule->getTransferMode()));
+
   } else {
     setColorMapDataSource(nullptr);
   }
@@ -378,13 +378,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   m_activeColorMapDataSource = source;
 
   if (source) {
-    m_ui->histogramWidget->setGradientOpacityChecked(
-      source->isGradientOpacityVisible());
-
     connect(source, SIGNAL(dataChanged()), SLOT(onColorMapDataSourceChanged()));
-
-    connect(m_ui->histogramWidget, SIGNAL(gradientVisibilityChanged(bool)),
-            source, SLOT(setGradientOpacityVisibility(bool)));
   }
 
   if (!source) {
@@ -415,8 +409,6 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
           m_activeModule->opacityMap()->GetClientSideObject()));
       m_ui->histogram2DWidget->setTransfer2D(
         m_activeModule->transferFunction2D());
-      m_activeModule->setTransferMode(static_cast<Module::TransferMode>(
-        m_ui->tabWidget1D2DTransfer->currentIndex()));
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
@@ -430,6 +422,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
         source->opacityMap()->GetClientSideObject()));
     m_ui->histogram2DWidget->setTransfer2D(source->transferFunction2D());
   }
+  m_ui->histogram2DWidget->updateTransfer2D();
 
   // Check our cache, and use that if appopriate (or update it).
   if (m_histogramCache.contains(image)) {
@@ -546,8 +539,20 @@ void CentralWidget::onTransferModeChanged(const int mode)
     return;
   }
 
-  /// TODO Handle case: other than ModuleVolume active.
-  m_activeModule->setTransferMode(static_cast<Module::TransferMode>(mode));
+  int index = 0;
+  switch (static_cast<Module::TransferMode>(mode)) {
+    case Module::SCALAR:
+      m_ui->gradientOpacityWidget->hide();
+      break;
+    case Module::GRADIENT_1D:
+      m_ui->gradientOpacityWidget->show();
+      break;
+    case Module::GRADIENT_2D:
+      index = 1;
+      break;
+  }
+
+  m_ui->swTransferMode->setCurrentIndex(index);
 }
 
 } // end of namespace tomviz

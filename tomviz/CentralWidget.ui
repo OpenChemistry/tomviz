@@ -21,19 +21,52 @@
      </property>
      <widget class="QWidget" name="widget" native="true">
       <layout class="QVBoxLayout" name="verticalLayout">
+       <property name="spacing">
+        <number>5</number>
+       </property>
+       <property name="leftMargin">
+        <number>5</number>
+       </property>
+       <property name="topMargin">
+        <number>5</number>
+       </property>
+       <property name="rightMargin">
+        <number>5</number>
+       </property>
+       <property name="bottomMargin">
+        <number>5</number>
+       </property>
        <item>
-        <widget class="QTabWidget" name="tabWidget1D2DTransfer">
-         <property name="tabPosition">
-          <enum>QTabWidget::East</enum>
+        <widget class="QStackedWidget" name="swTransferMode">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
          </property>
          <property name="currentIndex">
           <number>0</number>
          </property>
-         <widget class="QWidget" name="tab">
-          <attribute name="title">
-           <string>1D</string>
-          </attribute>
+         <widget class="QWidget" name="pageTransfer1D">
           <layout class="QVBoxLayout" name="verticalLayout_4">
+           <property name="spacing">
+            <number>5</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
             <widget class="tomviz::HistogramWidget" name="histogramWidget" native="true">
              <property name="sizePolicy">
@@ -71,11 +104,23 @@
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="tab_2">
-          <attribute name="title">
-           <string>2D</string>
-          </attribute>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <widget class="QWidget" name="pageTransfer2D">
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <property name="spacing">
+            <number>5</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
             <widget class="tomviz::Histogram2DWidget" name="histogram2DWidget" native="true">
              <property name="sizePolicy">
@@ -95,6 +140,21 @@
               </size>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_6">
+              <property name="spacing">
+               <number>5</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
               <item>
                <widget class="QTableView" name="tvTransfer2DSelection"/>
               </item>
@@ -103,6 +163,9 @@
               </item>
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_2">
+                <property name="spacing">
+                 <number>5</number>
+                </property>
                 <item>
                  <widget class="QPushButton" name="pbInsert">
                   <property name="maximumSize">

@@ -49,25 +49,9 @@ public:
 
   void setInputData(vtkTable* table, const char* x_, const char* y_);
 
-  //@{
-  /**
-    * \brief Interface for the gradient opacity button.
-    *
-    * This button controls the visibility and accessibility of the
-    * GradientOpacityWidget. The button was placed within this class
-    * to keep the current layout in the application.
-    */
-  void setGradientOpacityEnabled(bool enable);
-  void setGradientOpacityChecked(bool checked);
-  //@}
-
 signals:
   void colorMapUpdated();
-
-  /**
-    * \sa HistogramWidget::setGradientOpacityEnabled
-    */
-  void gradientVisibilityChanged(bool);
+  void opacityChanged();
 
 public slots:
   void onScalarOpacityFunctionChanged();
@@ -92,7 +76,6 @@ private:
   vtkPVDiscretizableColorTransferFunction* m_LUT = nullptr;
   vtkPiecewiseFunction* m_scalarOpacityFunction = nullptr;
   vtkSMProxy* m_LUTProxy = nullptr;
-  QToolButton* m_gradientOpacityButton = nullptr;
 
   QVTKGLWidget* m_qvtk;
 };

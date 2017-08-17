@@ -33,6 +33,11 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
                  << tr("Additive");
   m_ui->cbBlending->addItems(labelsBlending);
 
+  QStringList labelsTransferMode;
+  labelsTransferMode << tr("Scalar") << tr("Scalar-Gradient 1D")
+                     << tr("Scalar-Gradient 2D");
+  m_ui->cbTransferMode->addItems(labelsTransferMode);
+
   QStringList labelsInterp;
   labelsInterp << tr("Nearest Neighbor") << tr("Linear");
   m_ui->cbInterpolation->addItems(labelsInterp);
@@ -43,8 +48,8 @@ ModuleVolumeWidget::ModuleVolumeWidget(QWidget* parent_)
           SLOT(onBlendingChanged(const int)));
   connect(m_ui->cbInterpolation, SIGNAL(currentIndexChanged(int)), this,
           SIGNAL(interpolationChanged(const int)));
-  connect(m_ui->cbGradientOpac, SIGNAL(toggled(bool)), this,
-          SIGNAL(gradientOpacityChanged(const bool)));
+  connect(m_ui->cbTransferMode, SIGNAL(currentIndexChanged(int)), this,
+          SIGNAL(transferModeChanged(const int)));
 
   connect(m_uiLighting->gbLighting, SIGNAL(toggled(bool)), this,
           SIGNAL(lightingToggled(const bool)));
@@ -101,11 +106,6 @@ void ModuleVolumeWidget::setSpecularPower(const double value)
   m_uiLighting->sliSpecularPower->setValue(value);
 }
 
-void ModuleVolumeWidget::setGradientOpacityEnabled(const bool enabled)
-{
-  m_ui->cbGradientOpac->setChecked(enabled);
-}
-
 void ModuleVolumeWidget::onBlendingChanged(const int mode)
 {
   m_uiLighting->gbLighting->setEnabled(usesLighting(mode));
@@ -121,15 +121,8 @@ bool ModuleVolumeWidget::usesLighting(const int mode) const
   return false;
 }
 
-void ModuleVolumeWidget::adjustForTransferMode(const int transferMode)
+void ModuleVolumeWidget::setTransferMode(const int transferMode)
 {
-  switch (transferMode) {
-    case Module::TF_2D:
-      m_ui->cbGradientOpac->setEnabled(false);
-      break;
-    case Module::TF_1D:
-    default:
-      m_ui->cbGradientOpac->setEnabled(true);
-  }
+  m_ui->cbTransferMode->setCurrentIndex(transferMode);
 }
 }
