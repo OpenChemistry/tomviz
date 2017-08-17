@@ -90,6 +90,7 @@ void ExportDataReaction::onTriggered()
   } else if (exportType == "Image") {
     filters << "PNG Files (*.png)"
             << "JPEG Files (*.jpg *.jpeg)"
+            << "TIFF Files (*.tiff)"
             << "VTK ImageData Files (*.vti)";
   }
 
