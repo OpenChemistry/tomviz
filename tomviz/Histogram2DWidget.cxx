@@ -75,6 +75,7 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   // Offset margins to align with HistogramWidget
   auto hLayout = new QVBoxLayout(this);
   hLayout->addWidget(m_qvtk);
+  hLayout->setContentsMargins(0, 0, 5, 0);
   setLayout(hLayout);
 }
 
