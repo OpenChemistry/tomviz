@@ -197,6 +197,8 @@ void HistogramWidget::onScalarOpacityFunctionChanged()
       pointsHelper.Set(4 * i + 3, value[3]);
     }
   }
+
+  emit opacityChanged();
 }
 
 void HistogramWidget::onCurrentPointEditEvent()

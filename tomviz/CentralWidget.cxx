@@ -301,6 +301,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
           SLOT(onColorMapUpdated()));
   m_ui->gradientOpacityWidget->hide();
+  connect(m_ui->histogramWidget, SIGNAL(opacityChanged()),
+          m_ui->histogram2DWidget, SLOT(updateTransfer2D()));
 
   // Start the worker thread and give it ownership of the HistogramMaker
   // object. Also connect the HistogramMaker's signal to the histogramReady

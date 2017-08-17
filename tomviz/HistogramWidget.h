@@ -51,6 +51,7 @@ public:
 
 signals:
   void colorMapUpdated();
+  void opacityChanged();
 
 public slots:
   void onScalarOpacityFunctionChanged();
