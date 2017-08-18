@@ -26,7 +26,9 @@
 #include <vtkPlotHistogram2D.h>
 #include <vtkPointData.h>
 #include <vtkRect.h>
+#include <vtkTextProperty.h>
 #include <vtkTransferFunctionBoxItem.h>
+#include <vtkTooltipItem.h>
 
 vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
@@ -34,6 +36,14 @@ vtkStandardNewMacro(vtkChartTransfer2DEditor)
 {
   Callback->SetClientData(this);
   Callback->SetCallback(vtkChartTransfer2DEditor::OnBoxItemModified);
+
+  int fontSize = 8;
+  GetAxis(vtkAxis::LEFT)->GetLabelProperties()->SetFontSize(fontSize);
+  GetAxis(vtkAxis::BOTTOM)->GetLabelProperties()->SetFontSize(fontSize);
+  GetAxis(vtkAxis::RIGHT)->GetLabelProperties()->SetFontSize(fontSize);
+  GetAxis(vtkAxis::LEFT)->GetTitleProperties()->SetFontSize(fontSize);
+  GetAxis(vtkAxis::BOTTOM)->GetTitleProperties()->SetFontSize(fontSize);
+  GetTooltip()->GetTextProperties()->SetFontSize(fontSize);
 }
 
 vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor() = default;
