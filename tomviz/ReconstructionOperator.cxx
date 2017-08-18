@@ -113,6 +113,12 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   std::vector<float> sinogramPtr(numYSlices * numZSlices);
   std::vector<float> reconstructionPtr(numYSlices * numYSlices);
   QVector<double> tiltAngles = m_dataSource->getTiltAngles();
+  if (tiltAngles.size() < numZSlices) {
+    qDebug() << "Incorrect number of tilt angles. There are"
+             << tiltAngles.size() << "and there should be" << numZSlices
+             << ".\n";
+    return false;
+  }
 
   vtkNew<vtkImageData> reconstructionImage;
   int extent2[6] = { dataExtent[0], m_extent[1],   dataExtent[2],

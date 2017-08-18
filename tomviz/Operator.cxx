@@ -42,7 +42,11 @@ Operator::~Operator()
   emit aboutToBeDestroyed(this);
 
   if (hasChildDataSource()) {
-    childDataSource()->removeAllOperators();
+    auto cds = childDataSource();
+    // If the operator failed, the child data source will be null
+    if (cds) {
+      cds->removeAllOperators();
+    }
   }
 }
 
