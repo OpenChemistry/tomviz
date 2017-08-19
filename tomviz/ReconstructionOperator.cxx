@@ -112,7 +112,17 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   int numZSlices = dataExtent[5] - dataExtent[4] + 1;
   std::vector<float> sinogramPtr(numYSlices * numZSlices);
   std::vector<float> reconstructionPtr(numYSlices * numYSlices);
-  QVector<double> tiltAngles = m_dataSource->getTiltAngles();
+  QVector<double> tiltAngles;
+
+  vtkFieldData* fd = dataObject->GetFieldData();
+  vtkDataArray* tiltAnglesVTKArray = fd->GetArray("tilt_angles");
+  if (tiltAnglesVTKArray) {
+    tiltAngles.resize(tiltAnglesVTKArray->GetNumberOfTuples());
+    for (int i = 0; i < tiltAngles.size(); ++i) {
+      tiltAngles[i] = tiltAnglesVTKArray->GetTuple1(i);
+    }
+  }
+
   if (tiltAngles.size() < numZSlices) {
     qDebug() << "Incorrect number of tilt angles. There are"
              << tiltAngles.size() << "and there should be" << numZSlices
