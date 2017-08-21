@@ -56,6 +56,8 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
   labelsRepre << tr("Surface") << tr("Wireframe") << tr("Points");
   m_ui->cbRepresentation->addItems(labelsRepre);
 
+  connect(m_ui->cbColorMapData, SIGNAL(toggled(bool)), this,
+          SIGNAL(propertyChanged()));
   connect(m_uiLighting->sliAmbient, SIGNAL(valueEdited(double)), this,
           SIGNAL(propertyChanged()));
   connect(m_uiLighting->sliDiffuse, SIGNAL(valueEdited(double)), this,
@@ -84,6 +86,9 @@ void ModuleContourWidget::addPropertyLinks(pqPropertyLinks& links,
                                            vtkSMProxy* representation,
                                            vtkSMSourceProxy* contourFilter)
 {
+  links.addPropertyLink(m_ui->cbColorMapData, "checked", SIGNAL(toggled(bool)),
+                        representation,
+                        representation->GetProperty("MapScalars"), 0);
   links.addPropertyLink(m_ui->sliValue, "value", SIGNAL(valueEdited(double)),
                         contourFilter,
                         contourFilter->GetProperty("ContourValues"), 0);
