@@ -15,7 +15,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, tomviz will use a separate color map for this module. Otherwise, the default behavior is to use the color map associated with the data.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>Separate color map</string>
+      <string>Separate Color Map</string>
      </property>
     </widget>
    </item>
