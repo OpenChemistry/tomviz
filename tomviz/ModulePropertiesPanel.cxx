@@ -83,11 +83,11 @@ void ModulePropertiesPanel::setModule(Module* module)
 
   deleteLayoutContents(ui.PropertiesWidget->layout());
 
-  ui.DetachColorMap->setVisible(false);
+  ui.DetachColorMapWidget->setVisible(false);
   if (module) {
     module->addToPanel(ui.PropertiesWidget);
     if (module->isColorMapNeeded()) {
-      ui.DetachColorMap->setVisible(true);
+      ui.DetachColorMapWidget->setVisible(true);
       ui.DetachColorMap->setChecked(module->useDetachedColorMap());
 
       this->connect(module, &Module::colorMapChanged, this, [&]() {
