@@ -642,6 +642,7 @@ bool AlignWidget::eventFilter(QObject* object, QEvent* e)
       if (ke->key() == Qt::Key_Enter || ke->key() == Qt::Key_Return) {
         e->accept();
         qobject_cast<QWidget*>(object)->clearFocus();
+        m_widget->setFocus(Qt::OtherFocusReason);
         return true;
       }
     }
