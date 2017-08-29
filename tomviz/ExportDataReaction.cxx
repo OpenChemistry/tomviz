@@ -29,6 +29,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkTIFFWriter.h>
 #include <vtkTrivialProducer.h>
+#include <vtkUnsignedCharArray.h>
 
 #include "ActiveObjects.h"
 #include "ConvertToFloatOperator.h"
@@ -122,6 +123,26 @@ void ExportDataReaction::onTriggered()
   }
 }
 
+namespace {
+
+template <typename FromType, typename ToType>
+void convert(vtkDataArray* outArray, int nComps, int nTuples, void* data)
+{
+  FromType* d = static_cast<FromType*>(data);
+  ToType* a = static_cast<ToType*>(outArray->GetVoidPointer(0));
+  for (int i = 0; i < nComps * nTuples; ++i) {
+    a[i] = static_cast<ToType>(d[i]);
+  }
+}
+
+template <typename FromType>
+void convertToUnsignedChar(vtkDataArray* outArray, int nComps, int nTuples,
+                           void* data)
+{
+  convert<FromType, unsigned char>(outArray, nComps, nTuples, data);
+}
+}
+
 bool ExportDataReaction::exportData(const QString& filename)
 {
   auto server = pqActiveObjects::instance().activeServer();
@@ -153,7 +174,7 @@ bool ExportDataReaction::exportData(const QString& filename)
   vtkSmartPointer<vtkSMSourceProxy> producer;
   producer.TakeReference(vtkSMSourceProxy::SafeDownCast(
     pxm->NewProxy("sources", "TrivialProducer")));
-  auto trivialProducer =
+  vtkSmartPointer<vtkTrivialProducer> trivialProducer =
     vtkTrivialProducer::SafeDownCast(producer->GetClientSideObject());
   trivialProducer->SetOutput(data);
   trivialProducer->UpdateInformation();
@@ -169,24 +190,51 @@ bool ExportDataReaction::exportData(const QString& filename)
     return false;
   }
 
-  // Convert to float if the type is found to be a double.
-  if (strcmp(writer->GetClientSideObject()->GetClassName(), "vtkTIFFWriter") ==
-      0) {
-    auto t = vtkTrivialProducer::SafeDownCast(producer->GetClientSideObject());
-    auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-    if (imageData->GetPointData()->GetScalars()->GetDataType() == VTK_DOUBLE) {
-      vtkNew<vtkImageData> fImage;
-      fImage->DeepCopy(imageData);
-      ConvertToFloatOperator convertFloat;
-      convertFloat.applyTransform(fImage);
+  // Convert to a data format the file type supports
+  const char* writerName = writer->GetClientSideObject()->GetClassName();
+  auto imageData =
+    vtkImageData::SafeDownCast(trivialProducer->GetOutputDataObject(0));
+  auto imageType = imageData->GetPointData()->GetScalars()->GetDataType();
+  if (strcmp(writerName, "vtkTIFFWriter") == 0 && imageType == VTK_DOUBLE) {
+    vtkNew<vtkImageData> fImage;
+    fImage->DeepCopy(imageData);
+    ConvertToFloatOperator convertFloat;
+    convertFloat.applyTransform(fImage);
 
-      vtkNew<vtkTIFFWriter> tiff;
-      tiff->SetInputData(fImage);
-      tiff->SetFileName(filename.toLatin1().data());
-      tiff->Write();
+    trivialProducer->SetOutput(fImage.Get());
+    trivialProducer->UpdateInformation();
+    trivialProducer->Update();
+    producer->UpdatePipeline();
+  }
 
-      return true;
+  if ((strcmp(writerName, "vtkPNGWriter") == 0 &&
+       (imageType != VTK_UNSIGNED_CHAR || imageType != VTK_UNSIGNED_SHORT)) ||
+      (strcmp(writerName, "vtkJPEGWriter") == 0 &&
+       imageType != VTK_UNSIGNED_CHAR)) {
+    std::cout << "File type does not support the current data type, converting "
+                 "to unsigned char"
+              << std::endl;
+    vtkNew<vtkImageData> newImage;
+    newImage->DeepCopy(imageData);
+    vtkDataArray* scalars = imageData->GetPointData()->GetScalars();
+    double range[2];
+    scalars->GetRange(range);
+    vtkNew<vtkUnsignedCharArray> charArray;
+    charArray->SetNumberOfComponents(scalars->GetNumberOfComponents());
+    charArray->SetNumberOfTuples(scalars->GetNumberOfTuples());
+    charArray->SetName(scalars->GetName());
+    switch (scalars->GetDataType()) {
+      vtkTemplateMacro(convertToUnsignedChar<VTK_TT>(
+        charArray.Get(), scalars->GetNumberOfComponents(),
+        scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0)));
     }
+    newImage->GetPointData()->RemoveArray(scalars->GetName());
+    newImage->GetPointData()->SetScalars(charArray.Get());
+
+    trivialProducer->SetOutput(newImage.Get());
+    trivialProducer->UpdateInformation();
+    trivialProducer->Update();
+    producer->UpdatePipeline();
   }
 
   pqProxyWidgetDialog dialog(writer, pqCoreUtilities::mainWidget());
