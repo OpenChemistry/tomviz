@@ -1541,6 +1541,24 @@ vtkTexture* vtkNonOrthoImagePlaneWidget::GetTexture()
   return this->Texture;
 }
 
+void vtkNonOrthoImagePlaneWidget::SetMapScalars(int val)
+{
+  if (val < 0 || val > 1) {
+    vtkWarningMacro(
+      << "Invalid parameter for vtkNonOrthoImagePlaneWidget::SetMapScalars: "
+      << val);
+    val = 0;
+  }
+
+  this->Texture->SetMapColorScalarsThroughLookupTable(val);
+  this->Modified();
+}
+
+int vtkNonOrthoImagePlaneWidget::GetMapScalars()
+{
+  return this->Texture->GetMapColorScalarsThroughLookupTable();
+}
+
 void vtkNonOrthoImagePlaneWidget::GetVector1(double v1[3])
 {
   double* p1 = this->PlaneSource->GetPoint1();

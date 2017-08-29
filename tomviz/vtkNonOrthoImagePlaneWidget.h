@@ -275,6 +275,11 @@ public:
   vtkGetObjectMacro(SelectedPlaneProperty, vtkProperty)
 
   // Description:
+  // Set whether to color map scalars or to render them directly.
+  void SetMapScalars(int val);
+  int GetMapScalars();
+
+  // Description:
   // Set/Get the arrows's outline properties. The properties of the arrow's
   // outline when selected and unselected can be manipulated.
   virtual void SetArrowProperty(vtkProperty*);
