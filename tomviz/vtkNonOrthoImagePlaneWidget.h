@@ -276,8 +276,8 @@ public:
 
   // Description:
   // Set whether to color map scalars or to render them directly.
-  void SetMapScalars(int val);
-  int GetMapScalars();
+  void SetMapScalars(bool map);
+  bool GetMapScalars();
 
   // Description:
   // Set/Get the arrows's outline properties. The properties of the arrow's

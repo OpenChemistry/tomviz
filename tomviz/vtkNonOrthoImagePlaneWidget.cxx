@@ -1541,22 +1541,15 @@ vtkTexture* vtkNonOrthoImagePlaneWidget::GetTexture()
   return this->Texture;
 }
 
-void vtkNonOrthoImagePlaneWidget::SetMapScalars(int val)
+void vtkNonOrthoImagePlaneWidget::SetMapScalars(bool map)
 {
-  if (val < 0 || val > 1) {
-    vtkWarningMacro(
-      << "Invalid parameter for vtkNonOrthoImagePlaneWidget::SetMapScalars: "
-      << val);
-    val = 0;
-  }
-
-  this->Texture->SetMapColorScalarsThroughLookupTable(val);
+  this->Texture->SetMapColorScalarsThroughLookupTable(map ? 1 : 0);
   this->Modified();
 }
 
-int vtkNonOrthoImagePlaneWidget::GetMapScalars()
+bool vtkNonOrthoImagePlaneWidget::GetMapScalars()
 {
-  return this->Texture->GetMapColorScalarsThroughLookupTable();
+  return this->Texture->GetMapColorScalarsThroughLookupTable() == 1;
 }
 
 void vtkNonOrthoImagePlaneWidget::GetVector1(double v1[3])
