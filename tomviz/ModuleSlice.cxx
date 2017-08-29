@@ -430,7 +430,6 @@ void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
   m_widget->SetDisplayOffset(pos);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleSlice::isProxyPartOfModule(vtkSMProxy* proxy)
 {
   return (proxy == m_passThrough.Get()) || (proxy == m_propsPanelProxy.Get());
