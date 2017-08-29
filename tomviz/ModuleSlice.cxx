@@ -231,14 +231,6 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   QVBoxLayout* layout = new QVBoxLayout;
 
-  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
-  layout->addWidget(mapScalarsCheckBox);
-
-  m_Links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
-                          m_propsPanelProxy,
-                          m_propsPanelProxy->GetProperty("MapScalars"), 0);
-  connect(mapScalarsCheckBox, SIGNAL(toggled(bool)), this, SLOT(dataUpdated()));
-
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
   layout->addWidget(showArrow);
   m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
@@ -280,6 +272,14 @@ void ModuleSlice::addToPanel(QWidget* panel)
     row->addWidget(inputBox);
   }
   layout->addItem(row);
+
+  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
+  layout->addWidget(mapScalarsCheckBox);
+
+  m_Links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
+                          m_propsPanelProxy,
+                          m_propsPanelProxy->GetProperty("MapScalars"), 0);
+  connect(mapScalarsCheckBox, SIGNAL(toggled(bool)), this, SLOT(dataUpdated()));
 
   layout->addStretch();
 
