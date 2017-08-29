@@ -32,6 +32,7 @@
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
 #include <QVBoxLayout>
@@ -189,6 +190,9 @@ void ModuleThreshold::addToPanel(QWidget* panel)
   specularSlider->setLineEditWidth(50);
   formLayout->addRow("Specular", specularSlider);
 
+  QCheckBox* mapScalarsCheckBox = new QCheckBox();
+  formLayout->addRow("Color Map Data", mapScalarsCheckBox);
+
   layout->addStretch();
   panel->setLayout(layout);
 
@@ -209,6 +213,11 @@ void ModuleThreshold::addToPanel(QWidget* panel)
     m_thresholdRepresentation,
     m_thresholdRepresentation->GetProperty("Specular"), 0);
 
+  m_links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
+                          m_thresholdRepresentation,
+                          m_thresholdRepresentation->GetProperty("MapScalars"),
+                          0);
+
   connect(arraySelection, &pqPropertyWidget::changeFinished,
                 arraySelection, &pqPropertyWidget::apply);
   connect(arraySelection, &pqPropertyWidget::changeFinished, this,
@@ -223,6 +232,8 @@ void ModuleThreshold::addToPanel(QWidget* panel)
                 &ModuleThreshold::dataUpdated);
   connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
                 &ModuleThreshold::dataUpdated);
+  connect(mapScalarsCheckBox, &QCheckBox::toggled, this,
+          &ModuleThreshold::dataUpdated);
 }
 
 void ModuleThreshold::dataUpdated()
@@ -242,7 +253,8 @@ bool ModuleThreshold::serialize(pugi::xml_node& ns) const
   representationProperties << "Representation"
                            << "Opacity"
                            << "Specular"
-                           << "Visibility";
+                           << "Visibility"
+                           << "MapScalars";
   pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
   return tomviz::serialize(m_thresholdFilter, tnode, fprops) &&
          tomviz::serialize(m_thresholdRepresentation, rnode,
