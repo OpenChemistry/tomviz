@@ -273,6 +273,14 @@ void ModuleSlice::addToPanel(QWidget* panel)
   }
   layout->addItem(row);
 
+  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
+  layout->addWidget(mapScalarsCheckBox);
+
+  m_Links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
+                          m_propsPanelProxy,
+                          m_propsPanelProxy->GetProperty("MapScalars"), 0);
+  connect(mapScalarsCheckBox, SIGNAL(toggled(bool)), this, SLOT(dataUpdated()));
+
   layout->addStretch();
 
   panel->setLayout(layout);
@@ -281,6 +289,9 @@ void ModuleSlice::addToPanel(QWidget* panel)
 void ModuleSlice::dataUpdated()
 {
   m_Links.accept();
+  m_widget->SetMapScalars(
+    vtkSMPropertyHelper(m_propsPanelProxy->GetProperty("MapScalars"), 1)
+      .GetAsInt());
   m_widget->UpdatePlacement();
   emit renderNeeded();
 }
@@ -316,6 +327,11 @@ bool ModuleSlice::serialize(pugi::xml_node& ns) const
   pointNode.append_attribute("x").set_value(point[0]);
   pointNode.append_attribute("y").set_value(point[1]);
   pointNode.append_attribute("z").set_value(point[2]);
+
+  // Map colors
+  pugi::xml_node mapScalars = ns.append_child("MapScalars");
+  mapScalars.append_attribute("value").set_value(m_widget->GetMapScalars() ==
+                                                 1);
 
   // Let the superclass do its thing
   return Module::serialize(ns);
@@ -353,6 +369,10 @@ bool ModuleSlice::deserialize(const pugi::xml_node& ns)
       return false;
     }
   }
+
+  pugi::xml_node mapScalars = ns.child("MapScalars");
+  m_widget->SetMapScalars(mapScalars.attribute("value").as_bool() ? 1 : 0);
+
   m_widget->UpdatePlacement();
   onPlaneChanged();
 
@@ -397,6 +417,10 @@ void ModuleSlice::onPlaneChanged()
   vtkSMPropertyHelper normalProperty(m_propsPanelProxy, "PlaneNormal");
   double* normalVector = m_widget->GetNormal();
   normalProperty.Set(normalVector, 3);
+  vtkSMPropertyHelper mapScalarsProperty(m_propsPanelProxy, "MapScalars");
+  int mapScalars = m_widget->GetMapScalars();
+  mapScalarsProperty.Set(mapScalars);
+
   m_ignoreSignals = false;
 }
 
@@ -406,7 +430,6 @@ void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
   m_widget->SetDisplayOffset(pos);
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleSlice::isProxyPartOfModule(vtkSMProxy* proxy)
 {
   return (proxy == m_passThrough.Get()) || (proxy == m_propsPanelProxy.Get());

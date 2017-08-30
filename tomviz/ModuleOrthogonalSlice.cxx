@@ -32,6 +32,7 @@
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
 
@@ -160,6 +161,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   opacitySlider->setLineEditWidth(50);
   layout->addRow("Opacity", opacitySlider);
 
+  QCheckBox* mapScalarsCheckBox = new QCheckBox;
+  layout->addRow("Color Map Data", mapScalarsCheckBox);
+
   panel->setLayout(layout);
 
   m_links.addPropertyLink(sliceIndex, "value", SIGNAL(valueEdited(int)),
@@ -170,6 +174,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   m_links.addPropertyLink(opacitySlider, "value", SIGNAL(valueEdited(double)),
                           m_representation,
                           m_representation->GetProperty("Opacity"), 0);
+  m_links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
+                          m_representation,
+                          m_representation->GetProperty("MapScalars"), 0);
 
   m_links.addPropertyLink(adaptor, "currentText",
                           SIGNAL(currentTextChanged(QString)), m_representation,
@@ -181,6 +188,7 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
           &ModuleOrthogonalSlice::dataUpdated);
   connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
           &ModuleOrthogonalSlice::dataUpdated);
+  connect(mapScalarsCheckBox, SIGNAL(toggled(bool)), this, SLOT(dataUpdated()));
 }
 
 void ModuleOrthogonalSlice::dataUpdated()
@@ -195,7 +203,8 @@ bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
   reprProperties << "SliceMode"
                  << "Slice"
                  << "Opacity"
-                 << "Visibility";
+                 << "Visibility"
+                 << "MapScalars";
   pugi::xml_node nodeR = ns.append_child("Representation");
   return (tomviz::serialize(m_representation, nodeR, reprProperties) &&
           Module::serialize(ns));

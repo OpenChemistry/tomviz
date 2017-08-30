@@ -1541,6 +1541,17 @@ vtkTexture* vtkNonOrthoImagePlaneWidget::GetTexture()
   return this->Texture;
 }
 
+void vtkNonOrthoImagePlaneWidget::SetMapScalars(bool map)
+{
+  this->Texture->SetMapColorScalarsThroughLookupTable(map ? 1 : 0);
+  this->Modified();
+}
+
+bool vtkNonOrthoImagePlaneWidget::GetMapScalars()
+{
+  return this->Texture->GetMapColorScalarsThroughLookupTable() == 1;
+}
+
 void vtkNonOrthoImagePlaneWidget::GetVector1(double v1[3])
 {
   double* p1 = this->PlaneSource->GetPoint1();
