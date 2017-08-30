@@ -337,7 +337,7 @@ bool ModuleSlice::serialize(pugi::xml_node& ns) const
   return Module::serialize(ns);
 }
 
-bool ModuleSlice::deserialize(const pugi::xml_node& ns) /**/
+bool ModuleSlice::deserialize(const pugi::xml_node& ns)
 {
 
   pugi::xml_node plane = ns.child("Plane");
