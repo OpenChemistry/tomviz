@@ -10,11 +10,20 @@ function(add_python_test case)
 
   set(_one_value_args PYTHONPATH)
   cmake_parse_arguments(fn "" "${_one_value_args}" "" ${ARGN})
+  
+  set(_python_executable "${PYTHON_EXECUTABLE}")
+  
+  # Allow a different python environment to be used other than
+  # the one Tomviz was built with. For example one that has testing
+  # packages installed such as mock.
+  if(DEFINED ENV{TOMVIZ_TEST_PYTHON_EXECUTABLE})
+    set(_python_executable "$ENV{TOMVIZ_TEST_PYTHON_EXECUTABLE}")
+  endif()  
 
   add_test(
     NAME ${name}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    COMMAND "${PYTHON_EXECUTABLE}" -m unittest -v ${module}
+    COMMAND "${_python_executable}" -m unittest -v ${module}
   )
   set(_pythonpath "${tomviz_python_binary_dir}")
   set(_pythonpath "${_pythonpath}${_separator}${fn_PYTHONPATH}")
