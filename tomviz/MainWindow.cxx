@@ -18,7 +18,6 @@
 
 #include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
-#include <pqPythonShellReaction.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSaveStateReaction.h>
 #include <pqSettings.h>
@@ -134,7 +133,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // tabify output messages widget.
   tabifyDockWidget(m_ui->dockWidget_3, m_ui->dockWidgetMessages);
+  tabifyDockWidget(m_ui->dockWidget_3, m_ui->dockWidgetPythonConsole);
   m_ui->dockWidgetMessages->hide();
+
+  // don't think tomviz should import ParaView modules by default in Python
+  // shell.
+  pqPythonShell::setPreamble(QStringList());
 
   // Tweak the initial sizes of the dock widgets.
   QList<QDockWidget*> docks;
@@ -193,7 +197,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Connect the about dialog up too.
   connect(m_ui->actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
 
-  new pqPythonShellReaction(m_ui->actionPythonConsole);
   new pqMacroReaction(m_ui->actionMacros);
 
   // Instantiate tomviz application behavior.
