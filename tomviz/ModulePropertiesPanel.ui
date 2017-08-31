@@ -6,21 +6,56 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <property name="margin">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
     <number>0</number>
    </property>
    <item>
-    <widget class="QCheckBox" name="DetachColorMap">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, tomviz will use a separate color map for this module. Otherwise, the default behavior is to use the color map associated with the data.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <widget class="QWidget" name="DetachColorMapWidget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
-     <property name="text">
-      <string>Separate color map</string>
+     <property name="styleSheet">
+      <string notr="true"/>
      </property>
+     <layout class="QFormLayout" name="formLayout">
+      <property name="bottomMargin">
+       <number>6</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="DetachColorMap">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, tomviz will use a separate color map for this module. Otherwise, the default behavior is to use the color map associated with the data.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="text">
+         <string>Separate Color Map</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="PropertiesWidget" native="true"/>
+    <widget class="QWidget" name="PropertiesWidget" native="true">
+     <zorder>DetachColorMap</zorder>
+    </widget>
    </item>
   </layout>
  </widget>
