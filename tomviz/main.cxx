@@ -19,7 +19,6 @@
 
 #include <QDebug>
 
-#include <pqOptions.h>
 #include <pqPVApplicationCore.h>
 
 #include <QVTKOpenGLWidget.h>
@@ -32,23 +31,7 @@
 
 #include <clocale>
 
-// We need to override the default options to enable streaming by default.
-// Streaming needs to be enabled for the dax representations
-class TomvizOptions : public pqOptions
-{
-public:
-  static TomvizOptions* New();
-  vtkTypeMacro(TomvizOptions, pqOptions) int GetEnableStreaming() override
-  {
-    return 1;
-  }
-
-protected:
-  TomvizOptions() : pqOptions() { ; }
-};
-vtkStandardNewMacro(TomvizOptions)
-
-  int main(int argc, char** argv)
+int main(int argc, char** argv)
 {
   QSurfaceFormat::setDefaultFormat(QVTKOpenGLWidget::defaultFormat());
 
@@ -74,8 +57,7 @@ vtkStandardNewMacro(TomvizOptions)
 #endif
 
   setlocale(LC_NUMERIC, "C");
-  vtkNew<TomvizOptions> options;
-  pqPVApplicationCore appCore(argc, argv, options.Get());
+  pqPVApplicationCore appCore(argc, argv);
   tomviz::MainWindow window;
   window.show();
   return app.exec();

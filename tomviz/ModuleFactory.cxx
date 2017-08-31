@@ -15,11 +15,6 @@
 ******************************************************************************/
 #include "ModuleFactory.h"
 
-#ifdef DAX_DEVICE_ADAPTER
-#include "dax/ModuleAccelThreshold.h"
-#include "dax/ModuleStreamingContour.h"
-#endif
-
 #include "ModuleContour.h"
 #include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
@@ -74,11 +69,7 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
   if (type == "Outline") {
     module = new ModuleOutline();
   } else if (type == "Contour") {
-#ifdef DAX_DEVICE_ADAPTER
-    module = new ModuleStreamingContour();
-#else
     module = new ModuleContour();
-#endif
   } else if (type == "Volume") {
     module = new ModuleVolume();
   } else if (type == "Slice") {
@@ -86,11 +77,7 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
   } else if (type == "Orthogonal Slice") {
     module = new ModuleOrthogonalSlice();
   } else if (type == "Threshold") {
-#ifdef DAX_DEVICE_ADAPTER
-    module = new ModuleAccelThreshold();
-#else
     module = new ModuleThreshold();
-#endif
   } else if (type == "Ruler") {
     module = new ModuleRuler();
   } else if (type == "Scale Cube") {
@@ -133,18 +120,14 @@ QIcon ModuleFactory::moduleIcon(const QString& type)
 const char* ModuleFactory::moduleType(Module* module)
 {
   // WARNING: to ensure the most useful result is returned from this
-  // function, the if statements should be ordered so that children
+  // function, the if statements should be ordered so that child
   // classes are checked before parent classes. Otherwise, the module
   // type may be reported to be a class's parent.
 
   if (qobject_cast<ModuleOutline*>(module)) {
     return "Outline";
   }
-#ifdef DAX_DEVICE_ADAPTER
-  if (qobject_cast<ModuleStreamingContour*>(module))
-#else
   if (qobject_cast<ModuleContour*>(module))
-#endif
   {
     return "Contour";
   }
@@ -157,12 +140,7 @@ const char* ModuleFactory::moduleType(Module* module)
   if (qobject_cast<ModuleOrthogonalSlice*>(module)) {
     return "Orthogonal Slice";
   }
-#ifdef DAX_DEVICE_ADAPTER
-  if (qobject_cast<ModuleAccelThreshold*>(module))
-#else
-  if (qobject_cast<ModuleThreshold*>(module))
-#endif
-  {
+  if (qobject_cast<ModuleThreshold*>(module)) {
     return "Threshold";
   }
   if (qobject_cast<ModuleRuler*>(module)) {
@@ -171,10 +149,6 @@ const char* ModuleFactory::moduleType(Module* module)
   if (qobject_cast<ModuleScaleCube*>(module)) {
     return "Scale Cube";
   }
-  //  if (qobject_cast<ModuleSegment*>(module))
-  //  {
-  //    return "Segmentation";
-  //  }
   return nullptr;
 }
 
