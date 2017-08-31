@@ -19,6 +19,7 @@
 #include <pqActiveObjects.h>
 #include <pqCoreUtilities.h>
 #include <pqProxyWidgetDialog.h>
+#include <vtkArrayCalculator.h>
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
 #include <vtkNew.h>
@@ -216,9 +217,25 @@ bool ExportDataReaction::exportData(const QString& filename)
               << std::endl;
     vtkNew<vtkImageData> newImage;
     newImage->DeepCopy(imageData);
-    vtkDataArray* scalars = imageData->GetPointData()->GetScalars();
+    vtkSmartPointer<vtkDataArray> scalars =
+      imageData->GetPointData()->GetScalars();
     double range[2];
     scalars->GetRange(range);
+
+    if ((imageType == VTK_FLOAT || imageType == VTK_DOUBLE) &&
+        (range[0] >= 0 && range[1] <= 1)) {
+      std::cout << "Converting normalized floating point values to integers in "
+                   "the range 0-255."
+                << std::endl;
+      vtkNew<vtkArrayCalculator> calc;
+      calc->AddScalarVariable("scalars", scalars->GetName());
+      calc->SetFunction("floor(scalars*255 + 0.5)");
+      calc->SetResultArrayName("result");
+      calc->SetInputData(imageData);
+      calc->Update();
+      scalars = calc->GetDataSetOutput()->GetPointData()->GetArray("result");
+      scalars->GetRange(range);
+    }
     vtkNew<vtkUnsignedCharArray> charArray;
     charArray->SetNumberOfComponents(scalars->GetNumberOfComponents());
     charArray->SetNumberOfTuples(scalars->GetNumberOfTuples());
