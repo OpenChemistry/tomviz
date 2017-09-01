@@ -83,13 +83,6 @@
 #undef ERROR
 #include <pqOutputWidget.h>
 
-// we are building with dax, so we have plugins to import
-#ifdef DAX_DEVICE_ADAPTER
-// Adds required forward declarations.
-PV_PLUGIN_IMPORT_INIT(tomvizThreshold);
-PV_PLUGIN_IMPORT_INIT(tomvizStreaming);
-#endif
-
 namespace {
 QString getAutosaveFile()
 {
@@ -423,12 +416,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   if (tb) {
     tb->setPopupMode(QToolButton::InstantPopup);
   }
-
-// now init the optional dax plugins
-#ifdef DAX_DEVICE_ADAPTER
-  PV_PLUGIN_IMPORT(tomvizThreshold);
-  PV_PLUGIN_IMPORT(tomvizStreaming);
-#endif
 
   ResetReaction::reset();
   // Initialize worker manager

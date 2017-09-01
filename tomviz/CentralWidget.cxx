@@ -42,10 +42,6 @@
 #include "ModuleManager.h"
 #include "Utilities.h"
 
-#ifdef DAX_DEVICE_ADAPTER
-#include "dax/ModuleStreamingContour.h"
-#endif
-
 Q_DECLARE_METATYPE(vtkSmartPointer<vtkImageData>)
 Q_DECLARE_METATYPE(vtkSmartPointer<vtkTable>)
 

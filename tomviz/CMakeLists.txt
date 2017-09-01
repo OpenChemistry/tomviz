@@ -6,20 +6,6 @@ include_directories(SYSTEM
   ${PARAVIEW_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
-option(ENABLE_DAX_ACCELERATION "Enable Accelerated Algorithms" OFF)
-if(ENABLE_DAX_ACCELERATION)
-  find_package(Dax REQUIRED)
-  DaxConfigureTBB(REQUIRED)
-
-  add_subdirectory(dax)
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dax)
-  set(accel_srcs
-    dax/ModuleStreamingContour.cxx
-    dax/ModuleAccelThreshold.cxx
-    )
-endif()
-
 add_subdirectory(pvextensions)
 
 set(SOURCES
@@ -462,19 +448,6 @@ if(tomviz_data_DIR)
     DESTINATION "${tomviz_data_install_dir}"
     USE_SOURCE_PERMISSIONS
     COMPONENT runtime)
-endif()
-
-if(ENABLE_DAX_ACCELERATION)
-  target_link_libraries(tomvizlib
-    PUBLIC
-      tomvizStreaming
-      tomvizThreshold
-      ${TBB_LIBRARIES})
-
-  #set the dax backend to tbb explicitly as the histogram is
-  #computed using dax.
-  set_target_properties(tomvizlib PROPERTIES COMPILE_DEFINITIONS
-    "DAX_DEVICE_ADAPTER=DAX_DEVICE_ADAPTER_TBB")
 endif()
 
 add_subdirectory(pybind11)
