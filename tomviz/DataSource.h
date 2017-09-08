@@ -167,6 +167,9 @@ public:
   // existing pipeline.
   void resumePipeline();
 
+  // Cancel execution of the operator pipeline
+  void cancelPipeline();
+
   /// Set the persistence state
   void setPersistenceState(PersistenceState state);
 

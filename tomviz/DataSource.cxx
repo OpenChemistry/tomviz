@@ -1076,6 +1076,11 @@ void DataSource::resumePipeline()
   executeOperators();
 }
 
+void DataSource::cancelPipeline()
+{
+  this->Internals->Future->cancel();
+}
+
 void DataSource::setPersistenceState(DataSource::PersistenceState state)
 {
   this->Internals->PersistState = state;

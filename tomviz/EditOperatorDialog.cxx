@@ -26,6 +26,7 @@
 
 #include <QDebug>
 #include <QDialogButtonBox>
+#include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -113,6 +114,17 @@ void EditOperatorDialog::onApply()
   }
 
   if (this->Internals->Widget) {
+    // If we are modifying an operator that is already part of a pipeline and
+    // the pipeline is running it has to cancel the currently running pipeline first.
+    // Warn the user rather that just canceling potentially long-running operations.
+    if (this->Internals->dataSource->isRunningAnOperator() && !this->Internals->needsToBeAdded) {
+      auto result = QMessageBox::question(this, "Cancel running operation?", "Applying changes to an opertor that is part of a running pipeline will cancel the current running operator and restart the pipeline run.  Proceed anyway?");
+      if (result == QMessageBox::No) {
+        return;
+      } else {
+        this->Internals->dataSource->cancelPipeline();
+      }
+    }
     this->Internals->Widget->applyChangesToOperator();
   }
   if (this->Internals->needsToBeAdded) {
