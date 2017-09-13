@@ -1078,7 +1078,9 @@ void DataSource::resumePipeline()
 
 void DataSource::cancelPipeline()
 {
-  this->Internals->Future->cancel();
+  if (this->Internals->Future) {
+    this->Internals->Future->cancel();
+  }
 }
 
 void DataSource::setPersistenceState(DataSource::PersistenceState state)
