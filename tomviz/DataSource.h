@@ -167,7 +167,7 @@ public:
 
   // Resume the automatic execution of the operator pipeline, will execution the
   // existing pipeline. If execute is true the entire pipeline will be executed.
-  void resumePipeline(bool execute=true);
+  void resumePipeline(bool execute = true);
 
   // Cancel execution of the operator pipeline. canceled is a optional callback
   // that will be called when the pipeline has been successfully canceled.

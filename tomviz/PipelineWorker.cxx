@@ -210,8 +210,7 @@ void PipelineWorker::Run::cancel()
     QThreadPool::globalInstance()->cancel(m_running);
     m_running->cancel();
     m_running = nullptr;
-  }
-  else {
+  } else {
     emit canceled();
   }
 }
