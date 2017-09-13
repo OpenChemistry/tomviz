@@ -1078,9 +1078,12 @@ void DataSource::resumePipeline(bool execute)
   }
 }
 
-void DataSource::cancelPipeline()
+void DataSource::cancelPipeline(std::function<void()> canceled)
 {
   if (this->Internals->Future) {
+    if (canceled) {
+      connect(this->Internals->Future, &PipelineWorker::Future::canceled, canceled);
+    }
     this->Internals->Future->cancel();
   }
 }

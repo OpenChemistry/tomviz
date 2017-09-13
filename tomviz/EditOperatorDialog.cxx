@@ -122,10 +122,25 @@ void EditOperatorDialog::onApply()
       if (result == QMessageBox::No) {
         return;
       } else {
-        this->Internals->dataSource->cancelPipeline();
+        auto op = this->Internals->Op;
+        auto dataSource = this->Internals->dataSource;
+        auto whenCanceled = [op, dataSource]() {
+          // Resume the pipeline and emit transformModified
+          dataSource->resumePipeline(false);
+          emit op->transformModified();
+        };
+        // We pause the pipeline so applyChangesToOperator does cause it to
+        // execute.
+        this->Internals->dataSource->pausePipeline();
+        // We do this before causing cancel so the values are in place for when
+        // whenCanceled cause the pipeline to be re-executed.
+        this->Internals->Widget->applyChangesToOperator();
+        this->Internals->dataSource->cancelPipeline(whenCanceled);
       }
     }
-    this->Internals->Widget->applyChangesToOperator();
+    else {
+       this->Internals->Widget->applyChangesToOperator();
+    }
   }
   if (this->Internals->needsToBeAdded) {
     this->Internals->dataSource->addOperator(this->Internals->Op);

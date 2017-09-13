@@ -27,6 +27,8 @@
 
 #include "PipelineWorker.h"
 
+#include <functional>
+
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
@@ -167,8 +169,9 @@ public:
   // existing pipeline. If execute is true the entire pipeline will be executed.
   void resumePipeline(bool execute=true);
 
-  // Cancel execution of the operator pipeline
-  void cancelPipeline();
+  // Cancel execution of the operator pipeline. canceled is a optional callback
+  // that will be called when the pipeline has been successfully canceled.
+  void cancelPipeline(std::function<void()> canceled = nullptr);
 
   /// Set the persistence state
   void setPersistenceState(PersistenceState state);
