@@ -1070,10 +1070,12 @@ void DataSource::pausePipeline()
   this->Internals->PipelinePaused = true;
 }
 
-void DataSource::resumePipeline()
+void DataSource::resumePipeline(bool execute)
 {
   this->Internals->PipelinePaused = false;
-  executeOperators();
+  if (execute) {
+    executeOperators();
+  }
 }
 
 void DataSource::cancelPipeline()
