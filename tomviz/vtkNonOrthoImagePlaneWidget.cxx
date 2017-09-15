@@ -46,6 +46,7 @@
 #include "vtkScalarsToColors.h"
 #include "vtkSphereSource.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkSystemIncludes.h"
 #include "vtkTextActor.h"
 #include "vtkTextProperty.h"
 #include "vtkTexture.h"
@@ -1543,13 +1544,13 @@ vtkTexture* vtkNonOrthoImagePlaneWidget::GetTexture()
 
 void vtkNonOrthoImagePlaneWidget::SetMapScalars(bool map)
 {
-  this->Texture->SetMapColorScalarsThroughLookupTable(map ? 1 : 0);
+  this->Texture->SetColorMode(map ? VTK_COLOR_MODE_MAP_SCALARS : VTK_COLOR_MODE_DIRECT_SCALARS);
   this->Modified();
 }
 
 bool vtkNonOrthoImagePlaneWidget::GetMapScalars()
 {
-  return this->Texture->GetMapColorScalarsThroughLookupTable() == 1;
+  return this->Texture->GetColorMode() == VTK_COLOR_MODE_MAP_SCALARS;
 }
 
 void vtkNonOrthoImagePlaneWidget::GetVector1(double v1[3])
@@ -1664,7 +1665,7 @@ void vtkNonOrthoImagePlaneWidget::GenerateTexturePlane()
   texturePlaneMapper->SetInputConnection(this->PlaneSource->GetOutputPort());
 
   this->Texture->SetQualityTo32Bit();
-  this->Texture->MapColorScalarsThroughLookupTableOn();
+  this->Texture->SetColorModeToMapScalars();
   this->Texture->SetInterpolate(this->TextureInterpolate);
   this->Texture->RepeatOff();
   this->Texture->SetLookupTable(this->LookupTable);
