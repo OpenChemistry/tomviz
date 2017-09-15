@@ -70,7 +70,7 @@ QList<DataSource*> LoadDataReaction::loadData()
   QStringList filters;
   filters
     << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
-       " *.dat *.bin *.txt *.mhd *.mha *.mrc *.st *.rec *.ali *.xmf *.xdmf)"
+       " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali *.xmf *.xdmf)"
     << "EMD (*.emd)"
     << "JPeg Image files (*.jpg *.jpeg)"
     << "PNG Image files (*.png)"
@@ -78,6 +78,7 @@ QList<DataSource*> LoadDataReaction::loadData()
     << "OME-TIFF Image files (*.ome.tif)"
     << "Raw data files (*.raw *.dat *.bin)"
     << "Meta Image files (*.mhd *.mha)"
+    << "VTK ImageData Files (*.vti)"
     << "MRC files (*.mrc *.st *.rec *.ali)"
     << "XDMF files (*.xmf *.xdmf)"
     << "Text files (*.txt)"
