@@ -76,7 +76,7 @@ void SaveDataReaction::onTriggered()
           << "Legacy VTK Files (*.vtk)"
           << "Meta Image Files (*.mhd)"
           << "ParaView Data Files (*.pvd)"
-          << "VTK ImageData Fiels (*.vti)"
+          << "VTK ImageData Files (*.vti)"
           << "XDMF Data File (*.xmf)"
           << "JSON Image Files (*.json)";
 
