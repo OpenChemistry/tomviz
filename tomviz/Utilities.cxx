@@ -353,15 +353,6 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   if (ainfo != nullptr &&
       vtkSMPropertyHelper(cmap, "AutomaticRescaleRangeMode").GetAsInt() !=
         vtkSMTransferFunctionManager::NEVER) {
-    // assuming single component arrays.
-    if (ainfo->GetNumberOfComponents() != 1) {
-      QMessageBox box;
-      box.setWindowTitle("Warning");
-      box.setText("tomviz currently supports only single component data");
-      box.setIcon(QMessageBox::Warning);
-      box.exec();
-      return false;
-    }
     vtkSMTransferFunctionProxy::RescaleTransferFunction(
       cmap, ainfo->GetComponentRange(0));
     vtkSMTransferFunctionProxy::RescaleTransferFunction(
