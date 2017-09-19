@@ -97,8 +97,8 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   switch (arrayPtr->GetDataType()) {
     vtkTemplateMacro(tomviz::CalculateHistogram(
       reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
-      arrayPtr->GetNumberOfTuples(), minmax[0], pops, inc, numberOfBins,
-      invalid));
+      arrayPtr->GetNumberOfTuples(), arrayPtr->GetNumberOfComponents(),
+      -1 /* Magnitude */, minmax[0], pops, inc, numberOfBins, invalid));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
