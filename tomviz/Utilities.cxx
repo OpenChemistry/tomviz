@@ -354,9 +354,9 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
       vtkSMPropertyHelper(cmap, "AutomaticRescaleRangeMode").GetAsInt() !=
         vtkSMTransferFunctionManager::NEVER) {
     vtkSMTransferFunctionProxy::RescaleTransferFunction(
-      cmap, ainfo->GetComponentRange(0));
+      cmap, ainfo->GetComponentRange(-1));
     vtkSMTransferFunctionProxy::RescaleTransferFunction(
-      omap, ainfo->GetComponentRange(0));
+      omap, ainfo->GetComponentRange(-1));
     return true;
   }
   return false;
