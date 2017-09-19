@@ -8,24 +8,6 @@
 namespace tomviz {
 
 template <typename T>
-void GetScalarRange(T* values, const vtkIdType n, double* minmax)
-{
-  T tempMinMax[2];
-  tempMinMax[0] = values[0];
-  tempMinMax[1] = values[0];
-  for (vtkIdType j = 1; j < n; ++j) {
-    // This code does not handle NaN or Inf values, so check for them
-    if (!vtkMath::IsFinite(values[j]))
-      continue;
-    tempMinMax[0] = std::min(values[j], tempMinMax[0]);
-    tempMinMax[1] = std::max(values[j], tempMinMax[1]);
-  }
-
-  minmax[0] = static_cast<double>(tempMinMax[0]);
-  minmax[1] = static_cast<double>(tempMinMax[1]);
-}
-
-template <typename T>
 void CalculateHistogram(T* values, const vtkIdType n, const float min,
                         int* pops, const float inc, const int numberOfBins,
                         int& invalid)
