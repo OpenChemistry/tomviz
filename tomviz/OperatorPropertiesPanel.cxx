@@ -128,7 +128,11 @@ void OperatorPropertiesPanel::apply()
           // when
           // whenCanceled cause the pipeline to be re-executed.
           pythonOperator->setArguments(values);
-          dataSource->cancelPipeline(whenCanceled);
+          if (dataSource->isRunningAnOperator()) {
+            dataSource->cancelPipeline(whenCanceled);
+          } else {
+            whenCanceled();
+          }
         }
       } else {
         pythonOperator->setArguments(values);

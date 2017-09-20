@@ -139,7 +139,11 @@ void EditOperatorDialog::onApply()
         // We do this before causing cancel so the values are in place for when
         // whenCanceled cause the pipeline to be re-executed.
         this->Internals->Widget->applyChangesToOperator();
-        this->Internals->dataSource->cancelPipeline(whenCanceled);
+        if (dataSource->isRunningAnOperator()) {
+          this->Internals->dataSource->cancelPipeline(whenCanceled);
+        } else {
+          whenCanceled();
+        }
       }
     } else {
       this->Internals->Widget->applyChangesToOperator();
