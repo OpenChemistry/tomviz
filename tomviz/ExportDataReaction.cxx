@@ -195,63 +195,66 @@ bool ExportDataReaction::exportData(const QString& filename)
   const char* writerName = writer->GetClientSideObject()->GetClassName();
   auto imageData =
     vtkImageData::SafeDownCast(trivialProducer->GetOutputDataObject(0));
-  auto imageType = imageData->GetPointData()->GetScalars()->GetDataType();
-  if (strcmp(writerName, "vtkTIFFWriter") == 0 && imageType == VTK_DOUBLE) {
-    vtkNew<vtkImageData> fImage;
-    fImage->DeepCopy(imageData);
-    ConvertToFloatOperator convertFloat;
-    convertFloat.applyTransform(fImage);
+  if (imageData) {
+    auto imageType = imageData->GetPointData()->GetScalars()->GetDataType();
+    if (strcmp(writerName, "vtkTIFFWriter") == 0 && imageType == VTK_DOUBLE) {
+      vtkNew<vtkImageData> fImage;
+      fImage->DeepCopy(imageData);
+      ConvertToFloatOperator convertFloat;
+      convertFloat.applyTransform(fImage);
 
-    trivialProducer->SetOutput(fImage.Get());
-    trivialProducer->UpdateInformation();
-    trivialProducer->Update();
-    producer->UpdatePipeline();
-  }
+      trivialProducer->SetOutput(fImage.Get());
+      trivialProducer->UpdateInformation();
+      trivialProducer->Update();
+      producer->UpdatePipeline();
+    }
 
-  if ((strcmp(writerName, "vtkPNGWriter") == 0 &&
-       (imageType != VTK_UNSIGNED_CHAR || imageType != VTK_UNSIGNED_SHORT)) ||
-      (strcmp(writerName, "vtkJPEGWriter") == 0 &&
-       imageType != VTK_UNSIGNED_CHAR)) {
-    std::cout << "File type does not support the current data type, converting "
-                 "to unsigned char"
-              << std::endl;
-    vtkNew<vtkImageData> newImage;
-    newImage->DeepCopy(imageData);
-    vtkSmartPointer<vtkDataArray> scalars =
-      imageData->GetPointData()->GetScalars();
-    double range[2];
-    scalars->GetRange(range);
-
-    if ((imageType == VTK_FLOAT || imageType == VTK_DOUBLE) &&
-        (range[0] >= 0 && range[1] <= 1)) {
-      std::cout << "Converting normalized floating point values to integers in "
-                   "the range 0-255."
+    if ((strcmp(writerName, "vtkPNGWriter") == 0 &&
+         (imageType != VTK_UNSIGNED_CHAR || imageType != VTK_UNSIGNED_SHORT)) ||
+        (strcmp(writerName, "vtkJPEGWriter") == 0 &&
+         imageType != VTK_UNSIGNED_CHAR)) {
+      std::cout << "File type does not support the current data type, converting "
+                   "to unsigned char"
                 << std::endl;
-      vtkNew<vtkArrayCalculator> calc;
-      calc->AddScalarVariable("scalars", scalars->GetName());
-      calc->SetFunction("floor(scalars*255 + 0.5)");
-      calc->SetResultArrayName("result");
-      calc->SetInputData(imageData);
-      calc->Update();
-      scalars = calc->GetDataSetOutput()->GetPointData()->GetArray("result");
+      vtkNew<vtkImageData> newImage;
+      newImage->DeepCopy(imageData);
+      vtkSmartPointer<vtkDataArray> scalars =
+        imageData->GetPointData()->GetScalars();
+      double range[2];
       scalars->GetRange(range);
-    }
-    vtkNew<vtkUnsignedCharArray> charArray;
-    charArray->SetNumberOfComponents(scalars->GetNumberOfComponents());
-    charArray->SetNumberOfTuples(scalars->GetNumberOfTuples());
-    charArray->SetName(scalars->GetName());
-    switch (scalars->GetDataType()) {
-      vtkTemplateMacro(convertToUnsignedChar<VTK_TT>(
-        charArray.Get(), scalars->GetNumberOfComponents(),
-        scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0)));
-    }
-    newImage->GetPointData()->RemoveArray(scalars->GetName());
-    newImage->GetPointData()->SetScalars(charArray.Get());
 
-    trivialProducer->SetOutput(newImage.Get());
-    trivialProducer->UpdateInformation();
-    trivialProducer->Update();
-    producer->UpdatePipeline();
+      if ((imageType == VTK_FLOAT || imageType == VTK_DOUBLE) &&
+          (range[0] >= 0 && range[1] <= 1)) {
+        std::cout << "Converting normalized floating point values to integers in "
+                     "the range 0-255."
+                  << std::endl;
+        vtkNew<vtkArrayCalculator> calc;
+        calc->AddScalarVariable("scalars", scalars->GetName());
+        calc->SetFunction("floor(scalars*255 + 0.5)");
+        calc->SetResultArrayName("result");
+        calc->SetInputData(imageData);
+        calc->Update();
+        scalars = calc->GetDataSetOutput()->GetPointData()->GetArray("result");
+        scalars->GetRange(range);
+      }
+      vtkNew<vtkUnsignedCharArray> charArray;
+      charArray->SetNumberOfComponents(scalars->GetNumberOfComponents());
+      charArray->SetNumberOfTuples(scalars->GetNumberOfTuples());
+      charArray->SetName(scalars->GetName());
+      switch (scalars->GetDataType()) {
+        vtkTemplateMacro(convertToUnsignedChar<VTK_TT>(
+          charArray.Get(), scalars->GetNumberOfComponents(),
+          scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0)));
+      }
+      newImage->GetPointData()->RemoveArray(scalars->GetName());
+      newImage->GetPointData()->SetScalars(charArray.Get());
+
+      trivialProducer->SetOutput(newImage.Get());
+      trivialProducer->UpdateInformation();
+      trivialProducer->Update();
+      producer->UpdatePipeline();
+    }
+
   }
 
   pqProxyWidgetDialog dialog(writer, pqCoreUtilities::mainWidget());
