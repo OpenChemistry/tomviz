@@ -21,6 +21,7 @@
 #include <vtkAlgorithm.h>
 #include <vtkCommand.h>
 #include <vtkDataObject.h>
+#include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkNonOrthoImagePlaneWidget.h>
 #include <vtkProperty.h>
@@ -428,6 +429,11 @@ void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };
   m_widget->SetDisplayOffset(pos);
+}
+
+vtkSmartPointer<vtkDataObject> ModuleSlice::getDataToExport()
+{
+  return m_widget->GetResliceOutput();
 }
 
 bool ModuleSlice::isProxyPartOfModule(vtkSMProxy* proxy)

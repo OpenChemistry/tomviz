@@ -48,6 +48,10 @@ public:
 
   bool isProxyPartOfModule(vtkSMProxy* proxy) override;
 
+  QString exportDataTypeString() override { return "Image"; }
+
+  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+
 protected:
   void updateColorMap() override;
   std::string getStringForProxy(vtkSMProxy* proxy) override;

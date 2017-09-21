@@ -297,6 +297,13 @@ void ModuleVolume::onTransferModeChanged(const int mode)
   emit renderNeeded();
 }
 
+vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
+{
+  vtkTrivialProducer* trv = vtkTrivialProducer::SafeDownCast(
+    this->dataSource()->producer()->GetClientSideObject());
+  return trv->GetOutputDataObject(0);
+}
+
 void ModuleVolume::onAmbientChanged(const double value)
 {
   m_volumeProperty->SetAmbient(value);

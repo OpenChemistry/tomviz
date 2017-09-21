@@ -22,6 +22,9 @@
 #include "pqPropertyLinks.h"
 #include "pqSignalAdaptors.h"
 #include "pqWidgetRangeDomain.h"
+#include "vtkAlgorithm.h"
+#include "vtkImageData.h"
+#include "vtkImageReslice.h"
 #include "vtkNew.h"
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -224,6 +227,54 @@ void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY,
   double pos[3] = { newX, newY, newZ };
   vtkSMPropertyHelper(m_representation, "Position").Set(pos, 3);
   m_representation->UpdateVTKObjects();
+}
+
+vtkSmartPointer<vtkDataObject> ModuleOrthogonalSlice::getDataToExport()
+{
+  vtkAlgorithm* algorithm =
+    vtkAlgorithm::SafeDownCast(m_passThrough->GetClientSideObject());
+  vtkImageData* volume =
+    vtkImageData::SafeDownCast(algorithm->GetOutputDataObject(0));
+
+  double origin[3], spacing[3];
+  int extent[6];
+  volume->GetOrigin(origin);
+  volume->GetSpacing(spacing);
+  volume->GetExtent(extent);
+
+  double cosines[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+  double newOrigin[3] = { origin[0], origin[1], origin[2] };
+  vtkSMPropertyHelper directionHelper(m_representation, "SliceMode");
+  vtkSMPropertyHelper sliceNumHelper(m_representation, "Slice");
+  switch (directionHelper.GetAsInt()) {
+    case 5: // XY Plane
+      cosines[0] = cosines[4] = cosines[8] = 1;
+      newOrigin[2] =
+        origin[2] + spacing[2] * (extent[4] + sliceNumHelper.GetAsInt());
+      break;
+    case 6: // YZ Plane
+      cosines[4] = cosines[6] = 1;
+      cosines[2] = -1;
+      newOrigin[0] =
+        origin[0] + spacing[0] * (extent[0] + sliceNumHelper.GetAsInt());
+      break;
+    case 7: // XZ Plane
+      cosines[0] = cosines[7] = 1;
+      cosines[5] = -1;
+      newOrigin[1] =
+        origin[1] + spacing[1] * (extent[2] + sliceNumHelper.GetAsInt());
+      break;
+  }
+
+  vtkNew<vtkImageReslice> reslice;
+  reslice->SetInputData(volume);
+  reslice->SetResliceAxesDirectionCosines(cosines);
+  reslice->SetResliceAxesOrigin(newOrigin);
+  reslice->SetOutputDimensionality(2);
+  reslice->Update();
+
+  vtkSmartPointer<vtkImageData> output = reslice->GetOutput();
+  return output;
 }
 
 //-----------------------------------------------------------------------------

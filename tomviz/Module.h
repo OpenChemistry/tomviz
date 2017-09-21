@@ -21,6 +21,7 @@
 #include <QPointer>
 #include <QScopedPointer>
 
+#include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
 
 #include <vtk_pugixml.h>
@@ -31,6 +32,7 @@ class vtkImageData;
 class vtkSMProxy;
 class vtkSMViewProxy;
 class vtkPiecewiseFunction;
+class vtkDataObject;
 
 namespace tomviz {
 class DataSource;
@@ -123,6 +125,14 @@ public:
                                       const pugi::xml_node& ns);
 
   virtual bool supportsGradientOpacity() { return false; }
+
+  /// A description of the data type that will be exported.  For instance if
+  /// exporting a mesh, this would return "Mesh".  Returning an empty string
+  /// indicates that this module has nothing of interest to be exported.
+  virtual QString exportDataTypeString() { return ""; }
+
+  /// Returns the data to export for this visualization module.
+  virtual vtkSmartPointer<vtkDataObject> getDataToExport();
 
 signals:
 
