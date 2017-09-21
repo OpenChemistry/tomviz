@@ -123,6 +123,10 @@ void EditOperatorDialog::onApply()
         "Applying changes to an operator that is part of a running pipeline "
         "will cancel the current running operator and restart the pipeline "
         "run.  Proceed anyway?");
+      // FIXME There is still a concurrency issue here if the background thread running the
+      // operator finishes and the finished event is queued behind the question() return
+      // event above.  If that happens then we will not get a canceled() event and the
+      // pipeline will stay paused.
       if (result == QMessageBox::No) {
         return;
       } else {
