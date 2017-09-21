@@ -151,7 +151,7 @@ bool ExportDataReaction::exportData(const QString& filename)
 {
   auto server = pqActiveObjects::instance().activeServer();
 
-  vtkSmartPointer<vtkDataObject> data = this->m_module->getDataToExport();
+  auto data = m_module->getDataToExport();
 
   if (!server) {
     qCritical("No active server located.");
