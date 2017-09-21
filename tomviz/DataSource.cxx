@@ -1070,10 +1070,23 @@ void DataSource::pausePipeline()
   this->Internals->PipelinePaused = true;
 }
 
-void DataSource::resumePipeline()
+void DataSource::resumePipeline(bool execute)
 {
   this->Internals->PipelinePaused = false;
-  executeOperators();
+  if (execute) {
+    executeOperators();
+  }
+}
+
+void DataSource::cancelPipeline(std::function<void()> canceled)
+{
+  if (this->Internals->Future) {
+    if (canceled) {
+      connect(this->Internals->Future, &PipelineWorker::Future::canceled,
+              canceled);
+    }
+    this->Internals->Future->cancel();
+  }
 }
 
 void DataSource::setPersistenceState(DataSource::PersistenceState state)

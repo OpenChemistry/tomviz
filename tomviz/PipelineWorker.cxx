@@ -204,14 +204,15 @@ void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
 
 void PipelineWorker::Run::cancel()
 {
+  m_state = State::CANCELED;
   // Try to cancel the currently running operator
   if (m_running != nullptr) {
     QThreadPool::globalInstance()->cancel(m_running);
     m_running->cancel();
     m_running = nullptr;
+  } else {
+    emit canceled();
   }
-  m_state = State::CANCELED;
-  emit canceled();
 }
 
 bool PipelineWorker::Run::cancel(Operator* op)

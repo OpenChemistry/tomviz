@@ -26,6 +26,7 @@
 
 #include <QDebug>
 #include <QDialogButtonBox>
+#include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -113,7 +114,44 @@ void EditOperatorDialog::onApply()
   }
 
   if (this->Internals->Widget) {
-    this->Internals->Widget->applyChangesToOperator();
+    // If we are modifying an operator that is already part of a pipeline and
+    // the pipeline is running it has to cancel the currently running pipeline first.
+    // Warn the user rather that just canceling potentially long-running operations.
+    if (this->Internals->dataSource->isRunningAnOperator() && !this->Internals->needsToBeAdded) {
+      auto result = QMessageBox::question(
+        this, "Cancel running operation?",
+        "Applying changes to an operator that is part of a running pipeline "
+        "will cancel the current running operator and restart the pipeline "
+        "run.  Proceed anyway?");
+      // FIXME There is still a concurrency issue here if the background thread running the
+      // operator finishes and the finished event is queued behind the question() return
+      // event above.  If that happens then we will not get a canceled() event and the
+      // pipeline will stay paused.
+      if (result == QMessageBox::No) {
+        return;
+      } else {
+        auto op = this->Internals->Op;
+        auto dataSource = this->Internals->dataSource;
+        auto whenCanceled = [op, dataSource]() {
+          // Resume the pipeline and emit transformModified
+          dataSource->resumePipeline(false);
+          emit op->transformModified();
+        };
+        // We pause the pipeline so applyChangesToOperator does cause it to
+        // execute.
+        this->Internals->dataSource->pausePipeline();
+        // We do this before causing cancel so the values are in place for when
+        // whenCanceled cause the pipeline to be re-executed.
+        this->Internals->Widget->applyChangesToOperator();
+        if (dataSource->isRunningAnOperator()) {
+          this->Internals->dataSource->cancelPipeline(whenCanceled);
+        } else {
+          whenCanceled();
+        }
+      }
+    } else {
+      this->Internals->Widget->applyChangesToOperator();
+    }
   }
   if (this->Internals->needsToBeAdded) {
     this->Internals->dataSource->addOperator(this->Internals->Op);

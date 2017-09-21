@@ -16,6 +16,7 @@
 #include "OperatorPropertiesPanel.h"
 
 #include "ActiveObjects.h"
+#include "DataSource.h"
 #include "Operator.h"
 #include "OperatorWidget.h"
 #include "Utilities.h"
@@ -23,6 +24,7 @@
 #include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QLabel>
+#include <QMessageBox>
 #include <QScrollArea>
 #include <QVBoxLayout>
 
@@ -103,8 +105,43 @@ void OperatorPropertiesPanel::apply()
     OperatorPython* pythonOperator =
       qobject_cast<OperatorPython*>(m_activeOperator);
     if (pythonOperator) {
-      pythonOperator->setArguments(values);
-      emit pythonOperator->transformModified();
+      DataSource* dataSource =
+        qobject_cast<DataSource*>(pythonOperator->parent());
+      if (dataSource->isRunningAnOperator()) {
+        auto result = QMessageBox::question(
+          this, "Cancel running operation?",
+          "Applying changes to an operator that is part of a running pipeline "
+          "will cancel the current running operator and restart the pipeline "
+          "run.  Proceed anyway?");
+        // FIXME There is still a concurrency issue here if the background thread running the
+        // operator finishes and the finished event is queued behind the question() return
+        // event above.  If that happens then we will not get a canceled() event and the
+        // pipeline will stay paused.
+        if (result == QMessageBox::No) {
+          return;
+        } else {
+          auto whenCanceled = [pythonOperator, dataSource]() {
+            // Resume the pipeline and emit transformModified
+            dataSource->resumePipeline(false);
+            emit pythonOperator->transformModified();
+          };
+          // We pause the pipeline so applyChangesToOperator does cause it to
+          // execute.
+          dataSource->pausePipeline();
+          // We do this before causing cancel so the values are in place for
+          // when
+          // whenCanceled cause the pipeline to be re-executed.
+          pythonOperator->setArguments(values);
+          if (dataSource->isRunningAnOperator()) {
+            dataSource->cancelPipeline(whenCanceled);
+          } else {
+            whenCanceled();
+          }
+        }
+      } else {
+        pythonOperator->setArguments(values);
+        emit pythonOperator->transformModified();
+      }
     }
   }
 }

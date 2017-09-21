@@ -92,7 +92,7 @@ QWidget* ReconstructionOperator::getCustomProgressWidget(QWidget* p) const
 
 bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
 {
-  vtkImageData* imageData = vtkImageData::SafeDownCast(dataObject);
+  vtkSmartPointer<vtkImageData> imageData = vtkImageData::SafeDownCast(dataObject);
   if (!imageData) {
     return false;
   }
