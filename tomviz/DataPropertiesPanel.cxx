@@ -22,12 +22,14 @@
 #include "SetTiltAnglesReaction.h"
 #include "Utilities.h"
 
+#include <pqNonEditableStyledItemDelegate.h>
 #include <pqPropertiesPanel.h>
 #include <pqProxyWidget.h>
 #include <pqView.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
+#include <vtkPVDataSetAttributesInformation.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
@@ -51,8 +53,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   m_ui->xLengthBox->setValidator(new QDoubleValidator(m_ui->xLengthBox));
   m_ui->yLengthBox->setValidator(new QDoubleValidator(m_ui->yLengthBox));
   m_ui->zLengthBox->setValidator(new QDoubleValidator(m_ui->zLengthBox));
-  QVBoxLayout* l = m_ui->verticalLayout;
 
+  QVBoxLayout* l = m_ui->verticalLayout;
   l->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
 
   // add separator labels.
@@ -115,37 +117,67 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
 
 namespace {
 
-QString getDataExtentAndRangeString(vtkSMSourceProxy* proxy)
+QString getDataDimensionsString(vtkSMSourceProxy* proxy)
 {
   vtkPVDataInformation* info = proxy->GetDataInformation(0);
 
   QString extentString =
-    QString("%1 x %2 x %3")
+    QString("Dimensions: %1 x %2 x %3")
       .arg(info->GetExtent()[1] - info->GetExtent()[0] + 1)
       .arg(info->GetExtent()[3] - info->GetExtent()[2] + 1)
       .arg(info->GetExtent()[5] - info->GetExtent()[4] + 1);
 
-  if (vtkPVArrayInformation* scalarInfo =
-        tomviz::scalarArrayInformation(proxy)) {
-    return QString("(%1)\t%2 : %3")
-      .arg(extentString)
-      .arg(scalarInfo->GetComponentRange(0)[0])
-      .arg(scalarInfo->GetComponentRange(0)[1]);
-  } else {
-    return QString("(%1)\t? : ? (type: ?)").arg(extentString);
-  }
+  return extentString;
 }
 
-QString getDataTypeString(vtkSMSourceProxy* proxy)
+} // namespace
+
+void DataPropertiesPanel::updateInformationWidget(
+  QTreeWidget* infoTreeWidget, vtkPVDataInformation* dataInfo)
 {
-  if (vtkPVArrayInformation* scalarInfo =
-        tomviz::scalarArrayInformation(proxy)) {
-    return QString("Type: %1")
-      .arg(vtkImageScalarTypeNameMacro(scalarInfo->GetDataType()));
-  } else {
-    return QString("Type: ?");
+  infoTreeWidget->clear();
+
+  vtkPVDataSetAttributesInformation* pointDataInfo =
+    dataInfo->GetPointDataInformation();
+  if (pointDataInfo) {
+    QPixmap pointDataPixmap(":/pqWidgets/Icons/pqPointData16.png");
+    int numArrays = pointDataInfo->GetNumberOfArrays();
+    for (int i = 0; i < numArrays; i++) {
+      vtkPVArrayInformation* arrayInfo;
+      arrayInfo = pointDataInfo->GetArrayInformation(i);
+      // name, type, data range, data type
+      QTreeWidgetItem* item = new QTreeWidgetItem(infoTreeWidget);
+      item->setData(0, Qt::DisplayRole, arrayInfo->GetName());
+      QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
+      item->setData(2, Qt::DisplayRole, dataType);
+      int numComponents = arrayInfo->GetNumberOfComponents();
+      QString dataRange;
+      double range[2];
+      for (int j = 0; j < numComponents; j++) {
+        if (j != 0) {
+          dataRange.append(", ");
+        }
+        arrayInfo->GetComponentRange(j, range);
+        QString componentRange =
+          QString("[%1, %2]").arg(range[0]).arg(range[1]);
+        dataRange.append(componentRange);
+      }
+      item->setData(1, Qt::DisplayRole,
+                    dataType == "string" ? tr("NA") : dataRange);
+      item->setData(1, Qt::ToolTipRole, dataRange);
+      item->setFlags(item->flags() | Qt::ItemIsEditable);
+      if (arrayInfo->GetIsPartial()) {
+        item->setForeground(0, QBrush(QColor("darkBlue")));
+        item->setData(0, Qt::DisplayRole,
+                      QString("%1 (partial)").arg(arrayInfo->GetName()));
+      } else {
+        item->setForeground(0, QBrush(QColor("darkGreen")));
+      }
+    }
   }
-}
+
+  infoTreeWidget->header()->resizeSections(QHeaderView::ResizeToContents);
+  infoTreeWidget->setItemDelegate(new pqNonEditableStyledItemDelegate(this));
 }
 
 void DataPropertiesPanel::updateData()
@@ -166,12 +198,9 @@ void DataPropertiesPanel::updateData()
   m_ui->FileName->setText(dsource->filename());
 
   m_ui->OriginalDataRange->setText(
-    getDataExtentAndRangeString(dsource->originalDataSource()));
-  m_ui->OriginalDataType->setText(
-    getDataTypeString(dsource->originalDataSource()));
+    getDataDimensionsString(dsource->originalDataSource()));
   m_ui->TransformedDataRange->setText(
-    getDataExtentAndRangeString(dsource->producer()));
-  m_ui->TransformedDataType->setText(getDataTypeString(dsource->producer()));
+    getDataDimensionsString(dsource->producer()));
 
   int extent[6];
   double spacing[3];
@@ -184,6 +213,19 @@ void DataPropertiesPanel::updateData()
   m_ui->zLengthBox->setText(
     QString("%1").arg(spacing[2] * (extent[5] - extent[4] + 1)));
   m_ui->unitBox->setText(m_currentDataSource->getUnits(0));
+
+  vtkSMSourceProxy* sourceProxy =
+    vtkSMSourceProxy::SafeDownCast(dsource->originalDataSource());
+  if (sourceProxy) {
+    updateInformationWidget(m_ui->OriginalDataTreeWidget,
+                            sourceProxy->GetDataInformation());
+  }
+
+  sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->producer());
+  if (sourceProxy) {
+    updateInformationWidget(m_ui->TransformedDataTreeWidget,
+                            sourceProxy->GetDataInformation());
+  }
 
   // display tilt series data
   if (dsource->type() == DataSource::TiltSeries) {
@@ -348,9 +390,7 @@ void DataPropertiesPanel::clear()
 {
   m_ui->FileName->setText("");
   m_ui->OriginalDataRange->setText("");
-  m_ui->OriginalDataType->setText("Type:");
   m_ui->TransformedDataRange->setText("");
-  m_ui->TransformedDataType->setText("Type:");
   if (m_colorMapWidget) {
     m_ui->verticalLayout->removeWidget(m_colorMapWidget);
     delete m_colorMapWidget;

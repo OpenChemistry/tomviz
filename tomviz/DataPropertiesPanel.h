@@ -22,6 +22,8 @@
 #include <QScopedPointer>
 
 class pqProxyWidget;
+class QTreeWidget;
+class vtkPVDataInformation;
 
 namespace Ui {
 class DataPropertiesPanel;
@@ -74,6 +76,8 @@ private:
 
   void clear();
   void updateSpacing(int axis, double newLength);
+  void updateInformationWidget(QTreeWidget* infoTreeWidget,
+                               vtkPVDataInformation* dataInformation);
 };
 }
 
