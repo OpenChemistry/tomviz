@@ -1,0 +1,26 @@
+{
+  "name" : "RotationAlign",
+  "label" : "Rotation Alignment",
+  "description" : "Align the rotation axis of a tilt series to the x-axis.",
+  "widget" : "RotationAlignWidget",
+  "parameters" : [
+    {
+      "name" : "SHIFT",
+      "label" : "Shift",
+      "description" : "Amount to shift by.",
+      "type" : "double",
+      "default" : [0.0, 0.0, 0.0]
+    },
+    {
+      "name" : "rotation_angle",
+      "label" : "Angle",
+      "description" : "Rotation angle in degrees.",
+      "type" : "double",
+      "default" : 90.0,
+      "minimum" : -360.0,
+      "maximum" : 360.0
+    }
+  ]
+}
+
+

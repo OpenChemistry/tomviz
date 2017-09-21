@@ -294,6 +294,7 @@ set(python_files
   UnsharpMask.py
   AddConstant.py
   SegmentPores.py
+  RotationAlign.py
   )
 
 set(json_files
@@ -331,6 +332,7 @@ set(json_files
   UnsharpMask.json
   AddConstant.json
   SegmentPores.json
+  RotationAlign.json
   )
 
 set(resource_files
