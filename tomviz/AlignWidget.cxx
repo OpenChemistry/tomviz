@@ -590,7 +590,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   for (int i = 0; i < m_offsets.size(); ++i) {
     item = new QTableWidgetItem();
     item->setData(Qt::DisplayRole, QString::number(i));
-    item->setFlags(Qt::ItemIsEnabled);
+    item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
     m_offsetTable->setItem(i, 0, item);
 
     item = new QTableWidgetItem();
@@ -603,7 +603,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
 
     item = new QTableWidgetItem();
     item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
-    item->setFlags(Qt::ItemIsEnabled);
+    item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
     m_offsetTable->setItem(i, 3, item);
   }
   m_offsetTable->resizeColumnsToContents();
@@ -615,6 +615,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   connect(m_timer, SIGNAL(timeout()), SLOT(onTimeout()));
   connect(m_offsetTable, SIGNAL(cellChanged(int, int)),
           SLOT(sliceOffsetEdited(int, int)));
+  changeSlice(0);
   m_timer->start(200);
 }
 
@@ -672,6 +673,9 @@ void AlignWidget::changeSlice(int delta)
     i = max;
   }
   m_currentSlice->setValue(i);
+  m_offsetTable->setCurrentCell(i, 0);
+  QTableWidgetSelectionRange range(i, 0, i, 3);
+  m_offsetTable->setRangeSelected(range, true);
   setSlice(i, true);
   updateReference();
 }
