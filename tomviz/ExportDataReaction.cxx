@@ -19,6 +19,7 @@
 #include <pqActiveObjects.h>
 #include <pqCoreUtilities.h>
 #include <pqProxyWidgetDialog.h>
+#include <pqSettings.h>
 #include <vtkArrayCalculator.h>
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
@@ -38,10 +39,12 @@
 #include "Module.h"
 #include "Utilities.h"
 
+#include <QCheckBox>
 #include <QDebug>
 #include <QDialog>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QMessageBox>
 #include <QRegularExpression>
 
 namespace tomviz {
@@ -195,6 +198,7 @@ bool ExportDataReaction::exportData(const QString& filename)
   const char* writerName = writer->GetClientSideObject()->GetClassName();
   auto imageData =
     vtkImageData::SafeDownCast(trivialProducer->GetOutputDataObject(0));
+  QSettings* settings = pqApplicationCore::instance()->settings();
   if (imageData) {
     auto imageType = imageData->GetPointData()->GetScalars()->GetDataType();
     if (strcmp(writerName, "vtkTIFFWriter") == 0 && imageType == VTK_DOUBLE) {
@@ -213,9 +217,26 @@ bool ExportDataReaction::exportData(const QString& filename)
          (imageType != VTK_UNSIGNED_CHAR || imageType != VTK_UNSIGNED_SHORT)) ||
         (strcmp(writerName, "vtkJPEGWriter") == 0 &&
          imageType != VTK_UNSIGNED_CHAR)) {
-      std::cout << "File type does not support the current data type, converting "
-                   "to unsigned char"
-                << std::endl;
+
+      // Warn the user about the conversion
+      if (settings->value("tomviz/export/ShowFileTypeWarning", QVariant(true))
+            .toBool()) {
+        QMessageBox messageBox(QMessageBox::Warning, "tomviz",
+                               "The requested file type does not support the "
+                               "current data type, converting to unsigned "
+                               "char.",
+                               QMessageBox::Ok);
+        QCheckBox* checkBox = new QCheckBox;
+        checkBox->setText("Show this message again");
+        checkBox->setChecked(true);
+        connect(checkBox, &QCheckBox::stateChanged, [settings](int state) {
+          settings->setValue("tomviz/export/ShowFileTypeWarning",
+                             QVariant(state != 0));
+        });
+        messageBox.setCheckBox(checkBox);
+        messageBox.exec();
+      }
+
       vtkNew<vtkImageData> newImage;
       newImage->DeepCopy(imageData);
       vtkSmartPointer<vtkDataArray> scalars =
@@ -225,9 +246,27 @@ bool ExportDataReaction::exportData(const QString& filename)
 
       if ((imageType == VTK_FLOAT || imageType == VTK_DOUBLE) &&
           (range[0] >= 0 && range[1] <= 1)) {
-        std::cout << "Converting normalized floating point values to integers in "
-                     "the range 0-255."
-                  << std::endl;
+
+        // Warn the user about the conversion
+        if (settings
+              ->value("tomviz/export/ShowNormalizedFloatWarning",
+                      QVariant(true))
+              .toBool()) {
+          QMessageBox messageBox(QMessageBox::Warning, "tomviz",
+                                 "Converting normalized floating point values "
+                                 "to integers in the range 0-255.",
+                                 QMessageBox::Ok);
+          QCheckBox* checkBox = new QCheckBox;
+          checkBox->setText("Show this message again");
+          checkBox->setChecked(true);
+          connect(checkBox, &QCheckBox::stateChanged, [settings](int state) {
+            settings->setValue("tomviz/export/ShowNormalizedFloatWarning",
+                               QVariant(state != 0));
+          });
+          messageBox.setCheckBox(checkBox);
+          messageBox.exec();
+        }
+
         vtkNew<vtkArrayCalculator> calc;
         calc->AddScalarVariable("scalars", scalars->GetName());
         calc->SetFunction("floor(scalars*255 + 0.5)");
