@@ -18,7 +18,6 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
-#include "InterfaceBuilder.h"
 #include "OperatorDialog.h"
 #include "OperatorPython.h"
 #include "SelectVolumeWidget.h"
