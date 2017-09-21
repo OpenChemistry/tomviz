@@ -21,6 +21,7 @@
 #include "EditOperatorDialog.h"
 #include "ExportDataReaction.h"
 #include "LoadDataReaction.h"
+#include "MergeImageComponentsReaction.h"
 #include "Module.h"
 #include "ModuleManager.h"
 #include "Operator.h"
@@ -43,6 +44,7 @@
 
 #include <QApplication>
 #include <QItemDelegate>
+#include <QItemSelection>
 #include <QKeyEvent>
 #include <QMainWindow>
 #include <QMenu>
@@ -219,6 +221,21 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     } else {
       markAsAction = contextMenu.addAction("Mark as Volume");
     }
+
+    // Add option to merge different datasets
+    QAction* mergeComponentsAction = contextMenu.addAction("Merge Image Components");
+    auto micReaction = new MergeImageComponentsReaction(mergeComponentsAction);
+
+    // Set the selected data sources in the merge components reaction
+    QModelIndexList indexList = selectedIndexes();
+    QSet<DataSource*> selectedDataSources;
+    for (int i = 0; i < indexList.size(); ++i) {
+      auto source = pipelineModel->dataSource(indexList[i]);
+      if (source && !selectedDataSources.contains(source)) {
+        selectedDataSources.insert(source);
+      }
+    }
+    micReaction->updateDataSources(selectedDataSources);
 
     // Add option to re-execute the pipeline is we have a canceled operator
     // in our pipeline.

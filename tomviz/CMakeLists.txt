@@ -84,6 +84,8 @@ set(SOURCES
   LoadPaletteReaction.h
   Logger.cxx
   Logger.h
+  MergeImageComponentsReaction.cxx
+  MergeImageComponentsReaction.h
   Module.cxx
   Module.h
   ModuleContour.cxx
