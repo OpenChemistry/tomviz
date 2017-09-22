@@ -22,9 +22,12 @@
 #include <QFileInfo>
 #include <QSet>
 
+#include <vtkPVDataInformation.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMSourceProxy.h>
+
+#include <algorithm>
 
 namespace tomviz {
 
@@ -84,7 +87,26 @@ void MergeImageComponentsReaction::updateDataSources(QSet<DataSource*> sources)
 
 void MergeImageComponentsReaction::updateEnableState()
 {
-  parentAction()->setEnabled(m_dataSources.size() > 1);
+  bool enabled = m_dataSources.size() > 1;
+
+  // Check for compatibility of the DataSource extents. Ignore overlap in
+  // physical space for now.
+  if (enabled) {
+    QList<DataSource*> sourceList = m_dataSources.toList();
+    auto info = sourceList[0]->producer()->GetDataInformation();
+    int refExtent[6];
+    info->GetExtent(refExtent);
+
+    // Check against other DataSource extents
+    for (int i = 0; i < m_dataSources.size(); ++i) {
+      info = sourceList[i]->producer()->GetDataInformation();
+      int thisExtent[6];
+      info->GetExtent(thisExtent);
+      enabled = enabled && std::equal(refExtent, refExtent+6, thisExtent);
+    }
+  }
+
+  parentAction()->setEnabled(enabled);
 }
 
 }
