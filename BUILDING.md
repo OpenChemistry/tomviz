@@ -79,7 +79,7 @@ you will need to specify the correct generator for the installed compiler.
       -DITKGroup_Segmentation:BOOL=ON \
       -DITKGroup_Registration:BOOL=ON \
       -DITKGroup_Nonunit:BOOL=ON \
-      -DPython_ADDITIONAL_VERSIONS:STRING=3 \ 
+      -DPython_ADDITIONAL_VERSIONS:STRING=3 \
       -DITK_WRAP_PYTHON:BOOL=ON \
       -DBUILD_EXAMPLES:BOOL=OFF \
       -DBUILD_SHARED_LIBS:BOOL=ON \
