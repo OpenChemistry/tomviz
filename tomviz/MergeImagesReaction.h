@@ -13,8 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizMergeImageComponentsReaction_h
-#define tomvizMergeImageComponentsReaction_h
+#ifndef tomvizMergeImagesReaction_h
+#define tomvizMergeImagesReaction_h
 
 #include <pqReaction.h>
 
@@ -24,14 +24,14 @@ namespace tomviz {
 
 class DataSource;
 
-class MergeImageComponentsReaction : pqReaction
+class MergeImagesReaction : pqReaction
 {
   Q_OBJECT
 
 public:
-  MergeImageComponentsReaction(QAction* action);
+  MergeImagesReaction(QAction* action);
 
-  DataSource* mergeComponents();
+  DataSource* mergeComponents(); 
 
 public slots:
   void updateDataSources(QSet<DataSource*>);
@@ -41,7 +41,7 @@ protected:
   void updateEnableState() override;
 
 private:
-  Q_DISABLE_COPY(MergeImageComponentsReaction)
+  Q_DISABLE_COPY(MergeImagesReaction)
 
   QSet<DataSource*> m_dataSources;
 };

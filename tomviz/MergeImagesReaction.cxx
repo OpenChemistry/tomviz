@@ -13,7 +13,7 @@
   limitations under the License.
 
 ******************************************************************************/
-#include "MergeImageComponentsReaction.h"
+#include "MergeImagesReaction.h"
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
@@ -31,13 +31,13 @@
 
 namespace tomviz {
 
-MergeImageComponentsReaction::MergeImageComponentsReaction(QAction* parentObject)
+MergeImagesReaction::MergeImagesReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
   updateEnableState();
 }
 
-DataSource* MergeImageComponentsReaction::mergeComponents()
+DataSource* MergeImagesReaction::mergeComponents()
 {
   if (m_dataSources.size() < 1) {
     return nullptr;
@@ -71,7 +71,7 @@ DataSource* MergeImageComponentsReaction::mergeComponents()
   return newDataset;
 }
 
-void MergeImageComponentsReaction::onTriggered()
+void MergeImagesReaction::onTriggered()
 {
   DataSource* source = mergeComponents();
   if (source) {
@@ -79,13 +79,13 @@ void MergeImageComponentsReaction::onTriggered()
   }
 }
 
-void MergeImageComponentsReaction::updateDataSources(QSet<DataSource*> sources)
+void MergeImagesReaction::updateDataSources(QSet<DataSource*> sources)
 {
   m_dataSources = sources;
   updateEnableState();
 }
 
-void MergeImageComponentsReaction::updateEnableState()
+void MergeImagesReaction::updateEnableState()
 {
   bool enabled = m_dataSources.size() > 1;
 

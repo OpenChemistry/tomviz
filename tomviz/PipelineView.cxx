@@ -21,7 +21,7 @@
 #include "EditOperatorDialog.h"
 #include "ExportDataReaction.h"
 #include "LoadDataReaction.h"
-#include "MergeImageComponentsReaction.h"
+#include "MergeImagesReaction.h"
 #include "Module.h"
 #include "ModuleManager.h"
 #include "Operator.h"
@@ -223,8 +223,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     }
 
     // Add option to merge different datasets
-    QAction* mergeComponentsAction = contextMenu.addAction("Merge Image Components");
-    auto micReaction = new MergeImageComponentsReaction(mergeComponentsAction);
+    QAction* mergeImageAction = contextMenu.addAction("Merge Images");
+    auto micReaction = new MergeImagesReaction(mergeImageAction);
 
     // Set the selected data sources in the merge components reaction
     QModelIndexList indexList = selectedIndexes();
