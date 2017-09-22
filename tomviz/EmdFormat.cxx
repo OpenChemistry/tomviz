@@ -234,7 +234,7 @@ public:
     h5dim[2] = dim[0];
 
     auto arrayPtr = data->GetPointData()->GetScalars();
-    auto dataPtr = static_cast<float*>(arrayPtr->GetVoidPointer(0));
+    auto dataPtr = arrayPtr->GetVoidPointer(0);
 
     // Map the VTK types to the HDF5 types for storage and memory. We should
     // probably add more, but I got the important ones for testing in first.
