@@ -13,38 +13,33 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizMergeImagesReaction_h
-#define tomvizMergeImagesReaction_h
+#ifndef tomvizMergeImagesDialog_h
+#define tomvizMergeImagesDialog_h
 
-#include <pqReaction.h>
+#include <QDialog>
+#include <QScopedPointer>
 
-#include <QSet>
+namespace Ui {
+class MergeImagesDialog;
+}
 
 namespace tomviz {
 
-class DataSource;
-
-class MergeImagesReaction : pqReaction
+class MergeImagesDialog : public QDialog
 {
-  Q_OBJECT
+Q_OBJECT
 
 public:
-  MergeImagesReaction(QAction* action);
+  MergeImagesDialog(QWidget* parent = nullptr);
+  ~MergeImagesDialog() override;
 
-public slots:
-  void updateDataSources(QSet<DataSource*>);
+  enum MergeMode : int { Arrays, Components };
 
-protected:
-  void onTriggered() override;
-  void updateEnableState() override;
-
-  DataSource* mergeArrays();
-  DataSource* mergeComponents();
+  MergeMode getMode();
 
 private:
-  Q_DISABLE_COPY(MergeImagesReaction)
-
-  QSet<DataSource*> m_dataSources;
+  Q_DISABLE_COPY(MergeImagesDialog)
+  QScopedPointer<Ui::MergeImagesDialog> m_ui;
 };
 }
 

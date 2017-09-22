@@ -13,39 +13,27 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizMergeImagesReaction_h
-#define tomvizMergeImagesReaction_h
-
-#include <pqReaction.h>
-
-#include <QSet>
+#include "MergeImagesDialog.h"
+#include "ui_MergeImagesDialog.h"
 
 namespace tomviz {
 
-class DataSource;
-
-class MergeImagesReaction : pqReaction
+MergeImagesDialog::MergeImagesDialog(QWidget* parent)
+  : QDialog(parent), m_ui(new Ui::MergeImagesDialog)
 {
-  Q_OBJECT
-
-public:
-  MergeImagesReaction(QAction* action);
-
-public slots:
-  void updateDataSources(QSet<DataSource*>);
-
-protected:
-  void onTriggered() override;
-  void updateEnableState() override;
-
-  DataSource* mergeArrays();
-  DataSource* mergeComponents();
-
-private:
-  Q_DISABLE_COPY(MergeImagesReaction)
-
-  QSet<DataSource*> m_dataSources;
-};
+  m_ui->setupUi(this);
+  m_ui->MergeImageArraysRadioButton->setChecked(true);
+  m_ui->MergeImageArraysRadioButton->setChecked(false);
+  m_ui->MergeArrayComponentsWidget->hide();
 }
 
-#endif
+MergeImagesDialog::~MergeImagesDialog()
+{
+}
+
+MergeImagesDialog::MergeMode MergeImagesDialog::getMode()
+{
+  return (m_ui->MergeImageArraysRadioButton->isChecked() ? Arrays : Components);
+}
+
+}
