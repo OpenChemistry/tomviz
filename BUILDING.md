@@ -16,7 +16,7 @@ point to them if they are not found automatically.
 Dependencies
 ------------
 
- * Qt 5.6.0 (5.7.0 recommended)
+ * Qt 5.6.0 (5.9.1 recommended)
  * CMake 3.3
  * Python 3.6
  * NumPy 1.12
@@ -59,8 +59,7 @@ you will need to specify the correct generator for the installed compiler.
     cd ..
     git clone git://itk.org/ITK.git
     cd ITK
-    # ITK master 2017-03-17
-    git checkout 99250d305e
+    git checkout v4.12.0
     cd ..
     mkdir itk-build
     cd itk-build
@@ -79,7 +78,7 @@ you will need to specify the correct generator for the installed compiler.
       -DITKGroup_Segmentation:BOOL=ON \
       -DITKGroup_Registration:BOOL=ON \
       -DITKGroup_Nonunit:BOOL=ON \
-      -DPython_ADDITIONAL_VERSIONS:STRING=3 \ 
+      -DPython_ADDITIONAL_VERSIONS:STRING=3 \
       -DITK_WRAP_PYTHON:BOOL=ON \
       -DBUILD_EXAMPLES:BOOL=OFF \
       -DBUILD_SHARED_LIBS:BOOL=ON \
