@@ -199,9 +199,16 @@ Python::Dict& Python::Dict::operator=(const Python::Object& other)
 
 Python::Object Python::Dict::operator[](const QString& key)
 {
-  return PyDict_GetItemString(m_smartPyObject->GetPointer(),
-                              key.toLatin1().data());
-  ;
+  return this->operator[](key.toLatin1().data());
+}
+
+Python::Object Python::Dict::operator[](const char* key)
+{
+  PyObject* item = PyDict_GetItemString(m_smartPyObject->GetPointer(), key);
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
+
+  return item;
 }
 
 void Python::Dict::set(const QString& key, const Object& value)
