@@ -110,6 +110,15 @@ public:
     QString toString();
   };
 
+  class List : public Object
+  {
+  public:
+    List(PyObject* obj);
+    List(const List& other);
+    Object operator[](int index);
+    int length();
+  };
+
   class Function : public Object
   {
   public:
@@ -174,6 +183,17 @@ public:
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
+
+struct OperatorDescription
+{
+  QString label;
+  QString pythonPath;
+  QString jsonPath;
+  QString loadError;
+  bool valid = true;
+};
+
+std::vector<OperatorDescription> findCustomOperators(const QString& path);
 }
 
 #endif

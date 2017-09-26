@@ -452,4 +452,56 @@ void Python::prependPythonPath(std::string dir)
 {
   vtkPythonInterpreter::PrependPythonPath(dir.c_str());
 }
+
+std::vector<OperatorDescription> findCustomOperators(const QString& path)
+{
+  Python::initialize();
+
+  Python python;
+  auto internalModule = python.import("tomviz._internal");
+  if (!internalModule.isValid()) {
+    Logger::critical("Failed to import tomviz._internal module.");
+  }
+
+  auto findCustomOperators = internalModule.findFunction("find_operators");
+  if (!findCustomOperators.isValid()) {
+    Logger::critical("Unable to locate find_operators.");
+  }
+
+  std::vector<OperatorDescription> operators;
+  Python::Object pyPath(path);
+  Python::Tuple args(1);
+  args.set(0, pyPath);
+
+  auto pyOperators = findCustomOperators.call(args);
+  if (!pyOperators.isValid()) {
+    Logger::critical("Failed to execute findCustomOperators.");
+  }
+
+  Python::List ops(pyOperators);
+  for (int i = 0; i < ops.length(); i++) {
+    Python::Dict opDict = ops[i].toDict();
+    OperatorDescription op;
+
+    op.label = opDict["label"].toString();
+    op.pythonPath = opDict["pythonPath"].toString();
+    op.valid = opDict["valid"].toBool();
+
+    // Do we have a JSON file?
+    Python::Object jsonPath = opDict["jsonPath"];
+    if (jsonPath.isValid()) {
+      op.jsonPath = jsonPath.toString();
+    }
+
+    // Do we have a load error?
+    Python::Object loadError = opDict["loadError"];
+    if (loadError.isValid()) {
+      op.loadError = loadError.toString();
+    }
+
+    operators.push_back(op);
+  }
+
+  return operators;
+}
 }
