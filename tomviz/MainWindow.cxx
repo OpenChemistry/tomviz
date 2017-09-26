@@ -662,8 +662,13 @@ void MainWindow::registerCustomOperators()
 
 void MainWindow::registerCustomOperators(const QString& path)
 {
-
   std::vector<OperatorDescription> operators = findCustomOperators(path);
+  // Sort so we get a consistent order each time we load
+  std::sort(operators.begin(), operators.end(),
+            [](const OperatorDescription& op1, const OperatorDescription& op2) {
+              return op1.label.compare(op2.label);
+            });
+
   if (!operators.empty()) {
     QMenu* customTransformsMenu = new QMenu("Custom Transforms", this);
     m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
