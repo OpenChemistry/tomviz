@@ -101,7 +101,10 @@ public:
     Dict();
     Dict(PyObject* obj);
     Dict(const Dict& other);
+    Dict(const Object& obj);
+    Dict& operator=(const Object& other);
     Object operator[](const QString& key);
+    Object operator[](const char* key);
     void set(const QString& key, const Object& value);
     void set(const QString& key, const Variant& value);
     QString toString();

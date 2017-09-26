@@ -229,6 +229,28 @@ QString Python::Dict::toString()
   return PyString_AsString(objectRepr);
 }
 
+Python::List::List(PyObject* obj) : Object(obj)
+{
+}
+
+Python::List::List(const List& other) : Object(other)
+{
+}
+
+Python::Object Python::List::operator[](int index)
+{
+  PyObject* item = PyList_GetItem(m_smartPyObject->GetPointer(), index);
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
+
+  return PyList_GetItem(m_smartPyObject->GetPointer(), index);
+}
+
+int Python::List::length()
+{
+  return PyList_Size(m_smartPyObject->GetPointer());
+}
+
 Python::Function::Function() : Object()
 {
 }
