@@ -677,13 +677,13 @@ void MainWindow::registerCustomOperators(const QString& path)
       QAction* action = customTransformsMenu->addAction(op.label);
       action->setEnabled(op.valid);
       if (!op.loadError.isNull()) {
-        qWarning()
+        qWarning().noquote()
           << QString("An error occured trying to load an operator from '%1':")
                .arg(op.pythonPath);
-        qWarning() << op.loadError;
+        qWarning().noquote() << op.loadError;
         continue;
       } else if (!op.valid) {
-        qWarning() << QString(
+        qWarning().noquote() << QString(
                         "'%1' doesn't contain a valid operator definition.")
                         .arg(op.pythonPath);
         continue;
