@@ -125,9 +125,13 @@ def _operator_description(operator_dir, filename):
     if os.path.exists(json_filepath):
         description['jsonPath'] = json_filepath
         # Extract the label from the JSON
-        with open(json_filepath) as fp:
-            operator_json = json.load(fp)
-            description['label'] = operator_json['label']
+        try:
+            with open(json_filepath) as fp:
+                operator_json = json.load(fp)
+                description['label'] = operator_json['label']
+        except:
+            description['loadError'] = traceback.format_exc()
+            description['valid'] = False
 
     return description
 

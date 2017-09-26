@@ -97,6 +97,13 @@ class OperatorTestCase(unittest.TestCase):
              'label': 'simple',
              'valid': True,
              'pythonPath': 'simple.py'
+           },
+           {
+             'jsonPath': 'invalidjson.json',
+             'label': 'invalidjson',
+             'loadError': None,
+             'pythonPath': 'invalidjson.py',
+             'valid': False
            }
         ]
 
