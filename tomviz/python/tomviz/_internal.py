@@ -48,10 +48,10 @@ def find_operator_class(transform_module):
 def find_transform_scalars_function(transform_module):
     transform_function = None
     functions = inspect.getmembers(transform_module, inspect.isfunction)
-
     for (name, func) in functions:
         if name == 'transform_scalars':
             transform_function = func
+            break
 
     return transform_function
 
