@@ -109,4 +109,6 @@ class OperatorTestCase(unittest.TestCase):
             if 'jsonPath' in op:
                 op['jsonPath'] = os.path.basename(op['jsonPath'])
 
-        self.assertEqual(operators, expected)
+
+        sort_key = lambda k: k['label']
+        self.assertEqual(sorted(operators, key=sort_key), sorted(expected, key=sort_key))
