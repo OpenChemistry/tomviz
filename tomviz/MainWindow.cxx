@@ -74,7 +74,6 @@
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
 #include <QStandardPaths>
-#include <QStandardPaths>
 #include <QSurfaceFormat>
 #include <QTimer>
 #include <QToolButton>
@@ -644,7 +643,6 @@ void MainWindow::registerCustomOperators()
   foreach (QString home,
            QStandardPaths::standardLocations(QStandardPaths::HomeLocation)) {
     QString path = QString("%1%2.tomviz").arg(home).arg(QDir::separator());
-    qDebug() << path;
     if (QFile(path).exists()) {
       paths.append(path);
     }
@@ -690,7 +688,6 @@ void MainWindow::registerCustomOperators(const QString& path)
       QString json;
       // Read the Python source
       QFile pythonFile(op.pythonPath);
-      qDebug() << op.pythonPath;
       if (pythonFile.open(QIODevice::ReadOnly)) {
         source = pythonFile.readAll();
       } else {
