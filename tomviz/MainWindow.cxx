@@ -44,6 +44,7 @@
 #include "ModulePropertiesPanel.h"
 #include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
+#include "PythonUtilities.h"
 #include "RecentFilesMenu.h"
 #include "ReconstructionReaction.h"
 #include "ResetReaction.h"
@@ -72,6 +73,7 @@
 #include <QMessageBox>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
+#include <QStandardPaths>
 #include <QStandardPaths>
 #include <QSurfaceFormat>
 #include <QTimer>
@@ -437,6 +439,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto acquisitionAction = m_ui->menuTools->addAction("Acquisition");
   connect(acquisitionAction, SIGNAL(triggered(bool)), acquisitionWidget,
           SLOT(show()));
+
+  registerCustomOperators();
 }
 
 MainWindow::~MainWindow()
@@ -633,4 +637,77 @@ void MainWindow::handleMessage(const QString&, int type)
   }
 }
 
+void MainWindow::registerCustomOperators()
+{
+  QStringList paths;
+  // Search in <home>/.tomviz
+  foreach (QString home,
+           QStandardPaths::standardLocations(QStandardPaths::HomeLocation)) {
+    QString path = QString("%1%2.tomviz").arg(home).arg(QDir::separator());
+    qDebug() << path;
+    if (QFile(path).exists()) {
+      paths.append(path);
+    }
+  }
+  // Search in data locations.
+  // For example on window C:/Users/<USER>/AppData/Local/tomviz
+  foreach (QString path,
+           QStandardPaths::standardLocations(QStandardPaths::DataLocation)) {
+    if (QFile(path).exists()) {
+      paths.append(path);
+    }
+  }
+  foreach (QString path, paths) {
+    registerCustomOperators(path);
+  }
+}
+
+void MainWindow::registerCustomOperators(const QString& path)
+{
+
+  std::vector<OperatorDescription> operators = findCustomOperators(path);
+  if (!operators.empty()) {
+    QMenu* customTransformsMenu = new QMenu("Custom Transforms", this);
+    m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
+                              customTransformsMenu);
+    for (const OperatorDescription& op : operators) {
+      QAction* action = customTransformsMenu->addAction(op.label);
+      action->setEnabled(op.valid);
+      if (!op.loadError.isNull()) {
+        qWarning()
+          << QString("An error occured trying to load an operator from '%1':")
+               .arg(op.pythonPath);
+        qWarning() << op.loadError;
+        continue;
+      } else if (!op.valid) {
+        qWarning() << QString(
+                        "'%1' doesn't contain a valid operator definition.")
+                        .arg(op.pythonPath);
+        continue;
+      }
+
+      QString source;
+      QString json;
+      // Read the Python source
+      QFile pythonFile(op.pythonPath);
+      qDebug() << op.pythonPath;
+      if (pythonFile.open(QIODevice::ReadOnly)) {
+        source = pythonFile.readAll();
+      } else {
+        qCritical() << QString("Unable to read '%1'.").arg(op.pythonPath);
+      }
+      // Read the JSON if we have any
+      if (!op.jsonPath.isNull()) {
+        QFile jsonFile(op.jsonPath);
+        if (jsonFile.open(QIODevice::ReadOnly)) {
+          json = jsonFile.readAll();
+        } else {
+          qCritical() << QString("Unable to read '%1'.").arg(op.jsonPath);
+        }
+      }
+      new AddPythonTransformReaction(action, op.label, source, false, false,
+                                     json);
+    }
+  }
+}
 }

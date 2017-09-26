@@ -93,16 +93,10 @@
      <string>Segmentation</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuCustom">
-    <property name="title">
-     <string>&amp;Custom Transforms</string>
-    </property>
-   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuData"/>
    <addaction name="menuSegmentation"/>
    <addaction name="menuTomography"/>
-   <addaction name="menuCustom"/>
    <addaction name="menuModules"/>
    <addaction name="menuView"/>
    <addaction name="menuTools"/>
