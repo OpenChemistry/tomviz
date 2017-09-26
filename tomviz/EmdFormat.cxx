@@ -241,6 +241,10 @@ public:
     hid_t dataTypeId = 0;
     hid_t memTypeId = 0;
     switch (data->GetScalarType()) {
+      case VTK_DOUBLE:
+        dataTypeId = H5T_IEEE_F64LE;
+        memTypeId = H5T_NATIVE_DOUBLE;
+        break;
       case VTK_FLOAT:
         dataTypeId = H5T_IEEE_F32LE;
         memTypeId = H5T_NATIVE_FLOAT;
@@ -321,7 +325,10 @@ public:
     hid_t dataTypeId = H5Dget_type(datasetId);
     hid_t memTypeId = 0;
 
-    if (H5Tequal(dataTypeId, H5T_IEEE_F32LE)) {
+    if (H5Tequal(dataTypeId, H5T_IEEE_F64LE)) {
+      memTypeId = H5T_NATIVE_DOUBLE;
+      vtkDataType = VTK_DOUBLE;
+    } else if (H5Tequal(dataTypeId, H5T_IEEE_F32LE)) {
       memTypeId = H5T_NATIVE_FLOAT;
       vtkDataType = VTK_FLOAT;
     } else if (H5Tequal(dataTypeId, H5T_STD_I32LE)) {
