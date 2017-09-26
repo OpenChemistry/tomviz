@@ -1,8 +1,7 @@
 {
   "name" : "ShiftVolume",
   "label" : "Shift Volume",
-  "description" : "Shift the volume. Voxels that roll beyond the last position
-in each dimension are re-introduced at the first position.",
+  "description" : "Shift the volume. Voxels that roll beyond the last position\nin each dimension are re-introduced at the first position.",
   "parameters" : [
     {
       "type" : "xyz_header"
