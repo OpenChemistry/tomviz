@@ -186,6 +186,17 @@ Python::Dict::Dict(const Python::Dict& other) : Object(other)
 {
 }
 
+Python::Dict::Dict(const Object& obj) : Object(obj)
+{
+}
+
+Python::Dict& Python::Dict::operator=(const Python::Object& other)
+{
+  Object::operator=(other);
+
+  return *this;
+}
+
 Python::Object Python::Dict::operator[](const QString& key)
 {
   return PyDict_GetItemString(m_smartPyObject->GetPointer(),
