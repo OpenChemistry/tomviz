@@ -20,7 +20,11 @@ import tomviz.operators
 import tomviz._wrapping
 import inspect
 import sys
-
+import os
+import fnmatch
+import imp
+import json
+import traceback
 
 def delete_module(name):
     if name in sys.modules:
@@ -87,3 +91,53 @@ def find_transform_scalars(transform_module, op):
         raise Exception('Unable to locate transform_function.')
 
     return transform_function
+
+def _load_module(operator_dir, python_file):
+    module_name, _ = os.path.splitext(python_file)
+    fp, pathname, description = imp.find_module(module_name, [operator_dir])
+    module = imp.load_module(module_name, fp, pathname, description)
+
+    return module
+
+def _has_operator(module):
+    return find_transform_scalars_function(module) is not None or \
+            find_operator_class(module) is not None
+
+def _operator_description(operator_dir, filename):
+    name, _ = os.path.splitext(filename)
+    description =  {
+        'label': name,
+        'pythonPath': os.path.join(operator_dir, filename),
+    }
+
+    has_operator = False
+    # Load the module and see if they are valid operators
+    try:
+        module = _load_module(operator_dir, filename)
+        has_operator = _has_operator(module)
+    except:
+        description['loadError'] = traceback.format_exc()
+
+    description['valid'] = has_operator
+
+    # See if we have a JSON file
+    json_filepath = os.path.join(operator_dir, '%s.json' % name)
+    if os.path.exists(json_filepath):
+        description['jsonPath'] = json_filepath
+        # Extract the label from the JSON
+        with open(json_filepath) as fp:
+            operator_json = json.load(fp)
+            description['label'] = operator_json['label']
+
+    return description
+
+def find_operators(operator_dir):
+    # First look for the python files
+    python_files = fnmatch.filter(os.listdir(operator_dir), '*.py')
+    operator_descriptions = []
+    for python_file in python_files:
+        operator_descriptions.append(
+            _operator_description(operator_dir, python_file)
+        )
+
+    return operator_descriptions
