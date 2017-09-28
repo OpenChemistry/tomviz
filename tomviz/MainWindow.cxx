@@ -126,13 +126,21 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   setWindowIcon(icon);
 
   // tabify output messages widget.
-  tabifyDockWidget(m_ui->dockWidget_3, m_ui->dockWidgetMessages);
-  tabifyDockWidget(m_ui->dockWidget_3, m_ui->dockWidgetPythonConsole);
-  m_ui->dockWidgetMessages->hide();
+  tabifyDockWidget(m_ui->dockWidgetAnimation, m_ui->dockWidgetMessages);
+  tabifyDockWidget(m_ui->dockWidgetAnimation, m_ui->dockWidgetPythonConsole);
 
   // don't think tomviz should import ParaView modules by default in Python
   // shell.
   pqPythonShell::setPreamble(QStringList());
+
+  // Hide these dock widgets when tomviz is first opened. If they are later
+  // opened and remain open while tomviz is shut down, their visibility and
+  // geometry state will be saved out to the settings file. The dock widgets
+  // will then be restored when the Behaviors (in particular the
+  // pqPersistentMainWindowStateBehavior) are instantiated further down.
+  m_ui->dockWidgetMessages->hide();
+  m_ui->dockWidgetPythonConsole->hide();
+  m_ui->dockWidgetAnimation->hide();
 
   // Tweak the initial sizes of the dock widgets.
   QList<QDockWidget*> docks;
@@ -142,7 +150,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   resizeDocks(docks, dockSizes, Qt::Horizontal);
   docks.clear();
   dockSizes.clear();
-  docks << m_ui->dockWidget_3;
+  docks << m_ui->dockWidgetAnimation;
   dockSizes << 200;
   resizeDocks(docks, dockSizes, Qt::Vertical);
 
