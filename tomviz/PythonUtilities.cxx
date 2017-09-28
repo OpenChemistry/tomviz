@@ -186,11 +186,29 @@ Python::Dict::Dict(const Python::Dict& other) : Object(other)
 {
 }
 
+Python::Dict::Dict(const Object& obj) : Object(obj)
+{
+}
+
+Python::Dict& Python::Dict::operator=(const Python::Object& other)
+{
+  Object::operator=(other);
+
+  return *this;
+}
+
 Python::Object Python::Dict::operator[](const QString& key)
 {
-  return PyDict_GetItemString(m_smartPyObject->GetPointer(),
-                              key.toLatin1().data());
-  ;
+  return this->operator[](key.toLatin1().data());
+}
+
+Python::Object Python::Dict::operator[](const char* key)
+{
+  PyObject* item = PyDict_GetItemString(m_smartPyObject->GetPointer(), key);
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
+
+  return item;
 }
 
 void Python::Dict::set(const QString& key, const Object& value)
@@ -209,6 +227,28 @@ QString Python::Dict::toString()
 {
   PyObject* objectRepr = PyObject_Repr(*this);
   return PyString_AsString(objectRepr);
+}
+
+Python::List::List(PyObject* obj) : Object(obj)
+{
+}
+
+Python::List::List(const List& other) : Object(other)
+{
+}
+
+Python::Object Python::List::operator[](int index)
+{
+  PyObject* item = PyList_GetItem(m_smartPyObject->GetPointer(), index);
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
+
+  return PyList_GetItem(m_smartPyObject->GetPointer(), index);
+}
+
+int Python::List::length()
+{
+  return PyList_Size(m_smartPyObject->GetPointer());
 }
 
 Python::Function::Function() : Object()
@@ -411,5 +451,57 @@ PyObject* Python::toPyObject(long l)
 void Python::prependPythonPath(std::string dir)
 {
   vtkPythonInterpreter::PrependPythonPath(dir.c_str());
+}
+
+std::vector<OperatorDescription> findCustomOperators(const QString& path)
+{
+  Python::initialize();
+
+  Python python;
+  auto internalModule = python.import("tomviz._internal");
+  if (!internalModule.isValid()) {
+    Logger::critical("Failed to import tomviz._internal module.");
+  }
+
+  auto findCustomOperators = internalModule.findFunction("find_operators");
+  if (!findCustomOperators.isValid()) {
+    Logger::critical("Unable to locate find_operators.");
+  }
+
+  std::vector<OperatorDescription> operators;
+  Python::Object pyPath(path);
+  Python::Tuple args(1);
+  args.set(0, pyPath);
+
+  auto pyOperators = findCustomOperators.call(args);
+  if (!pyOperators.isValid()) {
+    Logger::critical("Failed to execute findCustomOperators.");
+  }
+
+  Python::List ops(pyOperators);
+  for (int i = 0; i < ops.length(); i++) {
+    Python::Dict opDict = ops[i].toDict();
+    OperatorDescription op;
+
+    op.label = opDict["label"].toString();
+    op.pythonPath = opDict["pythonPath"].toString();
+    op.valid = opDict["valid"].toBool();
+
+    // Do we have a JSON file?
+    Python::Object jsonPath = opDict["jsonPath"];
+    if (jsonPath.isValid()) {
+      op.jsonPath = jsonPath.toString();
+    }
+
+    // Do we have a load error?
+    Python::Object loadError = opDict["loadError"];
+    if (loadError.isValid()) {
+      op.loadError = loadError.toString();
+    }
+
+    operators.push_back(op);
+  }
+
+  return operators;
 }
 }

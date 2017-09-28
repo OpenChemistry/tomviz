@@ -101,10 +101,22 @@ public:
     Dict();
     Dict(PyObject* obj);
     Dict(const Dict& other);
+    Dict(const Object& obj);
+    Dict& operator=(const Object& other);
     Object operator[](const QString& key);
+    Object operator[](const char* key);
     void set(const QString& key, const Object& value);
     void set(const QString& key, const Variant& value);
     QString toString();
+  };
+
+  class List : public Object
+  {
+  public:
+    List(PyObject* obj);
+    List(const List& other);
+    Object operator[](int index);
+    int length();
   };
 
   class Function : public Object
@@ -171,6 +183,17 @@ public:
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
+
+struct OperatorDescription
+{
+  QString label;
+  QString pythonPath;
+  QString jsonPath;
+  QString loadError;
+  bool valid = true;
+};
+
+std::vector<OperatorDescription> findCustomOperators(const QString& path);
 }
 
 #endif

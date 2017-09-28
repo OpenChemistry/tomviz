@@ -76,6 +76,10 @@ private slots:
 private:
   Q_DISABLE_COPY(MainWindow)
 
+  /// Find and register any user defined operators
+  void registerCustomOperators(const QString& path);
+  void registerCustomOperators();
+
   QScopedPointer<Ui::MainWindow> m_ui;
   QTimer* m_timer = nullptr;
   bool m_isFirstShow = true;
