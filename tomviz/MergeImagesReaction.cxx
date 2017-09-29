@@ -169,6 +169,7 @@ DataSource* MergeImagesReaction::mergeComponents()
 
   // Set the Python expression for arranging the components in the output
   vtkSMPropertyHelper(filter, "ArrayAssociation").Set(0);
+  vtkSMPropertyHelper(filter, "CopyArrays").Set(0);
   vtkSMPropertyHelper(filter, "Expression").Set(expression.str().c_str());
   vtkSMPropertyHelper(filter, "ArrayName").Set("Merged");
 
