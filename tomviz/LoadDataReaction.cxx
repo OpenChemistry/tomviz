@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "ModuleManager.h"
+#include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
 
@@ -146,8 +147,14 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     if (!reader) {
       return nullptr;
     }
+    size_t size = 0;
+    for (const QString& file : fileNames) {
+      QFileInfo sizeInfo(file);
+      size += sizeInfo.size();
+    }
 
-    dataSource = createDataSource(reader->getProxy(), defaultModules, child);
+    dataSource =
+      createDataSource(reader->getProxy(), defaultModules, child, size);
     // The dataSource may be NULL if the user cancelled the action.
     if (addToRecent && dataSource) {
       RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
@@ -221,15 +228,21 @@ bool hasData(vtkSMProxy* reader)
 }
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
-                                               bool defaultModules, bool child)
+                                               bool defaultModules, bool child,
+                                               size_t fileSize)
 {
   // Prompt user for reader configuration, unless it is TIFF.
-  pqProxyWidgetDialog dialog(reader);
-  dialog.setObjectName("ConfigureReaderDialog");
-  dialog.setWindowTitle("Configure Reader Parameters");
+  QScopedPointer<QDialog> dialog(new pqProxyWidgetDialog(reader));
+  bool hasVisibleWidgets =
+    qobject_cast<pqProxyWidgetDialog*>(dialog.data())->hasVisibleWidgets();
+  if (QString(reader->GetXMLName()) == "TVRawImageReader") {
+    dialog.reset(new RAWFileReaderDialog(reader, fileSize));
+    hasVisibleWidgets = true;
+  }
+  dialog->setObjectName("ConfigureReaderDialog");
+  dialog->setWindowTitle("Configure Reader Parameters");
   if (QString(reader->GetXMLName()) == "TIFFSeriesReader" ||
-      dialog.hasVisibleWidgets() == false ||
-      dialog.exec() == QDialog::Accepted) {
+      hasVisibleWidgets == false || dialog->exec() == QDialog::Accepted) {
     DataSource* previousActiveDataSource =
       ActiveObjects::instance().activeDataSource();
 
