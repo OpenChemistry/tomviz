@@ -17,7 +17,6 @@
 
 #include "AddRenderViewContextMenuBehavior.h"
 #include "MoveActiveObject.h"
-#include "ProgressBehavior.h"
 #include "ViewFrameActions.h"
 
 #include <vtkNew.h>
@@ -106,7 +105,6 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
   new pqAlwaysConnectedBehavior(this);
   new pqViewStreamingBehavior(this);
   new pqPersistentMainWindowStateBehavior(mainWindow);
-  new tomviz::ProgressBehavior(mainWindow);
   // new tomviz::ScaleActorBehavior(this);
 
   new tomviz::AddRenderViewContextMenuBehavior(this);

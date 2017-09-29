@@ -144,8 +144,6 @@ set(SOURCES
   PipelineView.h
   PipelineWorker.cxx
   PipelineWorker.h
-  ProgressBehavior.cxx
-  ProgressBehavior.h
   ProgressDialogManager.cxx
   ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx
