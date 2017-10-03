@@ -234,10 +234,14 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
     return;
   }
 
+  size_t filesize;
   int index = actn->data().toInt();
   pugi::xml_document settings;
   get_settings(settings);
   pugi::xml_node root = settings.root();
+
+  QFileInfo info(actn->iconText());
+  filesize = info.size();
 
   for (pugi::xml_node node = root.child("DataReader"); node;
        node = node.next_sibling("DataReader"), --index) {
@@ -265,7 +269,7 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
       if (tomviz::deserialize(reader, node)) {
         reader->UpdateVTKObjects();
         vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
-        if (LoadDataReaction::createDataSource(reader)) {
+        if (LoadDataReaction::createDataSource(reader, true, false, filesize)) {
           // reorder the nodes to move the recently opened file to the top.
           root.prepend_copy(node);
           root.remove_child(node);
