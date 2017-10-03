@@ -160,11 +160,10 @@ void RAWFileReaderDialog::sanityCheckSize()
   }
   size_t selectedSize =
     dataSize * dims[0] * dims[1] * dims[2] * numComponents;
-  auto labelText =
-    QString("Selected parameters would read %1 of %3 bytes (%2% of the file)")
-      .arg(selectedSize)
-      .arg(static_cast<float>(selectedSize) / m_filesize * 100)
-      .arg(m_filesize);
+  auto labelText = QString("Reading %1 of %3 bytes (%2% of the file)")
+                     .arg(selectedSize)
+                     .arg(static_cast<float>(selectedSize) / m_filesize * 100)
+                     .arg(m_filesize);
   m_ui->statusLabel->setText(labelText);
   if (selectedSize != m_filesize) {
     m_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
