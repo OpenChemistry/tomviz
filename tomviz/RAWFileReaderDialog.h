@@ -30,8 +30,7 @@ class RAWFileReaderDialog : public QDialog
 {
   Q_OBJECT
 public:
-  RAWFileReaderDialog(vtkSMProxy* reader, size_t filesize,
-                      QWidget* parent = nullptr);
+  RAWFileReaderDialog(vtkSMProxy* reader, QWidget* parent = nullptr);
   ~RAWFileReaderDialog();
 
   void dimensions(size_t*);

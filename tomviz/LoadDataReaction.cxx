@@ -147,14 +147,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     if (!reader) {
       return nullptr;
     }
-    size_t size = 0;
-    for (const QString& file : fileNames) {
-      QFileInfo sizeInfo(file);
-      size += sizeInfo.size();
-    }
 
-    dataSource =
-      createDataSource(reader->getProxy(), defaultModules, child, size);
+    dataSource = createDataSource(reader->getProxy(), defaultModules, child);
     // The dataSource may be NULL if the user cancelled the action.
     if (addToRecent && dataSource) {
       RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
@@ -228,19 +222,24 @@ bool hasData(vtkSMProxy* reader)
 }
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
-                                               bool defaultModules, bool child,
-                                               size_t fileSize)
+                                               bool defaultModules, bool child)
 {
   // Prompt user for reader configuration, unless it is TIFF.
   QScopedPointer<QDialog> dialog(new pqProxyWidgetDialog(reader));
   bool hasVisibleWidgets =
     qobject_cast<pqProxyWidgetDialog*>(dialog.data())->hasVisibleWidgets();
   if (QString(reader->GetXMLName()) == "TVRawImageReader") {
-    dialog.reset(new RAWFileReaderDialog(reader, fileSize));
+    dialog.reset(new RAWFileReaderDialog(reader));
     hasVisibleWidgets = true;
+    // This will show only a partial filename when reading multiple files as a
+    // raw image
+    vtkSMPropertyHelper fname(reader, "FilePrefix");
+    QFileInfo info(fname.GetAsString());
+    dialog->setWindowTitle(QString("Opening %1").arg(info.fileName()));
+  } else {
+    dialog->setWindowTitle("Configure Reader Parameters");
   }
   dialog->setObjectName("ConfigureReaderDialog");
-  dialog->setWindowTitle("Configure Reader Parameters");
   if (QString(reader->GetXMLName()) == "TIFFSeriesReader" ||
       hasVisibleWidgets == false || dialog->exec() == QDialog::Accepted) {
     DataSource* previousActiveDataSource =

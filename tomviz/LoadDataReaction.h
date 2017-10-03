@@ -41,7 +41,7 @@ public:
   /// Create a raw data source from the reader.
   static DataSource* createDataSource(vtkSMProxy* reader,
                                       bool defaultModules = true,
-                                      bool child = false, size_t filesize = 0);
+                                      bool child = false);
 
   /// Create a data source that can be populated with data.
   static DataSource* createDataSource(vtkImageData* imageData);

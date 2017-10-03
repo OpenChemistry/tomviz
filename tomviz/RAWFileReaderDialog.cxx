@@ -20,17 +20,21 @@
 #include "vtkSMProxy.h"
 
 #include <QComboBox>
+#include <QFileDialog>
 #include <QPushButton>
 #include <QSpinBox>
-#include <QtGlobal>
 
 namespace tomviz {
 
-RAWFileReaderDialog::RAWFileReaderDialog(vtkSMProxy* reader, size_t filesize,
-                                         QWidget* p)
-  : QDialog(p), m_ui(new Ui::RAWFileReaderDialog), m_reader(reader),
-    m_filesize(filesize)
+RAWFileReaderDialog::RAWFileReaderDialog(vtkSMProxy* reader, QWidget* p)
+  : QDialog(p), m_ui(new Ui::RAWFileReaderDialog), m_reader(reader)
 {
+  // This will break when we support reading in raw data broken across multiple
+  // files...
+  vtkSMPropertyHelper fname(reader, "FilePrefix");
+  QFileInfo info(fname.GetAsString());
+  m_filesize = info.size();
+  setWindowTitle(QString("Opening %1").arg(info.fileName()));
   m_ui->setupUi(this);
   connect(m_ui->dimensionX,
           static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
@@ -156,8 +160,11 @@ void RAWFileReaderDialog::sanityCheckSize()
   }
   size_t selectedSize =
     dataSize * dims[0] * dims[1] * dims[2] * numComponents;
-  auto labelText = QString("The selected parameters give a file size of %1 bytes.\n"
-      "This is %2% of the actual file size of %3 bytes.").arg(selectedSize).arg(static_cast<float>(selectedSize) / m_filesize * 100).arg(m_filesize);
+  auto labelText =
+    QString("Selected parameters would read %1 of %3 bytes (%2% of the file)")
+      .arg(selectedSize)
+      .arg(static_cast<float>(selectedSize) / m_filesize * 100)
+      .arg(m_filesize);
   m_ui->statusLabel->setText(labelText);
   if (selectedSize != m_filesize) {
     m_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
