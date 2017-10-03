@@ -34,11 +34,12 @@ public:
                       QWidget* parent = nullptr);
   ~RAWFileReaderDialog();
 
-  void dimensions(double*);
+  void dimensions(size_t*);
   int components();
   int vtkDataType();
 private slots:
   void sanityCheckSize();
+  void dataTypeChanged();
   void onAccepted();
 
 private:

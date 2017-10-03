@@ -44,6 +44,10 @@ RAWFileReaderDialog::RAWFileReaderDialog(vtkSMProxy* reader, size_t filesize,
   connect(m_ui->dataType, static_cast<void (QComboBox::*)(int)>(
                             &QComboBox::currentIndexChanged),
           this, &RAWFileReaderDialog::sanityCheckSize);
+  connect(m_ui->dataType, static_cast<void (QComboBox::*)(int)>(
+                            &QComboBox::currentIndexChanged),
+          this, &RAWFileReaderDialog::dataTypeChanged);
+  connect(m_ui->signedness, &QCheckBox::stateChanged, this, &RAWFileReaderDialog::sanityCheckSize);
   connect(m_ui->numComponents,
           static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
           &RAWFileReaderDialog::sanityCheckSize);
@@ -55,7 +59,7 @@ RAWFileReaderDialog::~RAWFileReaderDialog()
 {
 }
 
-void RAWFileReaderDialog::dimensions(double* output)
+void RAWFileReaderDialog::dimensions(size_t* output)
 {
   output[0] = m_ui->dimensionX->value();
   output[1] = m_ui->dimensionY->value();
@@ -69,61 +73,107 @@ int RAWFileReaderDialog::components()
 
 int RAWFileReaderDialog::vtkDataType()
 {
-  // The two is a conversion factor between the index in the dropdown and the
-  // VTK type numbering
-  // used by the RAW reader
-  return m_ui->dataType->currentIndex() + 2;
+  int idx = m_ui->dataType->currentIndex();
+  bool sign = m_ui->signedness->isChecked();
+  if (sign) {
+    if (idx == 0) {
+      return VTK_SIGNED_CHAR;
+    } else if (idx == 1) {
+      return VTK_SHORT;
+    } else if (idx == 2) {
+      return VTK_INT;
+    } else if (idx == 3) {
+#if VTK_SIZE_OF_LONG == 8
+      return VTK_LONG;
+#else
+      // Windows
+      return VTK_LONG_LONG;
+#endif
+    } else if (idx == 4) {
+      return VTK_FLOAT;
+    } else if (idx == 5) {
+      return VTK_DOUBLE;
+    }
+  } else {
+    if (idx == 0) {
+      return VTK_UNSIGNED_CHAR;
+    } else if (idx == 1) {
+      return VTK_UNSIGNED_SHORT;
+    } else if (idx == 2) {
+      return VTK_UNSIGNED_INT;
+    } else if (idx == 3) {
+#if VTK_SIZE_OF_LONG == 8
+      return VTK_UNSIGNED_LONG;
+#else
+      // Windows
+      return VTK_UNSIGNED_LONG_LONG;
+#endif
+    } else if (idx == 4) {
+      // This shouldn't happen...
+      return VTK_FLOAT;
+    } else if (idx == 5) {
+      // This shouldn't happen...
+      return VTK_DOUBLE;
+    }
+  }
+  return VTK_CHAR;
 }
 
 void RAWFileReaderDialog::sanityCheckSize()
 {
-  int dataType = m_ui->dataType->currentIndex();
-  size_t dimensionX = m_ui->dimensionX->value();
-  size_t dimensionY = m_ui->dimensionY->value();
-  size_t dimensionZ = m_ui->dimensionZ->value();
+  int dataType = this->vtkDataType();
+  size_t dims[3];
+  this->dimensions(dims);
   size_t numComponents = m_ui->numComponents->value();
   size_t dataSize = 0;
   switch (dataType) {
-    case 0: // char
+    case VTK_SIGNED_CHAR:
+    case VTK_UNSIGNED_CHAR:
       dataSize = sizeof(char);
       break;
-    case 1: // unsigned char
-      dataSize = sizeof(unsigned char);
-      break;
-    case 2: // short
+    case VTK_SHORT:
+    case VTK_UNSIGNED_SHORT:
       dataSize = sizeof(short);
       break;
-    case 3: // unsigned short
-      dataSize = sizeof(unsigned short);
-      break;
-    case 4: // int
+    case VTK_INT:
+    case VTK_UNSIGNED_INT:
       dataSize = sizeof(int);
       break;
-    case 5: // unsigned int
-      dataSize = sizeof(unsigned int);
-      break;
-    case 6: // long
+    case VTK_LONG:
+    case VTK_UNSIGNED_LONG:
       dataSize = sizeof(long);
       break;
-    case 7: // unsigned long
-      dataSize = sizeof(unsigned long);
+    case VTK_LONG_LONG:
+    case VTK_UNSIGNED_LONG_LONG:
+      dataSize = sizeof(long long);
       break;
-    case 8: // float
+    case VTK_FLOAT:
       dataSize = sizeof(float);
       break;
-    case 9: // double
+    case VTK_DOUBLE:
       dataSize = sizeof(double);
       break;
   }
   size_t selectedSize =
-    dataSize * dimensionX * dimensionY * dimensionZ * numComponents;
+    dataSize * dims[0] * dims[1] * dims[2] * numComponents;
+  auto labelText = QString("The selected parameters give a file size of %1 bytes.\n"
+      "This is %2% of the actual file size of %3 bytes.").arg(selectedSize).arg(static_cast<float>(selectedSize) / m_filesize * 100).arg(m_filesize);
+  m_ui->statusLabel->setText(labelText);
   if (selectedSize != m_filesize) {
-    m_ui->statusLabel->setText(
-      "The selected dimensions and data type do not match the file size!");
     m_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
   } else {
-    m_ui->statusLabel->setText("");
     m_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+  }
+}
+
+void RAWFileReaderDialog::dataTypeChanged()
+{
+  int typeIndex = m_ui->dataType->currentIndex();
+  if (typeIndex < 4) {
+    m_ui->signedness->setEnabled(true);
+  } else {
+    m_ui->signedness->setEnabled(false);
+    m_ui->signedness->setChecked(true);
   }
 }
 
@@ -134,7 +184,7 @@ void RAWFileReaderDialog::onAccepted()
   vtkSMPropertyHelper numComps(m_reader, "NumberOfScalarComponents");
   vtkSMPropertyHelper dims(m_reader, "DataExtent");
 
-  scalarType.Set(m_ui->dataType->currentIndex() + 2);
+  scalarType.Set(this->vtkDataType());
   byteOrder.Set(m_ui->endianness->currentIndex());
   numComps.Set(m_ui->numComponents->value());
 
