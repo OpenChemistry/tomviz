@@ -265,7 +265,7 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
       if (tomviz::deserialize(reader, node)) {
         reader->UpdateVTKObjects();
         vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
-        if (LoadDataReaction::createDataSource(reader)) {
+        if (LoadDataReaction::createDataSource(reader, true, false)) {
           // reorder the nodes to move the recently opened file to the top.
           root.prepend_copy(node);
           root.remove_child(node);

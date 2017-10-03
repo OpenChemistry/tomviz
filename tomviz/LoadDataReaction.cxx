@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "ModuleManager.h"
+#include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
 
@@ -224,12 +225,23 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
                                                bool defaultModules, bool child)
 {
   // Prompt user for reader configuration, unless it is TIFF.
-  pqProxyWidgetDialog dialog(reader);
-  dialog.setObjectName("ConfigureReaderDialog");
-  dialog.setWindowTitle("Configure Reader Parameters");
+  QScopedPointer<QDialog> dialog(new pqProxyWidgetDialog(reader));
+  bool hasVisibleWidgets =
+    qobject_cast<pqProxyWidgetDialog*>(dialog.data())->hasVisibleWidgets();
+  if (QString(reader->GetXMLName()) == "TVRawImageReader") {
+    dialog.reset(new RAWFileReaderDialog(reader));
+    hasVisibleWidgets = true;
+    // This will show only a partial filename when reading multiple files as a
+    // raw image
+    vtkSMPropertyHelper fname(reader, "FilePrefix");
+    QFileInfo info(fname.GetAsString());
+    dialog->setWindowTitle(QString("Opening %1").arg(info.fileName()));
+  } else {
+    dialog->setWindowTitle("Configure Reader Parameters");
+  }
+  dialog->setObjectName("ConfigureReaderDialog");
   if (QString(reader->GetXMLName()) == "TIFFSeriesReader" ||
-      dialog.hasVisibleWidgets() == false ||
-      dialog.exec() == QDialog::Accepted) {
+      hasVisibleWidgets == false || dialog->exec() == QDialog::Accepted) {
     DataSource* previousActiveDataSource =
       ActiveObjects::instance().activeDataSource();
 

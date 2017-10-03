@@ -150,6 +150,8 @@ set(SOURCES
   PythonUtilities.h
   QVTKGLWidget.cxx
   QVTKGLWidget.h
+  RAWFileReaderDialog.h
+  RAWFileReaderDialog.cxx
   RecentFilesMenu.cxx
   RecentFilesMenu.h
   ReconstructionOperator.cxx
