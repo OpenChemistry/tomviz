@@ -207,11 +207,11 @@ void DataPropertiesPanel::updateData()
   dsource->getExtent(extent);
   dsource->getSpacing(spacing);
   m_ui->xLengthBox->setText(
-    QString("%1").arg(spacing[0] * (extent[1] - extent[0] + 1)));
+    QString("%1").arg(spacing[0] * (extent[1] - extent[0])));
   m_ui->yLengthBox->setText(
-    QString("%1").arg(spacing[1] * (extent[3] - extent[2] + 1)));
+    QString("%1").arg(spacing[1] * (extent[3] - extent[2])));
   m_ui->zLengthBox->setText(
-    QString("%1").arg(spacing[2] * (extent[5] - extent[4] + 1)));
+    QString("%1").arg(spacing[2] * (extent[5] - extent[4])));
   m_ui->unitBox->setText(m_currentDataSource->getUnits(0));
 
   vtkSMSourceProxy* sourceProxy =
@@ -411,7 +411,7 @@ void DataPropertiesPanel::updateSpacing(int axis, double newLength)
   double spacing[3];
   m_currentDataSource->getExtent(extent);
   m_currentDataSource->getSpacing(spacing);
-  spacing[axis] = newLength / (extent[2 * axis + 1] - extent[2 * axis] + 1);
+  spacing[axis] = newLength / (extent[2 * axis + 1] - extent[2 * axis]);
   m_currentDataSource->setSpacing(spacing);
 }
 }
