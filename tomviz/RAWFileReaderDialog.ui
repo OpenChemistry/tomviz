@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>315</width>
+    <height>205</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -123,12 +123,25 @@
        </widget>
       </item>
       <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="QSpinBox" name="dimensionX">
         <property name="minimum">
          <number>1</number>
         </property>
         <property name="maximum">
-         <number>2147483647</number>
+         <number>99999</number>
         </property>
         <property name="value">
          <number>100</number>
@@ -138,7 +151,7 @@
       <item>
        <widget class="QSpinBox" name="dimensionY">
         <property name="maximum">
-         <number>2147483647</number>
+         <number>99999</number>
         </property>
         <property name="value">
          <number>100</number>
@@ -151,7 +164,7 @@
          <number>1</number>
         </property>
         <property name="maximum">
-         <number>2147483647</number>
+         <number>99999</number>
         </property>
         <property name="value">
          <number>100</number>
