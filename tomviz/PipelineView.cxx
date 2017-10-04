@@ -231,6 +231,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     // Child data source
   } else if (childDataSource) {
     cloneChildAction = contextMenu.addAction("Clone");
+    saveDataAction = contextMenu.addAction("Save Data");
+    new SaveDataReaction(saveDataAction);
   }
 
   // Allow pipeline to be re-executed if we are dealing with a canceled
