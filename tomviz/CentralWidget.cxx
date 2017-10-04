@@ -63,13 +63,7 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
 
   // The bin values are the centers, extending +/- half an inc either side
-  switch (arrayPtr->GetDataType()) {
-    vtkTemplateMacro(tomviz::GetScalarRange(
-      reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
-      input->GetPointData()->GetScalars()->GetNumberOfTuples(), minmax));
-    default:
-      break;
-  }
+  arrayPtr->GetFiniteRange(minmax, -1);
   if (minmax[0] == minmax[1]) {
     minmax[1] = minmax[0] + 1.0;
   }
@@ -103,8 +97,8 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   switch (arrayPtr->GetDataType()) {
     vtkTemplateMacro(tomviz::CalculateHistogram(
       reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
-      arrayPtr->GetNumberOfTuples(), minmax[0], pops, inc, numberOfBins,
-      invalid));
+      arrayPtr->GetNumberOfTuples(), arrayPtr->GetNumberOfComponents(),
+      -1 /* Magnitude */, minmax[0], pops, inc, numberOfBins, invalid));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
@@ -133,13 +127,7 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
   vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
 
   // The bin values are the centers, extending +/- half an inc either side
-  switch (arrayPtr->GetDataType()) {
-    vtkTemplateMacro(tomviz::GetScalarRange(
-      reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
-      input->GetPointData()->GetScalars()->GetNumberOfTuples(), minmax));
-    default:
-      break;
-  }
+  arrayPtr->GetFiniteRange(minmax, -1);
   if (minmax[0] == minmax[1]) {
     minmax[1] = minmax[0] + 1.0;
   }

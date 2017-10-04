@@ -213,8 +213,7 @@ bool hasData(vtkSMProxy* reader)
     return false;
   }
 
-  vtkDataArray* scalars = pd->GetScalars();
-  if (!scalars || scalars->GetNumberOfTuples() == 0) {
+  if (pd->GetNumberOfArrays() < 1) {
     return false;
   }
   return true;

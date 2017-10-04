@@ -7,39 +7,69 @@
 
 namespace tomviz {
 
+/**
+ * Computes a histogram from an array of values.
+ * \param values The array from which to compute the histogram.
+ * \param numTuples Number of tuples in the array.
+ * \param numComponents Number of components in each tuple.
+ * \param component The desired component from each tuple to use when building
+ *   the histogram (-1 means compute the histogram of the L2
+ *   norm of each tuple)
+ * \param inc Bin size, numBins is the number of bins
+ * in the histogram (or length of the pops array), and invalid is a return
+ * parameter indicating how many values in the array had a non-finite value.
+ */
 template <typename T>
-void GetScalarRange(T* values, const vtkIdType n, double* minmax)
+void CalculateHistogram(T* values, const vtkIdType numTuples,
+                        const vtkIdType numComponents, int component,
+                        const float min, int* pops, const float inc,
+                        const int numBins, int& invalid)
 {
-  T tempMinMax[2];
-  tempMinMax[0] = values[0];
-  tempMinMax[1] = values[0];
-  for (vtkIdType j = 1; j < n; ++j) {
-    // This code does not handle NaN or Inf values, so check for them
-    if (!vtkMath::IsFinite(values[j]))
-      continue;
-    tempMinMax[0] = std::min(values[j], tempMinMax[0]);
-    tempMinMax[1] = std::max(values[j], tempMinMax[1]);
+  const int maxBin(numBins - 1);
+
+  // Simplify the case where tuple magnitude is requested but the number of
+  // components is only 1.
+  if (component == -1 && numComponents == 1) {
+    component = 0;
   }
 
-  minmax[0] = static_cast<double>(tempMinMax[0]);
-  minmax[1] = static_cast<double>(tempMinMax[1]);
-}
-
-template <typename T>
-void CalculateHistogram(T* values, const vtkIdType n, const float min,
-                        int* pops, const float inc, const int numberOfBins,
-                        int& invalid)
-{
-  const int maxBin(numberOfBins - 1);
-  for (vtkIdType j = 0; j < n; ++j) {
-    // This code does not handle NaN or Inf values, so check for them and handle
-    // them specially
-    if (vtkMath::IsFinite(*values)) {
-      int index = std::min(static_cast<int>((*(values++) - min) / inc), maxBin);
-      ++pops[index];
-    } else {
-      ++values;
-      ++invalid;
+  if (component >= 0) {
+    // Single scalar value
+    for (vtkIdType j = 0; j < numTuples; ++j) {
+      // This code does not handle NaN or Inf values, so check for them and
+      // handle
+      // them specially
+      T value = *(values + component);
+      if (vtkMath::IsFinite(value)) {
+        int index = std::min(static_cast<int>((value - min) / inc), maxBin);
+        ++pops[index];
+      } else {
+        ++invalid;
+      }
+      values += numComponents;
+    }
+  } else {
+    // Multicomponent magnitude
+    for (vtkIdType j = 0; j < numTuples; ++j) {
+      // Check that all components are valid.
+      bool valid = true;
+      double squaredSum = 0.0;
+      for (vtkIdType c = 0; c < numComponents; ++c) {
+        T value = *(values + c);
+        if (!vtkMath::IsFinite(value)) {
+          valid = false;
+          break;
+        }
+        squaredSum += (value * value);
+      }
+      if (valid) {
+        int index =
+          std::min(static_cast<int>((sqrt(squaredSum) - min) / inc), maxBin);
+        ++pops[index];
+      } else {
+        ++invalid;
+      }
+      values += numComponents;
     }
   }
 }
