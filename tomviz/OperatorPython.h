@@ -24,6 +24,9 @@
 #include <vtkDataObject.h>
 
 namespace tomviz {
+
+class CustomPythonOperatorWidget;
+
 class OperatorPython : public Operator
 {
   Q_OBJECT
@@ -52,6 +55,9 @@ public:
   const QString& script() const { return this->Script; }
 
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
+  EditOperatorWidget* getEditorContentsWithData(
+    QWidget* parent,
+    vtkSmartPointer<vtkImageData> inputDataForDisplay) override;
   bool hasCustomUI() const override { return true; }
 
   /// Set the arguments to pass to the transform_scalars function
@@ -59,6 +65,12 @@ public:
 
   /// Returns the argument that will be passed to transform_scalars
   QMap<QString, QVariant> arguments() const;
+
+  typedef CustomPythonOperatorWidget* (*CustomWidgetFunction)(
+    QWidget*, Operator*, vtkSmartPointer<vtkImageData>);
+
+  static void registerCustomWidget(const QString& key, bool needsData,
+                                   CustomWidgetFunction func);
 
 signals:
   // Signal used to request the creation of a new data source. Needed to
@@ -84,6 +96,8 @@ private:
   QString Label;
   QString jsonDescription;
   QString Script;
+
+  QString m_customWidgetID;
 
   QList<QString> m_resultNames;
   QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;

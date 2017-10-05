@@ -22,6 +22,7 @@
 #include <QPointer>
 #include <QtDebug>
 
+#include "CustomPythonOperatorWidget.h"
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
@@ -48,8 +49,10 @@ class EditPythonOperatorWidget : public tomviz::EditOperatorWidget
   typedef tomviz::EditOperatorWidget Superclass;
 
 public:
-  EditPythonOperatorWidget(QWidget* p, tomviz::OperatorPython* o)
-    : Superclass(p), Op(o), Ui()
+  EditPythonOperatorWidget(
+    QWidget* p, tomviz::OperatorPython* o,
+    tomviz::CustomPythonOperatorWidget* customWidget = nullptr)
+    : Superclass(p), Op(o), Ui(), m_customWidget(customWidget)
   {
     this->Ui.setupUi(this);
     this->Ui.name->setText(o->label());
@@ -57,22 +60,47 @@ public:
       this->Ui.script->setPlainText(o->script());
     }
     new pqPythonSyntaxHighlighter(this->Ui.script, this);
+    if (customWidget) {
+      QVBoxLayout* layout = new QVBoxLayout();
+      m_customWidget->setValues(this->Op->arguments());
+      layout->addWidget(m_customWidget);
+      this->Ui.argumentsWidget->setLayout(layout);
+    } else {
+      // TODO I'd like to use the OperatorWidget from the properties panel
+      // instead
+    }
   }
   void applyChangesToOperator() override
   {
     if (this->Op) {
       this->Op->setLabel(this->Ui.name->text());
       this->Op->setScript(this->Ui.script->toPlainText());
+      if (m_customWidget) {
+        QMap<QString, QVariant> args;
+        m_customWidget->getValues(args);
+        this->Op->setArguments(args);
+      }
     }
   }
 
 private:
   QPointer<tomviz::OperatorPython> Op;
   Ui::EditPythonOperatorWidget Ui;
+  tomviz::CustomPythonOperatorWidget* m_customWidget;
 };
+
+QMap<QString, QPair<bool, tomviz::OperatorPython::CustomWidgetFunction>>
+  CustomWidgetMap;
 }
 
 namespace tomviz {
+
+void OperatorPython::registerCustomWidget(const QString& key, bool needsData,
+                                          CustomWidgetFunction func)
+{
+  CustomWidgetMap.insert(key,
+                         QPair<bool, CustomWidgetFunction>(needsData, func));
+}
 
 class OperatorPython::OPInternals
 {
@@ -171,6 +199,11 @@ void OperatorPython::setJSONDescription(const QString& str)
   QJsonValueRef labelNode = root["label"];
   if (!labelNode.isUndefined() && !labelNode.isNull()) {
     setLabel(labelNode.toString());
+  }
+
+  QJsonValueRef widgetNode = root["widget"];
+  if (!widgetNode.isUndefined() && !widgetNode.isNull()) {
+    m_customWidgetID = widgetNode.toString();
   }
 
   m_resultNames.clear();
@@ -423,7 +456,28 @@ bool OperatorPython::deserialize(const pugi::xml_node& ns)
 
 EditOperatorWidget* OperatorPython::getEditorContents(QWidget* p)
 {
-  return new EditPythonOperatorWidget(p, this);
+  CustomPythonOperatorWidget* widget = nullptr;
+  if (m_customWidgetID != "" && CustomWidgetMap.contains(m_customWidgetID)) {
+    if (!CustomWidgetMap[m_customWidgetID].first) {
+      vtkSmartPointer<vtkImageData> nullPtr;
+      widget = CustomWidgetMap[m_customWidgetID].second(p, this, nullPtr);
+    } else {
+      // return nullptr so the caller knows to get the input data and
+      // use the getEditorContentsWithData method
+      return nullptr;
+    }
+  }
+  return new EditPythonOperatorWidget(p, this, widget);
+}
+
+EditOperatorWidget* OperatorPython::getEditorContentsWithData(
+  QWidget* p, vtkSmartPointer<vtkImageData> displayImage)
+{
+  // Should only be called if there is a custom widget that needs input data
+  Q_ASSERT(m_customWidgetID != "");
+  Q_ASSERT(CustomWidgetMap[m_customWidgetID].first);
+  auto widget = CustomWidgetMap[m_customWidgetID].second(p, this, displayImage);
+  return new EditPythonOperatorWidget(p, this, widget);
 }
 
 void OperatorPython::createNewChildDataSource(

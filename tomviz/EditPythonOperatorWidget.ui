@@ -29,16 +29,7 @@
    <property name="spacing">
     <number>0</number>
    </property>
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>0</number>
    </property>
    <item>
@@ -47,16 +38,7 @@
       <property name="spacing">
        <number>5</number>
       </property>
-      <property name="leftMargin">
-       <number>5</number>
-      </property>
-      <property name="topMargin">
-       <number>5</number>
-      </property>
-      <property name="rightMargin">
-       <number>5</number>
-      </property>
-      <property name="bottomMargin">
+      <property name="margin">
        <number>5</number>
       </property>
       <item>
@@ -73,24 +55,34 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>Python Script</string>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>1</number>
      </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QTextEdit" name="script">
-     <property name="font">
-      <font>
-       <family>Monospace</family>
-      </font>
-     </property>
-     <property name="lineWrapMode">
-      <enum>QTextEdit::NoWrap</enum>
-     </property>
-     <property name="plainText">
-      <string>def transform_scalars(dataset):
+     <widget class="QWidget" name="scriptTab">
+      <attribute name="title">
+       <string>Script</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Python Script</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="script">
+         <property name="font">
+          <font>
+           <family>Monospace</family>
+          </font>
+         </property>
+         <property name="lineWrapMode">
+          <enum>QTextEdit::NoWrap</enum>
+         </property>
+         <property name="plainText">
+          <string>def transform_scalars(dataset):
     &quot;&quot;&quot;Define this method for Python operators that 
     transform the input array&quot;&quot;&quot;
 
@@ -105,7 +97,21 @@
     
     # This is where the transformed data is set, it will display in tomviz.
     utils.set_array(dataset, result)</string>
-     </property>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Set Parameter Values</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QWidget" name="argumentsWidget" native="true"/>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>

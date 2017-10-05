@@ -44,6 +44,8 @@ set(SOURCES
   CropReaction.h
   CropOperator.cxx
   CropOperator.h
+  CustomPythonOperatorWidget.cxx
+  CustomPythonOperatorWidget.h
   SelectVolumeWidget.cxx
   SelectVolumeWidget.h
   DataPropertiesPanel.cxx
