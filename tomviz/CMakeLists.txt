@@ -26,8 +26,6 @@ set(SOURCES
   AddRenderViewContextMenuBehavior.h
   AddResampleReaction.cxx
   AddResampleReaction.h
-  AddRotateAlignReaction.cxx
-  AddRotateAlignReaction.h
   AlignWidget.cxx
   AlignWidget.h
   Behaviors.cxx

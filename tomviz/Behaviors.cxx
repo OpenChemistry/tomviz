@@ -17,6 +17,8 @@
 
 #include "AddRenderViewContextMenuBehavior.h"
 #include "MoveActiveObject.h"
+#include "OperatorPython.h"
+#include "RotateAlignWidget.h"
 #include "ViewFrameActions.h"
 
 #include <vtkNew.h>
@@ -116,6 +118,8 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
+
+  registerCustomOperatorUIs();
 }
 
 Behaviors::~Behaviors() = default;
@@ -188,6 +192,12 @@ void Behaviors::setDefaultColorMapFromPreset(const char* name)
     vtkSMSettings::GetInstance()->AddCollectionFromString(ss.str().c_str(),
                                                           1.0);
   }
+}
+
+void Behaviors::registerCustomOperatorUIs()
+{
+  OperatorPython::registerCustomWidget("RotationAlignWidget", true,
+                                       RotateAlignWidget::New);
 }
 
 } // end of namespace tomviz
