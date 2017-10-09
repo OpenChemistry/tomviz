@@ -15,254 +15,258 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="2">
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Instructions:&lt;/p&gt;&lt;p&gt;Adjust the &amp;quot;Shift Rotation Axis&amp;quot; and &amp;quot;Tilt Rotation Axis&amp;quot; such that the three reconstructions on the bottom look accurate.  The yellow line shows the current axis of rotation.  The three vertical red lines show where the displayed reconstructions are taken from.  It is often useful to reconstruct different slices of the tomogram by changing the corresponding &amp;quot;Slice No.&amp;quot;  When complete, click &amp;quot;Transform Data to Axis of Rotation&amp;quot; button.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_8">
-         <item>
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>Projection No. </string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="tomviz::SpinBox" name="projection"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <item>
-          <widget class="QLabel" name="label_5">
-           <property name="text">
-            <string>Shift Rotation Axis: </string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="tomviz::DoubleSpinBox" name="rotationAxis"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_6">
-           <property name="text">
-            <string>Tilt Rotation Axis: </string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="tomviz::DoubleSpinBox" name="rotationAngle">
-           <property name="minimum">
-            <double>-180.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>180.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButton">
-         <property name="text">
-          <string>Transform Data to Axis of Rotation</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="0" column="1">
-      <widget class="tomviz::QVTKGLWidget" name="sliceView" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>1</horstretch>
-         <verstretch>1</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>300</width>
-         <height>300</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="zeroLabel">
-       <property name="text">
-        <string>0</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QLabel" name="xSizeLabel">
-       <property name="text">
-        <string>100</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="ySizeLabel">
-       <property name="text">
-        <string>100</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QWidget" name="top_widget" native="true">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="2">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Instructions:&lt;/p&gt;&lt;p&gt;Adjust the &amp;quot;Shift Rotation Axis&amp;quot; and &amp;quot;Tilt Rotation Axis&amp;quot; such that the three reconstructions on the bottom look accurate.  The yellow line shows the current axis of rotation.  The three vertical red lines show where the displayed reconstructions are taken from.  It is often useful to reconstruct different slices of the tomogram by changing the corresponding &amp;quot;Slice No.&amp;quot;  When complete, click &amp;quot;Transform Data to Axis of Rotation&amp;quot; button.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Projection No. </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="tomviz::SpinBox" name="projection"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Shift Rotation Axis: </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="tomviz::DoubleSpinBox" name="rotationAxis"/>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Tilt Rotation Axis: </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="tomviz::DoubleSpinBox" name="rotationAngle">
+            <property name="minimum">
+             <double>-180.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>180.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="1">
+       <widget class="tomviz::QVTKGLWidget" name="sliceView" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>1</horstretch>
+          <verstretch>1</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>300</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="zeroLabel">
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="xSizeLabel">
+        <property name="text">
+         <string>100</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="ySizeLabel">
+        <property name="text">
+         <string>100</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Slice No.</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="tomviz::SpinBox" name="spinBox_1"/>
-         </item>
-         <item>
-          <widget class="QToolButton" name="colorMapButton_1">
-           <property name="text">
-            <string>...</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="tomviz::QVTKGLWidget" name="sliceView_1" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>256</width>
-           <height>256</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>Slice No.</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="tomviz::SpinBox" name="spinBox_2"/>
-         </item>
-         <item>
-          <widget class="QToolButton" name="colorMapButton_2">
-           <property name="text">
-            <string>...</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="tomviz::QVTKGLWidget" name="sliceView_2" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>256</width>
-           <height>256</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_6">
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <item>
-          <widget class="QLabel" name="label_3">
-           <property name="text">
-            <string>Slice No.</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="tomviz::SpinBox" name="spinBox_3"/>
-         </item>
-         <item>
-          <widget class="QToolButton" name="colorMapButton_3">
-           <property name="text">
-            <string>...</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="tomviz::QVTKGLWidget" name="sliceView_3" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>256</width>
-           <height>256</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-    </layout>
+    <widget class="QWidget" name="recon_slices_widget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Slice No.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="tomviz::SpinBox" name="spinBox_1">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>27</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="colorMapButton_1">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="tomviz::QVTKGLWidget" name="sliceView_1" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>256</width>
+            <height>256</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Slice No.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="tomviz::SpinBox" name="spinBox_2"/>
+          </item>
+          <item>
+           <widget class="QToolButton" name="colorMapButton_2">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="tomviz::QVTKGLWidget" name="sliceView_2" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>256</width>
+            <height>256</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>Slice No.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="tomviz::SpinBox" name="spinBox_3"/>
+          </item>
+          <item>
+           <widget class="QToolButton" name="colorMapButton_3">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="tomviz::QVTKGLWidget" name="sliceView_3" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>256</width>
+            <height>256</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>
