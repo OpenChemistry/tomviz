@@ -26,6 +26,7 @@
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
+#include "OperatorWidget.h"
 #include "PythonUtilities.h"
 #include "Utilities.h"
 #include "pqPythonSyntaxHighlighter.h"
@@ -52,7 +53,8 @@ public:
   EditPythonOperatorWidget(
     QWidget* p, tomviz::OperatorPython* o,
     tomviz::CustomPythonOperatorWidget* customWidget = nullptr)
-    : Superclass(p), Op(o), Ui(), m_customWidget(customWidget)
+    : Superclass(p), Op(o), Ui(), m_customWidget(customWidget),
+      m_opWidget(nullptr)
   {
     this->Ui.setupUi(this);
     this->Ui.name->setText(o->label());
@@ -66,8 +68,12 @@ public:
       layout->addWidget(m_customWidget);
       this->Ui.argumentsWidget->setLayout(layout);
     } else {
-      // TODO I'd like to use the OperatorWidget from the properties panel
-      // instead
+      QVBoxLayout* layout = new QVBoxLayout();
+      m_opWidget = new tomviz::OperatorWidget(this);
+      m_opWidget->setupUI(this->Op);
+      layout->addWidget(m_opWidget);
+      layout->addStretch();
+      this->Ui.argumentsWidget->setLayout(layout);
     }
   }
   void applyChangesToOperator() override
@@ -79,6 +85,9 @@ public:
         QMap<QString, QVariant> args;
         m_customWidget->getValues(args);
         this->Op->setArguments(args);
+      } else if (m_opWidget) {
+        QMap<QString, QVariant> args = m_opWidget->values();
+        this->Op->setArguments(args);
       }
     }
   }
@@ -87,6 +96,7 @@ private:
   QPointer<tomviz::OperatorPython> Op;
   Ui::EditPythonOperatorWidget Ui;
   tomviz::CustomPythonOperatorWidget* m_customWidget;
+  tomviz::OperatorWidget* m_opWidget;
 };
 
 QMap<QString, QPair<bool, tomviz::OperatorPython::CustomWidgetFunction>>
