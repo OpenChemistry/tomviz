@@ -180,16 +180,18 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
   bool hasJson = this->jsonSource.size() > 0;
   if (hasJson) {
-    // Use JSON to build the interface via the OperatorDialog
-    OperatorDialog dialog(pqCoreUtilities::mainWidget());
-    dialog.setWindowTitle(scriptLabel);
-    dialog.setJSONDescription(this->jsonSource);
+    OperatorPython* opPython = new OperatorPython();
+    opPython->setJSONDescription(jsonSource);
+    opPython->setLabel(scriptLabel);
+    opPython->setScript(scriptSource);
 
-    if (dialog.exec() == QDialog::Accepted) {
-      QMap<QString, QVariant> parameterValues = dialog.values();
-      addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        parameterValues, jsonSource);
-    }
+    // Use JSON to build the interface via the EditOperatorDialog
+    EditOperatorDialog* dialog = new EditOperatorDialog(
+      opPython, source, true, pqCoreUtilities::mainWidget());
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setWindowTitle("Set Tilt Angles");
+    dialog->show();
+
     // Handle transforms with custom UIs
   } else if (scriptLabel == "Shift Volume") {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
