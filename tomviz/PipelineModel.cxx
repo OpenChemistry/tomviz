@@ -267,6 +267,9 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
           SLOT(dataSourceRemoved(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
           SLOT(moduleRemoved(Module*)));
+  connect(&ModuleManager::instance(),
+          SIGNAL(childDataSourceRemoved(DataSource*)),
+          SLOT(childDataSourceRemoved(DataSource*)));
   // Need to register this for cross thread dataChanged signal
   qRegisterMetaType<QVector<int>>("QVector<int>");
 }
@@ -787,6 +790,34 @@ void PipelineModel::dataSourceRemoved(DataSource* source)
   }
 }
 
+void PipelineModel::childDataSourceRemoved(DataSource* source)
+{
+  auto index = this->dataSourceIndex(source);
+
+  if (index.isValid()) {
+    auto operatorIndex = this->parent(index);
+    auto operatorTreeItem = this->treeItem(operatorIndex);
+    auto op = operatorTreeItem->op();
+
+    auto item = this->treeItem(index);
+    beginRemoveRows(this->parent(index), index.row(), index.row());
+    item->remove(source);
+    m_treeItems.removeAll(item);
+    endRemoveRows();
+
+    int numResults = op->numberOfResults();
+    if (numResults) {
+
+      beginInsertRows(operatorIndex, 0, numResults - 1);
+      for (int j = 0; j < numResults; ++j) {
+        OperatorResult* result = op->resultAt(j);
+        operatorTreeItem->appendChild(PipelineModel::Item(result));
+      }
+      endInsertRows();
+    }
+  }
+}
+
 void PipelineModel::moduleRemoved(Module* module)
 {
   auto index = this->moduleIndex(module);
@@ -801,8 +832,13 @@ void PipelineModel::moduleRemoved(Module* module)
 
 bool PipelineModel::removeDataSource(DataSource* source)
 {
-  dataSourceRemoved(source);
-  ModuleManager::instance().removeDataSource(source);
+  if (ModuleManager::instance().isChild(source)) {
+    childDataSourceRemoved(source);
+    ModuleManager::instance().removeChildDataSource(source);
+  } else {
+    dataSourceRemoved(source);
+    ModuleManager::instance().removeDataSource(source);
+  }
   return true;
 }
 
