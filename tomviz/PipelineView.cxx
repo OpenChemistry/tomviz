@@ -258,9 +258,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
 
   // Keep the delete menu entry at the end of the list of options.
   QAction* deleteAction = nullptr;
-  if (!childDataSource) {
-    deleteAction = contextMenu.addAction("Delete");
-  }
+  deleteAction = contextMenu.addAction("Delete");
   if (deleteAction && !enableDeleteItems(selectedIndexes())) {
     deleteAction->setEnabled(false);
   }
@@ -488,8 +486,7 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   for (auto& index : idxs) {
     auto dataSource = pipelineModel->dataSource(index);
-    if (dataSource && (dataSource->isRunningAnOperator() ||
-                       ModuleManager::instance().isChild(dataSource))) {
+    if (dataSource && dataSource->isRunningAnOperator()) {
       return false;
     }
     auto op = pipelineModel->op(index);

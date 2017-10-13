@@ -20,6 +20,7 @@
 
 #include <QIcon>
 #include <QObject>
+#include <QPointer>
 
 #include <vtkObject.h>
 #include <vtkSmartPointer.h>
@@ -243,7 +244,7 @@ private:
   QList<OperatorResult*> m_results;
   bool m_supportsCancel = false;
   bool m_hasChildDataSource = false;
-  DataSource* m_childDataSource = nullptr;
+  QPointer<DataSource> m_childDataSource;
   int m_totalProgressSteps = 0;
   int m_progressStep = 0;
   QString m_progressMessage;
