@@ -47,6 +47,7 @@
 #include <QMap>
 #include <QTimer>
 
+#include <cmath>
 #include <sstream>
 
 namespace tomviz {
@@ -808,6 +809,9 @@ void DataSource::resetData()
     image->GetSpacing(spacing);
     for (int i = 0; i < 3; ++i) {
       spacing[i] *= this->Internals->m_scaleOriginalSpacingBy;
+      if (spacing[i] == 0 || std::isnan(spacing[i])) {
+        spacing[i] = 1;
+      }
     }
     image->SetSpacing(spacing);
   }
