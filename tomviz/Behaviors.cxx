@@ -65,9 +65,10 @@ const char* const settings = "{"
                              "   }"
                              "}";
 
-namespace tomviz {
 Q_DECLARE_METATYPE(QTextCharFormat)
 Q_DECLARE_METATYPE(QTextCursor)
+
+namespace tomviz {
 
 Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 {
