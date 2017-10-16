@@ -189,9 +189,8 @@ void RecentFilesMenu::aboutToShowMenu()
       actn->setEnabled(false);
       header_added = true;
     }
-    QFileInfo checkFile(node.attribute("filename0").as_string("<bug>"));
     bool stack = node.attribute("stack").as_bool(false);
-    if (checkFile.exists() || stack) {
+    if (QFileInfo::exists(node.attribute("filename0").as_string("<bug>")) || stack) {
       QAction* actn =
         menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
                         node.attribute("filename0").as_string("<bug>"));
@@ -211,8 +210,7 @@ void RecentFilesMenu::aboutToShowMenu()
       actn->setEnabled(false);
       header_added = true;
     }
-    QFileInfo checkFile(node.attribute("filename").as_string("<bug>"));
-    if (checkFile.exists()) {
+    if (QFileInfo::exists(node.attribute("filename").as_string("<bug>"))) {
       QAction* actn =
         menu->addAction(QIcon(":/icons/tomviz.png"),
                         node.attribute("filename").as_string("<bug>"));
@@ -225,9 +223,7 @@ void RecentFilesMenu::aboutToShowMenu()
 
 void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
 {
-
-  QFileInfo checkFile(actn->iconText());
-  if (!checkFile.exists() && !stack) {
+  if (!QFileInfo::exists(actn->iconText()) && !stack) {
     // This should never happen since the checks in aboutToShowMenu should
     // prevent it, but just in case...
     qWarning() << "Error: file '" << actn->iconText() << "' does not exist.";
@@ -289,8 +285,7 @@ void RecentFilesMenu::stateTriggered()
   QAction* actn = qobject_cast<QAction*>(this->sender());
   Q_ASSERT(actn);
 
-  QFileInfo checkFile(actn->iconText());
-  if (!checkFile.exists()) {
+  if (!QFileInfo::exists(actn->iconText())) {
     // This should never happen since the checks in aboutToShowMenu should
     // prevent it, but just in case...
     qWarning() << "Error: file '" << actn->iconText() << "' does not exist.";
