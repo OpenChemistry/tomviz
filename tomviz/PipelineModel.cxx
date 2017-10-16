@@ -300,6 +300,7 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
     case OperatorState::Complete:
       return QIcon(":/icons/check.png");
     case OperatorState::Queued:
+    case OperatorState::Modified:
       return QIcon(":/icons/question.png");
     case OperatorState::Error:
       return QIcon(":/icons/error_notification.png");
@@ -326,6 +327,8 @@ QString tooltipForOperatorState(tomviz::OperatorState state)
       return QString("Error");
     case OperatorState::Canceled:
       return QString("Canceled");
+    case OperatorState::Modified:
+      return QString("Modified");
   }
 
   return "";
@@ -805,6 +808,7 @@ void PipelineModel::childDataSourceRemoved(DataSource* source)
     m_treeItems.removeAll(item);
     endRemoveRows();
 
+    op->setModified();
     int numResults = op->numberOfResults();
     if (numResults) {
 

@@ -240,7 +240,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     // Add option to re-execute the pipeline is we have a canceled operator
     // in our pipeline.
     foreach (Operator* op, dataSource->operators()) {
-      if (op->isCanceled()) {
+      if (op->isCanceled() || op->isModified()) {
         allowReExecute = true;
         break;
       }
@@ -255,7 +255,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   // Allow pipeline to be re-executed if we are dealing with a canceled
   // operator.
   auto op = pipelineModel->op(idx);
-  allowReExecute = allowReExecute || (op && op->isCanceled());
+  allowReExecute =
+    allowReExecute || (op && (op->isCanceled() || op->isModified()));
 
   if (allowReExecute) {
     executeAction = contextMenu.addAction("Re-execute pipeline");

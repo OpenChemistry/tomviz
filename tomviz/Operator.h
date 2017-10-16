@@ -43,7 +43,8 @@ enum class OperatorState
   Running,
   Complete,
   Canceled,
-  Error
+  Error,
+  Modified
 };
 
 enum class TransformResult
@@ -226,8 +227,10 @@ public slots:
     return m_state == OperatorState::Complete ||
            m_state == OperatorState::Error;
   };
+  bool isModified() { return m_state == OperatorState::Modified; }
   OperatorState state() { return m_state; };
   void resetState() { m_state = OperatorState::Queued; }
+  void setModified() { m_state = OperatorState::Modified; }
 
 protected:
   /// Method to transform a dataset in-place.
