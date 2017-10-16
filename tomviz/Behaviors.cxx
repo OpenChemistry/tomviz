@@ -55,6 +55,11 @@ const char* const settings = "{"
                              //"         \"ShowAnnotation\" : 1,"
                              "         \"UseDisplayLists\" : 1"
                              "      }"
+                             "  },"
+                             "  \"misc\" : {"
+                             "      \"SaveAnimation\" : {"
+                             "         \"FrameRate\" : 30"
+                             "      }"
                              "   }"
                              "}";
 
