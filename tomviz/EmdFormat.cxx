@@ -500,13 +500,16 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
 
   hid_t status;
 
+  // Use constant spacing, with zero offset, so just populate the first two.
+  double spacing[3];
+  image->GetSpacing(spacing);
   std::vector<float> imageDimDataX(2);
   std::vector<float> imageDimDataY(2);
   std::vector<float> imageDimDataZ(2);
   for (int i = 0; i < 2; ++i) {
-    imageDimDataX[i] = i;
-    imageDimDataY[i] = i;
-    imageDimDataZ[i] = i;
+    imageDimDataX[i] = i * spacing[0];
+    imageDimDataY[i] = i * spacing[1];
+    imageDimDataZ[i] = i * spacing[2];
   }
 
   d->writeData("/data/tomography", "data", image);
