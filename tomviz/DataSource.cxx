@@ -47,6 +47,7 @@
 #include <QMap>
 #include <QTimer>
 
+#include <cmath>
 #include <sstream>
 
 namespace tomviz {
@@ -69,6 +70,7 @@ public:
   PipelineWorker::Future* Future;
   bool PipelinePaused = false;
   PersistenceState PersistState = PersistenceState::Saved;
+  double m_scaleOriginalSpacingBy = 1;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -198,6 +200,12 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
       dataSource->SetAnnotation(Attributes::FILENAME, sourceFilename);
     } else {
       sourceFilename = helper.GetAsString();
+    }
+    QFileInfo info(helper.GetAsString());
+    if (info.suffix() == "mrc") {
+      // MRC format uses angstroms as default units, tomviz uses nanometers.
+      // This handles scaling between the two.
+      this->Internals->m_scaleOriginalSpacingBy = 0.1;
     }
   }
   if (sourceFilename && strlen(sourceFilename)) {
@@ -795,6 +803,18 @@ vtkDataObject* DataSource::copyOriginalData()
 void DataSource::resetData()
 {
   auto data = copyOriginalData();
+  auto image = vtkImageData::SafeDownCast(data);
+  if (image) {
+    double spacing[3];
+    image->GetSpacing(spacing);
+    for (int i = 0; i < 3; ++i) {
+      spacing[i] *= this->Internals->m_scaleOriginalSpacingBy;
+      if (spacing[i] == 0 || std::isnan(spacing[i])) {
+        spacing[i] = 1;
+      }
+    }
+    image->SetSpacing(spacing);
+  }
   setData(data);
   this->Internals->GradientOpacityMap->RemoveAllPoints();
   this->Internals->m_transfer2D->SetDimensions(1, 1, 1);
