@@ -288,6 +288,91 @@ public:
     return success;
   }
 
+  std::vector<float> readData(const std::string& path)
+  {
+    std::vector<float> result;
+
+    // Verify that the path exists in the HDF5 file.
+    bool dataLinkExists = false;
+    H5O_info_t info;
+    if (H5Oget_info_by_name(fileId, path.c_str(), &info,
+                            H5P_DEFAULT < 0)) {
+      dataLinkExists = false;
+    } else {
+      dataLinkExists = true;
+    }
+
+    if (!dataLinkExists || info.type != H5O_TYPE_DATASET) {
+      return result;
+    }
+
+    std::vector<int> dims;
+    hid_t datasetId = H5Dopen(fileId, path.c_str(), H5P_DEFAULT);
+    if (datasetId < 0) {
+      return result;
+    }
+    hid_t dataspaceId = H5Dget_space(datasetId);
+    if (dataspaceId < 0) {
+      H5Dclose(dataspaceId);
+      return result;
+    }
+    int dimCount = H5Sget_simple_extent_ndims(dataspaceId);
+    if (dimCount < 1) {
+      H5Sclose(dataspaceId);
+      H5Dclose(datasetId);
+      return result;
+    }
+
+    hsize_t* h5dims = new hsize_t[dimCount];
+    int dimCount2 = H5Sget_simple_extent_dims(dataspaceId, h5dims, nullptr);
+    if (dimCount == dimCount2) {
+      dims.resize(dimCount);
+      std::copy(h5dims, h5dims + dimCount, dims.begin());
+    }
+    if (dimCount == 3) {
+      dims[0] = h5dims[2];
+      dims[2] = h5dims[0];
+    }
+    delete[] h5dims;
+
+    // Map the HDF5 types to the VTK types for storage and memory. We should
+    // probably add more, but I got the important ones for testing in first.
+    int vtkDataType = VTK_FLOAT;
+    hid_t dataTypeId = H5Dget_type(datasetId);
+    hid_t memTypeId = 0;
+
+    if (H5Tequal(dataTypeId, H5T_IEEE_F32LE)) {
+      memTypeId = H5T_NATIVE_FLOAT;
+      vtkDataType = VTK_FLOAT;
+    } else {
+      // Not accounted for, fail for now, should probably improve this soon.
+      std::cout << "Unknown type encountered!" << dataTypeId << std::endl;
+      H5Tclose(dataTypeId);
+      H5Sclose(dataspaceId);
+      H5Dclose(datasetId);
+      return result;
+    }
+    H5Tclose(dataTypeId);
+
+    if (dimCount != 1) {
+      // Only implemented for single dimensional data - vector of type double.
+      H5Sclose(dataspaceId);
+      H5Dclose(datasetId);
+      std::cout << "Dimensions are " << dimCount << std::endl;
+      return result;
+    }
+
+    result.resize(dims[0]);
+
+    H5Dread(datasetId, memTypeId, H5S_ALL, dataspaceId, H5P_DEFAULT,
+            result.data());
+
+    H5Sclose(dataspaceId);
+    H5Dclose(datasetId);
+
+    return result;
+  }
+
   bool readData(const std::string& path, vtkImageData* data)
   {
     std::vector<int> dims;
@@ -455,9 +540,21 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 
   if (dataLinkExists && info.type == H5O_TYPE_DATASET) {
     d->readData(emdDataNode, image);
-    return true;
   } else {
     return false;
+  }
+
+  // Now to read back in the units, note the reordering for C vs Fortran...
+  auto dim1 = d->readData("/data/tomography/dim1");
+  auto dim2 = d->readData("/data/tomography/dim2");
+  auto dim3 = d->readData("/data/tomography/dim3");
+
+  if (dim1.size() > 1 && dim2.size() > 1 && dim3.size() > 1) {
+    double spacing[3];
+    spacing[2] = static_cast<double>(dim1[1] - dim1[0]);
+    spacing[1] = static_cast<double>(dim2[1] - dim2[0]);
+    spacing[0] = static_cast<double>(dim3[1] - dim3[0]);
+    image->SetSpacing(spacing);
   }
 
   // Close up the file now we are done.
@@ -500,13 +597,17 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
 
   hid_t status;
 
+  // Use constant spacing, with zero offset, so just populate the first two.
+  double spacing[3];
+  image->GetSpacing(spacing);
   std::vector<float> imageDimDataX(2);
   std::vector<float> imageDimDataY(2);
   std::vector<float> imageDimDataZ(2);
   for (int i = 0; i < 2; ++i) {
-    imageDimDataX[i] = i;
-    imageDimDataY[i] = i;
-    imageDimDataZ[i] = i;
+    // Note the flipping to make our ordering work in C-ordered codes correctly.
+    imageDimDataX[i] = i * spacing[2];
+    imageDimDataY[i] = i * spacing[1];
+    imageDimDataZ[i] = i * spacing[0];
   }
 
   d->writeData("/data/tomography", "data", image);
