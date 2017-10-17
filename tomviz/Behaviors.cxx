@@ -39,6 +39,8 @@
 #include <QApplication>
 #include <QFile>
 #include <QMainWindow>
+#include <QTextCharFormat>
+#include <QTextCursor>
 
 #include <sstream>
 
@@ -63,11 +65,17 @@ const char* const settings = "{"
                              "   }"
                              "}";
 
+Q_DECLARE_METATYPE(QTextCharFormat)
+Q_DECLARE_METATYPE(QTextCursor)
+
 namespace tomviz {
 
 Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 {
   Q_ASSERT(mainWindow);
+
+  qRegisterMetaType<QTextCharFormat>();
+  qRegisterMetaType<QTextCursor>();
 
   PV_PLUGIN_IMPORT(tomvizExtensions)
 
