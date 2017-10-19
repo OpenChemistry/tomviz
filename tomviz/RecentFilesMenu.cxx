@@ -190,15 +190,13 @@ void RecentFilesMenu::aboutToShowMenu()
       header_added = true;
     }
     bool stack = node.attribute("stack").as_bool(false);
-    if (QFileInfo::exists(node.attribute("filename0").as_string("<bug>")) || stack) {
-      QAction* actn =
-        menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
-                        node.attribute("filename0").as_string("<bug>"));
-      actn->setData(index);
-      this->connect(actn, &QAction::triggered, [this, actn, stack]() {
-        dataSourceTriggered(actn, stack);
-      });
-    }
+    QAction* actn =
+      menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
+                      node.attribute("filename0").as_string("<bug>"));
+    actn->setData(index);
+    this->connect(actn, &QAction::triggered, [this, actn, stack]() {
+      dataSourceTriggered(actn, stack);
+    });
     index++;
   }
 
@@ -210,26 +208,17 @@ void RecentFilesMenu::aboutToShowMenu()
       actn->setEnabled(false);
       header_added = true;
     }
-    if (QFileInfo::exists(node.attribute("filename").as_string("<bug>"))) {
-      QAction* actn =
-        menu->addAction(QIcon(":/icons/tomviz.png"),
-                        node.attribute("filename").as_string("<bug>"));
-      actn->setData(node.attribute("filename").as_string("<bug>"));
-      this->connect(actn, SIGNAL(triggered()), SLOT(stateTriggered()));
-    }
+    QAction* actn =
+      menu->addAction(QIcon(":/icons/tomviz.png"),
+                      node.attribute("filename").as_string("<bug>"));
+    actn->setData(node.attribute("filename").as_string("<bug>"));
+    this->connect(actn, SIGNAL(triggered()), SLOT(stateTriggered()));
     index++;
   }
 }
 
 void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
 {
-  if (!QFileInfo::exists(actn->iconText()) && !stack) {
-    // This should never happen since the checks in aboutToShowMenu should
-    // prevent it, but just in case...
-    qWarning() << "Error: file '" << actn->iconText() << "' does not exist.";
-    return;
-  }
-
   int index = actn->data().toInt();
   pugi::xml_document settings;
   get_settings(settings);
@@ -238,6 +227,14 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
   for (pugi::xml_node node = root.child("DataReader"); node;
        node = node.next_sibling("DataReader"), --index) {
     if (index == 0) {
+      if (!QFileInfo::exists(actn->iconText()) && !stack) {
+        // If the user tried to open a recent file that no longer exists, remove
+        // it from the recent files
+        qWarning() << "Error: file '" << actn->iconText() << "' does not exist.";
+        root.remove_child(node);
+        save_settings(settings);
+        return;
+      }
       if (node.attribute("xmlgroup").empty()) {
         // Special node for EMDs that have no proxy.
         if (LoadDataReaction::createDataSourceLocal(
@@ -285,19 +282,20 @@ void RecentFilesMenu::stateTriggered()
   QAction* actn = qobject_cast<QAction*>(this->sender());
   Q_ASSERT(actn);
 
-  if (!QFileInfo::exists(actn->iconText())) {
-    // This should never happen since the checks in aboutToShowMenu should
-    // prevent it, but just in case...
+  QString filename = actn->data().toString();
+
+  if (QFileInfo::exists(actn->iconText())) {
+    if (SaveLoadStateReaction::loadState(filename)) {
+      // the above call will ensure that the file name moves to top of the list
+      // since it calls pushStateFile() on success.
+      return;
+    }
+  } else {
+    // // If the user tried to open a recent file that no longer exists, remove
+    // it from the recent files
     qWarning() << "Error: file '" << actn->iconText() << "' does not exist.";
-    return;
   }
 
-  QString filename = actn->data().toString();
-  if (SaveLoadStateReaction::loadState(filename)) {
-    // the above call will ensure that the file name moves to top of the list
-    // since it calls pushStateFile() on success.
-    return;
-  }
 
   // remove the item from the recent state files list.
   pugi::xml_document settings;
