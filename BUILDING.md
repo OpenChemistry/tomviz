@@ -50,11 +50,20 @@ with all prerequisites installed:
       -DVTK_PYTHON_FULL_THREADSAFE:BOOL=ON \
       -DVTK_NO_PYTHON_THREADS:BOOL=OFF \
       ../paraview
+    #****
     cmake --build .
 
 This will clone all source code needed, configure and build a minimal ParaView,
 the Ninja generator is recommended to build faster, but optional, on Windows
 you will need to specify the correct generator for the installed compiler.
+
+Note: since the switch to Python 3 it is highly recommended to stop at the point
+marked with `#****` and check which version of Python CMake found.  Make sure the
+`PYTHON_EXECUTABLE` `PYTHON_INCLUDE_DIR` and `PYTHON_LIBRARY` variables are pointing
+to the python you want to use.  Compiling against Anaconda packages is **not**
+supported.  If you know your python is installed in /usr/local (the default for Homebrew)
+you can run `find /usr/local -name patchlevel.h` to find the value for `PYTHON_INCLUDE_DIR`
+and `find /usr/local -name libpython3.6m.*` to find the value for `PYTHON_LIBRARY`.
 
     cd ..
     git clone git://itk.org/ITK.git
