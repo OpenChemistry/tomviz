@@ -344,7 +344,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                                  readInJSONDescription("Recon_SIRT"));
   new AddPythonTransformReaction(
     reconDFMConstraintAction, "Reconstruct (Constraint-based Direct Fourier)",
-    readInPythonScript("Recon_DFT_constraint"), true);
+    readInPythonScript("Recon_DFT_constraint"), true, false,
+    readInJSONDescription("Recon_DFT_constraint"));
   new AddPythonTransformReaction(
     reconTVMinimizationAction, "Reconstruct (TV Minimization)",
     readInPythonScript("Recon_TV_minimization"), true, false,
