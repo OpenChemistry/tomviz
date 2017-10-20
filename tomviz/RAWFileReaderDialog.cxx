@@ -165,7 +165,7 @@ void RAWFileReaderDialog::sanityCheckSize()
                      .arg(static_cast<float>(selectedSize) / m_filesize * 100)
                      .arg(m_filesize);
   m_ui->statusLabel->setText(labelText);
-  if (selectedSize != m_filesize) {
+  if (selectedSize > m_filesize) {
     m_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
   } else {
     m_ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
