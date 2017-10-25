@@ -27,10 +27,16 @@
 #include <vtkNew.h>
 #include <vtkTypeInt8Array.h>
 
+#include <QClipboard>
 #include <QDoubleSpinBox>
+#include <QDebug>
+#include <QEvent>
 #include <QGridLayout>
+#include <QGuiApplication>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
+#include <QMimeData>
 #include <QPointer>
 #include <QSpinBox>
 #include <QString>
@@ -170,6 +176,7 @@ public:
       item->setData(Qt::DisplayRole, QString::number(angle));
       this->tableWidget->setItem(i, 0, item);
     }
+    tableWidget->installEventFilter(this);
 
     setFromTablePanel->setLayout(tablePanelLayout);
 
@@ -212,6 +219,53 @@ public:
       }
       this->Op->setTiltAngles(tiltAngles);
     }
+  }
+
+  bool eventFilter(QObject* obj, QEvent *event) override {
+    QKeyEvent *ke = dynamic_cast<QKeyEvent*>(event);
+    if (ke && obj == this->tableWidget) {
+      if (ke->matches(QKeySequence::Paste) && ke->type() == QEvent::KeyPress) {
+        QClipboard* clipboard = QGuiApplication::clipboard();
+        const QMimeData* mimeData = clipboard->mimeData();
+        if (mimeData->hasText()) {
+          QString text = mimeData->text();
+          QStringList rows = text.split("\n");
+          QStringList angles;
+          for (const QString& row: rows) {
+            angles << row.split("\t")[0];
+          }
+          auto ranges = this->tableWidget->selectedRanges();
+          // check if the table in the clipboard is of numbers
+          for (const QString& angle: angles) {
+            bool ok;
+            angle.toDouble(&ok);
+            if (!ok) {
+              qWarning() << "Error parsing pasted tilt angle " << angle;
+              return true;
+            }
+          }
+          // If separate blocks of rows selected, cancel the paste
+          // since we don't know where to put angles
+          if (ranges.size() != 1) {
+            return true;
+          }
+          // If multiple rows selected and it is not equal to
+          // the number of angles pasted, cancel the paste
+          if (ranges[0].rowCount() > 1 && ranges[0].rowCount() != angles.size()) {
+            return true;
+          }
+          int startRow = ranges[0].topRow();
+          for (int i = 0; i < angles.size(); ++i) {
+            auto item = this->tableWidget->item(i + startRow, 0);
+            if (item) {
+              item->setData(Qt::DisplayRole, angles[i]);
+            }
+          }
+        }
+        return true;
+      }
+    }
+    return QWidget::eventFilter(obj, event);
   }
 
 public slots:
