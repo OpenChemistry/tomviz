@@ -32,14 +32,11 @@ class ViewMenuManager : public pqViewMenuManager
   Q_OBJECT
 public:
   ViewMenuManager(QMainWindow* mainWindow, QMenu* menu);
+  ~ViewMenuManager();
 
 signals:
   void setScaleLegendStyle(ScaleLegendStyle);
   void setScaleLegendVisibility(bool);
-
-protected:
-  // Override to add 'show View Properties dialog'
-  void buildMenu() override;
 
 private slots:
   void showViewPropertiesDialog(bool show);

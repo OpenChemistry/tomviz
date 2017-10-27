@@ -67,30 +67,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   }
   this->connect(&ActiveObjects::instance(),
                 SIGNAL(viewChanged(vtkSMViewProxy*)), SLOT(onViewChanged()));
-}
-
-void ViewMenuManager::buildMenu()
-{
-  bool showViewPropertiesChecked = this->showViewPropertiesAction->isChecked();
-  bool perspectiveProjectionChecked = true;
-  if (this->perspectiveProjectionAction) {
-    perspectiveProjectionChecked =
-      this->perspectiveProjectionAction->isChecked();
-  }
-  bool hideScaleLegendIsEnabled = false;
-  if (this->hideScaleLegendAction) {
-    hideScaleLegendIsEnabled = this->hideScaleLegendAction->isEnabled();
-  }
-  this->showViewPropertiesAction = nullptr; // The object is about to be deleted
-  this->perspectiveProjectionAction = nullptr;
-  this->orthographicProjectionAction = nullptr;
-  this->scaleLegendCubeAction = nullptr;
-  this->scaleLegendRulerAction = nullptr;
-  this->hideScaleLegendAction = nullptr;
-
-  pqViewMenuManager::buildMenu(); // deletes all prior menu items and
-                                  // repopulates menu
-
   this->Menu->addSeparator();
   // Projection modes
   QActionGroup* projectionGroup = new QActionGroup(this);
@@ -99,14 +75,14 @@ void ViewMenuManager::buildMenu()
     this->Menu->addAction("Perspective Projection");
   this->perspectiveProjectionAction->setCheckable(true);
   this->perspectiveProjectionAction->setActionGroup(projectionGroup);
-  this->perspectiveProjectionAction->setChecked(perspectiveProjectionChecked);
+  this->perspectiveProjectionAction->setChecked(true);
   this->connect(this->perspectiveProjectionAction, SIGNAL(triggered()),
                 SLOT(setProjectionModeToPerspective()));
   this->orthographicProjectionAction =
     this->Menu->addAction("Orthographic Projection");
   this->orthographicProjectionAction->setCheckable(true);
   this->orthographicProjectionAction->setActionGroup(projectionGroup);
-  this->orthographicProjectionAction->setChecked(!perspectiveProjectionChecked);
+  this->orthographicProjectionAction->setChecked(false);
   this->connect(this->orthographicProjectionAction, SIGNAL(triggered()),
                 SLOT(setProjectionModeToOrthographic()));
 
@@ -115,7 +91,7 @@ void ViewMenuManager::buildMenu()
   this->scaleLegendCubeAction = this->Menu->addAction("Show Legend as Cube");
   this->scaleLegendRulerAction = this->Menu->addAction("Show Legend as Ruler");
   this->hideScaleLegendAction = this->Menu->addAction("Hide Legend");
-  this->hideScaleLegendAction->setEnabled(hideScaleLegendIsEnabled);
+  this->hideScaleLegendAction->setEnabled(false);
 
   connect(this->scaleLegendCubeAction, &QAction::triggered, this, [&]() {
     this->setScaleLegendStyle(ScaleLegendStyle::Cube);
@@ -139,7 +115,7 @@ void ViewMenuManager::buildMenu()
   // Show view properties
   this->showViewPropertiesAction = this->Menu->addAction("View Properties");
   this->showViewPropertiesAction->setCheckable(true);
-  this->showViewPropertiesAction->setChecked(showViewPropertiesChecked);
+  this->showViewPropertiesAction->setChecked(false);
   this->connect(this->showViewPropertiesAction, SIGNAL(triggered(bool)),
                 SLOT(showViewPropertiesDialog(bool)));
 }
