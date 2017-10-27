@@ -18,6 +18,8 @@
 
 #include <pqViewMenuManager.h>
 
+#include <QPointer>
+
 class QDialog;
 class QAction;
 
@@ -49,12 +51,12 @@ private slots:
 
 private:
   QDialog* viewPropertiesDialog;
-  QAction* showViewPropertiesAction;
-  QAction* perspectiveProjectionAction;
-  QAction* orthographicProjectionAction;
-  QAction* scaleLegendCubeAction;
-  QAction* scaleLegendRulerAction;
-  QAction* hideScaleLegendAction;
+  QPointer<QAction> showViewPropertiesAction;
+  QPointer<QAction> perspectiveProjectionAction;
+  QPointer<QAction> orthographicProjectionAction;
+  QPointer<QAction> scaleLegendCubeAction;
+  QPointer<QAction> scaleLegendRulerAction;
+  QPointer<QAction> hideScaleLegendAction;
 
   vtkSMViewProxy* View;
   unsigned long ViewObserverId;
