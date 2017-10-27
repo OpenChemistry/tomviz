@@ -120,6 +120,13 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
                 SLOT(showViewPropertiesDialog(bool)));
 }
 
+ViewMenuManager::~ViewMenuManager()
+{
+  if (this->View) {
+    this->View->RemoveObserver(this->ViewObserverId);
+  }
+}
+
 void ViewMenuManager::showViewPropertiesDialog(bool show)
 {
   if (show) {
@@ -188,6 +195,9 @@ void ViewMenuManager::onViewPropertyChanged()
 
 void ViewMenuManager::onViewChanged()
 {
+  if (this->View) {
+    this->View->RemoveObserver(this->ViewObserverId);
+  }
   this->View = ActiveObjects::instance().activeView();
   if (this->View) {
     this->ViewObserverId =
