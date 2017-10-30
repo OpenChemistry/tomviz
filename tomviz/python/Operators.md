@@ -3,7 +3,7 @@ Implementing Python operators
 
 There are a couple of ways to implement a Python operator.
 
-Writing a transform_scalar function
+Writing a transform_scalars function
 -----------------------------------
 The simplest operator implementation is to provide a function called ```transform_scalars```
 in a module.
@@ -27,7 +27,7 @@ create an operator simply subclass and provide an implementation of the
 import tomviz.operators
 
 class MyOperator(tomviz.operators.Operator):
-    def transform_scalar(self, data):
+    def transform_scalars(self, data):
         # Do work here
 
 ```
@@ -47,7 +47,7 @@ if necessary.
 import tomviz.operators
 
 class MyCancelableOperator(tomviz.operators.CancelableOperator):
-    def transform_scalar(self, data):
+    def transform_scalars(self, data):
          while(not self.canceled):
             # Do work here
 
@@ -68,7 +68,7 @@ import tomviz.operators
 
 class MyProgressOperator(tomviz.operators.Operator):
     current_progress = 0
-    def transform_scalar(self, data):
+    def transform_scalars(self, data):
         self.progress.maximum = 100
         # Do work here
         current_progress += 1
