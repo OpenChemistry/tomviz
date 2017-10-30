@@ -655,6 +655,10 @@ void MainWindow::registerCustomOperators()
     if (QFile(path).exists()) {
       paths.append(path);
     }
+    path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
+    if (QFile(path).exists()) {
+          paths.append(path);
+    }
   }
   // Search in data locations.
   // For example on window C:/Users/<USER>/AppData/Local/tomviz
