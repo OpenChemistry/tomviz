@@ -18,6 +18,8 @@
 
 #include <pqViewMenuManager.h>
 
+#include <QPointer>
+
 class QDialog;
 class QAction;
 
@@ -32,14 +34,11 @@ class ViewMenuManager : public pqViewMenuManager
   Q_OBJECT
 public:
   ViewMenuManager(QMainWindow* mainWindow, QMenu* menu);
+  ~ViewMenuManager();
 
 signals:
   void setScaleLegendStyle(ScaleLegendStyle);
   void setScaleLegendVisibility(bool);
-
-protected:
-  // Override to add 'show View Properties dialog'
-  void buildMenu() override;
 
 private slots:
   void showViewPropertiesDialog(bool show);
@@ -52,12 +51,12 @@ private slots:
 
 private:
   QDialog* viewPropertiesDialog;
-  QAction* showViewPropertiesAction;
-  QAction* perspectiveProjectionAction;
-  QAction* orthographicProjectionAction;
-  QAction* scaleLegendCubeAction;
-  QAction* scaleLegendRulerAction;
-  QAction* hideScaleLegendAction;
+  QPointer<QAction> showViewPropertiesAction;
+  QPointer<QAction> perspectiveProjectionAction;
+  QPointer<QAction> orthographicProjectionAction;
+  QPointer<QAction> scaleLegendCubeAction;
+  QPointer<QAction> scaleLegendRulerAction;
+  QPointer<QAction> hideScaleLegendAction;
 
   vtkSMViewProxy* View;
   unsigned long ViewObserverId;
