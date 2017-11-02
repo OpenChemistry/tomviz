@@ -16,7 +16,7 @@ point to them if they are not found automatically.
 Dependencies
 ------------
 
- * Qt 5.6.0 (5.9.1 recommended)
+ * Qt 5.6 (5.9 recommended)
  * CMake 3.3
  * Python 3.6
  * NumPy 1.12
@@ -33,27 +33,31 @@ you are in a directory where you would like to place the source and builds
 with all prerequisites installed:
 
     git clone --recursive git://github.com/kitware/paraview.git
-    git clone --recursive git://github.com/openchemistry/tomviz.git
     mkdir paraview-build
     cd paraview-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
       -DBUILD_TESTING:BOOL=OFF \
       -DPARAVIEW_ENABLE_CATALYST:BOOL=OFF \
       -DPARAVIEW_ENABLE_PYTHON:BOOL=ON \
-      -DPARAVIEW_QT_VERSION:STRING=5 \
       -DPARAVIEW_ENABLE_WEB:BOOL=OFF \
       -DPARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION:BOOL=OFF\
       -DPARAVIEW_USE_QTHELP:BOOL=OFF \
-      -DVTK_RENDERING_BACKEND:STRING=OpenGL2 \
       -DVTK_SMP_IMPLEMENTATION_TYPE:STRING=TBB \
       -DVTK_PYTHON_VERSION:STRING=3 \
       -DVTK_PYTHON_FULL_THREADSAFE:BOOL=ON \
       -DVTK_NO_PYTHON_THREADS:BOOL=OFF \
       ../paraview
+
+Check which version of Python CMake found. Ensure the `PYTHON_EXECUTABLE`,
+`PYTHON_INCLUDE_DIR`, and `PYTHON_LIBRARY` variables are pointing to a
+consistent version of Python in the same prefix. Compiling against Anaconda
+packages is **not** recommended. If they are consistent proceed to build
+ParaView:
+
     cmake --build .
 
 This will clone all source code needed, configure and build a minimal ParaView,
-the Ninja generator is recommended to build faster, but optional, on Windows
+the Ninja generator is recommended for faster builds, but optional. On Windows
 you will need to specify the correct generator for the installed compiler.
 
     cd ..
@@ -94,6 +98,7 @@ Now, to build Tomviz:
 
     cd ..
     export build_root=`pwd`
+    git clone --recursive git://github.com/openchemistry/tomviz.git
     mkdir tomviz-build
     cd tomviz-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
