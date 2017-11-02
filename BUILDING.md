@@ -16,7 +16,7 @@ point to them if they are not found automatically.
 Dependencies
 ------------
 
- * Qt 5.6.0 (5.9.1 recommended)
+ * Qt 5.6 (5.9 recommended)
  * CMake 3.3
  * Python 3.6
  * NumPy 1.12
