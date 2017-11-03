@@ -335,15 +335,11 @@ public:
     }
     delete[] h5dims;
 
-    // Map the HDF5 types to the VTK types for storage and memory. We should
-    // probably add more, but I got the important ones for testing in first.
-    int vtkDataType = VTK_FLOAT;
     hid_t dataTypeId = H5Dget_type(datasetId);
     hid_t memTypeId = 0;
 
     if (H5Tequal(dataTypeId, H5T_IEEE_F32LE)) {
       memTypeId = H5T_NATIVE_FLOAT;
-      vtkDataType = VTK_FLOAT;
     } else {
       // Not accounted for, fail for now, should probably improve this soon.
       std::cout << "Unknown type encountered!" << dataTypeId << std::endl;
