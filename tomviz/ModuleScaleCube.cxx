@@ -100,7 +100,7 @@ bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_handleWidget->SetInteractor(m_view->GetInteractor());
 
   double bounds[6];
-  data->producer()->GetDataInformation()->GetBounds(bounds);
+  data->dataSourceProxy()->GetDataInformation()->GetBounds(bounds);
   double length = std::max(floor((bounds[1] - bounds[0]) * .1), 1.);
   double minPosition[3] = { bounds[0] + length * .5, bounds[2] + length * .5,
                             bounds[4] + length * .5 };

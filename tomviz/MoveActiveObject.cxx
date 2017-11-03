@@ -92,7 +92,7 @@ void MoveActiveObject::updateForNewDataSource(DataSource* source)
     return;
   }
   vtkDataObject* data =
-    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject())
+    vtkTrivialProducer::SafeDownCast(source->dataSourceProxy()->GetClientSideObject())
       ->GetOutputDataObject(0);
   double dataBounds[6];
   vtkImageData::SafeDownCast(data)->GetBounds(dataBounds);

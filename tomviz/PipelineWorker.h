@@ -73,6 +73,8 @@ public:
   /// operator to it. Return true is
   bool addOperator(Operator* op);
 
+  QList<Operator*> operators();
+
   ~Future();
 
 signals:

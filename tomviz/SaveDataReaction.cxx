@@ -116,8 +116,8 @@ bool SaveDataReaction::saveData(const QString& filename)
 
   auto updateSource = [](QString fileName, DataSource* ds) {
       ds->setPersistenceState(DataSource::PersistenceState::Saved);
-      ds->originalDataSource()->SetAnnotation(Attributes::FILENAME,
-                                              fileName.toLatin1().data());
+      ds->dataSourceProxy()->SetAnnotation(Attributes::FILENAME,
+          fileName.toLatin1().data());
   };
 
   if (!server) {
@@ -144,7 +144,7 @@ bool SaveDataReaction::saveData(const QString& filename)
 
   vtkSMSourceProxy* producer = nullptr;
   if (source) {
-    producer = source->producer();
+    producer = source->dataSourceProxy();
   }
   // If an operator result is active, save it. Otherwise, save the source.
   if (result) {
@@ -179,7 +179,7 @@ bool SaveDataReaction::saveData(const QString& filename)
       tiff->SetInputData(fImage);
       tiff->SetFileName(filename.toLatin1().data());
       tiff->Write();
-      
+
       updateSource(filename, source);
       return true;
     }

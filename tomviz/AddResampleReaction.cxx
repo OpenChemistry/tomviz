@@ -54,7 +54,7 @@ namespace {
 vtkImageData* imageData(DataSource* source)
 {
   vtkTrivialProducer* t =
-    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+    vtkTrivialProducer::SafeDownCast(source->dataSourceProxy()->GetClientSideObject());
   return vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 }
 }
@@ -131,12 +131,12 @@ void AddResampleReaction::resample(DataSource* source)
     // TODO - cloning here is really expensive memory-wise, we should figure
     // out a different way to do it
     DataSource* resampledData = source->clone(true);
-    QString name = resampledData->producer()->GetAnnotation(Attributes::LABEL);
+    QString name = resampledData->dataSourceProxy()->GetAnnotation(Attributes::LABEL);
     name = "Downsampled_" + name;
-    resampledData->producer()->SetAnnotation(Attributes::LABEL,
+    resampledData->dataSourceProxy()->SetAnnotation(Attributes::LABEL,
                                              name.toLatin1().data());
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      resampledData->producer()->GetClientSideObject());
+      resampledData->dataSourceProxy()->GetClientSideObject());
     t->SetOutput(reslice->GetOutput());
     resampledData->dataModified();
 

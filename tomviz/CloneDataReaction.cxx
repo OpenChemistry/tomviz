@@ -60,7 +60,7 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
 
   if (user_okayed) {
     DataSource* newClone =
-      toClone->clone(selection == items[1], selection == items[2]);
+      toClone->clone(selection == items[1]);
     LoadDataReaction::dataSourceAdded(newClone);
     return newClone;
   }

@@ -353,7 +353,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         case Qt::DecorationRole:
           return QIcon(":/icons/pqInspect.png");
         case Qt::DisplayRole: {
-          QString label = QFileInfo(dataSource->filename()).baseName();
+          QString label = dataSource->label();
           if (dataSource->persistenceState() ==
               DataSource::PersistenceState::Modified) {
             label += QString(" *");
@@ -906,6 +906,9 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
       operatorTreeItem->appendChild(PipelineModel::Item(dataSource));
       endInsertRows();
     }
+
+    connect(dataSource, SIGNAL(operatorAdded(Operator*)),
+            SLOT(operatorAdded(Operator*)));
   }
 
   // When restoring a data source from a state file it will have its operators

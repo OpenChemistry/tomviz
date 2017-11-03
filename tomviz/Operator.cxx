@@ -161,7 +161,7 @@ bool Operator::serialize(pugi::xml_node& ns) const
   if (hasChildDataSource()) {
     DataSource* ds = childDataSource();
     ns.append_attribute("childDataSource")
-      .set_value(ds->producer()->GetGlobalIDAsString());
+      .set_value(ds->dataSourceProxy()->GetGlobalIDAsString());
   }
 
   return true;

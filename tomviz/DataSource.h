@@ -34,6 +34,8 @@ class vtkSMSourceProxy;
 class vtkImageData;
 class vtkDataObject;
 class vtkPiecewiseFunction;
+class vtkAlgorithm;
+class vtkTrivialProducer;
 
 namespace tomviz {
 class Operator;
@@ -67,12 +69,20 @@ public:
   DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
              QObject* parent = nullptr,
              PersistenceState persistState = PersistenceState::Saved);
+
+  /// Create a new dataSource not associated with a source proxy
+  DataSource(const QString &label = QString(), DataSourceType dataType = Volume,
+      QObject* parent = nullptr, PersistenceState persistState = PersistenceState::Saved);
+
   ~DataSource() override;
 
-  /// Returns the data producer proxy to insert in ParaView pipelines.
+  /// Returns the data source proxy to insert in ParaView pipelines.
   /// This proxy instance doesn't change over the lifetime of a DataSource even
   /// if new DataOperators are added to the source.
-  vtkSMSourceProxy* producer() const;
+  vtkSMSourceProxy* dataSourceProxy() const;
+
+  /// Returns the output data object associated with the proxy.
+  vtkDataObject* dataObject() const;
 
   /// Returns a list of operators added to the DataSource.
   const QList<Operator*>& operators() const;
@@ -83,23 +93,21 @@ public:
   bool removeAllOperators();
 
   /// Creates a new clone from this DataSource. If cloneOperators then clone
-  /// the operators too, if cloneTransformedOnly clone the transformed data.
-  DataSource* clone(bool cloneOperators,
-                    bool cloneTransformedOnly = false) const;
+  /// the operators too.
+  DataSource* clone(bool cloneOperators) const;
 
   /// Save the state out.
   bool serialize(pugi::xml_node& in) const;
   bool deserialize(const pugi::xml_node& ns);
-
-  /// Returns the original data source. This is not meant to be used to connect
-  /// visualization pipelines on directly. Use producer() instead.
-  vtkSMSourceProxy* originalDataSource() const;
 
   /// Override the filename.
   void setFilename(const QString& filename);
 
   /// Returns the name of the filename used from the originalDataSource.
   QString filename() const;
+
+  /// Returns the name of the filename used from the originalDataSource.
+  QString label() const;
 
   /// Returns the type of data in this DataSource
   DataSourceType type() const;
@@ -123,7 +131,7 @@ public:
   bool hasTiltAngles();
 
   /// Get a copy of the current tilt angles
-  QVector<double> getTiltAngles(bool useOriginalDataTiltAngles = false) const;
+  QVector<double> getTiltAngles() const;
 
   /// Set the tilt angles to the values in the given QVector
   void setTiltAngles(const QVector<double>& angles);
@@ -159,12 +167,15 @@ public:
   /// Return true is datasource is an image stack, false otherwise
   bool isImageStack();
 
+  // TODO Move
   /// Return true if an operator is running in this DataSource's worker
   bool isRunningAnOperator();
 
+  // TODO Move
   // Pause the automatic exection of the operator pipeline
   void pausePipeline();
 
+  // TODO Move
   // Resume the automatic execution of the operator pipeline, will execution the
   // existing pipeline. If execute is true the entire pipeline will be executed.
   void resumePipeline(bool execute = true);
@@ -241,6 +252,10 @@ protected slots:
   void updateCache();
 
 private:
+
+  vtkTrivialProducer* trivialProducer();
+  vtkAlgorithm* algorithm() const;
+
   Q_DISABLE_COPY(DataSource)
 
   class DSInternals;

@@ -329,7 +329,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (showAction && selectedItem == showAction) {
     setModuleVisibility(selectedIndexes(), true);
   } else if (cloneChildAction && selectedItem == cloneChildAction) {
-    DataSource* newClone = dataSource->clone(false, true);
+    DataSource* newClone = dataSource->clone(false);
     LoadDataReaction::dataSourceAdded(newClone);
   } else if (snapshotAction && selectedItem == snapshotAction) {
     op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));

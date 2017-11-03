@@ -349,7 +349,7 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   vtkSMProxy* omap =
     vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
   vtkPVArrayInformation* ainfo =
-    tomviz::scalarArrayInformation(dataSource->producer());
+    tomviz::scalarArrayInformation(dataSource->dataSourceProxy());
   if (ainfo != nullptr &&
       vtkSMPropertyHelper(cmap, "AutomaticRescaleRangeMode").GetAsInt() !=
         vtkSMTransferFunctionManager::NEVER) {

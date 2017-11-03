@@ -171,7 +171,7 @@ DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData.Get())) {
       DataSource* dataSource = createDataSource(imageData.Get());
-      dataSource->originalDataSource()->SetAnnotation(
+      dataSource->dataSourceProxy()->SetAnnotation(
         Attributes::FILENAME, fileName.toLatin1().data());
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
       return dataSource;
@@ -257,7 +257,7 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
       pqRenderView* renderView =
         qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
       if (renderView) {
-        tomviz::createCameraOrbit(dataSource->producer(),
+        tomviz::createCameraOrbit(dataSource->dataSourceProxy(),
                                   renderView->getRenderViewProxy());
       }
     }

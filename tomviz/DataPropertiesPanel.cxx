@@ -62,12 +62,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   l->insertWidget(l->indexOf(m_ui->FileName), separator);
 
   separator =
-    pqProxyWidget::newGroupLabelWidget("Original Dimensions & Range", this);
-  l->insertWidget(l->indexOf(m_ui->OriginalDataRange), separator);
-
-  separator =
-    pqProxyWidget::newGroupLabelWidget("Transformed Dimensions & Range", this);
-  l->insertWidget(l->indexOf(m_ui->TransformedDataRange), separator);
+    pqProxyWidget::newGroupLabelWidget("Dimensions & Range", this);
+  l->insertWidget(l->indexOf(m_ui->DataRange), separator);
 
   separator = pqProxyWidget::newGroupLabelWidget("Units and Size", this);
 
@@ -198,7 +194,7 @@ void DataPropertiesPanel::updateData()
   m_ui->FileName->setText(dsource->filename());
 
   m_ui->OriginalDataRange->setText(
-    getDataDimensionsString(dsource->originalDataSource()));
+    getDataDimensionsString(dsource->dataSourceProxy()));
   m_ui->TransformedDataRange->setText(
     getDataDimensionsString(dsource->producer()));
 
@@ -389,10 +385,8 @@ void DataPropertiesPanel::updateAxesGridLabels()
 void DataPropertiesPanel::clear()
 {
   m_ui->FileName->setText("");
-  m_ui->OriginalDataRange->setText("");
-  m_ui->OriginalDataTreeWidget->clear();
-  m_ui->TransformedDataRange->setText("");
-  m_ui->TransformedDataTreeWidget->clear();
+  m_ui->DataRange->setText("");
+  m_ui->DataTreeWidget->clear();
   if (m_colorMapWidget) {
     m_ui->verticalLayout->removeWidget(m_colorMapWidget);
     delete m_colorMapWidget;

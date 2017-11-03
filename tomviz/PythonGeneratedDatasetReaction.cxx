@@ -578,7 +578,7 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
     pqRenderView* renderView =
       qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
     if (renderView) {
-      tomviz::createCameraOrbit(dataSource->producer(),
+      tomviz::createCameraOrbit(dataSource->dataSourceProxy(),
                                 renderView->getRenderViewProxy());
     }
   }

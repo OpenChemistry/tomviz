@@ -125,7 +125,7 @@ public:
   void setupRotationAxisLine()
   {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      this->Source->producer()->GetClientSideObject());
+      this->Source->dataSourceProxy()->GetClientSideObject());
     if (!t) {
       return;
     }
@@ -169,7 +169,7 @@ public:
       this->axisActor->SetUserTransform(t.Get());
     }
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      this->Source->producer()->GetClientSideObject());
+      this->Source->dataSourceProxy()->GetClientSideObject());
     if (!t) {
       return;
     }
@@ -205,7 +205,7 @@ public:
   void updateReconSlice(int i)
   {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      this->Source->producer()->GetClientSideObject());
+      this->Source->dataSourceProxy()->GetClientSideObject());
     if (!t) {
       return;
     }
@@ -266,7 +266,7 @@ public:
   void updateSliceLines()
   {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      this->Source->producer()->GetClientSideObject());
+      this->Source->dataSourceProxy()->GetClientSideObject());
     if (!t) {
       return;
     }
@@ -453,7 +453,7 @@ void RotateAlignWidget::setDataSource(DataSource* source)
   this->Internals->Source = source;
   if (source) {
     vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
+      source->dataSourceProxy()->GetClientSideObject());
     if (t) {
       this->Internals->mainSliceMapper->SetInputConnection(t->GetOutputPort());
     }
@@ -507,7 +507,7 @@ void RotateAlignWidget::onProjectionNumberChanged()
 {
   int newVal = this->Internals->Ui.projection->value();
   vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-    this->Internals->Source->producer()->GetClientSideObject());
+    this->Internals->Source->dataSourceProxy()->GetClientSideObject());
   if (!t) {
     std::cout << "Failed to get trivail producer" << std::endl;
     return;

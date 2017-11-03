@@ -71,7 +71,7 @@ bool ModuleSegment::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  vtkSMSourceProxy* producer = data->producer();
+  vtkSMSourceProxy* producer = data->dataSourceProxy();
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
 
   d->SegmentationScript.TakeReference(
