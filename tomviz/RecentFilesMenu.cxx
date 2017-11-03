@@ -20,6 +20,7 @@
 #include "LoadDataReaction.h"
 #include "SaveLoadStateReaction.h"
 #include "Utilities.h"
+#include "pqCoreUtilities.h"
 #include "pqPipelineSource.h"
 #include "pqSettings.h"
 #include "vtkNew.h"
@@ -30,8 +31,8 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSmartPointer.h"
 
-#include <QDebug>
 #include <QMenu>
+#include <QMessageBox>
 #include <sstream>
 #include <string>
 
@@ -230,7 +231,9 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
       if (!QFileInfo::exists(actn->iconText()) && !stack) {
         // If the user tried to open a recent file that no longer exists, remove
         // it from the recent files
-        qWarning() << "Error: file '" << actn->iconText() << "' does not exist.";
+        QMessageBox::warning(
+          pqCoreUtilities::mainWidget(), "Error",
+          QString("The file '%1' does not exist").arg(actn->iconText()));
         root.remove_child(node);
         save_settings(settings);
         return;
@@ -293,7 +296,9 @@ void RecentFilesMenu::stateTriggered()
   } else {
     // // If the user tried to open a recent file that no longer exists, remove
     // it from the recent files
-    qWarning() << "Error: file '" << actn->iconText() << "' does not exist.";
+    QMessageBox::warning(
+      pqCoreUtilities::mainWidget(), "Error",
+      QString("The file '%1' does not exist").arg(actn->iconText()));
   }
 
 
