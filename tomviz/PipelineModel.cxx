@@ -674,10 +674,16 @@ void PipelineModel::moduleAdded(Module* module)
   auto index = this->dataSourceIndex(dataSource);
   if (index.isValid()) {
     auto dataSourceItem = this->treeItem(index);
-    // Modules are placed at the bottom of the list. Let's just append it
-    // to the data source item.
-    auto row = dataSourceItem->childCount();
-    beginInsertRows(index, row, row);
+    // Modules straight after the data source so append after any current modules.
+    int insertionRow = dataSourceItem->childCount();
+    for (int j = 0; j < dataSourceItem->childCount(); ++j) {
+      if (!dataSourceItem->child(j)->module()) {
+        insertionRow = j;
+        break;
+      }
+    }
+
+    beginInsertRows(index, insertionRow, insertionRow);
     auto childCount = dataSourceItem->childCount();
     if (childCount > 0 && dataSourceItem->child(childCount - 1)->dataSource()) {
       // Last item is a child DataSource, so insert the new module in front of
@@ -711,15 +717,8 @@ void PipelineModel::operatorAdded(Operator* op)
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
-  // Find the last operator if there is one, and insert the operator there.
+  // Operators are just append as last child.
   int insertionRow = dataSourceItem->childCount();
-  for (int j = 0; j < dataSourceItem->childCount(); ++j) {
-    if (!dataSourceItem->child(j)->op()) {
-      insertionRow = j;
-      break;
-    }
-  }
-
   beginInsertRows(index, insertionRow, insertionRow);
   dataSourceItem->insertChild(insertionRow, PipelineModel::Item(op));
   endInsertRows();
