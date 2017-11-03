@@ -193,10 +193,8 @@ void DataPropertiesPanel::updateData()
 
   m_ui->FileName->setText(dsource->filename());
 
-  m_ui->OriginalDataRange->setText(
+  m_ui->DataRange->setText(
     getDataDimensionsString(dsource->dataSourceProxy()));
-  m_ui->TransformedDataRange->setText(
-    getDataDimensionsString(dsource->producer()));
 
   int extent[6];
   double spacing[3];
@@ -211,15 +209,9 @@ void DataPropertiesPanel::updateData()
   m_ui->unitBox->setText(m_currentDataSource->getUnits(0));
 
   vtkSMSourceProxy* sourceProxy =
-    vtkSMSourceProxy::SafeDownCast(dsource->originalDataSource());
+    vtkSMSourceProxy::SafeDownCast(dsource->dataSourceProxy());
   if (sourceProxy) {
-    updateInformationWidget(m_ui->OriginalDataTreeWidget,
-                            sourceProxy->GetDataInformation());
-  }
-
-  sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->producer());
-  if (sourceProxy) {
-    updateInformationWidget(m_ui->TransformedDataTreeWidget,
+    updateInformationWidget(m_ui->DataTreeWidget,
                             sourceProxy->GetDataInformation());
   }
 
@@ -387,6 +379,7 @@ void DataPropertiesPanel::clear()
   m_ui->FileName->setText("");
   m_ui->DataRange->setText("");
   m_ui->DataTreeWidget->clear();
+
   if (m_colorMapWidget) {
     m_ui->verticalLayout->removeWidget(m_colorMapWidget);
     delete m_colorMapWidget;
