@@ -390,7 +390,9 @@ void DataPropertiesPanel::clear()
 {
   m_ui->FileName->setText("");
   m_ui->OriginalDataRange->setText("");
+  m_ui->OriginalDataTreeWidget->clear();
   m_ui->TransformedDataRange->setText("");
+  m_ui->TransformedDataTreeWidget->clear();
   if (m_colorMapWidget) {
     m_ui->verticalLayout->removeWidget(m_colorMapWidget);
     delete m_colorMapWidget;
