@@ -46,6 +46,7 @@ public:
   ~DataPropertiesPanel() override;
 
   bool eventFilter(QObject*, QEvent*) override;
+
 protected:
   void paintEvent(QPaintEvent*) override;
   void updateData();

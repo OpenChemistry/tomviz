@@ -36,6 +36,7 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QMessageBox>
 #include <QMimeData>
 #include <QPointer>
 #include <QSpinBox>
@@ -240,18 +241,33 @@ public:
             bool ok;
             angle.toDouble(&ok);
             if (!ok) {
-              qWarning() << "Error parsing pasted tilt angle " << angle;
+              QMessageBox::warning(
+                this, "Error",
+                QString("Error: pasted tilt angle %1 is not a number")
+                  .arg(angle));
               return true;
             }
           }
           // If separate blocks of rows selected, cancel the paste
           // since we don't know where to put angles
           if (ranges.size() != 1) {
+            QMessageBox::warning(
+              this, "Error",
+              "Pasting is not supported with non-continuous selections");
             return true;
           }
           // If multiple rows selected and it is not equal to
           // the number of angles pasted, cancel the paste
           if (ranges[0].rowCount() > 1 && ranges[0].rowCount() != angles.size()) {
+            QMessageBox::warning(this, "Error",
+                                 QString("Cells selected (%1) does not match "
+                                         "number of angles to paste (%2).  \n"
+                                         "Please select one cell to mark the "
+                                         "start location for pasting or select "
+                                         "the same number of cells that will "
+                                         "be pasted into.")
+                                   .arg(ranges[0].rowCount())
+                                   .arg(angles.size()));
             return true;
           }
           int startRow = ranges[0].topRow();
