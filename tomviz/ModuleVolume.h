@@ -59,7 +59,7 @@ public:
 
   bool supportsGradientOpacity() override { return true; }
 
-  QString exportDataTypeString() { return "Volume"; }
+  QString exportDataTypeString() override { return "Volume"; }
 
   vtkSmartPointer<vtkDataObject> getDataToExport() override;
 
