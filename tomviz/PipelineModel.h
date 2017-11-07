@@ -80,6 +80,11 @@ public slots:
   void moduleRemoved(Module* module);
   void childDataSourceAdded(DataSource* dataSource);
 
+signals:
+  void dataSourceItemAdded(DataSource* dataSource);
+  void moduleItemAdded(Module* module);
+  void operatorItemAdded(Operator* op);
+
 private:
   struct Item;
   class TreeItem;

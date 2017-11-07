@@ -659,6 +659,7 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
   foreach (auto op, dataSource->operators()) {
     this->operatorAdded(op);
   }
+  emit dataSourceItemAdded(dataSource);
 }
 
 void PipelineModel::moduleAdded(Module* module)
@@ -682,6 +683,7 @@ void PipelineModel::moduleAdded(Module* module)
     }
     endInsertRows();
   }
+  emit moduleItemAdded(module);
 }
 
 void PipelineModel::operatorAdded(Operator* op)
@@ -731,6 +733,7 @@ void PipelineModel::operatorAdded(Operator* op)
     }
     endInsertRows();
   }
+  emit operatorItemAdded(op);
 }
 
 void PipelineModel::operatorModified()

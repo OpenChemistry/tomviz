@@ -42,6 +42,7 @@
 #include <vtkTable.h>
 
 #include <QApplication>
+#include <QDebug>
 #include <QItemDelegate>
 #include <QKeyEvent>
 #include <QMainWindow>
@@ -138,12 +139,6 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   OperatorRunningDelegate* delegate = new OperatorRunningDelegate(this);
   setItemDelegate(delegate);
 
-  // track selection to update ActiveObjects.
-  connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
-          SLOT(setCurrent(DataSource*)));
-  connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
-          SLOT(setCurrent(Module*)));
-
   // Connect up operators to start and stop delegate
   // New datasource added
   connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded,
@@ -165,6 +160,28 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
 }
 
 PipelineView::~PipelineView() = default;
+
+void PipelineView::setModel(QAbstractItemModel* model)
+{
+  QTreeView::setModel(model);
+  auto pipelineModel = qobject_cast<PipelineModel*>(model);
+  if (!pipelineModel) {
+    // Warn about impending segfault
+    qCritical() << "Unknown model type.  PipelineView will not work correctly";
+  }
+
+  // Listen for new items being added since the current selection needs
+  // to be updated.  We can't listen on the ModuleManager/DataSource
+  // since the PipelineModel listens to those signals and setCurrent
+  // has to happen AFTER the slots on the PipelineModel are called.  So
+  // we listen to the model and respond after it does its update.
+  connect(pipelineModel, SIGNAL(dataSourceItemAdded(DataSource*)),
+          SLOT(setCurrent(DataSource*)));
+  connect(pipelineModel, SIGNAL(moduleItemAdded(Module*)),
+          SLOT(setCurrent(Module*)));
+  connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
+          SLOT(setCurrent(Operator*)));
+}
 
 void PipelineView::keyPressEvent(QKeyEvent* e)
 {
@@ -458,17 +475,25 @@ void PipelineView::currentChanged(const QModelIndex& current,
 void PipelineView::setCurrent(DataSource* dataSource)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
-  setCurrentIndex(pipelineModel->dataSourceIndex(dataSource));
+  auto index = pipelineModel->dataSourceIndex(dataSource);
+  setCurrentIndex(index);
+  selectionModel()->select(index, QItemSelectionModel::Select);
 }
 
 void PipelineView::setCurrent(Module* module)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
-  setCurrentIndex(pipelineModel->moduleIndex(module));
+  auto index = pipelineModel->moduleIndex(module);
+  setCurrentIndex(index);
+  selectionModel()->select(index, QItemSelectionModel::Select);
 }
 
-void PipelineView::setCurrent(Operator*)
+void PipelineView::setCurrent(Operator* op)
 {
+  auto pipelineModel = qobject_cast<PipelineModel*>(model());
+  auto index = pipelineModel->operatorIndex(op);
+  setCurrentIndex(index);
+  selectionModel()->select(index, QItemSelectionModel::Select);
 }
 
 void PipelineView::deleteItemsConfirm(const QModelIndexList& idxs)
