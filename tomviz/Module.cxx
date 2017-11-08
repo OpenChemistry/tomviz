@@ -163,7 +163,6 @@ vtkSMProxy* Module::opacityMap() const
 
 vtkPiecewiseFunction* Module::gradientOpacityMap() const
 {
-  Q_ASSERT(!m_useDetachedColorMap);
   vtkPiecewiseFunction* gof = useDetachedColorMap()
                                 ? d->m_gradientOpacityMap.GetPointer()
                                 : dataSource()->gradientOpacityMap();
