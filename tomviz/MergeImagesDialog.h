@@ -13,37 +13,34 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizProgressBehavior_h
-#define tomvizProgressBehavior_h
+#ifndef tomvizMergeImagesDialog_h
+#define tomvizMergeImagesDialog_h
 
-#include <QObject>
-#include <QPointer>
+#include <QDialog>
+#include <QScopedPointer>
 
-class QProgressDialog;
-class QWidget;
+namespace Ui {
+class MergeImagesDialog;
+}
 
 namespace tomviz {
 
-/// Behavior to show a progress dialog for ParaView progress events.
-class ProgressBehavior : public QObject
+class MergeImagesDialog : public QDialog
 {
-  Q_OBJECT
-  typedef QObject Superclass;
+Q_OBJECT
 
 public:
-  ProgressBehavior(QWidget* parent = nullptr);
-  ~ProgressBehavior();
+  MergeImagesDialog(QWidget* parent = nullptr);
+  ~MergeImagesDialog() override;
 
-  /// Delayed initialization of the dialog until it is used.
-  void initialize();
+  enum MergeMode : int { Arrays, Components };
 
-private slots:
-  void enableProgress(bool enable);
-  void progress(const QString& message, int progress);
+  MergeMode getMode();
 
 private:
-  Q_DISABLE_COPY(ProgressBehavior)
-  QPointer<QProgressDialog> ProgressDialog;
+  Q_DISABLE_COPY(MergeImagesDialog)
+  QScopedPointer<Ui::MergeImagesDialog> m_ui;
 };
 }
+
 #endif

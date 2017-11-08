@@ -84,6 +84,10 @@ set(SOURCES
   LoadPaletteReaction.h
   Logger.cxx
   Logger.h
+  MergeImagesDialog.cxx
+  MergeImagesDialog.h
+  MergeImagesReaction.cxx
+  MergeImagesReaction.h
   Module.cxx
   Module.h
   ModuleContour.cxx
@@ -140,8 +144,6 @@ set(SOURCES
   PipelineView.h
   PipelineWorker.cxx
   PipelineWorker.h
-  ProgressBehavior.cxx
-  ProgressBehavior.h
   ProgressDialogManager.cxx
   ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx
