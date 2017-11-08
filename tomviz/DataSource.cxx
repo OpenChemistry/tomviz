@@ -18,9 +18,9 @@
 #include "ModuleManager.h"
 #include "Operator.h"
 #include "OperatorFactory.h"
-#include "PipelineWorker.h"
 #include "Utilities.h"
 #include "ActiveObjects.h"
+#include "Pipeline.h"
 
 #include <vtkDataObject.h>
 #include <vtkDoubleArray.h>
@@ -65,10 +65,6 @@ public:
   vtkSmartPointer<vtkDataArray> TiltAngles;
   vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
-  QMap<Operator*, vtkWeakPointer<vtkImageData>> CachedPreOpStates;
-  PipelineWorker* Worker;
-  PipelineWorker::Future* Future;
-  bool PipelinePaused = false;
   PersistenceState PersistState = PersistenceState::Saved;
   double m_scaleOriginalSpacingBy = 1;
 
@@ -135,26 +131,6 @@ void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
   }
   delete[] data;
 }
-}
-
-DataSource::ImageFuture::ImageFuture(Operator* op,
-                                     vtkSmartPointer<vtkImageData> imageData,
-                                     PipelineWorker::Future* future,
-                                     QObject* parent)
-  : QObject(parent), m_operator(op), m_imageData(imageData), m_future(future)
-{
-
-  if (m_future != nullptr) {
-    connect(m_future, SIGNAL(finished(bool)), SIGNAL(finished(bool)));
-    connect(m_future, SIGNAL(canceled()), SIGNAL(canceled()));
-  }
-}
-
-DataSource::ImageFuture::~ImageFuture()
-{
-  if (m_future != nullptr) {
-    m_future->deleteLater();
-  }
 }
 
 DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
@@ -554,43 +530,19 @@ int DataSource::addOperator(Operator* op)
 {
   op->setParent(this);
   int index = this->Internals->Operators.count();
-  foreach (Operator* o, this->Internals->Operators) {
-    if (o->hasChildDataSource()) {
-      auto dataSource = o->childDataSource();
-      o->setChildDataSource(nullptr);
-      o->setHasChildDataSource(false);
-      ModuleManager::instance().removeDataSource(dataSource);
-    }
-  }
-
   this->Internals->Operators.push_back(op);
-  connect(op, SIGNAL(transformModified()), SLOT(operatorTransformModified()));
   emit operatorAdded(op);
 
-  operate(op);
   return index;
 }
 
 bool DataSource::removeOperator(Operator* op)
 {
   if (op) {
-    // TODO Should remove any cache entries?
-
     // We should emit that the operator was removed...
     this->Internals->Operators.removeAll(op);
 
-    // If pipeline is running see if we can safely remove the operator
-    if (this->Internals->Future != nullptr &&
-        this->Internals->Future->isRunning()) {
-      // If we can't safely cancel the execution then trigger the rerun of the
-      // pipeline.
-      if (!this->Internals->Future->cancel(op)) {
-        operatorTransformModified();
-      }
-    } else {
-      // Trigger the pipeline to run
-      this->operatorTransformModified();
-    }
+    emit this->operatorRemoved(op);
 
     op->deleteLater();
 
@@ -629,88 +581,6 @@ bool DataSource::removeAllOperators()
   }
 
   return success;
-}
-
-void DataSource::operate(Operator* op)
-{
-  Q_ASSERT(op);
-
-  if (this->Internals->PipelinePaused) {
-    return;
-  }
-
-  // See if we have any canceled operators in the pipeline, if so start from
-  // there.
-  for (auto itr = this->Internals->Operators.begin(); *itr != op; ++itr) {
-    auto currentOp = *itr;
-    if (currentOp->isCanceled()) {
-      emit currentOp->transformModified();
-      return;
-    }
-  }
-
-  // Reset operator state
-  op->resetState();
-
-  // If we are currently executing the pipeline, just add the operator
-  if (this->Internals->Future != nullptr &&
-      this->Internals->Future->isRunning()) {
-    this->Internals->Future->addOperator(op);
-  }
-  // We need to initiate a new run
-  else {
-    emit operatorStarted();
-    vtkDataObject* copy = copyData();
-    this->Internals->Future = this->Internals->Worker->run(copy, op);
-    connect(this->Internals->Future, SIGNAL(finished(bool)), this,
-            SLOT(pipelineFinished(bool)));
-    connect(this->Internals->Future, SIGNAL(canceled()), this,
-            SLOT(pipelineCanceled()));
-  }
-}
-
-DataSource::ImageFuture* DataSource::getCopyOfImagePriorTo(Operator* op)
-{
-  vtkSmartPointer<vtkImageData> result = vtkSmartPointer<vtkImageData>::New();
-  ImageFuture* imageFuture;
-  if (this->Internals->Operators.contains(op)) {
-    if (this->Internals->Operators.size() > 1) {
-      vtkAlgorithm* alg = algorithm();
-      result->DeepCopy(alg->GetOutputDataObject(0));
-
-      auto index = this->Internals->Operators.indexOf(op);
-      // Only run operators if we have some to run
-      if (index > 0) {
-        auto future = this->Internals->Worker->run(
-          result, this->Internals->Operators.mid(0, index));
-
-        imageFuture = new ImageFuture(op, result, future);
-        connect(imageFuture, SIGNAL(finished(bool)), this, SLOT(updateCache()));
-
-        return imageFuture;
-      }
-    } else { // this->Internals->Operators.size() == 1
-      // If there is one operator, copy the original data source to the current
-      // data set. Otherwise, a copy is not needed.
-      auto data = copyData();
-      setData(data);
-    }
-  }
-
-  vtkTrivialProducer* tp = trivialProducer();
-  result->DeepCopy(tp->GetOutputDataObject(0));
-  imageFuture = new ImageFuture(op, result);
-  // Delay emitting signal until next event loop
-  QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
-
-  return imageFuture;
-}
-
-void DataSource::updateCache()
-{
-  DataSource::ImageFuture* future =
-    qobject_cast<DataSource::ImageFuture*>(sender());
-  this->Internals->CachedPreOpStates[future->op()] = future->result();
 }
 
 void DataSource::dataModified()
@@ -797,31 +667,7 @@ vtkDataObject* DataSource::copyData()
   return copy;
 }
 
-//vtkDataObject* DataSource::copyOriginalData()
-//{
-//
-//  vtkSMSourceProxy* dataSource = this->Internals->OriginalDataSource;
-//  Q_ASSERT(dataSource);
-//
-//  dataSource->UpdatePipeline();
-//  vtkAlgorithm* vtkalgorithm =
-//    vtkAlgorithm::SafeDownCast(dataSource->GetClientSideObject());
-//  Q_ASSERT(vtkalgorithm);
-//
-//  vtkSMSourceProxy* source = this->Internals->Producer;
-//  Q_ASSERT(source != nullptr);
-//
-//  // Create a clone and release the reader data.
-//  vtkDataObject* data = vtkalgorithm->GetOutputDataObject(0);
-//  vtkDataObject* dataClone = data->NewInstance();
-//  dataClone->DeepCopy(data);
-//  // data->ReleaseData();  FIXME: how it this supposed to work? I get errors on
-//  // attempting to re-execute the reader pipeline in clone().
-//
-//  return dataClone;
-//}
-
-    void DataSource::setData(vtkDataObject* newData)
+void DataSource::setData(vtkDataObject* newData)
 {
   vtkSMSourceProxy* source = this->Internals->DataSourceProxy;
   Q_ASSERT(source != nullptr);
@@ -853,93 +699,6 @@ vtkDataObject* DataSource::copyData()
     fd->AddArray(typeArray);
   }
   typeArray->SetTuple1(0, this->Internals->Type);
-}
-
-void DataSource::operatorTransformModified()
-{
-  if (this->Internals->PipelinePaused) {
-    return;
-  }
-
-  Operator* srcOp = qobject_cast<Operator*>(sender());
-
-  vtkSmartPointer<vtkImageData> cachedState;
-  if (srcOp && this->Internals->CachedPreOpStates.contains(srcOp)) {
-    cachedState = this->Internals->CachedPreOpStates[srcOp];
-  }
-  // Cancel any running operators
-  if (this->Internals->Future != nullptr &&
-      this->Internals->Future->isRunning()) {
-    this->Internals->Future->cancel();
-  }
-
-  // Disable caching for now, issue #1133.
-  if (false && cachedState) {
-    // TODO I don't think we need todo this or should do this!
-    //vtkTrivialProducer* tp = vtkTrivialProducer::SafeDownCast(
-    //  this->Internals->Producer->GetClientSideObject());
-    // TODO Should we not copy this?
-    //tp->SetOutput(cachedState);
-
-    // Use cached result and run the pipeline from the operator which we have
-    // the data before it was applied.
-    this->Internals->Future = this->Internals->Worker->run(
-      cachedState, this->Internals->Operators.mid(
-                     this->Internals->Operators.indexOf(srcOp)));
-    connect(this->Internals->Future, SIGNAL(finished(bool)), this,
-            SLOT(pipelineFinished(bool)));
-    connect(this->Internals->Future, SIGNAL(canceled()), this,
-            SLOT(pipelineCanceled()));
-  } else {
-    executeOperators();
-  }
-}
-
-void DataSource::pipelineFinished(bool result)
-{
-  PipelineWorker::Future* future =
-    qobject_cast<PipelineWorker::Future*>(sender());
-  if (result) {
-
-    auto lastOp = future->operators()[0];
-
-    DataSource *newChildDataSource = nullptr;
-    if (!lastOp->hasChildDataSource()) {
-      auto label = QString("%1[Transformed]").arg(filename());
-      qDebug() << label;
-      newChildDataSource = new DataSource(label);
-      // TODO A little odd we have todo both?
-      lastOp->setHasChildDataSource(true);
-      lastOp->setChildDataSource(newChildDataSource);
-    }
-
-    lastOp->childDataSource()->setData(future->result());
-
-    if (newChildDataSource != nullptr) {
-      emit lastOp->newChildDataSource(newChildDataSource);
-    }
-
-  } else {
-    future->result()->Delete();
-  }
-  future->deleteLater();
-  if (this->Internals->Future == future) {
-    this->Internals->Future = nullptr;
-    emit allOperatorsFinished();
-  }
-
-  dataModified();
-}
-
-void DataSource::pipelineCanceled()
-{
-  PipelineWorker::Future* future =
-    qobject_cast<PipelineWorker::Future*>(sender());
-  future->result()->Delete();
-  future->deleteLater();
-  if (this->Internals->Future == future) {
-    this->Internals->Future = nullptr;
-  }
 }
 
 vtkSMProxy* DataSource::colorMap() const
@@ -1055,34 +814,6 @@ void DataSource::updateColorMap()
   tomviz::rescaleColorMap(colorMap(), this);
 }
 
-void DataSource::executeOperators()
-{
-  if (this->Internals->PipelinePaused) {
-    return;
-  }
-
-  // Cancel any running operators
-  if (this->Internals->Future != nullptr &&
-      this->Internals->Future->isRunning()) {
-    this->Internals->Future->cancel();
-  }
-
-  auto data = copyData();
-
-  // We have no operators to run so just update the data and signal that
-  // data has changed
-  if (this->Internals->Operators.isEmpty()) {
-    setData(data);
-    dataModified();
-  } else {
-    this->Internals->Future =
-      this->Internals->Worker->run(data, this->Internals->Operators);
-    connect(this->Internals->Future, SIGNAL(finished(bool)), this,
-            SLOT(pipelineFinished(bool)));
-    connect(this->Internals->Future, SIGNAL(canceled()), this,
-            SLOT(pipelineCanceled()));
-  }
-}
 
 bool DataSource::isImageStack()
 {
@@ -1092,38 +823,6 @@ bool DataSource::isImageStack()
 
   return helper.GetNumberOfElements() > 1;
 }
-
-bool DataSource::isRunningAnOperator()
-{
-  return this->Internals->Future != nullptr &&
-         this->Internals->Future->isRunning();
-}
-
-void DataSource::pausePipeline()
-{
-  this->Internals->PipelinePaused = true;
-}
-
-void DataSource::resumePipeline(bool execute)
-{
-  this->Internals->PipelinePaused = false;
-  if (execute) {
-    executeOperators();
-  }
-}
-
-void DataSource::cancelPipeline(std::function<void()> canceled)
-{
-  if (this->Internals->Future) {
-    if (canceled) {
-      connect(this->Internals->Future, &PipelineWorker::Future::canceled,
-              canceled);
-    }
-    this->Internals->Future->cancel();
-  }
-}
-
-
 
 void DataSource::setPersistenceState(DataSource::PersistenceState state)
 {
@@ -1152,6 +851,12 @@ vtkDataObject* DataSource::dataObject() const
   auto alg = algorithm();
   Q_ASSERT(alg);
   return alg->GetOutputDataObject(0);
+}
+
+
+Pipeline* DataSource::pipeline()
+{
+  return qobject_cast<Pipeline*>(parent());
 }
 
 }

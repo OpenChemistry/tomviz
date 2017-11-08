@@ -81,13 +81,13 @@ void MergeImagesReaction::updateEnableState()
   // physical space for now.
   if (enabled) {
     QList<DataSource*> sourceList = m_dataSources.toList();
-    auto info = sourceList[0]->producer()->GetDataInformation();
+    auto info = sourceList[0]->dataSourceProxy()->GetDataInformation();
     int refExtent[6];
     info->GetExtent(refExtent);
 
     // Check against other DataSource extents
     for (int i = 0; i < m_dataSources.size(); ++i) {
-      info = sourceList[i]->producer()->GetDataInformation();
+      info = sourceList[i]->dataSourceProxy()->GetDataInformation();
       int thisExtent[6];
       info->GetExtent(thisExtent);
       enabled = enabled && std::equal(refExtent, refExtent+6, thisExtent);
@@ -113,7 +113,7 @@ DataSource* MergeImagesReaction::mergeArrays()
   Q_ASSERT(filter);
 
   for (int i = 0; i < sourceList.size(); ++i) {
-    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->producer(), 0);  
+    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->dataSourceProxy(), 0);
   }
 
   filter->UpdateVTKObjects();
@@ -148,9 +148,9 @@ DataSource* MergeImagesReaction::mergeComponents()
   expression << "np.transpose(np.vstack((";
 
   for (int i = 0; i < sourceList.size(); ++i) {
-    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->producer(), 0);
+    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->dataSourceProxy(), 0);
 
-    auto info = sourceList[0]->producer()->GetDataInformation();
+    auto info = sourceList[0]->dataSourceProxy()->GetDataInformation();
     auto pointData = info->GetPointDataInformation();
     for (int j = 0; j < pointData->GetNumberOfArrays(); ++j) {
       auto arrayInfo = pointData->GetArrayInformation(j);

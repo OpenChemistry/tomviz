@@ -32,6 +32,7 @@
 #include "SnapshotOperator.h"
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
+#include "Pipeline.h"
 
 #include <pqCoreUtilities.h>
 #include <pqSpreadSheetView.h>
@@ -320,7 +321,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     if (!dataSource) {
       dataSource = op->dataSource();
     }
-    dataSource->executeOperators();
+    dataSource->pipeline()->execute(dataSource);
   } else if (markAsAction != nullptr && markAsAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());
     ToggleDataTypeReaction::toggleDataType(mainWindow, dataSource);
@@ -376,7 +377,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
   foreach (Operator* op, operators) {
     // If the datasource is being remove don't bother removing the operator
     if (!dataSources.contains(op->dataSource())) {
-      op->dataSource()->pausePipeline();
+      op->dataSource()->pipeline()->pause();
       paused.insert(op->dataSource());
       pipelineModel->removeOp(op);
     }
@@ -388,7 +389,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
 
   // Now resume the pipelines
   foreach (DataSource* dataSource, paused) {
-    dataSource->resumePipeline();
+    dataSource->pipeline()->resume();
   }
 
   // Delay rendering until signals have been processed and all modules removed.
@@ -504,11 +505,11 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   for (auto& index : idxs) {
     auto dataSource = pipelineModel->dataSource(index);
-    if (dataSource && dataSource->isRunningAnOperator()) {
+    if (dataSource && dataSource->pipeline()->isRunning()) {
       return false;
     }
     auto op = pipelineModel->op(index);
-    if (op && op->dataSource()->isRunningAnOperator()) {
+    if (op && op->dataSource()->pipeline()->isRunning()) {
       return false;
     }
   }

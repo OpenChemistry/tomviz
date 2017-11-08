@@ -25,10 +25,6 @@
 
 #include <vtk_pugixml.h>
 
-#include "PipelineWorker.h"
-
-#include <functional>
-
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
@@ -39,6 +35,7 @@ class vtkTrivialProducer;
 
 namespace tomviz {
 class Operator;
+class Pipeline;
 
 /// Encapsulation for a DataSource. This class manages a data source, including
 /// the provenance for any operations performed on the data source.
@@ -47,8 +44,6 @@ class DataSource : public QObject
   Q_OBJECT
 
 public:
-  class ImageFuture;
-
   /// The type of data in the data source.  The data types currently supported
   /// are volumetric data and image stacks representing tilt series.
   enum DataSourceType
@@ -145,8 +140,6 @@ public:
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);
 
-  ImageFuture* getCopyOfImagePriorTo(Operator* op);
-
   /// Returns the extent of the transformed dataset
   void getExtent(int extent[6]);
   /// Returns the physical extent (bounds) of the transformed dataset
@@ -161,34 +154,26 @@ public:
   /// Set the string describing the units
   void setUnits(const QString& units);
 
-  /// Execute the operator pipeline associate with the datasource
-  void executeOperators();
-
   /// Return true is datasource is an image stack, false otherwise
   bool isImageStack();
-
-  // TODO Move
-  /// Return true if an operator is running in this DataSource's worker
-  bool isRunningAnOperator();
-
-  // TODO Move
-  // Pause the automatic exection of the operator pipeline
-  void pausePipeline();
-
-  // TODO Move
-  // Resume the automatic execution of the operator pipeline, will execution the
-  // existing pipeline. If execute is true the entire pipeline will be executed.
-  void resumePipeline(bool execute = true);
-
-  // Cancel execution of the operator pipeline. canceled is a optional callback
-  // that will be called when the pipeline has been successfully canceled.
-  void cancelPipeline(std::function<void()> canceled = nullptr);
 
   /// Set the persistence state
   void setPersistenceState(PersistenceState state);
 
   /// Returns the persistence state
   PersistenceState persistenceState() const;
+
+  Pipeline* pipeline();
+
+  /// Create copy of current data object, caller is responsible for ownership
+  vtkDataObject* copyData();
+
+  /// Set data output of trivial producer to new data object, the trivial
+  /// producer takes over ownership of the data object.
+  void setData(vtkDataObject* newData);
+
+  /// Reset the data output of the trivial producer to original data object.
+  void resetData();
 
 signals:
   /// This signal is fired to notify the world that the DataSource may have
@@ -203,53 +188,26 @@ signals:
   /// DataSource.
   void operatorAdded(Operator*);
 
+
+  void operatorRemoved(Operator*);
+
   /// This signal is fired every time the display position is changed
   /// Any actors based on this DataSource's data should update the position
   /// on their actors to match this so the effect of setting the position is
   /// to translate the dataset.
   void displayPositionChanged(double newX, double newY, double newZ);
 
-  /// This signal is fired when the return value from isRunningAnOperator
-  /// becomes true
-  void operatorStarted();
-  /// This signal is fired when the return value from isRunningAnOperator
-  /// becomes false
-  void allOperatorsFinished();
 
 public slots:
   void dataModified();
 
 protected:
-  void operate(Operator* op);
-
-  /// Reset the data output of the trivial producer to original data object.
-  void resetData();
-
-  /// Set data output of trivial producer to new data object, the trivial
-  /// producer takes over ownership of the data object.
-  void setData(vtkDataObject* newData);
-
-  /// Create copy of current data object, caller is responsible for ownership
-  vtkDataObject* copyData();
-
-  /// Create copy of original data object, caller is responsible for ownership
-  vtkDataObject* copyOriginalData();
-
   /// Sets the type of data in the DataSource
   void setType(DataSourceType t);
 
 protected slots:
-  void operatorTransformModified();
-
   /// update the color map range.
   void updateColorMap();
-
-  /// The pipeline worker is finished
-  void pipelineFinished(bool result);
-
-  /// The pipeline worker is has been canceled
-  void pipelineCanceled();
-  void updateCache();
 
 private:
 
@@ -262,30 +220,6 @@ private:
   const QScopedPointer<DSInternals> Internals;
 };
 
-/// Return from getCopyOfImagePriorTo for caller to track async operation.
-class DataSource::ImageFuture : public QObject
-{
-  Q_OBJECT
-
-public:
-  friend class DataSource;
-
-  vtkSmartPointer<vtkImageData> result() { return m_imageData; }
-  Operator* op() { return m_operator; }
-
-signals:
-  void finished(bool result);
-  void canceled();
-
-private:
-  ImageFuture(Operator* op, vtkSmartPointer<vtkImageData> m_imageData,
-              PipelineWorker::Future* future = nullptr,
-              QObject* parent = nullptr);
-  ~ImageFuture() override;
-  Operator* m_operator;
-  vtkSmartPointer<vtkImageData> m_imageData;
-  PipelineWorker::Future* m_future;
-};
 }
 
 #endif

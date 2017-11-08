@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "Pipeline.h"
 #include "LoadDataReaction.h"
 #include "Module.h"
 #include "ModuleFactory.h"
@@ -112,7 +113,7 @@ void ModuleManager::reset()
 bool ModuleManager::hasRunningOperators()
 {
   for (QPointer<DataSource> dsource : this->Internals->DataSources) {
-    if (dsource->isRunningAnOperator()) {
+    if (dsource->pipeline()->isRunning()) {
       return true;
     }
   }
@@ -122,7 +123,6 @@ bool ModuleManager::hasRunningOperators()
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !this->Internals->DataSources.contains(dataSource)) {
-    dataSource->setParent(this);
     this->Internals->DataSources.push_back(dataSource);
     emit this->dataSourceAdded(dataSource);
   }
@@ -131,7 +131,6 @@ void ModuleManager::addDataSource(DataSource* dataSource)
 void ModuleManager::addChildDataSource(DataSource* dataSource)
 {
   if (dataSource && !this->Internals->ChildDataSources.contains(dataSource)) {
-    dataSource->setParent(this);
     this->Internals->ChildDataSources.push_back(dataSource);
     emit this->childDataSourceAdded(dataSource);
   }

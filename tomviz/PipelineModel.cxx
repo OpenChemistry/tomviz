@@ -31,6 +31,7 @@
 #include <vtkTable.h>
 #include <vtkUnstructuredGrid.h>
 
+
 namespace tomviz {
 
 struct PipelineModel::Item
@@ -69,6 +70,7 @@ public:
   ~TreeItem();
 
   TreeItem* parent() { return m_parent; }
+  void setParent(TreeItem* parent) { m_parent = parent; };
   TreeItem* child(int index);
   TreeItem* lastChild();
   int childCount() const { return m_children.count(); }
@@ -77,6 +79,9 @@ public:
   bool appendChild(const PipelineModel::Item& item);
   bool insertChild(int position, const PipelineModel::Item& item);
   bool removeChild(int position);
+  PipelineModel::TreeItem* detachChild(int position);
+  PipelineModel::TreeItem* detach();
+  bool attach(PipelineModel::TreeItem* treeItem);
 
   bool remove(DataSource* source);
   bool remove(Module* module);
@@ -154,6 +159,30 @@ bool PipelineModel::TreeItem::removeChild(int pos)
     return false;
   }
   delete m_children.takeAt(pos);
+  return true;
+}
+
+PipelineModel::TreeItem* PipelineModel::TreeItem::detachChild(int pos)
+{
+  if (pos < 0 || pos >= m_children.size()) {
+    return nullptr;
+  }
+  auto child = m_children.takeAt(pos);
+  child->setParent(nullptr);
+
+  return child;
+}
+
+PipelineModel::TreeItem* PipelineModel::TreeItem::detach()
+{
+
+  return this->parent()->detachChild(this->childIndex());
+}
+
+bool PipelineModel::TreeItem::attach(PipelineModel::TreeItem* treeItem)
+{
+  m_children.append(treeItem);
+  treeItem->setParent(this);
   return true;
 }
 
@@ -714,6 +743,8 @@ void PipelineModel::operatorAdded(Operator* op)
     auto statusIndex = this->index(opIndex.row(), 1, opIndex.parent());
     emit this->dataChanged(statusIndex, statusIndex);
   });
+  connect(op, &Operator::dataSourceMoved, this, &PipelineModel::dataSourceMoved);
+
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
@@ -914,6 +945,24 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
   // before we can listen to the signal above. Display those operators.
   foreach (auto op, dataSource->operators()) {
     this->operatorAdded(op);
+  }
+}
+
+void PipelineModel::dataSourceMoved(DataSource* dataSource)
+{
+  if (Operator* newParent = qobject_cast<Operator*>(this->sender())) {
+
+    auto index = this->dataSourceIndex(dataSource);
+    auto dataSourceItem = this->treeItem(index);
+    auto oldParent = dataSourceItem->parent()->op();
+    auto oldParentIndex = this->operatorIndex(oldParent);
+    auto operatorIndex = this->operatorIndex(newParent);
+    auto operatorTreeItem = this->treeItem(operatorIndex);
+
+    beginMoveRows(oldParentIndex, index.row(), index.row(), operatorIndex, operatorTreeItem->childCount());
+    dataSourceItem = dataSourceItem->detach();
+    operatorTreeItem->attach(dataSourceItem);
+    endMoveRows();
   }
 }
 

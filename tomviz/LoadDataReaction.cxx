@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "Pipeline.h"
 #include "EmdFormat.h"
 #include "ModuleManager.h"
 #include "RAWFileReaderDialog.h"
@@ -287,7 +288,9 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
   if (child) {
     ModuleManager::instance().addChildDataSource(dataSource);
   } else {
+    auto pipeline = new Pipeline(dataSource);
     ModuleManager::instance().addDataSource(dataSource);
+
   }
 
   // Work through pathological cases as necessary, prefer active view.

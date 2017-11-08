@@ -80,6 +80,7 @@ public slots:
   void moduleRemoved(Module* module);
   void childDataSourceAdded(DataSource* dataSource);
   void childDataSourceRemoved(DataSource* dataSource);
+  void dataSourceMoved(DataSource* dataSource);
 
 private:
   struct Item;
