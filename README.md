@@ -54,6 +54,14 @@ Start by watching this short video to [see tomviz in action][tomviz_in_action].
 The [tomviz user guide](/docs/TomvizBasicUserGuide.pdf) has more detailed
 information to get started.
 
+Mailing List
+------------
+
+Community support is available through the [tomviz mailing list](https://public.kitware.com/mailman/listinfo/tomviz).
+Please use the mailing list for questions about usage,
+capabilities, and general discussion about tomviz. Specific errors and bugs should
+be reported on the [tomviz issue tracker](https://github.com/OpenChemistry/tomviz/issues).
+
 Publications using Tomviz
 -------------------------
 - [Nanomaterial datasets to advance tomography in scanning transmission electron
