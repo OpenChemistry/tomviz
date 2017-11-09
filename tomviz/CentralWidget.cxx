@@ -327,10 +327,6 @@ CentralWidget::~CentralWidget()
 
 void CentralWidget::setActiveColorMapDataSource(DataSource* source)
 {
-  if (m_activeModule) {
-    m_activeModule->disconnect(this);
-    m_activeModule = nullptr;
-  }
   setColorMapDataSource(source);
 }
 
