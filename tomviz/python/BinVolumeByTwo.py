@@ -9,7 +9,17 @@ def transform_scalars(dataset):
 
     # Downsample the dataset x2 using order 1 spline (linear)
     # Calculate out array shape
-    zoom = (0.5, 0.5, 0.5)
+
+    def dimensions(array):
+        if array.ndim == 4:
+            zoom = (0.5, 0.5, 0.5, 1)
+
+        else:
+            zoom = (0.5, 0.5, 0.5)
+
+        return zoom
+
+    zoom = dimensions(array)
     result_shape = utils.zoom_shape(array, zoom)
     result = np.empty(result_shape, array.dtype, order='F')
     scipy.ndimage.interpolation.zoom(array, zoom,
