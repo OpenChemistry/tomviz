@@ -92,7 +92,6 @@ public slots:
   void addDataSource(DataSource*);
   void addChildDataSource(DataSource*);
   void removeDataSource(DataSource*);
-  void removeChildDataSource(DataSource*);
   void removeAllDataSources();
 
   /// Removes all modules and data sources.
@@ -114,7 +113,6 @@ signals:
   void dataSourceAdded(DataSource*);
   void childDataSourceAdded(DataSource*);
   void dataSourceRemoved(DataSource*);
-  void childDataSourceRemoved(DataSource*);
 
 private:
   Q_DISABLE_COPY(ModuleManager)

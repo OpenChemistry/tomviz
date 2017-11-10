@@ -144,14 +144,6 @@ void ModuleManager::removeDataSource(DataSource* dataSource)
   }
 }
 
-void ModuleManager::removeChildDataSource(DataSource* dataSource)
-{
-  if (this->Internals->ChildDataSources.removeOne(dataSource)) {
-    emit this->childDataSourceRemoved(dataSource);
-    dataSource->deleteLater();
-  }
-}
-
 void ModuleManager::removeAllDataSources()
 {
   foreach (DataSource* dataSource, this->Internals->DataSources) {
