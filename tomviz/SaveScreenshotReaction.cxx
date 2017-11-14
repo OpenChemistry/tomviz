@@ -24,11 +24,16 @@
 #include <pqSaveScreenshotReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
+#include <vtkNew.h>
 #include <vtkPVProxyDefinitionIterator.h>
+#include <vtkSMParaViewPipelineController.h>
+#include <vtkSMPropertyHelper.h>
 #include <vtkSMProxy.h>
 #include <vtkSMProxyDefinitionManager.h>
 #include <vtkSMProxyManager.h>
+#include <vtkSMSaveScreenshotProxy.h>
 #include <vtkSMSessionProxyManager.h>
+#include <vtkSMViewLayoutProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QComboBox>
@@ -177,12 +182,9 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
   QString palette = paletteBox->itemData(paletteBox->currentIndex()).toString();
 
   bool makeTransparentBackground = false;
-  bool wasTransparent = vtkSMViewProxy::GetTransparentBackground();
   if (palette == "Transparent Background") {
-    std::cout << "Trying to make transparent" << std::endl;
     makeTransparentBackground = true;
     palette = "";
-    vtkSMViewProxy::SetTransparentBackground(1);
   }
 
   auto colorPalette = pxm->GetProxy("global_properties", "ColorPalette");
@@ -199,15 +201,33 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
     chosenPalette->Delete();
   }
 
-  pqSaveScreenshotReaction::saveScreenshot(filename, size, 100, false);
+  vtkSMViewProxy* viewProxy = view->getViewProxy();
+  vtkSMViewLayoutProxy* layout = vtkSMViewLayoutProxy::FindLayout(viewProxy);
 
-  // restore color palette.
-  if (clone) {
-    colorPalette->Copy(clone);
-    pqApplicationCore::instance()->render();
+  vtkSmartPointer<vtkSMProxy> proxy;
+  proxy.TakeReference(pxm->NewProxy("misc", "SaveScreenshot"));
+  vtkSMSaveScreenshotProxy* shProxy =
+    vtkSMSaveScreenshotProxy::SafeDownCast(proxy);
+  if (!shProxy) {
+    // TODO something went horribly wrong
+    return;
   }
-  if (makeTransparentBackground) {
-    vtkSMViewProxy::SetTransparentBackground(wasTransparent);
-  }
+
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  controller->PreInitializeProxy(shProxy);
+  vtkSMPropertyHelper(shProxy, "View").Set(viewProxy);
+  vtkSMPropertyHelper(shProxy, "Layout").Set(layout);
+  controller->PostInitializeProxy(shProxy);
+
+  int resolution[2];
+  resolution[0] = size.width();
+  resolution[1] = size.height();
+  vtkSMPropertyHelper(shProxy, "ImageResolution").Set(resolution, 2);
+  vtkSMPropertyHelper(shProxy, "OverrideColorPalette")
+    .Set(palette.toLocal8Bit().data());
+  vtkSMPropertyHelper(shProxy, "TransparentBackground")
+    .Set(makeTransparentBackground);
+
+  shProxy->WriteImage(filename.toLocal8Bit().data());
 }
 }
