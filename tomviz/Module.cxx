@@ -39,6 +39,7 @@
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMViewProxy.h>
 #include <vtkSmartPointer.h>
+#include <vtkTransferFunction2DItem.h>
 
 namespace tomviz {
 
@@ -53,7 +54,14 @@ public:
   vtkNew<vtkPiecewiseFunction> m_gradientOpacityMap;
 
   Module::TransferMode m_transferMode;
+  QVector<vtkSmartPointer<vtkTransferFunction2DItem>> m_transferFunction2D;
   vtkNew<vtkImageData> m_transfer2D;
+
+  MInternals()
+  {
+    m_transferFunction2D.push_back(
+      vtkSmartPointer<vtkTransferFunction2DItem>::New());
+  }
   vtkSMProxy* detachedColorMap()
   {
     if (!m_detachedColorMap) {
@@ -186,10 +194,18 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
   return gof;
 }
 
-vtkImageData* Module::transferFunction2D() const
+QVector<vtkSmartPointer<vtkTransferFunction2DItem>>&
+Module::transferFunction2D() const
 {
-  return useDetachedColorMap() ? d->m_transfer2D.GetPointer()
+  return useDetachedColorMap() ? d->m_transferFunction2D
                                : colorMapDataSource()->transferFunction2D();
+}
+
+vtkImageData* Module::transferFunction2DImage() const
+{
+  return useDetachedColorMap()
+           ? d->m_transfer2D.GetPointer()
+           : colorMapDataSource()->transferFunction2DImage();
 }
 
 bool Module::serialize(pugi::xml_node& ns) const

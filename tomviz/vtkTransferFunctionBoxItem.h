@@ -32,11 +32,10 @@
  * vtkChartTransfer2DEditor.
  */
 
-class vtkColorTransferFunction;
 class vtkImageData;
 class vtkPen;
-class vtkPiecewiseFunction;
 class vtkPoints2D;
+class vtkTransferFunction2DItem;
 
 class vtkTransferFunctionBoxItem : public vtkControlPointsItem
 {
@@ -49,29 +48,11 @@ public:
 
     void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
-  //@{
   /**
-   * Transfer functions represented by this box item.
+   * Set the item that this chart widget is displaying
    */
-  void SetColorFunction(vtkColorTransferFunction* function);
-  vtkColorTransferFunction* GetColorFunction();
-
-  void SetOpacityFunction(vtkPiecewiseFunction* function);
-  vtkPiecewiseFunction* GetOpacityFunction();
-  //@}
-
-  /**
-   * Returns the curren box as [x0, y0, width, height].
-   */
-  const vtkRectd& GetBox();
-
-  //{@
-  /**
-   * Set position and width with respect to corner 0 (BOTTOM_LEFT).
-   */
-  void SetBox(const double x, const double y, const double width,
-              const double height);
-  //@}
+  vtkTransferFunction2DItem* GetItem();
+  void SetItem(vtkTransferFunction2DItem* item);
 
 protected:
   vtkTransferFunctionBoxItem();
@@ -147,7 +128,15 @@ protected:
 
   virtual void ComputeTexture();
 
+  void UpdateInternalBox();
+
 private:
+  /**
+   * Moves and resizes the displayed box to the given dimensions.  Also
+   * modifies the TransferFunctionItem's box to match the given dimensions.
+   */
+  void SetBox(const double x, const double y, const double width,
+              const double height);
   /**
    * Custom method to clamp point positions to valid bounds (chart bounds).  A
    * custom method was required given that ControlPoints::ClampValidPos()
@@ -189,9 +178,9 @@ private:
 
   vtkNew<vtkPoints2D> BoxPoints;
   const int NumPoints = 4;
-  vtkRectd Box;
-  vtkSmartPointer<vtkPiecewiseFunction> OpacityFunction;
-  vtkSmartPointer<vtkColorTransferFunction> ColorFunction;
+  vtkSmartPointer<vtkTransferFunction2DItem> TransferFunctionItem;
+  int ObserverNum;
+  bool IsUpdatingBox;
 
   vtkNew<vtkPen> Pen;
   vtkNew<vtkImageData> Texture;

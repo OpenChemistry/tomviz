@@ -30,6 +30,8 @@
 #include <vtkUnsignedCharArray.h>
 #include <vtkVectorOperators.h>
 
+#include "vtkTransferFunction2DItem.h"
+
 namespace {
 inline bool PointIsWithinBounds2D(double point[2], double bounds[4],
                                   const double delta[2])
@@ -54,6 +56,7 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
   vtkTransferFunctionBoxItem::vtkTransferFunctionBoxItem()
   : Superclass()
 {
+  this->ObserverNum = 0;
   // Initialize box, points are ordered as:
   //     3 ----- 2
   //     |       |
@@ -80,34 +83,33 @@ vtkStandardNewMacro(vtkTransferFunctionBoxItem)
     vtkUnsignedCharArray::SafeDownCast(tex->GetPointData()->GetScalars());
   const auto dataPtr = arr->GetVoidPointer(0);
   memset(dataPtr, 0, texSize * 4 * sizeof(unsigned char));
+  this->IsUpdatingBox = false;
 }
 
 vtkTransferFunctionBoxItem::~vtkTransferFunctionBoxItem() = default;
 
-void vtkTransferFunctionBoxItem::SetColorFunction(vtkColorTransferFunction* f)
+void vtkTransferFunctionBoxItem::SetItem(vtkTransferFunction2DItem* item)
 {
-  if (this->ColorFunction != f) {
-    this->ColorFunction = f;
+  if (this->TransferFunctionItem != item) {
+    if (this->TransferFunctionItem) {
+      this->TransferFunctionItem->RemoveObserver(this->ObserverNum);
+    }
+    this->TransferFunctionItem = item;
+    // Capture changes to the box
+    if (this->TransferFunctionItem) {
+      this->TransferFunctionItem->AddObserver(vtkCommand::ModifiedEvent, this,
+                                              &vtkObject::Modified);
+      vtkRectd newBox = this->TransferFunctionItem->GetBox();
+      this->SetBox(newBox.GetX(), newBox.GetY(), newBox.GetWidth(),
+                   newBox.GetHeight());
+    }
     this->Modified();
   }
 }
 
-vtkColorTransferFunction* vtkTransferFunctionBoxItem::GetColorFunction()
+vtkTransferFunction2DItem* vtkTransferFunctionBoxItem::GetItem()
 {
-  return this->ColorFunction;
-}
-
-void vtkTransferFunctionBoxItem::SetOpacityFunction(vtkPiecewiseFunction* f)
-{
-  if (this->OpacityFunction != f) {
-    this->OpacityFunction = f;
-    this->Modified();
-  }
-}
-
-vtkPiecewiseFunction* vtkTransferFunctionBoxItem::GetOpacityFunction()
-{
-  return this->OpacityFunction;
+  return this->TransferFunctionItem;
 }
 
 void vtkTransferFunctionBoxItem::DragBox(const double deltaX,
@@ -124,6 +126,7 @@ void vtkTransferFunctionBoxItem::DragBox(const double deltaX,
   this->MovePoint(TOP_RIGHT, deltaX, deltaY);
   this->MovePoint(TOP_LEFT, deltaX, deltaY);
 
+  this->UpdateInternalBox();
   this->EndChanges();
   this->InvokeEvent(vtkCommand::SelectionChangedEvent);
 }
@@ -176,6 +179,7 @@ vtkIdType vtkTransferFunctionBoxItem::AddPoint(double* pos)
   const vtkIdType id = this->BoxPoints->InsertNextPoint(pos[0], pos[1]);
   Superclass::AddPointId(id);
 
+  this->UpdateInternalBox();
   this->EndChanges();
 
   return id;
@@ -228,6 +232,7 @@ void vtkTransferFunctionBoxItem::DragCorner(const vtkIdType cornerId,
       break;
   }
 
+  this->UpdateInternalBox();
   this->EndChanges();
   this->InvokeEvent(vtkCommand::SelectionChangedEvent);
 }
@@ -318,15 +323,18 @@ bool vtkTransferFunctionBoxItem::Paint(vtkContext2D* painter)
 
 void vtkTransferFunctionBoxItem::ComputeTexture()
 {
+  auto ColorFunction = this->TransferFunctionItem->GetColorTransferFunction();
+
   double range[2];
-  this->ColorFunction->GetRange(range);
+  ColorFunction->GetRange(range);
 
   const int texSize = this->Texture->GetDimensions()[0];
   auto dataRGB = new double[texSize * 3];
-  this->ColorFunction->GetTable(range[0], range[1], texSize, dataRGB);
+  ColorFunction->GetTable(range[0], range[1], texSize, dataRGB);
 
   auto dataAlpha = new double[texSize];
-  this->OpacityFunction->GetTable(range[0], range[1], texSize, dataAlpha);
+  this->TransferFunctionItem->GetOpacityFunction()->GetTable(
+    range[0], range[1], texSize, dataAlpha);
 
   auto arr = vtkUnsignedCharArray::SafeDownCast(
     this->Texture->GetPointData()->GetScalars());
@@ -463,30 +471,17 @@ void vtkTransferFunctionBoxItem::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
 
-  os << indent << "Box [x, y, width, height]: [" << this->Box.GetX() << ", "
-     << this->Box.GetY() << ", " << this->Box.GetWidth() << ", "
-     << this->Box.GetHeight() << "]\n";
-}
+  auto Box = this->TransferFunctionItem->GetBox();
 
-const vtkRectd& vtkTransferFunctionBoxItem::GetBox()
-{
-  double lowerBound[2];
-  this->BoxPoints->GetPoint(BOTTOM_LEFT, lowerBound);
-
-  double upperBound[2];
-  this->BoxPoints->GetPoint(TOP_RIGHT, upperBound);
-
-  const double width = upperBound[0] - lowerBound[0];
-  const double height = upperBound[1] - lowerBound[1];
-
-  this->Box.Set(lowerBound[0], lowerBound[1], width, height);
-
-  return this->Box;
+  os << indent << "Box [x, y, width, height]: [" << Box.GetX() << ", "
+     << Box.GetY() << ", " << Box.GetWidth() << ", " << Box.GetHeight()
+     << "]\n";
 }
 
 void vtkTransferFunctionBoxItem::SetBox(const double x, const double y,
                                         const double width, const double height)
 {
+  this->IsUpdatingBox = true;
   // Delta position
   double posBottomLeft[2];
   this->BoxPoints->GetPoint(BOTTOM_LEFT, posBottomLeft);
@@ -504,18 +499,25 @@ void vtkTransferFunctionBoxItem::SetBox(const double x, const double y,
 
   this->DragBox(deltaPos.GetX(), deltaPos.GetY());
   this->DragCorner(TOP_RIGHT, deltaSize);
+  this->TransferFunctionItem->SetBox(x, y, width, height);
+  this->IsUpdatingBox = false;
 }
 
 bool vtkTransferFunctionBoxItem::NeedsTextureUpdate()
 {
   auto tex = this->Texture.GetPointer();
-  return (tex->GetMTime() < this->ColorFunction->GetMTime() ||
-          tex->GetMTime() < this->OpacityFunction->GetMTime());
+  return (
+    tex->GetMTime() <
+      this->TransferFunctionItem->GetColorTransferFunction()->GetMTime() ||
+    tex->GetMTime() <
+      this->TransferFunctionItem->GetOpacityFunction()->GetMTime());
 }
 
 bool vtkTransferFunctionBoxItem::IsInitialized()
 {
-  return this->ColorFunction && this->OpacityFunction;
+  return this->TransferFunctionItem &&
+         this->TransferFunctionItem->GetColorTransferFunction() &&
+         this->TransferFunctionItem->GetOpacityFunction();
 }
 
 vtkIdType vtkTransferFunctionBoxItem::FindBoxPoint(double* _pos)
@@ -558,4 +560,21 @@ vtkIdType vtkTransferFunctionBoxItem::FindBoxPoint(double* _pos)
     }
   }
   return pointId;
+}
+
+void vtkTransferFunctionBoxItem::UpdateInternalBox()
+{
+  if (!this->IsUpdatingBox && this->TransferFunctionItem) {
+    double posBottomLeft[2];
+    this->BoxPoints->GetPoint(BOTTOM_LEFT, posBottomLeft);
+    double posTopRight[2];
+    this->BoxPoints->GetPoint(TOP_RIGHT, posTopRight);
+
+    vtkRectd rect;
+    rect.SetX(posBottomLeft[0]);
+    rect.SetY(posBottomLeft[1]);
+    rect.SetWidth(posTopRight[0] - posBottomLeft[0]);
+    rect.SetHeight(posTopRight[1] - posBottomLeft[1]);
+    this->TransferFunctionItem->SetBox(rect);
+  }
 }
