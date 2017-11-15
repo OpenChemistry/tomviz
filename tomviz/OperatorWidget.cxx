@@ -29,6 +29,7 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QVariant>
+#include <QLineEdit>
 
 namespace tomviz {
 
@@ -129,6 +130,12 @@ QMap<QString, QVariant> OperatorWidget::values() const
       // Single-element parameter, nothing to do
       ++iter;
     }
+  }
+
+  // QLineEdit's ( currently 'file' and 'directory' types ).
+  QList<QLineEdit*> lineEdits = this->findChildren<QLineEdit*>();
+  for (int i = 0; i < lineEdits.size(); ++i) {
+    map[lineEdits[i]->objectName()] = lineEdits[i]->text();
   }
 
   return map;
