@@ -24,12 +24,12 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QLineEdit>
 #include <QMap>
 #include <QSet>
 #include <QString>
 #include <QVBoxLayout>
 #include <QVariant>
-#include <QLineEdit>
 
 namespace tomviz {
 

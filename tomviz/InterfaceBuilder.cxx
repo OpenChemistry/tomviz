@@ -23,18 +23,18 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
+#include <QDir>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QLabel>
-#include <QSpinBox>
-#include <QWidget>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QFileInfo>
-#include <QDir>
-#include <QFileDialog>
+#include <QSpinBox>
+#include <QWidget>
 
 namespace {
 
@@ -373,12 +373,12 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   }
   layout->addWidget(label, row, 0, 1, 1);
 
-  QLineEdit *pathField = new QLineEdit();
+  QLineEdit* pathField = new QLineEdit();
   pathField->setObjectName(nameValue.toString());
   pathField->setMinimumWidth(500);
   horizontalLayout->addWidget(pathField);
 
-  QPushButton *browseButton = new QPushButton("Browse");
+  QPushButton* browseButton = new QPushButton("Browse");
   horizontalLayout->addWidget(browseButton);
   QObject::connect(browseButton, &QPushButton::clicked, [type, pathField]() {
 
@@ -396,11 +396,10 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
     QString path;
     if (type == "file") {
       path = QFileDialog::getOpenFileName(pqCoreUtilities::mainWidget(),
-          "Select File", browseDir);
-    }
-    else {
+                                          "Select File", browseDir);
+    } else {
       path = QFileDialog::getExistingDirectory(pqCoreUtilities::mainWidget(),
-          "Select Directory", browseDir);
+                                               "Select Directory", browseDir);
     }
 
     // If a path was selected update the line edit.
@@ -409,7 +408,6 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
     }
   });
 }
-
 
 } // end anonymous namespace
 
@@ -505,7 +503,6 @@ QLayout* InterfaceBuilder::buildInterface() const
     } else if (typeString == "file" || typeString == "directory") {
       addPathWidget(layout, i + 1, parameterObject);
     }
-
   }
 
   return layout;
