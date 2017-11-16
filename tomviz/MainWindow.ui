@@ -348,6 +348,15 @@
    </attribute>
    <widget class="pqPythonShell" name="pythonConsole"/>
   </widget>
+  <widget class="QDockWidget" name="dockWidgetLightsInspector">
+   <property name="windowTitle">
+    <string>Lights Inspector</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="pqLightsInspector" name="lightsInspector"/>
+  </widget>
   <action name="actionOpen">
    <property name="text">
     <string>&amp;Open Data</string>
@@ -488,6 +497,12 @@
    <class>pqPythonShell</class>
    <extends>QWidget</extends>
    <header>pqPythonShell.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqLightsInspector</class>
+   <extends>QWidget</extends>
+   <header>pqLightsInspector.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

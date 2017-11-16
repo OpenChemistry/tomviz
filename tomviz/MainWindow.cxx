@@ -141,6 +141,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_ui->dockWidgetMessages->hide();
   m_ui->dockWidgetPythonConsole->hide();
   m_ui->dockWidgetAnimation->hide();
+  m_ui->dockWidgetLightsInspector->hide();
 
   // Tweak the initial sizes of the dock widgets.
   QList<QDockWidget*> docks;
