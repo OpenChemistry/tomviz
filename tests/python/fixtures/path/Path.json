@@ -1,0 +1,19 @@
+{
+  "name" : "Path",
+  "label" : "Path test operator",
+  "description" : "Tests 'file' and 'directory' types.",
+  "parameters" : [
+    {
+      "name" : "file",
+      "label" : "File",
+      "description" : "The file.",
+      "type" : "file"
+    },
+    {
+      "name" : "dir",
+      "label" : "Directory",
+      "description" : "The directory.",
+      "type" : "directory"
+    }
+  ]
+}
