@@ -56,7 +56,6 @@ QList<QString> ModuleFactory::moduleTypes(DataSource* dataSource,
           << "Ruler"
           << "Scale Cube"
           << "Orthogonal Slice";
-    //      << "Segmentation";
     qSort(reply);
   }
   return reply;
@@ -83,10 +82,6 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
   } else if (type == "Scale Cube") {
     module = new ModuleScaleCube();
   }
-  //  else if (type == "Segmentation")
-  //  {
-  //    module = new ModuleSegment();
-  //  }
 
   if (module) {
     // sanity check.
