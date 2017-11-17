@@ -13,29 +13,23 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizAddRotateAlignReaction_h
-#define tomvizAddRotateAlignReaction_h
+#ifndef tomvizCustomPythonOperatorWidget_h
+#define tomvizCustomPythonOperatorWidget_h
 
-#include "pqReaction.h"
+#include <QWidget>
 
 namespace tomviz {
-class DataSource;
 
-class AddRotateAlignReaction : public pqReaction
+class CustomPythonOperatorWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  AddRotateAlignReaction(QAction* parent);
+  CustomPythonOperatorWidget(QWidget* parent);
+  virtual ~CustomPythonOperatorWidget();
 
-  void align(DataSource* source = NULL);
-
-protected:
-  void updateEnableState() override;
-  void onTriggered() override { align(); }
-
-private:
-  Q_DISABLE_COPY(AddRotateAlignReaction)
+  virtual void getValues(QMap<QString, QVariant>& map) = 0;
+  virtual void setValues(const QMap<QString, QVariant>& map) = 0;
 };
 }
 

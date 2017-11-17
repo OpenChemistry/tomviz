@@ -32,8 +32,6 @@
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
-#include "AddRotateAlignReaction.h"
-#include "AddRotateAlignReaction.h"
 #include "Behaviors.h"
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
@@ -316,7 +314,11 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new AddPythonTransformReaction(
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
     readInPythonScript("GradientMagnitude2D_Sobel"), true);
-  new AddRotateAlignReaction(rotateAlignAction);
+  new AddPythonTransformReaction(rotateAlignAction,
+                                 "Tilt Axis Alignment (manual)",
+                                 readInPythonScript("RotationAlign"), true,
+                                 false, readInJSONDescription("RotationAlign"));
+  // new AddRotateAlignReaction(rotateAlignAction);
   new AddPythonTransformReaction(
     autoRotateAlignAction, "Auto Tilt Axis Align",
     readInPythonScript("AutoTiltAxisRotationAlignment"), true);
