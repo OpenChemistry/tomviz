@@ -48,6 +48,7 @@ signals:
   void adaptiveScalingToggled(const bool state);
   void sideLengthChanged(const double length);
   void annotationToggled(const bool state);
+  void boxColorChanged(QColor color);
   //@}
 
 public slots:
@@ -63,6 +64,7 @@ public slots:
   void setPositionUnit(const QString unit);
   void setSideLength(const double length);
   void setPosition(const double x, const double y, const double z);
+  void setBoxColor(const QColor& color);
   //@}
 
 private:
