@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ModuleFactory.h"
 
+#include "DataSource.h"
 #include "ModuleContour.h"
 #include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
@@ -41,24 +42,36 @@ ModuleFactory::~ModuleFactory()
 {
 }
 
-QList<QString> ModuleFactory::moduleTypes(DataSource* dataSource,
-                                          vtkSMViewProxy* view)
+QList<QString> ModuleFactory::moduleTypes()
 {
   QList<QString> reply;
-  if (dataSource && view) {
-
-    // based on the data type and view, return module types.
-    reply << "Outline"
-          << "Volume"
-          << "Contour"
-          << "Threshold"
-          << "Slice"
-          << "Ruler"
-          << "Scale Cube"
-          << "Orthogonal Slice";
-    qSort(reply);
-  }
+  reply << "Outline"
+        << "Slice"
+        << "Ruler"
+        << "Scale Cube"
+        << "Orthogonal Slice"
+        << "Contour"
+        << "Volume"
+        << "Threshold";
+  qSort(reply);
   return reply;
+}
+
+bool ModuleFactory::moduleApplicable(const QString & moduleName,
+                                     DataSource* dataSource,
+                                     vtkSMViewProxy* view) {
+  if (dataSource && view) {
+    if (dataSource->getNumberOfComponents() > 1) {
+      if (moduleName == "Contour" ||
+          moduleName == "Volume" ||
+          moduleName == "Threshold") {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  return false;
 }
 
 Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
