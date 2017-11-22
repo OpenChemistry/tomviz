@@ -100,6 +100,7 @@ private slots:
 
   void setLengthUnit();
   void setPositionUnit();
+  void onBoxColorChanged(const QColor& color);
 };
 }
 

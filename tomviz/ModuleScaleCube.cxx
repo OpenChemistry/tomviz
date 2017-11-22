@@ -27,6 +27,7 @@
 #include <vtkCommand.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVRenderView.h>
+#include <vtkProperty.h>
 #include <vtkSMPVRepresentationProxy.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMPropertyHelper.h>
@@ -161,6 +162,13 @@ bool ModuleScaleCube::serialize(pugi::xml_node& ns) const
   annotationNode.append_attribute("enabled") =
     m_cubeRep->GetLabelVisibility() == 1;
 
+  xml_node colorNode = rootNode.append_child("color");
+  double color[3];
+  m_cubeRep->GetProperty()->GetDiffuseColor(color);
+  colorNode.append_attribute("red").set_value(color[0]);
+  colorNode.append_attribute("green").set_value(color[1]);
+  colorNode.append_attribute("blue").set_value(color[2]);
+
   return Module::serialize(ns);
 }
 
@@ -210,6 +218,15 @@ bool ModuleScaleCube::deserialize(const pugi::xml_node& ns)
     }
   }
 
+  node = rootNode.child("color");
+  if (node) {
+    double color[3];
+    color[0] = node.attribute("red").as_double();
+    color[1] = node.attribute("green").as_double();
+    color[2] = node.attribute("blue").as_double();
+    m_cubeRep->GetProperty()->SetDiffuseColor(color);
+  }
+
   return Module::deserialize(ns);
 }
 
@@ -238,6 +255,11 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
   m_controllers->setPosition(worldPosition[0], worldPosition[1],
                              worldPosition[2]);
   m_controllers->setPositionUnit(QString(m_cubeRep->GetLengthUnit()));
+  double color[3];
+  m_cubeRep->GetProperty()->GetDiffuseColor(color);
+  m_controllers->setBoxColor(QColor(static_cast<int>(color[0] * 255.0 + 0.5),
+                                    static_cast<int>(color[1] * 255.0 + 0.5),
+                                    static_cast<int>(color[2] * 255.0 + 0.5)));
 
   // Connect the widget's signals to this class' slots
   connect(m_controllers, SIGNAL(adaptiveScalingToggled(const bool)), this,
@@ -246,6 +268,8 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
           SLOT(setSideLength(const double)));
   connect(m_controllers, SIGNAL(annotationToggled(const bool)), this,
           SLOT(setAnnotation(const bool)));
+  connect(m_controllers, &ModuleScaleCubeWidget::boxColorChanged, this,
+          &ModuleScaleCube::onBoxColorChanged);
 
   // Connect this class' signals to the widget's slots
   connect(this, SIGNAL(onLengthUnitChanged(const QString)), m_controllers,
@@ -316,6 +340,13 @@ std::string ModuleScaleCube::getStringForProxy(vtkSMProxy*)
 vtkSMProxy* ModuleScaleCube::getProxyForString(const std::string&)
 {
   return nullptr;
+}
+
+void ModuleScaleCube::onBoxColorChanged(const QColor& color)
+{
+  m_cubeRep->GetProperty()->SetDiffuseColor(
+    color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0);
+  emit renderNeeded();
 }
 
 } // end of namespace tomviz
