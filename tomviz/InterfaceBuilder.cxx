@@ -374,6 +374,9 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   layout->addWidget(label, row, 0, 1, 1);
 
   QLineEdit* pathField = new QLineEdit();
+  // Tag the line edit with the type, so we can distinguish it from other line
+  // edit uses ( such as in a QSpinBox )
+  pathField->setProperty("type", type);
   pathField->setObjectName(nameValue.toString());
   pathField->setMinimumWidth(500);
   horizontalLayout->addWidget(pathField);

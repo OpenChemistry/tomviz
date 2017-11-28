@@ -133,9 +133,16 @@ QMap<QString, QVariant> OperatorWidget::values() const
   }
 
   // QLineEdit's ( currently 'file' and 'directory' types ).
+  QStringList pathTypes = { "file", "directory" };
   QList<QLineEdit*> lineEdits = this->findChildren<QLineEdit*>();
   for (int i = 0; i < lineEdits.size(); ++i) {
-    map[lineEdits[i]->objectName()] = lineEdits[i]->text();
+    auto lineEdit = lineEdits[i];
+    QVariant type = lineEdit->property("type");
+
+    if (type.canConvert(QMetaType::QString) &&
+        pathTypes.contains(type.toString())) {
+      map[lineEdit->objectName()] = lineEdit->text();
+    }
   }
 
   return map;
