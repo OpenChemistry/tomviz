@@ -71,8 +71,9 @@ void DataTransformMenu::buildTransforms()
   auto fftAbsLogAction = menu->addAction("FFT (abs log)");
   auto gradientMagnitudeSobelAction = menu->addAction("Gradient Magnitude");
   auto unsharpMaskAction = menu->addAction("Unsharp Mask");
-  auto laplaceFilterAction = menu->addAction("Laplace Filter");
-  auto gaussianFilterAction = menu->addAction("Gaussian Filter");
+  auto laplaceFilterAction = menu->addAction("Laplace Sharpen");
+  auto gaussianFilterAction = menu->addAction("Gaussian Blur");
+  auto autoCorrelationAction = menu->addAction("Auto Correlation");
   auto peronaMalikeAnisotropicDiffusionAction =
     menu->addAction("Perona-Malik Anisotropic Diffusion");
   auto medianFilterAction = menu->addAction("Median Filter");
@@ -132,12 +133,14 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(unsharpMaskAction, "Unsharp Mask",
                                  readInPythonScript("UnsharpMask"), false,
                                  false, readInJSONDescription("UnsharpMask"));
-  new AddPythonTransformReaction(laplaceFilterAction, "Laplace Filter",
+  new AddPythonTransformReaction(laplaceFilterAction, "Laplace Sharpen",
                                  readInPythonScript("LaplaceFilter"));
-  new AddPythonTransformReaction(gaussianFilterAction, "Gaussian Filter",
-                                 readInPythonScript("GaussianFilter"), false,
-                                 false,
-                                 readInJSONDescription("GaussianFilter"));
+  new AddPythonTransformReaction(autoCorrelationAction,"Auto Correlation",
+                                 readInPythonScript("Auto_Correlation"));
+  new AddPythonTransformReaction(gaussianFilterAction, "Gaussian Blur",
+                                   readInPythonScript("GaussianFilter"), false,
+                                   false,
+                                   readInJSONDescription("GaussianFilter"));
   new AddPythonTransformReaction(
     peronaMalikeAnisotropicDiffusionAction,
     "Perona-Malik Anisotropic Diffusion",

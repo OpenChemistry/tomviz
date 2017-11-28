@@ -240,6 +240,7 @@ set(exec_sources
 
 set(python_files
   AddPoissonNoise.py
+  Auto_Correlation.py
   BinaryThreshold.py
   ConnectedComponents.py
   ClipEdges.py
