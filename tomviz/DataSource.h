@@ -148,6 +148,10 @@ public:
   /// Sets the scale factor (ratio between units and spacing)
   /// one component per axis
   void setSpacing(const double scaleFactor[3]);
+
+  /// Returns the number of components in the dataset.
+  unsigned int getNumberOfComponents();
+
   /// Returns a string describing the units for the given axis of the data
   QString getUnits(int axis);
   /// Set the string describing the units

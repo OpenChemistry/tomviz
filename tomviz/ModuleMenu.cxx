@@ -48,12 +48,16 @@ void ModuleMenu::updateActions()
 
   menu->clear();
   toolBar->clear();
-  QList<QString> modules =
-    ModuleFactory::moduleTypes(ActiveObjects::instance().activeDataSource(),
-                               ActiveObjects::instance().activeView());
+
+  auto activeDataSource = ActiveObjects::instance().activeDataSource();
+  auto activeView = ActiveObjects::instance().activeView();
+  QList<QString> modules = ModuleFactory::moduleTypes();
+
   if (modules.size() > 0) {
     foreach (const QString& txt, modules) {
       auto actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
+      actn->setEnabled(ModuleFactory::moduleApplicable(txt, activeDataSource,
+                                                       activeView));
       toolBar->addAction(actn);
       actn->setData(txt);
     }
