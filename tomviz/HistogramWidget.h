@@ -19,6 +19,7 @@
 #include <QWidget>
 
 #include <vtkNew.h>
+#include <vtkWeakPointer.h>
 
 class vtkChartHistogramColorOpacityEditor;
 class vtkContextView;
@@ -72,10 +73,11 @@ private:
   vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
+  QToolButton* m_colorLegendToolButton;
 
-  vtkPVDiscretizableColorTransferFunction* m_LUT = nullptr;
-  vtkPiecewiseFunction* m_scalarOpacityFunction = nullptr;
-  vtkSMProxy* m_LUTProxy = nullptr;
+  vtkWeakPointer<vtkPVDiscretizableColorTransferFunction> m_LUT;
+  vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
+  vtkWeakPointer<vtkSMProxy> m_LUTProxy;
 
   QVTKGLWidget* m_qvtk;
 };
