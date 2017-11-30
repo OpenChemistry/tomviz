@@ -50,9 +50,12 @@ public:
 
   void setInputData(vtkTable* table, const char* x_, const char* y_);
 
+  vtkSMProxy* getScalarBarRepresentation(vtkSMProxy* view);
+
 signals:
   void colorMapUpdated();
   void opacityChanged();
+  void colorLegendToggled(bool);
 
 public slots:
   void onScalarOpacityFunctionChanged();
@@ -64,6 +67,7 @@ public slots:
   void onInvertClicked();
   void onPresetClicked();
   void applyCurrentPreset();
+  void updateUI();
 
 protected:
   void showEvent(QShowEvent* event) override;

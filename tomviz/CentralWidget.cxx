@@ -30,12 +30,15 @@
 #include <vtkVector.h>
 
 #include <vtkPVDiscretizableColorTransferFunction.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMViewProxy.h>
 
 #include <QModelIndex>
 #include <QThread>
 #include <QTimer>
 
 #include "AbstractDataModel.h"
+#include "ActiveObjects.h"
 #include "ComputeHistogram.h"
 #include "DataSource.h"
 #include "Module.h"
@@ -282,6 +285,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
           SLOT(onColorMapUpdated()));
+  connect(m_ui->histogramWidget, SIGNAL(colorLegendToggled(bool)),
+          SLOT(onColorLegendToggled(bool)));
   connect(m_ui->gradientOpacityWidget, SIGNAL(mapUpdated()),
           SLOT(onColorMapUpdated()));
   m_ui->gradientOpacityWidget->hide();
@@ -438,6 +443,18 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
 void CentralWidget::onColorMapUpdated()
 {
   onColorMapDataSourceChanged();
+}
+
+void CentralWidget::onColorLegendToggled(bool visibility)
+{
+  auto view = ActiveObjects::instance().activeView();
+  auto sbProxy = m_ui->histogramWidget->getScalarBarRepresentation(view);
+  if (view && sbProxy) {
+    vtkSMPropertyHelper(sbProxy, "Visibility").Set(visibility ? 1 : 0);
+    vtkSMPropertyHelper(sbProxy, "Enabled").Set(visibility ? 1 : 0);
+    sbProxy->UpdateVTKObjects();
+    ActiveObjects::instance().renderAllViews();
+  }
 }
 
 void CentralWidget::onColorMapDataSourceChanged()

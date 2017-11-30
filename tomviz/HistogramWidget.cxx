@@ -42,9 +42,11 @@
 
 #include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMPropertyHelper.h>
+#include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMViewProxy.h>
 
+#include <QCheckBox>
 #include <QColorDialog>
 #include <QHBoxLayout>
 #include <QToolButton>
@@ -109,7 +111,20 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
   vLayout->addWidget(button);
 
+  button = new QToolButton;
+  m_colorLegendToolButton = button;
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqScalarBar24.png"));
+  button->setToolTip("Show color legend in the 3D window.");
+  button->setCheckable(true);
+  connect(button, SIGNAL(toggled(bool)), this, SIGNAL(colorLegendToggled(bool)));
+  button->setChecked(false);
+  vLayout->addWidget(button);
+
   vLayout->addStretch(1);
+
+  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
+          this, SLOT(updateUI()));
+  connect(this, SIGNAL(colorMapUpdated()), this, SLOT(updateUI()));
 
   setLayout(hLayout);
 }
@@ -131,6 +146,7 @@ void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction* lut)
                          vtkCommand::ModifiedEvent,
                          this,
                          SLOT(onScalarOpacityFunctionChanged()));
+    emit colorMapUpdated();
   }
 }
 
@@ -142,6 +158,17 @@ void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
       vtkPVDiscretizableColorTransferFunction::SafeDownCast(
         proxy->GetClientSideObject());
     setLUT(lut);
+
+    auto view = ActiveObjects::instance().activeView();
+
+    // Update widget to reflect scalar bar visibility.
+    if (m_LUTProxy) {
+      auto sbProxy = getScalarBarRepresentation(view);
+      if (sbProxy) {
+        bool visible = vtkSMPropertyHelper(sbProxy, "Visibility").GetAsInt() == 1;
+        m_colorLegendToolButton->setChecked(visible);
+      }
+    }
   }
 }
 
@@ -157,6 +184,32 @@ void HistogramWidget::setInputData(vtkTable* table,
     m_histogramColorOpacityEditor->SelectColorArray("image_extents");
   }
   m_histogramView->Render();
+}
+
+vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
+{
+  if (!view) {
+    return nullptr;
+  }
+
+  vtkSMTransferFunctionProxy* tferProxy =
+    vtkSMTransferFunctionProxy::SafeDownCast(m_LUTProxy);
+  Q_ASSERT(tferProxy);
+
+  auto sbProxy = tferProxy->FindScalarBarRepresentation(view);
+  if (!sbProxy) {
+    // No scalar bar representation exists yet, create it and initialize it
+    // with some default settings.
+    vtkNew<vtkSMTransferFunctionManager> tferManager;
+    sbProxy = tferManager->GetScalarBarRepresentation(m_LUTProxy, view);
+    vtkSMPropertyHelper(sbProxy, "Visibility").Set(0);
+    vtkSMPropertyHelper(sbProxy, "Enabled").Set(0);
+    vtkSMPropertyHelper(sbProxy, "Title").Set("");
+    vtkSMPropertyHelper(sbProxy, "ComponentTitle").Set("");
+    sbProxy->UpdateVTKObjects();
+  }
+
+  return sbProxy;
 }
 
 void HistogramWidget::onScalarOpacityFunctionChanged()
@@ -343,6 +396,22 @@ void HistogramWidget::applyCurrentPreset()
     }
     renderViews();
     emit colorMapUpdated();
+  }
+}
+
+void HistogramWidget::updateUI()
+{
+  auto view = ActiveObjects::instance().activeView();
+
+  // Update widget to reflect scalar bar visibility.
+  if (m_LUTProxy) {
+    auto sbProxy = getScalarBarRepresentation(view);
+    if (view && sbProxy) {
+      m_colorLegendToolButton->blockSignals(true);
+      m_colorLegendToolButton->
+        setChecked(vtkSMPropertyHelper(sbProxy, "Visibility").GetAsInt() == 1);
+      m_colorLegendToolButton->blockSignals(false);
+    }
   }
 }
 
