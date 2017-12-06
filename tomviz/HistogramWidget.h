@@ -19,6 +19,7 @@
 #include <QWidget>
 
 #include <vtkNew.h>
+#include <vtkWeakPointer.h>
 
 class vtkChartHistogramColorOpacityEditor;
 class vtkContextView;
@@ -49,9 +50,12 @@ public:
 
   void setInputData(vtkTable* table, const char* x_, const char* y_);
 
+  vtkSMProxy* getScalarBarRepresentation(vtkSMProxy* view);
+
 signals:
   void colorMapUpdated();
   void opacityChanged();
+  void colorLegendToggled(bool);
 
 public slots:
   void onScalarOpacityFunctionChanged();
@@ -63,6 +67,7 @@ public slots:
   void onInvertClicked();
   void onPresetClicked();
   void applyCurrentPreset();
+  void updateUI();
 
 protected:
   void showEvent(QShowEvent* event) override;
@@ -72,10 +77,11 @@ private:
   vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
+  QToolButton* m_colorLegendToolButton;
 
-  vtkPVDiscretizableColorTransferFunction* m_LUT = nullptr;
-  vtkPiecewiseFunction* m_scalarOpacityFunction = nullptr;
-  vtkSMProxy* m_LUTProxy = nullptr;
+  vtkWeakPointer<vtkPVDiscretizableColorTransferFunction> m_LUT;
+  vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
+  vtkWeakPointer<vtkSMProxy> m_LUTProxy;
 
   QVTKGLWidget* m_qvtk;
 };

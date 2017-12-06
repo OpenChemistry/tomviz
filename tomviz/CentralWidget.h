@@ -61,6 +61,7 @@ public slots:
   void setActiveModule(Module*);
 
   void onColorMapUpdated();
+  void onColorLegendToggled(bool visibility);
 
 private slots:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
