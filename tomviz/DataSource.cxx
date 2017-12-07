@@ -563,7 +563,7 @@ bool DataSource::removeAllOperators()
   while (this->Internals->Operators.size() > 0) {
     Operator* lastOperator = this->Internals->Operators.takeLast();
 
-    if (lastOperator->hasChildDataSource()) {
+    if (lastOperator->childDataSource() != nullptr) {
       DataSource* childDataSource = lastOperator->childDataSource();
 
       // Recurse on the child data source

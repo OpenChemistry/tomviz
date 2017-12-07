@@ -793,7 +793,7 @@ void PipelineModel::operatorTransformDone()
     }
   }
 
-  if (op->hasChildDataSource()) {
+  if (op->hasChildDataSource() || op->childDataSource() != nullptr) {
     auto childDataSource = op->childDataSource();
     if (childDataSource) {
       // The Operator's child data set is null initially. We need to set it
@@ -918,7 +918,6 @@ PipelineModel::TreeItem* PipelineModel::treeItem(const QModelIndex& index) const
 void PipelineModel::childDataSourceAdded(DataSource* dataSource)
 {
   if (Operator* op = qobject_cast<Operator*>(this->sender())) {
-    assert(op->hasChildDataSource());
 
     auto index = this->dataSourceIndex(op->dataSource());
     auto dataSourceItem = this->treeItem(index);

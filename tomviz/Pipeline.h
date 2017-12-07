@@ -68,7 +68,6 @@ protected slots:
   /// The pipeline worker has been canceled
   void pipelineBranchCanceled();
 
-
 signals:
   /// This signal is when the execution of the pipeline starts.
   void started();
@@ -81,6 +80,7 @@ private:
 
   DataSource* findTransformedDataSource(DataSource *dataSource);
   Operator* findTransformedDataSourceOperator(DataSource *dataSource);
+  void addDataSource(DataSource* dataSource);
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.

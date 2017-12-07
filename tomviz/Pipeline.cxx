@@ -44,47 +44,7 @@ Pipeline::Pipeline(DataSource *dataSource, QObject *parent)
   this->Internals->Worker = new PipelineWorker(this);
   this->Internals->Data->setParent(this);
 
-  connect(dataSource, &DataSource::operatorAdded, [this](Operator *op) {
-    this->execute(op->dataSource(), true);
-  });
-  // Wire up transformModified to execute pipeline
-  connect(dataSource, &DataSource::operatorAdded, [this](Operator *op) {
-    // Extract out source and execute all.
-    connect(op, &Operator::transformModified, this, [this]() {
-      this->execute();
-    });
-
-    // We need to ensure we move add datasource to the end of the branch
-    auto operators = op->dataSource()->operators();
-    if (operators.size() > 1) {
-      auto transformedDataSourceOp = this->findTransformedDataSourceOperator(op->dataSource());
-      if (transformedDataSourceOp != nullptr) {
-        auto transformedDataSource = transformedDataSourceOp->childDataSource();
-        transformedDataSourceOp->setChildDataSource(nullptr);
-        transformedDataSourceOp->setHasChildDataSource(false);
-        op->setChildDataSource(transformedDataSource);
-        op->setHasChildDataSource(true);
-        // Delay emitting signal until next event loop
-        QTimer::singleShot(0, [=] { emit op->dataSourceMoved(transformedDataSource); });
-      }
-    }
-  });
-  // Wire up operatorRemoved. TODO We need to check the branch of the
-  // pipeline we are currently executing.
-  connect(dataSource, &DataSource::operatorRemoved, [this](Operator *op) {
-    // If pipeline is running see if we can safely remove the operator
-      if (this->Internals->Future != nullptr &&
-          this->Internals->Future->isRunning()) {
-        // If we can't safely cancel the execution then trigger the rerun of the
-        // pipeline.
-        if (!this->Internals->Future->cancel(op)) {
-          this->execute(op->dataSource());
-        }
-      } else {
-        // Trigger the pipeline to run
-          this->execute(op->dataSource());
-      }
-  });
+  this->addDataSource(dataSource);
 }
 
 
@@ -108,7 +68,7 @@ void Pipeline::execute(DataSource *start, bool last)
   if (last) {
     lastOp = start->operators().last();
   }
-  this->executePipelineBranch(this->Internals->Data, lastOp);
+  this->executePipelineBranch(start, lastOp);
 }
 
 void Pipeline::execute(DataSource *start)
@@ -184,25 +144,28 @@ void Pipeline::pipelineBranchFinished(bool result)
 
     auto lastOp = future->operators().last();
 
-    DataSource *newChildDataSource = nullptr;
-    if (lastOp->childDataSource() == nullptr) {
-      newChildDataSource = new DataSource("Output");
-      newChildDataSource->setParent(this);
-      // TODO A little odd we have todo both?
-      lastOp->setHasChildDataSource(true);
-      lastOp->setChildDataSource(newChildDataSource);
+    // We only add the transformed child data source if the last operator
+    // doesn't already have an explicit child data source i.e. hasChildDataSource
+    // is true.
+    if (!lastOp->hasChildDataSource()) {
+      DataSource *newChildDataSource = nullptr;
+      if (lastOp->childDataSource() == nullptr) {
+        newChildDataSource = new DataSource("Output");
+        newChildDataSource->setParent(this);
+        this->addDataSource(newChildDataSource);
+        lastOp->setChildDataSource(newChildDataSource);
+      }
+
+      lastOp->childDataSource()->setData(future->result());
+      lastOp->childDataSource()->dataModified();
+
+      if (newChildDataSource != nullptr) {
+        emit lastOp->newChildDataSource(newChildDataSource);
+      }
     }
-
-    lastOp->childDataSource()->setData(future->result());
-
-    if (newChildDataSource != nullptr) {
-      emit lastOp->newChildDataSource(newChildDataSource);
-    }
-
-    lastOp->dataSource()->dataModified();
 
     // Do we have another branch to execute
-    if (newChildDataSource == nullptr) {
+    if (lastOp->childDataSource() != nullptr) {
       this->execute(lastOp->childDataSource());
     }
     // The pipeline execution is finished
@@ -275,7 +238,11 @@ Operator* Pipeline::findTransformedDataSourceOperator(DataSource *dataSource)
 {
   auto operators = dataSource->operators();
   for (auto itr = operators.rbegin(); itr != operators.rend(); ++itr) {    auto op = *itr;
-    if (op->childDataSource() != nullptr) {
+    // hasChildDataSource is only set by operators that explicitly produce child data sources
+    // such as a reconstruction operator. As part of the pipeline execution we do not
+    // set that flag, so we currently use it to tell the difference between "explicit"
+    // child data sources and those used to represent the transform data source.
+    if (!op->hasChildDataSource() && op->childDataSource() != nullptr) {
       return op;
     }
   }
@@ -283,6 +250,49 @@ Operator* Pipeline::findTransformedDataSourceOperator(DataSource *dataSource)
   return nullptr;
 }
 
+
+void Pipeline::addDataSource(DataSource *dataSource)
+{
+  connect(dataSource, &DataSource::operatorAdded, [this](Operator *op) {
+    this->execute(op->dataSource(), true);
+  });
+  // Wire up transformModified to execute pipeline
+  connect(dataSource, &DataSource::operatorAdded, [this](Operator *op) {
+    // Extract out source and execute all.
+    connect(op, &Operator::transformModified, this, [this]() {
+      this->execute();
+    });
+
+    // We need to ensure we move add datasource to the end of the branch
+    auto operators = op->dataSource()->operators();
+    if (operators.size() > 1) {
+      auto transformedDataSourceOp = this->findTransformedDataSourceOperator(op->dataSource());
+      if (transformedDataSourceOp != nullptr) {
+        auto transformedDataSource = transformedDataSourceOp->childDataSource();
+        transformedDataSourceOp->setChildDataSource(nullptr);
+        op->setChildDataSource(transformedDataSource);
+        // Delay emitting signal until next event loop
+        QTimer::singleShot(0, [=] { emit op->dataSourceMoved(transformedDataSource); });
+      }
+    }
+  });
+  // Wire up operatorRemoved. TODO We need to check the branch of the
+  // pipeline we are currently executing.
+  connect(dataSource, &DataSource::operatorRemoved, [this](Operator *op) {
+    // If pipeline is running see if we can safely remove the operator
+      if (this->Internals->Future != nullptr &&
+          this->Internals->Future->isRunning()) {
+        // If we can't safely cancel the execution then trigger the rerun of the
+        // pipeline.
+        if (!this->Internals->Future->cancel(op)) {
+          this->execute(op->dataSource());
+        }
+      } else {
+        // Trigger the pipeline to run
+          this->execute(op->dataSource());
+      }
+  });
+}
 
 Pipeline::ImageFuture::ImageFuture(Operator* op,
                                   vtkSmartPointer<vtkImageData> imageData,
