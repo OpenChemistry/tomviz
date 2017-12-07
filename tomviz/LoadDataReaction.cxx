@@ -18,6 +18,7 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "Pipeline.h"
+#include "PipelineManager.h"
 #include "EmdFormat.h"
 #include "ModuleManager.h"
 #include "RAWFileReaderDialog.h"
@@ -288,7 +289,9 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
   if (child) {
     ModuleManager::instance().addChildDataSource(dataSource);
   } else {
-    auto pipeline = new Pipeline(dataSource);
+    PipelineManager::instance().addPipeline(new Pipeline(dataSource));
+    // TODO Eventually we shouldn't need to keep track of the data sources,
+    // the pipeline should do that for us.
     ModuleManager::instance().addDataSource(dataSource);
 
   }
