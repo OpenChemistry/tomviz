@@ -73,7 +73,7 @@ vtkChartHistogram::vtkChartHistogram()
   this->GetAxis(vtkAxis::LEFT)->SetMinimumLimit(1);
   this->GetAxis(vtkAxis::LEFT)->SetLogScale(true);
   this->GetAxis(vtkAxis::LEFT)->SetNotation(vtkAxis::SCIENTIFIC_NOTATION);
-  this->GetAxis(vtkAxis::LEFT)->SetPrecision(0);
+  this->GetAxis(vtkAxis::LEFT)->SetPrecision(1);
   this->GetAxis(vtkAxis::RIGHT)->SetBehavior(vtkAxis::FIXED);
   this->GetAxis(vtkAxis::RIGHT)->SetRange(0.0, 1.0);
   this->GetAxis(vtkAxis::RIGHT)->SetVisible(false);
