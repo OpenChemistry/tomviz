@@ -279,7 +279,26 @@ void Pipeline::addDataSource(DataSource *dataSource)
   // Wire up operatorRemoved. TODO We need to check the branch of the
   // pipeline we are currently executing.
   connect(dataSource, &DataSource::operatorRemoved, [this](Operator *op) {
-    // If pipeline is running see if we can safely remove the operator
+      // Do we need to move the transformed data source, !hasChildDataSource as we
+      // don't want to move "explicit" child data sources.
+      if (!op->hasChildDataSource() && op->childDataSource() != nullptr ) {
+        auto transformedDataSource = op->childDataSource();
+        auto operators = op->dataSource()->operators();
+        // We have an operator to move it to.
+        if (!operators.isEmpty()) {
+          auto newOp = operators.last();
+          op->setChildDataSource(nullptr);
+          newOp->setChildDataSource(transformedDataSource);
+          emit newOp->dataSourceMoved(transformedDataSource);
+        }
+        // Clean it up
+        else {
+          transformedDataSource->removeAllOperators();
+          transformedDataSource->deleteLater();
+        }
+      }
+
+      // If pipeline is running see if we can safely remove the operator
       if (this->Internals->Future != nullptr &&
           this->Internals->Future->isRunning()) {
         // If we can't safely cancel the execution then trigger the rerun of the
@@ -289,7 +308,7 @@ void Pipeline::addDataSource(DataSource *dataSource)
         }
       } else {
         // Trigger the pipeline to run
-          this->execute(op->dataSource());
+        this->execute(op->dataSource());
       }
   });
 }
