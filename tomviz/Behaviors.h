@@ -50,6 +50,8 @@ private:
 
   /// Use the named color map preset as default.
   void setDefaultColorMapFromPreset(const char* name);
+
+  void registerCustomOperatorUIs();
 };
 }
 #endif

@@ -107,6 +107,8 @@ restrictions.
     * `xyz_header` - Special type used as a hint for the UI to add the headers
     "X", "Y", and "Z" above columns for 3-element parameters representing
     coordinates.
+    * `file` - Provides the ability to browse for a file path.
+    * `directory` - Provides the ability to browse for a directory path.
 * `default` - Default value for the parameter. Must be a number or boolean JSON
 value `true` or `false`. The default for a multi-element `int` or `double`
 parameter is an array of one or more ints or doubles.

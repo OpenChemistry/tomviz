@@ -28,6 +28,7 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
+#include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTrivialProducer.h>
@@ -491,6 +492,23 @@ void DataSource::setSpacing(const double spacing[3])
     }
   }
   emit dataPropertiesChanged();
+}
+
+unsigned int DataSource::getNumberOfComponents()
+{
+  unsigned int numComponents = 0;
+  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
+    this->Internals->Producer->GetClientSideObject());
+  if (tp) {
+    vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
+    if (data) {
+      if (data->GetPointData() && data->GetPointData()->GetScalars()) {
+        numComponents = static_cast<unsigned int>(data->GetPointData()->GetScalars()->GetNumberOfComponents());
+      }
+    }
+  }
+
+  return numComponents;
 }
 
 QString DataSource::getUnits(int axis)

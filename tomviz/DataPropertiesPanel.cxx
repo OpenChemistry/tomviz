@@ -40,9 +40,13 @@
 #include <vtkFieldData.h>
 #include <vtkSMSourceProxy.h>
 
+#include <QClipboard>
 #include <QDebug>
 #include <QDoubleValidator>
+#include <QKeyEvent>
 #include <QMainWindow>
+#include <QMessageBox>
+#include <QMimeData>
 
 namespace tomviz {
 
@@ -53,6 +57,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   m_ui->xLengthBox->setValidator(new QDoubleValidator(m_ui->xLengthBox));
   m_ui->yLengthBox->setValidator(new QDoubleValidator(m_ui->yLengthBox));
   m_ui->zLengthBox->setValidator(new QDoubleValidator(m_ui->zLengthBox));
+  m_ui->TiltAnglesTable->installEventFilter(this);
 
   QVBoxLayout* l = m_ui->verticalLayout;
   l->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
@@ -266,6 +271,85 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
   } else {
     std::cerr << "Invalid tilt angle." << std::endl;
   }
+}
+
+bool DataPropertiesPanel::eventFilter(QObject* obj, QEvent* event)
+{
+  QKeyEvent* ke = dynamic_cast<QKeyEvent*>(event);
+  if (ke && obj == this->m_ui->TiltAnglesTable) {
+    if (ke->matches(QKeySequence::Paste) && ke->type() == QEvent::KeyPress) {
+      QClipboard* clipboard = QGuiApplication::clipboard();
+      const QMimeData* mimeData = clipboard->mimeData();
+      if (mimeData->hasText()) {
+        QString text = mimeData->text();
+        QStringList rows = text.split("\n");
+        QStringList angles;
+        for (const QString& row : rows) {
+          angles << row.split("\t")[0];
+        }
+        auto ranges = this->m_ui->TiltAnglesTable->selectedRanges();
+        // check if the table in the clipboard is of numbers
+        for (const QString& angle : angles) {
+          bool ok;
+          angle.toDouble(&ok);
+          if (!ok) {
+            QMessageBox::warning(
+              this, "Error",
+              QString("Error: pasted tilt angle %1 is not a number")
+                .arg(angle));
+            return true;
+          }
+        }
+        // If separate blocks of rows selected, cancel the paste
+        // since we don't know where to put angles
+        if (ranges.size() != 1) {
+          QMessageBox::warning(
+            this, "Error",
+            "Pasting is not supported with non-continuous selections");
+          return true;
+        }
+        // If multiple rows selected and it is not equal to
+        // the number of angles pasted, cancel the paste
+        if (ranges[0].rowCount() > 1 && ranges[0].rowCount() != angles.size()) {
+          QMessageBox::warning(
+            this, "Error", QString("Cells selected (%1) does not match number "
+                                   "of angles to paste (%2).  \n"
+                                   "Please select one cell to mark the start "
+                                   "location for pasting or select the same "
+                                   "number of cells that will be pasted into.")
+                             .arg(ranges[0].rowCount())
+                             .arg(angles.size()));
+          return true;
+        }
+        auto needToAdd = false;
+        SetTiltAnglesOperator* op = nullptr;
+        DataSource* dsource = m_currentDataSource;
+        if (dsource->operators().size() > 0) {
+          op =
+            qobject_cast<SetTiltAnglesOperator*>(dsource->operators().last());
+        }
+        if (!op) {
+          op = new SetTiltAnglesOperator;
+          op->setParent(dsource);
+          needToAdd = true;
+        }
+        auto tiltAngles = op->tiltAngles();
+        int startRow = ranges[0].topRow();
+        for (int i = 0; i < angles.size() && i + startRow < tiltAngles.size();
+             ++i) {
+          bool ok;
+          tiltAngles[i + startRow] = angles[i].toDouble(
+            &ok); // no need to check ok, we checked these above
+        }
+        op->setTiltAngles(tiltAngles);
+        if (needToAdd) {
+          dsource->addOperator(op);
+        }
+      }
+      return true;
+    }
+  }
+  return QWidget::eventFilter(obj, event);
 }
 
 void DataPropertiesPanel::setTiltAngles()

@@ -96,6 +96,14 @@ def vtk_cast_map():
                 'float',
                 'double'
             ],
+            vtk.VTK_SIGNED_CHAR: [
+                'signed char',
+                'signed short',
+                'signed int',
+                'signed long',
+                'float',
+                'double'
+            ],
             vtk.VTK_UNSIGNED_SHORT: [
                 'unsigned short',
                 'unsigned int',

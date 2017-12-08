@@ -45,6 +45,8 @@ public:
   explicit DataPropertiesPanel(QWidget* parent = nullptr);
   ~DataPropertiesPanel() override;
 
+  bool eventFilter(QObject*, QEvent*) override;
+
 protected:
   void paintEvent(QPaintEvent*) override;
   void updateData();

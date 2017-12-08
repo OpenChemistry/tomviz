@@ -18,15 +18,21 @@
 #include "DataSource.h"
 #include "DoubleSpinBox.h"
 #include "SpinBox.h"
+#include <pqCoreUtilities.h>
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
+#include <QDir>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
 #include <QSpinBox>
 #include <QWidget>
 
@@ -335,6 +341,77 @@ void addXYZHeaderWidget(QGridLayout* layout, int row, const QJsonValue&)
   horizontalLayout->addWidget(zLabel);
 }
 
+void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
+{
+  QHBoxLayout* horizontalLayout = new QHBoxLayout;
+  horizontalLayout->setContentsMargins(0, 0, 0, 0);
+  QWidget* horizontalWidget = new QWidget;
+  horizontalWidget->setLayout(horizontalLayout);
+  layout->addWidget(horizontalWidget, row, 1, 1, 1);
+
+  QJsonValueRef typeValue = pathNode["type"];
+  if (typeValue.isUndefined()) {
+    QJsonDocument document(pathNode);
+    qWarning() << QString("Parameter %1 has no type. Skipping.")
+                    .arg(document.toJson().data());
+    return;
+  }
+  QString type = typeValue.toString();
+
+  QJsonValueRef nameValue = pathNode["name"];
+  if (nameValue.isUndefined()) {
+    QJsonDocument document(pathNode);
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(document.toJson().data());
+    return;
+  }
+
+  QJsonValueRef labelValue = pathNode["label"];
+  QLabel* label = new QLabel(nameValue.toString());
+  if (!labelValue.isUndefined()) {
+    label->setText(labelValue.toString());
+  }
+  layout->addWidget(label, row, 0, 1, 1);
+
+  QLineEdit* pathField = new QLineEdit();
+  // Tag the line edit with the type, so we can distinguish it from other line
+  // edit uses ( such as in a QSpinBox )
+  pathField->setProperty("type", type);
+  pathField->setObjectName(nameValue.toString());
+  pathField->setMinimumWidth(500);
+  horizontalLayout->addWidget(pathField);
+
+  QPushButton* browseButton = new QPushButton("Browse");
+  horizontalLayout->addWidget(browseButton);
+  QObject::connect(browseButton, &QPushButton::clicked, [type, pathField]() {
+
+    // Determine the directory we should open the file browser at.
+    QString browseDir;
+    if (!pathField->text().isEmpty()) {
+      QFileInfo currentValue = QFileInfo(pathField->text());
+      auto dir = currentValue.dir();
+      if (dir.exists()) {
+        browseDir = dir.absolutePath();
+      }
+    }
+
+    // Now open the appropriate dialog to browse for a file or directory.
+    QString path;
+    if (type == "file") {
+      path = QFileDialog::getOpenFileName(pqCoreUtilities::mainWidget(),
+                                          "Select File", browseDir);
+    } else {
+      path = QFileDialog::getExistingDirectory(pqCoreUtilities::mainWidget(),
+                                               "Select Directory", browseDir);
+    }
+
+    // If a path was selected update the line edit.
+    if (!path.isNull()) {
+      pathField->setText(path);
+    }
+  });
+}
+
 } // end anonymous namespace
 
 namespace tomviz {
@@ -426,6 +503,8 @@ QLayout* InterfaceBuilder::buildInterface() const
       addEnumerationWidget(layout, i + 1, parameterObject);
     } else if (typeString == "xyz_header") {
       addXYZHeaderWidget(layout, i + 1, parameterObject);
+    } else if (typeString == "file" || typeString == "directory") {
+      addPathWidget(layout, i + 1, parameterObject);
     }
   }
 

@@ -16,25 +16,34 @@
 #ifndef tomvizRotateAlignWidget_h
 #define tomvizRotateAlignWidget_h
 
-#include <QWidget>
+#include "CustomPythonOperatorWidget.h"
+
+#include "vtkSmartPointer.h"
 
 #include <QScopedPointer>
 
-namespace tomviz {
-class DataSource;
+class vtkImageData;
 
-class RotateAlignWidget : public QWidget
+namespace tomviz {
+class Operator;
+
+class RotateAlignWidget : public CustomPythonOperatorWidget
 {
   Q_OBJECT
-  typedef QWidget Superclass;
+  typedef CustomPythonOperatorWidget Superclass;
 
 public:
-  RotateAlignWidget(DataSource* data, QWidget* parent = NULL);
+  RotateAlignWidget(Operator* op, vtkSmartPointer<vtkImageData> image,
+                    QWidget* parent = NULL);
   ~RotateAlignWidget();
 
-public slots:
-  void setDataSource(DataSource* source);
+  static CustomPythonOperatorWidget* New(QWidget* p, Operator* op,
+                                         vtkSmartPointer<vtkImageData> data);
 
+  void getValues(QMap<QString, QVariant>& map) override;
+  void setValues(const QMap<QString, QVariant>& map) override;
+
+public slots:
   bool eventFilter(QObject* o, QEvent* e) override;
 
 signals:

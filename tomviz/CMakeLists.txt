@@ -26,8 +26,6 @@ set(SOURCES
   AddRenderViewContextMenuBehavior.h
   AddResampleReaction.cxx
   AddResampleReaction.h
-  AddRotateAlignReaction.cxx
-  AddRotateAlignReaction.h
   AlignWidget.cxx
   AlignWidget.h
   Behaviors.cxx
@@ -44,6 +42,8 @@ set(SOURCES
   CropReaction.h
   CropOperator.cxx
   CropOperator.h
+  CustomPythonOperatorWidget.cxx
+  CustomPythonOperatorWidget.h
   SelectVolumeWidget.cxx
   SelectVolumeWidget.h
   DataPropertiesPanel.cxx
@@ -261,7 +261,6 @@ set(python_files
   Recon_ART.py
   Recon_SIRT.py
   Recon_TV_minimization.py
-  Crop_Data.py
   FFT_AbsLog.py
   Shift_Stack_Uniformly.py
   Shift3D.py
@@ -299,6 +298,7 @@ set(python_files
   UnsharpMask.py
   AddConstant.py
   SegmentPores.py
+  RotationAlign.py
   )
 
 set(json_files
@@ -336,6 +336,7 @@ set(json_files
   UnsharpMask.json
   AddConstant.json
   SegmentPores.json
+  RotationAlign.json
   )
 
 set(resource_files

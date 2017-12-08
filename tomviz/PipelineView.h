@@ -36,6 +36,8 @@ public:
   PipelineView(QWidget* parent = nullptr);
   ~PipelineView() override;
 
+  void setModel(QAbstractItemModel*) override;
+
 protected:
   void keyPressEvent(QKeyEvent*) override;
   void contextMenuEvent(QContextMenuEvent*) override;

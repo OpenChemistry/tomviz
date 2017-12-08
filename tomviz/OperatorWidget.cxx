@@ -24,6 +24,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QLineEdit>
 #include <QMap>
 #include <QSet>
 #include <QString>
@@ -128,6 +129,19 @@ QMap<QString, QVariant> OperatorWidget::values() const
     } else {
       // Single-element parameter, nothing to do
       ++iter;
+    }
+  }
+
+  // QLineEdit's ( currently 'file' and 'directory' types ).
+  QStringList pathTypes = { "file", "directory" };
+  QList<QLineEdit*> lineEdits = this->findChildren<QLineEdit*>();
+  for (int i = 0; i < lineEdits.size(); ++i) {
+    auto lineEdit = lineEdits[i];
+    QVariant type = lineEdit->property("type");
+
+    if (type.canConvert(QMetaType::QString) &&
+        pathTypes.contains(type.toString())) {
+      map[lineEdit->objectName()] = lineEdit->text();
     }
   }
 
