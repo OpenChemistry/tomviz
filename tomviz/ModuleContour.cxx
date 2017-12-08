@@ -551,8 +551,7 @@ void ModuleContour::updateScalarColoring()
   vtkPVDataSetAttributesInformation* attributeInfo = nullptr;
   vtkPVArrayInformation* arrayInfo = nullptr;
   if (d->ColorByDataSource) {
-    dataInfo =
-      d->ColorByDataSource->dataSourceProxy()->GetDataInformation(0);
+    dataInfo = d->ColorByDataSource->dataSourceProxy()->GetDataInformation(0);
   }
   if (dataInfo) {
     attributeInfo = dataInfo->GetAttributeInformation(

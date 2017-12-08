@@ -65,7 +65,8 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data,
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = data->dataSourceProxy()->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm =
+    data->dataSourceProxy()->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;

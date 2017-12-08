@@ -66,8 +66,9 @@ public:
              PersistenceState persistState = PersistenceState::Saved);
 
   /// Create a new dataSource not associated with a source proxy
-  DataSource(const QString &label = QString(), DataSourceType dataType = Volume,
-      QObject* parent = nullptr, PersistenceState persistState = PersistenceState::Saved);
+  DataSource(const QString& label = QString(), DataSourceType dataType = Volume,
+             QObject* parent = nullptr,
+             PersistenceState persistState = PersistenceState::Saved);
 
   ~DataSource() override;
 
@@ -188,7 +189,6 @@ signals:
   /// DataSource.
   void operatorAdded(Operator*);
 
-
   void operatorRemoved(Operator*);
 
   /// This signal is fired every time the display position is changed
@@ -210,7 +210,6 @@ protected slots:
   void updateColorMap();
 
 private:
-
   vtkTrivialProducer* trivialProducer();
   vtkAlgorithm* algorithm() const;
 

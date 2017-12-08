@@ -20,22 +20,23 @@
 
 #include "PipelineWorker.h"
 
-#include <functional>
-#include <vtkSmartPointer.h>
-#include <vtkImageData.h>
 #include <QScopedPointer>
+#include <functional>
+#include <vtkImageData.h>
+#include <vtkSmartPointer.h>
 
 namespace tomviz {
 class DataSource;
 class Operator;
 
-class Pipeline: public QObject {
+class Pipeline : public QObject
+{
   Q_OBJECT
 
 public:
   class ImageFuture;
 
-  Pipeline(DataSource *dataSource, QObject *parent=nullptr);
+  Pipeline(DataSource* dataSource, QObject* parent = nullptr);
   ~Pipeline();
 
   // Pause the automatic execution of the pipeline
@@ -56,11 +57,11 @@ public:
 
 public slots:
   void execute();
-  void execute(DataSource *start, bool runLast);
-  void execute(DataSource *start);
+  void execute(DataSource* start, bool runLast);
+  void execute(DataSource* start);
 
 protected slots:
-  void executePipelineBranch(DataSource *dataSource, Operator *start=nullptr);
+  void executePipelineBranch(DataSource* dataSource, Operator* start = nullptr);
 
   /// The pipeline worker is finished with this branch.
   void pipelineBranchFinished(bool result);
@@ -78,8 +79,8 @@ private:
   class PInternals;
   const QScopedPointer<PInternals> Internals;
 
-  DataSource* findTransformedDataSource(DataSource *dataSource);
-  Operator* findTransformedDataSourceOperator(DataSource *dataSource);
+  DataSource* findTransformedDataSource(DataSource* dataSource);
+  Operator* findTransformedDataSourceOperator(DataSource* dataSource);
   void addDataSource(DataSource* dataSource);
 };
 
@@ -107,7 +108,6 @@ private:
   vtkSmartPointer<vtkImageData> m_imageData;
   PipelineWorker::Future* m_future;
 };
-
 }
 
 #endif // tomvizPipeline_h

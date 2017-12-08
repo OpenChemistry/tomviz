@@ -490,7 +490,8 @@ vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)
     return nullptr;
   }
 
-  auto image = vtkImageData::SafeDownCast(m_activeColorMapDataSource->dataObject());
+  auto image =
+    vtkImageData::SafeDownCast(m_activeColorMapDataSource->dataObject());
 
   // The current dataset has changed since the histogram was requested,
   // ignore this histogram and wait for the next one queued...

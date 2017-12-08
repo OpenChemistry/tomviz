@@ -113,7 +113,8 @@ DataSource* MergeImagesReaction::mergeArrays()
   Q_ASSERT(filter);
 
   for (int i = 0; i < sourceList.size(); ++i) {
-    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->dataSourceProxy(), 0);
+    vtkSMPropertyHelper(filter, "Input")
+      .Add(sourceList[i]->dataSourceProxy(), 0);
   }
 
   filter->UpdateVTKObjects();
@@ -148,7 +149,8 @@ DataSource* MergeImagesReaction::mergeComponents()
   expression << "np.transpose(np.vstack((";
 
   for (int i = 0; i < sourceList.size(); ++i) {
-    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->dataSourceProxy(), 0);
+    vtkSMPropertyHelper(filter, "Input")
+      .Add(sourceList[i]->dataSourceProxy(), 0);
 
     auto info = sourceList[0]->dataSourceProxy()->GetDataInformation();
     auto pointData = info->GetPointDataInformation();

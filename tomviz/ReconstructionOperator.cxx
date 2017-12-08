@@ -39,8 +39,8 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
   : Operator(p), m_dataSource(source)
 {
   qRegisterMetaType<std::vector<float>>();
-  auto t =
-    vtkTrivialProducer::SafeDownCast(source->dataSourceProxy()->GetClientSideObject());
+  auto t = vtkTrivialProducer::SafeDownCast(
+    source->dataSourceProxy()->GetClientSideObject());
   auto imageData =
     vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   int dataExtent[6];

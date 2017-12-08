@@ -14,15 +14,13 @@
 
 ******************************************************************************/
 #include "Pipeline.h"
-#include "PipelineWorker.h"
-#include "Operator.h"
 #include "DataSource.h"
+#include "Operator.h"
+#include "PipelineWorker.h"
 
-#include <QTimer>
 #include <QObject>
+#include <QTimer>
 #include <vtkTrivialProducer.h>
-
-
 
 namespace tomviz {
 
@@ -35,9 +33,7 @@ public:
   bool Paused = false;
 };
 
-
-
-Pipeline::Pipeline(DataSource *dataSource, QObject *parent)
+Pipeline::Pipeline(DataSource* dataSource, QObject* parent)
   : QObject(parent), Internals(new Pipeline::PInternals())
 {
   this->Internals->Data = dataSource;
@@ -47,12 +43,9 @@ Pipeline::Pipeline(DataSource *dataSource, QObject *parent)
   this->addDataSource(dataSource);
 }
 
-
 Pipeline::~Pipeline()
 {
-
 }
-
 
 void Pipeline::execute()
 {
@@ -60,7 +53,7 @@ void Pipeline::execute()
   this->executePipelineBranch(this->Internals->Data);
 }
 
-void Pipeline::execute(DataSource *start, bool last)
+void Pipeline::execute(DataSource* start, bool last)
 {
   emit this->started();
   Operator* lastOp = nullptr;
@@ -71,13 +64,13 @@ void Pipeline::execute(DataSource *start, bool last)
   this->executePipelineBranch(start, lastOp);
 }
 
-void Pipeline::execute(DataSource *start)
+void Pipeline::execute(DataSource* start)
 {
   emit this->started();
   this->executePipelineBranch(start);
 }
 
-void Pipeline::executePipelineBranch(DataSource *dataSource, Operator* start)
+void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
 {
   if (this->Internals->Paused) {
     return;
@@ -95,7 +88,7 @@ void Pipeline::executePipelineBranch(DataSource *dataSource, Operator* start)
     this->Internals->Future->cancel();
   }
 
-  vtkDataObject *data = nullptr;
+  vtkDataObject* data = nullptr;
 
   if (start != nullptr) {
     // Use the transform DataSource as the starting point, if we have one.
@@ -128,8 +121,7 @@ void Pipeline::executePipelineBranch(DataSource *dataSource, Operator* start)
     data = dataSource->copyData();
   }
 
-  this->Internals->Future =
-    this->Internals->Worker->run(data, operators);
+  this->Internals->Future = this->Internals->Worker->run(data, operators);
   connect(this->Internals->Future, &PipelineWorker::Future::finished, this,
           &Pipeline::pipelineBranchFinished);
   connect(this->Internals->Future, &PipelineWorker::Future::canceled, this,
@@ -145,10 +137,11 @@ void Pipeline::pipelineBranchFinished(bool result)
     auto lastOp = future->operators().last();
 
     // We only add the transformed child data source if the last operator
-    // doesn't already have an explicit child data source i.e. hasChildDataSource
+    // doesn't already have an explicit child data source i.e.
+    // hasChildDataSource
     // is true.
     if (!lastOp->hasChildDataSource()) {
-      DataSource *newChildDataSource = nullptr;
+      DataSource* newChildDataSource = nullptr;
       if (lastOp->childDataSource() == nullptr) {
         newChildDataSource = new DataSource("Output");
         newChildDataSource->setParent(this);
@@ -223,8 +216,7 @@ bool Pipeline::isRunning()
          this->Internals->Future->isRunning();
 }
 
-
-DataSource* Pipeline::findTransformedDataSource(DataSource *dataSource)
+DataSource* Pipeline::findTransformedDataSource(DataSource* dataSource)
 {
   auto op = this->findTransformedDataSourceOperator(dataSource);
   if (op != nullptr) {
@@ -234,13 +226,17 @@ DataSource* Pipeline::findTransformedDataSource(DataSource *dataSource)
   return nullptr;
 }
 
-Operator* Pipeline::findTransformedDataSourceOperator(DataSource *dataSource)
+Operator* Pipeline::findTransformedDataSourceOperator(DataSource* dataSource)
 {
   auto operators = dataSource->operators();
-  for (auto itr = operators.rbegin(); itr != operators.rend(); ++itr) {    auto op = *itr;
-    // hasChildDataSource is only set by operators that explicitly produce child data sources
-    // such as a reconstruction operator. As part of the pipeline execution we do not
-    // set that flag, so we currently use it to tell the difference between "explicit"
+  for (auto itr = operators.rbegin(); itr != operators.rend(); ++itr) {
+    auto op = *itr;
+    // hasChildDataSource is only set by operators that explicitly produce child
+    // data sources
+    // such as a reconstruction operator. As part of the pipeline execution we
+    // do not
+    // set that flag, so we currently use it to tell the difference between
+    // "explicit"
     // child data sources and those used to represent the transform data source.
     if (!op->hasChildDataSource() && op->childDataSource() != nullptr) {
       return op;
@@ -250,79 +246,80 @@ Operator* Pipeline::findTransformedDataSourceOperator(DataSource *dataSource)
   return nullptr;
 }
 
-
-void Pipeline::addDataSource(DataSource *dataSource)
+void Pipeline::addDataSource(DataSource* dataSource)
 {
-  connect(dataSource, &DataSource::operatorAdded, [this](Operator *op) {
-    this->execute(op->dataSource(), true);
-  });
+  connect(dataSource, &DataSource::operatorAdded,
+          [this](Operator* op) { this->execute(op->dataSource(), true); });
   // Wire up transformModified to execute pipeline
-  connect(dataSource, &DataSource::operatorAdded, [this](Operator *op) {
+  connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
     // Extract out source and execute all.
-    connect(op, &Operator::transformModified, this, [this]() {
-      this->execute();
-    });
+    connect(op, &Operator::transformModified, this,
+            [this]() { this->execute(); });
 
     // We need to ensure we move add datasource to the end of the branch
     auto operators = op->dataSource()->operators();
     if (operators.size() > 1) {
-      auto transformedDataSourceOp = this->findTransformedDataSourceOperator(op->dataSource());
+      auto transformedDataSourceOp =
+        this->findTransformedDataSourceOperator(op->dataSource());
       if (transformedDataSourceOp != nullptr) {
         auto transformedDataSource = transformedDataSourceOp->childDataSource();
         transformedDataSourceOp->setChildDataSource(nullptr);
         op->setChildDataSource(transformedDataSource);
         // Delay emitting signal until next event loop
-        QTimer::singleShot(0, [=] { emit op->dataSourceMoved(transformedDataSource); });
+        QTimer::singleShot(
+          0, [=] { emit op->dataSourceMoved(transformedDataSource); });
       }
     }
   });
   // Wire up operatorRemoved. TODO We need to check the branch of the
   // pipeline we are currently executing.
-  connect(dataSource, &DataSource::operatorRemoved, [this](Operator *op) {
-      // Do we need to move the transformed data source, !hasChildDataSource as we
-      // don't want to move "explicit" child data sources.
-      if (!op->hasChildDataSource() && op->childDataSource() != nullptr ) {
-        auto transformedDataSource = op->childDataSource();
-        auto operators = op->dataSource()->operators();
-        // We have an operator to move it to.
-        if (!operators.isEmpty()) {
-          auto newOp = operators.last();
-          op->setChildDataSource(nullptr);
-          newOp->setChildDataSource(transformedDataSource);
-          emit newOp->dataSourceMoved(transformedDataSource);
-        }
-        // Clean it up
-        else {
-          transformedDataSource->removeAllOperators();
-          transformedDataSource->deleteLater();
-        }
+  connect(dataSource, &DataSource::operatorRemoved, [this](Operator* op) {
+    // Do we need to move the transformed data source, !hasChildDataSource as we
+    // don't want to move "explicit" child data sources.
+    if (!op->hasChildDataSource() && op->childDataSource() != nullptr) {
+      auto transformedDataSource = op->childDataSource();
+      auto operators = op->dataSource()->operators();
+      // We have an operator to move it to.
+      if (!operators.isEmpty()) {
+        auto newOp = operators.last();
+        op->setChildDataSource(nullptr);
+        newOp->setChildDataSource(transformedDataSource);
+        emit newOp->dataSourceMoved(transformedDataSource);
       }
+      // Clean it up
+      else {
+        transformedDataSource->removeAllOperators();
+        transformedDataSource->deleteLater();
+      }
+    }
 
-      // If pipeline is running see if we can safely remove the operator
-      if (this->Internals->Future != nullptr &&
-          this->Internals->Future->isRunning()) {
-        // If we can't safely cancel the execution then trigger the rerun of the
-        // pipeline.
-        if (!this->Internals->Future->cancel(op)) {
-          this->execute(op->dataSource());
-        }
-      } else {
-        // Trigger the pipeline to run
+    // If pipeline is running see if we can safely remove the operator
+    if (this->Internals->Future != nullptr &&
+        this->Internals->Future->isRunning()) {
+      // If we can't safely cancel the execution then trigger the rerun of the
+      // pipeline.
+      if (!this->Internals->Future->cancel(op)) {
         this->execute(op->dataSource());
       }
+    } else {
+      // Trigger the pipeline to run
+      this->execute(op->dataSource());
+    }
   });
 }
 
 Pipeline::ImageFuture::ImageFuture(Operator* op,
-                                  vtkSmartPointer<vtkImageData> imageData,
-                                     PipelineWorker::Future* future,
-                                     QObject* parent)
+                                   vtkSmartPointer<vtkImageData> imageData,
+                                   PipelineWorker::Future* future,
+                                   QObject* parent)
   : QObject(parent), m_operator(op), m_imageData(imageData), m_future(future)
 {
 
   if (m_future != nullptr) {
-    connect(m_future, &PipelineWorker::Future::finished, this, &Pipeline::ImageFuture::finished);
-    connect(m_future, &PipelineWorker::Future::canceled, this, &Pipeline::ImageFuture::canceled);
+    connect(m_future, &PipelineWorker::Future::finished, this,
+            &Pipeline::ImageFuture::finished);
+    connect(m_future, &PipelineWorker::Future::canceled, this,
+            &Pipeline::ImageFuture::canceled);
   }
 }
 
@@ -346,8 +343,8 @@ Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
     auto index = operators.indexOf(op);
     // Only run operators if we have some to run
     if (index > 0) {
-      auto future = this->Internals->Worker->run(
-        result, operators.mid(0, index));
+      auto future =
+        this->Internals->Worker->run(result, operators.mid(0, index));
 
       imageFuture = new ImageFuture(op, result, future);
 
@@ -361,6 +358,5 @@ Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
 
   return imageFuture;
 }
-
 
 } // tomviz namespace

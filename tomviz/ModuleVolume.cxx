@@ -69,8 +69,8 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   // Default parameters
-  vtkTrivialProducer* trv =
-    vtkTrivialProducer::SafeDownCast(data->dataSourceProxy()->GetClientSideObject());
+  vtkTrivialProducer* trv = vtkTrivialProducer::SafeDownCast(
+    data->dataSourceProxy()->GetClientSideObject());
   m_volumeMapper->SetInputConnection(trv->GetOutputPort());
   m_volume->SetMapper(m_volumeMapper.Get());
   m_volume->SetProperty(m_volumeProperty.Get());
@@ -299,8 +299,8 @@ void ModuleVolume::onTransferModeChanged(const int mode)
 
 vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
 {
-  vtkTrivialProducer* trv = vtkTrivialProducer::SafeDownCast(
-    this->dataSource()->dataSourceProxy());
+  vtkTrivialProducer* trv =
+    vtkTrivialProducer::SafeDownCast(this->dataSource()->dataSourceProxy());
   return trv->GetOutputDataObject(0);
 }
 

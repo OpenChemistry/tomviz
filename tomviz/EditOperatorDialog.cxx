@@ -17,9 +17,9 @@
 #include "EditOperatorDialog.h"
 
 #include "DataSource.h"
-#include "Pipeline.h"
 #include "EditOperatorWidget.h"
 #include "Operator.h"
+#include "Pipeline.h"
 
 #include <pqApplicationCore.h>
 #include <pqPythonSyntaxHighlighter.h>
@@ -90,7 +90,8 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     }
     // We need the image data for call the datasource to run the pipeline
     else {
-      Pipeline::ImageFuture* future = dataSource->pipeline()->getCopyOfImagePriorTo(op);
+      Pipeline::ImageFuture* future =
+        dataSource->pipeline()->getCopyOfImagePriorTo(op);
       connect(future, &Pipeline::ImageFuture::finished, this,
               &EditOperatorDialog::getCopyOfImagePriorToFinished);
     }
@@ -118,7 +119,8 @@ void EditOperatorDialog::onApply()
     // If we are modifying an operator that is already part of a pipeline and
     // the pipeline is running it has to cancel the currently running pipeline first.
     // Warn the user rather that just canceling potentially long-running operations.
-    if (this->Internals->dataSource->pipeline()->isRunning() && !this->Internals->needsToBeAdded) {
+    if (this->Internals->dataSource->pipeline()->isRunning() &&
+        !this->Internals->needsToBeAdded) {
       auto result = QMessageBox::question(
         this, "Cancel running operation?",
         "Applying changes to an operator that is part of a running pipeline "

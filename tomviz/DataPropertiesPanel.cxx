@@ -61,8 +61,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   QWidget* separator = pqProxyWidget::newGroupLabelWidget("Filename", this);
   l->insertWidget(l->indexOf(m_ui->FileName), separator);
 
-  separator =
-    pqProxyWidget::newGroupLabelWidget("Dimensions & Range", this);
+  separator = pqProxyWidget::newGroupLabelWidget("Dimensions & Range", this);
   l->insertWidget(l->indexOf(m_ui->DataRange), separator);
 
   separator = pqProxyWidget::newGroupLabelWidget("Units and Size", this);
@@ -193,8 +192,7 @@ void DataPropertiesPanel::updateData()
 
   m_ui->FileName->setText(dsource->filename());
 
-  m_ui->DataRange->setText(
-    getDataDimensionsString(dsource->dataSourceProxy()));
+  m_ui->DataRange->setText(getDataDimensionsString(dsource->dataSourceProxy()));
 
   int extent[6];
   double spacing[3];

@@ -68,10 +68,10 @@ void DeleteDataReaction::activeDataSourceChanged()
     }
     m_activeDataSource = source;
     if (m_activeDataSource) {
-      connect(m_activeDataSource.data()->pipeline(), &Pipeline::started,
-              this, &DeleteDataReaction::updateEnableState);
-      connect(m_activeDataSource.data()->pipeline(), &Pipeline::finished,
-              this, &DeleteDataReaction::updateEnableState);
+      connect(m_activeDataSource.data()->pipeline(), &Pipeline::started, this,
+              &DeleteDataReaction::updateEnableState);
+      connect(m_activeDataSource.data()->pipeline(), &Pipeline::finished, this,
+              &DeleteDataReaction::updateEnableState);
     }
   }
   updateEnableState();

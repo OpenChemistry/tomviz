@@ -565,8 +565,8 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 bool EmdFormat::write(const std::string& fileName, DataSource* source)
 {
   // Now create the tomography data store!
-  auto t =
-    vtkTrivialProducer::SafeDownCast(source->dataSourceProxy()->GetClientSideObject());
+  auto t = vtkTrivialProducer::SafeDownCast(
+    source->dataSourceProxy()->GetClientSideObject());
   auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 
   return this->write(fileName, image);

@@ -17,10 +17,10 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "Pipeline.h"
-#include "PipelineManager.h"
 #include "EmdFormat.h"
 #include "ModuleManager.h"
+#include "Pipeline.h"
+#include "PipelineManager.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
@@ -173,8 +173,8 @@ DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData.Get())) {
       DataSource* dataSource = createDataSource(imageData.Get());
-      dataSource->dataSourceProxy()->SetAnnotation(
-        Attributes::FILENAME, fileName.toLatin1().data());
+      dataSource->dataSourceProxy()->SetAnnotation(Attributes::FILENAME,
+                                                   fileName.toLatin1().data());
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
       return dataSource;
     }
@@ -293,7 +293,6 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
     // TODO Eventually we shouldn't need to keep track of the data sources,
     // the pipeline should do that for us.
     ModuleManager::instance().addDataSource(dataSource);
-
   }
 
   // Work through pathological cases as necessary, prefer active view.

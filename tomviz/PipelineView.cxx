@@ -27,12 +27,12 @@
 #include "Operator.h"
 #include "OperatorPython.h"
 #include "OperatorResult.h"
+#include "Pipeline.h"
 #include "PipelineModel.h"
 #include "SaveDataReaction.h"
 #include "SnapshotOperator.h"
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
-#include "Pipeline.h"
 
 #include <pqCoreUtilities.h>
 #include <pqSpreadSheetView.h>

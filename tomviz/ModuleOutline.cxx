@@ -64,7 +64,8 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = data->dataSourceProxy()->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm =
+    data->dataSourceProxy()->GetSessionProxyManager();
 
   // Create the outline filter.
   vtkSmartPointer<vtkSMProxy> proxy;

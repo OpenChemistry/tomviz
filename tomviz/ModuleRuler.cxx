@@ -62,7 +62,8 @@ bool ModuleRuler::initialize(DataSource* data, vtkSMViewProxy* view)
   }
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = data->dataSourceProxy()->GetSessionProxyManager();
+  vtkSMSessionProxyManager* pxm =
+    data->dataSourceProxy()->GetSessionProxyManager();
   vtkAlgorithm* alg =
     vtkAlgorithm::SafeDownCast(data->dataSourceProxy()->GetClientSideObject());
   double bounds[6];

@@ -33,7 +33,6 @@ class DataSource;
 class Module;
 class Pipeline;
 
-
 class PipelineManager : public QObject
 {
   Q_OBJECT
@@ -49,7 +48,6 @@ public:
   bool serialize(pugi::xml_node& ns, const QDir& stateDir,
                  bool interactive = true) const;
   bool deserialize(const pugi::xml_node& ns, const QDir& stateDir);
-
 
 public slots:
   void addPipeline(Pipeline*);

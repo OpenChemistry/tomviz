@@ -19,8 +19,8 @@
 #include "DataSource.h"
 #include "Operator.h"
 #include "OperatorWidget.h"
-#include "Utilities.h"
 #include "Pipeline.h"
+#include "Utilities.h"
 
 #include <QAbstractButton>
 #include <QDialogButtonBox>

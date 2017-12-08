@@ -15,12 +15,12 @@
 ******************************************************************************/
 #include "DataSource.h"
 
+#include "ActiveObjects.h"
 #include "ModuleManager.h"
 #include "Operator.h"
 #include "OperatorFactory.h"
-#include "Utilities.h"
-#include "ActiveObjects.h"
 #include "Pipeline.h"
+#include "Utilities.h"
 
 #include <vtkDataObject.h>
 #include <vtkDoubleArray.h>
@@ -72,8 +72,8 @@ public:
   // and creates it if it does not exist.
   void ensureTiltAnglesArrayExists()
   {
-    auto alg = vtkAlgorithm::SafeDownCast(
-        this->DataSourceProxy->GetClientSideObject());
+    auto alg =
+      vtkAlgorithm::SafeDownCast(this->DataSourceProxy->GetClientSideObject());
     Q_ASSERT(alg);
     auto data = alg->GetOutputDataObject(0);
 
@@ -151,7 +151,8 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
   // If dataSource is null then we need to create the producer
   if (this->Internals->DataSourceProxy != nullptr) {
     // We add an annotation to the proxy so that it'll be easier for code to
-    // locate registered pipeline proxies that are being treated as data sources.
+    // locate registered pipeline proxies that are being treated as data
+    // sources.
     const char* sourceFilename = nullptr;
 
     QByteArray fileNameBytes;
@@ -183,8 +184,7 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
         // This handles scaling between the two.
         this->Internals->m_scaleOriginalSpacingBy = 0.1;
       }
-    }
-    else {
+    } else {
       auto image = vtkImageData::SafeDownCast(this->dataObject());
       if (image) {
         double spacing[3];
@@ -214,10 +214,10 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
           [this]() { this->dataSourceProxy()->MarkModified(nullptr); });
 }
 
-
-DataSource::DataSource(const QString& label, DataSourceType dataType, QObject* parent,
-           PersistenceState persistState)
-  : DataSource(nullptr, dataType, parent, persistState){
+DataSource::DataSource(const QString& label, DataSourceType dataType,
+                       QObject* parent, PersistenceState persistState)
+  : DataSource(nullptr, dataType, parent, persistState)
+{
 
   vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
   Q_ASSERT(pxm);
@@ -234,10 +234,8 @@ DataSource::DataSource(const QString& label, DataSourceType dataType, QObject* p
   }
 }
 
-
 DataSource::~DataSource()
 {
-
 }
 
 // TODO These should probably be rename, label or name?
@@ -283,7 +281,7 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   node = ns.append_child("GradientOpacityMap");
   tomviz::serialize(gradientOpacityMap(), node);
 
-  //ns.append_attribute("number_of_operators")
+  // ns.append_attribute("number_of_operators")
   //  .set_value(static_cast<int>(this->Internals->Operators.size()));
 
   pugi::xml_node scale_node = ns.append_child("Spacing");
@@ -303,7 +301,7 @@ bool DataSource::serialize(pugi::xml_node& ns) const
       this->Internals->Units->GetValue(2));
   }
 
-  //foreach (Operator* op, this->Internals->Operators) {
+  // foreach (Operator* op, this->Internals->Operators) {
   //  pugi::xml_node operatorNode = ns.append_child("Operator");
   //  operatorNode.append_attribute("operator_type")
   //    .set_value(OperatorFactory::operatorType(op));
@@ -327,12 +325,12 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
     setType(dstype);
   }
 
-  //int num_operators = ns.attribute("number_of_operators").as_int(-1);
-  //if (num_operators < 0) {
+  // int num_operators = ns.attribute("number_of_operators").as_int(-1);
+  // if (num_operators < 0) {
   //  return false;
- // }
+  // }
 
-  ///this->Internals->Operators.clear();
+  /// this->Internals->Operators.clear();
 
   // load the color map here to avoid resetData clobbering its range
   tomviz::deserialize(colorMap(), ns.child("ColorMap"));
@@ -370,40 +368,39 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
     this->Internals->Units->SetValue(2, unit_node.attribute("z").value());
   }
 
-//  for (pugi::xml_node node = ns.child("Operator"); node;
-//       node = node.next_sibling("Operator")) {
-//    Operator* op(OperatorFactory::createOperator(
-//      node.attribute("operator_type").value(), this));
-//    if (op) {
-//      if (op->deserialize(node)) {
-//        addOperator(op);
-//      }
-//    }
-//  }
+  //  for (pugi::xml_node node = ns.child("Operator"); node;
+  //       node = node.next_sibling("Operator")) {
+  //    Operator* op(OperatorFactory::createOperator(
+  //      node.attribute("operator_type").value(), this));
+  //    if (op) {
+  //      if (op->deserialize(node)) {
+  //        addOperator(op);
+  //      }
+  //    }
+  //  }
   return true;
 }
 
 DataSource* DataSource::clone(bool cloneOperators) const
 {
-// TODO I don't think this is necessary
-//    if (vtkSMCoreUtilities::GetFileNameProperty(
-//          this->Internals->OriginalDataSource) != nullptr) {
-//      const char* originalFilename =
-//        vtkSMPropertyHelper(this->Internals->OriginalDataSource,
-//                            vtkSMCoreUtilities::GetFileNameProperty(
-//                              this->Internals->OriginalDataSource))
-//          .GetAsString();
-//      this->Internals->Producer->SetAnnotation(Attributes::FILENAME,
-//                                               originalFilename);
-//    } else {
-//      this->Internals->Producer->SetAnnotation(
-//        Attributes::FILENAME,
-//        originalDataSource()->GetAnnotation(Attributes::FILENAME));
-//    }
+  // TODO I don't think this is necessary
+  //    if (vtkSMCoreUtilities::GetFileNameProperty(
+  //          this->Internals->OriginalDataSource) != nullptr) {
+  //      const char* originalFilename =
+  //        vtkSMPropertyHelper(this->Internals->OriginalDataSource,
+  //                            vtkSMCoreUtilities::GetFileNameProperty(
+  //                              this->Internals->OriginalDataSource))
+  //          .GetAsString();
+  //      this->Internals->Producer->SetAnnotation(Attributes::FILENAME,
+  //                                               originalFilename);
+  //    } else {
+  //      this->Internals->Producer->SetAnnotation(
+  //        Attributes::FILENAME,
+  //        originalDataSource()->GetAnnotation(Attributes::FILENAME));
+  //    }
 
-    auto newClone = new DataSource(this->Internals->DataSourceProxy,
-        this->Internals->Type);
-
+  auto newClone =
+    new DataSource(this->Internals->DataSourceProxy, this->Internals->Type);
 
   if (this->persistenceState() == PersistenceState::Transient ||
       this->persistenceState() == PersistenceState::Modified) {
@@ -479,15 +476,16 @@ void DataSource::setSpacing(const double spacing[3])
   double mySpacing[3] = { spacing[0], spacing[1], spacing[2] };
   vtkAlgorithm* alg = algorithm();
   if (alg) {
-    vtkImageData* data = vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+    vtkImageData* data =
+      vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
     if (data) {
       data->SetSpacing(mySpacing);
     }
   }
-  alg = vtkAlgorithm::SafeDownCast(
-    dataSourceProxy()->GetClientSideObject());
+  alg = vtkAlgorithm::SafeDownCast(dataSourceProxy()->GetClientSideObject());
   if (alg) {
-    vtkImageData* data = vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+    vtkImageData* data =
+      vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
     if (data) {
       data->SetSpacing(mySpacing);
     }
@@ -740,10 +738,10 @@ QVector<double> DataSource::getTiltAngles() const
   vtkDataObject* data = tp->GetOutputDataObject(0);
   vtkFieldData* fd = data->GetFieldData();
   vtkDataArray* tiltAngles = this->Internals->TiltAngles;
-//  if (fd->HasArray("tilt_angles") && !useOriginalDataTiltAngles &&
-//      fd->GetArray("tilt_angles") != this->Internals->TiltAngles.Get()) {
-//    tiltAngles = fd->GetArray("tilt_angles");
-//  }
+  //  if (fd->HasArray("tilt_angles") && !useOriginalDataTiltAngles &&
+  //      fd->GetArray("tilt_angles") != this->Internals->TiltAngles.Get()) {
+  //    tiltAngles = fd->GetArray("tilt_angles");
+  //  }
   if (tiltAngles) {
     result.resize(tiltAngles->GetNumberOfTuples());
     for (int i = 0; i < result.size(); ++i) {
@@ -817,9 +815,9 @@ void DataSource::updateColorMap()
 
 bool DataSource::isImageStack()
 {
-  vtkSMPropertyHelper helper(dataSourceProxy(),
-                             vtkSMCoreUtilities::GetFileNameProperty(
-                               dataSourceProxy()));
+  vtkSMPropertyHelper helper(
+    dataSourceProxy(),
+    vtkSMCoreUtilities::GetFileNameProperty(dataSourceProxy()));
 
   return helper.GetNumberOfElements() > 1;
 }
@@ -837,13 +835,13 @@ DataSource::PersistenceState DataSource::persistenceState() const
 vtkTrivialProducer* DataSource::trivialProducer()
 {
   return vtkTrivialProducer::SafeDownCast(
-      this->Internals->DataSourceProxy->GetClientSideObject());
+    this->Internals->DataSourceProxy->GetClientSideObject());
 }
 
 vtkAlgorithm* DataSource::algorithm() const
 {
   return vtkAlgorithm::SafeDownCast(
-      this->Internals->DataSourceProxy->GetClientSideObject());
+    this->Internals->DataSourceProxy->GetClientSideObject());
 }
 
 vtkDataObject* DataSource::dataObject() const
@@ -853,10 +851,8 @@ vtkDataObject* DataSource::dataObject() const
   return alg->GetOutputDataObject(0);
 }
 
-
 Pipeline* DataSource::pipeline()
 {
   return qobject_cast<Pipeline*>(parent());
 }
-
 }

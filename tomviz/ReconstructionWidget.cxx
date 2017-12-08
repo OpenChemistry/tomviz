@@ -112,8 +112,8 @@ ReconstructionWidget::ReconstructionWidget(DataSource* source, QWidget* p)
   this->Internals->canceled = false;
   this->Internals->started = false;
 
-  vtkTrivialProducer* t =
-    vtkTrivialProducer::SafeDownCast(source->dataSourceProxy()->GetClientSideObject());
+  vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
+    source->dataSourceProxy()->GetClientSideObject());
 
   this->Internals->dataSliceMapper->SetInputConnection(t->GetOutputPort());
   this->Internals->sinogramMapper->SetInputConnection(t->GetOutputPort());

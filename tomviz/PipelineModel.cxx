@@ -31,7 +31,6 @@
 #include <vtkTable.h>
 #include <vtkUnstructuredGrid.h>
 
-
 namespace tomviz {
 
 struct PipelineModel::Item
@@ -703,7 +702,8 @@ void PipelineModel::moduleAdded(Module* module)
   auto index = this->dataSourceIndex(dataSource);
   if (index.isValid()) {
     auto dataSourceItem = this->treeItem(index);
-    // Modules straight after the data source so append after any current modules.
+    // Modules straight after the data source so append after any current
+    // modules.
     int insertionRow = dataSourceItem->childCount();
     for (int j = 0; j < dataSourceItem->childCount(); ++j) {
       if (!dataSourceItem->child(j)->module()) {
@@ -743,8 +743,8 @@ void PipelineModel::operatorAdded(Operator* op)
     auto statusIndex = this->index(opIndex.row(), 1, opIndex.parent());
     emit this->dataChanged(statusIndex, statusIndex);
   });
-  connect(op, &Operator::dataSourceMoved, this, &PipelineModel::dataSourceMoved);
-
+  connect(op, &Operator::dataSourceMoved, this,
+          &PipelineModel::dataSourceMoved);
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
@@ -958,7 +958,8 @@ void PipelineModel::dataSourceMoved(DataSource* dataSource)
     auto operatorIndex = this->operatorIndex(newParent);
     auto operatorTreeItem = this->treeItem(operatorIndex);
 
-    beginMoveRows(oldParentIndex, index.row(), index.row(), operatorIndex, operatorTreeItem->childCount());
+    beginMoveRows(oldParentIndex, index.row(), index.row(), operatorIndex,
+                  operatorTreeItem->childCount());
     dataSourceItem = dataSourceItem->detach();
     operatorTreeItem->attach(dataSourceItem);
     endMoveRows();

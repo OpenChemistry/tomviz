@@ -18,7 +18,6 @@
 #include "ActiveObjects.h"
 #include "Pipeline.h"
 
-
 namespace tomviz {
 
 class PipelineManager::PMInternals
