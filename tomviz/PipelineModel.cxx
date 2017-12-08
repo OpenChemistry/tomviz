@@ -896,9 +896,9 @@ bool PipelineModel::removeOp(Operator* o)
 
     beginRemoveRows(this->parent(index), index.row(), index.row());
     auto item = this->treeItem(index);
+    o->dataSource()->removeOperator(o);
     item->parent()->remove(o);
     endRemoveRows();
-    o->dataSource()->removeOperator(o);
 
     return true;
   }
