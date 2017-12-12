@@ -497,8 +497,7 @@ void DataSource::setSpacing(const double spacing[3])
 unsigned int DataSource::getNumberOfComponents()
 {
   unsigned int numComponents = 0;
-  vtkAlgorithm* tp = vtkAlgorithm::SafeDownCast(
-    this->Internals->Producer->GetClientSideObject());
+  vtkAlgorithm* tp = this->algorithm();
   if (tp) {
     vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
     if (data) {
