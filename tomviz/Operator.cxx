@@ -16,6 +16,7 @@
 #include "Operator.h"
 
 #include "DataSource.h"
+#include "EditOperatorDialog.h"
 #include "ModuleManager.h"
 #include "OperatorResult.h"
 
@@ -184,5 +185,21 @@ bool Operator::deserialize(const pugi::xml_node& ns)
   }
 
   return true;
+}
+
+EditOperatorDialog* Operator::customDialog() const
+{
+  return m_customDialog;
+}
+
+void Operator::setCustomDialog(EditOperatorDialog* dialog)
+{
+  if (m_customDialog) {
+    std::cerr << "Error: Attempting to set custom dialog on an operator that "
+                 "already has one!";
+    return;
+  }
+
+  m_customDialog = dialog;
 }
 }

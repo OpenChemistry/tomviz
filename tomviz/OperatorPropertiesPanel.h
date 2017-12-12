@@ -40,6 +40,7 @@ private slots:
   void setOperator(Operator*);
   void setOperator(OperatorPython*);
   void apply();
+  void viewCodePressed();
 
 private:
   Q_DISABLE_COPY(OperatorPropertiesPanel)

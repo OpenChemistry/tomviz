@@ -32,6 +32,8 @@ class OperatorPython : public Operator
   Q_OBJECT
 
 public:
+  static const QString VIEW_CODE_MODE;
+
   OperatorPython(QObject* parent = nullptr);
   ~OperatorPython() override;
 

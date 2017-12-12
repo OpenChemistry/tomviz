@@ -76,6 +76,12 @@ public:
       m_ui.argumentsWidget->setLayout(layout);
     }
   }
+  void setViewMode(const QString& mode) override
+  {
+    if (mode == tomviz::OperatorPython::VIEW_CODE_MODE) {
+      m_ui.tabWidget->setCurrentWidget(m_ui.scriptTab);
+    }
+  }
   void applyChangesToOperator() override
   {
     if (m_op) {
@@ -104,6 +110,8 @@ QMap<QString, QPair<bool, tomviz::OperatorPython::CustomWidgetFunction>>
 }
 
 namespace tomviz {
+
+const QString OperatorPython::VIEW_CODE_MODE = "viewCode";
 
 void OperatorPython::registerCustomWidget(const QString& key, bool needsData,
                                           CustomWidgetFunction func)

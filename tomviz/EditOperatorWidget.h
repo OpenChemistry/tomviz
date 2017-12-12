@@ -40,6 +40,8 @@ public:
     emit dataMoved(newX, newY, newZ);
   }
 
+  virtual void setViewMode(const QString&) {}
+
 signals:
   void dataMoved(double, double, double);
 

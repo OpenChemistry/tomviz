@@ -39,7 +39,11 @@ public:
                      bool needToAddOperator, QWidget* parent);
   virtual ~EditOperatorDialog();
 
+  void setViewMode(const QString& mode);
+
   Operator* op();
+
+  static void showDialogForOperator(Operator* op, const QString& viewMode = "");
 
 private slots:
   void onApply();

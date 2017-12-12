@@ -36,6 +36,7 @@ namespace tomviz {
 class DataSource;
 class EditOperatorWidget;
 class OperatorResult;
+class EditOperatorDialog;
 
 enum class OperatorState
 {
@@ -134,6 +135,12 @@ public:
   /// Should return true if the Operator has a non-null widget to return from
   /// getEditorContents.
   virtual bool hasCustomUI() const { return false; }
+
+  /// Should return a custom dialog for an active operator.
+  EditOperatorDialog* customDialog() const;
+
+  /// Set a customDialog.
+  void setCustomDialog(EditOperatorDialog*);
 
   /// If the operator has some custom progress UI, then return that UI from this
   /// function.  This custom UI must be parented to the given widget and should
@@ -256,6 +263,7 @@ private:
   int m_progressStep = 0;
   QString m_progressMessage;
   std::atomic<OperatorState> m_state{ OperatorState::Queued };
+  QPointer<EditOperatorDialog> m_customDialog;
 };
 }
 
