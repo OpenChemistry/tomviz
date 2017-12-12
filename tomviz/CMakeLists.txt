@@ -338,6 +338,7 @@ set(json_files
   AddConstant.json
   SegmentPores.json
   RotationAlign.json
+  WienerFilter.json
   )
 
 set(resource_files
