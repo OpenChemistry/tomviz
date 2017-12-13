@@ -2,7 +2,6 @@
 import os
 import hashlib
 import requests
-import sys
 import tarfile
 
 downloads = [{
@@ -33,6 +32,7 @@ downloads = [{
 
 girder_url = 'https://data.kitware.com/api/v1'
 sha_dir = './sha512s'
+
 
 def is_cached(id):
     sha_path = '%s/%s.sha512' % (sha_dir, download['name'])

@@ -1,1 +1,1 @@
-def transform_scalars(data):
+def transform_scalars(data): # noqa

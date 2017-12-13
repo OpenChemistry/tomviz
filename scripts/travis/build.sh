@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     export DYLD_LIBRARY_PATH=/Users/travis/googletest-install/lib:$DYLD_LIBRARY_PATH
