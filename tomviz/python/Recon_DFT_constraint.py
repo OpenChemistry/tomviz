@@ -150,6 +150,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         returnValues["reconstruction"] = recon_dataset
         return returnValues
 
+
 def dfm3(input, angles, Npad):
     input = np.double(input)
     (Nx, Ny, Nproj) = input.shape
