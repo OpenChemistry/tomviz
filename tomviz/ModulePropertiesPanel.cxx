@@ -109,10 +109,10 @@ void ModulePropertiesPanel::setModule(Module* module)
     auto dataSource = module->dataSource();
     auto producer = dataSource->producer();
     auto tp = vtkAlgorithm::SafeDownCast(producer->GetClientSideObject());
-    auto data = vtkDataSet::SafeDownCast(tp->GetOutputDataObject(0));
-    if (data) {
+    auto dataSet = vtkDataSet::SafeDownCast(tp->GetOutputDataObject(0));
+    if (dataSet) {
       // Limit to point data
-      auto pointData = data->GetPointData();
+      auto pointData = dataSet->GetPointData();
       for (int i = 0; i < pointData->GetNumberOfArrays(); ++i) {
         auto arrayName = pointData->GetArray(i)->GetName();
         if (arrayName) {
