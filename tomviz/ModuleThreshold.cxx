@@ -59,7 +59,7 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  auto producer = data->dataSourceProxy();
+  auto producer = data->proxy();
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 

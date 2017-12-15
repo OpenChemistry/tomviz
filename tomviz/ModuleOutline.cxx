@@ -64,8 +64,7 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm =
-    data->dataSourceProxy()->GetSessionProxyManager();
+  auto pxm = data->proxy()->GetSessionProxyManager();
 
   // Create the outline filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -74,7 +73,7 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_outlineFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(m_outlineFilter);
   controller->PreInitializeProxy(m_outlineFilter);
-  vtkSMPropertyHelper(m_outlineFilter, "Input").Set(data->dataSourceProxy());
+  vtkSMPropertyHelper(m_outlineFilter, "Input").Set(data->proxy());
   controller->PostInitializeProxy(m_outlineFilter);
   controller->RegisterPipelineProxy(m_outlineFilter);
 
@@ -379,8 +378,8 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
     auto dataSource = qobject_cast<DataSource*>(sender());
     updateGridAxesBounds(dataSource);
     updateGridAxesUnit(dataSource);
-    dataSource->dataSourceProxy()->MarkModified(nullptr);
-    dataSource->dataSourceProxy()->UpdatePipeline();
+    dataSource->proxy()->MarkModified(nullptr);
+    dataSource->proxy()->UpdatePipeline();
     emit renderNeeded();
 
   });

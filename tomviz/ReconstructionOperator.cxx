@@ -39,10 +39,8 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
   : Operator(p), m_dataSource(source)
 {
   qRegisterMetaType<std::vector<float>>();
-  auto t = vtkTrivialProducer::SafeDownCast(
-    source->dataSourceProxy()->GetClientSideObject());
-  auto imageData =
-    vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto t =  source->producer();
+  auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   int dataExtent[6];
   imageData->GetExtent(dataExtent);
   for (int i = 0; i < 6; ++i) {
@@ -189,7 +187,7 @@ void ReconstructionOperator::createNewChildDataSource(
     vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this,
     DataSource::PersistenceState::Transient);
 
-  childDS->setFilename(label.toLatin1().data());
+  childDS->setFileName(label.toLatin1().data());
   setChildDataSource(childDS);
 }
 

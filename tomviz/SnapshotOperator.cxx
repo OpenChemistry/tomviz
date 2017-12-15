@@ -126,7 +126,7 @@ void SnapshotOperator::createNewChildDataSource(
                                 DataSource::Volume, this,
                                 DataSource::PersistenceState::Modified);
 
-  childDS->setFilename(label.toLatin1().data());
+  childDS->setFileName(label.toLatin1().data());
   setChildDataSource(childDS);
 
   emit Operator::newChildDataSource(childDS);

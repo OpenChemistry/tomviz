@@ -308,11 +308,11 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
   foreach (const QPointer<DataSource>& ds,
            this->Internals->ChildDataSources + this->Internals->DataSources) {
     if (ds == nullptr ||
-        uniqueOriginalSources.contains(ds->dataSourceProxy()) ||
+        uniqueOriginalSources.contains(ds->proxy()) ||
         ds->persistenceState() == DataSource::PersistenceState::Modified) {
       continue;
     }
-    vtkSMSourceProxy* reader = ds->dataSourceProxy();
+    vtkSMSourceProxy* reader = ds->proxy();
     Q_ASSERT(reader != nullptr);
     pugi::xml_node odsnode = ns.append_child("OriginalDataSource");
     odsnode.append_attribute("id").set_value(reader->GetGlobalIDAsString());
@@ -332,13 +332,13 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
   QList<DataSource*> serializedDataSources;
   foreach (const QPointer<DataSource>& ds,
            this->Internals->ChildDataSources + this->Internals->DataSources) {
-    if (ds && uniqueOriginalSources.contains(ds->dataSourceProxy()) &&
+    if (ds && uniqueOriginalSources.contains(ds->proxy()) &&
         ds->persistenceState() == DataSource::PersistenceState::Saved) {
       pugi::xml_node dsnode = ns.append_child("DataSource");
       dsnode.append_attribute("id").set_value(
-        ds->dataSourceProxy()->GetGlobalIDAsString());
+        ds->proxy()->GetGlobalIDAsString());
       dsnode.append_attribute("original_data_source")
-        .set_value(ds->dataSourceProxy()->GetGlobalIDAsString());
+        .set_value(ds->proxy()->GetGlobalIDAsString());
       if (ds == ActiveObjects::instance().activeDataSource()) {
         dsnode.append_attribute("active").set_value(1);
       }
@@ -363,7 +363,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
       mdlnode.append_attribute("type").set_value(
         ModuleFactory::moduleType(mdl));
       mdlnode.append_attribute("data_source")
-        .set_value(mdl->dataSource()->dataSourceProxy()->GetGlobalIDAsString());
+        .set_value(mdl->dataSource()->proxy()->GetGlobalIDAsString());
       mdlnode.append_attribute("view").set_value(
         mdl->view()->GetGlobalIDAsString());
       mdlnode.append_attribute("module_id").set_value(i);

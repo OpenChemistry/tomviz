@@ -194,8 +194,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     // Handle transforms with custom UIs
   } else if (scriptLabel == "Shift Volume") {
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->dataSourceProxy()->GetClientSideObject());
+    vtkTrivialProducer* t = source->producer();
     vtkImageData* data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* extent = data->GetExtent();
 
@@ -268,9 +267,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                         arguments);
     }
   } else if (scriptLabel == "Crop") {
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->dataSourceProxy()->GetClientSideObject());
-    vtkImageData* data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* extent = data->GetExtent();
 
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -330,9 +328,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                         arguments);
     }
   } else if (scriptLabel == "Delete Slices") {
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->dataSourceProxy()->GetClientSideObject());
-    vtkImageData* data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* shape = data->GetExtent();
 
     QDialog dialog(pqCoreUtilities::mainWidget());
@@ -368,8 +365,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     double origin[3];
     double spacing[3];
     int extent[6];
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->dataSourceProxy()->GetClientSideObject());
+    auto t = source->producer();
     vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
@@ -403,9 +399,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     double spacing[3];
     int extent[6];
 
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->dataSourceProxy()->GetClientSideObject());
-    vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
     image->GetExtent(extent);
@@ -500,9 +495,8 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     volumeWidget->getExtentOfSelection(selection_extent);
 
     int image_extent[6];
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->dataSourceProxy()->GetClientSideObject());
-    vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     image->GetExtent(image_extent);
 
     // The image extent is not necessarily zero-based.  The numpy array is.
@@ -536,9 +530,8 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     volumeWidget->getExtentOfSelection(selection_extent);
 
     int image_extent[6];
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->dataSourceProxy()->GetClientSideObject());
-    vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     image->GetExtent(image_extent);
     int indices[6];
     indices[0] = selection_extent[0] - image_extent[0];

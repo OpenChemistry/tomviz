@@ -195,9 +195,9 @@ void DataPropertiesPanel::updateData()
     return;
   }
 
-  m_ui->FileName->setText(dsource->filename());
+  m_ui->FileName->setText(dsource->fileName());
 
-  m_ui->DataRange->setText(getDataDimensionsString(dsource->dataSourceProxy()));
+  m_ui->DataRange->setText(getDataDimensionsString(dsource->proxy()));
 
   int extent[6];
   double spacing[3];
@@ -211,8 +211,7 @@ void DataPropertiesPanel::updateData()
     QString("%1").arg(spacing[2] * (extent[5] - extent[4])));
   m_ui->unitBox->setText(m_currentDataSource->getUnits(0));
 
-  vtkSMSourceProxy* sourceProxy =
-    vtkSMSourceProxy::SafeDownCast(dsource->dataSourceProxy());
+  auto sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->proxy());
   if (sourceProxy) {
     updateInformationWidget(m_ui->DataTreeWidget,
                             sourceProxy->GetDataInformation());

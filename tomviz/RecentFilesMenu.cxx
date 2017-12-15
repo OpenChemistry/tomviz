@@ -98,7 +98,7 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource,
     get_settings(settings);
 
     pugi::xml_node root = settings.root();
-    QByteArray labelBytes = dataSource->filename().toLatin1();
+    QByteArray labelBytes = dataSource->fileName().toLatin1();
     const char* filename = labelBytes.data();
 
     for (pugi::xml_node node = root.child("DataReader"); node;
@@ -122,7 +122,7 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource,
     get_settings(settings);
 
     pugi::xml_node root = settings.root();
-    QByteArray labelBytes = dataSource->filename().toLatin1();
+    QByteArray labelBytes = dataSource->fileName().toLatin1();
     const char* filename = labelBytes.data();
 
     for (pugi::xml_node node = root.child("DataReader"); node;

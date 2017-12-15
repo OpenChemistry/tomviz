@@ -53,8 +53,7 @@ void AddResampleReaction::updateEnableState()
 namespace {
 vtkImageData* imageData(DataSource* source)
 {
-  vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-    source->dataSourceProxy()->GetClientSideObject());
+  auto t = source->producer();
   return vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 }
 }
@@ -132,12 +131,11 @@ void AddResampleReaction::resample(DataSource* source)
     // out a different way to do it
     DataSource* resampledData = source->clone(true);
     QString name =
-      resampledData->dataSourceProxy()->GetAnnotation(Attributes::LABEL);
+      resampledData->proxy()->GetAnnotation(Attributes::LABEL);
     name = "Downsampled_" + name;
-    resampledData->dataSourceProxy()->SetAnnotation(Attributes::LABEL,
+    resampledData->proxy()->SetAnnotation(Attributes::LABEL,
                                                     name.toLatin1().data());
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      resampledData->dataSourceProxy()->GetClientSideObject());
+    auto t = resampledData->producer();
     t->SetOutput(reslice->GetOutput());
     resampledData->dataModified();
 

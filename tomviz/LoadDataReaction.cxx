@@ -53,13 +53,11 @@
 namespace tomviz {
 
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
-  : Superclass(parentObject)
+  : pqReaction(parentObject)
 {
 }
 
-LoadDataReaction::~LoadDataReaction()
-{
-}
+LoadDataReaction::~LoadDataReaction() = default;
 
 void LoadDataReaction::onTriggered()
 {
@@ -68,8 +66,6 @@ void LoadDataReaction::onTriggered()
 
 QList<DataSource*> LoadDataReaction::loadData()
 {
-  vtkNew<vtkSMParaViewPipelineController> controller;
-
   QStringList filters;
   filters
     << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
@@ -173,7 +169,7 @@ DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData.Get())) {
       DataSource* dataSource = createDataSource(imageData.Get());
-      dataSource->dataSourceProxy()->SetAnnotation(Attributes::FILENAME,
+      dataSource->proxy()->SetAnnotation(Attributes::FILENAME,
                                                    fileName.toLatin1().data());
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
       return dataSource;
@@ -259,7 +255,7 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
       pqRenderView* renderView =
         qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
       if (renderView) {
-        tomviz::createCameraOrbit(dataSource->dataSourceProxy(),
+        tomviz::createCameraOrbit(dataSource->proxy(),
                                   renderView->getRenderViewProxy());
       }
     }

@@ -552,7 +552,7 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
   }
   DataSource* dataSource = new DataSource(
     proxy, DataSource::Volume, nullptr, DataSource::PersistenceState::Modified);
-  dataSource->setFilename(proxy->GetAnnotation(Attributes::LABEL));
+  dataSource->setFileName(proxy->GetAnnotation(Attributes::LABEL));
   ModuleManager::instance().addDataSource(dataSource);
 
   ActiveObjects::instance().createRenderViewIfNeeded();
@@ -578,7 +578,7 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
     pqRenderView* renderView =
       qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
     if (renderView) {
-      tomviz::createCameraOrbit(dataSource->dataSourceProxy(),
+      tomviz::createCameraOrbit(dataSource->proxy(),
                                 renderView->getRenderViewProxy());
     }
   }

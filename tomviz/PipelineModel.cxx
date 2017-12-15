@@ -389,7 +389,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
           return label;
         }
         case Qt::ToolTipRole:
-          return dataSource->filename();
+          return dataSource->fileName();
         case Qt::FontRole:
           if (dataSource->persistenceState() ==
               DataSource::PersistenceState::Modified) {

@@ -69,8 +69,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   // Default parameters
-  vtkTrivialProducer* trv = vtkTrivialProducer::SafeDownCast(
-    data->dataSourceProxy()->GetClientSideObject());
+  vtkTrivialProducer* trv = data->producer();
   m_volumeMapper->SetInputConnection(trv->GetOutputPort());
   m_volume->SetMapper(m_volumeMapper.Get());
   m_volume->SetProperty(m_volumeProperty.Get());
@@ -109,10 +108,12 @@ void ModuleVolume::updateColorMap()
       break;
     case (Module::GRADIENT_2D):
       propertyMode = vtkVolumeProperty::TF_2D;
+      if (transferFunction2D() && transferFunction2D()->GetExtent()[1] > 0) {
+        m_volumeProperty->SetTransferFunction2D(transferFunction2D());
+      }
       break;
   }
 
-  m_volumeProperty->SetTransferFunction2D(transferFunction2D());
   m_volumeProperty->SetTransferFunctionMode(propertyMode);
 
   // BUG: volume mappers don't update property when LUT is changed and has an
@@ -300,7 +301,7 @@ void ModuleVolume::onTransferModeChanged(const int mode)
 vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
 {
   vtkTrivialProducer* trv =
-    vtkTrivialProducer::SafeDownCast(this->dataSource()->dataSourceProxy());
+    vtkTrivialProducer::SafeDownCast(this->dataSource()->proxy());
   return trv->GetOutputDataObject(0);
 }
 

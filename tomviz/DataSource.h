@@ -72,10 +72,13 @@ public:
 
   ~DataSource() override;
 
-  /// Returns the data source proxy to insert in ParaView pipelines.
+  /// Returns the proxy that can be inserted in ParaView pipelines.
   /// This proxy instance doesn't change over the lifetime of a DataSource even
   /// if new DataOperators are added to the source.
-  vtkSMSourceProxy* dataSourceProxy() const;
+  vtkSMSourceProxy* proxy() const;
+
+  //// Returns the trivial producer to insert in VTK pipelines.
+  vtkTrivialProducer* producer() const;
 
   /// Returns the output data object associated with the proxy.
   vtkDataObject* dataObject() const;
@@ -97,10 +100,10 @@ public:
   bool deserialize(const pugi::xml_node& ns);
 
   /// Override the filename.
-  void setFilename(const QString& filename);
+  void setFileName(const QString& fileName);
 
   /// Returns the name of the filename used from the originalDataSource.
-  QString filename() const;
+  QString fileName() const;
 
   /// Returns the name of the filename used from the originalDataSource.
   QString label() const;
@@ -132,7 +135,7 @@ public:
   /// Set the tilt angles to the values in the given QVector
   void setTiltAngles(const QVector<double>& angles);
 
-  /// Moves the displayPosition of the DataSource by detlaPosition
+  /// Moves the displayPosition of the DataSource by deltaPosition
   void translate(const double deltaPosition[3]);
 
   /// Gets the display position of the data source
@@ -201,7 +204,6 @@ signals:
   /// to translate the dataset.
   void displayPositionChanged(double newX, double newY, double newZ);
 
-
 public slots:
   void dataModified();
 
@@ -214,13 +216,14 @@ protected slots:
   void updateColorMap();
 
 private:
-  vtkTrivialProducer* trivialProducer();
   vtkAlgorithm* algorithm() const;
 
   Q_DISABLE_COPY(DataSource)
 
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;
+
+  double m_scaleOriginalSpacingBy = 1.0;
 };
 
 }

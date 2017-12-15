@@ -75,13 +75,11 @@ public:
 
   void setupCurrentSliceLine(int sliceNum)
   {
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      this->dataSource->dataSourceProxy()->GetClientSideObject());
+    auto t = this->dataSource->producer();
     if (!t) {
       return;
     }
-    vtkImageData* imageData =
-      vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     if (imageData) {
       int extent[6];
       imageData->GetExtent(extent);
@@ -112,8 +110,7 @@ ReconstructionWidget::ReconstructionWidget(DataSource* source, QWidget* p)
   this->Internals->canceled = false;
   this->Internals->started = false;
 
-  vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-    source->dataSourceProxy()->GetClientSideObject());
+  auto t = source->producer();
 
   this->Internals->dataSliceMapper->SetInputConnection(t->GetOutputPort());
   this->Internals->sinogramMapper->SetInputConnection(t->GetOutputPort());

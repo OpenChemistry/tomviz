@@ -32,11 +32,9 @@ class LoadDataReaction : public pqReaction
 {
   Q_OBJECT
 
-  typedef pqReaction Superclass;
-
 public:
   LoadDataReaction(QAction* parentAction);
-  virtual ~LoadDataReaction();
+  ~LoadDataReaction() override;
 
   /// Create a raw data source from the reader.
   static DataSource* createDataSource(vtkSMProxy* reader,
