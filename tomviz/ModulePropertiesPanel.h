@@ -38,6 +38,7 @@ private slots:
   void setView(vtkSMViewProxy*);
   void updatePanel();
   void detachColorMap(bool);
+  void arrayNameChanged(const QString&);
 
 private:
   Q_DISABLE_COPY(ModulePropertiesPanel)

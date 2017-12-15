@@ -18,6 +18,7 @@
 
 #include <QIcon>
 #include <QObject>
+#include <QMap>
 #include <QPointer>
 #include <QScopedPointer>
 
@@ -86,6 +87,11 @@ public:
   /// serialize the state of the module.
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
+
+  /// Set the active data array for the given index the array of the given
+  /// arrayName.
+  virtual void setActiveArray(int index, const QString &arrayName);
+  virtual QString activeArray(int index);
 
   /// Modules that use transfer functions should override this method to return
   /// true.
@@ -198,6 +204,7 @@ private:
   QPointer<DataSource> m_activeDataSource;
   vtkWeakPointer<vtkSMViewProxy> m_view;
   bool m_useDetachedColorMap = false;
+  QMap<int, QString> m_activeArrays;
 
   class MInternals;
   const QScopedPointer<MInternals> d;
