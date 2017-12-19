@@ -30,6 +30,7 @@
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
+#include <vtkRect.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTrivialProducer.h>
@@ -298,6 +299,25 @@ bool DataSource::serialize(pugi::xml_node& ns) const
   node = ns.append_child("GradientOpacityMap");
   tomviz::serialize(gradientOpacityMap(), node);
 
+  node = ns.append_child("ColorTransferFunction2D");
+  foreach (const vtkSmartPointer<vtkTransferFunction2DItem>& item,
+           this->Internals->m_transferFunction2D) {
+    pugi::xml_node itemNode = node.append_child("Item");
+    vtkRectd rect = item->GetBox();
+    itemNode.append_attribute("x").set_value(rect.GetX());
+    itemNode.append_attribute("y").set_value(rect.GetY());
+    itemNode.append_attribute("width").set_value(rect.GetWidth());
+    itemNode.append_attribute("height").set_value(rect.GetHeight());
+    // For now these are aliases of the color map and gradient opacity function,
+    // so saving them here is redundant and the code to read them in ignores it
+    // fix this when we add support for editing these.
+    //
+    // pugi::xml_node colorMapNode = itemNode.append_child("ColorMap");
+    // tomviz::serialize(item->GetColorTransferFunction(), colorMapNode);
+    // pugi::xml_node opacityMapNode = itemNode.append_child("OpacityMap");
+    // tomviz::serialize(item->GetOpacityFunction(), opacityMapNode);
+  }
+
   ns.append_attribute("number_of_operators")
     .set_value(static_cast<int>(this->Internals->Operators.size()));
 
@@ -357,6 +377,38 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   pugi::xml_node nodeGrad = ns.child("GradientOpacityMap");
   if (nodeGrad) {
     tomviz::deserialize(gradientOpacityMap(), nodeGrad);
+  }
+
+  const pugi::xml_node& tfr2d_node = ns.child("ColorTransferFunction2D");
+  this->Internals->m_transferFunction2D.clear();
+  for (pugi::xml_node itemNode = tfr2d_node.child("Item"); itemNode;
+       itemNode = itemNode.next_sibling("Item")) {
+    auto item = vtkSmartPointer<vtkTransferFunction2DItem>::New();
+    vtkRectd rect;
+    rect.SetX(itemNode.attribute("x").as_double());
+    rect.SetY(itemNode.attribute("y").as_double());
+    rect.SetWidth(itemNode.attribute("width").as_double());
+    rect.SetHeight(itemNode.attribute("height").as_double());
+    item->SetBox(rect);
+    // Color function and opacity function could be read in, but for now
+    // they are assumed to follow the ColorMap and GradientOpacityMap of
+    // the data source.  Swap to the commented code when they are independently
+    // editable
+    //
+    // vtkNew<vtkColorTransferFunction> colorFunc;
+    // tomviz::deserialize(colorFunc, itemNode.child("ColorMap"));
+    // item->SetColorTransferFunction(colorFunc);
+    // vtkNew<vtkPiecewiseFunction> opacityFunc;
+    // tomviz::deserialize(opacityFunc, itemNode.child("OpacityMap"));
+    // item->SetOpacityFunction(opacityFunc);
+    //
+    auto colorTfrFunction =
+      vtkColorTransferFunction::SafeDownCast(colorMap()->GetClientSideObject());
+    item->SetColorTransferFunction(colorTfrFunction);
+    item->SetOpacityFunction(gradientOpacityMap());
+    //
+
+    this->Internals->m_transferFunction2D.push_back(item);
   }
 
   vtkSMPropertyHelper(colorMap(), "ScalarOpacityFunction").Set(opacityMap());
