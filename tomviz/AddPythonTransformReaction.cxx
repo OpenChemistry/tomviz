@@ -194,8 +194,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     // Handle transforms with custom UIs
   } else if (scriptLabel == "Shift Volume") {
-    vtkTrivialProducer* t = source->producer();
-    vtkImageData* data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* extent = data->GetExtent();
 
     QDialog dialog(pqCoreUtilities::mainWidget());

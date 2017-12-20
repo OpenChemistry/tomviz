@@ -164,7 +164,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
 void ReconstructionOperator::createNewChildDataSource(
   const QString& label, vtkSmartPointer<vtkDataObject> childData)
 {
-
+/*
   vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
   vtkSMSessionProxyManager* sessionProxyManager =
     proxyManager->GetActiveSessionProxyManager();
@@ -182,9 +182,9 @@ void ReconstructionOperator::createNewChildDataSource(
   }
 
   producer->SetOutput(childData);
-
+*/
   DataSource* childDS = new DataSource(
-    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this,
+    vtkImageData::SafeDownCast(childData), DataSource::Volume, this,
     DataSource::PersistenceState::Transient);
 
   childDS->setFileName(label.toLatin1().data());

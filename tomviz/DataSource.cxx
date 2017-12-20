@@ -59,7 +59,7 @@ class DataSource::DSInternals
 public:
   vtkNew<vtkImageData> m_transfer2D;
   vtkNew<vtkPiecewiseFunction> GradientOpacityMap;
-  vtkSmartPointer<vtkSMSourceProxy> DataSourceProxy;
+//  vtkSmartPointer<vtkSMSourceProxy> DataSourceProxy;
   vtkSmartPointer<vtkSMSourceProxy> ProducerProxy;
   QList<Operator*> Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
@@ -74,7 +74,7 @@ public:
   void ensureTiltAnglesArrayExists()
   {
     auto alg =
-      vtkAlgorithm::SafeDownCast(this->DataSourceProxy->GetClientSideObject());
+      vtkAlgorithm::SafeDownCast(this->ProducerProxy->GetClientSideObject());
     Q_ASSERT(alg);
     auto data = alg->GetOutputDataObject(0);
 
@@ -134,119 +134,66 @@ void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
 }
 }
 
-DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType,
-                       QObject* parentObject, PersistenceState persistState)
-  : QObject(parentObject), Internals(new DataSource::DSInternals())
+DataSource::DataSource(vtkSMSourceProxy* dataSource,
+                       DataSourceType dataType)
+  : QObject(nullptr), Internals(new DSInternals)
 {
-  this->Internals->DataSourceProxy = dataSource;
-  this->Internals->Type = dataType;
-  this->Internals->PersistState = persistState;
-  for (int i = 0; i < 3; ++i) {
-    this->Internals->DisplayPosition[i] = 0.0;
-  }
+  const char* sourceFilename = nullptr;
 
-  vtkNew<vtkSMParaViewPipelineController> controller;
-  auto pxm = ActiveObjects::instance().proxyManager();
-  Q_ASSERT(pxm);
-
-  // If dataSource is null then we need to create the producer
-  if (this->Internals->ProducerProxy == nullptr) {
-    // We add an annotation to the proxy so that it'll be easier for code to
-    // locate registered pipeline proxies that are being treated as data
-    // sources.
-    const char* sourceFilename = nullptr;
-
-    QByteArray fileNameBytes;
-    if (vtkSMCoreUtilities::GetFileNameProperty(dataSource)) {
-
-      vtkSMPropertyHelper helper(
-        dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource));
-      // If we are dealing with an image stack find the prefix to use
-      // when displaying the data source.
-      if (helper.GetNumberOfElements() > 1) {
-        QStringList fileNames;
-        for (unsigned int i = 0; i < helper.GetNumberOfElements(); i++) {
-          fileNames << QString(helper.GetAsString(i));
-        }
-        QFileInfo fileInfo(fileNames[0]);
-        QString fileName =
-          QString("%1*.%2").arg(findPrefix(fileNames)).arg(fileInfo.suffix());
-        fileNameBytes = fileName.toLatin1();
-        sourceFilename = fileNameBytes.data();
-      } else {
-        sourceFilename = helper.GetAsString();
+  QByteArray fileNameBytes;
+  if (vtkSMCoreUtilities::GetFileNameProperty(dataSource)) {
+    vtkSMPropertyHelper helper(
+      dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource));
+    // If we are dealing with an image stack find the prefix to use
+    // when displaying the data source.
+    if (helper.GetNumberOfElements() > 1) {
+      QStringList fileNames;
+      for (unsigned int i = 0; i < helper.GetNumberOfElements(); i++) {
+        fileNames << QString(helper.GetAsString(i));
       }
-
-      QFileInfo info(helper.GetAsString());
-      if (info.suffix() == "mrc") {
-        // MRC format uses angstroms as default units, tomviz uses nanometers.
-        // This handles scaling between the two.
-        m_scaleOriginalSpacingBy = 0.1;
-      }
+      QFileInfo fileInfo(fileNames[0]);
+      QString fileName =
+        QString("%1*.%2").arg(findPrefix(fileNames)).arg(fileInfo.suffix());
+      fileNameBytes = fileName.toLatin1();
+      sourceFilename = fileNameBytes.data();
     } else {
-      auto image = vtkImageData::SafeDownCast(this->dataObject());
-      if (image) {
-        double spacing[3];
-        image->GetSpacing(spacing);
-        for (int i = 0; i < 3; ++i) {
-          spacing[i] *= m_scaleOriginalSpacingBy;
-        }
-        image->SetSpacing(spacing);
-      }
+      sourceFilename = helper.GetAsString();
     }
-    vtkSmartPointer<vtkSMProxy> source;
-    source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-    Q_ASSERT(source != nullptr);
-    Q_ASSERT(vtkSMSourceProxy::SafeDownCast(source));
 
-    dataSource->UpdatePipeline();
-    auto algo = vtkAlgorithm::SafeDownCast(dataSource->GetClientSideObject());
-    Q_ASSERT(algo);
-    auto data = algo->GetOutputDataObject(0);
-    auto copy = data->NewInstance();
-    copy->DeepCopy(data);
-    auto image = vtkImageData::SafeDownCast(data);
-    auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
-    tp->SetOutput(image);
-    this->Internals->ProducerProxy = vtkSMSourceProxy::SafeDownCast(source);
-    source->SetAnnotation(Attributes::FILENAME, sourceFilename);
-    controller->RegisterPipelineProxy(source);
+    QFileInfo info(helper.GetAsString());
+    if (info.suffix() == "mrc") {
+      // MRC format uses angstroms as default units, tomviz uses nanometers.
+      // This handles scaling between the two.
+      m_scaleOriginalSpacingBy = 0.1;
+    }
   }
 
-  // Setup color map for this data-source.
-  static unsigned int colorMapCounter = 0;
-  ++colorMapCounter;
+  dataSource->UpdatePipeline();
+  auto algo = vtkAlgorithm::SafeDownCast(dataSource->GetClientSideObject());
+  Q_ASSERT(algo);
+  auto data = algo->GetOutputDataObject(0);
+  auto image = vtkImageData::SafeDownCast(data);
 
-  vtkNew<vtkSMTransferFunctionManager> tfmgr;
-  this->Internals->ColorMap = tfmgr->GetColorTransferFunction(
-    QString("DataSourceColorMap%1").arg(colorMapCounter).toLatin1().data(),
-    pxm);
-  updateColorMap();
+  // Initialize our object, and set the file name.
+  init(image, dataType, PersistenceState::Saved);
+  setFileName(sourceFilename);
+}
 
-  // every time the data changes, we should update the color map.
-  connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
-
-  connect(this, &DataSource::dataPropertiesChanged,
-          [this]() { this->proxy()->MarkModified(nullptr); });
+DataSource::DataSource(vtkImageData* data, DataSourceType dataType,
+                       QObject* parentObject, PersistenceState persistState)
+  : QObject(parentObject), Internals(new DSInternals)
+{
+  init(data, dataType, persistState);
 }
 
 DataSource::DataSource(const QString& label, DataSourceType dataType,
                        QObject* parent, PersistenceState persistState)
-  : DataSource(nullptr, dataType, parent, persistState)
+  : QObject(parent), Internals(new DSInternals)
 {
-
-  auto pxm = ActiveObjects::instance().proxyManager();
-  Q_ASSERT(pxm);
-  vtkSmartPointer<vtkSMProxy> source;
-  source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-  Q_ASSERT(source != nullptr);
-  Q_ASSERT(vtkSMSourceProxy::SafeDownCast(source));
-  this->Internals->ProducerProxy = vtkSMSourceProxy::SafeDownCast(source);
+  init(nullptr, dataType, persistState);
 
   if (!label.isNull()) {
     setFileName(label);
-    QByteArray bytes = label.toLatin1();
-    tomviz::annotateDataProducer(source, bytes.data());
   }
 }
 
@@ -258,34 +205,28 @@ DataSource::~DataSource()
   }
 }
 
-// TODO These should probably be rename, label or name?
 void DataSource::setFileName(const QString& filename)
 {
-  vtkSMProxy* dataSource = proxy();
-  dataSource->SetAnnotation(Attributes::FILENAME,
-                            filename.toStdString().c_str());
+  m_json["fileName"] = filename;
 }
 
 QString DataSource::fileName() const
 {
-  vtkSMProxy* dataSource = proxy();
-
-  if (dataSource->HasAnnotation(Attributes::FILENAME)) {
-    return dataSource->GetAnnotation(Attributes::FILENAME);
-  }/** else {
-    return vtkSMPropertyHelper(
-             dataSource, vtkSMCoreUtilities::GetFileNameProperty(dataSource))
-      .GetAsString();
-  } */
+  if (m_json.contains("fileName")) {
+    return m_json["fileName"].toString();
+  }
   return QString();
+}
+
+void DataSource::setLabel(const QString& label)
+{
+  m_json["label"] = label;
 }
 
 QString DataSource::label() const
 {
-  vtkSMProxy* dataSource = proxy();
-
-  if (dataSource->HasAnnotation(Attributes::LABEL)) {
-    return dataSource->GetAnnotation(Attributes::LABEL);
+  if (m_json.contains("label")) {
+    return m_json["label"].toString();
   } else {
     return QFileInfo(fileName()).baseName();
   }
@@ -421,7 +362,7 @@ DataSource* DataSource::clone(bool cloneOperators) const
   //    }
 
   auto newClone =
-    new DataSource(this->Internals->DataSourceProxy, this->Internals->Type);
+    new DataSource(this->Internals->ProducerProxy, this->Internals->Type);
 
   if (this->persistenceState() == PersistenceState::Transient ||
       this->persistenceState() == PersistenceState::Modified) {
@@ -628,7 +569,7 @@ void DataSource::dataModified()
   tp->Modified();
   vtkDataObject* dObject = tp->GetOutputDataObject(0);
   dObject->Modified();
-  this->Internals->DataSourceProxy->MarkModified(nullptr);
+  this->Internals->ProducerProxy->MarkModified(nullptr);
 
   vtkFieldData* fd = dObject->GetFieldData();
   if (fd->HasArray("tomviz_data_source_type")) {
@@ -650,11 +591,11 @@ void DataSource::dataModified()
   // explicitly calling UpdatePipeline(). The extents don't reset to the whole
   // extent. Until a  proper fix makes it into VTK, this is needed.
   vtkSMSessionProxyManager* pxm =
-    this->Internals->DataSourceProxy->GetSessionProxyManager();
+    this->Internals->ProducerProxy->GetSessionProxyManager();
   vtkSMSourceProxy* filter =
     vtkSMSourceProxy::SafeDownCast(pxm->NewProxy("filters", "PassThrough"));
   Q_ASSERT(filter);
-  vtkSMPropertyHelper(filter, "Input").Set(this->Internals->DataSourceProxy, 0);
+  vtkSMPropertyHelper(filter, "Input").Set(this->Internals->ProducerProxy, 0);
   filter->UpdateVTKObjects();
   filter->UpdatePipeline();
   filter->Delete();
@@ -694,7 +635,7 @@ void DataSource::setDisplayPosition(const double newPosition[3])
 
 vtkDataObject* DataSource::copyData()
 {
-  this->Internals->DataSourceProxy->UpdatePipeline();
+  this->Internals->ProducerProxy->UpdatePipeline();
   vtkDataObject* data = dataObject();
   vtkDataObject* copy = data->NewInstance();
   copy->DeepCopy(data);
@@ -768,9 +709,9 @@ bool DataSource::hasTiltAngles()
 QVector<double> DataSource::getTiltAngles() const
 {
   QVector<double> result;
-  vtkAlgorithm* tp = algorithm();
-  vtkDataObject* data = tp->GetOutputDataObject(0);
-  vtkFieldData* fd = data->GetFieldData();
+  //vtkAlgorithm* tp = algorithm();
+  //vtkDataObject* data = tp->GetOutputDataObject(0);
+  //vtkFieldData* fd = data->GetFieldData();
   vtkDataArray* tiltAngles = this->Internals->TiltAngles;
   //  if (fd->HasArray("tilt_angles") && !useOriginalDataTiltAngles &&
   //      fd->GetArray("tilt_angles") != this->Internals->TiltAngles.Get()) {
@@ -868,8 +809,62 @@ DataSource::PersistenceState DataSource::persistenceState() const
 vtkTrivialProducer* DataSource::producer() const
 {
   Q_ASSERT(vtkTrivialProducer::SafeDownCast(proxy()->GetClientSideObject()));
-  return vtkTrivialProducer::SafeDownCast(
-    this->Internals->ProducerProxy->GetClientSideObject());
+  return vtkTrivialProducer::SafeDownCast(proxy()->GetClientSideObject());
+}
+
+void DataSource::init(vtkImageData* data, DataSourceType dataType,
+                      PersistenceState persistState)
+{
+  this->Internals->Type = dataType;
+  this->Internals->PersistState = persistState;
+  this->Internals->DisplayPosition.Set(0, 0, 0);
+
+  vtkNew<vtkSMParaViewPipelineController> controller;
+  auto pxm = ActiveObjects::instance().proxyManager();
+  Q_ASSERT(pxm);
+
+  // If dataSource is null then we need to create the producer
+  vtkSmartPointer<vtkSMProxy> source;
+  source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
+  Q_ASSERT(source != nullptr);
+  Q_ASSERT(vtkSMSourceProxy::SafeDownCast(source));
+  this->Internals->ProducerProxy = vtkSMSourceProxy::SafeDownCast(source);
+  controller->RegisterPipelineProxy(this->Internals->ProducerProxy);
+
+  if (data) {
+    auto copy = data->NewInstance();
+    copy->DeepCopy(data);
+    auto image = vtkImageData::SafeDownCast(copy);
+    auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
+    tp->SetOutput(image);
+
+    // This is a little hackish, currently special cased for the MRC format.
+    // It would probably be best to move this to the file read/write classes.
+    if (image && m_scaleOriginalSpacingBy != 1.0) {
+      double spacing[3];
+      image->GetSpacing(spacing);
+      for (int i = 0; i < 3; ++i) {
+        spacing[i] *= m_scaleOriginalSpacingBy;
+      }
+      image->SetSpacing(spacing);
+    }
+  }
+
+  // Setup color map for this data-source.
+  static unsigned int colorMapCounter = 0;
+  ++colorMapCounter;
+
+  vtkNew<vtkSMTransferFunctionManager> tfmgr;
+  this->Internals->ColorMap = tfmgr->GetColorTransferFunction(
+    QString("DataSourceColorMap%1").arg(colorMapCounter).toLatin1().data(),
+    pxm);
+  updateColorMap();
+
+  // Every time the data changes, we should update the color map.
+  connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));
+
+  connect(this, &DataSource::dataPropertiesChanged,
+          [this]() { this->proxy()->MarkModified(nullptr); });
 }
 
 vtkAlgorithm* DataSource::algorithm() const

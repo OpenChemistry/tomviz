@@ -17,32 +17,23 @@
 #define tomvizPipelineManager_h
 
 #include <QObject>
-#include <QScopedPointer>
+
 #include <vtk_pugixml.h>
 
-class pqView;
-class vtkSMSourceProxy;
-class vtkSMViewProxy;
-class vtkPVXMLElement;
-class vtkSMProxyLocator;
-class vtkSMRepresentationProxy;
 class QDir;
 
 namespace tomviz {
-class DataSource;
-class Module;
+
 class Pipeline;
 
 class PipelineManager : public QObject
 {
   Q_OBJECT
 
-  typedef QObject Superclass;
-
 public:
   static PipelineManager& instance();
 
-  /// save the application state as xml.
+  /// Save the application state as xml.
   /// Parameter stateDir: the location to use as the base of all relative file
   /// paths
   bool serialize(pugi::xml_node& ns, const QDir& stateDir,
@@ -59,8 +50,7 @@ private:
   PipelineManager(QObject* parent = nullptr);
   ~PipelineManager();
 
-  class PMInternals;
-  QScopedPointer<PMInternals> Internals;
+  QList<QPointer<Pipeline>> m_pipelines;
 };
 }
 

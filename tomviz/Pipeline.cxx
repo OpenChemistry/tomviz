@@ -24,55 +24,44 @@
 
 namespace tomviz {
 
-class Pipeline::PInternals
-{
-public:
-  DataSource* Data;
-  PipelineWorker* Worker;
-  PipelineWorker::Future* Future;
-  bool Paused = false;
-};
-
 Pipeline::Pipeline(DataSource* dataSource, QObject* parent)
-  : QObject(parent), Internals(new Pipeline::PInternals())
+  : QObject(parent)
 {
-  this->Internals->Data = dataSource;
-  this->Internals->Worker = new PipelineWorker(this);
-  this->Internals->Data->setParent(this);
+  m_data = dataSource;
+  m_worker = new PipelineWorker(this);
+  m_data->setParent(this);
 
-  this->addDataSource(dataSource);
+  addDataSource(dataSource);
 }
 
-Pipeline::~Pipeline()
-{
-}
+Pipeline::~Pipeline() = default;
 
 void Pipeline::execute()
 {
-  emit this->started();
-  this->executePipelineBranch(this->Internals->Data);
+  emit started();
+  executePipelineBranch(m_data);
 }
 
 void Pipeline::execute(DataSource* start, bool last)
 {
-  emit this->started();
+  emit started();
   Operator* lastOp = nullptr;
 
   if (last) {
     lastOp = start->operators().last();
   }
-  this->executePipelineBranch(start, lastOp);
+  executePipelineBranch(start, lastOp);
 }
 
 void Pipeline::execute(DataSource* start)
 {
-  emit this->started();
-  this->executePipelineBranch(start);
+  emit started();
+  executePipelineBranch(start);
 }
 
 void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
 {
-  if (this->Internals->Paused) {
+  if (m_paused) {
     return;
   }
 
@@ -83,17 +72,16 @@ void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
 
   // Cancel any running operators. TODO in the future we should be able to add
   // operators to end of a running pipeline.
-  if (this->Internals->Future != nullptr &&
-      this->Internals->Future->isRunning()) {
-    this->Internals->Future->cancel();
+  if (m_future && m_future->isRunning()) {
+    m_future->cancel();
   }
 
   vtkDataObject* data = nullptr;
 
   if (start != nullptr) {
     // Use the transform DataSource as the starting point, if we have one.
-    auto transformDataSource = this->findTransformedDataSource(dataSource);
-    if (transformDataSource != nullptr) {
+    auto transformDataSource = findTransformedDataSource(dataSource);
+    if (transformDataSource) {
       data = transformDataSource->copyData();
     }
 
@@ -121,10 +109,10 @@ void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
     data = dataSource->copyData();
   }
 
-  this->Internals->Future = this->Internals->Worker->run(data, operators);
-  connect(this->Internals->Future, &PipelineWorker::Future::finished, this,
+  m_future = m_worker->run(data, operators);
+  connect(m_future, &PipelineWorker::Future::finished, this,
           &Pipeline::pipelineBranchFinished);
-  connect(this->Internals->Future, &PipelineWorker::Future::canceled, this,
+  connect(m_future, &PipelineWorker::Future::canceled, this,
           &Pipeline::pipelineBranchCanceled);
 }
 
@@ -145,7 +133,7 @@ void Pipeline::pipelineBranchFinished(bool result)
       if (lastOp->childDataSource() == nullptr) {
         newChildDataSource = new DataSource("Output");
         newChildDataSource->setParent(this);
-        this->addDataSource(newChildDataSource);
+        addDataSource(newChildDataSource);
         lastOp->setChildDataSource(newChildDataSource);
       }
 
@@ -159,16 +147,16 @@ void Pipeline::pipelineBranchFinished(bool result)
 
     // Do we have another branch to execute
     if (lastOp->childDataSource() != nullptr) {
-      this->execute(lastOp->childDataSource());
+      execute(lastOp->childDataSource());
     }
     // The pipeline execution is finished
     else {
-      emit this->finished();
+      emit finished();
     }
 
     future->deleteLater();
-    if (this->Internals->Future == future) {
-      this->Internals->Future = nullptr;
+    if (m_future == future) {
+      m_future = nullptr;
     }
   } else {
     future->result()->Delete();
@@ -181,44 +169,42 @@ void Pipeline::pipelineBranchCanceled()
     qobject_cast<PipelineWorker::Future*>(sender());
   future->result()->Delete();
   future->deleteLater();
-  if (this->Internals->Future == future) {
-    this->Internals->Future = nullptr;
+  if (m_future == future) {
+    m_future = nullptr;
   }
 }
 
 void Pipeline::pause()
 {
-  this->Internals->Paused = true;
+  m_paused = true;
 }
 
-void Pipeline::resume(bool execute)
+void Pipeline::resume(bool run)
 {
-  this->Internals->Paused = false;
-  if (execute) {
-    this->execute();
+  m_paused = false;
+  if (run) {
+    execute();
   }
 }
 
 void Pipeline::cancel(std::function<void()> canceled)
 {
-  if (this->Internals->Future) {
+  if (m_future) {
     if (canceled) {
-      connect(this->Internals->Future, &PipelineWorker::Future::canceled,
-              canceled);
+      connect(m_future, &PipelineWorker::Future::canceled, canceled);
     }
-    this->Internals->Future->cancel();
+    m_future->cancel();
   }
 }
 
 bool Pipeline::isRunning()
 {
-  return this->Internals->Future != nullptr &&
-         this->Internals->Future->isRunning();
+  return m_future != nullptr && m_future->isRunning();
 }
 
 DataSource* Pipeline::findTransformedDataSource(DataSource* dataSource)
 {
-  auto op = this->findTransformedDataSourceOperator(dataSource);
+  auto op = findTransformedDataSourceOperator(dataSource);
   if (op != nullptr) {
     return op->childDataSource();
   }
@@ -294,11 +280,10 @@ void Pipeline::addDataSource(DataSource* dataSource)
     }
 
     // If pipeline is running see if we can safely remove the operator
-    if (this->Internals->Future != nullptr &&
-        this->Internals->Future->isRunning()) {
+    if (m_future && m_future->isRunning()) {
       // If we can't safely cancel the execution then trigger the rerun of the
       // pipeline.
-      if (!this->Internals->Future->cancel(op)) {
+      if (!m_future->cancel(op)) {
         this->execute(op->dataSource());
       }
     } else {
@@ -333,9 +318,8 @@ Pipeline::ImageFuture::~ImageFuture()
 Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
 {
   ImageFuture* imageFuture;
-  Q_ASSERT(op->dataSource() != nullptr);
 
-  auto dataSource = op->dataSource();
+  auto dataSource = m_data;
   auto dataObject = dataSource->copyData();
   vtkSmartPointer<vtkImageData> result(vtkImageData::SafeDownCast(dataObject));
   auto operators = dataSource->operators();
@@ -343,8 +327,7 @@ Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
     auto index = operators.indexOf(op);
     // Only run operators if we have some to run
     if (index > 0) {
-      auto future =
-        this->Internals->Worker->run(result, operators.mid(0, index));
+      auto future = m_worker->run(result, operators.mid(0, index));
 
       imageFuture = new ImageFuture(op, result, future);
 

@@ -551,7 +551,7 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
     return;
   }
   DataSource* dataSource = new DataSource(
-    proxy, DataSource::Volume, nullptr, DataSource::PersistenceState::Modified);
+    proxy, DataSource::Volume);//, nullptr, DataSource::PersistenceState::Modified);
   dataSource->setFileName(proxy->GetAnnotation(Attributes::LABEL));
   ModuleManager::instance().addDataSource(dataSource);
 

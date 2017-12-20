@@ -92,10 +92,7 @@ ModuleManager::ModuleManager(QObject* parentObject)
           SIGNAL(viewRemoved(pqView*)), SLOT(onViewRemoved(pqView*)));
 }
 
-ModuleManager::~ModuleManager()
-{
-  // Internals is a QScopedPointer.
-}
+ModuleManager::~ModuleManager() = default;
 
 ModuleManager& ModuleManager::instance()
 {

@@ -116,8 +116,7 @@ bool SaveDataReaction::saveData(const QString& filename)
 
   auto updateSource = [](QString fileName, DataSource* ds) {
       ds->setPersistenceState(DataSource::PersistenceState::Saved);
-      ds->proxy()->SetAnnotation(Attributes::FILENAME,
-                                 fileName.toLatin1().data());
+      ds->setFileName(fileName);
   };
 
   if (!server) {

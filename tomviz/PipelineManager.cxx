@@ -20,21 +20,12 @@
 
 namespace tomviz {
 
-class PipelineManager::PMInternals
-{
-public:
-  QList<QPointer<Pipeline>> Pipelines;
-};
-
-PipelineManager::PipelineManager(QObject* parentObject)
-  : Superclass(parentObject), Internals(new PipelineManager::PMInternals())
+PipelineManager::PipelineManager(QObject* p)
+  : QObject(p)
 {
 }
 
-PipelineManager::~PipelineManager()
-{
-  // Internals is a QScopedPointer.
-}
+PipelineManager::~PipelineManager() = default;
 
 PipelineManager& PipelineManager::instance()
 {
@@ -44,25 +35,25 @@ PipelineManager& PipelineManager::instance()
 
 void PipelineManager::addPipeline(Pipeline* pipeline)
 {
-  if (pipeline && !this->Internals->Pipelines.contains(pipeline)) {
+  if (pipeline && !m_pipelines.contains(pipeline)) {
     pipeline->setParent(this);
-    this->Internals->Pipelines.push_back(pipeline);
+    m_pipelines.push_back(pipeline);
   }
 }
 
 void PipelineManager::removePipeline(Pipeline* pipeline)
 {
-  if (this->Internals->Pipelines.removeOne(pipeline)) {
+  if (m_pipelines.removeOne(pipeline)) {
     pipeline->deleteLater();
   }
 }
 
 void PipelineManager::removeAllPipelines()
 {
-  foreach (Pipeline* pipeline, this->Internals->Pipelines) {
+  foreach (Pipeline* pipeline, m_pipelines) {
     pipeline->deleteLater();
   }
-  this->Internals->Pipelines.clear();
+  m_pipelines.clear();
 }
 
 } // end of namespace tomviz

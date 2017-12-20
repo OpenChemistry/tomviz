@@ -155,6 +155,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     controller->UnRegisterProxy(reader->getProxy());
   }
 
+  dataSource->setFileName(fileName);
   return dataSource;
 }
 
@@ -169,8 +170,7 @@ DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData.Get())) {
       DataSource* dataSource = createDataSource(imageData.Get());
-      dataSource->proxy()->SetAnnotation(Attributes::FILENAME,
-                                                   fileName.toLatin1().data());
+      dataSource->setFileName(fileName.toLatin1().data());
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
       return dataSource;
     }
@@ -239,26 +239,21 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
   dialog->setObjectName("ConfigureReaderDialog");
   if (QString(reader->GetXMLName()) == "TIFFSeriesReader" ||
       hasVisibleWidgets == false || dialog->exec() == QDialog::Accepted) {
-    DataSource* previousActiveDataSource =
-      ActiveObjects::instance().activeDataSource();
 
     if (!hasData(reader)) {
       qCritical() << "Error: failed to load file!";
       return nullptr;
     }
 
-    DataSource* dataSource =
-      new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
-    // do whatever we need to do with a new data source.
+    auto source = vtkSMSourceProxy::SafeDownCast(reader);
+    source->UpdatePipeline();
+    auto algo = vtkAlgorithm::SafeDownCast(source->GetClientSideObject());
+    auto data = algo->GetOutputDataObject(0);
+    auto image = vtkImageData::SafeDownCast(data);
+
+    DataSource* dataSource = new DataSource(image);
+    // Do whatever we need to do with a new data source.
     LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
-    if (!previousActiveDataSource) {
-      pqRenderView* renderView =
-        qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
-      if (renderView) {
-        tomviz::createCameraOrbit(dataSource->proxy(),
-                                  renderView->getRenderViewProxy());
-      }
-    }
     return dataSource;
   }
   return nullptr;
@@ -273,13 +268,15 @@ DataSource* LoadDataReaction::createDataSource(vtkImageData* imageData)
   tp->SetOutput(imageData);
   source->SetAnnotation("tomviz.Type", "DataSource");
 
-  auto dataSource = new DataSource(vtkSMSourceProxy::SafeDownCast(source));
+  auto dataSource = new DataSource(imageData);
   return dataSource;
 }
 
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
                                        bool defaultModules, bool child)
 {
+  DataSource* previousActiveDataSource =
+    ActiveObjects::instance().activeDataSource();
   bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
   ActiveObjects::instance().setMoveObjectsMode(false);
   if (child) {
@@ -304,6 +301,14 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
 
   if (defaultModules) {
     addDefaultModules(dataSource);
+  }
+  if (!previousActiveDataSource) {
+    pqRenderView* renderView =
+      qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+    if (renderView) {
+      tomviz::createCameraOrbit(dataSource->proxy(),
+                                renderView->getRenderViewProxy());
+    }
   }
 }
 

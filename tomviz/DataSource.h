@@ -18,10 +18,9 @@
 
 #include <QObject>
 
+#include <QJsonObject>
 #include <QScopedPointer>
 #include <QVector>
-
-#include <vtkSmartPointer.h>
 
 #include <vtk_pugixml.h>
 
@@ -54,14 +53,17 @@ public:
 
   enum class PersistenceState
   {
-    Transient, // Doesn't need to written to disk
+    Transient, // Doesn't need to be written to disk
     Saved,     // Written to disk
     Modified   // Needs to be written to disk
   };
 
+  /// Deprecated constructor, prefer directly setting data.
+  DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume);
+
   /// \c dataSource is the original reader that reads the data into the
   /// application.
-  DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
+  DataSource(vtkImageData* dataSource, DataSourceType dataType = Volume,
              QObject* parent = nullptr,
              PersistenceState persistState = PersistenceState::Saved);
 
@@ -99,11 +101,14 @@ public:
   bool serialize(pugi::xml_node& in) const;
   bool deserialize(const pugi::xml_node& ns);
 
-  /// Override the filename.
+  /// Set the file name.
   void setFileName(const QString& fileName);
 
   /// Returns the name of the filename used from the originalDataSource.
   QString fileName() const;
+
+  /// Set the label for the data source.
+  void setLabel(const QString& label);
 
   /// Returns the name of the filename used from the originalDataSource.
   QString label() const;
@@ -216,6 +221,10 @@ protected slots:
   void updateColorMap();
 
 private:
+  /// Private method to initialize the data source.
+  void init(vtkImageData* dataSource, DataSourceType dataType,
+            PersistenceState persistState);
+
   vtkAlgorithm* algorithm() const;
 
   Q_DISABLE_COPY(DataSource)
@@ -223,6 +232,7 @@ private:
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;
 
+  QJsonObject m_json;
   double m_scaleOriginalSpacingBy = 1.0;
 };
 

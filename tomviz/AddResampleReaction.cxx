@@ -130,11 +130,9 @@ void AddResampleReaction::resample(DataSource* source)
     // TODO - cloning here is really expensive memory-wise, we should figure
     // out a different way to do it
     DataSource* resampledData = source->clone(true);
-    QString name =
-      resampledData->proxy()->GetAnnotation(Attributes::LABEL);
+    QString name = resampledData->label();
     name = "Downsampled_" + name;
-    resampledData->proxy()->SetAnnotation(Attributes::LABEL,
-                                                    name.toLatin1().data());
+    resampledData->setLabel(name);
     auto t = resampledData->producer();
     t->SetOutput(reslice->GetOutput());
     resampledData->dataModified();

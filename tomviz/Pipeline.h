@@ -21,7 +21,9 @@
 #include "PipelineWorker.h"
 
 #include <QScopedPointer>
+
 #include <functional>
+
 #include <vtkImageData.h>
 #include <vtkSmartPointer.h>
 
@@ -37,7 +39,7 @@ public:
   class ImageFuture;
 
   Pipeline(DataSource* dataSource, QObject* parent = nullptr);
-  ~Pipeline();
+  ~Pipeline() override;
 
   // Pause the automatic execution of the pipeline
   void pause();
@@ -72,16 +74,19 @@ protected slots:
 signals:
   /// This signal is when the execution of the pipeline starts.
   void started();
+
   /// This signal is fired the execution of the pipeline finishes.
   void finished();
 
 private:
-  class PInternals;
-  const QScopedPointer<PInternals> Internals;
-
   DataSource* findTransformedDataSource(DataSource* dataSource);
   Operator* findTransformedDataSourceOperator(DataSource* dataSource);
   void addDataSource(DataSource* dataSource);
+
+  DataSource* m_data;
+  PipelineWorker* m_worker;
+  PipelineWorker::Future* m_future = nullptr;
+  bool m_paused = false;
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.
