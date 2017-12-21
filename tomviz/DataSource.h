@@ -185,9 +185,6 @@ public:
   /// producer takes over ownership of the data object.
   void setData(vtkDataObject* newData);
 
-  /// Reset the data output of the trivial producer to original data object.
-  void resetData();
-
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
