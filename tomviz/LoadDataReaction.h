@@ -36,19 +36,6 @@ public:
   LoadDataReaction(QAction* parentAction);
   ~LoadDataReaction() override;
 
-  /// Create a raw data source from the reader.
-  static DataSource* createDataSource(vtkSMProxy* reader,
-                                      bool defaultModules = true,
-                                      bool child = false);
-
-  /// Create a data source that can be populated with data.
-  static DataSource* createDataSource(vtkImageData* imageData);
-
-  /// Create a data source using Tomviz readers (no proxy).
-  static DataSource* createDataSourceLocal(const QString& fileName,
-                                           bool defaultModules = true,
-                                           bool child = false);
-
   static QList<DataSource*> loadData();
 
   /// Load a data file from the specified location.
@@ -60,6 +47,16 @@ public:
   static DataSource* loadData(const QStringList& fileNames,
                               bool defaultModules = true,
                               bool addToRecent = true, bool child = false);
+
+  /// Create a data source using Tomviz readers (no proxy).
+  static DataSource* createDataSourceLocal(const QString& fileName,
+                                           bool defaultModules = true,
+                                           bool child = false);
+
+  /// Create a raw data source from the reader.
+  static DataSource* createDataSource(vtkSMProxy* reader,
+                                      bool defaultModules = true,
+                                      bool child = false);
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource* dataSource,

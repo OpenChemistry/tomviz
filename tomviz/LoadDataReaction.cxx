@@ -50,6 +50,46 @@
 #include <QFileDialog>
 #include <QFileInfo>
 
+namespace {
+bool hasData(vtkSMProxy* reader)
+{
+  vtkSMSourceProxy* dataSource = vtkSMSourceProxy::SafeDownCast(reader);
+  if (!dataSource) {
+    return false;
+  }
+
+  dataSource->UpdatePipeline();
+  vtkAlgorithm* vtkalgorithm =
+    vtkAlgorithm::SafeDownCast(dataSource->GetClientSideObject());
+  if (!vtkalgorithm) {
+    return false;
+  }
+
+  // Create a clone and release the reader data.
+  vtkImageData* data =
+    vtkImageData::SafeDownCast(vtkalgorithm->GetOutputDataObject(0));
+  if (!data) {
+    return false;
+  }
+
+  int extent[6];
+  data->GetExtent(extent);
+  if (extent[0] > extent[1] || extent[2] > extent[3] || extent[4] > extent[5]) {
+    return false;
+  }
+
+  vtkPointData* pd = data->GetPointData();
+  if (!pd) {
+    return false;
+  }
+
+  if (pd->GetNumberOfArrays() < 1) {
+    return false;
+  }
+  return true;
+}
+}
+
 namespace tomviz {
 
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
@@ -168,54 +208,14 @@ DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
     // Load the file using our simple EMD class.
     EmdFormat emdFile;
     vtkNew<vtkImageData> imageData;
-    if (emdFile.read(fileName.toLatin1().data(), imageData.Get())) {
-      DataSource* dataSource = createDataSource(imageData.Get());
+    if (emdFile.read(fileName.toLatin1().data(), imageData)) {
+      DataSource* dataSource = new DataSource(imageData);
       dataSource->setFileName(fileName.toLatin1().data());
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
       return dataSource;
     }
   }
   return nullptr;
-}
-
-namespace {
-bool hasData(vtkSMProxy* reader)
-{
-  vtkSMSourceProxy* dataSource = vtkSMSourceProxy::SafeDownCast(reader);
-  if (!dataSource) {
-    return false;
-  }
-
-  dataSource->UpdatePipeline();
-  vtkAlgorithm* vtkalgorithm =
-    vtkAlgorithm::SafeDownCast(dataSource->GetClientSideObject());
-  if (!vtkalgorithm) {
-    return false;
-  }
-
-  // Create a clone and release the reader data.
-  vtkImageData* data =
-    vtkImageData::SafeDownCast(vtkalgorithm->GetOutputDataObject(0));
-  if (!data) {
-    return false;
-  }
-
-  int extent[6];
-  data->GetExtent(extent);
-  if (extent[0] > extent[1] || extent[2] > extent[3] || extent[4] > extent[5]) {
-    return false;
-  }
-
-  vtkPointData* pd = data->GetPointData();
-  if (!pd) {
-    return false;
-  }
-
-  if (pd->GetNumberOfArrays() < 1) {
-    return false;
-  }
-  return true;
-}
 }
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
@@ -257,19 +257,6 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
     return dataSource;
   }
   return nullptr;
-}
-
-DataSource* LoadDataReaction::createDataSource(vtkImageData* imageData)
-{
-  auto pxm = tomviz::ActiveObjects::instance().proxyManager();
-  vtkSmartPointer<vtkSMProxy> source;
-  source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-  auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
-  tp->SetOutput(imageData);
-  source->SetAnnotation("tomviz.Type", "DataSource");
-
-  auto dataSource = new DataSource(imageData);
-  return dataSource;
 }
 
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
