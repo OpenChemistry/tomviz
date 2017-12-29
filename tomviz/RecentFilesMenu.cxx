@@ -20,26 +20,25 @@
 #include "LoadDataReaction.h"
 #include "SaveLoadStateReaction.h"
 #include "Utilities.h"
-#include "pqCoreUtilities.h"
-#include "pqPipelineSource.h"
-#include "pqSettings.h"
-#include "vtkNew.h"
-#include "vtkSMCoreUtilities.h"
-#include "vtkSMParaViewPipelineController.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSmartPointer.h"
 
+#include <pqCoreUtilities.h>
+#include <pqSettings.h>
+
+#include <QDebug>
 #include <QMenu>
 #include <QMessageBox>
-#include <sstream>
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+
 #include <string>
 
 namespace tomviz {
 
 static const int MAX_ITEMS = 10;
 
+namespace{
 void get_settings(pugi::xml_document& doc)
 {
   QSettings* settings = pqApplicationCore::instance()->settings();
@@ -50,8 +49,53 @@ void get_settings(pugi::xml_document& doc)
   }
 }
 
+QJsonObject loadSettings()
+{
+  // Load the recent files from our saved state.
+  auto settings = pqApplicationCore::instance()->settings();
+  auto recent = settings->value("recentFiles").toByteArray();
+  auto doc = QJsonDocument::fromJson(recent);
+  if (!doc.isNull() && doc.isObject()) {
+    return doc.object();
+  } else {
+    QJsonObject json;
+    json["readers"] = QJsonArray();
+    return QJsonObject();
+  }
+}
+
+void saveSettings(QJsonObject json)
+{
+  // Save recent file list to our saved state, prune lists to be <= 10 entries.
+  QJsonArray readers;
+  if (json.contains("readers") && json["readers"].isArray()) {
+    readers = json["readers"].toArray();
+  }
+  QJsonArray states;
+  if (json.contains("states") && json["states"].isArray()) {
+    states = json["states"].toArray();
+  }
+  if (readers.size() > 10) {
+    // We need to prune the list to 10.
+    while (readers.size() > 10) {
+      readers.removeLast();
+    }
+  }
+  if (states.size() > 10) {
+    // We need to prune the list to 10.
+    while (states.size() > 10) {
+      states.removeLast();
+    }
+  }
+  QJsonDocument doc(json);
+
+  auto settings = pqApplicationCore::instance()->settings();
+  settings->setValue("recentFiles", doc.toJson(QJsonDocument::Compact));
+}
+
 void save_settings(pugi::xml_document& doc)
 {
+/*
   // trim the list.
   pugi::xml_node root = doc.root();
   std::vector<pugi::xml_node> to_remove;
@@ -77,73 +121,33 @@ void save_settings(pugi::xml_document& doc)
   doc.save(stream);
   QSettings* settings = pqApplicationCore::instance()->settings();
   settings->setValue("recentFiles", stream.str().c_str());
+*/
 }
 
-RecentFilesMenu::RecentFilesMenu(QMenu& menu, QObject* parentObject)
-  : Superclass(parentObject)
+}
+
+RecentFilesMenu::RecentFilesMenu(QMenu& menu, QObject* p)
+  : QObject(p)
 {
-  this->connect(&menu, SIGNAL(aboutToShow()), SLOT(aboutToShowMenu()));
+  connect(&menu, SIGNAL(aboutToShow()), SLOT(aboutToShowMenu()));
 }
 
-RecentFilesMenu::~RecentFilesMenu()
-{
-}
+RecentFilesMenu::~RecentFilesMenu() = default;
 
-void RecentFilesMenu::pushDataReader(DataSource* dataSource,
-                                     vtkSMProxy* readerProxy)
+void RecentFilesMenu::pushDataReader(DataSource* dataSource)
 {
   // Add non-proxy based readers separately.
-  if (!readerProxy) {
-    pugi::xml_document settings;
-    get_settings(settings);
-
-    pugi::xml_node root = settings.root();
-    QByteArray labelBytes = dataSource->fileName().toLatin1();
-    const char* filename = labelBytes.data();
-
-    for (pugi::xml_node node = root.child("DataReader"); node;
-         node = node.next_sibling("DataReader")) {
-      if (strcmp(node.attribute("filename0").as_string(""), filename) == 0) {
-        root.remove_child(node);
-        break;
-      }
-    }
-
-    pugi::xml_node node = root.prepend_child("DataReader");
-    node.append_attribute("filename0").set_value(filename);
-    save_settings(settings);
-    return;
+  auto settings = loadSettings();
+  auto readerList = settings["readers"].toArray();
+  QJsonObject readerJson;
+  readerJson["fileName"] = dataSource->fileName();
+  readerJson["stack"] = dataSource->isImageStack();
+  if (!dataSource->pvReaderXml().isEmpty()) {
+    readerJson["pvXml"] = dataSource->pvReaderXml();
   }
-
-  const char* pname = vtkSMCoreUtilities::GetFileNameProperty(readerProxy);
-  // Only add to list if the data source is associated with file(s)
-  if (pname) {
-    pugi::xml_document settings;
-    get_settings(settings);
-
-    pugi::xml_node root = settings.root();
-    QByteArray labelBytes = dataSource->fileName().toLatin1();
-    const char* filename = labelBytes.data();
-
-    for (pugi::xml_node node = root.child("DataReader"); node;
-         node = node.next_sibling("DataReader")) {
-      if (strcmp(node.attribute("filename0").as_string(""), filename) == 0) {
-        root.remove_child(node);
-        break;
-      }
-    }
-
-    pugi::xml_node node = root.prepend_child("DataReader");
-    node.append_attribute("filename0").set_value(filename);
-    node.append_attribute("xmlgroup").set_value(readerProxy->GetXMLGroup());
-    node.append_attribute("xmlname").set_value(readerProxy->GetXMLName());
-    if (dataSource->isImageStack()) {
-      node.append_attribute("stack").set_value(true);
-    }
-    tomviz::serialize(readerProxy, node);
-
-    save_settings(settings);
-  }
+  readerList.push_front(readerJson);
+  settings["readers"] = readerList;
+  saveSettings(settings);
 }
 
 void RecentFilesMenu::pushStateFile(const QString& filename)
@@ -167,122 +171,101 @@ void RecentFilesMenu::pushStateFile(const QString& filename)
 
 void RecentFilesMenu::aboutToShowMenu()
 {
-  QMenu* menu = qobject_cast<QMenu*>(this->sender());
+  auto menu = qobject_cast<QMenu*>(sender());
   Q_ASSERT(menu);
   menu->clear();
 
-  pugi::xml_document settings;
-  get_settings(settings);
+  auto json = loadSettings();
 
-  pugi::xml_node root = settings.root();
-  if (!root.child("DataReader") && !root.child("State")) {
-    QAction* actn = menu->addAction("Empty");
+  // There are no entries, make it clear in the recent files menu.
+  if (!json.contains("readers") && !json.contains("states")) {
+    auto actn = menu->addAction("Empty");
     actn->setEnabled(false);
     return;
   }
 
-  bool header_added = false;
+  // We have something, let's populate the recent files and/or state files.
+  bool headerAdded = false;
   int index = 0;
-  for (pugi::xml_node node = root.child("DataReader"); node;
-       node = node.next_sibling("DataReader")) {
-    if (header_added == false) {
-      QAction* actn = menu->addAction("Datasets");
-      actn->setEnabled(false);
-      header_added = true;
+  foreach(QJsonValue file, json["readers"].toArray()) {
+    if (file.isObject()) {
+      auto object = file.toObject();
+      if (headerAdded == false) {
+        auto actn = menu->addAction("Data files");
+        actn->setEnabled(false);
+        headerAdded = true;
+      }
+      bool stack = object["stack"].toBool(false);
+      auto actn =
+        menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
+                        object["fileName"].toString("<bug>"));
+      actn->setData(index);
+      connect(actn, &QAction::triggered, [this, actn, stack]() {
+        dataSourceTriggered(actn, stack);
+      });
+      ++index;
     }
-    bool stack = node.attribute("stack").as_bool(false);
-    QAction* actn =
-      menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
-                      node.attribute("filename0").as_string("<bug>"));
-    actn->setData(index);
-    this->connect(actn, &QAction::triggered, [this, actn, stack]() {
-      dataSourceTriggered(actn, stack);
-    });
-    index++;
   }
 
-  header_added = false;
-  for (pugi::xml_node node = root.child("State"); node;
-       node = node.next_sibling("State")) {
-    if (header_added == false) {
-      QAction* actn = menu->addAction("State files");
-      actn->setEnabled(false);
-      header_added = true;
+  headerAdded = false;
+  foreach(QJsonValue file, json["states"].toArray()) {
+    qDebug() << "File:" << file;
+    if (file.isObject()) {
+      auto object = file.toObject();
+      if (headerAdded == false) {
+        auto actn = menu->addAction("State files");
+        actn->setEnabled(false);
+        headerAdded = true;
+      }
+      auto actn =
+        menu->addAction(QIcon(":/icons/tomviz.png"),
+                        object["fileName"].toString("<bug>"));
+      actn->setData(object["fileName"].toString("<bug>"));
+      connect(actn, SIGNAL(triggered()), SLOT(stateTriggered()));
     }
-    QAction* actn =
-      menu->addAction(QIcon(":/icons/tomviz.png"),
-                      node.attribute("filename").as_string("<bug>"));
-    actn->setData(node.attribute("filename").as_string("<bug>"));
-    this->connect(actn, SIGNAL(triggered()), SLOT(stateTriggered()));
-    index++;
   }
 }
 
 void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
 {
   int index = actn->data().toInt();
-  pugi::xml_document settings;
-  get_settings(settings);
-  pugi::xml_node root = settings.root();
+  auto json = loadSettings();
+  QJsonArray readers;
+  if (json["readers"].isArray()) {
+    readers = json["readers"].toArray();
+  } else {
+    return;
+  }
 
-  for (pugi::xml_node node = root.child("DataReader"); node;
-       node = node.next_sibling("DataReader"), --index) {
-    if (index == 0) {
-      if (!QFileInfo::exists(actn->iconText()) && !stack) {
-        // If the user tried to open a recent file that no longer exists, remove
-        // it from the recent files
-        QMessageBox::warning(
-          pqCoreUtilities::mainWidget(), "Error",
-          QString("The file '%1' does not exist").arg(actn->iconText()));
-        root.remove_child(node);
-        save_settings(settings);
-        return;
-      }
-      if (node.attribute("xmlgroup").empty()) {
-        // Special node for EMDs that have no proxy.
-        if (LoadDataReaction::createDataSourceLocal(
-              node.attribute("filename0").as_string())) {
-          // reorder the nodes to move the recently opened file to the top.
-          root.prepend_copy(node);
-          root.remove_child(node);
-          save_settings(settings);
-          return;
-        }
-        // failed to create reader, remove the node.
-        root.remove_child(node);
-        save_settings(settings);
-        return;
-      }
-      vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
-      vtkSmartPointer<vtkSMProxy> reader;
-      reader.TakeReference(
-        pxm->NewProxy(node.attribute("xmlgroup").as_string(),
-                      node.attribute("xmlname").as_string()));
-      if (tomviz::deserialize(reader, node)) {
-        reader->UpdateVTKObjects();
-        vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
-        if (LoadDataReaction::createDataSource(reader, true, false)) {
-          // reorder the nodes to move the recently opened file to the top.
-          root.prepend_copy(node);
-          root.remove_child(node);
-          save_settings(settings);
-          return;
-        }
-        // If the user pressed 'Cancel' on the reader properties dialog,
-        // don't remove the node
-        return;
-      }
-      // failed to create reader, remove the node.
-      root.remove_child(node);
-      save_settings(settings);
+  QJsonObject file;
+  if (index < readers.size() && readers.at(index).isObject()) {
+    file = readers.at(index).toObject();
+    // Check the file actually exists, remove it if not.
+    if (!QFileInfo::exists(file["fileName"].toString()) && !stack) {
+      QMessageBox::warning(
+        pqCoreUtilities::mainWidget(), "Error",
+        QString("The file '%1' does not exist").arg(actn->iconText()));
+      readers.removeAt(index);
+      json["readers"] = readers;
+      saveSettings(json);
       return;
     }
+    // Otherwise attempt to load the file, and bump it to the top of the list
+    // if it is loaded successfully.
+    auto ds = LoadDataReaction::loadData(file["fileName"].toString(), true,
+                                         false, false);
+    readers.removeAt(index);
+    if (ds) {
+      readers.prepend(file);
+    }
+    json["readers"] = readers;
+    saveSettings(json);
   }
 }
 
 void RecentFilesMenu::stateTriggered()
 {
-  QAction* actn = qobject_cast<QAction*>(this->sender());
+  auto actn = qobject_cast<QAction*>(sender());
   Q_ASSERT(actn);
 
   QString filename = actn->data().toString();
@@ -300,7 +283,6 @@ void RecentFilesMenu::stateTriggered()
       pqCoreUtilities::mainWidget(), "Error",
       QString("The file '%1' does not exist").arg(actn->iconText()));
   }
-
 
   // remove the item from the recent state files list.
   pugi::xml_document settings;

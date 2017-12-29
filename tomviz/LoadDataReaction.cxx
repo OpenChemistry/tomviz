@@ -25,30 +25,34 @@
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
 
-#include "pqActiveObjects.h"
-#include "pqLoadDataReaction.h"
-#include "pqPipelineSource.h"
-#include "pqProxyWidgetDialog.h"
-#include "pqRenderView.h"
-#include "pqSMAdaptor.h"
-#include "pqView.h"
-#include "vtkDataArray.h"
-#include "vtkImageData.h"
-#include "vtkNew.h"
-#include "vtkPointData.h"
-#include "vtkSMCoreUtilities.h"
-#include "vtkSMParaViewPipelineController.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMStringVectorProperty.h"
-#include "vtkSMViewProxy.h"
-#include "vtkSmartPointer.h"
-#include "vtkTrivialProducer.h"
+#include <pqActiveObjects.h>
+#include <pqLoadDataReaction.h>
+#include <pqPipelineSource.h>
+#include <pqProxyWidgetDialog.h>
+#include <pqRenderView.h>
+#include <pqSMAdaptor.h>
+#include <pqView.h>
+#include <vtkSMCoreUtilities.h>
+#include <vtkSMParaViewPipelineController.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMStringVectorProperty.h>
+#include <vtkSMViewProxy.h>
+
+#include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkPointData.h>
+#include <vtkSmartPointer.h>
+#include <vtkTrivialProducer.h>
+
+#include <vtk_pugixml.h>
 
 #include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
+
+#include <sstream>
 
 namespace {
 bool hasData(vtkSMProxy* reader)
@@ -88,6 +92,21 @@ bool hasData(vtkSMProxy* reader)
   }
   return true;
 }
+
+QString pvXml(vtkSMProxy* readerProxy)
+{
+  pugi::xml_document doc;
+  pugi::xml_node root = doc.root();
+  pugi::xml_node node = root.prepend_child("DataReader");
+  node.append_attribute("xmlgroup").set_value(readerProxy->GetXMLGroup());
+  node.append_attribute("xmlname").set_value(readerProxy->GetXMLName());
+  tomviz::serialize(readerProxy, node);
+  std::ostringstream stream;
+  doc.save(stream);
+
+  return QString(stream.str().c_str());
+}
+
 }
 
 namespace tomviz {
@@ -139,19 +158,33 @@ QList<DataSource*> LoadDataReaction::loadData()
 
 DataSource* LoadDataReaction::loadData(const QString& fileName,
                                        bool defaultModules, bool addToRecent,
-                                       bool child)
+                                       bool child, const QJsonObject& options)
+{
+  QJsonObject opts = options;
+  opts["defaultModules"] = defaultModules;
+  opts["addToRecent"] = addToRecent;
+  opts["child"] = child;
+  return LoadDataReaction::loadData(fileName, opts);
+}
+
+DataSource* LoadDataReaction::loadData(const QString& fileName,
+                                       const QJsonObject& val)
 {
   QStringList fileNames;
   fileNames << fileName;
 
-  return loadData(fileNames, defaultModules, addToRecent, child);
+  return loadData(fileNames, val);
 }
 
 DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
-                                       bool defaultModules, bool addToRecent,
-                                       bool child)
+                                       const QJsonObject& options)
 {
+  bool defaultModules = options["defaultModules"].toBool(true);
+  bool addToRecent = options["addToRecent"].toBool(true);
+  bool child = options["child"].toBool(false);
+
   DataSource* dataSource(nullptr);
+  QString xml;
   QString fileName;
   if (fileNames.size() > 0) {
     fileName = fileNames[0];
@@ -159,9 +192,29 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   QFileInfo info(fileName);
   if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
-    dataSource = createDataSourceLocal(fileName, defaultModules, child);
-    if (addToRecent && dataSource) {
-      RecentFilesMenu::pushDataReader(dataSource, nullptr);
+    EmdFormat emdFile;
+    vtkNew<vtkImageData> imageData;
+    if (emdFile.read(fileName.toLatin1().data(), imageData)) {
+      dataSource = new DataSource(imageData);
+      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    }
+  } else if (options.contains("pvXml") && options["pvXml"].isString()) {
+    // Create the ParaView reader from the XML supplied.
+    pugi::xml_document doc;
+    xml = options["pvXml"].toString();
+    if (doc.load(xml.toUtf8().data())) {
+      pugi::xml_node root = doc.root();
+      pugi::xml_node node = root.child("DataReader");
+      auto pxm = ActiveObjects::instance().proxyManager();
+      vtkSmartPointer<vtkSMProxy> reader;
+      reader.TakeReference(
+        pxm->NewProxy(node.attribute("xmlgroup").as_string(),
+                      node.attribute("xmlname").as_string()));
+      if (tomviz::deserialize(reader, node)) {
+        reader->UpdateVTKObjects();
+        vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
+        LoadDataReaction::createDataSource(reader, defaultModules, child);
+      }
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
     auto pxm = tomviz::ActiveObjects::instance().proxyManager();
@@ -174,48 +227,32 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     source->UpdateVTKObjects();
 
     dataSource = createDataSource(source, defaultModules, child);
-    // The dataSource may be NULL if the user cancelled the action.
-    if (addToRecent && dataSource) {
-      RecentFilesMenu::pushDataReader(dataSource, source);
-    }
+    xml = pvXml(source);
   } else {
     // Use ParaView's file load infrastructure.
     pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
-
     if (!reader) {
       return nullptr;
     }
 
     dataSource = createDataSource(reader->getProxy(), defaultModules, child);
-    // The dataSource may be NULL if the user cancelled the action.
-    if (addToRecent && dataSource) {
-      RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
-    }
+    xml = pvXml(reader->getProxy());
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(reader->getProxy());
   }
 
+  // Now for house keeping, registering elements, etc.
   dataSource->setFileName(fileName);
-  return dataSource;
-}
-
-DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
-                                                    bool defaultModules,
-                                                    bool child)
-{
-  QFileInfo info(fileName);
-  if (info.suffix().toLower() == "emd") {
-    // Load the file using our simple EMD class.
-    EmdFormat emdFile;
-    vtkNew<vtkImageData> imageData;
-    if (emdFile.read(fileName.toLatin1().data(), imageData)) {
-      DataSource* dataSource = new DataSource(imageData);
-      dataSource->setFileName(fileName.toLatin1().data());
-      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
-      return dataSource;
-    }
+  if (fileNames.size() > 1) {
+    dataSource->setFileNames(fileNames);
   }
-  return nullptr;
+  if (!xml.isEmpty()) {
+    dataSource->setPvReaderXml(xml);
+  }
+  if (addToRecent && dataSource) {
+    RecentFilesMenu::pushDataReader(dataSource);
+  }
+  return dataSource;
 }
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
