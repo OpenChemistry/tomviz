@@ -15,16 +15,17 @@
 ******************************************************************************/
 #include "SaveLoadStateReaction.h"
 
-#include "pqCoreUtilities.h"
-#include <vtk_pugixml.h>
-
 #include "ModuleManager.h"
 #include "RecentFilesMenu.h"
-#include "vtkSMProxyManager.h"
+
+#include <pqCoreUtilities.h>
+#include <vtkSMProxyManager.h>
+
+#include <vtk_pugixml.h>
 
 #include <QDir>
 #include <QFileDialog>
-#include <QtDebug>
+#include <QDebug>
 
 namespace tomviz {
 
