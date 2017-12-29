@@ -104,8 +104,23 @@ public:
   /// Set the file name.
   void setFileName(const QString& fileName);
 
-  /// Returns the name of the filename used from the originalDataSource.
+  /// Returns the name of the file used to load the data source.
   QString fileName() const;
+
+  /// Set the ordered list of file names if loading from a stack of images.
+  void setFileNames(const QStringList fileNames);
+
+  /// Returns the list of files used to load the volume (if a stack was used).
+  QStringList fileNames() const;
+
+  /// Return true is data source is an image stack, false otherwise.
+  bool isImageStack() const;
+
+  /// Set the PV reader information if it is useful for loading data.
+  void setPvReaderXml(const QString& xml);
+
+  /// Get the PV reader information if available for the data source.
+  QString pvReaderXml() const;
 
   /// Set the label for the data source.
   void setLabel(const QString& label);
@@ -166,9 +181,6 @@ public:
   QString getUnits(int axis);
   /// Set the string describing the units
   void setUnits(const QString& units);
-
-  /// Return true is datasource is an image stack, false otherwise
-  bool isImageStack();
 
   /// Set the persistence state
   void setPersistenceState(PersistenceState state);

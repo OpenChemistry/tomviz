@@ -46,6 +46,7 @@
 #include <vtkSMTransferFunctionManager.h>
 
 #include <QDebug>
+#include <QJsonArray>
 #include <QMap>
 #include <QTimer>
 
@@ -216,6 +217,47 @@ QString DataSource::fileName() const
     return m_json["fileName"].toString();
   }
   return QString();
+}
+
+void DataSource::setFileNames(const QStringList fileNames)
+{
+  QJsonArray files;
+  foreach (QString file, fileNames) {
+    files.append(file);
+  }
+  m_json["fileNames"] = files;
+}
+
+QStringList DataSource::fileNames() const
+{
+  QStringList files;
+  if (isImageStack()) {
+    QJsonArray fileArray = m_json["fileNames"].toArray();
+    foreach (QJsonValue file, fileArray) {
+      files.append(file.toString());
+    }
+  }
+  return files;
+}
+
+bool DataSource::isImageStack() const
+{
+  return m_json.contains("fileNames") && m_json["fileNames"].isArray() &&
+    m_json["fileNames"].toArray().size() > 1;
+}
+
+void DataSource::setPvReaderXml(const QString& xml)
+{
+  m_json["pvReaderXml"] = xml;
+}
+
+QString DataSource::pvReaderXml() const
+{
+  if (m_json.contains("pvReaderXml") && m_json["pvReaderXml"].isString()) {
+    return m_json["pvReaderXml"].toString();
+  } else {
+    return QString();
+  }
 }
 
 void DataSource::setLabel(const QString& label)
@@ -784,16 +826,6 @@ bool DataSource::hasLabelMap()
 void DataSource::updateColorMap()
 {
   rescaleColorMap(colorMap(), this);
-}
-
-
-bool DataSource::isImageStack()
-{
-  vtkSMPropertyHelper helper(
-    proxy(),
-    vtkSMCoreUtilities::GetFileNameProperty(proxy()));
-
-  return helper.GetNumberOfElements() > 1;
 }
 
 void DataSource::setPersistenceState(DataSource::PersistenceState state)
