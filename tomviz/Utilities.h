@@ -188,6 +188,9 @@ Variant toVariant(const QVariantList& value);
 /// Find common prefix for collection of file names
 QString findPrefix(const QStringList& fileNames);
 
+/// Convenience function to get the main widget (useful for dialog parenting).
+QWidget* mainWidget();
+
 extern double offWhite[3];
 }
 

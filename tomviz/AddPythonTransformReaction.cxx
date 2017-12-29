@@ -22,8 +22,8 @@
 #include "OperatorPython.h"
 #include "SelectVolumeWidget.h"
 #include "SpinBox.h"
+#include "Utilities.h"
 
-#include <pqCoreUtilities.h>
 #include <vtkImageData.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
@@ -186,8 +186,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     opPython->setScript(scriptSource);
 
     // Use JSON to build the interface via the EditOperatorDialog
-    EditOperatorDialog* dialog = new EditOperatorDialog(
-      opPython, source, true, pqCoreUtilities::mainWidget());
+    auto dialog = new EditOperatorDialog(opPython, source, true,
+                                         tomviz::mainWidget());
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setWindowTitle("Set Tilt Angles");
     dialog->show();
@@ -198,7 +198,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* extent = data->GetExtent();
 
-    QDialog dialog(pqCoreUtilities::mainWidget());
+    QDialog dialog(tomviz::mainWidget());
     dialog.setWindowTitle("Shift Volume");
 
     QHBoxLayout* layout = new QHBoxLayout;
@@ -237,7 +237,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                         arguments);
     }
   } else if (scriptLabel == "Remove Bad Pixels") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
+    QDialog dialog(tomviz::mainWidget());
     dialog.setWindowTitle("Remove Bad Pixels");
     QHBoxLayout* layout = new QHBoxLayout;
     QLabel* label = new QLabel("Remove bad pixels that are ", &dialog);
@@ -271,7 +271,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* extent = data->GetExtent();
 
-    QDialog dialog(pqCoreUtilities::mainWidget());
+    QDialog dialog(tomviz::mainWidget());
     QHBoxLayout* layout1 = new QHBoxLayout;
     QLabel* label = new QLabel("Crop data start:", &dialog);
     layout1->addWidget(label);
@@ -332,7 +332,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* shape = data->GetExtent();
 
-    QDialog dialog(pqCoreUtilities::mainWidget());
+    QDialog dialog(tomviz::mainWidget());
 
     SelectSliceRangeWidget* sliceRange =
       new SelectSliceRangeWidget(shape, true, &dialog);
@@ -358,7 +358,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                         arguments);
     }
   } else if (scriptLabel == "Clear Volume") {
-    QDialog* dialog = new QDialog(pqCoreUtilities::mainWidget());
+    QDialog* dialog = new QDialog(tomviz::mainWidget());
     dialog->setWindowTitle("Select Volume to Clear");
     dialog->setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -391,7 +391,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QLayout::SetFixedSize); // Make the UI non-resizeable
 
   } else if (scriptLabel == "Background Subtraction (Manual)") {
-    QDialog* dialog = new QDialog(pqCoreUtilities::mainWidget());
+    QDialog* dialog = new QDialog(tomviz::mainWidget());
     dialog->setWindowTitle("Background Subtraction (Manual)");
     dialog->setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -450,8 +450,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     if (interactive) {
       // Create a non-modal dialog, delete it once it has been closed.
-      EditOperatorDialog* dialog = new EditOperatorDialog(
-        opPython, source, true, pqCoreUtilities::mainWidget());
+      auto dialog = new EditOperatorDialog(opPython, source, true,
+                                           tomviz::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
       connect(opPython, SIGNAL(destroyed()), dialog, SIGNAL(reject()));

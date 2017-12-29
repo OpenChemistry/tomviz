@@ -18,7 +18,7 @@
 #include "DataSource.h"
 #include "DoubleSpinBox.h"
 #include "SpinBox.h"
-#include <pqCoreUtilities.h>
+#include "Utilities.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -398,10 +398,10 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
     // Now open the appropriate dialog to browse for a file or directory.
     QString path;
     if (type == "file") {
-      path = QFileDialog::getOpenFileName(pqCoreUtilities::mainWidget(),
+      path = QFileDialog::getOpenFileName(tomviz::mainWidget(),
                                           "Select File", browseDir);
     } else {
-      path = QFileDialog::getExistingDirectory(pqCoreUtilities::mainWidget(),
+      path = QFileDialog::getExistingDirectory(tomviz::mainWidget(),
                                                "Select Directory", browseDir);
     }
 
@@ -417,11 +417,7 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
 namespace tomviz {
 
 InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
-  : Superclass(parentObject), m_dataSource(ds)
-{
-}
-
-InterfaceBuilder::~InterfaceBuilder()
+  : QObject(parentObject), m_dataSource(ds)
 {
 }
 

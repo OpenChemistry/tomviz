@@ -34,7 +34,6 @@ class PipelineView : public QTreeView
 
 public:
   PipelineView(QWidget* parent = nullptr);
-  ~PipelineView() override;
 
   void setModel(QAbstractItemModel*) override;
 

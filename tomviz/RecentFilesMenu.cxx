@@ -21,7 +21,6 @@
 #include "SaveLoadStateReaction.h"
 #include "Utilities.h"
 
-#include <pqCoreUtilities.h>
 #include <pqSettings.h>
 
 #include <QDebug>
@@ -243,7 +242,7 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, bool stack)
     // Check the file actually exists, remove it if not.
     if (!QFileInfo::exists(file["fileName"].toString()) && !stack) {
       QMessageBox::warning(
-        pqCoreUtilities::mainWidget(), "Error",
+        tomviz::mainWidget(), "Error",
         QString("The file '%1' does not exist").arg(actn->iconText()));
       readers.removeAt(index);
       json["readers"] = readers;
@@ -280,7 +279,7 @@ void RecentFilesMenu::stateTriggered()
     // // If the user tried to open a recent file that no longer exists, remove
     // it from the recent files
     QMessageBox::warning(
-      pqCoreUtilities::mainWidget(), "Error",
+      tomviz::mainWidget(), "Error",
       QString("The file '%1' does not exist").arg(actn->iconText()));
   }
 

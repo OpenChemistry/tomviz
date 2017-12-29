@@ -19,12 +19,13 @@
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "Utilities.h"
-#include <pqCoreUtilities.h>
+
 #include <vtkImageData.h>
 #include <vtkImageReslice.h>
 #include <vtkNew.h>
-#include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
+
+#include <vtkSMSourceProxy.h>
 
 #include <QDebug>
 #include <QDialog>
@@ -73,7 +74,7 @@ void AddResampleReaction::resample(DataSource* source)
                         extents[5] - extents[4] + 1 };
 
   // Find out how big they want to resample it
-  QDialog dialog(pqCoreUtilities::mainWidget());
+  QDialog dialog(tomviz::mainWidget());
   QHBoxLayout* layout = new QHBoxLayout;
   QLabel* label0 = new QLabel(QString("Current resolution: %1, %2, %3")
                                 .arg(resolution[0])

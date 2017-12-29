@@ -18,7 +18,7 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
-#include <pqCoreUtilities.h>
+#include "Utilities.h"
 
 #include <QInputDialog>
 
@@ -52,7 +52,7 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
 
   bool user_okayed;
   QString selection =
-    QInputDialog::getItem(pqCoreUtilities::mainWidget(), "Clone Data Options",
+    QInputDialog::getItem(tomviz::mainWidget(), "Clone Data Options",
                           "Select what should be cloned", items,
                           /*current=*/0,
                           /*editable=*/false,

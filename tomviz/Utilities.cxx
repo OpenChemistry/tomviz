@@ -20,11 +20,18 @@
 #include <pqAnimationCue.h>
 #include <pqAnimationManager.h>
 #include <pqAnimationScene.h>
+#include <pqCoreUtilities.h>
 #include <pqPVApplicationCore.h>
 #include <pqSMAdaptor.h>
+#include <vtkPVArrayInformation.h>
+#include <vtkPVDataInformation.h>
+#include <vtkPVDataSetAttributesInformation.h>
+#include <vtkPVXMLElement.h>
+#include <vtkPVXMLParser.h>
 #include <vtkSMNamedPropertyIterator.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMRenderViewProxy.h>
+#include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMUtilities.h>
 
@@ -33,15 +40,9 @@
 #include <vtkImageData.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkNew.h>
-#include <vtkPVArrayInformation.h>
-#include <vtkPVDataInformation.h>
-#include <vtkPVDataSetAttributesInformation.h>
-#include <vtkPVXMLElement.h>
-#include <vtkPVXMLParser.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPoints.h>
 #include <vtkRenderer.h>
-#include <vtkSMTransferFunctionManager.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringList.h>
 #include <vtkTrivialProducer.h>
@@ -571,6 +572,11 @@ QString findPrefix(const QStringList& fileNames)
   }
 
   return prefix;
+}
+
+QWidget* mainWidget()
+{
+  return pqCoreUtilities::mainWidget();
 }
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };

@@ -21,36 +21,36 @@
 #include "LoadDataReaction.h"
 #include "TomographyReconstruction.h"
 #include "TomographyTiltSeries.h"
-#define PI 3.14159265359
 #include "AddPythonTransformReaction.h"
 #include "Utilities.h"
-#include <math.h>
 
-#include "pqCoreUtilities.h"
-#include "pqPresetDialog.h"
-#include "vtkCamera.h"
-#include "vtkDataArray.h"
-#include "vtkImageData.h"
-#include "vtkImageProperty.h"
-#include "vtkImageSlice.h"
-#include "vtkImageSliceMapper.h"
-#include "vtkInteractorStyleRubberBand2D.h"
-#include "vtkLineSource.h"
-#include "vtkMath.h"
-#include "vtkNew.h"
-#include "vtkPointData.h"
-#include "vtkPolyDataMapper.h"
-#include "vtkProperty.h"
-#include "vtkRenderWindow.h"
-#include "vtkRenderer.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMTransferFunctionManager.h"
-#include "vtkSMTransferFunctionProxy.h"
-#include "vtkScalarsToColors.h"
-#include "vtkTransform.h"
-#include "vtkTrivialProducer.h"
-#include "vtkVector.h"
+#include <cmath>
+
+#include <pqPresetDialog.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMTransferFunctionManager.h>
+#include <vtkSMTransferFunctionProxy.h>
+
+#include <vtkCamera.h>
+#include <vtkDataArray.h>
+#include <vtkImageData.h>
+#include <vtkImageProperty.h>
+#include <vtkImageSlice.h>
+#include <vtkImageSliceMapper.h>
+#include <vtkInteractorStyleRubberBand2D.h>
+#include <vtkLineSource.h>
+#include <vtkMath.h>
+#include <vtkNew.h>
+#include <vtkPointData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkProperty.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkScalarsToColors.h>
+#include <vtkTransform.h>
+#include <vtkTrivialProducer.h>
+#include <vtkVector.h>
 
 #include "ui_RotateAlignWidget.h"
 
@@ -67,6 +67,8 @@
 #include <QVBoxLayout>
 
 #include <array>
+
+#define PI 3.14159265359
 
 namespace tomviz {
 
@@ -542,7 +544,7 @@ void RotateAlignWidget::showChangeColorMapDialog(int reconSlice)
   auto slotsArray = make_array({ &RotateAlignWidget::changeColorMap0,
                                  &RotateAlignWidget::changeColorMap1,
                                  &RotateAlignWidget::changeColorMap2 });
-  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
+  pqPresetDialog dialog(tomviz::mainWidget(),
                         pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
   dialog.setCustomizableLoadColors(true);
   dialog.setCustomizableLoadOpacities(true);

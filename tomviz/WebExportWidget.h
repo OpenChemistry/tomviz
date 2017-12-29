@@ -42,7 +42,6 @@ class WebExportWidget : public QDialog
 
 public:
   WebExportWidget(QWidget* parent = nullptr);
-  ~WebExportWidget();
 
   QMap<QString, QVariant>* getKeywordArguments();
 

@@ -33,7 +33,6 @@
 #include <vtkVector.h>
 
 #include <pqApplicationCore.h>
-#include <pqCoreUtilities.h>
 #include <pqPresetDialog.h>
 #include <pqRescaleRange.h>
 #include <pqResetScalarRangeReaction.h>
@@ -323,7 +322,7 @@ void HistogramWidget::onCustomRangeClicked()
     return;
   }
   discFunc->GetRange(range.GetData());
-  pqRescaleRange dialog(pqCoreUtilities::mainWidget());
+  pqRescaleRange dialog(tomviz::mainWidget());
   dialog.setRange(range[0], range[1]);
   if (dialog.exec() == QDialog::Accepted) {
     vtkSMTransferFunctionProxy::RescaleTransferFunction(
@@ -342,7 +341,7 @@ void HistogramWidget::onInvertClicked()
 
 void HistogramWidget::onPresetClicked()
 {
-  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
+  pqPresetDialog dialog(tomviz::mainWidget(),
                         pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
   dialog.setCustomizableLoadColors(true);
   dialog.setCustomizableLoadOpacities(true);

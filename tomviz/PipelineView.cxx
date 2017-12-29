@@ -34,7 +34,6 @@
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 
-#include <pqCoreUtilities.h>
 #include <pqSpreadSheetView.h>
 #include <pqView.h>
 #include <vtkNew.h>
@@ -49,6 +48,7 @@
 #include <QItemSelection>
 #include <QKeyEvent>
 #include <QMainWindow>
+#include <QMessageBox>
 #include <QMenu>
 #include <QPainter>
 #include <QSet>
@@ -161,8 +161,6 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   connect(this, SIGNAL(doubleClicked(QModelIndex)),
           SLOT(rowDoubleClicked(QModelIndex)));
 }
-
-PipelineView::~PipelineView() = default;
 
 void PipelineView::setModel(QAbstractItemModel* model)
 {
@@ -585,7 +583,7 @@ void PipelineView::showUserInterface(Operator* op)
       QString dialogTitle("Edit - ");
       dialogTitle.append(op->label());
       auto dialog = new EditOperatorDialog(op, op->dataSource(), false,
-                                           pqCoreUtilities::mainWidget());
+                                           tomviz::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->setWindowTitle(dialogTitle);
       dialog->show();

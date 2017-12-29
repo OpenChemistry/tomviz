@@ -22,25 +22,26 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
-#include "pqActiveObjects.h"
-#include "pqCoreUtilities.h"
-#include "pqPipelineSource.h"
-#include "pqProxyWidgetDialog.h"
-#include "pqSaveDataReaction.h"
-#include "vtkDataArray.h"
-#include "vtkDataObject.h"
-#include "vtkImageData.h"
-#include "vtkNew.h"
-#include "vtkPointData.h"
-#include "vtkSMCoreUtilities.h"
-#include "vtkSMParaViewPipelineController.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMProxyManager.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMWriterFactory.h"
-#include "vtkTIFFWriter.h"
-#include "vtkTrivialProducer.h"
+
+#include <pqActiveObjects.h>
+#include <pqPipelineSource.h>
+#include <pqProxyWidgetDialog.h>
+#include <pqSaveDataReaction.h>
+#include <vtkSMCoreUtilities.h>
+#include <vtkSMParaViewPipelineController.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMProxyManager.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMWriterFactory.h>
+
+#include <vtkDataArray.h>
+#include <vtkDataObject.h>
+#include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkPointData.h>
+#include <vtkTIFFWriter.h>
+#include <vtkTrivialProducer.h>
 
 #include <cassert>
 
@@ -184,7 +185,7 @@ bool SaveDataReaction::saveData(const QString& filename)
     }
   }
 
-  pqProxyWidgetDialog dialog(writer, pqCoreUtilities::mainWidget());
+  pqProxyWidgetDialog dialog(writer, tomviz::mainWidget());
   dialog.setObjectName("WriterSettingsDialog");
   dialog.setEnableSearchBar(true);
   dialog.setWindowTitle(
