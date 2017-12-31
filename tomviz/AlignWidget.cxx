@@ -24,9 +24,8 @@
 #include "QVTKGLWidget.h"
 #include "Utilities.h"
 
-#include "vtk_jsoncpp.h"
+#include <vtk_jsoncpp.h>
 
-#include <pqCoreUtilities.h>
 #include <pqPresetDialog.h>
 #include <pqView.h>
 #include <vtkPVArrayInformation.h>
@@ -928,7 +927,7 @@ void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
 
 void AlignWidget::onPresetClicked()
 {
-  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
+  pqPresetDialog dialog(tomviz::mainWidget(),
                         pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
   dialog.setCustomizableLoadColors(true);
   dialog.setCustomizableLoadOpacities(true);

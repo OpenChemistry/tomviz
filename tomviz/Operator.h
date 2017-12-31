@@ -216,6 +216,10 @@ signals:
   /// Emitted just prior to this object's destruction.
   void aboutToBeDestroyed(Operator* op);
 
+  // Emitted when a data source is move to a new operator. For example when
+  // a new operator is added.
+  void dataSourceMoved(DataSource*);
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation

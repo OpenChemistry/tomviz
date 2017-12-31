@@ -76,8 +76,8 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  vtkSMSourceProxy* producer = data->producer();
-  vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
+  auto producer = data->proxy();
+  auto pxm = producer->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;

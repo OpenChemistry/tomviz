@@ -40,6 +40,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "PipelineManager.h"
 #include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "PythonUtilities.h"
@@ -566,6 +567,10 @@ void MainWindow::closeEvent(QCloseEvent* e)
       return;
     }
   }
+  // This is a little hackish, but we must ensure all PV proxy unregister calls
+  // happen early enough in application destruction that the ParaView proxy
+  // management code can still run without segfaulting.
+  PipelineManager::instance().removeAllPipelines();
   ModuleManager::instance().removeAllModules();
   ModuleManager::instance().removeAllDataSources();
   e->accept();

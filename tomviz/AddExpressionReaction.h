@@ -25,7 +25,6 @@ class OperatorPython;
 class AddExpressionReaction : public pqReaction
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
 
 public:
   AddExpressionReaction(QAction* parent);

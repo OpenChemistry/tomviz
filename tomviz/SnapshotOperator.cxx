@@ -105,28 +105,11 @@ bool SnapshotOperator::applyTransform(vtkDataObject* dataObject)
 void SnapshotOperator::createNewChildDataSource(
   const QString& label, vtkSmartPointer<vtkDataObject> childData)
 {
-  auto proxyManager = vtkSMProxyManager::GetProxyManager();
-  auto sessionProxyManager = proxyManager->GetActiveSessionProxyManager();
-
-  pqSMProxy producerProxy;
-  producerProxy.TakeReference(
-    sessionProxyManager->NewProxy("sources", "TrivialProducer"));
-  producerProxy->UpdateVTKObjects();
-
-  auto producer =
-    vtkTrivialProducer::SafeDownCast(producerProxy->GetClientSideObject());
-  if (!producer) {
-    qWarning() << "Could not get TrivialProducer from proxy";
-    return;
-  }
-
-  producer->SetOutput(childData);
-
-  auto childDS = new DataSource(vtkSMSourceProxy::SafeDownCast(producerProxy),
+  auto childDS = new DataSource(vtkImageData::SafeDownCast(childData),
                                 DataSource::Volume, this,
                                 DataSource::PersistenceState::Modified);
 
-  childDS->setFilename(label.toLatin1().data());
+  childDS->setLabel(label);
   setChildDataSource(childDS);
 
   emit Operator::newChildDataSource(childDS);

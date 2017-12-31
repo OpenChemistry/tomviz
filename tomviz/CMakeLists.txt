@@ -138,6 +138,10 @@ set(SOURCES
   OperatorResult.h
   OperatorWidget.cxx
   OperatorWidget.h
+  Pipeline.cxx
+  Pipeline.h
+  PipelineManager.cxx
+  PipelineManager.h
   PipelineModel.cxx
   PipelineModel.h
   PipelineView.cxx

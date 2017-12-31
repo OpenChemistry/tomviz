@@ -19,8 +19,7 @@
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
 #include "TranslateAlignOperator.h"
-
-#include <pqCoreUtilities.h>
+#include "Utilities.h"
 
 #include <QDebug>
 
@@ -32,10 +31,6 @@ AddAlignReaction::AddAlignReaction(QAction* parentObject)
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
   updateEnableState();
-}
-
-AddAlignReaction::~AddAlignReaction()
-{
 }
 
 void AddAlignReaction::updateEnableState()
@@ -54,9 +49,8 @@ void AddAlignReaction::align(DataSource* source)
     return;
   }
 
-  Operator* Op = new TranslateAlignOperator(source);
-  EditOperatorDialog* dialog =
-    new EditOperatorDialog(Op, source, true, pqCoreUtilities::mainWidget());
+  auto Op = new TranslateAlignOperator(source);
+  auto dialog = new EditOperatorDialog(Op, source, true, tomviz::mainWidget());
 
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->setWindowTitle("Manual Image Alignment");

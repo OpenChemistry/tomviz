@@ -16,10 +16,7 @@
 
 #include "WebExportWidget.h"
 
-#include <vtkObject.h>
-
-#include "pqActiveObjects.h"
-#include "pqCoreUtilities.h"
+#include <pqActiveObjects.h>
 
 #include <QButtonGroup>
 #include <QCheckBox>
@@ -216,13 +213,9 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->onTypeChange(0);
 }
 
-WebExportWidget::~WebExportWidget()
-{
-}
-
 void WebExportWidget::onBrowse()
 {
-  QFileDialog fileDialog(pqCoreUtilities::mainWidget(),
+  QFileDialog fileDialog(tomviz::mainWidget(),
                          tr("Save Scene for Web:"));
   fileDialog.setObjectName("DirectorySaveDialog");
   fileDialog.setFileMode(QFileDialog::Directory);

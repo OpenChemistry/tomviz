@@ -126,7 +126,7 @@ private slots:
 
 protected:
   ActiveObjects();
-  virtual ~ActiveObjects();
+  ~ActiveObjects() override;
 
   QPointer<DataSource> m_activeDataSource = nullptr;
   DataSource::DataSourceType m_activeDataSourceType = DataSource::Volume;

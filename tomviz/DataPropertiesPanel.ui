@@ -17,16 +17,7 @@
    <property name="spacing">
     <number>12</number>
    </property>
-   <property name="leftMargin">
-    <number>4</number>
-   </property>
-   <property name="topMargin">
-    <number>4</number>
-   </property>
-   <property name="rightMargin">
-    <number>4</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>4</number>
    </property>
    <item>
@@ -43,9 +34,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="OriginalDataRange">
+    <widget class="QLabel" name="DataRange">
      <property name="text">
-      <string>OriginalDataRange</string>
+      <string>DataRange</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -53,39 +44,7 @@
     </widget>
    </item>
    <item>
-    <widget class="pqTreeWidget" name="OriginalDataTreeWidget">
-     <property name="rootIsDecorated">
-      <bool>false</bool>
-     </property>
-     <column>
-      <property name="text">
-       <string>Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Data Range</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Data Type</string>
-      </property>
-     </column>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="TransformedDataRange">
-     <property name="text">
-      <string>TransformedDataRange</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="pqTreeWidget" name="TransformedDataTreeWidget">
+    <widget class="pqTreeWidget" name="DataTreeWidget">
      <property name="rootIsDecorated">
       <bool>false</bool>
      </property>
@@ -109,16 +68,7 @@
    <item>
     <widget class="QWidget" name="PropertiesButtons" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
+      <property name="margin">
        <number>0</number>
       </property>
      </layout>
@@ -127,16 +77,7 @@
    <item>
     <widget class="QWidget" name="LengthWidget" native="true">
      <layout class="QVBoxLayout" name="verticalLayout1">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
+      <property name="margin">
        <number>0</number>
       </property>
       <item>

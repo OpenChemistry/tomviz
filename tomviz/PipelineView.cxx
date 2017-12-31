@@ -27,13 +27,13 @@
 #include "Operator.h"
 #include "OperatorPython.h"
 #include "OperatorResult.h"
+#include "Pipeline.h"
 #include "PipelineModel.h"
 #include "SaveDataReaction.h"
 #include "SnapshotOperator.h"
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 
-#include <pqCoreUtilities.h>
 #include <pqSpreadSheetView.h>
 #include <pqView.h>
 #include <vtkNew.h>
@@ -48,6 +48,7 @@
 #include <QItemSelection>
 #include <QKeyEvent>
 #include <QMainWindow>
+#include <QMessageBox>
 #include <QMenu>
 #include <QPainter>
 #include <QSet>
@@ -160,8 +161,6 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   connect(this, SIGNAL(doubleClicked(QModelIndex)),
           SLOT(rowDoubleClicked(QModelIndex)));
 }
-
-PipelineView::~PipelineView() = default;
 
 void PipelineView::setModel(QAbstractItemModel* model)
 {
@@ -337,7 +336,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     if (!dataSource) {
       dataSource = op->dataSource();
     }
-    dataSource->executeOperators();
+    dataSource->pipeline()->execute(dataSource);
   } else if (markAsAction != nullptr && markAsAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());
     ToggleDataTypeReaction::toggleDataType(mainWindow, dataSource);
@@ -346,7 +345,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (showAction && selectedItem == showAction) {
     setModuleVisibility(selectedIndexes(), true);
   } else if (cloneChildAction && selectedItem == cloneChildAction) {
-    DataSource* newClone = dataSource->clone(false, true);
+    DataSource* newClone = dataSource->clone(false);
     LoadDataReaction::dataSourceAdded(newClone);
   } else if (snapshotAction && selectedItem == snapshotAction) {
     op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));
@@ -393,7 +392,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
   foreach (Operator* op, operators) {
     // If the datasource is being remove don't bother removing the operator
     if (!dataSources.contains(op->dataSource())) {
-      op->dataSource()->pausePipeline();
+      op->dataSource()->pipeline()->pause();
       paused.insert(op->dataSource());
       pipelineModel->removeOp(op);
     }
@@ -405,7 +404,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
 
   // Now resume the pipelines
   foreach (DataSource* dataSource, paused) {
-    dataSource->resumePipeline();
+    dataSource->pipeline()->resume();
   }
 
   // Delay rendering until signals have been processed and all modules removed.
@@ -529,11 +528,11 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   for (auto& index : idxs) {
     auto dataSource = pipelineModel->dataSource(index);
-    if (dataSource && dataSource->isRunningAnOperator()) {
+    if (dataSource && dataSource->pipeline()->isRunning()) {
       return false;
     }
     auto op = pipelineModel->op(index);
-    if (op && op->dataSource()->isRunningAnOperator()) {
+    if (op && op->dataSource()->pipeline()->isRunning()) {
       return false;
     }
   }
@@ -584,7 +583,7 @@ void PipelineView::showUserInterface(Operator* op)
       QString dialogTitle("Edit - ");
       dialogTitle.append(op->label());
       auto dialog = new EditOperatorDialog(op, op->dataSource(), false,
-                                           pqCoreUtilities::mainWidget());
+                                           tomviz::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->setWindowTitle(dialogTitle);
       dialog->show();

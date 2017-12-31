@@ -20,6 +20,7 @@
 #include "LoadDataReaction.h"
 #include "Module.h"
 #include "ModuleFactory.h"
+#include "Pipeline.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "Utilities.h"
 #include "tomvizConfig.h"
@@ -67,6 +68,7 @@ namespace tomviz {
 class ModuleManager::MMInternals
 {
 public:
+  // TODO Should only hold top level roots of pipeline
   QList<QPointer<DataSource>> DataSources;
   QList<QPointer<DataSource>> ChildDataSources;
   QList<QPointer<Module>> Modules;
@@ -90,10 +92,7 @@ ModuleManager::ModuleManager(QObject* parentObject)
           SIGNAL(viewRemoved(pqView*)), SLOT(onViewRemoved(pqView*)));
 }
 
-ModuleManager::~ModuleManager()
-{
-  // Internals is a QScopedPointer.
-}
+ModuleManager::~ModuleManager() = default;
 
 ModuleManager& ModuleManager::instance()
 {
@@ -111,7 +110,7 @@ void ModuleManager::reset()
 bool ModuleManager::hasRunningOperators()
 {
   for (QPointer<DataSource> dsource : this->Internals->DataSources) {
-    if (dsource->isRunningAnOperator()) {
+    if (dsource->pipeline()->isRunning()) {
       return true;
     }
   }
@@ -121,7 +120,6 @@ bool ModuleManager::hasRunningOperators()
 void ModuleManager::addDataSource(DataSource* dataSource)
 {
   if (dataSource && !this->Internals->DataSources.contains(dataSource)) {
-    dataSource->setParent(this);
     this->Internals->DataSources.push_back(dataSource);
     emit this->dataSourceAdded(dataSource);
   }
@@ -130,7 +128,6 @@ void ModuleManager::addDataSource(DataSource* dataSource)
 void ModuleManager::addChildDataSource(DataSource* dataSource)
 {
   if (dataSource && !this->Internals->ChildDataSources.contains(dataSource)) {
-    dataSource->setParent(this);
     this->Internals->ChildDataSources.push_back(dataSource);
     emit this->childDataSourceAdded(dataSource);
   }
@@ -138,7 +135,8 @@ void ModuleManager::addChildDataSource(DataSource* dataSource)
 
 void ModuleManager::removeDataSource(DataSource* dataSource)
 {
-  if (this->Internals->DataSources.removeOne(dataSource)) {
+  if (this->Internals->DataSources.removeOne(dataSource) ||
+      this->Internals->ChildDataSources.removeOne(dataSource)) {
     emit this->dataSourceRemoved(dataSource);
     dataSource->deleteLater();
   }
@@ -307,11 +305,11 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
   foreach (const QPointer<DataSource>& ds,
            this->Internals->ChildDataSources + this->Internals->DataSources) {
     if (ds == nullptr ||
-        uniqueOriginalSources.contains(ds->originalDataSource()) ||
+        uniqueOriginalSources.contains(ds->proxy()) ||
         ds->persistenceState() == DataSource::PersistenceState::Modified) {
       continue;
     }
-    vtkSMSourceProxy* reader = ds->originalDataSource();
+    vtkSMSourceProxy* reader = ds->proxy();
     Q_ASSERT(reader != nullptr);
     pugi::xml_node odsnode = ns.append_child("OriginalDataSource");
     odsnode.append_attribute("id").set_value(reader->GetGlobalIDAsString());
@@ -331,13 +329,13 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
   QList<DataSource*> serializedDataSources;
   foreach (const QPointer<DataSource>& ds,
            this->Internals->ChildDataSources + this->Internals->DataSources) {
-    if (ds && uniqueOriginalSources.contains(ds->originalDataSource()) &&
+    if (ds && uniqueOriginalSources.contains(ds->proxy()) &&
         ds->persistenceState() == DataSource::PersistenceState::Saved) {
       pugi::xml_node dsnode = ns.append_child("DataSource");
       dsnode.append_attribute("id").set_value(
-        ds->producer()->GetGlobalIDAsString());
+        ds->proxy()->GetGlobalIDAsString());
       dsnode.append_attribute("original_data_source")
-        .set_value(ds->originalDataSource()->GetGlobalIDAsString());
+        .set_value(ds->proxy()->GetGlobalIDAsString());
       if (ds == ActiveObjects::instance().activeDataSource()) {
         dsnode.append_attribute("active").set_value(1);
       }
@@ -362,7 +360,7 @@ bool ModuleManager::serialize(pugi::xml_node& ns, const QDir& saveDir,
       mdlnode.append_attribute("type").set_value(
         ModuleFactory::moduleType(mdl));
       mdlnode.append_attribute("data_source")
-        .set_value(mdl->dataSource()->producer()->GetGlobalIDAsString());
+        .set_value(mdl->dataSource()->proxy()->GetGlobalIDAsString());
       mdlnode.append_attribute("view").set_value(
         mdl->view()->GetGlobalIDAsString());
       mdlnode.append_attribute("module_id").set_value(i);

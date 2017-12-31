@@ -373,9 +373,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   }
 
   // Get the actual data source, build a histogram out of it.
-  auto t =
-    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto image = vtkImageData::SafeDownCast(source->dataObject());
 
   if (image->GetPointData()->GetScalars() == nullptr) {
     return;
@@ -505,9 +503,8 @@ vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)
     return nullptr;
   }
 
-  auto t = vtkTrivialProducer::SafeDownCast(
-    m_activeColorMapDataSource->producer()->GetClientSideObject());
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto image =
+    vtkImageData::SafeDownCast(m_activeColorMapDataSource->dataObject());
 
   // The current dataset has changed since the histogram was requested,
   // ignore this histogram and wait for the next one queued...

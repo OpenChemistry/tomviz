@@ -87,7 +87,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  vtkSMSourceProxy* producer = data->producer();
+  auto producer = data->proxy();
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
@@ -113,7 +113,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_resampleFilter = vtkSMSourceProxy::SafeDownCast(probeProxy);
   Q_ASSERT(m_resampleFilter);
   controller->PreInitializeProxy(m_resampleFilter);
-  vtkSMPropertyHelper(m_resampleFilter, "Input").Set(data->producer());
+  vtkSMPropertyHelper(m_resampleFilter, "Input").Set(data->proxy());
   vtkSMPropertyHelper(m_resampleFilter, "Source").Set(m_contourFilter);
   vtkSMPropertyHelper(m_resampleFilter, "CategoricalData").Set(1);
   vtkSMPropertyHelper(m_resampleFilter, "PassPointArrays").Set(1);
@@ -265,7 +265,7 @@ void ModuleContour::createCategoricalColoringPipeline()
 
     // Set up a point data to cell data filter and set the input data as
     // categorical
-    vtkSMSourceProxy* producer = d->ColorByDataSource->producer();
+    vtkSMSourceProxy* producer = d->ColorByDataSource->proxy();
 
     vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
     vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
@@ -348,7 +348,7 @@ void ModuleContour::onPropertyChanged()
   setVisibility(true);
 
   vtkSMPropertyHelper resampleHelper(m_resampleFilter, "Input");
-  resampleHelper.Set(d->ColorByDataSource->producer());
+  resampleHelper.Set(d->ColorByDataSource->proxy());
 
   updateColorMap();
 
@@ -551,8 +551,7 @@ void ModuleContour::updateScalarColoring()
   vtkPVDataSetAttributesInformation* attributeInfo = nullptr;
   vtkPVArrayInformation* arrayInfo = nullptr;
   if (d->ColorByDataSource) {
-    dataInfo =
-      d->ColorByDataSource->producer()->GetDataInformation(0);
+    dataInfo = d->ColorByDataSource->proxy()->GetDataInformation(0);
   }
   if (dataInfo) {
     attributeInfo = dataInfo->GetAttributeInformation(
@@ -602,7 +601,7 @@ void ModuleContour::updateGUI()
     combo->clear();
     combo->addItem("This Data");
     for (int i = 0; i < childSources.size(); ++i) {
-      combo->addItem(childSources[i]->filename());
+      combo->addItem(childSources[i]->fileName());
     }
 
     int selected = childSources.indexOf(d->ColorByDataSource);

@@ -22,8 +22,8 @@
 #include "OperatorPython.h"
 #include "SelectVolumeWidget.h"
 #include "SpinBox.h"
+#include "Utilities.h"
 
-#include <pqCoreUtilities.h>
 #include <vtkImageData.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
@@ -186,20 +186,19 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     opPython->setScript(scriptSource);
 
     // Use JSON to build the interface via the EditOperatorDialog
-    EditOperatorDialog* dialog = new EditOperatorDialog(
-      opPython, source, true, pqCoreUtilities::mainWidget());
+    auto dialog = new EditOperatorDialog(opPython, source, true,
+                                         tomviz::mainWidget());
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setWindowTitle("Set Tilt Angles");
     dialog->show();
 
     // Handle transforms with custom UIs
   } else if (scriptLabel == "Shift Volume") {
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
-    vtkImageData* data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* extent = data->GetExtent();
 
-    QDialog dialog(pqCoreUtilities::mainWidget());
+    QDialog dialog(tomviz::mainWidget());
     dialog.setWindowTitle("Shift Volume");
 
     QHBoxLayout* layout = new QHBoxLayout;
@@ -238,7 +237,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                         arguments);
     }
   } else if (scriptLabel == "Remove Bad Pixels") {
-    QDialog dialog(pqCoreUtilities::mainWidget());
+    QDialog dialog(tomviz::mainWidget());
     dialog.setWindowTitle("Remove Bad Pixels");
     QHBoxLayout* layout = new QHBoxLayout;
     QLabel* label = new QLabel("Remove bad pixels that are ", &dialog);
@@ -268,12 +267,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                         arguments);
     }
   } else if (scriptLabel == "Crop") {
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
-    vtkImageData* data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* extent = data->GetExtent();
 
-    QDialog dialog(pqCoreUtilities::mainWidget());
+    QDialog dialog(tomviz::mainWidget());
     QHBoxLayout* layout1 = new QHBoxLayout;
     QLabel* label = new QLabel("Crop data start:", &dialog);
     layout1->addWidget(label);
@@ -330,12 +328,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                         arguments);
     }
   } else if (scriptLabel == "Delete Slices") {
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
-    vtkImageData* data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     int* shape = data->GetExtent();
 
-    QDialog dialog(pqCoreUtilities::mainWidget());
+    QDialog dialog(tomviz::mainWidget());
 
     SelectSliceRangeWidget* sliceRange =
       new SelectSliceRangeWidget(shape, true, &dialog);
@@ -361,15 +358,14 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                         arguments);
     }
   } else if (scriptLabel == "Clear Volume") {
-    QDialog* dialog = new QDialog(pqCoreUtilities::mainWidget());
+    QDialog* dialog = new QDialog(tomviz::mainWidget());
     dialog->setWindowTitle("Select Volume to Clear");
     dialog->setAttribute(Qt::WA_DeleteOnClose, true);
 
     double origin[3];
     double spacing[3];
     int extent[6];
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
+    auto t = source->producer();
     vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
@@ -395,7 +391,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QLayout::SetFixedSize); // Make the UI non-resizeable
 
   } else if (scriptLabel == "Background Subtraction (Manual)") {
-    QDialog* dialog = new QDialog(pqCoreUtilities::mainWidget());
+    QDialog* dialog = new QDialog(tomviz::mainWidget());
     dialog->setWindowTitle("Background Subtraction (Manual)");
     dialog->setAttribute(Qt::WA_DeleteOnClose, true);
 
@@ -403,9 +399,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     double spacing[3];
     int extent[6];
 
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
-    vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     image->GetOrigin(origin);
     image->GetSpacing(spacing);
     image->GetExtent(extent);
@@ -455,8 +450,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     if (interactive) {
       // Create a non-modal dialog, delete it once it has been closed.
-      EditOperatorDialog* dialog = new EditOperatorDialog(
-        opPython, source, true, pqCoreUtilities::mainWidget());
+      auto dialog = new EditOperatorDialog(opPython, source, true,
+                                           tomviz::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
       connect(opPython, SIGNAL(destroyed()), dialog, SIGNAL(reject()));
@@ -500,9 +495,8 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     volumeWidget->getExtentOfSelection(selection_extent);
 
     int image_extent[6];
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
-    vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     image->GetExtent(image_extent);
 
     // The image extent is not necessarily zero-based.  The numpy array is.
@@ -536,9 +530,8 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     volumeWidget->getExtentOfSelection(selection_extent);
 
     int image_extent[6];
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      source->producer()->GetClientSideObject());
-    vtkImageData* image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = source->producer();
+    auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     image->GetExtent(image_extent);
     int indices[6];
     indices[0] = selection_extent[0] - image_extent[0];

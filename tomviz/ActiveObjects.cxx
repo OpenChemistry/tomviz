@@ -42,9 +42,7 @@ ActiveObjects::ActiveObjects() : QObject()
           SLOT(moduleRemoved(Module*)));
 }
 
-ActiveObjects::~ActiveObjects()
-{
-}
+ActiveObjects::~ActiveObjects() = default;
 
 ActiveObjects& ActiveObjects::instance()
 {

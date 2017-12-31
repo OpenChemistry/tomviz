@@ -27,7 +27,6 @@ class AddAlignReaction : public pqReaction
 
 public:
   AddAlignReaction(QAction* parent);
-  ~AddAlignReaction();
 
   void align(DataSource* source = nullptr);
 

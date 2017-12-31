@@ -19,12 +19,13 @@
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "Utilities.h"
-#include <pqCoreUtilities.h>
+
 #include <vtkImageData.h>
 #include <vtkImageReslice.h>
 #include <vtkNew.h>
-#include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
+
+#include <vtkSMSourceProxy.h>
 
 #include <QDebug>
 #include <QDialog>
@@ -53,8 +54,7 @@ void AddResampleReaction::updateEnableState()
 namespace {
 vtkImageData* imageData(DataSource* source)
 {
-  vtkTrivialProducer* t =
-    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
+  auto t = source->producer();
   return vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 }
 }
@@ -74,7 +74,7 @@ void AddResampleReaction::resample(DataSource* source)
                         extents[5] - extents[4] + 1 };
 
   // Find out how big they want to resample it
-  QDialog dialog(pqCoreUtilities::mainWidget());
+  QDialog dialog(tomviz::mainWidget());
   QHBoxLayout* layout = new QHBoxLayout;
   QLabel* label0 = new QLabel(QString("Current resolution: %1, %2, %3")
                                 .arg(resolution[0])
@@ -131,12 +131,10 @@ void AddResampleReaction::resample(DataSource* source)
     // TODO - cloning here is really expensive memory-wise, we should figure
     // out a different way to do it
     DataSource* resampledData = source->clone(true);
-    QString name = resampledData->producer()->GetAnnotation(Attributes::LABEL);
+    QString name = resampledData->label();
     name = "Downsampled_" + name;
-    resampledData->producer()->SetAnnotation(Attributes::LABEL,
-                                             name.toLatin1().data());
-    vtkTrivialProducer* t = vtkTrivialProducer::SafeDownCast(
-      resampledData->producer()->GetClientSideObject());
+    resampledData->setLabel(name);
+    auto t = resampledData->producer();
     t->SetOutput(reslice->GetOutput());
     resampledData->dataModified();
 

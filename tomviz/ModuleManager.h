@@ -31,6 +31,7 @@ class QDir;
 namespace tomviz {
 class DataSource;
 class Module;
+class Pipeline;
 
 /// Singleton akin to ProxyManager, but to keep track (and
 /// serialize/deserialze) modules.

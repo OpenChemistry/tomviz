@@ -15,16 +15,17 @@
 ******************************************************************************/
 #include "SaveLoadStateReaction.h"
 
-#include "pqCoreUtilities.h"
-#include <vtk_pugixml.h>
-
 #include "ModuleManager.h"
 #include "RecentFilesMenu.h"
-#include "vtkSMProxyManager.h"
+#include "Utilities.h"
+
+#include <vtkSMProxyManager.h>
+
+#include <vtk_pugixml.h>
 
 #include <QDir>
 #include <QFileDialog>
-#include <QtDebug>
+#include <QDebug>
 
 namespace tomviz {
 
@@ -44,7 +45,7 @@ void SaveLoadStateReaction::onTriggered()
 
 bool SaveLoadStateReaction::saveState()
 {
-  QFileDialog fileDialog(pqCoreUtilities::mainWidget(), tr("Save State File"),
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"),
                          QString(),
                          "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
@@ -64,7 +65,7 @@ bool SaveLoadStateReaction::saveState()
 
 bool SaveLoadStateReaction::loadState()
 {
-  QFileDialog fileDialog(pqCoreUtilities::mainWidget(), tr("Load State File"),
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"),
                          QString(),
                          "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");

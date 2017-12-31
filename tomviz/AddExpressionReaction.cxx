@@ -21,12 +21,10 @@
 #include "OperatorPython.h"
 #include "Utilities.h"
 
-#include <pqCoreUtilities.h>
-
 namespace tomviz {
 
 AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
-  : Superclass(parentObject)
+  : pqReaction(parentObject)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -53,8 +51,8 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
   opPython->setLabel("Transform Data");
 
   // Create a non-modal dialog, delete it once it has been closed.
-  EditOperatorDialog* dialog = new EditOperatorDialog(
-    opPython, source, true, pqCoreUtilities::mainWidget());
+  auto dialog = new EditOperatorDialog(opPython, source, true,
+                                       tomviz::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->show();
   connect(opPython, SIGNAL(destroyed()), dialog, SLOT(reject()));

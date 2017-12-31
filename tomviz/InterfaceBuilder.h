@@ -30,11 +30,9 @@ class DataSource;
 class InterfaceBuilder : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
   InterfaceBuilder(QObject* parent = nullptr, DataSource* ds = nullptr);
-  ~InterfaceBuilder() override;
 
   /// Set the JSON description
   void setJSONDescription(const QString& description);

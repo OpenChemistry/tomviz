@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "Operator.h"
 #include "OperatorWidget.h"
+#include "Pipeline.h"
 #include "Utilities.h"
 
 #include <QAbstractButton>
@@ -107,7 +108,7 @@ void OperatorPropertiesPanel::apply()
     if (pythonOperator) {
       DataSource* dataSource =
         qobject_cast<DataSource*>(pythonOperator->parent());
-      if (dataSource->isRunningAnOperator()) {
+      if (dataSource->pipeline()->isRunning()) {
         auto result = QMessageBox::question(
           this, "Cancel running operation?",
           "Applying changes to an operator that is part of a running pipeline "
@@ -122,18 +123,18 @@ void OperatorPropertiesPanel::apply()
         } else {
           auto whenCanceled = [pythonOperator, dataSource]() {
             // Resume the pipeline and emit transformModified
-            dataSource->resumePipeline(false);
+            dataSource->pipeline()->resume(false);
             emit pythonOperator->transformModified();
           };
           // We pause the pipeline so applyChangesToOperator does cause it to
           // execute.
-          dataSource->pausePipeline();
+          dataSource->pipeline()->pause();
           // We do this before causing cancel so the values are in place for
           // when
           // whenCanceled cause the pipeline to be re-executed.
           pythonOperator->setArguments(values);
-          if (dataSource->isRunningAnOperator()) {
-            dataSource->cancelPipeline(whenCanceled);
+          if (dataSource->pipeline()->isRunning()) {
+            dataSource->pipeline()->cancel(whenCanceled);
           } else {
             whenCanceled();
           }

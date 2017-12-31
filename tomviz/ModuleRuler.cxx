@@ -29,6 +29,8 @@
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkRulerSourceRepresentation.h>
+#include <vtkTrivialProducer.h>
+
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMSessionProxyManager.h>
@@ -62,9 +64,8 @@ bool ModuleRuler::initialize(DataSource* data, vtkSMViewProxy* view)
   }
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = data->producer()->GetSessionProxyManager();
-  vtkAlgorithm* alg =
-    vtkAlgorithm::SafeDownCast(data->producer()->GetClientSideObject());
+  auto pxm = data->proxy()->GetSessionProxyManager();
+  auto alg = vtkAlgorithm::SafeDownCast(data->producer());
   double bounds[6];
   vtkDataSet::SafeDownCast(alg->GetOutputDataObject(0))->GetBounds(bounds);
   double boundsMin[3] = { bounds[0], bounds[2], bounds[4] };
@@ -267,7 +268,7 @@ void ModuleRuler::endPointsUpdated()
   vtkSMPropertyHelper(m_rulerSource, "Point2").Get(point2, 3);
   DataSource* source = dataSource();
   vtkImageData* img = vtkImageData::SafeDownCast(
-    vtkAlgorithm::SafeDownCast(source->producer()->GetClientSideObject())
+    vtkAlgorithm::SafeDownCast(source->proxy()->GetClientSideObject())
       ->GetOutputDataObject(0));
   vtkIdType p1 = img->FindPoint(point1);
   vtkIdType p2 = img->FindPoint(point2);

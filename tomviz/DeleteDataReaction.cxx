@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "ModuleManager.h"
+#include "Pipeline.h"
 
 namespace tomviz {
 
@@ -33,7 +34,7 @@ void DeleteDataReaction::updateEnableState()
 {
   bool enabled = (m_activeDataSource != nullptr);
   if (enabled) {
-    enabled = !m_activeDataSource->isRunningAnOperator();
+    enabled = !m_activeDataSource->pipeline()->isRunning();
   }
   parentAction()->setEnabled(enabled);
 }
@@ -60,17 +61,17 @@ void DeleteDataReaction::activeDataSourceChanged()
   auto source = ActiveObjects::instance().activeDataSource();
   if (m_activeDataSource != source) {
     if (m_activeDataSource) {
-      disconnect(m_activeDataSource.data(), &DataSource::operatorStarted,
+      disconnect(m_activeDataSource.data()->pipeline(), &Pipeline::started,
                  this, nullptr);
-      disconnect(m_activeDataSource.data(), &DataSource::allOperatorsFinished,
+      disconnect(m_activeDataSource.data()->pipeline(), &Pipeline::finished,
                  this, nullptr);
     }
     m_activeDataSource = source;
     if (m_activeDataSource) {
-      connect(m_activeDataSource.data(), &DataSource::operatorStarted,
-              this, &DeleteDataReaction::updateEnableState);
-      connect(m_activeDataSource.data(), &DataSource::allOperatorsFinished,
-              this, &DeleteDataReaction::updateEnableState);
+      connect(m_activeDataSource.data()->pipeline(), &Pipeline::started, this,
+              &DeleteDataReaction::updateEnableState);
+      connect(m_activeDataSource.data()->pipeline(), &Pipeline::finished, this,
+              &DeleteDataReaction::updateEnableState);
     }
   }
   updateEnableState();

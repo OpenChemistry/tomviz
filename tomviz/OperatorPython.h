@@ -30,13 +30,12 @@ class CustomPythonOperatorWidget;
 class OperatorPython : public Operator
 {
   Q_OBJECT
-  typedef Operator Superclass;
 
 public:
   OperatorPython(QObject* parent = nullptr);
-  virtual ~OperatorPython();
+  ~OperatorPython() override;
 
-  QString label() const override { return this->Label; }
+  QString label() const override { return m_label; }
   void setLabel(const QString& txt);
 
   /// Returns an icon to use for this operator.
@@ -52,7 +51,7 @@ public:
   const QString& JSONDescription() const;
 
   void setScript(const QString& str);
-  const QString& script() const { return this->Script; }
+  const QString& script() const { return m_script; }
 
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
   EditOperatorWidget* getEditorContentsWithData(
@@ -92,10 +91,10 @@ private:
   Q_DISABLE_COPY(OperatorPython)
 
   class OPInternals;
-  const QScopedPointer<OPInternals> Internals;
-  QString Label;
-  QString jsonDescription;
-  QString Script;
+  const QScopedPointer<OPInternals> d;
+  QString m_label;
+  QString m_jsonDescription;
+  QString m_script;
 
   QString m_customWidgetID;
 

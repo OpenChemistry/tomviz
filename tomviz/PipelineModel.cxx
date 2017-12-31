@@ -69,6 +69,7 @@ public:
   ~TreeItem();
 
   TreeItem* parent() { return m_parent; }
+  void setParent(TreeItem* parent) { m_parent = parent; };
   TreeItem* child(int index);
   TreeItem* lastChild();
   int childCount() const { return m_children.count(); }
@@ -77,6 +78,9 @@ public:
   bool appendChild(const PipelineModel::Item& item);
   bool insertChild(int position, const PipelineModel::Item& item);
   bool removeChild(int position);
+  PipelineModel::TreeItem* detachChild(int position);
+  PipelineModel::TreeItem* detach();
+  bool attach(PipelineModel::TreeItem* treeItem);
 
   bool remove(DataSource* source);
   bool remove(Module* module);
@@ -154,6 +158,30 @@ bool PipelineModel::TreeItem::removeChild(int pos)
     return false;
   }
   delete m_children.takeAt(pos);
+  return true;
+}
+
+PipelineModel::TreeItem* PipelineModel::TreeItem::detachChild(int pos)
+{
+  if (pos < 0 || pos >= m_children.size()) {
+    return nullptr;
+  }
+  auto child = m_children.takeAt(pos);
+  child->setParent(nullptr);
+
+  return child;
+}
+
+PipelineModel::TreeItem* PipelineModel::TreeItem::detach()
+{
+
+  return this->parent()->detachChild(this->childIndex());
+}
+
+bool PipelineModel::TreeItem::attach(PipelineModel::TreeItem* treeItem)
+{
+  m_children.append(treeItem);
+  treeItem->setParent(this);
   return true;
 }
 
@@ -353,7 +381,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         case Qt::DecorationRole:
           return QIcon(":/icons/pqInspect.png");
         case Qt::DisplayRole: {
-          QString label = QFileInfo(dataSource->filename()).baseName();
+          QString label = dataSource->label();
           if (dataSource->persistenceState() ==
               DataSource::PersistenceState::Modified) {
             label += QString(" *");
@@ -361,7 +389,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
           return label;
         }
         case Qt::ToolTipRole:
-          return dataSource->filename();
+          return dataSource->fileName();
         case Qt::FontRole:
           if (dataSource->persistenceState() ==
               DataSource::PersistenceState::Modified) {
@@ -675,10 +703,17 @@ void PipelineModel::moduleAdded(Module* module)
   auto index = this->dataSourceIndex(dataSource);
   if (index.isValid()) {
     auto dataSourceItem = this->treeItem(index);
-    // Modules are placed at the bottom of the list. Let's just append it
-    // to the data source item.
-    auto row = dataSourceItem->childCount();
-    beginInsertRows(index, row, row);
+    // Modules straight after the data source so append after any current
+    // modules.
+    int insertionRow = dataSourceItem->childCount();
+    for (int j = 0; j < dataSourceItem->childCount(); ++j) {
+      if (!dataSourceItem->child(j)->module()) {
+        insertionRow = j;
+        break;
+      }
+    }
+
+    beginInsertRows(index, insertionRow, insertionRow);
     auto childCount = dataSourceItem->childCount();
     if (childCount > 0 && dataSourceItem->child(childCount - 1)->dataSource()) {
       // Last item is a child DataSource, so insert the new module in front of
@@ -710,18 +745,13 @@ void PipelineModel::operatorAdded(Operator* op)
     auto statusIndex = this->index(opIndex.row(), 1, opIndex.parent());
     emit this->dataChanged(statusIndex, statusIndex);
   });
+  connect(op, &Operator::dataSourceMoved, this,
+          &PipelineModel::dataSourceMoved);
 
   auto index = this->dataSourceIndex(dataSource);
   auto dataSourceItem = this->treeItem(index);
-  // Find the last operator if there is one, and insert the operator there.
+  // Operators are just append as last child.
   int insertionRow = dataSourceItem->childCount();
-  for (int j = 0; j < dataSourceItem->childCount(); ++j) {
-    if (!dataSourceItem->child(j)->op()) {
-      insertionRow = j;
-      break;
-    }
-  }
-
   beginInsertRows(index, insertionRow, insertionRow);
   dataSourceItem->insertChild(insertionRow, PipelineModel::Item(op));
   endInsertRows();
@@ -766,7 +796,7 @@ void PipelineModel::operatorTransformDone()
     }
   }
 
-  if (op->hasChildDataSource()) {
+  if (op->hasChildDataSource() || op->childDataSource() != nullptr) {
     auto childDataSource = op->childDataSource();
     if (childDataSource) {
       // The Operator's child data set is null initially. We need to set it
@@ -869,9 +899,9 @@ bool PipelineModel::removeOp(Operator* o)
 
     beginRemoveRows(this->parent(index), index.row(), index.row());
     auto item = this->treeItem(index);
+    o->dataSource()->removeOperator(o);
     item->parent()->remove(o);
     endRemoveRows();
-    o->dataSource()->removeOperator(o);
 
     return true;
   }
@@ -891,7 +921,6 @@ PipelineModel::TreeItem* PipelineModel::treeItem(const QModelIndex& index) const
 void PipelineModel::childDataSourceAdded(DataSource* dataSource)
 {
   if (Operator* op = qobject_cast<Operator*>(this->sender())) {
-    assert(op->hasChildDataSource());
 
     auto index = this->dataSourceIndex(op->dataSource());
     auto dataSourceItem = this->treeItem(index);
@@ -909,12 +938,34 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
       operatorTreeItem->appendChild(PipelineModel::Item(dataSource));
       endInsertRows();
     }
+
+    connect(dataSource, SIGNAL(operatorAdded(Operator*)),
+            SLOT(operatorAdded(Operator*)));
   }
 
   // When restoring a data source from a state file it will have its operators
   // before we can listen to the signal above. Display those operators.
   foreach (auto op, dataSource->operators()) {
     this->operatorAdded(op);
+  }
+}
+
+void PipelineModel::dataSourceMoved(DataSource* dataSource)
+{
+  if (Operator* newParent = qobject_cast<Operator*>(this->sender())) {
+
+    auto index = this->dataSourceIndex(dataSource);
+    auto dataSourceItem = this->treeItem(index);
+    auto oldParent = dataSourceItem->parent()->op();
+    auto oldParentIndex = this->operatorIndex(oldParent);
+    auto operatorIndex = this->operatorIndex(newParent);
+    auto operatorTreeItem = this->treeItem(operatorIndex);
+
+    beginMoveRows(oldParentIndex, index.row(), index.row(), operatorIndex,
+                  operatorTreeItem->childCount());
+    dataSourceItem = dataSourceItem->detach();
+    operatorTreeItem->attach(dataSourceItem);
+    endMoveRows();
   }
 }
 
