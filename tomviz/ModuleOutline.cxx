@@ -34,6 +34,7 @@
 
 #include <QCheckBox>
 #include <QHBoxLayout>
+#include <QJsonArray>
 #include <QLabel>
 #include <QVBoxLayout>
 
@@ -111,6 +112,41 @@ bool ModuleOutline::finalize()
   m_outlineFilter = nullptr;
   m_outlineRepresentation = nullptr;
   return true;
+}
+
+QJsonObject ModuleOutline::serialize() const
+{
+  QJsonObject json = Module::serialize();
+  QJsonObject props;
+
+  props["visibility"] = visibility();
+  props["gridVisibility"] = m_gridAxes->GetVisibility() > 0;
+  props["gridLines"] = m_gridAxes->GetGenerateGrid();
+
+  QJsonArray color;
+  double rgb[3];
+  m_gridAxes->GetProperty()->GetDiffuseColor(rgb);
+  color << rgb[0] << rgb[1] << rgb[2];
+  props["gridColor"] = color;
+
+  json["properties"] = props;
+  return json;
+}
+
+bool ModuleOutline::deserialize(const QJsonObject &json)
+{
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    setVisibility(props["visibility"].toBool());
+    m_gridAxes->SetVisibility(props["gridVisibility"].toBool() ? 1 : 0);
+    m_gridAxes->SetGenerateGrid(props["gridLines"].toBool());
+    auto color = props["gridColor"].toArray();
+    double rgb[3] = { color[0].toDouble(), color[1].toDouble(),
+                      color[2].toDouble() };
+    updateGridAxesColor(rgb);
+    return true;
+  }
+  return false;
 }
 
 bool ModuleOutline::serialize(pugi::xml_node& ns) const

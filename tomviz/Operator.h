@@ -105,6 +105,9 @@ public:
   virtual DataSource* childDataSource() const;
 
   /// Save/Restore state.
+  virtual QJsonObject serialize() const;
+  virtual bool deserialize(const QJsonObject& json);
+
   virtual bool serialize(pugi::xml_node& in) const = 0;
   virtual bool deserialize(const pugi::xml_node& ns) = 0;
 
@@ -241,7 +244,7 @@ public slots:
            m_state == OperatorState::Error;
   };
   bool isModified() { return m_state == OperatorState::Modified; }
-  OperatorState state() { return m_state; };
+  OperatorState state() { return m_state; }
   void resetState() { m_state = OperatorState::Queued; }
   void setModified() { m_state = OperatorState::Modified; }
 

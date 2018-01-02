@@ -25,6 +25,8 @@
 #include <QList>
 #include <QTimer>
 
+#include <QDebug>
+
 namespace tomviz {
 
 using pugi::xml_attribute;
@@ -155,6 +157,26 @@ void Operator::setChildDataSource(DataSource* source)
 DataSource* Operator::childDataSource() const
 {
   return m_childDataSource;
+}
+
+QJsonObject Operator::serialize() const
+{
+  QJsonObject json;
+  if (childDataSource()) {
+    DataSource* ds = childDataSource();
+    json["childDataSource"] = ds->serialize();
+  }
+  return json;
+}
+
+bool Operator::deserialize(const QJsonObject &json)
+{
+  if (json.contains("childDataSource")) {
+    // This means that this operator is the end of the line, and needs to
+    // restore the child once it has finished doing its thing.
+    qDebug() << "We need to do something with this:" << json["childDataSource"];
+  }
+  return true;
 }
 
 bool Operator::serialize(pugi::xml_node& ns) const

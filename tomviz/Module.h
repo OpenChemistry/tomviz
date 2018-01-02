@@ -84,6 +84,8 @@ public:
   virtual DataSource* colorMapDataSource() const { return dataSource(); }
 
   /// serialize the state of the module.
+  virtual QJsonObject serialize() const;
+  virtual bool deserialize(const QJsonObject& json);
   virtual bool serialize(pugi::xml_node& ns) const;
   virtual bool deserialize(const pugi::xml_node& ns);
 

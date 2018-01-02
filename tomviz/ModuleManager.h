@@ -17,7 +17,10 @@
 #define tomvizModuleManager_h
 
 #include <QObject>
+
+#include <QJsonObject>
 #include <QScopedPointer>
+
 #include <vtk_pugixml.h>
 
 class pqView;
@@ -60,6 +63,15 @@ public:
     return modulesT;
   }
 
+  QList<Module*> findModulesGeneric(const DataSource* dataSource,
+                                    const vtkSMViewProxy* view);
+
+  /// Save the application state as JSON, use stateDir as the base for relative
+  /// paths.
+  bool serialize(QJsonObject& doc, const QDir& stateDir,
+                 bool interative = true) const;
+  bool deserialize(const QJsonObject& doc, const QDir& stateDir);
+
   /// save the application state as xml.
   /// Parameter stateDir: the location to use as the base of all relative file
   /// paths
@@ -76,6 +88,9 @@ public:
   /// Used to lookup a data source by id, used to lookup child data sources,
   /// during the deserialization process.
   DataSource* lookupDataSource(int id);
+
+  /// Used to lookup a view by id, only intended for use during deserialization.
+  vtkSMViewProxy* lookupView(int id);
 
 public slots:
   void addModule(Module*);
@@ -122,11 +137,10 @@ private:
   ModuleManager(QObject* parent = nullptr);
   ~ModuleManager();
 
-  QList<Module*> findModulesGeneric(DataSource* dataSource,
-                                    vtkSMViewProxy* view);
-
   class MMInternals;
   QScopedPointer<MMInternals> Internals;
+
+  QJsonObject m_stateObject;
 };
 }
 

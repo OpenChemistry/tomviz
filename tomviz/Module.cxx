@@ -192,6 +192,33 @@ vtkImageData* Module::transferFunction2D() const
                                : colorMapDataSource()->transferFunction2D();
 }
 
+QJsonObject Module::serialize() const
+{
+  QJsonObject json;
+  if (isColorMapNeeded()) {
+    json["useDetachedColorMap"] = m_useDetachedColorMap;
+    if (m_useDetachedColorMap) {/*
+      pugi::xml_node nodeL = ns.append_child("ColorMap");
+      pugi::xml_node nodeS = ns.append_child("OpacityMap");
+
+      // Using detached color map, so we need to save the local color map.
+      if (tomviz::serialize(colorMap(), nodeL) == false ||
+          tomviz::serialize(opacityMap(), nodeS) == false) {
+        return false;
+      }
+
+      pugi::xml_node nodeGrad = ns.append_child("GradientOpacityMap");
+      tomviz::serialize(gradientOpacityMap(), nodeGrad); */
+    }
+  }
+  return json;
+}
+
+bool Module::deserialize(const QJsonObject &json)
+{
+  return true;
+}
+
 bool Module::serialize(pugi::xml_node& ns) const
 {
   if (isColorMapNeeded()) {

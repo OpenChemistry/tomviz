@@ -215,6 +215,32 @@ void ModuleOrthogonalSlice::onScalarArrayChanged()
   emit renderNeeded();
 }
 
+QJsonObject ModuleOrthogonalSlice::serialize() const
+{
+  QJsonObject json = Module::serialize();
+  QJsonObject props;
+
+  props["visibility"] = visibility();
+  vtkSMPropertyHelper slice(m_representation->GetProperty("Slice"));
+  props["slice"] = slice.GetAsInt();
+
+  json["properties"] = props;
+  return json;
+}
+
+bool ModuleOrthogonalSlice::deserialize(const QJsonObject &json)
+{
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    setVisibility(props["visibility"].toBool());
+    vtkSMPropertyHelper(m_representation, "Slice").Set(props["slice"].toInt());
+
+    m_representation->UpdateVTKObjects();
+    return true;
+  }
+  return false;
+}
+
 bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
 {
   QStringList reprProperties;

@@ -35,6 +35,8 @@
 
 namespace tomviz {
 
+static const int MAX_ITEMS = 10;
+
 namespace{
 void get_settings(pugi::xml_document& doc)
 {
@@ -72,15 +74,15 @@ void saveSettings(QJsonObject json)
   if (json.contains("states") && json["states"].isArray()) {
     states = json["states"].toArray();
   }
-  if (readers.size() > 10) {
+  if (readers.size() > MAX_ITEMS) {
     // We need to prune the list to 10.
-    while (readers.size() > 10) {
+    while (readers.size() > MAX_ITEMS) {
       readers.removeLast();
     }
   }
-  if (states.size() > 10) {
+  if (states.size() > MAX_ITEMS) {
     // We need to prune the list to 10.
-    while (states.size() > 10) {
+    while (states.size() > MAX_ITEMS) {
       states.removeLast();
     }
   }
@@ -92,9 +94,8 @@ void saveSettings(QJsonObject json)
   settings->setValue("recentFiles", doc.toJson(QJsonDocument::Compact));
 }
 
-void save_settings(pugi::xml_document& doc)
+void save_settings(pugi::xml_document&)
 {
-  Q_UNUSED(doc)
 /*
   // trim the list.
   pugi::xml_node root = doc.root();
