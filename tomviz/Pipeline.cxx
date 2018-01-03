@@ -148,6 +148,7 @@ void Pipeline::pipelineBranchFinished(bool result)
     // Do we have another branch to execute
     if (lastOp->childDataSource() != nullptr) {
       execute(lastOp->childDataSource());
+      lastOp->childDataSource()->setParent(this);
     }
     // The pipeline execution is finished
     else {
