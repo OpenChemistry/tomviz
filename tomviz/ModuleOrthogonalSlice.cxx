@@ -221,6 +221,18 @@ bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
   return Module::deserialize(ns);
 }
 
+void ModuleOrthogonalSlice::setActiveArray(int index, const QString & arrayName)
+{
+  Module::setActiveArray(index, arrayName);
+
+  if (m_representation) {
+    vtkSMPropertyHelper(m_representation, "ColorArrayName").
+      SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                             arrayName.toLatin1().data());
+    m_representation->UpdateVTKObjects();
+  }
+}
+
 void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY,
                                             double newZ)
 {

@@ -21,6 +21,11 @@
 #include "ModuleManager.h"
 #include "Utilities.h"
 #include "pqView.h"
+
+#include "vtkAlgorithm.h"
+#include "vtkDataArray.h"
+#include "vtkDataSet.h"
+#include "vtkPointData.h"
 #include "vtkSMViewProxy.h"
 
 namespace tomviz {
@@ -78,8 +83,11 @@ void ModulePropertiesPanel::setModule(Module* module)
     }
   }
 
-  this->Internals->ActiveModule = module;
   Ui::ModulePropertiesPanel& ui = this->Internals->Ui;
+  this->Internals->ActiveModule = module;
+
+  QObject::disconnect(ui.ArrayNames, SIGNAL(activated(QString)), this,
+    SLOT(arrayNameChanged(QString)));
 
   deleteLayoutContents(ui.PropertiesWidget->layout());
 
@@ -95,6 +103,30 @@ void ModulePropertiesPanel::setModule(Module* module)
           this->Internals->ActiveModule->useDetachedColorMap());
       });
     }
+
+    // Add data arrays to the array name combo box
+    ui.ArrayNames->clear();
+    auto dataSource = module->dataSource();
+    auto producer = dataSource->producer();
+    auto tp = vtkAlgorithm::SafeDownCast(producer->GetClientSideObject());
+    auto dataSet = vtkDataSet::SafeDownCast(tp->GetOutputDataObject(0));
+    if (dataSet) {
+      // Limit to point data
+      auto pointData = dataSet->GetPointData();
+      for (int i = 0; i < pointData->GetNumberOfArrays(); ++i) {
+        auto arrayName = pointData->GetArray(i)->GetName();
+        if (arrayName) {
+          ui.ArrayNames->addItem(arrayName);
+        }
+      }
+    }
+    auto currentArrayName = module->activeArray(0);
+    int index = ui.ArrayNames->findText(currentArrayName);
+    if (index >= 0) {
+      ui.ArrayNames->setCurrentIndex(index);
+    }
+    QObject::connect(ui.ArrayNames, SIGNAL(activated(QString)), this,
+                     SLOT(arrayNameChanged(QString)));
   }
   ui.PropertiesWidget->layout()->update();
   this->updatePanel();
@@ -114,6 +146,16 @@ void ModulePropertiesPanel::detachColorMap(bool val)
   if (module) {
     module->setUseDetachedColorMap(val);
     this->setModule(module); // refreshes the module.
+    emit module->renderNeeded();
+  }
+}
+
+void ModulePropertiesPanel::arrayNameChanged(const QString& name)
+{
+  auto module = this->Internals->ActiveModule;
+  if (module) {
+    module->setActiveArray(0, name);
+    this->setModule(module);
     emit module->renderNeeded();
   }
 }

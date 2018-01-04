@@ -33,10 +33,26 @@
       <string notr="true"/>
      </property>
      <layout class="QFormLayout" name="formLayout">
+      <property name="labelAlignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
       <property name="bottomMargin">
        <number>6</number>
       </property>
-      <item row="0" column="0">
+      <item row="2" column="0">
+       <widget class="QLabel" name="ActiveArrayLabel">
+        <property name="text">
+         <string>Active Array</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="ArrayNames"/>
+      </item>
+      <item row="1" column="1">
        <widget class="QCheckBox" name="DetachColorMap">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, tomviz will use a separate color map for this module. Otherwise, the default behavior is to use the color map associated with the data.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -45,7 +61,17 @@
          <enum>Qt::LeftToRight</enum>
         </property>
         <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="DetachColorMapLabel">
+        <property name="text">
          <string>Separate Color Map</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -53,9 +79,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="PropertiesWidget" native="true">
-     <zorder>DetachColorMap</zorder>
-    </widget>
+    <widget class="QWidget" name="PropertiesWidget" native="true"/>
    </item>
   </layout>
  </widget>

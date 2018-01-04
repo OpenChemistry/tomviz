@@ -240,6 +240,20 @@ bool Module::deserialize(const pugi::xml_node& ns)
   return true;
 }
 
+void Module::setActiveArray(int index, const QString & arrayName)
+{
+  m_activeArrays.insert(index, arrayName);
+}
+
+QString Module::activeArray(int index)
+{
+  if (m_activeArrays.contains(index)) {
+    return m_activeArrays[index];
+  }
+
+  return QString();
+}
+
 void Module::onColorMapChanged()
 {
   emit colorMapChanged();
