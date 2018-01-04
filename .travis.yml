@@ -20,11 +20,11 @@ cache:
 matrix:
   include:
     - os: linux
-      dist: precise
+      dist: trusty
       python: 2.7
       env: TASKS="pytest(acquisition), flake8, clang-format"
     - os: linux
-      dist: precise
+      dist: trusty
       python: 3.4
       env: TASKS="pytest(acquisition), flake8"
     - language: generic
@@ -36,7 +36,7 @@ addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
-    - llvm-toolchain-precise-3.8
+    - llvm-toolchain-trusty-3.8
     packages:
     - clang-format-3.8
 install:
