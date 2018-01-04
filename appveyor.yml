@@ -31,7 +31,7 @@ build_script:
   - set PATH=C:\projects\tbb\bin\intel64\vc14;%PATH%
   - set PATH=C:\projects\paraview-build\lib;%PATH%
   - set PATH=C:\projects\paraview-build\bin;%PATH%
-  - set PATH=C:\Qt\5.9.1\msvc2015_64\bin;%PATH%
+  - set PATH=C:\Qt\5.9.2\msvc2015_64\bin;%PATH%
   # Setup PYTHONPATH
   - set PYTHONPATH=C:/projects/python/bin/Lib
   - set PYTHONPATH=C:/projects/python/bin/Lib/site-packages;%PYTHONPATH%
