@@ -25,6 +25,7 @@
 #include <pqNonEditableStyledItemDelegate.h>
 #include <pqPropertiesPanel.h>
 #include <pqProxyWidget.h>
+#include <pqTreeWidget.h>
 #include <pqView.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkPVArrayInformation.h>
@@ -90,6 +91,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(m_ui->xLengthBox, SIGNAL(editingFinished()), SLOT(updateXLength()));
   connect(m_ui->yLengthBox, SIGNAL(editingFinished()), SLOT(updateYLength()));
   connect(m_ui->zLengthBox, SIGNAL(editingFinished()), SLOT(updateZLength()));
+  connect(m_ui->DataTreeWidget, SIGNAL(clicked(const QModelIndex&)),
+          SLOT(updateActiveScalars()));
 }
 
 DataPropertiesPanel::~DataPropertiesPanel()
@@ -137,6 +140,8 @@ void DataPropertiesPanel::updateInformationWidget(
 {
   infoTreeWidget->clear();
 
+  int activeArrayRow = -1;
+
   vtkPVDataSetAttributesInformation* pointDataInfo =
     dataInfo->GetPointDataInformation();
   if (pointDataInfo) {
@@ -145,9 +150,15 @@ void DataPropertiesPanel::updateInformationWidget(
     for (int i = 0; i < numArrays; i++) {
       vtkPVArrayInformation* arrayInfo;
       arrayInfo = pointDataInfo->GetArrayInformation(i);
+      if (pointDataInfo->IsArrayAnAttribute(i) ==
+          vtkDataSetAttributes::SCALARS) {
+        activeArrayRow = i;
+      }
+
       // name, type, data range, data type
       QTreeWidgetItem* item = new QTreeWidgetItem(infoTreeWidget);
-      item->setData(0, Qt::DisplayRole, arrayInfo->GetName());
+      auto arrayName = arrayInfo->GetName();
+      item->setData(0, Qt::DisplayRole, arrayName);
       QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
       item->setData(2, Qt::DisplayRole, dataType);
       int numComponents = arrayInfo->GetNumberOfComponents();
@@ -174,6 +185,14 @@ void DataPropertiesPanel::updateInformationWidget(
         item->setForeground(0, QBrush(QColor("darkGreen")));
       }
     }
+  }
+
+  // Select the active array row if there is one
+  if (activeArrayRow >= 0) {
+    QModelIndex index = infoTreeWidget->model()->index(activeArrayRow, 0);
+    QItemSelectionModel* selectionModel = infoTreeWidget->selectionModel();
+    selectionModel->select(index, QItemSelectionModel::ClearAndSelect |
+                                    QItemSelectionModel::Rows);
   }
 
   infoTreeWidget->header()->resizeSections(QHeaderView::ResizeToContents);
@@ -452,6 +471,21 @@ void DataPropertiesPanel::updateAxesGridLabels()
     tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (qtView) {
     qtView->render();
+  }
+}
+
+void DataPropertiesPanel::updateActiveScalars()
+{
+  QList<QTreeWidgetItem*> items = m_ui->DataTreeWidget->selectedItems();
+  if (items.size() > 0) {
+    // Warning: assumes the first item is from the first column. I'm not sure if
+    // this
+    // is guaranteed.
+    auto arrayName =
+      items[0]->data(0, Qt::DisplayRole).toString().toLatin1().data();
+    if (m_currentDataSource) {
+      m_currentDataSource->setActiveScalars(arrayName);
+    }
   }
 }
 

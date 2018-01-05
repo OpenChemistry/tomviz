@@ -497,6 +497,22 @@ void DataSource::setSpacing(const double spacing[3])
   emit dataPropertiesChanged();
 }
 
+void DataSource::setActiveScalars(const char* arrayName)
+{
+  vtkAlgorithm* alg = algorithm();
+  if (alg) {
+    vtkImageData* data =
+      vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+    if (data) {
+      data->GetPointData()->SetActiveScalars(arrayName);
+    }
+  }
+
+  dataModified();
+
+  emit dataPropertiesChanged();
+}
+
 unsigned int DataSource::getNumberOfComponents()
 {
   unsigned int numComponents = 0;

@@ -174,6 +174,9 @@ public:
   /// one component per axis
   void setSpacing(const double scaleFactor[3]);
 
+  /// Set the active scalars by array name.
+  void setActiveScalars(const char* arrayName);
+
   /// Returns the number of components in the dataset.
   unsigned int getNumberOfComponents();
 
