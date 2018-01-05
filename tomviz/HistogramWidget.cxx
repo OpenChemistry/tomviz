@@ -27,9 +27,11 @@
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
 #include <vtkControlPointsItem.h>
+#include <vtkDataArray.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
+#include <vtkTable.h>
 #include <vtkVector.h>
 
 #include <pqApplicationCore.h>
@@ -175,6 +177,7 @@ void HistogramWidget::setInputData(vtkTable* table,
                                    const char* x_,
                                    const char* y_)
 {
+  m_inputData = table;
   m_histogramColorOpacityEditor->SetHistogramInputData(table, x_, y_);
   m_histogramColorOpacityEditor->SetOpacityFunction(m_scalarOpacityFunction);
   if (m_LUT && table) {
@@ -309,7 +312,17 @@ void HistogramWidget::histogramClicked(vtkObject*)
 
 void HistogramWidget::onResetRangeClicked()
 {
-  pqResetScalarRangeReaction::resetScalarRangeToData(nullptr);
+  if (m_inputData) {
+    auto array = vtkDataArray::SafeDownCast(m_inputData->GetColumn(0));
+    if (array) {
+      double range[2];
+      array->GetRange(range);
+      vtkSMTransferFunctionProxy::RescaleTransferFunction(m_LUTProxy, range[0],
+                                                          range[1]);
+      renderViews();
+      emit colorMapUpdated();
+    }
+  }
 }
 
 void HistogramWidget::onCustomRangeClicked()

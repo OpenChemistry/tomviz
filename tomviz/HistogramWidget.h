@@ -82,6 +82,7 @@ private:
   vtkWeakPointer<vtkPVDiscretizableColorTransferFunction> m_LUT;
   vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
   vtkWeakPointer<vtkSMProxy> m_LUTProxy;
+  vtkWeakPointer<vtkTable> m_inputData;
 
   QVTKGLWidget* m_qvtk;
 };
