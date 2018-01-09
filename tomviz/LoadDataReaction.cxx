@@ -306,10 +306,14 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
   if (child) {
     ModuleManager::instance().addChildDataSource(dataSource);
   } else {
-    PipelineManager::instance().addPipeline(new Pipeline(dataSource));
+    auto pipeline = new Pipeline(dataSource);
+    PipelineManager::instance().addPipeline(pipeline);
     // TODO Eventually we shouldn't need to keep track of the data sources,
     // the pipeline should do that for us.
     ModuleManager::instance().addDataSource(dataSource);
+    if (defaultModules) {
+      pipeline->addDefaultModules(dataSource);
+    }
   }
 
   // Work through pathological cases as necessary, prefer active view.
@@ -322,10 +326,6 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
   }
 
   ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
-
-  if (defaultModules) {
-    addDefaultModules(dataSource);
-  }
   if (!previousActiveDataSource) {
     pqRenderView* renderView =
       qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
@@ -334,26 +334,6 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
                                 renderView->getRenderViewProxy());
     }
   }
-}
-
-void LoadDataReaction::addDefaultModules(DataSource* dataSource)
-{
-  bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
-  ActiveObjects::instance().setMoveObjectsMode(false);
-  auto view = ActiveObjects::instance().activeView();
-
-  // Create an outline module for the source in the active view.
-  ModuleManager::instance().createAndAddModule("Outline", dataSource, view);
-
-  if (auto module = ModuleManager::instance().createAndAddModule(
-        "Orthogonal Slice", dataSource, view)) {
-    ActiveObjects::instance().setActiveModule(module);
-  }
-  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
-
-  auto pqview = tomviz::convert<pqView*>(view);
-  pqview->resetDisplay();
-  pqview->render();
 }
 
 } // end of namespace tomviz

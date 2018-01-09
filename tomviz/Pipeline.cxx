@@ -14,12 +14,17 @@
 
 ******************************************************************************/
 #include "Pipeline.h"
+#include "ActiveObjects.h"
 #include "DataSource.h"
+#include "ModuleManager.h"
 #include "Operator.h"
 #include "PipelineWorker.h"
+#include "Utilities.h"
 
 #include <QObject>
 #include <QTimer>
+#include <pqView.h>
+#include <vtkSMViewProxy.h>
 #include <vtkTrivialProducer.h>
 
 namespace tomviz {
@@ -142,6 +147,16 @@ void Pipeline::pipelineBranchFinished(bool result)
 
       if (newChildDataSource != nullptr) {
         emit lastOp->newChildDataSource(newChildDataSource);
+        // We need to add the default modules
+        this->addDefaultModules(newChildDataSource);
+        // Remove any default modules attached to the root data source.
+        foreach (Module* module, ModuleManager::instance().findModules<Module*>(
+                                   m_data, nullptr)) {
+          auto isDefault = module->property("default");
+          if (isDefault.isValid() && isDefault.toBool()) {
+            ModuleManager::instance().removeModule(module);
+          }
+        }
       }
     }
 
@@ -292,6 +307,28 @@ void Pipeline::addDataSource(DataSource* dataSource)
       this->execute(op->dataSource());
     }
   });
+}
+
+void Pipeline::addDefaultModules(DataSource* dataSource)
+{
+  // Note: In the future we can pull this out into a setting.
+  QStringList defaultModules = { "Outline", "Orthogonal Slice" };
+  bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
+  ActiveObjects::instance().setMoveObjectsMode(false);
+  auto view = ActiveObjects::instance().activeView();
+
+  Module* module = nullptr;
+  foreach (QString name, defaultModules) {
+    module =
+      ModuleManager::instance().createAndAddModule(name, dataSource, view);
+    module->setProperty("default", true);
+  }
+  ActiveObjects::instance().setActiveModule(module);
+  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+
+  auto pqview = tomviz::convert<pqView*>(view);
+  pqview->resetDisplay();
+  pqview->render();
 }
 
 Pipeline::ImageFuture::ImageFuture(Operator* op,
