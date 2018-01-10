@@ -105,9 +105,9 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   const bool widgetSetup = setupWidget(vtkView, producer);
 
   if (widgetSetup) {
+    m_widget->SetDisplayOffset(data->displayPosition());
     m_widget->On();
     m_widget->InteractionOn();
-    m_widget->SetDisplayOffset(data->displayPosition());
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
