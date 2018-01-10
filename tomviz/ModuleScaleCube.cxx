@@ -63,6 +63,9 @@ ModuleScaleCube::ModuleScaleCube(QObject* parentObject) : Module(parentObject)
             onPositionChanged(p[0], p[1], p[2]);
           });
 
+  connect(this, SIGNAL(onPositionChanged(double, double, double)),
+          SLOT(updateOffset(double, double, double)));
+
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
   // "onSideLengthChanged" signal
   m_observedSideLengthId =
@@ -101,15 +104,18 @@ bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_handleWidget->SetInteractor(m_view->GetInteractor());
 
   double bounds[6];
-  data->proxy()->GetDataInformation()->GetBounds(bounds);
+  dataSource()->proxy()->GetDataInformation()->GetBounds(bounds);
   double length = std::max(floor((bounds[1] - bounds[0]) * .1), 1.);
-  double minPosition[3] = { bounds[0] + length * .5, bounds[2] + length * .5,
-                            bounds[4] + length * .5 };
   m_cubeRep->SetSideLength(length);
-  m_cubeRep->PlaceWidget(minPosition);
-  m_cubeRep->SetWorldPosition(minPosition);
   m_cubeRep->SetAdaptiveScaling(0);
   m_cubeRep->SetLengthUnit(data->getUnits(0).toStdString().c_str());
+
+  m_offset[0] = 0.5 * length;
+  m_offset[1] = 0.5 * length;
+  m_offset[2] = 0.5 * length;
+
+  const double* displayPosition = dataSource()->displayPosition();
+  dataSourceMoved(displayPosition[0], displayPosition[1], displayPosition[2]);
 
   m_handleWidget->SetRepresentation(m_cubeRep.Get());
   m_handleWidget->EnabledOn();
@@ -326,6 +332,17 @@ void ModuleScaleCube::dataPropertiesChanged()
   emit onPositionUnitChanged(data->getUnits(0));
 }
 
+void ModuleScaleCube::dataSourceMoved(double newX, double newY, double newZ)
+{
+  double position[3];
+  position[0] = newX + m_offset[0];
+  position[1] = newY + m_offset[1];
+  position[2] = newZ + m_offset[2];
+
+  m_cubeRep->PlaceWidget(position);
+  m_cubeRep->SetWorldPosition(position);
+}
+
 bool ModuleScaleCube::isProxyPartOfModule(vtkSMProxy*)
 {
   return false;
@@ -347,6 +364,14 @@ void ModuleScaleCube::onBoxColorChanged(const QColor& color)
   m_cubeRep->GetProperty()->SetDiffuseColor(
     color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0);
   emit renderNeeded();
+}
+
+void ModuleScaleCube::updateOffset(double x, double y, double z)
+{
+  const double* displayPosition = dataSource()->displayPosition();
+  m_offset[0] = x - displayPosition[0];
+  m_offset[1] = y - displayPosition[1];
+  m_offset[2] = z - displayPosition[2];
 }
 
 } // end of namespace tomviz
