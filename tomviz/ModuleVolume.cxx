@@ -73,6 +73,9 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_volumeMapper->SetInputConnection(trv->GetOutputPort());
   m_volume->SetMapper(m_volumeMapper.Get());
   m_volume->SetProperty(m_volumeProperty.Get());
+  const double* displayPosition = data->displayPosition();
+  m_volume->SetPosition(displayPosition[0], displayPosition[1],
+                        displayPosition[2]);
   m_volumeMapper->UseJitteringOn();
   m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
   m_volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
