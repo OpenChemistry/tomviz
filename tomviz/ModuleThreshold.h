@@ -57,6 +57,8 @@ protected:
 private slots:
   void dataUpdated();
 
+  void onScalarArrayChanged();
+
 private:
   Q_DISABLE_COPY(ModuleThreshold)
 

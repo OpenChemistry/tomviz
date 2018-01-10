@@ -90,6 +90,8 @@ private slots:
   /// invoked whenever a property widget changes
   void onPropertyChanged();
 
+  void onScalarArrayChanged();
+
   void setUseSolidColor(const bool useSolidColor);
 
   /// Reset the UI for widgets not connected to a proxy property

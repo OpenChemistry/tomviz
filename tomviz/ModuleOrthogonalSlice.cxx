@@ -95,6 +95,10 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data,
     p->rename(label());
   }
 
+  connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
+
+  onScalarArrayChanged();
+
   return true;
 }
 
@@ -197,6 +201,16 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
 void ModuleOrthogonalSlice::dataUpdated()
 {
   m_links.accept();
+  emit renderNeeded();
+}
+
+void ModuleOrthogonalSlice::onScalarArrayChanged()
+{
+  const char* arrayName = dataSource()->activeScalars();
+  vtkSMPropertyHelper(m_representation, "ColorArrayName")
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName);
+  m_representation->UpdateVTKObjects();
+
   emit renderNeeded();
 }
 

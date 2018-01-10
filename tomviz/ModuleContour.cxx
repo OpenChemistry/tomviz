@@ -158,6 +158,9 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     p->rename(label());
   }
 
+  connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
+  onScalarArrayChanged();
+
   return true;
 }
 
@@ -326,6 +329,10 @@ void ModuleContour::onPropertyChanged()
 {
   d->Links.accept();
 
+  if (!m_controllers) {
+    return;
+  }
+
   int colorByIndex = m_controllers->getColorByComboBox()->currentIndex();
   if (colorByIndex > 0) {
     createCategoricalColoringPipeline();
@@ -358,6 +365,18 @@ void ModuleContour::onPropertyChanged()
   }
   m_activeRepresentation->MarkDirty(m_activeRepresentation);
   m_activeRepresentation->UpdateVTKObjects();
+
+  emit renderNeeded();
+}
+
+void ModuleContour::onScalarArrayChanged()
+{
+  const char* arrayName = dataSource()->activeScalars();
+  vtkSMPropertyHelper(m_contourFilter, "SelectInputScalars")
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName);
+  m_contourFilter->UpdateVTKObjects();
+
+  onPropertyChanged();
 
   emit renderNeeded();
 }

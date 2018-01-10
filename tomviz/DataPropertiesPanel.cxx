@@ -91,7 +91,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(m_ui->xLengthBox, SIGNAL(editingFinished()), SLOT(updateXLength()));
   connect(m_ui->yLengthBox, SIGNAL(editingFinished()), SLOT(updateYLength()));
   connect(m_ui->zLengthBox, SIGNAL(editingFinished()), SLOT(updateZLength()));
-  connect(m_ui->DataTreeWidget, SIGNAL(clicked(const QModelIndex&)),
+  connect(m_ui->DataTreeWidget, SIGNAL(itemSelectionChanged()),
           SLOT(updateActiveScalars()));
 }
 
@@ -191,8 +191,12 @@ void DataPropertiesPanel::updateInformationWidget(
   if (activeArrayRow >= 0) {
     QModelIndex index = infoTreeWidget->model()->index(activeArrayRow, 0);
     QItemSelectionModel* selectionModel = infoTreeWidget->selectionModel();
-    selectionModel->select(index, QItemSelectionModel::ClearAndSelect |
-                                    QItemSelectionModel::Rows);
+    if (selectionModel) {
+      m_ui->DataTreeWidget->blockSignals(true);
+      selectionModel->select(index, QItemSelectionModel::ClearAndSelect |
+                                      QItemSelectionModel::Rows);
+      m_ui->DataTreeWidget->blockSignals(false);
+    }
   }
 
   infoTreeWidget->header()->resizeSections(QHeaderView::ResizeToContents);
