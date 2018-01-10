@@ -510,7 +510,25 @@ void DataSource::setActiveScalars(const char* arrayName)
 
   dataModified();
 
+  emit activeScalarsChanged();
   emit dataPropertiesChanged();
+}
+
+const char* DataSource::activeScalars() const
+{
+  vtkAlgorithm* alg = algorithm();
+  if (alg) {
+    vtkImageData* data =
+      vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+    if (data) {
+      vtkDataArray* scalars = data->GetPointData()->GetScalars();
+      if (scalars) {
+        return scalars->GetName();
+      }
+    }
+  }
+
+  return nullptr;
 }
 
 unsigned int DataSource::getNumberOfComponents()
