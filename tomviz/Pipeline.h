@@ -57,6 +57,9 @@ public:
 
   ImageFuture* getCopyOfImagePriorTo(Operator* op);
 
+  /// Add default modules to this pipeline.
+  void addDefaultModules(DataSource* dataSource);
+
 public slots:
   void execute();
   void execute(DataSource* start, bool runLast);
