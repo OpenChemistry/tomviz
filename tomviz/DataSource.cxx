@@ -497,14 +497,14 @@ void DataSource::setSpacing(const double spacing[3])
   emit dataPropertiesChanged();
 }
 
-void DataSource::setActiveScalars(const char* arrayName)
+void DataSource::setActiveScalars(const QString& arrayName)
 {
   vtkAlgorithm* alg = algorithm();
   if (alg) {
     vtkImageData* data =
       vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
     if (data) {
-      data->GetPointData()->SetActiveScalars(arrayName);
+      data->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
     }
   }
 
@@ -514,8 +514,9 @@ void DataSource::setActiveScalars(const char* arrayName)
   emit dataPropertiesChanged();
 }
 
-const char* DataSource::activeScalars() const
+QString DataSource::activeScalars() const
 {
+  QString returnValue;
   vtkAlgorithm* alg = algorithm();
   if (alg) {
     vtkImageData* data =
@@ -523,12 +524,12 @@ const char* DataSource::activeScalars() const
     if (data) {
       vtkDataArray* scalars = data->GetPointData()->GetScalars();
       if (scalars) {
-        return scalars->GetName();
+        returnValue = scalars->GetName();
       }
     }
   }
 
-  return nullptr;
+  return returnValue;
 }
 
 unsigned int DataSource::getNumberOfComponents()

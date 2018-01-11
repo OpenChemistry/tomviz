@@ -249,9 +249,10 @@ void ModuleThreshold::dataUpdated()
 
 void ModuleThreshold::onScalarArrayChanged()
 {
-  const char* arrayName = dataSource()->activeScalars();
+  QString arrayName = dataSource()->activeScalars();
   vtkSMPropertyHelper(m_thresholdRepresentation, "ColorArrayName")
-    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName);
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                            arrayName.toLatin1().data());
   m_thresholdRepresentation->UpdateVTKObjects();
 
   emit renderNeeded();

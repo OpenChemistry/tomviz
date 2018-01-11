@@ -485,8 +485,7 @@ void DataPropertiesPanel::updateActiveScalars()
     // Warning: assumes the first item is from the first column. I'm not sure if
     // this
     // is guaranteed.
-    auto arrayName =
-      items[0]->data(0, Qt::DisplayRole).toString().toLatin1().data();
+    auto arrayName = items[0]->data(0, Qt::DisplayRole).toString();
     if (m_currentDataSource) {
       m_currentDataSource->setActiveScalars(arrayName);
     }

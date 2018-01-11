@@ -371,9 +371,10 @@ void ModuleContour::onPropertyChanged()
 
 void ModuleContour::onScalarArrayChanged()
 {
-  const char* arrayName = dataSource()->activeScalars();
+  QString arrayName = dataSource()->activeScalars();
   vtkSMPropertyHelper(m_contourFilter, "SelectInputScalars")
-    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName);
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                            arrayName.toLatin1().data());
   m_contourFilter->UpdateVTKObjects();
 
   onPropertyChanged();
