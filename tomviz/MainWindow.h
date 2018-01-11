@@ -20,6 +20,8 @@
 
 #include <QScopedPointer>
 
+class QMenu;
+
 namespace Ui {
 class MainWindow;
 }
@@ -66,6 +68,9 @@ private slots:
   /// Change the active module displayed in the properties panel.
   void operatorChanged(Operator* op);
 
+  /// Load a custom operator from a file
+  void importCustomTransform();
+
   void onFirstWindowShow();
 
   void autosave();
@@ -81,6 +86,7 @@ private:
   void registerCustomOperators();
 
   QScopedPointer<Ui::MainWindow> m_ui;
+  QMenu* m_customTransformsMenu = nullptr;
   QTimer* m_timer = nullptr;
   bool m_isFirstShow = true;
   AboutDialog* m_aboutDialog = nullptr;

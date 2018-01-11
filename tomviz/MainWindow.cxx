@@ -67,6 +67,7 @@
 #include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QIcon>
 #include <QMessageBox>
@@ -545,6 +546,70 @@ void MainWindow::operatorChanged(Operator*)
     m_ui->operatorPropertiesScrollArea);
 }
 
+void MainWindow::importCustomTransform()
+{
+  QStringList filters;
+  filters << "Python (*.py)";
+
+  QFileDialog dialog(this);
+  dialog.setFileMode(QFileDialog::ExistingFile);
+  dialog.setNameFilters(filters);
+  dialog.setObjectName("ImportCustomTransform-tomviz");
+  dialog.setAcceptMode(QFileDialog::AcceptOpen);
+
+  if (dialog.exec() == QDialog::Accepted) {
+    QStringList filePaths = dialog.selectedFiles();
+    QString format = dialog.selectedNameFilter();
+    QFileInfo fileInfo(filePaths[0]);
+    QString filePath = fileInfo.absolutePath();
+    QString fileBaseName = fileInfo.baseName();
+    QString pythonSourcePath = QString("%1%2%3.py")
+                                 .arg(filePath)
+                                 .arg(QDir::separator())
+                                 .arg(fileBaseName);
+    QString jsonSourcePath = QString("%1%2%3.json")
+                               .arg(filePath)
+                               .arg(QDir::separator())
+                               .arg(fileBaseName);
+
+    // Ensure the tomviz directory exists
+    QStringList locations =
+      QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+    QString home = locations[0];
+    QString path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
+    QDir dir(path);
+    // dir.mkpath() returns true if the path already exists or if it was
+    // successfully created.
+    if (!dir.mkpath(path)) {
+      QMessageBox::warning(
+        this, "Could not create tomviz directory",
+        QString("Could not create tomviz directory '%1'.").arg(path));
+      return;
+    }
+
+    // Copy the Python file to the tomviz directory if it exists
+    QFileInfo pythonFileInfo(pythonSourcePath);
+    if (pythonFileInfo.exists()) {
+      QString pythonDestPath =
+        QString("%1%2%3.py").arg(path).arg(QDir::separator()).arg(fileBaseName);
+      QFile::copy(pythonSourcePath, pythonDestPath);
+
+      // Copy the JSON file if it exists.
+      QFileInfo jsonFileInfo(jsonSourcePath);
+      if (jsonFileInfo.exists()) {
+        QString jsonDestPath = QString("%1%2%3.json")
+                                 .arg(path)
+                                 .arg(QDir::separator())
+                                 .arg(fileBaseName);
+        QFile::copy(jsonSourcePath, jsonDestPath);
+      }
+
+      // Register custom operators again.
+      registerCustomOperators();
+    }
+  }
+}
+
 void MainWindow::showEvent(QShowEvent* e)
 {
   QMainWindow::showEvent(e);
@@ -655,6 +720,24 @@ void MainWindow::handleMessage(const QString&, int type)
 
 void MainWindow::registerCustomOperators()
 {
+  // Always create the Custom Transforms menu so that it is possible to import
+  // new operators.
+  if (m_customTransformsMenu) {
+    m_customTransformsMenu->clear();
+  }
+
+  if (!m_customTransformsMenu) {
+    m_customTransformsMenu = new QMenu("Custom Transforms", this);
+    m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
+                              m_customTransformsMenu);
+  }
+
+  QAction* importCustomTransformAction =
+    m_customTransformsMenu->addAction("Import Custom Transform...");
+  m_customTransformsMenu->addSeparator();
+  connect(importCustomTransformAction, SIGNAL(triggered()),
+          SLOT(importCustomTransform()));
+
   QStringList paths;
   // Search in <home>/.tomviz
   foreach (QString home,
@@ -684,22 +767,20 @@ void MainWindow::registerCustomOperators()
 void MainWindow::registerCustomOperators(const QString& path)
 {
   std::vector<OperatorDescription> operators = findCustomOperators(path);
+
   // Sort so we get a consistent order each time we load
   std::sort(operators.begin(), operators.end(),
             [](const OperatorDescription& op1, const OperatorDescription& op2) {
-              return op1.label.compare(op2.label);
+              return  op1.label < op2.label;
             });
 
   if (!operators.empty()) {
-    QMenu* customTransformsMenu = new QMenu("Custom Transforms", this);
-    m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
-                              customTransformsMenu);
     for (const OperatorDescription& op : operators) {
-      QAction* action = customTransformsMenu->addAction(op.label);
+      QAction* action = m_customTransformsMenu->addAction(op.label);
       action->setEnabled(op.valid);
       if (!op.loadError.isNull()) {
         qWarning().noquote()
-          << QString("An error occured trying to load an operator from '%1':")
+          << QString("An error occurred trying to load an operator from '%1':")
                .arg(op.pythonPath);
         qWarning().noquote() << op.loadError;
         continue;
