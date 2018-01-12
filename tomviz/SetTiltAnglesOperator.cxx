@@ -154,10 +154,17 @@ public:
     this->tableWidget->setColumnCount(1);
     tablePanelLayout->addWidget(this->tableWidget);
 
+    // Widget to hold tilt angle import button
+    QWidget* buttonWidget = new QWidget;
+    QHBoxLayout* buttonLayout = new QHBoxLayout;
+    buttonWidget->setLayout(buttonLayout);
+    tablePanelLayout->addWidget(buttonWidget);
+
     // Add button to load a text file with tilt series values
     QPushButton* loadFromFileButton = new QPushButton;
     loadFromFileButton->setText("Load From Text File");
-    tablePanelLayout->addWidget(loadFromFileButton);
+    buttonLayout->addWidget(loadFromFileButton);
+    buttonLayout->insertStretch(-1);
     connect(loadFromFileButton, SIGNAL(clicked()), SLOT(loadFromFile()));
 
     vtkFieldData* fd = dataObject->GetFieldData();
