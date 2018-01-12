@@ -18,10 +18,12 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "LoadDataReaction.h"
 #include "ModuleManager.h"
 #include "PythonUtilities.h"
 #include "Utilities.h"
 #include "Variant.h"
+
 #include "pqActiveObjects.h"
 #include "pqRenderView.h"
 #include "vtkImageData.h"
@@ -553,35 +555,8 @@ void PythonGeneratedDatasetReaction::dataSourceAdded(
   DataSource* dataSource = new DataSource(
     proxy, DataSource::Volume);//, nullptr, DataSource::PersistenceState::Modified);
   dataSource->setFileName(proxy->GetAnnotation(Attributes::LABEL));
-  ModuleManager::instance().addDataSource(dataSource);
-
-  ActiveObjects::instance().createRenderViewIfNeeded();
-  auto view = ActiveObjects::instance().activeView();
-
-  if (!view || QString(view->GetXMLName()) != "RenderView") {
-    ActiveObjects::instance().setActiveViewToFirstRenderView();
-    view = ActiveObjects::instance().activeView();
-  }
-
-  // Create an outline module for the source in the active view.
-  if (Module* module = ModuleManager::instance().createAndAddModule(
-        "Outline", dataSource, view)) {
-    ActiveObjects::instance().setActiveModule(module);
-  }
-  if (Module* module = ModuleManager::instance().createAndAddModule(
-        "Orthogonal Slice", dataSource, view)) {
-    ActiveObjects::instance().setActiveModule(module);
-  }
-  DataSource* previousActiveDataSource =
-    ActiveObjects::instance().activeDataSource();
-  if (!previousActiveDataSource) {
-    pqRenderView* renderView =
-      qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
-    if (renderView) {
-      tomviz::createCameraOrbit(dataSource->proxy(),
-                                renderView->getRenderViewProxy());
-    }
-  }
+  LoadDataReaction::dataSourceAdded(dataSource, true /* default modules */,
+                                    false /* child */);
 }
 
 vtkSmartPointer<vtkSMSourceProxy>
