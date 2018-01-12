@@ -16,6 +16,8 @@
 #ifndef tomvizReconstructionReaction_h
 #define tomvizReconstructionReaction_h
 
+#include "ActiveObjects.h"
+
 #include <pqReaction.h>
 
 namespace tomviz {
@@ -32,7 +34,10 @@ public:
 
 protected:
   void updateEnableState();
-  void onTriggered() { recon(); }
+  void onTriggered()
+  {
+    recon();
+  }
 
 private:
   Q_DISABLE_COPY(ReconstructionReaction)

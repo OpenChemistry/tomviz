@@ -47,7 +47,7 @@ public:
 protected:
   void updateEnableState() override;
 
-  void onTriggered() override { addExpression(ActiveObjects::instance().activeParentDataSource()); }
+  void onTriggered() override { addExpression(); }
 
 private slots:
   void addExpressionFromNonModalDialog();

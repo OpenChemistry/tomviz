@@ -40,14 +40,14 @@ ReconstructionReaction::ReconstructionReaction(QAction* parentObject)
 void ReconstructionReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != NULL &&
-    ActiveObjects::instance().activeDataSource()->type() ==
+    ActiveObjects::instance().activeParentDataSource() != NULL &&
+    ActiveObjects::instance().activeParentDataSource()->type() ==
       DataSource::TiltSeries);
 }
 
 void ReconstructionReaction::recon(DataSource* input)
 {
-  input = input ? input : ActiveObjects::instance().activeDataSource();
+  input = input ? input : ActiveObjects::instance().activeParentDataSource();
   if (!input) {
     qDebug() << "Exiting early - no data :-(";
     return;

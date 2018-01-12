@@ -36,14 +36,14 @@ AddAlignReaction::AddAlignReaction(QAction* parentObject)
 void AddAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != nullptr &&
-    ActiveObjects::instance().activeDataSource()->type() ==
+    ActiveObjects::instance().activeParentDataSource() != nullptr &&
+    ActiveObjects::instance().activeParentDataSource()->type() ==
       DataSource::TiltSeries);
 }
 
 void AddAlignReaction::align(DataSource* source)
 {
-  source = source ? source : ActiveObjects::instance().activeDataSource();
+  source = source ? source : ActiveObjects::instance().activeParentDataSource();
   if (!source) {
     qDebug() << "Exiting early - no data found.";
     return;

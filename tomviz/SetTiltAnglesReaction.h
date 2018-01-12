@@ -16,6 +16,8 @@
 #ifndef tomvizSetTiltAnglesReaction_h
 #define tomvizSetTiltAnglesReaction_h
 
+#include "ActiveObjects.h"
+
 #include <pqReaction.h>
 
 class QMainWindow;
@@ -35,7 +37,10 @@ public:
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { showSetTiltAnglesUI(m_mainWindow); }
+  void onTriggered() override
+  {
+    showSetTiltAnglesUI(m_mainWindow);
+  }
 
 private:
   Q_DISABLE_COPY(SetTiltAnglesReaction)

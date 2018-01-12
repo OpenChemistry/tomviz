@@ -16,6 +16,8 @@
 #ifndef tomvizCropReaction_h
 #define tomvizCropReaction_h
 
+#include "ActiveObjects.h"
+
 #include <pqReaction.h>
 
 class QMainWindow;
@@ -34,7 +36,10 @@ public:
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { crop(); }
+  void onTriggered() override
+  {
+    crop();
+  }
 
 private:
   Q_DISABLE_COPY(CropReaction)

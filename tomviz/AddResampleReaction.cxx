@@ -47,7 +47,7 @@ AddResampleReaction::AddResampleReaction(QAction* parentObject)
 
 void AddResampleReaction::updateEnableState()
 {
-  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+  parentAction()->setEnabled(ActiveObjects::instance().activeParentDataSource() !=
                              nullptr);
 }
 
@@ -61,7 +61,7 @@ vtkImageData* imageData(DataSource* source)
 
 void AddResampleReaction::resample(DataSource* source)
 {
-  source = source ? source : ActiveObjects::instance().activeDataSource();
+  source = source ? source : ActiveObjects::instance().activeParentDataSource();
   if (!source) {
     qDebug() << "Exiting early - no data :-(";
     return;

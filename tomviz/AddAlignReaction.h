@@ -16,6 +16,8 @@
 #ifndef tomvizAddAlignReaction_h
 #define tomvizAddAlignReaction_h
 
+#include "ActiveObjects.h"
+
 #include <pqReaction.h>
 
 namespace tomviz {
@@ -32,7 +34,10 @@ public:
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { this->align(); }
+  void onTriggered() override
+  {
+    this->align();
+  }
 
 private:
   Q_DISABLE_COPY(AddAlignReaction)

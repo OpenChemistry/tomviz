@@ -159,13 +159,13 @@ AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
 
 void AddPythonTransformReaction::updateEnableState()
 {
-  bool enable = ActiveObjects::instance().activeDataSource() != nullptr;
+  bool enable = ActiveObjects::instance().activeParentDataSource() != nullptr;
   if (enable && this->requiresTiltSeries) {
-    enable = ActiveObjects::instance().activeDataSource()->type() ==
+    enable = ActiveObjects::instance().activeParentDataSource()->type() ==
              DataSource::TiltSeries;
   }
   if (enable && this->requiresVolume) {
-    enable = ActiveObjects::instance().activeDataSource()->type() ==
+    enable = ActiveObjects::instance().activeParentDataSource()->type() ==
              DataSource::Volume;
   }
   parentAction()->setEnabled(enable);
@@ -173,7 +173,7 @@ void AddPythonTransformReaction::updateEnableState()
 
 OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 {
-  source = source ? source : ActiveObjects::instance().activeDataSource();
+  source = source ? source : ActiveObjects::instance().activeParentDataSource();
   if (!source) {
     return nullptr;
   }
@@ -478,7 +478,7 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     arguments.insert("ZRANGE", range);
   };
 
-  DataSource* source = ActiveObjects::instance().activeDataSource();
+  DataSource* source = ActiveObjects::instance().activeParentDataSource();
   QDialog* dialog = qobject_cast<QDialog*>(this->sender());
   if (this->scriptLabel == "Clear Volume") {
     QLayout* layout = dialog->layout();

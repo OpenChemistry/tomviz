@@ -16,6 +16,8 @@
 #ifndef tomvizCloneDataReaction_h
 #define tomvizCloneDataReaction_h
 
+#include "ActiveObjects.h"
+
 #include <pqReaction.h>
 
 namespace tomviz {
@@ -32,7 +34,10 @@ public:
 
 protected:
   /// Called when the action is triggered.
-  void onTriggered() override { clone(); }
+  void onTriggered() override
+  {
+    clone();
+  }
   void updateEnableState() override;
 
 private:

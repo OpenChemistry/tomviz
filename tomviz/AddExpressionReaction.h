@@ -16,6 +16,8 @@
 #ifndef tomvizAddExpressionReaction_h
 #define tomvizAddExpressionReaction_h
 
+#include "ActiveObjects.h"
+
 #include <pqReaction.h>
 
 namespace tomviz {
@@ -33,7 +35,10 @@ public:
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override { addExpression(); }
+  void onTriggered() override
+  {
+    addExpression();
+  }
 
 private:
   Q_DISABLE_COPY(AddExpressionReaction)

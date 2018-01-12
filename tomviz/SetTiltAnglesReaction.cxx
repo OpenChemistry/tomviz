@@ -35,9 +35,9 @@ SetTiltAnglesReaction::SetTiltAnglesReaction(QAction* p, QMainWindow* mw)
 
 void SetTiltAnglesReaction::updateEnableState()
 {
-  bool enable = ActiveObjects::instance().activeDataSource() != nullptr;
+  bool enable = ActiveObjects::instance().activeParentDataSource() != nullptr;
   if (enable) {
-    enable = ActiveObjects::instance().activeDataSource()->type() ==
+    enable = ActiveObjects::instance().activeParentDataSource()->type() ==
              DataSource::TiltSeries;
   }
   parentAction()->setEnabled(enable);
@@ -46,7 +46,7 @@ void SetTiltAnglesReaction::updateEnableState()
 void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow* window,
                                                 DataSource* source)
 {
-  source = source ? source : ActiveObjects::instance().activeDataSource();
+  source = source ? source : ActiveObjects::instance().activeParentDataSource();
   if (!source) {
     return;
   }
