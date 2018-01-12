@@ -16,6 +16,8 @@
 #ifndef tomvizAddPythonTransformReaction_h
 #define tomvizAddPythonTransformReaction_h
 
+#include "ActiveObjects.h"
+
 #include <pqReaction.h>
 
 namespace tomviz {
@@ -45,7 +47,7 @@ public:
 protected:
   void updateEnableState() override;
 
-  void onTriggered() override { addExpression(); }
+  void onTriggered() override { addExpression(ActiveObjects::instance().activeParentDataSource()); }
 
 private slots:
   void addExpressionFromNonModalDialog();

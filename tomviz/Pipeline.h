@@ -60,6 +60,9 @@ public:
   /// Add default modules to this pipeline.
   void addDefaultModules(DataSource* dataSource);
 
+  /// The data source a the root of the pipeline.
+  DataSource* dataSource() { return m_data; };
+
 public slots:
   void execute();
   void execute(DataSource* start, bool runLast);

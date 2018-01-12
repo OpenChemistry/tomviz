@@ -30,6 +30,8 @@ class vtkSMViewProxy;
 
 namespace tomviz {
 
+class Pipeline;
+
 /// ActiveObjects keeps track of active objects in tomviz.
 /// This is similar to pqActiveObjects in ParaView, however it tracks objects
 /// relevant to tomviz.
@@ -59,6 +61,15 @@ public:
   vtkSMSessionProxyManager* proxyManager() const;
 
   bool moveObjectsEnabled() { return m_moveObjectsEnabled; }
+
+  /// Returns the active pipelines.
+  Pipeline* activePipeline() const;
+
+  /// The "parent" data source is the data source that new operators will be
+  /// appended to. i.e. The closes parent of the currently active data source
+  /// that is not an "Output" data source.
+  DataSource* activeParentDataSource();
+
 
 public slots:
   /// Set the active view;
