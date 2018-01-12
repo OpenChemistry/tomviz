@@ -869,6 +869,7 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
     auto image = vtkImageData::SafeDownCast(copy);
     auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
     tp->SetOutput(image);
+    image->Delete();
 
     // This is a little hackish, currently special cased for the MRC format.
     // It would probably be best to move this to the file read/write classes.
