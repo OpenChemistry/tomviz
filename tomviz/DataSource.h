@@ -174,6 +174,10 @@ public:
   /// one component per axis
   void setSpacing(const double scaleFactor[3]);
 
+  /// Set the active scalars by array name.
+  void setActiveScalars(const QString& arrayName);
+  QString activeScalars() const;
+
   /// Returns the number of components in the dataset.
   unsigned int getNumberOfComponents();
 
@@ -205,6 +209,9 @@ signals:
   /// This signal is fired to notify the world that the data's properties may
   /// have changed.
   void dataPropertiesChanged();
+
+  /// Fired when active scalars change
+  void activeScalarsChanged();
 
   /// This signal is fired every time a new operator is added to this
   /// DataSource.

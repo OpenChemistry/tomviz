@@ -22,6 +22,8 @@
 #include "pqProxiesWidget.h"
 #include "pqSignalAdaptors.h"
 #include "pqStringVectorPropertyWidget.h"
+
+#include "vtkDataObject.h"
 #include "vtkNew.h"
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -102,6 +104,9 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   if (auto p = convert<pqProxy*>(proxy)) {
     p->rename(label());
   }
+
+  connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
+  onScalarArrayChanged();
 
   return true;
 }
@@ -239,6 +244,17 @@ void ModuleThreshold::addToPanel(QWidget* panel)
 void ModuleThreshold::dataUpdated()
 {
   m_links.accept();
+  emit renderNeeded();
+}
+
+void ModuleThreshold::onScalarArrayChanged()
+{
+  QString arrayName = dataSource()->activeScalars();
+  vtkSMPropertyHelper(m_thresholdRepresentation, "ColorArrayName")
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                            arrayName.toLatin1().data());
+  m_thresholdRepresentation->UpdateVTKObjects();
+
   emit renderNeeded();
 }
 

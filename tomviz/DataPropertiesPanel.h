@@ -64,6 +64,8 @@ private slots:
 
   void updateAxesGridLabels();
 
+  void updateActiveScalars();
+
 signals:
   void colorMapUpdated();
 
