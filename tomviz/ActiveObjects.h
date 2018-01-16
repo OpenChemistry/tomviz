@@ -141,6 +141,7 @@ protected:
 
   QPointer<DataSource> m_activeDataSource = nullptr;
   DataSource::DataSourceType m_activeDataSourceType = DataSource::Volume;
+  QPointer<DataSource> m_activeParentDataSource = nullptr;
 
   QPointer<Module> m_activeModule = nullptr;
 
