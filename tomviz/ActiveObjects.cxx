@@ -208,6 +208,10 @@ DataSource* ActiveObjects::activeParentDataSource()
     auto pipeline = this->activePipeline();
     auto dataSource = this->activeDataSource();
 
+    if (dataSource == nullptr) {
+      return nullptr;
+    }
+
     auto isOutput = dataSource->property("output");
     if (!isOutput.isValid() || !isOutput.toBool()) {
       return dataSource;
