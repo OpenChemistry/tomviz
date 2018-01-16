@@ -34,10 +34,7 @@ public:
 
 protected:
   /// Called when the action is triggered.
-  void onTriggered() override
-  {
-    clone();
-  }
+  void onTriggered() override { clone(); }
   void updateEnableState() override;
 
 private:

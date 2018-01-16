@@ -15,8 +15,8 @@
 ******************************************************************************/
 #include "ActiveObjects.h"
 #include "ModuleManager.h"
-#include "Utilities.h"
 #include "Pipeline.h"
+#include "Utilities.h"
 
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
@@ -201,7 +201,8 @@ void ActiveObjects::renderAllViews()
   pqApplicationCore::instance()->render();
 }
 
-DataSource* ActiveObjects::activeParentDataSource() {
+DataSource* ActiveObjects::activeParentDataSource()
+{
 
   if (m_activeParentDataSource == nullptr) {
     auto pipeline = this->activePipeline();
@@ -212,23 +213,27 @@ DataSource* ActiveObjects::activeParentDataSource() {
       return dataSource;
     }
 
-    std::function<QList<DataSource*>(DataSource*, DataSource*, QList<DataSource*>)> dfs = [&dfs](DataSource *currentDataSource, DataSource *targetDataSource, QList<DataSource *> path) {
-      path.append(currentDataSource);
-      if (currentDataSource == targetDataSource) {
-        return path;
-      }
+    std::function<QList<DataSource*>(DataSource*, DataSource*,
+                                     QList<DataSource*>)>
+      dfs = [&dfs](DataSource* currentDataSource, DataSource* targetDataSource,
+                   QList<DataSource*> path) {
+        path.append(currentDataSource);
+        if (currentDataSource == targetDataSource) {
+          return path;
+        }
 
-      foreach(Operator *op, currentDataSource->operators()) {
-        if (op->childDataSource() != nullptr) {
-          QList<DataSource *> p = dfs(op->childDataSource(), targetDataSource, path);
-          if (!p.isEmpty()) {
-            return p;
+        foreach (Operator* op, currentDataSource->operators()) {
+          if (op->childDataSource() != nullptr) {
+            QList<DataSource*> p =
+              dfs(op->childDataSource(), targetDataSource, path);
+            if (!p.isEmpty()) {
+              return p;
+            }
           }
         }
-      }
 
-      return QList<DataSource*>();
-    };
+        return QList<DataSource*>();
+      };
 
     // Find path to the active datasource
     auto path = dfs(pipeline->dataSource(), dataSource, QList<DataSource*>());
@@ -247,7 +252,8 @@ DataSource* ActiveObjects::activeParentDataSource() {
   return m_activeParentDataSource;
 }
 
-Pipeline* ActiveObjects::activePipeline() const {
+Pipeline* ActiveObjects::activePipeline() const
+{
 
   if (m_activeDataSource != nullptr) {
     return m_activeDataSource->pipeline();

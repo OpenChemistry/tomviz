@@ -34,10 +34,7 @@ public:
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override
-  {
-    resample();
-  }
+  void onTriggered() override { resample(); }
 
 private:
   Q_DISABLE_COPY(AddResampleReaction)

@@ -70,7 +70,6 @@ public:
   /// that is not an "Output" data source.
   DataSource* activeParentDataSource();
 
-
 public slots:
   /// Set the active view;
   void setActiveView(vtkSMViewProxy*);

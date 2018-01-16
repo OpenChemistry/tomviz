@@ -36,10 +36,7 @@ public:
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override
-  {
-    crop();
-  }
+  void onTriggered() override { crop(); }
 
 private:
   Q_DISABLE_COPY(CropReaction)

@@ -34,10 +34,7 @@ public:
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override
-  {
-    this->align();
-  }
+  void onTriggered() override { this->align(); }
 
 private:
   Q_DISABLE_COPY(AddAlignReaction)

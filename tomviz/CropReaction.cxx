@@ -35,8 +35,8 @@ CropReaction::CropReaction(QAction* parentObject, QMainWindow* mw)
 
 void CropReaction::updateEnableState()
 {
-  parentAction()->setEnabled(ActiveObjects::instance().activeParentDataSource() !=
-                             nullptr);
+  parentAction()->setEnabled(
+    ActiveObjects::instance().activeParentDataSource() != nullptr);
 }
 
 void CropReaction::crop(DataSource* source)

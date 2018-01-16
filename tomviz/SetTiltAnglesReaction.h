@@ -37,10 +37,7 @@ public:
 
 protected:
   void updateEnableState() override;
-  void onTriggered() override
-  {
-    showSetTiltAnglesUI(m_mainWindow);
-  }
+  void onTriggered() override { showSetTiltAnglesUI(m_mainWindow); }
 
 private:
   Q_DISABLE_COPY(SetTiltAnglesReaction)

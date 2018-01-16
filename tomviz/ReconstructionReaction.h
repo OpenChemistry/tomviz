@@ -34,10 +34,7 @@ public:
 
 protected:
   void updateEnableState();
-  void onTriggered()
-  {
-    recon();
-  }
+  void onTriggered() { recon(); }
 
 private:
   Q_DISABLE_COPY(ReconstructionReaction)
