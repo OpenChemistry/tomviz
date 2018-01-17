@@ -16,8 +16,6 @@
 #ifndef tomvizAddExpressionReaction_h
 #define tomvizAddExpressionReaction_h
 
-#include "ActiveObjects.h"
-
 #include <pqReaction.h>
 
 namespace tomviz {

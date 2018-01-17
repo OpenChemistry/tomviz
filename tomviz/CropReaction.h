@@ -16,8 +16,6 @@
 #ifndef tomvizCropReaction_h
 #define tomvizCropReaction_h
 
-#include "ActiveObjects.h"
-
 #include <pqReaction.h>
 
 class QMainWindow;

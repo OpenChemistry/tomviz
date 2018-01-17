@@ -40,8 +40,8 @@ ReconstructionReaction::ReconstructionReaction(QAction* parentObject)
 void ReconstructionReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-    ActiveObjects::instance().activeParentDataSource() != NULL &&
-    ActiveObjects::instance().activeParentDataSource()->type() ==
+    ActiveObjects::instance().activeDataSource() != NULL &&
+    ActiveObjects::instance().activeDataSource()->type() ==
       DataSource::TiltSeries);
 }
 

@@ -16,8 +16,6 @@
 #ifndef tomvizSetTiltAnglesReaction_h
 #define tomvizSetTiltAnglesReaction_h
 
-#include "ActiveObjects.h"
-
 #include <pqReaction.h>
 
 class QMainWindow;

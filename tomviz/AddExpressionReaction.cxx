@@ -33,8 +33,8 @@ AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
 
 void AddExpressionReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-    ActiveObjects::instance().activeParentDataSource() != nullptr);
+  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+                             nullptr);
 }
 
 OperatorPython* AddExpressionReaction::addExpression(DataSource* source)

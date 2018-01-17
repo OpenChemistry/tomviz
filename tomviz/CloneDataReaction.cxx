@@ -34,14 +34,13 @@ CloneDataReaction::CloneDataReaction(QAction* parentObject)
 
 void CloneDataReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-    ActiveObjects::instance().activeParentDataSource() != nullptr);
+  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
+                             nullptr);
 }
 
 DataSource* CloneDataReaction::clone(DataSource* toClone)
 {
-  toClone =
-    toClone ? toClone : ActiveObjects::instance().activeParentDataSource();
+  toClone = toClone ? toClone : ActiveObjects::instance().activeDataSource();
   if (!toClone) {
     return nullptr;
   }

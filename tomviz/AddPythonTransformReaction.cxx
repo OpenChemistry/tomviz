@@ -159,13 +159,13 @@ AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
 
 void AddPythonTransformReaction::updateEnableState()
 {
-  bool enable = ActiveObjects::instance().activeParentDataSource() != nullptr;
+  bool enable = ActiveObjects::instance().activeDataSource() != nullptr;
   if (enable && this->requiresTiltSeries) {
-    enable = ActiveObjects::instance().activeParentDataSource()->type() ==
+    enable = ActiveObjects::instance().activeDataSource()->type() ==
              DataSource::TiltSeries;
   }
   if (enable && this->requiresVolume) {
-    enable = ActiveObjects::instance().activeParentDataSource()->type() ==
+    enable = ActiveObjects::instance().activeDataSource()->type() ==
              DataSource::Volume;
   }
   parentAction()->setEnabled(enable);

@@ -16,8 +16,6 @@
 #ifndef tomvizAddPythonTransformReaction_h
 #define tomvizAddPythonTransformReaction_h
 
-#include "ActiveObjects.h"
-
 #include <pqReaction.h>
 
 namespace tomviz {

@@ -16,8 +16,6 @@
 #ifndef tomvizCloneDataReaction_h
 #define tomvizCloneDataReaction_h
 
-#include "ActiveObjects.h"
-
 #include <pqReaction.h>
 
 namespace tomviz {

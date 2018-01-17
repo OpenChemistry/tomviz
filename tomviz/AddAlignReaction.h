@@ -16,8 +16,6 @@
 #ifndef tomvizAddAlignReaction_h
 #define tomvizAddAlignReaction_h
 
-#include "ActiveObjects.h"
-
 #include <pqReaction.h>
 
 namespace tomviz {

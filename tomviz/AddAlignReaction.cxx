@@ -36,8 +36,8 @@ AddAlignReaction::AddAlignReaction(QAction* parentObject)
 void AddAlignReaction::updateEnableState()
 {
   parentAction()->setEnabled(
-    ActiveObjects::instance().activeParentDataSource() != nullptr &&
-    ActiveObjects::instance().activeParentDataSource()->type() ==
+    ActiveObjects::instance().activeDataSource() != nullptr &&
+    ActiveObjects::instance().activeDataSource()->type() ==
       DataSource::TiltSeries);
 }
 
