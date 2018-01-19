@@ -268,9 +268,12 @@ void Pipeline::addDataSource(DataSource* dataSource)
         transformedDataSourceOp->setChildDataSource(nullptr);
         op->setChildDataSource(transformedDataSource);
         // Delay emitting signal until next event loop
-        QTimer::singleShot(
-          0, [=] { emit op->dataSourceMoved(transformedDataSource); });
+        emit this->operatorAdded(op, transformedDataSource);
+      } else {
+        emit this->operatorAdded(op);
       }
+    } else {
+      emit this->operatorAdded(op);
     }
   });
   // Wire up operatorRemoved. TODO We need to check the branch of the

@@ -21,6 +21,7 @@
 #include "ModuleManager.h"
 #include "Operator.h"
 #include "OperatorResult.h"
+#include "Pipeline.h"
 
 #include <QFileInfo>
 #include <QFont>
@@ -685,8 +686,8 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
   beginInsertRows(QModelIndex(), 0, 0);
   m_treeItems.append(treeItem);
   endInsertRows();
-  connect(dataSource, SIGNAL(operatorAdded(Operator*)),
-          SLOT(operatorAdded(Operator*)));
+  connect(dataSource->pipeline(), &Pipeline::operatorAdded, this,
+          &PipelineModel::operatorAdded, Qt::UniqueConnection);
 
   // When restoring a data source from a state file it will have its operators
   // before we can listen to the signal above. Display those operators.
@@ -727,7 +728,7 @@ void PipelineModel::moduleAdded(Module* module)
   emit moduleItemAdded(module);
 }
 
-void PipelineModel::operatorAdded(Operator* op)
+void PipelineModel::operatorAdded(Operator* op, DataSource* transformedDataSource)
 {
   // Operators are special, they operate on all data and are shown in the
   // visualization modules. So there are some moves necessary to show this.
@@ -769,6 +770,13 @@ void PipelineModel::operatorAdded(Operator* op)
     }
     endInsertRows();
   }
+
+  // If there is a transformed data output to move, move it to be a child
+  // of this operator
+  if (transformedDataSource) {
+    this->moveDataSourceHelper(transformedDataSource, op);
+  }
+
   emit operatorItemAdded(op);
 }
 
@@ -807,8 +815,6 @@ void PipelineModel::operatorTransformDone()
       if (childItem) {
         childItem->setItem(PipelineModel::Item(childDataSource));
       }
-      connect(childDataSource, SIGNAL(operatorAdded(Operator*)),
-              SLOT(operatorAdded(Operator*)), Qt::UniqueConnection);
     }
   }
 }
@@ -938,9 +944,6 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
       operatorTreeItem->appendChild(PipelineModel::Item(dataSource));
       endInsertRows();
     }
-
-    connect(dataSource, SIGNAL(operatorAdded(Operator*)),
-            SLOT(operatorAdded(Operator*)));
   }
 
   // When restoring a data source from a state file it will have its operators
@@ -950,22 +953,25 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
   }
 }
 
+void PipelineModel::moveDataSourceHelper(DataSource* dataSource, Operator* newParent) {
+  auto index = this->dataSourceIndex(dataSource);
+  auto dataSourceItem = this->treeItem(index);
+  auto oldParent = dataSourceItem->parent()->op();
+  auto oldParentIndex = this->operatorIndex(oldParent);
+  auto operatorIndex = this->operatorIndex(newParent);
+  auto operatorTreeItem = this->treeItem(operatorIndex);
+
+  beginMoveRows(oldParentIndex, index.row(), index.row(), operatorIndex,
+                operatorTreeItem->childCount());
+  dataSourceItem = dataSourceItem->detach();
+  operatorTreeItem->attach(dataSourceItem);
+  endMoveRows();
+}
+
 void PipelineModel::dataSourceMoved(DataSource* dataSource)
 {
   if (Operator* newParent = qobject_cast<Operator*>(this->sender())) {
-
-    auto index = this->dataSourceIndex(dataSource);
-    auto dataSourceItem = this->treeItem(index);
-    auto oldParent = dataSourceItem->parent()->op();
-    auto oldParentIndex = this->operatorIndex(oldParent);
-    auto operatorIndex = this->operatorIndex(newParent);
-    auto operatorTreeItem = this->treeItem(operatorIndex);
-
-    beginMoveRows(oldParentIndex, index.row(), index.row(), operatorIndex,
-                  operatorTreeItem->childCount());
-    dataSourceItem = dataSourceItem->detach();
-    operatorTreeItem->attach(dataSourceItem);
-    endMoveRows();
+    moveDataSourceHelper(dataSource, newParent);
   }
 }
 
