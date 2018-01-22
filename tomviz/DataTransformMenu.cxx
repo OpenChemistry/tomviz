@@ -73,7 +73,7 @@ void DataTransformMenu::buildTransforms()
   auto unsharpMaskAction = menu->addAction("Unsharp Mask");
   auto laplaceFilterAction = menu->addAction("Laplace Sharpen");
   auto gaussianFilterAction = menu->addAction("Gaussian Blur");
-  auto autoCorrelationAction = menu->addAction("Auto Correlation");
+  auto wienerAction = menu->addAction("Wiener Filter");
   auto peronaMalikeAnisotropicDiffusionAction =
     menu->addAction("Perona-Malik Anisotropic Diffusion");
   auto medianFilterAction = menu->addAction("Median Filter");
@@ -135,12 +135,12 @@ void DataTransformMenu::buildTransforms()
                                  false, readInJSONDescription("UnsharpMask"));
   new AddPythonTransformReaction(laplaceFilterAction, "Laplace Sharpen",
                                  readInPythonScript("LaplaceFilter"));
-  new AddPythonTransformReaction(autoCorrelationAction,"Auto Correlation",
-                                 readInPythonScript("Auto_Correlation"));
-  new AddPythonTransformReaction(gaussianFilterAction, "Gaussian Blur",
-                                   readInPythonScript("GaussianFilter"), false,
-                                   false,
-                                   readInJSONDescription("GaussianFilter"));
+  new AddPythonTransformReaction(wienerAction, "Wiener Filter",
+                                 readInPythonScript("WienerFilter"), false,
+                                 false, readInJSONDescription("WienerFilter"));
+  new AddPythonTransformReaction(
+    gaussianFilterAction, "Gaussian Blur", readInPythonScript("GaussianFilter"),
+    false, false, readInJSONDescription("GaussianFilter"));
   new AddPythonTransformReaction(
     peronaMalikeAnisotropicDiffusionAction,
     "Perona-Malik Anisotropic Diffusion",

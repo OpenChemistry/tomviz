@@ -240,7 +240,6 @@ set(exec_sources
 
 set(python_files
   AddPoissonNoise.py
-  Auto_Correlation.py
   BinaryThreshold.py
   ConnectedComponents.py
   ClipEdges.py
@@ -300,6 +299,7 @@ set(python_files
   AddConstant.py
   SegmentPores.py
   RotationAlign.py
+  WienerFilter.py
   )
 
 set(json_files

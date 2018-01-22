@@ -1,31 +1,38 @@
 {
   "name" : "WienerFilter",
-  "label" : “Wiener Filter",
-  "description" : "Apply an Wiener filter to 3D volume. \nThe standard deviations\n(sigma) can be specified below:",
+  "label" : "Wiener Filter",
+  "description" : "Apply a Wiener filter to 3D volumetric dataset or stack of STEM projections. \nThe standard deviations can be specified  in each direction (x, y, z).",
   "parameters" : [
     {
-      "name" : “SX”,
-      "label" : "SigmaX”,
+      "name" : "SX",
+      "label" : "Sigma-X",
       "type" : "double",
-      "default" : 1.0,
-      "minimum" : 0.1
+      "default" : 0.5,
+      "minimum" : 0.001,
+      "maximum" : 1.0
     },
     {
-      "name" : “SY”,
-      "label" : "SigmaY”,
+      "name" : "SY",
+      "label" : "Sigma-Y",
       "type" : "double",
-      "default" : 1.0,
-      "minimum" : 0.1
+      "default" : 0.5,
+      "minimum" : 0.001,
+      "maximum" : 1.0
     },
-  ]
-  "description" : "The signal to noise ratio (SNR)\n(mu) can be specified below:\nNormal deconvolution is applied when (mu) = 0.”,
-  "parameters" : [
     {
-      "name" : “noise”,
-      "label" : “SNR”,
+      "name" : "SZ",
+      "label" : "Sigma-Z",
       "type" : "double",
-      "default" : 5.0,
+      "default" : 0.5,
+      "minimum" : 0.001,
+      "maximum" : 1.0
+    },
+    {
+      "name" : "noise",
+      "label" : "SNR:  Normal deconvolution is applied when Signal to Noise (SNR) = 0.",
+      "type" : "double",
+      "default" : 15.0,
       "minimum" : 0.0
-    },	
+    }	
   ]
 }
