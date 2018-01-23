@@ -81,6 +81,11 @@ signals:
   /// This signal is fired the execution of the pipeline finishes.
   void finished();
 
+  /// This signal is fired when an operator is added.  The second argument
+  /// is the datasource that should be moved to become its output in the pipeline
+  /// view (or null if there isn't one).
+  void operatorAdded(Operator* op, DataSource* outputDS = nullptr);
+
 private:
   DataSource* findTransformedDataSource(DataSource* dataSource);
   Operator* findTransformedDataSourceOperator(DataSource* dataSource);
