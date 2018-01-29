@@ -12,7 +12,7 @@ set(CTEST_BUILD_NAME "${_prefix}-#$ENV{APPVEYOR_BUILD_NUMBER}")
 set(CTEST_CMAKE_GENERATOR "Visual Studio 14 2015 Win64")
 set(CTEST_CONFIGURATION_TYPE "Release")
 set(cfg_options
-  -DQt5_DIR:PATH=C:/Qt/5.9.2/msvc2015_64/lib/cmake/Qt5
+  -DQt5_DIR:PATH=C:/Qt/5.10.0/msvc2015_64/lib/cmake/Qt5
   -DParaView_DIR:PATH=C:/projects/paraview-build/
   -DITK_DIR:PATH=C:/projects/itk/lib/cmake/ITK-4.9
   -DGTEST_LIBRARY:PATH=C:/projects/googletest-install/lib/gtest.lib
