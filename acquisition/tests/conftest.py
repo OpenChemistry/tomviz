@@ -5,7 +5,7 @@ from threading import Thread
 from bottle import default_app, WSGIRefServer
 
 from tomviz.acquisition import server
-
+from .mock.tiltseries import Writer
 
 class Server(Thread):
     def __init__(self, dev=False, port=9999):
@@ -56,3 +56,9 @@ def acquisition_dev_server():
     yield srv
     srv.stop()
     srv.join()
+
+@pytest.fixture(scope='function')
+def mock_tiltseries_writer(tmpdir):
+    writer = Writer(str(tmpdir), delay=0.01)
+    writer.start()
+    yield writer

@@ -115,13 +115,33 @@ def _setup_adapter(source_adapter):
     @inject(source_adapter)
     def stem_acquire(source_adapter):
         id = 'stem_acquire_slice'
-        slices[id] = source_adapter.stem_acquire()
+        data = source_adapter.stem_acquire()
 
-        return '%s/data/%s' % (_base_url(), id)
+        if data is None:
+            return None
+
+        metadata = None
+        # Do we have any meta data
+        if isinstance(data, tuple):
+            (metadata, data) = data
+        slices[id] = data
+
+        image_data_url = '%s/data/%s' % (_base_url(), id)
+
+        if metadata is not None:
+            return {
+                'meta': metadata,
+                'imageUrl': image_data_url
+            }
+        else:
+            return image_data_url
 
     @route('/data/<id>')
-    def data(id):
+    @inject(source_adapter)
+    def data(source_adapter, id):
         bottle.response.headers['Content-Type'] = 'image/tiff'
+        if hasattr(source_adapter, 'mimetype'):
+            bottle.response.headers['Content-Type'] = source_adapter.mimetype
 
         if id not in slices:
             raise HTTPResponse(body='Acquisition data not found.', status=404)
