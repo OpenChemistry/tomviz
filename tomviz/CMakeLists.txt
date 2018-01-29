@@ -299,6 +299,7 @@ set(python_files
   AddConstant.py
   SegmentPores.py
   RotationAlign.py
+  WienerFilter.py
   )
 
 set(json_files
@@ -337,6 +338,7 @@ set(json_files
   AddConstant.json
   SegmentPores.json
   RotationAlign.json
+  WienerFilter.json
   )
 
 set(resource_files
