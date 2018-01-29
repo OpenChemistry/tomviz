@@ -1,11 +1,11 @@
 /******************************************************************************
- 
+
   This source file is part of the tomviz project.
-  
+
   Copyright Kitware, Inc.
-  
+
   This source code is released under the New BSD License, (the "License").
-  
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -215,10 +215,6 @@ signals:
 
   /// Emitted just prior to this object's destruction.
   void aboutToBeDestroyed(Operator* op);
-
-  // Emitted when a data source is move to a new operator. For example when
-  // a new operator is added.
-  void dataSourceMoved(DataSource*);
 
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.

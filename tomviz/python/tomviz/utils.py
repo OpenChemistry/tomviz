@@ -54,28 +54,17 @@ def set_scalars(dataobject, newscalars):
     do.PointData.SetActiveScalars(name)
 
 
-def get_array(dataobject, order='F'): #Updated the function to recognize if the data set is RGB
+def get_array(dataobject, order='F'):
     scalars_array = get_scalars(dataobject)
-
     if order == 'F':
-        if scalars_array.ndim == 1:
-            scalars_array3d = np.ndarray.reshape(scalars_array,
-                                                 (dataobject.GetDimensions()),
-                                                 order=order)
-        else:
-            dimensions = dataobject.GetDimensions()
-            dimensions = dimensions + (3,)
-            scalars_array3d = np.ndarray.reshape(scalars_array,
-                                                 dimensions,
-                                                 order=order)
+        scalars_array3d = np.reshape(scalars_array,
+                                     (dataobject.GetDimensions()),
+                                     order=order)
     else:
-        if scalars_array.ndim == 1:
-            scalars_array3d = np.reshape(scalars_array,
-                                         (dataobject.GetDimensions()[::-1]),
-                                         order=order)
-
+        scalars_array3d = np.reshape(scalars_array,
+                                     (dataobject.GetDimensions()[::-1]),
+                                     order=order)
     return scalars_array3d
-
 
 
 def set_array(dataobject, newarray, minextent=None, isFortran=True):
@@ -85,7 +74,7 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
     # isFortran indicates whether the NumPy array has Fortran-order indexing,
     # i.e. i,j,k indexing. If isFortran is False, then the NumPy array uses
     # C-order indexing, i.e. k,j,i indexing.
-    
+
     if isFortran is False:
         # Flatten according to array.flags
         arr = newarray.ravel(order='A')
@@ -93,15 +82,9 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
             vtkshape = newarray.shape
         else:
             vtkshape = newarray.shape[::-1]
-
     elif np.isfortran(newarray):
         arr = newarray.reshape(-1, order='F')
         vtkshape = newarray.shape
-        dimensions = len(vtkshape)
-        if dimensions == 4:
-            shape = vtkshape[0]*vtkshape[1]*vtkshape[2]
-            arr = np.ndarray.reshape(arr,(shape,3))
-
     else:
         print('Warning, array does not have Fortran order, making deep copy '
               'and fixing...')
@@ -116,12 +99,12 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
     if minextent is None:
         minextent = dataobject.GetExtent()[::2]
     sameindex = list(minextent) == list(dataobject.GetExtent()[::2])
-    sameshape = list(vtkshape[0:3]) == list(dataobject.GetDimensions())
+    sameshape = list(vtkshape) == list(dataobject.GetDimensions())
     if not sameindex or not sameshape:
         extent = 6*[0]
         extent[::2] = minextent
         extent[1::2] = \
-            [x + y - 1 for (x, y) in zip(minextent, vtkshape[0:3])]
+            [x + y - 1 for (x, y) in zip(minextent, vtkshape)]
         dataobject.SetExtent(extent)
 
     # Now replace the scalars array with the new array.
