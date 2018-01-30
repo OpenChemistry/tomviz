@@ -23,8 +23,6 @@
 #include "Pipeline.h"
 #include "Utilities.h"
 
-#include "pqCoreUtilities.h"
-
 #include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QLabel>
