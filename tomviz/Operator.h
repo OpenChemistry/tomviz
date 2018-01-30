@@ -136,10 +136,14 @@ public:
   /// getEditorContents.
   virtual bool hasCustomUI() const { return false; }
 
-  /// Should return a custom dialog for an active operator.
+  /// If this operator has a dialog active, this should return that dialog (the
+  /// dialog
+  /// will register itself using setCustomDialog in its constructor).  Otherwise
+  /// this
+  /// will return nullptr.
   EditOperatorDialog* customDialog() const;
 
-  /// Set a customDialog.
+  /// Set the custom dialog associated with this operator
   void setCustomDialog(EditOperatorDialog*);
 
   /// If the operator has some custom progress UI, then return that UI from this
