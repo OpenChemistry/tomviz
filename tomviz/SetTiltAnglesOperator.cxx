@@ -28,9 +28,10 @@
 #include <vtkTypeInt8Array.h>
 
 #include <QClipboard>
-#include <QDoubleSpinBox>
 #include <QDebug>
+#include <QDoubleSpinBox>
 #include <QEvent>
+#include <QFileDialog>
 #include <QGridLayout>
 #include <QGuiApplication>
 #include <QHBoxLayout>
@@ -39,6 +40,7 @@
 #include <QMessageBox>
 #include <QMimeData>
 #include <QPointer>
+#include <QPushButton>
 #include <QSpinBox>
 #include <QString>
 #include <QTabWidget>
@@ -146,11 +148,24 @@ public:
     setAutomaticPanel->setLayout(layout);
 
     QWidget* setFromTablePanel = new QWidget;
-    QHBoxLayout* tablePanelLayout = new QHBoxLayout;
+    QVBoxLayout* tablePanelLayout = new QVBoxLayout;
     this->tableWidget = new QTableWidget;
     this->tableWidget->setRowCount(totalSlices);
     this->tableWidget->setColumnCount(1);
     tablePanelLayout->addWidget(this->tableWidget);
+
+    // Widget to hold tilt angle import button
+    QWidget* buttonWidget = new QWidget;
+    QHBoxLayout* buttonLayout = new QHBoxLayout;
+    buttonWidget->setLayout(buttonLayout);
+    tablePanelLayout->addWidget(buttonWidget);
+
+    // Add button to load a text file with tilt series values
+    QPushButton* loadFromFileButton = new QPushButton;
+    loadFromFileButton->setText("Load From Text File");
+    buttonLayout->addWidget(loadFromFileButton);
+    buttonLayout->insertStretch(-1);
+    connect(loadFromFileButton, SIGNAL(clicked()), SLOT(loadFromFile()));
 
     vtkFieldData* fd = dataObject->GetFieldData();
     vtkDataArray* tiltArray = nullptr;
@@ -298,6 +313,39 @@ public slots:
       s = "Invalid inputs!";
     }
     this->angleIncrementLabel->setText(s);
+  }
+
+  void loadFromFile()
+  {
+    QStringList filters;
+    filters << "Any (*)"
+            << "Text (*.txt)"
+            << "CSV (*.csv)";
+
+    QFileDialog dialog;
+    dialog.setFileMode(QFileDialog::ExistingFile);
+    dialog.setNameFilters(filters);
+    dialog.setObjectName("SetTiltAnglesOperator-loadFromFile");
+    dialog.setAcceptMode(QFileDialog::AcceptOpen);
+
+    if (dialog.exec() == QDialog::Accepted) {
+      QString content;
+      QFile tiltAnglesFile(dialog.selectedFiles()[0]);
+      if (tiltAnglesFile.open(QIODevice::ReadOnly)) {
+        content = tiltAnglesFile.readAll();
+      } else {
+        qCritical()
+          << QString("Unable to read '%1'.").arg(dialog.selectedFiles()[0]);
+      }
+
+      QStringList angleStrings = content.split(QRegExp("\\s+"));
+      int maxRows =
+        std::min(angleStrings.size(), this->tableWidget->rowCount());
+      for (int i = 0; i < maxRows; ++i) {
+        QTableWidgetItem* item = this->tableWidget->item(i, 0);
+        item->setData(Qt::DisplayRole, angleStrings[i]);
+      }
+    }
   }
 
 private:
