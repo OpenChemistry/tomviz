@@ -41,22 +41,16 @@ public:
 
   // Used to set the mode of the EditOperatorWidget in the dialog.  The mode
   // corresponds to dialog options like tabs and varies from operator to
-  // operator.
-  // If the requested mode is not recognized, or the widget does not support
-  // modes,
-  // this function does nothing.
+  // operator. If the requested mode is not recognized, or the widget does not
+  // support modes, this function does nothing.
   void setViewMode(const QString& mode);
 
   Operator* op();
 
   // If the given operator does not already have a dialog, this function creates
   // and shows a new dialog for that operator with the given mode (see comment
-  // above
-  // on setViewMode for details about modes).
-  //
-  // If the given operator has a dialog already, that dialog is set to the
-  // requested
-  // mode and given focus.
+  // above on setViewMode for details about modes).  If the given operator has a
+  // dialog already, that dialog is set to the requested mode and given focus.
   static void showDialogForOperator(Operator* op, const QString& viewMode = "");
 
 private slots:

@@ -137,10 +137,8 @@ public:
   virtual bool hasCustomUI() const { return false; }
 
   /// If this operator has a dialog active, this should return that dialog (the
-  /// dialog
-  /// will register itself using setCustomDialog in its constructor).  Otherwise
-  /// this
-  /// will return nullptr.
+  /// dialog will register itself using setCustomDialog in its constructor).
+  /// Otherwise this will return nullptr.
   EditOperatorDialog* customDialog() const;
 
   /// Set the custom dialog associated with this operator

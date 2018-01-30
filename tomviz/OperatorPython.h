@@ -35,8 +35,7 @@ public:
   // Pass this constant in to EditOperatorWidget::setViewMode to change the tab
   // to the Script tab where the python operator's code is viewable.  This only
   // applies to the custom EditOperatorWidget used by OperatorPython and
-  // returned
-  // from its getEditorContents method.
+  // returned from its getEditorContents method.
   static const QString VIEW_CODE_MODE;
 
   OperatorPython(QObject* parent = nullptr);
