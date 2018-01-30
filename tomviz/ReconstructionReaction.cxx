@@ -47,7 +47,7 @@ void ReconstructionReaction::updateEnableState()
 
 void ReconstructionReaction::recon(DataSource* input)
 {
-  input = input ? input : ActiveObjects::instance().activeDataSource();
+  input = input ? input : ActiveObjects::instance().activeParentDataSource();
   if (!input) {
     qDebug() << "Exiting early - no data :-(";
     return;

@@ -137,6 +137,7 @@ void Pipeline::pipelineBranchFinished(bool result)
       DataSource* newChildDataSource = nullptr;
       if (lastOp->childDataSource() == nullptr) {
         newChildDataSource = new DataSource("Output");
+        newChildDataSource->setProperty("output", true);
         newChildDataSource->setParent(this);
         addDataSource(newChildDataSource);
         lastOp->setChildDataSource(newChildDataSource);

@@ -15,6 +15,7 @@
 ******************************************************************************/
 #include "ActiveObjects.h"
 #include "ModuleManager.h"
+#include "Pipeline.h"
 #include "Utilities.h"
 
 #include <pqActiveObjects.h>
@@ -24,6 +25,7 @@
 #include <pqServer.h>
 #include <pqView.h>
 
+#include <functional>
 #include <vtkNew.h>
 #include <vtkSMProxyIterator.h>
 #include <vtkSMRenderViewProxy.h>
@@ -93,6 +95,9 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
     }
     m_activeDataSource = source;
     emit dataSourceChanged(m_activeDataSource);
+
+    // Setting to nullptr so the traverse logic is re-run.
+    m_activeParentDataSource = nullptr;
   }
   emit dataSourceActivated(m_activeDataSource);
 }
@@ -194,6 +199,71 @@ void ActiveObjects::setMoveObjectsMode(bool moveObjectsOn)
 void ActiveObjects::renderAllViews()
 {
   pqApplicationCore::instance()->render();
+}
+
+DataSource* ActiveObjects::activeParentDataSource()
+{
+
+  if (m_activeParentDataSource == nullptr) {
+    auto pipeline = this->activePipeline();
+    auto dataSource = this->activeDataSource();
+
+    if (dataSource == nullptr) {
+      return nullptr;
+    }
+
+    auto isOutput = dataSource->property("output");
+    if (!isOutput.isValid() || !isOutput.toBool()) {
+      return dataSource;
+    }
+
+    std::function<QList<DataSource*>(DataSource*, DataSource*,
+                                     QList<DataSource*>)>
+      dfs = [&dfs](DataSource* currentDataSource, DataSource* targetDataSource,
+                   QList<DataSource*> path) {
+        path.append(currentDataSource);
+        if (currentDataSource == targetDataSource) {
+          return path;
+        }
+
+        foreach (Operator* op, currentDataSource->operators()) {
+          if (op->childDataSource() != nullptr) {
+            QList<DataSource*> p =
+              dfs(op->childDataSource(), targetDataSource, path);
+            if (!p.isEmpty()) {
+              return p;
+            }
+          }
+        }
+
+        return QList<DataSource*>();
+      };
+
+    // Find path to the active datasource
+    auto path = dfs(pipeline->dataSource(), dataSource, QList<DataSource*>());
+
+    // Return the first non output data source
+    for (auto itr = path.rbegin(); itr != path.rend(); ++itr) {
+      auto ds = *itr;
+      auto output = ds->property("output");
+      if (!output.isValid() || !output.toBool()) {
+        m_activeParentDataSource = ds;
+        break;
+      }
+    }
+  }
+
+  return m_activeParentDataSource;
+}
+
+Pipeline* ActiveObjects::activePipeline() const
+{
+
+  if (m_activeDataSource != nullptr) {
+    return m_activeDataSource->pipeline();
+  }
+
+  return nullptr;
 }
 
 } // end of namespace tomviz

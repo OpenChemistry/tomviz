@@ -43,7 +43,7 @@ void AddAlignReaction::updateEnableState()
 
 void AddAlignReaction::align(DataSource* source)
 {
-  source = source ? source : ActiveObjects::instance().activeDataSource();
+  source = source ? source : ActiveObjects::instance().activeParentDataSource();
   if (!source) {
     qDebug() << "Exiting early - no data found.";
     return;

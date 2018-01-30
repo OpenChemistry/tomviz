@@ -173,7 +173,7 @@ void AddPythonTransformReaction::updateEnableState()
 
 OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 {
-  source = source ? source : ActiveObjects::instance().activeDataSource();
+  source = source ? source : ActiveObjects::instance().activeParentDataSource();
   if (!source) {
     return nullptr;
   }
@@ -478,7 +478,7 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     arguments.insert("ZRANGE", range);
   };
 
-  DataSource* source = ActiveObjects::instance().activeDataSource();
+  DataSource* source = ActiveObjects::instance().activeParentDataSource();
   QDialog* dialog = qobject_cast<QDialog*>(this->sender());
   if (this->scriptLabel == "Clear Volume") {
     QLayout* layout = dialog->layout();
