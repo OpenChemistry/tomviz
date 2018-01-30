@@ -15,12 +15,13 @@ class InvertOperator(tomviz.operators.CancelableOperator):
             raise RuntimeError("No scalars found!")
 
         result = np.float32(scalars)
+        min = np.amin(scalars)
         max = np.amax(scalars)
         step = 0
         for chunk in np.array_split(result, NUMBER_OF_CHUNKS):
             if self.canceled:
                 return
-            chunk[:] = max - chunk
+            chunk[:] = max - chunk + min
             step += 1
             self.progress.value = step
 
