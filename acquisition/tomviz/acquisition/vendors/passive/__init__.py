@@ -55,7 +55,7 @@ class PassiveWatchSource(AbstractSource):
 
     def __init__(self):
         self._watcher = None
-        self.mimetype = None
+        self.image_data_mimetype = TIFF_MIME_TYPE
         mimetypes.add_type(DM3_MIME_TYPE, '.dm3')
 
     """
@@ -135,14 +135,14 @@ class PassiveWatchSource(AbstractSource):
 
         with open(file) as fp:
             image_data = None
-            (self.mimetype, _) = mimetypes.guess_type(file)
+            (mimetype, _) = mimetypes.guess_type(file)
 
             metadata = {}
             if self._filename_regex_groups is not None:
                 metadata.update(self._extract_filename_metadata(file))
 
-            if self.mimetype in _extractors:
-                extractor = _extractors[self.mimetype]
+            if mimetype in _extractors:
+                extractor = _extractors[mimetype]
                 (extracted_metadata, image_data) = extractor(file)
                 metadata.update(extracted_metadata)
 

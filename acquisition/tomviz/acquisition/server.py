@@ -140,8 +140,8 @@ def _setup_adapter(source_adapter):
     @inject(source_adapter)
     def data(source_adapter, id):
         bottle.response.headers['Content-Type'] = 'image/tiff'
-        if hasattr(source_adapter, 'mimetype'):
-            bottle.response.headers['Content-Type'] = source_adapter.mimetype
+        if hasattr(source_adapter, 'image_data_mimetype'):
+            bottle.response.headers['Content-Type'] = source_adapter.image_data_mimetype
 
         if id not in slices:
             raise HTTPResponse(body='Acquisition data not found.', status=404)
