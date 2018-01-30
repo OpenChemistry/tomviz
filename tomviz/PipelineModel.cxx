@@ -903,9 +903,12 @@ bool PipelineModel::removeOp(Operator* o)
       }
     }
 
+    // This will trigger the move of the "transformed" data source
+    // so we need todo this outside the beginRemoveRow(...), otherwise
+    // the model is not correctly invalidated.
+    o->dataSource()->removeOperator(o);
     beginRemoveRows(this->parent(index), index.row(), index.row());
     auto item = this->treeItem(index);
-    o->dataSource()->removeOperator(o);
     item->parent()->remove(o);
     endRemoveRows();
 
