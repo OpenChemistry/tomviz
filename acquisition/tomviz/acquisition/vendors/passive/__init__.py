@@ -15,7 +15,6 @@ DM3_MIME_TYPE = 'image/x-dm3'
 _extractors = {}
 
 def _dm3_extractor(filepath):
-    print '%%%% %s' % filepath
     dm3_file = dm3.DM3(filepath)
 
     image = Image.fromarray(dm3_file.imagedata)
