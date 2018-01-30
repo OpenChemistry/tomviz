@@ -35,8 +35,6 @@
 
 namespace tomviz {
 
-static const int MAX_ITEMS = 10;
-
 namespace{
 void get_settings(pugi::xml_document& doc)
 {
@@ -94,6 +92,7 @@ void saveSettings(QJsonObject json)
 
 void save_settings(pugi::xml_document& doc)
 {
+  Q_UNUSED(doc)
 /*
   // trim the list.
   pugi::xml_node root = doc.root();
