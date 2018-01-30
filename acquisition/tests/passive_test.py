@@ -4,6 +4,7 @@ import hashlib
 import sys
 import os
 import time
+import re
 from PIL import Image
 import dm3_lib as dm3
 
@@ -94,12 +95,14 @@ def test_tiff_stem_acquire(passive_acquisition_server, tmpdir, mock_tiff_tiltser
 
 def test_dm3_stem_acquire(passive_acquisition_server, tmpdir, mock_dm3_tiltseries_writer):
     id = 1234
+    angle_regex = '.*_([n,p]{1}[\d,\.]+)degree.*\.dm3'
     request = jsonrpc_message({
         'id': id,
         'method': 'connect',
         'params': {
             'path': str(tmpdir),
-            'fileNameRegex': '.*\.dm3'
+            'fileNameRegex': angle_regex,
+            'fileNameRegexGroups': ['angle']
         }
     })
     response = requests.post(passive_acquisition_server.url, json=request)
@@ -133,9 +136,11 @@ def test_dm3_stem_acquire(passive_acquisition_server, tmpdir, mock_dm3_tiltserie
     assert len(tilt_series) ==  mock_dm3_tiltseries_writer.series_size
 
     # Now check we got the write images
-    for (i, (_, fp)) in enumerate(test_dm3_tilt_series()):
+    for (i, (filename, fp)) in enumerate(test_dm3_tilt_series()):
         dm3_file = dm3.DM3(fp)
-        assert tilt_series_metadata[i] == dm3_file.info
+        expected_metadata = dm3_file.info.copy()
+        expected_metadata['angle'] = re.match(angle_regex, filename).group(1)
+        assert tilt_series_metadata[i] == expected_metadata
 
         md5 = hashlib.md5()
         md5.update(tilt_series[i])

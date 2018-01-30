@@ -118,7 +118,7 @@ class PassiveWatchSource(AbstractSource):
 
         meta = {}
         for i, group_name in enumerate(self._filename_regex_groups):
-            meta[g] = match.group(i)
+            meta[group_name] = match.group(i+1)
 
         return meta
 
