@@ -1,21 +1,31 @@
 import mimetypes
 import re
 from PIL import Image
+import struct
+import dm3_lib as dm3
 
 from tomviz.acquisition import AbstractSource
+from tomviz.acquisition.utility import tobytes
 from .filesystem import Monitor
 
+TIFF_MIME_TYPE = 'image/tiff'
 DM3_MIME_TYPE = 'image/x-dm3'
 
-# map of mimetype => function to extract metadata from a particular file type.
-metadata_extractors = {}
+# map of mimetype => function to extract metadata and image data from a particular file type.
+_extractors = {}
 
-def _dm3_extractor(file):
-    pass
+def _dm3_extractor(filepath):
+    print '%%%% %s' % filepath
+    dm3_file = dm3.DM3(filepath)
 
-_valid_file_check_map = {
+    image = Image.fromarray(dm3_file.imagedata)
+    image_data = tobytes(image)
 
-}
+    return (dm3_file.info, image_data)
+
+_extractors[DM3_MIME_TYPE] = _dm3_extractor
+
+_valid_file_check_map = {}
 
 def _valid_tiff(filepath):
     try:
@@ -24,7 +34,15 @@ def _valid_tiff(filepath):
     except IOError:
         return False
 
-_valid_file_check_map['image/tiff'] = _valid_tiff
+def _valid_dm3(filepath):
+    try:
+        dm3.DM3(filepath)
+        return True
+    except struct.error:
+        return False
+
+_valid_file_check_map[TIFF_MIME_TYPE] = _valid_tiff
+_valid_file_check_map[DM3_MIME_TYPE] = _valid_dm3
 
 def _valid_file_check(filepath):
     (mimetype, _) = mimetypes.guess_type(filepath)
@@ -93,8 +111,8 @@ class PassiveWatchSource(AbstractSource):
         """
         pass
 
-    def _extract_filename_metadata(self, filename):
-        match = re.search(self._filename_regex, filename)
+    def _extract_filename_metadata(self, filepath):
+        match = re.search(self._filename_regex, filepath)
         if match is None:
             return {}
 
@@ -106,7 +124,7 @@ class PassiveWatchSource(AbstractSource):
 
     def stem_acquire(self):
         """
-        Peforms STEM acquire. In our case we just fetch an image of the use if
+        Performs STEM acquire. In our case we just fetch an image of the use if
         there is one
         :returns: The 2D tiff generate by the scan along with its meta data.
         """
@@ -117,16 +135,20 @@ class PassiveWatchSource(AbstractSource):
             return None
 
         with open(file) as fp:
+            image_data = None
             (self.mimetype, _) = mimetypes.guess_type(file)
 
             metadata = {}
             if self._filename_regex_groups is not None:
-                metadata.update(self._extract_filename_metadata())
+                metadata.update(self._extract_filename_metadata(file))
 
-            if self.mimetype in metadata_extractors:
-                extractor = metadata_extractors[self.mimetype]
-                metadata.update(extractor(fp))
+            if self.mimetype in _extractors:
+                extractor = _extractors[self.mimetype]
+                (extracted_metadata, image_data) = extractor(file)
+                metadata.update(extracted_metadata)
 
-            fp.seek(0)
+            if image_data is None:
+                fp.seek(0)
+                image_data = fp.read()
 
-            return (metadata, fp.read())
+            return (metadata, image_data)

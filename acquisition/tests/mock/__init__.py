@@ -46,3 +46,32 @@ def test_black_image():
         cache.set(download_url, response.raw, read=True)
 
     return cache.get(download_url, read=True)
+
+def test_dm3_tilt_series():
+    _ids = [
+        '5a69e8408d777f0649e0350f',
+        '5a69e8408d777f0649e03515',
+        '5a69e8408d777f0649e0351b',
+        '5a69e8418d777f0649e03521',
+        '5a69e8418d777f0649e03527'
+    ]
+
+    cache_path = os.path.join(tempfile.gettempdir(), 'tomviz_test_cache')
+    cache = diskcache.Cache(cache_path)
+
+    def gen():
+        for _id in _ids:
+            file_url = '%s/%s' % (url, _id)
+            response = requests.get(file_url)
+            response.raise_for_status()
+            name = response.json()['name']
+            download_url = '%s/download' % file_url
+
+            if name not in cache:
+                response = requests.get(download_url, stream=True)
+                response.raise_for_status()
+                cache.set(name, response.raw, read=True)
+
+            yield (name, cache.get(name, read=True))
+
+    return gen()

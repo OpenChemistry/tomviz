@@ -2,23 +2,30 @@
 # Simulates an operator writing a series of images to a directory forming
 # a tilt series. Used to test passive acquisition by watching a directory.
 # It uses a tilt series downloaded from data.kitware.com
-# (TiltSeries_NanoParticle_doi_10.1021-nl103400a.tif)
-from . import Writer
+
+from . import TIFFWriter, DM3Writer
 
 import argparse
-import tomviz
 
+_writer_map = {
+    'tiff': TIFFWriter,
+    'dm3': DM3Writer
+}
 
 def main():
     parser = argparse.ArgumentParser(
         description='Simulates a tilt series be written to a directory..')
     parser.add_argument('-p', '--path',
-                        help='path to write files')
+                        help='path to write files', required=True)
     parser.add_argument('-d', '--delay', help='the delay between writing images',
                         default=1)
 
+    parser.add_argument('-t', '--type', help='the type of images to use',
+                        choices=['tiff', 'dm3'], default='tiff')
+
+
     args = parser.parse_args()
-    writer = Writre(args.path, args.delay)
+    writer = _writer_map[args.type](args.path, args.delay)
     writer.start()
     writer.join()
 

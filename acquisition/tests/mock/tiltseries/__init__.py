@@ -3,13 +3,13 @@ import datetime
 import time
 import os
 from PIL import Image
-from .. import test_image, angle_to_page
+from .. import test_image, angle_to_page, test_dm3_tilt_series
 
 
-class Writer(Thread):
+class TIFFWriter(Thread):
     def __init__(self, path, delay=1):
         """
-        Thread to writing images to a particular path. The files are written using the
+        Thread to write TIFF image stack to a particular path. The files are written using the
         following naming convention <timestamp>_<tilt_angle>.tif
 
         :param path: The path to write the images to.
@@ -17,7 +17,7 @@ class Writer(Thread):
         :param delay: The time in seconds to wait between writing images.
         :type delay: int
         """
-        super(Writer, self).__init__()
+        super(TIFFWriter, self).__init__()
         self.daemon = True
 
         self._path = path
@@ -33,4 +33,29 @@ class Writer(Thread):
             file_path = os.path.join(self._path, filename)
             with open(file_path, 'wb') as fp:
                 self.img.save(fp, 'TIFF')
+            time.sleep(self._delay)
+
+class DM3Writer(Thread):
+    def __init__(self, path, delay=1):
+        """
+        Thread to write DM3 tilt series to a particular path.
+
+        :param path: The path to write the images to.
+        :type path: str
+        :param delay: The time in seconds to wait between writing images.
+        :type delay: int
+        """
+        super(DM3Writer, self).__init__()
+        self.daemon = True
+
+        self._path = path
+        self._delay = delay
+        self._files = list(test_dm3_tilt_series())
+        self.series_size = len(self._files)
+
+    def run(self):
+        for (filename, dm3fp) in self._files:
+            file_path = os.path.join(self._path, filename)
+            with open(file_path, 'wb') as fp:
+                fp.write(dm3fp.read())
             time.sleep(self._delay)

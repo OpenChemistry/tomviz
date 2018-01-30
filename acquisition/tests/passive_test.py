@@ -5,10 +5,10 @@ import sys
 import os
 import time
 from PIL import Image
-
+import dm3_lib as dm3
 
 from tomviz.jsonrpc import jsonrpc_message
-from .mock import test_image
+from .mock import test_image, test_dm3_tilt_series
 from .utility import tobytes
 
 # Add mock modules to path
@@ -43,7 +43,7 @@ def test_connected(passive_acquisition_server):
     result = response.json()['result']
     assert result is None
 
-def test_stem_acquire(passive_acquisition_server, tmpdir, mock_tiltseries_writer):
+def test_tiff_stem_acquire(passive_acquisition_server, tmpdir, mock_tiff_tiltseries_writer):
     id = 1234
     request = jsonrpc_message({
         'id': id,
@@ -65,7 +65,7 @@ def test_stem_acquire(passive_acquisition_server, tmpdir, mock_tiltseries_writer
     for _ in range(0, 1000):
         response = requests.post(passive_acquisition_server.url, json=request)
         assert response.status_code == 200, response.content
-        # Not images left to fetch
+        # No images left to fetch
         result = response.json()['result']
         if result is None:
             continue
@@ -74,11 +74,11 @@ def test_stem_acquire(passive_acquisition_server, tmpdir, mock_tiltseries_writer
         response = requests.get(url)
         tilt_series.append(response.content)
 
-        if len(tilt_series) == mock_tiltseries_writer.series_size:
+        if len(tilt_series) == mock_tiff_tiltseries_writer.series_size:
             break
 
     # make sure we got all the images
-    assert len(tilt_series) ==  mock_tiltseries_writer.series_size
+    assert len(tilt_series) ==  mock_tiff_tiltseries_writer.series_size
 
     # Now check we got the write images
     with Image.open(test_image()) as image_stack:
@@ -91,3 +91,58 @@ def test_stem_acquire(passive_acquisition_server, tmpdir, mock_tiltseries_writer
             expected_md5 = hashlib.md5()
             expected_md5.update(image_slice)
             assert md5.hexdigest() == expected_md5.hexdigest()
+
+def test_dm3_stem_acquire(passive_acquisition_server, tmpdir, mock_dm3_tiltseries_writer):
+    id = 1234
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'connect',
+        'params': {
+            'path': str(tmpdir),
+            'fileNameRegex': '.*\.dm3'
+        }
+    })
+    response = requests.post(passive_acquisition_server.url, json=request)
+    assert response.status_code == 200, response.content
+
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'stem_acquire'
+    })
+
+    tilt_series = []
+    tilt_series_metadata = []
+    for _ in range(0, 1000):
+        response = requests.post(passive_acquisition_server.url, json=request)
+        assert response.status_code == 200, response.content
+        # No images left to fetch
+        result = response.json()['result']
+        if result is None:
+            continue
+
+        url = result['imageUrl']
+        response = requests.get(url)
+        tilt_series.append(response.content)
+        if 'meta' in result:
+            tilt_series_metadata.append(result['meta'])
+
+        if len(tilt_series) == mock_dm3_tiltseries_writer.series_size:
+            break
+
+    # make sure we got all the images
+    assert len(tilt_series) ==  mock_dm3_tiltseries_writer.series_size
+
+    # Now check we got the write images
+    for (i, (_, fp)) in enumerate(test_dm3_tilt_series()):
+        dm3_file = dm3.DM3(fp)
+        assert tilt_series_metadata[i] == dm3_file.info
+
+        md5 = hashlib.md5()
+        md5.update(tilt_series[i])
+
+        image = Image.fromarray(dm3_file.imagedata)
+        tiff_image_data = tobytes(image)
+        expected_md5 = hashlib.md5()
+        expected_md5.update(tiff_image_data)
+
+        assert md5.hexdigest() == expected_md5.hexdigest()
