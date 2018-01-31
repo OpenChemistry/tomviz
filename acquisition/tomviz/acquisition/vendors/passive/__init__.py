@@ -2,6 +2,7 @@ import mimetypes
 import re
 from PIL import Image
 import struct
+import os
 import dm3_lib as dm3
 
 from tomviz.acquisition import AbstractSource
@@ -76,13 +77,46 @@ class PassiveWatchSource(AbstractSource):
         self.image_data_mimetype = TIFF_MIME_TYPE
         mimetypes.add_type(DM3_MIME_TYPE, '.dm3')
 
+    def _validate_connection_params(self, path, fileNameRegex,
+                                    fileNameRegexGroups,
+                                    groupRegexSubstitutions):
+
+        if not os.path.exists(path):
+            raise ValueError("Path '%s does not exist" % path)
+
+        def _validate_regex(regex):
+            try:
+                re.compile(regex)
+            except re.error as err:
+                raise ValueError("'%s'is not a valid regex: '%s'"
+                                 % (regex, str(err)))
+
+        if fileNameRegex is not None:
+            _validate_regex(fileNameRegex)
+
+        if fileNameRegexGroups is not None:
+            if fileNameRegex is None:
+                raise ValueError("'fileNameRegex' must be provided.")
+
+        if groupRegexSubstitutions is not None:
+            if fileNameRegexGroups is None:
+                raise ValueError("'fileNameRegexGroups' must be provided.")
+
+            for sub in groupRegexSubstitutions:
+                for regex, repl in iteritems(sub):
+                    _validate_regex(regex)
+
+            if len(groupRegexSubstitutions) > len(fileNameRegexGroups):
+                raise ValueError("The indexes of 'groupRegexSubstitutions'"
+                                 " must match 'fileNameRegexGroups'.")
+
     """
     A simple source that will passively watch a path for files being added to
     a directory.
     """
 
     def connect(self, path, fileNameRegex=None, fileNameRegexGroups=None,
-                groupRegexSubstitutions=None, watchInterval=1,  **params):
+                groupRegexSubstitutions=None, **params):
         """
          Start the watching thread, to watch for files being added to a
         directory.
@@ -101,6 +135,10 @@ class PassiveWatchSource(AbstractSource):
         For example {'n': '-'} - The will replace the 'n' with '-'.
         :type groupRegexSubstitutions: str
         """
+
+        self._validate_connection_params(path, fileNameRegex,
+                                         fileNameRegexGroups,
+                                         groupRegexSubstitutions)
         self._filename_regex = fileNameRegex
         self._filename_regex_groups = fileNameRegexGroups
         self._group_regex_subsitutions = groupRegexSubstitutions

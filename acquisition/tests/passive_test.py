@@ -24,13 +24,91 @@ def passive_acquisition_server(acquisition_server):
     yield acquisition_server
 
 
-def test_connected(passive_acquisition_server):
+def test_connected_invalid_path(passive_acquisition_server):
     id = 1234
     request = jsonrpc_message({
         'id': id,
         'method': 'connect',
         'params': {
-            'path': '/tmp'
+            'path': '/bogus'
+        }
+    })
+
+    response = requests.post(passive_acquisition_server.url, json=request)
+    assert response.status_code == 500, response.content
+
+
+def test_connected_invalid_regex(passive_acquisition_server, tmpdir):
+    id = 1234
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'connect',
+        'params': {
+            'path': tmpdir.strpath,
+            'fileNameRegex': 'bogus@@232(]'
+        }
+    })
+
+    response = requests.post(passive_acquisition_server.url, json=request)
+    assert response.status_code == 500, response.content
+
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'connect',
+        'params': {
+            'path': tmpdir.strpath,
+            'fileNameRegex': '.*',
+            'fileNameRegexGroups': ['angle'],
+            'groupRegexSubstitutions': [{
+                'n[': '-'
+            }]
+        }
+    })
+
+    response = requests.post(passive_acquisition_server.url, json=request)
+    assert response.status_code == 500, response.content
+
+
+def test_connected_missing_regex(passive_acquisition_server, tmpdir):
+    id = 1234
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'connect',
+        'params': {
+            'path': tmpdir.strpath,
+            'fileNameRegexGroups': ['angle'],
+            'groupRegexSubstitutions': [{
+                'n[': '-'
+            }]
+        }
+    })
+
+    response = requests.post(passive_acquisition_server.url, json=request)
+    assert response.status_code == 500, response.content
+
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'connect',
+        'params': {
+            'path': tmpdir.strpath,
+            'fileNameRegex': '.*',
+            'groupRegexSubstitutions': [{
+                'n[': '-'
+            }]
+        }
+    })
+
+    response = requests.post(passive_acquisition_server.url, json=request)
+    assert response.status_code == 500, response.content
+
+
+def test_connected(passive_acquisition_server, tmpdir):
+    id = 1234
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'connect',
+        'params': {
+            'path': tmpdir.strpath
         }
     })
 
@@ -53,7 +131,7 @@ def test_tiff_stem_acquire(passive_acquisition_server, tmpdir,
         'id': id,
         'method': 'connect',
         'params': {
-            'path': str(tmpdir),
+            'path': tmpdir.strpath,
             'fileNameRegex': '.*\.tif'
         }
     })
@@ -105,7 +183,7 @@ def test_dm3_stem_acquire(passive_acquisition_server, tmpdir,
         'id': id,
         'method': 'connect',
         'params': {
-            'path': str(tmpdir),
+            'path': tmpdir.strpath,
             'fileNameRegex': angle_regex,
             'fileNameRegexGroups': ['angle'],
             'groupRegexSubstitutions': [{
