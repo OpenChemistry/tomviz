@@ -12,17 +12,17 @@ _writer_map = {
     'dm3': DM3Writer
 }
 
+
 def main():
     parser = argparse.ArgumentParser(
         description='Simulates a tilt series be written to a directory..')
     parser.add_argument('-p', '--path',
                         help='path to write files', required=True)
-    parser.add_argument('-d', '--delay', help='the delay between writing images',
-                        default=1)
+    parser.add_argument('-d', '--delay',
+                        help='the delay between writing images', default=1)
 
     parser.add_argument('-t', '--type', help='the type of images to use',
                         choices=['tiff', 'dm3'], default='tiff')
-
 
     args = parser.parse_args()
     writer = _writer_map[args.type](args.path, args.delay)
@@ -31,8 +31,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-

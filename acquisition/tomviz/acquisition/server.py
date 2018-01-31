@@ -49,7 +49,10 @@ def _load_source_adapter(source_adapter):
     return cls
 
 
-def _setup_adapter(source_adapter):
+# TODO Refactor, flake8 is complain about the complexity of this function. The
+# endpoints currently have to be defined in this way to allow the injection of
+# the source adapter we need to revisit this. For now I added noqa
+def _setup_adapter(source_adapter): # noqa
     """
     Setup up the JSON-RPC endpoints for a give source adapter
     """
@@ -141,7 +144,8 @@ def _setup_adapter(source_adapter):
     def data(source_adapter, id):
         bottle.response.headers['Content-Type'] = 'image/tiff'
         if hasattr(source_adapter, 'image_data_mimetype'):
-            bottle.response.headers['Content-Type'] = source_adapter.image_data_mimetype
+            bottle.response.headers['Content-Type'] \
+                = source_adapter.image_data_mimetype
 
         if id not in slices:
             raise HTTPResponse(body='Acquisition data not found.', status=404)

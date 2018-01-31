@@ -8,11 +8,15 @@ from tomviz.acquisition import AbstractSource
 from tomviz.acquisition.utility import tobytes
 from .filesystem import Monitor
 
+
 TIFF_MIME_TYPE = 'image/tiff'
 DM3_MIME_TYPE = 'image/x-dm3'
 
-# map of mimetype => function to extract metadata and image data from a particular file type.
+
+# map of mimetype => function to extract metadata and image data from a
+# particular file type.
 _extractors = {}
+
 
 def _dm3_extractor(filepath):
     dm3_file = dm3.DM3(filepath)
@@ -22,9 +26,10 @@ def _dm3_extractor(filepath):
 
     return (dm3_file.info, image_data)
 
-_extractors[DM3_MIME_TYPE] = _dm3_extractor
 
+_extractors[DM3_MIME_TYPE] = _dm3_extractor
 _valid_file_check_map = {}
+
 
 def _valid_tiff(filepath):
     try:
@@ -32,6 +37,7 @@ def _valid_tiff(filepath):
         return img.format == 'TIFF'
     except IOError:
         return False
+
 
 def _valid_dm3(filepath):
     try:
@@ -42,6 +48,7 @@ def _valid_dm3(filepath):
 
 _valid_file_check_map[TIFF_MIME_TYPE] = _valid_tiff
 _valid_file_check_map[DM3_MIME_TYPE] = _valid_dm3
+
 
 def _valid_file_check(filepath):
     (mimetype, _) = mimetypes.guess_type(filepath)
@@ -63,9 +70,11 @@ class PassiveWatchSource(AbstractSource):
     a directory.
     """
 
-    def connect(self, path, fileNameRegex=None, fileNameRegexGroups=None,  watchInterval=1,  **params):
+    def connect(self, path, fileNameRegex=None, fileNameRegexGroups=None,
+                watchInterval=1,  **params):
         """
-        Start the watching thread, to watch for files being added to a directory.
+        Start the watching thread, to watch for files being added to a
+        directory.
 
         :param path: The path to the directory to watch for updates.
         :type path: str
@@ -73,8 +82,8 @@ class PassiveWatchSource(AbstractSource):
         """
         self._filename_regex = fileNameRegex
         self._filename_regex_groups = fileNameRegexGroups
-        self._monitor = Monitor(path, filename_regex=fileNameRegex, valid_file_check=_valid_file_check)
-
+        self._monitor = Monitor(path, filename_regex=fileNameRegex,
+                                valid_file_check=_valid_file_check)
 
     def disconnect(self, **params):
         """

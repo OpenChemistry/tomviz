@@ -47,6 +47,7 @@ def test_black_image():
 
     return cache.get(download_url, read=True)
 
+
 def test_dm3_tilt_series():
     _ids = [
         '5a69e8408d777f0649e0350f',

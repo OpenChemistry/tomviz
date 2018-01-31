@@ -3,7 +3,6 @@ import requests
 import hashlib
 import sys
 import os
-import time
 import re
 from PIL import Image
 import dm3_lib as dm3
@@ -20,7 +19,8 @@ sys.path.append(mock_dir)
 
 @pytest.fixture(scope="module")
 def passive_acquisition_server(acquisition_server):
-    acquisition_server.setup('tomviz.acquisition.vendors.passive.PassiveWatchSource')
+    source = 'tomviz.acquisition.vendors.passive.PassiveWatchSource'
+    acquisition_server.setup(source)
     yield acquisition_server
 
 
@@ -37,14 +37,17 @@ def test_connected(passive_acquisition_server):
     response = requests.post(passive_acquisition_server.url, json=request)
     assert response.status_code == 200, response.content
 
-    # As we haven't started a mock tilt series write calls to should return noting
+    # As we haven't started a mock tilt series write calls to should
+    # return noting
     response = requests.post(passive_acquisition_server.url, json=request)
     assert response.status_code == 200
 
     result = response.json()['result']
     assert result is None
 
-def test_tiff_stem_acquire(passive_acquisition_server, tmpdir, mock_tiff_tiltseries_writer):
+
+def test_tiff_stem_acquire(passive_acquisition_server, tmpdir,
+                           mock_tiff_tiltseries_writer):
     id = 1234
     request = jsonrpc_message({
         'id': id,
@@ -79,7 +82,7 @@ def test_tiff_stem_acquire(passive_acquisition_server, tmpdir, mock_tiff_tiltser
             break
 
     # make sure we got all the images
-    assert len(tilt_series) ==  mock_tiff_tiltseries_writer.series_size
+    assert len(tilt_series) == mock_tiff_tiltseries_writer.series_size
 
     # Now check we got the write images
     with Image.open(test_image()) as image_stack:
@@ -93,7 +96,9 @@ def test_tiff_stem_acquire(passive_acquisition_server, tmpdir, mock_tiff_tiltser
             expected_md5.update(image_slice)
             assert md5.hexdigest() == expected_md5.hexdigest()
 
-def test_dm3_stem_acquire(passive_acquisition_server, tmpdir, mock_dm3_tiltseries_writer):
+
+def test_dm3_stem_acquire(passive_acquisition_server, tmpdir,
+                          mock_dm3_tiltseries_writer):
     id = 1234
     angle_regex = '.*_([n,p]{1}[\d,\.]+)degree.*\.dm3'
     request = jsonrpc_message({
@@ -133,7 +138,7 @@ def test_dm3_stem_acquire(passive_acquisition_server, tmpdir, mock_dm3_tiltserie
             break
 
     # make sure we got all the images
-    assert len(tilt_series) ==  mock_dm3_tiltseries_writer.series_size
+    assert len(tilt_series) == mock_dm3_tiltseries_writer.series_size
 
     # Now check we got the write images
     for (i, (filename, fp)) in enumerate(test_dm3_tilt_series()):

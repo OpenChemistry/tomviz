@@ -3,14 +3,15 @@ import datetime
 import time
 import os
 from PIL import Image
-from .. import test_image, angle_to_page, test_dm3_tilt_series
+from .. import test_image, test_dm3_tilt_series
 
 
 class TIFFWriter(Thread):
     def __init__(self, path, delay=1):
         """
-        Thread to write TIFF image stack to a particular path. The files are written using the
-        following naming convention <timestamp>_<tilt_angle>.tif
+        Thread to write TIFF image stack to a particular path. The
+        files are written using the following naming convention
+        <timestamp>_<tilt_angle>.tif
 
         :param path: The path to write the images to.
         :type path: str
@@ -34,6 +35,7 @@ class TIFFWriter(Thread):
             with open(file_path, 'wb') as fp:
                 self.img.save(fp, 'TIFF')
             time.sleep(self._delay)
+
 
 class DM3Writer(Thread):
     def __init__(self, path, delay=1):

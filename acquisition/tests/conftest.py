@@ -7,6 +7,7 @@ from bottle import default_app, WSGIRefServer
 from tomviz.acquisition import server
 from .mock.tiltseries import TIFFWriter, DM3Writer
 
+
 class Server(Thread):
     def __init__(self, dev=False, port=9999):
         super(Server, self).__init__()
@@ -57,11 +58,13 @@ def acquisition_dev_server():
     srv.stop()
     srv.join()
 
+
 @pytest.fixture(scope='function')
 def mock_tiff_tiltseries_writer(tmpdir):
     writer = TIFFWriter(str(tmpdir), delay=0.01)
     writer.start()
     yield writer
+
 
 @pytest.fixture(scope='function')
 def mock_dm3_tiltseries_writer(tmpdir):
