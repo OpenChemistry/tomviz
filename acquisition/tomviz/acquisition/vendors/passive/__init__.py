@@ -8,6 +8,17 @@ from tomviz.acquisition import AbstractSource
 from tomviz.acquisition.utility import tobytes
 from .filesystem import Monitor
 
+try:
+    dict.iteritems
+except AttributeError:
+    # Python 3
+    def iteritems(d):
+        return iter(d.items())
+else:
+    # Python 2
+    def iteritems(d):
+        return d.iteritems()
+
 
 TIFF_MIME_TYPE = 'image/tiff'
 DM3_MIME_TYPE = 'image/x-dm3'
@@ -71,17 +82,28 @@ class PassiveWatchSource(AbstractSource):
     """
 
     def connect(self, path, fileNameRegex=None, fileNameRegexGroups=None,
-                watchInterval=1,  **params):
+                groupRegexSubstitutions=None, watchInterval=1,  **params):
         """
-        Start the watching thread, to watch for files being added to a
+         Start the watching thread, to watch for files being added to a
         directory.
 
         :param path: The path to the directory to watch for updates.
         :type path: str
-        :param fileNameRegex: The regex to use to match filenames.
+        :param fileNameRegex: The regex to use to match filenames. May contain
+        capture groups.
+        :type fileNameRegex: str
+        :param fileNameRegexGroups: The names to assign to the capture groups
+        extracted from fileNameRegex.
+        :type fileNameRegexGroups: str
+        :param groupRegexSubstitutions: A list of dictionaries the indexes map
+        to the indexes of fileNameRegexGroups. The dictionaries contains
+        mappings of regex => repl using to replace parts of the captured group.
+        For example {'n': '-'} - The will replace the 'n' with '-'.
+        :type groupRegexSubstitutions: str
         """
         self._filename_regex = fileNameRegex
         self._filename_regex_groups = fileNameRegexGroups
+        self._group_regex_subsitutions = groupRegexSubstitutions
         self._monitor = Monitor(path, filename_regex=fileNameRegex,
                                 valid_file_check=_valid_file_check)
 
@@ -127,6 +149,13 @@ class PassiveWatchSource(AbstractSource):
         meta = {}
         for i, group_name in enumerate(self._filename_regex_groups):
             meta[group_name] = match.group(i+1)
+
+        # Do we need todo any substitutions?
+        if self._group_regex_subsitutions is not None:
+            for i, sub in enumerate(self._group_regex_subsitutions):
+                group_name = self._filename_regex_groups[i]
+                for regex, repl in iteritems(sub):
+                    meta[group_name] = re.sub(regex, repl, meta[group_name])
 
         return meta
 

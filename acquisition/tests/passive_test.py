@@ -107,7 +107,11 @@ def test_dm3_stem_acquire(passive_acquisition_server, tmpdir,
         'params': {
             'path': str(tmpdir),
             'fileNameRegex': angle_regex,
-            'fileNameRegexGroups': ['angle']
+            'fileNameRegexGroups': ['angle'],
+            'groupRegexSubstitutions': [{
+                'n': '-',
+                'p': '+'
+            }]
         }
     })
     response = requests.post(passive_acquisition_server.url, json=request)
@@ -144,7 +148,10 @@ def test_dm3_stem_acquire(passive_acquisition_server, tmpdir,
     for (i, (filename, fp)) in enumerate(test_dm3_tilt_series()):
         dm3_file = dm3.DM3(fp)
         expected_metadata = dm3_file.info.copy()
-        expected_metadata['angle'] = re.match(angle_regex, filename).group(1)
+        angle = re.match(angle_regex, filename).group(1)
+        angle = angle.replace('n', '-')
+        angle = angle.replace('p', '+')
+        expected_metadata['angle'] = angle
         assert tilt_series_metadata[i] == expected_metadata
 
         md5 = hashlib.md5()
