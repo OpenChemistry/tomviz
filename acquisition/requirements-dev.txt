@@ -6,3 +6,4 @@ Pillow==4.2.1
 https://github.com/bottlepy/bottle/archive/41ed6965.zip
 mock==2.0.0
 diskcache==2.3.0
+-e git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git#filelike

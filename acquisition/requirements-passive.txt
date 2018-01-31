@@ -1,2 +1,0 @@
-Pillow==4.2.1
--e git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git#filelike
