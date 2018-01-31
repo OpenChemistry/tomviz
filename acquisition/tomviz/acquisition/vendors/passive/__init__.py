@@ -58,6 +58,7 @@ def _valid_dm3(filepath):
     except struct.error:
         return False
 
+
 _valid_file_check_map[TIFF_MIME_TYPE] = _valid_tiff
 _valid_file_check_map[DM3_MIME_TYPE] = _valid_dm3
 

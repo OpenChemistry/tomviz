@@ -49,9 +49,9 @@ def _load_source_adapter(source_adapter):
     return cls
 
 
-# TODO Refactor, flake8 is complain about the complexity of this function. The
-# endpoints currently have to be defined in this way to allow the injection of
-# the source adapter we need to revisit this. For now I added noqa
+# TODO Refactor, flake8 is complaining about the complexity of this function.
+# This endpoints currently have to be defined in this way to allow the injection
+# of the source adapter we need to revisit this. For now I added noqa
 def _setup_adapter(source_adapter): # noqa
     """
     Setup up the JSON-RPC endpoints for a give source adapter
