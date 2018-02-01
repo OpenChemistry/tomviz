@@ -9,7 +9,7 @@ import dm3_lib as dm3
 
 from tomviz.jsonrpc import jsonrpc_message
 from .mock import test_image, test_dm3_tilt_series
-from .utility import tobytes
+from tomviz.acquisition.utility import tobytes
 
 # Add mock modules to path
 mock_dir = os.path.join(os.path.dirname(__file__), '..', 'tomviz',
