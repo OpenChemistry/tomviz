@@ -350,7 +350,11 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (snapshotAction && selectedItem == snapshotAction) {
     op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));
   } else if (showInterfaceAction && selectedItem == showInterfaceAction) {
-    EditOperatorDialog::showDialogForOperator(op);
+    if (qobject_cast<OperatorPython*>(op)) {
+      EditOperatorDialog::showDialogForOperator(op, QStringLiteral("viewCode"));
+    } else {
+      EditOperatorDialog::showDialogForOperator(op);
+    }
   }
 }
 
