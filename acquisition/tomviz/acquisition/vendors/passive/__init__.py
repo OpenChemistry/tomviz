@@ -30,13 +30,14 @@ DM3_MIME_TYPE = 'image/x-dm3'
 _extractors = {}
 
 
-def _dm3_extractor(filepath):
-    dm3_file = dm3.DM3(filepath)
+def _dm3_extractor(file):
+    dm3_file = dm3.DM3(file)
+    info = {k: v.decode('utf8') for k, v in dm3_file.info.items()}
 
     image = Image.fromarray(dm3_file.imagedata)
     image_data = tobytes(image)
 
-    return (dm3_file.info, image_data)
+    return (info, image_data)
 
 
 _extractors[DM3_MIME_TYPE] = _dm3_extractor
@@ -210,7 +211,7 @@ class PassiveWatchSource(AbstractSource):
         if file is None:
             return None
 
-        with open(file) as fp:
+        with open(file, 'rb') as fp:
             image_data = None
             (mimetype, _) = mimetypes.guess_type(file)
 
@@ -220,7 +221,7 @@ class PassiveWatchSource(AbstractSource):
 
             if mimetype in _extractors:
                 extractor = _extractors[mimetype]
-                (extracted_metadata, image_data) = extractor(file)
+                (extracted_metadata, image_data) = extractor(fp)
                 metadata.update(extracted_metadata)
 
             if image_data is None:
