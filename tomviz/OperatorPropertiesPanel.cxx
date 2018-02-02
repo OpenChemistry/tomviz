@@ -161,6 +161,6 @@ void OperatorPropertiesPanel::apply()
 void OperatorPropertiesPanel::viewCodePressed()
 {
   EditOperatorDialog::showDialogForOperator(m_activeOperator,
-                                            OperatorPython::VIEW_CODE_MODE);
+                                            QStringLiteral("viewCode"));
 }
 }
