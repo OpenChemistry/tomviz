@@ -350,7 +350,11 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (snapshotAction && selectedItem == snapshotAction) {
     op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));
   } else if (showInterfaceAction && selectedItem == showInterfaceAction) {
-    showUserInterface(op);
+    if (qobject_cast<OperatorPython*>(op)) {
+      EditOperatorDialog::showDialogForOperator(op, QStringLiteral("viewCode"));
+    } else {
+      EditOperatorDialog::showDialogForOperator(op);
+    }
   }
 }
 
@@ -432,7 +436,7 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
   if (auto op = pipelineModel->op(idx)) {
-    showUserInterface(op);
+    EditOperatorDialog::showDialogForOperator(op);
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
       auto view = ActiveObjects::instance().activeView();
@@ -557,43 +561,4 @@ void PipelineView::setModuleVisibility(const QModelIndexList& idxs,
   }
 }
 
-void PipelineView::unmapOperatorDialog(Operator* op)
-{
-  if (op && m_operatorDialogs.contains(op)) {
-    m_operatorDialogs.remove(op);
-  }
-}
-
-void PipelineView::showUserInterface(Operator* op)
-{
-  if (!op) {
-    return;
-  }
-
-  if (op->hasCustomUI()) {
-    // See if we already have a dialog open for this operator
-    bool haveDialog = m_operatorDialogs.contains(op) && m_operatorDialogs[op];
-    if (haveDialog) {
-      auto dialog = m_operatorDialogs[op];
-      dialog->show();
-      dialog->raise();
-      dialog->activateWindow();
-    } else {
-      // Create a non-modal dialog, delete it once it has been closed.
-      QString dialogTitle("Edit - ");
-      dialogTitle.append(op->label());
-      auto dialog = new EditOperatorDialog(op, op->dataSource(), false,
-                                           tomviz::mainWidget());
-      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-      dialog->setWindowTitle(dialogTitle);
-      dialog->show();
-      m_operatorDialogs[op] = dialog;
-
-      // Close the dialog if the Operator is destroyed.
-      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
-      connect(op, SIGNAL(aboutToBeDestroyed(Operator*)), this,
-              SLOT(unmapOperatorDialog(Operator*)));
-    }
-  }
-}
 }

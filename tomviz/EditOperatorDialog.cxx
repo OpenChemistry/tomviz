@@ -20,6 +20,7 @@
 #include "EditOperatorWidget.h"
 #include "Operator.h"
 #include "Pipeline.h"
+#include "Utilities.h"
 
 #include <pqApplicationCore.h>
 #include <pqPythonSyntaxHighlighter.h>
@@ -98,10 +99,18 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   } else {
     this->setupUI();
   }
+  op->setCustomDialog(this);
 }
 
 EditOperatorDialog::~EditOperatorDialog()
 {
+}
+
+void EditOperatorDialog::setViewMode(const QString& mode)
+{
+  if (this->Internals->Widget) {
+    this->Internals->Widget->setViewMode(mode);
+  }
 }
 
 Operator* EditOperatorDialog::op()
@@ -221,5 +230,38 @@ void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)
     qWarning() << "Error occured running operators.";
   }
   future->deleteLater();
+}
+
+void EditOperatorDialog::showDialogForOperator(Operator* op,
+                                               const QString& viewMode)
+{
+  if (!op) {
+    return;
+  }
+
+  if (op->hasCustomUI()) {
+    // See if we already have a dialog open for this operator
+    auto dialog = op->customDialog();
+    if (dialog) {
+      dialog->setViewMode(viewMode);
+      dialog->show();
+      dialog->raise();
+      dialog->activateWindow();
+    } else {
+      // Create a non-modal dialog, delete it once it has been closed.
+      QString dialogTitle("Edit - ");
+      dialogTitle.append(op->label());
+      dialog = new EditOperatorDialog(op, op->dataSource(), false,
+                                      tomviz::mainWidget());
+
+      dialog->setViewMode(viewMode);
+      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+      dialog->setWindowTitle(dialogTitle);
+      dialog->show();
+
+      // Close the dialog if the Operator is destroyed.
+      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+    }
+  }
 }
 }

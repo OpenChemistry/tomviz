@@ -40,6 +40,14 @@ public:
     emit dataMoved(newX, newY, newZ);
   }
 
+  // Used to set the mode of the EditOperatorWidget.  The mode corresponds to
+  // options like tabs that change the whole widget's appearance and varies from
+  // operator to operator.  If the requested mode is not recognized, or the
+  // widget does not support modes, this function does nothing.  The default
+  // implementation of this function does nothing.  This method should be
+  // overridden to add support for modes.
+  virtual void setViewMode(const QString&) {}
+
 signals:
   void dataMoved(double, double, double);
 

@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "EditOperatorDialog.h"
 #include "Operator.h"
 #include "OperatorWidget.h"
 #include "Pipeline.h"
@@ -26,6 +27,7 @@
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
 
@@ -91,12 +93,21 @@ void OperatorPropertiesPanel::setOperator(OperatorPython* op)
   scroll->setWidget(m_operatorWidget);
 
   m_layout->addWidget(scroll);
+
+  auto buttonLayout = new QHBoxLayout;
+  auto viewCodeButton = new QPushButton("View Code", this);
+
+  connect(viewCodeButton, &QAbstractButton::clicked, this,
+          &OperatorPropertiesPanel::viewCodePressed);
+  buttonLayout->addWidget(viewCodeButton);
+
   auto apply =
     new QDialogButtonBox(QDialogButtonBox::Apply, Qt::Horizontal, this);
   connect(apply, &QDialogButtonBox::clicked, this,
           &OperatorPropertiesPanel::apply);
 
-  m_layout->addWidget(apply);
+  buttonLayout->addWidget(apply);
+  m_layout->addItem(buttonLayout);
 }
 
 void OperatorPropertiesPanel::apply()
@@ -145,5 +156,11 @@ void OperatorPropertiesPanel::apply()
       }
     }
   }
+}
+
+void OperatorPropertiesPanel::viewCodePressed()
+{
+  EditOperatorDialog::showDialogForOperator(m_activeOperator,
+                                            QStringLiteral("viewCode"));
 }
 }

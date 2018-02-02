@@ -76,6 +76,12 @@ public:
       m_ui.argumentsWidget->setLayout(layout);
     }
   }
+  void setViewMode(const QString& mode) override
+  {
+    if (mode == QStringLiteral("viewCode")) {
+      m_ui.tabWidget->setCurrentWidget(m_ui.scriptTab);
+    }
+  }
   void applyChangesToOperator() override
   {
     if (m_op) {
