@@ -46,10 +46,6 @@ if(APPLE)
   set(tomviz_data_install_dir "Applications/tomviz.app/Contents/share/tomviz")
 endif()
 
-set(PYBIND11_PYTHON_VERSION "2.7" CACHE STRING "")
-set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
-add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
-
 # These dependencies are inherited from ParaView.
 find_package(Qt5 REQUIRED COMPONENTS Network Widgets)
 find_package(ParaView REQUIRED)
@@ -117,6 +113,18 @@ if(ITK_FOUND AND NOT SKIP_PARAVIEW_ITK_PYTHON_CHECKS)
     )
   endif()
 endif()
+
+# Ensure we use the same Python as ParaView
+load_cache(${ParaView_DIR}
+  READ_WITH_PREFIX ParaView_
+  PYTHON_INCLUDE_DIR PYTHON_LIBRARY PYTHON_EXECUTABLE
+)
+set(PYTHON_INCLUDE_DIR ${ParaView_PYTHON_INCLUDE_DIR} CACHE PATH "Tomviz")
+set(PYTHON_LIBRARY ${ParaView_PYTHON_LIBRARY} CACHE PATH "Tomviz")
+set(PYTHON_EXECUTABLE ${ParaView_PYTHON_EXECUTABLE} CACHE PATH "Tomviz")
+
+set(PYBIND11_CPP_STANDARD "-std=c++11" CACHE STRING "")
+add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/pybind11)
 
 add_subdirectory(tomviz)
 
