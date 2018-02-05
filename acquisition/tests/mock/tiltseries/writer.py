@@ -1,6 +1,6 @@
 #
-# Simulates an operator writing a series of images to a directory forming
-# a tilt series. Used to test passive acquisition by watching a directory.
+# Simulates writing a series of images to a directory forming a tilt
+# series. Used to test passive acquisition by watching a directory.
 # It uses a tilt series downloaded from data.kitware.com
 
 from . import TIFFWriter, DM3Writer

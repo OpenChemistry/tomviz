@@ -31,6 +31,13 @@ _extractors = {}
 
 
 def _dm3_extractor(file):
+    """
+    Extract metadata and image data from a DM3 file.
+
+    :param file: The the DM3 file.
+    :type file: The file-like object.
+    :return A tuple contain the metadata and image data.
+    """
     dm3_file = dm3.DM3(file)
     info = {k: v.decode('utf8') for k, v in dm3_file.info.items()}
 
@@ -45,6 +52,12 @@ _valid_file_check_map = {}
 
 
 def _valid_tiff(filepath):
+    """
+    Check the TIFF file is valid by opening it.
+
+    :param filepath: The path to the TIFF file.
+    :type filepath: str
+    """
     try:
         img = Image.open(filepath)
         return img.format == 'TIFF'
@@ -53,6 +66,12 @@ def _valid_tiff(filepath):
 
 
 def _valid_dm3(filepath):
+    """
+    Check the DM3 file is valid by opening it.
+
+    :param filepath: The path to the TIFF file.
+    :type filepath: str
+    """
     try:
         dm3.DM3(filepath)
         return True
@@ -65,6 +84,15 @@ _valid_file_check_map[DM3_MIME_TYPE] = _valid_dm3
 
 
 def _valid_file_check(filepath):
+    """
+    Take a file path and checks that the file is valid according to any
+    validation functions registered against it mime type.
+
+    :param filepath: The path to the file.
+    :type filepath: str
+    :return True, if the validation is successful, False otherwise ( or if there
+    if no validation function registered. )
+    """
     (mimetype, _) = mimetypes.guess_type(filepath)
     if mimetype in _valid_file_check_map:
         return _valid_file_check_map[mimetype](filepath)
@@ -73,10 +101,15 @@ def _valid_file_check(filepath):
 
 
 class PassiveWatchSource(AbstractSource):
+    """
+    A simple source that will passively watch a path for files being added to
+    a directory.
+    """
 
     def __init__(self):
         self._watcher = None
         self.image_data_mimetype = TIFF_MIME_TYPE
+        # Register teh dm3 mime type.
         mimetypes.add_type(DM3_MIME_TYPE, '.dm3')
 
     def _validate_connection_params(self, path, fileNameRegex,
@@ -112,15 +145,10 @@ class PassiveWatchSource(AbstractSource):
                 raise ValueError("The indexes of 'groupRegexSubstitutions'"
                                  " must match 'fileNameRegexGroups'.")
 
-    """
-    A simple source that will passively watch a path for files being added to
-    a directory.
-    """
-
     def connect(self, path, fileNameRegex=None, fileNameRegexGroups=None,
                 groupRegexSubstitutions=None, **params):
         """
-         Start the watching thread, to watch for files being added to a
+        Start the watching thread, to watch for files being added to a
         directory.
 
         :param path: The path to the directory to watch for updates.

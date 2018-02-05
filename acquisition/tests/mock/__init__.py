@@ -49,6 +49,10 @@ def test_black_image():
 
 
 def test_dm3_tilt_series():
+    """
+    A generator yielding the dm3 files forming a tilt series.
+    The files are downloaded from data.kitware.com.
+    """
     _ids = [
         '5a69e8408d777f0649e0350f',
         '5a69e8408d777f0649e03515',

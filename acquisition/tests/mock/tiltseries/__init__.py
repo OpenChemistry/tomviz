@@ -9,7 +9,7 @@ from .. import test_image, test_dm3_tilt_series
 class TIFFWriter(Thread):
     def __init__(self, path, delay=1):
         """
-        Thread to write TIFF image stack to a particular path. The
+        Thread to write a TIFF image stack to a particular path. The
         files are written using the following naming convention
         <timestamp>_<tilt_angle>.tif
 
@@ -40,7 +40,7 @@ class TIFFWriter(Thread):
 class DM3Writer(Thread):
     def __init__(self, path, delay=1):
         """
-        Thread to write DM3 tilt series to a particular path.
+        Thread to write a DM3 tilt series to a particular path.
 
         :param path: The path to write the images to.
         :type path: str
