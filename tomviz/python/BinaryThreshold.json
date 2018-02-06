@@ -2,13 +2,6 @@
   "name" : "BinaryThreshold",
   "label" : "Binary Threshold",
   "description" : "Threshold image. Voxels with values between minimum and\nmaximum intensities will be considered object, others\nbackground.",
-  "children" : [
-    {
-      "name" : "thresholded_segmentation",
-      "label" : "Thresholded Segmentation",
-      "type" : "label_map"
-    }
-  ],
   "parameters" : [
     {
       "name" : "lower_threshold",
