@@ -58,6 +58,10 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
 
   connect(m_ui->cbColorMapData, SIGNAL(toggled(bool)), this,
           SIGNAL(propertyChanged()));
+  connect(m_ui->sliColorArrayMin, SIGNAL(valueEdited(double)), this,
+          SIGNAL(propertyChanged()));
+  connect(m_ui->sliColorArrayMax, SIGNAL(valueEdited(double)), this,
+          SIGNAL(propertyChanged()));
   connect(m_uiLighting->sliAmbient, SIGNAL(valueEdited(double)), this,
           SIGNAL(propertyChanged()));
   connect(m_uiLighting->sliDiffuse, SIGNAL(valueEdited(double)), this,
@@ -185,4 +189,41 @@ QComboBox* ModuleContourWidget::getColorByComboBox()
 {
   return m_ui->cbColorBy;
 }
+
+void ModuleContourWidget::setColorMapRangeDomain(const double range[2])
+{
+  bool minSignalBlocked = m_ui->sliColorArrayMin->signalsBlocked();
+  m_ui->sliColorArrayMin->blockSignals(true);
+  bool maxSignalBlocked = m_ui->sliColorArrayMax->signalsBlocked();
+  m_ui->sliColorArrayMax->blockSignals(true);
+
+  m_ui->sliColorArrayMin->setMinimum(range[0]);
+  m_ui->sliColorArrayMin->setMaximum(range[1]);
+  m_ui->sliColorArrayMax->setMinimum(range[0]);
+  m_ui->sliColorArrayMax->setMaximum(range[1]);
+
+  m_ui->sliColorArrayMin->blockSignals(minSignalBlocked);
+  m_ui->sliColorArrayMax->blockSignals(maxSignalBlocked);
+}
+
+void ModuleContourWidget::setColorMapRange(const double range[2])
+{
+  bool minSignalBlocked = m_ui->sliColorArrayMin->signalsBlocked();
+  m_ui->sliColorArrayMin->blockSignals(true);
+  bool maxSignalBlocked = m_ui->sliColorArrayMax->signalsBlocked();
+  m_ui->sliColorArrayMax->blockSignals(true);
+
+  m_ui->sliColorArrayMin->setValue(range[0]);
+  m_ui->sliColorArrayMax->setValue(range[1]);
+
+  m_ui->sliColorArrayMin->blockSignals(minSignalBlocked);
+  m_ui->sliColorArrayMax->blockSignals(maxSignalBlocked);
+}
+
+void ModuleContourWidget::getColorMapRange(double range[2]) const
+{
+  range[0] = m_ui->sliColorArrayMin->value();
+  range[1] = m_ui->sliColorArrayMax->value();
+}
+
 }

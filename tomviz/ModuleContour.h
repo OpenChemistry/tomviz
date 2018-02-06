@@ -94,6 +94,8 @@ private slots:
 
   void setUseSolidColor(const bool useSolidColor);
 
+  void updateRangeSliders();
+
   /// Reset the UI for widgets not connected to a proxy property
   void updateGUI();
 
