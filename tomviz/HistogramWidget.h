@@ -74,6 +74,7 @@ protected:
 
 private:
   void renderViews();
+  void rescaleTransferFunction(vtkSMProxy* lutProxy, double min, double max);
   vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;

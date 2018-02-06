@@ -317,10 +317,8 @@ void HistogramWidget::onResetRangeClicked()
     if (array) {
       double range[2];
       array->GetRange(range);
-      vtkSMTransferFunctionProxy::RescaleTransferFunction(m_LUTProxy, range[0],
-                                                          range[1]);
+      rescaleTransferFunction(m_LUTProxy, range[0], range[1]);
       renderViews();
-      emit colorMapUpdated();
     }
   }
 }
@@ -338,11 +336,9 @@ void HistogramWidget::onCustomRangeClicked()
   pqRescaleRange dialog(tomviz::mainWidget());
   dialog.setRange(range[0], range[1]);
   if (dialog.exec() == QDialog::Accepted) {
-    vtkSMTransferFunctionProxy::RescaleTransferFunction(
-      m_LUTProxy, dialog.minimum(), dialog.maximum());
+    rescaleTransferFunction(m_LUTProxy, dialog.minimum(), dialog.maximum());
+    renderViews();
   }
-  renderViews();
-  emit colorMapUpdated();
 }
 
 void HistogramWidget::onInvertClicked()
@@ -435,6 +431,15 @@ void HistogramWidget::renderViews()
   if (view) {
     view->render();
   }
+}
+
+void HistogramWidget::rescaleTransferFunction(vtkSMProxy* lutProxy, double min, double max)
+{
+  vtkSMTransferFunctionProxy::RescaleTransferFunction(lutProxy, min, max);
+  auto opacityMap = vtkSMPropertyHelper(m_LUTProxy, "ScalarOpacityFunction")
+    .GetAsProxy();
+  vtkSMTransferFunctionProxy::RescaleTransferFunction(opacityMap, min, max);
+  emit colorMapUpdated();
 }
 
 void HistogramWidget::showEvent(QShowEvent* event)
