@@ -305,7 +305,7 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     return itk_image
 
 
-def set_array_from_itk_image(dataset, itk_image):
+def set_array_from_itk_image(dataset, itk_image, name=None):
     """Set dataset array from an ITK image."""
 
     itk_output_image_type = type(itk_image)
@@ -332,7 +332,7 @@ def set_array_from_itk_image(dataset, itk_image):
     result = itk.PyBuffer[
         itk_output_image_type].GetArrayFromImage(itk_image)
     result = result.copy()
-    utils.set_array(dataset, result, isFortran=False)
+    utils.set_array(dataset, result, isFortran=False, name=name)
 
 
 def get_label_object_attributes(dataset, progress_callback=None):

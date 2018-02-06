@@ -67,7 +67,7 @@ def get_array(dataobject, order='F'):
     return scalars_array3d
 
 
-def set_array(dataobject, newarray, minextent=None, isFortran=True):
+def set_array(dataobject, newarray, minextent=None, isFortran=True, name=None):
     # Set the extent if needed, i.e. if the minextent is not the same as
     # the data object starting index, or if the newarray shape is not the same
     # as the size of the dataobject.
@@ -112,9 +112,12 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
     vtkarray.Association = dsa.ArrayAssociation.POINT
     do = dsa.WrapDataObject(dataobject)
     oldscalars = do.PointData.GetScalars()
-    arrayname = "Scalars"
-    if oldscalars is not None:
-        arrayname = oldscalars.GetName()
+    if name is None:
+      arrayname = "Scalars"
+      if oldscalars is not None:
+          arrayname = oldscalars.GetName()
+    else:
+      arrayname = name
     del oldscalars
     do.PointData.append(arr, arrayname)
     do.PointData.SetActiveScalars(arrayname)
