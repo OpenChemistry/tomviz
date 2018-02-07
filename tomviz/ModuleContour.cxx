@@ -154,6 +154,8 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
   onScalarArrayChanged();
 
+  connect(this, SIGNAL(colorMapChanged()), this, SLOT(updateRangeSliders()));
+
   return true;
 }
 
@@ -250,6 +252,8 @@ void ModuleContour::addToPanel(QWidget* panel)
   connect(m_controllers, SIGNAL(propertyChanged()), this,
                 SLOT(onPropertyChanged()));
   connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));
+  connect(m_controllers->getColorByComboBox(), SIGNAL(currentIndexChanged(int)),
+          this, SIGNAL(colorMapChanged()));
 
   updateGUI();
   onPropertyChanged();
