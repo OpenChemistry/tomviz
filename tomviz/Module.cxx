@@ -51,6 +51,7 @@ public:
   vtkWeakPointer<vtkSMProxy> m_colorMap;
   vtkWeakPointer<vtkSMProxy> m_opacityMap;
   vtkNew<vtkPiecewiseFunction> m_gradientOpacityMap;
+  unsigned long m_colorMapCallbackId = -1;
 
   Module::TransferMode m_transferMode;
   vtkNew<vtkImageData> m_transfer2D;
@@ -104,6 +105,8 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     connect(m_activeDataSource,
             SIGNAL(displayPositionChanged(double, double, double)),
             SLOT(dataSourceMoved(double, double, double)));
+    d->m_colorMapCallbackId = pqCoreUtilities::connect(colorMap(), vtkCommand::ModifiedEvent, this,
+                           SLOT(onColorMapChanged()));
   }
   return (m_view && m_activeDataSource);
 }
@@ -128,6 +131,8 @@ void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
 
 void Module::setUseDetachedColorMap(bool val)
 {
+  colorMap()->RemoveObserver(d->m_colorMapCallbackId);
+
   m_useDetachedColorMap = val;
   if (isColorMapNeeded() == false) {
     return;
@@ -136,15 +141,16 @@ void Module::setUseDetachedColorMap(bool val)
   if (m_useDetachedColorMap) {
     d->m_colorMap = d->detachedColorMap();
     d->m_opacityMap = d->detachedOpacityMap();
-
-    tomviz::rescaleColorMap(d->m_colorMap, dataSource());
-    pqCoreUtilities::connect(d->m_colorMap, vtkCommand::ModifiedEvent, this,
-                             SLOT(onColorMapChanged()));
   } else {
     d->m_colorMap = nullptr;
     d->m_opacityMap = nullptr;
   }
   updateColorMap();
+
+  tomviz::rescaleColorMap(colorMap(), dataSource());
+  d->m_colorMapCallbackId = pqCoreUtilities::connect(colorMap(), vtkCommand::ModifiedEvent, this,
+                           SLOT(onColorMapChanged()));
+
   emit colorMapChanged();
 }
 

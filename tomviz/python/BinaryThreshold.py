@@ -65,19 +65,15 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
             except RuntimeError:
                 return returnValue
 
-            self.progress.message = "Creating child data set"
+            self.progress.message = "Adding array to data set"
+            input_scalar_name = dataset.GetPointData().GetScalars().GetName()
 
-            # Set the output as a new child data object of the current data set
-            label_map_dataset = vtk.vtkImageData()
-            label_map_dataset.CopyStructure(dataset)
-
-            itkutils.set_array_from_itk_image(label_map_dataset,
-                                              threshold_filter.GetOutput())
+            # Add "_LM" at the end to designate this as a label map
+            array_name = "%s_thresholded_LM" % (input_scalar_name)
+            itkutils.set_array_from_itk_image(dataset,
+                                              threshold_filter.GetOutput(),
+                                              name=array_name)
             self.progress.value = STEP_PCT[4]
-
-            returnValue = {
-                "thresholded_segmentation": label_map_dataset
-            }
 
         except Exception as exc:
             print("Problem encountered while running %s" %

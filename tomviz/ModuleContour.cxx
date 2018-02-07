@@ -28,8 +28,11 @@
 #include "pqWidgetRangeDomain.h"
 
 #include "vtkAlgorithm.h"
+#include "vtkDataArray.h"
 #include "vtkDataObject.h"
+#include "vtkDataSet.h"
 #include "vtkNew.h"
+#include "vtkPointData.h"
 #include "vtkPVArrayInformation.h"
 #include "vtkPVDataInformation.h"
 #include "vtkPVDataSetAttributesInformation.h"
@@ -38,6 +41,7 @@
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMTransferFunctionProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 
@@ -56,10 +60,8 @@ namespace tomviz {
 class ModuleContour::Private
 {
 public:
-  std::string ColorArrayName;
   bool UseSolidColor = false;
   pqPropertyLinks Links;
-  QPointer<DataSource> ColorByDataSource = nullptr;
 };
 
 ModuleContour::ModuleContour(QObject* parentObject) : Module(parentObject)
@@ -115,7 +117,6 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PreInitializeProxy(m_resampleFilter);
   vtkSMPropertyHelper(m_resampleFilter, "Input").Set(data->proxy());
   vtkSMPropertyHelper(m_resampleFilter, "Source").Set(m_contourFilter);
-  vtkSMPropertyHelper(m_resampleFilter, "CategoricalData").Set(1);
   vtkSMPropertyHelper(m_resampleFilter, "PassPointArrays").Set(1);
   controller->PostInitializeProxy(m_resampleFilter);
   controller->RegisterPipelineProxy(m_resampleFilter);
@@ -135,11 +136,6 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
       .Set(data->displayPosition(), 3);
     m_resampleRepresentation->UpdateProperty("Visibility");
 
-    vtkSMPropertyHelper colorArrayHelper(m_resampleRepresentation,
-                                         "ColorArrayName");
-    d->ColorArrayName =
-      std::string(colorArrayHelper.GetInputArrayNameToProcess());
-
     vtkSMPropertyHelper colorHelper(m_resampleRepresentation,
                                     "DiffuseColor");
     double white[3] = { 1.0, 1.0, 1.0 };
@@ -150,9 +146,6 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     m_resampleRepresentation->UpdateVTKObjects();
   }
 
-  // Color by the data source by default
-  d->ColorByDataSource = dataSource();
-
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(contourProxy)) {
     p->rename(label());
@@ -160,6 +153,8 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
   onScalarArrayChanged();
+
+  connect(this, SIGNAL(colorMapChanged()), this, SLOT(updateRangeSliders()));
 
   return true;
 }
@@ -257,6 +252,8 @@ void ModuleContour::addToPanel(QWidget* panel)
   connect(m_controllers, SIGNAL(propertyChanged()), this,
                 SLOT(onPropertyChanged()));
   connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));
+  connect(m_controllers->getColorByComboBox(), SIGNAL(currentIndexChanged(int)),
+          this, SIGNAL(colorMapChanged()));
 
   updateGUI();
   onPropertyChanged();
@@ -268,7 +265,7 @@ void ModuleContour::createCategoricalColoringPipeline()
 
     // Set up a point data to cell data filter and set the input data as
     // categorical
-    vtkSMSourceProxy* producer = d->ColorByDataSource->proxy();
+    vtkSMSourceProxy* producer = dataSource()->proxy();
 
     vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
     vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
@@ -301,15 +298,10 @@ void ModuleContour::createCategoricalColoringPipeline()
                         "Representation")
       .Set("Surface");
     vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Position")
-      .Set(d->ColorByDataSource->displayPosition(), 3);
+      .Set(dataSource()->displayPosition(), 3);
 
     vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Visibility")
       .Set(0);
-
-    vtkSMPropertyHelper colorArrayHelper(
-      m_pointDataToCellDataRepresentation, "ColorArrayName");
-    d->ColorArrayName =
-      std::string(colorArrayHelper.GetInputArrayNameToProcess());
 
     vtkSMPropertyHelper colorHelper(m_pointDataToCellDataRepresentation,
                                     "DiffuseColor");
@@ -333,29 +325,27 @@ void ModuleContour::onPropertyChanged()
     return;
   }
 
-  int colorByIndex = m_controllers->getColorByComboBox()->currentIndex();
-  if (colorByIndex > 0) {
-    createCategoricalColoringPipeline();
-    auto childDataSources = getChildDataSources();
-    d->ColorByDataSource = childDataSources[colorByIndex - 1];
-    vtkSMPropertyHelper(m_resampleFilter, "CategoricalData").Set(1);
-    vtkSMPropertyHelper(m_resampleRepresentation, "Visibility").Set(0);
-    m_resampleRepresentation->UpdateProperty("Visibility");
-    m_activeRepresentation = m_pointDataToCellDataRepresentation;
-  } else {
-    d->ColorByDataSource = dataSource();
-    vtkSMPropertyHelper(m_resampleFilter, "CategoricalData").Set(0);
-    if (m_pointDataToCellDataRepresentation) {
-      vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Visibility")
-        .Set(0);
-      m_pointDataToCellDataRepresentation->UpdateProperty("Visibility");
-    }
-    m_activeRepresentation = m_resampleRepresentation;
-  }
+  m_activeRepresentation = m_resampleRepresentation;
+
+  auto comboBox = m_controllers->getColorByComboBox();
+  auto arrayName = comboBox->currentText();
+
+  vtkSMPropertyHelper(m_activeRepresentation, "ColorArrayName")
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                            arrayName.toLatin1().data());
+
+  // Rescale the current color map
+  double range[2] = {0, 0};
+  m_controllers->getColorMapRange(range);
+  auto cmap = colorMap();
+  auto omap = opacityMap();
+  vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, range, false /*extend*/);
+  vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, range, false /*extend*/);
+
   setVisibility(true);
 
   vtkSMPropertyHelper resampleHelper(m_resampleFilter, "Input");
-  resampleHelper.Set(d->ColorByDataSource->proxy());
+  resampleHelper.Set(dataSource()->proxy());
 
   updateColorMap();
 
@@ -473,9 +463,7 @@ void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
 
 DataSource* ModuleContour::colorMapDataSource() const
 {
-  return d->ColorByDataSource.data()
-           ? d->ColorByDataSource.data()
-           : dataSource();
+  return dataSource();
 }
 
 bool ModuleContour::isProxyPartOfModule(vtkSMProxy* proxy)
@@ -560,46 +548,7 @@ QList<DataSource*> ModuleContour::getChildDataSources()
 
 void ModuleContour::updateScalarColoring()
 {
-  if (!d->ColorByDataSource) {
-    return;
-  }
-
-  std::string arrayName(d->ColorArrayName);
-
-  // Get the active point scalars from the resample filter
-  vtkPVDataInformation* dataInfo = nullptr;
-  vtkPVDataSetAttributesInformation* attributeInfo = nullptr;
-  vtkPVArrayInformation* arrayInfo = nullptr;
-  if (d->ColorByDataSource) {
-    dataInfo = d->ColorByDataSource->proxy()->GetDataInformation(0);
-  }
-  if (dataInfo) {
-    attributeInfo = dataInfo->GetAttributeInformation(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS);
-  }
-  if (attributeInfo) {
-    arrayInfo =
-      attributeInfo->GetAttributeInformation(vtkDataSetAttributes::SCALARS);
-  }
-  if (arrayInfo) {
-    arrayName = arrayInfo->GetName();
-  }
-
-  vtkSMPropertyHelper colorArrayHelper(m_activeRepresentation,
-                                       "ColorArrayName");
-  if (d->UseSolidColor) {
-    colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS, "");
-  } else if (m_controllers &&
-             m_controllers->getColorByComboBox()->currentIndex() > 0) {
-    colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_CELLS, arrayName.c_str());
-  } else {
-    colorArrayHelper.SetInputArrayToProcess(
-      vtkDataObject::FIELD_ASSOCIATION_POINTS, arrayName.c_str());
-  }
-
-  ActiveObjects::instance().colorMapChanged(d->ColorByDataSource);
+  ActiveObjects::instance().colorMapChanged(colorMapDataSource());
 }
 
 void ModuleContour::setUseSolidColor(const bool useSolidColor)
@@ -607,6 +556,26 @@ void ModuleContour::setUseSolidColor(const bool useSolidColor)
   d->UseSolidColor = useSolidColor;
   updateColorMap();
   emit renderNeeded();
+}
+
+void ModuleContour::updateRangeSliders()
+{
+  auto comboBox = m_controllers->getColorByComboBox();
+  auto arrayName = comboBox->currentText();
+
+  double dataRange[2] = {0, 0};
+  auto dataset = vtkDataSet::SafeDownCast(colorMapDataSource()->dataObject());
+  auto colorArray = dataset->GetPointData()->GetArray(arrayName.toLatin1().data());
+  if (colorArray) {
+    colorArray->GetRange(dataRange, -1);
+  }
+
+  m_controllers->setColorMapRangeDomain(dataRange);
+
+  // Get the range of the lookup table
+  double range[2] = {0, 0};
+  vtkSMTransferFunctionProxy::GetRange(colorMap(), range);
+  m_controllers->setColorMapRange(range);
 }
 
 void ModuleContour::updateGUI()
@@ -619,17 +588,29 @@ void ModuleContour::updateGUI()
   if (combo) {
     combo->blockSignals(true);
     combo->clear();
-    combo->addItem("This Data");
-    for (int i = 0; i < childSources.size(); ++i) {
-      combo->addItem(childSources[i]->fileName());
+
+    auto dataSet = vtkDataSet::SafeDownCast(dataSource()->dataObject());
+    auto pointData = dataSet->GetPointData();
+    for (int i = 0; i < pointData->GetNumberOfArrays(); ++i) {
+      combo->addItem(pointData->GetArray(i)->GetName());
     }
 
-    int selected = childSources.indexOf(d->ColorByDataSource);
-
-    // If data source not found, selected will be -1, so the current index will
-    // be set to 0, which is the right index for this data source.
-    combo->setCurrentIndex(selected + 1);
+    // Get the active ColorArrayName
+    vtkSMPropertyHelper colorArrayHelper(
+      m_activeRepresentation, "ColorArrayName");
+    auto colorArrayName =
+      QString(colorArrayHelper.GetInputArrayNameToProcess());
+    combo->setCurrentText(colorArrayName);
     combo->blockSignals(false);
+
+    // Get the data range sliders
+    updateRangeSliders();
+
+    // Get the color map data range
+    auto colorMap = colorMapDataSource()->colorMap();
+    double range[2];
+    vtkSMTransferFunctionProxy::GetRange(colorMap, range);
+    m_controllers->setColorMapRange(range);
   }
 }
 

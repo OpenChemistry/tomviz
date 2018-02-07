@@ -70,6 +70,20 @@ public:
    */
   QComboBox* getColorByComboBox();
 
+  /**
+   * Set the color map range domain (the range of possible values, not the
+   * range itself).
+   */
+  void setColorMapRangeDomain(const double range[2]);
+
+  //@{
+  /**
+  * Set/get the color map range.
+  */
+  void setColorMapRange(const double range[2]);
+  void getColorMapRange(double range[2]) const;
+  //@}
+
 signals:
   //@{
   /**
