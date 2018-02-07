@@ -344,6 +344,8 @@ void CentralWidget::setActiveModule(Module* module)
   if (m_activeModule) {
     connect(m_activeModule, SIGNAL(colorMapChanged()),
             SLOT(onColorMapDataSourceChanged()));
+    connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
+            m_activeModule, SIGNAL(colorMapChanged()));
     setColorMapDataSource(module->colorMapDataSource());
     connect(m_activeModule, SIGNAL(transferModeChanged(const int)), this,
             SLOT(onTransferModeChanged(const int)));
