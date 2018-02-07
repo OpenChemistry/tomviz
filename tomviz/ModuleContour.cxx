@@ -564,16 +564,22 @@ void ModuleContour::setUseSolidColor(const bool useSolidColor)
 
 void ModuleContour::updateRangeSliders()
 {
+  auto comboBox = m_controllers->getColorByComboBox();
+  auto arrayName = comboBox->currentText();
+
   double dataRange[2] = {0, 0};
   auto dataset = vtkDataSet::SafeDownCast(colorMapDataSource()->dataObject());
-  auto colorArray = dataset->GetPointData()->GetScalars();
+  auto colorArray = dataset->GetPointData()->GetArray(arrayName.toLatin1().data());
   if (colorArray) {
     colorArray->GetRange(dataRange, -1);
   }
-#if 0
-  std::cout << "Range: " << dataRange[0] << ", " << dataRange[1] << std::endl;
+
   m_controllers->setColorMapRangeDomain(dataRange);
-#endif
+
+  // Get the range of the lookup table
+  double range[2] = {0, 0};
+  vtkSMTransferFunctionProxy::GetRange(colorMap(), range);
+  m_controllers->setColorMapRange(range);
 }
 
 void ModuleContour::updateGUI()
