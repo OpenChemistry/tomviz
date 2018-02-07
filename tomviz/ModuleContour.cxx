@@ -334,9 +334,6 @@ void ModuleContour::onPropertyChanged()
     .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
                             arrayName.toLatin1().data());
 
-  // Update the range sliders
-  updateRangeSliders();
-
   // Rescale the current color map
   double range[2] = {0, 0};
   m_controllers->getColorMapRange(range);
@@ -344,7 +341,6 @@ void ModuleContour::onPropertyChanged()
   auto omap = opacityMap();
   vtkSMTransferFunctionProxy::RescaleTransferFunction(cmap, range, false /*extend*/);
   vtkSMTransferFunctionProxy::RescaleTransferFunction(omap, range, false /*extend*/);
-  //emit colorMapChanged();
 
   setVisibility(true);
 
