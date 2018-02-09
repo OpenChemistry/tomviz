@@ -1,5 +1,10 @@
 from setuptools import setup, find_packages
 
+dm3_url = 'git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git' \
+    '@filelike#egg=dm3_lib-1.2'
+bottle_url = 'https://github.com/bottlepy/bottle/archive/41ed6965.zip' \
+    '#egg=bottle-0.13-dev'
+
 setup(
     name='tomviz-acquisition',
     version='0.0.1',
@@ -26,8 +31,8 @@ setup(
     },
     install_requires=['bottle==0.13-dev'],
     dependency_links=[
-        'git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git@filelike#egg=dm3_lib-1.2',
-        'https://github.com/bottlepy/bottle/archive/41ed6965.zip#egg=bottle-0.13-dev'
+        dm3_url,
+        bottle_url
     ],
     entry_points={
         'console_scripts': [
