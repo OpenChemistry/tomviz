@@ -27,7 +27,6 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonArray>
-#include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QLabel>
@@ -412,6 +411,48 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   });
 }
 
+void addStringWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
+{
+  QHBoxLayout* horizontalLayout = new QHBoxLayout;
+  horizontalLayout->setContentsMargins(0, 0, 0, 0);
+  QWidget* horizontalWidget = new QWidget;
+  horizontalWidget->setLayout(horizontalLayout);
+  layout->addWidget(horizontalWidget, row, 1, 1, 1);
+
+  QJsonValueRef typeValue = pathNode["type"];
+  if (typeValue.isUndefined()) {
+    QJsonDocument document(pathNode);
+    qWarning() << QString("Parameter %1 has no type. Skipping.")
+                    .arg(document.toJson().data());
+    return;
+  }
+  QString type = typeValue.toString();
+
+  QJsonValueRef nameValue = pathNode["name"];
+  if (nameValue.isUndefined()) {
+    QJsonDocument document(pathNode);
+    qWarning() << QString("Parameter %1 has no name. Skipping.")
+                    .arg(document.toJson().data());
+    return;
+  }
+
+  QJsonValueRef labelValue = pathNode["label"];
+  QLabel* label = new QLabel(nameValue.toString());
+  if (!labelValue.isUndefined()) {
+    label->setText(labelValue.toString());
+  }
+  layout->addWidget(label, row, 0, 1, 1);
+
+  QLineEdit* stringField = new QLineEdit();
+  stringField->setProperty("type", type);
+  // Tag the line edit with the type, so we can distinguish it from other line
+  // edit uses ( such as in a QSpinBox )
+  stringField->setProperty("type", type);
+  stringField->setObjectName(nameValue.toString());
+  stringField->setMinimumWidth(500);
+  horizontalLayout->addWidget(stringField);
+}
+
 } // end anonymous namespace
 
 namespace tomviz {
@@ -423,50 +464,24 @@ InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
 
 void InterfaceBuilder::setJSONDescription(const QString& description)
 {
-  m_json = description;
+  this->setJSONDescription(QJsonDocument::fromJson(description.toLatin1()));
 }
 
-const QString& InterfaceBuilder::JSONDescription() const
+void InterfaceBuilder::setJSONDescription(const QJsonDocument& description)
 {
-  return m_json;
-}
-
-QLayout* InterfaceBuilder::buildInterface() const
-{
-  QGridLayout* layout = new QGridLayout;
-
-  QJsonDocument document = QJsonDocument::fromJson(m_json.toLatin1());
-  if (!document.isObject()) {
+  if (!description.isObject()) {
     qCritical() << "Failed to parse operator JSON";
     qCritical() << m_json;
-    return layout;
+    m_json = QJsonDocument();
   }
-  QJsonObject root = document.object();
+}
 
-  QLabel* descriptionLabel = new QLabel("No description provided in JSON");
-  QJsonValueRef descriptionValue = root["description"];
-  if (!descriptionValue.isUndefined()) {
-    descriptionLabel->setText(descriptionValue.toString());
-  }
-  layout->addWidget(descriptionLabel, 0, 0, 1, 2);
+QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout *layout,
+    QJsonArray &parameters) const {
 
-  // Get the label for the operator
-  QString operatorLabel;
-  QJsonValueRef labelNode = root["label"];
-  if (!labelNode.isUndefined()) {
-    operatorLabel = QString(labelNode.toString());
-  }
-
-  // Get the parameters for the operator
-  QJsonValueRef parametersNode = root["parameters"];
-  if (parametersNode.isUndefined()) {
-    return layout;
-  }
-
-  QJsonArray parametersArray = parametersNode.toArray();
-  QJsonObject::size_type numParameters = parametersArray.size();
+  QJsonObject::size_type numParameters = parameters.size();
   for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
-    QJsonValueRef parameterNode = parametersArray[i];
+    QJsonValueRef parameterNode = parameters[i];
     QJsonObject parameterObject = parameterNode.toObject();
     QJsonValueRef typeValue = parameterObject["type"];
 
@@ -501,8 +516,45 @@ QLayout* InterfaceBuilder::buildInterface() const
       addXYZHeaderWidget(layout, i + 1, parameterObject);
     } else if (typeString == "file" || typeString == "directory") {
       addPathWidget(layout, i + 1, parameterObject);
+    } else if (typeString == "string") {
+      addStringWidget(layout, i + 1, parameterObject);
     }
   }
+
+  return layout;
+
+}
+
+QLayout* InterfaceBuilder::buildInterface() const
+{
+  QGridLayout* layout = new QGridLayout;
+
+  if (!m_json.isObject()) {
+    return layout;
+  }
+  QJsonObject root = m_json.object();
+
+  QLabel* descriptionLabel = new QLabel("No description provided in JSON");
+  QJsonValueRef descriptionValue = root["description"];
+  if (!descriptionValue.isUndefined()) {
+    descriptionLabel->setText(descriptionValue.toString());
+  }
+  layout->addWidget(descriptionLabel, 0, 0, 1, 2);
+
+  // Get the label for the operator
+  QString operatorLabel;
+  QJsonValueRef labelNode = root["label"];
+  if (!labelNode.isUndefined()) {
+    operatorLabel = QString(labelNode.toString());
+  }
+
+  // Get the parameters for the operator
+  QJsonValueRef parametersNode = root["parameters"];
+  if (parametersNode.isUndefined()) {
+    return layout;
+  }
+  auto parameters = parametersNode.toArray();
+  this->buildParameterInterface(layout, parameters);
 
   return layout;
 }
@@ -510,6 +562,89 @@ QLayout* InterfaceBuilder::buildInterface() const
 void InterfaceBuilder::setParameterValues(QMap<QString, QVariant> values)
 {
   m_parameterValues = values;
+}
+
+QVariantMap InterfaceBuilder::values(const QObject* parent)
+{
+  QVariantMap map;
+  qDebug() << parent->children().size();
+
+  // Iterate over all children, taking the value of the named widgets
+  // and stuffing them into the map.pathField->setProperty("type", type);
+  QList<QCheckBox*> checkBoxes = parent->findChildren<QCheckBox*>();
+  for (int i = 0; i < checkBoxes.size(); ++i) {
+    map[checkBoxes[i]->objectName()] =
+      (checkBoxes[i]->checkState() == Qt::Checked);
+  }
+
+  QList<tomviz::SpinBox*> spinBoxes = parent->findChildren<tomviz::SpinBox*>();
+  for (int i = 0; i < spinBoxes.size(); ++i) {
+    map[spinBoxes[i]->objectName()] = spinBoxes[i]->value();
+  }
+
+  QList<tomviz::DoubleSpinBox*> doubleSpinBoxes =
+    parent->findChildren<tomviz::DoubleSpinBox*>();
+  for (int i = 0; i < doubleSpinBoxes.size(); ++i) {
+    map[doubleSpinBoxes[i]->objectName()] = doubleSpinBoxes[i]->value();
+  }
+
+  QList<QComboBox*> comboBoxes = parent->findChildren<QComboBox*>();
+  for (int i = 0; i < comboBoxes.size(); ++i) {
+    int currentIndex = comboBoxes[i]->currentIndex();
+    map[comboBoxes[i]->objectName()] = comboBoxes[i]->itemData(currentIndex);
+  }
+
+  // Assemble multi-component properties into single properties in the map.
+  QMap<QString, QVariant>::iterator iter = map.begin();
+  while (iter != map.end()) {
+    QString name = iter.key();
+    QVariant value = iter.value();
+    int poundIndex = name.indexOf(tr("#"));
+    if (poundIndex >= 0) {
+      QString indexString = name.mid(poundIndex + 1);
+
+      // Keep the part of the name to the left of the '#'
+      name = name.left(poundIndex);
+
+      QList<QVariant> valueList;
+      QMap<QString, QVariant>::iterator findIter = map.find(name);
+      if (findIter != map.end()) {
+        valueList = map[name].toList();
+      }
+
+      // The QMap keeps entries sorted by lexicographic order, so we
+      // can just append to the list and the elements will be inserted
+      // in the correct order.
+      valueList.append(value);
+      map[name] = valueList;
+
+      // Delete the individual component map entry. Doing so increments the
+      // iterator.
+      iter = map.erase(iter);
+    } else {
+      // Single-element parameter, nothing to do
+      ++iter;
+    }
+  }
+
+  // QLineEdit's ( currently 'file' and 'directory' types ).
+  QStringList pathTypes = { "file", "directory" };
+  QList<QLineEdit*> lineEdits = parent->findChildren<QLineEdit*>();
+  for (int i = 0; i < lineEdits.size(); ++i) {
+    auto lineEdit = lineEdits[i];
+    QVariant type = lineEdit->property("type");
+
+    if (type.canConvert(QMetaType::QString) &&
+        pathTypes.contains(type.toString())) {
+      map[lineEdit->objectName()] = lineEdit->text();
+    }
+    else if (type.canConvert(QMetaType::QString) &&
+        type.toString() == "string") {
+      map[lineEdit->objectName()] = lineEdit->text();
+    }
+  }
+
+  return map;
 }
 
 } // namespace tomviz
