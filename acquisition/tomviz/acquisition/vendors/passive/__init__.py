@@ -146,7 +146,6 @@ class PassiveWatchSource(AbstractSource):
                 raise ValueError("The indexes of 'groupRegexSubstitutions'"
                                  " must match 'fileNameRegexGroups'.")
 
-
     @describe([{
         'name': 'path',
         'label': 'Watch path',
