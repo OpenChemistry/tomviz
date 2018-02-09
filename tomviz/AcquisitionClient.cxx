@@ -130,17 +130,42 @@ void AcquisitionClient::connectResultSignal(
     [this, reply, request](QJsonObject message) {
       QJsonValue result = message["result"];
 
-      if (!result.isString()) {
+
+      auto urlMissing = [request, reply, result]() {
         request->error("Response doesn't contain URL.", result);
         reply->deleteLater();
+      };
+      QString url;
+      QJsonObject meta;
+      if (result.isString()) {
+        url = result.toString();
+      }
+      else if (result.isObject()) {
+        auto obj = result.toObject();
+        if (!obj.contains("imageUrl")) {
+          urlMissing();
+          return;
+        }
+        url = obj["imageUrl"].toString();
+        if (obj.contains("meta")) {
+          meta = obj["meta"].toObject();
+        }
+      }
+      else if (result.isNull()) {
+        QByteArray empty;
+        QJsonObject noMeta;
+        emit request->finished("", empty, noMeta);
+        return;
+      }
+      else {
+        urlMissing();
         return;
       }
 
-      QString url = result.toString();
       QNetworkAccessManager* manager = new QNetworkAccessManager(this);
       QObject::connect(
         manager, &QNetworkAccessManager::finished,
-        [manager, request](QNetworkReply* networkReply) {
+        [manager, request, meta](QNetworkReply* networkReply) {
           if (networkReply->error() != QNetworkReply::NoError) {
             QJsonValue data(networkReply->error());
             emit request->error(networkReply->errorString(), data);
@@ -149,7 +174,7 @@ void AcquisitionClient::connectResultSignal(
               networkReply->header(QNetworkRequest::ContentTypeHeader)
                 .toString();
             QByteArray imageData = networkReply->readAll();
-            emit request->finished(mimeType, imageData);
+            emit request->finished(mimeType, imageData, meta);
           }
         });
 
