@@ -18,6 +18,7 @@
 
 #include <QScopedPointer>
 #include <QWidget>
+#include <QPointer>
 
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
@@ -68,8 +69,17 @@ private slots:
 
   void resetCamera();
   void onError(const QString& errorMessage, const QJsonValue& errorData);
+  void generateConnectUI(QJsonValue params);
+
+signals:
+  void connectParameterDescription(QJsonValue params);
 
 private:
+  QString url() const;
+  void introspectSource();
+  QJsonObject connectParams();
+  void watchSource();
+
   QScopedPointer<Ui::AcquisitionWidget> m_ui;
   QScopedPointer<AcquisitionClient> m_client;
 
@@ -84,6 +94,8 @@ private:
   QString m_units = "unknown";
   double m_calX = 0.0;
   double m_calY = 0.0;
+  QPointer<QWidget> m_connectParamsWidget;
+  QPointer<QTimer> m_watchTimer;
 };
 }
 

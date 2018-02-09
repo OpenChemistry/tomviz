@@ -56,7 +56,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="controlTab">
        <attribute name="title">
@@ -194,9 +194,6 @@
          </layout>
         </item>
        </layout>
-       <zorder>tiltAngleLabel</zorder>
-       <zorder>pixelSize</zorder>
-       <zorder>pixelSizeLabel</zorder>
       </widget>
       <widget class="QWidget" name="acquireTab">
        <attribute name="title">
@@ -209,46 +206,50 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <layout class="QFormLayout" name="formLayout_2">
-          <item row="0" column="0">
-           <widget class="QLabel" name="hostnameLabel">
-            <property name="text">
-             <string>Hostname</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="hostnameEdit">
-            <property name="text">
-             <string>localhost</string>
-            </property>
-            <property name="maxLength">
-             <number>15</number>
-            </property>
-            <property name="clearButtonEnabled">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="portLabel">
-            <property name="text">
-             <string>Port Number:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="portEdit">
-            <property name="text">
-             <string>8080</string>
-            </property>
-            <property name="maxLength">
-             <number>10</number>
-            </property>
-            <property name="clearButtonEnabled">
-             <bool>true</bool>
-            </property>
-           </widget>
+         <layout class="QVBoxLayout" name="paramsLayout">
+          <item>
+           <layout class="QFormLayout" name="defaultParamsLayout">
+            <item row="0" column="0">
+             <widget class="QLabel" name="hostnameLabel">
+              <property name="text">
+               <string>Hostname</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="hostnameEdit">
+              <property name="text">
+               <string>localhost</string>
+              </property>
+              <property name="maxLength">
+               <number>15</number>
+              </property>
+              <property name="clearButtonEnabled">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="portLabel">
+              <property name="text">
+               <string>Port Number:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="portEdit">
+              <property name="text">
+               <string>8080</string>
+              </property>
+              <property name="maxLength">
+               <number>10</number>
+              </property>
+              <property name="clearButtonEnabled">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </item>
@@ -276,7 +277,7 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <layout class="QHBoxLayout" name="buttonsLayout">
           <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
@@ -291,7 +292,17 @@
            </spacer>
           </item>
           <item>
+           <widget class="QPushButton" name="introspectButton">
+            <property name="text">
+             <string>Introspect</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="connectButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Connect</string>
             </property>
@@ -304,6 +315,13 @@
             </property>
             <property name="text">
              <string>Disconnect</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="watchButton">
+            <property name="text">
+             <string>Watch</string>
             </property>
            </widget>
           </item>

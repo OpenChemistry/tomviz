@@ -20,6 +20,7 @@
 
 #include "AcquisitionClient.h"
 #include "ActiveObjects.h"
+#include "InterfaceBuilder.h"
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
@@ -41,12 +42,17 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QTimer>
 
 namespace tomviz {
 
 AcquisitionWidget::AcquisitionWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::AcquisitionWidget),
-    m_client(new AcquisitionClient("http://localhost:8080/acquisition", this))
+    m_client(new AcquisitionClient("http://localhost:8080/acquisition", this)),
+    m_connectParamsWidget(new QWidget),
+    m_watchTimer(new QTimer)
 {
   m_ui->setupUi(this);
   this->setWindowFlags(Qt::Dialog);
@@ -55,6 +61,18 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
   connect(m_ui->disconnectButton, SIGNAL(clicked(bool)),
           SLOT(disconnectFromServer()));
   connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
+  connect(m_ui->introspectButton, &QPushButton::clicked, [this]() {
+    this->introspectSource();
+    m_ui->introspectButton->setEnabled(false);
+    m_ui->connectButton->setEnabled(true);
+  });
+  connect(this, &AcquisitionWidget::connectParameterDescription, this,
+      &AcquisitionWidget::generateConnectUI);
+
+  connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
+      this->watchSource();
+      m_ui->watchButton->setText("Stop watching");
+    });
 
   m_ui->imageWidget->GetRenderWindow()->AddRenderer(m_renderer.Get());
   m_ui->imageWidget->GetInteractor()->SetInteractorStyle(
@@ -104,9 +122,9 @@ void AcquisitionWidget::writeSettings()
 void AcquisitionWidget::connectToServer()
 {
   m_ui->statusEdit->setText("Attempting to connect to server...");
-  m_client->setUrl("http://" + m_ui->hostnameEdit->text() + ":" +
-                   m_ui->portEdit->text() + "/acquisition");
-  auto request = m_client->connect(QJsonObject());
+  m_client->setUrl(this->url());
+  qDebug() << this->connectParams();
+  auto request = m_client->connect(this->connectParams());
   connect(request, SIGNAL(finished(QJsonValue)), SLOT(onConnect()));
   connect(request, &AcquisitionClientRequest::error, this,
           &AcquisitionWidget::onError);
@@ -281,4 +299,54 @@ void AcquisitionWidget::onError(const QString& errorMessage,
   qDebug() << errorMessage;
   qDebug() << errorData;
 }
+
+QString AcquisitionWidget::url() const {
+  return "http://" + m_ui->hostnameEdit->text() + ":" +
+      m_ui->portEdit->text() + "/acquisition";
+}
+
+void AcquisitionWidget::generateConnectUI(QJsonValue params)
+{
+  if (params.isArray()) {
+    InterfaceBuilder* ib = new InterfaceBuilder(this);
+    auto parameters = params.toArray();
+    auto connectParamsLayout = new QGridLayout;
+    ib->buildParameterInterface(connectParamsLayout, parameters);
+    m_connectParamsWidget->setLayout(connectParamsLayout);
+    ib->deleteLater();
+    m_ui->paramsLayout->addWidget(m_connectParamsWidget);
+  }
+}
+
+void AcquisitionWidget::introspectSource() {
+  m_client->setUrl(this->url());
+  auto request = m_client->describe("connect");
+  connect(request, &AcquisitionClientRequest::error, this,
+          &AcquisitionWidget::onError);
+  connect(request, &AcquisitionClientRequest::finished, this,
+          &AcquisitionWidget::connectParameterDescription);
+}
+
+QJsonObject AcquisitionWidget::connectParams() {
+  auto values = InterfaceBuilder::values(this->m_connectParamsWidget);
+  return QJsonObject::fromVariantMap(values);
+}
+
+void AcquisitionWidget::watchSource() {
+  connect(this->m_watchTimer, &QTimer::timeout, this, [this](){
+    auto request = m_client->stem_acquire();
+    connect(request, &AcquisitionClientImageRequest::finished,
+            [this](const QString mimeType, const QByteArray& result, const QJsonObject& meta) {
+      if (!result.isNull()) {
+        qDebug() << "New image received!";
+        this->previewReady(mimeType, result);
+      }
+    });
+    connect(request, &AcquisitionClientRequest::error, this,
+            &AcquisitionWidget::onError);
+
+  }, Qt::UniqueConnection);
+  this->m_watchTimer->start(1000);
+}
+
 }
