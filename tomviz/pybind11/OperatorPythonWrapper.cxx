@@ -59,3 +59,18 @@ std::string OperatorPythonWrapper::progressMessage()
 {
   return this->op->progressMessage().toStdString();
 }
+
+void OperatorPythonWrapper::setDataUpdate(const vtkImageData* object)
+{
+  std::cout << "OperatorPythonWrapper::setDataUpdate" << std::endl;
+}
+
+vtkImageData* OperatorPythonWrapper::dataUpdate()
+{
+  return nullptr;
+}
+
+void OperatorPythonWrapper::dataUpdated()
+{
+  this->op->dataUpdated();
+}

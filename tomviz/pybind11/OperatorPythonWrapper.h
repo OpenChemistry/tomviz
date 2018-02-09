@@ -19,6 +19,8 @@
 
 #include <string>
 
+class vtkImageData;
+
 namespace tomviz {
 class OperatorPython;
 }
@@ -33,6 +35,9 @@ struct OperatorPythonWrapper
   int progressStep();
   void setProgressMessage(const std::string& message);
   std::string progressMessage();
+  void setDataUpdate(const vtkImageData* object);
+  vtkImageData* dataUpdate();
+  void dataUpdated();
 
   tomviz::OperatorPython* op = nullptr;
 };
