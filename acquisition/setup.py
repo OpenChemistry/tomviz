@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='tomviz-acquisition-passive',
+    name='tomviz-acquisition',
     version='0.0.1',
-    description='Passive acquisition source.',
+    description='Tomviz acquisition server.',
     author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     url='https://www.tomviz.org/',
@@ -19,8 +19,20 @@ setup(
         'Programming Language :: Python :: 3.5'
     ],
     packages=find_packages(),
-    install_requires=['dm3_lib', 'Pillow'],
+    extras_require={
+        'dm3': ['dm3_lib==1.2'],
+        'tif': ['Pillow'],
+        'test': ['requests', 'Pillow', 'mock', 'diskcache']
+    },
+    install_requires=['bottle==0.13-dev'],
     dependency_links=[
-        'git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git#filelike'
-    ]
+        'git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git@filelike#egg=dm3_lib-1.2',
+        'https://github.com/bottlepy/bottle/archive/41ed6965.zip#egg=bottle-0.13-dev'
+    ],
+    entry_points={
+        'console_scripts': [
+            'tomviz = tomviz.__main__:main',
+            'tomviz-tiltseries-writer = tests.mock.tiltseries.writer:main'
+        ]
+    }
 )
