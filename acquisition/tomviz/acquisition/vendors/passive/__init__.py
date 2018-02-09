@@ -6,6 +6,7 @@ import os
 import dm3_lib as dm3
 
 from tomviz.acquisition import AbstractSource
+from tomviz.acquisition import describe
 from tomviz.acquisition.utility import tobytes
 from .filesystem import Monitor
 
@@ -145,6 +146,19 @@ class PassiveWatchSource(AbstractSource):
                 raise ValueError("The indexes of 'groupRegexSubstitutions'"
                                  " must match 'fileNameRegexGroups'.")
 
+
+    @describe([{
+        'name': 'path',
+        'label': 'Watch path',
+        'description': 'The path to the directory to watch for updates.',
+        'type': 'string'
+    }, {
+        'name': 'fileNameRegex',
+        'label': 'File name regex',
+        'description': 'The regex used to match image filename.',
+        'type': 'string',
+        'default': '.*'
+    }])
     def connect(self, path, fileNameRegex=None, fileNameRegexGroups=None,
                 groupRegexSubstitutions=None, **params):
         """
