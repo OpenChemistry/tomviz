@@ -49,7 +49,10 @@ def _load_source_adapter(source_adapter):
     return cls
 
 
-def _setup_adapter(source_adapter):
+# TODO Refactor, flake8 is complaining about the complexity of this function.
+# This endpoints currently have to be defined in this way to allow the injection
+# of the source adapter we need to revisit this. For now I added noqa
+def _setup_adapter(source_adapter): # noqa
     """
     Setup up the JSON-RPC endpoints for a give source adapter
     """
@@ -115,13 +118,34 @@ def _setup_adapter(source_adapter):
     @inject(source_adapter)
     def stem_acquire(source_adapter):
         id = 'stem_acquire_slice'
-        slices[id] = source_adapter.stem_acquire()
+        data = source_adapter.stem_acquire()
 
-        return '%s/data/%s' % (_base_url(), id)
+        if data is None:
+            return None
+
+        metadata = None
+        # Do we have any meta data
+        if isinstance(data, tuple):
+            (metadata, data) = data
+        slices[id] = data
+
+        image_data_url = '%s/data/%s' % (_base_url(), id)
+
+        if metadata is not None:
+            return {
+                'meta': metadata,
+                'imageUrl': image_data_url
+            }
+        else:
+            return image_data_url
 
     @route('/data/<id>')
-    def data(id):
+    @inject(source_adapter)
+    def data(source_adapter, id):
         bottle.response.headers['Content-Type'] = 'image/tiff'
+        if hasattr(source_adapter, 'image_data_mimetype'):
+            bottle.response.headers['Content-Type'] \
+                = source_adapter.image_data_mimetype
 
         if id not in slices:
             raise HTTPResponse(body='Acquisition data not found.', status=404)

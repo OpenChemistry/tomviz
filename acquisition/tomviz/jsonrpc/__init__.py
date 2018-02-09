@@ -105,6 +105,9 @@ class JsonRpcHandler(object):
                     result = func(**params)
                 else:
                     raise InvalidParams()
+            except ValueError as vex:
+                raise InvalidParams(message=str(vex),
+                                    data=json.dumps(traceback.format_exc()))
             except Exception as ex:
                 raise ServerError(message=str(ex),
                                   data=json.dumps(traceback.format_exc()))

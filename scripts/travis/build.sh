@@ -18,5 +18,5 @@ else
     pip install -r requirements-dev.txt
     if [ -n "${PY2}" ]; then pytest -s; fi
     # Skip FEI test for Python 3
-    if [ -n "${PY#}" ]; then pytest -s -k "not fei"; fi
+    if [ -n "${PY3}" ]; then pytest -s -k "not fei"; fi
 fi
