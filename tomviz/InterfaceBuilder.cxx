@@ -476,8 +476,9 @@ void InterfaceBuilder::setJSONDescription(const QJsonDocument& description)
   }
 }
 
-QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout *layout,
-    QJsonArray &parameters) const {
+QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
+                                                   QJsonArray& parameters) const
+{
 
   QJsonObject::size_type numParameters = parameters.size();
   for (QJsonObject::size_type i = 0; i < numParameters; ++i) {
@@ -522,7 +523,6 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout *layout,
   }
 
   return layout;
-
 }
 
 QLayout* InterfaceBuilder::buildInterface() const
@@ -637,9 +637,8 @@ QVariantMap InterfaceBuilder::values(const QObject* parent)
     if (type.canConvert(QMetaType::QString) &&
         pathTypes.contains(type.toString())) {
       map[lineEdit->objectName()] = lineEdit->text();
-    }
-    else if (type.canConvert(QMetaType::QString) &&
-        type.toString() == "string") {
+    } else if (type.canConvert(QMetaType::QString) &&
+               type.toString() == "string") {
       map[lineEdit->objectName()] = lineEdit->text();
     }
   }

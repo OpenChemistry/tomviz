@@ -17,11 +17,11 @@
 #define tomvizInterfaceBuilder_h
 
 #include <QGridLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QMap>
 #include <QObject>
 #include <QVariant>
-#include <QJsonDocument>
-#include <QJsonArray>
 
 namespace tomviz {
 
@@ -42,13 +42,14 @@ public:
 
   /// Build the interface, returning it in a QWidget.
   QLayout* buildInterface() const;
-  QLayout* buildParameterInterface(QGridLayout* layout, QJsonArray &parameters) const;
-
+  QLayout* buildParameterInterface(QGridLayout* layout,
+                                   QJsonArray& parameters) const;
 
   /// Set the parameter values
   void setParameterValues(QMap<QString, QVariant> values);
 
   static QMap<QString, QVariant> values(const QObject* parent);
+
 private:
   Q_DISABLE_COPY(InterfaceBuilder)
 

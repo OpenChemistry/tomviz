@@ -130,7 +130,6 @@ void AcquisitionClient::connectResultSignal(
     [this, reply, request](QJsonObject message) {
       QJsonValue result = message["result"];
 
-
       auto urlMissing = [request, reply, result]() {
         request->error("Response doesn't contain URL.", result);
         reply->deleteLater();
@@ -139,8 +138,7 @@ void AcquisitionClient::connectResultSignal(
       QJsonObject meta;
       if (result.isString()) {
         url = result.toString();
-      }
-      else if (result.isObject()) {
+      } else if (result.isObject()) {
         auto obj = result.toObject();
         if (!obj.contains("imageUrl")) {
           urlMissing();
@@ -150,14 +148,12 @@ void AcquisitionClient::connectResultSignal(
         if (obj.contains("meta")) {
           meta = obj["meta"].toObject();
         }
-      }
-      else if (result.isNull()) {
+      } else if (result.isNull()) {
         QByteArray empty;
         QJsonObject noMeta;
         emit request->finished("", empty, noMeta);
         return;
-      }
-      else {
+      } else {
         urlMissing();
         return;
       }

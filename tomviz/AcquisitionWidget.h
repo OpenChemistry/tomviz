@@ -16,9 +16,9 @@
 #ifndef tomvizAcquisitionWidget_h
 #define tomvizAcquisitionWidget_h
 
+#include <QPointer>
 #include <QScopedPointer>
 #include <QWidget>
-#include <QPointer>
 
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
