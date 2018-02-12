@@ -514,7 +514,10 @@ void OperatorPython::setOperatorResult(const QString& name,
 
 void OperatorPython::setArguments(QMap<QString, QVariant> args)
 {
-  m_arguments = args;
+  if (args != m_arguments) {
+    m_arguments = args;
+    emit transformModified();
+  }
 }
 
 QMap<QString, QVariant> OperatorPython::arguments() const
