@@ -17,16 +17,7 @@
    <property name="spacing">
     <number>5</number>
    </property>
-   <property name="leftMargin">
-    <number>5</number>
-   </property>
-   <property name="topMargin">
-    <number>5</number>
-   </property>
-   <property name="rightMargin">
-    <number>5</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>5</number>
    </property>
    <item>
@@ -103,7 +94,7 @@
             <property name="readOnly">
              <bool>true</bool>
             </property>
-            <property name="clearButtonEnabled">
+            <property name="clearButtonEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -129,7 +120,7 @@
             <property name="readOnly">
              <bool>true</bool>
             </property>
-            <property name="clearButtonEnabled">
+            <property name="clearButtonEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -224,7 +215,7 @@
               <property name="maxLength">
                <number>15</number>
               </property>
-              <property name="clearButtonEnabled">
+              <property name="clearButtonEnabled" stdset="0">
                <bool>true</bool>
               </property>
              </widget>
@@ -244,7 +235,7 @@
               <property name="maxLength">
                <number>10</number>
               </property>
-              <property name="clearButtonEnabled">
+              <property name="clearButtonEnabled" stdset="0">
                <bool>true</bool>
               </property>
              </widget>
@@ -320,6 +311,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="watchButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Watch</string>
             </property>

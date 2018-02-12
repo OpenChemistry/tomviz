@@ -69,8 +69,14 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
           &AcquisitionWidget::generateConnectUI);
 
   connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
-    this->watchSource();
-    m_ui->watchButton->setText("Stop watching");
+    if (!this->m_watchTimer->isActive()) {
+      this->watchSource();
+      m_ui->watchButton->setText("Stop watching");
+    } else {
+      this->m_watchTimer->stop();
+      m_ui->watchButton->setText("Watch");
+    }
+
   });
 
   m_ui->imageWidget->GetRenderWindow()->AddRenderer(m_renderer.Get());
@@ -153,6 +159,7 @@ void AcquisitionWidget::onConnect()
   m_ui->statusEdit->setText("Connected to " + m_client->url() + "!!!");
   m_ui->connectButton->setEnabled(false);
   m_ui->disconnectButton->setEnabled(true);
+  m_ui->watchButton->setEnabled(true);
   setAcquireParameters();
 }
 
