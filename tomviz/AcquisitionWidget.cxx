@@ -301,6 +301,8 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
     PipelineManager::instance().addPipeline(pipeline);
     ModuleManager::instance().addDataSource(m_dataSource);
     pipeline->addDefaultModules(m_dataSource);
+  } else {
+    m_dataSource->appendSlice(m_imageData);
   }
 
   m_ui->previewButton->setEnabled(true);
