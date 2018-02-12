@@ -330,7 +330,7 @@ void AcquisitionWidget::introspectSource()
 
 QJsonObject AcquisitionWidget::connectParams()
 {
-  auto values = InterfaceBuilder::values(this->m_connectParamsWidget);
+  auto values = InterfaceBuilder::parameterValues(this->m_connectParamsWidget);
   return QJsonObject::fromVariantMap(values);
 }
 

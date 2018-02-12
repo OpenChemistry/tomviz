@@ -48,7 +48,7 @@ public:
   /// Set the parameter values
   void setParameterValues(QMap<QString, QVariant> values);
 
-  static QMap<QString, QVariant> values(const QObject* parent);
+  static QMap<QString, QVariant> parameterValues(const QObject* parent);
 
 private:
   Q_DISABLE_COPY(InterfaceBuilder)

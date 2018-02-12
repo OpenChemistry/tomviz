@@ -584,7 +584,7 @@ void InterfaceBuilder::setParameterValues(QMap<QString, QVariant> values)
   m_parameterValues = values;
 }
 
-QVariantMap InterfaceBuilder::values(const QObject* parent)
+QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
 {
   QVariantMap map;
   qDebug() << parent->children().size();

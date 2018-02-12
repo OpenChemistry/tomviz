@@ -72,6 +72,6 @@ void OperatorWidget::buildInterface(InterfaceBuilder* builder)
 
 QMap<QString, QVariant> OperatorWidget::values() const
 {
-  return InterfaceBuilder::values(this);
+  return InterfaceBuilder::parameterValues(this);
 }
 }
