@@ -473,6 +473,8 @@ void InterfaceBuilder::setJSONDescription(const QJsonDocument& description)
     qCritical() << "Failed to parse operator JSON";
     qCritical() << m_json;
     m_json = QJsonDocument();
+  } else {
+    m_json = description;
   }
 }
 
