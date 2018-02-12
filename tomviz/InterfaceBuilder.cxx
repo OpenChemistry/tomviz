@@ -87,6 +87,18 @@ double getAs(const QJsonValue& value)
   return dValue;
 }
 
+template <>
+QString getAs(const QJsonValue& value)
+{
+  QString strValue;
+  try {
+    strValue = value.toString();
+  } catch (...) {
+    qCritical() << "Could not get QString from QJsonValue";
+  }
+  return strValue;
+}
+
 // Templated generation of numeric editing widgets.
 template <typename T>
 QWidget* getNumericWidget(T, T, T, int, T)
@@ -451,6 +463,12 @@ void addStringWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   stringField->setObjectName(nameValue.toString());
   stringField->setMinimumWidth(500);
   horizontalLayout->addWidget(stringField);
+
+  QJsonValueRef defaultNode = pathNode["default"];
+  if (!defaultNode.isUndefined() && defaultNode.isString()) {
+    auto defaultValue = getAs<QString>(defaultNode);
+    stringField->setText(defaultValue);
+  }
 }
 
 } // end anonymous namespace
