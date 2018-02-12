@@ -79,6 +79,7 @@ private:
   void introspectSource();
   QJsonObject connectParams();
   void watchSource();
+  QVariantMap settings();
 
   QScopedPointer<Ui::AcquisitionWidget> m_ui;
   QScopedPointer<AcquisitionClient> m_client;

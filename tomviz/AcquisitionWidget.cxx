@@ -107,6 +107,19 @@ void AcquisitionWidget::readSettings()
   settings->endGroup();
 }
 
+QVariantMap AcquisitionWidget::settings()
+{
+  QVariantMap settingsMap;
+  auto settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup("acquisition");
+  foreach (QString key, settings->childKeys()) {
+    settingsMap[key] = settings->value(key);
+  }
+  settings->endGroup();
+
+  return settingsMap;
+}
+
 void AcquisitionWidget::writeSettings()
 {
   auto settings = pqApplicationCore::instance()->settings();
@@ -115,6 +128,12 @@ void AcquisitionWidget::writeSettings()
   settings->setValue("splitterSizes", m_ui->splitter->saveState());
   settings->setValue("hostname", m_ui->hostnameEdit->text());
   settings->setValue("port", m_ui->portEdit->text());
+  auto connectValues =
+    InterfaceBuilder::parameterValues(m_connectParamsWidget.data());
+  for (QVariantMap::const_iterator iter = connectValues.begin();
+       iter != connectValues.end(); ++iter) {
+    settings->setValue(iter.key(), iter.value());
+  }
   settings->endGroup();
 }
 
@@ -311,6 +330,7 @@ void AcquisitionWidget::generateConnectUI(QJsonValue params)
     InterfaceBuilder* ib = new InterfaceBuilder(this);
     auto parameters = params.toArray();
     auto connectParamsLayout = new QGridLayout;
+    ib->setParameterValues(this->settings());
     ib->buildParameterInterface(connectParamsLayout, parameters);
     m_connectParamsWidget->setLayout(connectParamsLayout);
     ib->deleteLater();
