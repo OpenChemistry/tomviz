@@ -45,35 +45,35 @@ public:
 
   QMap<QString, QVariant>* getKeywordArguments();
 
-protected slots:
+private slots:
   void onBrowse();
   void onCancel();
   void onExport();
   void onPathChange();
   void onTypeChange(int);
 
-protected:
-  QCheckBox* keepData;
-  QComboBox* exportType;
-  QLineEdit* outputPath;
-  QLineEdit* multiValue;
-  QPushButton* browseButton;
-  QPushButton* cancelButton;
-  QPushButton* exportButton;
-  QSpinBox* imageHeight;
-  QSpinBox* imageWidth;
-  QSpinBox* maxOpacity;
-  QSpinBox* nbPhi;
-  QSpinBox* nbTheta;
-  QSpinBox* scale;
-  QSpinBox* spanValue;
-  QWidget* cameraGroup;
-  QWidget* imageSizeGroup;
-  QWidget* valuesGroup;
-  QWidget* volumeExplorationGroup;
-  QWidget* volumeResampleGroup;
+private:
+  QCheckBox* m_keepData;
+  QComboBox* m_exportType;
+  QLineEdit* m_outputPath;
+  QLineEdit* m_multiValue;
+  QPushButton* m_browseButton;
+  QPushButton* m_cancelButton;
+  QPushButton* m_exportButton;
+  QSpinBox* m_imageHeight;
+  QSpinBox* m_imageWidth;
+  QSpinBox* m_maxOpacity;
+  QSpinBox* m_nbPhi;
+  QSpinBox* m_nbTheta;
+  QSpinBox* m_scale;
+  QSpinBox* m_spanValue;
+  QWidget* m_cameraGroup;
+  QWidget* m_imageSizeGroup;
+  QWidget* m_valuesGroup;
+  QWidget* m_volumeExplorationGroup;
+  QWidget* m_volumeResampleGroup;
 
-  QMap<QString, QVariant> kwargs;
+  QMap<QString, QVariant> m_kwargs;
 };
 }
 

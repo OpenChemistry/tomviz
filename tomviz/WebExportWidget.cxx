@@ -48,165 +48,165 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   // Output directory path
   QLabel* outputDirectorylabel = new QLabel("Output directory:");
   QHBoxLayout* pathGroup = new QHBoxLayout;
-  this->outputPath = new QLineEdit();
-  this->browseButton = new QPushButton("Browse");
+  this->m_outputPath = new QLineEdit();
+  this->m_browseButton = new QPushButton("Browse");
   pathGroup->addWidget(outputDirectorylabel);
-  pathGroup->addWidget(this->outputPath);
-  pathGroup->addWidget(this->browseButton);
+  pathGroup->addWidget(this->m_outputPath);
+  pathGroup->addWidget(this->m_browseButton);
   v->addLayout(pathGroup);
 
   // Output type
   QLabel* outputTypelabel = new QLabel("Output type:");
   QHBoxLayout* typeGroup = new QHBoxLayout;
-  this->exportType = new QComboBox;
-  this->exportType->addItem("Images: Current scene");
-  this->exportType->addItem("Images: Volume exploration");
-  this->exportType->addItem("Images: Contour exploration");
-  this->exportType->addItem("Geometry: Current scene contour(s)");
-  this->exportType->addItem("Geometry: Contour exploration");
-  this->exportType->addItem("Geometry: Volume");
+  this->m_exportType = new QComboBox;
+  this->m_exportType->addItem("Images: Current scene");
+  this->m_exportType->addItem("Images: Volume exploration");
+  this->m_exportType->addItem("Images: Contour exploration");
+  this->m_exportType->addItem("Geometry: Current scene contour(s)");
+  this->m_exportType->addItem("Geometry: Contour exploration");
+  this->m_exportType->addItem("Geometry: Volume");
   // this->exportType->addItem("Composite surfaces"); // specularColor segfault
-  this->exportType->setCurrentIndex(0);
+  this->m_exportType->setCurrentIndex(0);
   typeGroup->addWidget(outputTypelabel);
-  typeGroup->addWidget(this->exportType, 1);
+  typeGroup->addWidget(this->m_exportType, 1);
   v->addLayout(typeGroup);
 
   // Image size
   QLabel* imageSizeGroupLabel = new QLabel("View size:");
 
   QLabel* imageWidthLabel = new QLabel("Width");
-  this->imageWidth = new QSpinBox();
-  this->imageWidth->setRange(50, 2048);
-  this->imageWidth->setSingleStep(1);
-  this->imageWidth->setValue(500);
-  this->imageWidth->setMinimumWidth(100);
+  this->m_imageWidth = new QSpinBox();
+  this->m_imageWidth->setRange(50, 2048);
+  this->m_imageWidth->setSingleStep(1);
+  this->m_imageWidth->setValue(500);
+  this->m_imageWidth->setMinimumWidth(100);
 
   QLabel* imageHeightLabel = new QLabel("Height");
-  this->imageHeight = new QSpinBox();
-  this->imageHeight->setRange(50, 2048);
-  this->imageHeight->setSingleStep(1);
-  this->imageHeight->setValue(500);
-  this->imageHeight->setMinimumWidth(100);
+  this->m_imageHeight = new QSpinBox();
+  this->m_imageHeight->setRange(50, 2048);
+  this->m_imageHeight->setSingleStep(1);
+  this->m_imageHeight->setValue(500);
+  this->m_imageHeight->setMinimumWidth(100);
 
   QHBoxLayout* imageSizeGroupLayout = new QHBoxLayout;
   imageSizeGroupLayout->addWidget(imageSizeGroupLabel);
   imageSizeGroupLayout->addStretch();
   imageSizeGroupLayout->addWidget(imageWidthLabel);
-  imageSizeGroupLayout->addWidget(imageWidth);
+  imageSizeGroupLayout->addWidget(m_imageWidth);
   imageSizeGroupLayout->addSpacing(30);
   imageSizeGroupLayout->addWidget(imageHeightLabel);
-  imageSizeGroupLayout->addWidget(imageHeight);
+  imageSizeGroupLayout->addWidget(m_imageHeight);
 
-  this->imageSizeGroup = new QWidget();
-  this->imageSizeGroup->setLayout(imageSizeGroupLayout);
-  v->addWidget(this->imageSizeGroup);
+  this->m_imageSizeGroup = new QWidget();
+  this->m_imageSizeGroup->setLayout(imageSizeGroupLayout);
+  v->addWidget(this->m_imageSizeGroup);
 
   // Camera settings
   QLabel* cameraGrouplabel = new QLabel("Camera tilts:");
 
   QLabel* phiLabel = new QLabel("Phi");
-  this->nbPhi = new QSpinBox();
-  this->nbPhi->setRange(4, 72);
-  this->nbPhi->setSingleStep(4);
-  this->nbPhi->setValue(36);
-  this->nbPhi->setMinimumWidth(100);
+  this->m_nbPhi = new QSpinBox();
+  this->m_nbPhi->setRange(4, 72);
+  this->m_nbPhi->setSingleStep(4);
+  this->m_nbPhi->setValue(36);
+  this->m_nbPhi->setMinimumWidth(100);
 
   QLabel* thetaLabel = new QLabel("Theta");
-  this->nbTheta = new QSpinBox();
-  this->nbTheta->setRange(1, 20);
-  this->nbTheta->setSingleStep(1);
-  this->nbTheta->setValue(5);
-  this->nbTheta->setMinimumWidth(100);
+  this->m_nbTheta = new QSpinBox();
+  this->m_nbTheta->setRange(1, 20);
+  this->m_nbTheta->setSingleStep(1);
+  this->m_nbTheta->setValue(5);
+  this->m_nbTheta->setMinimumWidth(100);
 
   QHBoxLayout* cameraGroupLayout = new QHBoxLayout;
   cameraGroupLayout->addWidget(cameraGrouplabel);
   cameraGroupLayout->addStretch();
   cameraGroupLayout->addWidget(phiLabel);
-  cameraGroupLayout->addWidget(nbPhi);
+  cameraGroupLayout->addWidget(m_nbPhi);
   cameraGroupLayout->addSpacing(30);
   cameraGroupLayout->addWidget(thetaLabel);
-  cameraGroupLayout->addWidget(nbTheta);
+  cameraGroupLayout->addWidget(m_nbTheta);
 
-  this->cameraGroup = new QWidget();
-  this->cameraGroup->setLayout(cameraGroupLayout);
-  v->addWidget(this->cameraGroup);
+  this->m_cameraGroup = new QWidget();
+  this->m_cameraGroup->setLayout(cameraGroupLayout);
+  v->addWidget(this->m_cameraGroup);
 
   // Volume exploration
   QLabel* opacityLabel = new QLabel("Max opacity");
-  this->maxOpacity = new QSpinBox();
-  this->maxOpacity->setRange(10, 100);
-  this->maxOpacity->setSingleStep(10);
-  this->maxOpacity->setValue(50);
-  this->maxOpacity->setMinimumWidth(100);
+  this->m_maxOpacity = new QSpinBox();
+  this->m_maxOpacity->setRange(10, 100);
+  this->m_maxOpacity->setSingleStep(10);
+  this->m_maxOpacity->setValue(50);
+  this->m_maxOpacity->setMinimumWidth(100);
 
   QLabel* spanLabel = new QLabel("Tent width");
-  this->spanValue = new QSpinBox();
-  this->spanValue->setRange(1, 200);
-  this->spanValue->setSingleStep(1);
-  this->spanValue->setValue(10);
-  this->spanValue->setMinimumWidth(100);
+  this->m_spanValue = new QSpinBox();
+  this->m_spanValue->setRange(1, 200);
+  this->m_spanValue->setSingleStep(1);
+  this->m_spanValue->setValue(10);
+  this->m_spanValue->setMinimumWidth(100);
 
   QHBoxLayout* volumeExplorationGroupLayout = new QHBoxLayout;
   volumeExplorationGroupLayout->addWidget(opacityLabel);
-  volumeExplorationGroupLayout->addWidget(maxOpacity);
+  volumeExplorationGroupLayout->addWidget(m_maxOpacity);
   cameraGroupLayout->addStretch();
   volumeExplorationGroupLayout->addWidget(spanLabel);
-  volumeExplorationGroupLayout->addWidget(spanValue);
+  volumeExplorationGroupLayout->addWidget(m_spanValue);
 
-  this->volumeExplorationGroup = new QWidget();
-  this->volumeExplorationGroup->setLayout(volumeExplorationGroupLayout);
-  v->addWidget(this->volumeExplorationGroup);
+  this->m_volumeExplorationGroup = new QWidget();
+  this->m_volumeExplorationGroup->setLayout(volumeExplorationGroupLayout);
+  v->addWidget(this->m_volumeExplorationGroup);
 
   // Multi-value exploration
   QLabel* multiValueLabel = new QLabel("Values:");
-  this->multiValue = new QLineEdit("25, 50, 75, 100, 125, 150, 175, 200, 225");
+  this->m_multiValue = new QLineEdit("25, 50, 75, 100, 125, 150, 175, 200, 225");
 
   QHBoxLayout* multiValueGroupLayout = new QHBoxLayout;
   multiValueGroupLayout->addWidget(multiValueLabel);
-  multiValueGroupLayout->addWidget(this->multiValue);
+  multiValueGroupLayout->addWidget(this->m_multiValue);
 
-  this->valuesGroup = new QWidget();
-  this->valuesGroup->setLayout(multiValueGroupLayout);
-  v->addWidget(this->valuesGroup);
+  this->m_valuesGroup = new QWidget();
+  this->m_valuesGroup->setLayout(multiValueGroupLayout);
+  v->addWidget(this->m_valuesGroup);
 
   // Volume down sampling
   QLabel* scaleLabel = new QLabel("Sampling stride");
-  this->scale = new QSpinBox();
-  this->scale->setRange(1, 5);
-  this->scale->setSingleStep(1);
-  this->scale->setValue(1);
-  this->scale->setMinimumWidth(100);
+  this->m_scale = new QSpinBox();
+  this->m_scale->setRange(1, 5);
+  this->m_scale->setSingleStep(1);
+  this->m_scale->setValue(1);
+  this->m_scale->setMinimumWidth(100);
 
   QHBoxLayout* scaleGroupLayout = new QHBoxLayout;
   scaleGroupLayout->addWidget(scaleLabel);
-  scaleGroupLayout->addWidget(this->scale);
+  scaleGroupLayout->addWidget(this->m_scale);
 
-  this->volumeResampleGroup = new QWidget();
-  this->volumeResampleGroup->setLayout(scaleGroupLayout);
-  v->addWidget(this->volumeResampleGroup);
+  this->m_volumeResampleGroup = new QWidget();
+  this->m_volumeResampleGroup->setLayout(scaleGroupLayout);
+  v->addWidget(this->m_volumeResampleGroup);
 
   v->addStretch();
 
   // Action buttons
   QHBoxLayout* actionGroup = new QHBoxLayout;
-  this->keepData = new QCheckBox("Generate data for viewer");
-  this->exportButton = new QPushButton("Export");
-  this->exportButton->setDisabled(true);
-  this->cancelButton = new QPushButton("Cancel");
-  actionGroup->addWidget(this->keepData);
+  this->m_keepData = new QCheckBox("Generate data for viewer");
+  this->m_exportButton = new QPushButton("Export");
+  this->m_exportButton->setDisabled(true);
+  this->m_cancelButton = new QPushButton("Cancel");
+  actionGroup->addWidget(this->m_keepData);
   actionGroup->addStretch();
-  actionGroup->addWidget(this->exportButton);
+  actionGroup->addWidget(this->m_exportButton);
   actionGroup->addSpacing(20);
-  actionGroup->addWidget(this->cancelButton);
+  actionGroup->addWidget(this->m_cancelButton);
   v->addLayout(actionGroup);
 
   // UI binding
-  this->connect(this->outputPath, SIGNAL(textChanged(const QString&)), this,
+  this->connect(this->m_outputPath, SIGNAL(textChanged(const QString&)), this,
                 SLOT(onPathChange()));
-  this->connect(this->browseButton, SIGNAL(pressed()), this, SLOT(onBrowse()));
-  this->connect(this->exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
-  this->connect(this->cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
-  this->connect(this->exportType, SIGNAL(currentIndexChanged(int)), this,
+  this->connect(this->m_browseButton, SIGNAL(pressed()), this, SLOT(onBrowse()));
+  this->connect(this->m_exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
+  this->connect(this->m_cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
+  this->connect(this->m_exportType, SIGNAL(currentIndexChanged(int)), this,
                 SLOT(onTypeChange(int)));
 
   // Initialize visibility
@@ -220,8 +220,8 @@ void WebExportWidget::onBrowse()
   fileDialog.setObjectName("DirectorySaveDialog");
   fileDialog.setFileMode(QFileDialog::Directory);
   if (fileDialog.exec() == QDialog::Accepted) {
-    this->outputPath->setText(fileDialog.selectedFiles()[0]);
-    this->exportButton->setDisabled(false);
+    this->m_outputPath->setText(fileDialog.selectedFiles()[0]);
+    this->m_exportButton->setDisabled(false);
   }
 }
 
@@ -229,19 +229,19 @@ void WebExportWidget::onTypeChange(int index)
 {
   pqView* view = pqActiveObjects::instance().activeView();
   QSize size = view->getSize();
-  this->imageWidth->setMaximum(size.width());
-  this->imageHeight->setMaximum(size.height());
+  this->m_imageWidth->setMaximum(size.width());
+  this->m_imageHeight->setMaximum(size.height());
 
-  this->imageSizeGroup->setVisible(index < 3);
-  this->cameraGroup->setVisible(index < 3);
-  this->volumeExplorationGroup->setVisible(index == 1);
-  this->valuesGroup->setVisible(index == 1 || index == 2 || index == 4);
-  this->volumeResampleGroup->setVisible(index == 5);
+  this->m_imageSizeGroup->setVisible(index < 3);
+  this->m_cameraGroup->setVisible(index < 3);
+  this->m_volumeExplorationGroup->setVisible(index == 1);
+  this->m_valuesGroup->setVisible(index == 1 || index == 2 || index == 4);
+  this->m_volumeResampleGroup->setVisible(index == 5);
 }
 
 void WebExportWidget::onPathChange()
 {
-  this->exportButton->setDisabled(!(this->outputPath->text().length() > 3));
+  this->m_exportButton->setDisabled(!(this->m_outputPath->text().length() > 3));
 }
 
 void WebExportWidget::onExport()
@@ -256,20 +256,20 @@ void WebExportWidget::onCancel()
 
 QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
 {
-  this->kwargs["executionPath"] =
+  this->m_kwargs["executionPath"] =
     QVariant(QCoreApplication::applicationDirPath());
-  this->kwargs["destPath"] = QVariant(this->outputPath->text());
-  this->kwargs["exportType"] = QVariant(this->exportType->currentIndex());
-  this->kwargs["imageWidth"] = QVariant(this->imageWidth->value());
-  this->kwargs["imageHeight"] = QVariant(this->imageHeight->value());
-  this->kwargs["nbPhi"] = QVariant(this->nbPhi->value());
-  this->kwargs["nbTheta"] = QVariant(this->nbTheta->value());
-  this->kwargs["keepData"] = QVariant(this->keepData->checkState());
-  this->kwargs["maxOpacity"] = QVariant(this->maxOpacity->value());
-  this->kwargs["tentWidth"] = QVariant(this->spanValue->value());
-  this->kwargs["volumeScale"] = QVariant(this->scale->value());
-  this->kwargs["multiValue"] = QVariant(this->multiValue->text());
+  this->m_kwargs["destPath"] = QVariant(this->m_outputPath->text());
+  this->m_kwargs["exportType"] = QVariant(this->m_exportType->currentIndex());
+  this->m_kwargs["imageWidth"] = QVariant(this->m_imageWidth->value());
+  this->m_kwargs["imageHeight"] = QVariant(this->m_imageHeight->value());
+  this->m_kwargs["nbPhi"] = QVariant(this->m_nbPhi->value());
+  this->m_kwargs["nbTheta"] = QVariant(this->m_nbTheta->value());
+  this->m_kwargs["keepData"] = QVariant(this->m_keepData->checkState());
+  this->m_kwargs["maxOpacity"] = QVariant(this->m_maxOpacity->value());
+  this->m_kwargs["tentWidth"] = QVariant(this->m_spanValue->value());
+  this->m_kwargs["volumeScale"] = QVariant(this->m_scale->value());
+  this->m_kwargs["multiValue"] = QVariant(this->m_multiValue->text());
 
-  return &this->kwargs;
+  return &this->m_kwargs;
 }
 }
