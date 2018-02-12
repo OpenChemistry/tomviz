@@ -22,6 +22,11 @@
 #include "ActiveObjects.h"
 #include "InterfaceBuilder.h"
 
+#include "DataSource.h"
+#include "ModuleManager.h"
+#include "Pipeline.h"
+#include "PipelineManager.h"
+
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 #include <vtkSMProxy.h>
@@ -286,6 +291,16 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
   }
   if (m_lut) {
     m_imageSlice->GetProperty()->SetLookupTable(m_lut.Get());
+  }
+
+  // If we haven't added it, add our live data source to the pipeline.
+  if (!m_dataSource) {
+    m_dataSource = new DataSource(m_imageData);
+    m_dataSource->setLabel("Live!");
+    auto pipeline = new Pipeline(m_dataSource);
+    PipelineManager::instance().addPipeline(pipeline);
+    ModuleManager::instance().addDataSource(m_dataSource);
+    pipeline->addDefaultModules(m_dataSource);
   }
 
   m_ui->previewButton->setEnabled(true);

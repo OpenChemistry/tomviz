@@ -38,6 +38,7 @@ class AcquisitionWidget;
 namespace tomviz {
 
 class AcquisitionClient;
+class DataSource;
 
 class AcquisitionWidget : public QWidget
 {
@@ -90,6 +91,8 @@ private:
   vtkNew<vtkImageSlice> m_imageSlice;
   vtkNew<vtkImageSliceMapper> m_imageSliceMapper;
   vtkSmartPointer<vtkScalarsToColors> m_lut;
+
+  DataSource* m_dataSource = nullptr;
 
   double m_tiltAngle = 0.0;
   QString m_units = "unknown";
