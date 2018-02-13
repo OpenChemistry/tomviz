@@ -51,6 +51,7 @@
 #include <QTimer>
 
 #include <cmath>
+#include <cstring>
 #include <sstream>
 
 namespace tomviz {
@@ -204,6 +205,66 @@ DataSource::~DataSource()
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(this->Internals->ProducerProxy);
   }
+}
+
+bool DataSource::appendSlice(vtkImageData* slice)
+{
+  if (!slice) {
+    return false;
+  }
+  if (std::string(slice->GetScalarTypeAsString()) != "unsigned char") {
+    cout << "Only unsigned char is supported at present" << endl;
+    return false;
+  }
+
+  int extents[6];
+  int sliceExtents[6];
+  slice->GetExtent(sliceExtents);
+  auto tp = algorithm();
+  if (tp) {
+    auto data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
+    if (data) {
+      data->GetExtent(extents);
+      cout << "The data is ";
+      for (int i = 0; i < 6; ++i)
+        cout << extents[i] << ", ";
+      cout << endl;
+      for (int i = 0; i < 4; ++i) {
+        if (extents[i] != sliceExtents[i]) {
+          cout << "Mismatch: " << extents[i] << " != " << sliceExtents[i]
+               << endl;
+          return false;
+        }
+      }
+
+      // Now to append the slice onto our image data.
+      auto dataArray = data->GetPointData()->GetScalars();
+
+      int bufferSize = dataArray->GetNumberOfTuples();
+      unsigned char* buffer = new unsigned char[bufferSize];
+      void* ptr = dataArray->GetVoidPointer(0);
+      std::memcpy(buffer, ptr, bufferSize);
+      ++extents[5];
+      data->SetExtent(extents);
+      data->AllocateScalars(data->GetScalarType(),
+                            data->GetNumberOfScalarComponents());
+      ptr = data->GetScalarPointer();
+      std::memcpy(ptr, buffer, bufferSize);
+      delete[] buffer;
+      buffer = 0;
+      void* imagePtr = data->GetScalarPointer(0, 0, extents[5]);
+      auto sliceArray = slice->GetPointData()->GetScalars();
+      void* slicePtr = sliceArray->GetVoidPointer(0);
+      std::memcpy(imagePtr, slicePtr, sliceArray->GetNumberOfTuples());
+
+      // Let everyone know the data has changed, then re-execute the pipeline.
+      data->Modified();
+      emit dataChanged();
+      emit dataPropertiesChanged();
+      pipeline()->execute();
+    }
+  }
+  return true;
 }
 
 void DataSource::setFileName(const QString& filename)

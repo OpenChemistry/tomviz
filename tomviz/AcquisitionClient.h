@@ -64,7 +64,8 @@ public:
   }
 
 signals:
-  void finished(const QString mimeType, const QByteArray& result);
+  void finished(const QString mimeType, const QByteArray& result,
+                const QJsonObject& meta);
 };
 
 class AcquisitionClient : public QObject

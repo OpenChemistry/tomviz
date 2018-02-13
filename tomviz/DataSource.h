@@ -74,6 +74,10 @@ public:
 
   ~DataSource() override;
 
+  /// Append a slice to the data source, this must be of the same x and y
+  /// dimension as the existing slices in order to be appended.
+  bool appendSlice(vtkImageData* slice);
+
   /// Returns the proxy that can be inserted in ParaView pipelines.
   /// This proxy instance doesn't change over the lifetime of a DataSource even
   /// if new DataOperators are added to the source.
