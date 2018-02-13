@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import zipfile
+import tempfile
 
 from paraview import simple
 from paraview.web.dataset_builder import ImageDataSetBuilder
@@ -33,77 +34,86 @@ jsMapping = {
 
 
 def web_export(*args, **kwargs):
-    # Expecting only kwargs
-    keepData = kwargs['keepData']
-    executionPath = kwargs['executionPath']
-    destPath = kwargs['destPath']
-    exportType = kwargs['exportType']
+    temp_dir = tempfile.mkdtemp()
+    try:
+        # Expecting only kwargs
+        keepData = kwargs['keepData']
+        executionPath = kwargs['executionPath']
+        exportType = kwargs['exportType']
+        htmlFilePath = kwargs['htmlFilePath']
+        if not htmlFilePath.lower().endswith(('.html', '.htm')):
+            htmlFilePath += '.html'
 
-    # Camera properties
-    nbPhi = kwargs['nbPhi']
-    nbTheta = kwargs['nbTheta']
+        dataFileName = '%s.zip' % os.path.splitext(os.path.basename(htmlFilePath))[0]
+        dataFilePath = os.path.join(os.path.dirname(htmlFilePath), dataFileName)
+        print(dataFilePath)
 
-    # Destination directory for data
-    dest = '%s/data' % destPath
+        # Camera properties
+        nbPhi = kwargs['nbPhi']
+        nbTheta = kwargs['nbTheta']
 
-    # Extract initial setting for view
-    view = simple.GetRenderView()
-    viewState = {}
-    for prop in ['CameraViewUp', 'CameraPosition', 'ViewSize']:
-        viewState[prop] = tuple(view.GetProperty(prop).GetData())
+        # Destination directory for data
+        dest = '%s/data' % temp_dir
 
-    # Camera handling
-    deltaPhi = int(360 / nbPhi)
-    deltaTheta = int(180 / nbTheta)
-    thetaMax = deltaTheta
-    while thetaMax + deltaTheta < 90:
-        thetaMax += deltaTheta
-    camera = {
-        'type': 'spherical',
-        'phi': range(0, 360, deltaPhi),
-        'theta': range(-thetaMax, thetaMax + 1, deltaTheta)
-    }
+        # Extract initial setting for view
+        view = simple.GetRenderView()
+        viewState = {}
+        for prop in ['CameraViewUp', 'CameraPosition', 'ViewSize']:
+            viewState[prop] = tuple(view.GetProperty(prop).GetData())
 
-    # Choose export mode:
-    if exportType == 0:
-        export_images(dest, camera, **kwargs)
+        # Camera handling
+        deltaPhi = int(360 / nbPhi)
+        deltaTheta = int(180 / nbTheta)
+        thetaMax = deltaTheta
+        while thetaMax + deltaTheta < 90:
+            thetaMax += deltaTheta
+        camera = {
+            'type': 'spherical',
+            'phi': range(0, 360, deltaPhi),
+            'theta': range(-thetaMax, thetaMax + 1, deltaTheta)
+        }
 
-    if exportType == 1:
-        export_volume_exploration_images(dest, camera, **kwargs)
+        # Choose export mode:
+        if exportType == 0:
+            export_images(dest, camera, **kwargs)
 
-    if exportType == 2:
-        export_contour_exploration_images(dest, camera, **kwargs)
+        if exportType == 1:
+            export_volume_exploration_images(dest, camera, **kwargs)
 
-    if exportType == 3:
-        export_contours_geometry(dest, **kwargs)
+        if exportType == 2:
+            export_contour_exploration_images(dest, camera, **kwargs)
 
-    if exportType == 4:
-        export_contour_exploration_geometry(dest, **kwargs)
+        if exportType == 3:
+            export_contours_geometry(dest, **kwargs)
 
-    if exportType == 5:
-        export_volume(dest, **kwargs)
+        if exportType == 4:
+            export_contour_exploration_geometry(dest, **kwargs)
 
-    # Setup application
-    copy_viewer(destPath, executionPath)
+        if exportType == 5:
+            export_volume(dest, **kwargs)
 
-    # Compress only geometry data
-    bundleDataToHTML(destPath, keepData, exportType > 2)
+        # Setup application
+        copy_viewer(temp_dir, executionPath)
 
-    # Restore initial parameters
-    for prop in viewState:
-        view.GetProperty(prop).SetData(viewState[prop])
+        # Compress only geometry data
+        bundleDataToHTML(temp_dir, htmlFilePath,
+                         dataFilePath=dataFilePath if keepData else None,
+                         compress=exportType > 2)
 
+        # Restore initial parameters
+        for prop in viewState:
+            view.GetProperty(prop).SetData(viewState[prop])
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
 
 
-def bundleDataToHTML(destinationPath, keepData, compress=False):
+def bundleDataToHTML(temp_dir, htmlFilePath, dataFilePath=None, compress=False):
     compression_type = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
-    dataDir = os.path.join(destinationPath, DATA_DIRECTORY)
-    srcHtmlPath = os.path.join(destinationPath, HTML_FILENAME)
-    dstHtmlPath = os.path.join(destinationPath, HTML_WITH_DATA_FILENAME)
-    dstDataPath = os.path.join(destinationPath, DATA_FILENAME)
+    dataDir = os.path.join(temp_dir, DATA_DIRECTORY)
+    srcHtmlPath = os.path.join(temp_dir, HTML_FILENAME)
     webResources = ['<style>.webResource { display: none; }</style>']
 
     if os.path.exists(dataDir):
@@ -131,7 +141,7 @@ def bundleDataToHTML(destinationPath, keepData, compress=False):
 
         # Create new output file
         with open(srcHtmlPath, mode='r', encoding='utf8') as srcHtml:
-            with open(dstHtmlPath, mode='w', encoding='utf8') as dstHtml:
+            with open(htmlFilePath, mode='w', encoding='utf8') as dstHtml:
                 for line in srcHtml:
                     if '</body>' in line:
                         for webResource in webResources:
@@ -140,8 +150,8 @@ def bundleDataToHTML(destinationPath, keepData, compress=False):
                         dstHtml.write(line)
 
         # Generate zip file for the data
-        if keepData and os.path.exists(dataDir):
-            with zipfile.ZipFile(dstDataPath, mode='w') as zf:
+        if dataFilePath is not None and os.path.exists(dataDir):
+            with zipfile.ZipFile(dataFilePath, mode='w') as zf:
                 for dirName, subdirList, fileList in os.walk(dataDir):
                     for fname in fileList:
                         fullPath = os.path.join(dirName, fname)
@@ -149,10 +159,6 @@ def bundleDataToHTML(destinationPath, keepData, compress=False):
                         relPath = '%s/%s' % (DATA_DIRECTORY, filePath)
                         zf.write(fullPath, arcname=relPath,
                                  compress_type=compression_type)
-
-        # Cleanup
-        os.remove(srcHtmlPath)
-        shutil.rmtree(dataDir)
 
 
 def get_proxy(id):

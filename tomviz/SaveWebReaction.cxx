@@ -29,13 +29,17 @@
 
 #include <cassert>
 
+#include <pqSettings.h>
+
 #include <QDebug>
 #include <QDialog>
+#include <QFileDialog>
 #include <QMap>
 #include <QMessageBox>
 #include <QRegularExpression>
 #include <QString>
 #include <QVariant>
+#include <QVariantMap>
 
 namespace tomviz {
 
@@ -57,7 +61,35 @@ void SaveWebReaction::onTriggered()
 {
   WebExportWidget dialog;
   if (dialog.exec() == QDialog::Accepted) {
-    this->saveWeb(dialog.getKeywordArguments());
+
+    QString lastUsedExt;
+    // Load the most recently used file extensions from QSettings, if available.
+    auto settings = pqApplicationCore::instance()->settings();
+    QString defaultFileName = "tomviz.html";
+    if (settings->contains("web/exportFilename")) {
+      defaultFileName = settings->value("web/exportFilename").toString();
+    }
+
+    QStringList filters;
+    filters << "HTML (*.html)";
+
+    QFileDialog fileDialog(nullptr, "Save Web Export:");
+    fileDialog.setFileMode(QFileDialog::AnyFile);
+    fileDialog.setNameFilters(filters);
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    fileDialog.selectFile(defaultFileName);
+
+    if (fileDialog.exec() != QDialog::Accepted) {
+      return;
+    }
+
+    auto args = dialog.getKeywordArguments();
+    auto filePath = fileDialog.selectedFiles()[0];
+    QFileInfo info(filePath);
+    auto filename = info.fileName();
+    args->insert("htmlFilePath", QVariant(filePath));
+    settings->setValue("web/exportFilename", QVariant(filename));
+    this->saveWeb(args);
   }
 }
 

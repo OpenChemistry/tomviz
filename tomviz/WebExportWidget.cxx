@@ -46,16 +46,6 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   this->setMinimumHeight(400);
   this->setWindowTitle("Web export data");
 
-  // Output directory path
-  QLabel* outputDirectorylabel = new QLabel("Output directory:");
-  QHBoxLayout* pathGroup = new QHBoxLayout;
-  this->m_outputPath = new QLineEdit();
-  this->m_browseButton = new QPushButton("Browse");
-  pathGroup->addWidget(outputDirectorylabel);
-  pathGroup->addWidget(this->m_outputPath);
-  pathGroup->addWidget(this->m_browseButton);
-  v->addLayout(pathGroup);
-
   // Output type
   QLabel* outputTypelabel = new QLabel("Output type:");
   QHBoxLayout* typeGroup = new QHBoxLayout;
@@ -192,7 +182,6 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   QHBoxLayout* actionGroup = new QHBoxLayout;
   this->m_keepData = new QCheckBox("Generate data for viewer");
   this->m_exportButton = new QPushButton("Export");
-  this->m_exportButton->setDisabled(true);
   this->m_cancelButton = new QPushButton("Cancel");
   actionGroup->addWidget(this->m_keepData);
   actionGroup->addStretch();
@@ -202,9 +191,6 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   v->addLayout(actionGroup);
 
   // UI binding
-  this->connect(this->m_outputPath, SIGNAL(textChanged(const QString&)), this,
-                SLOT(onPathChange()));
-  this->connect(this->m_browseButton, SIGNAL(pressed()), this, SLOT(onBrowse()));
   this->connect(this->m_exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
   this->connect(this->m_cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
   this->connect(this->m_exportType, SIGNAL(currentIndexChanged(int)), this,
@@ -217,18 +203,6 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 
   connect(this, &QDialog::finished, this,
           &WebExportWidget::writeWidgetSettings);
-}
-
-void WebExportWidget::onBrowse()
-{
-  QFileDialog fileDialog(tomviz::mainWidget(),
-                         tr("Save Scene for Web:"));
-  fileDialog.setObjectName("DirectorySaveDialog");
-  fileDialog.setFileMode(QFileDialog::Directory);
-  if (fileDialog.exec() == QDialog::Accepted) {
-    this->m_outputPath->setText(fileDialog.selectedFiles()[0]);
-    this->m_exportButton->setDisabled(false);
-  }
 }
 
 void WebExportWidget::onTypeChange(int index)
@@ -245,11 +219,6 @@ void WebExportWidget::onTypeChange(int index)
   this->m_volumeResampleGroup->setVisible(index == 5);
 }
 
-void WebExportWidget::onPathChange()
-{
-  this->m_exportButton->setDisabled(!(this->m_outputPath->text().length() > 3));
-}
-
 void WebExportWidget::onExport()
 {
   this->accept();
@@ -264,7 +233,6 @@ QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
 {
   this->m_kwargs["executionPath"] =
     QVariant(QCoreApplication::applicationDirPath());
-  this->m_kwargs["destPath"] = QVariant(this->m_outputPath->text());
   this->m_kwargs["exportType"] = QVariant(this->m_exportType->currentIndex());
   this->m_kwargs["imageWidth"] = QVariant(this->m_imageWidth->value());
   this->m_kwargs["imageHeight"] = QVariant(this->m_imageHeight->value());

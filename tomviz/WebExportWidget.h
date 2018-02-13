@@ -47,10 +47,8 @@ public:
   QMap<QString, QVariant>* getKeywordArguments();
 
 private slots:
-  void onBrowse();
   void onCancel();
   void onExport();
-  void onPathChange();
   void onTypeChange(int);
 
 private:
@@ -61,9 +59,7 @@ private:
 
   QCheckBox* m_keepData;
   QComboBox* m_exportType;
-  QLineEdit* m_outputPath;
   QLineEdit* m_multiValue;
-  QPushButton* m_browseButton;
   QPushButton* m_cancelButton;
   QPushButton* m_exportButton;
   QSpinBox* m_imageHeight;
