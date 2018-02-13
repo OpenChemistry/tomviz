@@ -229,7 +229,7 @@ void WebExportWidget::onCancel()
   this->reject();
 }
 
-QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
+QMap<QString, QVariant> WebExportWidget::getKeywordArguments()
 {
   this->m_kwargs["executionPath"] =
     QVariant(QCoreApplication::applicationDirPath());
@@ -244,7 +244,7 @@ QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
   this->m_kwargs["volumeScale"] = QVariant(this->m_scale->value());
   this->m_kwargs["multiValue"] = QVariant(this->m_multiValue->text());
 
-  return &this->m_kwargs;
+  return this->m_kwargs;
 }
 
 QMap<QString, QVariant> WebExportWidget::readSettings()

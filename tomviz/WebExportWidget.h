@@ -44,7 +44,7 @@ class WebExportWidget : public QDialog
 public:
   WebExportWidget(QWidget* parent = nullptr);
 
-  QMap<QString, QVariant>* getKeywordArguments();
+  QMap<QString, QVariant> getKeywordArguments();
 
 private slots:
   void onCancel();
