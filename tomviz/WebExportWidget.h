@@ -17,6 +17,7 @@
 #define tomvizWebExportWidget_h
 
 #include <QDialog>
+#include <QVariantMap>
 
 #include "PythonUtilities.h"
 #include "Utilities.h"
@@ -53,6 +54,11 @@ private slots:
   void onTypeChange(int);
 
 private:
+  QVariantMap readSettings();
+  void writeSettings(const QVariantMap& settings);
+  void writeWidgetSettings();
+  void restoreSettings();
+
   QCheckBox* m_keepData;
   QComboBox* m_exportType;
   QLineEdit* m_outputPath;
@@ -73,7 +79,7 @@ private:
   QWidget* m_volumeExplorationGroup;
   QWidget* m_volumeResampleGroup;
 
-  QMap<QString, QVariant> m_kwargs;
+  QVariantMap m_kwargs;
 };
 }
 

@@ -17,6 +17,7 @@
 #include "WebExportWidget.h"
 
 #include <pqActiveObjects.h>
+#include <pqSettings.h>
 
 #include <QButtonGroup>
 #include <QCheckBox>
@@ -211,6 +212,11 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 
   // Initialize visibility
   this->onTypeChange(0);
+
+  this->restoreSettings();
+
+  connect(this, &QDialog::finished, this,
+          &WebExportWidget::writeWidgetSettings);
 }
 
 void WebExportWidget::onBrowse()
@@ -271,5 +277,96 @@ QMap<QString, QVariant>* WebExportWidget::getKeywordArguments()
   this->m_kwargs["multiValue"] = QVariant(this->m_multiValue->text());
 
   return &this->m_kwargs;
+}
+
+QMap<QString, QVariant> WebExportWidget::readSettings()
+{
+  QMap<QString, QVariant> settingsMap;
+
+  auto settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup("web");
+  foreach (QString key, settings->childKeys()) {
+    settingsMap[key] = settings->value(key);
+  }
+  settings->endGroup();
+
+  return settingsMap;
+}
+
+void WebExportWidget::writeSettings(const QMap<QString, QVariant>& settingsMap)
+{
+
+  auto settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup("web");
+  for (QMap<QString, QVariant>::const_iterator iter = settingsMap.begin();
+       iter != settingsMap.end(); ++iter) {
+    settings->setValue(iter.key(), iter.value());
+  }
+  settings->endGroup();
+}
+
+void WebExportWidget::writeWidgetSettings()
+{
+  QVariantMap settingsMap;
+
+  settingsMap["phi"] = this->m_nbPhi->value();
+  settingsMap["theta"] = this->m_nbTheta->value();
+  settingsMap["imageWidth"] = this->m_imageWidth->value();
+  settingsMap["imageHeight"] = this->m_imageHeight->value();
+  settingsMap["generateDataViewer"] = this->m_keepData->isChecked();
+  settingsMap["exportType"] = this->m_exportType->currentIndex();
+  settingsMap["maxOpacity"] = this->m_maxOpacity->value();
+  settingsMap["tentWidth"] = this->m_spanValue->value();
+  settingsMap["volumeScale"] = this->m_scale->value();
+  settingsMap["multiValue"] = this->m_multiValue->text();
+
+  this->writeSettings(settingsMap);
+}
+
+void WebExportWidget::restoreSettings()
+{
+  QVariantMap settingsMap = this->readSettings();
+  if (settingsMap.contains("phi")) {
+    this->m_nbPhi->setValue(settingsMap.value("phi").toInt());
+  }
+
+  if (settingsMap.contains("theta")) {
+    this->m_nbTheta->setValue(settingsMap.value("theta").toInt());
+  }
+
+  if (settingsMap.contains("imageWidth")) {
+    this->m_imageWidth->setValue(settingsMap.value("imageWidth").toInt());
+  }
+
+  if (settingsMap.contains("imageHeight")) {
+    this->m_imageHeight->setValue(settingsMap.value("imageHeight").toInt());
+  }
+
+  if (settingsMap.contains("generateDataViewer")) {
+    this->m_keepData->setChecked(
+      settingsMap.value("generateDataViewer").toBool());
+  }
+
+  if (settingsMap.contains("exportType")) {
+    this->m_exportType->setCurrentIndex(
+      settingsMap.value("exportType").toInt());
+  }
+
+  if (settingsMap.contains("maxOpacity")) {
+    this->m_maxOpacity->setValue(settingsMap.value("maxOpacity").toInt());
+  }
+
+  if (settingsMap.contains("tentWidth")) {
+
+    this->m_spanValue->setValue(settingsMap.value("tentWidth").toInt());
+  }
+
+  if (settingsMap.contains("volumeScale")) {
+    this->m_scale->setValue(settingsMap.value("volumeScale").toInt());
+  }
+
+  if (settingsMap.contains("multiValue")) {
+    this->m_multiValue->setText(settingsMap.value("multiValue").toString());
+  }
 }
 }
