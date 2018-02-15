@@ -70,19 +70,11 @@ class Progress(object):
         """
         self._operator._operator_wrapper.progress_message = msg
 
-    @property
-    def data(self):
-        """
-        Property defining current data object value.
-        """
-        return self._operator._operator_wrapper.progress_data
-
-    @data.setter
-    def data(self, value):
+    def _data(self, value):
         self._operator._operator_wrapper.progress_data = value
 
-    def data_updated(self):
-        self._operator._operator_wrapper.data_updated()
+    # Write-only property to update child data
+    data = property(fset=_data)
 
 class Operator(object):
     """
