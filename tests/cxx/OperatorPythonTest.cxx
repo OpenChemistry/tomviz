@@ -185,6 +185,14 @@ TEST_F(OperatorPythonTest, update_progress_message)
 TEST_F(OperatorPythonTest, update_data)
 {
   pythonOperator->setLabel("update_data");
+  // Disconnect these signals as they will cause us to reach into
+  // part of ParaView that aren't available in the test executable.
+  // We only need to test that the childDataSourceUpdated signal is
+  // fired, not the data source creation.
+  QObject::disconnect(pythonOperator, &OperatorPython::newChildDataSource,
+                      nullptr, nullptr);
+  QObject::disconnect(pythonOperator, &OperatorPython::childDataSourceUpdated,
+                      nullptr, nullptr);
   QFile file(QString("%1/fixtures/update_data.py").arg(SOURCE_DIR));
   if (file.open(QIODevice::ReadOnly)) {
     QByteArray array = file.readAll();
