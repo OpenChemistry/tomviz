@@ -71,4 +71,3 @@ void OperatorPythonWrapper::setProgressData(vtkImageData* imageData)
 {
   emit this->op->childDataSourceUpdated(imageData);
 }
-

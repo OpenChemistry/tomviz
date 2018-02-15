@@ -34,7 +34,8 @@ void DeleteDataReaction::updateEnableState()
 {
   bool enabled = (m_activeDataSource != nullptr);
   if (enabled) {
-    enabled = m_activeDataSource->pipeline() && !m_activeDataSource->pipeline()->isRunning();
+    enabled = m_activeDataSource->pipeline() &&
+              !m_activeDataSource->pipeline()->isRunning();
   }
   parentAction()->setEnabled(enabled);
 }

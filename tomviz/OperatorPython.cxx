@@ -367,7 +367,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       QString label(nameLabelPair.second);
 
       // Create uninitialized data set as a placeholder for the data
-      vtkSmartPointer<vtkImageData> childData = vtkSmartPointer<vtkImageData>::New();
+      vtkSmartPointer<vtkImageData> childData =
+        vtkSmartPointer<vtkImageData>::New();
       childData->DeepCopy(data);
       Q_ASSERT(childData->GetPointData()->GetScalars());
 
