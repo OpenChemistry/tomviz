@@ -18,6 +18,8 @@
 #include <thread>
 
 #include <vtkDataObject.h>
+#include <vtkImageData.h>
+#include <vtkSmartPointer.h>
 
 #include <QByteArray>
 #include <QDebug>
@@ -175,6 +177,45 @@ TEST_F(OperatorPythonTest, update_progress_message)
     ASSERT_STREQ(args.at(0).toString().toLatin1().constData(),
                  "Is there anyone out there?");
 
+  } else {
+    FAIL() << "Unable to load script.";
+  }
+}
+
+TEST_F(OperatorPythonTest, update_data)
+{
+  pythonOperator->setLabel("update_data");
+  QFile file(QString("%1/fixtures/update_data.py").arg(SOURCE_DIR));
+  if (file.open(QIODevice::ReadOnly)) {
+    QByteArray array = file.readAll();
+    QString script(array);
+    file.close();
+    pythonOperator->setScript(script);
+
+    QSignalSpy spy(pythonOperator,
+                   SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)));
+    TransformResult result = pythonOperator->transform(dataObject);
+    ASSERT_EQ(result, TransformResult::Complete);
+
+    ASSERT_EQ(spy.count(), 1);
+
+    QList<QVariant> args = spy.takeFirst();
+    vtkSmartPointer<vtkDataObject> data
+      = args.at(0).value<vtkSmartPointer<vtkDataObject>>();
+    vtkImageData *imageData = vtkImageData::SafeDownCast(data);
+    int dims[3];
+    imageData->GetDimensions(dims);
+    ASSERT_EQ(dims[0], 3);
+    ASSERT_EQ(dims[1], 4);
+    ASSERT_EQ(dims[2], 5);
+
+    for(int z=0; z < dims[2]; z++) {
+        for(int y=0; y < dims[1]; y++) {
+            for(int x=0; x<dims[0]; x++) {
+                ASSERT_EQ(imageData->GetScalarComponentAsDouble(x, y, z, 0), 2.0);
+            }
+        }
+    }
   } else {
     FAIL() << "Unable to load script.";
   }
