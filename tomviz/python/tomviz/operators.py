@@ -76,6 +76,7 @@ class Progress(object):
     # Write-only property to update child data
     data = property(fset=_data)
 
+
 class Operator(object):
     """
     The base operator class from which all operators should be derived.
