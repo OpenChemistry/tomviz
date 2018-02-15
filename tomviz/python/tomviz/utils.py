@@ -163,6 +163,16 @@ def get_coordinate_arrays(dataset):
     return (xx, yy, zz)
 
 
+def make_child_dataset(reference_dataset):
+    """Creates a child dataset with the same size as the reference_dataset.
+    """
+    from vtk import vtkImageData
+    new_child = vtkImageData()
+    new_child.CopyStructure(reference_dataset)
+
+    return new_child
+
+
 def connected_components(dataset, background_value=0, progress_callback=None):
     try:
         import itk
