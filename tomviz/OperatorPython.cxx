@@ -22,6 +22,7 @@
 #include <QPointer>
 #include <QtDebug>
 
+#include "ActiveObjects.h"
 #include "CustomPythonOperatorWidget.h"
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
@@ -34,6 +35,7 @@
 #include "vtkDataObject.h"
 #include "vtkImageData.h"
 #include "vtkNew.h"
+#include "vtkPointData.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyManager.h"
@@ -165,11 +167,9 @@ OperatorPython::OperatorPython(QObject* parentObject)
     }
   }
 
-  // Use a blocking queued connection to pause the running operator until the
-  // slot is finished copying the data and returns.
+  // Needed so the worker thread can update data in the UI thread.
   connect(this, SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)),
-          this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)),
-          Qt::BlockingQueuedConnection);
+          this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)));
 
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
@@ -359,6 +359,23 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   {
     Python python;
 
+    // Create child datasets in advance.
+    for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
+      QPair<QString, QString> nameLabelPair =
+        m_childDataSourceNamesAndLabels[i];
+      QString name(nameLabelPair.first);
+      QString label(nameLabelPair.second);
+
+      // Create uninitialized data set as a placeholder for the data
+      vtkSmartPointer<vtkImageData> childData = vtkSmartPointer<vtkImageData>::New();
+      childData->DeepCopy(data);
+      Q_ASSERT(childData->GetPointData()->GetScalars());
+
+      if (childData) {
+        emit newChildDataSource(label, childData);
+      }
+    }
+
     Python::Tuple args(1);
     args.set(0, pydata);
 
@@ -409,32 +426,6 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         continue;
       }
     }
-
-#if 0
-    // Segmentations, reconstructions, etc.
-    for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
-      QPair<QString, QString> nameLabelPair =
-        m_childDataSourceNamesAndLabels[i];
-      QString name(nameLabelPair.first);
-      QString label(nameLabelPair.second);
-      Python::Object child = outputDict[name];
-
-      if (!child.isValid()) {
-        errorEncountered = true;
-        qCritical() << "No child data source named '" << name
-                    << "' defined in output dictionary.\n";
-        continue;
-      }
-
-      vtkObjectBase* vtkobject =
-        Python::VTK::GetPointerFromObject(child, "vtkDataObject");
-      vtkSmartPointer<vtkDataObject> childData =
-        vtkDataObject::SafeDownCast(vtkobject);
-      if (childData) {
-        emit newChildDataSource(label, childData);
-      }
-    }
-#endif
 
     if (errorEncountered) {
 
@@ -514,17 +505,16 @@ void OperatorPython::createNewChildDataSource(
 
 void OperatorPython::updateChildDataSource(vtkSmartPointer<vtkDataObject> data)
 {
-  std::cout << "updateChildDataSource" << std::endl;
-
   // Check to see if a child data source has already been created. If not,
   // create it here.
   auto dataSource = childDataSource();
-  if (!dataSource) {
-    emit newChildDataSource(QString("tmp label"), data);
-  } else {
-    // Now deep copy the new data to the child source data if needed
-    dataSource->copyData(data);
-  }
+  Q_ASSERT(dataSource);
+
+  // Now deep copy the new data to the child source data if needed
+  dataSource->copyData(data);
+  emit dataSource->dataChanged();
+  emit dataSource->dataPropertiesChanged();
+  ActiveObjects::instance().renderAllViews();
 }
 
 void OperatorPython::setOperatorResult(const QString& name,
