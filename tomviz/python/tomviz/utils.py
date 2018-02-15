@@ -44,8 +44,11 @@ def is_numpy_vtk_type(newscalars):
 def set_scalars(dataobject, newscalars):
     do = dsa.WrapDataObject(dataobject)
     oldscalars = do.PointData.GetScalars()
-    name = oldscalars.GetName()
-    del oldscalars
+    if oldscalars is None:
+        name = "scalars"
+    else:
+        name = oldscalars.GetName()
+        del oldscalars
 
     if not is_numpy_vtk_type(newscalars):
         newscalars = newscalars.astype(np.float32)
