@@ -44,7 +44,8 @@ def web_export(*args, **kwargs):
         if not htmlFilePath.lower().endswith(('.html', '.htm')):
             htmlFilePath += '.html'
 
-        dataFileName = '%s.zip' % os.path.splitext(os.path.basename(htmlFilePath))[0]
+        dataFileName = '%s.zip' % os.path.splitext(
+            os.path.basename(htmlFilePath))[0]
         dataFilePath = os.path.join(os.path.dirname(htmlFilePath), dataFileName)
 
         # Camera properties
