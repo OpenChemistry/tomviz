@@ -21,7 +21,6 @@
 
 #include "vtkImageData.h"
 
-
 namespace py = pybind11;
 
 PYBIND11_VTK_TYPECASTER(vtkImageData)

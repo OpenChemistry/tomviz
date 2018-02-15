@@ -17,8 +17,8 @@
 #include "OperatorPythonWrapper.h"
 #include "OperatorPython.h"
 
-#include <vtkSmartPointer.h>
 #include <vtkImageData.h>
+#include <vtkSmartPointer.h>
 
 using namespace tomviz;
 

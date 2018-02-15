@@ -192,29 +192,29 @@ TEST_F(OperatorPythonTest, update_data)
     file.close();
     pythonOperator->setScript(script);
 
-    QSignalSpy spy(pythonOperator,
-                   SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)));
+    QSignalSpy spy(pythonOperator, SIGNAL(childDataSourceUpdated(
+                                     vtkSmartPointer<vtkDataObject>)));
     TransformResult result = pythonOperator->transform(dataObject);
     ASSERT_EQ(result, TransformResult::Complete);
 
     ASSERT_EQ(spy.count(), 1);
 
     QList<QVariant> args = spy.takeFirst();
-    vtkSmartPointer<vtkDataObject> data
-      = args.at(0).value<vtkSmartPointer<vtkDataObject>>();
-    vtkImageData *imageData = vtkImageData::SafeDownCast(data);
+    vtkSmartPointer<vtkDataObject> data =
+      args.at(0).value<vtkSmartPointer<vtkDataObject>>();
+    vtkImageData* imageData = vtkImageData::SafeDownCast(data);
     int dims[3];
     imageData->GetDimensions(dims);
     ASSERT_EQ(dims[0], 3);
     ASSERT_EQ(dims[1], 4);
     ASSERT_EQ(dims[2], 5);
 
-    for(int z=0; z < dims[2]; z++) {
-        for(int y=0; y < dims[1]; y++) {
-            for(int x=0; x<dims[0]; x++) {
-                ASSERT_EQ(imageData->GetScalarComponentAsDouble(x, y, z, 0), 2.0);
-            }
+    for (int z = 0; z < dims[2]; z++) {
+      for (int y = 0; y < dims[1]; y++) {
+        for (int x = 0; x < dims[0]; x++) {
+          ASSERT_EQ(imageData->GetScalarComponentAsDouble(x, y, z, 0), 2.0);
         }
+      }
     }
   } else {
     FAIL() << "Unable to load script.";
