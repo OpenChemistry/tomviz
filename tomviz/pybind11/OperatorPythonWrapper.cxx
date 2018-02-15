@@ -17,6 +17,9 @@
 #include "OperatorPythonWrapper.h"
 #include "OperatorPython.h"
 
+#include <vtkSmartPointer.h>
+#include <vtkImageData.h>
+
 using namespace tomviz;
 
 OperatorPythonWrapper::OperatorPythonWrapper(void* o)
@@ -60,17 +63,12 @@ std::string OperatorPythonWrapper::progressMessage()
   return this->op->progressMessage().toStdString();
 }
 
-void OperatorPythonWrapper::setDataUpdate(const vtkImageData* object)
+void OperatorPythonWrapper::progressData()
 {
-  std::cout << "OperatorPythonWrapper::setDataUpdate" << std::endl;
 }
 
-vtkImageData* OperatorPythonWrapper::dataUpdate()
+void OperatorPythonWrapper::setProgressData(vtkImageData* imageData)
 {
-  return nullptr;
+  emit this->op->childDataSourceUpdated(imageData);
 }
 
-void OperatorPythonWrapper::dataUpdated()
-{
-  this->op->dataUpdated();
-}

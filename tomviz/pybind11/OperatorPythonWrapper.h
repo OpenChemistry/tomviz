@@ -35,9 +35,10 @@ struct OperatorPythonWrapper
   int progressStep();
   void setProgressMessage(const std::string& message);
   std::string progressMessage();
-  void setDataUpdate(const vtkImageData* object);
-  vtkImageData* dataUpdate();
-  void dataUpdated();
+  // Dummy getter needed by our pybind11 version. TODO: Update to latest
+  // pybind11 as it supports write-only properties.
+  void progressData();
+  void setProgressData(vtkImageData* object);
 
   tomviz::OperatorPython* op = nullptr;
 };

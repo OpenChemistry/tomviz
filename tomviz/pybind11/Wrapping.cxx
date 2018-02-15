@@ -17,10 +17,14 @@
 #include <pybind11/pybind11.h>
 
 #include "OperatorPythonWrapper.h"
+#include "PybindVTKTypeCaster.h"
 
 #include "vtkImageData.h"
 
+
 namespace py = pybind11;
+
+PYBIND11_VTK_TYPECASTER(vtkImageData)
 
 PYBIND11_PLUGIN(_wrapping)
 {
@@ -31,7 +35,6 @@ PYBIND11_PLUGIN(_wrapping)
          [](OperatorPythonWrapper& instance, void* op) {
            new (&instance) OperatorPythonWrapper(op);
          })
-    .def("data_updated", &OperatorPythonWrapper::dataUpdated)
     .def_property_readonly("canceled", &OperatorPythonWrapper::canceled)
     .def_property("progress_maximum",
                   &OperatorPythonWrapper::totalProgressSteps,
@@ -40,8 +43,8 @@ PYBIND11_PLUGIN(_wrapping)
                   &OperatorPythonWrapper::setProgressStep)
     .def_property("progress_message", &OperatorPythonWrapper::progressMessage,
                   &OperatorPythonWrapper::setProgressMessage)
-    .def_property("progress_data", &OperatorPythonWrapper::dataUpdate,
-                  &OperatorPythonWrapper::setDataUpdate);
+    .def_property("progress_data", &OperatorPythonWrapper::progressData,
+                  &OperatorPythonWrapper::setProgressData);
 
   return m.ptr();
 }
