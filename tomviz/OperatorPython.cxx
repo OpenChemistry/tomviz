@@ -164,6 +164,13 @@ OperatorPython::OperatorPython(QObject* parentObject)
       qCritical() << "Unable to locate delete_module.";
     }
   }
+
+  // Use a blocking queued connection to pause the running operator until the
+  // slot is finished copying the data and returns.
+  connect(this, SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)),
+          this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)),
+          Qt::BlockingQueuedConnection);
+
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
   connect(this, SIGNAL(newChildDataSource(const QString&,
@@ -403,6 +410,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       }
     }
 
+#if 0
     // Segmentations, reconstructions, etc.
     for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
       QPair<QString, QString> nameLabelPair =
@@ -426,6 +434,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         emit newChildDataSource(label, childData);
       }
     }
+#endif
 
     if (errorEncountered) {
 
@@ -501,6 +510,21 @@ void OperatorPython::createNewChildDataSource(
   childDS->setFileName(label);
   setChildDataSource(childDS);
   emit Operator::newChildDataSource(childDS);
+}
+
+void OperatorPython::updateChildDataSource(vtkSmartPointer<vtkDataObject> data)
+{
+  std::cout << "updateChildDataSource" << std::endl;
+
+  // Check to see if a child data source has already been created. If not,
+  // create it here.
+  auto dataSource = childDataSource();
+  if (!dataSource) {
+    emit newChildDataSource(QString("tmp label"), data);
+  } else {
+    // Now deep copy the new data to the child source data if needed
+    dataSource->copyData(data);
+  }
 }
 
 void OperatorPython::setOperatorResult(const QString& name,

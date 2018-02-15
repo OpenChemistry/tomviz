@@ -87,6 +87,7 @@ private slots:
   // Create a new child datasource and set it on this operator
   void createNewChildDataSource(const QString& label,
                                 vtkSmartPointer<vtkDataObject>);
+  void updateChildDataSource(vtkSmartPointer<vtkDataObject>);
   void setOperatorResult(const QString& name,
                          vtkSmartPointer<vtkDataObject> result);
 
