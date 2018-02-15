@@ -205,6 +205,9 @@ public:
   /// producer takes over ownership of the data object.
   void setData(vtkDataObject* newData);
 
+  /// Copy data from a data object to the existing data.
+  void copyData(vtkDataObject* newData);
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.

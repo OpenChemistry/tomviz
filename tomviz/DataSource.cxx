@@ -812,6 +812,16 @@ void DataSource::setData(vtkDataObject* newData)
   typeArray->SetTuple1(0, this->Internals->Type);
 }
 
+void DataSource::copyData(vtkDataObject* newData)
+{
+  auto tp = producer();
+  Q_ASSERT(tp);
+  auto oldData = tp->GetOutputDataObject(0);
+  Q_ASSERT(oldData);
+
+  oldData->DeepCopy(newData);
+}
+
 vtkSMProxy* DataSource::colorMap() const
 {
   return this->Internals->ColorMap;
