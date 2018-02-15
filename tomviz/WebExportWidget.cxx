@@ -150,7 +150,8 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 
   // Multi-value exploration
   QLabel* multiValueLabel = new QLabel("Values:");
-  this->m_multiValue = new QLineEdit("25, 50, 75, 100, 125, 150, 175, 200, 225");
+  this->m_multiValue =
+    new QLineEdit("25, 50, 75, 100, 125, 150, 175, 200, 225");
 
   QHBoxLayout* multiValueGroupLayout = new QHBoxLayout;
   multiValueGroupLayout->addWidget(multiValueLabel);
@@ -191,8 +192,10 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   v->addLayout(actionGroup);
 
   // UI binding
-  this->connect(this->m_exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
-  this->connect(this->m_cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
+  this->connect(this->m_exportButton, SIGNAL(pressed()), this,
+                SLOT(onExport()));
+  this->connect(this->m_cancelButton, SIGNAL(pressed()), this,
+                SLOT(onCancel()));
   this->connect(this->m_exportType, SIGNAL(currentIndexChanged(int)), this,
                 SLOT(onTypeChange(int)));
 
