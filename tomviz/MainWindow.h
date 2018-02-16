@@ -58,6 +58,7 @@ private slots:
   void openTilt();
   void openDataLink();
   void openUserGuide();
+  void openVisIntro();
 
   /// Change the active data source in the UI.
   void dataSourceChanged(DataSource* source);

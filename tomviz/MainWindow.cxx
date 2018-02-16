@@ -390,6 +390,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
   QAction* userGuideAction = m_ui->menuHelp->addAction("User Guide");
   connect(userGuideAction, SIGNAL(triggered()), SLOT(openUserGuide()));
+  QAction* introAction = m_ui->menuHelp->addAction("Intro to 3D Visualization");
+  connect(introAction, SIGNAL(triggered()), SLOT(openVisIntro()));
 #ifdef TOMVIZ_DATA
   QAction* reconAction =
     sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
@@ -526,6 +528,15 @@ void MainWindow::openUserGuide()
       this, "User Guide not found",
       QString("The user guide \"%1\" was not found.").arg(path));
   }
+}
+
+void MainWindow::openVisIntro()
+{
+  QString link = "https://www.cambridge.org/core/journals/microscopy-today/"
+                 "article/"
+                 "tutorial-on-the-visualization-of-volumetric-data-using-"
+                 "tomviz/55B58F40A16E96CDEB644202D9FD08BB";
+  QDesktopServices::openUrl(QUrl(link));
 }
 
 void MainWindow::dataSourceChanged(DataSource*)
