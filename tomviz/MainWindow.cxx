@@ -390,6 +390,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
   QAction* userGuideAction = m_ui->menuHelp->addAction("User Guide");
   connect(userGuideAction, SIGNAL(triggered()), SLOT(openUserGuide()));
+  QAction* introAction = m_ui->menuHelp->addAction("Intro to 3D Visualization");
+  connect(introAction, SIGNAL(triggered()), SLOT(openVisIntro()));
 #ifdef TOMVIZ_DATA
   QAction* reconAction =
     sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
@@ -517,6 +519,21 @@ void MainWindow::openUserGuide()
 {
   QString path = QApplication::applicationDirPath() +
                  "/../share/tomviz/docs/TomvizBasicUserGuide.pdf";
+  QFileInfo info(path);
+  if (info.exists()) {
+    QUrl userGuideUrl = QUrl::fromLocalFile(path);
+    QDesktopServices::openUrl(userGuideUrl);
+  } else {
+    QMessageBox::warning(
+      this, "User Guide not found",
+      QString("The user guide \"%1\" was not found.").arg(path));
+  }
+}
+
+void MainWindow::openVisIntro()
+{
+  QString path = QApplication::applicationDirPath() +
+                 "/../share/tomviz/docs/IntroTo3DVisualization.pdf";
   QFileInfo info(path);
   if (info.exists()) {
     QUrl userGuideUrl = QUrl::fromLocalFile(path);
