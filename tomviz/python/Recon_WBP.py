@@ -34,6 +34,11 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         counter = 1
         etcMessage = 'Estimated time to complete: n/a'
 
+
+        child = utils.make_child_dataset(dataset) #create child for recon
+        utils.mark_as_volume(child)
+        scalars = utils.get_scalars(dataset)
+
         for i in range(Nslice):
             if self.canceled:
                 return
@@ -52,17 +57,19 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
             etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
-        # Set up the output dataset
-        from vtk import vtkImageData
-        recon_dataset = vtkImageData()
-        recon_dataset.CopyStructure(dataset)
-        utils.set_array(recon_dataset, recon)
-        utils.mark_as_volume(recon_dataset)
+            # Update only once every so many steps
+            if (i + 1) % 40 == 0:
+                utils.set_array(child, recon) #add recon to child
+                # This copies data to the main thread
+                self.progress.data = child
+
+        # One last update of the child data.
+        utils.set_array(child, recon) #add recon to child
+        self.progress.data = child
 
         returnValues = {}
-        returnValues["reconstruction"] = recon_dataset
+        returnValues["reconstruction"] = child
         return returnValues
-
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     if sinogram.ndim != 2:
