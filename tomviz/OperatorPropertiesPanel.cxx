@@ -76,6 +76,13 @@ void OperatorPropertiesPanel::setOperator(Operator* op)
 
 void OperatorPropertiesPanel::setOperator(OperatorPython* op)
 {
+  auto buttonLayout = new QHBoxLayout;
+  auto viewCodeButton = new QPushButton("View Code", this);
+
+  connect(viewCodeButton, &QAbstractButton::clicked, this,
+          &OperatorPropertiesPanel::viewCodePressed);
+  buttonLayout->addWidget(viewCodeButton);
+
   m_operatorWidget = new OperatorWidget(this);
   m_operatorWidget->setupUI(op);
 
@@ -84,29 +91,21 @@ void OperatorPropertiesPanel::setOperator(OperatorPython* op)
   if (!m_operatorWidget->layout() || m_operatorWidget->layout()->count() == 0) {
     m_operatorWidget->deleteLater();
     m_operatorWidget = nullptr;
-    return;
+  } else {
+    // For now add to scroll box, out operator widget tend to be a little
+    // wide!
+    auto scroll = new QScrollArea(this);
+    scroll->setWidget(m_operatorWidget);
+
+    m_layout->addWidget(scroll);
+
+    auto apply =
+      new QDialogButtonBox(QDialogButtonBox::Apply, Qt::Horizontal, this);
+    connect(apply, &QDialogButtonBox::clicked, this,
+            &OperatorPropertiesPanel::apply);
+
+    buttonLayout->addWidget(apply);
   }
-
-  // For now add to scroll box, out operator widget tend to be a little
-  // wide!
-  auto scroll = new QScrollArea(this);
-  scroll->setWidget(m_operatorWidget);
-
-  m_layout->addWidget(scroll);
-
-  auto buttonLayout = new QHBoxLayout;
-  auto viewCodeButton = new QPushButton("View Code", this);
-
-  connect(viewCodeButton, &QAbstractButton::clicked, this,
-          &OperatorPropertiesPanel::viewCodePressed);
-  buttonLayout->addWidget(viewCodeButton);
-
-  auto apply =
-    new QDialogButtonBox(QDialogButtonBox::Apply, Qt::Horizontal, this);
-  connect(apply, &QDialogButtonBox::clicked, this,
-          &OperatorPropertiesPanel::apply);
-
-  buttonLayout->addWidget(apply);
   m_layout->addItem(buttonLayout);
 }
 
