@@ -184,6 +184,13 @@ private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
 
+class TemporarilyReleaseGil {
+
+public:
+  TemporarilyReleaseGil();
+  ~TemporarilyReleaseGil();
+};
+
 struct OperatorDescription
 {
   QString label;

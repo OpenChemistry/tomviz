@@ -504,4 +504,13 @@ std::vector<OperatorDescription> findCustomOperators(const QString& path)
 
   return operators;
 }
+
+TemporarilyReleaseGil::TemporarilyReleaseGil() {
+  PyGILState_Release(PyGILState_LOCKED);
+}
+
+TemporarilyReleaseGil::~TemporarilyReleaseGil() {
+  PyGILState_Ensure();
+}
+
 }
