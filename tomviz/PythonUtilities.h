@@ -28,6 +28,9 @@ struct _object;
 typedef _object PyObject;
 #endif
 
+// Definition in pystate.h
+typedef struct _ts PyThreadState;
+
 class vtkSmartPyObject;
 class vtkObjectBase;
 class vtkPythonScopeGilEnsurer;
@@ -185,6 +188,8 @@ private:
 };
 
 class TemporarilyReleaseGil {
+
+  PyThreadState* m_save = nullptr;
 
 public:
   TemporarilyReleaseGil();
