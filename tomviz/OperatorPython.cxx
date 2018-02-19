@@ -365,8 +365,6 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     // Create uninitialized data set as a placeholder for the data
     vtkSmartPointer<vtkImageData> childData =
       vtkSmartPointer<vtkImageData>::New();
-    childData->DeepCopy(data);
-    Q_ASSERT(childData->GetPointData()->GetScalars());
 
     if (childData) {
       emit newChildDataSource(label, childData);
@@ -503,6 +501,7 @@ void OperatorPython::createNewChildDataSource(
 
   childDS->setFileName(label);
   setChildDataSource(childDS);
+  setHasChildDataSource(true);
   emit Operator::newChildDataSource(childDS);
 }
 
