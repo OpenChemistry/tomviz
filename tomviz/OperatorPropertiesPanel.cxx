@@ -92,7 +92,7 @@ void OperatorPropertiesPanel::setOperator(OperatorPython* op)
     m_operatorWidget->deleteLater();
     m_operatorWidget = nullptr;
   } else {
-    // For now add to scroll box, out operator widget tend to be a little
+    // For now add to scroll box, our operator widget tend to be a little
     // wide!
     auto scroll = new QScrollArea(this);
     scroll->setWidget(m_operatorWidget);
