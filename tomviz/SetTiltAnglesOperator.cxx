@@ -244,7 +244,10 @@ public:
         QClipboard* clipboard = QGuiApplication::clipboard();
         const QMimeData* mimeData = clipboard->mimeData();
         if (mimeData->hasText()) {
-          QString text = mimeData->text();
+          // some spreadsheet programs include an trailing newline when copying
+          // a range of cells which then gets split into an empty string entry.
+          // Strip this trailing newline.
+          QString text = mimeData->text().trimmed();
           QStringList rows = text.split("\n");
           QStringList angles;
           for (const QString& row: rows) {
