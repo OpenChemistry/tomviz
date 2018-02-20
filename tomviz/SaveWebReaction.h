@@ -16,14 +16,7 @@
 #ifndef tomvizSaveWebReaction_h
 #define tomvizSaveWebReaction_h
 
-#include "PythonUtilities.h"
 #include <pqReaction.h>
-
-#include <QPointer>
-#include <QThread>
-#include <QVariantMap>
-
-class QDialog;
 
 namespace tomviz {
 
