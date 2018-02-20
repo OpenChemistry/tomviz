@@ -42,42 +42,42 @@ namespace tomviz {
 WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
 {
   QVBoxLayout* v = new QVBoxLayout(this);
-  this->setMinimumWidth(500);
-  this->setMinimumHeight(400);
-  this->setWindowTitle("Web export data");
+  setMinimumWidth(500);
+  setMinimumHeight(400);
+  setWindowTitle("Web export data");
 
   // Output type
   QLabel* outputTypelabel = new QLabel("Output type:");
   QHBoxLayout* typeGroup = new QHBoxLayout;
-  this->m_exportType = new QComboBox;
-  this->m_exportType->addItem("Images: Current scene");
-  this->m_exportType->addItem("Images: Volume exploration");
-  this->m_exportType->addItem("Images: Contour exploration");
-  this->m_exportType->addItem("Geometry: Current scene contour(s)");
-  this->m_exportType->addItem("Geometry: Contour exploration");
-  this->m_exportType->addItem("Geometry: Volume");
-  // this->exportType->addItem("Composite surfaces"); // specularColor segfault
-  this->m_exportType->setCurrentIndex(0);
+  m_exportType = new QComboBox;
+  m_exportType->addItem("Images: Current scene");
+  m_exportType->addItem("Images: Volume exploration");
+  m_exportType->addItem("Images: Contour exploration");
+  m_exportType->addItem("Geometry: Current scene contour(s)");
+  m_exportType->addItem("Geometry: Contour exploration");
+  m_exportType->addItem("Geometry: Volume");
+  // exportType->addItem("Composite surfaces"); // specularColor segfault
+  m_exportType->setCurrentIndex(0);
   typeGroup->addWidget(outputTypelabel);
-  typeGroup->addWidget(this->m_exportType, 1);
+  typeGroup->addWidget(m_exportType, 1);
   v->addLayout(typeGroup);
 
   // Image size
   QLabel* imageSizeGroupLabel = new QLabel("View size:");
 
   QLabel* imageWidthLabel = new QLabel("Width");
-  this->m_imageWidth = new QSpinBox();
-  this->m_imageWidth->setRange(50, 2048);
-  this->m_imageWidth->setSingleStep(1);
-  this->m_imageWidth->setValue(500);
-  this->m_imageWidth->setMinimumWidth(100);
+  m_imageWidth = new QSpinBox();
+  m_imageWidth->setRange(50, 2048);
+  m_imageWidth->setSingleStep(1);
+  m_imageWidth->setValue(500);
+  m_imageWidth->setMinimumWidth(100);
 
   QLabel* imageHeightLabel = new QLabel("Height");
-  this->m_imageHeight = new QSpinBox();
-  this->m_imageHeight->setRange(50, 2048);
-  this->m_imageHeight->setSingleStep(1);
-  this->m_imageHeight->setValue(500);
-  this->m_imageHeight->setMinimumWidth(100);
+  m_imageHeight = new QSpinBox();
+  m_imageHeight->setRange(50, 2048);
+  m_imageHeight->setSingleStep(1);
+  m_imageHeight->setValue(500);
+  m_imageHeight->setMinimumWidth(100);
 
   QHBoxLayout* imageSizeGroupLayout = new QHBoxLayout;
   imageSizeGroupLayout->addWidget(imageSizeGroupLabel);
@@ -88,26 +88,26 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   imageSizeGroupLayout->addWidget(imageHeightLabel);
   imageSizeGroupLayout->addWidget(m_imageHeight);
 
-  this->m_imageSizeGroup = new QWidget();
-  this->m_imageSizeGroup->setLayout(imageSizeGroupLayout);
-  v->addWidget(this->m_imageSizeGroup);
+  m_imageSizeGroup = new QWidget();
+  m_imageSizeGroup->setLayout(imageSizeGroupLayout);
+  v->addWidget(m_imageSizeGroup);
 
   // Camera settings
   QLabel* cameraGrouplabel = new QLabel("Camera tilts:");
 
   QLabel* phiLabel = new QLabel("Phi");
-  this->m_nbPhi = new QSpinBox();
-  this->m_nbPhi->setRange(4, 72);
-  this->m_nbPhi->setSingleStep(4);
-  this->m_nbPhi->setValue(36);
-  this->m_nbPhi->setMinimumWidth(100);
+  m_nbPhi = new QSpinBox();
+  m_nbPhi->setRange(4, 72);
+  m_nbPhi->setSingleStep(4);
+  m_nbPhi->setValue(36);
+  m_nbPhi->setMinimumWidth(100);
 
   QLabel* thetaLabel = new QLabel("Theta");
-  this->m_nbTheta = new QSpinBox();
-  this->m_nbTheta->setRange(1, 20);
-  this->m_nbTheta->setSingleStep(1);
-  this->m_nbTheta->setValue(5);
-  this->m_nbTheta->setMinimumWidth(100);
+  m_nbTheta = new QSpinBox();
+  m_nbTheta->setRange(1, 20);
+  m_nbTheta->setSingleStep(1);
+  m_nbTheta->setValue(5);
+  m_nbTheta->setMinimumWidth(100);
 
   QHBoxLayout* cameraGroupLayout = new QHBoxLayout;
   cameraGroupLayout->addWidget(cameraGrouplabel);
@@ -118,24 +118,24 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   cameraGroupLayout->addWidget(thetaLabel);
   cameraGroupLayout->addWidget(m_nbTheta);
 
-  this->m_cameraGroup = new QWidget();
-  this->m_cameraGroup->setLayout(cameraGroupLayout);
-  v->addWidget(this->m_cameraGroup);
+  m_cameraGroup = new QWidget();
+  m_cameraGroup->setLayout(cameraGroupLayout);
+  v->addWidget(m_cameraGroup);
 
   // Volume exploration
   QLabel* opacityLabel = new QLabel("Max opacity");
-  this->m_maxOpacity = new QSpinBox();
-  this->m_maxOpacity->setRange(10, 100);
-  this->m_maxOpacity->setSingleStep(10);
-  this->m_maxOpacity->setValue(50);
-  this->m_maxOpacity->setMinimumWidth(100);
+  m_maxOpacity = new QSpinBox();
+  m_maxOpacity->setRange(10, 100);
+  m_maxOpacity->setSingleStep(10);
+  m_maxOpacity->setValue(50);
+  m_maxOpacity->setMinimumWidth(100);
 
   QLabel* spanLabel = new QLabel("Tent width");
-  this->m_spanValue = new QSpinBox();
-  this->m_spanValue->setRange(1, 200);
-  this->m_spanValue->setSingleStep(1);
-  this->m_spanValue->setValue(10);
-  this->m_spanValue->setMinimumWidth(100);
+  m_spanValue = new QSpinBox();
+  m_spanValue->setRange(1, 200);
+  m_spanValue->setSingleStep(1);
+  m_spanValue->setValue(10);
+  m_spanValue->setMinimumWidth(100);
 
   QHBoxLayout* volumeExplorationGroupLayout = new QHBoxLayout;
   volumeExplorationGroupLayout->addWidget(opacityLabel);
@@ -144,65 +144,62 @@ WebExportWidget::WebExportWidget(QWidget* p) : QDialog(p)
   volumeExplorationGroupLayout->addWidget(spanLabel);
   volumeExplorationGroupLayout->addWidget(m_spanValue);
 
-  this->m_volumeExplorationGroup = new QWidget();
-  this->m_volumeExplorationGroup->setLayout(volumeExplorationGroupLayout);
-  v->addWidget(this->m_volumeExplorationGroup);
+  m_volumeExplorationGroup = new QWidget();
+  m_volumeExplorationGroup->setLayout(volumeExplorationGroupLayout);
+  v->addWidget(m_volumeExplorationGroup);
 
   // Multi-value exploration
   QLabel* multiValueLabel = new QLabel("Values:");
-  this->m_multiValue =
-    new QLineEdit("25, 50, 75, 100, 125, 150, 175, 200, 225");
+  m_multiValue = new QLineEdit("25, 50, 75, 100, 125, 150, 175, 200, 225");
 
   QHBoxLayout* multiValueGroupLayout = new QHBoxLayout;
   multiValueGroupLayout->addWidget(multiValueLabel);
-  multiValueGroupLayout->addWidget(this->m_multiValue);
+  multiValueGroupLayout->addWidget(m_multiValue);
 
-  this->m_valuesGroup = new QWidget();
-  this->m_valuesGroup->setLayout(multiValueGroupLayout);
-  v->addWidget(this->m_valuesGroup);
+  m_valuesGroup = new QWidget();
+  m_valuesGroup->setLayout(multiValueGroupLayout);
+  v->addWidget(m_valuesGroup);
 
   // Volume down sampling
   QLabel* scaleLabel = new QLabel("Sampling stride");
-  this->m_scale = new QSpinBox();
-  this->m_scale->setRange(1, 5);
-  this->m_scale->setSingleStep(1);
-  this->m_scale->setValue(1);
-  this->m_scale->setMinimumWidth(100);
+  m_scale = new QSpinBox();
+  m_scale->setRange(1, 5);
+  m_scale->setSingleStep(1);
+  m_scale->setValue(1);
+  m_scale->setMinimumWidth(100);
 
   QHBoxLayout* scaleGroupLayout = new QHBoxLayout;
   scaleGroupLayout->addWidget(scaleLabel);
-  scaleGroupLayout->addWidget(this->m_scale);
+  scaleGroupLayout->addWidget(m_scale);
 
-  this->m_volumeResampleGroup = new QWidget();
-  this->m_volumeResampleGroup->setLayout(scaleGroupLayout);
-  v->addWidget(this->m_volumeResampleGroup);
+  m_volumeResampleGroup = new QWidget();
+  m_volumeResampleGroup->setLayout(scaleGroupLayout);
+  v->addWidget(m_volumeResampleGroup);
 
   v->addStretch();
 
   // Action buttons
   QHBoxLayout* actionGroup = new QHBoxLayout;
-  this->m_keepData = new QCheckBox("Generate data for viewer");
-  this->m_exportButton = new QPushButton("Export");
-  this->m_cancelButton = new QPushButton("Cancel");
-  actionGroup->addWidget(this->m_keepData);
+  m_keepData = new QCheckBox("Generate data for viewer");
+  m_exportButton = new QPushButton("Export");
+  m_cancelButton = new QPushButton("Cancel");
+  actionGroup->addWidget(m_keepData);
   actionGroup->addStretch();
-  actionGroup->addWidget(this->m_exportButton);
+  actionGroup->addWidget(m_exportButton);
   actionGroup->addSpacing(20);
-  actionGroup->addWidget(this->m_cancelButton);
+  actionGroup->addWidget(m_cancelButton);
   v->addLayout(actionGroup);
 
   // UI binding
-  this->connect(this->m_exportButton, SIGNAL(pressed()), this,
-                SLOT(onExport()));
-  this->connect(this->m_cancelButton, SIGNAL(pressed()), this,
-                SLOT(onCancel()));
-  this->connect(this->m_exportType, SIGNAL(currentIndexChanged(int)), this,
-                SLOT(onTypeChange(int)));
+  connect(m_exportButton, SIGNAL(pressed()), this, SLOT(onExport()));
+  connect(m_cancelButton, SIGNAL(pressed()), this, SLOT(onCancel()));
+  connect(m_exportType, SIGNAL(currentIndexChanged(int)), this,
+          SLOT(onTypeChange(int)));
 
   // Initialize visibility
-  this->onTypeChange(0);
+  onTypeChange(0);
 
-  this->restoreSettings();
+  restoreSettings();
 
   connect(this, &QDialog::finished, this,
           &WebExportWidget::writeWidgetSettings);
@@ -212,42 +209,41 @@ void WebExportWidget::onTypeChange(int index)
 {
   pqView* view = pqActiveObjects::instance().activeView();
   QSize size = view->getSize();
-  this->m_imageWidth->setMaximum(size.width());
-  this->m_imageHeight->setMaximum(size.height());
+  m_imageWidth->setMaximum(size.width());
+  m_imageHeight->setMaximum(size.height());
 
-  this->m_imageSizeGroup->setVisible(index < 3);
-  this->m_cameraGroup->setVisible(index < 3);
-  this->m_volumeExplorationGroup->setVisible(index == 1);
-  this->m_valuesGroup->setVisible(index == 1 || index == 2 || index == 4);
-  this->m_volumeResampleGroup->setVisible(index == 5);
+  m_imageSizeGroup->setVisible(index < 3);
+  m_cameraGroup->setVisible(index < 3);
+  m_volumeExplorationGroup->setVisible(index == 1);
+  m_valuesGroup->setVisible(index == 1 || index == 2 || index == 4);
+  m_volumeResampleGroup->setVisible(index == 5);
 }
 
 void WebExportWidget::onExport()
 {
-  this->accept();
+  accept();
 }
 
 void WebExportWidget::onCancel()
 {
-  this->reject();
+  reject();
 }
 
 QMap<QString, QVariant> WebExportWidget::getKeywordArguments()
 {
-  this->m_kwargs["executionPath"] =
-    QVariant(QCoreApplication::applicationDirPath());
-  this->m_kwargs["exportType"] = QVariant(this->m_exportType->currentIndex());
-  this->m_kwargs["imageWidth"] = QVariant(this->m_imageWidth->value());
-  this->m_kwargs["imageHeight"] = QVariant(this->m_imageHeight->value());
-  this->m_kwargs["nbPhi"] = QVariant(this->m_nbPhi->value());
-  this->m_kwargs["nbTheta"] = QVariant(this->m_nbTheta->value());
-  this->m_kwargs["keepData"] = QVariant(this->m_keepData->checkState());
-  this->m_kwargs["maxOpacity"] = QVariant(this->m_maxOpacity->value());
-  this->m_kwargs["tentWidth"] = QVariant(this->m_spanValue->value());
-  this->m_kwargs["volumeScale"] = QVariant(this->m_scale->value());
-  this->m_kwargs["multiValue"] = QVariant(this->m_multiValue->text());
+  m_kwargs["executionPath"] = QVariant(QCoreApplication::applicationDirPath());
+  m_kwargs["exportType"] = QVariant(m_exportType->currentIndex());
+  m_kwargs["imageWidth"] = QVariant(m_imageWidth->value());
+  m_kwargs["imageHeight"] = QVariant(m_imageHeight->value());
+  m_kwargs["nbPhi"] = QVariant(m_nbPhi->value());
+  m_kwargs["nbTheta"] = QVariant(m_nbTheta->value());
+  m_kwargs["keepData"] = QVariant(m_keepData->checkState());
+  m_kwargs["maxOpacity"] = QVariant(m_maxOpacity->value());
+  m_kwargs["tentWidth"] = QVariant(m_spanValue->value());
+  m_kwargs["volumeScale"] = QVariant(m_scale->value());
+  m_kwargs["multiValue"] = QVariant(m_multiValue->text());
 
-  return this->m_kwargs;
+  return m_kwargs;
 }
 
 QMap<QString, QVariant> WebExportWidget::readSettings()
@@ -280,64 +276,62 @@ void WebExportWidget::writeWidgetSettings()
 {
   QVariantMap settingsMap;
 
-  settingsMap["phi"] = this->m_nbPhi->value();
-  settingsMap["theta"] = this->m_nbTheta->value();
-  settingsMap["imageWidth"] = this->m_imageWidth->value();
-  settingsMap["imageHeight"] = this->m_imageHeight->value();
-  settingsMap["generateDataViewer"] = this->m_keepData->isChecked();
-  settingsMap["exportType"] = this->m_exportType->currentIndex();
-  settingsMap["maxOpacity"] = this->m_maxOpacity->value();
-  settingsMap["tentWidth"] = this->m_spanValue->value();
-  settingsMap["volumeScale"] = this->m_scale->value();
-  settingsMap["multiValue"] = this->m_multiValue->text();
+  settingsMap["phi"] = m_nbPhi->value();
+  settingsMap["theta"] = m_nbTheta->value();
+  settingsMap["imageWidth"] = m_imageWidth->value();
+  settingsMap["imageHeight"] = m_imageHeight->value();
+  settingsMap["generateDataViewer"] = m_keepData->isChecked();
+  settingsMap["exportType"] = m_exportType->currentIndex();
+  settingsMap["maxOpacity"] = m_maxOpacity->value();
+  settingsMap["tentWidth"] = m_spanValue->value();
+  settingsMap["volumeScale"] = m_scale->value();
+  settingsMap["multiValue"] = m_multiValue->text();
 
-  this->writeSettings(settingsMap);
+  writeSettings(settingsMap);
 }
 
 void WebExportWidget::restoreSettings()
 {
-  QVariantMap settingsMap = this->readSettings();
+  QVariantMap settingsMap = readSettings();
   if (settingsMap.contains("phi")) {
-    this->m_nbPhi->setValue(settingsMap.value("phi").toInt());
+    m_nbPhi->setValue(settingsMap.value("phi").toInt());
   }
 
   if (settingsMap.contains("theta")) {
-    this->m_nbTheta->setValue(settingsMap.value("theta").toInt());
+    m_nbTheta->setValue(settingsMap.value("theta").toInt());
   }
 
   if (settingsMap.contains("imageWidth")) {
-    this->m_imageWidth->setValue(settingsMap.value("imageWidth").toInt());
+    m_imageWidth->setValue(settingsMap.value("imageWidth").toInt());
   }
 
   if (settingsMap.contains("imageHeight")) {
-    this->m_imageHeight->setValue(settingsMap.value("imageHeight").toInt());
+    m_imageHeight->setValue(settingsMap.value("imageHeight").toInt());
   }
 
   if (settingsMap.contains("generateDataViewer")) {
-    this->m_keepData->setChecked(
-      settingsMap.value("generateDataViewer").toBool());
+    m_keepData->setChecked(settingsMap.value("generateDataViewer").toBool());
   }
 
   if (settingsMap.contains("exportType")) {
-    this->m_exportType->setCurrentIndex(
-      settingsMap.value("exportType").toInt());
+    m_exportType->setCurrentIndex(settingsMap.value("exportType").toInt());
   }
 
   if (settingsMap.contains("maxOpacity")) {
-    this->m_maxOpacity->setValue(settingsMap.value("maxOpacity").toInt());
+    m_maxOpacity->setValue(settingsMap.value("maxOpacity").toInt());
   }
 
   if (settingsMap.contains("tentWidth")) {
 
-    this->m_spanValue->setValue(settingsMap.value("tentWidth").toInt());
+    m_spanValue->setValue(settingsMap.value("tentWidth").toInt());
   }
 
   if (settingsMap.contains("volumeScale")) {
-    this->m_scale->setValue(settingsMap.value("volumeScale").toInt());
+    m_scale->setValue(settingsMap.value("volumeScale").toInt());
   }
 
   if (settingsMap.contains("multiValue")) {
-    this->m_multiValue->setText(settingsMap.value("multiValue").toString());
+    m_multiValue->setText(settingsMap.value("multiValue").toString());
   }
 }
 }
