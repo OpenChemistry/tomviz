@@ -347,7 +347,6 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
 {
   m_timer = new QTimer(this);
   m_operator = op;
-  m_unalignedData = op->getDataSource();
   m_inputData = imageData;
   m_widget = new QVTKGLWidget(this);
   m_widget->installEventFilter(this);
@@ -366,7 +365,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   setWindowTitle("Align data");
 
   // Grab the image data from the data source...
-  vtkSMProxy* lut = m_unalignedData->colorMap();
+  vtkSMProxy* lut = op->getDataSource()->colorMap();
 
   // Set up the rendering pipeline
   if (imageData) {
@@ -463,7 +462,16 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   v->addLayout(optionsLayout);
 
   // get tilt angles and determine initial reference image
-  QVector<double> tiltAngles = m_unalignedData->getTiltAngles();
+  QVector<double> tiltAngles;
+  auto fd = imageData->GetFieldData();
+  if (fd->HasArray("tilt_angles")) {
+    auto angles = fd->GetArray("tilt_angles");
+    tiltAngles.resize(angles->GetNumberOfTuples());
+    for (int i = 0; i < tiltAngles.size(); ++i) {
+      tiltAngles[i] = angles->GetTuple1(i);
+    }
+  }
+
   int startRef = tiltAngles.indexOf(0); // use 0-degree image by default
   if (startRef == -1) {
     startRef = (m_minSliceNum + m_maxSliceNum) / 2;
