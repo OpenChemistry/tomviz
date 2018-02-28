@@ -86,7 +86,7 @@ public:
       array->SetName("tilt_angles");
       array->SetNumberOfTuples(numTiltAngles);
       array->FillComponent(0, 0.0);
-      fd->AddArray(array.GetPointer());
+      fd->AddArray(array);
     }
   }
 };
