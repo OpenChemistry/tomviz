@@ -870,7 +870,7 @@ void DataSource::setTiltAngles(const QVector<double>& angles)
 {
   auto data = this->dataObject();
   auto fd = data->GetFieldData();
-  if (fd->GetArray("tilt_angles")) {
+  if (fd->HasArray("tilt_angles")) {
     auto tiltAngles = fd->GetArray("tilt_angles");
     for (int i = 0; i < tiltAngles->GetNumberOfTuples() && i < angles.size();
          ++i) {
