@@ -359,29 +359,41 @@ Pipeline::ImageFuture::~ImageFuture()
 
 Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
 {
-  ImageFuture* imageFuture;
+  auto operators = m_data->operators();
 
-  auto dataSource = m_data;
-  auto dataObject = dataSource->copyData();
-  vtkSmartPointer<vtkImageData> result(vtkImageData::SafeDownCast(dataObject));
-  auto operators = dataSource->operators();
-  if (operators.size() > 1) {
-    auto index = operators.indexOf(op);
-    // Only run operators if we have some to run
-    if (index > 0) {
-      auto future = m_worker->run(result, operators.mid(0, index));
+  // If the op has not been added then we can just use the "Output" data source.
+  if (!operators.isEmpty() && !operators.contains(op)) {
+    auto transformed = this->findTransformedDataSource(m_data);
+    auto dataObject = transformed->copyData();
+    vtkSmartPointer<vtkImageData> result(
+      vtkImageData::SafeDownCast(dataObject));
+    auto imageFuture = new ImageFuture(op, result);
+    // Delay emitting signal until next event loop
+    QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
 
-      imageFuture = new ImageFuture(op, result, future);
+    return imageFuture;
+  } else {
+    auto dataSource = m_data;
+    auto dataObject = dataSource->copyData();
+    vtkSmartPointer<vtkImageData> result(
+      vtkImageData::SafeDownCast(dataObject));
+    if (operators.size() > 1) {
+      auto index = operators.indexOf(op);
+      // Only run operators if we have some to run
+      if (index > 0) {
+        auto future = m_worker->run(result, operators.mid(0, index));
+        auto imageFuture = new ImageFuture(op, result, future);
 
-      return imageFuture;
+        return imageFuture;
+      }
     }
+
+    auto imageFuture = new ImageFuture(op, result);
+    // Delay emitting signal until next event loop
+    QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
+
+    return imageFuture;
   }
-
-  imageFuture = new ImageFuture(op, result);
-  // Delay emitting signal until next event loop
-  QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
-
-  return imageFuture;
 }
 
 } // tomviz namespace
