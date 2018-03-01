@@ -357,8 +357,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
   // Create child datasets in advance.
   for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
-    QPair<QString, QString> nameLabelPair =
-      m_childDataSourceNamesAndLabels[i];
+    QPair<QString, QString> nameLabelPair = m_childDataSourceNamesAndLabels[i];
     QString name(nameLabelPair.first);
     QString label(nameLabelPair.second);
 

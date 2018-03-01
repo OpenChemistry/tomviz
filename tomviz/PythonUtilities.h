@@ -187,7 +187,8 @@ private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
 };
 
-class TemporarilyReleaseGil {
+class TemporarilyReleaseGil
+{
 
   PyThreadState* m_save = nullptr;
 

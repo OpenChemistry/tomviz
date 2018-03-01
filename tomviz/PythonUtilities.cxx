@@ -505,13 +505,15 @@ std::vector<OperatorDescription> findCustomOperators(const QString& path)
   return operators;
 }
 
-TemporarilyReleaseGil::TemporarilyReleaseGil() {
+TemporarilyReleaseGil::TemporarilyReleaseGil()
+{
   // This releases the current thread's lock and saves thread state. We need
   // to do this so the main thread can acquire the lock for certain operations.
   m_save = PyEval_SaveThread();
 }
 
-TemporarilyReleaseGil::~TemporarilyReleaseGil() {
+TemporarilyReleaseGil::~TemporarilyReleaseGil()
+{
   // Have this thread reacquire the lock and restore the previous thread state.
   PyEval_RestoreThread(m_save);
 }
