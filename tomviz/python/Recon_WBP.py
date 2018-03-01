@@ -34,10 +34,8 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         counter = 1
         etcMessage = 'Estimated time to complete: n/a'
 
-
         child = utils.make_child_dataset(dataset) #create child for recon
         utils.mark_as_volume(child)
-        scalars = utils.get_scalars(dataset)
 
         for i in range(Nslice):
             if self.canceled:
@@ -70,6 +68,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         returnValues = {}
         returnValues["reconstruction"] = child
         return returnValues
+
 
 def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     if sinogram.ndim != 2:
