@@ -41,7 +41,7 @@ addons:
     - clang-format-3.8
 install:
   - cd $HOME
-  - $TRAVIS_BUILD_DIR/scripts/travis/install.sh
+  - travis_wait 20 $TRAVIS_BUILD_DIR/scripts/travis/install.sh
 script:
   - cd $HOME
   - env
