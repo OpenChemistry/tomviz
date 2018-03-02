@@ -44,8 +44,11 @@ def is_numpy_vtk_type(newscalars):
 def set_scalars(dataobject, newscalars):
     do = dsa.WrapDataObject(dataobject)
     oldscalars = do.PointData.GetScalars()
-    name = oldscalars.GetName()
-    del oldscalars
+    if oldscalars is None:
+        name = "scalars"
+    else:
+        name = oldscalars.GetName()
+        del oldscalars
 
     if not is_numpy_vtk_type(newscalars):
         newscalars = newscalars.astype(np.float32)
@@ -161,6 +164,16 @@ def get_coordinate_arrays(dataset):
     yy, xx, zz = np.meshgrid(y, x, z)
 
     return (xx, yy, zz)
+
+
+def make_child_dataset(reference_dataset):
+    """Creates a child dataset with the same size as the reference_dataset.
+    """
+    from vtk import vtkImageData
+    new_child = vtkImageData()
+    new_child.CopyStructure(reference_dataset)
+
+    return new_child
 
 
 def connected_components(dataset, background_value=0, progress_callback=None):

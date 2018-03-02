@@ -17,8 +17,13 @@
 #include <pybind11/pybind11.h>
 
 #include "OperatorPythonWrapper.h"
+#include "PybindVTKTypeCaster.h"
+
+#include "vtkImageData.h"
 
 namespace py = pybind11;
+
+PYBIND11_VTK_TYPECASTER(vtkImageData)
 
 PYBIND11_PLUGIN(_wrapping)
 {
@@ -36,7 +41,9 @@ PYBIND11_PLUGIN(_wrapping)
     .def_property("progress_value", &OperatorPythonWrapper::progressStep,
                   &OperatorPythonWrapper::setProgressStep)
     .def_property("progress_message", &OperatorPythonWrapper::progressMessage,
-                  &OperatorPythonWrapper::setProgressMessage);
+                  &OperatorPythonWrapper::setProgressMessage)
+    .def_property("progress_data", &OperatorPythonWrapper::progressData,
+                  &OperatorPythonWrapper::setProgressData);
 
   return m.ptr();
 }
