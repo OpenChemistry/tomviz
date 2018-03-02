@@ -33,6 +33,7 @@
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
 #include "Behaviors.h"
+#include "Connection.h"
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
 #include "LoadDataReaction.h"
@@ -40,6 +41,7 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "PassiveAcquisitionWidget.h"
 #include "PipelineManager.h"
 #include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
@@ -96,12 +98,15 @@ QString getAutosaveFile()
   return dataDir.absoluteFilePath(".tomviz_autosave.tvsm");
 }
 }
+class Connection;
 
 namespace tomviz {
 
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   : QMainWindow(parent, flags), m_ui(new Ui::MainWindow)
 {
+  // Register meta type
+  Connection::registerType();
 
   // Override the default setting for showing full messages. This needs to be
   // done prior to calling m_ui->setupUi(this) which sets the default to false.
@@ -451,6 +456,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto acquisitionAction = m_ui->menuTools->addAction("Acquisition");
   connect(acquisitionAction, SIGNAL(triggered(bool)), acquisitionWidget,
           SLOT(show()));
+
+  auto passiveAcquisitionWidget = new PassiveAcquisitionWidget(this);
+  connect(m_ui->actionPassiveAcquisition, &QAction::triggered,
+          passiveAcquisitionWidget, &QWidget::show);
 
   registerCustomOperators();
 }

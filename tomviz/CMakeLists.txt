@@ -38,6 +38,12 @@ set(SOURCES
   ConvertToFloatOperator.h
   ConvertToFloatReaction.cxx
   ConvertToFloatReaction.h
+  Connection.cxx
+  Connection.h
+  ConnectionsWidget.cxx
+  ConnectionsWidget.h
+  ConnectionDialog.cxx
+  ConnectionDialog.h
   CropReaction.cxx
   CropReaction.h
   CropOperator.cxx
@@ -138,6 +144,8 @@ set(SOURCES
   OperatorResult.h
   OperatorWidget.cxx
   OperatorWidget.h
+  PassiveAcquisitionWidget.cxx
+  PassiveAcquisitionWidget.h
   Pipeline.cxx
   Pipeline.h
   PipelineManager.cxx
