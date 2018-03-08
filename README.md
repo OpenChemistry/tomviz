@@ -51,11 +51,13 @@ User Guide
 ----------
 Start by watching this short video to [see tomviz in action][tomviz_in_action].
 
-The [tomviz user guide](/docs/TomvizBasicUserGuide.pdf) has more detailed
+Also [tomviz user guide](/docs/TomvizBasicUserGuide.pdf) has more detailed
 information to get started.
 
 Publications using Tomviz
--------------------------
+------------------------
+- [A Simple Preparation Method for Full-Range Electron Tomography of Nanoparticles and Fine Powders, E. Padgett et al., Microsc. & Microanalys. (2017)](https://www.cambridge.org/core/journals/microscopy-and-microanalysis/article/simple-preparation-method-for-fullrange-electron-tomography-of-nanoparticles-and-fine-powders/918054E2B052A391B82467EB42FCB09C)
+- [Physical Confinement Promoting Formation of Cu2O–Au Heterostructures with Au Nanoparticles Entrapped within Crystalline Cu2O Nanorods, E. Asenath-Smith et al., Chem. Mater. (2017)](http://pubs.acs.org/doi/abs/10.1021/acs.chemmater.6b03653)
 - [Nanomaterial datasets to advance tomography in scanning transmission electron
   microscopy, B. Levin et al., Nature Scientific Data (2016)](http://www.nature.com/articles/sdata201641)
 - [Graphene kirigami, M.K. Blees et al., Nature (2015)](http://www.nature.com/nature/journal/v524/n7564/full/nature14588.html)
