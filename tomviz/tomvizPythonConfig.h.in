@@ -104,9 +104,8 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     // executable is a shared-forwarded executable in
     // INSTALL_DIR/lib/paraview-X.Y/paraview. In our case the exectuable is in
     // INSTALL_DIR/bin, so ParaView's baked-in paths do not work.
-    PythonAppInitPrependPythonPath(exe_dir + "/../lib/paraview/site-packages");
     PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../lib/paraview/site-packages/vtk");
+                                   "/../lib/paraview/python3.6/site-packages");
     // Add ITK to the python path
     PythonAppInitPrependPythonPath(exe_dir +
                                    "/../lib/itk/python3.6/dist-packages");
