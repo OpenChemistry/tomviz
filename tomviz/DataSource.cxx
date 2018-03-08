@@ -66,7 +66,6 @@ public:
   QList<Operator*> Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
   DataSource::DataSourceType Type;
-  vtkSmartPointer<vtkDataArray> TiltAngles;
   vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
   PersistenceState PersistState = PersistenceState::Saved;
@@ -79,23 +78,15 @@ public:
       vtkAlgorithm::SafeDownCast(this->ProducerProxy->GetClientSideObject());
     Q_ASSERT(alg);
     auto data = alg->GetOutputDataObject(0);
-
     auto fd = data->GetFieldData();
-    if (!this->TiltAngles) {
+    if (!fd->HasArray("tilt_angles")) {
       int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
       int numTiltAngles = extent[5] - extent[4] + 1;
       vtkNew<vtkDoubleArray> array;
       array->SetName("tilt_angles");
       array->SetNumberOfTuples(numTiltAngles);
       array->FillComponent(0, 0.0);
-      if (!fd->HasArray("tilt_angles")) {
-        fd->AddArray(array.GetPointer());
-      }
-      this->TiltAngles = array.Get();
-    } else {
-      if (!fd->HasArray("tilt_angles")) {
-        fd->AddArray(this->TiltAngles);
-      }
+      fd->AddArray(array);
     }
   }
 };
@@ -413,7 +404,10 @@ bool DataSource::deserialize(const pugi::xml_node& ns)
   // the load code is for legacy support.  This should be saved by the
   // SetTiltAnglesOperator.
   if (type() == TiltSeries && ns.child("TiltAngles")) {
-    deserializeDataArray(ns.child("TiltAngles"), this->Internals->TiltAngles);
+    auto data = this->dataObject();
+    auto fd = data->GetFieldData();
+    auto tiltAngles = fd->GetArray("tilt_angles");
+    deserializeDataArray(ns.child("TiltAngles"), tiltAngles);
   }
 
   if (ns.child("Spacing")) {
@@ -850,22 +844,20 @@ void DataSource::setType(DataSourceType t)
 
 bool DataSource::hasTiltAngles()
 {
-  vtkDataArray* tiltAngles = this->Internals->TiltAngles;
-  return tiltAngles != nullptr;
+  vtkDataObject* data = this->dataObject();
+  vtkFieldData* fd = data->GetFieldData();
+
+  return fd->HasArray("tilt_angles");
 }
 
 QVector<double> DataSource::getTiltAngles() const
 {
   QVector<double> result;
-  //vtkAlgorithm* tp = algorithm();
-  //vtkDataObject* data = tp->GetOutputDataObject(0);
-  //vtkFieldData* fd = data->GetFieldData();
-  vtkDataArray* tiltAngles = this->Internals->TiltAngles;
-  //  if (fd->HasArray("tilt_angles") && !useOriginalDataTiltAngles &&
-  //      fd->GetArray("tilt_angles") != this->Internals->TiltAngles.Get()) {
-  //    tiltAngles = fd->GetArray("tilt_angles");
-  //  }
-  if (tiltAngles) {
+  auto data = this->dataObject();
+  auto fd = data->GetFieldData();
+
+  if (fd->HasArray("tilt_angles")) {
+    auto tiltAngles = fd->GetArray("tilt_angles");
     result.resize(tiltAngles->GetNumberOfTuples());
     for (int i = 0; i < result.size(); ++i) {
       result[i] = tiltAngles->GetTuple1(i);
@@ -876,14 +868,10 @@ QVector<double> DataSource::getTiltAngles() const
 
 void DataSource::setTiltAngles(const QVector<double>& angles)
 {
-  vtkDataArray* tiltAngles = this->Internals->TiltAngles;
-  vtkAlgorithm* tp = algorithm();
-  vtkDataObject* data = tp->GetOutputDataObject(0);
-  vtkFieldData* fd = data->GetFieldData();
-  if (fd->GetArray("tilt_angles") != this->Internals->TiltAngles) {
-    tiltAngles = fd->GetArray("tilt_angles");
-  }
-  if (tiltAngles) {
+  auto data = this->dataObject();
+  auto fd = data->GetFieldData();
+  if (fd->HasArray("tilt_angles")) {
+    auto tiltAngles = fd->GetArray("tilt_angles");
     for (int i = 0; i < tiltAngles->GetNumberOfTuples() && i < angles.size();
          ++i) {
       tiltAngles->SetTuple1(i, angles[i]);
