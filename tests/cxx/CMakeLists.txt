@@ -9,6 +9,7 @@ include_directories(SYSTEM
   ${PARAVIEW_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/tomviz)
+include_directories(${PROJECT_SOURCE_DIR}/tomviz/acquisition)
 
 include(CheckIncludeFileCXX)
 include(CheckCXXSymbolExists)

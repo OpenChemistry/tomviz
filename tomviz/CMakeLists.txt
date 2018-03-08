@@ -13,10 +13,6 @@ set(SOURCES
   AbstractDataModel.cxx
   ActiveObjects.cxx
   ActiveObjects.h
-  AcquisitionWidget.cxx
-  AcquisitionWidget.h
-  AcquisitionClient.cxx
-  AcquisitionClient.h
   AddAlignReaction.cxx
   AddAlignReaction.h
   AddExpressionReaction.cxx
@@ -38,12 +34,6 @@ set(SOURCES
   ConvertToFloatOperator.h
   ConvertToFloatReaction.cxx
   ConvertToFloatReaction.h
-  Connection.cxx
-  Connection.h
-  ConnectionsWidget.cxx
-  ConnectionsWidget.h
-  ConnectionDialog.cxx
-  ConnectionDialog.h
   CropReaction.cxx
   CropReaction.h
   CropOperator.cxx
@@ -144,8 +134,6 @@ set(SOURCES
   OperatorResult.h
   OperatorWidget.cxx
   OperatorWidget.h
-  PassiveAcquisitionWidget.cxx
-  PassiveAcquisitionWidget.h
   Pipeline.cxx
   Pipeline.h
   PipelineManager.cxx
@@ -435,7 +423,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/acquisition)
+add_subdirectory(acquisition)
+
+add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs}  $<TARGET_OBJECTS:acquisition>)
 set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
