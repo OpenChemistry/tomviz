@@ -72,8 +72,6 @@ set(SOURCES
   InterfaceBuilder.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
-  JsonRpcClient.cxx
-  JsonRpcClient.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   LoadPaletteReaction.cxx

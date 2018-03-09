@@ -9,6 +9,8 @@ set(ACQUISITION_SOURCES
   ConnectionsWidget.h
   ConnectionDialog.cxx
   ConnectionDialog.h
+  JsonRpcClient.cxx
+  JsonRpcClient.h
   PassiveAcquisitionWidget.cxx
   PassiveAcquisitionWidget.h
 )
