@@ -110,7 +110,7 @@ class PassiveWatchSource(AbstractSource):
     def __init__(self):
         self._watcher = None
         self.image_data_mimetype = TIFF_MIME_TYPE
-        # Register teh dm3 mime type.
+        # Register the dm3 mime type.
         mimetypes.add_type(DM3_MIME_TYPE, '.dm3')
 
     def _validate_connection_params(self, path, fileNameRegex,

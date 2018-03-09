@@ -95,6 +95,8 @@ public slots:
 
   AcquisitionClientRequest* describe(const QString& method);
 
+  AcquisitionClientRequest* describe();
+
 private slots:
 
   AcquisitionClientRequest* makeRequest(const QString& method,

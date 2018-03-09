@@ -79,6 +79,13 @@ AcquisitionClientRequest* AcquisitionClient::describe(const QString& method)
   return makeRequest("describe", params);
 }
 
+AcquisitionClientRequest* AcquisitionClient::describe()
+{
+  QJsonObject params;
+
+  return makeRequest("describe", params);
+}
+
 AcquisitionClientRequest* AcquisitionClient::makeRequest(
   const QString& method, const QJsonObject& params)
 {

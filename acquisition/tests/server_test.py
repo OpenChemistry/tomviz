@@ -3,6 +3,7 @@ import hashlib
 import os
 import tempfile
 import pytest
+import inspect
 
 from tomviz.jsonrpc import jsonrpc_message
 from tests.mock.source import ApiAdapter
@@ -266,6 +267,22 @@ def test_describe(acquisition_server):
     error = response.json()['error']
     del error['data']
     assert error == expected
+
+
+def test_describe_adapter(acquisition_server):
+    id = 1234
+    request = jsonrpc_message({
+        'id': id,
+        'method': 'describe'
+    })
+    response = requests.post(acquisition_server.url, json=request)
+    assert response.status_code == 200, response.json()
+    expected = {
+        'name': '%s.%s' % (inspect.getmodule(ApiAdapter).__name__,
+                           ApiAdapter.__name__)
+    }
+    assert response.json()['result'] \
+        == expected, response.json()
 
 
 @pytest.fixture(scope='function')
