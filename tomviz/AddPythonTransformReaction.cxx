@@ -189,7 +189,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     auto dialog = new EditOperatorDialog(opPython, source, true,
                                          tomviz::mainWidget());
     dialog->setAttribute(Qt::WA_DeleteOnClose);
-    dialog->setWindowTitle("Set Tilt Angles");
+    dialog->setWindowTitle(QString("Edit %1").arg(opPython->label()));
     dialog->show();
 
     // Handle transforms with custom UIs

@@ -375,7 +375,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new SaveDataReaction(m_ui->actionSaveData);
   new SaveScreenshotReaction(m_ui->actionSaveScreenshot, this);
   new pqSaveAnimationReaction(m_ui->actionSaveMovie);
-  new SaveWebReaction(m_ui->actionSaveWeb);
+  new SaveWebReaction(m_ui->actionSaveWeb, this);
 
   new SaveLoadStateReaction(m_ui->actionSaveState);
   new SaveLoadStateReaction(m_ui->actionLoadState, /*load*/ true);

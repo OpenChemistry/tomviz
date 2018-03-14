@@ -64,6 +64,9 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   // Keep the array we are working on around even if the user shallow copies
   // over the input image data by incrementing the reference count here.
   vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
+  if (!arrayPtr) {
+    return;
+  }
 
   // The bin values are the centers, extending +/- half an inc either side
   arrayPtr->GetFiniteRange(minmax, -1);
@@ -128,6 +131,9 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
   // Keep the array we are working on around even if the user shallow copies
   // over the input image data by incrementing the reference count here.
   vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
+  if (!arrayPtr) {
+    return;
+  }
 
   // The bin values are the centers, extending +/- half an inc either side
   arrayPtr->GetFiniteRange(minmax, -1);

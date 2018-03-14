@@ -84,6 +84,9 @@ Histogram2DWidget::~Histogram2DWidget() = default;
 void Histogram2DWidget::setHistogram(vtkImageData* histogram)
 {
   vtkDataArray* arr = histogram->GetPointData()->GetScalars();
+  if (!arr) {
+    return;
+  }
   double range[2];
   arr->GetRange(range, 0);
 

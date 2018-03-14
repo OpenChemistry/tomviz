@@ -89,25 +89,33 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   this->Menu->addSeparator();
 
   this->scaleLegendCubeAction = this->Menu->addAction("Show Legend as Cube");
+  this->scaleLegendCubeAction->setCheckable(true);
   this->scaleLegendRulerAction = this->Menu->addAction("Show Legend as Ruler");
+  this->scaleLegendRulerAction->setCheckable(true);
   this->hideScaleLegendAction = this->Menu->addAction("Hide Legend");
   this->hideScaleLegendAction->setEnabled(false);
 
   connect(this->scaleLegendCubeAction, &QAction::triggered, this, [&]() {
     this->setScaleLegendStyle(ScaleLegendStyle::Cube);
     this->setScaleLegendVisibility(true);
+    this->scaleLegendCubeAction->setChecked(true);
+    this->scaleLegendRulerAction->setChecked(false);
     this->hideScaleLegendAction->setEnabled(true);
   });
 
   connect(this->scaleLegendRulerAction, &QAction::triggered, this, [&]() {
     this->setScaleLegendStyle(ScaleLegendStyle::Ruler);
     this->setScaleLegendVisibility(true);
+    this->scaleLegendCubeAction->setChecked(false);
+    this->scaleLegendRulerAction->setChecked(true);
     this->hideScaleLegendAction->setEnabled(true);
   });
 
   connect(this->hideScaleLegendAction, &QAction::triggered, this, [&]() {
     this->setScaleLegendVisibility(false);
     this->hideScaleLegendAction->setDisabled(true);
+    this->scaleLegendCubeAction->setChecked(false);
+    this->scaleLegendRulerAction->setChecked(false);
   });
 
   this->Menu->addSeparator();

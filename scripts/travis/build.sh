@@ -4,7 +4,7 @@ set -e
 if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     which python
     export DYLD_LIBRARY_PATH=/Users/travis/googletest-install/lib:$DYLD_LIBRARY_PATH
-    export TOMVIZ_TEST_PYTHON_EXECUTABLE=/usr/bin/python
+    export TOMVIZ_TEST_PYTHON_EXECUTABLE=/usr/local/bin/python3
     ctest -VV -S $TRAVIS_BUILD_DIR/cmake/TravisContinuous.cmake
 else
     cd $TRAVIS_BUILD_DIR

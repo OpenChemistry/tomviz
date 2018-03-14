@@ -1,0 +1,25 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: tomviz/tomviz-builder:latest
+        environment:
+          - CIRCLE_BRANCH: ${CIRCLE_BRANCH}
+          - CIRCLE_BUILD_NUM: ${CIRCLE_BUILD_NUM}
+    working_directory: /tomviz
+    steps:
+      - checkout
+      - run:
+          name: Update submodules ...
+          command: |
+            git submodule sync
+            git submodule update --init
+      - run:
+          name: Run build ...
+          command: /build.sh
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - build

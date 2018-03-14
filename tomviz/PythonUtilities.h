@@ -28,6 +28,9 @@ struct _object;
 typedef _object PyObject;
 #endif
 
+// Definition in pystate.h
+typedef struct _ts PyThreadState;
+
 class vtkSmartPyObject;
 class vtkObjectBase;
 class vtkPythonScopeGilEnsurer;
@@ -182,6 +185,16 @@ public:
 
 private:
   vtkPythonScopeGilEnsurer* m_ensurer = nullptr;
+};
+
+class TemporarilyReleaseGil
+{
+
+  PyThreadState* m_save = nullptr;
+
+public:
+  TemporarilyReleaseGil();
+  ~TemporarilyReleaseGil();
 };
 
 struct OperatorDescription
