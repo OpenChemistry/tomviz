@@ -165,7 +165,8 @@ void ConnectionsWidget::editConnection(Connection conn)
 
 Connection* ConnectionsWidget::selectedConnection()
 {
-  auto selectedRow = m_ui->connectionsWidget->row(m_ui->connectionsWidget->currentItem());
+  auto selectedRow =
+    m_ui->connectionsWidget->row(m_ui->connectionsWidget->currentItem());
 
   if (selectedRow == -1) {
     return nullptr;

@@ -108,5 +108,4 @@ JsonRpcReply* JsonRpcClient::sendRequest(const QJsonObject& requestBody)
 
   return rpcReply;
 }
-
 }

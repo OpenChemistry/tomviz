@@ -17,7 +17,6 @@
 #include "RegexGroupDialog.h"
 #include "ui_RegexGroupDialog.h"
 
-
 namespace tomviz {
 
 RegexGroupDialog::RegexGroupDialog(const QString name, QWidget* parent)
@@ -33,5 +32,4 @@ QString RegexGroupDialog::name()
 {
   return m_ui->nameLineEdit->text();
 }
-
 }

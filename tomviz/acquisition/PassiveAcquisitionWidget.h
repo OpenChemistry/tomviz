@@ -57,7 +57,7 @@ protected:
   void writeSettings();
 
 private slots:
-  void connectToServer(bool startServer=true);
+  void connectToServer(bool startServer = true);
 
   void imageReady(QString mimeType, QByteArray result, int angle = 0);
 

@@ -100,7 +100,9 @@ void AcquisitionWidget::connectToServer()
 {
   auto connection = m_ui->connectionsWidget->selectedConnection();
   m_ui->statusEdit->setText("Attempting to connect to server...");
-  m_client->setUrl(QString("http://%1:%2/acquisition").arg(connection->hostName()).arg(connection->port()));
+  m_client->setUrl(QString("http://%1:%2/acquisition")
+                     .arg(connection->hostName())
+                     .arg(connection->port()));
   auto request = m_client->connect(QJsonObject());
   connect(request, SIGNAL(finished(QJsonValue)), SLOT(onConnect()));
   connect(request, &AcquisitionClientRequest::error, this,

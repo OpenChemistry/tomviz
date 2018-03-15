@@ -63,7 +63,7 @@ public:
   QString url() const { return m_url; }
 
 public slots:
-  ///Send the Json request to the RPC server.
+  /// Send the Json request to the RPC server.
   JsonRpcReply* sendRequest(const QJsonObject& request);
 
 signals:

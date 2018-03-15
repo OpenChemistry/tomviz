@@ -39,7 +39,6 @@ RegexGroupsWidget::RegexGroupsWidget(QWidget* parent)
 
   this->readSettings();
 
-
   // New
   connect(m_ui->newRegexGroupButton, &QPushButton::clicked, [this]() {
     RegexGroupDialog dialog;
@@ -91,8 +90,8 @@ void RegexGroupsWidget::writeSettings()
   settings->beginGroup("acquisition");
 
   QStringList groups;
-  for (int i=0; i< this->m_ui->regexGroupsWidget->count(); i++) {
-    QListWidgetItem *group = this->m_ui->regexGroupsWidget->item(i);
+  for (int i = 0; i < this->m_ui->regexGroupsWidget->count(); i++) {
+    QListWidgetItem* group = this->m_ui->regexGroupsWidget->item(i);
     groups.append(group->text());
   }
   settings->setValue("regexGroupNames", groups);
