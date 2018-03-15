@@ -217,10 +217,10 @@ void PassiveAcquisitionWidget::imageReady(QString mimeType, QByteArray result,
 
   QString path = "/tomviz_";
 
-  if (m_tiltAngle > 0.0) {
+  if (angle > 0.0) {
     path.append('+');
   }
-  path.append(QString::number(m_tiltAngle, 'g', 2));
+  path.append(QString::number(angle, 'g', 2));
   path.append(".tiff");
 
   QFile file(dir.path() + path);
@@ -292,8 +292,11 @@ void PassiveAcquisitionWidget::watchSource()
                     [this](const QString mimeType, const QByteArray& result,
                            const QJsonObject& meta) {
                       if (!result.isNull()) {
-                        qDebug() << "New image received!";
-                        this->previewReady(mimeType, result);
+                        int angle = 0;
+                        if (meta.contains("angle")) {
+                          angle = meta["angle"].toString().toInt();
+                        }
+                        this->imageReady(mimeType, result, angle);
                       }
                     });
             connect(request, &AcquisitionClientRequest::error, this,
