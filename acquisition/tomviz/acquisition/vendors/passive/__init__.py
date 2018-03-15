@@ -170,8 +170,8 @@ class PassiveWatchSource(AbstractSource):
         :param fileNameRegexGroups: The names to assign to the capture groups
         extracted from fileNameRegex.
         :type fileNameRegexGroups: str
-        :param groupRegexSubstitutions: A dictionary of lists. Keyed off the regex
-        group names. The values are lists of dictionaries contains
+        :param groupRegexSubstitutions: A dictionary of lists. Keyed off the
+        regex group names. The values are lists of dictionaries contains
         mappings of regex => repl using to replace parts of the captured group.
         For example {'n': '-'} - The will replace the 'n' with '-'.
         :type groupRegexSubstitutions: str
@@ -231,7 +231,8 @@ class PassiveWatchSource(AbstractSource):
 
         # Do we need todo any substitutions?
         if self._group_regex_substitutions is not None:
-            for group, substitutions in iteritems(self._group_regex_substitutions):
+            for group, substitutions in iteritems(
+                    self._group_regex_substitutions):
                 for sub in substitutions:
                     for regex, repl in iteritems(sub):
                         meta[group] = re.sub(regex, repl, meta[group])
