@@ -16,7 +16,6 @@
 #ifndef tomvizAcquisitionWidget_h
 #define tomvizAcquisitionWidget_h
 
-#include <QPointer>
 #include <QScopedPointer>
 #include <QWidget>
 
@@ -38,7 +37,6 @@ class AcquisitionWidget;
 namespace tomviz {
 
 class AcquisitionClient;
-class DataSource;
 
 class AcquisitionWidget : public QWidget
 {
@@ -70,18 +68,8 @@ private slots:
 
   void resetCamera();
   void onError(const QString& errorMessage, const QJsonValue& errorData);
-  void generateConnectUI(QJsonValue params);
-
-signals:
-  void connectParameterDescription(QJsonValue params);
 
 private:
-  QString url() const;
-  void introspectSource();
-  QJsonObject connectParams();
-  void watchSource();
-  QVariantMap settings();
-
   QScopedPointer<Ui::AcquisitionWidget> m_ui;
   QScopedPointer<AcquisitionClient> m_client;
 
@@ -92,14 +80,10 @@ private:
   vtkNew<vtkImageSliceMapper> m_imageSliceMapper;
   vtkSmartPointer<vtkScalarsToColors> m_lut;
 
-  DataSource* m_dataSource = nullptr;
-
   double m_tiltAngle = 0.0;
   QString m_units = "unknown";
   double m_calX = 0.0;
   double m_calY = 0.0;
-  QPointer<QWidget> m_connectParamsWidget;
-  QPointer<QTimer> m_watchTimer;
 };
 }
 
