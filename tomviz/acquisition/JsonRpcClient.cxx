@@ -45,6 +45,10 @@ JsonRpcReply* JsonRpcClient::sendRequest(const QJsonObject& requestBody)
 
   auto rpcReply = new JsonRpcReply(this);
   connect(networkReply, &QNetworkReply::finished, [rpcReply, networkReply]() {
+    if (networkReply->error() != QNetworkReply::NoError) {
+      // The error case is handle by the error signal connection.
+      return;
+    }
     auto response = networkReply->readAll();
     QJsonParseError errorHandler;
     auto doc = QJsonDocument::fromJson(response, &errorHandler);
