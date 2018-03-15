@@ -138,13 +138,11 @@ class PassiveWatchSource(AbstractSource):
             if fileNameRegexGroups is None:
                 raise ValueError("'fileNameRegexGroups' must be provided.")
 
-            for sub in groupRegexSubstitutions:
-                for regex, repl in iteritems(sub):
-                    _validate_regex(regex)
-
-            if len(groupRegexSubstitutions) > len(fileNameRegexGroups):
-                raise ValueError("The indexes of 'groupRegexSubstitutions'"
-                                 " must match 'fileNameRegexGroups'.")
+            for group, substitutions in iteritems(groupRegexSubstitutions):
+                for sub in substitutions:
+                    print(sub)
+                    for regex, _ in iteritems(sub):
+                        _validate_regex(regex)
 
     @describe([{
         'name': 'path',
@@ -172,8 +170,8 @@ class PassiveWatchSource(AbstractSource):
         :param fileNameRegexGroups: The names to assign to the capture groups
         extracted from fileNameRegex.
         :type fileNameRegexGroups: str
-        :param groupRegexSubstitutions: A list of dictionaries the indexes map
-        to the indexes of fileNameRegexGroups. The dictionaries contains
+        :param groupRegexSubstitutions: A dictionary of lists. Keyed off the regex
+        group names. The values are lists of dictionaries contains
         mappings of regex => repl using to replace parts of the captured group.
         For example {'n': '-'} - The will replace the 'n' with '-'.
         :type groupRegexSubstitutions: str
@@ -184,7 +182,7 @@ class PassiveWatchSource(AbstractSource):
                                          groupRegexSubstitutions)
         self._filename_regex = fileNameRegex
         self._filename_regex_groups = fileNameRegexGroups
-        self._group_regex_subsitutions = groupRegexSubstitutions
+        self._group_regex_substitutions = groupRegexSubstitutions
         self._monitor = Monitor(path, filename_regex=fileNameRegex,
                                 valid_file_check=_valid_file_check)
 
@@ -232,11 +230,11 @@ class PassiveWatchSource(AbstractSource):
             meta[group_name] = match.group(i+1)
 
         # Do we need todo any substitutions?
-        if self._group_regex_subsitutions is not None:
-            for i, sub in enumerate(self._group_regex_subsitutions):
-                group_name = self._filename_regex_groups[i]
-                for regex, repl in iteritems(sub):
-                    meta[group_name] = re.sub(regex, repl, meta[group_name])
+        if self._group_regex_substitutions is not None:
+            for group, substitutions in iteritems(self._group_regex_substitutions):
+                for sub in substitutions:
+                    for regex, repl in iteritems(sub):
+                        meta[group] = re.sub(regex, repl, meta[group])
 
         return meta
 

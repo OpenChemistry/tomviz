@@ -186,10 +186,12 @@ def test_dm3_stem_acquire(passive_acquisition_server, tmpdir,
             'path': tmpdir.strpath,
             'fileNameRegex': angle_regex,
             'fileNameRegexGroups': ['angle'],
-            'groupRegexSubstitutions': [{
-                'n': '-',
-                'p': '+'
-            }]
+            'groupRegexSubstitutions': {
+                'angle': [{
+                    'n': '-',
+                    'p': '+'
+                }]
+            }
         }
     })
     response = requests.post(passive_acquisition_server.url, json=request)
