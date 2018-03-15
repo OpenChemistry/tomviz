@@ -11,7 +11,7 @@ LOG_PATH = log_path = os.path.join(os.path.expanduser('~'), '.tomviz', 'logs')
 LOG_PATHS = {
     'stderr': '%s/stderr.log' % LOG_PATH,
     'stdout': '%s/stdout.log' % LOG_PATH,
-    'debug': '%s/debug.log' % LOG_PATH
+    'tomviz': '%s/tomviz.log' % LOG_PATH
 }
 
 try:
@@ -58,16 +58,18 @@ def setup_std_loggers():
     sys.stdout = stdout_log_writer
 
 
-def setup_loggers(debug=False):
+def setup_loggers(debug=False, redirect=False):
     logger = logging.getLogger('tomviz')
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
-    stream_handler = logging.StreamHandler()
 
     file_handler = logging.handlers.RotatingFileHandler(
-        LOG_PATHS['debug'], maxBytes=MAX_LOG_SIZE,
+        LOG_PATHS['tomviz'], maxBytes=MAX_LOG_SIZE,
         backupCount=LOG_BACKUP_COUNT)
     formatter = logging.Formatter(LOG_FORMAT)
-    stream_handler.setFormatter(formatter)
     file_handler.setFormatter(formatter)
-    logger.addHandler(stream_handler)
     logger.addHandler(file_handler)
+
+    if not redirect:
+        stream_handler = logging.StreamHandler(stream=sys.stdout)
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
