@@ -39,10 +39,6 @@ ConnectionsWidget::ConnectionsWidget(QWidget* parent)
 
   this->readSettings();
 
-  foreach (const Connection& conn, m_connections) {
-    m_ui->connectionsWidget->addItem(conn.name());
-  }
-
   // New
   connect(m_ui->newConnectionButton, &QPushButton::clicked, [this]() {
     ConnectionDialog dialog;
@@ -90,6 +86,12 @@ ConnectionsWidget::ConnectionsWidget(QWidget* parent)
             // Show context menu at handling position
             contextMenu.exec(globalPos);
           });
+
+  connect(m_ui->connectionsWidget, &QListWidget::itemSelectionChanged, this,
+          &ConnectionsWidget::selectionChanged);
+
+  connect(m_ui->connectionsWidget, &QListWidget::itemSelectionChanged,
+          [this]() { this->writeSettings(); });
 }
 
 ConnectionsWidget::~ConnectionsWidget() = default;
@@ -101,13 +103,20 @@ void ConnectionsWidget::readSettings()
     // Add a default localhost connection
     Connection local("localhost", "localhost", 8080);
     m_connections.append(local);
+    m_ui->connectionsWidget->addItem(local.name());
     return;
   }
   settings->beginGroup("acquisition");
   auto connections = settings->value("connections").toList();
-  foreach (const QVariant conn, connections) {
-    m_connections.append(conn.value<Connection>());
+  foreach (const QVariant v, connections) {
+    auto conn = v.value<Connection>();
+    m_connections.append(conn);
+    m_ui->connectionsWidget->addItem(conn.name());
   }
+
+  auto selectedConnection = settings->value("selectedConnections").toInt();
+  m_ui->connectionsWidget->setCurrentRow(selectedConnection);
+
   settings->endGroup();
 }
 
@@ -123,6 +132,8 @@ void ConnectionsWidget::writeSettings()
     connections.append(variant);
   }
   settings->setValue("connections", connections);
+  settings->setValue("selectedConnections",
+                     m_ui->connectionsWidget->currentRow());
   settings->endGroup();
 }
 
@@ -150,5 +161,16 @@ void ConnectionsWidget::editConnection(Connection conn)
     m_connections.append(newConnection);
     m_ui->connectionsWidget->addItem(newConnection.name());
   }
+}
+
+Connection* ConnectionsWidget::selectedConnection()
+{
+  auto selectedRow = m_ui->connectionsWidget->row(m_ui->connectionsWidget->currentItem());
+
+  if (selectedRow == -1) {
+    return nullptr;
+  }
+
+  return &m_connections[selectedRow];
 }
 }

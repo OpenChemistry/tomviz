@@ -14,43 +14,43 @@
 
 ******************************************************************************/
 
-#ifndef tomvizConnectionsWidget_h
-#define tomvizConnectionsWidget_h
+#ifndef tomvizRegexGroupsSubstitutionsWidget_h
+#define tomvizRegexGroupsSubstitutionsWidget_h
 
-#include "Connection.h"
+#include "RegexGroupSubstitution.h"
 
+#include <QMap>
 #include <QScopedPointer>
 #include <QVariantList>
 #include <QWidget>
 
 namespace Ui {
-class ConnectionsWidget;
+class RegexGroupsSubstitutionsWidget;
 }
 
 namespace tomviz {
 
-class ConnectionsWidget : public QWidget
+class RegexGroupsSubstitutionsWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  ConnectionsWidget(QWidget* parent);
-  ~ConnectionsWidget() override;
+  RegexGroupsSubstitutionsWidget(QWidget* parent);
+  ~RegexGroupsSubstitutionsWidget();
 
-  Connection* selectedConnection();
-
-signals:
-  void selectionChanged();
+  QList<RegexGroupSubstitution> substitutions();
 
 private:
-  QScopedPointer<Ui::ConnectionsWidget> m_ui;
-  QList<Connection> m_connections;
+  QScopedPointer<Ui::RegexGroupsSubstitutionsWidget> m_ui;
+  QList<RegexGroupSubstitution> m_substitutions;
 
   void readSettings();
   void writeSettings();
-  void setConnections(const QVariantList& connections);
-  void sortConnections();
-  void editConnection(Connection conn);
+  void setRegexGroupSubstitutions(const QVariantList& substitutions);
+  void sortRegexGroupSubstitutions();
+  void editRegexGroupSubstitution(int row);
+  void addRegexGroupSubstitution(RegexGroupSubstitution substitution);
+  void setRegexGroupSubstitution(int row, RegexGroupSubstitution substitution);
 };
 }
 

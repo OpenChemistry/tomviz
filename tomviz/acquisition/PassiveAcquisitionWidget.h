@@ -31,6 +31,7 @@ class vtkInteractorStyleRubberBand2D;
 class vtkInteractorStyleRubberBandZoom;
 class vtkRenderer;
 class vtkScalarsToColors;
+class QProcess;
 
 namespace Ui {
 class PassiveAcquisitionWidget;
@@ -56,23 +57,12 @@ protected:
   void writeSettings();
 
 private slots:
-  void connectToServer();
-  void onConnect();
+  void connectToServer(bool startServer=true);
 
-  void disconnectFromServer();
-  void onDisconnect();
+  void imageReady(QString mimeType, QByteArray result, int angle = 0);
 
-  void setAcquireParameters();
-  void acquireParameterResponse(const QJsonValue& result);
-
-  void setTiltAngle();
-  void acquirePreview(const QJsonValue& result);
-  void previewReady(QString, QByteArray);
-
-  void resetCamera();
   void onError(const QString& errorMessage, const QJsonValue& errorData);
-  void generateConnectUI(QJsonValue params);
-
+  void watchSource();
 signals:
   void connectParameterDescription(QJsonValue params);
 
@@ -80,7 +70,7 @@ private:
   QString url() const;
   void introspectSource();
   QJsonObject connectParams();
-  void watchSource();
+
   QVariantMap settings();
 
   QScopedPointer<Ui::PassiveAcquisitionWidget> m_ui;
@@ -95,12 +85,20 @@ private:
 
   DataSource* m_dataSource = nullptr;
 
-  double m_tiltAngle = 0.0;
   QString m_units = "unknown";
   double m_calX = 0.0;
   double m_calY = 0.0;
   QPointer<QWidget> m_connectParamsWidget;
   QPointer<QTimer> m_watchTimer;
+  int m_retryCount = 5;
+  QProcess* m_serverProcess = nullptr;
+
+  void checkEnableWatchButton();
+  void startLocalServer();
+  void displayError(const QString& errorMessage);
+  void setEnabledRegexGroupsWidget(bool enabled);
+  void setEnabledRegexGroupsSubstitutionsWidget(bool enabled);
+  void stopWatching();
 };
 }
 

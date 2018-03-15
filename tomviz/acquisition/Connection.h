@@ -34,8 +34,8 @@ public:
   void setName(const QString& name) { m_name = name; };
   QString hostName() const { return m_hostName; };
   void setHostName(const QString& hostName) { m_hostName = hostName; };
-  quint8 port() const { return m_port; };
-  void setPort(quint8 port) { m_port = port; };
+  int port() const { return m_port; };
+  void setPort(int port) { m_port = port; };
 
   static void registerType();
 

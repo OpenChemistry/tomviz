@@ -14,43 +14,34 @@
 
 ******************************************************************************/
 
-#ifndef tomvizConnectionsWidget_h
-#define tomvizConnectionsWidget_h
+#ifndef tomvizStartServerDialog_h
+#define tomvizStartServerDialog_h
 
-#include "Connection.h"
-
+#include <QDialog>
 #include <QScopedPointer>
-#include <QVariantList>
-#include <QWidget>
 
 namespace Ui {
-class ConnectionsWidget;
+class StartServerDialog;
 }
 
 namespace tomviz {
 
-class ConnectionsWidget : public QWidget
+class StartServerDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  ConnectionsWidget(QWidget* parent);
-  ~ConnectionsWidget() override;
-
-  Connection* selectedConnection();
-
-signals:
-  void selectionChanged();
+  explicit StartServerDialog(QWidget* parent = nullptr);
+  ~StartServerDialog() override;
+  QString pythonExecutablePath() { return m_pythonExecutablePath; };
 
 private:
-  QScopedPointer<Ui::ConnectionsWidget> m_ui;
-  QList<Connection> m_connections;
+  QScopedPointer<Ui::StartServerDialog> m_ui;
+  QString m_pythonExecutablePath;
 
   void readSettings();
   void writeSettings();
-  void setConnections(const QVariantList& connections);
-  void sortConnections();
-  void editConnection(Connection conn);
+  void setPythonExecutablePath(const QString& path);
 };
 }
 

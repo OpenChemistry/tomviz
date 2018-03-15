@@ -13,6 +13,18 @@ set(ACQUISITION_SOURCES
   JsonRpcClient.h
   PassiveAcquisitionWidget.cxx
   PassiveAcquisitionWidget.h
+  RegexGroupDialog.cxx
+  RegexGroupDialog.h
+  RegexGroupsWidget.cxx
+  RegexGroupsWidget.h
+  RegexGroupSubstitution.cxx
+  RegexGroupSubstitution.h
+  RegexGroupSubstitutionDialog.cxx
+  RegexGroupSubstitutionDialog.h
+  RegexGroupsSubstitutionsWidget.cxx
+  RegexGroupsSubstitutionsWidget.h
+  StartServerDialog.cxx
+  StartServerDialog.h
 )
 
 # We need this otherwise Qt will complain, not sure why!

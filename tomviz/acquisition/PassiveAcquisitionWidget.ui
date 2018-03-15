@@ -6,30 +6,24 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>868</width>
-    <height>797</height>
+    <width>604</width>
+    <height>359</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>Data Acquisition</string>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <property name="spacing">
+  <property name="windowTitle">
+   <string>Passive Data Acquisition</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="margin">
     <number>5</number>
    </property>
-   <property name="leftMargin">
-    <number>5</number>
-   </property>
-   <property name="topMargin">
-    <number>5</number>
-   </property>
-   <property name="rightMargin">
-    <number>5</number>
-   </property>
-   <property name="bottomMargin">
-    <number>5</number>
-   </property>
-   <item>
+   <item row="0" column="0">
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -37,24 +31,116 @@
      <widget class="QWidget" name="verticalLayoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="tomviz::ConnectionsWidget" name="widget" native="true"/>
-       </item>
-       <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
+        <layout class="QFormLayout" name="formLayout_2">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
+         <item row="1" column="0">
+          <widget class="QLabel" name="watchPathLabel">
+           <property name="text">
+            <string>Watch Path (required)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="watchPathLineEdit"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="fileNameRegexLabel">
+           <property name="text">
+            <string>File Name Regex</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="fileNameRegexLineEdit"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Server Connection (required)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="tomviz::ConnectionsWidget" name="connectionsWidget" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="regexGroupsLabel">
+           <property name="text">
+            <string>File Name Regex Group Names</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="tomviz::RegexGroupsWidget" name="regexGroupsWidget" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="regexGroupsSubstitutionsLabel">
+           <property name="text">
+            <string>Regex Group Substitutions</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="tomviz::RegexGroupsSubstitutionsWidget" name="regexGroupsSubstitutionsWidget" native="true"/>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
     </widget>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="stopWatchingButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Stop Watching</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="watchButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Watch</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
@@ -63,6 +149,18 @@
    <class>tomviz::ConnectionsWidget</class>
    <extends>QWidget</extends>
    <header>ConnectionsWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::RegexGroupsWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">RegexGroupsWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::RegexGroupsSubstitutionsWidget</class>
+   <extends>QWidget</extends>
+   <header>RegexGroupsSubstitutionsWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

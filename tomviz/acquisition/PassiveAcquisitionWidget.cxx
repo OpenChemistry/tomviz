@@ -22,6 +22,7 @@
 #include "ActiveObjects.h"
 #include "ConnectionDialog.h"
 #include "InterfaceBuilder.h"
+#include "StartServerDialog.h"
 
 #include "DataSource.h"
 #include "ModuleManager.h"
@@ -45,14 +46,21 @@
 
 #include <QBuffer>
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QJsonValueRef>
+#include <QMessageBox>
+#include <QNetworkReply>
+#include <QProcess>
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
 
 namespace tomviz {
+
+const char* PASSIVE_ADAPTER = "tomviz.acquisition.vendors.passive.PassiveWatchSource";
 
 PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::PassiveAcquisitionWidget),
@@ -62,39 +70,49 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
   m_ui->setupUi(this);
   this->setWindowFlags(Qt::Dialog);
 
-  //  connect(m_ui->connectButton, SIGNAL(clicked(bool)),
-  //  SLOT(connectToServer()));
-  //  connect(m_ui->disconnectButton, SIGNAL(clicked(bool)),
-  //          SLOT(disconnectFromServer()));
-  //  connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
-  //  connect(m_ui->introspectButton, &QPushButton::clicked, [this]() {
-  //    this->introspectSource();
-  //    m_ui->introspectButton->setEnabled(false);
-  //    m_ui->connectButton->setEnabled(true);
-  //  });
-  //  connect(this, &AcquisitionWidget::connectParameterDescription, this,
-  //          &AcquisitionWidget::generateConnectUI);
-  //
-  //  connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
-  //    if (!this->m_watchTimer->isActive()) {
-  //      this->watchSource();
-  //      m_ui->watchButton->setText("Stop watching");
-  //    } else {
-  //      this->m_watchTimer->stop();
-  //      m_ui->watchButton->setText("Watch");
-  //    }
-  //
-  //  });
-  //
-  //  m_ui->imageWidget->GetRenderWindow()->AddRenderer(m_renderer.Get());
-  //  m_ui->imageWidget->GetInteractor()->SetInteractorStyle(
-  //    m_defaultInteractorStyle.Get());
-  //  m_defaultInteractorStyle->SetRenderOnMouseMove(true);
-  //
-  //  m_renderer->SetBackground(1.0, 1.0, 1.0);
-  //  m_renderer->SetViewport(0.0, 0.0, 1.0, 1.0);
-
   readSettings();
+
+  connect(m_ui->watchPathLineEdit, &QLineEdit::textChanged, this,
+          &PassiveAcquisitionWidget::checkEnableWatchButton);
+  connect(m_ui->connectionsWidget, &ConnectionsWidget::selectionChanged, this,
+          &PassiveAcquisitionWidget::checkEnableWatchButton);
+
+  connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
+    this->m_retryCount = 5;
+    this->connectToServer();
+  });
+
+  connect(m_ui->stopWatchingButton, &QPushButton::clicked, this,
+          &PassiveAcquisitionWidget::stopWatching);
+
+  connect(m_ui->fileNameRegexLineEdit, &QLineEdit::textChanged, [this]() {
+    this->setEnabledRegexGroupsWidget(
+      !m_ui->fileNameRegexLineEdit->text().isEmpty());
+  });
+  this->setEnabledRegexGroupsWidget(
+    !m_ui->fileNameRegexLineEdit->text().isEmpty());
+
+  connect(m_ui->regexGroupsWidget, &RegexGroupsWidget::groupsChanged, [this]() {
+    this->setEnabledRegexGroupsSubstitutionsWidget(
+      !this->m_ui->regexGroupsWidget->regexGroups().isEmpty());
+  });
+  this->setEnabledRegexGroupsSubstitutionsWidget(
+    !this->m_ui->regexGroupsWidget->regexGroups().isEmpty());
+
+  this->checkEnableWatchButton();
+
+  // Connect signal to clean up any servers we start.
+  auto app = QCoreApplication::instance();
+  connect(app, &QApplication::aboutToQuit, [this]() {
+    if (this->m_serverProcess != nullptr) {
+      // First disconnect the error signal as we are about pull the rug from
+      // under
+      // the process!
+      disconnect(this->m_serverProcess, &QProcess::errorOccurred, nullptr,
+                 nullptr);
+      this->m_serverProcess->terminate();
+    }
+  });
 }
 
 PassiveAcquisitionWidget::~PassiveAcquisitionWidget() = default;
@@ -111,146 +129,80 @@ void PassiveAcquisitionWidget::readSettings()
   if (!settings->contains("acquisition/geometry")) {
     return;
   }
-  //  settings->beginGroup("acquisition");
-  //  setGeometry(settings->value("geometry").toRect());
-  //  m_ui->splitter->restoreState(settings->value("splitterSizes").toByteArray());
-  //  m_ui->hostnameEdit->setText(
-  //    settings->value("hostname", "localhost").toString());
-  //  m_ui->portEdit->setText(settings->value("port", "8080").toString());
-  //  settings->endGroup();
-}
-
-QVariantMap PassiveAcquisitionWidget::settings()
-{
-  QVariantMap settingsMap;
-  auto settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("acquisition");
-  foreach (QString key, settings->childKeys()) {
-    settingsMap[key] = settings->value(key);
-  }
+  setGeometry(settings->value("passive.geometry").toRect());
+  m_ui->splitter->restoreState(
+    settings->value("passive.splitterSizes").toByteArray());
+  m_ui->watchPathLineEdit->setText(settings->value("watchPath").toString());
+  m_ui->fileNameRegexLineEdit->setText(
+    settings->value("fileNameRegex").toString());
   settings->endGroup();
-
-  return settingsMap;
 }
 
 void PassiveAcquisitionWidget::writeSettings()
 {
-  //  auto settings = pqApplicationCore::instance()->settings();
-  //  settings->beginGroup("acquisition");
-  //  settings->setValue("geometry", geometry());
-  //  settings->setValue("splitterSizes", m_ui->splitter->saveState());
-  //  settings->setValue("hostname", m_ui->hostnameEdit->text());
-  //  settings->setValue("port", m_ui->portEdit->text());
-  //  auto connectValues =
-  //    InterfaceBuilder::parameterValues(m_connectParamsWidget.data());
-  //  for (QVariantMap::const_iterator iter = connectValues.begin();
-  //       iter != connectValues.end(); ++iter) {
-  //    settings->setValue(iter.key(), iter.value());
-  //  }
-  //  settings->endGroup();
+  auto settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup("acquisition");
+  settings->setValue("passive.geometry", geometry());
+  settings->setValue("passive.splitterSizes", m_ui->splitter->saveState());
+  settings->setValue("watchPath", m_ui->watchPathLineEdit->text());
+  settings->setValue("fileNameRegex", m_ui->fileNameRegexLineEdit->text());
+  settings->endGroup();
 }
 
-void PassiveAcquisitionWidget::connectToServer()
+void PassiveAcquisitionWidget::connectToServer(bool startServer)
 {
-  //  m_ui->statusEdit->setText("Attempting to connect to server...");
-  //  m_client->setUrl(this->url());
-  //  qDebug() << this->connectParams();
-  //  auto request = m_client->connect(this->connectParams());
-  //  connect(request, SIGNAL(finished(QJsonValue)), SLOT(onConnect()));
-  //  connect(request, &AcquisitionClientRequest::error, this,
-  //          &PassiveAcquisitionWidget::onError);
+  if (this->m_retryCount == 0) {
+    this->displayError("Retry count excceed trying to connect to server.");
+    return;
+  }
+
+  m_client->setUrl(this->url());
+  auto request = m_client->connect(this->connectParams());
+  connect(request, &AcquisitionClientRequest::finished, [this]() {
+    // Now check that we are connected to server that has the right adapter
+    // loaded.
+    auto describeRequest = this->m_client->describe();
+    connect(describeRequest, &AcquisitionClientRequest::error, this,
+        &PassiveAcquisitionWidget::onError);
+    connect(describeRequest, &AcquisitionClientRequest::finished, [this](const QJsonValue& result) {
+      if (!result.isObject()) {
+        this->onError("Invalid response to describe request:", result);
+        return;
+      }
+
+      if (result.toObject()["name"] != PASSIVE_ADAPTER) {
+        this->onError("The server is not running the passive acquisition " \
+            "adapter, please restart the server with the correct adapter.",
+            QJsonValue());
+        return;
+      }
+
+      // Now we can start watching.
+      this->watchSource();
+
+    });
+  });
+
+  connect(request, &AcquisitionClientRequest::error, [startServer, this](const QString& errorMessage,
+      const QJsonValue& errorData) {
+
+      auto connection = this->m_ui->connectionsWidget->selectedConnection();
+      // If we are getting a connection refused error and we are trying to connect
+      // to localhost, try to start the server.
+      if (startServer &&
+          errorData.toInt() == QNetworkReply::ConnectionRefusedError &&
+          connection->hostName() == "localhost") {
+        this->startLocalServer();
+      }
+      else {
+        this->onError(errorMessage, errorData);
+      }
+  });
 }
 
-void PassiveAcquisitionWidget::onConnect()
-{
-  //  m_ui->statusEdit->setText("Connected to " + m_client->url() + "!!!");
-  //  m_ui->connectButton->setEnabled(false);
-  //  m_ui->disconnectButton->setEnabled(true);
-  //  m_ui->watchButton->setEnabled(true);
-  //  setAcquireParameters();
-}
-
-void PassiveAcquisitionWidget::disconnectFromServer()
-{
-  //  m_ui->statusEdit->setText("Disconnecting");
-  //  auto request = m_client->disconnect(QJsonObject());
-  //  connect(request, SIGNAL(finished(QJsonValue)), SLOT(onDisconnect()));
-  //  connect(request, &AcquisitionClientRequest::error, this,
-  //          &PassiveAcquisitionWidget::onError);
-}
-
-void PassiveAcquisitionWidget::onDisconnect()
-{
-  //  m_ui->statusEdit->setText("Disconnected");
-  //  m_ui->connectButton->setEnabled(true);
-  //  m_ui->disconnectButton->setEnabled(false);
-}
-
-void PassiveAcquisitionWidget::setAcquireParameters()
-{
-  //  QJsonObject params;
-  //  auto request = m_client->acquisition_params(params);
-  //  connect(request, SIGNAL(finished(QJsonValue)),
-  //          SLOT(acquireParameterResponse(QJsonValue)));
-  //  connect(request, &AcquisitionClientRequest::error, this,
-  //          &PassiveAcquisitionWidget::onError);
-}
-
-void PassiveAcquisitionWidget::acquireParameterResponse(
-  const QJsonValue& result)
-{
-  //  if (result.isObject()) {
-  //    auto resultObject = result.toObject();
-  //    if (resultObject.contains("units") && resultObject["units"].isString())
-  //    {
-  //      m_units = resultObject["units"].toString();
-  //    }
-  //    // Careful, at least in the impllementation examinend, X/Y are in
-  //    metres.
-  //    if (resultObject.contains("calX") && resultObject["calX"].isDouble()) {
-  //      m_calX = resultObject["calX"].toDouble();
-  //    }
-  //    if (resultObject.contains("calY") && resultObject["calY"].isDouble()) {
-  //      m_calX = resultObject["calY"].toDouble();
-  //    }
-  //    m_ui->statusEdit->setText("Pixel dimensionality received");
-  //    QString pixelSize = QString::number(m_calX * 1e9) + " x " +
-  //                        QString::number(m_calY * 1e9) + " nm";
-  //    m_ui->pixelSize->setText(pixelSize);
-  //  }
-}
-
-void PassiveAcquisitionWidget::setTiltAngle()
-{
-  //  QJsonObject params;
-  //  params["angle"] = m_ui->tiltAngleSpinBox->value();
-  //  auto request = m_client->tilt_params(params);
-  //  connect(request, SIGNAL(finished(QJsonValue)),
-  //          SLOT(acquirePreview(QJsonValue)));
-  //  connect(request, &AcquisitionClientRequest::error, this,
-  //          &AcquisitionWidget::onError);
-  //
-  //  m_ui->previewButton->setEnabled(false);
-  //  m_ui->acquireButton->setEnabled(false);
-}
-
-void PassiveAcquisitionWidget::acquirePreview(const QJsonValue& result)
-{
-  //  // This should be the actual angle the stage is at.
-  //  if (result.isDouble()) {
-  //    m_tiltAngle = result.toDouble(-69.99);
-  //    m_ui->tiltAngle->setText(QString::number(result.toDouble(-69.99), 'g',
-  //    2));
-  //  }
-  //
-  //  auto request = m_client->preview_scan();
-  //  connect(request, SIGNAL(finished(QString, QByteArray)),
-  //          SLOT(previewReady(QString, QByteArray)));
-  //  connect(request, &AcquisitionClientRequest::error, this,
-  //          &AcquisitionWidget::onError);
-}
-
-void PassiveAcquisitionWidget::previewReady(QString mimeType, QByteArray result)
+void PassiveAcquisitionWidget::imageReady(QString mimeType, QByteArray result,
+                                          int angle)
 {
   if (mimeType != "image/tiff") {
     qDebug() << "image/tiff is the only supported mime type right now.\n"
@@ -300,79 +252,39 @@ void PassiveAcquisitionWidget::previewReady(QString mimeType, QByteArray result)
   }
 }
 
-void PassiveAcquisitionWidget::resetCamera()
-{
-  vtkCamera* camera = m_renderer->GetActiveCamera();
-  double* bounds = m_imageData->GetBounds();
-  vtkVector3d point;
-  point[0] = 0.5 * (bounds[0] + bounds[1]);
-  point[1] = 0.5 * (bounds[2] + bounds[3]);
-  point[2] = 0.5 * (bounds[4] + bounds[5]);
-  camera->SetFocalPoint(point.GetData());
-  point[2] += 50 + 0.5 * (bounds[4] + bounds[5]);
-  camera->SetPosition(point.GetData());
-  camera->SetViewUp(0.0, 1.0, 0.0);
-  camera->ParallelProjectionOn();
-  double parallelScale;
-  if (bounds[1] - bounds[0] < bounds[3] - bounds[2]) {
-    parallelScale = 0.5 * (bounds[3] - bounds[2] + 1);
-  } else {
-    parallelScale = 0.5 * (bounds[1] - bounds[0] + 1);
-  }
-  camera->SetParallelScale(parallelScale);
-  double clippingRange[2];
-  camera->GetClippingRange(clippingRange);
-  clippingRange[1] = clippingRange[0] + (bounds[5] - bounds[4] + 50);
-  camera->SetClippingRange(clippingRange);
-}
-
 void PassiveAcquisitionWidget::onError(const QString& errorMessage,
                                        const QJsonValue& errorData)
 {
-  qDebug() << errorMessage;
-  qDebug() << errorData;
+  auto message = errorMessage;
+  if (!errorData.toString().isEmpty()) {
+    message = QString("%1\n%2").arg(message).arg(errorData.toString());
+  }
+
+  this->stopWatching();
+  this->displayError(message);
+}
+
+void PassiveAcquisitionWidget::displayError(const QString& errorMessage)
+{
+  QMessageBox::warning(this, "Acquisition Error",
+      errorMessage,
+      QMessageBox::Ok);
 }
 
 QString PassiveAcquisitionWidget::url() const
 {
-  return "";
-  // return "http://" + m_ui->hostnameEdit->text() + ":" +
-  // m_ui->portEdit->text() +
-  //       "/acquisition";
+  auto connection = m_ui->connectionsWidget->selectedConnection();
+
+  return QString("http://%1:%2/acquisition")
+    .arg(connection->hostName())
+    .arg(connection->port());
 }
 
-void PassiveAcquisitionWidget::generateConnectUI(QJsonValue params)
-{
-  if (params.isArray()) {
-    InterfaceBuilder* ib = new InterfaceBuilder(this);
-    auto parameters = params.toArray();
-    auto connectParamsLayout = new QGridLayout;
-    ib->setParameterValues(this->settings());
-    ib->buildParameterInterface(connectParamsLayout, parameters);
-    m_connectParamsWidget->setLayout(connectParamsLayout);
-    ib->deleteLater();
-    // m_ui->paramsLayout->addWidget(m_connectParamsWidget);
-  }
-}
-
-void PassiveAcquisitionWidget::introspectSource()
-{
-  m_client->setUrl(this->url());
-  auto request = m_client->describe("connect");
-  connect(request, &AcquisitionClientRequest::error, this,
-          &PassiveAcquisitionWidget::onError);
-  connect(request, &AcquisitionClientRequest::finished, this,
-          &PassiveAcquisitionWidget::connectParameterDescription);
-}
-
-QJsonObject PassiveAcquisitionWidget::connectParams()
-{
-  auto values = InterfaceBuilder::parameterValues(this->m_connectParamsWidget);
-  return QJsonObject::fromVariantMap(values);
-}
 
 void PassiveAcquisitionWidget::watchSource()
 {
+  this->m_ui->watchButton->setEnabled(false);
+  this->m_ui->stopWatchingButton->setEnabled(true);
   connect(this->m_watchTimer, &QTimer::timeout, this,
           [this]() {
             auto request = m_client->stem_acquire();
@@ -390,5 +302,104 @@ void PassiveAcquisitionWidget::watchSource()
           },
           Qt::UniqueConnection);
   this->m_watchTimer->start(1000);
+}
+
+QJsonObject PassiveAcquisitionWidget::connectParams() {
+  QJsonObject connectParams{
+    {  "path", m_ui->watchPathLineEdit->text() },
+    {  "fileNameRegex", m_ui->fileNameRegexLineEdit->text() },
+  };
+
+  auto fileNameRegexGroups = m_ui->regexGroupsWidget->regexGroups();
+  if (!fileNameRegexGroups.isEmpty()) {
+    auto groups = QJsonArray::fromStringList(fileNameRegexGroups);
+    connectParams["fileNameRegexGroups"] = groups;
+  }
+
+  auto regexGroupsSubstitutions =
+    m_ui->regexGroupsSubstitutionsWidget->substitutions();
+  if (!regexGroupsSubstitutions.isEmpty()) {
+    QJsonObject substitutions;
+    foreach (RegexGroupSubstitution sub, regexGroupsSubstitutions) {
+
+      QJsonArray regexToSubs;
+      if (substitutions.contains(sub.groupName())) {
+        regexToSubs = substitutions.value(sub.groupName()).toArray();
+      }
+      QJsonObject mapping;
+      mapping[sub.regex()] = sub.substitution();
+      regexToSubs.append(mapping);
+      substitutions[sub.groupName()] = regexToSubs;
+    }
+    connectParams["groupRegexSubstitutions"] = substitutions;
+  }
+
+  return connectParams;
+}
+
+void PassiveAcquisitionWidget::startLocalServer() {
+  StartServerDialog dialog;
+  auto r = dialog.exec();
+  if (r != QDialog::Accepted) {
+    return;
+  }
+  auto pythonExecutablePath = dialog.pythonExecutablePath();
+
+  QStringList arguments;
+  arguments << "-m" << "tomviz" << "-a" << PASSIVE_ADAPTER << "-r";
+
+  this->m_serverProcess = new QProcess(this);
+  this->m_serverProcess->setProgram(pythonExecutablePath);
+  this->m_serverProcess->setArguments(arguments);
+  connect(this->m_serverProcess, &QProcess::errorOccurred,
+          [this](QProcess::ProcessError error) {
+            auto message = QString("Error starting local acquisition: '%1'")
+                             .arg(this->m_serverProcess->errorString());
+
+            QMessageBox::warning(this, "Server Start Error", message,
+                                 QMessageBox::Ok);
+
+          });
+
+  connect(this->m_serverProcess, &QProcess::started, [this]() {
+    // Now try to connect and watch. Note we are not asking for server to be
+    // started if the connection fails, this is to prevent us getting into a
+    // connect loop.
+    QTimer::singleShot(200, [this](){
+      this->m_retryCount--;
+      this->connectToServer(false);
+    });
+
+  });
+
+  this->m_serverProcess->start();
+}
+
+void PassiveAcquisitionWidget::checkEnableWatchButton()
+{
+  auto path = m_ui->watchPathLineEdit->text();
+  this->m_ui->watchButton->setEnabled(
+    !path.isEmpty() &&
+    this->m_ui->connectionsWidget->selectedConnection() != nullptr);
+}
+
+void PassiveAcquisitionWidget::setEnabledRegexGroupsWidget(bool enabled)
+{
+  this->m_ui->regexGroupsLabel->setEnabled(enabled);
+  this->m_ui->regexGroupsWidget->setEnabled(enabled);
+}
+
+void PassiveAcquisitionWidget::setEnabledRegexGroupsSubstitutionsWidget(
+  bool enabled)
+{
+  this->m_ui->regexGroupsSubstitutionsLabel->setEnabled(enabled);
+  this->m_ui->regexGroupsSubstitutionsWidget->setEnabled(enabled);
+}
+
+void PassiveAcquisitionWidget::stopWatching()
+{
+  this->m_watchTimer->stop();
+  this->m_ui->stopWatchingButton->setEnabled(false);
+  this->m_ui->watchButton->setEnabled(true);
 }
 }

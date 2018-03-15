@@ -48,6 +48,7 @@
 #include "PythonUtilities.h"
 #include "RecentFilesMenu.h"
 #include "ReconstructionReaction.h"
+#include "RegexGroupSubstitution.h"
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
@@ -105,8 +106,9 @@ namespace tomviz {
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   : QMainWindow(parent, flags), m_ui(new Ui::MainWindow)
 {
-  // Register meta type
+  // Register meta types
   Connection::registerType();
+  RegexGroupSubstitution::registerType();
 
   // Override the default setting for showing full messages. This needs to be
   // done prior to calling m_ui->setupUi(this) which sets the default to false.

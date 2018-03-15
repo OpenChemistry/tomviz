@@ -14,43 +14,40 @@
 
 ******************************************************************************/
 
-#ifndef tomvizConnectionsWidget_h
-#define tomvizConnectionsWidget_h
+#ifndef tomvizRegexGroupSubstitutionDialog_h
+#define tomvizRegexGroupSubstitutionDialog_h
 
-#include "Connection.h"
-
+#include <QDialog>
+#include <QLabel>
 #include <QScopedPointer>
-#include <QVariantList>
-#include <QWidget>
 
 namespace Ui {
-class ConnectionsWidget;
+class RegexGroupSubstitutionDialog;
 }
 
 namespace tomviz {
 
-class ConnectionsWidget : public QWidget
+class RegexGroupSubstitutionDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  ConnectionsWidget(QWidget* parent);
-  ~ConnectionsWidget() override;
+  explicit RegexGroupSubstitutionDialog(const QString groupName = "",
+                                        const QString regex = "",
+                                        const QString substitution = "",
+                                        QWidget* parent = nullptr);
+  ~RegexGroupSubstitutionDialog();
 
-  Connection* selectedConnection();
+  QString groupName();
+  QString regex();
+  QString substitution();
 
-signals:
-  void selectionChanged();
+public slots:
+  void done(int r) override;
 
 private:
-  QScopedPointer<Ui::ConnectionsWidget> m_ui;
-  QList<Connection> m_connections;
-
-  void readSettings();
-  void writeSettings();
-  void setConnections(const QVariantList& connections);
-  void sortConnections();
-  void editConnection(Connection conn);
+  QScopedPointer<Ui::RegexGroupSubstitutionDialog> m_ui;
+  QLabel m_regexErrorLabel;
 };
 }
 
