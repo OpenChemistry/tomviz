@@ -225,9 +225,16 @@ bool PipelineModel::TreeItem::remove(Operator* o)
 {
   foreach (auto childItem, m_children) {
     if (childItem->op() == o) {
-      // Remove results
       foreach (auto resultItem, childItem->children()) {
-        childItem->removeChild(resultItem->childIndex());
+        auto dataSource = resultItem->dataSource();
+        if (ModuleManager::instance().isChild(dataSource)) {
+          // if the result is a child datasource, allow it to remove its
+          // children
+          resultItem->remove(dataSource);
+        } else {
+          // Remove results
+          childItem->removeChild(resultItem->childIndex());
+        }
       }
       removeChild(childItem->childIndex());
       return true;
