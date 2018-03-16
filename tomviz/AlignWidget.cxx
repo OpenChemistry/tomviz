@@ -180,6 +180,7 @@ public:
     if (dataLUT) {
       m_imageSlice->GetProperty()->SetLookupTable(dataLUT);
     }
+    data->GetSpacing(m_spacing);
   }
   void addToView(vtkRenderer* renderer) override
   {
@@ -204,14 +205,14 @@ public:
     if (m_showingCurrentSlice) {
       m_imageSliceMapper->SetSliceNumber(m_currentSlice);
       m_imageSliceMapper->Update();
-      m_imageSlice->SetPosition(m_currentSliceOffset[0],
-                                m_currentSliceOffset[1], 0);
+      m_imageSlice->SetPosition(m_currentSliceOffset[0] * m_spacing[0],
+                                m_currentSliceOffset[1] * m_spacing[1], 0);
     } else // showing reference slice
     {
       m_imageSliceMapper->SetSliceNumber(m_referenceSlice);
       m_imageSliceMapper->Update();
-      m_imageSlice->SetPosition(m_referenceSliceOffset[0],
-                                m_referenceSliceOffset[1], 0);
+      m_imageSlice->SetPosition(m_referenceSliceOffset[0] * m_spacing[0],
+                                m_referenceSliceOffset[1] * m_spacing[1], 0);
     }
   }
   double* bounds() const override { return m_imageSliceMapper->GetBounds(); }
@@ -220,6 +221,7 @@ private:
   vtkNew<vtkImageSlice> m_imageSlice;
   vtkNew<vtkImageSliceMapper> m_imageSliceMapper;
   vtkSmartPointer<vtkSMProxy> m_lut;
+  double m_spacing[3];
   bool m_showingCurrentSlice = false;
 };
 
