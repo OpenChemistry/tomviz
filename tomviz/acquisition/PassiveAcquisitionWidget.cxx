@@ -53,8 +53,10 @@
 #include <QJsonValueRef>
 #include <QMessageBox>
 #include <QNetworkReply>
+#include <QPalette>
 #include <QProcess>
 #include <QPushButton>
+#include <QRegExp>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -79,6 +81,12 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
           &PassiveAcquisitionWidget::checkEnableWatchButton);
 
   connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
+
+    // Validate the filename regex
+    if (!this->validateRegex()) {
+      return;
+    }
+
     this->m_retryCount = 5;
     this->connectToServer();
   });
@@ -113,6 +121,16 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
                  nullptr);
       this->m_serverProcess->terminate();
     }
+  });
+
+  // Setup regex error label
+  auto palette = m_regexErrorLabel.palette();
+  palette.setColor(m_regexErrorLabel.foregroundRole(), Qt::red);
+  m_regexErrorLabel.setPalette(palette);
+
+  connect(m_ui->fileNameRegexLineEdit, &QLineEdit::textChanged, [this]() {
+    this->m_ui->formLayout->removeWidget(&m_regexErrorLabel);
+    this->m_regexErrorLabel.setText("");
   });
 }
 
@@ -412,5 +430,20 @@ void PassiveAcquisitionWidget::stopWatching()
   this->m_watchTimer->stop();
   this->m_ui->stopWatchingButton->setEnabled(false);
   this->m_ui->watchButton->setEnabled(true);
+}
+
+bool PassiveAcquisitionWidget::validateRegex()
+{
+  auto regExText = m_ui->fileNameRegexLineEdit->text();
+  if (!regExText.isEmpty()) {
+    QRegExp regExp(regExText);
+    if (!regExp.isValid()) {
+      m_regexErrorLabel.setText(regExp.errorString());
+      m_ui->formLayout->insertRow(3, "", &m_regexErrorLabel);
+      return false;
+    }
+  }
+
+  return true;
 }
 }

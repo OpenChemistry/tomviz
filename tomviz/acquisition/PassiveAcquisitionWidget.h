@@ -16,6 +16,7 @@
 #ifndef tomvizPassiveAcquisitionWidget_h
 #define tomvizPassiveAcquisitionWidget_h
 
+#include <QLabel>
 #include <QPointer>
 #include <QScopedPointer>
 #include <QString>
@@ -67,12 +68,6 @@ signals:
   void connectParameterDescription(QJsonValue params);
 
 private:
-  QString url() const;
-  void introspectSource();
-  QJsonObject connectParams();
-
-  QVariantMap settings();
-
   QScopedPointer<Ui::PassiveAcquisitionWidget> m_ui;
   QScopedPointer<AcquisitionClient> m_client;
 
@@ -92,13 +87,19 @@ private:
   QPointer<QTimer> m_watchTimer;
   int m_retryCount = 5;
   QProcess* m_serverProcess = nullptr;
+  QLabel m_regexErrorLabel;
 
+  QString url() const;
+  void introspectSource();
+  QJsonObject connectParams();
+  QVariantMap settings();
   void checkEnableWatchButton();
   void startLocalServer();
   void displayError(const QString& errorMessage);
   void setEnabledRegexGroupsWidget(bool enabled);
   void setEnabledRegexGroupsSubstitutionsWidget(bool enabled);
   void stopWatching();
+  bool validateRegex();
 };
 }
 
