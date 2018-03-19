@@ -222,6 +222,38 @@ set(SOURCES
   WebExportWidget.h
   )
 
+# acquisition/
+list(APPEND SOURCES
+  acquisition/AcquisitionWidget.cxx
+  acquisition/AcquisitionWidget.h
+  acquisition/AcquisitionClient.cxx
+  acquisition/AcquisitionClient.h
+  acquisition/Connection.cxx
+  acquisition/Connection.h
+  acquisition/ConnectionsWidget.cxx
+  acquisition/ConnectionsWidget.h
+  acquisition/ConnectionDialog.cxx
+  acquisition/ConnectionDialog.h
+  acquisition/JsonRpcClient.cxx
+  acquisition/JsonRpcClient.h
+  acquisition/PassiveAcquisitionWidget.cxx
+  acquisition/PassiveAcquisitionWidget.h
+  acquisition/RegexGroupDialog.cxx
+  acquisition/RegexGroupDialog.h
+  acquisition/RegexGroupsWidget.cxx
+  acquisition/RegexGroupsWidget.h
+  acquisition/RegexGroupSubstitution.cxx
+  acquisition/RegexGroupSubstitution.h
+  acquisition/RegexGroupSubstitutionDialog.cxx
+  acquisition/RegexGroupSubstitutionDialog.h
+  acquisition/RegexGroupsSubstitutionsWidget.cxx
+  acquisition/RegexGroupsSubstitutionsWidget.h
+  acquisition/StartServerDialog.cxx
+  acquisition/StartServerDialog.h
+)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/acquisition)
+
 set(exec_sources
   AboutDialog.h
   AboutDialog.cxx
@@ -421,10 +453,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 configure_file(tomvizConfig.h.in tomvizConfig.h @ONLY)
 configure_file(tomvizPythonConfig.h.in tomvizPythonConfig.h @ONLY)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/acquisition)
-add_subdirectory(acquisition)
-
-add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs}  $<TARGET_OBJECTS:acquisition>)
+add_library(tomvizlib STATIC ${SOURCES} ${accel_srcs})
 set_target_properties(tomvizlib PROPERTIES OUTPUT_NAME tomviz)
 
 set_property(TARGET tomvizlib PROPERTY POSITION_INDEPENDENT_CODE TRUE)
