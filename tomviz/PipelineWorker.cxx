@@ -192,6 +192,9 @@ void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
   // Error
   else if (!result) {
     emit finished(result);
+    // The operator's state shows if it failed.  This complete means the
+    // pipeline is no longer running.
+    m_state = State::COMPLETE;
   }
   // Run next operator
   else if (!m_runnableOperators.isEmpty()) {
