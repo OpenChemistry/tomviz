@@ -722,14 +722,7 @@ void PipelineModel::moduleAdded(Module* module)
     }
 
     beginInsertRows(index, insertionRow, insertionRow);
-    auto childCount = dataSourceItem->childCount();
-    if (childCount > 0 && dataSourceItem->child(childCount - 1)->dataSource()) {
-      // Last item is a child DataSource, so insert the new module in front of
-      // it.
-      dataSourceItem->insertChild(childCount - 1, PipelineModel::Item(module));
-    } else {
-      dataSourceItem->appendChild(PipelineModel::Item(module));
-    }
+    dataSourceItem->insertChild(insertionRow, PipelineModel::Item(module));
     endInsertRows();
   }
   emit moduleItemAdded(module);
