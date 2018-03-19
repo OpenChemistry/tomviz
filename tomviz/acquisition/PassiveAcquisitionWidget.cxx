@@ -382,6 +382,7 @@ void PassiveAcquisitionWidget::startLocalServer()
   this->m_serverProcess->setArguments(arguments);
   connect(this->m_serverProcess, &QProcess::errorOccurred,
           [this](QProcess::ProcessError error) {
+            Q_UNUSED(error);
             auto message = QString("Error starting local acquisition: '%1'")
                              .arg(this->m_serverProcess->errorString());
 
