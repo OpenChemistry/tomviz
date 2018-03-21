@@ -82,40 +82,6 @@ set(SOURCES
   MergeImagesDialog.h
   MergeImagesReaction.cxx
   MergeImagesReaction.h
-  Module.cxx
-  Module.h
-  ModuleContour.cxx
-  ModuleContour.h
-  ModuleContourWidget.cxx
-  ModuleContourWidget.h
-  ModuleFactory.cxx
-  ModuleFactory.h
-  ModuleManager.cxx
-  ModuleManager.h
-  ModuleScaleCube.cxx
-  ModuleScaleCube.h
-  ModuleScaleCubeWidget.cxx
-  ModuleScaleCubeWidget.h
-  ModuleMenu.cxx
-  ModuleMenu.h
-  ModuleOrthogonalSlice.cxx
-  ModuleOrthogonalSlice.h
-  ModuleOutline.cxx
-  ModuleOutline.h
-  ModulePropertiesPanel.cxx
-  ModulePropertiesPanel.h
-  ModuleRuler.cxx
-  ModuleRuler.h
-  ModuleSegment.cxx
-  ModuleSegment.h
-  ModuleSlice.cxx
-  ModuleSlice.h
-  ModuleThreshold.cxx
-  ModuleThreshold.h
-  ModuleVolume.cxx
-  ModuleVolume.h
-  ModuleVolumeWidget.cxx
-  ModuleVolumeWidget.h
   MoveActiveObject.cxx
   MoveActiveObject.h
   Operator.cxx
@@ -220,7 +186,45 @@ set(SOURCES
   vtkVolumeScaleRepresentation.cxx
   WebExportWidget.cxx
   WebExportWidget.h
-  )
+)
+
+list(APPEND SOURCES
+  modules/Module.cxx
+  modules/Module.h
+  modules/ModuleContour.cxx
+  modules/ModuleContour.h
+  modules/ModuleContourWidget.cxx
+  modules/ModuleContourWidget.h
+  modules/ModuleFactory.cxx
+  modules/ModuleFactory.h
+  modules/ModuleManager.cxx
+  modules/ModuleManager.h
+  modules/ModuleScaleCube.cxx
+  modules/ModuleScaleCube.h
+  modules/ModuleScaleCubeWidget.cxx
+  modules/ModuleScaleCubeWidget.h
+  modules/ModuleMenu.cxx
+  modules/ModuleMenu.h
+  modules/ModuleOrthogonalSlice.cxx
+  modules/ModuleOrthogonalSlice.h
+  modules/ModuleOutline.cxx
+  modules/ModuleOutline.h
+  modules/ModulePropertiesPanel.cxx
+  modules/ModulePropertiesPanel.h
+  modules/ModuleRuler.cxx
+  modules/ModuleRuler.h
+  modules/ModuleSegment.cxx
+  modules/ModuleSegment.h
+  modules/ModuleSlice.cxx
+  modules/ModuleSlice.h
+  modules/ModuleThreshold.cxx
+  modules/ModuleThreshold.h
+  modules/ModuleVolume.cxx
+  modules/ModuleVolume.h
+  modules/ModuleVolumeWidget.cxx
+  modules/ModuleVolumeWidget.h
+)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/modules)
 
 # acquisition/
 list(APPEND SOURCES
