@@ -174,11 +174,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                                SLOT(onColorMapUpdated()));
 
   m_ui->treeWidget->setModel(new PipelineModel(this));
-  m_ui->treeWidget->header()->setStretchLastSection(false);
-  m_ui->treeWidget->header()->setVisible(false);
-  m_ui->treeWidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-  m_ui->treeWidget->header()->setSectionResizeMode(1, QHeaderView::Fixed);
-  m_ui->treeWidget->header()->resizeSection(1, 30);
+  m_ui->treeWidget->initLayout();
+
   // Ensure that items are expanded by default, can be collapsed at will.
   connect(m_ui->treeWidget->model(),
           SIGNAL(rowsInserted(QModelIndex, int, int)), m_ui->treeWidget,
