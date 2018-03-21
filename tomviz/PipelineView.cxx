@@ -44,12 +44,13 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QHeaderView>
 #include <QItemDelegate>
 #include <QItemSelection>
 #include <QKeyEvent>
 #include <QMainWindow>
-#include <QMessageBox>
 #include <QMenu>
+#include <QMessageBox>
 #include <QPainter>
 #include <QSet>
 #include <QTimer>
@@ -182,6 +183,11 @@ void PipelineView::setModel(QAbstractItemModel* model)
           SLOT(setCurrent(Module*)));
   connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
           SLOT(setCurrent(Operator*)));
+
+  // This is needed to work around a bug in Qt 5.10, the select resize mode is
+  // setting reset for some reason.
+  connect(pipelineModel, &PipelineModel::operatorItemAdded, this,
+          &PipelineView::initLayout);
 }
 
 void PipelineView::keyPressEvent(QKeyEvent* e)
@@ -563,4 +569,12 @@ void PipelineView::setModuleVisibility(const QModelIndexList& idxs,
   }
 }
 
+void PipelineView::initLayout()
+{
+  this->header()->setStretchLastSection(false);
+  this->header()->setVisible(false);
+  this->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+  this->header()->setSectionResizeMode(1, QHeaderView::Fixed);
+  this->header()->resizeSection(1, 30);
+}
 }

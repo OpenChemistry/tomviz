@@ -35,6 +35,7 @@ public:
   PipelineView(QWidget* parent = nullptr);
 
   void setModel(QAbstractItemModel*) override;
+  void initLayout();
 
 protected:
   void keyPressEvent(QKeyEvent*) override;
