@@ -31,7 +31,6 @@
 #include <QTest>
 
 #include "AcquisitionClient.h"
-#include "OperatorPython.h"
 #include "TomvizTest.h"
 
 using namespace tomviz;

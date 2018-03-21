@@ -28,8 +28,8 @@
 #include <QSignalSpy>
 #include <QString>
 
-#include "OperatorPython.h"
 #include "TomvizTest.h"
+#include "operators/OperatorPython.h"
 
 using namespace tomviz;
 

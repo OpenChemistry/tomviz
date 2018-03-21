@@ -30,16 +30,10 @@ set(SOURCES
   CentralWidget.h
   CloneDataReaction.cxx
   CloneDataReaction.h
-  ConvertToFloatOperator.cxx
-  ConvertToFloatOperator.h
   ConvertToFloatReaction.cxx
   ConvertToFloatReaction.h
   CropReaction.cxx
   CropReaction.h
-  CropOperator.cxx
-  CropOperator.h
-  CustomPythonOperatorWidget.cxx
-  CustomPythonOperatorWidget.h
   SelectVolumeWidget.cxx
   SelectVolumeWidget.h
   DataPropertiesPanel.cxx
@@ -54,10 +48,6 @@ set(SOURCES
   DoubleSliderWidget.h
   DoubleSpinBox.cxx
   DoubleSpinBox.h
-  EditOperatorDialog.cxx
-  EditOperatorDialog.h
-  EditOperatorWidget.cxx
-  EditOperatorWidget.h
   EmdFormat.cxx
   EmdFormat.h
   ExportDataReaction.cxx
@@ -84,20 +74,6 @@ set(SOURCES
   MergeImagesReaction.h
   MoveActiveObject.cxx
   MoveActiveObject.h
-  Operator.cxx
-  Operator.h
-  OperatorDialog.cxx
-  OperatorDialog.h
-  OperatorFactory.cxx
-  OperatorFactory.h
-  OperatorPropertiesPanel.cxx
-  OperatorPropertiesPanel.h
-  OperatorPython.cxx
-  OperatorPython.h
-  OperatorResult.cxx
-  OperatorResult.h
-  OperatorWidget.cxx
-  OperatorWidget.h
   Pipeline.cxx
   Pipeline.h
   PipelineManager.cxx
@@ -120,8 +96,6 @@ set(SOURCES
   RAWFileReaderDialog.cxx
   RecentFilesMenu.cxx
   RecentFilesMenu.h
-  ReconstructionOperator.cxx
-  ReconstructionOperator.h
   ReconstructionReaction.cxx
   ReconstructionReaction.h
   ReconstructionWidget.h
@@ -140,12 +114,8 @@ set(SOURCES
   ScaleActorBehavior.h
   ScaleLegend.h
   ScaleLegend.cxx
-  SetTiltAnglesOperator.cxx
-  SetTiltAnglesOperator.h
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
-  SnapshotOperator.h
-  SnapshotOperator.cxx
   SpinBox.cxx
   SpinBox.h
   ToggleDataTypeReaction.h
@@ -154,8 +124,6 @@ set(SOURCES
   TomographyReconstruction.cxx
   TomographyTiltSeries.h
   TomographyTiltSeries.cxx
-  TranslateAlignOperator.h
-  TranslateAlignOperator.cxx
   Utilities.cxx
   Utilities.h
   Variant.cxx
@@ -255,8 +223,43 @@ list(APPEND SOURCES
   acquisition/StartServerDialog.cxx
   acquisition/StartServerDialog.h
 )
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/acquisition)
+
+list(APPEND SOURCES
+  operators/ConvertToFloatOperator.cxx
+  operators/ConvertToFloatOperator.h
+  operators/CustomPythonOperatorWidget.cxx
+  operators/CustomPythonOperatorWidget.h
+  operators/CropOperator.cxx
+  operators/CropOperator.h
+  operators/EditOperatorDialog.cxx
+  operators/EditOperatorDialog.h
+  operators/EditOperatorWidget.cxx
+  operators/EditOperatorWidget.h
+  operators/Operator.cxx
+  operators/Operator.h
+  operators/OperatorDialog.cxx
+  operators/OperatorDialog.h
+  operators/OperatorFactory.cxx
+  operators/OperatorFactory.h
+  operators/OperatorPropertiesPanel.cxx
+  operators/OperatorPropertiesPanel.h
+  operators/OperatorPython.cxx
+  operators/OperatorPython.h
+  operators/OperatorResult.cxx
+  operators/OperatorResult.h
+  operators/OperatorWidget.cxx
+  operators/OperatorWidget.h
+  operators/ReconstructionOperator.cxx
+  operators/ReconstructionOperator.h
+  operators/SetTiltAnglesOperator.cxx
+  operators/SetTiltAnglesOperator.h
+  operators/SnapshotOperator.h
+  operators/SnapshotOperator.cxx
+  operators/TranslateAlignOperator.h
+  operators/TranslateAlignOperator.cxx
+)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/operators)
 
 set(exec_sources
   AboutDialog.h
