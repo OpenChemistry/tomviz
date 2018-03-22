@@ -4,19 +4,6 @@ branches:
     - master
 language: python
 
-cache:
-  timeout: 1000
-  directories:
-    - $HOME/googletest-install
-    - $HOME/itk-install
-    - $HOME/paraview
-    - $HOME/paraview-build
-    - $HOME/python
-    - $HOME/qt-5.9.1
-    - $HOME/tbb2017_20160916oss
-    - $HOME/sha512s
-
-
 matrix:
   include:
     - os: linux
