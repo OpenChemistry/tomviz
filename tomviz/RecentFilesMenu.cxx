@@ -84,6 +84,8 @@ void saveSettings(QJsonObject json)
       states.removeLast();
     }
   }
+  json["readers"] = readers;
+  json["states"] = states;
   QJsonDocument doc(json);
 
   auto settings = pqApplicationCore::instance()->settings();
@@ -142,6 +144,12 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource)
   readerJson["stack"] = dataSource->isImageStack();
   if (!dataSource->pvReaderXml().isEmpty()) {
     readerJson["pvXml"] = dataSource->pvReaderXml();
+  }
+  // remove the file if it is already in the list
+  for (int i = readerList.size() - 1; i >= 0; --i) {
+    if (readerList[i].toObject()["fileName"] == readerJson["fileName"]) {
+      readerList.removeAt(i);
+    }
   }
   readerList.push_front(readerJson);
   settings["readers"] = readerList;
