@@ -538,16 +538,25 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   for (auto& index : idxs) {
     auto dataSource = pipelineModel->dataSource(index);
-    if (dataSource && dataSource->pipeline() &&
-        dataSource->pipeline()->isRunning()) {
-      return false;
+    if (dataSource != nullptr) {
+      // Disable if pipeline is running
+      bool disable =
+        dataSource->pipeline() && dataSource->pipeline()->isRunning();
+
+      // Disable for "Output" data sources
+      auto output = dataSource->property("output");
+      disable = disable || (output.isValid() && output.toBool());
+
+      return !disable;
     }
+
     auto op = pipelineModel->op(index);
     if (op && op->dataSource()->pipeline() &&
         op->dataSource()->pipeline()->isRunning()) {
       return false;
     }
   }
+
   return true;
 }
 
