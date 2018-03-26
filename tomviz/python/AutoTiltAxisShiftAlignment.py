@@ -41,9 +41,9 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
             shiftedTiltSeries = np.roll(
                 tiltSeries[slices, :, :, ], shifts[i], axis=1)
             for s in range(numberOfSlices):
-                self.progress.message = ('Reconstructing slice No.%d/%d with %d'
-                                         'pixels shift' %
-                                         (step, total, shifts[i]))
+                self.progress.message = ('Reconstructing slice No.%d/%d with a '
+                                         'shift of %d pixels' %
+                                         (s, numberOfSlices, shifts[i]))
 
                 recon = wbp2(shiftedTiltSeries[s, :, :],
                              tilt_angles, Ny, 'ramp', 'linear')
