@@ -240,6 +240,11 @@ DataSource* Pipeline::findTransformedDataSource(DataSource* dataSource)
 
 Operator* Pipeline::findTransformedDataSourceOperator(DataSource* dataSource)
 {
+
+  if (dataSource == nullptr) {
+    return nullptr;
+  }
+
   auto operators = dataSource->operators();
   for (auto itr = operators.rbegin(); itr != operators.rend(); ++itr) {
     auto op = *itr;
@@ -404,5 +409,21 @@ Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
     return imageFuture;
   }
 }
+
+DataSource* Pipeline::transformedDataSource(DataSource* dataSource)
+{
+  if (dataSource == nullptr) {
+    dataSource = this->dataSource();
+  }
+
+  auto transformed = this->findTransformedDataSource(dataSource);
+  if (transformed != nullptr) {
+    return transformed;
+  }
+
+  // Default to dataSource at being of pipeline
+  return dataSource;
+}
+
 
 } // tomviz namespace

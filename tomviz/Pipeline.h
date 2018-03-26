@@ -63,6 +63,11 @@ public:
   /// The data source a the root of the pipeline.
   DataSource* dataSource() { return m_data; };
 
+  /// Returns that transformed data source associated with a given
+  /// data source. If no data source is provided the pipeline's root data source
+  /// will be used.
+  DataSource* transformedDataSource(DataSource* dataSource = nullptr);
+
 public slots:
   void execute();
   void execute(DataSource* start, bool runLast);
