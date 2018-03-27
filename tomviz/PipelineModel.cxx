@@ -323,7 +323,7 @@ QIcon iconForDataObject(vtkDataObject* dataObject)
     return QIcon(":/pqWidgets/Icons/pqUnstructuredGrid16.png");
   } else if (vtkStructuredGrid::SafeDownCast(dataObject)) {
     return QIcon(":/pqWidgets/Icons/pqStructuredGrid16.png");
-  } else if (vtkUnstructuredGrid::SafeDownCast(dataObject)) {
+  } else if (vtkRectilinearGrid::SafeDownCast(dataObject)) {
     return QIcon(":/pqWidgets/Icons/pqRectilinearGrid16.png");
   }
 
