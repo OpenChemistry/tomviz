@@ -45,8 +45,7 @@ void ReconstructionReaction::updateEnableState()
 
   if (enable) {
     auto dataSource = pipeline->transformedDataSource();
-    enable = dataSource->type() ==
-        DataSource::TiltSeries;
+    enable = dataSource->type() == DataSource::TiltSeries;
   }
 
   parentAction()->setEnabled(enable);

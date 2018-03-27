@@ -20,10 +20,10 @@
 #include "EditOperatorDialog.h"
 #include "OperatorDialog.h"
 #include "OperatorPython.h"
+#include "Pipeline.h"
 #include "SelectVolumeWidget.h"
 #include "SpinBox.h"
 #include "Utilities.h"
-#include "Pipeline.h"
 
 #include <vtkImageData.h>
 #include <vtkSMSourceProxy.h>
@@ -166,12 +166,10 @@ void AddPythonTransformReaction::updateEnableState()
   if (enable) {
     auto dataSource = pipeline->transformedDataSource();
     if (this->requiresTiltSeries) {
-      enable = dataSource->type() ==
-               DataSource::TiltSeries;
+      enable = dataSource->type() == DataSource::TiltSeries;
     }
     if (enable && this->requiresVolume) {
-      enable = dataSource->type() ==
-               DataSource::Volume;
+      enable = dataSource->type() == DataSource::Volume;
     }
   }
 

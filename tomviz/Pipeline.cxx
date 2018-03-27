@@ -426,5 +426,4 @@ DataSource* Pipeline::transformedDataSource(DataSource* dataSource)
   return dataSource;
 }
 
-
 } // tomviz namespace
