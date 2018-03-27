@@ -297,10 +297,20 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   }
 
   // Keep the delete menu entry at the end of the list of options.
+
+  // Don't add a "Delete" menu entry for "Output" data source.
   QAction* deleteAction = nullptr;
-  deleteAction = contextMenu.addAction("Delete");
-  if (deleteAction && !enableDeleteItems(selectedIndexes())) {
-    deleteAction->setEnabled(false);
+  bool addDelete = true;
+  if (dataSource != nullptr) {
+    auto output = dataSource->property("output");
+    addDelete = !(output.isValid() && output.toBool());
+  }
+
+  if (addDelete) {
+    deleteAction = contextMenu.addAction("Delete");
+    if (deleteAction && !enableDeleteItems(selectedIndexes())) {
+      deleteAction->setEnabled(false);
+    }
   }
 
   bool allModules = true;
