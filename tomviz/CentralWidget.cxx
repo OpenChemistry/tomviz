@@ -338,6 +338,14 @@ CentralWidget::~CentralWidget()
 
 void CentralWidget::setActiveColorMapDataSource(DataSource* source)
 {
+  auto selected = ActiveObjects::instance().selectedDataSource();
+
+  // If we have a data source selected directly ( i.e. the user has clicked on
+  // it ) use that, otherwise use the active transformed data source passed in.
+  if (selected != nullptr) {
+    source = selected;
+  }
+
   setColorMapDataSource(source);
 }
 
