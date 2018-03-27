@@ -693,8 +693,16 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
   beginInsertRows(QModelIndex(), 0, 0);
   m_treeItems.append(treeItem);
   endInsertRows();
-  connect(dataSource->pipeline(), &Pipeline::operatorAdded, this,
+  auto pipeline = dataSource->pipeline();
+  connect(pipeline, &Pipeline::operatorAdded, this,
           &PipelineModel::operatorAdded, Qt::UniqueConnection);
+
+  // Fire signal to indicate that the transformed data source has been modified
+  // when the pipeline has been executed.
+  connect(pipeline, &Pipeline::finished, [this, pipeline]() {
+    auto transformed = pipeline->transformedDataSource();
+    emit this->dataSourceModified(transformed);
+  });
 
   // When restoring a data source from a state file it will have its operators
   // before we can listen to the signal above. Display those operators.

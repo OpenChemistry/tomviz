@@ -72,6 +72,7 @@ void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
 
   auto operators = dataSource->operators();
   if (operators.isEmpty()) {
+    emit finished();
     return;
   }
 

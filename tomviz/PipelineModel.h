@@ -86,6 +86,7 @@ signals:
   void dataSourceItemAdded(DataSource* dataSource);
   void moduleItemAdded(Module* module);
   void operatorItemAdded(Operator* op);
+  void dataSourceModified(DataSource* dataSource);
 
 private:
   struct Item;
