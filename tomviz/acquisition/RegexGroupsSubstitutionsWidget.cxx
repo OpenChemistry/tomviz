@@ -96,6 +96,15 @@ void RegexGroupsSubstitutionsWidget::readSettings()
   auto settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("acquisition");
   auto substitutions = settings->value("regexGroupsSubstitutions").toList();
+  // If setting doesn't exist use the defaults
+  if (!settings->contains("regexGroupsSubstitutions")) {
+    QVariant pos;
+    pos.setValue(RegexGroupSubstitution("angle", "n", "-"));
+    substitutions.append(pos);
+    QVariant neg;
+    neg.setValue(RegexGroupSubstitution("angle", "p", "+"));
+    substitutions.append(neg);
+  }
   foreach (const QVariant conn, substitutions) {
     m_substitutions.append(conn.value<RegexGroupSubstitution>());
   }

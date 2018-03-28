@@ -78,6 +78,10 @@ void RegexGroupsWidget::readSettings()
   auto settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("acquisition");
   auto groups = settings->value("regexGroupNames").toStringList();
+  // Add the default
+  if (!settings->contains("regexGroupNames")) {
+    groups.append("angle");
+  }
   foreach (const QString& group, groups) {
     this->m_ui->regexGroupsWidget->addItem(group);
   }
