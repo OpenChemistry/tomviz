@@ -418,6 +418,24 @@ void PassiveAcquisitionWidget::startLocalServer()
 
   });
 
+  connect(this->m_serverProcess, static_cast<void (QProcess::*)(int)>(&QProcess::finished), [this](int exitCode) {
+    qWarning() << QString("The acquisition server has exited with exit code: %1").arg(exitCode);
+  });
+
+  connect(this->m_serverProcess, &QProcess::readyReadStandardError, [this]() {
+    qWarning() << this->m_serverProcess->readAllStandardError();
+  });
+
+  connect(this->m_serverProcess, &QProcess::readyReadStandardOutput, [this]() {
+    qInfo() << this->m_serverProcess->readAllStandardOutput();
+  });
+
+
+  qInfo() << QString("Starting server with following command: %1 %2").arg(m_serverProcess->program()).arg(this->m_serverProcess->arguments().join(" "));
+  QStringList locations =
+    QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+  qInfo() << QString("Server logs are written to the following path: %1%2.tomviz%2logs%2").arg(locations[0]).arg(QDir::separator());
+
   this->m_serverProcess->start();
 }
 
