@@ -49,6 +49,15 @@ public:
   /// Returns the active data source.
   DataSource* activeDataSource() const { return m_activeDataSource; }
 
+  /// Returns the selected data source, nullptr if no data source is selected.
+  DataSource* selectedDataSource() const { return m_selectedDataSource; }
+
+  /// Returns the active transformed data source.
+  DataSource* activeTransformedDataSource() const
+  {
+    return m_activeTransformedDataSource;
+  }
+
   /// Returns the active module.
   Module* activeModule() const { return m_activeModule; }
 
@@ -76,6 +85,12 @@ public slots:
 
   /// Set the active data source.
   void setActiveDataSource(DataSource* source);
+
+  /// Set the selected data source.
+  void setSelectedDataSource(DataSource* source);
+
+  /// Set the active transformed data source.
+  void setActiveTransformedDataSource(DataSource* source);
 
   /// Set the active module.
   void setActiveModule(Module* module);
@@ -110,6 +125,10 @@ signals:
   /// pipeline.
   void dataSourceActivated(DataSource*);
 
+  /// Fired whenever the data source is activated, i.e. selected in the
+  /// pipeline. This signal emits the transformed data source.
+  void transformedDataSourceActivated(DataSource*);
+
   /// Fired whenever the active module changes.
   void moduleChanged(Module*);
 
@@ -139,15 +158,13 @@ protected:
   ~ActiveObjects() override;
 
   QPointer<DataSource> m_activeDataSource = nullptr;
+  QPointer<DataSource> m_activeTransformedDataSource = nullptr;
+  QPointer<DataSource> m_selectedDataSource = nullptr;
   DataSource::DataSourceType m_activeDataSourceType = DataSource::Volume;
   QPointer<DataSource> m_activeParentDataSource = nullptr;
-
   QPointer<Module> m_activeModule = nullptr;
-
   QPointer<Operator> m_activeOperator = nullptr;
-
   QPointer<OperatorResult> m_activeOperatorResult = nullptr;
-
   bool m_moveObjectsEnabled = false;
 
 private:

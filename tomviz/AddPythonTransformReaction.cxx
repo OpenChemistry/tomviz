@@ -20,6 +20,7 @@
 #include "EditOperatorDialog.h"
 #include "OperatorDialog.h"
 #include "OperatorPython.h"
+#include "Pipeline.h"
 #include "SelectVolumeWidget.h"
 #include "SpinBox.h"
 #include "Utilities.h"
@@ -159,15 +160,19 @@ AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
 
 void AddPythonTransformReaction::updateEnableState()
 {
-  bool enable = ActiveObjects::instance().activeDataSource() != nullptr;
-  if (enable && this->requiresTiltSeries) {
-    enable = ActiveObjects::instance().activeDataSource()->type() ==
-             DataSource::TiltSeries;
+  auto pipeline = ActiveObjects::instance().activePipeline();
+  bool enable = ActiveObjects::instance().activePipeline() != nullptr;
+
+  if (enable) {
+    auto dataSource = pipeline->transformedDataSource();
+    if (this->requiresTiltSeries) {
+      enable = dataSource->type() == DataSource::TiltSeries;
+    }
+    if (enable && this->requiresVolume) {
+      enable = dataSource->type() == DataSource::Volume;
+    }
   }
-  if (enable && this->requiresVolume) {
-    enable = ActiveObjects::instance().activeDataSource()->type() ==
-             DataSource::Volume;
-  }
+
   parentAction()->setEnabled(enable);
 }
 

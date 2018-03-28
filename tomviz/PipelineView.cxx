@@ -183,6 +183,8 @@ void PipelineView::setModel(QAbstractItemModel* model)
           SLOT(setCurrent(Module*)));
   connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
           SLOT(setCurrent(Operator*)));
+  connect(pipelineModel, SIGNAL(dataSourceModified(DataSource*)),
+          SLOT(setCurrent(DataSource*)));
 
   // This is needed to work around a bug in Qt 5.10, the select resize mode is
   // setting reset for some reason.
@@ -488,8 +490,11 @@ void PipelineView::currentChanged(const QModelIndex& current,
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
 
+  // First set the selected data source to nullptr, in case the new selection
+  // is not a data source.
+  ActiveObjects::instance().setSelectedDataSource(nullptr);
   if (auto dataSource = pipelineModel->dataSource(current)) {
-    ActiveObjects::instance().setActiveDataSource(dataSource);
+    ActiveObjects::instance().setSelectedDataSource(dataSource);
   } else if (auto module = pipelineModel->module(current)) {
     ActiveObjects::instance().setActiveModule(module);
   } else if (auto op = pipelineModel->op(current)) {
