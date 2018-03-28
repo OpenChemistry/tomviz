@@ -104,6 +104,7 @@ void ConnectionsWidget::readSettings()
     Connection local("localhost", "localhost", 8080);
     m_connections.append(local);
     m_ui->connectionsWidget->addItem(local.name());
+    m_ui->connectionsWidget->setCurrentRow(0);
     return;
   }
   settings->beginGroup("acquisition");
