@@ -57,6 +57,7 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QRegExp>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -72,6 +73,11 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
 {
   m_ui->setupUi(this);
   this->setWindowFlags(Qt::Dialog);
+
+  // Default to home directory
+  QStringList locations =
+    QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+  m_ui->watchPathLineEdit->setText(locations[0]);
 
   readSettings();
 
@@ -145,16 +151,23 @@ void PassiveAcquisitionWidget::closeEvent(QCloseEvent* event)
 void PassiveAcquisitionWidget::readSettings()
 {
   auto settings = pqApplicationCore::instance()->settings();
-  if (!settings->contains("acquisition/geometry")) {
+  if (!settings->contains("acquisition/passive.geometry")) {
     return;
   }
   settings->beginGroup("acquisition");
   setGeometry(settings->value("passive.geometry").toRect());
   m_ui->splitter->restoreState(
     settings->value("passive.splitterSizes").toByteArray());
-  m_ui->watchPathLineEdit->setText(settings->value("watchPath").toString());
-  m_ui->fileNameRegexLineEdit->setText(
-    settings->value("fileNameRegex").toString());
+  auto watchPath = settings->value("watchPath").toString();
+  if (!watchPath.isEmpty()) {
+    m_ui->watchPathLineEdit->setText(watchPath);
+  }
+
+  auto fileNameRegex = settings->value("fileNameRegex").toString();
+  if (!fileNameRegex.isEmpty()) {
+    m_ui->fileNameRegexLineEdit->setText(fileNameRegex);
+  }
+
   settings->endGroup();
 }
 
