@@ -208,13 +208,13 @@ bool DataSource::appendSlice(vtkImageData* slice)
     return false;
   }
 
-  int extents[6];
   int sliceExtents[6];
   slice->GetExtent(sliceExtents);
   auto tp = algorithm();
   if (tp) {
     auto data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
     if (data) {
+      int extents[6];
       data->GetExtent(extents);
       cout << "The data is ";
       for (int i = 0; i < 6; ++i)
