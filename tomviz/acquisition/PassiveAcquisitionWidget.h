@@ -60,7 +60,7 @@ protected:
 private slots:
   void connectToServer(bool startServer = true);
 
-  void imageReady(QString mimeType, QByteArray result, int angle = 0);
+  void imageReady(QString mimeType, QByteArray result, float angle = 0);
 
   void onError(const QString& errorMessage, const QJsonValue& errorData);
   void watchSource();

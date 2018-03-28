@@ -242,7 +242,7 @@ void PassiveAcquisitionWidget::connectToServer(bool startServer)
 }
 
 void PassiveAcquisitionWidget::imageReady(QString mimeType, QByteArray result,
-                                          int angle)
+                                          float angle)
 {
   if (mimeType != "image/tiff") {
     qDebug() << "image/tiff is the only supported mime type right now.\n"
@@ -330,9 +330,9 @@ void PassiveAcquisitionWidget::watchSource()
                     [this](const QString mimeType, const QByteArray& result,
                            const QJsonObject& meta) {
                       if (!result.isNull()) {
-                        int angle = 0;
+                        float angle = 0;
                         if (meta.contains("angle")) {
-                          angle = meta["angle"].toString().toInt();
+                          angle = meta["angle"].toString().toFloat();
                         }
                         this->imageReady(mimeType, result, angle);
                       }
