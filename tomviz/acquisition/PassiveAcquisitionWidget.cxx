@@ -80,7 +80,7 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
   m_ui->watchPathLineEdit->setText(locations[0]);
 
   // Default file name regex
-  m_ui->fileNameRegexLineEdit->setText(".*_([n,p]{1}[\d,\.]+)degree.*\.dm3");
+  m_ui->fileNameRegexLineEdit->setText(".*_([n,p]{1}[\\d,\\.]+)degree.*\\.dm3");
 
   readSettings();
 
