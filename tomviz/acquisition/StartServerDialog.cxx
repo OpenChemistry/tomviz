@@ -23,12 +23,23 @@
 #include <QFileDialog>
 #include <QFontMetrics>
 
+const char* PYTHON_PATH_DEFAULT = "Enter Python path ...";
+
 namespace tomviz {
 
 StartServerDialog::StartServerDialog(QWidget* parent)
   : QDialog(parent), m_ui(new Ui::StartServerDialog)
 {
   m_ui->setupUi(this);
+
+  connect(m_ui->pythonPathLineEdit, &QLineEdit::textChanged, [this]() {
+    auto currentText = this->m_ui->pythonPathLineEdit->text();
+    auto valid = !currentText.isEmpty() && currentText != PYTHON_PATH_DEFAULT;
+    this->m_ui->startButton->setEnabled(valid);
+    if (valid) {
+      this->setPythonExecutablePath(currentText);
+    }
+  });
 
   this->readSettings();
 
@@ -53,8 +64,12 @@ void StartServerDialog::readSettings()
 {
   auto settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("acquisition");
-  this->setPythonExecutablePath(
-    settings->value("pythonExecutablePath").toString());
+  if (!settings->contains("pythonExecutablePath")) {
+    this->setPythonExecutablePath(PYTHON_PATH_DEFAULT);
+  } else {
+    this->setPythonExecutablePath(
+      settings->value("pythonExecutablePath").toString());
+  }
   settings->endGroup();
 }
 
@@ -69,9 +84,6 @@ void StartServerDialog::writeSettings()
 void StartServerDialog::setPythonExecutablePath(const QString& path)
 {
   this->m_pythonExecutablePath = path;
-  QFontMetrics metrics(this->m_ui->pythonExecutablPathLabel->font());
-  QString elidedText = metrics.elidedText(
-    path, Qt::ElideRight, this->m_ui->pythonExecutablPathLabel->width());
-  this->m_ui->pythonExecutablPathLabel->setText(elidedText);
+  this->m_ui->pythonPathLineEdit->setText(path);
 }
 }
