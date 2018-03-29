@@ -642,6 +642,38 @@ bool ModuleManager::deserialize(const QJsonObject &doc, const QDir &stateDir)
   this->Internals->dir = QDir();
   m_stateObject = QJsonObject();
 
+  // Now to restore all of our cameras...
+  for (int i = 0; i < views.size(); ++i) {
+    auto view = views[i].toObject();
+    auto viewProxy =
+      vtkSMRenderViewProxy::SafeDownCast(lookupView(view["id"].toInt()));
+    if (!viewProxy) {
+      continue;
+    }
+    double tmp[3];
+    auto camera = view["camera"].toObject();
+    auto jsonArray = camera["position"].toArray();
+    for (int j = 0; j < jsonArray.size(); ++j) {
+      tmp[j] = jsonArray[j].toDouble();
+    }
+    vtkSMPropertyHelper(viewProxy, "CameraPosition").Set(tmp, 3);
+    jsonArray = camera["focalPoint"].toArray();
+    for (int j = 0; j < jsonArray.size(); ++j) {
+      tmp[j] = jsonArray[j].toDouble();
+    }
+    vtkSMPropertyHelper(viewProxy, "CameraFocalPoint").Set(tmp, 3);
+    jsonArray = camera["viewUp"].toArray();
+    for (int j = 0; j < jsonArray.size(); ++j) {
+      tmp[j] = jsonArray[j].toDouble();
+    }
+    vtkSMPropertyHelper(viewProxy, "CameraViewUp").Set(tmp, 3);
+    vtkSMPropertyHelper(viewProxy, "CameraViewAngle")
+      .Set(camera["viewAngle"].toDouble());
+    vtkSMPropertyHelper(viewProxy, "EyeAngle")
+      .Set(camera["EyeAngle"].toDouble());
+    viewProxy->UpdateVTKObjects();
+  }
+
   return true;
 }
 
