@@ -38,15 +38,6 @@ namespace tomviz {
 static const int MAX_ITEMS = 10;
 
 namespace{
-void get_settings(pugi::xml_document& doc)
-{
-  QSettings* settings = pqApplicationCore::instance()->settings();
-  QString recent = settings->value("recentFiles").toString();
-  if (recent.isEmpty() || !doc.load(recent.toUtf8().data()) ||
-      !doc.child("tomvizRecentFilesMenu")) {
-    doc.append_child("tomvizRecentFilesMenu");
-  }
-}
 
 QJsonObject loadSettings()
 {
@@ -59,6 +50,7 @@ QJsonObject loadSettings()
   } else {
     QJsonObject json;
     json["readers"] = QJsonArray();
+    json["states"] = QJsonArray();
     return QJsonObject();
   }
 }
@@ -94,37 +86,6 @@ void saveSettings(QJsonObject json)
   settings->setValue("recentFiles", doc.toJson(QJsonDocument::Compact));
 }
 
-void save_settings(pugi::xml_document&)
-{
-/*
-  // trim the list.
-  pugi::xml_node root = doc.root();
-  std::vector<pugi::xml_node> to_remove;
-  int counter = 0;
-  for (pugi::xml_node node = root.child("DataReader"); node;
-       node = node.next_sibling("DataReader"), counter++) {
-    if (counter >= MAX_ITEMS) {
-      to_remove.push_back(node);
-    }
-  }
-  counter = 0;
-  for (pugi::xml_node node = root.child("State"); node;
-       node = node.next_sibling("State"), counter++) {
-    if (counter >= MAX_ITEMS) {
-      to_remove.push_back(node);
-    }
-  }
-  for (size_t cc = 0; cc < to_remove.size(); cc++) {
-    root.remove_child(to_remove[cc]);
-  }
-
-  std::ostringstream stream;
-  doc.save(stream);
-  QSettings* settings = pqApplicationCore::instance()->settings();
-  settings->setValue("recentFiles", stream.str().c_str());
-*/
-}
-
 }
 
 RecentFilesMenu::RecentFilesMenu(QMenu& menu, QObject* p)
@@ -146,7 +107,7 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource)
   if (!dataSource->pvReaderXml().isEmpty()) {
     readerJson["pvXml"] = dataSource->pvReaderXml();
   }
-  // remove the file if it is already in the list
+  // Remove the file if it is already in the list
   for (int i = readerList.size() - 1; i >= 0; --i) {
     if (readerList[i].toObject()["fileName"] == readerJson["fileName"]) {
       readerList.removeAt(i);
@@ -157,23 +118,21 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource)
   saveSettings(settings);
 }
 
-void RecentFilesMenu::pushStateFile(const QString& filename)
+void RecentFilesMenu::pushStateFile(const QString& fileName)
 {
-  pugi::xml_document settings;
-  get_settings(settings);
-
-  pugi::xml_node root = settings.root();
-  for (pugi::xml_node node = root.child("State"); node;
-       node = node.next_sibling("State")) {
-    if (filename == node.attribute("filename").as_string("")) {
-      root.remove_child(node);
-      break;
+  auto settings = loadSettings();
+  auto stateList = settings["states"].toArray();
+  QJsonObject stateJson;
+  stateJson["fileName"] = fileName;
+  // Remove the file if it is already in the list
+  for (int i = stateList.size() - 1; i >= 0; --i) {
+    if (stateList[i].toObject()["fileName"] == stateJson["fileName"]) {
+      stateList.removeAt(i);
     }
   }
-
-  pugi::xml_node node = root.prepend_child("State");
-  node.append_attribute("filename").set_value(filename.toLatin1().data());
-  save_settings(settings);
+  stateList.push_front(stateJson);
+  settings["states"] = stateList;
+  saveSettings(settings);
 }
 
 void RecentFilesMenu::aboutToShowMenu()
@@ -216,7 +175,6 @@ void RecentFilesMenu::aboutToShowMenu()
 
   headerAdded = false;
   foreach(QJsonValue file, json["states"].toArray()) {
-    qDebug() << "File:" << file;
     if (file.isObject()) {
       auto object = file.toObject();
       if (headerAdded == false) {
@@ -275,33 +233,32 @@ void RecentFilesMenu::stateTriggered()
   auto actn = qobject_cast<QAction*>(sender());
   Q_ASSERT(actn);
 
-  QString filename = actn->data().toString();
+  QString fileName = actn->data().toString();
 
   if (QFileInfo::exists(actn->iconText())) {
-    if (SaveLoadStateReaction::loadState(filename)) {
+    if (SaveLoadStateReaction::loadState(fileName)) {
       // the above call will ensure that the file name moves to top of the list
       // since it calls pushStateFile() on success.
       return;
     }
   } else {
-    // // If the user tried to open a recent file that no longer exists, remove
-    // it from the recent files
+    // If the user tried to open a recent file that no longer exists, remove
+    // it from the recent files.
     QMessageBox::warning(
       tomviz::mainWidget(), "Error",
       QString("The file '%1' does not exist").arg(actn->iconText()));
   }
 
-  // remove the item from the recent state files list.
-  pugi::xml_document settings;
-  get_settings(settings);
-  pugi::xml_node root = settings.root();
-  for (pugi::xml_node node = root.child("State"); node;
-       node = node.next_sibling("State")) {
-    if (filename == node.attribute("filename").as_string()) {
-      root.remove_child(node);
-      save_settings(settings);
-      break;
+  // Remove the item from the recent state files list.
+  auto json = loadSettings();
+  if (json["states"].isArray()) {
+    auto states = json["states"].toArray();
+    for (int i = 0; i < states.size(); ++i) {
+      if (states[i].toObject()["fileName"].toString() == fileName) {
+        states.removeAt(i);
+      }
     }
+    saveSettings(json);
   }
 }
 }
