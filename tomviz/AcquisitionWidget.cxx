@@ -386,6 +386,7 @@ void AcquisitionWidget::watchSource()
             connect(request, &AcquisitionClientImageRequest::finished,
                     [this](const QString mimeType, const QByteArray& result,
                            const QJsonObject& meta) {
+                      Q_UNUSED(meta);
                       if (!result.isNull()) {
                         qDebug() << "New image received!";
                         this->previewReady(mimeType, result);
