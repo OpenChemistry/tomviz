@@ -391,6 +391,7 @@ bool DataSource::deserialize(const QJsonObject& state)
   }
   // Now check for operators on the data source.
   if (state.contains("operators") && state["operators"].isArray()) {
+    pipeline()->pause();
     auto operatorArray = state["operators"].toArray();
     for (int i = 0; i < operatorArray.size(); ++i) {
       auto operatorObj = operatorArray[i].toObject();
@@ -400,6 +401,7 @@ bool DataSource::deserialize(const QJsonObject& state)
         addOperator(op);
       }
     }
+    pipeline()->resume(true);
   }
   return true;
 }
