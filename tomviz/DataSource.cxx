@@ -363,7 +363,7 @@ QJsonObject DataSource::serialize() const
   foreach(Module* module, modules) {
     QJsonObject jModule = module->serialize();
     jModule["type"] = ModuleFactory::moduleType(module);
-    jModule["view"] = module->view()->GetGlobalIDAsString();
+    jModule["viewId"] = module->view()->GetGlobalIDAsString();
 
     jModules.append(jModule);
   }
