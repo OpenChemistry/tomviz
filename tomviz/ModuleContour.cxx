@@ -457,16 +457,29 @@ bool ModuleContour::deserialize(const QJsonObject& json)
       m_resampleFilter->UpdateVTKObjects();
     }
 
-    auto useSolidColor = props["useSolidColor"];
-    d->UseSolidColor = useSolidColor.toBool();
+    d->UseSolidColor = props["useSolidColor"].toBool();
+    m_controllers->setUseSolidColor(d->UseSolidColor);
 
     auto toRep = [](vtkSMProxy* representation, const QJsonObject& state) {
+        QJsonObject lighting = state["lighting"].toObject();
+        vtkSMPropertyHelper ambient(representation, "Ambient");
+        ambient.Set(lighting["ambient"].toDouble());
+        vtkSMPropertyHelper diffuse(representation, "Diffuse");
+        diffuse.Set(lighting["diffuse"].toDouble());
+        vtkSMPropertyHelper specular(representation, "Specular");
+        specular.Set(lighting["specular"].toDouble());
+        vtkSMPropertyHelper specularPower(representation, "SpecularPower");
+        specularPower.Set(lighting["specularPower"].toDouble());
         auto color = state["color"].toObject();
         auto rgb = color["rgb"].toArray();
         vtkSMPropertyHelper diffuseColor(representation, "DiffuseColor");
         for (int i = 0; i < 3; i++) {
           diffuseColor.Set(i, rgb.at(i).toDouble());
         }
+        vtkSMPropertyHelper opacity(representation, "Opacity");
+        opacity.Set(state["opacity"].toDouble());
+        vtkSMPropertyHelper mapScalars(representation, "MapScalars");
+        mapScalars.Set(state["mapScalars"].toBool() ? 1 : 0);
         representation->UpdateVTKObjects();
       };
 
