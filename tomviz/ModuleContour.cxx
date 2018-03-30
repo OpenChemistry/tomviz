@@ -42,12 +42,15 @@
 #include "vtkSmartPointer.h"
 
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <vector>
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QLabel>
 #include <QPointer>
 
@@ -380,6 +383,105 @@ void ModuleContour::onScalarArrayChanged()
   onPropertyChanged();
 
   emit renderNeeded();
+}
+
+QJsonObject ModuleContour::serialize() const
+{
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
+  vtkSMPropertyHelper contourValues(
+    m_contourFilter->GetProperty("ContourValues"));
+  props["contourValue"] = contourValues.GetAsDouble();
+  props["useSolidColor"] = d->UseSolidColor;
+
+  std::function<QJsonObject(vtkWeakPointer<vtkSMProxy>)> toJson =
+    [this](vtkWeakPointer<vtkSMProxy> representation) {
+      QJsonObject obj;
+      QJsonObject color;
+      QJsonArray rgb;
+      vtkSMPropertyHelper diffuseColor(
+        representation->GetProperty("DiffuseColor"));
+      for (int i = 0; i < 3; i++) {
+        rgb.append(diffuseColor.GetAsDouble(i));
+      }
+      color["rgb"] = rgb;
+      obj["color"] = color;
+
+      QJsonObject lighting;
+      vtkSMPropertyHelper ambient(representation->GetProperty("Ambient"));
+      lighting["ambient"] = ambient.GetAsDouble();
+      vtkSMPropertyHelper diffuse(representation->GetProperty("Diffuse"));
+      lighting["diffuse"] = diffuse.GetAsDouble();
+      vtkSMPropertyHelper specular(representation->GetProperty("Specular"));
+      lighting["specular"] = specular.GetAsDouble();
+      vtkSMPropertyHelper specularPower(
+        representation->GetProperty("SpecularPower"));
+      lighting["specularPower"] = specularPower.GetAsDouble();
+      obj["lighting"] = lighting;
+
+      vtkSMPropertyHelper representationHelper(
+        representation->GetProperty("Representation"));
+      obj["representation"] = representationHelper.GetAsString();
+
+      vtkSMPropertyHelper opacity(representation->GetProperty("Opacity"));
+      obj["opacity"] = opacity.GetAsDouble();
+
+      vtkSMPropertyHelper mapScalars(representation->GetProperty("MapScalars"));
+      obj["mapScalars"] = mapScalars.GetAsInt() == 1;
+
+      return obj;
+    };
+
+  props["resampleRepresentation"] = toJson(m_resampleRepresentation);
+
+  if (m_pointDataToCellDataRepresentation) {
+    props["pointDataToCellDataRepresentation"] =
+      toJson(m_pointDataToCellDataRepresentation);
+  }
+
+  json["properties"] = props;
+
+  return json;
+}
+
+bool ModuleContour::deserialize(const QJsonObject& json)
+{
+  if (!Module::deserialize(json)) {
+    return false;
+  }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    if (m_contourFilter != nullptr) {
+      vtkSMPropertyHelper(m_contourFilter, "ContourValues")
+        .Set(props["contourValue"].toDouble());
+      m_resampleFilter->UpdateVTKObjects();
+    }
+
+    auto useSolidColor = props["useSolidColor"];
+    d->UseSolidColor = useSolidColor.toBool();
+
+    std::function<void(vtkWeakPointer<vtkSMProxy>, const QJsonObject&)> toRep =
+      [this](vtkWeakPointer<vtkSMProxy> representation,
+             const QJsonObject& state) {
+        auto color = state["color"].toObject();
+        auto rgb = color["rgb"].toArray();
+        vtkSMPropertyHelper diffuseColor(representation, "DiffuseColor");
+        for (int i = 0; i < 3; i++) {
+          diffuseColor.Set(i, rgb.at(i).toDouble());
+        }
+        representation->UpdateVTKObjects();
+      };
+
+    if (props.contains("resampleRepresentation")) {
+      auto resampleRepresentationState =
+        props["resampleRepresentation"].toObject();
+      toRep(m_resampleRepresentation, resampleRepresentationState);
+    }
+
+    return true;
+  }
+  return false;
 }
 
 bool ModuleContour::serialize(pugi::xml_node& ns) const
