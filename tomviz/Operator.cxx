@@ -22,6 +22,7 @@
 
 #include "vtkSMSourceProxy.h"
 
+#include <QJsonArray>
 #include <QList>
 #include <QTimer>
 
@@ -163,8 +164,10 @@ QJsonObject Operator::serialize() const
 {
   QJsonObject json;
   if (childDataSource()) {
+    QJsonArray dataSources;
     DataSource* ds = childDataSource();
-    json["childDataSource"] = ds->serialize();
+    dataSources.append(ds->serialize());
+    json["dataSources"] = dataSources;
   }
   return json;
 }
