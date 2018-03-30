@@ -392,15 +392,28 @@ bool DataSource::deserialize(const QJsonObject& state)
   // Now check for operators on the data source.
   if (state.contains("operators") && state["operators"].isArray()) {
     pipeline()->pause();
+    Operator* op = nullptr;
+    QJsonObject operatorObj;
     auto operatorArray = state["operators"].toArray();
     for (int i = 0; i < operatorArray.size(); ++i) {
-      auto operatorObj = operatorArray[i].toObject();
-      auto op = OperatorFactory::createOperator(operatorObj["type"].toString(),
+      operatorObj = operatorArray[i].toObject();
+      op = OperatorFactory::createOperator(operatorObj["type"].toString(),
                                                 this);
       if (op && op->deserialize(operatorObj)) {
         addOperator(op);
       }
     }
+
+    // If we have a child data source we need to restore it once the data source
+    // has been create by the first execution of the pipeline.
+    if (op != nullptr && operatorObj.contains("childDataSource")) {
+      auto childSourceSourceState = operatorObj["childDataSource"].toObject();
+      connect(pipeline(), &Pipeline::finished, [childSourceSourceState, op]() {
+        auto childDataSource = op->childDataSource();
+        childDataSource->deserialize(childSourceSourceState);
+      });
+    }
+
     pipeline()->resume(true);
   }
   return true;
