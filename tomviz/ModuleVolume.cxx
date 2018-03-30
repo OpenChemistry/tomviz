@@ -154,14 +154,13 @@ QJsonObject ModuleVolume::serialize() const
   props["blendingMode"] = m_volumeMapper->GetBlendMode();
   props["rayJittering"] = m_volumeMapper->GetUseJittering() == 1;
 
-  if (m_volumeProperty->GetShade() == 1) {
-    QJsonObject lighting;
-    lighting["ambient"] = m_volumeProperty->GetAmbient();
-    lighting["diffuse"] = m_volumeProperty->GetDiffuse();
-    lighting["specular"] = m_volumeProperty->GetSpecular();
-    lighting["specularPower"] = m_volumeProperty->GetSpecularPower();
-    props["lighting"] = lighting;
-  }
+  QJsonObject lighting;
+  lighting["enabled"] = m_volumeProperty->GetShade() == 1;
+  lighting["ambient"] = m_volumeProperty->GetAmbient();
+  lighting["diffuse"] = m_volumeProperty->GetDiffuse();
+  lighting["specular"] = m_volumeProperty->GetSpecular();
+  lighting["specularPower"] = m_volumeProperty->GetSpecularPower();
+  props["lighting"] = lighting;
 
   json["properties"] = props;
   return json;
@@ -182,8 +181,8 @@ bool ModuleVolume::deserialize(const QJsonObject &json)
     setJittering(props["rayJittering"].toBool());
 
     if (props["lighting"].isObject()) {
-      setLighting(true);
       auto lighting = props["lighting"].toObject();
+      setLighting(lighting["enabled"].toBool());
       onAmbientChanged(lighting["ambient"].toDouble());
       onDiffuseChanged(lighting["diffuse"].toDouble());
       onSpecularChanged(lighting["specular"].toDouble());
