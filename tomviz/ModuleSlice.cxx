@@ -50,6 +50,7 @@
 #include <QDebug>
 #include <QDoubleValidator>
 #include <QHBoxLayout>
+#include <QJsonArray>
 #include <QLabel>
 #include <QVBoxLayout>
 
@@ -295,6 +296,58 @@ void ModuleSlice::dataUpdated()
       .GetAsInt());
   m_widget->UpdatePlacement();
   emit renderNeeded();
+}
+
+QJsonObject ModuleSlice::serialize() const
+{
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
+  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
+  props["showArrow"] = showProperty.GetAsInt() != 0;
+
+  // Serialize the plane
+  double point[3];
+  m_widget->GetOrigin(point);
+  QJsonArray origin = { point[0], point[1], point[2] };
+  m_widget->GetPoint1(point);
+  QJsonArray point1 = { point[0], point[1], point[2] };
+  m_widget->GetPoint2(point);
+  QJsonArray point2 = { point[0], point[1], point[2] };
+
+  props["origin"] = origin;
+  props["point1"] = point1;
+  props["point2"] = point2;
+  props["mapScalars"] = m_widget->GetMapScalars() != 0;
+
+  json["properties"] = props;
+  return json;
+}
+
+bool ModuleSlice::deserialize(const QJsonObject &json)
+{
+  if (!Module::deserialize(json)) {
+    return false;
+  }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
+    showProperty.Set(props["showArrow"].toBool() ? 1 : 0);
+    auto o = props["origin"].toArray();
+    auto p1 = props["point1"].toArray();
+    auto p2 = props["point2"].toArray();
+    double origin[3] = { o[0].toDouble(), o[1].toDouble(), o[2].toDouble() };
+    double point1[3] = { p1[0].toDouble(), p1[1].toDouble(), p1[2].toDouble() };
+    double point2[3] = { p2[0].toDouble(), p2[1].toDouble(), p2[2].toDouble() };
+    m_widget->SetOrigin(origin);
+    m_widget->SetPoint1(point1);
+    m_widget->SetPoint2(point2);
+    m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
+    m_widget->UpdatePlacement();
+    onPlaneChanged();
+    return true;
+  }
+  return false;
 }
 
 bool ModuleSlice::serialize(pugi::xml_node& ns) const
