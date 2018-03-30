@@ -116,10 +116,9 @@ bool ModuleOutline::finalize()
 
 QJsonObject ModuleOutline::serialize() const
 {
-  QJsonObject json = Module::serialize();
-  QJsonObject props;
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
 
-  props["visibility"] = visibility();
   props["gridVisibility"] = m_gridAxes->GetVisibility() > 0;
   props["gridLines"] = m_gridAxes->GetGenerateGrid();
 
@@ -135,9 +134,11 @@ QJsonObject ModuleOutline::serialize() const
 
 bool ModuleOutline::deserialize(const QJsonObject &json)
 {
+  if (!Module::deserialize(json)) {
+    return false;
+  }
   if (json["properties"].isObject()) {
     auto props = json["properties"].toObject();
-    setVisibility(props["visibility"].toBool());
     m_gridAxes->SetVisibility(props["gridVisibility"].toBool() ? 1 : 0);
     m_gridAxes->SetGenerateGrid(props["gridLines"].toBool());
     auto color = props["gridColor"].toArray();

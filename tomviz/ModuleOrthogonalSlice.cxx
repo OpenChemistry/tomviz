@@ -217,10 +217,9 @@ void ModuleOrthogonalSlice::onScalarArrayChanged()
 
 QJsonObject ModuleOrthogonalSlice::serialize() const
 {
-  QJsonObject json = Module::serialize();
-  QJsonObject props;
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
 
-  props["visibility"] = visibility();
   vtkSMPropertyHelper sliceMode(m_representation->GetProperty("SliceMode"));
   props["sliceMode"] = sliceMode.GetAsInt();
   vtkSMPropertyHelper slice(m_representation->GetProperty("Slice"));
@@ -236,10 +235,12 @@ QJsonObject ModuleOrthogonalSlice::serialize() const
 
 bool ModuleOrthogonalSlice::deserialize(const QJsonObject &json)
 {
+  if (!Module::deserialize(json)) {
+    return false;
+  }
   if (json["properties"].isObject() && m_representation) {
     auto rep = m_representation.Get();
     auto props = json["properties"].toObject();
-    setVisibility(props["visibility"].toBool());
     vtkSMPropertyHelper(rep, "SliceMode").Set(props["sliceMode"].toInt());
     vtkSMPropertyHelper(rep, "Slice").Set(props["slice"].toInt());
     vtkSMPropertyHelper(rep, "Opacity").Set(props["opacity"].toDouble());

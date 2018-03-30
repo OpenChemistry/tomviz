@@ -195,6 +195,8 @@ vtkImageData* Module::transferFunction2D() const
 QJsonObject Module::serialize() const
 {
   QJsonObject json;
+  QJsonObject props;
+  props["visibility"] = visibility();
   if (isColorMapNeeded()) {
     json["useDetachedColorMap"] = m_useDetachedColorMap;
     if (m_useDetachedColorMap) {/*
@@ -211,11 +213,16 @@ QJsonObject Module::serialize() const
       tomviz::serialize(gradientOpacityMap(), nodeGrad); */
     }
   }
+  json["properties"] = props;
   return json;
 }
 
 bool Module::deserialize(const QJsonObject &json)
 {
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    setVisibility(props["visibility"].toBool());
+  }
   return true;
 }
 
