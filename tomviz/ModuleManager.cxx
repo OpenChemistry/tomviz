@@ -379,7 +379,7 @@ bool ModuleManager::serialize(QJsonObject &doc, const QDir &stateDir,
           QJsonObject itemObj;
           itemObj["direction"] = itemNode.attribute("direction").as_int(0);
           itemObj["fraction"] = itemNode.attribute("fraction").as_double(0);
-          itemObj["view"] = itemNode.attribute("view").as_int(0);
+          itemObj["viewId"] = itemNode.attribute("view").as_int(0);
           itemArray.append(itemObj);
         }
         layoutArray.append(itemArray);
@@ -490,7 +490,7 @@ void createXmlLayout(pugi::xml_node& n, QJsonArray arr)
     auto item = n.append_child("Item");
     item.append_attribute("direction").set_value(obj["direction"].toInt());
     item.append_attribute("fraction").set_value(obj["fraction"].toDouble());
-    item.append_attribute("view").set_value(obj["view"].toInt());
+    item.append_attribute("view").set_value(obj["viewId"].toInt());
   }
 }
 
