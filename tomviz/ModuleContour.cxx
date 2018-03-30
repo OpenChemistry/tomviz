@@ -395,8 +395,7 @@ QJsonObject ModuleContour::serialize() const
   props["contourValue"] = contourValues.GetAsDouble();
   props["useSolidColor"] = d->UseSolidColor;
 
-  std::function<QJsonObject(vtkWeakPointer<vtkSMProxy>)> toJson =
-    [this](vtkWeakPointer<vtkSMProxy> representation) {
+  auto toJson = [](vtkSMProxy* representation) {
       QJsonObject obj;
       QJsonObject color;
       QJsonArray rgb;
@@ -461,9 +460,7 @@ bool ModuleContour::deserialize(const QJsonObject& json)
     auto useSolidColor = props["useSolidColor"];
     d->UseSolidColor = useSolidColor.toBool();
 
-    std::function<void(vtkWeakPointer<vtkSMProxy>, const QJsonObject&)> toRep =
-      [this](vtkWeakPointer<vtkSMProxy> representation,
-             const QJsonObject& state) {
+    auto toRep = [](vtkSMProxy* representation, const QJsonObject& state) {
         auto color = state["color"].toObject();
         auto rgb = color["rgb"].toArray();
         vtkSMPropertyHelper diffuseColor(representation, "DiffuseColor");

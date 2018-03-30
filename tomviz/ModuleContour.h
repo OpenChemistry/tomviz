@@ -43,9 +43,9 @@ public:
   bool setVisibility(bool val) override;
   bool visibility() const override;
   bool serialize(pugi::xml_node& ns) const override;
-  QJsonObject serialize() const;
+  QJsonObject serialize() const override;
   bool deserialize(const pugi::xml_node& ns) override;
-  bool deserialize(const QJsonObject& json);
+  bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return true; }
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
