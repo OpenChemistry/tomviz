@@ -144,6 +144,58 @@ bool ModuleVolume::visibility() const
   return m_volume->GetVisibility() != 0;
 }
 
+QJsonObject ModuleVolume::serialize() const
+{
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
+  props["transferMode"] = getTransferMode();
+  props["interpolation"] = m_volumeProperty->GetInterpolationType();
+  props["blendingMode"] = m_volumeMapper->GetBlendMode();
+  props["rayJittering"] = m_volumeMapper->GetUseJittering() == 1;
+
+  if (m_volumeProperty->GetShade() == 1) {
+    QJsonObject lighting;
+    lighting["ambient"] = m_volumeProperty->GetAmbient();
+    lighting["diffuse"] = m_volumeProperty->GetDiffuse();
+    lighting["specular"] = m_volumeProperty->GetSpecular();
+    lighting["specularPower"] = m_volumeProperty->GetSpecularPower();
+    props["lighting"] = lighting;
+  }
+
+  json["properties"] = props;
+  return json;
+}
+
+bool ModuleVolume::deserialize(const QJsonObject &json)
+{
+  if (!Module::deserialize(json)) {
+    return false;
+  }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+
+    setTransferMode(
+      static_cast<Module::TransferMode>(props["transferMode"].toInt()));
+    onInterpolationChanged(props["interpolation"].toInt());
+    setBlendingMode(props["blendingMode"].toInt());
+    setJittering(props["rayJittering"].toBool());
+
+    if (props["lighting"].isObject()) {
+      setLighting(true);
+      auto lighting = props["lighting"].toObject();
+      onAmbientChanged(lighting["ambient"].toDouble());
+      onDiffuseChanged(lighting["diffuse"].toDouble());
+      onSpecularChanged(lighting["specular"].toDouble());
+      onSpecularPowerChanged(lighting["specularPower"].toDouble());
+    }
+
+    updatePanel();
+    return true;
+  }
+  return false;
+}
+
 bool ModuleVolume::serialize(pugi::xml_node& ns) const
 {
   xml_node rootNode = ns.append_child("properties");
@@ -249,28 +301,18 @@ void ModuleVolume::addToPanel(QWidget* panel)
 {
   if (panel->layout()) {
     delete panel->layout();
-    m_controllers = nullptr;
+  }
+  if (!m_controllers) {
+    m_controllers = new ModuleVolumeWidget;
   }
 
   QVBoxLayout* layout = new QVBoxLayout;
   panel->setLayout(layout);
 
   // Create, update and connect
-  m_controllers = new ModuleVolumeWidget;
+  //m_controllers = new ModuleVolumeWidget;
   layout->addWidget(m_controllers);
-
-  m_controllers->setJittering(
-    static_cast<bool>(m_volumeMapper->GetUseJittering()));
-  m_controllers->setLighting(static_cast<bool>(m_volumeProperty->GetShade()));
-  m_controllers->setBlendingMode(m_volumeMapper->GetBlendMode());
-  m_controllers->setAmbient(m_volumeProperty->GetAmbient());
-  m_controllers->setDiffuse(m_volumeProperty->GetDiffuse());
-  m_controllers->setSpecular(m_volumeProperty->GetSpecular());
-  m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
-  m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
-
-  const auto tfMode = getTransferMode();
-  m_controllers->setTransferMode(tfMode);
+  updatePanel();
 
   connect(m_controllers, SIGNAL(jitteringToggled(const bool)), this,
           SLOT(setJittering(const bool)));
@@ -290,6 +332,27 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularPowerChanged(const double)));
   connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
           SLOT(onTransferModeChanged(const int)));
+}
+
+void ModuleVolume::updatePanel()
+{
+  // If m_controllers is present update the values, if not they will be updated
+  // when it is created and shown.
+  if (!m_controllers || !m_volumeMapper || !m_volumeProperty) {
+    return;
+  }
+  m_controllers->setJittering(
+    static_cast<bool>(m_volumeMapper->GetUseJittering()));
+  m_controllers->setLighting(static_cast<bool>(m_volumeProperty->GetShade()));
+  m_controllers->setBlendingMode(m_volumeMapper->GetBlendMode());
+  m_controllers->setAmbient(m_volumeProperty->GetAmbient());
+  m_controllers->setDiffuse(m_volumeProperty->GetDiffuse());
+  m_controllers->setSpecular(m_volumeProperty->GetSpecular());
+  m_controllers->setSpecularPower(m_volumeProperty->GetSpecularPower());
+  m_controllers->setInterpolationType(m_volumeProperty->GetInterpolationType());
+
+  const auto tfMode = getTransferMode();
+  m_controllers->setTransferMode(tfMode);
 }
 
 void ModuleVolume::onTransferModeChanged(const int mode)
