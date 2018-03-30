@@ -397,8 +397,8 @@ bool DataSource::deserialize(const QJsonObject& state)
     auto operatorArray = state["operators"].toArray();
     for (int i = 0; i < operatorArray.size(); ++i) {
       operatorObj = operatorArray[i].toObject();
-      op = OperatorFactory::createOperator(operatorObj["type"].toString(),
-                                                this);
+      op =
+        OperatorFactory::createOperator(operatorObj["type"].toString(), this);
       if (op && op->deserialize(operatorObj)) {
         addOperator(op);
       }

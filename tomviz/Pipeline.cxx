@@ -158,7 +158,7 @@ void Pipeline::pipelineBranchFinished(bool result)
                                    m_data, nullptr)) {
           // TODO: We should really copy the module properties as well.
           ModuleManager::instance().createAndAddModule(
-              module->label(), newChildDataSource, view);
+            module->label(), newChildDataSource, view);
           ModuleManager::instance().removeModule(module);
         }
         ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
