@@ -38,6 +38,7 @@
 #include <vtkSMViewProxy.h>
 
 #include <QLabel>
+#include <QJsonArray>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -168,6 +169,48 @@ bool ModuleRuler::visibility() const
     return false;
   }
 }
+
+QJsonObject ModuleRuler::serialize() const
+{
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
+  props["showLine"] = m_showLine;
+  double p1[3];
+  double p2[3];
+  vtkSMPropertyHelper(m_rulerSource, "Point1").Get(p1, 3);
+  vtkSMPropertyHelper(m_rulerSource, "Point2").Get(p2, 3);
+  QJsonArray point1 = { p1[0], p1[1], p1[2] };
+  QJsonArray point2 = { p2[0], p2[1], p2[2] };
+  props["point1"] = point1;
+  props["point2"] = point2;
+
+  json["properties"] = props;
+  return json;
+}
+
+bool ModuleRuler::deserialize(const QJsonObject &json)
+{
+  if (!Module::deserialize(json)) {
+    return false;
+  }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    m_showLine = props["showLine"].toBool();
+    auto point1 = props["point1"].toArray();
+    auto point2 = props["point2"].toArray();
+    double p1[3] = { point1[0].toDouble(), point1[1].toDouble(),
+                     point1[2].toDouble() };
+    double p2[3] = { point2[0].toDouble(), point2[1].toDouble(),
+                     point2[2].toDouble() };
+    vtkSMPropertyHelper(m_rulerSource, "Point1").Set(p1, 3);
+    vtkSMPropertyHelper(m_rulerSource, "Point2").Set(p2, 3);
+    m_rulerSource->UpdateVTKObjects();
+    return true;
+  }
+  return false;
+}
+
 
 bool ModuleRuler::serialize(pugi::xml_node& ns) const
 {
