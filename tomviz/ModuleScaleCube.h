@@ -47,6 +47,8 @@ public:
   bool finalize() override;
   bool visibility() const override;
   bool setVisibility(bool choice) override;
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
   bool serialize(pugi::xml_node& ns) const override;
   bool deserialize(const pugi::xml_node& ns) override;
   void addToPanel(QWidget* panel) override;

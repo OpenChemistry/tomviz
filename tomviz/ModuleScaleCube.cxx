@@ -38,6 +38,7 @@
 #include <QCheckBox>
 #include <QDoubleValidator>
 #include <QFormLayout>
+#include <QJsonArray>
 #include <QLineEdit>
 #include <QVBoxLayout>
 
@@ -140,6 +141,54 @@ bool ModuleScaleCube::setVisibility(bool choice)
     m_cubeRep->SetLabelVisibility(choice ? 1 : 0);
   }
   return true;
+}
+QJsonObject ModuleScaleCube::serialize() const
+{
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+  props["adaptiveScaling"] = m_cubeRep->GetAdaptiveScaling() == 1;
+  props["sideLength"] = m_cubeRep->GetSideLength();
+  double p[3];
+  m_cubeRep->GetWorldPosition(p);
+  QJsonArray position = { p[0], p[1], p[2] };
+  props["position"] = position;
+  props["annotation"] = m_cubeRep->GetLabelVisibility() == 1;
+  double c[3];
+  m_cubeRep->GetProperty()->GetDiffuseColor(c);
+  QJsonArray color = { c[0], c[1], c[2] };
+  props["color"] = color;
+
+  json["properties"] = props;
+
+  return json;
+}
+
+bool ModuleScaleCube::deserialize(const QJsonObject& json)
+{
+  if (!Module::deserialize(json)) {
+    return false;
+  }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    m_cubeRep->SetAdaptiveScaling(props["adaptiveScaling"].toBool() ? 1 : 0);
+    m_cubeRep->SetSideLength(props["sideLength"].toDouble());
+    auto p = props["position"].toArray();
+    double pos[3] = { p[0].toDouble(), p[1].toDouble(), p[2].toDouble() };
+    m_cubeRep->SetWorldPosition(pos);
+    m_cubeRep->SetLabelVisibility(props["annotation"].toBool() ? 1 : 0);
+    auto c = props["color"].toArray();
+    double color[3] = { c[0].toDouble(), c[1].toDouble(), c[2].toDouble() };
+    m_cubeRep->GetProperty()->SetDiffuseColor(color);
+    if (m_controllers) {
+      QColor qColor(static_cast<int>(color[0] * 255.0 + 0.5),
+                    static_cast<int>(color[1] * 255.0 + 0.5),
+                    static_cast<int>(color[2] * 255.0 + 0.5));
+      m_controllers->setBoxColor(qColor);
+      m_controllers->setAdaptiveScaling(props["adaptiveScaling"].toBool());
+    }
+    return true;
+  }
+  return false;
 }
 
 bool ModuleScaleCube::serialize(pugi::xml_node& ns) const

@@ -397,14 +397,12 @@ QJsonObject ModuleContour::serialize() const
 
   auto toJson = [](vtkSMProxy* representation) {
       QJsonObject obj;
-      QJsonObject color;
-      QJsonArray rgb;
+      QJsonArray color;
       vtkSMPropertyHelper diffuseColor(
         representation->GetProperty("DiffuseColor"));
       for (int i = 0; i < 3; i++) {
-        rgb.append(diffuseColor.GetAsDouble(i));
+        color.append(diffuseColor.GetAsDouble(i));
       }
-      color["rgb"] = rgb;
       obj["color"] = color;
 
       QJsonObject lighting;
@@ -470,11 +468,10 @@ bool ModuleContour::deserialize(const QJsonObject& json)
         specular.Set(lighting["specular"].toDouble());
         vtkSMPropertyHelper specularPower(representation, "SpecularPower");
         specularPower.Set(lighting["specularPower"].toDouble());
-        auto color = state["color"].toObject();
-        auto rgb = color["rgb"].toArray();
+        auto color = state["color"].toArray();
         vtkSMPropertyHelper diffuseColor(representation, "DiffuseColor");
         for (int i = 0; i < 3; i++) {
-          diffuseColor.Set(i, rgb.at(i).toDouble());
+          diffuseColor.Set(i, color[i].toDouble());
         }
         vtkSMPropertyHelper opacity(representation, "Opacity");
         opacity.Set(state["opacity"].toDouble());
