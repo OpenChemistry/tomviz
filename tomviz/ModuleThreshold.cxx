@@ -314,34 +314,6 @@ bool ModuleThreshold::deserialize(const QJsonObject& json)
   return false;
 }
 
-bool ModuleThreshold::serialize(pugi::xml_node& ns) const
-{
-  QStringList fprops;
-  fprops << "SelectInputScalars"
-         << "ThresholdBetween";
-  pugi::xml_node tnode = ns.append_child("Threshold");
-
-  QStringList representationProperties;
-  representationProperties << "Representation"
-                           << "Opacity"
-                           << "Specular"
-                           << "Visibility"
-                           << "MapScalars";
-  pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
-  return tomviz::serialize(m_thresholdFilter, tnode, fprops) &&
-         tomviz::serialize(m_thresholdRepresentation, rnode,
-                           representationProperties) &&
-         Module::serialize(ns);
-}
-
-bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
-{
-  return tomviz::deserialize(m_thresholdFilter, ns.child("Threshold")) &&
-         tomviz::deserialize(m_thresholdRepresentation,
-                             ns.child("ThresholdRepresentation")) &&
-         Module::deserialize(ns);
-}
-
 void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
 {
   double pos[3] = { newX, newY, newZ };

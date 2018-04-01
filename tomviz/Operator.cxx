@@ -174,41 +174,21 @@ QJsonObject Operator::serialize() const
 
 bool Operator::deserialize(const QJsonObject &json)
 {
-  if (json.contains("childDataSource")) {
+  if (json.contains("dataSources")) {
     // This means that this operator is the end of the line, and needs to
     // restore the child once it has finished doing its thing.
-    qDebug() << "We need to do something with this:" << json["childDataSource"];
+    qDebug() << "We need to do something with this:" << json["dataSources"];
   }
   return true;
 }
 
-bool Operator::serialize(pugi::xml_node& ns) const
+bool Operator::serialize(pugi::xml_node&) const
 {
-  if (hasChildDataSource()) {
-    DataSource* ds = childDataSource();
-    ns.append_attribute("childDataSource")
-      .set_value(ds->proxy()->GetGlobalIDAsString());
-  }
-
   return true;
 }
 
-bool Operator::deserialize(const pugi::xml_node& ns)
+bool Operator::deserialize(const pugi::xml_node&)
 {
-  xml_attribute child = ns.attribute("childDataSource");
-  if (child) {
-    vtkTypeUInt32 id = child.as_int();
-    DataSource* childDataSource =
-      ModuleManager::instance().lookupDataSource(id);
-    setChildDataSource(childDataSource);
-
-    // The operator is not added at this point so the signal is lost, so we need
-    // to use a singleShot to emit on the next event loop.
-    QTimer::singleShot(0, [this, childDataSource]() {
-      emit this->newChildDataSource(childDataSource);
-    });
-  }
-
   return true;
 }
 

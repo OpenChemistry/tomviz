@@ -211,53 +211,6 @@ bool ModuleRuler::deserialize(const QJsonObject &json)
   return false;
 }
 
-
-bool ModuleRuler::serialize(pugi::xml_node& ns) const
-{
-  pugi::xml_node rulerNode = ns.append_child("Ruler");
-  pugi::xml_node representationNode = ns.append_child("Representation");
-
-  QStringList rulerProperties;
-  rulerProperties << "Point1"
-                  << "Point2";
-  QStringList representationProperties;
-  representationProperties << "Visibility";
-  if (!tomviz::serialize(m_rulerSource, rulerNode, rulerProperties)) {
-    qWarning("Failed to serialize ruler");
-    return false;
-  }
-
-  pugi::xml_node showLine = representationNode.append_child("ShowLine");
-  showLine.append_attribute("value").set_value(m_showLine);
-
-  if (!tomviz::serialize(m_representation, representationNode,
-                         representationProperties)) {
-    qWarning("Failed to serialize ruler representation");
-    return false;
-  }
-
-  return true;
-}
-
-bool ModuleRuler::deserialize(const pugi::xml_node& ns)
-{
-  pugi::xml_node representationNode = ns.child("Representation");
-  bool success = tomviz::deserialize(m_rulerSource, ns.child("Ruler")) &&
-                 tomviz::deserialize(m_representation, representationNode);
-
-  if (representationNode) {
-    pugi::xml_node showLineNode = representationNode.child("ShowLine");
-    if (showLineNode) {
-      pugi::xml_attribute valueAttribute = showLineNode.attribute("value");
-      if (valueAttribute) {
-        m_showLine = valueAttribute.as_bool();
-      }
-    }
-  }
-
-  return success;
-}
-
 bool ModuleRuler::isProxyPartOfModule(vtkSMProxy* proxy)
 {
   return proxy == m_rulerSource.GetPointer() ||

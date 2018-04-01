@@ -253,27 +253,6 @@ bool ModuleOrthogonalSlice::deserialize(const QJsonObject &json)
   return false;
 }
 
-bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
-{
-  QStringList reprProperties;
-  reprProperties << "SliceMode"
-                 << "Slice"
-                 << "Opacity"
-                 << "Visibility"
-                 << "MapScalars";
-  pugi::xml_node nodeR = ns.append_child("Representation");
-  return (tomviz::serialize(m_representation, nodeR, reprProperties) &&
-          Module::serialize(ns));
-}
-
-bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
-{
-  if (!tomviz::deserialize(m_representation, ns.child("Representation"))) {
-    return false;
-  }
-  return Module::deserialize(ns);
-}
-
 void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY,
                                             double newZ)
 {

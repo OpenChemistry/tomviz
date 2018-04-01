@@ -72,22 +72,11 @@ public:
                  bool interative = true) const;
   bool deserialize(const QJsonObject& doc, const QDir& stateDir);
 
-  /// save the application state as xml.
-  /// Parameter stateDir: the location to use as the base of all relative file
-  /// paths
-  bool serialize(pugi::xml_node& ns, const QDir& stateDir,
-                 bool interactive = true) const;
-  bool deserialize(const pugi::xml_node& ns, const QDir& stateDir);
-
   /// Test if any data source has running operators
   bool hasRunningOperators();
 
   /// Return whether a DataSource is a child DataSource
   bool isChild(DataSource*) const;
-
-  /// Used to lookup a data source by id, used to lookup child data sources,
-  /// during the deserialization process.
-  DataSource* lookupDataSource(int id);
 
   /// Used to lookup a view by id, only intended for use during deserialization.
   vtkSMViewProxy* lookupView(int id);
@@ -138,7 +127,7 @@ private:
   ~ModuleManager();
 
   class MMInternals;
-  QScopedPointer<MMInternals> Internals;
+  QScopedPointer<MMInternals> d;
 
   QJsonObject m_stateObject;
 };

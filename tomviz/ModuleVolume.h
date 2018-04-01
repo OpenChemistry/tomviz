@@ -52,8 +52,6 @@ public:
   bool visibility() const override;
   QJsonObject serialize() const override;
   bool deserialize(const QJsonObject& json) override;
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
   bool isColorMapNeeded() const override { return true; }
   void addToPanel(QWidget* panel) override;
   void updatePanel();
