@@ -157,8 +157,10 @@ void Pipeline::pipelineBranchFinished(bool result)
         foreach (Module* module, ModuleManager::instance().findModules<Module*>(
                                    m_data, nullptr)) {
           // TODO: We should really copy the module properties as well.
-          ModuleManager::instance().createAndAddModule(
+          auto newModule = ModuleManager::instance().createAndAddModule(
             module->label(), newChildDataSource, view);
+          // Copy over properties using the serialization code.
+          newModule->deserialize(module->serialize());
           ModuleManager::instance().removeModule(module);
         }
         ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
