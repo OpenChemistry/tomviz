@@ -42,12 +42,15 @@
 #include "vtkSmartPointer.h"
 
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <vector>
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QLabel>
 #include <QPointer>
 
@@ -382,85 +385,110 @@ void ModuleContour::onScalarArrayChanged()
   emit renderNeeded();
 }
 
-bool ModuleContour::serialize(pugi::xml_node& ns) const
+QJsonObject ModuleContour::serialize() const
 {
-  ns.append_attribute("solid_color").set_value(d->UseSolidColor);
-  // save stuff that the user can change.
-  pugi::xml_node node = ns.append_child("ContourFilter");
-  QStringList contourProperties;
-  contourProperties << "ContourValues";
-  if (tomviz::serialize(m_contourFilter, node, contourProperties) ==
-      false) {
-    qWarning("Failed to serialize ContourFilter.");
-    ns.remove_child(node);
-    return false;
-  }
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
 
-  {
-    QStringList resampleRepresentationProperties;
-    resampleRepresentationProperties << "Representation"
-                                     << "Opacity"
-                                     << "Specular"
-                                     << "Visibility"
-                                     << "MapScalars"
-                                     << "DiffuseColor"
-                                     << "AmbientColor"
-                                     << "Ambient"
-                                     << "Diffuse"
-                                     << "SpecularPower";
+  vtkSMPropertyHelper contourValues(
+    m_contourFilter->GetProperty("ContourValues"));
+  props["contourValue"] = contourValues.GetAsDouble();
+  props["useSolidColor"] = d->UseSolidColor;
 
-    node = ns.append_child("ResampleRepresentation");
-    if (tomviz::serialize(m_resampleRepresentation, node,
-                          resampleRepresentationProperties) == false) {
-      qWarning("Failed to serialize ResampleRepresentation.");
-      ns.remove_child(node);
-      return false;
+  auto toJson = [](vtkSMProxy* representation) {
+    QJsonObject obj;
+    QJsonArray color;
+    vtkSMPropertyHelper diffuseColor(
+      representation->GetProperty("DiffuseColor"));
+    for (int i = 0; i < 3; i++) {
+      color.append(diffuseColor.GetAsDouble(i));
     }
-  }
+    obj["color"] = color;
+
+    QJsonObject lighting;
+    vtkSMPropertyHelper ambient(representation->GetProperty("Ambient"));
+    lighting["ambient"] = ambient.GetAsDouble();
+    vtkSMPropertyHelper diffuse(representation->GetProperty("Diffuse"));
+    lighting["diffuse"] = diffuse.GetAsDouble();
+    vtkSMPropertyHelper specular(representation->GetProperty("Specular"));
+    lighting["specular"] = specular.GetAsDouble();
+    vtkSMPropertyHelper specularPower(
+      representation->GetProperty("SpecularPower"));
+    lighting["specularPower"] = specularPower.GetAsDouble();
+    obj["lighting"] = lighting;
+
+    vtkSMPropertyHelper representationHelper(
+      representation->GetProperty("Representation"));
+    obj["representation"] = representationHelper.GetAsString();
+
+    vtkSMPropertyHelper opacity(representation->GetProperty("Opacity"));
+    obj["opacity"] = opacity.GetAsDouble();
+
+    vtkSMPropertyHelper mapScalars(representation->GetProperty("MapScalars"));
+    obj["mapScalars"] = mapScalars.GetAsInt() == 1;
+
+    return obj;
+  };
+
+  props["resampleRepresentation"] = toJson(m_resampleRepresentation);
 
   if (m_pointDataToCellDataRepresentation) {
-    QStringList pointDataToCellDataRepresentationProperties;
-    pointDataToCellDataRepresentationProperties << "Representation"
-                                                << "Opacity"
-                                                << "Specular"
-                                                << "Visibility"
-                                                << "MapScalars"
-                                                << "DiffuseColor"
-                                                << "AmbientColor"
-                                                << "Ambient"
-                                                << "Diffuse"
-                                                << "SpecularPower";
-
-    node = ns.append_child("PointDataToCellDataRepresentation");
-    if (tomviz::serialize(m_pointDataToCellDataRepresentation, node,
-                          pointDataToCellDataRepresentationProperties) ==
-        false) {
-      qWarning("Failed to serialize PointDataToCellDataRepresentation.");
-      ns.remove_child(node);
-      return false;
-    }
+    props["pointDataToCellDataRepresentation"] =
+      toJson(m_pointDataToCellDataRepresentation);
   }
 
-  return Module::serialize(ns);
+  json["properties"] = props;
+
+  return json;
 }
 
-bool ModuleContour::deserialize(const pugi::xml_node& ns)
+bool ModuleContour::deserialize(const QJsonObject& json)
 {
-  if (ns.attribute("solid_color")) {
-    d->UseSolidColor = ns.attribute("solid_color").as_bool();
+  if (!Module::deserialize(json)) {
+    return false;
   }
-  if (ns.child("PointDataToCellDataRepresentation")) {
-    createCategoricalColoringPipeline();
-    if (!tomviz::deserialize(m_pointDataToCellDataRepresentation,
-                             ns.child("PointDataToCellDataRepresentation"))) {
-      return false;
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    if (m_contourFilter != nullptr) {
+      vtkSMPropertyHelper(m_contourFilter, "ContourValues")
+        .Set(props["contourValue"].toDouble());
+      m_resampleFilter->UpdateVTKObjects();
     }
-  }
 
-  return tomviz::deserialize(m_contourFilter, ns.child("ContourFilter")) &&
-         tomviz::deserialize(m_resampleRepresentation,
-                             ns.child("ResampleRepresentation")) &&
-         Module::deserialize(ns);
+    d->UseSolidColor = props["useSolidColor"].toBool();
+    m_controllers->setUseSolidColor(d->UseSolidColor);
+
+    auto toRep = [](vtkSMProxy* representation, const QJsonObject& state) {
+      QJsonObject lighting = state["lighting"].toObject();
+      vtkSMPropertyHelper ambient(representation, "Ambient");
+      ambient.Set(lighting["ambient"].toDouble());
+      vtkSMPropertyHelper diffuse(representation, "Diffuse");
+      diffuse.Set(lighting["diffuse"].toDouble());
+      vtkSMPropertyHelper specular(representation, "Specular");
+      specular.Set(lighting["specular"].toDouble());
+      vtkSMPropertyHelper specularPower(representation, "SpecularPower");
+      specularPower.Set(lighting["specularPower"].toDouble());
+      auto color = state["color"].toArray();
+      vtkSMPropertyHelper diffuseColor(representation, "DiffuseColor");
+      for (int i = 0; i < 3; i++) {
+        diffuseColor.Set(i, color[i].toDouble());
+      }
+      vtkSMPropertyHelper opacity(representation, "Opacity");
+      opacity.Set(state["opacity"].toDouble());
+      vtkSMPropertyHelper mapScalars(representation, "MapScalars");
+      mapScalars.Set(state["mapScalars"].toBool() ? 1 : 0);
+      representation->UpdateVTKObjects();
+    };
+
+    if (props.contains("resampleRepresentation")) {
+      auto resampleRepresentationState =
+        props["resampleRepresentation"].toObject();
+      toRep(m_resampleRepresentation, resampleRepresentationState);
+    }
+
+    return true;
+  }
+  return false;
 }
 
 void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)

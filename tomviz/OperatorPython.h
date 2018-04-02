@@ -44,6 +44,9 @@ public:
   /// Return a new clone.
   Operator* clone() const override;
 
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
+
   bool serialize(pugi::xml_node& in) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 

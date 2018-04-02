@@ -22,8 +22,11 @@
 
 #include "vtkSMSourceProxy.h"
 
+#include <QJsonArray>
 #include <QList>
 #include <QTimer>
+
+#include <QDebug>
 
 namespace tomviz {
 
@@ -157,33 +160,35 @@ DataSource* Operator::childDataSource() const
   return m_childDataSource;
 }
 
-bool Operator::serialize(pugi::xml_node& ns) const
+QJsonObject Operator::serialize() const
 {
-  if (hasChildDataSource()) {
+  QJsonObject json;
+  if (childDataSource()) {
+    QJsonArray dataSources;
     DataSource* ds = childDataSource();
-    ns.append_attribute("childDataSource")
-      .set_value(ds->proxy()->GetGlobalIDAsString());
+    dataSources.append(ds->serialize());
+    json["dataSources"] = dataSources;
   }
+  return json;
+}
 
+bool Operator::deserialize(const QJsonObject& json)
+{
+  if (json.contains("dataSources")) {
+    // This means that this operator is the end of the line, and needs to
+    // restore the child once it has finished doing its thing.
+    qDebug() << "We need to do something with this:" << json["dataSources"];
+  }
   return true;
 }
 
-bool Operator::deserialize(const pugi::xml_node& ns)
+bool Operator::serialize(pugi::xml_node&) const
 {
-  xml_attribute child = ns.attribute("childDataSource");
-  if (child) {
-    vtkTypeUInt32 id = child.as_int();
-    DataSource* childDataSource =
-      ModuleManager::instance().lookupDataSource(id);
-    setChildDataSource(childDataSource);
+  return true;
+}
 
-    // The operator is not added at this point so the signal is lost, so we need
-    // to use a singleShot to emit on the next event loop.
-    QTimer::singleShot(0, [this, childDataSource]() {
-      emit this->newChildDataSource(childDataSource);
-    });
-  }
-
+bool Operator::deserialize(const pugi::xml_node&)
+{
   return true;
 }
 

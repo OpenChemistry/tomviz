@@ -183,49 +183,6 @@ bool ModuleSegment::setVisibility(bool val)
   return true;
 }
 
-bool ModuleSegment::serialize(pugi::xml_node& ns) const
-{
-  pugi::xml_node node = ns.append_child("ITKScript");
-  QStringList scriptProps;
-  scriptProps << "Script";
-  if (!tomviz::serialize(d->SegmentationScript, node, scriptProps)) {
-    qWarning("Failed to serialize script.");
-    ns.remove_child(node);
-    return false;
-  }
-
-  node = ns.append_child("ContourFilter");
-  QStringList contourProps;
-  contourProps << "ContourValues";
-  if (!tomviz::serialize(d->ContourFilter, node, contourProps)) {
-    qWarning("Failed to serialize contour.");
-    ns.remove_child(node);
-    return false;
-  }
-
-  node = ns.append_child("ContourRepresentation");
-  QStringList representationProps;
-  representationProps << "Representation"
-                      << "Opacity"
-                      << "Specular"
-                      << "Visibility";
-  if (!tomviz::serialize(d->ContourRepresentation, node, representationProps)) {
-    qWarning("Failed to serialize ContourRepresentation");
-    ns.remove_child(node);
-    return false;
-  }
-  return Module::serialize(ns);
-}
-
-bool ModuleSegment::deserialize(const pugi::xml_node& ns)
-{
-  return tomviz::deserialize(d->SegmentationScript, ns.child("ITKScript")) &&
-         tomviz::deserialize(d->ContourFilter, ns.child("ContourFilter")) &&
-         tomviz::deserialize(d->ContourRepresentation,
-                             ns.child("ContourRepresentation")) &&
-         Module::deserialize(ns);
-}
-
 void ModuleSegment::addToPanel(QWidget* panel)
 {
   Q_ASSERT(d->ProgrammableFilter);

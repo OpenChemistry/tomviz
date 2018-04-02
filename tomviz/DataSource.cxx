@@ -16,6 +16,7 @@
 #include "DataSource.h"
 
 #include "ActiveObjects.h"
+#include "ModuleFactory.h"
 #include "ModuleManager.h"
 #include "Operator.h"
 #include "OperatorFactory.h"
@@ -44,6 +45,7 @@
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMTransferFunctionManager.h>
+#include <vtkSMViewProxy.h>
 
 #include <QDebug>
 #include <QJsonArray>
@@ -324,6 +326,111 @@ QString DataSource::label() const
   } else {
     return QFileInfo(fileName()).baseName();
   }
+}
+
+QJsonObject DataSource::serialize() const
+{
+  QJsonObject json = m_json;
+  double spacing[3];
+  getSpacing(spacing);
+  QJsonArray jsonSpacing;
+  for (int i = 0; i < 3; ++i) {
+    jsonSpacing.append(spacing[i]);
+  }
+  json["spacing"] = jsonSpacing;
+  if (this->Internals->Units) {
+    QJsonArray jsonUnits;
+    for (int i = 0; i < 3; ++i) {
+      jsonUnits.append(this->Internals->Units->GetValue(0).c_str());
+    }
+    json["units"] = jsonUnits;
+  }
+
+  // Serialize the color map, opacity map, and others if needed.
+  json["colorMap"] = tomviz::serialize(colorMap());
+  json["opacityMap"] = tomviz::serialize(opacityMap());
+
+  // tomviz::serialize(gradientOpacityMap(), node);
+
+  // Serialize the operators...
+  QJsonArray jOperators;
+  foreach (Operator* op, this->Internals->Operators) {
+    QJsonObject jOperator = op->serialize();
+    jOperator["type"] = OperatorFactory::operatorType(op);
+    jOperators.append(jOperator);
+  }
+  if (!jOperators.isEmpty()) {
+    json["operators"] = jOperators;
+  }
+
+  // Serialize the modules...
+  auto modules = ModuleManager::instance().findModulesGeneric(this, nullptr);
+  QJsonArray jModules;
+  foreach (Module* module, modules) {
+    QJsonObject jModule = module->serialize();
+    jModule["type"] = ModuleFactory::moduleType(module);
+    jModule["viewId"] = static_cast<int>(module->view()->GetGlobalID());
+
+    jModules.append(jModule);
+  }
+  if (!jModules.isEmpty()) {
+    json["modules"] = jModules;
+  }
+
+  return json;
+}
+
+bool DataSource::deserialize(const QJsonObject& state)
+{
+  if (state.contains("colorMap")) {
+    tomviz::deserialize(colorMap(), state["colorMap"].toObject());
+  }
+  if (state.contains("opacityMap")) {
+    tomviz::deserialize(opacityMap(), state["opacityMap"].toObject());
+  }
+
+  // Check for modules on the data source first.
+  if (state.contains("modules") && state["modules"].isArray()) {
+    auto moduleArray = state["modules"].toArray();
+    for (int i = 0; i < moduleArray.size(); ++i) {
+      auto moduleObj = moduleArray[i].toObject();
+      auto viewId = moduleObj["viewId"].toInt();
+      auto viewProxy = ModuleManager::instance().lookupView(viewId);
+      auto type = moduleObj["type"].toString();
+      auto m =
+        ModuleManager::instance().createAndAddModule(type, this, viewProxy);
+      m->deserialize(moduleObj);
+    }
+  }
+  // Now check for operators on the data source.
+  if (state.contains("operators") && state["operators"].isArray()) {
+    pipeline()->pause();
+    Operator* op = nullptr;
+    QJsonObject operatorObj;
+    auto operatorArray = state["operators"].toArray();
+    for (int i = 0; i < operatorArray.size(); ++i) {
+      operatorObj = operatorArray[i].toObject();
+      op =
+        OperatorFactory::createOperator(operatorObj["type"].toString(), this);
+      if (op && op->deserialize(operatorObj)) {
+        addOperator(op);
+      }
+    }
+
+    // If we have a child data source we need to restore it once the data source
+    // has been create by the first execution of the pipeline.
+    if (op != nullptr && operatorObj.contains("dataSources")) {
+      // We currently support a single child data source.
+      auto dataSourcesState = operatorObj["dataSources"].toArray();
+      connect(pipeline(), &Pipeline::finished, [dataSourcesState, op]() {
+        auto childDataSource = op->childDataSource();
+        childDataSource->deserialize(dataSourcesState[0].toObject());
+      });
+    }
+
+    pipeline()->resume(true);
+  }
+  return true;
 }
 
 bool DataSource::serialize(pugi::xml_node& ns) const

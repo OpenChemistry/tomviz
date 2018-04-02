@@ -146,16 +146,16 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   // Connect up operators to start and stop delegate
   // New datasource added
   connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded,
-          [this, delegate](DataSource* dataSource) {
+          [delegate](DataSource* dataSource) {
             // New operator added
             connect(dataSource, &DataSource::operatorAdded, delegate,
-                    [this, delegate](Operator* op) {
+                    [delegate](Operator* op) {
                       // Connect transformingStarted to OperatorRunningDelegate
                       connect(op, &Operator::transformingStarted, delegate,
                               &OperatorRunningDelegate::start);
                       // Connect transformingDone
                       connect(op, &Operator::transformingDone, delegate,
-                              [this, delegate]() { delegate->stop(); });
+                              [delegate]() { delegate->stop(); });
                     });
           });
 

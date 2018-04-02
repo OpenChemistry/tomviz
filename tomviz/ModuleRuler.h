@@ -44,8 +44,8 @@ public:
   void prepareToRemoveFromPanel(QWidget* panel) override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return false; }
 
   void dataSourceMoved(double, double, double) override {}

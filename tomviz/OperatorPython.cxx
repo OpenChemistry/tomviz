@@ -446,6 +446,28 @@ Operator* OperatorPython::clone() const
   return newClone;
 }
 
+QJsonObject OperatorPython::serialize() const
+{
+  auto json = Operator::serialize();
+  json["description"] = JSONDescription();
+  json["label"] = label();
+  json["script"] = script();
+  if (!m_arguments.isEmpty()) {
+    json["arguments"] = QJsonObject::fromVariantMap(m_arguments);
+  }
+  return json;
+}
+
+bool OperatorPython::deserialize(const QJsonObject& json)
+{
+  setJSONDescription(json["description"].toString());
+  setLabel(json["label"].toString());
+  setScript(json["script"].toString());
+  m_arguments.clear();
+  m_arguments = json["arguments"].toObject().toVariantMap();
+  return true;
+}
+
 bool OperatorPython::serialize(pugi::xml_node& ns) const
 {
   ns.append_attribute("json_description")

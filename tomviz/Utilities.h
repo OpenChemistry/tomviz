@@ -127,6 +127,10 @@ inline QString label(pqProxy* proxy)
   return label(convert(proxy));
 }
 
+//// Making a function to serialize some ParaView proxies we are interested in.
+QJsonObject serialize(vtkSMProxy* proxy);
+bool deserialize(vtkSMProxy* proxy, const QJsonObject& json);
+
 /// Serialize a proxy to a pugi::xml node.
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties = QStringList(),

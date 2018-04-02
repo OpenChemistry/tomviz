@@ -149,22 +149,16 @@ void Pipeline::pipelineBranchFinished(bool result)
 
       if (newChildDataSource != nullptr) {
         emit lastOp->newChildDataSource(newChildDataSource);
-        // We need to add the default modules
-        this->addDefaultModules(newChildDataSource);
-        // Move/Remove modules from root data source. We remove the default
-        // modules these have already been added to the new child data source.
-        // The rest we want to remove and add to the new child data source.
+        // Move modules from root data source.
         bool oldMoveObjectsEnabled =
           ActiveObjects::instance().moveObjectsEnabled();
         ActiveObjects::instance().setMoveObjectsMode(false);
         auto view = ActiveObjects::instance().activeView();
         foreach (Module* module, ModuleManager::instance().findModules<Module*>(
                                    m_data, nullptr)) {
-          auto isDefault = module->property("default");
-          if (!isDefault.isValid() || !isDefault.toBool()) {
-            ModuleManager::instance().createAndAddModule(
-              module->label(), newChildDataSource, view);
-          }
+          // TODO: We should really copy the module properties as well.
+          ModuleManager::instance().createAndAddModule(
+            module->label(), newChildDataSource, view);
           ModuleManager::instance().removeModule(module);
         }
         ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
@@ -340,7 +334,6 @@ void Pipeline::addDefaultModules(DataSource* dataSource)
   foreach (QString name, defaultModules) {
     module =
       ModuleManager::instance().createAndAddModule(name, dataSource, view);
-    module->setProperty("default", true);
   }
   ActiveObjects::instance().setActiveModule(module);
   ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);

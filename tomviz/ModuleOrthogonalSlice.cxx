@@ -215,25 +215,42 @@ void ModuleOrthogonalSlice::onScalarArrayChanged()
   emit renderNeeded();
 }
 
-bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
+QJsonObject ModuleOrthogonalSlice::serialize() const
 {
-  QStringList reprProperties;
-  reprProperties << "SliceMode"
-                 << "Slice"
-                 << "Opacity"
-                 << "Visibility"
-                 << "MapScalars";
-  pugi::xml_node nodeR = ns.append_child("Representation");
-  return (tomviz::serialize(m_representation, nodeR, reprProperties) &&
-          Module::serialize(ns));
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
+  vtkSMPropertyHelper sliceMode(m_representation->GetProperty("SliceMode"));
+  props["sliceMode"] = sliceMode.GetAsInt();
+  vtkSMPropertyHelper slice(m_representation->GetProperty("Slice"));
+  props["slice"] = slice.GetAsInt();
+  vtkSMPropertyHelper opacity(m_representation->GetProperty("Opacity"));
+  props["opacity"] = opacity.GetAsDouble();
+  vtkSMPropertyHelper mapScalars(m_representation->GetProperty("MapScalars"));
+  props["mapScalars"] = mapScalars.GetAsInt() != 0;
+
+  json["properties"] = props;
+  return json;
 }
 
-bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
+bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
 {
-  if (!tomviz::deserialize(m_representation, ns.child("Representation"))) {
+  if (!Module::deserialize(json)) {
     return false;
   }
-  return Module::deserialize(ns);
+  if (json["properties"].isObject() && m_representation) {
+    auto rep = m_representation.Get();
+    auto props = json["properties"].toObject();
+    vtkSMPropertyHelper(rep, "SliceMode").Set(props["sliceMode"].toInt());
+    vtkSMPropertyHelper(rep, "Slice").Set(props["slice"].toInt());
+    vtkSMPropertyHelper(rep, "Opacity").Set(props["opacity"].toDouble());
+    vtkSMPropertyHelper(rep, "MapScalars")
+      .Set(props["mapScalars"].toBool() ? 1 : 0);
+
+    rep->UpdateVTKObjects();
+    return true;
+  }
+  return false;
 }
 
 void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY,

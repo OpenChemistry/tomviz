@@ -192,50 +192,26 @@ vtkImageData* Module::transferFunction2D() const
                                : colorMapDataSource()->transferFunction2D();
 }
 
-bool Module::serialize(pugi::xml_node& ns) const
+QJsonObject Module::serialize() const
 {
+  QJsonObject json;
+  QJsonObject props;
+  props["visibility"] = visibility();
   if (isColorMapNeeded()) {
-    ns.append_attribute("use_detached_colormap")
-      .set_value(m_useDetachedColorMap ? 1 : 0);
+    json["useDetachedColorMap"] = m_useDetachedColorMap;
     if (m_useDetachedColorMap) {
-      pugi::xml_node nodeL = ns.append_child("ColorMap");
-      pugi::xml_node nodeS = ns.append_child("OpacityMap");
-
-      // Using detached color map, so we need to save the local color map.
-      if (tomviz::serialize(colorMap(), nodeL) == false ||
-          tomviz::serialize(opacityMap(), nodeS) == false) {
-        return false;
-      }
-
-      pugi::xml_node nodeGrad = ns.append_child("GradientOpacityMap");
-      tomviz::serialize(gradientOpacityMap(), nodeGrad);
+      /// FIXME: Add this capability back in.
     }
   }
-  return true;
+  json["properties"] = props;
+  return json;
 }
 
-bool Module::deserialize(const pugi::xml_node& ns)
+bool Module::deserialize(const QJsonObject& json)
 {
-  if (isColorMapNeeded()) {
-    bool dcm = ns.attribute("use_detached_colormap").as_int(0) == 1;
-    if (dcm && ns.child("ColorMap")) {
-      if (!tomviz::deserialize(d->detachedColorMap(), ns.child("ColorMap"))) {
-        qCritical("Failed to deserialze ColorMap");
-        return false;
-      }
-    }
-    if (dcm && ns.child("OpacityMap")) {
-      if (!tomviz::deserialize(d->detachedOpacityMap(),
-                               ns.child("OpacityMap"))) {
-        qCritical("Failed to deserialze OpacityMap");
-        return false;
-      }
-    }
-    pugi::xml_node nodeGrad = ns.child("GradientOpacityMap");
-    if (dcm && nodeGrad) {
-      tomviz::deserialize(d->m_gradientOpacityMap.GetPointer(), nodeGrad);
-    }
-    setUseDetachedColorMap(dcm);
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    setVisibility(props["visibility"].toBool());
   }
   return true;
 }
