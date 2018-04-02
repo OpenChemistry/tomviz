@@ -71,6 +71,7 @@ public:
   vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
   PersistenceState PersistState = PersistenceState::Saved;
+  bool UnitsModified = false;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -331,19 +332,23 @@ QString DataSource::label() const
 QJsonObject DataSource::serialize() const
 {
   QJsonObject json = m_json;
-  double spacing[3];
-  getSpacing(spacing);
-  QJsonArray jsonSpacing;
-  for (int i = 0; i < 3; ++i) {
-    jsonSpacing.append(spacing[i]);
-  }
-  json["spacing"] = jsonSpacing;
-  if (this->Internals->Units) {
-    QJsonArray jsonUnits;
+
+  if (Internals->UnitsModified) {
+    double spacing[3];
+    getSpacing(spacing);
+    QJsonArray jsonSpacing;
     for (int i = 0; i < 3; ++i) {
-      jsonUnits.append(this->Internals->Units->GetValue(0).c_str());
+      jsonSpacing.append(spacing[i]);
     }
-    json["units"] = jsonUnits;
+
+    json["spacing"] = jsonSpacing;
+    if (this->Internals->Units) {
+      QJsonArray jsonUnits;
+      for (int i = 0; i < 3; ++i) {
+        jsonUnits.append(this->Internals->Units->GetValue(0).c_str());
+      }
+      json["units"] = jsonUnits;
+    }
   }
 
   // Serialize the color map, opacity map, and others if needed.
@@ -387,6 +392,23 @@ bool DataSource::deserialize(const QJsonObject& state)
   }
   if (state.contains("opacityMap")) {
     tomviz::deserialize(opacityMap(), state["opacityMap"].toObject());
+  }
+
+  if (state.contains("spacing")) {
+    auto spacingArray = state["spacing"].toArray();
+    double spacing[3];
+    for (int i = 0; i < 3; i++) {
+      spacing[i] = spacingArray.at(i).toDouble();
+    }
+    setSpacing(spacing);
+  }
+
+  if (state.contains("units")) {
+    auto unitsArray = state["units"].toArray();
+
+    // We currently don't support setting different unit in different
+    // dimensions, so just use the first.
+    setUnits(unitsArray.at(0).toString());
   }
 
   // Check for modules on the data source first.
@@ -637,8 +659,12 @@ void DataSource::getSpacing(double spacing[3]) const
   }
 }
 
-void DataSource::setSpacing(const double spacing[3])
+void DataSource::setSpacing(const double spacing[3], bool markModified)
 {
+  if (markModified) {
+    Internals->UnitsModified = true;
+  }
+
   double mySpacing[3] = { spacing[0], spacing[1], spacing[2] };
   vtkAlgorithm* alg = algorithm();
   if (alg) {
@@ -719,8 +745,12 @@ QString DataSource::getUnits(int axis)
   }
 }
 
-void DataSource::setUnits(const QString& units)
+void DataSource::setUnits(const QString& units, bool markModified)
 {
+  if (markModified) {
+    Internals->UnitsModified = true;
+  }
+
   if (!this->Internals->Units) {
     this->Internals->Units = vtkSmartPointer<vtkStringArray>::New();
     this->Internals->Units->SetName("units");
@@ -1116,5 +1146,10 @@ vtkDataObject* DataSource::dataObject() const
 Pipeline* DataSource::pipeline()
 {
   return qobject_cast<Pipeline*>(parent());
+}
+
+bool DataSource::unitsModified()
+{
+  return Internals->UnitsModified;
 }
 }

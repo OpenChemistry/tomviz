@@ -142,6 +142,20 @@ void Pipeline::pipelineBranchFinished(bool result)
         newChildDataSource->setParent(this);
         addDataSource(newChildDataSource);
         lastOp->setChildDataSource(newChildDataSource);
+        auto rootDataSource = this->dataSource();
+        // connect signal to flow units and spacing to child data source.
+        connect(this->dataSource(), &DataSource::dataPropertiesChanged,
+                [rootDataSource, newChildDataSource]() {
+                  // Only flow the properties if no user modifications have been
+                  // made.
+                  if (!newChildDataSource->unitsModified()) {
+                    newChildDataSource->setUnits(rootDataSource->getUnits(0),
+                                                 false);
+                    double spacing[3];
+                    rootDataSource->getSpacing(spacing);
+                    newChildDataSource->setSpacing(spacing, false);
+                  }
+                });
       }
 
       lastOp->childDataSource()->setData(future->result());
