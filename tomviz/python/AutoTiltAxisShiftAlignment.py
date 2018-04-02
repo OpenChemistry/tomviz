@@ -33,7 +33,6 @@ class AutoTiltAxisShiftAlignmentOperator(tomviz.operators.CancelableOperator):
 
         self.progress.maximum = shifts.size - 1
         step = 1
-        total = shifts.size-1
 
         for i in range(shifts.size):
             if self.canceled:
