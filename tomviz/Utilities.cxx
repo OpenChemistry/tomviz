@@ -53,11 +53,14 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QJsonArray>
 #include <QLayout>
 #include <QMessageBox>
 #include <QString>
 
 namespace tomviz {
+
+using std::string;
 
 const char* Attributes::TYPE = "tomviz.Type";
 const char* Attributes::DATASOURCE_FILENAME = "tomviz.DataSource.FileName";
@@ -123,6 +126,127 @@ public:
 }
 
 namespace tomviz {
+
+namespace {
+
+QJsonArray jsonArrayFromXml(pugi::xml_node node)
+{
+  // Simple function, just iterates through the elements and fills the array.
+  // This assumes the ParaView Element nodes, values stored in value attributes.
+  QJsonArray array;
+  for (auto element = node.child("Element"); element;
+       element = element.next_sibling("Element")) {
+    array.append(element.attribute("value").as_double(-1));
+  }
+  return array;
+}
+
+void createXmlProperty(pugi::xml_node& n, const char* name, int id,
+                       QJsonArray arr)
+{
+  n.set_name("Property");
+  n.append_attribute("name").set_value(name);
+  QString idStr = QString::number(id) + "." + name;
+  n.append_attribute("id").set_value(idStr.toStdString().c_str());
+  n.append_attribute("number_of_elements").set_value(arr.size());
+  for (int i = 0; i < arr.size(); ++i) {
+    auto element = n.append_child("Element");
+    element.append_attribute("index").set_value(i);
+    element.append_attribute("value").set_value(arr[i].toDouble(-1));
+  }
+}
+
+}
+
+QJsonObject serialize(vtkSMProxy *proxy)
+{
+  // Start out by creating the XML, and loading it into a pugi::xml DOM.
+  vtkSmartPointer<vtkSMNamedPropertyIterator> iter;
+  vtkSmartPointer<vtkPVXMLElement> elem;
+  elem.TakeReference(proxy->SaveXMLState(nullptr, iter.GetPointer()));
+
+  std::ostringstream stream;
+  elem->PrintXML(stream, vtkIndent());
+
+  pugi::xml_document document;
+  if (!document.load(stream.str().c_str())) {
+    qCritical("Failed to convert from vtkPVXMLElement to pugi::xml_document");
+    return QJsonObject();
+  }
+
+  // Now to convert it over to the JSON, there is some very proxy specific code.
+  std::cout << "XML:\n" << stream.str().c_str() << std::endl;
+
+  QJsonObject json;
+  auto node = document.child("Proxy");
+  if (string(node.name()) == "Proxy") {
+    json["id"] = node.attribute("id").as_int();
+    json["servers"] = node.attribute("servers").as_int();
+  }
+  if (string(node.attribute("type").value()) == "PVLookupTable") {
+    std::cout << "We have a lookup table!!!\n\n";
+    for (auto property = node.child("Property"); property;
+         property = property.next_sibling("Property")) {
+      if (string(property.attribute("name").value()) == "RGBPoints") {
+        auto elementArray = jsonArrayFromXml(property);
+        json["colorTable"] = elementArray;
+      }
+    }
+  } else if (string(node.attribute("type").value()) == "PiecewiseFunction") {
+    for (auto property = node.child("Property"); property;
+         property = property.next_sibling("Property")) {
+      if (string(property.attribute("name").value()) == "Points") {
+        auto elementArray = jsonArrayFromXml(property);
+        json["pointTable"] = elementArray;
+      }
+    }
+  }
+
+  return json;
+}
+
+bool deserialize(vtkSMProxy* proxy, const QJsonObject& json)
+{
+  if (!proxy) {
+    return false;
+  }
+
+  if (json.empty()) {
+    // Empty state loaded.
+    return true;
+  }
+
+  pugi::xml_document document;
+  auto proxyNode = document.append_child("Proxy");
+  if (json.contains("colorTable")) {
+    proxyNode.append_attribute("group").set_value("lookup_tables");
+    proxyNode.append_attribute("type").set_value("PVLookupTable");
+    auto propNode = proxyNode.append_child("Property");
+    createXmlProperty(propNode, "RGBPoints", json["id"].toInt(),
+                      json["colorTable"].toArray());
+
+  } else if (json.contains("pointTable")) {
+    proxyNode.append_attribute("group").set_value("piecewise_functions");
+    proxyNode.append_attribute("type").set_value("PiecewiseFunction");
+    auto propNode = proxyNode.append_child("Property");
+    createXmlProperty(propNode, "Points", json["id"].toInt(),
+                      json["pointTable"].toArray());
+  }
+  proxyNode.append_attribute("id").set_value(json["id"].toInt());
+  proxyNode.append_attribute("servers").set_value(json["servers"].toInt());
+
+  std::ostringstream stream;
+  document.first_child().print(stream);
+  vtkNew<vtkPVXMLParser> parser;
+  if (!parser->Parse(stream.str().c_str())) {
+    return false;
+  }
+  if (proxy->LoadXMLState(parser->GetRootElement(), nullptr) != 0) {
+    proxy->UpdateVTKObjects();
+    return true;
+  }
+  return false;
+}
 
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties, const QDir* relDir)

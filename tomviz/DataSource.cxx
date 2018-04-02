@@ -346,6 +346,12 @@ QJsonObject DataSource::serialize() const
     json["units"] = jsonUnits;
   }
 
+  // Serialize the color map, opacity map, and others if needed.
+  json["colorMap"] = tomviz::serialize(colorMap());
+  json["opacityMap"] = tomviz::serialize(opacityMap());
+
+  //tomviz::serialize(gradientOpacityMap(), node);
+
   // Serialize the operators...
   QJsonArray jOperators;
   foreach(Operator* op, this->Internals->Operators) {
@@ -376,6 +382,13 @@ QJsonObject DataSource::serialize() const
 
 bool DataSource::deserialize(const QJsonObject& state)
 {
+  if (state.contains("colorMap")) {
+    tomviz::deserialize(colorMap(), state["colorMap"].toObject());
+  }
+  if (state.contains("opacityMap")) {
+    tomviz::deserialize(opacityMap(), state["opacityMap"].toObject());
+  }
+
   // Check for modules on the data source first.
   if (state.contains("modules") && state["modules"].isArray()) {
     auto moduleArray = state["modules"].toArray();
