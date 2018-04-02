@@ -243,7 +243,7 @@ vtkSMProxy* ModuleRuler::getProxyForString(const std::string& str)
 void ModuleRuler::updateUnits()
 {
   DataSource* source = dataSource();
-  QString units = source->getUnits(0);
+  QString units = source->getUnits();
   vtkRulerSourceRepresentation* rep =
     vtkRulerSourceRepresentation::SafeDownCast(
       m_representation->GetClientSideObject());

@@ -188,8 +188,8 @@ public:
   /// Returns the number of components in the dataset.
   unsigned int getNumberOfComponents();
 
-  /// Returns a string describing the units for the given axis of the data
-  QString getUnits(int axis);
+  /// Returns a string describing the units for the data
+  QString getUnits();
   /// Set the string describing the units
   void setUnits(const QString& units, bool markModified = true);
 

@@ -232,7 +232,7 @@ void DataPropertiesPanel::updateData()
     QString("%1").arg(spacing[1] * (extent[3] - extent[2])));
   m_ui->zLengthBox->setText(
     QString("%1").arg(spacing[2] * (extent[5] - extent[4])));
-  m_ui->unitBox->setText(m_currentDataSource->getUnits(0));
+  m_ui->unitBox->setText(m_currentDataSource->getUnits());
 
   auto sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->proxy());
   if (sourceProxy) {
@@ -463,9 +463,9 @@ void DataPropertiesPanel::updateAxesGridLabels()
   if (!axesGrid || !ds) {
     return;
   }
-  QString xTitle = QString("X (%1)").arg(ds->getUnits(0));
-  QString yTitle = QString("Y (%1)").arg(ds->getUnits(1));
-  QString zTitle = QString("Z (%1)").arg(ds->getUnits(2));
+  QString xTitle = QString("X (%1)").arg(ds->getUnits());
+  QString yTitle = QString("Y (%1)").arg(ds->getUnits());
+  QString zTitle = QString("Z (%1)").arg(ds->getUnits());
   vtkSMPropertyHelper(axesGrid, "XTitle").Set(xTitle.toUtf8().data());
   vtkSMPropertyHelper(axesGrid, "YTitle").Set(yTitle.toUtf8().data());
   vtkSMPropertyHelper(axesGrid, "ZTitle").Set(zTitle.toUtf8().data());

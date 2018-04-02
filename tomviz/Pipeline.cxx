@@ -149,7 +149,7 @@ void Pipeline::pipelineBranchFinished(bool result)
                   // Only flow the properties if no user modifications have been
                   // made.
                   if (!newChildDataSource->unitsModified()) {
-                    newChildDataSource->setUnits(rootDataSource->getUnits(0),
+                    newChildDataSource->setUnits(rootDataSource->getUnits(),
                                                  false);
                     double spacing[3];
                     rootDataSource->getSpacing(spacing);

@@ -368,9 +368,9 @@ void ModuleOutline::updateGridAxesColor(double* color)
 
 void ModuleOutline::updateGridAxesUnit(DataSource* dataSource)
 {
-  QString xTitle = QString("X (%1)").arg(dataSource->getUnits(0));
-  QString yTitle = QString("Y (%1)").arg(dataSource->getUnits(1));
-  QString zTitle = QString("Z (%1)").arg(dataSource->getUnits(2));
+  QString xTitle = QString("X (%1)").arg(dataSource->getUnits());
+  QString yTitle = QString("Y (%1)").arg(dataSource->getUnits());
+  QString zTitle = QString("Z (%1)").arg(dataSource->getUnits());
   m_gridAxes->SetXTitle(xTitle.toUtf8().data());
   m_gridAxes->SetYTitle(yTitle.toUtf8().data());
   m_gridAxes->SetZTitle(zTitle.toUtf8().data());

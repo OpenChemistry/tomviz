@@ -343,11 +343,7 @@ QJsonObject DataSource::serialize() const
 
     json["spacing"] = jsonSpacing;
     if (this->Internals->Units) {
-      QJsonArray jsonUnits;
-      for (int i = 0; i < 3; ++i) {
-        jsonUnits.append(this->Internals->Units->GetValue(0).c_str());
-      }
-      json["units"] = jsonUnits;
+      json["units"] = this->Internals->Units->GetValue(0).c_str();
     }
   }
 
@@ -404,11 +400,8 @@ bool DataSource::deserialize(const QJsonObject& state)
   }
 
   if (state.contains("units")) {
-    auto unitsArray = state["units"].toArray();
-
-    // We currently don't support setting different unit in different
-    // dimensions, so just use the first.
-    setUnits(unitsArray.at(0).toString());
+    auto units = state["units"].toString();
+    setUnits(units);
   }
 
   // Check for modules on the data source first.
@@ -457,116 +450,14 @@ bool DataSource::deserialize(const QJsonObject& state)
 
 bool DataSource::serialize(pugi::xml_node& ns) const
 {
-  pugi::xml_node node = ns.append_child("ColorMap");
-  tomviz::serialize(colorMap(), node);
-
-  node = ns.append_child("OpacityMap");
-  tomviz::serialize(opacityMap(), node);
-
-  node = ns.append_child("GradientOpacityMap");
-  tomviz::serialize(gradientOpacityMap(), node);
-
-  // ns.append_attribute("number_of_operators")
-  //  .set_value(static_cast<int>(this->Internals->Operators.size()));
-
-  pugi::xml_node scale_node = ns.append_child("Spacing");
-  double spacing[3];
-  getSpacing(spacing);
-  scale_node.append_attribute("x").set_value(spacing[0]);
-  scale_node.append_attribute("y").set_value(spacing[1]);
-  scale_node.append_attribute("z").set_value(spacing[2]);
-
-  if (this->Internals->Units) {
-    pugi::xml_node unit_node = ns.append_child("Units");
-    unit_node.append_attribute("x").set_value(
-      this->Internals->Units->GetValue(0));
-    unit_node.append_attribute("y").set_value(
-      this->Internals->Units->GetValue(1));
-    unit_node.append_attribute("z").set_value(
-      this->Internals->Units->GetValue(2));
-  }
-
-  // foreach (Operator* op, this->Internals->Operators) {
-  //  pugi::xml_node operatorNode = ns.append_child("Operator");
-  //  operatorNode.append_attribute("operator_type")
-  //    .set_value(OperatorFactory::operatorType(op));
-  //  if (!op->serialize(operatorNode)) {
-  //    qWarning("failed to serialize Operator. Skipping it.");
-  //    ns.remove_child(operatorNode);
-  //  }
-  //}
-  return true;
+  Q_UNUSED(ns);
+  return false;
 }
 
 bool DataSource::deserialize(const pugi::xml_node& ns)
 {
-
-  // We don't save this anymore, but so that we can continue to read legacy
-  // files....
-  // It should either be in the original data or in the Operator pipeline.
-  DataSourceType dstype;
-  if (ns.attribute("type") &&
-      stringToDataSourceType(ns.attribute("type").value(), dstype)) {
-    setType(dstype);
-  }
-
-  // int num_operators = ns.attribute("number_of_operators").as_int(-1);
-  // if (num_operators < 0) {
-  //  return false;
-  // }
-
-  /// this->Internals->Operators.clear();
-
-  // load the color map here to avoid resetData clobbering its range
-  tomviz::deserialize(colorMap(), ns.child("ColorMap"));
-  tomviz::deserialize(opacityMap(), ns.child("OpacityMap"));
-
-  pugi::xml_node nodeGrad = ns.child("GradientOpacityMap");
-  if (nodeGrad) {
-    tomviz::deserialize(gradientOpacityMap(), nodeGrad);
-  }
-
-  vtkSMPropertyHelper(colorMap(), "ScalarOpacityFunction").Set(opacityMap());
-  colorMap()->UpdateVTKObjects();
-
-  // load tilt angles AFTER resetData call.  Again this is no longer saved and
-  // the load code is for legacy support.  This should be saved by the
-  // SetTiltAnglesOperator.
-  if (type() == TiltSeries && ns.child("TiltAngles")) {
-    auto data = this->dataObject();
-    auto fd = data->GetFieldData();
-    auto tiltAngles = fd->GetArray("tilt_angles");
-    deserializeDataArray(ns.child("TiltAngles"), tiltAngles);
-  }
-
-  if (ns.child("Spacing")) {
-    pugi::xml_node scale_node = ns.child("Spacing");
-    double spacing[3];
-    spacing[0] = scale_node.attribute("x").as_double();
-    spacing[1] = scale_node.attribute("y").as_double();
-    spacing[2] = scale_node.attribute("z").as_double();
-    setSpacing(spacing);
-  }
-  if (ns.child("Units")) {
-    // Ensure the array exists
-    pugi::xml_node unit_node = ns.child("Units");
-    setUnits("nm");
-    this->Internals->Units->SetValue(0, unit_node.attribute("x").value());
-    this->Internals->Units->SetValue(1, unit_node.attribute("y").value());
-    this->Internals->Units->SetValue(2, unit_node.attribute("z").value());
-  }
-
-  //  for (pugi::xml_node node = ns.child("Operator"); node;
-  //       node = node.next_sibling("Operator")) {
-  //    Operator* op(OperatorFactory::createOperator(
-  //      node.attribute("operator_type").value(), this));
-  //    if (op) {
-  //      if (op->deserialize(node)) {
-  //        addOperator(op);
-  //      }
-  //    }
-  //  }
-  return true;
+  Q_UNUSED(ns);
+  return false;
 }
 
 DataSource* DataSource::clone(bool cloneOperators) const
@@ -736,10 +627,10 @@ unsigned int DataSource::getNumberOfComponents()
   return numComponents;
 }
 
-QString DataSource::getUnits(int axis)
+QString DataSource::getUnits()
 {
   if (this->Internals->Units) {
-    return QString(this->Internals->Units->GetValue(axis));
+    return QString(this->Internals->Units->GetValue(0));
   } else {
     return "nm";
   }
