@@ -109,7 +109,7 @@ bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   double length = std::max(floor((bounds[1] - bounds[0]) * .1), 1.);
   m_cubeRep->SetSideLength(length);
   m_cubeRep->SetAdaptiveScaling(0);
-  m_cubeRep->SetLengthUnit(data->getUnits(0).toStdString().c_str());
+  m_cubeRep->SetLengthUnit(data->getUnits().toStdString().c_str());
 
   m_offset[0] = 0.5 * length;
   m_offset[1] = 0.5 * length;
@@ -264,14 +264,14 @@ void ModuleScaleCube::setAnnotation(const bool val)
 
 void ModuleScaleCube::setLengthUnit()
 {
-  QString s = qobject_cast<DataSource*>(sender())->getUnits(0);
+  QString s = qobject_cast<DataSource*>(sender())->getUnits();
   m_cubeRep->SetLengthUnit(s.toStdString().c_str());
   emit onLengthUnitChanged(s);
 }
 
 void ModuleScaleCube::setPositionUnit()
 {
-  QString s = qobject_cast<DataSource*>(sender())->getUnits(0);
+  QString s = qobject_cast<DataSource*>(sender())->getUnits();
   emit onLengthUnitChanged(s);
 }
 
@@ -281,10 +281,10 @@ void ModuleScaleCube::dataPropertiesChanged()
   if (!data) {
     return;
   }
-  m_cubeRep->SetLengthUnit(data->getUnits(0).toStdString().c_str());
+  m_cubeRep->SetLengthUnit(data->getUnits().toStdString().c_str());
 
-  emit onLengthUnitChanged(data->getUnits(0));
-  emit onPositionUnitChanged(data->getUnits(0));
+  emit onLengthUnitChanged(data->getUnits());
+  emit onPositionUnitChanged(data->getUnits());
 }
 
 void ModuleScaleCube::dataSourceMoved(double newX, double newY, double newZ)

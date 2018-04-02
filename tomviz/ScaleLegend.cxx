@@ -237,8 +237,8 @@ void ScaleLegend::setVisibility(bool choice)
 
 void ScaleLegend::dataSourceAdded(DataSource* ds)
 {
-  m_volumeScaleRep->SetLengthUnit(ds->getUnits(0).toStdString().c_str());
-  m_lengthScaleRep->SetLengthUnit(ds->getUnits(0).toStdString().c_str());
+  m_volumeScaleRep->SetLengthUnit(ds->getUnits().toStdString().c_str());
+  m_lengthScaleRep->SetLengthUnit(ds->getUnits().toStdString().c_str());
   connect(ds, SIGNAL(dataPropertiesChanged()),
           SLOT(dataPropertiesChanged()));
   render();
@@ -250,8 +250,8 @@ void ScaleLegend::dataPropertiesChanged()
   if (!data) {
     return;
   }
-  m_volumeScaleRep->SetLengthUnit(data->getUnits(0).toStdString().c_str());
-  m_lengthScaleRep->SetLengthUnit(data->getUnits(0).toStdString().c_str());
+  m_volumeScaleRep->SetLengthUnit(data->getUnits().toStdString().c_str());
+  m_lengthScaleRep->SetLengthUnit(data->getUnits().toStdString().c_str());
 }
 
 void ScaleLegend::render()

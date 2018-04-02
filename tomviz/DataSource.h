@@ -179,7 +179,7 @@ public:
   void getSpacing(double spacing[3]) const;
   /// Sets the scale factor (ratio between units and spacing)
   /// one component per axis
-  void setSpacing(const double scaleFactor[3]);
+  void setSpacing(const double scaleFactor[3], bool markModified = true);
 
   /// Set the active scalars by array name.
   void setActiveScalars(const QString& arrayName);
@@ -188,10 +188,10 @@ public:
   /// Returns the number of components in the dataset.
   unsigned int getNumberOfComponents();
 
-  /// Returns a string describing the units for the given axis of the data
-  QString getUnits(int axis);
+  /// Returns a string describing the units for the data
+  QString getUnits();
   /// Set the string describing the units
-  void setUnits(const QString& units);
+  void setUnits(const QString& units, bool markModified = true);
 
   /// Set the persistence state
   void setPersistenceState(PersistenceState state);
@@ -210,6 +210,8 @@ public:
 
   /// Copy data from a data object to the existing data.
   void copyData(vtkDataObject* newData);
+
+  bool unitsModified();
 
 signals:
   /// This signal is fired to notify the world that the DataSource may have
