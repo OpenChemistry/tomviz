@@ -12,7 +12,7 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
         tiltSeries = utils.get_array(dataset).astype(float)
 
         self.progress.maximum = tiltSeries.shape[2]
-        step = 0
+        step = 1
 
         for i in range(tiltSeries.shape[2]):
             if self.canceled:
