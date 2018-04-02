@@ -458,7 +458,7 @@ QJsonObject OperatorPython::serialize() const
   return json;
 }
 
-bool OperatorPython::deserialize(const QJsonObject &json)
+bool OperatorPython::deserialize(const QJsonObject& json)
 {
   setJSONDescription(json["description"].toString());
   setLabel(json["label"].toString());

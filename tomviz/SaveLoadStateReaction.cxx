@@ -113,8 +113,8 @@ bool SaveLoadStateReaction::saveState(const QString& fileName, bool interactive)
   }
 
   QJsonObject state;
-  auto success = ModuleManager::instance().serialize(state, info.dir(),
-                                                     interactive);
+  auto success =
+    ModuleManager::instance().serialize(state, info.dir(), interactive);
   QJsonDocument doc(state);
   auto writeSuccess = saveFile.write(doc.toJson());
   return success && writeSuccess != -1;

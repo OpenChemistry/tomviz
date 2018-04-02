@@ -166,7 +166,7 @@ QJsonObject ModuleVolume::serialize() const
   return json;
 }
 
-bool ModuleVolume::deserialize(const QJsonObject &json)
+bool ModuleVolume::deserialize(const QJsonObject& json)
 {
   if (!Module::deserialize(json)) {
     return false;
@@ -208,7 +208,6 @@ void ModuleVolume::addToPanel(QWidget* panel)
   panel->setLayout(layout);
 
   // Create, update and connect
-  //m_controllers = new ModuleVolumeWidget;
   layout->addWidget(m_controllers);
   updatePanel();
 

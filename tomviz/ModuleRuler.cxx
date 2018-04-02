@@ -37,8 +37,8 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
-#include <QLabel>
 #include <QJsonArray>
+#include <QLabel>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -189,7 +189,7 @@ QJsonObject ModuleRuler::serialize() const
   return json;
 }
 
-bool ModuleRuler::deserialize(const QJsonObject &json)
+bool ModuleRuler::deserialize(const QJsonObject& json)
 {
   if (!Module::deserialize(json)) {
     return false;

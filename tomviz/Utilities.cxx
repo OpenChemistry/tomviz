@@ -155,10 +155,9 @@ void createXmlProperty(pugi::xml_node& n, const char* name, int id,
     element.append_attribute("value").set_value(arr[i].toDouble(-1));
   }
 }
-
 }
 
-QJsonObject serialize(vtkSMProxy *proxy)
+QJsonObject serialize(vtkSMProxy* proxy)
 {
   // Start out by creating the XML, and loading it into a pugi::xml DOM.
   vtkSmartPointer<vtkSMNamedPropertyIterator> iter;

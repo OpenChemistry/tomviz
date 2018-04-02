@@ -233,7 +233,7 @@ QJsonObject ModuleOrthogonalSlice::serialize() const
   return json;
 }
 
-bool ModuleOrthogonalSlice::deserialize(const QJsonObject &json)
+bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
 {
   if (!Module::deserialize(json)) {
     return false;

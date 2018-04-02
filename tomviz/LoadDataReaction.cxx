@@ -213,8 +213,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       if (tomviz::deserialize(reader, node)) {
         reader->UpdateVTKObjects();
         vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
-        dataSource = LoadDataReaction::createDataSource(reader, defaultModules,
-                                                        child);
+        dataSource =
+          LoadDataReaction::createDataSource(reader, defaultModules, child);
       }
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {

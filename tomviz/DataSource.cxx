@@ -350,11 +350,11 @@ QJsonObject DataSource::serialize() const
   json["colorMap"] = tomviz::serialize(colorMap());
   json["opacityMap"] = tomviz::serialize(opacityMap());
 
-  //tomviz::serialize(gradientOpacityMap(), node);
+  // tomviz::serialize(gradientOpacityMap(), node);
 
   // Serialize the operators...
   QJsonArray jOperators;
-  foreach(Operator* op, this->Internals->Operators) {
+  foreach (Operator* op, this->Internals->Operators) {
     QJsonObject jOperator = op->serialize();
     jOperator["type"] = OperatorFactory::operatorType(op);
     jOperators.append(jOperator);
@@ -366,7 +366,7 @@ QJsonObject DataSource::serialize() const
   // Serialize the modules...
   auto modules = ModuleManager::instance().findModulesGeneric(this, nullptr);
   QJsonArray jModules;
-  foreach(Module* module, modules) {
+  foreach (Module* module, modules) {
     QJsonObject jModule = module->serialize();
     jModule["type"] = ModuleFactory::moduleType(module);
     jModule["viewId"] = static_cast<int>(module->view()->GetGlobalID());
@@ -397,8 +397,8 @@ bool DataSource::deserialize(const QJsonObject& state)
       auto viewId = moduleObj["viewId"].toInt();
       auto viewProxy = ModuleManager::instance().lookupView(viewId);
       auto type = moduleObj["type"].toString();
-      auto m = ModuleManager::instance().createAndAddModule(type, this,
-                                                            viewProxy);
+      auto m =
+        ModuleManager::instance().createAndAddModule(type, this, viewProxy);
       m->deserialize(moduleObj);
     }
   }

@@ -132,7 +132,7 @@ QJsonObject ModuleOutline::serialize() const
   return json;
 }
 
-bool ModuleOutline::deserialize(const QJsonObject &json)
+bool ModuleOutline::deserialize(const QJsonObject& json)
 {
   if (!Module::deserialize(json)) {
     return false;

@@ -172,7 +172,7 @@ QJsonObject Operator::serialize() const
   return json;
 }
 
-bool Operator::deserialize(const QJsonObject &json)
+bool Operator::deserialize(const QJsonObject& json)
 {
   if (json.contains("dataSources")) {
     // This means that this operator is the end of the line, and needs to

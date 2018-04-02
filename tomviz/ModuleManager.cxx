@@ -60,7 +60,6 @@
 #include <QMultiMap>
 #include <QPointer>
 #include <QSet>
-#include <QDebug>
 
 #include <sstream>
 
@@ -267,7 +266,7 @@ QJsonArray jsonArrayFromXmlDouble(pugi::xml_node node)
   return array;
 }
 
-bool ModuleManager::serialize(QJsonObject &doc, const QDir &stateDir,
+bool ModuleManager::serialize(QJsonObject& doc, const QDir&,
                               bool interactive) const
 {
   QJsonObject tvObj;
@@ -276,9 +275,10 @@ bool ModuleManager::serialize(QJsonObject &doc, const QDir &stateDir,
     tvObj["versionExtra"] = QString(TOMVIZ_VERSION_EXTRA);
   }
 
-  auto pvVer = QString("%1.%2.%3").arg(vtkSMProxyManager::GetVersionMajor())
-                                  .arg(vtkSMProxyManager::GetVersionMinor())
-                                  .arg(vtkSMProxyManager::GetVersionPatch());
+  auto pvVer = QString("%1.%2.%3")
+                 .arg(vtkSMProxyManager::GetVersionMajor())
+                 .arg(vtkSMProxyManager::GetVersionMinor())
+                 .arg(vtkSMProxyManager::GetVersionPatch());
   tvObj["paraViewVersion"] = pvVer;
 
   doc["tomviz"] = tvObj;
@@ -293,8 +293,7 @@ bool ModuleManager::serialize(QJsonObject &doc, const QDir &stateDir,
         ++modified;
       }
     }
-    foreach (const QPointer<DataSource>& ds,
-             d->ChildDataSources) {
+    foreach (const QPointer<DataSource>& ds, d->ChildDataSources) {
       if (ds != nullptr &&
           ds->persistenceState() == DataSource::PersistenceState::Modified) {
         ++modified;
@@ -325,7 +324,7 @@ bool ModuleManager::serialize(QJsonObject &doc, const QDir &stateDir,
   }
 
   QJsonArray jDataSources;
-  foreach(DataSource *ds, d->DataSources) {
+  foreach (DataSource* ds, d->DataSources) {
     auto jDataSource = ds->serialize();
     if (ds == ActiveObjects::instance().activeDataSource()) {
       jDataSource["active"] = true;
@@ -496,7 +495,7 @@ void createXmlLayout(pugi::xml_node& n, QJsonArray arr)
   }
 }
 
-bool ModuleManager::deserialize(const QJsonObject &doc, const QDir &stateDir)
+bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
 {
   // Get back to a known state.
   reset();
@@ -517,7 +516,8 @@ bool ModuleManager::deserialize(const QJsonObject &doc, const QDir &stateDir)
       .arg(vtkSMProxyManager::GetVersionMajor())
       .arg(vtkSMProxyManager::GetVersionMinor())
       .arg(vtkSMProxyManager::GetVersionPatch())
-      .toLatin1().data());
+      .toLatin1()
+      .data());
   auto pvViews = pvState.append_child("ProxyCollection");
   pvViews.append_attribute("name").set_value("views");
   auto pvLayouts = pvState.append_child("ProxyCollection");
@@ -571,55 +571,12 @@ bool ModuleManager::deserialize(const QJsonObject &doc, const QDir &stateDir)
     layoutSummary.append_attribute("name").set_value(
       QString("Layout%1").arg(++numLayouts).toStdString().c_str());
   }
-/*
-  for (pugi::xml_node node = ns.child("View"); node;
-       node = node.next_sibling("View")) {
-    pugi::xml_node axesGridNode = node.child("AxesGrid");
-    pugi::xml_node axesGridProxyNode = axesGridNode.child("Proxy");
-    vtkTypeUInt32 axesGridId = axesGridProxyNode.attribute("id").as_uint(0);
-    vtkTypeUInt32 id = node.attribute("id").as_uint(0);
-    pugi::xml_node proxyNode = node.child("Proxy");
-    if (proxyNode) {
-      pvState.append_copy(proxyNode);
-      pugi::xml_node viewSummary = pvViews.append_child("Item");
-      viewSummary.append_attribute("id").set_value(id);
-      viewSummary.append_attribute("name").set_value(
-        QString("View%1").arg(++numViews).toStdString().c_str());
-    }
-    if (axesGridProxyNode) {
-      pvState.append_copy(axesGridProxyNode);
-      pugi::xml_node collection = pvState.append_child("ProxyCollection");
-      QString name = QString("pq_helper_proxies.%1").arg(id);
-      collection.append_attribute("name").set_value(name.toStdString().c_str());
-      pugi::xml_node item = collection.append_child("Item");
-      item.append_attribute("id").set_value(axesGridId);
-      item.append_attribute("name").set_value("AxesGrid");
-    }
-  }
-  for (pugi::xml_node node = ns.child("Layout"); node;
-       node = node.next_sibling("Layout")) {
-    vtkTypeUInt32 id = node.attribute("id").as_uint(0);
-    pugi::xml_node proxyNode = node.child("Proxy");
-    if (proxyNode) {
-      pvState.append_copy(proxyNode);
-      pugi::xml_node layoutSummary = pvLayouts.append_child("Item");
-      layoutSummary.append_attribute("id").set_value(id);
-      layoutSummary.append_attribute("name").set_value(
-        QString("Layout%1").arg(++numLayouts).toStdString().c_str());
-    }
-  }
-  pugi::xml_node node = ns.child("Links");
-  if (node) {
-    pvState.append_copy(node);
-  }
-  // This state and connection is cleaned up by onPVStateLoaded.
-  d->node = ns;
-  */
+
   d->dir = stateDir;
   m_stateObject = doc;
   connect(pqApplicationCore::instance(),
-         SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)),
-         SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
+          SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)),
+          SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
   // Set up call to ParaView to load state
   std::ostringstream stream;
   document.first_child().print(stream);
@@ -636,8 +593,7 @@ bool ModuleManager::deserialize(const QJsonObject &doc, const QDir &stateDir)
   // Clean up the state -- since the Qt slot call should be synchronous
   // it should be done before the code returns to here.
   disconnect(pqApplicationCore::instance(),
-             SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)),
-             this,
+             SIGNAL(stateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)), this,
              SLOT(onPVStateLoaded(vtkPVXMLElement*, vtkSMProxyLocator*)));
 
   d->dir = QDir();
@@ -737,8 +693,7 @@ void ModuleManager::onViewRemoved(pqView* view)
 
 void ModuleManager::render()
 {
-  auto view =
-    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view) {
     view->render();
   }
