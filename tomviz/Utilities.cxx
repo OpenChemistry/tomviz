@@ -247,6 +247,47 @@ bool deserialize(vtkSMProxy* proxy, const QJsonObject& json)
   return false;
 }
 
+QJsonObject serialize(vtkPiecewiseFunction* func)
+{
+  QJsonObject json;
+  QJsonArray pointsTable;
+
+  const int numPoints = func->GetSize();
+  for (int pointIdx = 0; pointIdx < numPoints; pointIdx++) {
+    double values[4] = { 0.0 };
+    func->GetNodeValue(pointIdx, values);
+    for (int i = 0; i < 4; i++) {
+      pointsTable.append(values[i]);
+    }
+  }
+  json["pointsTable"] = pointsTable;
+
+  return json;
+}
+
+bool deserialize(vtkPiecewiseFunction* func, const QJsonObject& json)
+{
+  if (json.empty()) {
+    // Empty state loaded.
+    return true;
+  }
+
+  if (json.contains("pointsTable")) {
+    auto points = json["pointsTable"].toArray();
+    func->RemoveAllPoints();
+    double values[4];
+    for (int pointIdx = 0; pointIdx < points.size(); pointIdx += 4) {
+      for (int i = 0; i < 4; i++) {
+        values[i] = points.at(pointIdx + i).toDouble();
+      }
+      func->AddPoint(values[0], values[1], values[2], values[3]);
+    }
+    return true;
+  }
+
+  return false;
+}
+
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties, const QDir* relDir)
 {

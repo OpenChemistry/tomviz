@@ -149,6 +149,9 @@ bool deserialize(QVariantMap& map, const pugi::xml_node& in);
 bool serialize(vtkPiecewiseFunction* func, pugi::xml_node& out);
 bool deserialize(vtkPiecewiseFunction* func, const pugi::xml_node& in);
 
+QJsonObject serialize(vtkPiecewiseFunction* func);
+bool deserialize(vtkPiecewiseFunction* func, const QJsonObject& json);
+
 /// Returns the vtkPVArrayInformation for scalars array produced by the given
 /// source proxy.
 vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy);

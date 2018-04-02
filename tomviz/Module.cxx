@@ -200,7 +200,9 @@ QJsonObject Module::serialize() const
   if (isColorMapNeeded()) {
     json["useDetachedColorMap"] = m_useDetachedColorMap;
     if (m_useDetachedColorMap) {
-      /// FIXME: Add this capability back in.
+      json["colorMap"] = tomviz::serialize(d->detachedColorMap());
+      json["opacityMap"] = tomviz::serialize(d->detachedOpacityMap());
+      json["gradientOpacityMap"] = tomviz::serialize(gradientOpacityMap());
     }
   }
   json["properties"] = props;
@@ -213,6 +215,26 @@ bool Module::deserialize(const QJsonObject& json)
     auto props = json["properties"].toObject();
     setVisibility(props["visibility"].toBool());
   }
+
+  if (isColorMapNeeded() && json.contains("useDetachedColorMap")) {
+    bool useDetachedColorMap = json["useDetachedColorMap"].toBool();
+    if (useDetachedColorMap) {
+      if (json.contains("colorMap")) {
+        auto colorMap = json["colorMap"].toObject();
+        tomviz::deserialize(d->detachedColorMap(), colorMap);
+      }
+      if (json.contains("opacityMap")) {
+        auto opacityMap = json["opacityMap"].toObject();
+        tomviz::deserialize(d->detachedOpacityMap(), opacityMap);
+      }
+      if (json.contains("gradientOpacityMap")) {
+        auto gradientOpacityMap = json["gradientOpacityMap"].toObject();
+        tomviz::deserialize(d->m_gradientOpacityMap, gradientOpacityMap);
+      }
+    }
+    setUseDetachedColorMap(useDetachedColorMap);
+  }
+
   return true;
 }
 
