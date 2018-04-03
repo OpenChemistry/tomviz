@@ -26,6 +26,7 @@
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
+#include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkPVXMLElement.h>
 #include <vtkPVXMLParser.h>
 #include <vtkSMNamedPropertyIterator.h>
@@ -37,6 +38,7 @@
 
 #include <vtkBoundingBox.h>
 #include <vtkCamera.h>
+#include <vtkColorTransferFunction.h>
 #include <vtkImageData.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkNew.h>
@@ -129,18 +131,6 @@ namespace tomviz {
 
 namespace {
 
-QJsonArray jsonArrayFromXml(pugi::xml_node node)
-{
-  // Simple function, just iterates through the elements and fills the array.
-  // This assumes the ParaView Element nodes, values stored in value attributes.
-  QJsonArray array;
-  for (auto element = node.child("Element"); element;
-       element = element.next_sibling("Element")) {
-    array.append(element.attribute("value").as_double(-1));
-  }
-  return array;
-}
-
 void createXmlProperty(pugi::xml_node& n, const char* name, int id,
                        QJsonArray arr)
 {
@@ -159,49 +149,13 @@ void createXmlProperty(pugi::xml_node& n, const char* name, int id,
 
 QJsonObject serialize(vtkSMProxy* proxy)
 {
-  // Start out by creating the XML, and loading it into a pugi::xml DOM.
-  vtkSmartPointer<vtkSMNamedPropertyIterator> iter;
-  vtkSmartPointer<vtkPVXMLElement> elem;
-  elem.TakeReference(proxy->SaveXMLState(nullptr, iter.GetPointer()));
-
-  std::ostringstream stream;
-  elem->PrintXML(stream, vtkIndent());
-
-  pugi::xml_document document;
-  if (!document.load(stream.str().c_str())) {
-    qCritical("Failed to convert from vtkPVXMLElement to pugi::xml_document");
-    return QJsonObject();
+  // Probe for some known types that can be serialized directly.
+  if (auto func = vtkPVDiscretizableColorTransferFunction::SafeDownCast(
+        proxy->GetClientSideObject())) {
+    return serialize(func);
   }
 
-  // Now to convert it over to the JSON, there is some very proxy specific code.
-  // std::cout << "XML:\n" << stream.str().c_str() << std::endl;
-
-  QJsonObject json;
-  auto node = document.child("Proxy");
-  if (string(node.name()) == "Proxy") {
-    json["id"] = node.attribute("id").as_int();
-    json["servers"] = node.attribute("servers").as_int();
-  }
-  if (string(node.attribute("type").value()) == "PVLookupTable") {
-    // std::cout << "We have a lookup table!!!\n\n";
-    for (auto property = node.child("Property"); property;
-         property = property.next_sibling("Property")) {
-      if (string(property.attribute("name").value()) == "RGBPoints") {
-        auto elementArray = jsonArrayFromXml(property);
-        json["colorTable"] = elementArray;
-      }
-    }
-  } else if (string(node.attribute("type").value()) == "PiecewiseFunction") {
-    for (auto property = node.child("Property"); property;
-         property = property.next_sibling("Property")) {
-      if (string(property.attribute("name").value()) == "Points") {
-        auto elementArray = jsonArrayFromXml(property);
-        json["pointTable"] = elementArray;
-      }
-    }
-  }
-
-  return json;
+  return QJsonObject();
 }
 
 bool deserialize(vtkSMProxy* proxy, const QJsonObject& json)
@@ -215,33 +169,100 @@ bool deserialize(vtkSMProxy* proxy, const QJsonObject& json)
     return true;
   }
 
-  pugi::xml_document document;
-  auto proxyNode = document.append_child("Proxy");
-  if (json.contains("colorTable")) {
+  if (json.contains("colors")) {
+    pugi::xml_document document;
+    auto proxyNode = document.append_child("Proxy");
+
     proxyNode.append_attribute("group").set_value("lookup_tables");
     proxyNode.append_attribute("type").set_value("PVLookupTable");
     auto propNode = proxyNode.append_child("Property");
     createXmlProperty(propNode, "RGBPoints", json["id"].toInt(),
-                      json["colorTable"].toArray());
+                      json["colors"].toArray());
 
-  } else if (json.contains("pointTable")) {
+    proxyNode.append_attribute("id").set_value(json["id"].toInt());
+    proxyNode.append_attribute("servers").set_value(json["servers"].toInt());
+    std::ostringstream stream;
+    document.first_child().print(stream);
+    vtkNew<vtkPVXMLParser> parser;
+    if (!parser->Parse(stream.str().c_str())) {
+      return false;
+    }
+    if (proxy->LoadXMLState(parser->GetRootElement(), nullptr) != 0) {
+      proxy->UpdateVTKObjects();
+    }
+  }
+  if (json.contains("points")) {
+    auto p = vtkSMPropertyHelper(proxy, "ScalarOpacityFunction").GetAsProxy();
+    if (!p) {
+      return false;
+    }
+
+    pugi::xml_document document;
+    auto proxyNode = document.append_child("Proxy");
+
     proxyNode.append_attribute("group").set_value("piecewise_functions");
     proxyNode.append_attribute("type").set_value("PiecewiseFunction");
     auto propNode = proxyNode.append_child("Property");
     createXmlProperty(propNode, "Points", json["id"].toInt(),
-                      json["pointTable"].toArray());
-  }
-  proxyNode.append_attribute("id").set_value(json["id"].toInt());
-  proxyNode.append_attribute("servers").set_value(json["servers"].toInt());
+                      json["points"].toArray());
 
-  std::ostringstream stream;
-  document.first_child().print(stream);
-  vtkNew<vtkPVXMLParser> parser;
-  if (!parser->Parse(stream.str().c_str())) {
-    return false;
+    proxyNode.append_attribute("id").set_value(json["id"].toInt());
+    proxyNode.append_attribute("servers").set_value(json["servers"].toInt());
+    std::ostringstream stream;
+    document.first_child().print(stream);
+    vtkNew<vtkPVXMLParser> parser;
+    if (!parser->Parse(stream.str().c_str())) {
+      return false;
+    }
+    if (p->LoadXMLState(parser->GetRootElement(), nullptr) != 0) {
+      p->UpdateVTKObjects();
+    }
   }
-  if (proxy->LoadXMLState(parser->GetRootElement(), nullptr) != 0) {
-    proxy->UpdateVTKObjects();
+
+  return true;
+}
+
+QJsonObject serialize(vtkDiscretizableColorTransferFunction* func)
+{
+  QJsonObject json;
+  QJsonArray colorTable;
+
+  if (!func) {
+    return json;
+  }
+
+  auto opacityFunc = func->GetScalarOpacityFunction();
+  json["points"] = serialize(opacityFunc)["points"];
+
+  // The data is of the form x, r, g, b for each point. Iterate through it.
+  const int numPoints = func->GetSize() * 4;
+  auto ptr = func->GetDataPointer();
+  for (int i = 0; i < numPoints; ++i) {
+    colorTable.append(ptr[i]);
+  }
+  json["colors"] = colorTable;
+
+  return json;
+}
+
+bool deserialize(vtkDiscretizableColorTransferFunction* func,
+                 const QJsonObject& json)
+{
+  if (!func || json.empty()) {
+    // Empty state loaded.
+    return true;
+  }
+
+  if (json.contains("points") && json.contains("colors")) {
+    func->RemoveAllPoints();
+    auto opacityFunc = func->GetScalarOpacityFunction();
+    deserialize(opacityFunc, json);
+    auto colors = json["colors"].toArray();
+    double* values = new double[colors.size()];
+    for (int i = 0; i < colors.size(); ++i) {
+      values[i] = colors[i].toDouble();
+    }
+    func->FillFromDataPointer(colors.size(), values);
     return true;
   }
   return false;
@@ -260,7 +281,7 @@ QJsonObject serialize(vtkPiecewiseFunction* func)
       pointsTable.append(values[i]);
     }
   }
-  json["pointsTable"] = pointsTable;
+  json["points"] = pointsTable;
 
   return json;
 }
@@ -272,8 +293,8 @@ bool deserialize(vtkPiecewiseFunction* func, const QJsonObject& json)
     return true;
   }
 
-  if (json.contains("pointsTable")) {
-    auto points = json["pointsTable"].toArray();
+  if (json.contains("points")) {
+    auto points = json["points"].toArray();
     func->RemoveAllPoints();
     double values[4];
     for (int pointIdx = 0; pointIdx < points.size(); pointIdx += 4) {

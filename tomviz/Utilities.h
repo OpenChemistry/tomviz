@@ -34,6 +34,7 @@
 
 class pqAnimationScene;
 
+class vtkDiscretizableColorTransferFunction;
 class vtkImageSliceMapper;
 class vtkRenderer;
 class vtkSMProxyLocator;
@@ -151,6 +152,9 @@ bool deserialize(QVariantMap& map, const pugi::xml_node& in);
 bool serialize(vtkPiecewiseFunction* func, pugi::xml_node& out);
 bool deserialize(vtkPiecewiseFunction* func, const pugi::xml_node& in);
 
+QJsonObject serialize(vtkDiscretizableColorTransferFunction* func);
+bool deserialize(vtkDiscretizableColorTransferFunction* func,
+                 const QJsonObject& json);
 QJsonObject serialize(vtkPiecewiseFunction* func);
 bool deserialize(vtkPiecewiseFunction* func, const QJsonObject& json);
 
