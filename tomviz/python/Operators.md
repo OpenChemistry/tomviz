@@ -228,3 +228,32 @@ data set and the value is the result or child data object. Results and child
 data objects are VTK objects created in the Python operator code. See
 `ConnectedComponents.py` for an example of how to return both a result and
 child data set.
+
+Command line execution of pipeline
+------------------------------------
+
+A single operator can be executed from a Python command line. The data
+source must be in EMD format. The execution is driven using a state file containing
+the operator pipeline. To install the command line package run the following:
+
+```bash
+pip install  <tomviz_repo_directory>/tomviz/python/
+
+```
+Note: Currently this package can't be installed in the same environment as
+the acquisition server.
+
+Then to execute the operator pipeline run the following command:
+
+```
+tomviz -s <path_to_state_file> -o <path_to_write_output_emd>
+```
+The input data source in the state file can be overridden by providing a path to
+a different EMD file using the -d option.
+
+Current restrictions/issues:
+
+- Single operator.
+- EMD data source only.
+- Spacing and units are copied from input data source.
+- No support for child data.
