@@ -61,7 +61,7 @@ macro(create_test_executable name)
         string(REPLACE ";" "\\;" "_tomviz_${_test_name}_pythonpath" "${_tomviz_${_test_name}_pythonpath}")
       endif()
       set_tests_properties(${_test_name}
-        PROPERTIES ENVIRONMENT "PYTHONPATH=${_tomviz_${_test_name}_pythonpath}")
+        PROPERTIES ENVIRONMENT "PYTHONPATH=${_tomviz_${_test_name}_pythonpath};TOMVIZ_APPLICATION=1")
     endif()
   endforeach()
 endmacro()
