@@ -15,9 +15,6 @@
 #  limitations under the License.
 #
 ###############################################################################
-
-import tomviz.operators
-import tomviz._wrapping
 import inspect
 import sys
 import os
@@ -25,6 +22,11 @@ import fnmatch
 import imp
 import json
 import traceback
+
+import tomviz
+import tomviz.operators
+if tomviz.in_application():
+    import tomviz._wrapping
 
 
 def delete_module(name):

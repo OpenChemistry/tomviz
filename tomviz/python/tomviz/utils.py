@@ -15,11 +15,13 @@
 #  limitations under the License.
 #
 ###############################################################################
-
 import math
 import numpy as np
-import vtk.numpy_interface.dataset_adapter as dsa
-import vtk.util.numpy_support as np_s
+import tomviz
+# Only import vtk if we are running within the tomviz application ( not cli )
+if tomviz.in_application():
+    import vtk.numpy_interface.dataset_adapter as dsa
+    import vtk.util.numpy_support as np_s
 
 
 def get_scalars(dataobject):
