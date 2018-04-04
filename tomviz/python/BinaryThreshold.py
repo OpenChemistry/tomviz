@@ -65,7 +65,6 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
             except RuntimeError:
                 return returnValue
 
-            from tomviz import utils
             self.progress.message = "Creating child data set"
 
             # Set the output as a new child data object of the current data set

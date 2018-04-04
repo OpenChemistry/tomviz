@@ -12,7 +12,6 @@ def transform_scalars(dataset, label_value=1):
 
     from tomviz import utils
     from vtkmodules.vtkCommonCore import vtkFloatArray
-    from vtkmodules.vtkCommonDataModel import vtkDataSet
 
     fd = dataset.GetFieldData()
 
