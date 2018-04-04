@@ -75,9 +75,9 @@ def vtk_cast_map():
         # Map from VTK array type to list of possible types to which they can be
         # converted, listed in order of preference based on representability
         # and memory size required.
-        import vtk
+        from vtkmodules.util import vtkConstants
         type_map = {
-            vtk.VTK_UNSIGNED_CHAR: [
+            vtkConstants.VTK_UNSIGNED_CHAR: [
                 'unsigned char',
                 'unsigned short',
                 'unsigned int',
@@ -88,7 +88,7 @@ def vtk_cast_map():
                 'float',
                 'double'
             ],
-            vtk.VTK_CHAR: [
+            vtkConstants.VTK_CHAR: [
                 'signed char',
                 'signed short',
                 'signed int',
@@ -96,7 +96,7 @@ def vtk_cast_map():
                 'float',
                 'double'
             ],
-            vtk.VTK_SIGNED_CHAR: [
+            vtkConstants.VTK_SIGNED_CHAR: [
                 'signed char',
                 'signed short',
                 'signed int',
@@ -104,7 +104,7 @@ def vtk_cast_map():
                 'float',
                 'double'
             ],
-            vtk.VTK_UNSIGNED_SHORT: [
+            vtkConstants.VTK_UNSIGNED_SHORT: [
                 'unsigned short',
                 'unsigned int',
                 'unsigned long',
@@ -113,31 +113,31 @@ def vtk_cast_map():
                 'float',
                 'double'
             ],
-            vtk.VTK_SHORT: [
+            vtkConstants.VTK_SHORT: [
                 'signed short',
                 'signed int',
                 'signed long',
                 'float',
                 'double'
             ],
-            vtk.VTK_UNSIGNED_INT: [
+            vtkConstants.VTK_UNSIGNED_INT: [
                 'unsigned int',
                 'unsigned long',
                 'signed long',
                 'float',
                 'double'
             ],
-            vtk.VTK_INT: [
+            vtkConstants.VTK_INT: [
                 'signed int',
                 'signed long',
                 'float',
                 'double'
             ],
-            vtk.VTK_FLOAT: [
+            vtkConstants.VTK_FLOAT: [
                 'float',
                 'double'
             ],
-            vtk.VTK_DOUBLE: [
+            vtkConstants.VTK_DOUBLE: [
                 'double',
                 'float'
             ]
@@ -145,16 +145,16 @@ def vtk_cast_map():
 
         # Map ITK ctype back to VTK type
         ctype_to_vtk = {
-            'unsigned char': vtk.VTK_UNSIGNED_CHAR,
-            'signed char': vtk.VTK_CHAR,
-            'unsigned short': vtk.VTK_UNSIGNED_SHORT,
-            'signed short': vtk.VTK_SHORT,
-            'unsigned int': vtk.VTK_UNSIGNED_INT,
-            'signed int': vtk.VTK_INT,
-            'unsigned long': vtk.VTK_UNSIGNED_LONG,
-            'signed long': vtk.VTK_LONG,
-            'float': vtk.VTK_FLOAT,
-            'double': vtk.VTK_DOUBLE
+            'unsigned char': vtkConstants.VTK_UNSIGNED_CHAR,
+            'signed char': vtkConstants.VTK_CHAR,
+            'unsigned short': vtkConstants.VTK_UNSIGNED_SHORT,
+            'signed short': vtkConstants.VTK_SHORT,
+            'unsigned int': vtkConstants.VTK_UNSIGNED_INT,
+            'signed int': vtkConstants.VTK_INT,
+            'unsigned long': vtkConstants.VTK_UNSIGNED_LONG,
+            'signed long': vtkConstants.VTK_LONG,
+            'float': vtkConstants.VTK_FLOAT,
+            'double': vtkConstants.VTK_DOUBLE
         }
 
         # Import build options from ITK. Explicitly reference itk.Vector so
@@ -186,18 +186,18 @@ def get_python_voxel_type(dataset):
         global _vtk_to_python_types
 
         if _vtk_to_python_types is None:
-            import vtk
+            from vtkmodules.util import vtkConstants
             _vtk_to_python_types = {
-                vtk.VTK_UNSIGNED_CHAR: int,
-                vtk.VTK_CHAR: int,
-                vtk.VTK_UNSIGNED_SHORT: int,
-                vtk.VTK_SHORT: int,
-                vtk.VTK_UNSIGNED_INT: int,
-                vtk.VTK_INT: int,
-                vtk.VTK_UNSIGNED_LONG: int,
-                vtk.VTK_LONG: int,
-                vtk.VTK_FLOAT: float,
-                vtk.VTK_DOUBLE: float
+                vtkConstants.VTK_UNSIGNED_CHAR: int,
+                vtkConstants.VTK_CHAR: int,
+                vtkConstants.VTK_UNSIGNED_SHORT: int,
+                vtkConstants.VTK_SHORT: int,
+                vtkConstants.VTK_UNSIGNED_INT: int,
+                vtkConstants.VTK_INT: int,
+                vtkConstants.VTK_UNSIGNED_LONG: int,
+                vtkConstants.VTK_LONG: int,
+                vtkConstants.VTK_FLOAT: float,
+                vtkConstants.VTK_DOUBLE: float
             }
 
         pd = dataset.GetPointData()
@@ -255,22 +255,23 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     #------------------------------------------
     import itk
     import itkTypes
-    import vtk
+    from vtkmodules.util import vtkConstants
+    from vtkmodules.vtkImagingCore import vtkImageCast
     from tomviz import utils
 
     itk_to_vtk_type_map = {
-        itkTypes.F: vtk.VTK_FLOAT,
-        itkTypes.D: vtk.VTK_DOUBLE,
-        itkTypes.LD: vtk.VTK_DOUBLE,
-        itkTypes.UC: vtk.VTK_UNSIGNED_CHAR,
-        itkTypes.US: vtk.VTK_UNSIGNED_SHORT,
-        itkTypes.UI: vtk.VTK_UNSIGNED_INT,
-        itkTypes.UL: vtk.VTK_UNSIGNED_LONG,
-        itkTypes.SC: vtk.VTK_CHAR,
-        itkTypes.SS: vtk.VTK_SHORT,
-        itkTypes.SI: vtk.VTK_INT,
-        itkTypes.SL: vtk.VTK_LONG,
-        itkTypes.B: vtk.VTK_INT
+        itkTypes.F: vtkConstants.VTK_FLOAT,
+        itkTypes.D: vtkConstants.VTK_DOUBLE,
+        itkTypes.LD: vtkConstants.VTK_DOUBLE,
+        itkTypes.UC: vtkConstants.VTK_UNSIGNED_CHAR,
+        itkTypes.US: vtkConstants.VTK_UNSIGNED_SHORT,
+        itkTypes.UI: vtkConstants.VTK_UNSIGNED_INT,
+        itkTypes.UL: vtkConstants.VTK_UNSIGNED_LONG,
+        itkTypes.SC: vtkConstants.VTK_CHAR,
+        itkTypes.SS: vtkConstants.VTK_SHORT,
+        itkTypes.SI: vtkConstants.VTK_INT,
+        itkTypes.SL: vtkConstants.VTK_LONG,
+        itkTypes.B: vtkConstants.VTK_INT
     }
 
     # See if we need to cast to a wrapped type in ITK.
@@ -281,7 +282,7 @@ def convert_vtk_to_itk_image(vtk_image_data, itk_pixel_type=None):
     else:
         dst_type = vtk_cast_map()[itk_to_vtk_type_map[itk_pixel_type]]
     if src_type != dst_type:
-        caster = vtk.vtkImageCast()
+        caster = vtkImageCast()
         caster.SetOutputScalarType(dst_type)
         caster.ClampOverflowOn()
         caster.SetInputData(vtk_image_data)

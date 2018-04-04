@@ -17,7 +17,7 @@ class LabelObjectAttributes(tomviz.operators.CancelableOperator):
         STEP_PCT = [10, 20, 80, 90, 100]
 
         try:
-            import vtk
+            from vtkmodules.util.vtkConstants import VTK_FLOAT, VTK_DOUBLE
             from tomviz import itkutils
             from tomviz import utils
         except Exception as exc:
@@ -27,7 +27,7 @@ class LabelObjectAttributes(tomviz.operators.CancelableOperator):
         returnValues = None
 
         scalarType = dataset.GetScalarType()
-        if scalarType == vtk.VTK_FLOAT or scalarType == vtk.VTK_DOUBLE:
+        if scalarType == VTK_FLOAT or scalarType == VTK_DOUBLE:
             raise Exception(
                 "Label Object Attributes works only on \
                  images with integral types.")

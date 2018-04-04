@@ -23,7 +23,7 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             import itk
             import itkExtras
             import itkTypes
-            import vtk
+            from vtkmodules.vtkCommonDataModel import vtkImageData
             from tomviz import itkutils
             from tomviz import utils
         except Exception as exc:
@@ -95,7 +95,7 @@ class OtsuMultipleThreshold(tomviz.operators.CancelableOperator):
             label_buffer = itk.PyBuffer[py_buffer_type] \
                 .GetArrayFromImage(itk_image_data)
 
-            label_map_dataset = vtk.vtkImageData()
+            label_map_dataset = vtkImageData()
             label_map_dataset.CopyStructure(dataset)
             utils.set_array(label_map_dataset, label_buffer, isFortran=False)
 
