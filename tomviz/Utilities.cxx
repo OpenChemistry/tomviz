@@ -174,7 +174,7 @@ QJsonObject serialize(vtkSMProxy* proxy)
   }
 
   // Now to convert it over to the JSON, there is some very proxy specific code.
-  std::cout << "XML:\n" << stream.str().c_str() << std::endl;
+  // std::cout << "XML:\n" << stream.str().c_str() << std::endl;
 
   QJsonObject json;
   auto node = document.child("Proxy");
@@ -183,7 +183,7 @@ QJsonObject serialize(vtkSMProxy* proxy)
     json["servers"] = node.attribute("servers").as_int();
   }
   if (string(node.attribute("type").value()) == "PVLookupTable") {
-    std::cout << "We have a lookup table!!!\n\n";
+    // std::cout << "We have a lookup table!!!\n\n";
     for (auto property = node.child("Property"); property;
          property = property.next_sibling("Property")) {
       if (string(property.attribute("name").value()) == "RGBPoints") {
