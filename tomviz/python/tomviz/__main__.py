@@ -1,0 +1,71 @@
+import click
+import json
+import os
+
+from tomviz import executor
+
+
+def _extract_pipeline(state):
+    if 'dataSources' not in state:
+        raise Exception('Invalid state file: \'dataSources\' not found.')
+
+    data_sources = state['dataSources']
+
+    if len(data_sources) > 1:
+        raise Exception(
+            'Only state files with a single data source are supported.')
+
+    if len(data_sources) != 1:
+        raise Exception('No data source found.')
+
+    data_source = data_sources[0]
+
+    if 'operators'not in data_source:
+        raise Exception('\'operators\' not found.')
+
+    operators = data_source['operators']
+
+    if len(operators) > 1:
+        raise Exception(
+            'Only state files with a single operator are supported.')
+
+    if len(operators) != 1:
+        raise Exception('No operator found.')
+
+    operator = operators[0]
+
+    return (data_source, operator)
+
+
+@click.command(name="tomviz")
+@click.option('-d', '--data-file-path', help='Path to the EMD file, can be used'
+              ' to override data source in state file',
+              type=click.Path(exists=True))
+@click.option('-s', '--state-file-path', help='Path to the Tomviz state file',
+              type=click.Path(exists=True))
+@click.option('-o', '--output-file-path',
+              help='Path to write the transformed dataset.', type=click.Path())
+def main(data_file_path, state_file_path, output_file_path):
+
+    # Extract the pipeline
+    with open(state_file_path) as fp:
+        state = json.load(fp)
+
+    (datasource, operator) = _extract_pipeline(state)
+
+    # if we have been provided a data file path we are going to use the one
+    # from the state file, so check it exists.
+    if data_file_path is None:
+        data_file_path = datasource['fileName']
+        if not data_file_path.lower().endswith('.emd'):
+            raise Exception(
+                'Unsupported data source format, only EMD is supported.')
+        if not os.path.exists(data_file_path):
+            raise Exception('Data source path does not exist: %s'
+                            % data_file_path)
+
+    executor.execute(operator, data_file_path, output_file_path)
+
+
+if __name__ == '__main__':
+    main()
