@@ -74,7 +74,7 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
             step += 1
             self.progress.value = step
 
-        from vtk import vtkImageData
+        from vtkmodules.vtkCommonDataModel import vtkImageData
         # Set up the output dataset
         recon_dataset = vtkImageData()
         recon_dataset.CopyStructure(dataset)

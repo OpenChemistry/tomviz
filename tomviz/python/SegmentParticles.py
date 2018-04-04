@@ -169,7 +169,7 @@ class SegmentParticles(tomviz.operators.CancelableOperator):
 
         try:
             import itk
-            import vtk
+            from vtkmodules.vtkCommonDataModel import vtkImageData
             from tomviz import itkutils
             from tomviz import utils
         except Exception as exc:
@@ -226,7 +226,7 @@ class SegmentParticles(tomviz.operators.CancelableOperator):
             label_buffer = itk.PyBuffer[type(itk_input_image)] \
                 .GetArrayFromImage(opening)
 
-            label_map_dataset = vtk.vtkImageData()
+            label_map_dataset = vtkImageData()
             label_map_dataset.CopyStructure(dataset)
             utils.set_array(label_map_dataset, label_buffer, isFortran=False)
 

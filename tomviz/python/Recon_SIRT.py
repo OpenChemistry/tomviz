@@ -73,7 +73,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
             etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
-        from vtk import vtkImageData
+        from vtkmodules.vtkCommonDataModel import vtkImageData
         recon_dataset = vtkImageData()
         recon_dataset.CopyStructure(dataset)
         utils.set_array(recon_dataset, recon)

@@ -11,14 +11,15 @@ def transform_scalars(dataset, label_value=1):
     """
 
     from tomviz import utils
-    import vtk
+    from vtkmodules.vtkCommonCore import vtkFloatArray
+    from vtkmodules.vtkCommonDataModel import vtkDataSet
 
     fd = dataset.GetFieldData()
 
     (axes, center) = utils.label_object_principal_axes(dataset, label_value)
     print(axes)
     print(center)
-    axis_array = vtk.vtkFloatArray()
+    axis_array = vtkFloatArray()
     axis_array.SetName('PrincipalAxes')
     axis_array.SetNumberOfComponents(3)
     axis_array.SetNumberOfTuples(3)
@@ -28,7 +29,7 @@ def transform_scalars(dataset, label_value=1):
     fd.RemoveArray('PrincipalAxis')
     fd.AddArray(axis_array)
 
-    center_array = vtk.vtkFloatArray()
+    center_array = vtkFloatArray()
     center_array.SetName('Center')
     center_array.SetNumberOfComponents(3)
     center_array.SetNumberOfTuples(1)

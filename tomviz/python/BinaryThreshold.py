@@ -24,7 +24,7 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
         try:
             self.progress.message = "Loading modules"
             import itk
-            import vtk
+            from vtkmodules.vtkCommonDataModel import vtkImageData
             from tomviz import itkutils
         except Exception as exc:
             print("Could not import necessary module(s)")
@@ -65,10 +65,11 @@ class BinaryThreshold(tomviz.operators.CancelableOperator):
             except RuntimeError:
                 return returnValue
 
+            from tomviz import utils
             self.progress.message = "Creating child data set"
 
             # Set the output as a new child data object of the current data set
-            label_map_dataset = vtk.vtkImageData()
+            label_map_dataset = vtkImageData()
             label_map_dataset.CopyStructure(dataset)
 
             itkutils.set_array_from_itk_image(label_map_dataset,
