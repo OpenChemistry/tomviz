@@ -242,6 +242,12 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     controller->UnRegisterProxy(reader->getProxy());
   }
 
+  // It is possible that the dataSource will be null if, for example, loading
+  // a VTI is cancelled in the array selection dialog. Guard against this.
+  if (!dataSource) {
+    return nullptr;
+  }
+
   // Now for house keeping, registering elements, etc.
   dataSource->setFileName(fileName);
   if (fileNames.size() > 1) {
