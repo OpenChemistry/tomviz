@@ -842,6 +842,8 @@ void DataSource::copyData(vtkDataObject* newData)
   Q_ASSERT(oldData);
 
   oldData->DeepCopy(newData);
+
+  dataModified();
 }
 
 vtkSMProxy* DataSource::colorMap() const
