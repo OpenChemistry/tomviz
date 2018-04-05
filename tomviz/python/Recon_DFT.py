@@ -106,7 +106,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         step += 1
         self.progress.value = step
 
-        from vtk import vtkImageData
+        from vtkmodules.vtkCommonDataModel import vtkImageData
         recon_dataset = vtkImageData()
         recon_dataset.CopyStructure(dataset)
         utils.set_array(recon_dataset, recon)

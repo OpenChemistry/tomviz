@@ -213,7 +213,8 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       if (tomviz::deserialize(reader, node)) {
         reader->UpdateVTKObjects();
         vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
-        LoadDataReaction::createDataSource(reader, defaultModules, child);
+        dataSource =
+          LoadDataReaction::createDataSource(reader, defaultModules, child);
       }
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
@@ -239,6 +240,12 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     xml = pvXml(reader->getProxy());
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(reader->getProxy());
+  }
+
+  // It is possible that the dataSource will be null if, for example, loading
+  // a VTI is cancelled in the array selection dialog. Guard against this.
+  if (!dataSource) {
+    return nullptr;
   }
 
   // Now for house keeping, registering elements, etc.

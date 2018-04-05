@@ -18,6 +18,7 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "Pipeline.h"
 #include "pqCoreUtilities.h"
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
@@ -39,10 +40,15 @@ ReconstructionReaction::ReconstructionReaction(QAction* parentObject)
 
 void ReconstructionReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != NULL &&
-    ActiveObjects::instance().activeDataSource()->type() ==
-      DataSource::TiltSeries);
+  auto pipeline = ActiveObjects::instance().activePipeline();
+  bool enable = pipeline != nullptr;
+
+  if (enable) {
+    auto dataSource = pipeline->transformedDataSource();
+    enable = dataSource->type() == DataSource::TiltSeries;
+  }
+
+  parentAction()->setEnabled(enable);
 }
 
 void ReconstructionReaction::recon(DataSource* input)

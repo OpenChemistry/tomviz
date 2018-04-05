@@ -134,7 +134,7 @@ def get_tilt_angles(dataobject):
 
 def set_tilt_angles(dataobject, newarray):
     # replace the tilt angles with the new array
-    from vtk import VTK_DOUBLE
+    from vtkmodules.util.vtkConstants import VTK_DOUBLE
     # deep copy avoids having to keep numpy array around, but is more
     # expensive.  I don't expect tilt_angles to be a big array though.
     vtkarray = np_s.numpy_to_vtk(newarray, deep=1, array_type=VTK_DOUBLE)

@@ -21,6 +21,8 @@
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
 
+#include <QPointer>
+
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
@@ -48,10 +50,11 @@ public:
   bool finalize() override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return true; }
   void addToPanel(QWidget* panel) override;
+  void updatePanel();
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
@@ -75,7 +78,7 @@ private:
   vtkNew<vtkVolume> m_volume;
   vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
-  ModuleVolumeWidget* m_controllers = nullptr;
+  QPointer<ModuleVolumeWidget> m_controllers;
 
 private slots:
   /**

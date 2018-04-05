@@ -283,7 +283,7 @@ class SegmentPores(tomviz.operators.CancelableOperator):
 
         try:
             import itk
-            import vtk
+            from vtkmodules.vtkCommonDataModel import vtkImageData
             from tomviz import itkutils
             from tomviz import utils
             import numpy as np
@@ -361,7 +361,7 @@ class SegmentPores(tomviz.operators.CancelableOperator):
 
             # temp
             label_buffer = label_buffer.copy()
-            label_map_dataset = vtk.vtkImageData()
+            label_map_dataset = vtkImageData()
             label_map_dataset.CopyStructure(dataset)
             utils.set_array(label_map_dataset, label_buffer, isFortran=False)
 

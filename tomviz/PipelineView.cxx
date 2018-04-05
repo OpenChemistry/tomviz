@@ -146,16 +146,16 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   // Connect up operators to start and stop delegate
   // New datasource added
   connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded,
-          [this, delegate](DataSource* dataSource) {
+          [delegate](DataSource* dataSource) {
             // New operator added
             connect(dataSource, &DataSource::operatorAdded, delegate,
-                    [this, delegate](Operator* op) {
+                    [delegate](Operator* op) {
                       // Connect transformingStarted to OperatorRunningDelegate
                       connect(op, &Operator::transformingStarted, delegate,
                               &OperatorRunningDelegate::start);
                       // Connect transformingDone
                       connect(op, &Operator::transformingDone, delegate,
-                              [this, delegate]() { delegate->stop(); });
+                              [delegate]() { delegate->stop(); });
                     });
           });
 
@@ -183,6 +183,8 @@ void PipelineView::setModel(QAbstractItemModel* model)
           SLOT(setCurrent(Module*)));
   connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
           SLOT(setCurrent(Operator*)));
+  connect(pipelineModel, SIGNAL(dataSourceModified(DataSource*)),
+          SLOT(setCurrent(DataSource*)));
 
   // This is needed to work around a bug in Qt 5.10, the select resize mode is
   // setting reset for some reason.
@@ -297,10 +299,20 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   }
 
   // Keep the delete menu entry at the end of the list of options.
+
+  // Don't add a "Delete" menu entry for "Output" data source.
   QAction* deleteAction = nullptr;
-  deleteAction = contextMenu.addAction("Delete");
-  if (deleteAction && !enableDeleteItems(selectedIndexes())) {
-    deleteAction->setEnabled(false);
+  bool addDelete = true;
+  if (dataSource != nullptr) {
+    auto output = dataSource->property("output");
+    addDelete = !(output.isValid() && output.toBool());
+  }
+
+  if (addDelete) {
+    deleteAction = contextMenu.addAction("Delete");
+    if (deleteAction && !enableDeleteItems(selectedIndexes())) {
+      deleteAction->setEnabled(false);
+    }
   }
 
   bool allModules = true;
@@ -478,8 +490,11 @@ void PipelineView::currentChanged(const QModelIndex& current,
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
 
+  // First set the selected data source to nullptr, in case the new selection
+  // is not a data source.
+  ActiveObjects::instance().setSelectedDataSource(nullptr);
   if (auto dataSource = pipelineModel->dataSource(current)) {
-    ActiveObjects::instance().setActiveDataSource(dataSource);
+    ActiveObjects::instance().setSelectedDataSource(dataSource);
   } else if (auto module = pipelineModel->module(current)) {
     ActiveObjects::instance().setActiveModule(module);
   } else if (auto op = pipelineModel->op(current)) {
@@ -538,16 +553,25 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   for (auto& index : idxs) {
     auto dataSource = pipelineModel->dataSource(index);
-    if (dataSource && dataSource->pipeline() &&
-        dataSource->pipeline()->isRunning()) {
-      return false;
+    if (dataSource != nullptr) {
+      // Disable if pipeline is running
+      bool disable =
+        dataSource->pipeline() && dataSource->pipeline()->isRunning();
+
+      // Disable for "Output" data sources
+      auto output = dataSource->property("output");
+      disable = disable || (output.isValid() && output.toBool());
+
+      return !disable;
     }
+
     auto op = pipelineModel->op(index);
     if (op && op->dataSource()->pipeline() &&
         op->dataSource()->pipeline()->isRunning()) {
       return false;
     }
   }
+
   return true;
 }
 

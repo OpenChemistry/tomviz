@@ -355,7 +355,10 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
   Q_ASSERT(data);
 
-  // Create child datasets in advance.
+  // Create child datasets in advance. Keep a map from DataSource to name
+  // so that we can match Python script return dictionary values containing
+  // child data after the script finishes.
+  QMap<DataSource*, QString> dataSourceByName;
   for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
     QPair<QString, QString> nameLabelPair = m_childDataSourceNamesAndLabels[i];
     QString name(nameLabelPair.first);
@@ -367,6 +370,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 
     if (childData) {
       emit newChildDataSource(label, childData);
+
+      dataSourceByName.insert(childDataSource(), nameLabelPair.first);
     }
   }
 
@@ -403,6 +408,26 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   if (check) {
     Python python;
     Python::Dict outputDict = result.toDict();
+
+    // Support setting child data from the output dictionary
+    if (hasChildDataSource()) {
+      Python::Object pyDataObject;
+      QString childKey = dataSourceByName[childDataSource()];
+      pyDataObject = outputDict[childKey];
+      if (!pyDataObject.isValid()) {
+        errorEncountered = true;
+        qCritical() << "No child dataset named " << childKey
+                    << "defined in dictionary returned from Python script.\n";
+      } else {
+        vtkObjectBase* vtkobject =
+          Python::VTK::GetPointerFromObject(pyDataObject, "vtkDataObject");
+        vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
+        if (dataObject) {
+          emit childDataSourceUpdated(dataObject);
+        }
+      }
+    }
+
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
       Python::Object pyDataObject;
@@ -411,7 +436,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       if (!pyDataObject.isValid()) {
         errorEncountered = true;
         qCritical() << "No result named" << m_resultNames[i]
-                    << "defined in output dictionary.\n";
+                    << "defined in dictionary returned from Python script.\n";
         continue;
       }
       vtkObjectBase* vtkobject =
@@ -444,6 +469,28 @@ Operator* OperatorPython::clone() const
   newClone->setScript(script());
   newClone->setJSONDescription(JSONDescription());
   return newClone;
+}
+
+QJsonObject OperatorPython::serialize() const
+{
+  auto json = Operator::serialize();
+  json["description"] = JSONDescription();
+  json["label"] = label();
+  json["script"] = script();
+  if (!m_arguments.isEmpty()) {
+    json["arguments"] = QJsonObject::fromVariantMap(m_arguments);
+  }
+  return json;
+}
+
+bool OperatorPython::deserialize(const QJsonObject& json)
+{
+  setJSONDescription(json["description"].toString());
+  setLabel(json["label"].toString());
+  setScript(json["script"].toString());
+  m_arguments.clear();
+  m_arguments = json["arguments"].toObject().toVariantMap();
+  return true;
 }
 
 bool OperatorPython::serialize(pugi::xml_node& ns) const

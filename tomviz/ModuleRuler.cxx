@@ -37,6 +37,7 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
+#include <QJsonArray>
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -169,50 +170,45 @@ bool ModuleRuler::visibility() const
   }
 }
 
-bool ModuleRuler::serialize(pugi::xml_node& ns) const
+QJsonObject ModuleRuler::serialize() const
 {
-  pugi::xml_node rulerNode = ns.append_child("Ruler");
-  pugi::xml_node representationNode = ns.append_child("Representation");
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
 
-  QStringList rulerProperties;
-  rulerProperties << "Point1"
-                  << "Point2";
-  QStringList representationProperties;
-  representationProperties << "Visibility";
-  if (!tomviz::serialize(m_rulerSource, rulerNode, rulerProperties)) {
-    qWarning("Failed to serialize ruler");
-    return false;
-  }
+  props["showLine"] = m_showLine;
+  double p1[3];
+  double p2[3];
+  vtkSMPropertyHelper(m_rulerSource, "Point1").Get(p1, 3);
+  vtkSMPropertyHelper(m_rulerSource, "Point2").Get(p2, 3);
+  QJsonArray point1 = { p1[0], p1[1], p1[2] };
+  QJsonArray point2 = { p2[0], p2[1], p2[2] };
+  props["point1"] = point1;
+  props["point2"] = point2;
 
-  pugi::xml_node showLine = representationNode.append_child("ShowLine");
-  showLine.append_attribute("value").set_value(m_showLine);
-
-  if (!tomviz::serialize(m_representation, representationNode,
-                         representationProperties)) {
-    qWarning("Failed to serialize ruler representation");
-    return false;
-  }
-
-  return true;
+  json["properties"] = props;
+  return json;
 }
 
-bool ModuleRuler::deserialize(const pugi::xml_node& ns)
+bool ModuleRuler::deserialize(const QJsonObject& json)
 {
-  pugi::xml_node representationNode = ns.child("Representation");
-  bool success = tomviz::deserialize(m_rulerSource, ns.child("Ruler")) &&
-                 tomviz::deserialize(m_representation, representationNode);
-
-  if (representationNode) {
-    pugi::xml_node showLineNode = representationNode.child("ShowLine");
-    if (showLineNode) {
-      pugi::xml_attribute valueAttribute = showLineNode.attribute("value");
-      if (valueAttribute) {
-        m_showLine = valueAttribute.as_bool();
-      }
-    }
+  if (!Module::deserialize(json)) {
+    return false;
   }
-
-  return success;
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    m_showLine = props["showLine"].toBool();
+    auto point1 = props["point1"].toArray();
+    auto point2 = props["point2"].toArray();
+    double p1[3] = { point1[0].toDouble(), point1[1].toDouble(),
+                     point1[2].toDouble() };
+    double p2[3] = { point2[0].toDouble(), point2[1].toDouble(),
+                     point2[2].toDouble() };
+    vtkSMPropertyHelper(m_rulerSource, "Point1").Set(p1, 3);
+    vtkSMPropertyHelper(m_rulerSource, "Point2").Set(p2, 3);
+    m_rulerSource->UpdateVTKObjects();
+    return true;
+  }
+  return false;
 }
 
 bool ModuleRuler::isProxyPartOfModule(vtkSMProxy* proxy)
@@ -247,7 +243,7 @@ vtkSMProxy* ModuleRuler::getProxyForString(const std::string& str)
 void ModuleRuler::updateUnits()
 {
   DataSource* source = dataSource();
-  QString units = source->getUnits(0);
+  QString units = source->getUnits();
   vtkRulerSourceRepresentation* rep =
     vtkRulerSourceRepresentation::SafeDownCast(
       m_representation->GetClientSideObject());
