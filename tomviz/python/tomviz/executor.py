@@ -161,19 +161,12 @@ def _write_emd(path, data, dims):
             d[:] = value
 
 
-def execute(operator, data_file_path, output_file_path):
-    operator_script = operator['script']
-    operator_label = operator['label']
-
-    data, dims = _read_emd(data_file_path)
-
-    operator_module = _load_operator_module(operator_label, operator_script)
-    transform_scalars = find_transform_scalars(operator_module)
-
+def _execute_transform(operator_label, transform, arguments, input):
     # Monkey patch tomviz.utils to make get_scalars a no-op and allow use to
     # retrieve the transformed data from set_scalars. I know this is a little
-    #yucky! And yes I know this is not thread safe!
+    # yucky! And yes I know this is not thread safe!
     utils.get_scalars = lambda d: d
+    utils.get_array = lambda d: d
     # Container to allow use to capture the transformed data, in Python 3 we
     # could use nonlocal :-)
     transformed_scalars_container = {}
@@ -181,27 +174,70 @@ def execute(operator, data_file_path, output_file_path):
     def _set_scalars(dataobject, new_scalars):
         transformed_scalars_container['data'] = new_scalars
 
+    def _set_array(dataobject, new_scalars):
+        transformed_scalars_container['data'] = new_scalars
+
     utils.set_scalars = _set_scalars
+    utils.set_array = _set_array
 
     # Update the progress attribute to an instance that will work outside the
     # application and give use a nice progress bar
     with Progress() as progress:
-        transform_scalars.__self__.progress = progress
+        spinner = None
+        supports_progress = hasattr(transform, '__self__')
+        if supports_progress:
+            transform.__self__.progress = progress
 
-        # Stub out the operator wrapper
-        transform_scalars.__self__._operator_wrapper = OperatorWrapper()
+            # Stub out the operator wrapper
+            transform.__self__._operator_wrapper = OperatorWrapper()
 
         logger.info('Executing \'%s\' operator' % operator_label)
+        if not supports_progress:
+            print('Operator doesn\'t support progress updates.')
         # Now run the operator
-        transform_scalars(data)
-        logger.info('Execution complete.')
+        transform(input, **arguments)
+        if spinner is not None:
+            update_spinner.cancel()
+            spinner.finish()
+
+    logger.info('Execution complete.')
+
+    return transformed_scalars_container['data']
+
+
+def _load_transform_functions(operators):
+    transform_functions = []
+    for operator in operators:
+        operator_script = operator['script']
+        operator_label = operator['label']
+
+        operator_module = _load_operator_module(operator_label, operator_script)
+        transform_scalars = find_transform_scalars(operator_module)
+
+        # partial apply the arguments
+        arguments = {}
+        if 'arguments' in operator:
+            arguments = operator['arguments']
+
+        transform_functions.append((operator_label, transform_scalars,
+                                    arguments))
+
+    return transform_functions
+
+
+def execute(operators, data_file_path, output_file_path):
+    data, dims = _read_emd(data_file_path)
+
+    transforms = _load_transform_functions(operators)
+    for label, transform, arguments in transforms:
+        data = _execute_transform(label, transform, arguments, data)
 
     # Now write out the transformed data.
     logger.info('Writing transformed data.')
     if output_file_path is None:
         output_file_path = '%s_transformed.emd' % \
             os.path.splitext(os.path.basename(data_file_path))[0]
-    _write_emd(output_file_path, transformed_scalars_container['data'], dims)
+    _write_emd(output_file_path, data, dims)
     logger.info('Write complete.')
 
 

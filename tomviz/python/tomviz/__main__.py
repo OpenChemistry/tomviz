@@ -25,16 +25,10 @@ def _extract_pipeline(state):
 
     operators = data_source['operators']
 
-    if len(operators) > 1:
-        raise Exception(
-            'Only state files with a single operator are supported.')
+    if len(operators) == 0:
+        raise Exception('No operators found.')
 
-    if len(operators) != 1:
-        raise Exception('No operator found.')
-
-    operator = operators[0]
-
-    return (data_source, operator)
+    return (data_source, operators)
 
 
 @click.command(name="tomviz")
@@ -51,7 +45,7 @@ def main(data_file_path, state_file_path, output_file_path):
     with open(state_file_path) as fp:
         state = json.load(fp)
 
-    (datasource, operator) = _extract_pipeline(state)
+    (datasource, operators) = _extract_pipeline(state)
 
     # if we have been provided a data file path we are going to use the one
     # from the state file, so check it exists.
@@ -64,7 +58,7 @@ def main(data_file_path, state_file_path, output_file_path):
             raise Exception('Data source path does not exist: %s'
                             % data_file_path)
 
-    executor.execute(operator, data_file_path, output_file_path)
+    executor.execute(operators, data_file_path, output_file_path)
 
 
 if __name__ == '__main__':
