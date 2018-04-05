@@ -197,50 +197,19 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <layout class="QVBoxLayout" name="paramsLayout">
-          <item>
-           <layout class="QFormLayout" name="defaultParamsLayout">
-            <item row="0" column="0">
-             <widget class="QLabel" name="hostnameLabel">
-              <property name="text">
-               <string>Hostname</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="hostnameEdit">
-              <property name="text">
-               <string>localhost</string>
-              </property>
-              <property name="maxLength">
-               <number>15</number>
-              </property>
-              <property name="clearButtonEnabled" stdset="0">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="portLabel">
-              <property name="text">
-               <string>Port Number:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QLineEdit" name="portEdit">
-              <property name="text">
-               <string>8080</string>
-              </property>
-              <property name="maxLength">
-               <number>10</number>
-              </property>
-              <property name="clearButtonEnabled" stdset="0">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-           </layout>
+         <layout class="QFormLayout" name="formLayout_2">
+          <property name="fieldGrowthPolicy">
+           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="hostnameLabel">
+            <property name="text">
+             <string>Server Connection</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="tomviz::ConnectionsWidget" name="connectionsWidget" native="true"/>
           </item>
          </layout>
         </item>
@@ -268,7 +237,7 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="buttonsLayout">
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
@@ -283,17 +252,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="introspectButton">
-            <property name="text">
-             <string>Introspect</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="connectButton">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Connect</string>
             </property>
@@ -306,16 +265,6 @@
             </property>
             <property name="text">
              <string>Disconnect</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="watchButton">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Watch</string>
             </property>
            </widget>
           </item>
@@ -345,7 +294,13 @@
   <customwidget>
    <class>tomviz::QVTKGLWidget</class>
    <extends>QWidget</extends>
-   <header location="global">QVTKGLWidget.h</header>
+   <header>QVTKGLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::ConnectionsWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">ConnectionsWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

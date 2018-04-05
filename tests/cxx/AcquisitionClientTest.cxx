@@ -241,6 +241,27 @@ private slots:
     QCOMPARE(fooDescription.toObject(), fooExpected);
   }
 
+  void describeAdapterTest()
+  {
+    AcquisitionClient client(this->url);
+    AcquisitionClientRequest* request = client.describe();
+    QSignalSpy error(request, &AcquisitionClientRequest::error);
+    QSignalSpy finished(request, &AcquisitionClientRequest::finished);
+    finished.wait();
+
+    if (!error.isEmpty()) {
+      qDebug() << error;
+    }
+    QVERIFY(error.isEmpty());
+    QCOMPARE(finished.size(), 1);
+    QList<QVariant> arguments = finished.takeFirst();
+    QJsonValue testDescription = arguments.at(0).toJsonValue().toObject();
+    QJsonObject testExpected =
+      QJsonDocument::fromJson("{\"name\":\"tests.mock.source.ApiAdapter\" }")
+        .object();
+    QCOMPARE(testDescription.toObject(), testExpected);
+  }
+
 private:
   QProcess* server;
   bool serverStarted = false;

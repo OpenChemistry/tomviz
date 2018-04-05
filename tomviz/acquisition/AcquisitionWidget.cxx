@@ -20,12 +20,6 @@
 
 #include "AcquisitionClient.h"
 #include "ActiveObjects.h"
-#include "InterfaceBuilder.h"
-
-#include "DataSource.h"
-#include "ModuleManager.h"
-#include "Pipeline.h"
-#include "PipelineManager.h"
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
@@ -47,16 +41,12 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
-#include <QPushButton>
-#include <QTimer>
-#include <QVBoxLayout>
 
 namespace tomviz {
 
 AcquisitionWidget::AcquisitionWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::AcquisitionWidget),
-    m_client(new AcquisitionClient("http://localhost:8080/acquisition", this)),
-    m_connectParamsWidget(new QWidget), m_watchTimer(new QTimer)
+    m_client(new AcquisitionClient("http://localhost:8080/acquisition", this))
 {
   m_ui->setupUi(this);
   this->setWindowFlags(Qt::Dialog);
@@ -65,24 +55,6 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
   connect(m_ui->disconnectButton, SIGNAL(clicked(bool)),
           SLOT(disconnectFromServer()));
   connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
-  connect(m_ui->introspectButton, &QPushButton::clicked, [this]() {
-    this->introspectSource();
-    m_ui->introspectButton->setEnabled(false);
-    m_ui->connectButton->setEnabled(true);
-  });
-  connect(this, &AcquisitionWidget::connectParameterDescription, this,
-          &AcquisitionWidget::generateConnectUI);
-
-  connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
-    if (!this->m_watchTimer->isActive()) {
-      this->watchSource();
-      m_ui->watchButton->setText("Stop watching");
-    } else {
-      this->m_watchTimer->stop();
-      m_ui->watchButton->setText("Watch");
-    }
-
-  });
 
   m_ui->imageWidget->GetRenderWindow()->AddRenderer(m_renderer.Get());
   m_ui->imageWidget->GetInteractor()->SetInteractorStyle(
@@ -112,23 +84,7 @@ void AcquisitionWidget::readSettings()
   settings->beginGroup("acquisition");
   setGeometry(settings->value("geometry").toRect());
   m_ui->splitter->restoreState(settings->value("splitterSizes").toByteArray());
-  m_ui->hostnameEdit->setText(
-    settings->value("hostname", "localhost").toString());
-  m_ui->portEdit->setText(settings->value("port", "8080").toString());
   settings->endGroup();
-}
-
-QVariantMap AcquisitionWidget::settings()
-{
-  QVariantMap settingsMap;
-  auto settings = pqApplicationCore::instance()->settings();
-  settings->beginGroup("acquisition");
-  foreach (QString key, settings->childKeys()) {
-    settingsMap[key] = settings->value(key);
-  }
-  settings->endGroup();
-
-  return settingsMap;
 }
 
 void AcquisitionWidget::writeSettings()
@@ -137,23 +93,17 @@ void AcquisitionWidget::writeSettings()
   settings->beginGroup("acquisition");
   settings->setValue("geometry", geometry());
   settings->setValue("splitterSizes", m_ui->splitter->saveState());
-  settings->setValue("hostname", m_ui->hostnameEdit->text());
-  settings->setValue("port", m_ui->portEdit->text());
-  auto connectValues =
-    InterfaceBuilder::parameterValues(m_connectParamsWidget.data());
-  for (QVariantMap::const_iterator iter = connectValues.begin();
-       iter != connectValues.end(); ++iter) {
-    settings->setValue(iter.key(), iter.value());
-  }
   settings->endGroup();
 }
 
 void AcquisitionWidget::connectToServer()
 {
+  auto connection = m_ui->connectionsWidget->selectedConnection();
   m_ui->statusEdit->setText("Attempting to connect to server...");
-  m_client->setUrl(this->url());
-  qDebug() << this->connectParams();
-  auto request = m_client->connect(this->connectParams());
+  m_client->setUrl(QString("http://%1:%2/acquisition")
+                     .arg(connection->hostName())
+                     .arg(connection->port()));
+  auto request = m_client->connect(QJsonObject());
   connect(request, SIGNAL(finished(QJsonValue)), SLOT(onConnect()));
   connect(request, &AcquisitionClientRequest::error, this,
           &AcquisitionWidget::onError);
@@ -164,7 +114,6 @@ void AcquisitionWidget::onConnect()
   m_ui->statusEdit->setText("Connected to " + m_client->url() + "!!!");
   m_ui->connectButton->setEnabled(false);
   m_ui->disconnectButton->setEnabled(true);
-  m_ui->watchButton->setEnabled(true);
   setAcquireParameters();
 }
 
@@ -293,18 +242,6 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
     m_imageSlice->GetProperty()->SetLookupTable(m_lut.Get());
   }
 
-  // If we haven't added it, add our live data source to the pipeline.
-  if (!m_dataSource) {
-    m_dataSource = new DataSource(m_imageData);
-    m_dataSource->setLabel("Live!");
-    auto pipeline = new Pipeline(m_dataSource);
-    PipelineManager::instance().addPipeline(pipeline);
-    ModuleManager::instance().addDataSource(m_dataSource);
-    pipeline->addDefaultModules(m_dataSource);
-  } else {
-    m_dataSource->appendSlice(m_imageData);
-  }
-
   m_ui->previewButton->setEnabled(true);
   m_ui->acquireButton->setEnabled(true);
 }
@@ -340,63 +277,5 @@ void AcquisitionWidget::onError(const QString& errorMessage,
 {
   qDebug() << errorMessage;
   qDebug() << errorData;
-}
-
-QString AcquisitionWidget::url() const
-{
-  return "http://" + m_ui->hostnameEdit->text() + ":" + m_ui->portEdit->text() +
-         "/acquisition";
-}
-
-void AcquisitionWidget::generateConnectUI(QJsonValue params)
-{
-  if (params.isArray()) {
-    InterfaceBuilder* ib = new InterfaceBuilder(this);
-    auto parameters = params.toArray();
-    auto connectParamsLayout = new QGridLayout;
-    ib->setParameterValues(this->settings());
-    ib->buildParameterInterface(connectParamsLayout, parameters);
-    m_connectParamsWidget->setLayout(connectParamsLayout);
-    ib->deleteLater();
-    m_ui->paramsLayout->addWidget(m_connectParamsWidget);
-  }
-}
-
-void AcquisitionWidget::introspectSource()
-{
-  m_client->setUrl(this->url());
-  auto request = m_client->describe("connect");
-  connect(request, &AcquisitionClientRequest::error, this,
-          &AcquisitionWidget::onError);
-  connect(request, &AcquisitionClientRequest::finished, this,
-          &AcquisitionWidget::connectParameterDescription);
-}
-
-QJsonObject AcquisitionWidget::connectParams()
-{
-  auto values = InterfaceBuilder::parameterValues(this->m_connectParamsWidget);
-  return QJsonObject::fromVariantMap(values);
-}
-
-void AcquisitionWidget::watchSource()
-{
-  connect(this->m_watchTimer, &QTimer::timeout, this,
-          [this]() {
-            auto request = m_client->stem_acquire();
-            connect(request, &AcquisitionClientImageRequest::finished,
-                    [this](const QString mimeType, const QByteArray& result,
-                           const QJsonObject& meta) {
-                      Q_UNUSED(meta);
-                      if (!result.isNull()) {
-                        qDebug() << "New image received!";
-                        this->previewReady(mimeType, result);
-                      }
-                    });
-            connect(request, &AcquisitionClientRequest::error, this,
-                    &AcquisitionWidget::onError);
-
-          },
-          Qt::UniqueConnection);
-  this->m_watchTimer->start(1000);
 }
 }

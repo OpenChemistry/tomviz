@@ -25,7 +25,7 @@ def main():
 
     from tomviz.acquisition import server
 
-    tomviz.setup_loggers(args.debug)
+    tomviz.setup_loggers(args.debug, args.redirect)
     server_params = vars(args)
     del server_params['redirect']
     server.start(**server_params)

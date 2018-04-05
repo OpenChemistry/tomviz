@@ -13,11 +13,13 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizAcquisitionWidget_h
-#define tomvizAcquisitionWidget_h
+#ifndef tomvizPassiveAcquisitionWidget_h
+#define tomvizPassiveAcquisitionWidget_h
 
+#include <QLabel>
 #include <QPointer>
 #include <QScopedPointer>
+#include <QString>
 #include <QWidget>
 
 #include <vtkNew.h>
@@ -30,9 +32,10 @@ class vtkInteractorStyleRubberBand2D;
 class vtkInteractorStyleRubberBandZoom;
 class vtkRenderer;
 class vtkScalarsToColors;
+class QProcess;
 
 namespace Ui {
-class AcquisitionWidget;
+class PassiveAcquisitionWidget;
 }
 
 namespace tomviz {
@@ -40,13 +43,13 @@ namespace tomviz {
 class AcquisitionClient;
 class DataSource;
 
-class AcquisitionWidget : public QWidget
+class PassiveAcquisitionWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  AcquisitionWidget(QWidget* parent = nullptr);
-  ~AcquisitionWidget() override;
+  PassiveAcquisitionWidget(QWidget* parent = nullptr);
+  ~PassiveAcquisitionWidget() override;
 
 protected:
   void closeEvent(QCloseEvent* event) override;
@@ -55,34 +58,17 @@ protected:
   void writeSettings();
 
 private slots:
-  void connectToServer();
-  void onConnect();
+  void connectToServer(bool startServer = true);
 
-  void disconnectFromServer();
-  void onDisconnect();
+  void imageReady(QString mimeType, QByteArray result, float angle = 0);
 
-  void setAcquireParameters();
-  void acquireParameterResponse(const QJsonValue& result);
-
-  void setTiltAngle();
-  void acquirePreview(const QJsonValue& result);
-  void previewReady(QString, QByteArray);
-
-  void resetCamera();
   void onError(const QString& errorMessage, const QJsonValue& errorData);
-  void generateConnectUI(QJsonValue params);
-
+  void watchSource();
 signals:
   void connectParameterDescription(QJsonValue params);
 
 private:
-  QString url() const;
-  void introspectSource();
-  QJsonObject connectParams();
-  void watchSource();
-  QVariantMap settings();
-
-  QScopedPointer<Ui::AcquisitionWidget> m_ui;
+  QScopedPointer<Ui::PassiveAcquisitionWidget> m_ui;
   QScopedPointer<AcquisitionClient> m_client;
 
   vtkNew<vtkRenderer> m_renderer;
@@ -94,13 +80,27 @@ private:
 
   DataSource* m_dataSource = nullptr;
 
-  double m_tiltAngle = 0.0;
   QString m_units = "unknown";
   double m_calX = 0.0;
   double m_calY = 0.0;
   QPointer<QWidget> m_connectParamsWidget;
   QPointer<QTimer> m_watchTimer;
+  int m_retryCount = 5;
+  QProcess* m_serverProcess = nullptr;
+  QLabel m_regexErrorLabel;
+
+  QString url() const;
+  void introspectSource();
+  QJsonObject connectParams();
+  QVariantMap settings();
+  void checkEnableWatchButton();
+  void startLocalServer();
+  void displayError(const QString& errorMessage);
+  void setEnabledRegexGroupsWidget(bool enabled);
+  void setEnabledRegexGroupsSubstitutionsWidget(bool enabled);
+  void stopWatching();
+  bool validateRegex();
 };
 }
 
-#endif // tomvizAcquisitionWidget_h
+#endif // tomvizPassiveAcquisitionWidget_h

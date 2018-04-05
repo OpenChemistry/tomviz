@@ -70,7 +70,13 @@ def _setup_adapter(source_adapter): # noqa
 
     @jsonrpc.endpoint(path='/acquisition')
     @inject(source_adapter)
-    def describe(source_adapter, method):
+    def describe(source_adapter, method=None):
+
+        if method is None:
+            return {
+                'name': '%s.%s' % (inspect.getmodule(source_adapter).__name__,
+                                   type(source_adapter).__name__)
+            }
 
         if not hasattr(source_adapter, method):
             raise Exception('Method %s not found.' % method)

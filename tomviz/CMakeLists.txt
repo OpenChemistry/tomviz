@@ -13,10 +13,6 @@ set(SOURCES
   AbstractDataModel.cxx
   ActiveObjects.cxx
   ActiveObjects.h
-  AcquisitionWidget.cxx
-  AcquisitionWidget.h
-  AcquisitionClient.cxx
-  AcquisitionClient.h
   AddAlignReaction.cxx
   AddAlignReaction.h
   AddExpressionReaction.cxx
@@ -76,8 +72,6 @@ set(SOURCES
   InterfaceBuilder.cxx
   IntSliderWidget.cxx
   IntSliderWidget.h
-  JsonRpcClient.cxx
-  JsonRpcClient.h
   LoadDataReaction.cxx
   LoadDataReaction.h
   LoadPaletteReaction.cxx
@@ -227,6 +221,38 @@ set(SOURCES
   WebExportWidget.cxx
   WebExportWidget.h
   )
+
+# acquisition/
+list(APPEND SOURCES
+  acquisition/AcquisitionWidget.cxx
+  acquisition/AcquisitionWidget.h
+  acquisition/AcquisitionClient.cxx
+  acquisition/AcquisitionClient.h
+  acquisition/Connection.cxx
+  acquisition/Connection.h
+  acquisition/ConnectionsWidget.cxx
+  acquisition/ConnectionsWidget.h
+  acquisition/ConnectionDialog.cxx
+  acquisition/ConnectionDialog.h
+  acquisition/JsonRpcClient.cxx
+  acquisition/JsonRpcClient.h
+  acquisition/PassiveAcquisitionWidget.cxx
+  acquisition/PassiveAcquisitionWidget.h
+  acquisition/RegexGroupDialog.cxx
+  acquisition/RegexGroupDialog.h
+  acquisition/RegexGroupsWidget.cxx
+  acquisition/RegexGroupsWidget.h
+  acquisition/RegexGroupSubstitution.cxx
+  acquisition/RegexGroupSubstitution.h
+  acquisition/RegexGroupSubstitutionDialog.cxx
+  acquisition/RegexGroupSubstitutionDialog.h
+  acquisition/RegexGroupsSubstitutionsWidget.cxx
+  acquisition/RegexGroupsSubstitutionsWidget.h
+  acquisition/StartServerDialog.cxx
+  acquisition/StartServerDialog.h
+)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/acquisition)
 
 set(exec_sources
   AboutDialog.h
