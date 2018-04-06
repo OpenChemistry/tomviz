@@ -452,7 +452,7 @@ bool ModuleContour::deserialize(const QJsonObject& json)
     if (m_contourFilter != nullptr) {
       vtkSMPropertyHelper(m_contourFilter, "ContourValues")
         .Set(props["contourValue"].toDouble());
-      m_resampleFilter->UpdateVTKObjects();
+      m_contourFilter->UpdateVTKObjects();
     }
 
     d->UseSolidColor = props["useSolidColor"].toBool();
