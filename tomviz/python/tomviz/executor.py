@@ -208,6 +208,11 @@ def _execute_transform(operator_label, transform, arguments, input):
 def _load_transform_functions(operators):
     transform_functions = []
     for operator in operators:
+
+        if 'script' not in operator:
+            raise Exception(
+                'No script property found. C++ operator are not supported.')
+
         operator_script = operator['script']
         operator_label = operator['label']
 
