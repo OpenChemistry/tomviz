@@ -59,6 +59,14 @@ private slots:
     server->setProcessChannelMode(QProcess::MergedChannels);
     server->waitForStarted();
 
+    QObject::connect(server, &QProcess::readyReadStandardError, [this]() {
+      qWarning() << this->server->readAllStandardError();
+    });
+
+    QObject::connect(server, &QProcess::readyReadStandardOutput, [this]() {
+      qDebug() << this->server->readAllStandardOutput();
+    });
+
     // Wait for server to start ( returns a 404 for a invalid URL )
     QNetworkAccessManager* manager = new QNetworkAccessManager();
     QObject::connect(manager, &QNetworkAccessManager::finished,
