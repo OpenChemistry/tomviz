@@ -5,5 +5,5 @@ Pillow==4.2.1
 # get into a release.
 https://github.com/bottlepy/bottle/archive/41ed6965.zip
 mock==2.0.0
-diskcache==2.3.0
+diskcache==3.0.1
 -e git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git@filelike#egg=dm3_lib
