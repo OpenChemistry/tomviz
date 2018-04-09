@@ -240,9 +240,6 @@ the operator pipeline. To install the command line package run the following:
 pip install  <tomviz_repo_directory>/tomviz/python/
 
 ```
-Note: Currently this package can't be installed in the same environment as
-the acquisition server.
-
 Then to execute the operator pipeline run the following command:
 
 ```
