@@ -19,7 +19,7 @@ setup(
         'Programming Language :: Python :: 3.5'
     ],
     packages=find_packages(),
-    install_requires=['tqdm', 'h5py', 'numpy', 'click'],
+    install_requires=['tqdm', 'h5py', 'numpy', 'click', 'scipy'],
     entry_points={
         'console_scripts': [
             'tomviz-pipeline = tomviz.cli:main'
