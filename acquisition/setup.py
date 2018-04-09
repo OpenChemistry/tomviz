@@ -36,7 +36,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'tomviz = tomviz.__main__:main',
+            'tomviz-acquisition = tomviz.acquisition.cli:main',
             'tomviz-tiltseries-writer = tests.mock.tiltseries.writer:main'
         ]
     }

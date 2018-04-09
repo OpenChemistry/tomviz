@@ -34,7 +34,7 @@ Once everything is installed you can start the acquisition server with the
 following commands.
 
     workon tomviz
-    tomviz -a tomviz.acquisition.vendors.passive.PassiveWatchSource
+    tomviz-acquisition -a tomviz.acquisition.vendors.passive.PassiveWatchSource
 
 This will result in a process running in the terminal on the machine that has a
 directory to be watched passively.
