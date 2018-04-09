@@ -683,6 +683,10 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
 
       auto dataSource = LoadDataReaction::loadData(fileName, options);
       dataSource->deserialize(dsObject);
+      if (fileName.isEmpty()) {
+        dataSource->setPersistenceState(
+          DataSource::PersistenceState::Transient);
+      }
       // FIXME: I think we need to collect the active objects and set them at
       // the end, as the act of adding generally implies setting to active.
       if (dsObject["active"].toBool()) {

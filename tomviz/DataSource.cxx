@@ -1046,6 +1046,6 @@ bool DataSource::unitsModified()
 
 bool DataSource::isTransient() const
 {
-  return fileName().isEmpty();
+  return Internals->PersistState == PersistenceState::Transient;
 }
 }

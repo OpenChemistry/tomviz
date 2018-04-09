@@ -138,6 +138,8 @@ void Pipeline::pipelineBranchFinished(bool result)
       DataSource* newChildDataSource = nullptr;
       if (lastOp->childDataSource() == nullptr) {
         newChildDataSource = new DataSource("Output");
+        newChildDataSource->setPersistenceState(
+          tomviz::DataSource::PersistenceState::Transient);
         newChildDataSource->setProperty("output", true);
         newChildDataSource->setParent(this);
         addDataSource(newChildDataSource);
