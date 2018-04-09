@@ -17,9 +17,9 @@
 ###############################################################################
 import math
 import numpy as np
-import tomviz
+from tomviz._internal import in_application
 # Only import vtk if we are running within the tomviz application ( not cli )
-if tomviz.in_application():
+if in_application():
     import vtk.numpy_interface.dataset_adapter as dsa
     import vtk.util.numpy_support as np_s
 

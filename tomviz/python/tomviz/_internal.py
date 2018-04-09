@@ -25,7 +25,13 @@ import traceback
 
 import tomviz
 import tomviz.operators
-if tomviz.in_application():
+
+
+def in_application():
+    return os.environ.get('TOMVIZ_APPLICATION', False)
+
+
+if in_application():
     import tomviz._wrapping
 
 

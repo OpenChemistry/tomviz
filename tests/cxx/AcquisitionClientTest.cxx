@@ -52,7 +52,7 @@ private slots:
 
     QStringList arguments;
     arguments << "-m"
-              << "tomviz";
+              << "tomviz.acquisition.cli";
 
     server = new QProcess();
     server->start(python, arguments, QIODevice::ReadWrite);

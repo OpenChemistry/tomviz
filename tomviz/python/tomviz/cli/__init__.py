@@ -59,7 +59,3 @@ def main(data_file_path, state_file_path, output_file_path):
                             % data_file_path)
 
     executor.execute(operators, data_file_path, output_file_path)
-
-
-if __name__ == '__main__':
-    main()

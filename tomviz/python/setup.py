@@ -22,7 +22,7 @@ setup(
     install_requires=['tqdm', 'h5py', 'numpy', 'click'],
     entry_points={
         'console_scripts': [
-            'tomviz-pipeline = tomviz.__main__:main'
+            'tomviz-pipeline = tomviz.cli:main'
         ]
     }
 )
