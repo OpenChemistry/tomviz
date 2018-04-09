@@ -51,6 +51,10 @@ def main(data_file_path, state_file_path, output_file_path):
     # from the state file, so check it exists.
     if data_file_path is None:
         data_file_path = datasource['fileName']
+        # fileName is relative to the state file location, so convert to
+        # absolute path.
+        data_file_path = os.path.abspath(
+            os.path.join(os.path.dirname(state_file_path), data_file_path))
         if not data_file_path.lower().endswith('.emd'):
             raise Exception(
                 'Unsupported data source format, only EMD is supported.')
