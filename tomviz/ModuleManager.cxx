@@ -266,7 +266,7 @@ QJsonArray jsonArrayFromXmlDouble(pugi::xml_node node)
   return array;
 }
 
-bool ModuleManager::serialize(QJsonObject& doc, const QDir&,
+bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
                               bool interactive) const
 {
   QJsonObject tvObj;
@@ -348,6 +348,17 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir&,
     if (!jModules.isEmpty()) {
       jDataSource["modules"] = jModules;
     }
+
+    // Make any fileName properties relative to the state file being written.
+    if (jDataSource.contains("fileName")) {
+      auto fileName = jDataSource["fileName"].toString();
+      // Exclude transient data sources.
+      // ( ones without a file. i.e. output data sources )
+      if (!ds->isTransient()) {
+        jDataSource["fileName"] = stateDir.relativeFilePath(fileName);
+      }
+    }
+
     jDataSources.append(jDataSource);
   }
   doc["dataSources"] = jDataSources;
@@ -665,6 +676,11 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
         options["pvXml"] = dsObject["pvReaderXml"];
       }
       QString fileName = dsObject["fileName"].toString();
+      // If we have a fileName make it absolute
+      if (!fileName.isEmpty()) {
+        fileName = d->dir.absoluteFilePath(fileName);
+      }
+
       auto dataSource = LoadDataReaction::loadData(fileName, options);
       dataSource->deserialize(dsObject);
       // FIXME: I think we need to collect the active objects and set them at
