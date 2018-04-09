@@ -183,13 +183,17 @@ DataSource::DataSource(vtkImageData* data, DataSourceType dataType,
 }
 
 DataSource::DataSource(const QString& label, DataSourceType dataType,
-                       QObject* parent, PersistenceState persistState)
+                       QObject* parent, PersistenceState persistState,
+                       const QJsonObject& sourceInfo)
   : QObject(parent), Internals(new DSInternals)
 {
   init(nullptr, dataType, persistState);
 
   if (!label.isNull()) {
     setLabel(label);
+  }
+  if (!sourceInfo.isEmpty()) {
+    m_json["sourceInformation"] = sourceInfo;
   }
 }
 

@@ -40,6 +40,8 @@
 #include <QDialogButtonBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QLabel>
 #include <QSpinBox>
 #include <QVBoxLayout>
@@ -101,10 +103,9 @@ public:
     this->pythonScript = script;
   }
 
-  vtkSmartPointer<vtkSMSourceProxy> createDataSource(const int shape[3])
+  tomviz::DataSource* createDataSource(const int shape[3])
   {
-    vtkNew<vtkImageData> image;
-    vtkSmartPointer<vtkSMSourceProxy> retVal;
+    vtkImageData* image = vtkImageData::New();
 
     {
       tomviz::Python python;
@@ -116,7 +117,7 @@ public:
       args.set(1, shape[1]);
       args.set(2, shape[2]);
       tomviz::Python::Object imageData =
-        tomviz::Python::VTK::GetObjectFromPointer(image.Get());
+        tomviz::Python::VTK::GetObjectFromPointer(image);
       args.set(3, imageData);
       args.set(4, this->GenerateFunction);
 
@@ -129,33 +130,35 @@ public:
       result = this->MakeDatasetFunction.call(args, kwargs);
       if (!result.isValid()) {
         qCritical() << "Failed to execute script.";
-        return retVal;
+        return nullptr;
       }
     }
 
-    vtkSMSessionProxyManager* pxm =
-      tomviz::ActiveObjects::instance().proxyManager();
-    vtkSmartPointer<vtkSMProxy> source;
-    source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-    vtkTrivialProducer* tp =
-      vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
-    tp->SetOutput(image.Get());
-    source->SetAnnotation(tomviz::Attributes::TYPE, "DataSource");
-    source->SetAnnotation("tomviz.DataSource.FileName",
-                          "Python Generated Data");
-    source->SetAnnotation(tomviz::Attributes::LABEL,
-                          this->label.toLatin1().data());
-    source->SetAnnotation("tomviz.Python_Source.Script",
-                          this->pythonScript.toLatin1().data());
-    source->SetAnnotation("tomviz.Python_Source.X",
-                          QString::number(shape[0]).toLatin1().data());
-    source->SetAnnotation("tomviz.Python_Source.Y",
-                          QString::number(shape[1]).toLatin1().data());
-    source->SetAnnotation("tomviz.Python_Source.Z",
-                          QString::number(shape[2]).toLatin1().data());
+    QVariantMap vmap;
+    foreach (QString key, this->arguments.keys()) {
+      vmap[key] = this->arguments[key];
+    }
 
-    retVal = vtkSMSourceProxy::SafeDownCast(source.Get());
-    return retVal;
+    QJsonObject argsJson = QJsonObject::fromVariantMap(vmap);
+
+    QJsonArray size;
+    size.append(shape[0]);
+    size.append(shape[1]);
+    size.append(shape[2]);
+
+    QJsonObject description;
+    description["script"] = this->pythonScript;
+    description["label"] = this->label;
+    description["args"] = argsJson;
+    description["shape"] = size;
+
+    tomviz::DataSource* dataSource = new tomviz::DataSource(
+      this->label, tomviz::DataSource::Volume, nullptr,
+      tomviz::DataSource::PersistenceState::Transient, description);
+    // setData consumes the caller's reference, so image can't be a vtkNew
+    dataSource->setData(image);
+
+    return dataSource;
   }
 
   void setArguments(QMap<QString, QVariant> args) { this->arguments = args; }
@@ -300,7 +303,8 @@ void PythonGeneratedDatasetReaction::addDataset()
 
     int shape[3];
     shapeWidget->getShape(shape);
-    this->dataSourceAdded(generator.createDataSource(shape));
+    LoadDataReaction::dataSourceAdded(generator.createDataSource(shape), true,
+                                      false);
   } else if (this->Internals->scriptLabel == "Random Particles") {
     QDialog dialog;
     dialog.setWindowTitle("Generate Random Particles");
@@ -374,7 +378,8 @@ void PythonGeneratedDatasetReaction::addDataset()
 
       int shape[3];
       shapeLayout->getShape(shape);
-      this->dataSourceAdded(generator.createDataSource(shape));
+      LoadDataReaction::dataSourceAdded(generator.createDataSource(shape), true,
+                                        false);
     }
   } else if (this->Internals->scriptLabel == "Electron Beam Shape") {
     QDialog dialog;
@@ -541,31 +546,24 @@ void PythonGeneratedDatasetReaction::addDataset()
       generator.setArguments(args);
 
       const int shape[3] = { Nxy->value(), Nxy->value(), Nz->value() };
-      this->dataSourceAdded(generator.createDataSource(shape));
+      LoadDataReaction::dataSourceAdded(generator.createDataSource(shape), true,
+                                        false);
     }
   } // end of else if
 }
 
-void PythonGeneratedDatasetReaction::dataSourceAdded(
-  vtkSmartPointer<vtkSMSourceProxy> proxy)
+DataSource* PythonGeneratedDatasetReaction::createDataSource(
+  const QJsonObject& sourceInformation)
 {
-  if (!proxy) {
-    return;
-  }
-  DataSource* dataSource = new DataSource(
-    proxy, DataSource::Volume);//, nullptr, DataSource::PersistenceState::Modified);
-  dataSource->setFileName(proxy->GetAnnotation(Attributes::LABEL));
-  LoadDataReaction::dataSourceAdded(dataSource, true /* default modules */,
-                                    false /* child */);
-}
-
-vtkSmartPointer<vtkSMSourceProxy>
-PythonGeneratedDatasetReaction::getSourceProxy(const QString& label,
-                                               const QString& script,
-                                               const int shape[3])
-{
-  PythonGeneratedDataSource generator(label);
-  generator.setScript(script);
+  PythonGeneratedDataSource generator(sourceInformation["label"].toString());
+  generator.setScript(sourceInformation["script"].toString());
+  QVariantMap args = sourceInformation["args"].toObject().toVariantMap();
+  generator.setArguments(args);
+  int shape[3];
+  QJsonArray shapeJson = sourceInformation["shape"].toArray();
+  shape[0] = shapeJson[0].toInt();
+  shape[1] = shapeJson[1].toInt();
+  shape[2] = shapeJson[2].toInt();
   return generator.createDataSource(shape);
 }
 }

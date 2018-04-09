@@ -681,7 +681,15 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
         fileName = d->dir.absoluteFilePath(fileName);
       }
 
-      auto dataSource = LoadDataReaction::loadData(fileName, options);
+      DataSource* dataSource;
+      if (dsObject.find("sourceInformation") != dsObject.end()) {
+        dataSource = PythonGeneratedDatasetReaction::createDataSource(
+          dsObject["sourceInformation"].toObject());
+        LoadDataReaction::dataSourceAdded(dataSource, false, false);
+      } else {
+        dataSource = LoadDataReaction::loadData(fileName, options);
+      }
+
       dataSource->deserialize(dsObject);
       if (fileName.isEmpty()) {
         dataSource->setPersistenceState(
