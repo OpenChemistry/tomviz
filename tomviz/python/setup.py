@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='tomviz-external',
+    name='tomviz-pipeline',
     version='0.0.1',
-    description='Tomviz python external execution infrastructure.',
+    description='Tomviz python external pipeline execution infrastructure.',
     author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     url='https://www.tomviz.org/',
