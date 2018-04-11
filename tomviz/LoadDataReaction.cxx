@@ -211,6 +211,21 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
         pxm->NewProxy(node.attribute("xmlgroup").as_string(),
                       node.attribute("xmlname").as_string()));
       if (tomviz::deserialize(reader, node)) {
+        // Use fileNames provided rather than relying on the XML. When loading
+        // a state file the file names provide are resolved relative to the
+        // state files so will survive a directory move.
+        // The are the possible ParaView properties
+        const char* propNames[] = { "FileNames", "FileName", "FilePrefix" };
+        for (int i = 0; i < 3; i++) {
+          auto propName = propNames[i];
+          auto prop = reader->GetProperty(propName);
+          if (prop != nullptr) {
+            vtkSMPropertyHelper helper(prop);
+            helper.Set(fileName.toLatin1().data());
+            break;
+          }
+        }
+
         reader->UpdateVTKObjects();
         vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
         dataSource =

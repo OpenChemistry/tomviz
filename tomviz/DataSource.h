@@ -213,6 +213,10 @@ public:
 
   bool unitsModified();
 
+  // Returns true if the data source is not associated with a file, false
+  // otherwise.
+  bool isTransient() const;
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.

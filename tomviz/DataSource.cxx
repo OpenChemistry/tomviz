@@ -189,7 +189,7 @@ DataSource::DataSource(const QString& label, DataSourceType dataType,
   init(nullptr, dataType, persistState);
 
   if (!label.isNull()) {
-    setFileName(label);
+    setLabel(label);
   }
 }
 
@@ -1044,5 +1044,10 @@ Pipeline* DataSource::pipeline()
 bool DataSource::unitsModified()
 {
   return Internals->UnitsModified;
+}
+
+bool DataSource::isTransient() const
+{
+  return Internals->PersistState == PersistenceState::Transient;
 }
 }
