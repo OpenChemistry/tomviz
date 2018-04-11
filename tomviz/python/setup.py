@@ -1,14 +1,9 @@
 from setuptools import setup, find_packages
 
-dm3_url = 'git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git' \
-    '@filelike#egg=dm3_lib-1.2'
-bottle_url = 'https://github.com/bottlepy/bottle/archive/41ed6965.zip' \
-    '#egg=bottle-0.13-dev'
-
 setup(
-    name='tomviz-acquisition',
+    name='tomviz-pipeline',
     version='0.0.1',
-    description='Tomviz acquisition server.',
+    description='Tomviz python external pipeline execution infrastructure.',
     author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     url='https://www.tomviz.org/',
@@ -24,20 +19,10 @@ setup(
         'Programming Language :: Python :: 3.5'
     ],
     packages=find_packages(),
-    extras_require={
-        'dm3': ['dm3_lib==1.2'],
-        'tif': ['Pillow'],
-        'test': ['requests', 'Pillow', 'mock', 'diskcache']
-    },
-    install_requires=['bottle==0.13-dev'],
-    dependency_links=[
-        dm3_url,
-        bottle_url
-    ],
+    install_requires=['tqdm', 'h5py', 'numpy', 'click', 'scipy'],
     entry_points={
         'console_scripts': [
-            'tomviz-acquisition = tomviz.acquisition.cli:main',
-            'tomviz-tiltseries-writer = tests.mock.tiltseries.writer:main'
+            'tomviz-pipeline = tomviz.cli:main'
         ]
     }
 )

@@ -28,7 +28,7 @@ class Progress(object):
     @property
     def maximum(self):
         """
-        Property defining the maxium progress value
+        Property defining the maximum progress value
         """
         return self._operator._operator_wrapper.progress_maximum
 

@@ -15,9 +15,6 @@
 #  limitations under the License.
 #
 ###############################################################################
-
-import tomviz.operators
-import tomviz._wrapping
 import inspect
 import sys
 import os
@@ -25,6 +22,17 @@ import fnmatch
 import imp
 import json
 import traceback
+
+import tomviz
+import tomviz.operators
+
+
+def in_application():
+    return os.environ.get('TOMVIZ_APPLICATION', False)
+
+
+if in_application():
+    import tomviz._wrapping
 
 
 def delete_module(name):
@@ -70,7 +78,7 @@ def is_cancelable(transform_module):
                                           tomviz.operators.CancelableOperator)
 
 
-def find_transform_scalars(transform_module, op):
+def find_transform_scalars(transform_module, op=None):
 
     transform_function = find_transform_scalars_function(transform_module)
     if transform_function is None:
@@ -82,8 +90,9 @@ def find_transform_scalars(transform_module, op):
         # wrapper OperatorPython instance before __init__ is called so that
         # any code in __init__ can access the wrapper.
         o = cls.__new__(cls)
-        # Set the wrapped OperatorPython instance
-        o._operator_wrapper = tomviz._wrapping.OperatorPythonWrapper(op)
+        if op is not None:
+            # Set the wrapped OperatorPython instance
+            o._operator_wrapper = tomviz._wrapping.OperatorPythonWrapper(op)
         cls.__init__(o)
 
         transform_function = o.transform_scalars

@@ -55,6 +55,10 @@ int main(int argc, char** argv)
     qputenv("PYTHONHOME", pythonPath);
   }
 #endif
+  // Set environment variable to indicate that we are running inside the Tomviz
+  // application vs Python command line. This can be used to selectively load
+  // modules.
+  qputenv("TOMVIZ_APPLICATION", "1");
 
   setlocale(LC_NUMERIC, "C");
   pqPVApplicationCore appCore(argc, argv);

@@ -44,6 +44,8 @@ build_script:
   # Install acquisition test requirements
   - set TOMVIZ_TEST_PYTHON_EXECUTABLE=C:\projects\python\bin\python.exe
   - C:\projects\python\bin\python.exe -m pip install -r %APPVEYOR_BUILD_FOLDER%\acquisition\requirements-dev.txt
+  - C:\projects\python\bin\python.exe -m pip install -r %APPVEYOR_BUILD_FOLDER%\tests\python\requirements-dev.txt
+  - C:\projects\python\bin\python.exe -m pip install %APPVEYOR_BUILD_FOLDER%\tomviz\python\
   # First run pytest
   - cd %APPVEYOR_BUILD_FOLDER%\acquisition\tests
   - C:\projects\python\bin\python.exe -m pytest -k "not fei"
