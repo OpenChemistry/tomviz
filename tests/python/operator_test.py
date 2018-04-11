@@ -6,7 +6,7 @@ import unittest
 import mock
 
 # Add fixtures to sys.path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'fixtures'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'fixtures')) # noqa
 
 import simple
 import two
@@ -35,18 +35,20 @@ def test_find_operator_class():
     with pytest.raises(Exception):
         find_operator_class(two)
 
+
 def test_find_transform_scalars_function():
     # No function
     assert find_transform_scalars_function(simple) is None
 
     # Module with a function
-    assert (find_transform_scalars_function(function)
-        == function.transform_scalars)
+    found = find_transform_scalars_function(function)
+    assert (found == function.transform_scalars)
+
 
 def test_find_transform_scalars():
     # Module with a function
-    assert (find_transform_scalars(
-        function, None) ==  function.transform_scalars)
+    found = find_transform_scalars(function, None)
+    assert (found == function.transform_scalars)
 
     # Module with operator class
     func = find_transform_scalars(simple, None)
@@ -58,6 +60,7 @@ def test_find_transform_scalars():
     with pytest.raises(Exception):
         find_transform_scalars(unittest, None)
 
+
 def test_is_cancelable():
     # Nope
     assert not is_cancelable(simple)
@@ -68,6 +71,7 @@ def test_is_cancelable():
 
     with pytest.raises(Exception):
         is_cancelable(unittest)
+
 
 def test_find_operators():
     op_dir = os.path.join(os.path.dirname(__file__), 'fixtures')
