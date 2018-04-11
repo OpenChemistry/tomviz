@@ -321,6 +321,9 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
                                        bool defaultModules, bool child)
 {
+  if (!dataSource) {
+    return;
+  }
   DataSource* previousActiveDataSource =
     ActiveObjects::instance().activeDataSource();
   bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();

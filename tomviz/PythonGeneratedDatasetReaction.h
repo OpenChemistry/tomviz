@@ -38,17 +38,13 @@ public:
 
   void addDataset();
 
-  static vtkSmartPointer<vtkSMSourceProxy> getSourceProxy(const QString& label,
-                                                          const QString& script,
-                                                          const int shape[3]);
+  static DataSource* createDataSource(const QJsonObject& sourceInformation);
 
 protected:
   void onTriggered() override { this->addDataset(); }
 
 private:
   Q_DISABLE_COPY(PythonGeneratedDatasetReaction)
-
-  void dataSourceAdded(vtkSmartPointer<vtkSMSourceProxy> proxy);
 
   class PGDRInternal;
   QScopedPointer<PGDRInternal> Internals;

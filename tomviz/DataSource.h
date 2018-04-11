@@ -70,7 +70,8 @@ public:
   /// Create a new dataSource not associated with a source proxy
   DataSource(const QString& label = QString(), DataSourceType dataType = Volume,
              QObject* parent = nullptr,
-             PersistenceState persistState = PersistenceState::Saved);
+             PersistenceState persistState = PersistenceState::Saved,
+             const QJsonObject& sourceInfo = QJsonObject());
 
   ~DataSource() override;
 
