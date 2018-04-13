@@ -728,24 +728,27 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       options["addToRecent"] = false;
       options["child"] = false;
       d->absoluteFilePaths(dsObject);
-      auto reader = dsObject["reader"].toObject();
-      options["reader"] = reader;
 
       QStringList fileNames;
-      if (reader.contains("fileName")) {
-        auto fileName = reader["fileName"].toString();
-        if (!fileName.isEmpty()) {
-          fileNames << fileName;
-        }
-      } else if (reader.contains("fileNames")) {
-        foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
-          auto fileName = value.toString();
-          if (fileName.isEmpty()) {
+      if (dsObject.contains("reader")) {
+        auto reader = dsObject["reader"].toObject();
+        options["reader"] = reader;
+
+        if (reader.contains("fileName")) {
+          auto fileName = reader["fileName"].toString();
+          if (!fileName.isEmpty()) {
             fileNames << fileName;
           }
+        } else if (reader.contains("fileNames")) {
+          foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
+            auto fileName = value.toString();
+            if (fileName.isEmpty()) {
+              fileNames << fileName;
+            }
+          }
+        } else {
+          qCritical() << "Unable to locate file name.";
         }
-      } else {
-        qCritical() << "Unable to locate file name.";
       }
 
       DataSource* dataSource;
