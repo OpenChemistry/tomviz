@@ -94,42 +94,6 @@ public:
   }
 };
 
-namespace {
-
-// Converts the save state string back to a DataSource::DataSourceType
-// Returns true if the type was successfully converted, false otherwise
-// the result is stored in the output paremeter type.
-bool stringToDataSourceType(const char* str, DataSource::DataSourceType& type)
-{
-  if (strcmp(str, "volume") == 0) {
-    type = DataSource::Volume;
-    return true;
-  } else if (strcmp(str, "tilt-series") == 0) {
-    type = DataSource::TiltSeries;
-    return true;
-  }
-  return false;
-}
-
-void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
-{
-  int components = ns.attribute("components").as_int(1);
-  array->SetNumberOfComponents(components);
-  int tuples = ns.attribute("tuples").as_int(array->GetNumberOfTuples());
-  array->SetNumberOfTuples(tuples);
-  const char* text = ns.child_value();
-  std::istringstream stream(text);
-  double* data = new double[components];
-  for (int i = 0; i < tuples; ++i) {
-    for (int j = 0; j < components; ++j) {
-      stream >> data[j];
-    }
-    array->SetTuple(i, data);
-  }
-  delete[] data;
-}
-}
-
 DataSource::DataSource(vtkSMSourceProxy* dataSource,
                        DataSourceType dataType)
   : QObject(nullptr), Internals(new DSInternals)
