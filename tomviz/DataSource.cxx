@@ -267,31 +267,38 @@ bool DataSource::appendSlice(vtkImageData* slice)
 
 void DataSource::setFileName(const QString& filename)
 {
-  m_json["fileName"] = filename;
+  auto reader = m_json.value("reader").toObject(QJsonObject());
+  reader["fileName"] = filename;
+  m_json["reader"] = reader;
 }
 
 QString DataSource::fileName() const
 {
-  if (m_json.contains("fileName")) {
-    return m_json["fileName"].toString();
+  auto reader = m_json.value("reader").toObject(QJsonObject());
+  if (reader.contains("fileName")) {
+    return reader["fileName"].toString();
   }
   return QString();
 }
 
 void DataSource::setFileNames(const QStringList fileNames)
 {
+  auto reader = m_json.value("reader").toObject(QJsonObject());
   QJsonArray files;
   foreach (QString file, fileNames) {
     files.append(file);
   }
-  m_json["fileNames"] = files;
+
+  reader["fileNames"] = files;
+  m_json["reader"] = reader;
 }
 
 QStringList DataSource::fileNames() const
 {
+  auto reader = m_json.value("reader").toObject(QJsonObject());
   QStringList files;
-  if (isImageStack()) {
-    QJsonArray fileArray = m_json["fileNames"].toArray();
+  if (reader.contains("fileNames") && isImageStack()) {
+    QJsonArray fileArray = reader["fileNames"].toArray();
     foreach (QJsonValue file, fileArray) {
       files.append(file.toString());
     }
@@ -305,17 +312,17 @@ bool DataSource::isImageStack() const
     m_json["fileNames"].toArray().size() > 1;
 }
 
-void DataSource::setPvReaderXml(const QString& xml)
+void DataSource::setReaderProperties(const QVariantMap& properties)
 {
-  m_json["pvReaderXml"] = xml;
+  m_json["reader"] = QJsonObject::fromVariantMap(properties);
 }
 
-QString DataSource::pvReaderXml() const
+QVariantMap DataSource::readerProperties() const
 {
-  if (m_json.contains("pvReaderXml") && m_json["pvReaderXml"].isString()) {
-    return m_json["pvReaderXml"].toString();
+  if (m_json.contains("reader") && m_json["reader"].isObject()) {
+    return m_json["reader"].toObject().toVariantMap();
   } else {
-    return QString();
+    return QVariantMap();
   }
 }
 

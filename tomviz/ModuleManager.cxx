@@ -53,6 +53,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkStdString.h>
 
+#include <QDebug>
 #include <QDir>
 #include <QJsonArray>
 #include <QMap>
@@ -81,6 +82,68 @@ public:
   // Only used by onPVStateLoaded for the second half of deserialize
   QDir dir;
   QMap<vtkTypeUInt32, vtkSMViewProxy*> ViewIdMap;
+  void relativeFilePaths(DataSource* ds, const QDir& stateDir,
+                         QJsonObject& dataSourceState)
+  {
+    QJsonObject readerProps;
+    if (dataSourceState.contains("reader") &&
+        dataSourceState["reader"].isObject()) {
+      readerProps = dataSourceState["reader"].toObject();
+    }
+
+    // Make any reader fileName properties relative to the state file being
+    // written.
+    if (readerProps.contains("fileName")) {
+      // Exclude transient data sources.
+      // ( ones without a file. i.e. output data sources )
+      if (!ds->isTransient()) {
+        auto fileName = readerProps["fileName"].toString();
+        readerProps["fileName"] = stateDir.relativeFilePath(fileName);
+      }
+      dataSourceState["reader"] = readerProps;
+    } else if (readerProps.contains("fileNames")) {
+      // Exclude transient data sources.
+      // ( ones without a file. i.e. output data sources )
+      if (!ds->isTransient()) {
+        auto fileNames = readerProps["fileNames"].toArray();
+        QJsonArray relativeNames;
+        foreach (QJsonValue name, fileNames) {
+          relativeNames.append(stateDir.relativeFilePath(name.toString()));
+        }
+        readerProps["fileNames"] = relativeNames;
+      }
+      dataSourceState["reader"] = readerProps;
+    }
+  }
+
+  void absoluteFilePaths(QJsonObject& dataSourceState)
+  {
+
+    std::function<QString(QString)> absolute = [this](QString path) {
+      if (!path.isEmpty()) {
+        path = this->dir.absoluteFilePath(path);
+      }
+
+      return path;
+    };
+
+    if (dataSourceState.contains("reader") &&
+        dataSourceState["reader"].isObject()) {
+      auto reader = dataSourceState["reader"].toObject();
+      if (reader.contains("fileName") && reader["fileName"].isString()) {
+        reader["fileName"] = absolute(reader["fileName"].toString());
+      } else if (reader.contains("fileNames") &&
+                 reader["fileNames"].isArray()) {
+        auto fileNames = reader["fileNames"].toArray();
+        QJsonArray absoluteFileNames;
+        foreach (const QJsonValue& path, fileNames) {
+          absoluteFileNames.append(absolute(path.toString()));
+        }
+        reader["fileNames"] = absoluteFileNames;
+      }
+      dataSourceState["reader"] = reader;
+    }
+  }
 };
 
 ModuleManager::ModuleManager(QObject* parentObject)
@@ -349,15 +412,7 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
       jDataSource["modules"] = jModules;
     }
 
-    // Make any fileName properties relative to the state file being written.
-    if (jDataSource.contains("fileName")) {
-      auto fileName = jDataSource["fileName"].toString();
-      // Exclude transient data sources.
-      // ( ones without a file. i.e. output data sources )
-      if (!ds->isTransient()) {
-        jDataSource["fileName"] = stateDir.relativeFilePath(fileName);
-      }
-    }
+    d->relativeFilePaths(ds, stateDir, jDataSource);
 
     jDataSources.append(jDataSource);
   }
@@ -672,13 +727,25 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       options["defaultModules"] = false;
       options["addToRecent"] = false;
       options["child"] = false;
-      if (dsObject.contains("pvReaderXml")) {
-        options["pvXml"] = dsObject["pvReaderXml"];
-      }
-      QString fileName = dsObject["fileName"].toString();
-      // If we have a fileName make it absolute
-      if (!fileName.isEmpty()) {
-        fileName = d->dir.absoluteFilePath(fileName);
+      d->absoluteFilePaths(dsObject);
+      auto reader = dsObject["reader"].toObject();
+      options["reader"] = reader;
+
+      QStringList fileNames;
+      if (reader.contains("fileName")) {
+        auto fileName = reader["fileName"].toString();
+        if (!fileName.isEmpty()) {
+          fileNames << fileName;
+        }
+      } else if (reader.contains("fileNames")) {
+        foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
+          auto fileName = value.toString();
+          if (fileName.isEmpty()) {
+            fileNames << fileName;
+          }
+        }
+      } else {
+        qCritical() << "Unable to locate file name.";
       }
 
       DataSource* dataSource;
@@ -687,11 +754,11 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
           dsObject["sourceInformation"].toObject());
         LoadDataReaction::dataSourceAdded(dataSource, false, false);
       } else {
-        dataSource = LoadDataReaction::loadData(fileName, options);
+        dataSource = LoadDataReaction::loadData(fileNames, options);
       }
 
       dataSource->deserialize(dsObject);
-      if (fileName.isEmpty()) {
+      if (fileNames.isEmpty()) {
         dataSource->setPersistenceState(
           DataSource::PersistenceState::Transient);
       }
