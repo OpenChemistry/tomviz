@@ -424,6 +424,7 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
       // Curate the pieces we want from the XML produced.
       auto viewProxy = document.child("ParaViewXML").child("Proxy");
       jView["servers"] = viewProxy.attribute("servers").as_int(0);
+      QJsonArray backgroundColor;
       // Iterate through the properties...
       for (pugi::xml_node node = viewProxy.child("Property"); node;
            node = node.next_sibling("Property")) {
@@ -442,9 +443,17 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
           camera["eyeAngle"] = jsonArrayFromXmlDouble(node)[0];
         } else if (name == "CenterOfRotation") {
           jView["centerOfRotation"] = jsonArrayFromXmlDouble(node);
+        } else if (name == "Background") {
+          backgroundColor.append(jsonArrayFromXmlDouble(node));
+        } else if (name == "Background2") {
+          vtkSMPropertyHelper helper(view, "UseGradientBackground");
+          if (helper.GetAsInt()) {
+            backgroundColor.append(jsonArrayFromXmlDouble(node));
+          }
         }
       }
       jView["camera"] = camera;
+      jView["backgroundColor"] = backgroundColor;
 
       jViews.append(jView);
       /*
@@ -478,13 +487,28 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
   return true;
 }
 
-void createXmlProperty(pugi::xml_node& n, const char* name, int id,
-                       QJsonArray arr)
+void createXmlProperty(pugi::xml_node& n, const char* name, int id)
 {
   n.set_name("Property");
   n.append_attribute("name").set_value(name);
   QString idStr = QString::number(id) + "." + name;
   n.append_attribute("id").set_value(idStr.toStdString().c_str());
+}
+
+template <typename T>
+void createXmlProperty(pugi::xml_node& n, const char* name, int id, T value)
+{
+  createXmlProperty(n, name, id);
+  n.append_attribute("number_of_elements").set_value(1);
+  auto element = n.append_child("Element");
+  element.append_attribute("index").set_value(0);
+  element.append_attribute("value").set_value(value);
+}
+
+void createXmlProperty(pugi::xml_node& n, const char* name, int id,
+                       QJsonArray arr)
+{
+  createXmlProperty(n, name, id);
   n.append_attribute("number_of_elements").set_value(arr.size());
   for (int i = 0; i < arr.size(); ++i) {
     auto element = n.append_child("Element");
@@ -553,6 +577,24 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
     propNode = proxyNode.append_child("Property");
     createXmlProperty(propNode, "CameraFocalPoint", viewId,
                       camera["focalPoint"].toArray());
+
+    if (view.contains("backgroundColor")) {
+      auto backgroundColor = view["backgroundColor"].toArray();
+      // Restore the background color
+      propNode = proxyNode.append_child("Property");
+      createXmlProperty(propNode, "Background", viewId,
+                        backgroundColor.at(0).toArray());
+
+      // If we have more than one element, we have a gradient so also restore
+      // Background2 and set UseGradientBackground.
+      if (backgroundColor.size() > 1) {
+        propNode = proxyNode.append_child("Property");
+        createXmlProperty(propNode, "Background2", viewId,
+                          backgroundColor.at(1).toArray());
+        propNode = proxyNode.append_child("Property");
+        createXmlProperty(propNode, "UseGradientBackground", viewId, 1);
+      }
+    }
 
     // Create an entry in the views thing...
     pugi::xml_node viewSummary = pvViews.append_child("Item");
