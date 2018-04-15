@@ -20,6 +20,7 @@
 
 #include <QJsonObject>
 #include <QScopedPointer>
+#include <QVariantMap>
 #include <QVector>
 
 #include <vtk_pugixml.h>
@@ -124,11 +125,11 @@ public:
   /// Return true is data source is an image stack, false otherwise.
   bool isImageStack() const;
 
-  /// Set the PV reader information if it is useful for loading data.
-  void setPvReaderXml(const QString& xml);
+  /// Set the PV reader properties.
+  void setReaderProperties(const QVariantMap& properties);
 
-  /// Get the PV reader information if available for the data source.
-  QString pvReaderXml() const;
+  /// Get the PV reader properties.
+  QVariantMap readerProperties() const;
 
   /// Set the label for the data source.
   void setLabel(const QString& label);

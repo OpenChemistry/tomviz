@@ -94,42 +94,6 @@ public:
   }
 };
 
-namespace {
-
-// Converts the save state string back to a DataSource::DataSourceType
-// Returns true if the type was successfully converted, false otherwise
-// the result is stored in the output paremeter type.
-bool stringToDataSourceType(const char* str, DataSource::DataSourceType& type)
-{
-  if (strcmp(str, "volume") == 0) {
-    type = DataSource::Volume;
-    return true;
-  } else if (strcmp(str, "tilt-series") == 0) {
-    type = DataSource::TiltSeries;
-    return true;
-  }
-  return false;
-}
-
-void deserializeDataArray(const pugi::xml_node& ns, vtkDataArray* array)
-{
-  int components = ns.attribute("components").as_int(1);
-  array->SetNumberOfComponents(components);
-  int tuples = ns.attribute("tuples").as_int(array->GetNumberOfTuples());
-  array->SetNumberOfTuples(tuples);
-  const char* text = ns.child_value();
-  std::istringstream stream(text);
-  double* data = new double[components];
-  for (int i = 0; i < tuples; ++i) {
-    for (int j = 0; j < components; ++j) {
-      stream >> data[j];
-    }
-    array->SetTuple(i, data);
-  }
-  delete[] data;
-}
-}
-
 DataSource::DataSource(vtkSMSourceProxy* dataSource,
                        DataSourceType dataType)
   : QObject(nullptr), Internals(new DSInternals)
@@ -267,31 +231,38 @@ bool DataSource::appendSlice(vtkImageData* slice)
 
 void DataSource::setFileName(const QString& filename)
 {
-  m_json["fileName"] = filename;
+  auto reader = m_json.value("reader").toObject(QJsonObject());
+  reader["fileName"] = filename;
+  m_json["reader"] = reader;
 }
 
 QString DataSource::fileName() const
 {
-  if (m_json.contains("fileName")) {
-    return m_json["fileName"].toString();
+  auto reader = m_json.value("reader").toObject(QJsonObject());
+  if (reader.contains("fileName")) {
+    return reader["fileName"].toString();
   }
   return QString();
 }
 
 void DataSource::setFileNames(const QStringList fileNames)
 {
+  auto reader = m_json.value("reader").toObject(QJsonObject());
   QJsonArray files;
   foreach (QString file, fileNames) {
     files.append(file);
   }
-  m_json["fileNames"] = files;
+
+  reader["fileNames"] = files;
+  m_json["reader"] = reader;
 }
 
 QStringList DataSource::fileNames() const
 {
+  auto reader = m_json.value("reader").toObject(QJsonObject());
   QStringList files;
-  if (isImageStack()) {
-    QJsonArray fileArray = m_json["fileNames"].toArray();
+  if (reader.contains("fileNames") && isImageStack()) {
+    QJsonArray fileArray = reader["fileNames"].toArray();
     foreach (QJsonValue file, fileArray) {
       files.append(file.toString());
     }
@@ -305,17 +276,17 @@ bool DataSource::isImageStack() const
     m_json["fileNames"].toArray().size() > 1;
 }
 
-void DataSource::setPvReaderXml(const QString& xml)
+void DataSource::setReaderProperties(const QVariantMap& properties)
 {
-  m_json["pvReaderXml"] = xml;
+  m_json["reader"] = QJsonObject::fromVariantMap(properties);
 }
 
-QString DataSource::pvReaderXml() const
+QVariantMap DataSource::readerProperties() const
 {
-  if (m_json.contains("pvReaderXml") && m_json["pvReaderXml"].isString()) {
-    return m_json["pvReaderXml"].toString();
+  if (m_json.contains("reader") && m_json["reader"].isObject()) {
+    return m_json["reader"].toObject().toVariantMap();
   } else {
-    return QString();
+    return QVariantMap();
   }
 }
 

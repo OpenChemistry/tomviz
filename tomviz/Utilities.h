@@ -21,7 +21,9 @@
 #include <pqApplicationCore.h>
 #include <pqProxy.h>
 #include <pqServerManagerModel.h>
+#include <vtkSMProperty.h>
 #include <vtkSMSourceProxy.h>
+#include <vtkVariant.h>
 
 #include <Variant.h>
 #include <vtk_pugixml.h>
@@ -197,6 +199,12 @@ QString findPrefix(const QStringList& fileNames);
 
 /// Convenience function to get the main widget (useful for dialog parenting).
 QWidget* mainWidget();
+
+QJsonValue toJson(vtkVariant variant);
+QJsonValue toJson(vtkSMProperty* prop);
+bool setProperties(const QJsonObject& props, vtkSMProxy* proxy);
+bool setProperty(const QJsonValue& value, vtkSMProperty* prop, int index = 0);
+bool setProperty(const QJsonArray& array, vtkSMProperty* prop);
 
 extern double offWhite[3];
 }

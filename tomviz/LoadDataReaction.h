@@ -75,6 +75,9 @@ private:
   Q_DISABLE_COPY(LoadDataReaction)
 
   static void addDefaultModules(DataSource* dataSource);
+  static QJsonObject readerProperties(vtkSMProxy* reader);
+  static void setFileNameProperties(const QJsonObject& props,
+                                    vtkSMProxy* reader);
 };
 }
 #endif

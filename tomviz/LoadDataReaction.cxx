@@ -51,6 +51,7 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QJsonArray>
 
 #include <sstream>
 
@@ -92,21 +93,6 @@ bool hasData(vtkSMProxy* reader)
   }
   return true;
 }
-
-QString pvXml(vtkSMProxy* readerProxy)
-{
-  pugi::xml_document doc;
-  pugi::xml_node root = doc.root();
-  pugi::xml_node node = root.prepend_child("DataReader");
-  node.append_attribute("xmlgroup").set_value(readerProxy->GetXMLGroup());
-  node.append_attribute("xmlname").set_value(readerProxy->GetXMLName());
-  tomviz::serialize(readerProxy, node);
-  std::ostringstream stream;
-  doc.save(stream);
-
-  return QString(stream.str().c_str());
-}
-
 }
 
 namespace tomviz {
@@ -184,7 +170,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   bool child = options["child"].toBool(false);
 
   DataSource* dataSource(nullptr);
-  QString xml;
   QString fileName;
   if (fileNames.size() > 0) {
     fileName = fileNames[0];
@@ -198,44 +183,11 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       dataSource = new DataSource(imageData);
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
-  } else if (options.contains("pvXml") && options["pvXml"].isString()) {
-    // Create the ParaView reader from the XML supplied.
-    pugi::xml_document doc;
-    xml = options["pvXml"].toString();
-    if (doc.load(xml.toUtf8().data())) {
-      pugi::xml_node root = doc.root();
-      pugi::xml_node node = root.child("DataReader");
-      auto pxm = ActiveObjects::instance().proxyManager();
-      vtkSmartPointer<vtkSMProxy> reader;
-      reader.TakeReference(
-        pxm->NewProxy(node.attribute("xmlgroup").as_string(),
-                      node.attribute("xmlname").as_string()));
-      if (tomviz::deserialize(reader, node)) {
-        // Use fileNames provided rather than relying on the XML. When loading
-        // a state file the file names provide are resolved relative to the
-        // state files so will survive a directory move.
-        // The are the possible ParaView properties
-        const char* propNames[] = { "FileNames", "FileName", "FilePrefix" };
-        for (int i = 0; i < 3; i++) {
-          auto propName = propNames[i];
-          auto prop = reader->GetProperty(propName);
-          if (prop != nullptr) {
-            vtkSMPropertyHelper helper(prop);
-            helper.Set(fileName.toLatin1().data());
-            break;
-          }
-        }
-
-        reader->UpdateVTKObjects();
-        vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
-        dataSource =
-          LoadDataReaction::createDataSource(reader, defaultModules, child);
-      }
-    }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
     auto pxm = tomviz::ActiveObjects::instance().proxyManager();
+    const char* name = "OMETIFFReader";
     vtkSmartPointer<vtkSMProxy> source;
-    source.TakeReference(pxm->NewProxy("sources", "OMETIFFReader"));
+    source.TakeReference(pxm->NewProxy("sources", name));
     QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
     vtkSMStringVectorProperty* prop = vtkSMStringVectorProperty::SafeDownCast(
       source->GetProperty(pname.toUtf8().data()));
@@ -243,7 +195,31 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     source->UpdateVTKObjects();
 
     dataSource = createDataSource(source, defaultModules, child);
-    xml = pvXml(source);
+    QJsonObject readerProperties;
+    readerProperties["name"] = name;
+    dataSource->setReaderProperties(readerProperties.toVariantMap());
+  } else if (options.contains("reader")) {
+    // Create the ParaView reader and set its properties using the JSON
+    // configuration.
+    auto props = options["reader"].toObject();
+    auto name = props["name"].toString();
+
+    auto pxm = ActiveObjects::instance().proxyManager();
+    vtkSmartPointer<vtkSMProxy> reader;
+    reader.TakeReference(pxm->NewProxy("sources", name.toLatin1().data()));
+
+    setProperties(props, reader);
+    setFileNameProperties(props, reader);
+    reader->UpdateVTKObjects();
+    vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
+    dataSource =
+      LoadDataReaction::createDataSource(reader, defaultModules, child);
+    if (dataSource == nullptr) {
+      return nullptr;
+    }
+
+    dataSource->setReaderProperties(props.toVariantMap());
+
   } else {
     // Use ParaView's file load infrastructure.
     pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
@@ -252,7 +228,15 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     }
 
     dataSource = createDataSource(reader->getProxy(), defaultModules, child);
-    xml = pvXml(reader->getProxy());
+    if (dataSource == nullptr) {
+      return nullptr;
+    }
+
+    QJsonObject props = readerProperties(reader->getProxy());
+    props["name"] = reader->getProxy()->GetXMLName();
+
+    dataSource->setReaderProperties(props.toVariantMap());
+
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(reader->getProxy());
   }
@@ -267,9 +251,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   dataSource->setFileName(fileName);
   if (fileNames.size() > 1) {
     dataSource->setFileNames(fileNames);
-  }
-  if (!xml.isEmpty()) {
-    dataSource->setPvReaderXml(xml);
   }
   if (addToRecent && dataSource) {
     RecentFilesMenu::pushDataReader(dataSource);
@@ -358,6 +339,79 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
       tomviz::createCameraOrbit(dataSource->proxy(),
                                 renderView->getRenderViewProxy());
     }
+  }
+}
+
+QJsonObject LoadDataReaction::readerProperties(vtkSMProxy* reader)
+{
+  QStringList propNames({ "DataScalarType", "DataByteOrder",
+                          "NumberOfScalarComponents", "DataExtent" });
+
+  QJsonObject props;
+  foreach (QString propName, propNames) {
+    auto prop = reader->GetProperty(propName.toLatin1().data());
+    if (prop != nullptr) {
+      props[propName] = toJson(prop);
+    }
+  }
+
+  // Special case file name related properties
+  auto prop = reader->GetProperty("FileName");
+  if (prop != nullptr) {
+    props["fileName"] = toJson(prop);
+  }
+  prop = reader->GetProperty("FileNames");
+  if (prop != nullptr) {
+    auto fileNames = toJson(prop).toArray();
+    if (fileNames.size() > 1) {
+      props["fileNames"] = fileNames;
+    }
+    // Normalize to fileNames for single value.
+    else {
+      props["fileName"] = fileNames[0];
+    }
+  }
+  prop = reader->GetProperty("FilePrefix");
+  if (prop != nullptr) {
+    props["fileName"] = toJson(prop);
+  }
+
+  return props;
+}
+
+void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
+                                             vtkSMProxy* reader)
+{
+  auto prop = reader->GetProperty("FileName");
+  if (prop != nullptr) {
+    if (!props.contains("fileName")) {
+      qCritical() << "Reader doesn't have 'fileName' property.";
+      return;
+    }
+    tomviz::setProperty(props["fileName"], prop);
+  }
+  prop = reader->GetProperty("FileNames");
+  if (prop != nullptr) {
+    if (!props.contains("fileNames") && !props.contains("fileName")) {
+      qCritical() << "Reader doesn't have 'fileName' or 'fileNames' property.";
+      return;
+    }
+
+    if (props.contains("fileNames")) {
+      tomviz::setProperty(props["fileNames"], prop);
+    } else {
+      QJsonArray fileNames;
+      fileNames.append(props["fileName"]);
+      tomviz::setProperty(fileNames, prop);
+    }
+  }
+  prop = reader->GetProperty("FilePrefix");
+  if (prop != nullptr) {
+    if (!props.contains("fileName")) {
+      qCritical() << "Reader doesn't have 'fileName' property.";
+      return;
+    }
+    tomviz::setProperty(props["fileName"], prop);
   }
 }
 

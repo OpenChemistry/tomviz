@@ -101,12 +101,11 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource)
   // Add non-proxy based readers separately.
   auto settings = loadSettings();
   auto readerList = settings["readers"].toArray();
-  QJsonObject readerJson;
+  QJsonObject readerJson =
+    QJsonObject::fromVariantMap(dataSource->readerProperties());
   readerJson["fileName"] = dataSource->fileName();
   readerJson["stack"] = dataSource->isImageStack();
-  if (!dataSource->pvReaderXml().isEmpty()) {
-    readerJson["pvXml"] = dataSource->pvReaderXml();
-  }
+
   // Remove the file if it is already in the list
   for (int i = readerList.size() - 1; i >= 0; --i) {
     if (readerList[i].toObject()["fileName"] == readerJson["fileName"]) {

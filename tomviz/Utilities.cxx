@@ -743,5 +743,111 @@ QWidget* mainWidget()
   return pqCoreUtilities::mainWidget();
 }
 
+QJsonValue toJson(vtkVariant variant)
+{
+  auto type = variant.GetType();
+  switch (type) {
+    case VTK_STRING:
+      return QJsonValue(variant.ToString());
+    case VTK_UNICODE_STRING:
+      return QJsonValue(
+        QString::fromUtf8(variant.ToUnicodeString().utf8_str()));
+    case VTK_CHAR:
+      return QJsonValue(QString(QChar(variant.ToChar())));
+    case VTK_SIGNED_CHAR:
+    case VTK_UNSIGNED_CHAR:
+    case VTK_SHORT:
+    case VTK_UNSIGNED_SHORT:
+    case VTK_INT:
+    case VTK_UNSIGNED_INT:
+      return QJsonValue(variant.ToInt());
+    case VTK_LONG:
+    case VTK_UNSIGNED_LONG:
+    case VTK_LONG_LONG:
+      return QJsonValue(variant.ToLongLong());
+    case VTK_FLOAT:
+    case VTK_DOUBLE:
+      return QJsonValue(variant.ToDouble());
+    default:
+      qCritical() << QString("Unsupported vtkVariant type %1").arg(type);
+      return QJsonValue();
+  }
+}
+
+QJsonValue toJson(vtkSMProperty* property)
+{
+  vtkSMPropertyHelper helper(property);
+
+  auto size = helper.GetNumberOfElements();
+
+  if (size == 1) {
+    return toJson(helper.GetAsVariant(0));
+  } else {
+    QJsonArray values;
+    for (unsigned int i = 0; i < size; i++) {
+      auto value = toJson(helper.GetAsVariant(i));
+      values.append(value);
+    }
+
+    return values;
+  }
+}
+
+bool setProperty(const QJsonArray& array, vtkSMProperty* prop)
+{
+  for (int i = 0; i < array.size(); i++) {
+    if (!setProperty(array[i], prop, i)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool setProperty(const QJsonValue& value, vtkSMProperty* prop, int index)
+{
+  vtkSMPropertyHelper helper(prop);
+
+  if (value.isArray()) {
+    return setProperty(value.toArray(), prop);
+  } else if (value.isDouble()) {
+    if (prop->IsA("vtkSMIntVectorProperty")) {
+      helper.Set(index, value.toInt());
+    } else if (prop->IsA("vtkSMDoubleVectorProperty")) {
+      helper.Set(index, value.toDouble());
+    } else {
+      qCritical() << QString("Unexpected property type.");
+      return false;
+    }
+  } else if (value.isString()) {
+    helper.Set(index, value.toString().toLatin1().data());
+  } else {
+    qCritical() << QString("Unexpected JSON type.");
+    return false;
+  }
+
+  return true;
+}
+
+bool setProperties(const QJsonObject& props, vtkSMProxy* proxy)
+{
+  if (proxy == nullptr) {
+    return false;
+  }
+
+  foreach (const QString& name, props.keys()) {
+    QJsonValue value = props.value(name);
+
+    auto prop = proxy->GetProperty(name.toLatin1().data());
+    if (prop != nullptr) {
+      if (!setProperty(value, prop)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
 }
