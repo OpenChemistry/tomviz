@@ -121,7 +121,7 @@ QJsonObject TranslateAlignOperator::serialize() const
   auto json = Operator::serialize();
 
   QJsonArray offsetArray;
-  foreach(auto offset, this->offsets) {
+  foreach (auto offset, this->offsets) {
     offsetArray << offset[0] << offset[1];
   }
 
