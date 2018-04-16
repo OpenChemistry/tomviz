@@ -21,7 +21,9 @@
 #include <pqApplicationCore.h>
 #include <pqProxy.h>
 #include <pqServerManagerModel.h>
+#include <vtkSMProperty.h>
 #include <vtkSMSourceProxy.h>
+#include <vtkVariant.h>
 
 #include <Variant.h>
 #include <vtk_pugixml.h>
@@ -127,6 +129,10 @@ inline QString label(pqProxy* proxy)
   return label(convert(proxy));
 }
 
+//// Making a function to serialize some ParaView proxies we are interested in.
+QJsonObject serialize(vtkSMProxy* proxy);
+bool deserialize(vtkSMProxy* proxy, const QJsonObject& json);
+
 /// Serialize a proxy to a pugi::xml node.
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties = QStringList(),
@@ -144,6 +150,9 @@ bool deserialize(QVariantMap& map, const pugi::xml_node& in);
 /// Serialize/deserialize a vtkPiecewiseFunction
 bool serialize(vtkPiecewiseFunction* func, pugi::xml_node& out);
 bool deserialize(vtkPiecewiseFunction* func, const pugi::xml_node& in);
+
+QJsonObject serialize(vtkPiecewiseFunction* func);
+bool deserialize(vtkPiecewiseFunction* func, const QJsonObject& json);
 
 /// Returns the vtkPVArrayInformation for scalars array produced by the given
 /// source proxy.
@@ -187,6 +196,15 @@ Variant toVariant(const QVariantList& value);
 
 /// Find common prefix for collection of file names
 QString findPrefix(const QStringList& fileNames);
+
+/// Convenience function to get the main widget (useful for dialog parenting).
+QWidget* mainWidget();
+
+QJsonValue toJson(vtkVariant variant);
+QJsonValue toJson(vtkSMProperty* prop);
+bool setProperties(const QJsonObject& props, vtkSMProxy* proxy);
+bool setProperty(const QJsonValue& value, vtkSMProperty* prop, int index = 0);
+bool setProperty(const QJsonArray& array, vtkSMProperty* prop);
 
 extern double offWhite[3];
 }

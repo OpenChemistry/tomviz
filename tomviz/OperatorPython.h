@@ -30,13 +30,12 @@ class CustomPythonOperatorWidget;
 class OperatorPython : public Operator
 {
   Q_OBJECT
-  typedef Operator Superclass;
 
 public:
   OperatorPython(QObject* parent = nullptr);
-  virtual ~OperatorPython();
+  ~OperatorPython() override;
 
-  QString label() const override { return this->Label; }
+  QString label() const override { return m_label; }
   void setLabel(const QString& txt);
 
   /// Returns an icon to use for this operator.
@@ -45,6 +44,9 @@ public:
   /// Return a new clone.
   Operator* clone() const override;
 
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
+
   bool serialize(pugi::xml_node& in) const override;
   bool deserialize(const pugi::xml_node& ns) override;
 
@@ -52,7 +54,7 @@ public:
   const QString& JSONDescription() const;
 
   void setScript(const QString& str);
-  const QString& script() const { return this->Script; }
+  const QString& script() const { return m_script; }
 
   EditOperatorWidget* getEditorContents(QWidget* parent) override;
   EditOperatorWidget* getEditorContentsWithData(
@@ -77,6 +79,9 @@ signals:
   // ensure the initialization of the new DataSource is performed on UI thread
   void newChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>);
   void newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>);
+  /// Signal uses to request that the child data source be updated with
+  /// a new vtkDataObject.
+  void childDataSourceUpdated(vtkSmartPointer<vtkDataObject>);
 
 protected:
   bool applyTransform(vtkDataObject* data) override;
@@ -85,6 +90,7 @@ private slots:
   // Create a new child datasource and set it on this operator
   void createNewChildDataSource(const QString& label,
                                 vtkSmartPointer<vtkDataObject>);
+  void updateChildDataSource(vtkSmartPointer<vtkDataObject>);
   void setOperatorResult(const QString& name,
                          vtkSmartPointer<vtkDataObject> result);
 
@@ -92,10 +98,10 @@ private:
   Q_DISABLE_COPY(OperatorPython)
 
   class OPInternals;
-  const QScopedPointer<OPInternals> Internals;
-  QString Label;
-  QString jsonDescription;
-  QString Script;
+  const QScopedPointer<OPInternals> d;
+  QString m_label;
+  QString m_jsonDescription;
+  QString m_script;
 
   QString m_customWidgetID;
 

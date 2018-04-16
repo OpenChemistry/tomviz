@@ -48,10 +48,6 @@ public:
   /// Returns the visibility for the module.
   bool visibility() const override;
 
-  /// serialize the state of the module.
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
-
   /// Set the visibility for this module. Subclasses should override this method
   /// show/hide all representations created for this module.
   bool setVisibility(bool val) override;

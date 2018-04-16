@@ -36,13 +36,13 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
         rFilter = (np.sin(np.pi * X / Nx) * np.sin(np.pi * Y / Ny)) ** 2
 
         self.progress.maximum = tiltSeries.shape[2] - 1
-        step = 0
+        step = 1
 
         for i in range(referenceIndex, Nproj - 1):
             if self.canceled:
                 return
             self.progress.message = 'Processing tilt image No.%d/%d' % (
-                i + 1, Nproj)
+                step, Nproj)
 
             tiltSeries[:, :, i + 1] = crossCorrelationAlign(
                 tiltSeries[:, :, i + 1], tiltSeries[:, :, i], rFilter, kFilter)
@@ -53,7 +53,7 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
             if self.canceled:
                 return
             self.progress.message = 'Processing tilt image No.%d/%d' % (
-                i, Nproj)
+                step, Nproj)
             tiltSeries[:, :, i - 1] = crossCorrelationAlign(
                 tiltSeries[:, :, i - 1], tiltSeries[:, :, i], rFilter, kFilter)
             step += 1

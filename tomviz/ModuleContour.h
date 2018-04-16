@@ -42,8 +42,8 @@ public:
   void addToPanel(QWidget*) override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return true; }
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
@@ -89,6 +89,8 @@ protected:
 private slots:
   /// invoked whenever a property widget changes
   void onPropertyChanged();
+
+  void onScalarArrayChanged();
 
   void setUseSolidColor(const bool useSolidColor);
 

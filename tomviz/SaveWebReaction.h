@@ -19,6 +19,9 @@
 #include <pqReaction.h>
 
 namespace tomviz {
+
+class MainWindow;
+
 /// SaveWebReaction handles the "Save Web" action in tomviz. On trigger,
 /// this will save several files for web viewing.
 class SaveWebReaction : public pqReaction
@@ -26,10 +29,10 @@ class SaveWebReaction : public pqReaction
   Q_OBJECT
 
 public:
-  SaveWebReaction(QAction* parentAction);
+  SaveWebReaction(QAction* parentAction, MainWindow* mainWindow);
 
   /// Save the file
-  bool saveWeb(QMap<QString, QVariant>* kwargs);
+  void saveWeb(QMap<QString, QVariant> kwargs);
 
 protected:
   /// Called when the data changes to enable/disable the menu item
@@ -39,7 +42,7 @@ protected:
   void onTriggered() override;
 
 private:
-  Q_DISABLE_COPY(SaveWebReaction)
+  MainWindow* m_mainWindow;
 };
 }
 #endif

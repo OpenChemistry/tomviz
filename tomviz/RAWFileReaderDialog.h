@@ -45,6 +45,9 @@ private:
   QScopedPointer<Ui::RAWFileReaderDialog> m_ui;
   vtkSMProxy* m_reader;
   size_t m_filesize;
+
+  bool isSigned(int vtkType);
+  int vtkDataTypeToIndex(int vtkType);
 };
 }
 

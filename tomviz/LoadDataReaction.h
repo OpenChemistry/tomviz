@@ -18,6 +18,8 @@
 
 #include <pqReaction.h>
 
+#include <QJsonObject>
+
 class vtkImageData;
 class vtkSMProxy;
 
@@ -32,42 +34,40 @@ class LoadDataReaction : public pqReaction
 {
   Q_OBJECT
 
-  typedef pqReaction Superclass;
-
 public:
   LoadDataReaction(QAction* parentAction);
-  virtual ~LoadDataReaction();
-
-  /// Create a raw data source from the reader.
-  static DataSource* createDataSource(vtkSMProxy* reader,
-                                      bool defaultModules = true,
-                                      bool child = false);
-
-  /// Create a data source that can be populated with data.
-  static DataSource* createDataSource(vtkImageData* imageData);
-
-  /// Create a data source using Tomviz readers (no proxy).
-  static DataSource* createDataSourceLocal(const QString& fileName,
-                                           bool defaultModules = true,
-                                           bool child = false);
+  ~LoadDataReaction() override;
 
   static QList<DataSource*> loadData();
 
-  /// Load a data file from the specified location.
-  static DataSource* loadData(const QString& fileName,
-                              bool defaultModules = true,
-                              bool addToRecent = true, bool child = false);
+  /// Convenience method, adds defaultModules, addToRecent, and child to the
+  /// JSON object before passing it to the loadData methods.
+  static DataSource* loadData(const QString& fileName, bool defaultModules,
+                              bool addToRecent, bool child,
+                              const QJsonObject& options = QJsonObject());
 
-  /// Load a data files from the specified location.
+  /// Load a data file from the specified location, options can be used to pass
+  /// additional parameters to the method, such as defaultModules, addToRecent,
+  /// and child, or pvXML to pass to the ParaView reader.
+  static DataSource* loadData(const QString& fileName,
+                              const QJsonObject& options = QJsonObject());
+
+  /// Load data files from the specified locations, options can be used to pass
+  /// additional parameters to the method, such as defaultModules, addToRecent,
+  /// and child, or pvXML to pass to the ParaView reader.
   static DataSource* loadData(const QStringList& fileNames,
-                              bool defaultModules = true,
-                              bool addToRecent = true, bool child = false);
+                              const QJsonObject& options = QJsonObject());
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource* dataSource,
                               bool defaultModules = true, bool child = false);
 
 protected:
+  /// Create a raw data source from the reader.
+  static DataSource* createDataSource(vtkSMProxy* reader,
+                                      bool defaultModules = true,
+                                      bool child = false);
+
   /// Called when the action is triggered.
   void onTriggered() override;
 
@@ -75,6 +75,9 @@ private:
   Q_DISABLE_COPY(LoadDataReaction)
 
   static void addDefaultModules(DataSource* dataSource);
+  static QJsonObject readerProperties(vtkSMProxy* reader);
+  static void setFileNameProperties(const QJsonObject& props,
+                                    vtkSMProxy* reader);
 };
 }
 #endif

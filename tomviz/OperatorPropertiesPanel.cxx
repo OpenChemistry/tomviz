@@ -17,14 +17,17 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "EditOperatorDialog.h"
 #include "Operator.h"
 #include "OperatorWidget.h"
+#include "Pipeline.h"
 #include "Utilities.h"
 
 #include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
 
@@ -73,6 +76,13 @@ void OperatorPropertiesPanel::setOperator(Operator* op)
 
 void OperatorPropertiesPanel::setOperator(OperatorPython* op)
 {
+  auto buttonLayout = new QHBoxLayout;
+  auto viewCodeButton = new QPushButton("View Code", this);
+
+  connect(viewCodeButton, &QAbstractButton::clicked, this,
+          &OperatorPropertiesPanel::viewCodePressed);
+  buttonLayout->addWidget(viewCodeButton);
+
   m_operatorWidget = new OperatorWidget(this);
   m_operatorWidget->setupUI(op);
 
@@ -81,21 +91,22 @@ void OperatorPropertiesPanel::setOperator(OperatorPython* op)
   if (!m_operatorWidget->layout() || m_operatorWidget->layout()->count() == 0) {
     m_operatorWidget->deleteLater();
     m_operatorWidget = nullptr;
-    return;
+  } else {
+    // For now add to scroll box, our operator widget tend to be a little
+    // wide!
+    auto scroll = new QScrollArea(this);
+    scroll->setWidget(m_operatorWidget);
+
+    m_layout->addWidget(scroll);
+
+    auto apply =
+      new QDialogButtonBox(QDialogButtonBox::Apply, Qt::Horizontal, this);
+    connect(apply, &QDialogButtonBox::clicked, this,
+            &OperatorPropertiesPanel::apply);
+
+    buttonLayout->addWidget(apply);
   }
-
-  // For now add to scroll box, out operator widget tend to be a little
-  // wide!
-  auto scroll = new QScrollArea(this);
-  scroll->setWidget(m_operatorWidget);
-
-  m_layout->addWidget(scroll);
-  auto apply =
-    new QDialogButtonBox(QDialogButtonBox::Apply, Qt::Horizontal, this);
-  connect(apply, &QDialogButtonBox::clicked, this,
-          &OperatorPropertiesPanel::apply);
-
-  m_layout->addWidget(apply);
+  m_layout->addItem(buttonLayout);
 }
 
 void OperatorPropertiesPanel::apply()
@@ -107,7 +118,7 @@ void OperatorPropertiesPanel::apply()
     if (pythonOperator) {
       DataSource* dataSource =
         qobject_cast<DataSource*>(pythonOperator->parent());
-      if (dataSource->isRunningAnOperator()) {
+      if (dataSource->pipeline()->isRunning()) {
         auto result = QMessageBox::question(
           this, "Cancel running operation?",
           "Applying changes to an operator that is part of a running pipeline "
@@ -122,18 +133,18 @@ void OperatorPropertiesPanel::apply()
         } else {
           auto whenCanceled = [pythonOperator, dataSource]() {
             // Resume the pipeline and emit transformModified
-            dataSource->resumePipeline(false);
+            dataSource->pipeline()->resume(false);
             emit pythonOperator->transformModified();
           };
           // We pause the pipeline so applyChangesToOperator does cause it to
           // execute.
-          dataSource->pausePipeline();
+          dataSource->pipeline()->pause();
           // We do this before causing cancel so the values are in place for
           // when
           // whenCanceled cause the pipeline to be re-executed.
           pythonOperator->setArguments(values);
-          if (dataSource->isRunningAnOperator()) {
-            dataSource->cancelPipeline(whenCanceled);
+          if (dataSource->pipeline()->isRunning()) {
+            dataSource->pipeline()->cancel(whenCanceled);
           } else {
             whenCanceled();
           }
@@ -144,5 +155,11 @@ void OperatorPropertiesPanel::apply()
       }
     }
   }
+}
+
+void OperatorPropertiesPanel::viewCodePressed()
+{
+  EditOperatorDialog::showDialogForOperator(m_activeOperator,
+                                            QStringLiteral("viewCode"));
 }
 }

@@ -74,6 +74,7 @@ protected:
 
 private:
   void renderViews();
+  void rescaleTransferFunction(vtkSMProxy* lutProxy, double min, double max);
   vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
@@ -82,6 +83,7 @@ private:
   vtkWeakPointer<vtkPVDiscretizableColorTransferFunction> m_LUT;
   vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
   vtkWeakPointer<vtkSMProxy> m_LUTProxy;
+  vtkWeakPointer<vtkTable> m_inputData;
 
   QVTKGLWidget* m_qvtk;
 };

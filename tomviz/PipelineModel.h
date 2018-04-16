@@ -72,7 +72,7 @@ public:
 public slots:
   void dataSourceAdded(DataSource* dataSource);
   void moduleAdded(Module* module);
-  void operatorAdded(Operator* op);
+  void operatorAdded(Operator* op, DataSource* transformedDataSource = nullptr);
   void operatorModified();
   void operatorTransformDone();
 
@@ -80,11 +80,13 @@ public slots:
   void moduleRemoved(Module* module);
   void childDataSourceAdded(DataSource* dataSource);
   void childDataSourceRemoved(DataSource* dataSource);
+  void dataSourceMoved(DataSource* dataSource);
 
 signals:
   void dataSourceItemAdded(DataSource* dataSource);
   void moduleItemAdded(Module* module);
   void operatorItemAdded(Operator* op);
+  void dataSourceModified(DataSource* dataSource);
 
 private:
   struct Item;
@@ -98,6 +100,7 @@ private:
                                     DataSource* source);
   QModelIndex operatorIndexHelper(PipelineModel::TreeItem* treeItem,
                                   Operator* op);
+  void moveDataSourceHelper(DataSource* dataSource, Operator* newParent);
 };
 
 } // tomviz namespace

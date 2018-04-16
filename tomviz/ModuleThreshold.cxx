@@ -22,6 +22,8 @@
 #include "pqProxiesWidget.h"
 #include "pqSignalAdaptors.h"
 #include "pqStringVectorPropertyWidget.h"
+
+#include "vtkDataObject.h"
 #include "vtkNew.h"
 #include "vtkSMPVRepresentationProxy.h"
 #include "vtkSMParaViewPipelineControllerWithRendering.h"
@@ -59,7 +61,7 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  auto producer = data->producer();
+  auto producer = data->proxy();
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
@@ -102,6 +104,9 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   if (auto p = convert<pqProxy*>(proxy)) {
     p->rename(label());
   }
+
+  connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
+  onScalarArrayChanged();
 
   return true;
 }
@@ -242,32 +247,71 @@ void ModuleThreshold::dataUpdated()
   emit renderNeeded();
 }
 
-bool ModuleThreshold::serialize(pugi::xml_node& ns) const
+void ModuleThreshold::onScalarArrayChanged()
 {
-  QStringList fprops;
-  fprops << "SelectInputScalars"
-         << "ThresholdBetween";
-  pugi::xml_node tnode = ns.append_child("Threshold");
+  QString arrayName = dataSource()->activeScalars();
+  vtkSMPropertyHelper(m_thresholdRepresentation, "ColorArrayName")
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                            arrayName.toLatin1().data());
+  m_thresholdRepresentation->UpdateVTKObjects();
 
-  QStringList representationProperties;
-  representationProperties << "Representation"
-                           << "Opacity"
-                           << "Specular"
-                           << "Visibility"
-                           << "MapScalars";
-  pugi::xml_node rnode = ns.append_child("ThresholdRepresentation");
-  return tomviz::serialize(m_thresholdFilter, tnode, fprops) &&
-         tomviz::serialize(m_thresholdRepresentation, rnode,
-                           representationProperties) &&
-         Module::serialize(ns);
+  emit renderNeeded();
 }
 
-bool ModuleThreshold::deserialize(const pugi::xml_node& ns)
+QJsonObject ModuleThreshold::serialize() const
 {
-  return tomviz::deserialize(m_thresholdFilter, ns.child("Threshold")) &&
-         tomviz::deserialize(m_thresholdRepresentation,
-                             ns.child("ThresholdRepresentation")) &&
-         Module::deserialize(ns);
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
+  auto rep = m_thresholdRepresentation;
+  vtkSMPropertyHelper scalars(m_thresholdFilter, "SelectInputScalars");
+  props["scalarArray"] = scalars.GetAsInt();
+  double range[2];
+  vtkSMPropertyHelper minMax(m_thresholdFilter, "ThresholdBetween");
+  minMax.Get(range, 2);
+  props["minimum"] = range[0];
+  props["maximum"] = range[1];
+  vtkSMPropertyHelper representationHelper(rep->GetProperty("Representation"));
+  props["representation"] = representationHelper.GetAsString();
+  vtkSMPropertyHelper specular(rep->GetProperty("Specular"));
+  props["specular"] = specular.GetAsDouble();
+  vtkSMPropertyHelper opacity(rep->GetProperty("Opacity"));
+  props["opacity"] = opacity.GetAsDouble();
+  vtkSMPropertyHelper mapScalars(rep->GetProperty("MapScalars"));
+  props["mapScalars"] = mapScalars.GetAsInt() == 1;
+
+  json["properties"] = props;
+
+  return json;
+}
+
+bool ModuleThreshold::deserialize(const QJsonObject& json)
+{
+  if (!Module::deserialize(json)) {
+    return false;
+  }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    auto rep = m_thresholdRepresentation;
+    vtkSMPropertyHelper scalars(m_thresholdFilter, "SelectInputScalars");
+    scalars.Set(props["scalarArray"].toInt());
+    double range[2] = { props["minimum"].toDouble(),
+                        props["maximum"].toDouble() };
+    vtkSMPropertyHelper minMax(m_thresholdFilter, "ThresholdBetween");
+    minMax.Set(range, 2);
+    vtkSMPropertyHelper repHelper(rep, "Representation");
+    repHelper.Set(props["representation"].toString().toStdString().c_str());
+    vtkSMPropertyHelper specular(rep, "Specular");
+    specular.Set(props["specular"].toDouble());
+    vtkSMPropertyHelper opacity(rep, "Opacity");
+    opacity.Set(props["opacity"].toDouble());
+    vtkSMPropertyHelper mapScalars(rep, "MapScalars");
+    mapScalars.Set(props["mapScalars"].toBool() ? 1 : 0);
+    m_thresholdFilter->UpdateVTKObjects();
+    rep->UpdateVTKObjects();
+    return true;
+  }
+  return false;
 }
 
 void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)

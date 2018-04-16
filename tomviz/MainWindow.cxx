@@ -33,6 +33,7 @@
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
 #include "Behaviors.h"
+#include "Connection.h"
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
 #include "LoadDataReaction.h"
@@ -40,11 +41,14 @@
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
+#include "PassiveAcquisitionWidget.h"
+#include "PipelineManager.h"
 #include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "PythonUtilities.h"
 #include "RecentFilesMenu.h"
 #include "ReconstructionReaction.h"
+#include "RegexGroupSubstitution.h"
 #include "ResetReaction.h"
 #include "SaveDataReaction.h"
 #include "SaveLoadStateReaction.h"
@@ -66,6 +70,7 @@
 #include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QIcon>
 #include <QMessageBox>
@@ -94,12 +99,16 @@ QString getAutosaveFile()
   return dataDir.absoluteFilePath(".tomviz_autosave.tvsm");
 }
 }
+class Connection;
 
 namespace tomviz {
 
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   : QMainWindow(parent, flags), m_ui(new Ui::MainWindow)
 {
+  // Register meta types
+  Connection::registerType();
+  RegexGroupSubstitution::registerType();
 
   // Override the default setting for showing full messages. This needs to be
   // done prior to calling m_ui->setupUi(this) which sets the default to false.
@@ -158,9 +167,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           SLOT(handleMessage(const QString&, int)));
 
   // Link the histogram in the central widget to the active data source.
-  m_ui->centralWidget->connect(&ActiveObjects::instance(),
-                               SIGNAL(dataSourceActivated(DataSource*)),
-                               SLOT(setActiveColorMapDataSource(DataSource*)));
+  m_ui->centralWidget->connect(
+    &ActiveObjects::instance(), &ActiveObjects::transformedDataSourceActivated,
+    m_ui->centralWidget, &CentralWidget::setActiveColorMapDataSource);
   m_ui->centralWidget->connect(&ActiveObjects::instance(),
                                SIGNAL(moduleActivated(Module*)),
                                SLOT(setActiveModule(Module*)));
@@ -172,11 +181,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                                SLOT(onColorMapUpdated()));
 
   m_ui->treeWidget->setModel(new PipelineModel(this));
-  m_ui->treeWidget->header()->setStretchLastSection(false);
-  m_ui->treeWidget->header()->setVisible(false);
-  m_ui->treeWidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-  m_ui->treeWidget->header()->setSectionResizeMode(1, QHeaderView::Fixed);
-  m_ui->treeWidget->header()->resizeSection(1, 30);
+  m_ui->treeWidget->initLayout();
+
   // Ensure that items are expanded by default, can be collapsed at will.
   connect(m_ui->treeWidget->model(),
           SIGNAL(rowsInserted(QModelIndex, int, int)), m_ui->treeWidget,
@@ -373,7 +379,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new SaveDataReaction(m_ui->actionSaveData);
   new SaveScreenshotReaction(m_ui->actionSaveScreenshot, this);
   new pqSaveAnimationReaction(m_ui->actionSaveMovie);
-  new SaveWebReaction(m_ui->actionSaveWeb);
+  new SaveWebReaction(m_ui->actionSaveWeb, this);
 
   new SaveLoadStateReaction(m_ui->actionSaveState);
   new SaveLoadStateReaction(m_ui->actionLoadState, /*load*/ true);
@@ -388,6 +394,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
   QAction* userGuideAction = m_ui->menuHelp->addAction("User Guide");
   connect(userGuideAction, SIGNAL(triggered()), SLOT(openUserGuide()));
+  QAction* introAction = m_ui->menuHelp->addAction("Intro to 3D Visualization");
+  connect(introAction, SIGNAL(triggered()), SLOT(openVisIntro()));
 #ifdef TOMVIZ_DATA
   QAction* reconAction =
     sampleDataMenu->addAction("Star Nanoparticle (Reconstruction)");
@@ -450,6 +458,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto acquisitionAction = m_ui->menuTools->addAction("Acquisition");
   connect(acquisitionAction, SIGNAL(triggered(bool)), acquisitionWidget,
           SLOT(show()));
+
+  auto passiveAcquisitionWidget = new PassiveAcquisitionWidget(this);
+  connect(m_ui->actionPassiveAcquisition, &QAction::triggered,
+          passiveAcquisitionWidget, &QWidget::show);
 
   registerCustomOperators();
 }
@@ -526,6 +538,15 @@ void MainWindow::openUserGuide()
   }
 }
 
+void MainWindow::openVisIntro()
+{
+  QString link = "https://www.cambridge.org/core/journals/microscopy-today/"
+                 "article/"
+                 "tutorial-on-the-visualization-of-volumetric-data-using-"
+                 "tomviz/55B58F40A16E96CDEB644202D9FD08BB";
+  QDesktopServices::openUrl(QUrl(link));
+}
+
 void MainWindow::dataSourceChanged(DataSource*)
 {
   m_ui->propertiesPanelStackedWidget->setCurrentWidget(
@@ -542,6 +563,70 @@ void MainWindow::operatorChanged(Operator*)
 {
   m_ui->propertiesPanelStackedWidget->setCurrentWidget(
     m_ui->operatorPropertiesScrollArea);
+}
+
+void MainWindow::importCustomTransform()
+{
+  QStringList filters;
+  filters << "Python (*.py)";
+
+  QFileDialog dialog(this);
+  dialog.setFileMode(QFileDialog::ExistingFile);
+  dialog.setNameFilters(filters);
+  dialog.setObjectName("ImportCustomTransform-tomviz");
+  dialog.setAcceptMode(QFileDialog::AcceptOpen);
+
+  if (dialog.exec() == QDialog::Accepted) {
+    QStringList filePaths = dialog.selectedFiles();
+    QString format = dialog.selectedNameFilter();
+    QFileInfo fileInfo(filePaths[0]);
+    QString filePath = fileInfo.absolutePath();
+    QString fileBaseName = fileInfo.baseName();
+    QString pythonSourcePath = QString("%1%2%3.py")
+                                 .arg(filePath)
+                                 .arg(QDir::separator())
+                                 .arg(fileBaseName);
+    QString jsonSourcePath = QString("%1%2%3.json")
+                               .arg(filePath)
+                               .arg(QDir::separator())
+                               .arg(fileBaseName);
+
+    // Ensure the tomviz directory exists
+    QStringList locations =
+      QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
+    QString home = locations[0];
+    QString path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
+    QDir dir(path);
+    // dir.mkpath() returns true if the path already exists or if it was
+    // successfully created.
+    if (!dir.mkpath(path)) {
+      QMessageBox::warning(
+        this, "Could not create tomviz directory",
+        QString("Could not create tomviz directory '%1'.").arg(path));
+      return;
+    }
+
+    // Copy the Python file to the tomviz directory if it exists
+    QFileInfo pythonFileInfo(pythonSourcePath);
+    if (pythonFileInfo.exists()) {
+      QString pythonDestPath =
+        QString("%1%2%3.py").arg(path).arg(QDir::separator()).arg(fileBaseName);
+      QFile::copy(pythonSourcePath, pythonDestPath);
+
+      // Copy the JSON file if it exists.
+      QFileInfo jsonFileInfo(jsonSourcePath);
+      if (jsonFileInfo.exists()) {
+        QString jsonDestPath = QString("%1%2%3.json")
+                                 .arg(path)
+                                 .arg(QDir::separator())
+                                 .arg(fileBaseName);
+        QFile::copy(jsonSourcePath, jsonDestPath);
+      }
+
+      // Register custom operators again.
+      registerCustomOperators();
+    }
+  }
 }
 
 void MainWindow::showEvent(QShowEvent* e)
@@ -566,6 +651,10 @@ void MainWindow::closeEvent(QCloseEvent* e)
       return;
     }
   }
+  // This is a little hackish, but we must ensure all PV proxy unregister calls
+  // happen early enough in application destruction that the ParaView proxy
+  // management code can still run without segfaulting.
+  PipelineManager::instance().removeAllPipelines();
   ModuleManager::instance().removeAllModules();
   ModuleManager::instance().removeAllDataSources();
   e->accept();
@@ -650,6 +739,24 @@ void MainWindow::handleMessage(const QString&, int type)
 
 void MainWindow::registerCustomOperators()
 {
+  // Always create the Custom Transforms menu so that it is possible to import
+  // new operators.
+  if (m_customTransformsMenu) {
+    m_customTransformsMenu->clear();
+  }
+
+  if (!m_customTransformsMenu) {
+    m_customTransformsMenu = new QMenu("Custom Transforms", this);
+    m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
+                              m_customTransformsMenu);
+  }
+
+  QAction* importCustomTransformAction =
+    m_customTransformsMenu->addAction("Import Custom Transform...");
+  m_customTransformsMenu->addSeparator();
+  connect(importCustomTransformAction, SIGNAL(triggered()),
+          SLOT(importCustomTransform()));
+
   QStringList paths;
   // Search in <home>/.tomviz
   foreach (QString home,
@@ -679,22 +786,20 @@ void MainWindow::registerCustomOperators()
 void MainWindow::registerCustomOperators(const QString& path)
 {
   std::vector<OperatorDescription> operators = findCustomOperators(path);
+
   // Sort so we get a consistent order each time we load
   std::sort(operators.begin(), operators.end(),
             [](const OperatorDescription& op1, const OperatorDescription& op2) {
-              return op1.label.compare(op2.label);
+              return  op1.label < op2.label;
             });
 
   if (!operators.empty()) {
-    QMenu* customTransformsMenu = new QMenu("Custom Transforms", this);
-    m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
-                              customTransformsMenu);
     for (const OperatorDescription& op : operators) {
-      QAction* action = customTransformsMenu->addAction(op.label);
+      QAction* action = m_customTransformsMenu->addAction(op.label);
       action->setEnabled(op.valid);
       if (!op.loadError.isNull()) {
         qWarning().noquote()
-          << QString("An error occured trying to load an operator from '%1':")
+          << QString("An error occurred trying to load an operator from '%1':")
                .arg(op.pythonPath);
         qWarning().noquote() << op.loadError;
         continue;

@@ -65,7 +65,7 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data,
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = data->producer()->GetSessionProxyManager();
+  auto pxm = data->proxy()->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -74,7 +74,7 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data,
   m_passThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(m_passThrough);
   controller->PreInitializeProxy(m_passThrough);
-  vtkSMPropertyHelper(m_passThrough, "Input").Set(data->producer());
+  vtkSMPropertyHelper(m_passThrough, "Input").Set(data->proxy());
   controller->PostInitializeProxy(m_passThrough);
   controller->RegisterPipelineProxy(m_passThrough);
 
@@ -94,6 +94,10 @@ bool ModuleOrthogonalSlice::initialize(DataSource* data,
   if (auto p = convert<pqProxy*>(proxy)) {
     p->rename(label());
   }
+
+  connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
+
+  onScalarArrayChanged();
 
   return true;
 }
@@ -200,25 +204,53 @@ void ModuleOrthogonalSlice::dataUpdated()
   emit renderNeeded();
 }
 
-bool ModuleOrthogonalSlice::serialize(pugi::xml_node& ns) const
+void ModuleOrthogonalSlice::onScalarArrayChanged()
 {
-  QStringList reprProperties;
-  reprProperties << "SliceMode"
-                 << "Slice"
-                 << "Opacity"
-                 << "Visibility"
-                 << "MapScalars";
-  pugi::xml_node nodeR = ns.append_child("Representation");
-  return (tomviz::serialize(m_representation, nodeR, reprProperties) &&
-          Module::serialize(ns));
+  QString arrayName = dataSource()->activeScalars();
+  vtkSMPropertyHelper(m_representation, "ColorArrayName")
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                            arrayName.toLatin1().data());
+  m_representation->UpdateVTKObjects();
+
+  emit renderNeeded();
 }
 
-bool ModuleOrthogonalSlice::deserialize(const pugi::xml_node& ns)
+QJsonObject ModuleOrthogonalSlice::serialize() const
 {
-  if (!tomviz::deserialize(m_representation, ns.child("Representation"))) {
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
+  vtkSMPropertyHelper sliceMode(m_representation->GetProperty("SliceMode"));
+  props["sliceMode"] = sliceMode.GetAsInt();
+  vtkSMPropertyHelper slice(m_representation->GetProperty("Slice"));
+  props["slice"] = slice.GetAsInt();
+  vtkSMPropertyHelper opacity(m_representation->GetProperty("Opacity"));
+  props["opacity"] = opacity.GetAsDouble();
+  vtkSMPropertyHelper mapScalars(m_representation->GetProperty("MapScalars"));
+  props["mapScalars"] = mapScalars.GetAsInt() != 0;
+
+  json["properties"] = props;
+  return json;
+}
+
+bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
+{
+  if (!Module::deserialize(json)) {
     return false;
   }
-  return Module::deserialize(ns);
+  if (json["properties"].isObject() && m_representation) {
+    auto rep = m_representation.Get();
+    auto props = json["properties"].toObject();
+    vtkSMPropertyHelper(rep, "SliceMode").Set(props["sliceMode"].toInt());
+    vtkSMPropertyHelper(rep, "Slice").Set(props["slice"].toInt());
+    vtkSMPropertyHelper(rep, "Opacity").Set(props["opacity"].toDouble());
+    vtkSMPropertyHelper(rep, "MapScalars")
+      .Set(props["mapScalars"].toBool() ? 1 : 0);
+
+    rep->UpdateVTKObjects();
+    return true;
+  }
+  return false;
 }
 
 void ModuleOrthogonalSlice::dataSourceMoved(double newX, double newY,

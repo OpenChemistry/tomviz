@@ -22,6 +22,7 @@
 #include <QPointer>
 #include <QtDebug>
 
+#include "ActiveObjects.h"
 #include "CustomPythonOperatorWidget.h"
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
@@ -32,7 +33,9 @@
 #include "pqPythonSyntaxHighlighter.h"
 
 #include "vtkDataObject.h"
+#include "vtkImageData.h"
 #include "vtkNew.h"
+#include "vtkPointData.h"
 #include "vtkSMParaViewPipelineController.h"
 #include "vtkSMProxy.h"
 #include "vtkSMProxyManager.h"
@@ -47,54 +50,59 @@ namespace {
 class EditPythonOperatorWidget : public tomviz::EditOperatorWidget
 {
   Q_OBJECT
-  typedef tomviz::EditOperatorWidget Superclass;
 
 public:
   EditPythonOperatorWidget(
     QWidget* p, tomviz::OperatorPython* o,
     tomviz::CustomPythonOperatorWidget* customWidget = nullptr)
-    : Superclass(p), Op(o), Ui(), m_customWidget(customWidget),
+    : tomviz::EditOperatorWidget(p), m_op(o), m_ui(), m_customWidget(customWidget),
       m_opWidget(nullptr)
   {
-    this->Ui.setupUi(this);
-    this->Ui.name->setText(o->label());
+    m_ui.setupUi(this);
+    m_ui.name->setText(o->label());
     if (!o->script().isEmpty()) {
-      this->Ui.script->setPlainText(o->script());
+      m_ui.script->setPlainText(o->script());
     }
-    new pqPythonSyntaxHighlighter(this->Ui.script, this);
+    new pqPythonSyntaxHighlighter(m_ui.script, this);
     if (customWidget) {
       QVBoxLayout* layout = new QVBoxLayout();
-      m_customWidget->setValues(this->Op->arguments());
+      m_customWidget->setValues(m_op->arguments());
       layout->addWidget(m_customWidget);
-      this->Ui.argumentsWidget->setLayout(layout);
+      m_ui.argumentsWidget->setLayout(layout);
     } else {
       QVBoxLayout* layout = new QVBoxLayout();
       m_opWidget = new tomviz::OperatorWidget(this);
-      m_opWidget->setupUI(this->Op);
+      m_opWidget->setupUI(m_op);
       layout->addWidget(m_opWidget);
       layout->addStretch();
-      this->Ui.argumentsWidget->setLayout(layout);
+      m_ui.argumentsWidget->setLayout(layout);
+    }
+  }
+  void setViewMode(const QString& mode) override
+  {
+    if (mode == QStringLiteral("viewCode")) {
+      m_ui.tabWidget->setCurrentWidget(m_ui.scriptTab);
     }
   }
   void applyChangesToOperator() override
   {
-    if (this->Op) {
-      this->Op->setLabel(this->Ui.name->text());
-      this->Op->setScript(this->Ui.script->toPlainText());
+    if (m_op) {
+      m_op->setLabel(m_ui.name->text());
+      m_op->setScript(m_ui.script->toPlainText());
       if (m_customWidget) {
         QMap<QString, QVariant> args;
         m_customWidget->getValues(args);
-        this->Op->setArguments(args);
+        m_op->setArguments(args);
       } else if (m_opWidget) {
         QMap<QString, QVariant> args = m_opWidget->values();
-        this->Op->setArguments(args);
+        m_op->setArguments(args);
       }
     }
   }
 
 private:
-  QPointer<tomviz::OperatorPython> Op;
-  Ui::EditPythonOperatorWidget Ui;
+  QPointer<tomviz::OperatorPython> m_op;
+  Ui::EditPythonOperatorWidget m_ui;
   tomviz::CustomPythonOperatorWidget* m_customWidget;
   tomviz::OperatorWidget* m_opWidget;
 };
@@ -125,47 +133,52 @@ public:
 };
 
 OperatorPython::OperatorPython(QObject* parentObject)
-  : Superclass(parentObject), Internals(new OperatorPython::OPInternals()),
-    Label("Python Operator")
+  : Operator(parentObject), d(new OperatorPython::OPInternals()),
+    m_label("Python Operator")
 {
   Python::initialize();
 
   {
     Python python;
-    this->Internals->OperatorModule = python.import("tomviz.utils");
-    if (!this->Internals->OperatorModule.isValid()) {
+    d->OperatorModule = python.import("tomviz.utils");
+    if (!d->OperatorModule.isValid()) {
       qCritical() << "Failed to import tomviz.utils module.";
     }
 
-    this->Internals->InternalModule = python.import("tomviz._internal");
-    if (!this->Internals->InternalModule.isValid()) {
+    d->InternalModule = python.import("tomviz._internal");
+    if (!d->InternalModule.isValid()) {
       qCritical() << "Failed to import tomviz._internal module.";
     }
 
-    this->Internals->IsCancelableFunction =
-      this->Internals->InternalModule.findFunction("is_cancelable");
-    if (!this->Internals->IsCancelableFunction.isValid()) {
+    d->IsCancelableFunction = d->InternalModule.findFunction("is_cancelable");
+    if (!d->IsCancelableFunction.isValid()) {
       qCritical() << "Unable to locate is_cancelable.";
     }
 
-    this->Internals->FindTransformScalarsFunction =
-      this->Internals->InternalModule.findFunction("find_transform_scalars");
-    if (!this->Internals->FindTransformScalarsFunction.isValid()) {
+    d->FindTransformScalarsFunction =
+      d->InternalModule.findFunction("find_transform_scalars");
+    if (!d->FindTransformScalarsFunction.isValid()) {
       qCritical() << "Unable to locate find_transform_scalars.";
     }
 
-    this->Internals->DeleteModuleFunction =
-      this->Internals->InternalModule.findFunction("delete_module");
-    if (!this->Internals->DeleteModuleFunction.isValid()) {
+    d->DeleteModuleFunction = d->InternalModule.findFunction("delete_module");
+    if (!d->DeleteModuleFunction.isValid()) {
       qCritical() << "Unable to locate delete_module.";
     }
   }
+
+  // Needed so the worker thread can update data in the UI thread.
+  connect(this, SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)),
+          this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)),
+          Qt::BlockingQueuedConnection);
+
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
   connect(this, SIGNAL(newChildDataSource(const QString&,
                                           vtkSmartPointer<vtkDataObject>)),
           this, SLOT(createNewChildDataSource(const QString&,
-                                              vtkSmartPointer<vtkDataObject>)));
+                                              vtkSmartPointer<vtkDataObject>)),
+          Qt::BlockingQueuedConnection);
   connect(
     this,
     SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
@@ -179,7 +192,7 @@ OperatorPython::~OperatorPython()
 
 void OperatorPython::setLabel(const QString& txt)
 {
-  this->Label = txt;
+  m_label = txt;
   emit labelModified();
 }
 
@@ -190,16 +203,16 @@ QIcon OperatorPython::icon() const
 
 void OperatorPython::setJSONDescription(const QString& str)
 {
-  if (this->jsonDescription == str) {
+  if (m_jsonDescription == str) {
     return;
   }
 
-  this->jsonDescription = str;
+  m_jsonDescription = str;
 
-  QJsonDocument document = QJsonDocument::fromJson(jsonDescription.toLatin1());
+  auto document = QJsonDocument::fromJson(m_jsonDescription.toLatin1());
   if (!document.isObject()) {
     qCritical() << "Failed to parse operator JSON";
-    qCritical() << jsonDescription;
+    qCritical() << m_jsonDescription;
     return;
   }
 
@@ -274,21 +287,20 @@ void OperatorPython::setJSONDescription(const QString& str)
 
 const QString& OperatorPython::JSONDescription() const
 {
-  return this->jsonDescription;
+  return m_jsonDescription;
 }
 
 void OperatorPython::setScript(const QString& str)
 {
-  if (this->Script != str) {
-    this->Script = str;
+  if (m_script != str) {
+    m_script = str;
 
     Python::Object result;
     {
       Python python;
-      QString moduleName = QString("tomviz_%1").arg(this->label());
-      this->Internals->TransformModule =
-        python.import(this->Script, this->label(), moduleName);
-      if (!this->Internals->TransformModule.isValid()) {
+      QString moduleName = QString("tomviz_%1").arg(label());
+      d->TransformModule = python.import(this->m_script, label(), moduleName);
+      if (!d->TransformModule.isValid()) {
         qCritical("Failed to create module.");
         return;
       }
@@ -297,7 +309,7 @@ void OperatorPython::setScript(const QString& str)
       Python::Tuple delArgs(1);
       Python::Object name(moduleName);
       delArgs.set(0, name);
-      auto delResult = this->Internals->DeleteModuleFunction.call(delArgs);
+      auto delResult = d->DeleteModuleFunction.call(delArgs);
       if (!delResult.isValid()) {
         qCritical("An error occurred deleting module.");
         return;
@@ -307,43 +319,61 @@ void OperatorPython::setScript(const QString& str)
       Python::Tuple findArgs(2);
       Python::Capsule op(this);
 
-      findArgs.set(0, this->Internals->TransformModule);
+      findArgs.set(0, d->TransformModule);
       findArgs.set(1, op);
 
-      this->Internals->TransformMethod =
-        this->Internals->FindTransformScalarsFunction.call(findArgs);
-      if (!this->Internals->TransformMethod.isValid()) {
+      d->TransformMethod = d->FindTransformScalarsFunction.call(findArgs);
+      if (!d->TransformMethod.isValid()) {
         qCritical("Script doesn't have any 'transform_scalars' function.");
         return;
       }
 
       Python::Tuple isArgs(1);
-      isArgs.set(0, this->Internals->TransformModule);
+      isArgs.set(0, d->TransformModule);
 
-      result = this->Internals->IsCancelableFunction.call(isArgs);
+      result = d->IsCancelableFunction.call(isArgs);
       if (!result.isValid()) {
         qCritical("Error calling is_cancelable.");
         return;
       }
     }
 
-    this->setSupportsCancel(result.toBool());
+    setSupportsCancel(result.toBool());
 
-    emit this->transformModified();
+    emit transformModified();
   }
 }
 
 bool OperatorPython::applyTransform(vtkDataObject* data)
 {
-  if (this->Script.isEmpty()) {
+  if (m_script.isEmpty()) {
     return false;
   }
-  if (!this->Internals->OperatorModule.isValid() ||
-      !this->Internals->TransformMethod.isValid()) {
+  if (!d->OperatorModule.isValid() || !d->TransformMethod.isValid()) {
     return false;
   }
 
   Q_ASSERT(data);
+
+  // Create child datasets in advance. Keep a map from DataSource to name
+  // so that we can match Python script return dictionary values containing
+  // child data after the script finishes.
+  QMap<DataSource*, QString> dataSourceByName;
+  for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
+    QPair<QString, QString> nameLabelPair = m_childDataSourceNamesAndLabels[i];
+    QString name(nameLabelPair.first);
+    QString label(nameLabelPair.second);
+
+    // Create uninitialized data set as a placeholder for the data
+    vtkSmartPointer<vtkImageData> childData =
+      vtkSmartPointer<vtkImageData>::New();
+
+    if (childData) {
+      emit newChildDataSource(label, childData);
+
+      dataSourceByName.insert(childDataSource(), nameLabelPair.first);
+    }
+  }
 
   Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
 
@@ -360,7 +390,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       kwargs.set(key, value);
     }
 
-    result = this->Internals->TransformMethod.call(args, kwargs);
+    result = d->TransformMethod.call(args, kwargs);
     if (!result.isValid()) {
       qCritical("Failed to execute the script.");
       return false;
@@ -378,6 +408,26 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
   if (check) {
     Python python;
     Python::Dict outputDict = result.toDict();
+
+    // Support setting child data from the output dictionary
+    if (hasChildDataSource()) {
+      Python::Object pyDataObject;
+      QString childKey = dataSourceByName[childDataSource()];
+      pyDataObject = outputDict[childKey];
+      if (!pyDataObject.isValid()) {
+        errorEncountered = true;
+        qCritical() << "No child dataset named " << childKey
+                    << "defined in dictionary returned from Python script.\n";
+      } else {
+        vtkObjectBase* vtkobject =
+          Python::VTK::GetPointerFromObject(pyDataObject, "vtkDataObject");
+        vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
+        if (dataObject) {
+          emit childDataSourceUpdated(dataObject);
+        }
+      }
+    }
+
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {
       Python::Object pyDataObject;
@@ -386,7 +436,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       if (!pyDataObject.isValid()) {
         errorEncountered = true;
         qCritical() << "No result named" << m_resultNames[i]
-                    << "defined in output dictionary.\n";
+                    << "defined in dictionary returned from Python script.\n";
         continue;
       }
       vtkObjectBase* vtkobject =
@@ -399,30 +449,6 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
         qCritical() << "Result named '" << m_resultNames[i]
                     << "' is not a vtkDataObject";
         continue;
-      }
-    }
-
-    // Segmentations, reconstructions, etc.
-    for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
-      QPair<QString, QString> nameLabelPair =
-        m_childDataSourceNamesAndLabels[i];
-      QString name(nameLabelPair.first);
-      QString label(nameLabelPair.second);
-      Python::Object child = outputDict[name];
-
-      if (!child.isValid()) {
-        errorEncountered = true;
-        qCritical() << "No child data source named '" << name
-                    << "' defined in output dictionary.\n";
-        continue;
-      }
-
-      vtkObjectBase* vtkobject =
-        Python::VTK::GetPointerFromObject(child, "vtkDataObject");
-      vtkSmartPointer<vtkDataObject> childData =
-        vtkDataObject::SafeDownCast(vtkobject);
-      if (childData) {
-        emit newChildDataSource(label, childData);
       }
     }
 
@@ -439,27 +465,49 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
 Operator* OperatorPython::clone() const
 {
   OperatorPython* newClone = new OperatorPython();
-  newClone->setLabel(this->label());
-  newClone->setScript(this->script());
-  newClone->setJSONDescription(this->JSONDescription());
+  newClone->setLabel(label());
+  newClone->setScript(script());
+  newClone->setJSONDescription(JSONDescription());
   return newClone;
+}
+
+QJsonObject OperatorPython::serialize() const
+{
+  auto json = Operator::serialize();
+  json["description"] = JSONDescription();
+  json["label"] = label();
+  json["script"] = script();
+  if (!m_arguments.isEmpty()) {
+    json["arguments"] = QJsonObject::fromVariantMap(m_arguments);
+  }
+  return json;
+}
+
+bool OperatorPython::deserialize(const QJsonObject& json)
+{
+  setJSONDescription(json["description"].toString());
+  setLabel(json["label"].toString());
+  setScript(json["script"].toString());
+  m_arguments.clear();
+  m_arguments = json["arguments"].toObject().toVariantMap();
+  return true;
 }
 
 bool OperatorPython::serialize(pugi::xml_node& ns) const
 {
   ns.append_attribute("json_description")
-    .set_value(this->JSONDescription().toLatin1().data());
-  ns.append_attribute("label").set_value(this->label().toLatin1().data());
-  ns.append_attribute("script").set_value(this->script().toLatin1().data());
+    .set_value(JSONDescription().toLatin1().data());
+  ns.append_attribute("label").set_value(label().toLatin1().data());
+  ns.append_attribute("script").set_value(script().toLatin1().data());
   pugi::xml_node argsNode = ns.append_child("arguments");
   return tomviz::serialize(m_arguments, argsNode);
 }
 
 bool OperatorPython::deserialize(const pugi::xml_node& ns)
 {
-  this->setJSONDescription(ns.attribute("json_description").as_string());
-  this->setLabel(ns.attribute("label").as_string());
-  this->setScript(ns.attribute("script").as_string());
+  setJSONDescription(ns.attribute("json_description").as_string());
+  setLabel(ns.attribute("label").as_string());
+  setScript(ns.attribute("script").as_string());
   m_arguments.clear();
   return tomviz::deserialize(m_arguments, ns.child("arguments"));
 }
@@ -493,38 +541,34 @@ EditOperatorWidget* OperatorPython::getEditorContentsWithData(
 void OperatorPython::createNewChildDataSource(
   const QString& label, vtkSmartPointer<vtkDataObject> childData)
 {
-
-  vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
-  vtkSMSessionProxyManager* sessionProxyManager =
-    proxyManager->GetActiveSessionProxyManager();
-
-  pqSMProxy producerProxy;
-  producerProxy.TakeReference(
-    sessionProxyManager->NewProxy("sources", "TrivialProducer"));
-  producerProxy->UpdateVTKObjects();
-
-  vtkTrivialProducer* producer =
-    vtkTrivialProducer::SafeDownCast(producerProxy->GetClientSideObject());
-  if (!producer) {
-    qWarning() << "Could not get TrivialProducer from proxy";
-    return;
-  }
-
-  producer->SetOutput(childData);
-
   DataSource* childDS = new DataSource(
-    vtkSMSourceProxy::SafeDownCast(producerProxy), DataSource::Volume, this,
+    vtkImageData::SafeDownCast(childData), DataSource::Volume, this,
     DataSource::PersistenceState::Transient);
 
-  childDS->setFilename(label.toLatin1().data());
-  this->setChildDataSource(childDS);
+  childDS->setFileName(label);
+  setChildDataSource(childDS);
+  setHasChildDataSource(true);
   emit Operator::newChildDataSource(childDS);
+}
+
+void OperatorPython::updateChildDataSource(vtkSmartPointer<vtkDataObject> data)
+{
+  // Check to see if a child data source has already been created. If not,
+  // create it here.
+  auto dataSource = childDataSource();
+  Q_ASSERT(dataSource);
+
+  // Now deep copy the new data to the child source data if needed
+  dataSource->copyData(data);
+  emit dataSource->dataChanged();
+  emit dataSource->dataPropertiesChanged();
+  ActiveObjects::instance().renderAllViews();
 }
 
 void OperatorPython::setOperatorResult(const QString& name,
                                        vtkSmartPointer<vtkDataObject> result)
 {
-  bool resultWasSet = this->setResult(name.toLatin1().data(), result);
+  bool resultWasSet = setResult(name.toLatin1().data(), result);
   if (!resultWasSet) {
     qCritical() << "Could not set result '" << name << "'";
   }
@@ -532,7 +576,10 @@ void OperatorPython::setOperatorResult(const QString& name,
 
 void OperatorPython::setArguments(QMap<QString, QVariant> args)
 {
-  m_arguments = args;
+  if (args != m_arguments) {
+    m_arguments = args;
+    emit transformModified();
+  }
 }
 
 QMap<QString, QVariant> OperatorPython::arguments() const

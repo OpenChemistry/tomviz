@@ -25,6 +25,7 @@
 #include <pqNonEditableStyledItemDelegate.h>
 #include <pqPropertiesPanel.h>
 #include <pqProxyWidget.h>
+#include <pqTreeWidget.h>
 #include <pqView.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkPVArrayInformation.h>
@@ -66,13 +67,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   QWidget* separator = pqProxyWidget::newGroupLabelWidget("Filename", this);
   l->insertWidget(l->indexOf(m_ui->FileName), separator);
 
-  separator =
-    pqProxyWidget::newGroupLabelWidget("Original Dimensions & Range", this);
-  l->insertWidget(l->indexOf(m_ui->OriginalDataRange), separator);
-
-  separator =
-    pqProxyWidget::newGroupLabelWidget("Transformed Dimensions & Range", this);
-  l->insertWidget(l->indexOf(m_ui->TransformedDataRange), separator);
+  separator = pqProxyWidget::newGroupLabelWidget("Dimensions & Range", this);
+  l->insertWidget(l->indexOf(m_ui->DataRange), separator);
 
   separator = pqProxyWidget::newGroupLabelWidget("Units and Size", this);
 
@@ -95,6 +91,8 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(m_ui->xLengthBox, SIGNAL(editingFinished()), SLOT(updateXLength()));
   connect(m_ui->yLengthBox, SIGNAL(editingFinished()), SLOT(updateYLength()));
   connect(m_ui->zLengthBox, SIGNAL(editingFinished()), SLOT(updateZLength()));
+  connect(m_ui->DataTreeWidget, SIGNAL(itemSelectionChanged()),
+          SLOT(updateActiveScalars()));
 }
 
 DataPropertiesPanel::~DataPropertiesPanel()
@@ -142,6 +140,8 @@ void DataPropertiesPanel::updateInformationWidget(
 {
   infoTreeWidget->clear();
 
+  int activeArrayRow = -1;
+
   vtkPVDataSetAttributesInformation* pointDataInfo =
     dataInfo->GetPointDataInformation();
   if (pointDataInfo) {
@@ -150,9 +150,15 @@ void DataPropertiesPanel::updateInformationWidget(
     for (int i = 0; i < numArrays; i++) {
       vtkPVArrayInformation* arrayInfo;
       arrayInfo = pointDataInfo->GetArrayInformation(i);
+      if (pointDataInfo->IsArrayAnAttribute(i) ==
+          vtkDataSetAttributes::SCALARS) {
+        activeArrayRow = i;
+      }
+
       // name, type, data range, data type
       QTreeWidgetItem* item = new QTreeWidgetItem(infoTreeWidget);
-      item->setData(0, Qt::DisplayRole, arrayInfo->GetName());
+      auto arrayName = arrayInfo->GetName();
+      item->setData(0, Qt::DisplayRole, arrayName);
       QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
       item->setData(2, Qt::DisplayRole, dataType);
       int numComponents = arrayInfo->GetNumberOfComponents();
@@ -181,6 +187,18 @@ void DataPropertiesPanel::updateInformationWidget(
     }
   }
 
+  // Select the active array row if there is one
+  if (activeArrayRow >= 0) {
+    QModelIndex index = infoTreeWidget->model()->index(activeArrayRow, 0);
+    QItemSelectionModel* selectionModel = infoTreeWidget->selectionModel();
+    if (selectionModel) {
+      m_ui->DataTreeWidget->blockSignals(true);
+      selectionModel->select(index, QItemSelectionModel::ClearAndSelect |
+                                      QItemSelectionModel::Rows);
+      m_ui->DataTreeWidget->blockSignals(false);
+    }
+  }
+
   infoTreeWidget->header()->resizeSections(QHeaderView::ResizeToContents);
   infoTreeWidget->setItemDelegate(new pqNonEditableStyledItemDelegate(this));
 }
@@ -200,12 +218,9 @@ void DataPropertiesPanel::updateData()
     return;
   }
 
-  m_ui->FileName->setText(dsource->filename());
+  m_ui->FileName->setText(dsource->fileName());
 
-  m_ui->OriginalDataRange->setText(
-    getDataDimensionsString(dsource->originalDataSource()));
-  m_ui->TransformedDataRange->setText(
-    getDataDimensionsString(dsource->producer()));
+  m_ui->DataRange->setText(getDataDimensionsString(dsource->proxy()));
 
   int extent[6];
   double spacing[3];
@@ -217,18 +232,11 @@ void DataPropertiesPanel::updateData()
     QString("%1").arg(spacing[1] * (extent[3] - extent[2])));
   m_ui->zLengthBox->setText(
     QString("%1").arg(spacing[2] * (extent[5] - extent[4])));
-  m_ui->unitBox->setText(m_currentDataSource->getUnits(0));
+  m_ui->unitBox->setText(m_currentDataSource->getUnits());
 
-  vtkSMSourceProxy* sourceProxy =
-    vtkSMSourceProxy::SafeDownCast(dsource->originalDataSource());
+  auto sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->proxy());
   if (sourceProxy) {
-    updateInformationWidget(m_ui->OriginalDataTreeWidget,
-                            sourceProxy->GetDataInformation());
-  }
-
-  sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->producer());
-  if (sourceProxy) {
-    updateInformationWidget(m_ui->TransformedDataTreeWidget,
+    updateInformationWidget(m_ui->DataTreeWidget,
                             sourceProxy->GetDataInformation());
   }
 
@@ -455,9 +463,9 @@ void DataPropertiesPanel::updateAxesGridLabels()
   if (!axesGrid || !ds) {
     return;
   }
-  QString xTitle = QString("X (%1)").arg(ds->getUnits(0));
-  QString yTitle = QString("Y (%1)").arg(ds->getUnits(1));
-  QString zTitle = QString("Z (%1)").arg(ds->getUnits(2));
+  QString xTitle = QString("X (%1)").arg(ds->getUnits());
+  QString yTitle = QString("Y (%1)").arg(ds->getUnits());
+  QString zTitle = QString("Z (%1)").arg(ds->getUnits());
   vtkSMPropertyHelper(axesGrid, "XTitle").Set(xTitle.toUtf8().data());
   vtkSMPropertyHelper(axesGrid, "YTitle").Set(yTitle.toUtf8().data());
   vtkSMPropertyHelper(axesGrid, "ZTitle").Set(zTitle.toUtf8().data());
@@ -470,13 +478,26 @@ void DataPropertiesPanel::updateAxesGridLabels()
   }
 }
 
+void DataPropertiesPanel::updateActiveScalars()
+{
+  QList<QTreeWidgetItem*> items = m_ui->DataTreeWidget->selectedItems();
+  if (items.size() > 0) {
+    // Warning: assumes the first item is from the first column. I'm not sure if
+    // this
+    // is guaranteed.
+    auto arrayName = items[0]->data(0, Qt::DisplayRole).toString();
+    if (m_currentDataSource) {
+      m_currentDataSource->setActiveScalars(arrayName);
+    }
+  }
+}
+
 void DataPropertiesPanel::clear()
 {
   m_ui->FileName->setText("");
-  m_ui->OriginalDataRange->setText("");
-  m_ui->OriginalDataTreeWidget->clear();
-  m_ui->TransformedDataRange->setText("");
-  m_ui->TransformedDataTreeWidget->clear();
+  m_ui->DataRange->setText("");
+  m_ui->DataTreeWidget->clear();
+
   if (m_colorMapWidget) {
     m_ui->verticalLayout->removeWidget(m_colorMapWidget);
     delete m_colorMapWidget;

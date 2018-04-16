@@ -20,7 +20,6 @@
 #include <QObject>
 
 class QMenu;
-class vtkSMProxy;
 
 namespace tomviz {
 
@@ -31,14 +30,13 @@ class DataSource;
 class RecentFilesMenu : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
   RecentFilesMenu(QMenu& menu, QObject* parent = nullptr);
-  virtual ~RecentFilesMenu();
+  ~RecentFilesMenu() override;
 
   /// Pushes a reader on the recent files stack.
-  static void pushDataReader(DataSource* dataSource, vtkSMProxy* readerProxy);
+  static void pushDataReader(DataSource* dataSource);
   static void pushStateFile(const QString& filename);
 
 private slots:

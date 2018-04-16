@@ -40,8 +40,8 @@ public:
   bool setVisibility(bool val) override;
   bool visibility() const override;
   void addToPanel(QWidget*) override;
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return true; }
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
@@ -59,6 +59,8 @@ protected:
 
 private slots:
   void dataUpdated();
+
+  void onScalarArrayChanged();
 
 private:
   Q_DISABLE_COPY(ModuleOrthogonalSlice)

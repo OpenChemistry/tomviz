@@ -20,11 +20,18 @@
 #include <pqAnimationCue.h>
 #include <pqAnimationManager.h>
 #include <pqAnimationScene.h>
+#include <pqCoreUtilities.h>
 #include <pqPVApplicationCore.h>
 #include <pqSMAdaptor.h>
+#include <vtkPVArrayInformation.h>
+#include <vtkPVDataInformation.h>
+#include <vtkPVDataSetAttributesInformation.h>
+#include <vtkPVXMLElement.h>
+#include <vtkPVXMLParser.h>
 #include <vtkSMNamedPropertyIterator.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMRenderViewProxy.h>
+#include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMUtilities.h>
 
@@ -33,15 +40,9 @@
 #include <vtkImageData.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkNew.h>
-#include <vtkPVArrayInformation.h>
-#include <vtkPVDataInformation.h>
-#include <vtkPVDataSetAttributesInformation.h>
-#include <vtkPVXMLElement.h>
-#include <vtkPVXMLParser.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPoints.h>
 #include <vtkRenderer.h>
-#include <vtkSMTransferFunctionManager.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringList.h>
 #include <vtkTrivialProducer.h>
@@ -52,11 +53,14 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QJsonArray>
 #include <QLayout>
 #include <QMessageBox>
 #include <QString>
 
 namespace tomviz {
+
+using std::string;
 
 const char* Attributes::TYPE = "tomviz.Type";
 const char* Attributes::DATASOURCE_FILENAME = "tomviz.DataSource.FileName";
@@ -122,6 +126,167 @@ public:
 }
 
 namespace tomviz {
+
+namespace {
+
+QJsonArray jsonArrayFromXml(pugi::xml_node node)
+{
+  // Simple function, just iterates through the elements and fills the array.
+  // This assumes the ParaView Element nodes, values stored in value attributes.
+  QJsonArray array;
+  for (auto element = node.child("Element"); element;
+       element = element.next_sibling("Element")) {
+    array.append(element.attribute("value").as_double(-1));
+  }
+  return array;
+}
+
+void createXmlProperty(pugi::xml_node& n, const char* name, int id,
+                       QJsonArray arr)
+{
+  n.set_name("Property");
+  n.append_attribute("name").set_value(name);
+  QString idStr = QString::number(id) + "." + name;
+  n.append_attribute("id").set_value(idStr.toStdString().c_str());
+  n.append_attribute("number_of_elements").set_value(arr.size());
+  for (int i = 0; i < arr.size(); ++i) {
+    auto element = n.append_child("Element");
+    element.append_attribute("index").set_value(i);
+    element.append_attribute("value").set_value(arr[i].toDouble(-1));
+  }
+}
+}
+
+QJsonObject serialize(vtkSMProxy* proxy)
+{
+  // Start out by creating the XML, and loading it into a pugi::xml DOM.
+  vtkSmartPointer<vtkSMNamedPropertyIterator> iter;
+  vtkSmartPointer<vtkPVXMLElement> elem;
+  elem.TakeReference(proxy->SaveXMLState(nullptr, iter.GetPointer()));
+
+  std::ostringstream stream;
+  elem->PrintXML(stream, vtkIndent());
+
+  pugi::xml_document document;
+  if (!document.load(stream.str().c_str())) {
+    qCritical("Failed to convert from vtkPVXMLElement to pugi::xml_document");
+    return QJsonObject();
+  }
+
+  // Now to convert it over to the JSON, there is some very proxy specific code.
+  // std::cout << "XML:\n" << stream.str().c_str() << std::endl;
+
+  QJsonObject json;
+  auto node = document.child("Proxy");
+  if (string(node.name()) == "Proxy") {
+    json["id"] = node.attribute("id").as_int();
+    json["servers"] = node.attribute("servers").as_int();
+  }
+  if (string(node.attribute("type").value()) == "PVLookupTable") {
+    // std::cout << "We have a lookup table!!!\n\n";
+    for (auto property = node.child("Property"); property;
+         property = property.next_sibling("Property")) {
+      if (string(property.attribute("name").value()) == "RGBPoints") {
+        auto elementArray = jsonArrayFromXml(property);
+        json["colorTable"] = elementArray;
+      }
+    }
+  } else if (string(node.attribute("type").value()) == "PiecewiseFunction") {
+    for (auto property = node.child("Property"); property;
+         property = property.next_sibling("Property")) {
+      if (string(property.attribute("name").value()) == "Points") {
+        auto elementArray = jsonArrayFromXml(property);
+        json["pointTable"] = elementArray;
+      }
+    }
+  }
+
+  return json;
+}
+
+bool deserialize(vtkSMProxy* proxy, const QJsonObject& json)
+{
+  if (!proxy) {
+    return false;
+  }
+
+  if (json.empty()) {
+    // Empty state loaded.
+    return true;
+  }
+
+  pugi::xml_document document;
+  auto proxyNode = document.append_child("Proxy");
+  if (json.contains("colorTable")) {
+    proxyNode.append_attribute("group").set_value("lookup_tables");
+    proxyNode.append_attribute("type").set_value("PVLookupTable");
+    auto propNode = proxyNode.append_child("Property");
+    createXmlProperty(propNode, "RGBPoints", json["id"].toInt(),
+                      json["colorTable"].toArray());
+
+  } else if (json.contains("pointTable")) {
+    proxyNode.append_attribute("group").set_value("piecewise_functions");
+    proxyNode.append_attribute("type").set_value("PiecewiseFunction");
+    auto propNode = proxyNode.append_child("Property");
+    createXmlProperty(propNode, "Points", json["id"].toInt(),
+                      json["pointTable"].toArray());
+  }
+  proxyNode.append_attribute("id").set_value(json["id"].toInt());
+  proxyNode.append_attribute("servers").set_value(json["servers"].toInt());
+
+  std::ostringstream stream;
+  document.first_child().print(stream);
+  vtkNew<vtkPVXMLParser> parser;
+  if (!parser->Parse(stream.str().c_str())) {
+    return false;
+  }
+  if (proxy->LoadXMLState(parser->GetRootElement(), nullptr) != 0) {
+    proxy->UpdateVTKObjects();
+    return true;
+  }
+  return false;
+}
+
+QJsonObject serialize(vtkPiecewiseFunction* func)
+{
+  QJsonObject json;
+  QJsonArray pointsTable;
+
+  const int numPoints = func->GetSize();
+  for (int pointIdx = 0; pointIdx < numPoints; pointIdx++) {
+    double values[4] = { 0.0 };
+    func->GetNodeValue(pointIdx, values);
+    for (int i = 0; i < 4; i++) {
+      pointsTable.append(values[i]);
+    }
+  }
+  json["pointsTable"] = pointsTable;
+
+  return json;
+}
+
+bool deserialize(vtkPiecewiseFunction* func, const QJsonObject& json)
+{
+  if (json.empty()) {
+    // Empty state loaded.
+    return true;
+  }
+
+  if (json.contains("pointsTable")) {
+    auto points = json["pointsTable"].toArray();
+    func->RemoveAllPoints();
+    double values[4];
+    for (int pointIdx = 0; pointIdx < points.size(); pointIdx += 4) {
+      for (int i = 0; i < 4; i++) {
+        values[i] = points.at(pointIdx + i).toDouble();
+      }
+      func->AddPoint(values[0], values[1], values[2], values[3]);
+    }
+    return true;
+  }
+
+  return false;
+}
 
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties, const QDir* relDir)
@@ -349,7 +514,7 @@ bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
   vtkSMProxy* omap =
     vtkSMPropertyHelper(cmap, "ScalarOpacityFunction").GetAsProxy();
   vtkPVArrayInformation* ainfo =
-    tomviz::scalarArrayInformation(dataSource->producer());
+    tomviz::scalarArrayInformation(dataSource->proxy());
   if (ainfo != nullptr &&
       vtkSMPropertyHelper(cmap, "AutomaticRescaleRangeMode").GetAsInt() !=
         vtkSMTransferFunctionManager::NEVER) {
@@ -571,6 +736,117 @@ QString findPrefix(const QStringList& fileNames)
   }
 
   return prefix;
+}
+
+QWidget* mainWidget()
+{
+  return pqCoreUtilities::mainWidget();
+}
+
+QJsonValue toJson(vtkVariant variant)
+{
+  auto type = variant.GetType();
+  switch (type) {
+    case VTK_STRING:
+      return QJsonValue(variant.ToString());
+    case VTK_UNICODE_STRING:
+      return QJsonValue(
+        QString::fromUtf8(variant.ToUnicodeString().utf8_str()));
+    case VTK_CHAR:
+      return QJsonValue(QString(QChar(variant.ToChar())));
+    case VTK_SIGNED_CHAR:
+    case VTK_UNSIGNED_CHAR:
+    case VTK_SHORT:
+    case VTK_UNSIGNED_SHORT:
+    case VTK_INT:
+    case VTK_UNSIGNED_INT:
+      return QJsonValue(variant.ToInt());
+    case VTK_LONG:
+    case VTK_UNSIGNED_LONG:
+    case VTK_LONG_LONG:
+      return QJsonValue(variant.ToLongLong());
+    case VTK_FLOAT:
+    case VTK_DOUBLE:
+      return QJsonValue(variant.ToDouble());
+    default:
+      qCritical() << QString("Unsupported vtkVariant type %1").arg(type);
+      return QJsonValue();
+  }
+}
+
+QJsonValue toJson(vtkSMProperty* property)
+{
+  vtkSMPropertyHelper helper(property);
+
+  auto size = helper.GetNumberOfElements();
+
+  if (size == 1) {
+    return toJson(helper.GetAsVariant(0));
+  } else {
+    QJsonArray values;
+    for (unsigned int i = 0; i < size; i++) {
+      auto value = toJson(helper.GetAsVariant(i));
+      values.append(value);
+    }
+
+    return values;
+  }
+}
+
+bool setProperty(const QJsonArray& array, vtkSMProperty* prop)
+{
+  for (int i = 0; i < array.size(); i++) {
+    if (!setProperty(array[i], prop, i)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool setProperty(const QJsonValue& value, vtkSMProperty* prop, int index)
+{
+  vtkSMPropertyHelper helper(prop);
+
+  if (value.isArray()) {
+    return setProperty(value.toArray(), prop);
+  } else if (value.isDouble()) {
+    if (prop->IsA("vtkSMIntVectorProperty")) {
+      helper.Set(index, value.toInt());
+    } else if (prop->IsA("vtkSMDoubleVectorProperty")) {
+      helper.Set(index, value.toDouble());
+    } else {
+      qCritical() << QString("Unexpected property type.");
+      return false;
+    }
+  } else if (value.isString()) {
+    helper.Set(index, value.toString().toLatin1().data());
+  } else {
+    qCritical() << QString("Unexpected JSON type.");
+    return false;
+  }
+
+  return true;
+}
+
+bool setProperties(const QJsonObject& props, vtkSMProxy* proxy)
+{
+  if (proxy == nullptr) {
+    return false;
+  }
+
+  foreach (const QString& name, props.keys()) {
+    QJsonValue value = props.value(name);
+
+    auto prop = proxy->GetProperty(name.toLatin1().data());
+    if (prop != nullptr) {
+      if (!setProperty(value, prop)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };

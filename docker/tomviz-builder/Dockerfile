@@ -1,11 +1,13 @@
 FROM tomviz/tomviz-dependencies:latest
 MAINTAINER Chris Harris <chris.harris@kitware.com>
-
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
 RUN echo "#!/bin/bash" > build.sh && \
   echo "set -e" >> build.sh && \
   echo "pip2 install -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
   echo "pip3 install -r ../tomviz/tests/python/requirements-dev.txt" >> build.sh && \
-  echo "pip2 install -r ../tomviz/acquisition/requirements-dev.txt" >> build.sh && \
+  echo "pip2 install -r ../tomviz/acquisition/requirements-dev.txt" >> build.sh  && \
+  echo "pip3 install ../tomviz/tomviz/python/" >> build.sh && \
   echo "ctest -VV -S /tomviz/cmake/CircleContinuous.cmake" >> build.sh && \
   chmod u+x build.sh
 

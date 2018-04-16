@@ -24,9 +24,8 @@
 #include "QVTKGLWidget.h"
 #include "Utilities.h"
 
-#include "vtk_jsoncpp.h"
+#include <vtk_jsoncpp.h>
 
-#include <pqCoreUtilities.h>
 #include <pqPresetDialog.h>
 #include <pqView.h>
 #include <vtkPVArrayInformation.h>
@@ -181,6 +180,7 @@ public:
     if (dataLUT) {
       m_imageSlice->GetProperty()->SetLookupTable(dataLUT);
     }
+    data->GetSpacing(m_spacing);
   }
   void addToView(vtkRenderer* renderer) override
   {
@@ -205,14 +205,14 @@ public:
     if (m_showingCurrentSlice) {
       m_imageSliceMapper->SetSliceNumber(m_currentSlice);
       m_imageSliceMapper->Update();
-      m_imageSlice->SetPosition(m_currentSliceOffset[0],
-                                m_currentSliceOffset[1], 0);
+      m_imageSlice->SetPosition(m_currentSliceOffset[0] * m_spacing[0],
+                                m_currentSliceOffset[1] * m_spacing[1], 0);
     } else // showing reference slice
     {
       m_imageSliceMapper->SetSliceNumber(m_referenceSlice);
       m_imageSliceMapper->Update();
-      m_imageSlice->SetPosition(m_referenceSliceOffset[0],
-                                m_referenceSliceOffset[1], 0);
+      m_imageSlice->SetPosition(m_referenceSliceOffset[0] * m_spacing[0],
+                                m_referenceSliceOffset[1] * m_spacing[1], 0);
     }
   }
   double* bounds() const override { return m_imageSliceMapper->GetBounds(); }
@@ -221,6 +221,7 @@ private:
   vtkNew<vtkImageSlice> m_imageSlice;
   vtkNew<vtkImageSliceMapper> m_imageSliceMapper;
   vtkSmartPointer<vtkSMProxy> m_lut;
+  double m_spacing[3];
   bool m_showingCurrentSlice = false;
 };
 
@@ -348,7 +349,6 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
 {
   m_timer = new QTimer(this);
   m_operator = op;
-  m_unalignedData = op->getDataSource();
   m_inputData = imageData;
   m_widget = new QVTKGLWidget(this);
   m_widget->installEventFilter(this);
@@ -367,7 +367,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   setWindowTitle("Align data");
 
   // Grab the image data from the data source...
-  vtkSMProxy* lut = m_unalignedData->colorMap();
+  vtkSMProxy* lut = op->getDataSource()->colorMap();
 
   // Set up the rendering pipeline
   if (imageData) {
@@ -464,7 +464,16 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   v->addLayout(optionsLayout);
 
   // get tilt angles and determine initial reference image
-  QVector<double> tiltAngles = m_unalignedData->getTiltAngles();
+  QVector<double> tiltAngles;
+  auto fd = imageData->GetFieldData();
+  if (fd->HasArray("tilt_angles")) {
+    auto angles = fd->GetArray("tilt_angles");
+    tiltAngles.resize(angles->GetNumberOfTuples());
+    for (int i = 0; i < tiltAngles.size(); ++i) {
+      tiltAngles[i] = angles->GetTuple1(i);
+    }
+  }
+
   int startRef = tiltAngles.indexOf(0); // use 0-degree image by default
   if (startRef == -1) {
     startRef = (m_minSliceNum + m_maxSliceNum) / 2;
@@ -928,7 +937,7 @@ void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
 
 void AlignWidget::onPresetClicked()
 {
-  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
+  pqPresetDialog dialog(tomviz::mainWidget(),
                         pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
   dialog.setCustomizableLoadColors(true);
   dialog.setCustomizableLoadOpacities(true);

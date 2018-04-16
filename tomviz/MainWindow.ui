@@ -66,6 +66,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionMacros"/>
+    <addaction name="actionPassiveAcquisition"/>
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
@@ -384,6 +385,11 @@
   <action name="actionMacros">
    <property name="text">
     <string>&amp;Macros</string>
+   </property>
+  </action>
+  <action name="actionPassiveAcquisition">
+   <property name="text">
+    <string>&amp;Passive Acquisition</string>
    </property>
   </action>
   <action name="actionSaveData">

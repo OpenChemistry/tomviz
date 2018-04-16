@@ -28,7 +28,7 @@ class Progress(object):
     @property
     def maximum(self):
         """
-        Property defining the maxium progress value
+        Property defining the maximum progress value
         """
         return self._operator._operator_wrapper.progress_maximum
 
@@ -69,6 +69,12 @@ class Progress(object):
         :type msg: str
         """
         self._operator._operator_wrapper.progress_message = msg
+
+    def _data(self, value):
+        self._operator._operator_wrapper.progress_data = value
+
+    # Write-only property to update child data
+    data = property(fset=_data)
 
 
 class Operator(object):

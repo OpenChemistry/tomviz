@@ -16,7 +16,6 @@
 #ifndef tomvizPipelineView_h
 #define tomvizPipelineView_h
 
-#include <QMap>
 #include <QPointer>
 #include <QTreeView>
 
@@ -34,9 +33,9 @@ class PipelineView : public QTreeView
 
 public:
   PipelineView(QWidget* parent = nullptr);
-  ~PipelineView() override;
 
   void setModel(QAbstractItemModel*) override;
+  void initLayout();
 
 protected:
   void keyPressEvent(QKeyEvent*) override;
@@ -55,11 +54,7 @@ private slots:
   void setCurrent(Operator* op);
   void deleteItemsConfirm(const QModelIndexList& idxs);
   void setModuleVisibility(const QModelIndexList& idxs, bool visible);
-  void unmapOperatorDialog(Operator* op);
-  void showUserInterface(Operator* op);
 
-private:
-  QMap<Operator*, QPointer<EditOperatorDialog>> m_operatorDialogs;
 };
 }
 

@@ -17,16 +17,7 @@
    <property name="spacing">
     <number>5</number>
    </property>
-   <property name="leftMargin">
-    <number>5</number>
-   </property>
-   <property name="topMargin">
-    <number>5</number>
-   </property>
-   <property name="rightMargin">
-    <number>5</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>5</number>
    </property>
    <item>
@@ -56,7 +47,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="controlTab">
        <attribute name="title">
@@ -103,7 +94,7 @@
             <property name="readOnly">
              <bool>true</bool>
             </property>
-            <property name="clearButtonEnabled">
+            <property name="clearButtonEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -129,7 +120,7 @@
             <property name="readOnly">
              <bool>true</bool>
             </property>
-            <property name="clearButtonEnabled">
+            <property name="clearButtonEnabled" stdset="0">
              <bool>false</bool>
             </property>
            </widget>
@@ -194,9 +185,6 @@
          </layout>
         </item>
        </layout>
-       <zorder>tiltAngleLabel</zorder>
-       <zorder>pixelSize</zorder>
-       <zorder>pixelSizeLabel</zorder>
       </widget>
       <widget class="QWidget" name="acquireTab">
        <attribute name="title">
@@ -210,45 +198,18 @@
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <layout class="QFormLayout" name="formLayout_2">
+          <property name="fieldGrowthPolicy">
+           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+          </property>
           <item row="0" column="0">
            <widget class="QLabel" name="hostnameLabel">
             <property name="text">
-             <string>Hostname</string>
+             <string>Server Connection</string>
             </property>
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLineEdit" name="hostnameEdit">
-            <property name="text">
-             <string>localhost</string>
-            </property>
-            <property name="maxLength">
-             <number>15</number>
-            </property>
-            <property name="clearButtonEnabled">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="portLabel">
-            <property name="text">
-             <string>Port Number:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="portEdit">
-            <property name="text">
-             <string>8080</string>
-            </property>
-            <property name="maxLength">
-             <number>10</number>
-            </property>
-            <property name="clearButtonEnabled">
-             <bool>true</bool>
-            </property>
-           </widget>
+           <widget class="tomviz::ConnectionsWidget" name="connectionsWidget" native="true"/>
           </item>
          </layout>
         </item>
@@ -333,7 +294,13 @@
   <customwidget>
    <class>tomviz::QVTKGLWidget</class>
    <extends>QWidget</extends>
-   <header location="global">QVTKGLWidget.h</header>
+   <header>QVTKGLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::ConnectionsWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">ConnectionsWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -31,7 +31,7 @@ build_script:
   - set PATH=C:\projects\tbb\bin\intel64\vc14;%PATH%
   - set PATH=C:\projects\paraview-build\lib;%PATH%
   - set PATH=C:\projects\paraview-build\bin;%PATH%
-  - set PATH=C:\Qt\5.9.1\msvc2015_64\bin;%PATH%
+  - set PATH=C:\Qt\5.10.1\msvc2015_64\bin;%PATH%
   # Setup PYTHONPATH
   - set PYTHONPATH=C:/projects/python/bin/Lib
   - set PYTHONPATH=C:/projects/python/bin/Lib/site-packages;%PYTHONPATH%
@@ -44,5 +44,10 @@ build_script:
   # Install acquisition test requirements
   - set TOMVIZ_TEST_PYTHON_EXECUTABLE=C:\projects\python\bin\python.exe
   - C:\projects\python\bin\python.exe -m pip install -r %APPVEYOR_BUILD_FOLDER%\acquisition\requirements-dev.txt
+  - C:\projects\python\bin\python.exe -m pip install -r %APPVEYOR_BUILD_FOLDER%\tests\python\requirements-dev.txt
+  - C:\projects\python\bin\python.exe -m pip install %APPVEYOR_BUILD_FOLDER%\tomviz\python\
+  # First run pytest
+  - cd %APPVEYOR_BUILD_FOLDER%\acquisition\tests
+  - C:\projects\python\bin\python.exe -m pytest -k "not fei"
   # Now call ctest
   - ctest -VV -S %APPVEYOR_BUILD_FOLDER%\cmake\AppVeyorContinuous.cmake

@@ -19,6 +19,8 @@
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
 #include "Operator.h"
+#include "Pipeline.h"
+#include "Utilities.h"
 
 #include <pqApplicationCore.h>
 #include <pqPythonSyntaxHighlighter.h>
@@ -89,17 +91,26 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     }
     // We need the image data for call the datasource to run the pipeline
     else {
-      DataSource::ImageFuture* future = dataSource->getCopyOfImagePriorTo(op);
-      connect(future, SIGNAL(finished(bool)), this,
-              SLOT(getCopyOfImagePriorToFinished(bool)));
+      Pipeline::ImageFuture* future =
+        dataSource->pipeline()->getCopyOfImagePriorTo(op);
+      connect(future, &Pipeline::ImageFuture::finished, this,
+              &EditOperatorDialog::getCopyOfImagePriorToFinished);
     }
   } else {
     this->setupUI();
   }
+  op->setCustomDialog(this);
 }
 
 EditOperatorDialog::~EditOperatorDialog()
 {
+}
+
+void EditOperatorDialog::setViewMode(const QString& mode)
+{
+  if (this->Internals->Widget) {
+    this->Internals->Widget->setViewMode(mode);
+  }
 }
 
 Operator* EditOperatorDialog::op()
@@ -117,7 +128,8 @@ void EditOperatorDialog::onApply()
     // If we are modifying an operator that is already part of a pipeline and
     // the pipeline is running it has to cancel the currently running pipeline first.
     // Warn the user rather that just canceling potentially long-running operations.
-    if (this->Internals->dataSource->isRunningAnOperator() && !this->Internals->needsToBeAdded) {
+    if (this->Internals->dataSource->pipeline()->isRunning() &&
+        !this->Internals->needsToBeAdded) {
       auto result = QMessageBox::question(
         this, "Cancel running operation?",
         "Applying changes to an operator that is part of a running pipeline "
@@ -134,17 +146,17 @@ void EditOperatorDialog::onApply()
         auto dataSource = this->Internals->dataSource;
         auto whenCanceled = [op, dataSource]() {
           // Resume the pipeline and emit transformModified
-          dataSource->resumePipeline(false);
+          dataSource->pipeline()->resume(false);
           emit op->transformModified();
         };
         // We pause the pipeline so applyChangesToOperator does cause it to
         // execute.
-        this->Internals->dataSource->pausePipeline();
+        this->Internals->dataSource->pipeline()->pause();
         // We do this before causing cancel so the values are in place for when
         // whenCanceled cause the pipeline to be re-executed.
         this->Internals->Widget->applyChangesToOperator();
-        if (dataSource->isRunningAnOperator()) {
-          this->Internals->dataSource->cancelPipeline(whenCanceled);
+        if (dataSource->pipeline()->isRunning()) {
+          this->Internals->dataSource->pipeline()->cancel(whenCanceled);
         } else {
           whenCanceled();
         }
@@ -207,8 +219,8 @@ void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)
     return;
   }
 
-  DataSource::ImageFuture* future =
-    qobject_cast<DataSource::ImageFuture*>(this->sender());
+  Pipeline::ImageFuture* future =
+    qobject_cast<Pipeline::ImageFuture*>(this->sender());
 
   if (result) {
     auto opWidget =
@@ -218,5 +230,38 @@ void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)
     qWarning() << "Error occured running operators.";
   }
   future->deleteLater();
+}
+
+void EditOperatorDialog::showDialogForOperator(Operator* op,
+                                               const QString& viewMode)
+{
+  if (!op) {
+    return;
+  }
+
+  if (op->hasCustomUI()) {
+    // See if we already have a dialog open for this operator
+    auto dialog = op->customDialog();
+    if (dialog) {
+      dialog->setViewMode(viewMode);
+      dialog->show();
+      dialog->raise();
+      dialog->activateWindow();
+    } else {
+      // Create a non-modal dialog, delete it once it has been closed.
+      QString dialogTitle("Edit - ");
+      dialogTitle.append(op->label());
+      dialog = new EditOperatorDialog(op, op->dataSource(), false,
+                                      tomviz::mainWidget());
+
+      dialog->setViewMode(viewMode);
+      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+      dialog->setWindowTitle(dialogTitle);
+      dialog->show();
+
+      // Close the dialog if the Operator is destroyed.
+      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
+    }
+  }
 }
 }

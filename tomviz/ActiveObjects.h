@@ -30,6 +30,8 @@ class vtkSMViewProxy;
 
 namespace tomviz {
 
+class Pipeline;
+
 /// ActiveObjects keeps track of active objects in tomviz.
 /// This is similar to pqActiveObjects in ParaView, however it tracks objects
 /// relevant to tomviz.
@@ -47,6 +49,15 @@ public:
   /// Returns the active data source.
   DataSource* activeDataSource() const { return m_activeDataSource; }
 
+  /// Returns the selected data source, nullptr if no data source is selected.
+  DataSource* selectedDataSource() const { return m_selectedDataSource; }
+
+  /// Returns the active transformed data source.
+  DataSource* activeTransformedDataSource() const
+  {
+    return m_activeTransformedDataSource;
+  }
+
   /// Returns the active module.
   Module* activeModule() const { return m_activeModule; }
 
@@ -60,12 +71,26 @@ public:
 
   bool moveObjectsEnabled() { return m_moveObjectsEnabled; }
 
+  /// Returns the active pipelines.
+  Pipeline* activePipeline() const;
+
+  /// The "parent" data source is the data source that new operators will be
+  /// appended to. i.e. The closes parent of the currently active data source
+  /// that is not an "Output" data source.
+  DataSource* activeParentDataSource();
+
 public slots:
   /// Set the active view;
   void setActiveView(vtkSMViewProxy*);
 
   /// Set the active data source.
   void setActiveDataSource(DataSource* source);
+
+  /// Set the selected data source.
+  void setSelectedDataSource(DataSource* source);
+
+  /// Set the active transformed data source.
+  void setActiveTransformedDataSource(DataSource* source);
 
   /// Set the active module.
   void setActiveModule(Module* module);
@@ -100,6 +125,10 @@ signals:
   /// pipeline.
   void dataSourceActivated(DataSource*);
 
+  /// Fired whenever the data source is activated, i.e. selected in the
+  /// pipeline. This signal emits the transformed data source.
+  void transformedDataSourceActivated(DataSource*);
+
   /// Fired whenever the active module changes.
   void moduleChanged(Module*);
 
@@ -126,17 +155,16 @@ private slots:
 
 protected:
   ActiveObjects();
-  virtual ~ActiveObjects();
+  ~ActiveObjects() override;
 
   QPointer<DataSource> m_activeDataSource = nullptr;
+  QPointer<DataSource> m_activeTransformedDataSource = nullptr;
+  QPointer<DataSource> m_selectedDataSource = nullptr;
   DataSource::DataSourceType m_activeDataSourceType = DataSource::Volume;
-
+  QPointer<DataSource> m_activeParentDataSource = nullptr;
   QPointer<Module> m_activeModule = nullptr;
-
   QPointer<Operator> m_activeOperator = nullptr;
-
   QPointer<OperatorResult> m_activeOperatorResult = nullptr;
-
   bool m_moveObjectsEnabled = false;
 
 private:

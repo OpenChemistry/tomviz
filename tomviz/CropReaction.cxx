@@ -41,7 +41,7 @@ void CropReaction::updateEnableState()
 
 void CropReaction::crop(DataSource* source)
 {
-  source = source ? source : ActiveObjects::instance().activeDataSource();
+  source = source ? source : ActiveObjects::instance().activeParentDataSource();
   if (!source) {
     return;
   }

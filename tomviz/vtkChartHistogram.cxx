@@ -194,6 +194,10 @@ void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
     bottomAxis->SetBehavior(vtkAxis::FIXED);
     bottomAxis->SetRange(range[0] - halfInc, range[1] + halfInc);
   }
+  // reset the right axis
+  vtkAxis* rightAxis = this->GetAxis(vtkAxis::RIGHT);
+  rightAxis->SetBehavior(vtkAxis::FIXED);
+  rightAxis->SetRange(0.0, 1.0);
 }
 
 void vtkChartHistogram::SetScalarVisibility(bool visible)

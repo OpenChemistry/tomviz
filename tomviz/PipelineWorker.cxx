@@ -85,6 +85,8 @@ public:
   /// Start the pipeline execution
   Future* start();
 
+  QList<Operator*> operators();
+
 public slots:
   void operatorComplete(TransformResult result);
 
@@ -100,6 +102,7 @@ private:
   vtkDataObject* m_data;
   QQueue<RunnableOperator*> m_runnableOperators;
   QList<RunnableOperator*> m_complete;
+  QList<Operator*> m_operators;
   State m_state = State::CREATED;
 };
 
@@ -145,6 +148,7 @@ PipelineWorker::ConfigureThreadPool::ConfigureThreadPool()
 PipelineWorker::Run::Run(vtkDataObject* data, QList<Operator*> operators)
   : m_data(data)
 {
+  m_operators = operators;
   foreach (auto op, operators) {
     m_runnableOperators.enqueue(new RunnableOperator(op, m_data, this));
   }
@@ -188,6 +192,9 @@ void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
   // Error
   else if (!result) {
     emit finished(result);
+    // The operator's state shows if it failed.  This complete means the
+    // pipeline is no longer running.
+    m_state = State::COMPLETE;
   }
   // Run next operator
   else if (!m_runnableOperators.isEmpty()) {
@@ -251,6 +258,11 @@ bool PipelineWorker::Run::addOperator(Operator* op)
   return true;
 }
 
+QList<Operator*> PipelineWorker::Run::operators()
+{
+  return m_operators;
+}
+
 PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data, Operator* op)
 {
   QList<Operator*> ops;
@@ -305,6 +317,11 @@ vtkDataObject* PipelineWorker::Future::result()
 bool PipelineWorker::Future::addOperator(Operator* op)
 {
   return m_run->addOperator(op);
+}
+
+QList<Operator*> PipelineWorker::Future::operators()
+{
+  return m_run->operators();
 }
 
 PipelineWorker::PipelineWorker(QObject* parent) : QObject(parent)

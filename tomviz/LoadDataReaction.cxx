@@ -19,166 +19,41 @@
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "ModuleManager.h"
+#include "Pipeline.h"
+#include "PipelineManager.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
 
-#include "pqActiveObjects.h"
-#include "pqLoadDataReaction.h"
-#include "pqPipelineSource.h"
-#include "pqProxyWidgetDialog.h"
-#include "pqRenderView.h"
-#include "pqSMAdaptor.h"
-#include "pqView.h"
-#include "vtkDataArray.h"
-#include "vtkImageData.h"
-#include "vtkNew.h"
-#include "vtkPointData.h"
-#include "vtkSMCoreUtilities.h"
-#include "vtkSMParaViewPipelineController.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMStringVectorProperty.h"
-#include "vtkSMViewProxy.h"
-#include "vtkSmartPointer.h"
-#include "vtkTrivialProducer.h"
+#include <pqActiveObjects.h>
+#include <pqLoadDataReaction.h>
+#include <pqPipelineSource.h>
+#include <pqProxyWidgetDialog.h>
+#include <pqRenderView.h>
+#include <pqSMAdaptor.h>
+#include <pqView.h>
+#include <vtkSMCoreUtilities.h>
+#include <vtkSMParaViewPipelineController.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMStringVectorProperty.h>
+#include <vtkSMViewProxy.h>
+
+#include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkPointData.h>
+#include <vtkSmartPointer.h>
+#include <vtkTrivialProducer.h>
+
+#include <vtk_pugixml.h>
 
 #include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QJsonArray>
 
-namespace tomviz {
-
-LoadDataReaction::LoadDataReaction(QAction* parentObject)
-  : Superclass(parentObject)
-{
-}
-
-LoadDataReaction::~LoadDataReaction()
-{
-}
-
-void LoadDataReaction::onTriggered()
-{
-  loadData();
-}
-
-QList<DataSource*> LoadDataReaction::loadData()
-{
-  vtkNew<vtkSMParaViewPipelineController> controller;
-
-  QStringList filters;
-  filters
-    << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
-       " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali *.xmf *.xdmf)"
-    << "EMD (*.emd)"
-    << "JPeg Image files (*.jpg *.jpeg)"
-    << "PNG Image files (*.png)"
-    << "TIFF Image files (*.tiff *.tif)"
-    << "OME-TIFF Image files (*.ome.tif)"
-    << "Raw data files (*.raw *.dat *.bin)"
-    << "Meta Image files (*.mhd *.mha)"
-    << "VTK ImageData Files (*.vti)"
-    << "MRC files (*.mrc *.st *.rec *.ali)"
-    << "XDMF files (*.xmf *.xdmf)"
-    << "Text files (*.txt)"
-    << "All files (*.*)";
-
-  QFileDialog dialog(nullptr);
-  dialog.setFileMode(QFileDialog::ExistingFiles);
-  dialog.setNameFilters(filters);
-  dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
-
-  QList<DataSource*> dataSources;
-  if (dialog.exec()) {
-    QStringList filenames = dialog.selectedFiles();
-    dataSources << loadData(filenames);
-  }
-
-  return dataSources;
-}
-
-DataSource* LoadDataReaction::loadData(const QString& fileName,
-                                       bool defaultModules, bool addToRecent,
-                                       bool child)
-{
-  QStringList fileNames;
-  fileNames << fileName;
-
-  return loadData(fileNames, defaultModules, addToRecent, child);
-}
-
-DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
-                                       bool defaultModules, bool addToRecent,
-                                       bool child)
-{
-  DataSource* dataSource(nullptr);
-  QString fileName;
-  if (fileNames.size() > 0) {
-    fileName = fileNames[0];
-  }
-  QFileInfo info(fileName);
-  if (info.suffix().toLower() == "emd") {
-    // Load the file using our simple EMD class.
-    dataSource = createDataSourceLocal(fileName, defaultModules, child);
-    if (addToRecent && dataSource) {
-      RecentFilesMenu::pushDataReader(dataSource, nullptr);
-    }
-  } else if (info.completeSuffix().endsWith("ome.tif")) {
-    auto pxm = tomviz::ActiveObjects::instance().proxyManager();
-    vtkSmartPointer<vtkSMProxy> source;
-    source.TakeReference(pxm->NewProxy("sources", "OMETIFFReader"));
-    QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
-    vtkSMStringVectorProperty* prop = vtkSMStringVectorProperty::SafeDownCast(
-      source->GetProperty(pname.toUtf8().data()));
-    pqSMAdaptor::setElementProperty(prop, fileName);
-    source->UpdateVTKObjects();
-
-    dataSource = createDataSource(source, defaultModules, child);
-    // The dataSource may be NULL if the user cancelled the action.
-    if (addToRecent && dataSource) {
-      RecentFilesMenu::pushDataReader(dataSource, source);
-    }
-  } else {
-    // Use ParaView's file load infrastructure.
-    pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
-
-    if (!reader) {
-      return nullptr;
-    }
-
-    dataSource = createDataSource(reader->getProxy(), defaultModules, child);
-    // The dataSource may be NULL if the user cancelled the action.
-    if (addToRecent && dataSource) {
-      RecentFilesMenu::pushDataReader(dataSource, reader->getProxy());
-    }
-    vtkNew<vtkSMParaViewPipelineController> controller;
-    controller->UnRegisterProxy(reader->getProxy());
-  }
-
-  return dataSource;
-}
-
-DataSource* LoadDataReaction::createDataSourceLocal(const QString& fileName,
-                                                    bool defaultModules,
-                                                    bool child)
-{
-  QFileInfo info(fileName);
-  if (info.suffix().toLower() == "emd") {
-    // Load the file using our simple EMD class.
-    EmdFormat emdFile;
-    vtkNew<vtkImageData> imageData;
-    if (emdFile.read(fileName.toLatin1().data(), imageData.Get())) {
-      DataSource* dataSource = createDataSource(imageData.Get());
-      dataSource->originalDataSource()->SetAnnotation(
-        Attributes::FILENAME, fileName.toLatin1().data());
-      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
-      return dataSource;
-    }
-  }
-  return nullptr;
-}
+#include <sstream>
 
 namespace {
 bool hasData(vtkSMProxy* reader)
@@ -220,6 +95,169 @@ bool hasData(vtkSMProxy* reader)
 }
 }
 
+namespace tomviz {
+
+LoadDataReaction::LoadDataReaction(QAction* parentObject)
+  : pqReaction(parentObject)
+{
+}
+
+LoadDataReaction::~LoadDataReaction() = default;
+
+void LoadDataReaction::onTriggered()
+{
+  loadData();
+}
+
+QList<DataSource*> LoadDataReaction::loadData()
+{
+  QStringList filters;
+  filters
+    << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
+       " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali *.xmf *.xdmf)"
+    << "EMD (*.emd)"
+    << "JPeg Image files (*.jpg *.jpeg)"
+    << "PNG Image files (*.png)"
+    << "TIFF Image files (*.tiff *.tif)"
+    << "OME-TIFF Image files (*.ome.tif)"
+    << "Raw data files (*.raw *.dat *.bin)"
+    << "Meta Image files (*.mhd *.mha)"
+    << "VTK ImageData Files (*.vti)"
+    << "MRC files (*.mrc *.st *.rec *.ali)"
+    << "XDMF files (*.xmf *.xdmf)"
+    << "Text files (*.txt)"
+    << "All files (*.*)";
+
+  QFileDialog dialog(nullptr);
+  dialog.setFileMode(QFileDialog::ExistingFiles);
+  dialog.setNameFilters(filters);
+  dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
+
+  QList<DataSource*> dataSources;
+  if (dialog.exec()) {
+    QStringList filenames = dialog.selectedFiles();
+    dataSources << loadData(filenames);
+  }
+
+  return dataSources;
+}
+
+DataSource* LoadDataReaction::loadData(const QString& fileName,
+                                       bool defaultModules, bool addToRecent,
+                                       bool child, const QJsonObject& options)
+{
+  QJsonObject opts = options;
+  opts["defaultModules"] = defaultModules;
+  opts["addToRecent"] = addToRecent;
+  opts["child"] = child;
+  return LoadDataReaction::loadData(fileName, opts);
+}
+
+DataSource* LoadDataReaction::loadData(const QString& fileName,
+                                       const QJsonObject& val)
+{
+  QStringList fileNames;
+  fileNames << fileName;
+
+  return loadData(fileNames, val);
+}
+
+DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
+                                       const QJsonObject& options)
+{
+  bool defaultModules = options["defaultModules"].toBool(true);
+  bool addToRecent = options["addToRecent"].toBool(true);
+  bool child = options["child"].toBool(false);
+
+  DataSource* dataSource(nullptr);
+  QString fileName;
+  if (fileNames.size() > 0) {
+    fileName = fileNames[0];
+  }
+  QFileInfo info(fileName);
+  if (info.suffix().toLower() == "emd") {
+    // Load the file using our simple EMD class.
+    EmdFormat emdFile;
+    vtkNew<vtkImageData> imageData;
+    if (emdFile.read(fileName.toLatin1().data(), imageData)) {
+      dataSource = new DataSource(imageData);
+      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    }
+  } else if (info.completeSuffix().endsWith("ome.tif")) {
+    auto pxm = tomviz::ActiveObjects::instance().proxyManager();
+    const char* name = "OMETIFFReader";
+    vtkSmartPointer<vtkSMProxy> source;
+    source.TakeReference(pxm->NewProxy("sources", name));
+    QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
+    vtkSMStringVectorProperty* prop = vtkSMStringVectorProperty::SafeDownCast(
+      source->GetProperty(pname.toUtf8().data()));
+    pqSMAdaptor::setElementProperty(prop, fileName);
+    source->UpdateVTKObjects();
+
+    dataSource = createDataSource(source, defaultModules, child);
+    QJsonObject readerProperties;
+    readerProperties["name"] = name;
+    dataSource->setReaderProperties(readerProperties.toVariantMap());
+  } else if (options.contains("reader")) {
+    // Create the ParaView reader and set its properties using the JSON
+    // configuration.
+    auto props = options["reader"].toObject();
+    auto name = props["name"].toString();
+
+    auto pxm = ActiveObjects::instance().proxyManager();
+    vtkSmartPointer<vtkSMProxy> reader;
+    reader.TakeReference(pxm->NewProxy("sources", name.toLatin1().data()));
+
+    setProperties(props, reader);
+    setFileNameProperties(props, reader);
+    reader->UpdateVTKObjects();
+    vtkSMSourceProxy::SafeDownCast(reader)->UpdatePipelineInformation();
+    dataSource =
+      LoadDataReaction::createDataSource(reader, defaultModules, child);
+    if (dataSource == nullptr) {
+      return nullptr;
+    }
+
+    dataSource->setReaderProperties(props.toVariantMap());
+
+  } else {
+    // Use ParaView's file load infrastructure.
+    pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
+    if (!reader) {
+      return nullptr;
+    }
+
+    dataSource = createDataSource(reader->getProxy(), defaultModules, child);
+    if (dataSource == nullptr) {
+      return nullptr;
+    }
+
+    QJsonObject props = readerProperties(reader->getProxy());
+    props["name"] = reader->getProxy()->GetXMLName();
+
+    dataSource->setReaderProperties(props.toVariantMap());
+
+    vtkNew<vtkSMParaViewPipelineController> controller;
+    controller->UnRegisterProxy(reader->getProxy());
+  }
+
+  // It is possible that the dataSource will be null if, for example, loading
+  // a VTI is cancelled in the array selection dialog. Guard against this.
+  if (!dataSource) {
+    return nullptr;
+  }
+
+  // Now for house keeping, registering elements, etc.
+  dataSource->setFileName(fileName);
+  if (fileNames.size() > 1) {
+    dataSource->setFileNames(fileNames);
+  }
+  if (addToRecent && dataSource) {
+    RecentFilesMenu::pushDataReader(dataSource);
+  }
+  return dataSource;
+}
+
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
                                                bool defaultModules, bool child)
 {
@@ -241,53 +279,47 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
   dialog->setObjectName("ConfigureReaderDialog");
   if (QString(reader->GetXMLName()) == "TIFFSeriesReader" ||
       hasVisibleWidgets == false || dialog->exec() == QDialog::Accepted) {
-    DataSource* previousActiveDataSource =
-      ActiveObjects::instance().activeDataSource();
 
     if (!hasData(reader)) {
       qCritical() << "Error: failed to load file!";
       return nullptr;
     }
 
-    DataSource* dataSource =
-      new DataSource(vtkSMSourceProxy::SafeDownCast(reader));
-    // do whatever we need to do with a new data source.
+    auto source = vtkSMSourceProxy::SafeDownCast(reader);
+    source->UpdatePipeline();
+    auto algo = vtkAlgorithm::SafeDownCast(source->GetClientSideObject());
+    auto data = algo->GetOutputDataObject(0);
+    auto image = vtkImageData::SafeDownCast(data);
+
+    DataSource* dataSource = new DataSource(image);
+    // Do whatever we need to do with a new data source.
     LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
-    if (!previousActiveDataSource) {
-      pqRenderView* renderView =
-        qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
-      if (renderView) {
-        tomviz::createCameraOrbit(dataSource->producer(),
-                                  renderView->getRenderViewProxy());
-      }
-    }
     return dataSource;
   }
   return nullptr;
 }
 
-DataSource* LoadDataReaction::createDataSource(vtkImageData* imageData)
-{
-  auto pxm = tomviz::ActiveObjects::instance().proxyManager();
-  vtkSmartPointer<vtkSMProxy> source;
-  source.TakeReference(pxm->NewProxy("sources", "TrivialProducer"));
-  auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
-  tp->SetOutput(imageData);
-  source->SetAnnotation("tomviz.Type", "DataSource");
-
-  auto dataSource = new DataSource(vtkSMSourceProxy::SafeDownCast(source));
-  return dataSource;
-}
-
 void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
                                        bool defaultModules, bool child)
 {
+  if (!dataSource) {
+    return;
+  }
+  DataSource* previousActiveDataSource =
+    ActiveObjects::instance().activeDataSource();
   bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
   ActiveObjects::instance().setMoveObjectsMode(false);
   if (child) {
     ModuleManager::instance().addChildDataSource(dataSource);
   } else {
+    auto pipeline = new Pipeline(dataSource);
+    PipelineManager::instance().addPipeline(pipeline);
+    // TODO Eventually we shouldn't need to keep track of the data sources,
+    // the pipeline should do that for us.
     ModuleManager::instance().addDataSource(dataSource);
+    if (defaultModules) {
+      pipeline->addDefaultModules(dataSource);
+    }
   }
 
   // Work through pathological cases as necessary, prefer active view.
@@ -300,30 +332,87 @@ void LoadDataReaction::dataSourceAdded(DataSource* dataSource,
   }
 
   ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
-
-  if (defaultModules) {
-    addDefaultModules(dataSource);
+  if (!previousActiveDataSource) {
+    pqRenderView* renderView =
+      qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+    if (renderView) {
+      tomviz::createCameraOrbit(dataSource->proxy(),
+                                renderView->getRenderViewProxy());
+    }
   }
 }
 
-void LoadDataReaction::addDefaultModules(DataSource* dataSource)
+QJsonObject LoadDataReaction::readerProperties(vtkSMProxy* reader)
 {
-  bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
-  ActiveObjects::instance().setMoveObjectsMode(false);
-  auto view = ActiveObjects::instance().activeView();
+  QStringList propNames({ "DataScalarType", "DataByteOrder",
+                          "NumberOfScalarComponents", "DataExtent" });
 
-  // Create an outline module for the source in the active view.
-  ModuleManager::instance().createAndAddModule("Outline", dataSource, view);
-
-  if (auto module = ModuleManager::instance().createAndAddModule(
-        "Orthogonal Slice", dataSource, view)) {
-    ActiveObjects::instance().setActiveModule(module);
+  QJsonObject props;
+  foreach (QString propName, propNames) {
+    auto prop = reader->GetProperty(propName.toLatin1().data());
+    if (prop != nullptr) {
+      props[propName] = toJson(prop);
+    }
   }
-  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
 
-  auto pqview = tomviz::convert<pqView*>(view);
-  pqview->resetDisplay();
-  pqview->render();
+  // Special case file name related properties
+  auto prop = reader->GetProperty("FileName");
+  if (prop != nullptr) {
+    props["fileName"] = toJson(prop);
+  }
+  prop = reader->GetProperty("FileNames");
+  if (prop != nullptr) {
+    auto fileNames = toJson(prop).toArray();
+    if (fileNames.size() > 1) {
+      props["fileNames"] = fileNames;
+    }
+    // Normalize to fileNames for single value.
+    else {
+      props["fileName"] = fileNames[0];
+    }
+  }
+  prop = reader->GetProperty("FilePrefix");
+  if (prop != nullptr) {
+    props["fileName"] = toJson(prop);
+  }
+
+  return props;
+}
+
+void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
+                                             vtkSMProxy* reader)
+{
+  auto prop = reader->GetProperty("FileName");
+  if (prop != nullptr) {
+    if (!props.contains("fileName")) {
+      qCritical() << "Reader doesn't have 'fileName' property.";
+      return;
+    }
+    tomviz::setProperty(props["fileName"], prop);
+  }
+  prop = reader->GetProperty("FileNames");
+  if (prop != nullptr) {
+    if (!props.contains("fileNames") && !props.contains("fileName")) {
+      qCritical() << "Reader doesn't have 'fileName' or 'fileNames' property.";
+      return;
+    }
+
+    if (props.contains("fileNames")) {
+      tomviz::setProperty(props["fileNames"], prop);
+    } else {
+      QJsonArray fileNames;
+      fileNames.append(props["fileName"]);
+      tomviz::setProperty(fileNames, prop);
+    }
+  }
+  prop = reader->GetProperty("FilePrefix");
+  if (prop != nullptr) {
+    if (!props.contains("fileName")) {
+      qCritical() << "Reader doesn't have 'fileName' property.";
+      return;
+    }
+    tomviz::setProperty(props["fileName"], prop);
+  }
 }
 
 } // end of namespace tomviz

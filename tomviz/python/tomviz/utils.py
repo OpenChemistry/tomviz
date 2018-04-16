@@ -15,11 +15,13 @@
 #  limitations under the License.
 #
 ###############################################################################
-
 import math
 import numpy as np
-import vtk.numpy_interface.dataset_adapter as dsa
-import vtk.util.numpy_support as np_s
+from tomviz._internal import in_application
+# Only import vtk if we are running within the tomviz application ( not cli )
+if in_application():
+    import vtk.numpy_interface.dataset_adapter as dsa
+    import vtk.util.numpy_support as np_s
 
 
 def get_scalars(dataobject):
@@ -44,8 +46,11 @@ def is_numpy_vtk_type(newscalars):
 def set_scalars(dataobject, newscalars):
     do = dsa.WrapDataObject(dataobject)
     oldscalars = do.PointData.GetScalars()
-    name = oldscalars.GetName()
-    del oldscalars
+    if oldscalars is None:
+        name = "scalars"
+    else:
+        name = oldscalars.GetName()
+        del oldscalars
 
     if not is_numpy_vtk_type(newscalars):
         newscalars = newscalars.astype(np.float32)
@@ -131,7 +136,7 @@ def get_tilt_angles(dataobject):
 
 def set_tilt_angles(dataobject, newarray):
     # replace the tilt angles with the new array
-    from vtk import VTK_DOUBLE
+    from vtkmodules.util.vtkConstants import VTK_DOUBLE
     # deep copy avoids having to keep numpy array around, but is more
     # expensive.  I don't expect tilt_angles to be a big array though.
     vtkarray = np_s.numpy_to_vtk(newarray, deep=1, array_type=VTK_DOUBLE)
@@ -161,6 +166,16 @@ def get_coordinate_arrays(dataset):
     yy, xx, zz = np.meshgrid(y, x, z)
 
     return (xx, yy, zz)
+
+
+def make_child_dataset(reference_dataset):
+    """Creates a child dataset with the same size as the reference_dataset.
+    """
+    from vtk import vtkImageData
+    new_child = vtkImageData()
+    new_child.CopyStructure(reference_dataset)
+
+    return new_child
 
 
 def connected_components(dataset, background_value=0, progress_callback=None):

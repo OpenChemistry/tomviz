@@ -53,7 +53,7 @@ void ToggleDataTypeReaction::toggleDataType(QMainWindow* mw,
 
 void ToggleDataTypeReaction::onTriggered()
 {
-  DataSource* dsource = ActiveObjects::instance().activeDataSource();
+  DataSource* dsource = ActiveObjects::instance().activeParentDataSource();
   toggleDataType(m_mainWindow, dsource);
   setWidgetText(dsource);
 }

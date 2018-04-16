@@ -27,13 +27,13 @@
 #include "Operator.h"
 #include "OperatorPython.h"
 #include "OperatorResult.h"
+#include "Pipeline.h"
 #include "PipelineModel.h"
 #include "SaveDataReaction.h"
 #include "SnapshotOperator.h"
 #include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 
-#include <pqCoreUtilities.h>
 #include <pqSpreadSheetView.h>
 #include <pqView.h>
 #include <vtkNew.h>
@@ -44,11 +44,13 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QHeaderView>
 #include <QItemDelegate>
 #include <QItemSelection>
 #include <QKeyEvent>
 #include <QMainWindow>
 #include <QMenu>
+#include <QMessageBox>
 #include <QPainter>
 #include <QSet>
 #include <QTimer>
@@ -144,24 +146,22 @@ PipelineView::PipelineView(QWidget* p) : QTreeView(p)
   // Connect up operators to start and stop delegate
   // New datasource added
   connect(&ModuleManager::instance(), &ModuleManager::dataSourceAdded,
-          [this, delegate](DataSource* dataSource) {
+          [delegate](DataSource* dataSource) {
             // New operator added
             connect(dataSource, &DataSource::operatorAdded, delegate,
-                    [this, delegate](Operator* op) {
+                    [delegate](Operator* op) {
                       // Connect transformingStarted to OperatorRunningDelegate
                       connect(op, &Operator::transformingStarted, delegate,
                               &OperatorRunningDelegate::start);
                       // Connect transformingDone
                       connect(op, &Operator::transformingDone, delegate,
-                              [this, delegate]() { delegate->stop(); });
+                              [delegate]() { delegate->stop(); });
                     });
           });
 
   connect(this, SIGNAL(doubleClicked(QModelIndex)),
           SLOT(rowDoubleClicked(QModelIndex)));
 }
-
-PipelineView::~PipelineView() = default;
 
 void PipelineView::setModel(QAbstractItemModel* model)
 {
@@ -183,6 +183,13 @@ void PipelineView::setModel(QAbstractItemModel* model)
           SLOT(setCurrent(Module*)));
   connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
           SLOT(setCurrent(Operator*)));
+  connect(pipelineModel, SIGNAL(dataSourceModified(DataSource*)),
+          SLOT(setCurrent(DataSource*)));
+
+  // This is needed to work around a bug in Qt 5.10, the select resize mode is
+  // setting reset for some reason.
+  connect(pipelineModel, &PipelineModel::operatorItemAdded, this,
+          &PipelineView::initLayout);
 }
 
 void PipelineView::keyPressEvent(QKeyEvent* e)
@@ -292,10 +299,20 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   }
 
   // Keep the delete menu entry at the end of the list of options.
+
+  // Don't add a "Delete" menu entry for "Output" data source.
   QAction* deleteAction = nullptr;
-  deleteAction = contextMenu.addAction("Delete");
-  if (deleteAction && !enableDeleteItems(selectedIndexes())) {
-    deleteAction->setEnabled(false);
+  bool addDelete = true;
+  if (dataSource != nullptr) {
+    auto output = dataSource->property("output");
+    addDelete = !(output.isValid() && output.toBool());
+  }
+
+  if (addDelete) {
+    deleteAction = contextMenu.addAction("Delete");
+    if (deleteAction && !enableDeleteItems(selectedIndexes())) {
+      deleteAction->setEnabled(false);
+    }
   }
 
   bool allModules = true;
@@ -337,7 +354,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     if (!dataSource) {
       dataSource = op->dataSource();
     }
-    dataSource->executeOperators();
+    dataSource->pipeline()->execute(dataSource);
   } else if (markAsAction != nullptr && markAsAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());
     ToggleDataTypeReaction::toggleDataType(mainWindow, dataSource);
@@ -346,12 +363,16 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (showAction && selectedItem == showAction) {
     setModuleVisibility(selectedIndexes(), true);
   } else if (cloneChildAction && selectedItem == cloneChildAction) {
-    DataSource* newClone = dataSource->clone(false, true);
+    DataSource* newClone = dataSource->clone(false);
     LoadDataReaction::dataSourceAdded(newClone);
   } else if (snapshotAction && selectedItem == snapshotAction) {
     op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));
   } else if (showInterfaceAction && selectedItem == showInterfaceAction) {
-    showUserInterface(op);
+    if (qobject_cast<OperatorPython*>(op)) {
+      EditOperatorDialog::showDialogForOperator(op, QStringLiteral("viewCode"));
+    } else {
+      EditOperatorDialog::showDialogForOperator(op);
+    }
   }
 }
 
@@ -393,7 +414,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
   foreach (Operator* op, operators) {
     // If the datasource is being remove don't bother removing the operator
     if (!dataSources.contains(op->dataSource())) {
-      op->dataSource()->pausePipeline();
+      op->dataSource()->pipeline()->pause();
       paused.insert(op->dataSource());
       pipelineModel->removeOp(op);
     }
@@ -405,7 +426,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
 
   // Now resume the pipelines
   foreach (DataSource* dataSource, paused) {
-    dataSource->resumePipeline();
+    dataSource->pipeline()->resume();
   }
 
   // Delay rendering until signals have been processed and all modules removed.
@@ -433,7 +454,7 @@ void PipelineView::rowDoubleClicked(const QModelIndex& idx)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
   if (auto op = pipelineModel->op(idx)) {
-    showUserInterface(op);
+    EditOperatorDialog::showDialogForOperator(op);
   } else if (auto result = pipelineModel->result(idx)) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
       auto view = ActiveObjects::instance().activeView();
@@ -469,8 +490,11 @@ void PipelineView::currentChanged(const QModelIndex& current,
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   Q_ASSERT(pipelineModel);
 
+  // First set the selected data source to nullptr, in case the new selection
+  // is not a data source.
+  ActiveObjects::instance().setSelectedDataSource(nullptr);
   if (auto dataSource = pipelineModel->dataSource(current)) {
-    ActiveObjects::instance().setActiveDataSource(dataSource);
+    ActiveObjects::instance().setSelectedDataSource(dataSource);
   } else if (auto module = pipelineModel->module(current)) {
     ActiveObjects::instance().setActiveModule(module);
   } else if (auto op = pipelineModel->op(current)) {
@@ -529,14 +553,25 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   for (auto& index : idxs) {
     auto dataSource = pipelineModel->dataSource(index);
-    if (dataSource && dataSource->isRunningAnOperator()) {
-      return false;
+    if (dataSource != nullptr) {
+      // Disable if pipeline is running
+      bool disable =
+        dataSource->pipeline() && dataSource->pipeline()->isRunning();
+
+      // Disable for "Output" data sources
+      auto output = dataSource->property("output");
+      disable = disable || (output.isValid() && output.toBool());
+
+      return !disable;
     }
+
     auto op = pipelineModel->op(index);
-    if (op && op->dataSource()->isRunningAnOperator()) {
+    if (op && op->dataSource()->pipeline() &&
+        op->dataSource()->pipeline()->isRunning()) {
       return false;
     }
   }
+
   return true;
 }
 
@@ -558,43 +593,12 @@ void PipelineView::setModuleVisibility(const QModelIndexList& idxs,
   }
 }
 
-void PipelineView::unmapOperatorDialog(Operator* op)
+void PipelineView::initLayout()
 {
-  if (op && m_operatorDialogs.contains(op)) {
-    m_operatorDialogs.remove(op);
-  }
-}
-
-void PipelineView::showUserInterface(Operator* op)
-{
-  if (!op) {
-    return;
-  }
-
-  if (op->hasCustomUI()) {
-    // See if we already have a dialog open for this operator
-    bool haveDialog = m_operatorDialogs.contains(op) && m_operatorDialogs[op];
-    if (haveDialog) {
-      auto dialog = m_operatorDialogs[op];
-      dialog->show();
-      dialog->raise();
-      dialog->activateWindow();
-    } else {
-      // Create a non-modal dialog, delete it once it has been closed.
-      QString dialogTitle("Edit - ");
-      dialogTitle.append(op->label());
-      auto dialog = new EditOperatorDialog(op, op->dataSource(), false,
-                                           pqCoreUtilities::mainWidget());
-      dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-      dialog->setWindowTitle(dialogTitle);
-      dialog->show();
-      m_operatorDialogs[op] = dialog;
-
-      // Close the dialog if the Operator is destroyed.
-      connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
-      connect(op, SIGNAL(aboutToBeDestroyed(Operator*)), this,
-              SLOT(unmapOperatorDialog(Operator*)));
-    }
-  }
+  this->header()->setStretchLastSection(false);
+  this->header()->setVisible(false);
+  this->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+  this->header()->setSectionResizeMode(1, QHeaderView::Fixed);
+  this->header()->resizeSection(1, 30);
 }
 }

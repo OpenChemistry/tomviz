@@ -1,8 +1,10 @@
 #!/bin/bash
+set -e
 
 if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+    which python
     export DYLD_LIBRARY_PATH=/Users/travis/googletest-install/lib:$DYLD_LIBRARY_PATH
-    export TOMVIZ_TEST_PYTHON_EXECUTABLE=/usr/local/bin/python
+    export TOMVIZ_TEST_PYTHON_EXECUTABLE=/usr/local/bin/python3
     ctest -VV -S $TRAVIS_BUILD_DIR/cmake/TravisContinuous.cmake
 else
     cd $TRAVIS_BUILD_DIR
@@ -16,5 +18,5 @@ else
     pip install -r requirements-dev.txt
     if [ -n "${PY2}" ]; then pytest -s; fi
     # Skip FEI test for Python 3
-    if [ -n "${PY#}" ]; then pytest -s -k "not fei"; fi
+    if [ -n "${PY3}" ]; then pytest -s -k "not fei"; fi
 fi

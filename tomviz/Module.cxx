@@ -209,106 +209,49 @@ vtkImageData* Module::transferFunction2DImage() const
            : colorMapDataSource()->transferFunction2DImage();
 }
 
-bool Module::serialize(pugi::xml_node& ns) const
+QJsonObject Module::serialize() const
 {
+  QJsonObject json;
+  QJsonObject props;
+  props["visibility"] = visibility();
   if (isColorMapNeeded()) {
-    ns.append_attribute("use_detached_colormap")
-      .set_value(m_useDetachedColorMap ? 1 : 0);
+    json["useDetachedColorMap"] = m_useDetachedColorMap;
     if (m_useDetachedColorMap) {
-      pugi::xml_node nodeL = ns.append_child("ColorMap");
-      pugi::xml_node nodeS = ns.append_child("OpacityMap");
-
-      // Using detached color map, so we need to save the local color map.
-      if (tomviz::serialize(colorMap(), nodeL) == false ||
-          tomviz::serialize(opacityMap(), nodeS) == false) {
-        return false;
-      }
-
-      pugi::xml_node nodeGrad = ns.append_child("GradientOpacityMap");
-      tomviz::serialize(gradientOpacityMap(), nodeGrad);
-
-      pugi::xml_node node2D = ns.append_child("ColorTransferFunction2D");
-      foreach (const vtkSmartPointer<vtkTransferFunction2DItem>& item,
-               transferFunction2D()) {
-        pugi::xml_node itemNode = node2D.append_child("Item");
-        vtkRectd rect = item->GetBox();
-        itemNode.append_attribute("x").set_value(rect.GetX());
-        itemNode.append_attribute("y").set_value(rect.GetY());
-        itemNode.append_attribute("width").set_value(rect.GetWidth());
-        itemNode.append_attribute("height").set_value(rect.GetHeight());
-        // For now these are aliases of the color map and gradient opacity
-        // function,
-        // so saving them here is redundant and the code to read them in ignores
-        // it
-        // fix this when we add support for editing these.
-        //
-        // pugi::xml_node colorMapNode = itemNode.append_child("ColorMap");
-        // tomviz::serialize(item->GetColorTransferFunction(), colorMapNode);
-        // pugi::xml_node opacityMapNode = itemNode.append_child("OpacityMap");
-        // tomviz::serialize(item->GetOpacityFunction(), opacityMapNode);
-      }
+      json["colorMap"] = tomviz::serialize(d->detachedColorMap());
+      json["opacityMap"] = tomviz::serialize(d->detachedOpacityMap());
+      json["gradientOpacityMap"] = tomviz::serialize(gradientOpacityMap());
     }
   }
-  return true;
+  json["properties"] = props;
+  return json;
 }
 
-bool Module::deserialize(const pugi::xml_node& ns)
+bool Module::deserialize(const QJsonObject& json)
 {
-  if (isColorMapNeeded()) {
-    bool dcm = ns.attribute("use_detached_colormap").as_int(0) == 1;
-    if (dcm && ns.child("ColorMap")) {
-      if (!tomviz::deserialize(d->detachedColorMap(), ns.child("ColorMap"))) {
-        qCritical("Failed to deserialze ColorMap");
-        return false;
-      }
-    }
-    if (dcm && ns.child("OpacityMap")) {
-      if (!tomviz::deserialize(d->detachedOpacityMap(),
-                               ns.child("OpacityMap"))) {
-        qCritical("Failed to deserialze OpacityMap");
-        return false;
-      }
-    }
-    pugi::xml_node nodeGrad = ns.child("GradientOpacityMap");
-    if (dcm && nodeGrad) {
-      tomviz::deserialize(d->m_gradientOpacityMap.GetPointer(), nodeGrad);
-    }
-
-    const pugi::xml_node& tfr2d_node = ns.child("ColorTransferFunction2D");
-    d->m_transferFunction2D.clear();
-    for (pugi::xml_node itemNode = tfr2d_node.child("Item"); itemNode;
-         itemNode = itemNode.next_sibling("Item")) {
-      auto item = vtkSmartPointer<vtkTransferFunction2DItem>::New();
-      vtkRectd rect;
-      rect.SetX(itemNode.attribute("x").as_double());
-      rect.SetY(itemNode.attribute("y").as_double());
-      rect.SetWidth(itemNode.attribute("width").as_double());
-      rect.SetHeight(itemNode.attribute("height").as_double());
-      item->SetBox(rect);
-      // Color function and opacity function could be read in, but for now
-      // they are assumed to follow the ColorMap and GradientOpacityMap of
-      // the data source.  Swap to the commented code when they are
-      // independently
-      // editable
-      //
-      // vtkNew<vtkColorTransferFunction> colorFunc;
-      // tomviz::deserialize(colorFunc, itemNode.child("ColorMap"));
-      // item->SetColorTransferFunction(colorFunc);
-      // vtkNew<vtkPiecewiseFunction> opacityFunc;
-      // tomviz::deserialize(opacityFunc, itemNode.child("OpacityMap"));
-      // item->SetOpacityFunction(opacityFunc);
-      //
-      auto colorTfrFunction = vtkColorTransferFunction::SafeDownCast(
-        colorMap()->GetClientSideObject());
-      item->SetColorTransferFunction(colorTfrFunction);
-      item->SetOpacityFunction(gradientOpacityMap());
-      //
-
-      d->m_transferFunction2D.push_back(item);
-    }
-
-    setUseDetachedColorMap(dcm);
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    setVisibility(props["visibility"].toBool());
   }
+
+  if (isColorMapNeeded() && json.contains("useDetachedColorMap")) {
+    bool useDetachedColorMap = json["useDetachedColorMap"].toBool();
+    if (useDetachedColorMap) {
+      if (json.contains("colorMap")) {
+        auto colorMap = json["colorMap"].toObject();
+        tomviz::deserialize(d->detachedColorMap(), colorMap);
+      }
+      if (json.contains("opacityMap")) {
+        auto opacityMap = json["opacityMap"].toObject();
+        tomviz::deserialize(d->detachedOpacityMap(), opacityMap);
+      }
+      if (json.contains("gradientOpacityMap")) {
+        auto gradientOpacityMap = json["gradientOpacityMap"].toObject();
+        tomviz::deserialize(d->m_gradientOpacityMap, gradientOpacityMap);
+      }
+    }
+    setUseDetachedColorMap(useDetachedColorMap);
+  }
+
   return true;
 }
 

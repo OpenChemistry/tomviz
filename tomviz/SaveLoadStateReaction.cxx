@@ -15,16 +15,20 @@
 ******************************************************************************/
 #include "SaveLoadStateReaction.h"
 
-#include "pqCoreUtilities.h"
-#include <vtk_pugixml.h>
-
 #include "ModuleManager.h"
 #include "RecentFilesMenu.h"
-#include "vtkSMProxyManager.h"
+#include "Utilities.h"
+
+#include <vtkSMProxyManager.h>
+
+#include <vtk_pugixml.h>
 
 #include <QDir>
 #include <QFileDialog>
-#include <QtDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
+
+#include <QDebug>
 
 namespace tomviz {
 
@@ -44,7 +48,7 @@ void SaveLoadStateReaction::onTriggered()
 
 bool SaveLoadStateReaction::saveState()
 {
-  QFileDialog fileDialog(pqCoreUtilities::mainWidget(), tr("Save State File"),
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"),
                          QString(),
                          "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
@@ -64,7 +68,7 @@ bool SaveLoadStateReaction::saveState()
 
 bool SaveLoadStateReaction::loadState()
 {
-  QFileDialog fileDialog(pqCoreUtilities::mainWidget(), tr("Load State File"),
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"),
                          QString(),
                          "tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");
@@ -77,38 +81,43 @@ bool SaveLoadStateReaction::loadState()
 
 bool SaveLoadStateReaction::loadState(const QString& filename)
 {
-  pugi::xml_document document;
-  if (!document.load_file(filename.toLatin1().data())) {
-    qCritical() << "Failed to read file (or file not valid xml) :" << filename;
+  QFile openFile(filename);
+  if (!openFile.open(QIODevice::ReadOnly)) {
+    qWarning("Couldn't open state file.");
     return false;
   }
 
-  if (ModuleManager::instance().deserialize(document.child("tomvizState"),
+  QJsonParseError error;
+  auto doc = QJsonDocument::fromJson(openFile.readAll(), &error);
+  if (doc.isNull()) {
+    qDebug() << "Error:" << error.errorString();
+  }
+
+  if (doc.isObject() &&
+      ModuleManager::instance().deserialize(doc.object(),
                                             QFileInfo(filename).dir())) {
     RecentFilesMenu::pushStateFile(filename);
     return true;
   }
+  qDebug() << "Failed to read state...";
   return false;
 }
 
-bool SaveLoadStateReaction::saveState(const QString& filename, bool interactive)
+bool SaveLoadStateReaction::saveState(const QString& fileName, bool interactive)
 {
-  pugi::xml_document document;
-  pugi::xml_node root = document.append_child("tomvizState");
-  root.append_attribute("version").set_value("0.0a");
-  root.append_attribute("paraview_version")
-    .set_value(QString("%1.%2.%3")
-                 .arg(vtkSMProxyManager::GetVersionMajor())
-                 .arg(vtkSMProxyManager::GetVersionMinor())
-                 .arg(vtkSMProxyManager::GetVersionPatch())
-                 .toLatin1()
-                 .data());
+  QFileInfo info(fileName);
+  QFile saveFile(fileName);
+  if (!saveFile.open(QIODevice::WriteOnly)) {
+    qWarning("Couldn't open save file.");
+    return false;
+  }
 
-  QFileInfo info(filename);
-
-  return (
-    ModuleManager::instance().serialize(root, info.dir(), interactive) &&
-    document.save_file(/*path*/ filename.toLatin1().data(), /*indent*/ "  "));
+  QJsonObject state;
+  auto success =
+    ModuleManager::instance().serialize(state, info.dir(), interactive);
+  QJsonDocument doc(state);
+  auto writeSuccess = saveFile.write(doc.toJson());
+  return success && writeSuccess != -1;
 }
 
 } // end of namespace

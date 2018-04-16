@@ -56,6 +56,23 @@ RAWFileReaderDialog::RAWFileReaderDialog(vtkSMProxy* reader, QWidget* p)
           static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
           &RAWFileReaderDialog::sanityCheckSize);
   connect(this, &QDialog::accepted, this, &RAWFileReaderDialog::onAccepted);
+
+  // Set the current values from the reader
+  vtkSMPropertyHelper scalarTypeHelp(m_reader, "DataScalarType");
+  int scalarType = scalarTypeHelp.GetAsInt();
+  m_ui->signedness->setChecked(isSigned(scalarType));
+  m_ui->dataType->setCurrentIndex(vtkDataTypeToIndex(scalarType));
+  vtkSMPropertyHelper byteOrder(m_reader, "DataByteOrder");
+  m_ui->endianness->setCurrentIndex(byteOrder.GetAsInt());
+  vtkSMPropertyHelper numComps(m_reader, "NumberOfScalarComponents");
+  m_ui->numComponents->setValue(numComps.GetAsInt());
+  vtkSMPropertyHelper dims(m_reader, "DataExtent");
+  int extents[6];
+  dims.Get(extents, 6);
+  m_ui->dimensionX->setValue(extents[1] + 1);
+  m_ui->dimensionY->setValue(extents[3] + 1);
+  m_ui->dimensionZ->setValue(extents[5] + 1);
+
   sanityCheckSize();
 }
 
@@ -121,6 +138,38 @@ int RAWFileReaderDialog::vtkDataType()
     }
   }
   return VTK_CHAR;
+}
+
+bool RAWFileReaderDialog::isSigned(int vtkType)
+{
+  return vtkType != VTK_UNSIGNED_CHAR && vtkType != VTK_UNSIGNED_SHORT &&
+         vtkType != VTK_UNSIGNED_INT && vtkType != VTK_UNSIGNED_LONG &&
+         vtkType != VTK_UNSIGNED_LONG_LONG;
+}
+
+int RAWFileReaderDialog::vtkDataTypeToIndex(int vtkType)
+{
+  switch (vtkType) {
+    case VTK_SIGNED_CHAR:
+    case VTK_UNSIGNED_CHAR:
+      return 0;
+    case VTK_SHORT:
+    case VTK_UNSIGNED_SHORT:
+      return 1;
+    case VTK_INT:
+    case VTK_UNSIGNED_INT:
+      return 2;
+    case VTK_LONG:
+    case VTK_UNSIGNED_LONG:
+    case VTK_LONG_LONG:
+    case VTK_UNSIGNED_LONG_LONG:
+      return 3;
+    case VTK_FLOAT:
+      return 4;
+    case VTK_DOUBLE:
+      return 5;
+  }
+  return 0;
 }
 
 void RAWFileReaderDialog::sanityCheckSize()

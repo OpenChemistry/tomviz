@@ -15,9 +15,6 @@
 #  limitations under the License.
 #
 ###############################################################################
-
-import tomviz.operators
-import tomviz._wrapping
 import inspect
 import sys
 import os
@@ -25,6 +22,18 @@ import fnmatch
 import imp
 import json
 import traceback
+
+import tomviz
+import tomviz.operators
+
+
+def in_application():
+    return os.environ.get('TOMVIZ_APPLICATION', False)
+
+
+if in_application():
+    import tomviz._wrapping
+
 
 def delete_module(name):
     if name in sys.modules:
@@ -69,7 +78,7 @@ def is_cancelable(transform_module):
                                           tomviz.operators.CancelableOperator)
 
 
-def find_transform_scalars(transform_module, op):
+def find_transform_scalars(transform_module, op=None):
 
     transform_function = find_transform_scalars_function(transform_module)
     if transform_function is None:
@@ -81,8 +90,9 @@ def find_transform_scalars(transform_module, op):
         # wrapper OperatorPython instance before __init__ is called so that
         # any code in __init__ can access the wrapper.
         o = cls.__new__(cls)
-        # Set the wrapped OperatorPython instance
-        o._operator_wrapper = tomviz._wrapping.OperatorPythonWrapper(op)
+        if op is not None:
+            # Set the wrapped OperatorPython instance
+            o._operator_wrapper = tomviz._wrapping.OperatorPythonWrapper(op)
         cls.__init__(o)
 
         transform_function = o.transform_scalars
@@ -92,6 +102,7 @@ def find_transform_scalars(transform_module, op):
 
     return transform_function
 
+
 def _load_module(operator_dir, python_file):
     module_name, _ = os.path.splitext(python_file)
     fp, pathname, description = imp.find_module(module_name, [operator_dir])
@@ -99,13 +110,15 @@ def _load_module(operator_dir, python_file):
 
     return module
 
+
 def _has_operator(module):
     return find_transform_scalars_function(module) is not None or \
-            find_operator_class(module) is not None
+        find_operator_class(module) is not None
+
 
 def _operator_description(operator_dir, filename):
     name, _ = os.path.splitext(filename)
-    description =  {
+    description = {
         'label': name,
         'pythonPath': os.path.join(operator_dir, filename),
     }
@@ -115,7 +128,7 @@ def _operator_description(operator_dir, filename):
     try:
         module = _load_module(operator_dir, filename)
         has_operator = _has_operator(module)
-    except:
+    except Exception:
         description['loadError'] = traceback.format_exc()
 
     description['valid'] = has_operator
@@ -129,11 +142,12 @@ def _operator_description(operator_dir, filename):
             with open(json_filepath) as fp:
                 operator_json = json.load(fp)
                 description['label'] = operator_json['label']
-        except:
+        except Exception:
             description['loadError'] = traceback.format_exc()
             description['valid'] = False
 
     return description
+
 
 def find_operators(operator_dir):
     # First look for the python files

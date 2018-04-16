@@ -18,16 +18,12 @@
 
 #include <QObject>
 
+#include <QJsonObject>
 #include <QScopedPointer>
+#include <QVariantMap>
 #include <QVector>
 
-#include <vtkSmartPointer.h>
-
 #include <vtk_pugixml.h>
-
-#include "PipelineWorker.h"
-
-#include <functional>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
@@ -35,9 +31,12 @@ class vtkImageData;
 class vtkDataObject;
 class vtkPiecewiseFunction;
 class vtkTransferFunction2DItem;
+class vtkAlgorithm;
+class vtkTrivialProducer;
 
 namespace tomviz {
 class Operator;
+class Pipeline;
 
 /// Encapsulation for a DataSource. This class manages a data source, including
 /// the provenance for any operations performed on the data source.
@@ -46,8 +45,6 @@ class DataSource : public QObject
   Q_OBJECT
 
 public:
-  class ImageFuture;
-
   /// The type of data in the data source.  The data types currently supported
   /// are volumetric data and image stacks representing tilt series.
   enum DataSourceType
@@ -58,22 +55,42 @@ public:
 
   enum class PersistenceState
   {
-    Transient, // Doesn't need to written to disk
+    Transient, // Doesn't need to be written to disk
     Saved,     // Written to disk
     Modified   // Needs to be written to disk
   };
 
+  /// Deprecated constructor, prefer directly setting data.
+  DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume);
+
   /// \c dataSource is the original reader that reads the data into the
   /// application.
-  DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType = Volume,
+  DataSource(vtkImageData* dataSource, DataSourceType dataType = Volume,
              QObject* parent = nullptr,
              PersistenceState persistState = PersistenceState::Saved);
+
+  /// Create a new dataSource not associated with a source proxy
+  DataSource(const QString& label = QString(), DataSourceType dataType = Volume,
+             QObject* parent = nullptr,
+             PersistenceState persistState = PersistenceState::Saved,
+             const QJsonObject& sourceInfo = QJsonObject());
+
   ~DataSource() override;
 
-  /// Returns the data producer proxy to insert in ParaView pipelines.
+  /// Append a slice to the data source, this must be of the same x and y
+  /// dimension as the existing slices in order to be appended.
+  bool appendSlice(vtkImageData* slice);
+
+  /// Returns the proxy that can be inserted in ParaView pipelines.
   /// This proxy instance doesn't change over the lifetime of a DataSource even
   /// if new DataOperators are added to the source.
-  vtkSMSourceProxy* producer() const;
+  vtkSMSourceProxy* proxy() const;
+
+  //// Returns the trivial producer to insert in VTK pipelines.
+  vtkTrivialProducer* producer() const;
+
+  /// Returns the output data object associated with the proxy.
+  vtkDataObject* dataObject() const;
 
   /// Returns a list of operators added to the DataSource.
   const QList<Operator*>& operators() const;
@@ -84,23 +101,42 @@ public:
   bool removeAllOperators();
 
   /// Creates a new clone from this DataSource. If cloneOperators then clone
-  /// the operators too, if cloneTransformedOnly clone the transformed data.
-  DataSource* clone(bool cloneOperators,
-                    bool cloneTransformedOnly = false) const;
+  /// the operators too.
+  DataSource* clone(bool cloneOperators) const;
 
   /// Save the state out.
+  QJsonObject serialize() const;
+  bool deserialize(const QJsonObject& state);
+
   bool serialize(pugi::xml_node& in) const;
   bool deserialize(const pugi::xml_node& ns);
 
-  /// Returns the original data source. This is not meant to be used to connect
-  /// visualization pipelines on directly. Use producer() instead.
-  vtkSMSourceProxy* originalDataSource() const;
+  /// Set the file name.
+  void setFileName(const QString& fileName);
 
-  /// Override the filename.
-  void setFilename(const QString& filename);
+  /// Returns the name of the file used to load the data source.
+  QString fileName() const;
+
+  /// Set the ordered list of file names if loading from a stack of images.
+  void setFileNames(const QStringList fileNames);
+
+  /// Returns the list of files used to load the volume (if a stack was used).
+  QStringList fileNames() const;
+
+  /// Return true is data source is an image stack, false otherwise.
+  bool isImageStack() const;
+
+  /// Set the PV reader properties.
+  void setReaderProperties(const QVariantMap& properties);
+
+  /// Get the PV reader properties.
+  QVariantMap readerProperties() const;
+
+  /// Set the label for the data source.
+  void setLabel(const QString& label);
 
   /// Returns the name of the filename used from the originalDataSource.
-  QString filename() const;
+  QString label() const;
 
   /// Returns the type of data in this DataSource
   DataSourceType type() const;
@@ -126,12 +162,12 @@ public:
   bool hasTiltAngles();
 
   /// Get a copy of the current tilt angles
-  QVector<double> getTiltAngles(bool useOriginalDataTiltAngles = false) const;
+  QVector<double> getTiltAngles() const;
 
   /// Set the tilt angles to the values in the given QVector
   void setTiltAngles(const QVector<double>& angles);
 
-  /// Moves the displayPosition of the DataSource by detlaPosition
+  /// Moves the displayPosition of the DataSource by deltaPosition
   void translate(const double deltaPosition[3]);
 
   /// Gets the display position of the data source
@@ -139,8 +175,6 @@ public:
 
   /// Sets the display position of the data source
   void setDisplayPosition(const double newPosition[3]);
-
-  ImageFuture* getCopyOfImagePriorTo(Operator* op);
 
   /// Returns the extent of the transformed dataset
   void getExtent(int extent[6]);
@@ -150,41 +184,43 @@ public:
   void getSpacing(double spacing[3]) const;
   /// Sets the scale factor (ratio between units and spacing)
   /// one component per axis
-  void setSpacing(const double scaleFactor[3]);
+  void setSpacing(const double scaleFactor[3], bool markModified = true);
+
+  /// Set the active scalars by array name.
+  void setActiveScalars(const QString& arrayName);
+  QString activeScalars() const;
 
   /// Returns the number of components in the dataset.
   unsigned int getNumberOfComponents();
 
-  /// Returns a string describing the units for the given axis of the data
-  QString getUnits(int axis);
+  /// Returns a string describing the units for the data
+  QString getUnits();
   /// Set the string describing the units
-  void setUnits(const QString& units);
-
-  /// Execute the operator pipeline associate with the datasource
-  void executeOperators();
-
-  /// Return true is datasource is an image stack, false otherwise
-  bool isImageStack();
-
-  /// Return true if an operator is running in this DataSource's worker
-  bool isRunningAnOperator();
-
-  // Pause the automatic exection of the operator pipeline
-  void pausePipeline();
-
-  // Resume the automatic execution of the operator pipeline, will execution the
-  // existing pipeline. If execute is true the entire pipeline will be executed.
-  void resumePipeline(bool execute = true);
-
-  // Cancel execution of the operator pipeline. canceled is a optional callback
-  // that will be called when the pipeline has been successfully canceled.
-  void cancelPipeline(std::function<void()> canceled = nullptr);
+  void setUnits(const QString& units, bool markModified = true);
 
   /// Set the persistence state
   void setPersistenceState(PersistenceState state);
 
   /// Returns the persistence state
   PersistenceState persistenceState() const;
+
+  Pipeline* pipeline();
+
+  /// Create copy of current data object, caller is responsible for ownership
+  vtkDataObject* copyData();
+
+  /// Set data output of trivial producer to new data object, the trivial
+  /// producer takes over ownership of the data object.
+  void setData(vtkDataObject* newData);
+
+  /// Copy data from a data object to the existing data.
+  void copyData(vtkDataObject* newData);
+
+  bool unitsModified();
+
+  // Returns true if the data source is not associated with a file, false
+  // otherwise.
+  bool isTransient() const;
 
 signals:
   /// This signal is fired to notify the world that the DataSource may have
@@ -195,9 +231,14 @@ signals:
   /// have changed.
   void dataPropertiesChanged();
 
+  /// Fired when active scalars change
+  void activeScalarsChanged();
+
   /// This signal is fired every time a new operator is added to this
   /// DataSource.
   void operatorAdded(Operator*);
+
+  void operatorRemoved(Operator*);
 
   /// This signal is fired every time the display position is changed
   /// Any actors based on this DataSource's data should update the position
@@ -205,79 +246,33 @@ signals:
   /// to translate the dataset.
   void displayPositionChanged(double newX, double newY, double newZ);
 
-  /// This signal is fired when the return value from isRunningAnOperator
-  /// becomes true
-  void operatorStarted();
-  /// This signal is fired when the return value from isRunningAnOperator
-  /// becomes false
-  void allOperatorsFinished();
-
 public slots:
   void dataModified();
 
 protected:
-  void operate(Operator* op);
-
-  /// Reset the data output of the trivial producer to original data object.
-  void resetData();
-
-  /// Set data output of trivial producer to new data object, the trivial
-  /// producer takes over ownership of the data object.
-  void setData(vtkDataObject* newData);
-
-  /// Create copy of current data object, caller is responsible for ownership
-  vtkDataObject* copyData();
-
-  /// Create copy of original data object, caller is responsible for ownership
-  vtkDataObject* copyOriginalData();
-
   /// Sets the type of data in the DataSource
   void setType(DataSourceType t);
 
 protected slots:
-  void operatorTransformModified();
-
   /// update the color map range.
   void updateColorMap();
 
-  /// The pipeline worker is finished
-  void pipelineFinished(bool result);
-
-  /// The pipeline worker is has been canceled
-  void pipelineCanceled();
-  void updateCache();
-
 private:
+  /// Private method to initialize the data source.
+  void init(vtkImageData* dataSource, DataSourceType dataType,
+            PersistenceState persistState);
+
+  vtkAlgorithm* algorithm() const;
+
   Q_DISABLE_COPY(DataSource)
 
   class DSInternals;
   const QScopedPointer<DSInternals> Internals;
+
+  QJsonObject m_json;
+  double m_scaleOriginalSpacingBy = 1.0;
 };
 
-/// Return from getCopyOfImagePriorTo for caller to track async operation.
-class DataSource::ImageFuture : public QObject
-{
-  Q_OBJECT
-
-public:
-  friend class DataSource;
-
-  vtkSmartPointer<vtkImageData> result() { return m_imageData; }
-  Operator* op() { return m_operator; }
-
-signals:
-  void finished(bool result);
-  void canceled();
-
-private:
-  ImageFuture(Operator* op, vtkSmartPointer<vtkImageData> m_imageData,
-              PipelineWorker::Future* future = nullptr,
-              QObject* parent = nullptr);
-  ~ImageFuture() override;
-  Operator* m_operator;
-  vtkSmartPointer<vtkImageData> m_imageData;
-  PipelineWorker::Future* m_future;
-};
 }
 
 #endif

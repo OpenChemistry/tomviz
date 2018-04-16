@@ -39,7 +39,7 @@ void ConvertToFloatReaction::updateEnableState()
 
 void ConvertToFloatReaction::convertToFloat()
 {
-  DataSource* source = ActiveObjects::instance().activeDataSource();
+  DataSource* source = ActiveObjects::instance().activeParentDataSource();
   if (!source) {
     qDebug() << "Exiting early - no data found.";
     return;

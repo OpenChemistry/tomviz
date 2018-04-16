@@ -42,12 +42,15 @@
 #include "vtkSmartPointer.h"
 
 #include <algorithm>
+#include <functional>
 #include <string>
 #include <vector>
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QLabel>
 #include <QPointer>
 
@@ -87,7 +90,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  vtkSMSourceProxy* producer = data->producer();
+  auto producer = data->proxy();
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
   vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
@@ -113,7 +116,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_resampleFilter = vtkSMSourceProxy::SafeDownCast(probeProxy);
   Q_ASSERT(m_resampleFilter);
   controller->PreInitializeProxy(m_resampleFilter);
-  vtkSMPropertyHelper(m_resampleFilter, "Input").Set(data->producer());
+  vtkSMPropertyHelper(m_resampleFilter, "Input").Set(data->proxy());
   vtkSMPropertyHelper(m_resampleFilter, "Source").Set(m_contourFilter);
   vtkSMPropertyHelper(m_resampleFilter, "CategoricalData").Set(1);
   vtkSMPropertyHelper(m_resampleFilter, "PassPointArrays").Set(1);
@@ -157,6 +160,9 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   if (auto p = convert<pqProxy*>(contourProxy)) {
     p->rename(label());
   }
+
+  connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
+  onScalarArrayChanged();
 
   return true;
 }
@@ -265,7 +271,7 @@ void ModuleContour::createCategoricalColoringPipeline()
 
     // Set up a point data to cell data filter and set the input data as
     // categorical
-    vtkSMSourceProxy* producer = d->ColorByDataSource->producer();
+    vtkSMSourceProxy* producer = d->ColorByDataSource->proxy();
 
     vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
     vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
@@ -326,6 +332,10 @@ void ModuleContour::onPropertyChanged()
 {
   d->Links.accept();
 
+  if (!m_controllers) {
+    return;
+  }
+
   int colorByIndex = m_controllers->getColorByComboBox()->currentIndex();
   if (colorByIndex > 0) {
     createCategoricalColoringPipeline();
@@ -348,7 +358,7 @@ void ModuleContour::onPropertyChanged()
   setVisibility(true);
 
   vtkSMPropertyHelper resampleHelper(m_resampleFilter, "Input");
-  resampleHelper.Set(d->ColorByDataSource->producer());
+  resampleHelper.Set(d->ColorByDataSource->proxy());
 
   updateColorMap();
 
@@ -362,85 +372,123 @@ void ModuleContour::onPropertyChanged()
   emit renderNeeded();
 }
 
-bool ModuleContour::serialize(pugi::xml_node& ns) const
+void ModuleContour::onScalarArrayChanged()
 {
-  ns.append_attribute("solid_color").set_value(d->UseSolidColor);
-  // save stuff that the user can change.
-  pugi::xml_node node = ns.append_child("ContourFilter");
-  QStringList contourProperties;
-  contourProperties << "ContourValues";
-  if (tomviz::serialize(m_contourFilter, node, contourProperties) ==
-      false) {
-    qWarning("Failed to serialize ContourFilter.");
-    ns.remove_child(node);
-    return false;
-  }
+  QString arrayName = dataSource()->activeScalars();
+  vtkSMPropertyHelper(m_contourFilter, "SelectInputScalars")
+    .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
+                            arrayName.toLatin1().data());
+  m_contourFilter->UpdateVTKObjects();
 
-  {
-    QStringList resampleRepresentationProperties;
-    resampleRepresentationProperties << "Representation"
-                                     << "Opacity"
-                                     << "Specular"
-                                     << "Visibility"
-                                     << "MapScalars"
-                                     << "DiffuseColor"
-                                     << "AmbientColor"
-                                     << "Ambient"
-                                     << "Diffuse"
-                                     << "SpecularPower";
+  onPropertyChanged();
 
-    node = ns.append_child("ResampleRepresentation");
-    if (tomviz::serialize(m_resampleRepresentation, node,
-                          resampleRepresentationProperties) == false) {
-      qWarning("Failed to serialize ResampleRepresentation.");
-      ns.remove_child(node);
-      return false;
-    }
-  }
-
-  if (m_pointDataToCellDataRepresentation) {
-    QStringList pointDataToCellDataRepresentationProperties;
-    pointDataToCellDataRepresentationProperties << "Representation"
-                                                << "Opacity"
-                                                << "Specular"
-                                                << "Visibility"
-                                                << "MapScalars"
-                                                << "DiffuseColor"
-                                                << "AmbientColor"
-                                                << "Ambient"
-                                                << "Diffuse"
-                                                << "SpecularPower";
-
-    node = ns.append_child("PointDataToCellDataRepresentation");
-    if (tomviz::serialize(m_pointDataToCellDataRepresentation, node,
-                          pointDataToCellDataRepresentationProperties) ==
-        false) {
-      qWarning("Failed to serialize PointDataToCellDataRepresentation.");
-      ns.remove_child(node);
-      return false;
-    }
-  }
-
-  return Module::serialize(ns);
+  emit renderNeeded();
 }
 
-bool ModuleContour::deserialize(const pugi::xml_node& ns)
+QJsonObject ModuleContour::serialize() const
 {
-  if (ns.attribute("solid_color")) {
-    d->UseSolidColor = ns.attribute("solid_color").as_bool();
-  }
-  if (ns.child("PointDataToCellDataRepresentation")) {
-    createCategoricalColoringPipeline();
-    if (!tomviz::deserialize(m_pointDataToCellDataRepresentation,
-                             ns.child("PointDataToCellDataRepresentation"))) {
-      return false;
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
+  vtkSMPropertyHelper contourValues(
+    m_contourFilter->GetProperty("ContourValues"));
+  props["contourValue"] = contourValues.GetAsDouble();
+  props["useSolidColor"] = d->UseSolidColor;
+
+  auto toJson = [](vtkSMProxy* representation) {
+    QJsonObject obj;
+    QJsonArray color;
+    vtkSMPropertyHelper diffuseColor(
+      representation->GetProperty("DiffuseColor"));
+    for (int i = 0; i < 3; i++) {
+      color.append(diffuseColor.GetAsDouble(i));
     }
+    obj["color"] = color;
+
+    QJsonObject lighting;
+    vtkSMPropertyHelper ambient(representation->GetProperty("Ambient"));
+    lighting["ambient"] = ambient.GetAsDouble();
+    vtkSMPropertyHelper diffuse(representation->GetProperty("Diffuse"));
+    lighting["diffuse"] = diffuse.GetAsDouble();
+    vtkSMPropertyHelper specular(representation->GetProperty("Specular"));
+    lighting["specular"] = specular.GetAsDouble();
+    vtkSMPropertyHelper specularPower(
+      representation->GetProperty("SpecularPower"));
+    lighting["specularPower"] = specularPower.GetAsDouble();
+    obj["lighting"] = lighting;
+
+    vtkSMPropertyHelper representationHelper(
+      representation->GetProperty("Representation"));
+    obj["representation"] = representationHelper.GetAsString();
+
+    vtkSMPropertyHelper opacity(representation->GetProperty("Opacity"));
+    obj["opacity"] = opacity.GetAsDouble();
+
+    vtkSMPropertyHelper mapScalars(representation->GetProperty("MapScalars"));
+    obj["mapScalars"] = mapScalars.GetAsInt() == 1;
+
+    return obj;
+  };
+
+  props["resampleRepresentation"] = toJson(m_resampleRepresentation);
+
+  if (m_pointDataToCellDataRepresentation) {
+    props["pointDataToCellDataRepresentation"] =
+      toJson(m_pointDataToCellDataRepresentation);
   }
 
-  return tomviz::deserialize(m_contourFilter, ns.child("ContourFilter")) &&
-         tomviz::deserialize(m_resampleRepresentation,
-                             ns.child("ResampleRepresentation")) &&
-         Module::deserialize(ns);
+  json["properties"] = props;
+
+  return json;
+}
+
+bool ModuleContour::deserialize(const QJsonObject& json)
+{
+  if (!Module::deserialize(json)) {
+    return false;
+  }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    if (m_contourFilter != nullptr) {
+      vtkSMPropertyHelper(m_contourFilter, "ContourValues")
+        .Set(props["contourValue"].toDouble());
+      m_contourFilter->UpdateVTKObjects();
+    }
+
+    d->UseSolidColor = props["useSolidColor"].toBool();
+    m_controllers->setUseSolidColor(d->UseSolidColor);
+
+    auto toRep = [](vtkSMProxy* representation, const QJsonObject& state) {
+      QJsonObject lighting = state["lighting"].toObject();
+      vtkSMPropertyHelper ambient(representation, "Ambient");
+      ambient.Set(lighting["ambient"].toDouble());
+      vtkSMPropertyHelper diffuse(representation, "Diffuse");
+      diffuse.Set(lighting["diffuse"].toDouble());
+      vtkSMPropertyHelper specular(representation, "Specular");
+      specular.Set(lighting["specular"].toDouble());
+      vtkSMPropertyHelper specularPower(representation, "SpecularPower");
+      specularPower.Set(lighting["specularPower"].toDouble());
+      auto color = state["color"].toArray();
+      vtkSMPropertyHelper diffuseColor(representation, "DiffuseColor");
+      for (int i = 0; i < 3; i++) {
+        diffuseColor.Set(i, color[i].toDouble());
+      }
+      vtkSMPropertyHelper opacity(representation, "Opacity");
+      opacity.Set(state["opacity"].toDouble());
+      vtkSMPropertyHelper mapScalars(representation, "MapScalars");
+      mapScalars.Set(state["mapScalars"].toBool() ? 1 : 0);
+      representation->UpdateVTKObjects();
+    };
+
+    if (props.contains("resampleRepresentation")) {
+      auto resampleRepresentationState =
+        props["resampleRepresentation"].toObject();
+      toRep(m_resampleRepresentation, resampleRepresentationState);
+    }
+
+    return true;
+  }
+  return false;
 }
 
 void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
@@ -551,8 +599,7 @@ void ModuleContour::updateScalarColoring()
   vtkPVDataSetAttributesInformation* attributeInfo = nullptr;
   vtkPVArrayInformation* arrayInfo = nullptr;
   if (d->ColorByDataSource) {
-    dataInfo =
-      d->ColorByDataSource->producer()->GetDataInformation(0);
+    dataInfo = d->ColorByDataSource->proxy()->GetDataInformation(0);
   }
   if (dataInfo) {
     attributeInfo = dataInfo->GetAttributeInformation(
@@ -602,7 +649,7 @@ void ModuleContour::updateGUI()
     combo->clear();
     combo->addItem("This Data");
     for (int i = 0; i < childSources.size(); ++i) {
-      combo->addItem(childSources[i]->filename());
+      combo->addItem(childSources[i]->fileName());
     }
 
     int selected = childSources.indexOf(d->ColorByDataSource);

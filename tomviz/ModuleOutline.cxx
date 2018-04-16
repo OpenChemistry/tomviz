@@ -34,6 +34,7 @@
 
 #include <QCheckBox>
 #include <QHBoxLayout>
+#include <QJsonArray>
 #include <QLabel>
 #include <QVBoxLayout>
 
@@ -64,7 +65,7 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-  vtkSMSessionProxyManager* pxm = data->producer()->GetSessionProxyManager();
+  auto pxm = data->proxy()->GetSessionProxyManager();
 
   // Create the outline filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -73,7 +74,7 @@ bool ModuleOutline::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_outlineFilter = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(m_outlineFilter);
   controller->PreInitializeProxy(m_outlineFilter);
-  vtkSMPropertyHelper(m_outlineFilter, "Input").Set(data->producer());
+  vtkSMPropertyHelper(m_outlineFilter, "Input").Set(data->proxy());
   controller->PostInitializeProxy(m_outlineFilter);
   controller->RegisterPipelineProxy(m_outlineFilter);
 
@@ -113,73 +114,40 @@ bool ModuleOutline::finalize()
   return true;
 }
 
-bool ModuleOutline::serialize(pugi::xml_node& ns) const
+QJsonObject ModuleOutline::serialize() const
 {
-  xml_node rootNode = ns.append_child("properties");
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
 
-  xml_node visibilityNode = rootNode.append_child("visibility");
-  visibilityNode.append_attribute("enabled") = visibility();
+  props["gridVisibility"] = m_gridAxes->GetVisibility() > 0;
+  props["gridLines"] = m_gridAxes->GetGenerateGrid();
 
-  xml_node gridAxesNode = rootNode.append_child("grid_axes");
-  gridAxesNode.append_attribute("enabled") = m_gridAxes->GetVisibility() > 0;
-  gridAxesNode.append_attribute("grid") = m_gridAxes->GetGenerateGrid();
-
-  xml_node color = gridAxesNode.append_child("color");
+  QJsonArray color;
   double rgb[3];
   m_gridAxes->GetProperty()->GetDiffuseColor(rgb);
-  color.append_attribute("r") = rgb[0];
-  color.append_attribute("g") = rgb[1];
-  color.append_attribute("b") = rgb[2];
+  color << rgb[0] << rgb[1] << rgb[2];
+  props["gridColor"] = color;
 
-  return true;
+  json["properties"] = props;
+  return json;
 }
 
-bool ModuleOutline::deserialize(const pugi::xml_node& ns)
+bool ModuleOutline::deserialize(const QJsonObject& json)
 {
-  xml_node rootNode = ns.child("properties");
-  if (!rootNode) {
+  if (!Module::deserialize(json)) {
     return false;
   }
-
-  xml_node node = rootNode.child("visibility");
-  if (node) {
-    xml_attribute att = node.attribute("enabled");
-    if (att) {
-      setVisibility(att.as_bool());
-    }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    m_gridAxes->SetVisibility(props["gridVisibility"].toBool() ? 1 : 0);
+    m_gridAxes->SetGenerateGrid(props["gridLines"].toBool());
+    auto color = props["gridColor"].toArray();
+    double rgb[3] = { color[0].toDouble(), color[1].toDouble(),
+                      color[2].toDouble() };
+    updateGridAxesColor(rgb);
+    return true;
   }
-
-  node = rootNode.child("grid_axes");
-  if (node) {
-    xml_attribute att = node.attribute("enabled");
-    if (att) {
-      m_gridAxes->SetVisibility(att.as_bool() ? 1 : 0);
-      m_axesVisibility = att.as_bool();
-    }
-    att = node.attribute("grid");
-    if (att) {
-      m_gridAxes->SetGenerateGrid(att.as_bool());
-    }
-    xml_node color = node.child("color");
-    if (color) {
-      double rgb[3];
-      att = color.attribute("r");
-      if (att) {
-        rgb[0] = att.as_double();
-      }
-      att = color.attribute("g");
-      if (att) {
-        rgb[1] = att.as_double();
-      }
-      att = color.attribute("b");
-      if (att) {
-        rgb[2] = att.as_double();
-      }
-      updateGridAxesColor(rgb);
-    }
-  }
-
-  return Module::deserialize(ns);
+  return false;
 }
 
 bool ModuleOutline::setVisibility(bool val)
@@ -378,8 +346,8 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
     auto dataSource = qobject_cast<DataSource*>(sender());
     updateGridAxesBounds(dataSource);
     updateGridAxesUnit(dataSource);
-    dataSource->producer()->MarkModified(nullptr);
-    dataSource->producer()->UpdatePipeline();
+    dataSource->proxy()->MarkModified(nullptr);
+    dataSource->proxy()->UpdatePipeline();
     emit renderNeeded();
 
   });
@@ -400,9 +368,9 @@ void ModuleOutline::updateGridAxesColor(double* color)
 
 void ModuleOutline::updateGridAxesUnit(DataSource* dataSource)
 {
-  QString xTitle = QString("X (%1)").arg(dataSource->getUnits(0));
-  QString yTitle = QString("Y (%1)").arg(dataSource->getUnits(1));
-  QString zTitle = QString("Z (%1)").arg(dataSource->getUnits(2));
+  QString xTitle = QString("X (%1)").arg(dataSource->getUnits());
+  QString yTitle = QString("Y (%1)").arg(dataSource->getUnits());
+  QString zTitle = QString("Z (%1)").arg(dataSource->getUnits());
   m_gridAxes->SetXTitle(xTitle.toUtf8().data());
   m_gridAxes->SetYTitle(yTitle.toUtf8().data());
   m_gridAxes->SetZTitle(zTitle.toUtf8().data());

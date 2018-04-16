@@ -84,9 +84,6 @@ void AcquisitionWidget::readSettings()
   settings->beginGroup("acquisition");
   setGeometry(settings->value("geometry").toRect());
   m_ui->splitter->restoreState(settings->value("splitterSizes").toByteArray());
-  m_ui->hostnameEdit->setText(
-    settings->value("hostname", "localhost").toString());
-  m_ui->portEdit->setText(settings->value("port", "8080").toString());
   settings->endGroup();
 }
 
@@ -96,16 +93,16 @@ void AcquisitionWidget::writeSettings()
   settings->beginGroup("acquisition");
   settings->setValue("geometry", geometry());
   settings->setValue("splitterSizes", m_ui->splitter->saveState());
-  settings->setValue("hostname", m_ui->hostnameEdit->text());
-  settings->setValue("port", m_ui->portEdit->text());
   settings->endGroup();
 }
 
 void AcquisitionWidget::connectToServer()
 {
+  auto connection = m_ui->connectionsWidget->selectedConnection();
   m_ui->statusEdit->setText("Attempting to connect to server...");
-  m_client->setUrl("http://" + m_ui->hostnameEdit->text() + ":" +
-                   m_ui->portEdit->text() + "/acquisition");
+  m_client->setUrl(QString("http://%1:%2/acquisition")
+                     .arg(connection->hostName())
+                     .arg(connection->port()));
   auto request = m_client->connect(QJsonObject());
   connect(request, SIGNAL(finished(QJsonValue)), SLOT(onConnect()));
   connect(request, &AcquisitionClientRequest::error, this,

@@ -16,7 +16,9 @@
 #ifndef tomvizInterfaceBuilder_h
 #define tomvizInterfaceBuilder_h
 
-#include <QLayout>
+#include <QGridLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QMap>
 #include <QObject>
 #include <QVariant>
@@ -30,28 +32,28 @@ class DataSource;
 class InterfaceBuilder : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
   InterfaceBuilder(QObject* parent = nullptr, DataSource* ds = nullptr);
-  ~InterfaceBuilder() override;
 
   /// Set the JSON description
   void setJSONDescription(const QString& description);
-
-  /// Get the JSON description
-  const QString& JSONDescription() const;
+  void setJSONDescription(const QJsonDocument& description);
 
   /// Build the interface, returning it in a QWidget.
   QLayout* buildInterface() const;
+  QLayout* buildParameterInterface(QGridLayout* layout,
+                                   QJsonArray& parameters) const;
 
   /// Set the parameter values
   void setParameterValues(QMap<QString, QVariant> values);
 
+  static QMap<QString, QVariant> parameterValues(const QObject* parent);
+
 private:
   Q_DISABLE_COPY(InterfaceBuilder)
 
-  QString m_json;
+  QJsonDocument m_json;
   QMap<QString, QVariant> m_parameterValues;
   DataSource* m_dataSource;
 };

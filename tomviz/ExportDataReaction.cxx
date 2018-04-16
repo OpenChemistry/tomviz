@@ -17,7 +17,6 @@
 #include "ExportDataReaction.h"
 
 #include <pqActiveObjects.h>
-#include <pqCoreUtilities.h>
 #include <pqProxyWidgetDialog.h>
 #include <pqSettings.h>
 #include <vtkArrayCalculator.h>
@@ -296,7 +295,7 @@ bool ExportDataReaction::exportData(const QString& filename)
 
   }
 
-  pqProxyWidgetDialog dialog(writer, pqCoreUtilities::mainWidget());
+  pqProxyWidgetDialog dialog(writer, tomviz::mainWidget());
   dialog.setObjectName("WriterSettingsDialog");
   dialog.setEnableSearchBar(true);
   dialog.setWindowTitle(

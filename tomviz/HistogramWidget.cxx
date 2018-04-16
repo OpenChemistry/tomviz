@@ -27,13 +27,14 @@
 #include <vtkContextScene.h>
 #include <vtkContextView.h>
 #include <vtkControlPointsItem.h>
+#include <vtkDataArray.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
+#include <vtkTable.h>
 #include <vtkVector.h>
 
 #include <pqApplicationCore.h>
-#include <pqCoreUtilities.h>
 #include <pqPresetDialog.h>
 #include <pqRescaleRange.h>
 #include <pqResetScalarRangeReaction.h>
@@ -176,6 +177,7 @@ void HistogramWidget::setInputData(vtkTable* table,
                                    const char* x_,
                                    const char* y_)
 {
+  m_inputData = table;
   m_histogramColorOpacityEditor->SetHistogramInputData(table, x_, y_);
   m_histogramColorOpacityEditor->SetOpacityFunction(m_scalarOpacityFunction);
   if (m_LUT && table) {
@@ -310,7 +312,15 @@ void HistogramWidget::histogramClicked(vtkObject*)
 
 void HistogramWidget::onResetRangeClicked()
 {
-  pqResetScalarRangeReaction::resetScalarRangeToData(nullptr);
+  if (m_inputData) {
+    auto array = vtkDataArray::SafeDownCast(m_inputData->GetColumn(0));
+    if (array) {
+      double range[2];
+      array->GetRange(range);
+      rescaleTransferFunction(m_LUTProxy, range[0], range[1]);
+      renderViews();
+    }
+  }
 }
 
 void HistogramWidget::onCustomRangeClicked()
@@ -323,14 +333,12 @@ void HistogramWidget::onCustomRangeClicked()
     return;
   }
   discFunc->GetRange(range.GetData());
-  pqRescaleRange dialog(pqCoreUtilities::mainWidget());
+  pqRescaleRange dialog(tomviz::mainWidget());
   dialog.setRange(range[0], range[1]);
   if (dialog.exec() == QDialog::Accepted) {
-    vtkSMTransferFunctionProxy::RescaleTransferFunction(
-      m_LUTProxy, dialog.minimum(), dialog.maximum());
+    rescaleTransferFunction(m_LUTProxy, dialog.minimum(), dialog.maximum());
+    renderViews();
   }
-  renderViews();
-  emit colorMapUpdated();
 }
 
 void HistogramWidget::onInvertClicked()
@@ -342,7 +350,7 @@ void HistogramWidget::onInvertClicked()
 
 void HistogramWidget::onPresetClicked()
 {
-  pqPresetDialog dialog(pqCoreUtilities::mainWidget(),
+  pqPresetDialog dialog(tomviz::mainWidget(),
                         pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
   dialog.setCustomizableLoadColors(true);
   dialog.setCustomizableLoadOpacities(true);
@@ -423,6 +431,16 @@ void HistogramWidget::renderViews()
   if (view) {
     view->render();
   }
+}
+
+void HistogramWidget::rescaleTransferFunction(vtkSMProxy* lutProxy, double min,
+                                              double max)
+{
+  vtkSMTransferFunctionProxy::RescaleTransferFunction(lutProxy, min, max);
+  auto opacityMap =
+    vtkSMPropertyHelper(m_LUTProxy, "ScalarOpacityFunction").GetAsProxy();
+  vtkSMTransferFunctionProxy::RescaleTransferFunction(opacityMap, min, max);
+  emit colorMapUpdated();
 }
 
 void HistogramWidget::showEvent(QShowEvent* event)

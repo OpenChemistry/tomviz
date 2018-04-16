@@ -50,6 +50,7 @@
 #include <QDebug>
 #include <QDoubleValidator>
 #include <QHBoxLayout>
+#include <QJsonArray>
 #include <QLabel>
 #include <QVBoxLayout>
 
@@ -76,8 +77,8 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  vtkSMSourceProxy* producer = data->producer();
-  vtkSMSessionProxyManager* pxm = producer->GetSessionProxyManager();
+  auto producer = data->proxy();
+  auto pxm = producer->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -105,9 +106,9 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   const bool widgetSetup = setupWidget(vtkView, producer);
 
   if (widgetSetup) {
+    m_widget->SetDisplayOffset(data->displayPosition());
     m_widget->On();
     m_widget->InteractionOn();
-    m_widget->SetDisplayOffset(data->displayPosition());
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
@@ -297,88 +298,56 @@ void ModuleSlice::dataUpdated()
   emit renderNeeded();
 }
 
-bool ModuleSlice::serialize(pugi::xml_node& ns) const
+QJsonObject ModuleSlice::serialize() const
 {
-  // Save the state of the arrow's visibility
+  auto json = Module::serialize();
+  auto props = json["properties"].toObject();
+
   vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
-  ns.append_attribute("show_arrow").set_value(showProperty.GetAsInt());
+  props["showArrow"] = showProperty.GetAsInt() != 0;
 
   // Serialize the plane
   double point[3];
-  pugi::xml_node plane = ns.append_child("Plane");
-  pugi::xml_node pointNode;
   m_widget->GetOrigin(point);
-  // Origin of plane
-  pointNode = plane.append_child("Point");
-  pointNode.append_attribute("index").set_value(0);
-  pointNode.append_attribute("x").set_value(point[0]);
-  pointNode.append_attribute("y").set_value(point[1]);
-  pointNode.append_attribute("z").set_value(point[2]);
-  // Point 1 of plane
+  QJsonArray origin = { point[0], point[1], point[2] };
   m_widget->GetPoint1(point);
-  pointNode = plane.append_child("Point");
-  pointNode.append_attribute("index").set_value(1);
-  pointNode.append_attribute("x").set_value(point[0]);
-  pointNode.append_attribute("y").set_value(point[1]);
-  pointNode.append_attribute("z").set_value(point[2]);
-  // Point 2 of plane
+  QJsonArray point1 = { point[0], point[1], point[2] };
   m_widget->GetPoint2(point);
-  pointNode = plane.append_child("Point");
-  pointNode.append_attribute("index").set_value(2);
-  pointNode.append_attribute("x").set_value(point[0]);
-  pointNode.append_attribute("y").set_value(point[1]);
-  pointNode.append_attribute("z").set_value(point[2]);
+  QJsonArray point2 = { point[0], point[1], point[2] };
 
-  // Map colors
-  pugi::xml_node mapScalars = ns.append_child("MapScalars");
-  mapScalars.append_attribute("value").set_value(m_widget->GetMapScalars() ==
-                                                 1);
+  props["origin"] = origin;
+  props["point1"] = point1;
+  props["point2"] = point2;
+  props["mapScalars"] = m_widget->GetMapScalars() != 0;
 
-  // Let the superclass do its thing
-  return Module::serialize(ns);
+  json["properties"] = props;
+  return json;
 }
 
-bool ModuleSlice::deserialize(const pugi::xml_node& ns)
+bool ModuleSlice::deserialize(const QJsonObject& json)
 {
-
-  pugi::xml_node plane = ns.child("Plane");
-  if (!plane) {
-    // We are reading an older state file from before the change that added
-    // the ability to save these...
-    return Module::deserialize(ns);
+  if (!Module::deserialize(json)) {
+    return false;
   }
-  // Deserialize the show arrow state
-  vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
-  showProperty.Set(ns.attribute("show_arrow").as_int());
-
-  // Deserialize the plane
-  double point[3];
-  for (pugi::xml_node pointNode = plane.child("Point"); pointNode;
-       pointNode = pointNode.next_sibling("Point")) {
-    point[0] = pointNode.attribute("x").as_double();
-    point[1] = pointNode.attribute("y").as_double();
-    point[2] = pointNode.attribute("z").as_double();
-    int index = pointNode.attribute("index").as_int();
-    if (index == 0) {
-      m_widget->SetOrigin(point);
-    } else if (index == 1) {
-      m_widget->SetPoint1(point);
-    } else if (index == 2) {
-      m_widget->SetPoint2(point);
-    } else {
-      qCritical("Unknown point index for slice plane point");
-      return false;
-    }
+  if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
+    showProperty.Set(props["showArrow"].toBool() ? 1 : 0);
+    auto o = props["origin"].toArray();
+    auto p1 = props["point1"].toArray();
+    auto p2 = props["point2"].toArray();
+    double origin[3] = { o[0].toDouble(), o[1].toDouble(), o[2].toDouble() };
+    double point1[3] = { p1[0].toDouble(), p1[1].toDouble(), p1[2].toDouble() };
+    double point2[3] = { p2[0].toDouble(), p2[1].toDouble(), p2[2].toDouble() };
+    m_widget->SetOrigin(origin);
+    m_widget->SetPoint1(point1);
+    m_widget->SetPoint2(point2);
+    m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
+    m_widget->UpdatePlacement();
+    onPlaneChanged();
+    return true;
   }
-
-  pugi::xml_node mapScalars = ns.child("MapScalars");
-  m_widget->SetMapScalars(mapScalars.attribute("value").as_bool() ? 1 : 0);
-
-  m_widget->UpdatePlacement();
-  onPlaneChanged();
-
-  // Let the superclass do its thing
-  return Module::deserialize(ns);
+  return false;
 }
 
 void ModuleSlice::onPropertyChanged()

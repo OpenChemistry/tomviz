@@ -36,6 +36,7 @@ namespace tomviz {
 class DataSource;
 class EditOperatorWidget;
 class OperatorResult;
+class EditOperatorDialog;
 
 enum class OperatorState
 {
@@ -104,6 +105,9 @@ public:
   virtual DataSource* childDataSource() const;
 
   /// Save/Restore state.
+  virtual QJsonObject serialize() const;
+  virtual bool deserialize(const QJsonObject& json);
+
   virtual bool serialize(pugi::xml_node& in) const = 0;
   virtual bool deserialize(const pugi::xml_node& ns) = 0;
 
@@ -134,6 +138,14 @@ public:
   /// Should return true if the Operator has a non-null widget to return from
   /// getEditorContents.
   virtual bool hasCustomUI() const { return false; }
+
+  /// If this operator has a dialog active, this should return that dialog (the
+  /// dialog will register itself using setCustomDialog in its constructor).
+  /// Otherwise this will return nullptr.
+  EditOperatorDialog* customDialog() const;
+
+  /// Set the custom dialog associated with this operator
+  void setCustomDialog(EditOperatorDialog*);
 
   /// If the operator has some custom progress UI, then return that UI from this
   /// function.  This custom UI must be parented to the given widget and should
@@ -216,6 +228,10 @@ signals:
   /// Emitted just prior to this object's destruction.
   void aboutToBeDestroyed(Operator* op);
 
+  // Emitted when a data source is move to a new operator. For example when
+  // a new operator is added.
+  void dataSourceMoved(DataSource*);
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
@@ -228,7 +244,7 @@ public slots:
            m_state == OperatorState::Error;
   };
   bool isModified() { return m_state == OperatorState::Modified; }
-  OperatorState state() { return m_state; };
+  OperatorState state() { return m_state; }
   void resetState() { m_state = OperatorState::Queued; }
   void setModified() { m_state = OperatorState::Modified; }
 
@@ -252,6 +268,7 @@ private:
   int m_progressStep = 0;
   QString m_progressMessage;
   std::atomic<OperatorState> m_state{ OperatorState::Queued };
+  QPointer<EditOperatorDialog> m_customDialog;
 };
 }
 

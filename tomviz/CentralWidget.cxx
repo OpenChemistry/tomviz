@@ -65,6 +65,9 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   // Keep the array we are working on around even if the user shallow copies
   // over the input image data by incrementing the reference count here.
   vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
+  if (!arrayPtr) {
+    return;
+  }
 
   // The bin values are the centers, extending +/- half an inc either side
   arrayPtr->GetFiniteRange(minmax, -1);
@@ -129,6 +132,9 @@ void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
   // Keep the array we are working on around even if the user shallow copies
   // over the input image data by incrementing the reference count here.
   vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
+  if (!arrayPtr) {
+    return;
+  }
 
   // The bin values are the centers, extending +/- half an inc either side
   arrayPtr->GetFiniteRange(minmax, -1);
@@ -333,6 +339,14 @@ CentralWidget::~CentralWidget()
 
 void CentralWidget::setActiveColorMapDataSource(DataSource* source)
 {
+  auto selected = ActiveObjects::instance().selectedDataSource();
+
+  // If we have a data source selected directly ( i.e. the user has clicked on
+  // it ) use that, otherwise use the active transformed data source passed in.
+  if (selected != nullptr) {
+    source = selected;
+  }
+
   setColorMapDataSource(source);
 }
 
@@ -374,9 +388,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   }
 
   // Get the actual data source, build a histogram out of it.
-  auto t =
-    vtkTrivialProducer::SafeDownCast(source->producer()->GetClientSideObject());
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto image = vtkImageData::SafeDownCast(source->dataObject());
 
   if (image->GetPointData()->GetScalars() == nullptr) {
     return;
@@ -504,9 +516,8 @@ vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)
     return nullptr;
   }
 
-  auto t = vtkTrivialProducer::SafeDownCast(
-    m_activeColorMapDataSource->producer()->GetClientSideObject());
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  auto image =
+    vtkImageData::SafeDownCast(m_activeColorMapDataSource->dataObject());
 
   // The current dataset has changed since the histogram was requested,
   // ignore this histogram and wait for the next one queued...

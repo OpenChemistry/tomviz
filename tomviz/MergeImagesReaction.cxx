@@ -81,13 +81,13 @@ void MergeImagesReaction::updateEnableState()
   // physical space for now.
   if (enabled) {
     QList<DataSource*> sourceList = m_dataSources.toList();
-    auto info = sourceList[0]->producer()->GetDataInformation();
+    auto info = sourceList[0]->proxy()->GetDataInformation();
     int refExtent[6];
     info->GetExtent(refExtent);
 
     // Check against other DataSource extents
     for (int i = 0; i < m_dataSources.size(); ++i) {
-      info = sourceList[i]->producer()->GetDataInformation();
+      info = sourceList[i]->proxy()->GetDataInformation();
       int thisExtent[6];
       info->GetExtent(thisExtent);
       enabled = enabled && std::equal(refExtent, refExtent+6, thisExtent);
@@ -113,19 +113,20 @@ DataSource* MergeImagesReaction::mergeArrays()
   Q_ASSERT(filter);
 
   for (int i = 0; i < sourceList.size(); ++i) {
-    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->producer(), 0);  
+    vtkSMPropertyHelper(filter, "Input")
+      .Add(sourceList[i]->proxy(), 0);
   }
 
   filter->UpdateVTKObjects();
   filter->UpdatePipeline();
 
   DataSource* newSource = new DataSource(filter);
-  QString mergedFilename(QFileInfo(sourceList[0]->filename()).baseName());
+  QString mergedFilename(QFileInfo(sourceList[0]->fileName()).baseName());
   for (int i = 1; i < sourceList.size(); ++i) {
     mergedFilename.append(" + ");
-    mergedFilename.append(QFileInfo(sourceList[i]->filename()).baseName());
+    mergedFilename.append(QFileInfo(sourceList[i]->fileName()).baseName());
   }
-  newSource->setFilename(mergedFilename);
+  newSource->setFileName(mergedFilename);
   filter->Delete();
 
   return newSource;
@@ -148,9 +149,10 @@ DataSource* MergeImagesReaction::mergeComponents()
   expression << "np.transpose(np.vstack((";
 
   for (int i = 0; i < sourceList.size(); ++i) {
-    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->producer(), 0);
+    vtkSMPropertyHelper(filter, "Input")
+      .Add(sourceList[i]->proxy(), 0);
 
-    auto info = sourceList[0]->producer()->GetDataInformation();
+    auto info = sourceList[0]->proxy()->GetDataInformation();
     auto pointData = info->GetPointDataInformation();
     for (int j = 0; j < pointData->GetNumberOfArrays(); ++j) {
       auto arrayInfo = pointData->GetArrayInformation(j);
@@ -177,7 +179,7 @@ DataSource* MergeImagesReaction::mergeComponents()
   filter->UpdatePipeline();
 
   DataSource* newSource = new DataSource(filter);
-  newSource->setFilename("Merged Image");
+  newSource->setFileName("Merged Image");
   filter->Delete();
 
   return newSource;

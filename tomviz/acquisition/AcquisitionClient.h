@@ -64,7 +64,8 @@ public:
   }
 
 signals:
-  void finished(const QString mimeType, const QByteArray& result);
+  void finished(const QString mimeType, const QByteArray& result,
+                const QJsonObject& meta);
 };
 
 class AcquisitionClient : public QObject
@@ -93,6 +94,8 @@ public slots:
   AcquisitionClientImageRequest* stem_acquire();
 
   AcquisitionClientRequest* describe(const QString& method);
+
+  AcquisitionClientRequest* describe();
 
 private slots:
 

@@ -140,7 +140,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         recon[:] = (y2 + y1) / 2
         recon[:] = np.fft.fftshift(recon)
 
-        from vtk import vtkImageData
+        from vtkmodules.vtkCommonDataModel import vtkImageData
         recon_dataset = vtkImageData()
         recon_dataset.CopyStructure(dataset)
         utils.set_array(recon_dataset, recon)
@@ -149,6 +149,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         returnValues = {}
         returnValues["reconstruction"] = recon_dataset
         return returnValues
+
 
 def dfm3(input, angles, Npad):
     input = np.double(input)

@@ -4,27 +4,14 @@ branches:
     - master
 language: python
 
-cache:
-  timeout: 1000
-  directories:
-    - $HOME/googletest-install
-    - $HOME/itk-install
-    - $HOME/paraview
-    - $HOME/paraview-build
-    - $HOME/python
-    - $HOME/qt-5.9.1
-    - $HOME/tbb2017_20160916oss
-    - $HOME/sha512s
-
-
 matrix:
   include:
     - os: linux
-      dist: precise
+      dist: trusty
       python: 2.7
       env: TASKS="pytest(acquisition), flake8, clang-format"
     - os: linux
-      dist: precise
+      dist: trusty
       python: 3.4
       env: TASKS="pytest(acquisition), flake8"
     - language: generic
@@ -36,12 +23,12 @@ addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
-    - llvm-toolchain-precise-3.8
+    - llvm-toolchain-trusty-3.8
     packages:
     - clang-format-3.8
 install:
   - cd $HOME
-  - $TRAVIS_BUILD_DIR/scripts/travis/install.sh
+  - travis_wait 20 $TRAVIS_BUILD_DIR/scripts/travis/install.sh
 script:
   - cd $HOME
   - env
