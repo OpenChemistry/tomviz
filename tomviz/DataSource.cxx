@@ -323,10 +323,8 @@ QJsonObject DataSource::serialize() const
   }
 
   // Serialize the color map, opacity map, and others if needed.
-  json["colorMap"] = tomviz::serialize(colorMap());
-  json["opacityMap"] = tomviz::serialize(opacityMap());
-
-  // tomviz::serialize(gradientOpacityMap(), node);
+  json["colorOpacityMap"] = tomviz::serialize(colorMap());
+  json["gradientOpacityMap"] = tomviz::serialize(gradientOpacityMap());
 
   // Serialize the operators...
   QJsonArray jOperators;
@@ -358,11 +356,12 @@ QJsonObject DataSource::serialize() const
 
 bool DataSource::deserialize(const QJsonObject& state)
 {
-  if (state.contains("colorMap")) {
-    tomviz::deserialize(colorMap(), state["colorMap"].toObject());
+  if (state.contains("colorOpacityMap")) {
+    tomviz::deserialize(colorMap(), state["colorOpacityMap"].toObject());
   }
-  if (state.contains("opacityMap")) {
-    tomviz::deserialize(opacityMap(), state["opacityMap"].toObject());
+  if (state.contains("gradientOpacityMap")) {
+    tomviz::deserialize(gradientOpacityMap(),
+                        state["gradientOpacityMap"].toObject());
   }
 
   if (state.contains("spacing")) {
