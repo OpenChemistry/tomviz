@@ -35,6 +35,7 @@
 #include <QGridLayout>
 #include <QGuiApplication>
 #include <QHBoxLayout>
+#include <QJsonArray>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QMessageBox>
@@ -386,23 +387,31 @@ Operator* SetTiltAnglesOperator::clone() const
   return op;
 }
 
-bool SetTiltAnglesOperator::serialize(pugi::xml_node& ns) const
+QJsonObject SetTiltAnglesOperator::serialize() const
 {
+  auto json = Operator::serialize();
+
+  // Note that this is always a dense array of angles, storing it as such.
+  QJsonArray angleArray;
   for (auto itr = std::begin(m_tiltAngles);
        itr != std::end(m_tiltAngles); ++itr) {
-    pugi::xml_node angleNode = ns.append_child("Angle");
-    angleNode.append_attribute("index").set_value((unsigned int)itr.key());
-    angleNode.append_attribute("angle").set_value(itr.value());
+    angleArray << itr.value();
   }
-  return true;
+
+  json["angles"] = angleArray;
+  return json;
 }
 
-bool SetTiltAnglesOperator::deserialize(const pugi::xml_node& ns)
+bool SetTiltAnglesOperator::deserialize(const QJsonObject& json)
 {
-  for (auto node = ns.child("Angle"); node; node = node.next_sibling("Angle")) {
-    m_tiltAngles.insert(node.attribute("index").as_uint(),
-                            node.attribute("angle").as_double());
+  if (json.contains("angles") && json["angles"].isArray()) {
+    auto angleArray = json["angles"].toArray();
+    m_tiltAngles.clear();
+    for (int i = 0; i < angleArray.size(); ++i) {
+      m_tiltAngles.insert(i, angleArray[i].toDouble());
+    }
   }
+
   return true;
 }
 
