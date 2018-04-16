@@ -34,11 +34,6 @@ public:
 
   Operator* clone() const override;
 
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
-
-  bool hasCustomUI() const override { return false; }
-
   QWidget* getCustomProgressWidget(QWidget*) const override;
 
 protected:
