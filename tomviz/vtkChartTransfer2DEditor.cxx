@@ -27,8 +27,9 @@
 #include <vtkPointData.h>
 #include <vtkRect.h>
 #include <vtkTextProperty.h>
-#include <vtkTransferFunctionBoxItem.h>
 #include <vtkTooltipItem.h>
+#include <vtkTransferFunction2DItem.h>
+#include <vtkTransferFunctionBoxItem.h>
 
 vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
@@ -104,9 +105,10 @@ vtkPlot* vtkChartTransfer2DEditor::GetPlot(vtkIdType index)
 void vtkChartTransfer2DEditor::RasterBoxItem(
   vtkTransferFunctionBoxItem* boxItem)
 {
-  const vtkRectd& box = boxItem->GetBox();
-  vtkPiecewiseFunction* opacFunc = boxItem->GetOpacityFunction();
-  vtkColorTransferFunction* colorFunc = boxItem->GetColorFunction();
+  const vtkRectd& box = boxItem->GetItem()->GetBox();
+  vtkPiecewiseFunction* opacFunc = boxItem->GetItem()->GetOpacityFunction();
+  vtkColorTransferFunction* colorFunc =
+    boxItem->GetItem()->GetColorTransferFunction();
   if (!opacFunc || !colorFunc) {
     vtkErrorMacro(<< "BoxItem contains invalid transfer functions!");
     return;
@@ -252,5 +254,6 @@ void vtkChartTransfer2DEditor::SetDefaultBoxPosition(
 {
   const double deltaX = (xRange[1] - xRange[0]) / 3.0;
   const double deltaY = (yRange[1] - yRange[0]) / 3.0;
-  item->SetBox(xRange[0] + deltaX, yRange[0] + deltaY, deltaX, deltaY);
+  item->GetItem()->SetBox(xRange[0] + deltaX, yRange[0] + deltaY, deltaX,
+                          deltaY);
 }

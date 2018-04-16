@@ -24,6 +24,7 @@
 #include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
 #include <vtkTable.h>
+#include <vtkTransferFunction2DItem.h>
 #include <vtkTransferFunctionBoxItem.h>
 #include <vtkTrivialProducer.h>
 #include <vtkUnsignedShortArray.h>
@@ -398,26 +399,24 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
     m_ui->histogramWidget->setLUTProxy(m_activeModule->colorMap());
     if (m_activeModule->supportsGradientOpacity()) {
       m_ui->gradientOpacityWidget->setLUT(m_activeModule->gradientOpacityMap());
-      m_transfer2DModel->getDefault()->SetColorFunction(
-        vtkColorTransferFunction::SafeDownCast(
-          m_activeModule->colorMap()->GetClientSideObject()));
-      m_transfer2DModel->getDefault()->SetOpacityFunction(
-        vtkPiecewiseFunction::SafeDownCast(
-          m_activeModule->opacityMap()->GetClientSideObject()));
+
+      // Since setting the transfer function box item regenerates the image, the
+      // image must be set first.  Otherwise you override whatever image was
+      // there before with this transfer function's image.
       m_ui->histogram2DWidget->setTransfer2D(
-        m_activeModule->transferFunction2D());
+        m_activeModule->transferFunction2DImage());
+      m_transfer2DModel->getDefault()->SetItem(
+        m_activeModule->transferFunction2D()[0]);
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
     m_ui->gradientOpacityWidget->setLUT(source->gradientOpacityMap());
 
-    m_transfer2DModel->getDefault()->SetColorFunction(
-      vtkColorTransferFunction::SafeDownCast(
-        source->colorMap()->GetClientSideObject()));
-    m_transfer2DModel->getDefault()->SetOpacityFunction(
-      vtkPiecewiseFunction::SafeDownCast(
-        source->opacityMap()->GetClientSideObject()));
-    m_ui->histogram2DWidget->setTransfer2D(source->transferFunction2D());
+    // Since setting the transfer function box item regenerates the image, the
+    // image must be set first.  Otherwise you override whatever image was
+    // there before with this transfer function's image.
+    m_ui->histogram2DWidget->setTransfer2D(source->transferFunction2DImage());
+    m_transfer2DModel->getDefault()->SetItem(source->transferFunction2D()[0]);
   }
   m_ui->histogram2DWidget->updateTransfer2D();
 

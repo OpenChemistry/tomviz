@@ -208,6 +208,8 @@ set(SOURCES
   vtkChartHistogramColorOpacityEditor.h
   vtkChartTransfer2DEditor.cxx
   vtkChartTransfer2DEditor.h
+  vtkTransferFunction2DItem.h
+  vtkTransferFunction2DItem.cxx
   vtkTransferFunctionBoxItem.h
   vtkTransferFunctionBoxItem.cxx
   vtkCustomPiecewiseControlPointsItem.cxx

@@ -117,6 +117,7 @@ void ModuleVolume::updateColorMap()
       break;
   }
 
+  m_volumeProperty->SetTransferFunction2D(transferFunction2DImage());
   m_volumeProperty->SetTransferFunctionMode(propertyMode);
 
   // BUG: volume mappers don't update property when LUT is changed and has an

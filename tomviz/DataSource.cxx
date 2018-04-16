@@ -22,7 +22,9 @@
 #include "OperatorFactory.h"
 #include "Pipeline.h"
 #include "Utilities.h"
+#include "vtkTransferFunction2DItem.h"
 
+#include <vtkColorTransferFunction.h>
 #include <vtkDataObject.h>
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
@@ -30,6 +32,7 @@
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
+#include <vtkRect.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTrivialProducer.h>
@@ -62,6 +65,7 @@ class DataSource::DSInternals
 {
 public:
   vtkNew<vtkImageData> m_transfer2D;
+  QVector<vtkSmartPointer<vtkTransferFunction2DItem>> m_transferFunction2D;
   vtkNew<vtkPiecewiseFunction> GradientOpacityMap;
 //  vtkSmartPointer<vtkSMSourceProxy> DataSourceProxy;
   vtkSmartPointer<vtkSMSourceProxy> ProducerProxy;
@@ -72,6 +76,14 @@ public:
   vtkVector3d DisplayPosition;
   PersistenceState PersistState = PersistenceState::Saved;
   bool UnitsModified = false;
+
+  DSInternals()
+  {
+    m_transferFunction2D.push_back(
+      vtkSmartPointer<vtkTransferFunction2DItem>::New());
+    Future = nullptr;
+    Worker = nullptr;
+  }
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -899,7 +911,13 @@ vtkPiecewiseFunction* DataSource::gradientOpacityMap() const
   return this->Internals->GradientOpacityMap;
 }
 
-vtkImageData* DataSource::transferFunction2D() const
+QVector<vtkSmartPointer<vtkTransferFunction2DItem>>&
+DataSource::transferFunction2D() const
+{
+  return this->Internals->m_transferFunction2D;
+}
+
+vtkImageData* DataSource::transferFunction2DImage() const
 {
   return this->Internals->m_transfer2D;
 }
@@ -991,6 +1009,13 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
     QString("DataSourceColorMap%1").arg(colorMapCounter).toLatin1().data(),
     pxm);
   updateColorMap();
+
+  auto colorTfrFunction = vtkColorTransferFunction::SafeDownCast(
+    this->Internals->ColorMap->GetClientSideObject());
+  this->Internals->m_transferFunction2D[0]->SetColorTransferFunction(
+    colorTfrFunction);
+  this->Internals->m_transferFunction2D[0]->SetOpacityFunction(
+    this->Internals->GradientOpacityMap);
 
   // Every time the data changes, we should update the color map.
   connect(this, SIGNAL(dataChanged()), SLOT(updateColorMap()));

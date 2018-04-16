@@ -20,6 +20,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QScopedPointer>
+#include <QVector>
 
 #include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
@@ -33,6 +34,7 @@ class vtkSMProxy;
 class vtkSMViewProxy;
 class vtkPiecewiseFunction;
 class vtkDataObject;
+class vtkTransferFunction2DItem;
 
 namespace tomviz {
 class DataSource;
@@ -101,7 +103,9 @@ public:
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
   vtkPiecewiseFunction* gradientOpacityMap() const;
-  vtkImageData* transferFunction2D() const;
+  QVector<vtkSmartPointer<vtkTransferFunction2DItem>>& transferFunction2D()
+    const;
+  vtkImageData* transferFunction2DImage() const;
 
   /// Returns true if the given proxy is part of the display or data processing
   /// in this module

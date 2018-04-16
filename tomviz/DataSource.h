@@ -30,6 +30,7 @@ class vtkSMSourceProxy;
 class vtkImageData;
 class vtkDataObject;
 class vtkPiecewiseFunction;
+class vtkTransferFunction2DItem;
 class vtkAlgorithm;
 class vtkTrivialProducer;
 
@@ -144,7 +145,9 @@ public:
   vtkSMProxy* colorMap() const;
   vtkSMProxy* opacityMap() const;
   vtkPiecewiseFunction* gradientOpacityMap() const;
-  vtkImageData* transferFunction2D() const;
+  QVector<vtkSmartPointer<vtkTransferFunction2DItem>>& transferFunction2D()
+    const;
+  vtkImageData* transferFunction2DImage() const;
 
   /// Indicates whether the DataSource has a label map of the voxels.
   bool hasLabelMap();
