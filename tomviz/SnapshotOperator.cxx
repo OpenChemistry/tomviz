@@ -54,26 +54,25 @@ Operator* SnapshotOperator::clone() const
   return new SnapshotOperator(m_dataSource);
 }
 
-bool SnapshotOperator::serialize(pugi::xml_node& ns) const
+QJsonObject SnapshotOperator::serialize() const
 {
-  Operator::serialize(ns);
+  auto json = Operator::serialize();
+
   if (hasChildDataSource() &&
       childDataSource()->persistenceState() ==
         DataSource::PersistenceState::Saved) {
-    ns.append_attribute("update").set_value(false);
+    json["update"] = false;
   }
 
-  return true;
+  return json;
 }
 
-bool SnapshotOperator::deserialize(const pugi::xml_node& ns)
+bool SnapshotOperator::deserialize(const QJsonObject& json)
 {
-  Operator::deserialize(ns);
-  xml_attribute att = ns.attribute("update");
-  if (att) {
-    m_updateCache = att.as_bool();
+  if (json.contains("update")) {
+    m_updateCache = json["update"].toBool(false);
   }
-  // No state to serialize yet
+
   return true;
 }
 
