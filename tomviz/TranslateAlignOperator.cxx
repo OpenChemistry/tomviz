@@ -22,6 +22,8 @@
 #include "vtkImageData.h"
 #include "vtkNew.h"
 
+#include <QJsonArray>
+
 namespace {
 
 // We are assuming an image that begins at 0, 0, 0.
@@ -114,30 +116,30 @@ Operator* TranslateAlignOperator::clone() const
   return op;
 }
 
-bool TranslateAlignOperator::serialize(pugi::xml_node& ns) const
+QJsonObject TranslateAlignOperator::serialize() const
 {
-  ns.append_attribute("number_of_offsets").set_value(this->offsets.size());
-  for (int i = 0; i < this->offsets.size(); ++i) {
-    pugi::xml_node node = ns.append_child("offset");
-    node.append_attribute("slice_number").set_value(i);
-    node.append_attribute("x_offset").set_value(this->offsets[i][0]);
-    node.append_attribute("y_offset").set_value(this->offsets[i][1]);
+  auto json = Operator::serialize();
+
+  QJsonArray offsetArray;
+  foreach(auto offset, this->offsets) {
+    offsetArray << offset[0] << offset[1];
   }
-  return true;
+
+  json["offsets"] = offsetArray;
+  return json;
 }
 
-bool TranslateAlignOperator::deserialize(const pugi::xml_node& ns)
+bool TranslateAlignOperator::deserialize(const QJsonObject& json)
 {
-  int numOffsets = ns.attribute("number_of_offsets").as_int();
-  this->offsets.resize(numOffsets);
-  for (pugi::xml_node node = ns.child("offset"); node;
-       node = node.next_sibling("offset")) {
-    int sliceNum = node.attribute("slice_number").as_int();
-    int xOffset = node.attribute("x_offset").as_int();
-    int yOffset = node.attribute("y_offset").as_int();
-    this->offsets[sliceNum][0] = xOffset;
-    this->offsets[sliceNum][1] = yOffset;
+  if (json.contains("offsets") && json["offsets"].isArray()) {
+    auto offsetArray = json["offsets"].toArray();
+    this->offsets.resize(offsetArray.size() / 2);
+    for (int i = 0; i < offsetArray.size() / 2; ++i) {
+      this->offsets[i][0] = offsetArray[2 * i].toInt();
+      this->offsets[i][1] = offsetArray[2 * i + 1].toInt();
+    }
   }
+
   return true;
 }
 
