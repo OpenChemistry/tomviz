@@ -493,25 +493,6 @@ bool OperatorPython::deserialize(const QJsonObject& json)
   return true;
 }
 
-bool OperatorPython::serialize(pugi::xml_node& ns) const
-{
-  ns.append_attribute("json_description")
-    .set_value(JSONDescription().toLatin1().data());
-  ns.append_attribute("label").set_value(label().toLatin1().data());
-  ns.append_attribute("script").set_value(script().toLatin1().data());
-  pugi::xml_node argsNode = ns.append_child("arguments");
-  return tomviz::serialize(m_arguments, argsNode);
-}
-
-bool OperatorPython::deserialize(const pugi::xml_node& ns)
-{
-  setJSONDescription(ns.attribute("json_description").as_string());
-  setLabel(ns.attribute("label").as_string());
-  setScript(ns.attribute("script").as_string());
-  m_arguments.clear();
-  return tomviz::deserialize(m_arguments, ns.child("arguments"));
-}
-
 EditOperatorWidget* OperatorPython::getEditorContents(QWidget* p)
 {
   CustomPythonOperatorWidget* widget = nullptr;

@@ -108,9 +108,6 @@ public:
   virtual QJsonObject serialize() const;
   virtual bool deserialize(const QJsonObject& json);
 
-  virtual bool serialize(pugi::xml_node& in) const = 0;
-  virtual bool deserialize(const pugi::xml_node& ns) = 0;
-
   /// There are two versions of this function, this one and
   /// getEditorContentsWithData. Subclasses should override this one if their
   /// editors do not need the previous state of the data.  Subclasses should
