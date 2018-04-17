@@ -182,16 +182,6 @@ bool Operator::deserialize(const QJsonObject& json)
   return true;
 }
 
-bool Operator::serialize(pugi::xml_node&) const
-{
-  return true;
-}
-
-bool Operator::deserialize(const pugi::xml_node&)
-{
-  return true;
-}
-
 EditOperatorDialog* Operator::customDialog() const
 {
   return m_customDialog;

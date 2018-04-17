@@ -24,6 +24,8 @@
 #include "vtkNew.h"
 
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QPointer>
 
 #include <limits>
@@ -111,27 +113,29 @@ Operator* CropOperator::clone() const
   return other;
 }
 
-bool CropOperator::serialize(pugi::xml_node& ns) const
+QJsonObject CropOperator::serialize() const
 {
-  ns.append_attribute("boundsXmin").set_value(m_bounds[0]);
-  ns.append_attribute("boundsXmax").set_value(m_bounds[1]);
-  ns.append_attribute("boundsYmin").set_value(m_bounds[2]);
-  ns.append_attribute("boundsYmax").set_value(m_bounds[3]);
-  ns.append_attribute("boundsZmin").set_value(m_bounds[4]);
-  ns.append_attribute("boundsZmax").set_value(m_bounds[5]);
-  return true;
+  auto json = Operator::serialize();
+  QJsonArray bounds;
+  for (int i = 0; i < 6; ++i) {
+    bounds << m_bounds[i];
+  }
+  json["bounds"] = bounds;
+  return json;
 }
 
-bool CropOperator::deserialize(const pugi::xml_node& ns)
+bool CropOperator::deserialize(const QJsonObject& json)
 {
-  int bounds[6];
-  bounds[0] = ns.attribute("boundsXmin").as_int();
-  bounds[1] = ns.attribute("boundsXmax").as_int();
-  bounds[2] = ns.attribute("boundsYmin").as_int();
-  bounds[3] = ns.attribute("boundsYmax").as_int();
-  bounds[4] = ns.attribute("boundsZmin").as_int();
-  bounds[5] = ns.attribute("boundsZmax").as_int();
-  setCropBounds(bounds);
+  if (json.contains("bounds")) {
+    auto bounds = json["bounds"].toArray();
+    if (json.size() == 6) {
+      int b[6];
+      for (int i = 0; i < 6; ++i) {
+        b[i] = bounds[i].toInt();
+      }
+      setCropBounds(b);
+    }
+  }
   return true;
 }
 

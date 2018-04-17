@@ -72,13 +72,4 @@ Operator* ConvertToFloatOperator::clone() const
   return new ConvertToFloatOperator();
 }
 
-bool ConvertToFloatOperator::serialize(pugi::xml_node&) const
-{
-  return true;
-}
-
-bool ConvertToFloatOperator::deserialize(const pugi::xml_node&)
-{
-  return true;
-}
 }

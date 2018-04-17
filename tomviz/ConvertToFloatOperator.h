@@ -30,9 +30,6 @@ public:
   QString label() const override { return "Convert to Float"; }
   QIcon icon() const override;
   Operator* clone() const override;
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
-  bool hasCustomUI() const override { return false; }
 
   bool applyTransform(vtkDataObject* data) override;
 

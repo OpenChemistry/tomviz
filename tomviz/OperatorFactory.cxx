@@ -41,9 +41,6 @@ public:
 
   QString label() const override { return "Mark as Volume"; }
   QIcon icon() const override { return QIcon(); }
-  bool serialize(pugi::xml_node&) const override { return true; }
-  bool deserialize(const pugi::xml_node&) override { return true; }
-  bool hasCustomUI() const override { return false; }
   Operator* clone() const override { return new ConvertToVolumeOperator; }
 
 protected:

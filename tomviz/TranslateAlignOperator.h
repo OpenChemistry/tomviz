@@ -38,8 +38,8 @@ public:
   QIcon icon() const override;
   Operator* clone() const override;
 
-  bool serialize(pugi::xml_node& ns) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
 
   EditOperatorWidget* getEditorContentsWithData(
     QWidget* parent, vtkSmartPointer<vtkImageData> data) override;

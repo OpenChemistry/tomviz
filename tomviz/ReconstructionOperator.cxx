@@ -66,18 +66,6 @@ Operator* ReconstructionOperator::clone() const
   return new ReconstructionOperator(m_dataSource);
 }
 
-bool ReconstructionOperator::serialize(pugi::xml_node&) const
-{
-  // No state to serialize yet
-  return true;
-}
-
-bool ReconstructionOperator::deserialize(const pugi::xml_node&)
-{
-  // No state to serialize yet
-  return true;
-}
-
 QWidget* ReconstructionOperator::getCustomProgressWidget(QWidget* p) const
 {
   ReconstructionWidget* widget = new ReconstructionWidget(m_dataSource, p);

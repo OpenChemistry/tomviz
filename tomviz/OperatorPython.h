@@ -47,9 +47,6 @@ public:
   QJsonObject serialize() const override;
   bool deserialize(const QJsonObject& json) override;
 
-  bool serialize(pugi::xml_node& in) const override;
-  bool deserialize(const pugi::xml_node& ns) override;
-
   void setJSONDescription(const QString& str);
   const QString& JSONDescription() const;
 
