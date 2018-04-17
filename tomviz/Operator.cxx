@@ -30,9 +30,6 @@
 
 namespace tomviz {
 
-using pugi::xml_attribute;
-using pugi::xml_node;
-
 Operator::Operator(QObject* parentObject) : QObject(parentObject)
 {
   qRegisterMetaType<TransformResult>("TransformResult");

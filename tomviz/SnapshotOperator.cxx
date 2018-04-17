@@ -32,9 +32,6 @@
 
 namespace tomviz {
 
-using pugi::xml_attribute;
-using pugi::xml_node;
-
 SnapshotOperator::SnapshotOperator(DataSource* source, QObject* p)
   : Operator(p), m_dataSource(source)
 {

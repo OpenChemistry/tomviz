@@ -46,8 +46,6 @@
 #include <vtkSmartPointer.h>
 #include <vtkTrivialProducer.h>
 
-#include <vtk_pugixml.h>
-
 #include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>

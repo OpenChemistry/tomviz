@@ -21,8 +21,6 @@
 
 #include <vtkSMProxyManager.h>
 
-#include <vtk_pugixml.h>
-
 #include <QDir>
 #include <QFileDialog>
 #include <QJsonDocument>

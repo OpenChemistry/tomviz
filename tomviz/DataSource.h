@@ -23,8 +23,6 @@
 #include <QVariantMap>
 #include <QVector>
 
-#include <vtk_pugixml.h>
-
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
@@ -106,9 +104,6 @@ public:
   /// Save the state out.
   QJsonObject serialize() const;
   bool deserialize(const QJsonObject& state);
-
-  bool serialize(pugi::xml_node& in) const;
-  bool deserialize(const pugi::xml_node& ns);
 
   /// Set the file name.
   void setFileName(const QString& fileName);

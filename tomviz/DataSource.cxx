@@ -422,18 +422,6 @@ bool DataSource::deserialize(const QJsonObject& state)
   return true;
 }
 
-bool DataSource::serialize(pugi::xml_node& ns) const
-{
-  Q_UNUSED(ns);
-  return false;
-}
-
-bool DataSource::deserialize(const pugi::xml_node& ns)
-{
-  Q_UNUSED(ns);
-  return false;
-}
-
 DataSource* DataSource::clone(bool cloneOperators) const
 {
   // TODO I don't think this is necessary

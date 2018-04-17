@@ -40,9 +40,6 @@
 
 namespace tomviz {
 
-using pugi::xml_attribute;
-using pugi::xml_node;
-
 ModuleOutline::ModuleOutline(QObject* parentObject) : Module(parentObject)
 {
 }

@@ -45,9 +45,6 @@
 
 namespace tomviz {
 
-using pugi::xml_attribute;
-using pugi::xml_node;
-
 ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
 {
 }
