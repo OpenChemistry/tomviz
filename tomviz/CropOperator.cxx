@@ -128,12 +128,10 @@ bool CropOperator::deserialize(const QJsonObject& json)
 {
   if (json.contains("bounds")) {
     auto bounds = json["bounds"].toArray();
-    if (json.size() == 6) {
-      int b[6];
+    if (bounds.size() == 6) {
       for (int i = 0; i < 6; ++i) {
-        b[i] = bounds[i].toInt();
+        m_bounds[i] = bounds[i].toInt();
       }
-      setCropBounds(b);
     }
   }
   return true;
