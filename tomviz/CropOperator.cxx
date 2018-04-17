@@ -18,10 +18,10 @@
 
 #include "EditOperatorWidget.h"
 #include "SelectVolumeWidget.h"
-#include "vtkDataObject.h"
-#include "vtkExtractVOI.h"
-#include "vtkImageData.h"
-#include "vtkNew.h"
+
+#include <vtkExtractVOI.h>
+#include <vtkImageData.h>
+#include <vtkNew.h>
 
 #include <QHBoxLayout>
 #include <QJsonArray>
