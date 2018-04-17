@@ -149,8 +149,8 @@ set(tomviz_html_binary_path "${tomviz_html_binary_dir}/tomviz.html")
 # Section to update when a new version of tomvizweb became available
 # -----------------------------------------------------------------------------
 
-set(tomvizweb_version "1.0.6")
-set(tomviz_js_sha512 "acfedd92f82d4e452f4bc961f97cbcddfacc1216800cd003e4d252ef7c6a1fc3a445879214e3de4f42ae51a1eeea56bc380755bbcaf53a131b7beff9cb988a73")
+set(tomvizweb_version "1.0.7")
+set(tomviz_js_sha512 "820c4f4ed80044cd7f8cfcdf53f5fb961c5098a315bb208d9a0ff8bb94dc7e1c7aaa8f814390672c730546ec19c07d243d6846b8aba01e51625cf902d2b1eba0")
 set(tomviz_html_sha512 "97d41012baf6300002cd59a6122b1fcedc75014d3ee876fcc9250ce9a6352b00495103473ee9ec28550c275a0038f98b1396306366609197d9901fda4b5d94cd")
 
 # -----------------------------------------------------------------------------
