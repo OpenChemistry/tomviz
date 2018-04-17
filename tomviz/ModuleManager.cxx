@@ -53,6 +53,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkStdString.h>
 
+#include <vtk_pugixml.h>
+
 #include <QDebug>
 #include <QDir>
 #include <QJsonArray>

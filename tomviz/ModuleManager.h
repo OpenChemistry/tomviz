@@ -21,8 +21,6 @@
 #include <QJsonObject>
 #include <QScopedPointer>
 
-#include <vtk_pugixml.h>
-
 class pqView;
 class vtkSMSourceProxy;
 class vtkSMViewProxy;

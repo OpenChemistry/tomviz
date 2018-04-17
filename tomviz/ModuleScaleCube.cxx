@@ -44,9 +44,6 @@
 
 namespace tomviz {
 
-using pugi::xml_attribute;
-using pugi::xml_node;
-
 ModuleScaleCube::ModuleScaleCube(QObject* parentObject) : Module(parentObject)
 {
   // Connect to m_cubeRep's "modified" signal, and emit it as our own

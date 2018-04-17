@@ -18,8 +18,6 @@
 
 #include <QObject>
 
-#include <vtk_pugixml.h>
-
 class QDir;
 
 namespace tomviz {
@@ -32,13 +30,6 @@ class PipelineManager : public QObject
 
 public:
   static PipelineManager& instance();
-
-  /// Save the application state as xml.
-  /// Parameter stateDir: the location to use as the base of all relative file
-  /// paths
-  bool serialize(pugi::xml_node& ns, const QDir& stateDir,
-                 bool interactive = true) const;
-  bool deserialize(const pugi::xml_node& ns, const QDir& stateDir);
 
 public slots:
   void addPipeline(Pipeline*);
