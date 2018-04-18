@@ -61,7 +61,7 @@ public:
   void addDefaultModules(DataSource* dataSource);
 
   /// The data source a the root of the pipeline.
-  DataSource* dataSource() { return m_data; };
+  DataSource* dataSource() { return m_data; }
 
   /// Returns that transformed data source associated with a given
   /// data source. If no data source is provided the pipeline's root data source
@@ -121,7 +121,7 @@ signals:
   void canceled();
 
 private:
-  ImageFuture(Operator* op, vtkSmartPointer<vtkImageData> m_imageData,
+  ImageFuture(Operator* op, vtkImageData* imageData,
               PipelineWorker::Future* future = nullptr,
               QObject* parent = nullptr);
   ~ImageFuture() override;

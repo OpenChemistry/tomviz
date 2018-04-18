@@ -35,8 +35,8 @@ public:
                    QObject* parent = nullptr);
 
   /// Returns the data the operator operates on
-  vtkDataObject* data() { return m_data; };
-  Operator* op() { return m_operator; };
+  vtkDataObject* data() { return m_data; }
+  Operator* op() { return m_operator; }
   void run() override;
   void cancel();
   bool isCanceled();
@@ -80,7 +80,7 @@ public:
   bool addOperator(Operator* op);
 
   /// Returns the data object being used for this run.
-  vtkDataObject* data() { return m_data; };
+  vtkDataObject* data() { return m_data; }
 
   /// Start the pipeline execution
   Future* start();
@@ -99,7 +99,7 @@ signals:
 
 private:
   RunnableOperator* m_running = nullptr;
-  vtkDataObject* m_data;
+  vtkSmartPointer<vtkDataObject> m_data;
   QQueue<RunnableOperator*> m_runnableOperators;
   QList<RunnableOperator*> m_complete;
   QList<Operator*> m_operators;

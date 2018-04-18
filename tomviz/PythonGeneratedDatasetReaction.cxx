@@ -105,7 +105,7 @@ public:
 
   tomviz::DataSource* createDataSource(const int shape[3])
   {
-    vtkImageData* image = vtkImageData::New();
+    vtkNew<vtkImageData> image;
 
     {
       tomviz::Python python;
@@ -155,7 +155,7 @@ public:
     tomviz::DataSource* dataSource = new tomviz::DataSource(
       this->label, tomviz::DataSource::Volume, nullptr,
       tomviz::DataSource::PersistenceState::Transient, description);
-    // setData consumes the caller's reference, so image can't be a vtkNew
+
     dataSource->setData(image);
 
     return dataSource;
