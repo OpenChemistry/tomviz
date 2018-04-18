@@ -526,7 +526,7 @@ void OperatorPython::createNewChildDataSource(
     vtkImageData::SafeDownCast(childData), DataSource::Volume, this,
     DataSource::PersistenceState::Transient);
 
-  childDS->setFileName(label);
+  childDS->setLabel(label);
   setChildDataSource(childDS);
   setHasChildDataSource(true);
   emit Operator::newChildDataSource(childDS);
