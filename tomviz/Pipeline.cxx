@@ -116,6 +116,7 @@ void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
   }
 
   m_future = m_worker->run(data, operators);
+  data->FastDelete();
   connect(m_future, &PipelineWorker::Future::finished, this,
           &Pipeline::pipelineBranchFinished);
   connect(m_future, &PipelineWorker::Future::canceled, this,
@@ -197,8 +198,6 @@ void Pipeline::pipelineBranchFinished(bool result)
     if (m_future == future) {
       m_future = nullptr;
     }
-  } else {
-    future->result()->Delete();
   }
 }
 
@@ -362,7 +361,7 @@ void Pipeline::addDefaultModules(DataSource* dataSource)
 }
 
 Pipeline::ImageFuture::ImageFuture(Operator* op,
-                                   vtkSmartPointer<vtkImageData> imageData,
+                                   vtkImageData* imageData,
                                    PipelineWorker::Future* future,
                                    QObject* parent)
   : QObject(parent), m_operator(op), m_imageData(imageData), m_future(future)
@@ -390,31 +389,31 @@ Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
   // If the op has not been added then we can just use the "Output" data source.
   if (!operators.isEmpty() && !operators.contains(op)) {
     auto transformed = this->findTransformedDataSource(m_data);
-    auto dataObject = transformed->copyData();
-    vtkSmartPointer<vtkImageData> result(
-      vtkImageData::SafeDownCast(dataObject));
-    auto imageFuture = new ImageFuture(op, result);
+    auto dataObject = vtkImageData::SafeDownCast(transformed->copyData());
+    auto imageFuture = new ImageFuture(op, dataObject);
+    dataObject->FastDelete();
     // Delay emitting signal until next event loop
     QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
 
     return imageFuture;
   } else {
     auto dataSource = m_data;
-    auto dataObject = dataSource->copyData();
-    vtkSmartPointer<vtkImageData> result(
-      vtkImageData::SafeDownCast(dataObject));
+    auto dataObject = vtkImageData::SafeDownCast(dataSource->copyData());
     if (operators.size() > 1) {
       auto index = operators.indexOf(op);
       // Only run operators if we have some to run
       if (index > 0) {
-        auto future = m_worker->run(result, operators.mid(0, index));
-        auto imageFuture = new ImageFuture(op, result, future);
+        auto future = m_worker->run(dataObject, operators.mid(0, index));
+        auto imageFuture = new ImageFuture(op, dataObject, future);
+        dataObject->FastDelete();
 
         return imageFuture;
       }
     }
 
-    auto imageFuture = new ImageFuture(op, result);
+    auto imageFuture = new ImageFuture(op, dataObject);
+    dataObject->FastDelete();
+
     // Delay emitting signal until next event loop
     QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
 

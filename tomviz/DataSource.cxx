@@ -770,7 +770,6 @@ void DataSource::setData(vtkDataObject* newData)
   auto tp = producer();
   Q_ASSERT(tp);
   tp->SetOutput(newData);
-  newData->FastDelete();
   auto fd = newData->GetFieldData();
   vtkSmartPointer<vtkTypeInt8Array> typeArray =
     vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
