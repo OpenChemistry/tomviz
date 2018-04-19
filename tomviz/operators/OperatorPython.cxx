@@ -423,6 +423,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
           Python::VTK::GetPointerFromObject(pyDataObject, "vtkDataObject");
         vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
         if (dataObject) {
+          TemporarilyReleaseGil releaseMe;
           emit childDataSourceUpdated(dataObject);
         }
       }
