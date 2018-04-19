@@ -205,7 +205,6 @@ void Pipeline::pipelineBranchCanceled()
 {
   PipelineWorker::Future* future =
     qobject_cast<PipelineWorker::Future*>(sender());
-  future->result()->Delete();
   future->deleteLater();
   if (m_future == future) {
     m_future = nullptr;
