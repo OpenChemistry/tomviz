@@ -587,7 +587,6 @@ void InterfaceBuilder::setParameterValues(QMap<QString, QVariant> values)
 QVariantMap InterfaceBuilder::parameterValues(const QObject* parent)
 {
   QVariantMap map;
-  qDebug() << parent->children().size();
 
   // Iterate over all children, taking the value of the named widgets
   // and stuffing them into the map.pathField->setProperty("type", type);
