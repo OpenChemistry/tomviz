@@ -1,7 +1,7 @@
 {
   "name" : "ShiftTiltSeries",
   "label" : "Shift Tilt Series Randomly",
-  "description" : "Apply random integer shifts to tilt series. \nThe maximum shift can be specified betow.",
+  "description" : "Apply random integer shifts to tilt series. The maximum shift can be specified betow.",
   "parameters" : [
       {
       "name" : "maxShift",

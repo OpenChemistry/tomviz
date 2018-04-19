@@ -1,7 +1,7 @@
 {
   "name" : "BinaryClose",
   "label" : "Binary Close",
-  "description" : "Perform morphological closing on segmented objects with a\ngiven label by a spherically symmetric structuring element of a given radius.",
+  "description" : "Perform morphological closing on segmented objects with a given label by a spherically symmetric structuring element of a given radius.",
   "parameters" : [
     {
       "name" : "structuring_element_id",

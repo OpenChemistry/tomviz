@@ -1,7 +1,7 @@
 {
   "name" : "GenerateTiltSeries",
   "label" : "Generate Tilt Series",
-  "description" : "Generate electron tomography tilt series from volume dataset.\nObject is rotated about the x-axis and\nprojected along the z-axis.",
+  "description" : "Generate electron tomography tilt series from volume dataset. Object is rotated about the x-axis and projected along the z-axis.",
   "parameters" : [
     {
       "name" : "start_angle",
