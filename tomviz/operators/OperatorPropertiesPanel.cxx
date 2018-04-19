@@ -96,6 +96,7 @@ void OperatorPropertiesPanel::setOperator(OperatorPython* op)
     // wide!
     auto scroll = new QScrollArea(this);
     scroll->setWidget(m_operatorWidget);
+    scroll->setWidgetResizable(true);
 
     m_layout->addWidget(scroll);
 
