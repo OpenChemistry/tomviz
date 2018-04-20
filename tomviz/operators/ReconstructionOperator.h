@@ -45,10 +45,6 @@ signals:
   /// contains the slice of the resulting image.
   void intermediateResults(std::vector<float> resultSlice);
 
-  void newOperatorResult(vtkSmartPointer<vtkDataObject>);
-
-private slots:
-  void setOperatorResult(vtkSmartPointer<vtkDataObject> result);
 private:
   DataSource* m_dataSource;
   int m_extent[6];

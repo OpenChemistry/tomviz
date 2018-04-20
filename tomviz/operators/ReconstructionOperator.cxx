@@ -48,7 +48,6 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
   }
   setSupportsCancel(true);
   setTotalProgressSteps(m_extent[1] - m_extent[0] + 1);
-  setNumberOfResults(1);
   setHasChildDataSource(true);
   connect(
     this, static_cast<void (Operator::*)(const QString&,
@@ -59,8 +58,6 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
       this->createNewChildDataSource(label, childData, DataSource::Volume,
                                      DataSource::PersistenceState::Transient);
     });
-  connect(this, &ReconstructionOperator::newOperatorResult,
-          this, &ReconstructionOperator::setOperatorResult);
 }
 
 QIcon ReconstructionOperator::icon() const
@@ -151,15 +148,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   if (isCanceled()) {
     return false;
   }
-  emit newOperatorResult(reconstructionImage.Get());
   emit newChildDataSource("Reconstruction", reconstructionImage.Get());
   return true;
-}
-void ReconstructionOperator::setOperatorResult(vtkSmartPointer<vtkDataObject> result)
-{
-  bool resultWasSet = setResult(0, result);
-  if (!resultWasSet) {
-    qCritical() << "Could not set result 0";
-  }
 }
 }
