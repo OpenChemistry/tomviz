@@ -61,7 +61,7 @@ void DeleteDataReaction::activeDataSourceChanged()
 {
   auto source = ActiveObjects::instance().activeDataSource();
   if (m_activeDataSource != source) {
-    if (m_activeDataSource) {
+    if (m_activeDataSource && m_activeDataSource.data()->pipeline()) {
       disconnect(m_activeDataSource.data()->pipeline(), &Pipeline::started,
                  this, nullptr);
       disconnect(m_activeDataSource.data()->pipeline(), &Pipeline::finished,

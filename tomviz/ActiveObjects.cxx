@@ -101,7 +101,8 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
   }
   emit dataSourceActivated(m_activeDataSource);
 
-  if (!m_activeDataSource.isNull()) {
+  if (!m_activeDataSource.isNull() &&
+      m_activeDataSource->pipeline() != nullptr) {
     this->setActiveTransformedDataSource(
       m_activeDataSource->pipeline()->transformedDataSource());
   }
