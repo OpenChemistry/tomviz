@@ -45,15 +45,9 @@ signals:
   /// contains the slice of the resulting image.
   void intermediateResults(std::vector<float> resultSlice);
 
-  // Signal used to request the creation of a new data source. Needed to
-  // ensure the initialization of the new DataSource is performed on UI thread
-  void newChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>);
   void newOperatorResult(vtkSmartPointer<vtkDataObject>);
 
 private slots:
-  // Create a new child datasource and set it on this operator
-  void createNewChildDataSource(const QString& label,
-                                vtkSmartPointer<vtkDataObject>);
   void setOperatorResult(vtkSmartPointer<vtkDataObject> result);
 private:
   DataSource* m_dataSource;

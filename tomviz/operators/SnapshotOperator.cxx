@@ -37,8 +37,15 @@ SnapshotOperator::SnapshotOperator(DataSource* source, QObject* p)
 {
   setSupportsCancel(false);
   setHasChildDataSource(true);
-  connect(this, &SnapshotOperator::newChildDataSource, this,
-          &SnapshotOperator::createNewChildDataSource);
+  connect(
+    this, static_cast<void (Operator::*)(const QString&,
+                                         vtkSmartPointer<vtkDataObject>)>(
+            &Operator::newChildDataSource),
+    this,
+    [this](const QString& label, vtkSmartPointer<vtkDataObject> childData) {
+      this->createNewChildDataSource(label, childData, DataSource::Volume,
+                                     DataSource::PersistenceState::Modified);
+    });
 }
 
 QIcon SnapshotOperator::icon() const
@@ -96,18 +103,5 @@ bool SnapshotOperator::applyTransform(vtkDataObject* dataObject)
 
   emit newChildDataSource("Snapshot", cacheImage.Get());
   return true;
-}
-
-void SnapshotOperator::createNewChildDataSource(
-  const QString& label, vtkSmartPointer<vtkDataObject> childData)
-{
-  auto childDS = new DataSource(vtkImageData::SafeDownCast(childData),
-                                DataSource::Volume, this,
-                                DataSource::PersistenceState::Modified);
-
-  childDS->setLabel(label);
-  setChildDataSource(childDS);
-
-  emit Operator::newChildDataSource(childDS);
 }
 }

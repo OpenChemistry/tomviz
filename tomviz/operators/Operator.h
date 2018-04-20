@@ -26,6 +26,8 @@
 #include <vtkSmartPointer.h>
 #include <vtk_pugixml.h>
 
+#include "DataSource.h"
+
 class vtkDataObject;
 class vtkImageData;
 class QWidget;
@@ -33,7 +35,6 @@ class QWidget;
 Q_DECLARE_METATYPE(vtkSmartPointer<vtkDataObject>)
 
 namespace tomviz {
-class DataSource;
 class EditOperatorWidget;
 class OperatorResult;
 class EditOperatorDialog;
@@ -222,6 +223,10 @@ signals:
   /// Emitted when a child data source is create by this operator.
   void newChildDataSource(DataSource*);
 
+  // Signal used to request the creation of a new data source. Needed to
+  // ensure the initialization of the new DataSource is performed on UI thread
+  void newChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>);
+
   /// Emitted just prior to this object's destruction.
   void aboutToBeDestroyed(Operator* op);
 
@@ -244,6 +249,14 @@ public slots:
   OperatorState state() { return m_state; }
   void resetState() { m_state = OperatorState::Queued; }
   void setModified() { m_state = OperatorState::Modified; }
+
+protected slots:
+  // Create a new child datasource and set it on this operator
+  void createNewChildDataSource(
+    const QString& label, vtkSmartPointer<vtkDataObject>,
+    DataSource::DataSourceType type = DataSource::DataSourceType::Volume,
+    DataSource::PersistenceState state =
+      DataSource::PersistenceState::Transient);
 
 protected:
   /// Method to transform a dataset in-place.

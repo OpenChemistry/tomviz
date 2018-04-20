@@ -189,7 +189,9 @@ TEST_F(OperatorPythonTest, update_data)
   // part of ParaView that aren't available in the test executable.
   // We only need to test that the childDataSourceUpdated signal is
   // fired, not the data source creation.
-  QObject::disconnect(pythonOperator, &OperatorPython::newChildDataSource,
+  QObject::disconnect(pythonOperator,
+                      static_cast<void (Operator::*)(DataSource*)>(
+                        &OperatorPython::newChildDataSource),
                       nullptr, nullptr);
   QObject::disconnect(pythonOperator, &OperatorPython::childDataSourceUpdated,
                       nullptr, nullptr);

@@ -519,26 +519,6 @@ EditOperatorWidget* OperatorPython::getEditorContentsWithData(
   return new EditPythonOperatorWidget(p, this, widget);
 }
 
-void OperatorPython::createNewChildDataSource(
-  const QString& label, vtkSmartPointer<vtkDataObject> childData)
-{
-  if (this->childDataSource() == nullptr) {
-    DataSource* childDS =
-      new DataSource(vtkImageData::SafeDownCast(childData), DataSource::Volume,
-                     this, DataSource::PersistenceState::Transient);
-    childDS->setLabel(label);
-    setChildDataSource(childDS);
-    setHasChildDataSource(true);
-    emit Operator::newChildDataSource(childDS);
-  }
-  // Reuse the existing "Output" data source.
-  else {
-    childDataSource()->setLabel(label);
-    childDataSource()->setForkable(true);
-    setHasChildDataSource(true);
-  }
-}
-
 void OperatorPython::updateChildDataSource(vtkSmartPointer<vtkDataObject> data)
 {
   // Check to see if a child data source has already been created. If not,

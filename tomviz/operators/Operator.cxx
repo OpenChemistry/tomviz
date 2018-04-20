@@ -20,6 +20,7 @@
 #include "ModuleManager.h"
 #include "OperatorResult.h"
 
+#include "vtkImageData.h"
 #include "vtkSMSourceProxy.h"
 
 #include <QJsonArray>
@@ -193,5 +194,25 @@ void Operator::setCustomDialog(EditOperatorDialog* dialog)
   }
 
   m_customDialog = dialog;
+}
+
+void Operator::createNewChildDataSource(
+  const QString& label, vtkSmartPointer<vtkDataObject> childData,
+  DataSource::DataSourceType type, DataSource::PersistenceState state)
+{
+  if (this->childDataSource() == nullptr) {
+    DataSource* childDS =
+      new DataSource(vtkImageData::SafeDownCast(childData), type, this, state);
+    childDS->setLabel(label);
+    setChildDataSource(childDS);
+    setHasChildDataSource(true);
+    emit Operator::newChildDataSource(childDS);
+  }
+  // Reuse the existing "Output" data source.
+  else {
+    childDataSource()->setLabel(label);
+    childDataSource()->setForkable(true);
+    setHasChildDataSource(true);
+  }
 }
 }
