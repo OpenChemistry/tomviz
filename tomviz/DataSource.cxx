@@ -72,6 +72,7 @@ public:
   vtkVector3d DisplayPosition;
   PersistenceState PersistState = PersistenceState::Saved;
   bool UnitsModified = false;
+  bool Forkable = true;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -1010,5 +1011,15 @@ bool DataSource::unitsModified()
 bool DataSource::isTransient() const
 {
   return Internals->PersistState == PersistenceState::Transient;
+}
+
+bool DataSource::forkable()
+{
+  return Internals->Forkable;
+}
+
+void DataSource::setForkable(bool forkable)
+{
+  Internals->Forkable = forkable;
 }
 }

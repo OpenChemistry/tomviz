@@ -133,15 +133,14 @@ void Pipeline::pipelineBranchFinished(bool result)
 
     // We only add the transformed child data source if the last operator
     // doesn't already have an explicit child data source i.e.
-    // hasChildDataSource
-    // is true.
+    // hasChildDataSource is true.
     if (!lastOp->hasChildDataSource()) {
       DataSource* newChildDataSource = nullptr;
       if (lastOp->childDataSource() == nullptr) {
         newChildDataSource = new DataSource("Output");
         newChildDataSource->setPersistenceState(
           tomviz::DataSource::PersistenceState::Transient);
-        newChildDataSource->setProperty("output", true);
+        newChildDataSource->setForkable(false);
         newChildDataSource->setParent(this);
         addDataSource(newChildDataSource);
         lastOp->setChildDataSource(newChildDataSource);

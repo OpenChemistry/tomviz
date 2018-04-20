@@ -235,8 +235,7 @@ DataSource* ActiveObjects::activeParentDataSource()
       return nullptr;
     }
 
-    auto isOutput = dataSource->property("output");
-    if (!isOutput.isValid() || !isOutput.toBool()) {
+    if (dataSource->forkable()) {
       return dataSource;
     }
 
@@ -268,8 +267,7 @@ DataSource* ActiveObjects::activeParentDataSource()
     // Return the first non output data source
     for (auto itr = path.rbegin(); itr != path.rend(); ++itr) {
       auto ds = *itr;
-      auto output = ds->property("output");
-      if (!output.isValid() || !output.toBool()) {
+      if (ds->forkable()) {
         m_activeParentDataSource = ds;
         break;
       }

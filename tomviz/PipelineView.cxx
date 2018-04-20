@@ -304,8 +304,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* deleteAction = nullptr;
   bool addDelete = true;
   if (dataSource != nullptr) {
-    auto output = dataSource->property("output");
-    addDelete = !(output.isValid() && output.toBool());
+    addDelete = dataSource->forkable();
   }
 
   if (addDelete) {
@@ -559,8 +558,7 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
         dataSource->pipeline() && dataSource->pipeline()->isRunning();
 
       // Disable for "Output" data sources
-      auto output = dataSource->property("output");
-      disable = disable || (output.isValid() && output.toBool());
+      disable = disable || !dataSource->forkable();
 
       return !disable;
     }

@@ -214,6 +214,11 @@ public:
   // otherwise.
   bool isTransient() const;
 
+  /// Returns true if child operators can be added to this data source, false
+  // otherwise.
+  bool forkable();
+  void setForkable(bool forkable);
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.
