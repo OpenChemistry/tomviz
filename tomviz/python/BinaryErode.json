@@ -1,7 +1,7 @@
 {
   "name" : "BinaryErode",
   "label" : "Binary Erode",
-  "description" : "Erode segmented objects with a given label by a spherically symmetric\nstructuring element of a given radius.",
+  "description" : "Erode segmented objects with a given label by a spherically symmetric structuring element of a given radius.",
   "parameters" : [
     {
       "name" : "structuring_element_id",

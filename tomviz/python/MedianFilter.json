@@ -1,7 +1,7 @@
 {
   "name" : "MedianFilter",
   "label" : "Median Filter",
-  "description" : "Apply an isotropic median filter. \nThe window size can be specified below:",
+  "description" : "Apply an isotropic median filter. The window size can be specified below:",
   "parameters" : [
     {
       "name" : "size",

@@ -1,7 +1,7 @@
 {
   "name" : "ReconstructDFTconstraint",
   "label" : "Reconstruct (Constraint based Direct Fourier)",
-  "description" : "Reconstruct a tilt series using constraint-based Direct Fourier method.\nThe tilt axis must be parallel to the x-direction and centered in the y-direction.\nThe size of reconstruction will be (Nx,Ny,Ny).\nReconstructing a 512x512x512 tomogram typically takes xxxx mins.",
+  "description" : "Reconstruct a tilt series using constraint-based Direct Fourier method. The tilt axis must be parallel to the x-direction and centered in the y-direction. The size of reconstruction will be (Nx,Ny,Ny). Reconstructing a 512x512x512 tomogram typically takes xxxx mins.",
   "children": [
     {
       "name": "reconstruction",

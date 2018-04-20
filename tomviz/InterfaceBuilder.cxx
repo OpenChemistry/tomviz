@@ -547,7 +547,14 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
 
 QLayout* InterfaceBuilder::buildInterface() const
 {
+  QWidget* widget = new QWidget;
+
+  QVBoxLayout* verticalLayout = new QVBoxLayout;
+  verticalLayout->addWidget(widget);
+  verticalLayout->addStretch();
+
   QGridLayout* layout = new QGridLayout;
+  widget->setLayout(layout);
 
   if (!m_json.isObject()) {
     return layout;
@@ -555,11 +562,13 @@ QLayout* InterfaceBuilder::buildInterface() const
   QJsonObject root = m_json.object();
 
   QLabel* descriptionLabel = new QLabel("No description provided in JSON");
+  descriptionLabel->setWordWrap(true);
+  descriptionLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
   QJsonValueRef descriptionValue = root["description"];
   if (!descriptionValue.isUndefined()) {
     descriptionLabel->setText(descriptionValue.toString());
   }
-  layout->addWidget(descriptionLabel, 0, 0, 1, 2);
+  verticalLayout->insertWidget(0, descriptionLabel);
 
   // Get the label for the operator
   QString operatorLabel;
@@ -576,7 +585,7 @@ QLayout* InterfaceBuilder::buildInterface() const
   auto parameters = parametersNode.toArray();
   this->buildParameterInterface(layout, parameters);
 
-  return layout;
+  return verticalLayout;
 }
 
 void InterfaceBuilder::setParameterValues(QMap<QString, QVariant> values)

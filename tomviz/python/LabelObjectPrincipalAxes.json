@@ -1,7 +1,7 @@
 {
   "name" : "LabelObjectPrincipalAxes",
   "label" : "Label Object Principal Axes",
-  "description" : "Computes principal axes of a labeled object using principal components\nanalysis of the positions of the labeled voxels. This data transform\ncauses no changes in the dataset voxels, but it does save the\nprincipal axes and center of the label object.",
+  "description" : "Computes principal axes of a labeled object using principal components analysis of the positions of the labeled voxels. This data transform causes no changes in the dataset voxels, but it does save the principal axes and center of the label object.",
   "parameters" : [
     {
       "name" : "label_value",

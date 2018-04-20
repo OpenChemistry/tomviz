@@ -1,7 +1,7 @@
 {
   "name" : "BinaryMinMaxCurvatureFlow",
   "label" : "Binary Min Max Curvature Flow",
-  "description" : "This filter smooths a binary image by evolving a level set with a\ncurvature-based speed function.",
+  "description" : "This filter smooths a binary image by evolving a level set with a curvature-based speed function.",
   "parameters" : [
     {
       "name" : "stencil_radius",
