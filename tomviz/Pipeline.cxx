@@ -133,15 +133,14 @@ void Pipeline::pipelineBranchFinished(bool result)
 
     // We only add the transformed child data source if the last operator
     // doesn't already have an explicit child data source i.e.
-    // hasChildDataSource
-    // is true.
+    // hasChildDataSource is true.
     if (!lastOp->hasChildDataSource()) {
       DataSource* newChildDataSource = nullptr;
       if (lastOp->childDataSource() == nullptr) {
         newChildDataSource = new DataSource("Output");
         newChildDataSource->setPersistenceState(
           tomviz::DataSource::PersistenceState::Transient);
-        newChildDataSource->setProperty("output", true);
+        newChildDataSource->setForkable(false);
         newChildDataSource->setParent(this);
         addDataSource(newChildDataSource);
         lastOp->setChildDataSource(newChildDataSource);
@@ -224,6 +223,12 @@ void Pipeline::resume(bool run)
   }
 }
 
+void Pipeline::resume(DataSource* at)
+{
+  m_paused = false;
+  execute(at);
+}
+
 void Pipeline::cancel(std::function<void()> canceled)
 {
   if (m_future) {
@@ -259,14 +264,13 @@ Operator* Pipeline::findTransformedDataSourceOperator(DataSource* dataSource)
   auto operators = dataSource->operators();
   for (auto itr = operators.rbegin(); itr != operators.rend(); ++itr) {
     auto op = *itr;
-    // hasChildDataSource is only set by operators that explicitly produce child
-    // data sources
-    // such as a reconstruction operator. As part of the pipeline execution we
-    // do not
-    // set that flag, so we currently use it to tell the difference between
-    // "explicit"
-    // child data sources and those used to represent the transform data source.
-    if (!op->hasChildDataSource() && op->childDataSource() != nullptr) {
+    if (op->childDataSource() != nullptr) {
+      auto child = op->childDataSource();
+      // If the child has operators we need to go deeper
+      if (!child->operators().isEmpty()) {
+        return findTransformedDataSourceOperator(child);
+      }
+
       return op;
     }
   }
@@ -293,7 +297,6 @@ void Pipeline::addDataSource(DataSource* dataSource)
         auto transformedDataSource = transformedDataSourceOp->childDataSource();
         transformedDataSourceOp->setChildDataSource(nullptr);
         op->setChildDataSource(transformedDataSource);
-        // Delay emitting signal until next event loop
         emit this->operatorAdded(op, transformedDataSource);
       } else {
         emit this->operatorAdded(op);

@@ -699,6 +699,7 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
 
   // Fire signal to indicate that the transformed data source has been modified
   // when the pipeline has been executed.
+  // TODO This should probably be move else where!
   connect(pipeline, &Pipeline::finished, [this, pipeline]() {
     auto transformed = pipeline->transformedDataSource();
     emit this->dataSourceModified(transformed);
@@ -746,8 +747,9 @@ void PipelineModel::operatorAdded(Operator* op, DataSource* transformedDataSourc
   connect(op, &Operator::labelModified, this, &PipelineModel::operatorModified);
   connect(op, &Operator::transformingDone, this,
           &PipelineModel::operatorTransformDone);
-  connect(op, &Operator::newChildDataSource, this,
-          &PipelineModel::childDataSourceAdded);
+  connect(op, static_cast<void (Operator::*)(DataSource*)>(
+                &Operator::newChildDataSource),
+          this, &PipelineModel::childDataSourceAdded);
   // Make sure dataChange signal is emitted when operator is complete
   connect(op, &Operator::transformingDone, [this, op]() {
     auto opIndex = this->operatorIndex(op);
@@ -962,6 +964,8 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
   foreach (auto op, dataSource->operators()) {
     this->operatorAdded(op);
   }
+
+  emit childDataSourceItemAdded(dataSource);
 }
 
 void PipelineModel::moveDataSourceHelper(DataSource* dataSource, Operator* newParent) {

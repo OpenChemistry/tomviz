@@ -120,8 +120,9 @@ void ProgressDialogManager::operatorAdded(Operator* op)
           &ProgressDialogManager::operationStarted,
           Qt::BlockingQueuedConnection);
 
-  connect(op, &Operator::newChildDataSource, this,
-          &ProgressDialogManager::dataSourceAdded);
+  connect(op, static_cast<void (Operator::*)(DataSource*)>(
+                &Operator::newChildDataSource),
+          this, &ProgressDialogManager::dataSourceAdded);
 }
 
 void ProgressDialogManager::dataSourceAdded(DataSource* ds)

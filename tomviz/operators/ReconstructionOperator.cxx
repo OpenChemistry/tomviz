@@ -48,12 +48,16 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
   }
   setSupportsCancel(true);
   setTotalProgressSteps(m_extent[1] - m_extent[0] + 1);
-  setNumberOfResults(1);
   setHasChildDataSource(true);
-  connect(this, &ReconstructionOperator::newChildDataSource,
-          this, &ReconstructionOperator::createNewChildDataSource);
-  connect(this, &ReconstructionOperator::newOperatorResult,
-          this, &ReconstructionOperator::setOperatorResult);
+  connect(
+    this, static_cast<void (Operator::*)(const QString&,
+                                         vtkSmartPointer<vtkDataObject>)>(
+            &Operator::newChildDataSource),
+    this,
+    [this](const QString& label, vtkSmartPointer<vtkDataObject> childData) {
+      this->createNewChildDataSource(label, childData, DataSource::Volume,
+                                     DataSource::PersistenceState::Transient);
+    });
 }
 
 QIcon ReconstructionOperator::icon() const
@@ -144,46 +148,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   if (isCanceled()) {
     return false;
   }
-  emit newOperatorResult(reconstructionImage.Get());
   emit newChildDataSource("Reconstruction", reconstructionImage.Get());
   return true;
-}
-
-void ReconstructionOperator::createNewChildDataSource(
-  const QString& label, vtkSmartPointer<vtkDataObject> childData)
-{
-/*
-  vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
-  vtkSMSessionProxyManager* sessionProxyManager =
-    proxyManager->GetActiveSessionProxyManager();
-
-  pqSMProxy producerProxy;
-  producerProxy.TakeReference(
-    sessionProxyManager->NewProxy("sources", "TrivialProducer"));
-  producerProxy->UpdateVTKObjects();
-
-  vtkTrivialProducer* producer =
-    vtkTrivialProducer::SafeDownCast(producerProxy->GetClientSideObject());
-  if (!producer) {
-    qWarning() << "Could not get TrivialProducer from proxy";
-    return;
-  }
-
-  producer->SetOutput(childData);
-*/
-  DataSource* childDS = new DataSource(
-    vtkImageData::SafeDownCast(childData), DataSource::Volume, this,
-    DataSource::PersistenceState::Transient);
-
-  childDS->setFileName(label.toLatin1().data());
-  setChildDataSource(childDS);
-}
-
-void ReconstructionOperator::setOperatorResult(vtkSmartPointer<vtkDataObject> result)
-{
-  bool resultWasSet = setResult(0, result);
-  if (!resultWasSet) {
-    qCritical() << "Could not set result 0";
-  }
 }
 }

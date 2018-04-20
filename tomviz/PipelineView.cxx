@@ -179,6 +179,8 @@ void PipelineView::setModel(QAbstractItemModel* model)
   // we listen to the model and respond after it does its update.
   connect(pipelineModel, SIGNAL(dataSourceItemAdded(DataSource*)),
           SLOT(setCurrent(DataSource*)));
+  connect(pipelineModel, SIGNAL(childDataSourceItemAdded(DataSource*)),
+          SLOT(setCurrent(DataSource*)));
   connect(pipelineModel, SIGNAL(moduleItemAdded(Module*)),
           SLOT(setCurrent(Module*)));
   connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
@@ -304,8 +306,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* deleteAction = nullptr;
   bool addDelete = true;
   if (dataSource != nullptr) {
-    auto output = dataSource->property("output");
-    addDelete = !(output.isValid() && output.toBool());
+    addDelete = dataSource->forkable();
   }
 
   if (addDelete) {
@@ -426,7 +427,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
 
   // Now resume the pipelines
   foreach (DataSource* dataSource, paused) {
-    dataSource->pipeline()->resume();
+    dataSource->pipeline()->resume(dataSource);
   }
 
   // Delay rendering until signals have been processed and all modules removed.
@@ -559,8 +560,7 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
         dataSource->pipeline() && dataSource->pipeline()->isRunning();
 
       // Disable for "Output" data sources
-      auto output = dataSource->property("output");
-      disable = disable || (output.isValid() && output.toBool());
+      disable = disable || !dataSource->forkable();
 
       return !disable;
     }
