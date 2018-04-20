@@ -84,6 +84,7 @@ public slots:
 
 signals:
   void dataSourceItemAdded(DataSource* dataSource);
+  void childDataSourceItemAdded(DataSource* dataSource);
   void moduleItemAdded(Module* module);
   void operatorItemAdded(Operator* op);
   void dataSourceModified(DataSource* dataSource);

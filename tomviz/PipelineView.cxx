@@ -179,6 +179,8 @@ void PipelineView::setModel(QAbstractItemModel* model)
   // we listen to the model and respond after it does its update.
   connect(pipelineModel, SIGNAL(dataSourceItemAdded(DataSource*)),
           SLOT(setCurrent(DataSource*)));
+  connect(pipelineModel, SIGNAL(childDataSourceItemAdded(DataSource*)),
+          SLOT(setCurrent(DataSource*)));
   connect(pipelineModel, SIGNAL(moduleItemAdded(Module*)),
           SLOT(setCurrent(Module*)));
   connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
@@ -425,7 +427,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
 
   // Now resume the pipelines
   foreach (DataSource* dataSource, paused) {
-    dataSource->pipeline()->resume();
+    dataSource->pipeline()->resume(dataSource);
   }
 
   // Delay rendering until signals have been processed and all modules removed.

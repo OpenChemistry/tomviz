@@ -699,6 +699,7 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
 
   // Fire signal to indicate that the transformed data source has been modified
   // when the pipeline has been executed.
+  // TODO This should probably be move else where!
   connect(pipeline, &Pipeline::finished, [this, pipeline]() {
     auto transformed = pipeline->transformedDataSource();
     emit this->dataSourceModified(transformed);
@@ -962,6 +963,8 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
   foreach (auto op, dataSource->operators()) {
     this->operatorAdded(op);
   }
+
+  emit childDataSourceItemAdded(dataSource);
 }
 
 void PipelineModel::moveDataSourceHelper(DataSource* dataSource, Operator* newParent) {
