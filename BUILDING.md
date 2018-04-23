@@ -89,7 +89,7 @@ you will need to specify the correct generator for the installed compiler.
       ../ITK
     cmake --build .
 
-This will build ITK with the its Python wrapping turned on, you must inspect
+This will build ITK with its Python wrapping turned on, you must inspect
 the CMake configuration to ensure it uses the same Python as ParaView. ITK,
 while not required to build Tomviz, is required for any of the ITK-based data
 operators to run.
