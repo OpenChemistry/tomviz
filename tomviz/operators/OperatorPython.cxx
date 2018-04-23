@@ -484,13 +484,68 @@ QJsonObject OperatorPython::serialize() const
   return json;
 }
 
+namespace {
+QJsonObject findJsonObject(const QJsonArray& array, const QString& name)
+{
+  for (int i = 0; i < array.size(); ++i) {
+    auto object = array[i].toObject();
+    if (object["name"].toString() == name) {
+      return object;
+    }
+  }
+  return QJsonObject();
+}
+
+QVariant castJsonArg(const QJsonValue& arg, const QString& type)
+{
+  if (arg.isArray()) {
+    auto arr = arg.toArray();
+    QVariantList arrayList;
+    if (type == "int" || type == "enumeration") {
+      for (int i = 0; i < arr.size(); ++i) {
+        arrayList << arr[i].toInt();
+      }
+    } else if (type == "double") {
+      for (int i = 0; i < arr.size(); ++i) {
+        arrayList << arr[i].toDouble();
+      }
+    }
+    return arrayList;
+  } else if (arg.isDouble()) {
+    QVariant variant;
+    if (type == "int" || type == "enumeration") {
+      variant = arg.toInt();
+    } else if (type == "double") {
+      variant = arg.toDouble();
+    }
+  }
+  return QVariant();
+}
+}
+
 bool OperatorPython::deserialize(const QJsonObject& json)
 {
   setJSONDescription(json["description"].toString());
   setLabel(json["label"].toString());
   setScript(json["script"].toString());
   m_arguments.clear();
-  m_arguments = json["arguments"].toObject().toVariantMap();
+  // We use the JSON description to ensure things have the correct type.
+  if (json.contains("arguments")) {
+    auto document = QJsonDocument::fromJson(m_jsonDescription.toLatin1());
+    if (!document.isObject()) {
+      qCritical() << "Failed to parse operator JSON";
+      qCritical() << m_jsonDescription;
+      return false;
+    }
+    auto args = json["arguments"].toObject();
+    auto params = document.object()["parameters"].toArray();
+    foreach (const QString& key, args.keys()) {
+      auto param = findJsonObject(params, key);
+      if (!param.isEmpty()) {
+        m_arguments[key] = castJsonArg(args[key], param["type"].toString());
+      }
+    }
+  }
   return true;
 }
 
