@@ -518,6 +518,7 @@ QVariant castJsonArg(const QJsonValue& arg, const QString& type)
     } else if (type == "double") {
       variant = arg.toDouble();
     }
+    return variant;
   }
   return QVariant();
 }
