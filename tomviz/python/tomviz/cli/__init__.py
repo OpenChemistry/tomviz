@@ -50,7 +50,9 @@ def main(data_file_path, state_file_path, output_file_path):
     # if we have been provided a data file path we are going to use the one
     # from the state file, so check it exists.
     if data_file_path is None:
-        data_file_path = datasource['fileName']
+        if 'reader' not in datasource:
+            raise Exception('Data source does not contain a reader.')
+        data_file_path = datasource['reader']['fileName']
         # fileName is relative to the state file location, so convert to
         # absolute path.
         data_file_path = os.path.abspath(
