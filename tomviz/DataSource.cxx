@@ -412,7 +412,7 @@ bool DataSource::deserialize(const QJsonObject& state)
     if (op != nullptr && operatorObj.contains("dataSources")) {
       // We currently support a single child data source.
       auto dataSourcesState = operatorObj["dataSources"].toArray();
-      connect(pipeline(), &Pipeline::finished, [dataSourcesState, op]() {
+      connect(pipeline(), &Pipeline::finished, op, [dataSourcesState, op]() {
         auto childDataSource = op->childDataSource();
         childDataSource->deserialize(dataSourcesState[0].toObject());
       });
