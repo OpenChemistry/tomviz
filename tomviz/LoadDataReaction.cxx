@@ -46,8 +46,8 @@
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
-#include <vtkTrivialProducer.h>
 #include <vtkTIFFReader.h>
+#include <vtkTrivialProducer.h>
 
 #include <QDebug>
 #include <QFileDialog>
@@ -228,7 +228,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     if (fileNames.size() > 1) {
       // Ensure all the images in the stack have the same size.
       std::vector<ImageFileInfo> summary;
-      if ( !loadTiffStack(fileNames, summary) ) {
+      if (!loadTiffStack(fileNames, summary)) {
         badStackAlert(summary);
         return nullptr;
       }
@@ -276,8 +276,10 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   return dataSource;
 }
 
-bool LoadDataReaction::loadTiffStack(const QStringList& fileNames, std::vector<ImageFileInfo>& summary){
-  
+bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
+                                     std::vector<ImageFileInfo>& summary)
+{
+
   vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
   int n = -1;
   int m = -1;
@@ -286,7 +288,7 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames, std::vector<I
   bool success = true;
   foreach (QString file, fileNames) {
     i++;
-    reader->SetFileName ( file.toLatin1().data() );
+    reader->SetFileName(file.toLatin1().data());
     reader->Update();
     reader->GetOutput()->GetDimensions(dims);
     summary.push_back(ImageFileInfo());
@@ -299,7 +301,7 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames, std::vector<I
       n = dims[0];
       m = dims[1];
     } else {
-      if ( n != dims[0] || m != dims[1] ) {
+      if (n != dims[0] || m != dims[1]) {
         summary[i].consistent = false;
         success = false;
       }
@@ -308,25 +310,26 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames, std::vector<I
   return success;
 }
 
-void LoadDataReaction::badStackAlert(std::vector<ImageFileInfo>& summary){
+void LoadDataReaction::badStackAlert(std::vector<ImageFileInfo>& summary)
+{
   for (auto it = summary.begin(); it != summary.end(); ++it) {
-    if ( !it->consistent ) {
+    if (!it->consistent) {
       QMessageBox::warning(
-        tomviz::mainWidget(),
-        "Error",
+        tomviz::mainWidget(), "Error",
         QString("The dimensions of the images in this stack are inconsistent.\n"
                 "This error first occurred at the file:\n\n"
                 "%1\n\n"
-                "The expected size is (%2, %3), but got (%4, %5) instead."
-              ).arg(it->fileName).arg(summary[0].m).arg(summary[0].n)
-              .arg(it->m).arg(it->n)
-      );
+                "The expected size is (%2, %3), but got (%4, %5) instead.")
+          .arg(it->fileName)
+          .arg(summary[0].m)
+          .arg(summary[0].n)
+          .arg(it->m)
+          .arg(it->n));
       return;
     }
   }
   return;
 }
-
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
                                                bool defaultModules, bool child)

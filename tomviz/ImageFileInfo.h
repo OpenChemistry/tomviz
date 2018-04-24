@@ -18,11 +18,12 @@
 
 #include <QString>
 
-struct ImageFileInfo {
-    QString fileName;
-    int m;
-    int n;
-    bool consistent;
+struct ImageFileInfo
+{
+  QString fileName;
+  int m;
+  int n;
+  bool consistent;
 };
 
 #endif

@@ -82,7 +82,8 @@ private:
   static QJsonObject readerProperties(vtkSMProxy* reader);
   static void setFileNameProperties(const QJsonObject& props,
                                     vtkSMProxy* reader);
-  static bool loadTiffStack(const QStringList& fileNames, std::vector<ImageFileInfo>& summary);
+  static bool loadTiffStack(const QStringList& fileNames,
+                            std::vector<ImageFileInfo>& summary);
   static void badStackAlert(std::vector<ImageFileInfo>& summary);
 };
 }
