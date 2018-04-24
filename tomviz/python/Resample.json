@@ -8,9 +8,12 @@
     },
     {
       "name" : "resampling_factor",
-      "label" : "Resampling Factor",
+      "label" : "Factor",
       "type" : "double",
-      "default" : [1, 1, 1]
+      "default" : [1, 1, 1],
+      "precision" : 2,
+      "minimum" : [0.01, 0.01, 0.01],
+      "maximum" : [100, 100, 100]
     }
   ]
 }

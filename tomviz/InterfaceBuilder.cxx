@@ -134,6 +134,8 @@ QWidget* getNumericWidget(double defaultValue, double rangeMin, double rangeMax,
   }
   if (precision != -1) {
     spinBox->setDecimals(precision);
+  } else {
+    spinBox->setDecimals(3);
   }
   spinBox->setMinimum(rangeMin);
   spinBox->setMaximum(rangeMax);
@@ -219,7 +221,7 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
     }
   }
 
-  std::vector<T> minValues(defaultValues.size(), std::numeric_limits<T>::lowest());
+  std::vector<T> minValues(defaultValues.size(), -9999);
   if (parameterNode.contains("minimum")) {
     QJsonValueRef minNode = parameterNode["minimum"];
     if (isType<T>(minNode)) {
@@ -232,7 +234,7 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
     }
   }
 
-  std::vector<T> maxValues(defaultValues.size(), std::numeric_limits<T>::max());
+  std::vector<T> maxValues(defaultValues.size(), 9999);
   if (parameterNode.contains("maximum")) {
     QJsonValueRef maxNode = parameterNode["maximum"];
     if (isType<T>(maxNode)) {
