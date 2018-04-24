@@ -123,7 +123,7 @@ public:
 
     std::function<QString(QString)> absolute = [this](QString path) {
       if (!path.isEmpty()) {
-        path = this->dir.absoluteFilePath(path);
+        path = QDir::cleanPath(this->dir.absoluteFilePath(path));
       }
 
       return path;
