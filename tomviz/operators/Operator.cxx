@@ -172,11 +172,8 @@ QJsonObject Operator::serialize() const
 
 bool Operator::deserialize(const QJsonObject& json)
 {
-  if (json.contains("dataSources")) {
-    // This means that this operator is the end of the line, and needs to
-    // restore the child once it has finished doing its thing.
-    qDebug() << "We need to do something with this:" << json["dataSources"];
-  }
+  Q_UNUSED(json);
+
   return true;
 }
 
