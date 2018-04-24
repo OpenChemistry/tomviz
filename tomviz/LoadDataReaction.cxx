@@ -168,16 +168,16 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   bool child = options["child"].toBool(false);
 
   DataSource* dataSource(nullptr);
-  QString fileName;
+  QString firstFile;
   if (fileNames.size() > 0) {
-    fileName = fileNames[0];
+    firstFile = fileNames[0];
   }
-  QFileInfo info(fileName);
+  QFileInfo info(firstFile);
   if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
     EmdFormat emdFile;
     vtkNew<vtkImageData> imageData;
-    if (emdFile.read(fileName.toLatin1().data(), imageData)) {
+    if (emdFile.read(firstFile.toLatin1().data(), imageData)) {
       dataSource = new DataSource(imageData);
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
@@ -189,7 +189,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
     vtkSMStringVectorProperty* prop = vtkSMStringVectorProperty::SafeDownCast(
       source->GetProperty(pname.toUtf8().data()));
-    pqSMAdaptor::setElementProperty(prop, fileName);
+    pqSMAdaptor::setElementProperty(prop, firstFile);
     source->UpdateVTKObjects();
 
     dataSource = createDataSource(source, defaultModules, child);
@@ -246,10 +246,12 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   }
 
   // Now for house keeping, registering elements, etc.
-  dataSource->setFileName(fileName);
-  if (fileNames.size() > 1) {
-    dataSource->setFileNames(fileNames);
-  }
+  // AG: always save it as a list, even if there is only one file.
+  dataSource->setFileNames(fileNames);
+  // dataSource->setFileName(fileName);
+  // if (fileNames.size() > 1) {
+
+  // }
   if (addToRecent && dataSource) {
     RecentFilesMenu::pushDataReader(dataSource);
   }
