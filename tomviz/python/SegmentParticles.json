@@ -1,7 +1,7 @@
 {
   "name" : "SegmentParticles",
   "label" : "Segment Particles",
-  "description" : "Segment spherical particles from a homogeneous, dark background.\nEven if the particles have pores, they are segmented as solid structures.",
+  "description" : "Segment spherical particles from a homogeneous, dark background. Even if the particles have pores, they are segmented as solid structures.",
   "children" : [
     {
       "name" : "label_map",
