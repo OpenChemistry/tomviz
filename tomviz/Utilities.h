@@ -134,6 +134,14 @@ inline QString label(pqProxy* proxy)
 QJsonObject serialize(vtkSMProxy* proxy);
 bool deserialize(vtkSMProxy* proxy, const QJsonObject& json);
 
+/// Serialize the properties from a camera keyframe proxy that we are intereted
+/// in
+QJsonObject serializeCameraAnimationKeyFrame(vtkSMProxy* keyframe);
+/// Deserialize the properties from a camera keyframe proxy that we are
+/// intereted in
+void deserializeCameraAnimationKeyFrame(vtkSMProxy* keyframe,
+                                        const QJsonObject& json);
+
 /// Serialize a proxy to a pugi::xml node.
 bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
                const QStringList& properties = QStringList(),

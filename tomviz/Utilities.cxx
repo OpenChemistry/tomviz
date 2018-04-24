@@ -222,6 +222,88 @@ bool deserialize(vtkSMProxy* proxy, const QJsonObject& json)
   return true;
 }
 
+QJsonObject serializeCameraAnimationKeyFrame(vtkSMProxy* keyframe)
+{
+  QJsonObject frameObj;
+  frameObj["closedFocalPath"] =
+    vtkSMPropertyHelper(keyframe, "ClosedFocalPath").GetAs<int>();
+  frameObj["closedPositionPath"] =
+    vtkSMPropertyHelper(keyframe, "ClosedPositionPath").GetAs<int>();
+  QJsonArray focalPathPointsJson;
+  vtkSMPropertyHelper focalPathPoints(keyframe, "FocalPathPoints");
+  for (unsigned i = 0; i < focalPathPoints.GetNumberOfElements(); ++i) {
+    focalPathPointsJson.append(focalPathPoints.GetAs<double>(i));
+  }
+  frameObj["focalPathPoints"] = focalPathPointsJson;
+  QJsonArray focalPointJson;
+  vtkSMPropertyHelper focalPoint(keyframe, "FocalPoint");
+  focalPointJson.append(focalPoint.GetAs<double>(0));
+  focalPointJson.append(focalPoint.GetAs<double>(1));
+  focalPointJson.append(focalPoint.GetAs<double>(2));
+  frameObj["focalPoint"] = focalPointJson;
+  frameObj["focalPointMode"] =
+    vtkSMPropertyHelper(keyframe, "FocalPointMode").GetAs<int>();
+  frameObj["keyTime"] =
+    vtkSMPropertyHelper(keyframe, "KeyTime").GetAs<double>();
+  frameObj["parallelScale"] =
+    vtkSMPropertyHelper(keyframe, "ParallelScale").GetAs<double>();
+  frameObj["positionMode"] =
+    vtkSMPropertyHelper(keyframe, "PositionMode").GetAs<int>();
+  QJsonArray positionJson;
+  vtkSMPropertyHelper position(keyframe, "Position");
+  positionJson.append(position.GetAs<double>(0));
+  positionJson.append(position.GetAs<double>(1));
+  positionJson.append(position.GetAs<double>(2));
+  frameObj["position"] = positionJson;
+  QJsonArray positionPathPointsJson;
+  vtkSMPropertyHelper positionPathPoints(keyframe, "PositionPathPoints");
+  for (unsigned i = 0; i < positionPathPoints.GetNumberOfElements(); ++i) {
+    positionPathPointsJson.append(positionPathPoints.GetAs<double>(i));
+  }
+  frameObj["positionPathPoints"] = positionPathPointsJson;
+  frameObj["viewAngle"] =
+    vtkSMPropertyHelper(keyframe, "ViewAngle").GetAs<double>();
+  QJsonArray viewUpJson;
+  vtkSMPropertyHelper viewUp(keyframe, "ViewUp");
+  viewUpJson.append(viewUp.GetAs<double>(0));
+  viewUpJson.append(viewUp.GetAs<double>(1));
+  viewUpJson.append(viewUp.GetAs<double>(2));
+  frameObj["viewUp"] = viewUpJson;
+  return frameObj;
+}
+
+void deserializeCameraAnimationKeyFrame(vtkSMProxy* keyframe,
+                                        const QJsonObject& json)
+{
+  vtkSMPropertyHelper(keyframe, "ClosedFocalPath")
+    .Set(json["closedFocalPath"].toInt());
+  vtkSMPropertyHelper(keyframe, "ClosedPositionPath")
+    .Set(json["closedPositionPath"].toInt());
+  QList<QVariant> focalPathPoints =
+    json["focalPathPoints"].toArray().toVariantList();
+  pqSMAdaptor::setMultipleElementProperty(
+    keyframe->GetProperty("FocalPathPoints"), focalPathPoints);
+  QList<QVariant> focalPoint = json["focalPoint"].toArray().toVariantList();
+  pqSMAdaptor::setMultipleElementProperty(keyframe->GetProperty("FocalPoint"),
+                                          focalPoint);
+  vtkSMPropertyHelper(keyframe, "FocalPointMode")
+    .Set(json["focalPointMode"].toInt());
+  vtkSMPropertyHelper(keyframe, "KeyTime").Set(json["keyTime"].toDouble());
+  vtkSMPropertyHelper(keyframe, "ParallelScale")
+    .Set(json["parallelScale"].toDouble());
+  vtkSMPropertyHelper(keyframe, "PositionMode")
+    .Set(json["positionMode"].toInt());
+  QList<QVariant> position = json["position"].toArray().toVariantList();
+  pqSMAdaptor::setMultipleElementProperty(keyframe->GetProperty("Position"),
+                                          position);
+  QList<QVariant> positionPathPoints =
+    json["positionPathPoints"].toArray().toVariantList();
+  pqSMAdaptor::setMultipleElementProperty(
+    keyframe->GetProperty("PositionPathPoints"), positionPathPoints);
+  vtkSMPropertyHelper(keyframe, "ViewAngle").Set(json["viewAngle"].toDouble());
+  keyframe->UpdateVTKObjects();
+}
+
 QJsonObject serialize(vtkDiscretizableColorTransferFunction* func)
 {
   QJsonObject json;
