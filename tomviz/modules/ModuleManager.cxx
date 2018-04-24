@@ -95,15 +95,7 @@ public:
 
     // Make any reader fileName properties relative to the state file being
     // written.
-    if (readerProps.contains("fileName")) {
-      // Exclude transient data sources.
-      // ( ones without a file. i.e. output data sources )
-      if (!ds->isTransient()) {
-        auto fileName = readerProps["fileName"].toString();
-        readerProps["fileName"] = stateDir.relativeFilePath(fileName);
-      }
-      dataSourceState["reader"] = readerProps;
-    } else if (readerProps.contains("fileNames")) {
+    if (readerProps.contains("fileNames")) {
       // Exclude transient data sources.
       // ( ones without a file. i.e. output data sources )
       if (!ds->isTransient()) {
@@ -132,9 +124,7 @@ public:
     if (dataSourceState.contains("reader") &&
         dataSourceState["reader"].isObject()) {
       auto reader = dataSourceState["reader"].toObject();
-      if (reader.contains("fileName") && reader["fileName"].isString()) {
-        reader["fileName"] = absolute(reader["fileName"].toString());
-      } else if (reader.contains("fileNames") &&
+      if (reader.contains("fileNames") &&
                  reader["fileNames"].isArray()) {
         auto fileNames = reader["fileNames"].toArray();
         QJsonArray absoluteFileNames;
@@ -778,12 +768,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
         auto reader = dsObject["reader"].toObject();
         options["reader"] = reader;
 
-        if (reader.contains("fileName")) {
-          auto fileName = reader["fileName"].toString();
-          if (!fileName.isEmpty()) {
-            fileNames << fileName;
-          }
-        } else if (reader.contains("fileNames")) {
+        if (reader.contains("fileNames")) {
           foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
             auto fileName = value.toString();
             if (fileName.isEmpty()) {

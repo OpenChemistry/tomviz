@@ -246,7 +246,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   }
 
   // Now for house keeping, registering elements, etc.
-  // always save it as a list, even if there is only one file.
+  // Always save it as a list, even if there is only one file.
   dataSource->setFileNames(fileNames);
 
   if (addToRecent && dataSource) {
