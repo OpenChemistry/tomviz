@@ -1,7 +1,7 @@
 {
   "name" : "UnsharpMask",
   "label" : "Unsharp Mask",
-  "description" : "Sharpen the image with the unsharp mask technique.\nsharpened=original+[abs(original-blurred)-threshold]*amount",
+  "description" : "Sharpen the image with the unsharp mask technique. sharpened=original+[abs(original-blurred)-threshold]*amount",
   "parameters" : [
     {
       "name" : "amount",
