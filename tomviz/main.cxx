@@ -15,6 +15,10 @@
 ******************************************************************************/
 #include <QApplication>
 
+#ifdef Q_OS_WIN
+#include <QStyleFactory>
+#endif
+
 #include <QSurfaceFormat>
 
 #include <QDebug>
@@ -39,6 +43,11 @@ int main(int argc, char** argv)
   QCoreApplication::setApplicationVersion(TOMVIZ_VERSION);
   QCoreApplication::setOrganizationName("tomviz");
   QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
+#ifdef Q_OS_WIN
+  // The default changed to "windows", looked very dated...
+  QApplication::setStyle(QStyleFactory::create("windowsvista"));
+#endif
 
   tomviz::InitializePythonEnvironment(argc, argv);
 
