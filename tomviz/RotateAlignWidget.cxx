@@ -370,28 +370,30 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->Ui.spinBox_2->setValue(50);
   this->Internals->Ui.spinBox_3->setValue(75);
 
-  QObject::connect(this->Internals->Ui.projection, SIGNAL(editingFinished()),
+  QObject::connect(this->Internals->Ui.projection, SIGNAL(valueChanged(int)),
                    this, SLOT(onProjectionNumberChanged()));
   this->Internals->Ui.projection->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_1, SIGNAL(editingFinished()),
+  QObject::connect(this->Internals->Ui.spinBox_1, SIGNAL(valueChanged(int)),
                    this, SLOT(onReconSlice0Changed()));
   this->Internals->Ui.spinBox_1->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_2, SIGNAL(editingFinished()),
+  QObject::connect(this->Internals->Ui.spinBox_2, SIGNAL(valueChanged(int)),
                    this, SLOT(onReconSlice1Changed()));
   this->Internals->Ui.spinBox_2->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_3, SIGNAL(editingFinished()),
+  QObject::connect(this->Internals->Ui.spinBox_3, SIGNAL(valueChanged(int)),
                    this, SLOT(onReconSlice2Changed()));
   this->Internals->Ui.spinBox_3->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.rotationAxis, SIGNAL(editingFinished()),
-                   this, SLOT(onRotationAxisChanged()));
+  QObject::connect(this->Internals->Ui.rotationAxis,
+                   SIGNAL(valueChanged(double)), this,
+                   SLOT(onRotationAxisChanged()));
   this->Internals->Ui.rotationAxis->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.rotationAngle, SIGNAL(editingFinished()),
-                   this, SLOT(onRotationAxisChanged()));
+  QObject::connect(this->Internals->Ui.rotationAngle,
+                   SIGNAL(valueChanged(double)), this,
+                   SLOT(onRotationAxisChanged()));
   this->Internals->Ui.rotationAngle->installEventFilter(this);
 
   //  this->connect(this->Internals->Ui.pushButton, SIGNAL(pressed()),
