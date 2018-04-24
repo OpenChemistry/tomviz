@@ -45,11 +45,13 @@
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkTrivialProducer.h>
+#include <vtkTIFFReader.h>
 
 #include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QMessageBox>
 
 #include <sstream>
 
@@ -166,6 +168,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   bool defaultModules = options["defaultModules"].toBool(true);
   bool addToRecent = options["addToRecent"].toBool(true);
   bool child = options["child"].toBool(false);
+  bool loadWithParaview = false;
 
   DataSource* dataSource(nullptr);
   QString fileName;
@@ -218,7 +221,22 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource->setReaderProperties(props.toVariantMap());
 
+  } else if (info.suffix().toLower() == "tiff" ||
+             info.suffix().toLower() == "tif") {
+    if (fileNames.size() > 1) {
+      // Ensure all the images in the stack have the same size.
+      int idx = -1;
+      if ( !validTiffStack(fileNames, idx) ) {
+        badStackAlert(fileNames, idx);
+        return nullptr;
+      }
+    }
+    loadWithParaview = true;
   } else {
+    loadWithParaview = true;
+  }
+
+  if (loadWithParaview) {
     // Use ParaView's file load infrastructure.
     pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
     if (!reader) {
@@ -254,6 +272,42 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     RecentFilesMenu::pushDataReader(dataSource);
   }
   return dataSource;
+}
+
+bool LoadDataReaction::validTiffStack(const QStringList& fileNames, int& idx){
+  
+  vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
+  int n = -1;
+  int m = -1;
+  int i = -1;
+  int dims[3];
+  foreach (QString file, fileNames) {
+    i++;
+    reader->SetFileName ( file.toLatin1().data() );
+    reader->Update();
+    reader->GetOutput()->GetDimensions(dims);
+    if (n == -1 && m == -1) {
+      n = dims[0];
+      m = dims[1];
+    } else {
+      if ( n != dims[0] || m != dims[1] ) {
+        idx = i;
+        return false;
+      }
+    }
+    //std::cout << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
+  }
+  return true;
+}
+
+void LoadDataReaction::badStackAlert(const QStringList& fileNames, int& idx){
+  QMessageBox::warning(
+    tomviz::mainWidget(),
+    "Error",
+    QString("The dimensions of the images in this stack are not consistent.\n"
+            "This error first occurred at the file:\n\n"
+            "%1").arg(fileNames[idx])
+  );
 }
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
