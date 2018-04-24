@@ -142,7 +142,6 @@ void Pipeline::pipelineBranchFinished(bool result)
           tomviz::DataSource::PersistenceState::Transient);
         newChildDataSource->setForkable(false);
         newChildDataSource->setParent(this);
-        addDataSource(newChildDataSource);
         lastOp->setChildDataSource(newChildDataSource);
         auto rootDataSource = this->dataSource();
         // connect signal to flow units and spacing to child data source.
@@ -287,6 +286,11 @@ void Pipeline::addDataSource(DataSource* dataSource)
     // Extract out source and execute all.
     connect(op, &Operator::transformModified, this,
             [this]() { this->execute(); });
+
+    // Ensure that new child data source signals are correctly wired up.
+    connect(op, static_cast<void (Operator::*)(DataSource*)>(
+                  &Operator::newChildDataSource),
+            [this](DataSource* ds) { this->addDataSource(ds); });
 
     // We need to ensure we move add datasource to the end of the branch
     auto operators = op->dataSource()->operators();
