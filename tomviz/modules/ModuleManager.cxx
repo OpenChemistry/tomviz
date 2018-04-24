@@ -124,8 +124,7 @@ public:
     if (dataSourceState.contains("reader") &&
         dataSourceState["reader"].isObject()) {
       auto reader = dataSourceState["reader"].toObject();
-      if (reader.contains("fileNames") &&
-                 reader["fileNames"].isArray()) {
+      if (reader.contains("fileNames") && reader["fileNames"].isArray()) {
         auto fileNames = reader["fileNames"].toArray();
         QJsonArray absoluteFileNames;
         foreach (const QJsonValue& path, fileNames) {
