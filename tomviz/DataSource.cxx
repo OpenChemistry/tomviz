@@ -425,7 +425,7 @@ bool DataSource::deserialize(const QJsonObject& state)
         });
     }
 
-    pipeline()->resume(true);
+    pipeline()->resume(this);
   }
   return true;
 }
