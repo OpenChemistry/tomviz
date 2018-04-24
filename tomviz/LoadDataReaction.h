@@ -16,9 +16,13 @@
 #ifndef tomvizLoadDataReaction_h
 #define tomvizLoadDataReaction_h
 
+#include <vector>
+
 #include <pqReaction.h>
 
 #include <QJsonObject>
+
+#include "ImageFileInfo.h"
 
 class vtkImageData;
 class vtkSMProxy;
@@ -78,8 +82,8 @@ private:
   static QJsonObject readerProperties(vtkSMProxy* reader);
   static void setFileNameProperties(const QJsonObject& props,
                                     vtkSMProxy* reader);
-  static bool validTiffStack(const QStringList& fileNames, int& idx);
-  static void badStackAlert(const QStringList& fileNames, int& idx);
+  static bool loadTiffStack(const QStringList& fileNames, std::vector<ImageFileInfo>& summary);
+  static void badStackAlert(std::vector<ImageFileInfo>& summary);
 };
 }
 #endif

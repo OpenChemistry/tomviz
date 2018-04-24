@@ -13,6 +13,8 @@
   limitations under the License.
 
 ******************************************************************************/
+#include <vector>
+
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
@@ -225,9 +227,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
              info.suffix().toLower() == "tif") {
     if (fileNames.size() > 1) {
       // Ensure all the images in the stack have the same size.
-      int idx = -1;
-      if ( !validTiffStack(fileNames, idx) ) {
-        badStackAlert(fileNames, idx);
+      std::vector<ImageFileInfo> summary;
+      if ( !loadTiffStack(fileNames, summary) ) {
+        badStackAlert(summary);
         return nullptr;
       }
     }
@@ -274,41 +276,57 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   return dataSource;
 }
 
-bool LoadDataReaction::validTiffStack(const QStringList& fileNames, int& idx){
+bool LoadDataReaction::loadTiffStack(const QStringList& fileNames, std::vector<ImageFileInfo>& summary){
   
   vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
   int n = -1;
   int m = -1;
-  int i = -1;
   int dims[3];
+  int i = -1;
+  bool success = true;
   foreach (QString file, fileNames) {
     i++;
     reader->SetFileName ( file.toLatin1().data() );
     reader->Update();
     reader->GetOutput()->GetDimensions(dims);
+    summary.push_back(ImageFileInfo());
+    summary[i].m = dims[0];
+    summary[i].n = dims[1];
+    summary[i].fileName = file;
+    summary[i].consistent = true;
+
     if (n == -1 && m == -1) {
       n = dims[0];
       m = dims[1];
     } else {
       if ( n != dims[0] || m != dims[1] ) {
-        idx = i;
-        return false;
+        summary[i].consistent = false;
+        success = false;
       }
     }
-    //std::cout << dims[0] << " " << dims[1] << " " << dims[2] << std::endl;
   }
-  return true;
+  return success;
 }
 
-void LoadDataReaction::badStackAlert(const QStringList& fileNames, int& idx){
-  QMessageBox::warning(
-    tomviz::mainWidget(),
-    "Error",
-    QString("The dimensions of the images in this stack are not consistent.\n"
-            "This error first occurred at the file:\n\n"
-            "%1").arg(fileNames[idx])
-  );
+void LoadDataReaction::badStackAlert(std::vector<ImageFileInfo>& summary){
+  for (auto it = summary.begin(); it != summary.end(); ++it) {
+    if ( !it->consistent ) {
+      QMessageBox::warning(
+        tomviz::mainWidget(),
+        "Error",
+        QString("The dimensions of the images in this stack are inconsistent.\n"
+                "This error first occurred at the file:\n\n"
+                "%1\n\n"
+                "The expected size is (%2, %3), but got (%4, %5) instead."
+              ).arg(it->fileName).arg(summary[0].m).arg(summary[0].n)
+              .arg(it->m).arg(it->n)
+      );
+      return;
+    }
+  }
+  return;
 }
+
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
                                                bool defaultModules, bool child)
