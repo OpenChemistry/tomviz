@@ -414,7 +414,9 @@ bool DataSource::deserialize(const QJsonObject& state)
       auto dataSourcesState = operatorObj["dataSources"].toArray();
       connect(pipeline(), &Pipeline::finished, op, [dataSourcesState, op]() {
         auto childDataSource = op->childDataSource();
-        childDataSource->deserialize(dataSourcesState[0].toObject());
+        if (childDataSource != nullptr) {
+          childDataSource->deserialize(dataSourcesState[0].toObject());
+        }
       });
     }
 
