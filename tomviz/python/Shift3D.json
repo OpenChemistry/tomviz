@@ -8,7 +8,9 @@
       "label" : "Shift",
       "description" : "Amount to shift by.",
       "type" : "double",
-      "default" : [0.0, 0.0, 0.0]
+      "default" : [0.0, 0.0, 0.0],
+      "minimum" : [-999, -999, -999],
+      "maximum" : [999, 999, 999]
     }
   ]
 }
