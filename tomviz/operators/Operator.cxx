@@ -207,8 +207,10 @@ void Operator::createNewChildDataSource(
   }
   // Reuse the existing "Output" data source.
   else {
+    childDataSource()->setData(childData);
     childDataSource()->setLabel(label);
     childDataSource()->setForkable(true);
+    childDataSource()->dataModified();
     setHasChildDataSource(true);
   }
 }
