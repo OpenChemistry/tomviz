@@ -79,6 +79,9 @@ public:
   /// Used to lookup a view by id, only intended for use during deserialization.
   vtkSMViewProxy* lookupView(int id);
 
+  /// Used to test if there is data loaded (i.e. not an empty session)
+  bool hasDataSources();
+
 public slots:
   void addModule(Module*);
 
