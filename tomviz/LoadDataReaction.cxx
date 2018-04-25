@@ -304,6 +304,10 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
       if (n != dims[0] || m != dims[1]) {
         summary[i].consistent = false;
         success = false;
+        // In the future all the files will be read to allow the user to
+        // fix/exclude specific files.
+        // But for now, just quit at the first inconsistency in the stack.
+        return success;
       }
     }
   }
