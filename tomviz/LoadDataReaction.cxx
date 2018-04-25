@@ -246,10 +246,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   }
 
   // Now for house keeping, registering elements, etc.
-  dataSource->setFileName(fileName);
-  if (fileNames.size() > 1) {
-    dataSource->setFileNames(fileNames);
-  }
+  // Always save it as a list, even if there is only one file.
+  dataSource->setFileNames(fileNames);
+
   if (addToRecent && dataSource) {
     RecentFilesMenu::pushDataReader(dataSource);
   }

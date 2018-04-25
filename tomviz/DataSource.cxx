@@ -232,16 +232,18 @@ bool DataSource::appendSlice(vtkImageData* slice)
 
 void DataSource::setFileName(const QString& filename)
 {
-  auto reader = m_json.value("reader").toObject(QJsonObject());
-  reader["fileName"] = filename;
-  m_json["reader"] = reader;
+  QStringList fileNames = QStringList(filename);
+  setFileNames(fileNames);
 }
 
 QString DataSource::fileName() const
 {
   auto reader = m_json.value("reader").toObject(QJsonObject());
-  if (reader.contains("fileName")) {
-    return reader["fileName"].toString();
+  if (reader.contains("fileNames")) {
+    auto fileNames = reader["fileNames"].toArray();
+    if (fileNames.size() > 0) {
+      return fileNames[0].toString();
+    }
   }
   return QString();
 }
