@@ -92,12 +92,12 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
   auto doc = QJsonDocument::fromJson(contents, &error);
   bool legacyStateFile = false;
   if (doc.isNull()) {
-    // See is user if try to load a old XML base state file.
+    // See if user is trying to load a old XML base state file.
     if (error.error == QJsonParseError::IllegalValue) {
       legacyStateFile = checkForLegacyStateFileFormat(contents);
     }
 
-    // If it an old state file we are done.
+    // If its a legacy state file we are done.
     if (legacyStateFile) {
       return false;
     }
