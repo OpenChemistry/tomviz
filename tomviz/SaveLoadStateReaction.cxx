@@ -21,12 +21,14 @@
 
 #include <vtkSMProxyManager.h>
 
+#include <QDebug>
 #include <QDir>
 #include <QFileDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMessageBox>
 
-#include <QDebug>
+#include <vtk_pugixml.h>
 
 namespace tomviz {
 
@@ -86,9 +88,19 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
   }
 
   QJsonParseError error;
-  auto doc = QJsonDocument::fromJson(openFile.readAll(), &error);
+  auto contents = openFile.readAll();
+  auto doc = QJsonDocument::fromJson(contents, &error);
+  bool legacyStateFile = false;
   if (doc.isNull()) {
-    qDebug() << "Error:" << error.errorString();
+    // See is user if try to load a old XML base state file.
+    if (error.error == QJsonParseError::IllegalValue) {
+      legacyStateFile = checkForLegacyStateFileFormat(contents);
+    }
+
+    // If it an old state file we are done.
+    if (legacyStateFile) {
+      return false;
+    }
   }
 
   if (doc.isObject() &&
@@ -97,7 +109,13 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     RecentFilesMenu::pushStateFile(filename);
     return true;
   }
-  qDebug() << "Failed to read state...";
+
+  if (!legacyStateFile) {
+    QMessageBox::warning(
+      tomviz::mainWidget(), "Invalid state file",
+      QString("Unable to read state file: %1").arg(error.errorString()));
+  }
+
   return false;
 }
 
@@ -116,6 +134,55 @@ bool SaveLoadStateReaction::saveState(const QString& fileName, bool interactive)
   QJsonDocument doc(state);
   auto writeSuccess = saveFile.write(doc.toJson());
   return success && writeSuccess != -1;
+}
+
+QString SaveLoadStateReaction::extractLegacyStateFileVersion(
+  const QByteArray state)
+{
+  QString fullVersion;
+  pugi::xml_document doc;
+
+  if (doc.load_buffer(state.data(), state.size())) {
+    pugi::xpath_node version = doc.select_single_node("/tomvizState/version");
+
+    if (version) {
+      fullVersion = version.node().attribute("full").value();
+    }
+  }
+
+  return fullVersion;
+}
+
+bool SaveLoadStateReaction::checkForLegacyStateFileFormat(
+  const QByteArray state)
+{
+
+  auto version = extractLegacyStateFileVersion(state);
+  if (version.length() > 0) {
+    QString url = "https://github.com/OpenChemistry/tomviz/releases";
+    QString versionString = QString("Tomviz %1").arg(version);
+    if (!version.contains("-g")) {
+      url = QString("https://github.com/OpenChemistry/tomviz/releases/%1")
+              .arg(version);
+      versionString = QString("<a href=%1>Tomviz %2</a>").arg(url).arg(version);
+    }
+
+    QMessageBox versionWarning(tomviz::mainWidget());
+    versionWarning.setIcon(QMessageBox::Icon::Warning);
+    versionWarning.setTextFormat(Qt::RichText);
+    versionWarning.setWindowTitle("Trying to load a legacy state file?");
+    versionWarning.setText(
+      QString("This state file was written using %1."
+              " The format is not supported by the version of Tomviz you are "
+              "running. "
+              "A compatible version can be downloaded <a href=%2>here<a>")
+        .arg(versionString)
+        .arg(url));
+    versionWarning.exec();
+    return true;
+  }
+
+  return false;
 }
 
 } // end of namespace

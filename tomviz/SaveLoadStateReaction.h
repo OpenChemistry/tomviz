@@ -18,6 +18,8 @@
 
 #include <pqReaction.h>
 
+#include <QByteArray>
+
 namespace tomviz {
 
 class SaveLoadStateReaction : public pqReaction
@@ -38,6 +40,9 @@ protected:
 private:
   Q_DISABLE_COPY(SaveLoadStateReaction)
   bool m_load;
+
+  static bool checkForLegacyStateFileFormat(const QByteArray state);
+  static QString extractLegacyStateFileVersion(const QByteArray state);
 };
 }
 
