@@ -22,10 +22,10 @@
 
 #include <QJsonObject>
 
-#include "ImageFileInfo.h"
-
 class vtkImageData;
 class vtkSMProxy;
+
+struct ImageFileInfo;
 
 namespace tomviz {
 class DataSource;
@@ -87,4 +87,13 @@ private:
   static void badStackAlert(std::vector<ImageFileInfo>& summary);
 };
 }
+
+struct ImageFileInfo
+{
+  QString fileName;
+  int m;
+  int n;
+  bool consistent;
+};
+
 #endif

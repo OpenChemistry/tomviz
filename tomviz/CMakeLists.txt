@@ -58,8 +58,6 @@ set(SOURCES
   HistogramWidget.cxx
   Histogram2DWidget.h
   Histogram2DWidget.cxx
-  ImageFileInfo.h
-  ImageFileInfo.cxx
   InterfaceBuilder.h
   InterfaceBuilder.cxx
   IntSliderWidget.cxx
