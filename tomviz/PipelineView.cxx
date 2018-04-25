@@ -541,6 +541,10 @@ void PipelineView::setCurrent(Operator* op)
 
 void PipelineView::deleteItemsConfirm(const QModelIndexList& idxs)
 {
+  if (idxs.isEmpty()) {
+    return;
+  }
+
   QMessageBox::StandardButton response = QMessageBox::question(
     this, "Delete pipeline elements?",
     "Are you sure you want to delete the selected pipeline elements");
@@ -551,6 +555,10 @@ void PipelineView::deleteItemsConfirm(const QModelIndexList& idxs)
 
 bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
 {
+  if (idxs.isEmpty()) {
+    return false;
+  }
+
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   for (auto& index : idxs) {
     auto dataSource = pipelineModel->dataSource(index);
