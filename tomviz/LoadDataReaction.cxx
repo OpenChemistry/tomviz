@@ -13,8 +13,6 @@
   limitations under the License.
 
 ******************************************************************************/
-#include <vector>
-
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
@@ -227,7 +225,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
              info.suffix().toLower() == "tif") {
     if (fileNames.size() > 1) {
       // Ensure all the images in the stack have the same size.
-      std::vector<ImageFileInfo> summary;
+      QList<ImageFileInfo> summary;
       if (!loadTiffStack(fileNames, summary)) {
         badStackAlert(summary);
         return nullptr;
@@ -277,7 +275,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 }
 
 bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
-                                     std::vector<ImageFileInfo>& summary)
+                                     QList<ImageFileInfo>& summary)
 {
 
   vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
@@ -314,21 +312,23 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
   return success;
 }
 
-void LoadDataReaction::badStackAlert(std::vector<ImageFileInfo>& summary)
+void LoadDataReaction::badStackAlert(QList<ImageFileInfo>& summary)
 {
-  for (auto it = summary.begin(); it != summary.end(); ++it) {
-    if (!it->consistent) {
+  //for (auto it = summary.begin(); it != summary.end(); ++it) {
+  foreach (ImageFileInfo image, summary) {
+    if (!image.consistent) {
       QMessageBox::warning(
         tomviz::mainWidget(), "Error",
         QString("The dimensions of the images in this stack are inconsistent.\n"
                 "This error first occurred at the file:\n\n"
                 "%1\n\n"
                 "The expected size is (%2, %3), but got (%4, %5) instead.")
-          .arg(it->fileName)
+          .arg(image.fileName)
           .arg(summary[0].m)
           .arg(summary[0].n)
-          .arg(it->m)
-          .arg(it->n));
+          .arg(image.m)
+          .arg(image.n)
+      );
       return;
     }
   }
