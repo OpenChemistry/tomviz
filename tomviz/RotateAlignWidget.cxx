@@ -174,7 +174,7 @@ public:
       centerOfRotation[2] = (bounds[4] + bounds[5]) / 2.0;
     }
     tform->Identity();
-    tform->Translate(0, -this->Ui.rotationAxis->value(), 0);
+    tform->Translate(0, this->Ui.rotationAxis->value(), 0);
     tform->Translate(centerOfRotation);
     tform->RotateZ(-this->Ui.rotationAngle->value());
     tform->Translate(-centerOfRotation[0], -centerOfRotation[1],
@@ -207,7 +207,7 @@ public:
       int Nray = 256; // Size of 2D reconstruction. Fixed for all tilt series
       std::vector<float> sinogram(Nray * dims[2]);
       // Approximate in-plance rotation as a shift in y-direction
-      double shift = -this->Ui.rotationAxis->value() +
+      double shift = this->Ui.rotationAxis->value() +
                      sin(-this->Ui.rotationAngle->value() * PI / 180) *
                        (sliceNum - dims[0] / 2);
 
@@ -370,28 +370,30 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->Ui.spinBox_2->setValue(50);
   this->Internals->Ui.spinBox_3->setValue(75);
 
-  QObject::connect(this->Internals->Ui.projection, SIGNAL(editingFinished()),
+  QObject::connect(this->Internals->Ui.projection, SIGNAL(valueChanged(int)),
                    this, SLOT(onProjectionNumberChanged()));
   this->Internals->Ui.projection->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_1, SIGNAL(editingFinished()),
+  QObject::connect(this->Internals->Ui.spinBox_1, SIGNAL(valueChanged(int)),
                    this, SLOT(onReconSlice0Changed()));
   this->Internals->Ui.spinBox_1->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_2, SIGNAL(editingFinished()),
+  QObject::connect(this->Internals->Ui.spinBox_2, SIGNAL(valueChanged(int)),
                    this, SLOT(onReconSlice1Changed()));
   this->Internals->Ui.spinBox_2->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_3, SIGNAL(editingFinished()),
+  QObject::connect(this->Internals->Ui.spinBox_3, SIGNAL(valueChanged(int)),
                    this, SLOT(onReconSlice2Changed()));
   this->Internals->Ui.spinBox_3->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.rotationAxis, SIGNAL(editingFinished()),
-                   this, SLOT(onRotationAxisChanged()));
+  QObject::connect(this->Internals->Ui.rotationAxis,
+                   SIGNAL(valueChanged(double)), this,
+                   SLOT(onRotationAxisChanged()));
   this->Internals->Ui.rotationAxis->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.rotationAngle, SIGNAL(editingFinished()),
-                   this, SLOT(onRotationAxisChanged()));
+  QObject::connect(this->Internals->Ui.rotationAngle,
+                   SIGNAL(valueChanged(double)), this,
+                   SLOT(onRotationAxisChanged()));
   this->Internals->Ui.rotationAngle->installEventFilter(this);
 
   //  this->connect(this->Internals->Ui.pushButton, SIGNAL(pressed()),
@@ -459,7 +461,7 @@ RotateAlignWidget::~RotateAlignWidget()
 void RotateAlignWidget::getValues(QMap<QString, QVariant>& map)
 {
   QList<QVariant> value;
-  value << 0 << this->Internals->Ui.rotationAxis->value() << 0;
+  value << 0 << -this->Internals->Ui.rotationAxis->value() << 0;
   map.insert("SHIFT", value);
   map.insert("rotation_angle", this->Internals->Ui.rotationAngle->value());
 }
@@ -468,7 +470,7 @@ void RotateAlignWidget::setValues(const QMap<QString, QVariant>& map)
 {
   if (map.contains("SHIFT")) {
     auto shift = map["SHIFT"];
-    this->Internals->Ui.rotationAxis->setValue(shift.toList()[1].toDouble());
+    this->Internals->Ui.rotationAxis->setValue(-shift.toList()[1].toDouble());
   }
   if (map.contains("rotation_angle")) {
     auto rotation = map["rotation_angle"];
