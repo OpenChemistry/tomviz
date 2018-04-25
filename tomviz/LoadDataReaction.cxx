@@ -278,7 +278,7 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
                                      QList<ImageFileInfo>& summary)
 {
 
-  vtkSmartPointer<vtkTIFFReader> reader = vtkSmartPointer<vtkTIFFReader>::New();
+  vtkNew<vtkTIFFReader> reader;
   int n = -1;
   int m = -1;
   int dims[3];
@@ -314,7 +314,7 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
 
 void LoadDataReaction::badStackAlert(QList<ImageFileInfo>& summary)
 {
-  //for (auto it = summary.begin(); it != summary.end(); ++it) {
+  // for (auto it = summary.begin(); it != summary.end(); ++it) {
   foreach (ImageFileInfo image, summary) {
     if (!image.consistent) {
       QMessageBox::warning(
@@ -327,8 +327,7 @@ void LoadDataReaction::badStackAlert(QList<ImageFileInfo>& summary)
           .arg(summary[0].m)
           .arg(summary[0].n)
           .arg(image.m)
-          .arg(image.n)
-      );
+          .arg(image.n));
       return;
     }
   }
