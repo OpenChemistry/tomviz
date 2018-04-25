@@ -168,16 +168,16 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   bool child = options["child"].toBool(false);
 
   DataSource* dataSource(nullptr);
-  QString firstFile;
+  QString fileName;
   if (fileNames.size() > 0) {
-    firstFile = fileNames[0];
+    fileName = fileNames[0];
   }
-  QFileInfo info(firstFile);
+  QFileInfo info(fileName);
   if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
     EmdFormat emdFile;
     vtkNew<vtkImageData> imageData;
-    if (emdFile.read(firstFile.toLatin1().data(), imageData)) {
+    if (emdFile.read(fileName.toLatin1().data(), imageData)) {
       dataSource = new DataSource(imageData);
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
@@ -189,7 +189,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
     vtkSMStringVectorProperty* prop = vtkSMStringVectorProperty::SafeDownCast(
       source->GetProperty(pname.toUtf8().data()));
-    pqSMAdaptor::setElementProperty(prop, firstFile);
+    pqSMAdaptor::setElementProperty(prop, fileName);
     source->UpdateVTKObjects();
 
     dataSource = createDataSource(source, defaultModules, child);
