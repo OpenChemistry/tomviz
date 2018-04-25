@@ -19,6 +19,7 @@
 #include "EditOperatorDialog.h"
 #include "ModuleManager.h"
 #include "OperatorResult.h"
+#include "Pipeline.h"
 
 #include "vtkImageData.h"
 #include "vtkSMSourceProxy.h"
@@ -199,7 +200,8 @@ void Operator::createNewChildDataSource(
 {
   if (this->childDataSource() == nullptr) {
     DataSource* childDS =
-      new DataSource(vtkImageData::SafeDownCast(childData), type, this, state);
+      new DataSource(vtkImageData::SafeDownCast(childData), type,
+                     this->dataSource()->pipeline(), state);
     childDS->setLabel(label);
     setChildDataSource(childDS);
     setHasChildDataSource(true);

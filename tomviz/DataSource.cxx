@@ -412,15 +412,20 @@ bool DataSource::deserialize(const QJsonObject& state)
     if (op != nullptr && operatorObj.contains("dataSources")) {
       // We currently support a single child data source.
       auto dataSourcesState = operatorObj["dataSources"].toArray();
-      connect(pipeline(), &Pipeline::finished, op, [dataSourcesState, op]() {
-        auto childDataSource = op->childDataSource();
-        if (childDataSource != nullptr) {
-          childDataSource->deserialize(dataSourcesState[0].toObject());
-        }
-      });
+      auto connection = new QMetaObject::Connection;
+      *connection =
+        connect(pipeline(), &Pipeline::finished, op, [connection,
+                                                      dataSourcesState, op]() {
+          auto childDataSource = op->childDataSource();
+          if (childDataSource != nullptr) {
+            childDataSource->deserialize(dataSourcesState[0].toObject());
+          }
+          QObject::disconnect(*connection);
+          delete connection;
+        });
     }
 
-    pipeline()->resume(true);
+    pipeline()->resume(this);
   }
   return true;
 }
