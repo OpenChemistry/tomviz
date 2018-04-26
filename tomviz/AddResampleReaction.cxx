@@ -130,7 +130,8 @@ void AddResampleReaction::resample(DataSource* source)
     // Create a DataSource and set its data to the resampled data
     // TODO - cloning here is really expensive memory-wise, we should figure
     // out a different way to do it
-    DataSource* resampledData = source->clone(true);
+    // N.B. This does not clone the attached operators.
+    DataSource* resampledData = source->clone();
     QString name = resampledData->label();
     name = "Downsampled_" + name;
     resampledData->setLabel(name);
