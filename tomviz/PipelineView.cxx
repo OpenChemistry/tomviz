@@ -235,11 +235,12 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* snapshotAction = nullptr;
   QAction* showInterfaceAction = nullptr;
   bool allowReExecute = false;
+  CloneDataReaction* cloneReaction;
 
   // Data source ( non child )
   if (dataSource != nullptr && !childDataSource) {
     cloneAction = contextMenu.addAction("Clone");
-    new CloneDataReaction(cloneAction);
+    cloneReaction = new CloneDataReaction(cloneAction);
     saveDataAction = contextMenu.addAction("Save Data");
     new SaveDataReaction(saveDataAction);
     if (dataSource->type() == DataSource::Volume) {
@@ -364,8 +365,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   } else if (showAction && selectedItem == showAction) {
     setModuleVisibility(selectedIndexes(), true);
   } else if (cloneChildAction && selectedItem == cloneChildAction) {
-    DataSource* newClone = dataSource->clone(false);
-    LoadDataReaction::dataSourceAdded(newClone);
+    cloneReaction->clone(dataSource);
   } else if (snapshotAction && selectedItem == snapshotAction) {
     op->dataSource()->addOperator(new SnapshotOperator(op->dataSource()));
   } else if (showInterfaceAction && selectedItem == showInterfaceAction) {
