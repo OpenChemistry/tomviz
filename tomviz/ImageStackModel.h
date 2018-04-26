@@ -23,8 +23,9 @@
 #include <QObject>
 #include <QString>
 
-class ImageInfo;
+struct ImageInfo;
 
+/// Adapter to visualize the ImageInfo of a stack of images in a QTableView
 class ImageStackModel : public QAbstractTableModel
 {
 public:
@@ -40,6 +41,7 @@ private:
   const QList<ImageInfo> m_filesInfo;
 };
 
+/// Basic image metadata container
 struct ImageInfo
 {
   ImageInfo(QString fileName, int m_, int n_, bool consistent_);
