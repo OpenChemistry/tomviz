@@ -44,12 +44,14 @@
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
+#include <vtkTIFFReader.h>
 #include <vtkTrivialProducer.h>
 
 #include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QMessageBox>
 
 #include <sstream>
 
@@ -166,6 +168,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   bool defaultModules = options["defaultModules"].toBool(true);
   bool addToRecent = options["addToRecent"].toBool(true);
   bool child = options["child"].toBool(false);
+  bool loadWithParaview = true;
 
   DataSource* dataSource(nullptr);
   QString fileName;
@@ -175,6 +178,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   QFileInfo info(fileName);
   if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
+    loadWithParaview = false;
     EmdFormat emdFile;
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData)) {
@@ -182,6 +186,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
+    loadWithParaview = false;
     auto pxm = tomviz::ActiveObjects::instance().proxyManager();
     const char* name = "OMETIFFReader";
     vtkSmartPointer<vtkSMProxy> source;
@@ -197,6 +202,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     readerProperties["name"] = name;
     dataSource->setReaderProperties(readerProperties.toVariantMap());
   } else if (options.contains("reader")) {
+    loadWithParaview = false;
     // Create the ParaView reader and set its properties using the JSON
     // configuration.
     auto props = options["reader"].toObject();
@@ -218,7 +224,19 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource->setReaderProperties(props.toVariantMap());
 
-  } else {
+  } else if (info.suffix().toLower() == "tiff" ||
+             info.suffix().toLower() == "tif") {
+    if (fileNames.size() > 1) {
+      // Ensure all the images in the stack have the same size.
+      QList<ImageFileInfo> summary;
+      if (!loadTiffStack(fileNames, summary)) {
+        badStackAlert(summary);
+        return nullptr;
+      }
+    }
+  }
+
+  if (loadWithParaview) {
     // Use ParaView's file load infrastructure.
     pqPipelineSource* reader = pqLoadDataReaction::loadData(fileNames);
     if (!reader) {
@@ -253,6 +271,66 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     RecentFilesMenu::pushDataReader(dataSource);
   }
   return dataSource;
+}
+
+bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
+                                     QList<ImageFileInfo>& summary)
+{
+
+  vtkNew<vtkTIFFReader> reader;
+  int n = -1;
+  int m = -1;
+  int dims[3];
+  int i = -1;
+  bool success = true;
+  foreach (QString file, fileNames) {
+    i++;
+    reader->SetFileName(file.toLatin1().data());
+    reader->Update();
+    reader->GetOutput()->GetDimensions(dims);
+    summary.push_back(ImageFileInfo());
+    summary[i].m = dims[0];
+    summary[i].n = dims[1];
+    summary[i].fileName = file;
+    summary[i].consistent = true;
+
+    if (n == -1 && m == -1) {
+      n = dims[0];
+      m = dims[1];
+    } else {
+      if (n != dims[0] || m != dims[1]) {
+        summary[i].consistent = false;
+        success = false;
+        // In the future all the files will be read to allow the user to
+        // fix/exclude specific files.
+        // But for now, just quit at the first inconsistency in the stack.
+        return success;
+      }
+    }
+  }
+  return success;
+}
+
+void LoadDataReaction::badStackAlert(QList<ImageFileInfo>& summary)
+{
+  // for (auto it = summary.begin(); it != summary.end(); ++it) {
+  foreach (ImageFileInfo image, summary) {
+    if (!image.consistent) {
+      QMessageBox::warning(
+        tomviz::mainWidget(), "Error",
+        QString("The dimensions of the images in this stack are inconsistent.\n"
+                "This error first occurred at the file:\n\n"
+                "%1\n\n"
+                "The expected size is (%2, %3), but got (%4, %5) instead.")
+          .arg(image.fileName)
+          .arg(summary[0].m)
+          .arg(summary[0].n)
+          .arg(image.m)
+          .arg(image.n));
+      return;
+    }
+  }
+  return;
 }
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,

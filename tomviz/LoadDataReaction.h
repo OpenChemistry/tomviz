@@ -23,6 +23,8 @@
 class vtkImageData;
 class vtkSMProxy;
 
+struct ImageFileInfo;
+
 namespace tomviz {
 class DataSource;
 
@@ -78,6 +80,18 @@ private:
   static QJsonObject readerProperties(vtkSMProxy* reader);
   static void setFileNameProperties(const QJsonObject& props,
                                     vtkSMProxy* reader);
+  static bool loadTiffStack(const QStringList& fileNames,
+                            QList<ImageFileInfo>& summary);
+  static void badStackAlert(QList<ImageFileInfo>& summary);
 };
 }
+
+struct ImageFileInfo
+{
+  QString fileName;
+  int m;
+  int n;
+  bool consistent;
+};
+
 #endif
