@@ -432,43 +432,17 @@ bool DataSource::deserialize(const QJsonObject& state)
   return true;
 }
 
-DataSource* DataSource::clone(bool cloneOperators) const
+DataSource* DataSource::clone() const
 {
-  // TODO I don't think this is necessary
-  //    if (vtkSMCoreUtilities::GetFileNameProperty(
-  //          this->Internals->OriginalDataSource) != nullptr) {
-  //      const char* originalFilename =
-  //        vtkSMPropertyHelper(this->Internals->OriginalDataSource,
-  //                            vtkSMCoreUtilities::GetFileNameProperty(
-  //                              this->Internals->OriginalDataSource))
-  //          .GetAsString();
-  //      this->Internals->Producer->SetAnnotation(Attributes::FILENAME,
-  //                                               originalFilename);
-  //    } else {
-  //      this->Internals->Producer->SetAnnotation(
-  //        Attributes::FILENAME,
-  //        originalDataSource()->GetAnnotation(Attributes::FILENAME));
-  //    }
-
-  auto newClone =
-    new DataSource(this->Internals->ProducerProxy, this->Internals->Type);
-
-  if (this->persistenceState() == PersistenceState::Transient ||
-      this->persistenceState() == PersistenceState::Modified) {
-    newClone->setPersistenceState(PersistenceState::Modified);
-  }
+  auto newClone = new DataSource(vtkImageData::SafeDownCast(this->dataObject()),
+                                 this->Internals->Type, this->pipeline());
+  newClone->setLabel(this->label());
+  newClone->setPersistenceState(PersistenceState::Modified);
 
   if (this->Internals->Type == TiltSeries) {
     newClone->setTiltAngles(getTiltAngles());
   }
-  if (cloneOperators) {
-    // now, clone the operators.
-    foreach (Operator* op, this->Internals->Operators) {
-      Operator* opClone(op->clone());
-      newClone->addOperator(opClone);
-    }
-    newClone->setTiltAngles(getTiltAngles());
-  }
+
   return newClone;
 }
 
@@ -1007,7 +981,7 @@ vtkDataObject* DataSource::dataObject() const
   return alg->GetOutputDataObject(0);
 }
 
-Pipeline* DataSource::pipeline()
+Pipeline* DataSource::pipeline() const
 {
   return qobject_cast<Pipeline*>(parent());
 }

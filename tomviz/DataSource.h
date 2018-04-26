@@ -97,9 +97,8 @@ public:
   bool removeOperator(Operator* op);
   bool removeAllOperators();
 
-  /// Creates a new clone from this DataSource. If cloneOperators then clone
-  /// the operators too.
-  DataSource* clone(bool cloneOperators) const;
+  /// Creates a new clone from this DataSource.
+  DataSource* clone() const;
 
   /// Save the state out.
   QJsonObject serialize() const;
@@ -196,7 +195,7 @@ public:
   /// Returns the persistence state
   PersistenceState persistenceState() const;
 
-  Pipeline* pipeline();
+  Pipeline* pipeline() const;
 
   /// Create copy of current data object, caller is responsible for ownership
   vtkDataObject* copyData();
