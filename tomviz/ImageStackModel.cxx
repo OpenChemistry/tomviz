@@ -1,3 +1,19 @@
+/******************************************************************************
+
+  This source file is part of the tomviz project.
+
+  Copyright Kitware, Inc.
+
+  This source code is released under the New BSD License, (the "License").
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+******************************************************************************/
+
 #include "ImageStackModel.h"
 
 #include <QBrush>
@@ -6,14 +22,15 @@
 #include <QObject>
 #include <QString>
 
-ImageStackModel::ImageStackModel(QObject* parent, QList<ImageInfo>* filesInfo_)
-  : QAbstractTableModel(parent), filesInfo(filesInfo_)
+ImageStackModel::ImageStackModel(QObject* parent,
+                                 const QList<ImageInfo>& filesInfo)
+  : QAbstractTableModel(parent), m_filesInfo(filesInfo)
 {
 }
 
 int ImageStackModel::rowCount(const QModelIndex& parent) const
 {
-  return filesInfo->size();
+  return m_filesInfo.size();
 }
 
 int ImageStackModel::columnCount(const QModelIndex& parent) const
@@ -31,21 +48,19 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
 
       switch (col) {
         case 0:
-          return (*filesInfo)[row].fileInfo.fileName();
+          return m_filesInfo[row].fileInfo.fileName();
 
         case 1:
-          return QString("%1").arg((*filesInfo)[row].m);
+          return QString("%1").arg(m_filesInfo[row].m);
 
         case 2:
-          return QString("%1").arg((*filesInfo)[row].n);
+          return QString("%1").arg(m_filesInfo[row].n);
       }
     }
 
     case Qt::ToolTipRole: {
-
-      switch (col) {
-        case 0:
-          return (*filesInfo)[row].fileInfo.absoluteFilePath();
+      if (col == 0) {
+        return m_filesInfo[row].fileInfo.absoluteFilePath();
       }
     }
 
@@ -56,7 +71,7 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
       QColor successColor = Qt::green;
       successColor.setAlphaF(0.125);
       QBrush successBackground(successColor);
-      if ((*filesInfo)[row].consistent) {
+      if (m_filesInfo[row].consistent) {
         return successBackground;
       } else {
         return failBackground;
@@ -69,31 +84,26 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
 QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
                                      int role) const
 {
-  switch (role) {
-    case Qt::DisplayRole:
+  if (role == Qt::DisplayRole) {
+    if (orientation == Qt::Horizontal) {
+      switch (section) {
+        case 0:
+          return QString("Filename");
 
-      switch (orientation) {
-        case Qt::Horizontal:
+        case 1:
+          return QString("X");
 
-          switch (section) {
-            case 0:
-              return QString("Filename");
-
-            case 1:
-              return QString("X");
-
-            case 2:
-              return QString("Y");
-          }
-
-        case Qt::Vertical:
-          return QString("%1").arg(section + 1);
+        case 2:
+          return QString("Y");
       }
+    } else if (orientation == Qt::Horizontal) {
+      return QString("%1").arg(section + 1);
+    }
   }
   return QVariant();
 }
 
-ImageInfo::ImageInfo(QString filename_, int m_, int n_, bool consistent_)
-  : fileInfo(QFileInfo(filename_)), m(m_), n(n_), consistent(consistent_)
+ImageInfo::ImageInfo(QString fileName, int m_, int n_, bool consistent_)
+  : fileInfo(QFileInfo(fileName)), m(m_), n(n_), consistent(consistent_)
 {
 }

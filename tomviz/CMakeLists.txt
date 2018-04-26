@@ -24,8 +24,8 @@ set(SOURCES
   AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
-  BadStackDialog.h
-  BadStackDialog.cxx
+  ImageStackDialog.h
+  ImageStackDialog.cxx
   Behaviors.cxx
   Behaviors.h
   CentralWidget.cxx

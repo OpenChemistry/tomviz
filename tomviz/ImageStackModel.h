@@ -1,3 +1,19 @@
+/******************************************************************************
+
+  This source file is part of the tomviz project.
+
+  Copyright Kitware, Inc.
+
+  This source code is released under the New BSD License, (the "License").
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+******************************************************************************/
+
 #ifndef tomvizImageStackModel_h
 #define tomvizImageStackModel_h
 
@@ -12,7 +28,7 @@ class ImageInfo;
 class ImageStackModel : public QAbstractTableModel
 {
 public:
-  ImageStackModel(QObject* parent, QList<ImageInfo>* filesInfo);
+  ImageStackModel(QObject* parent, const QList<ImageInfo>& filesInfo);
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
   QVariant data(const QModelIndex& index,
@@ -21,14 +37,12 @@ public:
                       int role) const override;
 
 private:
-  const QList<ImageInfo>* filesInfo;
+  const QList<ImageInfo> m_filesInfo;
 };
 
-class ImageInfo
+struct ImageInfo
 {
-private:
-public:
-  ImageInfo(QString filename_, int m_, int n_, bool consistent_);
+  ImageInfo(QString fileName, int m_, int n_, bool consistent_);
   QFileInfo fileInfo;
   int m;
   int n;

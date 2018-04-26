@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#ifndef tomvizBadStackDialog_h
-#define tomvizBadStackDialog_h
+#ifndef tomvizImageStackDialog_h
+#define tomvizImageStackDialog_h
 
 #include "ImageStackModel.h"
 
@@ -24,24 +24,24 @@
 
 namespace Ui {
 
-class BadStackDialog;
+class ImageStackDialog;
 }
 
 namespace tomviz {
 
-class BadStackDialog : public QDialog
+class ImageStackDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  explicit BadStackDialog(QWidget* parent = nullptr,
-                          ImageStackModel* tableModel = nullptr);
-  ~BadStackDialog() override;
+  explicit ImageStackDialog(QWidget* parent = nullptr,
+                            ImageStackModel* tableModel = nullptr);
+  ~ImageStackDialog() override;
 
 private slots:
 
 private:
-  QScopedPointer<Ui::BadStackDialog> m_ui;
+  QScopedPointer<Ui::ImageStackDialog> m_ui;
 };
 }
 

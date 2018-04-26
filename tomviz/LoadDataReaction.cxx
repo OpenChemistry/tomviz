@@ -16,9 +16,9 @@
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
-#include "BadStackDialog.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
+#include "ImageStackDialog.h"
 #include "ImageStackModel.h"
 #include "ModuleManager.h"
 #include "Pipeline.h"
@@ -312,8 +312,8 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
 
 void LoadDataReaction::badStackAlert(QList<ImageInfo>& summary)
 {
-  ImageStackModel imageStackModel(0, &summary);
-  BadStackDialog errorDialog(tomviz::mainWidget(), &imageStackModel);
+  ImageStackModel imageStackModel(0, summary);
+  ImageStackDialog errorDialog(tomviz::mainWidget(), &imageStackModel);
   errorDialog.exec();
   return;
 }

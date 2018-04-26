@@ -14,8 +14,8 @@
 
 ******************************************************************************/
 
-#include "BadStackDialog.h"
-#include "ui_BadStackDialog.h"
+#include "ImageStackDialog.h"
+#include "ui_ImageStackDialog.h"
 
 #include "ImageStackModel.h"
 
@@ -23,8 +23,8 @@
 
 namespace tomviz {
 
-BadStackDialog::BadStackDialog(QWidget* parent, ImageStackModel* tableModel)
-  : QDialog(parent), m_ui(new Ui::BadStackDialog)
+ImageStackDialog::ImageStackDialog(QWidget* parent, ImageStackModel* tableModel)
+  : QDialog(parent), m_ui(new Ui::ImageStackDialog)
 {
   m_ui->setupUi(this);
   m_ui->tableView->setModel(tableModel);
@@ -33,7 +33,7 @@ BadStackDialog::BadStackDialog(QWidget* parent, ImageStackModel* tableModel)
     0, QHeaderView::Stretch);
 }
 
-BadStackDialog::~BadStackDialog()
+ImageStackDialog::~ImageStackDialog()
 {
 }
 }
