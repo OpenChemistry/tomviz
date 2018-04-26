@@ -168,7 +168,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   bool defaultModules = options["defaultModules"].toBool(true);
   bool addToRecent = options["addToRecent"].toBool(true);
   bool child = options["child"].toBool(false);
-  bool loadWithParaview = false;
+  bool loadWithParaview = true;
 
   DataSource* dataSource(nullptr);
   QString fileName;
@@ -178,6 +178,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   QFileInfo info(fileName);
   if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
+    loadWithParaview = false;
     EmdFormat emdFile;
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData)) {
@@ -185,6 +186,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
+    loadWithParaview = false;
     auto pxm = tomviz::ActiveObjects::instance().proxyManager();
     const char* name = "OMETIFFReader";
     vtkSmartPointer<vtkSMProxy> source;
@@ -200,6 +202,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     readerProperties["name"] = name;
     dataSource->setReaderProperties(readerProperties.toVariantMap());
   } else if (options.contains("reader")) {
+    loadWithParaview = false;
     // Create the ParaView reader and set its properties using the JSON
     // configuration.
     auto props = options["reader"].toObject();
@@ -231,9 +234,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
         return nullptr;
       }
     }
-    loadWithParaview = true;
-  } else {
-    loadWithParaview = true;
   }
 
   if (loadWithParaview) {
