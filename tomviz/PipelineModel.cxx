@@ -609,7 +609,17 @@ QModelIndex PipelineModel::dataSourceIndexHelper(
   if (!source) {
     return QModelIndex();
   } else if (treeItem->dataSource() == source) {
-    return createIndex(treeItem->childIndex(), 0, treeItem);
+
+    auto row = treeItem->childIndex();
+    // If this item has no parent then we are dealing with a root data source,
+    // childIndex() will return 0. We need to find the item in m_treeItems to
+    // determine the correct index.
+    if (treeItem->parent() == nullptr) {
+      row = m_treeItems.indexOf(treeItem);
+      Q_ASSERT(row != -1);
+    }
+
+    return createIndex(row, 0, treeItem);
   } else {
     // Recurse on children
     foreach (auto childItem, treeItem->children()) {
