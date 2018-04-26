@@ -41,7 +41,6 @@
 #include <vtkRenderer.h>
 #include <vtkSMProperty.h>
 #include <vtkSMPropertyHelper.h>
-#include <vtkSMPropertyIterator.h>
 #include <vtkSMProxyIterator.h>
 #include <vtkSMProxyLocator.h>
 #include <vtkSMProxyManager.h>
@@ -321,30 +320,6 @@ QJsonArray jsonArrayFromXmlDouble(pugi::xml_node node)
   return array;
 }
 
-QJsonArray serializeProxyProperties(vtkSMProxy* proxy)
-{
-  // Simple function, attempts to serialize a proxy directly to Json.  It
-  // handles direct
-  // properties but not proxy properties (AFAIK).
-  QJsonArray result;
-  auto itr =
-    vtkSmartPointer<vtkSMPropertyIterator>::Take(proxy->NewPropertyIterator());
-  for (itr->Begin(); !itr->IsAtEnd(); itr->Next()) {
-    QJsonObject propJson;
-    auto label = itr->GetKey();
-    auto prop = itr->GetProperty();
-    propJson["label"] = label;
-    vtkSMPropertyHelper helper(prop);
-    QJsonArray elements;
-    for (unsigned i = 0; i < helper.GetNumberOfElements(); ++i) {
-      elements.append(helper.GetAs<double>(i));
-    }
-    propJson["elements"] = elements;
-    result.append(propJson);
-  }
-  return result;
-}
-
 bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
                               bool interactive) const
 {
@@ -595,7 +570,7 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
     } else if (vtkSMTimeKeeper::SafeDownCast(
                  animatedProxy->GetClientSideObject())) {
       cueObject["type"] = "timekeeper";
-      cueObject["proxy"] = serializeProxyProperties(animatedProxy);
+      cueObject["proxy"] = tomviz::serializeProxyProperties(animatedProxy);
       // may not need to save this one?
     } else {
       cueObject["type"] = "moduleproxy";

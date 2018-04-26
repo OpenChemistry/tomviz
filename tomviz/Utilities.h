@@ -134,6 +134,7 @@ inline QString label(pqProxy* proxy)
 QJsonObject serialize(vtkSMProxy* proxy);
 bool deserialize(vtkSMProxy* proxy, const QJsonObject& json);
 
+QJsonArray serializeProxyProperties(vtkSMProxy* proxy);
 /// Serialize the properties from a camera keyframe proxy that we are intereted
 /// in
 QJsonObject serializeCameraAnimationKeyFrame(vtkSMProxy* keyframe);

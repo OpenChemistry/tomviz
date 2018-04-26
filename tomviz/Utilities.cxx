@@ -222,6 +222,30 @@ bool deserialize(vtkSMProxy* proxy, const QJsonObject& json)
   return true;
 }
 
+QJsonArray serializeProxyProperties(vtkSMProxy* proxy)
+{
+  // Simple function, attempts to serialize a proxy directly to Json.  It
+  // handles direct
+  // properties but not proxy properties (AFAIK).
+  QJsonArray result;
+  auto itr =
+    vtkSmartPointer<vtkSMPropertyIterator>::Take(proxy->NewPropertyIterator());
+  for (itr->Begin(); !itr->IsAtEnd(); itr->Next()) {
+    QJsonObject propJson;
+    auto label = itr->GetKey();
+    auto prop = itr->GetProperty();
+    propJson["label"] = label;
+    vtkSMPropertyHelper helper(prop);
+    QJsonArray elements;
+    for (unsigned i = 0; i < helper.GetNumberOfElements(); ++i) {
+      elements.append(helper.GetAs<double>(i));
+    }
+    propJson["elements"] = elements;
+    result.append(propJson);
+  }
+  return result;
+}
+
 QJsonObject serializeCameraAnimationKeyFrame(vtkSMProxy* keyframe)
 {
   QJsonObject frameObj;
