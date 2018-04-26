@@ -39,6 +39,7 @@ class DataSource;
 class HistogramMaker;
 class Module;
 class Transfer2DModel;
+class Operator;
 
 /// CentralWidget is a QWidget that is used as the central widget
 /// for the application. This include a histogram at the top and a
@@ -59,7 +60,7 @@ public slots:
   /// Set the data source that is shown to the module's data source and color
   /// by the module's color map
   void setActiveModule(Module*);
-
+  void setActiveOperator(Operator*);
   void onColorMapUpdated();
   void onColorLegendToggled(bool visibility);
 

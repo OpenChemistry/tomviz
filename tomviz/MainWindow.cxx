@@ -179,6 +179,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_ui->centralWidget->connect(m_ui->dataPropertiesPanel,
                                SIGNAL(colorMapUpdated()),
                                SLOT(onColorMapUpdated()));
+  m_ui->centralWidget->connect(&ActiveObjects::instance(),
+                               SIGNAL(operatorActivated(Operator*)),
+                               SLOT(setActiveOperator(Operator*)));
 
   m_ui->treeWidget->setModel(new PipelineModel(this));
   m_ui->treeWidget->initLayout();
