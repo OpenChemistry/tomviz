@@ -81,6 +81,16 @@ bool SaveLoadStateReaction::loadState()
 
 bool SaveLoadStateReaction::loadState(const QString& filename)
 {
+  if (ModuleManager::instance().hasDataSources()) {
+    if (QMessageBox::Yes !=
+        QMessageBox::warning(tomviz::mainWidget(), "Load State Warning",
+                             "Current data and operators will be cleared when "
+                             "loading a state file.  Proceed anyway?",
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::No)) {
+      return false;
+    }
+  }
   QFile openFile(filename);
   if (!openFile.open(QIODevice::ReadOnly)) {
     qWarning("Couldn't open state file.");

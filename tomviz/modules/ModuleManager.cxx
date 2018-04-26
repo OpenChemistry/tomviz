@@ -830,4 +830,9 @@ vtkSMViewProxy* ModuleManager::lookupView(int id)
   return d->ViewIdMap.value(id);
 }
 
+bool ModuleManager::hasDataSources()
+{
+  return !d->DataSources.empty();
+}
+
 } // end of namesapce tomviz
