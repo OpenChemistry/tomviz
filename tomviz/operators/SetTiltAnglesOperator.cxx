@@ -68,16 +68,13 @@ public:
 
     QGridLayout* layout = new QGridLayout;
 
-    QString description_string =
+    QString descriptionString =
       "A tomographic \"tilt series\" is a set of projection images taken while "
-      "rotating"
-      " (\"tilting\") the specimen.  Setting the correct angles is needed for "
-      "accurate"
-      " reconstruction.\nSet a linearly spaced range of angles by specifying "
-      "the start"
-      " and end tilt index and start and end angles.  Note, tilt angles can "
-      "also be set"
-      " in the \"Data Properties\" panel or within Python.";
+      "rotating (\"tilting\") the specimen. Setting the correct angles is "
+      "needed for accurate reconstruction. Set a linearly spaced range of "
+      "angles by specifying the start and end tilt index and start and end "
+      "angles.  The tilt angles can also be set in the \"Data Properties\" "
+      "panel or from Python.";
 
     vtkImageData* image = vtkImageData::SafeDownCast(dataObject);
     Q_ASSERT(image);
@@ -104,7 +101,10 @@ public:
       endAngleValue = tiltAngles[totalSlices - 1];
     }
 
-    QLabel* descriptionLabel = new QLabel(description_string);
+    QLabel* descriptionLabel = new QLabel(descriptionString);
+    descriptionLabel->setMinimumHeight(120);
+    descriptionLabel->setSizePolicy(QSizePolicy::MinimumExpanding,
+                                    QSizePolicy::MinimumExpanding);
     descriptionLabel->setWordWrap(true);
     layout->addWidget(descriptionLabel, 0, 0, 1, 4, Qt::AlignCenter);
     layout->addWidget(new QLabel("Start Image #: "), 1, 0, 1, 1,
@@ -146,7 +146,11 @@ public:
             SLOT(updateAngleIncrement()));
     layout->addWidget(angleIncrementLabel, 3, 3, 1, 1, Qt::AlignCenter);
 
-    setAutomaticPanel->setLayout(layout);
+    auto outerLayout = new QVBoxLayout;
+    outerLayout->addLayout(layout);
+    outerLayout->addStretch();
+
+    setAutomaticPanel->setLayout(outerLayout);
 
     QWidget* setFromTablePanel = new QWidget;
     QVBoxLayout* tablePanelLayout = new QVBoxLayout;
@@ -200,7 +204,7 @@ public:
     this->tabWidget->addTab(setAutomaticPanel, "Set by Range");
     this->tabWidget->addTab(setFromTablePanel, "Set Individually");
 
-    baseLayout->setSizeConstraint(QLayout::SetFixedSize);
+    baseLayout->setSizeConstraint(QLayout::SetMinimumSize);
   }
 
   void applyChangesToOperator() override
