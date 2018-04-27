@@ -16,6 +16,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
+#include <pqApplicationCore.h>
 #include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
 #include <pqSaveAnimationReaction.h>
@@ -24,6 +25,7 @@
 #include <pqView.h>
 #include <vtkPVPlugin.h>
 #include <vtkPVRenderView.h>
+#include <vtkSMPropertyHelper.h>
 #include <vtkSMSettings.h>
 #include <vtkSMViewProxy.h>
 
@@ -116,6 +118,14 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   if (!qtSettings->contains("pqOutputWidget.ShowFullMessages")) {
     qtSettings->setValue("pqOutputWidget.ShowFullMessages", true);
   }
+
+  // Update back light azimuth default on view.
+  connect(pqApplicationCore::instance()->getServerManagerModel(),
+          &pqServerManagerModel::viewAdded, [](pqView* view) {
+            vtkSMPropertyHelper helper(view->getProxy(), "BackLightAzimuth");
+            // See https://github.com/OpenChemistry/tomviz/issues/1525
+            helper.Set(60);
+          });
 
   // checkOpenGL();
   m_ui->setupUi(this);
