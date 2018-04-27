@@ -530,6 +530,57 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
     doc["views"] = jViews;
   }
 
+  pqAnimationScene* scene =
+    pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+  QJsonObject sceneJson;
+  vtkSMPropertyHelper numFrames(scene->getProxy(), "NumberOfFrames");
+  vtkSMPropertyHelper duration(scene->getProxy(), "Duration");
+  sceneJson["number_of_frames"] = numFrames.GetAsInt();
+  sceneJson["duration"] = duration.GetAsDouble();
+
+  QJsonArray cuesJson;
+  QSet<pqAnimationCue*> cues = scene->getCues();
+  foreach (pqAnimationCue* cue, cues) {
+    QJsonObject cueObject;
+    vtkSMProxy* animatedProxy = cue->getAnimatedProxy();
+    QString helperKey;
+    pqProxy* animatedSrcProxy =
+      pqProxy::findProxyWithHelper(animatedProxy, helperKey);
+
+    if (vtkSMViewProxy::SafeDownCast(animatedProxy)) {
+      auto proxy = cue->getProxy();
+      if (proxy->GetXMLName() == QString("CameraAnimationCue")) {
+        cueObject["type"] = "camera";
+        // TODO which view
+        cueObject["mode"] = vtkSMPropertyHelper(proxy, "Mode").GetAsInt();
+        cueObject["startTime"] =
+          vtkSMPropertyHelper(proxy, "StartTime").GetAsDouble();
+        // keyframes
+        QJsonArray keyframesArray;
+        QList<vtkSMProxy*> keyframes = cue->getKeyFrames();
+        foreach (vtkSMProxy* frame, keyframes) {
+          keyframesArray.append(serializeCameraAnimationKeyFrame(frame));
+        }
+        cueObject["keyframes"] = keyframesArray;
+      } else {
+        cueObject["type"] = "view";
+        // unimplemented, not sure what falls into this category, but I want all
+        // cues to have a type
+      }
+    } else if (vtkSMTimeKeeper::SafeDownCast(
+                 animatedProxy->GetClientSideObject())) {
+      cueObject["type"] = "timekeeper";
+      cueObject["proxy"] = tomviz::serializeProxyProperties(animatedProxy);
+      // may not need to save this one?
+    } else {
+      cueObject["type"] = "moduleproxy";
+      // unimplemented, these are difficult but I want all cues to have a type
+    }
+    cuesJson.append(cueObject);
+  }
+  sceneJson["cues"] = cuesJson;
+  doc["animation"] = sceneJson;
+
   return true;
 }
 
@@ -798,6 +849,47 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       if (dsObject["active"].toBool()) {
         ActiveObjects::instance().setActiveDataSource(dataSource);
       }
+    }
+  }
+
+  if (m_stateObject["animation"].isObject()) {
+    auto sceneJson = m_stateObject["animation"].toObject();
+    pqAnimationScene* scene =
+      pqPVApplicationCore::instance()->animationManager()->getActiveScene();
+    vtkSMPropertyHelper(scene->getProxy(), "NumberOfFrames")
+      .Set(sceneJson["number_of_frames"].toInt());
+    vtkSMPropertyHelper(scene->getProxy(), "Duration")
+      .Set(sceneJson["duration"].toDouble());
+
+    // FIXME: figure out how to get the render view if it is not active (or the
+    // render view for the give cue)
+    vtkSMRenderViewProxy* renderView = vtkSMRenderViewProxy::SafeDownCast(
+      ActiveObjects::instance().activeView());
+    auto cuesJson = sceneJson["cues"].toArray();
+    for (auto itr = cuesJson.begin(); itr != cuesJson.end(); ++itr) {
+      auto cueJson = (*itr).toObject();
+      if (cueJson["type"].toString() == "camera") {
+        if (renderView) {
+          pqAnimationCue* cue =
+            scene->createCue(renderView, "Camera", 0, "CameraAnimationCue");
+          vtkSMPropertyHelper(cue->getProxy(), "Mode")
+            .Set(cueJson["mode"].toInt());
+          vtkSMPropertyHelper(cue->getProxy(), "StartTime")
+            .Set(cueJson["startTime"].toDouble());
+          cue->getProxy()->UpdateVTKObjects();
+          QJsonArray keyframesArray = cueJson["keyframes"].toArray();
+          for (int i = 0; i < keyframesArray.size(); ++i) {
+            vtkSMProxy* kf = cue->getKeyFrame(i);
+            if (!kf) {
+              // something went wrong, we should have already restored the
+              // number of frames in the animation
+              break;
+            }
+            deserializeCameraAnimationKeyFrame(kf,
+                                               keyframesArray[i].toObject());
+          }
+        }
+      } // other types unimplemented
     }
   }
 }
