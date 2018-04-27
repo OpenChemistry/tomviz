@@ -344,6 +344,9 @@ void CentralWidget::setActiveColorMapDataSource(DataSource* source)
   // it ) use that, otherwise use the active transformed data source passed in.
   if (selected != nullptr) {
     source = selected;
+    // set the active module to null so we use the color map for the data
+    // source.
+    m_activeModule = nullptr;
   }
 
   setColorMapDataSource(source);
@@ -365,6 +368,15 @@ void CentralWidget::setActiveModule(Module* module)
 
   } else {
     setColorMapDataSource(nullptr);
+  }
+}
+
+void CentralWidget::setActiveOperator(Operator* op)
+{
+
+  if (op != nullptr) {
+    m_activeModule = nullptr;
+    setColorMapDataSource(op->dataSource());
   }
 }
 
