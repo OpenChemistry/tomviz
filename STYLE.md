@@ -79,7 +79,7 @@ style guidelines when contributing code to our project.
 
 * Alphabetize includes
 
-* Use #include "xxx" for local includes, #include <xxx> for external includes.
+* Use #include "xxx" for local includes, #include \<xxx\> for external includes.
 
 * Do not add comment separators before function definitions.
 
