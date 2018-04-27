@@ -33,7 +33,5 @@ ImageStackDialog::ImageStackDialog(QWidget* parent, ImageStackModel* tableModel)
     0, QHeaderView::Stretch);
 }
 
-ImageStackDialog::~ImageStackDialog()
-{
-}
+ImageStackDialog::~ImageStackDialog() = default;
 }

@@ -28,12 +28,12 @@ ImageStackModel::ImageStackModel(QObject* parent,
 {
 }
 
-int ImageStackModel::rowCount(const QModelIndex& parent) const
+int ImageStackModel::rowCount(const QModelIndex&) const
 {
   return m_filesInfo.size();
 }
 
-int ImageStackModel::columnCount(const QModelIndex& parent) const
+int ImageStackModel::columnCount(const QModelIndex&) const
 {
   return 3;
 }
@@ -62,6 +62,7 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
       if (col == 0) {
         return m_filesInfo[row].fileInfo.absoluteFilePath();
       }
+      break;
     }
 
     case Qt::BackgroundRole: {
