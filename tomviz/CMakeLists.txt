@@ -24,6 +24,8 @@ set(SOURCES
   AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
+  ImageStackDialog.h
+  ImageStackDialog.cxx
   Behaviors.cxx
   Behaviors.h
   CentralWidget.cxx
@@ -58,6 +60,8 @@ set(SOURCES
   HistogramWidget.cxx
   Histogram2DWidget.h
   Histogram2DWidget.cxx
+  ImageStackModel.h
+  ImageStackModel.cxx
   InterfaceBuilder.h
   InterfaceBuilder.cxx
   IntSliderWidget.cxx

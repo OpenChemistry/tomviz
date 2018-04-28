@@ -18,6 +18,8 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
+#include "ImageStackDialog.h"
+#include "ImageStackModel.h"
 #include "ModuleManager.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
@@ -51,7 +53,6 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonArray>
-#include <QMessageBox>
 
 #include <sstream>
 
@@ -228,7 +229,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
              info.suffix().toLower() == "tif") {
     if (fileNames.size() > 1) {
       // Ensure all the images in the stack have the same size.
-      QList<ImageFileInfo> summary;
+      QList<ImageInfo> summary;
       if (!loadTiffStack(fileNames, summary)) {
         badStackAlert(summary);
         return nullptr;
@@ -274,7 +275,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 }
 
 bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
-                                     QList<ImageFileInfo>& summary)
+                                     QList<ImageInfo>& summary)
 {
 
   vtkNew<vtkTIFFReader> reader;
@@ -288,11 +289,7 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
     reader->SetFileName(file.toLatin1().data());
     reader->Update();
     reader->GetOutput()->GetDimensions(dims);
-    summary.push_back(ImageFileInfo());
-    summary[i].m = dims[0];
-    summary[i].n = dims[1];
-    summary[i].fileName = file;
-    summary[i].consistent = true;
+    summary.push_back(ImageInfo(file, dims[0], dims[1], true));
 
     if (n == -1 && m == -1) {
       n = dims[0];
@@ -301,35 +298,17 @@ bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
       if (n != dims[0] || m != dims[1]) {
         summary[i].consistent = false;
         success = false;
-        // In the future all the files will be read to allow the user to
-        // fix/exclude specific files.
-        // But for now, just quit at the first inconsistency in the stack.
-        return success;
       }
     }
   }
   return success;
 }
 
-void LoadDataReaction::badStackAlert(QList<ImageFileInfo>& summary)
+void LoadDataReaction::badStackAlert(QList<ImageInfo>& summary)
 {
-  // for (auto it = summary.begin(); it != summary.end(); ++it) {
-  foreach (ImageFileInfo image, summary) {
-    if (!image.consistent) {
-      QMessageBox::warning(
-        tomviz::mainWidget(), "Error",
-        QString("The dimensions of the images in this stack are inconsistent.\n"
-                "This error first occurred at the file:\n\n"
-                "%1\n\n"
-                "The expected size is (%2, %3), but got (%4, %5) instead.")
-          .arg(image.fileName)
-          .arg(summary[0].m)
-          .arg(summary[0].n)
-          .arg(image.m)
-          .arg(image.n));
-      return;
-    }
-  }
+  ImageStackModel imageStackModel(0, summary);
+  ImageStackDialog errorDialog(tomviz::mainWidget(), &imageStackModel);
+  errorDialog.exec();
   return;
 }
 
