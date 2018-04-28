@@ -35,9 +35,9 @@ namespace tomviz {
 ConnectionsWidget::ConnectionsWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::ConnectionsWidget)
 {
-  this->m_ui->setupUi(this);
+  m_ui->setupUi(this);
 
-  this->readSettings();
+  readSettings();
 
   // New
   connect(m_ui->newConnectionButton, &QPushButton::clicked, [this]() {
@@ -56,10 +56,10 @@ ConnectionsWidget::ConnectionsWidget(QWidget* parent)
 
     if (!replaced) {
       m_connections.append(newConnection);
-      this->sortConnections();
+      sortConnections();
       m_ui->connectionsWidget->addItem(newConnection.name());
     }
-    this->writeSettings();
+    writeSettings();
   });
 
   // Edit

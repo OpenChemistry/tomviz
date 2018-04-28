@@ -17,6 +17,7 @@
 #define tomvizDataTransformMenu_h
 
 #include <QObject>
+
 #include <QPointer>
 #include <QScopedPointer>
 

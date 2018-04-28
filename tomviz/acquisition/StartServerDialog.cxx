@@ -33,24 +33,24 @@ StartServerDialog::StartServerDialog(QWidget* parent)
   m_ui->setupUi(this);
 
   connect(m_ui->pythonPathLineEdit, &QLineEdit::textChanged, [this]() {
-    auto currentText = this->m_ui->pythonPathLineEdit->text();
+    auto currentText = m_ui->pythonPathLineEdit->text();
     auto valid = !currentText.isEmpty() && currentText != PYTHON_PATH_DEFAULT;
-    this->m_ui->startButton->setEnabled(valid);
+    m_ui->startButton->setEnabled(valid);
     if (valid) {
-      this->setPythonExecutablePath(currentText);
+      setPythonExecutablePath(currentText);
     }
   });
 
-  this->readSettings();
+  readSettings();
 
   connect(m_ui->browseButton, &QPushButton::clicked, [this]() {
-    QFileInfo info(this->m_pythonExecutablePath);
+    QFileInfo info(m_pythonExecutablePath);
     auto pythonExecutablePath = QFileDialog::getOpenFileName(
       this, "Select Python Executable", info.dir().path());
 
     if (!pythonExecutablePath.isEmpty()) {
-      this->setPythonExecutablePath(pythonExecutablePath);
-      this->writeSettings();
+      setPythonExecutablePath(pythonExecutablePath);
+      writeSettings();
     }
   });
 
@@ -65,9 +65,9 @@ void StartServerDialog::readSettings()
   auto settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("acquisition");
   if (!settings->contains("pythonExecutablePath")) {
-    this->setPythonExecutablePath(PYTHON_PATH_DEFAULT);
+    setPythonExecutablePath(PYTHON_PATH_DEFAULT);
   } else {
-    this->setPythonExecutablePath(
+    setPythonExecutablePath(
       settings->value("pythonExecutablePath").toString());
   }
   settings->endGroup();
@@ -77,13 +77,13 @@ void StartServerDialog::writeSettings()
 {
   auto settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("acquisition");
-  settings->setValue("pythonExecutablePath", this->m_pythonExecutablePath);
+  settings->setValue("pythonExecutablePath", m_pythonExecutablePath);
   settings->endGroup();
 }
 
 void StartServerDialog::setPythonExecutablePath(const QString& path)
 {
-  this->m_pythonExecutablePath = path;
-  this->m_ui->pythonPathLineEdit->setText(path);
+  m_pythonExecutablePath = path;
+  m_ui->pythonPathLineEdit->setText(path);
 }
 }

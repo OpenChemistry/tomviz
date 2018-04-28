@@ -18,6 +18,7 @@
 #define tomvizRegexGroupSubstitutionDialog_h
 
 #include <QDialog>
+
 #include <QLabel>
 #include <QScopedPointer>
 
@@ -36,7 +37,7 @@ public:
                                         const QString regex = "",
                                         const QString substitution = "",
                                         QWidget* parent = nullptr);
-  ~RegexGroupSubstitutionDialog();
+  ~RegexGroupSubstitutionDialog() override;
 
   QString groupName();
   QString regex();

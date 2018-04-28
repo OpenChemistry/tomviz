@@ -17,9 +17,10 @@
 #ifndef tomvizRegexGroupsWidget_h
 #define tomvizRegexGroupsWidget_h
 
+#include <QWidget>
+
 #include <QScopedPointer>
 #include <QStringList>
-#include <QWidget>
 
 namespace Ui {
 class RegexGroupsWidget;

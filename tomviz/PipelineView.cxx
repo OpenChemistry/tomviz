@@ -603,10 +603,10 @@ void PipelineView::setModuleVisibility(const QModelIndexList& idxs,
 
 void PipelineView::initLayout()
 {
-  this->header()->setStretchLastSection(false);
-  this->header()->setVisible(false);
-  this->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-  this->header()->setSectionResizeMode(1, QHeaderView::Fixed);
-  this->header()->resizeSection(1, 30);
+  header()->setStretchLastSection(false);
+  header()->setVisible(false);
+  header()->setSectionResizeMode(0, QHeaderView::Stretch);
+  header()->setSectionResizeMode(1, QHeaderView::Fixed);
+  header()->resizeSection(1, 30);
 }
 }

@@ -113,12 +113,11 @@ PipelineWorker::RunnableOperator::RunnableOperator(Operator* op,
                                                    QObject* parent)
   : QObject(parent), m_operator(op), m_data(data)
 {
-  this->setAutoDelete(false);
+  setAutoDelete(false);
 }
 
 void PipelineWorker::RunnableOperator::run()
 {
-
   TransformResult result = m_operator->transform(m_data);
   emit complete(result);
 }
@@ -180,7 +179,7 @@ void PipelineWorker::Run::startNextOperator()
 
 void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
 {
-  auto runnableOperator = qobject_cast<RunnableOperator*>(this->sender());
+  auto runnableOperator = qobject_cast<RunnableOperator*>(sender());
 
   m_complete.append(runnableOperator);
 
@@ -198,7 +197,7 @@ void PipelineWorker::Run::operatorComplete(TransformResult transformResult)
   }
   // Run next operator
   else if (!m_runnableOperators.isEmpty()) {
-    this->startNextOperator();
+    startNextOperator();
   }
   // We are done
   else {
@@ -228,7 +227,7 @@ bool PipelineWorker::Run::cancel(Operator* op)
   // If the operator is currently running we just have to cancel the execution
   // of the whole pipeline.
   if (m_running->op() == op) {
-    this->cancel();
+    cancel();
     return false;
   }
 
@@ -249,7 +248,7 @@ bool PipelineWorker::Run::isRunning()
 
 bool PipelineWorker::Run::addOperator(Operator* op)
 {
-  if (!this->isRunning()) {
+  if (!isRunning()) {
     return false;
   }
 
@@ -268,7 +267,7 @@ PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data, Operator* op)
   QList<Operator*> ops;
   ops << op;
 
-  return this->run(data, ops);
+  return run(data, ops);
 }
 
 PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data,

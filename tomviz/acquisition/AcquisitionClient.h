@@ -17,9 +17,10 @@
 #ifndef ACQUISITION_CLIENT_H
 #define ACQUISITION_CLIENT_H
 
+#include <QObject>
+
 #include <QJsonObject>
 #include <QJsonValue>
-#include <QObject>
 
 namespace tomviz {
 

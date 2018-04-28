@@ -35,12 +35,12 @@ namespace tomviz {
 RegexGroupsSubstitutionsWidget::RegexGroupsSubstitutionsWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::RegexGroupsSubstitutionsWidget)
 {
-  this->m_ui->setupUi(this);
+  m_ui->setupUi(this);
 
-  this->readSettings();
+  readSettings();
 
   foreach (const RegexGroupSubstitution& substitution, m_substitutions) {
-    this->addRegexGroupSubstitution(substitution);
+    addRegexGroupSubstitution(substitution);
   }
 
   // New
@@ -55,18 +55,18 @@ RegexGroupsSubstitutionsWidget::RegexGroupsSubstitutionsWidget(QWidget* parent)
                                            dialog.substitution());
 
     m_substitutions.append(newSubstitution);
-    this->sortRegexGroupSubstitutions();
-    this->addRegexGroupSubstitution(newSubstitution);
+    sortRegexGroupSubstitutions();
+    addRegexGroupSubstitution(newSubstitution);
 
-    this->writeSettings();
+    writeSettings();
   });
 
   // Edit
   connect(m_ui->regexGroupsSubstitutionsWidget,
           &QTableWidget::itemDoubleClicked, [this](QTableWidgetItem* item) {
-            auto row = this->m_ui->regexGroupsSubstitutionsWidget->row(item);
-            this->editRegexGroupSubstitution(row);
-            this->writeSettings();
+            auto row = m_ui->regexGroupsSubstitutionsWidget->row(item);
+            editRegexGroupSubstitution(row);
+            writeSettings();
           });
 
   // Delete
@@ -136,7 +136,7 @@ void RegexGroupsSubstitutionsWidget::sortRegexGroupSubstitutions()
 
 void RegexGroupsSubstitutionsWidget::editRegexGroupSubstitution(int row)
 {
-  RegexGroupSubstitution substitution = this->m_substitutions[row];
+  RegexGroupSubstitution substitution = m_substitutions[row];
   RegexGroupSubstitutionDialog dialog(substitution.groupName(),
                                       substitution.regex(),
                                       substitution.substitution());
@@ -145,15 +145,15 @@ void RegexGroupsSubstitutionsWidget::editRegexGroupSubstitution(int row)
                                          dialog.substitution());
 
   m_substitutions[row] = newSubstitution;
-  this->setRegexGroupSubstitution(row, newSubstitution);
+  setRegexGroupSubstitution(row, newSubstitution);
 }
 
 void RegexGroupsSubstitutionsWidget::addRegexGroupSubstitution(
   RegexGroupSubstitution substitution)
 {
-  auto row = this->m_ui->regexGroupsSubstitutionsWidget->rowCount();
-  this->m_ui->regexGroupsSubstitutionsWidget->insertRow(row);
-  this->setRegexGroupSubstitution(row, substitution);
+  auto row = m_ui->regexGroupsSubstitutionsWidget->rowCount();
+  m_ui->regexGroupsSubstitutionsWidget->insertRow(row);
+  setRegexGroupSubstitution(row, substitution);
 }
 
 void RegexGroupsSubstitutionsWidget::setRegexGroupSubstitution(
@@ -164,9 +164,9 @@ void RegexGroupsSubstitutionsWidget::setRegexGroupSubstitution(
   QTableWidgetItem* regexItem = new QTableWidgetItem(substitution.regex());
   QTableWidgetItem* substitutionItem =
     new QTableWidgetItem(substitution.substitution());
-  this->m_ui->regexGroupsSubstitutionsWidget->setItem(row, 0, groupNameItem);
-  this->m_ui->regexGroupsSubstitutionsWidget->setItem(row, 1, regexItem);
-  this->m_ui->regexGroupsSubstitutionsWidget->setItem(row, 2, substitutionItem);
+  m_ui->regexGroupsSubstitutionsWidget->setItem(row, 0, groupNameItem);
+  m_ui->regexGroupsSubstitutionsWidget->setItem(row, 1, regexItem);
+  m_ui->regexGroupsSubstitutionsWidget->setItem(row, 2, substitutionItem);
 }
 
 QList<RegexGroupSubstitution> RegexGroupsSubstitutionsWidget::substitutions()

@@ -17,12 +17,13 @@
 #ifndef tomvizRegexGroupsSubstitutionsWidget_h
 #define tomvizRegexGroupsSubstitutionsWidget_h
 
-#include "RegexGroupSubstitution.h"
+#include <QWidget>
 
 #include <QMap>
 #include <QScopedPointer>
 #include <QVariantList>
-#include <QWidget>
+
+#include "RegexGroupSubstitution.h"
 
 namespace Ui {
 class RegexGroupsSubstitutionsWidget;
@@ -36,7 +37,7 @@ class RegexGroupsSubstitutionsWidget : public QWidget
 
 public:
   RegexGroupsSubstitutionsWidget(QWidget* parent);
-  ~RegexGroupsSubstitutionsWidget();
+  ~RegexGroupsSubstitutionsWidget() override;
 
   QList<RegexGroupSubstitution> substitutions();
 

@@ -15,6 +15,7 @@
 ******************************************************************************/
 
 #include "RegexGroupsWidget.h"
+
 #include "ui_RegexGroupsWidget.h"
 
 #include "ActiveObjects.h"
@@ -35,35 +36,35 @@ namespace tomviz {
 RegexGroupsWidget::RegexGroupsWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::RegexGroupsWidget)
 {
-  this->m_ui->setupUi(this);
+  m_ui->setupUi(this);
 
-  this->readSettings();
+  readSettings();
 
   // New
   connect(m_ui->newRegexGroupButton, &QPushButton::clicked, [this]() {
     RegexGroupDialog dialog;
     dialog.exec();
 
-    if (this->m_ui->regexGroupsWidget
+    if (m_ui->regexGroupsWidget
           ->findItems(dialog.name(), Qt::MatchExactly)
           .isEmpty()) {
-      this->m_ui->regexGroupsWidget->addItem(dialog.name());
+      m_ui->regexGroupsWidget->addItem(dialog.name());
     }
 
-    this->writeSettings();
-    emit this->groupsChanged();
+    writeSettings();
+    emit groupsChanged();
   });
 
   // Delete
   connect(m_ui->regexGroupsWidget, &QWidget::customContextMenuRequested,
           [this](const QPoint& pos) {
-            auto globalPos = this->m_ui->regexGroupsWidget->mapToGlobal(pos);
+            auto globalPos = m_ui->regexGroupsWidget->mapToGlobal(pos);
             QMenu contextMenu;
             contextMenu.addAction("Delete", this, [this, &pos]() {
-              auto item = this->m_ui->regexGroupsWidget->itemAt(pos);
+              auto item = m_ui->regexGroupsWidget->itemAt(pos);
               delete item;
-              this->writeSettings();
-              emit this->groupsChanged();
+              writeSettings();
+              emit groupsChanged();
             });
 
             // Show context menu at handling position
@@ -83,7 +84,7 @@ void RegexGroupsWidget::readSettings()
     groups.append("angle");
   }
   foreach (const QString& group, groups) {
-    this->m_ui->regexGroupsWidget->addItem(group);
+    m_ui->regexGroupsWidget->addItem(group);
   }
   settings->endGroup();
 }
@@ -94,8 +95,8 @@ void RegexGroupsWidget::writeSettings()
   settings->beginGroup("acquisition");
 
   QStringList groups;
-  for (int i = 0; i < this->m_ui->regexGroupsWidget->count(); i++) {
-    QListWidgetItem* group = this->m_ui->regexGroupsWidget->item(i);
+  for (int i = 0; i < m_ui->regexGroupsWidget->count(); i++) {
+    QListWidgetItem* group = m_ui->regexGroupsWidget->item(i);
     groups.append(group->text());
   }
   settings->setValue("regexGroupNames", groups);
@@ -105,8 +106,8 @@ void RegexGroupsWidget::writeSettings()
 QStringList RegexGroupsWidget::regexGroups()
 {
   QStringList groups;
-  for (int i = 0; i < this->m_ui->regexGroupsWidget->count(); i++) {
-    QListWidgetItem* group = this->m_ui->regexGroupsWidget->item(i);
+  for (int i = 0; i < m_ui->regexGroupsWidget->count(); i++) {
+    QListWidgetItem* group = m_ui->regexGroupsWidget->item(i);
     groups.append(group->text());
   }
 

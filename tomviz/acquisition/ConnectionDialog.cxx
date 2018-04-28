@@ -15,6 +15,7 @@
 ******************************************************************************/
 
 #include "ConnectionDialog.h"
+
 #include "ui_ConnectionDialog.h"
 
 #include <QIntValidator>

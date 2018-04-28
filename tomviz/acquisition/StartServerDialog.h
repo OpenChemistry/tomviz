@@ -18,6 +18,7 @@
 #define tomvizStartServerDialog_h
 
 #include <QDialog>
+
 #include <QScopedPointer>
 
 namespace Ui {
@@ -33,7 +34,7 @@ class StartServerDialog : public QDialog
 public:
   explicit StartServerDialog(QWidget* parent = nullptr);
   ~StartServerDialog() override;
-  QString pythonExecutablePath() { return m_pythonExecutablePath; };
+  QString pythonExecutablePath() { return m_pythonExecutablePath; }
 
 private:
   QScopedPointer<Ui::StartServerDialog> m_ui;

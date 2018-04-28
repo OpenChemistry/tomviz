@@ -14,6 +14,7 @@
 
 ******************************************************************************/
 #include "DataPropertiesPanel.h"
+
 #include "ui_DataPropertiesPanel.h"
 
 #include "ActiveObjects.h"
@@ -298,7 +299,7 @@ void DataPropertiesPanel::onTiltAnglesModified(int row, int column)
 bool DataPropertiesPanel::eventFilter(QObject* obj, QEvent* event)
 {
   QKeyEvent* ke = dynamic_cast<QKeyEvent*>(event);
-  if (ke && obj == this->m_ui->TiltAnglesTable) {
+  if (ke && obj == m_ui->TiltAnglesTable) {
     if (ke->matches(QKeySequence::Paste) && ke->type() == QEvent::KeyPress) {
       QClipboard* clipboard = QGuiApplication::clipboard();
       const QMimeData* mimeData = clipboard->mimeData();
@@ -309,7 +310,7 @@ bool DataPropertiesPanel::eventFilter(QObject* obj, QEvent* event)
         for (const QString& row : rows) {
           angles << row.split("\t")[0];
         }
-        auto ranges = this->m_ui->TiltAnglesTable->selectedRanges();
+        auto ranges = m_ui->TiltAnglesTable->selectedRanges();
         // check if the table in the clipboard is of numbers
         for (const QString& angle : angles) {
           bool ok;

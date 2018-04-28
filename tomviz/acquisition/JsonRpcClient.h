@@ -17,10 +17,11 @@
 #ifndef TOMVIZ_JSONRPCCLIENT_H
 #define TOMVIZ_JSONRPCCLIENT_H
 
+#include <QObject>
+
 #include <QJsonObject>
 #include <QJsonParseError>
 #include <QNetworkReply>
-#include <QObject>
 
 class QNetworkAccessManager;
 
@@ -34,7 +35,6 @@ public:
   explicit JsonRpcReply(QObject* parent = 0) : QObject(parent) {}
 
 signals:
-
   /// Emitted when a result is received.
   void resultReceived(QJsonObject message);
 
@@ -42,10 +42,13 @@ signals:
   void errorReceived(QJsonObject message);
 
   void protocolError(const QString& errorMessage);
+
   void parseError(QJsonParseError::ParseError code,
                   const QString& errorMessage);
+
   void networkError(QNetworkReply::NetworkError code,
                     const QString& errorMessage);
+
   void httpError(int statusCode, const QString& errorMessage);
 };
 

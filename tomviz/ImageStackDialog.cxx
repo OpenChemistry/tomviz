@@ -15,6 +15,7 @@
 ******************************************************************************/
 
 #include "ImageStackDialog.h"
+
 #include "ui_ImageStackDialog.h"
 
 #include "ImageStackModel.h"
@@ -32,4 +33,5 @@ ImageStackDialog::ImageStackDialog(QWidget* parent, ImageStackModel* tableModel)
 }
 
 ImageStackDialog::~ImageStackDialog() = default;
+
 }

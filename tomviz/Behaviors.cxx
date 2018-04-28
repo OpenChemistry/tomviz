@@ -122,8 +122,6 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
   registerCustomOperatorUIs();
 }
 
-Behaviors::~Behaviors() = default;
-
 QString Behaviors::getMatplotlibColorMapFile()
 {
   QString path = QApplication::applicationDirPath() +

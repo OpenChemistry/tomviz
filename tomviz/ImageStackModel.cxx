@@ -18,6 +18,8 @@
 
 #include <QBrush>
 
+namespace tomviz {
+
 ImageStackModel::ImageStackModel(QObject* parent,
                                  const QList<ImageInfo>& filesInfo)
   : QAbstractTableModel(parent), m_filesInfo(filesInfo)
@@ -45,10 +47,8 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
       switch (col) {
         case 0:
           return m_filesInfo[row].fileInfo.fileName();
-
         case 1:
           return QString("%1").arg(m_filesInfo[row].m);
-
         case 2:
           return QString("%1").arg(m_filesInfo[row].n);
       }
@@ -86,10 +86,8 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
       switch (section) {
         case 0:
           return QString("Filename");
-
         case 1:
           return QString("X");
-
         case 2:
           return QString("Y");
       }
@@ -103,4 +101,6 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
 ImageInfo::ImageInfo(QString fileName, int m_, int n_, bool consistent_)
   : fileInfo(QFileInfo(fileName)), m(m_), n(n_), consistent(consistent_)
 {
+}
+
 }

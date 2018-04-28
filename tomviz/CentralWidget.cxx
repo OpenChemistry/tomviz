@@ -210,8 +210,7 @@ void HistogramMaker::makeHistogram2D(vtkSmartPointer<vtkImageData> input,
 //////////////////////////////////////////////////////////////////////////////////
 /**
  * \brief Data model holding a set of vtkTransferFunctionBoxItem instances used
- * to
- * edit a 2D transfer function.
+ * to edit a 2D transfer function.
  * \note Does not currently support insertion and removal of items.
  */
 class Transfer2DModel : public AbstractDataModel
@@ -224,7 +223,7 @@ public:
   {
     initializeRootItem();
     populate();
-  };
+  }
 
   ~Transfer2DModel() = default;
 
@@ -233,7 +232,7 @@ public:
     m_rootItem = new DataItemBox;
     m_rootItem->setData(0, Qt::DisplayRole, "Id");
     m_rootItem->setData(0, Qt::DisplayRole, "Name");
-  };
+  }
 
   /**
    * Initializes with a default TFBoxItem, which will be used to hold the
@@ -251,7 +250,7 @@ public:
   {
     const auto itemBox = static_cast<const DataItemBox*>(getItem(index));
     return itemBox->getReferencedDataConst();
-  };
+  }
 
   /**
    * Returns the first element of the list which refers to the default
@@ -373,7 +372,6 @@ void CentralWidget::setActiveModule(Module* module)
 
 void CentralWidget::setActiveOperator(Operator* op)
 {
-
   if (op != nullptr) {
     m_activeModule = nullptr;
     setColorMapDataSource(op->dataSource());

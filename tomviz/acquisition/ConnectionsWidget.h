@@ -17,11 +17,12 @@
 #ifndef tomvizConnectionsWidget_h
 #define tomvizConnectionsWidget_h
 
+#include <QWidget>
+
 #include "Connection.h"
 
 #include <QScopedPointer>
 #include <QVariantList>
-#include <QWidget>
 
 namespace Ui {
 class ConnectionsWidget;

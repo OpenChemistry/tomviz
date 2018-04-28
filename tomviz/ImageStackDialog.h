@@ -18,9 +18,8 @@
 #define tomvizImageStackDialog_h
 
 #include <QDialog>
-#include <QScopedPointer>
 
-class ImageStackModel;
+#include <QScopedPointer>
 
 namespace Ui {
 
@@ -28,6 +27,8 @@ class ImageStackDialog;
 }
 
 namespace tomviz {
+
+class ImageStackModel;
 
 class ImageStackDialog : public QDialog
 {

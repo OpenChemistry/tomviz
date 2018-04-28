@@ -18,6 +18,7 @@
 #define tomvizRegexGroupDialog_h
 
 #include <QDialog>
+
 #include <QScopedPointer>
 
 namespace Ui {
@@ -32,7 +33,7 @@ class RegexGroupDialog : public QDialog
 
 public:
   explicit RegexGroupDialog(const QString name = "", QWidget* parent = nullptr);
-  ~RegexGroupDialog();
+  ~RegexGroupDialog() override;
 
   QString name();
 

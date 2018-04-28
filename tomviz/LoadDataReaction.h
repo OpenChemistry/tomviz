@@ -16,11 +16,11 @@
 #ifndef tomvizLoadDataReaction_h
 #define tomvizLoadDataReaction_h
 
-#include "ImageStackModel.h"
-
 #include <pqReaction.h>
 
 #include <QJsonObject>
+
+#include "ImageStackModel.h"
 
 class vtkImageData;
 class vtkSMProxy;

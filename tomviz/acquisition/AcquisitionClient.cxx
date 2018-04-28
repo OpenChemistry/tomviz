@@ -17,6 +17,7 @@
 #include "AcquisitionClient.h"
 
 #include "JsonRpcClient.h"
+
 #include <QNetworkAccessManager>
 
 namespace tomviz {
@@ -119,7 +120,6 @@ AcquisitionClientImageRequest* AcquisitionClient::makeImageRequest(
 void AcquisitionClient::connectResultSignal(JsonRpcReply* reply,
                                             AcquisitionClientRequest* request)
 {
-
   QObject::connect(reply, &JsonRpcReply::resultReceived,
                    [reply, request](QJsonObject message) {
                      QJsonValue result = message["result"];
@@ -131,7 +131,6 @@ void AcquisitionClient::connectResultSignal(JsonRpcReply* reply,
 void AcquisitionClient::connectResultSignal(
   JsonRpcReply* reply, AcquisitionClientImageRequest* request)
 {
-
   QObject::connect(
     reply, &JsonRpcReply::resultReceived,
     [this, reply, request](QJsonObject message) {
@@ -168,7 +167,7 @@ void AcquisitionClient::connectResultSignal(
       QNetworkAccessManager* manager = new QNetworkAccessManager(this);
       QObject::connect(
         manager, &QNetworkAccessManager::finished,
-        [manager, request, meta](QNetworkReply* networkReply) {
+        [request, meta](QNetworkReply* networkReply) {
           if (networkReply->error() != QNetworkReply::NoError) {
             QJsonValue data(networkReply->error());
             emit request->error(networkReply->errorString(), data);
@@ -188,7 +187,6 @@ void AcquisitionClient::connectResultSignal(
 void AcquisitionClient::connectErrorSignals(
   JsonRpcReply* reply, AcquisitionClientBaseRequest* request)
 {
-
   QObject::connect(reply, &JsonRpcReply::errorReceived,
                    [reply, request](QJsonObject error) {
                      QString message = error["message"].toString();
