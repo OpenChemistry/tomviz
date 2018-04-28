@@ -20,7 +20,6 @@
 #include <QAbstractTableModel>
 #include <QFileInfo>
 #include <QModelIndex>
-#include <QObject>
 #include <QString>
 
 struct ImageInfo;

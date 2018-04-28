@@ -50,14 +50,9 @@
 #include <vtkTrivialProducer.h>
 
 #include <QDebug>
-#include <QDialog>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonArray>
-#include <QLabel>
-#include <QMessageBox>
-#include <QTableView>
-#include <QVBoxLayout>
 
 #include <sstream>
 

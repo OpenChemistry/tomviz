@@ -17,10 +17,10 @@
 #ifndef tomvizImageStackDialog_h
 #define tomvizImageStackDialog_h
 
-#include "ImageStackModel.h"
-
 #include <QDialog>
 #include <QScopedPointer>
+
+class ImageStackModel;
 
 namespace Ui {
 

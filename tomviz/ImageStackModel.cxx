@@ -17,10 +17,6 @@
 #include "ImageStackModel.h"
 
 #include <QBrush>
-#include <QFileInfo>
-#include <QModelIndex>
-#include <QObject>
-#include <QString>
 
 ImageStackModel::ImageStackModel(QObject* parent,
                                  const QList<ImageInfo>& filesInfo)

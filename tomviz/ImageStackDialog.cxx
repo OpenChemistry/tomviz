@@ -19,8 +19,6 @@
 
 #include "ImageStackModel.h"
 
-#include <QDialog>
-
 namespace tomviz {
 
 ImageStackDialog::ImageStackDialog(QWidget* parent, ImageStackModel* tableModel)
