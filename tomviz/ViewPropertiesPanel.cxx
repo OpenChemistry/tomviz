@@ -24,43 +24,31 @@
 
 namespace tomviz {
 
-class ViewPropertiesPanel::VPPInternals
-{
-public:
-  Ui::ViewPropertiesPanel Ui;
-
-  VPPInternals() {}
-};
-
 ViewPropertiesPanel::ViewPropertiesPanel(QWidget* parentObject)
-  : Superclass(parentObject), Internals(new ViewPropertiesPanel::VPPInternals())
+  : QWidget(parentObject), m_ui(new Ui::ViewPropertiesPanel)
 {
-  Ui::ViewPropertiesPanel& ui = this->Internals->Ui;
-  ui.setupUi(this);
+  m_ui->setupUi(this);
 
-  this->connect(ui.SearchBox, SIGNAL(advancedSearchActivated(bool)),
+  this->connect(m_ui->SearchBox, SIGNAL(advancedSearchActivated(bool)),
                 SLOT(updatePanel()));
-  this->connect(ui.SearchBox, SIGNAL(textChanged(const QString&)),
+  this->connect(m_ui->SearchBox, SIGNAL(textChanged(const QString&)),
                 SLOT(updatePanel()));
   this->connect(&ActiveObjects::instance(),
                 SIGNAL(viewChanged(vtkSMViewProxy*)),
                 SLOT(setView(vtkSMViewProxy*)));
-  this->connect(ui.ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
+  this->connect(m_ui->ProxiesWidget, SIGNAL(changeFinished(vtkSMProxy*)),
                 SLOT(render()));
 }
 
-ViewPropertiesPanel::~ViewPropertiesPanel()
-{
-}
+ViewPropertiesPanel::~ViewPropertiesPanel() = default;
 
 void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
 {
-  Ui::ViewPropertiesPanel& ui = this->Internals->Ui;
-  ui.ProxiesWidget->clear();
+  m_ui->ProxiesWidget->clear();
   if (view) {
-    ui.ProxiesWidget->addProxy(view, view->GetXMLLabel(), QStringList(), true);
+    m_ui->ProxiesWidget->addProxy(view, view->GetXMLLabel(), QStringList(), true);
   }
-  ui.ProxiesWidget->updateLayout();
+  m_ui->ProxiesWidget->updateLayout();
   this->updatePanel();
 }
 
@@ -75,8 +63,7 @@ void ViewPropertiesPanel::render()
 
 void ViewPropertiesPanel::updatePanel()
 {
-  Ui::ViewPropertiesPanel& ui = this->Internals->Ui;
-  ui.ProxiesWidget->filterWidgets(ui.SearchBox->isAdvancedSearchActive(),
-                                  ui.SearchBox->text());
+  m_ui->ProxiesWidget->filterWidgets(m_ui->SearchBox->isAdvancedSearchActive(),
+                                     m_ui->SearchBox->text());
 }
 }
