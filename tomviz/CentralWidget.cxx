@@ -29,6 +29,7 @@
 #include <vtkUnsignedShortArray.h>
 #include <vtkVector.h>
 
+#include <pqSettings.h>
 #include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMViewProxy.h>
@@ -282,11 +283,23 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   qRegisterMetaType<vtkSmartPointer<vtkImageData>>();
   qRegisterMetaType<vtkSmartPointer<vtkTable>>();
 
-  QList<int> sizes;
-  sizes << 200 << 200;
-  m_ui->splitter->setSizes(sizes);
+  // Setting the initial split size is trickier than you might expect, set the
+  // stretch to favor the 3D widget, and then wait for layout to complete to
+  // reallocate size if this is the first time this window is shown.
   m_ui->splitter->setStretchFactor(0, 0);
   m_ui->splitter->setStretchFactor(1, 1);
+  QTimer::singleShot(0, [this]() {
+    auto settings = pqApplicationCore::instance()->settings();
+    bool resize = settings->value("Tomviz.firstCentralWidget", true).toBool();
+    settings->setValue("Tomviz.firstCentralWidget", false);
+    if (resize) {
+      int mainWidgetSize = m_ui->splitter->size().height() - 150;
+      m_ui->splitter->setSizes({ 150, mainWidgetSize });
+    } else {
+      auto sizing = settings->value("Tomviz.centralSplitSizes").toByteArray();
+      m_ui->splitter->restoreState(sizing);
+    }
+  });
 
   connect(m_ui->histogramWidget, SIGNAL(colorMapUpdated()),
           SLOT(onColorMapUpdated()));
@@ -322,6 +335,8 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
 CentralWidget::~CentralWidget()
 {
+  auto settings = pqApplicationCore::instance()->settings();
+  settings->setValue("Tomviz.centralSplitSizes", m_ui->splitter->saveState());
   // disconnect all signals/slots
   disconnect(m_histogramGen, nullptr, nullptr, nullptr);
   // when the HistogramMaker is deleted, kill the background thread
