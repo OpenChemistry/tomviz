@@ -699,8 +699,8 @@ void MainWindow::onFirstWindowShow()
   QFile file(getAutosaveFile());
   if (!file.exists()) {
     QSettings* settings = pqApplicationCore::instance()->settings();
-    int showWelcome =
-      settings->value("GeneralSettings.ShowWelcomeDialog", 1).toInt();
+    bool showWelcome =
+      settings->value("GeneralSettings.ShowWelcomeDialog", true).toBool();
     if (showWelcome) {
       QString path =
         QApplication::applicationDirPath() + "/../share/tomviz/Data";

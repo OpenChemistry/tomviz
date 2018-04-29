@@ -59,6 +59,6 @@ void WelcomeDialog::onDoNotShowAgainStateChanged(int state)
   bool showDialog = (state != Qt::Checked);
 
   auto settings = pqApplicationCore::instance()->settings();
-  settings->setValue("GeneralSettings.ShowWelcomeDialog", showDialog ? 1 : 0);
+  settings->setValue("GeneralSettings.ShowWelcomeDialog", showDialog);
 }
 }
