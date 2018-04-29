@@ -18,9 +18,12 @@
 #define tomvizImageStackModel_h
 
 #include <QAbstractTableModel>
+
 #include <QFileInfo>
 #include <QModelIndex>
 #include <QString>
+
+namespace tomviz {
 
 struct ImageInfo;
 
@@ -49,5 +52,7 @@ struct ImageInfo
   int n;
   bool consistent;
 };
+
+}
 
 #endif

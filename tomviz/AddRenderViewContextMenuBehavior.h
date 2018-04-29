@@ -17,6 +17,7 @@
 #define tomvizAddRenderViewContextMenuBehavior_h
 
 #include <QObject>
+
 #include <QPoint>
 
 class QMenu;
@@ -29,7 +30,7 @@ class AddRenderViewContextMenuBehavior : public QObject
 
 public:
   AddRenderViewContextMenuBehavior(QObject* p);
-  ~AddRenderViewContextMenuBehavior();
+  ~AddRenderViewContextMenuBehavior() override;
 
 protected slots:
   void onViewAdded(pqView* view);

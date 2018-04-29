@@ -47,6 +47,7 @@ public:
   // Resume the automatic execution of the pipeline, will execution the
   // existing pipeline. If execute is true the entire pipeline will be executed.
   void resume(bool execute = true);
+
   // Resume the automatic execution of the pipeline, will execute the
   // existing pipeline starting at the given data source.
   void resume(DataSource* at);

@@ -40,7 +40,7 @@ class PipelineModel : public QAbstractItemModel
 
 public:
   explicit PipelineModel(QObject* parent = 0);
-  ~PipelineModel();
+  ~PipelineModel() override;
 
   QVariant data(const QModelIndex& index, int role) const override;
   bool setData(const QModelIndex& index, const QVariant& value,

@@ -17,6 +17,7 @@
 #define tomvizMoveActiveObject_h
 
 #include <QObject>
+
 #include <QPoint>
 #include <QPointer>
 

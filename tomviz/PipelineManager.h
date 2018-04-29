@@ -39,7 +39,7 @@ public slots:
 private:
   Q_DISABLE_COPY(PipelineManager)
   PipelineManager(QObject* parent = nullptr);
-  ~PipelineManager();
+  ~PipelineManager() override;
 
   QList<QPointer<Pipeline>> m_pipelines;
 };

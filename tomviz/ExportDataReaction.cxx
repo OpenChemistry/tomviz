@@ -16,6 +16,12 @@
 
 #include "ExportDataReaction.h"
 
+#include "ActiveObjects.h"
+#include "ConvertToFloatOperator.h"
+#include "EmdFormat.h"
+#include "Module.h"
+#include "Utilities.h"
+
 #include <pqActiveObjects.h>
 #include <pqProxyWidgetDialog.h>
 #include <pqSettings.h>
@@ -31,12 +37,6 @@
 #include <vtkTIFFWriter.h>
 #include <vtkTrivialProducer.h>
 #include <vtkUnsignedCharArray.h>
-
-#include "ActiveObjects.h"
-#include "ConvertToFloatOperator.h"
-#include "EmdFormat.h"
-#include "Module.h"
-#include "Utilities.h"
 
 #include <QCheckBox>
 #include <QDebug>

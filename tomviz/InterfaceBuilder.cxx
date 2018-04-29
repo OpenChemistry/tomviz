@@ -484,7 +484,7 @@ InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
 
 void InterfaceBuilder::setJSONDescription(const QString& description)
 {
-  this->setJSONDescription(QJsonDocument::fromJson(description.toLatin1()));
+  setJSONDescription(QJsonDocument::fromJson(description.toLatin1()));
 }
 
 void InterfaceBuilder::setJSONDescription(const QJsonDocument& description)
@@ -529,10 +529,10 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
     if (typeString == "bool") {
       addBoolWidget(layout, i + 1, parameterObject);
     } else if (typeString == "int") {
-      addNumericWidget<int>(layout, i + 1, parameterObject, this->m_dataSource);
+      addNumericWidget<int>(layout, i + 1, parameterObject, m_dataSource);
     } else if (typeString == "double") {
       addNumericWidget<double>(layout, i + 1, parameterObject,
-                               this->m_dataSource);
+                               m_dataSource);
     } else if (typeString == "enumeration") {
       addEnumerationWidget(layout, i + 1, parameterObject);
     } else if (typeString == "xyz_header") {
@@ -585,7 +585,7 @@ QLayout* InterfaceBuilder::buildInterface() const
     return layout;
   }
   auto parameters = parametersNode.toArray();
-  this->buildParameterInterface(layout, parameters);
+  buildParameterInterface(layout, parameters);
 
   return verticalLayout;
 }

@@ -34,7 +34,6 @@ class Behaviors : public QObject
 
 public:
   Behaviors(QMainWindow* mainWindow);
-  ~Behaviors() override;
 
   MoveActiveObject* moveActiveBehavior() { return m_moveActiveBehavior; }
 

@@ -49,7 +49,7 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
     m_client(new AcquisitionClient("http://localhost:8080/acquisition", this))
 {
   m_ui->setupUi(this);
-  this->setWindowFlags(Qt::Dialog);
+  setWindowFlags(Qt::Dialog);
 
   connect(m_ui->connectButton, SIGNAL(clicked(bool)), SLOT(connectToServer()));
   connect(m_ui->disconnectButton, SIGNAL(clicked(bool)),

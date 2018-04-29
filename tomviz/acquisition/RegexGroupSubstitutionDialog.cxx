@@ -15,6 +15,7 @@
 ******************************************************************************/
 
 #include "RegexGroupSubstitutionDialog.h"
+
 #include "ui_RegexGroupSubstitutionDialog.h"
 
 #include <QPalette>

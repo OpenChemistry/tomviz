@@ -25,12 +25,13 @@
 #include <pqServer.h>
 #include <pqView.h>
 
-#include <functional>
 #include <vtkNew.h>
 #include <vtkSMProxyIterator.h>
 #include <vtkSMRenderViewProxy.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
+
+#include <functional>
 
 namespace tomviz {
 
@@ -103,7 +104,7 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
 
   if (!m_activeDataSource.isNull() &&
       m_activeDataSource->pipeline() != nullptr) {
-    this->setActiveTransformedDataSource(
+    setActiveTransformedDataSource(
       m_activeDataSource->pipeline()->transformedDataSource());
   }
 }
@@ -113,7 +114,7 @@ void ActiveObjects::setSelectedDataSource(DataSource* source)
   m_selectedDataSource = source;
 
   if (!m_selectedDataSource.isNull()) {
-    this->setActiveDataSource(m_selectedDataSource);
+    setActiveDataSource(m_selectedDataSource);
   }
 }
 
@@ -228,8 +229,8 @@ DataSource* ActiveObjects::activeParentDataSource()
 {
 
   if (m_activeParentDataSource == nullptr) {
-    auto pipeline = this->activePipeline();
-    auto dataSource = this->activeDataSource();
+    auto pipeline = activePipeline();
+    auto dataSource = activeDataSource();
 
     if (dataSource == nullptr) {
       return nullptr;

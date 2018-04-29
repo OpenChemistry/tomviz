@@ -14,6 +14,7 @@
 
 ******************************************************************************/
 #include "Pipeline.h"
+
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
@@ -143,9 +144,9 @@ void Pipeline::pipelineBranchFinished(bool result)
         newChildDataSource->setForkable(false);
         newChildDataSource->setParent(this);
         lastOp->setChildDataSource(newChildDataSource);
-        auto rootDataSource = this->dataSource();
+        auto rootDataSource = dataSource();
         // connect signal to flow units and spacing to child data source.
-        connect(this->dataSource(), &DataSource::dataPropertiesChanged,
+        connect(dataSource(), &DataSource::dataPropertiesChanged,
                 [rootDataSource, newChildDataSource]() {
                   // Only flow the properties if no user modifications have been
                   // made.
@@ -255,7 +256,6 @@ DataSource* Pipeline::findTransformedDataSource(DataSource* dataSource)
 
 Operator* Pipeline::findTransformedDataSourceOperator(DataSource* dataSource)
 {
-
   if (dataSource == nullptr) {
     return nullptr;
   }
@@ -280,33 +280,33 @@ Operator* Pipeline::findTransformedDataSourceOperator(DataSource* dataSource)
 void Pipeline::addDataSource(DataSource* dataSource)
 {
   connect(dataSource, &DataSource::operatorAdded,
-          [this](Operator* op) { this->execute(op->dataSource(), true); });
+          [this](Operator* op) { execute(op->dataSource(), true); });
   // Wire up transformModified to execute pipeline
   connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
     // Extract out source and execute all.
     connect(op, &Operator::transformModified, this,
-            [this]() { this->execute(); });
+            [this]() { execute(); });
 
     // Ensure that new child data source signals are correctly wired up.
     connect(op, static_cast<void (Operator::*)(DataSource*)>(
                   &Operator::newChildDataSource),
-            [this](DataSource* ds) { this->addDataSource(ds); });
+            [this](DataSource* ds) { addDataSource(ds); });
 
     // We need to ensure we move add datasource to the end of the branch
     auto operators = op->dataSource()->operators();
     if (operators.size() > 1) {
       auto transformedDataSourceOp =
-        this->findTransformedDataSourceOperator(op->dataSource());
+        findTransformedDataSourceOperator(op->dataSource());
       if (transformedDataSourceOp != nullptr) {
         auto transformedDataSource = transformedDataSourceOp->childDataSource();
         transformedDataSourceOp->setChildDataSource(nullptr);
         op->setChildDataSource(transformedDataSource);
-        emit this->operatorAdded(op, transformedDataSource);
+        emit operatorAdded(op, transformedDataSource);
       } else {
-        emit this->operatorAdded(op);
+        emit operatorAdded(op);
       }
     } else {
-      emit this->operatorAdded(op);
+      emit operatorAdded(op);
     }
   });
   // Wire up operatorRemoved. TODO We need to check the branch of the
@@ -336,11 +336,11 @@ void Pipeline::addDataSource(DataSource* dataSource)
       // If we can't safely cancel the execution then trigger the rerun of the
       // pipeline.
       if (!m_future->cancel(op)) {
-        this->execute(op->dataSource());
+        execute(op->dataSource());
       }
     } else {
       // Trigger the pipeline to run
-      this->execute(op->dataSource());
+      execute(op->dataSource());
     }
   });
 }
@@ -394,7 +394,7 @@ Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
 
   // If the op has not been added then we can just use the "Output" data source.
   if (!operators.isEmpty() && !operators.contains(op)) {
-    auto transformed = this->findTransformedDataSource(m_data);
+    auto transformed = findTransformedDataSource(m_data);
     auto dataObject = vtkImageData::SafeDownCast(transformed->copyData());
     auto imageFuture = new ImageFuture(op, dataObject);
     dataObject->FastDelete();
@@ -427,19 +427,19 @@ Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
   }
 }
 
-DataSource* Pipeline::transformedDataSource(DataSource* dataSource)
+DataSource* Pipeline::transformedDataSource(DataSource* ds)
 {
-  if (dataSource == nullptr) {
-    dataSource = this->dataSource();
+  if (ds == nullptr) {
+    ds = dataSource();
   }
 
-  auto transformed = this->findTransformedDataSource(dataSource);
+  auto transformed = findTransformedDataSource(ds);
   if (transformed != nullptr) {
     return transformed;
   }
 
   // Default to dataSource at being of pipeline
-  return dataSource;
+  return ds;
 }
 
 } // tomviz namespace

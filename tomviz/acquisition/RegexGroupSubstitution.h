@@ -30,15 +30,15 @@ public:
                          const QString& substitution);
   ~RegexGroupSubstitution();
 
-  QString groupName() const { return m_groupName; };
-  void setGroupName(const QString& groupName) { m_groupName = groupName; };
-  QString regex() const { return m_regex; };
-  void setRegex(const QString& regex) { m_regex = regex; };
-  QString substitution() const { return m_substitution; };
+  QString groupName() const { return m_groupName; }
+  void setGroupName(const QString& groupName) { m_groupName = groupName; }
+  QString regex() const { return m_regex; }
+  void setRegex(const QString& regex) { m_regex = regex; }
+  QString substitution() const { return m_substitution; }
   void setSubstitution(const QString& substitution)
   {
     m_substitution = substitution;
-  };
+  }
 
   static void registerType();
 

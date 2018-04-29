@@ -15,6 +15,7 @@
 ******************************************************************************/
 
 #include "RegexGroupDialog.h"
+
 #include "ui_RegexGroupDialog.h"
 
 namespace tomviz {

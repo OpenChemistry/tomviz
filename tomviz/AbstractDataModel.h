@@ -13,10 +13,11 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef __AbstractDataModel_h
-#define __AbstractDataModel_h
+#ifndef tomvizAbstractDataModel_h
+#define tomvizAbstractDataModel_h
 
 #include <QAbstractItemModel>
+
 #include <QTreeWidgetItem>
 
 /**
@@ -35,29 +36,29 @@ public:
   const QModelIndex getDefaultIndex();
 
 protected:
-  AbstractDataModel(QObject* parent_ = nullptr);
+  AbstractDataModel(QObject* parent = nullptr);
   ~AbstractDataModel() override;
 
   /**
   * @{
   * QAbstractItemModel implementation
   */
-  int rowCount(const QModelIndex& parent_ = QModelIndex()) const override;
-  int columnCount(const QModelIndex& parent_ = QModelIndex()) const override;
+  int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+  int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
   QModelIndex index(int row, int column,
-                    const QModelIndex& parent_ = QModelIndex()) const override;
+                    const QModelIndex& parent = QModelIndex()) const override;
 
-  QModelIndex parent(const QModelIndex& index_) const override;
-  QVariant data(const QModelIndex& index_,
+  QModelIndex parent(const QModelIndex& index) const override;
+  QVariant data(const QModelIndex& index,
                 int role = Qt::DisplayRole) const override;
-  bool setData(const QModelIndex& index_, const QVariant& value,
+  bool setData(const QModelIndex& index, const QVariant& value,
                int role) override;
 
   QVariant headerData(int section, Qt::Orientation orientation,
                       int role = Qt::DisplayRole) const override;
 
-  Qt::ItemFlags flags(const QModelIndex& index_) const override;
+  Qt::ItemFlags flags(const QModelIndex& index) const override;
 
   bool removeRows(int row, int count, const QModelIndex& parent) override;
   /**
@@ -81,13 +82,11 @@ protected:
 
   /**
   * More comprehensive validation. In addition to the standard
-  * QModelIndex::isValid
-  * it checks the upper bounds. Because it internally calls
-  * QModelIndex::parent()
-  * (and thus QAbstractItemMode::parent()) it should never be called from within
-  * parent().
+  * QModelIndex::isValid it checks the upper bounds. Because it internally calls
+  * QModelIndex::parent() (and thus QAbstractItemMode::parent()) it should never
+  * be called from within parent().
   */
-  bool isIndexValidUpperBound(const QModelIndex& index_) const;
+  bool isIndexValidUpperBound(const QModelIndex& index) const;
 
 protected:
   QTreeWidgetItem* m_rootItem = nullptr;
@@ -143,4 +142,4 @@ const T& DataItem<T>::getReferencedDataConst() const
 {
   return m_data;
 }
-#endif //__AbstractDataModel_h
+#endif // tomvizAbstractDataModel_h

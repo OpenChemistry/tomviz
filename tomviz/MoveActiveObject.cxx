@@ -22,22 +22,23 @@
 #include "ModuleManager.h"
 #include "Utilities.h"
 
-#include "pqView.h"
-#include "vtkBoundingBox.h"
-#include "vtkBoxRepresentation.h"
-#include "vtkBoxWidget2.h"
-#include "vtkCommand.h"
-#include "vtkDataObject.h"
-#include "vtkEvent.h"
-#include "vtkEventQtSlotConnect.h"
-#include "vtkImageData.h"
-#include "vtkRenderWindow.h"
-#include "vtkRenderWindowInteractor.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMViewProxy.h"
-#include "vtkTrivialProducer.h"
-#include "vtkWidgetEvent.h"
-#include "vtkWidgetEventTranslator.h"
+#include <pqView.h>
+
+#include <vtkBoundingBox.h>
+#include <vtkBoxRepresentation.h>
+#include <vtkBoxWidget2.h>
+#include <vtkCommand.h>
+#include <vtkDataObject.h>
+#include <vtkEvent.h>
+#include <vtkEventQtSlotConnect.h>
+#include <vtkImageData.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkSMSourceProxy.h>
+#include <vtkSMViewProxy.h>
+#include <vtkTrivialProducer.h>
+#include <vtkWidgetEvent.h>
+#include <vtkWidgetEventTranslator.h>
 
 namespace tomviz {
 

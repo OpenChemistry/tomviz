@@ -18,6 +18,7 @@
 #define tomvizConnectionDialog_h
 
 #include <QDialog>
+
 #include <QScopedPointer>
 
 namespace Ui {
