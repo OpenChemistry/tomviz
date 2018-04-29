@@ -27,10 +27,9 @@ class ReconstructionWidget : public QWidget
 
 public:
   ReconstructionWidget(DataSource* source, QWidget* parent = nullptr);
-  virtual ~ReconstructionWidget();
+  ~ReconstructionWidget() override;
 
 public slots:
-
   void startReconstruction();
   void updateProgress(int progress);
   void updateIntermediateResults(std::vector<float> reconSlice);

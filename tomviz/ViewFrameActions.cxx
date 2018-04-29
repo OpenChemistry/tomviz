@@ -23,8 +23,6 @@ ViewFrameActions::ViewFrameActions(QObject* p)
 {
 }
 
-ViewFrameActions::~ViewFrameActions() = default;
-
 QList<pqStandardViewFrameActionsImplementation::ViewType>
 ViewFrameActions::availableViewTypes()
 {

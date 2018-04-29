@@ -27,7 +27,7 @@ QVTKGLWidget::QVTKGLWidget(QWidget* parent, Qt::WindowFlags f)
 {
   // Set some defaults for our render window.
   vtkNew<vtkGenericOpenGLRenderWindow> window;
-  SetRenderWindow(window.Get());
+  SetRenderWindow(window);
   QSurfaceFormat glFormat = QVTKOpenGLWidget::defaultFormat();
   glFormat.setSamples(8);
   setFormat(glFormat);
@@ -44,7 +44,7 @@ void QVTKGLWidget::setEnableHiDPI(bool)
     // In my testing they seem to be quite a bit bigger that the Qt text sizes.
     dpi = (dpi - 72) * 0.56 + 72;
     RenderWindow->SetDPI(dpi);
-    InteractorAdaptor->SetDevicePixelRatio(this->devicePixelRatio());
+    InteractorAdaptor->SetDevicePixelRatio(devicePixelRatio());
   }
 }
 }

@@ -30,7 +30,6 @@ class Operator;
 class RotateAlignWidget : public CustomPythonOperatorWidget
 {
   Q_OBJECT
-  typedef CustomPythonOperatorWidget Superclass;
 
 public:
   RotateAlignWidget(Operator* op, vtkSmartPointer<vtkImageData> image,

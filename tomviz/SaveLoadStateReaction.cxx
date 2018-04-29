@@ -50,7 +50,7 @@ bool SaveLoadStateReaction::saveState()
 {
   QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"),
                          QString(),
-                         "tomviz state files (*.tvsm);;All files (*)");
+                         "Tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
   fileDialog.setAcceptMode(QFileDialog::AcceptSave);
   fileDialog.setFileMode(QFileDialog::AnyFile);
@@ -58,7 +58,7 @@ bool SaveLoadStateReaction::saveState()
     QString filename = fileDialog.selectedFiles()[0];
     QString format = fileDialog.selectedNameFilter();
     if (!filename.endsWith(".tvsm") &&
-        format == "tomviz state files (*.tvsm)") {
+        format == "Tomviz state files (*.tvsm)") {
       filename = QString("%1%2").arg(filename, ".tvsm");
     }
     return SaveLoadStateReaction::saveState(filename);
@@ -70,7 +70,7 @@ bool SaveLoadStateReaction::loadState()
 {
   QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"),
                          QString(),
-                         "tomviz state files (*.tvsm);;All files (*)");
+                         "Tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");
   fileDialog.setFileMode(QFileDialog::ExistingFile);
   if (fileDialog.exec() == QDialog::Accepted) {

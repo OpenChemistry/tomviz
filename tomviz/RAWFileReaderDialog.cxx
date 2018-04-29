@@ -76,9 +76,7 @@ RAWFileReaderDialog::RAWFileReaderDialog(vtkSMProxy* reader, QWidget* p)
   sanityCheckSize();
 }
 
-RAWFileReaderDialog::~RAWFileReaderDialog()
-{
-}
+RAWFileReaderDialog::~RAWFileReaderDialog() = default;
 
 void RAWFileReaderDialog::dimensions(size_t* output)
 {
@@ -174,9 +172,9 @@ int RAWFileReaderDialog::vtkDataTypeToIndex(int vtkType)
 
 void RAWFileReaderDialog::sanityCheckSize()
 {
-  int dataType = this->vtkDataType();
+  int dataType = vtkDataType();
   size_t dims[3];
-  this->dimensions(dims);
+  dimensions(dims);
   size_t numComponents = m_ui->numComponents->value();
   size_t dataSize = 0;
   switch (dataType) {
@@ -239,7 +237,7 @@ void RAWFileReaderDialog::onAccepted()
   vtkSMPropertyHelper numComps(m_reader, "NumberOfScalarComponents");
   vtkSMPropertyHelper dims(m_reader, "DataExtent");
 
-  scalarType.Set(this->vtkDataType());
+  scalarType.Set(vtkDataType());
   byteOrder.Set(m_ui->endianness->currentIndex());
   numComps.Set(m_ui->numComponents->value());
 

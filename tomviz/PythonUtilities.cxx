@@ -18,9 +18,10 @@
 #include "vtkPython.h" // must be first
 
 #include "Logger.h"
-#include "vtkPythonInterpreter.h"
-#include "vtkPythonUtil.h"
-#include "vtkSmartPyObject.h"
+
+#include <vtkPythonInterpreter.h>
+#include <vtkPythonUtil.h>
+#include <vtkSmartPyObject.h>
 
 #include <pybind11/pybind11.h>
 
@@ -199,7 +200,7 @@ Python::Dict& Python::Dict::operator=(const Python::Object& other)
 
 Python::Object Python::Dict::operator[](const QString& key)
 {
-  return this->operator[](key.toLatin1().data());
+  return operator[](key.toLatin1().data());
 }
 
 Python::Object Python::Dict::operator[](const char* key)

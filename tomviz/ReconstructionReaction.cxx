@@ -17,9 +17,8 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "LoadDataReaction.h"
 #include "Pipeline.h"
-#include "pqCoreUtilities.h"
+
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
 
