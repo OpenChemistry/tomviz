@@ -24,16 +24,17 @@
 #include "Utilities.h"
 #include "Variant.h"
 
-#include "pqActiveObjects.h"
-#include "pqRenderView.h"
-#include "vtkImageData.h"
-#include "vtkNew.h"
-#include "vtkSMProxyIterator.h"
-#include "vtkSMRenderViewProxy.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSmartPointer.h"
-#include "vtkTrivialProducer.h"
+#include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkSmartPointer.h>
+#include <vtkTrivialProducer.h>
+
+#include <pqActiveObjects.h>
+#include <pqRenderView.h>
+#include <vtkSMProxyIterator.h>
+#include <vtkSMRenderViewProxy.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMSourceProxy.h>
 
 #include <QDebug>
 #include <QDialog>
@@ -53,15 +54,12 @@ namespace {
 class PythonGeneratedDataSource : public QObject
 {
   Q_OBJECT
-  typedef QObject Superclass;
 
 public:
   PythonGeneratedDataSource(const QString& l, QObject* p = nullptr)
-    : Superclass(p), label(l)
+    : QObject(p), label(l)
   {
   }
-
-  ~PythonGeneratedDataSource() {}
 
   void setScript(const QString& script)
   {
@@ -178,11 +176,10 @@ int PythonGeneratedDataSource::number_of_scripts = 0;
 class ShapeWidget : public QWidget
 {
   Q_OBJECT
-  typedef QWidget Superclass;
 
 public:
   ShapeWidget(QWidget* p = nullptr)
-    : Superclass(p), xSpinBox(new QSpinBox(this)), ySpinBox(new QSpinBox(this)),
+    : QWidget(p), xSpinBox(new QSpinBox(this)), ySpinBox(new QSpinBox(this)),
       zSpinBox(new QSpinBox(this))
   {
     QHBoxLayout* boundsLayout = new QHBoxLayout;
@@ -210,8 +207,6 @@ public:
 
     this->setLayout(boundsLayout);
   }
-
-  ~ShapeWidget() {}
 
   void getShape(int shape[3])
   {
@@ -247,29 +242,18 @@ private:
 
 namespace tomviz {
 
-class PythonGeneratedDatasetReaction::PGDRInternal
-{
-public:
-  QString scriptLabel;
-  QString scriptSource;
-};
-
 PythonGeneratedDatasetReaction::PythonGeneratedDatasetReaction(
   QAction* parentObject, const QString& l, const QString& s)
-  : Superclass(parentObject), Internals(new PGDRInternal)
+  : pqReaction(parentObject)
 {
-  this->Internals->scriptLabel = l;
-  this->Internals->scriptSource = s;
-}
-
-PythonGeneratedDatasetReaction::~PythonGeneratedDatasetReaction()
-{
+  m_scriptLabel = l;
+  m_scriptSource = s;
 }
 
 void PythonGeneratedDatasetReaction::addDataset()
 {
-  PythonGeneratedDataSource generator(this->Internals->scriptLabel);
-  if (this->Internals->scriptLabel == "Constant Dataset") {
+  PythonGeneratedDataSource generator(m_scriptLabel);
+  if (m_scriptLabel == "Constant Dataset") {
     QDialog dialog;
     dialog.setWindowTitle("Generate Constant Dataset");
     ShapeWidget* shapeWidget = new ShapeWidget(&dialog);
@@ -296,7 +280,7 @@ void PythonGeneratedDatasetReaction::addDataset()
       return;
     }
 
-    generator.setScript(this->Internals->scriptSource);
+    generator.setScript(m_scriptSource);
     QMap<QString, QVariant> args;
     args["CONSTANT"] = constant->value();
     generator.setArguments(args);
@@ -305,7 +289,7 @@ void PythonGeneratedDatasetReaction::addDataset()
     shapeWidget->getShape(shape);
     LoadDataReaction::dataSourceAdded(generator.createDataSource(shape), true,
                                       false);
-  } else if (this->Internals->scriptLabel == "Random Particles") {
+  } else if (m_scriptLabel == "Random Particles") {
     QDialog dialog;
     dialog.setWindowTitle("Generate Random Particles");
     QVBoxLayout* layout = new QVBoxLayout; // overall layout
@@ -369,7 +353,7 @@ void PythonGeneratedDatasetReaction::addDataset()
 
     // substitute values
     if (dialog.exec() == QDialog::Accepted) {
-      generator.setScript(this->Internals->scriptSource);
+      generator.setScript(m_scriptSource);
       QMap<QString, QVariant> args;
       args["p_in"] = innerStructureParameter->value();
       args["p_s"] = shapeParameter->value();
@@ -381,7 +365,7 @@ void PythonGeneratedDatasetReaction::addDataset()
       LoadDataReaction::dataSourceAdded(generator.createDataSource(shape), true,
                                         false);
     }
-  } else if (this->Internals->scriptLabel == "Electron Beam Shape") {
+  } else if (m_scriptLabel == "Electron Beam Shape") {
     QDialog dialog;
     dialog.setWindowTitle("Generate Electron Beam Shape");
     QVBoxLayout* layout = new QVBoxLayout; // overall layout
@@ -527,7 +511,7 @@ void PythonGeneratedDatasetReaction::addDataset()
 
     // substitute values
     if (dialog.exec() == QDialog::Accepted) {
-      generator.setScript(this->Internals->scriptSource);
+      generator.setScript(m_scriptSource);
       QMap<QString, QVariant> args;
       args["voltage"] = voltage->value();
       args["alpha_max"] = alpha_max->value();
