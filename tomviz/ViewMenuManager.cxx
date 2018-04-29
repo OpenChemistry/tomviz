@@ -16,15 +16,16 @@
 
 #include "ViewMenuManager.h"
 
-#include "pqCoreUtilities.h"
-#include "pqView.h"
-#include "vtkCommand.h"
-#include "vtkGridAxes3DActor.h"
-#include "vtkProperty.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMViewProxy.h"
-#include "vtkTextProperty.h"
+#include <pqCoreUtilities.h>
+#include <pqView.h>
+#include <vtkSMPropertyHelper.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMViewProxy.h>
+
+#include <vtkCommand.h>
+#include <vtkGridAxes3DActor.h>
+#include <vtkProperty.h>
+#include <vtkTextProperty.h>
 
 #include <QAction>
 #include <QActionGroup>
@@ -41,125 +42,125 @@
 namespace tomviz {
 
 ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
-  : pqViewMenuManager(mainWindow, menu), perspectiveProjectionAction(nullptr),
-    orthographicProjectionAction(nullptr), scaleLegendCubeAction(nullptr),
-    scaleLegendRulerAction(nullptr), hideScaleLegendAction(nullptr)
+  : pqViewMenuManager(mainWindow, menu), m_perspectiveProjectionAction(nullptr),
+    m_orthographicProjectionAction(nullptr), m_scaleLegendCubeAction(nullptr),
+    m_scaleLegendRulerAction(nullptr), m_hideScaleLegendAction(nullptr)
 {
-  this->viewPropertiesDialog = new QDialog(mainWindow);
-  this->viewPropertiesDialog->setWindowTitle("View Properties");
+  m_viewPropertiesDialog = new QDialog(mainWindow);
+  m_viewPropertiesDialog->setWindowTitle("View Properties");
   ViewPropertiesPanel* panel =
-    new ViewPropertiesPanel(this->viewPropertiesDialog);
+    new ViewPropertiesPanel(m_viewPropertiesDialog);
   QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(panel);
-  this->viewPropertiesDialog->setLayout(layout);
-  this->connect(this->viewPropertiesDialog, SIGNAL(finished(int)),
+  m_viewPropertiesDialog->setLayout(layout);
+  connect(m_viewPropertiesDialog, SIGNAL(finished(int)),
                 SLOT(viewPropertiesDialogHidden()));
 
-  this->showViewPropertiesAction = new QAction("View Properties", this->Menu);
-  this->showViewPropertiesAction->setCheckable(true);
-  this->connect(this->showViewPropertiesAction, SIGNAL(triggered(bool)),
+  m_showViewPropertiesAction = new QAction("View Properties", Menu);
+  m_showViewPropertiesAction->setCheckable(true);
+  connect(m_showViewPropertiesAction, SIGNAL(triggered(bool)),
                 SLOT(showViewPropertiesDialog(bool)));
-  this->View = ActiveObjects::instance().activeView();
-  if (this->View) {
-    this->ViewObserverId =
-      pqCoreUtilities::connect(this->View, vtkCommand::PropertyModifiedEvent,
+  m_view = ActiveObjects::instance().activeView();
+  if (m_view) {
+    m_viewObserverId =
+      pqCoreUtilities::connect(m_view, vtkCommand::PropertyModifiedEvent,
                                this, SLOT(onViewPropertyChanged()));
   }
-  this->connect(&ActiveObjects::instance(),
+  connect(&ActiveObjects::instance(),
                 SIGNAL(viewChanged(vtkSMViewProxy*)), SLOT(onViewChanged()));
-  this->Menu->addSeparator();
+  Menu->addSeparator();
   // Projection modes
   QActionGroup* projectionGroup = new QActionGroup(this);
 
-  this->perspectiveProjectionAction =
-    this->Menu->addAction("Perspective Projection");
-  this->perspectiveProjectionAction->setCheckable(true);
-  this->perspectiveProjectionAction->setActionGroup(projectionGroup);
-  this->perspectiveProjectionAction->setChecked(true);
-  this->connect(this->perspectiveProjectionAction, SIGNAL(triggered()),
+  m_perspectiveProjectionAction =
+    Menu->addAction("Perspective Projection");
+  m_perspectiveProjectionAction->setCheckable(true);
+  m_perspectiveProjectionAction->setActionGroup(projectionGroup);
+  m_perspectiveProjectionAction->setChecked(true);
+  connect(m_perspectiveProjectionAction, SIGNAL(triggered()),
                 SLOT(setProjectionModeToPerspective()));
-  this->orthographicProjectionAction =
-    this->Menu->addAction("Orthographic Projection");
-  this->orthographicProjectionAction->setCheckable(true);
-  this->orthographicProjectionAction->setActionGroup(projectionGroup);
-  this->orthographicProjectionAction->setChecked(false);
-  this->connect(this->orthographicProjectionAction, SIGNAL(triggered()),
+  m_orthographicProjectionAction =
+    Menu->addAction("Orthographic Projection");
+  m_orthographicProjectionAction->setCheckable(true);
+  m_orthographicProjectionAction->setActionGroup(projectionGroup);
+  m_orthographicProjectionAction->setChecked(false);
+  connect(m_orthographicProjectionAction, SIGNAL(triggered()),
                 SLOT(setProjectionModeToOrthographic()));
 
-  this->Menu->addSeparator();
+  Menu->addSeparator();
 
-  this->scaleLegendCubeAction = this->Menu->addAction("Show Legend as Cube");
-  this->scaleLegendCubeAction->setCheckable(true);
-  this->scaleLegendRulerAction = this->Menu->addAction("Show Legend as Ruler");
-  this->scaleLegendRulerAction->setCheckable(true);
-  this->hideScaleLegendAction = this->Menu->addAction("Hide Legend");
-  this->hideScaleLegendAction->setEnabled(false);
+  m_scaleLegendCubeAction = Menu->addAction("Show Legend as Cube");
+  m_scaleLegendCubeAction->setCheckable(true);
+  m_scaleLegendRulerAction = Menu->addAction("Show Legend as Ruler");
+  m_scaleLegendRulerAction->setCheckable(true);
+  m_hideScaleLegendAction = Menu->addAction("Hide Legend");
+  m_hideScaleLegendAction->setEnabled(false);
 
-  connect(this->scaleLegendCubeAction, &QAction::triggered, this, [&]() {
-    this->setScaleLegendStyle(ScaleLegendStyle::Cube);
-    this->setScaleLegendVisibility(true);
-    this->scaleLegendCubeAction->setChecked(true);
-    this->scaleLegendRulerAction->setChecked(false);
-    this->hideScaleLegendAction->setEnabled(true);
+  connect(m_scaleLegendCubeAction, &QAction::triggered, this, [&]() {
+    setScaleLegendStyle(ScaleLegendStyle::Cube);
+    setScaleLegendVisibility(true);
+    m_scaleLegendCubeAction->setChecked(true);
+    m_scaleLegendRulerAction->setChecked(false);
+    m_hideScaleLegendAction->setEnabled(true);
   });
 
-  connect(this->scaleLegendRulerAction, &QAction::triggered, this, [&]() {
-    this->setScaleLegendStyle(ScaleLegendStyle::Ruler);
-    this->setScaleLegendVisibility(true);
-    this->scaleLegendCubeAction->setChecked(false);
-    this->scaleLegendRulerAction->setChecked(true);
-    this->hideScaleLegendAction->setEnabled(true);
+  connect(m_scaleLegendRulerAction, &QAction::triggered, this, [&]() {
+    setScaleLegendStyle(ScaleLegendStyle::Ruler);
+    setScaleLegendVisibility(true);
+    m_scaleLegendCubeAction->setChecked(false);
+    m_scaleLegendRulerAction->setChecked(true);
+    m_hideScaleLegendAction->setEnabled(true);
   });
 
-  connect(this->hideScaleLegendAction, &QAction::triggered, this, [&]() {
-    this->setScaleLegendVisibility(false);
-    this->hideScaleLegendAction->setDisabled(true);
-    this->scaleLegendCubeAction->setChecked(false);
-    this->scaleLegendRulerAction->setChecked(false);
+  connect(m_hideScaleLegendAction, &QAction::triggered, this, [&]() {
+    setScaleLegendVisibility(false);
+    m_hideScaleLegendAction->setDisabled(true);
+    m_scaleLegendCubeAction->setChecked(false);
+    m_scaleLegendRulerAction->setChecked(false);
   });
 
-  this->Menu->addSeparator();
+  Menu->addSeparator();
 
   // Show view properties
-  this->showViewPropertiesAction = this->Menu->addAction("View Properties");
-  this->showViewPropertiesAction->setCheckable(true);
-  this->showViewPropertiesAction->setChecked(false);
-  this->connect(this->showViewPropertiesAction, SIGNAL(triggered(bool)),
+  m_showViewPropertiesAction = Menu->addAction("View Properties");
+  m_showViewPropertiesAction->setCheckable(true);
+  m_showViewPropertiesAction->setChecked(false);
+  connect(m_showViewPropertiesAction, SIGNAL(triggered(bool)),
                 SLOT(showViewPropertiesDialog(bool)));
 }
 
 ViewMenuManager::~ViewMenuManager()
 {
-  if (this->View) {
-    this->View->RemoveObserver(this->ViewObserverId);
+  if (m_view) {
+    m_view->RemoveObserver(m_viewObserverId);
   }
 }
 
 void ViewMenuManager::showViewPropertiesDialog(bool show)
 {
   if (show) {
-    this->viewPropertiesDialog->show();
+    m_viewPropertiesDialog->show();
   } else {
-    this->viewPropertiesDialog->accept();
+    m_viewPropertiesDialog->accept();
   }
 }
 
 void ViewMenuManager::viewPropertiesDialogHidden()
 {
-  this->showViewPropertiesAction->setChecked(false);
+  m_showViewPropertiesAction->setChecked(false);
 }
 
 void ViewMenuManager::setProjectionModeToPerspective()
 {
-  if (!this->View->GetProperty("CameraParallelProjection")) {
+  if (!m_view->GetProperty("CameraParallelProjection")) {
     return;
   }
   int parallel =
-    vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
+    vtkSMPropertyHelper(m_view, "CameraParallelProjection").GetAsInt();
   if (parallel) {
-    vtkSMPropertyHelper(this->View, "CameraParallelProjection").Set(0);
-    this->View->UpdateVTKObjects();
-    pqView* view = tomviz::convert<pqView*>(this->View);
+    vtkSMPropertyHelper(m_view, "CameraParallelProjection").Set(0);
+    m_view->UpdateVTKObjects();
+    pqView* view = tomviz::convert<pqView*>(m_view);
     if (view) {
       view->render();
     }
@@ -168,15 +169,15 @@ void ViewMenuManager::setProjectionModeToPerspective()
 
 void ViewMenuManager::setProjectionModeToOrthographic()
 {
-  if (!this->View->GetProperty("CameraParallelProjection")) {
+  if (!m_view->GetProperty("CameraParallelProjection")) {
     return;
   }
   int parallel =
-    vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
+    vtkSMPropertyHelper(m_view, "CameraParallelProjection").GetAsInt();
   if (!parallel) {
-    vtkSMPropertyHelper(this->View, "CameraParallelProjection").Set(1);
-    this->View->UpdateVTKObjects();
-    pqView* view = tomviz::convert<pqView*>(this->View);
+    vtkSMPropertyHelper(m_view, "CameraParallelProjection").Set(1);
+    m_view->UpdateVTKObjects();
+    pqView* view = tomviz::convert<pqView*>(m_view);
     if (view) {
       view->render();
     }
@@ -185,50 +186,50 @@ void ViewMenuManager::setProjectionModeToOrthographic()
 
 void ViewMenuManager::onViewPropertyChanged()
 {
-  if (!this->perspectiveProjectionAction ||
-      !this->orthographicProjectionAction) {
+  if (!m_perspectiveProjectionAction ||
+      !m_orthographicProjectionAction) {
     return;
   }
-  if (!this->View->GetProperty("CameraParallelProjection")) {
+  if (!m_view->GetProperty("CameraParallelProjection")) {
     return;
   }
   int parallel =
-    vtkSMPropertyHelper(this->View, "CameraParallelProjection").GetAsInt();
-  if (parallel && this->perspectiveProjectionAction->isChecked()) {
-    this->orthographicProjectionAction->setChecked(true);
-  } else if (!parallel && this->orthographicProjectionAction->isChecked()) {
-    this->perspectiveProjectionAction->setChecked(true);
+    vtkSMPropertyHelper(m_view, "CameraParallelProjection").GetAsInt();
+  if (parallel && m_perspectiveProjectionAction->isChecked()) {
+    m_orthographicProjectionAction->setChecked(true);
+  } else if (!parallel && m_orthographicProjectionAction->isChecked()) {
+    m_perspectiveProjectionAction->setChecked(true);
   }
 }
 
 void ViewMenuManager::onViewChanged()
 {
-  if (this->View) {
-    this->View->RemoveObserver(this->ViewObserverId);
+  if (m_view) {
+    m_view->RemoveObserver(m_viewObserverId);
   }
-  this->View = ActiveObjects::instance().activeView();
-  if (this->View) {
-    this->ViewObserverId =
-      pqCoreUtilities::connect(this->View, vtkCommand::PropertyModifiedEvent,
+  m_view = ActiveObjects::instance().activeView();
+  if (m_view) {
+    m_viewObserverId =
+      pqCoreUtilities::connect(m_view, vtkCommand::PropertyModifiedEvent,
                                this, SLOT(onViewPropertyChanged()));
-    if (this->View->GetProperty("AxesGrid")) {
-      vtkSMPropertyHelper axesGridProp(this->View, "AxesGrid");
+    if (m_view->GetProperty("AxesGrid")) {
+      vtkSMPropertyHelper axesGridProp(m_view, "AxesGrid");
       vtkSMProxy* proxy = axesGridProp.GetAsProxy();
       if (!proxy) {
-        vtkSMSessionProxyManager* pxm = this->View->GetSessionProxyManager();
+        vtkSMSessionProxyManager* pxm = m_view->GetSessionProxyManager();
         proxy = pxm->NewProxy("annotations", "GridAxes3DActor");
         axesGridProp.Set(proxy);
-        this->View->UpdateVTKObjects();
+        m_view->UpdateVTKObjects();
         proxy->Delete();
       }
     }
   }
   bool enableProjectionModes =
-    (this->View && this->View->GetProperty("CameraParallelProjection"));
+    (m_view && m_view->GetProperty("CameraParallelProjection"));
   // We have to check since this can be called before buildMenu
-  if (this->orthographicProjectionAction && this->perspectiveProjectionAction) {
-    this->orthographicProjectionAction->setEnabled(enableProjectionModes);
-    this->perspectiveProjectionAction->setEnabled(enableProjectionModes);
+  if (m_orthographicProjectionAction && m_perspectiveProjectionAction) {
+    m_orthographicProjectionAction->setEnabled(enableProjectionModes);
+    m_perspectiveProjectionAction->setEnabled(enableProjectionModes);
   }
 }
 }
