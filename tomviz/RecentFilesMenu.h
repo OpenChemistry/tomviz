@@ -16,17 +16,16 @@
 #ifndef tomvizRecentFilesMenu_h
 #define tomvizRecentFilesMenu_h
 
-#include <QAction>
 #include <QObject>
 
+class QAction;
 class QMenu;
 
 namespace tomviz {
 
 class DataSource;
 
-/// Extends pqRecentFilesMenu to add support to open a data file customized for
-/// tomviz.
+/// Adds recent file and recent state file support to Tomviz.
 class RecentFilesMenu : public QObject
 {
   Q_OBJECT

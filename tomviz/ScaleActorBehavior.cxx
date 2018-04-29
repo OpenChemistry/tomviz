@@ -15,25 +15,27 @@
 *****************************************************************************/
 #include "ScaleActorBehavior.h"
 
-#include "pqApplicationCore.h"
-#include "pqServerManagerModel.h"
-#include "pqView.h"
-#include "vtkAxisActor2D.h"
-#include "vtkCallbackCommand.h"
-#include "vtkNew.h"
-#include "vtkPVRenderView.h"
-#include "vtkRenderer.h"
-#include "vtkSMRenderViewProxy.h"
-#include "vtkVector.h"
-#include "vtkVectorOperators.h"
+#include <pqApplicationCore.h>
+#include <pqServerManagerModel.h>
+#include <pqView.h>
+#include <vtkPVRenderView.h>
+#include <vtkSMRenderViewProxy.h>
+
+#include <vtkAxisActor2D.h>
+#include <vtkCallbackCommand.h>
+#include <vtkNew.h>
+#include <vtkRenderer.h>
+#include <vtkVector.h>
+#include <vtkVectorOperators.h>
+
 
 namespace tomviz {
 
 static void UpdateScale(vtkObject* caller, unsigned long, void* clientData,
                         void*)
 {
-  vtkAxisActor2D* axis = static_cast<vtkAxisActor2D*>(clientData);
-  vtkRenderer* ren = static_cast<vtkRenderer*>(caller);
+  auto axis = static_cast<vtkAxisActor2D*>(clientData);
+  auto ren = static_cast<vtkRenderer*>(caller);
 
   vtkVector3d pos1(axis->GetPoint1()[0], axis->GetPoint1()[1], 0);
   vtkVector3d pos2(axis->GetPoint2()[0], axis->GetPoint2()[1], 0);

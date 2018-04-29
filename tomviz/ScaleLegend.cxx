@@ -15,26 +15,26 @@
 ******************************************************************************/
 #include "ScaleLegend.h"
 
-#include "vtkAxisActor2D.h"
-#include "vtkBillboardTextActor3D.h"
-#include "vtkCamera.h"
-#include "vtkCommand.h"
-#include "vtkDistanceWidget.h"
-#include "vtkHandleWidget.h"
-#include "vtkLengthScaleRepresentation.h"
-#include "vtkMath.h"
-#include "vtkPointHandleRepresentation2D.h"
-#include "vtkProperty2D.h"
-#include "vtkRenderWindow.h"
-#include "vtkRenderer.h"
-#include "vtkTextActor.h"
-#include "vtkTextProperty.h"
-#include "vtkVolumeScaleRepresentation.h"
+#include <vtkAxisActor2D.h>
+#include <vtkBillboardTextActor3D.h>
+#include <vtkCamera.h>
+#include <vtkCommand.h>
+#include <vtkDistanceWidget.h>
+#include <vtkHandleWidget.h>
+#include <vtkLengthScaleRepresentation.h>
+#include <vtkMath.h>
+#include <vtkPointHandleRepresentation2D.h>
+#include <vtkProperty2D.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkTextActor.h>
+#include <vtkTextProperty.h>
+#include <vtkVolumeScaleRepresentation.h>
 
-#include "pqView.h"
-#include "vtkPVAxesWidget.h"
-#include "vtkPVRenderView.h"
-#include "vtkSMViewProxy.h"
+#include <pqView.h>
+#include <vtkPVAxesWidget.h>
+#include <vtkPVRenderView.h>
+#include <vtkSMViewProxy.h>
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
@@ -42,7 +42,7 @@
 #include "ModuleManager.h"
 #include "Utilities.h"
 
-#include <math.h>
+#include <cmath>
 
 // The Scale legend lives in a sub-render window at the bottom right-hand corner
 // of the viewing screen and has its own camera. vtkLinkCameras connects the

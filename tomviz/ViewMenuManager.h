@@ -50,16 +50,16 @@ private slots:
   void onViewChanged();
 
 private:
-  QDialog* viewPropertiesDialog;
-  QPointer<QAction> showViewPropertiesAction;
-  QPointer<QAction> perspectiveProjectionAction;
-  QPointer<QAction> orthographicProjectionAction;
-  QPointer<QAction> scaleLegendCubeAction;
-  QPointer<QAction> scaleLegendRulerAction;
-  QPointer<QAction> hideScaleLegendAction;
+  QDialog* m_viewPropertiesDialog;
+  QPointer<QAction> m_showViewPropertiesAction;
+  QPointer<QAction> m_perspectiveProjectionAction;
+  QPointer<QAction> m_orthographicProjectionAction;
+  QPointer<QAction> m_scaleLegendCubeAction;
+  QPointer<QAction> m_scaleLegendRulerAction;
+  QPointer<QAction> m_hideScaleLegendAction;
 
-  vtkSMViewProxy* View;
-  unsigned long ViewObserverId;
+  vtkSMViewProxy* m_view;
+  unsigned long m_viewObserverId;
 };
 }
 

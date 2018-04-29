@@ -28,7 +28,6 @@ class ViewFrameActions : public pqStandardViewFrameActionsImplementation
 
 public:
   explicit ViewFrameActions(QObject* parent = nullptr);
-  ~ViewFrameActions() override;
 
 protected:
   QList<ViewType> availableViewTypes() override;

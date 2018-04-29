@@ -280,7 +280,7 @@ public:
 RotateAlignWidget::RotateAlignWidget(Operator* op,
                                      vtkSmartPointer<vtkImageData> image,
                                      QWidget* p)
-  : Superclass(p), Internals(new RAWInternal)
+  : CustomPythonOperatorWidget(p), Internals(new RAWInternal)
 {
   this->Internals->m_image = image;
   this->Internals->Ui.setupUi(this);

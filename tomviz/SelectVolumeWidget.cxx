@@ -17,15 +17,12 @@
 #include "SelectVolumeWidget.h"
 #include "ui_SelectVolumeWidget.h"
 
-#include <pqApplicationCore.h>
-#include <pqSettings.h>
 #include <vtkBoundingBox.h>
 #include <vtkBoxRepresentation.h>
 #include <vtkBoxWidget2.h>
 #include <vtkCommand.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkImageData.h>
-#include <vtkInteractorObserver.h>
 #include <vtkMath.h>
 #include <vtkNew.h>
 #include <vtkProperty.h>
@@ -33,13 +30,10 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkRendererCollection.h>
+#include <vtkSmartPointer.h>
+
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
-#include <vtkSmartPointer.h>
-#include <vtkSmartVolumeMapper.h>
-#include <vtkTrivialProducer.h>
-#include <vtkVolume.h>
-#include <vtkVolumeProperty.h>
 
 #include <QHBoxLayout>
 #include <QSettings>
