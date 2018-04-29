@@ -57,7 +57,7 @@ class PythonGeneratedDataSource : public QObject
 
 public:
   PythonGeneratedDataSource(const QString& l, QObject* p = nullptr)
-    : QObject(p), label(l)
+    : QObject(p), m_label(l)
   {
   }
 
@@ -67,38 +67,38 @@ public:
 
     {
       tomviz::Python python;
-      this->OperatorModule = python.import("tomviz.utils");
-      if (!this->OperatorModule.isValid()) {
+      m_operatorModule = python.import("tomviz.utils");
+      if (!m_operatorModule.isValid()) {
         qCritical() << "Failed to import tomviz.utils module.";
       }
 
       // Don't let these be the same, even for similar scripts.  Seems to
       // cause python crashes.
       QString moduleName =
-        QString("tomviz_%1%2").arg(this->label).arg(number_of_scripts++);
+        QString("tomviz_%1%2").arg(m_label).arg(s_numberOfScripts++);
 
       tomviz::Python::Module module =
-        python.import(script, this->label, moduleName);
+        python.import(script, m_label, moduleName);
       if (!module.isValid()) {
         qCritical() << "Failed to create module.";
         return;
       }
 
-      this->GenerateFunction = module.findFunction("generate_dataset");
-      if (!this->GenerateFunction.isValid()) {
+      m_generateFunction = module.findFunction("generate_dataset");
+      if (!m_generateFunction.isValid()) {
         qCritical() << "Script does not have a 'generate_dataset' function.";
         return;
       }
 
-      this->MakeDatasetFunction =
-        this->OperatorModule.findFunction("make_dataset");
-      if (!this->MakeDatasetFunction.isValid()) {
+      m_makeDatasetFunction =
+        m_operatorModule.findFunction("make_dataset");
+      if (!m_makeDatasetFunction.isValid()) {
         qCritical() << "Could not find make_dataset function in tomviz.utils";
         return;
       }
     }
 
-    this->pythonScript = script;
+    m_pythonScript = script;
   }
 
   tomviz::DataSource* createDataSource(const int shape[3])
@@ -117,15 +117,15 @@ public:
       tomviz::Python::Object imageData =
         tomviz::Python::VTK::GetObjectFromPointer(image);
       args.set(3, imageData);
-      args.set(4, this->GenerateFunction);
+      args.set(4, m_generateFunction);
 
       tomviz::Python::Dict kwargs;
-      foreach (QString key, this->arguments.keys()) {
-        tomviz::Variant value = tomviz::toVariant(this->arguments[key]);
+      foreach (QString key, m_arguments.keys()) {
+        tomviz::Variant value = tomviz::toVariant(m_arguments[key]);
         kwargs.set(key, value);
       }
 
-      result = this->MakeDatasetFunction.call(args, kwargs);
+      result = m_makeDatasetFunction.call(args, kwargs);
       if (!result.isValid()) {
         qCritical() << "Failed to execute script.";
         return nullptr;
@@ -133,8 +133,8 @@ public:
     }
 
     QVariantMap vmap;
-    foreach (QString key, this->arguments.keys()) {
-      vmap[key] = this->arguments[key];
+    foreach (QString key, m_arguments.keys()) {
+      vmap[key] = m_arguments[key];
     }
 
     QJsonObject argsJson = QJsonObject::fromVariantMap(vmap);
@@ -145,13 +145,13 @@ public:
     size.append(shape[2]);
 
     QJsonObject description;
-    description["script"] = this->pythonScript;
-    description["label"] = this->label;
+    description["script"] = m_pythonScript;
+    description["label"] = m_label;
     description["args"] = argsJson;
     description["shape"] = size;
 
     tomviz::DataSource* dataSource = new tomviz::DataSource(
-      this->label, tomviz::DataSource::Volume, nullptr,
+      m_label, tomviz::DataSource::Volume, nullptr,
       tomviz::DataSource::PersistenceState::Transient, description);
 
     dataSource->setData(image);
@@ -159,19 +159,19 @@ public:
     return dataSource;
   }
 
-  void setArguments(QMap<QString, QVariant> args) { this->arguments = args; }
+  void setArguments(QMap<QString, QVariant> args) { m_arguments = args; }
 
 private:
-  tomviz::Python::Module OperatorModule;
-  tomviz::Python::Function GenerateFunction;
-  tomviz::Python::Function MakeDatasetFunction;
-  QString label;
-  QString pythonScript;
-  QMap<QString, QVariant> arguments;
-  static int number_of_scripts;
+  tomviz::Python::Module m_operatorModule;
+  tomviz::Python::Function m_generateFunction;
+  tomviz::Python::Function m_makeDatasetFunction;
+  QString m_label;
+  QString m_pythonScript;
+  QMap<QString, QVariant> m_arguments;
+  static int s_numberOfScripts;
 };
 
-int PythonGeneratedDataSource::number_of_scripts = 0;
+int PythonGeneratedDataSource::s_numberOfScripts = 0;
 
 class ShapeWidget : public QWidget
 {
@@ -179,8 +179,8 @@ class ShapeWidget : public QWidget
 
 public:
   ShapeWidget(QWidget* p = nullptr)
-    : QWidget(p), xSpinBox(new QSpinBox(this)), ySpinBox(new QSpinBox(this)),
-      zSpinBox(new QSpinBox(this))
+    : QWidget(p), m_xSpinBox(new QSpinBox(this)), m_ySpinBox(new QSpinBox(this)),
+      m_zSpinBox(new QSpinBox(this))
   {
     QHBoxLayout* boundsLayout = new QHBoxLayout;
 
@@ -188,53 +188,53 @@ public:
     QLabel* yLabel = new QLabel("Y:", this);
     QLabel* zLabel = new QLabel("Z:", this);
 
-    this->xSpinBox->setMaximum(std::numeric_limits<int>::max());
-    this->xSpinBox->setMinimum(1);
-    this->xSpinBox->setValue(100);
-    this->ySpinBox->setMaximum(std::numeric_limits<int>::max());
-    this->ySpinBox->setMinimum(1);
-    this->ySpinBox->setValue(100);
-    this->zSpinBox->setMaximum(std::numeric_limits<int>::max());
-    this->zSpinBox->setMinimum(1);
-    this->zSpinBox->setValue(100);
+    m_xSpinBox->setMaximum(std::numeric_limits<int>::max());
+    m_xSpinBox->setMinimum(1);
+    m_xSpinBox->setValue(100);
+    m_ySpinBox->setMaximum(std::numeric_limits<int>::max());
+    m_ySpinBox->setMinimum(1);
+    m_ySpinBox->setValue(100);
+    m_zSpinBox->setMaximum(std::numeric_limits<int>::max());
+    m_zSpinBox->setMinimum(1);
+    m_zSpinBox->setValue(100);
 
     boundsLayout->addWidget(xLabel);
-    boundsLayout->addWidget(this->xSpinBox);
+    boundsLayout->addWidget(m_xSpinBox);
     boundsLayout->addWidget(yLabel);
-    boundsLayout->addWidget(this->ySpinBox);
+    boundsLayout->addWidget(m_ySpinBox);
     boundsLayout->addWidget(zLabel);
-    boundsLayout->addWidget(this->zSpinBox);
+    boundsLayout->addWidget(m_zSpinBox);
 
-    this->setLayout(boundsLayout);
+    setLayout(boundsLayout);
   }
 
   void getShape(int shape[3])
   {
-    shape[0] = xSpinBox->value();
-    shape[1] = ySpinBox->value();
-    shape[2] = zSpinBox->value();
+    shape[0] = m_xSpinBox->value();
+    shape[1] = m_ySpinBox->value();
+    shape[2] = m_zSpinBox->value();
   }
 
   void setSpinBoxValue(int newX, int newY, int newZ)
   {
-    this->xSpinBox->setValue(newX);
-    this->ySpinBox->setValue(newY);
-    this->zSpinBox->setValue(newZ);
+    m_xSpinBox->setValue(newX);
+    m_ySpinBox->setValue(newY);
+    m_zSpinBox->setValue(newZ);
   }
 
   void setSpinBoxMaximum(int xmax, int ymax, int zmax)
   {
-    this->xSpinBox->setMaximum(xmax);
-    this->ySpinBox->setMaximum(ymax);
-    this->zSpinBox->setMaximum(zmax);
+    m_xSpinBox->setMaximum(xmax);
+    m_ySpinBox->setMaximum(ymax);
+    m_zSpinBox->setMaximum(zmax);
   }
 
 private:
   Q_DISABLE_COPY(ShapeWidget)
 
-  QSpinBox* xSpinBox;
-  QSpinBox* ySpinBox;
-  QSpinBox* zSpinBox;
+  QSpinBox* m_xSpinBox;
+  QSpinBox* m_ySpinBox;
+  QSpinBox* m_zSpinBox;
 };
 }
 
