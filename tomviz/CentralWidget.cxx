@@ -293,7 +293,11 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
     bool resize = settings->value("Tomviz.firstCentralWidget", true).toBool();
     settings->setValue("Tomviz.firstCentralWidget", false);
     if (resize) {
+      // Allocate maximum to the 3D widget, addded a fallback so both are shown.
       int mainWidgetSize = m_ui->splitter->size().height() - 150;
+      if (mainWidgetSize < 650) {
+        mainWidgetSize = 650;
+      }
       m_ui->splitter->setSizes({ 150, mainWidgetSize });
     } else {
       auto sizing = settings->value("Tomviz.centralSplitSizes").toByteArray();
