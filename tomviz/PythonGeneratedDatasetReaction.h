@@ -42,6 +42,6 @@ private:
   QString m_scriptLabel;
   QString m_scriptSource;
 };
-}
+} // namespace tomviz
 
 #endif

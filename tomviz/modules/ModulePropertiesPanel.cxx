@@ -57,9 +57,7 @@ ModulePropertiesPanel::ModulePropertiesPanel(QWidget* parentObject)
                 SLOT(detachColorMap(bool)));
 }
 
-ModulePropertiesPanel::~ModulePropertiesPanel()
-{
-}
+ModulePropertiesPanel::~ModulePropertiesPanel() {}
 
 void ModulePropertiesPanel::setModule(Module* module)
 {
@@ -100,13 +98,9 @@ void ModulePropertiesPanel::setModule(Module* module)
   this->updatePanel();
 }
 
-void ModulePropertiesPanel::setView(vtkSMViewProxy* vtkNotUsed(view))
-{
-}
+void ModulePropertiesPanel::setView(vtkSMViewProxy* vtkNotUsed(view)) {}
 
-void ModulePropertiesPanel::updatePanel()
-{
-}
+void ModulePropertiesPanel::updatePanel() {}
 
 void ModulePropertiesPanel::detachColorMap(bool val)
 {
@@ -117,4 +111,4 @@ void ModulePropertiesPanel::detachColorMap(bool val)
     emit module->renderNeeded();
   }
 }
-}
+} // namespace tomviz

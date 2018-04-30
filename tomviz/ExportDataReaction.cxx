@@ -144,7 +144,7 @@ void convertToUnsignedChar(vtkDataArray* outArray, int nComps, int nTuples,
 {
   convert<FromType, unsigned char>(outArray, nComps, nTuples, data);
 }
-}
+} // namespace
 
 bool ExportDataReaction::exportData(const QString& filename)
 {
@@ -292,7 +292,6 @@ bool ExportDataReaction::exportData(const QString& filename)
       trivialProducer->Update();
       producer->UpdatePipeline();
     }
-
   }
 
   pqProxyWidgetDialog dialog(writer, tomviz::mainWidget());
@@ -315,4 +314,4 @@ bool ExportDataReaction::exportData(const QString& filename)
 
   return true;
 }
-}
+} // namespace tomviz

@@ -84,6 +84,6 @@ private:
                             QList<ImageInfo>& summary);
   static void badStackAlert(QList<ImageInfo>& summary);
 };
-}
+} // namespace tomviz
 
 #endif

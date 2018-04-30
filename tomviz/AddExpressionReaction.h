@@ -40,6 +40,6 @@ private:
 
   QString getDefaultExpression(DataSource*);
 };
-}
+} // namespace tomviz
 
 #endif

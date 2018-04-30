@@ -67,8 +67,7 @@ void StartServerDialog::readSettings()
   if (!settings->contains("pythonExecutablePath")) {
     setPythonExecutablePath(PYTHON_PATH_DEFAULT);
   } else {
-    setPythonExecutablePath(
-      settings->value("pythonExecutablePath").toString());
+    setPythonExecutablePath(settings->value("pythonExecutablePath").toString());
   }
   settings->endGroup();
 }
@@ -86,4 +85,4 @@ void StartServerDialog::setPythonExecutablePath(const QString& path)
   m_pythonExecutablePath = path;
   m_ui->pythonPathLineEdit->setText(path);
 }
-}
+} // namespace tomviz

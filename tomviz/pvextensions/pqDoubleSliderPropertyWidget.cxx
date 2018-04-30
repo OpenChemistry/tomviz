@@ -27,6 +27,4 @@ pqDoubleSliderPropertyWidget::pqDoubleSliderPropertyWidget(
   std::cout << "Creating slider widget" << std::endl;
 }
 
-pqDoubleSliderPropertyWidget::~pqDoubleSliderPropertyWidget()
-{
-}
+pqDoubleSliderPropertyWidget::~pqDoubleSliderPropertyWidget() {}

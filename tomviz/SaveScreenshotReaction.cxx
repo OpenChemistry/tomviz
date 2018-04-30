@@ -52,8 +52,7 @@ namespace tomviz {
 
 SaveScreenshotReaction::SaveScreenshotReaction(QAction* a, MainWindow* mw)
   : pqReaction(a), m_mainWindow(mw)
-{
-}
+{}
 
 void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
 {
@@ -111,8 +110,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
       pxm->GetProxyDefinitionManager()->NewSingleGroupIterator("palettes");
     for (iter->InitTraversal(); !iter->IsDoneWithTraversal();
          iter->GoToNextItem()) {
-      auto prototype =
-        pxm->GetPrototypeProxy("palettes", iter->GetProxyName());
+      auto prototype = pxm->GetPrototypeProxy("palettes", iter->GetProxyName());
       if (prototype) {
         paletteBox->addItem(prototype->GetXMLLabel(), prototype->GetXMLName());
       }
@@ -195,8 +193,7 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
       pxm->NewProxy(colorPalette->GetXMLGroup(), colorPalette->GetXMLName()));
     clone->Copy(colorPalette);
 
-    auto chosenPalette =
-      pxm->NewProxy("palettes", palette.toLatin1().data());
+    auto chosenPalette = pxm->NewProxy("palettes", palette.toLatin1().data());
     colorPalette->Copy(chosenPalette);
     chosenPalette->Delete();
   }
@@ -230,4 +227,4 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
 
   shProxy->WriteImage(filename.toLocal8Bit().data());
 }
-}
+} // namespace tomviz

@@ -30,7 +30,7 @@
 namespace Ui {
 class ModuleContourWidget;
 class LightingParametersForm;
-}
+} // namespace Ui
 
 class QComboBox;
 
@@ -90,5 +90,5 @@ private:
   QScopedPointer<Ui::ModuleContourWidget> m_ui;
   QScopedPointer<Ui::LightingParametersForm> m_uiLighting;
 };
-}
+} // namespace tomviz
 #endif

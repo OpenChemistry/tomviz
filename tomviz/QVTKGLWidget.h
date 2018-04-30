@@ -33,6 +33,6 @@ public:
 
 private:
 };
-}
+} // namespace tomviz
 
 #endif // tomvizQVTKGLWidget_h

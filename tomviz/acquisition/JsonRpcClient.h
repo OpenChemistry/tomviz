@@ -78,6 +78,6 @@ protected:
   QString m_url;
   QNetworkAccessManager* m_networkAccessManager = nullptr;
 };
-}
+} // namespace tomviz
 
 #endif

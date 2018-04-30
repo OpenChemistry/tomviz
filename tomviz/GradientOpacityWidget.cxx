@@ -41,8 +41,7 @@
 namespace tomviz {
 
 GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
-  : QWidget(parent_), m_qvtk(new QVTKGLWidget(this)),
-    m_adjustedTable(nullptr)
+  : QWidget(parent_), m_qvtk(new QVTKGLWidget(this)), m_adjustedTable(nullptr)
 {
   // Set up our little chart.
   m_histogramView->SetRenderWindow(m_qvtk->GetRenderWindow());
@@ -154,4 +153,4 @@ void GradientOpacityWidget::renderViews()
     view->render();
   }
 }
-}
+} // namespace tomviz

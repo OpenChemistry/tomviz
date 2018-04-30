@@ -94,14 +94,13 @@ bool hasData(vtkSMProxy* reader)
   }
   return true;
 }
-}
+} // namespace
 
 namespace tomviz {
 
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
   : pqReaction(parentObject)
-{
-}
+{}
 
 LoadDataReaction::~LoadDataReaction() = default;
 
@@ -113,21 +112,21 @@ void LoadDataReaction::onTriggered()
 QList<DataSource*> LoadDataReaction::loadData()
 {
   QStringList filters;
-  filters
-    << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
-       " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali *.xmf *.xdmf)"
-    << "EMD (*.emd)"
-    << "JPeg Image files (*.jpg *.jpeg)"
-    << "PNG Image files (*.png)"
-    << "TIFF Image files (*.tiff *.tif)"
-    << "OME-TIFF Image files (*.ome.tif)"
-    << "Raw data files (*.raw *.dat *.bin)"
-    << "Meta Image files (*.mhd *.mha)"
-    << "VTK ImageData Files (*.vti)"
-    << "MRC files (*.mrc *.st *.rec *.ali)"
-    << "XDMF files (*.xmf *.xdmf)"
-    << "Text files (*.txt)"
-    << "All files (*.*)";
+  filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
+             " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali "
+             "*.xmf *.xdmf)"
+          << "EMD (*.emd)"
+          << "JPeg Image files (*.jpg *.jpeg)"
+          << "PNG Image files (*.png)"
+          << "TIFF Image files (*.tiff *.tif)"
+          << "OME-TIFF Image files (*.ome.tif)"
+          << "Raw data files (*.raw *.dat *.bin)"
+          << "Meta Image files (*.mhd *.mha)"
+          << "VTK ImageData Files (*.vti)"
+          << "MRC files (*.mrc *.st *.rec *.ali)"
+          << "XDMF files (*.xmf *.xdmf)"
+          << "Text files (*.txt)"
+          << "All files (*.*)";
 
   QFileDialog dialog(nullptr);
   dialog.setFileMode(QFileDialog::ExistingFiles);

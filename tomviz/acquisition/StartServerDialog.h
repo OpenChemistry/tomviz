@@ -44,6 +44,6 @@ private:
   void writeSettings();
   void setPythonExecutablePath(const QString& path);
 };
-}
+} // namespace tomviz
 
 #endif

@@ -67,4 +67,4 @@ void SetTiltAnglesReaction::showSetTiltAnglesUI(QMainWindow* window,
   dialog->show();
   connect(op, SIGNAL(destroyed()), dialog, SLOT(reject()));
 }
-}
+} // namespace tomviz

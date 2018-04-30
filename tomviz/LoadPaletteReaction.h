@@ -42,5 +42,5 @@ private:
   QPointer<QMenu> m_menu;
   QStringList m_paletteWhiteList;
 };
-}
+} // namespace tomviz
 #endif

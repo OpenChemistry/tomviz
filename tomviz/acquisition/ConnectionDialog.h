@@ -44,6 +44,6 @@ public:
 private:
   QScopedPointer<Ui::ConnectionDialog> m_ui;
 };
-}
+} // namespace tomviz
 
 #endif

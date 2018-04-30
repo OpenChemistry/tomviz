@@ -27,13 +27,17 @@ namespace tomviz {
 
 class MergeImagesDialog : public QDialog
 {
-Q_OBJECT
+  Q_OBJECT
 
 public:
   MergeImagesDialog(QWidget* parent = nullptr);
   ~MergeImagesDialog() override;
 
-  enum MergeMode : int { Arrays, Components };
+  enum MergeMode : int
+  {
+    Arrays,
+    Components
+  };
 
   MergeMode getMode();
 
@@ -41,6 +45,6 @@ private:
   Q_DISABLE_COPY(MergeImagesDialog)
   QScopedPointer<Ui::MergeImagesDialog> m_ui;
 };
-}
+} // namespace tomviz
 
 #endif

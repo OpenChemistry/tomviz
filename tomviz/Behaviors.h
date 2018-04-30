@@ -52,5 +52,5 @@ private:
 
   void registerCustomOperatorUIs();
 };
-}
+} // namespace tomviz
 #endif

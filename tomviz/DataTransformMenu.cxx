@@ -237,7 +237,5 @@ void DataTransformMenu::buildSegmentation()
                                  false, readInJSONDescription("SegmentPores"));
 }
 
-void DataTransformMenu::updateActions()
-{
-}
-}
+void DataTransformMenu::updateActions() {}
+} // namespace tomviz

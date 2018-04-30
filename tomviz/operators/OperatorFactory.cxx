@@ -68,17 +68,13 @@ private:
 };
 
 #include "OperatorFactory.moc"
-}
+} // namespace
 
 namespace tomviz {
 
-OperatorFactory::OperatorFactory()
-{
-}
+OperatorFactory::OperatorFactory() {}
 
-OperatorFactory::~OperatorFactory()
-{
-}
+OperatorFactory::~OperatorFactory() {}
 
 QList<QString> OperatorFactory::operatorTypes()
 {
@@ -152,4 +148,4 @@ const char* OperatorFactory::operatorType(Operator* op)
   }
   return nullptr;
 }
-}
+} // namespace tomviz

@@ -94,4 +94,4 @@ void ModuleScaleCubeWidget::onAnnotationChanged(const bool state)
 {
   emit annotationToggled(state);
 }
-}
+} // namespace tomviz

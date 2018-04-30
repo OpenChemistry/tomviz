@@ -72,6 +72,6 @@ private:
   VariantUnion m_value;
   void copy(const Variant& v);
 };
-}
+} // namespace tomviz
 
 #endif

@@ -69,5 +69,5 @@ private:
 
   pqPropertyLinks m_links;
 };
-}
+} // namespace tomviz
 #endif

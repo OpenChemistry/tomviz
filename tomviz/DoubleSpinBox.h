@@ -41,6 +41,6 @@ private:
   bool pressInUp;
   bool pressInDown;
 };
-}
+} // namespace tomviz
 
 #endif

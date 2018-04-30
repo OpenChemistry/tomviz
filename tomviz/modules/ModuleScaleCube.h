@@ -105,6 +105,6 @@ private slots:
 
   void updateOffset(double, double, double);
 };
-}
+} // namespace tomviz
 
 #endif

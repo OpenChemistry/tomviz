@@ -44,6 +44,6 @@ private:
   class RWInternal;
   RWInternal* Internals;
 };
-}
+} // namespace tomviz
 
 #endif

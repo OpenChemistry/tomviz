@@ -92,5 +92,5 @@ private:
   bool m_isFirstShow = true;
   AboutDialog* m_aboutDialog = nullptr;
 };
-}
+} // namespace tomviz
 #endif

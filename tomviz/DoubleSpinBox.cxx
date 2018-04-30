@@ -24,8 +24,7 @@ namespace tomviz {
 
 DoubleSpinBox::DoubleSpinBox(QWidget* p)
   : QDoubleSpinBox(p), pressInUp(false), pressInDown(false)
-{
-}
+{}
 
 void DoubleSpinBox::mousePressEvent(QMouseEvent* event)
 {
@@ -80,4 +79,4 @@ void DoubleSpinBox::mouseReleaseEvent(QMouseEvent* event)
   }
   this->pressInUp = this->pressInDown = false;
 }
-}
+} // namespace tomviz

@@ -1,9 +1,9 @@
 #ifndef tomvizComputeHistogram_h
 #define tomvizComputeHistogram_h
 
-#include <vtkMath.h>
 #include <vtkDoubleArray.h>
 #include <vtkImageData.h>
+#include <vtkMath.h>
 
 namespace tomviz {
 
@@ -170,6 +170,6 @@ void Calculate2DHistogram(T* values, const int* dim, const int numComp,
   }
 }
 
-}
+} // namespace tomviz
 
 #endif

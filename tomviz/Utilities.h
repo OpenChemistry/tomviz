@@ -211,6 +211,6 @@ bool setProperty(const QJsonValue& value, vtkSMProperty* prop, int index = 0);
 bool setProperty(const QJsonArray& array, vtkSMProperty* prop);
 
 extern double offWhite[3];
-}
+} // namespace tomviz
 
 #endif

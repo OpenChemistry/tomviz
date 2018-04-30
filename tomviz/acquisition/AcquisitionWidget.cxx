@@ -31,8 +31,8 @@
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkInteractorStyleRubberBand2D.h>
-#include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
 #include <vtkScalarsToColors.h>
 #include <vtkTIFFReader.h>
 
@@ -278,4 +278,4 @@ void AcquisitionWidget::onError(const QString& errorMessage,
   qDebug() << errorMessage;
   qDebug() << errorData;
 }
-}
+} // namespace tomviz

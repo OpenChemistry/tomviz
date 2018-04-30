@@ -61,4 +61,4 @@ void ReconstructionReaction::recon(DataSource* input)
   Operator* op = new ReconstructionOperator(input);
   input->addOperator(op);
 }
-}
+} // namespace tomviz

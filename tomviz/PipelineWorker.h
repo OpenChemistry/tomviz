@@ -89,6 +89,6 @@ private:
 
   Run* m_run;
 };
-}
+} // namespace tomviz
 
 #endif

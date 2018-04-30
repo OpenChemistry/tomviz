@@ -43,6 +43,6 @@ private:
 
   QList<QPointer<Pipeline>> m_pipelines;
 };
-}
+} // namespace tomviz
 
 #endif

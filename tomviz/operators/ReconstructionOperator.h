@@ -50,6 +50,6 @@ private:
   int m_extent[6];
   Q_DISABLE_COPY(ReconstructionOperator)
 };
-}
+} // namespace tomviz
 
 #endif

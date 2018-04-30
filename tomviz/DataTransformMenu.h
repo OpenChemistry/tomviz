@@ -50,6 +50,6 @@ private:
   QMenu* m_segmentationMenu;
   QMainWindow* m_mainWindow;
 };
-}
+} // namespace tomviz
 
 #endif

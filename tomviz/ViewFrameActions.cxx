@@ -20,8 +20,7 @@ namespace tomviz {
 
 ViewFrameActions::ViewFrameActions(QObject* p)
   : pqStandardViewFrameActionsImplementation(p)
-{
-}
+{}
 
 QList<pqStandardViewFrameActionsImplementation::ViewType>
 ViewFrameActions::availableViewTypes()
@@ -46,4 +45,4 @@ bool ViewFrameActions::isButtonVisible(const std::string& buttonName, pqView*)
   }
   return false;
 }
-}
+} // namespace tomviz

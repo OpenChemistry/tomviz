@@ -53,6 +53,6 @@ private:
   void sortConnections();
   void editConnection(Connection conn);
 };
-}
+} // namespace tomviz
 
 #endif

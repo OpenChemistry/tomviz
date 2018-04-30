@@ -53,6 +53,6 @@ private:
   void addRegexGroupSubstitution(RegexGroupSubstitution substitution);
   void setRegexGroupSubstitution(int row, RegexGroupSubstitution substitution);
 };
-}
+} // namespace tomviz
 
 #endif

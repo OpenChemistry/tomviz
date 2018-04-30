@@ -40,6 +40,6 @@ private:
   QScopedPointer<Ui::AboutDialog> m_ui;
   QJsonObject m_details;
 };
-}
+} // namespace tomviz
 
 #endif

@@ -120,8 +120,7 @@ private:
 
 namespace tomviz {
 
-ScaleLegend::ScaleLegend(QMainWindow* mw)
-  : QObject(mw), m_mainWindow(mw)
+ScaleLegend::ScaleLegend(QMainWindow* mw) : QObject(mw), m_mainWindow(mw)
 {
   // Connect the data manager's "dataSourceAdded" to our "dataSourceAdded" slot
   // to allow us to connect to the new data source's length scale information.
@@ -175,8 +174,7 @@ ScaleLegend::ScaleLegend(QMainWindow* mw)
     // Something is wrong with the view, exit early.
     return;
   }
-  auto renderView =
-    vtkPVRenderView::SafeDownCast(view->GetClientSideView());
+  auto renderView = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
   renderView->GetRenderWindow()->AddRenderer(m_renderer.Get());
 
   // Set up interactors
@@ -199,8 +197,7 @@ ScaleLegend::~ScaleLegend()
 {
   // Break the connection between the cameras of the two views
   auto view = ActiveObjects::instance().activeView();
-  auto renderView =
-    vtkPVRenderView::SafeDownCast(view->GetClientSideView());
+  auto renderView = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
   if (renderView) {
     renderView->GetActiveCamera()->RemoveObserver(m_linkCamerasId);
   }
@@ -239,8 +236,7 @@ void ScaleLegend::dataSourceAdded(DataSource* ds)
 {
   m_volumeScaleRep->SetLengthUnit(ds->getUnits().toStdString().c_str());
   m_lengthScaleRep->SetLengthUnit(ds->getUnits().toStdString().c_str());
-  connect(ds, SIGNAL(dataPropertiesChanged()),
-          SLOT(dataPropertiesChanged()));
+  connect(ds, SIGNAL(dataPropertiesChanged()), SLOT(dataPropertiesChanged()));
   render();
 }
 
@@ -256,10 +252,9 @@ void ScaleLegend::dataPropertiesChanged()
 
 void ScaleLegend::render()
 {
-  auto view =
-    tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   if (view) {
     view->render();
   }
 }
-}
+} // namespace tomviz

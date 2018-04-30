@@ -102,8 +102,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   Q_ASSERT(m_contourFilter);
   controller->PreInitializeProxy(m_contourFilter);
   vtkSMPropertyHelper(m_contourFilter, "Input").Set(producer);
-  vtkSMPropertyHelper(m_contourFilter, "ComputeScalars", /*quiet*/ true)
-    .Set(1);
+  vtkSMPropertyHelper(m_contourFilter, "ComputeScalars", /*quiet*/ true).Set(1);
 
   controller->PostInitializeProxy(m_contourFilter);
   controller->RegisterPipelineProxy(m_contourFilter);
@@ -125,8 +124,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 
   {
     // Create the representation for the resampled data
-    m_resampleRepresentation =
-      controller->Show(m_resampleFilter, 0, vtkView);
+    m_resampleRepresentation = controller->Show(m_resampleFilter, 0, vtkView);
     Q_ASSERT(m_resampleRepresentation);
 
     // Set the active representation to resampled data
@@ -143,8 +141,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     d->ColorArrayName =
       std::string(colorArrayHelper.GetInputArrayNameToProcess());
 
-    vtkSMPropertyHelper colorHelper(m_resampleRepresentation,
-                                    "DiffuseColor");
+    vtkSMPropertyHelper colorHelper(m_resampleRepresentation, "DiffuseColor");
     double white[3] = { 1.0, 1.0, 1.0 };
     colorHelper.Set(white, 3);
     // use proper color map.
@@ -170,8 +167,7 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 void ModuleContour::updateColorMap()
 {
   Q_ASSERT(m_activeRepresentation);
-  vtkSMPropertyHelper(m_activeRepresentation, "LookupTable")
-    .Set(colorMap());
+  vtkSMPropertyHelper(m_activeRepresentation, "LookupTable").Set(colorMap());
 
   updateScalarColoring();
 
@@ -204,8 +200,7 @@ bool ModuleContour::finalize()
 bool ModuleContour::setVisibility(bool val)
 {
   Q_ASSERT(m_activeRepresentation);
-  vtkSMPropertyHelper(m_activeRepresentation, "Visibility")
-    .Set(val ? 1 : 0);
+  vtkSMPropertyHelper(m_activeRepresentation, "Visibility").Set(val ? 1 : 0);
   m_activeRepresentation->UpdateVTKObjects();
 
   return true;
@@ -255,10 +250,10 @@ void ModuleContour::addToPanel(QWidget* panel)
 
   connect(m_controllers, SIGNAL(useSolidColor(const bool)), this,
           SLOT(setUseSolidColor(const bool)));
-  m_controllers->addPropertyLinks(
-    d->Links, m_resampleRepresentation, m_contourFilter);
+  m_controllers->addPropertyLinks(d->Links, m_resampleRepresentation,
+                                  m_contourFilter);
   connect(m_controllers, SIGNAL(propertyChanged()), this,
-                SLOT(onPropertyChanged()));
+          SLOT(onPropertyChanged()));
   connect(this, SIGNAL(dataSourceChanged()), this, SLOT(updateGUI()));
 
   updateGUI();
@@ -279,14 +274,12 @@ void ModuleContour::createCategoricalColoringPipeline()
     vtkSmartPointer<vtkSMProxy> pdToCdProxy;
     pdToCdProxy.TakeReference(pxm->NewProxy("filters", "PointDataToCellData"));
 
-    m_pointDataToCellDataFilter =
-      vtkSMSourceProxy::SafeDownCast(pdToCdProxy);
+    m_pointDataToCellDataFilter = vtkSMSourceProxy::SafeDownCast(pdToCdProxy);
     Q_ASSERT(m_pointDataToCellDataFilter);
     controller->PreInitializeProxy(m_pointDataToCellDataFilter);
     vtkSMPropertyHelper(m_pointDataToCellDataFilter, "Input")
       .Set(m_resampleFilter);
-    vtkSMPropertyHelper(m_pointDataToCellDataFilter, "CategoricalData")
-      .Set(1);
+    vtkSMPropertyHelper(m_pointDataToCellDataFilter, "CategoricalData").Set(1);
     controller->PostInitializeProxy(m_pointDataToCellDataFilter);
     controller->RegisterPipelineProxy(m_pointDataToCellDataFilter);
   }
@@ -296,12 +289,10 @@ void ModuleContour::createCategoricalColoringPipeline()
     // Create the representation for the point data to cell data
     vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
 
-    m_pointDataToCellDataRepresentation =
-      controller->Show(m_pointDataToCellDataFilter, 0,
-                       ActiveObjects::instance().activeView());
+    m_pointDataToCellDataRepresentation = controller->Show(
+      m_pointDataToCellDataFilter, 0, ActiveObjects::instance().activeView());
     Q_ASSERT(m_pointDataToCellDataRepresentation);
-    vtkSMPropertyHelper(m_pointDataToCellDataRepresentation,
-                        "Representation")
+    vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Representation")
       .Set("Surface");
     vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Position")
       .Set(d->ColorByDataSource->displayPosition(), 3);
@@ -309,8 +300,8 @@ void ModuleContour::createCategoricalColoringPipeline()
     vtkSMPropertyHelper(m_pointDataToCellDataRepresentation, "Visibility")
       .Set(0);
 
-    vtkSMPropertyHelper colorArrayHelper(
-      m_pointDataToCellDataRepresentation, "ColorArrayName");
+    vtkSMPropertyHelper colorArrayHelper(m_pointDataToCellDataRepresentation,
+                                         "ColorArrayName");
     d->ColorArrayName =
       std::string(colorArrayHelper.GetInputArrayNameToProcess());
 
@@ -501,9 +492,8 @@ void ModuleContour::dataSourceMoved(double newX, double newY, double newZ)
 
 DataSource* ModuleContour::colorMapDataSource() const
 {
-  return d->ColorByDataSource.data()
-           ? d->ColorByDataSource.data()
-           : dataSource();
+  return d->ColorByDataSource.data() ? d->ColorByDataSource.data()
+                                     : dataSource();
 }
 
 bool ModuleContour::isProxyPartOfModule(vtkSMProxy* proxy)

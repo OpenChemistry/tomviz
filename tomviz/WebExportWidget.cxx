@@ -334,4 +334,4 @@ void WebExportWidget::restoreSettings()
     m_multiValue->setText(settingsMap.value("multiValue").toString());
   }
 }
-}
+} // namespace tomviz

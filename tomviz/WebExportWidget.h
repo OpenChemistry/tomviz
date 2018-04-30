@@ -77,6 +77,6 @@ private:
 
   QVariantMap m_kwargs;
 };
-}
+} // namespace tomviz
 
 #endif // tomvizWebExportWidget

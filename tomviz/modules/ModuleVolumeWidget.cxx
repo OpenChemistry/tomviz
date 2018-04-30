@@ -125,4 +125,4 @@ void ModuleVolumeWidget::setTransferMode(const int transferMode)
 {
   m_ui->cbTransferMode->setCurrentIndex(transferMode);
 }
-}
+} // namespace tomviz

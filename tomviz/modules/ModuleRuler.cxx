@@ -44,9 +44,7 @@
 
 namespace tomviz {
 
-ModuleRuler::ModuleRuler(QObject* p) : Module(p)
-{
-}
+ModuleRuler::ModuleRuler(QObject* p) : Module(p) {}
 
 ModuleRuler::~ModuleRuler()
 {
@@ -273,4 +271,4 @@ void ModuleRuler::endPointsUpdated()
   emit newEndpointData(v1, v2);
   renderNeeded();
 }
-}
+} // namespace tomviz

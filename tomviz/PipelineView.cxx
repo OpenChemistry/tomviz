@@ -609,4 +609,4 @@ void PipelineView::initLayout()
   header()->setSectionResizeMode(1, QHeaderView::Fixed);
   header()->resizeSection(1, 30);
 }
-}
+} // namespace tomviz

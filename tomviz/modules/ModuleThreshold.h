@@ -66,6 +66,6 @@ private:
   vtkWeakPointer<vtkSMSourceProxy> m_thresholdFilter;
   vtkWeakPointer<vtkSMProxy> m_thresholdRepresentation;
 };
-}
+} // namespace tomviz
 
 #endif

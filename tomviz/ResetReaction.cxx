@@ -20,8 +20,7 @@
 namespace tomviz {
 
 ResetReaction::ResetReaction(QAction* parentObject) : Superclass(parentObject)
-{
-}
+{}
 
 void ResetReaction::updateEnableState()
 {
@@ -33,4 +32,4 @@ void ResetReaction::reset()
 {
   ModuleManager::instance().reset();
 }
-}
+} // namespace tomviz

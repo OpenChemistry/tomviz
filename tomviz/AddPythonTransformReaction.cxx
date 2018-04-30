@@ -139,7 +139,7 @@ private:
   QComboBox* axisSelect;
   int Extent[6];
 };
-}
+} // namespace
 
 #include "AddPythonTransformReaction.moc"
 
@@ -191,8 +191,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     opPython->setScript(scriptSource);
 
     // Use JSON to build the interface via the EditOperatorDialog
-    auto dialog = new EditOperatorDialog(opPython, source, true,
-                                         tomviz::mainWidget());
+    auto dialog =
+      new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setWindowTitle(QString("Edit %1").arg(opPython->label()));
     dialog->show();
@@ -455,8 +455,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
     if (interactive) {
       // Create a non-modal dialog, delete it once it has been closed.
-      auto dialog = new EditOperatorDialog(opPython, source, true,
-                                           tomviz::mainWidget());
+      auto dialog =
+        new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose, true);
       dialog->show();
       connect(opPython, SIGNAL(destroyed()), dialog, SIGNAL(reject()));
@@ -566,4 +566,4 @@ void AddPythonTransformReaction::addPythonOperator(
 
   source->addOperator(opPython);
 }
-}
+} // namespace tomviz

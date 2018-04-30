@@ -55,6 +55,6 @@ private:
   class CWInternals;
   QScopedPointer<CWInternals> Internals;
 };
-}
+} // namespace tomviz
 
 #endif

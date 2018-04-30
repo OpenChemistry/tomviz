@@ -46,5 +46,5 @@ private:
 
   Q_DISABLE_COPY(ExportDataReaction)
 };
-}
+} // namespace tomviz
 #endif

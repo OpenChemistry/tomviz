@@ -216,4 +216,4 @@ void Operator::createNewChildDataSource(
     setHasChildDataSource(true);
   }
 }
-}
+} // namespace tomviz

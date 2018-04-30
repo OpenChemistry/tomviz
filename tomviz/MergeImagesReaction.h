@@ -46,6 +46,6 @@ private:
 
   QSet<DataSource*> m_dataSources;
 };
-}
+} // namespace tomviz
 
 #endif

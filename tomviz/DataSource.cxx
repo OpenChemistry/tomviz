@@ -63,7 +63,7 @@ class DataSource::DSInternals
 public:
   vtkNew<vtkImageData> m_transfer2D;
   vtkNew<vtkPiecewiseFunction> GradientOpacityMap;
-//  vtkSmartPointer<vtkSMSourceProxy> DataSourceProxy;
+  //  vtkSmartPointer<vtkSMSourceProxy> DataSourceProxy;
   vtkSmartPointer<vtkSMSourceProxy> ProducerProxy;
   QList<Operator*> Operators;
   vtkSmartPointer<vtkSMProxy> ColorMap;
@@ -95,8 +95,7 @@ public:
   }
 };
 
-DataSource::DataSource(vtkSMSourceProxy* dataSource,
-                       DataSourceType dataType)
+DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType)
   : QObject(nullptr), Internals(new DSInternals)
 {
   const char* sourceFilename = nullptr;
@@ -276,7 +275,7 @@ QStringList DataSource::fileNames() const
 bool DataSource::isImageStack() const
 {
   return m_json.contains("fileNames") && m_json["fileNames"].isArray() &&
-    m_json["fileNames"].toArray().size() > 1;
+         m_json["fileNames"].toArray().size() > 1;
 }
 
 void DataSource::setReaderProperties(const QVariantMap& properties)
@@ -415,16 +414,16 @@ bool DataSource::deserialize(const QJsonObject& state)
       // We currently support a single child data source.
       auto dataSourcesState = operatorObj["dataSources"].toArray();
       auto connection = new QMetaObject::Connection;
-      *connection =
-        connect(pipeline(), &Pipeline::finished, op, [connection,
-                                                      dataSourcesState, op]() {
-          auto childDataSource = op->childDataSource();
-          if (childDataSource != nullptr) {
-            childDataSource->deserialize(dataSourcesState[0].toObject());
-          }
-          QObject::disconnect(*connection);
-          delete connection;
-        });
+      *connection = connect(pipeline(), &Pipeline::finished, op,
+                            [connection, dataSourcesState, op]() {
+                              auto childDataSource = op->childDataSource();
+                              if (childDataSource != nullptr) {
+                                childDataSource->deserialize(
+                                  dataSourcesState[0].toObject());
+                              }
+                              QObject::disconnect(*connection);
+                              delete connection;
+                            });
     }
 
     pipeline()->resume(this);
@@ -565,7 +564,8 @@ unsigned int DataSource::getNumberOfComponents()
     vtkImageData* data = vtkImageData::SafeDownCast(tp->GetOutputDataObject(0));
     if (data) {
       if (data->GetPointData() && data->GetPointData()->GetScalars()) {
-        numComponents = static_cast<unsigned int>(data->GetPointData()->GetScalars()->GetNumberOfComponents());
+        numComponents = static_cast<unsigned int>(
+          data->GetPointData()->GetScalars()->GetNumberOfComponents());
       }
     }
   }
@@ -1005,4 +1005,4 @@ void DataSource::setForkable(bool forkable)
 {
   Internals->Forkable = forkable;
 }
-}
+} // namespace tomviz

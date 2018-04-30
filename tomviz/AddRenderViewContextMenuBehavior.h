@@ -43,6 +43,6 @@ protected:
   QPoint m_position;
   QMenu* m_menu;
 };
-}
+} // namespace tomviz
 
 #endif

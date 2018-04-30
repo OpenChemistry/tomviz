@@ -95,6 +95,6 @@ private slots:
   void onSpecularPowerChanged(const double value);
   void onTransferModeChanged(const int mode);
 };
-}
+} // namespace tomviz
 
 #endif

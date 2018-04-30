@@ -20,8 +20,7 @@
 
 AbstractDataModel::AbstractDataModel(QObject* parent_)
   : QAbstractItemModel(parent_)
-{
-}
+{}
 
 AbstractDataModel::~AbstractDataModel()
 {

@@ -83,6 +83,6 @@ private:
   void updateInformationWidget(QTreeWidget* infoTreeWidget,
                                vtkPVDataInformation* dataInformation);
 };
-}
+} // namespace tomviz
 
 #endif

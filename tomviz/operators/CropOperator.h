@@ -50,6 +50,6 @@ private:
   int m_bounds[6];
   Q_DISABLE_COPY(CropOperator)
 };
-}
+} // namespace tomviz
 
 #endif

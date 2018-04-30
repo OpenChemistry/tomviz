@@ -140,4 +140,4 @@ void Histogram2DWidget::updateTransfer2D()
 {
   m_chartHistogram2D->GenerateTransfer2D();
 }
-}
+} // namespace tomviz

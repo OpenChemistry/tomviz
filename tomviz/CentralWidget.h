@@ -97,6 +97,6 @@ private:
   QMap<vtkImageData*, vtkSmartPointer<vtkTable>> m_histogramCache;
   Transfer2DModel* m_transfer2DModel;
 };
-}
+} // namespace tomviz
 
 #endif

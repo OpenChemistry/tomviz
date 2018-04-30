@@ -19,9 +19,9 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "QVTKGLWidget.h"
 #include "SpinBox.h"
 #include "TranslateAlignOperator.h"
-#include "QVTKGLWidget.h"
 #include "Utilities.h"
 
 #include <vtk_jsoncpp.h>
@@ -87,7 +87,7 @@ void renderViews()
     view->render();
   }
 }
-}
+} // namespace
 
 class ViewMode
 {
@@ -217,6 +217,7 @@ public:
   }
   double* bounds() const override { return m_imageSliceMapper->GetBounds(); }
   vtkSMProxy* getLUT() override { return m_lut; }
+
 private:
   vtkNew<vtkImageSlice> m_imageSlice;
   vtkNew<vtkImageSliceMapper> m_imageSliceMapper;
@@ -997,4 +998,4 @@ void AlignWidget::applyCurrentPreset()
     m_widget->GetRenderWindow()->Render();
   }
 }
-}
+} // namespace tomviz

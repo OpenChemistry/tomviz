@@ -73,6 +73,6 @@ private:
   pqPropertyLinks m_links;
   bool m_axesVisibility = false;
 };
-}
+} // namespace tomviz
 
 #endif

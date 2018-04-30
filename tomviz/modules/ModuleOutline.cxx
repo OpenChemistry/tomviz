@@ -40,9 +40,7 @@
 
 namespace tomviz {
 
-ModuleOutline::ModuleOutline(QObject* parentObject) : Module(parentObject)
-{
-}
+ModuleOutline::ModuleOutline(QObject* parentObject) : Module(parentObject) {}
 
 ModuleOutline::~ModuleOutline()
 {
@@ -239,7 +237,6 @@ void ModuleOutline::addToPanel(QWidget* panel)
             rgb[1] = color.greenF();
             rgb[2] = color.blueF();
             updateGridAxesColor(rgb);
-
           });
   connect(colorSelector, &pqColorChooserButton::chosenColorChanged, this,
           &ModuleOutline::dataUpdated);
@@ -346,7 +343,6 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
     dataSource->proxy()->MarkModified(nullptr);
     dataSource->proxy()->UpdatePipeline();
     emit renderNeeded();
-
   });
 }
 

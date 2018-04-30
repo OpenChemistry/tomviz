@@ -41,7 +41,7 @@ vtkSmartPointer<vtkFloatArray> convertToFloatT(T* data, int len)
   }
   return array;
 }
-}
+} // namespace
 
 namespace tomviz {
 
@@ -135,5 +135,5 @@ void unweightedBackProjection2(float* sinogram, double* tiltAngles,
     image[i] *= normalizationFactor;
   }
 }
-}
-}
+} // namespace TomographyReconstruction
+} // namespace tomviz

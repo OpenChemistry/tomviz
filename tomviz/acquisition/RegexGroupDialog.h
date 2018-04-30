@@ -40,6 +40,6 @@ public:
 private:
   QScopedPointer<Ui::RegexGroupDialog> m_ui;
 };
-}
+} // namespace tomviz
 
 #endif

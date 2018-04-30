@@ -104,6 +104,6 @@ private:
   void moveDataSourceHelper(DataSource* dataSource, Operator* newParent);
 };
 
-} // tomviz namespace
+} // namespace tomviz
 
 #endif // tomvizPipelineModel_h

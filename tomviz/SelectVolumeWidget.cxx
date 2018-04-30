@@ -309,4 +309,4 @@ void SelectVolumeWidget::dataMoved(double x, double y, double z)
 
   this->updateBounds(cropVolume);
 }
-}
+} // namespace tomviz

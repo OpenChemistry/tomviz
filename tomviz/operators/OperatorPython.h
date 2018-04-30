@@ -100,5 +100,5 @@ private:
   QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;
   QMap<QString, QVariant> m_arguments;
 };
-}
+} // namespace tomviz
 #endif

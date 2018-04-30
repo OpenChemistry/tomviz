@@ -24,8 +24,7 @@ namespace tomviz {
 
 AcquisitionClient::AcquisitionClient(const QString& url, QObject* parent)
   : QObject(parent), m_jsonRpcClient(new JsonRpcClient(url, this))
-{
-}
+{}
 
 AcquisitionClient::~AcquisitionClient() = default;
 
@@ -226,4 +225,4 @@ void AcquisitionClient::connectErrorSignals(
       reply->deleteLater();
     });
 }
-}
+} // namespace tomviz

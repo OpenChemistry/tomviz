@@ -58,6 +58,6 @@ private:
   QVector<vtkVector2i> offsets;
   const QPointer<DataSource> dataSource;
 };
-}
+} // namespace tomviz
 
 #endif

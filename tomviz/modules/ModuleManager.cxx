@@ -835,4 +835,4 @@ bool ModuleManager::hasDataSources()
   return !d->DataSources.empty();
 }
 
-} // end of namesapce tomviz
+} // namespace tomviz

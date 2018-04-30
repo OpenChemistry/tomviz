@@ -78,5 +78,5 @@ private:
   class RAWInternal;
   QScopedPointer<RAWInternal> Internals;
 };
-}
+} // namespace tomviz
 #endif

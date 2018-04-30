@@ -90,7 +90,6 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
           &PassiveAcquisitionWidget::checkEnableWatchButton);
 
   connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
-
     // Validate the filename regex
     if (!validateRegex()) {
       return;
@@ -104,11 +103,9 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
           &PassiveAcquisitionWidget::stopWatching);
 
   connect(m_ui->fileNameRegexLineEdit, &QLineEdit::textChanged, [this]() {
-    setEnabledRegexGroupsWidget(
-      !m_ui->fileNameRegexLineEdit->text().isEmpty());
+    setEnabledRegexGroupsWidget(!m_ui->fileNameRegexLineEdit->text().isEmpty());
   });
-  setEnabledRegexGroupsWidget(
-    !m_ui->fileNameRegexLineEdit->text().isEmpty());
+  setEnabledRegexGroupsWidget(!m_ui->fileNameRegexLineEdit->text().isEmpty());
 
   connect(m_ui->regexGroupsWidget, &RegexGroupsWidget::groupsChanged, [this]() {
     setEnabledRegexGroupsSubstitutionsWidget(
@@ -126,8 +123,7 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
       // First disconnect the error signal as we are about pull the rug from
       // under
       // the process!
-      disconnect(m_serverProcess, &QProcess::errorOccurred, nullptr,
-                 nullptr);
+      disconnect(m_serverProcess, &QProcess::errorOccurred, nullptr, nullptr);
       m_serverProcess->terminate();
     }
   });
@@ -218,16 +214,13 @@ void PassiveAcquisitionWidget::connectToServer(bool startServer)
 
         // Now we can start watching.
         watchSource();
-
       });
   });
 
   connect(request, &AcquisitionClientRequest::error,
           [startServer, this](const QString& errorMessage,
                               const QJsonValue& errorData) {
-
-            auto connection =
-              m_ui->connectionsWidget->selectedConnection();
+            auto connection = m_ui->connectionsWidget->selectedConnection();
             // If we are getting a connection refused error and we are trying to
             // connect
             // to localhost, try to start the server.
@@ -339,7 +332,6 @@ void PassiveAcquisitionWidget::watchSource()
                     });
             connect(request, &AcquisitionClientRequest::error, this,
                     &PassiveAcquisitionWidget::onError);
-
           },
           Qt::UniqueConnection);
   m_watchTimer->start(1000);
@@ -404,7 +396,6 @@ void PassiveAcquisitionWidget::startLocalServer()
 
             QMessageBox::warning(this, "Server Start Error", message,
                                  QMessageBox::Ok);
-
           });
 
   connect(m_serverProcess, &QProcess::started, [this]() {
@@ -415,25 +406,21 @@ void PassiveAcquisitionWidget::startLocalServer()
       --m_retryCount;
       connectToServer(false);
     });
-
   });
 
   connect(
-    m_serverProcess,
-    static_cast<void (QProcess::*)(int)>(&QProcess::finished),
+    m_serverProcess, static_cast<void (QProcess::*)(int)>(&QProcess::finished),
     [](int exitCode) {
       qWarning() << QString(
                       "The acquisition server has exited with exit code: %1")
                       .arg(exitCode);
     });
 
-  connect(m_serverProcess, &QProcess::readyReadStandardError, [this]() {
-    qWarning() << m_serverProcess->readAllStandardError();
-  });
+  connect(m_serverProcess, &QProcess::readyReadStandardError,
+          [this]() { qWarning() << m_serverProcess->readAllStandardError(); });
 
-  connect(m_serverProcess, &QProcess::readyReadStandardOutput, [this]() {
-    qInfo() << m_serverProcess->readAllStandardOutput();
-  });
+  connect(m_serverProcess, &QProcess::readyReadStandardOutput,
+          [this]() { qInfo() << m_serverProcess->readAllStandardOutput(); });
 
   qInfo() << QString("Starting server with following command: %1 %2")
                .arg(m_serverProcess->program())
@@ -452,9 +439,9 @@ void PassiveAcquisitionWidget::startLocalServer()
 void PassiveAcquisitionWidget::checkEnableWatchButton()
 {
   auto path = m_ui->watchPathLineEdit->text();
-  m_ui->watchButton->setEnabled(
-    !path.isEmpty() &&
-    m_ui->connectionsWidget->selectedConnection() != nullptr);
+  m_ui->watchButton->setEnabled(!path.isEmpty() &&
+                                m_ui->connectionsWidget->selectedConnection() !=
+                                  nullptr);
 }
 
 void PassiveAcquisitionWidget::setEnabledRegexGroupsWidget(bool enabled)
@@ -491,4 +478,4 @@ bool PassiveAcquisitionWidget::validateRegex()
 
   return true;
 }
-}
+} // namespace tomviz

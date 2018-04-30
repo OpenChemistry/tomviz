@@ -24,8 +24,7 @@ Connection::Connection() = default;
 
 Connection::Connection(QString name, QString hostName, int port)
   : m_name(name), m_hostName(hostName), m_port(port)
-{
-}
+{}
 
 Connection::~Connection() = default;
 
@@ -57,4 +56,4 @@ QDataStream& operator>>(QDataStream& in, Connection& conn)
 
   return in;
 }
-}
+} // namespace tomviz

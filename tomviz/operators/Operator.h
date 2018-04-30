@@ -280,6 +280,6 @@ private:
   std::atomic<OperatorState> m_state{ OperatorState::Queued };
   QPointer<EditOperatorDialog> m_customDialog;
 };
-}
+} // namespace tomviz
 
 #endif

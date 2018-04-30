@@ -47,6 +47,6 @@ private:
   OperatorPython* m_operator = nullptr;
   void buildInterface(InterfaceBuilder* builder);
 };
-}
+} // namespace tomviz
 
 #endif

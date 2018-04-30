@@ -47,6 +47,6 @@ private:
   void readSettings();
   void writeSettings();
 };
-}
+} // namespace tomviz
 
 #endif

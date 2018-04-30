@@ -43,6 +43,6 @@ private:
   ~OperatorFactory();
   Q_DISABLE_COPY(OperatorFactory)
 };
-}
+} // namespace tomviz
 
 #endif

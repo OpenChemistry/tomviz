@@ -80,13 +80,12 @@ void applyImageOffsets(T* in, T* out, vtkImageData* image,
     }
   }
 }
-}
+} // namespace
 
 namespace tomviz {
 TranslateAlignOperator::TranslateAlignOperator(DataSource* ds, QObject* p)
   : Operator(p), dataSource(ds)
-{
-}
+{}
 
 QIcon TranslateAlignOperator::icon() const
 {
@@ -156,4 +155,4 @@ void TranslateAlignOperator::setAlignOffsets(
   std::copy(newOffsets.begin(), newOffsets.end(), this->offsets.begin());
   emit this->transformModified();
 }
-}
+} // namespace tomviz

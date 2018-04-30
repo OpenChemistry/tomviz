@@ -100,6 +100,6 @@ private slots:
 private:
   Q_DISABLE_COPY(ModuleContour)
 };
-}
+} // namespace tomviz
 
 #endif

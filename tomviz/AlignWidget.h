@@ -124,6 +124,6 @@ protected:
   QVector<vtkVector2i> m_offsets;
   QPointer<TranslateAlignOperator> m_operator;
 };
-}
+} // namespace tomviz
 
 #endif // tomvizAlignWidget

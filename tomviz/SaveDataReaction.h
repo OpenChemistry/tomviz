@@ -43,5 +43,5 @@ protected:
 private:
   Q_DISABLE_COPY(SaveDataReaction)
 };
-}
+} // namespace tomviz
 #endif

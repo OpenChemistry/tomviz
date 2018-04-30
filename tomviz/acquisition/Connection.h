@@ -43,7 +43,7 @@ private:
   QString m_hostName;
   int m_port;
 };
-}
+} // namespace tomviz
 
 Q_DECLARE_METATYPE(tomviz::Connection)
 

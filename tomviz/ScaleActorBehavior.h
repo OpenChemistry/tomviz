@@ -34,6 +34,6 @@ private slots:
 private:
   Q_DISABLE_COPY(ScaleActorBehavior)
 };
-}
+} // namespace tomviz
 
 #endif

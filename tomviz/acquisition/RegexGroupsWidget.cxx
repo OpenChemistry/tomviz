@@ -45,8 +45,7 @@ RegexGroupsWidget::RegexGroupsWidget(QWidget* parent)
     RegexGroupDialog dialog;
     dialog.exec();
 
-    if (m_ui->regexGroupsWidget
-          ->findItems(dialog.name(), Qt::MatchExactly)
+    if (m_ui->regexGroupsWidget->findItems(dialog.name(), Qt::MatchExactly)
           .isEmpty()) {
       m_ui->regexGroupsWidget->addItem(dialog.name());
     }
@@ -113,4 +112,4 @@ QStringList RegexGroupsWidget::regexGroups()
 
   return groups;
 }
-}
+} // namespace tomviz

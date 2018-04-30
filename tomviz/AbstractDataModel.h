@@ -40,9 +40,9 @@ protected:
   ~AbstractDataModel() override;
 
   /**
-  * @{
-  * QAbstractItemModel implementation
-  */
+   * @{
+   * QAbstractItemModel implementation
+   */
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
@@ -62,8 +62,8 @@ protected:
 
   bool removeRows(int row, int count, const QModelIndex& parent) override;
   /**
-  * @}
-  */
+   * @}
+   */
 
   /**
    * Convenience function to query the internal item of an index. Checks the
@@ -73,19 +73,19 @@ protected:
   QTreeWidgetItem* getItem(const QModelIndex& index) const;
 
   /**
-  * Construct the root element. This is the element holding the header tags
-  * so these should be initialized here. Concrete classes should implement this
-  * method as it is up to them to decide the concrete time of element
-  * (QTreeWidgetItem subclasses) to use.
-  */
+   * Construct the root element. This is the element holding the header tags
+   * so these should be initialized here. Concrete classes should implement this
+   * method as it is up to them to decide the concrete time of element
+   * (QTreeWidgetItem subclasses) to use.
+   */
   virtual void initializeRootItem() = 0;
 
   /**
-  * More comprehensive validation. In addition to the standard
-  * QModelIndex::isValid it checks the upper bounds. Because it internally calls
-  * QModelIndex::parent() (and thus QAbstractItemMode::parent()) it should never
-  * be called from within parent().
-  */
+   * More comprehensive validation. In addition to the standard
+   * QModelIndex::isValid it checks the upper bounds. Because it internally
+   * calls QModelIndex::parent() (and thus QAbstractItemMode::parent()) it
+   * should never be called from within parent().
+   */
   bool isIndexValidUpperBound(const QModelIndex& index) const;
 
 protected:
@@ -128,8 +128,7 @@ private:
 
 template <typename T>
 DataItem<T>::DataItem(QTreeWidgetItem* parent) : QTreeWidgetItem(parent)
-{
-}
+{}
 
 template <typename T>
 void DataItem<T>::setReferencedData(const T& data)

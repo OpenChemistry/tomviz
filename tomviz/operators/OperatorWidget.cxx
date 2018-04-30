@@ -34,12 +34,9 @@
 namespace tomviz {
 
 OperatorWidget::OperatorWidget(QWidget* parentObject) : Superclass(parentObject)
-{
-}
+{}
 
-OperatorWidget::~OperatorWidget()
-{
-}
+OperatorWidget::~OperatorWidget() {}
 
 void OperatorWidget::setupUI(OperatorPython* op)
 {
@@ -75,4 +72,4 @@ QMap<QString, QVariant> OperatorWidget::values() const
 {
   return InterfaceBuilder::parameterValues(this);
 }
-}
+} // namespace tomviz

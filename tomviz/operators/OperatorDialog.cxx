@@ -35,9 +35,7 @@ OperatorDialog::OperatorDialog(QWidget* parentObject) : Superclass(parentObject)
   layout->addWidget(buttons);
 }
 
-OperatorDialog::~OperatorDialog()
-{
-}
+OperatorDialog::~OperatorDialog() {}
 
 void OperatorDialog::setJSONDescription(const QString& json)
 {
@@ -48,4 +46,4 @@ QMap<QString, QVariant> OperatorDialog::values() const
 {
   return m_ui->values();
 }
-}
+} // namespace tomviz

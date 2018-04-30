@@ -38,9 +38,10 @@ SnapshotOperator::SnapshotOperator(DataSource* source, QObject* p)
   setSupportsCancel(false);
   setHasChildDataSource(true);
   connect(
-    this, static_cast<void (Operator::*)(const QString&,
-                                         vtkSmartPointer<vtkDataObject>)>(
-            &Operator::newChildDataSource),
+    this,
+    static_cast<void (Operator::*)(const QString&,
+                                   vtkSmartPointer<vtkDataObject>)>(
+      &Operator::newChildDataSource),
     this,
     [this](const QString& label, vtkSmartPointer<vtkDataObject> childData) {
       this->createNewChildDataSource(label, childData, DataSource::Volume,
@@ -62,9 +63,8 @@ QJsonObject SnapshotOperator::serialize() const
 {
   auto json = Operator::serialize();
 
-  if (hasChildDataSource() &&
-      childDataSource()->persistenceState() ==
-        DataSource::PersistenceState::Saved) {
+  if (hasChildDataSource() && childDataSource()->persistenceState() ==
+                                DataSource::PersistenceState::Saved) {
     json["update"] = false;
   }
 
@@ -104,4 +104,4 @@ bool SnapshotOperator::applyTransform(vtkDataObject* dataObject)
   emit newChildDataSource("Snapshot", cacheImage.Get());
   return true;
 }
-}
+} // namespace tomviz

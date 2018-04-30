@@ -86,6 +86,6 @@ private:
   double m_calX = 0.0;
   double m_calY = 0.0;
 };
-}
+} // namespace tomviz
 
 #endif // tomvizAcquisitionWidget_h

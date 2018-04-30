@@ -116,8 +116,8 @@ bool SaveDataReaction::saveData(const QString& filename)
   auto result = ActiveObjects::instance().activeOperatorResult();
 
   auto updateSource = [](QString fileName, DataSource* ds) {
-      ds->setPersistenceState(DataSource::PersistenceState::Saved);
-      ds->setFileName(fileName);
+    ds->setPersistenceState(DataSource::PersistenceState::Saved);
+    ds->setFileName(fileName);
   };
 
   if (!server) {
@@ -151,11 +151,10 @@ bool SaveDataReaction::saveData(const QString& filename)
     producer = result->producerProxy();
   }
 
-  auto writerFactory =
-    vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
+  auto writerFactory = vtkSMProxyManager::GetProxyManager()->GetWriterFactory();
   vtkSmartPointer<vtkSMProxy> proxy;
-  proxy.TakeReference(writerFactory->CreateWriter(filename.toLatin1().data(),
-                                                  producer));
+  proxy.TakeReference(
+    writerFactory->CreateWriter(filename.toLatin1().data(), producer));
   auto writer = vtkSMSourceProxy::SafeDownCast(proxy);
   if (!writer) {
     qCritical() << "Failed to create writer for: " << filename;
@@ -165,10 +164,8 @@ bool SaveDataReaction::saveData(const QString& filename)
   // Convert to float if the type is found to be a double.
   if (strcmp(writer->GetClientSideObject()->GetClassName(), "vtkTIFFWriter") ==
       0) {
-    auto t = vtkTrivialProducer::SafeDownCast(
-      producer->GetClientSideObject());
-    auto imageData =
-      vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    auto t = vtkTrivialProducer::SafeDownCast(producer->GetClientSideObject());
+    auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
     if (imageData->GetPointData()->GetScalars()->GetDataType() == VTK_DOUBLE) {
       vtkNew<vtkImageData> fImage;
       fImage->DeepCopy(imageData);

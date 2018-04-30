@@ -45,6 +45,6 @@ private:
 
   Q_DISABLE_COPY(ToggleDataTypeReaction)
 };
-}
+} // namespace tomviz
 
 #endif

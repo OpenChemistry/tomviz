@@ -62,6 +62,6 @@ private:
   vtkVector3d DataLocation;
   bool MoveEnabled;
 };
-}
+} // namespace tomviz
 
 #endif

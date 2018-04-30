@@ -139,4 +139,4 @@ void LoadPaletteReaction::actionTriggered(QAction* action)
     settings->SetProxySettings(paletteProxy);
   }
 }
-}
+} // namespace tomviz

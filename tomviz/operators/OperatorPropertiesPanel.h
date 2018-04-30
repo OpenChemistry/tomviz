@@ -49,6 +49,6 @@ private:
   QVBoxLayout* m_layout = nullptr;
   OperatorWidget* m_operatorWidget = nullptr;
 };
-}
+} // namespace tomviz
 
 #endif

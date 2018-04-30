@@ -61,4 +61,4 @@ void WelcomeDialog::onDoNotShowAgainStateChanged(int state)
   auto settings = pqApplicationCore::instance()->settings();
   settings->setValue("GeneralSettings.ShowWelcomeDialog", showDialog);
 }
-}
+} // namespace tomviz

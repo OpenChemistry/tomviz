@@ -46,7 +46,8 @@ void ViewPropertiesPanel::setView(vtkSMViewProxy* view)
 {
   m_ui->ProxiesWidget->clear();
   if (view) {
-    m_ui->ProxiesWidget->addProxy(view, view->GetXMLLabel(), QStringList(), true);
+    m_ui->ProxiesWidget->addProxy(view, view->GetXMLLabel(), QStringList(),
+                                  true);
   }
   m_ui->ProxiesWidget->updateLayout();
   this->updatePanel();
@@ -66,4 +67,4 @@ void ViewPropertiesPanel::updatePanel()
   m_ui->ProxiesWidget->filterWidgets(m_ui->SearchBox->isAdvancedSearchActive(),
                                      m_ui->SearchBox->text());
 }
-}
+} // namespace tomviz

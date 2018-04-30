@@ -61,6 +61,6 @@ private:
   vtkSMViewProxy* m_view;
   unsigned long m_viewObserverId;
 };
-}
+} // namespace tomviz
 
 #endif

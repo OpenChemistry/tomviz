@@ -107,7 +107,7 @@ void AddItem(QTreeWidget* tree, const QString& name, const QString& value)
   item->setText(0, name);
   item->setText(1, value);
 }
-}
+} // namespace
 
 AboutDialog::AboutDialog(QWidget* parent)
   : QDialog(parent), m_ui(new Ui::AboutDialog)
@@ -143,4 +143,4 @@ AboutDialog::AboutDialog(QWidget* parent)
 }
 
 AboutDialog::~AboutDialog() = default;
-}
+} // namespace tomviz

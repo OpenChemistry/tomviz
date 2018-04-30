@@ -25,6 +25,6 @@ class Logger
 public:
   static void critical(const QString& msg);
 };
-}
+} // namespace tomviz
 
 #endif

@@ -37,6 +37,6 @@ protected:
 private:
   Q_DISABLE_COPY(AddResampleReaction)
 };
-}
+} // namespace tomviz
 
 #endif

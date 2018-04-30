@@ -55,6 +55,6 @@ public slots:
   // Called when the dialog should apply its changes to the operator
   virtual void applyChangesToOperator() = 0;
 };
-}
+} // namespace tomviz
 
 #endif

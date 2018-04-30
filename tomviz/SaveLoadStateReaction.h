@@ -44,6 +44,6 @@ private:
   static bool checkForLegacyStateFileFormat(const QByteArray state);
   static QString extractLegacyStateFileVersion(const QByteArray state);
 };
-}
+} // namespace tomviz
 
 #endif

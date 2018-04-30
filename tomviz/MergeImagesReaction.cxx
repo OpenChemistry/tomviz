@@ -90,7 +90,7 @@ void MergeImagesReaction::updateEnableState()
       info = sourceList[i]->proxy()->GetDataInformation();
       int thisExtent[6];
       info->GetExtent(thisExtent);
-      enabled = enabled && std::equal(refExtent, refExtent+6, thisExtent);
+      enabled = enabled && std::equal(refExtent, refExtent + 6, thisExtent);
     }
   }
 
@@ -108,13 +108,12 @@ DataSource* MergeImagesReaction::mergeArrays()
   // Eventually, we'll offer the option to merge compontents in a single array.
   // For now, we will simply append the point data arrays.
   vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
-  vtkSMSourceProxy* filter =
-    vtkSMSourceProxy::SafeDownCast(pxm->NewProxy("filters", "AppendAttributes"));
+  vtkSMSourceProxy* filter = vtkSMSourceProxy::SafeDownCast(
+    pxm->NewProxy("filters", "AppendAttributes"));
   Q_ASSERT(filter);
 
   for (int i = 0; i < sourceList.size(); ++i) {
-    vtkSMPropertyHelper(filter, "Input")
-      .Add(sourceList[i]->proxy(), 0);
+    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->proxy(), 0);
   }
 
   filter->UpdateVTKObjects();
@@ -141,16 +140,15 @@ DataSource* MergeImagesReaction::mergeComponents()
   QList<DataSource*> sourceList = m_dataSources.toList();
 
   vtkSMSessionProxyManager* pxm = ActiveObjects::instance().proxyManager();
-  vtkSMSourceProxy* filter =
-    vtkSMSourceProxy::SafeDownCast(pxm->NewProxy("filters", "PythonCalculator"));
+  vtkSMSourceProxy* filter = vtkSMSourceProxy::SafeDownCast(
+    pxm->NewProxy("filters", "PythonCalculator"));
   Q_ASSERT(filter);
 
   std::stringstream expression;
   expression << "np.transpose(np.vstack((";
 
   for (int i = 0; i < sourceList.size(); ++i) {
-    vtkSMPropertyHelper(filter, "Input")
-      .Add(sourceList[i]->proxy(), 0);
+    vtkSMPropertyHelper(filter, "Input").Add(sourceList[i]->proxy(), 0);
 
     auto info = sourceList[0]->proxy()->GetDataInformation();
     auto pointData = info->GetPointDataInformation();
@@ -185,4 +183,4 @@ DataSource* MergeImagesReaction::mergeComponents()
   return newSource;
 }
 
-}
+} // namespace tomviz

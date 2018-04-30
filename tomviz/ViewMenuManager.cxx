@@ -48,44 +48,41 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
 {
   m_viewPropertiesDialog = new QDialog(mainWindow);
   m_viewPropertiesDialog->setWindowTitle("View Properties");
-  ViewPropertiesPanel* panel =
-    new ViewPropertiesPanel(m_viewPropertiesDialog);
+  ViewPropertiesPanel* panel = new ViewPropertiesPanel(m_viewPropertiesDialog);
   QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(panel);
   m_viewPropertiesDialog->setLayout(layout);
   connect(m_viewPropertiesDialog, SIGNAL(finished(int)),
-                SLOT(viewPropertiesDialogHidden()));
+          SLOT(viewPropertiesDialogHidden()));
 
   m_showViewPropertiesAction = new QAction("View Properties", Menu);
   m_showViewPropertiesAction->setCheckable(true);
   connect(m_showViewPropertiesAction, SIGNAL(triggered(bool)),
-                SLOT(showViewPropertiesDialog(bool)));
+          SLOT(showViewPropertiesDialog(bool)));
   m_view = ActiveObjects::instance().activeView();
   if (m_view) {
     m_viewObserverId =
-      pqCoreUtilities::connect(m_view, vtkCommand::PropertyModifiedEvent,
-                               this, SLOT(onViewPropertyChanged()));
+      pqCoreUtilities::connect(m_view, vtkCommand::PropertyModifiedEvent, this,
+                               SLOT(onViewPropertyChanged()));
   }
-  connect(&ActiveObjects::instance(),
-                SIGNAL(viewChanged(vtkSMViewProxy*)), SLOT(onViewChanged()));
+  connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
+          SLOT(onViewChanged()));
   Menu->addSeparator();
   // Projection modes
   QActionGroup* projectionGroup = new QActionGroup(this);
 
-  m_perspectiveProjectionAction =
-    Menu->addAction("Perspective Projection");
+  m_perspectiveProjectionAction = Menu->addAction("Perspective Projection");
   m_perspectiveProjectionAction->setCheckable(true);
   m_perspectiveProjectionAction->setActionGroup(projectionGroup);
   m_perspectiveProjectionAction->setChecked(true);
   connect(m_perspectiveProjectionAction, SIGNAL(triggered()),
-                SLOT(setProjectionModeToPerspective()));
-  m_orthographicProjectionAction =
-    Menu->addAction("Orthographic Projection");
+          SLOT(setProjectionModeToPerspective()));
+  m_orthographicProjectionAction = Menu->addAction("Orthographic Projection");
   m_orthographicProjectionAction->setCheckable(true);
   m_orthographicProjectionAction->setActionGroup(projectionGroup);
   m_orthographicProjectionAction->setChecked(false);
   connect(m_orthographicProjectionAction, SIGNAL(triggered()),
-                SLOT(setProjectionModeToOrthographic()));
+          SLOT(setProjectionModeToOrthographic()));
 
   Menu->addSeparator();
 
@@ -126,7 +123,7 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   m_showViewPropertiesAction->setCheckable(true);
   m_showViewPropertiesAction->setChecked(false);
   connect(m_showViewPropertiesAction, SIGNAL(triggered(bool)),
-                SLOT(showViewPropertiesDialog(bool)));
+          SLOT(showViewPropertiesDialog(bool)));
 }
 
 ViewMenuManager::~ViewMenuManager()
@@ -186,8 +183,7 @@ void ViewMenuManager::setProjectionModeToOrthographic()
 
 void ViewMenuManager::onViewPropertyChanged()
 {
-  if (!m_perspectiveProjectionAction ||
-      !m_orthographicProjectionAction) {
+  if (!m_perspectiveProjectionAction || !m_orthographicProjectionAction) {
     return;
   }
   if (!m_view->GetProperty("CameraParallelProjection")) {
@@ -210,8 +206,8 @@ void ViewMenuManager::onViewChanged()
   m_view = ActiveObjects::instance().activeView();
   if (m_view) {
     m_viewObserverId =
-      pqCoreUtilities::connect(m_view, vtkCommand::PropertyModifiedEvent,
-                               this, SLOT(onViewPropertyChanged()));
+      pqCoreUtilities::connect(m_view, vtkCommand::PropertyModifiedEvent, this,
+                               SLOT(onViewPropertyChanged()));
     if (m_view->GetProperty("AxesGrid")) {
       vtkSMPropertyHelper axesGridProp(m_view, "AxesGrid");
       vtkSMProxy* proxy = axesGridProp.GetAsProxy();
@@ -232,4 +228,4 @@ void ViewMenuManager::onViewChanged()
     m_perspectiveProjectionAction->setEnabled(enableProjectionModes);
   }
 }
-}
+} // namespace tomviz

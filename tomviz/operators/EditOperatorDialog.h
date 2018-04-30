@@ -64,6 +64,6 @@ private:
   class EODInternals;
   QScopedPointer<EODInternals> Internals;
 };
-}
+} // namespace tomviz
 
 #endif
