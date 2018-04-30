@@ -38,6 +38,6 @@ private:
   class Private;
   Private* d;
 };
-}
+} // namespace tomviz
 
 #endif // tomvizEmdFormat_h

@@ -73,5 +73,5 @@ private:
   unsigned long m_linkCamerasId;
   bool m_visible = false;
 };
-}
+} // namespace tomviz
 #endif

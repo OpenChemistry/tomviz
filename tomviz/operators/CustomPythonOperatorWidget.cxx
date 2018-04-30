@@ -19,10 +19,7 @@
 namespace tomviz {
 
 CustomPythonOperatorWidget::CustomPythonOperatorWidget(QWidget* p) : QWidget(p)
-{
-}
+{}
 
-CustomPythonOperatorWidget::~CustomPythonOperatorWidget()
-{
-}
-}
+CustomPythonOperatorWidget::~CustomPythonOperatorWidget() {}
+} // namespace tomviz

@@ -82,8 +82,7 @@ public:
 
 Module::Module(QObject* parentObject)
   : QObject(parentObject), d(new Module::MInternals())
-{
-}
+{}
 
 Module::~Module() = default;
 
@@ -118,13 +117,9 @@ DataSource* Module::dataSource() const
   return m_activeDataSource;
 }
 
-void Module::addToPanel(QWidget* vtkNotUsed(panel))
-{
-}
+void Module::addToPanel(QWidget* vtkNotUsed(panel)) {}
 
-void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel))
-{
-}
+void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel)) {}
 
 void Module::setUseDetachedColorMap(bool val)
 {

@@ -30,7 +30,6 @@
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
-#include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 
@@ -40,10 +39,8 @@
 #include <QVBoxLayout>
 namespace tomviz {
 
-ModuleThreshold::ModuleThreshold(QObject* parentObject)
-  : Module(parentObject)
-{
-}
+ModuleThreshold::ModuleThreshold(QObject* parentObject) : Module(parentObject)
+{}
 
 ModuleThreshold::~ModuleThreshold()
 {
@@ -90,8 +87,7 @@ bool ModuleThreshold::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_thresholdFilter->UpdateVTKObjects();
 
   // Create the representation for it.
-  m_thresholdRepresentation =
-    controller->Show(m_thresholdFilter, 0, vtkView);
+  m_thresholdRepresentation = controller->Show(m_thresholdFilter, 0, vtkView);
   Q_ASSERT(m_thresholdRepresentation);
   vtkSMRepresentationProxy::SetRepresentationType(m_thresholdRepresentation,
                                                   "Surface");
@@ -116,8 +112,7 @@ void ModuleThreshold::updateColorMap()
   Q_ASSERT(m_thresholdRepresentation);
 
   // by default, use the data source's color/opacity maps.
-  vtkSMPropertyHelper(m_thresholdRepresentation, "LookupTable")
-    .Set(colorMap());
+  vtkSMPropertyHelper(m_thresholdRepresentation, "LookupTable").Set(colorMap());
   vtkSMPropertyHelper(m_thresholdRepresentation, "ScalarOpacityFunction")
     .Set(opacityMap());
 
@@ -137,8 +132,7 @@ bool ModuleThreshold::finalize()
 bool ModuleThreshold::setVisibility(bool val)
 {
   Q_ASSERT(m_thresholdRepresentation);
-  vtkSMPropertyHelper(m_thresholdRepresentation, "Visibility")
-    .Set(val ? 1 : 0);
+  vtkSMPropertyHelper(m_thresholdRepresentation, "Visibility").Set(val ? 1 : 0);
   m_thresholdRepresentation->UpdateVTKObjects();
   return true;
 }
@@ -211,32 +205,31 @@ void ModuleThreshold::addToPanel(QWidget* panel)
 
   m_links.addPropertyLink(opacitySlider, "value", SIGNAL(valueEdited(double)),
                           m_thresholdRepresentation,
-                          m_thresholdRepresentation->GetProperty("Opacity"),
+                          m_thresholdRepresentation->GetProperty("Opacity"), 0);
+  m_links.addPropertyLink(specularSlider, "value", SIGNAL(valueEdited(double)),
+                          m_thresholdRepresentation,
+                          m_thresholdRepresentation->GetProperty("Specular"),
                           0);
-  m_links.addPropertyLink(
-    specularSlider, "value", SIGNAL(valueEdited(double)),
-    m_thresholdRepresentation,
-    m_thresholdRepresentation->GetProperty("Specular"), 0);
 
   m_links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
                           m_thresholdRepresentation,
                           m_thresholdRepresentation->GetProperty("MapScalars"),
                           0);
 
-  connect(arraySelection, &pqPropertyWidget::changeFinished,
-                arraySelection, &pqPropertyWidget::apply);
+  connect(arraySelection, &pqPropertyWidget::changeFinished, arraySelection,
+          &pqPropertyWidget::apply);
   connect(arraySelection, &pqPropertyWidget::changeFinished, this,
-                &Module::renderNeeded);
+          &Module::renderNeeded);
   connect(range, &pqPropertyWidget::changeFinished, range,
-                &pqPropertyWidget::apply);
+          &pqPropertyWidget::apply);
   connect(range, &pqPropertyWidget::changeFinished, this,
-                &Module::renderNeeded);
+          &Module::renderNeeded);
   connect(representations, &QComboBox::currentTextChanged, this,
-                &ModuleThreshold::dataUpdated);
+          &ModuleThreshold::dataUpdated);
   connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleThreshold::dataUpdated);
+          &ModuleThreshold::dataUpdated);
   connect(specularSlider, &DoubleSliderWidget::valueEdited, this,
-                &ModuleThreshold::dataUpdated);
+          &ModuleThreshold::dataUpdated);
   connect(mapScalarsCheckBox, &QCheckBox::toggled, this,
           &ModuleThreshold::dataUpdated);
 }
@@ -350,4 +343,4 @@ vtkSMProxy* ModuleThreshold::getProxyForString(const std::string& str)
     return nullptr;
   }
 }
-}
+} // namespace tomviz

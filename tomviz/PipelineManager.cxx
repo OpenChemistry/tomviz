@@ -20,10 +20,7 @@
 
 namespace tomviz {
 
-PipelineManager::PipelineManager(QObject* p)
-  : QObject(p)
-{
-}
+PipelineManager::PipelineManager(QObject* p) : QObject(p) {}
 
 PipelineManager::~PipelineManager() = default;
 

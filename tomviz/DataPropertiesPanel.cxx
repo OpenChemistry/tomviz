@@ -96,9 +96,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
           SLOT(updateActiveScalars()));
 }
 
-DataPropertiesPanel::~DataPropertiesPanel()
-{
-}
+DataPropertiesPanel::~DataPropertiesPanel() {}
 
 void DataPropertiesPanel::paintEvent(QPaintEvent* e)
 {
@@ -335,13 +333,14 @@ bool DataPropertiesPanel::eventFilter(QObject* obj, QEvent* event)
         // the number of angles pasted, cancel the paste
         if (ranges[0].rowCount() > 1 && ranges[0].rowCount() != angles.size()) {
           QMessageBox::warning(
-            this, "Error", QString("Cells selected (%1) does not match number "
-                                   "of angles to paste (%2).  \n"
-                                   "Please select one cell to mark the start "
-                                   "location for pasting or select the same "
-                                   "number of cells that will be pasted into.")
-                             .arg(ranges[0].rowCount())
-                             .arg(angles.size()));
+            this, "Error",
+            QString("Cells selected (%1) does not match number "
+                    "of angles to paste (%2).  \n"
+                    "Please select one cell to mark the start "
+                    "location for pasting or select the same "
+                    "number of cells that will be pasted into.")
+              .arg(ranges[0].rowCount())
+              .arg(angles.size()));
           return true;
         }
         auto needToAdd = false;
@@ -522,4 +521,4 @@ void DataPropertiesPanel::updateSpacing(int axis, double newLength)
   spacing[axis] = newLength / (extent[2 * axis + 1] - extent[2 * axis] + 1);
   m_currentDataSource->setSpacing(spacing);
 }
-}
+} // namespace tomviz

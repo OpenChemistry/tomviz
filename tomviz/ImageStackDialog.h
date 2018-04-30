@@ -44,6 +44,6 @@ private slots:
 private:
   QScopedPointer<Ui::ImageStackDialog> m_ui;
 };
-}
+} // namespace tomviz
 
 #endif

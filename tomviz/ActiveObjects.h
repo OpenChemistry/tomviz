@@ -62,7 +62,10 @@ public:
   Module* activeModule() const { return m_activeModule; }
 
   /// Returns the active OperatorResult
-  OperatorResult* activeOperatorResult() const { return m_activeOperatorResult; }
+  OperatorResult* activeOperatorResult() const
+  {
+    return m_activeOperatorResult;
+  }
 
   /// Returns the vtkSMSessionProxyManager from the active server/session.
   /// Provided here for convenience, since we need to access the proxy manager
@@ -170,6 +173,6 @@ protected:
 private:
   Q_DISABLE_COPY(ActiveObjects)
 };
-}
+} // namespace tomviz
 
 #endif

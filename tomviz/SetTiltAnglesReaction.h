@@ -41,6 +41,6 @@ private:
   Q_DISABLE_COPY(SetTiltAnglesReaction)
   QMainWindow* m_mainWindow;
 };
-}
+} // namespace tomviz
 
 #endif

@@ -30,8 +30,7 @@
 
 namespace tomviz {
 
-Pipeline::Pipeline(DataSource* dataSource, QObject* parent)
-  : QObject(parent)
+Pipeline::Pipeline(DataSource* dataSource, QObject* parent) : QObject(parent)
 {
   m_data = dataSource;
   m_worker = new PipelineWorker(this);
@@ -284,12 +283,12 @@ void Pipeline::addDataSource(DataSource* dataSource)
   // Wire up transformModified to execute pipeline
   connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
     // Extract out source and execute all.
-    connect(op, &Operator::transformModified, this,
-            [this]() { execute(); });
+    connect(op, &Operator::transformModified, this, [this]() { execute(); });
 
     // Ensure that new child data source signals are correctly wired up.
-    connect(op, static_cast<void (Operator::*)(DataSource*)>(
-                  &Operator::newChildDataSource),
+    connect(op,
+            static_cast<void (Operator::*)(DataSource*)>(
+              &Operator::newChildDataSource),
             [this](DataSource* ds) { addDataSource(ds); });
 
     // We need to ensure we move add datasource to the end of the branch
@@ -366,8 +365,7 @@ void Pipeline::addDefaultModules(DataSource* dataSource)
   pqview->render();
 }
 
-Pipeline::ImageFuture::ImageFuture(Operator* op,
-                                   vtkImageData* imageData,
+Pipeline::ImageFuture::ImageFuture(Operator* op, vtkImageData* imageData,
                                    PipelineWorker::Future* future,
                                    QObject* parent)
   : QObject(parent), m_operator(op), m_imageData(imageData), m_future(future)
@@ -442,4 +440,4 @@ DataSource* Pipeline::transformedDataSource(DataSource* ds)
   return ds;
 }
 
-} // tomviz namespace
+} // namespace tomviz

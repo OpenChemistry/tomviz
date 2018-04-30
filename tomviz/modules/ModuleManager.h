@@ -132,6 +132,6 @@ private:
 
   QJsonObject m_stateObject;
 };
-}
+} // namespace tomviz
 
 #endif

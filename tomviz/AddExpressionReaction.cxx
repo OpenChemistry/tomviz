@@ -51,8 +51,8 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
   opPython->setLabel("Transform Data");
 
   // Create a non-modal dialog, delete it once it has been closed.
-  auto dialog = new EditOperatorDialog(opPython, source, true,
-                                       tomviz::mainWidget());
+  auto dialog =
+    new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
   dialog->setAttribute(Qt::WA_DeleteOnClose, true);
   dialog->show();
   connect(opPython, SIGNAL(destroyed()), dialog, SLOT(reject()));
@@ -97,4 +97,4 @@ QString AddExpressionReaction::getDefaultExpression(DataSource* source)
                "\n");
   }
 }
-}
+} // namespace tomviz

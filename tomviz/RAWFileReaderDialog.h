@@ -49,6 +49,6 @@ private:
   bool isSigned(int vtkType);
   int vtkDataTypeToIndex(int vtkType);
 };
-}
+} // namespace tomviz
 
 #endif

@@ -26,8 +26,7 @@ RegexGroupSubstitution::RegexGroupSubstitution(const QString& groupName,
                                                const QString& regex,
                                                const QString& substitution)
   : m_groupName(groupName), m_regex(regex), m_substitution(substitution)
-{
-}
+{}
 
 RegexGroupSubstitution::~RegexGroupSubstitution() = default;
 
@@ -59,4 +58,4 @@ QDataStream& operator>>(QDataStream& in, RegexGroupSubstitution& conn)
 
   return in;
 }
-}
+} // namespace tomviz

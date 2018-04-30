@@ -24,8 +24,7 @@ namespace tomviz {
 JsonRpcClient::JsonRpcClient(const QString& url, QObject* parent_)
   : QObject(parent_), m_url(url),
     m_networkAccessManager(new QNetworkAccessManager(this))
-{
-}
+{}
 
 JsonRpcReply* JsonRpcClient::sendRequest(const QJsonObject& requestBody)
 {
@@ -108,4 +107,4 @@ JsonRpcReply* JsonRpcClient::sendRequest(const QJsonObject& requestBody)
 
   return rpcReply;
 }
-}
+} // namespace tomviz

@@ -185,4 +185,4 @@ QComboBox* ModuleContourWidget::getColorByComboBox()
 {
   return m_ui->cbColorBy;
 }
-}
+} // namespace tomviz

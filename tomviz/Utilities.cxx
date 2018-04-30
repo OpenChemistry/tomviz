@@ -68,7 +68,7 @@ const char* Attributes::TYPE = "tomviz.Type";
 const char* Attributes::DATASOURCE_FILENAME = "tomviz.DataSource.FileName";
 const char* Attributes::LABEL = "tomviz.Label";
 const char* Attributes::FILENAME = "tomviz.filename";
-}
+} // namespace tomviz
 
 namespace {
 
@@ -93,8 +93,7 @@ class XMLFileNameConverter : public pugi::xml_tree_walker
 public:
   XMLFileNameConverter(const QDir& dir, bool rel)
     : rootDir(dir), toRelative(rel)
-  {
-  }
+  {}
   bool for_each(pugi::xml_node& node) override
   {
     if (strcmp(node.name(), "Property") == 0) {
@@ -125,7 +124,7 @@ public:
   QDir rootDir;
   bool toRelative;
 };
-}
+} // namespace
 
 namespace tomviz {
 
@@ -145,7 +144,7 @@ void createXmlProperty(pugi::xml_node& n, const char* name, int id,
     element.append_attribute("value").set_value(arr[i].toDouble(-1));
   }
 }
-}
+} // namespace
 
 QJsonObject serialize(vtkSMProxy* proxy)
 {
@@ -522,10 +521,9 @@ bool deserialize(vtkPiecewiseFunction* func, const pugi::xml_node& in)
 vtkPVArrayInformation* scalarArrayInformation(vtkSMSourceProxy* proxy)
 {
   vtkPVDataInformation* dinfo = proxy->GetDataInformation();
-  return dinfo
-           ? dinfo->GetPointDataInformation()->GetAttributeInformation(
-               vtkDataSetAttributes::SCALARS)
-           : nullptr;
+  return dinfo ? dinfo->GetPointDataInformation()->GetAttributeInformation(
+                   vtkDataSetAttributes::SCALARS)
+               : nullptr;
 }
 
 bool rescaleColorMap(vtkSMProxy* colorMap, DataSource* dataSource)
@@ -871,4 +869,4 @@ bool setProperties(const QJsonObject& props, vtkSMProxy* proxy)
 }
 
 double offWhite[3] = { 204.0 / 255, 204.0 / 255, 204.0 / 255 };
-}
+} // namespace tomviz

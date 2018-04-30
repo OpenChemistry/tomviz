@@ -23,8 +23,7 @@ namespace tomviz {
 ImageStackModel::ImageStackModel(QObject* parent,
                                  const QList<ImageInfo>& filesInfo)
   : QAbstractTableModel(parent), m_filesInfo(filesInfo)
-{
-}
+{}
 
 int ImageStackModel::rowCount(const QModelIndex&) const
 {
@@ -100,7 +99,6 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
 
 ImageInfo::ImageInfo(QString fileName, int m_, int n_, bool consistent_)
   : fileInfo(QFileInfo(fileName)), m(m_), n(n_), consistent(consistent_)
-{
-}
+{}
 
-}
+} // namespace tomviz

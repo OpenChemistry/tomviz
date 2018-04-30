@@ -27,8 +27,7 @@ namespace tomviz {
 
 OperatorResult::OperatorResult(QObject* parent)
   : Superclass(parent), m_name(tr("Unnamed"))
-{
-}
+{}
 
 OperatorResult::~OperatorResult()
 {

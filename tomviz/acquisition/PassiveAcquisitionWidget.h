@@ -101,6 +101,6 @@ private:
   void stopWatching();
   bool validateRegex();
 };
-}
+} // namespace tomviz
 
 #endif // tomvizPassiveAcquisitionWidget_h

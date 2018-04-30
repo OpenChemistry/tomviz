@@ -33,4 +33,4 @@ QString RegexGroupDialog::name()
 {
   return m_ui->nameLineEdit->text();
 }
-}
+} // namespace tomviz

@@ -207,6 +207,6 @@ struct OperatorDescription
 };
 
 std::vector<OperatorDescription> findCustomOperators(const QString& path);
-}
+} // namespace tomviz
 
 #endif

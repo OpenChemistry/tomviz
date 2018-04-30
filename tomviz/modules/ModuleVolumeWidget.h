@@ -29,7 +29,7 @@
 namespace Ui {
 class ModuleVolumeWidget;
 class LightingParametersForm;
-}
+} // namespace Ui
 
 namespace tomviz {
 
@@ -86,5 +86,5 @@ private:
 private slots:
   void onBlendingChanged(const int mode);
 };
-}
+} // namespace tomviz
 #endif

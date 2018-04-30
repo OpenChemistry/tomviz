@@ -53,6 +53,6 @@ struct ImageInfo
   bool consistent;
 };
 
-}
+} // namespace tomviz
 
 #endif

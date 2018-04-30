@@ -50,5 +50,5 @@ private:
 
   QPointer<DataSource> m_activeDataSource;
 };
-}
+} // namespace tomviz
 #endif

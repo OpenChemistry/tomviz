@@ -47,7 +47,7 @@ private:
   QString m_regex;
   QString m_substitution;
 };
-}
+} // namespace tomviz
 
 Q_DECLARE_METATYPE(tomviz::RegexGroupSubstitution)
 

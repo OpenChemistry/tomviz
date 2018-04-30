@@ -33,8 +33,7 @@ class AcquisitionClientBaseRequest : public QObject
 
 public:
   explicit AcquisitionClientBaseRequest(QObject* parent = 0) : QObject(parent)
-  {
-  }
+  {}
 
 signals:
   void error(const QString& errorMessage, const QJsonValue& errorData);
@@ -47,8 +46,7 @@ class AcquisitionClientRequest : public AcquisitionClientBaseRequest
 public:
   explicit AcquisitionClientRequest(QObject* parent = 0)
     : AcquisitionClientBaseRequest(parent)
-  {
-  }
+  {}
 
 signals:
   void finished(const QJsonValue& result);
@@ -61,8 +59,7 @@ class AcquisitionClientImageRequest : public AcquisitionClientBaseRequest
 public:
   explicit AcquisitionClientImageRequest(QObject* parent = 0)
     : AcquisitionClientBaseRequest(parent)
-  {
-  }
+  {}
 
 signals:
   void finished(const QString mimeType, const QByteArray& result,
@@ -113,6 +110,6 @@ private slots:
 private:
   JsonRpcClient* m_jsonRpcClient;
 };
-}
+} // namespace tomviz
 
 #endif

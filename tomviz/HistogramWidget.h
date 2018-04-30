@@ -87,6 +87,6 @@ private:
 
   QVTKGLWidget* m_qvtk;
 };
-}
+} // namespace tomviz
 
 #endif // tomvizHistogramWidget_h

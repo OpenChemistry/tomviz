@@ -79,5 +79,5 @@ protected:
 private:
   QVTKGLWidget* m_qvtk;
 };
-}
+} // namespace tomviz
 #endif // tomvizHistogram2DWidget_h

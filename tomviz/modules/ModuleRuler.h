@@ -74,6 +74,6 @@ private:
 
   bool m_showLine = true;
 };
-}
+} // namespace tomviz
 
 #endif

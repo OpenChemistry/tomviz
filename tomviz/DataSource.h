@@ -269,6 +269,6 @@ private:
   double m_scaleOriginalSpacingBy = 1.0;
 };
 
-}
+} // namespace tomviz
 
 #endif

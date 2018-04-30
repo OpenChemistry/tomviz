@@ -47,6 +47,6 @@ private:
   bool m_updateCache = true; // Update the first time, then freeze.
   Q_DISABLE_COPY(SnapshotOperator)
 };
-}
+} // namespace tomviz
 
 #endif

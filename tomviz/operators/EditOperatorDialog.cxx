@@ -102,9 +102,7 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   op->setCustomDialog(this);
 }
 
-EditOperatorDialog::~EditOperatorDialog()
-{
-}
+EditOperatorDialog::~EditOperatorDialog() {}
 
 void EditOperatorDialog::setViewMode(const QString& mode)
 {
@@ -126,8 +124,9 @@ void EditOperatorDialog::onApply()
 
   if (this->Internals->Widget) {
     // If we are modifying an operator that is already part of a pipeline and
-    // the pipeline is running it has to cancel the currently running pipeline first.
-    // Warn the user rather that just canceling potentially long-running operations.
+    // the pipeline is running it has to cancel the currently running pipeline
+    // first. Warn the user rather that just canceling potentially long-running
+    // operations.
     if (this->Internals->dataSource->pipeline()->isRunning() &&
         !this->Internals->needsToBeAdded) {
       auto result = QMessageBox::question(
@@ -135,10 +134,10 @@ void EditOperatorDialog::onApply()
         "Applying changes to an operator that is part of a running pipeline "
         "will cancel the current running operator and restart the pipeline "
         "run.  Proceed anyway?");
-      // FIXME There is still a concurrency issue here if the background thread running the
-      // operator finishes and the finished event is queued behind the question() return
-      // event above.  If that happens then we will not get a canceled() event and the
-      // pipeline will stay paused.
+      // FIXME There is still a concurrency issue here if the background thread
+      // running the operator finishes and the finished event is queued behind
+      // the question() return event above.  If that happens then we will not
+      // get a canceled() event and the pipeline will stay paused.
       if (result == QMessageBox::No) {
         return;
       } else {
@@ -264,4 +263,4 @@ void EditOperatorDialog::showDialogForOperator(Operator* op,
     }
   }
 }
-}
+} // namespace tomviz

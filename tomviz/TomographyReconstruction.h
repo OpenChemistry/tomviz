@@ -42,7 +42,7 @@ void weightedBackProjection3(vtkImageData* tiltSeries,
 void unweightedBackProjection2(float* sinogram, double* tiltAngles,
                                float* recon, int numOfTilts,
                                int numOfRays); // 2D WBP recon
-}
-}
+} // namespace TomographyReconstruction
+} // namespace tomviz
 
 #endif

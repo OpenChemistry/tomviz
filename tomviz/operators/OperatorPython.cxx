@@ -55,8 +55,8 @@ public:
   EditPythonOperatorWidget(
     QWidget* p, tomviz::OperatorPython* o,
     tomviz::CustomPythonOperatorWidget* customWidget = nullptr)
-    : tomviz::EditOperatorWidget(p), m_op(o), m_ui(), m_customWidget(customWidget),
-      m_opWidget(nullptr)
+    : tomviz::EditOperatorWidget(p), m_op(o), m_ui(),
+      m_customWidget(customWidget), m_opWidget(nullptr)
   {
     m_ui.setupUi(this);
     m_ui.name->setText(o->label());
@@ -109,7 +109,7 @@ private:
 
 QMap<QString, QPair<bool, tomviz::OperatorPython::CustomWidgetFunction>>
   CustomWidgetMap;
-}
+} // namespace
 
 namespace tomviz {
 
@@ -174,11 +174,13 @@ OperatorPython::OperatorPython(QObject* parentObject)
 
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
-  connect(this, SIGNAL(newChildDataSource(const QString&,
-                                          vtkSmartPointer<vtkDataObject>)),
-          this, SLOT(createNewChildDataSource(const QString&,
-                                              vtkSmartPointer<vtkDataObject>)),
-          Qt::BlockingQueuedConnection);
+  connect(
+    this,
+    SIGNAL(newChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>)),
+    this,
+    SLOT(
+      createNewChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>)),
+    Qt::BlockingQueuedConnection);
   connect(
     this,
     SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
@@ -186,9 +188,7 @@ OperatorPython::OperatorPython(QObject* parentObject)
     SLOT(setOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)));
 }
 
-OperatorPython::~OperatorPython()
-{
-}
+OperatorPython::~OperatorPython() {}
 
 void OperatorPython::setLabel(const QString& txt)
 {
@@ -522,7 +522,7 @@ QVariant castJsonArg(const QJsonValue& arg, const QString& type)
   }
   return QVariant();
 }
-}
+} // namespace
 
 bool OperatorPython::deserialize(const QJsonObject& json)
 {
@@ -611,5 +611,5 @@ QMap<QString, QVariant> OperatorPython::arguments() const
 {
   return m_arguments;
 }
-}
+} // namespace tomviz
 #include "OperatorPython.moc"

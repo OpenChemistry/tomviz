@@ -45,5 +45,5 @@ private:
   QMainWindow* mainWindow;
   Q_DISABLE_COPY(ProgressDialogManager)
 };
-}
+} // namespace tomviz
 #endif

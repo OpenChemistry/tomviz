@@ -35,9 +35,7 @@ ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject)
   updateActions();
 }
 
-ModuleMenu::~ModuleMenu()
-{
-}
+ModuleMenu::~ModuleMenu() {}
 
 void ModuleMenu::updateActions()
 {
@@ -56,8 +54,8 @@ void ModuleMenu::updateActions()
   if (modules.size() > 0) {
     foreach (const QString& txt, modules) {
       auto actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
-      actn->setEnabled(ModuleFactory::moduleApplicable(txt, activeDataSource,
-                                                       activeView));
+      actn->setEnabled(
+        ModuleFactory::moduleApplicable(txt, activeDataSource, activeView));
       toolBar->addAction(actn);
       actn->setData(txt);
     }

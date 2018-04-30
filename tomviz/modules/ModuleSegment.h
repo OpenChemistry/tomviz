@@ -75,6 +75,6 @@ private:
   class MSInternal;
   QScopedPointer<MSInternal> d;
 };
-}
+} // namespace tomviz
 
 #endif

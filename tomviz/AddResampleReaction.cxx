@@ -57,7 +57,7 @@ vtkImageData* imageData(DataSource* source)
   auto t = source->producer();
   return vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
 }
-}
+} // namespace
 
 void AddResampleReaction::resample(DataSource* source)
 {
@@ -143,4 +143,4 @@ void AddResampleReaction::resample(DataSource* source)
     LoadDataReaction::dataSourceAdded(resampledData);
   }
 }
-}
+} // namespace tomviz

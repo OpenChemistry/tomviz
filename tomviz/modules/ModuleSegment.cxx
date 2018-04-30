@@ -45,9 +45,7 @@ public:
   bool IsVisible;
 };
 
-ModuleSegment::ModuleSegment(QObject* p) : Module(p), d(new MSInternal)
-{
-}
+ModuleSegment::ModuleSegment(QObject* p) : Module(p), d(new MSInternal) {}
 
 ModuleSegment::~ModuleSegment()
 {
@@ -305,4 +303,4 @@ vtkSMProxy* ModuleSegment::getProxyForString(const std::string& str)
     return nullptr;
   }
 }
-}
+} // namespace tomviz

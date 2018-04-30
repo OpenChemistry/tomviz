@@ -56,9 +56,7 @@
 
 namespace tomviz {
 
-ModuleSlice::ModuleSlice(QObject* parentObject) : Module(parentObject)
-{
-}
+ModuleSlice::ModuleSlice(QObject* parentObject) : Module(parentObject) {}
 
 ModuleSlice::~ModuleSlice()
 {
@@ -433,4 +431,4 @@ vtkSMProxy* ModuleSlice::getProxyForString(const std::string& str)
     return nullptr;
   }
 }
-}
+} // namespace tomviz

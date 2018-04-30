@@ -75,5 +75,5 @@ private:
   bool StrictRange;
   bool BlockUpdate;
 };
-}
+} // namespace tomviz
 #endif

@@ -34,8 +34,7 @@ namespace tomviz {
 
 SaveLoadStateReaction::SaveLoadStateReaction(QAction* parentObject, bool load)
   : pqReaction(parentObject), m_load(load)
-{
-}
+{}
 
 void SaveLoadStateReaction::onTriggered()
 {
@@ -48,8 +47,7 @@ void SaveLoadStateReaction::onTriggered()
 
 bool SaveLoadStateReaction::saveState()
 {
-  QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"),
-                         QString(),
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Save State File"), QString(),
                          "Tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("SaveStateDialog");
   fileDialog.setAcceptMode(QFileDialog::AcceptSave);
@@ -68,8 +66,7 @@ bool SaveLoadStateReaction::saveState()
 
 bool SaveLoadStateReaction::loadState()
 {
-  QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"),
-                         QString(),
+  QFileDialog fileDialog(tomviz::mainWidget(), tr("Load State File"), QString(),
                          "Tomviz state files (*.tvsm);;All files (*)");
   fileDialog.setObjectName("LoadStateDialog");
   fileDialog.setFileMode(QFileDialog::ExistingFile);
@@ -113,9 +110,8 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     }
   }
 
-  if (doc.isObject() &&
-      ModuleManager::instance().deserialize(doc.object(),
-                                            QFileInfo(filename).dir())) {
+  if (doc.isObject() && ModuleManager::instance().deserialize(
+                          doc.object(), QFileInfo(filename).dir())) {
     RecentFilesMenu::pushStateFile(filename);
     return true;
   }
@@ -195,4 +191,4 @@ bool SaveLoadStateReaction::checkForLegacyStateFileFormat(
   return false;
 }
 
-} // end of namespace
+} // namespace tomviz

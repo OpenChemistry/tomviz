@@ -56,6 +56,6 @@ private slots:
   void deleteItemsConfirm(const QModelIndexList& idxs);
   void setModuleVisibility(const QModelIndexList& idxs, bool visible);
 };
-}
+} // namespace tomviz
 
 #endif // tomvizPipelineView_h

@@ -285,8 +285,7 @@ PipelineWorker::Future* PipelineWorker::run(vtkDataObject* data,
 
 PipelineWorker::Future::Future(Run* run, QObject* parent)
   : QObject(parent), m_run(run)
-{
-}
+{}
 
 PipelineWorker::Future::~Future()
 {
@@ -323,7 +322,5 @@ QList<Operator*> PipelineWorker::Future::operators()
   return m_run->operators();
 }
 
-PipelineWorker::PipelineWorker(QObject* parent) : QObject(parent)
-{
-}
-}
+PipelineWorker::PipelineWorker(QObject* parent) : QObject(parent) {}
+} // namespace tomviz

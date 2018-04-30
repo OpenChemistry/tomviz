@@ -106,8 +106,7 @@ private:
 
 PipelineModel::TreeItem::TreeItem(const PipelineModel::Item& i, TreeItem* p)
   : m_item(i), m_parent(p)
-{
-}
+{}
 
 PipelineModel::TreeItem::~TreeItem()
 {
@@ -310,9 +309,7 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
   qRegisterMetaType<QVector<int>>("QVector<int>");
 }
 
-PipelineModel::~PipelineModel()
-{
-}
+PipelineModel::~PipelineModel() {}
 
 namespace {
 QIcon iconForDataObject(vtkDataObject* dataObject)
@@ -369,7 +366,7 @@ QString tooltipForOperatorState(tomviz::OperatorState state)
 
   return "";
 }
-}
+} // namespace
 
 QVariant PipelineModel::data(const QModelIndex& index, int role) const
 {
@@ -747,7 +744,8 @@ void PipelineModel::moduleAdded(Module* module)
   emit moduleItemAdded(module);
 }
 
-void PipelineModel::operatorAdded(Operator* op, DataSource* transformedDataSource)
+void PipelineModel::operatorAdded(Operator* op,
+                                  DataSource* transformedDataSource)
 {
   // Operators are special, they operate on all data and are shown in the
   // visualization modules. So there are some moves necessary to show this.
@@ -757,9 +755,10 @@ void PipelineModel::operatorAdded(Operator* op, DataSource* transformedDataSourc
   connect(op, &Operator::labelModified, this, &PipelineModel::operatorModified);
   connect(op, &Operator::transformingDone, this,
           &PipelineModel::operatorTransformDone);
-  connect(op, static_cast<void (Operator::*)(DataSource*)>(
-                &Operator::newChildDataSource),
-          this, &PipelineModel::childDataSourceAdded);
+  connect(
+    op,
+    static_cast<void (Operator::*)(DataSource*)>(&Operator::newChildDataSource),
+    this, &PipelineModel::childDataSourceAdded);
   // Make sure dataChange signal is emitted when operator is complete
   connect(op, &Operator::transformingDone, [this, op]() {
     auto opIndex = operatorIndex(op);
@@ -978,7 +977,9 @@ void PipelineModel::childDataSourceAdded(DataSource* dataSource)
   emit childDataSourceItemAdded(dataSource);
 }
 
-void PipelineModel::moveDataSourceHelper(DataSource* dataSource, Operator* newParent) {
+void PipelineModel::moveDataSourceHelper(DataSource* dataSource,
+                                         Operator* newParent)
+{
   auto index = dataSourceIndex(dataSource);
   auto dataSourceItem = treeItem(index);
   auto oldParent = dataSourceItem->parent()->op();
@@ -1000,4 +1001,4 @@ void PipelineModel::dataSourceMoved(DataSource* dataSource)
   }
 }
 
-} // tomviz namespace
+} // namespace tomviz

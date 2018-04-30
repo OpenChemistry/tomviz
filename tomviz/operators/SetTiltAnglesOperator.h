@@ -49,6 +49,6 @@ protected:
 private:
   Q_DISABLE_COPY(SetTiltAnglesOperator)
 };
-}
+} // namespace tomviz
 
 #endif

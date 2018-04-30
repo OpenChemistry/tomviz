@@ -34,4 +34,4 @@ ImageStackDialog::ImageStackDialog(QWidget* parent, ImageStackModel* tableModel)
 
 ImageStackDialog::~ImageStackDialog() = default;
 
-}
+} // namespace tomviz

@@ -50,4 +50,4 @@ int ConnectionDialog::port()
 {
   return m_ui->portLineEdit->text().toInt();
 }
-}
+} // namespace tomviz

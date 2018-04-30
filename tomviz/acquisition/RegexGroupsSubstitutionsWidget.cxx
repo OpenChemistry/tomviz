@@ -173,4 +173,4 @@ QList<RegexGroupSubstitution> RegexGroupsSubstitutionsWidget::substitutions()
 {
   return m_substitutions;
 }
-}
+} // namespace tomviz

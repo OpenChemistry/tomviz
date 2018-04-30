@@ -29,8 +29,7 @@ namespace tomviz {
 
 Python::Capsule::Capsule(const void* ptr)
   : m_capsule(new pybind11::capsule(ptr))
-{
-}
+{}
 
 Python::Capsule::operator PyObject*() const
 {
@@ -47,14 +46,11 @@ Python::Capsule::~Capsule()
   delete m_capsule;
 }
 
-Python::Object::Object() : m_smartPyObject(new vtkSmartPyObject())
-{
-}
+Python::Object::Object() : m_smartPyObject(new vtkSmartPyObject()) {}
 
 Python::Object::Object(const Python::Object& other)
   : m_smartPyObject(new vtkSmartPyObject(*other.m_smartPyObject))
-{
-}
+{}
 
 Python::Object::Object(const QString& str)
 {
@@ -130,13 +126,9 @@ void Python::Object::incrementRefCount()
   m_smartPyObject->GetAndIncreaseReferenceCount();
 }
 
-Python::Tuple::Tuple() : Object()
-{
-}
+Python::Tuple::Tuple() : Object() {}
 
-Python::Tuple::Tuple(const Python::Tuple& other) : Object(other)
-{
-}
+Python::Tuple::Tuple(const Python::Tuple& other) : Object(other) {}
 
 Python::Tuple::Tuple(int size)
 {
@@ -179,17 +171,11 @@ Python::Dict::Dict() : Object()
   m_smartPyObject->TakeReference(PyDict_New());
 }
 
-Python::Dict::Dict(PyObject* obj) : Object(obj)
-{
-}
+Python::Dict::Dict(PyObject* obj) : Object(obj) {}
 
-Python::Dict::Dict(const Python::Dict& other) : Object(other)
-{
-}
+Python::Dict::Dict(const Python::Dict& other) : Object(other) {}
 
-Python::Dict::Dict(const Object& obj) : Object(obj)
-{
-}
+Python::Dict::Dict(const Object& obj) : Object(obj) {}
 
 Python::Dict& Python::Dict::operator=(const Python::Object& other)
 {
@@ -230,13 +216,9 @@ QString Python::Dict::toString()
   return PyString_AsString(objectRepr);
 }
 
-Python::List::List(PyObject* obj) : Object(obj)
-{
-}
+Python::List::List(PyObject* obj) : Object(obj) {}
 
-Python::List::List(const List& other) : Object(other)
-{
-}
+Python::List::List(const List& other) : Object(other) {}
 
 Python::Object Python::List::operator[](int index)
 {
@@ -252,18 +234,11 @@ int Python::List::length()
   return PyList_Size(m_smartPyObject->GetPointer());
 }
 
-Python::Function::Function() : Object()
-{
-}
+Python::Function::Function() : Object() {}
 
-Python::Function::Function(PyObject* obj) : Object(obj)
-{
-}
+Python::Function::Function(PyObject* obj) : Object(obj) {}
 
-Python::Function::Function(const Python::Function& other) : Object(other)
-
-{
-}
+Python::Function::Function(const Python::Function& other) : Object(other) {}
 
 Python::Function& Python::Function::operator=(const Python::Object& other)
 {
@@ -306,9 +281,7 @@ void Python::initialize()
   vtkPythonInterpreter::Initialize();
 }
 
-Python::Python() : m_ensurer(new vtkPythonScopeGilEnsurer(true))
-{
-}
+Python::Python() : m_ensurer(new vtkPythonScopeGilEnsurer(true)) {}
 
 Python::~Python()
 {
@@ -325,17 +298,11 @@ Python::Module Python::import(const QString& name)
   return module;
 }
 
-Python::Module::Module() : Object()
-{
-}
+Python::Module::Module() : Object() {}
 
-Python::Module::Module(PyObject* obj) : Object(obj)
-{
-}
+Python::Module::Module(PyObject* obj) : Object(obj) {}
 
-Python::Module::Module(const Python::Module& other) : Object(other)
-{
-}
+Python::Module::Module(const Python::Module& other) : Object(other) {}
 
 Python::Module& Python::Module::operator=(const Python::Module& other)
 {
@@ -518,4 +485,4 @@ TemporarilyReleaseGil::~TemporarilyReleaseGil()
   // Have this thread reacquire the lock and restore the previous thread state.
   PyEval_RestoreThread(m_save);
 }
-}
+} // namespace tomviz

@@ -32,13 +32,11 @@ void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void* data)
     a[i] = (float)d[i];
   }
 }
-}
+} // namespace
 
 namespace tomviz {
 
-ConvertToFloatOperator::ConvertToFloatOperator(QObject* p) : Operator(p)
-{
-}
+ConvertToFloatOperator::ConvertToFloatOperator(QObject* p) : Operator(p) {}
 
 QIcon ConvertToFloatOperator::icon() const
 {
@@ -72,4 +70,4 @@ Operator* ConvertToFloatOperator::clone() const
   return new ConvertToFloatOperator();
 }
 
-}
+} // namespace tomviz

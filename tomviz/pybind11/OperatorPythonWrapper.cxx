@@ -64,9 +64,7 @@ std::string OperatorPythonWrapper::progressMessage()
   return this->op->progressMessage().toStdString();
 }
 
-void OperatorPythonWrapper::progressData()
-{
-}
+void OperatorPythonWrapper::progressData() {}
 
 void OperatorPythonWrapper::setProgressData(vtkImageData* imageData)
 {

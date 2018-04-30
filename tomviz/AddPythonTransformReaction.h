@@ -61,6 +61,6 @@ private:
   bool requiresTiltSeries;
   bool requiresVolume;
 };
-}
+} // namespace tomviz
 
 #endif

@@ -100,7 +100,7 @@ QString getAutosaveFile()
   }
   return dataDir.absoluteFilePath(".tomviz_autosave.tvsm");
 }
-}
+} // namespace
 class Connection;
 
 namespace tomviz {
@@ -654,11 +654,12 @@ void MainWindow::showEvent(QShowEvent* e)
 void MainWindow::closeEvent(QCloseEvent* e)
 {
   if (ModuleManager::instance().hasRunningOperators()) {
-    QMessageBox::StandardButton response = QMessageBox::question(
-      this, "Close tomviz?", "You have transforms that are not completed "
-                             "running in the background. These may not exit "
-                             "cleanly. Are "
-                             "you sure you want to try exiting anyway?");
+    QMessageBox::StandardButton response =
+      QMessageBox::question(this, "Close tomviz?",
+                            "You have transforms that are not completed "
+                            "running in the background. These may not exit "
+                            "cleanly. Are "
+                            "you sure you want to try exiting anyway?");
     if (response == QMessageBox::No) {
       e->ignore();
       return;
@@ -780,7 +781,7 @@ void MainWindow::registerCustomOperators()
     }
     path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
     if (QFile(path).exists()) {
-          paths.append(path);
+      paths.append(path);
     }
   }
   // Search in data locations.
@@ -803,7 +804,7 @@ void MainWindow::registerCustomOperators(const QString& path)
   // Sort so we get a consistent order each time we load
   std::sort(operators.begin(), operators.end(),
             [](const OperatorDescription& op1, const OperatorDescription& op2) {
-              return  op1.label < op2.label;
+              return op1.label < op2.label;
             });
 
   if (!operators.empty()) {
@@ -817,9 +818,9 @@ void MainWindow::registerCustomOperators(const QString& path)
         qWarning().noquote() << op.loadError;
         continue;
       } else if (!op.valid) {
-        qWarning().noquote() << QString(
-                        "'%1' doesn't contain a valid operator definition.")
-                        .arg(op.pythonPath);
+        qWarning().noquote()
+          << QString("'%1' doesn't contain a valid operator definition.")
+               .arg(op.pythonPath);
         continue;
       }
 
@@ -846,4 +847,4 @@ void MainWindow::registerCustomOperators(const QString& path)
     }
   }
 }
-}
+} // namespace tomviz

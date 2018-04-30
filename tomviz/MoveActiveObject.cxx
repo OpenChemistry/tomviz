@@ -79,9 +79,7 @@ MoveActiveObject::MoveActiveObject(QObject* p) : Superclass(p)
   this->MoveEnabled = false;
 }
 
-MoveActiveObject::~MoveActiveObject()
-{
-}
+MoveActiveObject::~MoveActiveObject() {}
 
 void MoveActiveObject::updateForNewDataSource(DataSource* source)
 {
@@ -169,4 +167,4 @@ void MoveActiveObject::dataSourceActivated(DataSource* ds)
     this->updateForNewDataSource(ds);
   }
 }
-}
+} // namespace tomviz

@@ -74,4 +74,4 @@ DataSource* CloneDataReaction::clone(DataSource* toClone)
   }
   return nullptr;
 }
-}
+} // namespace tomviz

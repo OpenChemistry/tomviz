@@ -175,4 +175,4 @@ Connection* ConnectionsWidget::selectedConnection()
 
   return &m_connections[selectedRow];
 }
-}
+} // namespace tomviz

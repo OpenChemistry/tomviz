@@ -48,4 +48,4 @@ void ConvertToFloatReaction::convertToFloat()
 
   source->addOperator(Op);
 }
-}
+} // namespace tomviz

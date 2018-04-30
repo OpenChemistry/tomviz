@@ -36,6 +36,6 @@ public:
 private:
   Q_DISABLE_COPY(ConvertToFloatOperator)
 };
-}
+} // namespace tomviz
 
 #endif

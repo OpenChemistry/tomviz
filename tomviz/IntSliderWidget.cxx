@@ -60,9 +60,7 @@ IntSliderWidget::IntSliderWidget(bool showLineEdit, QWidget* p) : QWidget(p)
   }
 }
 
-IntSliderWidget::~IntSliderWidget()
-{
-}
+IntSliderWidget::~IntSliderWidget() {}
 
 void IntSliderWidget::setLineEditWidth(int width)
 {
@@ -197,4 +195,4 @@ void IntSliderWidget::updateSlider()
   this->Slider->setValue(v);
   this->Slider->blockSignals(false);
 }
-}
+} // namespace tomviz

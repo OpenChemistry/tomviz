@@ -39,7 +39,7 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
   : Operator(p), m_dataSource(source)
 {
   qRegisterMetaType<std::vector<float>>();
-  auto t =  source->producer();
+  auto t = source->producer();
   auto imageData = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
   int dataExtent[6];
   imageData->GetExtent(dataExtent);
@@ -50,9 +50,10 @@ ReconstructionOperator::ReconstructionOperator(DataSource* source, QObject* p)
   setTotalProgressSteps(m_extent[1] - m_extent[0] + 1);
   setHasChildDataSource(true);
   connect(
-    this, static_cast<void (Operator::*)(const QString&,
-                                         vtkSmartPointer<vtkDataObject>)>(
-            &Operator::newChildDataSource),
+    this,
+    static_cast<void (Operator::*)(const QString&,
+                                   vtkSmartPointer<vtkDataObject>)>(
+      &Operator::newChildDataSource),
     this,
     [this](const QString& label, vtkSmartPointer<vtkDataObject> childData) {
       this->createNewChildDataSource(label, childData, DataSource::Volume,
@@ -82,7 +83,8 @@ QWidget* ReconstructionOperator::getCustomProgressWidget(QWidget* p) const
 
 bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
 {
-  vtkSmartPointer<vtkImageData> imageData = vtkImageData::SafeDownCast(dataObject);
+  vtkSmartPointer<vtkImageData> imageData =
+    vtkImageData::SafeDownCast(dataObject);
   if (!imageData) {
     return false;
   }
@@ -151,4 +153,4 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   emit newChildDataSource("Reconstruction", reconstructionImage.Get());
   return true;
 }
-}
+} // namespace tomviz

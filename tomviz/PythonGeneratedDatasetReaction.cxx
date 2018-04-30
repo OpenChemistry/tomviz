@@ -58,8 +58,7 @@ class PythonGeneratedDataSource : public QObject
 public:
   PythonGeneratedDataSource(const QString& l, QObject* p = nullptr)
     : QObject(p), m_label(l)
-  {
-  }
+  {}
 
   void setScript(const QString& script)
   {
@@ -90,8 +89,7 @@ public:
         return;
       }
 
-      m_makeDatasetFunction =
-        m_operatorModule.findFunction("make_dataset");
+      m_makeDatasetFunction = m_operatorModule.findFunction("make_dataset");
       if (!m_makeDatasetFunction.isValid()) {
         qCritical() << "Could not find make_dataset function in tomviz.utils";
         return;
@@ -179,8 +177,8 @@ class ShapeWidget : public QWidget
 
 public:
   ShapeWidget(QWidget* p = nullptr)
-    : QWidget(p), m_xSpinBox(new QSpinBox(this)), m_ySpinBox(new QSpinBox(this)),
-      m_zSpinBox(new QSpinBox(this))
+    : QWidget(p), m_xSpinBox(new QSpinBox(this)),
+      m_ySpinBox(new QSpinBox(this)), m_zSpinBox(new QSpinBox(this))
   {
     QHBoxLayout* boundsLayout = new QHBoxLayout;
 
@@ -236,7 +234,7 @@ private:
   QSpinBox* m_ySpinBox;
   QSpinBox* m_zSpinBox;
 };
-}
+} // namespace
 
 #include "PythonGeneratedDatasetReaction.moc"
 
@@ -550,4 +548,4 @@ DataSource* PythonGeneratedDatasetReaction::createDataSource(
   shape[2] = shapeJson[2].toInt();
   return generator.createDataSource(shape);
 }
-}
+} // namespace tomviz

@@ -45,6 +45,6 @@ private:
 
   QScopedPointer<Ui::ViewPropertiesPanel> m_ui;
 };
-}
+} // namespace tomviz
 
 #endif

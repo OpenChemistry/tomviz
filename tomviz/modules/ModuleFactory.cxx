@@ -34,13 +34,9 @@
 
 namespace tomviz {
 
-ModuleFactory::ModuleFactory()
-{
-}
+ModuleFactory::ModuleFactory() {}
 
-ModuleFactory::~ModuleFactory()
-{
-}
+ModuleFactory::~ModuleFactory() {}
 
 QList<QString> ModuleFactory::moduleTypes()
 {
@@ -57,13 +53,13 @@ QList<QString> ModuleFactory::moduleTypes()
   return reply;
 }
 
-bool ModuleFactory::moduleApplicable(const QString & moduleName,
+bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                      DataSource* dataSource,
-                                     vtkSMViewProxy* view) {
+                                     vtkSMViewProxy* view)
+{
   if (dataSource && view) {
     if (dataSource->getNumberOfComponents() > 1) {
-      if (moduleName == "Contour" ||
-          moduleName == "Volume" ||
+      if (moduleName == "Contour" || moduleName == "Volume" ||
           moduleName == "Threshold") {
         return false;
       }
@@ -135,8 +131,7 @@ const char* ModuleFactory::moduleType(Module* module)
   if (qobject_cast<ModuleOutline*>(module)) {
     return "Outline";
   }
-  if (qobject_cast<ModuleContour*>(module))
-  {
+  if (qobject_cast<ModuleContour*>(module)) {
     return "Contour";
   }
   if (qobject_cast<ModuleVolume*>(module)) {

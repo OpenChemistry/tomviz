@@ -25,4 +25,4 @@ void Logger::critical(const QString& msg)
 {
   qCritical() << msg;
 }
-}
+} // namespace tomviz

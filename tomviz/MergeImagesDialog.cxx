@@ -27,13 +27,11 @@ MergeImagesDialog::MergeImagesDialog(QWidget* parent)
   m_ui->MergeArrayComponentsWidget->hide();
 }
 
-MergeImagesDialog::~MergeImagesDialog()
-{
-}
+MergeImagesDialog::~MergeImagesDialog() {}
 
 MergeImagesDialog::MergeMode MergeImagesDialog::getMode()
 {
   return (m_ui->MergeImageArraysRadioButton->isChecked() ? Arrays : Components);
 }
 
-}
+} // namespace tomviz

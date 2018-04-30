@@ -28,7 +28,6 @@
 #include <vtkVector.h>
 #include <vtkVectorOperators.h>
 
-
 namespace tomviz {
 
 static void UpdateScale(vtkObject* caller, unsigned long, void* clientData,
@@ -97,11 +96,9 @@ ScaleActorBehavior::ScaleActorBehavior(QObject* parentObject)
 
 void ScaleActorBehavior::viewAdded(pqView* view)
 {
-  if (auto viewProxy =
-        vtkSMRenderViewProxy::SafeDownCast(view->getProxy())) {
-    auto ren =
-      vtkPVRenderView::SafeDownCast(viewProxy->GetClientSideObject())
-        ->GetNonCompositedRenderer();
+  if (auto viewProxy = vtkSMRenderViewProxy::SafeDownCast(view->getProxy())) {
+    auto ren = vtkPVRenderView::SafeDownCast(viewProxy->GetClientSideObject())
+                 ->GetNonCompositedRenderer();
     Q_ASSERT(ren);
 
     vtkNew<vtkAxisActor2D> axis;
@@ -120,4 +117,4 @@ void ScaleActorBehavior::viewAdded(pqView* view)
     ren->AddActor(axis.GetPointer());
   }
 }
-}
+} // namespace tomviz

@@ -41,9 +41,7 @@ ProgressDialogManager::ProgressDialogManager(QMainWindow* mw)
                    SLOT(dataSourceAdded(DataSource*)));
 }
 
-ProgressDialogManager::~ProgressDialogManager()
-{
-}
+ProgressDialogManager::~ProgressDialogManager() {}
 
 void ProgressDialogManager::operationStarted()
 {
@@ -120,9 +118,10 @@ void ProgressDialogManager::operatorAdded(Operator* op)
           &ProgressDialogManager::operationStarted,
           Qt::BlockingQueuedConnection);
 
-  connect(op, static_cast<void (Operator::*)(DataSource*)>(
-                &Operator::newChildDataSource),
-          this, &ProgressDialogManager::dataSourceAdded);
+  connect(
+    op,
+    static_cast<void (Operator::*)(DataSource*)>(&Operator::newChildDataSource),
+    this, &ProgressDialogManager::dataSourceAdded);
 }
 
 void ProgressDialogManager::dataSourceAdded(DataSource* ds)
@@ -131,12 +130,10 @@ void ProgressDialogManager::dataSourceAdded(DataSource* ds)
                    SLOT(operatorAdded(Operator*)));
 }
 
-void ProgressDialogManager::operationProgress(int)
-{
-}
+void ProgressDialogManager::operationProgress(int) {}
 
 void ProgressDialogManager::showStatusBarMessage(const QString& message)
 {
   this->mainWindow->statusBar()->showMessage(message, 3000);
 }
-}
+} // namespace tomviz

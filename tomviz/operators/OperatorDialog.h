@@ -44,6 +44,6 @@ private:
   Q_DISABLE_COPY(OperatorDialog)
   OperatorWidget* m_ui = nullptr;
 };
-}
+} // namespace tomviz
 
 #endif

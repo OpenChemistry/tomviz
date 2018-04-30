@@ -46,7 +46,7 @@ void getSinogram(vtkImageData* tiltSeries, int, float* sinogram, int Nray,
 
 void averageTiltSeries(vtkImageData* tiltSeries,
                        float* average); // Average all tilts
-}
-}
+} // namespace TomographyTiltSeries
+} // namespace tomviz
 
 #endif

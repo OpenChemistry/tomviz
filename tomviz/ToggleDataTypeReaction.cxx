@@ -77,4 +77,4 @@ void ToggleDataTypeReaction::setWidgetText(DataSource* dsource)
     assert("Unknown data source type" && false);
   }
 }
-}
+} // namespace tomviz

@@ -45,6 +45,6 @@ private:
   QPointer<QMenu> m_menu;
   QPointer<QToolBar> m_toolBar;
 };
-}
+} // namespace tomviz
 
 #endif

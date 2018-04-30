@@ -46,5 +46,5 @@ private slots:
 private:
   Q_DISABLE_COPY(RecentFilesMenu)
 };
-}
+} // namespace tomviz
 #endif

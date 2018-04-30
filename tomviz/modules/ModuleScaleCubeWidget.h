@@ -78,5 +78,5 @@ private slots:
   void onSideLengthChanged(const double length);
   void onAnnotationChanged(const bool state);
 };
-}
+} // namespace tomviz
 #endif

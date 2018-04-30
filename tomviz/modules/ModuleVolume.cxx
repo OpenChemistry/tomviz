@@ -45,9 +45,7 @@
 
 namespace tomviz {
 
-ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
-{
-}
+ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject) {}
 
 ModuleVolume::~ModuleVolume()
 {

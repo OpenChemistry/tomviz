@@ -45,6 +45,6 @@ private:
   class MPPInternals;
   const QScopedPointer<MPPInternals> Internals;
 };
-}
+} // namespace tomviz
 
 #endif

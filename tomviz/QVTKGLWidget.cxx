@@ -47,4 +47,4 @@ void QVTKGLWidget::setEnableHiDPI(bool)
     InteractorAdaptor->SetDevicePixelRatio(devicePixelRatio());
   }
 }
-}
+} // namespace tomviz

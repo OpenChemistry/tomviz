@@ -74,4 +74,4 @@ void RegexGroupSubstitutionDialog::done(int r)
 
   QDialog::done(r);
 }
-}
+} // namespace tomviz

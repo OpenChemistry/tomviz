@@ -27,9 +27,9 @@
 #include <QMenu>
 #include <QMessageBox>
 
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
 
 #include <string>
 
@@ -37,7 +37,7 @@ namespace tomviz {
 
 static const int MAX_ITEMS = 10;
 
-namespace{
+namespace {
 
 QJsonObject loadSettings()
 {
@@ -86,10 +86,9 @@ void saveSettings(QJsonObject json)
   settings->setValue("recentFiles", doc.toJson(QJsonDocument::Compact));
 }
 
-}
+} // namespace
 
-RecentFilesMenu::RecentFilesMenu(QMenu& menu, QObject* p)
-  : QObject(p)
+RecentFilesMenu::RecentFilesMenu(QMenu& menu, QObject* p) : QObject(p)
 {
   connect(&menu, SIGNAL(aboutToShow()), SLOT(aboutToShowMenu()));
 }
@@ -152,7 +151,7 @@ void RecentFilesMenu::aboutToShowMenu()
   // We have something, let's populate the recent files and/or state files.
   bool headerAdded = false;
   int index = 0;
-  foreach(QJsonValue file, json["readers"].toArray()) {
+  foreach (QJsonValue file, json["readers"].toArray()) {
     if (file.isObject()) {
       auto object = file.toObject();
       if (headerAdded == false) {
@@ -161,19 +160,17 @@ void RecentFilesMenu::aboutToShowMenu()
         headerAdded = true;
       }
       bool stack = object["stack"].toBool(false);
-      auto actn =
-        menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
-                        object["fileName"].toString("<bug>"));
+      auto actn = menu->addAction(QIcon(":/pqWidgets/Icons/pqInspect22.png"),
+                                  object["fileName"].toString("<bug>"));
       actn->setData(index);
-      connect(actn, &QAction::triggered, [this, actn, stack]() {
-        dataSourceTriggered(actn, stack);
-      });
+      connect(actn, &QAction::triggered,
+              [this, actn, stack]() { dataSourceTriggered(actn, stack); });
       ++index;
     }
   }
 
   headerAdded = false;
-  foreach(QJsonValue file, json["states"].toArray()) {
+  foreach (QJsonValue file, json["states"].toArray()) {
     if (file.isObject()) {
       auto object = file.toObject();
       if (headerAdded == false) {
@@ -181,9 +178,8 @@ void RecentFilesMenu::aboutToShowMenu()
         actn->setEnabled(false);
         headerAdded = true;
       }
-      auto actn =
-        menu->addAction(QIcon(":/icons/tomviz.png"),
-                        object["fileName"].toString("<bug>"));
+      auto actn = menu->addAction(QIcon(":/icons/tomviz.png"),
+                                  object["fileName"].toString("<bug>"));
       actn->setData(object["fileName"].toString("<bug>"));
       connect(actn, SIGNAL(triggered()), SLOT(stateTriggered()));
     }
@@ -260,4 +256,4 @@ void RecentFilesMenu::stateTriggered()
     saveSettings(json);
   }
 }
-}
+} // namespace tomviz

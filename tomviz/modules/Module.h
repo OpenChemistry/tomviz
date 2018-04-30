@@ -183,5 +183,5 @@ private:
   class MInternals;
   const QScopedPointer<MInternals> d;
 };
-}
+} // namespace tomviz
 #endif

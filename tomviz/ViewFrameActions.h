@@ -36,6 +36,6 @@ protected:
 private:
   Q_DISABLE_COPY(ViewFrameActions)
 };
-}
+} // namespace tomviz
 
 #endif // tomvizViewFrameActions_h

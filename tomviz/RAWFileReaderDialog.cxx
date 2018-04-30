@@ -45,13 +45,16 @@ RAWFileReaderDialog::RAWFileReaderDialog(vtkSMProxy* reader, QWidget* p)
   connect(m_ui->dimensionZ,
           static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
           &RAWFileReaderDialog::sanityCheckSize);
-  connect(m_ui->dataType, static_cast<void (QComboBox::*)(int)>(
-                            &QComboBox::currentIndexChanged),
-          this, &RAWFileReaderDialog::sanityCheckSize);
-  connect(m_ui->dataType, static_cast<void (QComboBox::*)(int)>(
-                            &QComboBox::currentIndexChanged),
-          this, &RAWFileReaderDialog::dataTypeChanged);
-  connect(m_ui->signedness, &QCheckBox::stateChanged, this, &RAWFileReaderDialog::sanityCheckSize);
+  connect(
+    m_ui->dataType,
+    static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    this, &RAWFileReaderDialog::sanityCheckSize);
+  connect(
+    m_ui->dataType,
+    static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+    this, &RAWFileReaderDialog::dataTypeChanged);
+  connect(m_ui->signedness, &QCheckBox::stateChanged, this,
+          &RAWFileReaderDialog::sanityCheckSize);
   connect(m_ui->numComponents,
           static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this,
           &RAWFileReaderDialog::sanityCheckSize);
@@ -205,8 +208,7 @@ void RAWFileReaderDialog::sanityCheckSize()
       dataSize = sizeof(double);
       break;
   }
-  size_t selectedSize =
-    dataSize * dims[0] * dims[1] * dims[2] * numComponents;
+  size_t selectedSize = dataSize * dims[0] * dims[1] * dims[2] * numComponents;
   auto labelText = QString("Reading %1 of %3 bytes (%2% of the file)")
                      .arg(selectedSize)
                      .arg(static_cast<float>(selectedSize) / m_filesize * 100)
@@ -253,4 +255,4 @@ void RAWFileReaderDialog::onAccepted()
   dims.Set(extents, 6);
   m_reader->UpdateVTKObjects();
 }
-}
+} // namespace tomviz

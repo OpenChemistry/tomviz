@@ -242,8 +242,9 @@ public:
     }
   }
 
-  bool eventFilter(QObject* obj, QEvent *event) override {
-    QKeyEvent *ke = dynamic_cast<QKeyEvent*>(event);
+  bool eventFilter(QObject* obj, QEvent* event) override
+  {
+    QKeyEvent* ke = dynamic_cast<QKeyEvent*>(event);
     if (ke && obj == this->tableWidget) {
       if (ke->matches(QKeySequence::Paste) && ke->type() == QEvent::KeyPress) {
         QClipboard* clipboard = QGuiApplication::clipboard();
@@ -255,12 +256,12 @@ public:
           QString text = mimeData->text().trimmed();
           QStringList rows = text.split("\n");
           QStringList angles;
-          for (const QString& row: rows) {
+          for (const QString& row : rows) {
             angles << row.split("\t")[0];
           }
           auto ranges = this->tableWidget->selectedRanges();
           // check if the table in the clipboard is of numbers
-          for (const QString& angle: angles) {
+          for (const QString& angle : angles) {
             bool ok;
             angle.toDouble(&ok);
             if (!ok) {
@@ -281,7 +282,8 @@ public:
           }
           // If multiple rows selected and it is not equal to
           // the number of angles pasted, cancel the paste
-          if (ranges[0].rowCount() > 1 && ranges[0].rowCount() != angles.size()) {
+          if (ranges[0].rowCount() > 1 &&
+              ranges[0].rowCount() != angles.size()) {
             QMessageBox::warning(this, "Error",
                                  QString("Cells selected (%1) does not match "
                                          "number of angles to paste (%2).  \n"
@@ -371,13 +373,11 @@ private:
 };
 
 #include "SetTiltAnglesOperator.moc"
-}
+} // namespace
 
 namespace tomviz {
 
-SetTiltAnglesOperator::SetTiltAnglesOperator(QObject* p) : Operator(p)
-{
-}
+SetTiltAnglesOperator::SetTiltAnglesOperator(QObject* p) : Operator(p) {}
 
 QIcon SetTiltAnglesOperator::icon() const
 {
@@ -397,8 +397,8 @@ QJsonObject SetTiltAnglesOperator::serialize() const
 
   // Note that this is always a dense array of angles, storing it as such.
   QJsonArray angleArray;
-  for (auto itr = std::begin(m_tiltAngles);
-       itr != std::end(m_tiltAngles); ++itr) {
+  for (auto itr = std::begin(m_tiltAngles); itr != std::end(m_tiltAngles);
+       ++itr) {
     angleArray << itr.value();
   }
 
@@ -465,10 +465,10 @@ bool SetTiltAnglesOperator::applyTransform(vtkDataObject* dataObject)
   } else if (dataTiltAngles->GetNumberOfTuples() < totalSlices) {
     dataTiltAngles->SetNumberOfTuples(totalSlices);
   }
-  for (auto itr = std::begin(m_tiltAngles);
-       itr != std::end(m_tiltAngles); ++itr) {
+  for (auto itr = std::begin(m_tiltAngles); itr != std::end(m_tiltAngles);
+       ++itr) {
     dataTiltAngles->SetTuple(itr.key(), &itr.value());
   }
   return true;
 }
-}
+} // namespace tomviz

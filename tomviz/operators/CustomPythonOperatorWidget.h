@@ -31,6 +31,6 @@ public:
   virtual void getValues(QMap<QString, QVariant>& map) = 0;
   virtual void setValues(const QMap<QString, QVariant>& map) = 0;
 };
-}
+} // namespace tomviz
 
 #endif

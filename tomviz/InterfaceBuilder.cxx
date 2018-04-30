@@ -397,7 +397,6 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
   QPushButton* browseButton = new QPushButton("Browse");
   horizontalLayout->addWidget(browseButton);
   QObject::connect(browseButton, &QPushButton::clicked, [type, pathField]() {
-
     // Determine the directory we should open the file browser at.
     QString browseDir;
     if (!pathField->text().isEmpty()) {
@@ -411,8 +410,8 @@ void addPathWidget(QGridLayout* layout, int row, QJsonObject& pathNode)
     // Now open the appropriate dialog to browse for a file or directory.
     QString path;
     if (type == "file") {
-      path = QFileDialog::getOpenFileName(tomviz::mainWidget(),
-                                          "Select File", browseDir);
+      path = QFileDialog::getOpenFileName(tomviz::mainWidget(), "Select File",
+                                          browseDir);
     } else {
       path = QFileDialog::getExistingDirectory(tomviz::mainWidget(),
                                                "Select Directory", browseDir);
@@ -479,8 +478,7 @@ namespace tomviz {
 
 InterfaceBuilder::InterfaceBuilder(QObject* parentObject, DataSource* ds)
   : QObject(parentObject), m_dataSource(ds)
-{
-}
+{}
 
 void InterfaceBuilder::setJSONDescription(const QString& description)
 {
@@ -531,8 +529,7 @@ QLayout* InterfaceBuilder::buildParameterInterface(QGridLayout* layout,
     } else if (typeString == "int") {
       addNumericWidget<int>(layout, i + 1, parameterObject, m_dataSource);
     } else if (typeString == "double") {
-      addNumericWidget<double>(layout, i + 1, parameterObject,
-                               m_dataSource);
+      addNumericWidget<double>(layout, i + 1, parameterObject, m_dataSource);
     } else if (typeString == "enumeration") {
       addEnumerationWidget(layout, i + 1, parameterObject);
     } else if (typeString == "xyz_header") {

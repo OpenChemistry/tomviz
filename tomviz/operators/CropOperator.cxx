@@ -76,7 +76,7 @@ private:
   QPointer<tomviz::CropOperator> m_operator;
   tomviz::SelectVolumeWidget* m_widget;
 };
-}
+} // namespace
 
 #include "CropOperator.moc"
 
@@ -150,4 +150,4 @@ EditOperatorWidget* CropOperator::getEditorContentsWithData(
 {
   return new CropWidget(this, data, p);
 }
-}
+} // namespace tomviz

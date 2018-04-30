@@ -49,10 +49,10 @@ AddRenderViewContextMenuBehavior::AddRenderViewContextMenuBehavior(QObject* p)
   m_menu->addSeparator();
 
   // Support camera linking/unlinking
-  new pqCameraLinkReaction(
-    m_menu->addAction("Add Camera Link...") << pqSetName("actionToolsAddCameraLink"));
-  new pqManageLinksReaction(
-    m_menu->addAction("Manage Camera Links...") << pqSetName("actionToolsManageCameraLinks"));
+  new pqCameraLinkReaction(m_menu->addAction("Add Camera Link...")
+                           << pqSetName("actionToolsAddCameraLink"));
+  new pqManageLinksReaction(m_menu->addAction("Manage Camera Links...")
+                            << pqSetName("actionToolsManageCameraLinks"));
 }
 
 AddRenderViewContextMenuBehavior::~AddRenderViewContextMenuBehavior()
@@ -121,4 +121,4 @@ bool AddRenderViewContextMenuBehavior::eventFilter(QObject* caller, QEvent* e)
 
   return QObject::eventFilter(caller, e);
 }
-}
+} // namespace tomviz

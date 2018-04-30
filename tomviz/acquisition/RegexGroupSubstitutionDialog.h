@@ -50,6 +50,6 @@ private:
   QScopedPointer<Ui::RegexGroupSubstitutionDialog> m_ui;
   QLabel m_regexErrorLabel;
 };
-}
+} // namespace tomviz
 
 #endif

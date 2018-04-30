@@ -38,6 +38,6 @@ protected:
 private:
   Q_DISABLE_COPY(CloneDataReaction)
 };
-}
+} // namespace tomviz
 
 #endif

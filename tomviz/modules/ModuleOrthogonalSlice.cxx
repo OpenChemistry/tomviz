@@ -31,7 +31,6 @@
 #include "vtkSMPropertyHelper.h"
 #include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
-#include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 
@@ -43,8 +42,7 @@ namespace tomviz {
 
 ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject)
   : Module(parentObject)
-{
-}
+{}
 
 ModuleOrthogonalSlice::~ModuleOrthogonalSlice()
 {
@@ -338,4 +336,4 @@ vtkSMProxy* ModuleOrthogonalSlice::getProxyForString(const std::string& str)
     return nullptr;
   }
 }
-}
+} // namespace tomviz

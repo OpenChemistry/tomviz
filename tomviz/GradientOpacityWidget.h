@@ -82,5 +82,5 @@ private:
 
   vtkSmartPointer<vtkTable> m_adjustedTable;
 };
-}
+} // namespace tomviz
 #endif // tomvizGradientOpacityWidget_h

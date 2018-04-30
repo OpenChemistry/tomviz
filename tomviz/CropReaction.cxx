@@ -54,4 +54,4 @@ void CropReaction::crop(DataSource* source)
   dialog->show();
   connect(Op, SIGNAL(destroyed()), dialog, SLOT(reject()));
 }
-}
+} // namespace tomviz

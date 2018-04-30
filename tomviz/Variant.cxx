@@ -125,4 +125,4 @@ void Variant::copy(const Variant& v)
       break;
   }
 }
-}
+} // namespace tomviz

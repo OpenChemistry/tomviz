@@ -266,8 +266,7 @@ public:
     }
 
     hid_t groupId = H5Gopen(fileId, group.c_str(), H5P_DEFAULT);
-    hid_t dataspaceId =
-      H5Screate_simple(3, &h5dim[0], NULL);
+    hid_t dataspaceId = H5Screate_simple(3, &h5dim[0], NULL);
 
     switch (data->GetScalarType()) {
       vtkTemplateMacro(success =
@@ -295,8 +294,7 @@ public:
     // Verify that the path exists in the HDF5 file.
     bool dataLinkExists = false;
     H5O_info_t info;
-    if (H5Oget_info_by_name(fileId, path.c_str(), &info,
-                            H5P_DEFAULT < 0)) {
+    if (H5Oget_info_by_name(fileId, path.c_str(), &info, H5P_DEFAULT < 0)) {
       dataLinkExists = false;
     } else {
       dataLinkExists = true;
@@ -425,8 +423,8 @@ public:
       memTypeId = H5T_NATIVE_USHORT;
       vtkDataType = VTK_UNSIGNED_SHORT;
     } else if (H5Tequal(dataTypeId, H5T_STD_I8LE)) {
-        memTypeId = H5T_NATIVE_CHAR;
-        vtkDataType = VTK_SIGNED_CHAR;
+      memTypeId = H5T_NATIVE_CHAR;
+      vtkDataType = VTK_SIGNED_CHAR;
     } else if (H5Tequal(dataTypeId, H5T_STD_U8LE)) {
       memTypeId = H5T_NATIVE_UCHAR;
       vtkDataType = VTK_UNSIGNED_CHAR;
@@ -460,8 +458,8 @@ public:
     constexpr int maxName = 2048;
     char groupName[maxName];
     hid_t groupId = H5Gopen(fileId, path.c_str(), H5P_DEFAULT);
-    //H5Iget_name(groupId, groupName, maxName);
-    //std::cout << "group name " << groupName << std::endl;
+    // H5Iget_name(groupId, groupName, maxName);
+    // std::cout << "group name " << groupName << std::endl;
     H5Gget_num_objs(groupId, &objCount);
     for (hsize_t i = 0; i < objCount; ++i) {
       H5Gget_objname_by_idx(groupId, i, groupName, maxName);
@@ -496,9 +494,7 @@ public:
   }
 };
 
-EmdFormat::EmdFormat() : d(new Private)
-{
-}
+EmdFormat::EmdFormat() : d(new Private) {}
 
 bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 {
@@ -638,4 +634,4 @@ EmdFormat::~EmdFormat()
 {
   delete d;
 }
-}
+} // namespace tomviz

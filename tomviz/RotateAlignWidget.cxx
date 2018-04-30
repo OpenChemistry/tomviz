@@ -17,11 +17,11 @@
 #include "RotateAlignWidget.h"
 
 #include "ActiveObjects.h"
+#include "AddPythonTransformReaction.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "TomographyReconstruction.h"
 #include "TomographyTiltSeries.h"
-#include "AddPythonTransformReaction.h"
 #include "Utilities.h"
 
 #include <cmath>
@@ -454,9 +454,7 @@ CustomPythonOperatorWidget* RotateAlignWidget::New(
   return new RotateAlignWidget(op, data, p);
 }
 
-RotateAlignWidget::~RotateAlignWidget()
-{
-}
+RotateAlignWidget::~RotateAlignWidget() {}
 
 void RotateAlignWidget::getValues(QMap<QString, QVariant>& map)
 {
@@ -539,7 +537,7 @@ std::array<T, 3> make_array(std::initializer_list<T> list)
   }
   return array;
 }
-}
+} // namespace
 
 void RotateAlignWidget::showChangeColorMapDialog(int reconSlice)
 {
@@ -610,7 +608,5 @@ void RotateAlignWidget::updateWidgets()
   this->Internals->Ui.sliceView_3->GetRenderWindow()->Render();
 }
 
-void RotateAlignWidget::onFinalReconButtonPressed()
-{
-}
-}
+void RotateAlignWidget::onFinalReconButtonPressed() {}
+} // namespace tomviz

@@ -40,6 +40,6 @@ private:
   Q_DISABLE_COPY(CropReaction)
   QMainWindow* m_mainWindow;
 };
-}
+} // namespace tomviz
 
 #endif

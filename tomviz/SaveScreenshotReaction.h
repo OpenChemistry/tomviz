@@ -38,6 +38,6 @@ private:
 
   MainWindow* m_mainWindow;
 };
-}
+} // namespace tomviz
 
 #endif
