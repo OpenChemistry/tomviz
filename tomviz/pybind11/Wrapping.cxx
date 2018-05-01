@@ -30,10 +30,7 @@ PYBIND11_PLUGIN(_wrapping)
   py::module m("_wrapping", "tomviz wrapped classes");
 
   py::class_<OperatorPythonWrapper>(m, "OperatorPythonWrapper")
-    .def("__init__",
-         [](OperatorPythonWrapper& instance, void* op) {
-           new (&instance) OperatorPythonWrapper(op);
-         })
+    .def(py::init([](void* op) { return new OperatorPythonWrapper(op); }))
     .def_property_readonly("canceled", &OperatorPythonWrapper::canceled)
     .def_property("progress_maximum",
                   &OperatorPythonWrapper::totalProgressSteps,
