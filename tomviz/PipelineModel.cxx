@@ -210,10 +210,10 @@ bool PipelineModel::TreeItem::remove(Module* module)
 {
   foreach (auto childItem, m_children) {
     if (childItem->module() == module) {
-      removeChild(childItem->childIndex());
       // Not sure I like this, an alternative is to make TreeItem a
       // QObject and use a signal?
       ModuleManager::instance().removeModule(module);
+      removeChild(childItem->childIndex());
       return true;
     }
   }
