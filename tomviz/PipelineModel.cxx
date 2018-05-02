@@ -697,7 +697,7 @@ QModelIndex PipelineModel::resultIndex(OperatorResult* result)
 void PipelineModel::dataSourceAdded(DataSource* dataSource)
 {
   auto treeItem = new PipelineModel::TreeItem(PipelineModel::Item(dataSource));
-  beginInsertRows(QModelIndex(), 0, 0);
+  beginInsertRows(QModelIndex(), m_treeItems.size(), m_treeItems.size());
   m_treeItems.append(treeItem);
   endInsertRows();
   auto pipeline = dataSource->pipeline();
