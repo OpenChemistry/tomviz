@@ -101,7 +101,7 @@ public:
 private:
   QList<TreeItem*> m_children;
   PipelineModel::Item m_item;
-  TreeItem* m_parent;
+  TreeItem* m_parent = nullptr;
 };
 
 PipelineModel::TreeItem::TreeItem(const PipelineModel::Item& i, TreeItem* p)
