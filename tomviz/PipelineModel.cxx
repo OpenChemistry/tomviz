@@ -847,6 +847,7 @@ void PipelineModel::dataSourceRemoved(DataSource* source)
     beginRemoveRows(parent(index), index.row(), index.row());
     item->remove(source);
     m_treeItems.removeAll(item);
+    delete item;
     endRemoveRows();
   }
 }
@@ -864,6 +865,7 @@ void PipelineModel::childDataSourceRemoved(DataSource* source)
     beginRemoveRows(parent(index), index.row(), index.row());
     item->remove(source);
     m_treeItems.removeAll(item);
+    delete item;
     endRemoveRows();
 
     op->setModified();
