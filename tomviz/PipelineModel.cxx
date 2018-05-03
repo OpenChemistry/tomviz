@@ -101,7 +101,7 @@ public:
 private:
   QList<TreeItem*> m_children;
   PipelineModel::Item m_item;
-  TreeItem* m_parent;
+  TreeItem* m_parent = nullptr;
 };
 
 PipelineModel::TreeItem::TreeItem(const PipelineModel::Item& i, TreeItem* p)
@@ -196,7 +196,7 @@ bool PipelineModel::TreeItem::remove(DataSource* source)
     if (childItem->op()) {
       remove(childItem->op());
     } else if (childItem->module()) {
-      remove(childItem->module());
+      ModuleManager::instance().removeModule(childItem->module());
     }
   }
   if (parent()) {
@@ -211,9 +211,6 @@ bool PipelineModel::TreeItem::remove(Module* module)
   foreach (auto childItem, m_children) {
     if (childItem->module() == module) {
       removeChild(childItem->childIndex());
-      // Not sure I like this, an alternative is to make TreeItem a
-      // QObject and use a signal?
-      ModuleManager::instance().removeModule(module);
       return true;
     }
   }
@@ -697,7 +694,7 @@ QModelIndex PipelineModel::resultIndex(OperatorResult* result)
 void PipelineModel::dataSourceAdded(DataSource* dataSource)
 {
   auto treeItem = new PipelineModel::TreeItem(PipelineModel::Item(dataSource));
-  beginInsertRows(QModelIndex(), 0, 0);
+  beginInsertRows(QModelIndex(), m_treeItems.size(), m_treeItems.size());
   m_treeItems.append(treeItem);
   endInsertRows();
   auto pipeline = dataSource->pipeline();
@@ -847,6 +844,7 @@ void PipelineModel::dataSourceRemoved(DataSource* source)
     beginRemoveRows(parent(index), index.row(), index.row());
     item->remove(source);
     m_treeItems.removeAll(item);
+    delete item;
     endRemoveRows();
   }
 }
@@ -864,6 +862,7 @@ void PipelineModel::childDataSourceRemoved(DataSource* source)
     beginRemoveRows(parent(index), index.row(), index.row());
     item->remove(source);
     m_treeItems.removeAll(item);
+    delete item;
     endRemoveRows();
 
     op->setModified();
