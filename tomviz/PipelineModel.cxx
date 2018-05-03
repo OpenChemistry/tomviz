@@ -196,7 +196,7 @@ bool PipelineModel::TreeItem::remove(DataSource* source)
     if (childItem->op()) {
       remove(childItem->op());
     } else if (childItem->module()) {
-      remove(childItem->module());
+      ModuleManager::instance().removeModule(childItem->module());
     }
   }
   if (parent()) {
