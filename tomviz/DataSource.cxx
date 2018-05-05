@@ -789,6 +789,8 @@ void DataSource::copyData(vtkDataObject* newData)
   oldData->DeepCopy(newData);
 
   dataModified();
+
+  emit activeScalarsChanged();
 }
 
 vtkSMProxy* DataSource::colorMap() const
