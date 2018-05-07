@@ -6,6 +6,10 @@ def transform_scalars(dataset):
     # Get the current volume as a numpy array.
     array = utils.get_array(dataset)
 
+    # Save the type
+    input_dtype = array.dtype
+    array = array.astype(np.float32)
+
     # Create 3D hanning window.
     for axis, axis_size in enumerate(array.shape):
         # Set up shape for numpy broadcasting.
@@ -14,9 +18,6 @@ def transform_scalars(dataset):
         window = np.hanning(axis_size).reshape(filter_shape)
         array *= window
 
-    # This is where you operate on your data
-    result = array
-    #result = window
-
-    # This is where the transformed data is set, it will display in tomviz.
+    # Recast the data to the input type
+    result = array.astype(input_dtype)
     utils.set_array(dataset, result)
