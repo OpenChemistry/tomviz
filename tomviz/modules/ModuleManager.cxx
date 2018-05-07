@@ -769,10 +769,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
 
         if (reader.contains("fileNames")) {
           foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
-            auto fileName = value.toString();
-            if (fileName.isEmpty()) {
-              fileNames << fileName;
-            }
+            fileNames << value.toString();
           }
         } else {
           qCritical() << "Unable to locate file name.";
