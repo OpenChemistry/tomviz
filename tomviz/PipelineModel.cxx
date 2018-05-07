@@ -906,6 +906,7 @@ bool PipelineModel::removeDataSource(DataSource* source)
 bool PipelineModel::removeModule(Module* module)
 {
   moduleRemoved(module);
+  ModuleManager::instance().removeModule(module);
   return true;
 }
 
