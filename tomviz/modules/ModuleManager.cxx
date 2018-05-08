@@ -592,13 +592,9 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   pugi::xml_document document;
   auto pvxml = document.append_child("ParaView");
   auto pvState = pvxml.append_child("ServerManagerState");
-  pvState.append_attribute("version").set_value(
-    QString("%1.%2.%3")
-      .arg(vtkSMProxyManager::GetVersionMajor())
-      .arg(vtkSMProxyManager::GetVersionMinor())
-      .arg(vtkSMProxyManager::GetVersionPatch())
-      .toLatin1()
-      .data());
+  // Hardwire the ParaView version to avoid issues with a hardwired check for
+  // versions less than 4.0.1 in the state version controller in ParaView.
+  pvState.append_attribute("version").set_value("5.5.0");
   auto pvViews = pvState.append_child("ProxyCollection");
   pvViews.append_attribute("name").set_value("views");
   auto pvLayouts = pvState.append_child("ProxyCollection");
