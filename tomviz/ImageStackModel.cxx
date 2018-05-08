@@ -21,7 +21,7 @@
 namespace tomviz {
 
 ImageStackModel::ImageStackModel(QObject* parent,
-                                 const QList<ImageInfo>& filesInfo)
+                                 QList<ImageInfo>& filesInfo)
   : QAbstractTableModel(parent), m_filesInfo(filesInfo)
 {}
 
@@ -32,46 +32,55 @@ int ImageStackModel::rowCount(const QModelIndex&) const
 
 int ImageStackModel::columnCount(const QModelIndex&) const
 {
-  return 3;
+  return 4;
 }
 
 QVariant ImageStackModel::data(const QModelIndex& index, int role) const
 {
+  if (!index.isValid()){
+    return QVariant();
+  }
+
   int row = index.row();
   int col = index.column();
 
-  switch (role) {
-    case Qt::DisplayRole: {
+  if (row >= m_filesInfo.size()) {
+    return QVariant();
+  }
 
-      switch (col) {
-        case 0:
-          return m_filesInfo[row].fileInfo.fileName();
-        case 1:
-          return QString("%1").arg(m_filesInfo[row].m);
-        case 2:
-          return QString("%1").arg(m_filesInfo[row].n);
-      }
+  if (role == Qt::DisplayRole){
+    if (col == 0) {
+      // return m_filesInfo[row].selected ? "Y" : "N";
+    } else if (col == 1) {
+      return m_filesInfo[row].fileInfo.fileName();
+    } else if (col == 2) {
+      return QString("%1").arg(m_filesInfo[row].m);
+    } else if (col == 3) {
+      return QString("%1").arg(m_filesInfo[row].n);
     }
-
-    case Qt::ToolTipRole: {
-      if (col == 0) {
+  } else if (role == Qt::ToolTipRole) {
+    if (col == 1) {
         return m_filesInfo[row].fileInfo.absoluteFilePath();
-      }
-      break;
     }
-
-    case Qt::BackgroundRole: {
-      QColor failColor = Qt::red;
-      failColor.setAlphaF(0.25);
-      QBrush failBackground(failColor);
-      QColor successColor = Qt::green;
+  } else if (role == Qt::BackgroundRole) {
+    QColor failColor = Qt::red;
+    failColor.setAlphaF(0.25);
+    QBrush failBackground(failColor);
+    QColor successColor = Qt::green;
+    if (m_filesInfo[row].selected) {
       successColor.setAlphaF(0.125);
-      QBrush successBackground(successColor);
-      if (m_filesInfo[row].consistent) {
-        return successBackground;
-      } else {
-        return failBackground;
-      }
+    } else {
+      successColor.setAlphaF(0.0625);
+    }
+    QBrush successBackground(successColor);
+    if (m_filesInfo[row].consistent) {
+      return successBackground;
+    } else {
+      return failBackground;
+    }
+  } else if (role == Qt::CheckStateRole) {
+    if (col == 0){
+      return m_filesInfo[row].selected;
     }
   }
   return QVariant();
@@ -82,13 +91,12 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
 {
   if (role == Qt::DisplayRole) {
     if (orientation == Qt::Horizontal) {
-      switch (section) {
-        case 0:
-          return QString("Filename");
-        case 1:
-          return QString("X");
-        case 2:
-          return QString("Y");
+      if (section == 1) {
+        return QString("Filename");
+      } else if (section == 2) {
+        return QString("X");
+      } else if (section == 3) {
+        return QString("Y");
       }
     } else if (orientation == Qt::Horizontal) {
       return QString("%1").arg(section + 1);
@@ -97,8 +105,37 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
   return QVariant();
 }
 
+Qt::ItemFlags ImageStackModel::flags(const QModelIndex &index) const
+{
+    if (!index.isValid()){
+      return Qt::ItemIsEnabled;
+    }
+    if (index.column() == 0) {
+      return QAbstractItemModel::flags(index) | Qt::ItemIsUserCheckable;
+    } else {
+      return QAbstractItemModel::flags(index);
+    }
+}
+
+bool ImageStackModel::setData(const QModelIndex &index,
+                              const QVariant &value, int role)
+{
+    if (index.isValid() && role == Qt::EditRole) {
+        int col = index.column();
+        int row = index.row();
+        if (col == 0) {
+          m_filesInfo[row].selected = value.toBool();
+          emit dataChanged(index, index);
+          return true;
+        }
+    }
+    return false;
+}
+
 ImageInfo::ImageInfo(QString fileName, int m_, int n_, bool consistent_)
   : fileInfo(QFileInfo(fileName)), m(m_), n(n_), consistent(consistent_)
-{}
+  , selected(consistent_)
+{
+}
 
 } // namespace tomviz

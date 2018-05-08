@@ -29,7 +29,7 @@ ImageStackDialog::ImageStackDialog(QWidget* parent, ImageStackModel* tableModel)
   m_ui->tableView->setModel(tableModel);
   m_ui->tableView->resizeColumnsToContents();
   m_ui->tableView->horizontalHeader()->setSectionResizeMode(
-    0, QHeaderView::Stretch);
+    1, QHeaderView::Stretch);
 }
 
 ImageStackDialog::~ImageStackDialog() = default;

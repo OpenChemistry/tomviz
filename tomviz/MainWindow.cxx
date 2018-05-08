@@ -40,6 +40,7 @@
 #include "DataTransformMenu.h"
 #include "LoadDataReaction.h"
 #include "LoadPaletteReaction.h"
+#include "LoadStackReaction.h"
 #include "ModuleManager.h"
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
@@ -223,6 +224,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new Behaviors(this);
 
   new LoadDataReaction(m_ui->actionOpen);
+
+  new LoadStackReaction(m_ui->actionStack);
 
   // Build Data Transforms menu
   new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);

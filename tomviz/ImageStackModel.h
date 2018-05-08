@@ -31,7 +31,7 @@ struct ImageInfo;
 class ImageStackModel : public QAbstractTableModel
 {
 public:
-  ImageStackModel(QObject* parent, const QList<ImageInfo>& filesInfo);
+  ImageStackModel(QObject* parent, QList<ImageInfo>& filesInfo);
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
   QVariant data(const QModelIndex& index,
@@ -39,8 +39,12 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation,
                       int role) const override;
 
+  Qt::ItemFlags flags(const QModelIndex &index) const;
+  bool setData(const QModelIndex &index, const QVariant &value,
+                int role = Qt::EditRole);
+
 private:
-  const QList<ImageInfo> m_filesInfo;
+  QList<ImageInfo> m_filesInfo;
 };
 
 /// Basic image metadata container
@@ -51,6 +55,7 @@ struct ImageInfo
   int m;
   int n;
   bool consistent;
+  bool selected;
 };
 
 } // namespace tomviz

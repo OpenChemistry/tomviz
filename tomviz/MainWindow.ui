@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>19</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -40,6 +40,7 @@
      </property>
     </widget>
     <addaction name="actionOpen"/>
+    <addaction name="actionStack"/>
     <addaction name="menuRecentlyOpened"/>
     <addaction name="separator"/>
     <addaction name="actionSaveData"/>
@@ -439,6 +440,14 @@
    </property>
    <property name="toolTip">
     <string>Export data to Web</string>
+   </property>
+  </action>
+  <action name="actionStack">
+   <property name="text">
+    <string>O&amp;pen Stack</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

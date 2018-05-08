@@ -70,6 +70,8 @@ set(SOURCES
   LoadDataReaction.h
   LoadPaletteReaction.cxx
   LoadPaletteReaction.h
+  LoadStackReaction.cxx
+  LoadStackReaction.h
   Logger.cxx
   Logger.h
   MergeImagesDialog.cxx
