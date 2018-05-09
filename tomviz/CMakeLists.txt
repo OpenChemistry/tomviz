@@ -44,6 +44,8 @@ set(SOURCES
   DataTransformMenu.h
   DeleteDataReaction.cxx
   DeleteDataReaction.h
+  DockerUtilities.cxx
+  DockerUtilities.h
   DoubleSliderWidget.cxx
   DoubleSliderWidget.h
   DoubleSpinBox.cxx
