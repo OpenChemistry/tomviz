@@ -113,6 +113,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   m_colorLegendToolButton = button;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqScalarBar24.png"));
   button->setToolTip("Show color legend in the 3D window.");
+  button->setEnabled(false);
   button->setCheckable(true);
   connect(button, SIGNAL(toggled(bool)), this,
           SIGNAL(colorLegendToggled(bool)));
@@ -191,7 +192,9 @@ vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
 
   vtkSMTransferFunctionProxy* tferProxy =
     vtkSMTransferFunctionProxy::SafeDownCast(m_LUTProxy);
-  Q_ASSERT(tferProxy);
+  if (!tferProxy) {
+    return nullptr;
+  }
 
   auto sbProxy = tferProxy->FindScalarBarRepresentation(view);
   if (!sbProxy) {
@@ -409,6 +412,7 @@ void HistogramWidget::updateUI()
     auto sbProxy = getScalarBarRepresentation(view);
     if (view && sbProxy) {
       m_colorLegendToolButton->blockSignals(true);
+      m_colorLegendToolButton->setEnabled(true);
       m_colorLegendToolButton->setChecked(
         vtkSMPropertyHelper(sbProxy, "Visibility").GetAsInt() == 1);
       m_colorLegendToolButton->blockSignals(false);
