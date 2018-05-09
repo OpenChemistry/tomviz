@@ -446,9 +446,6 @@
    <property name="text">
     <string>O&amp;pen Stack</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
-   </property>
   </action>
  </widget>
  <customwidgets>

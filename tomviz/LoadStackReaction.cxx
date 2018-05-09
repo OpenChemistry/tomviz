@@ -36,18 +36,42 @@ LoadStackReaction::~LoadStackReaction() = default;
 
 void LoadStackReaction::onTriggered()
 {
+  loadData();
 }
 
 DataSource* LoadStackReaction::loadData(QStringList fileNames)
 {
   QList<ImageInfo> summary = loadTiffStack(fileNames);
-  ImageStackModel imageStackModel(0, summary);
-  ImageStackDialog dialog(tomviz::mainWidget(), &imageStackModel);
-  dialog.exec();
-  summary = imageStackModel.getFileInfo();
-  QStringList fNames;
-  fNames = summaryToFileNames(summary);
-  return LoadDataReaction::loadData(fNames);
+  // ImageStackModel imageStackModel(0);
+  ImageStackDialog dialog(tomviz::mainWidget());
+  dialog.setStackSummary(summary);
+  int result = dialog.exec();
+  if (result == QDialog::Accepted) {
+    QStringList fNames;
+    fNames = summaryToFileNames(dialog.stackSummary());
+    if (fNames.size() < 1) {
+      return nullptr;
+    }
+    return LoadDataReaction::loadData(fNames);
+  } else {
+    return nullptr;
+  }
+}
+
+DataSource* LoadStackReaction::loadData()
+{
+  ImageStackDialog dialog(tomviz::mainWidget());
+  int result = dialog.exec();
+  if (result == QDialog::Accepted) {
+    QStringList fNames;
+    fNames = summaryToFileNames(dialog.stackSummary());
+    if (fNames.size() < 1) {
+      return nullptr;
+    }
+    return LoadDataReaction::loadData(fNames);
+  } else {
+    return nullptr;
+  }
 }
 
 QStringList LoadStackReaction::summaryToFileNames(const QList<ImageInfo>& summary)

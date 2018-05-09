@@ -42,6 +42,8 @@ public:
   ~LoadStackReaction() override;
 
   static DataSource* loadData(QStringList fileNames);
+  static DataSource* loadData();
+  static QList<ImageInfo> loadTiffStack(const QStringList& fileNames);
 
 protected:
   /// Called when the action is triggered.
@@ -51,7 +53,6 @@ private:
   Q_DISABLE_COPY(LoadStackReaction)
 
   static QStringList summaryToFileNames(const QList<ImageInfo>& summary);
-  static QList<ImageInfo> loadTiffStack(const QStringList& fileNames);
 };
 } // namespace tomviz
 

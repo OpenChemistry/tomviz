@@ -29,20 +29,31 @@ class ImageStackDialog;
 namespace tomviz {
 
 class ImageStackModel;
+class ImageInfo;
 
 class ImageStackDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  explicit ImageStackDialog(QWidget* parent = nullptr,
-                            ImageStackModel* tableModel = nullptr);
+  explicit ImageStackDialog(QWidget* parent = nullptr);
   ~ImageStackDialog() override;
 
-private slots:
+  void setStackSummary(const QList<ImageInfo>& summary);
+  QList<ImageInfo> stackSummary() const;
+
+public slots:
+  void onOpenFileClick();
+  void onOpenFolderClick();
+  void onImageToggled(int row, bool value);
+
+signals:
+  void summaryChanged(const QList<ImageInfo>&);
 
 private:
   QScopedPointer<Ui::ImageStackDialog> m_ui;
+  QList<ImageInfo> m_summary;
+  void openFileDialog(QString mode);
 };
 } // namespace tomviz
 

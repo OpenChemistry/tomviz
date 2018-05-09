@@ -80,9 +80,6 @@ private:
   static QJsonObject readerProperties(vtkSMProxy* reader);
   static void setFileNameProperties(const QJsonObject& props,
                                     vtkSMProxy* reader);
-  static bool loadTiffStack(const QStringList& fileNames,
-                            QList<ImageInfo>& summary);
-  static void badStackAlert(QList<ImageInfo>& summary);
 };
 } // namespace tomviz
 

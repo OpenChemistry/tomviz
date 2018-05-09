@@ -18,12 +18,14 @@
 
 #include <QBrush>
 
+#include <iostream>
+
 namespace tomviz {
 
-ImageStackModel::ImageStackModel(QObject* parent,
-                                 const QList<ImageInfo>& filesInfo)
-  : QAbstractTableModel(parent), m_filesInfo(filesInfo)
-{}
+ImageStackModel::ImageStackModel(QObject* parent)
+  : QAbstractTableModel(parent)
+{
+}
 
 int ImageStackModel::rowCount(const QModelIndex&) const
 {
@@ -119,8 +121,9 @@ bool ImageStackModel::setData(const QModelIndex &index,
     int col = index.column();
     int row = index.row();
     if (m_filesInfo[row].consistent && col == CHECK_COL) {
-      m_filesInfo[row].selected = value.toBool();
-      emit dataChanged(index, index);
+      // m_filesInfo[row].selected = value.toBool();
+      // emit dataChanged(index, index);
+      emit toggledSelected(row, value.toBool());
       return true;
     }
   }
@@ -129,7 +132,17 @@ bool ImageStackModel::setData(const QModelIndex &index,
 
 QList<ImageInfo> ImageStackModel::getFileInfo() const
 {
-  return m_filesInfo;
+  return (m_filesInfo);
+}
+
+void ImageStackModel::onFilesInfoChanged(QList<ImageInfo> filesInfo)
+{
+  beginResetModel();
+  std::cout << "Summary Changed: MODEL" << std::endl;
+  m_filesInfo = filesInfo;
+  endResetModel();
+  // emit modelReset();
+  // emit dataChanged();
 }
 
 ImageInfo::ImageInfo(QString fileName, int m_, int n_, bool consistent_)

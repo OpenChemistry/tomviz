@@ -30,8 +30,9 @@ struct ImageInfo;
 /// Adapter to visualize the ImageInfo of a stack of images in a QTableView
 class ImageStackModel : public QAbstractTableModel
 {
+  Q_OBJECT
 public:
-  ImageStackModel(QObject* parent, const QList<ImageInfo>& filesInfo);
+  ImageStackModel(QObject* parent);
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
   QVariant data(const QModelIndex& index,
@@ -45,8 +46,16 @@ public:
 
   QList<ImageInfo> getFileInfo() const;
 
+public slots:
+  // void on_stackType_changed(QString stackType);
+  void onFilesInfoChanged(QList<ImageInfo> filesInfo);
+
+signals:
+  void toggledSelected(int row, bool value);
+
 private:
   QList<ImageInfo> m_filesInfo;
+  // const int c_numCol = 4;
   const int NUM_COL = 4;
   const int CHECK_COL = 0;
   const int FILE_COL = 1;

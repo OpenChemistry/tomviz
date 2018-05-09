@@ -280,13 +280,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   return dataSource;
 }
 
-void LoadDataReaction::badStackAlert(QList<ImageInfo>& summary)
-{
-  ImageStackModel imageStackModel(0, summary);
-  ImageStackDialog errorDialog(tomviz::mainWidget(), &imageStackModel);
-  errorDialog.exec();
-  return;
-}
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
                                                bool defaultModules, bool child)
