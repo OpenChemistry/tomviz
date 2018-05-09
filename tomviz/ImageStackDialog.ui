@@ -22,13 +22,13 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="label">
-     <property name="font">
+     <!-- <property name="font">
       <font>
        <pointsize>11</pointsize>
        <weight>50</weight>
        <bold>false</bold>
       </font>
-     </property>
+     </property> -->
      <property name="text">
       <string>The dimensions of the images in this stack are inconsistent</string>
      </property>
@@ -39,9 +39,9 @@
    </item>
    <item>
     <widget class="QTableView" name="tableView">
-     <property name="selectionMode">
+     <!-- <property name="selectionMode">
       <enum>QAbstractItemView::NoSelection</enum>
-     </property>
+     </property> -->
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>false</bool>
      </attribute>

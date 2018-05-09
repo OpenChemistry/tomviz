@@ -21,7 +21,7 @@
 namespace tomviz {
 
 ImageStackModel::ImageStackModel(QObject* parent,
-                                 QList<ImageInfo>& filesInfo)
+                                 const QList<ImageInfo>& filesInfo)
   : QAbstractTableModel(parent), m_filesInfo(filesInfo)
 {}
 
@@ -32,7 +32,7 @@ int ImageStackModel::rowCount(const QModelIndex&) const
 
 int ImageStackModel::columnCount(const QModelIndex&) const
 {
-  return 4;
+  return NUM_COL;
 }
 
 QVariant ImageStackModel::data(const QModelIndex& index, int role) const
@@ -49,18 +49,16 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
   }
 
   if (role == Qt::DisplayRole){
-    if (col == 0) {
-      // return m_filesInfo[row].selected ? "Y" : "N";
-    } else if (col == 1) {
+    if (col == FILE_COL) {
       return m_filesInfo[row].fileInfo.fileName();
-    } else if (col == 2) {
+    } else if (col == X_COL) {
       return QString("%1").arg(m_filesInfo[row].m);
-    } else if (col == 3) {
+    } else if (col == Y_COL) {
       return QString("%1").arg(m_filesInfo[row].n);
     }
   } else if (role == Qt::ToolTipRole) {
-    if (col == 1) {
-        return m_filesInfo[row].fileInfo.absoluteFilePath();
+    if (col == FILE_COL) {
+      return m_filesInfo[row].fileInfo.absoluteFilePath();
     }
   } else if (role == Qt::BackgroundRole) {
     QColor failColor = Qt::red;
@@ -79,8 +77,8 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
       return failBackground;
     }
   } else if (role == Qt::CheckStateRole) {
-    if (col == 0){
-      return m_filesInfo[row].selected;
+    if (col == CHECK_COL) {
+      return m_filesInfo[row].selected ? Qt::Checked : Qt::Unchecked;
     }
   }
   return QVariant();
@@ -91,11 +89,11 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
 {
   if (role == Qt::DisplayRole) {
     if (orientation == Qt::Horizontal) {
-      if (section == 1) {
+      if (section == FILE_COL) {
         return QString("Filename");
-      } else if (section == 2) {
+      } else if (section == X_COL) {
         return QString("X");
-      } else if (section == 3) {
+      } else if (section == Y_COL) {
         return QString("Y");
       }
     } else if (orientation == Qt::Horizontal) {
@@ -107,29 +105,31 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
 
 Qt::ItemFlags ImageStackModel::flags(const QModelIndex &index) const
 {
-    if (!index.isValid()){
-      return Qt::ItemIsEnabled;
-    }
-    if (index.column() == 0) {
-      return QAbstractItemModel::flags(index) | Qt::ItemIsUserCheckable;
-    } else {
-      return QAbstractItemModel::flags(index);
-    }
+  if (index.column() == CHECK_COL) {
+    return Qt::ItemIsUserCheckable | Qt::ItemIsEnabled;
+  } else {
+    return Qt::ItemIsEnabled;
+  }
 }
 
 bool ImageStackModel::setData(const QModelIndex &index,
                               const QVariant &value, int role)
 {
-    if (index.isValid() && role == Qt::EditRole) {
-        int col = index.column();
-        int row = index.row();
-        if (col == 0) {
-          m_filesInfo[row].selected = value.toBool();
-          emit dataChanged(index, index);
-          return true;
-        }
+  if (index.isValid() && role == Qt::CheckStateRole) {
+    int col = index.column();
+    int row = index.row();
+    if (m_filesInfo[row].consistent && col == CHECK_COL) {
+      m_filesInfo[row].selected = value.toBool();
+      emit dataChanged(index, index);
+      return true;
     }
-    return false;
+  }
+  return false;
+}
+
+QList<ImageInfo> ImageStackModel::getFileInfo() const
+{
+  return m_filesInfo;
 }
 
 ImageInfo::ImageInfo(QString fileName, int m_, int n_, bool consistent_)

@@ -24,6 +24,7 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkTIFFReader.h>
+// #include <iostream>
 
 namespace tomviz {
 
@@ -35,23 +36,18 @@ LoadStackReaction::~LoadStackReaction() = default;
 
 void LoadStackReaction::onTriggered()
 {
-  stackDialog();
-}
-
-void LoadStackReaction::stackDialog()
-{
-  // ImageStackModel imageStackModel(0, QList<ImageInfo>());
-  // ImageStackDialog errorDialog(tomviz::mainWidget(), &imageStackModel);
-  // errorDialog.exec();
-  return;
 }
 
 DataSource* LoadStackReaction::loadData(QStringList fileNames)
 {
   QList<ImageInfo> summary = loadTiffStack(fileNames);
-  stackDialog(summary);
-  fileNames = summaryToFileNames(summary);
-  return LoadDataReaction::loadData(fileNames);
+  ImageStackModel imageStackModel(0, summary);
+  ImageStackDialog dialog(tomviz::mainWidget(), &imageStackModel);
+  dialog.exec();
+  summary = imageStackModel.getFileInfo();
+  QStringList fNames;
+  fNames = summaryToFileNames(summary);
+  return LoadDataReaction::loadData(fNames);
 }
 
 QStringList LoadStackReaction::summaryToFileNames(const QList<ImageInfo>& summary)
@@ -64,7 +60,6 @@ QStringList LoadStackReaction::summaryToFileNames(const QList<ImageInfo>& summar
   }
   return fileNames;
 }
-
 
 QList<ImageInfo> LoadStackReaction::loadTiffStack(const QStringList& fileNames)
 {
@@ -92,16 +87,6 @@ QList<ImageInfo> LoadStackReaction::loadTiffStack(const QStringList& fileNames)
     summary.push_back(ImageInfo(file, dims[0], dims[1], consistent));
   }
   return summary;
-}
-
-void LoadStackReaction::stackDialog(QList<ImageInfo>& summary)
-{
-  ImageStackModel imageStackModel(0, summary);
-  ImageStackDialog dialog(tomviz::mainWidget(), &imageStackModel);
-  dialog.exec();
-
-
-  return;
 }
 
 }

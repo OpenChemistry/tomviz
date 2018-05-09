@@ -43,16 +43,6 @@ public:
 
   static DataSource* loadData(QStringList fileNames);
 
-  // static void loadData();
-
-  
-
-  /// Load data files from the specified locations, options can be used to pass
-  /// additional parameters to the method, such as defaultModules, addToRecent,
-  /// and child, or pvXML to pass to the ParaView reader.
-  // static DataSource* loadData(const QStringList& fileNames,
-  //                             const QJsonObject& options = QJsonObject());
-
 protected:
   /// Called when the action is triggered.
   void onTriggered() override;
@@ -60,14 +50,6 @@ protected:
 private:
   Q_DISABLE_COPY(LoadStackReaction)
 
-  // static void addDefaultModules(DataSource* dataSource);
-  // static QJsonObject readerProperties(vtkSMProxy* reader);
-  // static void setFileNameProperties(const QJsonObject& props,
-  //                                   vtkSMProxy* reader);
-  // static bool loadTiffStack(const QStringList& fileNames,
-  //                           QList<ImageInfo>& summary);
-  static void stackDialog();
-  static void stackDialog(QList<ImageInfo>& summary);
   static QStringList summaryToFileNames(const QList<ImageInfo>& summary);
   static QList<ImageInfo> loadTiffStack(const QStringList& fileNames);
 };

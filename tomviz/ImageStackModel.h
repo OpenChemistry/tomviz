@@ -31,7 +31,7 @@ struct ImageInfo;
 class ImageStackModel : public QAbstractTableModel
 {
 public:
-  ImageStackModel(QObject* parent, QList<ImageInfo>& filesInfo);
+  ImageStackModel(QObject* parent, const QList<ImageInfo>& filesInfo);
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
   QVariant data(const QModelIndex& index,
@@ -43,8 +43,15 @@ public:
   bool setData(const QModelIndex &index, const QVariant &value,
                 int role = Qt::EditRole);
 
+  QList<ImageInfo> getFileInfo() const;
+
 private:
   QList<ImageInfo> m_filesInfo;
+  const int NUM_COL = 4;
+  const int CHECK_COL = 0;
+  const int FILE_COL = 1;
+  const int X_COL = 2;
+  const int Y_COL = 3;
 };
 
 /// Basic image metadata container
