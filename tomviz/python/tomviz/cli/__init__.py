@@ -30,13 +30,12 @@ def _extract_pipeline(state):
 
     return (data_source, operators)
 
-
 @click.command(name="tomviz")
 @click.option('-d', '--data-file-path', help='Path to the EMD file, can be used'
               ' to override data source in state file',
               type=click.Path(exists=True))
 @click.option('-s', '--state-file-path', help='Path to the Tomviz state file',
-              type=click.Path(exists=True))
+              type=click.Path(exists=True), required=True)
 @click.option('-o', '--output-file-path',
               help='Path to write the transformed dataset.', type=click.Path())
 def main(data_file_path, state_file_path, output_file_path):
