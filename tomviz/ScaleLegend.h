@@ -45,6 +45,7 @@ public:
   ~ScaleLegend() override;
 
   ScaleLegendStyle style() const { return m_style; }
+  bool visible() const { return m_visible; }
 
 public slots:
   void setStyle(ScaleLegendStyle style);
