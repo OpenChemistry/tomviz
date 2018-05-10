@@ -38,7 +38,6 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
-#include "MainWindow.h"
 #include "ModuleManager.h"
 #include "Utilities.h"
 
@@ -120,7 +119,7 @@ private:
 
 namespace tomviz {
 
-ScaleLegend::ScaleLegend(QMainWindow* mw) : QObject(mw), m_mainWindow(mw)
+ScaleLegend::ScaleLegend(QObject* p) : QObject(p)
 {
   // Connect the data manager's "dataSourceAdded" to our "dataSourceAdded" slot
   // to allow us to connect to the new data source's length scale information.

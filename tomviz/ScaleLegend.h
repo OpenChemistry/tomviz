@@ -20,8 +20,6 @@
 
 #include <vtkNew.h>
 
-class QMainWindow;
-
 class vtkLengthScaleRepresentation;
 class vtkDistanceWidget;
 class vtkHandleWidget;
@@ -43,7 +41,7 @@ class ScaleLegend : public QObject
   Q_OBJECT
 
 public:
-  ScaleLegend(QMainWindow* mw);
+  ScaleLegend(QObject* p = nullptr);
   ~ScaleLegend() override;
 
   ScaleLegendStyle style() const { return m_style; }
@@ -57,7 +55,6 @@ private slots:
   void dataPropertiesChanged();
 
 private:
-  QMainWindow* m_mainWindow;
   Q_DISABLE_COPY(ScaleLegend)
 
   void render();
