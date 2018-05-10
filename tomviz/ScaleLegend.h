@@ -20,11 +20,14 @@
 
 #include <vtkNew.h>
 
+class pqView;
+
 class vtkLengthScaleRepresentation;
 class vtkDistanceWidget;
 class vtkHandleWidget;
 class vtkLinkCameras;
 class vtkRenderer;
+class vtkSMViewProxy;
 class vtkVolumeScaleRepresentation;
 
 namespace tomviz {
@@ -41,8 +44,8 @@ class ScaleLegend : public QObject
   Q_OBJECT
 
 public:
-  ScaleLegend(QObject* p = nullptr);
-  ~ScaleLegend() override;
+  static ScaleLegend* getScaleLegend(vtkSMViewProxy* view);
+  static ScaleLegend* getScaleLegend(pqView* view);
 
   ScaleLegendStyle style() const { return m_style; }
   bool visible() const { return m_visible; }
@@ -56,6 +59,9 @@ private slots:
   void dataPropertiesChanged();
 
 private:
+  ScaleLegend(pqView* v);
+  ~ScaleLegend() override;
+
   Q_DISABLE_COPY(ScaleLegend)
 
   void render();

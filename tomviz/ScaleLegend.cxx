@@ -27,16 +27,17 @@
 #include <vtkProperty2D.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
+#include <vtkSmartPointer.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
 #include <vtkVolumeScaleRepresentation.h>
 
+#include <pqRenderView.h>
 #include <pqView.h>
 #include <vtkPVAxesWidget.h>
 #include <vtkPVRenderView.h>
 #include <vtkSMViewProxy.h>
 
-#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
 #include "Utilities.h"
@@ -58,6 +59,7 @@ public:
   vtkLinkCameras() : Style(tomviz::ScaleLegendStyle::Cube) {}
 
   void SetParentCamera(vtkCamera* c) { this->ParentCamera = c; }
+  vtkCamera* parentCamera() { return this->ParentCamera; }
 
   void SetChildCamera(vtkCamera* c) { this->ChildCamera = c; }
 
@@ -111,7 +113,7 @@ public:
   }
 
 private:
-  vtkCamera* ParentCamera;
+  vtkSmartPointer<vtkCamera> ParentCamera;
   vtkCamera* ChildCamera;
 
   tomviz::ScaleLegendStyle Style;
@@ -119,7 +121,27 @@ private:
 
 namespace tomviz {
 
-ScaleLegend::ScaleLegend(QObject* p) : QObject(p)
+ScaleLegend* ScaleLegend::getScaleLegend(vtkSMViewProxy* viewProxy)
+{
+  pqView* view = tomviz::convert<pqView*>(viewProxy);
+  return getScaleLegend(view);
+}
+
+ScaleLegend* ScaleLegend::getScaleLegend(pqView* view)
+{
+  // sanity check, scale legend only works with render views and assumes
+  // the view is a render view in its constructor
+  if (!view || !qobject_cast<pqRenderView*>(view)) {
+    return nullptr;
+  }
+  static QMap<pqView*, QPointer<ScaleLegend>> legends;
+  if (!legends.contains(view) || legends[view] == nullptr) {
+    legends.insert(view, new ScaleLegend(view));
+  }
+  return legends[view];
+}
+
+ScaleLegend::ScaleLegend(pqView* view) : QObject(view)
 {
   // Connect the data manager's "dataSourceAdded" to our "dataSourceAdded" slot
   // to allow us to connect to the new data source's length scale information.
@@ -168,12 +190,10 @@ ScaleLegend::ScaleLegend(QObject* p) : QObject(p)
   m_renderer->AddActor(m_lengthScaleRep.Get());
 
   // Add our sub-renderer to the main renderer
-  auto view = ActiveObjects::instance().activeView();
-  if (!view) {
-    // Something is wrong with the view, exit early.
-    return;
-  }
-  auto renderView = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
+  auto viewProxy = view->getViewProxy();
+  // this line assumes the view is a render view
+  auto renderView =
+    vtkPVRenderView::SafeDownCast(viewProxy->GetClientSideView());
   renderView->GetRenderWindow()->AddRenderer(m_renderer.Get());
 
   // Set up interactors
@@ -195,11 +215,7 @@ ScaleLegend::ScaleLegend(QObject* p) : QObject(p)
 ScaleLegend::~ScaleLegend()
 {
   // Break the connection between the cameras of the two views
-  auto view = ActiveObjects::instance().activeView();
-  auto renderView = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
-  if (renderView) {
-    renderView->GetActiveCamera()->RemoveObserver(m_linkCamerasId);
-  }
+  m_linkCameras->parentCamera()->RemoveObserver(m_linkCamerasId);
 }
 
 void ScaleLegend::setStyle(ScaleLegendStyle style)
@@ -251,7 +267,7 @@ void ScaleLegend::dataPropertiesChanged()
 
 void ScaleLegend::render()
 {
-  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  auto view = qobject_cast<pqView*>(parent());
   if (view) {
     view->render();
   }

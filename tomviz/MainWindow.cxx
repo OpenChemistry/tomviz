@@ -462,7 +462,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new ProgressDialogManager(this);
 
   // Initialize scale legend
-  ScaleLegend* scaleLegend = new ScaleLegend(this);
+  ScaleLegend* scaleLegend =
+    ScaleLegend::getScaleLegend(ActiveObjects::instance().activeView());
 
   connect(viewMenuManager, SIGNAL(setScaleLegendStyle(ScaleLegendStyle)),
           scaleLegend, SLOT(setStyle(ScaleLegendStyle)));
