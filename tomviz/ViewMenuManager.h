@@ -36,10 +36,6 @@ public:
   ViewMenuManager(QMainWindow* mainWindow, QMenu* menu);
   ~ViewMenuManager();
 
-signals:
-  void setScaleLegendStyle(ScaleLegendStyle);
-  void setScaleLegendVisibility(bool);
-
 private slots:
   void showViewPropertiesDialog(bool show);
   void viewPropertiesDialogHidden();
@@ -50,6 +46,9 @@ private slots:
   void onViewChanged();
 
 private:
+  void setScaleLegendStyle(ScaleLegendStyle);
+  void setScaleLegendVisibility(bool);
+
   QDialog* m_viewPropertiesDialog;
   QPointer<QAction> m_showViewPropertiesAction;
   QPointer<QAction> m_perspectiveProjectionAction;
