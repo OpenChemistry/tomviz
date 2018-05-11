@@ -25,7 +25,6 @@ class pqView;
 class vtkLengthScaleRepresentation;
 class vtkDistanceWidget;
 class vtkHandleWidget;
-class vtkLinkCameras;
 class vtkRenderer;
 class vtkSMViewProxy;
 class vtkVolumeScaleRepresentation;
@@ -65,6 +64,7 @@ private:
   Q_DISABLE_COPY(ScaleLegend)
 
   void render();
+  class vtkLinkCameras;
 
   vtkNew<vtkDistanceWidget> m_distanceWidget;
   vtkNew<vtkLengthScaleRepresentation> m_lengthScaleRep;

@@ -44,10 +44,12 @@
 
 #include <cmath>
 
+namespace tomviz {
+
 // The Scale legend lives in a sub-render window at the bottom right-hand corner
 // of the viewing screen and has its own camera. vtkLinkCameras connects the
 // sub-render window camera to the main window camera.
-class vtkLinkCameras : public vtkCommand
+class ScaleLegend::vtkLinkCameras : public vtkCommand
 {
 public:
   static vtkLinkCameras* New()
@@ -118,8 +120,6 @@ private:
 
   tomviz::ScaleLegendStyle Style;
 };
-
-namespace tomviz {
 
 ScaleLegend* ScaleLegend::getScaleLegend(vtkSMViewProxy* viewProxy)
 {
