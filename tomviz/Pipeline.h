@@ -30,6 +30,8 @@
 namespace tomviz {
 class DataSource;
 class Operator;
+class Pipeline;
+class PipelineExecutor;
 
 class Pipeline : public QObject
 {
@@ -43,6 +45,9 @@ public:
 
   // Pause the automatic execution of the pipeline
   void pause();
+
+  // Returns true if pipeline is currently paused, false otherwise.
+  bool paused();
 
   // Resume the automatic execution of the pipeline, will execution the
   // existing pipeline. If execute is true the entire pipeline will be executed.
@@ -77,15 +82,6 @@ public slots:
   void execute(DataSource* start, bool runLast);
   void execute(DataSource* start);
 
-protected slots:
-  void executePipelineBranch(DataSource* dataSource, Operator* start = nullptr);
-
-  /// The pipeline worker is finished with this branch.
-  void pipelineBranchFinished(bool result);
-
-  /// The pipeline worker has been canceled
-  void pipelineBranchCanceled();
-
 signals:
   /// This signal is when the execution of the pipeline starts.
   void started();
@@ -104,9 +100,8 @@ private:
   void addDataSource(DataSource* dataSource);
 
   DataSource* m_data;
-  PipelineWorker* m_worker;
-  PipelineWorker::Future* m_future = nullptr;
   bool m_paused = false;
+  PipelineExecutor* m_executor;
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.
@@ -115,7 +110,7 @@ class Pipeline::ImageFuture : public QObject
   Q_OBJECT
 
 public:
-  friend class Pipeline;
+  friend class ThreadPipelineExecutor;
 
   vtkSmartPointer<vtkImageData> result() { return m_imageData; }
   Operator* op() { return m_operator; }
@@ -133,6 +128,50 @@ private:
   vtkSmartPointer<vtkImageData> m_imageData;
   PipelineWorker::Future* m_future;
 };
+
+class PipelineExecutor : public QObject
+{
+  Q_OBJECT
+
+public:
+  PipelineExecutor(Pipeline* pipeline);
+
+  virtual void execute(DataSource* dataSource, Operator* start = nullptr) = 0;
+  virtual Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op) = 0;
+  virtual void cancel(std::function<void()> canceled) = 0;
+  bool cancel(Operator* op);
+  virtual bool isRunning() = 0;
+
+protected:
+  Pipeline* pipeline();
+};
+
+class ThreadPipelineExecutor : public PipelineExecutor
+{
+  Q_OBJECT
+
+public:
+  ThreadPipelineExecutor(Pipeline* pipeline);
+  void execute(DataSource* dataSource, Operator* start = nullptr);
+  Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op);
+  void cancel(std::function<void()> canceled);
+  bool cancel(Operator* op);
+  bool isRunning();
+
+private slots:
+  void executePipelineBranch(DataSource* dataSource, Operator* start = nullptr);
+
+  /// The pipeline worker is finished with this branch.
+  void pipelineBranchFinished(bool result);
+
+  /// The pipeline worker has been canceled
+  void pipelineBranchCanceled();
+
+private:
+  PipelineWorker* m_worker;
+  PipelineWorker::Future* m_future = nullptr;
+};
+
 } // namespace tomviz
 
 #endif // tomvizPipeline_h
