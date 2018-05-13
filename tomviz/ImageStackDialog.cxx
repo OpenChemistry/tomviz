@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <QFileDialog>
+#include <QFileInfo>
 
 namespace tomviz {
 
@@ -51,6 +52,8 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
 
   m_ui->loadedContainer->hide();
   m_ui->stackType->setDisabled(true);
+  this->setAcceptDrops(true);
+
 }
 
 ImageStackDialog::~ImageStackDialog() = default;
@@ -63,33 +66,93 @@ void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
   m_ui->emptyContainer->hide();
   m_ui->loadedContainer->show();
   m_ui->stackType->setEnabled(true);
-
+  this->setAcceptDrops(true);
 }
 
 void ImageStackDialog::onOpenFileClick()
 {
   std::cout << "Open file clicked" << std::endl;
-  openFileDialog(QString());
+  openFileDialog(QFileDialog::ExistingFiles);
 }
 
 void ImageStackDialog::onOpenFolderClick()
 {
   std::cout << "Open folder clicked" << std::endl;
+  openFileDialog(QFileDialog::Directory);
 }
 
-void ImageStackDialog::openFileDialog(QString mode)
+void ImageStackDialog::openFileDialog(int mode)
 {
   QStringList filters;
   filters << "TIFF Image files (*.tiff *.tif)";
 
   QFileDialog dialog(nullptr);
-  dialog.setFileMode(QFileDialog::ExistingFiles);
-  dialog.setNameFilters(filters);
+  if (mode == QFileDialog::ExistingFiles) {
+    dialog.setFileMode(QFileDialog::ExistingFiles);
+    dialog.setNameFilters(filters);
+  } else if (mode == QFileDialog::Directory) {
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setOption(QFileDialog::ShowDirsOnly, true);
+  }
 
   if (dialog.exec()) {
-    QStringList fileNames = dialog.selectedFiles();
-    QList<ImageInfo> summary = LoadStackReaction::loadTiffStack(fileNames);
-    this->setStackSummary(summary);
+    QStringList fileNames;
+    if (mode == QFileDialog::ExistingFiles) {
+      processFiles(dialog.selectedFiles());
+    } else if (mode == QFileDialog::Directory) {
+      processDirectory(dialog.selectedFiles()[0]);
+    }
+  }
+}
+
+void ImageStackDialog::processDirectory(QString path) {
+  QStringList fileNames;
+  QDir directory(path);
+  foreach(auto file, directory.entryList(QDir::Files)) {
+    fileNames << directory.absolutePath() + QDir::separator() + file;
+  }
+  processFiles(fileNames);
+}
+
+void ImageStackDialog::processFiles(QStringList fileNames) {
+  foreach(auto file, fileNames) {
+    std::cout << file.toStdString() << std::endl;
+  }
+  QList<ImageInfo> summary = LoadStackReaction::loadTiffStack(fileNames);
+  this->setStackSummary(summary);
+}
+
+void ImageStackDialog::dragEnterEvent(QDragEnterEvent *event)
+{
+    // if (event->mimeData()->hasFormat("text/plain")) {
+    if (event->mimeData()->hasUrls()) {
+      event->acceptProposedAction();
+    }
+}
+
+void ImageStackDialog::dropEvent(QDropEvent* event)
+{
+  std::cout << "Dropped!" << std::endl;
+  if (event->mimeData()->hasUrls()) {
+    QStringList pathList;
+    QString path;
+    QList<QUrl> urlList = event->mimeData()->urls();
+    bool openDirs = true;
+    for (int i = 0; i < urlList.size(); ++i) {
+      path = urlList.at(i).toLocalFile();
+      QFileInfo fileInfo(path);
+      if (fileInfo.exists()) {
+        if (fileInfo.isDir() && openDirs) {
+          processDirectory(path);
+          return;
+        } else if (fileInfo.isFile()) {
+          pathList.append(path);
+        }
+        // only open the first directory being dropped
+        openDirs = false;
+      }
+    }
+    processFiles(pathList);
   }
 }
 

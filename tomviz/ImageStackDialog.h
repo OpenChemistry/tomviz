@@ -18,7 +18,9 @@
 #define tomvizImageStackDialog_h
 
 #include <QDialog>
-
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
 #include <QScopedPointer>
 
 namespace Ui {
@@ -50,10 +52,16 @@ public slots:
 signals:
   void summaryChanged(const QList<ImageInfo>&);
 
+protected:
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dropEvent(QDropEvent* event) override;
+
 private:
   QScopedPointer<Ui::ImageStackDialog> m_ui;
   QList<ImageInfo> m_summary;
-  void openFileDialog(QString mode);
+  void openFileDialog(int mode);
+  void processDirectory(QString path);
+  void processFiles(QStringList fileNames);
 };
 } // namespace tomviz
 

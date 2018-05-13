@@ -130,7 +130,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "All files (*.*)";
 
   QFileDialog dialog(nullptr);
-  dialog.setFileMode(QFileDialog::ExistingFiles);
+  dialog.setFileMode(QFileDialog::ExistingFile);
   dialog.setNameFilters(filters);
   dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
 
@@ -229,18 +229,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource->setReaderProperties(props.toVariantMap());
 
-  } else if (info.suffix().toLower() == "tiff" ||
-             info.suffix().toLower() == "tif") {
-    if (fileNames.size() > 1) {
-    //   // Delegate opening of the image stack to LoadStackReaction
-      
-      // return nullptr;
-    //   // QList<ImageInfo> summary;
-    //   // if (!loadTiffStack(fileNames, summary)) {
-    //   //   badStackAlert(summary);
-    //   //   return nullptr;
-    //   // }
-    }
   }
 
   if (loadWithParaview) {

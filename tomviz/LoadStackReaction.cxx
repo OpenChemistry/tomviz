@@ -52,6 +52,10 @@ DataSource* LoadStackReaction::loadData(QStringList fileNames)
     if (fNames.size() < 1) {
       return nullptr;
     }
+    std::cout << "loadData0" << std::endl;
+    foreach(auto file, fNames) {
+      std::cout << file.toStdString() << std::endl;
+    }
     return LoadDataReaction::loadData(fNames);
   } else {
     return nullptr;
@@ -67,6 +71,10 @@ DataSource* LoadStackReaction::loadData()
     fNames = summaryToFileNames(dialog.stackSummary());
     if (fNames.size() < 1) {
       return nullptr;
+    }
+    std::cout << "loadData1" << std::endl;
+    foreach(auto file, fNames) {
+      std::cout << file.toStdString() << std::endl;
     }
     return LoadDataReaction::loadData(fNames);
   } else {
