@@ -23,6 +23,8 @@
 #include <QMimeData>
 #include <QScopedPointer>
 
+#include "DataSource.h"
+
 namespace Ui {
 
 class ImageStackDialog;
@@ -32,6 +34,7 @@ namespace tomviz {
 
 class ImageStackModel;
 class ImageInfo;
+class DataSource;
 
 class ImageStackDialog : public QDialog
 {
@@ -42,15 +45,18 @@ public:
   ~ImageStackDialog() override;
 
   void setStackSummary(const QList<ImageInfo>& summary);
+  void setStackType(const DataSource::DataSourceType& stackType);
   QList<ImageInfo> stackSummary() const;
 
 public slots:
   void onOpenFileClick();
   void onOpenFolderClick();
   void onImageToggled(int row, bool value);
+  void onStackTypeChanged(int stackType);
 
 signals:
   void summaryChanged(const QList<ImageInfo>&);
+  void stackTypeChanged(const DataSource::DataSourceType&);
 
 protected:
   void dragEnterEvent(QDragEnterEvent *event) override;
@@ -59,6 +65,7 @@ protected:
 private:
   QScopedPointer<Ui::ImageStackDialog> m_ui;
   QList<ImageInfo> m_summary;
+  DataSource::DataSourceType m_stackType;
   void openFileDialog(int mode);
   void processDirectory(QString path);
   void processFiles(QStringList fileNames);

@@ -23,6 +23,8 @@
 #include <QModelIndex>
 #include <QString>
 
+#include "DataSource.h"
+
 namespace tomviz {
 
 struct ImageInfo;
@@ -49,18 +51,21 @@ public:
 public slots:
   // void on_stackType_changed(QString stackType);
   void onFilesInfoChanged(QList<ImageInfo> filesInfo);
+  void onStackTypeChanged(DataSource::DataSourceType stackType);
 
 signals:
   void toggledSelected(int row, bool value);
 
 private:
   QList<ImageInfo> m_filesInfo;
+  DataSource::DataSourceType m_stackType;
   // const int c_numCol = 4;
-  const int NUM_COL = 4;
-  const int CHECK_COL = 0;
-  const int FILE_COL = 1;
-  const int X_COL = 2;
-  const int Y_COL = 3;
+  const int c_numCol = 5;
+  const int c_checkCol = 0;
+  const int c_fileCol = 1;
+  const int c_xCol = 2;
+  const int c_yCol = 3;
+  const int c_posCol = 4;
 };
 
 /// Basic image metadata container

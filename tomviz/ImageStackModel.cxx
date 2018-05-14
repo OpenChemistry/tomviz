@@ -34,7 +34,7 @@ int ImageStackModel::rowCount(const QModelIndex&) const
 
 int ImageStackModel::columnCount(const QModelIndex&) const
 {
-  return NUM_COL;
+  return c_numCol;
 }
 
 QVariant ImageStackModel::data(const QModelIndex& index, int role) const
@@ -51,15 +51,17 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
   }
 
   if (role == Qt::DisplayRole){
-    if (col == FILE_COL) {
+    if (col == c_fileCol) {
       return m_filesInfo[row].fileInfo.fileName();
-    } else if (col == X_COL) {
+    } else if (col == c_xCol) {
       return QString("%1").arg(m_filesInfo[row].m);
-    } else if (col == Y_COL) {
+    } else if (col == c_yCol) {
       return QString("%1").arg(m_filesInfo[row].n);
+    } else if (col == c_posCol) {
+      return QString("%1").arg(m_filesInfo[row].pos);
     }
   } else if (role == Qt::ToolTipRole) {
-    if (col == FILE_COL) {
+    if (col == c_fileCol) {
       return m_filesInfo[row].fileInfo.absoluteFilePath();
     }
   } else if (role == Qt::BackgroundRole) {
@@ -79,7 +81,7 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
       return failBackground;
     }
   } else if (role == Qt::CheckStateRole) {
-    if (col == CHECK_COL) {
+    if (col == c_checkCol) {
       return m_filesInfo[row].selected ? Qt::Checked : Qt::Unchecked;
     }
   }
@@ -91,12 +93,18 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
 {
   if (role == Qt::DisplayRole) {
     if (orientation == Qt::Horizontal) {
-      if (section == FILE_COL) {
+      if (section == c_fileCol) {
         return QString("Filename");
-      } else if (section == X_COL) {
+      } else if (section == c_xCol) {
         return QString("X");
-      } else if (section == Y_COL) {
+      } else if (section == c_yCol) {
         return QString("Y");
+      } else if (section == c_posCol) {
+        if (m_stackType == DataSource::DataSourceType::Volume) {
+          return QString("Slice");
+        } else if (m_stackType == DataSource::DataSourceType::TiltSeries) {
+          return QString("Angle");
+        }
       }
     } else if (orientation == Qt::Horizontal) {
       return QString("%1").arg(section + 1);
@@ -107,7 +115,7 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
 
 Qt::ItemFlags ImageStackModel::flags(const QModelIndex &index) const
 {
-  if (index.column() == CHECK_COL) {
+  if (index.column() == c_checkCol) {
     return Qt::ItemIsUserCheckable | Qt::ItemIsEnabled;
   } else {
     return Qt::ItemIsEnabled;
@@ -120,7 +128,7 @@ bool ImageStackModel::setData(const QModelIndex &index,
   if (index.isValid() && role == Qt::CheckStateRole) {
     int col = index.column();
     int row = index.row();
-    if (m_filesInfo[row].consistent && col == CHECK_COL) {
+    if (m_filesInfo[row].consistent && col == c_checkCol) {
       // m_filesInfo[row].selected = value.toBool();
       // emit dataChanged(index, index);
       emit toggledSelected(row, value.toBool());
@@ -143,6 +151,14 @@ void ImageStackModel::onFilesInfoChanged(QList<ImageInfo> filesInfo)
   endResetModel();
   // emit modelReset();
   // emit dataChanged();
+}
+
+void ImageStackModel::onStackTypeChanged(DataSource::DataSourceType stackType)
+{
+  beginResetModel();
+  std::cout << "stackType Changed: MODEL" << std::endl;
+  m_stackType = stackType;
+  endResetModel();
 }
 
 ImageInfo::ImageInfo(QString fileName, int pos_, int m_, int n_, bool consistent_)

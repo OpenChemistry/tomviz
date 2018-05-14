@@ -41,6 +41,9 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
   QObject::connect(this, &ImageStackDialog::summaryChanged,
                    tableModel, &ImageStackModel::onFilesInfoChanged);
 
+  QObject::connect(this, &ImageStackDialog::stackTypeChanged,
+                   tableModel, &ImageStackModel::onStackTypeChanged);
+
   QObject::connect(m_ui->openFile, &QPushButton::clicked,
                    this, &ImageStackDialog::onOpenFileClick);
 
@@ -51,9 +54,16 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
                    this, &ImageStackDialog::onImageToggled);
 
   m_ui->loadedContainer->hide();
-  m_ui->stackType->setDisabled(true);
-  this->setAcceptDrops(true);
+  m_ui->stackTypeCombo->setDisabled(true);
+  m_ui->stackTypeCombo->insertItem(DataSource::DataSourceType::Volume, QString("Volume"));
+  m_ui->stackTypeCombo->insertItem(DataSource::DataSourceType::TiltSeries, QString("Tilt Series"));
 
+  // Due to an overloaded signal I am force to use static_cast here.
+  QObject::connect(m_ui->stackTypeCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+                   this, &ImageStackDialog::onStackTypeChanged);
+  // QObject::connect(this, &ImageStackDialog::stackTypeChanged),
+                  //  m_ui->stackTypeCombo, &QComboBox::setCurrentIndex);
+  this->setAcceptDrops(true);
 }
 
 ImageStackDialog::~ImageStackDialog() = default;
@@ -64,15 +74,30 @@ void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
   m_summary = summary;
   std::sort(m_summary.begin(), m_summary.end(),
     [](const ImageInfo & a, const ImageInfo & b) -> bool
-    { 
-      return a.pos < b.pos; 
+    {
+      // Place the inconsistent images at the top, so the user will notice them.
+      if (a.consistent == b.consistent) {
+        return a.pos < b.pos;
+      } else {
+        return !a.consistent;
+      }
     }
   );
   emit summaryChanged(m_summary);
   m_ui->emptyContainer->hide();
   m_ui->loadedContainer->show();
-  m_ui->stackType->setEnabled(true);
+  m_ui->stackTypeCombo->setEnabled(true);
   this->setAcceptDrops(true);
+}
+
+void ImageStackDialog::setStackType(const DataSource::DataSourceType& stackType)
+{
+  std::cout << "StackType Changed: DIALOG " << stackType << std::endl;
+  if (m_stackType != stackType) {
+    m_stackType = stackType;
+    emit stackTypeChanged(m_stackType);
+    m_ui->stackTypeCombo->setCurrentIndex(m_stackType);
+  }
 }
 
 void ImageStackDialog::onOpenFileClick()
@@ -125,7 +150,6 @@ void ImageStackDialog::processFiles(QStringList fileNames) {
   foreach(auto file, fileNames) {
     if (file.endsWith(".tif") || file.endsWith(".tiff")) {
       fNames << file;
-      // std::cout << file.toStdString() << std::endl;
     }
   }
   QList<ImageInfo> summary = LoadStackReaction::loadTiffStack(fNames);
@@ -133,18 +157,21 @@ void ImageStackDialog::processFiles(QStringList fileNames) {
   bool isVolume = false;
   bool isTilt = false;
   bool isNumbered = false;
-  
+  DataSource::DataSourceType stackType = DataSource::DataSourceType::Volume;
+
   isVolume = detectVolume(fNames, summary);
   if (!isVolume) {
     isTilt = detectTilt(fNames, summary);
-    if (!isTilt) {
+    if (isTilt) {
+      stackType = DataSource::DataSourceType::TiltSeries;
+    } else {
       isNumbered = detectVolume(fNames, summary, false);
       if (!isNumbered) {
         defaultOrder(fNames, summary);
       }
     }
   }
-
+  this->setStackType(stackType);
   this->setStackSummary(summary);
 }
 
@@ -272,6 +299,15 @@ void ImageStackDialog::onImageToggled(int row, bool value)
 {
   m_summary[row].selected = value;
   emit summaryChanged(m_summary);
+}
+
+void ImageStackDialog::onStackTypeChanged(int stackType)
+{
+  if (stackType == DataSource::DataSourceType::Volume) {
+    setStackType(DataSource::DataSourceType::Volume);
+  } else if (stackType == DataSource::DataSourceType::TiltSeries) {
+    setStackType(DataSource::DataSourceType::TiltSeries);
+  }
 }
 
 } // namespace tomviz

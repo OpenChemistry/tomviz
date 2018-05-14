@@ -40,20 +40,10 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QComboBox" name="stackType">
+      <widget class="QComboBox" name="stackTypeCombo">
        <property name="enabled">
         <bool>true</bool>
        </property>
-       <item>
-        <property name="text">
-         <string>Tilt Series</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Volume</string>
-        </property>
-       </item>
       </widget>
      </item>
     </layout>
@@ -178,18 +168,7 @@
    </item>
   </layout>
   <zorder>label</zorder>
-  <zorder>tableView</zorder>
-  <zorder>buttonBox</zorder>
-  <zorder>stackType</zorder>
-  <zorder>horizontalSpacer</zorder>
-  <zorder>label_2</zorder>
-  <zorder>frame</zorder>
-  <zorder>buttonBox_2</zorder>
-  <zorder>openFolder</zorder>
-  <zorder>openFile</zorder>
-  <zorder>tableView</zorder>
   <zorder></zorder>
-  <zorder>buttonBox</zorder>
   <zorder>emptyContainer</zorder>
   <zorder>loadedContainer</zorder>
  </widget>
