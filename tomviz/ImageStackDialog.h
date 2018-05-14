@@ -62,6 +62,9 @@ private:
   void openFileDialog(int mode);
   void processDirectory(QString path);
   void processFiles(QStringList fileNames);
+  bool detectVolume(QStringList fileNames, QList<ImageInfo>& summary, bool matchPrefix = true);
+  bool detectTilt(QStringList fileNames, QList<ImageInfo>& summary, bool matchPrefix = true);
+  void defaultOrder(QStringList fileNames, QList<ImageInfo>& summary);
 };
 } // namespace tomviz
 

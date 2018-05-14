@@ -145,8 +145,8 @@ void ImageStackModel::onFilesInfoChanged(QList<ImageInfo> filesInfo)
   // emit dataChanged();
 }
 
-ImageInfo::ImageInfo(QString fileName, int m_, int n_, bool consistent_)
-  : fileInfo(QFileInfo(fileName)), m(m_), n(n_), consistent(consistent_)
+ImageInfo::ImageInfo(QString fileName, int pos_, int m_, int n_, bool consistent_)
+  : fileInfo(QFileInfo(fileName)), pos(pos_),  m(m_), n(n_), consistent(consistent_)
   , selected(consistent_)
 {
 }

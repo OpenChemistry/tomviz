@@ -116,7 +116,7 @@ QList<ImageInfo> LoadStackReaction::loadTiffStack(const QStringList& fileNames)
         consistent = false;
       }
     }
-    summary.push_back(ImageInfo(file, dims[0], dims[1], consistent));
+    summary.push_back(ImageInfo(file, 0, dims[0], dims[1], consistent));
   }
   return summary;
 }

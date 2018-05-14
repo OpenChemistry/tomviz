@@ -62,6 +62,12 @@ void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
 {
   std::cout << "Summary Changed: DIALOG" << std::endl;
   m_summary = summary;
+  std::sort(m_summary.begin(), m_summary.end(),
+    [](const ImageInfo & a, const ImageInfo & b) -> bool
+    { 
+      return a.pos < b.pos; 
+    }
+  );
   emit summaryChanged(m_summary);
   m_ui->emptyContainer->hide();
   m_ui->loadedContainer->show();
@@ -115,11 +121,112 @@ void ImageStackDialog::processDirectory(QString path) {
 }
 
 void ImageStackDialog::processFiles(QStringList fileNames) {
+  QStringList fNames;
   foreach(auto file, fileNames) {
-    std::cout << file.toStdString() << std::endl;
+    if (file.endsWith(".tif") || file.endsWith(".tiff")) {
+      fNames << file;
+      // std::cout << file.toStdString() << std::endl;
+    }
   }
-  QList<ImageInfo> summary = LoadStackReaction::loadTiffStack(fileNames);
+  QList<ImageInfo> summary = LoadStackReaction::loadTiffStack(fNames);
+
+  bool isVolume = false;
+  bool isTilt = false;
+  bool isNumbered = false;
+  
+  isVolume = detectVolume(fNames, summary);
+  if (!isVolume) {
+    isTilt = detectTilt(fNames, summary);
+    if (!isTilt) {
+      isNumbered = detectVolume(fNames, summary, false);
+      if (!isNumbered) {
+        defaultOrder(fNames, summary);
+      }
+    }
+  }
+
   this->setStackSummary(summary);
+}
+
+bool ImageStackDialog::detectVolume(QStringList fileNames, QList<ImageInfo>& summary, bool matchPrefix)
+{
+  if (fileNames.size() < 1) {
+    return false;
+  }
+  QString thePrefix;
+  QString prefix;
+  int num;
+  QRegExp volRegExp("^(.*[^\\d]{1})(\\d+)(\\.(tif|tiff))$");
+
+  for (int i = 0; i < fileNames.size(); ++i) {
+    if (volRegExp.exactMatch(fileNames[i])) {
+      prefix = volRegExp.cap(1);
+      if (i == 0) {
+        thePrefix = prefix;
+      }
+      if (prefix == thePrefix || !matchPrefix) {
+        num = volRegExp.cap(2).toInt();
+        summary[i].pos = num;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool ImageStackDialog::detectTilt(QStringList fileNames, QList<ImageInfo>& summary, bool matchPrefix)
+{
+  if (fileNames.size() < 1) {
+    return false;
+  }
+  QString thePrefix;
+  QString prefix;
+  int num;
+  QString sign;
+  QString num_;
+  QString ext;
+
+  QRegExp tiltRegExp("^.*([p+]|[m-])?(\\d+)(\\.(tif|tiff))$");
+
+  for (int i = 0; i < fileNames.size(); ++i) {
+    if (tiltRegExp.exactMatch(fileNames[i])) {
+      sign = tiltRegExp.cap(1);
+      num_ = tiltRegExp.cap(2);
+      ext = tiltRegExp.cap(3);
+      prefix = fileNames[i];
+      prefix.replace(sign+num_+ext, QString());
+      if (i == 0) {
+        thePrefix = prefix;
+      }
+      if (prefix == thePrefix || !matchPrefix) {
+        if (sign == "p") {
+          sign = "+";
+        } else if (sign == "m") {
+          sign = "-";
+        }
+        num = (sign+num_).toInt();
+        summary[i].pos = num;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+
+void ImageStackDialog::defaultOrder(QStringList fileNames, QList<ImageInfo>& summary)
+{
+  if (fileNames.size() != summary.size()) {
+    return;
+  }
+  for (int i = 0; i < fileNames.size(); ++i) {
+    summary[i].pos = i;
+  }
 }
 
 void ImageStackDialog::dragEnterEvent(QDragEnterEvent *event)

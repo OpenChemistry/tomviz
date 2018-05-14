@@ -66,8 +66,9 @@ private:
 /// Basic image metadata container
 struct ImageInfo
 {
-  ImageInfo(QString fileName, int m_, int n_, bool consistent_);
+  ImageInfo(QString fileName, int pos_=0, int m_=-1, int n_=-1, bool consistent_=false);
   QFileInfo fileInfo;
+  int pos;
   int m;
   int n;
   bool consistent;
