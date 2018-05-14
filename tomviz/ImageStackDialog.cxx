@@ -35,9 +35,6 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
   // m_summary = nullptr;
   ImageStackModel* tableModel = new ImageStackModel(nullptr);
   m_ui->tableView->setModel(tableModel);
-  // m_ui->tableView->resizeColumnsToContents();
-  m_ui->tableView->horizontalHeader()->setSectionResizeMode(
-    1, QHeaderView::Stretch);
   QObject::connect(this, &ImageStackDialog::summaryChanged,
                    tableModel, &ImageStackModel::onFilesInfoChanged);
 
@@ -87,7 +84,10 @@ void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
   m_ui->emptyContainer->hide();
   m_ui->loadedContainer->show();
   m_ui->stackTypeCombo->setEnabled(true);
-  this->setAcceptDrops(true);
+  m_ui->tableView->resizeColumnsToContents();
+  m_ui->tableView->horizontalHeader()->setSectionResizeMode(
+    1, QHeaderView::Stretch);
+  this->setAcceptDrops(false);
 }
 
 void ImageStackDialog::setStackType(const DataSource::DataSourceType& stackType)

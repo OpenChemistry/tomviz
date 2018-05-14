@@ -23,7 +23,7 @@
 namespace tomviz {
 
 ImageStackModel::ImageStackModel(QObject* parent)
-  : QAbstractTableModel(parent)
+  : QAbstractTableModel(parent), m_stackType(DataSource::DataSourceType::Volume)
 {
 }
 
