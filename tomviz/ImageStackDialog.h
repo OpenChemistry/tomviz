@@ -30,7 +30,6 @@ class ImageStackDialog;
 }
 
 namespace tomviz {
-class ImageInfo;
 class ImageStackDialog : public QDialog
 {
   Q_OBJECT

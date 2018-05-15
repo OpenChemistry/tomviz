@@ -17,7 +17,6 @@
 
 #include "DataSource.h"
 #include "ImageStackDialog.h"
-#include "ImageStackModel.h"
 #include "LoadDataReaction.h"
 #include "SetTiltAnglesOperator.h"
 #include "Utilities.h"

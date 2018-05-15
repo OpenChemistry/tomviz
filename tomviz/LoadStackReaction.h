@@ -18,9 +18,10 @@
 
 #include <pqReaction.h>
 
+#include "ImageStackModel.h"
+
 namespace tomviz {
 class DataSource;
-class ImageInfo;
 class ImageStackDialog;
 
 /// LoadStackReaction handles the "Load Stack" action in tomviz. On trigger,
