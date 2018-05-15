@@ -17,13 +17,11 @@
 #ifndef tomvizImageStackDialog_h
 #define tomvizImageStackDialog_h
 
+#include <QDialog>
+
 #include "DataSource.h"
 #include "ImageStackModel.h"
 
-#include <QDialog>
-#include <QDragEnterEvent>
-#include <QDropEvent>
-#include <QMimeData>
 #include <QScopedPointer>
 
 namespace Ui {
@@ -43,8 +41,8 @@ public:
 
   void setStackSummary(const QList<ImageInfo>& summary);
   void setStackType(const DataSource::DataSourceType& stackType);
-  void processDirectory(QString path);
-  void processFiles(QStringList fileNames);
+  void processDirectory(const QString& path);
+  void processFiles(const QStringList& fileNames);
   QList<ImageInfo> getStackSummary() const;
   DataSource::DataSourceType getStackType() const;
 

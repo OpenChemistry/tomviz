@@ -20,8 +20,10 @@
 
 #include "LoadStackReaction.h"
 
+#include <QDropEvent>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QMimeData>
 
 namespace tomviz {
 
@@ -57,7 +59,7 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
                                            &QComboBox::currentIndexChanged),
                    this, &ImageStackDialog::onStackTypeChanged);
 
-  this->setAcceptDrops(true);
+  setAcceptDrops(true);
 }
 
 ImageStackDialog::~ImageStackDialog() = default;
@@ -82,7 +84,7 @@ void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
   m_ui->tableView->resizeColumnsToContents();
   m_ui->tableView->horizontalHeader()->setSectionResizeMode(
     1, QHeaderView::Stretch);
-  this->setAcceptDrops(false);
+  setAcceptDrops(false);
 }
 
 void ImageStackDialog::setStackType(const DataSource::DataSourceType& stackType)
@@ -128,7 +130,7 @@ void ImageStackDialog::openFileDialog(int mode)
   }
 }
 
-void ImageStackDialog::processDirectory(QString path)
+void ImageStackDialog::processDirectory(const QString& path)
 {
   QStringList fileNames;
   QDir directory(path);
@@ -138,7 +140,7 @@ void ImageStackDialog::processDirectory(QString path)
   processFiles(fileNames);
 }
 
-void ImageStackDialog::processFiles(QStringList fileNames)
+void ImageStackDialog::processFiles(const QStringList& fileNames)
 {
   QStringList fNames;
   foreach (auto file, fileNames) {
@@ -165,8 +167,8 @@ void ImageStackDialog::processFiles(QStringList fileNames)
       }
     }
   }
-  this->setStackType(stackType);
-  this->setStackSummary(summary);
+  setStackType(stackType);
+  setStackSummary(summary);
 }
 
 bool ImageStackDialog::detectVolume(QStringList fileNames,
@@ -209,7 +211,7 @@ bool ImageStackDialog::detectTilt(QStringList fileNames,
   QString prefix;
   int num;
   QString sign;
-  QString num_;
+  QString numStr;
   QString ext;
 
   QRegExp tiltRegExp("^.*([p+]|[n-])?(\\d+)(\\.(tif|tiff))$");
@@ -217,10 +219,10 @@ bool ImageStackDialog::detectTilt(QStringList fileNames,
   for (int i = 0; i < fileNames.size(); ++i) {
     if (tiltRegExp.exactMatch(fileNames[i])) {
       sign = tiltRegExp.cap(1);
-      num_ = tiltRegExp.cap(2);
+      numStr = tiltRegExp.cap(2);
       ext = tiltRegExp.cap(3);
       prefix = fileNames[i];
-      prefix.replace(sign + num_ + ext, QString());
+      prefix.replace(sign + numStr + ext, QString());
       if (i == 0) {
         thePrefix = prefix;
       }
@@ -230,7 +232,7 @@ bool ImageStackDialog::detectTilt(QStringList fileNames,
         } else if (sign == "n") {
           sign = "-";
         }
-        num = (sign + num_).toInt();
+        num = (sign + numStr).toInt();
         summary[i].pos = num;
       } else {
         return false;

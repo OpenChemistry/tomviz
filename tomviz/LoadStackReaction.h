@@ -18,9 +18,6 @@
 
 #include <pqReaction.h>
 
-class vtkImageData;
-class vtkSMProxy;
-
 namespace tomviz {
 class DataSource;
 class ImageInfo;

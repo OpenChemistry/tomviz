@@ -17,9 +17,10 @@
 #ifndef tomvizImageStackModel_h
 #define tomvizImageStackModel_h
 
+#include <QAbstractTableModel>
+
 #include "DataSource.h"
 
-#include <QAbstractTableModel>
 #include <QFileInfo>
 #include <QModelIndex>
 #include <QString>

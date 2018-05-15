@@ -135,7 +135,7 @@ bool ImageStackModel::setData(const QModelIndex& index, const QVariant& value,
 
 QList<ImageInfo> ImageStackModel::getFileInfo() const
 {
-  return (m_filesInfo);
+  return m_filesInfo;
 }
 
 void ImageStackModel::onFilesInfoChanged(QList<ImageInfo> filesInfo)
