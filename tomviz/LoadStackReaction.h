@@ -26,8 +26,10 @@ class DataSource;
 class ImageInfo;
 
 /// LoadStackReaction handles the "Load Stack" action in tomviz. On trigger,
-/// this will open a dialog where the user can drag-n-drop or open multiple files
-/// or a folder. After selecting the files in the stack, options will be presented
+/// this will open a dialog where the user can drag-n-drop or open multiple
+/// files
+/// or a folder. After selecting the files in the stack, options will be
+/// presented
 /// to include or exclude each file, and to label which type of stack it is
 ///
 class LoadStackReaction : public pqReaction

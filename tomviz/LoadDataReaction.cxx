@@ -137,7 +137,7 @@ QList<DataSource*> LoadDataReaction::loadData()
   QList<DataSource*> dataSources;
   if (dialog.exec()) {
     QStringList filenames = dialog.selectedFiles();
-    if (filenames.size() > 1){
+    if (filenames.size() > 1) {
       dataSources << LoadStackReaction::loadData(filenames);
     } else {
       dataSources << loadData(filenames);

@@ -20,8 +20,7 @@
 
 namespace tomviz {
 
-ImageStackModel::ImageStackModel(QObject* parent)
-  : QAbstractTableModel(parent)
+ImageStackModel::ImageStackModel(QObject* parent) : QAbstractTableModel(parent)
 {
 }
 
@@ -37,7 +36,7 @@ int ImageStackModel::columnCount(const QModelIndex&) const
 
 QVariant ImageStackModel::data(const QModelIndex& index, int role) const
 {
-  if (!index.isValid()){
+  if (!index.isValid()) {
     return QVariant();
   }
 
@@ -48,7 +47,7 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
     return QVariant();
   }
 
-  if (role == Qt::DisplayRole){
+  if (role == Qt::DisplayRole) {
     if (col == c_fileCol) {
       return m_filesInfo[row].fileInfo.fileName();
     } else if (col == c_xCol) {
@@ -111,7 +110,7 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
   return QVariant();
 }
 
-Qt::ItemFlags ImageStackModel::flags(const QModelIndex &index) const
+Qt::ItemFlags ImageStackModel::flags(const QModelIndex& index) const
 {
   if (index.column() == c_checkCol) {
     return Qt::ItemIsUserCheckable | Qt::ItemIsEnabled;
@@ -120,8 +119,8 @@ Qt::ItemFlags ImageStackModel::flags(const QModelIndex &index) const
   }
 }
 
-bool ImageStackModel::setData(const QModelIndex &index,
-                              const QVariant &value, int role)
+bool ImageStackModel::setData(const QModelIndex& index, const QVariant& value,
+                              int role)
 {
   if (index.isValid() && role == Qt::CheckStateRole) {
     int col = index.column();
@@ -153,9 +152,10 @@ void ImageStackModel::onStackTypeChanged(DataSource::DataSourceType stackType)
   endResetModel();
 }
 
-ImageInfo::ImageInfo(QString fileName, int pos_, int m_, int n_, bool consistent_)
-  : fileInfo(QFileInfo(fileName)), pos(pos_),  m(m_), n(n_), consistent(consistent_)
-  , selected(consistent_)
+ImageInfo::ImageInfo(QString fileName, int pos_, int m_, int n_,
+                     bool consistent_)
+  : fileInfo(QFileInfo(fileName)), pos(pos_), m(m_), n(n_),
+    consistent(consistent_), selected(consistent_)
 {
 }
 

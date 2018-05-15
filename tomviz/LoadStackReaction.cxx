@@ -29,7 +29,8 @@ namespace tomviz {
 
 LoadStackReaction::LoadStackReaction(QAction* parentObject)
   : pqReaction(parentObject)
-{}
+{
+}
 
 LoadStackReaction::~LoadStackReaction() = default;
 
@@ -72,11 +73,12 @@ DataSource* LoadStackReaction::loadData()
   }
 }
 
-QStringList LoadStackReaction::summaryToFileNames(const QList<ImageInfo>& summary)
+QStringList LoadStackReaction::summaryToFileNames(
+  const QList<ImageInfo>& summary)
 {
   QStringList fileNames;
-  foreach(auto image, summary){
-    if (image.selected){
+  foreach (auto image, summary) {
+    if (image.selected) {
       fileNames << image.fileInfo.absoluteFilePath();
     }
   }
@@ -110,5 +112,4 @@ QList<ImageInfo> LoadStackReaction::loadTiffStack(const QStringList& fileNames)
   }
   return summary;
 }
-
 }

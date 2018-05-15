@@ -29,30 +29,32 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
   : QDialog(parent), m_ui(new Ui::ImageStackDialog)
 {
   m_ui->setupUi(this);
-  // ImageStackModel* tableModel = new ImageStackModel(nullptr);
   m_ui->tableView->setModel(&m_tableModel);
-  QObject::connect(this, &ImageStackDialog::summaryChanged,
-                   &m_tableModel, &ImageStackModel::onFilesInfoChanged);
+  QObject::connect(this, &ImageStackDialog::summaryChanged, &m_tableModel,
+                   &ImageStackModel::onFilesInfoChanged);
 
-  QObject::connect(this, &ImageStackDialog::stackTypeChanged,
-                   &m_tableModel, &ImageStackModel::onStackTypeChanged);
+  QObject::connect(this, &ImageStackDialog::stackTypeChanged, &m_tableModel,
+                   &ImageStackModel::onStackTypeChanged);
 
-  QObject::connect(m_ui->openFile, &QPushButton::clicked,
-                   this, &ImageStackDialog::onOpenFileClick);
+  QObject::connect(m_ui->openFile, &QPushButton::clicked, this,
+                   &ImageStackDialog::onOpenFileClick);
 
-  QObject::connect(m_ui->openFolder, &QPushButton::clicked,
-                   this, &ImageStackDialog::onOpenFolderClick);
+  QObject::connect(m_ui->openFolder, &QPushButton::clicked, this,
+                   &ImageStackDialog::onOpenFolderClick);
 
-  QObject::connect(&m_tableModel, &ImageStackModel::toggledSelected,
-                   this, &ImageStackDialog::onImageToggled);
+  QObject::connect(&m_tableModel, &ImageStackModel::toggledSelected, this,
+                   &ImageStackDialog::onImageToggled);
 
   m_ui->loadedContainer->hide();
   m_ui->stackTypeCombo->setDisabled(true);
-  m_ui->stackTypeCombo->insertItem(DataSource::DataSourceType::Volume, QString("Volume"));
-  m_ui->stackTypeCombo->insertItem(DataSource::DataSourceType::TiltSeries, QString("Tilt Series"));
+  m_ui->stackTypeCombo->insertItem(DataSource::DataSourceType::Volume,
+                                   QString("Volume"));
+  m_ui->stackTypeCombo->insertItem(DataSource::DataSourceType::TiltSeries,
+                                   QString("Tilt Series"));
 
   // Due to an overloaded signal I am force to use static_cast here.
-  QObject::connect(m_ui->stackTypeCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+  QObject::connect(m_ui->stackTypeCombo, static_cast<void (QComboBox::*)(int)>(
+                                           &QComboBox::currentIndexChanged),
                    this, &ImageStackDialog::onStackTypeChanged);
 
   this->setAcceptDrops(true);
@@ -64,16 +66,15 @@ void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
 {
   m_summary = summary;
   std::sort(m_summary.begin(), m_summary.end(),
-    [](const ImageInfo & a, const ImageInfo & b) -> bool
-    {
-      // Place the inconsistent images at the top, so the user will notice them.
-      if (a.consistent == b.consistent) {
-        return a.pos < b.pos;
-      } else {
-        return !a.consistent;
-      }
-    }
-  );
+            [](const ImageInfo& a, const ImageInfo& b) -> bool {
+              // Place the inconsistent images at the top, so the user will
+              // notice them.
+              if (a.consistent == b.consistent) {
+                return a.pos < b.pos;
+              } else {
+                return !a.consistent;
+              }
+            });
   emit summaryChanged(m_summary);
   m_ui->emptyContainer->hide();
   m_ui->loadedContainer->show();
@@ -127,18 +128,20 @@ void ImageStackDialog::openFileDialog(int mode)
   }
 }
 
-void ImageStackDialog::processDirectory(QString path) {
+void ImageStackDialog::processDirectory(QString path)
+{
   QStringList fileNames;
   QDir directory(path);
-  foreach(auto file, directory.entryList(QDir::Files)) {
+  foreach (auto file, directory.entryList(QDir::Files)) {
     fileNames << directory.absolutePath() + QDir::separator() + file;
   }
   processFiles(fileNames);
 }
 
-void ImageStackDialog::processFiles(QStringList fileNames) {
+void ImageStackDialog::processFiles(QStringList fileNames)
+{
   QStringList fNames;
-  foreach(auto file, fileNames) {
+  foreach (auto file, fileNames) {
     if (file.endsWith(".tif") || file.endsWith(".tiff")) {
       fNames << file;
     }
@@ -166,7 +169,8 @@ void ImageStackDialog::processFiles(QStringList fileNames) {
   this->setStackSummary(summary);
 }
 
-bool ImageStackDialog::detectVolume(QStringList fileNames, QList<ImageInfo>& summary, bool matchPrefix)
+bool ImageStackDialog::detectVolume(QStringList fileNames,
+                                    QList<ImageInfo>& summary, bool matchPrefix)
 {
   if (fileNames.size() < 1) {
     return false;
@@ -195,7 +199,8 @@ bool ImageStackDialog::detectVolume(QStringList fileNames, QList<ImageInfo>& sum
   return true;
 }
 
-bool ImageStackDialog::detectTilt(QStringList fileNames, QList<ImageInfo>& summary, bool matchPrefix)
+bool ImageStackDialog::detectTilt(QStringList fileNames,
+                                  QList<ImageInfo>& summary, bool matchPrefix)
 {
   if (fileNames.size() < 1) {
     return false;
@@ -215,7 +220,7 @@ bool ImageStackDialog::detectTilt(QStringList fileNames, QList<ImageInfo>& summa
       num_ = tiltRegExp.cap(2);
       ext = tiltRegExp.cap(3);
       prefix = fileNames[i];
-      prefix.replace(sign+num_+ext, QString());
+      prefix.replace(sign + num_ + ext, QString());
       if (i == 0) {
         thePrefix = prefix;
       }
@@ -225,7 +230,7 @@ bool ImageStackDialog::detectTilt(QStringList fileNames, QList<ImageInfo>& summa
         } else if (sign == "m") {
           sign = "-";
         }
-        num = (sign+num_).toInt();
+        num = (sign + num_).toInt();
         summary[i].pos = num;
       } else {
         return false;
@@ -237,7 +242,8 @@ bool ImageStackDialog::detectTilt(QStringList fileNames, QList<ImageInfo>& summa
   return true;
 }
 
-void ImageStackDialog::defaultOrder(QStringList fileNames, QList<ImageInfo>& summary)
+void ImageStackDialog::defaultOrder(QStringList fileNames,
+                                    QList<ImageInfo>& summary)
 {
   if (fileNames.size() != summary.size()) {
     return;
@@ -247,11 +253,11 @@ void ImageStackDialog::defaultOrder(QStringList fileNames, QList<ImageInfo>& sum
   }
 }
 
-void ImageStackDialog::dragEnterEvent(QDragEnterEvent *event)
+void ImageStackDialog::dragEnterEvent(QDragEnterEvent* event)
 {
-    if (event->mimeData()->hasUrls()) {
-      event->acceptProposedAction();
-    }
+  if (event->mimeData()->hasUrls()) {
+    event->acceptProposedAction();
+  }
 }
 
 void ImageStackDialog::dropEvent(QDropEvent* event)
