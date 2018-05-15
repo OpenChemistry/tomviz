@@ -212,7 +212,7 @@ bool ImageStackDialog::detectTilt(QStringList fileNames,
   QString num_;
   QString ext;
 
-  QRegExp tiltRegExp("^.*([p+]|[m-])?(\\d+)(\\.(tif|tiff))$");
+  QRegExp tiltRegExp("^.*([p+]|[n-])?(\\d+)(\\.(tif|tiff))$");
 
   for (int i = 0; i < fileNames.size(); ++i) {
     if (tiltRegExp.exactMatch(fileNames[i])) {
@@ -227,7 +227,7 @@ bool ImageStackDialog::detectTilt(QStringList fileNames,
       if (prefix == thePrefix || !matchPrefix) {
         if (sign == "p") {
           sign = "+";
-        } else if (sign == "m") {
+        } else if (sign == "n") {
           sign = "-";
         }
         num = (sign + num_).toInt();
