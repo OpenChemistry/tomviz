@@ -78,10 +78,10 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   double inc = (minmax[1] - minmax[0]) / numberOfBins;
   double halfInc = inc / 2.0;
   vtkSmartPointer<vtkFloatArray> extents = vtkFloatArray::SafeDownCast(
-    output->GetColumnByName(vtkStdString("image_extents").c_str()));
+    output->GetColumnByName("image_extents"));
   if (!extents) {
     extents = vtkSmartPointer<vtkFloatArray>::New();
-    extents->SetName(vtkStdString("image_extents").c_str());
+    extents->SetName("image_extents");
   }
   extents->SetNumberOfTuples(numberOfBins);
   double min = minmax[0] + halfInc;
@@ -89,10 +89,10 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     extents->SetValue(j, min + j * inc);
   }
   vtkSmartPointer<vtkIntArray> populations = vtkIntArray::SafeDownCast(
-    output->GetColumnByName(vtkStdString("image_pops").c_str()));
+    output->GetColumnByName("image_pops"));
   if (!populations) {
     populations = vtkSmartPointer<vtkIntArray>::New();
-    populations->SetName(vtkStdString("image_pops").c_str());
+    populations->SetName("image_pops");
   }
   populations->SetNumberOfTuples(numberOfBins);
   auto pops = static_cast<int*>(populations->GetVoidPointer(0));
@@ -120,8 +120,8 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     cout << "Warning: NaN or infinite value in dataset" << endl;
   }
 
-  output->AddColumn(extents.Get());
-  output->AddColumn(populations.Get());
+  output->AddColumn(extents);
+  output->AddColumn(populations);
 }
 
 void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
