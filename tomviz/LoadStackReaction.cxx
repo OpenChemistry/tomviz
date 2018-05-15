@@ -68,8 +68,11 @@ DataSource* LoadStackReaction::execStackDialog(ImageStackDialog& dialog)
     if (stackType == DataSource::DataSourceType::TiltSeries) {
       auto op = new SetTiltAnglesOperator;
       QMap<size_t, double> angles;
+      int j = 0;
       for (int i = 0; i < summary.size(); ++i) {
-        angles[i] = summary[i].pos;
+        if (summary[i].selected) {
+          angles[j++] = summary[i].pos;
+        }
       }
       op->setTiltAngles(angles);
       dataSource->addOperator(op);
