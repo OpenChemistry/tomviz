@@ -496,6 +496,30 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
           if (helper.GetAsInt()) {
             backgroundColor.append(jsonArrayFromXmlDouble(node));
           }
+        } else if (name == "CameraParallelScale") {
+          vtkSMPropertyHelper helper(view, "CameraParallelScale");
+          camera["parallelScale"] = jsonArrayFromXmlDouble(node)[0];
+        } else if (name == "CameraParallelProjection") {
+          // orthographic or perspective projection
+          vtkSMPropertyHelper helper(view, "CameraParallelProjection");
+          jView["isOrthographic"] = helper.GetAsInt() != 0;
+        } else if (name == "InteractionMode") {
+          vtkSMPropertyHelper helper(view, "InteractionMode");
+          QString mode = "3D";
+          if (helper.GetAsInt() == 1) {
+            mode = "2D";
+          } else if (helper.GetAsInt() == 2) {
+            mode = "selection";
+          }
+          jView["interactionMode"] = mode;
+        }
+      }
+      if (view->GetProperty("AxesGrid")) {
+        vtkSMPropertyHelper helper(view, "AxesGrid");
+        vtkSMProxy* axesGridProxy = helper.GetAsProxy();
+        if (axesGridProxy) {
+          vtkSMPropertyHelper visibilityHelper(axesGridProxy, "Visibility");
+          jView["axesGridVisibility"] = visibilityHelper.GetAsInt() != 0;
         }
       }
       jView["camera"] = camera;
@@ -637,6 +661,23 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
         createXmlProperty(propNode, "UseGradientBackground", viewId, 1);
       }
     }
+    if (view.contains("isOrthographic")) {
+      auto parallelProjection = view["isOrthographic"].toBool() ? 1 : 0;
+      propNode = proxyNode.append_child("Property");
+      createXmlProperty(propNode, "CameraParallelProjection", viewId,
+                        parallelProjection);
+    }
+    if (view.contains("interactionMode")) {
+      propNode = proxyNode.append_child("Property");
+      auto modeString = view["interactionMode"].toString();
+      int mode = 0; // default to 3D
+      if (modeString == "2D") {
+        mode = 1;
+      } else if (modeString == "selection") {
+        mode = 2;
+      }
+      createXmlProperty(propNode, "InteractionMode", viewId, mode);
+    }
 
     // Create an entry in the views thing...
     pugi::xml_node viewSummary = pvViews.append_child("Item");
@@ -723,6 +764,23 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
       .Set(camera["viewAngle"].toDouble());
     vtkSMPropertyHelper(viewProxy, "EyeAngle")
       .Set(camera["EyeAngle"].toDouble());
+    vtkSMPropertyHelper(viewProxy, "CameraParallelScale")
+      .Set(camera["parallelScale"].toDouble());
+
+    // restore axis grid visibility
+    if (viewProxy->GetProperty("AxesGrid")) {
+      vtkSMPropertyHelper axesGridProp(viewProxy, "AxesGrid");
+      vtkSMProxy* proxy = axesGridProp.GetAsProxy();
+      if (!proxy) {
+        vtkSMSessionProxyManager* pxm = viewProxy->GetSessionProxyManager();
+        proxy = pxm->NewProxy("annotations", "GridAxes3DActor");
+        axesGridProp.Set(proxy);
+        proxy->Delete();
+      }
+      vtkSMPropertyHelper(proxy, "Visibility")
+        .Set(view["axesGridVisibility"].toBool() ? 1 : 0);
+      proxy->UpdateVTKObjects();
+    }
     viewProxy->UpdateVTKObjects();
   }
 
