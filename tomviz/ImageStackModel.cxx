@@ -18,12 +18,10 @@
 
 #include <QBrush>
 
-#include <iostream>
-
 namespace tomviz {
 
 ImageStackModel::ImageStackModel(QObject* parent)
-  : QAbstractTableModel(parent), m_stackType(DataSource::DataSourceType::Volume)
+  : QAbstractTableModel(parent)
 {
 }
 
@@ -129,8 +127,6 @@ bool ImageStackModel::setData(const QModelIndex &index,
     int col = index.column();
     int row = index.row();
     if (m_filesInfo[row].consistent && col == c_checkCol) {
-      // m_filesInfo[row].selected = value.toBool();
-      // emit dataChanged(index, index);
       emit toggledSelected(row, value.toBool());
       return true;
     }
@@ -146,17 +142,13 @@ QList<ImageInfo> ImageStackModel::getFileInfo() const
 void ImageStackModel::onFilesInfoChanged(QList<ImageInfo> filesInfo)
 {
   beginResetModel();
-  std::cout << "Summary Changed: MODEL" << std::endl;
   m_filesInfo = filesInfo;
   endResetModel();
-  // emit modelReset();
-  // emit dataChanged();
 }
 
 void ImageStackModel::onStackTypeChanged(DataSource::DataSourceType stackType)
 {
   beginResetModel();
-  std::cout << "stackType Changed: MODEL" << std::endl;
   m_stackType = stackType;
   endResetModel();
 }

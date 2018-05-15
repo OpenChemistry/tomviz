@@ -16,15 +16,14 @@
 #include "LoadStackReaction.h"
 
 #include "DataSource.h"
-// #include "ImageStackModel.h"
 #include "ImageStackDialog.h"
+#include "ImageStackModel.h"
 #include "LoadDataReaction.h"
 #include "Utilities.h"
 
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkTIFFReader.h>
-// #include <iostream>
 
 namespace tomviz {
 
@@ -42,7 +41,6 @@ void LoadStackReaction::onTriggered()
 DataSource* LoadStackReaction::loadData(QStringList fileNames)
 {
   QList<ImageInfo> summary = loadTiffStack(fileNames);
-  // ImageStackModel imageStackModel(0);
   ImageStackDialog dialog(tomviz::mainWidget());
   dialog.setStackSummary(summary);
   int result = dialog.exec();
@@ -51,10 +49,6 @@ DataSource* LoadStackReaction::loadData(QStringList fileNames)
     fNames = summaryToFileNames(dialog.stackSummary());
     if (fNames.size() < 1) {
       return nullptr;
-    }
-    std::cout << "loadData0" << std::endl;
-    foreach(auto file, fNames) {
-      std::cout << file.toStdString() << std::endl;
     }
     return LoadDataReaction::loadData(fNames);
   } else {
@@ -71,10 +65,6 @@ DataSource* LoadStackReaction::loadData()
     fNames = summaryToFileNames(dialog.stackSummary());
     if (fNames.size() < 1) {
       return nullptr;
-    }
-    std::cout << "loadData1" << std::endl;
-    foreach(auto file, fNames) {
-      std::cout << file.toStdString() << std::endl;
     }
     return LoadDataReaction::loadData(fNames);
   } else {

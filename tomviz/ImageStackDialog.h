@@ -17,13 +17,14 @@
 #ifndef tomvizImageStackDialog_h
 #define tomvizImageStackDialog_h
 
+#include "DataSource.h"
+#include "ImageStackModel.h"
+
 #include <QDialog>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
 #include <QScopedPointer>
-
-#include "DataSource.h"
 
 namespace Ui {
 
@@ -31,11 +32,7 @@ class ImageStackDialog;
 }
 
 namespace tomviz {
-
-class ImageStackModel;
 class ImageInfo;
-class DataSource;
-
 class ImageStackDialog : public QDialog
 {
   Q_OBJECT
@@ -64,8 +61,10 @@ protected:
 
 private:
   QScopedPointer<Ui::ImageStackDialog> m_ui;
+
   QList<ImageInfo> m_summary;
   DataSource::DataSourceType m_stackType;
+  ImageStackModel m_tableModel;
   void openFileDialog(int mode);
   void processDirectory(QString path);
   void processFiles(QStringList fileNames);

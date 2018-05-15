@@ -17,13 +17,12 @@
 #ifndef tomvizImageStackModel_h
 #define tomvizImageStackModel_h
 
-#include <QAbstractTableModel>
+#include "DataSource.h"
 
+#include <QAbstractTableModel>
 #include <QFileInfo>
 #include <QModelIndex>
 #include <QString>
-
-#include "DataSource.h"
 
 namespace tomviz {
 
@@ -34,7 +33,7 @@ class ImageStackModel : public QAbstractTableModel
 {
   Q_OBJECT
 public:
-  ImageStackModel(QObject* parent);
+  ImageStackModel(QObject* parent=nullptr);
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
   QVariant data(const QModelIndex& index,
@@ -49,7 +48,6 @@ public:
   QList<ImageInfo> getFileInfo() const;
 
 public slots:
-  // void on_stackType_changed(QString stackType);
   void onFilesInfoChanged(QList<ImageInfo> filesInfo);
   void onStackTypeChanged(DataSource::DataSourceType stackType);
 
@@ -58,8 +56,7 @@ signals:
 
 private:
   QList<ImageInfo> m_filesInfo;
-  DataSource::DataSourceType m_stackType;
-  // const int c_numCol = 4;
+  DataSource::DataSourceType m_stackType = DataSource::DataSourceType::Volume;
   const int c_numCol = 5;
   const int c_checkCol = 0;
   const int c_fileCol = 1;

@@ -18,15 +18,12 @@
 
 #include <pqReaction.h>
 
-#include <QJsonObject>
-
-#include "ImageStackModel.h"
-
 class vtkImageData;
 class vtkSMProxy;
 
 namespace tomviz {
 class DataSource;
+class ImageInfo;
 
 /// LoadStackReaction handles the "Load Stack" action in tomviz. On trigger,
 /// this will open a dialog where the user can drag-n-drop or open multiple files
@@ -41,8 +38,8 @@ public:
   LoadStackReaction(QAction* parentAction);
   ~LoadStackReaction() override;
 
-  static DataSource* loadData(QStringList fileNames);
   static DataSource* loadData();
+  static DataSource* loadData(QStringList fileNames);
   static QList<ImageInfo> loadTiffStack(const QStringList& fileNames);
 
 protected:

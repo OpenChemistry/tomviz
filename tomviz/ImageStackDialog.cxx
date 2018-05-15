@@ -18,11 +18,8 @@
 
 #include "ui_ImageStackDialog.h"
 
-#include "ImageStackModel.h"
 #include "LoadStackReaction.h"
-#include "LoadDataReaction.h"
 
-#include <iostream>
 #include <QFileDialog>
 #include <QFileInfo>
 
@@ -32,14 +29,13 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
   : QDialog(parent), m_ui(new Ui::ImageStackDialog)
 {
   m_ui->setupUi(this);
-  // m_summary = nullptr;
-  ImageStackModel* tableModel = new ImageStackModel(nullptr);
-  m_ui->tableView->setModel(tableModel);
+  // ImageStackModel* tableModel = new ImageStackModel(nullptr);
+  m_ui->tableView->setModel(&m_tableModel);
   QObject::connect(this, &ImageStackDialog::summaryChanged,
-                   tableModel, &ImageStackModel::onFilesInfoChanged);
+                   &m_tableModel, &ImageStackModel::onFilesInfoChanged);
 
   QObject::connect(this, &ImageStackDialog::stackTypeChanged,
-                   tableModel, &ImageStackModel::onStackTypeChanged);
+                   &m_tableModel, &ImageStackModel::onStackTypeChanged);
 
   QObject::connect(m_ui->openFile, &QPushButton::clicked,
                    this, &ImageStackDialog::onOpenFileClick);
@@ -47,7 +43,7 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
   QObject::connect(m_ui->openFolder, &QPushButton::clicked,
                    this, &ImageStackDialog::onOpenFolderClick);
 
-  QObject::connect(tableModel, &ImageStackModel::toggledSelected,
+  QObject::connect(&m_tableModel, &ImageStackModel::toggledSelected,
                    this, &ImageStackDialog::onImageToggled);
 
   m_ui->loadedContainer->hide();
@@ -58,8 +54,7 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
   // Due to an overloaded signal I am force to use static_cast here.
   QObject::connect(m_ui->stackTypeCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                    this, &ImageStackDialog::onStackTypeChanged);
-  // QObject::connect(this, &ImageStackDialog::stackTypeChanged),
-                  //  m_ui->stackTypeCombo, &QComboBox::setCurrentIndex);
+
   this->setAcceptDrops(true);
 }
 
@@ -67,7 +62,6 @@ ImageStackDialog::~ImageStackDialog() = default;
 
 void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
 {
-  std::cout << "Summary Changed: DIALOG" << std::endl;
   m_summary = summary;
   std::sort(m_summary.begin(), m_summary.end(),
     [](const ImageInfo & a, const ImageInfo & b) -> bool
@@ -92,7 +86,6 @@ void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
 
 void ImageStackDialog::setStackType(const DataSource::DataSourceType& stackType)
 {
-  std::cout << "StackType Changed: DIALOG " << stackType << std::endl;
   if (m_stackType != stackType) {
     m_stackType = stackType;
     emit stackTypeChanged(m_stackType);
@@ -102,13 +95,11 @@ void ImageStackDialog::setStackType(const DataSource::DataSourceType& stackType)
 
 void ImageStackDialog::onOpenFileClick()
 {
-  std::cout << "Open file clicked" << std::endl;
   openFileDialog(QFileDialog::ExistingFiles);
 }
 
 void ImageStackDialog::onOpenFolderClick()
 {
-  std::cout << "Open folder clicked" << std::endl;
   openFileDialog(QFileDialog::Directory);
 }
 
@@ -258,7 +249,6 @@ void ImageStackDialog::defaultOrder(QStringList fileNames, QList<ImageInfo>& sum
 
 void ImageStackDialog::dragEnterEvent(QDragEnterEvent *event)
 {
-    // if (event->mimeData()->hasFormat("text/plain")) {
     if (event->mimeData()->hasUrls()) {
       event->acceptProposedAction();
     }
@@ -266,7 +256,6 @@ void ImageStackDialog::dragEnterEvent(QDragEnterEvent *event)
 
 void ImageStackDialog::dropEvent(QDropEvent* event)
 {
-  std::cout << "Dropped!" << std::endl;
   if (event->mimeData()->hasUrls()) {
     QStringList pathList;
     QString path;
