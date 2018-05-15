@@ -43,7 +43,10 @@ public:
 
   void setStackSummary(const QList<ImageInfo>& summary);
   void setStackType(const DataSource::DataSourceType& stackType);
-  QList<ImageInfo> stackSummary() const;
+  void processDirectory(QString path);
+  void processFiles(QStringList fileNames);
+  QList<ImageInfo> getStackSummary() const;
+  DataSource::DataSourceType getStackType() const;
 
 public slots:
   void onOpenFileClick();
@@ -66,8 +69,6 @@ private:
   DataSource::DataSourceType m_stackType;
   ImageStackModel m_tableModel;
   void openFileDialog(int mode);
-  void processDirectory(QString path);
-  void processFiles(QStringList fileNames);
   bool detectVolume(QStringList fileNames, QList<ImageInfo>& summary,
                     bool matchPrefix = true);
   bool detectTilt(QStringList fileNames, QList<ImageInfo>& summary,

@@ -285,9 +285,14 @@ void ImageStackDialog::dropEvent(QDropEvent* event)
   }
 }
 
-QList<ImageInfo> ImageStackDialog::stackSummary() const
+QList<ImageInfo> ImageStackDialog::getStackSummary() const
 {
   return m_summary;
+}
+
+DataSource::DataSourceType ImageStackDialog::getStackType() const
+{
+  return m_stackType;
 }
 
 void ImageStackDialog::onImageToggled(int row, bool value)

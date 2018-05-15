@@ -24,6 +24,7 @@ class vtkSMProxy;
 namespace tomviz {
 class DataSource;
 class ImageInfo;
+class ImageStackDialog;
 
 /// LoadStackReaction handles the "Load Stack" action in tomviz. On trigger,
 /// this will open a dialog where the user can drag-n-drop or open multiple
@@ -51,6 +52,7 @@ protected:
 private:
   Q_DISABLE_COPY(LoadStackReaction)
 
+  static DataSource* execStackDialog(ImageStackDialog& dialog);
   static QStringList summaryToFileNames(const QList<ImageInfo>& summary);
 };
 } // namespace tomviz

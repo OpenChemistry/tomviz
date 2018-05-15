@@ -19,6 +19,7 @@
 #include "ImageStackDialog.h"
 #include "ImageStackModel.h"
 #include "LoadDataReaction.h"
+#include "SetTiltAnglesOperator.h"
 #include "Utilities.h"
 
 #include <vtkImageData.h>
@@ -41,33 +42,39 @@ void LoadStackReaction::onTriggered()
 
 DataSource* LoadStackReaction::loadData(QStringList fileNames)
 {
-  QList<ImageInfo> summary = loadTiffStack(fileNames);
   ImageStackDialog dialog(tomviz::mainWidget());
-  dialog.setStackSummary(summary);
-  int result = dialog.exec();
-  if (result == QDialog::Accepted) {
-    QStringList fNames;
-    fNames = summaryToFileNames(dialog.stackSummary());
-    if (fNames.size() < 1) {
-      return nullptr;
-    }
-    return LoadDataReaction::loadData(fNames);
-  } else {
-    return nullptr;
-  }
+  dialog.processFiles(fileNames);
+  return execStackDialog(dialog);
 }
 
 DataSource* LoadStackReaction::loadData()
 {
   ImageStackDialog dialog(tomviz::mainWidget());
+  return execStackDialog(dialog);
+}
+
+DataSource* LoadStackReaction::execStackDialog(ImageStackDialog& dialog)
+{
   int result = dialog.exec();
   if (result == QDialog::Accepted) {
     QStringList fNames;
-    fNames = summaryToFileNames(dialog.stackSummary());
+    QList<ImageInfo> summary = dialog.getStackSummary();
+    fNames = summaryToFileNames(summary);
     if (fNames.size() < 1) {
       return nullptr;
     }
-    return LoadDataReaction::loadData(fNames);
+    DataSource* dataSource = LoadDataReaction::loadData(fNames);
+    DataSource::DataSourceType stackType = dialog.getStackType();
+    if (stackType == DataSource::DataSourceType::TiltSeries) {
+      auto op = new SetTiltAnglesOperator;
+      QMap<size_t, double> angles;
+      for (int i = 0; i < summary.size(); ++i) {
+        angles[i] = summary[i].pos;
+      }
+      op->setTiltAngles(angles);
+      dataSource->addOperator(op);
+    }
+    return dataSource;
   } else {
     return nullptr;
   }
