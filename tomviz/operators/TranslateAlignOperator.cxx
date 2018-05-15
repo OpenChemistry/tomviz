@@ -123,8 +123,14 @@ QJsonObject TranslateAlignOperator::serialize() const
   foreach (auto offset, this->offsets) {
     offsetArray << offset[0] << offset[1];
   }
-
   json["offsets"] = offsetArray;
+
+  QJsonArray draftOffsetArray;
+  foreach (auto offset, this->m_draftOffsets) {
+    draftOffsetArray << offset[0] << offset[1];
+  }
+  json["draftOffsets"] = draftOffsetArray;
+
   return json;
 }
 
@@ -136,6 +142,15 @@ bool TranslateAlignOperator::deserialize(const QJsonObject& json)
     for (int i = 0; i < offsetArray.size() / 2; ++i) {
       this->offsets[i][0] = offsetArray[2 * i].toInt();
       this->offsets[i][1] = offsetArray[2 * i + 1].toInt();
+    }
+  }
+
+  if (json.contains("draftOffsets") && json["draftOffsets"].isArray()) {
+    auto draftOffsetArray = json["draftOffsets"].toArray();
+    this->m_draftOffsets.resize(draftOffsetArray.size() / 2);
+    for (int i = 0; i < draftOffsetArray.size() / 2; ++i) {
+      this->m_draftOffsets[i][0] = draftOffsetArray[2 * i].toInt();
+      this->m_draftOffsets[i][1] = draftOffsetArray[2 * i + 1].toInt();
     }
   }
 
@@ -154,5 +169,12 @@ void TranslateAlignOperator::setAlignOffsets(
   this->offsets.resize(newOffsets.size());
   std::copy(newOffsets.begin(), newOffsets.end(), this->offsets.begin());
   emit this->transformModified();
+}
+
+void TranslateAlignOperator::setDraftAlignOffsets(
+  const QVector<vtkVector2i>& newOffsets)
+{
+  this->m_draftOffsets.resize(newOffsets.size());
+  std::copy(newOffsets.begin(), newOffsets.end(), this->m_draftOffsets.begin());
 }
 } // namespace tomviz

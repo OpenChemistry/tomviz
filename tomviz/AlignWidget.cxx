@@ -573,7 +573,14 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   v->addWidget(m_offsetTable, 2);
   m_offsets.fill(vtkVector2i(0, 0), m_maxSliceNum + 1);
 
-  const QVector<vtkVector2i>& oldOffsets = m_operator->getAlignOffsets();
+
+  QVector<vtkVector2i> oldOffsets = m_operator->getDraftAlignOffsets();
+  if (oldOffsets.size() > 0) {
+    std::cout << "DraftAlignOffsets detected!" << std::endl;
+  } else {
+    std::cout << "NO DraftAlignOffsets detected!" << std::endl;
+    oldOffsets = m_operator->getAlignOffsets();
+  }
 
   m_offsetTable->setRowCount(m_offsets.size());
   m_offsetTable->setColumnCount(4);
@@ -887,6 +894,8 @@ void AlignWidget::applyChangesToOperator()
 {
   if (m_operator) {
     m_operator->setAlignOffsets(m_offsets);
+    // When the operator is saved, the draft is discarded
+    m_operator->setDraftAlignOffsets(QVector<vtkVector2i>());
   }
 }
 
@@ -927,6 +936,9 @@ void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
   int offset = str.toInt(&ok);
   if (ok) {
     m_offsets[slice][offsetComponent - 1] = offset;
+    if (m_operator) {
+      m_operator->setDraftAlignOffsets(m_offsets);
+    }
   }
   if (slice == m_currentSlice->value()) {
     applySliceOffset();

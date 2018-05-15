@@ -131,7 +131,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   m_ui->setupUi(this);
   m_timer = new QTimer(this);
   connect(m_timer, SIGNAL(timeout()), SLOT(autosave()));
-  m_timer->start(5 /*minutes*/ * 60 /*seconds per minute*/ *
+  m_timer->start(1 /*minutes*/ * 20 /*seconds per minute*/ *
                  1000 /*msec per second*/);
 
   QString version(TOMVIZ_VERSION);

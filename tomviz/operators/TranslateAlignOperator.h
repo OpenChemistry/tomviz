@@ -45,7 +45,9 @@ public:
     QWidget* parent, vtkSmartPointer<vtkImageData> data) override;
 
   void setAlignOffsets(const QVector<vtkVector2i>& offsets);
+  void setDraftAlignOffsets(const QVector<vtkVector2i>& offsets);
   const QVector<vtkVector2i>& getAlignOffsets() const { return offsets; }
+  const QVector<vtkVector2i>& getDraftAlignOffsets() const { return m_draftOffsets; }
 
   DataSource* getDataSource() const { return this->dataSource; }
 
@@ -56,6 +58,7 @@ protected:
 
 private:
   QVector<vtkVector2i> offsets;
+  QVector<vtkVector2i> m_draftOffsets;
   const QPointer<DataSource> dataSource;
 };
 } // namespace tomviz
