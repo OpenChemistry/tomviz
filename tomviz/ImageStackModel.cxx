@@ -20,10 +20,9 @@
 
 namespace tomviz {
 
-ImageStackModel::ImageStackModel(QObject* parent,
-                                 const QList<ImageInfo>& filesInfo)
-  : QAbstractTableModel(parent), m_filesInfo(filesInfo)
-{}
+ImageStackModel::ImageStackModel(QObject* parent) : QAbstractTableModel(parent)
+{
+}
 
 int ImageStackModel::rowCount(const QModelIndex&) const
 {
@@ -32,46 +31,55 @@ int ImageStackModel::rowCount(const QModelIndex&) const
 
 int ImageStackModel::columnCount(const QModelIndex&) const
 {
-  return 3;
+  return c_numCol;
 }
 
 QVariant ImageStackModel::data(const QModelIndex& index, int role) const
 {
+  if (!index.isValid()) {
+    return QVariant();
+  }
+
   int row = index.row();
   int col = index.column();
 
-  switch (role) {
-    case Qt::DisplayRole: {
+  if (row >= m_filesInfo.size()) {
+    return QVariant();
+  }
 
-      switch (col) {
-        case 0:
-          return m_filesInfo[row].fileInfo.fileName();
-        case 1:
-          return QString("%1").arg(m_filesInfo[row].m);
-        case 2:
-          return QString("%1").arg(m_filesInfo[row].n);
-      }
+  if (role == Qt::DisplayRole) {
+    if (col == c_fileCol) {
+      return m_filesInfo[row].fileInfo.fileName();
+    } else if (col == c_xCol) {
+      return QString("%1").arg(m_filesInfo[row].m);
+    } else if (col == c_yCol) {
+      return QString("%1").arg(m_filesInfo[row].n);
+    } else if (col == c_posCol) {
+      return QString("%1").arg(m_filesInfo[row].pos);
     }
-
-    case Qt::ToolTipRole: {
-      if (col == 0) {
-        return m_filesInfo[row].fileInfo.absoluteFilePath();
-      }
-      break;
+  } else if (role == Qt::ToolTipRole) {
+    if (col == c_fileCol) {
+      return m_filesInfo[row].fileInfo.absoluteFilePath();
     }
-
-    case Qt::BackgroundRole: {
-      QColor failColor = Qt::red;
-      failColor.setAlphaF(0.25);
-      QBrush failBackground(failColor);
-      QColor successColor = Qt::green;
+  } else if (role == Qt::BackgroundRole) {
+    QColor failColor = Qt::red;
+    failColor.setAlphaF(0.25);
+    QBrush failBackground(failColor);
+    QColor successColor = Qt::green;
+    if (m_filesInfo[row].selected) {
       successColor.setAlphaF(0.125);
-      QBrush successBackground(successColor);
-      if (m_filesInfo[row].consistent) {
-        return successBackground;
-      } else {
-        return failBackground;
-      }
+    } else {
+      successColor.setAlphaF(0.0625);
+    }
+    QBrush successBackground(successColor);
+    if (m_filesInfo[row].consistent) {
+      return successBackground;
+    } else {
+      return failBackground;
+    }
+  } else if (role == Qt::CheckStateRole) {
+    if (col == c_checkCol) {
+      return m_filesInfo[row].selected ? Qt::Checked : Qt::Unchecked;
     }
   }
   return QVariant();
@@ -82,13 +90,18 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
 {
   if (role == Qt::DisplayRole) {
     if (orientation == Qt::Horizontal) {
-      switch (section) {
-        case 0:
-          return QString("Filename");
-        case 1:
-          return QString("X");
-        case 2:
-          return QString("Y");
+      if (section == c_fileCol) {
+        return QString("Filename");
+      } else if (section == c_xCol) {
+        return QString("X");
+      } else if (section == c_yCol) {
+        return QString("Y");
+      } else if (section == c_posCol) {
+        if (m_stackType == DataSource::DataSourceType::Volume) {
+          return QString("Slice");
+        } else if (m_stackType == DataSource::DataSourceType::TiltSeries) {
+          return QString("Angle");
+        }
       }
     } else if (orientation == Qt::Horizontal) {
       return QString("%1").arg(section + 1);
@@ -97,8 +110,53 @@ QVariant ImageStackModel::headerData(int section, Qt::Orientation orientation,
   return QVariant();
 }
 
-ImageInfo::ImageInfo(QString fileName, int m_, int n_, bool consistent_)
-  : fileInfo(QFileInfo(fileName)), m(m_), n(n_), consistent(consistent_)
-{}
+Qt::ItemFlags ImageStackModel::flags(const QModelIndex& index) const
+{
+  if (index.column() == c_checkCol) {
+    return Qt::ItemIsUserCheckable | Qt::ItemIsEnabled;
+  } else {
+    return Qt::ItemIsEnabled;
+  }
+}
+
+bool ImageStackModel::setData(const QModelIndex& index, const QVariant& value,
+                              int role)
+{
+  if (index.isValid() && role == Qt::CheckStateRole) {
+    int col = index.column();
+    int row = index.row();
+    if (m_filesInfo[row].consistent && col == c_checkCol) {
+      emit toggledSelected(row, value.toBool());
+      return true;
+    }
+  }
+  return false;
+}
+
+QList<ImageInfo> ImageStackModel::getFileInfo() const
+{
+  return m_filesInfo;
+}
+
+void ImageStackModel::onFilesInfoChanged(QList<ImageInfo> filesInfo)
+{
+  beginResetModel();
+  m_filesInfo = filesInfo;
+  endResetModel();
+}
+
+void ImageStackModel::onStackTypeChanged(DataSource::DataSourceType stackType)
+{
+  beginResetModel();
+  m_stackType = stackType;
+  endResetModel();
+}
+
+ImageInfo::ImageInfo(QString fileName, int pos_, int m_, int n_,
+                     bool consistent_)
+  : fileInfo(QFileInfo(fileName)), pos(pos_), m(m_), n(n_),
+    consistent(consistent_), selected(consistent_)
+{
+}
 
 } // namespace tomviz

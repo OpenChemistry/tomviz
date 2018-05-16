@@ -19,6 +19,8 @@
 
 #include <QAbstractTableModel>
 
+#include "DataSource.h"
+
 #include <QFileInfo>
 #include <QModelIndex>
 #include <QString>
@@ -30,8 +32,9 @@ struct ImageInfo;
 /// Adapter to visualize the ImageInfo of a stack of images in a QTableView
 class ImageStackModel : public QAbstractTableModel
 {
+  Q_OBJECT
 public:
-  ImageStackModel(QObject* parent, const QList<ImageInfo>& filesInfo);
+  ImageStackModel(QObject* parent = nullptr);
   int rowCount(const QModelIndex& parent = QModelIndex()) const override;
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
   QVariant data(const QModelIndex& index,
@@ -39,18 +42,41 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation,
                       int role) const override;
 
+  Qt::ItemFlags flags(const QModelIndex& index) const;
+  bool setData(const QModelIndex& index, const QVariant& value,
+               int role = Qt::EditRole);
+
+  QList<ImageInfo> getFileInfo() const;
+
+public slots:
+  void onFilesInfoChanged(QList<ImageInfo> filesInfo);
+  void onStackTypeChanged(DataSource::DataSourceType stackType);
+
+signals:
+  void toggledSelected(int row, bool value);
+
 private:
-  const QList<ImageInfo> m_filesInfo;
+  QList<ImageInfo> m_filesInfo;
+  DataSource::DataSourceType m_stackType = DataSource::DataSourceType::Volume;
+  const int c_numCol = 5;
+  const int c_checkCol = 0;
+  const int c_fileCol = 1;
+  const int c_xCol = 2;
+  const int c_yCol = 3;
+  const int c_posCol = 4;
 };
 
 /// Basic image metadata container
 struct ImageInfo
 {
-  ImageInfo(QString fileName, int m_, int n_, bool consistent_);
+  ImageInfo(QString fileName, int pos_ = 0, int m_ = -1, int n_ = -1,
+            bool consistent_ = false);
   QFileInfo fileInfo;
+  int pos;
   int m;
   int n;
   bool consistent;
+  bool selected;
 };
 
 } // namespace tomviz

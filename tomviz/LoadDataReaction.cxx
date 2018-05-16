@@ -20,6 +20,7 @@
 #include "EmdFormat.h"
 #include "ImageStackDialog.h"
 #include "ImageStackModel.h"
+#include "LoadStackReaction.h"
 #include "ModuleManager.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
@@ -136,7 +137,11 @@ QList<DataSource*> LoadDataReaction::loadData()
   QList<DataSource*> dataSources;
   if (dialog.exec()) {
     QStringList filenames = dialog.selectedFiles();
-    dataSources << loadData(filenames);
+    if (filenames.size() > 1) {
+      dataSources << LoadStackReaction::loadData(filenames);
+    } else {
+      dataSources << loadData(filenames);
+    }
   }
 
   return dataSources;
@@ -224,16 +229,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource->setReaderProperties(props.toVariantMap());
 
-  } else if (info.suffix().toLower() == "tiff" ||
-             info.suffix().toLower() == "tif") {
-    if (fileNames.size() > 1) {
-      // Ensure all the images in the stack have the same size.
-      QList<ImageInfo> summary;
-      if (!loadTiffStack(fileNames, summary)) {
-        badStackAlert(summary);
-        return nullptr;
-      }
-    }
   }
 
   if (loadWithParaview) {
@@ -273,43 +268,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   return dataSource;
 }
 
-bool LoadDataReaction::loadTiffStack(const QStringList& fileNames,
-                                     QList<ImageInfo>& summary)
-{
-
-  vtkNew<vtkTIFFReader> reader;
-  int n = -1;
-  int m = -1;
-  int dims[3];
-  int i = -1;
-  bool success = true;
-  foreach (QString file, fileNames) {
-    i++;
-    reader->SetFileName(file.toLatin1().data());
-    reader->Update();
-    reader->GetOutput()->GetDimensions(dims);
-    summary.push_back(ImageInfo(file, dims[0], dims[1], true));
-
-    if (n == -1 && m == -1) {
-      n = dims[0];
-      m = dims[1];
-    } else {
-      if (n != dims[0] || m != dims[1]) {
-        summary[i].consistent = false;
-        success = false;
-      }
-    }
-  }
-  return success;
-}
-
-void LoadDataReaction::badStackAlert(QList<ImageInfo>& summary)
-{
-  ImageStackModel imageStackModel(0, summary);
-  ImageStackDialog errorDialog(tomviz::mainWidget(), &imageStackModel);
-  errorDialog.exec();
-  return;
-}
 
 DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
                                                bool defaultModules, bool child)

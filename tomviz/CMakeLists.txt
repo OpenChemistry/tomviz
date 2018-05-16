@@ -24,8 +24,6 @@ set(SOURCES
   AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
-  ImageStackDialog.h
-  ImageStackDialog.cxx
   Behaviors.cxx
   Behaviors.h
   CentralWidget.cxx
@@ -60,6 +58,8 @@ set(SOURCES
   HistogramWidget.cxx
   Histogram2DWidget.h
   Histogram2DWidget.cxx
+  ImageStackDialog.h
+  ImageStackDialog.cxx
   ImageStackModel.h
   ImageStackModel.cxx
   InterfaceBuilder.h
@@ -70,6 +70,8 @@ set(SOURCES
   LoadDataReaction.h
   LoadPaletteReaction.cxx
   LoadPaletteReaction.h
+  LoadStackReaction.cxx
+  LoadStackReaction.h
   Logger.cxx
   Logger.h
   MergeImagesDialog.cxx
