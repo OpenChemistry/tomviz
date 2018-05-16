@@ -47,7 +47,10 @@ public:
   void setAlignOffsets(const QVector<vtkVector2i>& offsets);
   void setDraftAlignOffsets(const QVector<vtkVector2i>& offsets);
   const QVector<vtkVector2i>& getAlignOffsets() const { return offsets; }
-  const QVector<vtkVector2i>& getDraftAlignOffsets() const { return m_draftOffsets; }
+  const QVector<vtkVector2i>& getDraftAlignOffsets() const
+  {
+    return m_draftOffsets;
+  }
 
   DataSource* getDataSource() const { return this->dataSource; }
 

@@ -125,11 +125,13 @@ QJsonObject TranslateAlignOperator::serialize() const
   }
   json["offsets"] = offsetArray;
 
-  QJsonArray draftOffsetArray;
-  foreach (auto offset, this->m_draftOffsets) {
-    draftOffsetArray << offset[0] << offset[1];
+  if (m_draftOffsets.size() > 0) {
+    QJsonArray draftOffsetArray;
+    foreach (auto offset, this->m_draftOffsets) {
+      draftOffsetArray << offset[0] << offset[1];
+    }
+    json["draftOffsets"] = draftOffsetArray;
   }
-  json["draftOffsets"] = draftOffsetArray;
 
   return json;
 }

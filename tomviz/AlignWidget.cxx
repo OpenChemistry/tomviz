@@ -66,6 +66,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSlider>
@@ -573,12 +574,13 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   v->addWidget(m_offsetTable, 2);
   m_offsets.fill(vtkVector2i(0, 0), m_maxSliceNum + 1);
 
-
   QVector<vtkVector2i> oldOffsets = m_operator->getDraftAlignOffsets();
   if (oldOffsets.size() > 0) {
-    std::cout << "DraftAlignOffsets detected!" << std::endl;
+    int answer = restoreDraftDialog();
+    if (answer != QMessageBox::Yes) {
+      oldOffsets = m_operator->getAlignOffsets();
+    }
   } else {
-    std::cout << "NO DraftAlignOffsets detected!" << std::endl;
     oldOffsets = m_operator->getAlignOffsets();
   }
 
@@ -1009,5 +1011,18 @@ void AlignWidget::applyCurrentPreset()
     renderViews();
     m_widget->GetRenderWindow()->Render();
   }
+}
+
+int AlignWidget::restoreDraftDialog() const
+{
+  // QMessageBox constructor expects a QWidget*,
+  // but this is a const QWidget*
+  AlignWidget* thisCopy = const_cast<AlignWidget*>(this);
+  QMessageBox dialog(thisCopy);
+  dialog.setWindowTitle("Restore alignments");
+  dialog.setText("Would you like to restore unapplied manual alignments?");
+  dialog.setStandardButtons(QMessageBox::No | QMessageBox::Yes);
+  dialog.setDefaultButton(QMessageBox::Yes);
+  return dialog.exec();
 }
 } // namespace tomviz

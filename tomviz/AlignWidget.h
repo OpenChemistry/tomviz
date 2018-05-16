@@ -123,6 +123,9 @@ protected:
 
   QVector<vtkVector2i> m_offsets;
   QPointer<TranslateAlignOperator> m_operator;
+
+private:
+  int restoreDraftDialog() const;
 };
 } // namespace tomviz
 
