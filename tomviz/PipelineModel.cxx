@@ -302,6 +302,9 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
   connect(&ModuleManager::instance(),
           SIGNAL(childDataSourceRemoved(DataSource*)),
           SLOT(childDataSourceRemoved(DataSource*)));
+
+  connect(&ModuleManager::instance(), SIGNAL(operatorRemoved(Operator*)),
+          SLOT(operatorRemoved(Operator*)));
   // Need to register this for cross thread dataChanged signal
   qRegisterMetaType<QVector<int>>("QVector<int>");
 }
@@ -794,6 +797,12 @@ void PipelineModel::operatorAdded(Operator* op,
   }
 
   emit operatorItemAdded(op);
+}
+
+void PipelineModel::operatorRemoved(Operator* op)
+{
+
+  removeOp(op);
 }
 
 void PipelineModel::operatorModified()

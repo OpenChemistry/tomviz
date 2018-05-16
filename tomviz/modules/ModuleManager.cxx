@@ -212,6 +212,13 @@ void ModuleManager::removeAllDataSources()
   d->DataSources.clear();
 }
 
+void ModuleManager::removeOperator(Operator* op)
+{
+  if (op) {
+    emit operatorRemoved(op);
+  }
+}
+
 bool ModuleManager::isChild(DataSource* source) const
 {
   return (d->ChildDataSources.indexOf(source) >= 0);

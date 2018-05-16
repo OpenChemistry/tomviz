@@ -18,6 +18,7 @@
 
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
+#include "ModuleManager.h"
 #include "Operator.h"
 #include "Pipeline.h"
 #include "Utilities.h"
@@ -77,6 +78,8 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   this->Internals->needsToBeAdded = needToAddOperator;
   if (needToAddOperator) {
     op->setParent(this);
+    this->Internals->dataSource->pipeline()->pause();
+    this->Internals->dataSource->addOperator(this->Internals->Op);
   }
 
   QVariant geometry = this->Internals->loadGeometry();
@@ -165,7 +168,8 @@ void EditOperatorDialog::onApply()
     }
   }
   if (this->Internals->needsToBeAdded) {
-    this->Internals->dataSource->addOperator(this->Internals->Op);
+    this->Internals->dataSource->pipeline()->resume(
+      this->Internals->dataSource);
     this->Internals->needsToBeAdded = false;
   }
 }
@@ -173,6 +177,16 @@ void EditOperatorDialog::onApply()
 void EditOperatorDialog::onClose()
 {
   this->Internals->saveGeometry(this->geometry());
+  if (this->Internals->needsToBeAdded) {
+    // Since for now operators can't be programmatically removed
+    // (i.e. all removals are assumed to be initialized
+    // from the gui in PipelineModel), we need to do a workaround and have the
+    // ModuleManaged emit a signal that is captured by the PipelineModel,
+    // which eventually will lead to the removal of the operator.
+    ModuleManager::instance().removeOperator(this->Internals->Op);
+    this->Internals->dataSource->pipeline()->resume(
+      this->Internals->dataSource);
+  }
 }
 
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)

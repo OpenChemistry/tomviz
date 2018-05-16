@@ -32,6 +32,7 @@ class QDir;
 namespace tomviz {
 class DataSource;
 class Module;
+class Operator;
 class Pipeline;
 
 /// Singleton akin to ProxyManager, but to keep track (and
@@ -100,6 +101,7 @@ public slots:
   void removeDataSource(DataSource*);
   void removeChildDataSource(DataSource*);
   void removeAllDataSources();
+  void removeOperator(Operator*);
 
   /// Removes all modules and data sources.
   void reset();
@@ -121,6 +123,8 @@ signals:
   void childDataSourceAdded(DataSource*);
   void dataSourceRemoved(DataSource*);
   void childDataSourceRemoved(DataSource*);
+
+  void operatorRemoved(Operator*);
 
 private:
   Q_DISABLE_COPY(ModuleManager)
