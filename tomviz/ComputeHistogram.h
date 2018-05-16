@@ -23,10 +23,8 @@ template <typename T>
 void CalculateHistogram(T* values, const vtkIdType numTuples,
                         const vtkIdType numComponents, int component,
                         const float min, int* pops, const float inc,
-                        const int numBins, int& invalid)
+                        const int, int& invalid)
 {
-  const int maxBin(numBins - 1);
-
   // Simplify the case where tuple magnitude is requested but the number of
   // components is only 1.
   if (component == -1 && numComponents == 1) {
@@ -41,7 +39,7 @@ void CalculateHistogram(T* values, const vtkIdType numTuples,
       // them specially
       T value = *(values + component);
       if (vtkMath::IsFinite(value)) {
-        int index = std::min(static_cast<int>((value - min) / inc), maxBin);
+        int index = static_cast<int>((value - min) / inc);
         ++pops[index];
       } else {
         ++invalid;
@@ -63,8 +61,7 @@ void CalculateHistogram(T* values, const vtkIdType numTuples,
         squaredSum += (value * value);
       }
       if (valid) {
-        int index =
-          std::min(static_cast<int>((sqrt(squaredSum) - min) / inc), maxBin);
+        int index = static_cast<int>((sqrt(squaredSum) - min) / inc);
         ++pops[index];
       } else {
         ++invalid;

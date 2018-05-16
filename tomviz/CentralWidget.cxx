@@ -75,7 +75,7 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     minmax[1] = minmax[0] + 1.0;
   }
 
-  double inc = (minmax[1] - minmax[0]) / numberOfBins;
+  double inc = (minmax[1] - minmax[0]) / (numberOfBins - 1);
   double halfInc = inc / 2.0;
   vtkSmartPointer<vtkFloatArray> extents = vtkFloatArray::SafeDownCast(
     output->GetColumnByName("image_extents"));
