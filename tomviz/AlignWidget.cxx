@@ -66,6 +66,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSlider>
@@ -573,7 +574,15 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   v->addWidget(m_offsetTable, 2);
   m_offsets.fill(vtkVector2i(0, 0), m_maxSliceNum + 1);
 
-  const QVector<vtkVector2i>& oldOffsets = m_operator->getAlignOffsets();
+  QVector<vtkVector2i> oldOffsets = m_operator->getDraftAlignOffsets();
+  if (oldOffsets.size() > 0) {
+    int answer = restoreDraftDialog();
+    if (answer != QMessageBox::Yes) {
+      oldOffsets = m_operator->getAlignOffsets();
+    }
+  } else {
+    oldOffsets = m_operator->getAlignOffsets();
+  }
 
   m_offsetTable->setRowCount(m_offsets.size());
   m_offsetTable->setColumnCount(4);
@@ -887,6 +896,8 @@ void AlignWidget::applyChangesToOperator()
 {
   if (m_operator) {
     m_operator->setAlignOffsets(m_offsets);
+    // When the operator is saved, the draft is discarded
+    m_operator->setDraftAlignOffsets(QVector<vtkVector2i>());
   }
 }
 
@@ -927,6 +938,9 @@ void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
   int offset = str.toInt(&ok);
   if (ok) {
     m_offsets[slice][offsetComponent - 1] = offset;
+    if (m_operator) {
+      m_operator->setDraftAlignOffsets(m_offsets);
+    }
   }
   if (slice == m_currentSlice->value()) {
     applySliceOffset();
@@ -997,5 +1011,18 @@ void AlignWidget::applyCurrentPreset()
     renderViews();
     m_widget->GetRenderWindow()->Render();
   }
+}
+
+int AlignWidget::restoreDraftDialog() const
+{
+  // QMessageBox constructor expects a QWidget*,
+  // but this is a const QWidget*
+  AlignWidget* thisCopy = const_cast<AlignWidget*>(this);
+  QMessageBox dialog(thisCopy);
+  dialog.setWindowTitle("Restore alignments");
+  dialog.setText("Would you like to restore unapplied manual alignments?");
+  dialog.setStandardButtons(QMessageBox::No | QMessageBox::Yes);
+  dialog.setDefaultButton(QMessageBox::Yes);
+  return dialog.exec();
 }
 } // namespace tomviz
