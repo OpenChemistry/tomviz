@@ -31,19 +31,14 @@ void CalculateHistogram(T* values, const vtkIdType numTuples,
     component = 0;
   }
 
+  const float inv = 1.0f / inc;
+
   if (component >= 0) {
     // Single scalar value
     for (vtkIdType j = 0; j < numTuples; ++j) {
-      // This code does not handle NaN or Inf values, so check for them and
-      // handle
-      // them specially
       T value = *(values + component);
-      if (vtkMath::IsFinite(value)) {
-        int index = static_cast<int>((value - min) / inc);
-        ++pops[index];
-      } else {
-        ++invalid;
-      }
+      int index = static_cast<int>((value - min) * inv);
+      ++pops[index];
       values += numComponents;
     }
   } else {
@@ -61,7 +56,7 @@ void CalculateHistogram(T* values, const vtkIdType numTuples,
         squaredSum += (value * value);
       }
       if (valid) {
-        int index = static_cast<int>((sqrt(squaredSum) - min) / inc);
+        int index = static_cast<int>((sqrt(squaredSum) - min) * inv);
         ++pops[index];
       } else {
         ++invalid;
