@@ -130,7 +130,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "All files (*.*)";
 
   QFileDialog dialog(nullptr);
-  dialog.setFileMode(QFileDialog::ExistingFile);
+  dialog.setFileMode(QFileDialog::ExistingFiles);
   dialog.setNameFilters(filters);
   dialog.setObjectName("FileOpenDialog-tomviz"); // avoid name collision?
 
