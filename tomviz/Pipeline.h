@@ -86,6 +86,14 @@ public:
   /// Return true if the pipeline is currently being executed.
   bool isRunning();
 
+  /// Return true is the pipeline is currently paused.
+  bool isPaused() const;
+
+  /// The user operator has started/finished editing an operator
+  void startedEditingOp() { ++m_editingOperators; }
+  void finishedEditingOp() { --m_editingOperators; }
+  int editingOperators() { return m_editingOperators; }
+
   ImageFuture* getCopyOfImagePriorTo(Operator* op);
 
   /// Add default modules to this pipeline.
@@ -131,6 +139,7 @@ private:
   bool m_paused = false;
   QScopedPointer<PipelineExecutor> m_executor;
   ExecutionMode m_executionMode = Threaded;
+  int m_editingOperators = 0;
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.

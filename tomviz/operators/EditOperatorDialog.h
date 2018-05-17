@@ -63,6 +63,7 @@ private:
   Q_DISABLE_COPY(EditOperatorDialog)
   class EODInternals;
   QScopedPointer<EODInternals> Internals;
+  bool m_pipelineWasPaused;
 };
 } // namespace tomviz
 

@@ -46,7 +46,8 @@ enum class OperatorState
   Complete,
   Canceled,
   Error,
-  Modified
+  Modified,
+  Edit
 };
 
 enum class TransformResult
@@ -252,6 +253,7 @@ public slots:
   OperatorState state() { return m_state; }
   void resetState() { m_state = OperatorState::Queued; }
   void setModified() { m_state = OperatorState::Modified; }
+  void setEditing() { m_state = OperatorState::Edit; }
 
 protected slots:
   // Create a new child datasource and set it on this operator

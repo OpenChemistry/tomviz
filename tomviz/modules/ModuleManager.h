@@ -101,7 +101,7 @@ public slots:
   void removeDataSource(DataSource*);
   void removeChildDataSource(DataSource*);
   void removeAllDataSources();
-  void removeOperator(Operator*);
+  void removeOperator(Operator *);
 
   /// Removes all modules and data sources.
   void reset();

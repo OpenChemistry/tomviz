@@ -240,6 +240,11 @@ bool Pipeline::isRunning()
   return m_executor->isRunning();
 }
 
+bool Pipeline::isPaused() const
+{
+  return m_paused;
+}
+
 DataSource* Pipeline::findTransformedDataSource(DataSource* dataSource)
 {
   auto op = findTransformedDataSourceOperator(dataSource);

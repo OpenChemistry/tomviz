@@ -73,12 +73,20 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   : Superclass(p), Internals(new EditOperatorDialog::EODInternals())
 {
   Q_ASSERT(op);
+  op->setEditing();
   this->Internals->Op = op;
   this->Internals->dataSource = dataSource;
   this->Internals->needsToBeAdded = needToAddOperator;
+  // check if another EditOperatorDialog is still open
+  // and has already paused the pipeline
+  m_pipelineWasPaused = this->Internals->dataSource->pipeline()->isPaused();
+  this->Internals->dataSource->pipeline()->startedEditingOp();
+
   if (needToAddOperator) {
     op->setParent(this);
-    this->Internals->dataSource->pipeline()->pause();
+    if (!m_pipelineWasPaused) {
+      this->Internals->dataSource->pipeline()->pause();
+    }
     this->Internals->dataSource->addOperator(this->Internals->Op);
   }
 
@@ -165,12 +173,14 @@ void EditOperatorDialog::onApply()
       }
     } else {
       this->Internals->Widget->applyChangesToOperator();
+      if (this->Internals->needsToBeAdded) {
+        if (this->Internals->dataSource->pipeline()->editingOperators() == 1){
+          this->Internals->dataSource->pipeline()->resume(
+            this->Internals->dataSource);
+        }
+        this->Internals->needsToBeAdded = false;
+      }
     }
-  }
-  if (this->Internals->needsToBeAdded) {
-    this->Internals->dataSource->pipeline()->resume(
-      this->Internals->dataSource);
-    this->Internals->needsToBeAdded = false;
   }
 }
 
@@ -184,9 +194,13 @@ void EditOperatorDialog::onClose()
     // ModuleManaged emit a signal that is captured by the PipelineModel,
     // which eventually will lead to the removal of the operator.
     ModuleManager::instance().removeOperator(this->Internals->Op);
-    this->Internals->dataSource->pipeline()->resume(
-      this->Internals->dataSource);
+    if (this->Internals->dataSource->pipeline()->editingOperators() == 1){
+      this->Internals->dataSource->pipeline()->resume(
+        this->Internals->dataSource);
+    }
   }
+  this->Internals->Op->resetState();
+  this->Internals->dataSource->pipeline()->finishedEditingOp();
 }
 
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)

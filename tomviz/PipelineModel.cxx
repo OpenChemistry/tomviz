@@ -332,6 +332,8 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
   switch (state) {
     case OperatorState::Complete:
       return QIcon(":/icons/check.png");
+    case OperatorState::Edit:
+      return QIcon(":/icons/pqSlice.png");
     case OperatorState::Queued:
     case OperatorState::Modified:
       return QIcon(":/icons/question.png");
@@ -354,6 +356,8 @@ QString tooltipForOperatorState(tomviz::OperatorState state)
       return QString("Running");
     case OperatorState::Complete:
       return QString("Complete");
+    case OperatorState::Edit:
+      return QString("Editing");
     case OperatorState::Queued:
       return QString("Queued");
     case OperatorState::Error:

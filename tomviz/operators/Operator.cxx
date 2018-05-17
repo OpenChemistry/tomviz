@@ -60,6 +60,9 @@ DataSource* Operator::dataSource()
 
 TransformResult Operator::transform(vtkDataObject* data)
 {
+  // if (m_state == OperatorState::Edit) {
+  //   return TransformResult::Complete;
+  // }
   m_state = OperatorState::Running;
   emit transformingStarted();
   setProgressStep(0);
