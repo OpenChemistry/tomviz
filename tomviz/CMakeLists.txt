@@ -92,6 +92,8 @@ set(SOURCES
   PipelineView.h
   PipelineWorker.cxx
   PipelineWorker.h
+  PipelineSettingsDialog.cxx
+  PipelineSettingsDialog.h
   ProgressDialogManager.cxx
   ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx

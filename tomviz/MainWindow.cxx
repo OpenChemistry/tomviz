@@ -46,6 +46,7 @@
 #include "ModulePropertiesPanel.h"
 #include "PassiveAcquisitionWidget.h"
 #include "PipelineManager.h"
+#include "PipelineSettingsDialog.h"
 #include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "PythonUtilities.h"
@@ -471,13 +472,16 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // Add the acquisition client experimentally.
   auto acquisitionWidget = new AcquisitionWidget(this);
-  auto acquisitionAction = m_ui->menuTools->addAction("Acquisition");
-  connect(acquisitionAction, SIGNAL(triggered(bool)), acquisitionWidget,
+  connect(m_ui->actionAcquisition, SIGNAL(triggered(bool)), acquisitionWidget,
           SLOT(show()));
 
   auto passiveAcquisitionWidget = new PassiveAcquisitionWidget(this);
   connect(m_ui->actionPassiveAcquisition, &QAction::triggered,
           passiveAcquisitionWidget, &QWidget::show);
+
+  auto pipelineSettingsDialog = new PipelineSettingsDialog(this);
+  connect(m_ui->actionPipelineSettings, &QAction::triggered,
+          pipelineSettingsDialog, &QWidget::show);
 
   registerCustomOperators();
 }

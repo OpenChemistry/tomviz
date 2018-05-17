@@ -27,6 +27,8 @@
 #include <vtkImageData.h>
 #include <vtkSmartPointer.h>
 
+class pqSettings;
+
 namespace tomviz {
 class DataSource;
 class Operator;
@@ -38,6 +40,13 @@ class Pipeline : public QObject
   Q_OBJECT
 
 public:
+  enum ExecutionMode
+  {
+    Threaded,
+    Docker
+  };
+  Q_ENUM(ExecutionMode)
+
   class ImageFuture;
 
   Pipeline(DataSource* dataSource, QObject* parent = nullptr);
@@ -127,6 +136,25 @@ private:
   Operator* m_operator;
   vtkSmartPointer<vtkImageData> m_imageData;
   PipelineWorker::Future* m_future;
+};
+
+class PipelineSettings
+{
+public:
+  PipelineSettings();
+  Pipeline::ExecutionMode executionMode();
+  QString dockerImage();
+  bool dockerPull();
+  bool dockerRemove();
+
+  void setExecutionMode(Pipeline::ExecutionMode executor);
+  void setExecutionMode(const QString& executor);
+  void setDockerImage(const QString& image);
+  void setDockerPull(bool pull);
+  void setDockerRemove(bool remove);
+
+private:
+  pqSettings* m_settings;
 };
 
 class PipelineExecutor : public QObject
