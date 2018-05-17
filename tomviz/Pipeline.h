@@ -238,7 +238,7 @@ private slots:
 
 private:
   QScopedPointer<QTemporaryDir> m_temporaryDir;
-  bool m_pullImage = false;
+  bool m_pullImage = true;
   QString m_containerId;
   QScopedPointer<QLocalServer> m_localServer;
   QScopedPointer<QLocalSocket> m_progressConnection;

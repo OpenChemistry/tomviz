@@ -23,6 +23,7 @@
 #include "Operator.h"
 #include "PipelineWorker.h"
 #include "Utilities.h"
+#include "ProgressDialog.h"
 
 #include <QDir>
 #include <QFile>
@@ -756,14 +757,19 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   PipelineSettings settings;
   // Pull the latest version of the image, if haven't already
   if (settings.dockerPull() && m_pullImage) {
+    auto msg = QString("Pulling docker image: %1").arg(image);
+    auto progress = new ProgressDialog("Docker Pull", msg, tomviz::mainWidget());
+    progress->show();
     m_pullImage = false;
     auto pullInvocation = docker::pull(image);
     connect(pullInvocation, &docker::DockerPullInvocation::error, this,
             &DockerPipelineExecutor::error);
     connect(
       pullInvocation, &docker::DockerPullInvocation::finished, pullInvocation,
-      [this, &image, &args, &bindMounts,
-       pullInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      [this, image, args, bindMounts,
+       pullInvocation, progress](int exitCode, QProcess::ExitStatus exitStatus) {
+        progress->hide();
+        progress->deleteLater();
         if (exitCode) {
           displayError("Docker Error",
                        QString("Docker pull failed with: %1").arg(exitCode));
