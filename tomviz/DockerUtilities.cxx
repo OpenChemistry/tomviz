@@ -165,7 +165,7 @@ DockerLogsInvocation* DockerLogsInvocation::run()
 
 QString DockerLogsInvocation::logs()
 {
-  return stdOut();
+  return stdErr() + stdOut();
 }
 
 DockerStopInvocation::DockerStopInvocation(const QString& containerId,
