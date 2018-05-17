@@ -602,8 +602,12 @@ DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
       connect(connection, static_cast<void (QLocalSocket::*)(
                             QLocalSocket::LocalSocketError socketError)>(
                             &QLocalSocket::error),
-              [](QLocalSocket::LocalSocketError socketError) {
-                qDebug() << socketError;
+              [this](QLocalSocket::LocalSocketError socketError) {
+                if (socketError != QLocalSocket::PeerClosedError) {
+                  displayError(
+                    "Socket Error",
+                    QString("Socket connection error: %1").arg(socketError));
+                }
               });
     }
   });
