@@ -218,6 +218,7 @@ private slots:
     auto arguments = inspectFinished.takeFirst();
     QCOMPARE(arguments.at(0).toInt(), 0);
     QCOMPARE(inspectInvocation->status(), "exited");
+    QCOMPARE(inspectInvocation->exitCode(), 0);
     inspectInvocation->deleteLater();
     remove(containerId);
   }

@@ -121,10 +121,13 @@ public:
 
   DockerInspectInvocation* run();
   QString status();
+  int exitCode();
 
 private:
   QString m_containerId;
   int m_inspectResult;
+  QString m_status;
+  int m_exitCode = -1;
 };
 
 class DockerRemoveInvocation : public DockerInvocation

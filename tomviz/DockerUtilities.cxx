@@ -196,16 +196,34 @@ DockerInspectInvocation::DockerInspectInvocation(const QString& containerId)
 
 QString DockerInspectInvocation::status()
 {
-  auto document = QJsonDocument::fromJson(stdOut().toLatin1());
-  auto inspect = document.array()[0].toObject();
-  auto state = inspect["State"].toObject();
-  auto status = state["Status"];
+  if (m_status.isNull()) {
+    auto document = QJsonDocument::fromJson(stdOut().toLatin1());
+    auto inspect = document.array()[0].toObject();
+    auto state = inspect["State"].toObject();
+    auto status = state["Status"];
 
-  if (status.isString()) {
-    return status.toString();
+    if (status.isString()) {
+      m_status = status.toString();
+    }
   }
 
-  return QString();
+  return m_status;
+}
+
+int DockerInspectInvocation::exitCode()
+{
+  if (m_exitCode < 0) {
+    auto document = QJsonDocument::fromJson(stdOut().toLatin1());
+    auto inspect = document.array()[0].toObject();
+    auto state = inspect["State"].toObject();
+    auto exitCode = state["ExitCode"];
+
+    if (exitCode.isDouble()) {
+      m_exitCode = exitCode.toInt();
+    }
+  }
+
+  return m_exitCode;
 }
 
 DockerInspectInvocation* DockerInspectInvocation::run()
