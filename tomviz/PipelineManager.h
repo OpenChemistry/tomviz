@@ -18,6 +18,8 @@
 
 #include <QObject>
 
+#include "Pipeline.h"
+
 class QDir;
 
 namespace tomviz {
@@ -31,10 +33,16 @@ class PipelineManager : public QObject
 public:
   static PipelineManager& instance();
 
+  /// Update the execution modethe pipelines are using.
+  void updateExecutionMode(Pipeline::ExecutionMode mode);
+
 public slots:
   void addPipeline(Pipeline*);
   void removePipeline(Pipeline*);
   void removeAllPipelines();
+
+signals:
+  void executionModeUpdated(Pipeline::ExecutionMode mode);
 
 private:
   Q_DISABLE_COPY(PipelineManager)

@@ -95,6 +95,9 @@ public:
   /// will be used.
   DataSource* transformedDataSource(DataSource* dataSource = nullptr);
 
+  /// Set the execution mode to use when executing the pipeline.
+  void setExecutionMode(ExecutionMode executor);
+
 public slots:
   void execute();
   void execute(DataSource* start, bool runLast);

@@ -30,11 +30,19 @@ PipelineManager& PipelineManager::instance()
   return theInstance;
 }
 
+void PipelineManager::updateExecutionMode(Pipeline::ExecutionMode mode)
+{
+  emit executionModeUpdated(mode);
+}
+
 void PipelineManager::addPipeline(Pipeline* pipeline)
 {
   if (pipeline && !m_pipelines.contains(pipeline)) {
     pipeline->setParent(this);
     m_pipelines.push_back(pipeline);
+
+    connect(this, &PipelineManager::executionModeUpdated, pipeline,
+            &Pipeline::setExecutionMode);
   }
 }
 

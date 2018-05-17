@@ -17,26 +17,101 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "DockerUtilities.h"
+#include "EmdFormat.h"
 #include "ModuleManager.h"
 #include "Operator.h"
 #include "PipelineWorker.h"
 #include "Utilities.h"
 
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMessageBox>
+#include <QMetaEnum>
 #include <QObject>
+#include <QTextStream>
 #include <QTimer>
+#include <QtConcurrent>
+
+#include <pqApplicationCore.h>
+#include <pqSettings.h>
 #include <pqView.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTrivialProducer.h>
 
 namespace tomviz {
 
+PipelineSettings::PipelineSettings()
+{
+  m_settings = pqApplicationCore::instance()->settings();
+}
+
+void PipelineSettings::setExecutionMode(Pipeline::ExecutionMode executor)
+{
+  auto metaEnum = QMetaEnum::fromType<Pipeline::ExecutionMode>();
+  setExecutionMode(QString(metaEnum.valueToKey(executor)));
+}
+
+void PipelineSettings::setExecutionMode(const QString& executor)
+{
+  m_settings->setValue("pipeline/mode", executor);
+}
+
+Pipeline::ExecutionMode PipelineSettings::executionMode()
+{
+  if (!m_settings->contains("pipeline/mode")) {
+    return Pipeline::ExecutionMode::Threaded;
+  }
+  auto metaEnum = QMetaEnum::fromType<Pipeline::ExecutionMode>();
+
+  return static_cast<Pipeline::ExecutionMode>(metaEnum.keyToValue(
+    m_settings->value("pipeline/mode").toString().toLatin1().data()));
+}
+
+QString PipelineSettings::dockerImage()
+{
+  return m_settings->value("pipeline/docker.image").toString();
+}
+
+bool PipelineSettings::dockerPull()
+{
+  return m_settings->value("pipeline/docker.pull", true).toBool();
+}
+
+bool PipelineSettings::dockerRemove()
+{
+  return m_settings->value("pipeline/docker.remove", true).toBool();
+}
+
+void PipelineSettings::setDockerImage(const QString& image)
+{
+  m_settings->setValue("pipeline/docker.image", image);
+}
+
+void PipelineSettings::setDockerPull(bool pull)
+{
+  m_settings->setValue("pipeline/docker.pull", pull);
+}
+
+void PipelineSettings::setDockerRemove(bool remove)
+{
+  m_settings->setValue("pipeline/docker.remove", remove);
+}
+
 Pipeline::Pipeline(DataSource* dataSource, QObject* parent) : QObject(parent)
 {
   m_data = dataSource;
-  m_executor = new ThreadPipelineExecutor(this);
   m_data->setParent(this);
 
   addDataSource(dataSource);
+
+  PipelineSettings settings;
+  auto executor = settings.executionMode();
+  setExecutionMode(executor);
 }
 
 Pipeline::~Pipeline() = default;
@@ -314,6 +389,16 @@ DataSource* Pipeline::transformedDataSource(DataSource* ds)
 
   // Default to dataSource at being of pipeline
   return ds;
+}
+
+void Pipeline::setExecutionMode(ExecutionMode executor)
+{
+
+  if (executor == ExecutionMode::Docker) {
+    m_executor.reset(new DockerPipelineExecutor(this));
+  } else {
+    m_executor.reset(new ThreadPipelineExecutor(this));
+  }
 }
 
 PipelineExecutor::PipelineExecutor(Pipeline* pipeline) : QObject(pipeline)
