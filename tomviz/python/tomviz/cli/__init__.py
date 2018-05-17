@@ -38,10 +38,17 @@ def _extract_pipeline(state):
               type=click.Path(exists=True), required=True)
 @click.option('-o', '--output-file-path',
               help='Path to write the transformed dataset.', type=click.Path())
-def main(data_file_path, state_file_path, output_file_path):
+@click.option('-p', '--progress-method',
+              help='The method to use to progress updates.',
+              type=click.Choice(['tqdm', 'socket']), default='tqdm')
+@click.option('-u', '--socket-path',
+              help='The socket path to use for progress updates.',
+              type=click.Path(), default='/tomviz/progress')
+def main(data_file_path, state_file_path, output_file_path, progress_method,
+         socket_path):
 
     # Extract the pipeline
-    with open(state_file_path) as fp:
+    with open(state_file_path, 'rb') as fp:
         state = json.load(fp)
 
     (datasource, operators) = _extract_pipeline(state)
@@ -51,7 +58,10 @@ def main(data_file_path, state_file_path, output_file_path):
     if data_file_path is None:
         if 'reader' not in datasource:
             raise Exception('Data source does not contain a reader.')
-        data_file_path = datasource['reader']['fileName']
+        filenames = datasource['reader']['fileNames']
+        if len(filenames) > 1:
+            raise Exception('Image stacks not supported.')
+        data_file_path = filenames[0]
         # fileName is relative to the state file location, so convert to
         # absolute path.
         data_file_path = os.path.abspath(
@@ -63,4 +73,5 @@ def main(data_file_path, state_file_path, output_file_path):
             raise Exception('Data source path does not exist: %s'
                             % data_file_path)
 
-    executor.execute(operators, data_file_path, output_file_path)
+    executor.execute(operators, data_file_path, output_file_path,
+                     progress_method, socket_path)

@@ -20,7 +20,13 @@
 
 #include "PipelineWorker.h"
 
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QProcess>
 #include <QScopedPointer>
+#include <QSettings>
+#include <QTemporaryDir>
+#include <QThreadPool>
 
 #include <functional>
 
@@ -35,10 +41,13 @@ class Operator;
 class Pipeline;
 class PipelineExecutor;
 
+namespace docker {
+class DockerStopInvocation;
+}
+
 class Pipeline : public QObject
 {
   Q_OBJECT
-
 public:
   enum ExecutionMode
   {
@@ -90,6 +99,7 @@ public slots:
   void execute();
   void execute(DataSource* start, bool runLast);
   void execute(DataSource* start);
+  void branchFinished(DataSource* start, vtkDataObject* newData);
 
 signals:
   /// This signal is when the execution of the pipeline starts.
@@ -110,7 +120,7 @@ private:
 
   DataSource* m_data;
   bool m_paused = false;
-  PipelineExecutor* m_executor;
+  QScopedPointer<PipelineExecutor> m_executor;
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.
@@ -198,6 +208,49 @@ private slots:
 private:
   PipelineWorker* m_worker;
   PipelineWorker::Future* m_future = nullptr;
+};
+
+class DockerPipelineExecutor : public PipelineExecutor
+{
+  Q_OBJECT
+
+public:
+  DockerPipelineExecutor(Pipeline* pipeline);
+  ~DockerPipelineExecutor();
+  void execute(DataSource* dataSource, Operator* start = nullptr);
+  Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op);
+  void cancel(std::function<void()> canceled);
+  bool cancel(Operator* op);
+  bool isRunning();
+
+private slots:
+  void error(QProcess::ProcessError error);
+  void progressReady();
+  void run(const QString& image, const QStringList& args,
+           const QMap<QString, QString>& bindMounts);
+  void remove(const QString& containerId);
+  docker::DockerStopInvocation* stop(const QString& containerId);
+  void containerError(int exitCode);
+
+private:
+  QScopedPointer<QTemporaryDir> m_temporaryDir;
+  bool m_pullImage = false;
+  QString m_containerId;
+  QScopedPointer<QLocalServer> m_localServer;
+  QScopedPointer<QLocalSocket> m_progressConnection;
+  QThreadPool* m_threadPool;
+
+  void checkContainerStatus();
+  void operatorStarted(Operator* op);
+  void operatorFinished(Operator* op);
+  void operatorError(Operator* op, const QString& error);
+  void operatorCanceled(Operator* op);
+  void operatorProgressMaximum(Operator* op, int max);
+  void operatorProgressStep(Operator* op, int step);
+  void operatorProgressMessage(Operator* op, const QString& msg);
+  void pipelineStarted();
+  void pipelineFinished();
+  void displayError(const QString& title, const QString& msg);
 };
 
 } // namespace tomviz

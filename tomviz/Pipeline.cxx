@@ -63,6 +63,61 @@ void Pipeline::execute(DataSource* start)
   m_executor->execute(start);
 }
 
+void Pipeline::branchFinished(DataSource* start, vtkDataObject* newData)
+{
+  // We only add the transformed child data source if the last operator
+  // doesn't already have an explicit child data source i.e.
+  // hasChildDataSource is true.
+  auto lastOp = start->operators().last();
+  if (!lastOp->hasChildDataSource()) {
+    DataSource* newChildDataSource = nullptr;
+    if (lastOp->childDataSource() == nullptr) {
+      newChildDataSource = new DataSource("Output");
+      newChildDataSource->setPersistenceState(
+        tomviz::DataSource::PersistenceState::Transient);
+      newChildDataSource->setForkable(false);
+      newChildDataSource->setParent(this);
+      lastOp->setChildDataSource(newChildDataSource);
+      auto rootDataSource = dataSource();
+      // connect signal to flow units and spacing to child data source.
+      connect(dataSource(), &DataSource::dataPropertiesChanged,
+              [rootDataSource, newChildDataSource]() {
+                // Only flow the properties if no user modifications have been
+                // made.
+                if (!newChildDataSource->unitsModified()) {
+                  newChildDataSource->setUnits(rootDataSource->getUnits(),
+                                               false);
+                  double spacing[3];
+                  rootDataSource->getSpacing(spacing);
+                  newChildDataSource->setSpacing(spacing, false);
+                }
+              });
+    }
+
+    lastOp->childDataSource()->setData(newData);
+    lastOp->childDataSource()->dataModified();
+
+    if (newChildDataSource != nullptr) {
+      emit lastOp->newChildDataSource(newChildDataSource);
+      // Move modules from root data source.
+      bool oldMoveObjectsEnabled =
+        ActiveObjects::instance().moveObjectsEnabled();
+      ActiveObjects::instance().setMoveObjectsMode(false);
+      auto view = ActiveObjects::instance().activeView();
+      foreach (Module* module, ModuleManager::instance().findModules<Module*>(
+                                 dataSource(), nullptr)) {
+        // TODO: We should really copy the module properties as well.
+        auto newModule = ModuleManager::instance().createAndAddModule(
+          module->label(), newChildDataSource, view);
+        // Copy over properties using the serialization code.
+        newModule->deserialize(module->serialize());
+        ModuleManager::instance().removeModule(module);
+      }
+      ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+    }
+  }
+}
+
 void Pipeline::pause()
 {
   m_paused = true;
@@ -369,64 +424,16 @@ void ThreadPipelineExecutor::pipelineBranchFinished(bool result)
   PipelineWorker::Future* future =
     qobject_cast<PipelineWorker::Future*>(sender());
   if (result) {
-
     auto lastOp = future->operators().last();
 
-    // We only add the transformed child data source if the last operator
-    // doesn't already have an explicit child data source i.e.
-    // hasChildDataSource is true.
-    if (!lastOp->hasChildDataSource()) {
-      DataSource* newChildDataSource = nullptr;
-      if (lastOp->childDataSource() == nullptr) {
-        newChildDataSource = new DataSource("Output");
-        newChildDataSource->setPersistenceState(
-          tomviz::DataSource::PersistenceState::Transient);
-        newChildDataSource->setForkable(false);
-        newChildDataSource->setParent(this);
-        lastOp->setChildDataSource(newChildDataSource);
-        auto rootDataSource = pipeline()->dataSource();
-        // connect signal to flow units and spacing to child data source.
-        connect(pipeline()->dataSource(), &DataSource::dataPropertiesChanged,
-                [rootDataSource, newChildDataSource]() {
-                  // Only flow the properties if no user modifications have been
-                  // made.
-                  if (!newChildDataSource->unitsModified()) {
-                    newChildDataSource->setUnits(rootDataSource->getUnits(),
-                                                 false);
-                    double spacing[3];
-                    rootDataSource->getSpacing(spacing);
-                    newChildDataSource->setSpacing(spacing, false);
-                  }
-                });
-      }
-
-      lastOp->childDataSource()->setData(future->result());
-      lastOp->childDataSource()->dataModified();
-
-      if (newChildDataSource != nullptr) {
-        emit lastOp->newChildDataSource(newChildDataSource);
-        // Move modules from root data source.
-        bool oldMoveObjectsEnabled =
-          ActiveObjects::instance().moveObjectsEnabled();
-        ActiveObjects::instance().setMoveObjectsMode(false);
-        auto view = ActiveObjects::instance().activeView();
-        foreach (Module* module, ModuleManager::instance().findModules<Module*>(
-                                   pipeline()->dataSource(), nullptr)) {
-          // TODO: We should really copy the module properties as well.
-          auto newModule = ModuleManager::instance().createAndAddModule(
-            module->label(), newChildDataSource, view);
-          // Copy over properties using the serialization code.
-          newModule->deserialize(module->serialize());
-          ModuleManager::instance().removeModule(module);
-        }
-        ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
-      }
-    }
+    // TODO Need to refactor and moved to Pipeline ...
+    pipeline()->branchFinished(lastOp->dataSource(), future->result());
 
     // Do we have another branch to execute
     if (lastOp->childDataSource() != nullptr) {
       execute(lastOp->childDataSource());
-      lastOp->childDataSource()->setParent(this);
+      // Ensure the pipeline has ownership of the transformed data source.
+      lastOp->childDataSource()->setParent(pipeline());
     }
     // The pipeline execution is finished
     else {
@@ -442,8 +449,7 @@ void ThreadPipelineExecutor::pipelineBranchFinished(bool result)
 
 void ThreadPipelineExecutor::pipelineBranchCanceled()
 {
-  PipelineWorker::Future* future =
-    qobject_cast<PipelineWorker::Future*>(sender());
+  auto future = qobject_cast<PipelineWorker::Future*>(sender());
   future->deleteLater();
   if (m_future == future) {
     m_future = nullptr;
@@ -488,6 +494,428 @@ Pipeline::ImageFuture* ThreadPipelineExecutor::getCopyOfImagePriorTo(
 
     return imageFuture;
   }
+}
+
+const char* TRANSFORM_FILENAME = "transformed.emd";
+const char* STATE_FILENAME = "state.tvsm";
+const char* CONTAINER_MOUNT = "/tomviz";
+const char* PROGRESS_PATH = "progress";
+
+DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
+  : PipelineExecutor(pipeline), m_localServer(new QLocalServer(this)),
+    m_threadPool(new QThreadPool(this))
+{
+  auto server = m_localServer.data();
+  connect(server, &QLocalServer::newConnection, server, [this]() {
+    auto connection = m_localServer->nextPendingConnection();
+    m_progressConnection.reset(connection);
+
+    if (m_progressConnection) {
+      connect(connection, &QIODevice::readyRead, this,
+              &DockerPipelineExecutor::progressReady);
+      connect(connection, static_cast<void (QLocalSocket::*)(
+                            QLocalSocket::LocalSocketError socketError)>(
+                            &QLocalSocket::error),
+              [](QLocalSocket::LocalSocketError socketError) {
+                qDebug() << socketError;
+              });
+    }
+  });
+}
+
+DockerPipelineExecutor::~DockerPipelineExecutor()
+{}
+
+void DockerPipelineExecutor::run(const QString& image, const QStringList& args,
+                                 const QMap<QString, QString>& bindMounts)
+{
+  auto runInvocation =
+    docker::run("tomviz/pipeline", QString(), args, bindMounts);
+  connect(runInvocation, &docker::DockerRunInvocation::error, this,
+          &DockerPipelineExecutor::error);
+  connect(runInvocation, &docker::DockerRunInvocation::finished, runInvocation,
+          [this, runInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+            if (exitCode) {
+              displayError("Docker Error",
+                           QString("Docker run failed with: %1").arg(exitCode));
+              return;
+            } else {
+              m_containerId = runInvocation->containerId();
+              checkContainerStatus();
+            }
+            runInvocation->deleteLater();
+          });
+}
+
+void DockerPipelineExecutor::remove(const QString& containerId)
+{
+  auto removeInvocation = docker::remove(containerId);
+  connect(removeInvocation, &docker::DockerRunInvocation::error, this,
+          &DockerPipelineExecutor::error);
+  connect(
+    removeInvocation, &docker::DockerRunInvocation::finished, removeInvocation,
+    [this, removeInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      if (exitCode) {
+        displayError("Docker Error",
+                     QString("Docker remove failed with: %1").arg(exitCode));
+        return;
+      }
+      removeInvocation->deleteLater();
+    });
+}
+
+docker::DockerStopInvocation* DockerPipelineExecutor::stop(
+  const QString& containerId)
+{
+  auto stopInvocation = docker::stop(containerId, 0);
+  connect(stopInvocation, &docker::DockerStopInvocation::error, this,
+          &DockerPipelineExecutor::error);
+  connect(
+    stopInvocation, &docker::DockerStopInvocation::finished, stopInvocation,
+    [this, stopInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      if (exitCode) {
+        displayError("Docker Error",
+                     QString("Docker stop failed with: %1").arg(exitCode));
+        return;
+      }
+
+      PipelineSettings settings;
+      if (settings.dockerRemove()) {
+        // Remove the container
+        remove(m_containerId);
+      }
+
+      stopInvocation->deleteLater();
+    });
+
+  return stopInvocation;
+}
+
+void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
+{
+
+  foreach (Operator* op, pipeline()->dataSource()->operators()) {
+    op->setState(OperatorState::Queued);
+  }
+
+  m_temporaryDir.reset(new QTemporaryDir());
+  if (!m_temporaryDir->isValid()) {
+    displayError("Directory Error", "Unable to create temporary directory.");
+    return;
+  }
+
+  // First serialize the pipeline.
+  auto source = dataSource->serialize();
+  auto reader = source["reader"].toObject();
+  auto fileNames = reader["fileNames"].toArray();
+
+  if (fileNames.count() > 1) {
+    displayError("Unsupported", "Docker executor doesn't support stacks.");
+    return;
+  }
+
+  // Locate data and copy to temp dir
+  auto filePath = fileNames[0].toString();
+  QFileInfo info(filePath);
+  auto fileName = info.fileName();
+
+  QFile::copy(filePath, m_temporaryDir->filePath(fileName));
+
+  // Now update the file path to where the it will appear in the
+  // docker container.
+  fileNames[0] = QJsonValue(fileName);
+  // TODO There must be a better way!
+  reader["fileNames"] = fileNames;
+  source["reader"] = reader;
+  QJsonObject pipeline;
+  QJsonArray dataSources;
+  dataSources.append(source);
+  pipeline["dataSources"] = dataSources;
+
+  // Now write the update state file to the temporary directory.
+  QFile stateFile(m_temporaryDir->filePath(STATE_FILENAME));
+  if (!stateFile.open(QIODevice::WriteOnly)) {
+    displayError("Write Error", "Couldn't open state file for write.");
+    return;
+  }
+  stateFile.write(QJsonDocument(pipeline).toJson());
+  stateFile.close();
+
+  // Start listening for local socket connections for progress update from
+  // within the docker container.
+  m_localServer->close();
+  auto r = m_localServer->listen(m_temporaryDir->filePath(PROGRESS_PATH));
+
+  // We are now ready to run the pipeline
+  auto mount = QDir(CONTAINER_MOUNT);
+  auto stateFilePath = mount.filePath(STATE_FILENAME);
+  auto outputPath = mount.filePath(TRANSFORM_FILENAME);
+  QStringList args;
+  args << "-s";
+  args << stateFilePath;
+  args << "-o";
+  args << outputPath;
+  args << "-p";
+  args << "socket";
+  args << "-u";
+  args << mount.filePath(PROGRESS_PATH);
+  QMap<QString, QString> bindMounts;
+  bindMounts[m_temporaryDir->path()] = CONTAINER_MOUNT;
+  QString image = "tomviz/pipeline";
+
+  PipelineSettings settings;
+  // Pull the latest version of the image, if haven't already
+  if (settings.dockerPull() && m_pullImage) {
+    m_pullImage = false;
+    auto pullInvocation = docker::pull(image);
+    connect(pullInvocation, &docker::DockerPullInvocation::error, this,
+            &DockerPipelineExecutor::error);
+    connect(
+      pullInvocation, &docker::DockerPullInvocation::finished, pullInvocation,
+      [this, &image, &args, &bindMounts,
+       pullInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+        if (exitCode) {
+          displayError("Docker Error",
+                       QString("Docker pull failed with: %1").arg(exitCode));
+          return;
+        } else {
+          run(image, args, bindMounts);
+        }
+        pullInvocation->deleteLater();
+      });
+  } else {
+    run(image, args, bindMounts);
+  }
+}
+
+Pipeline::ImageFuture* DockerPipelineExecutor::getCopyOfImagePriorTo(
+  Operator* op)
+{
+  // TODO
+  return nullptr;
+}
+
+void DockerPipelineExecutor::cancel(std::function<void()> canceled)
+{
+  auto stopInvocation = stop(m_containerId);
+  connect(stopInvocation, &docker::DockerStopInvocation::finished,
+          stopInvocation,
+          [this, canceled](int exitCode, QProcess::ExitStatus exitStatus) {
+            if (!exitCode) {
+              canceled();
+            }
+          });
+}
+
+bool DockerPipelineExecutor::cancel(Operator* op)
+{
+
+  // Simply stop the container.
+  stop(m_containerId);
+
+  return true;
+}
+
+bool DockerPipelineExecutor::isRunning()
+{
+  return !m_containerId.isEmpty();
+}
+
+void DockerPipelineExecutor::error(QProcess::ProcessError error)
+{
+  auto invocation = qobject_cast<docker::DockerInvocation*>(sender());
+  displayError("Execution Error",
+               QString("An error occurred executing '%1', '%2'")
+                 .arg(invocation->commandLine())
+                 .arg(error));
+}
+
+void DockerPipelineExecutor::containerError(int exitCode)
+{
+  auto logsInvocation = docker::logs(m_containerId);
+  connect(logsInvocation, &docker::DockerRunInvocation::error, this,
+          &DockerPipelineExecutor::error);
+  connect(
+    logsInvocation, &docker::DockerRunInvocation::finished, logsInvocation,
+    [this, logsInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      if (exitCode) {
+        displayError("Docker Error",
+                     QString("Docker logs failed with: %1").arg(exitCode));
+        return;
+      } else {
+        auto logs = logsInvocation->logs();
+        displayError(
+          "Pipeline Error",
+          QString("Docker container exited with non-zero exit code: %1."
+                  "\n\nDocker logs below: \n\n %2")
+            .arg(exitCode)
+            .arg(logs));
+      }
+      logsInvocation->deleteLater();
+      PipelineSettings settings;
+      if (settings.dockerRemove()) {
+        remove(m_containerId);
+      }
+    });
+}
+
+void DockerPipelineExecutor::checkContainerStatus()
+{
+  auto inspectInvocation = docker::inspect(m_containerId);
+  connect(inspectInvocation, &docker::DockerInspectInvocation::error, this,
+          &DockerPipelineExecutor::error);
+  connect(
+    inspectInvocation, &docker::DockerInspectInvocation::finished,
+    inspectInvocation,
+    [this, inspectInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      if (exitCode) {
+        displayError("Docker Error",
+                     QString("Docker inspect failed with: %1").arg(exitCode));
+        return;
+      } else {
+        // Check we haven't exited with an error.
+        auto status = inspectInvocation->status();
+        if (status == "exited") {
+          if (inspectInvocation->exitCode()) {
+            containerError(inspectInvocation->exitCode());
+          }
+        }
+        // Keep checking
+        else {
+          QTimer::singleShot(5000, this,
+                             &DockerPipelineExecutor::checkContainerStatus);
+        }
+      }
+      inspectInvocation->deleteLater();
+    });
+}
+
+void DockerPipelineExecutor::progressReady()
+{
+  auto progressMessage = m_progressConnection->readLine();
+  auto progressDoc = QJsonDocument::fromJson(progressMessage);
+  if (!progressDoc.isObject()) {
+    qCritical()
+      << QString("Invalid progress message '%1'").arg(QString(progressMessage));
+    return;
+  }
+  auto progressObj = progressDoc.object();
+  auto type = progressObj["type"].toString();
+
+  // Operator progress
+  if (progressObj.contains("operator")) {
+    auto opIndex = progressObj["operator"].toInt();
+    auto op = pipeline()->dataSource()->operators()[opIndex];
+
+    if (type == "started") {
+      operatorStarted(op);
+    } else if (type == "finished") {
+      operatorFinished(op);
+    } else if (type == "error") {
+      auto error = progressObj["error"].toString();
+      operatorError(op, error);
+    } else if (type == "progress.maximum") {
+      auto value = progressObj["value"].toInt();
+      operatorProgressMaximum(op, value);
+    } else if (type == "progress.step") {
+      auto value = progressObj["value"].toInt();
+      operatorProgressStep(op, value);
+    } else if (type == "progress.message") {
+      auto value = progressObj["value"].toInt();
+      operatorProgressMaximum(op, value);
+    } else {
+      qCritical() << QString("Unrecognized message type: %1").arg(type);
+    }
+  }
+  // Overrall pipeline progress
+  else {
+    if (type == "started") {
+      pipelineStarted();
+    } else if (type == "finished") {
+      pipelineFinished();
+    } else {
+      qCritical() << QString("Unrecognized message type: %1").arg(type);
+    }
+  }
+
+  // If we have more data schedule ourselve again.
+  if (m_progressConnection->bytesAvailable() > 0) {
+    QTimer::singleShot(0, this, &DockerPipelineExecutor::progressReady);
+  }
+}
+
+void DockerPipelineExecutor::operatorStarted(Operator* op)
+{
+  op->setState(OperatorState::Running);
+  QtConcurrent::run(m_threadPool, [op]() { emit op->transformingStarted(); });
+}
+
+void DockerPipelineExecutor::operatorFinished(Operator* op)
+{
+  op->setState(OperatorState::Complete);
+  QtConcurrent::run(m_threadPool, [op]() {
+    emit op->transformingDone(TransformResult::Complete);
+  });
+}
+
+void DockerPipelineExecutor::operatorError(Operator* op, const QString& error)
+{
+  op->setState(OperatorState::Error);
+  QtConcurrent::run(m_threadPool, [op]() {
+    emit op->transformingDone(TransformResult::Error);
+  });
+}
+
+void DockerPipelineExecutor::operatorProgressMaximum(Operator* op, int max)
+{
+  op->setTotalProgressSteps(max);
+}
+
+void DockerPipelineExecutor::operatorProgressStep(Operator* op, int step)
+{
+  op->setProgressStep(step);
+}
+void DockerPipelineExecutor::operatorProgressMessage(Operator* op,
+                                                     const QString& msg)
+{
+  op->setProgressMessage(msg);
+}
+
+void DockerPipelineExecutor::pipelineStarted()
+{
+  qDebug("Pipeline started in docker container!");
+}
+
+void DockerPipelineExecutor::pipelineFinished()
+{
+  auto transformedFilePath = m_temporaryDir->filePath(TRANSFORM_FILENAME);
+  EmdFormat emdFile;
+  vtkNew<vtkImageData> transformedData;
+  if (emdFile.read(transformedFilePath.toLatin1().data(), transformedData)) {
+    pipeline()->branchFinished(pipeline()->dataSource(), transformedData);
+    emit pipeline()->finished();
+  } else {
+    displayError("Read Error", QString("Unable to load transformed data at: %1")
+                                 .arg(transformedFilePath));
+  }
+
+  // Clean up temp directory
+  m_temporaryDir.reset(nullptr);
+
+  PipelineSettings settings;
+  if (settings.dockerRemove()) {
+    // Remove the container
+    remove(m_containerId);
+  }
+
+  m_containerId = QString();
+}
+
+void DockerPipelineExecutor::displayError(const QString& title,
+                                          const QString& msg)
+{
+  QMessageBox::critical(tomviz::mainWidget(), title, msg);
+  qCritical() << msg;
 }
 
 } // namespace tomviz

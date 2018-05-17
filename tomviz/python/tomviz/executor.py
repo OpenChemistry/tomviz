@@ -5,6 +5,12 @@ import numpy
 import logging
 import tempfile
 import sys
+import socket
+import abc
+import stat
+import json
+from contextlib import contextmanager
+
 from tqdm import tqdm
 
 from tomviz import utils
@@ -22,8 +28,14 @@ logger.addHandler(stream_handler)
 
 DIMS = ['dim1', 'dim2', 'dim3']
 
+class ProgressBase(object):
+    def started(self, op):
+        self._operator_index = op
 
-class Progress(object):
+    def finished(self, op):
+        pass
+
+class Progress(ProgressBase):
     """
     Class used to update operator progress. This replaces the C++ bound one that
     is used inside the Qt applicaition.
@@ -92,6 +104,160 @@ class Progress(object):
 
         return False
 
+    def finished(self, op):
+        if self._progress_bar is not None:
+            self._progress_bar.close()
+
+
+class LocalSocketProgress(ProgressBase):
+    """
+    Class used to update operator progress. Connects to QLocalServer and writes
+    JSON message updating the UI on pipeline progress.
+    """
+
+    def __init__(self, socket_path):
+        self._maximum = None
+        self._value = None
+        self._message = None
+        self._connection = None
+        self._path = socket_path
+
+        try:
+            mode = os.stat(self._path).st_mode
+
+            # Named pipe (Windows)
+            if stat.S_ISFIFO(mode):
+                self._np_connect()
+            elif stat.S_ISSOCK(mode):
+                self._uds_connect()
+            else:
+                raise Exception('Invalid progress path type.')
+
+        except OSError:
+            raise Exception('Progress path doesn\'t exist')
+
+    def _uds_connect(self):
+        self._connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._connection.connect(self._path)
+
+    def _np_connect(self):
+        self._connection = open(self._path, 'wb')
+
+    def _write(self, data):
+        print(data)
+        data = ('%s\n' % json.dumps(data)).encode('utf8')
+        if isinstance(self._connection, socket.socket):
+            self._connection.sendall(data)
+        else:
+            self._connection.write(data)
+
+    def set_operator_index(self, index):
+        self._operator_index = index
+
+    @property
+    def maximum(self):
+        """
+        Property defining the maximum progress value
+        """
+        return self._maximum
+
+    @maximum.setter
+    def maximum(self, value):
+        msg = {
+            'type': 'progress.maximum',
+            'operator': self._operator_index,
+            'value': value
+        }
+        self._write(msg)
+        self._maximum = value
+
+    @property
+    def value(self):
+        """
+        Property defining the current progress value
+        """
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        """
+        Updates the progress of the the operator.
+
+        :param value The current progress value.
+        :type value: int
+        """
+        msg = {
+            'type': 'progress.step',
+            'operator': self._operator_index,
+            'value': value
+        }
+        self._write(msg)
+
+        self._value = value
+
+    @property
+    def message(self):
+        """
+        Property defining the current progress message
+        """
+        return self._message
+
+    @message.setter
+    def message(self, msg):
+        """
+        Updates the progress message of the the operator.
+
+        :param msg The current progress message.
+        :type msg: str
+        """
+        m = {
+            'type': 'progress.message',
+            'operator': self._operator_index,
+            'messages': msg
+        }
+        self._write(m)
+
+        self._message = msg
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        if self._connection is not None:
+            self._connection.close()
+
+        return False
+
+    def started(self, op=None):
+        super(LocalSocketProgress, self).started(op)
+        msg = {
+            'type': 'started'
+        }
+
+        if op is not None:
+            msg['operator'] = op
+
+        self._write(msg)
+
+    def finished(self, op=None):
+        super(LocalSocketProgress, self).started(op)
+        msg = {
+            'type': 'finished'
+        }
+
+        if op is not None:
+            msg['operator'] = op
+
+        self._write(msg)
+
+
+def _progress(progress_method, socket_path):
+    if progress_method == 'tqdm':
+        return Progress()
+    elif progress_method == 'socket':
+        return LocalSocketProgress(socket_path)
+    else:
+        raise Exception('Unrecognized progress method: %s' % progress_method)
 
 class OperatorWrapper(object):
     canceled = False
@@ -161,7 +327,7 @@ def _write_emd(path, data, dims):
             d[:] = value
 
 
-def _execute_transform(operator_label, transform, arguments, input):
+def _execute_transform(operator_label, transform, arguments, input, progress):
     # Monkey patch tomviz.utils to make get_scalars a no-op and allow use to
     # retrieve the transformed data from set_scalars. I know this is a little
     # yucky! And yes I know this is not thread safe!
@@ -181,24 +347,23 @@ def _execute_transform(operator_label, transform, arguments, input):
     utils.set_array = _set_array
 
     # Update the progress attribute to an instance that will work outside the
-    # application and give use a nice progress bar
-    with Progress() as progress:
-        spinner = None
-        supports_progress = hasattr(transform, '__self__')
-        if supports_progress:
-            transform.__self__.progress = progress
+    # application and give use a nice progress information.
+    spinner = None
+    supports_progress = hasattr(transform, '__self__')
+    if supports_progress:
+        transform.__self__.progress = progress
 
-            # Stub out the operator wrapper
-            transform.__self__._operator_wrapper = OperatorWrapper()
+        # Stub out the operator wrapper
+        transform.__self__._operator_wrapper = OperatorWrapper()
 
-        logger.info('Executing \'%s\' operator' % operator_label)
-        if not supports_progress:
-            print('Operator doesn\'t support progress updates.')
-        # Now run the operator
-        transform(input, **arguments)
-        if spinner is not None:
-            update_spinner.cancel()
-            spinner.finish()
+    logger.info('Executing \'%s\' operator' % operator_label)
+    if not supports_progress:
+        print('Operator doesn\'t support progress updates.')
+    # Now run the operator
+    transform(input, **arguments)
+    if spinner is not None:
+        update_spinner.cancel()
+        spinner.finish()
 
     logger.info('Execution complete.')
 
@@ -230,20 +395,27 @@ def _load_transform_functions(operators):
     return transform_functions
 
 
-def execute(operators, data_file_path, output_file_path):
+def execute(operators, data_file_path, output_file_path, progress_method,
+            socket_path):
     data, dims = _read_emd(data_file_path)
 
     transforms = _load_transform_functions(operators)
-    for label, transform, arguments in transforms:
-        data = _execute_transform(label, transform, arguments, data)
+    with _progress(progress_method, socket_path) as progress:
+        progress.started()
+        for i, (label, transform, arguments) in enumerate(transforms):
+            progress.started(i)
+            data = _execute_transform(label, transform, arguments, data, progress)
+            progress.finished(i)
 
-    # Now write out the transformed data.
-    logger.info('Writing transformed data.')
-    if output_file_path is None:
-        output_file_path = '%s_transformed.emd' % \
-            os.path.splitext(os.path.basename(data_file_path))[0]
-    _write_emd(output_file_path, data, dims)
-    logger.info('Write complete.')
+        # Now write out the transformed data.
+        logger.info('Writing transformed data.')
+        if output_file_path is None:
+            output_file_path = '%s_transformed.emd' % \
+                os.path.splitext(os.path.basename(data_file_path))[0]
+        _write_emd(output_file_path, data, dims)
+        logger.info('Write complete.')
+        progress.finished()
+
 
 
 if __name__ == '__main__':
