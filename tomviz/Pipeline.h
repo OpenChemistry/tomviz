@@ -27,6 +27,7 @@
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QThreadPool>
+#include <QTimer>
 
 #include <functional>
 
@@ -242,6 +243,7 @@ private:
   QScopedPointer<QLocalServer> m_localServer;
   QScopedPointer<QLocalSocket> m_progressConnection;
   QThreadPool* m_threadPool;
+  QTimer* m_statusCheckTimer;
 
   void checkContainerStatus();
   void operatorStarted(Operator* op);

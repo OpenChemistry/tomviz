@@ -588,7 +588,7 @@ const char* PROGRESS_PATH = "progress";
 
 DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
   : PipelineExecutor(pipeline), m_localServer(new QLocalServer(this)),
-    m_threadPool(new QThreadPool(this))
+    m_threadPool(new QThreadPool(this)), m_statusCheckTimer(new QTimer(this))
 {
   auto server = m_localServer.data();
   connect(server, &QLocalServer::newConnection, server, [this]() {
@@ -606,6 +606,10 @@ DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
               });
     }
   });
+
+  m_statusCheckTimer->setInterval(5000);
+  connect(m_statusCheckTimer, &QTimer::timeout, this,
+          &DockerPipelineExecutor::checkContainerStatus);
 }
 
 DockerPipelineExecutor::~DockerPipelineExecutor()
@@ -626,7 +630,8 @@ void DockerPipelineExecutor::run(const QString& image, const QStringList& args,
               return;
             } else {
               m_containerId = runInvocation->containerId();
-              checkContainerStatus();
+              // Start to monitor the status of the container
+              m_statusCheckTimer->start();
             }
             runInvocation->deleteLater();
           });
@@ -855,7 +860,9 @@ void DockerPipelineExecutor::checkContainerStatus()
     [this, inspectInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
       if (exitCode) {
         displayError("Docker Error",
-                     QString("Docker inspect failed with: %1").arg(exitCode));
+                     QString("Docker inspect failed with: %1\n\n%2")
+                       .arg(exitCode)
+                       .arg(inspectInvocation->stdErr()));
         return;
       } else {
         // Check we haven't exited with an error.
@@ -864,11 +871,8 @@ void DockerPipelineExecutor::checkContainerStatus()
           if (inspectInvocation->exitCode()) {
             containerError(inspectInvocation->exitCode());
           }
-        }
-        // Keep checking
-        else {
-          QTimer::singleShot(5000, this,
-                             &DockerPipelineExecutor::checkContainerStatus);
+          // Cancel the status checks we are done.
+          m_statusCheckTimer->stop();
         }
       }
       inspectInvocation->deleteLater();
@@ -983,6 +987,9 @@ void DockerPipelineExecutor::pipelineFinished()
     displayError("Read Error", QString("Unable to load transformed data at: %1")
                                  .arg(transformedFilePath));
   }
+
+  // Cancel status checks
+  m_statusCheckTimer->stop();
 
   // Clean up temp directory
   m_temporaryDir.reset(nullptr);
