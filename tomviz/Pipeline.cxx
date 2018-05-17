@@ -22,8 +22,8 @@
 #include "ModuleManager.h"
 #include "Operator.h"
 #include "PipelineWorker.h"
-#include "Utilities.h"
 #include "ProgressDialog.h"
+#include "Utilities.h"
 
 #include <QDir>
 #include <QFile>
@@ -627,7 +627,10 @@ void DockerPipelineExecutor::run(const QString& image, const QStringList& args,
           [this, runInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
             if (exitCode) {
               displayError("Docker Error",
-                           QString("Docker run failed with: %1").arg(exitCode));
+                           QString("Docker run failed with: %1\n\n%2")
+                             .arg(exitCode)
+                             .arg(runInvocation->stdErr()));
+              ;
               return;
             } else {
               m_containerId = runInvocation->containerId();
@@ -648,7 +651,9 @@ void DockerPipelineExecutor::remove(const QString& containerId)
     [this, removeInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
       if (exitCode) {
         displayError("Docker Error",
-                     QString("Docker remove failed with: %1").arg(exitCode));
+                     QString("Docker remove failed with: %1\n\n%2")
+                       .arg(exitCode)
+                       .arg(removeInvocation->stdErr()));
         return;
       }
       removeInvocation->deleteLater();
@@ -758,27 +763,30 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   // Pull the latest version of the image, if haven't already
   if (settings.dockerPull() && m_pullImage) {
     auto msg = QString("Pulling docker image: %1").arg(image);
-    auto progress = new ProgressDialog("Docker Pull", msg, tomviz::mainWidget());
+    auto progress =
+      new ProgressDialog("Docker Pull", msg, tomviz::mainWidget());
     progress->show();
     m_pullImage = false;
     auto pullInvocation = docker::pull(image);
     connect(pullInvocation, &docker::DockerPullInvocation::error, this,
             &DockerPipelineExecutor::error);
-    connect(
-      pullInvocation, &docker::DockerPullInvocation::finished, pullInvocation,
-      [this, image, args, bindMounts,
-       pullInvocation, progress](int exitCode, QProcess::ExitStatus exitStatus) {
-        progress->hide();
-        progress->deleteLater();
-        if (exitCode) {
-          displayError("Docker Error",
-                       QString("Docker pull failed with: %1").arg(exitCode));
-          return;
-        } else {
-          run(image, args, bindMounts);
-        }
-        pullInvocation->deleteLater();
-      });
+    connect(pullInvocation, &docker::DockerPullInvocation::finished,
+            pullInvocation,
+            [this, image, args, bindMounts, pullInvocation,
+             progress](int exitCode, QProcess::ExitStatus exitStatus) {
+              progress->hide();
+              progress->deleteLater();
+              if (exitCode) {
+                displayError("Docker Error",
+                             QString("Docker pull failed with: %1\n\n%2")
+                               .arg(exitCode)
+                               .arg(pullInvocation->stdErr()));
+                return;
+              } else {
+                run(image, args, bindMounts);
+              }
+              pullInvocation->deleteLater();
+            });
   } else {
     run(image, args, bindMounts);
   }
@@ -836,7 +844,9 @@ void DockerPipelineExecutor::containerError(int exitCode)
     [this, logsInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
       if (exitCode) {
         displayError("Docker Error",
-                     QString("Docker logs failed with: %1").arg(exitCode));
+                     QString("Docker logs failed with: %1\n\n%2")
+                       .arg(exitCode)
+                       .arg(logsInvocation->stdErr()));
         return;
       } else {
         auto logs = logsInvocation->logs();

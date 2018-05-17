@@ -27,13 +27,13 @@ class ProgressDialog;
 
 namespace tomviz {
 
-
 class ProgressDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  explicit ProgressDialog(const QString& title, const QString& msg, QWidget* parent = nullptr);
+  explicit ProgressDialog(const QString& title, const QString& msg,
+                          QWidget* parent = nullptr);
   ~ProgressDialog() override;
 
 private:

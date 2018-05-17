@@ -20,7 +20,8 @@
 
 namespace tomviz {
 
-ProgressDialog::ProgressDialog(const QString& title, const QString& msg, QWidget* parent)
+ProgressDialog::ProgressDialog(const QString& title, const QString& msg,
+                               QWidget* parent)
   : QDialog(parent), m_ui(new Ui::ProgressDialog)
 {
   m_ui->setupUi(this);
