@@ -429,6 +429,8 @@
   <action name="actionStack">
    <property name="text">
     <string>O&amp;pen Stack</string>
+    </property>
+  </action>
   <action name="actionPipelineSettings">
    <property name="text">
     <string>Pipeline Settings</string>
