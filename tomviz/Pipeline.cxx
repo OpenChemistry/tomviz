@@ -909,7 +909,13 @@ void DockerPipelineExecutor::checkContainerStatus()
 
 void DockerPipelineExecutor::progressReady()
 {
+
   auto progressMessage = m_progressConnection->readLine();
+  // If the message is empty then connection has be disconnect by the peer.
+  if (progressMessage.isEmpty()) {
+    return;
+  }
+
   auto progressDoc = QJsonDocument::fromJson(progressMessage);
   if (!progressDoc.isObject()) {
     qCritical()
