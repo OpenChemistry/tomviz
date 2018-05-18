@@ -5,48 +5,76 @@
 #include <vtkImageData.h>
 #include <vtkMath.h>
 
+#include <cmath>
+
 namespace tomviz {
+
+/** Single component integral type specialization. */
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+void calcHistogram(T* values, const vtkIdType numTuples, const float min,
+                   const float inv, int* pops, int&)
+{
+  for (vtkIdType j = 0; j < numTuples; ++j) {
+    ++pops[static_cast<int>((*values++ - min) * inv)];
+  }
+}
+
+/** Needs to be present, should never be compiled. */
+template <typename T>
+void calcHistogram(T*, const vtkIdType, int*)
+{
+  static_assert(!std::is_same<unsigned char, T>::value, "Invalid type");
+}
+
+/** Single component unsigned char covering 0 -> 255 range. */
+void calcHistogram(unsigned char* values, const vtkIdType numTuples, int* pops)
+{
+  for (vtkIdType j = 0; j < numTuples; ++j) {
+    ++pops[*values++];
+  }
+}
+
+/** Single component floating point type specialization. */
+template <typename T,
+          typename std::enable_if<!std::is_integral<T>::value>::type* = nullptr>
+void calcHistogram(T* values, const vtkIdType numTuples, const float min,
+                   const float inv, int* pops, int& invalid)
+{
+  for (vtkIdType j = 0; j < numTuples; ++j) {
+    T value = *(values++);
+    if (std::isfinite(value)) {
+      ++pops[static_cast<int>((value - min) * inv)];
+    } else {
+      ++invalid;
+    }
+  }
+}
 
 /**
  * Computes a histogram from an array of values.
  * \param values The array from which to compute the histogram.
  * \param numTuples Number of tuples in the array.
  * \param numComponents Number of components in each tuple.
- * \param component The desired component from each tuple to use when building
- *   the histogram (-1 means compute the histogram of the L2
- *   norm of each tuple)
- * \param inc Bin size, numBins is the number of bins
+ * \param min Minimum value in range
+ * \param max Maximum value in range
+ * \param inv Inverse of bin size, numBins is the number of bins
  * in the histogram (or length of the pops array), and invalid is a return
  * parameter indicating how many values in the array had a non-finite value.
  */
 template <typename T>
 void CalculateHistogram(T* values, const vtkIdType numTuples,
-                        const vtkIdType numComponents, int component,
-                        const float min, int* pops, const float inc,
-                        const int numBins, int& invalid)
+                        const vtkIdType numComponents, const float min,
+                        const float max, int* pops, const float inv,
+                        int& invalid)
 {
-  const int maxBin(numBins - 1);
-
-  // Simplify the case where tuple magnitude is requested but the number of
-  // components is only 1.
-  if (component == -1 && numComponents == 1) {
-    component = 0;
-  }
-
-  if (component >= 0) {
-    // Single scalar value
-    for (vtkIdType j = 0; j < numTuples; ++j) {
-      // This code does not handle NaN or Inf values, so check for them and
-      // handle
-      // them specially
-      T value = *(values + component);
-      if (vtkMath::IsFinite(value)) {
-        int index = std::min(static_cast<int>((value - min) / inc), maxBin);
-        ++pops[index];
-      } else {
-        ++invalid;
-      }
-      values += numComponents;
+  // Single component is a simpler/faster path, let's dispatch separately.
+  if (numComponents == 1) {
+    // Very fast path for unsigned char in 0 -> 255 range, or fast path.
+    if (std::is_same<T, unsigned char>::value && min == 0.f && max == 255.f) {
+      calcHistogram(values, numTuples, pops);
+    } else {
+      calcHistogram(values, numTuples, min, inv, pops, invalid);
     }
   } else {
     // Multicomponent magnitude
@@ -63,8 +91,7 @@ void CalculateHistogram(T* values, const vtkIdType numTuples,
         squaredSum += (value * value);
       }
       if (valid) {
-        int index =
-          std::min(static_cast<int>((sqrt(squaredSum) - min) / inc), maxBin);
+        int index = static_cast<int>((sqrt(squaredSum) - min) * inv);
         ++pops[index];
       } else {
         ++invalid;

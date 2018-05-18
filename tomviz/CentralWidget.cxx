@@ -75,24 +75,24 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     minmax[1] = minmax[0] + 1.0;
   }
 
-  double inc = (minmax[1] - minmax[0]) / numberOfBins;
+  double inc = (minmax[1] - minmax[0]) / (numberOfBins - 1);
   double halfInc = inc / 2.0;
-  vtkSmartPointer<vtkFloatArray> extents = vtkFloatArray::SafeDownCast(
-    output->GetColumnByName(vtkStdString("image_extents").c_str()));
+  vtkSmartPointer<vtkFloatArray> extents =
+    vtkFloatArray::SafeDownCast(output->GetColumnByName("image_extents"));
   if (!extents) {
     extents = vtkSmartPointer<vtkFloatArray>::New();
-    extents->SetName(vtkStdString("image_extents").c_str());
+    extents->SetName("image_extents");
   }
   extents->SetNumberOfTuples(numberOfBins);
   double min = minmax[0] + halfInc;
   for (int j = 0; j < numberOfBins; ++j) {
     extents->SetValue(j, min + j * inc);
   }
-  vtkSmartPointer<vtkIntArray> populations = vtkIntArray::SafeDownCast(
-    output->GetColumnByName(vtkStdString("image_pops").c_str()));
+  vtkSmartPointer<vtkIntArray> populations =
+    vtkIntArray::SafeDownCast(output->GetColumnByName("image_pops"));
   if (!populations) {
     populations = vtkSmartPointer<vtkIntArray>::New();
-    populations->SetName(vtkStdString("image_pops").c_str());
+    populations->SetName("image_pops");
   }
   populations->SetNumberOfTuples(numberOfBins);
   auto pops = static_cast<int*>(populations->GetVoidPointer(0));
@@ -105,7 +105,7 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     vtkTemplateMacro(tomviz::CalculateHistogram(
       reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
       arrayPtr->GetNumberOfTuples(), arrayPtr->GetNumberOfComponents(),
-      -1 /* Magnitude */, minmax[0], pops, inc, numberOfBins, invalid));
+      minmax[0], minmax[1], pops, 1.0 / inc, invalid));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
@@ -120,8 +120,8 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     cout << "Warning: NaN or infinite value in dataset" << endl;
   }
 
-  output->AddColumn(extents.Get());
-  output->AddColumn(populations.Get());
+  output->AddColumn(extents);
+  output->AddColumn(populations);
 }
 
 void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
