@@ -333,7 +333,7 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
     case OperatorState::Complete:
       return QIcon(":/icons/check.png");
     case OperatorState::Edit:
-      return QIcon(":/icons/pqRuler.png");
+      return QIcon(":/icons/edit.png");
     case OperatorState::Queued:
     case OperatorState::Modified:
       return QIcon(":/icons/question.png");
