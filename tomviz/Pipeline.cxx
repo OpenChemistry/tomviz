@@ -413,6 +413,7 @@ Pipeline* PipelineExecutor::pipeline()
 
 bool PipelineExecutor::cancel(Operator* op)
 {
+  Q_UNUSED(op)
   // Default implementation doesn't allow canceling operators during execution.
   return false;
 }
@@ -624,11 +625,12 @@ void DockerPipelineExecutor::run(const QString& image, const QStringList& args,
                                  const QMap<QString, QString>& bindMounts)
 {
   auto runInvocation =
-    docker::run("tomviz/pipeline", QString(), args, bindMounts);
+    docker::run(image, QString(), args, bindMounts);
   connect(runInvocation, &docker::DockerRunInvocation::error, this,
           &DockerPipelineExecutor::error);
   connect(runInvocation, &docker::DockerRunInvocation::finished, runInvocation,
           [this, runInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+            Q_UNUSED(exitStatus)
             if (exitCode) {
               displayError("Docker Error",
                            QString("Docker run failed with: %1\n\n%2")
@@ -653,6 +655,7 @@ void DockerPipelineExecutor::remove(const QString& containerId)
   connect(
     removeInvocation, &docker::DockerRunInvocation::finished, removeInvocation,
     [this, removeInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      Q_UNUSED(exitStatus)
       if (exitCode) {
         displayError("Docker Error",
                      QString("Docker remove failed with: %1\n\n%2")
@@ -673,6 +676,7 @@ docker::DockerStopInvocation* DockerPipelineExecutor::stop(
   connect(
     stopInvocation, &docker::DockerStopInvocation::finished, stopInvocation,
     [this, stopInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      Q_UNUSED(exitStatus)
       if (exitCode) {
         displayError("Docker Error",
                      QString("Docker stop failed with: %1").arg(exitCode));
@@ -744,7 +748,7 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   // Start listening for local socket connections for progress update from
   // within the docker container.
   m_localServer->close();
-  auto r = m_localServer->listen(m_temporaryDir->filePath(PROGRESS_PATH));
+  m_localServer->listen(m_temporaryDir->filePath(PROGRESS_PATH));
 
   // We are now ready to run the pipeline
   auto mount = QDir(CONTAINER_MOUNT);
@@ -778,6 +782,7 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
             pullInvocation,
             [this, image, args, bindMounts, pullInvocation,
              progress](int exitCode, QProcess::ExitStatus exitStatus) {
+              Q_UNUSED(exitStatus)
               progress->hide();
               progress->deleteLater();
               if (exitCode) {
@@ -809,6 +814,7 @@ void DockerPipelineExecutor::cancel(std::function<void()> canceled)
   connect(stopInvocation, &docker::DockerStopInvocation::finished,
           stopInvocation,
           [this, canceled](int exitCode, QProcess::ExitStatus exitStatus) {
+            Q_UNUSED(exitStatus)
             if (!exitCode) {
               canceled();
             }
@@ -838,14 +844,15 @@ void DockerPipelineExecutor::error(QProcess::ProcessError error)
                  .arg(error));
 }
 
-void DockerPipelineExecutor::containerError(int exitCode)
+void DockerPipelineExecutor::containerError(int containerExitCode)
 {
   auto logsInvocation = docker::logs(m_containerId);
   connect(logsInvocation, &docker::DockerRunInvocation::error, this,
           &DockerPipelineExecutor::error);
   connect(
     logsInvocation, &docker::DockerRunInvocation::finished, logsInvocation,
-    [this, logsInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+    [this, logsInvocation, containerExitCode](int exitCode, QProcess::ExitStatus exitStatus) {
+      Q_UNUSED(exitStatus)
       if (exitCode) {
         displayError("Docker Error",
                      QString("Docker logs failed with: %1\n\n%2")
@@ -858,7 +865,7 @@ void DockerPipelineExecutor::containerError(int exitCode)
           "Pipeline Error",
           QString("Docker container exited with non-zero exit code: %1."
                   "\n\nDocker logs below: \n\n %2")
-            .arg(exitCode)
+            .arg(containerExitCode)
             .arg(logs));
       }
       logsInvocation->deleteLater();
@@ -878,6 +885,7 @@ void DockerPipelineExecutor::checkContainerStatus()
     inspectInvocation, &docker::DockerInspectInvocation::finished,
     inspectInvocation,
     [this, inspectInvocation](int exitCode, QProcess::ExitStatus exitStatus) {
+      Q_UNUSED(exitStatus)
       if (exitCode) {
         displayError("Docker Error",
                      QString("Docker inspect failed with: %1\n\n%2")
@@ -973,6 +981,7 @@ void DockerPipelineExecutor::operatorError(Operator* op, const QString& error)
   QtConcurrent::run(m_threadPool, [op]() {
     emit op->transformingDone(TransformResult::Error);
   });
+  qCritical() << error;
 }
 
 void DockerPipelineExecutor::operatorProgressMaximum(Operator* op, int max)

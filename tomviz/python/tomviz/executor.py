@@ -144,7 +144,6 @@ class LocalSocketProgress(ProgressBase):
         self._connection = open(self._path, 'wb')
 
     def _write(self, data):
-        print(data)
         data = ('%s\n' % json.dumps(data)).encode('utf8')
         if isinstance(self._connection, socket.socket):
             self._connection.sendall(data)

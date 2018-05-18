@@ -69,9 +69,6 @@ PipelineSettingsDialog::PipelineSettingsDialog(QWidget* parent)
     PipelineSettings currentSettings;
     auto newMode = m_executorTypeMetaEnum.keyToValue(
       m_ui->modeComboBox->currentText().toLatin1().data());
-    qDebug() << m_ui->modeComboBox->currentText();
-    qDebug() << newMode;
-    qDebug() << currentSettings.executionMode();
     if (newMode != currentSettings.executionMode()) {
       PipelineManager::instance().updateExecutionMode(
         static_cast<Pipeline::ExecutionMode>(newMode));
