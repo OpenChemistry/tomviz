@@ -333,7 +333,7 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
     case OperatorState::Complete:
       return QIcon(":/icons/check.png");
     case OperatorState::Edit:
-      return QIcon(":/icons/pqSlice.png");
+      return QIcon(":/icons/pqRuler.png");
     case OperatorState::Queued:
     case OperatorState::Modified:
       return QIcon(":/icons/question.png");
@@ -805,7 +805,6 @@ void PipelineModel::operatorAdded(Operator* op,
 
 void PipelineModel::operatorRemoved(Operator* op)
 {
-
   removeOp(op);
 }
 

@@ -89,9 +89,6 @@ public:
   /// Return true is the pipeline is currently paused.
   bool isPaused() const;
 
-  /// The user operator has started/finished editing an operator
-  void startedEditingOp() { ++m_editingOperators; }
-  void finishedEditingOp() { --m_editingOperators; }
   int editingOperators() { return m_editingOperators; }
 
   ImageFuture* getCopyOfImagePriorTo(Operator* op);
@@ -109,6 +106,13 @@ public:
 
   /// Set the execution mode to use when executing the pipeline.
   void setExecutionMode(ExecutionMode executor);
+public slots:
+  void execute();
+  void execute(DataSource* start, bool runLast);
+  void execute(DataSource* start);
+  /// The user has started/finished editing an operator
+  void startedEditingOp(Operator* op);
+  void finishedEditingOp(Operator* op);
 
   ExecutionMode executionMode() { return m_executionMode; };
 

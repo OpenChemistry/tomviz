@@ -46,6 +46,7 @@
 #include "ModuleMenu.h"
 #include "ModulePropertiesPanel.h"
 #include "PassiveAcquisitionWidget.h"
+#include "Pipeline.h"
 #include "PipelineManager.h"
 #include "PipelineSettingsDialog.h"
 #include "ProgressDialogManager.h"
@@ -561,10 +562,21 @@ void MainWindow::openVisIntro()
   QDesktopServices::openUrl(QUrl(link));
 }
 
-void MainWindow::dataSourceChanged(DataSource*)
+void MainWindow::dataSourceChanged(DataSource* dataSource)
 {
   m_ui->propertiesPanelStackedWidget->setCurrentWidget(
     m_ui->dataPropertiesScrollArea);
+  if (dataSource && dataSource->pipeline()->isPaused()) {
+    m_ui->menuData->setEnabled(false);
+    m_ui->menuSegmentation->setEnabled(false);
+    m_ui->menuTomography->setEnabled(false);
+    m_customTransformsMenu->setEnabled(false);
+  } else {
+    m_ui->menuData->setEnabled(true);
+    m_ui->menuSegmentation->setEnabled(true);
+    m_ui->menuTomography->setEnabled(true);
+    m_customTransformsMenu->setEnabled(true);
+  }
 }
 
 void MainWindow::moduleChanged(Module*)

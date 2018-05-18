@@ -55,8 +55,14 @@ public:
 
 private slots:
   void onApply();
+  void onCancel();
   void onClose();
+  void onPipelineFinished();
   void getCopyOfImagePriorToFinished(bool result);
+
+signals:
+  void editStarted(Operator*);
+  void editEnded(Operator*);
 
 private:
   void setupUI(EditOperatorWidget* opWidget = nullptr);

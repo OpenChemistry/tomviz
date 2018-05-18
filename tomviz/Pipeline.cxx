@@ -110,6 +110,29 @@ void Pipeline::execute()
   execute(m_data);
 }
 
+void Pipeline::startedEditingOp(Operator* op)
+{
+  ++m_editingOperators;
+  op->setEditing();
+  if (!m_paused) {
+    pause();
+  }
+}
+
+void Pipeline::finishedEditingOp(Operator* op)
+{
+  if (m_editingOperators > 0) {
+    --m_editingOperators;
+    if (m_editingOperators == 0) {
+      if (m_paused) {
+        resume(op->dataSource());
+      }
+    } else if (m_editingOperators > 0) {
+      op->resetState();
+    }
+  }
+}
+
 void Pipeline::execute(DataSource* dataSource, Operator* start)
 {
   if (paused()) {
