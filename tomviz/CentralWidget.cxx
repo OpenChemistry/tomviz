@@ -77,8 +77,8 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
 
   double inc = (minmax[1] - minmax[0]) / (numberOfBins - 1);
   double halfInc = inc / 2.0;
-  vtkSmartPointer<vtkFloatArray> extents = vtkFloatArray::SafeDownCast(
-    output->GetColumnByName("image_extents"));
+  vtkSmartPointer<vtkFloatArray> extents =
+    vtkFloatArray::SafeDownCast(output->GetColumnByName("image_extents"));
   if (!extents) {
     extents = vtkSmartPointer<vtkFloatArray>::New();
     extents->SetName("image_extents");
@@ -88,8 +88,8 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   for (int j = 0; j < numberOfBins; ++j) {
     extents->SetValue(j, min + j * inc);
   }
-  vtkSmartPointer<vtkIntArray> populations = vtkIntArray::SafeDownCast(
-    output->GetColumnByName("image_pops"));
+  vtkSmartPointer<vtkIntArray> populations =
+    vtkIntArray::SafeDownCast(output->GetColumnByName("image_pops"));
   if (!populations) {
     populations = vtkSmartPointer<vtkIntArray>::New();
     populations->SetName("image_pops");
@@ -105,7 +105,7 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
     vtkTemplateMacro(tomviz::CalculateHistogram(
       reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
       arrayPtr->GetNumberOfTuples(), arrayPtr->GetNumberOfComponents(),
-      -1 /* Magnitude */, minmax[0], pops, inc, numberOfBins, invalid));
+      minmax[0], minmax[1], pops, 1.0 / inc, invalid));
     default:
       cout << "UpdateFromFile: Unknown data type" << endl;
   }
