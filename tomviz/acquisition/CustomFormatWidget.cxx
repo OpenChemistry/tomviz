@@ -14,11 +14,11 @@ CustomFormatWidget::CustomFormatWidget(QWidget* parent)
   m_ui->negativeEdit->setText(m_negChar);
   m_ui->positiveEdit->setText(m_posChar);
 
-  connect(m_ui->prefixEdit, &QLineEdit::textChanged, this, &CustomFormatWidget::onPrefixChanged);
-  connect(m_ui->suffixEdit, &QLineEdit::textChanged, this, &CustomFormatWidget::onSuffixChanged);
-  connect(m_ui->extensionEdit, &QLineEdit::textChanged, this, &CustomFormatWidget::onExtensionChanged);
-  connect(m_ui->negativeEdit, &QLineEdit::textChanged, this, &CustomFormatWidget::onNegChanged);
-  connect(m_ui->positiveEdit, &QLineEdit::textChanged, this, &CustomFormatWidget::onPosChanged);
+  connect(m_ui->prefixEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onPrefixChanged);
+  connect(m_ui->suffixEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onSuffixChanged);
+  connect(m_ui->extensionEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onExtensionChanged);
+  connect(m_ui->negativeEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onNegChanged);
+  connect(m_ui->positiveEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onPosChanged);
 }
 
 CustomFormatWidget::~CustomFormatWidget() = default;

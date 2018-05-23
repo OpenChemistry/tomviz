@@ -208,6 +208,8 @@ list(APPEND SOURCES
   acquisition/AcquisitionClient.h
   acquisition/AdvancedFormatWidget.cxx
   acquisition/AdvancedFormatWidget.h
+  acquisition/BasicFormatWidget.cxx
+  acquisition/BasicFormatWidget.h
   acquisition/Connection.cxx
   acquisition/Connection.h
   acquisition/ConnectionsWidget.cxx

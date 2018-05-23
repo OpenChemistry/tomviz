@@ -71,11 +71,7 @@ const char* PASSIVE_ADAPTER =
 PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
   : QDialog(parent), m_ui(new Ui::PassiveAcquisitionWidget),
     m_client(new AcquisitionClient("http://localhost:8080/acquisition", this)),
-    m_connectParamsWidget(new QWidget), m_watchTimer(new QTimer),
-    m_defaultFormatOrder(makeDefaultFormatOrder()),
-    m_defaultFileNames(makeDefaultFileNames()),
-    m_defaultFormatLabels(makeDefaultLabels()),
-    m_defaultRegexParams(makeDefaultRegexParams())
+    m_connectParamsWidget(new QWidget), m_watchTimer(new QTimer)
 {
   m_ui->setupUi(this);
   // setFixedSize(QSize(420, 440));
@@ -85,7 +81,6 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
     QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
   m_ui->watchPathLineEdit->setText(locations[0]);
 
-  m_ui->customGroupBox->setVisible(true);
   setupTestTable();
 
   readSettings();
@@ -95,18 +90,14 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
   connect(m_ui->connectionsWidget, &ConnectionsWidget::selectionChanged, this,
           &PassiveAcquisitionWidget::checkEnableWatchButton);
 
-  connect(m_ui->fileFormatCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this,
-          &PassiveAcquisitionWidget::formatChanged);
-
-  setupFileFormatCombo();
-
   connect(m_ui->formatTabWidget, &QTabWidget::currentChanged, this,
           &PassiveAcquisitionWidget::formatTabChanged);
 
   connect(m_ui->testFileFormatEdit, &QLineEdit::textChanged, this,
           &PassiveAcquisitionWidget::testFileNameChanged);
 
-  connect(m_ui->customFormatWidget, &CustomFormatWidget::fieldsChanged, this, &PassiveAcquisitionWidget::customFileRegex);
+  connect(m_ui->basicTab, &BasicFormatWidget::regexChanged, this,
+          &PassiveAcquisitionWidget::onRegexChanged);
 
   connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
     m_retryCount = 5;
@@ -346,23 +337,25 @@ QJsonObject PassiveAcquisitionWidget::connectParams()
 
   QJsonObject connectParams{
     { "path", m_ui->watchPathLineEdit->text() },
-    { "fileNameRegex", m_pythonFileNameRegex },
   };
 
-  auto groups = QJsonArray::fromStringList(QStringList(QString("angle")));
-  connectParams["fileNameRegexGroups"] = groups;
-
+  QString regex;
+  QJsonArray groups;
   QJsonObject substitutions;
-  QJsonArray regexToSubs;
-  QJsonObject sub0;
-  sub0[m_posChar] = "+";
-  QJsonObject sub1;
-  sub1[m_negChar] = "-";
-  regexToSubs.append(sub0);
-  regexToSubs.append(sub1);
-  substitutions["angle"] = regexToSubs;
-  connectParams["groupRegexSubstitutions"] = substitutions;
 
+  int tabIndex = m_ui->formatTabWidget->currentIndex();
+  if (tabIndex == 0) {
+    regex = m_ui->basicTab->getPythonRegex();
+    groups = m_ui->basicTab->getRegexGroups();
+  } else {
+
+  }
+
+  connectParams["fileNameRegex"] = regex;
+  connectParams["fileNameRegexGroups"] = groups;
+  connectParams["groupRegexSubstitutions"] = substitutions;
+  
+  qDebug() << connectParams;
   return connectParams;
 }
 
@@ -460,134 +453,54 @@ void PassiveAcquisitionWidget::formatTabChanged(int index)
 
 }
 
-void PassiveAcquisitionWidget::formatChanged(int index)
+void PassiveAcquisitionWidget::onRegexChanged(QString regex)
 {
-  qDebug() << index;
+  qDebug() << regex;
+  validateTestFileName();
+}
 
-  if (index >= m_defaultFormatOrder.size() || index < 0) {
-    return;
-  }
+void PassiveAcquisitionWidget::validateTestFileName()
+{
+  int tabIndex = m_ui->formatTabWidget->currentIndex();
+  MatchInfo result;
 
-  QStringList defaultNames;
-  foreach (auto format, m_defaultFormatOrder) {
-    defaultNames << m_defaultFileNames[format];
+  if (tabIndex == 0) {
+    result = m_ui->basicTab->matchFileName(m_testFileName);
+  } else {
+   
   }
   
-  bool isDefaultTestFileName = defaultNames.contains(m_testFileName);
-  TestRegexFormat format = m_defaultFormatOrder[index];
-
-  switch(format) {
-    case TestRegexFormat::Custom :
-      m_ui->customGroupBox->setVisible(true);
-      m_ui->customGroupBox->setEnabled(true);
-      // m_ui->customFormatWidget->setAllowEdit(true);
-      break;
-    default :
-      m_ui->customGroupBox->setVisible(true);
-      m_ui->customGroupBox->setEnabled(false);
-      // m_ui->customFormatWidget->setAllowEdit(false);
+  if (result.matched) {
+    m_ui->testFileFormatEdit->setStyleSheet("background-color : #A5D6A7;");
+  } else {
+    m_ui->testFileFormatEdit->setStyleSheet("background-color : #FFAB91;");
+  }
+  if (m_testFileName.isEmpty()) {
+    m_ui->testFileFormatEdit->setStyleSheet("");
   }
 
-  buildFileRegex(m_defaultRegexParams[format][0], m_defaultRegexParams[format][1],
-                 m_defaultRegexParams[format][2], m_defaultRegexParams[format][3],
-                 m_defaultRegexParams[format][4]);
-
-  m_ui->customFormatWidget->setFields(m_defaultRegexParams[format][0], m_defaultRegexParams[format][1],
-                 m_defaultRegexParams[format][2], m_defaultRegexParams[format][3],
-                 m_defaultRegexParams[format][4]);
-
-  if (isDefaultTestFileName) {
-    m_testFileName = m_defaultFileNames[format];
-    m_ui->testFileFormatEdit->setText(m_testFileName);
+  QStringList tableHeaders;
+  m_ui->testTableWidget->setColumnCount(result.groups.size());
+  for (int i = 0; i < result.groups.size(); ++i) {
+    tableHeaders << result.groups[i].name;
+    m_ui->testTableWidget->setItem(0, i, new QTableWidgetItem(result.groups[i].capturedText));
   }
-
-  validateFileNameRegex();
+  m_ui->testTableWidget->setHorizontalHeaderLabels(tableHeaders);
+  resizeTestTable();
 }
 
 void PassiveAcquisitionWidget::testFileNameChanged(QString fileName)
 {
   qDebug() << fileName;
   m_testFileName = fileName;
-
-  if (fileName.isEmpty()) {
-    m_ui->testFileFormatEdit->setStyleSheet("");
-  }
-  validateFileNameRegex();
-}
-
-void PassiveAcquisitionWidget::validateFileNameRegex()
-{
-  QString prefix;
-  QString suffix;
-  QString sign;
-  QString numStr;
-  QString ext;
-  double num;
-  bool valid = false;
-  bool match = m_fileNameRegex.exactMatch(m_testFileName);
-
-  if (match) {
-    valid = true;
-
-    sign = m_fileNameRegex.cap(2);
-		numStr = m_fileNameRegex.cap(3);
-		ext = m_fileNameRegex.cap(5);
-		
-		int start = 0;
-		int stop = 0;
-		stop = m_fileNameRegex.pos(1);
-		prefix = m_testFileName.left(stop);
-		start = m_fileNameRegex.pos(1) + m_fileNameRegex.cap(1).size();
-		stop = m_fileNameRegex.pos(5);
-		suffix = m_testFileName.mid(start, stop - start);
-    
-    if (sign == m_posChar) {
-			sign = "+";
-		} else if (sign == m_negChar) {
-			sign = "-";
-		}
-		num = (sign+numStr).toFloat();
-
-    // Special case: only 0 can be missing a positive/negative identifier
-    if (sign.trimmed() == "" && num != 0) {
-      valid = false;
-    }
-  }
-  
-  if (valid) {
-    m_ui->testFileFormatEdit->setStyleSheet("background-color : #A5D6A7;");
-  } else {
-    prefix = "";
-    suffix = "";
-    sign = "";
-    numStr = "";
-    ext = "";
-
-    m_ui->testFileFormatEdit->setStyleSheet("background-color : #FFAB91;");
-  }
-  m_ui->testTableWidget->setItem(0, 0, new QTableWidgetItem(prefix));
-  m_ui->testTableWidget->setItem(0, 1, new QTableWidgetItem(sign+numStr));
-  m_ui->testTableWidget->setItem(0, 2, new QTableWidgetItem(suffix));
-  m_ui->testTableWidget->setItem(0, 3, new QTableWidgetItem(ext));
-  resizeTestTable();
-  m_ui->testTableWidget->setVisible(true);
-  m_ui->testTablePlaceholder->setVisible(false);
-}
-
-void PassiveAcquisitionWidget::setupFileFormatCombo()
-{
-  foreach (auto format, m_defaultFormatOrder) {
-    m_ui->fileFormatCombo->addItem(m_defaultFormatLabels[format]);
-  }
+  validateTestFileName();
 }
 
 void PassiveAcquisitionWidget::setupTestTable()
 {
   m_ui->testTableWidget->setRowCount(1);
-  m_ui->testTableWidget->setColumnCount(4);
+  m_ui->testTableWidget->setColumnCount(1);
   QStringList tableHeaders;
-  tableHeaders << "Prefix" << "Angle" << "Suffix" << "Ext.";
-  m_ui->testTableWidget->setHorizontalHeaderLabels(tableHeaders);
   m_ui->testTableWidget->verticalHeader()->setVisible(false);
   m_ui->testTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_ui->testTableWidget->setSelectionMode(QAbstractItemView::NoSelection);
@@ -595,6 +508,7 @@ void PassiveAcquisitionWidget::setupTestTable()
   m_ui->testTableWidget->setVisible(true);
   m_ui->testTablePlaceholder->setVisible(false);
   resizeTestTable();
+  validateTestFileName();
 }
 
 void  PassiveAcquisitionWidget::resizeTestTable()
@@ -610,128 +524,6 @@ void  PassiveAcquisitionWidget::resizeTestTable()
   m_ui->testTableWidget->setMaximumHeight(vSize);
   m_ui->testTablePlaceholder->setMinimumHeight(vSize);
   m_ui->testTablePlaceholder->setMaximumHeight(vSize);
-}
-
-void PassiveAcquisitionWidget::buildFileRegex(QString prefix, QString negChar, QString posChar, QString suffix, QString extension)
-{
-  // Greediness differences between Qt regex engine in the client,
-  // and the python regex engine on the server,
-  // require adjustments to the pattern
-  if (prefix.trimmed() == "") {
-    prefix = QString("*");
-  }
-  QString pythonPrefix = prefix;
-  prefix.replace(QString("*"), QString(".*"));
-  pythonPrefix.replace(QString("*"), QString(".*?"));
-
-  if (suffix.trimmed() == "") {
-    suffix = QString("*");
-  }
-  QString pythonSuffix = suffix;
-  suffix.replace(QString("*"), QString(".*"));
-  pythonSuffix.replace(QString("*"), QString(".*?"));
-
-  if (extension.trimmed() == "" || extension.trimmed() == "*") {
-    extension = QString(".+");
-  }
-  if (negChar.trimmed() == "") {
-    negChar = QString("n");
-  }
-  if (posChar.trimmed() == "") {
-    posChar = QString("p");
-  }
-
-  QString regExpStr = QString("^%1((%2|%3)?(\\d+(\\.\\d+)?))%4(\\.%5)$")
-                        .arg(prefix)
-                        .arg(QRegExp::escape(negChar))
-                        .arg(QRegExp::escape(posChar))
-                        .arg(suffix)
-                        .arg(extension);
-  
-  m_fileNameRegex = QRegExp(regExpStr);
-  m_pythonFileNameRegex = QString("^%1((%2|%3)?(\\d+(\\.\\d+)?))%4(\\.%5)$")
-                            .arg(pythonPrefix)
-                            .arg(QRegExp::escape(negChar))
-                            .arg(QRegExp::escape(posChar))
-                            .arg(pythonSuffix)
-                            .arg(extension);
-  m_negChar = negChar;
-  m_posChar = posChar;
-  qDebug() << regExpStr;
-}
-
-void PassiveAcquisitionWidget::customFileRegex()
-{
-  QStringList fields = m_ui->customFormatWidget->getFields();
-  buildFileRegex(fields[0], fields[1], fields[2], fields[3], fields[4]);
-  validateFileNameRegex();
-}
-
-QMap<TestRegexFormat, QString> PassiveAcquisitionWidget::makeDefaultFileNames() const
-{
-  QMap<TestRegexFormat, QString> defaultFilenames;
-  defaultFilenames[TestRegexFormat::npDm3] = QString("ThePrefix_n12.3degree_TheSuffix.dm3");
-  defaultFilenames[TestRegexFormat::pmDm3] = QString("ThePrefix_-12.3degree_TheSuffix.dm3");
-  defaultFilenames[TestRegexFormat::npTiff] = QString("ThePrefix_n12.3_TheSuffix.tif");
-  defaultFilenames[TestRegexFormat::pmTiff] = QString("ThePrefix_+12.3_TheSuffix.tif");
-  defaultFilenames[TestRegexFormat::Custom] = QString("");
-  defaultFilenames[TestRegexFormat::Advanced] = QString("");
-
-  return defaultFilenames;
-}
-
-QMap<TestRegexFormat, QString> PassiveAcquisitionWidget::makeDefaultLabels() const
-{
-  QMap<TestRegexFormat, QString> defaultLabels;
-  defaultLabels[TestRegexFormat::npDm3] = QString("<prefix>[n|p]<angle>degree<suffix>.dm3");
-  defaultLabels[TestRegexFormat::pmDm3] = QString("<prefix>[-|+]<angle>degree<suffix>.dm3");
-  defaultLabels[TestRegexFormat::npTiff] = QString("<prefix>[n|p]<angle><suffix>.tif[f]");
-  defaultLabels[TestRegexFormat::pmTiff] = QString("<prefix>[-|+]<angle><suffix>.tif[f]");
-  defaultLabels[TestRegexFormat::Custom] = QString("Custom");
-  defaultLabels[TestRegexFormat::Advanced] = QString("Advanced");
-
-  return defaultLabels;
-}
-
-QMap<TestRegexFormat, QStringList> PassiveAcquisitionWidget::makeDefaultRegexParams() const
-{
-  QMap<TestRegexFormat, QStringList> defaultRegexParams;
-  
-  QStringList params0;
-  params0 << "*" << "n" << "p" << "degree*" << "dm3";
-  defaultRegexParams[TestRegexFormat::npDm3] = params0;
-
-  QStringList params1;
-  params1 << "*" << "-" << "+" << "degree*" << "dm3";
-  defaultRegexParams[TestRegexFormat::pmDm3] = params1;
-
-  QStringList params2;
-  params2 << "*" << "n" << "p" << "*" << "tif[f]?";
-  defaultRegexParams[TestRegexFormat::npTiff] = params2;
-
-  QStringList params3;
-  params3 << "*" << "-" << "+" << "*" << "tif[f]?";
-  defaultRegexParams[TestRegexFormat::pmTiff] = params3;
-
-  QStringList params4;
-  params4 << "*" << "n" << "p" << "*" << "*";
-  defaultRegexParams[TestRegexFormat::Custom] = params4;
-
-  defaultRegexParams[TestRegexFormat::Advanced] = params4;
-
-  return defaultRegexParams;
-}
-
-QList<TestRegexFormat> PassiveAcquisitionWidget::makeDefaultFormatOrder() const
-{
-  QList<TestRegexFormat> defaultOrder;
-  defaultOrder << TestRegexFormat::npDm3
-               << TestRegexFormat::pmDm3
-               << TestRegexFormat::npTiff
-               << TestRegexFormat::pmTiff
-               << TestRegexFormat::Custom
-               << TestRegexFormat::Advanced;
-  return defaultOrder;               
 }
 
 } // namespace tomviz
