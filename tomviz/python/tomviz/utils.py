@@ -80,7 +80,7 @@ def set_array(dataobject, newarray, minextent=None, isFortran=True):
     # i.e. i,j,k indexing. If isFortran is False, then the NumPy array uses
     # C-order indexing, i.e. k,j,i indexing.
 
-    if isFortran is False:
+    if not isFortran:
         # Flatten according to array.flags
         arr = newarray.ravel(order='A')
         if newarray.flags.f_contiguous:
