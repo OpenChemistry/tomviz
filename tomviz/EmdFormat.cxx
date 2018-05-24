@@ -93,13 +93,17 @@ public:
       cout << "Type determined does not match that requested." << endl;
       cout << type << " -> " << typeId << " : " << H5T_STD_U32LE << endl;
       H5Aclose(attr);
+      H5Tclose(type);
       return false;
     } else if (H5Tequal(type, typeId) < 0) {
       cout << "Something went really wrong....\n\n";
       H5Aclose(attr);
+      H5Tclose(type);
       return false;
     }
     hid_t status = H5Aread(attr, H5T_NATIVE_INT, value);
+    H5Aclose(attr);
+    H5Tclose(type);
     return status >= 0;
   }
 
