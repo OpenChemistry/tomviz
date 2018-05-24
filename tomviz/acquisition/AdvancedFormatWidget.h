@@ -25,43 +25,42 @@
 #include <QLabel>
 #include <QScopedPointer>
 
-
 namespace Ui {
 class AdvancedFormatWidget;
 }
 
 namespace tomviz {
-class AdvancedFormatWidget : public QWidget {
+class AdvancedFormatWidget : public QWidget
+{
   Q_OBJECT
 
-  public:
-    AdvancedFormatWidget(QWidget* parent = nullptr);
-    ~AdvancedFormatWidget() override;
+public:
+  AdvancedFormatWidget(QWidget* parent = nullptr);
+  ~AdvancedFormatWidget() override;
 
-    QString getRegex() const;
-    QString getPythonRegex() const;
-    MatchInfo matchFileName(QString) const;
-    QJsonArray getRegexGroups() const;
-    QJsonObject getRegexSubsitutions() const;    
+  QString getRegex() const;
+  QString getPythonRegex() const;
+  MatchInfo matchFileName(QString) const;
+  QJsonArray getRegexGroups() const;
+  QJsonObject getRegexSubsitutions() const;
 
-  public slots:
+public slots:
 
-  private slots:
+private slots:
 
-  signals:
-    void regexChanged(QString);
+signals:
+  void regexChanged(QString);
 
-  private:
-    QScopedPointer<Ui::AdvancedFormatWidget> m_ui;
+private:
+  QScopedPointer<Ui::AdvancedFormatWidget> m_ui;
 
-    QLabel m_regexErrorLabel;
+  QLabel m_regexErrorLabel;
 
-    QRegExp m_fileNameRegex;
+  QString m_fileNameRegex;
 
-    void setEnabledRegexGroupsWidget(bool enabled);
-    void setEnabledRegexGroupsSubstitutionsWidget(bool enabled);
+  void setEnabledRegexGroupsWidget(bool enabled);
+  void setEnabledRegexGroupsSubstitutionsWidget(bool enabled);
 };
-
 }
 
 #endif

@@ -5,17 +5,18 @@
 
 namespace tomviz {
 
-struct CapGroup {
+struct CapGroup
+{
   CapGroup(QString name_, QString text) : name(name_), capturedText(text) {}
   QString name;
   QString capturedText;
 };
 
-struct MatchInfo {
+struct MatchInfo
+{
   bool matched;
   QList<CapGroup> groups;
 };
-
 }
 
 #endif

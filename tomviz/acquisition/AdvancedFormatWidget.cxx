@@ -19,22 +19,25 @@
 
 namespace tomviz {
 
-AdvancedFormatWidget::AdvancedFormatWidget(QWidget *parent)
+AdvancedFormatWidget::AdvancedFormatWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::AdvancedFormatWidget)
 {
   m_ui->setupUi(this);
 
   // Default file name regex
-  m_ui->fileNameRegexLineEdit->setText(".*_([n,p]{1}[\\d,\\.]+)degree.*\\.dm3");
+  m_fileNameRegex = QString(".*_([n,p]{1}[\\d,\\.]+)degree.*\\.dm3");
+  m_ui->fileNameRegexLineEdit->setText(m_fileNameRegex);
 
-  connect(m_ui->fileNameRegexLineEdit, &QLineEdit::textChanged, [this](QString regex) {
-    setEnabledRegexGroupsWidget(!regex.isEmpty());
-    m_fileNameRegex = QRegExp(regex);
-    emit regexChanged(regex);
-  });
+  connect(m_ui->fileNameRegexLineEdit, &QLineEdit::textChanged,
+          [this](QString pattern) {
+            setEnabledRegexGroupsWidget(!pattern.isEmpty());
+            m_fileNameRegex = pattern;
+            emit regexChanged(pattern);
+          });
   setEnabledRegexGroupsWidget(!m_ui->fileNameRegexLineEdit->text().isEmpty());
 
   connect(m_ui->regexGroupsWidget, &RegexGroupsWidget::groupsChanged, [this]() {
+    emit regexChanged(m_fileNameRegex);
     setEnabledRegexGroupsSubstitutionsWidget(
       !m_ui->regexGroupsWidget->regexGroups().isEmpty());
   });
@@ -69,14 +72,21 @@ void AdvancedFormatWidget::setEnabledRegexGroupsSubstitutionsWidget(
 
 MatchInfo AdvancedFormatWidget::matchFileName(QString fileName) const
 {
-  bool match = m_fileNameRegex.exactMatch(fileName);
+  QRegExp regex = QRegExp(m_fileNameRegex);
+  bool match = regex.exactMatch(fileName);
   MatchInfo result;
   result.matched = match;
   QList<CapGroup> groups;
   QStringList namedGroups = m_ui->regexGroupsWidget->regexGroups();
-  for (int i = 0; i < namedGroups.size(); ++i) {
-    groups << CapGroup(namedGroups[i], m_fileNameRegex.cap(i+1));
+
+  if (namedGroups.size() == 0) {
+    groups << CapGroup(QString("Full match"), regex.cap(0));
+  } else {
+    for (int i = 0; i < namedGroups.size(); ++i) {
+      groups << CapGroup(namedGroups[i], regex.cap(i + 1));
+    }
   }
+
   result.groups = groups;
   return result;
 }
@@ -107,14 +117,15 @@ QJsonObject AdvancedFormatWidget::getRegexSubsitutions() const
 
 QString AdvancedFormatWidget::getRegex() const
 {
-  return m_fileNameRegex.pattern();
+  return m_fileNameRegex;
 }
 
 QString AdvancedFormatWidget::getPythonRegex() const
 {
-  auto regex = m_fileNameRegex.pattern();
-  regex.replace(QString("*"), QString("*?"));
+  QString regex = m_fileNameRegex;
+  // Let's not replace it if it isn't needed
+  regex.replace(QString(".*?"), QString(".*"));
+  regex.replace(QString(".*"), QString(".*?"));
   return regex;
 }
-
 }

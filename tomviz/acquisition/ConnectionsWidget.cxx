@@ -42,8 +42,25 @@ ConnectionsWidget::ConnectionsWidget(QWidget* parent)
   // New
   connect(m_ui->newConnectionButton, &QPushButton::clicked, [this]() {
     ConnectionDialog dialog;
-    dialog.exec();
-    Connection newConnection(dialog.name(), dialog.hostName(), dialog.port());
+    auto r = dialog.exec();
+
+    if (r != QDialog::Accepted) {
+      return;
+    }
+
+    QString name = dialog.name();
+    QString hostName = dialog.hostName();
+    int port = dialog.port();
+
+    if (hostName.trimmed().isEmpty()) {
+      return;
+    }
+
+    if (name.trimmed().isEmpty()) {
+      name = hostName.trimmed() + QString(":%1").arg(port);
+    }
+
+    Connection newConnection(name, hostName, port);
 
     bool replaced = false;
     for (int i = 0; i < m_connections.size(); i++) {
@@ -66,7 +83,7 @@ ConnectionsWidget::ConnectionsWidget(QWidget* parent)
   connect(m_ui->connectionsWidget, &QListWidget::itemDoubleClicked,
           [this](QListWidgetItem* item) {
             auto row = this->m_ui->connectionsWidget->row(item);
-            this->editConnection(this->m_connections[row]);
+            this->editConnection(this->m_connections[row], row);
             this->writeSettings();
           });
 
@@ -144,11 +161,33 @@ void ConnectionsWidget::sortConnections()
             [](Connection a, Connection b) { return a.name() < b.name(); });
 }
 
-void ConnectionsWidget::editConnection(Connection conn)
+void ConnectionsWidget::editConnection(Connection conn, size_t row)
 {
   ConnectionDialog dialog(conn.name(), conn.hostName(), conn.port());
-  dialog.exec();
-  Connection newConnection(dialog.name(), dialog.hostName(), dialog.port());
+  auto r = dialog.exec();
+
+  if (r != QDialog::Accepted) {
+    return;
+  }
+
+  QString name = dialog.name();
+  QString hostName = dialog.hostName();
+  int port = dialog.port();
+
+  if (hostName.trimmed().isEmpty()) {
+    return;
+  }
+
+  if (name.trimmed().isEmpty()) {
+    name = hostName.trimmed() + QString(":%1").arg(port);
+  }
+
+  Connection newConnection(name, hostName, port);
+  // First delete the current connection, to prevent always adding an extra one
+  // when editing
+  this->m_connections.removeAt(row);
+  auto item = this->m_ui->connectionsWidget->takeItem(row);
+  delete item;
 
   bool replaced = false;
   for (int i = 0; i < m_connections.size(); i++) {

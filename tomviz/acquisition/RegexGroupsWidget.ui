@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>604</width>
-    <height>386</height>
+    <height>250</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -40,7 +40,7 @@
         <enum>Qt::CustomContextMenu</enum>
        </property>
        <property name="sortingEnabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
       </widget>
      </item>

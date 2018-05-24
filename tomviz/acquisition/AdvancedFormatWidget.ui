@@ -19,6 +19,9 @@
      <property name="text">
       <string>Regex Group Names</string>
      </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+     </property>
     </widget>
    </item>
    <item row="1" column="1">
@@ -29,6 +32,9 @@
     <widget class="QLabel" name="regexGroupsSubstitutionsLabel">
      <property name="text">
       <string>Group Substitutions</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
      </property>
     </widget>
    </item>

@@ -51,7 +51,7 @@ private:
   void writeSettings();
   void setConnections(const QVariantList& connections);
   void sortConnections();
-  void editConnection(Connection conn);
+  void editConnection(Connection conn, size_t row);
 };
 } // namespace tomviz
 

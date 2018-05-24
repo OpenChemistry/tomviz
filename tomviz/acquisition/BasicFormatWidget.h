@@ -33,49 +33,50 @@ class BasicFormatWidget;
 
 namespace tomviz {
 
-enum class TestRegexFormat {
+enum class TestRegexFormat
+{
   npDm3,
   pmDm3,
   npTiff,
   pmTiff,
-  Custom,
-  Advanced
+  Custom
 };
 
-class BasicFormatWidget : public QWidget {
+class BasicFormatWidget : public QWidget
+{
   Q_OBJECT
 
-  public:
-    BasicFormatWidget(QWidget *parent = nullptr);
-    ~BasicFormatWidget() override;
-    
-    QString getRegex() const;
-    QString getPythonRegex() const;
-    MatchInfo matchFileName(QString) const;
-    QJsonArray getRegexGroups() const;
-    QJsonObject getRegexSubsitutions() const;    
+public:
+  BasicFormatWidget(QWidget* parent = nullptr);
+  ~BasicFormatWidget() override;
 
-  public slots:
+  QString getRegex() const;
+  QString getPythonRegex() const;
+  MatchInfo matchFileName(QString) const;
+  QJsonArray getRegexGroups() const;
+  QJsonObject getRegexSubsitutions() const;
 
-  private slots:
-    void formatChanged(int);
+public slots:
 
+private slots:
+  void onComboChanged(int);
 
-  signals:
-    void fileFormatChanged(TestRegexFormat);
-    void regexChanged(QString);
+signals:
+  void fileFormatChanged(TestRegexFormat);
+  void regexChanged(QString);
 
-  private:
+private:
   QScopedPointer<Ui::BasicFormatWidget> m_ui;
 
-  QRegExp m_fileNameRegex;
+  QString m_fileNameRegex;
   QString m_negChar;
   QString m_posChar;
   QString m_pythonFileNameRegex;
   QString m_testFileName;
 
   void setupFileFormatCombo();
-  
+  void setupRegexDisplayLine();
+
   QList<TestRegexFormat> makeDefaultFormatOrder() const;
   QMap<TestRegexFormat, QString> makeDefaultFileNames() const;
   QMap<TestRegexFormat, QString> makeDefaultLabels() const;
@@ -90,9 +91,6 @@ class BasicFormatWidget : public QWidget {
   void customFileRegex();
   void validateFileNameRegex();
 };
-
 }
-
-
 
 #endif

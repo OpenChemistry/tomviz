@@ -57,7 +57,6 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QRegExp>
-#include <QScrollBar>
 #include <QStandardPaths>
 #include <QTabWidget>
 #include <QTimer>
@@ -74,7 +73,6 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
     m_connectParamsWidget(new QWidget), m_watchTimer(new QTimer)
 {
   m_ui->setupUi(this);
-  // setFixedSize(QSize(420, 440));
 
   // Default to home directory
   QStringList locations =
@@ -142,7 +140,7 @@ void PassiveAcquisitionWidget::readSettings()
   }
   settings->beginGroup("acquisition");
   setGeometry(settings->value("passive.geometry").toRect());
-  
+
   auto watchPath = settings->value("watchPath").toString();
   if (!watchPath.isEmpty()) {
     m_ui->watchPathLineEdit->setText(watchPath);
@@ -320,7 +318,7 @@ QJsonObject PassiveAcquisitionWidget::connectParams()
 {
   /*
     Let's write some json in C++ !!
-    
+
     Structure:
 
     connectParams = {
@@ -360,8 +358,7 @@ QJsonObject PassiveAcquisitionWidget::connectParams()
   connectParams["fileNameRegex"] = regex;
   connectParams["fileNameRegexGroups"] = groups;
   connectParams["groupRegexSubstitutions"] = substitutions;
-  
-  qDebug() << connectParams;
+
   return connectParams;
 }
 
@@ -445,19 +442,9 @@ void PassiveAcquisitionWidget::stopWatching()
   m_ui->watchButton->setEnabled(true);
 }
 
-void PassiveAcquisitionWidget::formatTabChanged(int index)
+void PassiveAcquisitionWidget::formatTabChanged(int)
 {
-  qDebug() << index;
   validateTestFileName();
-  // Hide/Show tab index so that the tab itself is resized
-  // if (index == 0) {
-  //   m_ui->advancedTab->setVisible(false);
-  //   m_ui->basicTab->setVisible(true);
-  // } else if (index == 1) {
-  //   m_ui->advancedTab->setVisible(true);
-  //   m_ui->basicTab->setVisible(false);
-  // }
-
 }
 
 void PassiveAcquisitionWidget::onRegexChanged(QString regex)
@@ -477,9 +464,9 @@ void PassiveAcquisitionWidget::validateTestFileName()
     result = m_ui->advancedTab->matchFileName(m_testFileName);
   }
   if (result.matched) {
-    m_ui->testFileFormatEdit->setStyleSheet("background-color : #A5D6A7;");
+    m_ui->testFileFormatEdit->setStyleSheet("background-color : #C8E6C9;");
   } else {
-    m_ui->testFileFormatEdit->setStyleSheet("background-color : #FFAB91;");
+    m_ui->testFileFormatEdit->setStyleSheet("background-color : #FFCCBC;");
   }
   if (m_testFileName.isEmpty()) {
     m_ui->testFileFormatEdit->setStyleSheet("");
@@ -489,7 +476,8 @@ void PassiveAcquisitionWidget::validateTestFileName()
   m_ui->testTableWidget->setColumnCount(result.groups.size());
   for (int i = 0; i < result.groups.size(); ++i) {
     tableHeaders << result.groups[i].name;
-    m_ui->testTableWidget->setItem(0, i, new QTableWidgetItem(result.groups[i].capturedText));
+    m_ui->testTableWidget->setItem(
+      0, i, new QTableWidgetItem(result.groups[i].capturedText));
   }
   m_ui->testTableWidget->setHorizontalHeaderLabels(tableHeaders);
   resizeTestTable();
@@ -497,7 +485,6 @@ void PassiveAcquisitionWidget::validateTestFileName()
 
 void PassiveAcquisitionWidget::testFileNameChanged(QString fileName)
 {
-  qDebug() << fileName;
   m_testFileName = fileName;
   validateTestFileName();
 }
@@ -517,14 +504,15 @@ void PassiveAcquisitionWidget::setupTestTable()
   validateTestFileName();
 }
 
-void  PassiveAcquisitionWidget::resizeTestTable()
+void PassiveAcquisitionWidget::resizeTestTable()
 {
   m_ui->testTableWidget->resizeColumnsToContents();
   m_ui->testTableWidget->horizontalHeader()->setSectionResizeMode(
     0, QHeaderView::Stretch);
-  int horizontalHeaderHeight = m_ui->testTableWidget->horizontalHeader()->height();
+  int horizontalHeaderHeight =
+    m_ui->testTableWidget->horizontalHeader()->height();
   int rowTotalHeight = m_ui->testTableWidget->verticalHeader()->sectionSize(0);
-  int vSize = horizontalHeaderHeight+rowTotalHeight;//+scrollBarHeight;
+  int vSize = horizontalHeaderHeight + rowTotalHeight;
 
   m_ui->testTableWidget->setMinimumHeight(vSize);
   m_ui->testTableWidget->setMaximumHeight(vSize);

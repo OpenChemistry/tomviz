@@ -14,11 +14,16 @@ CustomFormatWidget::CustomFormatWidget(QWidget* parent)
   m_ui->negativeEdit->setText(m_negChar);
   m_ui->positiveEdit->setText(m_posChar);
 
-  connect(m_ui->prefixEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onPrefixChanged);
-  connect(m_ui->suffixEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onSuffixChanged);
-  connect(m_ui->extensionEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onExtensionChanged);
-  connect(m_ui->negativeEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onNegChanged);
-  connect(m_ui->positiveEdit, &QLineEdit::textEdited, this, &CustomFormatWidget::onPosChanged);
+  connect(m_ui->prefixEdit, &QLineEdit::textEdited, this,
+          &CustomFormatWidget::onPrefixChanged);
+  connect(m_ui->suffixEdit, &QLineEdit::textEdited, this,
+          &CustomFormatWidget::onSuffixChanged);
+  connect(m_ui->extensionEdit, &QLineEdit::textEdited, this,
+          &CustomFormatWidget::onExtensionChanged);
+  connect(m_ui->negativeEdit, &QLineEdit::textEdited, this,
+          &CustomFormatWidget::onNegChanged);
+  connect(m_ui->positiveEdit, &QLineEdit::textEdited, this,
+          &CustomFormatWidget::onPosChanged);
 }
 
 CustomFormatWidget::~CustomFormatWidget() = default;
@@ -60,7 +65,9 @@ QStringList CustomFormatWidget::getFields() const
   return fields;
 }
 
-void CustomFormatWidget::setFields(QString field0, QString field1, QString field2, QString field3, QString field4)
+void CustomFormatWidget::setFields(QString field0, QString field1,
+                                   QString field2, QString field3,
+                                   QString field4)
 {
   m_prefix = field0;
   m_negChar = field1;
@@ -83,6 +90,5 @@ void CustomFormatWidget::setAllowEdit(bool allow)
   m_ui->negativeEdit->setEnabled(allow);
   m_ui->positiveEdit->setEnabled(allow);
 }
-
 
 } // namespace tomviz
