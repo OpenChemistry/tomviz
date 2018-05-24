@@ -48,6 +48,7 @@ class BasicFormatWidget : public QWidget {
   public:
     BasicFormatWidget(QWidget *parent = nullptr);
     ~BasicFormatWidget() override;
+    
     QString getRegex() const;
     QString getPythonRegex() const;
     MatchInfo matchFileName(QString) const;

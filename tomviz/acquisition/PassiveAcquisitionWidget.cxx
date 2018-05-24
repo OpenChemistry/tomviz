@@ -99,6 +99,9 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
   connect(m_ui->basicTab, &BasicFormatWidget::regexChanged, this,
           &PassiveAcquisitionWidget::onRegexChanged);
 
+  connect(m_ui->advancedTab, &AdvancedFormatWidget::regexChanged, this,
+          &PassiveAcquisitionWidget::onRegexChanged);
+
   connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
     m_retryCount = 5;
     connectToServer();
@@ -347,8 +350,11 @@ QJsonObject PassiveAcquisitionWidget::connectParams()
   if (tabIndex == 0) {
     regex = m_ui->basicTab->getPythonRegex();
     groups = m_ui->basicTab->getRegexGroups();
+    substitutions = m_ui->basicTab->getRegexSubsitutions();
   } else {
-
+    regex = m_ui->advancedTab->getPythonRegex();
+    groups = m_ui->advancedTab->getRegexGroups();
+    substitutions = m_ui->advancedTab->getRegexSubsitutions();
   }
 
   connectParams["fileNameRegex"] = regex;
@@ -442,6 +448,7 @@ void PassiveAcquisitionWidget::stopWatching()
 void PassiveAcquisitionWidget::formatTabChanged(int index)
 {
   qDebug() << index;
+  validateTestFileName();
   // Hide/Show tab index so that the tab itself is resized
   // if (index == 0) {
   //   m_ui->advancedTab->setVisible(false);
@@ -467,9 +474,8 @@ void PassiveAcquisitionWidget::validateTestFileName()
   if (tabIndex == 0) {
     result = m_ui->basicTab->matchFileName(m_testFileName);
   } else {
-   
+    result = m_ui->advancedTab->matchFileName(m_testFileName);
   }
-  
   if (result.matched) {
     m_ui->testFileFormatEdit->setStyleSheet("background-color : #A5D6A7;");
   } else {

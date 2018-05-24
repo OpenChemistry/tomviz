@@ -18,6 +18,11 @@
 
 #include <QWidget>
 
+#include "MatchInfo.h"
+
+#include <QJsonArray>
+#include <QJsonObject>
+#include <QLabel>
 #include <QScopedPointer>
 
 
@@ -33,14 +38,28 @@ class AdvancedFormatWidget : public QWidget {
     AdvancedFormatWidget(QWidget* parent = nullptr);
     ~AdvancedFormatWidget() override;
 
+    QString getRegex() const;
+    QString getPythonRegex() const;
+    MatchInfo matchFileName(QString) const;
+    QJsonArray getRegexGroups() const;
+    QJsonObject getRegexSubsitutions() const;    
+
   public slots:
 
   private slots:
 
   signals:
+    void regexChanged(QString);
 
   private:
     QScopedPointer<Ui::AdvancedFormatWidget> m_ui;
+
+    QLabel m_regexErrorLabel;
+
+    QRegExp m_fileNameRegex;
+
+    void setEnabledRegexGroupsWidget(bool enabled);
+    void setEnabledRegexGroupsSubstitutionsWidget(bool enabled);
 };
 
 }
