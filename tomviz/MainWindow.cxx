@@ -57,7 +57,6 @@
 #include "SaveLoadStateReaction.h"
 #include "SaveScreenshotReaction.h"
 #include "SaveWebReaction.h"
-#include "ScaleLegend.h"
 #include "SetTiltAnglesOperator.h"
 #include "SetTiltAnglesReaction.h"
 #include "ToggleDataTypeReaction.h"
@@ -404,7 +403,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->menu_File, &QMenu::aboutToShow, reaction,
           &ResetReaction::updateEnableState);
 
-  ViewMenuManager* viewMenuManager = new ViewMenuManager(this, m_ui->menuView);
+  new ViewMenuManager(this, m_ui->menuView);
 
   QMenu* sampleDataMenu = new QMenu("Sample Data", this);
   m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
@@ -460,14 +459,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   ResetReaction::reset();
   // Initialize worker manager
   new ProgressDialogManager(this);
-
-  // Initialize scale legend
-  ScaleLegend* scaleLegend = new ScaleLegend(this);
-
-  connect(viewMenuManager, SIGNAL(setScaleLegendStyle(ScaleLegendStyle)),
-          scaleLegend, SLOT(setStyle(ScaleLegendStyle)));
-  connect(viewMenuManager, SIGNAL(setScaleLegendVisibility(bool)), scaleLegend,
-          SLOT(setVisibility(bool)));
 
   // Add the acquisition client experimentally.
   auto acquisitionWidget = new AcquisitionWidget(this);

@@ -220,6 +220,20 @@ void ViewMenuManager::onViewChanged()
       }
     }
   }
+  auto scaleLegend = ScaleLegend::getScaleLegend(m_view);
+  if (scaleLegend && scaleLegend->visible()) {
+    m_scaleLegendCubeAction->setChecked(scaleLegend->style() ==
+                                        ScaleLegendStyle::Cube);
+    m_scaleLegendRulerAction->setChecked(scaleLegend->style() ==
+                                         ScaleLegendStyle::Ruler);
+    m_hideScaleLegendAction->setChecked(false);
+    m_hideScaleLegendAction->setEnabled(true);
+  } else {
+    m_scaleLegendCubeAction->setChecked(false);
+    m_scaleLegendRulerAction->setChecked(false);
+    m_hideScaleLegendAction->setChecked(true);
+    m_hideScaleLegendAction->setEnabled(false);
+  }
   bool enableProjectionModes =
     (m_view && m_view->GetProperty("CameraParallelProjection"));
   // We have to check since this can be called before buildMenu
@@ -228,4 +242,29 @@ void ViewMenuManager::onViewChanged()
     m_perspectiveProjectionAction->setEnabled(enableProjectionModes);
   }
 }
+
+void ViewMenuManager::setScaleLegendStyle(ScaleLegendStyle s)
+{
+  if (!m_view) {
+    return;
+  }
+  auto scaleLegend = ScaleLegend::getScaleLegend(m_view);
+  if (!scaleLegend) {
+    return;
+  }
+  scaleLegend->setStyle(s);
+}
+
+void ViewMenuManager::setScaleLegendVisibility(bool v)
+{
+  if (!m_view) {
+    return;
+  }
+  auto scaleLegend = ScaleLegend::getScaleLegend(m_view);
+  if (!scaleLegend) {
+    return;
+  }
+  scaleLegend->setVisibility(v);
+}
+
 } // namespace tomviz

@@ -22,6 +22,7 @@
 #include "ModuleFactory.h"
 #include "Pipeline.h"
 #include "PythonGeneratedDatasetReaction.h"
+#include "ScaleLegend.h"
 #include "Utilities.h"
 #include "tomvizConfig.h"
 
@@ -460,6 +461,17 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
         jView["active"] = true;
       }
 
+      auto scaleLegend =
+        ScaleLegend::getScaleLegend(vtkSMViewProxy::SafeDownCast(view));
+      if (scaleLegend) {
+        if (scaleLegend->visible()) {
+          jView["scaleLegend"] =
+            scaleLegend->style() == ScaleLegendStyle::Cube ? "cube" : "ruler";
+        } else {
+          jView["scaleLegend"] = "none";
+        }
+      }
+
       // Now to get some more specific information about the view!
       pugi::xml_document document;
       pugi::xml_node proxyNode = document.append_child("ParaViewXML");
@@ -782,7 +794,29 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
       proxy->UpdateVTKObjects();
     }
     viewProxy->UpdateVTKObjects();
+    if (view.contains("scaleLegend")) {
+      auto scaleLegend = ScaleLegend::getScaleLegend(viewProxy);
+      if (scaleLegend) {
+        auto legendType = view["scaleLegend"].toString();
+        if (legendType == "none") {
+          scaleLegend->setVisibility(false);
+        } else if (legendType == "cube") {
+          scaleLegend->setVisibility(true);
+          scaleLegend->setStyle(ScaleLegendStyle::Cube);
+        } else if (legendType == "ruler") {
+          scaleLegend->setVisibility(true);
+          scaleLegend->setStyle(ScaleLegendStyle::Ruler);
+        } else { // corrupted file?
+          qWarning() << "Unknown scale legend type" << legendType
+                     << "encountered in state file.  Defaulting to \"none\".";
+          scaleLegend->setVisibility(false);
+        }
+      }
+    }
   }
+  // force the view menu to update its state based on the settings we have
+  // restored to the view
+  ActiveObjects::instance().viewChanged(ActiveObjects::instance().activeView());
 
   return true;
 }
