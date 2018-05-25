@@ -143,7 +143,7 @@ private slots:
     remove(containerId);
     runInvocation->deleteLater();
 
-    QFile file(tempDir.filePath("hello.txt"));
+    QFile file(QDir(tempDir.path()).filePath("hello.txt"));
     QVERIFY(file.open(QIODevice::ReadOnly | QIODevice::Text));
     QCOMPARE(QString(file.readLine()).trimmed(), QString("world"));
   }

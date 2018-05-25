@@ -346,7 +346,7 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   QFileInfo info(filePath);
   auto fileName = info.fileName();
 
-  QFile::copy(filePath, m_temporaryDir->filePath(fileName));
+  QFile::copy(filePath, QDir(m_temporaryDir->path()).filePath(fileName));
 
   // Now update the file path to where the it will appear in the
   // docker container.
@@ -360,7 +360,7 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   pipeline["dataSources"] = dataSources;
 
   // Now write the update state file to the temporary directory.
-  QFile stateFile(m_temporaryDir->filePath(STATE_FILENAME));
+  QFile stateFile(QDir(m_temporaryDir->path()).filePath(STATE_FILENAME));
   if (!stateFile.open(QIODevice::WriteOnly)) {
     displayError("Write Error", "Couldn't open state file for write.");
     return;
@@ -369,7 +369,7 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   stateFile.close();
 
   // Start reading progress updates
-  auto progressPath = m_temporaryDir->filePath(PROGRESS_PATH);
+  auto progressPath = QDir(m_temporaryDir->path()).filePath(PROGRESS_PATH);
 
 // On Windows we have use files to pass progress updates rather than a local
 // socket which we can use of the unixes
@@ -646,7 +646,8 @@ void DockerPipelineExecutor::pipelineStarted()
 
 void DockerPipelineExecutor::pipelineFinished()
 {
-  auto transformedFilePath = m_temporaryDir->filePath(TRANSFORM_FILENAME);
+  auto transformedFilePath =
+    QDir(m_temporaryDir->path()).filePath(TRANSFORM_FILENAME);
   EmdFormat emdFile;
   vtkNew<vtkImageData> transformedData;
   if (emdFile.read(transformedFilePath.toLatin1().data(), transformedData)) {
