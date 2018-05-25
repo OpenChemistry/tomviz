@@ -85,6 +85,8 @@ set(SOURCES
   MoveActiveObject.h
   Pipeline.cxx
   Pipeline.h
+  PipelineExecutor.cxx
+  PipelineExecutor.h
   PipelineManager.cxx
   PipelineManager.h
   PipelineModel.cxx
