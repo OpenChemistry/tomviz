@@ -382,7 +382,7 @@ DataSource* Pipeline::transformedDataSource(DataSource* ds)
 
 void Pipeline::setExecutionMode(ExecutionMode executor)
 {
-
+  m_executionMode = executor;
   if (executor == ExecutionMode::Docker) {
     m_executor.reset(new DockerPipelineExecutor(this));
   } else {

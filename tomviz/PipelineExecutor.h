@@ -118,11 +118,8 @@ private:
   QScopedPointer<QTemporaryDir> m_temporaryDir;
   bool m_pullImage = true;
   QString m_containerId;
-  QScopedPointer<QFileSystemWatcher> m_localServer;
-  QScopedPointer<QLocalSocket> m_progressConnection;
-  QScopedPointer<QFile> m_progressFile;
   QScopedPointer<ProgressReader> m_progressReader;
-  QThreadPool* m_threadPool;
+
   QTimer* m_statusCheckTimer;
 
   void checkContainerStatus();

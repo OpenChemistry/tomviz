@@ -36,7 +36,6 @@
 #include <QMessageBox>
 #include <QMetaEnum>
 #include <QTimer>
-#include <QtConcurrent>
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
@@ -232,13 +231,8 @@ const char* CONTAINER_MOUNT = "/tomviz";
 const char* PROGRESS_PATH = "progress";
 
 DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
-  : PipelineExecutor(pipeline), m_localServer(new QFileSystemWatcher(this)),
-    m_threadPool(new QThreadPool(this)), m_statusCheckTimer(new QTimer(this)),
-    m_progressFile(nullptr)
+  : PipelineExecutor(pipeline), m_statusCheckTimer(new QTimer(this))
 {
-
-  auto server = m_localServer.data();
-
   m_statusCheckTimer->setInterval(5000);
   connect(m_statusCheckTimer, &QTimer::timeout, this,
           &DockerPipelineExecutor::checkContainerStatus);
@@ -598,7 +592,7 @@ void DockerPipelineExecutor::progressReady(const QString& progressMessage)
       qCritical() << QString("Unrecognized message type: %1").arg(type);
     }
   }
-  // Overrall pipeline progress
+  // Overall pipeline progress
   else {
     if (type == "started") {
       pipelineStarted();
@@ -613,23 +607,20 @@ void DockerPipelineExecutor::progressReady(const QString& progressMessage)
 void DockerPipelineExecutor::operatorStarted(Operator* op)
 {
   op->setState(OperatorState::Running);
-  QtConcurrent::run(m_threadPool, [op]() { emit op->transformingStarted(); });
+  emit op->transformingStarted();
 }
 
 void DockerPipelineExecutor::operatorFinished(Operator* op)
 {
   op->setState(OperatorState::Complete);
-  QtConcurrent::run(m_threadPool, [op]() {
-    emit op->transformingDone(TransformResult::Complete);
-  });
+  emit op->transformingDone(TransformResult::Complete);
 }
 
 void DockerPipelineExecutor::operatorError(Operator* op, const QString& error)
 {
   op->setState(OperatorState::Error);
-  QtConcurrent::run(m_threadPool, [op]() {
-    emit op->transformingDone(TransformResult::Error);
-  });
+  emit op->transformingDone(TransformResult::Error);
+
   qCritical() << error;
 }
 

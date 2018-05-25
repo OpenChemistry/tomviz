@@ -102,6 +102,8 @@ public:
   /// Set the execution mode to use when executing the pipeline.
   void setExecutionMode(ExecutionMode executor);
 
+  ExecutionMode executionMode() { return m_executionMode; };
+
 public slots:
   void execute();
   void execute(DataSource* start, bool runLast);
@@ -128,6 +130,7 @@ private:
   DataSource* m_data;
   bool m_paused = false;
   QScopedPointer<PipelineExecutor> m_executor;
+  ExecutionMode m_executionMode = Threaded;
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.
