@@ -589,29 +589,12 @@ const char* CONTAINER_MOUNT = "/tomviz";
 const char* PROGRESS_PATH = "progress";
 
 DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
-  : PipelineExecutor(pipeline), m_localServer(new QLocalServer(this)),
-    m_threadPool(new QThreadPool(this)), m_statusCheckTimer(new QTimer(this))
+  : PipelineExecutor(pipeline), m_localServer(new QFileSystemWatcher(this)),
+    m_threadPool(new QThreadPool(this)), m_statusCheckTimer(new QTimer(this)),
+    m_progressFile(nullptr)
 {
-  auto server = m_localServer.data();
-  connect(server, &QLocalServer::newConnection, server, [this]() {
-    auto connection = m_localServer->nextPendingConnection();
-    m_progressConnection.reset(connection);
 
-    if (m_progressConnection) {
-      connect(connection, &QIODevice::readyRead, this,
-              &DockerPipelineExecutor::progressReady);
-      connect(connection, static_cast<void (QLocalSocket::*)(
-                            QLocalSocket::LocalSocketError socketError)>(
-                            &QLocalSocket::error),
-              [this](QLocalSocket::LocalSocketError socketError) {
-                if (socketError != QLocalSocket::PeerClosedError) {
-                  displayError(
-                    "Socket Error",
-                    QString("Socket connection error: %1").arg(socketError));
-                }
-              });
-    }
-  });
+  auto server = m_localServer.data();
 
   m_statusCheckTimer->setInterval(5000);
   connect(m_statusCheckTimer, &QTimer::timeout, this,
@@ -621,8 +604,9 @@ DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
 DockerPipelineExecutor::~DockerPipelineExecutor()
 {}
 
-void DockerPipelineExecutor::run(const QString& image, const QStringList& args,
-                                 const QMap<QString, QString>& bindMounts)
+docker::DockerRunInvocation* DockerPipelineExecutor::run(
+  const QString& image, const QStringList& args,
+  const QMap<QString, QString>& bindMounts)
 {
   auto runInvocation =
     docker::run(image, QString(), args, bindMounts);
@@ -645,6 +629,8 @@ void DockerPipelineExecutor::run(const QString& image, const QStringList& args,
             }
             runInvocation->deleteLater();
           });
+
+  return runInvocation;
 }
 
 void DockerPipelineExecutor::remove(const QString& containerId)
@@ -745,10 +731,22 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   stateFile.write(QJsonDocument(pipeline).toJson());
   stateFile.close();
 
-  // Start listening for local socket connections for progress update from
-  // within the docker container.
-  m_localServer->close();
-  m_localServer->listen(m_temporaryDir->filePath(PROGRESS_PATH));
+  // Start reading progress updates
+  auto progressPath = m_temporaryDir->filePath(PROGRESS_PATH);
+
+// On Windows we have use files to pass progress updates rather than a local
+// socket which we can use of the unixes
+#ifdef Q_OS_WIN
+  QString progressMode("files");
+  m_progressReader.reset(new FilesProgressReader(progressPath));
+#else
+  QString progressMode("socket");
+  m_progressReader.reset(new LocalSocketProgressReader(progressPath));
+#endif
+
+  m_progressReader->start();
+  connect(m_progressReader.data(), &ProgressReader::progressMessage, this,
+          &DockerPipelineExecutor::progressReady);
 
   // We are now ready to run the pipeline
   auto mount = QDir(CONTAINER_MOUNT);
@@ -760,7 +758,7 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   args << "-o";
   args << outputPath;
   args << "-p";
-  args << "socket";
+  args << progressMode;
   args << "-u";
   args << mount.filePath(PROGRESS_PATH);
   QMap<QString, QString> bindMounts;
@@ -797,7 +795,18 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
               pullInvocation->deleteLater();
             });
   } else {
-    run(image, args, bindMounts);
+    auto msg = QString("Starting docker container.");
+    auto progress = new ProgressDialog("Docker run", msg, tomviz::mainWidget());
+    progress->show();
+    auto runInvocation = run(image, args, bindMounts);
+    connect(runInvocation, &docker::DockerPullInvocation::finished,
+            runInvocation,
+            [progress](int exitCode, QProcess::ExitStatus exitStatus) {
+              Q_UNUSED(exitCode)
+              Q_UNUSED(exitStatus)
+              progress->hide();
+              progress->deleteLater();
+            });
   }
 }
 
@@ -907,16 +916,13 @@ void DockerPipelineExecutor::checkContainerStatus()
     });
 }
 
-void DockerPipelineExecutor::progressReady()
+void DockerPipelineExecutor::progressReady(const QString& progressMessage)
 {
-
-  auto progressMessage = m_progressConnection->readLine();
-  // If the message is empty then connection has be disconnect by the peer.
   if (progressMessage.isEmpty()) {
     return;
   }
 
-  auto progressDoc = QJsonDocument::fromJson(progressMessage);
+  auto progressDoc = QJsonDocument::fromJson(progressMessage.toLatin1());
   if (!progressDoc.isObject()) {
     qCritical()
       << QString("Invalid progress message '%1'").arg(QString(progressMessage));
@@ -959,11 +965,6 @@ void DockerPipelineExecutor::progressReady()
     } else {
       qCritical() << QString("Unrecognized message type: %1").arg(type);
     }
-  }
-
-  // If we have more data schedule ourselve again.
-  if (m_progressConnection->bytesAvailable() > 0) {
-    QTimer::singleShot(0, this, &DockerPipelineExecutor::progressReady);
   }
 }
 
@@ -1026,6 +1027,9 @@ void DockerPipelineExecutor::pipelineFinished()
   // Cancel status checks
   m_statusCheckTimer->stop();
 
+  // Stop the progress reader
+  m_progressReader->stop();
+
   // Clean up temp directory
   m_temporaryDir.reset(nullptr);
 
@@ -1045,4 +1049,108 @@ void DockerPipelineExecutor::displayError(const QString& title,
   qCritical() << msg;
 }
 
+ProgressReader::ProgressReader(const QString& path) : m_path(path)
+{
+}
+
+FilesProgressReader::FilesProgressReader(const QString& path)
+  : ProgressReader(path), m_pathWatcher(new QFileSystemWatcher())
+{
+  QDir dir(m_path);
+  if (!dir.exists()) {
+    dir.mkpath(".");
+  }
+
+  connect(m_pathWatcher.data(), &QFileSystemWatcher::directoryChanged, this,
+          &FilesProgressReader::checkForProgressFiles);
+}
+
+void FilesProgressReader::start()
+{
+  m_pathWatcher->addPath(m_path);
+}
+
+void FilesProgressReader::stop()
+{
+  m_pathWatcher->removePath(m_path);
+}
+
+void FilesProgressReader::checkForProgressFiles()
+{
+  QDir progressDir(m_path);
+  foreach (const QString fileName,
+           progressDir.entryList(QDir::Files, QDir::Name)) {
+    auto progressFilePath = progressDir.filePath(fileName);
+    QFile progressFile(progressFilePath);
+    if (!progressFile.exists()) {
+      continue;
+    }
+
+    if (!progressFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      qCritical() << "Unable to read progress file: " << progressFilePath;
+      continue;
+    }
+
+    auto msg = progressFile.readLine();
+    progressFile.close();
+    if (!msg.isEmpty()) {
+      emit progressMessage(msg);
+
+      progressFile.remove();
+    } else {
+      QTimer::singleShot(0, this, &FilesProgressReader::checkForProgressFiles);
+    }
+  }
+}
+
+LocalSocketProgressReader::LocalSocketProgressReader(const QString& path)
+  : ProgressReader(path), m_localServer(new QLocalServer())
+{
+
+  auto server = m_localServer.data();
+  connect(server, &QLocalServer::newConnection, server, [this]() {
+    auto connection = m_localServer->nextPendingConnection();
+    m_progressConnection.reset(connection);
+
+    if (m_progressConnection) {
+      connect(connection, &QIODevice::readyRead, this,
+              &LocalSocketProgressReader::readProgress);
+      connect(connection, static_cast<void (QLocalSocket::*)(
+                            QLocalSocket::LocalSocketError socketError)>(
+                            &QLocalSocket::error),
+              [this](QLocalSocket::LocalSocketError socketError) {
+                if (socketError != QLocalSocket::PeerClosedError) {
+                  qCritical()
+                    << QString("Socket connection error: %1").arg(socketError);
+                }
+              });
+    }
+  });
+}
+
+void LocalSocketProgressReader::start()
+{
+  m_localServer->listen(m_path);
+}
+
+void LocalSocketProgressReader::stop()
+{
+  m_localServer->close();
+}
+
+void LocalSocketProgressReader::readProgress()
+{
+  auto message = m_progressConnection->readLine();
+
+  if (message.isEmpty()) {
+    return;
+  }
+
+  emit progressMessage(message);
+
+  // If we have more data schedule ourselves again.
+  if (m_progressConnection->bytesAvailable() > 0) {
+    QTimer::singleShot(0, this, &LocalSocketProgressReader::readProgress);
+  }
+};
 } // namespace tomviz

@@ -40,7 +40,7 @@ def _extract_pipeline(state):
               help='Path to write the transformed dataset.', type=click.Path())
 @click.option('-p', '--progress-method',
               help='The method to use to progress updates.',
-              type=click.Choice(['tqdm', 'socket']), default='tqdm')
+              type=click.Choice(['tqdm', 'socket', 'files']), default='tqdm')
 @click.option('-u', '--socket-path',
               help='The socket path to use for progress updates.',
               type=click.Path(), default='/tomviz/progress')

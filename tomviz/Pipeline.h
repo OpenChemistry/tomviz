@@ -20,6 +20,8 @@
 
 #include "PipelineWorker.h"
 
+#include <QFile>
+#include <QFileSystemWatcher>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QProcess>
@@ -44,6 +46,7 @@ class PipelineExecutor;
 
 namespace docker {
 class DockerStopInvocation;
+class DockerRunInvocation;
 }
 
 class Pipeline : public QObject
@@ -214,6 +217,8 @@ private:
   PipelineWorker::Future* m_future = nullptr;
 };
 
+class ProgressReader;
+
 class DockerPipelineExecutor : public PipelineExecutor
 {
   Q_OBJECT
@@ -229,9 +234,10 @@ public:
 
 private slots:
   void error(QProcess::ProcessError error);
-  void progressReady();
-  void run(const QString& image, const QStringList& args,
-           const QMap<QString, QString>& bindMounts);
+  void progressReady(const QString& progressMessage);
+  docker::DockerRunInvocation* run(const QString& image,
+                                   const QStringList& args,
+                                   const QMap<QString, QString>& bindMounts);
   void remove(const QString& containerId);
   docker::DockerStopInvocation* stop(const QString& containerId);
   void containerError(int exitCode);
@@ -240,8 +246,10 @@ private:
   QScopedPointer<QTemporaryDir> m_temporaryDir;
   bool m_pullImage = true;
   QString m_containerId;
-  QScopedPointer<QLocalServer> m_localServer;
+  QScopedPointer<QFileSystemWatcher> m_localServer;
   QScopedPointer<QLocalSocket> m_progressConnection;
+  QScopedPointer<QFile> m_progressFile;
+  QScopedPointer<ProgressReader> m_progressReader;
   QThreadPool* m_threadPool;
   QTimer* m_statusCheckTimer;
 
@@ -256,6 +264,56 @@ private:
   void pipelineStarted();
   void pipelineFinished();
   void displayError(const QString& title, const QString& msg);
+};
+
+class ProgressReader : public QObject
+{
+  Q_OBJECT
+
+public:
+  ProgressReader(const QString& path);
+
+  virtual void start() = 0;
+  virtual void stop() = 0;
+
+signals:
+  void progressMessage(const QString& msg);
+
+protected:
+  QString m_path;
+};
+
+class FilesProgressReader : public ProgressReader
+{
+  Q_OBJECT
+
+public:
+  FilesProgressReader(const QString& path);
+
+  void start();
+  void stop();
+
+private:
+  QScopedPointer<QFileSystemWatcher> m_pathWatcher;
+
+  void checkForProgressFiles();
+};
+
+class LocalSocketProgressReader : public ProgressReader
+{
+  Q_OBJECT
+
+public:
+  LocalSocketProgressReader(const QString& path);
+
+  void start();
+  void stop();
+
+private:
+  QScopedPointer<QLocalServer> m_localServer;
+  QScopedPointer<QLocalSocket> m_progressConnection;
+
+  void readProgress();
 };
 
 } // namespace tomviz

@@ -10,6 +10,8 @@ import abc
 import stat
 import json
 from contextlib import contextmanager
+import six
+import abc
 
 from tqdm import tqdm
 
@@ -35,7 +37,7 @@ class ProgressBase(object):
     def finished(self, op):
         pass
 
-class Progress(ProgressBase):
+class TqdmProgress(ProgressBase):
     """
     Class used to update operator progress. This replaces the C++ bound one that
     is used inside the Qt applicaition.
@@ -108,47 +110,17 @@ class Progress(ProgressBase):
         if self._progress_bar is not None:
             self._progress_bar.close()
 
-
-class LocalSocketProgress(ProgressBase):
+@six.add_metaclass(abc.ABCMeta)
+class JsonProgress(ProgressBase):
     """
-    Class used to update operator progress. Connects to QLocalServer and writes
-    JSON message updating the UI on pipeline progress.
+    Abstract class used to update operator progress using JSON based messages.
     """
 
-    def __init__(self, socket_path):
-        self._maximum = None
-        self._value = None
-        self._message = None
-        self._connection = None
-        self._path = socket_path
-
-        try:
-            mode = os.stat(self._path).st_mode
-
-            # Named pipe (Windows)
-            if stat.S_ISFIFO(mode):
-                self._np_connect()
-            elif stat.S_ISSOCK(mode):
-                self._uds_connect()
-            else:
-                raise Exception('Invalid progress path type.')
-
-        except OSError:
-            raise Exception('Progress path doesn\'t exist')
-
-    def _uds_connect(self):
-        self._connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self._connection.connect(self._path)
-
-    def _np_connect(self):
-        self._connection = open(self._path, 'wb')
-
-    def _write(self, data):
-        data = ('%s\n' % json.dumps(data)).encode('utf8')
-        if isinstance(self._connection, socket.socket):
-            self._connection.sendall(data)
-        else:
-            self._connection.write(data)
+    @abc.abstractmethod
+    def write(self, data):
+        """
+        Method the write JSON progress message. Implemented by subclass.
+        """
 
     def set_operator_index(self, index):
         self._operator_index = index
@@ -167,7 +139,7 @@ class LocalSocketProgress(ProgressBase):
             'operator': self._operator_index,
             'value': value
         }
-        self._write(msg)
+        self.write(msg)
         self._maximum = value
 
     @property
@@ -190,7 +162,7 @@ class LocalSocketProgress(ProgressBase):
             'operator': self._operator_index,
             'value': value
         }
-        self._write(msg)
+        self.write(msg)
 
         self._value = value
 
@@ -214,7 +186,7 @@ class LocalSocketProgress(ProgressBase):
             'operator': self._operator_index,
             'messages': msg
         }
-        self._write(m)
+        self.write(m)
 
         self._message = msg
 
@@ -222,13 +194,10 @@ class LocalSocketProgress(ProgressBase):
         return self
 
     def __exit__(self, *exc):
-        if self._connection is not None:
-            self._connection.close()
-
         return False
 
     def started(self, op=None):
-        super(LocalSocketProgress, self).started(op)
+        super(JsonProgress, self).started(op)
         msg = {
             'type': 'started'
         }
@@ -236,10 +205,10 @@ class LocalSocketProgress(ProgressBase):
         if op is not None:
             msg['operator'] = op
 
-        self._write(msg)
+        self.write(msg)
 
     def finished(self, op=None):
-        super(LocalSocketProgress, self).started(op)
+        super(JsonProgress, self).started(op)
         msg = {
             'type': 'finished'
         }
@@ -247,14 +216,70 @@ class LocalSocketProgress(ProgressBase):
         if op is not None:
             msg['operator'] = op
 
-        self._write(msg)
+        self.write(msg)
 
+class LocalSocketProgress(JsonProgress):
+    """
+    Class used to update operator progress. Connects to QLocalServer and writes
+    JSON message updating the UI on pipeline progress.
+    """
 
-def _progress(progress_method, socket_path):
+    def __init__(self, socket_path):
+        self._maximum = None
+        self._value = None
+        self._message = None
+        self._connection = None
+        self._path = socket_path
+
+        try:
+            mode = os.stat(self._path).st_mode
+            if stat.S_ISSOCK(mode):
+                self._uds_connect()
+            else:
+                raise Exception('Invalid progress path type.')
+
+        except OSError:
+            raise Exception('TqdmProgress path doesn\'t exist')
+
+    def _uds_connect(self):
+        self._connection = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._connection.connect(self._path)
+
+    def write(self, data):
+        data = ('%s\n' % json.dumps(data)).encode('utf8')
+        if isinstance(self._connection, socket.socket):
+            self._connection.sendall(data)
+        else:
+            self._connection.write(data)
+    def __exit__(self, *exc):
+        if self._connection is not None:
+            self._connection.close()
+
+        return False
+
+class FilesProgress(JsonProgress):
+    """
+    Class used to update operator progress by writing a sequence of files to a
+    directory.
+    """
+    def __init__(self, path):
+        self._path = path
+        self._sequence_number = 0
+
+    def write(self, data):
+        file_path = os.path.join(self._path, 'progress%d' % self._sequence_number)
+        self._sequence_number += 1
+
+        with open(file_path, 'w') as f:
+            json.dump(data, f)
+
+def _progress(progress_method, progress_path):
     if progress_method == 'tqdm':
-        return Progress()
+        return TqdmProgress()
     elif progress_method == 'socket':
-        return LocalSocketProgress(socket_path)
+        return LocalSocketProgress(progress_path)
+    elif progress_method == 'files':
+        return FilesProgress(progress_path)
     else:
         raise Exception('Unrecognized progress method: %s' % progress_method)
 
@@ -395,11 +420,11 @@ def _load_transform_functions(operators):
 
 
 def execute(operators, data_file_path, output_file_path, progress_method,
-            socket_path):
+            progress_path):
     data, dims = _read_emd(data_file_path)
 
     transforms = _load_transform_functions(operators)
-    with _progress(progress_method, socket_path) as progress:
+    with _progress(progress_method, progress_path) as progress:
         progress.started()
         for i, (label, transform, arguments) in enumerate(transforms):
             progress.started(i)
