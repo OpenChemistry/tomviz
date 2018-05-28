@@ -86,6 +86,9 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     if (result == QMessageBox::No) {
       QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
       return;
+    } else {
+      auto whenCanceled = []() { qDebug() << "Canceled!"; };
+      this->Internals->dataSource->pipeline()->cancel(whenCanceled);
     }
   }
   // Connect to the finished signal on the pipeline to handle the UI after
@@ -100,10 +103,6 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   emit editStarted(this->Internals->Op);
   // check if another EditOperatorDialog is still open
   // and has already paused the pipeline
-  m_pipelineWasPaused = this->Internals->dataSource->pipeline()->isPaused();
-  if (!m_pipelineWasPaused) {
-    this->Internals->dataSource->pipeline()->pause();
-  }
   // If editing an existing operator, still the signal to disable
   // menubar buttons to add new operators to the current source
   if (!needToAddOperator) {
@@ -163,9 +162,7 @@ void EditOperatorDialog::onApply()
     // the pipeline is running it has to cancel the currently running pipeline
     // first. Warn the user rather that just canceling potentially long-running
     // operations.
-    // TODO: we need to discuss about this.
-    if (this->Internals->dataSource->pipeline()->isRunning() &&
-        !this->Internals->needsToBeAdded && false) {
+    if (this->Internals->dataSource->pipeline()->isRunning()) {
       auto result = QMessageBox::question(
         this, "Cancel running operation?",
         "Applying changes to an operator that is part of a running pipeline "
@@ -185,9 +182,15 @@ void EditOperatorDialog::onApply()
           dataSource->pipeline()->resume(false);
           emit op->transformModified();
         };
+        if (this->Internals->needsToBeAdded) {
+          this->Internals->needsToBeAdded = false;
+        }
         // We pause the pipeline so applyChangesToOperator does cause it to
         // execute.
         this->Internals->dataSource->pipeline()->pause();
+        if (this->Internals->dataSource->pipeline()->editingOperators() == 1) {
+          emit editEnded(this->Internals->Op);
+        }
         // We do this before causing cancel so the values are in place for when
         // whenCanceled cause the pipeline to be re-executed.
         this->Internals->Widget->applyChangesToOperator();
@@ -202,12 +205,12 @@ void EditOperatorDialog::onApply()
       if (this->Internals->needsToBeAdded) {
         this->Internals->needsToBeAdded = false;
       }
-    }
-    // If this is the only operator currently being edited, resume the pipeline
-    // onApply rather than onClose, so the apply button actually works as
-    // expected.
-    if (this->Internals->dataSource->pipeline()->editingOperators() == 1) {
-      emit editEnded(this->Internals->Op);
+      // If this is the only operator currently being edited, resume the pipeline
+      // onApply rather than onClose, so the apply button actually works as
+      // expected.
+      if (this->Internals->dataSource->pipeline()->editingOperators() == 1) {
+        emit editEnded(this->Internals->Op);
+      }
     }
   }
 }

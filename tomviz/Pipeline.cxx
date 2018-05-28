@@ -28,6 +28,9 @@
 
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
+#include <QDebug>
+#include <QObject>
+#include <QTimer>
 #include <pqView.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTrivialProducer.h>
@@ -112,6 +115,7 @@ void Pipeline::execute()
 
 void Pipeline::startedEditingOp(Operator* op)
 {
+  qDebug() << "Started " << m_editingOperators;
   ++m_editingOperators;
   op->setEditing();
   if (!m_paused) {
@@ -121,6 +125,7 @@ void Pipeline::startedEditingOp(Operator* op)
 
 void Pipeline::finishedEditingOp(Operator* op)
 {
+  qDebug() << "Finished " << m_editingOperators;
   if (m_editingOperators > 0) {
     --m_editingOperators;
     if (m_editingOperators == 0) {

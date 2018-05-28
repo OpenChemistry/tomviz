@@ -8,6 +8,7 @@ class InvertOperator(tomviz.operators.CancelableOperator):
     def transform_scalars(self, dataset):
         from tomviz import utils
         import numpy as np
+        import time
         self.progress.maximum = NUMBER_OF_CHUNKS
 
         scalars = utils.get_scalars(dataset)
@@ -19,6 +20,7 @@ class InvertOperator(tomviz.operators.CancelableOperator):
         max = np.amax(scalars)
         step = 0
         for chunk in np.array_split(result, NUMBER_OF_CHUNKS):
+            time.sleep(6/NUMBER_OF_CHUNKS)
             if self.canceled:
                 return
             chunk[:] = max - chunk + min
