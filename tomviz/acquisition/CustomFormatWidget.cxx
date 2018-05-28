@@ -1,3 +1,18 @@
+/******************************************************************************
+
+  This source file is part of the tomviz project.
+
+  Copyright Kitware, Inc.
+
+  This source code is released under the New BSD License, (the "License").
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+******************************************************************************/
 #include "CustomFormatWidget.h"
 
 #include "ui_CustomFormatWidget.h"
@@ -65,15 +80,16 @@ QStringList CustomFormatWidget::getFields() const
   return fields;
 }
 
-void CustomFormatWidget::setFields(QString field0, QString field1,
-                                   QString field2, QString field3,
-                                   QString field4)
+void CustomFormatWidget::setFields(const QStringList& fields)
 {
-  m_prefix = field0;
-  m_negChar = field1;
-  m_posChar = field2;
-  m_suffix = field3;
-  m_ext = field4;
+  if (fields.size() != 5) {
+    return;
+  }
+  m_prefix = fields[0];
+  m_negChar = fields[1];
+  m_posChar = fields[2];
+  m_suffix = fields[3];
+  m_ext = fields[4];
 
   m_ui->prefixEdit->setText(m_prefix);
   m_ui->suffixEdit->setText(m_suffix);

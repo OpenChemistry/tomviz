@@ -55,14 +55,14 @@ public:
   MatchInfo matchFileName(QString) const;
   QJsonArray getRegexGroups() const;
   QJsonObject getRegexSubsitutions() const;
-
-public slots:
+  bool isDefaultFilename(const QString& fileName) const;
+  QString getDefaultFilename() const;
 
 private slots:
   void onComboChanged(int);
 
 signals:
-  void fileFormatChanged(TestRegexFormat);
+  void fileFormatChanged();
   void regexChanged(QString);
 
 private:
@@ -73,6 +73,7 @@ private:
   QString m_posChar;
   QString m_pythonFileNameRegex;
   QString m_testFileName;
+  TestRegexFormat m_format;
 
   void setupFileFormatCombo();
   void setupRegexDisplayLine();

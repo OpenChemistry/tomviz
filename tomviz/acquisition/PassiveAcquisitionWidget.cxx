@@ -97,6 +97,9 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
   connect(m_ui->basicTab, &BasicFormatWidget::regexChanged, this,
           &PassiveAcquisitionWidget::onRegexChanged);
 
+  connect(m_ui->basicTab, &BasicFormatWidget::fileFormatChanged, this,
+          &PassiveAcquisitionWidget::onBasicFormatChanged);
+
   connect(m_ui->advancedTab, &AdvancedFormatWidget::regexChanged, this,
           &PassiveAcquisitionWidget::onRegexChanged);
 
@@ -122,6 +125,8 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
     }
   });
 
+  // Initialize the fileName line edit with a default example
+  onBasicFormatChanged();
 }
 
 PassiveAcquisitionWidget::~PassiveAcquisitionWidget() = default;
@@ -442,15 +447,25 @@ void PassiveAcquisitionWidget::stopWatching()
   m_ui->watchButton->setEnabled(true);
 }
 
-void PassiveAcquisitionWidget::formatTabChanged(int)
+void PassiveAcquisitionWidget::formatTabChanged(int tab)
+{
+  if (tab == 0) {
+    onBasicFormatChanged();
+  }
+  validateTestFileName();
+}
+
+void PassiveAcquisitionWidget::onRegexChanged(QString)
 {
   validateTestFileName();
 }
 
-void PassiveAcquisitionWidget::onRegexChanged(QString regex)
+void PassiveAcquisitionWidget::onBasicFormatChanged()
 {
-  qDebug() << regex;
-  validateTestFileName();
+  if (m_ui->basicTab->isDefaultFilename(m_testFileName)) {
+    m_testFileName = m_ui->basicTab->getDefaultFilename();
+    m_ui->testFileFormatEdit->setText(m_testFileName);
+  }
 }
 
 void PassiveAcquisitionWidget::validateTestFileName()

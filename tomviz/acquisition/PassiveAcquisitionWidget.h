@@ -21,7 +21,6 @@
 #include "MatchInfo.h"
 
 #include <QLabel>
-#include <QMap>
 #include <QPointer>
 #include <QScopedPointer>
 #include <QString>
@@ -71,6 +70,7 @@ private slots:
 
   void formatTabChanged(int index);
   void testFileNameChanged(QString);
+  void onBasicFormatChanged();
 
   void onRegexChanged(QString);
 

@@ -54,9 +54,9 @@ void BasicFormatWidget::onComboChanged(int index)
     return;
   }
 
-  TestRegexFormat format = m_defaultFormatOrder[index];
+  m_format = m_defaultFormatOrder[index];
 
-  switch (format) {
+  switch (m_format) {
     case TestRegexFormat::Custom:
       m_ui->customGroupBox->setVisible(true);
       m_ui->customGroupBox->setEnabled(true);
@@ -67,14 +67,13 @@ void BasicFormatWidget::onComboChanged(int index)
   }
 
   buildFileRegex(
-    m_defaultRegexParams[format][0], m_defaultRegexParams[format][1],
-    m_defaultRegexParams[format][2], m_defaultRegexParams[format][3],
-    m_defaultRegexParams[format][4]);
+    m_defaultRegexParams[m_format][0], m_defaultRegexParams[m_format][1],
+    m_defaultRegexParams[m_format][2], m_defaultRegexParams[m_format][3],
+    m_defaultRegexParams[m_format][4]);
 
-  m_ui->customFormatWidget->setFields(
-    m_defaultRegexParams[format][0], m_defaultRegexParams[format][1],
-    m_defaultRegexParams[format][2], m_defaultRegexParams[format][3],
-    m_defaultRegexParams[format][4]);
+  m_ui->customFormatWidget->setFields(m_defaultRegexParams[m_format]);
+
+  emit fileFormatChanged();
 }
 
 void BasicFormatWidget::buildFileRegex(QString prefix, QString negChar,
@@ -220,6 +219,20 @@ QJsonObject BasicFormatWidget::getRegexSubsitutions() const
   regexToSubs.append(sub1);
   substitutions["angle"] = regexToSubs;
   return substitutions;
+}
+
+bool BasicFormatWidget::isDefaultFilename(const QString& fileName) const
+{
+  QStringList defaultList;
+  foreach (auto format, m_defaultFormatOrder) {
+    defaultList << m_defaultFileNames[format];
+  }
+  return defaultList.contains(fileName);
+}
+
+QString BasicFormatWidget::getDefaultFilename() const
+{
+  return m_defaultFileNames[m_format];
 }
 
 void BasicFormatWidget::setupRegexDisplayLine()
