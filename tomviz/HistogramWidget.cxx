@@ -259,9 +259,9 @@ void HistogramWidget::onCurrentPointEditEvent()
 {
   double rgb[3];
   if (m_histogramColorOpacityEditor->GetCurrentControlPointColor(rgb)) {
-    QColor color = QColorDialog::getColor(
-      QColor::fromRgbF(rgb[0], rgb[1], rgb[2]), this,
-      "Select Color for Control Point", QColorDialog::DontUseNativeDialog);
+    QColor color =
+      QColorDialog::getColor(QColor::fromRgbF(rgb[0], rgb[1], rgb[2]), this,
+                             "Select Color for Control Point");
     if (color.isValid()) {
       rgb[0] = color.redF();
       rgb[1] = color.greenF();
