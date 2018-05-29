@@ -18,11 +18,9 @@
 
 import numpy as np
 
-from tomviz.io.base import Writer
-from tomviz.io.base import Reader
+from tomviz.io import FileType, IOBase, Reader, Writer
 
 import tomviz.utils
-from tomviz.io.base import FileType, IOBase
 
 from vtk import vtkImageData
 
@@ -43,7 +41,7 @@ class NumpyWriter(Writer, NumpyBase):
 
     def write(self, path, data_object):
         data = tomviz.utils.get_array(data_object)
-        with self.open(path, write=True) as f:
+        with self.open(path) as f:
             np.save(f, data)
 
 
