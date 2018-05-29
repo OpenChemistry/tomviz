@@ -33,13 +33,17 @@ class BasicFormatWidget;
 
 namespace tomviz {
 
-enum class TestRegexFormat
+enum class RegexFormat
 {
-  npDm3,
-  pmDm3,
-  npTiff,
-  pmTiff,
+  NegativePositive,
+  PlusMinus,
   Custom
+};
+
+enum class RegexExtension
+{
+  tiff,
+  dm3
 };
 
 class BasicFormatWidget : public QWidget
@@ -59,7 +63,8 @@ public:
   QString getDefaultFilename() const;
 
 private slots:
-  void onComboChanged(int);
+  void onFormatChanged(int);
+  void onExtensionChanged(int);
 
 signals:
   void fileFormatChanged();
@@ -73,21 +78,32 @@ private:
   QString m_posChar;
   QString m_pythonFileNameRegex;
   QString m_testFileName;
-  TestRegexFormat m_format;
+  RegexFormat m_format;
+  RegexExtension m_extension;
 
   void setupFileFormatCombo();
+  void setupFileExtensionCombo();
   void setupRegexDisplayLine();
 
-  QList<TestRegexFormat> makeDefaultFormatOrder() const;
-  QMap<TestRegexFormat, QString> makeDefaultFileNames() const;
-  QMap<TestRegexFormat, QString> makeDefaultLabels() const;
-  QMap<TestRegexFormat, QStringList> makeDefaultRegexParams() const;
+  QList<RegexFormat> makeDefaultFormatOrder() const;
+  QList<RegexExtension> makeDefaultExtensionOrder() const;
+  QMap<std::pair<RegexFormat, RegexExtension>, QString> makeDefaultFileNames()
+    const;
+  QMap<RegexFormat, QString> makeDefaultFormatLabels() const;
+  QMap<RegexExtension, QString> makeDefaultExtensionLabels() const;
+  QMap<std::pair<RegexFormat, RegexExtension>, QStringList>
+  makeDefaultRegexParams() const;
 
-  const QList<TestRegexFormat> m_defaultFormatOrder;
-  const QMap<TestRegexFormat, QString> m_defaultFileNames;
-  const QMap<TestRegexFormat, QString> m_defaultFormatLabels;
-  const QMap<TestRegexFormat, QStringList> m_defaultRegexParams;
+  const QList<RegexFormat> m_defaultFormatOrder;
+  const QList<RegexExtension> m_defaultExtensionOrder;
+  const QMap<std::pair<RegexFormat, RegexExtension>, QString>
+    m_defaultFileNames;
+  const QMap<RegexFormat, QString> m_defaultFormatLabels;
+  const QMap<RegexExtension, QString> m_defaultExtensionLabels;
+  const QMap<std::pair<RegexFormat, RegexExtension>, QStringList>
+    m_defaultRegexParams;
 
+  void updateRegex();
   void buildFileRegex(QString, QString, QString, QString, QString);
   void customFileRegex();
   void validateFileNameRegex();

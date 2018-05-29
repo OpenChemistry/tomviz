@@ -22,17 +22,24 @@ namespace tomviz {
 BasicFormatWidget::BasicFormatWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::BasicFormatWidget),
     m_defaultFormatOrder(makeDefaultFormatOrder()),
+    m_defaultExtensionOrder(makeDefaultExtensionOrder()),
     m_defaultFileNames(makeDefaultFileNames()),
-    m_defaultFormatLabels(makeDefaultLabels()),
+    m_defaultFormatLabels(makeDefaultFormatLabels()),
+    m_defaultExtensionLabels(makeDefaultExtensionLabels()),
     m_defaultRegexParams(makeDefaultRegexParams())
 {
   m_ui->setupUi(this);
 
   connect(m_ui->fileFormatCombo, static_cast<void (QComboBox::*)(int)>(
                                    &QComboBox::currentIndexChanged),
-          this, &BasicFormatWidget::onComboChanged);
+          this, &BasicFormatWidget::onFormatChanged);
+
+  connect(m_ui->fileExtensionCombo, static_cast<void (QComboBox::*)(int)>(
+                                      &QComboBox::currentIndexChanged),
+          this, &BasicFormatWidget::onExtensionChanged);
 
   setupFileFormatCombo();
+  setupFileExtensionCombo();
   setupRegexDisplayLine();
 
   connect(m_ui->customFormatWidget, &CustomFormatWidget::fieldsChanged, this,
@@ -48,7 +55,14 @@ void BasicFormatWidget::setupFileFormatCombo()
   }
 }
 
-void BasicFormatWidget::onComboChanged(int index)
+void BasicFormatWidget::setupFileExtensionCombo()
+{
+  foreach (auto format, m_defaultExtensionOrder) {
+    m_ui->fileExtensionCombo->addItem(m_defaultExtensionLabels[format]);
+  }
+}
+
+void BasicFormatWidget::onFormatChanged(int index)
 {
   if (index >= m_defaultFormatOrder.size() || index < 0) {
     return;
@@ -57,23 +71,37 @@ void BasicFormatWidget::onComboChanged(int index)
   m_format = m_defaultFormatOrder[index];
 
   switch (m_format) {
-    case TestRegexFormat::Custom:
+    case RegexFormat::Custom:
       m_ui->customGroupBox->setVisible(true);
       m_ui->customGroupBox->setEnabled(true);
+      m_ui->fileExtensionCombo->setEnabled(false);
       break;
     default:
       m_ui->customGroupBox->setVisible(true);
       m_ui->customGroupBox->setEnabled(false);
+      m_ui->fileExtensionCombo->setEnabled(true);
   }
-
-  buildFileRegex(
-    m_defaultRegexParams[m_format][0], m_defaultRegexParams[m_format][1],
-    m_defaultRegexParams[m_format][2], m_defaultRegexParams[m_format][3],
-    m_defaultRegexParams[m_format][4]);
-
-  m_ui->customFormatWidget->setFields(m_defaultRegexParams[m_format]);
-
+  updateRegex();
   emit fileFormatChanged();
+}
+
+void BasicFormatWidget::onExtensionChanged(int index)
+{
+  if (index >= m_defaultExtensionOrder.size() || index < 0) {
+    return;
+  }
+  m_extension = m_defaultExtensionOrder[index];
+  updateRegex();
+  emit fileFormatChanged();
+}
+
+void BasicFormatWidget::updateRegex()
+{
+  QStringList params =
+    m_defaultRegexParams[std::make_pair(m_format, m_extension)];
+  buildFileRegex(params[0], params[1], params[2], params[3], params[4]);
+
+  m_ui->customFormatWidget->setFields(params);
 }
 
 void BasicFormatWidget::buildFileRegex(QString prefix, QString negChar,
@@ -223,16 +251,19 @@ QJsonObject BasicFormatWidget::getRegexSubsitutions() const
 
 bool BasicFormatWidget::isDefaultFilename(const QString& fileName) const
 {
-  QStringList defaultList;
   foreach (auto format, m_defaultFormatOrder) {
-    defaultList << m_defaultFileNames[format];
+    foreach (auto extension, m_defaultExtensionOrder) {
+      if (fileName == m_defaultFileNames[std::make_pair(format, extension)]) {
+        return true;
+      }
+    }
   }
-  return defaultList.contains(fileName);
+  return false;
 }
 
 QString BasicFormatWidget::getDefaultFilename() const
 {
-  return m_defaultFileNames[m_format];
+  return m_defaultFileNames[std::make_pair(m_format, m_extension)];
 }
 
 void BasicFormatWidget::setupRegexDisplayLine()
@@ -242,95 +273,115 @@ void BasicFormatWidget::setupRegexDisplayLine()
   QPalette pal = display->palette();
   QColor disabledBg = pal.color(QPalette::Disabled, QPalette::Base);
   pal.setColor(QPalette::Active, QPalette::Base, disabledBg);
+  pal.setColor(QPalette::Inactive, QPalette::Base, disabledBg);
   display->setPalette(pal);
 }
 
-QMap<TestRegexFormat, QString> BasicFormatWidget::makeDefaultFileNames() const
+QMap<std::pair<RegexFormat, RegexExtension>, QString>
+BasicFormatWidget::makeDefaultFileNames() const
 {
-  QMap<TestRegexFormat, QString> defaultFilenames;
-  defaultFilenames[TestRegexFormat::npDm3] =
-    QString("ThePrefix_n12.3degree_TheSuffix.dm3");
-  defaultFilenames[TestRegexFormat::pmDm3] =
-    QString("ThePrefix_-12.3degree_TheSuffix.dm3");
-  defaultFilenames[TestRegexFormat::npTiff] =
-    QString("ThePrefix_n12.3_TheSuffix.tif");
-  defaultFilenames[TestRegexFormat::pmTiff] =
-    QString("ThePrefix_+12.3_TheSuffix.tif");
-  defaultFilenames[TestRegexFormat::Custom] = QString("");
+  QMap<std::pair<RegexFormat, RegexExtension>, QString> defaultFilenames;
+  QString fileBase;
+  QString fileExt;
+  foreach (auto format, m_defaultFormatOrder) {
+    foreach (auto extension, m_defaultExtensionOrder) {
+      fileBase = QString("");
+      fileExt = QString("");
+      if (format == RegexFormat::NegativePositive) {
+        fileBase = QString("Prefix_n12.3_Suffix");
+      } else if (format == RegexFormat::PlusMinus) {
+        fileBase = QString("Prefix_+12.3_Suffix");
+      }
 
+      if (format != RegexFormat::Custom) {
+        if (extension == RegexExtension::dm3) {
+          fileExt = QString(".dm3");
+        } else if (extension == RegexExtension::tiff) {
+          fileExt = QString(".tiff");
+        }
+      }
+
+      defaultFilenames[std::make_pair(format, extension)] =
+        QString("%1%2").arg(fileBase).arg(fileExt);
+    }
+  }
   return defaultFilenames;
 }
 
-QMap<TestRegexFormat, QString> BasicFormatWidget::makeDefaultLabels() const
+QMap<RegexFormat, QString> BasicFormatWidget::makeDefaultFormatLabels() const
 {
-  QMap<TestRegexFormat, QString> defaultLabels;
-  defaultLabels[TestRegexFormat::npDm3] =
-    QString("<prefix>[n|p]<angle>degree<suffix>.dm3");
-  defaultLabels[TestRegexFormat::pmDm3] =
-    QString("<prefix>[-|+]<angle>degree<suffix>.dm3");
-  defaultLabels[TestRegexFormat::npTiff] =
-    QString("<prefix>[n|p]<angle><suffix>.tif[f]");
-  defaultLabels[TestRegexFormat::pmTiff] =
-    QString("<prefix>[-|+]<angle><suffix>.tif[f]");
-  defaultLabels[TestRegexFormat::Custom] = QString("Custom");
+  QMap<RegexFormat, QString> defaultLabels;
+  defaultLabels[RegexFormat::NegativePositive] =
+    QString("<prefix>[n|p]<angle><suffix>");
+  defaultLabels[RegexFormat::PlusMinus] =
+    QString("<prefix>[-|+]<angle><suffix>");
+  defaultLabels[RegexFormat::Custom] = QString("Custom");
 
   return defaultLabels;
 }
 
-QMap<TestRegexFormat, QStringList> BasicFormatWidget::makeDefaultRegexParams()
+QMap<RegexExtension, QString> BasicFormatWidget::makeDefaultExtensionLabels()
   const
 {
-  QMap<TestRegexFormat, QStringList> defaultRegexParams;
+  QMap<RegexExtension, QString> defaultLabels;
+  defaultLabels[RegexExtension::dm3] = QString(".dm3");
+  defaultLabels[RegexExtension::tiff] = QString(".tif[f]");
 
-  QStringList params0;
-  params0 << "*"
-          << "n"
-          << "p"
-          << "degree*"
-          << "dm3";
-  defaultRegexParams[TestRegexFormat::npDm3] = params0;
+  return defaultLabels;
+}
 
-  QStringList params1;
-  params1 << "*"
-          << "-"
-          << "+"
-          << "degree*"
-          << "dm3";
-  defaultRegexParams[TestRegexFormat::pmDm3] = params1;
+QMap<std::pair<RegexFormat, RegexExtension>, QStringList>
+BasicFormatWidget::makeDefaultRegexParams() const
+{
+  QMap<std::pair<RegexFormat, RegexExtension>, QStringList> defaultRegexParams;
+  foreach (auto format, m_defaultFormatOrder) {
+    foreach (auto extension, m_defaultExtensionOrder) {
+      QStringList params;
 
-  QStringList params2;
-  params2 << "*"
-          << "n"
-          << "p"
-          << "*"
-          << "tif[f]?";
-  defaultRegexParams[TestRegexFormat::npTiff] = params2;
+      if (format == RegexFormat::NegativePositive) {
+        params << "*"
+               << "n"
+               << "p"
+               << "*";
+      } else if (format == RegexFormat::PlusMinus) {
+        params << "*"
+               << "-"
+               << "+"
+               << "*";
+      } else if (format == RegexFormat::Custom) {
+        params << "*"
+               << "n"
+               << "p"
+               << "*";
+      }
 
-  QStringList params3;
-  params3 << "*"
-          << "-"
-          << "+"
-          << "*"
-          << "tif[f]?";
-  defaultRegexParams[TestRegexFormat::pmTiff] = params3;
+      if (format == RegexFormat::Custom) {
+        params << "*";
+      } else if (extension == RegexExtension::dm3) {
+        params << "dm3";
+      } else if (extension == RegexExtension::tiff) {
+        params << "tif[f]?";
+      }
 
-  QStringList params4;
-  params4 << "*"
-          << "n"
-          << "p"
-          << "*"
-          << "*";
-  defaultRegexParams[TestRegexFormat::Custom] = params4;
+      defaultRegexParams[std::make_pair(format, extension)] = params;
+    }
+  }
 
   return defaultRegexParams;
 }
 
-QList<TestRegexFormat> BasicFormatWidget::makeDefaultFormatOrder() const
+QList<RegexFormat> BasicFormatWidget::makeDefaultFormatOrder() const
 {
-  QList<TestRegexFormat> defaultOrder;
-  defaultOrder << TestRegexFormat::npDm3 << TestRegexFormat::pmDm3
-               << TestRegexFormat::npTiff << TestRegexFormat::pmTiff
-               << TestRegexFormat::Custom;
+  QList<RegexFormat> defaultOrder;
+  defaultOrder << RegexFormat::NegativePositive << RegexFormat::PlusMinus
+               << RegexFormat::Custom;
+  return defaultOrder;
+}
+
+QList<RegexExtension> BasicFormatWidget::makeDefaultExtensionOrder() const
+{
+  QList<RegexExtension> defaultOrder;
+  defaultOrder << RegexExtension::dm3 << RegexExtension::tiff;
   return defaultOrder;
 }
 }
