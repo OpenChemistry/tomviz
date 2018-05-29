@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BasicFormatWidget</class>
+ <widget class="QWidget" name="BasicFormatWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>296</width>
+    <height>166</height>
+   </rect>
+  </property>
+  <layout class="QGridLayout" name="basicTabLayout">
+   <item row="0" column="0">
+    <widget class="QLabel" name="fileNameFormatLabel">
+     <property name="text">
+      <string>File Name Format</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <layout class="QHBoxLayout" name="horizontalCombo_layout">
+     <item>
+      <widget class="QComboBox" name="fileFormatCombo">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="fileExtensionCombo">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="regexFormatLabel">
+     <property name="text">
+      <string>Resulting Regex</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLineEdit" name="regexDisplay"/>
+   </item>
+   <item row="1" column="0" colspan="2">
+    <widget class="QGroupBox" name="customGroupBox">
+     <property name="title">
+      <string>Custom format</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_group">
+      <item>
+       <widget class="tomviz::CustomFormatWidget" name="customFormatWidget" native="true"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <spacer name="vBottomSpacer3">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>0</width>
+       <height>30</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>tomviz::CustomFormatWidget</class>
+   <extends>QWidget</extends>
+   <header>CustomFormatWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

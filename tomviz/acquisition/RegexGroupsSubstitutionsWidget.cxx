@@ -36,6 +36,7 @@ RegexGroupsSubstitutionsWidget::RegexGroupsSubstitutionsWidget(QWidget* parent)
   : QWidget(parent), m_ui(new Ui::RegexGroupsSubstitutionsWidget)
 {
   m_ui->setupUi(this);
+  autoResizeTable();
 
   readSettings();
 
@@ -82,6 +83,7 @@ RegexGroupsSubstitutionsWidget::RegexGroupsSubstitutionsWidget(QWidget* parent)
               this->m_ui->regexGroupsSubstitutionsWidget->removeRow(row);
               this->m_substitutions.removeAt(row);
               this->writeSettings();
+              autoResizeTable();
             });
 
             // Show context menu at handling position
@@ -154,6 +156,7 @@ void RegexGroupsSubstitutionsWidget::addRegexGroupSubstitution(
   auto row = m_ui->regexGroupsSubstitutionsWidget->rowCount();
   m_ui->regexGroupsSubstitutionsWidget->insertRow(row);
   setRegexGroupSubstitution(row, substitution);
+  autoResizeTable();
 }
 
 void RegexGroupsSubstitutionsWidget::setRegexGroupSubstitution(
@@ -173,4 +176,26 @@ QList<RegexGroupSubstitution> RegexGroupsSubstitutionsWidget::substitutions()
 {
   return m_substitutions;
 }
+
+void RegexGroupsSubstitutionsWidget::autoResizeTable()
+{
+  // Auto resize the size when adding/deleting entries.
+  // Keep the size between is between 0 and 2 rows.
+  m_ui->regexGroupsSubstitutionsWidget->resizeColumnsToContents();
+  m_ui->regexGroupsSubstitutionsWidget->horizontalHeader()
+    ->setSectionResizeMode(0, QHeaderView::Stretch);
+  int vSize =
+    m_ui->regexGroupsSubstitutionsWidget->horizontalHeader()->height();
+  for (int i = 0; i < m_substitutions.size(); ++i) {
+    vSize +=
+      m_ui->regexGroupsSubstitutionsWidget->verticalHeader()->sectionSize(i);
+    if (i >= 1) {
+      break;
+    }
+  }
+  vSize += 2;
+  m_ui->regexGroupsSubstitutionsWidget->setMinimumHeight(vSize);
+  m_ui->regexGroupsSubstitutionsWidget->setMaximumHeight(vSize);
+}
+
 } // namespace tomviz

@@ -13,46 +13,48 @@
   limitations under the License.
 
 ******************************************************************************/
-
-#ifndef tomvizConnectionsWidget_h
-#define tomvizConnectionsWidget_h
+#ifndef tomvizCustomFormatWidget_h
+#define tomvizCustomFormatWidget_h
 
 #include <QWidget>
 
-#include "Connection.h"
-
 #include <QScopedPointer>
-#include <QVariantList>
 
 namespace Ui {
-class ConnectionsWidget;
+class CustomFormatWidget;
 }
 
 namespace tomviz {
 
-class ConnectionsWidget : public QWidget
+class CustomFormatWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  ConnectionsWidget(QWidget* parent);
-  ~ConnectionsWidget() override;
-
-  Connection* selectedConnection();
+  CustomFormatWidget(QWidget* parent = nullptr);
+  ~CustomFormatWidget() override;
+  QStringList getFields() const;
+  void setFields(const QStringList&);
+  void setAllowEdit(bool);
 
 signals:
-  void selectionChanged();
+  void fieldsChanged();
+
+private slots:
+  void onPrefixChanged(QString prefix);
+  void onNegChanged(QString prefix);
+  void onPosChanged(QString prefix);
+  void onSuffixChanged(QString prefix);
+  void onExtensionChanged(QString prefix);
 
 private:
-  QScopedPointer<Ui::ConnectionsWidget> m_ui;
-  QList<Connection> m_connections;
-
-  void readSettings();
-  void writeSettings();
-  void setConnections(const QVariantList& connections);
-  void sortConnections();
-  void editConnection(Connection conn, size_t row);
+  QScopedPointer<Ui::CustomFormatWidget> m_ui;
+  QString m_prefix = "*";
+  QString m_suffix = "*";
+  QString m_ext = "*";
+  QString m_negChar = "n";
+  QString m_posChar = "p";
 };
-} // namespace tomviz
+}
 
 #endif

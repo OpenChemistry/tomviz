@@ -468,7 +468,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   auto passiveAcquisitionWidget = new PassiveAcquisitionWidget(this);
   connect(m_ui->actionPassiveAcquisition, &QAction::triggered,
-          passiveAcquisitionWidget, &QWidget::show);
+          passiveAcquisitionWidget, &QDialog::show);
 
   registerCustomOperators();
 }

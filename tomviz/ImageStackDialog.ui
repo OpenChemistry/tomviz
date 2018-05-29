@@ -170,10 +170,6 @@
     </widget>
    </item>
   </layout>
-  <zorder></zorder>
-  <zorder>emptyContainer</zorder>
-  <zorder>loadedContainer</zorder>
-  <zorder>horizontalSpacer</zorder>
  </widget>
  <tabstops>
   <tabstop>tableView</tabstop>

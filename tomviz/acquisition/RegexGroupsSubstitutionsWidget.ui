@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1388</width>
-    <height>1077</height>
+    <width>537</width>
+    <height>282</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -18,10 +18,19 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
-    <number>5</number>
+    <number>6</number>
    </property>
-   <property name="margin">
-    <number>5</number>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
    </property>
    <item>
     <widget class="QTableWidget" name="regexGroupsSubstitutionsWidget">

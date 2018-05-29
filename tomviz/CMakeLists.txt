@@ -206,12 +206,18 @@ list(APPEND SOURCES
   acquisition/AcquisitionWidget.h
   acquisition/AcquisitionClient.cxx
   acquisition/AcquisitionClient.h
+  acquisition/AdvancedFormatWidget.cxx
+  acquisition/AdvancedFormatWidget.h
+  acquisition/BasicFormatWidget.cxx
+  acquisition/BasicFormatWidget.h
   acquisition/Connection.cxx
   acquisition/Connection.h
   acquisition/ConnectionsWidget.cxx
   acquisition/ConnectionsWidget.h
   acquisition/ConnectionDialog.cxx
   acquisition/ConnectionDialog.h
+  acquisition/CustomFormatWidget.cxx
+  acquisition/CustomFormatWidget.h
   acquisition/JsonRpcClient.cxx
   acquisition/JsonRpcClient.h
   acquisition/PassiveAcquisitionWidget.cxx
