@@ -325,7 +325,7 @@ QMap<RegexExtension, QString> BasicFormatWidget::makeDefaultExtensionLabels()
 {
   QMap<RegexExtension, QString> defaultLabels;
   defaultLabels[RegexExtension::dm3] = QString(".dm3");
-  defaultLabels[RegexExtension::tiff] = QString(".tif[f]");
+  defaultLabels[RegexExtension::tiff] = QString(".tiff");
 
   return defaultLabels;
 }
