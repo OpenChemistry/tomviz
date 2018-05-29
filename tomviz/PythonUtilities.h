@@ -58,7 +58,7 @@ public:
   };
 
   class Dict;
-
+  class List;
   class Object
   {
   public:
@@ -75,9 +75,11 @@ public:
     void incrementRefCount();
     bool toBool() const;
     bool isDict() const;
+    bool isList() const;
     bool isValid() const;
     QString toString() const;
     Dict toDict();
+    List toList();
     virtual ~Object();
 
   protected:

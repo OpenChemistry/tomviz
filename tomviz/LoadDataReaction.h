@@ -28,6 +28,8 @@ class vtkSMProxy;
 namespace tomviz {
 class DataSource;
 
+class PythonReader;
+
 /// LoadDataReaction handles the "Load Data" action in tomviz. On trigger,
 /// this will open the data file and necessary subsequent actions, including:
 /// \li make the data source "active".
@@ -80,6 +82,7 @@ private:
   static QJsonObject readerProperties(vtkSMProxy* reader);
   static void setFileNameProperties(const QJsonObject& props,
                                     vtkSMProxy* reader);
+  static QStringList getPythonReaders();
 };
 } // namespace tomviz
 

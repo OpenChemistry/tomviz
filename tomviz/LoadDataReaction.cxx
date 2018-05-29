@@ -24,6 +24,7 @@
 #include "ModuleManager.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
+#include "PythonUtilities.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
@@ -47,6 +48,7 @@
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
+#include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkTrivialProducer.h>
 
@@ -128,6 +130,12 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "XDMF files (*.xmf *.xdmf)"
           << "Text files (*.txt)"
           << "All files (*.*)";
+
+  QStringList pythonFilters = getPythonReaders();
+
+  foreach(auto fileType, pythonFilters) {
+    filters << fileType;
+  }
 
   QFileDialog dialog(nullptr);
   dialog.setFileMode(QFileDialog::ExistingFiles);
@@ -424,6 +432,45 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
     }
     tomviz::setProperty(props["fileName"], prop);
   }
+}
+
+QStringList LoadDataReaction::getPythonReaders()
+{
+  Python python;
+  auto module = python.import("tomviz._internal");
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz._internal module.";
+    return QStringList();
+  } else {
+    qDebug() << "Imported tomviz._internal";
+  }
+
+  auto reader = module.findFunction("get_python_readers");
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz._internal module.get_python_readers";
+    return QStringList();
+  } else {
+    qDebug() << "Imported tomviz._internal.get_python_readers";
+  }
+
+  Python::Tuple args(0);
+  auto res = reader.call(args);
+  if (!res.isValid()) {
+    qCritical("Error calling get_python_readers.");
+    return QStringList();
+  } else {
+    qDebug() << "Success calling get_python_readers";
+    if (res.isList()) {
+      Python::List fileTypes(res);
+      QStringList readers;
+      for (int i = 0; i < fileTypes.length(); ++i) {
+        readers << QString(fileTypes[i].toString());
+      }
+      qDebug() << readers;
+      return readers;
+    }
+  }
+  return QStringList();
 }
 
 } // end of namespace tomviz

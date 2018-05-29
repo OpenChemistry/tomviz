@@ -28,6 +28,9 @@ class FileType(object):
         self.display_name = display_name
         self.extensions = extensions
 
+    def __str__(self):
+        return "%s (%s)" % (self.display_name, " ".join(["*."+ext for ext in self.extensions]))
+
 
 @six.add_metaclass(ABCMeta)
 class IOBase(object):

@@ -93,12 +93,22 @@ bool Python::Object::isDict() const
   return PyDict_Check(m_smartPyObject->GetPointer());
 }
 
+bool Python::Object::isList() const
+{
+  return PyList_Check(m_smartPyObject->GetPointer());
+}
+
 bool Python::Object::isValid() const
 {
   return m_smartPyObject->GetPointer() != nullptr;
 }
 
 Python::Dict Python::Object::toDict()
+{
+  return m_smartPyObject->GetPointer();
+}
+
+Python::List Python::Object::toList()
 {
   return m_smartPyObject->GetPointer();
 }

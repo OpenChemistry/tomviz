@@ -159,3 +159,11 @@ def find_operators(operator_dir):
         )
 
     return operator_descriptions
+
+def get_python_readers():
+    from tomviz.io.formats.numpy import NumpyReader
+    from tomviz.io.formats.plaintext import PlainTextReader
+    file_types = []
+    file_types.append(str(NumpyReader.file_type()))
+    file_types.append(str(PlainTextReader.file_type()))
+    return file_types
