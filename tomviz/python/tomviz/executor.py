@@ -9,9 +9,8 @@ import socket
 import abc
 import stat
 import json
-from contextlib import contextmanager
 import six
-import abc
+
 
 from tqdm import tqdm
 
@@ -30,12 +29,14 @@ logger.addHandler(stream_handler)
 
 DIMS = ['dim1', 'dim2', 'dim3']
 
+
 class ProgressBase(object):
     def started(self, op=None):
         self._operator_index = op
 
     def finished(self, op=None):
         pass
+
 
 class TqdmProgress(ProgressBase):
     """
@@ -109,6 +110,7 @@ class TqdmProgress(ProgressBase):
     def finished(self, op=None):
         if self._progress_bar is not None:
             self._progress_bar.close()
+
 
 @six.add_metaclass(abc.ABCMeta)
 class JsonProgress(ProgressBase):
@@ -218,6 +220,7 @@ class JsonProgress(ProgressBase):
 
         self.write(msg)
 
+
 class LocalSocketProgress(JsonProgress):
     """
     Class used to update operator progress. Connects to QLocalServer and writes
@@ -251,11 +254,13 @@ class LocalSocketProgress(JsonProgress):
             self._connection.sendall(data)
         else:
             self._connection.write(data)
+
     def __exit__(self, *exc):
         if self._connection is not None:
             self._connection.close()
 
         return False
+
 
 class FilesProgress(JsonProgress):
     """
@@ -267,11 +272,13 @@ class FilesProgress(JsonProgress):
         self._sequence_number = 0
 
     def write(self, data):
-        file_path = os.path.join(self._path, 'progress%d' % self._sequence_number)
+        file_path = os.path.join(self._path,
+                                 'progress%d' % self._sequence_number)
         self._sequence_number += 1
 
         with open(file_path, 'w') as f:
             json.dump(data, f)
+
 
 def _progress(progress_method, progress_path):
     if progress_method == 'tqdm':
@@ -282,6 +289,7 @@ def _progress(progress_method, progress_path):
         return FilesProgress(progress_path)
     else:
         raise Exception('Unrecognized progress method: %s' % progress_method)
+
 
 class OperatorWrapper(object):
     canceled = False
@@ -430,9 +438,10 @@ def execute(operators, start_at, data_file_path, output_file_path,
         operator_index = start_at
         for (label, transform, arguments) in transforms:
             progress.started(operator_index)
-            data = _execute_transform(label, transform, arguments, data, progress)
+            data = _execute_transform(label, transform, arguments, data,
+                                      progress)
             progress.finished(operator_index)
-            operator_index +=1
+            operator_index += 1
 
         # Now write out the transformed data.
         logger.info('Writing transformed data.')
@@ -442,7 +451,6 @@ def execute(operators, start_at, data_file_path, output_file_path,
         _write_emd(output_file_path, data, dims)
         logger.info('Write complete.')
         progress.finished()
-
 
 
 if __name__ == '__main__':

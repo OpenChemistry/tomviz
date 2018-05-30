@@ -30,6 +30,7 @@ def _extract_pipeline(state):
 
     return (data_source, operators)
 
+
 @click.command(name="tomviz")
 @click.option('-d', '--data-file-path', help='Path to the EMD file, can be used'
               ' to override data source in state file',
