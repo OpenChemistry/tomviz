@@ -44,8 +44,11 @@ def _extract_pipeline(state):
 @click.option('-u', '--socket-path',
               help='The socket path to use for progress updates.',
               type=click.Path(), default='/tomviz/progress')
+@click.option('-i', '--operator-index',
+              help='The operator to start at.',
+              type=int, default=0)
 def main(data_file_path, state_file_path, output_file_path, progress_method,
-         socket_path):
+         socket_path, operator_index):
 
     # Extract the pipeline
     with open(state_file_path, 'rb') as fp:
@@ -73,5 +76,5 @@ def main(data_file_path, state_file_path, output_file_path, progress_method,
             raise Exception('Data source path does not exist: %s'
                             % data_file_path)
 
-    executor.execute(operators, data_file_path, output_file_path,
-                     progress_method, socket_path)
+    executor.execute(operators, operator_index, data_file_path,
+                     output_file_path, progress_method, socket_path)

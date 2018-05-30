@@ -106,8 +106,8 @@ public:
 
 public slots:
   void execute();
-  void execute(DataSource* start, bool runLast);
-  void execute(DataSource* start);
+  void execute(DataSource* dataSource, Operator* start = nullptr);
+
   void branchFinished(DataSource* start, vtkDataObject* newData);
 
 signals:

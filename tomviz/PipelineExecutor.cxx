@@ -66,9 +66,11 @@ ThreadPipelineExecutor::ThreadPipelineExecutor(Pipeline* pipeline)
   m_worker = new PipelineWorker(this);
 }
 
-void ThreadPipelineExecutor::execute(DataSource* dataSource, Operator* start)
+void ThreadPipelineExecutor::execute(vtkDataObject* data,
+                                     QList<Operator*> operators, int start)
 {
-  executePipelineBranch(dataSource, start);
+  operators = operators.mid(start);
+  executePipelineBranch(data, operators);
 }
 
 void ThreadPipelineExecutor::cancel(std::function<void()> canceled)
@@ -95,53 +97,24 @@ bool ThreadPipelineExecutor::isRunning()
   return m_future != nullptr && m_future->isRunning();
 }
 
-void ThreadPipelineExecutor::executePipelineBranch(DataSource* dataSource,
-                                                   Operator* start)
+void ThreadPipelineExecutor::executePipelineBranch(vtkDataObject* data,
+                                                   QList<Operator*> operators)
 {
-  if (pipeline()->paused()) {
-    return;
-  }
-
-  auto operators = dataSource->operators();
-  if (operators.isEmpty()) {
-    emit pipeline()->finished();
-    return;
-  }
-
   // Cancel any running operators. TODO in the future we should be able to add
   // operators to end of a running pipeline.
   if (m_future && m_future->isRunning()) {
     m_future->cancel();
   }
 
-  vtkDataObject* data = nullptr;
-
-  if (start != nullptr) {
-    // Use the transform DataSource as the starting point.
-    auto transformDataSource = pipeline()->transformedDataSource(dataSource);
-    data = transformDataSource->copyData();
-
-    // See if we have any canceled operators in the pipeline, if so we have to
-    // re-run this branch of the pipeline.
-    bool haveCanceled = false;
-    for (auto itr = dataSource->operators().begin(); *itr != start; ++itr) {
-      auto currentOp = *itr;
-      if (currentOp->isCanceled()) {
-        currentOp->resetState();
-        haveCanceled = true;
-        break;
-      }
-    }
-
-    // If we have canceled operators we have to run call operators.
-    if (!haveCanceled) {
-      operators = operators.mid(operators.indexOf(start));
-      start->resetState();
-    }
+  if (operators.isEmpty()) {
+    emit pipeline()->finished();
+    return;
   }
 
-  m_future = m_worker->run(data, operators);
-  data->FastDelete();
+  auto copy = data->NewInstance();
+  copy->DeepCopy(data);
+  m_future = m_worker->run(copy, operators);
+  copy->FastDelete();
   connect(m_future, &PipelineWorker::Future::finished, this,
           &ThreadPipelineExecutor::pipelineBranchFinished);
   connect(m_future, &PipelineWorker::Future::canceled, this,
@@ -225,6 +198,12 @@ Pipeline::ImageFuture* ThreadPipelineExecutor::getCopyOfImagePriorTo(
   }
 }
 
+void ThreadPipelineExecutor::execute(DataSource* dataSource)
+{
+  execute(dataSource->dataObject(), dataSource->operators());
+}
+
+const char* ORIGINAL_FILENAME = "original.emd";
 const char* TRANSFORM_FILENAME = "transformed.emd";
 const char* STATE_FILENAME = "state.tvsm";
 const char* CONTAINER_MOUNT = "/tomviz";
@@ -318,46 +297,31 @@ docker::DockerStopInvocation* DockerPipelineExecutor::stop(
   return stopInvocation;
 }
 
-void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
+void DockerPipelineExecutor::execute(vtkDataObject* data,
+                                     QList<Operator*> operators, int start)
 {
-
-  foreach (Operator* op, pipeline()->dataSource()->operators()) {
-    op->setState(OperatorState::Queued);
-  }
-
   m_temporaryDir.reset(new QTemporaryDir());
   if (!m_temporaryDir->isValid()) {
     displayError("Directory Error", "Unable to create temporary directory.");
     return;
   }
 
-  // First serialize the pipeline.
-  auto source = dataSource->serialize();
-  auto reader = source["reader"].toObject();
-  auto fileNames = reader["fileNames"].toArray();
-
-  if (fileNames.count() > 1) {
-    displayError("Unsupported", "Docker executor doesn't support stacks.");
-    return;
-  }
-
-  // Locate data and copy to temp dir
-  auto filePath = fileNames[0].toString();
-  QFileInfo info(filePath);
-  auto fileName = info.fileName();
-
-  QFile::copy(filePath, QDir(m_temporaryDir->path()).filePath(fileName));
-
-  // Now update the file path to where the it will appear in the
-  // docker container.
-  fileNames[0] = QJsonValue(fileName);
-  // TODO There must be a better way!
+  // First generate a state file for this pipeline
+  QJsonObject state;
+  QJsonObject dataSource;
+  QJsonObject reader;
+  QJsonArray fileNames;
+  fileNames.append(QDir(CONTAINER_MOUNT).filePath(ORIGINAL_FILENAME));
   reader["fileNames"] = fileNames;
-  source["reader"] = reader;
-  QJsonObject pipeline;
+  dataSource["reader"] = reader;
+  QJsonArray pipelineOps;
+  foreach (Operator* op, operators) {
+    pipelineOps.append(op->serialize());
+  }
+  dataSource["operators"] = pipelineOps;
   QJsonArray dataSources;
-  dataSources.append(source);
-  pipeline["dataSources"] = dataSources;
+  dataSources.append(dataSource);
+  state["dataSources"] = dataSources;
 
   // Now write the update state file to the temporary directory.
   QFile stateFile(QDir(m_temporaryDir->path()).filePath(STATE_FILENAME));
@@ -365,8 +329,18 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
     displayError("Write Error", "Couldn't open state file for write.");
     return;
   }
-  stateFile.write(QJsonDocument(pipeline).toJson());
+  stateFile.write(QJsonDocument(state).toJson());
   stateFile.close();
+
+  // Write data to EMD
+  auto dataFilePath = QDir(m_temporaryDir->path()).filePath(ORIGINAL_FILENAME);
+  EmdFormat emdFile;
+  auto imageData = vtkImageData::SafeDownCast(data);
+  if (!emdFile.write(dataFilePath.toLatin1().data(), imageData)) {
+    displayError("Write Error",
+                 QString("Unable to write data at: %1").arg(dataFilePath));
+    return;
+  }
 
   // Start reading progress updates
   auto progressPath = QDir(m_temporaryDir->path()).filePath(PROGRESS_PATH);
@@ -394,6 +368,8 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   QStringList args;
   args << "-s";
   args << stateFilePath;
+  args << "-i";
+  args << QString::number(start);
   args << "-o";
   args << outputPath;
   args << "-p";

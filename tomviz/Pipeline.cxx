@@ -110,21 +110,45 @@ void Pipeline::execute()
   execute(m_data);
 }
 
-void Pipeline::execute(DataSource* start, bool last)
+void Pipeline::execute(DataSource* dataSource, Operator* start)
 {
-  emit started();
-  Operator* lastOp = nullptr;
-
-  if (last) {
-    lastOp = start->operators().last();
+  if (paused()) {
+    return;
   }
-  m_executor->execute(start, lastOp);
-}
-
-void Pipeline::execute(DataSource* start)
-{
   emit started();
-  m_executor->execute(start);
+
+  if (dataSource == nullptr) {
+    dataSource = m_data;
+  }
+
+  auto operators = dataSource->operators();
+  if (operators.isEmpty()) {
+    emit finished();
+    return;
+  }
+  int startIndex = 0;
+  // We currently only support running the last operator or the entire pipeline.
+  if (start == dataSource->operators().last()) {
+    // See if we have any canceled operators in the pipeline, if so we have to
+    // re-run the anyway pipeline.
+    bool haveCanceled = false;
+    for (auto itr = operators.begin(); *itr != start; ++itr) {
+      auto currentOp = *itr;
+      if (currentOp->isCanceled()) {
+        currentOp->resetState();
+        haveCanceled = true;
+        break;
+      }
+    }
+
+    if (!haveCanceled) {
+      startIndex = operators.indexOf(start);
+      // Use transformed data source
+      dataSource = transformedDataSource(dataSource);
+    }
+  }
+
+  m_executor->execute(dataSource->dataObject(), operators, startIndex);
 }
 
 void Pipeline::branchFinished(DataSource* start, vtkDataObject* newData)
@@ -253,7 +277,7 @@ Operator* Pipeline::findTransformedDataSourceOperator(DataSource* dataSource)
 void Pipeline::addDataSource(DataSource* dataSource)
 {
   connect(dataSource, &DataSource::operatorAdded,
-          [this](Operator* op) { execute(op->dataSource(), true); });
+          [this](Operator* op) { execute(op->dataSource(), op); });
   // Wire up transformModified to execute pipeline
   connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
     // Extract out source and execute all.

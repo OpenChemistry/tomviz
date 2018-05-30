@@ -53,7 +53,10 @@ class PipelineExecutor : public QObject
 public:
   PipelineExecutor(Pipeline* pipeline);
 
-  virtual void execute(DataSource* dataSource, Operator* start = nullptr) = 0;
+  /// Execute list of operators on a give data source. start is the index into
+  /// the operator list indicating where the execution should start.
+  virtual void execute(vtkDataObject* data, QList<Operator*> operators,
+                       int start = 0) = 0;
   virtual Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op) = 0;
   virtual void cancel(std::function<void()> canceled) = 0;
   bool cancel(Operator* op);
@@ -69,20 +72,22 @@ class ThreadPipelineExecutor : public PipelineExecutor
 
 public:
   ThreadPipelineExecutor(Pipeline* pipeline);
-  void execute(DataSource* dataSource, Operator* start = nullptr);
+  void execute(vtkDataObject* data, QList<Operator*> operators, int start = 0);
   Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op);
   void cancel(std::function<void()> canceled);
   bool cancel(Operator* op);
   bool isRunning();
 
 private slots:
-  void executePipelineBranch(DataSource* dataSource, Operator* start = nullptr);
+  void executePipelineBranch(vtkDataObject* data, QList<Operator*> operators);
 
   /// The pipeline worker is finished with this branch.
   void pipelineBranchFinished(bool result);
 
   /// The pipeline worker has been canceled
   void pipelineBranchCanceled();
+
+  void execute(DataSource* dataSource);
 
 private:
   PipelineWorker* m_worker;
@@ -98,7 +103,7 @@ class DockerPipelineExecutor : public PipelineExecutor
 public:
   DockerPipelineExecutor(Pipeline* pipeline);
   ~DockerPipelineExecutor();
-  void execute(DataSource* dataSource, Operator* start = nullptr);
+  void execute(vtkDataObject* data, QList<Operator*> operators, int start = 0);
   Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op);
   void cancel(std::function<void()> canceled);
   bool cancel(Operator* op);

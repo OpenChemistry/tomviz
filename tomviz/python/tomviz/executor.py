@@ -31,10 +31,10 @@ logger.addHandler(stream_handler)
 DIMS = ['dim1', 'dim2', 'dim3']
 
 class ProgressBase(object):
-    def started(self, op):
+    def started(self, op=None):
         self._operator_index = op
 
-    def finished(self, op):
+    def finished(self, op=None):
         pass
 
 class TqdmProgress(ProgressBase):
@@ -106,7 +106,7 @@ class TqdmProgress(ProgressBase):
 
         return False
 
-    def finished(self, op):
+    def finished(self, op=None):
         if self._progress_bar is not None:
             self._progress_bar.close()
 
@@ -419,17 +419,20 @@ def _load_transform_functions(operators):
     return transform_functions
 
 
-def execute(operators, data_file_path, output_file_path, progress_method,
-            progress_path):
+def execute(operators, start_at, data_file_path, output_file_path,
+            progress_method, progress_path):
     data, dims = _read_emd(data_file_path)
 
+    operators = operators[start_at:]
     transforms = _load_transform_functions(operators)
     with _progress(progress_method, progress_path) as progress:
         progress.started()
-        for i, (label, transform, arguments) in enumerate(transforms):
-            progress.started(i)
+        operator_index = start_at
+        for (label, transform, arguments) in transforms:
+            progress.started(operator_index)
             data = _execute_transform(label, transform, arguments, data, progress)
-            progress.finished(i)
+            progress.finished(operator_index)
+            operator_index +=1
 
         # Now write out the transformed data.
         logger.info('Writing transformed data.')
