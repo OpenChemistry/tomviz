@@ -371,9 +371,11 @@ void DockerPipelineExecutor::execute(DataSource* dataSource, Operator* start)
   // Start reading progress updates
   auto progressPath = QDir(m_temporaryDir->path()).filePath(PROGRESS_PATH);
 
-// On Windows we have use files to pass progress updates rather than a local
-// socket which we can use of the unixes
-#ifdef Q_OS_WIN
+// On Windows and MacOS we have to use files to pass progress updates rather
+// than a local socket which we can use on Linux. Looks like docker on MacOS
+// may support sharing local sockets as some point, see
+// https://github.com/docker/for-mac/issues/483
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
   QString progressMode("files");
   m_progressReader.reset(new FilesProgressReader(progressPath));
 #else
