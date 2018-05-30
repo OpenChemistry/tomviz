@@ -21,21 +21,33 @@
 #include <QString>
 #include <QStringList>
 
-namespace tomviz{
+namespace tomviz {
 
 class DataSource;
 
-class PythonReader {
-  public:
-    PythonReader(QString, QStringList, Python::Function);
-    DataSource* read(QString fileName);
-    QString getDescription() const;
-    QStringList getExtensions() const;
+class PythonReader
+{
+public:
+  PythonReader(Python::Object);
+  DataSource* read(QString fileName);
 
-  private:
-    QString m_description;
-    QStringList m_extensions;
-    Python::Function m_readFunction;
+private:
+  Python::Object m_instance;
+};
+
+class PythonReaderFactory
+{
+public:
+  PythonReaderFactory(QString, QStringList, Python::Object);
+  QString getDescription() const;
+  QStringList getExtensions() const;
+  QString getFileDialogFilter() const;
+  PythonReader createReader() const;
+
+private:
+  QString m_description;
+  QStringList m_extensions;
+  Python::Object m_class;
 };
 }
 

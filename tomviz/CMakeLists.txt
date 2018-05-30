@@ -94,6 +94,8 @@ set(SOURCES
   ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx
   PythonGeneratedDatasetReaction.h
+  PythonReader.cxx
+  PythonReader.h
   PythonUtilities.cxx
   PythonUtilities.h
   QVTKGLWidget.cxx

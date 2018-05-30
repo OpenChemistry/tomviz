@@ -24,6 +24,7 @@
 #include "ModuleManager.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
+#include "PythonReader.h"
 #include "PythonUtilities.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
@@ -101,6 +102,10 @@ bool hasData(vtkSMProxy* reader)
 
 namespace tomviz {
 
+bool LoadDataReaction::m_registeredPythonReaders = false;
+QList<PythonReaderFactory*> LoadDataReaction::m_pythonReaders;
+QMap<QString, int> LoadDataReaction::m_pythonExtReaderMap;
+
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {}
@@ -114,6 +119,7 @@ void LoadDataReaction::onTriggered()
 
 QList<DataSource*> LoadDataReaction::loadData()
 {
+  LoadDataReaction::registerPythonReaders();
   QStringList filters;
   filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
              " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali "
@@ -128,14 +134,13 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "VTK ImageData Files (*.vti)"
           << "MRC files (*.mrc *.st *.rec *.ali)"
           << "XDMF files (*.xmf *.xdmf)"
-          << "Text files (*.txt)"
-          << "All files (*.*)";
+          << "Text files (*.txt)";
 
-  QStringList pythonFilters = getPythonReaders();
-
-  foreach(auto fileType, pythonFilters) {
-    filters << fileType;
+  foreach (auto reader, m_pythonReaders) {
+    filters << reader->getFileDialogFilter();
   }
+
+  filters << "All files (*.*)";
 
   QFileDialog dialog(nullptr);
   dialog.setFileMode(QFileDialog::ExistingFiles);
@@ -178,10 +183,12 @@ DataSource* LoadDataReaction::loadData(const QString& fileName,
 DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
                                        const QJsonObject& options)
 {
+  LoadDataReaction::registerPythonReaders();
   bool defaultModules = options["defaultModules"].toBool(true);
   bool addToRecent = options["addToRecent"].toBool(true);
   bool child = options["child"].toBool(false);
   bool loadWithParaview = true;
+  bool loadWithPython = false;
 
   DataSource* dataSource(nullptr);
   QString fileName;
@@ -237,6 +244,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource->setReaderProperties(props.toVariantMap());
 
+  } else if (m_pythonExtReaderMap.contains(info.suffix().toLower())) {
+    loadWithParaview = false;
+    loadWithPython = true;
   }
 
   if (loadWithParaview) {
@@ -258,6 +268,11 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(reader->getProxy());
+  } else if (loadWithPython) {
+    QString ext = info.suffix().toLower();
+    auto reader = m_pythonReaders[m_pythonExtReaderMap[ext]]->createReader();
+    dataSource = reader.read(fileNames[0]);
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   }
 
   // It is possible that the dataSource will be null if, for example, loading
@@ -434,43 +449,50 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
   }
 }
 
-QStringList LoadDataReaction::getPythonReaders()
+void LoadDataReaction::registerPythonReaders()
 {
+  if (m_registeredPythonReaders) {
+    return;
+  }
+  m_registeredPythonReaders = true;
   Python python;
-  auto module = python.import("tomviz._internal");
+  auto module = python.import("tomviz.io._internal");
+
   if (!module.isValid()) {
-    qCritical() << "Failed to import tomviz._internal module.";
-    return QStringList();
-  } else {
-    qDebug() << "Imported tomviz._internal";
+    qCritical() << "Failed to import tomviz.io._internal module.";
+    return;
   }
 
-  auto reader = module.findFunction("get_python_readers");
+  auto lister = module.findFunction("list_python_readers");
   if (!module.isValid()) {
-    qCritical() << "Failed to import tomviz._internal module.get_python_readers";
-    return QStringList();
-  } else {
-    qDebug() << "Imported tomviz._internal.get_python_readers";
+    qCritical()
+      << "Failed to import tomviz._internal module.list_python_readers";
+    return;
   }
 
-  Python::Tuple args(0);
-  auto res = reader.call(args);
+  auto res = lister.call();
   if (!res.isValid()) {
-    qCritical("Error calling get_python_readers.");
-    return QStringList();
-  } else {
-    qDebug() << "Success calling get_python_readers";
-    if (res.isList()) {
-      Python::List fileTypes(res);
-      QStringList readers;
-      for (int i = 0; i < fileTypes.length(); ++i) {
-        readers << QString(fileTypes[i].toString());
+    qCritical("Error calling list_python_readers.");
+    return;
+  }
+
+  if (res.isList()) {
+    Python::List readersList(res);
+    for (int i = 0; i < readersList.length(); ++i) {
+      Python::List readerInfo(readersList[i]);
+      QString description = readerInfo[0].toString();
+      Python::List extensions_(readerInfo[1]);
+      Python::Object readerClass = readerInfo[2];
+      QStringList extensions;
+      for (int j = 0; j < extensions_.length(); ++j) {
+        QString extension = QString(extensions_[j].toString());
+        extensions << extension;
+        m_pythonExtReaderMap[extension] = i;
       }
-      qDebug() << readers;
-      return readers;
+      m_pythonReaders.push_back(
+        new PythonReaderFactory(description, extensions, readerClass));
     }
   }
-  return QStringList();
 }
 
 } // end of namespace tomviz

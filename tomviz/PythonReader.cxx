@@ -21,36 +21,97 @@
 
 #include <QDebug>
 
-
 namespace tomviz {
 
-PythonReader::PythonReader(QString description, QStringList extensions, Python::Function readFunction)
-  : m_description(description), m_extensions(extensions), m_readFunction(readFunction)
-{}
-
-QString PythonReader::getDescription() const
+PythonReader::PythonReader(Python::Object instance) : m_instance(instance)
 {
-  return m_description;
-}
-
-QStringList PythonReader::getExtensions() const
-{
-  return m_extensions;
 }
 
 DataSource* PythonReader::read(QString fileName)
 {
-  Python::Tuple args(1);
-  args.set(0, Python::Object(fileName));
-  auto res = m_readFunction.call(args);
+  Python python;
+  auto module = python.import("tomviz.io._internal");
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz._internal module.";
+    return nullptr;
+  }
+  auto readerFunction = module.findFunction("execute_reader");
+  if (!readerFunction.isValid()) {
+    qCritical()
+      << "Failed to import tomviz._internal module.get_reader_instance";
+    return nullptr;
+  }
+
+  Python::Tuple args(2);
+  Python::Object argInstance = m_instance;
+  args.set(0, argInstance);
+  Python::Object fileArg(fileName);
+  args.set(1, fileArg);
+  auto res = readerFunction.call(args);
+
   if (!res.isValid()) {
     qCritical("Error calling the reader");
     return nullptr;
   }
+
   vtkObjectBase* vtkobject =
-      Python::VTK::GetPointerFromObject(res, "vtkImageData");
+    Python::VTK::GetPointerFromObject(res, "vtkImageData");
   vtkImageData* imageData = vtkImageData::SafeDownCast(vtkobject);
   return new DataSource(imageData);
 }
 
+PythonReaderFactory::PythonReaderFactory(QString description,
+                                         QStringList extensions,
+                                         Python::Object cls)
+  : m_description(description), m_extensions(extensions), m_class(cls)
+{
+}
+
+QString PythonReaderFactory::getDescription() const
+{
+  return m_description;
+}
+
+QStringList PythonReaderFactory::getExtensions() const
+{
+  return m_extensions;
+}
+
+QString PythonReaderFactory::getFileDialogFilter() const
+{
+  QStringList filterExt;
+  foreach (auto ext, m_extensions) {
+    filterExt << QString("*.%1").arg(ext);
+  }
+  QString filter =
+    QString("%1 (%2)").arg(m_description).arg(filterExt.join(QString(" ")));
+
+  return filter;
+}
+
+PythonReader PythonReaderFactory::createReader() const
+{
+  Python python;
+  auto module = python.import("tomviz.io._internal");
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz._internal module.";
+    return Python::Object();
+  }
+  auto factory = module.findFunction("get_reader_instance");
+  if (!factory.isValid()) {
+    qCritical()
+      << "Failed to import tomviz._internal module.get_reader_instance";
+    return Python::Object();
+  }
+
+  Python::Tuple args(1);
+  Python::Object argClass = m_class;
+  args.set(0, argClass);
+  auto res = factory.call(args);
+  if (!res.isValid()) {
+    qCritical("Error calling get_reader_instance.");
+    return Python::Object();
+  }
+  return PythonReader(res);
+}
 }

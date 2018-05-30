@@ -28,7 +28,7 @@ class vtkSMProxy;
 namespace tomviz {
 class DataSource;
 
-class PythonReader;
+class PythonReaderFactory;
 
 /// LoadDataReaction handles the "Load Data" action in tomviz. On trigger,
 /// this will open the data file and necessary subsequent actions, including:
@@ -82,7 +82,11 @@ private:
   static QJsonObject readerProperties(vtkSMProxy* reader);
   static void setFileNameProperties(const QJsonObject& props,
                                     vtkSMProxy* reader);
-  static QStringList getPythonReaders();
+  static void registerPythonReaders();
+
+  static bool m_registeredPythonReaders;
+  static QList<PythonReaderFactory*> m_pythonReaders;
+  static QMap<QString, int> m_pythonExtReaderMap;
 };
 } // namespace tomviz
 

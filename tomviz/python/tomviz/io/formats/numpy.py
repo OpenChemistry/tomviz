@@ -27,7 +27,7 @@ from vtk import vtkImageData
 
 class NumpyBase(IOBase):
 
-    def __init__(self, mode):
+    def __init__(self):
         super(NumpyBase, self).__init__('binary')
 
     @staticmethod
@@ -50,6 +50,7 @@ class NumpyReader(Reader, NumpyBase):
         super(NumpyReader, self).__init__()
 
     def read(self, path):
+        print(path)
         with self.open(path) as f:
             data = np.load(f)
 

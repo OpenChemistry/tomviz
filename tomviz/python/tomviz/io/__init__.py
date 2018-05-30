@@ -81,9 +81,8 @@ class Reader(IOBase):
     """
     supports_stacks = False
 
-    @contextmanager
     def open(self, path):
-        super(Reader, self).open(path, write=False)
+        return super(Reader, self).open(path, write=False)
 
     @abstractmethod
     def read(self, file):
@@ -100,9 +99,8 @@ class Writer(IOBase):
     The base reader class from which writers should be derived.
     """
 
-    @contextmanager
     def open(self, path):
-        super(Writer, self).open(path, write=True)
+        return super(Writer, self).open(path, write=True)
 
     @abstractmethod
     def write(self, file, data):

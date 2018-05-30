@@ -132,6 +132,7 @@ public:
     Function(const Function& other);
     Function& operator=(const Object& other);
 
+    Object call();
     Object call(Tuple& args);
     Object call(Tuple& args, Dict& kwargs);
   };

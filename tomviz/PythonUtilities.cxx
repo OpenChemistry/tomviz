@@ -257,6 +257,12 @@ Python::Function& Python::Function::operator=(const Python::Object& other)
   return *this;
 }
 
+Python::Object Python::Function::call()
+{
+  Python::Tuple empty(0);
+  return call(empty);
+}
+
 Python::Object Python::Function::call(Tuple& args)
 {
   Python::Dict empty;
