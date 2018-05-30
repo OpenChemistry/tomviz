@@ -18,10 +18,12 @@
 
 def list_python_readers():
     from tomviz.io.formats.numpy import NumpyReader
-    from tomviz.io.formats.plaintext import PlainTextReader
+    from tomviz.io.formats.matlab import MatlabReader
+    # from tomviz.io.formats.plaintext import PlainTextReader
     reader_classes = [
         NumpyReader,
-        PlainTextReader
+        MatlabReader,
+        # PlainTextReader
     ]
     file_types = []
     for reader_class in reader_classes:
