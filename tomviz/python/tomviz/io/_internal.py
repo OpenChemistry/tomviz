@@ -17,23 +17,29 @@
 ###############################################################################
 
 
+import inspect
+import pkgutil
+
+import tomviz.io
+import tomviz.io.formats
+
+
 def list_python_readers():
-    from tomviz.io.formats.numpy import NumpyReader
-    from tomviz.io.formats.matlab import MatlabReader
-    reader_classes = [
-        NumpyReader,
-        MatlabReader,
-    ]
-    file_types = []
-    for reader_class in reader_classes:
-        file_types.append(
-            [
-                reader_class.file_type().display_name,
-                reader_class.file_type().extensions,
-                reader_class
-            ]
-        )
-    return file_types
+
+    readers = []
+    for importer, name, _ in pkgutil.iter_modules(tomviz.io.formats.__path__):
+        m = importer.find_module(name).load_module(name)
+        for _, c in inspect.getmembers(m, inspect.isclass):
+            if inspect.getmodule(c) is m:
+                if issubclass(c, tomviz.io.Reader):
+                    readers.append(
+                        [
+                            c.file_type().display_name,
+                            c.file_type().extensions,
+                            c
+                        ]
+                    )
+    return readers
 
 
 def create_reader_instance(reader_class):
@@ -45,20 +51,20 @@ def execute_reader(obj, path):
 
 
 def list_python_writers():
-    from tomviz.io.formats.numpy import NumpyWriter
-    writer_classes = [
-        NumpyWriter,
-    ]
-    file_types = []
-    for writer_class in writer_classes:
-        file_types.append(
-            [
-                writer_class.file_type().display_name,
-                writer_class.file_type().extensions,
-                writer_class
-            ]
-        )
-    return file_types
+    writers = []
+    for importer, name, _ in pkgutil.iter_modules(tomviz.io.formats.__path__):
+        m = importer.find_module(name).load_module(name)
+        for _, c in inspect.getmembers(m, inspect.isclass):
+            if inspect.getmodule(c) is m:
+                if issubclass(c, tomviz.io.Writer):
+                    writers.append(
+                        [
+                            c.file_type().display_name,
+                            c.file_type().extensions,
+                            c
+                        ]
+                    )
+    return writers
 
 
 def create_writer_instance(writer_class):
