@@ -471,6 +471,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           passiveAcquisitionWidget, &QWidget::show);
 
   registerCustomOperators();
+  LoadDataReaction::registerPythonReaders();
 }
 
 MainWindow::~MainWindow()
