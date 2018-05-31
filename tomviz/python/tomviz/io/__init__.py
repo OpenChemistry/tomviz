@@ -29,18 +29,19 @@ class FileType(object):
         self.extensions = extensions
 
     def __str__(self):
-        return "%s (%s)" % (self.display_name, " ".join(["*."+ext for ext in self.extensions]))
+        return "%s (%s)" % (self.display_name,
+                            " ".join(["*."+ext for ext in self.extensions]))
 
 
 @six.add_metaclass(ABCMeta)
 class IOBase(object):
 
-    def __init__(self, mode = "text"):
+    def __init__(self, mode="text"):
         if mode not in ["text", "binary"]:
-            raise ValueError("mode has to be either 'text' or 'binary': %s" % mode)
+            raise ValueError("mode has to be either 'text' or 'binary': %s"
+                             % mode)
         self._file_type = None
         self._mode = mode
-
 
     @staticmethod
     @abstractmethod
@@ -69,6 +70,7 @@ class IOBase(object):
         f = open(path, mode)
         yield f
         f.close()
+
 
 @six.add_metaclass(ABCMeta)
 class Reader(IOBase):

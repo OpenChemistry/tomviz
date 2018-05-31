@@ -98,6 +98,8 @@ set(SOURCES
   PythonReader.h
   PythonUtilities.cxx
   PythonUtilities.h
+  PythonWriter.cxx
+  PythonWriter.h
   QVTKGLWidget.cxx
   QVTKGLWidget.h
   RAWFileReaderDialog.h

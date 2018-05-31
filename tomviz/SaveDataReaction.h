@@ -20,6 +20,7 @@
 
 namespace tomviz {
 class DataSource;
+class PythonWriterFactory;
 
 /// SaveDataReaction handles the "Save Data" action in tomviz. On trigger,
 /// this will save the data file.
@@ -42,6 +43,12 @@ protected:
 
 private:
   Q_DISABLE_COPY(SaveDataReaction)
+
+  static void registerPythonWriters();
+
+  static bool m_registeredPythonWriters;
+  static QList<PythonWriterFactory*> m_pythonWriters;
+  static QMap<QString, int> m_pythonExtWriterMap;
 };
 } // namespace tomviz
 #endif

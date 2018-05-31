@@ -18,11 +18,12 @@
 import numpy as np
 import scipy.io
 
-from tomviz.io import FileType, IOBase, Reader, Writer
+from tomviz.io import FileType, IOBase, Reader
 
 import tomviz.utils
 
 from vtk import vtkImageData
+
 
 class MatlabBase(IOBase):
 
@@ -50,7 +51,7 @@ class MatlabReader(Reader, MatlabBase):
 
         if data is None:
             return vtkImageData()
-        
+
         image_data = vtkImageData()
         (x, y, z) = data.shape
 
