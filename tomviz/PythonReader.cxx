@@ -27,18 +27,17 @@ PythonReader::PythonReader(Python::Object instance) : m_instance(instance)
 {
 }
 
-DataSource* PythonReader::read(QString fileName)
+vtkSmartPointer<vtkImageData> PythonReader::read(QString fileName)
 {
   Python python;
   auto module = python.import("tomviz.io._internal");
   if (!module.isValid()) {
-    qCritical() << "Failed to import tomviz._internal module.";
+    qCritical() << "Failed to import tomviz.io._internal module.";
     return nullptr;
   }
   auto readerFunction = module.findFunction("execute_reader");
   if (!readerFunction.isValid()) {
-    qCritical()
-      << "Failed to import tomviz._internal module.get_reader_instance";
+    qCritical() << "Failed to import tomviz.io._internal.execute_reader";
     return nullptr;
   }
 
@@ -56,8 +55,13 @@ DataSource* PythonReader::read(QString fileName)
 
   vtkObjectBase* vtkobject =
     Python::VTK::GetPointerFromObject(res, "vtkImageData");
-  vtkImageData* imageData = vtkImageData::SafeDownCast(vtkobject);
-  return new DataSource(imageData);
+  if (vtkobject == nullptr) {
+    return nullptr;
+  }
+
+  vtkSmartPointer<vtkImageData> imageData =
+    vtkImageData::SafeDownCast(vtkobject);
+  return imageData;
 }
 
 PythonReaderFactory::PythonReaderFactory(QString description,
@@ -94,13 +98,13 @@ PythonReader PythonReaderFactory::createReader() const
   Python python;
   auto module = python.import("tomviz.io._internal");
   if (!module.isValid()) {
-    qCritical() << "Failed to import tomviz._internal module.";
+    qCritical() << "Failed to import tomviz.io._internal module.";
     return Python::Object();
   }
-  auto factory = module.findFunction("get_reader_instance");
+  auto factory = module.findFunction("create_reader_instance");
   if (!factory.isValid()) {
     qCritical()
-      << "Failed to import tomviz._internal module.get_reader_instance";
+      << "Failed to import tomviz.io._internal.create_reader_instance";
     return Python::Object();
   }
 
@@ -109,7 +113,7 @@ PythonReader PythonReaderFactory::createReader() const
   args.set(0, argClass);
   auto res = factory.call(args);
   if (!res.isValid()) {
-    qCritical("Error calling get_reader_instance.");
+    qCritical("Error calling create_reader_instance.");
     return Python::Object();
   }
   return PythonReader(res);

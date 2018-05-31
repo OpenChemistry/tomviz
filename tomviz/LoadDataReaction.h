@@ -84,9 +84,7 @@ private:
                                     vtkSMProxy* reader);
   static void registerPythonReaders();
 
-  static bool m_registeredPythonReaders;
-  static QList<PythonReaderFactory*> m_pythonReaders;
-  static QMap<QString, int> m_pythonExtReaderMap;
+  static QMap<QString, PythonReaderFactory*> m_pythonExtReaderMap;
 };
 } // namespace tomviz
 

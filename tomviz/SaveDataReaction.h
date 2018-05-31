@@ -46,9 +46,7 @@ private:
 
   static void registerPythonWriters();
 
-  static bool m_registeredPythonWriters;
-  static QList<PythonWriterFactory*> m_pythonWriters;
-  static QMap<QString, int> m_pythonExtWriterMap;
+  static QMap<QString, PythonWriterFactory*> m_pythonExtWriterMap;
 };
 } // namespace tomviz
 #endif

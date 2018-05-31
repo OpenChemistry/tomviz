@@ -102,9 +102,7 @@ bool hasData(vtkSMProxy* reader)
 
 namespace tomviz {
 
-bool LoadDataReaction::m_registeredPythonReaders = false;
-QList<PythonReaderFactory*> LoadDataReaction::m_pythonReaders;
-QMap<QString, int> LoadDataReaction::m_pythonExtReaderMap;
+QMap<QString, PythonReaderFactory*> LoadDataReaction::m_pythonExtReaderMap;
 
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
   : pqReaction(parentObject)
@@ -136,7 +134,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "XDMF files (*.xmf *.xdmf)"
           << "Text files (*.txt)";
 
-  foreach (auto reader, m_pythonReaders) {
+  foreach (auto reader, m_pythonExtReaderMap.values().toSet()) {
     filters << reader->getFileDialogFilter();
   }
 
@@ -270,8 +268,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     controller->UnRegisterProxy(reader->getProxy());
   } else if (loadWithPython) {
     QString ext = info.suffix().toLower();
-    auto reader = m_pythonReaders[m_pythonExtReaderMap[ext]]->createReader();
-    dataSource = reader.read(fileNames[0]);
+    auto reader = m_pythonExtReaderMap[ext]->createReader();
+    auto imageData = reader.read(fileNames[0]);
+    dataSource = new DataSource(imageData);
     LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   }
 
@@ -451,10 +450,9 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
 
 void LoadDataReaction::registerPythonReaders()
 {
-  if (m_registeredPythonReaders) {
+  if (!m_pythonExtReaderMap.isEmpty()) {
     return;
   }
-  m_registeredPythonReaders = true;
   Python python;
   auto module = python.import("tomviz.io._internal");
 
@@ -465,8 +463,7 @@ void LoadDataReaction::registerPythonReaders()
 
   auto lister = module.findFunction("list_python_readers");
   if (!module.isValid()) {
-    qCritical()
-      << "Failed to import tomviz._internal module.list_python_readers";
+    qCritical() << "Failed to import tomviz.io._internal.list_python_readers";
     return;
   }
 
@@ -480,17 +477,24 @@ void LoadDataReaction::registerPythonReaders()
     Python::List readersList(res);
     for (int i = 0; i < readersList.length(); ++i) {
       Python::List readerInfo(readersList[i]);
+      if (!readerInfo.isList() || readerInfo.length() != 3) {
+        return;
+      }
       QString description = readerInfo[0].toString();
       Python::List extensions_(readerInfo[1]);
+      if (!extensions_.isList()) {
+        return;
+      }
       Python::Object readerClass = readerInfo[2];
       QStringList extensions;
       for (int j = 0; j < extensions_.length(); ++j) {
-        QString extension = QString(extensions_[j].toString());
-        extensions << extension;
-        m_pythonExtReaderMap[extension] = i;
+        extensions << QString(extensions_[j].toString());
       }
-      m_pythonReaders.push_back(
-        new PythonReaderFactory(description, extensions, readerClass));
+      PythonReaderFactory* readerFactory =
+        new PythonReaderFactory(description, extensions, readerClass);
+      foreach (auto extension, extensions) {
+        m_pythonExtReaderMap[extension] = readerFactory;
+      }
     }
   }
 }

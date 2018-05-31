@@ -27,31 +27,23 @@ from vtk import vtkImageData
 
 class NumpyBase(IOBase):
 
-    def __init__(self):
-        super(NumpyBase, self).__init__('binary')
-
     @staticmethod
     def file_type():
         return FileType('NumPy binary format', ['npy'])
 
 
 class NumpyWriter(Writer, NumpyBase):
-    def __init__(self):
-        super(NumpyWriter, self).__init__()
 
     def write(self, path, data_object):
         data = tomviz.utils.get_array(data_object)
-        with self.open(path) as f:
+        with open(path, "wb") as f:
             np.save(f, data)
 
 
 class NumpyReader(Reader, NumpyBase):
-    def __init__(self):
-        super(NumpyReader, self).__init__()
 
     def read(self, path):
-        print(path)
-        with self.open(path) as f:
+        with open(path, "rb") as f:
             data = np.load(f)
 
         image_data = vtkImageData()

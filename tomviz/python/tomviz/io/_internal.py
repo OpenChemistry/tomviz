@@ -20,11 +20,9 @@
 def list_python_readers():
     from tomviz.io.formats.numpy import NumpyReader
     from tomviz.io.formats.matlab import MatlabReader
-    # from tomviz.io.formats.plaintext import PlainTextReader
     reader_classes = [
         NumpyReader,
         MatlabReader,
-        # PlainTextReader
     ]
     file_types = []
     for reader_class in reader_classes:
@@ -38,7 +36,7 @@ def list_python_readers():
     return file_types
 
 
-def get_reader_instance(reader_class):
+def create_reader_instance(reader_class):
     return reader_class()
 
 
@@ -63,7 +61,7 @@ def list_python_writers():
     return file_types
 
 
-def get_writer_instance(writer_class):
+def create_writer_instance(writer_class):
     return writer_class()
 
 

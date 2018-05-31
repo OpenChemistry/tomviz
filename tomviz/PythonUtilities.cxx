@@ -98,6 +98,11 @@ bool Python::Object::isList() const
   return PyList_Check(m_smartPyObject->GetPointer());
 }
 
+bool Python::Object::isTuple() const
+{
+  return PyTuple_Check(m_smartPyObject->GetPointer());
+}
+
 bool Python::Object::isValid() const
 {
   return m_smartPyObject->GetPointer() != nullptr;
@@ -174,6 +179,20 @@ void Python::Tuple::set(int index, const Variant& value)
 {
   Python::Object pyObj(toPyObject(value));
   set(index, pyObj);
+}
+
+int Python::Tuple::length()
+{
+  return PyTuple_Size(m_smartPyObject->GetPointer());
+}
+
+Python::Object Python::Tuple::operator[](int index)
+{
+  PyObject* item = PyTuple_GetItem(m_smartPyObject->GetPointer(), index);
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
+
+  return PyTuple_GetItem(m_smartPyObject->GetPointer(), index);
 }
 
 Python::Dict::Dict() : Object()

@@ -16,7 +16,6 @@
 #
 ###############################################################################
 from abc import ABCMeta, abstractmethod
-from contextlib import contextmanager
 import six
 
 
@@ -36,13 +35,6 @@ class FileType(object):
 @six.add_metaclass(ABCMeta)
 class IOBase(object):
 
-    def __init__(self, mode="text"):
-        if mode not in ["text", "binary"]:
-            raise ValueError("mode has to be either 'text' or 'binary': %s"
-                             % mode)
-        self._file_type = None
-        self._mode = mode
-
     @staticmethod
     @abstractmethod
     def file_type():
@@ -51,25 +43,6 @@ class IOBase(object):
         a file type with a reader.
         :rtype tomviz.io.FileType
         """
-
-    @contextmanager
-    def open(self, path, write):
-        """
-        :param file_paths: The list of files to open.
-        :type params: list
-        :returns: ...
-        """
-        if write:
-            mode = "w"
-        else:
-            mode = "r"
-
-        if self._mode == "binary":
-            mode += "b"
-
-        f = open(path, mode)
-        yield f
-        f.close()
 
 
 @six.add_metaclass(ABCMeta)
@@ -82,9 +55,6 @@ class Reader(IOBase):
     Set to True if reader supports loading image stacks.
     """
     supports_stacks = False
-
-    def open(self, path):
-        return super(Reader, self).open(path, write=False)
 
     @abstractmethod
     def read(self, file):
@@ -100,9 +70,6 @@ class Writer(IOBase):
     """
     The base reader class from which writers should be derived.
     """
-
-    def open(self, path):
-        return super(Writer, self).open(path, write=True)
 
     @abstractmethod
     def write(self, file, data):

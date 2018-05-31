@@ -54,9 +54,7 @@
 
 namespace tomviz {
 
-bool SaveDataReaction::m_registeredPythonWriters = false;
-QList<PythonWriterFactory*> SaveDataReaction::m_pythonWriters;
-QMap<QString, int> SaveDataReaction::m_pythonExtWriterMap;
+QMap<QString, PythonWriterFactory*> SaveDataReaction::m_pythonExtWriterMap;
 
 SaveDataReaction::SaveDataReaction(QAction* parentObject)
   : pqReaction(parentObject)
@@ -87,7 +85,7 @@ void SaveDataReaction::onTriggered()
           << "XDMF Data File (*.xmf)"
           << "JSON Image Files (*.json)";
 
-  foreach (auto writer, m_pythonWriters) {
+  foreach (auto writer, m_pythonExtWriterMap.values().toSet()) {
     filters << writer->getFileDialogFilter();
   }
 
@@ -153,9 +151,10 @@ bool SaveDataReaction::saveData(const QString& filename)
       return true;
     }
   } else if (m_pythonExtWriterMap.contains(info.suffix().toLower())) {
-    auto writer = m_pythonWriters[m_pythonExtWriterMap[info.suffix().toLower()]]
-                    ->createWriter();
-    if (!writer.write(filename, source)) {
+    auto writer = m_pythonExtWriterMap[info.suffix().toLower()]->createWriter();
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!writer.write(filename, data)) {
       qCritical() << "Failed to write out data.";
       return false;
     } else {
@@ -229,10 +228,9 @@ bool SaveDataReaction::saveData(const QString& filename)
 
 void SaveDataReaction::registerPythonWriters()
 {
-  if (m_registeredPythonWriters) {
+  if (!m_pythonExtWriterMap.isEmpty()) {
     return;
   }
-  m_registeredPythonWriters = true;
   Python python;
   auto module = python.import("tomviz.io._internal");
 
@@ -243,8 +241,7 @@ void SaveDataReaction::registerPythonWriters()
 
   auto lister = module.findFunction("list_python_writers");
   if (!module.isValid()) {
-    qCritical()
-      << "Failed to import tomviz._internal module.list_python_writers";
+    qCritical() << "Failed to import tomviz.io._internal.list_python_writers";
     return;
   }
 
@@ -258,17 +255,24 @@ void SaveDataReaction::registerPythonWriters()
     Python::List writersList(res);
     for (int i = 0; i < writersList.length(); ++i) {
       Python::List writerInfo(writersList[i]);
+      if (!writerInfo.isList() || writerInfo.length() != 3) {
+        return;
+      }
       QString description = writerInfo[0].toString();
       Python::List extensions_(writerInfo[1]);
+      if (!extensions_.isList()) {
+        return;
+      }
       Python::Object writerClass = writerInfo[2];
       QStringList extensions;
       for (int j = 0; j < extensions_.length(); ++j) {
-        QString extension = QString(extensions_[j].toString());
-        extensions << extension;
-        m_pythonExtWriterMap[extension] = i;
+        extensions << QString(extensions_[j].toString());
       }
-      m_pythonWriters.push_back(
-        new PythonWriterFactory(description, extensions, writerClass));
+      PythonWriterFactory* writerFactory =
+        new PythonWriterFactory(description, extensions, writerClass);
+      foreach (auto extension, extensions) {
+        m_pythonExtWriterMap[extension] = writerFactory;
+      }
     }
   }
 }

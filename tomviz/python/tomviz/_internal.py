@@ -46,8 +46,8 @@ def find_operator_class(transform_module):
     for (name, cls) in classes:
         if issubclass(cls, tomviz.operators.Operator):
             if operator_class is not None:
-                raise Exception('Multiple operators define in module, only one '
-                                'operator can be defined per module.')
+                raise Exception('Multiple operators define in module, only '
+                                'one operator can be defined per module.')
 
             operator_class = cls
 
@@ -159,11 +159,3 @@ def find_operators(operator_dir):
         )
 
     return operator_descriptions
-
-def get_python_readers():
-    from tomviz.io.formats.numpy import NumpyReader
-    from tomviz.io.formats.plaintext import PlainTextReader
-    file_types = []
-    file_types.append(str(NumpyReader.file_type()))
-    file_types.append(str(PlainTextReader.file_type()))
-    return file_types

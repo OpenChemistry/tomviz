@@ -27,17 +27,12 @@ from vtk import vtkImageData
 
 class MatlabBase(IOBase):
 
-    def __init__(self):
-        super(MatlabBase, self).__init__('binary')
-
     @staticmethod
     def file_type():
         return FileType('MATLAB binary format', ['mat'])
 
 
 class MatlabReader(Reader, MatlabBase):
-    def __init__(self):
-        super(MatlabReader, self).__init__()
 
     def read(self, path):
         mat_dict = scipy.io.loadmat(path)

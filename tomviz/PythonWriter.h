@@ -21,6 +21,8 @@
 #include <QString>
 #include <QStringList>
 
+class vtkImageData;
+
 namespace tomviz {
 
 class DataSource;
@@ -29,7 +31,7 @@ class PythonWriter
 {
 public:
   PythonWriter(Python::Object);
-  bool write(QString fileName, DataSource* data);
+  bool write(QString fileName, vtkImageData* data);
 
 private:
   Python::Object m_instance;

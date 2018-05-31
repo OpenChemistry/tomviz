@@ -18,18 +18,19 @@
 
 #include "PythonUtilities.h"
 
+#include <vtkSmartPointer.h>
+
 #include <QString>
 #include <QStringList>
 
+class vtkImageData;
+
 namespace tomviz {
-
-class DataSource;
-
 class PythonReader
 {
 public:
   PythonReader(Python::Object);
-  DataSource* read(QString fileName);
+  vtkSmartPointer<vtkImageData> read(QString);
 
 private:
   Python::Object m_instance;

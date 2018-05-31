@@ -76,6 +76,7 @@ public:
     bool toBool() const;
     bool isDict() const;
     bool isList() const;
+    bool isTuple() const;
     bool isValid() const;
     QString toString() const;
     Dict toDict();
@@ -92,12 +93,15 @@ public:
   {
   public:
     Tuple();
+    Tuple(const Object& other);
     Tuple(const Tuple& other);
     Tuple(int size);
     void set(int index, Module& obj);
     void set(int index, Capsule& obj);
     void set(int index, Object& obj);
     void set(int index, const Variant& value);
+    Object operator[](int index);
+    int length();
   };
 
   class Dict : public Object

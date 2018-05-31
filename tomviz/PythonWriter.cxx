@@ -28,17 +28,17 @@ PythonWriter::PythonWriter(Python::Object instance) : m_instance(instance)
 {
 }
 
-bool PythonWriter::write(QString fileName, DataSource* source)
+bool PythonWriter::write(QString fileName, vtkImageData* data)
 {
   Python python;
   auto module = python.import("tomviz.io._internal");
   if (!module.isValid()) {
-    qCritical() << "Failed to import tomviz._internal module.";
+    qCritical() << "Failed to import tomviz.io._internal module.";
     return false;
   }
   auto writerFunction = module.findFunction("execute_writer");
   if (!writerFunction.isValid()) {
-    qCritical() << "Failed to import tomviz._internal module.execute_writer";
+    qCritical() << "Failed to import tomviz.io._internal.execute_writer";
     return false;
   }
 
@@ -47,9 +47,8 @@ bool PythonWriter::write(QString fileName, DataSource* source)
   args.set(0, argInstance);
   Python::Object fileArg(fileName);
   args.set(1, fileArg);
-  auto t = source->producer();
-  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
-  Python::Object imageArg = Python::VTK::GetObjectFromPointer(image);
+
+  Python::Object imageArg = Python::VTK::GetObjectFromPointer(data);
   args.set(2, imageArg);
   auto res = writerFunction.call(args);
 
@@ -95,13 +94,12 @@ PythonWriter PythonWriterFactory::createWriter() const
   Python python;
   auto module = python.import("tomviz.io._internal");
   if (!module.isValid()) {
-    qCritical() << "Failed to import tomviz._internal module.";
+    qCritical() << "Failed to import tomviz.io._internal module.";
     return Python::Object();
   }
-  auto factory = module.findFunction("get_writer_instance");
+  auto factory = module.findFunction("create_writer_instance");
   if (!factory.isValid()) {
-    qCritical()
-      << "Failed to import tomviz._internal module.get_writer_instance";
+    qCritical() << "Failed to import tomviz.io_internal.create_writer_instance";
     return Python::Object();
   }
 
@@ -110,7 +108,7 @@ PythonWriter PythonWriterFactory::createWriter() const
   args.set(0, argClass);
   auto res = factory.call(args);
   if (!res.isValid()) {
-    qCritical("Error calling get_writer_instance.");
+    qCritical("Error calling create_writer_instance.");
     return Python::Object();
   }
   return PythonWriter(res);
