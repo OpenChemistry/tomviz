@@ -58,7 +58,7 @@ public:
   };
 
   class Dict;
-
+  class List;
   class Object
   {
   public:
@@ -75,9 +75,12 @@ public:
     void incrementRefCount();
     bool toBool() const;
     bool isDict() const;
+    bool isList() const;
+    bool isTuple() const;
     bool isValid() const;
     QString toString() const;
     Dict toDict();
+    List toList();
     virtual ~Object();
 
   protected:
@@ -90,12 +93,15 @@ public:
   {
   public:
     Tuple();
+    Tuple(const Object& other);
     Tuple(const Tuple& other);
     Tuple(int size);
     void set(int index, Module& obj);
     void set(int index, Capsule& obj);
     void set(int index, Object& obj);
     void set(int index, const Variant& value);
+    Object operator[](int index);
+    int length();
   };
 
   class Dict : public Object
@@ -130,6 +136,7 @@ public:
     Function(const Function& other);
     Function& operator=(const Object& other);
 
+    Object call();
     Object call(Tuple& args);
     Object call(Tuple& args, Dict& kwargs);
   };

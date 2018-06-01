@@ -94,8 +94,12 @@ set(SOURCES
   ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx
   PythonGeneratedDatasetReaction.h
+  PythonReader.cxx
+  PythonReader.h
   PythonUtilities.cxx
   PythonUtilities.h
+  PythonWriter.cxx
+  PythonWriter.h
   QVTKGLWidget.cxx
   QVTKGLWidget.h
   RAWFileReaderDialog.h
@@ -447,6 +451,29 @@ install(DIRECTORY "${tomviz_SOURCE_DIR}/tomviz/python/tomviz"
        DESTINATION "${tomviz_python_install_dir}"
        USE_SOURCE_PERMISSIONS
        COMPONENT runtime)
+
+set(tomviz_python_io_modules
+  __init__.py
+  _internal.py
+)
+
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/io")
+foreach(file ${tomviz_python_io_modules})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/io/${file}"
+    "${tomviz_python_binary_dir}/tomviz/io/${file}")
+endforeach()
+
+
+# Autodiscover python reader/writers added to tomviz/python/tomviz/io/formats
+file(GLOB tomviz_python_io_formats "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/io/formats/*.py")
+file(MAKE_DIRECTORY "${tomviz_python_binary_dir}/tomviz/io/formats")
+foreach(file_ ${tomviz_python_io_formats})
+  get_filename_component(file ${file_} NAME)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E ${script_cmd}
+    "${tomviz_SOURCE_DIR}/tomviz/python/tomviz/io/formats/${file}"
+    "${tomviz_python_binary_dir}/tomviz/io/formats/${file}")
+endforeach()
 
 # Install documentation (user guide)
 file(MAKE_DIRECTORY "${tomviz_BINARY_DIR}/share/tomviz/docs")

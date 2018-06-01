@@ -24,6 +24,8 @@
 #include "ModuleManager.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
+#include "PythonReader.h"
+#include "PythonUtilities.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
@@ -47,6 +49,7 @@
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
+#include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkTrivialProducer.h>
 
@@ -99,6 +102,8 @@ bool hasData(vtkSMProxy* reader)
 
 namespace tomviz {
 
+QMap<QString, PythonReaderFactory*> LoadDataReaction::m_pythonExtReaderMap;
+
 LoadDataReaction::LoadDataReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {}
@@ -112,6 +117,7 @@ void LoadDataReaction::onTriggered()
 
 QList<DataSource*> LoadDataReaction::loadData()
 {
+  LoadDataReaction::registerPythonReaders();
   QStringList filters;
   filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
              " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali "
@@ -126,8 +132,13 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "VTK ImageData Files (*.vti)"
           << "MRC files (*.mrc *.st *.rec *.ali)"
           << "XDMF files (*.xmf *.xdmf)"
-          << "Text files (*.txt)"
-          << "All files (*.*)";
+          << "Text files (*.txt)";
+
+  foreach (auto reader, m_pythonExtReaderMap.values().toSet()) {
+    filters << reader->getFileDialogFilter();
+  }
+
+  filters << "All files (*.*)";
 
   QFileDialog dialog(nullptr);
   dialog.setFileMode(QFileDialog::ExistingFiles);
@@ -170,10 +181,12 @@ DataSource* LoadDataReaction::loadData(const QString& fileName,
 DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
                                        const QJsonObject& options)
 {
+  LoadDataReaction::registerPythonReaders();
   bool defaultModules = options["defaultModules"].toBool(true);
   bool addToRecent = options["addToRecent"].toBool(true);
   bool child = options["child"].toBool(false);
   bool loadWithParaview = true;
+  bool loadWithPython = false;
 
   DataSource* dataSource(nullptr);
   QString fileName;
@@ -229,6 +242,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource->setReaderProperties(props.toVariantMap());
 
+  } else if (m_pythonExtReaderMap.contains(info.suffix().toLower())) {
+    loadWithParaview = false;
+    loadWithPython = true;
   }
 
   if (loadWithParaview) {
@@ -250,6 +266,15 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(reader->getProxy());
+  } else if (loadWithPython) {
+    QString ext = info.suffix().toLower();
+    auto reader = m_pythonExtReaderMap[ext]->createReader();
+    auto imageData = reader.read(fileNames[0]);
+    if (imageData == nullptr) {
+      return nullptr;
+    }
+    dataSource = new DataSource(imageData);
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   }
 
   // It is possible that the dataSource will be null if, for example, loading
@@ -423,6 +448,57 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
       return;
     }
     tomviz::setProperty(props["fileName"], prop);
+  }
+}
+
+void LoadDataReaction::registerPythonReaders()
+{
+  if (!m_pythonExtReaderMap.isEmpty()) {
+    return;
+  }
+  Python python;
+  auto module = python.import("tomviz.io._internal");
+
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz.io._internal module.";
+    return;
+  }
+
+  auto lister = module.findFunction("list_python_readers");
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz.io._internal.list_python_readers";
+    return;
+  }
+
+  auto res = lister.call();
+  if (!res.isValid()) {
+    qCritical("Error calling list_python_readers.");
+    return;
+  }
+
+  if (res.isList()) {
+    Python::List readersList(res);
+    for (int i = 0; i < readersList.length(); ++i) {
+      Python::List readerInfo(readersList[i]);
+      if (!readerInfo.isList() || readerInfo.length() != 3) {
+        return;
+      }
+      QString description = readerInfo[0].toString();
+      Python::List extensions_(readerInfo[1]);
+      if (!extensions_.isList()) {
+        return;
+      }
+      Python::Object readerClass = readerInfo[2];
+      QStringList extensions;
+      for (int j = 0; j < extensions_.length(); ++j) {
+        extensions << QString(extensions_[j].toString());
+      }
+      PythonReaderFactory* readerFactory =
+        new PythonReaderFactory(description, extensions, readerClass);
+      foreach (auto extension, extensions) {
+        m_pythonExtReaderMap[extension] = readerFactory;
+      }
+    }
   }
 }
 

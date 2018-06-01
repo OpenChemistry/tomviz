@@ -22,6 +22,7 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "ModuleManager.h"
+#include "PythonWriter.h"
 
 #include <pqActiveObjects.h>
 #include <pqPipelineSource.h>
@@ -53,6 +54,8 @@
 
 namespace tomviz {
 
+QMap<QString, PythonWriterFactory*> SaveDataReaction::m_pythonExtWriterMap;
+
 SaveDataReaction::SaveDataReaction(QAction* parentObject)
   : pqReaction(parentObject)
 {
@@ -69,6 +72,7 @@ void SaveDataReaction::updateEnableState()
 
 void SaveDataReaction::onTriggered()
 {
+  SaveDataReaction::registerPythonWriters();
   QStringList filters;
   filters << "TIFF format (*.tiff)"
           << "EMD format (*.emd *.hdf5)"
@@ -80,6 +84,10 @@ void SaveDataReaction::onTriggered()
           << "VTK ImageData Files (*.vti)"
           << "XDMF Data File (*.xmf)"
           << "JSON Image Files (*.json)";
+
+  foreach (auto writer, m_pythonExtWriterMap.values().toSet()) {
+    filters << writer->getFileDialogFilter();
+  }
 
   QFileDialog dialog(nullptr);
   dialog.setFileMode(QFileDialog::AnyFile);
@@ -130,10 +138,23 @@ bool SaveDataReaction::saveData(const QString& filename)
     return false;
   }
 
+  SaveDataReaction::registerPythonWriters();
+
   QFileInfo info(filename);
   if (info.suffix() == "emd") {
     EmdFormat writer;
     if (!writer.write(filename.toLatin1().data(), source)) {
+      qCritical() << "Failed to write out data.";
+      return false;
+    } else {
+      updateSource(filename, source);
+      return true;
+    }
+  } else if (m_pythonExtWriterMap.contains(info.suffix().toLower())) {
+    auto writer = m_pythonExtWriterMap[info.suffix().toLower()]->createWriter();
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!writer.write(filename, data)) {
       qCritical() << "Failed to write out data.";
       return false;
     } else {
@@ -203,6 +224,57 @@ bool SaveDataReaction::saveData(const QString& filename)
   updateSource(filename, source);
 
   return true;
+}
+
+void SaveDataReaction::registerPythonWriters()
+{
+  if (!m_pythonExtWriterMap.isEmpty()) {
+    return;
+  }
+  Python python;
+  auto module = python.import("tomviz.io._internal");
+
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz.io._internal module.";
+    return;
+  }
+
+  auto lister = module.findFunction("list_python_writers");
+  if (!module.isValid()) {
+    qCritical() << "Failed to import tomviz.io._internal.list_python_writers";
+    return;
+  }
+
+  auto res = lister.call();
+  if (!res.isValid()) {
+    qCritical("Error calling list_python_writers.");
+    return;
+  }
+
+  if (res.isList()) {
+    Python::List writersList(res);
+    for (int i = 0; i < writersList.length(); ++i) {
+      Python::List writerInfo(writersList[i]);
+      if (!writerInfo.isList() || writerInfo.length() != 3) {
+        return;
+      }
+      QString description = writerInfo[0].toString();
+      Python::List extensions_(writerInfo[1]);
+      if (!extensions_.isList()) {
+        return;
+      }
+      Python::Object writerClass = writerInfo[2];
+      QStringList extensions;
+      for (int j = 0; j < extensions_.length(); ++j) {
+        extensions << QString(extensions_[j].toString());
+      }
+      PythonWriterFactory* writerFactory =
+        new PythonWriterFactory(description, extensions, writerClass);
+      foreach (auto extension, extensions) {
+        m_pythonExtWriterMap[extension] = writerFactory;
+      }
+    }
+  }
 }
 
 } // end of namespace tomviz

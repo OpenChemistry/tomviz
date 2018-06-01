@@ -28,6 +28,8 @@ class vtkSMProxy;
 namespace tomviz {
 class DataSource;
 
+class PythonReaderFactory;
+
 /// LoadDataReaction handles the "Load Data" action in tomviz. On trigger,
 /// this will open the data file and necessary subsequent actions, including:
 /// \li make the data source "active".
@@ -64,6 +66,9 @@ public:
   static void dataSourceAdded(DataSource* dataSource,
                               bool defaultModules = true, bool child = false);
 
+  // Fetch the available python readers
+  static void registerPythonReaders();
+
 protected:
   /// Create a raw data source from the reader.
   static DataSource* createDataSource(vtkSMProxy* reader,
@@ -80,6 +85,8 @@ private:
   static QJsonObject readerProperties(vtkSMProxy* reader);
   static void setFileNameProperties(const QJsonObject& props,
                                     vtkSMProxy* reader);
+
+  static QMap<QString, PythonReaderFactory*> m_pythonExtReaderMap;
 };
 } // namespace tomviz
 
