@@ -488,7 +488,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     "1. Pick an object, use the arrow keys to minimize the wobble.<br />"
     "2. S moves to the next slice, A returns to the previous slice.<br />"
     "3. Repeat steps 1 and 2.<br />"
-    "<i>Note: Must use the same object/point all slices.</i>");
+    "<i>Note: Must use the same object/point all slices.</i><br /><br />"
+    "<i>Shortcuts: P starts/stops the preview; Q, W change the framerate.</i>");
   keyGuide->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
   v->addWidget(keyGuide);
 
@@ -543,12 +544,12 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   ++gridrow;
   label = new QLabel("Frame rate (fps):");
   grid->addWidget(label, gridrow, 0, 1, 1, Qt::AlignRight);
-  QSpinBox* spin = new QSpinBox;
-  spin->setRange(0, 50);
-  spin->setValue(5);
-  spin->installEventFilter(this);
-  connect(spin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
-  grid->addWidget(spin, gridrow, 1, 1, 1, Qt::AlignLeft);
+  m_fpsSpin = new QSpinBox;
+  m_fpsSpin->setRange(0, 50);
+  m_fpsSpin->setValue(5);
+  m_fpsSpin->installEventFilter(this);
+  connect(m_fpsSpin, SIGNAL(valueChanged(int)), SLOT(setFrameRate(int)));
+  grid->addWidget(m_fpsSpin, gridrow, 1, 1, 1, Qt::AlignLeft);
 
   // Slice offsets
   ++gridrow;
@@ -796,6 +797,21 @@ void AlignWidget::widgetKeyPress(QKeyEvent* key)
     case Qt::Key_J:
     case Qt::Key_A:
       changeSlice(-1);
+      return;
+    case Qt::Key_P:
+      if (m_startButton->isEnabled()) {
+        startAlign();
+      } else {
+        stopAlign();
+      }
+      return;
+    case Qt::Key_Q:
+    case Qt::Key_U:
+      m_fpsSpin->setValue(m_fpsSpin->value() - 1);
+      return;
+    case Qt::Key_W:
+    case Qt::Key_I:
+      m_fpsSpin->setValue(m_fpsSpin->value() + 1);
       return;
     default:
       // Nothing

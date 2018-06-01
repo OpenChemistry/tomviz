@@ -107,6 +107,7 @@ protected:
   QRadioButton* m_nextButton;
   QRadioButton* m_statButton;
   QSpinBox* m_refNum;
+  QSpinBox* m_fpsSpin;
   QPushButton* m_startButton;
   QPushButton* m_stopButton;
   QTableWidget* m_offsetTable;
