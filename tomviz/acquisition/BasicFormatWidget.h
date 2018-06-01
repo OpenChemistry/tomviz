@@ -78,8 +78,8 @@ private:
   QString m_posChar;
   QString m_pythonFileNameRegex;
   QString m_testFileName;
-  RegexFormat m_format;
-  RegexExtension m_extension;
+  RegexFormat m_format = RegexFormat::NegativePositive;
+  RegexExtension m_extension = RegexExtension::dm3;
 
   void setupFileFormatCombo();
   void setupFileExtensionCombo();

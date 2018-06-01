@@ -17,6 +17,8 @@
 
 #include "ui_BasicFormatWidget.h"
 
+#include <QDebug>
+
 namespace tomviz {
 
 BasicFormatWidget::BasicFormatWidget(QWidget* parent)
@@ -99,6 +101,10 @@ void BasicFormatWidget::updateRegex()
 {
   QStringList params =
     m_defaultRegexParams[std::make_pair(m_format, m_extension)];
+  if (params.size() != 5) {
+    qCritical() << "Default Regex Parameters size not equal to 5";
+    return;
+  }
   buildFileRegex(params[0], params[1], params[2], params[3], params[4]);
 
   m_ui->customFormatWidget->setFields(params);
@@ -158,6 +164,10 @@ void BasicFormatWidget::buildFileRegex(QString prefix, QString negChar,
 void BasicFormatWidget::customFileRegex()
 {
   QStringList fields = m_ui->customFormatWidget->getFields();
+  if (fields.size() != 5) {
+    qCritical() << "Field Regex Parameters size not equal to 5";
+    return;
+  }
   buildFileRegex(fields[0], fields[1], fields[2], fields[3], fields[4]);
 }
 
