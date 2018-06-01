@@ -52,8 +52,8 @@ def main(data_file_path, state_file_path, output_file_path, progress_method,
          socket_path, operator_index):
 
     # Extract the pipeline
-    with open(state_file_path, 'rb') as fp:
-        state = json.load(fp)
+    with open(state_file_path) as fp:
+        state = json.load(fp, encoding='utf-8')
 
     (datasource, operators) = _extract_pipeline(state)
 
