@@ -177,7 +177,6 @@ private:
   pqSettings* m_settings;
 };
 
-
 } // namespace tomviz
 
 #endif // tomvizPipeline_h

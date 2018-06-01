@@ -216,7 +216,6 @@ bool Pipeline::paused()
   return m_paused;
 }
 
-
 void Pipeline::resume(bool run)
 {
   m_paused = false;

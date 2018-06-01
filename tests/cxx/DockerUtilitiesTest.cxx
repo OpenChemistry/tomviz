@@ -121,6 +121,12 @@ private slots:
 
   void runBindMountTest()
   {
+    // We can't bind mount volumes on CircleCi so skip the test.
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    if (env.contains("CIRCLECI")) {
+      QSKIP("Running on CircleCI skipping mount test.");
+    }
+
     QMap<QString, QString> bindMounts;
     QTemporaryDir tempDir;
 
@@ -195,7 +201,7 @@ private slots:
     QCOMPARE(inspectFinished.size(), 1);
     arguments = inspectFinished.takeFirst();
     QCOMPARE(arguments.at(0).toInt(), 0);
-    QCOMPARE(inspectInvocation->status(), "exited");
+    QCOMPARE(inspectInvocation->status(), QString("exited"));
     inspectInvocation->deleteLater();
     remove(containerId);
   }
@@ -217,7 +223,7 @@ private slots:
     QCOMPARE(inspectFinished.size(), 1);
     auto arguments = inspectFinished.takeFirst();
     QCOMPARE(arguments.at(0).toInt(), 0);
-    QCOMPARE(inspectInvocation->status(), "exited");
+    QCOMPARE(inspectInvocation->status(), QString("exited"));
     QCOMPARE(inspectInvocation->exitCode(), 0);
     inspectInvocation->deleteLater();
     remove(containerId);
