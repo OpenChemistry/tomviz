@@ -270,6 +270,9 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     QString ext = info.suffix().toLower();
     auto reader = m_pythonExtReaderMap[ext]->createReader();
     auto imageData = reader.read(fileNames[0]);
+    if (imageData == nullptr) {
+      return nullptr;
+    }
     dataSource = new DataSource(imageData);
     LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   }

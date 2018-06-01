@@ -61,6 +61,11 @@ vtkSmartPointer<vtkImageData> PythonReader::read(QString fileName)
 
   vtkSmartPointer<vtkImageData> imageData =
     vtkImageData::SafeDownCast(vtkobject);
+
+  if (imageData->GetNumberOfPoints() <= 1) {
+    qCritical() << "The file didn't contain any suitable volumetric data";
+    return nullptr;
+  }
   return imageData;
 }
 

@@ -38,18 +38,18 @@ class MatlabReader(Reader, MatlabBase):
         mat_dict = scipy.io.loadmat(path)
 
         data = None
-        for key, item in mat_dict.items():
-            # Assume only one array per file
+        for item in mat_dict.values():
+            # Assume only one 3D array per file
             if isinstance(item, np.ndarray):
-                data = item
-                break
+                if len(item.shape) == 3:
+                    data = item
+                    break
 
         if data is None:
             return vtkImageData()
 
         image_data = vtkImageData()
         (x, y, z) = data.shape
-
         image_data.SetOrigin(0, 0, 0)
         image_data.SetSpacing(1, 1, 1)
         image_data.SetExtent(0, x - 1, 0, y - 1, 0, z - 1)

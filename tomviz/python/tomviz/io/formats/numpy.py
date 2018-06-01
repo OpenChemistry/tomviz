@@ -46,6 +46,9 @@ class NumpyReader(Reader, NumpyBase):
         with open(path, "rb") as f:
             data = np.load(f)
 
+        if len(data.shape) != 3:
+            return vtkImageData()
+
         image_data = vtkImageData()
         (x, y, z) = data.shape
 
