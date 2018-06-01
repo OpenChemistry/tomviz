@@ -52,7 +52,10 @@ def main(data_file_path, state_file_path, output_file_path):
     if data_file_path is None:
         if 'reader' not in datasource:
             raise Exception('Data source does not contain a reader.')
-        data_file_path = datasource['reader']['fileName']
+        filenames = datasource['reader']['fileNames']
+        if len(filenames) > 1:
+            raise Exception('Image stacks not supported.')
+        data_file_path = filenames[0]
         # fileName is relative to the state file location, so convert to
         # absolute path.
         data_file_path = os.path.abspath(
