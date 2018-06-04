@@ -215,7 +215,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           SLOT(operatorChanged(Operator*)));
 
   // Connect the about dialog up too.
-  connect(m_ui->actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
+  connect(m_ui->actionAbout, &QAction::triggered, this,
+          [this]() { openDialog<AboutDialog>(&m_aboutDialog); });
 
   new pqMacroReaction(m_ui->actionMacros);
 
@@ -461,14 +462,13 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new ProgressDialogManager(this);
 
   // Add the acquisition client experimentally.
-  auto acquisitionWidget = new AcquisitionWidget(this);
   auto acquisitionAction = m_ui->menuTools->addAction("Acquisition");
-  connect(acquisitionAction, SIGNAL(triggered(bool)), acquisitionWidget,
-          SLOT(show()));
+  connect(acquisitionAction, &QAction::triggered, this,
+          [this]() { openDialog<AcquisitionWidget>(&m_acquisitionWidget); });
 
-  auto passiveAcquisitionWidget = new PassiveAcquisitionWidget(this);
-  connect(m_ui->actionPassiveAcquisition, &QAction::triggered,
-          passiveAcquisitionWidget, &QDialog::show);
+  connect(m_ui->actionPassiveAcquisition, &QAction::triggered, this, [this]() {
+    openDialog<PassiveAcquisitionWidget>(&m_passiveAcquisitionDialog);
+  });
 
   registerCustomOperators();
   LoadDataReaction::registerPythonReaders();
@@ -483,12 +483,13 @@ MainWindow::~MainWindow()
   }
 }
 
-void MainWindow::showAbout()
+template <class T>
+void MainWindow::openDialog(QWidget** dialog)
 {
-  if (!m_aboutDialog) {
-    m_aboutDialog = new AboutDialog(this);
+  if (*dialog == nullptr) {
+    *dialog = new T(this);
   }
-  m_aboutDialog->show();
+  (*dialog)->show();
 }
 
 void MainWindow::openTilt()
