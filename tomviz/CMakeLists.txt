@@ -52,6 +52,8 @@ set(SOURCES
   EmdFormat.h
   ExportDataReaction.cxx
   ExportDataReaction.h
+  FileFormatManager.cxx
+  FileFormatManager.h
   GradientOpacityWidget.h
   GradientOpacityWidget.cxx
   HistogramWidget.h

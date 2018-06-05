@@ -38,6 +38,7 @@
 #include "Connection.h"
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
+#include "FileFormatManager.h"
 #include "LoadDataReaction.h"
 #include "LoadPaletteReaction.h"
 #include "LoadStackReaction.h"
@@ -471,7 +472,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           passiveAcquisitionWidget, &QDialog::show);
 
   registerCustomOperators();
-  LoadDataReaction::registerPythonReaders();
+  FileFormatManager::instance().registerPythonReaders();
 }
 
 MainWindow::~MainWindow()

@@ -13,36 +13,40 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizSaveDataReaction_h
-#define tomvizSaveDataReaction_h
+#ifndef tomvizFileFormatManager_h
+#define tomvizFileFormatManager_h
 
-#include <pqReaction.h>
+#include <QList>
+#include <QMap>
+#include <QString>
 
 namespace tomviz {
-class DataSource;
+
+class PythonReaderFactory;
 class PythonWriterFactory;
 
-/// SaveDataReaction handles the "Save Data" action in tomviz. On trigger,
-/// this will save the data file.
-class SaveDataReaction : public pqReaction
+class FileFormatManager
 {
-  Q_OBJECT
 
 public:
-  SaveDataReaction(QAction* parentAction);
+  static FileFormatManager& instance();
 
-  /// Save the file
-  bool saveData(const QString& filename);
+  // Fetch the available python readers
+  void registerPythonReaders();
 
-protected:
-  /// Called when the data changes to enable/disable the menu item
-  void updateEnableState() override;
+  // Fetch the available python writer
+  void registerPythonWriters();
 
-  /// Called when the action is triggered.
-  void onTriggered() override;
+  QList<PythonReaderFactory*> pythonReaderFactories();
+  QList<PythonWriterFactory*> pythonWriterFactories();
+
+  PythonReaderFactory* pythonReaderFactory(const QString& ext);
+  PythonWriterFactory* pythonWriterFactory(const QString& ext);
 
 private:
-  Q_DISABLE_COPY(SaveDataReaction)
+  QMap<QString, PythonReaderFactory*> m_pythonExtReaderMap;
+  QMap<QString, PythonWriterFactory*> m_pythonExtWriterMap;
 };
 } // namespace tomviz
+
 #endif
