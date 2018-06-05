@@ -43,6 +43,8 @@
 #include <vtkSMViewProxy.h>
 #include <vtkTrivialProducer.h>
 
+#include <functional>
+
 namespace tomviz {
 PipelineExecutor::PipelineExecutor(Pipeline* pipeline) : QObject(pipeline)
 {
@@ -380,6 +382,21 @@ void DockerPipelineExecutor::execute(vtkDataObject* data,
   bindMounts[m_temporaryDir->path()] = CONTAINER_MOUNT;
   QString image = "tomviz/pipeline";
 
+  auto startContainer = [this, image, args, bindMounts]() {
+    auto msg = QString("Starting docker container.");
+    auto progress = new ProgressDialog("Docker run", msg, tomviz::mainWidget());
+    progress->show();
+    auto runInvocation = run(image, args, bindMounts);
+    connect(runInvocation, &docker::DockerPullInvocation::finished,
+            runInvocation,
+            [progress](int exitCode, QProcess::ExitStatus exitStatus) {
+              Q_UNUSED(exitCode)
+              Q_UNUSED(exitStatus)
+              progress->hide();
+              progress->deleteLater();
+            });
+  };
+
   PipelineSettings settings;
   // Pull the latest version of the image, if haven't already
   if (settings.dockerPull() && m_pullImage) {
@@ -393,8 +410,8 @@ void DockerPipelineExecutor::execute(vtkDataObject* data,
             &DockerPipelineExecutor::error);
     connect(pullInvocation, &docker::DockerPullInvocation::finished,
             pullInvocation,
-            [this, image, args, bindMounts, pullInvocation,
-             progress](int exitCode, QProcess::ExitStatus exitStatus) {
+            [this, image, args, bindMounts, pullInvocation, progress,
+             startContainer](int exitCode, QProcess::ExitStatus exitStatus) {
               Q_UNUSED(exitStatus)
               progress->hide();
               progress->deleteLater();
@@ -405,23 +422,12 @@ void DockerPipelineExecutor::execute(vtkDataObject* data,
                                .arg(pullInvocation->stdErr()));
                 return;
               } else {
-                run(image, args, bindMounts);
+                startContainer();
               }
               pullInvocation->deleteLater();
             });
   } else {
-    auto msg = QString("Starting docker container.");
-    auto progress = new ProgressDialog("Docker run", msg, tomviz::mainWidget());
-    progress->show();
-    auto runInvocation = run(image, args, bindMounts);
-    connect(runInvocation, &docker::DockerPullInvocation::finished,
-            runInvocation,
-            [progress](int exitCode, QProcess::ExitStatus exitStatus) {
-              Q_UNUSED(exitCode)
-              Q_UNUSED(exitStatus)
-              progress->hide();
-              progress->deleteLater();
-            });
+    startContainer();
   }
 }
 
