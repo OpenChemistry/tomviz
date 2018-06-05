@@ -18,6 +18,8 @@
 #include "DataSource.h"
 #include "ModuleManager.h"
 #include "Operator.h"
+#include "Pipeline.h"
+#include "PipelineManager.h"
 
 #include <QCoreApplication>
 #include <QDialog>
@@ -114,9 +116,30 @@ void ProgressDialogManager::operationStarted()
 
 void ProgressDialogManager::operatorAdded(Operator* op)
 {
-  connect(op, &Operator::transformingStarted, this,
-          &ProgressDialogManager::operationStarted,
-          Qt::BlockingQueuedConnection);
+  // Need to ensure that if we are using the docker executor we use a
+  // DirectQueued
+  // connection here, otherwise we will deadlock as the sender and receiver will
+  // will have the same thread affinity.
+  std::function<void()> connectTransformingStarted = [op, this]() {
+    auto connectionType = Qt::BlockingQueuedConnection;
+    if (op->dataSource()->pipeline()->executionMode() ==
+        Pipeline::ExecutionMode::Docker) {
+      connectionType = Qt::DirectConnection;
+    }
+
+    connect(op, &Operator::transformingStarted, this,
+            &ProgressDialogManager::operationStarted, connectionType);
+  };
+  connectTransformingStarted();
+
+  // Recreate the connection with the correct type if the execution mode is
+  // changed.
+  connect(&PipelineManager::instance(), &PipelineManager::executionModeUpdated,
+          op, [this, connectTransformingStarted, op]() {
+            disconnect(op, &Operator::transformingStarted, this,
+                       &ProgressDialogManager::operationStarted);
+            connectTransformingStarted();
+          });
 
   connect(
     op,

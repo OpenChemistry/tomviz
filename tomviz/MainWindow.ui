@@ -27,7 +27,7 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>20</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -68,6 +68,8 @@
     </property>
     <addaction name="actionMacros"/>
     <addaction name="actionPassiveAcquisition"/>
+    <addaction name="actionAcquisition"/>
+    <addaction name="actionPipelineSettings"/>
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
@@ -120,16 +122,7 @@
    </attribute>
    <widget class="QWidget" name="pipelineBrowserWidget">
     <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
+     <property name="margin">
       <number>0</number>
      </property>
      <item>
@@ -242,16 +235,7 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout_2">
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
+     <property name="margin">
       <number>0</number>
      </property>
      <item>
@@ -445,6 +429,16 @@
   <action name="actionStack">
    <property name="text">
     <string>O&amp;pen Stack</string>
+    </property>
+  </action>
+  <action name="actionPipelineSettings">
+   <property name="text">
+    <string>Pipeline Settings</string>
+   </property>
+  </action>
+  <action name="actionAcquisition">
+   <property name="text">
+    <string>Acquisition</string>
    </property>
   </action>
  </widget>

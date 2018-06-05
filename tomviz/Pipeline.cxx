@@ -17,57 +17,108 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "DockerUtilities.h"
+#include "EmdFormat.h"
 #include "ModuleManager.h"
 #include "Operator.h"
-#include "PipelineWorker.h"
+#include "PipelineExecutor.h"
 #include "Utilities.h"
 
-#include <QObject>
-#include <QTimer>
+#include <QMetaEnum>
+
+#include <pqApplicationCore.h>
+#include <pqSettings.h>
 #include <pqView.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTrivialProducer.h>
 
 namespace tomviz {
 
+PipelineSettings::PipelineSettings()
+{
+  m_settings = pqApplicationCore::instance()->settings();
+}
+
+void PipelineSettings::setExecutionMode(Pipeline::ExecutionMode executor)
+{
+  auto metaEnum = QMetaEnum::fromType<Pipeline::ExecutionMode>();
+  setExecutionMode(QString(metaEnum.valueToKey(executor)));
+}
+
+void PipelineSettings::setExecutionMode(const QString& executor)
+{
+  m_settings->setValue("pipeline/mode", executor);
+}
+
+Pipeline::ExecutionMode PipelineSettings::executionMode()
+{
+  if (!m_settings->contains("pipeline/mode")) {
+    return Pipeline::ExecutionMode::Threaded;
+  }
+  auto metaEnum = QMetaEnum::fromType<Pipeline::ExecutionMode>();
+
+  return static_cast<Pipeline::ExecutionMode>(metaEnum.keyToValue(
+    m_settings->value("pipeline/mode").toString().toLatin1().data()));
+}
+
+QString PipelineSettings::dockerImage()
+{
+  return m_settings->value("pipeline/docker.image").toString();
+}
+
+bool PipelineSettings::dockerPull()
+{
+  return m_settings->value("pipeline/docker.pull", true).toBool();
+}
+
+bool PipelineSettings::dockerRemove()
+{
+  return m_settings->value("pipeline/docker.remove", true).toBool();
+}
+
+void PipelineSettings::setDockerImage(const QString& image)
+{
+  m_settings->setValue("pipeline/docker.image", image);
+}
+
+void PipelineSettings::setDockerPull(bool pull)
+{
+  m_settings->setValue("pipeline/docker.pull", pull);
+}
+
+void PipelineSettings::setDockerRemove(bool remove)
+{
+  m_settings->setValue("pipeline/docker.remove", remove);
+}
+
 Pipeline::Pipeline(DataSource* dataSource, QObject* parent) : QObject(parent)
 {
   m_data = dataSource;
-  m_worker = new PipelineWorker(this);
   m_data->setParent(this);
 
   addDataSource(dataSource);
+
+  PipelineSettings settings;
+  auto executor = settings.executionMode();
+  setExecutionMode(executor);
 }
 
 Pipeline::~Pipeline() = default;
 
 void Pipeline::execute()
 {
-  emit started();
-  executePipelineBranch(m_data);
+  execute(m_data);
 }
 
-void Pipeline::execute(DataSource* start, bool last)
+void Pipeline::execute(DataSource* dataSource, Operator* start)
 {
-  emit started();
-  Operator* lastOp = nullptr;
-
-  if (last) {
-    lastOp = start->operators().last();
-  }
-  executePipelineBranch(start, lastOp);
-}
-
-void Pipeline::execute(DataSource* start)
-{
-  emit started();
-  executePipelineBranch(start);
-}
-
-void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
-{
-  if (m_paused) {
+  if (paused()) {
     return;
+  }
+  emit started();
+
+  if (dataSource == nullptr) {
+    dataSource = m_data;
   }
 
   auto operators = dataSource->operators();
@@ -75,26 +126,13 @@ void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
     emit finished();
     return;
   }
-
-  // Cancel any running operators. TODO in the future we should be able to add
-  // operators to end of a running pipeline.
-  if (m_future && m_future->isRunning()) {
-    m_future->cancel();
-  }
-
-  vtkDataObject* data = nullptr;
-
-  if (start != nullptr) {
-    // Use the transform DataSource as the starting point, if we have one.
-    auto transformDataSource = findTransformedDataSource(dataSource);
-    if (transformDataSource) {
-      data = transformDataSource->copyData();
-    }
-
+  int startIndex = 0;
+  // We currently only support running the last operator or the entire pipeline.
+  if (start == dataSource->operators().last()) {
     // See if we have any canceled operators in the pipeline, if so we have to
-    // re-run this branch of the pipeline.
+    // re-run the anyway pipeline.
     bool haveCanceled = false;
-    for (auto itr = dataSource->operators().begin(); *itr != start; ++itr) {
+    for (auto itr = operators.begin(); *itr != start; ++itr) {
       auto currentOp = *itr;
       if (currentOp->isCanceled()) {
         currentOp->resetState();
@@ -103,115 +141,79 @@ void Pipeline::executePipelineBranch(DataSource* dataSource, Operator* start)
       }
     }
 
-    // If we have canceled operators we have to run call operators.
     if (!haveCanceled) {
-      operators = operators.mid(operators.indexOf(start));
-      start->resetState();
+      startIndex = operators.indexOf(start);
+      // Use transformed data source
+      dataSource = transformedDataSource(dataSource);
     }
   }
 
-  // Use the original
-  if (data == nullptr) {
-    data = dataSource->copyData();
-  }
-
-  m_future = m_worker->run(data, operators);
-  data->FastDelete();
-  connect(m_future, &PipelineWorker::Future::finished, this,
-          &Pipeline::pipelineBranchFinished);
-  connect(m_future, &PipelineWorker::Future::canceled, this,
-          &Pipeline::pipelineBranchCanceled);
+  m_executor->execute(dataSource->dataObject(), operators, startIndex);
 }
 
-void Pipeline::pipelineBranchFinished(bool result)
+void Pipeline::branchFinished(DataSource* start, vtkDataObject* newData)
 {
-  PipelineWorker::Future* future =
-    qobject_cast<PipelineWorker::Future*>(sender());
-  if (result) {
+  // We only add the transformed child data source if the last operator
+  // doesn't already have an explicit child data source i.e.
+  // hasChildDataSource is true.
+  auto lastOp = start->operators().last();
+  if (!lastOp->hasChildDataSource()) {
+    DataSource* newChildDataSource = nullptr;
+    if (lastOp->childDataSource() == nullptr) {
+      newChildDataSource = new DataSource("Output");
+      newChildDataSource->setPersistenceState(
+        tomviz::DataSource::PersistenceState::Transient);
+      newChildDataSource->setForkable(false);
+      newChildDataSource->setParent(this);
+      lastOp->setChildDataSource(newChildDataSource);
+      auto rootDataSource = dataSource();
+      // connect signal to flow units and spacing to child data source.
+      connect(dataSource(), &DataSource::dataPropertiesChanged,
+              [rootDataSource, newChildDataSource]() {
+                // Only flow the properties if no user modifications have been
+                // made.
+                if (!newChildDataSource->unitsModified()) {
+                  newChildDataSource->setUnits(rootDataSource->getUnits(),
+                                               false);
+                  double spacing[3];
+                  rootDataSource->getSpacing(spacing);
+                  newChildDataSource->setSpacing(spacing, false);
+                }
+              });
+    }
 
-    auto lastOp = future->operators().last();
+    lastOp->childDataSource()->setData(newData);
+    lastOp->childDataSource()->dataModified();
 
-    // We only add the transformed child data source if the last operator
-    // doesn't already have an explicit child data source i.e.
-    // hasChildDataSource is true.
-    if (!lastOp->hasChildDataSource()) {
-      DataSource* newChildDataSource = nullptr;
-      if (lastOp->childDataSource() == nullptr) {
-        newChildDataSource = new DataSource("Output");
-        newChildDataSource->setPersistenceState(
-          tomviz::DataSource::PersistenceState::Transient);
-        newChildDataSource->setForkable(false);
-        newChildDataSource->setParent(this);
-        lastOp->setChildDataSource(newChildDataSource);
-        auto rootDataSource = dataSource();
-        // connect signal to flow units and spacing to child data source.
-        connect(dataSource(), &DataSource::dataPropertiesChanged,
-                [rootDataSource, newChildDataSource]() {
-                  // Only flow the properties if no user modifications have been
-                  // made.
-                  if (!newChildDataSource->unitsModified()) {
-                    newChildDataSource->setUnits(rootDataSource->getUnits(),
-                                                 false);
-                    double spacing[3];
-                    rootDataSource->getSpacing(spacing);
-                    newChildDataSource->setSpacing(spacing, false);
-                  }
-                });
+    if (newChildDataSource != nullptr) {
+      emit lastOp->newChildDataSource(newChildDataSource);
+      // Move modules from root data source.
+      bool oldMoveObjectsEnabled =
+        ActiveObjects::instance().moveObjectsEnabled();
+      ActiveObjects::instance().setMoveObjectsMode(false);
+      auto view = ActiveObjects::instance().activeView();
+      foreach (Module* module, ModuleManager::instance().findModules<Module*>(
+                                 dataSource(), nullptr)) {
+        // TODO: We should really copy the module properties as well.
+        auto newModule = ModuleManager::instance().createAndAddModule(
+          module->label(), newChildDataSource, view);
+        // Copy over properties using the serialization code.
+        newModule->deserialize(module->serialize());
+        ModuleManager::instance().removeModule(module);
       }
-
-      lastOp->childDataSource()->setData(future->result());
-      lastOp->childDataSource()->dataModified();
-
-      if (newChildDataSource != nullptr) {
-        emit lastOp->newChildDataSource(newChildDataSource);
-        // Move modules from root data source.
-        bool oldMoveObjectsEnabled =
-          ActiveObjects::instance().moveObjectsEnabled();
-        ActiveObjects::instance().setMoveObjectsMode(false);
-        auto view = ActiveObjects::instance().activeView();
-        foreach (Module* module, ModuleManager::instance().findModules<Module*>(
-                                   m_data, nullptr)) {
-          // TODO: We should really copy the module properties as well.
-          auto newModule = ModuleManager::instance().createAndAddModule(
-            module->label(), newChildDataSource, view);
-          // Copy over properties using the serialization code.
-          newModule->deserialize(module->serialize());
-          ModuleManager::instance().removeModule(module);
-        }
-        ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
-      }
+      ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
     }
-
-    // Do we have another branch to execute
-    if (lastOp->childDataSource() != nullptr) {
-      execute(lastOp->childDataSource());
-      lastOp->childDataSource()->setParent(this);
-    }
-    // The pipeline execution is finished
-    else {
-      emit finished();
-    }
-
-    future->deleteLater();
-    if (m_future == future) {
-      m_future = nullptr;
-    }
-  }
-}
-
-void Pipeline::pipelineBranchCanceled()
-{
-  PipelineWorker::Future* future =
-    qobject_cast<PipelineWorker::Future*>(sender());
-  future->deleteLater();
-  if (m_future == future) {
-    m_future = nullptr;
   }
 }
 
 void Pipeline::pause()
 {
   m_paused = true;
+}
+
+bool Pipeline::paused()
+{
+  return m_paused;
 }
 
 void Pipeline::resume(bool run)
@@ -230,17 +232,12 @@ void Pipeline::resume(DataSource* at)
 
 void Pipeline::cancel(std::function<void()> canceled)
 {
-  if (m_future) {
-    if (canceled) {
-      connect(m_future, &PipelineWorker::Future::canceled, canceled);
-    }
-    m_future->cancel();
-  }
+  m_executor->cancel(canceled);
 }
 
 bool Pipeline::isRunning()
 {
-  return m_future != nullptr && m_future->isRunning();
+  return m_executor->isRunning();
 }
 
 DataSource* Pipeline::findTransformedDataSource(DataSource* dataSource)
@@ -279,7 +276,7 @@ Operator* Pipeline::findTransformedDataSourceOperator(DataSource* dataSource)
 void Pipeline::addDataSource(DataSource* dataSource)
 {
   connect(dataSource, &DataSource::operatorAdded,
-          [this](Operator* op) { execute(op->dataSource(), true); });
+          [this](Operator* op) { execute(op->dataSource(), op); });
   // Wire up transformModified to execute pipeline
   connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
     // Extract out source and execute all.
@@ -331,10 +328,10 @@ void Pipeline::addDataSource(DataSource* dataSource)
     }
 
     // If pipeline is running see if we can safely remove the operator
-    if (m_future && m_future->isRunning()) {
+    if (isRunning()) {
       // If we can't safely cancel the execution then trigger the rerun of the
       // pipeline.
-      if (!m_future->cancel(op)) {
+      if (!m_executor->cancel(op)) {
         execute(op->dataSource());
       }
     } else {
@@ -388,41 +385,7 @@ Pipeline::ImageFuture::~ImageFuture()
 
 Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
 {
-  auto operators = m_data->operators();
-
-  // If the op has not been added then we can just use the "Output" data source.
-  if (!operators.isEmpty() && !operators.contains(op)) {
-    auto transformed = findTransformedDataSource(m_data);
-    auto dataObject = vtkImageData::SafeDownCast(transformed->copyData());
-    auto imageFuture = new ImageFuture(op, dataObject);
-    dataObject->FastDelete();
-    // Delay emitting signal until next event loop
-    QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
-
-    return imageFuture;
-  } else {
-    auto dataSource = m_data;
-    auto dataObject = vtkImageData::SafeDownCast(dataSource->copyData());
-    if (operators.size() > 1) {
-      auto index = operators.indexOf(op);
-      // Only run operators if we have some to run
-      if (index > 0) {
-        auto future = m_worker->run(dataObject, operators.mid(0, index));
-        auto imageFuture = new ImageFuture(op, dataObject, future);
-        dataObject->FastDelete();
-
-        return imageFuture;
-      }
-    }
-
-    auto imageFuture = new ImageFuture(op, dataObject);
-    dataObject->FastDelete();
-
-    // Delay emitting signal until next event loop
-    QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
-
-    return imageFuture;
-  }
+  return m_executor->getCopyOfImagePriorTo(op);
 }
 
 DataSource* Pipeline::transformedDataSource(DataSource* ds)
@@ -438,6 +401,16 @@ DataSource* Pipeline::transformedDataSource(DataSource* ds)
 
   // Default to dataSource at being of pipeline
   return ds;
+}
+
+void Pipeline::setExecutionMode(ExecutionMode executor)
+{
+  m_executionMode = executor;
+  if (executor == ExecutionMode::Docker) {
+    m_executor.reset(new DockerPipelineExecutor(this));
+  } else {
+    m_executor.reset(new ThreadPipelineExecutor(this));
+  }
 }
 
 } // namespace tomviz

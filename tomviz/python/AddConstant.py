@@ -1,4 +1,4 @@
-def transform_scalars(dataset, constant=0):
+def transform_scalars(dataset, constant=0.0):
     """Add a constant to the data set"""
 
     from tomviz import utils
@@ -7,6 +7,9 @@ def transform_scalars(dataset, constant=0):
     scalars = utils.get_scalars(dataset)
     if scalars is None:
         raise RuntimeError("No scalars found!")
+
+    # Ensure we start with a float
+    constant = float(constant)
 
     # Try to be a little smart so that we don't always just produce a
     # double-precision output

@@ -13,43 +13,31 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizPipelineManager_h
-#define tomvizPipelineManager_h
 
-#include <QObject>
+#ifndef tomvizProgressDialog_h
+#define tomvizProgressDialog_h
 
-#include "Pipeline.h"
+#include <QDialog>
+#include <QScopedPointer>
 
-class QDir;
+namespace Ui {
+
+class ProgressDialog;
+}
 
 namespace tomviz {
 
-class Pipeline;
-
-class PipelineManager : public QObject
+class ProgressDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  static PipelineManager& instance();
-
-  /// Update the execution modethe pipelines are using.
-  void updateExecutionMode(Pipeline::ExecutionMode mode);
-
-public slots:
-  void addPipeline(Pipeline*);
-  void removePipeline(Pipeline*);
-  void removeAllPipelines();
-
-signals:
-  void executionModeUpdated(Pipeline::ExecutionMode mode);
+  explicit ProgressDialog(const QString& title, const QString& msg,
+                          QWidget* parent = nullptr);
+  ~ProgressDialog() override;
 
 private:
-  Q_DISABLE_COPY(PipelineManager)
-  PipelineManager(QObject* parent = nullptr);
-  ~PipelineManager() override;
-
-  QList<QPointer<Pipeline>> m_pipelines;
+  QScopedPointer<Ui::ProgressDialog> m_ui;
 };
 } // namespace tomviz
 

@@ -3,6 +3,7 @@ find_package(OpenGL REQUIRED)
 include_directories(SYSTEM
   ${Qt5Network_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
+  ${Qt5Concurrent_INCLUDE_DIRS}
   ${PARAVIEW_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
@@ -44,6 +45,8 @@ set(SOURCES
   DataTransformMenu.h
   DeleteDataReaction.cxx
   DeleteDataReaction.h
+  DockerUtilities.cxx
+  DockerUtilities.h
   DoubleSliderWidget.cxx
   DoubleSliderWidget.h
   DoubleSpinBox.cxx
@@ -84,6 +87,8 @@ set(SOURCES
   MoveActiveObject.h
   Pipeline.cxx
   Pipeline.h
+  PipelineExecutor.cxx
+  PipelineExecutor.h
   PipelineManager.cxx
   PipelineManager.h
   PipelineModel.cxx
@@ -92,6 +97,10 @@ set(SOURCES
   PipelineView.h
   PipelineWorker.cxx
   PipelineWorker.h
+  PipelineSettingsDialog.cxx
+  PipelineSettingsDialog.h
+  ProgressDialog.cxx
+  ProgressDialog.h
   ProgressDialogManager.cxx
   ProgressDialogManager.h
   PythonGeneratedDatasetReaction.cxx

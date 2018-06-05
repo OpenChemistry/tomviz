@@ -8,6 +8,7 @@ jobs:
           - CIRCLE_BUILD_NUM: ${CIRCLE_BUILD_NUM}
     working_directory: /tomviz
     steps:
+      - setup_remote_docker
       - checkout
       - run:
           name: Update submodules ...

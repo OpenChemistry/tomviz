@@ -47,6 +47,7 @@
 #include "ModulePropertiesPanel.h"
 #include "PassiveAcquisitionWidget.h"
 #include "PipelineManager.h"
+#include "PipelineSettingsDialog.h"
 #include "ProgressDialogManager.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "PythonUtilities.h"
@@ -463,13 +464,16 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new ProgressDialogManager(this);
 
   // Add the acquisition client experimentally.
-  auto acquisitionAction = m_ui->menuTools->addAction("Acquisition");
-  connect(acquisitionAction, &QAction::triggered, this,
+  connect(m_ui->actionAcquisition, &QAction::triggered, this,
           [this]() { openDialog<AcquisitionWidget>(&m_acquisitionWidget); });
 
   connect(m_ui->actionPassiveAcquisition, &QAction::triggered, this, [this]() {
     openDialog<PassiveAcquisitionWidget>(&m_passiveAcquisitionDialog);
   });
+
+  auto pipelineSettingsDialog = new PipelineSettingsDialog(this);
+  connect(m_ui->actionPipelineSettings, &QAction::triggered,
+          pipelineSettingsDialog, &QWidget::show);
 
   registerCustomOperators();
   FileFormatManager::instance().registerPythonReaders();

@@ -26,7 +26,7 @@ set(cfg_options
 ctest_start("Continuous")
 ctest_configure(OPTIONS "${cfg_options}")
 ctest_build()
-ctest_test(RETURN_VALUE rv)
+ctest_test(EXCLUDE "Docker" RETURN_VALUE rv)
 ctest_submit()
 
 if(NOT rv EQUAL 0)

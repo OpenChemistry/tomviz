@@ -47,7 +47,7 @@ if(APPLE)
 endif()
 
 # These dependencies are inherited from ParaView.
-find_package(Qt5 REQUIRED COMPONENTS Network Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Concurrent Network Widgets)
 find_package(ParaView REQUIRED)
 
 # Use automoc, autouic, and autorcc for our Qt code.

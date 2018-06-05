@@ -20,22 +20,46 @@
 
 #include "PipelineWorker.h"
 
+#include <QFile>
+#include <QFileSystemWatcher>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QProcess>
 #include <QScopedPointer>
+#include <QSettings>
+#include <QTemporaryDir>
+#include <QThreadPool>
+#include <QTimer>
 
 #include <functional>
 
 #include <vtkImageData.h>
 #include <vtkSmartPointer.h>
 
+class pqSettings;
+
 namespace tomviz {
 class DataSource;
 class Operator;
+class Pipeline;
+class PipelineExecutor;
+
+namespace docker {
+class DockerStopInvocation;
+class DockerRunInvocation;
+}
 
 class Pipeline : public QObject
 {
   Q_OBJECT
-
 public:
+  enum ExecutionMode
+  {
+    Threaded,
+    Docker
+  };
+  Q_ENUM(ExecutionMode)
+
   class ImageFuture;
 
   Pipeline(DataSource* dataSource, QObject* parent = nullptr);
@@ -43,6 +67,9 @@ public:
 
   // Pause the automatic execution of the pipeline
   void pause();
+
+  // Returns true if pipeline is currently paused, false otherwise.
+  bool paused();
 
   // Resume the automatic execution of the pipeline, will execution the
   // existing pipeline. If execute is true the entire pipeline will be executed.
@@ -72,19 +99,16 @@ public:
   /// will be used.
   DataSource* transformedDataSource(DataSource* dataSource = nullptr);
 
+  /// Set the execution mode to use when executing the pipeline.
+  void setExecutionMode(ExecutionMode executor);
+
+  ExecutionMode executionMode() { return m_executionMode; };
+
 public slots:
   void execute();
-  void execute(DataSource* start, bool runLast);
-  void execute(DataSource* start);
+  void execute(DataSource* dataSource, Operator* start = nullptr);
 
-protected slots:
-  void executePipelineBranch(DataSource* dataSource, Operator* start = nullptr);
-
-  /// The pipeline worker is finished with this branch.
-  void pipelineBranchFinished(bool result);
-
-  /// The pipeline worker has been canceled
-  void pipelineBranchCanceled();
+  void branchFinished(DataSource* start, vtkDataObject* newData);
 
 signals:
   /// This signal is when the execution of the pipeline starts.
@@ -104,9 +128,9 @@ private:
   void addDataSource(DataSource* dataSource);
 
   DataSource* m_data;
-  PipelineWorker* m_worker;
-  PipelineWorker::Future* m_future = nullptr;
   bool m_paused = false;
+  QScopedPointer<PipelineExecutor> m_executor;
+  ExecutionMode m_executionMode = Threaded;
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.
@@ -115,7 +139,7 @@ class Pipeline::ImageFuture : public QObject
   Q_OBJECT
 
 public:
-  friend class Pipeline;
+  friend class ThreadPipelineExecutor;
 
   vtkSmartPointer<vtkImageData> result() { return m_imageData; }
   Operator* op() { return m_operator; }
@@ -133,6 +157,26 @@ private:
   vtkSmartPointer<vtkImageData> m_imageData;
   PipelineWorker::Future* m_future;
 };
+
+class PipelineSettings
+{
+public:
+  PipelineSettings();
+  Pipeline::ExecutionMode executionMode();
+  QString dockerImage();
+  bool dockerPull();
+  bool dockerRemove();
+
+  void setExecutionMode(Pipeline::ExecutionMode executor);
+  void setExecutionMode(const QString& executor);
+  void setDockerImage(const QString& image);
+  void setDockerPull(bool pull);
+  void setDockerRemove(bool remove);
+
+private:
+  pqSettings* m_settings;
+};
+
 } // namespace tomviz
 
 #endif // tomvizPipeline_h

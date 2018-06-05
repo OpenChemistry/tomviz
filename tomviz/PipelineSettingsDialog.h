@@ -13,43 +13,38 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizPipelineManager_h
-#define tomvizPipelineManager_h
+#ifndef tomvizPipelineSettingsDialog_h
+#define tomvizPipelineSettingsDialog_h
 
-#include <QObject>
+#include <QDialog>
+#include <QMetaEnum>
+#include <QScopedPointer>
 
 #include "Pipeline.h"
 
-class QDir;
+namespace Ui {
+class PipelineSettingsDialog;
+}
 
 namespace tomviz {
 
-class Pipeline;
-
-class PipelineManager : public QObject
+class PipelineSettingsDialog : public QDialog
 {
   Q_OBJECT
 
 public:
-  static PipelineManager& instance();
+  PipelineSettingsDialog(QWidget* parent = nullptr);
+  ~PipelineSettingsDialog() override;
+  void readSettings();
 
-  /// Update the execution modethe pipelines are using.
-  void updateExecutionMode(Pipeline::ExecutionMode mode);
-
-public slots:
-  void addPipeline(Pipeline*);
-  void removePipeline(Pipeline*);
-  void removeAllPipelines();
-
-signals:
-  void executionModeUpdated(Pipeline::ExecutionMode mode);
+private slots:
+  void writeSettings();
 
 private:
-  Q_DISABLE_COPY(PipelineManager)
-  PipelineManager(QObject* parent = nullptr);
-  ~PipelineManager() override;
-
-  QList<QPointer<Pipeline>> m_pipelines;
+  Q_DISABLE_COPY(PipelineSettingsDialog)
+  QScopedPointer<Ui::PipelineSettingsDialog> m_ui;
+  QMetaEnum m_executorTypeMetaEnum;
+  void checkEnableOk();
 };
 } // namespace tomviz
 

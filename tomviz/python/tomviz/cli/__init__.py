@@ -36,14 +36,24 @@ def _extract_pipeline(state):
               ' to override data source in state file',
               type=click.Path(exists=True))
 @click.option('-s', '--state-file-path', help='Path to the Tomviz state file',
-              type=click.Path(exists=True))
+              type=click.Path(exists=True), required=True)
 @click.option('-o', '--output-file-path',
               help='Path to write the transformed dataset.', type=click.Path())
-def main(data_file_path, state_file_path, output_file_path):
+@click.option('-p', '--progress-method',
+              help='The method to use to progress updates.',
+              type=click.Choice(['tqdm', 'socket', 'files']), default='tqdm')
+@click.option('-u', '--socket-path',
+              help='The socket path to use for progress updates.',
+              type=click.Path(), default='/tomviz/progress')
+@click.option('-i', '--operator-index',
+              help='The operator to start at.',
+              type=int, default=0)
+def main(data_file_path, state_file_path, output_file_path, progress_method,
+         socket_path, operator_index):
 
     # Extract the pipeline
     with open(state_file_path) as fp:
-        state = json.load(fp)
+        state = json.load(fp, encoding='utf-8')
 
     (datasource, operators) = _extract_pipeline(state)
 
@@ -67,4 +77,5 @@ def main(data_file_path, state_file_path, output_file_path):
             raise Exception('Data source path does not exist: %s'
                             % data_file_path)
 
-    executor.execute(operators, data_file_path, output_file_path)
+    executor.execute(operators, operator_index, data_file_path,
+                     output_file_path, progress_method, socket_path)
