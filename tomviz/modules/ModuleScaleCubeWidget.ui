@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>818</width>
+    <width>837</width>
     <height>728</height>
    </rect>
   </property>
@@ -20,21 +20,21 @@
    <string>Form</string>
   </property>
   <layout class="QFormLayout" name="formLayout">
-   <item row="1" column="0">
+   <item row="11" column="0">
     <widget class="QLabel" name="tlAdaptiveScaling">
      <property name="text">
       <string>Adaptive scaling</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
+   <item row="11" column="1">
     <widget class="QCheckBox" name="chbAdaptiveScaling">
      <property name="text">
       <string/>
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item row="12" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="spacing">
       <number>0</number>
@@ -62,10 +62,10 @@
      </item>
     </layout>
    </item>
-   <item row="2" column="1">
+   <item row="12" column="1">
     <widget class="QLineEdit" name="leSideLength"/>
    </item>
-   <item row="3" column="0">
+   <item row="14" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <property name="spacing">
       <number>0</number>
@@ -93,7 +93,7 @@
      </item>
     </layout>
    </item>
-   <item row="3" column="1">
+   <item row="14" column="1">
     <widget class="QLabel" name="tlPosition">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -115,31 +115,45 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="1">
-    <widget class="QCheckBox" name="chbAnnotation">
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="0">
+   <item row="15" column="0">
     <widget class="QLabel" name="label_4">
      <property name="text">
       <string>Annotation</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="0">
+   <item row="15" column="1">
+    <widget class="QCheckBox" name="chbAnnotation">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="16" column="0">
     <widget class="QLabel" name="colorLabel">
      <property name="text">
       <string>Box Color</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="1">
+   <item row="16" column="1">
     <widget class="pqColorChooserButton" name="colorChooserButton">
      <property name="text">
       <string>...</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>The Scale Cube is an interactive tool to visualize</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0" colspan="2">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>size in 3D. Click and drag the cube to move it.</string>
      </property>
     </widget>
    </item>
