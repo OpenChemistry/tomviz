@@ -16,12 +16,12 @@ point to them if they are not found automatically.
 Dependencies
 ------------
 
- * Qt 5.6 (5.9 recommended)
- * CMake 3.3
+ * Qt 5.6+ (5.9 recommended)
+ * CMake 3.3+
  * Python 3.6
  * NumPy 1.12
  * Git 2.1
- * C++ compiler with C++11 support
+ * C++ compiler with C++11 support (MSVC 2015 on Windows)
  * Intel TBB
 
 Initial Build
@@ -32,7 +32,7 @@ You will need the development headers, so please ensure they are installed
 you are in a directory where you would like to place the source and builds
 with all prerequisites installed:
 
-    git clone --recursive git://github.com/kitware/paraview.git
+    git clone --recursive git://github.com/openchemistry/paraview.git
     mkdir paraview-build
     cd paraview-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
@@ -125,7 +125,7 @@ and rebuild the binaries incrementally. The following would update both source
 trees and rebuild the latest version of each:
 
     cd ../paraview
-    git pull && git submodule update
+    git pull && git submodule update --recursive
     cd ../paraview-build
     cmake --build .
     cd ../tomviz
