@@ -153,6 +153,7 @@ bool SaveDataReaction::saveData(const QString& filename)
                info.suffix().toLower()) != nullptr) {
     auto factory = FileFormatManager::instance().pythonWriterFactory(
       info.suffix().toLower());
+    Q_ASSERT(factory != nullptr);
     auto writer = factory->createWriter();
     auto t = source->producer();
     auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
