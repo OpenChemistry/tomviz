@@ -52,6 +52,7 @@ private:
   void editRegexGroupSubstitution(int row);
   void addRegexGroupSubstitution(RegexGroupSubstitution substitution);
   void setRegexGroupSubstitution(int row, RegexGroupSubstitution substitution);
+  void autoResizeTable();
 };
 } // namespace tomviz
 

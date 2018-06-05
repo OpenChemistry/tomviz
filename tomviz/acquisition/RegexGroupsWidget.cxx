@@ -43,7 +43,10 @@ RegexGroupsWidget::RegexGroupsWidget(QWidget* parent)
   // New
   connect(m_ui->newRegexGroupButton, &QPushButton::clicked, [this]() {
     RegexGroupDialog dialog;
-    dialog.exec();
+    auto r = dialog.exec();
+    if (r != QDialog::Accepted || dialog.name().isEmpty()) {
+      return;
+    }
 
     if (m_ui->regexGroupsWidget->findItems(dialog.name(), Qt::MatchExactly)
           .isEmpty()) {

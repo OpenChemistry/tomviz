@@ -13,46 +13,44 @@
   limitations under the License.
 
 ******************************************************************************/
+#ifndef tomvizPythonWriter_h
+#define tomvizPythonWriter_h
 
-#ifndef tomvizConnectionsWidget_h
-#define tomvizConnectionsWidget_h
+#include "PythonUtilities.h"
 
-#include <QWidget>
+#include <QString>
+#include <QStringList>
 
-#include "Connection.h"
-
-#include <QScopedPointer>
-#include <QVariantList>
-
-namespace Ui {
-class ConnectionsWidget;
-}
+class vtkImageData;
 
 namespace tomviz {
 
-class ConnectionsWidget : public QWidget
+class DataSource;
+
+class PythonWriter
 {
-  Q_OBJECT
-
 public:
-  ConnectionsWidget(QWidget* parent);
-  ~ConnectionsWidget() override;
-
-  Connection* selectedConnection();
-
-signals:
-  void selectionChanged();
+  PythonWriter(Python::Object);
+  bool write(QString fileName, vtkImageData* data);
 
 private:
-  QScopedPointer<Ui::ConnectionsWidget> m_ui;
-  QList<Connection> m_connections;
-
-  void readSettings();
-  void writeSettings();
-  void setConnections(const QVariantList& connections);
-  void sortConnections();
-  void editConnection(Connection conn, size_t row);
+  Python::Object m_instance;
 };
-} // namespace tomviz
+
+class PythonWriterFactory
+{
+public:
+  PythonWriterFactory(QString, QStringList, Python::Object);
+  QString getDescription() const;
+  QStringList getExtensions() const;
+  QString getFileDialogFilter() const;
+  PythonWriter createWriter() const;
+
+private:
+  QString m_description;
+  QStringList m_extensions;
+  Python::Object m_class;
+};
+}
 
 #endif

@@ -21,7 +21,9 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "FileFormatManager.h"
 #include "ModuleManager.h"
+#include "PythonWriter.h"
 
 #include <pqActiveObjects.h>
 #include <pqPipelineSource.h>
@@ -69,6 +71,7 @@ void SaveDataReaction::updateEnableState()
 
 void SaveDataReaction::onTriggered()
 {
+  FileFormatManager::instance().registerPythonWriters();
   QStringList filters;
   filters << "TIFF format (*.tiff)"
           << "EMD format (*.emd *.hdf5)"
@@ -80,6 +83,10 @@ void SaveDataReaction::onTriggered()
           << "VTK ImageData Files (*.vti)"
           << "XDMF Data File (*.xmf)"
           << "JSON Image Files (*.json)";
+
+  foreach (auto writer, FileFormatManager::instance().pythonWriterFactories()) {
+    filters << writer->getFileDialogFilter();
+  }
 
   QFileDialog dialog(nullptr);
   dialog.setFileMode(QFileDialog::AnyFile);
@@ -130,10 +137,27 @@ bool SaveDataReaction::saveData(const QString& filename)
     return false;
   }
 
+  FileFormatManager::instance().registerPythonWriters();
+
   QFileInfo info(filename);
   if (info.suffix() == "emd") {
     EmdFormat writer;
     if (!writer.write(filename.toLatin1().data(), source)) {
+      qCritical() << "Failed to write out data.";
+      return false;
+    } else {
+      updateSource(filename, source);
+      return true;
+    }
+  } else if (FileFormatManager::instance().pythonWriterFactory(
+               info.suffix().toLower()) != nullptr) {
+    auto factory = FileFormatManager::instance().pythonWriterFactory(
+      info.suffix().toLower());
+    Q_ASSERT(factory != nullptr);
+    auto writer = factory->createWriter();
+    auto t = source->producer();
+    auto data = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+    if (!writer.write(filename, data)) {
       qCritical() << "Failed to write out data.";
       return false;
     } else {

@@ -58,6 +58,7 @@
 #include <QPushButton>
 #include <QRegExp>
 #include <QStandardPaths>
+#include <QTabWidget>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -67,20 +68,18 @@ const char* PASSIVE_ADAPTER =
   "tomviz.acquisition.vendors.passive.PassiveWatchSource";
 
 PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
-  : QWidget(parent), m_ui(new Ui::PassiveAcquisitionWidget),
+  : QDialog(parent), m_ui(new Ui::PassiveAcquisitionWidget),
     m_client(new AcquisitionClient("http://localhost:8080/acquisition", this)),
     m_connectParamsWidget(new QWidget), m_watchTimer(new QTimer)
 {
   m_ui->setupUi(this);
-  setWindowFlags(Qt::Dialog);
 
   // Default to home directory
   QStringList locations =
     QStandardPaths::standardLocations(QStandardPaths::HomeLocation);
   m_ui->watchPathLineEdit->setText(locations[0]);
 
-  // Default file name regex
-  m_ui->fileNameRegexLineEdit->setText(".*_([n,p]{1}[\\d,\\.]+)degree.*\\.dm3");
+  setupTestTable();
 
   readSettings();
 
@@ -89,30 +88,28 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
   connect(m_ui->connectionsWidget, &ConnectionsWidget::selectionChanged, this,
           &PassiveAcquisitionWidget::checkEnableWatchButton);
 
-  connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
-    // Validate the filename regex
-    if (!validateRegex()) {
-      return;
-    }
+  connect(m_ui->formatTabWidget, &QTabWidget::currentChanged, this,
+          &PassiveAcquisitionWidget::formatTabChanged);
 
+  connect(m_ui->testFileFormatEdit, &QLineEdit::textChanged, this,
+          &PassiveAcquisitionWidget::testFileNameChanged);
+
+  connect(m_ui->basicTab, &BasicFormatWidget::regexChanged, this,
+          &PassiveAcquisitionWidget::onRegexChanged);
+
+  connect(m_ui->basicTab, &BasicFormatWidget::fileFormatChanged, this,
+          &PassiveAcquisitionWidget::onBasicFormatChanged);
+
+  connect(m_ui->advancedTab, &AdvancedFormatWidget::regexChanged, this,
+          &PassiveAcquisitionWidget::onRegexChanged);
+
+  connect(m_ui->watchButton, &QPushButton::clicked, [this]() {
     m_retryCount = 5;
     connectToServer();
   });
 
   connect(m_ui->stopWatchingButton, &QPushButton::clicked, this,
           &PassiveAcquisitionWidget::stopWatching);
-
-  connect(m_ui->fileNameRegexLineEdit, &QLineEdit::textChanged, [this]() {
-    setEnabledRegexGroupsWidget(!m_ui->fileNameRegexLineEdit->text().isEmpty());
-  });
-  setEnabledRegexGroupsWidget(!m_ui->fileNameRegexLineEdit->text().isEmpty());
-
-  connect(m_ui->regexGroupsWidget, &RegexGroupsWidget::groupsChanged, [this]() {
-    setEnabledRegexGroupsSubstitutionsWidget(
-      !m_ui->regexGroupsWidget->regexGroups().isEmpty());
-  });
-  setEnabledRegexGroupsSubstitutionsWidget(
-    !m_ui->regexGroupsWidget->regexGroups().isEmpty());
 
   checkEnableWatchButton();
 
@@ -128,15 +125,8 @@ PassiveAcquisitionWidget::PassiveAcquisitionWidget(QWidget* parent)
     }
   });
 
-  // Setup regex error label
-  auto palette = m_regexErrorLabel.palette();
-  palette.setColor(m_regexErrorLabel.foregroundRole(), Qt::red);
-  m_regexErrorLabel.setPalette(palette);
-
-  connect(m_ui->fileNameRegexLineEdit, &QLineEdit::textChanged, [this]() {
-    m_ui->formLayout->removeWidget(&m_regexErrorLabel);
-    m_regexErrorLabel.setText("");
-  });
+  // Initialize the fileName line edit with a default example
+  onBasicFormatChanged();
 }
 
 PassiveAcquisitionWidget::~PassiveAcquisitionWidget() = default;
@@ -150,21 +140,15 @@ void PassiveAcquisitionWidget::closeEvent(QCloseEvent* event)
 void PassiveAcquisitionWidget::readSettings()
 {
   auto settings = pqApplicationCore::instance()->settings();
-  if (!settings->contains("acquisition/passive.geometry")) {
+  if (!settings->contains("acquisition/watchPath")) {
     return;
   }
   settings->beginGroup("acquisition");
   setGeometry(settings->value("passive.geometry").toRect());
-  m_ui->splitter->restoreState(
-    settings->value("passive.splitterSizes").toByteArray());
+
   auto watchPath = settings->value("watchPath").toString();
   if (!watchPath.isEmpty()) {
     m_ui->watchPathLineEdit->setText(watchPath);
-  }
-
-  auto fileNameRegex = settings->value("fileNameRegex").toString();
-  if (!fileNameRegex.isEmpty()) {
-    m_ui->fileNameRegexLineEdit->setText(fileNameRegex);
   }
 
   settings->endGroup();
@@ -175,9 +159,7 @@ void PassiveAcquisitionWidget::writeSettings()
   auto settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("acquisition");
   settings->setValue("passive.geometry", geometry());
-  settings->setValue("passive.splitterSizes", m_ui->splitter->saveState());
   settings->setValue("watchPath", m_ui->watchPathLineEdit->text());
-  settings->setValue("fileNameRegex", m_ui->fileNameRegexLineEdit->text());
   settings->endGroup();
 }
 
@@ -339,34 +321,48 @@ void PassiveAcquisitionWidget::watchSource()
 
 QJsonObject PassiveAcquisitionWidget::connectParams()
 {
+  /*
+    Let's write some json in C++ !!
+
+    Structure:
+
+    connectParams = {
+      "path": "/directory/to/be/watched/",
+      "fileNameRegex": "^.*((n|p)?(\d+(\.\d+)?)).*(\.tif[f]?)$",
+      "fileNameRegexGroups": [
+        "angle"
+      ],
+      "groupRegexSubstitutions": {
+        "angle": [
+          {"n": "-"},
+          {"p": "+"},
+        ]
+      }
+    }
+  */
+
   QJsonObject connectParams{
     { "path", m_ui->watchPathLineEdit->text() },
-    { "fileNameRegex", m_ui->fileNameRegexLineEdit->text() },
   };
 
-  auto fileNameRegexGroups = m_ui->regexGroupsWidget->regexGroups();
-  if (!fileNameRegexGroups.isEmpty()) {
-    auto groups = QJsonArray::fromStringList(fileNameRegexGroups);
-    connectParams["fileNameRegexGroups"] = groups;
+  QString regex;
+  QJsonArray groups;
+  QJsonObject substitutions;
+
+  int tabIndex = m_ui->formatTabWidget->currentIndex();
+  if (tabIndex == 0) {
+    regex = m_ui->basicTab->getPythonRegex();
+    groups = m_ui->basicTab->getRegexGroups();
+    substitutions = m_ui->basicTab->getRegexSubsitutions();
+  } else {
+    regex = m_ui->advancedTab->getPythonRegex();
+    groups = m_ui->advancedTab->getRegexGroups();
+    substitutions = m_ui->advancedTab->getRegexSubsitutions();
   }
 
-  auto regexGroupsSubstitutions =
-    m_ui->regexGroupsSubstitutionsWidget->substitutions();
-  if (!regexGroupsSubstitutions.isEmpty()) {
-    QJsonObject substitutions;
-    foreach (RegexGroupSubstitution sub, regexGroupsSubstitutions) {
-
-      QJsonArray regexToSubs;
-      if (substitutions.contains(sub.groupName())) {
-        regexToSubs = substitutions.value(sub.groupName()).toArray();
-      }
-      QJsonObject mapping;
-      mapping[sub.regex()] = sub.substitution();
-      regexToSubs.append(mapping);
-      substitutions[sub.groupName()] = regexToSubs;
-    }
-    connectParams["groupRegexSubstitutions"] = substitutions;
-  }
+  connectParams["fileNameRegex"] = regex;
+  connectParams["fileNameRegexGroups"] = groups;
+  connectParams["groupRegexSubstitutions"] = substitutions;
 
   return connectParams;
 }
@@ -444,19 +440,6 @@ void PassiveAcquisitionWidget::checkEnableWatchButton()
                                   nullptr);
 }
 
-void PassiveAcquisitionWidget::setEnabledRegexGroupsWidget(bool enabled)
-{
-  m_ui->regexGroupsLabel->setEnabled(enabled);
-  m_ui->regexGroupsWidget->setEnabled(enabled);
-}
-
-void PassiveAcquisitionWidget::setEnabledRegexGroupsSubstitutionsWidget(
-  bool enabled)
-{
-  m_ui->regexGroupsSubstitutionsLabel->setEnabled(enabled);
-  m_ui->regexGroupsSubstitutionsWidget->setEnabled(enabled);
-}
-
 void PassiveAcquisitionWidget::stopWatching()
 {
   m_watchTimer->stop();
@@ -464,18 +447,92 @@ void PassiveAcquisitionWidget::stopWatching()
   m_ui->watchButton->setEnabled(true);
 }
 
-bool PassiveAcquisitionWidget::validateRegex()
+void PassiveAcquisitionWidget::formatTabChanged(int tab)
 {
-  auto regExText = m_ui->fileNameRegexLineEdit->text();
-  if (!regExText.isEmpty()) {
-    QRegExp regExp(regExText);
-    if (!regExp.isValid()) {
-      m_regexErrorLabel.setText(regExp.errorString());
-      m_ui->formLayout->insertRow(3, "", &m_regexErrorLabel);
-      return false;
-    }
+  if (tab == 0) {
+    onBasicFormatChanged();
+  }
+  validateTestFileName();
+}
+
+void PassiveAcquisitionWidget::onRegexChanged(QString)
+{
+  validateTestFileName();
+}
+
+void PassiveAcquisitionWidget::onBasicFormatChanged()
+{
+  if (m_ui->basicTab->isDefaultFilename(m_testFileName)) {
+    m_testFileName = m_ui->basicTab->getDefaultFilename();
+    m_ui->testFileFormatEdit->setText(m_testFileName);
+  }
+}
+
+void PassiveAcquisitionWidget::validateTestFileName()
+{
+  int tabIndex = m_ui->formatTabWidget->currentIndex();
+  MatchInfo result;
+
+  if (tabIndex == 0) {
+    result = m_ui->basicTab->matchFileName(m_testFileName);
+  } else {
+    result = m_ui->advancedTab->matchFileName(m_testFileName);
+  }
+  if (result.matched) {
+    m_ui->testFileFormatEdit->setStyleSheet("background-color : #C8E6C9;");
+  } else {
+    m_ui->testFileFormatEdit->setStyleSheet("background-color : #FFCCBC;");
+  }
+  if (m_testFileName.isEmpty()) {
+    m_ui->testFileFormatEdit->setStyleSheet("");
   }
 
-  return true;
+  QStringList tableHeaders;
+  m_ui->testTableWidget->setColumnCount(result.groups.size());
+  for (int i = 0; i < result.groups.size(); ++i) {
+    tableHeaders << result.groups[i].name;
+    m_ui->testTableWidget->setItem(
+      0, i, new QTableWidgetItem(result.groups[i].capturedText));
+  }
+  m_ui->testTableWidget->setHorizontalHeaderLabels(tableHeaders);
+  resizeTestTable();
 }
+
+void PassiveAcquisitionWidget::testFileNameChanged(QString fileName)
+{
+  m_testFileName = fileName;
+  validateTestFileName();
+}
+
+void PassiveAcquisitionWidget::setupTestTable()
+{
+  m_ui->testTableWidget->setRowCount(1);
+  m_ui->testTableWidget->setColumnCount(1);
+  QStringList tableHeaders;
+  m_ui->testTableWidget->verticalHeader()->setVisible(false);
+  m_ui->testTableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  m_ui->testTableWidget->setSelectionMode(QAbstractItemView::NoSelection);
+
+  m_ui->testTableWidget->setVisible(true);
+  m_ui->testTablePlaceholder->setVisible(false);
+  resizeTestTable();
+  validateTestFileName();
+}
+
+void PassiveAcquisitionWidget::resizeTestTable()
+{
+  m_ui->testTableWidget->resizeColumnsToContents();
+  m_ui->testTableWidget->horizontalHeader()->setSectionResizeMode(
+    0, QHeaderView::Stretch);
+  int horizontalHeaderHeight =
+    m_ui->testTableWidget->horizontalHeader()->height();
+  int rowTotalHeight = m_ui->testTableWidget->verticalHeader()->sectionSize(0);
+  int vSize = horizontalHeaderHeight + rowTotalHeight;
+
+  m_ui->testTableWidget->setMinimumHeight(vSize);
+  m_ui->testTableWidget->setMaximumHeight(vSize);
+  m_ui->testTablePlaceholder->setMinimumHeight(vSize);
+  m_ui->testTablePlaceholder->setMaximumHeight(vSize);
+}
+
 } // namespace tomviz

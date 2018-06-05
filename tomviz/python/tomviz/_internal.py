@@ -46,8 +46,8 @@ def find_operator_class(transform_module):
     for (name, cls) in classes:
         if issubclass(cls, tomviz.operators.Operator):
             if operator_class is not None:
-                raise Exception('Multiple operators define in module, only one '
-                                'operator can be defined per module.')
+                raise Exception('Multiple operators define in module, only '
+                                'one operator can be defined per module.')
 
             operator_class = cls
 

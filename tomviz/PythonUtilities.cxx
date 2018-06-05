@@ -93,12 +93,27 @@ bool Python::Object::isDict() const
   return PyDict_Check(m_smartPyObject->GetPointer());
 }
 
+bool Python::Object::isList() const
+{
+  return PyList_Check(m_smartPyObject->GetPointer());
+}
+
+bool Python::Object::isTuple() const
+{
+  return PyTuple_Check(m_smartPyObject->GetPointer());
+}
+
 bool Python::Object::isValid() const
 {
   return m_smartPyObject->GetPointer() != nullptr;
 }
 
 Python::Dict Python::Object::toDict()
+{
+  return m_smartPyObject->GetPointer();
+}
+
+Python::List Python::Object::toList()
 {
   return m_smartPyObject->GetPointer();
 }
@@ -164,6 +179,20 @@ void Python::Tuple::set(int index, const Variant& value)
 {
   Python::Object pyObj(toPyObject(value));
   set(index, pyObj);
+}
+
+int Python::Tuple::length()
+{
+  return PyTuple_Size(m_smartPyObject->GetPointer());
+}
+
+Python::Object Python::Tuple::operator[](int index)
+{
+  PyObject* item = PyTuple_GetItem(m_smartPyObject->GetPointer(), index);
+  // Increment ref count as our destructor will decrement it.
+  Py_XINCREF(item);
+
+  return PyTuple_GetItem(m_smartPyObject->GetPointer(), index);
 }
 
 Python::Dict::Dict() : Object()
@@ -245,6 +274,12 @@ Python::Function& Python::Function::operator=(const Python::Object& other)
   Object::operator=(other);
 
   return *this;
+}
+
+Python::Object Python::Function::call()
+{
+  Python::Tuple empty(0);
+  return call(empty);
 }
 
 Python::Object Python::Function::call(Tuple& args)

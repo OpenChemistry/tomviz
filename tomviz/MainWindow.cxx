@@ -38,6 +38,7 @@
 #include "Connection.h"
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
+#include "FileFormatManager.h"
 #include "LoadDataReaction.h"
 #include "LoadPaletteReaction.h"
 #include "LoadStackReaction.h"
@@ -58,7 +59,6 @@
 #include "SaveLoadStateReaction.h"
 #include "SaveScreenshotReaction.h"
 #include "SaveWebReaction.h"
-#include "ScaleLegend.h"
 #include "SetTiltAnglesOperator.h"
 #include "SetTiltAnglesReaction.h"
 #include "ToggleDataTypeReaction.h"
@@ -217,7 +217,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           SLOT(operatorChanged(Operator*)));
 
   // Connect the about dialog up too.
-  connect(m_ui->actionAbout, SIGNAL(triggered()), SLOT(showAbout()));
+  connect(m_ui->actionAbout, &QAction::triggered, this,
+          [this]() { openDialog<AboutDialog>(&m_aboutDialog); });
 
   new pqMacroReaction(m_ui->actionMacros);
 
@@ -405,7 +406,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->menu_File, &QMenu::aboutToShow, reaction,
           &ResetReaction::updateEnableState);
 
-  ViewMenuManager* viewMenuManager = new ViewMenuManager(this, m_ui->menuView);
+  new ViewMenuManager(this, m_ui->menuView);
 
   QMenu* sampleDataMenu = new QMenu("Sample Data", this);
   m_ui->menubar->insertMenu(m_ui->menuHelp->menuAction(), sampleDataMenu);
@@ -462,28 +463,20 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Initialize worker manager
   new ProgressDialogManager(this);
 
-  // Initialize scale legend
-  ScaleLegend* scaleLegend = new ScaleLegend(this);
-
-  connect(viewMenuManager, SIGNAL(setScaleLegendStyle(ScaleLegendStyle)),
-          scaleLegend, SLOT(setStyle(ScaleLegendStyle)));
-  connect(viewMenuManager, SIGNAL(setScaleLegendVisibility(bool)), scaleLegend,
-          SLOT(setVisibility(bool)));
-
   // Add the acquisition client experimentally.
-  auto acquisitionWidget = new AcquisitionWidget(this);
-  connect(m_ui->actionAcquisition, SIGNAL(triggered(bool)), acquisitionWidget,
-          SLOT(show()));
+  connect(m_ui->actionAcquisition, &QAction::triggered, this,
+          [this]() { openDialog<AcquisitionWidget>(&m_acquisitionWidget); });
 
-  auto passiveAcquisitionWidget = new PassiveAcquisitionWidget(this);
-  connect(m_ui->actionPassiveAcquisition, &QAction::triggered,
-          passiveAcquisitionWidget, &QWidget::show);
+  connect(m_ui->actionPassiveAcquisition, &QAction::triggered, this, [this]() {
+    openDialog<PassiveAcquisitionWidget>(&m_passiveAcquisitionDialog);
+  });
 
   auto pipelineSettingsDialog = new PipelineSettingsDialog(this);
   connect(m_ui->actionPipelineSettings, &QAction::triggered,
           pipelineSettingsDialog, &QWidget::show);
 
   registerCustomOperators();
+  FileFormatManager::instance().registerPythonReaders();
 }
 
 MainWindow::~MainWindow()
@@ -495,12 +488,13 @@ MainWindow::~MainWindow()
   }
 }
 
-void MainWindow::showAbout()
+template <class T>
+void MainWindow::openDialog(QWidget** dialog)
 {
-  if (!m_aboutDialog) {
-    m_aboutDialog = new AboutDialog(this);
+  if (*dialog == nullptr) {
+    *dialog = new T(this);
   }
-  m_aboutDialog->show();
+  (*dialog)->show();
 }
 
 void MainWindow::openTilt()

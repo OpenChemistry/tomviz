@@ -54,7 +54,6 @@ public slots:
   void openRecon();
 
 private slots:
-  void showAbout();
   void openTilt();
   void openDataLink();
   void openUserGuide();
@@ -90,7 +89,14 @@ private:
   QMenu* m_customTransformsMenu = nullptr;
   QTimer* m_timer = nullptr;
   bool m_isFirstShow = true;
-  AboutDialog* m_aboutDialog = nullptr;
+
+  // Lazily loaded dialogs
+  QWidget* m_aboutDialog = nullptr;
+  QWidget* m_acquisitionWidget = nullptr;
+  QWidget* m_passiveAcquisitionDialog = nullptr;
+
+  template <class T>
+  void openDialog(QWidget**);
 };
 } // namespace tomviz
 #endif

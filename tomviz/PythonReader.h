@@ -13,46 +13,43 @@
   limitations under the License.
 
 ******************************************************************************/
+#ifndef tomvizPythonReader_h
+#define tomvizPythonReader_h
 
-#ifndef tomvizConnectionsWidget_h
-#define tomvizConnectionsWidget_h
+#include "PythonUtilities.h"
 
-#include <QWidget>
+#include <vtkSmartPointer.h>
 
-#include "Connection.h"
+#include <QString>
+#include <QStringList>
 
-#include <QScopedPointer>
-#include <QVariantList>
-
-namespace Ui {
-class ConnectionsWidget;
-}
+class vtkImageData;
 
 namespace tomviz {
-
-class ConnectionsWidget : public QWidget
+class PythonReader
 {
-  Q_OBJECT
-
 public:
-  ConnectionsWidget(QWidget* parent);
-  ~ConnectionsWidget() override;
-
-  Connection* selectedConnection();
-
-signals:
-  void selectionChanged();
+  PythonReader(Python::Object);
+  vtkSmartPointer<vtkImageData> read(QString);
 
 private:
-  QScopedPointer<Ui::ConnectionsWidget> m_ui;
-  QList<Connection> m_connections;
-
-  void readSettings();
-  void writeSettings();
-  void setConnections(const QVariantList& connections);
-  void sortConnections();
-  void editConnection(Connection conn, size_t row);
+  Python::Object m_instance;
 };
-} // namespace tomviz
+
+class PythonReaderFactory
+{
+public:
+  PythonReaderFactory(QString, QStringList, Python::Object);
+  QString getDescription() const;
+  QStringList getExtensions() const;
+  QString getFileDialogFilter() const;
+  PythonReader createReader() const;
+
+private:
+  QString m_description;
+  QStringList m_extensions;
+  Python::Object m_class;
+};
+}
 
 #endif

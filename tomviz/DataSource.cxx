@@ -935,22 +935,18 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   controller->RegisterPipelineProxy(this->Internals->ProducerProxy);
 
   if (data) {
-    auto copy = data->NewInstance();
-    copy->DeepCopy(data);
-    auto image = vtkImageData::SafeDownCast(copy);
     auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
-    tp->SetOutput(image);
-    image->Delete();
+    tp->SetOutput(data);
 
     // This is a little hackish, currently special cased for the MRC format.
     // It would probably be best to move this to the file read/write classes.
-    if (image && m_scaleOriginalSpacingBy != 1.0) {
+    if (data && m_scaleOriginalSpacingBy != 1.0) {
       double spacing[3];
-      image->GetSpacing(spacing);
+      data->GetSpacing(spacing);
       for (int i = 0; i < 3; ++i) {
         spacing[i] *= m_scaleOriginalSpacingBy;
       }
-      image->SetSpacing(spacing);
+      data->SetSpacing(spacing);
     }
   }
 

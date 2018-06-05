@@ -18,12 +18,15 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
+#include "FileFormatManager.h"
 #include "ImageStackDialog.h"
 #include "ImageStackModel.h"
 #include "LoadStackReaction.h"
 #include "ModuleManager.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
+#include "PythonReader.h"
+#include "PythonUtilities.h"
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
@@ -47,6 +50,7 @@
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
+#include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkTrivialProducer.h>
 
@@ -126,8 +130,13 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "VTK ImageData Files (*.vti)"
           << "MRC files (*.mrc *.st *.rec *.ali)"
           << "XDMF files (*.xmf *.xdmf)"
-          << "Text files (*.txt)"
-          << "All files (*.*)";
+          << "Text files (*.txt)";
+
+  foreach (auto reader, FileFormatManager::instance().pythonReaderFactories()) {
+    filters << reader->getFileDialogFilter();
+  }
+
+  filters << "All files (*.*)";
 
   QFileDialog dialog(nullptr);
   dialog.setFileMode(QFileDialog::ExistingFiles);
@@ -174,6 +183,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   bool addToRecent = options["addToRecent"].toBool(true);
   bool child = options["child"].toBool(false);
   bool loadWithParaview = true;
+  bool loadWithPython = false;
 
   DataSource* dataSource(nullptr);
   QString fileName;
@@ -229,6 +239,10 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     dataSource->setReaderProperties(props.toVariantMap());
 
+  } else if (FileFormatManager::instance().pythonReaderFactory(
+               info.suffix().toLower()) != nullptr) {
+    loadWithParaview = false;
+    loadWithPython = true;
   }
 
   if (loadWithParaview) {
@@ -250,6 +264,17 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
 
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterProxy(reader->getProxy());
+  } else if (loadWithPython) {
+    QString ext = info.suffix().toLower();
+    auto factory = FileFormatManager::instance().pythonReaderFactory(ext);
+    Q_ASSERT(factory != nullptr);
+    auto reader = factory->createReader();
+    auto imageData = reader.read(fileNames[0]);
+    if (imageData == nullptr) {
+      return nullptr;
+    }
+    dataSource = new DataSource(imageData);
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   }
 
   // It is possible that the dataSource will be null if, for example, loading

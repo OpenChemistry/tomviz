@@ -28,6 +28,8 @@ class vtkSMProxy;
 namespace tomviz {
 class DataSource;
 
+class PythonReaderFactory;
+
 /// LoadDataReaction handles the "Load Data" action in tomviz. On trigger,
 /// this will open the data file and necessary subsequent actions, including:
 /// \li make the data source "active".

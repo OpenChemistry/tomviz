@@ -16,11 +16,14 @@
 #ifndef tomvizPassiveAcquisitionWidget_h
 #define tomvizPassiveAcquisitionWidget_h
 
+#include <QDialog>
+
+#include "MatchInfo.h"
+
 #include <QLabel>
 #include <QPointer>
 #include <QScopedPointer>
 #include <QString>
-#include <QWidget>
 
 #include <vtkNew.h>
 #include <vtkSmartPointer.h>
@@ -43,7 +46,7 @@ namespace tomviz {
 class AcquisitionClient;
 class DataSource;
 
-class PassiveAcquisitionWidget : public QWidget
+class PassiveAcquisitionWidget : public QDialog
 {
   Q_OBJECT
 
@@ -64,12 +67,21 @@ private slots:
 
   void onError(const QString& errorMessage, const QJsonValue& errorData);
   void watchSource();
+
+  void formatTabChanged(int index);
+  void testFileNameChanged(QString);
+  void onBasicFormatChanged();
+
+  void onRegexChanged(QString);
+
 signals:
   void connectParameterDescription(QJsonValue params);
 
 private:
   QScopedPointer<Ui::PassiveAcquisitionWidget> m_ui;
   QScopedPointer<AcquisitionClient> m_client;
+
+  QString m_testFileName;
 
   vtkNew<vtkRenderer> m_renderer;
   vtkNew<vtkInteractorStyleRubberBand2D> m_defaultInteractorStyle;
@@ -87,7 +99,6 @@ private:
   QPointer<QTimer> m_watchTimer;
   int m_retryCount = 5;
   QProcess* m_serverProcess = nullptr;
-  QLabel m_regexErrorLabel;
 
   QString url() const;
   void introspectSource();
@@ -96,10 +107,11 @@ private:
   void checkEnableWatchButton();
   void startLocalServer();
   void displayError(const QString& errorMessage);
-  void setEnabledRegexGroupsWidget(bool enabled);
-  void setEnabledRegexGroupsSubstitutionsWidget(bool enabled);
   void stopWatching();
-  bool validateRegex();
+  void validateTestFileName();
+
+  void setupTestTable();
+  void resizeTestTable();
 };
 } // namespace tomviz
 
