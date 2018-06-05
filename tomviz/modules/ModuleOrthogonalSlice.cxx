@@ -33,11 +33,11 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
+#include <vtkPVDiscretizableColorTransferFunction.h>
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
-
 namespace tomviz {
 
 ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject)
@@ -169,6 +169,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   QCheckBox* mapScalarsCheckBox = new QCheckBox;
   layout->addRow("Color Map Data", mapScalarsCheckBox);
 
+  m_opacityCheckBox = new QCheckBox;
+  layout->addRow("Color Map Opacity", m_opacityCheckBox);
+
   panel->setLayout(layout);
 
   m_links.addPropertyLink(sliceIndex, "value", SIGNAL(valueEdited(int)),
@@ -194,6 +197,22 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
           &ModuleOrthogonalSlice::dataUpdated);
   connect(mapScalarsCheckBox, SIGNAL(toggled(bool)), this, SLOT(dataUpdated()));
+
+  connect(m_opacityCheckBox, &QCheckBox::toggled, this, [this](bool val) {
+    m_opaqueMap = val;
+    // Ensure the colormap is detached before applying opacity
+    if (val) {
+      setUseDetachedColorMap(val);
+    }
+    auto func = vtkPVDiscretizableColorTransferFunction::SafeDownCast(
+      colorMap()->GetClientSideObject());
+    func->SetEnableOpacityMapping(val);
+    emit opacityEnforced(val);
+    updateColorMap();
+    emit renderNeeded();
+  });
+
+  m_opacityCheckBox->setChecked(m_opaqueMap);
 }
 
 void ModuleOrthogonalSlice::dataUpdated()
@@ -226,6 +245,7 @@ QJsonObject ModuleOrthogonalSlice::serialize() const
   props["opacity"] = opacity.GetAsDouble();
   vtkSMPropertyHelper mapScalars(m_representation->GetProperty("MapScalars"));
   props["mapScalars"] = mapScalars.GetAsInt() != 0;
+  props["opaqueMap"] = m_opaqueMap;
 
   json["properties"] = props;
   return json;
@@ -244,7 +264,10 @@ bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
     vtkSMPropertyHelper(rep, "Opacity").Set(props["opacity"].toDouble());
     vtkSMPropertyHelper(rep, "MapScalars")
       .Set(props["mapScalars"].toBool() ? 1 : 0);
-
+    if (props.contains("opaqueMap")) {
+      m_opaqueMap = props["opaqueMap"].toBool();
+      m_opacityCheckBox->setChecked(m_opaqueMap);
+    }
     rep->UpdateVTKObjects();
     return true;
   }

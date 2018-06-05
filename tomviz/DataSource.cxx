@@ -39,7 +39,6 @@
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
-#include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMCoreUtilities.h>
 #include <vtkSMParaViewPipelineController.h>
 #include <vtkSMPropertyHelper.h>
@@ -959,10 +958,6 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   this->Internals->ColorMap = tfmgr->GetColorTransferFunction(
     QString("DataSourceColorMap%1").arg(colorMapCounter).toLatin1().data(),
     pxm);
-
-  auto func = vtkPVDiscretizableColorTransferFunction::SafeDownCast(
-    this->Internals->ColorMap->GetClientSideObject());
-  func->SetEnableOpacityMapping(true);
   updateColorMap();
 
   // Every time the data changes, we should update the color map.

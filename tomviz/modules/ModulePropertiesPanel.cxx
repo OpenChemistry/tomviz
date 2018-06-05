@@ -87,6 +87,10 @@ void ModulePropertiesPanel::setModule(Module* module)
     if (module->isColorMapNeeded()) {
       ui.DetachColorMapWidget->setVisible(true);
       ui.DetachColorMap->setChecked(module->useDetachedColorMap());
+      ui.DetachColorMap->setEnabled(!module->isColorMapOpaque());
+
+      this->connect(module, &Module::opacityEnforced, this,
+                    &ModulePropertiesPanel::onEnforcedOpacity);
 
       this->connect(module, &Module::colorMapChanged, this, [&]() {
         ui.DetachColorMap->setChecked(
@@ -101,6 +105,12 @@ void ModulePropertiesPanel::setModule(Module* module)
 void ModulePropertiesPanel::setView(vtkSMViewProxy* vtkNotUsed(view)) {}
 
 void ModulePropertiesPanel::updatePanel() {}
+
+void ModulePropertiesPanel::onEnforcedOpacity(bool val)
+{
+  auto ui = this->Internals->Ui;
+  ui.DetachColorMap->setEnabled(!val);
+}
 
 void ModulePropertiesPanel::detachColorMap(bool val)
 {
