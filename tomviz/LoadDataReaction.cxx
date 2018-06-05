@@ -116,7 +116,6 @@ void LoadDataReaction::onTriggered()
 
 QList<DataSource*> LoadDataReaction::loadData()
 {
-  FileFormatManager::instance().registerPythonReaders();
   QStringList filters;
   filters << "Common file types (*.emd *.jpg *.jpeg *.png *.tiff *.tif *.raw"
              " *.dat *.bin *.txt *.mhd *.mha *.vti *.mrc *.st *.rec *.ali "
