@@ -72,6 +72,7 @@ TransformResult Operator::transform(vtkDataObject* data)
     transformResult = TransformResult::Canceled;
   } else {
     m_state = static_cast<OperatorState>(transformResult);
+    m_modified = false;
   }
   emit transformingDone(transformResult);
 

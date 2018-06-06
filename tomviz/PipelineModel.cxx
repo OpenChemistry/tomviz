@@ -334,9 +334,11 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
       return QIcon(":/icons/check.png");
     case OperatorState::Edit:
       return QIcon(":/icons/edit.png");
+    case OperatorState::Unknown:
     case OperatorState::Queued:
-    case OperatorState::Modified:
       return QIcon(":/icons/question.png");
+    case OperatorState::Modified:
+      return QIcon(":/icons/slice.png");
     case OperatorState::Error:
       return QIcon(":/icons/error_notification.png");
     case OperatorState::Canceled:
@@ -366,6 +368,8 @@ QString tooltipForOperatorState(tomviz::OperatorState state)
       return QString("Canceled");
     case OperatorState::Modified:
       return QString("Modified");
+    case OperatorState::Unknown:
+      return QString("Unknown");
   }
 
   return "";

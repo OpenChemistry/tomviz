@@ -47,7 +47,8 @@ enum class OperatorState
   Canceled,
   Error,
   Modified,
-  Edit
+  Edit,
+  Unknown
 };
 
 enum class TransformResult
@@ -249,11 +250,18 @@ public slots:
     return m_state == OperatorState::Complete ||
            m_state == OperatorState::Error;
   };
-  bool isModified() { return m_state == OperatorState::Modified; }
+  bool isModified() { return m_modified; }
+  bool isNew() { return m_new; }
+  bool isEditing() { return m_state == OperatorState::Edit; }
+  bool isQueued() { return m_state == OperatorState::Queued; }
+
   OperatorState state() { return m_state; }
   void resetState() { m_state = OperatorState::Queued; }
-  void setModified() { m_state = OperatorState::Modified; }
+  void setModified() { m_modified = true; }
+  void setNew(bool val) { m_new = val; }
   void setEditing() { m_state = OperatorState::Edit; }
+  void setUnknown() { m_state = OperatorState::Unknown; }
+  void setComplete() { m_state = OperatorState::Complete; }
 
 protected slots:
   // Create a new child datasource and set it on this operator
@@ -278,6 +286,8 @@ private:
   QList<OperatorResult*> m_results;
   bool m_supportsCancel = false;
   bool m_hasChildDataSource = false;
+  bool m_modified = true;
+  bool m_new = false;
   QPointer<DataSource> m_childDataSource;
   int m_totalProgressSteps = 0;
   int m_progressStep = 0;

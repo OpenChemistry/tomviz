@@ -26,11 +26,11 @@
 
 #include <QMetaEnum>
 
-#include <pqApplicationCore.h>
-#include <pqSettings.h>
 #include <QDebug>
 #include <QObject>
 #include <QTimer>
+#include <pqApplicationCore.h>
+#include <pqSettings.h>
 #include <pqView.h>
 #include <vtkSMViewProxy.h>
 #include <vtkTrivialProducer.h>
@@ -119,44 +119,63 @@ void Pipeline::startedEditingOp(Operator* op)
   ++m_editingOperators;
   op->setEditing();
   if (!m_paused) {
-    pause();
+    // pause();
   }
 }
 
-void Pipeline::finishedEditingOp(Operator* op)
+void Pipeline::finishedEditingOp(Operator* op, bool wasModified)
 {
   qDebug() << "Finished " << m_editingOperators;
+  if (op == nullptr) {
+    return;
+  }
+  if (wasModified) {
+    op->setModified();
+  }
+  if (op->isModified()) {
+    op->resetState();
+  } else {
+    op->setComplete();
+  }
   if (m_editingOperators > 0) {
     --m_editingOperators;
-    if (m_editingOperators == 0) {
-      if (m_paused) {
-        resume(op->dataSource());
-      }
-    } else if (m_editingOperators > 0) {
-      op->resetState();
+    if (m_editingOperators == 0 && !isRunning()) {
+      execute();
     }
   }
 }
 
-void Pipeline::execute(DataSource* dataSource, Operator* start)
+void Pipeline::execute(DataSource* ds, Operator* start)
 {
   if (paused()) {
     return;
   }
-  emit started();
 
-  if (dataSource == nullptr) {
-    dataSource = m_data;
+  if (ds == nullptr) {
+    ds = m_data;
   }
 
-  auto operators = dataSource->operators();
+  if (!canExecute(ds)) {
+    qDebug() << "Can't execute";
+    return;
+  }
+
+  if (!shouldExecute(ds)) {
+    qDebug() << "Shouldn't execute";
+    return;
+  }
+  m_reallyShouldExecute = false;
+
+  emit started();
+
+  auto operators = ds->operators();
   if (operators.isEmpty()) {
     emit finished();
     return;
   }
   int startIndex = 0;
   // We currently only support running the last operator or the entire pipeline.
-  if (start == dataSource->operators().last()) {
+  if (start == ds->operators().last()) {
     // See if we have any canceled operators in the pipeline, if so we have to
     // re-run the anyway pipeline.
     bool haveCanceled = false;
@@ -172,11 +191,60 @@ void Pipeline::execute(DataSource* dataSource, Operator* start)
     if (!haveCanceled) {
       startIndex = operators.indexOf(start);
       // Use transformed data source
-      dataSource = transformedDataSource(dataSource);
+      ds = transformedDataSource(ds);
     }
   }
 
-  m_executor->execute(dataSource->dataObject(), operators, startIndex);
+  m_executor->execute(ds->dataObject(), operators, startIndex);
+}
+
+bool Pipeline::canExecute(DataSource* ds) const
+{
+  // If any operators in the pipeline are in editing state,
+  // don't execute the pipeline
+  if (ds == nullptr) {
+    return true;
+  }
+  auto operators = ds->operators();
+  for (auto itr = operators.begin(); itr != operators.end(); ++itr) {
+    auto currentOp = *itr;
+    if (currentOp->isEditing()) {
+      qDebug() << "Operator is editing";
+      return false;
+    }
+    // Also check if the operators in a branch are being edited.
+    if (!canExecute(currentOp->childDataSource())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Pipeline::shouldExecute(DataSource* datasource) const
+{
+  // If the m_reallyShouldExecute flag is tripped
+  // (for instance if an operator has been deleted)
+  // we should execute the pipeline even if no operators are in a modified state
+  if (m_reallyShouldExecute) {
+    return true;
+  }
+  // If no operators are in a modified state,
+  // there is no need to execute the pipeline
+  if (datasource == nullptr) {
+    return false;
+  }
+  auto operators = datasource->operators();
+  for (auto itr = operators.begin(); itr != operators.end(); ++itr) {
+    auto currentOp = *itr;
+    if (currentOp->isModified()) {
+      return true;
+    }
+    // Also check if the operators in a branch are being edited.
+    if (shouldExecute(currentOp->childDataSource())) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void Pipeline::branchFinished(DataSource* start, vtkDataObject* newData)
@@ -341,6 +409,13 @@ void Pipeline::addDataSource(DataSource* dataSource)
   // Wire up operatorRemoved. TODO We need to check the branch of the
   // pipeline we are currently executing.
   connect(dataSource, &DataSource::operatorRemoved, [this](Operator* op) {
+    // If an operator has been removed, there's a chance that none of the
+    // remaining
+    // operators are in a modified state. But the pipeline should still be
+    // executed to reflect changes
+    if (!op->isNew()) {
+      m_reallyShouldExecute = true;
+    }
     // Do we need to move the transformed data source, !hasChildDataSource as we
     // don't want to move "explicit" child data sources.
     if (!op->hasChildDataSource() && op->childDataSource() != nullptr) {

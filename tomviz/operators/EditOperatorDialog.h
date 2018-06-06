@@ -56,16 +56,17 @@ public:
 private slots:
   void onApply();
   void onCancel();
-  void onClose();
-  void onPipelineFinished();
+  void onOkay();
   void getCopyOfImagePriorToFinished(bool result);
 
 signals:
   void editStarted(Operator*);
-  void editEnded(Operator*);
+  void editEnded(Operator*, bool);
 
 private:
   void setupUI(EditOperatorWidget* opWidget = nullptr);
+  void applyChanges();
+  void closeDialog();
   Q_DISABLE_COPY(EditOperatorDialog)
   class EODInternals;
   QScopedPointer<EODInternals> Internals;

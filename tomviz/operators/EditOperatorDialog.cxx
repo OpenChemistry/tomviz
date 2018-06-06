@@ -77,6 +77,7 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   this->Internals->Op = op;
   this->Internals->dataSource = dataSource;
   this->Internals->needsToBeAdded = needToAddOperator;
+  op->setNew(true);
   if (this->Internals->dataSource->pipeline()->isRunning()) {
     auto result = QMessageBox::question(
       this, "Cancel running operation?",
@@ -93,8 +94,6 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   }
   // Connect to the finished signal on the pipeline to handle the UI after
   // pressing apply
-  connect(this->Internals->dataSource->pipeline(), &Pipeline::finished, this,
-          &EditOperatorDialog::onPipelineFinished);
   connect(this, &EditOperatorDialog::editStarted,
           this->Internals->dataSource->pipeline(), &Pipeline::startedEditingOp);
   connect(this, &EditOperatorDialog::editEnded,
@@ -151,7 +150,7 @@ Operator* EditOperatorDialog::op()
   return this->Internals->Op;
 }
 
-void EditOperatorDialog::onApply()
+void EditOperatorDialog::applyChanges()
 {
   if (this->Internals->Op.isNull()) {
     return;
@@ -184,13 +183,10 @@ void EditOperatorDialog::onApply()
         };
         if (this->Internals->needsToBeAdded) {
           this->Internals->needsToBeAdded = false;
+          this->Internals->Op->setNew(false);
         }
-        // We pause the pipeline so applyChangesToOperator does cause it to
-        // execute.
-        this->Internals->dataSource->pipeline()->pause();
-        if (this->Internals->dataSource->pipeline()->editingOperators() == 1) {
-          emit editEnded(this->Internals->Op);
-        }
+        emit editEnded(this->Internals->Op, true);
+        emit editStarted(this->Internals->Op);
         // We do this before causing cancel so the values are in place for when
         // whenCanceled cause the pipeline to be re-executed.
         this->Internals->Widget->applyChangesToOperator();
@@ -204,15 +200,33 @@ void EditOperatorDialog::onApply()
       this->Internals->Widget->applyChangesToOperator();
       if (this->Internals->needsToBeAdded) {
         this->Internals->needsToBeAdded = false;
+        this->Internals->Op->setNew(false);
       }
-      // If this is the only operator currently being edited, resume the pipeline
-      // onApply rather than onClose, so the apply button actually works as
-      // expected.
-      if (this->Internals->dataSource->pipeline()->editingOperators() == 1) {
-        emit editEnded(this->Internals->Op);
-      }
+      // Emit edit ended, so that the pipeline can decide whether to execute
+      // if there are no other operators being edited at the moment
+      emit editEnded(this->Internals->Op, true);
+      // Unless we click on okay, the we are still editing the operator
+      emit editStarted(this->Internals->Op);
     }
   }
+}
+
+void EditOperatorDialog::closeDialog()
+{
+  this->Internals->saveGeometry(this->geometry());
+  emit editEnded(this->Internals->Op, false);
+  ActiveObjects::instance().setActiveDataSource(this->Internals->dataSource);
+}
+
+void EditOperatorDialog::onApply()
+{
+  applyChanges();
+}
+
+void EditOperatorDialog::onOkay()
+{
+  applyChanges();
+  closeDialog();
 }
 
 void EditOperatorDialog::onCancel()
@@ -225,20 +239,7 @@ void EditOperatorDialog::onCancel()
     // which eventually will lead to the removal of the operator.
     ModuleManager::instance().removeOperator(this->Internals->Op);
   }
-}
-
-void EditOperatorDialog::onClose()
-{
-  this->Internals->saveGeometry(this->geometry());
-  disconnect(this->Internals->dataSource->pipeline(), &Pipeline::finished, this,
-             &EditOperatorDialog::onPipelineFinished);
-  emit editEnded(this->Internals->Op);
-  ActiveObjects::instance().setActiveDataSource(this->Internals->dataSource);
-}
-
-void EditOperatorDialog::onPipelineFinished()
-{
-  emit editStarted(this->Internals->Op);
+  closeDialog();
 }
 
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
@@ -272,11 +273,13 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   this->connect(dialogButtons, SIGNAL(rejected()), SLOT(reject()));
 
   this->connect(dialogButtons->button(QDialogButtonBox::Apply),
-                SIGNAL(clicked()), SLOT(onApply()));
-  this->connect(this, SIGNAL(accepted()), SLOT(onApply()));
-  this->connect(this, SIGNAL(accepted()), SLOT(onClose()));
-  this->connect(this, SIGNAL(rejected()), SLOT(onCancel()));
-  this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
+                SIGNAL(clicked()), this, SLOT(onApply()));
+
+  this->connect(this, &EditOperatorDialog::rejected, this,
+                &EditOperatorDialog::onCancel);
+
+  this->connect(this, &EditOperatorDialog::accepted, this,
+                &EditOperatorDialog::onOkay);
 }
 
 void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)

@@ -117,7 +117,7 @@ public slots:
 
   /// The user has started/finished editing an operator
   void startedEditingOp(Operator* op);
-  void finishedEditingOp(Operator* op);
+  void finishedEditingOp(Operator* op, bool wasModified);
 
 signals:
   /// This signal is when the execution of the pipeline starts.
@@ -135,9 +135,12 @@ private:
   DataSource* findTransformedDataSource(DataSource* dataSource);
   Operator* findTransformedDataSourceOperator(DataSource* dataSource);
   void addDataSource(DataSource* dataSource);
+  bool canExecute(DataSource* dataSource) const;
+  bool shouldExecute(DataSource* dataSource) const;
 
   DataSource* m_data;
   bool m_paused = false;
+  bool m_reallyShouldExecute = false;
   QScopedPointer<PipelineExecutor> m_executor;
   ExecutionMode m_executionMode = Threaded;
   int m_editingOperators = 0;
