@@ -148,6 +148,12 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
+  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
+  layout->addRow(mapScalarsCheckBox);
+
+  m_opacityCheckBox = new QCheckBox("Color Map Opacity");
+  layout->addRow(m_opacityCheckBox);
+
   QComboBox* direction = new QComboBox;
   direction->addItem("XY Plane");
   direction->addItem("YZ Plane");
@@ -165,12 +171,6 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   DoubleSliderWidget* opacitySlider = new DoubleSliderWidget(true);
   opacitySlider->setLineEditWidth(50);
   layout->addRow("Opacity", opacitySlider);
-
-  QCheckBox* mapScalarsCheckBox = new QCheckBox;
-  layout->addRow("Color Map Data", mapScalarsCheckBox);
-
-  m_opacityCheckBox = new QCheckBox;
-  layout->addRow("Color Map Opacity", m_opacityCheckBox);
 
   panel->setLayout(layout);
 

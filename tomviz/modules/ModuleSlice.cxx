@@ -273,9 +273,6 @@ void ModuleSlice::addToPanel(QWidget* panel)
   }
   layout->addItem(row);
 
-  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
-  layout->addWidget(mapScalarsCheckBox);
-
   m_Links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
                           m_propsPanelProxy,
                           m_propsPanelProxy->GetProperty("MapScalars"), 0);
