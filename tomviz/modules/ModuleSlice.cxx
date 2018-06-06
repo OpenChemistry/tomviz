@@ -343,6 +343,7 @@ QJsonObject ModuleSlice::serialize() const
   props["point1"] = point1;
   props["point2"] = point2;
   props["mapScalars"] = m_widget->GetMapScalars() != 0;
+  props["opaqueMap"] = m_opaqueMap;
 
   json["properties"] = props;
   return json;
@@ -367,6 +368,10 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     m_widget->SetPoint1(point1);
     m_widget->SetPoint2(point2);
     m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
+    if (props.contains("opaqueMap")) {
+      m_opaqueMap = props["opaqueMap"].toBool();
+      m_opacityCheckBox->setChecked(m_opaqueMap);
+    }
     m_widget->UpdatePlacement();
     onPlaneChanged();
     return true;
