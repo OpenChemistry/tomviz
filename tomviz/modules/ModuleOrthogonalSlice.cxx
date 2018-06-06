@@ -148,11 +148,16 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
+  m_opacityCheckBox = new QCheckBox("Color Map Opacity");
+  layout->addRow(m_opacityCheckBox);
+
   QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
   layout->addRow(mapScalarsCheckBox);
 
-  m_opacityCheckBox = new QCheckBox("Color Map Opacity");
-  layout->addRow(m_opacityCheckBox);
+  auto line = new QFrame;
+  line->setFrameShape(QFrame::HLine);
+  line->setFrameShadow(QFrame::Sunken);
+  layout->addRow(line);
 
   QComboBox* direction = new QComboBox;
   direction->addItem("XY Plane");

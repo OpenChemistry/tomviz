@@ -232,11 +232,16 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   QVBoxLayout* layout = new QVBoxLayout;
 
+  m_opacityCheckBox = new QCheckBox("Color Map Opacity");
+  layout->addWidget(m_opacityCheckBox);
+
   QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
   layout->addWidget(mapScalarsCheckBox);
 
-  m_opacityCheckBox = new QCheckBox("Color Map Opacity");
-  layout->addWidget(m_opacityCheckBox);
+  auto line = new QFrame;
+  line->setFrameShape(QFrame::HLine);
+  line->setFrameShadow(QFrame::Sunken);
+  layout->addWidget(line);
 
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
   layout->addWidget(showArrow);
