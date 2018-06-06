@@ -59,8 +59,6 @@ protected:
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
 
-  bool m_opaqueMap = false;
-
 private slots:
   void dataUpdated();
 
@@ -74,6 +72,7 @@ private:
   pqPropertyLinks m_links;
 
   QCheckBox* m_opacityCheckBox;
+  bool m_opaqueMap = false;
 };
 } // namespace tomviz
 #endif

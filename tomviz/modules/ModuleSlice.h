@@ -22,6 +22,7 @@
 
 #include <pqPropertyLinks.h>
 
+class QCheckBox;
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
@@ -44,6 +45,7 @@ public:
   QJsonObject serialize() const override;
   bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return true; }
+  bool isColorMapOpaque() const override { return m_opaqueMap; }
   void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
@@ -77,6 +79,9 @@ private:
   bool m_ignoreSignals = false;
 
   pqPropertyLinks m_Links;
+
+  QCheckBox* m_opacityCheckBox;
+  bool m_opaqueMap = false;
 };
 } // namespace tomviz
 

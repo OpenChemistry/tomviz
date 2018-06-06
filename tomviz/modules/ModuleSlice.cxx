@@ -36,6 +36,7 @@
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
+#include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMPVRepresentationProxy.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMPropertyHelper.h>
@@ -231,8 +232,15 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   QVBoxLayout* layout = new QVBoxLayout;
 
+  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
+  layout->addWidget(mapScalarsCheckBox);
+
+  m_opacityCheckBox = new QCheckBox("Color Map Opacity");
+  layout->addWidget(m_opacityCheckBox);
+
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
   layout->addWidget(showArrow);
+
   m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
                           m_propsPanelProxy,
                           m_propsPanelProxy->GetProperty("ShowArrow"), 0);
@@ -281,6 +289,22 @@ void ModuleSlice::addToPanel(QWidget* panel)
   layout->addStretch();
 
   panel->setLayout(layout);
+
+  connect(m_opacityCheckBox, &QCheckBox::toggled, this, [this](bool val) {
+    m_opaqueMap = val;
+    // Ensure the colormap is detached before applying opacity
+    if (val) {
+      setUseDetachedColorMap(val);
+    }
+    auto func = vtkPVDiscretizableColorTransferFunction::SafeDownCast(
+      colorMap()->GetClientSideObject());
+    func->SetEnableOpacityMapping(val);
+    emit opacityEnforced(val);
+    updateColorMap();
+    emit renderNeeded();
+  });
+
+  m_opacityCheckBox->setChecked(m_opaqueMap);
 }
 
 void ModuleSlice::dataUpdated()
