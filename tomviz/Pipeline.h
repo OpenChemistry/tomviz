@@ -106,13 +106,6 @@ public:
 
   /// Set the execution mode to use when executing the pipeline.
   void setExecutionMode(ExecutionMode executor);
-public slots:
-  void execute();
-  void execute(DataSource* start, bool runLast);
-  void execute(DataSource* start);
-  /// The user has started/finished editing an operator
-  void startedEditingOp(Operator* op);
-  void finishedEditingOp(Operator* op);
 
   ExecutionMode executionMode() { return m_executionMode; };
 
@@ -121,6 +114,10 @@ public slots:
   void execute(DataSource* dataSource, Operator* start = nullptr);
 
   void branchFinished(DataSource* start, vtkDataObject* newData);
+
+  /// The user has started/finished editing an operator
+  void startedEditingOp(Operator* op);
+  void finishedEditingOp(Operator* op);
 
 signals:
   /// This signal is when the execution of the pipeline starts.
