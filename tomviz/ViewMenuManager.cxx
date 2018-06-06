@@ -37,7 +37,6 @@
 #include "ActiveObjects.h"
 #include "ScaleLegend.h"
 #include "Utilities.h"
-#include "ViewPropertiesPanel.h"
 
 namespace tomviz {
 
@@ -46,19 +45,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
     m_orthographicProjectionAction(nullptr), m_scaleLegendCubeAction(nullptr),
     m_scaleLegendRulerAction(nullptr), m_hideScaleLegendAction(nullptr)
 {
-  m_viewPropertiesDialog = new QDialog(mainWindow);
-  m_viewPropertiesDialog->setWindowTitle("View Properties");
-  ViewPropertiesPanel* panel = new ViewPropertiesPanel(m_viewPropertiesDialog);
-  QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(panel);
-  m_viewPropertiesDialog->setLayout(layout);
-  connect(m_viewPropertiesDialog, SIGNAL(finished(int)),
-          SLOT(viewPropertiesDialogHidden()));
-
-  m_showViewPropertiesAction = new QAction("View Properties", Menu);
-  m_showViewPropertiesAction->setCheckable(true);
-  connect(m_showViewPropertiesAction, SIGNAL(triggered(bool)),
-          SLOT(showViewPropertiesDialog(bool)));
   m_view = ActiveObjects::instance().activeView();
   if (m_view) {
     m_viewObserverId =
@@ -135,13 +121,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   });
 
   Menu->addSeparator();
-
-  // Show view properties
-  m_showViewPropertiesAction = Menu->addAction("View Properties");
-  m_showViewPropertiesAction->setCheckable(true);
-  m_showViewPropertiesAction->setChecked(false);
-  connect(m_showViewPropertiesAction, SIGNAL(triggered(bool)),
-          SLOT(showViewPropertiesDialog(bool)));
 }
 
 ViewMenuManager::~ViewMenuManager()
@@ -149,20 +128,6 @@ ViewMenuManager::~ViewMenuManager()
   if (m_view) {
     m_view->RemoveObserver(m_viewObserverId);
   }
-}
-
-void ViewMenuManager::showViewPropertiesDialog(bool show)
-{
-  if (show) {
-    m_viewPropertiesDialog->show();
-  } else {
-    m_viewPropertiesDialog->accept();
-  }
-}
-
-void ViewMenuManager::viewPropertiesDialogHidden()
-{
-  m_showViewPropertiesAction->setChecked(false);
 }
 
 void ViewMenuManager::setProjectionModeToPerspective()

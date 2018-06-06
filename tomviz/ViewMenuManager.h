@@ -37,9 +37,6 @@ public:
   ~ViewMenuManager();
 
 private slots:
-  void showViewPropertiesDialog(bool show);
-  void viewPropertiesDialogHidden();
-
   void setProjectionModeToPerspective();
   void setProjectionModeToOrthographic();
   void onViewPropertyChanged();
@@ -53,8 +50,6 @@ private:
   void setScaleLegendStyle(ScaleLegendStyle);
   void setScaleLegendVisibility(bool);
 
-  QDialog* m_viewPropertiesDialog;
-  QPointer<QAction> m_showViewPropertiesAction;
   QPointer<QAction> m_perspectiveProjectionAction;
   QPointer<QAction> m_orthographicProjectionAction;
   QPointer<QAction> m_scaleLegendCubeAction;
