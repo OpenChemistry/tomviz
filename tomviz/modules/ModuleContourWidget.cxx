@@ -74,8 +74,6 @@ ModuleContourWidget::ModuleContourWidget(QWidget* parent_)
           SIGNAL(propertyChanged()));
   connect(m_ui->colorChooser, SIGNAL(chosenColorChanged(const QColor&)), this,
           SIGNAL(propertyChanged()));
-  connect(m_ui->cbColorBy, SIGNAL(currentIndexChanged(int)), this,
-          SIGNAL(propertyChanged()));
   connect(m_ui->cbSelectColor, SIGNAL(toggled(bool)), this,
           SIGNAL(useSolidColor(const bool)));
 }
@@ -181,8 +179,4 @@ void ModuleContourWidget::setUseSolidColor(const bool useSolid)
   m_ui->cbSelectColor->setChecked(useSolid);
 }
 
-QComboBox* ModuleContourWidget::getColorByComboBox()
-{
-  return m_ui->cbColorBy;
-}
 } // namespace tomviz
