@@ -69,7 +69,10 @@ public:
   void pause();
 
   // Returns true if pipeline is currently paused, false otherwise.
-  bool paused();
+  bool paused() const;
+
+  // Returns true if edit dialogs of operators in the pipeline are open
+  bool editingOperators() const;
 
   // Resume the automatic execution of the pipeline, will execution the
   // existing pipeline. If execute is true the entire pipeline will be executed.
@@ -85,9 +88,6 @@ public:
 
   /// Return true if the pipeline is currently being executed.
   bool isRunning();
-
-  /// Return true is the pipeline is currently paused.
-  bool isPaused() const;
 
   int editingOperators() { return m_editingOperators; }
 
@@ -135,12 +135,12 @@ private:
   DataSource* findTransformedDataSource(DataSource* dataSource);
   Operator* findTransformedDataSourceOperator(DataSource* dataSource);
   void addDataSource(DataSource* dataSource);
-  bool canExecute(DataSource* dataSource) const;
-  bool shouldExecute(DataSource* dataSource) const;
+  bool beingEdited(DataSource* dataSource) const;
+  bool isModified(DataSource* dataSource, Operator** firstModified) const;
 
   DataSource* m_data;
   bool m_paused = false;
-  bool m_reallyShouldExecute = false;
+  bool m_deletedOperators = false;
   QScopedPointer<PipelineExecutor> m_executor;
   ExecutionMode m_executionMode = Threaded;
   int m_editingOperators = 0;

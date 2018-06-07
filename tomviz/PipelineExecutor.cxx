@@ -165,8 +165,8 @@ Pipeline::ImageFuture* ThreadPipelineExecutor::getCopyOfImagePriorTo(
 {
   auto operators = pipeline()->dataSource()->operators();
 
-  // If the op has not been added then we can just use the "Output" data source.
-  if (!operators.isEmpty() && !operators.contains(op)) {
+  // If the op is new then we can just use the "Output" data source.
+  if (!operators.isEmpty() && op->isNew()) {
     auto transformed = pipeline()->transformedDataSource();
     auto dataObject = vtkImageData::SafeDownCast(transformed->copyData());
     auto imageFuture = new Pipeline::ImageFuture(op, dataObject);

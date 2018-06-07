@@ -115,32 +115,30 @@ void Pipeline::execute()
 
 void Pipeline::startedEditingOp(Operator* op)
 {
-  qDebug() << "Started " << m_editingOperators;
   ++m_editingOperators;
   op->setEditing();
-  if (!m_paused) {
-    // pause();
-  }
 }
 
 void Pipeline::finishedEditingOp(Operator* op, bool wasModified)
 {
-  qDebug() << "Finished " << m_editingOperators;
   if (op == nullptr) {
     return;
   }
+
   if (wasModified) {
     op->setModified();
   }
+
   if (op->isModified()) {
     op->resetState();
   } else {
     op->setComplete();
   }
+
   if (m_editingOperators > 0) {
     --m_editingOperators;
     if (m_editingOperators == 0 && !isRunning()) {
-      execute();
+      execute(op->dataSource());
     }
   }
 }
@@ -155,16 +153,18 @@ void Pipeline::execute(DataSource* ds, Operator* start)
     ds = m_data;
   }
 
-  if (!canExecute(ds)) {
-    qDebug() << "Can't execute";
+  if (beingEdited(ds)) {
+    qDebug() << "Can't execute, edit in progress";
     return;
   }
 
-  if (!shouldExecute(ds)) {
-    qDebug() << "Shouldn't execute";
+  Operator* firstModifiedOperator;
+  if (!isModified(ds, &firstModifiedOperator)) {
+    qDebug() << "Shouldn't execute, no operators have changed";
     return;
   }
-  m_reallyShouldExecute = false;
+
+  m_deletedOperators = false;
 
   emit started();
 
@@ -175,6 +175,9 @@ void Pipeline::execute(DataSource* ds, Operator* start)
   }
   int startIndex = 0;
   // We currently only support running the last operator or the entire pipeline.
+  if (start == nullptr) {
+    start = firstModifiedOperator;
+  }
   if (start == ds->operators().last()) {
     // See if we have any canceled operators in the pipeline, if so we have to
     // re-run the anyway pipeline.
@@ -198,34 +201,33 @@ void Pipeline::execute(DataSource* ds, Operator* start)
   m_executor->execute(ds->dataObject(), operators, startIndex);
 }
 
-bool Pipeline::canExecute(DataSource* ds) const
+bool Pipeline::beingEdited(DataSource* ds) const
 {
   // If any operators in the pipeline are in editing state,
   // don't execute the pipeline
   if (ds == nullptr) {
-    return true;
+    return false;
   }
   auto operators = ds->operators();
   for (auto itr = operators.begin(); itr != operators.end(); ++itr) {
     auto currentOp = *itr;
     if (currentOp->isEditing()) {
-      qDebug() << "Operator is editing";
-      return false;
+      return true;
     }
     // Also check if the operators in a branch are being edited.
-    if (!canExecute(currentOp->childDataSource())) {
-      return false;
+    if (beingEdited(currentOp->childDataSource())) {
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
-bool Pipeline::shouldExecute(DataSource* datasource) const
+bool Pipeline::isModified(DataSource* datasource, Operator** start) const
 {
-  // If the m_reallyShouldExecute flag is tripped
-  // (for instance if an operator has been deleted)
+  // If the m_deletedOperators flag is tripped
+  // (i.e. if one or more operator were deleted since the last execution)
   // we should execute the pipeline even if no operators are in a modified state
-  if (m_reallyShouldExecute) {
+  if (m_deletedOperators) {
     return true;
   }
   // If no operators are in a modified state,
@@ -237,10 +239,11 @@ bool Pipeline::shouldExecute(DataSource* datasource) const
   for (auto itr = operators.begin(); itr != operators.end(); ++itr) {
     auto currentOp = *itr;
     if (currentOp->isModified()) {
+      *start = currentOp;
       return true;
     }
     // Also check if the operators in a branch are being edited.
-    if (shouldExecute(currentOp->childDataSource())) {
+    if (isModified(currentOp->childDataSource(), start)) {
       return true;
     }
   }
@@ -307,7 +310,7 @@ void Pipeline::pause()
   m_paused = true;
 }
 
-bool Pipeline::paused()
+bool Pipeline::paused() const
 {
   return m_paused;
 }
@@ -336,9 +339,9 @@ bool Pipeline::isRunning()
   return m_executor->isRunning();
 }
 
-bool Pipeline::isPaused() const
+bool Pipeline::editingOperators() const
 {
-  return m_paused;
+  return m_editingOperators > 0;
 }
 
 DataSource* Pipeline::findTransformedDataSource(DataSource* dataSource)
@@ -414,7 +417,7 @@ void Pipeline::addDataSource(DataSource* dataSource)
     // operators are in a modified state. But the pipeline should still be
     // executed to reflect changes
     if (!op->isNew()) {
-      m_reallyShouldExecute = true;
+      m_deletedOperators = true;
     }
     // Do we need to move the transformed data source, !hasChildDataSource as we
     // don't want to move "explicit" child data sources.

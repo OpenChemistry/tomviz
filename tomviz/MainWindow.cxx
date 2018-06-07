@@ -566,7 +566,7 @@ void MainWindow::dataSourceChanged(DataSource* dataSource)
 {
   m_ui->propertiesPanelStackedWidget->setCurrentWidget(
     m_ui->dataPropertiesScrollArea);
-  if (dataSource && dataSource->pipeline()->isPaused()) {
+  if (dataSource && dataSource->pipeline()->editingOperators()) {
     m_ui->menuData->setEnabled(false);
     m_ui->menuSegmentation->setEnabled(false);
     m_ui->menuTomography->setEnabled(false);

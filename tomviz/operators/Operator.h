@@ -46,9 +46,7 @@ enum class OperatorState
   Complete,
   Canceled,
   Error,
-  Modified,
-  Edit,
-  Unknown
+  Edit
 };
 
 enum class TransformResult
@@ -260,7 +258,6 @@ public slots:
   void setModified() { m_modified = true; }
   void setNew(bool val) { m_new = val; }
   void setEditing() { m_state = OperatorState::Edit; }
-  void setUnknown() { m_state = OperatorState::Unknown; }
   void setComplete() { m_state = OperatorState::Complete; }
 
 protected slots:

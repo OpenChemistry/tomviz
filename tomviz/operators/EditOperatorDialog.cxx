@@ -88,7 +88,7 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
       QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
       return;
     } else {
-      auto whenCanceled = []() { qDebug() << "Canceled!"; };
+      auto whenCanceled = []() {};
       this->Internals->dataSource->pipeline()->cancel(whenCanceled);
     }
   }
@@ -100,9 +100,7 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
           this->Internals->dataSource->pipeline(),
           &Pipeline::finishedEditingOp);
   emit editStarted(this->Internals->Op);
-  // check if another EditOperatorDialog is still open
-  // and has already paused the pipeline
-  // If editing an existing operator, still the signal to disable
+  // If editing an existing operator, still emit the signal to disable
   // menubar buttons to add new operators to the current source
   if (!needToAddOperator) {
     ActiveObjects::instance().setActiveDataSource(this->Internals->dataSource);
