@@ -524,6 +524,12 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
             mode = "selection";
           }
           jView["interactionMode"] = mode;
+        } else if (name == "CenterAxesVisibility") {
+          vtkSMPropertyHelper helper(view, "CenterAxesVisibility");
+          jView["centerAxesVisible"] = helper.GetAsInt() == 1;
+        } else if (name == "OrientationAxesVisibility") {
+          vtkSMPropertyHelper helper(view, "OrientationAxesVisibility");
+          jView["orientationAxesVisible"] = helper.GetAsInt() == 1;
         }
       }
       if (view->GetProperty("AxesGrid")) {
@@ -792,6 +798,14 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
       vtkSMPropertyHelper(proxy, "Visibility")
         .Set(view["axesGridVisibility"].toBool() ? 1 : 0);
       proxy->UpdateVTKObjects();
+    }
+    if (view.contains("centerAxesVisible")) {
+      vtkSMPropertyHelper(viewProxy, "CenterAxesVisibility")
+        .Set(view["centerAxesVisible"].toBool() ? 1 : 0);
+    }
+    if (view.contains("orientationAxesVisible")) {
+      vtkSMPropertyHelper(viewProxy, "OrientationAxesVisibility")
+        .Set(view["orientationAxesVisible"].toBool() ? 1 : 0);
     }
     viewProxy->UpdateVTKObjects();
     if (view.contains("scaleLegend")) {

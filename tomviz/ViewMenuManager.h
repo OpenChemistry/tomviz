@@ -37,25 +37,27 @@ public:
   ~ViewMenuManager();
 
 private slots:
-  void showViewPropertiesDialog(bool show);
-  void viewPropertiesDialogHidden();
-
   void setProjectionModeToPerspective();
   void setProjectionModeToOrthographic();
   void onViewPropertyChanged();
   void onViewChanged();
 
+  void setShowAxesGrid(bool show);
+  void setShowCenterAxes(bool show);
+  void setShowOrientationAxes(bool show);
+
 private:
   void setScaleLegendStyle(ScaleLegendStyle);
   void setScaleLegendVisibility(bool);
 
-  QDialog* m_viewPropertiesDialog;
-  QPointer<QAction> m_showViewPropertiesAction;
   QPointer<QAction> m_perspectiveProjectionAction;
   QPointer<QAction> m_orthographicProjectionAction;
   QPointer<QAction> m_scaleLegendCubeAction;
   QPointer<QAction> m_scaleLegendRulerAction;
   QPointer<QAction> m_hideScaleLegendAction;
+  QPointer<QAction> m_showAxesGridAction;
+  QPointer<QAction> m_showCenterAxesAction;
+  QPointer<QAction> m_showOrientationAxesAction;
 
   vtkSMViewProxy* m_view;
   unsigned long m_viewObserverId;

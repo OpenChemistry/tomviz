@@ -151,8 +151,6 @@ set(SOURCES
   Variant.h
   ViewFrameActions.cxx
   ViewFrameActions.h
-  ViewPropertiesPanel.cxx
-  ViewPropertiesPanel.h
   ViewMenuManager.cxx
   ViewMenuManager.h
   vtkChartGradientOpacityEditor.cxx

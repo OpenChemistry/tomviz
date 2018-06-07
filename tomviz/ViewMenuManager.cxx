@@ -37,7 +37,6 @@
 #include "ActiveObjects.h"
 #include "ScaleLegend.h"
 #include "Utilities.h"
-#include "ViewPropertiesPanel.h"
 
 namespace tomviz {
 
@@ -46,19 +45,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
     m_orthographicProjectionAction(nullptr), m_scaleLegendCubeAction(nullptr),
     m_scaleLegendRulerAction(nullptr), m_hideScaleLegendAction(nullptr)
 {
-  m_viewPropertiesDialog = new QDialog(mainWindow);
-  m_viewPropertiesDialog->setWindowTitle("View Properties");
-  ViewPropertiesPanel* panel = new ViewPropertiesPanel(m_viewPropertiesDialog);
-  QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(panel);
-  m_viewPropertiesDialog->setLayout(layout);
-  connect(m_viewPropertiesDialog, SIGNAL(finished(int)),
-          SLOT(viewPropertiesDialogHidden()));
-
-  m_showViewPropertiesAction = new QAction("View Properties", Menu);
-  m_showViewPropertiesAction->setCheckable(true);
-  connect(m_showViewPropertiesAction, SIGNAL(triggered(bool)),
-          SLOT(showViewPropertiesDialog(bool)));
   m_view = ActiveObjects::instance().activeView();
   if (m_view) {
     m_viewObserverId =
@@ -83,6 +69,24 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   m_orthographicProjectionAction->setChecked(false);
   connect(m_orthographicProjectionAction, SIGNAL(triggered()),
           SLOT(setProjectionModeToOrthographic()));
+
+  Menu->addSeparator();
+
+  m_showAxesGridAction = Menu->addAction("Show Axes Grid");
+  m_showAxesGridAction->setCheckable(true);
+  m_showAxesGridAction->setChecked(false);
+  connect(m_showAxesGridAction, &QAction::triggered, this,
+          &ViewMenuManager::setShowAxesGrid);
+  m_showCenterAxesAction = Menu->addAction("Show Center Axes");
+  m_showCenterAxesAction->setCheckable(true);
+  m_showCenterAxesAction->setChecked(false);
+  connect(m_showCenterAxesAction, &QAction::triggered, this,
+          &ViewMenuManager::setShowCenterAxes);
+  m_showOrientationAxesAction = Menu->addAction("Show Orientation Axes");
+  m_showOrientationAxesAction->setCheckable(true);
+  m_showOrientationAxesAction->setChecked(true);
+  connect(m_showOrientationAxesAction, &QAction::triggered, this,
+          &ViewMenuManager::setShowOrientationAxes);
 
   Menu->addSeparator();
 
@@ -117,13 +121,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   });
 
   Menu->addSeparator();
-
-  // Show view properties
-  m_showViewPropertiesAction = Menu->addAction("View Properties");
-  m_showViewPropertiesAction->setCheckable(true);
-  m_showViewPropertiesAction->setChecked(false);
-  connect(m_showViewPropertiesAction, SIGNAL(triggered(bool)),
-          SLOT(showViewPropertiesDialog(bool)));
 }
 
 ViewMenuManager::~ViewMenuManager()
@@ -131,20 +128,6 @@ ViewMenuManager::~ViewMenuManager()
   if (m_view) {
     m_view->RemoveObserver(m_viewObserverId);
   }
-}
-
-void ViewMenuManager::showViewPropertiesDialog(bool show)
-{
-  if (show) {
-    m_viewPropertiesDialog->show();
-  } else {
-    m_viewPropertiesDialog->accept();
-  }
-}
-
-void ViewMenuManager::viewPropertiesDialogHidden()
-{
-  m_showViewPropertiesAction->setChecked(false);
 }
 
 void ViewMenuManager::setProjectionModeToPerspective()
@@ -218,6 +201,12 @@ void ViewMenuManager::onViewChanged()
         m_view->UpdateVTKObjects();
         proxy->Delete();
       }
+      vtkSMPropertyHelper visibilityHelper(proxy, "Visibility");
+      m_showAxesGridAction->setChecked(visibilityHelper.GetAsInt() == 1);
+      m_showAxesGridAction->setEnabled(true);
+    } else {
+      m_showAxesGridAction->setChecked(false);
+      m_showAxesGridAction->setEnabled(false);
     }
   }
   auto scaleLegend = ScaleLegend::getScaleLegend(m_view);
@@ -236,10 +225,73 @@ void ViewMenuManager::onViewChanged()
   }
   bool enableProjectionModes =
     (m_view && m_view->GetProperty("CameraParallelProjection"));
-  // We have to check since this can be called before buildMenu
-  if (m_orthographicProjectionAction && m_perspectiveProjectionAction) {
-    m_orthographicProjectionAction->setEnabled(enableProjectionModes);
-    m_perspectiveProjectionAction->setEnabled(enableProjectionModes);
+  m_orthographicProjectionAction->setEnabled(enableProjectionModes);
+  m_perspectiveProjectionAction->setEnabled(enableProjectionModes);
+  if (enableProjectionModes) {
+    vtkSMPropertyHelper parallelProjection(m_view, "CameraParallelProjection");
+    m_orthographicProjectionAction->setChecked(parallelProjection.GetAsInt() ==
+                                               1);
+    m_perspectiveProjectionAction->setChecked(parallelProjection.GetAsInt() !=
+                                              1);
+  }
+  bool enableCenterAxes = m_view && m_view->GetProperty("CenterAxesVisibility");
+  bool enableOrientationAxes =
+    m_view && m_view->GetProperty("OrientationAxesVisibility");
+  m_showCenterAxesAction->setEnabled(enableCenterAxes);
+  m_showOrientationAxesAction->setEnabled(enableOrientationAxes);
+  if (enableCenterAxes) {
+    vtkSMPropertyHelper showCenterAxes(m_view, "CenterAxesVisibility");
+    m_showCenterAxesAction->setChecked(showCenterAxes.GetAsInt() == 1);
+  }
+  if (enableOrientationAxes) {
+    vtkSMPropertyHelper showOrientationAxes(m_view,
+                                            "OrientationAxesVisibility");
+    m_showOrientationAxesAction->setChecked(showOrientationAxes.GetAsInt() ==
+                                            1);
+  }
+}
+
+void ViewMenuManager::setShowAxesGrid(bool show)
+{
+  if (!m_view || !m_view->GetProperty("AxesGrid")) {
+    return;
+  }
+  vtkSMPropertyHelper axesGridProp(m_view, "AxesGrid");
+  auto axesGridProxy = axesGridProp.GetAsProxy();
+  vtkSMPropertyHelper visibility(axesGridProxy, "Visibility");
+  visibility.Set(show ? 1 : 0);
+  axesGridProxy->UpdateVTKObjects();
+  pqView* view = tomviz::convert<pqView*>(m_view);
+  if (view) {
+    view->render();
+  }
+}
+
+void ViewMenuManager::setShowCenterAxes(bool show)
+{
+  if (!m_view || !m_view->GetProperty("CenterAxesVisibility")) {
+    return;
+  }
+  vtkSMPropertyHelper visibility(m_view, "CenterAxesVisibility");
+  visibility.Set(show ? 1 : 0);
+  m_view->UpdateVTKObjects();
+  pqView* view = tomviz::convert<pqView*>(m_view);
+  if (view) {
+    view->render();
+  }
+}
+
+void ViewMenuManager::setShowOrientationAxes(bool show)
+{
+  if (!m_view || !m_view->GetProperty("OrientationAxesVisibility")) {
+    return;
+  }
+  vtkSMPropertyHelper visibility(m_view, "OrientationAxesVisibility");
+  visibility.Set(show ? 1 : 0);
+  m_view->UpdateVTKObjects();
+  pqView* view = tomviz::convert<pqView*>(m_view);
+  if (view) {
+    view->render();
   }
 }
 
