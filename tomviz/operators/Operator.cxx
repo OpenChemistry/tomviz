@@ -36,6 +36,18 @@ Operator::Operator(QObject* parentObject) : QObject(parentObject)
 {
   qRegisterMetaType<TransformResult>("TransformResult");
   qRegisterMetaType<vtkSmartPointer<vtkDataObject>>();
+
+  // Whenever we emit transform modified, let's trip the m_modified flag
+  connect(this, &Operator::transformModified, this,
+          [this]() { m_modified = true; });
+
+  // When the transorm is completed, let's reset m_modified and m_new flags
+  connect(this, &Operator::transformingDone, this, [this]() {
+    if (m_state == OperatorState::Complete) {
+      m_modified = false;
+      m_new = false;
+    }
+  });
 }
 
 Operator::~Operator()

@@ -69,7 +69,10 @@ public:
   void pause();
 
   // Returns true if pipeline is currently paused, false otherwise.
-  bool paused();
+  bool paused() const;
+
+  // Returns true if edit dialogs of operators in the pipeline are open
+  bool editingOperators() const { return m_editingOperators > 0; }
 
   // Resume the automatic execution of the pipeline, will execution the
   // existing pipeline. If execute is true the entire pipeline will be executed.
@@ -110,6 +113,10 @@ public slots:
 
   void branchFinished(DataSource* start, vtkDataObject* newData);
 
+  /// The user has started/finished editing an operator
+  void startedEditingOp(Operator* op);
+  void finishedEditingOp(Operator* op);
+
 signals:
   /// This signal is when the execution of the pipeline starts.
   void started();
@@ -126,11 +133,15 @@ private:
   DataSource* findTransformedDataSource(DataSource* dataSource);
   Operator* findTransformedDataSourceOperator(DataSource* dataSource);
   void addDataSource(DataSource* dataSource);
+  bool beingEdited(DataSource* dataSource) const;
+  bool isModified(DataSource* dataSource, Operator** firstModified) const;
 
   DataSource* m_data;
   bool m_paused = false;
+  bool m_operatorsDeleted = false;
   QScopedPointer<PipelineExecutor> m_executor;
   ExecutionMode m_executionMode = Threaded;
+  int m_editingOperators = 0;
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.

@@ -302,6 +302,9 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
   connect(&ModuleManager::instance(),
           SIGNAL(childDataSourceRemoved(DataSource*)),
           SLOT(childDataSourceRemoved(DataSource*)));
+
+  connect(&ModuleManager::instance(), SIGNAL(operatorRemoved(Operator*)),
+          SLOT(operatorRemoved(Operator*)));
   // Need to register this for cross thread dataChanged signal
   qRegisterMetaType<QVector<int>>("QVector<int>");
 }
@@ -329,8 +332,9 @@ QIcon iconForOperatorState(tomviz::OperatorState state)
   switch (state) {
     case OperatorState::Complete:
       return QIcon(":/icons/check.png");
+    case OperatorState::Edit:
+      return QIcon(":/icons/edit.png");
     case OperatorState::Queued:
-    case OperatorState::Modified:
       return QIcon(":/icons/question.png");
     case OperatorState::Error:
       return QIcon(":/icons/error_notification.png");
@@ -351,14 +355,14 @@ QString tooltipForOperatorState(tomviz::OperatorState state)
       return QString("Running");
     case OperatorState::Complete:
       return QString("Complete");
+    case OperatorState::Edit:
+      return QString("Editing");
     case OperatorState::Queued:
       return QString("Queued");
     case OperatorState::Error:
       return QString("Error");
     case OperatorState::Canceled:
       return QString("Canceled");
-    case OperatorState::Modified:
-      return QString("Modified");
   }
 
   return "";
@@ -794,6 +798,11 @@ void PipelineModel::operatorAdded(Operator* op,
   }
 
   emit operatorItemAdded(op);
+}
+
+void PipelineModel::operatorRemoved(Operator* op)
+{
+  removeOp(op);
 }
 
 void PipelineModel::operatorModified()

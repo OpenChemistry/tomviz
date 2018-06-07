@@ -16,8 +16,10 @@
  ******************************************************************************/
 #include "EditOperatorDialog.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EditOperatorWidget.h"
+#include "ModuleManager.h"
 #include "Operator.h"
 #include "Pipeline.h"
 #include "Utilities.h"
@@ -75,8 +77,37 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   this->Internals->Op = op;
   this->Internals->dataSource = dataSource;
   this->Internals->needsToBeAdded = needToAddOperator;
+  if (this->Internals->dataSource->pipeline()->isRunning()) {
+    auto result = QMessageBox::question(
+      this, "Cancel running operation?",
+      "Editing or adding an operator that is part of a running pipeline "
+      "will cancel the current running operation and restart the pipeline "
+      "Proceed anyway?");
+    if (result == QMessageBox::No) {
+      QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
+      return;
+    } else {
+      auto whenCanceled = []() {};
+      this->Internals->dataSource->pipeline()->cancel(whenCanceled);
+    }
+  }
+  // Connect to the finished signal on the pipeline to handle the UI after
+  // pressing apply
+  connect(this, &EditOperatorDialog::editStarted,
+          this->Internals->dataSource->pipeline(), &Pipeline::startedEditingOp);
+  connect(this, &EditOperatorDialog::editEnded,
+          this->Internals->dataSource->pipeline(),
+          &Pipeline::finishedEditingOp);
+  emit editStarted(this->Internals->Op);
+  // If editing an existing operator, still emit the signal to disable
+  // menubar buttons to add new operators to the current source
+  if (!needToAddOperator) {
+    ActiveObjects::instance().setActiveDataSource(this->Internals->dataSource);
+  }
+
   if (needToAddOperator) {
     op->setParent(this);
+    this->Internals->dataSource->addOperator(this->Internals->Op);
   }
 
   QVariant geometry = this->Internals->loadGeometry();
@@ -116,7 +147,7 @@ Operator* EditOperatorDialog::op()
   return this->Internals->Op;
 }
 
-void EditOperatorDialog::onApply()
+void EditOperatorDialog::applyChanges()
 {
   if (this->Internals->Op.isNull()) {
     return;
@@ -127,8 +158,7 @@ void EditOperatorDialog::onApply()
     // the pipeline is running it has to cancel the currently running pipeline
     // first. Warn the user rather that just canceling potentially long-running
     // operations.
-    if (this->Internals->dataSource->pipeline()->isRunning() &&
-        !this->Internals->needsToBeAdded) {
+    if (this->Internals->dataSource->pipeline()->isRunning()) {
       auto result = QMessageBox::question(
         this, "Cancel running operation?",
         "Applying changes to an operator that is part of a running pipeline "
@@ -148,9 +178,10 @@ void EditOperatorDialog::onApply()
           dataSource->pipeline()->resume(false);
           emit op->transformModified();
         };
-        // We pause the pipeline so applyChangesToOperator does cause it to
-        // execute.
-        this->Internals->dataSource->pipeline()->pause();
+        if (this->Internals->needsToBeAdded) {
+          this->Internals->needsToBeAdded = false;
+        }
+        emit editEnded(this->Internals->Op);
         // We do this before causing cancel so the values are in place for when
         // whenCanceled cause the pipeline to be re-executed.
         this->Internals->Widget->applyChangesToOperator();
@@ -162,17 +193,48 @@ void EditOperatorDialog::onApply()
       }
     } else {
       this->Internals->Widget->applyChangesToOperator();
+      if (this->Internals->needsToBeAdded) {
+        this->Internals->needsToBeAdded = false;
+      }
+      // Emit edit ended, so that the pipeline can decide whether to execute
+      // if there are no other operators being edited at the moment
+      emit editEnded(this->Internals->Op);
     }
-  }
-  if (this->Internals->needsToBeAdded) {
-    this->Internals->dataSource->addOperator(this->Internals->Op);
-    this->Internals->needsToBeAdded = false;
   }
 }
 
-void EditOperatorDialog::onClose()
+void EditOperatorDialog::closeDialog()
 {
   this->Internals->saveGeometry(this->geometry());
+  ActiveObjects::instance().setActiveDataSource(this->Internals->dataSource);
+}
+
+void EditOperatorDialog::onApply()
+{
+  applyChanges();
+  // Changes are applied, but the dialog is still open.
+  // Let's fire the editStarted signal.
+  emit editStarted(this->Internals->Op);
+}
+
+void EditOperatorDialog::onOkay()
+{
+  applyChanges();
+  closeDialog();
+}
+
+void EditOperatorDialog::onCancel()
+{
+  if (this->Internals->needsToBeAdded) {
+    // Since for now operators can't be programmatically removed
+    // (i.e. all removals are assumed to be initialized
+    // from the gui in PipelineModel), we need to do a workaround and have the
+    // ModuleManaged emit a signal that is captured by the PipelineModel,
+    // which eventually will lead to the removal of the operator.
+    ModuleManager::instance().removeOperator(this->Internals->Op);
+  }
+  emit editEnded(this->Internals->Op);
+  closeDialog();
 }
 
 void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
@@ -206,10 +268,13 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   this->connect(dialogButtons, SIGNAL(rejected()), SLOT(reject()));
 
   this->connect(dialogButtons->button(QDialogButtonBox::Apply),
-                SIGNAL(clicked()), SLOT(onApply()));
-  this->connect(this, SIGNAL(accepted()), SLOT(onApply()));
-  this->connect(this, SIGNAL(accepted()), SLOT(onClose()));
-  this->connect(this, SIGNAL(rejected()), SLOT(onClose()));
+                SIGNAL(clicked()), this, SLOT(onApply()));
+
+  this->connect(this, &EditOperatorDialog::rejected, this,
+                &EditOperatorDialog::onCancel);
+
+  this->connect(this, &EditOperatorDialog::accepted, this,
+                &EditOperatorDialog::onOkay);
 }
 
 void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)

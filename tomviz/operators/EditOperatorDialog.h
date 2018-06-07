@@ -55,14 +55,22 @@ public:
 
 private slots:
   void onApply();
-  void onClose();
+  void onCancel();
+  void onOkay();
   void getCopyOfImagePriorToFinished(bool result);
+
+signals:
+  void editStarted(Operator*);
+  void editEnded(Operator*);
 
 private:
   void setupUI(EditOperatorWidget* opWidget = nullptr);
+  void applyChanges();
+  void closeDialog();
   Q_DISABLE_COPY(EditOperatorDialog)
   class EODInternals;
   QScopedPointer<EODInternals> Internals;
+  bool m_pipelineWasPaused;
 };
 } // namespace tomviz
 
