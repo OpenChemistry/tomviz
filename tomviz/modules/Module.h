@@ -88,6 +88,7 @@ public:
   /// Modules that use transfer functions should override this method to return
   /// true.
   virtual bool isColorMapNeeded() const { return false; }
+  virtual bool isOpacityMapped() const { return false; }
 
   /// Flag indicating whether the module uses a "detached" color map or not.
   /// This is only applicable when isColorMapNeeded() return true.
@@ -170,6 +171,12 @@ signals:
   /// Emitted when the module properties are changed in a way that would require
   /// a re-render of the scene to take effect.
   void renderNeeded();
+
+  /// Emitted when the module explicitly requires the opacity of the color map
+  /// to be enforced. This will cause the colormap to be detached, and the
+  /// "Separate Color Map" box to be checked and disabled. In practice, this is
+  ///  only useful to make Orthogonal and regular slices transparent.
+  void opacityEnforced(bool);
 
 private slots:
   void onColorMapChanged();

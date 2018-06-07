@@ -36,6 +36,7 @@
 #include <vtkPVArrayInformation.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVDataSetAttributesInformation.h>
+#include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMPVRepresentationProxy.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMPropertyHelper.h>
@@ -231,8 +232,20 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   QVBoxLayout* layout = new QVBoxLayout;
 
+  m_opacityCheckBox = new QCheckBox("Map Opacity");
+  layout->addWidget(m_opacityCheckBox);
+
+  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
+  layout->addWidget(mapScalarsCheckBox);
+
+  auto line = new QFrame;
+  line->setFrameShape(QFrame::HLine);
+  line->setFrameShadow(QFrame::Sunken);
+  layout->addWidget(line);
+
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
   layout->addWidget(showArrow);
+
   m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
                           m_propsPanelProxy,
                           m_propsPanelProxy->GetProperty("ShowArrow"), 0);
@@ -273,9 +286,6 @@ void ModuleSlice::addToPanel(QWidget* panel)
   }
   layout->addItem(row);
 
-  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
-  layout->addWidget(mapScalarsCheckBox);
-
   m_Links.addPropertyLink(mapScalarsCheckBox, "checked", SIGNAL(toggled(bool)),
                           m_propsPanelProxy,
                           m_propsPanelProxy->GetProperty("MapScalars"), 0);
@@ -284,6 +294,22 @@ void ModuleSlice::addToPanel(QWidget* panel)
   layout->addStretch();
 
   panel->setLayout(layout);
+
+  connect(m_opacityCheckBox, &QCheckBox::toggled, this, [this](bool val) {
+    m_mapOpacity = val;
+    // Ensure the colormap is detached before applying opacity
+    if (val) {
+      setUseDetachedColorMap(val);
+    }
+    auto func = vtkPVDiscretizableColorTransferFunction::SafeDownCast(
+      colorMap()->GetClientSideObject());
+    func->SetEnableOpacityMapping(val);
+    emit opacityEnforced(val);
+    updateColorMap();
+    emit renderNeeded();
+  });
+
+  m_opacityCheckBox->setChecked(m_mapOpacity);
 }
 
 void ModuleSlice::dataUpdated()
@@ -317,6 +343,7 @@ QJsonObject ModuleSlice::serialize() const
   props["point1"] = point1;
   props["point2"] = point2;
   props["mapScalars"] = m_widget->GetMapScalars() != 0;
+  props["mapOpacity"] = m_mapOpacity;
 
   json["properties"] = props;
   return json;
@@ -341,6 +368,10 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     m_widget->SetPoint1(point1);
     m_widget->SetPoint2(point2);
     m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
+    if (props.contains("mapOpacity")) {
+      m_mapOpacity = props["mapOpacity"].toBool();
+      m_opacityCheckBox->setChecked(m_mapOpacity);
+    }
     m_widget->UpdatePlacement();
     onPlaneChanged();
     return true;

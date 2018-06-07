@@ -20,6 +20,7 @@
 #include <pqPropertyLinks.h>
 #include <vtkWeakPointer.h>
 
+class QCheckBox;
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
@@ -43,6 +44,7 @@ public:
   QJsonObject serialize() const override;
   bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return true; }
+  bool isOpacityMapped() const override { return m_mapOpacity; }
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
@@ -68,6 +70,9 @@ private:
   vtkWeakPointer<vtkSMProxy> m_representation;
 
   pqPropertyLinks m_links;
+
+  QCheckBox* m_opacityCheckBox;
+  bool m_mapOpacity = false;
 };
 } // namespace tomviz
 #endif

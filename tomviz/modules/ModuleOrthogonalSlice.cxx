@@ -33,11 +33,11 @@
 #include "vtkSMSourceProxy.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
+#include <vtkPVDiscretizableColorTransferFunction.h>
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFormLayout>
-
 namespace tomviz {
 
 ModuleOrthogonalSlice::ModuleOrthogonalSlice(QObject* parentObject)
@@ -148,6 +148,17 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
+  m_opacityCheckBox = new QCheckBox("Map Opacity");
+  layout->addRow(m_opacityCheckBox);
+
+  QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
+  layout->addRow(mapScalarsCheckBox);
+
+  auto line = new QFrame;
+  line->setFrameShape(QFrame::HLine);
+  line->setFrameShadow(QFrame::Sunken);
+  layout->addRow(line);
+
   QComboBox* direction = new QComboBox;
   direction->addItem("XY Plane");
   direction->addItem("YZ Plane");
@@ -165,9 +176,6 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   DoubleSliderWidget* opacitySlider = new DoubleSliderWidget(true);
   opacitySlider->setLineEditWidth(50);
   layout->addRow("Opacity", opacitySlider);
-
-  QCheckBox* mapScalarsCheckBox = new QCheckBox;
-  layout->addRow("Color Map Data", mapScalarsCheckBox);
 
   panel->setLayout(layout);
 
@@ -194,6 +202,22 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   connect(opacitySlider, &DoubleSliderWidget::valueEdited, this,
           &ModuleOrthogonalSlice::dataUpdated);
   connect(mapScalarsCheckBox, SIGNAL(toggled(bool)), this, SLOT(dataUpdated()));
+
+  connect(m_opacityCheckBox, &QCheckBox::toggled, this, [this](bool val) {
+    m_mapOpacity = val;
+    // Ensure the colormap is detached before applying opacity
+    if (val) {
+      setUseDetachedColorMap(val);
+    }
+    auto func = vtkPVDiscretizableColorTransferFunction::SafeDownCast(
+      colorMap()->GetClientSideObject());
+    func->SetEnableOpacityMapping(val);
+    emit opacityEnforced(val);
+    updateColorMap();
+    emit renderNeeded();
+  });
+
+  m_opacityCheckBox->setChecked(m_mapOpacity);
 }
 
 void ModuleOrthogonalSlice::dataUpdated()
@@ -226,6 +250,7 @@ QJsonObject ModuleOrthogonalSlice::serialize() const
   props["opacity"] = opacity.GetAsDouble();
   vtkSMPropertyHelper mapScalars(m_representation->GetProperty("MapScalars"));
   props["mapScalars"] = mapScalars.GetAsInt() != 0;
+  props["mapOpacity"] = m_mapOpacity;
 
   json["properties"] = props;
   return json;
@@ -244,7 +269,10 @@ bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
     vtkSMPropertyHelper(rep, "Opacity").Set(props["opacity"].toDouble());
     vtkSMPropertyHelper(rep, "MapScalars")
       .Set(props["mapScalars"].toBool() ? 1 : 0);
-
+    if (props.contains("mapOpacity")) {
+      m_mapOpacity = props["mapOpacity"].toBool();
+      m_opacityCheckBox->setChecked(m_mapOpacity);
+    }
     rep->UpdateVTKObjects();
     return true;
   }
