@@ -87,7 +87,7 @@ void ModulePropertiesPanel::setModule(Module* module)
     if (module->isColorMapNeeded()) {
       ui.DetachColorMapWidget->setVisible(true);
       ui.DetachColorMap->setChecked(module->useDetachedColorMap());
-      ui.DetachColorMap->setEnabled(!module->isColorMapOpaque());
+      ui.DetachColorMap->setEnabled(!module->isOpacityMapped());
 
       this->connect(module, &Module::opacityEnforced, this,
                     &ModulePropertiesPanel::onEnforcedOpacity);

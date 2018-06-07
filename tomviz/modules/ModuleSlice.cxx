@@ -232,7 +232,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   QVBoxLayout* layout = new QVBoxLayout;
 
-  m_opacityCheckBox = new QCheckBox("Color Map Opacity");
+  m_opacityCheckBox = new QCheckBox("Map Opacity");
   layout->addWidget(m_opacityCheckBox);
 
   QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
@@ -296,7 +296,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
   panel->setLayout(layout);
 
   connect(m_opacityCheckBox, &QCheckBox::toggled, this, [this](bool val) {
-    m_opaqueMap = val;
+    m_mapOpacity = val;
     // Ensure the colormap is detached before applying opacity
     if (val) {
       setUseDetachedColorMap(val);
@@ -309,7 +309,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     emit renderNeeded();
   });
 
-  m_opacityCheckBox->setChecked(m_opaqueMap);
+  m_opacityCheckBox->setChecked(m_mapOpacity);
 }
 
 void ModuleSlice::dataUpdated()
@@ -343,7 +343,7 @@ QJsonObject ModuleSlice::serialize() const
   props["point1"] = point1;
   props["point2"] = point2;
   props["mapScalars"] = m_widget->GetMapScalars() != 0;
-  props["opaqueMap"] = m_opaqueMap;
+  props["mapOpacity"] = m_mapOpacity;
 
   json["properties"] = props;
   return json;
@@ -368,9 +368,9 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     m_widget->SetPoint1(point1);
     m_widget->SetPoint2(point2);
     m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
-    if (props.contains("opaqueMap")) {
-      m_opaqueMap = props["opaqueMap"].toBool();
-      m_opacityCheckBox->setChecked(m_opaqueMap);
+    if (props.contains("mapOpacity")) {
+      m_mapOpacity = props["mapOpacity"].toBool();
+      m_opacityCheckBox->setChecked(m_mapOpacity);
     }
     m_widget->UpdatePlacement();
     onPlaneChanged();

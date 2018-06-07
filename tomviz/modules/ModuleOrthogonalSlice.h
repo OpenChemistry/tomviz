@@ -44,7 +44,7 @@ public:
   QJsonObject serialize() const override;
   bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return true; }
-  bool isColorMapOpaque() const override { return m_opaqueMap; }
+  bool isOpacityMapped() const override { return m_mapOpacity; }
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
@@ -72,7 +72,7 @@ private:
   pqPropertyLinks m_links;
 
   QCheckBox* m_opacityCheckBox;
-  bool m_opaqueMap = false;
+  bool m_mapOpacity = false;
 };
 } // namespace tomviz
 #endif

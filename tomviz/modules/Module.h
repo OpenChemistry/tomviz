@@ -88,7 +88,7 @@ public:
   /// Modules that use transfer functions should override this method to return
   /// true.
   virtual bool isColorMapNeeded() const { return false; }
-  virtual bool isColorMapOpaque() const { return false; }
+  virtual bool isOpacityMapped() const { return false; }
 
   /// Flag indicating whether the module uses a "detached" color map or not.
   /// This is only applicable when isColorMapNeeded() return true.

@@ -148,7 +148,7 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
 
   QFormLayout* layout = new QFormLayout;
 
-  m_opacityCheckBox = new QCheckBox("Color Map Opacity");
+  m_opacityCheckBox = new QCheckBox("Map Opacity");
   layout->addRow(m_opacityCheckBox);
 
   QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
@@ -204,7 +204,7 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   connect(mapScalarsCheckBox, SIGNAL(toggled(bool)), this, SLOT(dataUpdated()));
 
   connect(m_opacityCheckBox, &QCheckBox::toggled, this, [this](bool val) {
-    m_opaqueMap = val;
+    m_mapOpacity = val;
     // Ensure the colormap is detached before applying opacity
     if (val) {
       setUseDetachedColorMap(val);
@@ -217,7 +217,7 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
     emit renderNeeded();
   });
 
-  m_opacityCheckBox->setChecked(m_opaqueMap);
+  m_opacityCheckBox->setChecked(m_mapOpacity);
 }
 
 void ModuleOrthogonalSlice::dataUpdated()
@@ -250,7 +250,7 @@ QJsonObject ModuleOrthogonalSlice::serialize() const
   props["opacity"] = opacity.GetAsDouble();
   vtkSMPropertyHelper mapScalars(m_representation->GetProperty("MapScalars"));
   props["mapScalars"] = mapScalars.GetAsInt() != 0;
-  props["opaqueMap"] = m_opaqueMap;
+  props["mapOpacity"] = m_mapOpacity;
 
   json["properties"] = props;
   return json;
@@ -269,9 +269,9 @@ bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
     vtkSMPropertyHelper(rep, "Opacity").Set(props["opacity"].toDouble());
     vtkSMPropertyHelper(rep, "MapScalars")
       .Set(props["mapScalars"].toBool() ? 1 : 0);
-    if (props.contains("opaqueMap")) {
-      m_opaqueMap = props["opaqueMap"].toBool();
-      m_opacityCheckBox->setChecked(m_opaqueMap);
+    if (props.contains("mapOpacity")) {
+      m_mapOpacity = props["mapOpacity"].toBool();
+      m_opacityCheckBox->setChecked(m_mapOpacity);
     }
     rep->UpdateVTKObjects();
     return true;
