@@ -43,8 +43,10 @@ Operator::Operator(QObject* parentObject) : QObject(parentObject)
 
   // When the transorm is completed, let's reset m_modified and m_new flags
   connect(this, &Operator::transformingDone, this, [this]() {
-    m_modified = false;
-    m_new = false;
+    if (m_state == OperatorState::Complete) {
+      m_modified = false;
+      m_new = false;
+    }
   });
 }
 

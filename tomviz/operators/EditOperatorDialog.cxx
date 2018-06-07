@@ -182,7 +182,6 @@ void EditOperatorDialog::applyChanges()
           this->Internals->needsToBeAdded = false;
         }
         emit editEnded(this->Internals->Op);
-        emit editStarted(this->Internals->Op);
         // We do this before causing cancel so the values are in place for when
         // whenCanceled cause the pipeline to be re-executed.
         this->Internals->Widget->applyChangesToOperator();
@@ -200,8 +199,6 @@ void EditOperatorDialog::applyChanges()
       // Emit edit ended, so that the pipeline can decide whether to execute
       // if there are no other operators being edited at the moment
       emit editEnded(this->Internals->Op);
-      // Unless we click on okay, the we are still editing the operator
-      emit editStarted(this->Internals->Op);
     }
   }
 }
@@ -209,13 +206,15 @@ void EditOperatorDialog::applyChanges()
 void EditOperatorDialog::closeDialog()
 {
   this->Internals->saveGeometry(this->geometry());
-  emit editEnded(this->Internals->Op);
   ActiveObjects::instance().setActiveDataSource(this->Internals->dataSource);
 }
 
 void EditOperatorDialog::onApply()
 {
   applyChanges();
+  // Changes are applied, but the dialog is still open.
+  // Let's fire the editStarted signal.
+  emit editStarted(this->Internals->Op);
 }
 
 void EditOperatorDialog::onOkay()
@@ -234,6 +233,7 @@ void EditOperatorDialog::onCancel()
     // which eventually will lead to the removal of the operator.
     ModuleManager::instance().removeOperator(this->Internals->Op);
   }
+  emit editEnded(this->Internals->Op);
   closeDialog();
 }
 

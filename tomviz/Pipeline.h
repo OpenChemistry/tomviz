@@ -72,7 +72,7 @@ public:
   bool paused() const;
 
   // Returns true if edit dialogs of operators in the pipeline are open
-  bool editingOperators() const;
+  bool editingOperators() const { return m_editingOperators > 0; }
 
   // Resume the automatic execution of the pipeline, will execution the
   // existing pipeline. If execute is true the entire pipeline will be executed.
@@ -88,8 +88,6 @@ public:
 
   /// Return true if the pipeline is currently being executed.
   bool isRunning();
-
-  int editingOperators() { return m_editingOperators; }
 
   ImageFuture* getCopyOfImagePriorTo(Operator* op);
 
@@ -140,7 +138,7 @@ private:
 
   DataSource* m_data;
   bool m_paused = false;
-  bool m_deletedOperators = false;
+  bool m_operatorsDeleted = false;
   QScopedPointer<PipelineExecutor> m_executor;
   ExecutionMode m_executionMode = Threaded;
   int m_editingOperators = 0;

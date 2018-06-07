@@ -26,9 +26,6 @@
 
 #include <QMetaEnum>
 
-#include <QDebug>
-#include <QObject>
-#include <QTimer>
 #include <pqApplicationCore.h>
 #include <pqSettings.h>
 #include <pqView.h>
@@ -121,10 +118,6 @@ void Pipeline::startedEditingOp(Operator* op)
 
 void Pipeline::finishedEditingOp(Operator* op)
 {
-  if (op == nullptr) {
-    return;
-  }
-
   if (op->isModified()) {
     op->resetState();
   } else {
@@ -150,19 +143,15 @@ void Pipeline::execute(DataSource* ds, Operator* start)
   }
 
   if (beingEdited(ds)) {
-    qDebug() << "Can't execute, edit in progress";
     return;
   }
 
   Operator* firstModifiedOperator;
   if (!isModified(ds, &firstModifiedOperator)) {
-    qDebug() << "Shouldn't execute, no operators have changed";
     return;
   }
 
-  qDebug() << "Executing the pipeline";
-
-  m_deletedOperators = false;
+  m_operatorsDeleted = false;
 
   emit started();
 
@@ -193,7 +182,6 @@ void Pipeline::execute(DataSource* ds, Operator* start)
       startIndex = operators.indexOf(start);
       // Use transformed data source
       ds = transformedDataSource(ds);
-      qDebug() << "Incremental";
     }
   }
 
@@ -223,10 +211,10 @@ bool Pipeline::beingEdited(DataSource* ds) const
 
 bool Pipeline::isModified(DataSource* datasource, Operator** start) const
 {
-  // If the m_deletedOperators flag is tripped
+  // If the m_operatorsDeleted flag is tripped
   // (i.e. if one or more operator were deleted since the last execution)
   // we should execute the pipeline even if no operators are in a modified state
-  if (m_deletedOperators) {
+  if (m_operatorsDeleted) {
     return true;
   }
   // If no operators are in a modified state,
@@ -338,11 +326,6 @@ bool Pipeline::isRunning()
   return m_executor->isRunning();
 }
 
-bool Pipeline::editingOperators() const
-{
-  return m_editingOperators > 0;
-}
-
 DataSource* Pipeline::findTransformedDataSource(DataSource* dataSource)
 {
   auto op = findTransformedDataSourceOperator(dataSource);
@@ -383,8 +366,7 @@ void Pipeline::addDataSource(DataSource* dataSource)
   // Wire up transformModified to execute pipeline
   connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
     // Extract out source and execute all.
-    connect(op, &Operator::transformModified, this,
-            [this, op]() { execute(); });
+    connect(op, &Operator::transformModified, this, [this]() { execute(); });
 
     // Ensure that new child data source signals are correctly wired up.
     connect(op,
@@ -413,11 +395,10 @@ void Pipeline::addDataSource(DataSource* dataSource)
   // pipeline we are currently executing.
   connect(dataSource, &DataSource::operatorRemoved, [this](Operator* op) {
     // If an operator has been removed, there's a chance that none of the
-    // remaining
-    // operators are in a modified state. But the pipeline should still be
-    // executed to reflect changes
+    // remaining operators are in a modified state.
+    // But the pipeline should still be executed to reflect changes
     if (!op->isNew()) {
-      m_deletedOperators = true;
+      m_operatorsDeleted = true;
     }
     // Do we need to move the transformed data source, !hasChildDataSource as we
     // don't want to move "explicit" child data sources.

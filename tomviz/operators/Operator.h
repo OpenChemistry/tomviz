@@ -254,9 +254,8 @@ public slots:
   bool isQueued() { return m_state == OperatorState::Queued; }
 
   OperatorState state() { return m_state; }
-  void resetState() { m_state = OperatorState::Queued; }
   void setModified() { m_modified = true; }
-  void setNew(bool val) { m_new = val; }
+  void resetState() { m_state = OperatorState::Queued; }
   void setEditing() { m_state = OperatorState::Edit; }
   void setComplete() { m_state = OperatorState::Complete; }
 

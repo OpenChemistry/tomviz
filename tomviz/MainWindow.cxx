@@ -566,16 +566,12 @@ void MainWindow::dataSourceChanged(DataSource* dataSource)
 {
   m_ui->propertiesPanelStackedWidget->setCurrentWidget(
     m_ui->dataPropertiesScrollArea);
-  if (dataSource && dataSource->pipeline()->editingOperators()) {
-    m_ui->menuData->setEnabled(false);
-    m_ui->menuSegmentation->setEnabled(false);
-    m_ui->menuTomography->setEnabled(false);
-    m_customTransformsMenu->setEnabled(false);
-  } else {
-    m_ui->menuData->setEnabled(true);
-    m_ui->menuSegmentation->setEnabled(true);
-    m_ui->menuTomography->setEnabled(true);
-    m_customTransformsMenu->setEnabled(true);
+  if (dataSource) {
+    bool canAdd = !dataSource->pipeline()->editingOperators();
+    m_ui->menuData->setEnabled(canAdd);
+    m_ui->menuSegmentation->setEnabled(canAdd);
+    m_ui->menuTomography->setEnabled(canAdd);
+    m_customTransformsMenu->setEnabled(canAdd);
   }
 }
 
