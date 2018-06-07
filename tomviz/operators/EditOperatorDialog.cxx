@@ -77,7 +77,6 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
   this->Internals->Op = op;
   this->Internals->dataSource = dataSource;
   this->Internals->needsToBeAdded = needToAddOperator;
-  op->setNew(true);
   if (this->Internals->dataSource->pipeline()->isRunning()) {
     auto result = QMessageBox::question(
       this, "Cancel running operation?",
@@ -181,7 +180,6 @@ void EditOperatorDialog::applyChanges()
         };
         if (this->Internals->needsToBeAdded) {
           this->Internals->needsToBeAdded = false;
-          this->Internals->Op->setNew(false);
         }
         emit editEnded(this->Internals->Op, true);
         emit editStarted(this->Internals->Op);
@@ -198,7 +196,6 @@ void EditOperatorDialog::applyChanges()
       this->Internals->Widget->applyChangesToOperator();
       if (this->Internals->needsToBeAdded) {
         this->Internals->needsToBeAdded = false;
-        this->Internals->Op->setNew(false);
       }
       // Emit edit ended, so that the pipeline can decide whether to execute
       // if there are no other operators being edited at the moment

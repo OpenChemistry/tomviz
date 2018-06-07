@@ -284,7 +284,7 @@ private:
   bool m_supportsCancel = false;
   bool m_hasChildDataSource = false;
   bool m_modified = true;
-  bool m_new = false;
+  bool m_new = true;
   QPointer<DataSource> m_childDataSource;
   int m_totalProgressSteps = 0;
   int m_progressStep = 0;

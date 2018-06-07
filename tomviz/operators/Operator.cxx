@@ -73,6 +73,7 @@ TransformResult Operator::transform(vtkDataObject* data)
   } else {
     m_state = static_cast<OperatorState>(transformResult);
     m_modified = false;
+    m_new = false;
   }
   emit transformingDone(transformResult);
 

@@ -164,6 +164,8 @@ void Pipeline::execute(DataSource* ds, Operator* start)
     return;
   }
 
+  qDebug() << "Executing the pipeline";
+
   m_deletedOperators = false;
 
   emit started();
@@ -178,7 +180,7 @@ void Pipeline::execute(DataSource* ds, Operator* start)
   if (start == nullptr) {
     start = firstModifiedOperator;
   }
-  if (start == ds->operators().last()) {
+  if (start == ds->operators().last() && start->isNew()) {
     // See if we have any canceled operators in the pipeline, if so we have to
     // re-run the anyway pipeline.
     bool haveCanceled = false;
@@ -195,6 +197,7 @@ void Pipeline::execute(DataSource* ds, Operator* start)
       startIndex = operators.indexOf(start);
       // Use transformed data source
       ds = transformedDataSource(ds);
+      qDebug() << "Incremental";
     }
   }
 
