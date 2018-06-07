@@ -61,7 +61,7 @@ private slots:
 
 signals:
   void editStarted(Operator*);
-  void editEnded(Operator*, bool);
+  void editEnded(Operator*);
 
 private:
   void setupUI(EditOperatorWidget* opWidget = nullptr);

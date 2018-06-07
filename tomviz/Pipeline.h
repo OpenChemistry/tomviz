@@ -117,7 +117,7 @@ public slots:
 
   /// The user has started/finished editing an operator
   void startedEditingOp(Operator* op);
-  void finishedEditingOp(Operator* op, bool wasModified);
+  void finishedEditingOp(Operator* op);
 
 signals:
   /// This signal is when the execution of the pipeline starts.

@@ -119,14 +119,10 @@ void Pipeline::startedEditingOp(Operator* op)
   op->setEditing();
 }
 
-void Pipeline::finishedEditingOp(Operator* op, bool wasModified)
+void Pipeline::finishedEditingOp(Operator* op)
 {
   if (op == nullptr) {
     return;
-  }
-
-  if (wasModified) {
-    op->setModified();
   }
 
   if (op->isModified()) {
@@ -387,7 +383,8 @@ void Pipeline::addDataSource(DataSource* dataSource)
   // Wire up transformModified to execute pipeline
   connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
     // Extract out source and execute all.
-    connect(op, &Operator::transformModified, this, [this]() { execute(); });
+    connect(op, &Operator::transformModified, this,
+            [this, op]() { execute(); });
 
     // Ensure that new child data source signals are correctly wired up.
     connect(op,
