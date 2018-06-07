@@ -575,9 +575,8 @@ bool PipelineView::enableDeleteItems(const QModelIndexList& idxs)
 
     auto op = pipelineModel->op(index);
     if (op && op->dataSource()->pipeline() &&
-        op->dataSource()->pipeline()->isRunning()) {
-      return false;
-    } else if (op->state() == OperatorState::Edit) {
+        (op->dataSource()->pipeline()->isRunning() || 
+         op->state() == OperatorState::Edit) ) {
       return false;
     }
   }
