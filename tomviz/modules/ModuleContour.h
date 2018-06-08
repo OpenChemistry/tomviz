@@ -49,6 +49,7 @@ public:
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
   void setIsoValue(double value);
+  double getIsoValue() const;
 
   DataSource* colorMapDataSource() const override;
 
@@ -84,6 +85,8 @@ private slots:
   void setUseSolidColor(const bool useSolidColor);
 
 private:
+  void userSelectInitialContourValue();
+
   Q_DISABLE_COPY(ModuleContour)
 };
 } // namespace tomviz

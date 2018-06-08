@@ -73,6 +73,7 @@ public:
   PersistenceState PersistState = PersistenceState::Saved;
   bool UnitsModified = false;
   bool Forkable = true;
+  double initialContourValue = DBL_MAX;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -1020,5 +1021,15 @@ bool DataSource::forkable()
 void DataSource::setForkable(bool forkable)
 {
   Internals->Forkable = forkable;
+}
+
+double DataSource::initialContourValue() const
+{
+  return Internals->initialContourValue;
+}
+
+void DataSource::setInitialContourValue(double d)
+{
+  Internals->initialContourValue = d;
 }
 } // namespace tomviz

@@ -220,6 +220,11 @@ public:
   bool forkable();
   void setForkable(bool forkable);
 
+  // Get or set the initial contour value for the contour module
+  // If the initial contour value hasn't been set, it will be DBL_MAX.
+  double initialContourValue() const;
+  void setInitialContourValue(double initialContourValue);
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.

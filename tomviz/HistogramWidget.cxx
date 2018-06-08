@@ -293,16 +293,20 @@ void HistogramWidget::histogramClicked(vtkObject*)
       ModuleManager::instance().findModules<ModuleContourType*>(
         activeDataSource, view);
     if (contours.size() == 0) {
+      activeDataSource->setInitialContourValue(
+        m_histogramColorOpacityEditor->GetContourValue());
       contour = qobject_cast<ModuleContourType*>(
         ModuleManager::instance().createAndAddModule("Contour",
                                                      activeDataSource, view));
     } else {
       contour = contours[0];
+      contour->setIsoValue(m_histogramColorOpacityEditor->GetContourValue());
     }
     ActiveObjects::instance().setActiveModule(contour);
+  } else {
+    contour->setIsoValue(m_histogramColorOpacityEditor->GetContourValue());
   }
   Q_ASSERT(contour);
-  contour->setIsoValue(m_histogramColorOpacityEditor->GetContourValue());
   tomviz::convert<pqView*>(view)->render();
 }
 
