@@ -48,13 +48,7 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  void setIsoValues(const QList<double>& values);
-  void setIsoValue(double value)
-  {
-    QList<double> values;
-    values << value;
-    setIsoValues(values);
-  }
+  void setIsoValue(double value);
 
   DataSource* colorMapDataSource() const override;
 

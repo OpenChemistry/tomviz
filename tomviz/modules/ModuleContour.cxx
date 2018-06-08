@@ -162,17 +162,10 @@ bool ModuleContour::visibility() const
   }
 }
 
-void ModuleContour::setIsoValues(const QList<double>& values)
+void ModuleContour::setIsoValue(double value)
 {
-  std::vector<double> vectorValues(values.size());
-  std::copy(values.begin(), values.end(), vectorValues.begin());
-  vectorValues.push_back(0); // to avoid having to check for 0 size on Windows.
-
-  vtkSMPropertyHelper(m_contourFilter, "ContourValues")
-    .Set(&vectorValues[0], values.size());
+  vtkSMPropertyHelper(m_contourFilter, "ContourValues").Set(value);
   m_contourFilter->UpdateVTKObjects();
-
-  updateScalarColoring();
 }
 
 void ModuleContour::addToPanel(QWidget* panel)
