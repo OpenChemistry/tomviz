@@ -413,6 +413,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   if (!source) {
     m_ui->histogramWidget->setInputData(nullptr, "", "");
     m_ui->gradientOpacityWidget->setInputData(nullptr, "", "");
+    m_ui->histogram2DWidget->setTransfer2D(nullptr, nullptr);
     return;
   }
 
@@ -435,7 +436,8 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
         vtkPiecewiseFunction::SafeDownCast(
           m_activeModule->opacityMap()->GetClientSideObject()));
       m_ui->histogram2DWidget->setTransfer2D(
-        m_activeModule->transferFunction2D());
+        m_activeModule->transferFunction2D(),
+        m_activeModule->transferFunction2DBox());
     }
   } else {
     m_ui->histogramWidget->setLUTProxy(source->colorMap());
@@ -447,7 +449,8 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
     m_transfer2DModel->getDefault()->SetOpacityFunction(
       vtkPiecewiseFunction::SafeDownCast(
         source->opacityMap()->GetClientSideObject()));
-    m_ui->histogram2DWidget->setTransfer2D(source->transferFunction2D());
+    m_ui->histogram2DWidget->setTransfer2D(source->transferFunction2D(),
+                                           source->transferFunction2DBox());
   }
   m_ui->histogram2DWidget->updateTransfer2D();
 

@@ -23,6 +23,8 @@
 #include <QVariantMap>
 #include <QVector>
 
+#include <vtkRect.h>
+
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
@@ -139,6 +141,7 @@ public:
   vtkSMProxy* opacityMap() const;
   vtkPiecewiseFunction* gradientOpacityMap() const;
   vtkImageData* transferFunction2D() const;
+  vtkRectd* transferFunction2DBox() const;
 
   /// Indicates whether the DataSource has a label map of the voxels.
   bool hasLabelMap();

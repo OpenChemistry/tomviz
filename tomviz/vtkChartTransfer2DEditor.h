@@ -47,9 +47,10 @@ public:
   vtkTypeMacro(vtkChartTransfer2DEditor, vtkChartHistogram2D)
 
     /**
-     * Set the vtkImageData on which to raster the 2D transfer function.
+     * Set the vtkImageData on which to raster the 2D transfer function
+     * and the vtkRectd to store its box coordinates into.
      */
-    void SetTransfer2D(vtkImageData* transfer2D);
+    void SetTransfer2D(vtkImageData* transfer2D, vtkRectd* box);
 
   /**
    * Events from added BoxItems (vtkCommand::SelectionChangedEvent) are
@@ -76,6 +77,8 @@ protected:
 
   vtkSmartPointer<vtkImageData> Transfer2D;
   vtkNew<vtkCallbackCommand> Callback;
+  vtkRectd* Transfer2DBox;
+  vtkRectd DummyBox;
 
   vtkPlot* GetPlot(vtkIdType index) override;
 

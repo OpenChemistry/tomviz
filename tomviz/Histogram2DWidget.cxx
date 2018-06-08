@@ -112,9 +112,9 @@ void Histogram2DWidget::addFunctionItem(
   m_chartHistogram2D->AddFunction(item);
 }
 
-void Histogram2DWidget::setTransfer2D(vtkImageData* transfer2D)
+void Histogram2DWidget::setTransfer2D(vtkImageData* transfer2D, vtkRectd* box)
 {
-  m_chartHistogram2D->SetTransfer2D(transfer2D);
+  m_chartHistogram2D->SetTransfer2D(transfer2D, box);
   m_histogramView->Render();
 }
 

@@ -19,6 +19,7 @@
 #include <QWidget>
 
 #include <vtkNew.h>
+#include <vtkRect.h>
 #include <vtkSmartPointer.h>
 
 /**
@@ -57,9 +58,10 @@ public:
 
   /**
    * Set the vtkImageData object into which the 2D transfer function will be
-   * rastered from the available vtkTransferFunctionBoxItems.
+   * rastered from the available vtkTransferFunctionBoxItems and the vtkRectd
+   * that will store the box points for this transfer function 2D.
    */
-  void setTransfer2D(vtkImageData* transfer2D);
+  void setTransfer2D(vtkImageData* transfer2D, vtkRectd* box);
 
 public slots:
   void onTransfer2DChanged();

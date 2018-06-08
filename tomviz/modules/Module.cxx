@@ -46,6 +46,7 @@ class Module::MInternals
 {
   vtkSmartPointer<vtkSMProxy> m_detachedColorMap;
   vtkSmartPointer<vtkSMProxy> m_detachedOpacityMap;
+  vtkRectd m_detachedTransferFunction2DBox;
 
 public:
   vtkWeakPointer<vtkSMProxy> m_colorMap;
@@ -69,6 +70,8 @@ public:
       m_detachedOpacityMap =
         vtkSMPropertyHelper(m_detachedColorMap, "ScalarOpacityFunction")
           .GetAsProxy();
+      // These were the default box params in the UI.
+      m_detachedTransferFunction2DBox.Set(1, 1, 19, 19);
     }
     return m_detachedColorMap;
   }
@@ -77,6 +80,12 @@ public:
   {
     detachedColorMap();
     return m_detachedOpacityMap;
+  }
+
+  vtkRectd* detachedTransferFunction2DBox()
+  {
+    detachedColorMap();
+    return &m_detachedTransferFunction2DBox;
   }
 };
 
@@ -185,6 +194,12 @@ vtkImageData* Module::transferFunction2D() const
 {
   return useDetachedColorMap() ? d->m_transfer2D.GetPointer()
                                : colorMapDataSource()->transferFunction2D();
+}
+
+vtkRectd* Module::transferFunction2DBox() const
+{
+  return useDetachedColorMap() ? d->detachedTransferFunction2DBox()
+                               : dataSource()->transferFunction2DBox();
 }
 
 QJsonObject Module::serialize() const

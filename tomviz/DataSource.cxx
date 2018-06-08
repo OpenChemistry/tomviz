@@ -71,6 +71,7 @@ public:
   vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
   PersistenceState PersistState = PersistenceState::Saved;
+  vtkRectd m_transferFunction2DBox;
   bool UnitsModified = false;
   bool Forkable = true;
   double initialContourValue = DBL_MAX;
@@ -895,6 +896,11 @@ vtkImageData* DataSource::transferFunction2D() const
   return this->Internals->m_transfer2D;
 }
 
+vtkRectd* DataSource::transferFunction2DBox() const
+{
+  return &this->Internals->m_transferFunction2DBox;
+}
+
 bool DataSource::hasLabelMap()
 {
   auto dataSource = proxy();
@@ -940,6 +946,10 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   this->Internals->Type = dataType;
   this->Internals->PersistState = persistState;
   this->Internals->DisplayPosition.Set(0, 0, 0);
+
+  // Set up default rect for transfer function 2d.
+  // These were the default box params in the UI.
+  this->Internals->m_transferFunction2DBox.Set(1, 1, 19, 19);
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   auto pxm = ActiveObjects::instance().proxyManager();

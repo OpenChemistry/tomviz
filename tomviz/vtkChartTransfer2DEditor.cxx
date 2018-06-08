@@ -33,6 +33,7 @@
 vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
   vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
+  : Transfer2DBox(&this->DummyBox)
 {
   Callback->SetClientData(this);
   Callback->SetCallback(vtkChartTransfer2DEditor::OnBoxItemModified);
@@ -48,14 +49,48 @@ vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
 vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor() = default;
 
-void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
+void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D,
+                                             vtkRectd* box)
 {
+  // Set the box first, GenerateTransfer2D writes to it
+  // so avoid writing to the old one.
+  if (box != nullptr) {
+    this->Transfer2DBox = box;
+  } else {
+    // Make sure to use internal dummy box.  This is set to
+    // nullptr when the active datasource/module is cleared
+    // which usually means it was deleted.  Avoid pointers to
+    // deleted data by setting this to a local dummy value.
+    this->Transfer2DBox = &this->DummyBox;
+  }
   if (transfer2D != this->Transfer2D) {
     this->Transfer2D = transfer2D;
 
+    // Call modified here but delay call of GenerateTransfer2D until
+    // after the box update is passed to the boxItem.
     Modified();
-    GenerateTransfer2D();
   }
+  // Now force the new box through (must be done after the
+  // Transfer2D is set).
+  if (box != nullptr) {
+    // Update the box shown on the plot (assumes only one box).
+    const vtkIdType numPlots = GetNumberOfPlots();
+    for (vtkIdType i = 0; i < numPlots; i++) {
+      typedef vtkTransferFunctionBoxItem BoxType;
+      BoxType* boxItem = BoxType::SafeDownCast(GetPlot(i));
+      if (!boxItem) {
+        continue;
+      }
+
+      boxItem->SetBox(box->GetX(), box->GetY(), box->GetWidth(),
+                      box->GetHeight());
+      break;
+    }
+  }
+
+  // This should only do something if Modified was called and it has not
+  // been called since.
+  GenerateTransfer2D();
 }
 
 bool vtkChartTransfer2DEditor::IsInitialized()
@@ -105,6 +140,7 @@ void vtkChartTransfer2DEditor::RasterBoxItem(
   vtkTransferFunctionBoxItem* boxItem)
 {
   const vtkRectd& box = boxItem->GetBox();
+  *this->Transfer2DBox = box;
   vtkPiecewiseFunction* opacFunc = boxItem->GetOpacityFunction();
   vtkColorTransferFunction* colorFunc = boxItem->GetColorFunction();
   if (!opacFunc || !colorFunc) {
