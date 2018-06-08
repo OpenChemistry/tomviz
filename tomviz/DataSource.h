@@ -171,6 +171,8 @@ public:
   void getExtent(int extent[6]);
   /// Returns the physical extent (bounds) of the transformed dataset
   void getBounds(double bounds[6]);
+  /// Returns the range of the transformed dataset
+  void getRange(double range[2]);
   /// Returns the spacing of the transformed dataset
   void getSpacing(double spacing[3]) const;
   /// Sets the scale factor (ratio between units and spacing)
