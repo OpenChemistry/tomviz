@@ -70,13 +70,8 @@ protected:
   vtkSMProxy* getProxyForString(const std::string& str) override;
   QList<DataSource*> getChildDataSources();
   void updateScalarColoring();
-  void createCategoricalColoringPipeline();
 
   vtkWeakPointer<vtkSMSourceProxy> m_contourFilter;
-  vtkWeakPointer<vtkSMSourceProxy> m_resampleFilter;
-  vtkWeakPointer<vtkSMProxy> m_resampleRepresentation;
-  vtkWeakPointer<vtkSMSourceProxy> m_pointDataToCellDataFilter;
-  vtkWeakPointer<vtkSMProxy> m_pointDataToCellDataRepresentation;
   vtkWeakPointer<vtkSMProxy> m_activeRepresentation;
 
   class Private;
@@ -93,9 +88,6 @@ private slots:
   void onScalarArrayChanged();
 
   void setUseSolidColor(const bool useSolidColor);
-
-  /// Reset the UI for widgets not connected to a proxy property
-  void updateGUI();
 
 private:
   Q_DISABLE_COPY(ModuleContour)

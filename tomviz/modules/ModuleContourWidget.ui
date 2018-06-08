@@ -15,7 +15,37 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QCheckBox" name="cbColorMapData">
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Color Map Data</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QCheckBox" name="cbSelectColor">
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Select Color</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="pqColorChooserButton" name="colorChooser" native="true"/>
+     </item>
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -29,69 +59,39 @@
        </property>
       </spacer>
      </item>
-     <item>
-      <widget class="QCheckBox" name="cbSelectColor">
-       <property name="text">
-        <string>Select Color</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="pqColorChooserButton" name="colorChooser" native="true"/>
-     </item>
     </layout>
    </item>
    <item>
     <layout class="QFormLayout" name="formLayout">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Color By</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
+     <item row="1" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>Value</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QComboBox" name="cbColorBy"/>
+     <item row="1" column="1">
+      <widget class="tomviz::DoubleSliderWidget" name="sliValue" native="true"/>
      </item>
-     <item row="3" column="1">
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Mode</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
       <widget class="QComboBox" name="cbRepresentation"/>
      </item>
-     <item row="4" column="0">
+     <item row="3" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
         <string>Opacity</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="tomviz::DoubleSliderWidget" name="sliValue" native="true"/>
-     </item>
-     <item row="4" column="1">
+     <item row="3" column="1">
       <widget class="tomviz::DoubleSliderWidget" name="sliOpacity" native="true"/>
-     </item>
-     <item row="1" column="1">
-      <widget class="QCheckBox" name="cbColorMapData">
-       <property name="text">
-        <string/>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Color Map Data</string>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>

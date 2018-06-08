@@ -32,8 +32,6 @@ class ModuleContourWidget;
 class LightingParametersForm;
 } // namespace Ui
 
-class QComboBox;
-
 class pqPropertyLinks;
 class vtkSMProxy;
 class vtkSMSourceProxy;
@@ -64,11 +62,6 @@ public:
                         vtkSMSourceProxy* contourFilter);
   void addCategoricalPropertyLinks(pqPropertyLinks& links,
                                    vtkSMProxy* representation);
-
-  /**
-   * Expose 'ColorBy' combo box to be populated by the source.
-   */
-  QComboBox* getColorByComboBox();
 
 signals:
   //@{
