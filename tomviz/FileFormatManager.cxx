@@ -99,7 +99,7 @@ QList<PythonReaderFactory*> FileFormatManager::pythonReaderFactories()
 
 PythonReaderFactory* FileFormatManager::pythonReaderFactory(const QString& ext)
 {
-  return m_pythonExtReaderMap[ext];
+  return m_pythonExtReaderMap.value(ext, nullptr);
 }
 
 QList<PythonWriterFactory*> FileFormatManager::pythonWriterFactories()
@@ -109,7 +109,7 @@ QList<PythonWriterFactory*> FileFormatManager::pythonWriterFactories()
 
 PythonWriterFactory* FileFormatManager::pythonWriterFactory(const QString& ext)
 {
-  return m_pythonExtWriterMap[ext];
+  return m_pythonExtWriterMap.value(ext, nullptr);
 }
 
 } // namespace tomviz
