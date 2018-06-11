@@ -62,22 +62,81 @@ bool PipelineExecutor::cancel(Operator* op)
   return false;
 }
 
+class PipelineFutureThreadedInternal : public Pipeline::Future
+{
+public:
+  PipelineFutureThreadedInternal(vtkImageData* imageData,
+                                 QList<Operator*> operators,
+                                 PipelineWorker::Future* future = nullptr,
+                                 QObject* parent = nullptr);
+
+private:
+  PipelineWorker::Future* m_future;
+};
+
+PipelineFutureThreadedInternal::PipelineFutureThreadedInternal(
+  vtkImageData* imageData, QList<Operator*> operators,
+  PipelineWorker::Future* future, QObject* parent)
+  : Pipeline::Future(imageData, parent), m_future(future)
+{
+  setOperators(operators);
+  connect(m_future, &PipelineWorker::Future::finished, this,
+          &Pipeline::Future::finished);
+  connect(m_future, &PipelineWorker::Future::canceled, this,
+          &Pipeline::Future::canceled);
+
+  connect(m_future, &PipelineWorker::Future::finished, future,
+          [future]() { future->deleteLater(); });
+
+  connect(m_future, &PipelineWorker::Future::canceled, future,
+          [future]() { future->deleteLater(); });
+}
+
 ThreadPipelineExecutor::ThreadPipelineExecutor(Pipeline* pipeline)
   : PipelineExecutor(pipeline)
 {
   m_worker = new PipelineWorker(this);
 }
 
-void ThreadPipelineExecutor::execute(vtkDataObject* data,
-                                     QList<Operator*> operators, int start)
+Pipeline::Future* ThreadPipelineExecutor::execute(vtkDataObject* data,
+                                                  QList<Operator*> operators,
+                                                  int start, int end)
 {
-  operators = operators.mid(start);
-  executePipelineBranch(data, operators);
+  if (end == -1) {
+    end = operators.size();
+  }
+
+  operators = operators.mid(start, end - start);
+
+  // Cancel any running operators. TODO in the future we should be able to add
+  // operators to end of a running pipeline.
+  if (!m_future.isNull() && m_future->isRunning()) {
+    m_future->cancel();
+  }
+
+  auto copy = data->NewInstance();
+  copy->DeepCopy(data);
+
+  if (operators.isEmpty()) {
+    emit pipeline()->finished();
+    auto future = new Pipeline::Future();
+    future->setResult(vtkImageData::SafeDownCast(copy));
+    copy->FastDelete();
+    QTimer::singleShot(0, [future] { emit future->finished(); });
+    return future;
+  }
+
+  m_future = m_worker->run(copy, operators);
+  auto future = new PipelineFutureThreadedInternal(
+    vtkImageData::SafeDownCast(copy), operators, m_future.data(), this);
+  copy->FastDelete();
+
+  return future;
 }
 
 void ThreadPipelineExecutor::cancel(std::function<void()> canceled)
 {
-  if (m_future) {
+  if (!m_future.isNull()) {
     if (canceled) {
       connect(m_future, &PipelineWorker::Future::canceled, canceled);
     }
@@ -87,7 +146,7 @@ void ThreadPipelineExecutor::cancel(std::function<void()> canceled)
 
 bool ThreadPipelineExecutor::cancel(Operator* op)
 {
-  if (m_future && m_future->isRunning()) {
+  if (!m_future.isNull() && m_future->isRunning()) {
     return m_future->cancel(op);
   }
 
@@ -96,113 +155,7 @@ bool ThreadPipelineExecutor::cancel(Operator* op)
 
 bool ThreadPipelineExecutor::isRunning()
 {
-  return m_future != nullptr && m_future->isRunning();
-}
-
-void ThreadPipelineExecutor::executePipelineBranch(vtkDataObject* data,
-                                                   QList<Operator*> operators)
-{
-  // Cancel any running operators. TODO in the future we should be able to add
-  // operators to end of a running pipeline.
-  if (m_future && m_future->isRunning()) {
-    m_future->cancel();
-  }
-
-  if (operators.isEmpty()) {
-    emit pipeline()->finished();
-    return;
-  }
-
-  auto copy = data->NewInstance();
-  copy->DeepCopy(data);
-  m_future = m_worker->run(copy, operators);
-  copy->FastDelete();
-  connect(m_future, &PipelineWorker::Future::finished, this,
-          &ThreadPipelineExecutor::pipelineBranchFinished);
-  connect(m_future, &PipelineWorker::Future::canceled, this,
-          &ThreadPipelineExecutor::pipelineBranchCanceled);
-}
-
-void ThreadPipelineExecutor::pipelineBranchFinished(bool result)
-{
-  PipelineWorker::Future* future =
-    qobject_cast<PipelineWorker::Future*>(sender());
-  if (result) {
-    auto lastOp = future->operators().last();
-
-    // TODO Need to refactor and moved to Pipeline ...
-    pipeline()->branchFinished(lastOp->dataSource(), future->result());
-
-    // Do we have another branch to execute
-    if (lastOp->childDataSource() != nullptr) {
-      execute(lastOp->childDataSource());
-      // Ensure the pipeline has ownership of the transformed data source.
-      lastOp->childDataSource()->setParent(pipeline());
-    }
-    // The pipeline execution is finished
-    else {
-      emit pipeline()->finished();
-    }
-
-    future->deleteLater();
-    if (m_future == future) {
-      m_future = nullptr;
-    }
-  }
-}
-
-void ThreadPipelineExecutor::pipelineBranchCanceled()
-{
-  auto future = qobject_cast<PipelineWorker::Future*>(sender());
-  future->deleteLater();
-  if (m_future == future) {
-    m_future = nullptr;
-  }
-}
-
-Pipeline::ImageFuture* ThreadPipelineExecutor::getCopyOfImagePriorTo(
-  Operator* op)
-{
-  auto operators = pipeline()->dataSource()->operators();
-
-  // If the op is new then we can just use the "Output" data source.
-  if (!operators.isEmpty() && op->isNew()) {
-    auto transformed = pipeline()->transformedDataSource();
-    auto dataObject = vtkImageData::SafeDownCast(transformed->copyData());
-    auto imageFuture = new Pipeline::ImageFuture(op, dataObject);
-    dataObject->FastDelete();
-    // Delay emitting signal until next event loop
-    QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
-
-    return imageFuture;
-  } else {
-    auto dataSource = pipeline()->dataSource();
-    auto dataObject = vtkImageData::SafeDownCast(dataSource->copyData());
-    if (operators.size() > 1) {
-      auto index = operators.indexOf(op);
-      // Only run operators if we have some to run
-      if (index > 0) {
-        auto future = m_worker->run(dataObject, operators.mid(0, index));
-        auto imageFuture = new Pipeline::ImageFuture(op, dataObject, future);
-        dataObject->FastDelete();
-
-        return imageFuture;
-      }
-    }
-
-    auto imageFuture = new Pipeline::ImageFuture(op, dataObject);
-    dataObject->FastDelete();
-
-    // Delay emitting signal until next event loop
-    QTimer::singleShot(0, [=] { emit imageFuture->finished(true); });
-
-    return imageFuture;
-  }
-}
-
-void ThreadPipelineExecutor::execute(DataSource* dataSource)
-{
-  execute(dataSource->dataObject(), dataSource->operators());
+  return !m_future.isNull() && m_future->isRunning();
 }
 
 const char* ORIGINAL_FILENAME = "original.emd";
@@ -299,13 +252,14 @@ docker::DockerStopInvocation* DockerPipelineExecutor::stop(
   return stopInvocation;
 }
 
-void DockerPipelineExecutor::execute(vtkDataObject* data,
-                                     QList<Operator*> operators, int start)
+Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
+                                                  QList<Operator*> operators,
+                                                  int start, int end)
 {
   m_temporaryDir.reset(new QTemporaryDir());
   if (!m_temporaryDir->isValid()) {
     displayError("Directory Error", "Unable to create temporary directory.");
-    return;
+    return nullptr;
   }
 
   // First generate a state file for this pipeline
@@ -329,7 +283,7 @@ void DockerPipelineExecutor::execute(vtkDataObject* data,
   QFile stateFile(QDir(m_temporaryDir->path()).filePath(STATE_FILENAME));
   if (!stateFile.open(QIODevice::WriteOnly)) {
     displayError("Write Error", "Couldn't open state file for write.");
-    return;
+    return nullptr;
   }
   stateFile.write(QJsonDocument(state).toJson());
   stateFile.close();
@@ -341,7 +295,7 @@ void DockerPipelineExecutor::execute(vtkDataObject* data,
   if (!emdFile.write(dataFilePath.toLatin1().data(), imageData)) {
     displayError("Write Error",
                  QString("Unable to write data at: %1").arg(dataFilePath));
-    return;
+    return nullptr;
   }
 
   // Start reading progress updates
@@ -429,12 +383,7 @@ void DockerPipelineExecutor::execute(vtkDataObject* data,
   } else {
     startContainer();
   }
-}
 
-Pipeline::ImageFuture* DockerPipelineExecutor::getCopyOfImagePriorTo(
-  Operator* op)
-{
-  // TODO
   return nullptr;
 }
 
@@ -635,7 +584,8 @@ void DockerPipelineExecutor::pipelineFinished()
   EmdFormat emdFile;
   vtkNew<vtkImageData> transformedData;
   if (emdFile.read(transformedFilePath.toLatin1().data(), transformedData)) {
-    pipeline()->branchFinished(pipeline()->dataSource(), transformedData);
+    // TODO
+    // pipeline()->branchFinished(pipeline()->dataSource(), transformedData);
     emit pipeline()->finished();
   } else {
     displayError("Read Error", QString("Unable to load transformed data at: %1")

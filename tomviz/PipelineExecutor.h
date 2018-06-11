@@ -55,9 +55,9 @@ public:
 
   /// Execute list of operators on a give data source. start is the index into
   /// the operator list indicating where the execution should start.
-  virtual void execute(vtkDataObject* data, QList<Operator*> operators,
-                       int start = 0) = 0;
-  virtual Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op) = 0;
+  virtual Pipeline::Future* execute(vtkDataObject* data,
+                                    QList<Operator*> operators, int start = 0,
+                                    int end = -1) = 0;
   virtual void cancel(std::function<void()> canceled) = 0;
   bool cancel(Operator* op);
   virtual bool isRunning() = 0;
@@ -72,26 +72,15 @@ class ThreadPipelineExecutor : public PipelineExecutor
 
 public:
   ThreadPipelineExecutor(Pipeline* pipeline);
-  void execute(vtkDataObject* data, QList<Operator*> operators, int start = 0);
-  Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op);
+  Pipeline::Future* execute(vtkDataObject* data, QList<Operator*> operators,
+                            int start = 0, int end = -1);
   void cancel(std::function<void()> canceled);
   bool cancel(Operator* op);
   bool isRunning();
 
-private slots:
-  void executePipelineBranch(vtkDataObject* data, QList<Operator*> operators);
-
-  /// The pipeline worker is finished with this branch.
-  void pipelineBranchFinished(bool result);
-
-  /// The pipeline worker has been canceled
-  void pipelineBranchCanceled();
-
-  void execute(DataSource* dataSource);
-
 private:
   PipelineWorker* m_worker;
-  PipelineWorker::Future* m_future = nullptr;
+  QPointer<PipelineWorker::Future> m_future;
 };
 
 class ProgressReader;
@@ -103,8 +92,8 @@ class DockerPipelineExecutor : public PipelineExecutor
 public:
   DockerPipelineExecutor(Pipeline* pipeline);
   ~DockerPipelineExecutor();
-  void execute(vtkDataObject* data, QList<Operator*> operators, int start = 0);
-  Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op);
+  Pipeline::Future* execute(vtkDataObject* data, QList<Operator*> operators,
+                            int start = 0, int end = -1);
   void cancel(std::function<void()> canceled);
   bool cancel(Operator* op);
   bool isRunning();

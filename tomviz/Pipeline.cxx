@@ -105,50 +105,99 @@ Pipeline::Pipeline(DataSource* dataSource, QObject* parent) : QObject(parent)
 
 Pipeline::~Pipeline() = default;
 
-void Pipeline::execute()
+Pipeline::Future* Pipeline::execute()
 {
-  execute(m_data);
+  return execute(m_data);
 }
 
-void Pipeline::startedEditingOp(Operator* op)
+class PipelineFutureInternal : public Pipeline::Future
 {
-  ++m_editingOperators;
-  op->setEditing();
+  Q_OBJECT
+public:
+  PipelineFutureInternal(Pipeline* pipeline, Pipeline::Future* future,
+                         bool recurse = true);
+
+private:
+  Pipeline* m_pipeline;
+  QScopedPointer<Pipeline::Future> m_currentBranchFuture;
+  bool m_recurse = false;
+
+  void setCurrentFuture(Pipeline::Future* future);
+};
+
+PipelineFutureInternal::PipelineFutureInternal(Pipeline* pipeline,
+                                               Pipeline::Future* future,
+                                               bool recurse)
+  : m_pipeline(pipeline), m_recurse(recurse)
+{
+
+  setCurrentFuture(future);
 }
 
-void Pipeline::finishedEditingOp(Operator* op)
+void PipelineFutureInternal::setCurrentFuture(Pipeline::Future* future)
 {
-  if (op->isModified()) {
-    op->resetState();
-  } else {
-    op->setComplete();
-  }
 
-  if (m_editingOperators > 0) {
-    --m_editingOperators;
-    if (m_editingOperators == 0 && !isRunning()) {
-      execute(op->dataSource());
+  m_currentBranchFuture.reset(future);
+
+  connect(future, &Pipeline::Future::finished, future, [future, this]() {
+    auto operators = future->operators();
+    // operators will be empty if we are returning the original data set ( i.e
+    // no operators have been run.
+    if (operators.isEmpty()) {
+      setResult(future->result());
+      emit finished();
+      return;
     }
-  }
+
+    auto lastOp = future->operators().last();
+
+    // Do we have another branch to execute
+    if (m_recurse && lastOp->childDataSource() != nullptr &&
+        !lastOp->childDataSource()->operators().isEmpty()) {
+      auto child = lastOp->childDataSource();
+      auto newFuture = m_pipeline->executor()->execute(child->dataObject(),
+                                                       child->operators());
+      this->setCurrentFuture(newFuture);
+      // Ensure the pipeline has ownership of the transformed data source.
+      lastOp->childDataSource()->setParent(m_pipeline);
+    }
+    // The pipeline execution is finished
+    else {
+      setResult(future->result());
+      emit finished();
+    }
+  });
 }
 
-void Pipeline::execute(DataSource* ds, Operator* start)
+Pipeline::Future* Pipeline::execute(DataSource* dataSource)
+{
+  if (beingEdited(dataSource)) {
+    return emptyFuture();
+  }
+
+  auto operators = dataSource->operators();
+  Operator* firstModifiedOperator = operators.first();
+  if (!isModified(dataSource, &firstModifiedOperator)) {
+    return emptyFuture();
+  }
+
+  return execute(dataSource, firstModifiedOperator);
+}
+
+Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start)
+{
+  return execute(ds, start, nullptr);
+}
+
+Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
+                                    Operator* end)
 {
   if (paused()) {
-    return;
+    return emptyFuture();
   }
 
   if (ds == nullptr) {
     ds = m_data;
-  }
-
-  if (beingEdited(ds)) {
-    return;
-  }
-
-  Operator* firstModifiedOperator;
-  if (!isModified(ds, &firstModifiedOperator)) {
-    return;
   }
 
   m_operatorsDeleted = false;
@@ -158,12 +207,15 @@ void Pipeline::execute(DataSource* ds, Operator* start)
   auto operators = ds->operators();
   if (operators.isEmpty()) {
     emit finished();
-    return;
+    auto future = new Pipeline::Future();
+    // Delay emitting signal until next event loop
+    QTimer::singleShot(0, [future, ds] { emit future->finished(); });
+    return future;
   }
   int startIndex = 0;
   // We currently only support running the last operator or the entire pipeline.
   if (start == nullptr) {
-    start = firstModifiedOperator;
+    start = operators.first();
   }
   if (start == ds->operators().last() && start->isNew()) {
     // See if we have any canceled operators in the pipeline, if so we have to
@@ -185,7 +237,54 @@ void Pipeline::execute(DataSource* ds, Operator* start)
     }
   }
 
-  m_executor->execute(ds->dataObject(), operators, startIndex);
+  // If we have been asked to run until the new operator we can just return
+  // the transformed data.
+  if (!operators.isEmpty() && end != nullptr && end->isNew()) {
+    auto transformed = transformedDataSource();
+    auto dataObject = vtkImageData::SafeDownCast(transformed->copyData());
+    auto future = new Pipeline::Future(dataObject);
+    dataObject->FastDelete();
+    // Delay emitting signal until next event loop
+    QTimer::singleShot(0, [=] { emit future->finished(); });
+
+    return future;
+  }
+
+  auto endIndex = -1;
+  if (end != nullptr) {
+    endIndex = operators.indexOf(end);
+  }
+
+  auto branchFuture =
+    m_executor->execute(ds->dataObject(), operators, startIndex, endIndex);
+  connect(branchFuture, &Pipeline::Future::finished, this,
+          &Pipeline::branchFinished);
+  auto pipelineFuture =
+    new PipelineFutureInternal(this, branchFuture, operators.last() == end);
+
+  return pipelineFuture;
+}
+
+void Pipeline::startedEditingOp(Operator* op)
+{
+  ++m_editingOperators;
+  op->setEditing();
+}
+
+void Pipeline::finishedEditingOp(Operator* op)
+{
+  if (op->isModified()) {
+    op->resetState();
+  } else {
+    op->setComplete();
+  }
+
+  if (m_editingOperators > 0) {
+    --m_editingOperators;
+    if (m_editingOperators == 0 && !isRunning()) {
+      execute(op->dataSource())->deleteWhenFinished();
+    }
+  }
 }
 
 bool Pipeline::beingEdited(DataSource* ds) const
@@ -237,8 +336,17 @@ bool Pipeline::isModified(DataSource* datasource, Operator** start) const
   return false;
 }
 
-void Pipeline::branchFinished(DataSource* start, vtkDataObject* newData)
+void Pipeline::branchFinished()
 {
+  auto future = qobject_cast<Pipeline::Future*>(sender());
+  auto operators = future->operators();
+  // operators will be empty if the original data source was returned as the
+  // result. i.e. no operators have been run.
+  if (operators.isEmpty()) {
+    return;
+  }
+  auto start = future->operators().first()->dataSource();
+  auto newData = future->result();
   // We only add the transformed child data source if the last operator
   // doesn't already have an explicit child data source i.e.
   // hasChildDataSource is true.
@@ -306,14 +414,14 @@ void Pipeline::resume(bool run)
 {
   m_paused = false;
   if (run) {
-    execute();
+    execute()->deleteWhenFinished();
   }
 }
 
 void Pipeline::resume(DataSource* at)
 {
   m_paused = false;
-  execute(at);
+  execute(at)->deleteWhenFinished();
 }
 
 void Pipeline::cancel(std::function<void()> canceled)
@@ -361,12 +469,14 @@ Operator* Pipeline::findTransformedDataSourceOperator(DataSource* dataSource)
 
 void Pipeline::addDataSource(DataSource* dataSource)
 {
-  connect(dataSource, &DataSource::operatorAdded,
-          [this](Operator* op) { execute(op->dataSource(), op); });
+  connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
+    execute(op->dataSource())->deleteWhenFinished();
+  });
   // Wire up transformModified to execute pipeline
   connect(dataSource, &DataSource::operatorAdded, [this](Operator* op) {
     // Extract out source and execute all.
-    connect(op, &Operator::transformModified, this, [this]() { execute(); });
+    connect(op, &Operator::transformModified, this,
+            [this]() { execute()->deleteWhenFinished(); });
 
     // Ensure that new child data source signals are correctly wired up.
     connect(op,
@@ -424,11 +534,11 @@ void Pipeline::addDataSource(DataSource* dataSource)
       // If we can't safely cancel the execution then trigger the rerun of the
       // pipeline.
       if (!m_executor->cancel(op)) {
-        execute(op->dataSource());
+        execute(op->dataSource())->deleteWhenFinished();
       }
     } else {
       // Trigger the pipeline to run
-      execute(op->dataSource());
+      execute(op->dataSource())->deleteWhenFinished();
     }
   });
 }
@@ -452,32 +562,6 @@ void Pipeline::addDefaultModules(DataSource* dataSource)
   auto pqview = tomviz::convert<pqView*>(view);
   pqview->resetDisplay();
   pqview->render();
-}
-
-Pipeline::ImageFuture::ImageFuture(Operator* op, vtkImageData* imageData,
-                                   PipelineWorker::Future* future,
-                                   QObject* parent)
-  : QObject(parent), m_operator(op), m_imageData(imageData), m_future(future)
-{
-
-  if (m_future != nullptr) {
-    connect(m_future, &PipelineWorker::Future::finished, this,
-            &Pipeline::ImageFuture::finished);
-    connect(m_future, &PipelineWorker::Future::canceled, this,
-            &Pipeline::ImageFuture::canceled);
-  }
-}
-
-Pipeline::ImageFuture::~ImageFuture()
-{
-  if (m_future != nullptr) {
-    m_future->deleteLater();
-  }
-}
-
-Pipeline::ImageFuture* Pipeline::getCopyOfImagePriorTo(Operator* op)
-{
-  return m_executor->getCopyOfImagePriorTo(op);
 }
 
 DataSource* Pipeline::transformedDataSource(DataSource* ds)
@@ -504,5 +588,21 @@ void Pipeline::setExecutionMode(ExecutionMode executor)
     m_executor.reset(new ThreadPipelineExecutor(this));
   }
 }
+
+Pipeline::Future* Pipeline::emptyFuture()
+{
+  auto future = new Pipeline::Future();
+  // Delay emitting signal until next event loop
+  QTimer::singleShot(0, [future] { emit future->finished(); });
+
+  return future;
+}
+
+void Pipeline::Future::deleteWhenFinished()
+{
+  connect(this, &Pipeline::Future::finished, this, [this]() { deleteLater(); });
+}
+
+#include "Pipeline.moc"
 
 } // namespace tomviz

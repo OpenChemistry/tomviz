@@ -19,7 +19,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
         # Get Tilt angles
         tilt_angles = utils.get_tilt_angles(dataset)
-
+        print(tilt_angles)
         tiltSeries = utils.get_array(dataset)
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
