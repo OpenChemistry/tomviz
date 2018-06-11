@@ -59,10 +59,13 @@
 
 #include <QButtonGroup>
 #include <QComboBox>
+#include <QFileDialog>
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
@@ -409,6 +412,19 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   viewControls->addWidget(resetCamera);
 
   v->addLayout(viewControls);
+
+  // Add the save/load alignment buttons
+  QHBoxLayout* ioControls = new QHBoxLayout;
+  QPushButton* saveBtn =
+    new QPushButton(QIcon::fromTheme("document-save"), "Save Alignments");
+  connect(saveBtn, &QPushButton::clicked, this, &AlignWidget::onSaveClicked);
+  ioControls->addWidget(saveBtn);
+  QPushButton* loadBtn =
+    new QPushButton(QIcon::fromTheme("document-open"), "Load Alignments");
+  connect(loadBtn, &QPushButton::clicked, this, &AlignWidget::onLoadClicked);
+  ioControls->addWidget(loadBtn);
+
+  v->addLayout(ioControls);
 
   static const double sliderRange[2] = { 0., 100. };
 
@@ -906,6 +922,117 @@ void AlignWidget::zoomToSelectionFinished()
   m_widget->GetRenderWindow()->GetInteractor()->RemoveObserver(m_observerId);
   m_widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
     m_defaultInteractorStyle.Get());
+}
+
+void AlignWidget::onSaveClicked()
+{
+  QStringList filters;
+  filters << "JSON Files (*.json)";
+  QFileDialog dialog;
+  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setNameFilters(filters);
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
+  QString fileName = dialogToFileName(&dialog);
+  if (fileName.isEmpty()) {
+    return;
+  }
+  if (!fileName.endsWith(".json")) {
+    fileName = QString("%1.json").arg(fileName);
+  }
+
+  QJsonArray offsetArray;
+  foreach (auto offset, m_offsets) {
+    QJsonArray thisOffset;
+    thisOffset << offset[0] << offset[1];
+    offsetArray << thisOffset;
+  }
+
+  QFile file(fileName);
+  file.open(QIODevice::WriteOnly);
+  file.write(QJsonDocument(offsetArray).toJson());
+  file.close();
+}
+
+void AlignWidget::onLoadClicked()
+{
+  QStringList filters;
+  filters << "JSON Files (*.json)";
+  QFileDialog dialog;
+  dialog.setFileMode(QFileDialog::ExistingFile);
+  dialog.setNameFilters(filters);
+  QString fileName = dialogToFileName(&dialog);
+  if (fileName.isEmpty()) {
+    return;
+  }
+  QFile file(fileName);
+  file.open(QIODevice::ReadOnly);
+  QJsonDocument offsetDocument = QJsonDocument::fromJson(file.readAll());
+  file.close();
+
+  if (offsetDocument.isNull()) {
+    loadAlignError(QString("The file does not contain valid json data"));
+    return;
+  }
+
+  if (!offsetDocument.isArray()) {
+    loadAlignError(QString("The file does not contain valid alignment data"));
+    return;
+  }
+
+  QJsonArray offsetArray = offsetDocument.array();
+
+  if (offsetArray.size() != m_offsets.size()) {
+    loadAlignError(
+      QString("The alignment data is not compatible with this dataset"));
+    return;
+  }
+
+  // Validate
+  QVector<vtkVector2i> offsets;
+  offsets.resize(m_offsets.size());
+
+  for (int i = 0; i < offsetArray.size(); ++i) {
+    QJsonValue element = offsetArray[i];
+    if (!element.isArray()) {
+      loadAlignError(QString("The file does not contain valid alignment data"));
+      return;
+    }
+    QJsonArray offset = element.toArray();
+    if (offset.size() != 2) {
+      loadAlignError(QString("The file does not contain valid alignment data"));
+      return;
+    }
+    offsets[i][0] = offset[0].toInt();
+    offsets[i][1] = offset[1].toInt();
+  }
+  m_operator->setDraftAlignOffsets(offsets);
+  m_offsets = offsets;
+
+  for (int i = 0; i < m_offsets.size(); ++i) {
+    m_offsetTable->item(i, 1)->setText(QString::number(m_offsets[i][0]));
+    m_offsetTable->item(i, 2)->setText(QString::number(m_offsets[i][1]));
+  }
+}
+
+QString AlignWidget::dialogToFileName(QFileDialog* dialog) const
+{
+  auto res = dialog->exec();
+  if (res != QDialog::Accepted) {
+    return QString();
+  }
+  QStringList fileNames = dialog->selectedFiles();
+  if (fileNames.size() < 1) {
+    return QString();
+  }
+  QString fileName = fileNames[0];
+  return fileName;
+}
+
+void AlignWidget::loadAlignError(QString msg) const
+{
+  QWidget* thisPtr = (QWidget*)this;
+  int res = QMessageBox::critical(thisPtr, tr("Error loading alignments"), msg,
+                                  QMessageBox::Ok, QMessageBox::Ok);
 }
 
 void AlignWidget::applyChangesToOperator()
