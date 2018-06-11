@@ -225,6 +225,9 @@ void EditOperatorDialog::onOkay()
 
 void EditOperatorDialog::onCancel()
 {
+  if (this->Internals->Op == nullptr) {
+    return;
+  }
   if (this->Internals->needsToBeAdded) {
     // Since for now operators can't be programmatically removed
     // (i.e. all removals are assumed to be initialized
@@ -264,17 +267,19 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
   dialogButtons->button(QDialogButtonBox::Ok)->setDefault(false);
 
   this->setLayout(vLayout);
-  this->connect(dialogButtons, SIGNAL(accepted()), SLOT(accept()));
-  this->connect(dialogButtons, SIGNAL(rejected()), SLOT(reject()));
 
-  this->connect(dialogButtons->button(QDialogButtonBox::Apply),
-                SIGNAL(clicked()), this, SLOT(onApply()));
+  connect(dialogButtons, &QDialogButtonBox::accepted, this,
+          &EditOperatorDialog::accept);
+  connect(dialogButtons, &QDialogButtonBox::rejected, this,
+          &EditOperatorDialog::reject);
+  connect(dialogButtons->button(QDialogButtonBox::Apply), &QPushButton::clicked,
+          this, &EditOperatorDialog::onApply);
 
-  this->connect(this, &EditOperatorDialog::rejected, this,
-                &EditOperatorDialog::onCancel);
+  connect(this, &EditOperatorDialog::rejected, this,
+          &EditOperatorDialog::onCancel);
 
-  this->connect(this, &EditOperatorDialog::accepted, this,
-                &EditOperatorDialog::onOkay);
+  connect(this, &EditOperatorDialog::accepted, this,
+          &EditOperatorDialog::onOkay);
 }
 
 void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)
