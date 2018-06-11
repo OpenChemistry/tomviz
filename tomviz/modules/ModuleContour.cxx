@@ -22,8 +22,10 @@
 #include "Operator.h"
 #include "Utilities.h"
 
+#include "pqApplicationCore.h"
 #include "pqColorChooserButton.h"
 #include "pqPropertyLinks.h"
+#include "pqSettings.h"
 #include "pqSignalAdaptors.h"
 #include "pqWidgetRangeDomain.h"
 
@@ -42,16 +44,19 @@
 #include "vtkSmartPointer.h"
 
 #include <algorithm>
+#include <cfloat>
 #include <functional>
 #include <string>
 #include <vector>
 
 #include <QCheckBox>
-#include <QFormLayout>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QLabel>
+#include <QLayout>
 #include <QPointer>
+#include <QSettings>
 
 namespace tomviz {
 
@@ -102,6 +107,28 @@ bool ModuleContour::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PreInitializeProxy(m_contourFilter);
   vtkSMPropertyHelper(m_contourFilter, "Input").Set(producer);
   vtkSMPropertyHelper(m_contourFilter, "ComputeScalars", /*quiet*/ true).Set(1);
+
+  double contourStartVal = dataSource()->initialContourValue();
+
+  // Check if this start value has been set by the outside (i. e., by double
+  // clicking on the histogram). If not, then we will set it ourselves.
+  if (contourStartVal == DBL_MAX) {
+    // Get the range to calculate an initial value for the contour
+    double range[2];
+    dataSource()->getRange(range);
+
+    // Use 2/3 of the range for the initial value of the contour
+    contourStartVal = 2.0 / 3.0 * (range[1] - range[0]) + range[0];
+  } else {
+    // We will only use the initial contour value once. Reset it after
+    // its first use.
+    dataSource()->setInitialContourValue(DBL_MAX);
+  }
+
+  vtkSMPropertyHelper(m_contourFilter, "ContourValues").Set(contourStartVal);
+
+  // Ask the user if they would like to change the initial value for the contour
+  userSelectInitialContourValue();
 
   controller->PostInitializeProxy(m_contourFilter);
   controller->RegisterPipelineProxy(m_contourFilter);
@@ -166,6 +193,11 @@ void ModuleContour::setIsoValue(double value)
 {
   vtkSMPropertyHelper(m_contourFilter, "ContourValues").Set(value);
   m_contourFilter->UpdateVTKObjects();
+}
+
+double ModuleContour::getIsoValue() const
+{
+  return vtkSMPropertyHelper(m_contourFilter, "ContourValues").GetAsDouble();
 }
 
 void ModuleContour::addToPanel(QWidget* panel)
@@ -443,6 +475,54 @@ void ModuleContour::setUseSolidColor(const bool useSolidColor)
   d->UseSolidColor = useSolidColor;
   updateColorMap();
   emit renderNeeded();
+}
+
+void ModuleContour::userSelectInitialContourValue()
+{
+  QSettings* settings = pqApplicationCore::instance()->settings();
+  bool userConfirmInitialValue =
+    settings->value("ContourSettings.UserConfirmInitialValue", true).toBool();
+
+  if (!userConfirmInitialValue)
+    return;
+
+  QDialog dialog;
+  QVBoxLayout layout;
+  dialog.setLayout(&layout);
+  dialog.setWindowTitle(tr("Initial Contour Value"));
+
+  // Get the range of the dataset
+  double range[2];
+  dataSource()->getRange(range);
+
+  DoubleSliderWidget w(true);
+  w.setMinimum(range[0]);
+  w.setMaximum(range[1]);
+
+  // We want to round this to two decimal places
+  double isoValue = getIsoValue();
+  isoValue = QString::number(isoValue, 'f', 2).toDouble();
+  w.setValue(isoValue);
+
+  w.setLineEditWidth(50);
+
+  layout.addWidget(&w);
+
+  QCheckBox dontAskAgain("Don't ask again");
+  layout.addWidget(&dontAskAgain);
+  layout.setAlignment(&dontAskAgain, Qt::AlignCenter);
+
+  QDialogButtonBox ok(QDialogButtonBox::Ok);
+  layout.addWidget(&ok);
+  layout.setAlignment(&ok, Qt::AlignCenter);
+  connect(&ok, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+
+  dialog.exec();
+
+  if (dontAskAgain.isChecked())
+    settings->setValue("ContourSettings.UserConfirmInitialValue", false);
+
+  setIsoValue(w.value());
 }
 
 } // end of namespace tomviz
