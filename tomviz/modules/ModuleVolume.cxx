@@ -41,6 +41,7 @@
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -105,9 +106,14 @@ void ModuleVolume::updateColorMap()
       m_volumeProperty->SetGradientOpacity(gradientOpacityMap());
       break;
     case (Module::GRADIENT_2D):
-      propertyMode = vtkVolumeProperty::TF_2D;
       if (transferFunction2D() && transferFunction2D()->GetExtent()[1] > 0) {
+        propertyMode = vtkVolumeProperty::TF_2D;
         m_volumeProperty->SetTransferFunction2D(transferFunction2D());
+      } else {
+        QTimer::singleShot(3000, [this]() {
+          this->updateColorMap();
+          emit this->renderNeeded();
+        });
       }
       break;
   }

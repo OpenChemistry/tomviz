@@ -286,7 +286,11 @@ void vtkChartTransfer2DEditor::SetDefaultBoxPosition(
   vtkSmartPointer<vtkTransferFunctionBoxItem> item, const double xRange[2],
   const double yRange[2])
 {
-  const double deltaX = (xRange[1] - xRange[0]) / 3.0;
-  const double deltaY = (yRange[1] - yRange[0]) / 3.0;
-  item->SetBox(xRange[0] + deltaX, yRange[0] + deltaY, deltaX, deltaY);
+  if (this->Transfer2DBox->GetWidth() < 0) {
+    const double deltaX = (xRange[1] - xRange[0]) / 3.0;
+    const double deltaY = (yRange[1] - yRange[0]) / 3.0;
+    item->SetBox(xRange[0] + deltaX, yRange[0] + deltaY, deltaX, deltaY);
+    // set the box in the source directly since the callback may not be set up
+    *this->Transfer2DBox = item->GetBox();
+  }
 }

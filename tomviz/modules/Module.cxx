@@ -70,8 +70,8 @@ public:
       m_detachedOpacityMap =
         vtkSMPropertyHelper(m_detachedColorMap, "ScalarOpacityFunction")
           .GetAsProxy();
-      // These were the default box params in the UI.
-      m_detachedTransferFunction2DBox.Set(1, 1, 19, 19);
+      // The widget interprests negative width as uninitialized.
+      m_detachedTransferFunction2DBox.Set(0, 0, -1, -1);
     }
     return m_detachedColorMap;
   }
@@ -212,6 +212,13 @@ QJsonObject Module::serialize() const
     if (m_useDetachedColorMap) {
       json["colorOpacityMap"] = tomviz::serialize(d->detachedColorMap());
       json["gradientOpacityMap"] = tomviz::serialize(gradientOpacityMap());
+      QJsonObject boxJson;
+      auto transfer2DBox = d->detachedTransferFunction2DBox();
+      boxJson["x"] = transfer2DBox->GetX();
+      boxJson["y"] = transfer2DBox->GetY();
+      boxJson["width"] = transfer2DBox->GetWidth();
+      boxJson["height"] = transfer2DBox->GetHeight();
+      json["colorMap2DBox"] = boxJson;
     }
   }
   json["properties"] = props;
@@ -235,6 +242,13 @@ bool Module::deserialize(const QJsonObject& json)
       if (json.contains("gradientOpacityMap")) {
         auto gradientOpacityMap = json["gradientOpacityMap"].toObject();
         tomviz::deserialize(d->m_gradientOpacityMap, gradientOpacityMap);
+      }
+      if (json.contains("colorMap2DBox")) {
+        auto boxJson = json["colorMap2DBox"].toObject();
+        auto transfer2DBox = d->detachedTransferFunction2DBox();
+        transfer2DBox->Set(boxJson["x"].toDouble(), boxJson["y"].toDouble(),
+                           boxJson["width"].toDouble(),
+                           boxJson["height"].toDouble());
       }
     }
     setUseDetachedColorMap(useDetachedColorMap);
