@@ -46,6 +46,7 @@ public:
   bool deserialize(const QJsonObject& json) override;
   bool isColorMapNeeded() const override { return true; }
   bool isOpacityMapped() const override { return m_mapOpacity; }
+  bool areScalarsMapped() const override;
   void addToPanel(QWidget* panel) override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;

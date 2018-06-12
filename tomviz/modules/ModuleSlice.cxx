@@ -462,4 +462,10 @@ vtkSMProxy* ModuleSlice::getProxyForString(const std::string& str)
     return nullptr;
   }
 }
+
+bool ModuleSlice::areScalarsMapped() const
+{
+  vtkSMPropertyHelper mapScalars(m_propsPanelProxy->GetProperty("MapScalars"));
+  return mapScalars.GetAsInt() != 0;
+}
 } // namespace tomviz

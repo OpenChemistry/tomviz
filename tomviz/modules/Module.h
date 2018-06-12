@@ -89,6 +89,7 @@ public:
   /// true.
   virtual bool isColorMapNeeded() const { return false; }
   virtual bool isOpacityMapped() const { return false; }
+  virtual bool areScalarsMapped() const { return false; }
 
   /// Flag indicating whether the module uses a "detached" color map or not.
   /// This is only applicable when isColorMapNeeded() return true.
