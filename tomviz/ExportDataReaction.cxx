@@ -95,9 +95,15 @@ void ExportDataReaction::onTriggered()
     filters << "STL Files (*.stl)"
             << "VTK PolyData files(*.vtp)";
   } else if (exportType == "Image") {
-    filters << "PNG Files (*.png)"
-            << "JPEG Files (*.jpg *.jpeg)"
-            << "TIFF Files (*.tiff)"
+    // Default to png if we apply the colormap, tiff if exporting raw data
+    if (module->areScalarsMapped()) {
+      filters << "PNG Files (*.png)"
+              << "TIFF Files (*.tiff)";
+    } else {
+      filters << "TIFF Files (*.tiff)"
+              << "PNG Files (*.png)";
+    }
+    filters << "JPEG Files (*.jpg *.jpeg)"
             << "VTK ImageData Files (*.vti)";
   }
 
@@ -232,8 +238,7 @@ bool ExportDataReaction::exportData(const QString& filename)
     // If we are exporting a slice colored with the colormap to an image
     // file format, there is no need for type conversions or warning the user.
     if (m_module->areScalarsMapped() &&
-        (m_module->label() == "Slice" ||
-         m_module->label() == "Orthogonal Slice")) {
+        m_module->exportDataTypeString() == "Image") {
       bool res = exportColoredSlice(imageData, writer, filename);
       if (res) {
         return true;
