@@ -27,12 +27,15 @@
 #include <pqSettings.h>
 #include <vtkArrayCalculator.h>
 #include <vtkDataArray.h>
+#include <vtkImageCast.h>
 #include <vtkImageData.h>
+#include <vtkImageMapToColors.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMWriterFactory.h>
+#include <vtkScalarsToColors.h>
 #include <vtkSmartPointer.h>
 #include <vtkTIFFWriter.h>
 #include <vtkTrivialProducer.h>
@@ -146,6 +149,33 @@ void convertToUnsignedChar(vtkDataArray* outArray, int nComps, int nTuples,
 }
 } // namespace
 
+bool ExportDataReaction::exportColoredSlice(vtkImageData* imageData,
+                                            vtkSMSourceProxy* proxy,
+                                            const QString& filename)
+{
+  auto colorMap = m_module->colorMap();
+  auto stc = vtkScalarsToColors::SafeDownCast(colorMap->GetClientSideObject());
+
+  vtkNew<vtkImageMapToColors> imageSource;
+  imageSource->SetLookupTable(stc);
+  imageSource->SetInputData(imageData);
+
+  vtkNew<vtkImageCast> castFilter;
+  castFilter->SetOutputScalarTypeToUnsignedChar();
+  castFilter->SetInputConnection(imageSource->GetOutputPort());
+  castFilter->Update();
+
+  auto writer = vtkImageWriter::SafeDownCast(proxy->GetClientSideObject());
+  if (!writer) {
+    return false;
+  }
+  writer->GetClassName();
+  writer->SetFileName(filename.toLatin1().data());
+  writer->SetInputConnection(castFilter->GetOutputPort());
+  writer->Write();
+  return true;
+}
+
 bool ExportDataReaction::exportData(const QString& filename)
 {
   auto server = pqActiveObjects::instance().activeServer();
@@ -199,6 +229,16 @@ bool ExportDataReaction::exportData(const QString& filename)
     vtkImageData::SafeDownCast(trivialProducer->GetOutputDataObject(0));
   QSettings* settings = pqApplicationCore::instance()->settings();
   if (imageData) {
+    // If we are exporting a slice colored with the colormap to an image
+    // file format, there is no need for type conversions or warning the user.
+    if (m_module->areScalarsMapped() &&
+        (m_module->label() == "Slice" ||
+         m_module->label() == "Orthogonal Slice")) {
+      bool res = exportColoredSlice(imageData, writer, filename);
+      if (res) {
+        return true;
+      }
+    }
     auto imageType = imageData->GetPointData()->GetScalars()->GetDataType();
     if (strcmp(writerName, "vtkTIFFWriter") == 0 && imageType == VTK_DOUBLE) {
       vtkNew<vtkImageData> fImage;

@@ -18,6 +18,9 @@
 
 #include <pqReaction.h>
 
+class vtkImageData;
+class vtkSMSourceProxy;
+
 namespace tomviz {
 class Module;
 
@@ -33,6 +36,8 @@ public:
 
   /// Save the file
   bool exportData(const QString& filename);
+  bool exportColoredSlice(vtkImageData* imageData, vtkSMSourceProxy* writer,
+                          const QString& filename);
 
 protected:
   /// Called when the data changes to enable/disable the menu item
