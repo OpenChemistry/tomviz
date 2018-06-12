@@ -114,8 +114,9 @@ class PipelineFutureInternal : public Pipeline::Future
 {
   Q_OBJECT
 public:
-  PipelineFutureInternal(Pipeline* pipeline, Pipeline::Future* future,
-                         bool recurse = true);
+  PipelineFutureInternal(Pipeline* pipeline, QList<Operator*> operators,
+                         Pipeline::Future* future, bool recurse = true,
+                         QObject* parent = nullptr);
 
 private:
   Pipeline* m_pipeline;
@@ -126,11 +127,12 @@ private:
 };
 
 PipelineFutureInternal::PipelineFutureInternal(Pipeline* pipeline,
+                                               QList<Operator*> operators,
                                                Pipeline::Future* future,
-                                               bool recurse)
-  : m_pipeline(pipeline), m_recurse(recurse)
+                                               bool recurse, QObject* parent)
+  : Pipeline::Future(operators, parent), m_pipeline(pipeline),
+    m_recurse(recurse)
 {
-
   setCurrentFuture(future);
 }
 
@@ -259,8 +261,8 @@ Pipeline::Future* Pipeline::execute(DataSource* ds, Operator* start,
     m_executor->execute(ds->dataObject(), operators, startIndex, endIndex);
   connect(branchFuture, &Pipeline::Future::finished, this,
           &Pipeline::branchFinished);
-  auto pipelineFuture =
-    new PipelineFutureInternal(this, branchFuture, operators.last() == end);
+  auto pipelineFuture = new PipelineFutureInternal(
+    this, branchFuture->operators(), branchFuture, operators.last() == end);
 
   return pipelineFuture;
 }
@@ -589,6 +591,11 @@ void Pipeline::setExecutionMode(ExecutionMode executor)
   }
 }
 
+void Pipeline::Future::deleteWhenFinished()
+{
+  connect(this, &Pipeline::Future::finished, this, [this]() { deleteLater(); });
+}
+
 Pipeline::Future* Pipeline::emptyFuture()
 {
   auto future = new Pipeline::Future();
@@ -596,11 +603,6 @@ Pipeline::Future* Pipeline::emptyFuture()
   QTimer::singleShot(0, [future] { emit future->finished(); });
 
   return future;
-}
-
-void Pipeline::Future::deleteWhenFinished()
-{
-  connect(this, &Pipeline::Future::finished, this, [this]() { deleteLater(); });
 }
 
 #include "Pipeline.moc"

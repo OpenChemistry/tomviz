@@ -100,7 +100,6 @@ public:
 
 private slots:
   void error(QProcess::ProcessError error);
-  void progressReady(const QString& progressMessage);
   docker::DockerRunInvocation* run(const QString& image,
                                    const QStringList& args,
                                    const QMap<QString, QString>& bindMounts);
@@ -134,16 +133,29 @@ class ProgressReader : public QObject
   Q_OBJECT
 
 public:
-  ProgressReader(const QString& path);
+  ProgressReader(const QString& path, const QList<Operator*>& operators);
 
   virtual void start() = 0;
   virtual void stop() = 0;
 
 signals:
   void progressMessage(const QString& msg);
+  void operatorStarted(Operator* op);
+  void operatorFinished(Operator* op);
+  void operatorError(Operator* op, const QString& error);
+  void operatorCanceled(Operator* op);
+  void operatorProgressMaximum(Operator* op, int max);
+  void operatorProgressStep(Operator* op, int step);
+  void operatorProgressMessage(Operator* op, const QString& msg);
+  void pipelineStarted();
+  void pipelineFinished();
+
+private slots:
+  void progressReady(const QString& msg);
 
 protected:
   QString m_path;
+  QList<Operator*> m_operators;
 };
 
 class FilesProgressReader : public ProgressReader
@@ -151,7 +163,7 @@ class FilesProgressReader : public ProgressReader
   Q_OBJECT
 
 public:
-  FilesProgressReader(const QString& path);
+  FilesProgressReader(const QString& path, const QList<Operator*>& operators);
 
   void start();
   void stop();
@@ -167,7 +179,8 @@ class LocalSocketProgressReader : public ProgressReader
   Q_OBJECT
 
 public:
-  LocalSocketProgressReader(const QString& path);
+  LocalSocketProgressReader(const QString& path,
+                            const QList<Operator*>& operators);
 
   void start();
   void stop();

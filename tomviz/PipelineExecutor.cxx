@@ -21,6 +21,7 @@
 #include "EmdFormat.h"
 #include "ModuleManager.h"
 #include "Operator.h"
+#include "OperatorPython.h"
 #include "Pipeline.h"
 #include "PipelineExecutor.h"
 #include "PipelineWorker.h"
@@ -77,9 +78,8 @@ private:
 PipelineFutureThreadedInternal::PipelineFutureThreadedInternal(
   vtkImageData* imageData, QList<Operator*> operators,
   PipelineWorker::Future* future, QObject* parent)
-  : Pipeline::Future(imageData, parent), m_future(future)
+  : Pipeline::Future(imageData, operators, parent), m_future(future)
 {
-  setOperators(operators);
   connect(m_future, &PipelineWorker::Future::finished, this,
           &Pipeline::Future::finished);
   connect(m_future, &PipelineWorker::Future::canceled, this,
@@ -105,7 +105,6 @@ Pipeline::Future* ThreadPipelineExecutor::execute(vtkDataObject* data,
   if (end == -1) {
     end = operators.size();
   }
-
   operators = operators.mid(start, end - start);
 
   // Cancel any running operators. TODO in the future we should be able to add
@@ -164,6 +163,19 @@ const char* STATE_FILENAME = "state.tvsm";
 const char* CONTAINER_MOUNT = "/tomviz";
 const char* PROGRESS_PATH = "progress";
 
+class PipelineFutureDockerInternal : public Pipeline::Future
+{
+public:
+  PipelineFutureDockerInternal(QList<Operator*> operators,
+                               QObject* parent = nullptr);
+};
+
+PipelineFutureDockerInternal::PipelineFutureDockerInternal(
+  QList<Operator*> operators, QObject* parent)
+  : Pipeline::Future(operators, parent)
+{
+}
+
 DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
   : PipelineExecutor(pipeline), m_statusCheckTimer(new QTimer(this))
 {
@@ -172,9 +184,7 @@ DockerPipelineExecutor::DockerPipelineExecutor(Pipeline* pipeline)
           &DockerPipelineExecutor::checkContainerStatus);
 }
 
-DockerPipelineExecutor::~DockerPipelineExecutor()
-{
-}
+DockerPipelineExecutor::~DockerPipelineExecutor() = default;
 
 docker::DockerRunInvocation* DockerPipelineExecutor::run(
   const QString& image, const QStringList& args,
@@ -191,7 +201,6 @@ docker::DockerRunInvocation* DockerPipelineExecutor::run(
                            QString("Docker run failed with: %1\n\n%2")
                              .arg(exitCode)
                              .arg(runInvocation->stdErr()));
-              ;
               return;
             } else {
               m_containerId = runInvocation->containerId();
@@ -218,7 +227,6 @@ void DockerPipelineExecutor::remove(const QString& containerId)
                      QString("Docker remove failed with: %1\n\n%2")
                        .arg(exitCode)
                        .arg(removeInvocation->stdErr()));
-        return;
       }
       removeInvocation->deleteLater();
     });
@@ -237,6 +245,7 @@ docker::DockerStopInvocation* DockerPipelineExecutor::stop(
       if (exitCode) {
         displayError("Docker Error",
                      QString("Docker stop failed with: %1").arg(exitCode));
+        stopInvocation->deleteLater();
         return;
       }
 
@@ -256,10 +265,16 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
                                                   QList<Operator*> operators,
                                                   int start, int end)
 {
+  if (end == -1) {
+    end = operators.size();
+  }
+  operators = operators.mid(start, end - start);
+
   m_temporaryDir.reset(new QTemporaryDir());
   if (!m_temporaryDir->isValid()) {
     displayError("Directory Error", "Unable to create temporary directory.");
-    return nullptr;
+    return Pipeline::emptyFuture();
+    ;
   }
 
   // First generate a state file for this pipeline
@@ -283,7 +298,7 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
   QFile stateFile(QDir(m_temporaryDir->path()).filePath(STATE_FILENAME));
   if (!stateFile.open(QIODevice::WriteOnly)) {
     displayError("Write Error", "Couldn't open state file for write.");
-    return nullptr;
+    return Pipeline::emptyFuture();
   }
   stateFile.write(QJsonDocument(state).toJson());
   stateFile.close();
@@ -295,7 +310,7 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
   if (!emdFile.write(dataFilePath.toLatin1().data(), imageData)) {
     displayError("Write Error",
                  QString("Unable to write data at: %1").arg(dataFilePath));
-    return nullptr;
+    return Pipeline::emptyFuture();
   }
 
   // Start reading progress updates
@@ -307,15 +322,53 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
 // https://github.com/docker/for-mac/issues/483
 #if defined(Q_OS_WIN) || defined(Q_OS_MAC)
   QString progressMode("files");
-  m_progressReader.reset(new FilesProgressReader(progressPath));
+  m_progressReader.reset(new FilesProgressReader(progressPath, operators));
 #else
   QString progressMode("socket");
-  m_progressReader.reset(new LocalSocketProgressReader(progressPath));
+  m_progressReader.reset(
+    new LocalSocketProgressReader(progressPath, operators));
 #endif
 
+  auto future = new PipelineFutureDockerInternal(operators);
   m_progressReader->start();
-  connect(m_progressReader.data(), &ProgressReader::progressMessage, this,
-          &DockerPipelineExecutor::progressReady);
+  connect(m_progressReader.data(), &ProgressReader::operatorStarted, this,
+          &DockerPipelineExecutor::operatorStarted);
+  connect(m_progressReader.data(), &ProgressReader::operatorFinished, this,
+          &DockerPipelineExecutor::operatorFinished);
+  connect(m_progressReader.data(), &ProgressReader::operatorError, this,
+          &DockerPipelineExecutor::operatorError);
+  // connect(m_progressReader.data(), &ProgressReader::operatorCanceled,
+  //    this, &DockerPipelineExecutor::operatorCanceled);
+  connect(m_progressReader.data(), &ProgressReader::operatorProgressMaximum,
+          this, &DockerPipelineExecutor::operatorProgressMaximum);
+  connect(m_progressReader.data(), &ProgressReader::operatorProgressStep, this,
+          &DockerPipelineExecutor::operatorProgressStep);
+  connect(m_progressReader.data(), &ProgressReader::operatorProgressMessage,
+          this, &DockerPipelineExecutor::operatorProgressMessage);
+  connect(m_progressReader.data(), &ProgressReader::pipelineStarted, this,
+          &DockerPipelineExecutor::pipelineStarted);
+  connect(m_progressReader.data(), &ProgressReader::pipelineFinished, this,
+          [this, future]() {
+            auto transformedFilePath =
+              QDir(m_temporaryDir->path()).filePath(TRANSFORM_FILENAME);
+            EmdFormat transformedEmdFile;
+            vtkSmartPointer<vtkDataObject> transformedData =
+              vtkImageData::New();
+            vtkImageData* transformedImageData =
+              vtkImageData::SafeDownCast(transformedData.Get());
+            if (transformedEmdFile.read(transformedFilePath.toLatin1().data(),
+                                        transformedImageData)) {
+              future->setResult(transformedImageData);
+            } else {
+              displayError("Read Error",
+                           QString("Unable to load transformed data at: %1")
+                             .arg(transformedFilePath));
+            }
+            emit future->finished();
+            transformedImageData->FastDelete();
+          });
+  connect(future, &Pipeline::Future::finished, this,
+          &DockerPipelineExecutor::pipelineFinished);
 
   // We are now ready to run the pipeline
   auto mount = QDir(CONTAINER_MOUNT);
@@ -374,7 +427,6 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
                              QString("Docker pull failed with: %1\n\n%2")
                                .arg(exitCode)
                                .arg(pullInvocation->stdErr()));
-                return;
               } else {
                 startContainer();
               }
@@ -384,7 +436,7 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
     startContainer();
   }
 
-  return nullptr;
+  return future;
 }
 
 void DockerPipelineExecutor::cancel(std::function<void()> canceled)
@@ -402,7 +454,7 @@ void DockerPipelineExecutor::cancel(std::function<void()> canceled)
 
 bool DockerPipelineExecutor::cancel(Operator* op)
 {
-
+  Q_UNUSED(op);
   // Simply stop the container.
   stop(m_containerId);
 
@@ -485,66 +537,46 @@ void DockerPipelineExecutor::checkContainerStatus()
           });
 }
 
-void DockerPipelineExecutor::progressReady(const QString& progressMessage)
-{
-  if (progressMessage.isEmpty()) {
-    return;
-  }
-
-  auto progressDoc = QJsonDocument::fromJson(progressMessage.toLatin1());
-  if (!progressDoc.isObject()) {
-    qCritical()
-      << QString("Invalid progress message '%1'").arg(QString(progressMessage));
-    return;
-  }
-  auto progressObj = progressDoc.object();
-  auto type = progressObj["type"].toString();
-
-  // Operator progress
-  if (progressObj.contains("operator")) {
-    auto opIndex = progressObj["operator"].toInt();
-    auto op = pipeline()->dataSource()->operators()[opIndex];
-
-    if (type == "started") {
-      operatorStarted(op);
-    } else if (type == "finished") {
-      operatorFinished(op);
-    } else if (type == "error") {
-      auto error = progressObj["error"].toString();
-      operatorError(op, error);
-    } else if (type == "progress.maximum") {
-      auto value = progressObj["value"].toInt();
-      operatorProgressMaximum(op, value);
-    } else if (type == "progress.step") {
-      auto value = progressObj["value"].toInt();
-      operatorProgressStep(op, value);
-    } else if (type == "progress.message") {
-      auto value = progressObj["value"].toInt();
-      operatorProgressMaximum(op, value);
-    } else {
-      qCritical() << QString("Unrecognized message type: %1").arg(type);
-    }
-  }
-  // Overall pipeline progress
-  else {
-    if (type == "started") {
-      pipelineStarted();
-    } else if (type == "finished") {
-      pipelineFinished();
-    } else {
-      qCritical() << QString("Unrecognized message type: %1").arg(type);
-    }
-  }
-}
-
 void DockerPipelineExecutor::operatorStarted(Operator* op)
 {
   op->setState(OperatorState::Running);
   emit op->transformingStarted();
+
+  auto pythonOp = qobject_cast<OperatorPython*>(op);
+  Q_ASSERT(pythonOp != nullptr);
+
+  pythonOp->createChildDataSources();
 }
 
 void DockerPipelineExecutor::operatorFinished(Operator* op)
 {
+  QDir temp(m_temporaryDir->path());
+  auto operatorIndex = pipeline()->dataSource()->operators().indexOf(op);
+  QDir operatorPath(temp.filePath(QString::number(operatorIndex)));
+  // See it we have any child data source updates
+  if (operatorPath.exists()) {
+    QMap<QString, vtkSmartPointer<vtkDataObject>> childOutput;
+    foreach (const QFileInfo& fileInfo, operatorPath.entryInfoList()) {
+
+      auto name = fileInfo.baseName();
+      EmdFormat emdFile;
+      vtkNew<vtkImageData> childData;
+      if (emdFile.read(fileInfo.filePath().toLatin1().data(), childData)) {
+        childOutput[name] = childData;
+        emit pipeline()->finished();
+      } else {
+        displayError(
+          "Read Error",
+          QString("Unable to load child data at: %1").arg(fileInfo.filePath()));
+        break;
+      }
+    }
+
+    auto pythonOp = qobject_cast<OperatorPython*>(op);
+    Q_ASSERT(pythonOp != nullptr);
+    pythonOp->updateChildDataSources(childOutput);
+  }
+
   op->setState(OperatorState::Complete);
   emit op->transformingDone(TransformResult::Complete);
 }
@@ -579,19 +611,6 @@ void DockerPipelineExecutor::pipelineStarted()
 
 void DockerPipelineExecutor::pipelineFinished()
 {
-  auto transformedFilePath =
-    QDir(m_temporaryDir->path()).filePath(TRANSFORM_FILENAME);
-  EmdFormat emdFile;
-  vtkNew<vtkImageData> transformedData;
-  if (emdFile.read(transformedFilePath.toLatin1().data(), transformedData)) {
-    // TODO
-    // pipeline()->branchFinished(pipeline()->dataSource(), transformedData);
-    emit pipeline()->finished();
-  } else {
-    displayError("Read Error", QString("Unable to load transformed data at: %1")
-                                 .arg(transformedFilePath));
-  }
-
   // Cancel status checks
   m_statusCheckTimer->stop();
 
@@ -617,12 +636,69 @@ void DockerPipelineExecutor::displayError(const QString& title,
   qCritical() << msg;
 }
 
-ProgressReader::ProgressReader(const QString& path) : m_path(path)
+ProgressReader::ProgressReader(const QString& path,
+                               const QList<Operator*>& operators)
+  : m_path(path), m_operators(operators)
 {
+  connect(this, &ProgressReader::progressMessage, this,
+          &ProgressReader::progressReady);
 }
 
-FilesProgressReader::FilesProgressReader(const QString& path)
-  : ProgressReader(path), m_pathWatcher(new QFileSystemWatcher())
+void ProgressReader::progressReady(const QString& progressMessage)
+{
+  if (progressMessage.isEmpty()) {
+    return;
+  }
+
+  auto progressDoc = QJsonDocument::fromJson(progressMessage.toLatin1());
+  if (!progressDoc.isObject()) {
+    qCritical()
+      << QString("Invalid progress message '%1'").arg(QString(progressMessage));
+    return;
+  }
+  auto progressObj = progressDoc.object();
+  auto type = progressObj["type"].toString();
+
+  // Operator progress
+  if (progressObj.contains("operator")) {
+    auto opIndex = progressObj["operator"].toInt();
+    auto op = m_operators[opIndex];
+
+    if (type == "started") {
+      emit operatorStarted(op);
+    } else if (type == "finished") {
+      emit operatorFinished(op);
+    } else if (type == "error") {
+      auto error = progressObj["error"].toString();
+      emit operatorError(op, error);
+    } else if (type == "progress.maximum") {
+      auto value = progressObj["value"].toInt();
+      emit operatorProgressMaximum(op, value);
+    } else if (type == "progress.step") {
+      auto value = progressObj["value"].toInt();
+      emit operatorProgressStep(op, value);
+    } else if (type == "progress.message") {
+      auto value = progressObj["value"].toInt();
+      emit operatorProgressMaximum(op, value);
+    } else {
+      qCritical() << QString("Unrecognized message type: %1").arg(type);
+    }
+  }
+  // Overall pipeline progress
+  else {
+    if (type == "started") {
+      emit pipelineStarted();
+    } else if (type == "finished") {
+      emit pipelineFinished();
+    } else {
+      qCritical() << QString("Unrecognized message type: %1").arg(type);
+    }
+  }
+}
+
+FilesProgressReader::FilesProgressReader(const QString& path,
+                                         const QList<Operator*>& operators)
+  : ProgressReader(path, operators), m_pathWatcher(new QFileSystemWatcher())
 {
   QDir dir(m_path);
   if (!dir.exists()) {
@@ -671,8 +747,9 @@ void FilesProgressReader::checkForProgressFiles()
   }
 }
 
-LocalSocketProgressReader::LocalSocketProgressReader(const QString& path)
-  : ProgressReader(path), m_localServer(new QLocalServer())
+LocalSocketProgressReader::LocalSocketProgressReader(
+  const QString& path, const QList<Operator*>& operators)
+  : ProgressReader(path, operators), m_localServer(new QLocalServer())
 {
 
   auto server = m_localServer.data();

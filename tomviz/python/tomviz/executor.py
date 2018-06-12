@@ -1,7 +1,7 @@
 import h5py
 import importlib
 import os
-import numpy
+import numpy as np
 import logging
 import tempfile
 import sys
@@ -9,6 +9,8 @@ import socket
 import abc
 import stat
 import json
+import six
+import errno
 
 from tqdm import tqdm
 
@@ -336,7 +338,11 @@ def _read_emd(path):
                          tomography[dim].attrs['name'][0],
                          tomography[dim].attrs['name'][0]))
 
-        return (tomography['data'][:], dims)
+        data = tomography['data'][:]
+        # Ensure the right shape. Note sure if their is a more effient way of
+        # doing this.
+        data = np.reshape(data.flatten(), data.shape[::-1], order='F')
+        return (data, dims)
 
 
 def _write_emd(path, data, dims):
@@ -351,30 +357,70 @@ def _write_emd(path, data, dims):
         # add dimension vectors
         for (dataset_name, value, name, units) in dims:
             d = tomography_group.create_dataset(dataset_name, (2,))
-            d.attrs['name'] = numpy.string_(name)
-            d.attrs['units'] = numpy.string_(units)
+            d.attrs['name'] = np.string_(name)
+            d.attrs['units'] = np.string_(units)
             d[:] = value
 
 
-def _execute_transform(operator_label, transform, arguments, input, progress):
+class DataObjectArray(np.ndarray):
+    """
+    ndarray subclass that allows us to attach data object metadata.
+    """
+    def __new__(cls, array):
+        obj = np.asarray(array).view(cls)
+        # add the metadata
+        obj.tilt_angles = None
+        obj.is_volume = False
+        # Finally, we must return the newly created object:
+        return obj
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+        self.tilt_angles = getattr(obj, 'tilt_angles', None)
+        self.is_volume = getattr(obj, 'is_volume', None)
+
+
+def _patch_utils():
     # Monkey patch tomviz.utils to make get_scalars a no-op and allow use to
     # retrieve the transformed data from set_scalars. I know this is a little
-    # yucky! And yes I know this is not thread safe!
+    # yucky!
     utils.get_scalars = lambda d: d
     utils.get_array = lambda d: d
-    # Container to allow use to capture the transformed data, in Python 3 we
-    # could use nonlocal :-)
-    transformed_scalars_container = {}
 
     def _set_scalars(dataobject, new_scalars):
-        transformed_scalars_container['data'] = new_scalars
+        dataobject[...] = DataObjectArray(new_scalars)
 
     def _set_array(dataobject, new_scalars):
-        transformed_scalars_container['data'] = new_scalars
+        if (dataobject.dtype != new_scalars.dtype):
+            dataobject.dtype = new_scalars.dtype
+
+        if dataobject.shape != new_scalars.shape:
+            dataobject.resize(new_scalars.shape, refcheck=False)
+
+        dataobject[...] = new_scalars
+
+    def _set_tilt_angles(dataobject, tilt_angles):
+        dataobject.tilt_angles = tilt_angles
+
+    def _get_tilt_angles(dataobject):
+        return dataobject.tilt_angles
+
+    def _make_child_dataset(reference_dataset):
+        return np.empty_like(reference_dataset)
+
+    def _mark_as_volume(dataobject):
+        dataobject.is_volume = True
 
     utils.set_scalars = _set_scalars
     utils.set_array = _set_array
+    utils.set_tilt_angles = _set_tilt_angles
+    utils.get_tilt_angles = _get_tilt_angles
+    utils.make_child_dataset = _make_child_dataset
+    utils.mark_as_volume = _mark_as_volume
 
+
+def _execute_transform(operator_label, transform, arguments, input, progress):
     # Update the progress attribute to an instance that will work outside the
     # application and give use a nice progress information.
     spinner = None
@@ -388,20 +434,34 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
     logger.info('Executing \'%s\' operator' % operator_label)
     if not supports_progress:
         print('Operator doesn\'t support progress updates.')
-    # Now run the operator
-    transform(input, **arguments)
+
+    result = None
+    # Special case for SetTiltAngles
+    if operator_label == 'SetTiltAngles':
+        # Set the tilt angles so downstream operator can retrieve them
+        # arguments the tilt angles.
+        utils.set_tilt_angles(input, np.array(arguments['angles']))
+    else:
+        # Now run the operator
+        result = transform(input, **arguments)
     if spinner is not None:
         update_spinner.cancel()
         spinner.finish()
 
     logger.info('Execution complete.')
 
-    return transformed_scalars_container['data']
+    return result
 
 
 def _load_transform_functions(operators):
     transform_functions = []
     for operator in operators:
+        # Special case for tilt angles operator
+        if operator['type'] == 'SetTiltAngles':
+            # Just save the angles
+            transform_functions.append((operator['type'], None,
+                                        {'angles': operator['angles']}))
+            continue
 
         if 'script' not in operator:
             raise Exception(
@@ -424,9 +484,36 @@ def _load_transform_functions(operators):
     return transform_functions
 
 
+def _write_child_data(result, operator_index, output_file_path, dims):
+    for (label, dataobject) in six.iteritems(result):
+        # Only need write out data is the operator made updates.
+        output_path = '.'
+        if output_file_path is not None:
+            output_path = os.path.dirname(output_file_path)
+
+        # Make a directory with the operator index
+        operator_path = os.path.join(output_path, str(operator_index))
+        try:
+            os.makedirs(operator_path)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and os.path.isdir(operator_path):
+                pass
+            else:
+                raise
+
+        # Now write out the data
+        child_data_path = os.path.join(operator_path, '%s.emd' % label)
+        _write_emd(child_data_path, dataobject, dims)
+
+
 def execute(operators, start_at, data_file_path, output_file_path,
             progress_method, progress_path):
     data, dims = _read_emd(data_file_path)
+
+    _patch_utils()
+
+    # Replace the numpy array with our subclass so we can attach metadata.
+    data = DataObjectArray(data)
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)
@@ -435,8 +522,15 @@ def execute(operators, start_at, data_file_path, output_file_path,
         operator_index = start_at
         for (label, transform, arguments) in transforms:
             progress.started(operator_index)
-            data = _execute_transform(label, transform, arguments, data,
-                                      progress)
+            result = _execute_transform(label, transform,
+                                        arguments, data,
+                                        progress)
+
+            # Do we have any child data sources we need to write out?
+            if result is not None:
+                _write_child_data(result, operator_index,
+                                  output_file_path, dims)
+
             progress.finished(operator_index)
             operator_index += 1
 

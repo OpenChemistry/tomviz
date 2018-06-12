@@ -106,6 +106,8 @@ public:
   ExecutionMode executionMode() { return m_executionMode; };
   PipelineExecutor* executor() { return m_executor.data(); };
 
+  static Future* emptyFuture();
+
 public slots:
   /// Execute the entire pipeline, starting at the root data source. Note the
   /// returned Future instance needs to be cleaned up. deleteWhenFinished() can
@@ -150,7 +152,6 @@ private:
   void addDataSource(DataSource* dataSource);
   bool beingEdited(DataSource* dataSource) const;
   bool isModified(DataSource* dataSource, Operator** firstModified) const;
-  Future* emptyFuture();
 
   DataSource* m_data;
   bool m_paused = false;
@@ -168,10 +169,13 @@ class Pipeline::Future : public QObject
 public:
   friend class ThreadPipelineExecutor;
 
-  Future(vtkImageData* result, QObject* parent = nullptr) : QObject(parent)
-  {
-    m_imageData = result;
-  };
+  Future(vtkImageData* result, QObject* parent = nullptr)
+    : QObject(parent), m_imageData(result){};
+  Future(vtkImageData* result, QList<Operator*> operators,
+         QObject* parent = nullptr)
+    : QObject(parent), m_imageData(result), m_operators(operators){};
+  Future(QList<Operator*> operators, QObject* parent = nullptr)
+    : QObject(parent), m_operators(operators){};
   Future(QObject* parent = nullptr) : QObject(parent){};
   virtual ~Future() override{};
 
@@ -179,7 +183,6 @@ public:
   void setResult(vtkSmartPointer<vtkImageData> result) { m_imageData = result; }
   void setResult(vtkImageData* result) { m_imageData = result; }
   QList<Operator*> operators() { return m_operators; }
-  void setOperators(QList<Operator*> operators) { m_operators = operators; }
   void deleteWhenFinished();
 
 signals:
