@@ -59,6 +59,7 @@
 
 #include <QButtonGroup>
 #include <QComboBox>
+#include <QDebug>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QGridLayout>
@@ -948,7 +949,10 @@ void AlignWidget::onSaveClicked()
   }
 
   QFile file(fileName);
-  file.open(QIODevice::WriteOnly);
+  if (!file.open(QIODevice::WriteOnly)) {
+    qCritical() << QString("Error opening file for writing: %1").arg(fileName);
+    return;
+  }
   file.write(QJsonDocument(offsetArray).toJson());
   file.close();
 }
@@ -965,7 +969,10 @@ void AlignWidget::onLoadClicked()
     return;
   }
   QFile file(fileName);
-  file.open(QIODevice::ReadOnly);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qCritical() << QString("Error opening file for reading: %1").arg(fileName);
+    return;
+  }
   QJsonDocument offsetDocument = QJsonDocument::fromJson(file.readAll());
   file.close();
 
@@ -1031,8 +1038,8 @@ QString AlignWidget::dialogToFileName(QFileDialog* dialog) const
 void AlignWidget::loadAlignError(QString msg) const
 {
   QWidget* thisPtr = (QWidget*)this;
-  int res = QMessageBox::critical(thisPtr, tr("Error loading alignments"), msg,
-                                  QMessageBox::Ok, QMessageBox::Ok);
+  QMessageBox::critical(thisPtr, tr("Error loading alignments"), msg,
+                        QMessageBox::Ok, QMessageBox::Ok);
 }
 
 void AlignWidget::applyChangesToOperator()
