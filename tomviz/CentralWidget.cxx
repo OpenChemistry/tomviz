@@ -332,6 +332,7 @@ void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
 
   m_ui->histogram2DWidget->setHistogram(output);
   m_ui->histogram2DWidget->addFunctionItem(m_transfer2DModel->getDefault());
+  refreshHistogram();
 }
 
 vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)

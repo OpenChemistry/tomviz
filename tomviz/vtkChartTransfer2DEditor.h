@@ -18,11 +18,11 @@
  * @brief Generates and edits a 2D transfer function (vtkImageData) based
  * on its current vtkTransferFunctionBoxItems.
  *
- * Rasters a set of vtkTransferFunctionBoxItems on a vtkImageData instance
- * which is used as a 2D transfer function. Each of the BoxItems contains
- * one color and one opacity transfer functions.
+ * \todo Only supports a single vtkTransferFunctionBoxItem.  The rasterization
+ * code can be called in a loop over multiple items, but this currently only
+ * supports a single item.
  *
- * \todo Currently rasterization occurs in this class. In order to support
+ * \todo Currently rasterization occurs in Utilities. In order to support
  * additional shapes (besides rectangular boxes), much of this functionality
  * should be moved into the item class.
  */
@@ -62,10 +62,9 @@ public:
   /**
    * Allocates and clears Transfer2D to be updated, the dimenions of the
    * histogram (e.g. number of bins) are used as dimensions for the transfer
-   * function. Calls RasterBoxItem for the actual update. It invokes
-   * vtkCommand::EndEvent after the update, this signal should be caught by
-   * handlers using the generated 2DTF.
-   * \sa vtkChartTransfer2DEditor::RasterBoxItem
+   * function. Calls Utilities::rasterTransferFunction2DBox for the actual
+   * update. It invokes vtkCommand::EndEvent after the update, this signal
+   * should be caught by handlers using the generated 2DTF.
    */
   void GenerateTransfer2D();
 
@@ -102,12 +101,6 @@ protected:
    */
   void SetDefaultBoxPosition(vtkSmartPointer<vtkTransferFunctionBoxItem> item,
                              const double xRange[2], const double yRange[2]);
-
-  /**
-   * Rasterize the transfer function defined within the BoxItem into
-   * the current vtkImageData holding the 2D transfer function (Transfer2D).
-   */
-  void RasterBoxItem(vtkTransferFunctionBoxItem* boxItem);
 
   bool IsInitialized();
 

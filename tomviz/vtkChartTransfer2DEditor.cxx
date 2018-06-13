@@ -30,6 +30,8 @@
 #include <vtkTransferFunctionBoxItem.h>
 #include <vtkTooltipItem.h>
 
+#include "Utilities.h"
+
 vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
   vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
@@ -125,7 +127,10 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
       continue;
     }
 
-    RasterBoxItem(boxItem);
+    *this->Transfer2DBox = boxItem->GetBox();
+    tomviz::rasterTransferFunction2DBox(
+      Histogram->GetInputImageData(), boxItem->GetBox(), Transfer2D,
+      boxItem->GetColorFunction(), boxItem->GetOpacityFunction());
   }
 
   InvokeEvent(vtkCommand::EndEvent);
@@ -134,64 +139,6 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
 vtkPlot* vtkChartTransfer2DEditor::GetPlot(vtkIdType index)
 {
   return vtkChartXY::GetPlot(index);
-}
-
-void vtkChartTransfer2DEditor::RasterBoxItem(
-  vtkTransferFunctionBoxItem* boxItem)
-{
-  const vtkRectd& box = boxItem->GetBox();
-  *this->Transfer2DBox = box;
-  vtkPiecewiseFunction* opacFunc = boxItem->GetOpacityFunction();
-  vtkColorTransferFunction* colorFunc = boxItem->GetColorFunction();
-  if (!opacFunc || !colorFunc) {
-    vtkErrorMacro(<< "BoxItem contains invalid transfer functions!");
-    return;
-  }
-
-  double spacing[3];
-  Histogram->GetInputImageData()->GetSpacing(spacing);
-  const vtkIdType width = static_cast<vtkIdType>(box.GetWidth() / spacing[0]);
-  const vtkIdType height = static_cast<vtkIdType>(box.GetHeight() / spacing[1]);
-
-  if (width <= 0 || height <= 0) {
-    return;
-  }
-
-  // Assume color and opacity share the same data range
-  double range[2];
-  colorFunc->GetRange(range);
-
-  double* dataRGB = new double[width * 3];
-  colorFunc->GetTable(range[0], range[1], width, dataRGB);
-
-  double* dataAlpha = new double[width];
-  opacFunc->GetTable(range[0], range[1], width, dataAlpha);
-
-  // Copy the values into Transfer2D
-  vtkFloatArray* transfer =
-    vtkFloatArray::SafeDownCast(Transfer2D->GetPointData()->GetScalars());
-
-  const vtkIdType x0 = static_cast<vtkIdType>(box.GetX() / spacing[0]);
-  const vtkIdType y0 = static_cast<vtkIdType>(box.GetY() / spacing[1]);
-
-  int bins[3];
-  Transfer2D->GetDimensions(bins);
-
-  for (vtkIdType j = 0; j < height; j++)
-    for (vtkIdType i = 0; i < width; i++) {
-      double color[4];
-
-      color[0] = dataRGB[i * 3];
-      color[1] = dataRGB[i * 3 + 1];
-      color[2] = dataRGB[i * 3 + 2];
-      color[3] = dataAlpha[i];
-
-      const vtkIdType index = (y0 + j) * bins[1] + (x0 + i);
-      transfer->SetTuple(index, color);
-    }
-
-  delete[] dataRGB;
-  delete[] dataAlpha;
 }
 
 vtkIdType vtkChartTransfer2DEditor::AddFunction(
