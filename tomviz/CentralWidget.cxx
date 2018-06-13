@@ -16,9 +16,7 @@
 #include "CentralWidget.h"
 #include "ui_CentralWidget.h"
 
-#include <vtkFloatArray.h>
 #include <vtkImageData.h>
-#include <vtkIntArray.h>
 #include <vtkObjectFactory.h>
 #include <vtkPNGWriter.h>
 #include <vtkPiecewiseFunction.h>
@@ -40,173 +38,13 @@
 
 #include "AbstractDataModel.h"
 #include "ActiveObjects.h"
-#include "ComputeHistogram.h"
 #include "DataSource.h"
+#include "HistogramManager.h"
 #include "Module.h"
 #include "ModuleManager.h"
 #include "Utilities.h"
 
-Q_DECLARE_METATYPE(vtkSmartPointer<vtkImageData>)
-Q_DECLARE_METATYPE(vtkSmartPointer<vtkTable>)
-
 namespace tomviz {
-
-// This is just here for now - quick and dirty historgram calculations...
-void PopulateHistogram(vtkImageData* input, vtkTable* output)
-{
-  // The output table will have the twice the number of columns, they will be
-  // the x and y for input column. This is the bin centers, and the population.
-  double minmax[2] = { 0.0, 0.0 };
-
-  // This number of bins in the 2D histogram will also be used as the number of
-  // bins in the 2D transfer function for X (scalar value) and Y (gradient mag.)
-  const int numberOfBins = 256;
-
-  // Keep the array we are working on around even if the user shallow copies
-  // over the input image data by incrementing the reference count here.
-  vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
-  if (!arrayPtr) {
-    return;
-  }
-
-  // The bin values are the centers, extending +/- half an inc either side
-  arrayPtr->GetFiniteRange(minmax, -1);
-  if (minmax[0] == minmax[1]) {
-    minmax[1] = minmax[0] + 1.0;
-  }
-
-  double inc = (minmax[1] - minmax[0]) / (numberOfBins - 1);
-  double halfInc = inc / 2.0;
-  vtkSmartPointer<vtkFloatArray> extents =
-    vtkFloatArray::SafeDownCast(output->GetColumnByName("image_extents"));
-  if (!extents) {
-    extents = vtkSmartPointer<vtkFloatArray>::New();
-    extents->SetName("image_extents");
-  }
-  extents->SetNumberOfTuples(numberOfBins);
-  double min = minmax[0] + halfInc;
-  for (int j = 0; j < numberOfBins; ++j) {
-    extents->SetValue(j, min + j * inc);
-  }
-  vtkSmartPointer<vtkIntArray> populations =
-    vtkIntArray::SafeDownCast(output->GetColumnByName("image_pops"));
-  if (!populations) {
-    populations = vtkSmartPointer<vtkIntArray>::New();
-    populations->SetName("image_pops");
-  }
-  populations->SetNumberOfTuples(numberOfBins);
-  auto pops = static_cast<int*>(populations->GetVoidPointer(0));
-  for (int k = 0; k < numberOfBins; ++k) {
-    pops[k] = 0;
-  }
-  int invalid = 0;
-
-  switch (arrayPtr->GetDataType()) {
-    vtkTemplateMacro(tomviz::CalculateHistogram(
-      reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)),
-      arrayPtr->GetNumberOfTuples(), arrayPtr->GetNumberOfComponents(),
-      minmax[0], minmax[1], pops, 1.0 / inc, invalid));
-    default:
-      cout << "UpdateFromFile: Unknown data type" << endl;
-  }
-
-#ifndef NDEBUG
-  vtkIdType total = invalid;
-  for (int i = 0; i < numberOfBins; ++i)
-    total += pops[i];
-  assert(total == arrayPtr->GetNumberOfTuples());
-#endif
-  if (invalid) {
-    cout << "Warning: NaN or infinite value in dataset" << endl;
-  }
-
-  output->AddColumn(extents);
-  output->AddColumn(populations);
-}
-
-void Populate2DHistogram(vtkImageData* input, vtkImageData* output)
-{
-  double minmax[2] = { 0.0, 0.0 };
-  const int numberOfBins = 256;
-
-  // Keep the array we are working on around even if the user shallow copies
-  // over the input image data by incrementing the reference count here.
-  vtkSmartPointer<vtkDataArray> arrayPtr = input->GetPointData()->GetScalars();
-  if (!arrayPtr) {
-    return;
-  }
-
-  // The bin values are the centers, extending +/- half an inc either side
-  arrayPtr->GetFiniteRange(minmax, -1);
-  if (minmax[0] == minmax[1]) {
-    minmax[1] = minmax[0] + 1.0;
-  }
-
-  // vtkPlotHistogram2D expects the histogram array to be VTK_DOUBLE
-  output->SetDimensions(numberOfBins, numberOfBins, 1);
-  output->AllocateScalars(VTK_DOUBLE, 1);
-
-  // Get input parameters
-  int dim[3];
-  input->GetDimensions(dim);
-  int numComp = arrayPtr->GetNumberOfComponents();
-  double spacing[3];
-  input->GetSpacing(spacing);
-
-  switch (arrayPtr->GetDataType()) {
-    vtkTemplateMacro(tomviz::Calculate2DHistogram(
-      reinterpret_cast<VTK_TT*>(arrayPtr->GetVoidPointer(0)), dim, numComp,
-      minmax, output, spacing));
-    default:
-      cout << "UpdateFromFile: Unknown data type" << endl;
-  }
-}
-
-// This is a QObject that will be owned by the background thread
-// and use signals/slots to create histograms
-class HistogramMaker : public QObject
-{
-  Q_OBJECT
-
-  void run();
-
-public:
-  HistogramMaker(QObject* p = nullptr) : QObject(p) {}
-
-public slots:
-  void makeHistogram(vtkSmartPointer<vtkImageData> input,
-                     vtkSmartPointer<vtkTable> output);
-
-  void makeHistogram2D(vtkSmartPointer<vtkImageData> input,
-                       vtkSmartPointer<vtkImageData> output);
-
-signals:
-  void histogramDone(vtkSmartPointer<vtkImageData> image,
-                     vtkSmartPointer<vtkTable> output);
-
-  void histogram2DDone(vtkSmartPointer<vtkImageData> image,
-                       vtkSmartPointer<vtkImageData> output);
-};
-
-void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
-                                   vtkSmartPointer<vtkTable> output)
-{
-  // make the histogram and notify observers (the main thread) that it
-  // is done.
-  if (input && output) {
-    PopulateHistogram(input.Get(), output.Get());
-  }
-  emit histogramDone(input, output);
-}
-
-void HistogramMaker::makeHistogram2D(vtkSmartPointer<vtkImageData> input,
-                                     vtkSmartPointer<vtkImageData> output)
-{
-  if (input && output) {
-    Populate2DHistogram(input.Get(), output.Get());
-  }
-  emit histogram2DDone(input, output);
-}
 
 //////////////////////////////////////////////////////////////////////////////////
 /**
@@ -267,8 +105,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   : QWidget(parentObject, wflags), m_ui(new Ui::CentralWidget),
-    m_timer(new QTimer(this)), m_histogramGen(new HistogramMaker),
-    m_worker(new QThread(this)), m_transfer2DModel(new Transfer2DModel(this))
+    m_timer(new QTimer(this)), m_transfer2DModel(new Transfer2DModel(this))
 {
   m_ui->setupUi(this);
 
@@ -279,9 +116,6 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
 
   // Hide the layout tabs
   m_ui->tabbedMultiViewWidget->setTabVisibility(false);
-
-  qRegisterMetaType<vtkSmartPointer<vtkImageData>>();
-  qRegisterMetaType<vtkSmartPointer<vtkTable>>();
 
   // Setting the initial split size is trickier than you might expect, set the
   // stretch to favor the 3D widget, and then wait for layout to complete to
@@ -315,22 +149,12 @@ CentralWidget::CentralWidget(QWidget* parentObject, Qt::WindowFlags wflags)
   connect(m_ui->histogramWidget, SIGNAL(opacityChanged()),
           m_ui->histogram2DWidget, SLOT(updateTransfer2D()));
 
-  // Start the worker thread and give it ownership of the HistogramMaker
-  // object. Also connect the HistogramMaker's signal to the histogramReady
-  // slot on this object. This slot will be called on the GUI thread when the
-  // histogram has been finished on the background thread.
-  m_worker->start();
-  m_histogramGen->moveToThread(m_worker);
-  connect(m_histogramGen,
-          SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,
-                               vtkSmartPointer<vtkTable>)),
-          SLOT(histogramReady(vtkSmartPointer<vtkImageData>,
-                              vtkSmartPointer<vtkTable>)));
-  connect(m_histogramGen,
-          SIGNAL(histogram2DDone(vtkSmartPointer<vtkImageData>,
-                                 vtkSmartPointer<vtkImageData>)),
-          SLOT(histogram2DReady(vtkSmartPointer<vtkImageData>,
-                                vtkSmartPointer<vtkImageData>)));
+  auto& histogramMgr = HistogramManager::instance();
+  connect(&histogramMgr, &HistogramManager::histogramReady, this,
+          &CentralWidget::histogramReady);
+  connect(&histogramMgr, &HistogramManager::histogram2DReady, this,
+          &CentralWidget::histogram2DReady);
+
   m_timer->setInterval(200);
   m_timer->setSingleShot(true);
   connect(m_timer.data(), SIGNAL(timeout()), SLOT(refreshHistogram()));
@@ -342,17 +166,8 @@ CentralWidget::~CentralWidget()
 {
   auto settings = pqApplicationCore::instance()->settings();
   settings->setValue("Tomviz.centralSplitSizes", m_ui->splitter->saveState());
-  // disconnect all signals/slots
-  disconnect(m_histogramGen, nullptr, nullptr, nullptr);
-  // when the HistogramMaker is deleted, kill the background thread
-  connect(m_histogramGen, SIGNAL(destroyed()), m_worker, SLOT(quit()));
-  // I can't remember if deleteLater must be called on the owning thread
-  // play it safe and let the owning thread call it.
-  QMetaObject::invokeMethod(m_histogramGen, "deleteLater");
-  // Wait for the background thread to clean up the object and quit
-  while (m_worker->isRunning()) {
-    QCoreApplication::processEvents();
-  }
+  // Shut down the background thread used to create histograms.
+  HistogramManager::instance().finalize();
 }
 
 void CentralWidget::setActiveColorMapDataSource(DataSource* source)
@@ -454,35 +269,16 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   }
   m_ui->histogram2DWidget->updateTransfer2D();
 
-  // Check our cache, and use that if appopriate (or update it).
-  if (m_histogramCache.contains(image)) {
-    auto cachedTable = m_histogramCache[image];
-    if (cachedTable->GetMTime() > image->GetMTime()) {
-      setHistogramTable(cachedTable);
-      return;
-    } else {
-      // Need to recalculate, clear the plots, and remove the cached data.
-      m_histogramCache.remove(image);
-    }
-  }
-
-  // Calculate a histogram.
-  auto table = vtkSmartPointer<vtkTable>::New();
-  m_histogramCache[image] = table.Get();
   vtkSmartPointer<vtkImageData> const imageSP = image;
+  auto histogram = HistogramManager::instance().getHistogram(imageSP);
+  auto histogram2D = HistogramManager::instance().getHistogram2D(imageSP);
 
-  // This fakes a Qt signal to the background thread (without exposing the
-  // class internals as a signal).  The background thread will then call
-  // makeHistogram on the HistogramMaker object with the parameters we
-  // gave here.
-  QMetaObject::invokeMethod(m_histogramGen, "makeHistogram",
-                            Q_ARG(vtkSmartPointer<vtkImageData>, imageSP),
-                            Q_ARG(vtkSmartPointer<vtkTable>, table));
-
-  auto histogram = vtkSmartPointer<vtkImageData>::New();
-  QMetaObject::invokeMethod(m_histogramGen, "makeHistogram2D",
-                            Q_ARG(vtkSmartPointer<vtkImageData>, imageSP),
-                            Q_ARG(vtkSmartPointer<vtkImageData>, histogram));
+  if (histogram) {
+    setHistogramTable(histogram);
+  }
+  if (histogram2D) {
+    m_ui->histogram2DWidget->setHistogram(histogram2D);
+  }
 }
 
 void CentralWidget::onColorMapUpdated()
@@ -597,5 +393,3 @@ void CentralWidget::onTransferModeChanged(const int mode)
 }
 
 } // end of namespace tomviz
-
-#include "CentralWidget.moc"

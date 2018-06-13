@@ -61,6 +61,8 @@ set(SOURCES
   FileFormatManager.h
   GradientOpacityWidget.h
   GradientOpacityWidget.cxx
+  HistogramManager.h
+  HistogramManager.cxx
   HistogramWidget.h
   HistogramWidget.cxx
   Histogram2DWidget.h
