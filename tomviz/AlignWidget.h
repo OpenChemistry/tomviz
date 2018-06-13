@@ -27,6 +27,7 @@
 
 class QLabel;
 class QComboBox;
+class QFileDialog;
 class QSpinBox;
 class QTimer;
 class QKeyEvent;
@@ -91,6 +92,9 @@ protected slots:
 
   void sliceOffsetEdited(int slice, int offsetComponent);
 
+  void onSaveClicked();
+  void onLoadClicked();
+
 protected:
   vtkNew<vtkRenderer> m_renderer;
   vtkNew<vtkInteractorStyleRubberBand2D> m_defaultInteractorStyle;
@@ -127,6 +131,8 @@ protected:
 
 private:
   int restoreDraftDialog() const;
+  QString dialogToFileName(QFileDialog*) const;
+  void loadAlignError(QString) const;
 };
 } // namespace tomviz
 
