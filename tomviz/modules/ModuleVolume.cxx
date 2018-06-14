@@ -17,6 +17,7 @@
 #include "ModuleVolumeWidget.h"
 
 #include "DataSource.h"
+#include "HistogramManager.h"
 #include "Utilities.h"
 
 #include <vtkColorTransferFunction.h>
@@ -41,12 +42,31 @@
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
-#include <QTimer>
 #include <QVBoxLayout>
 
 namespace tomviz {
 
-ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject) {}
+ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
+{
+  connect(
+    &HistogramManager::instance(), &HistogramManager::histogram2DReady, this,
+    [=](vtkSmartPointer<vtkImageData> image,
+        vtkSmartPointer<vtkImageData> histogram2D) {
+      // Force the transfer function 2D to update.
+      if (image == vtkImageData::SafeDownCast(dataSource()->dataObject())) {
+        auto colorMap = vtkColorTransferFunction::SafeDownCast(
+          this->colorMap()->GetClientSideObject());
+        auto opacityMap = vtkPiecewiseFunction::SafeDownCast(
+          this->opacityMap()->GetClientSideObject());
+        tomviz::rasterTransferFunction2DBox(
+          histogram2D, *this->transferFunction2DBox(), transferFunction2D(),
+          colorMap, opacityMap);
+      }
+      // Update the volume mapper.
+      this->updateColorMap();
+      emit this->renderNeeded();
+    });
+}
 
 ModuleVolume::~ModuleVolume()
 {
@@ -110,10 +130,25 @@ void ModuleVolume::updateColorMap()
         propertyMode = vtkVolumeProperty::TF_2D;
         m_volumeProperty->SetTransferFunction2D(transferFunction2D());
       } else {
-        QTimer::singleShot(3000, [this]() {
-          this->updateColorMap();
-          emit this->renderNeeded();
-        });
+        vtkSmartPointer<vtkImageData> image =
+          vtkImageData::SafeDownCast(dataSource()->dataObject());
+        // See if the histogram is done, if it is then update the transfer
+        // function.
+        if (auto histogram2D =
+              HistogramManager::instance().getHistogram2D(image)) {
+          auto colorMap = vtkColorTransferFunction::SafeDownCast(
+            this->colorMap()->GetClientSideObject());
+          auto opacityMap = vtkPiecewiseFunction::SafeDownCast(
+            this->opacityMap()->GetClientSideObject());
+          tomviz::rasterTransferFunction2DBox(
+            histogram2D, *this->transferFunction2DBox(), transferFunction2D(),
+            colorMap, opacityMap);
+          propertyMode = vtkVolumeProperty::TF_2D;
+          m_volumeProperty->SetTransferFunction2D(transferFunction2D());
+        }
+        // If this histogram is not ready, then it finishing will trigger the
+        // functor created in the constructor and the volume mapper will be
+        // updated when the histogram2D is done
       }
       break;
   }
