@@ -51,6 +51,8 @@ set(SOURCES
   DoubleSliderWidget.h
   DoubleSpinBox.cxx
   DoubleSpinBox.h
+  DuplicateModuleReaction.h
+  DuplicateModuleReaction.cxx
   EmdFormat.cxx
   EmdFormat.h
   ExportDataReaction.cxx
