@@ -271,7 +271,9 @@ bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
       .Set(props["mapScalars"].toBool() ? 1 : 0);
     if (props.contains("mapOpacity")) {
       m_mapOpacity = props["mapOpacity"].toBool();
-      m_opacityCheckBox->setChecked(m_mapOpacity);
+      if (m_opacityCheckBox) {
+        m_opacityCheckBox->setChecked(m_mapOpacity);
+      }
     }
     rep->UpdateVTKObjects();
     return true;
