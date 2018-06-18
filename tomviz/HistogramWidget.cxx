@@ -312,15 +312,15 @@ void HistogramWidget::histogramClicked(vtkObject*)
 
 void HistogramWidget::onResetRangeClicked()
 {
-  if (m_inputData) {
-    auto array = vtkDataArray::SafeDownCast(m_inputData->GetColumn(0));
-    if (array) {
-      double range[2];
-      array->GetRange(range);
-      rescaleTransferFunction(m_LUTProxy, range[0], range[1]);
-      renderViews();
-    }
-  }
+  auto activeDataSource = ActiveObjects::instance().activeDataSource();
+  if (!activeDataSource)
+    return;
+
+  double range[2];
+  activeDataSource->getRange(range);
+
+  rescaleTransferFunction(m_LUTProxy, range[0], range[1]);
+  renderViews();
 }
 
 void HistogramWidget::onCustomRangeClicked()
