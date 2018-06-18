@@ -332,11 +332,6 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     hideAction = contextMenu.addAction("Hide");
     showAction = contextMenu.addAction("Show");
 
-    if (selectedIndexes().size() == 1) {
-      duplicateModuleAction = contextMenu.addAction("Duplicate Module");
-      new DuplicateModuleReaction(duplicateModuleAction);
-    }
-
     if (selectedIndexes().size() == 2) {
       auto module = pipelineModel->module(selectedIndexes()[0]);
       QString exportType = module->exportDataTypeString();
@@ -345,6 +340,9 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
         exportModuleAction = contextMenu.addAction(menuActionString);
         new ExportDataReaction(exportModuleAction, module);
       }
+
+      duplicateModuleAction = contextMenu.addAction("Duplicate Module");
+      new DuplicateModuleReaction(duplicateModuleAction);
     }
   }
 
