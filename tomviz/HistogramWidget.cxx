@@ -36,7 +36,6 @@
 
 #include <pqApplicationCore.h>
 #include <pqPresetDialog.h>
-#include <pqRescaleRange.h>
 #include <pqResetScalarRangeReaction.h>
 #include <pqServerManagerModel.h>
 #include <pqView.h>
@@ -49,7 +48,10 @@
 
 #include <QCheckBox>
 #include <QColorDialog>
+#include <QDialogButtonBox>
+#include <QDoubleSpinBox>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -325,20 +327,78 @@ void HistogramWidget::onResetRangeClicked()
 
 void HistogramWidget::onCustomRangeClicked()
 {
-  vtkVector2d range;
+  // Get the max allowable range
+  auto activeDataSource = ActiveObjects::instance().activeDataSource();
+  if (!activeDataSource)
+    return;
+
+  double maxRange[2];
+  activeDataSource->getRange(maxRange);
+
+  // Get the current range
+  vtkVector2d currentRange;
   vtkDiscretizableColorTransferFunction* discFunc =
     vtkDiscretizableColorTransferFunction::SafeDownCast(
       m_LUTProxy->GetClientSideObject());
   if (!discFunc) {
     return;
   }
-  discFunc->GetRange(range.GetData());
-  pqRescaleRange dialog(tomviz::mainWidget());
-  dialog.setRange(range[0], range[1]);
+  discFunc->GetRange(currentRange.GetData());
+
+  QDialog dialog;
+  QVBoxLayout vLayout;
+  QHBoxLayout hLayout;
+  vLayout.addLayout(&hLayout);
+
+  // Fix the size of this window
+  vLayout.setSizeConstraint(QLayout::SetFixedSize);
+  hLayout.setSizeConstraint(QLayout::SetFixedSize);
+
+  dialog.setLayout(&vLayout);
+  dialog.setWindowTitle(tr("Specify Data Range"));
+
+  QDoubleSpinBox bottom;
+  bottom.setRange(maxRange[0], maxRange[1]);
+  bottom.setValue(currentRange[0]);
+  bottom.setFixedSize(bottom.sizeHint());
+  bottom.setToolTip("Min: " + QString::number(maxRange[0]));
+  hLayout.addWidget(&bottom);
+
+  QLabel dash("-");
+  dash.setAlignment(Qt::AlignHCenter);
+  dash.setAlignment(Qt::AlignVCenter);
+  hLayout.addWidget(&dash);
+
+  QDoubleSpinBox top;
+  top.setRange(maxRange[0], maxRange[1]);
+  top.setValue(currentRange[1]);
+  top.setFixedSize(top.sizeHint());
+  top.setToolTip("Max: " + QString::number(maxRange[1]));
+  hLayout.addWidget(&top);
+
+  // Make sure the bottom isn't higher than the top, and the
+  // top isn't higher than the bottom.
+  connect(&bottom, static_cast<void (QDoubleSpinBox::*)(double)>(
+                     &QDoubleSpinBox::valueChanged),
+          &top, &QDoubleSpinBox::setMinimum);
+  connect(&top, static_cast<void (QDoubleSpinBox::*)(double)>(
+                  &QDoubleSpinBox::valueChanged),
+          &bottom, &QDoubleSpinBox::setMaximum);
+
+  QDialogButtonBox buttonBox;
+  buttonBox.addButton(QDialogButtonBox::Ok);
+  buttonBox.addButton(QDialogButtonBox::Cancel);
+  connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  vLayout.addWidget(&buttonBox);
+
   if (dialog.exec() == QDialog::Accepted) {
-    rescaleTransferFunction(m_LUTProxy, dialog.minimum(), dialog.maximum());
+    rescaleTransferFunction(m_LUTProxy, bottom.value(), top.value());
     renderViews();
   }
+
+  // vLayout should not call 'delete' on hLayout...
+  hLayout.setParent(nullptr);
 }
 
 void HistogramWidget::onInvertClicked()
