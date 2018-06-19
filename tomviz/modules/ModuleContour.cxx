@@ -164,9 +164,10 @@ void ModuleContour::updateColorMap()
 bool ModuleContour::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  controller->UnRegisterProxy(m_activeRepresentation);
   controller->UnRegisterProxy(m_contourFilter);
-  m_contourFilter = nullptr;
   m_activeRepresentation = nullptr;
+  m_contourFilter = nullptr;
   return true;
 }
 
