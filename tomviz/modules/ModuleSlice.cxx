@@ -370,7 +370,9 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
     if (props.contains("mapOpacity")) {
       m_mapOpacity = props["mapOpacity"].toBool();
-      m_opacityCheckBox->setChecked(m_mapOpacity);
+      if (m_opacityCheckBox) {
+        m_opacityCheckBox->setChecked(m_mapOpacity);
+      }
     }
     m_widget->UpdatePlacement();
     onPlaneChanged();

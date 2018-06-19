@@ -81,7 +81,7 @@ private:
 
   pqPropertyLinks m_Links;
 
-  QCheckBox* m_opacityCheckBox;
+  QPointer<QCheckBox> m_opacityCheckBox;
   bool m_mapOpacity = false;
 };
 } // namespace tomviz

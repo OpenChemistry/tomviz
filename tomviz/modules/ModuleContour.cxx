@@ -325,7 +325,9 @@ bool ModuleContour::deserialize(const QJsonObject& json)
     }
 
     d->UseSolidColor = props["useSolidColor"].toBool();
-    m_controllers->setUseSolidColor(d->UseSolidColor);
+    if (m_controllers) {
+      m_controllers->setUseSolidColor(d->UseSolidColor);
+    }
 
     auto toRep = [](vtkSMProxy* representation, const QJsonObject& state) {
       QJsonObject lighting = state["lighting"].toObject();

@@ -18,6 +18,7 @@
 
 #include "ActiveObjects.h"
 #include "CloneDataReaction.h"
+#include "DuplicateModuleReaction.h"
 #include "EditOperatorDialog.h"
 #include "ExportDataReaction.h"
 #include "LoadDataReaction.h"
@@ -225,6 +226,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
 
   QMenu contextMenu;
   QAction* cloneAction = nullptr;
+  QAction* duplicateModuleAction = nullptr;
   QAction* markAsAction = nullptr;
   QAction* saveDataAction = nullptr;
   QAction* exportModuleAction = nullptr;
@@ -338,6 +340,9 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
         exportModuleAction = contextMenu.addAction(menuActionString);
         new ExportDataReaction(exportModuleAction, module);
       }
+
+      duplicateModuleAction = contextMenu.addAction("Duplicate Module");
+      new DuplicateModuleReaction(duplicateModuleAction);
     }
   }
 
