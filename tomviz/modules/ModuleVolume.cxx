@@ -18,7 +18,7 @@
 
 #include "DataSource.h"
 #include "HistogramManager.h"
-#include "Utilities.h"
+#include "vtkTransferFunctionBoxItem.h"
 
 #include <vtkColorTransferFunction.h>
 #include <vtkGPUVolumeRayCastMapper.h>
@@ -58,7 +58,7 @@ ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
           this->colorMap()->GetClientSideObject());
         auto opacityMap = vtkPiecewiseFunction::SafeDownCast(
           this->opacityMap()->GetClientSideObject());
-        tomviz::rasterTransferFunction2DBox(
+        vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
           histogram2D, *this->transferFunction2DBox(), transferFunction2D(),
           colorMap, opacityMap);
       }
@@ -140,7 +140,7 @@ void ModuleVolume::updateColorMap()
             this->colorMap()->GetClientSideObject());
           auto opacityMap = vtkPiecewiseFunction::SafeDownCast(
             this->opacityMap()->GetClientSideObject());
-          tomviz::rasterTransferFunction2DBox(
+          vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
             histogram2D, *this->transferFunction2DBox(), transferFunction2D(),
             colorMap, opacityMap);
           propertyMode = vtkVolumeProperty::TF_2D;

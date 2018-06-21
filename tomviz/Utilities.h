@@ -208,11 +208,6 @@ QString findPrefix(const QStringList& fileNames);
 /// Convenience function to get the main widget (useful for dialog parenting).
 QWidget* mainWidget();
 
-void rasterTransferFunction2DBox(vtkImageData* histogram2D, const vtkRectd& box,
-                                 vtkImageData* transferFunction,
-                                 vtkColorTransferFunction* colorFunc,
-                                 vtkPiecewiseFunction* opacFunc);
-
 QJsonValue toJson(vtkVariant variant);
 QJsonValue toJson(vtkSMProperty* prop);
 bool setProperties(const QJsonObject& props, vtkSMProxy* proxy);

@@ -39,12 +39,10 @@
 #include <vtkBoundingBox.h>
 #include <vtkCamera.h>
 #include <vtkColorTransferFunction.h>
-#include <vtkFloatArray.h>
 #include <vtkImageData.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
-#include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
@@ -762,77 +760,6 @@ QString findPrefix(const QStringList& fileNames)
 QWidget* mainWidget()
 {
   return pqCoreUtilities::mainWidget();
-}
-
-void rasterTransferFunction2DBox(vtkImageData* histogram2D, const vtkRectd& box,
-                                 vtkImageData* transferFunction,
-                                 vtkColorTransferFunction* colorFunc,
-                                 vtkPiecewiseFunction* opacFunc)
-{
-  if (!histogram2D) {
-    std::cerr << "Invalid histogram" << std::endl;
-    return;
-  }
-  if (!transferFunction) {
-    std::cerr << "Invalid output image" << std::endl;
-    return;
-  }
-  if (!opacFunc || !colorFunc) {
-    std::cerr << "Invalid transfer functions!" << std::endl;
-    return;
-  }
-
-  int bins[3];
-  transferFunction->GetDimensions(bins);
-
-  // If the transfer function image is uninitialized, initialize it
-  if (bins[0] == 0 && bins[1] == 0) {
-    histogram2D->GetDimensions(bins);
-    transferFunction->SetDimensions(bins[0], bins[1], 1);
-    transferFunction->AllocateScalars(VTK_FLOAT, 4);
-  }
-
-  double spacing[3];
-  histogram2D->GetSpacing(spacing);
-  const vtkIdType width = static_cast<vtkIdType>(box.GetWidth() / spacing[0]);
-  const vtkIdType height = static_cast<vtkIdType>(box.GetHeight() / spacing[1]);
-
-  if (width <= 0 || height <= 0) {
-    return;
-  }
-
-  // Assume color and opacity share the same data range
-  double range[2];
-  colorFunc->GetRange(range);
-
-  double* dataRGB = new double[width * 3];
-  colorFunc->GetTable(range[0], range[1], width, dataRGB);
-
-  double* dataAlpha = new double[width];
-  opacFunc->GetTable(range[0], range[1], width, dataAlpha);
-
-  // Copy the values into Transfer2D
-  vtkFloatArray* transfer =
-    vtkFloatArray::SafeDownCast(transferFunction->GetPointData()->GetScalars());
-
-  const vtkIdType x0 = static_cast<vtkIdType>(box.GetX() / spacing[0]);
-  const vtkIdType y0 = static_cast<vtkIdType>(box.GetY() / spacing[1]);
-
-  for (vtkIdType j = 0; j < height; j++)
-    for (vtkIdType i = 0; i < width; i++) {
-      double color[4];
-
-      color[0] = dataRGB[i * 3];
-      color[1] = dataRGB[i * 3 + 1];
-      color[2] = dataRGB[i * 3 + 2];
-      color[3] = dataAlpha[i];
-
-      const vtkIdType index = (y0 + j) * bins[1] + (x0 + i);
-      transfer->SetTuple(index, color);
-    }
-
-  delete[] dataRGB;
-  delete[] dataAlpha;
 }
 
 QJsonValue toJson(vtkVariant variant)

@@ -30,8 +30,6 @@
 #include <vtkTransferFunctionBoxItem.h>
 #include <vtkTooltipItem.h>
 
-#include "Utilities.h"
-
 vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
   vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
@@ -128,7 +126,7 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
     }
 
     *this->Transfer2DBox = boxItem->GetBox();
-    tomviz::rasterTransferFunction2DBox(
+    vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
       Histogram->GetInputImageData(), boxItem->GetBox(), Transfer2D,
       boxItem->GetColorFunction(), boxItem->GetOpacityFunction());
   }
