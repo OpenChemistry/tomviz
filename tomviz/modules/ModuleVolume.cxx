@@ -48,24 +48,24 @@ namespace tomviz {
 
 ModuleVolume::ModuleVolume(QObject* parentObject) : Module(parentObject)
 {
-  connect(
-    &HistogramManager::instance(), &HistogramManager::histogram2DReady, this,
-    [=](vtkSmartPointer<vtkImageData> image,
-        vtkSmartPointer<vtkImageData> histogram2D) {
-      // Force the transfer function 2D to update.
-      if (image == vtkImageData::SafeDownCast(dataSource()->dataObject())) {
-        auto colorMap = vtkColorTransferFunction::SafeDownCast(
-          this->colorMap()->GetClientSideObject());
-        auto opacityMap = vtkPiecewiseFunction::SafeDownCast(
-          this->opacityMap()->GetClientSideObject());
-        vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
-          histogram2D, *this->transferFunction2DBox(), transferFunction2D(),
-          colorMap, opacityMap);
-      }
-      // Update the volume mapper.
-      this->updateColorMap();
-      emit this->renderNeeded();
-    });
+  connect(&HistogramManager::instance(), &HistogramManager::histogram2DReady,
+          this, [=](vtkSmartPointer<vtkImageData> image,
+                    vtkSmartPointer<vtkImageData> histogram2D) {
+            // Force the transfer function 2D to update.
+            if (image ==
+                vtkImageData::SafeDownCast(dataSource()->dataObject())) {
+              auto colorMap = vtkColorTransferFunction::SafeDownCast(
+                this->colorMap()->GetClientSideObject());
+              auto opacityMap = vtkPiecewiseFunction::SafeDownCast(
+                this->opacityMap()->GetClientSideObject());
+              vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
+                histogram2D, *this->transferFunction2DBox(),
+                transferFunction2D(), colorMap, opacityMap);
+            }
+            // Update the volume mapper.
+            this->updateColorMap();
+            emit this->renderNeeded();
+          });
 }
 
 ModuleVolume::~ModuleVolume()

@@ -205,9 +205,8 @@ HistogramManager::HistogramManager()
   // histogram has been finished on the background thread.
   m_worker->start();
   m_histogramGen->moveToThread(m_worker);
-  connect(m_histogramGen,
-          SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,
-                               vtkSmartPointer<vtkTable>)),
+  connect(m_histogramGen, SIGNAL(histogramDone(vtkSmartPointer<vtkImageData>,
+                                               vtkSmartPointer<vtkTable>)),
           SLOT(histogramReadyInternal(vtkSmartPointer<vtkImageData>,
                                       vtkSmartPointer<vtkTable>)));
   connect(m_histogramGen,
