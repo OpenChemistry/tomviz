@@ -220,10 +220,6 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   bool childDataSource =
     (dataSource && ModuleManager::instance().isChild(dataSource));
 
-  if (result && qobject_cast<Operator*>(result->parent())) {
-    return;
-  }
-
   QMenu contextMenu;
   QAction* cloneAction = nullptr;
   QAction* duplicateModuleAction = nullptr;
@@ -236,11 +232,18 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* cloneChildAction = nullptr;
   QAction* snapshotAction = nullptr;
   QAction* showInterfaceAction = nullptr;
+  QAction* exportTableResultAction = nullptr;
   bool allowReExecute = false;
   CloneDataReaction* cloneReaction;
 
-  // Data source ( non child )
-  if (dataSource != nullptr && !childDataSource) {
+  if (result && qobject_cast<Operator*>(result->parent())) {
+    if (vtkTable::SafeDownCast(result->dataObject())) {
+      exportTableResultAction = contextMenu.addAction("Save as .json");
+    } else {
+      return;
+    }
+  } else if (dataSource != nullptr && !childDataSource) {
+    // Data source ( non child )
     cloneAction = contextMenu.addAction("Clone");
     cloneReaction = new CloneDataReaction(cloneAction);
     saveDataAction = contextMenu.addAction("Save Data");
@@ -312,6 +315,10 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     addDelete = dataSource->forkable();
   }
 
+  if (result) {
+    addDelete = false;
+  }
+
   if (addDelete) {
     deleteAction = contextMenu.addAction("Delete");
     if (deleteAction && !enableDeleteItems(selectedIndexes())) {
@@ -379,7 +386,13 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     } else {
       EditOperatorDialog::showDialogForOperator(op);
     }
+  } else if (selectedItem == exportTableResultAction) {
+    exportTableAsJson(vtkTable::SafeDownCast(result->dataObject()));
   }
+}
+
+void PipelineView::exportTableAsJson(vtkTable*) {
+  qDebug() << "Exporting table";
 }
 
 void PipelineView::deleteItems(const QModelIndexList& idxs)
