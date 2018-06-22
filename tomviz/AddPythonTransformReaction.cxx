@@ -191,11 +191,16 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     opPython->setScript(scriptSource);
 
     // Use JSON to build the interface via the EditOperatorDialog
-    auto dialog =
+    // If the operator doesn't have parameters, don't add the dialog
+    if (opPython->arguments().isEmpty()) {
+      source->addOperator(opPython);
+    } else {
+      auto dialog =
       new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
-    dialog->setAttribute(Qt::WA_DeleteOnClose);
-    dialog->setWindowTitle(QString("Edit %1").arg(opPython->label()));
-    dialog->show();
+      dialog->setAttribute(Qt::WA_DeleteOnClose);
+      dialog->setWindowTitle(QString("Edit %1").arg(opPython->label()));
+      dialog->show();
+    }
 
     // Handle transforms with custom UIs
   } else if (scriptLabel == "Shift Volume") {

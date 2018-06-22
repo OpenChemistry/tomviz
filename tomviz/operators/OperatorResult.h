@@ -45,6 +45,10 @@ public:
   void setLabel(const QString& label);
   const QString& label();
 
+  /// Set description of object.
+  void setDescription(const QString& desc);
+  const QString& description();
+
   /// Clean up object, releasing the data object and the proxy created
   /// for it.
   virtual bool finalize();
@@ -61,6 +65,7 @@ private:
   vtkWeakPointer<vtkSMSourceProxy> m_producerProxy;
   QString m_name;
   QString m_label;
+  QString m_description = "Operator Result";
 
   void createProxyIfNeeded();
   void deleteProxy();

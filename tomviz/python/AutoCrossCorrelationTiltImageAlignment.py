@@ -38,13 +38,15 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = tiltSeries.shape[2] - 1
         step = 1
 
+        offsets = np.zeros((tiltSeries.shape[2], 2))
+
         for i in range(referenceIndex, Nproj - 1):
             if self.canceled:
                 return
             self.progress.message = 'Processing tilt image No.%d/%d' % (
                 step, Nproj)
 
-            tiltSeries[:, :, i + 1] = crossCorrelationAlign(
+            offsets[i + 1, :], tiltSeries[:, :, i + 1] = crossCorrelationAlign(
                 tiltSeries[:, :, i + 1], tiltSeries[:, :, i], rFilter, kFilter)
             step += 1
             self.progress.value = step
@@ -54,12 +56,20 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
                 return
             self.progress.message = 'Processing tilt image No.%d/%d' % (
                 step, Nproj)
-            tiltSeries[:, :, i - 1] = crossCorrelationAlign(
+            offsets[i - 1, :], tiltSeries[:, :, i - 1] = crossCorrelationAlign(
                 tiltSeries[:, :, i - 1], tiltSeries[:, :, i], rFilter, kFilter)
             step += 1
             self.progress.value = step
 
         utils.set_array(dataset, tiltSeries)
+
+        # Create a spreadsheet data set from table data
+        column_names = ["X Offset", "Y Offset"]
+        offsetsTable = utils.make_spreadsheet(column_names, offsets)
+        # Set up dictionary to return operator results
+        returnValues = {}
+        returnValues["alignments"] = offsetsTable
+        return returnValues
 
 
 def crossCorrelationAlign(image, reference, rFilter, kFilter):
@@ -75,4 +85,4 @@ def crossCorrelationAlign(image, reference, rFilter, kFilter):
     output = np.roll(image, shifts[0], axis=0)
     output = np.roll(output, shifts[1], axis=1)
 
-    return output
+    return shifts, output

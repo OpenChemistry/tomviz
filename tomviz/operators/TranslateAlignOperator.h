@@ -58,6 +58,8 @@ public:
 
 protected:
   bool applyTransform(vtkDataObject* data) override;
+  void offsetsToResult();
+  void initializeResults();
 
 private:
   QVector<vtkVector2i> offsets;

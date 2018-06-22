@@ -54,6 +54,16 @@ const QString& OperatorResult::label()
   return m_label;
 }
 
+void OperatorResult::setDescription(const QString& desc)
+{
+  m_description = desc;
+}
+
+const QString& OperatorResult::description()
+{
+  return m_description;
+}
+
 bool OperatorResult::finalize()
 {
   deleteProxy();
