@@ -196,7 +196,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       source->addOperator(opPython);
     } else {
       auto dialog =
-      new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
+        new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose);
       dialog->setWindowTitle(QString("Edit %1").arg(opPython->label()));
       dialog->show();

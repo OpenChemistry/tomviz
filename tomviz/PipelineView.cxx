@@ -391,7 +391,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   }
 }
 
-void PipelineView::exportTableAsJson(vtkTable*) {
+void PipelineView::exportTableAsJson(vtkTable*)
+{
   qDebug() << "Exporting table";
 }
 

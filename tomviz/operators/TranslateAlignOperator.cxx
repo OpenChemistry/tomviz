@@ -20,8 +20,8 @@
 #include "DataSource.h"
 #include "OperatorResult.h"
 
-#include "vtkIntArray.h"
 #include "vtkImageData.h"
+#include "vtkIntArray.h"
 #include "vtkNew.h"
 #include "vtkTable.h"
 
@@ -97,7 +97,8 @@ QIcon TranslateAlignOperator::icon() const
   return QIcon("");
 }
 
-void TranslateAlignOperator::initializeResults() {
+void TranslateAlignOperator::initializeResults()
+{
   setNumberOfResults(1);
   auto res = resultAt(0);
   res->setName("alignments");
