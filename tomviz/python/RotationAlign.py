@@ -12,7 +12,8 @@ def transform_scalars(dataset, SHIFT=None, rotation_angle=90.0):
 
     if data_py is None: #Check if data exists
         raise RuntimeError("No data array found!")
-
+    if SHIFT is None:
+        SHIFT = np.zeros(len(data_py.shape), dtype=np.int)
     data_py_return = np.empty_like(data_py)
     ndimage.interpolation.shift(data_py, SHIFT, order=0, output=data_py_return)
 
