@@ -55,8 +55,11 @@ public:
     QList<T> modulesT;
     QList<Module*> modules = this->findModulesGeneric(dataSource, view);
     foreach (Module* module, modules) {
-      if (T moduleT = qobject_cast<T>(module)) {
-        modulesT.push_back(moduleT);
+      // Don't include modules that are actually children of an OperatorResult
+      if (module->operatorResult() == nullptr) {
+        if (T moduleT = qobject_cast<T>(module)) {
+          modulesT.push_back(moduleT);
+        }
       }
     }
     return modulesT;

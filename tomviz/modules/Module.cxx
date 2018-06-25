@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "OperatorResult.h"
 #include "Utilities.h"
 
 #include <pqAnimationCue.h>
@@ -86,6 +87,12 @@ Module::Module(QObject* parentObject)
 
 Module::~Module() = default;
 
+bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView, OperatorResult* result)
+{
+  m_operatorResult = result;
+  return initialize(data, vtkView);
+}
+
 bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   m_view = vtkView;
@@ -115,6 +122,11 @@ vtkSMViewProxy* Module::view() const
 DataSource* Module::dataSource() const
 {
   return m_activeDataSource;
+}
+
+OperatorResult* Module::operatorResult() const
+{
+  return m_operatorResult;
 }
 
 void Module::addToPanel(QWidget* vtkNotUsed(panel)) {}

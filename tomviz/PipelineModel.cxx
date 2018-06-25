@@ -725,7 +725,13 @@ void PipelineModel::moduleAdded(Module* module)
 {
   Q_ASSERT(module);
   auto dataSource = module->dataSource();
-  auto index = dataSourceIndex(dataSource);
+  auto operatorResult = module->operatorResult();
+  QModelIndex index;
+  if (operatorResult) {
+    index = resultIndex(operatorResult);
+  } else if (dataSource) {
+    index = dataSourceIndex(dataSource);
+  }
   if (index.isValid()) {
     auto dataSourceItem = treeItem(index);
     // Modules straight after the data source so append after any current

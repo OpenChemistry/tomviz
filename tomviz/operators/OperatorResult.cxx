@@ -15,13 +15,21 @@
 ******************************************************************************/
 #include "OperatorResult.h"
 
+#include "ActiveObjects.h"
+#include "ModuleFactory.h"
+#include "ModuleManager.h"
+#include "ModuleMolecule.h"
+
 #include <vtkDataObject.h>
+#include <vtkMolecule.h>
 #include <vtkNew.h>
 #include <vtkSMParaViewPipelineController.h>
 #include <vtkSMProxyManager.h>
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
+
+#include <QDebug>
 
 namespace tomviz {
 
@@ -104,6 +112,17 @@ void OperatorResult::setDataObject(vtkDataObject* object)
   vtkTrivialProducer* producer =
     vtkTrivialProducer::SafeDownCast(clientSideObject);
   producer->SetOutput(object);
+  // If the result is a vtkMolecule, create a ModuleMolecule to display it
+  if (vtkMolecule::SafeDownCast(object)) {
+    qDebug() << "Result is a Molecule";
+    auto view = ActiveObjects::instance().activeView();
+    auto dataSource = ActiveObjects::instance().activeDataSource();
+    ModuleMolecule* module = new ModuleMolecule();
+    module->initialize(dataSource, view, this);
+    // pqView* pqview = tomviz::convert<pqView*>(view);
+    // pqview->render();
+    ModuleManager::instance().addModule(module);
+  }
 }
 
 vtkSMSourceProxy* OperatorResult::producerProxy()

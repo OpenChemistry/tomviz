@@ -34,6 +34,7 @@ class vtkDataObject;
 
 namespace tomviz {
 class DataSource;
+class OperatorResult;
 /// Abstract parent class for all Modules in tomviz.
 class Module : public QObject
 {
@@ -64,6 +65,7 @@ public:
   /// new module is instantiated. Subclasses override this method to setup the
   /// visualization pipeline for this module.
   virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
+  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view, OperatorResult* result);
 
   /// Finalize the module. Subclasses should override this method to delete and
   /// release all proxies (and data) created for this module.
@@ -75,6 +77,8 @@ public:
   /// Accessors for the data-source and view associated with this Plot.
   DataSource* dataSource() const;
   vtkSMViewProxy* view() const;
+  // Modules can alternatively use an OperatorResult as DataSource
+  OperatorResult* operatorResult() const;
 
   /// Some modules act on one data source and apply coloring from another data
   /// source (e.g. ModuleContour). This method allows a module to designate a
@@ -185,6 +189,7 @@ private slots:
 private:
   Q_DISABLE_COPY(Module)
   QPointer<DataSource> m_activeDataSource;
+  QPointer<OperatorResult> m_operatorResult;
   vtkWeakPointer<vtkSMViewProxy> m_view;
   bool m_useDetachedColorMap = false;
 

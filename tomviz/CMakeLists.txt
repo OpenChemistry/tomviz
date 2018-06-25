@@ -194,6 +194,8 @@ list(APPEND SOURCES
   modules/ModuleScaleCubeWidget.h
   modules/ModuleMenu.cxx
   modules/ModuleMenu.h
+  modules/ModuleMolecule.cxx
+  modules/ModuleMolecule.h
   modules/ModuleOrthogonalSlice.cxx
   modules/ModuleOrthogonalSlice.h
   modules/ModuleOutline.cxx
