@@ -391,9 +391,9 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   }
 }
 
-void PipelineView::exportTableAsJson(vtkTable*)
+void PipelineView::exportTableAsJson(vtkTable* table)
 {
-  qDebug() << "Exporting table";
+  writeTableToJson(table);
 }
 
 void PipelineView::deleteItems(const QModelIndexList& idxs)

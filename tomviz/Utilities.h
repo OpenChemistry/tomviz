@@ -41,6 +41,7 @@ class vtkSMProxyLocator;
 class vtkSMRenderViewProxy;
 class vtkPVArrayInformation;
 class vtkPiecewiseFunction;
+class vtkTable;
 
 class QDir;
 class QLayout;
@@ -209,6 +210,9 @@ QJsonValue toJson(vtkSMProperty* prop);
 bool setProperties(const QJsonObject& props, vtkSMProxy* proxy);
 bool setProperty(const QJsonValue& value, vtkSMProperty* prop, int index = 0);
 bool setProperty(const QJsonArray& array, vtkSMProperty* prop);
+
+/// Write a vtkTable to json file
+bool writeTableToJson(vtkTable* table);
 
 extern double offWhite[3];
 } // namespace tomviz

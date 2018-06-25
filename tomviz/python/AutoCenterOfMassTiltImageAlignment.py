@@ -22,7 +22,9 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
             self.progress.message = 'Processing tilt image No.%d/%d' % (
                 i + 1, tiltSeries.shape[2])
 
-            offsets[i, :], tiltSeries[:, :, i] = centerOfMassAlign(tiltSeries[:, :, i])
+            offsets[i, :], tiltSeries[:, :, i] = centerOfMassAlign(
+                                                    tiltSeries[:, :, i]
+                                                )
 
             step += 1
             self.progress.value = step
