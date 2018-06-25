@@ -59,7 +59,6 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QJsonArray>
-#include <QJsonDocument>
 #include <QLayout>
 #include <QMessageBox>
 #include <QString>
@@ -886,22 +885,8 @@ QString dialogToFileName(QFileDialog* dialog)
   return fileName;
 }
 
-bool writeTableToJson(vtkTable* table)
+QJsonDocument tableToJson(vtkTable* table)
 {
-  QStringList filters;
-  filters << "JSON Files (*.json)";
-  QFileDialog dialog;
-  dialog.setFileMode(QFileDialog::AnyFile);
-  dialog.setNameFilters(filters);
-  dialog.setAcceptMode(QFileDialog::AcceptSave);
-  QString fileName = dialogToFileName(&dialog);
-  if (fileName.isEmpty()) {
-    return false;
-  }
-  if (!fileName.endsWith(".json")) {
-    fileName = QString("%1.json").arg(fileName);
-  }
-
   QJsonArray rows;
   for (vtkIdType i = 0; i < table->GetNumberOfRows(); ++i) {
     auto row = table->GetRow(i);
@@ -923,13 +908,42 @@ bool writeTableToJson(vtkTable* table)
     }
     rows << item;
   }
+  return QJsonDocument(rows);
+}
+
+QJsonDocument vectorToJson(const QVector<vtkVector2i> vector)
+{
+  QJsonArray rows;
+  foreach (auto row, vector) {
+    QJsonArray item;
+    item << row[0] << row[1];
+    rows << item;
+  }
+  return QJsonDocument(rows);
+}
+
+bool jsonToFile(const QJsonDocument& document)
+{
+  QStringList filters;
+  filters << "JSON Files (*.json)";
+  QFileDialog dialog;
+  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setNameFilters(filters);
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
+  QString fileName = dialogToFileName(&dialog);
+  if (fileName.isEmpty()) {
+    return false;
+  }
+  if (!fileName.endsWith(".json")) {
+    fileName = QString("%1.json").arg(fileName);
+  }
 
   QFile file(fileName);
   if (!file.open(QIODevice::WriteOnly)) {
     qCritical() << QString("Error opening file for writing: %1").arg(fileName);
     return false;
   }
-  file.write(QJsonDocument(rows).toJson());
+  file.write(document.toJson());
   file.close();
   return true;
 }
