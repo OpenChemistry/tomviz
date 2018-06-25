@@ -23,8 +23,8 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
                 i + 1, tiltSeries.shape[2])
 
             offsets[i, :], tiltSeries[:, :, i] = centerOfMassAlign(
-                                                    tiltSeries[:, :, i]
-                                                )
+                tiltSeries[:, :, i]
+            )
 
             step += 1
             self.progress.value = step
@@ -46,7 +46,7 @@ def centerOfMassAlign(image):
     # set up coordinate
     y = np.linspace(0, Ny - 1, Ny)
     x = np.linspace(0, Nx - 1, Nx)
-    [X, Y] = np.meshgrid(y, x)
+    [X, Y] = np.meshgrid(x, y, indexing="ij")
 
     imageCOM_x = int(np.sum(image * X) / np.sum(image))
     imageCOM_y = int(np.sum(image * Y) / np.sum(image))
@@ -54,7 +54,7 @@ def centerOfMassAlign(image):
     sx = -(imageCOM_x - Nx // 2)
     sy = -(imageCOM_y - Ny // 2)
 
-    output = np.roll(image, sx, axis=1)
-    output = np.roll(output, sy, axis=0)
+    output = np.roll(image, sx, axis=0)
+    output = np.roll(output, sy, axis=1)
 
     return (sx, sy), output
