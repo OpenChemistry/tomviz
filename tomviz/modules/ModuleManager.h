@@ -83,6 +83,12 @@ public:
   /// Used to test if there is data loaded (i.e. not an empty session)
   bool hasDataSources();
 
+  /// Used when loading a model.  If there are additional child pipelines that
+  /// need to finish processing before stateDoneLoading is emitted, then this
+  /// must be called for each of them so the module manager knows how many
+  /// pipelineFinsihed signals to wait for.
+  void incrementPipelinesToWaitFor();
+
 public slots:
   void addModule(Module*);
 
@@ -115,6 +121,8 @@ private slots:
 
   void render();
 
+  void onPipelineFinished();
+
 signals:
   void moduleAdded(Module*);
   void moduleRemoved(Module*);
@@ -125,6 +133,8 @@ signals:
   void childDataSourceRemoved(DataSource*);
 
   void operatorRemoved(Operator*);
+
+  void stateDoneLoading();
 
 private:
   Q_DISABLE_COPY(ModuleManager)
