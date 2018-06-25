@@ -308,6 +308,7 @@ set(python_files
   BinaryErode.py
   BinaryOpen.py
   BinaryClose.py
+  DummyMolecule.py
   LabelObjectAttributes.py
   LabelObjectPrincipalAxes.py
   LabelObjectDistanceFromPrincipalAxis.py
@@ -374,6 +375,7 @@ set(json_files
   BinaryErode.json
   BinaryOpen.json
   BinaryClose.json
+  DummyMolecule.json
   LabelObjectAttributes.json
   LabelObjectPrincipalAxes.json
   LabelObjectDistanceFromPrincipalAxis.json

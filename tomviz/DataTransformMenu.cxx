@@ -77,6 +77,7 @@ void DataTransformMenu::buildTransforms()
   auto peronaMalikeAnisotropicDiffusionAction =
     menu->addAction("Perona-Malik Anisotropic Diffusion");
   auto medianFilterAction = menu->addAction("Median Filter");
+  auto moleculeAction = menu->addAction("Add Molecule");
   menu->addSeparator();
   auto cloneAction = menu->addAction("Clone");
   auto deleteDataAction = menu->addAction(
@@ -149,6 +150,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(medianFilterAction, "Median Filter",
                                  readInPythonScript("MedianFilter"), false,
                                  false, readInJSONDescription("MedianFilter"));
+  new AddPythonTransformReaction(moleculeAction, "Add Molecule",
+                                 readInPythonScript("DummyMolecule"), false,
+                                 false, readInJSONDescription("DummyMolecule"));
 
   new CloneDataReaction(cloneAction);
   new DeleteDataReaction(deleteDataAction);
