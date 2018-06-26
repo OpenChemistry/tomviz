@@ -18,7 +18,6 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
-#include "Module.h"
 #include "ModuleFactory.h"
 #include "Pipeline.h"
 #include "PythonGeneratedDatasetReaction.h"

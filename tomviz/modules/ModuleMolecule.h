@@ -17,6 +17,9 @@
 #define tomvizModuleMolecule_h
 
 #include "Module.h"
+#include "vtkActor.h"
+#include "vtkMoleculeMapper.h"
+#include "vtkPVRenderView.h"
 #include <pqPropertyLinks.h>
 #include <vtkWeakPointer.h>
 
@@ -38,7 +41,8 @@ public:
 
   QString label() const override { return "Molecule"; }
   QIcon icon() const override;
-  bool initialize(DataSource* dataSource, vtkSMViewProxy* view, OperatorResult* result) override;
+  bool initializeWithResult(DataSource* dataSource, vtkSMViewProxy* view,
+                            OperatorResult* result) override;
   bool finalize() override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
@@ -60,7 +64,9 @@ private slots:
 
 private:
   Q_DISABLE_COPY(ModuleMolecule)
-  vtkWeakPointer<vtkSMProxy> m_representation;
+  vtkWeakPointer<vtkPVRenderView> m_view;
+  vtkNew<vtkMoleculeMapper> m_moleculeMapper;
+  vtkNew<vtkActor> m_moleculeActor;
 
   pqPropertyLinks m_links;
 };

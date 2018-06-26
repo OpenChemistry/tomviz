@@ -17,24 +17,12 @@
 
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
-#include "IntSliderWidget.h"
+#include "OperatorResult.h"
 #include "Utilities.h"
-#include "pqPropertyLinks.h"
-#include "pqSignalAdaptors.h"
-#include "pqWidgetRangeDomain.h"
-#include "vtkAlgorithm.h"
-#include "vtkImageData.h"
-#include "vtkImageReslice.h"
 #include "vtkMolecule.h"
 #include "vtkNew.h"
-#include "vtkSMPVRepresentationProxy.h"
-#include "vtkSMParaViewPipelineControllerWithRendering.h"
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
+#include "vtkRenderer.h"
 #include "vtkSMViewProxy.h"
-#include "vtkSmartPointer.h"
-#include <vtkPVDiscretizableColorTransferFunction.h>
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -42,9 +30,9 @@
 #include <QFormLayout>
 namespace tomviz {
 
-ModuleMolecule::ModuleMolecule(QObject* parentObject)
-  : Module(parentObject)
-{}
+ModuleMolecule::ModuleMolecule(QObject* parentObject) : Module(parentObject)
+{
+}
 
 ModuleMolecule::~ModuleMolecule()
 {
@@ -56,32 +44,48 @@ QIcon ModuleMolecule::icon() const
   return QIcon(":/pqWidgets/Icons/pqGroup24.png");
 }
 
-bool ModuleMolecule::initialize(DataSource* dataSource,
-                                       vtkSMViewProxy* view, OperatorResult* result)
+bool ModuleMolecule::initializeWithResult(DataSource* dataSource,
+                                          vtkSMViewProxy* view,
+                                          OperatorResult* result)
 {
-  qDebug() << "Initializing ModuleMolecule";
-  return Module::initialize(dataSource, view, result);
+  if (!Module::initializeWithResult(dataSource, view, result)) {
+    return false;
+  }
+
+  vtkMolecule* molecule = vtkMolecule::SafeDownCast(result->dataObject());
+  if (molecule == nullptr) {
+    return false;
+  }
+
+  m_moleculeMapper->SetInputData(molecule);
+  m_moleculeMapper->UseBallAndStickSettings();
+  m_moleculeActor->SetMapper(m_moleculeMapper);
+
+  m_view = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
+  m_view->GetRenderer()->AddActor(m_moleculeActor);
+  m_view->Update();
+
+  return true;
 }
 
 bool ModuleMolecule::finalize()
 {
-  vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  controller->UnRegisterProxy(m_representation);
-  // controller->UnRegisterProxy(m_passThrough);
-
-  // m_passThrough = nullptr;
-  m_representation = nullptr;
+  if (m_view) {
+    m_view->GetRenderer()->RemoveActor(m_moleculeActor);
+  }
   return true;
 }
 
 bool ModuleMolecule::setVisibility(bool val)
 {
+  m_moleculeActor->SetVisibility(val);
+  m_view->Update();
   return true;
 }
 
 bool ModuleMolecule::visibility() const
 {
-  return false;
+  return m_moleculeActor->GetVisibility();
 }
 
 void ModuleMolecule::addToPanel(QWidget* panel)
@@ -93,13 +97,10 @@ void ModuleMolecule::addToPanel(QWidget* panel)
   QVBoxLayout* layout = new QVBoxLayout;
 
   panel->setLayout(layout);
-  
 }
 
 void ModuleMolecule::dataUpdated()
 {
-  m_links.accept();
-  emit renderNeeded();
 }
 
 QJsonObject ModuleMolecule::serialize() const
@@ -116,45 +117,30 @@ bool ModuleMolecule::deserialize(const QJsonObject& json)
   if (!Module::deserialize(json)) {
     return false;
   }
-  if (json["properties"].isObject() && m_representation) {
+  if (json["properties"].isObject()) {
     return true;
   }
   return false;
 }
 
-void ModuleMolecule::dataSourceMoved(double newX, double newY,
-                                            double newZ)
+void ModuleMolecule::dataSourceMoved(double, double, double)
 {
-  double pos[3] = { newX, newY, newZ };
-
 }
 
 //-----------------------------------------------------------------------------
-bool ModuleMolecule::isProxyPartOfModule(vtkSMProxy* proxy)
+bool ModuleMolecule::isProxyPartOfModule(vtkSMProxy*)
 {
   return false;
 }
 
-std::string ModuleMolecule::getStringForProxy(vtkSMProxy* proxy)
+std::string ModuleMolecule::getStringForProxy(vtkSMProxy*)
 {
-  return "Representation";
-  // if (proxy == m_representation.Get()) {
-  //   return "Representation";
-  // } else {
-  //   qWarning(
-  //     "Unknown proxy passed to module molecule");
-  //   return "";
-  // }
+  return "";
 }
 
-vtkSMProxy* ModuleMolecule::getProxyForString(const std::string& str)
+vtkSMProxy* ModuleMolecule::getProxyForString(const std::string&)
 {
   return nullptr;
-  // if (str == "Representation") {
-  //   return m_representation.Get();
-  // } else {
-  //   return nullptr;
-  // }
 }
 
 } // namespace tomviz

@@ -18,6 +18,8 @@
 
 #include <QObject>
 
+#include "Module.h"
+
 #include <QJsonObject>
 #include <QScopedPointer>
 

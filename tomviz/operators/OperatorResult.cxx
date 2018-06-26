@@ -114,13 +114,10 @@ void OperatorResult::setDataObject(vtkDataObject* object)
   producer->SetOutput(object);
   // If the result is a vtkMolecule, create a ModuleMolecule to display it
   if (vtkMolecule::SafeDownCast(object)) {
-    qDebug() << "Result is a Molecule";
     auto view = ActiveObjects::instance().activeView();
     auto dataSource = ActiveObjects::instance().activeDataSource();
     ModuleMolecule* module = new ModuleMolecule();
-    module->initialize(dataSource, view, this);
-    // pqView* pqview = tomviz::convert<pqView*>(view);
-    // pqview->render();
+    module->initializeWithResult(dataSource, view, this);
     ModuleManager::instance().addModule(module);
   }
 }

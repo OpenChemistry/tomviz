@@ -65,7 +65,9 @@ public:
   /// new module is instantiated. Subclasses override this method to setup the
   /// visualization pipeline for this module.
   virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view);
-  virtual bool initialize(DataSource* dataSource, vtkSMViewProxy* view, OperatorResult* result);
+  virtual bool initializeWithResult(DataSource* dataSource,
+                                    vtkSMViewProxy* view,
+                                    OperatorResult* result);
 
   /// Finalize the module. Subclasses should override this method to delete and
   /// release all proxies (and data) created for this module.

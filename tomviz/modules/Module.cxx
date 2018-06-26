@@ -87,7 +87,8 @@ Module::Module(QObject* parentObject)
 
 Module::~Module() = default;
 
-bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView, OperatorResult* result)
+bool Module::initializeWithResult(DataSource* data, vtkSMViewProxy* vtkView,
+                                  OperatorResult* result)
 {
   m_operatorResult = result;
   return initialize(data, vtkView);
