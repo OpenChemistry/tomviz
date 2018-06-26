@@ -33,6 +33,7 @@ class DataPropertiesPanel;
 class DataSource;
 class Module;
 class Operator;
+class OperatorResult;
 
 /// The main window for the tomviz application.
 class MainWindow : public QMainWindow
@@ -67,6 +68,9 @@ private slots:
 
   /// Change the active module displayed in the properties panel.
   void operatorChanged(Operator* op);
+
+  /// Change the active result displayed in the properties panel.
+  void operatorResultChanged(OperatorResult* result);
 
   /// Load a custom operator from a file
   void importCustomTransform();

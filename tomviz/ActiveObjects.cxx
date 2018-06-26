@@ -167,8 +167,6 @@ void ActiveObjects::setActiveOperator(Operator* op)
 
 void ActiveObjects::setActiveOperatorResult(OperatorResult* result)
 {
-  m_activeOperatorResult = result;
-
   if (result) {
     auto op = qobject_cast<Operator*>(result->parent());
     if (op) {
@@ -176,6 +174,11 @@ void ActiveObjects::setActiveOperatorResult(OperatorResult* result)
       setActiveDataSource(op->dataSource());
     }
   }
+  if (m_activeOperatorResult != result) {
+    m_activeOperatorResult = result;
+    emit resultChanged(result);
+  }
+  emit resultActivated(result);
 }
 
 void ActiveObjects::createRenderViewIfNeeded()

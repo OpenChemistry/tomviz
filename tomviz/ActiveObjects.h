@@ -144,6 +144,12 @@ signals:
   /// Fired whenever an operator is activated, i.e. selected in the pipeline.
   void operatorActivated(Operator*);
 
+  /// Fired whenever the active operator changes.
+  void resultChanged(OperatorResult*);
+
+  /// Fired whenever an OperatorResult is activated.
+  void resultActivated(OperatorResult*);
+
   /// Fired when the mode changes
   void moveObjectsModeChanged(bool moveObjectsOn);
 

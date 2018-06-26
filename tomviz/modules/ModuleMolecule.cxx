@@ -58,7 +58,6 @@ bool ModuleMolecule::initializeWithResult(DataSource* dataSource,
   }
 
   m_moleculeMapper->SetInputData(molecule);
-  m_moleculeMapper->UseBallAndStickSettings();
   m_moleculeActor->SetMapper(m_moleculeMapper);
 
   m_view = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
@@ -79,7 +78,6 @@ bool ModuleMolecule::finalize()
 bool ModuleMolecule::setVisibility(bool val)
 {
   m_moleculeActor->SetVisibility(val);
-  m_view->Update();
   return true;
 }
 
@@ -120,13 +118,17 @@ void ModuleMolecule::addToPanel(QWidget* panel)
 void ModuleMolecule::ballRadiusChanged(double val)
 {
   m_moleculeMapper->SetAtomicRadiusScaleFactor(val);
-  m_view->GetRenderer()->Render();
+  if (m_view) {
+    m_view->GetRenderer()->Render();
+  }
 }
 
 void ModuleMolecule::bondRadiusChanged(double val)
 {
   m_moleculeMapper->SetBondRadius(val);
-  m_view->GetRenderer()->Render();
+  if (m_view) {
+    m_view->GetRenderer()->Render();
+  }
 }
 
 QJsonObject ModuleMolecule::serialize() const

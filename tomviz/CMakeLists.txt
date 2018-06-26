@@ -277,6 +277,8 @@ list(APPEND SOURCES
   operators/OperatorPython.h
   operators/OperatorResult.cxx
   operators/OperatorResult.h
+  operators/OperatorResultPropertiesPanel.cxx
+  operators/OperatorResultPropertiesPanel.h
   operators/OperatorWidget.cxx
   operators/OperatorWidget.h
   operators/ReconstructionOperator.cxx
