@@ -45,10 +45,9 @@ void DuplicateModuleReaction::onTriggered()
   auto dataSource = module->dataSource();
   auto view = ActiveObjects::instance().activeView();
   auto moduleType = ModuleFactory::moduleType(module);
-
   if (ModuleFactory::moduleApplicable(moduleType, dataSource, view)) {
     // Copy the module
-    auto copy = ModuleFactory::createModule(moduleType, dataSource, view);
+    auto copy = ModuleFactory::createModule(moduleType, dataSource, view, module->operatorResult());
     // Copy its settings
     QJsonObject json = module->serialize();
     copy->deserialize(json);

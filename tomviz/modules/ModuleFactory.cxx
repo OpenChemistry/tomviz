@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "ModuleContour.h"
+#include "ModuleMolecule.h"
 #include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
 #include "ModuleRuler.h"
@@ -25,6 +26,7 @@
 #include "ModuleSlice.h"
 #include "ModuleThreshold.h"
 #include "ModuleVolume.h"
+#include "OperatorResult.h"
 #include "Utilities.h"
 
 #include <pqView.h>
@@ -71,7 +73,7 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
 }
 
 Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
-                                    vtkSMViewProxy* view)
+                                    vtkSMViewProxy* view, OperatorResult* result)
 {
   Module* module = nullptr;
   if (type == "Outline") {
@@ -90,6 +92,8 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
     module = new ModuleRuler();
   } else if (type == "Scale Cube") {
     module = new ModuleScaleCube();
+  } else if (type == "Molecule") {
+    module = new ModuleMolecule();
   }
 
   if (module) {
@@ -100,7 +104,14 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
       return module;
     }
 
-    if (!module->initialize(dataSource, view)) {
+    bool success;
+    if (result == nullptr) {
+      success = module->initialize(dataSource, view);
+    } else {
+      success = module->initializeWithResult(dataSource, view, result);
+    }
+
+    if (!success) {
       delete module;
       return nullptr;
     }
@@ -151,6 +162,9 @@ const char* ModuleFactory::moduleType(Module* module)
   }
   if (qobject_cast<ModuleScaleCube*>(module)) {
     return "Scale Cube";
+  }
+  if (qobject_cast<ModuleMolecule*>(module)) {
+    return "Molecule";
   }
   return nullptr;
 }

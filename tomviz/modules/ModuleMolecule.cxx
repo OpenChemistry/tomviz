@@ -133,6 +133,9 @@ QJsonObject ModuleMolecule::serialize() const
 {
   auto json = Module::serialize();
   auto props = json["properties"].toObject();
+  
+  props["ballRadius"] = m_moleculeMapper->GetAtomicRadiusScaleFactor();
+  props["stickRadius"] = m_moleculeMapper->GetBondRadius();
 
   json["properties"] = props;
   return json;
@@ -144,6 +147,9 @@ bool ModuleMolecule::deserialize(const QJsonObject& json)
     return false;
   }
   if (json["properties"].isObject()) {
+    auto props = json["properties"].toObject();
+    ballRadiusChanged(props["ballRadius"].toDouble());
+    bondRadiusChanged(props["stickRadius"].toDouble());
     return true;
   }
   return false;
