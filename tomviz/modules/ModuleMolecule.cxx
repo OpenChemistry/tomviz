@@ -94,13 +94,39 @@ void ModuleMolecule::addToPanel(QWidget* panel)
     delete panel->layout();
   }
 
-  QVBoxLayout* layout = new QVBoxLayout;
+  QFormLayout* layout = new QFormLayout;
+
+  auto ballSlider = new DoubleSliderWidget(true);
+  ballSlider->setLineEditWidth(50);
+  ballSlider->setMaximum(4.0);
+  ballSlider->setValue(m_moleculeMapper->GetAtomicRadiusScaleFactor());
+  layout->addRow("Ball Radius", ballSlider);
+
+  auto stickSlider = new DoubleSliderWidget(true);
+  stickSlider->setLineEditWidth(50);
+  stickSlider->setMaximum(2.0);
+  stickSlider->setValue(m_moleculeMapper->GetBondRadius());
+  layout->addRow("Stick Radius", stickSlider);
 
   panel->setLayout(layout);
+
+  connect(ballSlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleMolecule::ballRadiusChanged);
+
+  connect(stickSlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleMolecule::bondRadiusChanged);
 }
 
-void ModuleMolecule::dataUpdated()
+void ModuleMolecule::ballRadiusChanged(double val)
 {
+  m_moleculeMapper->SetAtomicRadiusScaleFactor(val);
+  m_view->GetRenderer()->Render();
+}
+
+void ModuleMolecule::bondRadiusChanged(double val)
+{
+  m_moleculeMapper->SetBondRadius(val);
+  m_view->GetRenderer()->Render();
 }
 
 QJsonObject ModuleMolecule::serialize() const

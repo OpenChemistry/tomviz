@@ -60,7 +60,8 @@ protected:
   vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private slots:
-  void dataUpdated();
+  void ballRadiusChanged(double val);
+  void bondRadiusChanged(double val);
 
 private:
   Q_DISABLE_COPY(ModuleMolecule)
