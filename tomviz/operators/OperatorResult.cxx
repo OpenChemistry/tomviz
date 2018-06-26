@@ -116,7 +116,8 @@ void OperatorResult::setDataObject(vtkDataObject* object)
   if (vtkMolecule::SafeDownCast(object)) {
     auto view = ActiveObjects::instance().activeView();
     auto dataSource = ActiveObjects::instance().activeDataSource();
-    auto module = ModuleFactory::createModule("Molecule", dataSource, view, this);
+    auto module =
+      ModuleFactory::createModule("Molecule", dataSource, view, this);
     ModuleManager::instance().addModule(module);
   }
 }

@@ -73,7 +73,8 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
 }
 
 Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
-                                    vtkSMViewProxy* view, OperatorResult* result)
+                                    vtkSMViewProxy* view,
+                                    OperatorResult* result)
 {
   Module* module = nullptr;
   if (type == "Outline") {

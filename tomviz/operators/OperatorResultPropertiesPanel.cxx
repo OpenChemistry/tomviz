@@ -35,7 +35,8 @@
 
 namespace tomviz {
 
-OperatorResultPropertiesPanel::OperatorResultPropertiesPanel(QWidget* p) : QWidget(p)
+OperatorResultPropertiesPanel::OperatorResultPropertiesPanel(QWidget* p)
+  : QWidget(p)
 {
   // Show active module in the "OperatorResult Properties" panel.
   connect(&ActiveObjects::instance(), SIGNAL(resultChanged(OperatorResult*)),
@@ -64,11 +65,11 @@ void OperatorResultPropertiesPanel::setOperatorResult(OperatorResult* result)
   m_activeOperatorResult = result;
 }
 
-void OperatorResultPropertiesPanel::makeMoleculeProperties(vtkMolecule* molecule)
+void OperatorResultPropertiesPanel::makeMoleculeProperties(
+  vtkMolecule* molecule)
 {
   m_layout->addWidget(new QLabel("Atomic Positions"));
   table = new QTableWidget();
-  
 }
 
 } // namespace tomviz
