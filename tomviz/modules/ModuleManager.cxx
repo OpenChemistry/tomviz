@@ -296,7 +296,9 @@ QList<Module*> ModuleManager::findModulesGeneric(const DataSource* dataSource,
   QList<Module*> modules;
   foreach (Module* module, d->Modules) {
     if (module && module->dataSource() == dataSource &&
-        (view == nullptr || view == module->view())) {
+        (view == nullptr || view == module->view()) &&
+        module->label() != "Molecule") {
+      qDebug() << module->label();
       modules.push_back(module);
     }
   }
@@ -390,26 +392,7 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
     if (ds == ActiveObjects::instance().activeDataSource()) {
       jDataSource["active"] = true;
     }
-    QJsonArray jModules;
-    // Now serialize each of the modules.
-    for (int i = 0; i < d->Modules.size(); ++i) {
-      const QPointer<Module>& mdl = d->Modules[i];
-      if (mdl && mdl->dataSource() == ds) {
-        QJsonObject jModule = mdl->serialize();
-        jModule["type"] = ModuleFactory::moduleType(mdl);
-        jModule["viewId"] = static_cast<int>(mdl->view()->GetGlobalID());
-        jModule["id"] = i;
-        if (mdl == ActiveObjects::instance().activeModule()) {
-          jModule["active"] = true;
-        }
-
-        jModules.append(jModule);
-      }
-    }
-    if (!jModules.isEmpty()) {
-      jDataSource["modules"] = jModules;
-    }
-
+    
     d->relativeFilePaths(ds, stateDir, jDataSource);
 
     jDataSources.append(jDataSource);
