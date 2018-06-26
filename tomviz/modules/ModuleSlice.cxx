@@ -95,7 +95,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   controller->PreInitializeProxy(m_passThrough);
   vtkSMPropertyHelper(m_passThrough, "Input").Set(producer);
   controller->PostInitializeProxy(m_passThrough);
-  controller->RegisterPipelineProxy(m_passThrough);
+  controller->RegisterRepresentationProxy(m_passThrough);
 
   // Give the proxy a friendly name for the GUI/Python world.
   if (auto p = convert<pqProxy*>(proxy)) {
