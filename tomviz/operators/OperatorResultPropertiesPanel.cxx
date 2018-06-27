@@ -54,7 +54,6 @@ OperatorResultPropertiesPanel::~OperatorResultPropertiesPanel() = default;
 
 void OperatorResultPropertiesPanel::setOperatorResult(OperatorResult* result)
 {
-  qDebug() << "OperatorResultPropertiesPanel::setResult";
   if (result != m_activeOperatorResult) {
     deleteLayoutContents(m_layout);
     if (result) {
@@ -64,6 +63,7 @@ void OperatorResultPropertiesPanel::setOperatorResult(OperatorResult* result)
         makeMoleculeProperties(vtkMolecule::SafeDownCast(result->dataObject()));
       }
     }
+    m_layout->addStretch();
   }
 
   m_activeOperatorResult = result;
@@ -72,7 +72,37 @@ void OperatorResultPropertiesPanel::setOperatorResult(OperatorResult* result)
 void OperatorResultPropertiesPanel::makeMoleculeProperties(
   vtkMolecule* molecule)
 {
+  auto table = initializeAtomTable();
+
+  // Button to save molecule to file
+  auto saveButton = new QPushButton("Export to file");
+  connect(saveButton, &QPushButton::clicked, this,
+          [molecule]() { moleculeToFile(molecule); });
+
+  // Button to show a table with individual atoms/positions
+  // the table is lazily populated only if the user clicks on the button
+  // to preserve resources in case thousands of atoms are part ot the molecule
+  auto showButton = new QPushButton("Show atoms position");
+  showButton->setCheckable(true);
+  connect(showButton, &QPushButton::clicked, this,
+          [this, table, molecule, showButton]() {
+            if (table->rowCount() == 0) {
+              populateAtomTable(table, molecule);
+            }
+            bool toggle = !table->isVisible();
+            showButton->setChecked(toggle);
+            table->setVisible(toggle);
+          });
+
+  m_layout->addWidget(saveButton);
+  m_layout->addWidget(showButton);
+  m_layout->addWidget(table);
+}
+
+QTableWidget* OperatorResultPropertiesPanel::initializeAtomTable()
+{
   auto table = new QTableWidget();
+  table->setRowCount(0);
   table->setColumnCount(4);
   QStringList labels;
   labels << "Symbol"
@@ -80,6 +110,14 @@ void OperatorResultPropertiesPanel::makeMoleculeProperties(
          << "Y"
          << "Z";
   table->setHorizontalHeaderLabels(labels);
+  table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  table->setVisible(false);
+  return table;
+}
+
+void OperatorResultPropertiesPanel::populateAtomTable(QTableWidget* table,
+                                                      vtkMolecule* molecule)
+{
   table->setRowCount(molecule->GetNumberOfAtoms());
   vtkNew<vtkPeriodicTable> periodicTable;
   for (int i = 0; i < molecule->GetNumberOfAtoms(); ++i) {
@@ -101,16 +139,6 @@ void OperatorResultPropertiesPanel::makeMoleculeProperties(
     table->setItem(i, 2, yItem);
     table->setItem(i, 3, zItem);
   }
-
-  table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-
-  // Button to save molecule to file
-  auto saveButton = new QPushButton("Export to file");
-  connect(saveButton, &QPushButton::clicked, this,
-          [molecule]() { moleculeToFile(molecule); });
-
-  m_layout->addWidget(saveButton);
-  m_layout->addWidget(table);
 }
 
 } // namespace tomviz

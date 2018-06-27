@@ -21,6 +21,7 @@
 #include <QPointer>
 
 class QLabel;
+class QTableWidget;
 class QVBoxLayout;
 class vtkMolecule;
 
@@ -42,6 +43,8 @@ private:
   Q_DISABLE_COPY(OperatorResultPropertiesPanel)
 
   void makeMoleculeProperties(vtkMolecule* molecule);
+  QTableWidget* initializeAtomTable();
+  void populateAtomTable(QTableWidget* table, vtkMolecule* molecule);
   QPointer<OperatorResult> m_activeOperatorResult = nullptr;
   QVBoxLayout* m_layout = nullptr;
 };
