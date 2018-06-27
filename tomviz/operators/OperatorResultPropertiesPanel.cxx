@@ -23,14 +23,17 @@
 #include "Utilities.h"
 
 #include "vtkMolecule.h"
+#include "vtkPeriodicTable.h"
 
 #include <QAbstractButton>
 #include <QDebug>
 #include <QDialogButtonBox>
+#include <QHeaderView>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QTableWidget>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -55,10 +58,11 @@ void OperatorResultPropertiesPanel::setOperatorResult(OperatorResult* result)
   if (result != m_activeOperatorResult) {
     deleteLayoutContents(m_layout);
     if (result) {
+      m_layout->addWidget(new QLabel(result->label()));
+
       if (vtkMolecule::SafeDownCast(result->dataObject())) {
         makeMoleculeProperties(vtkMolecule::SafeDownCast(result->dataObject()));
       }
-      m_layout->addStretch();
     }
   }
 
@@ -68,8 +72,39 @@ void OperatorResultPropertiesPanel::setOperatorResult(OperatorResult* result)
 void OperatorResultPropertiesPanel::makeMoleculeProperties(
   vtkMolecule* molecule)
 {
-  m_layout->addWidget(new QLabel("Atomic Positions"));
-  table = new QTableWidget();
+  auto table = new QTableWidget();
+  table->setColumnCount(4);
+  QStringList labels;
+  labels << "Symbol"
+         << "X"
+         << "Y"
+         << "Z";
+  table->setHorizontalHeaderLabels(labels);
+  table->setRowCount(molecule->GetNumberOfAtoms());
+  vtkNew<vtkPeriodicTable> periodicTable;
+  for (int i = 0; i < molecule->GetNumberOfAtoms(); ++i) {
+    vtkAtom atom = molecule->GetAtom(i);
+    auto symbolItem = new QTableWidgetItem(
+      QString(periodicTable->GetSymbol(atom.GetAtomicNumber())));
+    symbolItem->setFlags(Qt::ItemIsEnabled);
+
+    auto position = atom.GetPosition();
+    auto xItem = new QTableWidgetItem(QString::number(position[0]));
+    xItem->setFlags(Qt::ItemIsEnabled);
+    auto yItem = new QTableWidgetItem(QString::number(position[1]));
+    yItem->setFlags(Qt::ItemIsEnabled);
+    auto zItem = new QTableWidgetItem(QString::number(position[2]));
+    zItem->setFlags(Qt::ItemIsEnabled);
+
+    table->setItem(i, 0, symbolItem);
+    table->setItem(i, 1, xItem);
+    table->setItem(i, 2, yItem);
+    table->setItem(i, 3, zItem);
+  }
+
+  table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+  m_layout->addWidget(table);
 }
 
 } // namespace tomviz
