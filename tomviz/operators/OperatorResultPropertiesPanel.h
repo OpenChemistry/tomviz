@@ -45,6 +45,7 @@ private:
   void makeMoleculeProperties(vtkMolecule* molecule);
   QTableWidget* initializeAtomTable();
   void populateAtomTable(QTableWidget* table, vtkMolecule* molecule);
+  QMap<QString, int> moleculeSpeciesCount(vtkMolecule* molecule);
   QPointer<OperatorResult> m_activeOperatorResult = nullptr;
   QVBoxLayout* m_layout = nullptr;
 };
