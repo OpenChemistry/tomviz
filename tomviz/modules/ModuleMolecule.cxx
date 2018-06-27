@@ -52,12 +52,12 @@ bool ModuleMolecule::initializeWithResult(DataSource* dataSource,
     return false;
   }
 
-  vtkMolecule* molecule = vtkMolecule::SafeDownCast(result->dataObject());
-  if (molecule == nullptr) {
+  m_molecule = vtkMolecule::SafeDownCast(result->dataObject());
+  if (m_molecule == nullptr) {
     return false;
   }
 
-  m_moleculeMapper->SetInputData(molecule);
+  m_moleculeMapper->SetInputData(m_molecule);
   m_moleculeActor->SetMapper(m_moleculeMapper);
 
   m_view = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
@@ -175,6 +175,11 @@ std::string ModuleMolecule::getStringForProxy(vtkSMProxy*)
 vtkSMProxy* ModuleMolecule::getProxyForString(const std::string&)
 {
   return nullptr;
+}
+
+vtkSmartPointer<vtkDataObject> ModuleMolecule::getDataToExport()
+{
+  return m_molecule;
 }
 
 } // namespace tomviz

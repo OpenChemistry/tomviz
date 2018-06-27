@@ -24,6 +24,7 @@
 #include <vtkWeakPointer.h>
 
 class QCheckBox;
+class vtkMolecule;
 class vtkSMProxy;
 class vtkSMSourceProxy;
 
@@ -51,6 +52,7 @@ public:
   bool deserialize(const QJsonObject& json) override;
 
   QString exportDataTypeString() override { return "Molecule"; }
+  vtkSmartPointer<vtkDataObject> getDataToExport() override;
 
   bool isProxyPartOfModule(vtkSMProxy* proxy) override;
   void dataSourceMoved(double newX, double newY, double newZ) override;
@@ -66,6 +68,7 @@ private slots:
 private:
   Q_DISABLE_COPY(ModuleMolecule)
   vtkWeakPointer<vtkPVRenderView> m_view;
+  vtkMolecule* m_molecule;
   vtkNew<vtkMoleculeMapper> m_moleculeMapper;
   vtkNew<vtkActor> m_moleculeActor;
 

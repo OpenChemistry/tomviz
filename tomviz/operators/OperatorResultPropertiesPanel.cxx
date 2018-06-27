@@ -104,6 +104,12 @@ void OperatorResultPropertiesPanel::makeMoleculeProperties(
 
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
+  // Button to save molecule to file
+  auto saveButton = new QPushButton("Export to file");
+  connect(saveButton, &QPushButton::clicked, this,
+          [molecule]() { moleculeToFile(molecule); });
+
+  m_layout->addWidget(saveButton);
   m_layout->addWidget(table);
 }
 
