@@ -238,7 +238,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
 
   if (result && qobject_cast<Operator*>(result->parent())) {
     if (vtkTable::SafeDownCast(result->dataObject())) {
-      exportTableResultAction = contextMenu.addAction("Save as .json");
+      exportTableResultAction = contextMenu.addAction("Save as JSON");
     } else {
       return;
     }

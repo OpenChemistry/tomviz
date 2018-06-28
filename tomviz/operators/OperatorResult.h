@@ -38,16 +38,16 @@ public:
   virtual ~OperatorResult() override;
 
   /// Set name of object.
-  void setName(const QString& name);
-  const QString& name();
+  void setName(QString name);
+  QString name() const;
 
   /// Set label of object.
-  void setLabel(const QString& label);
-  const QString& label();
+  void setLabel(QString label);
+  QString label() const;
 
   /// Set description of object.
-  void setDescription(const QString& desc);
-  const QString& description();
+  void setDescription(QString desc);
+  QString description() const;
 
   /// Clean up object, releasing the data object and the proxy created
   /// for it.

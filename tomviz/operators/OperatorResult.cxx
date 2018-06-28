@@ -34,32 +34,32 @@ OperatorResult::~OperatorResult()
   finalize();
 }
 
-void OperatorResult::setName(const QString& name)
+void OperatorResult::setName(QString name)
 {
   m_name = name;
 }
 
-const QString& OperatorResult::name()
+QString OperatorResult::name() const
 {
   return m_name;
 }
 
-void OperatorResult::setLabel(const QString& label)
+void OperatorResult::setLabel(QString label)
 {
   m_label = label;
 }
 
-const QString& OperatorResult::label()
+QString OperatorResult::label() const
 {
   return m_label;
 }
 
-void OperatorResult::setDescription(const QString& desc)
+void OperatorResult::setDescription(QString desc)
 {
   m_description = desc;
 }
 
-const QString& OperatorResult::description()
+QString OperatorResult::description() const
 {
   return m_description;
 }
