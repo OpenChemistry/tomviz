@@ -364,6 +364,8 @@ set(python_files
 
 set(json_files
   AddPoissonNoise.json
+  AutoCenterOfMassTiltImageAlignment.json
+  AutoCrossCorrelationTiltImageAlignment.json
   BinaryThreshold.json
   ConnectedComponents.json
   ClipEdges.json

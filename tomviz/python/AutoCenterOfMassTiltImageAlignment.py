@@ -14,18 +14,30 @@ class CenterOfMassAlignmentOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = tiltSeries.shape[2]
         step = 1
 
+        offsets = np.zeros((tiltSeries.shape[2], 2))
+
         for i in range(tiltSeries.shape[2]):
             if self.canceled:
                 return
             self.progress.message = 'Processing tilt image No.%d/%d' % (
                 i + 1, tiltSeries.shape[2])
 
-            tiltSeries[:, :, i] = centerOfMassAlign(tiltSeries[:, :, i])
+            offsets[i, :], tiltSeries[:, :, i] = centerOfMassAlign(
+                tiltSeries[:, :, i]
+            )
 
             step += 1
             self.progress.value = step
 
         utils.set_array(dataset, tiltSeries)
+
+        # Create a spreadsheet data set from table data
+        column_names = ["X Offset", "Y Offset"]
+        offsetsTable = utils.make_spreadsheet(column_names, offsets)
+        # Set up dictionary to return operator results
+        returnValues = {}
+        returnValues["alignments"] = offsetsTable
+        return returnValues
 
 
 def centerOfMassAlign(image):
@@ -34,7 +46,7 @@ def centerOfMassAlign(image):
     # set up coordinate
     y = np.linspace(0, Ny - 1, Ny)
     x = np.linspace(0, Nx - 1, Nx)
-    [X, Y] = np.meshgrid(y, x)
+    [X, Y] = np.meshgrid(x, y, indexing="ij")
 
     imageCOM_x = int(np.sum(image * X) / np.sum(image))
     imageCOM_y = int(np.sum(image * Y) / np.sum(image))
@@ -42,7 +54,7 @@ def centerOfMassAlign(image):
     sx = -(imageCOM_x - Nx // 2)
     sy = -(imageCOM_y - Ny // 2)
 
-    output = np.roll(image, sx, axis=1)
-    output = np.roll(output, sy, axis=0)
+    output = np.roll(image, sx, axis=0)
+    output = np.roll(output, sy, axis=1)
 
-    return output
+    return (sx, sy), output

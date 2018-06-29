@@ -353,10 +353,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   new AddPythonTransformReaction(
     autoAlignCCAction, "Auto Tilt Image Align (XCORR)",
-    readInPythonScript("AutoCrossCorrelationTiltImageAlignment"), true);
+    readInPythonScript("AutoCrossCorrelationTiltImageAlignment"), true, false,
+    readInJSONDescription("AutoCrossCorrelationTiltImageAlignment"));
   new AddPythonTransformReaction(
     autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
-    readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true);
+    readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true, false,
+    readInJSONDescription("AutoCenterOfMassTiltImageAlignment"));
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true, false,
                                  readInJSONDescription("Recon_DFT"));

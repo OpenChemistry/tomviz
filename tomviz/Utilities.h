@@ -26,9 +26,11 @@
 #include <vtkVariant.h>
 
 #include <Variant.h>
+#include <vtkVector.h>
 #include <vtk_pugixml.h>
 
 #include <QFileInfo>
+#include <QJsonDocument>
 #include <QStringList>
 #include <QVariant>
 
@@ -41,6 +43,7 @@ class vtkSMProxyLocator;
 class vtkSMRenderViewProxy;
 class vtkPVArrayInformation;
 class vtkPiecewiseFunction;
+class vtkTable;
 
 class QDir;
 class QLayout;
@@ -209,6 +212,11 @@ QJsonValue toJson(vtkSMProperty* prop);
 bool setProperties(const QJsonObject& props, vtkSMProxy* proxy);
 bool setProperty(const QJsonValue& value, vtkSMProperty* prop, int index = 0);
 bool setProperty(const QJsonArray& array, vtkSMProperty* prop);
+
+/// Write a vtkTable to json file
+bool jsonToFile(const QJsonDocument& json);
+QJsonDocument tableToJson(vtkTable* table);
+QJsonDocument vectorToJson(const QVector<vtkVector2i> vector);
 
 extern double offWhite[3];
 } // namespace tomviz

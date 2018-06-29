@@ -47,7 +47,9 @@
 #include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringList.h>
+#include <vtkTable.h>
 #include <vtkTrivialProducer.h>
+#include <vtkVariantArray.h>
 
 #include <sstream>
 #include <vector>
@@ -55,6 +57,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QFileDialog>
 #include <QJsonArray>
 #include <QLayout>
 #include <QMessageBox>
@@ -865,6 +868,83 @@ bool setProperties(const QJsonObject& props, vtkSMProxy* proxy)
     }
   }
 
+  return true;
+}
+
+QString dialogToFileName(QFileDialog* dialog)
+{
+  auto res = dialog->exec();
+  if (res != QDialog::Accepted) {
+    return QString();
+  }
+  QStringList fileNames = dialog->selectedFiles();
+  if (fileNames.size() < 1) {
+    return QString();
+  }
+  QString fileName = fileNames[0];
+  return fileName;
+}
+
+QJsonDocument tableToJson(vtkTable* table)
+{
+  QJsonArray rows;
+  for (vtkIdType i = 0; i < table->GetNumberOfRows(); ++i) {
+    auto row = table->GetRow(i);
+    QJsonArray item;
+    for (vtkIdType j = 0; j < row->GetSize(); ++j) {
+      auto value = row->GetValue(j);
+      if (value.IsNumeric()) {
+        if (value.IsFloat()) {
+          item << value.ToFloat();
+        } else if (value.IsDouble()) {
+          item << value.ToDouble();
+        } else if (value.IsInt()) {
+          item << value.ToInt();
+        } else {
+          // Fall back to double, of include all the other types if needed
+          item << value.ToDouble();
+        }
+      }
+    }
+    rows << item;
+  }
+  return QJsonDocument(rows);
+}
+
+QJsonDocument vectorToJson(const QVector<vtkVector2i> vector)
+{
+  QJsonArray rows;
+  foreach (auto row, vector) {
+    QJsonArray item;
+    item << row[0] << row[1];
+    rows << item;
+  }
+  return QJsonDocument(rows);
+}
+
+bool jsonToFile(const QJsonDocument& document)
+{
+  QStringList filters;
+  filters << "JSON Files (*.json)";
+  QFileDialog dialog;
+  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setNameFilters(filters);
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
+  QString fileName = dialogToFileName(&dialog);
+  if (fileName.isEmpty()) {
+    return false;
+  }
+  if (!fileName.endsWith(".json")) {
+    fileName = QString("%1.json").arg(fileName);
+  }
+
+  QFile file(fileName);
+  if (!file.open(QIODevice::WriteOnly)) {
+    qCritical() << QString("Error opening file for writing: %1").arg(fileName);
+    return false;
+  }
+  file.write(document.toJson());
+  file.close();
   return true;
 }
 

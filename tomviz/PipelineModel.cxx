@@ -472,7 +472,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         case Qt::DisplayRole:
           return result->label();
         case Qt::ToolTipRole:
-          return tr("Result tooltip role");
+          return result->description();
         default:
           return QVariant();
       }

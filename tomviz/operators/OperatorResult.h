@@ -38,12 +38,16 @@ public:
   virtual ~OperatorResult() override;
 
   /// Set name of object.
-  void setName(const QString& name);
-  const QString& name();
+  void setName(QString name);
+  QString name() const;
 
   /// Set label of object.
-  void setLabel(const QString& label);
-  const QString& label();
+  void setLabel(QString label);
+  QString label() const;
+
+  /// Set description of object.
+  void setDescription(QString desc);
+  QString description() const;
 
   /// Clean up object, releasing the data object and the proxy created
   /// for it.
@@ -61,6 +65,7 @@ private:
   vtkWeakPointer<vtkSMSourceProxy> m_producerProxy;
   QString m_name;
   QString m_label;
+  QString m_description = "Operator Result";
 
   void createProxyIfNeeded();
   void deleteProxy();

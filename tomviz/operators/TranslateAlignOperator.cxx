@@ -18,9 +18,12 @@
 
 #include "AlignWidget.h"
 #include "DataSource.h"
+#include "OperatorResult.h"
 
 #include "vtkImageData.h"
+#include "vtkIntArray.h"
 #include "vtkNew.h"
+#include "vtkTable.h"
 
 #include <QJsonArray>
 
@@ -85,11 +88,23 @@ void applyImageOffsets(T* in, T* out, vtkImageData* image,
 namespace tomviz {
 TranslateAlignOperator::TranslateAlignOperator(DataSource* ds, QObject* p)
   : Operator(p), dataSource(ds)
-{}
+{
+  initializeResults();
+}
 
 QIcon TranslateAlignOperator::icon() const
 {
   return QIcon("");
+}
+
+void TranslateAlignOperator::initializeResults()
+{
+  setNumberOfResults(1);
+  auto res = resultAt(0);
+  res->setName("alignments");
+  res->setLabel("Alignments");
+  vtkNew<vtkTable> table;
+  setResult(0, table);
 }
 
 bool TranslateAlignOperator::applyTransform(vtkDataObject* data)
@@ -104,6 +119,7 @@ bool TranslateAlignOperator::applyTransform(vtkDataObject* data)
                         reinterpret_cast<VTK_TT*>(outImage->GetScalarPointer()),
                         inImage, offsets));
   }
+  offsetsToResult();
   data->ShallowCopy(outImage.Get());
   return true;
 }
@@ -113,6 +129,25 @@ Operator* TranslateAlignOperator::clone() const
   TranslateAlignOperator* op = new TranslateAlignOperator(this->dataSource);
   op->setAlignOffsets(this->offsets);
   return op;
+}
+
+void TranslateAlignOperator::offsetsToResult()
+{
+  vtkNew<vtkIntArray> arrX;
+  arrX->SetName("X Offset");
+  vtkNew<vtkIntArray> arrY;
+  arrY->SetName("Y Offset");
+
+  vtkNew<vtkTable> table;
+  table->AddColumn(arrX);
+  table->AddColumn(arrY);
+  table->SetNumberOfRows(offsets.size());
+
+  for (int i = 0; i < offsets.size(); ++i) {
+    table->SetValue(i, 0, offsets[i][0]);
+    table->SetValue(i, 1, offsets[i][1]);
+  }
+  setResult(0, table);
 }
 
 QJsonObject TranslateAlignOperator::serialize() const

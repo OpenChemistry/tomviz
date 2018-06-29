@@ -927,34 +927,8 @@ void AlignWidget::zoomToSelectionFinished()
 
 void AlignWidget::onSaveClicked()
 {
-  QStringList filters;
-  filters << "JSON Files (*.json)";
-  QFileDialog dialog;
-  dialog.setFileMode(QFileDialog::AnyFile);
-  dialog.setNameFilters(filters);
-  dialog.setAcceptMode(QFileDialog::AcceptSave);
-  QString fileName = dialogToFileName(&dialog);
-  if (fileName.isEmpty()) {
-    return;
-  }
-  if (!fileName.endsWith(".json")) {
-    fileName = QString("%1.json").arg(fileName);
-  }
-
-  QJsonArray offsetArray;
-  foreach (auto offset, m_offsets) {
-    QJsonArray thisOffset;
-    thisOffset << offset[0] << offset[1];
-    offsetArray << thisOffset;
-  }
-
-  QFile file(fileName);
-  if (!file.open(QIODevice::WriteOnly)) {
-    qCritical() << QString("Error opening file for writing: %1").arg(fileName);
-    return;
-  }
-  file.write(QJsonDocument(offsetArray).toJson());
-  file.close();
+  auto json = vectorToJson(m_offsets);
+  jsonToFile(json);
 }
 
 void AlignWidget::onLoadClicked()

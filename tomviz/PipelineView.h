@@ -22,6 +22,8 @@
 
 #include "EditOperatorDialog.h"
 
+class vtkTable;
+
 namespace tomviz {
 
 class DataSource;
@@ -55,6 +57,7 @@ private slots:
   void setCurrent(Operator* op);
   void deleteItemsConfirm(const QModelIndexList& idxs);
   void setModuleVisibility(const QModelIndexList& idxs, bool visible);
+  void exportTableAsJson(vtkTable*);
 };
 } // namespace tomviz
 
