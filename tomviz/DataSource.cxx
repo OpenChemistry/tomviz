@@ -841,9 +841,8 @@ void DataSource::setType(DataSourceType t)
 bool DataSource::hasTiltAngles()
 {
   vtkDataObject* data = this->dataObject();
-  vtkFieldData* fd = data->GetFieldData();
 
-  return fd->HasArray("tilt_angles");
+  return hasTiltAngles(data);
 }
 
 QVector<double> DataSource::getTiltAngles() const
@@ -1032,4 +1031,12 @@ void DataSource::setInitialContourValue(double d)
 {
   Internals->initialContourValue = d;
 }
+
+bool DataSource::hasTiltAngles(vtkDataObject* image)
+{
+  vtkFieldData* fd = image->GetFieldData();
+
+  return fd->HasArray("tilt_angles");
+}
+
 } // namespace tomviz
