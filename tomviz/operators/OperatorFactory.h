@@ -38,7 +38,7 @@ public:
   static Operator* createOperator(const QString& type, DataSource* ds);
 
   /// Returns the type for an operator instance.
-  static const char* operatorType(Operator* module);
+  static const char* operatorType(const Operator* module);
 
 private:
   OperatorFactory();

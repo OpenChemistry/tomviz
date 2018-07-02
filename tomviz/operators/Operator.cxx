@@ -18,6 +18,7 @@
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
 #include "ModuleManager.h"
+#include "OperatorFactory.h"
 #include "OperatorResult.h"
 #include "Pipeline.h"
 
@@ -180,6 +181,8 @@ QJsonObject Operator::serialize() const
     dataSources.append(ds->serialize());
     json["dataSources"] = dataSources;
   }
+  json["type"] = OperatorFactory::operatorType(this);
+
   return json;
 }
 

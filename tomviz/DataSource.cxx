@@ -369,7 +369,6 @@ QJsonObject DataSource::serialize() const
   QJsonArray jOperators;
   foreach (Operator* op, this->Internals->Operators) {
     QJsonObject jOperator = op->serialize();
-    jOperator["type"] = OperatorFactory::operatorType(op);
     jOperators.append(jOperator);
   }
   if (!jOperators.isEmpty()) {
