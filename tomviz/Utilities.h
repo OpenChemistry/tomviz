@@ -21,7 +21,6 @@
 #include <pqApplicationCore.h>
 #include <pqProxy.h>
 #include <pqServerManagerModel.h>
-#include <vtkRect.h>
 #include <vtkSMProperty.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkVariant.h>
@@ -35,11 +34,8 @@
 
 class pqAnimationScene;
 
-class vtkColorTransferFunction;
 class vtkDiscretizableColorTransferFunction;
-class vtkImageData;
 class vtkImageSliceMapper;
-class vtkPiecewiseFunction;
 class vtkRenderer;
 class vtkSMProxyLocator;
 class vtkSMRenderViewProxy;
