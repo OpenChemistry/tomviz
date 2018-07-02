@@ -73,6 +73,12 @@ public:
               const double height);
   //@}
 
+  static void rasterTransferFunction2DBox(vtkImageData* histogram2D,
+                                          const vtkRectd& box,
+                                          vtkImageData* transferFunction,
+                                          vtkColorTransferFunction* colorFunc,
+                                          vtkPiecewiseFunction* opacFunc);
+
 protected:
   vtkTransferFunctionBoxItem();
   ~vtkTransferFunctionBoxItem() override;

@@ -33,6 +33,7 @@
 vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
   vtkChartTransfer2DEditor::vtkChartTransfer2DEditor()
+  : Transfer2DBox(&this->DummyBox)
 {
   Callback->SetClientData(this);
   Callback->SetCallback(vtkChartTransfer2DEditor::OnBoxItemModified);
@@ -48,14 +49,48 @@ vtkStandardNewMacro(vtkChartTransfer2DEditor)
 
 vtkChartTransfer2DEditor::~vtkChartTransfer2DEditor() = default;
 
-void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D)
+void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D,
+                                             vtkRectd* box)
 {
+  // Set the box first, GenerateTransfer2D writes to it
+  // so avoid writing to the old one.
+  if (box != nullptr) {
+    this->Transfer2DBox = box;
+  } else {
+    // Make sure to use internal dummy box.  This is set to
+    // nullptr when the active datasource/module is cleared
+    // which usually means it was deleted.  Avoid pointers to
+    // deleted data by setting this to a local dummy value.
+    this->Transfer2DBox = &this->DummyBox;
+  }
   if (transfer2D != this->Transfer2D) {
     this->Transfer2D = transfer2D;
 
+    // Call modified here but delay call of GenerateTransfer2D until
+    // after the box update is passed to the boxItem.
     Modified();
-    GenerateTransfer2D();
   }
+  // Now force the new box through (must be done after the
+  // Transfer2D is set).
+  if (box != nullptr) {
+    // Update the box shown on the plot (assumes only one box).
+    const vtkIdType numPlots = GetNumberOfPlots();
+    for (vtkIdType i = 0; i < numPlots; i++) {
+      typedef vtkTransferFunctionBoxItem BoxType;
+      BoxType* boxItem = BoxType::SafeDownCast(GetPlot(i));
+      if (!boxItem) {
+        continue;
+      }
+
+      boxItem->SetBox(box->GetX(), box->GetY(), box->GetWidth(),
+                      box->GetHeight());
+      break;
+    }
+  }
+
+  // This should only do something if Modified was called and it has not
+  // been called since.
+  GenerateTransfer2D();
 }
 
 bool vtkChartTransfer2DEditor::IsInitialized()
@@ -90,7 +125,10 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
       continue;
     }
 
-    RasterBoxItem(boxItem);
+    *this->Transfer2DBox = boxItem->GetBox();
+    vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
+      Histogram->GetInputImageData(), boxItem->GetBox(), Transfer2D,
+      boxItem->GetColorFunction(), boxItem->GetOpacityFunction());
   }
 
   InvokeEvent(vtkCommand::EndEvent);
@@ -99,63 +137,6 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
 vtkPlot* vtkChartTransfer2DEditor::GetPlot(vtkIdType index)
 {
   return vtkChartXY::GetPlot(index);
-}
-
-void vtkChartTransfer2DEditor::RasterBoxItem(
-  vtkTransferFunctionBoxItem* boxItem)
-{
-  const vtkRectd& box = boxItem->GetBox();
-  vtkPiecewiseFunction* opacFunc = boxItem->GetOpacityFunction();
-  vtkColorTransferFunction* colorFunc = boxItem->GetColorFunction();
-  if (!opacFunc || !colorFunc) {
-    vtkErrorMacro(<< "BoxItem contains invalid transfer functions!");
-    return;
-  }
-
-  double spacing[3];
-  Histogram->GetInputImageData()->GetSpacing(spacing);
-  const vtkIdType width = static_cast<vtkIdType>(box.GetWidth() / spacing[0]);
-  const vtkIdType height = static_cast<vtkIdType>(box.GetHeight() / spacing[1]);
-
-  if (width <= 0 || height <= 0) {
-    return;
-  }
-
-  // Assume color and opacity share the same data range
-  double range[2];
-  colorFunc->GetRange(range);
-
-  double* dataRGB = new double[width * 3];
-  colorFunc->GetTable(range[0], range[1], width, dataRGB);
-
-  double* dataAlpha = new double[width];
-  opacFunc->GetTable(range[0], range[1], width, dataAlpha);
-
-  // Copy the values into Transfer2D
-  vtkFloatArray* transfer =
-    vtkFloatArray::SafeDownCast(Transfer2D->GetPointData()->GetScalars());
-
-  const vtkIdType x0 = static_cast<vtkIdType>(box.GetX() / spacing[0]);
-  const vtkIdType y0 = static_cast<vtkIdType>(box.GetY() / spacing[1]);
-
-  int bins[3];
-  Transfer2D->GetDimensions(bins);
-
-  for (vtkIdType j = 0; j < height; j++)
-    for (vtkIdType i = 0; i < width; i++) {
-      double color[4];
-
-      color[0] = dataRGB[i * 3];
-      color[1] = dataRGB[i * 3 + 1];
-      color[2] = dataRGB[i * 3 + 2];
-      color[3] = dataAlpha[i];
-
-      const vtkIdType index = (y0 + j) * bins[1] + (x0 + i);
-      transfer->SetTuple(index, color);
-    }
-
-  delete[] dataRGB;
-  delete[] dataAlpha;
 }
 
 vtkIdType vtkChartTransfer2DEditor::AddFunction(
@@ -250,7 +231,11 @@ void vtkChartTransfer2DEditor::SetDefaultBoxPosition(
   vtkSmartPointer<vtkTransferFunctionBoxItem> item, const double xRange[2],
   const double yRange[2])
 {
-  const double deltaX = (xRange[1] - xRange[0]) / 3.0;
-  const double deltaY = (yRange[1] - yRange[0]) / 3.0;
-  item->SetBox(xRange[0] + deltaX, yRange[0] + deltaY, deltaX, deltaY);
+  if (this->Transfer2DBox->GetWidth() < 0) {
+    const double deltaX = (xRange[1] - xRange[0]) / 3.0;
+    const double deltaY = (yRange[1] - yRange[0]) / 3.0;
+    item->SetBox(xRange[0] + deltaX, yRange[0] + deltaY, deltaX, deltaY);
+    // set the box in the source directly since the callback may not be set up
+    *this->Transfer2DBox = item->GetBox();
+  }
 }

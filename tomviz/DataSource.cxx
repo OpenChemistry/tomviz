@@ -71,6 +71,7 @@ public:
   vtkSmartPointer<vtkStringArray> Units;
   vtkVector3d DisplayPosition;
   PersistenceState PersistState = PersistenceState::Saved;
+  vtkRectd m_transferFunction2DBox;
   bool UnitsModified = false;
   bool Forkable = true;
   double initialContourValue = DBL_MAX;
@@ -328,6 +329,13 @@ QJsonObject DataSource::serialize() const
   // Serialize the color map, opacity map, and others if needed.
   json["colorOpacityMap"] = tomviz::serialize(colorMap());
   json["gradientOpacityMap"] = tomviz::serialize(gradientOpacityMap());
+  QJsonObject boxJson;
+  auto& transfer2DBox = this->Internals->m_transferFunction2DBox;
+  boxJson["x"] = transfer2DBox.GetX();
+  boxJson["y"] = transfer2DBox.GetY();
+  boxJson["width"] = transfer2DBox.GetWidth();
+  boxJson["height"] = transfer2DBox.GetHeight();
+  json["colorMap2DBox"] = boxJson;
 
   // Serialize the operators...
   QJsonArray jOperators;
@@ -365,6 +373,13 @@ bool DataSource::deserialize(const QJsonObject& state)
   if (state.contains("gradientOpacityMap")) {
     tomviz::deserialize(gradientOpacityMap(),
                         state["gradientOpacityMap"].toObject());
+  }
+  if (state.contains("colorMap2DBox")) {
+    auto boxJson = state["colorMap2DBox"].toObject();
+    auto& transfer2DBox = this->Internals->m_transferFunction2DBox;
+    transfer2DBox.Set(boxJson["x"].toDouble(), boxJson["y"].toDouble(),
+                      boxJson["width"].toDouble(),
+                      boxJson["height"].toDouble());
   }
 
   if (state.contains("spacing")) {
@@ -895,6 +910,11 @@ vtkImageData* DataSource::transferFunction2D() const
   return this->Internals->m_transfer2D;
 }
 
+vtkRectd* DataSource::transferFunction2DBox() const
+{
+  return &this->Internals->m_transferFunction2DBox;
+}
+
 bool DataSource::hasLabelMap()
 {
   auto dataSource = proxy();
@@ -940,6 +960,11 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   this->Internals->Type = dataType;
   this->Internals->PersistState = persistState;
   this->Internals->DisplayPosition.Set(0, 0, 0);
+
+  // Set up default rect for transfer function 2d...
+  // The widget knows to interpret a rect with negative width as
+  // uninitialized.
+  this->Internals->m_transferFunction2DBox.Set(0, 0, -1, -1);
 
   vtkNew<vtkSMParaViewPipelineController> controller;
   auto pxm = ActiveObjects::instance().proxyManager();

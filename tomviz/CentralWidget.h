@@ -92,9 +92,6 @@ private:
 
   QPointer<DataSource> m_activeColorMapDataSource;
   QPointer<Module> m_activeModule;
-  HistogramMaker* m_histogramGen;
-  QThread* m_worker;
-  QMap<vtkImageData*, vtkSmartPointer<vtkTable>> m_histogramCache;
   Transfer2DModel* m_transfer2DModel;
 };
 } // namespace tomviz

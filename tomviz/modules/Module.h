@@ -21,6 +21,7 @@
 #include <QPointer>
 #include <QScopedPointer>
 
+#include <vtkRect.h>
 #include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
 
@@ -102,6 +103,7 @@ public:
   vtkSMProxy* opacityMap() const;
   vtkPiecewiseFunction* gradientOpacityMap() const;
   vtkImageData* transferFunction2D() const;
+  vtkRectd* transferFunction2DBox() const;
 
   /// Returns true if the given proxy is part of the display or data processing
   /// in this module

@@ -46,6 +46,7 @@ class Module::MInternals
 {
   vtkSmartPointer<vtkSMProxy> m_detachedColorMap;
   vtkSmartPointer<vtkSMProxy> m_detachedOpacityMap;
+  vtkRectd m_detachedTransferFunction2DBox;
 
 public:
   vtkWeakPointer<vtkSMProxy> m_colorMap;
@@ -69,6 +70,8 @@ public:
       m_detachedOpacityMap =
         vtkSMPropertyHelper(m_detachedColorMap, "ScalarOpacityFunction")
           .GetAsProxy();
+      // The widget interprests negative width as uninitialized.
+      m_detachedTransferFunction2DBox.Set(0, 0, -1, -1);
     }
     return m_detachedColorMap;
   }
@@ -77,6 +80,12 @@ public:
   {
     detachedColorMap();
     return m_detachedOpacityMap;
+  }
+
+  vtkRectd* detachedTransferFunction2DBox()
+  {
+    detachedColorMap();
+    return &m_detachedTransferFunction2DBox;
   }
 };
 
@@ -187,6 +196,12 @@ vtkImageData* Module::transferFunction2D() const
                                : colorMapDataSource()->transferFunction2D();
 }
 
+vtkRectd* Module::transferFunction2DBox() const
+{
+  return useDetachedColorMap() ? d->detachedTransferFunction2DBox()
+                               : dataSource()->transferFunction2DBox();
+}
+
 QJsonObject Module::serialize() const
 {
   QJsonObject json;
@@ -197,6 +212,13 @@ QJsonObject Module::serialize() const
     if (m_useDetachedColorMap) {
       json["colorOpacityMap"] = tomviz::serialize(d->detachedColorMap());
       json["gradientOpacityMap"] = tomviz::serialize(gradientOpacityMap());
+      QJsonObject boxJson;
+      auto transfer2DBox = d->detachedTransferFunction2DBox();
+      boxJson["x"] = transfer2DBox->GetX();
+      boxJson["y"] = transfer2DBox->GetY();
+      boxJson["width"] = transfer2DBox->GetWidth();
+      boxJson["height"] = transfer2DBox->GetHeight();
+      json["colorMap2DBox"] = boxJson;
     }
   }
   json["properties"] = props;
@@ -220,6 +242,13 @@ bool Module::deserialize(const QJsonObject& json)
       if (json.contains("gradientOpacityMap")) {
         auto gradientOpacityMap = json["gradientOpacityMap"].toObject();
         tomviz::deserialize(d->m_gradientOpacityMap, gradientOpacityMap);
+      }
+      if (json.contains("colorMap2DBox")) {
+        auto boxJson = json["colorMap2DBox"].toObject();
+        auto transfer2DBox = d->detachedTransferFunction2DBox();
+        transfer2DBox->Set(boxJson["x"].toDouble(), boxJson["y"].toDouble(),
+                           boxJson["width"].toDouble(),
+                           boxJson["height"].toDouble());
       }
     }
     setUseDetachedColorMap(useDetachedColorMap);
