@@ -158,17 +158,6 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <widget class="pqAxesToolbar" name="axesToolbar">
-   <property name="windowTitle">
-    <string>Axes Toolbar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-  </widget>
   <widget class="QToolBar" name="utilitiesToolbar">
    <property name="windowTitle">
     <string>Utilities Toolbar</string>
@@ -437,11 +426,6 @@
    <extends>QWidget</extends>
    <header>CentralWidget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>pqAxesToolbar</class>
-   <extends>QToolBar</extends>
-   <header>pqAxesToolbar.h</header>
   </customwidget>
   <customwidget>
    <class>pqPVAnimationWidget</class>

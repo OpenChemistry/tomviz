@@ -25,6 +25,8 @@ set(SOURCES
   AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
+  AxesReaction.cxx
+  AxesReaction.h
   Behaviors.cxx
   Behaviors.h
   CameraReaction.cxx

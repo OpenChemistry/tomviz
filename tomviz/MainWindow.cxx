@@ -35,6 +35,7 @@
 #include "ActiveObjects.h"
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
+#include "AxesReaction.h"
 #include "Behaviors.h"
 #include "CameraReaction.h"
 #include "Connection.h"
@@ -465,6 +466,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   }
 
   CameraReaction::addAllActionsToToolBar(m_ui->utilitiesToolbar);
+  AxesReaction::addAllActionsToToolBar(m_ui->utilitiesToolbar);
 
   ResetReaction::reset();
   // Initialize worker manager
