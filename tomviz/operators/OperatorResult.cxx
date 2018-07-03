@@ -29,8 +29,6 @@
 #include <vtkSMSourceProxy.h>
 #include <vtkTrivialProducer.h>
 
-#include <QDebug>
-
 namespace tomviz {
 
 OperatorResult::OperatorResult(QObject* parent)

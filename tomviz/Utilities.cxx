@@ -969,7 +969,7 @@ bool moleculeToFile(vtkMolecule* molecule)
   if (!fileName.endsWith(".xyz")) {
     fileName = QString("%1.xyz").arg(fileName);
   }
-  
+
   QFile file(fileName);
   if (!file.open(QIODevice::WriteOnly)) {
     qCritical() << QString("Error opening file for writing: %1").arg(fileName);

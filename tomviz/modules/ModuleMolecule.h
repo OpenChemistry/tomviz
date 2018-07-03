@@ -17,10 +17,10 @@
 #define tomvizModuleMolecule_h
 
 #include "Module.h"
-#include "vtkActor.h"
-#include "vtkMoleculeMapper.h"
-#include "vtkPVRenderView.h"
-#include <pqPropertyLinks.h>
+
+#include <vtkActor.h>
+#include <vtkMoleculeMapper.h>
+#include <vtkPVRenderView.h>
 #include <vtkWeakPointer.h>
 
 class QCheckBox;
@@ -71,8 +71,6 @@ private:
   vtkMolecule* m_molecule;
   vtkNew<vtkMoleculeMapper> m_moleculeMapper;
   vtkNew<vtkActor> m_moleculeActor;
-
-  pqPropertyLinks m_links;
 };
 } // namespace tomviz
 #endif

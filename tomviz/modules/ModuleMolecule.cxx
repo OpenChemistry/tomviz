@@ -19,15 +19,17 @@
 #include "DoubleSliderWidget.h"
 #include "OperatorResult.h"
 #include "Utilities.h"
-#include "vtkMolecule.h"
-#include "vtkNew.h"
-#include "vtkRenderer.h"
-#include "vtkSMViewProxy.h"
+
+#include <vtkMolecule.h>
+#include <vtkNew.h>
+#include <vtkRenderer.h>
+#include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
 #include <QFormLayout>
+
 namespace tomviz {
 
 ModuleMolecule::ModuleMolecule(QObject* parentObject) : Module(parentObject)
@@ -161,7 +163,6 @@ void ModuleMolecule::dataSourceMoved(double, double, double)
 {
 }
 
-//-----------------------------------------------------------------------------
 bool ModuleMolecule::isProxyPartOfModule(vtkSMProxy*)
 {
   return false;
