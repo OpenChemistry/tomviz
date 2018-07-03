@@ -464,55 +464,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     tb->setPopupMode(QToolButton::InstantPopup);
   }
 
-  QAction* resetCamera = m_ui->utilitiesToolbar->addAction(
-    QIcon(":/pqWidgets/Icons/pqResetCamera.png"), tr("Reset Camera"));
-  new CameraReaction(resetCamera, CameraReaction::RESET_CAMERA);
-
-  QAction* zoomToBox = m_ui->utilitiesToolbar->addAction(
-    QIcon(":/pqWidgets/Icons/pqZoomToSelection.png"), tr("Zoom to Box"));
-  zoomToBox->setCheckable(true);
-  new pqRenderViewSelectionReaction(zoomToBox, nullptr,
-                                    pqRenderViewSelectionReaction::ZOOM_TO_BOX);
-
-  QMenu* menuResetViewDirection =
-    new QMenu(tr("Reset view direction"), m_ui->utilitiesToolbar);
-  QAction* setViewPlusX = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqXPlus.png"), "+X");
-  new CameraReaction(setViewPlusX, CameraReaction::RESET_POSITIVE_X);
-  QAction* setViewMinusX = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqXMinus.png"), "-X");
-  new CameraReaction(setViewMinusX, CameraReaction::RESET_NEGATIVE_X);
-
-  QAction* setViewPlusY = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqYPlus.png"), "+Y");
-  new CameraReaction(setViewPlusY, CameraReaction::RESET_POSITIVE_Y);
-  QAction* setViewMinusY = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqYMinus.png"), "-Y");
-  new CameraReaction(setViewMinusY, CameraReaction::RESET_NEGATIVE_Y);
-
-  QAction* setViewPlusZ = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqZPlus.png"), "+Z");
-  new CameraReaction(setViewPlusZ, CameraReaction::RESET_POSITIVE_Z);
-  QAction* setViewMinusZ = menuResetViewDirection->addAction(
-    QIcon(":/pqWidgets/Icons/pqZMinus.png"), "-Z");
-  new CameraReaction(setViewMinusZ, CameraReaction::RESET_NEGATIVE_Z);
-
-  QScopedPointer<QToolButton> toolButton(new QToolButton);
-  toolButton->setIcon(QIcon(":/pqWidgets/Icons/pqXPlus.png"));
-  toolButton->setMenu(menuResetViewDirection);
-  toolButton->setToolTip(tr("Reset view direction"));
-  toolButton->setPopupMode(QToolButton::InstantPopup);
-  m_ui->utilitiesToolbar->addWidget(toolButton.take());
-
-  QAction* rotateCameraCW = m_ui->utilitiesToolbar->addAction(
-    QIcon(":/pqWidgets/Icons/pqRotateCameraCW.png"),
-    tr("Rotate 90° clockwise"));
-  new CameraReaction(rotateCameraCW, CameraReaction::ROTATE_CAMERA_CW);
-
-  QAction* rotateCameraCCW = m_ui->utilitiesToolbar->addAction(
-    QIcon(":/pqWidgets/Icons/pqRotateCameraCCW.png"),
-    tr("Rotate 90° counterclockwise"));
-  new CameraReaction(rotateCameraCCW, CameraReaction::ROTATE_CAMERA_CCW);
+  CameraReaction::addAllActionsToToolBar(m_ui->utilitiesToolbar);
 
   ResetReaction::reset();
   // Initialize worker manager

@@ -18,6 +18,8 @@
 
 #include <pqReaction.h>
 
+class QToolBar;
+
 namespace tomviz {
 
 /**
@@ -57,6 +59,8 @@ public:
   static void resetDirection(double look_x, double look_y, double look_z,
                              double up_x, double up_y, double up_z);
   static void rotateCamera(double angle);
+
+  static void addAllActionsToToolBar(QToolBar* toolBar);
 
 public slots:
   /**
