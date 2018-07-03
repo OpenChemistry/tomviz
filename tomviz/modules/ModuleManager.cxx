@@ -903,7 +903,8 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
           DataSource::PersistenceState::Transient);
       }
       if (dataSource->pipeline()->isRunning()) {
-        connect(dataSource->pipeline(), &Pipeline::finished, this, &ModuleManager::onPipelineFinished);
+        connect(dataSource->pipeline(), &Pipeline::finished, this,
+                &ModuleManager::onPipelineFinished);
         ++d->m_remaningPipelinesToWaitFor;
       }
       // FIXME: I think we need to collect the active objects and set them at
