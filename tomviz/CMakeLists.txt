@@ -27,6 +27,8 @@ set(SOURCES
   AlignWidget.h
   Behaviors.cxx
   Behaviors.h
+  CameraReaction.cxx
+  CameraReaction.h
   CentralWidget.cxx
   CentralWidget.h
   CloneDataReaction.cxx

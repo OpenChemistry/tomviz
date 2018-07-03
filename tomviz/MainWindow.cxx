@@ -19,6 +19,7 @@
 #include <pqApplicationCore.h>
 #include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
+#include <pqRenderViewSelectionReaction.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSaveStateReaction.h>
 #include <pqSettings.h>
@@ -35,6 +36,7 @@
 #include "AddAlignReaction.h"
 #include "AddPythonTransformReaction.h"
 #include "Behaviors.h"
+#include "CameraReaction.h"
 #include "Connection.h"
 #include "DataPropertiesPanel.h"
 #include "DataTransformMenu.h"
@@ -461,6 +463,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   if (tb) {
     tb->setPopupMode(QToolButton::InstantPopup);
   }
+
+  CameraReaction::addAllActionsToToolBar(m_ui->utilitiesToolbar);
 
   ResetReaction::reset();
   // Initialize worker manager
