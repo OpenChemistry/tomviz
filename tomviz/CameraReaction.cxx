@@ -16,30 +16,27 @@
 #include "CameraReaction.h"
 
 #include <pqActiveObjects.h>
-#include <pqPipelineRepresentation.h>
 #include <pqRenderView.h>
 
 #include <vtkCamera.h>
 #include <vtkPVXMLElement.h>
 #include <vtkSMRenderViewProxy.h>
 
-//-----------------------------------------------------------------------------
 CameraReaction::CameraReaction(QAction* parentObject, CameraReaction::Mode mode)
-  : Superclass(parentObject)
+  : pqReaction(parentObject)
 {
-  this->ReactionMode = mode;
+  m_reactionMode = mode;
   QObject::connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
                    this, SLOT(updateEnableState()), Qt::QueuedConnection);
-  this->updateEnableState();
+  updateEnableState();
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::updateEnableState()
 {
   pqView* view = pqActiveObjects::instance().activeView();
-  pqRenderView* rview = qobject_cast<pqRenderView*>(view);
-  if (view && this->ReactionMode == RESET_CAMERA) {
-    this->parentAction()->setEnabled(true);
+  auto rview = qobject_cast<pqRenderView*>(view);
+  if (view && m_reactionMode == RESET_CAMERA) {
+    parentAction()->setEnabled(true);
   } else if (rview) {
     // Check hints to see if actions should be disabled
     bool cameraResetButtonsEnabled = true;
@@ -49,56 +46,46 @@ void CameraReaction::updateEnableState()
         hints->FindNestedElementByName("DisableCameraToolbarButtons") == NULL;
     }
 
-    this->parentAction()->setEnabled(cameraResetButtonsEnabled);
+    parentAction()->setEnabled(cameraResetButtonsEnabled);
 
   } else {
-    this->parentAction()->setEnabled(false);
+    parentAction()->setEnabled(false);
   }
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::onTriggered()
 {
-  switch (this->ReactionMode) {
+  switch (m_reactionMode) {
     case RESET_CAMERA:
-      this->resetCamera();
+      resetCamera();
       break;
-
     case RESET_POSITIVE_X:
-      this->resetPositiveX();
+      resetPositiveX();
       break;
-
     case RESET_POSITIVE_Y:
-      this->resetPositiveY();
+      resetPositiveY();
       break;
-
     case RESET_POSITIVE_Z:
-      this->resetPositiveZ();
+      resetPositiveZ();
       break;
-
     case RESET_NEGATIVE_X:
-      this->resetNegativeX();
+      resetNegativeX();
       break;
-
     case RESET_NEGATIVE_Y:
-      this->resetNegativeY();
+      resetNegativeY();
       break;
-
     case RESET_NEGATIVE_Z:
-      this->resetNegativeZ();
+      resetNegativeZ();
       break;
-
     case ROTATE_CAMERA_CW:
-      this->rotateCamera(90.0);
+      rotateCamera(90.0);
       break;
-
     case ROTATE_CAMERA_CCW:
-      this->rotateCamera(-90.0);
+      rotateCamera(-90.0);
       break;
   }
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::resetCamera()
 {
   pqView* view = pqActiveObjects::instance().activeView();
@@ -107,57 +94,49 @@ void CameraReaction::resetCamera()
   }
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::resetDirection(double look_x, double look_y, double look_z,
                                     double up_x, double up_y, double up_z)
 {
-  pqRenderView* ren =
+  auto ren =
     qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
   if (ren) {
     ren->resetViewDirection(look_x, look_y, look_z, up_x, up_y, up_z);
   }
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::resetPositiveX()
 {
   CameraReaction::resetDirection(1, 0, 0, 0, 0, 1);
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::resetNegativeX()
 {
   CameraReaction::resetDirection(-1, 0, 0, 0, 0, 1);
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::resetPositiveY()
 {
   CameraReaction::resetDirection(0, 1, 0, 0, 0, 1);
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::resetNegativeY()
 {
   CameraReaction::resetDirection(0, -1, 0, 0, 0, 1);
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::resetPositiveZ()
 {
   CameraReaction::resetDirection(0, 0, 1, 0, 1, 0);
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::resetNegativeZ()
 {
   CameraReaction::resetDirection(0, 0, -1, 0, 1, 0);
 }
 
-//-----------------------------------------------------------------------------
 void CameraReaction::rotateCamera(double angle)
 {
-  pqRenderView* renModule =
+  auto renModule =
     qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
 
   if (renModule) {

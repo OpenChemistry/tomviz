@@ -28,7 +28,6 @@
 class CameraReaction : public pqReaction
 {
   Q_OBJECT
-  typedef pqReaction Superclass;
 
 public:
   enum Mode
@@ -72,7 +71,7 @@ protected:
 
 private:
   Q_DISABLE_COPY(CameraReaction)
-  Mode ReactionMode;
+  Mode m_reactionMode;
 };
 
 #endif
