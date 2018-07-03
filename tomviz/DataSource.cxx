@@ -440,6 +440,12 @@ bool DataSource::deserialize(const QJsonObject& state)
                               QObject::disconnect(*connection);
                               delete connection;
                             });
+      // If the child datasource has its own pipeline of operators increment the
+      // number of pipelineFinished singals to wait for before emitting
+      // stateLoaded()
+      if (dataSourcesState[0].toObject().contains("operators")) {
+        ModuleManager::instance().incrementPipelinesToWaitFor();
+      }
     }
 
     pipeline()->resume(this);

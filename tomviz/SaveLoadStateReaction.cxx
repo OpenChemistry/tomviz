@@ -24,8 +24,10 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileDialog>
+#include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
 #include <QMessageBox>
 
 #include <vtk_pugixml.h>
@@ -113,6 +115,14 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
   if (doc.isObject() && ModuleManager::instance().deserialize(
                           doc.object(), QFileInfo(filename).dir())) {
     RecentFilesMenu::pushStateFile(filename);
+    QDialog dialog(tomviz::mainWidget(), Qt::WindowStaysOnTopHint);
+    QHBoxLayout* layout = new QHBoxLayout();
+    QLabel* label = new QLabel("Please wait... loading state file");
+    layout->addWidget(label);
+    dialog.setLayout(layout);
+    connect(&ModuleManager::instance(), &ModuleManager::stateDoneLoading,
+            &dialog, &QDialog::accept);
+    dialog.exec();
     return true;
   }
 

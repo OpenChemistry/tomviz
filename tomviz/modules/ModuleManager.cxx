@@ -82,6 +82,9 @@ public:
   // have been added to a view.
   QMultiMap<vtkSMProxy*, Module*> ViewModules;
 
+  // State for the "state finished loading signal"
+  int m_remaningPipelinesToWaitFor;
+
   // Only used by onPVStateLoaded for the second half of deserialize
   QDir dir;
   QMap<vtkTypeUInt32, vtkSMViewProxy*> ViewIdMap;
@@ -899,12 +902,35 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
         dataSource->setPersistenceState(
           DataSource::PersistenceState::Transient);
       }
+      if (dataSource->pipeline()->isRunning()) {
+        connect(dataSource->pipeline(), &Pipeline::finished, this,
+                &ModuleManager::onPipelineFinished);
+        ++d->m_remaningPipelinesToWaitFor;
+      }
       // FIXME: I think we need to collect the active objects and set them at
       // the end, as the act of adding generally implies setting to active.
       if (dsObject["active"].toBool()) {
         ActiveObjects::instance().setActiveDataSource(dataSource);
       }
     }
+  }
+}
+
+void ModuleManager::incrementPipelinesToWaitFor()
+{
+  ++d->m_remaningPipelinesToWaitFor;
+}
+
+void ModuleManager::onPipelineFinished()
+{
+  --d->m_remaningPipelinesToWaitFor;
+  if (d->m_remaningPipelinesToWaitFor == 0) {
+    emit this->stateDoneLoading();
+  }
+  if (d->m_remaningPipelinesToWaitFor <= 0) {
+    Pipeline* p = qobject_cast<Pipeline*>(sender());
+    disconnect(p, &Pipeline::finished, this,
+               &ModuleManager::onPipelineFinished);
   }
 }
 
