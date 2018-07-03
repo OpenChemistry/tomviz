@@ -22,6 +22,7 @@
 #include <pqApplicationCore.h>
 #include <pqObjectBuilder.h>
 #include <pqPipelineSource.h>
+#include <pqRenderView.h>
 #include <pqServer.h>
 #include <pqView.h>
 
@@ -60,8 +61,18 @@ void ActiveObjects::setActiveView(vtkSMViewProxy* view)
 
 vtkSMViewProxy* ActiveObjects::activeView() const
 {
-  pqView* view = pqActiveObjects::instance().activeView();
+  pqView* view = activePqView();
   return view ? view->getViewProxy() : nullptr;
+}
+
+pqView* ActiveObjects::activePqView() const
+{
+  return pqActiveObjects::instance().activeView();
+}
+
+pqRenderView* ActiveObjects::activePqRenderView() const
+{
+  return qobject_cast<pqRenderView*>(activePqView());
 }
 
 void ActiveObjects::viewChanged(pqView* view)
