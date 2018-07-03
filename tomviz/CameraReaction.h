@@ -18,13 +18,15 @@
 
 #include <pqReaction.h>
 
+namespace tomviz {
+
 /**
-* @ingroup Reactions
-* CameraReaction has the logic to handle common operations associated with
-* the camera such as reset view along X axis etc.
-*
-* This class was adapted from pqCameraReaction in ParaView.
-*/
+ * @ingroup Reactions
+ * CameraReaction has the logic to handle common operations associated with
+ * the camera such as reset view along X axis etc.
+ *
+ * This class was adapted from pqCameraReaction in ParaView.
+ */
 class CameraReaction : public pqReaction
 {
   Q_OBJECT
@@ -58,20 +60,21 @@ public:
 
 public slots:
   /**
-  * Updates the enabled state. Applications need not explicitly call
-  * this.
-  */
+   * Updates the enabled state. Applications need not explicitly call
+   * this.
+   */
   void updateEnableState() override;
 
 protected:
   /**
-  * Called when the action is triggered.
-  */
+   * Called when the action is triggered.
+   */
   void onTriggered() override;
 
 private:
   Q_DISABLE_COPY(CameraReaction)
   Mode m_reactionMode;
 };
+} // namespace tomviz
 
 #endif

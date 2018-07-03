@@ -15,25 +15,30 @@
 ******************************************************************************/
 #include "CameraReaction.h"
 
-#include <pqActiveObjects.h>
 #include <pqRenderView.h>
 
 #include <vtkCamera.h>
 #include <vtkPVXMLElement.h>
 #include <vtkSMRenderViewProxy.h>
 
+#include "ActiveObjects.h"
+#include "Utilities.h"
+
+namespace tomviz {
+
 CameraReaction::CameraReaction(QAction* parentObject, CameraReaction::Mode mode)
   : pqReaction(parentObject)
 {
   m_reactionMode = mode;
-  QObject::connect(&pqActiveObjects::instance(), SIGNAL(viewChanged(pqView*)),
-                   this, SLOT(updateEnableState()), Qt::QueuedConnection);
+  QObject::connect(&ActiveObjects::instance(),
+                   SIGNAL(viewChanged(vtkSMViewProxy*)), this,
+                   SLOT(updateEnableState()), Qt::QueuedConnection);
   updateEnableState();
 }
 
 void CameraReaction::updateEnableState()
 {
-  pqView* view = pqActiveObjects::instance().activeView();
+  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
   auto rview = qobject_cast<pqRenderView*>(view);
   if (view && m_reactionMode == RESET_CAMERA) {
     parentAction()->setEnabled(true);
@@ -88,20 +93,18 @@ void CameraReaction::onTriggered()
 
 void CameraReaction::resetCamera()
 {
-  pqView* view = pqActiveObjects::instance().activeView();
-  if (view) {
+  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  if (view)
     view->resetDisplay();
-  }
 }
 
 void CameraReaction::resetDirection(double look_x, double look_y, double look_z,
                                     double up_x, double up_y, double up_z)
 {
-  auto ren =
-    qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
-  if (ren) {
+  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  auto ren = qobject_cast<pqRenderView*>(view);
+  if (ren)
     ren->resetViewDirection(look_x, look_y, look_z, up_x, up_y, up_z);
-  }
 }
 
 void CameraReaction::resetPositiveX()
@@ -136,11 +139,13 @@ void CameraReaction::resetNegativeZ()
 
 void CameraReaction::rotateCamera(double angle)
 {
-  auto renModule =
-    qobject_cast<pqRenderView*>(pqActiveObjects::instance().activeView());
+  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  auto ren = qobject_cast<pqRenderView*>(view);
 
-  if (renModule) {
-    renModule->getRenderViewProxy()->GetActiveCamera()->Roll(angle);
-    renModule->render();
+  if (ren) {
+    ren->getRenderViewProxy()->GetActiveCamera()->Roll(angle);
+    ren->render();
   }
 }
+
+} // namespace tomviz
