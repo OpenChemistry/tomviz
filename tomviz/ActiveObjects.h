@@ -24,6 +24,7 @@
 #include "Operator.h"
 #include "OperatorResult.h"
 
+class pqRenderView;
 class pqView;
 class vtkSMSessionProxyManager;
 class vtkSMViewProxy;
@@ -45,6 +46,12 @@ public:
 
   /// Returns the active view.
   vtkSMViewProxy* activeView() const;
+
+  /// Returns the active view as a pqView object.
+  pqView* activePqView() const;
+
+  /// Returns the active pqRenderView object.
+  pqRenderView* activePqRenderView() const;
 
   /// Returns the active data source.
   DataSource* activeDataSource() const { return m_activeDataSource; }
