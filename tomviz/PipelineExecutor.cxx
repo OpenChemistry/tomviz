@@ -434,6 +434,8 @@ void DockerPipelineExecutor::execute(vtkDataObject* data,
 Pipeline::ImageFuture* DockerPipelineExecutor::getCopyOfImagePriorTo(
   Operator* op)
 {
+  Q_UNUSED(op);
+
   // TODO
   return nullptr;
 }
@@ -453,6 +455,7 @@ void DockerPipelineExecutor::cancel(std::function<void()> canceled)
 
 bool DockerPipelineExecutor::cancel(Operator* op)
 {
+  Q_UNUSED(op);
 
   // Simply stop the container.
   stop(m_containerId);
