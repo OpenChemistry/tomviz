@@ -11,7 +11,7 @@ else
     if [ ${TRAVIS_PYTHON_VERSION:0:1} == "3" ]; then export PY3="true"; else export PY2="true"; fi
     if [ -n "${PY2}" ]; then ./scripts/travis/run_clang_format_diff.sh master $TRAVIS_COMMIT; fi
     git checkout $TRAVIS_PULL_REQUEST_SHA
-    flake8 --config=flake8.cfg .
+    if [ -n "${PY3}" ]; then  flake8 --config=flake8.cfg .; fi
     cd "${TRAVIS_BUILD_DIR}/acquisition"
     pip install --upgrade pip setuptools wheel
     pip install --only-binary=numpy,scipy numpy scipy
