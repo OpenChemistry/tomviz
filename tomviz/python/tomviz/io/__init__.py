@@ -16,7 +16,6 @@
 #
 ###############################################################################
 from abc import ABCMeta, abstractmethod
-import six
 
 
 class FileType(object):
@@ -32,8 +31,7 @@ class FileType(object):
                             " ".join(["*."+ext for ext in self.extensions]))
 
 
-@six.add_metaclass(ABCMeta)
-class IOBase(object):
+class IOBase(object, metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
@@ -45,8 +43,7 @@ class IOBase(object):
         """
 
 
-@six.add_metaclass(ABCMeta)
-class Reader(IOBase):
+class Reader(IOBase, metaclass=ABCMeta):
     """
     The base reader class from which readers should be derived.
     """
@@ -65,8 +62,7 @@ class Reader(IOBase):
         """
 
 
-@six.add_metaclass(ABCMeta)
-class Writer(IOBase):
+class Writer(IOBase, metaclass=ABCMeta):
     """
     The base reader class from which writers should be derived.
     """

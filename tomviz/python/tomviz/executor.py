@@ -9,8 +9,6 @@ import socket
 import abc
 import stat
 import json
-import six
-
 
 from tqdm import tqdm
 
@@ -112,8 +110,7 @@ class TqdmProgress(ProgressBase):
             self._progress_bar.close()
 
 
-@six.add_metaclass(abc.ABCMeta)
-class JsonProgress(ProgressBase):
+class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
     """
     Abstract class used to update operator progress using JSON based messages.
     """
