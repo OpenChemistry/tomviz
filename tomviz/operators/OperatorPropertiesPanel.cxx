@@ -152,7 +152,6 @@ void OperatorPropertiesPanel::apply()
         }
       } else {
         pythonOperator->setArguments(values);
-        emit pythonOperator->transformModified();
       }
     }
   }
