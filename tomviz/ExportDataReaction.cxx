@@ -30,6 +30,7 @@
 #include <vtkImageCast.h>
 #include <vtkImageData.h>
 #include <vtkImageMapToColors.h>
+#include <vtkMolecule.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSMProxyManager.h>
@@ -105,6 +106,9 @@ void ExportDataReaction::onTriggered()
     }
     filters << "JPEG Files (*.jpg *.jpeg)"
             << "VTK ImageData Files (*.vti)";
+  } else if (exportType == "Molecule") {
+    moleculeToFile(vtkMolecule::SafeDownCast(module->getDataToExport()));
+    return;
   }
 
   QFileDialog dialog(nullptr);

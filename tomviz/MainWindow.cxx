@@ -218,6 +218,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
           SLOT(moduleChanged(Module*)));
   connect(&ActiveObjects::instance(), SIGNAL(operatorActivated(Operator*)),
           SLOT(operatorChanged(Operator*)));
+  connect(&ActiveObjects::instance(), SIGNAL(resultActivated(OperatorResult*)),
+          SLOT(operatorResultChanged(OperatorResult*)));
 
   // Connect the about dialog up too.
   connect(m_ui->actionAbout, &QAction::triggered, this,
@@ -592,6 +594,14 @@ void MainWindow::operatorChanged(Operator*)
 {
   m_ui->propertiesPanelStackedWidget->setCurrentWidget(
     m_ui->operatorPropertiesScrollArea);
+}
+
+void MainWindow::operatorResultChanged(OperatorResult* res)
+{
+  if (res) {
+    m_ui->propertiesPanelStackedWidget->setCurrentWidget(
+      m_ui->operatorResultPropertiesScrollArea);
+  }
 }
 
 void MainWindow::importCustomTransform()

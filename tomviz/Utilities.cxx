@@ -41,7 +41,9 @@
 #include <vtkColorTransferFunction.h>
 #include <vtkImageData.h>
 #include <vtkImageSliceMapper.h>
+#include <vtkMolecule.h>
 #include <vtkNew.h>
+#include <vtkPeriodicTable.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPoints.h>
 #include <vtkRenderer.h>
@@ -944,6 +946,47 @@ bool jsonToFile(const QJsonDocument& document)
     return false;
   }
   file.write(document.toJson());
+  file.close();
+  return true;
+}
+
+bool moleculeToFile(vtkMolecule* molecule)
+{
+  if (molecule == nullptr) {
+    return false;
+  }
+
+  QStringList filters;
+  filters << "XYZ Files (*.xyz)";
+  QFileDialog dialog;
+  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setNameFilters(filters);
+  dialog.setAcceptMode(QFileDialog::AcceptSave);
+  QString fileName = dialogToFileName(&dialog);
+  if (fileName.isEmpty()) {
+    return false;
+  }
+  if (!fileName.endsWith(".xyz")) {
+    fileName = QString("%1.xyz").arg(fileName);
+  }
+
+  QFile file(fileName);
+  if (!file.open(QIODevice::WriteOnly)) {
+    qCritical() << QString("Error opening file for writing: %1").arg(fileName);
+    return false;
+  }
+  QTextStream out(&file);
+  out << molecule->GetNumberOfAtoms() << "\n";
+  out << QString("Generated with TomViz ( http://tomviz.org )\n");
+  vtkNew<vtkPeriodicTable> periodicTable;
+  for (int i = 0; i < molecule->GetNumberOfAtoms(); ++i) {
+    vtkAtom atom = molecule->GetAtom(i);
+    auto symbol = QString(periodicTable->GetSymbol(atom.GetAtomicNumber()));
+    auto position = atom.GetPosition();
+    out << symbol << "   " << QString::number(position[0]) << "   "
+        << QString::number(position[1]) << "   " << QString::number(position[2])
+        << "\n";
+  }
   file.close();
   return true;
 }

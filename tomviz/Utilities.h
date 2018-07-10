@@ -38,6 +38,7 @@ class pqAnimationScene;
 
 class vtkDiscretizableColorTransferFunction;
 class vtkImageSliceMapper;
+class vtkMolecule;
 class vtkRenderer;
 class vtkSMProxyLocator;
 class vtkSMRenderViewProxy;
@@ -218,6 +219,8 @@ bool jsonToFile(const QJsonDocument& json);
 QJsonDocument tableToJson(vtkTable* table);
 QJsonDocument vectorToJson(const QVector<vtkVector2i> vector);
 
+/// Write a vtkMolecule to json file
+bool moleculeToFile(vtkMolecule* molecule);
 extern double offWhite[3];
 } // namespace tomviz
 

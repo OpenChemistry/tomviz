@@ -15,7 +15,13 @@
 ******************************************************************************/
 #include "OperatorResult.h"
 
+#include "ActiveObjects.h"
+#include "ModuleFactory.h"
+#include "ModuleManager.h"
+#include "ModuleMolecule.h"
+
 #include <vtkDataObject.h>
+#include <vtkMolecule.h>
 #include <vtkNew.h>
 #include <vtkSMParaViewPipelineController.h>
 #include <vtkSMProxyManager.h>
@@ -104,6 +110,14 @@ void OperatorResult::setDataObject(vtkDataObject* object)
   vtkTrivialProducer* producer =
     vtkTrivialProducer::SafeDownCast(clientSideObject);
   producer->SetOutput(object);
+  // If the result is a vtkMolecule, create a ModuleMolecule to display it
+  if (vtkMolecule::SafeDownCast(object)) {
+    auto view = ActiveObjects::instance().activeView();
+    auto dataSource = ActiveObjects::instance().activeDataSource();
+    auto module =
+      ModuleFactory::createModule("Molecule", dataSource, view, this);
+    ModuleManager::instance().addModule(module);
+  }
 }
 
 vtkSMSourceProxy* OperatorResult::producerProxy()

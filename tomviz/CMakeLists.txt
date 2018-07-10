@@ -200,6 +200,8 @@ list(APPEND SOURCES
   modules/ModuleScaleCubeWidget.h
   modules/ModuleMenu.cxx
   modules/ModuleMenu.h
+  modules/ModuleMolecule.cxx
+  modules/ModuleMolecule.h
   modules/ModuleOrthogonalSlice.cxx
   modules/ModuleOrthogonalSlice.h
   modules/ModuleOutline.cxx
@@ -281,6 +283,8 @@ list(APPEND SOURCES
   operators/OperatorPython.h
   operators/OperatorResult.cxx
   operators/OperatorResult.h
+  operators/OperatorResultPropertiesPanel.cxx
+  operators/OperatorResultPropertiesPanel.h
   operators/OperatorWidget.cxx
   operators/OperatorWidget.h
   operators/ReconstructionOperator.cxx
@@ -314,6 +318,7 @@ set(python_files
   BinaryErode.py
   BinaryOpen.py
   BinaryClose.py
+  DummyMolecule.py
   LabelObjectAttributes.py
   LabelObjectPrincipalAxes.py
   LabelObjectDistanceFromPrincipalAxis.py
@@ -380,6 +385,7 @@ set(json_files
   BinaryErode.json
   BinaryOpen.json
   BinaryClose.json
+  DummyMolecule.json
   LabelObjectAttributes.json
   LabelObjectPrincipalAxes.json
   LabelObjectDistanceFromPrincipalAxis.json
