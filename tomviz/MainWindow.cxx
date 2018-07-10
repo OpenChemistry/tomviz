@@ -19,7 +19,6 @@
 #include <pqApplicationCore.h>
 #include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
-#include <pqRenderViewSelectionReaction.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSaveStateReaction.h>
 #include <pqSettings.h>

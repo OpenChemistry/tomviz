@@ -42,8 +42,8 @@ CameraReaction::CameraReaction(QAction* parentObject, CameraReaction::Mode mode)
 
 void CameraReaction::updateEnableState()
 {
-  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  auto rview = qobject_cast<pqRenderView*>(view);
+  pqView* view = ActiveObjects::instance().activePqView();
+  pqRenderView* rview = ActiveObjects::instance().activePqRenderView();
   if (view && m_reactionMode == RESET_CAMERA) {
     parentAction()->setEnabled(true);
   } else if (rview) {
@@ -97,7 +97,7 @@ void CameraReaction::onTriggered()
 
 void CameraReaction::resetCamera()
 {
-  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
+  pqView* view = ActiveObjects::instance().activePqView();
   if (view)
     view->resetDisplay();
 }
@@ -105,10 +105,9 @@ void CameraReaction::resetCamera()
 void CameraReaction::resetDirection(double look_x, double look_y, double look_z,
                                     double up_x, double up_y, double up_z)
 {
-  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  auto ren = qobject_cast<pqRenderView*>(view);
-  if (ren)
-    ren->resetViewDirection(look_x, look_y, look_z, up_x, up_y, up_z);
+  pqRenderView* rview = ActiveObjects::instance().activePqRenderView();
+  if (rview)
+    rview->resetViewDirection(look_x, look_y, look_z, up_x, up_y, up_z);
 }
 
 void CameraReaction::resetPositiveX()
@@ -143,12 +142,11 @@ void CameraReaction::resetNegativeZ()
 
 void CameraReaction::rotateCamera(double angle)
 {
-  auto view = tomviz::convert<pqView*>(ActiveObjects::instance().activeView());
-  auto ren = qobject_cast<pqRenderView*>(view);
+  pqRenderView* rview = ActiveObjects::instance().activePqRenderView();
 
-  if (ren) {
-    ren->getRenderViewProxy()->GetActiveCamera()->Roll(angle);
-    ren->render();
+  if (rview) {
+    rview->getRenderViewProxy()->GetActiveCamera()->Roll(angle);
+    rview->render();
   }
 }
 
