@@ -94,6 +94,8 @@ public:
   /// pipelineFinsihed signals to wait for.
   void incrementPipelinesToWaitFor();
 
+  bool lastLoadStateSucceeded();
+
 public slots:
   void addModule(Module*);
 

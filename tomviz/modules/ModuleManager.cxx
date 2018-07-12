@@ -83,6 +83,7 @@ public:
 
   // State for the "state finished loading signal"
   int m_remaningPipelinesToWaitFor;
+  bool m_lastStateLoadSuccess;
 
   // Only used by onPVStateLoaded for the second half of deserialize
   QDir dir;
@@ -614,6 +615,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
 {
   // Get back to a known state.
   reset();
+  d->m_lastStateLoadSuccess = true;
 
   // High level game plan - construct some XML for ParaView, restore the
   // layouts, the views, links, etc. Once they are ready then restore the data
@@ -730,6 +732,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   // qDebug() << "\nPV XML:" << stream.str().c_str() << "\n";
   vtkNew<vtkPVXMLParser> parser;
   if (!parser->Parse(stream.str().c_str())) {
+    d->m_lastStateLoadSuccess = false;
     return false;
   }
   pqActiveObjects* activeObjects = &pqActiveObjects::instance();
@@ -824,7 +827,17 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   // restored to the view
   ActiveObjects::instance().viewChanged(ActiveObjects::instance().activeView());
 
+  d->m_lastStateLoadSuccess = true;
+
+  if (d->m_remaningPipelinesToWaitFor == 0) {
+    emit this->stateDoneLoading();
+  }
   return true;
+}
+
+bool ModuleManager::lastLoadStateSucceeded()
+{
+  return d->m_lastStateLoadSuccess;
 }
 
 void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
@@ -879,15 +892,16 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
         dataSource = LoadDataReaction::loadData(fileNames, options);
       }
 
+      if (dsObject.contains("operators") &&
+          dsObject["operators"].toArray().size() > 0) {
+        connect(dataSource->pipeline(), &Pipeline::finished, this,
+                &ModuleManager::onPipelineFinished);
+        ++d->m_remaningPipelinesToWaitFor;
+      }
       dataSource->deserialize(dsObject);
       if (fileNames.isEmpty()) {
         dataSource->setPersistenceState(
           DataSource::PersistenceState::Transient);
-      }
-      if (dataSource->pipeline()->isRunning()) {
-        connect(dataSource->pipeline(), &Pipeline::finished, this,
-                &ModuleManager::onPipelineFinished);
-        ++d->m_remaningPipelinesToWaitFor;
       }
       // FIXME: I think we need to collect the active objects and set them at
       // the end, as the act of adding generally implies setting to active.
