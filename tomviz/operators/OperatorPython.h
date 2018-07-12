@@ -71,6 +71,9 @@ public:
   static void registerCustomWidget(const QString& key, bool needsData,
                                    CustomWidgetFunction func);
 
+  void setTypeInfo(const QMap<QString, QString>& typeInfo);
+  const QMap<QString, QString>& typeInfo() const;
+
 signals:
   void newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>);
   /// Signal uses to request that the child data source be updated with
@@ -93,6 +96,10 @@ private:
   QString m_label;
   QString m_jsonDescription;
   QString m_script;
+
+  // This is for operators without a JSON description but with arguments.
+  // Serialization needs to know the type of the arguments.
+  QMap<QString, QString> m_typeInfo;
 
   QString m_customWidgetID;
 

@@ -37,10 +37,29 @@ public:
 
   void setInteractive(bool isInteractive) { interactive = isInteractive; }
 
+  // Used to create a python operator with a JSON string describing its
+  // arguments. Do not use this version of the function to create an operator
+  // with arguments but no JSON description.
   static void addPythonOperator(DataSource* source, const QString& scriptLabel,
                                 const QString& scriptBaseString,
                                 const QMap<QString, QVariant> arguments,
-                                const QString& jsonString = QString());
+                                const QString& jsonString);
+
+  // Used to create a python operator with no arguments.
+  static void addPythonOperator(DataSource* source, const QString& scriptLabel,
+                                const QString& scriptBaseString)
+  {
+    addPythonOperator(source, scriptLabel, scriptBaseString,
+                      QMap<QString, QVariant>(), "");
+  }
+
+  // Used to create a python operator with arguments but no JSON describing
+  // them. The typeInfo map must be a map of argument name -> type.  Without
+  // this the operator will fail to load from a state file.
+  static void addPythonOperator(DataSource* source, const QString& scriptLabel,
+                                const QString& scriptBaseString,
+                                const QMap<QString, QVariant> arguments,
+                                const QMap<QString, QString> typeInfo);
 
 protected:
   void updateEnableState() override;

@@ -242,9 +242,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       QList<QVariant> values;
       values << spinx->value() << spiny->value() << spinz->value();
       arguments.insert("SHIFT", values);
+      QMap<QString, QString> typeInfo;
+      typeInfo["SHIFT"] = "int";
 
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        arguments);
+                        arguments, typeInfo);
     }
   } else if (scriptLabel == "Remove Bad Pixels") {
     QDialog dialog(tomviz::mainWidget());
@@ -273,8 +275,10 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     if (dialog.exec() == QDialog::Accepted) {
       QMap<QString, QVariant> arguments;
       arguments.insert("threshold", threshold->value());
+      QMap<QString, QString> typeInfo;
+      typeInfo["threshold"] = "double";
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        arguments);
+                        arguments, typeInfo);
     }
   } else if (scriptLabel == "Crop") {
     auto t = source->producer();
@@ -334,8 +338,11 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
       values << spinxx->value() << spinyy->value() << spinzz->value();
       arguments.insert("END_CROP", values);
+      QMap<QString, QString> typeInfo;
+      typeInfo["START_CROP"] = "int";
+      typeInfo["END_CROP"] = "int";
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        arguments);
+                        arguments, typeInfo);
     }
   } else if (scriptLabel == "Delete Slices") {
     auto t = source->producer();
@@ -364,8 +371,12 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
       arguments.insert("firstSlice", sliceRange->startSlice());
       arguments.insert("lastSlice", sliceRange->endSlice());
       arguments.insert("axis", sliceRange->axis());
+      QMap<QString, QString> typeInfo;
+      typeInfo["firstSlice"] = "int";
+      typeInfo["lastSlice"] = "int";
+      typeInfo["axis"] = "int";
       addPythonOperator(source, this->scriptLabel, this->scriptSource,
-                        arguments);
+                        arguments, typeInfo);
     }
   } else if (scriptLabel == "Clear Volume") {
     QDialog* dialog = new QDialog(tomviz::mainWidget());
@@ -474,7 +485,8 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
 void AddPythonTransformReaction::addExpressionFromNonModalDialog()
 {
-  auto addRanges = [](QMap<QString, QVariant>& arguments, int* indices) {
+  auto addRanges = [](QMap<QString, QVariant>& arguments,
+                      QMap<QString, QString>& typeInfo, int* indices) {
     QList<QVariant> range;
     range << indices[0] << indices[1];
     arguments.insert("XRANGE", range);
@@ -486,6 +498,10 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
 
     range << indices[4] << indices[5];
     arguments.insert("ZRANGE", range);
+
+    typeInfo.insert("XRANGE", "int");
+    typeInfo.insert("YRANGE", "int");
+    typeInfo.insert("ZRANGE", "int");
   };
 
   DataSource* source = ActiveObjects::instance().activeParentDataSource();
@@ -522,8 +538,10 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     indices[5] = selection_extent[5] - image_extent[4] + 1;
 
     QMap<QString, QVariant> arguments;
-    addRanges(arguments, indices);
-    addPythonOperator(source, this->scriptLabel, this->scriptSource, arguments);
+    QMap<QString, QString> typeInfo;
+    addRanges(arguments, typeInfo, indices);
+    addPythonOperator(source, this->scriptLabel, this->scriptSource, arguments,
+                      typeInfo);
   }
   if (this->scriptLabel == "Background Subtraction (Manual)") {
     QLayout* layout = dialog->layout();
@@ -552,8 +570,10 @@ void AddPythonTransformReaction::addExpressionFromNonModalDialog()
     indices[5] = selection_extent[5] - image_extent[4] + 1;
 
     QMap<QString, QVariant> arguments;
-    addRanges(arguments, indices);
-    addPythonOperator(source, this->scriptLabel, this->scriptSource, arguments);
+    QMap<QString, QString> typeInfo;
+    addRanges(arguments, typeInfo, indices);
+    addPythonOperator(source, this->scriptLabel, this->scriptSource, arguments,
+                      typeInfo);
   }
 }
 
@@ -568,6 +588,21 @@ void AddPythonTransformReaction::addPythonOperator(
   opPython->setLabel(scriptLabel);
   opPython->setScript(scriptBaseString);
   opPython->setArguments(arguments);
+
+  source->addOperator(opPython);
+}
+
+void AddPythonTransformReaction::addPythonOperator(
+  DataSource* source, const QString& scriptLabel,
+  const QString& scriptBaseString, const QMap<QString, QVariant> arguments,
+  const QMap<QString, QString> typeInfo)
+{
+  // Create and add the operator
+  OperatorPython* opPython = new OperatorPython();
+  opPython->setLabel(scriptLabel);
+  opPython->setScript(scriptBaseString);
+  opPython->setArguments(arguments);
+  opPython->setTypeInfo(typeInfo);
 
   source->addOperator(opPython);
 }
