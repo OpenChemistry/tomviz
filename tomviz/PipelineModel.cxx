@@ -875,9 +875,10 @@ void PipelineModel::childDataSourceRemoved(DataSource* source)
 
     auto item = treeItem(index);
     beginRemoveRows(parent(index), index.row(), index.row());
+    // Since the item has a parent (it is a child data source), calling remove()
+    // will delete the item object.  No need to delete it again here.
     item->remove(source);
     m_treeItems.removeAll(item);
-    delete item;
     endRemoveRows();
 
     op->setModified();
