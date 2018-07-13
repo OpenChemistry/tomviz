@@ -690,6 +690,13 @@ void MainWindow::closeEvent(QCloseEvent* e)
       e->ignore();
       return;
     }
+  } else if (ModuleManager::instance().hasDataSources()) {
+    QMessageBox::StandardButton response = QMessageBox::question(
+      this, "Close tomviz?", "Are you sure you want to exit?");
+    if (response == QMessageBox::No) {
+      e->ignore();
+      return;
+    }
   }
   // This is a little hackish, but we must ensure all PV proxy unregister calls
   // happen early enough in application destruction that the ParaView proxy

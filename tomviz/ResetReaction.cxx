@@ -16,6 +16,9 @@
 #include "ResetReaction.h"
 
 #include "ModuleManager.h"
+#include "Utilities.h"
+
+#include <QMessageBox>
 
 namespace tomviz {
 
@@ -30,6 +33,16 @@ void ResetReaction::updateEnableState()
 
 void ResetReaction::reset()
 {
+  if (ModuleManager::instance().hasDataSources()) {
+    if (QMessageBox::Yes !=
+        QMessageBox::warning(tomviz::mainWidget(), "Reset Warning",
+                             "Current data and operators will be cleared when "
+                             "resetting.  Proceed anyway?",
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::No)) {
+      return;
+    }
+  }
   ModuleManager::instance().reset();
 }
 } // namespace tomviz
