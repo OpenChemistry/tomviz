@@ -35,15 +35,13 @@
 #include <QMenu>
 
 #include "ActiveObjects.h"
-#include "ScaleLegend.h"
 #include "Utilities.h"
 
 namespace tomviz {
 
 ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   : pqViewMenuManager(mainWindow, menu), m_perspectiveProjectionAction(nullptr),
-    m_orthographicProjectionAction(nullptr), m_scaleLegendCubeAction(nullptr),
-    m_scaleLegendRulerAction(nullptr), m_hideScaleLegendAction(nullptr)
+    m_orthographicProjectionAction(nullptr)
 {
   m_view = ActiveObjects::instance().activeView();
   if (m_view) {
@@ -87,38 +85,6 @@ ViewMenuManager::ViewMenuManager(QMainWindow* mainWindow, QMenu* menu)
   m_showOrientationAxesAction->setChecked(true);
   connect(m_showOrientationAxesAction, &QAction::triggered, this,
           &ViewMenuManager::setShowOrientationAxes);
-
-  Menu->addSeparator();
-
-  m_scaleLegendCubeAction = Menu->addAction("Show Legend as Cube");
-  m_scaleLegendCubeAction->setCheckable(true);
-  m_scaleLegendRulerAction = Menu->addAction("Show Legend as Ruler");
-  m_scaleLegendRulerAction->setCheckable(true);
-  m_hideScaleLegendAction = Menu->addAction("Hide Legend");
-  m_hideScaleLegendAction->setEnabled(false);
-
-  connect(m_scaleLegendCubeAction, &QAction::triggered, this, [&]() {
-    setScaleLegendStyle(ScaleLegendStyle::Cube);
-    setScaleLegendVisibility(true);
-    m_scaleLegendCubeAction->setChecked(true);
-    m_scaleLegendRulerAction->setChecked(false);
-    m_hideScaleLegendAction->setEnabled(true);
-  });
-
-  connect(m_scaleLegendRulerAction, &QAction::triggered, this, [&]() {
-    setScaleLegendStyle(ScaleLegendStyle::Ruler);
-    setScaleLegendVisibility(true);
-    m_scaleLegendCubeAction->setChecked(false);
-    m_scaleLegendRulerAction->setChecked(true);
-    m_hideScaleLegendAction->setEnabled(true);
-  });
-
-  connect(m_hideScaleLegendAction, &QAction::triggered, this, [&]() {
-    setScaleLegendVisibility(false);
-    m_hideScaleLegendAction->setDisabled(true);
-    m_scaleLegendCubeAction->setChecked(false);
-    m_scaleLegendRulerAction->setChecked(false);
-  });
 
   Menu->addSeparator();
 }
@@ -209,20 +175,6 @@ void ViewMenuManager::onViewChanged()
       m_showAxesGridAction->setEnabled(false);
     }
   }
-  auto scaleLegend = ScaleLegend::getScaleLegend(m_view);
-  if (scaleLegend && scaleLegend->visible()) {
-    m_scaleLegendCubeAction->setChecked(scaleLegend->style() ==
-                                        ScaleLegendStyle::Cube);
-    m_scaleLegendRulerAction->setChecked(scaleLegend->style() ==
-                                         ScaleLegendStyle::Ruler);
-    m_hideScaleLegendAction->setChecked(false);
-    m_hideScaleLegendAction->setEnabled(true);
-  } else {
-    m_scaleLegendCubeAction->setChecked(false);
-    m_scaleLegendRulerAction->setChecked(false);
-    m_hideScaleLegendAction->setChecked(true);
-    m_hideScaleLegendAction->setEnabled(false);
-  }
   bool enableProjectionModes =
     (m_view && m_view->GetProperty("CameraParallelProjection"));
   m_orthographicProjectionAction->setEnabled(enableProjectionModes);
@@ -293,30 +245,6 @@ void ViewMenuManager::setShowOrientationAxes(bool show)
   if (view) {
     view->render();
   }
-}
-
-void ViewMenuManager::setScaleLegendStyle(ScaleLegendStyle s)
-{
-  if (!m_view) {
-    return;
-  }
-  auto scaleLegend = ScaleLegend::getScaleLegend(m_view);
-  if (!scaleLegend) {
-    return;
-  }
-  scaleLegend->setStyle(s);
-}
-
-void ViewMenuManager::setScaleLegendVisibility(bool v)
-{
-  if (!m_view) {
-    return;
-  }
-  auto scaleLegend = ScaleLegend::getScaleLegend(m_view);
-  if (!scaleLegend) {
-    return;
-  }
-  scaleLegend->setVisibility(v);
 }
 
 } // namespace tomviz
