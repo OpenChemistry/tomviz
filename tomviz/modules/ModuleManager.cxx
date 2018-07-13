@@ -82,8 +82,8 @@ public:
   QMultiMap<vtkSMProxy*, Module*> ViewModules;
 
   // State for the "state finished loading signal"
-  int m_remaningPipelinesToWaitFor;
-  bool m_lastStateLoadSuccess;
+  int RemaningPipelinesToWaitFor;
+  bool LastStateLoadSuccess;
 
   // Only used by onPVStateLoaded for the second half of deserialize
   QDir dir;
@@ -615,7 +615,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
 {
   // Get back to a known state.
   reset();
-  d->m_lastStateLoadSuccess = true;
+  d->LastStateLoadSuccess = true;
 
   // High level game plan - construct some XML for ParaView, restore the
   // layouts, the views, links, etc. Once they are ready then restore the data
@@ -732,7 +732,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   // qDebug() << "\nPV XML:" << stream.str().c_str() << "\n";
   vtkNew<vtkPVXMLParser> parser;
   if (!parser->Parse(stream.str().c_str())) {
-    d->m_lastStateLoadSuccess = false;
+    d->LastStateLoadSuccess = false;
     return false;
   }
   pqActiveObjects* activeObjects = &pqActiveObjects::instance();
@@ -827,17 +827,17 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   // restored to the view
   ActiveObjects::instance().viewChanged(ActiveObjects::instance().activeView());
 
-  d->m_lastStateLoadSuccess = true;
+  d->LastStateLoadSuccess = true;
 
-  if (d->m_remaningPipelinesToWaitFor == 0) {
-    emit this->stateDoneLoading();
+  if (d->RemaningPipelinesToWaitFor == 0) {
+    emit stateDoneLoading();
   }
   return true;
 }
 
 bool ModuleManager::lastLoadStateSucceeded()
 {
-  return d->m_lastStateLoadSuccess;
+  return d->LastStateLoadSuccess;
 }
 
 void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
@@ -896,7 +896,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
           dsObject["operators"].toArray().size() > 0) {
         connect(dataSource->pipeline(), &Pipeline::finished, this,
                 &ModuleManager::onPipelineFinished);
-        ++d->m_remaningPipelinesToWaitFor;
+        ++d->RemaningPipelinesToWaitFor;
       }
       dataSource->deserialize(dsObject);
       if (fileNames.isEmpty()) {
@@ -914,16 +914,16 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
 
 void ModuleManager::incrementPipelinesToWaitFor()
 {
-  ++d->m_remaningPipelinesToWaitFor;
+  ++d->RemaningPipelinesToWaitFor;
 }
 
 void ModuleManager::onPipelineFinished()
 {
-  --d->m_remaningPipelinesToWaitFor;
-  if (d->m_remaningPipelinesToWaitFor == 0) {
-    emit this->stateDoneLoading();
+  --d->RemaningPipelinesToWaitFor;
+  if (d->RemaningPipelinesToWaitFor == 0) {
+    emit stateDoneLoading();
   }
-  if (d->m_remaningPipelinesToWaitFor <= 0) {
+  if (d->RemaningPipelinesToWaitFor <= 0) {
     Pipeline* p = qobject_cast<Pipeline*>(sender());
     disconnect(p, &Pipeline::finished, this,
                &ModuleManager::onPipelineFinished);
@@ -941,7 +941,7 @@ void ModuleManager::onViewRemoved(pqView* view)
     }
   }
   foreach (Module* module, modules) {
-    this->removeModule(module);
+    removeModule(module);
   }
 }
 
