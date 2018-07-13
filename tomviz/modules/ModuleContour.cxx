@@ -349,6 +349,10 @@ bool ModuleContour::deserialize(const QJsonObject& json)
       opacity.Set(state["opacity"].toDouble());
       vtkSMPropertyHelper mapScalars(representation, "MapScalars");
       mapScalars.Set(state["mapScalars"].toBool() ? 1 : 0);
+      vtkSMPropertyHelper representationHelper(representation,
+                                               "Representation");
+      representationHelper.Set(
+        state["representation"].toString().toLocal8Bit().data());
       representation->UpdateVTKObjects();
     };
 
