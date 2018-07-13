@@ -83,7 +83,8 @@ public:
   QMultiMap<vtkSMProxy*, Module*> ViewModules;
 
   // State for the "state finished loading signal"
-  int m_remaningPipelinesToWaitFor;
+  int RemaningPipelinesToWaitFor;
+  bool LastStateLoadSuccess;
 
   // Only used by onPVStateLoaded for the second half of deserialize
   QDir dir;
@@ -615,6 +616,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
 {
   // Get back to a known state.
   reset();
+  d->LastStateLoadSuccess = true;
 
   // Disable the contour module's dialog, re-enable it when the state loading is
   // finished.
@@ -743,6 +745,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   // qDebug() << "\nPV XML:" << stream.str().c_str() << "\n";
   vtkNew<vtkPVXMLParser> parser;
   if (!parser->Parse(stream.str().c_str())) {
+    d->LastStateLoadSuccess = false;
     return false;
   }
   pqActiveObjects* activeObjects = &pqActiveObjects::instance();
@@ -837,7 +840,17 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   // restored to the view
   ActiveObjects::instance().viewChanged(ActiveObjects::instance().activeView());
 
+  d->LastStateLoadSuccess = true;
+
+  if (d->RemaningPipelinesToWaitFor == 0) {
+    emit stateDoneLoading();
+  }
   return true;
+}
+
+bool ModuleManager::lastLoadStateSucceeded()
+{
+  return d->LastStateLoadSuccess;
 }
 
 void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
@@ -892,15 +905,16 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
         dataSource = LoadDataReaction::loadData(fileNames, options);
       }
 
+      if (dsObject.contains("operators") &&
+          dsObject["operators"].toArray().size() > 0) {
+        connect(dataSource->pipeline(), &Pipeline::finished, this,
+                &ModuleManager::onPipelineFinished);
+        ++d->RemaningPipelinesToWaitFor;
+      }
       dataSource->deserialize(dsObject);
       if (fileNames.isEmpty()) {
         dataSource->setPersistenceState(
           DataSource::PersistenceState::Transient);
-      }
-      if (dataSource->pipeline()->isRunning()) {
-        connect(dataSource->pipeline(), &Pipeline::finished, this,
-                &ModuleManager::onPipelineFinished);
-        ++d->m_remaningPipelinesToWaitFor;
       }
       // FIXME: I think we need to collect the active objects and set them at
       // the end, as the act of adding generally implies setting to active.
@@ -913,16 +927,16 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
 
 void ModuleManager::incrementPipelinesToWaitFor()
 {
-  ++d->m_remaningPipelinesToWaitFor;
+  ++d->RemaningPipelinesToWaitFor;
 }
 
 void ModuleManager::onPipelineFinished()
 {
-  --d->m_remaningPipelinesToWaitFor;
-  if (d->m_remaningPipelinesToWaitFor == 0) {
-    emit this->stateDoneLoading();
+  --d->RemaningPipelinesToWaitFor;
+  if (d->RemaningPipelinesToWaitFor == 0) {
+    emit stateDoneLoading();
   }
-  if (d->m_remaningPipelinesToWaitFor <= 0) {
+  if (d->RemaningPipelinesToWaitFor <= 0) {
     Pipeline* p = qobject_cast<Pipeline*>(sender());
     disconnect(p, &Pipeline::finished, this,
                &ModuleManager::onPipelineFinished);
@@ -940,7 +954,7 @@ void ModuleManager::onViewRemoved(pqView* view)
     }
   }
   foreach (Module* module, modules) {
-    this->removeModule(module);
+    removeModule(module);
   }
 }
 

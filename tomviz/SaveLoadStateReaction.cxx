@@ -29,6 +29,7 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QMessageBox>
+#include <QTimer>
 
 #include <vtk_pugixml.h>
 
@@ -112,9 +113,16 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     }
   }
 
-  if (doc.isObject() && ModuleManager::instance().deserialize(
-                          doc.object(), QFileInfo(filename).dir())) {
-    RecentFilesMenu::pushStateFile(filename);
+  if (doc.isObject()) {
+    // This needs to run here, but needs to run after the dialog is connected
+    // and execed.  Otherwise we miss singals fired from within deserialize.
+    // So put it on a timer.
+    QTimer::singleShot(0, [doc, filename]() {
+      if (ModuleManager::instance().deserialize(doc.object(),
+                                                QFileInfo(filename).dir())) {
+        RecentFilesMenu::pushStateFile(filename);
+      }
+    });
     QDialog dialog(tomviz::mainWidget(), Qt::WindowStaysOnTopHint);
     QHBoxLayout* layout = new QHBoxLayout();
     QLabel* label = new QLabel("Please wait... loading state file");
@@ -123,7 +131,9 @@ bool SaveLoadStateReaction::loadState(const QString& filename)
     connect(&ModuleManager::instance(), &ModuleManager::stateDoneLoading,
             &dialog, &QDialog::accept);
     dialog.exec();
-    return true;
+    if (ModuleManager::instance().lastLoadStateSucceeded()) {
+      return true;
+    } // else continue to error message
   }
 
   if (!legacyStateFile) {
