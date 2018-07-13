@@ -299,8 +299,7 @@ void ModuleVolume::onTransferModeChanged(const int mode)
 
 vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
 {
-  vtkTrivialProducer* trv =
-    vtkTrivialProducer::SafeDownCast(this->dataSource()->proxy());
+  vtkTrivialProducer* trv = this->dataSource()->producer();
   return trv->GetOutputDataObject(0);
 }
 
