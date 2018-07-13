@@ -32,6 +32,7 @@
 #include <pqApplicationCore.h>
 #include <pqDeleteReaction.h>
 #include <pqPVApplicationCore.h>
+#include <pqSettings.h>
 
 #include <vtkCamera.h>
 #include <vtkNew.h>
@@ -614,6 +615,18 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
 {
   // Get back to a known state.
   reset();
+
+  // Disable the contour module's dialog, re-enable it when the state loading is
+  // finished.
+  QSettings* settings = pqApplicationCore::instance()->settings();
+  bool userConfirmInitialValue =
+    settings->value("ContourSettings.UserConfirmInitialValue", true).toBool();
+  settings->setValue("ContourSettings.UserConfirmInitialValue", false);
+  connect(this, &ModuleManager::stateDoneLoading, this,
+          [settings, userConfirmInitialValue]() {
+            settings->setValue("ContourSettings.UserConfirmInitialValue",
+                               userConfirmInitialValue);
+          });
 
   // High level game plan - construct some XML for ParaView, restore the
   // layouts, the views, links, etc. Once they are ready then restore the data
