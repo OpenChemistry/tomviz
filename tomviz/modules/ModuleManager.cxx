@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "HistogramManager.h"
 #include "LoadDataReaction.h"
 #include "ModuleFactory.h"
 #include "Pipeline.h"
@@ -843,7 +844,7 @@ bool ModuleManager::deserialize(const QJsonObject& doc, const QDir& stateDir)
   d->LastStateLoadSuccess = true;
 
   if (d->RemaningPipelinesToWaitFor == 0) {
-    emit stateDoneLoading();
+    setupWaitForHistograms();
   }
   return true;
 }
@@ -908,7 +909,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       if (dsObject.contains("operators") &&
           dsObject["operators"].toArray().size() > 0) {
         connect(dataSource->pipeline(), &Pipeline::finished, this,
-                &ModuleManager::onPipelineFinished);
+                &ModuleManager::onPipelineFinished, Qt::QueuedConnection);
         ++d->RemaningPipelinesToWaitFor;
       }
       dataSource->deserialize(dsObject);
@@ -930,11 +931,34 @@ void ModuleManager::incrementPipelinesToWaitFor()
   ++d->RemaningPipelinesToWaitFor;
 }
 
+void ModuleManager::setupWaitForHistograms()
+{
+  if (HistogramManager::instance().hasHistogramsPending()) {
+    auto context = new QObject(this);
+    connect(&HistogramManager::instance(), &HistogramManager::histogramReady,
+            context, [this, context]() {
+              if (!HistogramManager::instance().hasHistogramsPending()) {
+                emit stateDoneLoading();
+                context->deleteLater();
+              }
+            });
+    connect(&HistogramManager::instance(), &HistogramManager::histogram2DReady,
+            context, [this, context]() {
+              if (!HistogramManager::instance().hasHistogramsPending()) {
+                emit stateDoneLoading();
+                context->deleteLater();
+              }
+            });
+  } else {
+    emit stateDoneLoading();
+  }
+}
+
 void ModuleManager::onPipelineFinished()
 {
   --d->RemaningPipelinesToWaitFor;
   if (d->RemaningPipelinesToWaitFor == 0) {
-    emit stateDoneLoading();
+    setupWaitForHistograms();
   }
   if (d->RemaningPipelinesToWaitFor <= 0) {
     Pipeline* p = qobject_cast<Pipeline*>(sender());

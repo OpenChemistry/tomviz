@@ -328,6 +328,12 @@ void HistogramManager::histogram2DReadyInternal(
   emit this->histogram2DReady(image, histogram);
 }
 
+bool HistogramManager::hasHistogramsPending()
+{
+  return this->m_histogramsInProgress.size() > 0 ||
+         this->m_histogram2DsInProgress.size() > 0;
+}
+
 } // namespace tomviz
 
 #include "HistogramManager.moc"
