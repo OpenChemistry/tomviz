@@ -691,8 +691,8 @@ void MainWindow::closeEvent(QCloseEvent* e)
       return;
     }
   } else if (ModuleManager::instance().hasDataSources()) {
-    QMessageBox::StandardButton response = QMessageBox::question(
-      this, "Close tomviz?", "Are you sure you want to exit?");
+    QMessageBox::StandardButton response =
+      QMessageBox::question(this, "Close?", "Are you sure you want to exit?");
     if (response == QMessageBox::No) {
       e->ignore();
       return;
