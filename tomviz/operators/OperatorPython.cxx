@@ -480,6 +480,15 @@ QJsonObject OperatorPython::serialize() const
   json["script"] = script();
   if (!m_arguments.isEmpty()) {
     json["arguments"] = QJsonObject::fromVariantMap(m_arguments);
+    // If we have no description we still need to save the types of
+    // the arguments
+    if (JSONDescription().isEmpty() && !m_typeInfo.isEmpty()) {
+      QJsonObject typeObj;
+      for (auto itr = m_typeInfo.begin(); itr != m_typeInfo.end(); ++itr) {
+        typeObj[itr.key()] = itr.value();
+      }
+      json["argumentTypeInformation"] = typeObj;
+    }
   }
   return json;
 }
@@ -532,18 +541,32 @@ bool OperatorPython::deserialize(const QJsonObject& json)
   m_arguments.clear();
   // We use the JSON description to ensure things have the correct type.
   if (json.contains("arguments")) {
-    auto document = QJsonDocument::fromJson(m_jsonDescription.toLatin1());
-    if (!document.isObject()) {
-      qCritical() << "Failed to parse operator JSON";
-      qCritical() << m_jsonDescription;
-      return false;
-    }
-    auto args = json["arguments"].toObject();
-    auto params = document.object()["parameters"].toArray();
-    foreach (const QString& key, args.keys()) {
-      auto param = findJsonObject(params, key);
-      if (!param.isEmpty()) {
-        m_arguments[key] = castJsonArg(args[key], param["type"].toString());
+    if (!m_jsonDescription.isEmpty()) {
+      auto document = QJsonDocument::fromJson(m_jsonDescription.toLatin1());
+      if (!document.isObject()) {
+        qCritical() << "Failed to parse operator JSON";
+        qCritical() << m_jsonDescription;
+        return false;
+      }
+      auto args = json["arguments"].toObject();
+      auto params = document.object()["parameters"].toArray();
+      foreach (const QString& key, args.keys()) {
+        auto param = findJsonObject(params, key);
+        if (!param.isEmpty()) {
+          m_arguments[key] = castJsonArg(args[key], param["type"].toString());
+        }
+      }
+    } else if (json.contains("argumentTypeInformation")) {
+      auto args = json["arguments"].toObject();
+      auto typeInfo = json["argumentTypeInformation"].toObject();
+      foreach (const QString& key, args.keys()) {
+        if (!typeInfo.contains(key)) {
+          qCritical() << "Deserializing operator " << m_label
+                      << " found argument " << key << " with unknown type.";
+          return false;
+        }
+        auto type = typeInfo[key].toString();
+        m_arguments[key] = castJsonArg(args[key], type);
       }
     }
   }
@@ -610,6 +633,16 @@ void OperatorPython::setArguments(QMap<QString, QVariant> args)
 QMap<QString, QVariant> OperatorPython::arguments() const
 {
   return m_arguments;
+}
+
+void OperatorPython::setTypeInfo(const QMap<QString, QString>& typeInfo)
+{
+  m_typeInfo = typeInfo;
+}
+
+const QMap<QString, QString>& OperatorPython::typeInfo() const
+{
+  return m_typeInfo;
 }
 } // namespace tomviz
 #include "OperatorPython.moc"
