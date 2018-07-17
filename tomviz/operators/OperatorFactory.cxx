@@ -17,7 +17,6 @@
 
 #include "ConvertToFloatOperator.h"
 #include "CropOperator.h"
-#include "DataSource.h"
 #include "OperatorPython.h"
 #include "ReconstructionOperator.h"
 #include "SetTiltAnglesOperator.h"
@@ -32,14 +31,21 @@
 #include "vtkTypeInt8Array.h"
 
 namespace {
+
 class ConvertToVolumeOperator : public tomviz::Operator
 {
   Q_OBJECT
 public:
-  ConvertToVolumeOperator(QObject* p = nullptr) : Operator(p) {}
+  ConvertToVolumeOperator(
+    QObject* p = nullptr,
+    tomviz::DataSource::DataSourceType t = tomviz::DataSource::Volume,
+    QString label = "Mark as Volume")
+    : Operator(p), m_type(t), m_label(label)
+  {
+  }
   ~ConvertToVolumeOperator() {}
 
-  QString label() const override { return "Mark as Volume"; }
+  QString label() const override { return m_label; }
   QIcon icon() const override { return QIcon(); }
   Operator* clone() const override { return new ConvertToVolumeOperator; }
 
@@ -59,12 +65,14 @@ protected:
       dataType = array.Get();
     }
     // It should already be this value...
-    dataType->SetTuple1(0, tomviz::DataSource::Volume);
+    dataType->SetTuple1(0, m_type);
     return true;
   }
 
 private:
   Q_DISABLE_COPY(ConvertToVolumeOperator)
+  QString m_label;
+  tomviz::DataSource::DataSourceType m_type;
 };
 
 #include "OperatorFactory.moc"
@@ -91,9 +99,15 @@ QList<QString> OperatorFactory::operatorTypes()
   return reply;
 }
 
-Operator* OperatorFactory::createConvertToVolumeOperator()
+Operator* OperatorFactory::createConvertToVolumeOperator(
+  DataSource::DataSourceType t)
 {
-  return new ConvertToVolumeOperator;
+  if (t == DataSource::Volume) {
+    return new ConvertToVolumeOperator(nullptr, t, "Mark as Volume");
+  } else if (t == DataSource::FIB) {
+    return new ConvertToVolumeOperator(nullptr, t, "Mark as Focused Ion Beam");
+  }
+  return nullptr;
 }
 
 Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)

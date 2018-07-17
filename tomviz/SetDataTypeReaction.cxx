@@ -14,10 +14,9 @@
 
 ******************************************************************************/
 
-#include "ToggleDataTypeReaction.h"
+#include "SetDataTypeReaction.h"
 
 #include "ActiveObjects.h"
-#include "DataSource.h"
 #include "OperatorFactory.h"
 #include "SetTiltAnglesReaction.h"
 
@@ -25,16 +24,18 @@
 
 namespace tomviz {
 
-ToggleDataTypeReaction::ToggleDataTypeReaction(QAction* action, QMainWindow* mw)
-  : pqReaction(action), m_mainWindow(mw)
+SetDataTypeReaction::SetDataTypeReaction(QAction* action, QMainWindow* mw,
+                                         DataSource::DataSourceType t)
+  : pqReaction(action), m_mainWindow(mw), m_type(t)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
+  setWidgetText(t);
   updateEnableState();
 }
 
-void ToggleDataTypeReaction::toggleDataType(QMainWindow* mw,
-                                            DataSource* dsource)
+void SetDataTypeReaction::setDataType(QMainWindow* mw, DataSource* dsource,
+                                      DataSource::DataSourceType t)
 {
   if (dsource == nullptr) {
     dsource = ActiveObjects::instance().activeDataSource();
@@ -43,36 +44,43 @@ void ToggleDataTypeReaction::toggleDataType(QMainWindow* mw,
   if (dsource == nullptr) {
     return;
   }
-  if (dsource->type() == DataSource::Volume) {
+  if (t == DataSource::TiltSeries) {
     SetTiltAnglesReaction::showSetTiltAnglesUI(mw, dsource);
-  } else if (dsource->type() == DataSource::TiltSeries) {
-    Operator* op = OperatorFactory::createConvertToVolumeOperator();
+  } else {
+    // If it was a TiltSeries convert to volume
+    // if (dsource->type() == DataSource::TiltSeries) {
+    Operator* op = OperatorFactory::createConvertToVolumeOperator(t);
     dsource->addOperator(op);
+    // dsource->setType(t);
+    // }
   }
 }
 
-void ToggleDataTypeReaction::onTriggered()
+void SetDataTypeReaction::onTriggered()
 {
   DataSource* dsource = ActiveObjects::instance().activeParentDataSource();
-  toggleDataType(m_mainWindow, dsource);
-  setWidgetText(dsource);
+  setDataType(m_mainWindow, dsource, m_type);
+  // setWidgetText(dsource);
 }
 
-void ToggleDataTypeReaction::updateEnableState()
+void SetDataTypeReaction::updateEnableState()
 {
   auto dsource = ActiveObjects::instance().activeDataSource();
-  parentAction()->setEnabled(dsource != nullptr);
+  parentAction()->setEnabled(false);
   if (dsource != nullptr) {
-    setWidgetText(dsource);
+    parentAction()->setEnabled(dsource->type() != m_type);
+    // setWidgetText(dsource);
   }
 }
 
-void ToggleDataTypeReaction::setWidgetText(DataSource* dsource)
+void SetDataTypeReaction::setWidgetText(DataSource::DataSourceType t)
 {
-  if (dsource->type() == DataSource::Volume) {
-    parentAction()->setText("Mark Data As Tilt Series");
-  } else if (dsource->type() == DataSource::TiltSeries) {
+  if (t == DataSource::Volume) {
     parentAction()->setText("Mark Data As Volume");
+  } else if (t == DataSource::TiltSeries) {
+    parentAction()->setText("Mark Data As Tilt Series");
+  } else if (t == DataSource::FIB) {
+    parentAction()->setText("Mark Data As Focused Ion Beam (FIB)");
   } else {
     assert("Unknown data source type" && false);
   }

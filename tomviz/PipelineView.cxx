@@ -31,8 +31,8 @@
 #include "Pipeline.h"
 #include "PipelineModel.h"
 #include "SaveDataReaction.h"
+#include "SetDataTypeReaction.h"
 #include "SnapshotOperator.h"
-#include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 
 #include <pqSpreadSheetView.h>
@@ -223,7 +223,9 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QMenu contextMenu;
   QAction* cloneAction = nullptr;
   QAction* duplicateModuleAction = nullptr;
-  QAction* markAsAction = nullptr;
+  QAction* markAsVolumeAction = nullptr;
+  QAction* markAsTiltAction = nullptr;
+  QAction* markAsFibAction = nullptr;
   QAction* saveDataAction = nullptr;
   QAction* exportModuleAction = nullptr;
   QAction* executeAction = nullptr;
@@ -249,9 +251,14 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     saveDataAction = contextMenu.addAction("Save Data");
     new SaveDataReaction(saveDataAction);
     if (dataSource->type() == DataSource::Volume) {
-      markAsAction = contextMenu.addAction("Mark as Tilt Series");
-    } else {
-      markAsAction = contextMenu.addAction("Mark as Volume");
+      markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
+      markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+    } else if (dataSource->type() == DataSource::TiltSeries) {
+      markAsVolumeAction = contextMenu.addAction("Mark as Volume");
+      markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+    } else if (dataSource->type() == DataSource::FIB) {
+      markAsVolumeAction = contextMenu.addAction("Mark as Volume");
+      markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
     }
 
     // Add option to merge different datasets
@@ -369,9 +376,18 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
       dataSource = op->dataSource();
     }
     dataSource->pipeline()->execute(dataSource);
-  } else if (markAsAction != nullptr && markAsAction == selectedItem) {
+  } else if (markAsVolumeAction != nullptr &&
+             markAsVolumeAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());
-    ToggleDataTypeReaction::toggleDataType(mainWindow, dataSource);
+    SetDataTypeReaction::setDataType(mainWindow, dataSource,
+                                     DataSource::Volume);
+  } else if (markAsTiltAction != nullptr && markAsTiltAction == selectedItem) {
+    auto mainWindow = qobject_cast<QMainWindow*>(window());
+    SetDataTypeReaction::setDataType(mainWindow, dataSource,
+                                     DataSource::TiltSeries);
+  } else if (markAsFibAction != nullptr && markAsFibAction == selectedItem) {
+    auto mainWindow = qobject_cast<QMainWindow*>(window());
+    SetDataTypeReaction::setDataType(mainWindow, dataSource, DataSource::FIB);
   } else if (hideAction && selectedItem == hideAction) {
     setModuleVisibility(selectedIndexes(), false);
   } else if (showAction && selectedItem == showAction) {

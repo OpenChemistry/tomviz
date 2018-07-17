@@ -141,12 +141,12 @@ set(SOURCES
   SaveWebReaction.cxx
   ScaleActorBehavior.cxx
   ScaleActorBehavior.h
+  SetDataTypeReaction.h
+  SetDataTypeReaction.cxx
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
   SpinBox.cxx
   SpinBox.h
-  ToggleDataTypeReaction.h
-  ToggleDataTypeReaction.cxx
   TomographyReconstruction.h
   TomographyReconstruction.cxx
   TomographyTiltSeries.h

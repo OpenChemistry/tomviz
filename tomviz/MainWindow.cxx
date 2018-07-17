@@ -62,9 +62,9 @@
 #include "SaveLoadStateReaction.h"
 #include "SaveScreenshotReaction.h"
 #include "SaveWebReaction.h"
+#include "SetDataTypeReaction.h"
 #include "SetTiltAnglesOperator.h"
 #include "SetTiltAnglesReaction.h"
-#include "ToggleDataTypeReaction.h"
 #include "Utilities.h"
 #include "ViewMenuManager.h"
 #include "WelcomeDialog.h"
@@ -239,8 +239,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // Build Tomography menu
   // ################################################################
-  QAction* toggleDataTypeAction =
-    m_ui->menuTomography->addAction("Toggle Data Type");
+  QAction* setVolumeDataTypeAction =
+    m_ui->menuTomography->addAction("Set Data Type");
+  QAction* setTiltDataTypeAction =
+    m_ui->menuTomography->addAction("Set Data Type");
+  QAction* setFibDataTypeAction =
+    m_ui->menuTomography->addAction("Set Data Type");
   m_ui->menuTomography->addSeparator();
 
   QAction* setTiltAnglesAction =
@@ -312,7 +316,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   // Set up reactions for Tomography Menu
   //#################################################################
-  new ToggleDataTypeReaction(toggleDataTypeAction, this);
+  new SetDataTypeReaction(setVolumeDataTypeAction, this, DataSource::Volume);
+  new SetDataTypeReaction(setTiltDataTypeAction, this, DataSource::TiltSeries);
+  new SetDataTypeReaction(setFibDataTypeAction, this, DataSource::FIB);
   new SetTiltAnglesReaction(setTiltAnglesAction, this);
 
   new AddPythonTransformReaction(

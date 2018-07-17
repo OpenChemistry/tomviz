@@ -800,6 +800,8 @@ void DataSource::setData(vtkDataObject* newData)
   if (typeArray && typeArray->GetTuple1(0) == TiltSeries) {
     this->Internals->ensureTiltAnglesArrayExists();
     this->Internals->Type = TiltSeries;
+  } else if (typeArray && typeArray->GetTuple1(0) == FIB) {
+    this->Internals->Type = FIB;
   } else {
     this->Internals->Type = Volume;
   }
