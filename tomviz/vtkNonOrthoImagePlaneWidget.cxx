@@ -850,7 +850,6 @@ void vtkNonOrthoImagePlaneWidget::CreateDefaultProperties()
 
   if (!this->TexturePlaneProperty) {
     this->TexturePlaneProperty = vtkProperty::New();
-    this->TexturePlaneProperty->SetAmbient(1);
     this->TexturePlaneProperty->SetInterpolationToFlat();
   }
 }
