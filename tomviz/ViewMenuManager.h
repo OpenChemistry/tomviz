@@ -52,9 +52,6 @@ private:
 
   QPointer<QAction> m_perspectiveProjectionAction;
   QPointer<QAction> m_orthographicProjectionAction;
-  QPointer<QAction> m_scaleLegendCubeAction;
-  QPointer<QAction> m_scaleLegendRulerAction;
-  QPointer<QAction> m_hideScaleLegendAction;
   QPointer<QAction> m_showAxesGridAction;
   QPointer<QAction> m_showCenterAxesAction;
   QPointer<QAction> m_showOrientationAxesAction;

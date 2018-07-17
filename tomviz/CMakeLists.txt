@@ -141,8 +141,6 @@ set(SOURCES
   SaveWebReaction.cxx
   ScaleActorBehavior.cxx
   ScaleActorBehavior.h
-  ScaleLegend.h
-  ScaleLegend.cxx
   SetTiltAnglesReaction.cxx
   SetTiltAnglesReaction.h
   SpinBox.cxx
