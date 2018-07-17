@@ -13,7 +13,10 @@ class CrossCorrelationAlignmentOperator(tomviz.operators.CancelableOperator):
         tiltAngles = utils.get_tilt_angles(dataset)
 
         # determine reference image index
-        zeroDegreeTiltImage = np.where(tiltAngles == 0)[0]
+        zeroDegreeTiltImage = None
+        if tiltAngles is not None:
+            zeroDegreeTiltImage = np.where(tiltAngles == 0)[0]
+
         if zeroDegreeTiltImage:
             referenceIndex = zeroDegreeTiltImage[0]
         else:

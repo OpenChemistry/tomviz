@@ -323,7 +323,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   new AddPythonTransformReaction(
     generateTiltSeriesAction, "Generate Tilt Series",
-    readInPythonScript("GenerateTiltSeries"), false, true,
+    readInPythonScript("GenerateTiltSeries"), false, true, false,
     readInJSONDescription("GenerateTiltSeries"));
 
   new AddAlignReaction(alignAction);
@@ -332,10 +332,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
                                  true);
   new AddPythonTransformReaction(
     removeBadPixelsAction, "Remove Bad Pixels",
-    readInPythonScript("RemoveBadPixelsTiltSeries"), true, false);
+    readInPythonScript("RemoveBadPixelsTiltSeries"), true, false, false);
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Filter Tilt Series",
-    readInPythonScript("GaussianFilterTiltSeries"), true, false,
+    readInPythonScript("GaussianFilterTiltSeries"), true, false, false,
     readInJSONDescription("GaussianFilterTiltSeries"));
   new AddPythonTransformReaction(
     autoSubtractBackgroundAction, "Background Subtraction (Auto)",
@@ -349,10 +349,10 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new AddPythonTransformReaction(
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
     readInPythonScript("GradientMagnitude2D_Sobel"), true);
-  new AddPythonTransformReaction(rotateAlignAction,
-                                 "Tilt Axis Alignment (manual)",
-                                 readInPythonScript("RotationAlign"), true,
-                                 false, readInJSONDescription("RotationAlign"));
+  new AddPythonTransformReaction(
+    rotateAlignAction, "Tilt Axis Alignment (manual)",
+    readInPythonScript("RotationAlign"), true, false, false,
+    readInJSONDescription("RotationAlign"));
   // new AddRotateAlignReaction(rotateAlignAction);
   new AddPythonTransformReaction(
     autoRotateAlignAction, "Auto Tilt Axis Align",
@@ -364,42 +364,42 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new AddPythonTransformReaction(
     autoAlignCCAction, "Auto Tilt Image Align (XCORR)",
     readInPythonScript("AutoCrossCorrelationTiltImageAlignment"), true, false,
-    readInJSONDescription("AutoCrossCorrelationTiltImageAlignment"));
+    true, readInJSONDescription("AutoCrossCorrelationTiltImageAlignment"));
   new AddPythonTransformReaction(
     autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
-    readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true, false,
+    readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true, false, true,
     readInJSONDescription("AutoCenterOfMassTiltImageAlignment"));
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true, false,
-                                 readInJSONDescription("Recon_DFT"));
+                                 false, readInJSONDescription("Recon_DFT"));
   new AddPythonTransformReaction(reconWBPAction,
                                  "Reconstruct (Back Projection)",
                                  readInPythonScript("Recon_WBP"), true, false,
-                                 readInJSONDescription("Recon_WBP"));
+                                 false, readInJSONDescription("Recon_WBP"));
   new AddPythonTransformReaction(reconARTAction, "Reconstruct (ART)",
                                  readInPythonScript("Recon_ART"), true, false,
-                                 readInJSONDescription("Recon_ART"));
+                                 false, readInJSONDescription("Recon_ART"));
   new AddPythonTransformReaction(reconSIRTAction, "Reconstruct (SIRT)",
                                  readInPythonScript("Recon_SIRT"), true, false,
-                                 readInJSONDescription("Recon_SIRT"));
+                                 false, readInJSONDescription("Recon_SIRT"));
   new AddPythonTransformReaction(
     reconDFMConstraintAction, "Reconstruct (Constraint-based Direct Fourier)",
-    readInPythonScript("Recon_DFT_constraint"), true, false,
+    readInPythonScript("Recon_DFT_constraint"), true, false, false,
     readInJSONDescription("Recon_DFT_constraint"));
   new AddPythonTransformReaction(
     reconTVMinimizationAction, "Reconstruct (TV Minimization)",
-    readInPythonScript("Recon_TV_minimization"), true, false,
+    readInPythonScript("Recon_TV_minimization"), true, false, false,
     readInJSONDescription("Recon_TV_minimization"));
 
   new ReconstructionReaction(reconWBP_CAction);
 
   new AddPythonTransformReaction(
     randomShiftsAction, "Shift Tilt Series Randomly",
-    readInPythonScript("ShiftTiltSeriesRandomly"), true, false,
+    readInPythonScript("ShiftTiltSeriesRandomly"), true, false, false,
     readInJSONDescription("ShiftTiltSeriesRandomly"));
   new AddPythonTransformReaction(addPoissonNoiseAction, "Add Poisson Noise",
                                  readInPythonScript("AddPoissonNoise"), true,
-                                 false,
+                                 false, false,
                                  readInJSONDescription("AddPoissonNoise"));
 
   //#################################################################
@@ -882,7 +882,7 @@ void MainWindow::registerCustomOperators(const QString& path)
         }
       }
       new AddPythonTransformReaction(action, op.label, source, false, false,
-                                     json);
+                                     false, json);
     }
   }
 }

@@ -18,6 +18,7 @@
 
 #include "ActiveObjects.h"
 #include "OperatorFactory.h"
+#include "Pipeline.h"
 #include "SetTiltAnglesReaction.h"
 
 #include <cassert>
@@ -65,12 +66,17 @@ void SetDataTypeReaction::onTriggered()
 
 void SetDataTypeReaction::updateEnableState()
 {
-  auto dsource = ActiveObjects::instance().activeDataSource();
-  parentAction()->setEnabled(false);
-  if (dsource != nullptr) {
-    parentAction()->setEnabled(dsource->type() != m_type);
-    // setWidgetText(dsource);
+  // auto dsource = ActiveObjects::instance().activeDataSource();
+  auto pipeline = ActiveObjects::instance().activePipeline();
+  bool enable = pipeline != nullptr;
+  if (enable) {
+    auto dsource = pipeline->transformedDataSource();
+    enable = dsource != nullptr;
+    if (enable) {
+      enable = dsource->type() != m_type;
+    }
   }
+  parentAction()->setEnabled(enable);
 }
 
 void SetDataTypeReaction::setWidgetText(DataSource::DataSourceType t)

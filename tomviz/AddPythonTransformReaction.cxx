@@ -145,13 +145,12 @@ private:
 
 namespace tomviz {
 
-AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
-                                                       const QString& l,
-                                                       const QString& s,
-                                                       bool rts, bool rv,
-                                                       const QString& json)
+AddPythonTransformReaction::AddPythonTransformReaction(
+  QAction* parentObject, const QString& l, const QString& s, bool rts, bool rv,
+  bool rf, const QString& json)
   : pqReaction(parentObject), jsonSource(json), scriptLabel(l), scriptSource(s),
-    interactive(false), requiresTiltSeries(rts), requiresVolume(rv)
+    interactive(false), requiresTiltSeries(rts), requiresVolume(rv),
+    requiresFib(rf)
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
@@ -161,15 +160,18 @@ AddPythonTransformReaction::AddPythonTransformReaction(QAction* parentObject,
 void AddPythonTransformReaction::updateEnableState()
 {
   auto pipeline = ActiveObjects::instance().activePipeline();
-  bool enable = ActiveObjects::instance().activePipeline() != nullptr;
+  bool enable = pipeline != nullptr;
 
   if (enable) {
     auto dataSource = pipeline->transformedDataSource();
-    if (this->requiresTiltSeries) {
-      enable = dataSource->type() == DataSource::TiltSeries;
-    }
-    if (enable && this->requiresVolume) {
-      enable = dataSource->type() == DataSource::Volume;
+
+    if ((requiresTiltSeries && dataSource->type() == DataSource::TiltSeries) ||
+        (requiresVolume && dataSource->type() == DataSource::Volume) ||
+        (requiresFib && dataSource->type() == DataSource::FIB) ||
+        (!requiresTiltSeries && !requiresVolume && !requiresFib)) {
+      enable = true;
+    } else {
+      enable = false;
     }
   }
 

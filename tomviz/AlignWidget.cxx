@@ -485,7 +485,8 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   // get tilt angles and determine initial reference image
   QVector<double> tiltAngles;
   auto fd = imageData->GetFieldData();
-  if (fd->HasArray("tilt_angles")) {
+  bool showAngles = fd->HasArray("tilt_angles");
+  if (showAngles) {
     auto angles = fd->GetArray("tilt_angles");
     tiltAngles.resize(angles->GetNumberOfTuples());
     for (int i = 0; i < tiltAngles.size(); ++i) {
@@ -603,7 +604,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   }
 
   m_offsetTable->setRowCount(m_offsets.size());
-  m_offsetTable->setColumnCount(4);
+  m_offsetTable->setColumnCount(showAngles ? 4 : 3);
   QTableWidgetItem* item = new QTableWidgetItem();
   item->setText("Slice #");
   m_offsetTable->setHorizontalHeaderItem(0, item);
@@ -613,9 +614,11 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
   item = new QTableWidgetItem();
   item->setText("Y offset");
   m_offsetTable->setHorizontalHeaderItem(2, item);
-  item = new QTableWidgetItem();
-  item->setText("Tilt angle");
-  m_offsetTable->setHorizontalHeaderItem(3, item);
+  if (showAngles) {
+    item = new QTableWidgetItem();
+    item->setText("Tilt angle");
+    m_offsetTable->setHorizontalHeaderItem(3, item);
+  }
   for (int i = 0; i < oldOffsets.size(); ++i) {
     m_offsets[i] = oldOffsets[i];
   }
@@ -638,12 +641,17 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     item->setData(Qt::DisplayRole, QString::number(m_offsets[i][1]));
     m_offsetTable->setItem(i, 2, item);
 
-    item = new QTableWidgetItem();
-    item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
-    item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-    m_offsetTable->setItem(i, 3, item);
+    // If we have a FIB datasource, there might not be tiltAngles data
+    if (showAngles) {
+      item = new QTableWidgetItem();
+      item->setData(Qt::DisplayRole, QString::number(tiltAngles[i]));
+      item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+      m_offsetTable->setItem(i, 3, item);
+    }
   }
   m_offsetTable->resizeColumnsToContents();
+  m_offsetTable->horizontalHeader()->setSectionResizeMode(0,
+                                                          QHeaderView::Stretch);
   m_currentSliceOffset->setText(
     QString("Image shift (Shortcut: arrow keys): (%1, %2)")
       .arg(m_offsets[m_currentSlice->value()][0])
