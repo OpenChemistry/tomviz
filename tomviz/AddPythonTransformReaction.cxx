@@ -191,15 +191,16 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
     opPython->setScript(scriptSource);
 
     // Use JSON to build the interface via the EditOperatorDialog
-    // If the operator doesn't have parameters, don't add the dialog
-    if (opPython->arguments().isEmpty()) {
-      source->addOperator(opPython);
-    } else {
+    // If the operator doesn't have parameters, don't show the dialog on first
+    // execution
+    if (opPython->numberOfParameters() > 0) {
       auto dialog =
         new EditOperatorDialog(opPython, source, true, tomviz::mainWidget());
       dialog->setAttribute(Qt::WA_DeleteOnClose);
       dialog->setWindowTitle(QString("Edit %1").arg(opPython->label()));
       dialog->show();
+    } else {
+      source->addOperator(opPython);
     }
 
     // Handle transforms with custom UIs
