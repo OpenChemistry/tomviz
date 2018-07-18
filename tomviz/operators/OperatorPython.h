@@ -74,6 +74,8 @@ public:
   void setTypeInfo(const QMap<QString, QString>& typeInfo);
   const QMap<QString, QString>& typeInfo() const;
 
+  int numberOfParameters() const { return m_numberOfParameters; }
+
 signals:
   void newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>);
   /// Signal uses to request that the child data source be updated with
@@ -91,6 +93,7 @@ private slots:
 private:
   Q_DISABLE_COPY(OperatorPython)
 
+  void setNumberOfParameters(int n) { m_numberOfParameters = n; }
   class OPInternals;
   const QScopedPointer<OPInternals> d;
   QString m_label;
@@ -106,6 +109,7 @@ private:
   QList<QString> m_resultNames;
   QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;
   QMap<QString, QVariant> m_arguments;
+  int m_numberOfParameters = 0;
 };
 } // namespace tomviz
 #endif

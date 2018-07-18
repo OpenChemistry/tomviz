@@ -257,6 +257,14 @@ void OperatorPython::setJSONDescription(const QString& str)
     }
   }
 
+  // Get the number of parameters
+  QJsonValueRef parametersNode = root["parameters"];
+  if (!parametersNode.isUndefined() && !parametersNode.isNull()) {
+    QJsonArray parametersArray = parametersNode.toArray();
+    QJsonObject::size_type numParameters = parametersArray.size();
+    setNumberOfParameters(numParameters);
+  }
+
   // Get child dataset information
   QJsonValueRef childDatasetNode = root["children"];
   if (!childDatasetNode.isUndefined() && !childDatasetNode.isNull()) {
