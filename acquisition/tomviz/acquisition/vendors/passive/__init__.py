@@ -237,6 +237,7 @@ class PassiveWatchSource(AbstractSource):
                     for regex, repl in iteritems(sub):
                         meta[group] = re.sub(regex, repl, meta[group])
 
+        meta['fileName'] = os.path.basename(filepath)
         return meta
 
     def stem_acquire(self):

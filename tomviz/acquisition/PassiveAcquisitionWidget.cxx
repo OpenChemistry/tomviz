@@ -217,7 +217,7 @@ void PassiveAcquisitionWidget::connectToServer(bool startServer)
 }
 
 void PassiveAcquisitionWidget::imageReady(QString mimeType, QByteArray result,
-                                          float angle)
+                                          float angle, bool hasAngle)
 {
   if (mimeType != "image/tiff") {
     qDebug() << "image/tiff is the only supported mime type right now.\n"
@@ -248,15 +248,18 @@ void PassiveAcquisitionWidget::imageReady(QString mimeType, QByteArray result,
   reader->SetFileName(file.fileName().toLatin1());
   reader->Update();
   m_imageData = reader->GetOutput();
-  m_imageSlice->GetProperty()->SetInterpolationTypeToNearest();
-  m_imageSliceMapper->SetInputData(m_imageData.Get());
-  m_imageSliceMapper->Update();
-  m_imageSlice->SetMapper(m_imageSliceMapper.Get());
-  m_renderer->AddViewProp(m_imageSlice.Get());
+  // Why is this here?
+  // m_imageSlice->GetProperty()->SetInterpolationTypeToNearest();
+  // m_imageSliceMapper->SetInputData(m_imageData.Get());
+  // m_imageSliceMapper->Update();
+  // m_imageSlice->SetMapper(m_imageSliceMapper.Get());
+  // m_renderer->AddViewProp(m_imageSlice.Get());
 
   // If we haven't added it, add our live data source to the pipeline.
   if (!m_dataSource) {
-    m_dataSource = new DataSource(m_imageData);
+    DataSource::DataSourceType t =
+      hasAngle ? DataSource::TiltSeries : DataSource::Volume;
+    m_dataSource = new DataSource(m_imageData, t);
     m_dataSource->setLabel("Live!");
     auto pipeline = new Pipeline(m_dataSource);
     PipelineManager::instance().addPipeline(pipeline);
@@ -264,6 +267,12 @@ void PassiveAcquisitionWidget::imageReady(QString mimeType, QByteArray result,
     pipeline->addDefaultModules(m_dataSource);
   } else {
     m_dataSource->appendSlice(m_imageData);
+  }
+
+  if (m_dataSource->type() == DataSource::TiltSeries) {
+    auto tiltAngles = m_dataSource->getTiltAngles();
+    tiltAngles << angle;
+    m_dataSource->setTiltAngles(tiltAngles);
   }
 }
 
@@ -306,10 +315,12 @@ void PassiveAcquisitionWidget::watchSource()
                            const QJsonObject& meta) {
                       if (!result.isNull()) {
                         float angle = 0;
+                        bool hasAngle = false;
                         if (meta.contains("angle")) {
                           angle = meta["angle"].toString().toFloat();
+                          hasAngle = true;
                         }
-                        imageReady(mimeType, result, angle);
+                        imageReady(mimeType, result, angle, hasAngle);
                       }
                     });
             connect(request, &AcquisitionClientRequest::error, this,
