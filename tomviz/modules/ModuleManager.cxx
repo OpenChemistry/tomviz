@@ -302,7 +302,6 @@ QList<Module*> ModuleManager::findModulesGeneric(const DataSource* dataSource,
     if (module && module->dataSource() == dataSource &&
         (view == nullptr || view == module->view()) &&
         module->label() != "Molecule") {
-      qDebug() << module->label();
       modules.push_back(module);
     }
   }
