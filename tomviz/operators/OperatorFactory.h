@@ -18,8 +18,9 @@
 
 #include <QObject>
 
+#include "DataSource.h"
+
 namespace tomviz {
-class DataSource;
 class Operator;
 
 class OperatorFactory
@@ -30,7 +31,8 @@ public:
   /// Returns a list of module types
   static QList<QString> operatorTypes();
 
-  static Operator* createConvertToVolumeOperator();
+  static Operator* createConvertToVolumeOperator(
+    DataSource::DataSourceType t = DataSource::Volume);
 
   /// Creates an operator of the given type
   static Operator* createOperator(const QString& type, DataSource* ds);

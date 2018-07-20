@@ -49,7 +49,8 @@ public:
   enum DataSourceType
   {
     Volume,
-    TiltSeries
+    TiltSeries,
+    FIB
   };
 
   enum class PersistenceState
@@ -135,6 +136,8 @@ public:
 
   /// Returns the type of data in this DataSource
   DataSourceType type() const;
+  /// Sets the type of data in the DataSource
+  void setType(DataSourceType t);
 
   /// Returns the color map for the DataSource.
   vtkSMProxy* colorMap() const;
@@ -254,10 +257,6 @@ signals:
 
 public slots:
   void dataModified();
-
-protected:
-  /// Sets the type of data in the DataSource
-  void setType(DataSourceType t);
 
 protected slots:
   /// update the color map range.

@@ -18,6 +18,7 @@
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
+#include "Pipeline.h"
 #include "TranslateAlignOperator.h"
 #include "Utilities.h"
 
@@ -35,10 +36,16 @@ AddAlignReaction::AddAlignReaction(QAction* parentObject)
 
 void AddAlignReaction::updateEnableState()
 {
-  parentAction()->setEnabled(
-    ActiveObjects::instance().activeDataSource() != nullptr &&
-    ActiveObjects::instance().activeDataSource()->type() ==
-      DataSource::TiltSeries);
+  auto pipeline = ActiveObjects::instance().activePipeline();
+  bool enable = pipeline != nullptr;
+
+  if (enable) {
+    auto dataSource = pipeline->transformedDataSource();
+    enable = (dataSource->type() == DataSource::TiltSeries ||
+              dataSource->type() == DataSource::FIB);
+  }
+
+  parentAction()->setEnabled(enable);
 }
 
 void AddAlignReaction::align(DataSource* source)

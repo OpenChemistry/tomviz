@@ -129,6 +129,8 @@ def get_tilt_angles(dataobject):
     # Get the tilt angles array
     do = dsa.WrapDataObject(dataobject)
     rawarray = do.FieldData.GetArray('tilt_angles')
+    if isinstance(rawarray, dsa.VTKNoneArray):
+        return None
     vtkarray = dsa.vtkDataArrayToVTKArray(rawarray, do)
     vtkarray.Association = dsa.ArrayAssociation.FIELD
     return vtkarray
@@ -258,7 +260,7 @@ def connected_components(dataset, background_value=0, progress_callback=None):
         # [N, N-1, N-2, ..., 1]. Note that zero is the background value, so we
         # do not want to change it.
         import numpy as np
-        minimum = 1 # Minimum label is always 1, background is 0
+        minimum = 1  # Minimum label is always 1, background is 0
         maximum = np.max(label_buffer)
 
         # Try more memory-efficient approach
@@ -397,7 +399,7 @@ def _minmax(coor, minc, maxc):
 
 def rotate_shape(input, angle, axes):
     """
-    Returns the shape of the output array for scipy.ndimage.interpolation.rotate
+    Returns the shape of the output array of scipy.ndimage.interpolation.rotate
     derived from: https://github.com/scipy/scipy/blob/v0.16.1/scipy/ndimage/ \
     interpolation.py #L578. We are duplicating the code here so we can generate
     an array of the right shape and array order to pass into the rotate

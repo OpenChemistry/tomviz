@@ -31,6 +31,7 @@ public:
                              const QString& source,
                              bool requiresTiltSeries = false,
                              bool requiresVolume = false,
+                             bool requiresFib = false,
                              const QString& json = QString());
 
   OperatorPython* addExpression(DataSource* source = nullptr);
@@ -79,6 +80,7 @@ private:
   bool interactive;
   bool requiresTiltSeries;
   bool requiresVolume;
+  bool requiresFib;
 };
 } // namespace tomviz
 

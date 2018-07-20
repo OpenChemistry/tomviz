@@ -13,10 +13,12 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizToggleDataTypeReaction_h
-#define tomvizToggleDataTypeReaction_h
+#ifndef tomvizSetDataTypeReaction_h
+#define tomvizSetDataTypeReaction_h
 
 #include <pqReaction.h>
+
+#include "DataSource.h"
 
 class QMainWindow;
 
@@ -24,14 +26,16 @@ namespace tomviz {
 
 class DataSource;
 
-class ToggleDataTypeReaction : public pqReaction
+class SetDataTypeReaction : public pqReaction
 {
   Q_OBJECT
 
 public:
-  ToggleDataTypeReaction(QAction* action, QMainWindow* mw);
+  SetDataTypeReaction(QAction* action, QMainWindow* mw,
+                      DataSource::DataSourceType t = DataSource::Volume);
 
-  static void toggleDataType(QMainWindow* mw, DataSource* source = nullptr);
+  static void setDataType(QMainWindow* mw, DataSource* source = nullptr,
+                          DataSource::DataSourceType t = DataSource::Volume);
 
 protected:
   /// Called when the action is triggered.
@@ -39,11 +43,12 @@ protected:
   void updateEnableState() override;
 
 private:
-  void setWidgetText(DataSource* dsource);
-
   QMainWindow* m_mainWindow;
+  DataSource::DataSourceType m_type;
 
-  Q_DISABLE_COPY(ToggleDataTypeReaction)
+  void setWidgetText(DataSource::DataSourceType t);
+
+  Q_DISABLE_COPY(SetDataTypeReaction)
 };
 } // namespace tomviz
 
