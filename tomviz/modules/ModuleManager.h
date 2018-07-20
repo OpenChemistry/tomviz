@@ -148,6 +148,8 @@ private:
   ModuleManager(QObject* parent = nullptr);
   ~ModuleManager();
 
+  void setupWaitForHistograms();
+
   class MMInternals;
   QScopedPointer<MMInternals> d;
 

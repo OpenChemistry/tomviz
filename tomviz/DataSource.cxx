@@ -16,6 +16,7 @@
 #include "DataSource.h"
 
 #include "ActiveObjects.h"
+#include "HistogramManager.h"
 #include "ModuleFactory.h"
 #include "ModuleManager.h"
 #include "Operator.h"
@@ -395,6 +396,13 @@ bool DataSource::deserialize(const QJsonObject& state)
     auto units = state["units"].toString();
     setUnits(units);
   }
+
+  // Trigger the histograms to be generated.  These are needed for Volume
+  // modules to be correctly rendered in some cases.
+  vtkSmartPointer<vtkImageData> imageData =
+    vtkImageData::SafeDownCast(this->dataObject());
+  HistogramManager::instance().getHistogram(imageData);
+  HistogramManager::instance().getHistogram2D(imageData);
 
   // Check for modules on the data source first.
   if (state.contains("modules") && state["modules"].isArray()) {

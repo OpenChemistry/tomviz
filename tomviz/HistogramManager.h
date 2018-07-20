@@ -45,6 +45,8 @@ public:
   vtkSmartPointer<vtkImageData> getHistogram2D(
     vtkSmartPointer<vtkImageData> image);
 
+  bool hasHistogramsPending();
+
 signals:
   void histogramReady(vtkSmartPointer<vtkImageData>, vtkSmartPointer<vtkTable>);
   void histogram2DReady(vtkSmartPointer<vtkImageData> input,
