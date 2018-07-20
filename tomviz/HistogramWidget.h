@@ -66,6 +66,7 @@ public slots:
   void onCustomRangeClicked();
   void onInvertClicked();
   void onPresetClicked();
+  void onSaveToPresetClicked();
   void applyCurrentPreset();
   void updateUI();
 

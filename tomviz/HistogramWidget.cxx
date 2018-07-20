@@ -33,6 +33,7 @@
 #include <vtkRenderWindow.h>
 #include <vtkTable.h>
 #include <vtkVector.h>
+#include <vtk_jsoncpp.h>
 
 #include <pqApplicationCore.h>
 #include <pqPresetDialog.h>
@@ -43,6 +44,7 @@
 #include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMTransferFunctionManager.h>
+#include <vtkSMTransferFunctionPresets.h>
 #include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMViewProxy.h>
 
@@ -109,6 +111,12 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   button->setIcon(QIcon(":/icons/pqFavorites.png"));
   button->setToolTip("Choose preset color map");
   connect(button, SIGNAL(clicked()), this, SLOT(onPresetClicked()));
+  vLayout->addWidget(button);
+
+  button = new QToolButton;
+  button->setIcon(QIcon(":/pqWidgets/Icons/pqSave16.png"));
+  button->setToolTip("Save current color map as a preset");
+  connect(button, SIGNAL(clicked()), this, SLOT(onSaveToPresetClicked()));
   vLayout->addWidget(button);
 
   button = new QToolButton;
@@ -408,17 +416,49 @@ void HistogramWidget::onInvertClicked()
   emit colorMapUpdated();
 }
 
-void HistogramWidget::onPresetClicked()
+namespace {
+void showPresetDialog(HistogramWidget* self, const char* presetName)
 {
   pqPresetDialog dialog(tomviz::mainWidget(),
                         pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
+  if (presetName) {
+    dialog.setCurrentPreset(presetName);
+  }
   dialog.setCustomizableLoadColors(true);
   dialog.setCustomizableLoadOpacities(true);
   dialog.setCustomizableUsePresetRange(true);
   dialog.setCustomizableLoadAnnotations(false);
-  connect(&dialog, SIGNAL(applyPreset(const Json::Value&)),
-          SLOT(applyCurrentPreset()));
+  QObject::connect(&dialog, SIGNAL(applyPreset(const Json::Value&)), self,
+                   SLOT(applyCurrentPreset()));
   dialog.exec();
+}
+} // namespace
+
+void HistogramWidget::onSaveToPresetClicked()
+{
+  vtkSMProxy* lut = m_LUTProxy;
+  vtkSMProxy* sof =
+    vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
+
+  Json::Value preset = vtkSMTransferFunctionProxy::GetStateAsPreset(lut);
+  Json::Value opacityInfo = vtkSMTransferFunctionProxy::GetStateAsPreset(sof);
+  preset["Points"] = opacityInfo["Points"];
+
+  std::string presetName;
+  {
+    // This scoping is necessary to ensure that the vtkSMTransferFunctionPresets
+    // saves the new preset to the "settings" before the choosePreset dialog is
+    // shown.
+    vtkNew<vtkSMTransferFunctionPresets> presets;
+    presetName = presets->AddUniquePreset(preset);
+  }
+
+  showPresetDialog(this, presetName.c_str());
+}
+
+void HistogramWidget::onPresetClicked()
+{
+  showPresetDialog(this, nullptr);
 }
 
 void HistogramWidget::applyCurrentPreset()
