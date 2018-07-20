@@ -328,27 +328,27 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   new AddAlignReaction(alignAction);
   new AddPythonTransformReaction(downsampleByTwoAction, "Bin Tilt Image x2",
-                                 readInPythonScript("BinTiltSeriesByTwo"),
-                                 true);
+                                 readInPythonScript("BinTiltSeriesByTwo"), true,
+                                 false, true);
   new AddPythonTransformReaction(
     removeBadPixelsAction, "Remove Bad Pixels",
-    readInPythonScript("RemoveBadPixelsTiltSeries"), true, false, false);
+    readInPythonScript("RemoveBadPixelsTiltSeries"), true, false, true);
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Filter Tilt Series",
-    readInPythonScript("GaussianFilterTiltSeries"), true, false, false,
+    readInPythonScript("GaussianFilterTiltSeries"), true, false, true,
     readInJSONDescription("GaussianFilterTiltSeries"));
   new AddPythonTransformReaction(
     autoSubtractBackgroundAction, "Background Subtraction (Auto)",
-    readInPythonScript("Subtract_TiltSer_Background_Auto"), true);
+    readInPythonScript("Subtract_TiltSer_Background_Auto"), true, false, true);
   new AddPythonTransformReaction(
     subtractBackgroundAction, "Background Subtraction (Manual)",
-    readInPythonScript("Subtract_TiltSer_Background"), true);
+    readInPythonScript("Subtract_TiltSer_Background"), true, false, true);
   new AddPythonTransformReaction(normalizationAction, "Normalize Tilt Series",
                                  readInPythonScript("NormalizeTiltSeries"),
-                                 true);
+                                 true, false, true);
   new AddPythonTransformReaction(
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
-    readInPythonScript("GradientMagnitude2D_Sobel"), true);
+    readInPythonScript("GradientMagnitude2D_Sobel"), true, false, true);
   new AddPythonTransformReaction(
     rotateAlignAction, "Tilt Axis Alignment (manual)",
     readInPythonScript("RotationAlign"), true, false, false,
