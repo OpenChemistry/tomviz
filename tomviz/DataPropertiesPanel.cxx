@@ -413,6 +413,7 @@ void DataPropertiesPanel::updateXLength()
   if (!dsource) {
     return;
   }
+  resetCamera();
   emit dsource->dataPropertiesChanged();
 }
 
@@ -431,6 +432,7 @@ void DataPropertiesPanel::updateYLength()
   if (!dsource) {
     return;
   }
+  resetCamera();
   emit dsource->dataPropertiesChanged();
 }
 
@@ -449,7 +451,16 @@ void DataPropertiesPanel::updateZLength()
   if (!dsource) {
     return;
   }
+  resetCamera();
   emit dsource->dataPropertiesChanged();
+}
+
+void DataPropertiesPanel::resetCamera()
+{
+  pqView* view = ActiveObjects::instance().activePqView();
+  if (view) {
+    view->resetDisplay();
+  }
 }
 
 void DataPropertiesPanel::updateAxesGridLabels()

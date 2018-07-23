@@ -82,6 +82,7 @@ private:
   void updateSpacing(int axis, double newLength);
   void updateInformationWidget(QTreeWidget* infoTreeWidget,
                                vtkPVDataInformation* dataInformation);
+  static void resetCamera();
 };
 } // namespace tomviz
 
