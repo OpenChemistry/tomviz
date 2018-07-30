@@ -231,6 +231,8 @@ public:
   double initialContourValue() const;
   void setInitialContourValue(double initialContourValue);
 
+  static bool hasTiltAngles(vtkDataObject* image);
+
 signals:
   /// This signal is fired to notify the world that the DataSource may have
   /// new/updated data.

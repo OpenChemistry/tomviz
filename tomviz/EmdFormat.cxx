@@ -591,6 +591,19 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
 
   hid_t status;
 
+  // See if we have tilt angles
+  auto hasTiltAngles = DataSource::hasTiltAngles(image);
+
+  int xIndex = 0;
+  int yIndex = 1;
+  int zIndex = 2;
+
+  if (hasTiltAngles) {
+    // Note the flipping to make our ordering work in C-ordered codes correctly.
+    xIndex = 2;
+    zIndex = 0;
+  }
+
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
   image->GetSpacing(spacing);
@@ -598,10 +611,10 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   std::vector<float> imageDimDataY(2);
   std::vector<float> imageDimDataZ(2);
   for (int i = 0; i < 2; ++i) {
-    // Note the flipping to make our ordering work in C-ordered codes correctly.
-    imageDimDataX[i] = i * spacing[2];
-    imageDimDataY[i] = i * spacing[1];
-    imageDimDataZ[i] = i * spacing[0];
+
+    imageDimDataX[i] = i * spacing[xIndex];
+    imageDimDataY[i] = i * spacing[yIndex];
+    imageDimDataZ[i] = i * spacing[zIndex];
   }
 
   d->writeData("/data/tomography", "data", image);
@@ -618,8 +631,14 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   d->setAttribute("/data/tomography/dim2", "units", "[n_m]", true);
 
   d->writeData("/data/tomography", "dim3", side, imageDimDataZ);
-  d->setAttribute("/data/tomography/dim3", "name", "z", true);
-  d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
+
+  if (hasTiltAngles) {
+    d->setAttribute("/data/tomography/dim3", "name", "z", true);
+    d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
+  } else {
+    d->setAttribute("/data/tomography/dim3", "name", "angles", true);
+    d->setAttribute("/data/tomography/dim3", "units", "[deg]", true);
+  }
 
   status = H5Gclose(tomoGroupId);
   status = H5Gclose(dataGroupId);
