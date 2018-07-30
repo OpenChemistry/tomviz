@@ -278,6 +278,7 @@ void CentralWidget::setColorMapDataSource(DataSource* source)
   }
   if (histogram2D) {
     m_ui->histogram2DWidget->setHistogram(histogram2D);
+    m_ui->histogram2DWidget->addFunctionItem(m_transfer2DModel->getDefault());
   }
 }
 

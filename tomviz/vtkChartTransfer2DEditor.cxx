@@ -146,6 +146,16 @@ vtkIdType vtkChartTransfer2DEditor::AddFunction(
     return -1;
   }
 
+  // make sure only one box item added.  We don't support multiple for now.
+  const vtkIdType numPlots = GetNumberOfPlots();
+  for (vtkIdType i = 0; i < numPlots; i++) {
+    typedef vtkTransferFunctionBoxItem BoxType;
+    BoxType* item = BoxType::SafeDownCast(GetPlot(i));
+    if (item) {
+      return -1;
+    }
+  }
+
   double xRange[2];
   auto bottomAxis = GetAxis(vtkAxis::BOTTOM);
   bottomAxis->GetRange(xRange);
