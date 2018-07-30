@@ -36,7 +36,7 @@ namespace tomviz {
 OperatorPropertiesPanel::OperatorPropertiesPanel(QWidget* p) : QWidget(p)
 {
   // Show active module in the "Operator Properties" panel.
-  connect(&ActiveObjects::instance(), SIGNAL(operatorChanged(Operator*)),
+  connect(&ActiveObjects::instance(), SIGNAL(operatorActivated(Operator*)),
           SLOT(setOperator(Operator*)));
 
   // Set up a very simple layout with a description label widget.
@@ -48,27 +48,25 @@ OperatorPropertiesPanel::~OperatorPropertiesPanel() = default;
 
 void OperatorPropertiesPanel::setOperator(Operator* op)
 {
-  if (op != m_activeOperator) {
-    if (m_activeOperator) {
-      disconnect(op, SIGNAL(labelModified()));
+  if (m_activeOperator) {
+    disconnect(op, SIGNAL(labelModified()));
+  }
+  deleteLayoutContents(m_layout);
+  m_operatorWidget = nullptr;
+  if (op) {
+    // See if we are dealing with a Python operator
+    OperatorPython* pythonOperator = qobject_cast<OperatorPython*>(op);
+    if (pythonOperator) {
+      setOperator(pythonOperator);
+    } else {
+      auto description = new QLabel(op->label());
+      layout()->addWidget(description);
+      connect(op, &Operator::labelModified, [this, description]() {
+        description->setText(m_activeOperator->label());
+      });
     }
-    deleteLayoutContents(m_layout);
-    m_operatorWidget = nullptr;
-    if (op) {
-      // See if we are dealing with a Python operator
-      OperatorPython* pythonOperator = qobject_cast<OperatorPython*>(op);
-      if (pythonOperator) {
-        setOperator(pythonOperator);
-      } else {
-        auto description = new QLabel(op->label());
-        layout()->addWidget(description);
-        connect(op, &Operator::labelModified, [this, description]() {
-          description->setText(m_activeOperator->label());
-        });
-      }
 
-      m_layout->addStretch();
-    }
+    m_layout->addStretch();
   }
 
   m_activeOperator = op;
