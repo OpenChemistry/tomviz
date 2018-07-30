@@ -243,8 +243,8 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
     m_ui->menuTomography->addAction("Set Data Type");
   QAction* setTiltDataTypeAction =
     m_ui->menuTomography->addAction("Set Data Type");
-  QAction* setFibDataTypeAction =
-    m_ui->menuTomography->addAction("Set Data Type");
+  // QAction* setFibDataTypeAction =
+  //   m_ui->menuTomography->addAction("Set Data Type");
   m_ui->menuTomography->addSeparator();
 
   QAction* setTiltAnglesAction =
@@ -318,7 +318,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   //#################################################################
   new SetDataTypeReaction(setVolumeDataTypeAction, this, DataSource::Volume);
   new SetDataTypeReaction(setTiltDataTypeAction, this, DataSource::TiltSeries);
-  new SetDataTypeReaction(setFibDataTypeAction, this, DataSource::FIB);
+  // new SetDataTypeReaction(setFibDataTypeAction, this, DataSource::FIB);
   new SetTiltAnglesReaction(setTiltAnglesAction, this);
 
   new AddPythonTransformReaction(
@@ -328,27 +328,28 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   new AddAlignReaction(alignAction);
   new AddPythonTransformReaction(downsampleByTwoAction, "Bin Tilt Image x2",
-                                 readInPythonScript("BinTiltSeriesByTwo"), true,
-                                 false, true);
+                                 readInPythonScript("BinTiltSeriesByTwo"),
+                                 false, false, false);
   new AddPythonTransformReaction(
     removeBadPixelsAction, "Remove Bad Pixels",
-    readInPythonScript("RemoveBadPixelsTiltSeries"), true, false, true);
+    readInPythonScript("RemoveBadPixelsTiltSeries"), false, false, false);
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Filter Tilt Series",
-    readInPythonScript("GaussianFilterTiltSeries"), true, false, true,
+    readInPythonScript("GaussianFilterTiltSeries"), false, false, false,
     readInJSONDescription("GaussianFilterTiltSeries"));
   new AddPythonTransformReaction(
     autoSubtractBackgroundAction, "Background Subtraction (Auto)",
-    readInPythonScript("Subtract_TiltSer_Background_Auto"), true, false, true);
+    readInPythonScript("Subtract_TiltSer_Background_Auto"), false, false,
+    false);
   new AddPythonTransformReaction(
     subtractBackgroundAction, "Background Subtraction (Manual)",
-    readInPythonScript("Subtract_TiltSer_Background"), true, false, true);
+    readInPythonScript("Subtract_TiltSer_Background"), false, false, false);
   new AddPythonTransformReaction(normalizationAction, "Normalize Tilt Series",
                                  readInPythonScript("NormalizeTiltSeries"),
-                                 true, false, true);
+                                 false, false, false);
   new AddPythonTransformReaction(
     gradientMagnitude2DSobelAction, "Gradient Magnitude 2D",
-    readInPythonScript("GradientMagnitude2D_Sobel"), true, false, true);
+    readInPythonScript("GradientMagnitude2D_Sobel"), false, false, false);
   new AddPythonTransformReaction(
     rotateAlignAction, "Tilt Axis Alignment (manual)",
     readInPythonScript("RotationAlign"), true, false, false,
@@ -363,12 +364,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   new AddPythonTransformReaction(
     autoAlignCCAction, "Auto Tilt Image Align (XCORR)",
-    readInPythonScript("AutoCrossCorrelationTiltImageAlignment"), true, false,
-    true, readInJSONDescription("AutoCrossCorrelationTiltImageAlignment"));
+    readInPythonScript("AutoCrossCorrelationTiltImageAlignment"), false, false,
+    false, readInJSONDescription("AutoCrossCorrelationTiltImageAlignment"));
   new AddPythonTransformReaction(
     autoAlignCOMAction, "Auto Tilt Image Align (CoM)",
-    readInPythonScript("AutoCenterOfMassTiltImageAlignment"), true, false, true,
-    readInJSONDescription("AutoCenterOfMassTiltImageAlignment"));
+    readInPythonScript("AutoCenterOfMassTiltImageAlignment"), false, false,
+    false, readInJSONDescription("AutoCenterOfMassTiltImageAlignment"));
   new AddPythonTransformReaction(reconDFMAction, "Reconstruct (Direct Fourier)",
                                  readInPythonScript("Recon_DFT"), true, false,
                                  false, readInJSONDescription("Recon_DFT"));
