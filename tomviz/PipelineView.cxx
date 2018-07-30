@@ -252,10 +252,10 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     new SaveDataReaction(saveDataAction);
     if (dataSource->type() == DataSource::Volume) {
       markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
-      markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+      // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
     } else if (dataSource->type() == DataSource::TiltSeries) {
       markAsVolumeAction = contextMenu.addAction("Mark as Volume");
-      markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+      // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
     } else if (dataSource->type() == DataSource::FIB) {
       markAsVolumeAction = contextMenu.addAction("Mark as Volume");
       markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");

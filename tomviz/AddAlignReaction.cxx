@@ -39,11 +39,11 @@ void AddAlignReaction::updateEnableState()
   auto pipeline = ActiveObjects::instance().activePipeline();
   bool enable = pipeline != nullptr;
 
-  if (enable) {
-    auto dataSource = pipeline->transformedDataSource();
-    enable = (dataSource->type() == DataSource::TiltSeries ||
-              dataSource->type() == DataSource::FIB);
-  }
+  // if (enable) {
+  //   auto dataSource = pipeline->transformedDataSource();
+  //   enable = (dataSource->type() == DataSource::TiltSeries ||
+  //             dataSource->type() == DataSource::FIB);
+  // }
 
   parentAction()->setEnabled(enable);
 }
