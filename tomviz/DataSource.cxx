@@ -180,13 +180,46 @@ DataSource::~DataSource()
   }
 }
 
+// Simple templated function to extend the image data.
+template <typename T>
+void appendImageData(vtkImageData* data, vtkImageData* slice, T* originalPtr)
+{
+  auto dataArray = data->GetPointData()->GetScalars();
+  int extents[6];
+  data->GetExtent(extents);
+
+  // Figure out the number of bytes in the original data, and allocate a buffer.
+  int bufferSize = dataArray->GetNumberOfTuples() *
+                   dataArray->GetNumberOfComponents() * sizeof(T);
+  unsigned char* buffer = new unsigned char[bufferSize];
+  // Copy the original image data, as the allocate scalars will erase it.
+  std::memcpy(buffer, originalPtr, bufferSize);
+  // Now increment the z extent, and reallocate the scalar array (destructive).
+  ++extents[5];
+  data->SetExtent(extents);
+  data->AllocateScalars(data->GetScalarType(),
+                        data->GetNumberOfScalarComponents());
+  // Copy the old data back into the new memory location, delete the buffer.
+  auto ptr = data->GetScalarPointer();
+  std::memcpy(ptr, buffer, bufferSize);
+  delete[] buffer;
+  buffer = 0;
+
+  // Now copy the new slice into the array.
+  void* imagePtr = data->GetScalarPointer(0, 0, extents[5]);
+  auto sliceArray = slice->GetPointData()->GetScalars();
+  void* slicePtr = sliceArray->GetVoidPointer(0);
+  int sliceSize = sliceArray->GetNumberOfTuples() *
+                  sliceArray->GetNumberOfComponents() * sizeof(T);
+  std::memcpy(imagePtr, slicePtr, sliceSize);
+
+  // Let everyone know the data has changed, then re-execute the pipeline.
+  data->Modified();
+}
+
 bool DataSource::appendSlice(vtkImageData* slice)
 {
   if (!slice) {
-    return false;
-  }
-  if (std::string(slice->GetScalarTypeAsString()) != "unsigned char") {
-    cout << "Only unsigned char is supported at present" << endl;
     return false;
   }
 
@@ -211,27 +244,11 @@ bool DataSource::appendSlice(vtkImageData* slice)
       }
 
       // Now to append the slice onto our image data.
-      auto dataArray = data->GetPointData()->GetScalars();
+      switch (data->GetScalarType()) {
+        vtkTemplateMacro(appendImageData(
+          data, slice, static_cast<VTK_TT*>(data->GetScalarPointer())));
+      }
 
-      int bufferSize = dataArray->GetNumberOfTuples();
-      unsigned char* buffer = new unsigned char[bufferSize];
-      void* ptr = dataArray->GetVoidPointer(0);
-      std::memcpy(buffer, ptr, bufferSize);
-      ++extents[5];
-      data->SetExtent(extents);
-      data->AllocateScalars(data->GetScalarType(),
-                            data->GetNumberOfScalarComponents());
-      ptr = data->GetScalarPointer();
-      std::memcpy(ptr, buffer, bufferSize);
-      delete[] buffer;
-      buffer = 0;
-      void* imagePtr = data->GetScalarPointer(0, 0, extents[5]);
-      auto sliceArray = slice->GetPointData()->GetScalars();
-      void* slicePtr = sliceArray->GetVoidPointer(0);
-      std::memcpy(imagePtr, slicePtr, sliceArray->GetNumberOfTuples());
-
-      // Let everyone know the data has changed, then re-execute the pipeline.
-      data->Modified();
       emit dataChanged();
       emit dataPropertiesChanged();
       pipeline()->execute();
