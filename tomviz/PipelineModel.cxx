@@ -194,7 +194,17 @@ bool PipelineModel::TreeItem::remove(DataSource* source)
   // This item is a DataSource item. Remove all children.
   foreach (auto childItem, m_children) {
     if (childItem->op()) {
-      remove(childItem->op());
+      auto op = childItem->op();
+      // Pause the pipeline
+      auto pipeline = op->dataSource()->pipeline();
+      if (pipeline != nullptr) {
+        pipeline->pause();
+      }
+      ModuleManager::instance().removeOperator(childItem->op());
+      if (pipeline != nullptr) {
+        // Resume but don't execute as we are removing this data source.
+        pipeline->resume(false);
+      }
     } else if (childItem->module()) {
       ModuleManager::instance().removeModule(childItem->module());
     }
