@@ -591,8 +591,8 @@ void vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
 
   double spacing[3];
   histogram2D->GetSpacing(spacing);
-  const vtkIdType width = static_cast<vtkIdType>(box.GetWidth() / spacing[0]);
-  const vtkIdType height = static_cast<vtkIdType>(box.GetHeight() / spacing[1]);
+  vtkIdType width = static_cast<vtkIdType>(box.GetWidth() / spacing[0]);
+  vtkIdType height = static_cast<vtkIdType>(box.GetHeight() / spacing[1]);
 
   if (width <= 0 || height <= 0) {
     return;
@@ -614,6 +614,10 @@ void vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
 
   const vtkIdType x0 = static_cast<vtkIdType>(box.GetX() / spacing[0]);
   const vtkIdType y0 = static_cast<vtkIdType>(box.GetY() / spacing[1]);
+
+  // The cast to vtkIdType is to help template type deduction.
+  width = vtkMath::ClampValue(width, static_cast<vtkIdType>(0), bins[0] - x0);
+  height = vtkMath::ClampValue(height, static_cast<vtkIdType>(0), bins[1] - y0);
 
   for (vtkIdType j = 0; j < height; j++)
     for (vtkIdType i = 0; i < width; i++) {
