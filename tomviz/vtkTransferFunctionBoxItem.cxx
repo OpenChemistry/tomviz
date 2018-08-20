@@ -616,8 +616,8 @@ void vtkTransferFunctionBoxItem::rasterTransferFunction2DBox(
   const vtkIdType y0 = static_cast<vtkIdType>(box.GetY() / spacing[1]);
 
   // The cast to vtkIdType is to help template type deduction.
-  width = vtkMath::ClampValue(width, (vtkIdType)0, bins[0] - x0);
-  height = vtkMath::ClampValue(height, (vtkIdType)0, bins[1] - y0);
+  width = vtkMath::ClampValue(width, static_cast<vtkIdType>(0), bins[0] - x0);
+  height = vtkMath::ClampValue(height, static_cast<vtkIdType>(0), bins[1] - y0);
 
   for (vtkIdType j = 0; j < height; j++)
     for (vtkIdType i = 0; i < width; i++) {
