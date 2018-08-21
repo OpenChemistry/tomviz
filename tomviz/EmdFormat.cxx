@@ -113,6 +113,28 @@ public:
                      H5T_STD_U32LE);
   }
 
+  bool attribute(const std::string& group, const std::string& name,
+                 std::string& value)
+  {
+    if (H5Aexists_by_name(fileId, group.c_str(), name.c_str(), H5P_DEFAULT) <=
+        0) {
+      // The specified attribute does not exist.
+      cout << group << name << " not found!" << endl;
+      return false;
+    }
+
+    hid_t attr = H5Aopen_by_name(fileId, group.c_str(), name.c_str(),
+                                 H5P_DEFAULT, H5P_DEFAULT);
+    hid_t type = H5Aget_type(attr);
+    char* tmpString;
+    H5Aread(attr, type, &tmpString);
+    value = tmpString;
+    free(tmpString);
+    H5Aclose(attr);
+    H5Tclose(type);
+    return true;
+  }
+
   bool setAttribute(const std::string& group, const std::string& name,
                     void* value, hid_t fileTypeId, hid_t typeId, hsize_t dims,
                     bool onData)
@@ -555,6 +577,16 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     spacing[0] = static_cast<double>(dim3[1] - dim3[0]);
     image->SetSpacing(spacing);
   }
+  std::string units = "[n_m]"; // default to nanometers
+  if (d->attribute(emdNode + "/dim1", "units", units)) {
+    if (units == "[deg]") {
+      QVector<double> angles;
+      for (unsigned i = 0; i < dim1.size(); ++i) {
+        angles.push_back(dim1[i]);
+      }
+      DataSource::setTiltAngles(image, angles);
+    }
+  }
 
   // Close up the file now we are done.
   if (d->fileId != H5I_INVALID_HID) {
@@ -657,7 +689,6 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   d->writeData("/data/tomography", "dim3", side, imageDimDataX);
   d->setAttribute("/data/tomography/dim3", "name", "x", true);
   d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
-
 
   status = H5Gclose(tomoGroupId);
   status = H5Gclose(dataGroupId);
