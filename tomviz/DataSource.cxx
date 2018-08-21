@@ -56,6 +56,31 @@
 #include <cstring>
 #include <sstream>
 
+namespace {
+void createOrResizeTiltAnglesArray(vtkDataObject* data)
+{
+  auto fd = data->GetFieldData();
+  if (!fd->HasArray("tilt_angles")) {
+    int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+    int numTiltAngles = extent[5] - extent[4] + 1;
+    vtkNew<vtkDoubleArray> array;
+    array->SetName("tilt_angles");
+    array->SetNumberOfTuples(numTiltAngles);
+    array->FillComponent(0, 0.0);
+    fd->AddArray(array);
+  } else {
+    // if it exists, ensure the size of the tilt angles array
+    // corresponds to the size of the data
+    int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+    int numTiltAngles = extent[5] - extent[4] + 1;
+    auto array = fd->GetArray("tilt_angles");
+    if (numTiltAngles != array->GetNumberOfTuples()) {
+      array->SetNumberOfTuples(numTiltAngles);
+    }
+  }
+}
+} // namespace
+
 namespace tomviz {
 
 class DataSource::DSInternals
@@ -84,25 +109,7 @@ public:
       vtkAlgorithm::SafeDownCast(this->ProducerProxy->GetClientSideObject());
     Q_ASSERT(alg);
     auto data = alg->GetOutputDataObject(0);
-    auto fd = data->GetFieldData();
-    if (!fd->HasArray("tilt_angles")) {
-      int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
-      int numTiltAngles = extent[5] - extent[4] + 1;
-      vtkNew<vtkDoubleArray> array;
-      array->SetName("tilt_angles");
-      array->SetNumberOfTuples(numTiltAngles);
-      array->FillComponent(0, 0.0);
-      fd->AddArray(array);
-    } else {
-      // if it exists, ensure the size of the tilt angles array
-      // corresponds to the size of the data
-      int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
-      int numTiltAngles = extent[5] - extent[4] + 1;
-      auto array = fd->GetArray("tilt_angles");
-      if (numTiltAngles != array->GetNumberOfTuples()) {
-        array->SetNumberOfTuples(numTiltAngles);
-      }
-    }
+    createOrResizeTiltAnglesArray(data);
   }
 };
 
@@ -896,32 +903,14 @@ bool DataSource::hasTiltAngles()
 
 QVector<double> DataSource::getTiltAngles() const
 {
-  QVector<double> result;
   auto data = this->dataObject();
-  auto fd = data->GetFieldData();
-
-  if (fd->HasArray("tilt_angles")) {
-    auto tiltAngles = fd->GetArray("tilt_angles");
-    result.resize(tiltAngles->GetNumberOfTuples());
-    for (int i = 0; i < result.size(); ++i) {
-      result[i] = tiltAngles->GetTuple1(i);
-    }
-  }
-  return result;
+  return getTiltAngles(data);
 }
 
 void DataSource::setTiltAngles(const QVector<double>& angles)
 {
   auto data = this->dataObject();
-  auto fd = data->GetFieldData();
-  this->Internals->ensureTiltAnglesArrayExists();
-  if (fd->HasArray("tilt_angles")) {
-    auto tiltAngles = fd->GetArray("tilt_angles");
-    for (int i = 0; i < tiltAngles->GetNumberOfTuples() && i < angles.size();
-         ++i) {
-      tiltAngles->SetTuple1(i, angles[i]);
-    }
-  }
+  setTiltAngles(data, angles);
   emit dataChanged();
 }
 
@@ -1097,6 +1086,35 @@ bool DataSource::hasTiltAngles(vtkDataObject* image)
   vtkFieldData* fd = image->GetFieldData();
 
   return fd->HasArray("tilt_angles");
+}
+
+QVector<double> DataSource::getTiltAngles(vtkDataObject* data)
+{
+  QVector<double> result;
+  auto fd = data->GetFieldData();
+
+  if (fd->HasArray("tilt_angles")) {
+    auto tiltAngles = fd->GetArray("tilt_angles");
+    result.resize(tiltAngles->GetNumberOfTuples());
+    for (int i = 0; i < result.size(); ++i) {
+      result[i] = tiltAngles->GetTuple1(i);
+    }
+  }
+  return result;
+}
+
+void DataSource::setTiltAngles(vtkDataObject* data,
+                               const QVector<double>& angles)
+{
+  auto fd = data->GetFieldData();
+  createOrResizeTiltAnglesArray(data);
+  if (fd->HasArray("tilt_angles")) {
+    auto tiltAngles = fd->GetArray("tilt_angles");
+    for (int i = 0; i < tiltAngles->GetNumberOfTuples() && i < angles.size();
+         ++i) {
+      tiltAngles->SetTuple1(i, angles[i]);
+    }
+  }
 }
 
 } // namespace tomviz

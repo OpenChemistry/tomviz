@@ -610,38 +610,54 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
   image->GetSpacing(spacing);
-  std::vector<float> imageDimDataX(2);
-  std::vector<float> imageDimDataY(2);
-  std::vector<float> imageDimDataZ(2);
-  for (int i = 0; i < 2; ++i) {
+  int dimensions[3];
+  image->GetDimensions(dimensions);
+  std::vector<float> imageDimDataX(dimensions[0]);
+  std::vector<float> imageDimDataY(dimensions[1]);
+  std::vector<float> imageDimDataZ(dimensions[2]);
 
+  for (int i = 0; i < dimensions[0]; ++i) {
     imageDimDataX[i] = i * spacing[xIndex];
+  }
+  for (int i = 0; i < dimensions[1]; ++i) {
     imageDimDataY[i] = i * spacing[yIndex];
-    imageDimDataZ[i] = i * spacing[zIndex];
+  }
+  if (!hasTiltAngles) {
+    for (int i = 0; i < dimensions[2]; ++i) {
+      imageDimDataZ[i] = i * spacing[zIndex];
+    }
+  } else {
+    auto angles = DataSource::getTiltAngles(image);
+    imageDimDataZ.reserve(angles.size());
+    for (int i = 0; i < angles.size(); ++i) {
+      imageDimDataZ[i] = static_cast<float>(angles[i]);
+    }
   }
 
   d->writeData("/data/tomography", "data", image);
 
   // Create the 3 dim sets too...
-  std::vector<int> side;
-  side.push_back(2);
-  d->writeData("/data/tomography", "dim1", side, imageDimDataX);
-  d->setAttribute("/data/tomography/dim1", "name", "x", true);
-  d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
+  std::vector<int> side(1);
+  side[0] = imageDimDataZ.size();
+  d->writeData("/data/tomography", "dim1", side, imageDimDataZ);
+  if (!hasTiltAngles) {
+    d->setAttribute("/data/tomography/dim1", "name", "z", true);
+    d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
+  } else {
+    d->setAttribute("/data/tomography/dim1", "name", "angles", true);
+    d->setAttribute("/data/tomography/dim1", "units", "[deg]", true);
+  }
 
+  side[0] = imageDimDataY.size();
   d->writeData("/data/tomography", "dim2", side, imageDimDataY);
   d->setAttribute("/data/tomography/dim2", "name", "y", true);
   d->setAttribute("/data/tomography/dim2", "units", "[n_m]", true);
 
-  d->writeData("/data/tomography", "dim3", side, imageDimDataZ);
+  side[0] = imageDimDataX.size();
+  d->writeData("/data/tomography", "dim3", side, imageDimDataX);
+  d->setAttribute("/data/tomography/dim3", "name", "x", true);
+  d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
 
-  if (hasTiltAngles) {
-    d->setAttribute("/data/tomography/dim3", "name", "z", true);
-    d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
-  } else {
-    d->setAttribute("/data/tomography/dim3", "name", "angles", true);
-    d->setAttribute("/data/tomography/dim3", "units", "[deg]", true);
-  }
 
   status = H5Gclose(tomoGroupId);
   status = H5Gclose(dataGroupId);
