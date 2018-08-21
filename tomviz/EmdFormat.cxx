@@ -541,9 +541,12 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
   }
 
   // Now to read back in the units, note the reordering for C vs Fortran...
-  auto dim1 = d->readData("/data/tomography/dim1");
-  auto dim2 = d->readData("/data/tomography/dim2");
-  auto dim3 = d->readData("/data/tomography/dim3");
+  std::string dimNode = emdNode + "/dim1";
+  auto dim1 = d->readData(dimNode.c_str());
+  dimNode = emdNode + "/dim2";
+  auto dim2 = d->readData(dimNode.c_str());
+  dimNode = emdNode + "/dim3";
+  auto dim3 = d->readData(dimNode.c_str());
 
   if (dim1.size() > 1 && dim2.size() > 1 && dim3.size() > 1) {
     double spacing[3];
