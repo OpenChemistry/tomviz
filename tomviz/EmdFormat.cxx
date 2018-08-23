@@ -127,7 +127,12 @@ public:
                                  H5P_DEFAULT, H5P_DEFAULT);
     hid_t type = H5Aget_type(attr);
     char* tmpString;
-    H5Aread(attr, type, &tmpString);
+    if (H5Aread(attr, type, &tmpString) < 0) {
+      cout << "Failed to read attribute " << group << " " << name << endl;
+      H5Aclose(attr);
+      H5Tclose(type);
+      return false;
+    }
     value = tmpString;
     free(tmpString);
     H5Aclose(attr);
