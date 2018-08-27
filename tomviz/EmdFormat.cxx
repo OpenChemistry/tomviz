@@ -594,7 +594,7 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
       QVector<double> angles;
       for (unsigned i = 0; i < dim1.size(); ++i) {
         // Convert radians to degrees since tomviz assumes degrees everywhere.
-        angles.push_back(dim1[i] * 180.0 / M_PI);
+        angles.push_back(dim1[i] * 180.0 / vtkMath::Pi());
       }
       DataSource::setTiltAngles(image, angles);
     }
