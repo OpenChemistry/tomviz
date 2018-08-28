@@ -128,9 +128,41 @@ public:
     hid_t attr = H5Aopen_by_name(fileId, group.c_str(), name.c_str(),
                                  H5P_DEFAULT, H5P_DEFAULT);
     hid_t type = H5Aget_type(attr);
+
+    if (H5T_STRING != H5Tget_class(type))
+    {
+      cout << group << name << " is not a string" << endl;
+      return false;
+    }
     char* tmpString;
-    if (H5Aread(attr, type, &tmpString) < 0) {
-      cout << "Failed to read attribute " << group << " " << name << endl;
+    int is_var_str = H5Tis_variable_str(type); 
+    if (is_var_str > 0) { // if it is a variable-length string
+      if (H5Aread(attr, type, &tmpString) < 0) {
+        cout << "Failed to read attribute " << group << " " << name << endl;
+        H5Aclose(attr);
+        H5Tclose(type);
+        return false;
+      }
+    } else if (is_var_str == 0) { // If it is not a variable-length string
+      // it must be fixed length since the "is a string" check earlier passed.
+      size_t size = H5Tget_size(type);
+      if (size == 0) {
+        cout << "Unknown error occurred" << endl;
+        H5Aclose(attr);
+        H5Tclose(type);
+        return false;
+      }
+      tmpString = new char[size + 1];
+      if (H5Aread(attr, type, tmpString) < 0) {
+        cout << "Failed to read attribute " << group << " " << name << endl;
+        H5Aclose(attr);
+        H5Tclose(type);
+        delete tmpString;
+        return false;
+      }
+      tmpString[size] = '\0'; // set null byte, hdf5 doesn't do this for you
+    } else {
+      cout << "Unknown error occurred" << endl;
       H5Aclose(attr);
       H5Tclose(type);
       return false;
