@@ -19,6 +19,8 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
+#include <vtkImagePermute.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkTrivialProducer.h>
 
@@ -258,13 +260,22 @@ public:
   {
     bool success = true;
     hsize_t h5dim[3];
-    int dim[3] = { 0, 0, 0 };
-    data->GetDimensions(dim);
-    h5dim[0] = dim[2];
-    h5dim[1] = dim[1];
-    h5dim[2] = dim[0];
 
-    auto arrayPtr = data->GetPointData()->GetScalars();
+    // VTK's data is a column major order and EMD files expect row-major.
+    // This code flips the order.
+    vtkNew<vtkImagePermute> permute;
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(data);
+    permute->Update();
+    auto rowMajorOrderData = permute->GetOutput();
+
+    int dim[3] = { 0, 0, 0 };
+    rowMajorOrderData->GetDimensions(dim);
+    h5dim[0] = dim[0];
+    h5dim[1] = dim[1];
+    h5dim[2] = dim[2];
+
+    auto arrayPtr = rowMajorOrderData->GetPointData()->GetScalars();
     auto dataPtr = arrayPtr->GetVoidPointer(0);
 
     // Map the VTK types to the HDF5 types for storage and memory. We should
@@ -423,10 +434,6 @@ public:
       dims.resize(dimCount);
       std::copy(h5dims, h5dims + dimCount, dims.begin());
     }
-    if (dimCount == 3) {
-      dims[0] = h5dims[2];
-      dims[2] = h5dims[0];
-    }
     delete[] h5dims;
 
     // Map the HDF5 types to the VTK types for storage and memory. We should
@@ -475,6 +482,17 @@ public:
     H5Dread(datasetId, memTypeId, H5S_ALL, dataspaceId, H5P_DEFAULT,
             data->GetScalarPointer());
     data->Modified();
+
+    // EMD stores data as row major order.  VTK expects column major order.
+    // Permute the data to fix this.
+    vtkNew<vtkImagePermute> permute;
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(data);
+    permute->Update();
+
+    permute->GetOutput()->GetDimensions(&dims[0]);
+
+    data->ShallowCopy(permute->GetOutput());
 
     H5Sclose(dataspaceId);
     H5Dclose(datasetId);
@@ -577,24 +595,24 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 
   if (dim1.size() > 1 && dim2.size() > 1 && dim3.size() > 1) {
     double spacing[3];
-    spacing[2] = static_cast<double>(dim1[1] - dim1[0]);
+    spacing[0] = static_cast<double>(dim1[1] - dim1[0]);
     spacing[1] = static_cast<double>(dim2[1] - dim2[0]);
-    spacing[0] = static_cast<double>(dim3[1] - dim3[0]);
+    spacing[2] = static_cast<double>(dim3[1] - dim3[0]);
     image->SetSpacing(spacing);
   }
   std::string units = "[n_m]"; // default to nanometers
-  if (d->attribute(emdNode + "/dim1", "units", units)) {
+  if (d->attribute(emdNode + "/dim3", "units", units)) {
     if (units == "[deg]") {
       QVector<double> angles;
-      for (unsigned i = 0; i < dim1.size(); ++i) {
-        angles.push_back(dim1[i]);
+      for (unsigned i = 0; i < dim3.size(); ++i) {
+        angles.push_back(dim3[i]);
       }
       DataSource::setTiltAngles(image, angles);
     } else if (units == "[rad]") {
       QVector<double> angles;
-      for (unsigned i = 0; i < dim1.size(); ++i) {
+      for (unsigned i = 0; i < dim3.size(); ++i) {
         // Convert radians to degrees since tomviz assumes degrees everywhere.
-        angles.push_back(dim1[i] * 180.0 / vtkMath::Pi());
+        angles.push_back(dim3[i] * 180.0 / vtkMath::Pi());
       }
       DataSource::setTiltAngles(image, angles);
     }
@@ -645,12 +663,6 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   int yIndex = 1;
   int zIndex = 2;
 
-  if (hasTiltAngles) {
-    // Note the flipping to make our ordering work in C-ordered codes correctly.
-    xIndex = 2;
-    zIndex = 0;
-  }
-
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
   image->GetSpacing(spacing);
@@ -682,25 +694,25 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
 
   // Create the 3 dim sets too...
   std::vector<int> side(1);
-  side[0] = imageDimDataZ.size();
-  d->writeData("/data/tomography", "dim1", side, imageDimDataZ);
-  if (!hasTiltAngles) {
-    d->setAttribute("/data/tomography/dim1", "name", "z", true);
-    d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
-  } else {
-    d->setAttribute("/data/tomography/dim1", "name", "angles", true);
-    d->setAttribute("/data/tomography/dim1", "units", "[deg]", true);
-  }
+  side[0] = imageDimDataX.size();
+  d->writeData("/data/tomography", "dim1", side, imageDimDataX);
+  d->setAttribute("/data/tomography/dim1", "name", "x", true);
+  d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
 
   side[0] = imageDimDataY.size();
   d->writeData("/data/tomography", "dim2", side, imageDimDataY);
   d->setAttribute("/data/tomography/dim2", "name", "y", true);
   d->setAttribute("/data/tomography/dim2", "units", "[n_m]", true);
 
-  side[0] = imageDimDataX.size();
-  d->writeData("/data/tomography", "dim3", side, imageDimDataX);
-  d->setAttribute("/data/tomography/dim3", "name", "x", true);
-  d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
+  side[0] = imageDimDataZ.size();
+  d->writeData("/data/tomography", "dim3", side, imageDimDataZ);
+  if (!hasTiltAngles) {
+    d->setAttribute("/data/tomography/dim3", "name", "z", true);
+    d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
+  } else {
+    d->setAttribute("/data/tomography/dim3", "name", "angles", true);
+    d->setAttribute("/data/tomography/dim3", "units", "[deg]", true);
+  }
 
   status = H5Gclose(tomoGroupId);
   status = H5Gclose(dataGroupId);
