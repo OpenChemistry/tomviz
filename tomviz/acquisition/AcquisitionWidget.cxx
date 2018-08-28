@@ -32,6 +32,7 @@
 #include <vtkImageSliceMapper.h>
 #include <vtkInteractorStyleRubberBand2D.h>
 #include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkScalarsToColors.h>
 #include <vtkTIFFReader.h>
