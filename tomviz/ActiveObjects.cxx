@@ -106,12 +106,12 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
       m_activeDataSourceType = source->type();
     }
     m_activeDataSource = source;
-    emit dataSourceChanged(m_activeDataSource);
 
     // Setting to nullptr so the traverse logic is re-run.
     m_activeParentDataSource = nullptr;
   }
   emit dataSourceActivated(m_activeDataSource);
+  emit dataSourceChanged(m_activeDataSource);
 
   if (!m_activeDataSource.isNull() &&
       m_activeDataSource->pipeline() != nullptr) {
