@@ -50,6 +50,7 @@ public slots:
   void onOpenFolderClick();
   void onImageToggled(int row, bool value);
   void onStackTypeChanged(int stackType);
+  void onCheckSizesClick();
 
 signals:
   void summaryChanged(const QList<ImageInfo>&);
@@ -72,6 +73,9 @@ private:
                   bool matchPrefix = true);
   void defaultOrder(QStringList fileNames, QList<ImageInfo>& summary);
   QList<ImageInfo> initStackSummary(const QStringList& fileNames);
+  static void getImageSize(QStringList fileNames, int iThread, int nThreads,
+                           QList<ImageInfo>* summary);
+  void checkStackSizes(QList<ImageInfo>& summary);
 };
 } // namespace tomviz
 

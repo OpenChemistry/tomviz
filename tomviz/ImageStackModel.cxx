@@ -72,7 +72,9 @@ QVariant ImageStackModel::data(const QModelIndex& index, int role) const
       successColor.setAlphaF(0.0625);
     }
     QBrush successBackground(successColor);
-    if (m_filesInfo[row].consistent) {
+    if (m_filesInfo[row].m == -1 || m_filesInfo[row].n == -1) {
+      return QVariant();
+    } else if (m_filesInfo[row].consistent) {
       return successBackground;
     } else {
       return failBackground;

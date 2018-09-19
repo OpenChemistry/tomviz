@@ -56,6 +56,9 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
   QObject::connect(m_ui->openFolder, &QPushButton::clicked, this,
                    &ImageStackDialog::onOpenFolderClick);
 
+  QObject::connect(m_ui->checkSizes, &QPushButton::clicked, this,
+                   &ImageStackDialog::onCheckSizesClick);
+
   QObject::connect(&m_tableModel, &ImageStackModel::toggledSelected, this,
                    &ImageStackDialog::onImageToggled);
 
@@ -121,6 +124,11 @@ void ImageStackDialog::onOpenFolderClick()
   openFileDialog(QFileDialog::Directory);
 }
 
+void ImageStackDialog::onCheckSizesClick()
+{
+  checkStackSizes(m_summary);
+}
+
 void ImageStackDialog::openFileDialog(int mode)
 {
   QStringList filters;
@@ -183,23 +191,24 @@ void ImageStackDialog::processFiles(const QStringList& fileNames)
     }
   }
   setStackType(stackType);
+  setStackSummary(summary, false);
 
-  auto readImage = [this](QStringList files, int me, int n,
-                          QList<ImageInfo>* s) {
-    TIFFSetWarningHandler(nullptr);
-    for (auto i = me; i < files.size(); i += n) {
-      uint32_t w = -1;
-      uint32_t h = -1;
-      TIFF* tif = TIFFOpen(files[i].toLatin1().data(), "r");
-      if (tif) {
-        TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
-        TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
-        TIFFClose(tif);
-      }
-      (*s)[i].m = w;
-      (*s)[i].n = h;
-    }
-  };
+  // Checking image size can take several seconds if there are thousands of
+  // images in the stack.
+  // Check the sizes automatically only for stacks smaller than maxImages
+  const auto maxImages = 1000;
+  if (summary.size() <= maxImages) {
+    checkStackSizes(summary);
+  }
+}
+
+void ImageStackDialog::checkStackSizes(QList<ImageInfo>& summary)
+{
+  m_ui->checkSizes->hide();
+  QStringList fileNames;
+  for (auto i = 0; i < summary.size(); ++i) {
+    fileNames << summary[i].fileInfo.absoluteFilePath();
+  }
 
   const unsigned int minCores = 1;
   const unsigned int nCores =
@@ -209,7 +218,7 @@ void ImageStackDialog::processFiles(const QStringList& fileNames)
   std::vector<std::thread> threads(nThreads);
 
   for (unsigned int i = 0; i < nThreads; ++i) {
-    threads[i] = std::thread(readImage, fNames, i, nThreads, &summary);
+    threads[i] = std::thread(getImageSize, fileNames, i, nThreads, &summary);
   }
 
   for (unsigned int i = 0; i < nThreads; ++i) {
@@ -224,11 +233,31 @@ void ImageStackDialog::processFiles(const QStringList& fileNames)
       if (summary[i].m == m && summary[i].n == n) {
         summary[i].consistent = true;
         summary[i].selected = true;
+      } else {
+        summary[i].consistent = false;
+        summary[i].selected = false;
       }
     }
   }
-
   setStackSummary(summary, true);
+}
+
+void ImageStackDialog::getImageSize(QStringList fileNames, int iThread,
+                                    int nThreads, QList<ImageInfo>* summary)
+{
+  TIFFSetWarningHandler(nullptr);
+  for (auto i = iThread; i < fileNames.size(); i += nThreads) {
+    uint32_t w = -1;
+    uint32_t h = -1;
+    TIFF* tif = TIFFOpen(fileNames[i].toLatin1().data(), "r");
+    if (tif) {
+      TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
+      TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
+      TIFFClose(tif);
+    }
+    (*summary)[i].m = w;
+    (*summary)[i].n = h;
+  }
 }
 
 bool ImageStackDialog::detectVolume(QStringList fileNames,
@@ -353,7 +382,7 @@ QList<ImageInfo> ImageStackDialog::initStackSummary(
   QList<ImageInfo> summary;
   int n = -1;
   int m = -1;
-  bool consistent = false;
+  bool consistent = true;
   foreach (QString file, fileNames) {
     summary.push_back(ImageInfo(file, 0, m, n, consistent));
   }
