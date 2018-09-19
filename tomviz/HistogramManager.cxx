@@ -18,9 +18,9 @@
 
 #include <vtkFloatArray.h>
 #include <vtkImageData.h>
-#include <vtkIntArray.h>
 #include <vtkPointData.h>
 #include <vtkTable.h>
+#include <vtkUnsignedLongLongArray.h>
 
 #include "ComputeHistogram.h"
 
@@ -69,14 +69,15 @@ void PopulateHistogram(vtkImageData* input, vtkTable* output)
   for (int j = 0; j < numberOfBins; ++j) {
     extents->SetValue(j, min + j * inc);
   }
-  vtkSmartPointer<vtkIntArray> populations =
-    vtkIntArray::SafeDownCast(output->GetColumnByName("image_pops"));
+  vtkSmartPointer<vtkUnsignedLongLongArray> populations =
+    vtkUnsignedLongLongArray::SafeDownCast(
+      output->GetColumnByName("image_pops"));
   if (!populations) {
-    populations = vtkSmartPointer<vtkIntArray>::New();
+    populations = vtkSmartPointer<vtkUnsignedLongLongArray>::New();
     populations->SetName("image_pops");
   }
   populations->SetNumberOfTuples(numberOfBins);
-  auto pops = static_cast<int*>(populations->GetVoidPointer(0));
+  auto pops = static_cast<uint64_t*>(populations->GetVoidPointer(0));
   for (int k = 0; k < numberOfBins; ++k) {
     pops[k] = 0;
   }
