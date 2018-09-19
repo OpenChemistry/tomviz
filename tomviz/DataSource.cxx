@@ -291,7 +291,7 @@ QStringList DataSource::fileNames() const
 {
   auto reader = m_json.value("reader").toObject(QJsonObject());
   QStringList files;
-  if (reader.contains("fileNames") && isImageStack()) {
+  if (reader.contains("fileNames")) {
     QJsonArray fileArray = reader["fileNames"].toArray();
     foreach (QJsonValue file, fileArray) {
       files.append(file.toString());
@@ -302,8 +302,11 @@ QStringList DataSource::fileNames() const
 
 bool DataSource::isImageStack() const
 {
-  return m_json.contains("fileNames") && m_json["fileNames"].isArray() &&
-         m_json["fileNames"].toArray().size() > 1;
+  auto reader = m_json.value("reader").toObject(QJsonObject());
+  if (reader.contains("fileNames") && reader["fileNames"].isArray()) {
+    return reader["fileNames"].toArray().size() > 1;
+  }
+  return false;
 }
 
 void DataSource::setReaderProperties(const QVariantMap& properties)

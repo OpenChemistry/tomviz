@@ -40,7 +40,7 @@ public:
 
 private slots:
   void aboutToShowMenu();
-  void dataSourceTriggered(QAction* actn, bool stack = false);
+  void dataSourceTriggered(QAction* actn, QStringList fileNames);
   void stateTriggered();
 
 private:
