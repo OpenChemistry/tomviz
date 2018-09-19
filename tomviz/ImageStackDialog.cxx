@@ -25,6 +25,18 @@
 #include <QFileInfo>
 #include <QMimeData>
 
+#include <algorithm>
+#include <chrono>
+#include <thread>
+
+#include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkTIFFReader.h>
+
+extern "C" {
+#include "vtk_tiff.h"
+}
+
 namespace tomviz {
 
 ImageStackDialog::ImageStackDialog(QWidget* parent)
@@ -64,19 +76,22 @@ ImageStackDialog::ImageStackDialog(QWidget* parent)
 
 ImageStackDialog::~ImageStackDialog() = default;
 
-void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary)
+void ImageStackDialog::setStackSummary(const QList<ImageInfo>& summary,
+                                       bool sort)
 {
   m_summary = summary;
-  std::sort(m_summary.begin(), m_summary.end(),
-            [](const ImageInfo& a, const ImageInfo& b) -> bool {
-              // Place the inconsistent images at the top, so the user will
-              // notice them.
-              if (a.consistent == b.consistent) {
-                return a.pos < b.pos;
-              } else {
-                return !a.consistent;
-              }
-            });
+  if (sort) {
+    std::sort(m_summary.begin(), m_summary.end(),
+              [](const ImageInfo& a, const ImageInfo& b) -> bool {
+                // Place the inconsistent images at the top, so the user will
+                // notice them.
+                if (a.consistent == b.consistent) {
+                  return a.pos < b.pos;
+                } else {
+                  return !a.consistent;
+                }
+              });
+  }
   emit summaryChanged(m_summary);
   m_ui->emptyContainer->hide();
   m_ui->loadedContainer->show();
@@ -148,7 +163,7 @@ void ImageStackDialog::processFiles(const QStringList& fileNames)
       fNames << file;
     }
   }
-  QList<ImageInfo> summary = LoadStackReaction::loadTiffStack(fNames);
+  QList<ImageInfo> summary = initStackSummary(fNames);
 
   bool isVolume = false;
   bool isTilt = false;
@@ -168,7 +183,49 @@ void ImageStackDialog::processFiles(const QStringList& fileNames)
     }
   }
   setStackType(stackType);
-  setStackSummary(summary);
+
+  auto readImage = [this](QStringList files, int me, int n,
+                          QList<ImageInfo>* s) {
+    for (auto i = me; i < files.size(); i += n) {
+      uint32_t w;
+      uint32_t h;
+      TIFF* tif = TIFFOpen(files[i].toLatin1().data(), "r");
+      TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
+      TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
+      TIFFClose(tif);
+      (*s)[i].m = w;
+      (*s)[i].n = h;
+    }
+  };
+
+  const unsigned int minCores = 1;
+  const unsigned int nCores =
+    std::max(std::thread::hardware_concurrency(), minCores);
+  const unsigned int maxThreads = 8;
+  const unsigned int nThreads = std::min(nCores, maxThreads);
+  std::vector<std::thread> threads(nThreads);
+
+  for (unsigned int i = 0; i < nThreads; ++i) {
+    threads[i] = std::thread(readImage, fNames, i, nThreads, &summary);
+  }
+
+  for (unsigned int i = 0; i < nThreads; ++i) {
+    threads[i].join();
+  }
+
+  // check consistency
+  if (summary.size() > 0) {
+    const auto m = summary[0].m;
+    const auto n = summary[1].n;
+    for (auto i = 0; i < summary.size(); ++i) {
+      if (summary[i].m == m && summary[i].n == n) {
+        summary[i].consistent = true;
+        summary[i].selected = true;
+      }
+    }
+  }
+
+  setStackSummary(summary, true);
 }
 
 bool ImageStackDialog::detectVolume(QStringList fileNames,
@@ -285,6 +342,19 @@ void ImageStackDialog::dropEvent(QDropEvent* event)
     }
     processFiles(pathList);
   }
+}
+
+QList<ImageInfo> ImageStackDialog::initStackSummary(
+  const QStringList& fileNames)
+{
+  QList<ImageInfo> summary;
+  int n = -1;
+  int m = -1;
+  bool consistent = false;
+  foreach (QString file, fileNames) {
+    summary.push_back(ImageInfo(file, 0, m, n, consistent));
+  }
+  return summary;
 }
 
 QList<ImageInfo> ImageStackDialog::getStackSummary() const
