@@ -186,13 +186,16 @@ void ImageStackDialog::processFiles(const QStringList& fileNames)
 
   auto readImage = [this](QStringList files, int me, int n,
                           QList<ImageInfo>* s) {
+    TIFFSetWarningHandler(nullptr);
     for (auto i = me; i < files.size(); i += n) {
-      uint32_t w;
-      uint32_t h;
+      uint32_t w = -1;
+      uint32_t h = -1;
       TIFF* tif = TIFFOpen(files[i].toLatin1().data(), "r");
-      TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
-      TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
-      TIFFClose(tif);
+      if (tif) {
+        TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
+        TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
+        TIFFClose(tif);
+      }
       (*s)[i].m = w;
       (*s)[i].n = h;
     }
@@ -201,7 +204,7 @@ void ImageStackDialog::processFiles(const QStringList& fileNames)
   const unsigned int minCores = 1;
   const unsigned int nCores =
     std::max(std::thread::hardware_concurrency(), minCores);
-  const unsigned int maxThreads = 8;
+  const unsigned int maxThreads = 4;
   const unsigned int nThreads = std::min(nCores, maxThreads);
   std::vector<std::thread> threads(nThreads);
 
