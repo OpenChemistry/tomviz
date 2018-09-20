@@ -13,7 +13,7 @@ namespace tomviz {
 template <typename T,
           typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
 void calcHistogram(T* values, const vtkIdType numTuples, const float min,
-                   const float inv, int* pops, int&)
+                   const float inv, uint64_t* pops, int&)
 {
   for (vtkIdType j = 0; j < numTuples; ++j) {
     ++pops[static_cast<int>((*values++ - min) * inv)];
@@ -22,13 +22,14 @@ void calcHistogram(T* values, const vtkIdType numTuples, const float min,
 
 /** Needs to be present, should never be compiled. */
 template <typename T>
-void calcHistogram(T*, const vtkIdType, int*)
+void calcHistogram(T*, const vtkIdType, uint64_t*)
 {
   static_assert(!std::is_same<unsigned char, T>::value, "Invalid type");
 }
 
 /** Single component unsigned char covering 0 -> 255 range. */
-void calcHistogram(unsigned char* values, const vtkIdType numTuples, int* pops)
+void calcHistogram(unsigned char* values, const vtkIdType numTuples,
+                   uint64_t* pops)
 {
   for (vtkIdType j = 0; j < numTuples; ++j) {
     ++pops[*values++];
@@ -39,7 +40,7 @@ void calcHistogram(unsigned char* values, const vtkIdType numTuples, int* pops)
 template <typename T,
           typename std::enable_if<!std::is_integral<T>::value>::type* = nullptr>
 void calcHistogram(T* values, const vtkIdType numTuples, const float min,
-                   const float inv, int* pops, int& invalid)
+                   const float inv, uint64_t* pops, int& invalid)
 {
   for (vtkIdType j = 0; j < numTuples; ++j) {
     T value = *(values++);
@@ -65,7 +66,7 @@ void calcHistogram(T* values, const vtkIdType numTuples, const float min,
 template <typename T>
 void CalculateHistogram(T* values, const vtkIdType numTuples,
                         const vtkIdType numComponents, const float min,
-                        const float max, int* pops, const float inv,
+                        const float max, uint64_t* pops, const float inv,
                         int& invalid)
 {
   // Single component is a simpler/faster path, let's dispatch separately.
