@@ -85,8 +85,6 @@ private slots:
   void setUseSolidColor(const bool useSolidColor);
 
 private:
-  void userSelectInitialContourValue();
-
   Q_DISABLE_COPY(ModuleContour)
 };
 } // namespace tomviz

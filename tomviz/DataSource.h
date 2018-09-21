@@ -226,11 +226,6 @@ public:
   bool forkable();
   void setForkable(bool forkable);
 
-  // Get or set the initial contour value for the contour module
-  // If the initial contour value hasn't been set, it will be DBL_MAX.
-  double initialContourValue() const;
-  void setInitialContourValue(double initialContourValue);
-
   static bool hasTiltAngles(vtkDataObject* image);
 
 signals:
