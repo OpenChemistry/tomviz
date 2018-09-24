@@ -13,38 +13,28 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizOperatorResultPropertiesPanel_h
-#define tomvizOperatorResultPropertiesPanel_h
+
+#ifndef tomvizMoleculeProperties_h
+#define tomvizMoleculeProperties_h
 
 #include <QWidget>
 
-#include <QPointer>
-
-class QLabel;
 class QTableWidget;
-class QVBoxLayout;
 class vtkMolecule;
 
 namespace tomviz {
-class OperatorResult;
-
-class OperatorResultPropertiesPanel : public QWidget
+class MoleculeProperties : public QWidget
 {
   Q_OBJECT
 
 public:
-  OperatorResultPropertiesPanel(QWidget* parent = nullptr);
-  virtual ~OperatorResultPropertiesPanel();
-
-private slots:
-  void setOperatorResult(OperatorResult*);
-
+  MoleculeProperties(vtkMolecule* molecule, QWidget* parent = nullptr);
+  // virtual ~MoleculeProperties();
 private:
-  Q_DISABLE_COPY(OperatorResultPropertiesPanel)
-
-  QPointer<OperatorResult> m_activeOperatorResult = nullptr;
-  QVBoxLayout* m_layout = nullptr;
+  QTableWidget* initializeAtomTable();
+  void populateAtomTable(QTableWidget* table, vtkMolecule* molecule);
+  QMap<QString, int> moleculeSpeciesCount(vtkMolecule* molecule);
 };
-} // namespace tomviz
+}
 
 #endif
