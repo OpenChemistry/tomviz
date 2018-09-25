@@ -30,6 +30,7 @@ enum Column
 namespace tomviz {
 
 class DataSource;
+class MoleculeSource;
 class Module;
 class Operator;
 class OperatorResult;
@@ -60,6 +61,7 @@ public:
   OperatorResult* result(const QModelIndex& index);
 
   QModelIndex dataSourceIndex(DataSource* source);
+  QModelIndex moleculeSourceIndex(MoleculeSource* source);
   QModelIndex moduleIndex(Module* module);
   QModelIndex operatorIndex(Operator* op);
   QModelIndex resultIndex(OperatorResult* result);
@@ -71,6 +73,7 @@ public:
 
 public slots:
   void dataSourceAdded(DataSource* dataSource);
+  void moleculeSourceAdded(MoleculeSource* moleculeSource);
   void moduleAdded(Module* module);
   void operatorAdded(Operator* op, DataSource* transformedDataSource = nullptr);
   void operatorRemoved(Operator* op);
@@ -86,6 +89,7 @@ public slots:
 signals:
   void dataSourceItemAdded(DataSource* dataSource);
   void childDataSourceItemAdded(DataSource* dataSource);
+  void moleculeSourceItemAdded(MoleculeSource* dataSource);
   void moduleItemAdded(Module* module);
   void operatorItemAdded(Operator* op);
   void dataSourceModified(DataSource* dataSource);

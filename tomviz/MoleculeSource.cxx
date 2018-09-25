@@ -28,10 +28,12 @@ namespace tomviz {
 
 MoleculeSource::MoleculeSource(vtkMolecule* molecule, QObject* parent)
   : QObject(parent), m_molecule(molecule)
-{}
+{
+}
 
 MoleculeSource::~MoleculeSource()
-{}
+{
+}
 
 QJsonObject MoleculeSource::serialize() const
 {

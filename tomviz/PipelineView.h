@@ -27,6 +27,7 @@ class vtkTable;
 namespace tomviz {
 
 class DataSource;
+class MoleculeSource;
 class Module;
 class Operator;
 
@@ -53,6 +54,7 @@ private slots:
   void rowDoubleClicked(const QModelIndex& idx);
 
   void setCurrent(DataSource* dataSource);
+  void setCurrent(MoleculeSource* dataSource);
   void setCurrent(Module* module);
   void setCurrent(Operator* op);
   void deleteItemsConfirm(const QModelIndexList& idxs);

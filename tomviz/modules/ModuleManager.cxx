@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "ModuleFactory.h"
+#include "MoleculeSource.h"
 #include "Pipeline.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "Utilities.h"
@@ -73,6 +74,7 @@ class ModuleManager::MMInternals
 public:
   // TODO Should only hold top level roots of pipeline
   QList<QPointer<DataSource>> DataSources;
+  QList<QPointer<MoleculeSource>> MoleculeSources;
   QList<QPointer<DataSource>> ChildDataSources;
   QList<QPointer<Module>> Modules;
   QMap<vtkSMProxy*, vtkSmartPointer<vtkCamera>> RenderViewCameras;
@@ -215,6 +217,14 @@ void ModuleManager::removeAllDataSources()
   d->DataSources.clear();
 }
 
+void ModuleManager::addMoleculeSource(MoleculeSource* moleculeSource)
+{
+  if (moleculeSource && !d->MoleculeSources.contains(moleculeSource)) {
+    d->MoleculeSources.push_back(moleculeSource);
+    emit moleculeSourceAdded(moleculeSource);
+  }
+}
+
 void ModuleManager::removeOperator(Operator* op)
 {
   if (op) {
@@ -294,6 +304,23 @@ Module* ModuleManager::createAndAddModule(const QString& type,
   return module;
 }
 
+Module* ModuleManager::createAndAddModule(const QString& type,
+                                          MoleculeSource* dataSource,
+                                          vtkSMViewProxy* view)
+{
+  if (!view || !dataSource) {
+    return nullptr;
+  }
+
+  // Create an outline module for the source in the active view.
+  auto module =
+    ModuleFactory::createModule(type, nullptr, view, nullptr, dataSource);
+  if (module) {
+    addModule(module);
+  }
+  return module;
+}
+
 QList<Module*> ModuleManager::findModulesGeneric(const DataSource* dataSource,
                                                  const vtkSMViewProxy* view)
 {
@@ -302,6 +329,19 @@ QList<Module*> ModuleManager::findModulesGeneric(const DataSource* dataSource,
     if (module && module->dataSource() == dataSource &&
         (view == nullptr || view == module->view()) &&
         module->label() != "Molecule") {
+      modules.push_back(module);
+    }
+  }
+  return modules;
+}
+
+QList<Module*> ModuleManager::findModulesGeneric(
+  const MoleculeSource* dataSource, const vtkSMViewProxy* view)
+{
+  QList<Module*> modules;
+  foreach (Module* module, d->Modules) {
+    if (module && module->moleculeSource() == dataSource &&
+        (view == nullptr || view == module->view())) {
       modules.push_back(module);
     }
   }

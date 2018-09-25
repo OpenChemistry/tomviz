@@ -27,6 +27,7 @@ class vtkSMProxy;
 
 namespace tomviz {
 class DataSource;
+class MoleculeSource;
 
 class PythonReaderFactory;
 
@@ -82,6 +83,7 @@ private:
   static QJsonObject readerProperties(vtkSMProxy* reader);
   static void setFileNameProperties(const QJsonObject& props,
                                     vtkSMProxy* reader);
+  static MoleculeSource* loadMolecule(QString fileName);
 };
 } // namespace tomviz
 

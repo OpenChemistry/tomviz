@@ -33,6 +33,7 @@ class QDir;
 
 namespace tomviz {
 class DataSource;
+class MoleculeSource;
 class Module;
 class Operator;
 class Pipeline;
@@ -68,6 +69,9 @@ public:
   }
 
   QList<Module*> findModulesGeneric(const DataSource* dataSource,
+                                    const vtkSMViewProxy* view);
+
+  QList<Module*> findModulesGeneric(const MoleculeSource* dataSource,
                                     const vtkSMViewProxy* view);
 
   /// Save the application state as JSON, use stateDir as the base for relative
@@ -107,9 +111,12 @@ public slots:
   /// Creates and add a new module.
   Module* createAndAddModule(const QString& type, DataSource* dataSource,
                              vtkSMViewProxy* view);
+  Module* createAndAddModule(const QString& type, MoleculeSource* dataSource,
+                             vtkSMViewProxy* view);
 
   /// Register/Unregister data sources with the ModuleManager.
   void addDataSource(DataSource*);
+  void addMoleculeSource(MoleculeSource*);
   void addChildDataSource(DataSource*);
   void removeDataSource(DataSource*);
   void removeChildDataSource(DataSource*);
@@ -138,6 +145,8 @@ signals:
   void childDataSourceAdded(DataSource*);
   void dataSourceRemoved(DataSource*);
   void childDataSourceRemoved(DataSource*);
+
+  void moleculeSourceAdded(MoleculeSource*);
 
   void operatorRemoved(Operator*);
 

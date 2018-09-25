@@ -23,6 +23,7 @@
 #include "ImageStackModel.h"
 #include "LoadStackReaction.h"
 #include "ModuleManager.h"
+#include "MoleculeSource.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
 #include "PythonReader.h"
@@ -47,12 +48,14 @@
 #include <vtkSMViewProxy.h>
 
 #include <vtkImageData.h>
+#include <vtkMolecule.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkTrivialProducer.h>
+#include <vtkXYZMolReader2.h>
 
 #include <QDebug>
 #include <QFileDialog>
@@ -130,6 +133,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "VTK ImageData Files (*.vti)"
           << "MRC files (*.mrc *.st *.rec *.ali)"
           << "XDMF files (*.xmf *.xdmf)"
+          << "Molecule files (*.xyz)"
           << "Text files (*.txt)";
 
   foreach (auto reader, FileFormatManager::instance().pythonReaderFactories()) {
@@ -191,7 +195,12 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     fileName = fileNames[0];
   }
   QFileInfo info(fileName);
-  if (info.suffix().toLower() == "emd") {
+  if (info.suffix().toLower() == "xyz") {
+    foreach (auto file, fileNames) {
+      LoadDataReaction::loadMolecule(file);
+    }
+    return nullptr;
+  } else if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
     loadWithParaview = false;
     EmdFormat emdFile;
@@ -449,6 +458,19 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
     }
     tomviz::setProperty(props["fileName"], prop);
   }
+}
+
+MoleculeSource* LoadDataReaction::loadMolecule(QString fileName)
+{
+  vtkNew<vtkXYZMolReader2> reader;
+  vtkNew<vtkMolecule> molecule;
+  reader->SetFileName(fileName.toLatin1().data());
+  reader->SetOutput(molecule);
+  reader->Update();
+  auto moleculeSource = new MoleculeSource(molecule);
+  moleculeSource->setFileName(fileName);
+  ModuleManager::instance().addMoleculeSource(moleculeSource);
+  return moleculeSource;
 }
 
 } // end of namespace tomviz

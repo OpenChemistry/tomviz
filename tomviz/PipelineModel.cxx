@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "Module.h"
 #include "ModuleManager.h"
+#include "MoleculeSource.h"
 #include "Operator.h"
 #include "OperatorResult.h"
 #include "Pipeline.h"
@@ -40,18 +41,24 @@ struct PipelineModel::Item
   Item(Module* module) : tag(MODULE), m(module) {}
   Item(Operator* op) : tag(OPERATOR), o(op) {}
   Item(OperatorResult* result) : tag(RESULT), r(result) {}
+  Item(MoleculeSource* source) : tag(MOLECULESOURCE), ms(source) {}
 
   DataSource* dataSource() { return tag == DATASOURCE ? s : nullptr; }
   Module* module() { return tag == MODULE ? m : nullptr; }
   Operator* op() { return tag == OPERATOR ? o : nullptr; }
   OperatorResult* result() { return tag == RESULT ? r : nullptr; }
+  MoleculeSource* moleculeSource()
+  {
+    return tag == MOLECULESOURCE ? ms : nullptr;
+  }
 
   enum
   {
     DATASOURCE,
     MODULE,
     OPERATOR,
-    RESULT
+    RESULT,
+    MOLECULESOURCE
   } tag;
   union
   {
@@ -59,6 +66,7 @@ struct PipelineModel::Item
     Module* m;
     Operator* o;
     OperatorResult* r;
+    MoleculeSource* ms;
   };
 };
 
@@ -88,6 +96,7 @@ public:
   bool remove(Operator* op);
 
   /// Recursively search entire tree for given object.
+  TreeItem* find(MoleculeSource* source);
   TreeItem* find(Module* module);
   TreeItem* find(Operator* op);
   TreeItem* find(OperatorResult* result);
@@ -96,6 +105,7 @@ public:
   DataSource* dataSource() { return m_item.dataSource(); }
   Module* module() { return m_item.module(); }
   Operator* op() { return m_item.op(); }
+  MoleculeSource* moleculeSource() { return m_item.moleculeSource(); }
   OperatorResult* result() { return m_item.result(); }
 
 private:
@@ -294,6 +304,14 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(OperatorResult* result)
   return nullptr;
 }
 
+PipelineModel::TreeItem* PipelineModel::TreeItem::find(MoleculeSource* source)
+{
+  if (this->moleculeSource() == source) {
+    return this;
+  }
+  return nullptr;
+}
+
 PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
 {
   connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
@@ -302,6 +320,9 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
           SLOT(childDataSourceAdded(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
           SLOT(moduleAdded(Module*)));
+  connect(&ModuleManager::instance(),
+          SIGNAL(moleculeSourceAdded(MoleculeSource*)),
+          SLOT(moleculeSourceAdded(MoleculeSource*)));
 
   connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
           SIGNAL(modelReset()));
@@ -386,6 +407,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
 
   auto treeItem = this->treeItem(index);
   auto dataSource = treeItem->dataSource();
+  auto moleculeSource = treeItem->moleculeSource();
   auto module = treeItem->module();
   auto op = treeItem->op();
   auto result = treeItem->result();
@@ -418,6 +440,21 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         default:
           return QVariant();
       }
+    }
+  } else if (moleculeSource) {
+    if (index.column() == Column::label) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return QIcon(":/icons/pqInspect.png");
+        case Qt::DisplayRole:
+          return moleculeSource->label();
+        case Qt::ToolTipRole:
+          return moleculeSource->label();
+        default:
+          return QVariant();
+      }
+    } else {
+      return QVariant();
     }
   } else if (module) {
     if (index.column() == Column::label) {
@@ -652,6 +689,17 @@ QModelIndex PipelineModel::dataSourceIndex(DataSource* source)
   return QModelIndex();
 }
 
+QModelIndex PipelineModel::moleculeSourceIndex(MoleculeSource* source)
+{
+  foreach (auto treeItem, m_treeItems) {
+    auto moleculeItem = treeItem->find(source);
+    if (moleculeItem) {
+      return createIndex(moleculeItem->childIndex(), 0, moleculeItem);
+    }
+  }
+  return QModelIndex();
+}
+
 QModelIndex PipelineModel::moduleIndex(Module* module)
 {
   foreach (auto treeItem, m_treeItems) {
@@ -729,6 +777,16 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
     operatorAdded(op);
   }
   emit dataSourceItemAdded(dataSource);
+}
+
+void PipelineModel::moleculeSourceAdded(MoleculeSource* moleculeSource)
+{
+  auto treeItem =
+    new PipelineModel::TreeItem(PipelineModel::Item(moleculeSource));
+  beginInsertRows(QModelIndex(), m_treeItems.size(), m_treeItems.size());
+  m_treeItems.append(treeItem);
+  endInsertRows();
+  emit moleculeSourceItemAdded(moleculeSource);
 }
 
 void PipelineModel::moduleAdded(Module* module)

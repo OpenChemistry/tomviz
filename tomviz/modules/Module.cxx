@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "MoleculeSource.h"
 #include "OperatorResult.h"
 #include "Utilities.h"
 
@@ -103,6 +104,13 @@ bool Module::initializeWithResult(DataSource* data, vtkSMViewProxy* vtkView,
   return initialize(data, vtkView);
 }
 
+bool Module::initialize(MoleculeSource* data, vtkSMViewProxy* vtkView)
+{
+  m_view = vtkView;
+  m_activeMoleculeSource = data;
+  return true;
+}
+
 bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   m_view = vtkView;
@@ -132,6 +140,11 @@ vtkSMViewProxy* Module::view() const
 DataSource* Module::dataSource() const
 {
   return m_activeDataSource;
+}
+
+MoleculeSource* Module::moleculeSource() const
+{
+  return m_activeMoleculeSource;
 }
 
 OperatorResult* Module::operatorResult() const

@@ -182,6 +182,10 @@ void PipelineView::setModel(QAbstractItemModel* model)
           SLOT(setCurrent(DataSource*)));
   connect(pipelineModel, SIGNAL(childDataSourceItemAdded(DataSource*)),
           SLOT(setCurrent(DataSource*)));
+  connect(pipelineModel, SIGNAL(moleculeSourceItemAdded(MoleculeSource*)),
+          SLOT(setCurrent(MoleculeSource*)));
+  connect(pipelineModel, SIGNAL(moleculeSourceItemAdded(MoleculeSource*)),
+          SLOT(setCurrent(MoleculeSource*)));
   connect(pipelineModel, SIGNAL(moduleItemAdded(Module*)),
           SLOT(setCurrent(Module*)));
   connect(pipelineModel, SIGNAL(operatorItemAdded(Operator*)),
@@ -555,6 +559,14 @@ void PipelineView::setCurrent(DataSource* dataSource)
 {
   auto pipelineModel = qobject_cast<PipelineModel*>(model());
   auto index = pipelineModel->dataSourceIndex(dataSource);
+  setCurrentIndex(index);
+  selectionModel()->select(index, QItemSelectionModel::Select);
+}
+
+void PipelineView::setCurrent(MoleculeSource* dataSource)
+{
+  auto pipelineModel = qobject_cast<PipelineModel*>(model());
+  auto index = pipelineModel->moleculeSourceIndex(dataSource);
   setCurrentIndex(index);
   selectionModel()->select(index, QItemSelectionModel::Select);
 }

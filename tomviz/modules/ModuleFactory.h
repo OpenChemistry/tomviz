@@ -23,6 +23,7 @@ class vtkSMViewProxy;
 
 namespace tomviz {
 class DataSource;
+class MoleculeSource;
 class Module;
 class OperatorResult;
 
@@ -43,7 +44,8 @@ public:
   /// Creates a module of the given type to show the dataSource in the view.
   static Module* createModule(const QString& type, DataSource* dataSource,
                               vtkSMViewProxy* view,
-                              OperatorResult* result = nullptr);
+                              OperatorResult* result = nullptr,
+                              MoleculeSource* moleculeSource = nullptr);
 
   /// Returns the type for a module instance.
   static const char* moduleType(Module* module);

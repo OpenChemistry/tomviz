@@ -74,7 +74,8 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
 
 Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
                                     vtkSMViewProxy* view,
-                                    OperatorResult* result)
+                                    OperatorResult* result,
+                                    MoleculeSource* moleculeSource)
 {
   Module* module = nullptr;
   if (type == "Outline") {
@@ -106,10 +107,12 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
     }
 
     bool success;
-    if (result == nullptr) {
-      success = module->initialize(dataSource, view);
-    } else {
+    if (result != nullptr) {
       success = module->initializeWithResult(dataSource, view, result);
+    } else if (moleculeSource != nullptr) {
+      success = module->initialize(moleculeSource, view);
+    } else if (dataSource != nullptr) {
+      success = module->initialize(dataSource, view);
     }
 
     if (!success) {
