@@ -113,6 +113,8 @@ public slots:
                              vtkSMViewProxy* view);
   Module* createAndAddModule(const QString& type, MoleculeSource* dataSource,
                              vtkSMViewProxy* view);
+  Module* createAndAddModule(const QString& type, OperatorResult* result,
+                             vtkSMViewProxy* view);
 
   /// Register/Unregister data sources with the ModuleManager.
   void addDataSource(DataSource*);

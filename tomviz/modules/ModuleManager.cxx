@@ -305,16 +305,31 @@ Module* ModuleManager::createAndAddModule(const QString& type,
 }
 
 Module* ModuleManager::createAndAddModule(const QString& type,
-                                          MoleculeSource* dataSource,
+                                          MoleculeSource* moleculeSource,
                                           vtkSMViewProxy* view)
 {
-  if (!view || !dataSource) {
+  if (!view || !moleculeSource) {
     return nullptr;
   }
 
   // Create an outline module for the source in the active view.
-  auto module =
-    ModuleFactory::createModule(type, nullptr, view, nullptr, dataSource);
+  auto module = ModuleFactory::createModule(type, moleculeSource, view);
+  if (module) {
+    addModule(module);
+  }
+  return module;
+}
+
+Module* ModuleManager::createAndAddModule(const QString& type,
+                                          OperatorResult* result,
+                                          vtkSMViewProxy* view)
+{
+  if (!view || !result) {
+    return nullptr;
+  }
+
+  // Create an outline module for the source in the active view.
+  auto module = ModuleFactory::createModule(type, result, view);
   if (module) {
     addModule(module);
   }

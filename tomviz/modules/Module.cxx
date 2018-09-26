@@ -97,18 +97,20 @@ Module::Module(QObject* parentObject)
 
 Module::~Module() = default;
 
-bool Module::initializeWithResult(DataSource* data, vtkSMViewProxy* vtkView,
-                                  OperatorResult* result)
+bool Module::initialize(OperatorResult* result, vtkSMViewProxy* vtkView)
 {
+  m_view = vtkView;
   m_operatorResult = result;
-  return initialize(data, vtkView);
+  m_activeDataSource = ActiveObjects::instance().activeDataSource();
+  return (m_view && m_operatorResult);
 }
 
 bool Module::initialize(MoleculeSource* data, vtkSMViewProxy* vtkView)
 {
   m_view = vtkView;
   m_activeMoleculeSource = data;
-  return true;
+  m_activeDataSource = ActiveObjects::instance().activeDataSource();
+  return (m_view && m_activeMoleculeSource);
 }
 
 bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
@@ -180,8 +182,15 @@ void Module::setUseDetachedColorMap(bool val)
 
 vtkSMProxy* Module::colorMap() const
 {
-  return useDetachedColorMap() ? d->m_colorMap.GetPointer()
-                               : colorMapDataSource()->colorMap();
+  if (useDetachedColorMap()) {
+    return d->m_colorMap.GetPointer();
+  }
+
+  if (colorMapDataSource()) {
+    return colorMapDataSource()->colorMap();
+  }
+
+  return nullptr;
 }
 
 vtkSMProxy* Module::opacityMap() const
@@ -218,8 +227,15 @@ vtkPiecewiseFunction* Module::gradientOpacityMap() const
 
 vtkImageData* Module::transferFunction2D() const
 {
-  return useDetachedColorMap() ? d->m_transfer2D.GetPointer()
-                               : colorMapDataSource()->transferFunction2D();
+  if (useDetachedColorMap()) {
+    return d->m_transfer2D.GetPointer();
+  }
+
+  if (colorMapDataSource()) {
+    return colorMapDataSource()->transferFunction2D();
+  }
+
+  return nullptr;
 }
 
 vtkRectd* Module::transferFunction2DBox() const

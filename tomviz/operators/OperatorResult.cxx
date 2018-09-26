@@ -113,10 +113,7 @@ void OperatorResult::setDataObject(vtkDataObject* object)
   // If the result is a vtkMolecule, create a ModuleMolecule to display it
   if (vtkMolecule::SafeDownCast(object)) {
     auto view = ActiveObjects::instance().activeView();
-    auto dataSource = ActiveObjects::instance().activeDataSource();
-    auto module =
-      ModuleFactory::createModule("Molecule", dataSource, view, this);
-    ModuleManager::instance().addModule(module);
+    ModuleManager::createAndAddModule("Molecule", this, view);
   }
 }
 

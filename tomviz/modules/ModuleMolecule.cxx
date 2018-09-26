@@ -46,11 +46,9 @@ QIcon ModuleMolecule::icon() const
   return QIcon(":/pqWidgets/Icons/pqGroup24.png");
 }
 
-bool ModuleMolecule::initializeWithResult(DataSource* dataSource,
-                                          vtkSMViewProxy* view,
-                                          OperatorResult* result)
+bool ModuleMolecule::initialize(OperatorResult* result, vtkSMViewProxy* view)
 {
-  if (!Module::initializeWithResult(dataSource, view, result)) {
+  if (!Module::initialize(result, view)) {
     return false;
   }
 

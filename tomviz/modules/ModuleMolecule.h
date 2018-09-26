@@ -42,8 +42,7 @@ public:
 
   QString label() const override { return "Molecule"; }
   QIcon icon() const override;
-  bool initializeWithResult(DataSource* dataSource, vtkSMViewProxy* view,
-                            OperatorResult* result) override;
+  bool initialize(OperatorResult* result, vtkSMViewProxy* view) override;
   bool finalize() override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
