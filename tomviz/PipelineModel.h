@@ -56,6 +56,7 @@ public:
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
   DataSource* dataSource(const QModelIndex& index);
+  MoleculeSource* moleculeSource(const QModelIndex& index);
   Module* module(const QModelIndex& index);
   Operator* op(const QModelIndex& index);
   OperatorResult* result(const QModelIndex& index);

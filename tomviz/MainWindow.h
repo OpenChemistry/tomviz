@@ -31,6 +31,7 @@ namespace tomviz {
 class AboutDialog;
 class DataPropertiesPanel;
 class DataSource;
+class MoleculeSource;
 class Module;
 class Operator;
 class OperatorResult;
@@ -62,6 +63,9 @@ private slots:
 
   /// Change the active data source in the UI.
   void dataSourceChanged(DataSource* source);
+
+  /// Change the active molecule source in the UI.
+  void moleculeSourceChanged(MoleculeSource* moleculeSource);
 
   /// Change the active module displayed in the UI.
   void moduleChanged(Module* module);

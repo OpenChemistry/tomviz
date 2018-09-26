@@ -151,6 +151,18 @@ vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
   return server ? server->proxyManager() : nullptr;
 }
 
+void ActiveObjects::setActiveMoleculeSource(MoleculeSource* source)
+{
+  if (source) {
+    setActiveDataSource(nullptr);
+  }
+  if (m_activeMoleculeSource != source) {
+    m_activeMoleculeSource = source;
+    emit moleculeSourceChanged(source);
+  }
+  emit moleculeSourceActivated(source);
+}
+
 void ActiveObjects::setActiveModule(Module* module)
 {
   if (module) {

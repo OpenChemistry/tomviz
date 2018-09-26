@@ -21,6 +21,7 @@
 
 #include "DataSource.h"
 #include "Module.h"
+#include "MoleculeSource.h"
 #include "Operator.h"
 #include "OperatorResult.h"
 
@@ -58,6 +59,12 @@ public:
 
   /// Returns the selected data source, nullptr if no data source is selected.
   DataSource* selectedDataSource() const { return m_selectedDataSource; }
+
+  /// Returns the active data source.
+  MoleculeSource* activeMoleculeSource() const
+  {
+    return m_activeMoleculeSource;
+  }
 
   /// Returns the active transformed data source.
   DataSource* activeTransformedDataSource() const
@@ -98,6 +105,9 @@ public slots:
 
   /// Set the selected data source.
   void setSelectedDataSource(DataSource* source);
+
+  /// Set the active molecule source
+  void setActiveMoleculeSource(MoleculeSource* source);
 
   /// Set the active transformed data source.
   void setActiveTransformedDataSource(DataSource* source);
@@ -140,6 +150,12 @@ signals:
   void transformedDataSourceActivated(DataSource*);
 
   /// Fired whenever the active module changes.
+  void moleculeSourceChanged(MoleculeSource*);
+
+  /// Fired whenever a module is activated, i.e. selected in the pipeline.
+  void moleculeSourceActivated(MoleculeSource*);
+
+  /// Fired whenever the active module changes.
   void moduleChanged(Module*);
 
   /// Fired whenever a module is activated, i.e. selected in the pipeline.
@@ -178,6 +194,7 @@ protected:
   QPointer<DataSource> m_selectedDataSource = nullptr;
   DataSource::DataSourceType m_activeDataSourceType = DataSource::Volume;
   QPointer<DataSource> m_activeParentDataSource = nullptr;
+  QPointer<MoleculeSource> m_activeMoleculeSource = nullptr;
   QPointer<Module> m_activeModule = nullptr;
   QPointer<Operator> m_activeOperator = nullptr;
   QPointer<OperatorResult> m_activeOperatorResult = nullptr;

@@ -540,6 +540,8 @@ void PipelineView::currentChanged(const QModelIndex& current,
     ActiveObjects::instance().setActiveModule(module);
   } else if (auto op = pipelineModel->op(current)) {
     ActiveObjects::instance().setActiveOperator(op);
+  } else if (auto moleculeSource = pipelineModel->moleculeSource(current)) {
+    ActiveObjects::instance().setActiveMoleculeSource(moleculeSource);
   }
 
   // Always change the active OperatorResult. It is possible to have both

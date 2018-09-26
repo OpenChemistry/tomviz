@@ -214,6 +214,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Connect up the module/data changed to the appropriate slots.
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceActivated(DataSource*)),
           SLOT(dataSourceChanged(DataSource*)));
+  connect(&ActiveObjects::instance(),
+          SIGNAL(moleculeSourceActivated(MoleculeSource*)),
+          SLOT(moleculeSourceChanged(MoleculeSource*)));
   connect(&ActiveObjects::instance(), SIGNAL(moduleActivated(Module*)),
           SLOT(moduleChanged(Module*)));
   connect(&ActiveObjects::instance(), SIGNAL(operatorActivated(Operator*)),
@@ -589,6 +592,12 @@ void MainWindow::dataSourceChanged(DataSource* dataSource)
     m_ui->menuTomography->setEnabled(canAdd);
     m_customTransformsMenu->setEnabled(canAdd);
   }
+}
+
+void MainWindow::moleculeSourceChanged(MoleculeSource* moleculeSource)
+{
+  m_ui->propertiesPanelStackedWidget->setCurrentWidget(
+    m_ui->moleculePropertiesScrollArea);
 }
 
 void MainWindow::moduleChanged(Module*)

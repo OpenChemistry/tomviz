@@ -133,4 +133,9 @@ QString MoleculeSource::label() const
   }
 }
 
+vtkMolecule* MoleculeSource::molecule() const
+{
+  return m_molecule;
+}
+
 } // namespace tomviz

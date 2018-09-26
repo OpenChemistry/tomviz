@@ -245,6 +245,27 @@
            </property>
           </widget>
          </widget>
+         <widget class="QScrollArea" name="moleculePropertiesScrollArea">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <widget class="tomviz::MoleculePropertiesPanel" name="moleculePropertiesPanel">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>100</width>
+             <height>30</height>
+            </rect>
+           </property>
+          </widget>
+         </widget>
          <widget class="QScrollArea" name="modulePropertiesScrollArea">
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
@@ -468,6 +489,12 @@
    <class>tomviz::DataPropertiesPanel</class>
    <extends>QWidget</extends>
    <header>DataPropertiesPanel.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>tomviz::MoleculePropertiesPanel</class>
+   <extends>QWidget</extends>
+   <header>MoleculePropertiesPanel.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

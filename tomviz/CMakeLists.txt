@@ -95,6 +95,8 @@ set(SOURCES
   MoleculeSource.h
   MoleculeProperties.cxx
   MoleculeProperties.h
+  MoleculePropertiesPanel.cxx
+  MoleculePropertiesPanel.h
   MoveActiveObject.cxx
   MoveActiveObject.h
   Pipeline.cxx

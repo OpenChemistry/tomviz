@@ -20,6 +20,8 @@
 
 #include <QJsonObject>
 
+#include <vtkSmartPointer.h>
+
 class vtkMolecule;
 
 namespace tomviz {
@@ -51,9 +53,12 @@ public:
   /// Returns the name of the filename used from the originalDataSource.
   QString label() const;
 
+  /// Returns a pointer to the vtkMolecule
+  vtkMolecule* molecule() const;
+
 private:
   QJsonObject m_json;
-  vtkMolecule* m_molecule;
+  vtkSmartPointer<vtkMolecule> m_molecule;
 };
 
 } // namespace tomviz

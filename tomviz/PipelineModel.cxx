@@ -445,7 +445,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
     if (index.column() == Column::label) {
       switch (role) {
         case Qt::DecorationRole:
-          return QIcon(":/icons/pqInspect.png");
+          return QIcon(":/icons/gradient_opacity.png");
         case Qt::DisplayRole:
           return moleculeSource->label();
         case Qt::ToolTipRole:
@@ -612,6 +612,16 @@ DataSource* PipelineModel::dataSource(const QModelIndex& idx)
   if (idx.isValid()) {
     auto treeItem = this->treeItem(idx);
     return (treeItem ? treeItem->dataSource() : nullptr);
+  } else {
+    return nullptr;
+  }
+}
+
+MoleculeSource* PipelineModel::moleculeSource(const QModelIndex& idx)
+{
+  if (idx.isValid()) {
+    auto treeItem = this->treeItem(idx);
+    return (treeItem ? treeItem->moleculeSource() : nullptr);
   } else {
     return nullptr;
   }
