@@ -17,6 +17,7 @@
 
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
+#include "MoleculeSource.h"
 #include "OperatorResult.h"
 #include "Utilities.h"
 
@@ -57,14 +58,36 @@ bool ModuleMolecule::initialize(OperatorResult* result, vtkSMViewProxy* view)
     return false;
   }
 
+  addMoleculeToView(view);
+
+  return true;
+}
+
+bool ModuleMolecule::initialize(MoleculeSource* moleculeSource,
+                                vtkSMViewProxy* view)
+{
+  if (!Module::initialize(moleculeSource, view)) {
+    return false;
+  }
+
+  m_molecule = vtkMolecule::SafeDownCast(moleculeSource->molecule());
+  if (m_molecule == nullptr) {
+    return false;
+  }
+
+  addMoleculeToView(view);
+
+  return true;
+}
+
+void ModuleMolecule::addMoleculeToView(vtkSMViewProxy* view)
+{
   m_moleculeMapper->SetInputData(m_molecule);
   m_moleculeActor->SetMapper(m_moleculeMapper);
 
   m_view = vtkPVRenderView::SafeDownCast(view->GetClientSideView());
   m_view->GetRenderer()->AddActor(m_moleculeActor);
   m_view->Update();
-
-  return true;
 }
 
 bool ModuleMolecule::finalize()

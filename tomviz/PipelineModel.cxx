@@ -803,9 +803,12 @@ void PipelineModel::moduleAdded(Module* module)
 {
   Q_ASSERT(module);
   auto dataSource = module->dataSource();
+  auto moleculeSource = module->moleculeSource();
   auto operatorResult = module->operatorResult();
   QModelIndex index;
-  if (operatorResult) {
+  if (moleculeSource) {
+    index = moleculeSourceIndex(moleculeSource);
+  } else if (operatorResult) {
     index = resultIndex(operatorResult);
   } else if (dataSource) {
     index = dataSourceIndex(dataSource);

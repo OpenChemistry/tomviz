@@ -470,6 +470,9 @@ MoleculeSource* LoadDataReaction::loadMolecule(QString fileName)
   auto moleculeSource = new MoleculeSource(molecule);
   moleculeSource->setFileName(fileName);
   ModuleManager::instance().addMoleculeSource(moleculeSource);
+  auto view = ActiveObjects::instance().activeView();
+  ModuleManager::instance().createAndAddModule("Molecule", moleculeSource,
+                                               view);
   return moleculeSource;
 }
 
