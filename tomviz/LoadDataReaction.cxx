@@ -150,7 +150,10 @@ QList<DataSource*> LoadDataReaction::loadData()
   QList<DataSource*> dataSources;
   if (dialog.exec()) {
     QStringList filenames = dialog.selectedFiles();
-    if (filenames.size() > 1) {
+    QString fileName = filenames.size() > 0 ? filenames[0] : "";
+    QFileInfo info(fileName);
+    QStringList tiffExt = { "tif", "tiff" };
+    if (filenames.size() > 1 && tiffExt.contains(info.suffix().toLower())) {
       dataSources << LoadStackReaction::loadData(filenames);
     } else {
       dataSources << loadData(filenames);
@@ -463,26 +466,31 @@ MoleculeSource* LoadDataReaction::loadMolecule(QStringList fileNames,
 {
   bool addToRecent = options["addToRecent"].toBool(true);
   bool defaultModules = options["defaultModules"].toBool(true);
+  vtkNew<vtkMolecule> molecule;
   foreach (auto fileName, fileNames) {
     vtkNew<vtkXYZMolReader2> reader;
-    vtkNew<vtkMolecule> molecule;
+    vtkNew<vtkMolecule> tmpMolecule;
     reader->SetFileName(fileName.toLatin1().data());
-    reader->SetOutput(molecule);
+    reader->SetOutput(tmpMolecule);
     reader->Update();
-    auto moleculeSource = new MoleculeSource(molecule);
-    moleculeSource->setFileName(fileName);
-    ModuleManager::instance().addMoleculeSource(moleculeSource);
-    if (moleculeSource && defaultModules) {
-      auto view = ActiveObjects::instance().activeView();
-      ModuleManager::instance().createAndAddModule("Molecule", moleculeSource,
-                                                   view);
+    for (int i = 0; i < tmpMolecule->GetNumberOfAtoms(); ++i) {
+      vtkAtom atom = tmpMolecule->GetAtom(i);
+      molecule->AppendAtom(atom.GetAtomicNumber(), atom.GetPosition());
     }
-    if (moleculeSource && addToRecent) {
-      RecentFilesMenu::pushMoleculeReader(moleculeSource);
-    }
-    return moleculeSource;
   }
-  return nullptr;
+
+  auto moleculeSource = new MoleculeSource(molecule);
+  moleculeSource->setFileNames(fileNames);
+  ModuleManager::instance().addMoleculeSource(moleculeSource);
+  if (moleculeSource && defaultModules) {
+    auto view = ActiveObjects::instance().activeView();
+    ModuleManager::instance().createAndAddModule("Molecule", moleculeSource,
+                                                 view);
+  }
+  if (moleculeSource && addToRecent) {
+    RecentFilesMenu::pushMoleculeReader(moleculeSource);
+  }
+  return moleculeSource;
 }
 
 } // end of namespace tomviz
