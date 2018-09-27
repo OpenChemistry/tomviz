@@ -116,6 +116,28 @@ public:
     }
   }
 
+  void relativeFilePaths(MoleculeSource*, const QDir& stateDir,
+                         QJsonObject& dataSourceState)
+  {
+    QJsonObject readerProps;
+    if (dataSourceState.contains("reader") &&
+        dataSourceState["reader"].isObject()) {
+      readerProps = dataSourceState["reader"].toObject();
+    }
+
+    // Make any reader fileName properties relative to the state file being
+    // written.
+    if (readerProps.contains("fileNames")) {
+      auto fileNames = readerProps["fileNames"].toArray();
+      QJsonArray relativeNames;
+      foreach (QJsonValue name, fileNames) {
+        relativeNames.append(stateDir.relativeFilePath(name.toString()));
+      }
+      readerProps["fileNames"] = relativeNames;
+      dataSourceState["reader"] = readerProps;
+    }
+  }
+
   void absoluteFilePaths(QJsonObject& dataSourceState)
   {
 
@@ -472,6 +494,19 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
     jDataSources.append(jDataSource);
   }
   doc["dataSources"] = jDataSources;
+
+  QJsonArray jMoleculeSources;
+  foreach (MoleculeSource* ms, d->MoleculeSources) {
+    auto jMoleculeSource = ms->serialize();
+    if (ms == ActiveObjects::instance().activeMoleculeSource()) {
+      jMoleculeSource["active"] = true;
+    }
+
+    d->relativeFilePaths(ms, stateDir, jMoleculeSource);
+
+    jMoleculeSources.append(jMoleculeSource);
+  }
+  doc["moleculeSources"] = jMoleculeSources;
 
   // Now serialize the views and layouts.
   vtkNew<vtkSMProxyIterator> iter;
@@ -959,6 +994,41 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       // the end, as the act of adding generally implies setting to active.
       if (dsObject["active"].toBool()) {
         ActiveObjects::instance().setActiveDataSource(dataSource);
+      }
+    }
+  }
+
+  // Load up all of the molecule sources.
+  if (m_stateObject["moleculeSources"].isArray()) {
+    auto moleculeSources = m_stateObject["moleculeSources"].toArray();
+    foreach (auto ds, moleculeSources) {
+      auto dsObject = ds.toObject();
+      QJsonObject options;
+      options["defaultModules"] = false;
+      options["addToRecent"] = false;
+      d->absoluteFilePaths(dsObject);
+
+      QStringList fileNames;
+      if (dsObject.contains("reader")) {
+        auto reader = dsObject["reader"].toObject();
+        options["reader"] = reader;
+
+        if (reader.contains("fileNames")) {
+          foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
+            fileNames << value.toString();
+          }
+        } else {
+          qCritical() << "Unable to locate file name.";
+        }
+      }
+
+      MoleculeSource* moleculeSource =
+        LoadDataReaction::loadMolecule(fileNames, options);
+      moleculeSource->deserialize(dsObject);
+      // FIXME: I think we need to collect the active objects and set them at
+      // the end, as the act of adding generally implies setting to active.
+      if (dsObject["active"].toBool()) {
+        ActiveObjects::instance().setActiveMoleculeSource(moleculeSource);
       }
     }
   }

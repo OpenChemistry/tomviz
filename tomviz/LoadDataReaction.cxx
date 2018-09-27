@@ -196,12 +196,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   }
   QFileInfo info(fileName);
   if (info.suffix().toLower() == "xyz") {
-    foreach (auto file, fileNames) {
-      auto moleculeSource = LoadDataReaction::loadMolecule(file);
-      if (moleculeSource && addToRecent) {
-        RecentFilesMenu::pushMoleculeReader(moleculeSource);
-      }
-    }
+    LoadDataReaction::loadMolecule(fileNames);
     return nullptr;
   } else if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
@@ -463,20 +458,31 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
   }
 }
 
-MoleculeSource* LoadDataReaction::loadMolecule(QString fileName)
+MoleculeSource* LoadDataReaction::loadMolecule(QStringList fileNames,
+                                               const QJsonObject& options)
 {
-  vtkNew<vtkXYZMolReader2> reader;
-  vtkNew<vtkMolecule> molecule;
-  reader->SetFileName(fileName.toLatin1().data());
-  reader->SetOutput(molecule);
-  reader->Update();
-  auto moleculeSource = new MoleculeSource(molecule);
-  moleculeSource->setFileName(fileName);
-  ModuleManager::instance().addMoleculeSource(moleculeSource);
-  auto view = ActiveObjects::instance().activeView();
-  ModuleManager::instance().createAndAddModule("Molecule", moleculeSource,
-                                               view);
-  return moleculeSource;
+  bool addToRecent = options["addToRecent"].toBool(true);
+  bool defaultModules = options["defaultModules"].toBool(true);
+  foreach (auto fileName, fileNames) {
+    vtkNew<vtkXYZMolReader2> reader;
+    vtkNew<vtkMolecule> molecule;
+    reader->SetFileName(fileName.toLatin1().data());
+    reader->SetOutput(molecule);
+    reader->Update();
+    auto moleculeSource = new MoleculeSource(molecule);
+    moleculeSource->setFileName(fileName);
+    ModuleManager::instance().addMoleculeSource(moleculeSource);
+    if (moleculeSource && defaultModules) {
+      auto view = ActiveObjects::instance().activeView();
+      ModuleManager::instance().createAndAddModule("Molecule", moleculeSource,
+                                                   view);
+    }
+    if (moleculeSource && addToRecent) {
+      RecentFilesMenu::pushMoleculeReader(moleculeSource);
+    }
+    return moleculeSource;
+  }
+  return nullptr;
 }
 
 } // end of namespace tomviz
