@@ -50,16 +50,21 @@ QList<QString> ModuleFactory::moduleTypes()
         << "Orthogonal Slice"
         << "Contour"
         << "Volume"
-        << "Threshold";
+        << "Threshold"
+        << "Molecule";
   qSort(reply);
   return reply;
 }
 
 bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                      DataSource* dataSource,
+                                     MoleculeSource* moleculeSource,
                                      vtkSMViewProxy* view)
 {
   if (dataSource && view) {
+    if (moduleName == "Molecule") {
+      return false;
+    }
     if (dataSource->getNumberOfComponents() > 1) {
       if (moduleName == "Contour" || moduleName == "Volume" ||
           moduleName == "Threshold") {
@@ -67,6 +72,10 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
       }
     }
     return true;
+  } else if (moleculeSource && view) {
+    if (moduleName == "Molecule") {
+      return true;
+    }
   }
 
   return false;

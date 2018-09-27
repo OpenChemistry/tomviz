@@ -32,6 +32,9 @@ ModuleMenu::ModuleMenu(QToolBar* toolBar, QMenu* menu, QObject* parentObject)
   connect(menu, SIGNAL(triggered(QAction*)), SLOT(triggered(QAction*)));
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateActions()));
+  connect(&ActiveObjects::instance(),
+          SIGNAL(moleculeSourceChanged(MoleculeSource*)),
+          SLOT(updateActions()));
   updateActions();
 }
 
@@ -48,14 +51,15 @@ void ModuleMenu::updateActions()
   toolBar->clear();
 
   auto activeDataSource = ActiveObjects::instance().activeDataSource();
+  auto activeMoleculeSource = ActiveObjects::instance().activeMoleculeSource();
   auto activeView = ActiveObjects::instance().activeView();
   QList<QString> modules = ModuleFactory::moduleTypes();
 
   if (modules.size() > 0) {
     foreach (const QString& txt, modules) {
       auto actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
-      actn->setEnabled(
-        ModuleFactory::moduleApplicable(txt, activeDataSource, activeView));
+      actn->setEnabled(ModuleFactory::moduleApplicable(
+        txt, activeDataSource, activeMoleculeSource, activeView));
       toolBar->addAction(actn);
       actn->setData(txt);
     }
@@ -68,9 +72,20 @@ void ModuleMenu::updateActions()
 
 void ModuleMenu::triggered(QAction* maction)
 {
-  auto module = ModuleManager::instance().createAndAddModule(
-    maction->data().toString(), ActiveObjects::instance().activeDataSource(),
-    ActiveObjects::instance().activeView());
+  auto type = maction->data().toString();
+  auto dataSource = ActiveObjects::instance().activeDataSource();
+  auto moleculeSource = ActiveObjects::instance().activeMoleculeSource();
+  auto view = ActiveObjects::instance().activeView();
+
+  Module* module;
+  if (type == "Molecule") {
+    module =
+      ModuleManager::instance().createAndAddModule(type, moleculeSource, view);
+  } else {
+    module =
+      ModuleManager::instance().createAndAddModule(type, dataSource, view);
+  }
+
   if (module) {
     ActiveObjects::instance().setActiveModule(module);
   } else {

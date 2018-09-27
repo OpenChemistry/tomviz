@@ -47,7 +47,8 @@ void DuplicateModuleReaction::onTriggered()
   auto moleculeSource = module->moleculeSource();
   auto view = ActiveObjects::instance().activeView();
   auto moduleType = ModuleFactory::moduleType(module);
-  if (ModuleFactory::moduleApplicable(moduleType, dataSource, view)) {
+  if (ModuleFactory::moduleApplicable(moduleType, dataSource, moleculeSource,
+                                      view)) {
     // Copy the module
     auto copy = ModuleFactory::createModule(moduleType, dataSource, view);
     // Copy its settings

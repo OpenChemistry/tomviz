@@ -39,7 +39,9 @@ public:
   /// Returns whether the module of the given name is applicable to the
   /// DataSource and View.
   static bool moduleApplicable(const QString& moduleName,
-                               DataSource* dataSource, vtkSMViewProxy* view);
+                               DataSource* dataSource,
+                               MoleculeSource* moleculeSource,
+                               vtkSMViewProxy* view);
 
   /// Creates a module of the given type to show the dataSource in the view.
   static Module* createModule(const QString& type, DataSource* dataSource,
