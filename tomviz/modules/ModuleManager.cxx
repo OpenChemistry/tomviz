@@ -162,6 +162,7 @@ void ModuleManager::reset()
 {
   removeAllModules();
   removeAllDataSources();
+  removeAllMoleculeSources();
   pqDeleteReaction::deleteAll();
 }
 
@@ -217,11 +218,26 @@ void ModuleManager::removeAllDataSources()
   d->DataSources.clear();
 }
 
+void ModuleManager::removeAllMoleculeSources()
+{
+  foreach (MoleculeSource* moleculeSource, d->MoleculeSources) {
+    emit moleculeSourceRemoved(moleculeSource);
+  }
+  d->MoleculeSources.clear();
+}
+
 void ModuleManager::addMoleculeSource(MoleculeSource* moleculeSource)
 {
   if (moleculeSource && !d->MoleculeSources.contains(moleculeSource)) {
     d->MoleculeSources.push_back(moleculeSource);
     emit moleculeSourceAdded(moleculeSource);
+  }
+}
+
+void ModuleManager::removeMoleculeSource(MoleculeSource* moleculeSource)
+{
+  if (d->MoleculeSources.removeOne(moleculeSource)) {
+    emit moleculeSourceRemoved(moleculeSource);
   }
 }
 
@@ -997,6 +1013,11 @@ vtkSMViewProxy* ModuleManager::lookupView(int id)
 bool ModuleManager::hasDataSources()
 {
   return !d->DataSources.empty();
+}
+
+bool ModuleManager::hasMoleculeSources()
+{
+  return !d->MoleculeSources.empty();
 }
 
 } // namespace tomviz

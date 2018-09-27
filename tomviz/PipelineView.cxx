@@ -423,6 +423,7 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
   Q_ASSERT(pipelineModel);
 
   QList<DataSource*> dataSources;
+  QList<MoleculeSource*> moleculeSources;
   QList<Operator*> operators;
   QList<Module*> modules;
 
@@ -433,10 +434,13 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
       continue;
     }
     auto dataSource = pipelineModel->dataSource(idx);
+    auto moleculeSource = pipelineModel->moleculeSource(idx);
     auto module = pipelineModel->module(idx);
     auto op = pipelineModel->op(idx);
     if (dataSource) {
       dataSources.push_back(dataSource);
+    } else if (moleculeSource) {
+      moleculeSources.push_back(moleculeSource);
     } else if (module) {
       modules.push_back(module);
     } else if (op) {
@@ -446,9 +450,14 @@ void PipelineView::deleteItems(const QModelIndexList& idxs)
 
   foreach (Module* module, modules) {
     // If the datasource is being remove don't bother removing the module
-    if (!dataSources.contains(module->dataSource())) {
+    if (!dataSources.contains(module->dataSource()) &&
+        !moleculeSources.contains(module->moleculeSource())) {
       pipelineModel->removeModule(module);
     }
+  }
+
+  foreach (MoleculeSource* moleculeSource, moleculeSources) {
+    pipelineModel->removeMoleculeSource(moleculeSource);
   }
 
   QSet<DataSource*> paused;

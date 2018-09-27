@@ -68,6 +68,7 @@ public:
   QModelIndex resultIndex(OperatorResult* result);
 
   bool removeDataSource(DataSource* dataSource);
+  bool removeMoleculeSource(MoleculeSource* moleculeSource);
   bool removeModule(Module* module);
   bool removeOp(Operator* op);
   bool removeResult(OperatorResult* result);
@@ -83,6 +84,7 @@ public slots:
 
   void dataSourceRemoved(DataSource* dataSource);
   void moduleRemoved(Module* module);
+  void moleculeSourceRemoved(MoleculeSource* moleculeSource);
   void childDataSourceAdded(DataSource* dataSource);
   void childDataSourceRemoved(DataSource* dataSource);
   void dataSourceMoved(DataSource* dataSource);

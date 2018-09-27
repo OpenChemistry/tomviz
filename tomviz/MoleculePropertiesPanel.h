@@ -47,7 +47,7 @@ private:
   QPointer<MoleculeSource> m_currentMoleculeSource;
   QVBoxLayout* m_layout;
   QLineEdit* m_label;
-  MoleculeProperties* m_moleculeProperties;
+  MoleculeProperties* m_moleculeProperties = nullptr;
 };
 }
 

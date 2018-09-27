@@ -91,6 +91,7 @@ public:
 
   /// Used to test if there is data loaded (i.e. not an empty session)
   bool hasDataSources();
+  bool hasMoleculeSources();
 
   /// Used when loading a model.  If there are additional child pipelines that
   /// need to finish processing before stateDoneLoading is emitted, then this
@@ -121,8 +122,10 @@ public slots:
   void addMoleculeSource(MoleculeSource*);
   void addChildDataSource(DataSource*);
   void removeDataSource(DataSource*);
+  void removeMoleculeSource(MoleculeSource*);
   void removeChildDataSource(DataSource*);
   void removeAllDataSources();
+  void removeAllMoleculeSources();
   void removeOperator(Operator*);
 
   /// Removes all modules and data sources.
@@ -146,6 +149,7 @@ signals:
   void dataSourceAdded(DataSource*);
   void childDataSourceAdded(DataSource*);
   void dataSourceRemoved(DataSource*);
+  void moleculeSourceRemoved(MoleculeSource*);
   void childDataSourceRemoved(DataSource*);
 
   void moleculeSourceAdded(MoleculeSource*);

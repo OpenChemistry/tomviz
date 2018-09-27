@@ -92,6 +92,7 @@ public:
   bool attach(PipelineModel::TreeItem* treeItem);
 
   bool remove(DataSource* source);
+  bool remove(MoleculeSource* source);
   bool remove(Module* module);
   bool remove(Operator* op);
 
@@ -226,6 +227,20 @@ bool PipelineModel::TreeItem::remove(DataSource* source)
   return false;
 }
 
+bool PipelineModel::TreeItem::remove(MoleculeSource* source)
+{
+  if (source != moleculeSource()) {
+    return false;
+  }
+  // This item is a DataSource item. Remove all children.
+  foreach (auto childItem, m_children) {
+    if (childItem->module()) {
+      ModuleManager::instance().removeModule(childItem->module());
+    }
+  }
+  return true;
+}
+
 bool PipelineModel::TreeItem::remove(Module* module)
 {
   foreach (auto childItem, m_children) {
@@ -328,6 +343,9 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
           SIGNAL(modelReset()));
   connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
           SLOT(dataSourceRemoved(DataSource*)));
+  connect(&ModuleManager::instance(),
+          SIGNAL(moleculeSourceRemoved(MoleculeSource*)),
+          SLOT(moleculeSourceRemoved(MoleculeSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
           SLOT(moduleRemoved(Module*)));
   connect(&ModuleManager::instance(),
@@ -976,6 +994,20 @@ void PipelineModel::childDataSourceRemoved(DataSource* source)
   }
 }
 
+void PipelineModel::moleculeSourceRemoved(MoleculeSource* moleculeSource)
+{
+  auto index = moleculeSourceIndex(moleculeSource);
+
+  if (index.isValid()) {
+    auto item = treeItem(index);
+    beginRemoveRows(parent(index), index.row(), index.row());
+    item->remove(moleculeSource);
+    m_treeItems.removeAll(item);
+    delete item;
+    endRemoveRows();
+  }
+}
+
 void PipelineModel::moduleRemoved(Module* module)
 {
   auto index = moduleIndex(module);
@@ -997,6 +1029,13 @@ bool PipelineModel::removeDataSource(DataSource* source)
     dataSourceRemoved(source);
     ModuleManager::instance().removeDataSource(source);
   }
+  return true;
+}
+
+bool PipelineModel::removeMoleculeSource(MoleculeSource* moleculeSource)
+{
+  moleculeSourceRemoved(moleculeSource);
+  ModuleManager::instance().removeMoleculeSource(moleculeSource);
   return true;
 }
 
