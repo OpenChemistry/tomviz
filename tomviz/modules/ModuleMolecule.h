@@ -43,6 +43,7 @@ public:
 
   QString label() const override { return "Molecule"; }
   QIcon icon() const override;
+  using Module::initialize;
   bool initialize(MoleculeSource* moleculeSource,
                   vtkSMViewProxy* view) override;
   bool initialize(OperatorResult* result, vtkSMViewProxy* view) override;

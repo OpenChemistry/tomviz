@@ -594,7 +594,7 @@ void MainWindow::dataSourceChanged(DataSource* dataSource)
   }
 }
 
-void MainWindow::moleculeSourceChanged(MoleculeSource* moleculeSource)
+void MainWindow::moleculeSourceChanged(MoleculeSource*)
 {
   m_ui->propertiesPanelStackedWidget->setCurrentWidget(
     m_ui->moleculePropertiesScrollArea);

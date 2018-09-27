@@ -43,6 +43,7 @@ public:
 
   QString label() const override { return "Scale Cube"; }
   QIcon icon() const override;
+  using Module::initialize;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
   bool visibility() const override;
