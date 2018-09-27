@@ -47,10 +47,19 @@ void DuplicateModuleReaction::onTriggered()
   auto moleculeSource = module->moleculeSource();
   auto view = ActiveObjects::instance().activeView();
   auto moduleType = ModuleFactory::moduleType(module);
+  // Copy the module
+  Module* copy;
   if (ModuleFactory::moduleApplicable(moduleType, dataSource, moleculeSource,
                                       view)) {
-    // Copy the module
-    auto copy = ModuleFactory::createModule(moduleType, dataSource, view);
+    copy = ModuleFactory::createModule(moduleType, dataSource, view);
+    if (!copy) {
+      copy = ModuleFactory::createModule(moduleType, moleculeSource, view);
+    }
+  } else {
+    copy = ModuleFactory::createModule(moduleType, operatorResult, view);
+  }
+
+  if (copy) {
     // Copy its settings
     QJsonObject json = module->serialize();
     copy->deserialize(json);
