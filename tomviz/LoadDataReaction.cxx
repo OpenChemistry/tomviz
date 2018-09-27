@@ -197,7 +197,10 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
   QFileInfo info(fileName);
   if (info.suffix().toLower() == "xyz") {
     foreach (auto file, fileNames) {
-      LoadDataReaction::loadMolecule(file);
+      auto moleculeSource = LoadDataReaction::loadMolecule(file);
+      if (moleculeSource && addToRecent) {
+        RecentFilesMenu::pushMoleculeReader(moleculeSource);
+      }
     }
     return nullptr;
   } else if (info.suffix().toLower() == "emd") {
