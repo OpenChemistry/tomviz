@@ -244,6 +244,7 @@ void ModuleManager::removeAllMoleculeSources()
 {
   foreach (MoleculeSource* moleculeSource, d->MoleculeSources) {
     emit moleculeSourceRemoved(moleculeSource);
+    moleculeSource->deleteLater();
   }
   d->MoleculeSources.clear();
 }

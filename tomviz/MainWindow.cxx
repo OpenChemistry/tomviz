@@ -720,6 +720,7 @@ void MainWindow::closeEvent(QCloseEvent* e)
   PipelineManager::instance().removeAllPipelines();
   ModuleManager::instance().removeAllModules();
   ModuleManager::instance().removeAllDataSources();
+  ModuleManager::instance().removeAllMoleculeSources();
   e->accept();
 }
 

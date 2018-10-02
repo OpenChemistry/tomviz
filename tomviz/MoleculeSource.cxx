@@ -27,7 +27,7 @@
 namespace tomviz {
 
 MoleculeSource::MoleculeSource(vtkMolecule* molecule, QObject* parent)
-  : QObject(parent), m_molecule(molecule)
+  : QObject(parent), m_molecule(vtkSmartPointer<vtkMolecule>::Take(molecule))
 {
 }
 
@@ -135,7 +135,7 @@ QString MoleculeSource::label() const
 
 vtkMolecule* MoleculeSource::molecule() const
 {
-  return m_molecule;
+  return m_molecule.GetPointer();
 }
 
 } // namespace tomviz

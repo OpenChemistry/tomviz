@@ -466,7 +466,7 @@ MoleculeSource* LoadDataReaction::loadMolecule(QStringList fileNames,
 {
   bool addToRecent = options["addToRecent"].toBool(true);
   bool defaultModules = options["defaultModules"].toBool(true);
-  vtkNew<vtkMolecule> molecule;
+  vtkMolecule* molecule = vtkMolecule::New();
   foreach (auto fileName, fileNames) {
     vtkNew<vtkXYZMolReader2> reader;
     vtkNew<vtkMolecule> tmpMolecule;
@@ -478,7 +478,6 @@ MoleculeSource* LoadDataReaction::loadMolecule(QStringList fileNames,
       molecule->AppendAtom(atom.GetAtomicNumber(), atom.GetPosition());
     }
   }
-
   auto moleculeSource = new MoleculeSource(molecule);
   moleculeSource->setFileNames(fileNames);
   ModuleManager::instance().addMoleculeSource(moleculeSource);
