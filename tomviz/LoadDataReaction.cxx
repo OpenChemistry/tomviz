@@ -152,9 +152,13 @@ QList<DataSource*> LoadDataReaction::loadData()
     QStringList filenames = dialog.selectedFiles();
     QString fileName = filenames.size() > 0 ? filenames[0] : "";
     QFileInfo info(fileName);
+    auto suffix = info.suffix().toLower();
     QStringList tiffExt = { "tif", "tiff" };
-    if (filenames.size() > 1 && tiffExt.contains(info.suffix().toLower())) {
+    QStringList moleculeExt = { "xyz" };
+    if (filenames.size() > 1 && tiffExt.contains(suffix)) {
       dataSources << LoadStackReaction::loadData(filenames);
+    } else if (moleculeExt.contains(suffix)) {
+      loadMolecule(filenames);
     } else {
       dataSources << loadData(filenames);
     }
@@ -198,10 +202,7 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     fileName = fileNames[0];
   }
   QFileInfo info(fileName);
-  if (info.suffix().toLower() == "xyz") {
-    LoadDataReaction::loadMolecule(fileNames);
-    return nullptr;
-  } else if (info.suffix().toLower() == "emd") {
+  if (info.suffix().toLower() == "emd") {
     // Load the file using our simple EMD class.
     loadWithParaview = false;
     EmdFormat emdFile;
