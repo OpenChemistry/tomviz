@@ -254,7 +254,7 @@ void RecentFilesMenu::aboutToShowMenu()
       actn->setToolTip(toolTip);
       actn->setData(index);
       connect(actn, &QAction::triggered, [this, actn, fileNames]() {
-        dataSourceTriggered(actn, fileNames);
+        moleculeSourceTriggered(actn, fileNames);
       });
       ++index;
     }
@@ -299,6 +299,33 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, QStringList fileNames)
   }
 
   LoadDataReaction::loadData(fileNames);
+}
+
+void RecentFilesMenu::moleculeSourceTriggered(QAction* actn,
+                                              QStringList fileNames)
+{
+  // Check the files actually exists, remove the recent entry if not.
+  int missingIdx = -1;
+  for (auto i = 0; i < fileNames.size(); ++i) {
+    auto file = fileNames[i];
+    if (!QFileInfo::exists(file)) {
+      QMessageBox::warning(tomviz::mainWidget(), "Error",
+                           QString("The file '%1' does not exist").arg(file));
+      missingIdx = i;
+      break;
+    }
+  }
+  if (missingIdx != -1) {
+    int index = actn->data().toInt();
+    auto json = loadSettings();
+    auto readers = json["molecules"].toArray();
+    readers.removeAt(index);
+    json["molecules"] = readers;
+    saveSettings(json);
+    return;
+  }
+
+  LoadDataReaction::loadMolecule(fileNames);
 }
 
 void RecentFilesMenu::stateTriggered()
