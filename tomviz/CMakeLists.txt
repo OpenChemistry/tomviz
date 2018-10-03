@@ -369,6 +369,7 @@ set(python_files
   SegmentPores.py
   RotationAlign.py
   WienerFilter.py
+  TV_Filter.py  
   )
 
 set(json_files
@@ -411,6 +412,7 @@ set(json_files
   SegmentPores.json
   RotationAlign.json
   WienerFilter.json
+  TV_Filter.json
   )
 
 set(resource_files

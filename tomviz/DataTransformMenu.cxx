@@ -140,9 +140,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(
     wienerAction, "Wiener Filter", readInPythonScript("WienerFilter"), false,
     false, false, readInJSONDescription("WienerFilter"));
-  new AddPythonTransformReaction(
-    TVminAction, "TV_Filter", readInPythonScript("TV_Filter"), false,
-    false, false, readInJSONDescription("TV_Filter"));
+  new AddPythonTransformReaction(TVminAction, "TV_Filter",
+                                 readInPythonScript("TV_Filter"), false, false,
+                                 false, readInJSONDescription("TV_Filter"));
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Blur", readInPythonScript("GaussianFilter"),
     false, false, false, readInJSONDescription("GaussianFilter"));

@@ -30,7 +30,7 @@
       "name" : "Niter",
       "label" : "Number of Iterations",
       "type" : "int",
-      "default" : 100,
+      "default" : 50,
       "minimum" : 1
     }, 
     {
