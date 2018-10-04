@@ -63,8 +63,10 @@ public:
   static DataSource* loadData(const QStringList& fileNames,
                               const QJsonObject& options = QJsonObject());
 
-  static MoleculeSource* loadMolecule(
+  static QList<MoleculeSource*> loadMolecule(
     QStringList fileNames, const QJsonObject& options = QJsonObject());
+  static MoleculeSource* loadMolecule(
+    QString fileName, const QJsonObject& options = QJsonObject());
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource* dataSource,

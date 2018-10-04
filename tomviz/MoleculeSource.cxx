@@ -73,48 +73,23 @@ bool MoleculeSource::deserialize(const QJsonObject& state)
   return true;
 }
 
-void MoleculeSource::setFileNames(const QStringList fileNames)
+void MoleculeSource::setFileName(const QString fileName)
 {
   auto reader = m_json.value("reader").toObject(QJsonObject());
-  QJsonArray files;
-  foreach (QString file, fileNames) {
-    files.append(file);
-  }
-
-  reader["fileNames"] = files;
+  QJsonValue file(fileName);
+  reader["fileName"] = file;
   m_json["reader"] = reader;
 }
 
-void MoleculeSource::setFileName(QString filename)
-{
-  QStringList fileNames = QStringList(filename);
-  setFileNames(fileNames);
-}
-
 /// Returns the name of the file used to load the data source.
-QStringList MoleculeSource::fileNames() const
-{
-  auto reader = m_json.value("reader").toObject(QJsonObject());
-  QStringList files;
-  if (reader.contains("fileNames")) {
-    QJsonArray fileArray = reader["fileNames"].toArray();
-    foreach (QJsonValue file, fileArray) {
-      files.append(file.toString());
-    }
-  }
-  return files;
-}
-
 QString MoleculeSource::fileName() const
 {
   auto reader = m_json.value("reader").toObject(QJsonObject());
-  if (reader.contains("fileNames")) {
-    auto fileNames = reader["fileNames"].toArray();
-    if (fileNames.size() > 0) {
-      return fileNames[0].toString();
-    }
+  QString file;
+  if (reader.contains("fileName")) {
+    file = reader["fileName"].toString();
   }
-  return QString();
+  return file;
 }
 
 /// Set the label for the data source.

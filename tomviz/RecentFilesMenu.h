@@ -43,7 +43,7 @@ public:
 private slots:
   void aboutToShowMenu();
   void dataSourceTriggered(QAction* actn, QStringList fileNames);
-  void moleculeSourceTriggered(QAction* actn, QStringList fileNames);
+  void moleculeSourceTriggered(QAction* actn, QString fileName);
   void stateTriggered();
 
 private:

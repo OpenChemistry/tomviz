@@ -39,12 +39,10 @@ public:
   QJsonObject serialize() const;
   bool deserialize(const QJsonObject& state);
 
-  /// Set the file names.
-  void setFileNames(const QStringList fileNames);
+  /// Set the file name.
   void setFileName(QString label);
 
-  /// Returns the list of files used to load the atoms.
-  QStringList fileNames() const;
+  /// Returns the file used to load the atoms.
   QString fileName() const;
 
   /// Set the label for the data source.

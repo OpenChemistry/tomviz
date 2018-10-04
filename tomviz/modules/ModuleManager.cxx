@@ -127,13 +127,9 @@ public:
 
     // Make any reader fileName properties relative to the state file being
     // written.
-    if (readerProps.contains("fileNames")) {
-      auto fileNames = readerProps["fileNames"].toArray();
-      QJsonArray relativeNames;
-      foreach (QJsonValue name, fileNames) {
-        relativeNames.append(stateDir.relativeFilePath(name.toString()));
-      }
-      readerProps["fileNames"] = relativeNames;
+    if (readerProps.contains("fileName")) {
+      auto fileName = readerProps["fileName"].toString();
+      readerProps["fileName"] = stateDir.relativeFilePath(fileName);
       dataSourceState["reader"] = readerProps;
     }
   }
@@ -159,6 +155,10 @@ public:
           absoluteFileNames.append(absolute(path.toString()));
         }
         reader["fileNames"] = absoluteFileNames;
+      }
+      if (reader.contains("fileName") && reader["fileName"].isString()) {
+        QString absoluteFileName = absolute(reader["fileName"].toString());
+        reader["fileName"] = absoluteFileName;
       }
       dataSourceState["reader"] = reader;
     }
@@ -1009,22 +1009,19 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       options["addToRecent"] = false;
       d->absoluteFilePaths(dsObject);
 
-      QStringList fileNames;
+      QString fileName;
       if (dsObject.contains("reader")) {
         auto reader = dsObject["reader"].toObject();
         options["reader"] = reader;
 
-        if (reader.contains("fileNames")) {
-          foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
-            fileNames << value.toString();
-          }
+        if (reader.contains("fileName")) {
+          fileName = reader["fileName"].toString();
         } else {
           qCritical() << "Unable to locate file name.";
         }
       }
-
       MoleculeSource* moleculeSource =
-        LoadDataReaction::loadMolecule(fileNames, options);
+        LoadDataReaction::loadMolecule(fileName, options);
       moleculeSource->deserialize(dsObject);
       // FIXME: I think we need to collect the active objects and set them at
       // the end, as the act of adding generally implies setting to active.

@@ -462,25 +462,30 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
   }
 }
 
-MoleculeSource* LoadDataReaction::loadMolecule(QStringList fileNames,
+QList<MoleculeSource*> LoadDataReaction::loadMolecule(
+  QStringList fileNames, const QJsonObject& options)
+{
+  QList<MoleculeSource*> moleculeSources;
+  foreach (auto fileName, fileNames) {
+    moleculeSources << loadMolecule(fileName);
+  }
+  return moleculeSources;
+}
+
+MoleculeSource* LoadDataReaction::loadMolecule(QString fileName,
                                                const QJsonObject& options)
 {
   bool addToRecent = options["addToRecent"].toBool(true);
   bool defaultModules = options["defaultModules"].toBool(true);
+
   vtkMolecule* molecule = vtkMolecule::New();
-  foreach (auto fileName, fileNames) {
-    vtkNew<vtkXYZMolReader2> reader;
-    vtkNew<vtkMolecule> tmpMolecule;
-    reader->SetFileName(fileName.toLatin1().data());
-    reader->SetOutput(tmpMolecule);
-    reader->Update();
-    for (int i = 0; i < tmpMolecule->GetNumberOfAtoms(); ++i) {
-      vtkAtom atom = tmpMolecule->GetAtom(i);
-      molecule->AppendAtom(atom.GetAtomicNumber(), atom.GetPosition());
-    }
-  }
+  vtkNew<vtkXYZMolReader2> reader;
+  reader->SetFileName(fileName.toLatin1().data());
+  reader->SetOutput(molecule);
+  reader->Update();
+
   auto moleculeSource = new MoleculeSource(molecule);
-  moleculeSource->setFileNames(fileNames);
+  moleculeSource->setFileName(fileName);
   ModuleManager::instance().addMoleculeSource(moleculeSource);
   if (moleculeSource && defaultModules) {
     auto view = ActiveObjects::instance().activeView();

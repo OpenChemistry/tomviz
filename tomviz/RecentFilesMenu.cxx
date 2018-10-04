@@ -135,21 +135,15 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource)
 
 void RecentFilesMenu::pushMoleculeReader(MoleculeSource* moleculeSource)
 {
-  // Add non-proxy based readers separately.
   auto settings = loadSettings();
   auto readerList = settings["molecules"].toArray();
   QJsonObject readerJson;
-  auto fileNames = moleculeSource->fileNames();
-  if (fileNames.size() < 1) {
-    return;
-  }
 
-  readerJson["fileNames"] = QJsonArray::fromStringList(fileNames);
+  readerJson["fileName"] = moleculeSource->fileName();
 
   // Remove the file if it is already in the list
   for (int i = readerList.size() - 1; i >= 0; --i) {
-    if (readerList[i].toObject()["fileNames"].toArray()[0] ==
-        readerJson["fileNames"].toArray()[0]) {
+    if (readerList[i].toObject()["fileName"] == readerJson["fileName"]) {
       readerList.removeAt(i);
     }
   }
@@ -236,26 +230,11 @@ void RecentFilesMenu::aboutToShowMenu()
   foreach (QJsonValue file, json["molecules"].toArray()) {
     if (file.isObject()) {
       auto object = file.toObject();
-      auto fileNamesArray = object["fileNames"].toArray();
-      QStringList fileNames;
-      foreach (file, fileNamesArray) {
-        fileNames << file.toString("<bug>");
-      }
-      QString label = fileNames[0];
-      QString toolTip;
-      // Truncate the number of files in the tooltip to 15
-      const auto maxEntries = 15;
-      if (fileNames.size() > maxEntries) {
-        toolTip = (fileNames.mid(0, maxEntries) << QString("...")).join("\n");
-      } else {
-        toolTip = fileNames.join("\n");
-      }
+      QString label = object["fileName"].toString("<bug>");
       auto actn = menu->addAction(QIcon(":/icons/gradient_opacity.png"), label);
-      actn->setToolTip(toolTip);
       actn->setData(index);
-      connect(actn, &QAction::triggered, [this, actn, fileNames]() {
-        moleculeSourceTriggered(actn, fileNames);
-      });
+      connect(actn, &QAction::triggered,
+              [this, actn, label]() { moleculeSourceTriggered(actn, label); });
       ++index;
     }
   }
@@ -301,21 +280,17 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, QStringList fileNames)
   LoadDataReaction::loadData(fileNames);
 }
 
-void RecentFilesMenu::moleculeSourceTriggered(QAction* actn,
-                                              QStringList fileNames)
+void RecentFilesMenu::moleculeSourceTriggered(QAction* actn, QString fileName)
 {
   // Check the files actually exists, remove the recent entry if not.
-  int missingIdx = -1;
-  for (auto i = 0; i < fileNames.size(); ++i) {
-    auto file = fileNames[i];
-    if (!QFileInfo::exists(file)) {
-      QMessageBox::warning(tomviz::mainWidget(), "Error",
-                           QString("The file '%1' does not exist").arg(file));
-      missingIdx = i;
-      break;
-    }
+  bool missing = false;
+  if (!QFileInfo::exists(fileName)) {
+    QMessageBox::warning(tomviz::mainWidget(), "Error",
+                         QString("The file '%1' does not exist").arg(fileName));
+    missing = true;
   }
-  if (missingIdx != -1) {
+
+  if (missing) {
     int index = actn->data().toInt();
     auto json = loadSettings();
     auto readers = json["molecules"].toArray();
@@ -325,7 +300,7 @@ void RecentFilesMenu::moleculeSourceTriggered(QAction* actn,
     return;
   }
 
-  LoadDataReaction::loadMolecule(fileNames);
+  LoadDataReaction::loadMolecule(fileName);
 }
 
 void RecentFilesMenu::stateTriggered()
