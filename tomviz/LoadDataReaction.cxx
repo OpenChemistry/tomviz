@@ -463,16 +463,16 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
 }
 
 QList<MoleculeSource*> LoadDataReaction::loadMolecule(
-  QStringList fileNames, const QJsonObject& options)
+  const QStringList& fileNames, const QJsonObject& options)
 {
   QList<MoleculeSource*> moleculeSources;
   foreach (auto fileName, fileNames) {
-    moleculeSources << loadMolecule(fileName);
+    moleculeSources << loadMolecule(fileName, options);
   }
   return moleculeSources;
 }
 
-MoleculeSource* LoadDataReaction::loadMolecule(QString fileName,
+MoleculeSource* LoadDataReaction::loadMolecule(const QString& fileName,
                                                const QJsonObject& options)
 {
   bool addToRecent = options["addToRecent"].toBool(true);

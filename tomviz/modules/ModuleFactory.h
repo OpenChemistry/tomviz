@@ -39,7 +39,8 @@ public:
   /// Returns whether the module of the given name is applicable to the
   /// DataSource and View.
   static bool moduleApplicable(const QString& moduleName,
-                               DataSource* dataSource,
+                               DataSource* dataSource, vtkSMViewProxy* view);
+  static bool moduleApplicable(const QString& moduleName,
                                MoleculeSource* moleculeSource,
                                vtkSMViewProxy* view);
 

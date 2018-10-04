@@ -31,9 +31,7 @@ MoleculeSource::MoleculeSource(vtkMolecule* molecule, QObject* parent)
 {
 }
 
-MoleculeSource::~MoleculeSource()
-{
-}
+MoleculeSource::~MoleculeSource() = default;
 
 QJsonObject MoleculeSource::serialize() const
 {

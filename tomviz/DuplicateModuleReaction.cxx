@@ -49,12 +49,11 @@ void DuplicateModuleReaction::onTriggered()
   auto moduleType = ModuleFactory::moduleType(module);
   // Copy the module
   Module* copy;
-  if (ModuleFactory::moduleApplicable(moduleType, dataSource, moleculeSource,
-                                      view)) {
+  if (ModuleFactory::moduleApplicable(moduleType, dataSource, view)) {
     copy = ModuleFactory::createModule(moduleType, dataSource, view);
-    if (!copy) {
-      copy = ModuleFactory::createModule(moduleType, moleculeSource, view);
-    }
+  } else if (ModuleFactory::moduleApplicable(moduleType, moleculeSource,
+                                             view)) {
+    copy = ModuleFactory::createModule(moduleType, moleculeSource, view);
   } else {
     copy = ModuleFactory::createModule(moduleType, operatorResult, view);
   }

@@ -58,8 +58,9 @@ void ModuleMenu::updateActions()
   if (modules.size() > 0) {
     foreach (const QString& txt, modules) {
       auto actn = menu->addAction(ModuleFactory::moduleIcon(txt), txt);
-      actn->setEnabled(ModuleFactory::moduleApplicable(
-        txt, activeDataSource, activeMoleculeSource, activeView));
+      actn->setEnabled(
+        ModuleFactory::moduleApplicable(txt, activeDataSource, activeView) ||
+        ModuleFactory::moduleApplicable(txt, activeMoleculeSource, activeView));
       toolBar->addAction(actn);
       actn->setData(txt);
     }

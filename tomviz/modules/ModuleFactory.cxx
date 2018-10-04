@@ -58,13 +58,13 @@ QList<QString> ModuleFactory::moduleTypes()
 
 bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                      DataSource* dataSource,
-                                     MoleculeSource* moleculeSource,
                                      vtkSMViewProxy* view)
 {
+  if (moduleName == "Molecule") {
+    return false;
+  }
+
   if (dataSource && view) {
-    if (moduleName == "Molecule") {
-      return false;
-    }
     if (dataSource->getNumberOfComponents() > 1) {
       if (moduleName == "Contour" || moduleName == "Volume" ||
           moduleName == "Threshold") {
@@ -72,12 +72,19 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
       }
     }
     return true;
-  } else if (moleculeSource && view) {
+  }
+  return false;
+}
+
+bool ModuleFactory::moduleApplicable(const QString& moduleName,
+                                     MoleculeSource* moleculeSource,
+                                     vtkSMViewProxy* view)
+{
+  if (moleculeSource && view) {
     if (moduleName == "Molecule") {
       return true;
     }
   }
-
   return false;
 }
 

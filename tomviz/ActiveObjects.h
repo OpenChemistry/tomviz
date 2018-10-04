@@ -182,6 +182,7 @@ signals:
 private slots:
   void viewChanged(pqView*);
   void dataSourceRemoved(DataSource*);
+  void moleculeSourceRemoved(MoleculeSource*);
   void moduleRemoved(Module*);
   void dataSourceChanged();
 

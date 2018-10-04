@@ -42,6 +42,9 @@ ActiveObjects::ActiveObjects() : QObject()
           SLOT(viewChanged(pqView*)));
   connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
           SLOT(dataSourceRemoved(DataSource*)));
+  connect(&ModuleManager::instance(),
+          SIGNAL(moleculeSourceRemoved(MoleculeSource*)),
+          SLOT(moleculeSourceRemoved(MoleculeSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
           SLOT(moduleRemoved(Module*)));
 }
@@ -87,6 +90,13 @@ void ActiveObjects::dataSourceRemoved(DataSource* ds)
   }
 }
 
+void ActiveObjects::moleculeSourceRemoved(MoleculeSource* ms)
+{
+  if (m_activeMoleculeSource == ms) {
+    setActiveMoleculeSource(nullptr);
+  }
+}
+
 void ActiveObjects::moduleRemoved(Module* mdl)
 {
   if (m_activeModule == mdl) {
@@ -96,6 +106,9 @@ void ActiveObjects::moduleRemoved(Module* mdl)
 
 void ActiveObjects::setActiveDataSource(DataSource* source)
 {
+  if (source) {
+    setActiveMoleculeSource(nullptr);
+  }
   if (m_activeDataSource != source) {
     if (m_activeDataSource) {
       disconnect(m_activeDataSource, SIGNAL(dataChanged()), this,
