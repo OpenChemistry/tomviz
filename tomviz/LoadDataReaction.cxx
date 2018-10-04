@@ -327,6 +327,32 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
     auto data = algo->GetOutputDataObject(0);
     auto image = vtkImageData::SafeDownCast(data);
 
+    auto prop = reader->GetProperty("FileNames");
+    if (prop != nullptr) {
+      auto jsonProp = toJson(prop);
+      QString fileName;
+      if (jsonProp.toArray().size() > 0) {
+        fileName = jsonProp.toArray()[0].toString();
+      } else {
+        fileName = jsonProp.toString();
+      }
+      QFileInfo info(fileName);
+      // Special case: mrc files store spacing in Angstrom
+      QStringList mrcExt;
+      mrcExt << "mrc"
+             << "st"
+             << "rec"
+             << "ali";
+      if (mrcExt.contains(info.suffix().toLower())) {
+        double spacing[3];
+        image->GetSpacing(spacing);
+        for (int i = 0; i < 3; ++i) {
+          spacing[i] *= 0.1;
+        }
+        image->SetSpacing(spacing);
+      }
+    }
+
     DataSource* dataSource = new DataSource(image);
     // Do whatever we need to do with a new data source.
     LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);

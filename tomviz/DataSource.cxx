@@ -129,13 +129,6 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType)
     } else {
       sourceFilename = helper.GetAsString();
     }
-
-    QFileInfo info(helper.GetAsString());
-    if (info.suffix() == "mrc") {
-      // MRC format uses angstroms as default units, tomviz uses nanometers.
-      // This handles scaling between the two.
-      m_scaleOriginalSpacingBy = 0.1;
-    }
   }
 
   dataSource->UpdatePipeline();
@@ -1017,17 +1010,6 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   if (data) {
     auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
     tp->SetOutput(data);
-
-    // This is a little hackish, currently special cased for the MRC format.
-    // It would probably be best to move this to the file read/write classes.
-    if (data && m_scaleOriginalSpacingBy != 1.0) {
-      double spacing[3];
-      data->GetSpacing(spacing);
-      for (int i = 0; i < 3; ++i) {
-        spacing[i] *= m_scaleOriginalSpacingBy;
-      }
-      data->SetSpacing(spacing);
-    }
   }
 
   // Setup color map for this data-source.

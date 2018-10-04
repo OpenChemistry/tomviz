@@ -272,7 +272,6 @@ private:
   const QScopedPointer<DSInternals> Internals;
 
   QJsonObject m_json;
-  double m_scaleOriginalSpacingBy = 1.0;
 };
 
 } // namespace tomviz
