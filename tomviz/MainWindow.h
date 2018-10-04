@@ -33,6 +33,7 @@ class DataPropertiesPanel;
 class DataSource;
 class Module;
 class Operator;
+class OperatorDescription;
 class OperatorResult;
 
 /// The main window for the tomviz application.
@@ -86,8 +87,9 @@ private:
   Q_DISABLE_COPY(MainWindow)
 
   /// Find and register any user defined operators
-  void registerCustomOperators(const QString& path);
-  void registerCustomOperators();
+  static std::vector<OperatorDescription> findCustomOperators();
+  void registerCustomOperators(std::vector<OperatorDescription> operators);
+  static std::vector<OperatorDescription> initPython();
 
   QScopedPointer<Ui::MainWindow> m_ui;
   QMenu* m_customTransformsMenu = nullptr;
