@@ -18,6 +18,8 @@
 
 #include <QMainWindow>
 
+#include <vector>
+
 #include <QScopedPointer>
 
 class QMenu;
@@ -33,7 +35,7 @@ class DataPropertiesPanel;
 class DataSource;
 class Module;
 class Operator;
-class OperatorDescription;
+struct OperatorDescription;
 class OperatorResult;
 
 /// The main window for the tomviz application.
