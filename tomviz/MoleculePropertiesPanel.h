@@ -13,38 +13,42 @@
   limitations under the License.
 
 ******************************************************************************/
-#ifndef tomvizOperatorResultPropertiesPanel_h
-#define tomvizOperatorResultPropertiesPanel_h
+#ifndef tomvizMoleculePropertiesPanel_h
+#define tomvizMoleculePropertiesPanel_h
 
 #include <QWidget>
 
 #include <QPointer>
 
-class QLabel;
-class QTableWidget;
 class QVBoxLayout;
-class vtkMolecule;
+class QLineEdit;
 
 namespace tomviz {
-class OperatorResult;
 
-class OperatorResultPropertiesPanel : public QWidget
+class MoleculeSource;
+class MoleculeProperties;
+
+class MoleculePropertiesPanel : public QWidget
 {
   Q_OBJECT
 
 public:
-  OperatorResultPropertiesPanel(QWidget* parent = nullptr);
-  virtual ~OperatorResultPropertiesPanel();
+  explicit MoleculePropertiesPanel(QWidget* parent = nullptr);
+  ~MoleculePropertiesPanel() override;
 
 private slots:
-  void setOperatorResult(OperatorResult*);
+  void setMoleculeSource(MoleculeSource*);
 
 private:
-  Q_DISABLE_COPY(OperatorResultPropertiesPanel)
+  Q_DISABLE_COPY(MoleculePropertiesPanel)
 
-  QPointer<OperatorResult> m_activeOperatorResult = nullptr;
-  QVBoxLayout* m_layout = nullptr;
+  void update();
+
+  QPointer<MoleculeSource> m_currentMoleculeSource;
+  QVBoxLayout* m_layout;
+  QLineEdit* m_label;
+  MoleculeProperties* m_moleculeProperties = nullptr;
 };
-} // namespace tomviz
+}
 
 #endif

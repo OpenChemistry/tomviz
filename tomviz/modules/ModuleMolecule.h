@@ -30,6 +30,7 @@ class vtkSMSourceProxy;
 
 namespace tomviz {
 
+class MoleculeSource;
 class OperatorResult;
 
 class ModuleMolecule : public Module
@@ -42,8 +43,10 @@ public:
 
   QString label() const override { return "Molecule"; }
   QIcon icon() const override;
-  bool initializeWithResult(DataSource* dataSource, vtkSMViewProxy* view,
-                            OperatorResult* result) override;
+  using Module::initialize;
+  bool initialize(MoleculeSource* moleculeSource,
+                  vtkSMViewProxy* view) override;
+  bool initialize(OperatorResult* result, vtkSMViewProxy* view) override;
   bool finalize() override;
   bool setVisibility(bool val) override;
   bool visibility() const override;
@@ -67,6 +70,7 @@ private slots:
 
 private:
   Q_DISABLE_COPY(ModuleMolecule)
+  void addMoleculeToView(vtkSMViewProxy* view);
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkMolecule* m_molecule;
   vtkNew<vtkMoleculeMapper> m_moleculeMapper;

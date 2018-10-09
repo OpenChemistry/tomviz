@@ -50,7 +50,8 @@ QList<QString> ModuleFactory::moduleTypes()
         << "Orthogonal Slice"
         << "Contour"
         << "Volume"
-        << "Threshold";
+        << "Threshold"
+        << "Molecule";
   qSort(reply);
   return reply;
 }
@@ -59,6 +60,10 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
                                      DataSource* dataSource,
                                      vtkSMViewProxy* view)
 {
+  if (moduleName == "Molecule") {
+    return false;
+  }
+
   if (dataSource && view) {
     if (dataSource->getNumberOfComponents() > 1) {
       if (moduleName == "Contour" || moduleName == "Volume" ||
@@ -68,13 +73,22 @@ bool ModuleFactory::moduleApplicable(const QString& moduleName,
     }
     return true;
   }
-
   return false;
 }
 
-Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
-                                    vtkSMViewProxy* view,
-                                    OperatorResult* result)
+bool ModuleFactory::moduleApplicable(const QString& moduleName,
+                                     MoleculeSource* moleculeSource,
+                                     vtkSMViewProxy* view)
+{
+  if (moleculeSource && view) {
+    if (moduleName == "Molecule") {
+      return true;
+    }
+  }
+  return false;
+}
+
+Module* ModuleFactory::allocateModule(const QString& type)
 {
   Module* module = nullptr;
   if (type == "Outline") {
@@ -96,7 +110,13 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
   } else if (type == "Molecule") {
     module = new ModuleMolecule();
   }
+  return module;
+}
 
+Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
+                                    vtkSMViewProxy* view)
+{
+  auto module = allocateModule(type);
   if (module) {
     // sanity check.
     Q_ASSERT(type == moduleType(module));
@@ -106,12 +126,56 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
     }
 
     bool success;
-    if (result == nullptr) {
-      success = module->initialize(dataSource, view);
-    } else {
-      success = module->initializeWithResult(dataSource, view, result);
+    success = module->initialize(dataSource, view);
+    if (!success) {
+      delete module;
+      return nullptr;
+    }
+    pqView* pqview = tomviz::convert<pqView*>(view);
+    pqview->render();
+  }
+  return module;
+}
+
+Module* ModuleFactory::createModule(const QString& type,
+                                    MoleculeSource* moleculeSource,
+                                    vtkSMViewProxy* view)
+{
+  auto module = allocateModule(type);
+  if (module) {
+    // sanity check.
+    Q_ASSERT(type == moduleType(module));
+    if (moleculeSource == nullptr && view == nullptr) {
+      // don't initialize module if args are NULL.
+      return module;
     }
 
+    bool success;
+    success = module->initialize(moleculeSource, view);
+    if (!success) {
+      delete module;
+      return nullptr;
+    }
+    pqView* pqview = tomviz::convert<pqView*>(view);
+    pqview->render();
+  }
+  return module;
+}
+
+Module* ModuleFactory::createModule(const QString& type, OperatorResult* result,
+                                    vtkSMViewProxy* view)
+{
+  auto module = allocateModule(type);
+  if (module) {
+    // sanity check.
+    Q_ASSERT(type == moduleType(module));
+    if (result == nullptr && view == nullptr) {
+      // don't initialize module if args are NULL.
+      return module;
+    }
+
+    bool success;
+    success = module->initialize(result, view);
     if (!success) {
       delete module;
       return nullptr;
@@ -125,7 +189,8 @@ Module* ModuleFactory::createModule(const QString& type, DataSource* dataSource,
 QIcon ModuleFactory::moduleIcon(const QString& type)
 {
   QIcon icon;
-  Module* mdl = ModuleFactory::createModule(type, nullptr, nullptr);
+  DataSource* d = nullptr;
+  Module* mdl = ModuleFactory::createModule(type, d, nullptr);
   if (mdl) {
     icon = mdl->icon();
     delete mdl;

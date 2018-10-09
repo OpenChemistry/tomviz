@@ -33,6 +33,7 @@ class QDir;
 
 namespace tomviz {
 class DataSource;
+class MoleculeSource;
 class Module;
 class Operator;
 class Pipeline;
@@ -70,6 +71,9 @@ public:
   QList<Module*> findModulesGeneric(const DataSource* dataSource,
                                     const vtkSMViewProxy* view);
 
+  QList<Module*> findModulesGeneric(const MoleculeSource* dataSource,
+                                    const vtkSMViewProxy* view);
+
   /// Save the application state as JSON, use stateDir as the base for relative
   /// paths.
   bool serialize(QJsonObject& doc, const QDir& stateDir,
@@ -87,6 +91,7 @@ public:
 
   /// Used to test if there is data loaded (i.e. not an empty session)
   bool hasDataSources();
+  bool hasMoleculeSources();
 
   /// Used when loading a model.  If there are additional child pipelines that
   /// need to finish processing before stateDoneLoading is emitted, then this
@@ -107,13 +112,20 @@ public slots:
   /// Creates and add a new module.
   Module* createAndAddModule(const QString& type, DataSource* dataSource,
                              vtkSMViewProxy* view);
+  Module* createAndAddModule(const QString& type, MoleculeSource* dataSource,
+                             vtkSMViewProxy* view);
+  Module* createAndAddModule(const QString& type, OperatorResult* result,
+                             vtkSMViewProxy* view);
 
   /// Register/Unregister data sources with the ModuleManager.
   void addDataSource(DataSource*);
+  void addMoleculeSource(MoleculeSource*);
   void addChildDataSource(DataSource*);
   void removeDataSource(DataSource*);
+  void removeMoleculeSource(MoleculeSource*);
   void removeChildDataSource(DataSource*);
   void removeAllDataSources();
+  void removeAllMoleculeSources();
   void removeOperator(Operator*);
 
   /// Removes all modules and data sources.
@@ -137,7 +149,10 @@ signals:
   void dataSourceAdded(DataSource*);
   void childDataSourceAdded(DataSource*);
   void dataSourceRemoved(DataSource*);
+  void moleculeSourceRemoved(MoleculeSource*);
   void childDataSourceRemoved(DataSource*);
+
+  void moleculeSourceAdded(MoleculeSource*);
 
   void operatorRemoved(Operator*);
 

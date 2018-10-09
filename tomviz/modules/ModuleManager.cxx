@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "LoadDataReaction.h"
 #include "ModuleFactory.h"
+#include "MoleculeSource.h"
 #include "Pipeline.h"
 #include "PythonGeneratedDatasetReaction.h"
 #include "Utilities.h"
@@ -73,6 +74,7 @@ class ModuleManager::MMInternals
 public:
   // TODO Should only hold top level roots of pipeline
   QList<QPointer<DataSource>> DataSources;
+  QList<QPointer<MoleculeSource>> MoleculeSources;
   QList<QPointer<DataSource>> ChildDataSources;
   QList<QPointer<Module>> Modules;
   QMap<vtkSMProxy*, vtkSmartPointer<vtkCamera>> RenderViewCameras;
@@ -114,6 +116,24 @@ public:
     }
   }
 
+  void relativeFilePaths(MoleculeSource*, const QDir& stateDir,
+                         QJsonObject& dataSourceState)
+  {
+    QJsonObject readerProps;
+    if (dataSourceState.contains("reader") &&
+        dataSourceState["reader"].isObject()) {
+      readerProps = dataSourceState["reader"].toObject();
+    }
+
+    // Make any reader fileName properties relative to the state file being
+    // written.
+    if (readerProps.contains("fileName")) {
+      auto fileName = readerProps["fileName"].toString();
+      readerProps["fileName"] = stateDir.relativeFilePath(fileName);
+      dataSourceState["reader"] = readerProps;
+    }
+  }
+
   void absoluteFilePaths(QJsonObject& dataSourceState)
   {
 
@@ -135,6 +155,10 @@ public:
           absoluteFileNames.append(absolute(path.toString()));
         }
         reader["fileNames"] = absoluteFileNames;
+      }
+      if (reader.contains("fileName") && reader["fileName"].isString()) {
+        QString absoluteFileName = absolute(reader["fileName"].toString());
+        reader["fileName"] = absoluteFileName;
       }
       dataSourceState["reader"] = reader;
     }
@@ -160,6 +184,7 @@ void ModuleManager::reset()
 {
   removeAllModules();
   removeAllDataSources();
+  removeAllMoleculeSources();
   pqDeleteReaction::deleteAll();
 }
 
@@ -213,6 +238,30 @@ void ModuleManager::removeAllDataSources()
     dataSource->deleteLater();
   }
   d->DataSources.clear();
+}
+
+void ModuleManager::removeAllMoleculeSources()
+{
+  foreach (MoleculeSource* moleculeSource, d->MoleculeSources) {
+    emit moleculeSourceRemoved(moleculeSource);
+    moleculeSource->deleteLater();
+  }
+  d->MoleculeSources.clear();
+}
+
+void ModuleManager::addMoleculeSource(MoleculeSource* moleculeSource)
+{
+  if (moleculeSource && !d->MoleculeSources.contains(moleculeSource)) {
+    d->MoleculeSources.push_back(moleculeSource);
+    emit moleculeSourceAdded(moleculeSource);
+  }
+}
+
+void ModuleManager::removeMoleculeSource(MoleculeSource* moleculeSource)
+{
+  if (d->MoleculeSources.removeOne(moleculeSource)) {
+    emit moleculeSourceRemoved(moleculeSource);
+  }
 }
 
 void ModuleManager::removeOperator(Operator* op)
@@ -294,6 +343,38 @@ Module* ModuleManager::createAndAddModule(const QString& type,
   return module;
 }
 
+Module* ModuleManager::createAndAddModule(const QString& type,
+                                          MoleculeSource* moleculeSource,
+                                          vtkSMViewProxy* view)
+{
+  if (!view || !moleculeSource) {
+    return nullptr;
+  }
+
+  // Create an outline module for the source in the active view.
+  auto module = ModuleFactory::createModule(type, moleculeSource, view);
+  if (module) {
+    addModule(module);
+  }
+  return module;
+}
+
+Module* ModuleManager::createAndAddModule(const QString& type,
+                                          OperatorResult* result,
+                                          vtkSMViewProxy* view)
+{
+  if (!view || !result) {
+    return nullptr;
+  }
+
+  // Create an outline module for the source in the active view.
+  auto module = ModuleFactory::createModule(type, result, view);
+  if (module) {
+    addModule(module);
+  }
+  return module;
+}
+
 QList<Module*> ModuleManager::findModulesGeneric(const DataSource* dataSource,
                                                  const vtkSMViewProxy* view)
 {
@@ -302,6 +383,19 @@ QList<Module*> ModuleManager::findModulesGeneric(const DataSource* dataSource,
     if (module && module->dataSource() == dataSource &&
         (view == nullptr || view == module->view()) &&
         module->label() != "Molecule") {
+      modules.push_back(module);
+    }
+  }
+  return modules;
+}
+
+QList<Module*> ModuleManager::findModulesGeneric(
+  const MoleculeSource* dataSource, const vtkSMViewProxy* view)
+{
+  QList<Module*> modules;
+  foreach (Module* module, d->Modules) {
+    if (module && module->moleculeSource() == dataSource &&
+        (view == nullptr || view == module->view())) {
       modules.push_back(module);
     }
   }
@@ -401,6 +495,19 @@ bool ModuleManager::serialize(QJsonObject& doc, const QDir& stateDir,
     jDataSources.append(jDataSource);
   }
   doc["dataSources"] = jDataSources;
+
+  QJsonArray jMoleculeSources;
+  foreach (MoleculeSource* ms, d->MoleculeSources) {
+    auto jMoleculeSource = ms->serialize();
+    if (ms == ActiveObjects::instance().activeMoleculeSource()) {
+      jMoleculeSource["active"] = true;
+    }
+
+    d->relativeFilePaths(ms, stateDir, jMoleculeSource);
+
+    jMoleculeSources.append(jMoleculeSource);
+  }
+  doc["moleculeSources"] = jMoleculeSources;
 
   // Now serialize the views and layouts.
   vtkNew<vtkSMProxyIterator> iter;
@@ -891,6 +998,38 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       }
     }
   }
+
+  // Load up all of the molecule sources.
+  if (m_stateObject["moleculeSources"].isArray()) {
+    auto moleculeSources = m_stateObject["moleculeSources"].toArray();
+    foreach (auto ds, moleculeSources) {
+      auto dsObject = ds.toObject();
+      QJsonObject options;
+      options["defaultModules"] = false;
+      options["addToRecent"] = false;
+      d->absoluteFilePaths(dsObject);
+
+      QString fileName;
+      if (dsObject.contains("reader")) {
+        auto reader = dsObject["reader"].toObject();
+        options["reader"] = reader;
+
+        if (reader.contains("fileName")) {
+          fileName = reader["fileName"].toString();
+        } else {
+          qCritical() << "Unable to locate file name.";
+        }
+      }
+      MoleculeSource* moleculeSource =
+        LoadDataReaction::loadMolecule(fileName, options);
+      moleculeSource->deserialize(dsObject);
+      // FIXME: I think we need to collect the active objects and set them at
+      // the end, as the act of adding generally implies setting to active.
+      if (dsObject["active"].toBool()) {
+        ActiveObjects::instance().setActiveMoleculeSource(moleculeSource);
+      }
+    }
+  }
 }
 
 void ModuleManager::incrementPipelinesToWaitFor()
@@ -942,6 +1081,11 @@ vtkSMViewProxy* ModuleManager::lookupView(int id)
 bool ModuleManager::hasDataSources()
 {
   return !d->DataSources.empty();
+}
+
+bool ModuleManager::hasMoleculeSources()
+{
+  return !d->MoleculeSources.empty();
 }
 
 } // namespace tomviz

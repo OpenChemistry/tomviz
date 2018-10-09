@@ -71,8 +71,8 @@ protected:
 
 private:
   Q_DISABLE_COPY(ConvertToVolumeOperator)
-  QString m_label;
   tomviz::DataSource::DataSourceType m_type;
+  QString m_label;
 };
 
 #include "OperatorFactory.moc"

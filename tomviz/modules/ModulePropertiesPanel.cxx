@@ -64,15 +64,19 @@ void ModulePropertiesPanel::setModule(Module* module)
   if (module != this->Internals->ActiveModule) {
     if (this->Internals->ActiveModule) {
       DataSource* dataSource = this->Internals->ActiveModule->dataSource();
-      QObject::disconnect(dataSource, SIGNAL(dataChanged()), this,
-                          SLOT(updatePanel()));
+      if (dataSource) {
+        QObject::disconnect(dataSource, SIGNAL(dataChanged()), this,
+                            SLOT(updatePanel()));
+      }
       this->Internals->ActiveModule->prepareToRemoveFromPanel(this);
     }
 
     if (module) {
       DataSource* dataSource = module->dataSource();
-      QObject::connect(dataSource, SIGNAL(dataChanged()), this,
-                       SLOT(updatePanel()));
+      if (dataSource) {
+        QObject::connect(dataSource, SIGNAL(dataChanged()), this,
+                         SLOT(updatePanel()));
+      }
     }
   }
 

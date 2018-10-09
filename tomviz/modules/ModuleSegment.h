@@ -36,6 +36,7 @@ public:
   /// Returns an icon to use for this module.
   QIcon icon() const override;
 
+  using Module::initialize;
   /// Initialize the module for the data source and view. This is called after a
   /// new module is instantiated. Subclasses override this method to setup the
   /// visualization pipeline for this module.

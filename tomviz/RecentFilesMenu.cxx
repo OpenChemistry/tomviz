@@ -50,6 +50,7 @@ QJsonObject loadSettings()
   } else {
     QJsonObject json;
     json["readers"] = QJsonArray();
+    json["molecules"] = QJsonArray();
     json["states"] = QJsonArray();
     return QJsonObject();
   }
@@ -66,6 +67,10 @@ void saveSettings(QJsonObject json)
   if (json.contains("states") && json["states"].isArray()) {
     states = json["states"].toArray();
   }
+  QJsonArray molecules;
+  if (json.contains("molecules") && json["molecules"].isArray()) {
+    molecules = json["molecules"].toArray();
+  }
   if (readers.size() > MAX_ITEMS) {
     // We need to prune the list to 10.
     while (readers.size() > MAX_ITEMS) {
@@ -78,8 +83,15 @@ void saveSettings(QJsonObject json)
       states.removeLast();
     }
   }
+  if (molecules.size() > MAX_ITEMS) {
+    // We need to prune the list to 10.
+    while (molecules.size() > MAX_ITEMS) {
+      molecules.removeLast();
+    }
+  }
   json["readers"] = readers;
   json["states"] = states;
+  json["molecules"] = molecules;
   QJsonDocument doc(json);
 
   auto settings = pqApplicationCore::instance()->settings();
@@ -118,6 +130,25 @@ void RecentFilesMenu::pushDataReader(DataSource* dataSource)
   }
   readerList.push_front(readerJson);
   settings["readers"] = readerList;
+  saveSettings(settings);
+}
+
+void RecentFilesMenu::pushMoleculeReader(MoleculeSource* moleculeSource)
+{
+  auto settings = loadSettings();
+  auto readerList = settings["molecules"].toArray();
+  QJsonObject readerJson;
+
+  readerJson["fileName"] = moleculeSource->fileName();
+
+  // Remove the file if it is already in the list
+  for (int i = readerList.size() - 1; i >= 0; --i) {
+    if (readerList[i].toObject()["fileName"] == readerJson["fileName"]) {
+      readerList.removeAt(i);
+    }
+  }
+  readerList.push_front(readerJson);
+  settings["molecules"] = readerList;
   saveSettings(settings);
 }
 
@@ -189,6 +220,25 @@ void RecentFilesMenu::aboutToShowMenu()
     }
   }
 
+  // We have something, let's populate the recent files and/or state files.
+  if (json["molecules"].toArray().size() > 0) {
+    menu->addAction("Molecule files")->setEnabled(false);
+  }
+
+  index = 0;
+
+  foreach (QJsonValue file, json["molecules"].toArray()) {
+    if (file.isObject()) {
+      auto object = file.toObject();
+      QString label = object["fileName"].toString("<bug>");
+      auto actn = menu->addAction(QIcon(":/icons/gradient_opacity.png"), label);
+      actn->setData(index);
+      connect(actn, &QAction::triggered,
+              [this, actn, label]() { moleculeSourceTriggered(actn, label); });
+      ++index;
+    }
+  }
+
   if (json["states"].toArray().size() > 0) {
     menu->addAction("State files")->setEnabled(false);
   }
@@ -228,6 +278,29 @@ void RecentFilesMenu::dataSourceTriggered(QAction* actn, QStringList fileNames)
   }
 
   LoadDataReaction::loadData(fileNames);
+}
+
+void RecentFilesMenu::moleculeSourceTriggered(QAction* actn, QString fileName)
+{
+  // Check the files actually exists, remove the recent entry if not.
+  bool missing = false;
+  if (!QFileInfo::exists(fileName)) {
+    QMessageBox::warning(tomviz::mainWidget(), "Error",
+                         QString("The file '%1' does not exist").arg(fileName));
+    missing = true;
+  }
+
+  if (missing) {
+    int index = actn->data().toInt();
+    auto json = loadSettings();
+    auto readers = json["molecules"].toArray();
+    readers.removeAt(index);
+    json["molecules"] = readers;
+    saveSettings(json);
+    return;
+  }
+
+  LoadDataReaction::loadMolecule(fileName);
 }
 
 void RecentFilesMenu::stateTriggered()

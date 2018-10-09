@@ -38,6 +38,7 @@ public:
 
   QString label() const override { return "Slice"; }
   QIcon icon() const override;
+  using Module::initialize;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
   bool setVisibility(bool val) override;

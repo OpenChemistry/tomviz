@@ -33,7 +33,8 @@ void ResetReaction::updateEnableState()
 
 void ResetReaction::reset()
 {
-  if (ModuleManager::instance().hasDataSources()) {
+  if (ModuleManager::instance().hasDataSources() ||
+      ModuleManager::instance().hasMoleculeSources()) {
     if (QMessageBox::Yes !=
         QMessageBox::warning(
           tomviz::mainWidget(), "Reset",

@@ -91,6 +91,12 @@ set(SOURCES
   MergeImagesDialog.h
   MergeImagesReaction.cxx
   MergeImagesReaction.h
+  MoleculeSource.cxx
+  MoleculeSource.h
+  MoleculeProperties.cxx
+  MoleculeProperties.h
+  MoleculePropertiesPanel.cxx
+  MoleculePropertiesPanel.h
   MoveActiveObject.cxx
   MoveActiveObject.h
   Pipeline.cxx

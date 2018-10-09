@@ -212,6 +212,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Connect up the module/data changed to the appropriate slots.
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceActivated(DataSource*)),
           SLOT(dataSourceChanged(DataSource*)));
+  connect(&ActiveObjects::instance(),
+          SIGNAL(moleculeSourceActivated(MoleculeSource*)),
+          SLOT(moleculeSourceChanged(MoleculeSource*)));
   connect(&ActiveObjects::instance(), SIGNAL(moduleActivated(Module*)),
           SLOT(moduleChanged(Module*)));
   connect(&ActiveObjects::instance(), SIGNAL(operatorActivated(Operator*)),
@@ -614,6 +617,12 @@ void MainWindow::dataSourceChanged(DataSource* dataSource)
   }
 }
 
+void MainWindow::moleculeSourceChanged(MoleculeSource*)
+{
+  m_ui->propertiesPanelStackedWidget->setCurrentWidget(
+    m_ui->moleculePropertiesScrollArea);
+}
+
 void MainWindow::moduleChanged(Module*)
 {
   m_ui->propertiesPanelStackedWidget->setCurrentWidget(
@@ -734,6 +743,7 @@ void MainWindow::closeEvent(QCloseEvent* e)
   PipelineManager::instance().removeAllPipelines();
   ModuleManager::instance().removeAllModules();
   ModuleManager::instance().removeAllDataSources();
+  ModuleManager::instance().removeAllMoleculeSources();
   e->accept();
 }
 
