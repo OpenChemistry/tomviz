@@ -79,6 +79,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFutureWatcher>
 #include <QIcon>
 #include <QMessageBox>
 #include <QOffscreenSurface>
@@ -88,6 +89,7 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
+#include <QtConcurrent>
 
 // undef ERROR here as its used in pqOutputWidget!
 #undef ERROR
@@ -113,10 +115,6 @@ namespace tomviz {
 MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   : QMainWindow(parent, flags), m_ui(new Ui::MainWindow)
 {
-  // Register meta types
-  Connection::registerType();
-  RegexGroupSubstitution::registerType();
-
   // Override the default setting for showing full messages. This needs to be
   // done prior to calling m_ui->setupUi(this) which sets the default to false.
   pqSettings* qtSettings = pqApplicationCore::instance()->settings();
@@ -231,6 +229,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new Behaviors(this);
 
   new LoadDataReaction(m_ui->actionOpen);
+  m_ui->actionOpen->setEnabled(false);
 
   new LoadStackReaction(m_ui->actionStack);
 
@@ -405,6 +404,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   //#################################################################
   new ModuleMenu(m_ui->modulesToolbar, m_ui->menuModules, this);
+  m_ui->menuRecentlyOpened->setEnabled(false);
   new RecentFilesMenu(*m_ui->menuRecentlyOpened, m_ui->menuRecentlyOpened);
   new pqSaveStateReaction(m_ui->actionSaveDebuggingState);
 
@@ -481,6 +481,9 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new ProgressDialogManager(this);
 
   // Add the acquisition client experimentally.
+  m_ui->actionAcquisition->setEnabled(false);
+  m_ui->actionPassiveAcquisition->setEnabled(false);
+
   connect(m_ui->actionAcquisition, &QAction::triggered, this,
           [this]() { openDialog<AcquisitionWidget>(&m_acquisitionWidget); });
 
@@ -492,8 +495,19 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionPipelineSettings, &QAction::triggered,
           pipelineSettingsDialog, &QWidget::show);
 
-  registerCustomOperators();
-  FileFormatManager::instance().registerPythonReaders();
+  // Async initialize python
+  auto pythonWatcher = new QFutureWatcher<std::vector<OperatorDescription>>;
+  connect(pythonWatcher, &QFutureWatcherBase::finished, this,
+          [this, pythonWatcher]() {
+            m_ui->actionOpen->setEnabled(true);
+            m_ui->menuRecentlyOpened->setEnabled(true);
+            m_ui->actionAcquisition->setEnabled(true);
+            m_ui->actionPassiveAcquisition->setEnabled(true);
+            registerCustomOperators(pythonWatcher->result());
+            delete pythonWatcher;
+          });
+  auto pythonFuture = QtConcurrent::run(initPython);
+  pythonWatcher->setFuture(pythonFuture);
 }
 
 MainWindow::~MainWindow()
@@ -503,6 +517,15 @@ MainWindow::~MainWindow()
   if (QFile::exists(autosaveFile) && !QFile::remove(autosaveFile)) {
     std::cerr << "Failed to remove autosave file." << std::endl;
   }
+}
+
+std::vector<OperatorDescription> MainWindow::initPython()
+{
+  Connection::registerType();
+  RegexGroupSubstitution::registerType();
+  auto operators = findCustomOperators();
+  FileFormatManager::instance().registerPythonReaders();
+  return operators;
 }
 
 template <class T>
@@ -670,7 +693,7 @@ void MainWindow::importCustomTransform()
       }
 
       // Register custom operators again.
-      registerCustomOperators();
+      registerCustomOperators(findCustomOperators());
     }
   }
 }
@@ -791,7 +814,8 @@ void MainWindow::handleMessage(const QString&, int type)
   }
 }
 
-void MainWindow::registerCustomOperators()
+void MainWindow::registerCustomOperators(
+  std::vector<OperatorDescription> operators)
 {
   // Always create the Custom Transforms menu so that it is possible to import
   // new operators.
@@ -810,42 +834,6 @@ void MainWindow::registerCustomOperators()
   m_customTransformsMenu->addSeparator();
   connect(importCustomTransformAction, SIGNAL(triggered()),
           SLOT(importCustomTransform()));
-
-  QStringList paths;
-  // Search in <home>/.tomviz
-  foreach (QString home,
-           QStandardPaths::standardLocations(QStandardPaths::HomeLocation)) {
-    QString path = QString("%1%2.tomviz").arg(home).arg(QDir::separator());
-    if (QFile(path).exists()) {
-      paths.append(path);
-    }
-    path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
-    if (QFile(path).exists()) {
-      paths.append(path);
-    }
-  }
-  // Search in data locations.
-  // For example on window C:/Users/<USER>/AppData/Local/tomviz
-  foreach (QString path,
-           QStandardPaths::standardLocations(QStandardPaths::DataLocation)) {
-    if (QFile(path).exists()) {
-      paths.append(path);
-    }
-  }
-  foreach (QString path, paths) {
-    registerCustomOperators(path);
-  }
-}
-
-void MainWindow::registerCustomOperators(const QString& path)
-{
-  std::vector<OperatorDescription> operators = findCustomOperators(path);
-
-  // Sort so we get a consistent order each time we load
-  std::sort(operators.begin(), operators.end(),
-            [](const OperatorDescription& op1, const OperatorDescription& op2) {
-              return op1.label < op2.label;
-            });
 
   if (!operators.empty()) {
     for (const OperatorDescription& op : operators) {
@@ -887,4 +875,44 @@ void MainWindow::registerCustomOperators(const QString& path)
     }
   }
 }
+
+std::vector<OperatorDescription> MainWindow::findCustomOperators()
+{
+  QStringList paths;
+  // Search in <home>/.tomviz
+  foreach (QString home,
+           QStandardPaths::standardLocations(QStandardPaths::HomeLocation)) {
+    QString path = QString("%1%2.tomviz").arg(home).arg(QDir::separator());
+    if (QFile(path).exists()) {
+      paths.append(path);
+    }
+    path = QString("%1%2tomviz").arg(home).arg(QDir::separator());
+    if (QFile(path).exists()) {
+      paths.append(path);
+    }
+  }
+  // Search in data locations.
+  // For example on window C:/Users/<USER>/AppData/Local/tomviz
+  foreach (QString path,
+           QStandardPaths::standardLocations(QStandardPaths::DataLocation)) {
+    if (QFile(path).exists()) {
+      paths.append(path);
+    }
+  }
+
+  std::vector<OperatorDescription> operators;
+  foreach (QString path, paths) {
+    std::vector<OperatorDescription> ops = tomviz::findCustomOperators(path);
+    operators.insert(operators.end(), ops.begin(), ops.end());
+  }
+
+  // Sort so we get a consistent order each time we load
+  std::sort(operators.begin(), operators.end(),
+            [](const OperatorDescription& op1, const OperatorDescription& op2) {
+              return op1.label < op2.label;
+            });
+
+  return operators;
+}
+
 } // namespace tomviz
