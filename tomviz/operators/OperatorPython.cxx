@@ -377,6 +377,8 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       vtkSmartPointer<vtkImageData>::New();
 
     if (childData) {
+      childData->ShallowCopy(
+        vtkImageData::SafeDownCast(dataSource()->dataObject()));
       emit newChildDataSource(label, childData);
 
       dataSourceByName.insert(childDataSource(), nameLabelPair.first);
