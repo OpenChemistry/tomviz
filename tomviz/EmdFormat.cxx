@@ -129,13 +129,12 @@ public:
                                  H5P_DEFAULT, H5P_DEFAULT);
     hid_t type = H5Aget_type(attr);
 
-    if (H5T_STRING != H5Tget_class(type))
-    {
+    if (H5T_STRING != H5Tget_class(type)) {
       cout << group << name << " is not a string" << endl;
       return false;
     }
     char* tmpString;
-    int is_var_str = H5Tis_variable_str(type); 
+    int is_var_str = H5Tis_variable_str(type);
     if (is_var_str > 0) { // if it is a variable-length string
       if (H5Aread(attr, type, &tmpString) < 0) {
         cout << "Failed to read attribute " << group << " " << name << endl;
