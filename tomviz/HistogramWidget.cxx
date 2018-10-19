@@ -17,6 +17,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "DoubleSliderWidget.h"
 #include "ModuleContour.h"
 #include "ModuleManager.h"
 #include "QVTKGLWidget.h"
@@ -39,6 +40,7 @@
 #include <pqPresetDialog.h>
 #include <pqResetScalarRangeReaction.h>
 #include <pqServerManagerModel.h>
+#include <pqSettings.h>
 #include <pqView.h>
 
 #include <vtkPVDiscretizableColorTransferFunction.h>
@@ -50,10 +52,13 @@
 
 #include <QCheckBox>
 #include <QColorDialog>
+#include <QDialog>
 #include <QDialogButtonBox>
 #include <QDoubleSpinBox>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QSettings>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -296,6 +301,7 @@ void HistogramWidget::histogramClicked(vtkObject*)
   // ModuleContour instance or just create a new one, if none exists.
   typedef ModuleContour ModuleContourType;
 
+  auto isoValue = m_histogramColorOpacityEditor->GetContourValue();
   auto contour =
     qobject_cast<ModuleContourType*>(ActiveObjects::instance().activeModule());
   if (!contour) {
@@ -303,21 +309,85 @@ void HistogramWidget::histogramClicked(vtkObject*)
       ModuleManager::instance().findModules<ModuleContourType*>(
         activeDataSource, view);
     if (contours.size() == 0) {
-      activeDataSource->setInitialContourValue(
-        m_histogramColorOpacityEditor->GetContourValue());
+      auto res = createContourDialog(isoValue);
+      if (!res) {
+        return;
+      }
       contour = qobject_cast<ModuleContourType*>(
         ModuleManager::instance().createAndAddModule("Contour",
                                                      activeDataSource, view));
     } else {
       contour = contours[0];
-      contour->setIsoValue(m_histogramColorOpacityEditor->GetContourValue());
     }
     ActiveObjects::instance().setActiveModule(contour);
-  } else {
-    contour->setIsoValue(m_histogramColorOpacityEditor->GetContourValue());
   }
   Q_ASSERT(contour);
+  contour->setIsoValue(isoValue);
   tomviz::convert<pqView*>(view)->render();
+}
+
+bool HistogramWidget::createContourDialog(double& isoValue)
+{
+  QSettings* settings = pqApplicationCore::instance()->settings();
+  bool autoAccept =
+    settings->value("ContourSettings.AutoAccept", false).toBool();
+  if (autoAccept) {
+    return true;
+  }
+
+  auto ds = ActiveObjects::instance().activeDataSource();
+  if (!ds) {
+    return false;
+  }
+
+  QDialog dialog;
+  dialog.setFixedWidth(300);
+  dialog.setMaximumHeight(50);
+  dialog.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+  QVBoxLayout vLayout;
+  dialog.setLayout(&vLayout);
+  dialog.setWindowTitle(tr("New Iso Contour"));
+
+  QFormLayout formLayout;
+  vLayout.addLayout(&formLayout);
+
+  // Get the range of the dataset
+  double range[2];
+  ds->getRange(range);
+
+  DoubleSliderWidget w(true);
+  w.setMinimum(range[0]);
+  w.setMaximum(range[1]);
+
+  // We want to round this to two decimal places
+  isoValue = QString::number(isoValue, 'f', 2).toDouble();
+  w.setValue(isoValue);
+
+  w.setLineEditWidth(50);
+
+  formLayout.addRow("Iso value", &w);
+
+  QCheckBox dontAskAgain("Don't ask again");
+  formLayout.addRow(&dontAskAgain);
+
+  QDialogButtonBox buttons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+  vLayout.addWidget(&buttons);
+
+  connect(&buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(&buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+  auto r = dialog.exec();
+
+  if (r == QDialog::Accepted) {
+    if (dontAskAgain.isChecked()) {
+      settings->setValue("ContourSettings.AutoAccept", true);
+    }
+    isoValue = w.value();
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void HistogramWidget::onResetRangeClicked()

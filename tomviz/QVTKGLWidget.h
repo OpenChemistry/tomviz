@@ -29,8 +29,6 @@ public:
                Qt::WindowFlags f = Qt::WindowFlags());
   ~QVTKGLWidget() override;
 
-  void setEnableHiDPI(bool enable) override;
-
 private:
 };
 } // namespace tomviz

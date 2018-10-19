@@ -51,6 +51,7 @@
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkScalarsToColors.h>
 #include <vtkSmartPointer.h>

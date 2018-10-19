@@ -42,6 +42,9 @@ ActiveObjects::ActiveObjects() : QObject()
           SLOT(viewChanged(pqView*)));
   connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
           SLOT(dataSourceRemoved(DataSource*)));
+  connect(&ModuleManager::instance(),
+          SIGNAL(moleculeSourceRemoved(MoleculeSource*)),
+          SLOT(moleculeSourceRemoved(MoleculeSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
           SLOT(moduleRemoved(Module*)));
 }
@@ -87,6 +90,13 @@ void ActiveObjects::dataSourceRemoved(DataSource* ds)
   }
 }
 
+void ActiveObjects::moleculeSourceRemoved(MoleculeSource* ms)
+{
+  if (m_activeMoleculeSource == ms) {
+    setActiveMoleculeSource(nullptr);
+  }
+}
+
 void ActiveObjects::moduleRemoved(Module* mdl)
 {
   if (m_activeModule == mdl) {
@@ -96,6 +106,9 @@ void ActiveObjects::moduleRemoved(Module* mdl)
 
 void ActiveObjects::setActiveDataSource(DataSource* source)
 {
+  if (source) {
+    setActiveMoleculeSource(nullptr);
+  }
   if (m_activeDataSource != source) {
     if (m_activeDataSource) {
       disconnect(m_activeDataSource, SIGNAL(dataChanged()), this,
@@ -106,12 +119,12 @@ void ActiveObjects::setActiveDataSource(DataSource* source)
       m_activeDataSourceType = source->type();
     }
     m_activeDataSource = source;
-    emit dataSourceChanged(m_activeDataSource);
 
     // Setting to nullptr so the traverse logic is re-run.
     m_activeParentDataSource = nullptr;
   }
   emit dataSourceActivated(m_activeDataSource);
+  emit dataSourceChanged(m_activeDataSource);
 
   if (!m_activeDataSource.isNull() &&
       m_activeDataSource->pipeline() != nullptr) {
@@ -149,6 +162,18 @@ vtkSMSessionProxyManager* ActiveObjects::proxyManager() const
 {
   pqServer* server = pqActiveObjects::instance().activeServer();
   return server ? server->proxyManager() : nullptr;
+}
+
+void ActiveObjects::setActiveMoleculeSource(MoleculeSource* source)
+{
+  if (source) {
+    setActiveDataSource(nullptr);
+  }
+  if (m_activeMoleculeSource != source) {
+    m_activeMoleculeSource = source;
+    emit moleculeSourceChanged(source);
+  }
+  emit moleculeSourceActivated(source);
 }
 
 void ActiveObjects::setActiveModule(Module* module)

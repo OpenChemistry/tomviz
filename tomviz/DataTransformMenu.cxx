@@ -74,6 +74,7 @@ void DataTransformMenu::buildTransforms()
   auto laplaceFilterAction = menu->addAction("Laplace Sharpen");
   auto gaussianFilterAction = menu->addAction("Gaussian Blur");
   auto wienerAction = menu->addAction("Wiener Filter");
+  auto TVminAction = menu->addAction("Remove Stripes, Curtaining, Scratches");
   auto peronaMalikeAnisotropicDiffusionAction =
     menu->addAction("Perona-Malik Anisotropic Diffusion");
   auto medianFilterAction = menu->addAction("Median Filter");
@@ -139,6 +140,9 @@ void DataTransformMenu::buildTransforms()
   new AddPythonTransformReaction(
     wienerAction, "Wiener Filter", readInPythonScript("WienerFilter"), false,
     false, false, readInJSONDescription("WienerFilter"));
+  new AddPythonTransformReaction(TVminAction, "TV_Filter",
+                                 readInPythonScript("TV_Filter"), false, false,
+                                 false, readInJSONDescription("TV_Filter"));
   new AddPythonTransformReaction(
     gaussianFilterAction, "Gaussian Blur", readInPythonScript("GaussianFilter"),
     false, false, false, readInJSONDescription("GaussianFilter"));

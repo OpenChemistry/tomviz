@@ -27,6 +27,7 @@ class vtkSMProxy;
 
 namespace tomviz {
 class DataSource;
+class MoleculeSource;
 
 class PythonReaderFactory;
 
@@ -61,6 +62,11 @@ public:
   /// and child, or pvXML to pass to the ParaView reader.
   static DataSource* loadData(const QStringList& fileNames,
                               const QJsonObject& options = QJsonObject());
+
+  static QList<MoleculeSource*> loadMolecule(
+    const QStringList& fileNames, const QJsonObject& options = QJsonObject());
+  static MoleculeSource* loadMolecule(
+    const QString& fileName, const QJsonObject& options = QJsonObject());
 
   /// Handle creation of a new data source.
   static void dataSourceAdded(DataSource* dataSource,

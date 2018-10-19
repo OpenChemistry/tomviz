@@ -23,6 +23,7 @@
 #include "ImageStackModel.h"
 #include "LoadStackReaction.h"
 #include "ModuleManager.h"
+#include "MoleculeSource.h"
 #include "Pipeline.h"
 #include "PipelineManager.h"
 #include "PythonReader.h"
@@ -47,12 +48,14 @@
 #include <vtkSMViewProxy.h>
 
 #include <vtkImageData.h>
+#include <vtkMolecule.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTIFFReader.h>
 #include <vtkTrivialProducer.h>
+#include <vtkXYZMolReader2.h>
 
 #include <QDebug>
 #include <QFileDialog>
@@ -130,6 +133,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "VTK ImageData Files (*.vti)"
           << "MRC files (*.mrc *.st *.rec *.ali)"
           << "XDMF files (*.xmf *.xdmf)"
+          << "Molecule files (*.xyz)"
           << "Text files (*.txt)";
 
   foreach (auto reader, FileFormatManager::instance().pythonReaderFactories()) {
@@ -146,8 +150,15 @@ QList<DataSource*> LoadDataReaction::loadData()
   QList<DataSource*> dataSources;
   if (dialog.exec()) {
     QStringList filenames = dialog.selectedFiles();
-    if (filenames.size() > 1) {
+    QString fileName = filenames.size() > 0 ? filenames[0] : "";
+    QFileInfo info(fileName);
+    auto suffix = info.suffix().toLower();
+    QStringList tiffExt = { "tif", "tiff" };
+    QStringList moleculeExt = { "xyz" };
+    if (filenames.size() > 1 && tiffExt.contains(suffix)) {
       dataSources << LoadStackReaction::loadData(filenames);
+    } else if (moleculeExt.contains(suffix)) {
+      loadMolecule(filenames);
     } else {
       dataSources << loadData(filenames);
     }
@@ -333,7 +344,34 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
                                         ? DataSource::TiltSeries
                                         : DataSource::Volume;
 
+    auto prop = reader->GetProperty("FileNames");
+    if (prop != nullptr) {
+      auto jsonProp = toJson(prop);
+      QString fileName;
+      if (jsonProp.toArray().size() > 0) {
+        fileName = jsonProp.toArray()[0].toString();
+      } else {
+        fileName = jsonProp.toString();
+      }
+      QFileInfo info(fileName);
+      // Special case: mrc files store spacing in Angstrom
+      QStringList mrcExt;
+      mrcExt << "mrc"
+             << "st"
+             << "rec"
+             << "ali";
+      if (mrcExt.contains(info.suffix().toLower())) {
+        double spacing[3];
+        image->GetSpacing(spacing);
+        for (int i = 0; i < 3; ++i) {
+          spacing[i] *= 0.1;
+        }
+        image->SetSpacing(spacing);
+      }
+    }
+
     DataSource* dataSource = new DataSource(image, type);
+
     // Do whatever we need to do with a new data source.
     LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     return dataSource;
@@ -455,6 +493,42 @@ void LoadDataReaction::setFileNameProperties(const QJsonObject& props,
     }
     tomviz::setProperty(props["fileName"], prop);
   }
+}
+
+QList<MoleculeSource*> LoadDataReaction::loadMolecule(
+  const QStringList& fileNames, const QJsonObject& options)
+{
+  QList<MoleculeSource*> moleculeSources;
+  foreach (auto fileName, fileNames) {
+    moleculeSources << loadMolecule(fileName, options);
+  }
+  return moleculeSources;
+}
+
+MoleculeSource* LoadDataReaction::loadMolecule(const QString& fileName,
+                                               const QJsonObject& options)
+{
+  bool addToRecent = options["addToRecent"].toBool(true);
+  bool defaultModules = options["defaultModules"].toBool(true);
+
+  vtkMolecule* molecule = vtkMolecule::New();
+  vtkNew<vtkXYZMolReader2> reader;
+  reader->SetFileName(fileName.toLatin1().data());
+  reader->SetOutput(molecule);
+  reader->Update();
+
+  auto moleculeSource = new MoleculeSource(molecule);
+  moleculeSource->setFileName(fileName);
+  ModuleManager::instance().addMoleculeSource(moleculeSource);
+  if (moleculeSource && defaultModules) {
+    auto view = ActiveObjects::instance().activeView();
+    ModuleManager::instance().createAndAddModule("Molecule", moleculeSource,
+                                                 view);
+  }
+  if (moleculeSource && addToRecent) {
+    RecentFilesMenu::pushMoleculeReader(moleculeSource);
+  }
+  return moleculeSource;
 }
 
 } // end of namespace tomviz

@@ -99,7 +99,6 @@ public:
   vtkRectd m_transferFunction2DBox;
   bool UnitsModified = false;
   bool Forkable = true;
-  double initialContourValue = DBL_MAX;
 
   // Checks if the tilt angles data array exists on the given VTK data
   // and creates it if it does not exist.
@@ -136,13 +135,6 @@ DataSource::DataSource(vtkSMSourceProxy* dataSource, DataSourceType dataType)
       sourceFilename = fileNameBytes.data();
     } else {
       sourceFilename = helper.GetAsString();
-    }
-
-    QFileInfo info(helper.GetAsString());
-    if (info.suffix() == "mrc") {
-      // MRC format uses angstroms as default units, tomviz uses nanometers.
-      // This handles scaling between the two.
-      m_scaleOriginalSpacingBy = 0.1;
     }
   }
 
@@ -298,7 +290,7 @@ QStringList DataSource::fileNames() const
 {
   auto reader = m_json.value("reader").toObject(QJsonObject());
   QStringList files;
-  if (reader.contains("fileNames") && isImageStack()) {
+  if (reader.contains("fileNames")) {
     QJsonArray fileArray = reader["fileNames"].toArray();
     foreach (QJsonValue file, fileArray) {
       files.append(file.toString());
@@ -309,8 +301,11 @@ QStringList DataSource::fileNames() const
 
 bool DataSource::isImageStack() const
 {
-  return m_json.contains("fileNames") && m_json["fileNames"].isArray() &&
-         m_json["fileNames"].toArray().size() > 1;
+  auto reader = m_json.value("reader").toObject(QJsonObject());
+  if (reader.contains("fileNames") && reader["fileNames"].isArray()) {
+    return reader["fileNames"].toArray().size() > 1;
+  }
+  return false;
 }
 
 void DataSource::setReaderProperties(const QVariantMap& properties)
@@ -1004,17 +999,6 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   if (data) {
     auto tp = vtkTrivialProducer::SafeDownCast(source->GetClientSideObject());
     tp->SetOutput(data);
-
-    // This is a little hackish, currently special cased for the MRC format.
-    // It would probably be best to move this to the file read/write classes.
-    if (data && m_scaleOriginalSpacingBy != 1.0) {
-      double spacing[3];
-      data->GetSpacing(spacing);
-      for (int i = 0; i < 3; ++i) {
-        spacing[i] *= m_scaleOriginalSpacingBy;
-      }
-      data->SetSpacing(spacing);
-    }
   }
 
   // Setup color map for this data-source.
@@ -1069,16 +1053,6 @@ bool DataSource::forkable()
 void DataSource::setForkable(bool forkable)
 {
   Internals->Forkable = forkable;
-}
-
-double DataSource::initialContourValue() const
-{
-  return Internals->initialContourValue;
-}
-
-void DataSource::setInitialContourValue(double d)
-{
-  Internals->initialContourValue = d;
 }
 
 bool DataSource::hasTiltAngles(vtkDataObject* image)

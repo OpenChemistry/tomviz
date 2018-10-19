@@ -36,6 +36,7 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkScalarsToColors.h>

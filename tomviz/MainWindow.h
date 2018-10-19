@@ -18,6 +18,8 @@
 
 #include <QMainWindow>
 
+#include <vector>
+
 #include <QScopedPointer>
 
 class QMenu;
@@ -31,8 +33,10 @@ namespace tomviz {
 class AboutDialog;
 class DataPropertiesPanel;
 class DataSource;
+class MoleculeSource;
 class Module;
 class Operator;
+struct OperatorDescription;
 class OperatorResult;
 
 /// The main window for the tomviz application.
@@ -63,6 +67,9 @@ private slots:
   /// Change the active data source in the UI.
   void dataSourceChanged(DataSource* source);
 
+  /// Change the active molecule source in the UI.
+  void moleculeSourceChanged(MoleculeSource* moleculeSource);
+
   /// Change the active module displayed in the UI.
   void moduleChanged(Module* module);
 
@@ -86,8 +93,9 @@ private:
   Q_DISABLE_COPY(MainWindow)
 
   /// Find and register any user defined operators
-  void registerCustomOperators(const QString& path);
-  void registerCustomOperators();
+  static std::vector<OperatorDescription> findCustomOperators();
+  void registerCustomOperators(std::vector<OperatorDescription> operators);
+  static std::vector<OperatorDescription> initPython();
 
   QScopedPointer<Ui::MainWindow> m_ui;
   QMenu* m_customTransformsMenu = nullptr;

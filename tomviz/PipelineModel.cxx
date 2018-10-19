@@ -19,6 +19,7 @@
 #include "DataSource.h"
 #include "Module.h"
 #include "ModuleManager.h"
+#include "MoleculeSource.h"
 #include "Operator.h"
 #include "OperatorResult.h"
 #include "Pipeline.h"
@@ -40,18 +41,24 @@ struct PipelineModel::Item
   Item(Module* module) : tag(MODULE), m(module) {}
   Item(Operator* op) : tag(OPERATOR), o(op) {}
   Item(OperatorResult* result) : tag(RESULT), r(result) {}
+  Item(MoleculeSource* source) : tag(MOLECULESOURCE), ms(source) {}
 
   DataSource* dataSource() { return tag == DATASOURCE ? s : nullptr; }
   Module* module() { return tag == MODULE ? m : nullptr; }
   Operator* op() { return tag == OPERATOR ? o : nullptr; }
   OperatorResult* result() { return tag == RESULT ? r : nullptr; }
+  MoleculeSource* moleculeSource()
+  {
+    return tag == MOLECULESOURCE ? ms : nullptr;
+  }
 
   enum
   {
     DATASOURCE,
     MODULE,
     OPERATOR,
-    RESULT
+    RESULT,
+    MOLECULESOURCE
   } tag;
   union
   {
@@ -59,6 +66,7 @@ struct PipelineModel::Item
     Module* m;
     Operator* o;
     OperatorResult* r;
+    MoleculeSource* ms;
   };
 };
 
@@ -84,10 +92,12 @@ public:
   bool attach(PipelineModel::TreeItem* treeItem);
 
   bool remove(DataSource* source);
+  bool remove(MoleculeSource* source);
   bool remove(Module* module);
   bool remove(Operator* op);
 
   /// Recursively search entire tree for given object.
+  TreeItem* find(MoleculeSource* source);
   TreeItem* find(Module* module);
   TreeItem* find(Operator* op);
   TreeItem* find(OperatorResult* result);
@@ -96,6 +106,7 @@ public:
   DataSource* dataSource() { return m_item.dataSource(); }
   Module* module() { return m_item.module(); }
   Operator* op() { return m_item.op(); }
+  MoleculeSource* moleculeSource() { return m_item.moleculeSource(); }
   OperatorResult* result() { return m_item.result(); }
 
 private:
@@ -216,6 +227,20 @@ bool PipelineModel::TreeItem::remove(DataSource* source)
   return false;
 }
 
+bool PipelineModel::TreeItem::remove(MoleculeSource* source)
+{
+  if (source != moleculeSource()) {
+    return false;
+  }
+  // This item is a DataSource item. Remove all children.
+  foreach (auto childItem, m_children) {
+    if (childItem->module()) {
+      ModuleManager::instance().removeModule(childItem->module());
+    }
+  }
+  return true;
+}
+
 bool PipelineModel::TreeItem::remove(Module* module)
 {
   foreach (auto childItem, m_children) {
@@ -294,6 +319,14 @@ PipelineModel::TreeItem* PipelineModel::TreeItem::find(OperatorResult* result)
   return nullptr;
 }
 
+PipelineModel::TreeItem* PipelineModel::TreeItem::find(MoleculeSource* source)
+{
+  if (this->moleculeSource() == source) {
+    return this;
+  }
+  return nullptr;
+}
+
 PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
 {
   connect(&ModuleManager::instance(), SIGNAL(dataSourceAdded(DataSource*)),
@@ -302,11 +335,17 @@ PipelineModel::PipelineModel(QObject* p) : QAbstractItemModel(p)
           SLOT(childDataSourceAdded(DataSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleAdded(Module*)),
           SLOT(moduleAdded(Module*)));
+  connect(&ModuleManager::instance(),
+          SIGNAL(moleculeSourceAdded(MoleculeSource*)),
+          SLOT(moleculeSourceAdded(MoleculeSource*)));
 
   connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
           SIGNAL(modelReset()));
   connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
           SLOT(dataSourceRemoved(DataSource*)));
+  connect(&ModuleManager::instance(),
+          SIGNAL(moleculeSourceRemoved(MoleculeSource*)),
+          SLOT(moleculeSourceRemoved(MoleculeSource*)));
   connect(&ModuleManager::instance(), SIGNAL(moduleRemoved(Module*)),
           SLOT(moduleRemoved(Module*)));
   connect(&ModuleManager::instance(),
@@ -386,6 +425,7 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
 
   auto treeItem = this->treeItem(index);
   auto dataSource = treeItem->dataSource();
+  auto moleculeSource = treeItem->moleculeSource();
   auto module = treeItem->module();
   auto op = treeItem->op();
   auto result = treeItem->result();
@@ -418,6 +458,21 @@ QVariant PipelineModel::data(const QModelIndex& index, int role) const
         default:
           return QVariant();
       }
+    }
+  } else if (moleculeSource) {
+    if (index.column() == Column::label) {
+      switch (role) {
+        case Qt::DecorationRole:
+          return QIcon(":/icons/gradient_opacity.png");
+        case Qt::DisplayRole:
+          return moleculeSource->label();
+        case Qt::ToolTipRole:
+          return moleculeSource->label();
+        default:
+          return QVariant();
+      }
+    } else {
+      return QVariant();
     }
   } else if (module) {
     if (index.column() == Column::label) {
@@ -580,6 +635,16 @@ DataSource* PipelineModel::dataSource(const QModelIndex& idx)
   }
 }
 
+MoleculeSource* PipelineModel::moleculeSource(const QModelIndex& idx)
+{
+  if (idx.isValid()) {
+    auto treeItem = this->treeItem(idx);
+    return (treeItem ? treeItem->moleculeSource() : nullptr);
+  } else {
+    return nullptr;
+  }
+}
+
 Module* PipelineModel::module(const QModelIndex& idx)
 {
   if (idx.isValid()) {
@@ -649,6 +714,17 @@ QModelIndex PipelineModel::dataSourceIndex(DataSource* source)
     }
   }
 
+  return QModelIndex();
+}
+
+QModelIndex PipelineModel::moleculeSourceIndex(MoleculeSource* source)
+{
+  foreach (auto treeItem, m_treeItems) {
+    auto moleculeItem = treeItem->find(source);
+    if (moleculeItem) {
+      return createIndex(moleculeItem->childIndex(), 0, moleculeItem);
+    }
+  }
   return QModelIndex();
 }
 
@@ -731,13 +807,26 @@ void PipelineModel::dataSourceAdded(DataSource* dataSource)
   emit dataSourceItemAdded(dataSource);
 }
 
+void PipelineModel::moleculeSourceAdded(MoleculeSource* moleculeSource)
+{
+  auto treeItem =
+    new PipelineModel::TreeItem(PipelineModel::Item(moleculeSource));
+  beginInsertRows(QModelIndex(), m_treeItems.size(), m_treeItems.size());
+  m_treeItems.append(treeItem);
+  endInsertRows();
+  emit moleculeSourceItemAdded(moleculeSource);
+}
+
 void PipelineModel::moduleAdded(Module* module)
 {
   Q_ASSERT(module);
   auto dataSource = module->dataSource();
+  auto moleculeSource = module->moleculeSource();
   auto operatorResult = module->operatorResult();
   QModelIndex index;
-  if (operatorResult) {
+  if (moleculeSource) {
+    index = moleculeSourceIndex(moleculeSource);
+  } else if (operatorResult) {
     index = resultIndex(operatorResult);
   } else if (dataSource) {
     index = dataSourceIndex(dataSource);
@@ -905,6 +994,20 @@ void PipelineModel::childDataSourceRemoved(DataSource* source)
   }
 }
 
+void PipelineModel::moleculeSourceRemoved(MoleculeSource* moleculeSource)
+{
+  auto index = moleculeSourceIndex(moleculeSource);
+
+  if (index.isValid()) {
+    auto item = treeItem(index);
+    beginRemoveRows(parent(index), index.row(), index.row());
+    item->remove(moleculeSource);
+    m_treeItems.removeAll(item);
+    delete item;
+    endRemoveRows();
+  }
+}
+
 void PipelineModel::moduleRemoved(Module* module)
 {
   auto index = moduleIndex(module);
@@ -926,6 +1029,13 @@ bool PipelineModel::removeDataSource(DataSource* source)
     dataSourceRemoved(source);
     ModuleManager::instance().removeDataSource(source);
   }
+  return true;
+}
+
+bool PipelineModel::removeMoleculeSource(MoleculeSource* moleculeSource)
+{
+  moleculeSourceRemoved(moleculeSource);
+  ModuleManager::instance().removeMoleculeSource(moleculeSource);
   return true;
 }
 

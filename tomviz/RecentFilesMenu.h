@@ -24,6 +24,7 @@ class QMenu;
 namespace tomviz {
 
 class DataSource;
+class MoleculeSource;
 
 /// Adds recent file and recent state file support to Tomviz.
 class RecentFilesMenu : public QObject
@@ -36,11 +37,13 @@ public:
 
   /// Pushes a reader on the recent files stack.
   static void pushDataReader(DataSource* dataSource);
+  static void pushMoleculeReader(MoleculeSource* moleculeSource);
   static void pushStateFile(const QString& filename);
 
 private slots:
   void aboutToShowMenu();
-  void dataSourceTriggered(QAction* actn, bool stack = false);
+  void dataSourceTriggered(QAction* actn, QStringList fileNames);
+  void moleculeSourceTriggered(QAction* actn, QString fileName);
   void stateTriggered();
 
 private:

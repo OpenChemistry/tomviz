@@ -37,6 +37,7 @@ public:
 
   QString label() const override { return "Contour"; }
   QIcon icon() const override;
+  using Module::initialize;
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
   void addToPanel(QWidget*) override;
@@ -85,8 +86,6 @@ private slots:
   void setUseSolidColor(const bool useSolidColor);
 
 private:
-  void userSelectInitialContourValue();
-
   Q_DISABLE_COPY(ModuleContour)
 };
 } // namespace tomviz

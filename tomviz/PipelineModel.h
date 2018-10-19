@@ -30,6 +30,7 @@ enum Column
 namespace tomviz {
 
 class DataSource;
+class MoleculeSource;
 class Module;
 class Operator;
 class OperatorResult;
@@ -55,22 +56,26 @@ public:
   int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
   DataSource* dataSource(const QModelIndex& index);
+  MoleculeSource* moleculeSource(const QModelIndex& index);
   Module* module(const QModelIndex& index);
   Operator* op(const QModelIndex& index);
   OperatorResult* result(const QModelIndex& index);
 
   QModelIndex dataSourceIndex(DataSource* source);
+  QModelIndex moleculeSourceIndex(MoleculeSource* source);
   QModelIndex moduleIndex(Module* module);
   QModelIndex operatorIndex(Operator* op);
   QModelIndex resultIndex(OperatorResult* result);
 
   bool removeDataSource(DataSource* dataSource);
+  bool removeMoleculeSource(MoleculeSource* moleculeSource);
   bool removeModule(Module* module);
   bool removeOp(Operator* op);
   bool removeResult(OperatorResult* result);
 
 public slots:
   void dataSourceAdded(DataSource* dataSource);
+  void moleculeSourceAdded(MoleculeSource* moleculeSource);
   void moduleAdded(Module* module);
   void operatorAdded(Operator* op, DataSource* transformedDataSource = nullptr);
   void operatorRemoved(Operator* op);
@@ -79,6 +84,7 @@ public slots:
 
   void dataSourceRemoved(DataSource* dataSource);
   void moduleRemoved(Module* module);
+  void moleculeSourceRemoved(MoleculeSource* moleculeSource);
   void childDataSourceAdded(DataSource* dataSource);
   void childDataSourceRemoved(DataSource* dataSource);
   void dataSourceMoved(DataSource* dataSource);
@@ -86,6 +92,7 @@ public slots:
 signals:
   void dataSourceItemAdded(DataSource* dataSource);
   void childDataSourceItemAdded(DataSource* dataSource);
+  void moleculeSourceItemAdded(MoleculeSource* dataSource);
   void moduleItemAdded(Module* module);
   void operatorItemAdded(Operator* op);
   void dataSourceModified(DataSource* dataSource);

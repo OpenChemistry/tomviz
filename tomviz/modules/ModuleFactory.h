@@ -23,6 +23,7 @@ class vtkSMViewProxy;
 
 namespace tomviz {
 class DataSource;
+class MoleculeSource;
 class Module;
 class OperatorResult;
 
@@ -39,11 +40,18 @@ public:
   /// DataSource and View.
   static bool moduleApplicable(const QString& moduleName,
                                DataSource* dataSource, vtkSMViewProxy* view);
+  static bool moduleApplicable(const QString& moduleName,
+                               MoleculeSource* moleculeSource,
+                               vtkSMViewProxy* view);
 
   /// Creates a module of the given type to show the dataSource in the view.
   static Module* createModule(const QString& type, DataSource* dataSource,
-                              vtkSMViewProxy* view,
-                              OperatorResult* result = nullptr);
+                              vtkSMViewProxy* view);
+  static Module* createModule(const QString& type,
+                              MoleculeSource* moleculeSource,
+                              vtkSMViewProxy* view);
+  static Module* createModule(const QString& type, OperatorResult* result,
+                              vtkSMViewProxy* view);
 
   /// Returns the type for a module instance.
   static const char* moduleType(Module* module);
@@ -55,6 +63,7 @@ private:
   ModuleFactory();
   ~ModuleFactory();
   Q_DISABLE_COPY(ModuleFactory)
+  static Module* allocateModule(const QString& type);
 };
 } // namespace tomviz
 

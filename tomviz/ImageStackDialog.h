@@ -38,7 +38,7 @@ public:
   explicit ImageStackDialog(QWidget* parent = nullptr);
   ~ImageStackDialog() override;
 
-  void setStackSummary(const QList<ImageInfo>& summary);
+  void setStackSummary(const QList<ImageInfo>& summary, bool sort = true);
   void setStackType(const DataSource::DataSourceType& stackType);
   void processDirectory(const QString& path);
   void processFiles(const QStringList& fileNames);
@@ -50,6 +50,7 @@ public slots:
   void onOpenFolderClick();
   void onImageToggled(int row, bool value);
   void onStackTypeChanged(int stackType);
+  void onCheckSizesClick();
 
 signals:
   void summaryChanged(const QList<ImageInfo>&);
@@ -71,6 +72,10 @@ private:
   bool detectTilt(QStringList fileNames, QList<ImageInfo>& summary,
                   bool matchPrefix = true);
   void defaultOrder(QStringList fileNames, QList<ImageInfo>& summary);
+  QList<ImageInfo> initStackSummary(const QStringList& fileNames);
+  static void getImageSize(QStringList fileNames, int iThread, int nThreads,
+                           QList<ImageInfo>* summary);
+  void checkStackSizes(QList<ImageInfo>& summary);
 };
 } // namespace tomviz
 
