@@ -543,9 +543,9 @@ void DockerPipelineExecutor::operatorStarted(Operator* op)
   emit op->transformingStarted();
 
   auto pythonOp = qobject_cast<OperatorPython*>(op);
-  Q_ASSERT(pythonOp != nullptr);
-
-  pythonOp->createChildDataSources();
+  if (pythonOp != nullptr) {
+    pythonOp->createChildDataSources();
+  }
 }
 
 void DockerPipelineExecutor::operatorFinished(Operator* op)
