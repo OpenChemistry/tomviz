@@ -338,11 +338,7 @@ def _read_emd(path):
                          tomography[dim].attrs['name'][0],
                          tomography[dim].attrs['name'][0]))
 
-        data = tomography['data'][:]
-        # Ensure the right shape. Note sure if their is a more effient way of
-        # doing this.
-        data = np.reshape(data.flatten(), data.shape[::-1], order='F')
-        return (data, dims)
+        return (tomography['data'][:], dims)
 
 
 def _write_emd(path, data, dims):
@@ -355,11 +351,11 @@ def _write_emd(path, data, dims):
         tomography_group.create_dataset('data', data=data)
 
         # add dimension vectors
-        for (dataset_name, value, name, units) in dims:
-            d = tomography_group.create_dataset(dataset_name, (2,))
+        for (dataset_name, values, name, units) in dims:
+            d = tomography_group.create_dataset(dataset_name, values.shape)
             d.attrs['name'] = np.string_(name)
             d.attrs['units'] = np.string_(units)
-            d[:] = value
+            d[:] = values
 
 
 class DataObjectArray(np.ndarray):
