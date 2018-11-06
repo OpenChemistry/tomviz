@@ -158,7 +158,7 @@ class endpoint(object):
                     try:
                         json_body = bottle.json_loads(
                             bottle.request.body.read())
-                    except ValueError as err:
+                    except ValueError:
                         raise ParseError(
                             message='Invalid JSON.',
                             data=json.dumps(traceback.format_exc()))
