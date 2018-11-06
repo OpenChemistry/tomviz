@@ -509,6 +509,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             registerCustomOperators(pythonWatcher->result());
             delete pythonWatcher;
           });
+  Python::initialize();
   auto pythonFuture = QtConcurrent::run(initPython);
   pythonWatcher->setFuture(pythonFuture);
 }

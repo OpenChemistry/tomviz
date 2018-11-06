@@ -458,8 +458,6 @@ void Python::prependPythonPath(std::string dir)
 
 std::vector<OperatorDescription> findCustomOperators(const QString& path)
 {
-  Python::initialize();
-
   Python python;
   auto internalModule = python.import("tomviz._internal");
   if (!internalModule.isValid()) {
