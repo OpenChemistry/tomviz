@@ -227,6 +227,9 @@ public:
   void setForkable(bool forkable);
 
   static bool hasTiltAngles(vtkDataObject* image);
+  static QVector<double> getTiltAngles(vtkDataObject* image);
+  static void setTiltAngles(vtkDataObject* image,
+                            const QVector<double>& angles);
 
 signals:
   /// This signal is fired to notify the world that the DataSource may have

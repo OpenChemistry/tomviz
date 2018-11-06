@@ -19,6 +19,8 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
+#include <vtkImagePermute.h>
+#include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkTrivialProducer.h>
 
@@ -111,6 +113,64 @@ public:
   {
     return attribute(group, name, reinterpret_cast<void*>(&value),
                      H5T_STD_U32LE);
+  }
+
+  bool attribute(const std::string& group, const std::string& name,
+                 std::string& value)
+  {
+    if (H5Aexists_by_name(fileId, group.c_str(), name.c_str(), H5P_DEFAULT) <=
+        0) {
+      // The specified attribute does not exist.
+      cout << group << name << " not found!" << endl;
+      return false;
+    }
+
+    hid_t attr = H5Aopen_by_name(fileId, group.c_str(), name.c_str(),
+                                 H5P_DEFAULT, H5P_DEFAULT);
+    hid_t type = H5Aget_type(attr);
+
+    if (H5T_STRING != H5Tget_class(type)) {
+      cout << group << name << " is not a string" << endl;
+      return false;
+    }
+    char* tmpString;
+    int is_var_str = H5Tis_variable_str(type);
+    if (is_var_str > 0) { // if it is a variable-length string
+      if (H5Aread(attr, type, &tmpString) < 0) {
+        cout << "Failed to read attribute " << group << " " << name << endl;
+        H5Aclose(attr);
+        H5Tclose(type);
+        return false;
+      }
+    } else if (is_var_str == 0) { // If it is not a variable-length string
+      // it must be fixed length since the "is a string" check earlier passed.
+      size_t size = H5Tget_size(type);
+      if (size == 0) {
+        cout << "Unknown error occurred" << endl;
+        H5Aclose(attr);
+        H5Tclose(type);
+        return false;
+      }
+      tmpString = new char[size + 1];
+      if (H5Aread(attr, type, tmpString) < 0) {
+        cout << "Failed to read attribute " << group << " " << name << endl;
+        H5Aclose(attr);
+        H5Tclose(type);
+        delete tmpString;
+        return false;
+      }
+      tmpString[size] = '\0'; // set null byte, hdf5 doesn't do this for you
+    } else {
+      cout << "Unknown error occurred" << endl;
+      H5Aclose(attr);
+      H5Tclose(type);
+      return false;
+    }
+    value = tmpString;
+    free(tmpString);
+    H5Aclose(attr);
+    H5Tclose(type);
+    return true;
   }
 
   bool setAttribute(const std::string& group, const std::string& name,
@@ -231,13 +291,22 @@ public:
   {
     bool success = true;
     hsize_t h5dim[3];
-    int dim[3] = { 0, 0, 0 };
-    data->GetDimensions(dim);
-    h5dim[0] = dim[2];
-    h5dim[1] = dim[1];
-    h5dim[2] = dim[0];
 
-    auto arrayPtr = data->GetPointData()->GetScalars();
+    // VTK's data is a column major order and EMD files expect row-major.
+    // This code flips the order.
+    vtkNew<vtkImagePermute> permute;
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(data);
+    permute->Update();
+    auto rowMajorOrderData = permute->GetOutput();
+
+    int dim[3] = { 0, 0, 0 };
+    rowMajorOrderData->GetDimensions(dim);
+    h5dim[0] = dim[0];
+    h5dim[1] = dim[1];
+    h5dim[2] = dim[2];
+
+    auto arrayPtr = rowMajorOrderData->GetPointData()->GetScalars();
     auto dataPtr = arrayPtr->GetVoidPointer(0);
 
     // Map the VTK types to the HDF5 types for storage and memory. We should
@@ -396,10 +465,6 @@ public:
       dims.resize(dimCount);
       std::copy(h5dims, h5dims + dimCount, dims.begin());
     }
-    if (dimCount == 3) {
-      dims[0] = h5dims[2];
-      dims[2] = h5dims[0];
-    }
     delete[] h5dims;
 
     // Map the HDF5 types to the VTK types for storage and memory. We should
@@ -448,6 +513,17 @@ public:
     H5Dread(datasetId, memTypeId, H5S_ALL, dataspaceId, H5P_DEFAULT,
             data->GetScalarPointer());
     data->Modified();
+
+    // EMD stores data as row major order.  VTK expects column major order.
+    // Permute the data to fix this.
+    vtkNew<vtkImagePermute> permute;
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(data);
+    permute->Update();
+
+    permute->GetOutput()->GetDimensions(&dims[0]);
+
+    data->ShallowCopy(permute->GetOutput());
 
     H5Sclose(dataspaceId);
     H5Dclose(datasetId);
@@ -541,16 +617,36 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
   }
 
   // Now to read back in the units, note the reordering for C vs Fortran...
-  auto dim1 = d->readData("/data/tomography/dim1");
-  auto dim2 = d->readData("/data/tomography/dim2");
-  auto dim3 = d->readData("/data/tomography/dim3");
+  std::string dimNode = emdNode + "/dim1";
+  auto dim1 = d->readData(dimNode.c_str());
+  dimNode = emdNode + "/dim2";
+  auto dim2 = d->readData(dimNode.c_str());
+  dimNode = emdNode + "/dim3";
+  auto dim3 = d->readData(dimNode.c_str());
 
   if (dim1.size() > 1 && dim2.size() > 1 && dim3.size() > 1) {
     double spacing[3];
-    spacing[2] = static_cast<double>(dim1[1] - dim1[0]);
+    spacing[0] = static_cast<double>(dim1[1] - dim1[0]);
     spacing[1] = static_cast<double>(dim2[1] - dim2[0]);
-    spacing[0] = static_cast<double>(dim3[1] - dim3[0]);
+    spacing[2] = static_cast<double>(dim3[1] - dim3[0]);
     image->SetSpacing(spacing);
+  }
+  std::string units = "[n_m]"; // default to nanometers
+  if (d->attribute(emdNode + "/dim3", "units", units)) {
+    if (units == "[deg]") {
+      QVector<double> angles;
+      for (unsigned i = 0; i < dim3.size(); ++i) {
+        angles.push_back(dim3[i]);
+      }
+      DataSource::setTiltAngles(image, angles);
+    } else if (units == "[rad]") {
+      QVector<double> angles;
+      for (unsigned i = 0; i < dim3.size(); ++i) {
+        // Convert radians to degrees since tomviz assumes degrees everywhere.
+        angles.push_back(dim3[i] * 180.0 / vtkMath::Pi());
+      }
+      DataSource::setTiltAngles(image, angles);
+    }
   }
 
   // Close up the file now we are done.
@@ -598,41 +694,50 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   int yIndex = 1;
   int zIndex = 2;
 
-  if (hasTiltAngles) {
-    // Note the flipping to make our ordering work in C-ordered codes correctly.
-    xIndex = 2;
-    zIndex = 0;
-  }
-
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
   image->GetSpacing(spacing);
-  std::vector<float> imageDimDataX(2);
-  std::vector<float> imageDimDataY(2);
-  std::vector<float> imageDimDataZ(2);
-  for (int i = 0; i < 2; ++i) {
+  int dimensions[3];
+  image->GetDimensions(dimensions);
+  std::vector<float> imageDimDataX(dimensions[0]);
+  std::vector<float> imageDimDataY(dimensions[1]);
+  std::vector<float> imageDimDataZ(dimensions[2]);
 
+  for (int i = 0; i < dimensions[0]; ++i) {
     imageDimDataX[i] = i * spacing[xIndex];
+  }
+  for (int i = 0; i < dimensions[1]; ++i) {
     imageDimDataY[i] = i * spacing[yIndex];
-    imageDimDataZ[i] = i * spacing[zIndex];
+  }
+  if (!hasTiltAngles) {
+    for (int i = 0; i < dimensions[2]; ++i) {
+      imageDimDataZ[i] = i * spacing[zIndex];
+    }
+  } else {
+    auto angles = DataSource::getTiltAngles(image);
+    imageDimDataZ.reserve(angles.size());
+    for (int i = 0; i < angles.size(); ++i) {
+      imageDimDataZ[i] = static_cast<float>(angles[i]);
+    }
   }
 
   d->writeData("/data/tomography", "data", image);
 
   // Create the 3 dim sets too...
-  std::vector<int> side;
-  side.push_back(2);
+  std::vector<int> side(1);
+  side[0] = imageDimDataX.size();
   d->writeData("/data/tomography", "dim1", side, imageDimDataX);
   d->setAttribute("/data/tomography/dim1", "name", "x", true);
   d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
 
+  side[0] = imageDimDataY.size();
   d->writeData("/data/tomography", "dim2", side, imageDimDataY);
   d->setAttribute("/data/tomography/dim2", "name", "y", true);
   d->setAttribute("/data/tomography/dim2", "units", "[n_m]", true);
 
+  side[0] = imageDimDataZ.size();
   d->writeData("/data/tomography", "dim3", side, imageDimDataZ);
-
-  if (hasTiltAngles) {
+  if (!hasTiltAngles) {
     d->setAttribute("/data/tomography/dim3", "name", "z", true);
     d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
   } else {

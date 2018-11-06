@@ -208,7 +208,10 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     EmdFormat emdFile;
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData)) {
-      dataSource = new DataSource(imageData);
+      DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
+                                          ? DataSource::TiltSeries
+                                          : DataSource::Volume;
+      dataSource = new DataSource(imageData, type);
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
@@ -337,6 +340,9 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
     auto algo = vtkAlgorithm::SafeDownCast(source->GetClientSideObject());
     auto data = algo->GetOutputDataObject(0);
     auto image = vtkImageData::SafeDownCast(data);
+    DataSource::DataSourceType type = DataSource::hasTiltAngles(image)
+                                        ? DataSource::TiltSeries
+                                        : DataSource::Volume;
 
     auto prop = reader->GetProperty("FileNames");
     if (prop != nullptr) {
@@ -364,7 +370,8 @@ DataSource* LoadDataReaction::createDataSource(vtkSMProxy* reader,
       }
     }
 
-    DataSource* dataSource = new DataSource(image);
+    DataSource* dataSource = new DataSource(image, type);
+
     // Do whatever we need to do with a new data source.
     LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     return dataSource;
