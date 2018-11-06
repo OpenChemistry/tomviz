@@ -202,7 +202,7 @@ class PassiveWatchSource(AbstractSource):
         :type params: dict
         :returns: The current tilt parameters.
         """
-        raise NotImplemented('Not supported by source.')
+        raise NotImplementedError('Not supported by source.')
 
     def preview_scan(self):
         """
