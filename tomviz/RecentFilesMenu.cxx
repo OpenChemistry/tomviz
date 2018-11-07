@@ -43,6 +43,8 @@ QJsonObject loadSettings()
 {
   // Load the recent files from our saved state.
   auto settings = pqApplicationCore::instance()->settings();
+  // Remove a key that can interfere/double count.
+  settings->remove("RecentlyUsedResourcesList");
   auto recent = settings->value("recentFiles").toByteArray();
   auto doc = QJsonDocument::fromJson(recent);
   if (!doc.isNull() && doc.isObject()) {
@@ -96,6 +98,8 @@ void saveSettings(QJsonObject json)
 
   auto settings = pqApplicationCore::instance()->settings();
   settings->setValue("recentFiles", doc.toJson(QJsonDocument::Compact));
+  // Remove a key that can interfere/double count.
+  settings->remove("RecentlyUsedResourcesList");
 }
 
 } // namespace
