@@ -35,11 +35,10 @@ SaveScreenshotDialog::SaveScreenshotDialog(QWidget* p)
 {
   setWindowTitle("Save Screenshot Options");
   auto vLayout = new QVBoxLayout;
-
-  auto label = new QLabel("Select resolution for the image to save");
-  vLayout->addWidget(label);
-
+  
   auto dimensionsLayout = new QHBoxLayout;
+  auto label = new QLabel("Resolution:");
+  dimensionsLayout->addWidget(label);
   m_width = new QSpinBox;
   m_width->setRange(42, 42000);
   m_width->setValue(69);
@@ -56,13 +55,15 @@ SaveScreenshotDialog::SaveScreenshotDialog(QWidget* p)
   dimensionsLayout->addWidget(lockAspectButton);
   vLayout->addItem(dimensionsLayout);
 
-  label = new QLabel("Override Color Palette");
-  vLayout->addWidget(label);
+  auto paletteLayout = new QHBoxLayout;
+  label = new QLabel("Palette:");
+  paletteLayout->addWidget(label);
 
   m_palettes = new QComboBox;
   m_palettes->addItem("Current Palette", "");
   m_palettes->addItem("Transparent Background", "Transparent Background");
-  vLayout->addWidget(m_palettes);
+  paletteLayout->addWidget(m_palettes);
+  vLayout->addItem(paletteLayout);
 
   auto buttonBox =
     new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -71,6 +72,9 @@ SaveScreenshotDialog::SaveScreenshotDialog(QWidget* p)
   QObject::connect(buttonBox, &QDialogButtonBox::rejected, this,
                    &QDialog::reject);
   vLayout->addWidget(buttonBox);
+
+  QObject::connect(lockAspectButton, SIGNAL(clicked()), this,
+                   SLOT(setLockAspectRatio()));
 
   setLayout(vLayout);
 }
@@ -105,7 +109,7 @@ QString SaveScreenshotDialog::palette() const
 
 void SaveScreenshotDialog::setLockAspectRatio()
 {
-
+  qDebug() << "Lock aspect ration...";
 }
 
 } // namespace tomviz
