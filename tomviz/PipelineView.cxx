@@ -379,7 +379,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     if (!dataSource) {
       dataSource = op->dataSource();
     }
-    dataSource->pipeline()->execute(dataSource);
+    // Re-execute from the beginning
+    dataSource->pipeline()->execute(dataSource, dataSource->operators().first());
   } else if (markAsVolumeAction != nullptr &&
              markAsVolumeAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());
