@@ -142,6 +142,8 @@ set(SOURCES
   SaveDataReaction.cxx
   SaveLoadStateReaction.cxx
   SaveLoadStateReaction.h
+  SaveScreenshotDialog.cxx
+  SaveScreenshotDialog.h
   SaveScreenshotReaction.cxx
   SaveScreenshotReaction.h
   SaveWebReaction.cxx
