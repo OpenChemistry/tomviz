@@ -509,7 +509,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             registerCustomOperators(pythonWatcher->result());
             delete pythonWatcher;
           });
-  Python::initialize();
   auto pythonFuture = QtConcurrent::run(initPython);
   pythonWatcher->setFuture(pythonFuture);
 }
@@ -525,6 +524,7 @@ MainWindow::~MainWindow()
 
 std::vector<OperatorDescription> MainWindow::initPython()
 {
+  Python::initialize();
   Connection::registerType();
   RegexGroupSubstitution::registerType();
   auto operators = findCustomOperators();
