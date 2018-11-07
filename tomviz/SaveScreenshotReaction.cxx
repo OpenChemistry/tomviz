@@ -78,8 +78,9 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
   QSpinBox* height = new QSpinBox;
   height->setRange(50, std::numeric_limits<int>::max());
   height->setValue(viewSize.height());
-  QPushButton* lockAspectButton =
-    new QPushButton(QIcon(":/pqWidgets/Icons/pqOctreeData16.png"), "");
+  auto lockAspectButton =
+    new QPushButton(QIcon(":/pqWidgets/Icons/pqLock24.png"), "");
+  lockAspectButton->setToolTip("Lock aspect ratio");
   dimensionsLayout->addWidget(width);
   dimensionsLayout->addWidget(label);
   dimensionsLayout->addWidget(height);
