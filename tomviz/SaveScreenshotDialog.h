@@ -40,9 +40,12 @@ public:
 
 private slots:
   void setLockAspectRatio();
+  void widthChanged(int i);
+  void heightChanged(int i);
 
 private:
   bool m_lockAspectRatio = false;
+  double m_aspectRatio = 1.0;
 
   QSpinBox *m_width = nullptr;
   QSpinBox *m_height = nullptr;

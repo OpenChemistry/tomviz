@@ -49,6 +49,7 @@ SaveScreenshotDialog::SaveScreenshotDialog(QWidget* p)
   auto lockAspectButton =
     new QPushButton(QIcon(":/pqWidgets/Icons/pqLock24.png"), "");
   lockAspectButton->setToolTip("Lock aspect ratio");
+  lockAspectButton->setCheckable(true);
   dimensionsLayout->addWidget(m_width);
   dimensionsLayout->addWidget(label);
   dimensionsLayout->addWidget(m_height);
@@ -109,7 +110,32 @@ QString SaveScreenshotDialog::palette() const
 
 void SaveScreenshotDialog::setLockAspectRatio()
 {
-  qDebug() << "Lock aspect ration...";
+  m_lockAspectRatio = !m_lockAspectRatio;
+  if (m_lockAspectRatio) {
+    m_aspectRatio = m_width->value() / static_cast<double>(m_height->value());
+    connect(m_width, SIGNAL(valueChanged(int)), this, SLOT(widthChanged(int)));
+    connect(m_height, SIGNAL(valueChanged(int)), this, SLOT(heightChanged(int)));
+  }
+  else {
+    disconnect(m_width, SIGNAL(valueChanged(int)), this,
+               SLOT(widthChanged(int)));
+    disconnect(m_height, SIGNAL(valueChanged(int)), this,
+               SLOT(heightChanged(int)));
+  }
+}
+
+void SaveScreenshotDialog::widthChanged(int i)
+{
+  m_height->blockSignals(true);
+  m_height->setValue(i / m_aspectRatio);
+  m_height->blockSignals(false);
+}
+
+void SaveScreenshotDialog::heightChanged(int i)
+{
+  m_width->blockSignals(true);
+  m_width->setValue(i * m_aspectRatio);
+  m_width->blockSignals(false);
 }
 
 } // namespace tomviz
