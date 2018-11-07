@@ -47,9 +47,9 @@ private:
   bool m_lockAspectRatio = false;
   double m_aspectRatio = 1.0;
 
-  QSpinBox *m_width = nullptr;
-  QSpinBox *m_height = nullptr;
-  QComboBox *m_palettes = nullptr;
+  QSpinBox* m_width = nullptr;
+  QSpinBox* m_height = nullptr;
+  QComboBox* m_palettes = nullptr;
 };
 } // namespace tomviz
 

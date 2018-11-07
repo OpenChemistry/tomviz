@@ -30,12 +30,11 @@
 
 namespace tomviz {
 
-SaveScreenshotDialog::SaveScreenshotDialog(QWidget* p)
-  : QDialog(p)
+SaveScreenshotDialog::SaveScreenshotDialog(QWidget* p) : QDialog(p)
 {
   setWindowTitle("Save Screenshot Options");
   auto vLayout = new QVBoxLayout;
-  
+
   auto dimensionsLayout = new QHBoxLayout;
   auto label = new QLabel("Resolution:");
   dimensionsLayout->addWidget(label);
@@ -114,9 +113,9 @@ void SaveScreenshotDialog::setLockAspectRatio()
   if (m_lockAspectRatio) {
     m_aspectRatio = m_width->value() / static_cast<double>(m_height->value());
     connect(m_width, SIGNAL(valueChanged(int)), this, SLOT(widthChanged(int)));
-    connect(m_height, SIGNAL(valueChanged(int)), this, SLOT(heightChanged(int)));
-  }
-  else {
+    connect(m_height, SIGNAL(valueChanged(int)), this,
+            SLOT(heightChanged(int)));
+  } else {
     disconnect(m_width, SIGNAL(valueChanged(int)), this,
                SLOT(widthChanged(int)));
     disconnect(m_height, SIGNAL(valueChanged(int)), this,
