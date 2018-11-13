@@ -1,3 +1,6 @@
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
+
 #include "ModuleVolumeWidget.h"
 #include "Module.h"
 #include "ui_LightingParametersForm.h"
