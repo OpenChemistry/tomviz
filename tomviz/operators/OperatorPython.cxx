@@ -360,17 +360,16 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     QString name(nameLabelPair.first);
     QString label(nameLabelPair.second);
 
-    // Create uninitialized data set as a placeholder for the data
-    vtkSmartPointer<vtkImageData> childData =
-      vtkSmartPointer<vtkImageData>::New();
-
-    if (childData) {
+    if (!childDataSource()) {
+      // Create uninitialized data set as a placeholder for the data
+      vtkSmartPointer<vtkImageData> childData =
+        vtkSmartPointer<vtkImageData>::New();
       childData->ShallowCopy(
         vtkImageData::SafeDownCast(dataSource()->dataObject()));
       emit newChildDataSource(label, childData);
-
-      dataSourceByName.insert(childDataSource(), nameLabelPair.first);
     }
+
+    dataSourceByName.insert(childDataSource(), nameLabelPair.first);
   }
 
   Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
