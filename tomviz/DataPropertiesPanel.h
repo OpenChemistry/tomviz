@@ -10,6 +10,7 @@
 #include <QScopedPointer>
 
 class pqProxyWidget;
+class QComboBox;
 class QTreeWidget;
 class vtkPVDataInformation;
 
@@ -52,7 +53,8 @@ private slots:
 
   void updateAxesGridLabels();
 
-  void updateActiveScalars();
+  void onDataTreeChange();
+  void setActiveScalars(QString activeScalars);
 
 signals:
   void colorMapUpdated();
@@ -70,6 +72,8 @@ private:
   void updateSpacing(int axis, double newLength);
   void updateInformationWidget(QTreeWidget* infoTreeWidget,
                                vtkPVDataInformation* dataInformation);
+  void updateActiveScalarsCombo(QComboBox* scalarsCombo,
+                                vtkPVDataInformation* dataInfo);
   static void resetCamera();
 };
 } // namespace tomviz

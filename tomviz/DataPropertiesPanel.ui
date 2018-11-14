@@ -34,6 +34,10 @@
     </widget>
    </item>
    <item>
+    <widget class="QComboBox" name="ActiveScalars">
+    </widget>
+   </item>
+   <item>
     <widget class="QLabel" name="DataRange">
      <property name="text">
       <string>DataRange</string>

@@ -56,6 +56,10 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   QWidget* separator = pqProxyWidget::newGroupLabelWidget("Filename", this);
   l->insertWidget(l->indexOf(m_ui->FileName), separator);
 
+  // add separator labels.
+  separator = pqProxyWidget::newGroupLabelWidget("Active Scalars", this);
+  l->insertWidget(l->indexOf(m_ui->ActiveScalars), separator);
+
   separator = pqProxyWidget::newGroupLabelWidget("Dimensions & Range", this);
   l->insertWidget(l->indexOf(m_ui->DataRange), separator);
 
@@ -81,7 +85,9 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(m_ui->yLengthBox, SIGNAL(editingFinished()), SLOT(updateYLength()));
   connect(m_ui->zLengthBox, SIGNAL(editingFinished()), SLOT(updateZLength()));
   connect(m_ui->DataTreeWidget, SIGNAL(itemSelectionChanged()),
-          SLOT(updateActiveScalars()));
+          SLOT(onDataTreeChange()));
+  connect(m_ui->ActiveScalars, &QComboBox::currentTextChanged, this,
+          &DataPropertiesPanel::setActiveScalars);
 }
 
 DataPropertiesPanel::~DataPropertiesPanel() {}
@@ -121,6 +127,31 @@ QString getDataDimensionsString(vtkSMSourceProxy* proxy)
 }
 
 } // namespace
+
+void DataPropertiesPanel::updateActiveScalarsCombo(
+  QComboBox* scalarsCombo, vtkPVDataInformation* dataInfo)
+{
+  scalarsCombo->clear();
+  scalarsCombo->blockSignals(true);
+
+  vtkPVDataSetAttributesInformation* pointDataInfo =
+    dataInfo->GetPointDataInformation();
+  if (pointDataInfo) {
+    int numArrays = pointDataInfo->GetNumberOfArrays();
+    for (int i = 0; i < numArrays; i++) {
+      vtkPVArrayInformation* arrayInfo;
+      arrayInfo = pointDataInfo->GetArrayInformation(i);
+
+      auto arrayName = arrayInfo->GetName();
+      scalarsCombo->addItem(arrayName);
+      if (arrayName == m_currentDataSource->activeScalars()) {
+        scalarsCombo->setCurrentText(arrayName);
+      }
+    }
+  }
+
+  scalarsCombo->blockSignals(false);
+}
 
 void DataPropertiesPanel::updateInformationWidget(
   QTreeWidget* infoTreeWidget, vtkPVDataInformation* dataInfo)
@@ -225,6 +256,8 @@ void DataPropertiesPanel::updateData()
   if (sourceProxy) {
     updateInformationWidget(m_ui->DataTreeWidget,
                             sourceProxy->GetDataInformation());
+    updateActiveScalarsCombo(m_ui->ActiveScalars,
+                             sourceProxy->GetDataInformation());
   }
 
   // display tilt series data
@@ -477,7 +510,7 @@ void DataPropertiesPanel::updateAxesGridLabels()
   }
 }
 
-void DataPropertiesPanel::updateActiveScalars()
+void DataPropertiesPanel::onDataTreeChange()
 {
   QList<QTreeWidgetItem*> items = m_ui->DataTreeWidget->selectedItems();
   if (items.size() > 0) {
@@ -485,9 +518,19 @@ void DataPropertiesPanel::updateActiveScalars()
     // this
     // is guaranteed.
     auto arrayName = items[0]->data(0, Qt::DisplayRole).toString();
-    if (m_currentDataSource) {
-      m_currentDataSource->setActiveScalars(arrayName);
-    }
+    setActiveScalars(arrayName);
+  }
+}
+
+void DataPropertiesPanel::setActiveScalars(QString activeScalars)
+{
+  if (activeScalars.size() == 0) {
+    return;
+  }
+
+  if (m_currentDataSource &&
+      m_currentDataSource->activeScalars() != activeScalars) {
+    m_currentDataSource->setActiveScalars(activeScalars);
   }
 }
 
@@ -496,6 +539,7 @@ void DataPropertiesPanel::clear()
   m_ui->FileName->setText("");
   m_ui->DataRange->setText("");
   m_ui->DataTreeWidget->clear();
+  m_ui->ActiveScalars->clear();
 
   if (m_colorMapWidget) {
     m_ui->verticalLayout->removeWidget(m_colorMapWidget);
