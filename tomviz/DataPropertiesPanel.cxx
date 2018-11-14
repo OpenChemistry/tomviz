@@ -101,12 +101,15 @@ void DataPropertiesPanel::paintEvent(QPaintEvent* e)
 void DataPropertiesPanel::setDataSource(DataSource* dsource)
 {
   if (m_currentDataSource) {
-    disconnect(m_currentDataSource);
+    disconnect(m_currentDataSource, 0, this, 0);
+    disconnect(&m_scalarsTableModel, 0, m_currentDataSource, 0);
   }
   m_currentDataSource = dsource;
   if (dsource) {
     connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
             Qt::UniqueConnection);
+    connect(&m_scalarsTableModel, &DataPropertiesModel::scalarsRenamed, dsource,
+            &DataSource::renameScalarsArray);
   }
   scheduleUpdate();
 }
@@ -501,6 +504,7 @@ void DataPropertiesPanel::clear()
   m_ui->FileName->setText("");
   m_ui->DataRange->setText("");
   m_ui->ActiveScalars->clear();
+  m_scalarsTableModel.setArraysInfo(QList<ArrayInfo>());
 
   if (m_colorMapWidget) {
     m_ui->verticalLayout->removeWidget(m_colorMapWidget);

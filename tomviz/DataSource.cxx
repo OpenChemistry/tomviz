@@ -612,6 +612,38 @@ QString DataSource::activeScalars() const
   return returnValue;
 }
 
+void DataSource::renameScalarsArray(const QString& oldName,
+                                    const QString& newName)
+{
+  const bool isCurrentScalars = oldName == activeScalars();
+
+  vtkAlgorithm* alg = algorithm();
+  if (alg == nullptr) {
+    return;
+  }
+  vtkImageData* data = vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+  if (data == nullptr) {
+    return;
+  }
+  vtkPointData* pointData = data->GetPointData();
+  if (pointData == nullptr) {
+    return;
+  }
+  vtkDataArray* dataArray = pointData->GetScalars(oldName.toLatin1().data());
+  if (dataArray == nullptr) {
+    return;
+  }
+  dataArray->SetName(newName.toLatin1().data());
+
+  if (isCurrentScalars) {
+    setActiveScalars(newName);
+  } else {
+    dataModified();
+    emit activeScalarsChanged();
+    emit dataPropertiesChanged();
+  }
+}
+
 unsigned int DataSource::getNumberOfComponents()
 {
   unsigned int numComponents = 0;

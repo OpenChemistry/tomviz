@@ -245,6 +245,7 @@ signals:
 
 public slots:
   void dataModified();
+  void renameScalarsArray(const QString& oldName, const QString& newName);
 
 protected slots:
   /// update the color map range.
