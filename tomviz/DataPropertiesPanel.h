@@ -6,12 +6,14 @@
 
 #include <QWidget>
 
+#include "DataPropertiesModel.h"
+
 #include <QPointer>
 #include <QScopedPointer>
 
 class pqProxyWidget;
 class QComboBox;
-class QTreeWidget;
+class QTableView;
 class vtkPVDataInformation;
 
 namespace Ui {
@@ -53,7 +55,6 @@ private slots:
 
   void updateAxesGridLabels();
 
-  void onDataTreeChange();
   void setActiveScalars(QString activeScalars);
 
 signals:
@@ -67,10 +68,11 @@ private:
   QPointer<DataSource> m_currentDataSource;
   QPointer<pqProxyWidget> m_colorMapWidget;
   QPointer<QWidget> m_tiltAnglesSeparator;
+  DataPropertiesModel m_scalarsTableModel;
 
   void clear();
   void updateSpacing(int axis, double newLength);
-  void updateInformationWidget(QTreeWidget* infoTreeWidget,
+  void updateInformationWidget(QTableView* scalarsTable,
                                vtkPVDataInformation* dataInformation);
   void updateActiveScalarsCombo(QComboBox* scalarsCombo,
                                 vtkPVDataInformation* dataInfo);

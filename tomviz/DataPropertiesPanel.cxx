@@ -14,7 +14,6 @@
 #include <pqNonEditableStyledItemDelegate.h>
 #include <pqPropertiesPanel.h>
 #include <pqProxyWidget.h>
-#include <pqTreeWidget.h>
 #include <pqView.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkPVArrayInformation.h>
@@ -48,6 +47,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   m_ui->yLengthBox->setValidator(new QDoubleValidator(m_ui->yLengthBox));
   m_ui->zLengthBox->setValidator(new QDoubleValidator(m_ui->zLengthBox));
   m_ui->TiltAnglesTable->installEventFilter(this);
+  m_ui->ScalarsTable->setModel(&m_scalarsTableModel);
 
   QVBoxLayout* l = m_ui->verticalLayout;
   l->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
@@ -84,10 +84,10 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(m_ui->xLengthBox, SIGNAL(editingFinished()), SLOT(updateXLength()));
   connect(m_ui->yLengthBox, SIGNAL(editingFinished()), SLOT(updateYLength()));
   connect(m_ui->zLengthBox, SIGNAL(editingFinished()), SLOT(updateZLength()));
-  connect(m_ui->DataTreeWidget, SIGNAL(itemSelectionChanged()),
-          SLOT(onDataTreeChange()));
   connect(m_ui->ActiveScalars, &QComboBox::currentTextChanged, this,
           &DataPropertiesPanel::setActiveScalars);
+  connect(&m_scalarsTableModel, &DataPropertiesModel::activeScalarsChanged,
+          this, &DataPropertiesPanel::setActiveScalars);
 }
 
 DataPropertiesPanel::~DataPropertiesPanel() {}
@@ -154,34 +154,25 @@ void DataPropertiesPanel::updateActiveScalarsCombo(
 }
 
 void DataPropertiesPanel::updateInformationWidget(
-  QTreeWidget* infoTreeWidget, vtkPVDataInformation* dataInfo)
+  QTableView* scalarsTable, vtkPVDataInformation* dataInfo)
 {
-  infoTreeWidget->clear();
-
-  int activeArrayRow = -1;
-
   vtkPVDataSetAttributesInformation* pointDataInfo =
     dataInfo->GetPointDataInformation();
   if (pointDataInfo) {
-    QPixmap pointDataPixmap(":/pqWidgets/Icons/pqPointData16.png");
     int numArrays = pointDataInfo->GetNumberOfArrays();
+    QList<ArrayInfo> arraysInfo;
     for (int i = 0; i < numArrays; i++) {
       vtkPVArrayInformation* arrayInfo;
       arrayInfo = pointDataInfo->GetArrayInformation(i);
-      if (pointDataInfo->IsArrayAnAttribute(i) ==
-          vtkDataSetAttributes::SCALARS) {
-        activeArrayRow = i;
-      }
 
-      // name, type, data range, data type
-      QTreeWidgetItem* item = new QTreeWidgetItem(infoTreeWidget);
+      // name, type, data range, data type, active
       auto arrayName = arrayInfo->GetName();
-      item->setData(0, Qt::DisplayRole, arrayName);
       QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
-      item->setData(2, Qt::DisplayRole, dataType);
       int numComponents = arrayInfo->GetNumberOfComponents();
       QString dataRange;
       double range[2];
+      bool active = m_currentDataSource->activeScalars() == arrayName;
+
       for (int j = 0; j < numComponents; j++) {
         if (j != 0) {
           dataRange.append(", ");
@@ -191,34 +182,17 @@ void DataPropertiesPanel::updateInformationWidget(
           QString("[%1, %2]").arg(range[0]).arg(range[1]);
         dataRange.append(componentRange);
       }
-      item->setData(1, Qt::DisplayRole,
-                    dataType == "string" ? tr("NA") : dataRange);
-      item->setData(1, Qt::ToolTipRole, dataRange);
-      item->setFlags(item->flags() | Qt::ItemIsEditable);
-      if (arrayInfo->GetIsPartial()) {
-        item->setForeground(0, QBrush(QColor("darkBlue")));
-        item->setData(0, Qt::DisplayRole,
-                      QString("%1 (partial)").arg(arrayInfo->GetName()));
-      } else {
-        item->setForeground(0, QBrush(QColor("darkGreen")));
-      }
-    }
-  }
 
-  // Select the active array row if there is one
-  if (activeArrayRow >= 0) {
-    QModelIndex index = infoTreeWidget->model()->index(activeArrayRow, 0);
-    QItemSelectionModel* selectionModel = infoTreeWidget->selectionModel();
-    if (selectionModel) {
-      m_ui->DataTreeWidget->blockSignals(true);
-      selectionModel->select(index, QItemSelectionModel::ClearAndSelect |
-                                      QItemSelectionModel::Rows);
-      m_ui->DataTreeWidget->blockSignals(false);
+      arraysInfo.push_back(
+        ArrayInfo(arrayName, dataType == "string" ? tr("NA") : dataRange,
+                  dataType, active));
     }
+    auto model = static_cast<DataPropertiesModel*>(scalarsTable->model());
+    model->setArraysInfo(arraysInfo);
+    scalarsTable->resizeColumnsToContents();
+    scalarsTable->horizontalHeader()->setSectionResizeMode(
+      1, QHeaderView::Stretch);
   }
-
-  infoTreeWidget->header()->resizeSections(QHeaderView::ResizeToContents);
-  infoTreeWidget->setItemDelegate(new pqNonEditableStyledItemDelegate(this));
 }
 
 void DataPropertiesPanel::updateData()
@@ -254,7 +228,7 @@ void DataPropertiesPanel::updateData()
 
   auto sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->proxy());
   if (sourceProxy) {
-    updateInformationWidget(m_ui->DataTreeWidget,
+    updateInformationWidget(m_ui->ScalarsTable,
                             sourceProxy->GetDataInformation());
     updateActiveScalarsCombo(m_ui->ActiveScalars,
                              sourceProxy->GetDataInformation());
@@ -510,18 +484,6 @@ void DataPropertiesPanel::updateAxesGridLabels()
   }
 }
 
-void DataPropertiesPanel::onDataTreeChange()
-{
-  QList<QTreeWidgetItem*> items = m_ui->DataTreeWidget->selectedItems();
-  if (items.size() > 0) {
-    // Warning: assumes the first item is from the first column. I'm not sure if
-    // this
-    // is guaranteed.
-    auto arrayName = items[0]->data(0, Qt::DisplayRole).toString();
-    setActiveScalars(arrayName);
-  }
-}
-
 void DataPropertiesPanel::setActiveScalars(QString activeScalars)
 {
   if (activeScalars.size() == 0) {
@@ -538,7 +500,6 @@ void DataPropertiesPanel::clear()
 {
   m_ui->FileName->setText("");
   m_ui->DataRange->setText("");
-  m_ui->DataTreeWidget->clear();
   m_ui->ActiveScalars->clear();
 
   if (m_colorMapWidget) {

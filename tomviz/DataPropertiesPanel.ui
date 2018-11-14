@@ -48,25 +48,7 @@
     </widget>
    </item>
    <item>
-    <widget class="pqTreeWidget" name="DataTreeWidget">
-     <property name="rootIsDecorated">
-      <bool>false</bool>
-     </property>
-     <column>
-      <property name="text">
-       <string>Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Data Range</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Data Type</string>
-      </property>
-     </column>
+    <widget class="QTableView" name="ScalarsTable">
     </widget>
    </item>
    <item>
