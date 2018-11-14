@@ -629,10 +629,18 @@ void DataSource::renameScalarsArray(const QString& oldName,
   if (pointData == nullptr) {
     return;
   }
-  vtkDataArray* dataArray = pointData->GetScalars(oldName.toLatin1().data());
-  if (dataArray == nullptr) {
+
+  // Ensure the array actually exist
+  if (pointData->HasArray(oldName.toLatin1().data()) == 0) {
     return;
   }
+
+  // Ensure the target name is not already taken
+  if (pointData->HasArray(newName.toLatin1().data()) == 1) {
+    return;
+  }
+
+  vtkDataArray* dataArray = pointData->GetScalars(oldName.toLatin1().data());
   dataArray->SetName(newName.toLatin1().data());
 
   if (isCurrentScalars) {
