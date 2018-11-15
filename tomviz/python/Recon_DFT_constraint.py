@@ -248,7 +248,7 @@ def radial_average(tiltseries, kr_cutoffs):
 
     kx = np.fft.fftfreq(Nx)
     ky = np.fft.fftfreq(Ny)
-    ky = ky[0:int(np.ceil(Ny / 2) + 1)]
+    ky = ky[0:Ny // 2 + 1]
 
     kX, kY = np.meshgrid(ky, kx)
     kR = np.sqrt(kY**2 + kX**2)
