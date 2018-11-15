@@ -185,7 +185,7 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(vtkPVDataInformation* dataIn
 }
 
 void DataPropertiesPanel::updateActiveScalarsCombo(
-  QComboBox* scalarsCombo, QList<ArrayInfo> arraysInfo)
+  QComboBox* scalarsCombo, const QList<ArrayInfo>& arraysInfo)
 {
   scalarsCombo->clear();
   scalarsCombo->blockSignals(true);
@@ -201,7 +201,7 @@ void DataPropertiesPanel::updateActiveScalarsCombo(
 }
 
 void DataPropertiesPanel::updateInformationWidget(
-  QTableView* scalarsTable, QList<ArrayInfo> arraysInfo)
+  QTableView* scalarsTable, const QList<ArrayInfo>& arraysInfo)
 {
   auto model = static_cast<DataPropertiesModel*>(scalarsTable->model());
   model->setArraysInfo(arraysInfo);
@@ -498,7 +498,7 @@ void DataPropertiesPanel::updateAxesGridLabels()
   }
 }
 
-void DataPropertiesPanel::setActiveScalars(QString activeScalars)
+void DataPropertiesPanel::setActiveScalars(const QString& activeScalars)
 {
   if (activeScalars.size() == 0) {
     return;

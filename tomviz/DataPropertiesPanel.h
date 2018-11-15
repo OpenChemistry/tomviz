@@ -55,7 +55,7 @@ private slots:
 
   void updateAxesGridLabels();
 
-  void setActiveScalars(QString activeScalars);
+  void setActiveScalars(const QString& activeScalars);
 
 signals:
   void colorMapUpdated();
@@ -74,9 +74,9 @@ private:
   void updateSpacing(int axis, double newLength);
   QList<ArrayInfo> getArraysInfo(vtkPVDataInformation* dataInfo) const;
   void updateInformationWidget(QTableView* scalarsTable,
-                               QList<ArrayInfo> arraysInfo);
+                               const QList<ArrayInfo>&  arraysInfo);
   void updateActiveScalarsCombo(QComboBox* scalarsCombo,
-                                QList<ArrayInfo> arraysInfo);
+                                const QList<ArrayInfo>& arraysInfo);
   static void resetCamera();
 };
 } // namespace tomviz

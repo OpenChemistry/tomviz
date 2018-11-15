@@ -3,9 +3,6 @@
 
 #include "DataPropertiesModel.h"
 
-#include <QBrush>
-#include <QDebug>
-
 namespace tomviz {
 
 DataPropertiesModel::DataPropertiesModel(QObject* parent)
