@@ -617,30 +617,18 @@ void DataSource::renameScalarsArray(const QString& oldName,
 {
   const bool isCurrentScalars = oldName == activeScalars();
 
-  vtkAlgorithm* alg = algorithm();
-  if (alg == nullptr) {
-    return;
-  }
-  vtkImageData* data = vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
-  if (data == nullptr) {
-    return;
-  }
-  vtkPointData* pointData = data->GetPointData();
-  if (pointData == nullptr) {
-    return;
-  }
-
   // Ensure the array actually exist
-  if (pointData->HasArray(oldName.toLatin1().data()) == 0) {
+  vtkDataArray* dataArray = getScalarsArray(oldName);
+  if (dataArray == nullptr) {
     return;
   }
 
   // Ensure the target name is not already taken
-  if (pointData->HasArray(newName.toLatin1().data()) == 1) {
+  vtkDataArray* targetArray = getScalarsArray(newName);
+  if (targetArray != nullptr) {
     return;
   }
 
-  vtkDataArray* dataArray = pointData->GetScalars(oldName.toLatin1().data());
   dataArray->SetName(newName.toLatin1().data());
 
   if (isCurrentScalars) {
@@ -650,6 +638,26 @@ void DataSource::renameScalarsArray(const QString& oldName,
     emit activeScalarsChanged();
     emit dataPropertiesChanged();
   }
+}
+
+vtkDataArray* DataSource::getScalarsArray(const QString& arrayName)
+{
+  vtkAlgorithm* alg = algorithm();
+  if (alg == nullptr) {
+    return nullptr;
+  }
+  vtkImageData* data = vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+  if (data == nullptr) {
+    return nullptr;
+  }
+  vtkPointData* pointData = data->GetPointData();
+  if (pointData == nullptr) {
+    return nullptr;
+  }
+  if (pointData->HasArray(arrayName.toLatin1().data()) == 0) {
+    return nullptr;
+  }
+  return pointData->GetScalars(arrayName.toLatin1().data());
 }
 
 unsigned int DataSource::getNumberOfComponents()

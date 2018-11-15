@@ -5,6 +5,8 @@
 
 #include "ui_DataPropertiesPanel.h"
 
+#include <algorithm>
+
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "SetTiltAnglesOperator.h"
@@ -131,45 +133,22 @@ QString getDataDimensionsString(vtkSMSourceProxy* proxy)
 
 } // namespace
 
-void DataPropertiesPanel::updateActiveScalarsCombo(
-  QComboBox* scalarsCombo, vtkPVDataInformation* dataInfo)
+QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(vtkPVDataInformation* dataInfo) const
 {
-  scalarsCombo->clear();
-  scalarsCombo->blockSignals(true);
-
+  QList<ArrayInfo> arraysInfo;
   vtkPVDataSetAttributesInformation* pointDataInfo =
     dataInfo->GetPointDataInformation();
   if (pointDataInfo) {
+    QList<ArrayInfo> arraysInfo_;
     int numArrays = pointDataInfo->GetNumberOfArrays();
-    for (int i = 0; i < numArrays; i++) {
-      vtkPVArrayInformation* arrayInfo;
-      arrayInfo = pointDataInfo->GetArrayInformation(i);
-
-      auto arrayName = arrayInfo->GetName();
-      scalarsCombo->addItem(arrayName);
-      if (arrayName == m_currentDataSource->activeScalars()) {
-        scalarsCombo->setCurrentText(arrayName);
-      }
-    }
-  }
-
-  scalarsCombo->blockSignals(false);
-}
-
-void DataPropertiesPanel::updateInformationWidget(
-  QTableView* scalarsTable, vtkPVDataInformation* dataInfo)
-{
-  vtkPVDataSetAttributesInformation* pointDataInfo =
-    dataInfo->GetPointDataInformation();
-  if (pointDataInfo) {
-    int numArrays = pointDataInfo->GetNumberOfArrays();
-    QList<ArrayInfo> arraysInfo;
+    QList<QPair<vtkDataArray*, int>> sortMap;
     for (int i = 0; i < numArrays; i++) {
       vtkPVArrayInformation* arrayInfo;
       arrayInfo = pointDataInfo->GetArrayInformation(i);
 
       // name, type, data range, data type, active
       auto arrayName = arrayInfo->GetName();
+      sortMap.push_back(QPair<vtkDataArray*, int>(m_currentDataSource->getScalarsArray(arrayName), i));
       QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
       int numComponents = arrayInfo->GetNumberOfComponents();
       QString dataRange;
@@ -186,16 +165,49 @@ void DataPropertiesPanel::updateInformationWidget(
         dataRange.append(componentRange);
       }
 
-      arraysInfo.push_back(
+      arraysInfo_.push_back(
         ArrayInfo(arrayName, dataType == "string" ? tr("NA") : dataRange,
                   dataType, active));
     }
-    auto model = static_cast<DataPropertiesModel*>(scalarsTable->model());
-    model->setArraysInfo(arraysInfo);
-    scalarsTable->resizeColumnsToContents();
-    scalarsTable->horizontalHeader()->setSectionResizeMode(
-      1, QHeaderView::Stretch);
+
+    // Ensure scalars are displayed in the same order even after renaming
+    std::sort(
+      sortMap.begin(), sortMap.end(),
+      [](QPair<vtkDataArray*, int> a, QPair<vtkDataArray*, int> b){
+        return a.first < b.first;
+      }
+    );
+    foreach(auto pair, sortMap) {
+      arraysInfo.push_back(arraysInfo_[pair.second]);
+    }
   }
+  return arraysInfo;
+}
+
+void DataPropertiesPanel::updateActiveScalarsCombo(
+  QComboBox* scalarsCombo, QList<ArrayInfo> arraysInfo)
+{
+  scalarsCombo->clear();
+  scalarsCombo->blockSignals(true);
+
+  foreach(auto array, arraysInfo) {
+    scalarsCombo->addItem(array.name);
+    if (array.active) {
+      scalarsCombo->setCurrentText(array.name);
+    }
+  }
+
+  scalarsCombo->blockSignals(false);
+}
+
+void DataPropertiesPanel::updateInformationWidget(
+  QTableView* scalarsTable, QList<ArrayInfo> arraysInfo)
+{
+  auto model = static_cast<DataPropertiesModel*>(scalarsTable->model());
+  model->setArraysInfo(arraysInfo);
+  scalarsTable->resizeColumnsToContents();
+  scalarsTable->horizontalHeader()->setSectionResizeMode(
+    1, QHeaderView::Stretch);
 }
 
 void DataPropertiesPanel::updateData()
@@ -231,10 +243,9 @@ void DataPropertiesPanel::updateData()
 
   auto sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->proxy());
   if (sourceProxy) {
-    updateInformationWidget(m_ui->ScalarsTable,
-                            sourceProxy->GetDataInformation());
-    updateActiveScalarsCombo(m_ui->ActiveScalars,
-                             sourceProxy->GetDataInformation());
+    auto arraysInfo = getArraysInfo(sourceProxy->GetDataInformation());
+    updateInformationWidget(m_ui->ScalarsTable, arraysInfo);
+    updateActiveScalarsCombo(m_ui->ActiveScalars, arraysInfo);
   }
 
   // display tilt series data

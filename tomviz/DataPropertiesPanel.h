@@ -72,10 +72,11 @@ private:
 
   void clear();
   void updateSpacing(int axis, double newLength);
+  QList<ArrayInfo> getArraysInfo(vtkPVDataInformation* dataInfo) const;
   void updateInformationWidget(QTableView* scalarsTable,
-                               vtkPVDataInformation* dataInformation);
+                               QList<ArrayInfo> arraysInfo);
   void updateActiveScalarsCombo(QComboBox* scalarsCombo,
-                                vtkPVDataInformation* dataInfo);
+                                QList<ArrayInfo> arraysInfo);
   static void resetCamera();
 };
 } // namespace tomviz
