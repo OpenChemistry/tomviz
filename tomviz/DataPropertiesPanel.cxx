@@ -133,7 +133,8 @@ QString getDataDimensionsString(vtkSMSourceProxy* proxy)
 
 } // namespace
 
-QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(vtkPVDataInformation* dataInfo) const
+QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(
+  vtkPVDataInformation* dataInfo) const
 {
   QList<ArrayInfo> arraysInfo;
   vtkPVDataSetAttributesInformation* pointDataInfo =
@@ -148,7 +149,8 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(vtkPVDataInformation* dataIn
 
       // name, type, data range, data type, active
       auto arrayName = arrayInfo->GetName();
-      sortMap.push_back(QPair<vtkDataArray*, int>(m_currentDataSource->getScalarsArray(arrayName), i));
+      sortMap.push_back(QPair<vtkDataArray*, int>(
+        m_currentDataSource->getScalarsArray(arrayName), i));
       QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
       int numComponents = arrayInfo->GetNumberOfComponents();
       QString dataRange;
@@ -171,13 +173,11 @@ QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(vtkPVDataInformation* dataIn
     }
 
     // Ensure scalars are displayed in the same order even after renaming
-    std::sort(
-      sortMap.begin(), sortMap.end(),
-      [](QPair<vtkDataArray*, int> a, QPair<vtkDataArray*, int> b){
-        return a.first < b.first;
-      }
-    );
-    foreach(auto pair, sortMap) {
+    std::sort(sortMap.begin(), sortMap.end(),
+              [](QPair<vtkDataArray*, int> a, QPair<vtkDataArray*, int> b) {
+                return a.first < b.first;
+              });
+    foreach (auto pair, sortMap) {
       arraysInfo.push_back(arraysInfo_[pair.second]);
     }
   }
@@ -190,7 +190,7 @@ void DataPropertiesPanel::updateActiveScalarsCombo(
   scalarsCombo->clear();
   scalarsCombo->blockSignals(true);
 
-  foreach(auto array, arraysInfo) {
+  foreach (auto array, arraysInfo) {
     scalarsCombo->addItem(array.name);
     if (array.active) {
       scalarsCombo->setCurrentText(array.name);
@@ -206,8 +206,8 @@ void DataPropertiesPanel::updateInformationWidget(
   auto model = static_cast<DataPropertiesModel*>(scalarsTable->model());
   model->setArraysInfo(arraysInfo);
   scalarsTable->resizeColumnsToContents();
-  scalarsTable->horizontalHeader()->setSectionResizeMode(
-    1, QHeaderView::Stretch);
+  scalarsTable->horizontalHeader()->setSectionResizeMode(1,
+                                                         QHeaderView::Stretch);
 }
 
 void DataPropertiesPanel::updateData()

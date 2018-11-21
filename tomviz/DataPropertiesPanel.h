@@ -74,7 +74,7 @@ private:
   void updateSpacing(int axis, double newLength);
   QList<ArrayInfo> getArraysInfo(vtkPVDataInformation* dataInfo) const;
   void updateInformationWidget(QTableView* scalarsTable,
-                               const QList<ArrayInfo>&  arraysInfo);
+                               const QList<ArrayInfo>& arraysInfo);
   void updateActiveScalarsCombo(QComboBox* scalarsCombo,
                                 const QList<ArrayInfo>& arraysInfo);
   static void resetCamera();
