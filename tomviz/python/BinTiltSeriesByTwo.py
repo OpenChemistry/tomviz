@@ -4,6 +4,7 @@ def transform_scalars(dataset):
     from tomviz import utils
     import scipy.ndimage
     import numpy as np
+    import warnings
 
     array = utils.get_array(dataset)
 
@@ -11,6 +12,7 @@ def transform_scalars(dataset):
     result_shape = utils.zoom_shape(array, zoom)
     result = np.empty(result_shape, array.dtype, order='F')
     # Downsample the dataset x2 using order 1 spline (linear)
+    warnings.simplefilter("ignore") #supress warnings
     scipy.ndimage.interpolation.zoom(array, zoom,
                                      output=result,
                                      order=1,
