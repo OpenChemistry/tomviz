@@ -959,7 +959,7 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
         }
       }
 
-      DataSource* dataSource;
+      DataSource* dataSource = nullptr;
       if (dsObject.find("sourceInformation") != dsObject.end()) {
         dataSource = PythonGeneratedDatasetReaction::createDataSource(
           dsObject["sourceInformation"].toObject());
