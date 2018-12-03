@@ -4,6 +4,8 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
+
+
 class Progress(object):
     """
     Class used to update operator progress.
