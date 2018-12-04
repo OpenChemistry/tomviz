@@ -952,32 +952,42 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
 
         if (reader.contains("fileNames")) {
           foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
-            fileNames << value.toString();
+            // Verify the file exists before adding it to the list.
+            if (QFileInfo::exists(value.toString())) {
+              fileNames << value.toString();
+            } else {
+              qCritical() << "File" << value.toString() 
+                          << "not found, skipping.";
+            }
           }
         } else {
-          qCritical() << "Unable to locate file name.";
+          qCritical() << "Unable to locate file name(s).";
         }
       }
 
-      DataSource* dataSource;
+      DataSource* dataSource = nullptr;
       if (dsObject.find("sourceInformation") != dsObject.end()) {
         dataSource = PythonGeneratedDatasetReaction::createDataSource(
           dsObject["sourceInformation"].toObject());
         LoadDataReaction::dataSourceAdded(dataSource, false, false);
-      } else {
+      } else if (fileNames.size() > 0) {
         dataSource = LoadDataReaction::loadData(fileNames, options);
+      } else {
+        qCritical() << "Files not found on disk for data source, check paths.";
       }
 
-      if (dsObject.contains("operators") &&
-          dsObject["operators"].toArray().size() > 0) {
-        connect(dataSource->pipeline(), &Pipeline::finished, this,
-                &ModuleManager::onPipelineFinished);
-        ++d->RemaningPipelinesToWaitFor;
-      }
-      dataSource->deserialize(dsObject);
-      if (fileNames.isEmpty()) {
-        dataSource->setPersistenceState(
-          DataSource::PersistenceState::Transient);
+      if (dataSource) {
+        if (dsObject.contains("operators") &&
+            dsObject["operators"].toArray().size() > 0) {
+          connect(dataSource->pipeline(), &Pipeline::finished, this,
+                  &ModuleManager::onPipelineFinished);
+          ++d->RemaningPipelinesToWaitFor;
+        }
+        dataSource->deserialize(dsObject);
+        if (fileNames.isEmpty()) {
+          dataSource->setPersistenceState(
+            DataSource::PersistenceState::Transient);
+        }
       }
       // FIXME: I think we need to collect the active objects and set them at
       // the end, as the act of adding generally implies setting to active.
