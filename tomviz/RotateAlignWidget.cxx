@@ -744,7 +744,8 @@ void RotateAlignWidget::updateControls()
 
   QString xLabel;
   QString yLabel;
-  QString zeroLabel;
+  QString xZeroLabel;
+  QString yZeroLabel;
 
   double projectionValue;
   double projectionRange[2];
@@ -769,9 +770,8 @@ void RotateAlignWidget::updateControls()
   if (this->Internals->m_lengthUnit == LengthUnit::physical) {
     xLabel = QString("%1").arg(extent[1] * spacing[0]);
     yLabel = QString("%1").arg(extent[3] * spacing[1]);
-    zeroLabel = QString("(%1, %2)")
-                  .arg(extent[0] * spacing[0])
-                  .arg(extent[2] * spacing[1]);
+    xZeroLabel = QString("%1").arg(extent[0] * spacing[0]);
+    yZeroLabel = QString("%1").arg(extent[2] * spacing[1]);
 
     projectionValue =
       (extent[4] + this->Internals->m_projectionNum) * spacing[2];
@@ -796,7 +796,8 @@ void RotateAlignWidget::updateControls()
   } else {
     xLabel = QString::number(dims[0]);
     yLabel = QString::number(dims[1]);
-    zeroLabel = QString::number(0);
+    xZeroLabel = QString::number(0);
+    yZeroLabel = QString::number(0);
 
     projectionValue = this->Internals->m_projectionNum;
     projectionRange[0] = 0;
@@ -821,7 +822,8 @@ void RotateAlignWidget::updateControls()
 
   this->Internals->Ui.xSizeLabel->setText(xLabel);
   this->Internals->Ui.ySizeLabel->setText(yLabel);
-  this->Internals->Ui.zeroLabel->setText(zeroLabel);
+  this->Internals->Ui.xZeroLabel->setText(xZeroLabel);
+  this->Internals->Ui.yZeroLabel->setText(yZeroLabel);
 
   this->Internals->Ui.projection->setRange(projectionRange[0],
                                            projectionRange[1]);
