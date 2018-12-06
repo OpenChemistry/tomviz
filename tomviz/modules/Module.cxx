@@ -90,7 +90,7 @@ bool Module::initialize(OperatorResult* result, vtkSMViewProxy* vtkView)
   m_view = vtkView;
   m_operatorResult = result;
   m_activeDataSource = ActiveObjects::instance().activeDataSource();
-  return (m_view && m_operatorResult);
+  return (m_view && m_view->IsA("vtkSMRenderViewProxy") && m_operatorResult);
 }
 
 bool Module::initialize(MoleculeSource* data, vtkSMViewProxy* vtkView)
@@ -98,7 +98,8 @@ bool Module::initialize(MoleculeSource* data, vtkSMViewProxy* vtkView)
   m_view = vtkView;
   m_activeMoleculeSource = data;
   m_activeDataSource = ActiveObjects::instance().activeDataSource();
-  return (m_view && m_activeMoleculeSource);
+  return (m_view && m_view->IsA("vtkSMRenderViewProxy") &&
+          m_activeMoleculeSource);
 }
 
 bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
@@ -109,7 +110,7 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   d->m_transfer2D->SetDimensions(1, 1, 1);
   d->m_transfer2D->AllocateScalars(VTK_FLOAT, 4);
 
-  if (m_view && m_activeDataSource) {
+  if (m_view && m_view->IsA("vtkSMRenderViewProxy") && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
       m_activeDataSource, SIGNAL(dataChanged()), SLOT(render()));
@@ -119,7 +120,7 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
             SIGNAL(displayPositionChanged(double, double, double)),
             SLOT(dataSourceMoved(double, double, double)));
   }
-  return (m_view && m_activeDataSource);
+  return (m_view && m_view->IsA("vtkSMRenderViewProxy") && m_activeDataSource);
 }
 
 vtkSMViewProxy* Module::view() const

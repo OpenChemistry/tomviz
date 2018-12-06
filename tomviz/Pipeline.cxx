@@ -429,6 +429,10 @@ void Pipeline::addDefaultModules(DataSource* dataSource)
   ActiveObjects::instance().setMoveObjectsMode(false);
   auto view = ActiveObjects::instance().activeView();
 
+  if (view == nullptr || !view->IsA("vtkSMRenderViewProxy")) {
+    return;
+  }
+
   Module* module = nullptr;
   foreach (QString name, defaultModules) {
     module =
