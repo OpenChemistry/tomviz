@@ -517,6 +517,7 @@ void RotateAlignWidget::onLengthUnitChanged(int val)
 
   this->Internals->m_lengthUnit = lengthUnit;
   updateControls();
+  updateWidgets();
 }
 
 void RotateAlignWidget::onProjectionNumberChanged(double val)
@@ -769,6 +770,9 @@ void RotateAlignWidget::updateControls()
   double rotationAngleStep = 0.5;
   int rotationAngleDecimals = 2;
 
+  double xAxisRange[2];
+  double yAxisRange[2];
+
   if (this->Internals->m_lengthUnit == LengthUnit::physical) {
     projectionValue =
       (extent[4] + this->Internals->m_projectionNum) * spacing[2];
@@ -790,6 +794,11 @@ void RotateAlignWidget::updateControls()
     sliceRange[1] = extent[1] * spacing[0];
     sliceStep = spacing[0];
     sliceDecimals = std::max(0, int(std::ceil(-log10(spacing[0]))));
+
+    xAxisRange[0] = extent[0] * spacing[0];
+    xAxisRange[1] = extent[1] * spacing[0];
+    yAxisRange[0] = extent[2] * spacing[1];
+    yAxisRange[1] = extent[3] * spacing[1];
   } else {
     projectionValue = this->Internals->m_projectionNum;
     projectionRange[0] = 0;
@@ -810,6 +819,11 @@ void RotateAlignWidget::updateControls()
     sliceRange[1] = dims[0] - 1;
     sliceStep = 1;
     sliceDecimals = 0;
+
+    xAxisRange[0] = 0;
+    xAxisRange[1] = dims[0];
+    yAxisRange[0] = 0;
+    yAxisRange[1] = dims[1];
   }
 
   this->Internals->Ui.projection->setRange(projectionRange[0],
@@ -842,6 +856,9 @@ void RotateAlignWidget::updateControls()
   this->Internals->Ui.rotationAngle->setSingleStep(rotationAngleStep);
   this->Internals->Ui.rotationAngle->setDecimals(rotationAngleDecimals);
   this->Internals->Ui.rotationAngle->setValue(rotationAngleValue);
+
+  this->Internals->axesActor->SetXAxisRange(xAxisRange);
+  this->Internals->axesActor->SetYAxisRange(yAxisRange);
 }
 
 void RotateAlignWidget::onFinalReconButtonPressed() {}
