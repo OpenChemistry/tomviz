@@ -20,6 +20,7 @@
 #include <vtkSMTransferFunctionProxy.h>
 
 #include <vtkCamera.h>
+#include <vtkCubeAxesActor.h>
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
@@ -69,6 +70,7 @@ public:
   vtkNew<vtkImageSlice> mainSlice;
   vtkNew<vtkImageData> reconImage[3];
   vtkNew<vtkImageSlice> reconSlice[3];
+  vtkNew<vtkCubeAxesActor> axesActor;
   vtkNew<vtkImageSliceMapper> mainSliceMapper;
   vtkNew<vtkImageSliceMapper> reconSliceMapper[3];
   vtkNew<vtkRenderer> mainRenderer;
@@ -100,8 +102,8 @@ public:
 
   void setupCameras()
   {
-    tomviz::setupRenderer(this->mainRenderer.Get(),
-                          this->mainSliceMapper.Get());
+    tomviz::setupRenderer(this->mainRenderer.Get(), this->mainSliceMapper.Get(),
+                          this->axesActor);
     tomviz::setupRenderer(this->reconRenderer[0].Get(),
                           this->reconSliceMapper[0].Get());
     tomviz::setupRenderer(this->reconRenderer[1].Get(),
@@ -768,11 +770,6 @@ void RotateAlignWidget::updateControls()
   int rotationAngleDecimals = 2;
 
   if (this->Internals->m_lengthUnit == LengthUnit::physical) {
-    xLabel = QString("%1").arg(extent[1] * spacing[0]);
-    yLabel = QString("%1").arg(extent[3] * spacing[1]);
-    xZeroLabel = QString("%1").arg(extent[0] * spacing[0]);
-    yZeroLabel = QString("%1").arg(extent[2] * spacing[1]);
-
     projectionValue =
       (extent[4] + this->Internals->m_projectionNum) * spacing[2];
     projectionRange[0] = extent[4] * spacing[2];
@@ -794,11 +791,6 @@ void RotateAlignWidget::updateControls()
     sliceStep = spacing[0];
     sliceDecimals = std::max(0, int(std::ceil(-log10(spacing[0]))));
   } else {
-    xLabel = QString::number(dims[0]);
-    yLabel = QString::number(dims[1]);
-    xZeroLabel = QString::number(0);
-    yZeroLabel = QString::number(0);
-
     projectionValue = this->Internals->m_projectionNum;
     projectionRange[0] = 0;
     projectionRange[1] = dims[2] - 1;
@@ -819,11 +811,6 @@ void RotateAlignWidget::updateControls()
     sliceStep = 1;
     sliceDecimals = 0;
   }
-
-  this->Internals->Ui.xSizeLabel->setText(xLabel);
-  this->Internals->Ui.ySizeLabel->setText(yLabel);
-  this->Internals->Ui.xZeroLabel->setText(xZeroLabel);
-  this->Internals->Ui.yZeroLabel->setText(yZeroLabel);
 
   this->Internals->Ui.projection->setRange(projectionRange[0],
                                            projectionRange[1]);
