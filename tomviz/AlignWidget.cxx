@@ -298,30 +298,42 @@ public:
     vtkDataArrayAccessor<InputArray> in(input);
     vtkDataArrayAccessor<OutputArray> out(output);
 
+    using T = decltype(in.Get(vtkIdType(), int()));
+
     for (vtkIdType j = 0; j < m_ySize; ++j) {
       for (vtkIdType i = 0; i < m_xSize; ++i) {
         vtkIdType destIdx = j * m_xSize + i;
-        if (j - m_currentSliceOffset[1] < m_ySize &&
-            j - m_currentSliceOffset[1] >= 0 &&
-            i - m_currentSliceOffset[0] < m_xSize &&
-            i - m_currentSliceOffset[0] >= 0) {
+
+        vtkIdType iCurr = i - m_currentSliceOffset[0];
+        vtkIdType jCurr = j - m_currentSliceOffset[1];
+        vtkIdType iRef = i - m_referenceSliceOffset[0];
+        vtkIdType jRef = j - m_referenceSliceOffset[1];
+
+        T currentValue = 0;
+        T referenceValue = 0;
+
+        bool currentIsBound =
+          (jCurr < m_ySize && jCurr >= 0 && iCurr < m_xSize && iCurr >= 0);
+
+        bool referenceIsBound =
+          (jRef < m_ySize && jRef >= 0 && iRef < m_xSize && iRef >= 0);
+
+        if (currentIsBound) {
           // Index of the point in the current slice that corresponds to the
           // given position
-          vtkIdType currentSliceIdx = m_currentSlice * m_ySize * m_xSize +
-                                      (j - m_currentSliceOffset[1]) * m_xSize +
-                                      (i - m_currentSliceOffset[0]);
+          vtkIdType currentSliceIdx =
+            m_currentSlice * m_ySize * m_xSize + jCurr * m_xSize + iCurr;
+          currentValue = in.Get(currentSliceIdx, 0);
+        }
+
+        if (referenceIsBound) {
           // Index in the reference slice that corresponds to the given position
           vtkIdType referenceSliceIdx =
-            m_referenceSlice * m_ySize * m_xSize +
-            (j - m_referenceSliceOffset[1]) * m_xSize +
-            (i - m_referenceSliceOffset[0]);
-          // Compute the difference and set it to the output at the position
-          out.Set(destIdx, 0,
-                  in.Get(currentSliceIdx, 0) - in.Get(referenceSliceIdx, 0));
-        } else {
-          // TODO - figure out what to do fort this region
-          out.Set(destIdx, 0, 0);
+            m_referenceSlice * m_ySize * m_xSize + jRef * m_xSize + iRef;
+          referenceValue = in.Get(referenceSliceIdx, 0);
         }
+
+        out.Set(destIdx, 0, currentValue - referenceValue);
       }
     }
   }
