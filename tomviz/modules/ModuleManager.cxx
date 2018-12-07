@@ -948,7 +948,6 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       QStringList fileNames;
       if (dsObject.contains("reader")) {
         auto reader = dsObject["reader"].toObject();
-        options["reader"] = reader;
 
         if (reader.contains("fileNames")) {
           foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
@@ -956,13 +955,23 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
             if (QFileInfo::exists(value.toString())) {
               fileNames << value.toString();
             } else {
-              qCritical() << "File" << value.toString() 
-                          << "not found, skipping.";
+              // If the file cannot be found in the path relative to the state
+              // file, make another attempt to locate it in the same directory
+              QString altLocation =
+                d->dir.absoluteFilePath(QFileInfo(value.toString()).fileName());
+              if (QFileInfo::exists(altLocation)) {
+                fileNames << altLocation;
+              } else {
+                qCritical() << "File" << value.toString()
+                            << "not found, skipping.";
+              }
             }
           }
+          reader["fileNames"] = QJsonArray::fromStringList(fileNames);
         } else {
           qCritical() << "Unable to locate file name(s).";
         }
+        options["reader"] = reader;
       }
 
       DataSource* dataSource = nullptr;
@@ -1010,21 +1019,32 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       QString fileName;
       if (dsObject.contains("reader")) {
         auto reader = dsObject["reader"].toObject();
-        options["reader"] = reader;
 
         if (reader.contains("fileName")) {
           fileName = reader["fileName"].toString();
+          // Verify the file exists.
+          if (!QFileInfo::exists(fileName)) {
+            // If the file cannot be found in the path relative to the state
+            // file, make another attempt to locate it in the same directory
+            fileName = d->dir.absoluteFilePath(QFileInfo(fileName).fileName());
+            if (!QFileInfo::exists(fileName)) {
+              qCritical() << "File" << fileName << "not found, skipping.";
+              fileName = "";
+            }
+          }
         } else {
           qCritical() << "Unable to locate file name.";
         }
       }
       MoleculeSource* moleculeSource =
         LoadDataReaction::loadMolecule(fileName, options);
-      moleculeSource->deserialize(dsObject);
-      // FIXME: I think we need to collect the active objects and set them at
-      // the end, as the act of adding generally implies setting to active.
-      if (dsObject["active"].toBool()) {
-        ActiveObjects::instance().setActiveMoleculeSource(moleculeSource);
+      if (moleculeSource) {
+        moleculeSource->deserialize(dsObject);
+        // FIXME: I think we need to collect the active objects and set them at
+        // the end, as the act of adding generally implies setting to active.
+        if (dsObject["active"].toBool()) {
+          ActiveObjects::instance().setActiveMoleculeSource(moleculeSource);
+        }
       }
     }
   }

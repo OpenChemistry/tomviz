@@ -496,6 +496,10 @@ QList<MoleculeSource*> LoadDataReaction::loadMolecule(
 MoleculeSource* LoadDataReaction::loadMolecule(const QString& fileName,
                                                const QJsonObject& options)
 {
+  if (fileName.isEmpty()) {
+    return nullptr;
+  }
+
   bool addToRecent = options["addToRecent"].toBool(true);
   bool defaultModules = options["defaultModules"].toBool(true);
 
