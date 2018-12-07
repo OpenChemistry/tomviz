@@ -26,6 +26,7 @@ class pqAnimationScene;
 
 class vtkDiscretizableColorTransferFunction;
 class vtkImageSliceMapper;
+class vtkCubeAxesActor;
 class vtkMolecule;
 class vtkRenderer;
 class vtkSMProxyLocator;
@@ -182,7 +183,8 @@ void createCameraOrbit(vtkSMSourceProxy* data,
 // This function attempts to zoom the renderer so that the enitire slice is
 // visible while minimizing the empty regions of the view (zoom so the slice's
 // target dimension barely fits in the view).
-void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
+void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper,
+                   vtkCubeAxesActor* axesActor = nullptr);
 
 // Delete all widgets within a layout
 void deleteLayoutContents(QLayout* layout);
