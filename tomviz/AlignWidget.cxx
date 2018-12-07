@@ -100,14 +100,12 @@ public:
     m_currentSlice = sliceNumber;
     m_currentSliceOffset[0] = offset[0];
     m_currentSliceOffset[1] = offset[1];
-    update();
   }
   void referenceSliceUpdated(int sliceNumber, vtkVector2i offset)
   {
     m_referenceSlice = sliceNumber;
     m_referenceSliceOffset[0] = offset[0];
     m_referenceSliceOffset[1] = offset[1];
-    update();
   }
   void brightnessAndContrast(double& brightness, double& contrast)
   {
