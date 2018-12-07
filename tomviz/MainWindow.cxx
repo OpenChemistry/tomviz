@@ -794,8 +794,7 @@ void MainWindow::autosave()
 void MainWindow::handleMessage(const QString&, int type)
 {
   QDockWidget* dock = m_ui->dockWidgetMessages;
-  if (!dock->isVisible() &&
-      (type == pqOutputWidget::ERROR || type == pqOutputWidget::WARNING)) {
+  if (!dock->isVisible() && (type == QtCriticalMsg || type == QtWarningMsg)) {
     // if dock is not visible, we always pop it up as a floating dialog. This
     // avoids causing re-renders which may cause more errors and more confusion.
     QRect rectApp = geometry();
