@@ -5,6 +5,8 @@
 
 #include "ui_DataPropertiesPanel.h"
 
+#include <algorithm>
+
 #include "ActiveObjects.h"
 #include "DataSource.h"
 #include "SetTiltAnglesOperator.h"
@@ -14,7 +16,6 @@
 #include <pqNonEditableStyledItemDelegate.h>
 #include <pqPropertiesPanel.h>
 #include <pqProxyWidget.h>
-#include <pqTreeWidget.h>
 #include <pqView.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkPVArrayInformation.h>
@@ -48,6 +49,7 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   m_ui->yLengthBox->setValidator(new QDoubleValidator(m_ui->yLengthBox));
   m_ui->zLengthBox->setValidator(new QDoubleValidator(m_ui->zLengthBox));
   m_ui->TiltAnglesTable->installEventFilter(this);
+  m_ui->ScalarsTable->setModel(&m_scalarsTableModel);
 
   QVBoxLayout* l = m_ui->verticalLayout;
   l->setSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
@@ -55,6 +57,10 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   // add separator labels.
   QWidget* separator = pqProxyWidget::newGroupLabelWidget("Filename", this);
   l->insertWidget(l->indexOf(m_ui->FileName), separator);
+
+  // add separator labels.
+  separator = pqProxyWidget::newGroupLabelWidget("Active Scalars", this);
+  l->insertWidget(l->indexOf(m_ui->ActiveScalars), separator);
 
   separator = pqProxyWidget::newGroupLabelWidget("Dimensions & Range", this);
   l->insertWidget(l->indexOf(m_ui->DataRange), separator);
@@ -80,8 +86,10 @@ DataPropertiesPanel::DataPropertiesPanel(QWidget* parentObject)
   connect(m_ui->xLengthBox, SIGNAL(editingFinished()), SLOT(updateXLength()));
   connect(m_ui->yLengthBox, SIGNAL(editingFinished()), SLOT(updateYLength()));
   connect(m_ui->zLengthBox, SIGNAL(editingFinished()), SLOT(updateZLength()));
-  connect(m_ui->DataTreeWidget, SIGNAL(itemSelectionChanged()),
-          SLOT(updateActiveScalars()));
+  connect(m_ui->ActiveScalars, &QComboBox::currentTextChanged, this,
+          &DataPropertiesPanel::setActiveScalars);
+  connect(&m_scalarsTableModel, &DataPropertiesModel::activeScalarsChanged,
+          this, &DataPropertiesPanel::setActiveScalars);
 }
 
 DataPropertiesPanel::~DataPropertiesPanel() {}
@@ -95,12 +103,15 @@ void DataPropertiesPanel::paintEvent(QPaintEvent* e)
 void DataPropertiesPanel::setDataSource(DataSource* dsource)
 {
   if (m_currentDataSource) {
-    disconnect(m_currentDataSource);
+    disconnect(m_currentDataSource, 0, this, 0);
+    disconnect(&m_scalarsTableModel, 0, m_currentDataSource, 0);
   }
   m_currentDataSource = dsource;
   if (dsource) {
     connect(dsource, SIGNAL(dataChanged()), SLOT(scheduleUpdate()),
             Qt::UniqueConnection);
+    connect(&m_scalarsTableModel, &DataPropertiesModel::scalarsRenamed, dsource,
+            &DataSource::renameScalarsArray);
   }
   scheduleUpdate();
 }
@@ -122,35 +133,30 @@ QString getDataDimensionsString(vtkSMSourceProxy* proxy)
 
 } // namespace
 
-void DataPropertiesPanel::updateInformationWidget(
-  QTreeWidget* infoTreeWidget, vtkPVDataInformation* dataInfo)
+QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(
+  vtkPVDataInformation* dataInfo) const
 {
-  infoTreeWidget->clear();
-
-  int activeArrayRow = -1;
-
+  QList<ArrayInfo> arraysInfo;
   vtkPVDataSetAttributesInformation* pointDataInfo =
     dataInfo->GetPointDataInformation();
   if (pointDataInfo) {
-    QPixmap pointDataPixmap(":/pqWidgets/Icons/pqPointData16.png");
+    QList<ArrayInfo> arraysInfo_;
     int numArrays = pointDataInfo->GetNumberOfArrays();
+    QList<QPair<vtkDataArray*, int>> sortMap;
     for (int i = 0; i < numArrays; i++) {
       vtkPVArrayInformation* arrayInfo;
       arrayInfo = pointDataInfo->GetArrayInformation(i);
-      if (pointDataInfo->IsArrayAnAttribute(i) ==
-          vtkDataSetAttributes::SCALARS) {
-        activeArrayRow = i;
-      }
 
-      // name, type, data range, data type
-      QTreeWidgetItem* item = new QTreeWidgetItem(infoTreeWidget);
+      // name, type, data range, data type, active
       auto arrayName = arrayInfo->GetName();
-      item->setData(0, Qt::DisplayRole, arrayName);
+      sortMap.push_back(QPair<vtkDataArray*, int>(
+        m_currentDataSource->getScalarsArray(arrayName), i));
       QString dataType = vtkImageScalarTypeNameMacro(arrayInfo->GetDataType());
-      item->setData(2, Qt::DisplayRole, dataType);
       int numComponents = arrayInfo->GetNumberOfComponents();
       QString dataRange;
       double range[2];
+      bool active = m_currentDataSource->activeScalars() == arrayName;
+
       for (int j = 0; j < numComponents; j++) {
         if (j != 0) {
           dataRange.append(", ");
@@ -160,34 +166,48 @@ void DataPropertiesPanel::updateInformationWidget(
           QString("[%1, %2]").arg(range[0]).arg(range[1]);
         dataRange.append(componentRange);
       }
-      item->setData(1, Qt::DisplayRole,
-                    dataType == "string" ? tr("NA") : dataRange);
-      item->setData(1, Qt::ToolTipRole, dataRange);
-      item->setFlags(item->flags() | Qt::ItemIsEditable);
-      if (arrayInfo->GetIsPartial()) {
-        item->setForeground(0, QBrush(QColor("darkBlue")));
-        item->setData(0, Qt::DisplayRole,
-                      QString("%1 (partial)").arg(arrayInfo->GetName()));
-      } else {
-        item->setForeground(0, QBrush(QColor("darkGreen")));
-      }
+
+      arraysInfo_.push_back(
+        ArrayInfo(arrayName, dataType == "string" ? tr("NA") : dataRange,
+                  dataType, active));
+    }
+
+    // Ensure scalars are displayed in the same order even after renaming
+    std::sort(sortMap.begin(), sortMap.end(),
+              [](QPair<vtkDataArray*, int> a, QPair<vtkDataArray*, int> b) {
+                return a.first < b.first;
+              });
+    foreach (auto pair, sortMap) {
+      arraysInfo.push_back(arraysInfo_[pair.second]);
+    }
+  }
+  return arraysInfo;
+}
+
+void DataPropertiesPanel::updateActiveScalarsCombo(
+  QComboBox* scalarsCombo, const QList<ArrayInfo>& arraysInfo)
+{
+  scalarsCombo->clear();
+  scalarsCombo->blockSignals(true);
+
+  foreach (auto array, arraysInfo) {
+    scalarsCombo->addItem(array.name);
+    if (array.active) {
+      scalarsCombo->setCurrentText(array.name);
     }
   }
 
-  // Select the active array row if there is one
-  if (activeArrayRow >= 0) {
-    QModelIndex index = infoTreeWidget->model()->index(activeArrayRow, 0);
-    QItemSelectionModel* selectionModel = infoTreeWidget->selectionModel();
-    if (selectionModel) {
-      m_ui->DataTreeWidget->blockSignals(true);
-      selectionModel->select(index, QItemSelectionModel::ClearAndSelect |
-                                      QItemSelectionModel::Rows);
-      m_ui->DataTreeWidget->blockSignals(false);
-    }
-  }
+  scalarsCombo->blockSignals(false);
+}
 
-  infoTreeWidget->header()->resizeSections(QHeaderView::ResizeToContents);
-  infoTreeWidget->setItemDelegate(new pqNonEditableStyledItemDelegate(this));
+void DataPropertiesPanel::updateInformationWidget(
+  QTableView* scalarsTable, const QList<ArrayInfo>& arraysInfo)
+{
+  auto model = static_cast<DataPropertiesModel*>(scalarsTable->model());
+  model->setArraysInfo(arraysInfo);
+  scalarsTable->resizeColumnsToContents();
+  scalarsTable->horizontalHeader()->setSectionResizeMode(1,
+                                                         QHeaderView::Stretch);
 }
 
 void DataPropertiesPanel::updateData()
@@ -223,8 +243,9 @@ void DataPropertiesPanel::updateData()
 
   auto sourceProxy = vtkSMSourceProxy::SafeDownCast(dsource->proxy());
   if (sourceProxy) {
-    updateInformationWidget(m_ui->DataTreeWidget,
-                            sourceProxy->GetDataInformation());
+    auto arraysInfo = getArraysInfo(sourceProxy->GetDataInformation());
+    updateInformationWidget(m_ui->ScalarsTable, arraysInfo);
+    updateActiveScalarsCombo(m_ui->ActiveScalars, arraysInfo);
   }
 
   // display tilt series data
@@ -477,17 +498,15 @@ void DataPropertiesPanel::updateAxesGridLabels()
   }
 }
 
-void DataPropertiesPanel::updateActiveScalars()
+void DataPropertiesPanel::setActiveScalars(const QString& activeScalars)
 {
-  QList<QTreeWidgetItem*> items = m_ui->DataTreeWidget->selectedItems();
-  if (items.size() > 0) {
-    // Warning: assumes the first item is from the first column. I'm not sure if
-    // this
-    // is guaranteed.
-    auto arrayName = items[0]->data(0, Qt::DisplayRole).toString();
-    if (m_currentDataSource) {
-      m_currentDataSource->setActiveScalars(arrayName);
-    }
+  if (activeScalars.size() == 0) {
+    return;
+  }
+
+  if (m_currentDataSource &&
+      m_currentDataSource->activeScalars() != activeScalars) {
+    m_currentDataSource->setActiveScalars(activeScalars);
   }
 }
 
@@ -495,7 +514,8 @@ void DataPropertiesPanel::clear()
 {
   m_ui->FileName->setText("");
   m_ui->DataRange->setText("");
-  m_ui->DataTreeWidget->clear();
+  m_ui->ActiveScalars->clear();
+  m_scalarsTableModel.setArraysInfo(QList<ArrayInfo>());
 
   if (m_colorMapWidget) {
     m_ui->verticalLayout->removeWidget(m_colorMapWidget);

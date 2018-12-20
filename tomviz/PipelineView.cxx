@@ -235,22 +235,37 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     } else {
       return;
     }
-  } else if (dataSource != nullptr && !childDataSource) {
-    // Data source ( non child )
-    cloneAction = contextMenu.addAction("Clone");
-    cloneReaction = new CloneDataReaction(cloneAction);
+  } else if (dataSource != nullptr) {
+    if (!childDataSource) {
+      // Data source ( non child )
+      cloneAction = contextMenu.addAction("Clone");
+      cloneReaction = new CloneDataReaction(cloneAction);
+      if (dataSource->type() == DataSource::Volume) {
+        markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
+        // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+      } else if (dataSource->type() == DataSource::TiltSeries) {
+        markAsVolumeAction = contextMenu.addAction("Mark as Volume");
+        // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+      } else if (dataSource->type() == DataSource::FIB) {
+        markAsVolumeAction = contextMenu.addAction("Mark as Volume");
+        markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
+      }
+
+      // Add option to re-execute the pipeline is we have a canceled operator
+      // in our pipeline.
+      foreach (Operator* op, dataSource->operators()) {
+        if (op->isCanceled() || op->isModified()) {
+          allowReExecute = true;
+          break;
+        }
+      }
+    } else if (childDataSource) {
+      // Child data source
+      cloneChildAction = contextMenu.addAction("Clone");
+    }
+
     saveDataAction = contextMenu.addAction("Save Data");
     new SaveDataReaction(saveDataAction);
-    if (dataSource->type() == DataSource::Volume) {
-      markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
-      // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
-    } else if (dataSource->type() == DataSource::TiltSeries) {
-      markAsVolumeAction = contextMenu.addAction("Mark as Volume");
-      // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
-    } else if (dataSource->type() == DataSource::FIB) {
-      markAsVolumeAction = contextMenu.addAction("Mark as Volume");
-      markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
-    }
 
     // Add option to merge different datasets
     QAction* mergeImageAction = contextMenu.addAction("Merge Images");
@@ -267,19 +282,6 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     }
     micReaction->updateDataSources(selectedDataSources);
 
-    // Add option to re-execute the pipeline is we have a canceled operator
-    // in our pipeline.
-    foreach (Operator* op, dataSource->operators()) {
-      if (op->isCanceled() || op->isModified()) {
-        allowReExecute = true;
-        break;
-      }
-    }
-    // Child data source
-  } else if (childDataSource) {
-    cloneChildAction = contextMenu.addAction("Clone");
-    saveDataAction = contextMenu.addAction("Save Data");
-    new SaveDataReaction(saveDataAction);
   }
 
   // Allow pipeline to be re-executed if we are dealing with a canceled

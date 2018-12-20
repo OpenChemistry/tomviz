@@ -612,6 +612,54 @@ QString DataSource::activeScalars() const
   return returnValue;
 }
 
+void DataSource::renameScalarsArray(const QString& oldName,
+                                    const QString& newName)
+{
+  const bool isCurrentScalars = oldName == activeScalars();
+
+  // Ensure the array actually exist
+  vtkDataArray* dataArray = getScalarsArray(oldName);
+  if (dataArray == nullptr) {
+    return;
+  }
+
+  // Ensure the target name is not already taken
+  vtkDataArray* targetArray = getScalarsArray(newName);
+  if (targetArray != nullptr) {
+    return;
+  }
+
+  dataArray->SetName(newName.toLatin1().data());
+
+  if (isCurrentScalars) {
+    setActiveScalars(newName);
+  } else {
+    dataModified();
+    emit activeScalarsChanged();
+    emit dataPropertiesChanged();
+  }
+}
+
+vtkDataArray* DataSource::getScalarsArray(const QString& arrayName)
+{
+  vtkAlgorithm* alg = algorithm();
+  if (alg == nullptr) {
+    return nullptr;
+  }
+  vtkImageData* data = vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+  if (data == nullptr) {
+    return nullptr;
+  }
+  vtkPointData* pointData = data->GetPointData();
+  if (pointData == nullptr) {
+    return nullptr;
+  }
+  if (pointData->HasArray(arrayName.toLatin1().data()) == 0) {
+    return nullptr;
+  }
+  return pointData->GetScalars(arrayName.toLatin1().data());
+}
+
 unsigned int DataSource::getNumberOfComponents()
 {
   unsigned int numComponents = 0;

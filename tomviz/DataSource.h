@@ -16,6 +16,7 @@
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkImageData;
+class vtkDataArray;
 class vtkDataObject;
 class vtkPiecewiseFunction;
 class vtkAlgorithm;
@@ -177,6 +178,9 @@ public:
   void setActiveScalars(const QString& arrayName);
   QString activeScalars() const;
 
+  // Get pointer to scalar array
+  vtkDataArray* getScalarsArray(const QString& arrayName);
+
   /// Returns the number of components in the dataset.
   unsigned int getNumberOfComponents();
 
@@ -245,6 +249,7 @@ signals:
 
 public slots:
   void dataModified();
+  void renameScalarsArray(const QString& oldName, const QString& newName);
 
 protected slots:
   /// update the color map range.

@@ -6,11 +6,14 @@
 
 #include <QWidget>
 
+#include "DataPropertiesModel.h"
+
 #include <QPointer>
 #include <QScopedPointer>
 
 class pqProxyWidget;
-class QTreeWidget;
+class QComboBox;
+class QTableView;
 class vtkPVDataInformation;
 
 namespace Ui {
@@ -52,7 +55,7 @@ private slots:
 
   void updateAxesGridLabels();
 
-  void updateActiveScalars();
+  void setActiveScalars(const QString& activeScalars);
 
 signals:
   void colorMapUpdated();
@@ -65,11 +68,15 @@ private:
   QPointer<DataSource> m_currentDataSource;
   QPointer<pqProxyWidget> m_colorMapWidget;
   QPointer<QWidget> m_tiltAnglesSeparator;
+  DataPropertiesModel m_scalarsTableModel;
 
   void clear();
   void updateSpacing(int axis, double newLength);
-  void updateInformationWidget(QTreeWidget* infoTreeWidget,
-                               vtkPVDataInformation* dataInformation);
+  QList<ArrayInfo> getArraysInfo(vtkPVDataInformation* dataInfo) const;
+  void updateInformationWidget(QTableView* scalarsTable,
+                               const QList<ArrayInfo>& arraysInfo);
+  void updateActiveScalarsCombo(QComboBox* scalarsCombo,
+                                const QList<ArrayInfo>& arraysInfo);
   static void resetCamera();
 };
 } // namespace tomviz
