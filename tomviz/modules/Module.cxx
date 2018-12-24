@@ -79,6 +79,8 @@ public:
   }
 };
 
+const QString Module::DEFAULT_SCALARS = "Default";
+
 Module::Module(QObject* parentObject)
   : QObject(parentObject), d(new Module::MInternals())
 {}
@@ -146,6 +148,12 @@ OperatorResult* Module::operatorResult() const
 void Module::addToPanel(QWidget* vtkNotUsed(panel)) {}
 
 void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel)) {}
+
+void Module::setActiveScalars(const QString& scalars)
+{
+  m_activeScalars = scalars;
+  emit dataSourceChanged();
+}
 
 void Module::setUseDetachedColorMap(bool val)
 {

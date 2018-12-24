@@ -178,6 +178,9 @@ public:
   void setActiveScalars(const QString& arrayName);
   QString activeScalars() const;
 
+  /// Get the scalars list
+  QStringList listScalars() const;
+
   // Get pointer to scalar array
   vtkDataArray* getScalarsArray(const QString& arrayName);
 

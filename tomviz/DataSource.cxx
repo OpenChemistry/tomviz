@@ -612,6 +612,24 @@ QString DataSource::activeScalars() const
   return returnValue;
 }
 
+QStringList DataSource::listScalars() const
+{
+  QStringList scalars;
+  vtkAlgorithm* alg = algorithm();
+  if (alg) {
+    vtkImageData* data =
+      vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+    if (data) {
+      vtkPointData* pointData = data->GetPointData();
+      auto n = pointData->GetNumberOfComponents();
+      for (int i = 0; i < n; ++i) {
+        scalars << pointData->GetArrayName(i);
+      }
+    }
+  }
+  return scalars;
+}
+
 void DataSource::renameScalarsArray(const QString& oldName,
                                     const QString& newName)
 {

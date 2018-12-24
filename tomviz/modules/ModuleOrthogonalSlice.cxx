@@ -6,6 +6,7 @@
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
+#include "ScalarsComboBox.h"
 #include "Utilities.h"
 #include "pqPropertyLinks.h"
 #include "pqSignalAdaptors.h"
@@ -147,6 +148,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   line->setFrameShadow(QFrame::Sunken);
   layout->addRow(line);
 
+  QComboBox* scalarsCombo = new ScalarsComboBox(dataSource(), this);
+  layout->addRow("Scalars", scalarsCombo);
+
   QComboBox* direction = new QComboBox;
   direction->addItem("XY Plane");
   direction->addItem("YZ Plane");
@@ -205,6 +209,12 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
     emit renderNeeded();
   });
 
+  connect(scalarsCombo, &QComboBox::currentTextChanged, this,
+          [this](QString scalars) {
+            setActiveScalars(scalars);
+            onScalarArrayChanged();
+          });
+
   m_opacityCheckBox->setChecked(m_mapOpacity);
 }
 
@@ -216,7 +226,12 @@ void ModuleOrthogonalSlice::dataUpdated()
 
 void ModuleOrthogonalSlice::onScalarArrayChanged()
 {
-  QString arrayName = dataSource()->activeScalars();
+  QString arrayName;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    arrayName = dataSource()->activeScalars();
+  } else {
+    arrayName = activeScalars();
+  }
   vtkSMPropertyHelper(m_representation, "ColorArrayName")
     .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
                             arrayName.toLatin1().data());

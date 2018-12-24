@@ -228,6 +228,8 @@ list(APPEND SOURCES
   modules/ModuleVolume.h
   modules/ModuleVolumeWidget.cxx
   modules/ModuleVolumeWidget.h
+  modules/ScalarsComboBox.cxx
+  modules/ScalarsComboBox.h
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/modules)
 
