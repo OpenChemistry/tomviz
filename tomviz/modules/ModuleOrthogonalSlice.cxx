@@ -23,6 +23,7 @@
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 #include <vtkPVDiscretizableColorTransferFunction.h>
+#include <vtkPointData.h>
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -298,14 +299,23 @@ vtkSmartPointer<vtkDataObject> ModuleOrthogonalSlice::getDataToExport()
 {
   vtkAlgorithm* algorithm =
     vtkAlgorithm::SafeDownCast(m_passThrough->GetClientSideObject());
-  vtkImageData* volume =
-    vtkImageData::SafeDownCast(algorithm->GetOutputDataObject(0));
+  vtkNew<vtkImageData> volume;
+  volume->ShallowCopy(
+    vtkImageData::SafeDownCast(algorithm->GetOutputDataObject(0)));
 
   double origin[3], spacing[3];
   int extent[6];
   volume->GetOrigin(origin);
   volume->GetSpacing(spacing);
   volume->GetExtent(extent);
+
+  QString arrayName;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    arrayName = dataSource()->activeScalars();
+  } else {
+    arrayName = dataSource()->scalarsName(activeScalars());
+  }
+  volume->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
 
   double cosines[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
   double newOrigin[3] = { origin[0], origin[1], origin[2] };

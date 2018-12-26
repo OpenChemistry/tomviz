@@ -275,7 +275,8 @@ void ModuleVolume::updatePanel()
 {
   // If m_controllers is present update the values, if not they will be updated
   // when it is created and shown.
-  if (!m_controllers || !m_volumeMapper || !m_volumeProperty) {
+  if (!m_controllers || !m_volumeMapper || !m_volumeProperty ||
+      !m_scalarsCombo) {
     return;
   }
   m_controllers->setJittering(
@@ -305,8 +306,7 @@ void ModuleVolume::onTransferModeChanged(const int mode)
 
 vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
 {
-  vtkTrivialProducer* trv = this->dataSource()->producer();
-  return trv->GetOutputDataObject(0);
+  return m_imageData.GetPointer();
 }
 
 void ModuleVolume::onAmbientChanged(const double value)
