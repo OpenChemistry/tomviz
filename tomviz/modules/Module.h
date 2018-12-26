@@ -115,8 +115,8 @@ public:
   virtual vtkSmartPointer<vtkDataObject> getDataToExport();
 
   /// Returns the active scalars of the module
-  QString activeScalars() const { return m_activeScalars; }
-  static const QString DEFAULT_SCALARS;
+  int activeScalars() const { return m_activeScalars; }
+  static const int DEFAULT_SCALARS;
 
 signals:
 
@@ -147,7 +147,7 @@ public slots:
   virtual void dataSourceMoved(double newX, double newY, double newZ) = 0;
 
   // This method is called when the active scalars for the module change
-  virtual void setActiveScalars(const QString& scalars);
+  virtual void setActiveScalars(int scalars);
 
 protected:
   /// Modules that use transfer functions for color/opacity should override this
@@ -196,7 +196,7 @@ private:
 
   class MInternals;
   const QScopedPointer<MInternals> d;
-  QString m_activeScalars = DEFAULT_SCALARS;
+  int m_activeScalars = DEFAULT_SCALARS;
 };
 } // namespace tomviz
 #endif

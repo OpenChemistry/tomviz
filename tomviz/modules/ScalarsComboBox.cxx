@@ -11,19 +11,17 @@ ScalarsComboBox::ScalarsComboBox(QWidget* parent) : QComboBox(parent)
 
 void ScalarsComboBox::setOptions(DataSource* ds, Module* module)
 {
-  if (module) {
-    addItem(module->DEFAULT_SCALARS);
+  if (!ds || !module) {
+    return;
   }
 
-  if (ds) {
-    QStringList scalars = ds->listScalars();
-    foreach (auto scalar, scalars) {
-      addItem(scalar);
-    }
+  addItem("Default", module->DEFAULT_SCALARS);
+
+  QStringList scalars = ds->listScalars();
+  for (int i = 0; i < scalars.length(); ++i) {
+    addItem(scalars[i], i);
   }
 
-  if (module) {
-    setCurrentText(module->activeScalars());
-  }
+  setCurrentIndex(module->activeScalars() + 1);
 }
 }

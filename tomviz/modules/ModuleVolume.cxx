@@ -264,9 +264,9 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularPowerChanged(const double)));
   connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
           SLOT(onTransferModeChanged(const int)));
-  connect(scalarsCombo, &QComboBox::currentTextChanged, this,
-          [this](QString scalars) {
-            setActiveScalars(scalars);
+  connect(scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this, scalarsCombo](int idx) {
+            setActiveScalars(scalarsCombo->itemData(idx).toInt());
             onScalarArrayChanged();
           });
 }
@@ -383,7 +383,7 @@ void ModuleVolume::onScalarArrayChanged()
   if (activeScalars() == Module::DEFAULT_SCALARS) {
     arrayName = dataSource()->activeScalars();
   } else {
-    arrayName = activeScalars();
+    arrayName = dataSource()->scalarsName(activeScalars());
   }
   m_imageData->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
   emit renderNeeded();

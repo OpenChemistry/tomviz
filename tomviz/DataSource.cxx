@@ -594,6 +594,17 @@ void DataSource::setActiveScalars(const QString& arrayName)
   emit dataPropertiesChanged();
 }
 
+void DataSource::setActiveScalars(int arrayIdx)
+{
+  QStringList scalars = listScalars();
+
+  if (arrayIdx < 0 || arrayIdx >= scalars.length()) {
+    return;
+  }
+
+  setActiveScalars(scalars[arrayIdx]);
+}
+
 QString DataSource::activeScalars() const
 {
   QString returnValue;
@@ -610,6 +621,25 @@ QString DataSource::activeScalars() const
   }
 
   return returnValue;
+}
+
+int DataSource::activeScalarsIdx() const
+{
+  QString arrayName = activeScalars();
+  QStringList scalars = listScalars();
+  return scalars.indexOf(arrayName);
+}
+
+QString DataSource::scalarsName(int arrayIdx) const
+{
+  QString arrayName;
+  QStringList scalars = listScalars();
+
+  if (arrayIdx >= 0 && arrayIdx < scalars.length()) {
+    arrayName = scalars[arrayIdx];
+  }
+
+  return arrayName;
 }
 
 QStringList DataSource::listScalars() const

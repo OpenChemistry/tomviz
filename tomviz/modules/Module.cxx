@@ -79,7 +79,7 @@ public:
   }
 };
 
-const QString Module::DEFAULT_SCALARS = "Default";
+const int Module::DEFAULT_SCALARS = -1;
 
 Module::Module(QObject* parentObject)
   : QObject(parentObject), d(new Module::MInternals())
@@ -149,7 +149,7 @@ void Module::addToPanel(QWidget* vtkNotUsed(panel)) {}
 
 void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel)) {}
 
-void Module::setActiveScalars(const QString& scalars)
+void Module::setActiveScalars(int scalars)
 {
   m_activeScalars = scalars;
   emit dataSourceChanged();

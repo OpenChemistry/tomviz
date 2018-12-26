@@ -210,9 +210,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
     emit renderNeeded();
   });
 
-  connect(scalarsCombo, &QComboBox::currentTextChanged, this,
-          [this](QString scalars) {
-            setActiveScalars(scalars);
+  connect(scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this, scalarsCombo](int idx) {
+            setActiveScalars(scalarsCombo->itemData(idx).toInt());
             onScalarArrayChanged();
           });
 
@@ -231,7 +231,7 @@ void ModuleOrthogonalSlice::onScalarArrayChanged()
   if (activeScalars() == Module::DEFAULT_SCALARS) {
     arrayName = dataSource()->activeScalars();
   } else {
-    arrayName = activeScalars();
+    arrayName = dataSource()->scalarsName(activeScalars());
   }
   vtkSMPropertyHelper(m_representation, "ColorArrayName")
     .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
