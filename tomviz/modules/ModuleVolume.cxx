@@ -235,9 +235,9 @@ void ModuleVolume::addToPanel(QWidget* panel)
     m_controllers = new ModuleVolumeWidget;
   }
 
-  ScalarsComboBox* scalarsCombo = new ScalarsComboBox();
-  scalarsCombo->setOptions(dataSource(), this);
-  m_controllers->formLayout()->insertRow(0, "Active Scalars", scalarsCombo);
+  m_scalarsCombo = new ScalarsComboBox();
+  m_scalarsCombo->setOptions(dataSource(), this);
+  m_controllers->formLayout()->insertRow(0, "Active Scalars", m_scalarsCombo);
 
   QVBoxLayout* layout = new QVBoxLayout;
   panel->setLayout(layout);
@@ -264,9 +264,9 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularPowerChanged(const double)));
   connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
           SLOT(onTransferModeChanged(const int)));
-  connect(scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this, scalarsCombo](int idx) {
-            setActiveScalars(scalarsCombo->itemData(idx).toInt());
+  connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
             onScalarArrayChanged();
           });
 }
@@ -290,6 +290,8 @@ void ModuleVolume::updatePanel()
 
   const auto tfMode = getTransferMode();
   m_controllers->setTransferMode(tfMode);
+
+  m_scalarsCombo->setOptions(dataSource(), this);
 }
 
 void ModuleVolume::onTransferModeChanged(const int mode)

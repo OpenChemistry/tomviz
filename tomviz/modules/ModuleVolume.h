@@ -23,6 +23,7 @@ class vtkVolume;
 namespace tomviz {
 
 class ModuleVolumeWidget;
+class ScalarsComboBox;
 
 class ModuleVolume : public Module
 {
@@ -69,6 +70,7 @@ private:
   vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   QPointer<ModuleVolumeWidget> m_controllers;
+  QPointer<ScalarsComboBox> m_scalarsCombo;
 
 private slots:
   /**

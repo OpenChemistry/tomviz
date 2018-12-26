@@ -261,6 +261,7 @@ QJsonObject Module::serialize() const
     }
   }
   json["properties"] = props;
+  json["activeScalars"] = m_activeScalars;
   return json;
 }
 
@@ -291,6 +292,10 @@ bool Module::deserialize(const QJsonObject& json)
       }
     }
     setUseDetachedColorMap(useDetachedColorMap);
+  }
+
+  if (json.contains("activeScalars")) {
+    m_activeScalars = json["activeScalars"].toInt();
   }
 
   return true;

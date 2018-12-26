@@ -148,9 +148,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   line->setFrameShadow(QFrame::Sunken);
   layout->addRow(line);
 
-  ScalarsComboBox* scalarsCombo = new ScalarsComboBox();
-  scalarsCombo->setOptions(dataSource(), this);
-  layout->addRow("Scalars", scalarsCombo);
+  m_scalarsCombo = new ScalarsComboBox();
+  m_scalarsCombo->setOptions(dataSource(), this);
+  layout->addRow("Scalars", m_scalarsCombo);
 
   QComboBox* direction = new QComboBox;
   direction->addItem("XY Plane");
@@ -210,9 +210,9 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
     emit renderNeeded();
   });
 
-  connect(scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this, scalarsCombo](int idx) {
-            setActiveScalars(scalarsCombo->itemData(idx).toInt());
+  connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
             onScalarArrayChanged();
           });
 
@@ -280,6 +280,7 @@ bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
       }
     }
     rep->UpdateVTKObjects();
+    m_scalarsCombo->setOptions(dataSource(), this);
     return true;
   }
   return false;
