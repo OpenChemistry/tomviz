@@ -11,6 +11,8 @@ ScalarsComboBox::ScalarsComboBox(QWidget* parent) : QComboBox(parent)
 
 void ScalarsComboBox::setOptions(DataSource* ds, Module* module)
 {
+  clear();
+
   if (!ds || !module) {
     return;
   }
