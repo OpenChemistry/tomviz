@@ -7,6 +7,8 @@
 #include <QScopedPointer>
 #include <QWidget>
 
+class QFormLayout;
+
 /**
  * \brief UI layer of ModuleVolume.
  *
@@ -35,6 +37,7 @@ public:
    * in the mapper or serialized), so the UI needs to be updated if the state
    * changes or when constructing the UI.
    */
+  void setActiveScalars(const QString& scalars);
   void setJittering(const bool enable);
   void setBlendingMode(const int mode);
   void setInterpolationType(const int type);
@@ -44,6 +47,7 @@ public:
   void setSpecular(const double value);
   void setSpecularPower(const double value);
   void setTransferMode(const int transferMode);
+  QFormLayout* formLayout();
   //@}
 
 signals:

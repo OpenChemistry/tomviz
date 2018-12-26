@@ -13,7 +13,8 @@ class ScalarsComboBox : public QComboBox
   Q_OBJECT
 
 public:
-  ScalarsComboBox(DataSource* ds, Module* module);
+  ScalarsComboBox(QWidget* parent = nullptr);
+  void setOptions(DataSource* ds, Module* module);
 };
 }
 

@@ -148,7 +148,8 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   line->setFrameShadow(QFrame::Sunken);
   layout->addRow(line);
 
-  QComboBox* scalarsCombo = new ScalarsComboBox(dataSource(), this);
+  ScalarsComboBox* scalarsCombo = new ScalarsComboBox();
+  scalarsCombo->setOptions(dataSource(), this);
   layout->addRow("Scalars", scalarsCombo);
 
   QComboBox* direction = new QComboBox;

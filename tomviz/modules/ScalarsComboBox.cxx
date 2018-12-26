@@ -5,7 +5,11 @@
 
 namespace tomviz {
 
-ScalarsComboBox::ScalarsComboBox(DataSource* ds, Module* module) : QComboBox()
+ScalarsComboBox::ScalarsComboBox(QWidget* parent) : QComboBox(parent)
+{
+}
+
+void ScalarsComboBox::setOptions(DataSource* ds, Module* module)
 {
   if (module) {
     addItem(module->DEFAULT_SCALARS);
