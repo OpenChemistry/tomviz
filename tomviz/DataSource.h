@@ -177,6 +177,14 @@ public:
   /// Set the active scalars by array name.
   void setActiveScalars(const QString& arrayName);
   QString activeScalars() const;
+  /// Set the active scalars by component index.
+  void setActiveScalars(int arrayIdx);
+  int activeScalarsIdx() const;
+  /// Get the scalars name for a given index.
+  QString scalarsName(int arrayIdx) const;
+
+  /// Get the scalars list
+  QStringList listScalars() const;
 
   // Get pointer to scalar array
   vtkDataArray* getScalarsArray(const QString& arrayName);

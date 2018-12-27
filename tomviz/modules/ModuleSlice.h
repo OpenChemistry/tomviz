@@ -16,6 +16,9 @@ class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
 
 namespace tomviz {
+
+class ScalarsComboBox;
+
 class ModuleSlice : public Module
 {
   Q_OBJECT
@@ -57,9 +60,11 @@ private slots:
 
   void dataUpdated();
 
+  void onScalarArrayChanged();
+
 private:
   // Should only be called from initialize after the PassThrough has been setup.
-  bool setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer);
+  bool setupWidget(vtkSMViewProxy* view);
 
   Q_DISABLE_COPY(ModuleSlice)
 
@@ -72,6 +77,9 @@ private:
 
   QPointer<QCheckBox> m_opacityCheckBox;
   bool m_mapOpacity = false;
+
+  vtkNew<vtkImageData> m_imageData;
+  QPointer<ScalarsComboBox> m_scalarsCombo;
 };
 } // namespace tomviz
 

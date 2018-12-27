@@ -23,6 +23,7 @@ class vtkVolume;
 namespace tomviz {
 
 class ModuleVolumeWidget;
+class ScalarsComboBox;
 
 class ModuleVolume : public Module
 {
@@ -64,10 +65,12 @@ private:
   Q_DISABLE_COPY(ModuleVolume)
 
   vtkWeakPointer<vtkPVRenderView> m_view;
+  vtkNew<vtkImageData> m_imageData;
   vtkNew<vtkVolume> m_volume;
   vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   QPointer<ModuleVolumeWidget> m_controllers;
+  QPointer<ScalarsComboBox> m_scalarsCombo;
 
 private slots:
   /**
@@ -83,6 +86,7 @@ private slots:
   void onSpecularChanged(const double value);
   void onSpecularPowerChanged(const double value);
   void onTransferModeChanged(const int mode);
+  void onScalarArrayChanged();
 };
 } // namespace tomviz
 

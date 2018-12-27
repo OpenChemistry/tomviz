@@ -6,6 +6,7 @@
 
 #include "DataSource.h"
 #include "HistogramManager.h"
+#include "ScalarsComboBox.h"
 #include "vtkTransferFunctionBoxItem.h"
 
 #include <vtkColorTransferFunction.h>
@@ -22,6 +23,7 @@
 
 #include <pqProxiesWidget.h>
 #include <vtkPVRenderView.h>
+#include <vtkPointData.h>
 #include <vtkSMPVRepresentationProxy.h>
 #include <vtkSMParaViewPipelineControllerWithRendering.h>
 #include <vtkSMPropertyHelper.h>
@@ -30,6 +32,7 @@
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
+#include <QFormLayout>
 #include <QVBoxLayout>
 
 namespace tomviz {
@@ -73,8 +76,9 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   // Default parameters
-  vtkTrivialProducer* trv = data->producer();
-  m_volumeMapper->SetInputConnection(trv->GetOutputPort());
+  m_imageData->ShallowCopy(
+    vtkImageData::SafeDownCast(data->producer()->GetOutputDataObject(0)));
+  m_volumeMapper->SetInputData(m_imageData);
   m_volume->SetMapper(m_volumeMapper.Get());
   m_volume->SetProperty(m_volumeProperty.Get());
   const double* displayPosition = data->displayPosition();
@@ -93,6 +97,9 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
   m_view->AddPropToRenderer(m_volume.Get());
   m_view->Update();
+
+  connect(data, &DataSource::activeScalarsChanged, this,
+          &ModuleVolume::onScalarArrayChanged);
 
   return true;
 }
@@ -228,6 +235,10 @@ void ModuleVolume::addToPanel(QWidget* panel)
     m_controllers = new ModuleVolumeWidget;
   }
 
+  m_scalarsCombo = new ScalarsComboBox();
+  m_scalarsCombo->setOptions(dataSource(), this);
+  m_controllers->formLayout()->insertRow(0, "Active Scalars", m_scalarsCombo);
+
   QVBoxLayout* layout = new QVBoxLayout;
   panel->setLayout(layout);
 
@@ -253,13 +264,19 @@ void ModuleVolume::addToPanel(QWidget* panel)
           SLOT(onSpecularPowerChanged(const double)));
   connect(m_controllers, SIGNAL(transferModeChanged(const int)), this,
           SLOT(onTransferModeChanged(const int)));
+  connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
+            onScalarArrayChanged();
+          });
 }
 
 void ModuleVolume::updatePanel()
 {
   // If m_controllers is present update the values, if not they will be updated
   // when it is created and shown.
-  if (!m_controllers || !m_volumeMapper || !m_volumeProperty) {
+  if (!m_controllers || !m_volumeMapper || !m_volumeProperty ||
+      !m_scalarsCombo) {
     return;
   }
   m_controllers->setJittering(
@@ -274,6 +291,8 @@ void ModuleVolume::updatePanel()
 
   const auto tfMode = getTransferMode();
   m_controllers->setTransferMode(tfMode);
+
+  m_scalarsCombo->setOptions(dataSource(), this);
 }
 
 void ModuleVolume::onTransferModeChanged(const int mode)
@@ -287,8 +306,7 @@ void ModuleVolume::onTransferModeChanged(const int mode)
 
 vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
 {
-  vtkTrivialProducer* trv = this->dataSource()->producer();
-  return trv->GetOutputDataObject(0);
+  return m_imageData.GetPointer();
 }
 
 void ModuleVolume::onAmbientChanged(const double value)
@@ -358,6 +376,18 @@ void ModuleVolume::setBlendingMode(const int mode)
 void ModuleVolume::setJittering(const bool val)
 {
   m_volumeMapper->SetUseJittering(val ? 1 : 0);
+  emit renderNeeded();
+}
+
+void ModuleVolume::onScalarArrayChanged()
+{
+  QString arrayName;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    arrayName = dataSource()->activeScalars();
+  } else {
+    arrayName = dataSource()->scalarsName(activeScalars());
+  }
+  m_imageData->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
   emit renderNeeded();
 }
 

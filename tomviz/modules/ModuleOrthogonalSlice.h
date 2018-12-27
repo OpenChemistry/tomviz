@@ -14,6 +14,8 @@ class vtkSMSourceProxy;
 
 namespace tomviz {
 
+class ScalarsComboBox;
+
 class ModuleOrthogonalSlice : public Module
 {
   Q_OBJECT
@@ -62,6 +64,7 @@ private:
   pqPropertyLinks m_links;
 
   QPointer<QCheckBox> m_opacityCheckBox;
+  QPointer<ScalarsComboBox> m_scalarsCombo;
   bool m_mapOpacity = false;
 };
 } // namespace tomviz

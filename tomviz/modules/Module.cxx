@@ -79,6 +79,8 @@ public:
   }
 };
 
+const int Module::DEFAULT_SCALARS = -1;
+
 Module::Module(QObject* parentObject)
   : QObject(parentObject), d(new Module::MInternals())
 {}
@@ -146,6 +148,12 @@ OperatorResult* Module::operatorResult() const
 void Module::addToPanel(QWidget* vtkNotUsed(panel)) {}
 
 void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel)) {}
+
+void Module::setActiveScalars(int scalars)
+{
+  m_activeScalars = scalars;
+  emit dataSourceChanged();
+}
 
 void Module::setUseDetachedColorMap(bool val)
 {
@@ -253,6 +261,7 @@ QJsonObject Module::serialize() const
     }
   }
   json["properties"] = props;
+  json["activeScalars"] = m_activeScalars;
   return json;
 }
 
@@ -283,6 +292,10 @@ bool Module::deserialize(const QJsonObject& json)
       }
     }
     setUseDetachedColorMap(useDetachedColorMap);
+  }
+
+  if (json.contains("activeScalars")) {
+    m_activeScalars = json["activeScalars"].toInt();
   }
 
   return true;

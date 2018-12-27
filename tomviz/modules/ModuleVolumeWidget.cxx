@@ -128,4 +128,9 @@ void ModuleVolumeWidget::setTransferMode(const int transferMode)
 {
   m_ui->cbTransferMode->setCurrentIndex(transferMode);
 }
+
+QFormLayout* ModuleVolumeWidget::formLayout()
+{
+  return m_ui->formLayout;
+}
 } // namespace tomviz
