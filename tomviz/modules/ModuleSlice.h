@@ -65,6 +65,7 @@ protected:
   void updateColorMap() override;
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
+  static Direction stringToDirection(const QString& name);
 
 private slots:
   void onPropertyChanged();
@@ -102,8 +103,8 @@ private:
   Direction m_direction = Direction::XY;
   int m_slice = 0;
 
-  pqLineEdit* m_pointInputs[3];
-  pqLineEdit* m_normalInputs[3];
+  QPointer<pqLineEdit> m_pointInputs[3];
+  QPointer<pqLineEdit> m_normalInputs[3];
 };
 } // namespace tomviz
 

@@ -274,7 +274,8 @@ void ModuleSlice::addToPanel(QWidget* panel)
   m_sliceSlider->setMinimum(0);
   m_sliceSlider->setValue(m_slice);
   int axis = directionAxis(m_direction);
-  if (axis >= 0) {
+  bool isOrtho = axis >= 0;
+  if (isOrtho) {
     int dims[3];
     m_imageData->GetDimensions(dims);
     m_sliceSlider->setMaximum(dims[axis] - 1);
@@ -297,6 +298,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     label = new QLabel(labels[i]);
     row->addWidget(label);
     pqLineEdit* inputBox = new pqLineEdit;
+    inputBox->setEnabled(!isOrtho);
     inputBox->setValidator(new QDoubleValidator(inputBox));
     m_Links.addPropertyLink(
       inputBox, "text2", SIGNAL(textChanged(const QString&)), m_propsPanelProxy,
@@ -315,6 +317,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     label = new QLabel(labels[i]);
     row->addWidget(label);
     pqLineEdit* inputBox = new pqLineEdit;
+    inputBox->setEnabled(!isOrtho);
     inputBox->setValidator(new QDoubleValidator(inputBox));
     m_Links.addPropertyLink(
       inputBox, "text2", SIGNAL(textChanged(const QString&)), m_propsPanelProxy,
@@ -401,6 +404,11 @@ QJsonObject ModuleSlice::serialize() const
   props["mapScalars"] = m_widget->GetMapScalars() != 0;
   props["mapOpacity"] = m_mapOpacity;
 
+  props["slice"] = m_slice;
+  QVariant qData;
+  qData.setValue(m_direction);
+  props["direction"] = qData.toString();
+
   json["properties"] = props;
   return json;
 }
@@ -432,6 +440,14 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     }
     m_widget->UpdatePlacement();
     m_scalarsCombo->setOptions(dataSource(), this);
+    if (props.contains("direction")) {
+      Direction direction = stringToDirection(props["direction"].toString());
+      onDirectionChanged(direction);
+    }
+    if (props.contains("slice")) {
+      m_slice = props["slice"].toInt();
+      onSliceChanged(m_slice);
+    }
     onPlaneChanged();
     return true;
   }
@@ -545,8 +561,8 @@ void ModuleSlice::onScalarArrayChanged()
 
 void ModuleSlice::onDirectionChanged(Direction direction)
 {
-  int axis = directionAxis(direction);
   m_direction = direction;
+  int axis = directionAxis(direction);
 
   bool isOrtho = axis >= 0;
 
@@ -563,6 +579,17 @@ void ModuleSlice::onDirectionChanged(Direction direction)
   }
 
   m_widget->SetOrtho(axis);
+
+  if (m_directionCombo) {
+    if (direction != m_directionCombo->currentData().value<Direction>()) {
+      for (int i = 0; i < m_directionCombo->count(); ++i) {
+        Direction data = m_directionCombo->itemData(i).value<Direction>();
+        if (data == direction) {
+          m_directionCombo->setCurrentIndex(i);
+        }
+      }
+    }
+  }
 
   if (!isOrtho) {
     return;
@@ -591,6 +618,7 @@ void ModuleSlice::onDirectionChanged(Direction direction)
 
 void ModuleSlice::onSliceChanged(int slice)
 {
+  m_slice = slice;
   int axis = directionAxis(m_direction);
   if (axis < 0) {
     return;
@@ -611,7 +639,6 @@ void ModuleSlice::onSliceChanged(int slice)
     bounds[2 * axis] +
     (bounds[2 * axis + 1] - bounds[2 * axis]) * slice / (dims[axis] - 1);
 
-  m_slice = slice;
   if (m_sliceSlider) {
     m_sliceSlider->setValue(slice);
   }
@@ -655,6 +682,19 @@ int ModuleSlice::directionAxis(Direction direction)
     default: {
       return -1;
     }
+  }
+}
+
+ModuleSlice::Direction ModuleSlice::stringToDirection(const QString& name)
+{
+  if (name == "XY") {
+    return Direction::XY;
+  } else if (name == "YZ") {
+    return Direction::YZ;
+  } else if (name == "XZ") {
+    return Direction::XZ;
+  } else {
+    return Direction::Custom;
   }
 }
 
