@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "IntSliderWidget.h"
 #include "ScalarsComboBox.h"
 #include "Utilities.h"
 
@@ -108,6 +109,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     m_widget->SetDisplayOffset(data->displayPosition());
     m_widget->On();
     m_widget->InteractionOn();
+    onDirectionChanged(m_direction);
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
@@ -247,6 +249,38 @@ void ModuleSlice::addToPanel(QWidget* panel)
   m_scalarsCombo->setOptions(dataSource(), this);
   formLayout->addRow("Scalars", m_scalarsCombo);
 
+  m_directionCombo = new QComboBox();
+  std::vector<std::tuple<QString, Direction>> options = {
+    std::make_tuple("XY Plane", Direction::XY),
+    std::make_tuple("YZ Plane", Direction::YZ),
+    std::make_tuple("XZ Plane", Direction::XZ),
+    std::make_tuple("Custom", Direction::Custom)
+  };
+  for (size_t i = 0; i < options.size(); ++i) {
+    auto label = std::get<0>(options[i]);
+    auto data = std::get<1>(options[i]);
+    QVariant qData;
+    qData.setValue(std::get<1>(options[i]));
+    m_directionCombo->addItem(label, qData);
+    if (data == m_direction) {
+      m_directionCombo->setCurrentIndex(i);
+    }
+  }
+  formLayout->addRow("Direction", m_directionCombo);
+
+  m_sliceSlider = new IntSliderWidget(true);
+  m_sliceSlider->setLineEditWidth(50);
+  m_sliceSlider->setPageStep(1);
+  m_sliceSlider->setMinimum(0);
+  m_sliceSlider->setValue(m_slice);
+  int axis = directionAxis(m_direction);
+  if (axis >= 0) {
+    int dims[3];
+    m_imageData->GetDimensions(dims);
+    m_sliceSlider->setMaximum(dims[axis] - 1);
+  }
+  formLayout->addRow("Slice", m_sliceSlider);
+
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
   formLayout->addRow(showArrow);
 
@@ -270,6 +304,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
             &ModuleSlice::dataUpdated);
     row->addWidget(inputBox);
+    m_pointInputs[i] = inputBox;
   }
   layout->addItem(row);
 
@@ -287,6 +322,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
             &ModuleSlice::dataUpdated);
     row->addWidget(inputBox);
+    m_normalInputs[i] = inputBox;
   }
   layout->addItem(row);
 
@@ -320,6 +356,16 @@ void ModuleSlice::addToPanel(QWidget* panel)
             setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
             onScalarArrayChanged();
           });
+  connect(m_directionCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            Direction dir = m_directionCombo->itemData(idx).value<Direction>();
+            onDirectionChanged(dir);
+          });
+
+  connect(m_sliceSlider, &IntSliderWidget::valueEdited, this,
+          QOverload<int>::of(&ModuleSlice::onSliceChanged));
+  connect(m_sliceSlider, &IntSliderWidget::valueChanged, this,
+          QOverload<int>::of(&ModuleSlice::onSliceChanged));
 }
 
 void ModuleSlice::dataUpdated()
@@ -433,6 +479,9 @@ void ModuleSlice::onPlaneChanged()
   int mapScalars = m_widget->GetMapScalars();
   mapScalarsProperty.Set(mapScalars);
 
+  // Adjust the slice slider if the slice has changed from dragging the arrow
+  onSliceChanged(centerPoint);
+
   m_ignoreSignals = false;
 }
 
@@ -492,6 +541,121 @@ void ModuleSlice::onScalarArrayChanged()
   }
   m_imageData->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
   emit renderNeeded();
+}
+
+void ModuleSlice::onDirectionChanged(Direction direction)
+{
+  int axis = directionAxis(direction);
+  m_direction = direction;
+
+  bool isOrtho = axis >= 0;
+
+  for (int i = 0; i < 3; ++i) {
+    if (m_pointInputs[i]) {
+      m_pointInputs[i]->setEnabled(!isOrtho);
+    }
+    if (m_normalInputs[i]) {
+      m_normalInputs[i]->setEnabled(!isOrtho);
+    }
+  }
+  if (m_sliceSlider) {
+    m_sliceSlider->setVisible(isOrtho);
+  }
+
+  m_widget->SetOrtho(axis);
+
+  if (!isOrtho) {
+    return;
+  }
+
+  int dims[3];
+  m_imageData->GetDimensions(dims);
+
+  double normal[3] = { 0, 0, 0 };
+  int slice = 0;
+  int maxSlice = 0;
+
+  normal[axis] = 1;
+  slice = dims[axis] / 2;
+  maxSlice = dims[axis] - 1;
+
+  m_widget->SetNormal(normal);
+  if (m_sliceSlider) {
+    m_sliceSlider->setMinimum(0);
+    m_sliceSlider->setMaximum(maxSlice);
+  }
+  onSliceChanged(slice);
+  onPlaneChanged();
+  dataUpdated();
+}
+
+void ModuleSlice::onSliceChanged(int slice)
+{
+  int axis = directionAxis(m_direction);
+  if (axis < 0) {
+    return;
+  }
+
+  int dims[3];
+  m_imageData->GetDimensions(dims);
+
+  double bounds[6];
+  m_imageData->GetBounds(bounds);
+
+  double point[3] = {
+    bounds[0] + (bounds[1] - bounds[0]) * (dims[0] / 2) / (dims[0] - 1),
+    bounds[2] + (bounds[3] - bounds[2]) * (dims[1] / 2) / (dims[1] - 1),
+    bounds[4] + (bounds[5] - bounds[4]) * (dims[2] / 2) / (dims[2] - 1),
+  };
+  point[axis] =
+    bounds[2 * axis] +
+    (bounds[2 * axis + 1] - bounds[2 * axis]) * slice / (dims[axis] - 1);
+
+  m_slice = slice;
+  if (m_sliceSlider) {
+    m_sliceSlider->setValue(slice);
+  }
+  m_widget->SetCenter(point);
+  onPlaneChanged();
+  dataUpdated();
+}
+
+void ModuleSlice::onSliceChanged(double* point)
+{
+  int axis = directionAxis(m_direction);
+  if (axis < 0) {
+    return;
+  }
+
+  int dims[3];
+  m_imageData->GetDimensions(dims);
+  double bounds[6];
+  m_imageData->GetBounds(bounds);
+  int slice;
+
+  slice = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
+          (bounds[2 * axis + 1] - bounds[2 * axis]);
+  if (slice != m_slice) {
+    onSliceChanged(slice);
+  }
+}
+
+int ModuleSlice::directionAxis(Direction direction)
+{
+  switch (direction) {
+    case Direction::XY: {
+      return 2;
+    }
+    case Direction::YZ: {
+      return 0;
+    }
+    case Direction::XZ: {
+      return 1;
+    }
+    default: {
+      return -1;
+    }
+  }
 }
 
 } // namespace tomviz

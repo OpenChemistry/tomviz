@@ -11,6 +11,8 @@
 #include <pqPropertyLinks.h>
 
 class QCheckBox;
+class QComboBox;
+class pqLineEdit;
 class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
@@ -18,6 +20,7 @@ class vtkNonOrthoImagePlaneWidget;
 namespace tomviz {
 
 class ScalarsComboBox;
+class IntSliderWidget;
 
 class ModuleSlice : public Module
 {
@@ -49,6 +52,15 @@ public:
 
   vtkSmartPointer<vtkDataObject> getDataToExport() override;
 
+  enum class Direction
+  {
+    XY,
+    YZ,
+    XZ,
+    Custom
+  };
+  Q_ENUM(Direction)
+
 protected:
   void updateColorMap() override;
   std::string getStringForProxy(vtkSMProxy* proxy) override;
@@ -61,6 +73,11 @@ private slots:
   void dataUpdated();
 
   void onScalarArrayChanged();
+
+  void onDirectionChanged(Direction direction);
+  void onSliceChanged(int slice);
+  void onSliceChanged(double* point);
+  int directionAxis(Direction direction);
 
 private:
   // Should only be called from initialize after the PassThrough has been setup.
@@ -80,6 +97,13 @@ private:
 
   vtkNew<vtkImageData> m_imageData;
   QPointer<ScalarsComboBox> m_scalarsCombo;
+  QPointer<QComboBox> m_directionCombo;
+  QPointer<IntSliderWidget> m_sliceSlider;
+  Direction m_direction = Direction::XY;
+  int m_slice = 0;
+
+  pqLineEdit* m_pointInputs[3];
+  pqLineEdit* m_normalInputs[3];
 };
 } // namespace tomviz
 

@@ -758,6 +758,8 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
   //
   double focalPoint[4], pickPoint[4], prevPickPoint[4];
   double z, vpn[3];
+  double* prevPlanePoint;
+  prevPlanePoint = GetCenter();
 
   vtkCamera* camera = this->CurrentRenderer->GetActiveCamera();
   if (!camera) {
@@ -778,9 +780,12 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
   this->ComputeDisplayToWorld(double(X), double(Y), z, pickPoint);
 
   if (this->State == vtkNonOrthoImagePlaneWidget::Pushing) {
-    this->Push(prevPickPoint, pickPoint);
+    this->Push(prevPlanePoint, pickPoint);
     this->UpdatePlacement();
   } else if (this->State == vtkNonOrthoImagePlaneWidget::Rotating) {
+    if (Ortho >= 0) {
+      return;
+    }
     camera->GetViewPlaneNormal(vpn);
     this->Rotate(double(X), double(Y), prevPickPoint, pickPoint, vpn);
     this->UpdatePlacement();
@@ -803,7 +808,15 @@ void vtkNonOrthoImagePlaneWidget::Push(double* p1, double* p2)
   // take only the primary component of the motion vector
   double norm[3];
   this->PlaneSource->GetNormal(norm);
-  const float dotV = vtkMath::Dot(v, norm);
+  float dotV = vtkMath::Dot(v, norm);
+
+  if (Ortho >= 0) {
+    double spacing[3];
+    ImageData->GetSpacing(spacing);
+    int n;
+    n = int(dotV / spacing[Ortho]);
+    dotV = n * spacing[Ortho];
+  }
 
   this->PlaneSource->Push(dotV);
 }
