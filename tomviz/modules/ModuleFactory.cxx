@@ -88,7 +88,7 @@ Module* ModuleFactory::allocateModule(const QString& type)
   } else if (type == "Slice") {
     module = new ModuleSlice();
   } else if (type == "Orthogonal Slice") {
-    module = new ModuleOrthogonalSlice();
+    module = new ModuleSlice();
   } else if (type == "Threshold") {
     module = new ModuleThreshold();
   } else if (type == "Ruler") {

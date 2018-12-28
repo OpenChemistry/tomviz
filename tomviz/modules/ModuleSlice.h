@@ -66,6 +66,7 @@ protected:
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
   static Direction stringToDirection(const QString& name);
+  static Direction modeToDirection(int sliceMode);
 
 private slots:
   void onPropertyChanged();

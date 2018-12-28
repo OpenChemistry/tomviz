@@ -422,15 +422,20 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     auto props = json["properties"].toObject();
     vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
     showProperty.Set(props["showArrow"].toBool() ? 1 : 0);
-    auto o = props["origin"].toArray();
-    auto p1 = props["point1"].toArray();
-    auto p2 = props["point2"].toArray();
-    double origin[3] = { o[0].toDouble(), o[1].toDouble(), o[2].toDouble() };
-    double point1[3] = { p1[0].toDouble(), p1[1].toDouble(), p1[2].toDouble() };
-    double point2[3] = { p2[0].toDouble(), p2[1].toDouble(), p2[2].toDouble() };
-    m_widget->SetOrigin(origin);
-    m_widget->SetPoint1(point1);
-    m_widget->SetPoint2(point2);
+    if (props.contains("origin") && props.contains("point1") &&
+        props.contains("point2")) {
+      auto o = props["origin"].toArray();
+      auto p1 = props["point1"].toArray();
+      auto p2 = props["point2"].toArray();
+      double origin[3] = { o[0].toDouble(), o[1].toDouble(), o[2].toDouble() };
+      double point1[3] = { p1[0].toDouble(), p1[1].toDouble(),
+                           p1[2].toDouble() };
+      double point2[3] = { p2[0].toDouble(), p2[1].toDouble(),
+                           p2[2].toDouble() };
+      m_widget->SetOrigin(origin);
+      m_widget->SetPoint1(point1);
+      m_widget->SetPoint2(point2);
+    }
     m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
     if (props.contains("mapOpacity")) {
       m_mapOpacity = props["mapOpacity"].toBool();
@@ -440,6 +445,12 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     }
     m_widget->UpdatePlacement();
     m_scalarsCombo->setOptions(dataSource(), this);
+    // If deserializing a former OrthogonalSlice, the direction is encoded in
+    // the property "sliceMode" as an int
+    if (props.contains("sliceMode")) {
+      Direction direction = modeToDirection(props["sliceMode"].toInt());
+      onDirectionChanged(direction);
+    }
     if (props.contains("direction")) {
       Direction direction = stringToDirection(props["direction"].toString());
       onDirectionChanged(direction);
@@ -695,6 +706,24 @@ ModuleSlice::Direction ModuleSlice::stringToDirection(const QString& name)
     return Direction::XZ;
   } else {
     return Direction::Custom;
+  }
+}
+
+ModuleSlice::Direction ModuleSlice::modeToDirection(int sliceMode)
+{
+  switch (sliceMode) {
+    case 5: {
+      return Direction::XY;
+    }
+    case 6: {
+      return Direction::YZ;
+    }
+    case 7: {
+      return Direction::XZ;
+    }
+    default: {
+      return Direction::Custom;
+    }
   }
 }
 
