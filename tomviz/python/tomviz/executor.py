@@ -123,6 +123,12 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
         Method the write JSON progress message. Implemented by subclass.
         """
 
+    @abc.abstractmethod
+    def write_to_file(self, data):
+        """
+        Write data to write and return path. Implemented by subclass.
+        """
+
     def set_operator_index(self, index):
         self._operator_index = index
 
@@ -185,11 +191,33 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
         m = {
             'type': 'progress.message',
             'operator': self._operator_index,
-            'messages': msg
+            'value': msg
         }
         self.write(m)
 
         self._message = msg
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        """
+        Updates the progress of the the operator.
+
+        :param data The current progress data value.
+        :type value: numpy.ndarray
+        """
+        value = value.T
+        path = self.write_to_file(value)
+        msg = {
+            'type': 'progress.data',
+            'operator': self._operator_index,
+            'value': path
+        }
+        self.write(msg)
+        self._data = value
 
     def __enter__(self):
         return self
@@ -219,8 +247,17 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
 
         self.write(msg)
 
+class WriteToFileMixin(object):
+    def write_to_file(self, data):
+        filename = '%d.emd' % self._sequence_number
+        path = os.path.join(os.path.dirname(self._path), filename)
+        _write_emd(path, data)
+        self._sequence_number += 1
 
-class LocalSocketProgress(JsonProgress):
+        return filename
+
+
+class LocalSocketProgress(WriteToFileMixin, JsonProgress):
     """
     Class used to update operator progress. Connects to QLocalServer and writes
     JSON message updating the UI on pipeline progress.
@@ -232,6 +269,7 @@ class LocalSocketProgress(JsonProgress):
         self._message = None
         self._connection = None
         self._path = socket_path
+        self._sequence_number = 0
 
         try:
             mode = os.stat(self._path).st_mode
@@ -260,8 +298,7 @@ class LocalSocketProgress(JsonProgress):
 
         return False
 
-
-class FilesProgress(JsonProgress):
+class FilesProgress(WriteToFileMixin, JsonProgress):
     """
     Class used to update operator progress by writing a sequence of files to a
     directory.
@@ -277,6 +314,8 @@ class FilesProgress(JsonProgress):
 
         with open(file_path, 'w') as f:
             json.dump(data, f)
+
+        return filename
 
 
 def _progress(progress_method, progress_path):
@@ -482,7 +521,7 @@ def _load_transform_functions(operators):
 
 def _write_child_data(result, operator_index, output_file_path, dims):
     for (label, dataobject) in six.iteritems(result):
-        # Only need write out data is the operator made updates.
+        # Only need write out data if the operator made updates.
         output_path = '.'
         if output_file_path is not None:
             output_path = os.path.dirname(output_file_path)

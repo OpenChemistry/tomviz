@@ -123,6 +123,7 @@ private:
   void operatorProgressMaximum(Operator* op, int max);
   void operatorProgressStep(Operator* op, int step);
   void operatorProgressMessage(Operator* op, const QString& msg);
+  void operatorProgressData(Operator* op, vtkSmartPointer<vtkDataObject> data);
   void pipelineStarted();
   void pipelineFinished();
   void displayError(const QString& title, const QString& msg);
@@ -137,6 +138,7 @@ public:
 
   virtual void start() = 0;
   virtual void stop() = 0;
+  vtkSmartPointer<vtkDataObject> readProgressData(const QString& path);
 
 signals:
   void progressMessage(const QString& msg);
@@ -147,6 +149,7 @@ signals:
   void operatorProgressMaximum(Operator* op, int max);
   void operatorProgressStep(Operator* op, int step);
   void operatorProgressMessage(Operator* op, const QString& msg);
+  void operatorProgressData(Operator* op, vtkSmartPointer<vtkDataObject> data);
   void pipelineStarted();
   void pipelineFinished();
 

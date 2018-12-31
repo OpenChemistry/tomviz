@@ -46,6 +46,8 @@
 
 #include <functional>
 
+Q_DECLARE_METATYPE(vtkSmartPointer<vtkImageData>);
+
 namespace tomviz {
 PipelineExecutor::PipelineExecutor(Pipeline* pipeline) : QObject(pipeline)
 {
@@ -268,7 +270,6 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
   if (end == -1) {
     end = operators.size();
   }
-  operators = operators.mid(start, end - start);
 
   m_temporaryDir.reset(new QTemporaryDir());
   if (!m_temporaryDir->isValid()) {
@@ -345,6 +346,8 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
           &DockerPipelineExecutor::operatorProgressStep);
   connect(m_progressReader.data(), &ProgressReader::operatorProgressMessage,
           this, &DockerPipelineExecutor::operatorProgressMessage);
+  connect(m_progressReader.data(), &ProgressReader::operatorProgressData,
+          this, &DockerPipelineExecutor::operatorProgressData);
   connect(m_progressReader.data(), &ProgressReader::pipelineStarted, this,
           &DockerPipelineExecutor::pipelineStarted);
   connect(m_progressReader.data(), &ProgressReader::pipelineFinished, this,
@@ -556,7 +559,7 @@ void DockerPipelineExecutor::operatorFinished(Operator* op)
   // See it we have any child data source updates
   if (operatorPath.exists()) {
     QMap<QString, vtkSmartPointer<vtkDataObject>> childOutput;
-    foreach (const QFileInfo& fileInfo, operatorPath.entryInfoList()) {
+    foreach (const QFileInfo& fileInfo, operatorPath.entryInfoList(QDir::NoDotAndDotDot)) {
 
       auto name = fileInfo.baseName();
       EmdFormat emdFile;
@@ -598,10 +601,20 @@ void DockerPipelineExecutor::operatorProgressStep(Operator* op, int step)
 {
   op->setProgressStep(step);
 }
+
 void DockerPipelineExecutor::operatorProgressMessage(Operator* op,
                                                      const QString& msg)
 {
   op->setProgressMessage(msg);
+}
+
+void DockerPipelineExecutor::operatorProgressData(Operator* op,
+                                                  vtkSmartPointer<vtkDataObject> data)
+{
+  auto pythonOperator = qobject_cast<OperatorPython*>(op);
+  if (pythonOperator != nullptr) {
+    emit pythonOperator->childDataSourceUpdated(data);
+  }
 }
 
 void DockerPipelineExecutor::pipelineStarted()
@@ -678,8 +691,11 @@ void ProgressReader::progressReady(const QString& progressMessage)
       auto value = progressObj["value"].toInt();
       emit operatorProgressStep(op, value);
     } else if (type == "progress.message") {
-      auto value = progressObj["value"].toInt();
-      emit operatorProgressMaximum(op, value);
+      auto value = progressObj["value"].toString();
+      emit operatorProgressMessage(op, value);
+    } else if (type == "progress.data") {
+      auto value = progressObj["value"].toString();
+      emit operatorProgressData(op, readProgressData(value));
     } else {
       qCritical() << QString("Unrecognized message type: %1").arg(type);
     }
@@ -694,6 +710,20 @@ void ProgressReader::progressReady(const QString& progressMessage)
       qCritical() << QString("Unrecognized message type: %1").arg(type);
     }
   }
+}
+
+vtkSmartPointer<vtkDataObject> ProgressReader::readProgressData(const QString& path)
+{
+  EmdFormat emdFile;
+  auto data = vtkSmartPointer<vtkImageData>::New();
+
+  auto hostPath = QFileInfo(m_path).absoluteDir().filePath(path);
+
+  if (!emdFile.read(hostPath.toLatin1().data(), data)) {
+    qCritical() << QString("Unable to load progress data at: %1").arg(path);
+  }
+
+  return data;
 }
 
 FilesProgressReader::FilesProgressReader(const QString& path,
