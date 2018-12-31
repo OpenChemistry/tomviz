@@ -187,7 +187,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
 
   bool hasJson = this->jsonSource.size() > 0;
   if (hasJson) {
-    OperatorPython* opPython = new OperatorPython();
+    OperatorPython* opPython = new OperatorPython(source);
     opPython->setJSONDescription(jsonSource);
     opPython->setLabel(scriptLabel);
     opPython->setScript(scriptSource);
@@ -468,7 +468,7 @@ OperatorPython* AddPythonTransformReaction::addExpression(DataSource* source)
                   SLOT(addExpressionFromNonModalDialog()));
     dialog->show();
   } else {
-    OperatorPython* opPython = new OperatorPython();
+    OperatorPython* opPython = new OperatorPython(source);
     opPython->setLabel(scriptLabel);
     opPython->setScript(scriptSource);
 
