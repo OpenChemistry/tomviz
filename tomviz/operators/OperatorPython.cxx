@@ -387,8 +387,6 @@ bool OperatorPython::updateChildDataSources(Python::Dict outputDict)
         emit childDataSourceUpdated(dataObject);
       }
     }
-
-    m_dataSourceByName.insert(childDataSource(), nameLabelPair.first);
   }
 
   return true;
