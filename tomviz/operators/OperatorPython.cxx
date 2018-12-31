@@ -31,6 +31,7 @@
 #include "PythonUtilities.h"
 #include "Utilities.h"
 #include "pqPythonSyntaxHighlighter.h"
+#include "Pipeline.h"
 
 #include "vtkDataObject.h"
 #include "vtkImageData.h"
@@ -167,10 +168,15 @@ OperatorPython::OperatorPython(QObject* parentObject)
     }
   }
 
+  auto connectionType = Qt::BlockingQueuedConnection;
+  if (dataSource()->pipeline()->executionMode() ==
+      Pipeline::ExecutionMode::Docker) {
+    connectionType = Qt::DirectConnection;
+  }
   // Needed so the worker thread can update data in the UI thread.
   connect(this, SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)),
           this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)),
-          Qt::BlockingQueuedConnection);
+          connectionType);
 
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
@@ -180,7 +186,7 @@ OperatorPython::OperatorPython(QObject* parentObject)
     this,
     SLOT(
       createNewChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>)),
-    Qt::BlockingQueuedConnection);
+      connectionType);
   connect(
     this,
     SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
