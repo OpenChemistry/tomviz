@@ -1,23 +1,12 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #include "ModuleOrthogonalSlice.h"
 
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
+#include "ScalarsComboBox.h"
 #include "Utilities.h"
 #include "pqPropertyLinks.h"
 #include "pqSignalAdaptors.h"
@@ -34,6 +23,7 @@
 #include "vtkSMViewProxy.h"
 #include "vtkSmartPointer.h"
 #include <vtkPVDiscretizableColorTransferFunction.h>
+#include <vtkPointData.h>
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -159,6 +149,10 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
   line->setFrameShadow(QFrame::Sunken);
   layout->addRow(line);
 
+  m_scalarsCombo = new ScalarsComboBox();
+  m_scalarsCombo->setOptions(dataSource(), this);
+  layout->addRow("Scalars", m_scalarsCombo);
+
   QComboBox* direction = new QComboBox;
   direction->addItem("XY Plane");
   direction->addItem("YZ Plane");
@@ -217,6 +211,12 @@ void ModuleOrthogonalSlice::addToPanel(QWidget* panel)
     emit renderNeeded();
   });
 
+  connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
+            onScalarArrayChanged();
+          });
+
   m_opacityCheckBox->setChecked(m_mapOpacity);
 }
 
@@ -228,7 +228,12 @@ void ModuleOrthogonalSlice::dataUpdated()
 
 void ModuleOrthogonalSlice::onScalarArrayChanged()
 {
-  QString arrayName = dataSource()->activeScalars();
+  QString arrayName;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    arrayName = dataSource()->activeScalars();
+  } else {
+    arrayName = dataSource()->scalarsName(activeScalars());
+  }
   vtkSMPropertyHelper(m_representation, "ColorArrayName")
     .SetInputArrayToProcess(vtkDataObject::FIELD_ASSOCIATION_POINTS,
                             arrayName.toLatin1().data());
@@ -276,6 +281,7 @@ bool ModuleOrthogonalSlice::deserialize(const QJsonObject& json)
       }
     }
     rep->UpdateVTKObjects();
+    m_scalarsCombo->setOptions(dataSource(), this);
     return true;
   }
   return false;
@@ -293,14 +299,23 @@ vtkSmartPointer<vtkDataObject> ModuleOrthogonalSlice::getDataToExport()
 {
   vtkAlgorithm* algorithm =
     vtkAlgorithm::SafeDownCast(m_passThrough->GetClientSideObject());
-  vtkImageData* volume =
-    vtkImageData::SafeDownCast(algorithm->GetOutputDataObject(0));
+  vtkNew<vtkImageData> volume;
+  volume->ShallowCopy(
+    vtkImageData::SafeDownCast(algorithm->GetOutputDataObject(0)));
 
   double origin[3], spacing[3];
   int extent[6];
   volume->GetOrigin(origin);
   volume->GetSpacing(spacing);
   volume->GetExtent(extent);
+
+  QString arrayName;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    arrayName = dataSource()->activeScalars();
+  } else {
+    arrayName = dataSource()->scalarsName(activeScalars());
+  }
+  volume->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
 
   double cosines[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
   double newOrigin[3] = { origin[0], origin[1], origin[2] };

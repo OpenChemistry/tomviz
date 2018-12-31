@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #include "DataSource.h"
 
 #include "ActiveObjects.h"
@@ -605,6 +593,17 @@ void DataSource::setActiveScalars(const QString& arrayName)
   emit dataPropertiesChanged();
 }
 
+void DataSource::setActiveScalars(int arrayIdx)
+{
+  QStringList scalars = listScalars();
+
+  if (arrayIdx < 0 || arrayIdx >= scalars.length()) {
+    return;
+  }
+
+  setActiveScalars(scalars[arrayIdx]);
+}
+
 QString DataSource::activeScalars() const
 {
   QString returnValue;
@@ -621,6 +620,91 @@ QString DataSource::activeScalars() const
   }
 
   return returnValue;
+}
+
+int DataSource::activeScalarsIdx() const
+{
+  QString arrayName = activeScalars();
+  QStringList scalars = listScalars();
+  return scalars.indexOf(arrayName);
+}
+
+QString DataSource::scalarsName(int arrayIdx) const
+{
+  QString arrayName;
+  QStringList scalars = listScalars();
+
+  if (arrayIdx >= 0 && arrayIdx < scalars.length()) {
+    arrayName = scalars[arrayIdx];
+  }
+
+  return arrayName;
+}
+
+QStringList DataSource::listScalars() const
+{
+  QStringList scalars;
+  vtkAlgorithm* alg = algorithm();
+  if (alg) {
+    vtkImageData* data =
+      vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+    if (data) {
+      vtkPointData* pointData = data->GetPointData();
+      auto n = pointData->GetNumberOfComponents();
+      for (int i = 0; i < n; ++i) {
+        scalars << pointData->GetArrayName(i);
+      }
+    }
+  }
+  return scalars;
+}
+
+void DataSource::renameScalarsArray(const QString& oldName,
+                                    const QString& newName)
+{
+  const bool isCurrentScalars = oldName == activeScalars();
+
+  // Ensure the array actually exist
+  vtkDataArray* dataArray = getScalarsArray(oldName);
+  if (dataArray == nullptr) {
+    return;
+  }
+
+  // Ensure the target name is not already taken
+  vtkDataArray* targetArray = getScalarsArray(newName);
+  if (targetArray != nullptr) {
+    return;
+  }
+
+  dataArray->SetName(newName.toLatin1().data());
+
+  if (isCurrentScalars) {
+    setActiveScalars(newName);
+  } else {
+    dataModified();
+    emit activeScalarsChanged();
+    emit dataPropertiesChanged();
+  }
+}
+
+vtkDataArray* DataSource::getScalarsArray(const QString& arrayName)
+{
+  vtkAlgorithm* alg = algorithm();
+  if (alg == nullptr) {
+    return nullptr;
+  }
+  vtkImageData* data = vtkImageData::SafeDownCast(alg->GetOutputDataObject(0));
+  if (data == nullptr) {
+    return nullptr;
+  }
+  vtkPointData* pointData = data->GetPointData();
+  if (pointData == nullptr) {
+    return nullptr;
+  }
+  if (pointData->HasArray(arrayName.toLatin1().data()) == 0) {
+    return nullptr;
+  }
+  return pointData->GetScalars(arrayName.toLatin1().data());
 }
 
 unsigned int DataSource::getNumberOfComponents()

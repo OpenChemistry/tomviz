@@ -1,6 +1,7 @@
 import pyfftw
 import numpy as np
 import tomviz.operators
+from tomviz import utils
 import time
 
 
@@ -10,9 +11,6 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         """3D Reconstruct from a tilt series using Direct Fourier Method"""
 
         self.progress.maximum = 1
-
-        from tomviz import utils
-        import numpy as np
 
         # Get Tilt angles
         tiltAngles = utils.get_tilt_angles(dataset)
@@ -33,17 +31,12 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
         self.progress.message = 'Initialization'
         Nz = Ny
         w = np.zeros((Nx, Ny, Nz // 2 + 1)) #store weighting factors
-        v = pyfftw.n_byte_align_empty(
-            (Nx, Ny, Nz // 2 + 1), 16, dtype='complex128')
-        v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
-        recon = pyfftw.n_byte_align_empty(
-            (Nx, Ny, Nz), 16, dtype='float64', order='F')
-        recon_fftw_object = pyfftw.FFTW(
-            v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
+        v = pyfftw.empty_aligned(
+            (Nx, Ny, Nz // 2 + 1), dtype='complex64', n=16)
 
-        p = pyfftw.n_byte_align_empty((Nx, Npad), 16, dtype='float64')
-        pF = pyfftw.n_byte_align_empty(
-            (Nx, Npad // 2 + 1), 16, dtype='complex128')
+        p = pyfftw.empty_aligned((Nx, Npad), dtype='float32', n=16)
+        pF = pyfftw.empty_aligned(
+            (Nx, Npad // 2 + 1), dtype='complex64', n=16)
         p_fftw_object = pyfftw.FFTW(p, pF, axes=(0, 1))
 
         dk = np.double(Ny) / np.double(Npad)
@@ -64,14 +57,14 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
             projection = tiltSeries[:, :, a] #2D projection image
             p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)),
                            'constant', constant_values=(0, 0)) #pad zeros
-            p = np.fft.ifftshift(p)
+            p = np.float32(np.fft.ifftshift(p))
             p_fftw_object.update_arrays(p, pF)
             p_fftw_object()
+            p = None #Garbage collector (gc)
 
-            probjection_f = pF.copy()
             if ang < 0:
-                probjection_f = np.conj(pF.copy())
-                probjection_f[1:, :] = np.flipud(probjection_f[1:, :])
+                pF = np.conj(pF)
+                pF[1:, :] = np.flipud(pF[1:, :])
                 ang = np.pi + ang
 
             # Bilinear extrapolation
@@ -87,7 +80,7 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
                     if (py >= 0 and py < Ny and pz >= 0 and pz < Nz / 2 + 1):
                         w[:, py, pz] = w[:, py, pz] + weight
                         v[:, py, pz] = v[:, py, pz] + \
-                            weight * probjection_f[:, i]
+                            weight * pF[:, i]
             step += 1
             self.progress.value = step
             timeLeft = (time.time() - t0) / counter * (Nproj - counter)
@@ -97,28 +90,38 @@ class ReconDFMOperator(tomviz.operators.CancelableOperator):
             etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
+        p = pF = None #gc
+
         self.progress.message = 'Inverse Fourier transform'
+        v_temp = v.copy()
+        recon = pyfftw.empty_aligned(
+            (Nx, Ny, Nz), dtype='float32', order='F', n=16)
+        recon_fftw_object = pyfftw.FFTW(
+            v_temp, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
         v[w != 0] = v[w != 0] / w[w != 0]
         recon_fftw_object.update_arrays(v, recon)
+        v = v_temp = []    #gc
         recon_fftw_object()
         recon[:] = np.fft.fftshift(recon)
 
         step += 1
         self.progress.value = step
 
+        self.progress.message = 'Passing data to Tomviz'
         from vtkmodules.vtkCommonDataModel import vtkImageData
         recon_dataset = vtkImageData()
         recon_dataset.CopyStructure(dataset)
         utils.set_array(recon_dataset, recon)
         utils.mark_as_volume(recon_dataset)
 
+        recon = None #gc
+
         returnValues = {}
         returnValues["reconstruction"] = recon_dataset
         return returnValues
 
+
 # Bilinear extrapolation
-
-
 def bilinear(kz_new, ky_new, sz, sy, N, p):
     if p == 1:
         py = np.floor(ky_new)

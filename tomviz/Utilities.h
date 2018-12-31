@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #ifndef tomvizUtilties_h
 #define tomvizUtilties_h
 
@@ -38,6 +26,7 @@ class pqAnimationScene;
 
 class vtkDiscretizableColorTransferFunction;
 class vtkImageSliceMapper;
+class vtkCubeAxesActor;
 class vtkMolecule;
 class vtkRenderer;
 class vtkSMProxyLocator;
@@ -194,7 +183,8 @@ void createCameraOrbit(vtkSMSourceProxy* data,
 // This function attempts to zoom the renderer so that the enitire slice is
 // visible while minimizing the empty regions of the view (zoom so the slice's
 // target dimension barely fits in the view).
-void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper);
+void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper,
+                   vtkCubeAxesActor* axesActor = nullptr);
 
 // Delete all widgets within a layout
 void deleteLayoutContents(QLayout* layout);

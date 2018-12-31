@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #include "ModuleManager.h"
 
 #include "ActiveObjects.h"
@@ -960,36 +948,55 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       QStringList fileNames;
       if (dsObject.contains("reader")) {
         auto reader = dsObject["reader"].toObject();
-        options["reader"] = reader;
 
         if (reader.contains("fileNames")) {
           foreach (const QJsonValue& value, reader["fileNames"].toArray()) {
-            fileNames << value.toString();
+            // Verify the file exists before adding it to the list.
+            if (QFileInfo::exists(value.toString())) {
+              fileNames << value.toString();
+            } else {
+              // If the file cannot be found in the path relative to the state
+              // file, make another attempt to locate it in the same directory
+              QString altLocation =
+                d->dir.absoluteFilePath(QFileInfo(value.toString()).fileName());
+              if (QFileInfo::exists(altLocation)) {
+                fileNames << altLocation;
+              } else {
+                qCritical() << "File" << value.toString()
+                            << "not found, skipping.";
+              }
+            }
           }
+          reader["fileNames"] = QJsonArray::fromStringList(fileNames);
         } else {
-          qCritical() << "Unable to locate file name.";
+          qCritical() << "Unable to locate file name(s).";
         }
+        options["reader"] = reader;
       }
 
-      DataSource* dataSource;
+      DataSource* dataSource = nullptr;
       if (dsObject.find("sourceInformation") != dsObject.end()) {
         dataSource = PythonGeneratedDatasetReaction::createDataSource(
           dsObject["sourceInformation"].toObject());
         LoadDataReaction::dataSourceAdded(dataSource, false, false);
-      } else {
+      } else if (fileNames.size() > 0) {
         dataSource = LoadDataReaction::loadData(fileNames, options);
+      } else {
+        qCritical() << "Files not found on disk for data source, check paths.";
       }
 
-      if (dsObject.contains("operators") &&
-          dsObject["operators"].toArray().size() > 0) {
-        connect(dataSource->pipeline(), &Pipeline::finished, this,
-                &ModuleManager::onPipelineFinished);
-        ++d->RemaningPipelinesToWaitFor;
-      }
-      dataSource->deserialize(dsObject);
-      if (fileNames.isEmpty()) {
-        dataSource->setPersistenceState(
-          DataSource::PersistenceState::Transient);
+      if (dataSource) {
+        if (dsObject.contains("operators") &&
+            dsObject["operators"].toArray().size() > 0) {
+          connect(dataSource->pipeline(), &Pipeline::finished, this,
+                  &ModuleManager::onPipelineFinished);
+          ++d->RemaningPipelinesToWaitFor;
+        }
+        dataSource->deserialize(dsObject);
+        if (fileNames.isEmpty()) {
+          dataSource->setPersistenceState(
+            DataSource::PersistenceState::Transient);
+        }
       }
       // FIXME: I think we need to collect the active objects and set them at
       // the end, as the act of adding generally implies setting to active.
@@ -1012,21 +1019,32 @@ void ModuleManager::onPVStateLoaded(vtkPVXMLElement*,
       QString fileName;
       if (dsObject.contains("reader")) {
         auto reader = dsObject["reader"].toObject();
-        options["reader"] = reader;
 
         if (reader.contains("fileName")) {
           fileName = reader["fileName"].toString();
+          // Verify the file exists.
+          if (!QFileInfo::exists(fileName)) {
+            // If the file cannot be found in the path relative to the state
+            // file, make another attempt to locate it in the same directory
+            fileName = d->dir.absoluteFilePath(QFileInfo(fileName).fileName());
+            if (!QFileInfo::exists(fileName)) {
+              qCritical() << "File" << fileName << "not found, skipping.";
+              fileName = "";
+            }
+          }
         } else {
           qCritical() << "Unable to locate file name.";
         }
       }
       MoleculeSource* moleculeSource =
         LoadDataReaction::loadMolecule(fileName, options);
-      moleculeSource->deserialize(dsObject);
-      // FIXME: I think we need to collect the active objects and set them at
-      // the end, as the act of adding generally implies setting to active.
-      if (dsObject["active"].toBool()) {
-        ActiveObjects::instance().setActiveMoleculeSource(moleculeSource);
+      if (moleculeSource) {
+        moleculeSource->deserialize(dsObject);
+        // FIXME: I think we need to collect the active objects and set them at
+        // the end, as the act of adding generally implies setting to active.
+        if (dsObject["active"].toBool()) {
+          ActiveObjects::instance().setActiveMoleculeSource(moleculeSource);
+        }
       }
     }
   }

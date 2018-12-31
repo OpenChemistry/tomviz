@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
@@ -524,6 +512,7 @@ MainWindow::~MainWindow()
 
 std::vector<OperatorDescription> MainWindow::initPython()
 {
+  Python::initialize();
   Connection::registerType();
   RegexGroupSubstitution::registerType();
   auto operators = findCustomOperators();
@@ -805,8 +794,7 @@ void MainWindow::autosave()
 void MainWindow::handleMessage(const QString&, int type)
 {
   QDockWidget* dock = m_ui->dockWidgetMessages;
-  if (!dock->isVisible() &&
-      (type == pqOutputWidget::ERROR || type == pqOutputWidget::WARNING)) {
+  if (!dock->isVisible() && (type == QtCriticalMsg || type == QtWarningMsg)) {
     // if dock is not visible, we always pop it up as a floating dialog. This
     // avoids causing re-renders which may cause more errors and more confusion.
     QRect rectApp = geometry();

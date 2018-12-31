@@ -1,22 +1,10 @@
-/******************************************************************************
-
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "SaveScreenshotReaction.h"
 
 #include "MainWindow.h"
+#include "SaveScreenshotDialog.h"
 
 #include <pqActiveObjects.h>
 #include <pqApplicationCore.h>
@@ -36,17 +24,9 @@
 #include <vtkSMViewLayoutProxy.h>
 #include <vtkSMViewProxy.h>
 
-#include <QComboBox>
 #include <QDebug>
-#include <QDialog>
-#include <QDialogButtonBox>
 #include <QFileDialog>
-#include <QHBoxLayout>
-#include <QIcon>
-#include <QLabel>
-#include <QPushButton>
-#include <QSpinBox>
-#include <QVBoxLayout>
+#include <QRegularExpression>
 
 namespace tomviz {
 
@@ -63,45 +43,8 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
   }
   QSize viewSize = view->getSize();
 
-  QDialog ssDialog(mw);
-  ssDialog.setWindowTitle("Save Screenshot Options");
-  QVBoxLayout* vLayout = new QVBoxLayout;
-
-  QLabel* label = new QLabel("Select resolution for the image to save");
-  vLayout->addWidget(label);
-
-  QHBoxLayout* dimensionsLayout = new QHBoxLayout;
-  QSpinBox* width = new QSpinBox;
-  width->setRange(50, std::numeric_limits<int>::max());
-  width->setValue(viewSize.width());
-  label = new QLabel("x");
-  QSpinBox* height = new QSpinBox;
-  height->setRange(50, std::numeric_limits<int>::max());
-  height->setValue(viewSize.height());
-  QPushButton* lockAspectButton =
-    new QPushButton(QIcon(":/pqWidgets/Icons/pqOctreeData16.png"), "");
-  dimensionsLayout->addWidget(width);
-  dimensionsLayout->addWidget(label);
-  dimensionsLayout->addWidget(height);
-  dimensionsLayout->addWidget(lockAspectButton);
-  vLayout->addItem(dimensionsLayout);
-
-  label = new QLabel("Override Color Palette");
-  vLayout->addWidget(label);
-
-  QComboBox* paletteBox = new QComboBox;
-  paletteBox->addItem("Current Palette", "");
-  vLayout->addWidget(paletteBox);
-
-  QDialogButtonBox* buttonBox =
-    new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  QObject::connect(buttonBox, &QDialogButtonBox::accepted, &ssDialog,
-                   &QDialog::accept);
-  QObject::connect(buttonBox, &QDialogButtonBox::rejected, &ssDialog,
-                   &QDialog::reject);
-  vLayout->addWidget(buttonBox);
-
-  ssDialog.setLayout(vLayout);
+  SaveScreenshotDialog ssDialog(mw);
+  ssDialog.setSize(viewSize.width(), viewSize.height());
 
   auto pxm =
     vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
@@ -112,12 +55,11 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
          iter->GoToNextItem()) {
       auto prototype = pxm->GetPrototypeProxy("palettes", iter->GetProxyName());
       if (prototype) {
-        paletteBox->addItem(prototype->GetXMLLabel(), prototype->GetXMLName());
+        ssDialog.addPalette(prototype->GetXMLLabel(), prototype->GetXMLName());
       }
     }
     iter->Delete();
   }
-  paletteBox->addItem("Transparent Background", "Transparent Background");
 
   if (ssDialog.exec() != QDialog::Accepted) {
     return;
@@ -176,8 +118,8 @@ void SaveScreenshotReaction::saveScreenshot(MainWindow* mw)
   if (mw) {
     dpr = mw->devicePixelRatio();
   }
-  QSize size = QSize(width->value() / dpr, height->value() / dpr);
-  QString palette = paletteBox->itemData(paletteBox->currentIndex()).toString();
+  QSize size = QSize(ssDialog.width() / dpr, ssDialog.height() / dpr);
+  QString palette = ssDialog.palette();
 
   bool makeTransparentBackground = false;
   if (palette == "Transparent Background") {

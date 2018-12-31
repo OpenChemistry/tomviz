@@ -1,18 +1,5 @@
-/******************************************************************************
-
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "PipelineView.h"
 
@@ -248,22 +235,37 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     } else {
       return;
     }
-  } else if (dataSource != nullptr && !childDataSource) {
-    // Data source ( non child )
-    cloneAction = contextMenu.addAction("Clone");
-    cloneReaction = new CloneDataReaction(cloneAction);
+  } else if (dataSource != nullptr) {
+    if (!childDataSource) {
+      // Data source ( non child )
+      cloneAction = contextMenu.addAction("Clone");
+      cloneReaction = new CloneDataReaction(cloneAction);
+      if (dataSource->type() == DataSource::Volume) {
+        markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
+        // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+      } else if (dataSource->type() == DataSource::TiltSeries) {
+        markAsVolumeAction = contextMenu.addAction("Mark as Volume");
+        // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+      } else if (dataSource->type() == DataSource::FIB) {
+        markAsVolumeAction = contextMenu.addAction("Mark as Volume");
+        markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
+      }
+
+      // Add option to re-execute the pipeline is we have a canceled operator
+      // in our pipeline.
+      foreach (Operator* op, dataSource->operators()) {
+        if (op->isCanceled() || op->isModified()) {
+          allowReExecute = true;
+          break;
+        }
+      }
+    } else if (childDataSource) {
+      // Child data source
+      cloneChildAction = contextMenu.addAction("Clone");
+    }
+
     saveDataAction = contextMenu.addAction("Save Data");
     new SaveDataReaction(saveDataAction);
-    if (dataSource->type() == DataSource::Volume) {
-      markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
-      // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
-    } else if (dataSource->type() == DataSource::TiltSeries) {
-      markAsVolumeAction = contextMenu.addAction("Mark as Volume");
-      // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
-    } else if (dataSource->type() == DataSource::FIB) {
-      markAsVolumeAction = contextMenu.addAction("Mark as Volume");
-      markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
-    }
 
     // Add option to merge different datasets
     QAction* mergeImageAction = contextMenu.addAction("Merge Images");
@@ -280,19 +282,6 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     }
     micReaction->updateDataSources(selectedDataSources);
 
-    // Add option to re-execute the pipeline is we have a canceled operator
-    // in our pipeline.
-    foreach (Operator* op, dataSource->operators()) {
-      if (op->isCanceled() || op->isModified()) {
-        allowReExecute = true;
-        break;
-      }
-    }
-    // Child data source
-  } else if (childDataSource) {
-    cloneChildAction = contextMenu.addAction("Clone");
-    saveDataAction = contextMenu.addAction("Save Data");
-    new SaveDataReaction(saveDataAction);
   }
 
   // Allow pipeline to be re-executed if we are dealing with a canceled
@@ -379,7 +368,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     if (!dataSource) {
       dataSource = op->dataSource();
     }
-    dataSource->pipeline()->execute(dataSource);
+    // Re-execute from the beginning
+    dataSource->pipeline()->execute(dataSource, dataSource->operators().first());
   } else if (markAsVolumeAction != nullptr &&
              markAsVolumeAction == selectedItem) {
     auto mainWindow = qobject_cast<QMainWindow*>(window());

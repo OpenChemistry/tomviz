@@ -1,21 +1,11 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #include "ModuleSlice.h"
 
+#include "ActiveObjects.h"
 #include "DataSource.h"
+#include "ScalarsComboBox.h"
 #include "Utilities.h"
 
 #include <vtkAlgorithm.h>
@@ -24,10 +14,13 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkNonOrthoImagePlaneWidget.h>
+#include <vtkPassThrough.h>
+#include <vtkPointData.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkScalarsToColors.h>
+#include <vtkTrivialProducer.h>
 
 #include <pqCoreUtilities.h>
 #include <pqDoubleVectorPropertyWidget.h>
@@ -50,6 +43,7 @@
 #include <QCheckBox>
 #include <QDebug>
 #include <QDoubleValidator>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QLabel>
@@ -75,9 +69,12 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
+  auto pxm = ActiveObjects::instance().proxyManager();
+
+  m_imageData->ShallowCopy(
+    vtkImageData::SafeDownCast(data->producer()->GetOutputDataObject(0)));
+
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
-  auto producer = data->proxy();
-  auto pxm = producer->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -93,7 +90,10 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_passThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(m_passThrough);
   controller->PreInitializeProxy(m_passThrough);
-  vtkSMPropertyHelper(m_passThrough, "Input").Set(producer);
+  vtkSmartPointer<vtkPassThrough> filter;
+  filter = vtkPassThrough::SafeDownCast(m_passThrough->GetClientSideObject());
+  Q_ASSERT(filter);
+  filter->SetInputData(m_imageData);
   controller->PostInitializeProxy(m_passThrough);
   controller->RegisterPipelineProxy(m_passThrough);
 
@@ -102,7 +102,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     p->rename(label());
   }
 
-  const bool widgetSetup = setupWidget(vtkView, producer);
+  const bool widgetSetup = setupWidget(vtkView);
 
   if (widgetSetup) {
     m_widget->SetDisplayOffset(data->displayPosition());
@@ -111,6 +111,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
+    connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
   }
 
   Q_ASSERT(m_widget);
@@ -118,21 +119,14 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 }
 
 //  Should only be called from initialize after the PassThrough has been setup
-bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView,
-                              vtkSMSourceProxy* producer)
+bool ModuleSlice::setupWidget(vtkSMViewProxy* vtkView)
 {
   vtkAlgorithm* passThroughAlg =
     vtkAlgorithm::SafeDownCast(m_passThrough->GetClientSideObject());
 
   vtkRenderWindowInteractor* rwi = vtkView->GetRenderWindow()->GetInteractor();
 
-  // Determine the name of the property we are coloring by
-  const char* propertyName = producer->GetDataInformation()
-                               ->GetPointDataInformation()
-                               ->GetArrayInformation(0)
-                               ->GetName();
-
-  if (!rwi || !passThroughAlg || !propertyName) {
+  if (!rwi || !passThroughAlg) {
     return false;
   }
 
@@ -231,20 +225,30 @@ void ModuleSlice::addToPanel(QWidget* panel)
   }
 
   QVBoxLayout* layout = new QVBoxLayout;
+  QFormLayout* formLayout = new QFormLayout;
+
+  QWidget* container = new QWidget;
+  container->setLayout(formLayout);
+  layout->addWidget(container);
+  formLayout->setContentsMargins(0, 0, 0, 0);
 
   m_opacityCheckBox = new QCheckBox("Map Opacity");
-  layout->addWidget(m_opacityCheckBox);
+  formLayout->addRow(m_opacityCheckBox);
 
   QCheckBox* mapScalarsCheckBox = new QCheckBox("Color Map Data");
-  layout->addWidget(mapScalarsCheckBox);
+  formLayout->addRow(mapScalarsCheckBox);
 
   auto line = new QFrame;
   line->setFrameShape(QFrame::HLine);
   line->setFrameShadow(QFrame::Sunken);
-  layout->addWidget(line);
+  formLayout->addRow(line);
+
+  m_scalarsCombo = new ScalarsComboBox();
+  m_scalarsCombo->setOptions(dataSource(), this);
+  formLayout->addRow("Scalars", m_scalarsCombo);
 
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
-  layout->addWidget(showArrow);
+  formLayout->addRow(showArrow);
 
   m_Links.addPropertyLink(showArrow, "checked", SIGNAL(toggled(bool)),
                           m_propsPanelProxy,
@@ -310,6 +314,12 @@ void ModuleSlice::addToPanel(QWidget* panel)
   });
 
   m_opacityCheckBox->setChecked(m_mapOpacity);
+
+  connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int idx) {
+            setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
+            onScalarArrayChanged();
+          });
 }
 
 void ModuleSlice::dataUpdated()
@@ -375,6 +385,7 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
       }
     }
     m_widget->UpdatePlacement();
+    m_scalarsCombo->setOptions(dataSource(), this);
     onPlaneChanged();
     return true;
   }
@@ -470,4 +481,17 @@ bool ModuleSlice::areScalarsMapped() const
   vtkSMPropertyHelper mapScalars(m_propsPanelProxy->GetProperty("MapScalars"));
   return mapScalars.GetAsInt() != 0;
 }
+
+void ModuleSlice::onScalarArrayChanged()
+{
+  QString arrayName;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    arrayName = dataSource()->activeScalars();
+  } else {
+    arrayName = dataSource()->scalarsName(activeScalars());
+  }
+  m_imageData->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
+  emit renderNeeded();
+}
+
 } // namespace tomviz

@@ -41,6 +41,8 @@ set(SOURCES
   CropReaction.h
   SelectVolumeWidget.cxx
   SelectVolumeWidget.h
+  DataPropertiesModel.cxx
+  DataPropertiesModel.h
   DataPropertiesPanel.cxx
   DataPropertiesPanel.h
   DataSource.cxx
@@ -142,6 +144,8 @@ set(SOURCES
   SaveDataReaction.cxx
   SaveLoadStateReaction.cxx
   SaveLoadStateReaction.h
+  SaveScreenshotDialog.cxx
+  SaveScreenshotDialog.h
   SaveScreenshotReaction.cxx
   SaveScreenshotReaction.h
   SaveWebReaction.cxx
@@ -224,6 +228,8 @@ list(APPEND SOURCES
   modules/ModuleVolume.h
   modules/ModuleVolumeWidget.cxx
   modules/ModuleVolumeWidget.h
+  modules/ScalarsComboBox.cxx
+  modules/ScalarsComboBox.h
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/modules)
 

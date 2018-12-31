@@ -132,7 +132,7 @@ def test_tiff_stem_acquire(passive_acquisition_server, tmpdir,
         'method': 'connect',
         'params': {
             'path': tmpdir.strpath,
-            'fileNameRegex': '.*\.tif'
+            'fileNameRegex': r'.*\.tif'
         }
     })
     response = requests.post(passive_acquisition_server.url, json=request)
@@ -178,7 +178,7 @@ def test_tiff_stem_acquire(passive_acquisition_server, tmpdir,
 def test_dm3_stem_acquire(passive_acquisition_server, tmpdir,
                           mock_dm3_tiltseries_writer):
     id = 1234
-    angle_regex = '.*_([n,p]{1}[\d,\.]+)degree.*\.dm3'
+    angle_regex = r'.*_([n,p]{1}[\d,\.]+)degree.*\.dm3'
     request = jsonrpc_message({
         'id': id,
         'method': 'connect',

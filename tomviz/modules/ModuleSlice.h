@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #ifndef tomvizModuleSlice_h
 #define tomvizModuleSlice_h
 
@@ -28,6 +16,9 @@ class vtkSMSourceProxy;
 class vtkNonOrthoImagePlaneWidget;
 
 namespace tomviz {
+
+class ScalarsComboBox;
+
 class ModuleSlice : public Module
 {
   Q_OBJECT
@@ -69,9 +60,11 @@ private slots:
 
   void dataUpdated();
 
+  void onScalarArrayChanged();
+
 private:
   // Should only be called from initialize after the PassThrough has been setup.
-  bool setupWidget(vtkSMViewProxy* view, vtkSMSourceProxy* producer);
+  bool setupWidget(vtkSMViewProxy* view);
 
   Q_DISABLE_COPY(ModuleSlice)
 
@@ -84,6 +77,9 @@ private:
 
   QPointer<QCheckBox> m_opacityCheckBox;
   bool m_mapOpacity = false;
+
+  vtkNew<vtkImageData> m_imageData;
+  QPointer<ScalarsComboBox> m_scalarsCombo;
 };
 } // namespace tomviz
 

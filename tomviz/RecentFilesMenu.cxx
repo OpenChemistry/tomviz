@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #include "RecentFilesMenu.h"
 
 #include "ActiveObjects.h"
@@ -43,6 +31,8 @@ QJsonObject loadSettings()
 {
   // Load the recent files from our saved state.
   auto settings = pqApplicationCore::instance()->settings();
+  // Remove a key that can interfere/double count.
+  settings->remove("RecentlyUsedResourcesList");
   auto recent = settings->value("recentFiles").toByteArray();
   auto doc = QJsonDocument::fromJson(recent);
   if (!doc.isNull() && doc.isObject()) {
@@ -96,6 +86,8 @@ void saveSettings(QJsonObject json)
 
   auto settings = pqApplicationCore::instance()->settings();
   settings->setValue("recentFiles", doc.toJson(QJsonDocument::Compact));
+  // Remove a key that can interfere/double count.
+  settings->remove("RecentlyUsedResourcesList");
 }
 
 } // namespace

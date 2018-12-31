@@ -29,13 +29,10 @@ but also provide nightly binaries built by our [dashboards][Dashboard] for
 Windows, macOS, and Linux.
 
 __Windows__: Follow the installation instructions, double-click on the Tomviz
-icon to launch the application. __Mac OS X__: After downloading the package
-double-click to begin installation. After reading the License Agreement, drag
-the Tomviz icon into your Applications directory – or anywhere else you would
-like to store it. The first time you open Tomviz, you will need to right-click on
-the application icon and select ‘open’. It will ask you if you are sure you wish
-to open it, click the ‘open’ button. This is only required the first time
-launching the application. It can be opened by double clicking after that.
+icon to launch the application. __macOS__: After downloading the package
+double-click to begin installation. Drag the Tomviz icon into your Applications
+directory – or anywhere else you would like to store it. Double-click on the
+icon to open it, nightly builds will require right-clicking and selecting open.
 __Linux__: A binary (tar.gz) is provided, or it can be built from source. See
 [instructions for building](BUILDING.md) found in the BUILDING.md document.
 
@@ -49,9 +46,9 @@ A Quick Tutorial
 
 User Guide
 ----------
-Start by watching this short video to [see tomviz in action][tomviz_in_action].
+Start by watching this short video to [see Tomviz in action][tomviz_in_action].
 
-Also [tomviz user guide](/docs/TomvizBasicUserGuide.pdf) has more detailed
+Also [Tomviz user guide](/docs/TomvizBasicUserGuide.pdf) has more detailed
 information to get started.
 
 Publications using Tomviz
@@ -70,7 +67,7 @@ pull request if you would like us to consider your patch for inclusion.
 
 ![Kitware, Inc.][KitwareLogo]
 
-  [tomviz]: http://tomviz.org/ "The tomviz project"
+  [tomviz]: https://tomviz.org/ "The Tomviz project"
   [tomviz_logo]: https://github.com/OpenChemistry/tomviz/blob/master/tomviz/icons/tomvizfull.png "tomviz"
   [tomviz_screenshot]: https://github.com/OpenChemistry/tomviz/blob/master/docs/images/screencap_mac_wide_v0.6.0.gif "tomviz screenshot v0.6.0"
   [tomviz_in_action]: https://vimeo.com/189945022 "Tomviz in action"

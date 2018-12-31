@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #ifndef tomvizModule_h
 #define tomvizModule_h
 
@@ -126,6 +114,10 @@ public:
   /// Returns the data to export for this visualization module.
   virtual vtkSmartPointer<vtkDataObject> getDataToExport();
 
+  /// Returns the active scalars of the module
+  int activeScalars() const { return m_activeScalars; }
+  static const int DEFAULT_SCALARS;
+
 signals:
 
   /// Emitted when the transfer function mode changed in the concrete
@@ -153,6 +145,9 @@ public slots:
 
   /// This method is called when the data source's display position changes.
   virtual void dataSourceMoved(double newX, double newY, double newZ) = 0;
+
+  // This method is called when the active scalars for the module change
+  virtual void setActiveScalars(int scalars);
 
 protected:
   /// Modules that use transfer functions for color/opacity should override this
@@ -201,6 +196,7 @@ private:
 
   class MInternals;
   const QScopedPointer<MInternals> d;
+  int m_activeScalars = DEFAULT_SCALARS;
 };
 } // namespace tomviz
 #endif

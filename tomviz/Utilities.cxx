@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #include "Utilities.h"
 
 #include "DataSource.h"
@@ -39,6 +27,7 @@
 #include <vtkBoundingBox.h>
 #include <vtkCamera.h>
 #include <vtkColorTransferFunction.h>
+#include <vtkCubeAxesActor.h>
 #include <vtkImageData.h>
 #include <vtkImageSliceMapper.h>
 #include <vtkMolecule.h>
@@ -46,10 +35,13 @@
 #include <vtkPeriodicTable.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPoints.h>
+#include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkSmartPointer.h>
+#include <vtkStringArray.h>
 #include <vtkStringList.h>
 #include <vtkTable.h>
+#include <vtkTextProperty.h>
 #include <vtkTrivialProducer.h>
 #include <vtkVariantArray.h>
 
@@ -640,7 +632,8 @@ void createCameraOrbit(vtkSMSourceProxy* data, vtkSMRenderViewProxy* renderView)
   kf->UpdateVTKObjects();
 }
 
-void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper)
+void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper,
+                   vtkCubeAxesActor* axesActor)
 {
   int axis = mapper->GetOrientation();
   int horizontal;
@@ -655,22 +648,11 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper)
     horizontal = 0;
     vertical = 2;
   }
-  renderer->SetBackground(1.0, 1.0, 1.0);
+  renderer->SetBackground(1, 1, 1);
   vtkCamera* camera = renderer->GetActiveCamera();
   renderer->SetViewport(0.0, 0.0, 1.0, 1.0);
 
   double* bounds = mapper->GetBounds();
-  vtkVector3d point;
-  point[0] = 0.5 * (bounds[0] + bounds[1]);
-  point[1] = 0.5 * (bounds[2] + bounds[3]);
-  point[2] = 0.5 * (bounds[4] + bounds[5]);
-  camera->SetFocalPoint(point.GetData());
-  point[axis] += 50 + 0.5 * (bounds[axis * 2 + 1] - bounds[axis * 2]);
-  camera->SetPosition(point.GetData());
-  double viewUp[3] = { 0.0, 0.0, 0.0 };
-  viewUp[vertical] = 1.0;
-  camera->SetViewUp(viewUp);
-  camera->ParallelProjectionOn();
   double parallelScale;
   if (bounds[horizontal * 2 + 1] - bounds[horizontal * 2] <
       bounds[vertical * 2 + 1] - bounds[vertical * 2]) {
@@ -679,12 +661,55 @@ void setupRenderer(vtkRenderer* renderer, vtkImageSliceMapper* mapper)
     parallelScale =
       0.5 * (bounds[horizontal * 2 + 1] - bounds[horizontal * 2] + 1);
   }
-  camera->SetParallelScale(parallelScale);
-  double clippingRange[2];
-  camera->GetClippingRange(clippingRange);
-  clippingRange[1] =
-    clippingRange[0] + (bounds[axis * 2 + 1] - bounds[axis * 2] + 50);
-  camera->SetClippingRange(clippingRange);
+
+  // If we have axes to plot, leave a little extra space for them
+  double parallelScaleFactor = 1.0;
+
+  if (axesActor) {
+    axesActor->SetCamera(camera);
+    double axisColor[3] = { 0.75, 0.75, 0.75 };
+    double labelColor[3] = { 0.125, 0.125, 0.125 };
+    double axesBounds[6] = { bounds[0], bounds[1], bounds[2],
+                             bounds[3], bounds[4], bounds[5] };
+    axesBounds[2 * axis] = bounds[2 * axis + 1];
+    axesBounds[2 * axis + 1] = bounds[2 * axis + 1];
+    axesActor->SetBounds(axesBounds);
+    axesActor->SetScreenSize(20);
+    axesActor->SetXTitle("");
+    axesActor->SetYTitle("");
+    axesActor->SetZTitle("");
+
+    axesActor->GetXAxesLinesProperty()->SetColor(axisColor);
+    axesActor->GetTitleTextProperty(0)->SetColor(axisColor);
+    axesActor->GetLabelTextProperty(0)->SetColor(labelColor);
+
+    axesActor->GetYAxesLinesProperty()->SetColor(axisColor);
+    axesActor->GetTitleTextProperty(1)->SetColor(axisColor);
+    axesActor->GetLabelTextProperty(1)->SetColor(labelColor);
+
+    axesActor->GetZAxesLinesProperty()->SetColor(axisColor);
+    axesActor->GetTitleTextProperty(2)->SetColor(axisColor);
+    axesActor->GetLabelTextProperty(2)->SetColor(labelColor);
+
+    renderer->AddActor(axesActor);
+    parallelScaleFactor = 1.1;
+  }
+
+  vtkVector3d point;
+  point[0] = 0.5 * (bounds[0] + bounds[1]);
+  point[1] = 0.5 * (bounds[2] + bounds[3]);
+  point[2] = 0.5 * (bounds[4] + bounds[5]);
+  point[axis] = bounds[axis * 2 + 1];
+  point[horizontal] -= (parallelScaleFactor - 1.0) * parallelScale / 2;
+  point[vertical] -= (parallelScaleFactor - 1.0) * parallelScale / 2;
+  camera->SetFocalPoint(point.GetData());
+  point[axis] += parallelScale;
+  camera->SetPosition(point.GetData());
+  double viewUp[3] = { 0.0, 0.0, 0.0 };
+  viewUp[vertical] = 1.0;
+  camera->SetViewUp(viewUp);
+  camera->ParallelProjectionOn();
+  camera->SetParallelScale(parallelScale * parallelScaleFactor);
 }
 
 void deleteLayoutContents(QLayout* layout)

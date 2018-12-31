@@ -1,18 +1,5 @@
-/******************************************************************************
-
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "RotateAlignWidget.h"
 
@@ -33,6 +20,7 @@
 #include <vtkSMTransferFunctionProxy.h>
 
 #include <vtkCamera.h>
+#include <vtkCubeAxesActor.h>
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
 #include <vtkImageProperty.h>
@@ -67,6 +55,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <algorithm>
 #include <array>
 
 #define PI 3.14159265359
@@ -81,6 +70,7 @@ public:
   vtkNew<vtkImageSlice> mainSlice;
   vtkNew<vtkImageData> reconImage[3];
   vtkNew<vtkImageSlice> reconSlice[3];
+  vtkNew<vtkCubeAxesActor> axesActor;
   vtkNew<vtkImageSliceMapper> mainSliceMapper;
   vtkNew<vtkImageSliceMapper> reconSliceMapper[3];
   vtkNew<vtkRenderer> mainRenderer;
@@ -93,6 +83,14 @@ public:
   bool m_reconSliceDirty[3];
   QTimer m_updateSlicesTimer;
 
+  LengthUnit m_lengthUnit = LengthUnit::pixel;
+  int m_projectionNum;
+  int m_shiftRotation;
+  double m_tiltRotation;
+  int m_slice0;
+  int m_slice1;
+  int m_slice2;
+
   RAWInternal()
   {
     m_reconSliceDirty[0] = m_reconSliceDirty[1] = m_reconSliceDirty[2] = true;
@@ -104,8 +102,8 @@ public:
 
   void setupCameras()
   {
-    tomviz::setupRenderer(this->mainRenderer.Get(),
-                          this->mainSliceMapper.Get());
+    tomviz::setupRenderer(this->mainRenderer.Get(), this->mainSliceMapper.Get(),
+                          this->axesActor);
     tomviz::setupRenderer(this->reconRenderer[0].Get(),
                           this->reconSliceMapper[0].Get());
     tomviz::setupRenderer(this->reconRenderer[1].Get(),
@@ -133,10 +131,7 @@ public:
       imageData->GetExtent(extent);
       double spacing[3];
       imageData->GetSpacing(spacing);
-      this->Ui.projection->setMaximum(extent[5] - extent[4]);
-      int yslices = extent[3] - extent[2] + 1;
-      this->Ui.rotationAxis->setRange(-yslices * spacing[1] / 2.0,
-                                      yslices * spacing[1] / 2.0);
+
       double bounds[6];
       imageData->GetBounds(bounds);
       double point1[3], point2[3];
@@ -151,7 +146,6 @@ public:
       this->rotationAxis->Update();
       this->axisActor->GetMapper()->Update();
       this->updateSliceLines();
-      this->Ui.rotationAngle->setSingleStep(0.5);
     }
   }
 
@@ -167,17 +161,22 @@ public:
     }
     double centerOfRotation[3] = { 0.0, 0.0, 0.0 };
     vtkImageData* imageData = m_image;
+    double yTranslate = 0;
     if (imageData) {
       double bounds[6];
       imageData->GetBounds(bounds);
+      int dims[3];
+      imageData->GetDimensions(dims);
       centerOfRotation[0] = (bounds[0] + bounds[1]) / 2.0;
       centerOfRotation[1] = (bounds[2] + bounds[3]) / 2.0;
       centerOfRotation[2] = (bounds[4] + bounds[5]) / 2.0;
+      double maxSlice = dims[1];
+      yTranslate = (bounds[3] - bounds[2]) * m_shiftRotation / maxSlice;
     }
     tform->Identity();
-    tform->Translate(0, this->Ui.rotationAxis->value(), 0);
+    tform->Translate(0, yTranslate, 0);
     tform->Translate(centerOfRotation);
-    tform->RotateZ(-this->Ui.rotationAngle->value());
+    tform->RotateZ(-this->m_tiltRotation);
     tform->Translate(-centerOfRotation[0], -centerOfRotation[1],
                      -centerOfRotation[2]);
     this->Ui.sliceView->GetRenderWindow()->Render();
@@ -201,16 +200,16 @@ public:
       imageData->GetExtent(extent);
       int dims[3] = { extent[1] - extent[0] + 1, extent[3] - extent[2] + 1,
                       extent[5] - extent[4] + 1 };
-      QSpinBox* spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2,
-                                 this->Ui.spinBox_3 };
-      int sliceNum = spinBoxes[i]->value();
+
+      int sliceNumbers[] = { m_slice0, m_slice1, m_slice2 };
+      int sliceNum = sliceNumbers[i];
 
       int Nray = 256; // Size of 2D reconstruction. Fixed for all tilt series
       std::vector<float> sinogram(Nray * dims[2]);
       // Approximate in-plance rotation as a shift in y-direction
-      double shift = this->Ui.rotationAxis->value() +
-                     sin(-this->Ui.rotationAngle->value() * PI / 180) *
-                       (sliceNum - dims[0] / 2);
+      double shift =
+        this->m_shiftRotation +
+        sin(-this->m_tiltRotation * PI / 180) * (sliceNum - dims[0] / 2);
 
       TomographyTiltSeries::getSinogram(
         imageData, sliceNum, &sinogram[0], Nray,
@@ -257,14 +256,11 @@ public:
       int extent[6];
       imageData->GetExtent(extent);
       double maxSlices = extent[1] - extent[0] + 1;
-      QSpinBox* spinBoxes[3] = { this->Ui.spinBox_1, this->Ui.spinBox_2,
-                                 this->Ui.spinBox_3 };
+      int slices[3] = { m_slice0, m_slice1, m_slice2 };
       for (int i = 0; i < 3; ++i) {
         double p1[3], p2[3];
-        p1[0] = bounds[0] +
-                (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / maxSlices);
-        p2[0] = bounds[0] +
-                (bounds[1] - bounds[0]) * (spinBoxes[i]->value() / maxSlices);
+        p1[0] = bounds[0] + (bounds[1] - bounds[0]) * (slices[i] / maxSlices);
+        p2[0] = bounds[0] + (bounds[1] - bounds[0]) * (slices[i] / maxSlices);
         p1[1] = bounds[2];
         p2[1] = bounds[3];
         p1[2] = bounds[5];
@@ -367,34 +363,42 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
     this->Internals->mainRenderer->AddActor(
       this->Internals->reconSliceLineActor[i].Get());
   }
-  this->Internals->Ui.spinBox_1->setValue(25);
-  this->Internals->Ui.spinBox_2->setValue(50);
-  this->Internals->Ui.spinBox_3->setValue(75);
 
-  QObject::connect(this->Internals->Ui.projection, SIGNAL(valueChanged(int)),
-                   this, SLOT(onProjectionNumberChanged()));
+  this->Internals->Ui.lengthUnit->addItem("Pixel");
+  this->Internals->Ui.lengthUnit->addItem("Physical");
+  this->Internals->Ui.lengthUnit->setCurrentIndex(0);
+
+  QObject::connect(this->Internals->Ui.lengthUnit,
+                   QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                   &RotateAlignWidget::onLengthUnitChanged);
+  QObject::connect(this->Internals->Ui.projection,
+                   QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                   &RotateAlignWidget::onProjectionNumberChanged);
   this->Internals->Ui.projection->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_1, SIGNAL(valueChanged(int)),
-                   this, SLOT(onReconSlice0Changed()));
+  QObject::connect(this->Internals->Ui.spinBox_1,
+                   QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                   [this](double val) { this->onReconSliceChanged(0, val); });
   this->Internals->Ui.spinBox_1->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_2, SIGNAL(valueChanged(int)),
-                   this, SLOT(onReconSlice1Changed()));
+  QObject::connect(this->Internals->Ui.spinBox_2,
+                   QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                   [this](double val) { this->onReconSliceChanged(1, val); });
   this->Internals->Ui.spinBox_2->installEventFilter(this);
 
-  QObject::connect(this->Internals->Ui.spinBox_3, SIGNAL(valueChanged(int)),
-                   this, SLOT(onReconSlice2Changed()));
+  QObject::connect(this->Internals->Ui.spinBox_3,
+                   QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                   [this](double val) { this->onReconSliceChanged(2, val); });
   this->Internals->Ui.spinBox_3->installEventFilter(this);
 
   QObject::connect(this->Internals->Ui.rotationAxis,
-                   SIGNAL(valueChanged(double)), this,
-                   SLOT(onRotationAxisChanged()));
+                   QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                   &RotateAlignWidget::onRotationShiftChanged);
   this->Internals->Ui.rotationAxis->installEventFilter(this);
 
   QObject::connect(this->Internals->Ui.rotationAngle,
-                   SIGNAL(valueChanged(double)), this,
-                   SLOT(onRotationAxisChanged()));
+                   QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+                   &RotateAlignWidget::onRotationAngleChanged);
   this->Internals->Ui.rotationAngle->installEventFilter(this);
 
   //  this->connect(this->Internals->Ui.pushButton, SIGNAL(pressed()),
@@ -418,24 +422,18 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
     }
   }
   vtkImageData* imageData = this->Internals->m_image;
-  int extent[6];
-  imageData->GetExtent(extent);
-  this->Internals->Ui.xSizeLabel->setText(
-    QString::number(extent[1] - extent[0]));
-  this->Internals->Ui.ySizeLabel->setText(
-    QString::number(extent[3] - extent[2]));
+  int dims[3];
+  imageData->GetDimensions(dims);
 
-  this->Internals->Ui.projection->setValue((extent[5] - extent[4]) / 2);
-  this->onProjectionNumberChanged();
-  this->Internals->Ui.spinBox_1->setRange(0, extent[1] - extent[0]);
-  this->Internals->Ui.spinBox_2->setRange(0, extent[1] - extent[0]);
-  this->Internals->Ui.spinBox_3->setRange(0, extent[1] - extent[0]);
-  this->Internals->Ui.spinBox_1->setValue(
-    vtkMath::Round(0.25 * (extent[1] - extent[0])));
-  this->Internals->Ui.spinBox_2->setValue(
-    vtkMath::Round(0.5 * (extent[1] - extent[0])));
-  this->Internals->Ui.spinBox_3->setValue(
-    vtkMath::Round(0.75 * (extent[1] - extent[0])));
+  this->Internals->m_slice0 = vtkMath::Round(0.25 * dims[0]);
+  this->Internals->m_slice1 = vtkMath::Round(0.50 * dims[0]);
+  this->Internals->m_slice2 = vtkMath::Round(0.75 * dims[0]);
+
+  this->Internals->m_projectionNum = dims[2] / 2;
+  this->Internals->m_shiftRotation = 0;
+  this->Internals->m_tiltRotation = 0;
+
+  updateControls();
 
   // We have to do this here since we need the output to exist so the camera
   // can be initialized below
@@ -460,21 +458,22 @@ RotateAlignWidget::~RotateAlignWidget() {}
 void RotateAlignWidget::getValues(QMap<QString, QVariant>& map)
 {
   QList<QVariant> value;
-  value << 0 << -this->Internals->Ui.rotationAxis->value() << 0;
+  value << 0 << -this->Internals->m_shiftRotation << 0;
   map.insert("SHIFT", value);
-  map.insert("rotation_angle", this->Internals->Ui.rotationAngle->value());
+  map.insert("rotation_angle", this->Internals->m_tiltRotation);
 }
 
 void RotateAlignWidget::setValues(const QMap<QString, QVariant>& map)
 {
   if (map.contains("SHIFT")) {
     auto shift = map["SHIFT"];
-    this->Internals->Ui.rotationAxis->setValue(-shift.toList()[1].toDouble());
+    onRotationShiftChanged(-shift.toList()[1].toInt());
   }
   if (map.contains("rotation_angle")) {
     auto rotation = map["rotation_angle"];
-    this->Internals->Ui.rotationAngle->setValue(rotation.toDouble());
+    onRotationAngleChanged(rotation.toDouble());
   }
+  updateControls();
 }
 
 bool RotateAlignWidget::eventFilter(QObject* o, QEvent* e)
@@ -498,15 +497,91 @@ bool RotateAlignWidget::eventFilter(QObject* o, QEvent* e)
   return QObject::eventFilter(o, e);
 }
 
-void RotateAlignWidget::onProjectionNumberChanged()
+void RotateAlignWidget::onLengthUnitChanged(int val)
 {
-  int newVal = this->Internals->Ui.projection->value();
+  LengthUnit lengthUnit;
+  switch (val) {
+    case 0: {
+      lengthUnit = LengthUnit::pixel;
+      break;
+    }
+    case 1: {
+      lengthUnit = LengthUnit::physical;
+      break;
+    }
+    default: {
+      lengthUnit = LengthUnit::pixel;
+      break;
+    }
+  }
+
+  this->Internals->m_lengthUnit = lengthUnit;
+  updateControls();
+  updateWidgets();
+}
+
+void RotateAlignWidget::onProjectionNumberChanged(double val)
+{
   vtkImageData* imageData = this->Internals->m_image;
+
   int extent[6];
   imageData->GetExtent(extent);
-  this->Internals->mainSliceMapper->SetSliceNumber(newVal + extent[4]);
+  double spacing[3];
+  imageData->GetSpacing(spacing);
+  int dims[3];
+  imageData->GetDimensions(dims);
+
+  int newVal;
+  if (this->Internals->m_lengthUnit == LengthUnit::pixel) {
+    newVal = val;
+  } else {
+    newVal = val / spacing[2] - extent[4];
+  }
+
+  if (newVal == this->Internals->m_projectionNum) {
+    return;
+  }
+
+  this->Internals->m_projectionNum = newVal;
+  this->Internals->mainSliceMapper->SetSliceNumber(newVal);
   this->Internals->mainSliceMapper->Update();
   this->Internals->Ui.sliceView->GetRenderWindow()->Render();
+}
+
+void RotateAlignWidget::onRotationShiftChanged(double val)
+{
+  vtkImageData* imageData = this->Internals->m_image;
+
+  int extent[6];
+  imageData->GetExtent(extent);
+  double spacing[3];
+  imageData->GetSpacing(spacing);
+  int dims[3];
+  imageData->GetDimensions(dims);
+
+  int newVal;
+  if (this->Internals->m_lengthUnit == LengthUnit::pixel) {
+    newVal = val;
+  } else {
+    newVal = val / spacing[1];
+  }
+
+  if (newVal == this->Internals->m_shiftRotation) {
+    return;
+  }
+
+  this->Internals->m_shiftRotation = newVal;
+  onRotationAxisChanged();
+}
+
+void RotateAlignWidget::onRotationAngleChanged(double val)
+{
+  if (val == this->Internals->m_tiltRotation) {
+    return;
+  }
+
+  this->Internals->m_tiltRotation = val;
+  onRotationAxisChanged();
 }
 
 void RotateAlignWidget::onRotationAxisChanged()
@@ -519,8 +594,49 @@ void RotateAlignWidget::onRotationAxisChanged()
   this->Internals->m_updateSlicesTimer.start();
 }
 
-void RotateAlignWidget::onReconSliceChanged(int idx)
+void RotateAlignWidget::onReconSliceChanged(int idx, double val)
 {
+  vtkImageData* imageData = this->Internals->m_image;
+
+  int extent[6];
+  imageData->GetExtent(extent);
+  double spacing[3];
+  imageData->GetSpacing(spacing);
+  int dims[3];
+  imageData->GetDimensions(dims);
+
+  int* slice;
+  switch (idx) {
+    case 0: {
+      slice = &this->Internals->m_slice0;
+      break;
+    }
+    case 1: {
+      slice = &this->Internals->m_slice1;
+      break;
+    }
+    case 2: {
+      slice = &this->Internals->m_slice2;
+      break;
+    }
+    default: {
+      return;
+    }
+  }
+
+  int newVal;
+  if (this->Internals->m_lengthUnit == LengthUnit::pixel) {
+    newVal = val;
+  } else {
+    newVal = val / spacing[0] - extent[0];
+  }
+
+  if (newVal == *slice) {
+    return;
+  }
+
+  *slice = newVal;
+
   this->Internals->updateSliceLines();
   this->Internals->Ui.sliceView->GetRenderWindow()->Render();
   this->Internals->m_reconSliceDirty[idx] = true;
@@ -607,6 +723,142 @@ void RotateAlignWidget::updateWidgets()
   this->Internals->Ui.sliceView_1->GetRenderWindow()->Render();
   this->Internals->Ui.sliceView_2->GetRenderWindow()->Render();
   this->Internals->Ui.sliceView_3->GetRenderWindow()->Render();
+}
+
+void RotateAlignWidget::updateControls()
+{
+  QSignalBlocker blockers[] = {
+    QSignalBlocker(this->Internals->Ui.projection),
+    QSignalBlocker(this->Internals->Ui.spinBox_1),
+    QSignalBlocker(this->Internals->Ui.spinBox_2),
+    QSignalBlocker(this->Internals->Ui.spinBox_3),
+    QSignalBlocker(this->Internals->Ui.rotationAxis),
+    QSignalBlocker(this->Internals->Ui.rotationAngle)
+  };
+
+  vtkImageData* imageData = this->Internals->m_image;
+
+  int extent[6];
+  imageData->GetExtent(extent);
+  double spacing[3];
+  imageData->GetSpacing(spacing);
+  int dims[3];
+  imageData->GetDimensions(dims);
+
+  QString xLabel;
+  QString yLabel;
+  QString xZeroLabel;
+  QString yZeroLabel;
+
+  double projectionValue;
+  double projectionRange[2];
+  double projectionStep;
+  int projectionDecimals;
+
+  double sliceValues[3];
+  double sliceRange[2];
+  double sliceStep;
+  int sliceDecimals;
+
+  double rotationShiftValue;
+  double rotationShiftRange[2];
+  double rotationShiftStep;
+  int rotationShiftDecimals;
+
+  double rotationAngleValue = this->Internals->m_tiltRotation;
+  double rotationAngleRange[2] = { -180, 180 };
+  double rotationAngleStep = 0.5;
+  int rotationAngleDecimals = 2;
+
+  double xAxisRange[2];
+  double yAxisRange[2];
+
+  if (this->Internals->m_lengthUnit == LengthUnit::physical) {
+    projectionValue =
+      (extent[4] + this->Internals->m_projectionNum) * spacing[2];
+    projectionRange[0] = extent[4] * spacing[2];
+    projectionRange[1] = extent[5] * spacing[2];
+    projectionStep = spacing[2];
+    projectionDecimals = std::max(0, int(std::ceil(-log10(spacing[2]))));
+
+    rotationShiftValue = this->Internals->m_shiftRotation * spacing[1];
+    rotationShiftRange[0] = -(dims[1] / 2) * spacing[1];
+    rotationShiftRange[1] = (dims[1] / 2) * spacing[1];
+    rotationShiftStep = spacing[1];
+    rotationShiftDecimals = std::max(0, int(std::ceil(-log10(spacing[1]))));
+
+    sliceValues[0] = (extent[0] + this->Internals->m_slice0) * spacing[0];
+    sliceValues[1] = (extent[0] + this->Internals->m_slice1) * spacing[0];
+    sliceValues[2] = (extent[0] + this->Internals->m_slice2) * spacing[0];
+    sliceRange[0] = extent[0] * spacing[0];
+    sliceRange[1] = extent[1] * spacing[0];
+    sliceStep = spacing[0];
+    sliceDecimals = std::max(0, int(std::ceil(-log10(spacing[0]))));
+
+    xAxisRange[0] = extent[0] * spacing[0];
+    xAxisRange[1] = extent[1] * spacing[0];
+    yAxisRange[0] = extent[2] * spacing[1];
+    yAxisRange[1] = extent[3] * spacing[1];
+  } else {
+    projectionValue = this->Internals->m_projectionNum;
+    projectionRange[0] = 0;
+    projectionRange[1] = dims[2] - 1;
+    projectionStep = 1;
+    projectionDecimals = 0;
+
+    rotationShiftValue = this->Internals->m_shiftRotation;
+    rotationShiftRange[0] = -dims[1] / 2;
+    rotationShiftRange[1] = dims[1] / 2;
+    rotationShiftStep = 1;
+    rotationShiftDecimals = 0;
+
+    sliceValues[0] = this->Internals->m_slice0;
+    sliceValues[1] = this->Internals->m_slice1;
+    sliceValues[2] = this->Internals->m_slice2;
+    sliceRange[0] = 0;
+    sliceRange[1] = dims[0] - 1;
+    sliceStep = 1;
+    sliceDecimals = 0;
+
+    xAxisRange[0] = 0;
+    xAxisRange[1] = dims[0];
+    yAxisRange[0] = 0;
+    yAxisRange[1] = dims[1];
+  }
+
+  this->Internals->Ui.projection->setRange(projectionRange[0],
+                                           projectionRange[1]);
+  this->Internals->Ui.projection->setSingleStep(projectionStep);
+  this->Internals->Ui.projection->setDecimals(projectionDecimals);
+  this->Internals->Ui.projection->setValue(projectionValue);
+
+  this->Internals->Ui.spinBox_1->setRange(sliceRange[0], sliceRange[1]);
+  this->Internals->Ui.spinBox_2->setRange(sliceRange[0], sliceRange[1]);
+  this->Internals->Ui.spinBox_3->setRange(sliceRange[0], sliceRange[1]);
+  this->Internals->Ui.spinBox_1->setSingleStep(sliceStep);
+  this->Internals->Ui.spinBox_2->setSingleStep(sliceStep);
+  this->Internals->Ui.spinBox_3->setSingleStep(sliceStep);
+  this->Internals->Ui.spinBox_1->setDecimals(sliceDecimals);
+  this->Internals->Ui.spinBox_2->setDecimals(sliceDecimals);
+  this->Internals->Ui.spinBox_3->setDecimals(sliceDecimals);
+  this->Internals->Ui.spinBox_1->setValue(sliceValues[0]);
+  this->Internals->Ui.spinBox_2->setValue(sliceValues[1]);
+  this->Internals->Ui.spinBox_3->setValue(sliceValues[2]);
+
+  this->Internals->Ui.rotationAxis->setRange(rotationShiftRange[0],
+                                             rotationShiftRange[1]);
+  this->Internals->Ui.rotationAxis->setSingleStep(rotationShiftStep);
+  this->Internals->Ui.rotationAxis->setDecimals(rotationShiftDecimals);
+  this->Internals->Ui.rotationAxis->setValue(rotationShiftValue);
+
+  this->Internals->Ui.rotationAngle->setRange(rotationAngleRange[0],
+                                              rotationAngleRange[1]);
+  this->Internals->Ui.rotationAngle->setSingleStep(rotationAngleStep);
+  this->Internals->Ui.rotationAngle->setDecimals(rotationAngleDecimals);
+  this->Internals->Ui.rotationAngle->setValue(rotationAngleValue);
+
+  this->Internals->axesActor->SetXAxisRange(xAxisRange);
+  this->Internals->axesActor->SetYAxisRange(yAxisRange);
 }
 
 void RotateAlignWidget::onFinalReconButtonPressed() {}

@@ -1,18 +1,6 @@
-/******************************************************************************
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
 
-  This source file is part of the tomviz project.
-
-  Copyright Kitware, Inc.
-
-  This source code is released under the New BSD License, (the "License").
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-******************************************************************************/
 #include "Module.h"
 
 #include "ActiveObjects.h"
@@ -91,6 +79,8 @@ public:
   }
 };
 
+const int Module::DEFAULT_SCALARS = -1;
+
 Module::Module(QObject* parentObject)
   : QObject(parentObject), d(new Module::MInternals())
 {}
@@ -102,7 +92,7 @@ bool Module::initialize(OperatorResult* result, vtkSMViewProxy* vtkView)
   m_view = vtkView;
   m_operatorResult = result;
   m_activeDataSource = ActiveObjects::instance().activeDataSource();
-  return (m_view && m_operatorResult);
+  return (m_view && m_view->IsA("vtkSMRenderViewProxy") && m_operatorResult);
 }
 
 bool Module::initialize(MoleculeSource* data, vtkSMViewProxy* vtkView)
@@ -110,7 +100,8 @@ bool Module::initialize(MoleculeSource* data, vtkSMViewProxy* vtkView)
   m_view = vtkView;
   m_activeMoleculeSource = data;
   m_activeDataSource = ActiveObjects::instance().activeDataSource();
-  return (m_view && m_activeMoleculeSource);
+  return (m_view && m_view->IsA("vtkSMRenderViewProxy") &&
+          m_activeMoleculeSource);
 }
 
 bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
@@ -121,7 +112,7 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   d->m_transfer2D->SetDimensions(1, 1, 1);
   d->m_transfer2D->AllocateScalars(VTK_FLOAT, 4);
 
-  if (m_view && m_activeDataSource) {
+  if (m_view && m_view->IsA("vtkSMRenderViewProxy") && m_activeDataSource) {
     // FIXME: we're connecting this too many times. Fix it.
     tomviz::convert<pqView*>(vtkView)->connect(
       m_activeDataSource, SIGNAL(dataChanged()), SLOT(render()));
@@ -131,7 +122,7 @@ bool Module::initialize(DataSource* data, vtkSMViewProxy* vtkView)
             SIGNAL(displayPositionChanged(double, double, double)),
             SLOT(dataSourceMoved(double, double, double)));
   }
-  return (m_view && m_activeDataSource);
+  return (m_view && m_view->IsA("vtkSMRenderViewProxy") && m_activeDataSource);
 }
 
 vtkSMViewProxy* Module::view() const
@@ -157,6 +148,12 @@ OperatorResult* Module::operatorResult() const
 void Module::addToPanel(QWidget* vtkNotUsed(panel)) {}
 
 void Module::prepareToRemoveFromPanel(QWidget* vtkNotUsed(panel)) {}
+
+void Module::setActiveScalars(int scalars)
+{
+  m_activeScalars = scalars;
+  emit dataSourceChanged();
+}
 
 void Module::setUseDetachedColorMap(bool val)
 {
@@ -264,6 +261,7 @@ QJsonObject Module::serialize() const
     }
   }
   json["properties"] = props;
+  json["activeScalars"] = m_activeScalars;
   return json;
 }
 
@@ -294,6 +292,10 @@ bool Module::deserialize(const QJsonObject& json)
       }
     }
     setUseDetachedColorMap(useDetachedColorMap);
+  }
+
+  if (json.contains("activeScalars")) {
+    m_activeScalars = json["activeScalars"].toInt();
   }
 
   return true;

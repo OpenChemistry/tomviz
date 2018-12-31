@@ -1,3 +1,6 @@
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+   It is released under the 3-Clause BSD License, see "LICENSE". */
+
 #ifndef pybind_extension_vtk_source_VTKTypeCaster_h
 #define pybind_extension_vtk_source_VTKTypeCaster_h
 
