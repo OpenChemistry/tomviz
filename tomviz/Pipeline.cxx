@@ -378,7 +378,12 @@ void Pipeline::branchFinished()
               });
     }
 
+    // Update the type if necessary
+    DataSource::DataSourceType type = DataSource::hasTiltAngles(newData)
+                                        ? DataSource::TiltSeries
+                                        : DataSource::Volume;
     lastOp->childDataSource()->setData(newData);
+    lastOp->childDataSource()->setType(type);
     lastOp->childDataSource()->dataModified();
 
     if (newChildDataSource != nullptr) {
