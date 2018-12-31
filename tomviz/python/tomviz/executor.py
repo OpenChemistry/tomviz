@@ -367,7 +367,6 @@ def _load_operator_module(label, script):
 
 def _read_emd(path):
     with h5py.File(path, 'r') as f:
-        # assuming you know the structure of the file
         tomography = f['data/tomography']
 
         dims = []
@@ -375,12 +374,24 @@ def _read_emd(path):
             dims.append((dim,
                          tomography[dim][:],
                          tomography[dim].attrs['name'][0],
-                         tomography[dim].attrs['name'][0]))
+                         tomography[dim].attrs['units'][0]))
 
-        return (tomography['data'][:], dims)
+        data  = tomography['data'][:]
+
+        # EMD stores data as row major order.  VTK expects column major order.
+        data = data.reshape(data.shape[::-1])
+
+        return (data, dims)
 
 
-def _write_emd(path, data, dims):
+def _write_emd(path, data, dims=None):
+    tilt_angles = None
+    if data.tilt_angles is not None:
+        tilt_angles = data.tilt_angles
+
+    # Switch back to row major order for EMD stores
+    data = data.reshape(data.shape[::-1])
+
     with h5py.File(path, 'w') as f:
         f.attrs.create('version_major', 0, dtype='uint32')
         f.attrs.create('version_minor', 2, dtype='uint32')
@@ -389,12 +400,26 @@ def _write_emd(path, data, dims):
         tomography_group.attrs.create('emd_group_type', 1, dtype='uint32')
         tomography_group.create_dataset('data', data=data)
 
+        if dims is None:
+            dims = []
+            for i, name in zip(range(0, 3), ['x', 'y', 'z']):
+                values = np.array(range(data.shape[i]))
+                dims.append(('/data/tomography/dim%d' % (i+1), values, name, '[n_m]'))
+
         # add dimension vectors
         for (dataset_name, values, name, units) in dims:
             d = tomography_group.create_dataset(dataset_name, values.shape)
             d.attrs['name'] = np.string_(name)
             d.attrs['units'] = np.string_(units)
             d[:] = values
+
+        # If we have angle update the last dim
+        if tilt_angles is not None:
+            (name, _, _, _) = dims[-1]
+            d = tomography_group[name]
+            d.attrs['name'] = np.string_('angles')
+            d.attrs['units'] = np.string_('[deg]')
+            d[:] = tilt_angles
 
 
 class DataObjectArray(np.ndarray):
@@ -415,25 +440,39 @@ class DataObjectArray(np.ndarray):
         self.tilt_angles = getattr(obj, 'tilt_angles', None)
         self.is_volume = getattr(obj, 'is_volume', None)
 
+    def GetDimensions(self):
+        return self.shape
 
 def _patch_utils():
     # Monkey patch tomviz.utils to make get_scalars a no-op and allow use to
     # retrieve the transformed data from set_scalars. I know this is a little
     # yucky!
-    utils.get_scalars = lambda d: d
-    utils.get_array = lambda d: d
+#    utils.get_scalars = lambda d: d
+
+    def _get_scalars(dataobject):
+        return dataobject.ravel(order='A')
 
     def _set_scalars(dataobject, new_scalars):
-        dataobject[...] = DataObjectArray(new_scalars)
+        order = 'C'
+        if np.isfortran(dataobject):
+            order = 'F'
 
-    def _set_array(dataobject, new_scalars):
-        if (dataobject.dtype != new_scalars.dtype):
-            dataobject.dtype = new_scalars.dtype
+        new_scalars = np.reshape(new_scalars, dataobject.shape, order=order)
 
-        if dataobject.shape != new_scalars.shape:
-            dataobject.resize(new_scalars.shape, refcheck=False)
+        dataobject[...] = DataObjectArray(np.asfortranarray(new_scalars))
 
-        dataobject[...] = new_scalars
+    def _set_array(dataobject, new_array):
+        if dataobject.shape != new_array.shape:
+            dataobject.resize(new_array.shape, refcheck=False)
+
+        if (dataobject.dtype != new_array.dtype):
+            dataobject.dtype = new_array.dtype
+
+        # Ensure Fortran ordering
+        if not np.isfortran(new_array):
+            new_array = new_array.reshape(new_array[::-1], order='F')
+
+        dataobject[...] = new_array
 
     def _set_tilt_angles(dataobject, tilt_angles):
         dataobject.tilt_angles = tilt_angles
@@ -442,13 +481,19 @@ def _patch_utils():
         return dataobject.tilt_angles
 
     def _make_child_dataset(reference_dataset):
-        return np.empty_like(reference_dataset)
+        child = np.empty_like(reference_dataset)
+        child.is_volume = False
+        child.tilt_angles = None
+
+        return child
 
     def _mark_as_volume(dataobject):
         dataobject.is_volume = True
 
+    utils.get_scalars = _get_scalars
     utils.set_scalars = _set_scalars
     utils.set_array = _set_array
+    utils.get_array = lambda d: d
     utils.set_tilt_angles = _set_tilt_angles
     utils.get_tilt_angles = _get_tilt_angles
     utils.make_child_dataset = _make_child_dataset
@@ -495,7 +540,7 @@ def _load_transform_functions(operators):
         if operator['type'] == 'SetTiltAngles':
             # Just save the angles
             transform_functions.append((operator['type'], None,
-                                        {'angles': operator['angles']}))
+                                        {'angles': [float(a) for a in operator['angles']]}))
             continue
 
         if 'script' not in operator:
@@ -549,6 +594,9 @@ def execute(operators, start_at, data_file_path, output_file_path,
 
     # Replace the numpy array with our subclass so we can attach metadata.
     data = DataObjectArray(data)
+    # If we have angles set them
+    if dims[-1][2] == b'angles':
+        data.tilt_angles = dims[-1][1][:]
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)
@@ -574,7 +622,12 @@ def execute(operators, start_at, data_file_path, output_file_path,
         if output_file_path is None:
             output_file_path = '%s_transformed.emd' % \
                 os.path.splitext(os.path.basename(data_file_path))[0]
-        _write_emd(output_file_path, data, dims)
+
+        if result is None:
+            _write_emd(output_file_path, data, dims)
+        else:
+            [(_, child_data)] = result.items()
+            _write_emd(output_file_path, child_data, dims)
         logger.info('Write complete.')
         progress.finished()
 
