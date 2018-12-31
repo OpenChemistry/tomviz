@@ -29,6 +29,7 @@
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
+#include "vtkPolygonalSurfacePointPlacer.h"
 #include "vtkProperty.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
@@ -703,10 +704,13 @@ void vtkNonOrthoImagePlaneWidget::StartSliceMotion()
       this->HighlightPlane(1);
       this->HighlightArrow(1);
       stateFound = true;
-    } else if (prop == this->TexturePlaneActor || prop == this->SphereActor) {
+    } else if (prop == this->TexturePlaneActor) {
       this->State = vtkNonOrthoImagePlaneWidget::Pushing;
       this->HighlightPlane(1);
       this->HighlightArrow(1);
+      stateFound = true;
+    } else if (prop == this->SphereActor) {
+      this->State = vtkNonOrthoImagePlaneWidget::Moving;
       stateFound = true;
     }
   }
@@ -789,6 +793,13 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
     camera->GetViewPlaneNormal(vpn);
     this->Rotate(double(X), double(Y), prevPickPoint, pickPoint, vpn);
     this->UpdatePlacement();
+  } else if (this->State == vtkNonOrthoImagePlaneWidget::Moving) {
+    if (Ortho >= 0) {
+      return;
+    }
+    double display[2] = { (double)X, (double)Y };
+    this->Move(display);
+    this->UpdatePlacement();
   }
 
   // Interact, if desired
@@ -819,6 +830,22 @@ void vtkNonOrthoImagePlaneWidget::Push(double* p1, double* p2)
   }
 
   this->PlaneSource->Push(dotV);
+}
+
+void vtkNonOrthoImagePlaneWidget::Move(double display[2])
+{
+  double point[3];
+  double orient[3];
+  vtkNew<vtkPolygonalSurfacePointPlacer> placer;
+  placer->AddProp(this->TexturePlaneActor);
+  int res =
+    placer->ComputeWorldPosition(this->CurrentRenderer, display, point, orient);
+
+  if (res == 0) {
+    return;
+  }
+
+  this->SetCenter(point);
 }
 
 void vtkNonOrthoImagePlaneWidget::CreateDefaultProperties()

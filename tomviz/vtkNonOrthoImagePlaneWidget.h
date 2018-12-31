@@ -378,6 +378,7 @@ protected:
     Start = 0,
     Pushing,
     Rotating,
+    Moving,
     Outside
   };
   // ETX
@@ -434,6 +435,7 @@ protected:
 
   // Methods to manipulate the plane
   void Push(double* p1, double* p2);
+  void Move(double display[2]);
   void Rotate(double X, double Y, double* p1, double* p2, double* vpn);
 
   vtkImageData* ImageData;
