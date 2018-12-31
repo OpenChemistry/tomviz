@@ -346,8 +346,8 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
           &DockerPipelineExecutor::operatorProgressStep);
   connect(m_progressReader.data(), &ProgressReader::operatorProgressMessage,
           this, &DockerPipelineExecutor::operatorProgressMessage);
-  connect(m_progressReader.data(), &ProgressReader::operatorProgressData,
-          this, &DockerPipelineExecutor::operatorProgressData);
+  connect(m_progressReader.data(), &ProgressReader::operatorProgressData, this,
+          &DockerPipelineExecutor::operatorProgressData);
   connect(m_progressReader.data(), &ProgressReader::pipelineStarted, this,
           &DockerPipelineExecutor::pipelineStarted);
   connect(m_progressReader.data(), &ProgressReader::pipelineFinished, this,
@@ -559,7 +559,8 @@ void DockerPipelineExecutor::operatorFinished(Operator* op)
   // See it we have any child data source updates
   if (operatorPath.exists()) {
     QMap<QString, vtkSmartPointer<vtkDataObject>> childOutput;
-    foreach (const QFileInfo& fileInfo, operatorPath.entryInfoList(QDir::NoDotAndDotDot)) {
+    foreach (const QFileInfo& fileInfo,
+             operatorPath.entryInfoList(QDir::NoDotAndDotDot)) {
 
       auto name = fileInfo.baseName();
       EmdFormat emdFile;
@@ -608,8 +609,8 @@ void DockerPipelineExecutor::operatorProgressMessage(Operator* op,
   op->setProgressMessage(msg);
 }
 
-void DockerPipelineExecutor::operatorProgressData(Operator* op,
-                                                  vtkSmartPointer<vtkDataObject> data)
+void DockerPipelineExecutor::operatorProgressData(
+  Operator* op, vtkSmartPointer<vtkDataObject> data)
 {
   auto pythonOperator = qobject_cast<OperatorPython*>(op);
   if (pythonOperator != nullptr) {
@@ -712,7 +713,8 @@ void ProgressReader::progressReady(const QString& progressMessage)
   }
 }
 
-vtkSmartPointer<vtkDataObject> ProgressReader::readProgressData(const QString& path)
+vtkSmartPointer<vtkDataObject> ProgressReader::readProgressData(
+  const QString& path)
 {
   EmdFormat emdFile;
   auto data = vtkSmartPointer<vtkImageData>::New();

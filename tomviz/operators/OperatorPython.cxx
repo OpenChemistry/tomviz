@@ -28,10 +28,10 @@
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
 #include "OperatorWidget.h"
+#include "Pipeline.h"
 #include "PythonUtilities.h"
 #include "Utilities.h"
 #include "pqPythonSyntaxHighlighter.h"
-#include "Pipeline.h"
 
 #include "vtkDataObject.h"
 #include "vtkImageData.h"
@@ -180,13 +180,11 @@ OperatorPython::OperatorPython(QObject* parentObject)
 
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
-  connect(
-    this,
-    SIGNAL(newChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>)),
-    this,
-    SLOT(
-      createNewChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>)),
-      connectionType);
+  connect(this, SIGNAL(newChildDataSource(const QString&,
+                                          vtkSmartPointer<vtkDataObject>)),
+          this, SLOT(createNewChildDataSource(const QString&,
+                                              vtkSmartPointer<vtkDataObject>)),
+          connectionType);
   connect(
     this,
     SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
