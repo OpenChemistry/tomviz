@@ -188,7 +188,6 @@ bool ModuleSlice::finalize()
   m_passThrough = nullptr;
 
   if (m_widget != nullptr) {
-    m_widget->InteractionOff();
     m_widget->Off();
   }
 

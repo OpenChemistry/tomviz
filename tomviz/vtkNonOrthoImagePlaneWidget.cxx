@@ -266,17 +266,17 @@ void vtkNonOrthoImagePlaneWidget::SetTextureVisibility(int vis)
 void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
 {
 
-  if (!this->Interactor) {
-    vtkErrorMacro(
-      << "The interactor must be set prior to enabling/disabling widget");
-    return;
-  }
-
   if (enabling) {
     vtkDebugMacro(<< "Enabling plane widget");
 
     if (this->Enabled) // already enabled, just return
     {
+      return;
+    }
+
+    if (!this->Interactor) {
+      vtkErrorMacro(
+        << "The interactor must be set prior to enabling/disabling widget");
       return;
     }
 
@@ -338,6 +338,12 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
 
     if (!this->Enabled) // already disabled, just return
     {
+      return;
+    }
+
+    if (!this->Interactor) {
+      vtkErrorMacro(
+        << "The interactor must be set prior to enabling/disabling widget");
       return;
     }
 
