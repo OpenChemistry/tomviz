@@ -61,7 +61,7 @@ ModuleSlice::~ModuleSlice()
 
 QIcon ModuleSlice::icon() const
 {
-  return QIcon(":/icons/pqSlice.png");
+  return QIcon(":/icons/orthoslice.png");
 }
 
 bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
