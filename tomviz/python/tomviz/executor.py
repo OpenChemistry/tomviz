@@ -462,10 +462,15 @@ def _patch_utils():
         dataobject[...] = DataObjectArray(np.asfortranarray(new_scalars))
 
     def _set_array(dataobject, new_array):
-        if dataobject.shape != new_array.shape:
-            dataobject.resize(new_array.shape, refcheck=False)
 
-        if (dataobject.dtype != new_array.dtype):
+        if (dataobject.dtype != new_array.dtype or dataobject.shape != new_array.shape):
+            old_size_bytes = dataobject.dtype.itemsize
+            new_size_bytes = new_array.dtype.itemsize
+
+            new_shape = list(new_array.shape)
+            new_shape[-1] = new_array.shape[-1] * new_size_bytes // old_size_bytes
+
+            dataobject.resize(new_shape, refcheck=False)
             dataobject.dtype = new_array.dtype
 
         # Ensure Fortran ordering
