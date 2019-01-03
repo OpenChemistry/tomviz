@@ -152,7 +152,7 @@ void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction* lut)
 
 void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
 {
-  if (m_LUTProxy != proxy) {
+  if (proxy && m_LUTProxy != proxy) {
     m_LUTProxy = proxy;
     vtkPVDiscretizableColorTransferFunction* lut =
       vtkPVDiscretizableColorTransferFunction::SafeDownCast(
