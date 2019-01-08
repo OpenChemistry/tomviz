@@ -76,7 +76,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   // Default parameters
-  vtkTrivialProducer* trv = data->producer();
+  auto trv = data->producer();
   m_volumeMapper->SetInputConnection(trv->GetOutputPort());
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SelectScalarArray(scalarsIndex());
@@ -308,7 +308,7 @@ void ModuleVolume::onTransferModeChanged(const int mode)
 
 vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
 {
-  vtkTrivialProducer* trv = this->dataSource()->producer();
+  auto trv = dataSource()->producer();
   return trv->GetOutputDataObject(0);
 }
 
