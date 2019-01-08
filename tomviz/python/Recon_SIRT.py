@@ -54,6 +54,10 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         counter = 1
         etcMessage = 'Estimated time to complete: n/a'
 
+        #Create child dataset for recon
+        child = utils.make_child_dataset(dataset) 
+        utils.mark_as_volume(child)
+
         for s in range(Nslice):
             if self.canceled:
                 return
@@ -73,14 +77,18 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
             etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
-        from vtkmodules.vtkCommonDataModel import vtkImageData
-        recon_dataset = vtkImageData()
-        recon_dataset.CopyStructure(dataset)
-        utils.set_array(recon_dataset, recon)
-        utils.mark_as_volume(recon_dataset)
+            # Update only once every so many steps
+            if (s + 1) % 40 == 0:
+                utils.set_array(child, recon) #add recon to child
+                # This copies data to the main thread
+                self.progress.data = child
+
+        # One last update of the child data.
+        utils.set_array(child, recon) #add recon to child
+        self.progress.data = child
 
         returnValues = {}
-        returnValues["reconstruction"] = recon_dataset
+        returnValues["reconstruction"] = child
         return returnValues
 
 
