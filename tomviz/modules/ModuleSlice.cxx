@@ -249,22 +249,11 @@ void ModuleSlice::addToPanel(QWidget* panel)
   formLayout->addRow("Scalars", m_scalarsCombo);
 
   m_directionCombo = new QComboBox();
-  std::vector<std::tuple<QString, Direction>> options = {
-    std::make_tuple("XY Plane", Direction::XY),
-    std::make_tuple("YZ Plane", Direction::YZ),
-    std::make_tuple("XZ Plane", Direction::XZ),
-    std::make_tuple("Custom", Direction::Custom)
-  };
-  for (size_t i = 0; i < options.size(); ++i) {
-    auto label = std::get<0>(options[i]);
-    auto data = std::get<1>(options[i]);
-    QVariant qData;
-    qData.setValue(std::get<1>(options[i]));
-    m_directionCombo->addItem(label, qData);
-    if (data == m_direction) {
-      m_directionCombo->setCurrentIndex(i);
-    }
-  }
+  m_directionCombo->addItem("XY Plane", QVariant(Direction::XY));
+  m_directionCombo->addItem("YZ Plane", QVariant(Direction::YZ));
+  m_directionCombo->addItem("XZ Plane", QVariant(Direction::XZ));
+  m_directionCombo->addItem("Custom", QVariant(Direction::Custom));
+  m_directionCombo->setCurrentIndex(static_cast<int>(m_direction));
   formLayout->addRow("Direction", m_directionCombo);
 
   m_sliceSlider = new IntSliderWidget(true);

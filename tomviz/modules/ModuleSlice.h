@@ -52,12 +52,12 @@ public:
 
   vtkSmartPointer<vtkDataObject> getDataToExport() override;
 
-  enum class Direction
+  enum Direction
   {
-    XY,
-    YZ,
-    XZ,
-    Custom
+    XY = 0,
+    YZ = 1,
+    XZ = 2,
+    Custom = 3
   };
   Q_ENUM(Direction)
 
