@@ -324,13 +324,6 @@ public:
   vtkGetMacro(ArrowVisibility, int);
   vtkBooleanMacro(ArrowVisibility, int);
 
-  // Description:
-  // Set wheter the slice should behave as an orthogonal slice:
-  // 1) The normal cannot be changed by moving the arrow
-  // 2) The plane can only be pushed by discrete amounts
-  void SetOrtho(int axis) { Ortho = axis; }
-  int GetOrtho() const { return Ortho; }
-
   // BTX
   // Description:
   // Set action associated to buttons.
@@ -461,7 +454,7 @@ protected:
   // Reslice and texture management
   void UpdatePlane();
   void FindPlaneBounds(vtkInformation* outInfo, double bounds[6]);
-  void UpdateClipBounds(double bounds[6], double spacing[3]);
+  void UpdateClipBounds(double bounds[6]);
 
   void GenerateTexturePlane();
 
@@ -488,8 +481,6 @@ protected:
   void HighlightArrow(int highlight);
   void GenerateArrow(); // generate the default arrow
   void UpdateArrowSize(); // update the arrow to be visible based on camera pos
-
-  int Ortho;
 
 private:
   vtkNonOrthoImagePlaneWidget(

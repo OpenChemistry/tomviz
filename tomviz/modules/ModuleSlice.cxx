@@ -577,7 +577,7 @@ void ModuleSlice::onDirectionChanged(Direction direction)
     m_sliceSlider->setVisible(isOrtho);
   }
 
-  m_widget->SetOrtho(axis);
+  m_widget->SetPlaneOrientation(axis);
 
   if (m_directionCombo) {
     if (direction != m_directionCombo->currentData().value<Direction>()) {
@@ -619,29 +619,15 @@ void ModuleSlice::onSliceChanged(int slice)
 {
   m_slice = slice;
   int axis = directionAxis(m_direction);
+
   if (axis < 0) {
     return;
   }
 
-  int dims[3];
-  m_imageData->GetDimensions(dims);
-
-  double bounds[6];
-  m_imageData->GetBounds(bounds);
-
-  double point[3] = {
-    bounds[0] + (bounds[1] - bounds[0]) * (dims[0] / 2) / (dims[0] - 1),
-    bounds[2] + (bounds[3] - bounds[2]) * (dims[1] / 2) / (dims[1] - 1),
-    bounds[4] + (bounds[5] - bounds[4]) * (dims[2] / 2) / (dims[2] - 1),
-  };
-  point[axis] =
-    bounds[2 * axis] +
-    (bounds[2 * axis + 1] - bounds[2 * axis]) * slice / (dims[axis] - 1);
-
+  m_widget->SetSliceIndex(slice);
   if (m_sliceSlider) {
     m_sliceSlider->setValue(slice);
   }
-  m_widget->SetCenter(point);
   onPlaneChanged();
   dataUpdated();
 }
@@ -661,9 +647,7 @@ void ModuleSlice::onSliceChanged(double* point)
 
   slice = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
           (bounds[2 * axis + 1] - bounds[2 * axis]);
-  if (slice != m_slice) {
-    onSliceChanged(slice);
-  }
+  onSliceChanged(slice);
 }
 
 int ModuleSlice::directionAxis(Direction direction)
