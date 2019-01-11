@@ -166,6 +166,10 @@ Pipeline::Future* Pipeline::execute(DataSource* dataSource)
   }
 
   auto operators = dataSource->operators();
+  if (operators.size() < 1) {
+    return emptyFuture();
+  }
+
   Operator* firstModifiedOperator = operators.first();
   if (!isModified(dataSource, &firstModifiedOperator)) {
     return emptyFuture();
