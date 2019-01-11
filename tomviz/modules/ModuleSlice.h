@@ -81,6 +81,8 @@ private slots:
   void onSliceChanged(double* point);
   int directionAxis(Direction direction);
 
+  void onTextureInterpolateChanged(bool flag);
+
 private:
   // Should only be called from initialize after the PassThrough has been setup.
   bool setupWidget(vtkSMViewProxy* view);
@@ -103,6 +105,9 @@ private:
   QPointer<IntSliderWidget> m_sliceSlider;
   Direction m_direction = Direction::XY;
   int m_slice = 0;
+
+  QPointer<QCheckBox> m_interpolateCheckBox;
+  bool m_interpolate = false;
 
   QPointer<pqLineEdit> m_pointInputs[3];
   QPointer<pqLineEdit> m_normalInputs[3];

@@ -110,6 +110,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     m_widget->On();
     m_widget->InteractionOn();
     onDirectionChanged(m_direction);
+    onTextureInterpolateChanged(m_interpolate);
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
@@ -270,6 +271,9 @@ void ModuleSlice::addToPanel(QWidget* panel)
   }
   formLayout->addRow("Slice", m_sliceSlider);
 
+  m_interpolateCheckBox = new QCheckBox("Interpolate Texture");
+  formLayout->addRow(m_interpolateCheckBox);
+
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
   formLayout->addRow(showArrow);
 
@@ -353,6 +357,9 @@ void ModuleSlice::addToPanel(QWidget* panel)
             onDirectionChanged(dir);
           });
 
+  connect(m_interpolateCheckBox, &QCheckBox::toggled, this,
+          &ModuleSlice::onTextureInterpolateChanged);
+
   connect(m_sliceSlider, &IntSliderWidget::valueEdited, this,
           QOverload<int>::of(&ModuleSlice::onSliceChanged));
   connect(m_sliceSlider, &IntSliderWidget::valueChanged, this,
@@ -396,6 +403,7 @@ QJsonObject ModuleSlice::serialize() const
   QVariant qData;
   qData.setValue(m_direction);
   props["direction"] = qData.toString();
+  props["interpolate"] = m_interpolate;
 
   json["properties"] = props;
   return json;
@@ -446,6 +454,13 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     if (props.contains("slice")) {
       m_slice = props["slice"].toInt();
       onSliceChanged(m_slice);
+    }
+    if (props.contains("interpolate")) {
+      m_interpolate = props["interpolate"].toBool();
+      onTextureInterpolateChanged(m_interpolate);
+      if (m_interpolateCheckBox) {
+        m_interpolateCheckBox->setChecked(m_interpolate);
+      }
     }
     onPlaneChanged();
     return true;
@@ -648,6 +663,18 @@ void ModuleSlice::onSliceChanged(double* point)
   slice = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
           (bounds[2 * axis + 1] - bounds[2 * axis]);
   onSliceChanged(slice);
+}
+
+void ModuleSlice::onTextureInterpolateChanged(bool flag)
+{
+  m_interpolate = flag;
+  if (!m_widget) {
+    return;
+  }
+  int val = flag ? 1 : 0;
+  m_widget->SetTextureInterpolate(val);
+  m_widget->SetResliceInterpolate(val);
+  emit renderNeeded();
 }
 
 int ModuleSlice::directionAxis(Direction direction)
