@@ -579,7 +579,11 @@ def _write_child_data(result, operator_index, output_file_path, dims):
         # Make a directory with the operator index
         operator_path = os.path.join(output_path, str(operator_index))
         try:
+            stat_result = os.stat(output_path)
             os.makedirs(operator_path)
+            # We need to chown to the user and group who owns the output
+            # path ( for docker execution )
+            os.chown(operator_path, stat_result.st_uid, stat_result.st_gid)
         except OSError as exc:
             if exc.errno == errno.EEXIST and os.path.isdir(operator_path):
                 pass
