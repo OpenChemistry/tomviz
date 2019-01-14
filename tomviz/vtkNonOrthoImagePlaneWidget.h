@@ -324,6 +324,11 @@ public:
   vtkGetMacro(ArrowVisibility, int);
   vtkBooleanMacro(ArrowVisibility, int);
 
+  // Description:
+  // Set the opacity of the plane
+  double GetOpacity() const;
+  void SetOpacity(double opacity);
+
   // BTX
   // Description:
   // Set action associated to buttons.
@@ -477,6 +482,9 @@ protected:
   // The origin positioning handle
   vtkSphereSource* Sphere;
   vtkActor* SphereActor;
+
+  // The opacity of the widget
+  double Opacity;
 
   void HighlightArrow(int highlight);
   void GenerateArrow(); // generate the default arrow

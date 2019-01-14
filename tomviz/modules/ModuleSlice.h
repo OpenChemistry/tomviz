@@ -20,6 +20,7 @@ class vtkNonOrthoImagePlaneWidget;
 namespace tomviz {
 
 class ScalarsComboBox;
+class DoubleSliderWidget;
 class IntSliderWidget;
 
 class ModuleSlice : public Module
@@ -80,6 +81,7 @@ private slots:
   void onSliceChanged(int slice);
   void onSliceChanged(double* point);
   int directionAxis(Direction direction);
+  void onOpacityChanged(double opacity);
 
   void onTextureInterpolateChanged(bool flag);
 
@@ -108,6 +110,9 @@ private:
 
   QPointer<QCheckBox> m_interpolateCheckBox;
   bool m_interpolate = false;
+
+  QPointer<DoubleSliderWidget> m_opacitySlider;
+  double m_opacity = 1;
 
   QPointer<pqLineEdit> m_pointInputs[3];
   QPointer<pqLineEdit> m_normalInputs[3];

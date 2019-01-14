@@ -155,6 +155,10 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
   this->TexturePlaneProperty = nullptr;
   this->CreateDefaultProperties();
 
+  // Initial opacity of the TexturePlane
+  this->Opacity = 1;
+  this->SetOpacity(this->Opacity);
+
   // Set up actions
   this->LeftButtonAction = vtkNonOrthoImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
   this->MiddleButtonAction = vtkNonOrthoImagePlaneWidget::VTK_NO_ACTION;
@@ -1791,4 +1795,15 @@ void vtkNonOrthoImagePlaneWidget::HighlightArrow(int highlight)
     this->ConeActor2->SetProperty(this->ArrowProperty);
     this->SphereActor->SetProperty(this->ArrowProperty);
   }
+}
+
+double vtkNonOrthoImagePlaneWidget::GetOpacity() const
+{
+  return this->Opacity;
+}
+
+void vtkNonOrthoImagePlaneWidget::SetOpacity(double opacity)
+{
+  this->Opacity = opacity;
+  this->TexturePlaneProperty->SetOpacity(opacity);
 }

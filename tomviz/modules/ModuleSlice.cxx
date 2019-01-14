@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "DataSource.h"
+#include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
 #include "ScalarsComboBox.h"
 #include "Utilities.h"
@@ -271,6 +272,13 @@ void ModuleSlice::addToPanel(QWidget* panel)
   }
   formLayout->addRow("Slice", m_sliceSlider);
 
+  m_opacitySlider = new DoubleSliderWidget(true);
+  m_opacitySlider->setLineEditWidth(50);
+  m_opacitySlider->setMinimum(0);
+  m_opacitySlider->setMaximum(1);
+  m_opacitySlider->setValue(m_opacity);
+  formLayout->addRow("Opacity", m_opacitySlider);
+
   m_interpolateCheckBox = new QCheckBox("Interpolate Texture");
   formLayout->addRow(m_interpolateCheckBox);
 
@@ -364,6 +372,11 @@ void ModuleSlice::addToPanel(QWidget* panel)
           QOverload<int>::of(&ModuleSlice::onSliceChanged));
   connect(m_sliceSlider, &IntSliderWidget::valueChanged, this,
           QOverload<int>::of(&ModuleSlice::onSliceChanged));
+
+  connect(m_opacitySlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleSlice::onOpacityChanged);
+  connect(m_opacitySlider, &DoubleSliderWidget::valueChanged, this,
+          &ModuleSlice::onOpacityChanged);
 }
 
 void ModuleSlice::dataUpdated()
@@ -404,6 +417,7 @@ QJsonObject ModuleSlice::serialize() const
   qData.setValue(m_direction);
   props["direction"] = qData.toString();
   props["interpolate"] = m_interpolate;
+  props["opacity"] = m_opacity;
 
   json["properties"] = props;
   return json;
@@ -454,6 +468,10 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     if (props.contains("slice")) {
       m_slice = props["slice"].toInt();
       onSliceChanged(m_slice);
+    }
+    if (props.contains("opacity")) {
+      m_opacity = props["opacity"].toDouble();
+      onOpacityChanged(m_opacity);
     }
     if (props.contains("interpolate")) {
       m_interpolate = props["interpolate"].toBool();
@@ -674,6 +692,13 @@ void ModuleSlice::onTextureInterpolateChanged(bool flag)
   int val = flag ? 1 : 0;
   m_widget->SetTextureInterpolate(val);
   m_widget->SetResliceInterpolate(val);
+  emit renderNeeded();
+}
+
+void ModuleSlice::onOpacityChanged(double opacity)
+{
+  m_opacity = opacity;
+  m_widget->SetOpacity(opacity);
   emit renderNeeded();
 }
 
