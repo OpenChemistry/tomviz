@@ -359,7 +359,15 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
             transformedImageData->FastDelete();
           });
   connect(future, &Pipeline::Future::finished, this,
-          &DockerPipelineExecutor::pipelineFinished);
+          &DockerPipelineExecutor::reset);
+
+  // We need to hook up the transformCanceled signal to each of the operators,
+  // so
+  // we can stop the container if the user cancels any of them.
+  for (Operator* op : operators) {
+    connect(op, &Operator::transformCanceled,
+            [this]() { this->cancel(nullptr); });
+  }
 
   // We are now ready to run the pipeline
   auto mount = QDir(CONTAINER_MOUNT);
@@ -432,6 +440,9 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
 
 void DockerPipelineExecutor::cancel(std::function<void()> canceled)
 {
+  // Call reset to stop progress updates, status checking and clean
+  // update state.
+  reset();
   auto stopInvocation = stop(m_containerId);
   connect(stopInvocation, &docker::DockerStopInvocation::finished,
           stopInvocation,
@@ -449,7 +460,13 @@ bool DockerPipelineExecutor::cancel(Operator* op)
   // Simply stop the container.
   stop(m_containerId);
 
-  return true;
+  // Call reset to stop progress updates, status checking and clean
+  // update state.
+  reset();
+
+  // We can't cancel an individual operator so we return false, so the caller
+  // knows
+  return false;
 }
 
 bool DockerPipelineExecutor::isRunning()
@@ -611,7 +628,7 @@ void DockerPipelineExecutor::pipelineStarted()
   qDebug("Pipeline started in docker container!");
 }
 
-void DockerPipelineExecutor::pipelineFinished()
+void DockerPipelineExecutor::reset()
 {
   // Cancel status checks
   m_statusCheckTimer->stop();

@@ -107,13 +107,12 @@ private:
   void operatorStarted(Operator* op);
   void operatorFinished(Operator* op);
   void operatorError(Operator* op, const QString& error);
-  void operatorCanceled(Operator* op);
   void operatorProgressMaximum(Operator* op, int max);
   void operatorProgressStep(Operator* op, int step);
   void operatorProgressMessage(Operator* op, const QString& msg);
   void operatorProgressData(Operator* op, vtkSmartPointer<vtkDataObject> data);
   void pipelineStarted();
-  void pipelineFinished();
+  void reset();
   void displayError(const QString& title, const QString& msg);
 };
 
