@@ -219,4 +219,9 @@ void Operator::createNewChildDataSource(
     setHasChildDataSource(true);
   }
 }
+
+void Operator::cancelTransform() {
+   m_state = OperatorState::Canceled;
+   emit transformCanceled();
+}
 } // namespace tomviz
