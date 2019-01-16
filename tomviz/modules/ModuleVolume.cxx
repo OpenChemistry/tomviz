@@ -76,9 +76,10 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   // Default parameters
-  m_imageData->ShallowCopy(
-    vtkImageData::SafeDownCast(data->producer()->GetOutputDataObject(0)));
-  m_volumeMapper->SetInputData(m_imageData);
+  auto trv = data->producer();
+  m_volumeMapper->SetInputConnection(trv->GetOutputPort());
+  m_volumeMapper->SetScalarModeToUsePointFieldData();
+  m_volumeMapper->SelectScalarArray(scalarsIndex());
   m_volume->SetMapper(m_volumeMapper.Get());
   m_volume->SetProperty(m_volumeProperty.Get());
   const double* displayPosition = data->displayPosition();
@@ -221,6 +222,7 @@ bool ModuleVolume::deserialize(const QJsonObject& json)
     }
 
     updatePanel();
+    onScalarArrayChanged();
     return true;
   }
   return false;
@@ -306,7 +308,8 @@ void ModuleVolume::onTransferModeChanged(const int mode)
 
 vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
 {
-  return m_imageData.GetPointer();
+  auto trv = dataSource()->producer();
+  return trv->GetOutputDataObject(0);
 }
 
 void ModuleVolume::onAmbientChanged(const double value)
@@ -381,14 +384,23 @@ void ModuleVolume::setJittering(const bool val)
 
 void ModuleVolume::onScalarArrayChanged()
 {
-  QString arrayName;
-  if (activeScalars() == Module::DEFAULT_SCALARS) {
-    arrayName = dataSource()->activeScalars();
-  } else {
-    arrayName = dataSource()->scalarsName(activeScalars());
+  m_volumeMapper->SelectScalarArray(scalarsIndex());
+  auto tp = dataSource()->producer();
+  if (tp) {
+    tp->GetOutputDataObject(0)->Modified();
   }
-  m_imageData->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
   emit renderNeeded();
+}
+
+int ModuleVolume::scalarsIndex()
+{
+  int index;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    index = dataSource()->activeScalarsIdx();
+  } else {
+    index = activeScalars();
+  }
+  return index;
 }
 
 } // end of namespace tomviz

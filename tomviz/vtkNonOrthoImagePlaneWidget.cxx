@@ -29,6 +29,7 @@
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper.h"
+#include "vtkPolygonalSurfacePointPlacer.h"
 #include "vtkProperty.h"
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRenderer.h"
@@ -135,21 +136,10 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
   this->Sphere = vtkSphereSource::New();
   this->SphereActor = vtkActor::New();
 
-  // Define some default point coordinates
-  double bounds[6];
-  bounds[0] = -0.5;
-  bounds[1] = 0.5;
-  bounds[2] = -0.5;
-  bounds[3] = 0.5;
-  bounds[4] = -0.5;
-  bounds[5] = 0.5;
-
   // Initial creation of the widget, serves to initialize it
   this->GeneratePlaneOutline();
   this->GenerateTexturePlane();
   this->GenerateArrow();
-  // GenerateArrow needs to before placeWidget
-  this->PlaceWidget(bounds);
 
   // Manage the picking stuff
   this->PlanePicker = nullptr;
@@ -164,6 +154,10 @@ vtkNonOrthoImagePlaneWidget::vtkNonOrthoImagePlaneWidget()
   this->SelectedArrowProperty = nullptr;
   this->TexturePlaneProperty = nullptr;
   this->CreateDefaultProperties();
+
+  // Initial opacity of the TexturePlane
+  this->Opacity = 1;
+  this->SetOpacity(this->Opacity);
 
   // Set up actions
   this->LeftButtonAction = vtkNonOrthoImagePlaneWidget::VTK_SLICE_MOTION_ACTION;
@@ -265,17 +259,17 @@ void vtkNonOrthoImagePlaneWidget::SetTextureVisibility(int vis)
 void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
 {
 
-  if (!this->Interactor) {
-    vtkErrorMacro(
-      << "The interactor must be set prior to enabling/disabling widget");
-    return;
-  }
-
   if (enabling) {
     vtkDebugMacro(<< "Enabling plane widget");
 
     if (this->Enabled) // already enabled, just return
     {
+      return;
+    }
+
+    if (!this->Interactor) {
+      vtkErrorMacro(
+        << "The interactor must be set prior to enabling/disabling widget");
       return;
     }
 
@@ -337,6 +331,12 @@ void vtkNonOrthoImagePlaneWidget::SetEnabled(int enabling)
 
     if (!this->Enabled) // already disabled, just return
     {
+      return;
+    }
+
+    if (!this->Interactor) {
+      vtkErrorMacro(
+        << "The interactor must be set prior to enabling/disabling widget");
       return;
     }
 
@@ -703,10 +703,13 @@ void vtkNonOrthoImagePlaneWidget::StartSliceMotion()
       this->HighlightPlane(1);
       this->HighlightArrow(1);
       stateFound = true;
-    } else if (prop == this->TexturePlaneActor || prop == this->SphereActor) {
+    } else if (prop == this->TexturePlaneActor) {
       this->State = vtkNonOrthoImagePlaneWidget::Pushing;
       this->HighlightPlane(1);
       this->HighlightArrow(1);
+      stateFound = true;
+    } else if (prop == this->SphereActor) {
+      this->State = vtkNonOrthoImagePlaneWidget::Moving;
       stateFound = true;
     }
   }
@@ -758,6 +761,8 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
   //
   double focalPoint[4], pickPoint[4], prevPickPoint[4];
   double z, vpn[3];
+  double* prevPlanePoint;
+  prevPlanePoint = GetCenter();
 
   vtkCamera* camera = this->CurrentRenderer->GetActiveCamera();
   if (!camera) {
@@ -778,11 +783,21 @@ void vtkNonOrthoImagePlaneWidget::OnMouseMove()
   this->ComputeDisplayToWorld(double(X), double(Y), z, pickPoint);
 
   if (this->State == vtkNonOrthoImagePlaneWidget::Pushing) {
-    this->Push(prevPickPoint, pickPoint);
+    this->Push(prevPlanePoint, pickPoint);
     this->UpdatePlacement();
   } else if (this->State == vtkNonOrthoImagePlaneWidget::Rotating) {
+    if (this->PlaneOrientation >= 0) {
+      return;
+    }
     camera->GetViewPlaneNormal(vpn);
     this->Rotate(double(X), double(Y), prevPickPoint, pickPoint, vpn);
+    this->UpdatePlacement();
+  } else if (this->State == vtkNonOrthoImagePlaneWidget::Moving) {
+    if (this->PlaneOrientation >= 0) {
+      return;
+    }
+    double display[2] = { (double)X, (double)Y };
+    this->Move(display);
     this->UpdatePlacement();
   }
 
@@ -803,9 +818,37 @@ void vtkNonOrthoImagePlaneWidget::Push(double* p1, double* p2)
   // take only the primary component of the motion vector
   double norm[3];
   this->PlaneSource->GetNormal(norm);
-  const float dotV = vtkMath::Dot(v, norm);
+  float dotV = vtkMath::Dot(v, norm);
+
+  if (this->PlaneOrientation >= 0) {
+    double spacing[3];
+    double center[3];
+    ImageData->GetSpacing(spacing);
+    GetCenter(center);
+    int n;
+    n = int((center[this->PlaneOrientation] + dotV) /
+            spacing[this->PlaneOrientation]);
+    SetSliceIndex(n);
+    return;
+  }
 
   this->PlaneSource->Push(dotV);
+}
+
+void vtkNonOrthoImagePlaneWidget::Move(double display[2])
+{
+  double point[3];
+  double orient[3];
+  vtkNew<vtkPolygonalSurfacePointPlacer> placer;
+  placer->AddProp(this->TexturePlaneActor);
+  int res =
+    placer->ComputeWorldPosition(this->CurrentRenderer, display, point, orient);
+
+  if (res == 0) {
+    return;
+  }
+
+  this->SetCenter(point);
 }
 
 void vtkNonOrthoImagePlaneWidget::CreateDefaultProperties()
@@ -850,20 +893,20 @@ void vtkNonOrthoImagePlaneWidget::PlaceWidget(double bds[6])
   this->AdjustBounds(bds, bounds, center);
 
   if (this->PlaneOrientation == 1) {
-    this->PlaneSource->SetOrigin(bounds[0], center[1], bounds[4]);
-    this->PlaneSource->SetPoint1(bounds[1], center[1], bounds[4]);
-    this->PlaneSource->SetPoint2(bounds[0], center[1], bounds[5]);
+    this->SetOrigin(bounds[0], center[1], bounds[4]);
+    this->SetPoint1(bounds[1], center[1], bounds[4]);
+    this->SetPoint2(bounds[0], center[1], bounds[5]);
     this->LineSource->SetPoint2(0, 1, 0);
   } else if (this->PlaneOrientation == 2) {
-    this->PlaneSource->SetOrigin(bounds[0], bounds[2], center[2]);
-    this->PlaneSource->SetPoint1(bounds[1], bounds[2], center[2]);
-    this->PlaneSource->SetPoint2(bounds[0], bounds[3], center[2]);
+    this->SetOrigin(bounds[0], bounds[2], center[2]);
+    this->SetPoint1(bounds[1], bounds[2], center[2]);
+    this->SetPoint2(bounds[0], bounds[3], center[2]);
     this->LineSource->SetPoint2(0, 0, 1);
   } else // default or x-normal
   {
-    this->PlaneSource->SetOrigin(center[0], bounds[2], bounds[4]);
-    this->PlaneSource->SetPoint1(center[0], bounds[3], bounds[4]);
-    this->PlaneSource->SetPoint2(center[0], bounds[2], bounds[5]);
+    this->SetOrigin(center[0], bounds[2], bounds[4]);
+    this->SetPoint1(center[0], bounds[3], bounds[4]);
+    this->SetPoint2(center[0], bounds[2], bounds[5]);
     this->LineSource->SetPoint2(1, 0, 0);
   }
 
@@ -877,6 +920,7 @@ void vtkNonOrthoImagePlaneWidget::SetPlaneOrientation(int i)
   // Generate a XY plane if i = 2, z-normal
   // or a YZ plane if i = 0, x-normal
   // or a ZX plane if i = 1, y-normal
+  // or a Custom plane else
   this->PlaneOrientation = i;
 
   // This method must be called _after_ SetInput
@@ -920,35 +964,79 @@ void vtkNonOrthoImagePlaneWidget::SetPlaneOrientation(int i)
     zbounds[1] = t;
   }
 
-  // push the bounds out by the diagonal length
-  vtkBoundingBox box;
-  box.AddPoint(xbounds[0], ybounds[0], zbounds[0]);
-  box.AddPoint(xbounds[1], ybounds[1], zbounds[1]);
-
-  double padding = box.GetDiagonalLength() / 2.0;
-  xbounds[0] -= padding;
-  ybounds[0] -= padding;
-  zbounds[0] -= padding;
-
-  xbounds[1] += padding;
-  ybounds[1] += padding;
-  zbounds[1] += padding;
-
   if (i == 2) // XY, z-normal
   {
-    this->PlaneSource->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
-    this->PlaneSource->SetPoint1(xbounds[1], ybounds[0], zbounds[0]);
-    this->PlaneSource->SetPoint2(xbounds[0], ybounds[1], zbounds[0]);
+    this->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
+    this->SetPoint1(xbounds[1], ybounds[0], zbounds[0]);
+    this->SetPoint2(xbounds[0], ybounds[1], zbounds[0]);
   } else if (i == 0) // YZ, x-normal
   {
-    this->PlaneSource->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
-    this->PlaneSource->SetPoint1(xbounds[0], ybounds[1], zbounds[0]);
-    this->PlaneSource->SetPoint2(xbounds[0], ybounds[0], zbounds[1]);
-  } else // ZX, y-normal
+    this->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
+    this->SetPoint1(xbounds[0], ybounds[1], zbounds[0]);
+    this->SetPoint2(xbounds[0], ybounds[0], zbounds[1]);
+  } else if (i == 1) // ZX, y-normal
   {
-    this->PlaneSource->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
-    this->PlaneSource->SetPoint1(xbounds[0], ybounds[0], zbounds[1]);
-    this->PlaneSource->SetPoint2(xbounds[1], ybounds[0], zbounds[0]);
+    this->SetOrigin(xbounds[0], ybounds[0], zbounds[0]);
+    this->SetPoint1(xbounds[0], ybounds[0], zbounds[1]);
+    this->SetPoint2(xbounds[1], ybounds[0], zbounds[0]);
+  } else { // Custom direction
+    // Keep the plane centered in the current position,
+    // and with the current normal,
+    // but make it large enough to span the entire image
+    // no matter what direction will be chosen
+    double length[3] = {
+      xbounds[1] - xbounds[0], ybounds[1] - ybounds[0], zbounds[1] - zbounds[0],
+    };
+    double l = length[0];
+    for (int j = 1; j < 3; ++j) {
+      if (length[j] > l) {
+        l = length[j];
+      }
+    }
+    l *= sqrt(2);
+
+    double points[2][3];
+    this->GetPoint1(points[0]);
+    this->GetPoint2(points[1]);
+
+    double center[3];
+    this->GetCenter(center);
+
+    this->GetOrigin(origin);
+
+    for (int j = 0; j < 2; ++j) {
+      for (int k = 0; k < 3; ++k) {
+        points[j][k] -= origin[k];
+      }
+
+      double c = 0;
+      for (int k = 0; k < 3; ++k) {
+        c += points[j][k] * points[j][k];
+      }
+
+      for (int k = 0; k < 3; ++k) {
+        points[j][k] /= sqrt(c);
+      }
+
+      for (int k = 0; k < 3; ++k) {
+        points[j][k] = l * points[j][k];
+      }
+    }
+
+    double delta[3];
+    for (int k = 0; k < 3; ++k) {
+      delta[k] = origin[k] + 0.5 * (points[0][k] + points[1][k]) - center[k];
+    }
+
+    for (int k = 0; k < 3; ++k) {
+      origin[k] -= delta[k];
+      points[0][k] += origin[k];
+      points[1][k] += origin[k];
+    }
+
+    this->SetOrigin(origin);
+    this->SetPoint1(points[0]);
+    this->SetPoint2(points[1]);
   }
 
   this->UpdatePlacement();
@@ -978,7 +1066,6 @@ void vtkNonOrthoImagePlaneWidget::SetInputConnection(vtkAlgorithmOutput* aout)
   this->Texture->SetInterpolate(this->TextureInterpolate);
 
   this->SetPlaneOrientation(this->PlaneOrientation);
-
   this->UpdatePlacement();
 }
 
@@ -999,7 +1086,7 @@ void vtkNonOrthoImagePlaneWidget::UpdatePlane()
   outInfo->Get(vtkDataObject::SPACING(), spacing);
 
   // setup the clip bounds
-  this->UpdateClipBounds(bounds, spacing);
+  this->UpdateClipBounds(bounds);
 
   double planeCenter[3];
   this->PlaneSource->GetCenter(planeCenter);
@@ -1107,8 +1194,7 @@ void vtkNonOrthoImagePlaneWidget::FindPlaneBounds(vtkInformation* outInfo,
   bounds[5] = orig_bounds[5];
 }
 
-void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6],
-                                                   double spacing[3])
+void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6])
 {
   // todo: we need to cache this so we don't redo this every frame
 
@@ -1116,14 +1202,10 @@ void vtkNonOrthoImagePlaneWidget::UpdateClipBounds(double bounds[6],
   // draw outside the box
   vtkNew<vtkPlaneCollection> clippingPlanes;
 
-  // we push the bounds out by two voxels by using the spacing
   double clip_bounds[6] = {
-    bounds[0] - (2 * spacing[0]) + this->DisplayOffset[0],
-    bounds[1] + (2 * spacing[0]) + this->DisplayOffset[0],
-    bounds[2] - (2 * spacing[1]) + this->DisplayOffset[1],
-    bounds[3] + (2 * spacing[1]) + this->DisplayOffset[1],
-    bounds[4] - (2 * spacing[2]) + this->DisplayOffset[2],
-    bounds[5] + (2 * spacing[2]) + this->DisplayOffset[2]
+    bounds[0] + this->DisplayOffset[0], bounds[1] + this->DisplayOffset[0],
+    bounds[2] + this->DisplayOffset[1], bounds[3] + this->DisplayOffset[1],
+    bounds[4] + this->DisplayOffset[2], bounds[5] + this->DisplayOffset[2]
   };
 
   vtkNew<vtkPlane> minXPlane;
@@ -1349,9 +1431,9 @@ void vtkNonOrthoImagePlaneWidget::SetSliceIndex(int index)
     return;
   }
 
-  this->PlaneSource->SetOrigin(planeOrigin);
-  this->PlaneSource->SetPoint1(pt1);
-  this->PlaneSource->SetPoint2(pt2);
+  this->SetOrigin(planeOrigin);
+  this->SetPoint1(pt1);
+  this->SetPoint2(pt2);
   this->UpdatePlacement();
   this->Modified();
 }
@@ -1713,4 +1795,15 @@ void vtkNonOrthoImagePlaneWidget::HighlightArrow(int highlight)
     this->ConeActor2->SetProperty(this->ArrowProperty);
     this->SphereActor->SetProperty(this->ArrowProperty);
   }
+}
+
+double vtkNonOrthoImagePlaneWidget::GetOpacity() const
+{
+  return this->Opacity;
+}
+
+void vtkNonOrthoImagePlaneWidget::SetOpacity(double opacity)
+{
+  this->Opacity = opacity;
+  this->TexturePlaneProperty->SetOpacity(opacity);
 }

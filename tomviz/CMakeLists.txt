@@ -210,8 +210,6 @@ list(APPEND SOURCES
   modules/ModuleMenu.h
   modules/ModuleMolecule.cxx
   modules/ModuleMolecule.h
-  modules/ModuleOrthogonalSlice.cxx
-  modules/ModuleOrthogonalSlice.h
   modules/ModuleOutline.cxx
   modules/ModuleOutline.h
   modules/ModulePropertiesPanel.cxx

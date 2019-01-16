@@ -424,7 +424,7 @@ void Pipeline::addDataSource(DataSource* dataSource)
 void Pipeline::addDefaultModules(DataSource* dataSource)
 {
   // Note: In the future we can pull this out into a setting.
-  QStringList defaultModules = { "Outline", "Orthogonal Slice" };
+  QStringList defaultModules = { "Outline", "Slice" };
   bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
   ActiveObjects::instance().setMoveObjectsMode(false);
   auto view = ActiveObjects::instance().activeView();

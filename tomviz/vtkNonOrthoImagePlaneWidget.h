@@ -324,6 +324,11 @@ public:
   vtkGetMacro(ArrowVisibility, int);
   vtkBooleanMacro(ArrowVisibility, int);
 
+  // Description:
+  // Set the opacity of the plane
+  double GetOpacity() const;
+  void SetOpacity(double opacity);
+
   // BTX
   // Description:
   // Set action associated to buttons.
@@ -371,6 +376,7 @@ protected:
     Start = 0,
     Pushing,
     Rotating,
+    Moving,
     Outside
   };
   // ETX
@@ -427,6 +433,7 @@ protected:
 
   // Methods to manipulate the plane
   void Push(double* p1, double* p2);
+  void Move(double display[2]);
   void Rotate(double X, double Y, double* p1, double* p2, double* vpn);
 
   vtkImageData* ImageData;
@@ -452,7 +459,7 @@ protected:
   // Reslice and texture management
   void UpdatePlane();
   void FindPlaneBounds(vtkInformation* outInfo, double bounds[6]);
-  void UpdateClipBounds(double bounds[6], double spacing[3]);
+  void UpdateClipBounds(double bounds[6]);
 
   void GenerateTexturePlane();
 
@@ -475,6 +482,9 @@ protected:
   // The origin positioning handle
   vtkSphereSource* Sphere;
   vtkActor* SphereActor;
+
+  // The opacity of the widget
+  double Opacity;
 
   void HighlightArrow(int highlight);
   void GenerateArrow(); // generate the default arrow
