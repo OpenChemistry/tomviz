@@ -3,11 +3,9 @@
 
 #include "ModuleSlice.h"
 
-#include "ActiveObjects.h"
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "IntSliderWidget.h"
-#include "ScalarsComboBox.h"
 #include "Utilities.h"
 
 #include <vtkAlgorithm.h>
@@ -16,13 +14,10 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkNonOrthoImagePlaneWidget.h>
-#include <vtkPassThrough.h>
-#include <vtkPointData.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkScalarsToColors.h>
-#include <vtkTrivialProducer.h>
 
 #include <pqCoreUtilities.h>
 #include <pqDoubleVectorPropertyWidget.h>
@@ -43,6 +38,7 @@
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDebug>
 #include <QDoubleValidator>
 #include <QFormLayout>
@@ -71,12 +67,9 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  auto pxm = ActiveObjects::instance().proxyManager();
-
-  m_imageData->ShallowCopy(
-    vtkImageData::SafeDownCast(data->producer()->GetOutputDataObject(0)));
-
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  auto producer = data->proxy();
+  auto pxm = producer->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -92,10 +85,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_passThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(m_passThrough);
   controller->PreInitializeProxy(m_passThrough);
-  vtkSmartPointer<vtkPassThrough> filter;
-  filter = vtkPassThrough::SafeDownCast(m_passThrough->GetClientSideObject());
-  Q_ASSERT(filter);
-  filter->SetInputData(m_imageData);
+  vtkSMPropertyHelper(m_passThrough, "Input").Set(producer);
   controller->PostInitializeProxy(m_passThrough);
   controller->RegisterPipelineProxy(m_passThrough);
 
@@ -115,7 +105,6 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
-    connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
   }
 
   Q_ASSERT(m_widget);
@@ -246,10 +235,6 @@ void ModuleSlice::addToPanel(QWidget* panel)
   line->setFrameShadow(QFrame::Sunken);
   formLayout->addRow(line);
 
-  m_scalarsCombo = new ScalarsComboBox();
-  m_scalarsCombo->setOptions(dataSource(), this);
-  formLayout->addRow("Scalars", m_scalarsCombo);
-
   m_directionCombo = new QComboBox();
   m_directionCombo->addItem("XY Plane", QVariant(Direction::XY));
   m_directionCombo->addItem("YZ Plane", QVariant(Direction::YZ));
@@ -354,11 +339,6 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   m_opacityCheckBox->setChecked(m_mapOpacity);
 
-  connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, [this](int idx) {
-            setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
-            onScalarArrayChanged();
-          });
   connect(m_directionCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this](int idx) {
             Direction dir = m_directionCombo->itemData(idx).value<Direction>();
@@ -454,7 +434,6 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
       }
     }
     m_widget->UpdatePlacement();
-    m_scalarsCombo->setOptions(dataSource(), this);
     // If deserializing a former OrthogonalSlice, the direction is encoded in
     // the property "sliceMode" as an int
     if (props.contains("sliceMode")) {
@@ -577,18 +556,6 @@ bool ModuleSlice::areScalarsMapped() const
 {
   vtkSMPropertyHelper mapScalars(m_propsPanelProxy->GetProperty("MapScalars"));
   return mapScalars.GetAsInt() != 0;
-}
-
-void ModuleSlice::onScalarArrayChanged()
-{
-  QString arrayName;
-  if (activeScalars() == Module::DEFAULT_SCALARS) {
-    arrayName = dataSource()->activeScalars();
-  } else {
-    arrayName = dataSource()->scalarsName(activeScalars());
-  }
-  m_imageData->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
-  emit renderNeeded();
 }
 
 void ModuleSlice::onDirectionChanged(Direction direction)
