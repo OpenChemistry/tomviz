@@ -19,7 +19,6 @@ class vtkNonOrthoImagePlaneWidget;
 
 namespace tomviz {
 
-class ScalarsComboBox;
 class DoubleSliderWidget;
 class IntSliderWidget;
 
@@ -75,8 +74,6 @@ private slots:
 
   void dataUpdated();
 
-  void onScalarArrayChanged();
-
   void onDirectionChanged(Direction direction);
   void onSliceChanged(int slice);
   void onSliceChanged(double* point);
@@ -102,7 +99,6 @@ private:
   bool m_mapOpacity = false;
 
   vtkNew<vtkImageData> m_imageData;
-  QPointer<ScalarsComboBox> m_scalarsCombo;
   QPointer<QComboBox> m_directionCombo;
   QPointer<IntSliderWidget> m_sliceSlider;
   Direction m_direction = Direction::XY;
