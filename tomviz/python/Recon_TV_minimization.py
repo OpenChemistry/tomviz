@@ -27,14 +27,14 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
 
         # Generate measurement matrix
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-        recon = np.empty([Nslice, Nray, Nray], dtype=float, order='F')
+        recon = np.empty([Nslice, Nray, Nray], dtype=np.float32, order='F')
         A = A.todense()
 
         (Nslice, Nray, Nproj) = tiltSeries.shape
         (Nrow, Ncol) = A.shape
-        rowInnerProduct = np.zeros(Nrow)
-        row = np.zeros(Ncol)
-        f = np.zeros(Ncol) # Placeholder for 2d image
+        rowInnerProduct = np.zeros(Nrow, dtype=np.float32)
+        row = np.zeros(Ncol, dtype=np.float32)
+        f = np.zeros(Ncol, dtype=np.float32) # Placeholder for 2d image
 
         alpha = 0.2
         ng = 30
@@ -127,9 +127,9 @@ def tv_minimization(A, tiltSeries, recon, iterNum=1):
     (Nslice, Nray, Nproj) = tiltSeries.shape
 
     (Nrow, Ncol) = A.shape
-    rowInnerProduct = np.zeros(Nrow)
-    row = np.zeros(Ncol)
-    f = np.zeros(Ncol) # Placeholder for 2d image
+    rowInnerProduct = np.zeros(Nrow, dtype=np.float32)
+    row = np.zeros(Ncol, dtype=np.float32)
+    f = np.zeros(Ncol, dtype=np.float32) # Placeholder for 2d image
 
     alpha = 0.2
     ng = 30
@@ -206,9 +206,9 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
 
     # Initialize vectors that contain matrix elements and corresponding
     # row/column numbers
-    rows = np.zeros(2 * Nside * Nproj * Nray)
-    cols = np.zeros(2 * Nside * Nproj * Nray)
-    vals = np.zeros(2 * Nside * Nproj * Nray)
+    rows = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
+    cols = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
+    vals = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
     idxend = 0
 
     for i in range(0, Nproj): # Loop over projection angles
@@ -298,7 +298,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     rows = rows[:idxend]
     cols = cols[:idxend]
     vals = vals[:idxend]
-    A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2))
+    A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2),
+                      dtype=np.float32)
     return A
 
 

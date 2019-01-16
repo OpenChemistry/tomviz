@@ -29,7 +29,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = Nslice
         step = 0
 
-        recon = np.empty([Nslice, Nrecon, Nrecon], dtype=float, order='F')
+        recon = np.empty([Nslice, Nrecon, Nrecon], dtype=np.float32, order='F')
         t0 = time.time()
         counter = 1
         etcMessage = 'Estimated time to complete: n/a'
@@ -96,7 +96,7 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     s = s[:Nray, :]
 
     # Back projection
-    recon = np.zeros((N, N))
+    recon = np.zeros((N, N), np.float32)
     center_proj = Nray // 2  # Index of center of projection
     [X, Y] = np.mgrid[0:N, 0:N]
     xpr = X - int(N) // 2
