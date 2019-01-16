@@ -39,7 +39,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         # Generate measurement matrix
         self.progress.message = 'Generating measurement matrix'
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-        recon = np.empty([Nslice, Nray, Nray], dtype=float, order='F')
+        recon = np.empty([Nslice, Nray, Nray], dtype=np.float32, order='F')
 
         self.progress.maximum = Nslice + 1
         step = 0
@@ -97,21 +97,22 @@ class SIRT:
             self.AT = self.A.transpose()
         elif self.method == 'cimmino':
             self.A = self.A.todense()
-            self.rowInnerProduct = np.zeros(self.Nrow)
-            self.a = np.zeros(self.Ncol)
-            # Calculate row inner product
-            self.row = np.zeros(self.Ncol) #placeholder for matrix rows
+            self.rowInnerProduct = np.zeros(self.Nrow, dtype=np.float32)
+            self.a = np.zeros(self.Ncol, dtype=np.float32)
+            # Calculate row inner product, placeholder for matrix rows
+            self.row = np.zeros(self.Ncol, dtype=np.float32)
             for i in range(self.Nrow):
                 self.row[:] = self.A[i, ].copy()
                 self.rowInnerProduct[i] = np.dot(self.row, self.row)
         elif self.method == 'component averaging':
             self.A = self.A.todense()
-            self.weightedRowProduct = np.zeros(self.Nrow)
-            self.a = np.zeros(self.Ncol)
+            self.weightedRowProduct = np.zeros(self.Nrow, dtype=np.float32)
+            self.a = np.zeros(self.Ncol, dtype=np.float32)
 
             # Calculate number of non-zero elements in each column
-            s = np.zeros(self.Ncol)
-            col = np.zeros(self.Nrow) #placeholder for matrix columns
+            s = np.zeros(self.Ncol, dtype=np.float32)
+            #placeholder for matrix columns
+            col = np.zeros(self.Nrow, dtype=np.float32)
 
             for i in range(self.Ncol):
                 col[:] = np.squeeze(self.A[:, i])
@@ -166,9 +167,9 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     ygrid = np.linspace(-Nside * 0.5, Nside * 0.5, Nside + 1) * pixelWidth
     # Initialize vectors that contain matrix elements and corresponding
     # row/column numbers
-    rows = np.zeros(2 * Nside * Nproj * Nray)
-    cols = np.zeros(2 * Nside * Nproj * Nray)
-    vals = np.zeros(2 * Nside * Nproj * Nray)
+    rows = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
+    cols = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
+    vals = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
     idxend = 0
 
     for i in range(0, Nproj): # Loop over projection angles
@@ -260,7 +261,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     rows = rows[:idxend]
     cols = cols[:idxend]
     vals = vals[:idxend]
-    A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2))
+    A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2),
+                      dtype=np.float32)
     return A
 
 

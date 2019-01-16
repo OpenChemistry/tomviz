@@ -26,14 +26,14 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
         # Generate measurement matrix
         self.progress.message = 'Generating measurement matrix'
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-        recon = np.empty([Nslice, Nray, Nray], dtype=float, order='F')
+        recon = np.empty([Nslice, Nray, Nray], dtype=np.float32, order='F')
 
         A = A.todense()
         (Nslice, Nray, Nproj) = tiltSeries.shape
         (Nrow, Ncol) = A.shape
-        rowInnerProduct = np.zeros(Nrow)
-        row = np.zeros(Ncol)
-        f = np.zeros(Ncol) # Placeholder for 2d image
+        rowInnerProduct = np.zeros(Nrow, dtype=np.float32)
+        row = np.zeros(Ncol, dtype=np.float32)
+        f = np.zeros(Ncol, dtype=np.float32) # Placeholder for 2d image
         beta = 1.0
 
         # Calculate row inner product
@@ -99,9 +99,9 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     ygrid = np.linspace(-Nside * 0.5, Nside * 0.5, Nside + 1) * pixelWidth
     # Initialize vectors that contain matrix elements and corresponding
     # row/column numbers
-    rows = np.zeros(2 * Nside * Nproj * Nray)
-    cols = np.zeros(2 * Nside * Nproj * Nray)
-    vals = np.zeros(2 * Nside * Nproj * Nray)
+    rows = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
+    cols = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
+    vals = np.zeros((2 * Nside * Nproj * Nray), dtype=np.float32)
     idxend = 0
 
     for i in range(0, Nproj): # Loop over projection angles
@@ -147,7 +147,7 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
                 # Get rid of double counted points
                 I = np.logical_and(np.abs(np.diff(xx)) <=
                                    1e-8, np.abs(np.diff(yy)) <= 1e-8)
-                I2 = np.zeros(I.size + 1)
+                I2 = np.zeros((I.size + 1), dtype=np.float32)
                 I2[0:-1] = I
                 xx = xx[np.logical_not(I2)]
                 yy = yy[np.logical_not(I2)]
@@ -193,7 +193,8 @@ def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
     rows = rows[:idxend]
     cols = cols[:idxend]
     vals = vals[:idxend]
-    A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2))
+    A = ss.coo_matrix((vals, (rows, cols)), shape=(Nray * Nproj, Nside**2),
+                      dtype=np.float32)
     return A
 
 
