@@ -226,6 +226,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Build Data Transforms menu
   new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);
 
+  // Create the custom transforms menu
+  m_customTransformsMenu = new QMenu("Custom Transforms", this);
+  m_customTransformsMenu->setEnabled(false);
+  m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
+                            m_customTransformsMenu);
+
   // Build Tomography menu
   // ################################################################
   QAction* setVolumeDataTypeAction =
@@ -822,15 +828,7 @@ void MainWindow::registerCustomOperators(
 {
   // Always create the Custom Transforms menu so that it is possible to import
   // new operators.
-  if (m_customTransformsMenu) {
-    m_customTransformsMenu->clear();
-  }
-
-  if (!m_customTransformsMenu) {
-    m_customTransformsMenu = new QMenu("Custom Transforms", this);
-    m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
-                              m_customTransformsMenu);
-  }
+  m_customTransformsMenu->clear();
 
   QAction* importCustomTransformAction =
     m_customTransformsMenu->addAction("Import Custom Transform...");
@@ -877,6 +875,7 @@ void MainWindow::registerCustomOperators(
                                      false, json);
     }
   }
+  m_customTransformsMenu->setEnabled(true);
 }
 
 std::vector<OperatorDescription> MainWindow::findCustomOperators()
