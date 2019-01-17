@@ -16,8 +16,18 @@ PythonWriter::PythonWriter(Python::Object instance) : m_instance(instance)
 {
 }
 
+PythonWriter::PythonWriter()
+{
+}
+
 bool PythonWriter::write(QString fileName, vtkImageData* data)
 {
+  if (!m_instance.isValid()) {
+    qWarning() << "The Python writer for this file type hasn't loaded yet. "
+                  "Please try again in a few seconds";
+    return false;
+  }
+
   Python python;
   auto module = python.import("tomviz.io._internal");
   if (!module.isValid()) {
@@ -55,6 +65,12 @@ PythonWriterFactory::PythonWriterFactory(QString description,
 {
 }
 
+PythonWriterFactory::PythonWriterFactory(QString description,
+                                         QStringList extensions)
+  : m_description(description), m_extensions(extensions)
+{
+}
+
 QString PythonWriterFactory::getDescription() const
 {
   return m_description;
@@ -79,6 +95,10 @@ QString PythonWriterFactory::getFileDialogFilter() const
 
 PythonWriter PythonWriterFactory::createWriter() const
 {
+  if (!m_class.isValid()) {
+    return PythonWriter();
+  }
+
   Python python;
   auto module = python.import("tomviz.io._internal");
   if (!module.isValid()) {

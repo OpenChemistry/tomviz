@@ -59,7 +59,6 @@ void SaveDataReaction::updateEnableState()
 
 void SaveDataReaction::onTriggered()
 {
-  FileFormatManager::instance().registerPythonWriters();
   QStringList filters;
   filters << "TIFF format (*.tiff)"
           << "EMD format (*.emd *.hdf5)"
@@ -124,8 +123,6 @@ bool SaveDataReaction::saveData(const QString& filename)
     qCritical("No active source located.");
     return false;
   }
-
-  FileFormatManager::instance().registerPythonWriters();
 
   QFileInfo info(filename);
   if (info.suffix() == "emd") {

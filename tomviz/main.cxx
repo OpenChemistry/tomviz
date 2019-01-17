@@ -3,8 +3,8 @@
 
 #include <QApplication>
 
-#include <QSurfaceFormat>
 #include <QSplashScreen>
+#include <QSurfaceFormat>
 
 #include <QDebug>
 

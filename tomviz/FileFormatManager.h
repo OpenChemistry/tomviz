@@ -19,6 +19,14 @@ class FileFormatManager
 public:
   static FileFormatManager& instance();
 
+  // Fetch the list of previously available python readers,
+  // and create placeholders for them while the actual python readers are loaded
+  void prepopulatePythonReaders();
+
+  // Fetch the list of previously available python writers,
+  // and create placeholders for them while the actual python writers are loaded
+  void prepopulatePythonWriters();
+
   // Fetch the available python readers
   void registerPythonReaders();
 
@@ -32,6 +40,8 @@ public:
   PythonWriterFactory* pythonWriterFactory(const QString& ext);
 
 private:
+  void setPythonReadersMap(QMap<QString, PythonReaderFactory*> factories);
+  void setPythonWritersMap(QMap<QString, PythonWriterFactory*> factories);
   QMap<QString, PythonReaderFactory*> m_pythonExtReaderMap;
   QMap<QString, PythonWriterFactory*> m_pythonExtWriterMap;
 };
