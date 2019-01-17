@@ -67,6 +67,7 @@ protected:
   vtkSMProxy* getProxyForString(const std::string& str) override;
   static Direction stringToDirection(const QString& name);
   static Direction modeToDirection(int sliceMode);
+  vtkImageData* imageData() const;
 
 private slots:
   void onPropertyChanged();
@@ -98,7 +99,6 @@ private:
   QPointer<QCheckBox> m_opacityCheckBox;
   bool m_mapOpacity = false;
 
-  vtkNew<vtkImageData> m_imageData;
   QPointer<QComboBox> m_directionCombo;
   QPointer<IntSliderWidget> m_sliceSlider;
   Direction m_direction = Direction::XY;

@@ -18,6 +18,7 @@
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkScalarsToColors.h>
+#include <vtkTrivialProducer.h>
 
 #include <pqCoreUtilities.h>
 #include <pqDoubleVectorPropertyWidget.h>
@@ -252,7 +253,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
   bool isOrtho = axis >= 0;
   if (isOrtho) {
     int dims[3];
-    m_imageData->GetDimensions(dims);
+    imageData()->GetDimensions(dims);
     m_sliceSlider->setMaximum(dims[axis] - 1);
   }
   formLayout->addRow("Slice", m_sliceSlider);
@@ -558,6 +559,14 @@ bool ModuleSlice::areScalarsMapped() const
   return mapScalars.GetAsInt() != 0;
 }
 
+vtkImageData* ModuleSlice::imageData() const
+{
+  vtkImageData* data = vtkImageData::SafeDownCast(
+    dataSource()->producer()->GetOutputDataObject(0));
+  Q_ASSERT(data);
+  return data;
+}
+
 void ModuleSlice::onDirectionChanged(Direction direction)
 {
   m_direction = direction;
@@ -595,7 +604,7 @@ void ModuleSlice::onDirectionChanged(Direction direction)
   }
 
   int dims[3];
-  m_imageData->GetDimensions(dims);
+  imageData()->GetDimensions(dims);
 
   double normal[3] = { 0, 0, 0 };
   int slice = 0;
@@ -640,9 +649,9 @@ void ModuleSlice::onSliceChanged(double* point)
   }
 
   int dims[3];
-  m_imageData->GetDimensions(dims);
+  imageData()->GetDimensions(dims);
   double bounds[6];
-  m_imageData->GetBounds(bounds);
+  imageData()->GetBounds(bounds);
   int slice;
 
   slice = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
