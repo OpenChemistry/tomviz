@@ -220,7 +220,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   new Behaviors(this);
 
   new LoadDataReaction(m_ui->actionOpen);
-  m_ui->actionOpen->setEnabled(false);
 
   new LoadStackReaction(m_ui->actionStack);
 
@@ -395,7 +394,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   //#################################################################
   new ModuleMenu(m_ui->modulesToolbar, m_ui->menuModules, this);
-  m_ui->menuRecentlyOpened->setEnabled(false);
   new RecentFilesMenu(*m_ui->menuRecentlyOpened, m_ui->menuRecentlyOpened);
   new pqSaveStateReaction(m_ui->actionSaveDebuggingState);
 
@@ -496,8 +494,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   auto pythonWatcher = new QFutureWatcher<std::vector<OperatorDescription>>;
   connect(pythonWatcher, &QFutureWatcherBase::finished, this,
           [this, pythonWatcher]() {
-            m_ui->actionOpen->setEnabled(true);
-            m_ui->menuRecentlyOpened->setEnabled(true);
             m_ui->actionAcquisition->setEnabled(true);
             m_ui->actionPassiveAcquisition->setEnabled(true);
             registerCustomOperators(pythonWatcher->result());
