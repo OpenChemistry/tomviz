@@ -15,8 +15,18 @@ PythonReader::PythonReader(Python::Object instance) : m_instance(instance)
 {
 }
 
+PythonReader::PythonReader()
+{
+}
+
 vtkSmartPointer<vtkImageData> PythonReader::read(QString fileName)
 {
+  if (!m_instance.isValid()) {
+    qWarning() << "The Python reader for this file type hasn't loaded yet. "
+                  "Please try again in a few seconds";
+    return nullptr;
+  }
+
   Python python;
   auto module = python.import("tomviz.io._internal");
   if (!module.isValid()) {
@@ -54,6 +64,7 @@ vtkSmartPointer<vtkImageData> PythonReader::read(QString fileName)
     qCritical() << "The file didn't contain any suitable volumetric data";
     return nullptr;
   }
+
   return imageData;
 }
 
@@ -61,6 +72,12 @@ PythonReaderFactory::PythonReaderFactory(QString description,
                                          QStringList extensions,
                                          Python::Object cls)
   : m_description(description), m_extensions(extensions), m_class(cls)
+{
+}
+
+PythonReaderFactory::PythonReaderFactory(QString description,
+                                         QStringList extensions)
+  : m_description(description), m_extensions(extensions)
 {
 }
 
@@ -88,6 +105,10 @@ QString PythonReaderFactory::getFileDialogFilter() const
 
 PythonReader PythonReaderFactory::createReader() const
 {
+  if (!m_class.isValid()) {
+    return PythonReader();
+  }
+
   Python python;
   auto module = python.import("tomviz.io._internal");
   if (!module.isValid()) {

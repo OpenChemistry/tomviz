@@ -486,6 +486,12 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionPipelineSettings, &QAction::triggered,
           pipelineSettingsDialog, &QWidget::show);
 
+  // Prepopulate the previously seen python readers/writers
+  // This operation is fast since it fetches the readers description
+  // from the settings, without really invoking python
+  FileFormatManager::instance().prepopulatePythonReaders();
+  FileFormatManager::instance().prepopulatePythonWriters();
+
   // Async initialize python
   auto pythonWatcher = new QFutureWatcher<std::vector<OperatorDescription>>;
   connect(pythonWatcher, &QFutureWatcherBase::finished, this,
@@ -517,6 +523,7 @@ std::vector<OperatorDescription> MainWindow::initPython()
   RegexGroupSubstitution::registerType();
   auto operators = findCustomOperators();
   FileFormatManager::instance().registerPythonReaders();
+  FileFormatManager::instance().registerPythonWriters();
   return operators;
 }
 
