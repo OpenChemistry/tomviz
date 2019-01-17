@@ -491,6 +491,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   FileFormatManager::instance().prepopulatePythonWriters();
 
   // Async initialize python
+  statusBar()->showMessage("Initializing python...");
   auto pythonWatcher = new QFutureWatcher<std::vector<OperatorDescription>>;
   connect(pythonWatcher, &QFutureWatcherBase::finished, this,
           [this, pythonWatcher]() {
@@ -498,6 +499,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
             m_ui->actionPassiveAcquisition->setEnabled(true);
             registerCustomOperators(pythonWatcher->result());
             delete pythonWatcher;
+            statusBar()->showMessage("Initialization complete", 1500);
           });
   auto pythonFuture = QtConcurrent::run(initPython);
   pythonWatcher->setFuture(pythonFuture);
