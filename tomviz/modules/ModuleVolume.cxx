@@ -69,24 +69,37 @@ QIcon ModuleVolume::icon() const
   return QIcon(":/icons/pqVolumeData.png");
 }
 
+void ModuleVolume::initializeMapper(DataSource* data) {
+  vtkAlgorithmOutput *output = nullptr;
+  if (data == nullptr) {
+    output = m_volumeMapper->GetInputConnection(0, 0);
+  }
+  else {
+    output = data->producer()->GetOutputPort();
+  }
+  m_volumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
+  m_volumeMapper->SetInputConnection(output);
+  m_volumeMapper->SetScalarModeToUsePointFieldData();
+  m_volumeMapper->SelectScalarArray(scalarsIndex());
+  m_volume->SetMapper(m_volumeMapper.Get());
+  m_volumeMapper->UseJitteringOn();
+  m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
+  if (m_view != nullptr) {
+    m_view->Update();
+  }
+}
+
 bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
-  // Default parameters
-  auto trv = data->producer();
-  m_volumeMapper->SetInputConnection(trv->GetOutputPort());
-  m_volumeMapper->SetScalarModeToUsePointFieldData();
-  m_volumeMapper->SelectScalarArray(scalarsIndex());
-  m_volume->SetMapper(m_volumeMapper.Get());
+  initializeMapper(data);
   m_volume->SetProperty(m_volumeProperty.Get());
   const double* displayPosition = data->displayPosition();
   m_volume->SetPosition(displayPosition[0], displayPosition[1],
                         displayPosition[2]);
-  m_volumeMapper->UseJitteringOn();
-  m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
   m_volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
   m_volumeProperty->SetAmbient(0.0);
   m_volumeProperty->SetDiffuse(1.0);
@@ -102,6 +115,14 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
 
+  // Work around mapper bug on the mac, see the following issue for details:
+  // https://github.com/OpenChemistry/tomviz/issues/1776
+  // Should be removed when this is fixed.
+#if defined(Q_OS_MAC)
+  connect(data, &DataSource::dataChanged, [this]() {
+    this->initializeMapper();
+  });
+#endif
   return true;
 }
 

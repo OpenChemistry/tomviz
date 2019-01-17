@@ -8,6 +8,7 @@
 
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
+#include <vtkSmartPointer.h>
 
 #include <QPointer>
 
@@ -36,6 +37,7 @@ public:
   QString label() const override { return "Volume"; }
   QIcon icon() const override;
   using Module::initialize;
+  void initializeMapper(DataSource *data=nullptr);
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
   bool setVisibility(bool val) override;
@@ -66,7 +68,7 @@ private:
 
   vtkWeakPointer<vtkPVRenderView> m_view;
   vtkNew<vtkVolume> m_volume;
-  vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
+  vtkSmartPointer<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
