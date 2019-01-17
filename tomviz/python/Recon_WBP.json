@@ -43,12 +43,12 @@
         {"Spline" : 2},
         {"Cubic" : 3}
       ]
-    },
+    }, 
     {
       "name" : "Nupdates",
-      "label" : "Number of Updates during Reconstruction",
+      "label" : "Number Of Updates During Live Reconstruction",
       "type" : "int",
-      "data-default" : "0",
+      "default" : 0,
       "minimum" : 0
     }
   ]

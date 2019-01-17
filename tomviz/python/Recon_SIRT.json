@@ -27,7 +27,7 @@
       "minimum" : 0
     },
     {
-      "name" : "updateMethodIndex",
+      "name" : "updateMethodIndex", 
       "label" : "Update method",
       "type" : "enumeration",
       "default" : 0,
@@ -36,6 +36,13 @@
         {"Cimmino": 1},
         {"Component average": 2}
       ]
+    },
+    {
+      "name" : "Nupdates",
+      "label" : "Number Of Updates during Live Reconstruction",
+      "type" : "int",
+      "default" : 0,
+      "minimum" : 0
     }
   ]
 }
