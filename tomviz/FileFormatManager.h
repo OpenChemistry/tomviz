@@ -4,8 +4,6 @@
 #ifndef tomvizFileFormatManager_h
 #define tomvizFileFormatManager_h
 
-#include <mutex>
-
 #include <QList>
 #include <QMap>
 #include <QString>
@@ -46,8 +44,6 @@ private:
   void setPythonWritersMap(QMap<QString, PythonWriterFactory*> factories);
   QMap<QString, PythonReaderFactory*> m_pythonExtReaderMap;
   QMap<QString, PythonWriterFactory*> m_pythonExtWriterMap;
-  std::mutex m_readersMutex;
-  std::mutex m_writersMutex;
 };
 } // namespace tomviz
 

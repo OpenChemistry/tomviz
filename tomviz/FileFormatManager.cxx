@@ -131,38 +131,32 @@ void FileFormatManager::registerPythonWriters()
 void FileFormatManager::setPythonReadersMap(
   QMap<QString, PythonReaderFactory*> factories)
 {
-  std::lock_guard<std::mutex> guard(m_readersMutex);
   m_pythonExtReaderMap = factories;
 }
 
 void FileFormatManager::setPythonWritersMap(
   QMap<QString, PythonWriterFactory*> factories)
 {
-  std::lock_guard<std::mutex> guard(m_writersMutex);
   m_pythonExtWriterMap = factories;
 }
 
 QList<PythonReaderFactory*> FileFormatManager::pythonReaderFactories()
 {
-  std::lock_guard<std::mutex> guard(m_readersMutex);
   return m_pythonExtReaderMap.values().toSet().values();
 }
 
 PythonReaderFactory* FileFormatManager::pythonReaderFactory(const QString& ext)
 {
-  std::lock_guard<std::mutex> guard(m_readersMutex);
   return m_pythonExtReaderMap.value(ext, nullptr);
 }
 
 QList<PythonWriterFactory*> FileFormatManager::pythonWriterFactories()
 {
-  std::lock_guard<std::mutex> guard(m_writersMutex);
   return m_pythonExtWriterMap.values().toSet().values();
 }
 
 PythonWriterFactory* FileFormatManager::pythonWriterFactory(const QString& ext)
 {
-  std::lock_guard<std::mutex> guard(m_writersMutex);
   return m_pythonExtWriterMap.value(ext, nullptr);
 }
 
