@@ -76,8 +76,8 @@ QMap<QString, T*> registerFactories(const QString& name,
     settings->beginWriteArray(name);
     for (int i = 0; i < cached.size(); ++i) {
       settings->setArrayIndex(i);
-      settings->setValue("description", cached.at(i).first);
-      settings->setValue("extensions", cached.at(i).second.join(","));
+      settings->setValue("description", cached[i].first);
+      settings->setValue("extensions", cached[i].second.join(","));
     }
     settings->endArray();
   }
