@@ -39,7 +39,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         # Generate measurement matrix
         self.progress.message = 'Generating measurement matrix'
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-        recon = np.empty([Nslice, Nray, Nray], dtype=np.float32, order='F')
+        recon = np.zeros([Nslice, Nray, Nray], dtype=np.float32, order='F')
 
         self.progress.maximum = Nslice + 1
         step = 0
@@ -53,6 +53,10 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         t0 = time.time()
         counter = 1
         etcMessage = 'Estimated time to complete: n/a'
+
+        #create child for recon
+        child = utils.make_child_dataset(dataset)
+        utils.mark_as_volume(child)
 
         for s in range(Nslice):
             if self.canceled:
@@ -73,14 +77,18 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
             etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
-        from vtkmodules.vtkCommonDataModel import vtkImageData
-        recon_dataset = vtkImageData()
-        recon_dataset.CopyStructure(dataset)
-        utils.set_array(recon_dataset, recon)
-        utils.mark_as_volume(recon_dataset)
+            # Update only once every so many steps
+            if (s + 1) % 40 == 0:
+                utils.set_array(child, recon) #add recon to child
+                # This copies data to the main thread
+                self.progress.data = child
+
+        # One last update of the child data.
+        utils.set_array(child, recon) #add recon to child
+        self.progress.data = child
 
         returnValues = {}
-        returnValues["reconstruction"] = recon_dataset
+        returnValues["reconstruction"] = child
         return returnValues
 
 
@@ -90,7 +98,7 @@ class SIRT:
         self.A = A
         self.method = method
         (self.Nrow, self.Ncol) = self.A.shape
-        self.f = np.zeros(self.Ncol) # Placeholder for 2d image
+        self.f = np.zeros(self.Ncol, dtype=np.float32) #Placeholder for 2d image
 
     def initialize(self):
         if self.method == 'landweber':
