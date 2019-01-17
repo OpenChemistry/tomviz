@@ -18,6 +18,8 @@ FileFormatManager& FileFormatManager::instance()
   return theInstance;
 }
 
+namespace {
+
 template <typename T>
 QMap<QString, T*> registerFactories(const QString& name,
                                     const QString& registerFunction)
@@ -101,6 +103,8 @@ QMap<QString, T*> populateFactories(const QString& name)
   settings->endArray();
   return factories;
 }
+
+} // namespace
 
 void FileFormatManager::prepopulatePythonReaders()
 {
