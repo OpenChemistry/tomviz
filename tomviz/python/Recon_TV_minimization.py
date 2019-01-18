@@ -75,6 +75,14 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
                     f = f + row * a * beta
                 recon[s, :, :] = f.reshape((Nray, Nray))
 
+                timeLeft = (time.time() - t0)/counter * \
+                    (Niter*Nslice - counter) 
+                counter += 1
+                timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+                timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+                etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                    timeLeftHour, timeLeftMin, timeLeftSec)
+
                 # Update only once every so many steps
                 if (s + 1) % 20 == 0:
                     utils.set_array(child, recon) #add recon to child
@@ -87,6 +95,8 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
 
             #calculate tomogram change due to POCS
             dPOCS = np.linalg.norm(recon_temp - recon)
+
+            self.progress.message = 'TV Minimization'
 
             #3D TV minimization
             for j in range(ng):
@@ -126,14 +136,6 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
 
             #adjust parameters
             beta = beta * beta_red
-
-            timeLeft = (time.time() - t0) / counter * \
-                (Nslice * Niter - counter)
-            counter += 1
-            timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
-            timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
-            etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
-                timeLeftHour, timeLeftMin, timeLeftSec)
 
         # One last update of the child data.
         utils.set_array(child, recon) #add recon to child
