@@ -7,7 +7,7 @@ import time
 
 class ReconARTOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Niter=1):
+    def transform_scalars(self, dataset, Niter=1, Nupdates=0):
         """
         3D Reconstruction using Algebraic Reconstruction Technique (ART)
         """
@@ -46,6 +46,10 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
         t0 = time.time()
         etcMessage = 'Estimated time to complete: n/a'
 
+        #create child for recon
+        child = utils.make_child_dataset(dataset)
+        utils.mark_as_volume(child)
+
         counter = 1
         for s in range(Nslice):
             if self.canceled:
@@ -53,8 +57,10 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
             f[:] = 0
             b = tiltSeries[s, :, :].transpose().flatten()
             for i in range(Niter):
-                self.progress.message = 'Slice No.%d/%d, iteration No.%d/%d. ' \
-                    % (s + 1, Nslice, i + 1, Niter) + etcMessage
+                if self.canceled:
+                    return
+                self.progress.message = 'Slice No.%d/%d,Iteration No.%d/%d.' % (
+                    s + 1, Nslice, i + 1, Niter) + etcMessage
                 for j in range(Nrow):
                     row[:] = A[j, ].copy()
                     row_f_product = np.dot(row, f)
@@ -71,18 +77,21 @@ class ReconARTOperator(tomviz.operators.CancelableOperator):
 
             recon[s, :, :] = f.reshape((Nray, Nray))
 
+            # Update only once every so many steps
+            if Nupdates != 0 and (s + 1) % (Nslice//Nupdates) == 0:
+                utils.set_array(child, recon) #add recon to child
+                # This copies data to the main thread
+                self.progress.data = child
+
             step += 1
             self.progress.value = step
 
-        from vtkmodules.vtkCommonDataModel import vtkImageData
-        # Set up the output dataset
-        recon_dataset = vtkImageData()
-        recon_dataset.CopyStructure(dataset)
-        utils.set_array(recon_dataset, recon)
-        utils.mark_as_volume(recon_dataset)
+        # One last update of the child data.
+        utils.set_array(child, recon) #add recon to child
+        self.progress.data = child
 
         returnValues = {}
-        returnValues["reconstruction"] = recon_dataset
+        returnValues["reconstruction"] = child
         return returnValues
 
 

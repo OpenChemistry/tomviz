@@ -16,6 +16,13 @@
       "type" : "int",
       "default" : 1,
       "minimum" : 1
+    },
+    {
+      "name" : "Nupdates",
+      "label" : "Number Of Updates for Live Reconstruction (zero means no updates).",
+      "type" : "int",
+      "default" : 0,
+      "minimum" : 0
     }
   ]
 }
