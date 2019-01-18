@@ -27,7 +27,7 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
 
         # Generate measurement matrix
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
-        recon = np.empty([Nslice, Nray, Nray], dtype=np.float32, order='F')
+        recon = np.zeros([Nslice, Nray, Nray], dtype=np.float32, order='F')
         A = A.todense()
 
         (Nslice, Nray, Nproj) = tiltSeries.shape
