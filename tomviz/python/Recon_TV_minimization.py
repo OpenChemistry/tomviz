@@ -7,7 +7,7 @@ import time
 
 class ReconTVOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Niter=1):
+    def transform_scalars(self, dataset, Niter=1, alpha=0.1):
         """3D Reconstruct from a tilt series using simple TV minimzation"""
         self.progress.maximum = 1
 
@@ -36,7 +36,6 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
         row = np.zeros(Ncol, dtype=np.float32)
         f = np.zeros(Ncol, dtype=np.float32) # Placeholder for 2d image
 
-        alpha = 0.2
         ng = 30
         beta_red = 0.995
         beta = 1.0
@@ -45,20 +44,28 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
             row[:] = A[j, ].copy()
             rowInnerProduct[j] = np.dot(row, row)
 
-        self.progress.maximum = Niter
-        step = 0
+        self.progress.maximum = Niter * Nslice
         t0 = time.time()
         counter = 1
-
         etcMessage = 'Estimated time to complete: n/a'
+
+        #Create child dataset for recon
+        child = utils.make_child_dataset(dataset)
+        utils.mark_as_volume(child)
+
         for i in range(Niter): #main loop
             if self.canceled:
                 return
-            self.progress.message = 'Iteration No.%d/%d. ' % (
-                i + 1, Niter) + etcMessage
+
             recon_temp = recon.copy()
+
             #ART recon
             for s in range(Nslice): #
+                if self.canceled: #In case canceled during ART.
+                    return
+
+                self.progress.message = 'Slice No.%d/%d, Iteration No.%d/%d. '\
+                    % (s + 1, Nslice, i + 1, Niter) + etcMessage
                 f[:] = 0
                 b = tiltSeries[s, :, :].transpose().flatten()
                 for j in range(Nrow):
@@ -67,6 +74,14 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
                     a = (b[j] - row_f_product) / rowInnerProduct[j]
                     f = f + row * a * beta
                 recon[s, :, :] = f.reshape((Nray, Nray))
+
+                # Update only once every so many steps
+                if (s + 1) % 20 == 0:
+                    utils.set_array(child, recon) #add recon to child
+                    # This copies data to the main thread
+                    self.progress.data = child
+
+                self.progress.value = i*Nslice + s
 
             recon[recon < 0] = 0 #Positivity constraint
 
@@ -103,10 +118,14 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
                 v = v / np.linalg.norm(v)
                 recon[:] = recon - alpha * dPOCS * v
 
+                # Update only once every so many steps
+                if (j + 1) % 10 == 0:
+                    utils.set_array(child, recon) #add recon to child
+                    # This copies data to the main thread
+                    self.progress.data = child
+
             #adjust parameters
             beta = beta * beta_red
-            step += 1
-            self.progress.value = step
 
             timeLeft = (time.time() - t0) / counter * \
                 (Nslice * Niter - counter)
@@ -116,11 +135,13 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
             etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
-        # Set the result as the new scalars.
-        utils.set_array(dataset, recon)
+        # One last update of the child data.
+        utils.set_array(child, recon) #add recon to child
+        self.progress.data = child
 
-        # Mark dataset as volume
-        utils.mark_as_volume(dataset)
+        returnValues = {}
+        returnValues["reconstruction"] = child
+        return returnValues
 
 
 def tv_minimization(A, tiltSeries, recon, iterNum=1):
