@@ -6,7 +6,8 @@ import time
 
 class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Nrecon=None, filter=None, interp=None):
+    def transform_scalars(self, dataset, Nrecon=None, filter=None,
+                          interp=None, Nupdates=None):
         """
         3D Reconstruct from a tilt series using Weighted Back-projection Method
         """
@@ -56,7 +57,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
             # Update only once every so many steps
-            if (i + 1) % 40 == 0:
+            if Nupdates != 0 and (i + 1) % (Nslice//Nupdates) == 0:
                 utils.set_array(child, recon) #add recon to child
                 # This copies data to the main thread
                 self.progress.data = child

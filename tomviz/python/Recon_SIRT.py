@@ -8,7 +8,7 @@ import time
 class ReconSirtOperator(tomviz.operators.CancelableOperator):
 
     def transform_scalars(self, dataset, Niter=None, stepSize=None,
-                          updateMethodIndex=None):
+                          updateMethodIndex=None, Nupdates=None):
         """
         3D Reconstruct from a tilt series using Simultaneous Iterative
         Reconstruction Techniques (SIRT)"""
@@ -78,7 +78,7 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
             # Update only once every so many steps
-            if (s + 1) % 40 == 0:
+            if Nupdates != 0 and (s + 1) % (Nslice//Nupdates) == 0:
                 utils.set_array(child, recon) #add recon to child
                 # This copies data to the main thread
                 self.progress.data = child
