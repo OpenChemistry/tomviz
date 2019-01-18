@@ -120,9 +120,8 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   // https://github.com/OpenChemistry/tomviz/issues/1776
   // Should be removed when this is fixed.
 #if defined(Q_OS_MAC)
-  connect(data, &DataSource::dataChanged, [this]() {
-    this->initializeMapper();
-  });
+  connect(data, &DataSource::dataChanged, this,
+          [this]() { this->initializeMapper(); });
 #endif
   return true;
 }
