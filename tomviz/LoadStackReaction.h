@@ -29,6 +29,7 @@ public:
 
   static DataSource* loadData();
   static DataSource* loadData(QStringList fileNames);
+  static DataSource* loadData(QString directory);
   static QList<ImageInfo> loadTiffStack(const QStringList& fileNames);
 
 protected:

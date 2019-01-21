@@ -34,6 +34,13 @@ DataSource* LoadStackReaction::loadData(QStringList fileNames)
   return execStackDialog(dialog);
 }
 
+DataSource* LoadStackReaction::loadData(QString directory)
+{
+  ImageStackDialog dialog(tomviz::mainWidget());
+  dialog.processDirectory(directory);
+  return execStackDialog(dialog);
+}
+
 DataSource* LoadStackReaction::loadData()
 {
   ImageStackDialog dialog(tomviz::mainWidget());

@@ -540,6 +540,29 @@ void MainWindow::openDialog(QWidget** dialog)
   (*dialog)->show();
 }
 
+void MainWindow::openFiles(int argc, char** argv)
+{
+  if (argc < 2) {
+    return;
+  }
+
+  QString path(argv[argc - 1]);
+  QFileInfo info(path);
+  if (!info.exists()) {
+    return;
+  }
+
+  if (info.isFile()) {
+    if (info.suffix() == "tvsm") {
+      SaveLoadStateReaction::loadState(info.canonicalFilePath());
+    } else {
+      LoadDataReaction::loadData(info.canonicalFilePath());
+    }
+  } else if (info.isDir()) {
+    LoadStackReaction::loadData(info.canonicalFilePath());
+  }
+}
+
 void MainWindow::openTilt()
 {
   QString path = QApplication::applicationDirPath() + "/../share/tomviz/Data";
