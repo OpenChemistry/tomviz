@@ -3,6 +3,7 @@ import scipy.sparse as ss
 from tomviz import utils
 import tomviz.operators
 import time
+from sys import getsizeof
 
 
 class ReconSirtOperator(tomviz.operators.CancelableOperator):
@@ -41,11 +42,11 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         A = parallelRay(Nray, 1.0, tiltAngles, Nray, 1.0) #A is a sparse matrix
         recon = np.zeros([Nslice, Nray, Nray], dtype=np.float32, order='F')
 
-        self.progress.maximum = Nslice + 1
+        self.progress.maximum = Nslice*Niter + 1
         step = 0
 
         #create a reconstruction object
-        r = SIRT(A, update_methods[updateMethodIndex])
+        r = SIRT(A, update_methods[updateMethodIndex], Nslice)
         r.initialize()
         step += 1
         self.progress.value = step
@@ -58,30 +59,35 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         child = utils.make_child_dataset(dataset)
         utils.mark_as_volume(child)
 
-        for s in range(Nslice):
+        for i in range(Niter):
             if self.canceled:
-                return
-            self.progress.message = 'Slice No.%d/%d. ' % (
-                s + 1, Nslice) + etcMessage
+                    return
 
-            b = tiltSeries[s, :, :].transpose().flatten()
-            recon[s, :, :] = r.recon2(b, Niter, stepSize).reshape((Nray, Nray))
+            for s in range(Nslice):
+                if self.canceled:
+                    return
 
-            step += 1
-            self.progress.value = step
+                self.progress.message = 'Iteration No.%d/%d,Slice No.%d/%d. ' % (
+                    i + 1,Niter,s + 1, Nslice) + etcMessage
 
-            timeLeft = (time.time() - t0) / counter * (Nslice - counter)
-            counter += 1
-            timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
-            timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
-            etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
-                timeLeftHour, timeLeftMin, timeLeftSec)
+                b = tiltSeries[s, :, :].transpose().flatten()
+                recon[s, :, :] = r.recon2(b, stepSize, s).reshape((Nray, Nray))
 
-            # Update only once every so many steps
-            if Nupdates != 0 and (s + 1) % (Nslice//Nupdates) == 0:
-                utils.set_array(child, recon) #add recon to child
-                # This copies data to the main thread
-                self.progress.data = child
+                step += 1
+                self.progress.value = step
+
+                timeLeft = (time.time() - t0) / counter * (Nslice*Niter - counter)
+                counter += 1
+                timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
+                timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
+                etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
+                    timeLeftHour, timeLeftMin, timeLeftSec)
+
+                # Update only once every so many steps
+                if Nupdates != 0 and (s + 1) % (Nslice//Nupdates) == 0:
+                    utils.set_array(child, recon) #add recon to child
+                    # This copies data to the main thread
+                    self.progress.data = child
 
         # One last update of the child data.
         utils.set_array(child, recon) #add recon to child
@@ -94,23 +100,23 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
 
 class SIRT:
 
-    def __init__(self, A, method):
+    def __init__(self, A, method, Nslice):
         self.A = A
         self.method = method
         (self.Nrow, self.Ncol) = self.A.shape
-        self.f = np.zeros(self.Ncol, dtype=np.float32) #Placeholder for 2d image
+        self.f = np.zeros((self.Ncol, Nslice), dtype=np.float32) #Placeholder for 2d image
 
     def initialize(self):
         if self.method == 'landweber':
             self.AT = self.A.transpose()
         elif self.method == 'cimmino':
-            self.A = self.A.todense()
+            self.A = self.A.tocsr()
             self.rowInnerProduct = np.zeros(self.Nrow, dtype=np.float32)
             self.a = np.zeros(self.Ncol, dtype=np.float32)
             # Calculate row inner product, placeholder for matrix rows
             self.row = np.zeros(self.Ncol, dtype=np.float32)
             for i in range(self.Nrow):
-                self.row[:] = self.A[i, ].copy()
+                self.row[:] = self.A[i, ].copy().toarray()
                 self.rowInnerProduct[i] = np.dot(self.row, self.row)
         elif self.method == 'component averaging':
             self.A = self.A.todense()
@@ -134,32 +140,31 @@ class SIRT:
         else:
             print("Invalid update method!")
 
-    def recon2(self, b, Niter, stepSize):
-        self.f[:] = 0
-        for i in range(Niter):
-            if self.method == 'landweber':
-                g = self.A.dot(self.f)
-                a = self.AT.dot(b - g)
-                self.f = self.f + a * stepSize
-            elif self.method == 'cimmino':
-                self.a[:] = 0
-                for j in range(self.Nrow):
-                    self.row[:] = self.A[j, ].copy()
-                    row_f_product = np.dot(self.row, self.f)
-                    self.a = self.a + (b[j] - row_f_product) / \
-                        self.rowInnerProduct[j] * self.row
-                self.f = self.f + self.a * stepSize / self.Nrow
-            elif self.method == 'component averaging':
-                self.a[:] = 0
-                for j in range(self.Nrow):
-                    self.row[:] = self.A[j, ].copy()
-                    row_f_product = np.dot(self.row, self.f)
-                    self.a = self.a + (b[j] - row_f_product) / \
-                        self.weightedRowProduct[j] * self.row
-                self.f = self.f + self.a * stepSize
-            else:
-                print("Invalid update method!")
-        return self.f
+    def recon2(self, b, stepSize, index):  
+        if self.method == 'landweber':
+            g = self.A.dot(self.f[:, index])
+            a = self.AT.dot(b - g)
+            self.f[:, index] = self.f[:, index] + a * stepSize
+        elif self.method == 'cimmino':
+            self.a[:] = 0
+            for j in range(self.Nrow):
+                self.row = self.A[j, ].copy()
+                #row_f_product = np.dot(self.row, self.f[:, index])
+                row_f_product = np.asscalar(self.row.dot(self.f[:,index]))
+                self.a = self.a + (b[j] - row_f_product) / \
+                    self.rowInnerProduct[j] * self.row
+            self.f[:, index] = self.f[:, index] + self.a * stepSize / self.Nrow
+        elif self.method == 'component averaging':
+            self.a[:] = 0
+            for j in range(self.Nrow):
+                self.row[:] = self.A[j, ].copy()
+                row_f_product = np.dot(self.row, self.f[:, index])
+                self.a = self.a + (b[j] - row_f_product) / \
+                    self.weightedRowProduct[j] * self.row
+            self.f[:, index] = self.f[:, index] + self.a * stepSize
+        else:
+            print("Invalid update method!")
+        return self.f[:, index]
 
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
@@ -281,3 +286,7 @@ def rmepsilon(input):
         if np.abs(input) < 1e-10:
             input = 0
     return input
+
+#def create_row_vector(input, i):
+ #   return 
+
