@@ -28,7 +28,8 @@ public:
   ~LoadStackReaction() override;
 
   static DataSource* loadData();
-  static DataSource* loadData(QStringList fileNames);
+  static DataSource* loadData(const QStringList& fileNames);
+  static DataSource* loadData(const QString& directory);
   static QList<ImageInfo> loadTiffStack(const QStringList& fileNames);
 
 protected:

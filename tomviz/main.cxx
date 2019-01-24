@@ -57,7 +57,8 @@ int main(int argc, char** argv)
   pqPVApplicationCore appCore(argc, argv);
   tomviz::MainWindow window;
   window.show();
-
   splash.finish(&window);
+  window.openFiles(argc, argv);
+
   return app.exec();
 }

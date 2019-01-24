@@ -27,10 +27,17 @@ void LoadStackReaction::onTriggered()
   loadData();
 }
 
-DataSource* LoadStackReaction::loadData(QStringList fileNames)
+DataSource* LoadStackReaction::loadData(const QStringList& fileNames)
 {
   ImageStackDialog dialog(tomviz::mainWidget());
   dialog.processFiles(fileNames);
+  return execStackDialog(dialog);
+}
+
+DataSource* LoadStackReaction::loadData(const QString& directory)
+{
+  ImageStackDialog dialog(tomviz::mainWidget());
+  dialog.processDirectory(directory);
   return execStackDialog(dialog);
 }
 
