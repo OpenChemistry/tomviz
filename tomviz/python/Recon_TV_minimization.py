@@ -76,7 +76,7 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
                 recon[s, :, :] = f.reshape((Nray, Nray))
 
                 timeLeft = (time.time() - t0)/counter * \
-                    (Niter*Nslice - counter) 
+                    (Niter*Nslice - counter)
                 counter += 1
                 timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
                 timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
