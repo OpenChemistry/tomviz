@@ -3,13 +3,12 @@ import scipy.sparse as ss
 from tomviz import utils
 import tomviz.operators
 import time
-from sys import getsizeof
 
 
 class ReconSirtOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Niter=None, stepSize=None,
-                          updateMethodIndex=None, Nupdates=None):
+    def transform_scalars(self, dataset, Niter=10, stepSize=0.0001,
+                          updateMethodIndex=0, Nupdates=0):
         """
         3D Reconstruct from a tilt series using Simultaneous Iterative
         Reconstruction Techniques (SIRT)"""
@@ -34,8 +33,15 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         tiltSeries = utils.get_array(dataset)
         (Nslice, Nray, Nproj) = tiltSeries.shape
 
+        #Check if there's negative values, shift by minimum if true.
+        if np.any(tiltSeries < 0):
+            tiltSeries -= np.amin(tiltSeries)
+
         if tiltSeries is None:
             raise RuntimeError("No scalars found!")
+
+        # Determine slice for live updates
+        Nupdates = calc_Nupdates(Nupdates, Niter)
 
         # Generate measurement matrix
         self.progress.message = 'Generating measurement matrix'
@@ -60,34 +66,43 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
         utils.mark_as_volume(child)
 
         for i in range(Niter):
-            if self.canceled:
-                    return
 
             for s in range(Nslice):
                 if self.canceled:
                     return
 
-                self.progress.message = 'Iteration No.%d/%d,Slice No.%d/%d. ' % (
-                    i + 1,Niter,s + 1, Nslice) + etcMessage
+                self.progress.message = 'Iteration No.%d/%d,Slice No.%d/%d.' % (
+                    i + 1, Niter, s + 1, Nslice) + etcMessage
 
                 b = tiltSeries[s, :, :].transpose().flatten()
-                recon[s, :, :] = r.recon2(b, stepSize, s).reshape((Nray, Nray))
+                recon_slice = recon[s, :, :].flatten()
+                recon[s, :, :] = r.recon2(b, recon_slice, stepSize,
+                                          s).reshape((Nray, Nray))
 
                 step += 1
                 self.progress.value = step
 
-                timeLeft = (time.time() - t0) / counter * (Nslice*Niter - counter)
+                timeLeft = (time.time() - t0) / counter * (Nslice*Niter -
+                                                           counter)
                 counter += 1
                 timeLeftMin, timeLeftSec = divmod(timeLeft, 60)
                 timeLeftHour, timeLeftMin = divmod(timeLeftMin, 60)
                 etcMessage = 'Estimated time to complete: %02d:%02d:%02d' % (
                     timeLeftHour, timeLeftMin, timeLeftSec)
 
-                # Update only once every so many steps
-                if Nupdates != 0 and (s + 1) % (Nslice//Nupdates) == 0:
-                    utils.set_array(child, recon) #add recon to child
-                    # This copies data to the main thread
+                # Give 4 updates for first iteration.
+                if Nupdates != 0 and i == 0 and (s + 1) % (Nslice//4) == 0:
+                    utils.set_array(child, recon)
                     self.progress.data = child
+
+            #Positivity constraint.
+            recon[recon < 0] = 0
+
+            #Update at the end of each iteration.
+            if Nupdates != 0 and (i + 1) % Nupdates == 0:
+                print('Updating at iteration ' + str(i))
+                utils.set_array(child, recon)
+                self.progress.data = child
 
         # One last update of the child data.
         utils.set_array(child, recon) #add recon to child
@@ -104,67 +119,62 @@ class SIRT:
         self.A = A
         self.method = method
         (self.Nrow, self.Ncol) = self.A.shape
-        self.f = np.zeros((self.Ncol, Nslice), dtype=np.float32) #Placeholder for 2d image
+        #f = Placeholder for 2d image
+        self.f = np.zeros(self.Ncol, dtype=np.float32)
 
     def initialize(self):
         if self.method == 'landweber':
             self.AT = self.A.transpose()
         elif self.method == 'cimmino':
             self.A = self.A.tocsr()
-            self.rowInnerProduct = np.zeros(self.Nrow, dtype=np.float32)
+            self.AT = self.A.transpose()
+            rowInnerProduct = np.zeros(self.Nrow, dtype=np.float32)
             self.a = np.zeros(self.Ncol, dtype=np.float32)
             # Calculate row inner product, placeholder for matrix rows
-            self.row = np.zeros(self.Ncol, dtype=np.float32)
+            row = np.zeros(self.Ncol, dtype=np.float32)
             for i in range(self.Nrow):
-                self.row[:] = self.A[i, ].copy().toarray()
-                self.rowInnerProduct[i] = np.dot(self.row, self.row)
+                row[:] = self.A[i, :].toarray()
+                rowInnerProduct[i] = np.dot(row, row)
+            self.M = ss.diags(1/rowInnerProduct)
         elif self.method == 'component averaging':
-            self.A = self.A.todense()
-            self.weightedRowProduct = np.zeros(self.Nrow, dtype=np.float32)
+            self.A = self.A.tocsr()
+            self.AT = self.A.transpose()
+            weightedRowProduct = np.zeros(self.Nrow, dtype=np.float32)
             self.a = np.zeros(self.Ncol, dtype=np.float32)
 
             # Calculate number of non-zero elements in each column
             s = np.zeros(self.Ncol, dtype=np.float32)
-            #placeholder for matrix columns
-            col = np.zeros(self.Nrow, dtype=np.float32)
 
             for i in range(self.Ncol):
-                col[:] = np.squeeze(self.A[:, i])
-                s[i] = np.count_nonzero(col)
+                s[i] = self.A[:, i].count_nonzero()
 
             # Calculate weighted row product
-            self.row = np.zeros(self.Ncol) #placeholder for matrix rows
+            row = np.zeros(self.Ncol) #placeholder for matrix rows
             for i in range(self.Nrow):
-                self.row[:] = self.A[i, ].copy()
-                self.weightedRowProduct[i] = np.sum(self.row * self.row * s)
+                row[:] = self.A[i, :].toarray()
+                weightedRowProduct[i] = np.sum(row * row * s)
+            self.M = ss.diags(1/weightedRowProduct)
         else:
             print("Invalid update method!")
 
-    def recon2(self, b, stepSize, index):  
+    def recon2(self, b, x, stepSize, index):
+        self.f[:] = x
         if self.method == 'landweber':
-            g = self.A.dot(self.f[:, index])
-            a = self.AT.dot(b - g)
-            self.f[:, index] = self.f[:, index] + a * stepSize
+            a = self.AT.dot(b - self.A.dot(self.f))
+            self.f = self.f + a * stepSize
         elif self.method == 'cimmino':
             self.a[:] = 0
-            for j in range(self.Nrow):
-                self.row = self.A[j, ].copy()
-                #row_f_product = np.dot(self.row, self.f[:, index])
-                row_f_product = np.asscalar(self.row.dot(self.f[:,index]))
-                self.a = self.a + (b[j] - row_f_product) / \
-                    self.rowInnerProduct[j] * self.row
-            self.f[:, index] = self.f[:, index] + self.a * stepSize / self.Nrow
+            g = self.M.dot(b - self.A.dot(self.f))
+            self.a = self.AT.dot(g)
+            self.f = self.f + self.a * stepSize / self.Nrow
         elif self.method == 'component averaging':
             self.a[:] = 0
-            for j in range(self.Nrow):
-                self.row[:] = self.A[j, ].copy()
-                row_f_product = np.dot(self.row, self.f[:, index])
-                self.a = self.a + (b[j] - row_f_product) / \
-                    self.weightedRowProduct[j] * self.row
-            self.f[:, index] = self.f[:, index] + self.a * stepSize
+            g = self.M.dot(b - self.A.dot(self.f))
+            self.a = self.AT.dot(g)
+            self.f = self.f + self.a * stepSize
         else:
             print("Invalid update method!")
-        return self.f[:, index]
+        return self.f
 
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
@@ -287,6 +297,13 @@ def rmepsilon(input):
             input = 0
     return input
 
-#def create_row_vector(input, i):
- #   return 
 
+def calc_Nupdates(Nupdates, Niter):
+    if Nupdates == 0:
+        Nupdates = 0
+    #If the user selects 100%, update for every slice.
+    elif Nupdates == 100:
+        Nupdates = 1
+    else:
+        Nupdates = int(round((Niter*(1 - Nupdates/100))))
+    return Nupdates
