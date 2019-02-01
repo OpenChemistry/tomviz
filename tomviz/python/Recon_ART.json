@@ -1,7 +1,11 @@
 {
   "name" : "ReconstructART",
   "label" : "Reconstruct (ART)",
-  "description" : "Reconstruct a tilt series using Algebraic Reconstruction Technique (ART). The tilt axis must be parallel to the x-direction and centered in the y-direction. The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.Reconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 iterations.",
+  "description" : "Reconstruct a tilt series using Algebraic Reconstruction Technique (ART) with a positivity constraint. 
+
+The tilt axis must be parallel to the x-direction and centered in the y-direction. The size of reconstruction will be (Nx,Ny,Ny). 
+
+The number of iterations can be specified below.Reconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 iterations.",
   "children": [
     {
       "name": "reconstruction",
@@ -18,11 +22,22 @@
       "minimum" : 1
     },
     {
+      "name" : "beta",
+      "label" : "Descent Parameter",
+      "type" : "double",
+      "default" : 1.0,
+      "precision" : 2,
+      "step" : 0.01,
+      "minimum" : 0.01,
+      "maximum" : 2.0
+    },
+    {
       "name" : "Nupdates",
-      "label" : "Number Of Updates for Live Reconstruction (zero means no updates).",
+      "label" : "Percent Of Updates for Live Reconstruction: \n0% means no updates. \n100% means an update for every slice.",
       "type" : "int",
       "default" : 0,
-      "minimum" : 0
+      "minimum" : 0,
+      "maximum" : 100
     }
   ]
 }
