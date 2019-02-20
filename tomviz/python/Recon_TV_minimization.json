@@ -32,6 +32,14 @@ Reconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 i
       "step" : 0.0001,
       "default" : 0.01,
       "minimum" : 0
+    },
+    {
+      "name" : "Nupdates",
+      "label" : "Percent Of Updates for Live Reconstruction: \n0% means no updates. \n100% means an update for every slice.",
+      "type" : "int",
+      "default" : 0,
+      "minimum" : 0,
+      "maximum" : 100
     }
   ]
 }
