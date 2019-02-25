@@ -100,7 +100,6 @@ class ReconSirtOperator(tomviz.operators.CancelableOperator):
 
             #Update at the end of each iteration.
             if Nupdates != 0 and (i + 1) % Nupdates == 0:
-                print('Updating at iteration ' + str(i))
                 utils.set_array(child, recon)
                 self.progress.data = child
 
