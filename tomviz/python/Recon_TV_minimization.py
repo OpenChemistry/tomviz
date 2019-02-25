@@ -7,7 +7,7 @@ import time
 
 class ReconTVOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Niter=1, alpha=0.1, Nupdates=0):
+    def transform_scalars(self, dataset, Niter=10, Nupdates=0):
         """3D Reconstruct from a tilt series using simple TV minimzation"""
         self.progress.maximum = 1
 
@@ -43,9 +43,11 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
         row = np.zeros(Ncol, dtype=np.float32)
         f = np.zeros(Ncol, dtype=np.float32) # Placeholder for 2d image
 
-        ng = 30
-        beta_red = 0.995
+        ng = 5
         beta = 1.0
+        r_max = 1.0
+        gamma_red = 0.8
+
         # Calculate row inner product, preparation for ART recon
         for j in range(Nrow):
             row[:] = A[j, :].toarray()
@@ -72,7 +74,11 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
                 self.progress.message = 'Slice No.%d/%d, Iteration No.%d/%d. '\
                     % (s + 1, Nslice, i + 1, Niter) + etcMessage
 
-                f[:] = 0
+                if (i == 0):
+                    f[:] = 0
+                elif (i != 0):
+                    f[:] = recon[s, :, :].flatten()
+
                 b = tiltSeries[s, :, :].transpose().flatten()
 
                 for j in range(Nrow):
@@ -103,50 +109,36 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
                 utils.set_array(child, recon)
                 self.progress.data = child
 
-            self.progress.message = 'Minimizating the Objects TV'
+            if i != (Niter - 1):
 
-            #calculate tomogram change due to POCS
-            dPOCS = np.linalg.norm(recon_temp - recon)
+                self.progress.message = 'Minimizating the Objects TV'
 
-            #3D TV minimization
-            for j in range(ng):
-                r = np.lib.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
-                v1n = 3 * r - np.roll(r, 1, axis=0) - \
-                                      np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2) # noqa TODO reformat this
-                v1d = np.sqrt(1e-8 + (r - np.roll(r, 1, axis=0))**2 + (r -
-                              np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2) # noqa TODO reformat this
+                #calculate tomogram change due to POCS
+                dPOCS = np.linalg.norm(recon_temp - recon)
 
-                v2n = r - np.roll(r, -1, axis=0)
-                v2d = np.sqrt(1e-8 + (np.roll(r, -1, axis=0) - r)**2 +
-                        (np.roll(r, -1, axis=0) -  # noqa TODO reformat this
-                         np.roll(np.roll(r, -1, axis=0), 1, axis=1))**2 +
-                        (np.roll(r, -1, axis=0) - np.roll(np.roll(r, -1, axis=0), 1, axis=2))**2) # noqa TODO reformat this
+                recon_temp = recon.copy()
 
-                v3n = r - np.roll(r, -1, axis=1)
-                v3d = np.sqrt(1e-8 + (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=0))**2 + # noqa TODO reformat this
-                              (np.roll(r, -1, axis=1) - r)**2 + # noqa TODO reformat this
-                              (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=2))**2) # noqa TODO reformat this
+                #3D TV minimization
+                for j in range(ng):
+                    R_0 = tv(recon)
+                    v = tv_derivative(recon)
+                    recon_prime = recon - dPOCS * v
+                    recon_prime[recon_prime < 0] = 0
+                    gamma = 1.0
+                    R_f = tv(recon_prime)
 
-                v4n = r - np.roll(r, -1, axis=2)
-                v4d = np.sqrt(1e-8 + (np.roll(r, -1, axis=2) - np.roll(np.roll(r, -1, axis=2), 1, axis=0))**2 + # noqa TODO reformat this
-                              (np.roll(r, -1, axis=2) -  # noqa TODO reformat this
-                              np.roll(np.roll(r, -1, axis=1), 1, axis=1))**2 +
-                              (np.roll(r, -1, axis=2) - r)**2) # noqa TODO reformat this
+                    #Projected Line search
+                    while R_f > R_0:
+                        gamma = gamma * gamma_red
+                        recon_prime = recon - gamma * dPOCS * v
+                        recon_prime[recon_prime < 0] = 0
+                        R_f = tv(recon_prime)
+                    recon = recon_prime
 
-                v = v1n / v1d + v2n / v2d + v3n / v3d + v4n / v4d
-                v = v[1:-1, 1:-1, 1:-1]
-                v = v / np.linalg.norm(v)
-                recon[:] = recon - alpha * dPOCS * v
+                dg = np.linalg.norm(recon - recon_temp)
 
-                # Update only once every 10 iterations.
-                if Nupdates != 0 and (i + 1) % Nupdates == 0 and \
-                   (j + 1) % 10 == 0:
-                    utils.set_array(child, recon) #add recon to child
-                    # This copies data to the main thread
-                    self.progress.data = child
-
-            #adjust parameters
-            beta = beta * beta_red
+                if dg > r_max*dPOCS:
+                    recon = r_max*dPOCS/dg*(recon - recon_temp) + recon_temp
 
         # One last update of the child data.
         utils.set_array(child, recon) #add recon to child
@@ -155,6 +147,45 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
         returnValues = {}
         returnValues["reconstruction"] = child
         return returnValues
+
+
+def tv_derivative(recon):
+    r = np.lib.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
+    v1n = 3 * r - np.roll(r, 1, axis=0) - \
+                          np.roll(r, 1, axis=1) - np.roll(r, 1, axis=2) # noqa TODO reformat this
+    v1d = np.sqrt(1e-8 + (r - np.roll(r, 1, axis=0))**2 + (r -
+                  np.roll(r, 1, axis=1))**2 + (r - np.roll(r, 1, axis=2))**2) # noqa TODO reformat this
+
+    v2n = r - np.roll(r, -1, axis=0)
+    v2d = np.sqrt(1e-8 + (np.roll(r, -1, axis=0) - r)**2 +
+            (np.roll(r, -1, axis=0) -  # noqa TODO reformat this
+             np.roll(np.roll(r, -1, axis=0), 1, axis=1))**2 +
+            (np.roll(r, -1, axis=0) - np.roll(np.roll(r, -1, axis=0), 1, axis=2))**2) # noqa TODO reformat this
+
+    v3n = r - np.roll(r, -1, axis=1)
+    v3d = np.sqrt(1e-8 + (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=0))**2 + # noqa TODO reformat this
+                  (np.roll(r, -1, axis=1) - r)**2 + # noqa TODO reformat this
+                  (np.roll(r, -1, axis=1) - np.roll(np.roll(r, -1, axis=1), 1, axis=2))**2) # noqa TODO reformat this
+
+    v4n = r - np.roll(r, -1, axis=2)
+    v4d = np.sqrt(1e-8 + (np.roll(r, -1, axis=2) - np.roll(np.roll(r, -1, axis=2), 1, axis=0))**2 + # noqa TODO reformat this
+                  (np.roll(r, -1, axis=2) -  # noqa TODO reformat this
+                  np.roll(np.roll(r, -1, axis=1), 1, axis=1))**2 +
+                  (np.roll(r, -1, axis=2) - r)**2) # noqa TODO reformat this
+
+    v = v1n / v1d + v2n / v2d + v3n / v3d + v4n / v4d
+    v = v[1:-1, 1:-1, 1:-1]
+    v = v / np.linalg.norm(v)
+    return v
+
+
+def tv(recon):
+    r = np.lib.pad(recon, ((1, 1), (1, 1), (1, 1)), 'edge')
+    tv = np.sqrt(1e-8 + (r - np.roll(r, -1, axis=0))**2 +
+                 (r - np.roll(r, -1, axis=1))**2 +
+                 (r - np.roll(r, -1, axis=2))**2)
+    tv = np.sum(tv[1:-1, 1:-1, 1:-1])
+    return tv
 
 
 def parallelRay(Nside, pixelWidth, angles, Nray, rayWidth):
