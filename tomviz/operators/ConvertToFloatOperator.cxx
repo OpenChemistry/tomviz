@@ -16,7 +16,7 @@ void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void* data)
   T* d = static_cast<T*>(data);
   float* a = static_cast<float*>(fArray->GetVoidPointer(0));
   for (int i = 0; i < nComps * nTuples; ++i) {
-    a[i] = (float)d[i];
+    a[i] = static_cast<float>(d[i]);
   }
 }
 } // namespace
