@@ -25,6 +25,8 @@ set(SOURCES
   AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
+  ArrayWranglerReaction.cxx
+  ArrayWranglerReaction.h
   AxesReaction.cxx
   AxesReaction.h
   Behaviors.cxx
@@ -269,6 +271,8 @@ list(APPEND SOURCES
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/acquisition)
 
 list(APPEND SOURCES
+  operators/ArrayWranglerOperator.cxx
+  operators/ArrayWranglerOperator.h
   operators/ConvertToFloatOperator.cxx
   operators/ConvertToFloatOperator.h
   operators/CustomPythonOperatorWidget.cxx
@@ -379,7 +383,7 @@ set(python_files
   SegmentPores.py
   RotationAlign.py
   WienerFilter.py
-  TV_Filter.py  
+  TV_Filter.py
   )
 
 set(json_files
