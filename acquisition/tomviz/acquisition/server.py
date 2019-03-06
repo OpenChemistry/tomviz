@@ -160,49 +160,49 @@ def _setup_adapter(source_adapter): # noqa
 
 
 def _log(log):
-        bottle.response.headers['Content-Type'] = 'text/plain'
-        bytes = request.query.bytes
+    bottle.response.headers['Content-Type'] = 'text/plain'
+    bytes = request.query.bytes
 
-        if log not in tomviz.LOG_PATHS:
-            raise HTTPResponse(body='Invalid log parameter: %s.' % log,
-                               status=400)
-        path = tomviz.LOG_PATHS[log]
+    if log not in tomviz.LOG_PATHS:
+        raise HTTPResponse(body='Invalid log parameter: %s.' % log,
+                           status=400)
+    path = tomviz.LOG_PATHS[log]
 
-        if not os.path.exists(path):
-            raise HTTPResponse(body='Log file does not exist.',
-                               status=400)
+    if not os.path.exists(path):
+        raise HTTPResponse(body='Log file does not exist.',
+                           status=400)
 
-        file_size = os.path.getsize(path)
-        length = int(bytes) or file_size
-        file_size1 = 0
-        if length > file_size:
-            path1 = path + '.1'
-            if os.path.exists(path1):
-                file_size1 = os.path.getsize(path1)
+    file_size = os.path.getsize(path)
+    length = int(bytes) or file_size
+    file_size1 = 0
+    if length > file_size:
+        path1 = path + '.1'
+        if os.path.exists(path1):
+            file_size1 = os.path.getsize(path1)
 
-        def stream():
-            read_length = length
-            if read_length > file_size and file_size1:
-                read_length = length - file_size
-                with open(path1, 'rb') as f:
-                    if read_length < file_size1:
-                        f.seek(-read_length, os.SEEK_END)
-                    while True:
-                        data = f.read(LOG_BUF_SIZE)
-                        if not data:
-                            break
-                        yield data
-                read_length = file_size
-            with open(path, 'rb') as f:
-                if read_length < file_size:
+    def stream():
+        read_length = length
+        if read_length > file_size and file_size1:
+            read_length = length - file_size
+            with open(path1, 'rb') as f:
+                if read_length < file_size1:
                     f.seek(-read_length, os.SEEK_END)
                 while True:
                     data = f.read(LOG_BUF_SIZE)
                     if not data:
                         break
                     yield data
+            read_length = file_size
+        with open(path, 'rb') as f:
+            if read_length < file_size:
+                f.seek(-read_length, os.SEEK_END)
+            while True:
+                data = f.read(LOG_BUF_SIZE)
+                if not data:
+                    break
+                yield data
 
-        return stream()
+    return stream()
 
 
 def _deploy_module(name, source):
