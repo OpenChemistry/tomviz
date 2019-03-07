@@ -88,7 +88,7 @@ private:
 namespace {
 
 template <typename vtkInputDataType, typename vtkOutputArrayType>
-void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps, int nTuples, void* data, double oldrange[2])
+void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps, int componentToKeep, int nTuples, void* data, double oldrange[2])
 {
   // We can't divide by zero...
   //assert(oldrange[1] != oldrange[0]);
@@ -108,14 +108,15 @@ void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps, int nTup
 
   auto d = static_cast<vtkInputDataType*>(data);
   auto a = static_cast<outputType*>(array->GetVoidPointer(0));
-  for (int i = 0; i < nComps * nTuples; ++i) {
+  for (int i = 0; i < nTuples; ++i) {
     // Add 0.5 before casting to ensure flooring rounds correctly
-    a[i] = static_cast<outputType>((d[i] - oldrange[0]) * multiplier + 0.5);
+    // We use a stride here to skip unwanted components in the source
+    a[i] = static_cast<outputType>((d[i * nComps + componentToKeep] - oldrange[0]) * multiplier + 0.5);
   }
 }
 
 template<typename vtkOutputArrayType>
-bool applyGenericTransform(vtkDataObject* data)
+bool applyGenericTransform(vtkDataObject* data, int componentToKeep)
 {
   auto imageData = vtkImageData::SafeDownCast(data);
   // sanity check
@@ -126,16 +127,18 @@ bool applyGenericTransform(vtkDataObject* data)
 
   // Get the range to input into the wrangle function
   double range[2];
-  scalars->GetRange(range);
+  scalars->GetFiniteRange(range);
+
+  auto numComponents = scalars->GetNumberOfComponents();
 
   vtkNew<vtkOutputArrayType> outputArray;
-  outputArray->SetNumberOfComponents(scalars->GetNumberOfComponents());
+  outputArray->SetNumberOfComponents(1);
   outputArray->SetNumberOfTuples(scalars->GetNumberOfTuples());
   outputArray->SetName(scalars->GetName());
 
   switch (scalars->GetDataType()) {
     vtkTemplateMacro(wrangleVtkArrayTypeUnsigned<VTK_TT>(
-      outputArray.Get(), scalars->GetNumberOfComponents(),
+      outputArray.Get(), numComponents, componentToKeep,
       scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0), range));
   }
 
@@ -159,9 +162,9 @@ bool ArrayWranglerOperator::applyTransform(vtkDataObject* data)
   // Use a template to make it easier to add other types...
   switch (m_outputType) {
     case OutputType::UInt8:
-      return applyGenericTransform<vtkTypeUInt8Array>(data);
+      return applyGenericTransform<vtkTypeUInt8Array>(data, m_componentToKeep);
     case OutputType::UInt16:
-      return applyGenericTransform<vtkTypeUInt16Array>(data);
+      return applyGenericTransform<vtkTypeUInt16Array>(data, m_componentToKeep);
   }
   return false;
 }

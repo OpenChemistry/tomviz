@@ -35,7 +35,7 @@ public:
 
 private:
   OutputType m_outputType;
-  size_t m_componentToKeep;
+  int m_componentToKeep;
 
   Q_DISABLE_COPY(ArrayWranglerOperator)
 };
