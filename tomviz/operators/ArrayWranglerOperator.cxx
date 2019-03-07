@@ -28,7 +28,7 @@ public:
     : tomviz::EditOperatorWidget(p), m_operator(source),
       m_outputTypes(nullptr), m_componentToKeep(nullptr)
   {
-    QLabel* label = new QLabel("Convert to:", this);
+    auto* label = new QLabel("Convert to:", this);
     label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     m_outputTypes = new QComboBox(this);
@@ -38,14 +38,14 @@ public:
     m_outputTypes->insertItem(static_cast<int>(OutputType::UInt8),  "UInt8");
     m_outputTypes->insertItem(static_cast<int>(OutputType::UInt16), "UInt16");
 
-    QHBoxLayout* hboxlayout = new QHBoxLayout(this);
+    auto* hboxlayout = new QHBoxLayout(this);
     hboxlayout->addWidget(label);
     hboxlayout->addWidget(m_outputTypes);
 
     auto numComponents = imageData->GetPointData()->GetScalars()->GetNumberOfComponents();
     if (numComponents > 1) {
       // Only add this option to the UI if there is more than one component
-      QLabel* numComponentsLabel = new QLabel("Component to Keep:");
+      auto* numComponentsLabel = new QLabel("Component to Keep:");
       numComponentsLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
       m_componentToKeep = new QComboBox(this);
       for (int i = 1; i < numComponents + 1; ++i)
@@ -108,7 +108,7 @@ void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps, int comp
 
   auto d = static_cast<vtkInputDataType*>(data);
   auto a = static_cast<outputType*>(array->GetVoidPointer(0));
-  for (int i = 0; i < nTuples; ++i) {
+  for (vtkIdType i = 0; i < nTuples; ++i) {
     // Add 0.5 before casting to ensure flooring rounds correctly
     // We use a stride here to skip unwanted components in the source
     a[i] = static_cast<outputType>((d[i * nComps + componentToKeep] - oldrange[0]) * multiplier + 0.5);
