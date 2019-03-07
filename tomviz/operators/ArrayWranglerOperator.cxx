@@ -28,8 +28,8 @@ public:
     : tomviz::EditOperatorWidget(p), m_operator(source),
       m_outputTypes(nullptr), m_componentToKeep(nullptr)
   {
-    auto* label = new QLabel("Convert to:", this);
-    label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    auto* convertLabel = new QLabel("Convert to:", this);
+    convertLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     m_outputTypes = new QComboBox(this);
 
@@ -38,9 +38,12 @@ public:
     m_outputTypes->insertItem(static_cast<int>(OutputType::UInt8),  "UInt8");
     m_outputTypes->insertItem(static_cast<int>(OutputType::UInt16), "UInt16");
 
-    auto* hboxlayout = new QHBoxLayout(this);
-    hboxlayout->addWidget(label);
-    hboxlayout->addWidget(m_outputTypes);
+    auto* vBoxLayout = new QVBoxLayout(this);
+
+    auto* convertHBoxLayout = new QHBoxLayout;
+    convertHBoxLayout->addWidget(convertLabel);
+    convertHBoxLayout->addWidget(m_outputTypes);
+    vBoxLayout->addLayout(convertHBoxLayout);
 
     auto numComponents = imageData->GetPointData()->GetScalars()->GetNumberOfComponents();
     if (numComponents > 1) {
@@ -50,8 +53,11 @@ public:
       m_componentToKeep = new QComboBox(this);
       for (int i = 1; i < numComponents + 1; ++i)
         m_componentToKeep->addItem(QString::number(i));
-      hboxlayout->addWidget(numComponentsLabel);
-      hboxlayout->addWidget(m_componentToKeep);
+
+      auto* componentHBoxLayout = new QHBoxLayout;
+      componentHBoxLayout->addWidget(numComponentsLabel);
+      componentHBoxLayout->addWidget(m_componentToKeep);
+      vBoxLayout->addLayout(componentHBoxLayout);
     }
     else if (m_componentToKeep) {
       // Ensure this is nullptr to communicate a component wasn't chosen
@@ -59,7 +65,7 @@ public:
       m_componentToKeep = nullptr;
     }
 
-    setLayout(hboxlayout);
+    setLayout(vBoxLayout);
   }
 
   void applyChangesToOperator() override
