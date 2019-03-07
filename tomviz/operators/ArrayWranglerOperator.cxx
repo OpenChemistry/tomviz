@@ -210,7 +210,10 @@ bool ArrayWranglerOperator::applyTransform(vtkDataObject* data)
 
 Operator* ArrayWranglerOperator::clone() const
 {
-  return new ArrayWranglerOperator();
+  auto* other = new ArrayWranglerOperator();
+  other->setOutputType(m_outputType);
+  other->setComponentToKeep(m_componentToKeep);
+  return other;
 }
 
 EditOperatorWidget* ArrayWranglerOperator::getEditorContentsWithData(
