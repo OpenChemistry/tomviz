@@ -25,7 +25,8 @@ public:
     QWidget* parent, vtkSmartPointer<vtkImageData> data) override;
   bool hasCustomUI() const override { return true; }
 
-  enum class OutputType {
+  enum class OutputType
+  {
     UInt8,
     UInt16
   };
