@@ -135,31 +135,13 @@ void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps,
 }
 
 template <typename vtkOutputArrayType>
-bool applyGenericTransform(vtkDataObject* data, int componentToKeep)
+void applyGenericWrangleTransform(vtkImageData* imageData, int componentToKeep,
+                                  double range[2])
 {
-  auto imageData = vtkImageData::SafeDownCast(data);
-  // sanity check
-  if (!imageData) {
-    qDebug() << "Error in" << __FUNCTION__ << ": imageData is nullptr!";
-    return false;
-  }
-
   auto scalars = imageData->GetPointData()->GetScalars();
-  // One more sanity check
-  if (componentToKeep >= scalars->GetNumberOfComponents()) {
-    qDebug() << "Error in" << __FUNCTION__ << ": componentToKeep,"
-             << QString::number(componentToKeep) << "is greater than or equal "
-             << "to the number of components:"
-             << QString::number(scalars->GetNumberOfComponents());
-    return false;
-  }
-
-  // Get the range to input into the wrangle function
-  double range[2];
-  scalars->GetFiniteRange(range);
 
   vtkNew<vtkOutputArrayType> outputArray;
-  outputArray->SetNumberOfComponents(1);
+  outputArray->SetNumberOfComponents(1); // We will always use one component
   outputArray->SetNumberOfTuples(scalars->GetNumberOfTuples());
   outputArray->SetName(scalars->GetName());
 
@@ -171,7 +153,6 @@ bool applyGenericTransform(vtkDataObject* data, int componentToKeep)
 
   imageData->GetPointData()->RemoveArray(scalars->GetName());
   imageData->GetPointData()->SetScalars(outputArray);
-  return true;
 }
 } // namespace
 
@@ -188,14 +169,43 @@ QIcon ArrayWranglerOperator::icon() const
 
 bool ArrayWranglerOperator::applyTransform(vtkDataObject* data)
 {
+  auto imageData = vtkImageData::SafeDownCast(data);
+  // sanity check
+  if (!imageData) {
+    qDebug() << "Error in" << __FUNCTION__ << ": imageData is nullptr!";
+    return false;
+  }
+
+  auto scalars = imageData->GetPointData()->GetScalars();
+  // One more sanity check
+  if (m_componentToKeep >= scalars->GetNumberOfComponents()) {
+    qDebug() << "Error in" << __FUNCTION__ << ": componentToKeep,"
+             << QString::number(m_componentToKeep) << "is greater than or "
+             << "equal to the number of components:"
+             << QString::number(scalars->GetNumberOfComponents());
+    return false;
+  }
+
+  // Get the range to input into the wrangle function
+  double range[2];
+  scalars->GetFiniteRange(range);
+
   // Use a template to make it easier to add other types...
   switch (m_outputType) {
     case OutputType::UInt8:
-      return applyGenericTransform<vtkTypeUInt8Array>(data, m_componentToKeep);
+      applyGenericWrangleTransform<vtkTypeUInt8Array>(imageData,
+                                                      m_componentToKeep, range);
+      break;
     case OutputType::UInt16:
-      return applyGenericTransform<vtkTypeUInt16Array>(data, m_componentToKeep);
+      applyGenericWrangleTransform<vtkTypeUInt16Array>(
+        imageData, m_componentToKeep, range);
+      break;
+    default:
+      qDebug() << "Error in" << __FUNCTION__ << ": unknown output type!";
+      return false;
   }
-  return false;
+
+  return true;
 }
 
 Operator* ArrayWranglerOperator::clone() const

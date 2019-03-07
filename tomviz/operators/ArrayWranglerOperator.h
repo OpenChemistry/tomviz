@@ -35,8 +35,8 @@ public:
   void setComponentToKeep(size_t i) { m_componentToKeep = i; }
 
 private:
-  OutputType m_outputType;
-  int m_componentToKeep;
+  OutputType m_outputType = OutputType::UInt8;
+  int m_componentToKeep = 0;
 
   Q_DISABLE_COPY(ArrayWranglerOperator)
 };
