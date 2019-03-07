@@ -3,3 +3,4 @@
 .cache
 *.egg-info
 __pycache__
+*.swp
