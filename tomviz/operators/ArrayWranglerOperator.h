@@ -15,7 +15,7 @@ class ArrayWranglerOperator : public Operator
 public:
   ArrayWranglerOperator(QObject* parent = nullptr);
 
-  QString label() const override { return "Wrangle Data"; }
+  QString label() const override { return "Convert Type"; }
   QIcon icon() const override;
   Operator* clone() const override;
 

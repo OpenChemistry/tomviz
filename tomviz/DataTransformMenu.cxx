@@ -39,8 +39,7 @@ void DataTransformMenu::buildTransforms()
 
   auto cropDataAction = menu->addAction("Crop");
   auto convertDataAction = menu->addAction("Convert to Float");
-  auto arrayWranglerAction =
-    menu->addAction("Convert to Type");
+  auto arrayWranglerAction = menu->addAction("Convert Type");
   auto reinterpretSignedToUnignedAction =
     menu->addAction("Reinterpret Signed to Unsigned");
   menu->addSeparator();
