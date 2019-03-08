@@ -25,6 +25,9 @@ public:
     QWidget* parent, vtkSmartPointer<vtkImageData> data) override;
   bool hasCustomUI() const override { return true; }
 
+  QJsonObject serialize() const override;
+  bool deserialize(const QJsonObject& json) override;
+
   enum class OutputType
   {
     UInt8,

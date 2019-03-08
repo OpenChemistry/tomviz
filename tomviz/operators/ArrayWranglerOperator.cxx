@@ -208,6 +208,28 @@ bool ArrayWranglerOperator::applyTransform(vtkDataObject* data)
   return true;
 }
 
+QJsonObject ArrayWranglerOperator::serialize() const
+{
+  auto json = Operator::serialize();
+  QJsonValue outputType(static_cast<int>(m_outputType));
+  QJsonValue componentToKeep(m_componentToKeep);
+  json["outputType"] = outputType;
+  json["componentToKeep"] = componentToKeep;
+  return json;
+}
+
+bool ArrayWranglerOperator::deserialize(const QJsonObject& json)
+{
+  if (json.contains("outputType")) {
+    m_outputType =
+      static_cast<OutputType>(json["outputType"].toInt());
+  }
+  if (json.contains("componentToKeep"))
+    m_componentToKeep = json["componentToKeep"].toInt();
+
+  return true;
+}
+
 Operator* ArrayWranglerOperator::clone() const
 {
   auto* other = new ArrayWranglerOperator();
