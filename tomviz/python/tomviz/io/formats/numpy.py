@@ -42,7 +42,7 @@ class NumpyReader(Reader, NumpyBase):
             return vtkImageData()
 
         # NPY stores data as row major order. VTK expects column major order.
-        data = data.reshape(data.shape[::-1])
+        data = np.asfortranarray(data.reshape(data.shape[::-1]))
 
         image_data = vtkImageData()
         (x, y, z) = data.shape
