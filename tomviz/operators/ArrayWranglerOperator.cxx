@@ -135,7 +135,7 @@ void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps,
 }
 
 template <typename vtkOutputArrayType>
-void applyGenericWrangleTransform(vtkImageData* imageData, int componentToKeep)
+void applyGenericTransform(vtkImageData* imageData, int componentToKeep)
 {
   auto scalars = imageData->GetPointData()->GetScalars();
 
@@ -192,12 +192,10 @@ bool ArrayWranglerOperator::applyTransform(vtkDataObject* data)
   // Use a template to make it easier to add other types...
   switch (m_outputType) {
     case OutputType::UInt8:
-      applyGenericWrangleTransform<vtkTypeUInt8Array>(imageData,
-                                                      m_componentToKeep);
+      applyGenericTransform<vtkTypeUInt8Array>(imageData, m_componentToKeep);
       break;
     case OutputType::UInt16:
-      applyGenericWrangleTransform<vtkTypeUInt16Array>(imageData,
-                                                       m_componentToKeep);
+      applyGenericTransform<vtkTypeUInt16Array>(imageData, m_componentToKeep);
       break;
     default:
       qDebug() << "Error in" << __FUNCTION__ << ": unknown output type!";
