@@ -135,10 +135,13 @@ void wrangleVtkArrayTypeUnsigned(vtkOutputArrayType* array, int nComps,
 }
 
 template <typename vtkOutputArrayType>
-void applyGenericWrangleTransform(vtkImageData* imageData, int componentToKeep,
-                                  double range[2])
+void applyGenericWrangleTransform(vtkImageData* imageData, int componentToKeep)
 {
   auto scalars = imageData->GetPointData()->GetScalars();
+
+  // Get the range to input into the wrangle function
+  double range[2];
+  scalars->GetFiniteRange(range);
 
   vtkNew<vtkOutputArrayType> outputArray;
   outputArray->SetNumberOfComponents(1); // We will always use one component
@@ -186,19 +189,15 @@ bool ArrayWranglerOperator::applyTransform(vtkDataObject* data)
     return false;
   }
 
-  // Get the range to input into the wrangle function
-  double range[2];
-  scalars->GetFiniteRange(range);
-
   // Use a template to make it easier to add other types...
   switch (m_outputType) {
     case OutputType::UInt8:
       applyGenericWrangleTransform<vtkTypeUInt8Array>(imageData,
-                                                      m_componentToKeep, range);
+                                                      m_componentToKeep);
       break;
     case OutputType::UInt16:
-      applyGenericWrangleTransform<vtkTypeUInt16Array>(
-        imageData, m_componentToKeep, range);
+      applyGenericWrangleTransform<vtkTypeUInt16Array>(imageData,
+                                                       m_componentToKeep);
       break;
     default:
       qDebug() << "Error in" << __FUNCTION__ << ": unknown output type!";
@@ -220,10 +219,9 @@ QJsonObject ArrayWranglerOperator::serialize() const
 
 bool ArrayWranglerOperator::deserialize(const QJsonObject& json)
 {
-  if (json.contains("outputType")) {
-    m_outputType =
-      static_cast<OutputType>(json["outputType"].toInt());
-  }
+  if (json.contains("outputType"))
+    m_outputType = static_cast<OutputType>(json["outputType"].toInt());
+
   if (json.contains("componentToKeep"))
     m_componentToKeep = json["componentToKeep"].toInt();
 
