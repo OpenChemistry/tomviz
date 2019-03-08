@@ -9,6 +9,7 @@
 
 #include "AddExpressionReaction.h"
 #include "AddPythonTransformReaction.h"
+#include "ArrayWranglerReaction.h"
 #include "CloneDataReaction.h"
 #include "ConvertToFloatReaction.h"
 #include "CropReaction.h"
@@ -38,6 +39,7 @@ void DataTransformMenu::buildTransforms()
 
   auto cropDataAction = menu->addAction("Crop");
   auto convertDataAction = menu->addAction("Convert to Float");
+  auto arrayWranglerAction = menu->addAction("Convert Type");
   auto reinterpretSignedToUnignedAction =
     menu->addAction("Reinterpret Signed to Unsigned");
   menu->addSeparator();
@@ -77,6 +79,7 @@ void DataTransformMenu::buildTransforms()
   new AddExpressionReaction(customPythonAction);
   new CropReaction(cropDataAction, mainWindow);
   new ConvertToFloatReaction(convertDataAction);
+  new ArrayWranglerReaction(arrayWranglerAction, mainWindow);
   new AddPythonTransformReaction(
     reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
     readInPythonScript("ReinterpretSignedToUnsigned"));

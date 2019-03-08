@@ -3,6 +3,7 @@
 
 #include "OperatorFactory.h"
 
+#include "ArrayWranglerOperator.h"
 #include "ConvertToFloatOperator.h"
 #include "CropOperator.h"
 #include "OperatorPython.h"
@@ -76,6 +77,7 @@ QList<QString> OperatorFactory::operatorTypes()
 {
   QList<QString> reply;
   reply << "Python"
+        << "ArrayWrangler"
         << "ConvertToFloat"
         << "ConvertToVolume"
         << "Crop"
@@ -104,6 +106,8 @@ Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
   Operator* op = nullptr;
   if (type == "Python") {
     op = new OperatorPython();
+  } else if (type == "ArrayWrangler") {
+    op = new ArrayWranglerOperator();
   } else if (type == "ConvertToFloat") {
     op = new ConvertToFloatOperator();
   } else if (type == "ConvertToVolume") {
@@ -129,6 +133,9 @@ const char* OperatorFactory::operatorType(Operator* op)
   }
   if (qobject_cast<ConvertToVolumeOperator*>(op)) {
     return "ConvertToVolume";
+  }
+  if (qobject_cast<ArrayWranglerOperator*>(op)) {
+    return "ArrayWrangler";
   }
   if (qobject_cast<ConvertToFloatOperator*>(op)) {
     return "ConvertToFloat";
