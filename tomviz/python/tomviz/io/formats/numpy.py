@@ -26,7 +26,7 @@ class NumpyWriter(Writer, NumpyBase):
         data = tomviz.utils.get_array(data_object)
 
         # Switch to row major order for NPY stores
-        data = data.reshape(data.shape[::-1])
+        data = np.ascontiguousarray(np.transpose(data, [2, 1, 0]))
 
         with open(path, "wb") as f:
             np.save(f, data)
@@ -42,7 +42,7 @@ class NumpyReader(Reader, NumpyBase):
             return vtkImageData()
 
         # NPY stores data as row major order. VTK expects column major order.
-        data = np.asfortranarray(data.reshape(data.shape[::-1]))
+        data = np.asfortranarray(np.transpose(data, [2, 1, 0]))
 
         image_data = vtkImageData()
         (x, y, z) = data.shape
