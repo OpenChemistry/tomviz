@@ -7,7 +7,6 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
-#include <vtkImagePermute.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkTrivialProducer.h>
@@ -51,6 +50,32 @@ bool writeVolume(T* buffer, hid_t groupId, const char* name, hid_t dataspaceId,
     success = false;
   }
   return success;
+}
+
+template <typename T>
+void ReorderArrayC(T* in, T* out, int dim[3])
+{
+  for (int i = 0; i < dim[0]; ++i) {
+    for (int j = 0; j < dim[1]; ++j) {
+      for (int k = 0; k < dim[2]; ++k) {
+        out[(i * dim[1] + j) * dim[2] + k] =
+          in[(k * dim[1] + j) * dim[0] + i];
+      }
+    }
+  }
+}
+
+template <typename T>
+void ReorderArrayF(T* in, T* out, int dim[3])
+{
+  for (int i = 0; i < dim[0]; ++i) {
+    for (int j = 0; j < dim[1]; ++j) {
+      for (int k = 0; k < dim[2]; ++k) {
+        out[(k * dim[1] + j) * dim[0] + i] =
+          in[(i * dim[1] + j) * dim[2] + k];
+      }
+    }
+  }
 }
 
 class EmdFormat::Private
@@ -280,22 +305,28 @@ public:
     bool success = true;
     hsize_t h5dim[3];
 
-    // VTK's data is a column major order and EMD files expect row-major.
-    // This code flips the order.
-    vtkNew<vtkImagePermute> permute;
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(data);
-    permute->Update();
-    auto rowMajorOrderData = permute->GetOutput();
-
     int dim[3] = { 0, 0, 0 };
-    rowMajorOrderData->GetDimensions(dim);
+    data->GetDimensions(dim);
     h5dim[0] = dim[0];
     h5dim[1] = dim[1];
     h5dim[2] = dim[2];
 
-    auto arrayPtr = rowMajorOrderData->GetPointData()->GetScalars();
+    // We must allocate a new array, and copy the reordered array into it.
+    auto arrayPtr = data->GetPointData()->GetScalars();
     auto dataPtr = arrayPtr->GetVoidPointer(0);
+    vtkNew<vtkImageData> reorderedImageData;
+    reorderedImageData->SetDimensions(dim);
+    reorderedImageData->AllocateScalars(arrayPtr->GetDataType(), 1);
+    auto outPtr =
+      reorderedImageData->GetPointData()->GetScalars()->GetVoidPointer(0);
+
+    switch (arrayPtr->GetDataType()) {
+    vtkTemplateMacro(tomviz::ReorderArrayC(
+      reinterpret_cast<VTK_TT*>(dataPtr), reinterpret_cast<VTK_TT*>(outPtr),
+      dim));
+    default:
+      cout << "EMD: Unknown data type" << endl;
+    }
 
     // Map the VTK types to the HDF5 types for storage and memory. We should
     // probably add more, but I got the important ones for testing in first.
@@ -331,7 +362,7 @@ public:
 
     switch (data->GetScalarType()) {
       vtkTemplateMacro(success =
-                         writeVolume((VTK_TT*)(dataPtr), groupId, name.c_str(),
+                         writeVolume((VTK_TT*)(outPtr), groupId, name.c_str(),
                                      dataspaceId, dataTypeId, memTypeId));
       default:
         success = false;
@@ -495,23 +526,26 @@ public:
     }
     H5Tclose(dataTypeId);
 
+    vtkNew<vtkImageData> tmp;
+    tmp->SetDimensions(&dims[0]);
+    tmp->AllocateScalars(vtkDataType, 1);
     data->SetDimensions(&dims[0]);
     data->AllocateScalars(vtkDataType, 1);
 
     H5Dread(datasetId, memTypeId, H5S_ALL, dataspaceId, H5P_DEFAULT,
-            data->GetScalarPointer());
+            tmp->GetScalarPointer());
+
+    // EMD stores data as row major order. VTK expects column major order.
+    auto inPtr = tmp->GetPointData()->GetScalars()->GetVoidPointer(0);
+    auto outPtr = data->GetPointData()->GetScalars()->GetVoidPointer(0);
+    switch (data->GetPointData()->GetScalars()->GetDataType()) {
+    vtkTemplateMacro(tomviz::ReorderArrayF(
+      reinterpret_cast<VTK_TT*>(inPtr), reinterpret_cast<VTK_TT*>(outPtr),
+      &dims[0]));
+    default:
+      cout << "EMD: Unknown data type" << endl;
+    }
     data->Modified();
-
-    // EMD stores data as row major order.  VTK expects column major order.
-    // Permute the data to fix this.
-    vtkNew<vtkImagePermute> permute;
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(data);
-    permute->Update();
-
-    permute->GetOutput()->GetDimensions(&dims[0]);
-
-    data->ShallowCopy(permute->GetOutput());
 
     H5Sclose(dataspaceId);
     H5Dclose(datasetId);
