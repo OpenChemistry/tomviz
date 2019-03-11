@@ -11,6 +11,7 @@
 #include "SetTiltAnglesOperator.h"
 #include "SnapshotOperator.h"
 #include "TranslateAlignOperator.h"
+#include "TransposeDataOperator.h"
 
 #include "vtkFieldData.h"
 #include "vtkImageData.h"
@@ -84,6 +85,7 @@ QList<QString> OperatorFactory::operatorTypes()
         << "CxxReconstruction"
         << "SetTiltAngles"
         << "TranslateAlign"
+        << "TransposeData"
         << "Snapshot";
   qSort(reply);
   return reply;
@@ -120,6 +122,8 @@ Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
     op = new SetTiltAnglesOperator();
   } else if (type == "TranslateAlign") {
     op = new TranslateAlignOperator(ds);
+  } else if (type == "TransposeData") {
+    op = new TransposeDataOperator();
   } else if (type == "Snapshot") {
     op = new SnapshotOperator(ds);
   }
@@ -151,6 +155,9 @@ const char* OperatorFactory::operatorType(Operator* op)
   }
   if (qobject_cast<TranslateAlignOperator*>(op)) {
     return "TranslateAlign";
+  }
+  if (qobject_cast<TransposeDataOperator*>(op)) {
+    return "TransposeData";
   }
   if (qobject_cast<SnapshotOperator*>(op)) {
     return "Snapshot";
