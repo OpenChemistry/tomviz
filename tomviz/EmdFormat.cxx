@@ -7,6 +7,7 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
+#include <vtkImagePermute.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
 #include <vtkTrivialProducer.h>
@@ -654,18 +655,18 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     image->SetSpacing(spacing);
   }
   std::string units = "[n_m]"; // default to nanometers
-  if (d->attribute(emdNode + "/dim3", "units", units)) {
+  if (d->attribute(emdNode + "/dim1", "units", units)) {
     if (units == "[deg]") {
       QVector<double> angles;
-      for (unsigned i = 0; i < dim3.size(); ++i) {
-        angles.push_back(dim3[i]);
+      for (unsigned i = 0; i < dim1.size(); ++i) {
+        angles.push_back(dim1[i]);
       }
       DataSource::setTiltAngles(image, angles);
     } else if (units == "[rad]") {
       QVector<double> angles;
-      for (unsigned i = 0; i < dim3.size(); ++i) {
+      for (unsigned i = 0; i < dim1.size(); ++i) {
         // Convert radians to degrees since tomviz assumes degrees everywhere.
-        angles.push_back(dim3[i] * 180.0 / vtkMath::Pi());
+        angles.push_back(dim1[i] * 180.0 / vtkMath::Pi());
       }
       DataSource::setTiltAngles(image, angles);
     }
@@ -675,6 +676,15 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
   if (d->fileId != H5I_INVALID_HID) {
     H5Fclose(d->fileId);
     d->fileId = H5I_INVALID_HID;
+  }
+
+  // If this is a tilt series, swap the X and Z axes
+  if (DataSource::hasTiltAngles(image)) {
+    vtkNew<vtkImagePermute> permute;
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    image->ShallowCopy(permute->GetOutput());
   }
 
   return true;
@@ -712,45 +722,62 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   // See if we have tilt angles
   auto hasTiltAngles = DataSource::hasTiltAngles(image);
 
+  // If this is a tilt series, swap the X and Z axes
+  vtkImageData* permutedImage = image;
+  vtkNew<vtkImagePermute> permute;
+  if (DataSource::hasTiltAngles(image)) {
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    permutedImage = permute->GetOutput();
+  }
+
   int xIndex = 0;
   int yIndex = 1;
   int zIndex = 2;
 
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
-  image->GetSpacing(spacing);
+  permutedImage->GetSpacing(spacing);
   int dimensions[3];
-  image->GetDimensions(dimensions);
+  permutedImage->GetDimensions(dimensions);
+
   std::vector<float> imageDimDataX(dimensions[0]);
   std::vector<float> imageDimDataY(dimensions[1]);
   std::vector<float> imageDimDataZ(dimensions[2]);
 
-  for (int i = 0; i < dimensions[0]; ++i) {
-    imageDimDataX[i] = i * spacing[xIndex];
+  if (hasTiltAngles) {
+    auto angles = DataSource::getTiltAngles(permutedImage);
+    imageDimDataX.reserve(angles.size());
+    for (int i = 0; i < angles.size(); ++i) {
+      imageDimDataX[i] = static_cast<float>(angles[i]);
+    }
+  } else {
+    for (int i = 0; i < dimensions[0]; ++i) {
+      imageDimDataX[i] = i * spacing[xIndex];
+    }
   }
   for (int i = 0; i < dimensions[1]; ++i) {
     imageDimDataY[i] = i * spacing[yIndex];
   }
-  if (!hasTiltAngles) {
-    for (int i = 0; i < dimensions[2]; ++i) {
-      imageDimDataZ[i] = i * spacing[zIndex];
-    }
-  } else {
-    auto angles = DataSource::getTiltAngles(image);
-    imageDimDataZ.reserve(angles.size());
-    for (int i = 0; i < angles.size(); ++i) {
-      imageDimDataZ[i] = static_cast<float>(angles[i]);
-    }
+  for (int i = 0; i < dimensions[2]; ++i) {
+    imageDimDataZ[i] = i * spacing[zIndex];
   }
 
-  d->writeData("/data/tomography", "data", image);
+  d->writeData("/data/tomography", "data", permutedImage);
 
   // Create the 3 dim sets too...
   std::vector<int> side(1);
   side[0] = imageDimDataX.size();
   d->writeData("/data/tomography", "dim1", side, imageDimDataX);
-  d->setAttribute("/data/tomography/dim1", "name", "x", true);
-  d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
+  if (hasTiltAngles) {
+    d->setAttribute("/data/tomography/dim1", "name", "angles", true);
+    d->setAttribute("/data/tomography/dim1", "units", "[deg]", true);
+  }
+  else {
+    d->setAttribute("/data/tomography/dim1", "name", "x", true);
+    d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
+  }
 
   side[0] = imageDimDataY.size();
   d->writeData("/data/tomography", "dim2", side, imageDimDataY);
@@ -759,12 +786,12 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
 
   side[0] = imageDimDataZ.size();
   d->writeData("/data/tomography", "dim3", side, imageDimDataZ);
-  if (!hasTiltAngles) {
-    d->setAttribute("/data/tomography/dim3", "name", "z", true);
+  if (hasTiltAngles) {
+    d->setAttribute("/data/tomography/dim3", "name", "x", true);
     d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
   } else {
-    d->setAttribute("/data/tomography/dim3", "name", "angles", true);
-    d->setAttribute("/data/tomography/dim3", "units", "[deg]", true);
+    d->setAttribute("/data/tomography/dim3", "name", "z", true);
+    d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
   }
 
   status = H5Gclose(tomoGroupId);
