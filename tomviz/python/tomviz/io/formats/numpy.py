@@ -25,8 +25,8 @@ class NumpyWriter(Writer, NumpyBase):
     def write(self, path, data_object):
         data = tomviz.utils.get_array(data_object)
 
-        # Switch to row major order for NPY stores
-        data = np.ascontiguousarray(np.transpose(data, [2, 1, 0]))
+        # Convert to C ordering
+        data = np.ascontiguousarray(data)
 
         with open(path, "wb") as f:
             np.save(f, data)
@@ -41,8 +41,8 @@ class NumpyReader(Reader, NumpyBase):
         if len(data.shape) != 3:
             return vtkImageData()
 
-        # NPY stores data as row major order. VTK expects column major order.
-        data = np.asfortranarray(np.transpose(data, [2, 1, 0]))
+        # Convert to Fortran ordering
+        data = np.asfortranarray(data)
 
         image_data = vtkImageData()
         (x, y, z) = data.shape
