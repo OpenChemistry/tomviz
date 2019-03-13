@@ -22,13 +22,6 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
         tiltSeries = utils.get_array(dataset)
         (Nslice, Nray, Nproj) = tiltSeries.shape
 
-        if tiltSeries is None:
-            raise RuntimeError("No scalars found!")
-
-        #Check if there's negative values, shift by minimum if true.
-        if np.any(tiltSeries < 0):
-            tiltSeries -= np.amin(tiltSeries)
-
         # Determine the slices for live updates.
         Nupdates = calc_Nupdates(Nupdates, Niter)
 
@@ -86,11 +79,6 @@ class ReconTVOperator(tomviz.operators.CancelableOperator):
                     a = (b[j] - np.dot(row, f)) / rowInnerProduct[j]
                     f = f + row * a * beta
                 recon[s, :, :] = f.reshape((Nray, Nray))
-
-                # Give 4 updates for first iteration.
-                if Nupdates != 0 and i == 0 and (s + 1) % (Nslice//4) == 0:
-                    utils.set_array(child, recon)
-                    self.progress.data = child
 
                 self.progress.value = i*Nslice + s
 
