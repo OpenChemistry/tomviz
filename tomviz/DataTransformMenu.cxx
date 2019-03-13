@@ -14,6 +14,7 @@
 #include "ConvertToFloatReaction.h"
 #include "CropReaction.h"
 #include "DeleteDataReaction.h"
+#include "TransposeDataReaction.h"
 #include "Utilities.h"
 
 namespace tomviz {
@@ -40,6 +41,7 @@ void DataTransformMenu::buildTransforms()
   auto cropDataAction = menu->addAction("Crop");
   auto convertDataAction = menu->addAction("Convert to Float");
   auto arrayWranglerAction = menu->addAction("Convert Type");
+  auto transposeDataAction = menu->addAction("Transpose Data");
   auto reinterpretSignedToUnignedAction =
     menu->addAction("Reinterpret Signed to Unsigned");
   menu->addSeparator();
@@ -80,6 +82,7 @@ void DataTransformMenu::buildTransforms()
   new CropReaction(cropDataAction, mainWindow);
   new ConvertToFloatReaction(convertDataAction);
   new ArrayWranglerReaction(arrayWranglerAction, mainWindow);
+  new TransposeDataReaction(transposeDataAction, mainWindow);
   new AddPythonTransformReaction(
     reinterpretSignedToUnignedAction, "Reinterpret Signed to Unsigned",
     readInPythonScript("ReinterpretSignedToUnsigned"));

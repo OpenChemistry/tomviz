@@ -163,6 +163,8 @@ set(SOURCES
   TomographyReconstruction.cxx
   TomographyTiltSeries.h
   TomographyTiltSeries.cxx
+  TransposeDataReaction.h
+  TransposeDataReaction.cxx
   Utilities.cxx
   Utilities.h
   Variant.cxx
@@ -307,6 +309,8 @@ list(APPEND SOURCES
   operators/SnapshotOperator.cxx
   operators/TranslateAlignOperator.h
   operators/TranslateAlignOperator.cxx
+  operators/TransposeDataOperator.h
+  operators/TransposeDataOperator.cxx
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/operators)
 
