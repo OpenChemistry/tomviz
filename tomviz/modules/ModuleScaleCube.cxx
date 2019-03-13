@@ -12,6 +12,7 @@
 
 #include <pqCoreUtilities.h>
 #include <pqProxiesWidget.h>
+#include <vtkBillboardTextActor3D.h>
 #include <vtkCommand.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVRenderView.h>
@@ -22,6 +23,7 @@
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
+#include <vtkTextProperty.h>
 
 #include <QCheckBox>
 #include <QDoubleValidator>
@@ -143,6 +145,10 @@ QJsonObject ModuleScaleCube::serialize() const
   QJsonArray color = { c[0], c[1], c[2] };
   props["color"] = color;
 
+  m_cubeRep->GetLabelText()->GetTextProperty()->GetColor(c);
+  color = { c[0], c[1], c[2] };
+  props["textColor"] = color;
+
   json["properties"] = props;
 
   return json;
@@ -164,6 +170,21 @@ bool ModuleScaleCube::deserialize(const QJsonObject& json)
     auto c = props["color"].toArray();
     double color[3] = { c[0].toDouble(), c[1].toDouble(), c[2].toDouble() };
     m_cubeRep->GetProperty()->SetDiffuseColor(color);
+
+    if (props["textColor"].isArray()) {
+      // This property was added later on...
+      c = props["textColor"].toArray();
+      double textColor[3] = { c[0].toDouble(), c[1].toDouble(),
+                              c[2].toDouble() };
+      m_cubeRep->GetLabelText()->GetTextProperty()->SetColor(textColor);
+      if (m_controllers) {
+        QColor qTextColor(static_cast<int>(textColor[0] * 255.0 + 0.5),
+                          static_cast<int>(textColor[1] * 255.0 + 0.5),
+                          static_cast<int>(textColor[2] * 255.0 + 0.5));
+        m_controllers->setTextColor(qTextColor);
+      }
+    }
+
     if (m_controllers) {
       QColor qColor(static_cast<int>(color[0] * 255.0 + 0.5),
                     static_cast<int>(color[1] * 255.0 + 0.5),
@@ -207,6 +228,11 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
                                     static_cast<int>(color[1] * 255.0 + 0.5),
                                     static_cast<int>(color[2] * 255.0 + 0.5)));
 
+  m_cubeRep->GetLabelText()->GetTextProperty()->GetColor(color);
+  m_controllers->setTextColor(QColor(static_cast<int>(color[0] * 255.0 + 0.5),
+                                     static_cast<int>(color[1] * 255.0 + 0.5),
+                                     static_cast<int>(color[2] * 255.0 + 0.5)));
+
   // Connect the widget's signals to this class' slots
   connect(m_controllers, SIGNAL(adaptiveScalingToggled(const bool)), this,
           SLOT(setAdaptiveScaling(const bool)));
@@ -216,6 +242,8 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
           SLOT(setAnnotation(const bool)));
   connect(m_controllers, &ModuleScaleCubeWidget::boxColorChanged, this,
           &ModuleScaleCube::onBoxColorChanged);
+  connect(m_controllers, &ModuleScaleCubeWidget::textColorChanged, this,
+          &ModuleScaleCube::onTextColorChanged);
 
   // Connect this class' signals to the widget's slots
   connect(this, SIGNAL(onLengthUnitChanged(const QString)), m_controllers,
@@ -302,6 +330,13 @@ vtkSMProxy* ModuleScaleCube::getProxyForString(const std::string&)
 void ModuleScaleCube::onBoxColorChanged(const QColor& color)
 {
   m_cubeRep->GetProperty()->SetDiffuseColor(
+    color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0);
+  emit renderNeeded();
+}
+
+void ModuleScaleCube::onTextColorChanged(const QColor& color)
+{
+  m_cubeRep->GetLabelText()->GetTextProperty()->SetColor(
     color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0);
   emit renderNeeded();
 }

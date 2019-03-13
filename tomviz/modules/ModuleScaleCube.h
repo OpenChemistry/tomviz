@@ -91,6 +91,7 @@ private slots:
   void setLengthUnit();
   void setPositionUnit();
   void onBoxColorChanged(const QColor& color);
+  void onTextColorChanged(const QColor& color);
 
   void updateOffset(double, double, double);
 };
