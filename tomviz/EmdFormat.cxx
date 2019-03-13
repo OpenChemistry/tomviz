@@ -53,6 +53,32 @@ bool writeVolume(T* buffer, hid_t groupId, const char* name, hid_t dataspaceId,
   return success;
 }
 
+template <typename T>
+void ReorderArrayC(T* in, T* out, int dim[3])
+{
+  for (int i = 0; i < dim[0]; ++i) {
+    for (int j = 0; j < dim[1]; ++j) {
+      for (int k = 0; k < dim[2]; ++k) {
+        out[(i * dim[1] + j) * dim[2] + k] =
+          in[(k * dim[1] + j) * dim[0] + i];
+      }
+    }
+  }
+}
+
+template <typename T>
+void ReorderArrayF(T* in, T* out, int dim[3])
+{
+  for (int i = 0; i < dim[0]; ++i) {
+    for (int j = 0; j < dim[1]; ++j) {
+      for (int k = 0; k < dim[2]; ++k) {
+        out[(k * dim[1] + j) * dim[0] + i] =
+          in[(i * dim[1] + j) * dim[2] + k];
+      }
+    }
+  }
+}
+
 class EmdFormat::Private
 {
 public:
@@ -280,22 +306,28 @@ public:
     bool success = true;
     hsize_t h5dim[3];
 
-    // VTK's data is a column major order and EMD files expect row-major.
-    // This code flips the order.
-    vtkNew<vtkImagePermute> permute;
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(data);
-    permute->Update();
-    auto rowMajorOrderData = permute->GetOutput();
-
     int dim[3] = { 0, 0, 0 };
-    rowMajorOrderData->GetDimensions(dim);
+    data->GetDimensions(dim);
     h5dim[0] = dim[0];
     h5dim[1] = dim[1];
     h5dim[2] = dim[2];
 
-    auto arrayPtr = rowMajorOrderData->GetPointData()->GetScalars();
+    // We must allocate a new array, and copy the reordered array into it.
+    auto arrayPtr = data->GetPointData()->GetScalars();
     auto dataPtr = arrayPtr->GetVoidPointer(0);
+    vtkNew<vtkImageData> reorderedImageData;
+    reorderedImageData->SetDimensions(dim);
+    reorderedImageData->AllocateScalars(arrayPtr->GetDataType(), 1);
+    auto outPtr =
+      reorderedImageData->GetPointData()->GetScalars()->GetVoidPointer(0);
+
+    switch (arrayPtr->GetDataType()) {
+    vtkTemplateMacro(tomviz::ReorderArrayC(
+      reinterpret_cast<VTK_TT*>(dataPtr), reinterpret_cast<VTK_TT*>(outPtr),
+      dim));
+    default:
+      cout << "EMD: Unknown data type" << endl;
+    }
 
     // Map the VTK types to the HDF5 types for storage and memory. We should
     // probably add more, but I got the important ones for testing in first.
@@ -331,7 +363,7 @@ public:
 
     switch (data->GetScalarType()) {
       vtkTemplateMacro(success =
-                         writeVolume((VTK_TT*)(dataPtr), groupId, name.c_str(),
+                         writeVolume((VTK_TT*)(outPtr), groupId, name.c_str(),
                                      dataspaceId, dataTypeId, memTypeId));
       default:
         success = false;
@@ -495,23 +527,26 @@ public:
     }
     H5Tclose(dataTypeId);
 
+    vtkNew<vtkImageData> tmp;
+    tmp->SetDimensions(&dims[0]);
+    tmp->AllocateScalars(vtkDataType, 1);
     data->SetDimensions(&dims[0]);
     data->AllocateScalars(vtkDataType, 1);
 
     H5Dread(datasetId, memTypeId, H5S_ALL, dataspaceId, H5P_DEFAULT,
-            data->GetScalarPointer());
+            tmp->GetScalarPointer());
+
+    // EMD stores data as row major order. VTK expects column major order.
+    auto inPtr = tmp->GetPointData()->GetScalars()->GetVoidPointer(0);
+    auto outPtr = data->GetPointData()->GetScalars()->GetVoidPointer(0);
+    switch (data->GetPointData()->GetScalars()->GetDataType()) {
+    vtkTemplateMacro(tomviz::ReorderArrayF(
+      reinterpret_cast<VTK_TT*>(inPtr), reinterpret_cast<VTK_TT*>(outPtr),
+      &dims[0]));
+    default:
+      cout << "EMD: Unknown data type" << endl;
+    }
     data->Modified();
-
-    // EMD stores data as row major order.  VTK expects column major order.
-    // Permute the data to fix this.
-    vtkNew<vtkImagePermute> permute;
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(data);
-    permute->Update();
-
-    permute->GetOutput()->GetDimensions(&dims[0]);
-
-    data->ShallowCopy(permute->GetOutput());
 
     H5Sclose(dataspaceId);
     H5Dclose(datasetId);
@@ -620,18 +655,18 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     image->SetSpacing(spacing);
   }
   std::string units = "[n_m]"; // default to nanometers
-  if (d->attribute(emdNode + "/dim3", "units", units)) {
+  if (d->attribute(emdNode + "/dim1", "units", units)) {
     if (units == "[deg]") {
       QVector<double> angles;
-      for (unsigned i = 0; i < dim3.size(); ++i) {
-        angles.push_back(dim3[i]);
+      for (unsigned i = 0; i < dim1.size(); ++i) {
+        angles.push_back(dim1[i]);
       }
       DataSource::setTiltAngles(image, angles);
     } else if (units == "[rad]") {
       QVector<double> angles;
-      for (unsigned i = 0; i < dim3.size(); ++i) {
+      for (unsigned i = 0; i < dim1.size(); ++i) {
         // Convert radians to degrees since tomviz assumes degrees everywhere.
-        angles.push_back(dim3[i] * 180.0 / vtkMath::Pi());
+        angles.push_back(dim1[i] * 180.0 / vtkMath::Pi());
       }
       DataSource::setTiltAngles(image, angles);
     }
@@ -641,6 +676,15 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
   if (d->fileId != H5I_INVALID_HID) {
     H5Fclose(d->fileId);
     d->fileId = H5I_INVALID_HID;
+  }
+
+  // If this is a tilt series, swap the X and Z axes
+  if (DataSource::hasTiltAngles(image)) {
+    vtkNew<vtkImagePermute> permute;
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    image->ShallowCopy(permute->GetOutput());
   }
 
   return true;
@@ -678,45 +722,62 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   // See if we have tilt angles
   auto hasTiltAngles = DataSource::hasTiltAngles(image);
 
+  // If this is a tilt series, swap the X and Z axes
+  vtkImageData* permutedImage = image;
+  vtkNew<vtkImagePermute> permute;
+  if (DataSource::hasTiltAngles(image)) {
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    permutedImage = permute->GetOutput();
+  }
+
   int xIndex = 0;
   int yIndex = 1;
   int zIndex = 2;
 
   // Use constant spacing, with zero offset, so just populate the first two.
   double spacing[3];
-  image->GetSpacing(spacing);
+  permutedImage->GetSpacing(spacing);
   int dimensions[3];
-  image->GetDimensions(dimensions);
+  permutedImage->GetDimensions(dimensions);
+
   std::vector<float> imageDimDataX(dimensions[0]);
   std::vector<float> imageDimDataY(dimensions[1]);
   std::vector<float> imageDimDataZ(dimensions[2]);
 
-  for (int i = 0; i < dimensions[0]; ++i) {
-    imageDimDataX[i] = i * spacing[xIndex];
+  if (hasTiltAngles) {
+    auto angles = DataSource::getTiltAngles(permutedImage);
+    imageDimDataX.reserve(angles.size());
+    for (int i = 0; i < angles.size(); ++i) {
+      imageDimDataX[i] = static_cast<float>(angles[i]);
+    }
+  } else {
+    for (int i = 0; i < dimensions[0]; ++i) {
+      imageDimDataX[i] = i * spacing[xIndex];
+    }
   }
   for (int i = 0; i < dimensions[1]; ++i) {
     imageDimDataY[i] = i * spacing[yIndex];
   }
-  if (!hasTiltAngles) {
-    for (int i = 0; i < dimensions[2]; ++i) {
-      imageDimDataZ[i] = i * spacing[zIndex];
-    }
-  } else {
-    auto angles = DataSource::getTiltAngles(image);
-    imageDimDataZ.reserve(angles.size());
-    for (int i = 0; i < angles.size(); ++i) {
-      imageDimDataZ[i] = static_cast<float>(angles[i]);
-    }
+  for (int i = 0; i < dimensions[2]; ++i) {
+    imageDimDataZ[i] = i * spacing[zIndex];
   }
 
-  d->writeData("/data/tomography", "data", image);
+  d->writeData("/data/tomography", "data", permutedImage);
 
   // Create the 3 dim sets too...
   std::vector<int> side(1);
   side[0] = imageDimDataX.size();
   d->writeData("/data/tomography", "dim1", side, imageDimDataX);
-  d->setAttribute("/data/tomography/dim1", "name", "x", true);
-  d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
+  if (hasTiltAngles) {
+    d->setAttribute("/data/tomography/dim1", "name", "angles", true);
+    d->setAttribute("/data/tomography/dim1", "units", "[deg]", true);
+  }
+  else {
+    d->setAttribute("/data/tomography/dim1", "name", "x", true);
+    d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
+  }
 
   side[0] = imageDimDataY.size();
   d->writeData("/data/tomography", "dim2", side, imageDimDataY);
@@ -725,12 +786,12 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
 
   side[0] = imageDimDataZ.size();
   d->writeData("/data/tomography", "dim3", side, imageDimDataZ);
-  if (!hasTiltAngles) {
-    d->setAttribute("/data/tomography/dim3", "name", "z", true);
+  if (hasTiltAngles) {
+    d->setAttribute("/data/tomography/dim3", "name", "x", true);
     d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
   } else {
-    d->setAttribute("/data/tomography/dim3", "name", "angles", true);
-    d->setAttribute("/data/tomography/dim3", "units", "[deg]", true);
+    d->setAttribute("/data/tomography/dim3", "name", "z", true);
+    d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
   }
 
   status = H5Gclose(tomoGroupId);
