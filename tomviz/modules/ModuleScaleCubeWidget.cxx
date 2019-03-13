@@ -23,6 +23,9 @@ ModuleScaleCubeWidget::ModuleScaleCubeWidget(QWidget* parent_)
           SIGNAL(annotationToggled(const bool)));
   connect(m_ui->colorChooserButton, &pqColorChooserButton::chosenColorChanged,
           this, &ModuleScaleCubeWidget::boxColorChanged);
+  connect(m_ui->textColorChooserButton,
+          &pqColorChooserButton::chosenColorChanged, this,
+          &ModuleScaleCubeWidget::textColorChanged);
 }
 
 ModuleScaleCubeWidget::~ModuleScaleCubeWidget() = default;
@@ -65,6 +68,11 @@ void ModuleScaleCubeWidget::setPositionUnit(const QString unit)
 void ModuleScaleCubeWidget::setBoxColor(const QColor& color)
 {
   m_ui->colorChooserButton->setChosenColor(color);
+}
+
+void ModuleScaleCubeWidget::setTextColor(const QColor& color)
+{
+  m_ui->textColorChooserButton->setChosenColor(color);
 }
 
 void ModuleScaleCubeWidget::onAdaptiveScalingChanged(const bool state)
