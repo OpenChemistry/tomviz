@@ -23,6 +23,7 @@ prvileges).
     mkvirtualenv tomviz
     pip install 'git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git@filelike'
     pip install https://github.com/bottlepy/bottle/archive/41ed6965.zip
+    pip install Pillow requests mock diskcache
 
 At this point you will have a Python environment with the required Python tools.
 
@@ -58,7 +59,7 @@ interface to aid in development. The following (from within the 'tomviz' Python
 virtual environment) will cause an image to be written from a stack every five
 seconds:
 
-    tomviz-tiltseries-writer -p /tmp/test -d 5 -t tiff
+    python -m tests.mock.tiltseries.writer -p /tmp/test -d 5 -t tiff
 
 It supports type of 'dm3' too, the path, delay, and type can all be modified. At
 present the angle information is not being fed through, this will be added next.
