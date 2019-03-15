@@ -23,7 +23,9 @@ prvileges).
     mkvirtualenv tomviz
     pip install 'git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git@filelike'
     pip install https://github.com/bottlepy/bottle/archive/41ed6965.zip
-    pip install Pillow requests mock diskcache
+    pip install -e .
+    pip install -e .[tiff]
+    pip install -e .[test]
 
 At this point you will have a Python environment with the required Python tools.
 
