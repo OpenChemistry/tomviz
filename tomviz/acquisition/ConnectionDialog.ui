@@ -72,6 +72,11 @@
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>nameLineEdit</tabstop>
+  <tabstop>hostNameLineEdit</tabstop>
+  <tabstop>portLineEdit</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
