@@ -172,6 +172,21 @@ void ModuleSlice::updateColorMap()
   m_widget->SetLookupTable(stc);
 }
 
+void ModuleSlice::updateSliceWidget()
+{
+  if (!m_sliceSlider || !imageData())
+    return;
+
+  int dims[3];
+  imageData()->GetDimensions(dims);
+
+  int axis = directionAxis(m_direction);
+  int maxSlice = dims[axis] - 1;
+
+  m_sliceSlider->setMinimum(0);
+  m_sliceSlider->setMaximum(maxSlice);
+}
+
 bool ModuleSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -248,7 +263,6 @@ void ModuleSlice::addToPanel(QWidget* panel)
   m_sliceSlider->setLineEditWidth(50);
   m_sliceSlider->setPageStep(1);
   m_sliceSlider->setMinimum(0);
-  m_sliceSlider->setValue(m_slice);
   int axis = directionAxis(m_direction);
   bool isOrtho = axis >= 0;
   if (isOrtho) {
@@ -256,6 +270,15 @@ void ModuleSlice::addToPanel(QWidget* panel)
     imageData()->GetDimensions(dims);
     m_sliceSlider->setMaximum(dims[axis] - 1);
   }
+
+  // Sanity check: make sure the slice value is within the bounds
+  if (m_slice < m_sliceSlider->minimum())
+    m_slice = m_sliceSlider->minimum();
+  else if (m_slice > m_sliceSlider->maximum())
+    m_slice = m_sliceSlider->maximum();
+
+  m_sliceSlider->setValue(m_slice);
+
   formLayout->addRow("Slice", m_sliceSlider);
 
   m_opacitySlider = new DoubleSliderWidget(true);
@@ -363,6 +386,8 @@ void ModuleSlice::addToPanel(QWidget* panel)
 void ModuleSlice::dataUpdated()
 {
   m_Links.accept();
+  // In case there are new slices, update min and max
+  updateSliceWidget();
   m_widget->SetMapScalars(
     vtkSMPropertyHelper(m_propsPanelProxy->GetProperty("MapScalars"), 1)
       .GetAsInt());
