@@ -25,7 +25,7 @@ setup(
     ],
     packages=find_packages(),
     extras_require={
-        'tif': ['Pillow'],
+        'tiff': ['Pillow'],
         'test': ['requests', 'Pillow', 'mock', 'diskcache']
     },
     entry_points={
