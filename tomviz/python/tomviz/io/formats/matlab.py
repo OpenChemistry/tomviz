@@ -24,7 +24,15 @@ class MatlabBase(IOBase):
 class MatlabReader(Reader, MatlabBase):
 
     def read(self, path):
-        mat_dict = scipy.io.loadmat(path)
+        try:
+            mat_dict = scipy.io.loadmat(path)
+        except NotImplementedError as e:
+            # matlab v7.3 requires h5py to load
+            if 'matlab v7.3' in str(e).lower():
+                print('Tomviz does not currently support matlab v7.3 files')
+                print('Please convert the file to matlab v7.2 or earlier')
+                return vtkImageData()
+            raise
 
         data = None
         for item in mat_dict.values():
