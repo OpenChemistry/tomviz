@@ -172,6 +172,21 @@ void ModuleSlice::updateColorMap()
   m_widget->SetLookupTable(stc);
 }
 
+void ModuleSlice::updateSliceWidget()
+{
+  if (!m_sliceSlider || !imageData())
+    return;
+
+  int dims[3];
+  imageData()->GetDimensions(dims);
+
+  int axis = directionAxis(m_direction);
+  int maxSlice = dims[axis] - 1;
+
+  m_sliceSlider->setMinimum(0);
+  m_sliceSlider->setMaximum(maxSlice);
+}
+
 bool ModuleSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -363,6 +378,8 @@ void ModuleSlice::addToPanel(QWidget* panel)
 void ModuleSlice::dataUpdated()
 {
   m_Links.accept();
+  // In case there are new slices, update min and max
+  updateSliceWidget();
   m_widget->SetMapScalars(
     vtkSMPropertyHelper(m_propsPanelProxy->GetProperty("MapScalars"), 1)
       .GetAsInt());

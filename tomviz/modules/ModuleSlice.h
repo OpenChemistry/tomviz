@@ -65,6 +65,7 @@ protected:
   void updateColorMap() override;
   std::string getStringForProxy(vtkSMProxy* proxy) override;
   vtkSMProxy* getProxyForString(const std::string& str) override;
+  void updateSliceWidget();
   static Direction stringToDirection(const QString& name);
   static Direction modeToDirection(int sliceMode);
   vtkImageData* imageData() const;
