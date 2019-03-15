@@ -21,10 +21,11 @@ prvileges).
     git clone --recursive git://github.com/openchemistry/tomviz.git
     cd tomviz/acquisition
     mkvirtualenv tomviz
-    pip install --process-dependency-links -e .
-    pip install --process-dependency-links -e .[dm3]
-    pip install --process-dependency-links -e .[tiff]
-    pip install --process-dependency-links -e .[test]
+    pip install 'git+https://cjh1@bitbucket.org/cjh1/pydm3reader.git@filelike'
+    pip install https://github.com/bottlepy/bottle/archive/41ed6965.zip
+    pip install -e .
+    pip install -e .[tiff]
+    pip install -e .[test]
 
 At this point you will have a Python environment with the required Python tools.
 

@@ -25,15 +25,9 @@ setup(
     ],
     packages=find_packages(),
     extras_require={
-        'dm3': ['dm3_lib==1.2'],
-        'tif': ['Pillow'],
+        'tiff': ['Pillow'],
         'test': ['requests', 'Pillow', 'mock', 'diskcache']
     },
-    install_requires=['bottle==0.13-dev'],
-    dependency_links=[
-        dm3_url,
-        bottle_url
-    ],
     entry_points={
         'console_scripts': [
             'tomviz-acquisition = tomviz.acquisition.cli:main',

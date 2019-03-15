@@ -1,3 +1,6 @@
+These instructions refer to the active acquisition server, refer to PASSIVE.md
+if you wish to monitor a directory for newly acquired data passively.
+
 # Installing development dependencies
 
 ```bash
@@ -10,7 +13,7 @@ pip install -r requirements-dev.txt
 
 ```bash
 cd <tomviz_repo>/acquisition
-python -m tomviz
+python -m tomviz.acquisition.cli
 
 ```
 
