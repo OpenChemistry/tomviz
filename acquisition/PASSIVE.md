@@ -35,7 +35,7 @@ Once everything is installed you can start the acquisition server with the
 following commands.
 
     workon tomviz
-    python -m tomviz.acquisition.cli -a tomviz.acquisition.vendors.passive.PassiveWatchSource
+    tomviz-acquisition -a tomviz.acquisition.vendors.passive.PassiveWatchSource
 
 This will result in a process running in the terminal on the machine that has a
 directory to be watched passively.
@@ -61,7 +61,7 @@ interface to aid in development. The following (from within the 'tomviz' Python
 virtual environment) will cause an image to be written from a stack every five
 seconds:
 
-    python -m tests.mock.tiltseries.writer -p /tmp/test -d 5 -t tiff
+    tomviz-tiltseries-writer -p /tmp/test -d 5 -t tiff
 
 It supports type of 'dm3' too, the path, delay, and type can all be modified. At
 present the angle information is not being fed through, this will be added next.
