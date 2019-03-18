@@ -31,10 +31,15 @@ void OperatorWidget::setupUI(OperatorPython* op)
   this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
   QString json = op->JSONDescription();
   if (!json.isNull()) {
-    DataSource* dataSource = op->childDataSource();
-    if (!dataSource) {
+    DataSource* dataSource = nullptr;
+    if (op->hasChildDataSource())
+      dataSource = op->childDataSource();
+    else
+      dataSource = qobject_cast<DataSource*>(op->parent());
+
+    if (!dataSource)
       dataSource = ActiveObjects::instance().activeDataSource();
-    }
+
     InterfaceBuilder* ib = new InterfaceBuilder(this, dataSource);
     ib->setJSONDescription(json);
     ib->setParameterValues(op->arguments());
