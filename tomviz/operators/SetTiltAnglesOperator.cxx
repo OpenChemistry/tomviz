@@ -206,7 +206,7 @@ public:
         double delta =
           (endAngle->value() - startAngle->value()) / (end - start);
         double baseAngle = startAngle->value();
-        if (delta < 0) {
+        if (end < start) {
           int temp = start;
           start = end;
           end = temp;
