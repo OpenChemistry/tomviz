@@ -91,7 +91,11 @@
           </widget>
          </item>
          <item>
-          <widget class="tomviz::DoubleSpinBox" name="projection"/>
+          <widget class="tomviz::DoubleSpinBox" name="projection">
+           <property name="decimals">
+            <number>0</number>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>

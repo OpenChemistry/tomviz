@@ -520,30 +520,13 @@ void RotateAlignWidget::onLengthUnitChanged(int val)
   updateWidgets();
 }
 
-void RotateAlignWidget::onProjectionNumberChanged(double val)
+void RotateAlignWidget::onProjectionNumberChanged(int val)
 {
-  vtkImageData* imageData = this->Internals->m_image;
-
-  int extent[6];
-  imageData->GetExtent(extent);
-  double spacing[3];
-  imageData->GetSpacing(spacing);
-  int dims[3];
-  imageData->GetDimensions(dims);
-
-  int newVal;
-  if (this->Internals->m_lengthUnit == LengthUnit::pixel) {
-    newVal = val;
-  } else {
-    newVal = val / spacing[2] - extent[4];
-  }
-
-  if (newVal == this->Internals->m_projectionNum) {
+  if (val == this->Internals->m_projectionNum)
     return;
-  }
 
-  this->Internals->m_projectionNum = newVal;
-  this->Internals->mainSliceMapper->SetSliceNumber(newVal);
+  this->Internals->m_projectionNum = val;
+  this->Internals->mainSliceMapper->SetSliceNumber(val);
   this->Internals->mainSliceMapper->Update();
   this->Internals->Ui.sliceView->GetRenderWindow()->Render();
 }
@@ -752,8 +735,6 @@ void RotateAlignWidget::updateControls()
 
   double projectionValue;
   double projectionRange[2];
-  double projectionStep;
-  int projectionDecimals;
 
   double sliceValues[3];
   double sliceRange[2];
@@ -774,13 +755,6 @@ void RotateAlignWidget::updateControls()
   double yAxisRange[2];
 
   if (this->Internals->m_lengthUnit == LengthUnit::physical) {
-    projectionValue =
-      (extent[4] + this->Internals->m_projectionNum) * spacing[2];
-    projectionRange[0] = extent[4] * spacing[2];
-    projectionRange[1] = extent[5] * spacing[2];
-    projectionStep = spacing[2];
-    projectionDecimals = std::max(0, int(std::ceil(-log10(spacing[2]))));
-
     rotationShiftValue = this->Internals->m_shiftRotation * spacing[1];
     rotationShiftRange[0] = -(dims[1] / 2) * spacing[1];
     rotationShiftRange[1] = (dims[1] / 2) * spacing[1];
@@ -800,12 +774,6 @@ void RotateAlignWidget::updateControls()
     yAxisRange[0] = extent[2] * spacing[1];
     yAxisRange[1] = extent[3] * spacing[1];
   } else {
-    projectionValue = this->Internals->m_projectionNum;
-    projectionRange[0] = 0;
-    projectionRange[1] = dims[2] - 1;
-    projectionStep = 1;
-    projectionDecimals = 0;
-
     rotationShiftValue = this->Internals->m_shiftRotation;
     rotationShiftRange[0] = -dims[1] / 2;
     rotationShiftRange[1] = dims[1] / 2;
@@ -826,10 +794,12 @@ void RotateAlignWidget::updateControls()
     yAxisRange[1] = dims[1];
   }
 
+  projectionValue = this->Internals->m_projectionNum;
+  projectionRange[0] = 0;
+  projectionRange[1] = dims[2] - 1;
+
   this->Internals->Ui.projection->setRange(projectionRange[0],
                                            projectionRange[1]);
-  this->Internals->Ui.projection->setSingleStep(projectionStep);
-  this->Internals->Ui.projection->setDecimals(projectionDecimals);
   this->Internals->Ui.projection->setValue(projectionValue);
 
   this->Internals->Ui.spinBox_1->setRange(sliceRange[0], sliceRange[1]);
