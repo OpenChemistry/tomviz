@@ -499,7 +499,7 @@ void RotateAlignWidget::onProjectionNumberChanged(int val)
   this->Internals->Ui.sliceView->GetRenderWindow()->Render();
 }
 
-void RotateAlignWidget::onRotationShiftChanged(double val)
+void RotateAlignWidget::onRotationShiftChanged(int val)
 {
   if (val == this->Internals->m_shiftRotation)
     return;

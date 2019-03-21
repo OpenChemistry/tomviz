@@ -38,7 +38,7 @@ signals:
 
 protected slots:
   void onProjectionNumberChanged(int);
-  void onRotationShiftChanged(double);
+  void onRotationShiftChanged(int);
   void onRotationAngleChanged(double);
   void onRotationAxisChanged();
 
