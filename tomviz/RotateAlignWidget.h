@@ -15,12 +15,6 @@ class vtkImageData;
 namespace tomviz {
 class Operator;
 
-enum class LengthUnit
-{
-  pixel,
-  physical
-};
-
 class RotateAlignWidget : public CustomPythonOperatorWidget
 {
   Q_OBJECT
@@ -43,7 +37,6 @@ signals:
   void creatingAlignedData();
 
 protected slots:
-  void onLengthUnitChanged(int);
   void onProjectionNumberChanged(int);
   void onRotationShiftChanged(double);
   void onRotationAngleChanged(double);
@@ -63,7 +56,7 @@ protected slots:
   void changeColorMap2() { this->changeColorMap(2); }
 
 private:
-  void onReconSliceChanged(int idx, double val);
+  void onReconSliceChanged(int idx, int val);
   void showChangeColorMapDialog(int reconSlice);
   void changeColorMap(int reconSlice);
 
