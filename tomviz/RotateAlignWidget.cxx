@@ -416,7 +416,11 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->m_slice1 = vtkMath::Round(0.50 * dims[0]);
   this->Internals->m_slice2 = vtkMath::Round(0.75 * dims[0]);
 
-  this->Internals->m_projectionNum = dims[2] / 2;
+  int projectionNum = dims[2] / 2;
+  this->Internals->m_projectionNum = projectionNum;
+  this->Internals->mainSliceMapper->SetSliceNumber(projectionNum);
+  this->Internals->mainSliceMapper->Update();
+
   this->Internals->m_shiftRotation = 0;
   this->Internals->m_tiltRotation = 0;
 
