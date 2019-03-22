@@ -1038,14 +1038,6 @@ bool PipelineModel::removeOp(Operator* o)
 {
   auto index = operatorIndex(o);
   if (index.isValid()) {
-    // Remove child data source
-    if (o->hasChildDataSource()) {
-      auto childDataSource = o->childDataSource();
-      if (childDataSource) {
-        childDataSource->removeAllOperators();
-      }
-    }
-
     // This will trigger the move of the "transformed" data source
     // so we need todo this outside the beginRemoveRow(...), otherwise
     // the model is not correctly invalidated.

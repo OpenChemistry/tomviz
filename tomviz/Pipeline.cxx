@@ -388,9 +388,7 @@ void Pipeline::addDataSource(DataSource* dataSource)
     if (!op->isNew()) {
       m_operatorsDeleted = true;
     }
-    // Do we need to move the transformed data source, !hasChildDataSource as we
-    // don't want to move "explicit" child data sources.
-    if (!op->hasChildDataSource() && op->childDataSource() != nullptr) {
+    if (op->childDataSource() != nullptr) {
       auto transformedDataSource = op->childDataSource();
       auto operators = op->dataSource()->operators();
       // We have an operator to move it to.
