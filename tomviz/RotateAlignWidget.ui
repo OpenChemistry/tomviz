@@ -67,20 +67,6 @@
         </spacer>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_9">
-         <item>
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>Length unit</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="lengthUnit"/>
-         </item>
-        </layout>
-       </item>
-       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_8">
          <item>
           <widget class="QLabel" name="label_4">
@@ -91,7 +77,11 @@
           </widget>
          </item>
          <item>
-          <widget class="tomviz::DoubleSpinBox" name="projection"/>
+          <widget class="tomviz::DoubleSpinBox" name="projection">
+           <property name="decimals">
+            <number>0</number>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -106,7 +96,11 @@
           </widget>
          </item>
          <item>
-          <widget class="tomviz::DoubleSpinBox" name="rotationAxis"/>
+          <widget class="tomviz::DoubleSpinBox" name="rotationAxis">
+           <property name="decimals">
+            <number>0</number>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -127,6 +121,9 @@
            </property>
            <property name="maximum">
             <double>180.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.500000000000000</double>
            </property>
           </widget>
          </item>
@@ -164,7 +161,11 @@
            </widget>
           </item>
           <item>
-           <widget class="tomviz::DoubleSpinBox" name="spinBox_1"/>
+           <widget class="tomviz::DoubleSpinBox" name="spinBox_1">
+            <property name="decimals">
+             <number>0</number>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="colorMapButton_1">
@@ -205,7 +206,11 @@
            </widget>
           </item>
           <item>
-           <widget class="tomviz::DoubleSpinBox" name="spinBox_2"/>
+           <widget class="tomviz::DoubleSpinBox" name="spinBox_2">
+            <property name="decimals">
+             <number>0</number>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="colorMapButton_2">
@@ -246,7 +251,11 @@
            </widget>
           </item>
           <item>
-           <widget class="tomviz::DoubleSpinBox" name="spinBox_3"/>
+           <widget class="tomviz::DoubleSpinBox" name="spinBox_3">
+            <property name="decimals">
+             <number>0</number>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="colorMapButton_3">
