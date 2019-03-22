@@ -42,10 +42,13 @@
 
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <sstream>
 
 namespace {
-void createOrResizeTiltAnglesArray(vtkDataObject* data)
+void createOrResizeTiltAnglesArray(
+  vtkDataObject* data,
+  vtkIdType maxSize = std::numeric_limits<vtkIdType>::max())
 {
   auto fd = data->GetFieldData();
   if (!fd->HasArray("tilt_angles")) {
@@ -53,7 +56,8 @@ void createOrResizeTiltAnglesArray(vtkDataObject* data)
     int numTiltAngles = extent[5] - extent[4] + 1;
     vtkNew<vtkDoubleArray> array;
     array->SetName("tilt_angles");
-    array->SetNumberOfTuples(numTiltAngles);
+    vtkIdType numTuples = numTiltAngles < maxSize ? numTiltAngles : maxSize;
+    array->SetNumberOfTuples(numTuples);
     array->FillComponent(0, 0.0);
     fd->AddArray(array);
   } else {
@@ -63,7 +67,8 @@ void createOrResizeTiltAnglesArray(vtkDataObject* data)
     int numTiltAngles = extent[5] - extent[4] + 1;
     auto array = fd->GetArray("tilt_angles");
     if (numTiltAngles != array->GetNumberOfTuples()) {
-      array->SetNumberOfTuples(numTiltAngles);
+      vtkIdType numTuples = numTiltAngles < maxSize ? numTiltAngles : maxSize;
+      array->SetNumberOfTuples(numTuples);
     }
   }
 }
@@ -1165,7 +1170,7 @@ void DataSource::setTiltAngles(vtkDataObject* data,
                                const QVector<double>& angles)
 {
   auto fd = data->GetFieldData();
-  createOrResizeTiltAnglesArray(data);
+  createOrResizeTiltAnglesArray(data, angles.size());
   if (fd->HasArray("tilt_angles")) {
     auto tiltAngles = fd->GetArray("tilt_angles");
     for (int i = 0; i < tiltAngles->GetNumberOfTuples() && i < angles.size();
