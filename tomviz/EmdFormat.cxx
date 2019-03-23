@@ -654,37 +654,36 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     spacing[2] = static_cast<double>(dim3[1] - dim3[0]);
     image->SetSpacing(spacing);
   }
+
   std::string units = "[n_m]"; // default to nanometers
+  QVector<double> angles;
   if (d->attribute(emdNode + "/dim1", "units", units)) {
     if (units == "[deg]") {
-      QVector<double> angles;
       for (unsigned i = 0; i < dim1.size(); ++i) {
         angles.push_back(dim1[i]);
       }
-      DataSource::setTiltAngles(image, angles);
     } else if (units == "[rad]") {
-      QVector<double> angles;
       for (unsigned i = 0; i < dim1.size(); ++i) {
         // Convert radians to degrees since tomviz assumes degrees everywhere.
         angles.push_back(dim1[i] * 180.0 / vtkMath::Pi());
       }
-      DataSource::setTiltAngles(image, angles);
     }
+  }
+
+  // If this is a tilt series, swap the X and Z axes
+  if (!angles.isEmpty()) {
+    vtkNew<vtkImagePermute> permute;
+    permute->SetFilteredAxes(2, 1, 0);
+    permute->SetInputData(image);
+    permute->Update();
+    image->ShallowCopy(permute->GetOutput());
+    DataSource::setTiltAngles(image, angles);
   }
 
   // Close up the file now we are done.
   if (d->fileId != H5I_INVALID_HID) {
     H5Fclose(d->fileId);
     d->fileId = H5I_INVALID_HID;
-  }
-
-  // If this is a tilt series, swap the X and Z axes
-  if (DataSource::hasTiltAngles(image)) {
-    vtkNew<vtkImagePermute> permute;
-    permute->SetFilteredAxes(2, 1, 0);
-    permute->SetInputData(image);
-    permute->Update();
-    image->ShallowCopy(permute->GetOutput());
   }
 
   return true;
