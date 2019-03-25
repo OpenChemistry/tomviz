@@ -681,7 +681,7 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
     DataSource::setTiltAngles(image, angles);
 
     // Now set the field data to preserve the tilt series state
-    auto typeArray = vtkSmartPointer<vtkTypeInt8Array>::New();
+    vtkNew<vtkTypeInt8Array> typeArray;
     typeArray->SetNumberOfComponents(1);
     typeArray->SetNumberOfTuples(1);
     typeArray->SetName("tomviz_data_source_type");
