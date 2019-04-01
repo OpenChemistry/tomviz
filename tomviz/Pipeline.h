@@ -120,6 +120,8 @@ signals:
 private:
   DataSource* findTransformedDataSource(DataSource* dataSource);
   Operator* findTransformedDataSourceOperator(DataSource* dataSource);
+  // Move modules down below the new data source
+  void moveModulesDown(DataSource* newChildDataSource);
   void addDataSource(DataSource* dataSource);
   bool beingEdited(DataSource* dataSource) const;
   bool isModified(DataSource* dataSource, Operator** firstModified) const;
