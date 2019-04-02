@@ -17,24 +17,34 @@ public:
   // If a file is open, automatically closes the file
   ~H5Reader();
 
+  H5Reader(const H5Reader&) = delete;
+  H5Reader& operator=(const H5Reader&) = delete;
+
   // These are for getting the types
   enum class DataType {
-    Int,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
     UInt8,
     UInt16,
     UInt32,
+    UInt64,
     Float,
     Double,
     String
-    // More to be added later...
   };
 
+  // Get a string representation of the DataType enum
+  static std::string dataTypeToString(const DataType& type);
+
   // Get the children of a path
-  std::vector<std::string> children(const std::string& path);
+  bool children(const std::string& path, std::vector<std::string>& result);
 
   // Get the type of the attribute
   // Returns false if the attribute does not exist
-  bool attributeType(const std::string& group, const std::string& name, DataType& type);
+  bool attributeType(const std::string& group, const std::string& name,
+                     DataType& type);
 
   // Read an attribute and interpret it as type T
   // Returns false if type T does not match the type of the attribute
@@ -47,7 +57,7 @@ public:
 
   // Get the number of dimensions of the data
   // Returns false if the data does not exist
-  bool numDimensions(const std::string& path, int& numDims);
+  bool numDims(const std::string& path, int& nDims);
 
   // Read 1-dimensional data and interpret it as type T
   // Returns false if type T does not match the type of the data,
@@ -67,4 +77,4 @@ private:
 
 } // namespace tomviz
 
-#endif // tomvizEmdFormat_h
+#endif // tomvizH5Reader_h
