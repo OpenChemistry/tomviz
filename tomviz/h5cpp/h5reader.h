@@ -12,15 +12,22 @@ namespace tomviz {
 
 class H5Reader {
 public:
-  // Opens the file
-  explicit H5Reader(const std::string& filename);
-  // If a file is open, automatically closes the file
+  /**
+   * Open an HDF5 file for reading.
+   * @param fileName the file to open for reading.
+   */
+  explicit H5Reader(const std::string& fileName);
+
+  /** Closes the file and destroys the H5Reader */
   ~H5Reader();
 
+  /** Copy constructor is disabled */
   H5Reader(const H5Reader&) = delete;
+
+  /** Assignment operator is disabled */
   H5Reader& operator=(const H5Reader&) = delete;
 
-  // These are for getting the types
+  /** Enumeration of the data types */
   enum class DataType {
     Int8,
     Int16,
@@ -32,57 +39,120 @@ public:
     UInt64,
     Float,
     Double,
-    String
+    String,
+    None = -1
   };
 
-  // Get a string representation of the DataType enum
+  /** Get a string representation of the enum DataType */
   static std::string dataTypeToString(const DataType& type);
 
-  // Get the children of a path
-  bool children(const std::string& path, std::vector<std::string>& result);
+  /**
+   * Get the children of a path.
+   * @param ok If used, set to true on success and false on failure.
+   * @return A vector of the names of the children.
+   */
+  std::vector<std::string> children(const std::string& path,
+                                    bool* ok = nullptr);
 
-  // Get the type of the attribute
-  // Returns false if the attribute does not exist
-  bool attributeType(const std::string& group, const std::string& name,
-                     DataType& type);
+  /**
+   * Check if a given path has at least one attribute.
+   * @param path The path to the attribute.
+   * @return True if the path has an attribute, false if it does not,
+   *         or if an error occurred.
+   */
+  bool hasAttribute(const std::string& path);
 
-  // Read an attribute and interpret it as type T
-  // Returns false if type T does not match the type of the attribute
+  /**
+   * Check if a given path has an attribute with a given name.
+   * @param path The path to the attribute.
+   * @param name The name of the attribute.
+   * @return True if the path has the attribute, false if it does not,
+   *         or if an error occurred.
+   */
+  bool hasAttribute(const std::string& path, const std::string& name);
+
+  /**
+   * Get an attribute's type.
+   * @param path The path to the attribute.
+   * @param name The name of the attribute.
+   * @return The datatype of the attribute, or DataType::None on failure.
+   */
+  DataType attributeType(const std::string& path, const std::string& name);
+
+  /**
+   * Read an attribute and interpret it as type T. If T is not
+   * the correct type of the attribute, an error will occur.
+   * @param path The path to the attribute.
+   * @param name The name of the attribute.
+   * @ok If used, set to true on success and false on failure.
+   * @return The attribute.
+   */
   template <typename T>
-  bool attribute(const std::string& group, const std::string& name, T& value);
+  T attribute(const std::string& path, const std::string& name,
+              bool* ok = nullptr);
 
-  // Get the type of the data
-  // Returns false if the data does not exist
-  bool dataType(const std::string& path, DataType& type);
+  /**
+   * Check if a given path is a data set.
+   * @return True if the path is a data set, false if it is not, or if
+   *         an error occurred.
+   */
+  bool isDataSet(const std::string& path);
 
-  // Get the number of dimensions of the data
-  // Returns false if the data does not exist
-  bool numDims(const std::string& path, int& nDims);
+  /**
+   * Get a data set's type. An error will occur if @p path is not a dataset.
+   * @param path The path to the data set.
+   * @return The datatype of the attribute, or DataType::None on failure.
+   */
+  DataType dataType(const std::string& path);
 
-  // Get the dimensions of the data
-  // Returns false if an error occurs
-  bool getDims(const std::string& path, std::vector<int>& dims);
+  /**
+   * Get the number of dimensions of a data set.
+   * @param path The path to the data set.
+   * @return The number of dimensions, or a negative number on failure.
+   */
+  int dimensionCount(const std::string& path);
 
-  // Read 1-dimensional data and interpret it as type T
-  // Returns false if type T does not match the type of the data,
-  // or if the data is multi-dimensional
+  /**
+   * Get the dimensions of a data set.
+   * @param path The path to the data set.
+   * @return A vector of the dimensions, or an empty vector on failure.
+   */
+  std::vector<int> getDimensions(const std::string& path);
+
+  /**
+   * Read a 1-dimensional data set and interpret it as type T. If @p path
+   * is not a data set, @p path is not a 1-dimensional data set, or T is
+   * not the correct type of the data set, an error will occur.
+   * @param path The path to the data set.
+   * @return A vector of the data, or an empty vector on failure.
+   */
   template <typename T>
-  bool readData(const std::string& path, std::vector<T>& data);
+  std::vector<T> readData(const std::string& path);
 
-  // Read 2-dimensional data and interpret it as type T
-  // Returns false if type T does not match the type of the data
+  /**
+   * Read a multi-dimensional data set and interpret it as type T. If
+   * @p path is not a data set, or T is not the correct type of the
+   * data set, an error will occur.
+   * @param path The path to the data set.
+   * @param dimensions Will be set to the dimensions of the data set.
+   * @return A vector of the data, or an empty vector on failure.
+   */
   template <typename T>
-  bool readData(const std::string& path, std::vector<std::vector<T>>& data);
+  std::vector<T> readData(const std::string& path,
+                          std::vector<int>& dimensions);
 
-  // Read multi-dimensional data and interpret it as type T.
-  // A vector containing the multi-dimensional data is returned, along
-  // with a vector containing the dimensions.
-  // The caller can use the dimensions to put the results in an object
-  // of a different shape, if desired.
-  // Returns false if an error occurs.
+  /**
+   * Read a multi-dimensional data set and interpret it as type T. If
+   * @p path is not a data set, or T is not the correct type of the
+   * data set, an error will occur.
+   * @param path The path to the data set.
+   * @param data A pointer to a block of memory with a size large enough
+   *             to hold the data (size >= dim1 * dim2 * dim3...). This
+   *             will be set to the data read from the data set.
+   * @return A vector of the dimensions, or an empty vector on failure.
+   */
   template <typename T>
-  bool readData(const std::string& path, std::vector<T>& data,
-                std::vector<int>& dimensions);
+  std::vector<int> readData(const std::string& path, T* data);
 
 private:
   class H5ReaderImpl;
