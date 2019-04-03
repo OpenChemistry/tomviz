@@ -59,16 +59,30 @@ public:
   // Returns false if the data does not exist
   bool numDims(const std::string& path, int& nDims);
 
+  // Get the dimensions of the data
+  // Returns false if an error occurs
+  bool getDims(const std::string& path, std::vector<int>& dims);
+
   // Read 1-dimensional data and interpret it as type T
   // Returns false if type T does not match the type of the data,
   // or if the data is multi-dimensional
   template <typename T>
   bool readData(const std::string& path, std::vector<T>& data);
 
-  // Read multi-dimensional data and interpret it as type T
+  // Read 2-dimensional data and interpret it as type T
   // Returns false if type T does not match the type of the data
   template <typename T>
   bool readData(const std::string& path, std::vector<std::vector<T>>& data);
+
+  // Read multi-dimensional data and interpret it as type T.
+  // A vector containing the multi-dimensional data is returned, along
+  // with a vector containing the dimensions.
+  // The caller can use the dimensions to put the results in an object
+  // of a different shape, if desired.
+  // Returns false if an error occurs.
+  template <typename T>
+  bool readData(const std::string& path, std::vector<T>& data,
+                std::vector<int>& dimensions);
 
 private:
   class H5ReaderImpl;
