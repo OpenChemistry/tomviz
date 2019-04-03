@@ -149,10 +149,10 @@ public:
    * @param data A pointer to a block of memory with a size large enough
    *             to hold the data (size >= dim1 * dim2 * dim3...). This
    *             will be set to the data read from the data set.
-   * @return A vector of the dimensions, or an empty vector on failure.
+   * @return True on success, false on failure.
    */
   template <typename T>
-  std::vector<int> readData(const std::string& path, T* data);
+  bool readData(const std::string& path, T* data);
 
 private:
   class H5ReaderImpl;
