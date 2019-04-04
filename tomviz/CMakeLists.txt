@@ -314,6 +314,10 @@ list(APPEND SOURCES
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/operators)
 
+list(APPEND SOURCES
+  h5cpp/h5readwrite.cpp
+)
+
 set(exec_sources
   AboutDialog.h
   AboutDialog.cxx
@@ -558,7 +562,6 @@ target_link_libraries(tomvizlib
     vtkjsoncpp
     vtkpugixml
     tomvizExtensions
-    h5cpp
     Qt5::Network)
 if(WIN32)
   target_link_libraries(tomvizlib PUBLIC Qt5::WinMain)
@@ -581,5 +584,3 @@ if(tomviz_data_DIR)
 endif()
 
 add_subdirectory(pybind11)
-
-add_subdirectory(h5cpp)
