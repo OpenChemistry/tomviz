@@ -17,8 +17,6 @@
 
 #include <vtkSMSourceProxy.h>
 
-#include "vtk_hdf5.h"
-
 #include <cassert>
 #include <string>
 #include <vector>
@@ -26,35 +24,6 @@
 #include <iostream>
 
 namespace tomviz {
-
-/**
- * Write the data into the supplied group. This is really just mapping the C++
- * vtkImageData types to the HDF5 API/types.
- *
- * dataTypeId refers to the type that will be stored in the HDF5 file
- * memTypeId refers to the memory type that will be copied from vtkImageData
- */
-template <typename T>
-bool writeVolume(T* buffer, hid_t groupId, const char* name, hid_t dataspaceId,
-                 hid_t dataTypeId, hid_t memTypeId)
-{
-  bool success = true;
-  hid_t dataId = H5Dcreate(groupId, name, dataTypeId, dataspaceId, H5P_DEFAULT,
-                           H5P_DEFAULT, H5P_DEFAULT);
-  if (dataId < 0) { // Failed to create object.
-    return false;
-  }
-  hid_t status =
-    H5Dwrite(dataId, memTypeId, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer);
-  if (status < 0) {
-    success = false;
-  }
-  status = H5Dclose(dataId);
-  if (status < 0) {
-    success = false;
-  }
-  return success;
-}
 
 template <typename T>
 void ReorderArrayC(T* in, T* out, int dim[3])
@@ -105,243 +74,46 @@ std::string firstEmdNode(h5::H5ReadWrite& reader)
   return "";
 }
 
-int dataTypeToVTK(h5::H5ReadWrite::DataType& type)
+static const std::map<h5::H5ReadWrite::DataType, int> DataTypeToVTK =
 {
-  using DataType = h5::H5ReadWrite::DataType;
-  switch (type) {
-    case DataType::Float:
-      return VTK_FLOAT;
-    case DataType::Double:
-      return VTK_DOUBLE;
-    case DataType::Int8:
-      return VTK_SIGNED_CHAR;
-    case DataType::Int16:
-      return VTK_SHORT;
-    case DataType::Int32:
-      return VTK_INT;
-    case DataType::Int64:
-      return VTK_LONG_LONG;
-    case DataType::UInt8:
-      return VTK_UNSIGNED_CHAR;
-    case DataType::UInt16:
-      return VTK_UNSIGNED_SHORT;
-    case DataType::UInt32:
-      return VTK_UNSIGNED_INT;
-    case DataType::UInt64:
-      return VTK_UNSIGNED_LONG_LONG;
-    default:
-      cout << "Error: could not convert DataType to VTK\n";
-      return -1;
-  }
-}
-
-class EmdFormat::Private
-{
-public:
-  Private() : fileId(H5I_INVALID_HID) {}
-  hid_t fileId;
-
-  hid_t createGroup(const std::string& group)
-  {
-    return H5Gcreate(fileId, group.c_str(), H5P_DEFAULT, H5P_DEFAULT,
-                     H5P_DEFAULT);
-  }
-
-  bool setAttribute(const std::string& group, const std::string& name,
-                    void* value, hid_t fileTypeId, hid_t typeId, hsize_t dims,
-                    bool onData)
-  {
-    hid_t parentId;
-    if (onData) {
-      parentId = H5Dopen(fileId, group.c_str(), H5P_DEFAULT);
-    } else {
-      parentId = H5Gopen(fileId, group.c_str(), H5P_DEFAULT);
-    }
-    hid_t dataspaceId = H5Screate_simple(1, &dims, NULL);
-    hid_t attributeId = H5Acreate2(parentId, name.c_str(), fileTypeId,
-                                   dataspaceId, H5P_DEFAULT, H5P_DEFAULT);
-    herr_t status = H5Awrite(attributeId, typeId, value);
-    if (status < 0) {
-      return false;
-    }
-    status = H5Aclose(attributeId);
-    if (status < 0) {
-      return false;
-    }
-    status = H5Sclose(dataspaceId);
-    if (status < 0) {
-      return false;
-    }
-    if (onData) {
-      status = H5Dclose(parentId);
-    } else {
-      status = H5Gclose(parentId);
-    }
-    if (status < 0) {
-      return false;
-    }
-    return true;
-  }
-
-  bool setAttribute(const std::string& group, const std::string& name,
-                    float value, bool onData = false)
-  {
-    return setAttribute(group, name, reinterpret_cast<void*>(&value),
-                        H5T_IEEE_F32LE, H5T_NATIVE_FLOAT, 1, onData);
-  }
-
-  bool setAttribute(const std::string& group, const std::string& name,
-                    int value, bool onData = false)
-  {
-    return setAttribute(group, name, reinterpret_cast<void*>(&value),
-                        H5T_STD_U32LE, H5T_NATIVE_INT, 1, onData);
-  }
-
-  bool setAttribute(const std::string& group, const std::string& name,
-                    const std::string& value, bool onData = false)
-  {
-    hid_t parentId;
-    if (onData) {
-      parentId = H5Dopen(fileId, group.c_str(), H5P_DEFAULT);
-    } else {
-      parentId = H5Gopen(fileId, group.c_str(), H5P_DEFAULT);
-    }
-    hsize_t dims = 1;
-    hid_t dataspaceId = H5Screate_simple(1, &dims, NULL);
-    hid_t dataType = H5Tcopy(H5T_C_S1);
-    herr_t status = H5Tset_size(dataType, H5T_VARIABLE);
-    hid_t attributeId = H5Acreate2(parentId, name.c_str(), dataType,
-                                   dataspaceId, H5P_DEFAULT, H5P_DEFAULT);
-    const char* tmp = value.c_str();
-    status = H5Awrite(attributeId, dataType, &tmp);
-    if (status < 0) {
-      return false;
-    }
-    status = H5Aclose(attributeId);
-    if (status < 0) {
-      return false;
-    }
-    status = H5Sclose(dataspaceId);
-    if (status < 0) {
-      return false;
-    }
-    if (onData) {
-      status = H5Dclose(parentId);
-    } else {
-      status = H5Gclose(parentId);
-    }
-    if (status < 0) {
-      return false;
-    }
-    return true;
-  }
-
-  bool writeData(const std::string& group, const std::string& name,
-                 const std::vector<int>& dims, const std::vector<float>& data)
-  {
-    bool success = true;
-    std::vector<hsize_t> h5dim;
-    for (size_t i = 0; i < dims.size(); ++i) {
-      h5dim.push_back(static_cast<hsize_t>(dims[i]));
-    }
-    hid_t groupId = H5Gopen(fileId, group.c_str(), H5P_DEFAULT);
-    hid_t dataspaceId =
-      H5Screate_simple(static_cast<int>(dims.size()), &h5dim[0], NULL);
-    hid_t dataId = H5Dcreate(groupId, name.c_str(), H5T_IEEE_F32LE, dataspaceId,
-                             H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    hid_t status = H5Dwrite(dataId, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL,
-                            H5P_DEFAULT, &data[0]);
-    if (status < 0) {
-      success = false;
-    }
-    status = H5Dclose(dataId);
-    status = H5Sclose(dataspaceId);
-    status = H5Gclose(groupId);
-    return success;
-  }
-
-  bool writeData(const std::string& group, const std::string& name,
-                 vtkImageData* data)
-  {
-    bool success = true;
-    hsize_t h5dim[3];
-
-    int dim[3] = { 0, 0, 0 };
-    data->GetDimensions(dim);
-    h5dim[0] = dim[0];
-    h5dim[1] = dim[1];
-    h5dim[2] = dim[2];
-
-    // We must allocate a new array, and copy the reordered array into it.
-    auto arrayPtr = data->GetPointData()->GetScalars();
-    auto dataPtr = arrayPtr->GetVoidPointer(0);
-    vtkNew<vtkImageData> reorderedImageData;
-    reorderedImageData->SetDimensions(dim);
-    reorderedImageData->AllocateScalars(arrayPtr->GetDataType(), 1);
-    auto outPtr =
-      reorderedImageData->GetPointData()->GetScalars()->GetVoidPointer(0);
-
-    switch (arrayPtr->GetDataType()) {
-    vtkTemplateMacro(tomviz::ReorderArrayC(
-      reinterpret_cast<VTK_TT*>(dataPtr), reinterpret_cast<VTK_TT*>(outPtr),
-      dim));
-    default:
-      cout << "EMD: Unknown data type" << endl;
-    }
-
-    // Map the VTK types to the HDF5 types for storage and memory. We should
-    // probably add more, but I got the important ones for testing in first.
-    hid_t dataTypeId = 0;
-    hid_t memTypeId = 0;
-    switch (data->GetScalarType()) {
-      case VTK_DOUBLE:
-        dataTypeId = H5T_IEEE_F64LE;
-        memTypeId = H5T_NATIVE_DOUBLE;
-        break;
-      case VTK_FLOAT:
-        dataTypeId = H5T_IEEE_F32LE;
-        memTypeId = H5T_NATIVE_FLOAT;
-        break;
-      case VTK_UNSIGNED_INT:
-        dataTypeId = H5T_STD_U32LE;
-        memTypeId = H5T_NATIVE_UINT;
-        break;
-      case VTK_UNSIGNED_SHORT:
-        dataTypeId = H5T_STD_U16LE;
-        memTypeId = H5T_NATIVE_USHORT;
-        break;
-      case VTK_UNSIGNED_CHAR:
-        dataTypeId = H5T_STD_U8LE;
-        memTypeId = H5T_NATIVE_UCHAR;
-        break;
-      default:
-        success = false;
-    }
-
-    hid_t groupId = H5Gopen(fileId, group.c_str(), H5P_DEFAULT);
-    hid_t dataspaceId = H5Screate_simple(3, &h5dim[0], NULL);
-
-    switch (data->GetScalarType()) {
-      vtkTemplateMacro(success =
-                         writeVolume((VTK_TT*)(outPtr), groupId, name.c_str(),
-                                     dataspaceId, dataTypeId, memTypeId));
-      default:
-        success = false;
-    }
-
-    hid_t status = H5Sclose(dataspaceId);
-    if (status < 0) {
-      success = false;
-    }
-    status = H5Gclose(groupId);
-    if (status < 0) {
-      success = false;
-    }
-    return success;
-  }
+  { h5::H5ReadWrite::DataType::Int8,   VTK_SIGNED_CHAR        },
+  { h5::H5ReadWrite::DataType::Int16,  VTK_SHORT              },
+  { h5::H5ReadWrite::DataType::Int32,  VTK_INT                },
+  { h5::H5ReadWrite::DataType::Int64,  VTK_LONG_LONG          },
+  { h5::H5ReadWrite::DataType::UInt8,  VTK_UNSIGNED_CHAR      },
+  { h5::H5ReadWrite::DataType::UInt16, VTK_UNSIGNED_SHORT     },
+  { h5::H5ReadWrite::DataType::UInt32, VTK_UNSIGNED_INT       },
+  { h5::H5ReadWrite::DataType::UInt64, VTK_UNSIGNED_LONG_LONG },
+  { h5::H5ReadWrite::DataType::Float,  VTK_FLOAT              },
+  { h5::H5ReadWrite::DataType::Double, VTK_DOUBLE             }
 };
 
-EmdFormat::EmdFormat() : d(new Private) {}
+int dataTypeToVTK(h5::H5ReadWrite::DataType& type)
+{
+  auto it = DataTypeToVTK.find(type);
+
+  if (it == DataTypeToVTK.end()) {
+    cerr << "Could not convert DataType to VTK!\n";
+    return -1;
+  }
+
+  return it->second;
+}
+
+h5::H5ReadWrite::DataType VTKToDataType(int type)
+{
+  auto it = DataTypeToVTK.cbegin();
+  while (it != DataTypeToVTK.cend()) {
+
+    if (it->second == type)
+      return it->first;
+
+    ++it;
+  }
+
+  cerr << "Failed to convert VTK to DataType\n";
+  return h5::H5ReadWrite::DataType::None;
+}
 
 bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 {
@@ -467,24 +239,20 @@ bool EmdFormat::write(const std::string& fileName, DataSource* source)
 
 bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
 {
-  d->fileId =
-    H5Fcreate(fileName.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-  // Create the version attribute on the root group.
-  hid_t groupId = H5Gopen(d->fileId, "/", H5P_DEFAULT);
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::WriteOnly;
+  H5ReadWrite writer(fileName, mode);
 
   // Now to create the attributes, groups, etc.
-  d->setAttribute("/", "version_major", 0);
-  d->setAttribute("/", "version_minor", 2);
+  writer.setAttribute("/", "version_major", 0u);
+  writer.setAttribute("/", "version_minor", 2u);
 
   // Now create a "data" group
-  hid_t dataGroupId = d->createGroup("/data");
-  hid_t tomoGroupId = d->createGroup("/data/tomography");
+  writer.createGroup("/data");
+  writer.createGroup("/data/tomography");
 
   // Now create the emd_group_type attribute.
-  d->setAttribute("/data/tomography", "emd_group_type", 1);
-
-  hid_t status;
+  writer.setAttribute("/data/tomography", "emd_group_type", 1u);
 
   // See if we have tilt angles
   auto hasTiltAngles = DataSource::hasTiltAngles(image);
@@ -531,51 +299,59 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
     imageDimDataZ[i] = i * spacing[zIndex];
   }
 
-  d->writeData("/data/tomography", "data", permutedImage);
+  int dim[3] = { 0, 0, 0 };
+  permutedImage->GetDimensions(dim);
+  std::vector<int> dims({dim[0], dim[1], dim[2]});
+
+  // We must allocate a new array, and copy the reordered array into it.
+  auto arrayPtr = permutedImage->GetPointData()->GetScalars();
+  auto dataPtr = arrayPtr->GetVoidPointer(0);
+  vtkNew<vtkImageData> reorderedImageData;
+  reorderedImageData->SetDimensions(dim);
+  reorderedImageData->AllocateScalars(arrayPtr->GetDataType(), 1);
+  auto outPtr =
+    reorderedImageData->GetPointData()->GetScalars()->GetVoidPointer(0);
+
+  switch (arrayPtr->GetDataType()) {
+  vtkTemplateMacro(tomviz::ReorderArrayC(
+    reinterpret_cast<VTK_TT*>(dataPtr), reinterpret_cast<VTK_TT*>(outPtr),
+    dim));
+  default:
+    cout << "EMD: Unknown data type" << endl;
+  }
+
+  H5ReadWrite::DataType type = VTKToDataType(arrayPtr->GetDataType());
+
+  writer.writeData("/data/tomography", "data", dims, type, outPtr);
 
   // Create the 3 dim sets too...
   std::vector<int> side(1);
   side[0] = imageDimDataX.size();
-  d->writeData("/data/tomography", "dim1", side, imageDimDataX);
+  writer.writeData("/data/tomography", "dim1", side, imageDimDataX);
   if (hasTiltAngles) {
-    d->setAttribute("/data/tomography/dim1", "name", "angles", true);
-    d->setAttribute("/data/tomography/dim1", "units", "[deg]", true);
+    writer.setAttribute("/data/tomography/dim1", "name", "angles");
+    writer.setAttribute("/data/tomography/dim1", "units", "[deg]");
   }
   else {
-    d->setAttribute("/data/tomography/dim1", "name", "x", true);
-    d->setAttribute("/data/tomography/dim1", "units", "[n_m]", true);
+    writer.setAttribute("/data/tomography/dim1", "name", "x");
+    writer.setAttribute("/data/tomography/dim1", "units", "[n_m]");
   }
 
   side[0] = imageDimDataY.size();
-  d->writeData("/data/tomography", "dim2", side, imageDimDataY);
-  d->setAttribute("/data/tomography/dim2", "name", "y", true);
-  d->setAttribute("/data/tomography/dim2", "units", "[n_m]", true);
+  writer.writeData("/data/tomography", "dim2", side, imageDimDataY);
+  writer.setAttribute("/data/tomography/dim2", "name", "y");
+  writer.setAttribute("/data/tomography/dim2", "units", "[n_m]");
 
   side[0] = imageDimDataZ.size();
-  d->writeData("/data/tomography", "dim3", side, imageDimDataZ);
+  writer.writeData("/data/tomography", "dim3", side, imageDimDataZ);
   if (hasTiltAngles) {
-    d->setAttribute("/data/tomography/dim3", "name", "x", true);
-    d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
+    writer.setAttribute("/data/tomography/dim3", "name", "x");
+    writer.setAttribute("/data/tomography/dim3", "units", "[n_m]");
   } else {
-    d->setAttribute("/data/tomography/dim3", "name", "z", true);
-    d->setAttribute("/data/tomography/dim3", "units", "[n_m]", true);
+    writer.setAttribute("/data/tomography/dim3", "name", "z");
+    writer.setAttribute("/data/tomography/dim3", "units", "[n_m]");
   }
 
-  status = H5Gclose(tomoGroupId);
-  status = H5Gclose(dataGroupId);
-
-  status = H5Gclose(groupId);
-
-  // Close up the file now we are done.
-  if (d->fileId != H5I_INVALID_HID) {
-    status = H5Fclose(d->fileId);
-    d->fileId = H5I_INVALID_HID;
-  }
-  return status >= 0;
-}
-
-EmdFormat::~EmdFormat()
-{
-  delete d;
+  return true;
 }
 } // namespace tomviz
