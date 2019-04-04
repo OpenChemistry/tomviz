@@ -171,6 +171,18 @@ public:
   template <typename T>
   bool readData(const std::string& path, T* data);
 
+  /**
+   * Read a multi-dimensional data set and itnerpret it as type @p type.
+   * If @p path is not a data set, or @p type is not the correct type
+   * of the data set, an error will occur.
+   * @param path The path to the data set.
+   * @param type The type of the data set.
+   * @param data A pointer to a block of memory with a size large enough
+   *             to hold the data (size >= dim1 * dim2 * dim3...). This
+   *             will be set to the data read from the data set.
+   * @return True on success, false on failure.
+   */
+  bool readData(const std::string& path, const DataType& type, void* data);
 
   /**
    * Write data to a specified path.

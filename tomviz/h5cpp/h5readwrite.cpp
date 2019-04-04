@@ -612,6 +612,34 @@ bool H5ReadWrite::readData(const string& path, T* data)
   return true;
 }
 
+bool H5ReadWrite::readData(const string& path, const DataType& type,
+                           void* data)
+{
+  auto it = DataTypeToH5DataType.find(type);
+  if (it == DataTypeToH5DataType.end()) {
+    cerr << "Failed to get H5 data type for " << dataTypeToString(type)
+         << "\n";
+    return false;
+  }
+
+  hid_t dataTypeId = it->second;
+
+  auto memIt = DataTypeToH5MemType.find(type);
+  if (memIt == DataTypeToH5MemType.end()) {
+    cerr << "Failed to get H5 mem type for " << dataTypeToString(type) << "\n";
+    return false;
+  }
+
+  hid_t memTypeId = memIt->second;
+
+  if (!m_impl->readData(path, dataTypeId, memTypeId, data)) {
+    cerr << "Failed to read the data\n";
+    return false;
+  }
+
+  return true;
+}
+
 template <typename T>
 bool H5ReadWrite::writeData(const string& path, const string& name,
                          const vector<int>& dims, const vector<T>& data)
