@@ -6,7 +6,7 @@
 
 #include "h5capi.h"
 
-namespace tomviz {
+namespace h5 {
 
 class HIDCloser
 {
@@ -59,6 +59,6 @@ private:
   herr_t (*m_closer) (hid_t) = nullptr;
 };
 
-} // namespace tomviz
+} // namespace h5
 
 #endif // tomvizHIDCloser

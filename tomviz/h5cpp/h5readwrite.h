@@ -1,31 +1,41 @@
 /* This source file is part of the Tomviz project, https://tomviz.org/.
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
-#ifndef tomvizH5Reader_h
-#define tomvizH5Reader_h
+#ifndef tomvizH5ReadWrite_h
+#define tomvizH5ReadWrite_h
 
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace tomviz {
+namespace h5 {
 
-class H5Reader {
+class H5ReadWrite {
 public:
+
+  /**
+   * Enumeration of the open modes.
+   */
+  enum class OpenMode {
+    ReadOnly,
+    WriteOnly
+  };
+
   /**
    * Open an HDF5 file for reading.
    * @param fileName the file to open for reading.
    */
-  explicit H5Reader(const std::string& fileName);
+  explicit H5ReadWrite(const std::string& fileName,
+                    OpenMode mode = OpenMode::ReadOnly);
 
-  /** Closes the file and destroys the H5Reader */
-  ~H5Reader();
+  /** Closes the file and destroys the H5ReadWrite */
+  ~H5ReadWrite();
 
   /** Copy constructor is disabled */
-  H5Reader(const H5Reader&) = delete;
+  H5ReadWrite(const H5ReadWrite&) = delete;
 
   /** Assignment operator is disabled */
-  H5Reader& operator=(const H5Reader&) = delete;
+  H5ReadWrite& operator=(const H5ReadWrite&) = delete;
 
   /** Enumeration of the data types */
   enum class DataType {
@@ -161,11 +171,35 @@ public:
   template <typename T>
   bool readData(const std::string& path, T* data);
 
+
+  /**
+   * Write data to a specified path.
+   * @param path The path where the data will be written.
+   * @param name The name of the data.
+   * @param dimensions The dimensions of the data.
+   * @param data The data to write.
+   * @return True on success, false on failure.
+   */
+  template <typename T>
+  bool writeData(const std::string& path, const std::string& name,
+                 const std::vector<int>& dimensions,
+                 const std::vector<T>& data);
+
+  /**
+   * Set an attribute on a specified path.
+   * @param path The path where the attribute will be written.
+   * @param name The name of the attribute.
+   * @param value The value of the attribute.
+   * @return True on success, false on failure.
+   */
+  template <typename T>
+  bool setAttribute(const std::string& path, const std::string& name, T value);
+
 private:
-  class H5ReaderImpl;
-  std::unique_ptr<H5ReaderImpl> m_impl;
+  class H5ReadWriteImpl;
+  std::unique_ptr<H5ReadWriteImpl> m_impl;
 };
 
-} // namespace tomviz
+} // namespace h5
 
-#endif // tomvizH5Reader_h
+#endif // tomvizH5ReadWrite_h

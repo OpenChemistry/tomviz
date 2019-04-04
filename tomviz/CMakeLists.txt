@@ -580,3 +580,5 @@ if(tomviz_data_DIR)
 endif()
 
 add_subdirectory(pybind11)
+
+add_subdirectory(h5cpp)
