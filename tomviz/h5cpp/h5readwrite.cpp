@@ -695,7 +695,7 @@ bool H5ReadWrite::setAttribute(const string& path, const string& name, T value)
 // Specialization for string
 template<>
 bool H5ReadWrite::setAttribute<const string&>(const string& path, const string& name,
-                                           const string& value)
+                                              const string& value)
 {
   if (!m_impl->fileIsValid()) {
     cerr << "File is not valid\n";
@@ -735,6 +735,14 @@ bool H5ReadWrite::setAttribute<const string&>(const string& path, const string& 
 
   return H5Awrite(attributeId, dataType, value.c_str());
 }
+
+template<>
+bool H5ReadWrite::setAttribute<const char*>(const string& path, const string& name,
+                                            const char* value)
+{
+  return setAttribute<const string&>(path, name, value);
+}
+
 
 bool H5ReadWrite::createGroup(const string& path)
 {
@@ -840,6 +848,7 @@ template bool H5ReadWrite::setAttribute(const string&, const string&, unsigned l
 template bool H5ReadWrite::setAttribute(const string&, const string&, float);
 template bool H5ReadWrite::setAttribute(const string&, const string&, double);
 template bool H5ReadWrite::setAttribute(const string&, const string&, const string&);
+template bool H5ReadWrite::setAttribute(const string&, const string&, const char*);
 
 // writeData
 template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const vector<char>&);
