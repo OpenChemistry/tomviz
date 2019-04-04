@@ -676,6 +676,17 @@ bool H5ReadWrite::setAttribute<const string&>(const string& path, const string& 
   return H5Awrite(attributeId, dataType, value.c_str());
 }
 
+bool H5ReadWrite::createGroup(const string& path)
+{
+  if (!m_impl->fileIsValid()) {
+    cerr << "File is not valid\n";
+    return false;
+  }
+
+  return H5Gcreate(m_impl->fileId(), path.c_str(), H5P_DEFAULT, H5P_DEFAULT,
+                   H5P_DEFAULT);
+}
+
 string H5ReadWrite::dataTypeToString(const DataType& type)
 {
   // Internal map. Keep it updated with the enum.

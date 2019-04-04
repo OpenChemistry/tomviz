@@ -195,6 +195,13 @@ public:
   template <typename T>
   bool setAttribute(const std::string& path, const std::string& name, T value);
 
+  /**
+   * Create a group.
+   * @param path The path to the group that will be created.
+   * @return True on success, false on failure
+   */
+  bool createGroup(const std::string& path);
+
 private:
   class H5ReadWriteImpl;
   std::unique_ptr<H5ReadWriteImpl> m_impl;
