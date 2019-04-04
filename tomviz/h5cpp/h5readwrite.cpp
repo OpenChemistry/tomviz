@@ -758,8 +758,16 @@ bool H5ReadWrite::createGroup(const string& path)
     return false;
   }
 
-  return H5Gcreate(m_impl->fileId(), path.c_str(), H5P_DEFAULT, H5P_DEFAULT,
-                   H5P_DEFAULT);
+  hid_t id = H5Gcreate(m_impl->fileId(), path.c_str(), H5P_DEFAULT, H5P_DEFAULT,
+                       H5P_DEFAULT);
+
+  if (id < 0) {
+    cerr << "Failed to create group\n";
+    return false;
+  }
+
+  H5Gclose(id);
+  return true;
 }
 
 string H5ReadWrite::dataTypeToString(const DataType& type)
