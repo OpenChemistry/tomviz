@@ -718,7 +718,7 @@ bool H5ReadWrite::setAttribute<const string&>(const string& path, const string& 
   HIDCloser parentCloser(parentId, closer);
 
   hsize_t dims = 1;
-  hid_t dataSpaceId = H5Screate_simple(1, &dims, nullptr);
+  hid_t dataSpaceId = H5Screate_simple(1, &dims, NULL);
   hid_t dataType = H5Tcopy(H5T_C_S1);
   herr_t status = H5Tset_size(dataType, H5T_VARIABLE);
 
@@ -730,10 +730,17 @@ bool H5ReadWrite::setAttribute<const string&>(const string& path, const string& 
   hid_t attributeId = H5Acreate2(parentId, name.c_str(), dataType,
                                  dataSpaceId, H5P_DEFAULT, H5P_DEFAULT);
 
+  if (attributeId < 0) {
+    cerr << "Failed to create attribute\n";
+    return false;
+  }
+
   HIDCloser attributeCloser(attributeId, H5Aclose);
   HIDCloser dataSpaceCloser(dataSpaceId, H5Sclose);
 
-  return H5Awrite(attributeId, dataType, value.c_str());
+  // Need a char**
+  const char* tmp = value.c_str();
+  return H5Awrite(attributeId, dataType, &tmp) >= 0;
 }
 
 template<>
