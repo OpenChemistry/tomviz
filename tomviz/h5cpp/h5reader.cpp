@@ -35,6 +35,23 @@ namespace tomviz {
 
 using DataType = H5Reader::DataType;
 
+class ListAllDataSetsVisitor
+{
+public:
+  vector<string> dataSets;
+  static herr_t operation(hid_t /*o_id*/, const char* name,
+                          const H5O_info_t* object_info, void* op_data)
+  {
+    // If this object isn't a dataset, continue
+    if (object_info->type != H5O_TYPE_DATASET)
+      return 0;
+
+    auto* self = reinterpret_cast<ListAllDataSetsVisitor*>(op_data);
+    self->dataSets.push_back(name);
+    return 0;
+  }
+};
+
 class H5Reader::H5ReaderImpl {
 public:
   H5ReaderImpl()
@@ -349,6 +366,21 @@ DataType H5Reader::attributeType(const string& path, const string& name)
 bool H5Reader::isDataSet(const string& path)
 {
   return m_impl->isDataSet(path);
+}
+
+vector<string> H5Reader::allDataSets()
+{
+  if (!m_impl->fileIsValid())
+    return vector<string>();
+
+  ListAllDataSetsVisitor visitor;
+  herr_t code = H5Ovisit(m_impl->fileId(), H5_INDEX_NAME, H5_ITER_INC,
+                         &visitor.operation, &visitor);
+
+  if (code < 0)
+    return vector<string>();
+
+  return visitor.dataSets;
 }
 
 DataType H5Reader::dataType(const string& path)

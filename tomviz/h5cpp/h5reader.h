@@ -99,6 +99,13 @@ public:
   bool isDataSet(const std::string& path);
 
   /**
+   * Get the paths to all of the data sets in the file.
+   * This could potentially be an expensive operation for large files.
+   * @return A vector of strings of the paths to the data sets.
+   */
+  std::vector<std::string> allDataSets();
+
+  /**
    * Get a data set's type. An error will occur if @p path is not a dataset.
    * @param path The path to the data set.
    * @return The datatype of the attribute, or DataType::None on failure.
