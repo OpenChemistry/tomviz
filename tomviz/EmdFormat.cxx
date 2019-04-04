@@ -122,13 +122,13 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
   H5ReadWrite reader(fileName.c_str(), mode);
 
   bool ok;
-  reader.attribute<unsigned int>("/", "version_major");
+  reader.attribute<unsigned int>("/", "version_major", &ok);
 
   if (!ok) {
     cout << "Failed to find version_major" << endl;
   }
 
-  reader.attribute<unsigned int>("/", "version_minor");
+  reader.attribute<unsigned int>("/", "version_minor", &ok);
   if (!ok) {
     cout << "Failed to find version_minor" << endl;
   }
