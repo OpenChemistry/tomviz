@@ -566,7 +566,7 @@ void MainWindow::openFiles(int argc, char** argv)
 void MainWindow::openTilt()
 {
   QString path = QApplication::applicationDirPath() + "/../share/tomviz/Data";
-  path += "/TiltSeries_NanoParticle_doi_10.1021-nl103400a.tif";
+  path += "/TiltSeries_NanoParticle_doi_10.1021-nl103400a.emd";
   QFileInfo info(path);
   if (info.exists()) {
     DataSource* source = LoadDataReaction::loadData(info.canonicalFilePath());
@@ -586,7 +586,7 @@ void MainWindow::openTilt()
 void MainWindow::openRecon()
 {
   QString path = QApplication::applicationDirPath() + "/../share/tomviz/Data";
-  path += "/Recon_NanoParticle_doi_10.1021-nl103400a.tif";
+  path += "/Recon_NanoParticle_doi_10.1021-nl103400a.emd";
   QFileInfo info(path);
   if (info.exists()) {
     LoadDataReaction::loadData(info.canonicalFilePath());
@@ -801,7 +801,7 @@ void MainWindow::onFirstWindowShow()
     if (showWelcome) {
       QString path =
         QApplication::applicationDirPath() + "/../share/tomviz/Data";
-      path += "/Recon_NanoParticle_doi_10.1021-nl103400a.tif";
+      path += "/Recon_NanoParticle_doi_10.1021-nl103400a.emd";
       QFileInfo info(path);
       if (info.exists()) {
         WelcomeDialog welcomeDialog(this);
