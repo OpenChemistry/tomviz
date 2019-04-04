@@ -642,12 +642,44 @@ bool H5ReadWrite::readData(const string& path, const DataType& type,
 
 template <typename T>
 bool H5ReadWrite::writeData(const string& path, const string& name,
-                         const vector<int>& dims, const vector<T>& data)
+                            const vector<int>& dims, const vector<T>& data)
+{
+  return writeData(path, name, dims, data.data());
+}
+
+template <typename T>
+bool H5ReadWrite::writeData(const string& path, const string& name,
+                            const vector<int>& dims, const T* data)
 {
   const hid_t dataTypeId = BasicTypeToH5<T>::dataTypeId();
   const hid_t memTypeId = BasicTypeToH5<T>::memTypeId();
 
-  return m_impl->writeData(path, name, dims, data.data(),
+  return m_impl->writeData(path, name, dims, data,
+                           dataTypeId, memTypeId);
+}
+
+bool H5ReadWrite::writeData(const string& path, const string& name,
+                            const vector<int>& dims, const DataType& type,
+                            const void* data)
+{
+  auto it = DataTypeToH5DataType.find(type);
+  if (it == DataTypeToH5DataType.end()) {
+    cerr << "Failed to get H5 data type for " << dataTypeToString(type)
+         << "\n";
+    return false;
+  }
+
+  hid_t dataTypeId = it->second;
+
+  auto memIt = DataTypeToH5MemType.find(type);
+  if (memIt == DataTypeToH5MemType.end()) {
+    cerr << "Failed to get H5 mem type for " << dataTypeToString(type) << "\n";
+    return false;
+  }
+
+  hid_t memTypeId = memIt->second;
+
+  return m_impl->writeData(path, name, dims, data,
                            dataTypeId, memTypeId);
 }
 
@@ -820,6 +852,17 @@ template bool H5ReadWrite::writeData(const string&, const string&, const vector<
 template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const vector<unsigned long long>&);
 template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const vector<float>&);
 template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const vector<double>&);
+
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const char*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const short*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const int*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const long long*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const unsigned char*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const unsigned short*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const unsigned int*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const unsigned long long*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const float*);
+template bool H5ReadWrite::writeData(const string&, const string&, const vector<int>&, const double*);
 
 // We need to create specializations for these
 //template vector<string> H5ReadWrite::readData(const string&);

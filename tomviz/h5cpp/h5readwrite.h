@@ -198,6 +198,31 @@ public:
                  const std::vector<T>& data);
 
   /**
+   * Write data to a specified path.
+   * @param path The path where the data will be written.
+   * @param name The name of the data.
+   * @param dimensions The dimensions of the data.
+   * @param data The data to write.
+   * @return True on success, false on failure.
+   */
+  template <typename T>
+  bool writeData(const std::string& path, const std::string& name,
+                 const std::vector<int>& dimensions, const T* data);
+
+  /**
+   * Write data to a specified path.
+   * @param path The path where the data will be written.
+   * @param name The name of the data.
+   * @param dimensions The dimensions of the data.
+   * @param type The type of data to write.
+   * @param data The data to write.
+   * @return True on success, false on failure.
+   */
+  bool writeData(const std::string& path, const std::string& name,
+                 const std::vector<int>& dimensions,
+                 const DataType& type, const void* data);
+
+  /**
    * Set an attribute on a specified path.
    * @param path The path where the attribute will be written.
    * @param name The name of the attribute.
