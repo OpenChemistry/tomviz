@@ -569,17 +569,11 @@ void MainWindow::openTilt()
   path += "/TiltSeries_NanoParticle_doi_10.1021-nl103400a.emd";
   QFileInfo info(path);
   if (info.exists()) {
-    DataSource* source = LoadDataReaction::loadData(info.canonicalFilePath());
-    auto op = new SetTiltAnglesOperator;
-    int extents[6];
-    source->getExtent(extents);
-    auto numTilts = extents[5] - extents[4] + 1;
-    QMap<size_t, double> tiltAngles;
-    for (int i = 0; i < numTilts; ++i) {
-      tiltAngles[i] = -73 + 2 * i;
-    }
-    op->setTiltAngles(tiltAngles);
-    source->addOperator(op);
+    LoadDataReaction::loadData(info.canonicalFilePath());
+  } else {
+    QMessageBox::warning(
+      this, "Sample Data not found",
+      QString("The data file \"%1\" was not found.").arg(path));
   }
 }
 
