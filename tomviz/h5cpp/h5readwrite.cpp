@@ -703,6 +703,9 @@ bool H5ReadWrite::setAttribute<const string&>(const string& path,
 
   hsize_t dims = 1;
   hid_t dataSpaceId = H5Screate_simple(1, &dims, nullptr);
+
+  HIDCloser dataSpaceCloser(dataSpaceId, H5Sclose);
+
   hid_t dataType = H5Tcopy(H5T_C_S1);
   herr_t status = H5Tset_size(dataType, H5T_VARIABLE);
 
@@ -720,7 +723,6 @@ bool H5ReadWrite::setAttribute<const string&>(const string& path,
   }
 
   HIDCloser attributeCloser(attributeId, H5Aclose);
-  HIDCloser dataSpaceCloser(dataSpaceId, H5Sclose);
 
   // Need a char**
   const char* tmp = value.c_str();
