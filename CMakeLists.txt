@@ -65,10 +65,7 @@ if(NOT PARAVIEW_ENABLE_PYTHON)
     "Tomviz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
     "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
 endif()
-if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
-  message(FATAL_ERROR
-    "Tomviz requires PARAVIEW_QT_VERSION to be 5, please rebuild ParaView.")
-endif()
+# TODO: is there a way in the latest ParaView to check Qt version used?
 
 # Most of the time we don't want to skip these checks, default to off.
 option(SKIP_PARAVIEW_ITK_PYTHON_CHECKS
