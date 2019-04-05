@@ -12,10 +12,8 @@ class HIDCloser
 {
 public:
   explicit HIDCloser(hid_t value, herr_t (*closer)(hid_t))
-    : m_value(value),
-      m_closer(closer)
-  {
-  }
+    : m_value(value), m_closer(closer)
+  {}
 
   bool valueIsValid() { return m_value >= 0; }
 
@@ -34,10 +32,7 @@ public:
   HIDCloser(const HIDCloser&) = delete;
   HIDCloser& operator=(const HIDCloser&) = delete;
 
-  HIDCloser(HIDCloser&& other) noexcept
-  {
-    *this = std::move(other);
-  }
+  HIDCloser(HIDCloser&& other) noexcept { *this = std::move(other); }
 
   HIDCloser& operator=(HIDCloser&& other) noexcept
   {
@@ -49,14 +44,11 @@ public:
     return *this;
   }
 
-  ~HIDCloser()
-  {
-    close();
-  }
+  ~HIDCloser() { close(); }
 
 private:
   hid_t m_value = H5I_INVALID_HID;
-  herr_t (*m_closer) (hid_t) = nullptr;
+  herr_t (*m_closer)(hid_t) = nullptr;
 };
 
 } // namespace h5

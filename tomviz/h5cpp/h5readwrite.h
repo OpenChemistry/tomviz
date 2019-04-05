@@ -10,13 +10,14 @@
 
 namespace h5 {
 
-class H5ReadWrite {
+class H5ReadWrite
+{
 public:
-
   /**
    * Enumeration of the open modes.
    */
-  enum class OpenMode {
+  enum class OpenMode
+  {
     ReadOnly,
     WriteOnly
   };
@@ -26,7 +27,7 @@ public:
    * @param fileName the file to open for reading.
    */
   explicit H5ReadWrite(const std::string& fileName,
-                    OpenMode mode = OpenMode::ReadOnly);
+                       OpenMode mode = OpenMode::ReadOnly);
 
   /** Closes the file and destroys the H5ReadWrite */
   ~H5ReadWrite();
@@ -38,7 +39,8 @@ public:
   H5ReadWrite& operator=(const H5ReadWrite&) = delete;
 
   /** Enumeration of the data types */
-  enum class DataType {
+  enum class DataType
+  {
     Int8,
     Int16,
     Int32,
@@ -219,8 +221,8 @@ public:
    * @return True on success, false on failure.
    */
   bool writeData(const std::string& path, const std::string& name,
-                 const std::vector<int>& dimensions,
-                 const DataType& type, const void* data);
+                 const std::vector<int>& dimensions, const DataType& type,
+                 const void* data);
 
   /**
    * Set an attribute on a specified path.

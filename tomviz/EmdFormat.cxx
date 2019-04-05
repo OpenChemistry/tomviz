@@ -74,18 +74,17 @@ std::string firstEmdNode(h5::H5ReadWrite& reader)
   return "";
 }
 
-static const std::map<h5::H5ReadWrite::DataType, int> DataTypeToVTK =
-{
-  { h5::H5ReadWrite::DataType::Int8,   VTK_SIGNED_CHAR        },
-  { h5::H5ReadWrite::DataType::Int16,  VTK_SHORT              },
-  { h5::H5ReadWrite::DataType::Int32,  VTK_INT                },
-  { h5::H5ReadWrite::DataType::Int64,  VTK_LONG_LONG          },
-  { h5::H5ReadWrite::DataType::UInt8,  VTK_UNSIGNED_CHAR      },
-  { h5::H5ReadWrite::DataType::UInt16, VTK_UNSIGNED_SHORT     },
-  { h5::H5ReadWrite::DataType::UInt32, VTK_UNSIGNED_INT       },
+static const std::map<h5::H5ReadWrite::DataType, int> DataTypeToVTK = {
+  { h5::H5ReadWrite::DataType::Int8, VTK_SIGNED_CHAR },
+  { h5::H5ReadWrite::DataType::Int16, VTK_SHORT },
+  { h5::H5ReadWrite::DataType::Int32, VTK_INT },
+  { h5::H5ReadWrite::DataType::Int64, VTK_LONG_LONG },
+  { h5::H5ReadWrite::DataType::UInt8, VTK_UNSIGNED_CHAR },
+  { h5::H5ReadWrite::DataType::UInt16, VTK_UNSIGNED_SHORT },
+  { h5::H5ReadWrite::DataType::UInt32, VTK_UNSIGNED_INT },
   { h5::H5ReadWrite::DataType::UInt64, VTK_UNSIGNED_LONG_LONG },
-  { h5::H5ReadWrite::DataType::Float,  VTK_FLOAT              },
-  { h5::H5ReadWrite::DataType::Double, VTK_DOUBLE             }
+  { h5::H5ReadWrite::DataType::Float, VTK_FLOAT },
+  { h5::H5ReadWrite::DataType::Double, VTK_DOUBLE }
 };
 
 int dataTypeToVTK(h5::H5ReadWrite::DataType& type)
@@ -301,7 +300,7 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
 
   int dim[3] = { 0, 0, 0 };
   permutedImage->GetDimensions(dim);
-  std::vector<int> dims({dim[0], dim[1], dim[2]});
+  std::vector<int> dims({ dim[0], dim[1], dim[2] });
 
   // We must allocate a new array, and copy the reordered array into it.
   auto arrayPtr = permutedImage->GetPointData()->GetScalars();
@@ -331,8 +330,7 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
   if (hasTiltAngles) {
     writer.setAttribute("/data/tomography/dim1", "name", "angles");
     writer.setAttribute("/data/tomography/dim1", "units", "[deg]");
-  }
-  else {
+  } else {
     writer.setAttribute("/data/tomography/dim1", "name", "x");
     writer.setAttribute("/data/tomography/dim1", "units", "[n_m]");
   }

@@ -4,7 +4,8 @@
 #ifndef tomvizH5CAPI_h
 #define tomvizH5CAPI_h
 
-extern "C" {
+extern "C"
+{
 #include <hdf5.h>
 }
 
