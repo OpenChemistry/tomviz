@@ -159,8 +159,8 @@ public:
     hid_t attributeId = H5Acreate2(parentId, name.c_str(), fileTypeId,
                                    dataspaceId, H5P_DEFAULT, H5P_DEFAULT);
 
-    HIDCloser attributeCloser(attributeId, H5Aclose);
     HIDCloser dataspaceCloser(dataspaceId, H5Sclose);
+    HIDCloser attributeCloser(attributeId, H5Aclose);
 
     return H5Awrite(attributeId, typeId, value) >= 0;
   }
