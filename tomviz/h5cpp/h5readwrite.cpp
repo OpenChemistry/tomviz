@@ -162,7 +162,7 @@ public:
 
     HIDCloser parentCloser(parentId, closer);
 
-    hid_t dataspaceId = H5Screate_simple(1, &dims, NULL);
+    hid_t dataspaceId = H5Screate_simple(1, &dims, nullptr);
     hid_t attributeId = H5Acreate2(parentId, name.c_str(), fileTypeId,
                                    dataspaceId, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -187,7 +187,7 @@ public:
     }
     hid_t groupId = H5Gopen(m_fileId, path.c_str(), H5P_DEFAULT);
     hid_t dataSpaceId =
-      H5Screate_simple(static_cast<int>(dims.size()), &h5dim[0], NULL);
+      H5Screate_simple(static_cast<int>(dims.size()), &h5dim[0], nullptr);
     hid_t dataId = H5Dcreate(groupId, name.c_str(), dataTypeId, dataSpaceId,
                              H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -718,7 +718,7 @@ bool H5ReadWrite::setAttribute<const string&>(const string& path, const string& 
   HIDCloser parentCloser(parentId, closer);
 
   hsize_t dims = 1;
-  hid_t dataSpaceId = H5Screate_simple(1, &dims, NULL);
+  hid_t dataSpaceId = H5Screate_simple(1, &dims, nullptr);
   hid_t dataType = H5Tcopy(H5T_C_S1);
   herr_t status = H5Tset_size(dataType, H5T_VARIABLE);
 
