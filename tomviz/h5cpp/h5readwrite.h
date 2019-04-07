@@ -246,6 +246,14 @@ private:
   std::unique_ptr<H5ReadWriteImpl> m_impl;
 };
 
+template <typename T>
+bool H5ReadWrite::writeData(const std::string& path, const std::string& name,
+                            const std::vector<int>& dims,
+                            const std::vector<T>& data)
+{
+  return writeData(path, name, dims, data.data());
+}
+
 } // namespace h5
 
 #endif // tomvizH5ReadWrite_h

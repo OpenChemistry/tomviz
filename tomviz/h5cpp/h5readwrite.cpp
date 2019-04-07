@@ -628,13 +628,6 @@ bool H5ReadWrite::readData(const string& path, const DataType& type, void* data)
 
 template <typename T>
 bool H5ReadWrite::writeData(const string& path, const string& name,
-                            const vector<int>& dims, const vector<T>& data)
-{
-  return writeData(path, name, dims, data.data());
-}
-
-template <typename T>
-bool H5ReadWrite::writeData(const string& path, const string& name,
                             const vector<int>& dims, const T* data)
 {
   const hid_t dataTypeId = BasicTypeToH5<T>::dataTypeId();
@@ -855,32 +848,6 @@ template bool H5ReadWrite::setAttribute(const string&, const string&,
                                         const char*);
 
 // writeData
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&, const vector<char>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&, const vector<short>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&, const vector<int>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&,
-                                     const vector<long long>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&,
-                                     const vector<unsigned char>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&,
-                                     const vector<unsigned short>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&,
-                                     const vector<unsigned int>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&,
-                                     const vector<unsigned long long>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&, const vector<float>&);
-template bool H5ReadWrite::writeData(const string&, const string&,
-                                     const vector<int>&, const vector<double>&);
-
 template bool H5ReadWrite::writeData(const string&, const string&,
                                      const vector<int>&, const char*);
 template bool H5ReadWrite::writeData(const string&, const string&,
