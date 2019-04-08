@@ -1,0 +1,7 @@
+NAME
+  TomvizExtensions
+DESCRIPTION
+  Tomviz extensions module
+REQUIRES_MODULES
+  VTK::pugixml
+  VTK::tiff

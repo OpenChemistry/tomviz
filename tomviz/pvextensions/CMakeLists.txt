@@ -3,39 +3,21 @@ set(CMAKE_AUTOMOC OFF)
 set(CMAKE_AUTOUIC OFF)
 set(CMAKE_AUTORCC OFF)
 
-include(${PARAVIEW_USE_FILE})
+set("_paraview_plugin_default_TomvizExtensions" ON)
+paraview_plugin_scan(
+  PLUGIN_FILES      "${CMAKE_CURRENT_SOURCE_DIR}/Plugin/paraview.plugin"
+  PROVIDES_PLUGINS  plugins
+  REQUIRES_MODULES  required_modules)
 
-set(pluginSrcs
-  vtkOMETiffReader.cxx)
-#set(outifaces0)
-#add_paraview_property_widget(outifaces0 outsrcs0
-#  TYPE "double_slider_widget"
-#  CLASS_NAME "pqDoubleSliderPropertyWidget")
+foreach (module IN LISTS required_modules)
+  if (NOT TARGET "${module}")
+    message("Missing required module: ${module}")
+    return ()
+  endif ()
+endforeach ()
 
-#qt5_wrap_cpp(moc_srcs
-#  pqDoubleSliderPropertyWidget.h
-#)
-
-add_paraview_plugin(tomvizExtensions "1.0"
-  SERVER_MANAGER_XML tomvizExtensions.xml
-  SERVER_MANAGER_SOURCES ${pluginSrcs}
-#  GUI_INTERFACES ${outifaces0}
-#          ${moc_srcs}
-#          pqDoubleSliderPropertyWidget.cxx
-)
-target_link_libraries(tomvizExtensions PUBLIC vtktiff vtkpugixml)
-
-if (NOT APPLE)
-  install(TARGETS tomvizExtensions
-          RUNTIME DESTINATION "bin"
-          LIBRARY DESTINATION "lib"
-          ARCHIVE DESTINATION "lib"
-          COMPONENT "runtime")
-else()
-  install(TARGETS tomvizExtensions
-          RUNTIME DESTINATION "bin"
-          LIBRARY DESTINATION "Applications/tomviz.app/Contents/Libraries"
-          ARCHIVE DESTINATION "lib"
-          COMPONENT "runtime")
-  set_target_properties(tomvizExtensions PROPERTIES INSTALL_NAME_DIR "@executable_path/../Libraries")
-endif()
+paraview_plugin_build(
+  RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  LIBRARY_DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY_SUBDIRECTORY "pvextensions"
+  PLUGINS ${plugins})
