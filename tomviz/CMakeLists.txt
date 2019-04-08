@@ -552,7 +552,7 @@ target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
 target_link_libraries(tomvizlib
   PUBLIC
     ParaView::pqApplicationComponents
-    vtkPVServerManagerRendering
+    ParaView::ServerManagerRendering
     VTK::glew
     VTK::jsoncpp
     VTK::pugixml
