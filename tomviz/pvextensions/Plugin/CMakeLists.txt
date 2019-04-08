@@ -4,4 +4,4 @@ paraview_add_plugin(TomvizExtensions
   MODULE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/TomvizExtensions/vtk.module"
 )
 
-target_link_libraries(TomvizExtensions PUBLIC vtktiff vtkpugixml)
+target_link_libraries(TomvizExtensions PUBLIC VTK::tiff VTK::pugixml)

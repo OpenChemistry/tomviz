@@ -551,10 +551,12 @@ target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
 target_link_libraries(tomvizlib
   PUBLIC
     ParaView::pqApplicationComponents
+    ParaView::pqPython
     ParaView::ServerManagerRendering
     VTK::glew
     VTK::jsoncpp
     VTK::pugixml
+    VTK::tiff
     TomvizExtensions
     Qt5::Network)
 if(WIN32)
