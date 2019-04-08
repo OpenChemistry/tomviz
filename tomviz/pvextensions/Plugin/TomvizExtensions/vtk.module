@@ -1,5 +1,5 @@
 NAME
-  vtkOMETiffReaderModule
+  vtkOMETiffReader
 DEPENDS
   VTK::CommonMisc
   VTK::IOImage
