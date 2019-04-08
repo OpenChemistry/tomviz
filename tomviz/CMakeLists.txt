@@ -553,9 +553,9 @@ target_link_libraries(tomvizlib
   PUBLIC
     ParaView::pqApplicationComponents
     vtkPVServerManagerRendering
-    vtkglew
-    vtkjsoncpp
-    vtkpugixml
+    VTK::glew
+    VTK::jsoncpp
+    VTK::pugixml
     TomvizExtensions
     Qt5::Network)
 if(WIN32)
