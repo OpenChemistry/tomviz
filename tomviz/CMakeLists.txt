@@ -4,7 +4,6 @@ include_directories(SYSTEM
   ${Qt5Network_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
   ${Qt5Concurrent_INCLUDE_DIRS}
-  ${PARAVIEW_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
 add_subdirectory(pvextensions)
@@ -552,7 +551,7 @@ target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
 
 target_link_libraries(tomvizlib
   PUBLIC
-    pqApplicationComponents
+    ParaView::pqApplicationComponents
     vtkPVServerManagerRendering
     vtkglew
     vtkjsoncpp
