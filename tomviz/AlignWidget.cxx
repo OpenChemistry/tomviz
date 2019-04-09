@@ -387,12 +387,12 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     m_minSliceNum = 0;
     m_maxSliceNum = 1;
   }
-  m_widget->GetRenderWindow()->AddRenderer(m_renderer.Get());
+  m_widget->renderWindow()->AddRenderer(m_renderer.Get());
 
   // Set up render window interaction.
   m_defaultInteractorStyle->SetRenderOnMouseMove(true);
 
-  m_widget->GetInteractor()->SetInteractorStyle(m_defaultInteractorStyle.Get());
+  m_widget->interactor()->SetInteractorStyle(m_defaultInteractorStyle.Get());
 
   m_renderer->SetBackground(1.0, 1.0, 1.0);
   m_renderer->SetViewport(0.0, 0.0, 1.0, 1.0);
@@ -443,7 +443,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
             m_modes[m_currentMode]->setBrightnessAndContrast(
               ((static_cast<double>(i) - sliderRange[0]) / sliderRange[1]),
               bAndC[1]);
-            m_widget->GetRenderWindow()->Render();
+            m_widget->renderWindow()->Render();
           });
   brightness->setValue(sliderRange[1]);
   brightnessAndContrastControls->addRow("Brightness", brightness);
@@ -456,7 +456,7 @@ AlignWidget::AlignWidget(TranslateAlignOperator* op,
     m_modes[m_currentMode]->brightnessAndContrast(bAndC[0], bAndC[1]);
     m_modes[m_currentMode]->setBrightnessAndContrast(
       bAndC[0], ((static_cast<double>(i) - sliderRange[0]) / sliderRange[1]));
-    m_widget->GetRenderWindow()->Render();
+    m_widget->renderWindow()->Render();
   });
   contrast->setValue(sliderRange[1]);
   brightnessAndContrastControls->addRow("Contrast", contrast);
@@ -699,7 +699,7 @@ void AlignWidget::onTimeout()
   if (m_modes.length() > 0) {
     m_modes[m_currentMode]->timeout();
   }
-  m_widget->GetRenderWindow()->Render();
+  m_widget->renderWindow()->Render();
 }
 
 void AlignWidget::changeSlice(int delta)
@@ -773,7 +773,7 @@ void AlignWidget::updateReference()
   if (m_modes.length() > 0) {
     m_modes[m_currentMode]->update();
   }
-  m_widget->GetRenderWindow()->Render();
+  m_widget->renderWindow()->Render();
 }
 
 void AlignWidget::setFrameRate(int rate)
@@ -886,7 +886,7 @@ void AlignWidget::applySliceOffset(int sliceNumber)
   if (m_modes.length() > 0) {
     m_modes[m_currentMode]->update();
   }
-  m_widget->GetRenderWindow()->Render();
+  m_widget->renderWindow()->Render();
 }
 
 void AlignWidget::startAlign()
@@ -917,17 +917,17 @@ void AlignWidget::stopAlign()
 
 void AlignWidget::zoomToSelectionStart()
 {
-  m_widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+  m_widget->renderWindow()->GetInteractor()->SetInteractorStyle(
     m_zoomToBoxInteractorStyle.Get());
-  m_observerId = m_widget->GetRenderWindow()->GetInteractor()->AddObserver(
+  m_observerId = m_widget->renderWindow()->GetInteractor()->AddObserver(
     vtkCommand::LeftButtonReleaseEvent, this,
     &AlignWidget::zoomToSelectionFinished);
 }
 
 void AlignWidget::zoomToSelectionFinished()
 {
-  m_widget->GetRenderWindow()->GetInteractor()->RemoveObserver(m_observerId);
-  m_widget->GetRenderWindow()->GetInteractor()->SetInteractorStyle(
+  m_widget->renderWindow()->GetInteractor()->RemoveObserver(m_observerId);
+  m_widget->renderWindow()->GetInteractor()->SetInteractorStyle(
     m_defaultInteractorStyle.Get());
 }
 
@@ -1139,7 +1139,7 @@ void AlignWidget::applyCurrentPreset()
       }
     }
     renderViews();
-    m_widget->GetRenderWindow()->Render();
+    m_widget->renderWindow()->Render();
   }
 }
 

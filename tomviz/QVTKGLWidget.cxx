@@ -14,7 +14,7 @@ QVTKGLWidget::QVTKGLWidget(QWidget* parent, Qt::WindowFlags f)
 {
   // Set some defaults for our render window.
   vtkNew<vtkGenericOpenGLRenderWindow> window;
-  SetRenderWindow(window);
+  setRenderWindow(window);
   QSurfaceFormat glFormat = QVTKOpenGLWidget::defaultFormat();
   glFormat.setSamples(8);
   setFormat(glFormat);

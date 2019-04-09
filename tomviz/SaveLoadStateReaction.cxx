@@ -157,7 +157,7 @@ QString SaveLoadStateReaction::extractLegacyStateFileVersion(
   pugi::xml_document doc;
 
   if (doc.load_buffer(state.data(), state.size())) {
-    pugi::xpath_node version = doc.select_single_node("/tomvizState/version");
+    pugi::xpath_node version = doc.select_node("/tomvizState/version");
 
     if (version) {
       fullVersion = version.node().attribute("full").value();

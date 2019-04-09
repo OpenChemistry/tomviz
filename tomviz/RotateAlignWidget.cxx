@@ -173,7 +173,7 @@ public:
     tform->RotateZ(-this->m_tiltRotation);
     tform->Translate(-centerOfRotation[0], -centerOfRotation[1],
                      -centerOfRotation[2]);
-    this->Ui.sliceView->GetRenderWindow()->Render();
+    this->Ui.sliceView->renderWindow()->Render();
   }
 
   void updateDirtyReconSlices()
@@ -237,7 +237,7 @@ public:
                                             this->Ui.sliceView_2,
                                             this->Ui.sliceView_3 };
 
-      sliceView[i]->GetRenderWindow()->Render();
+      sliceView[i]->renderWindow()->Render();
     }
   }
 
@@ -303,13 +303,13 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->reconRenderer[2]->AddViewProp(
     this->Internals->reconSlice[2].Get());
 
-  this->Internals->Ui.sliceView->GetRenderWindow()->AddRenderer(
+  this->Internals->Ui.sliceView->renderWindow()->AddRenderer(
     this->Internals->mainRenderer.Get());
-  this->Internals->Ui.sliceView_1->GetRenderWindow()->AddRenderer(
+  this->Internals->Ui.sliceView_1->renderWindow()->AddRenderer(
     this->Internals->reconRenderer[0].Get());
-  this->Internals->Ui.sliceView_2->GetRenderWindow()->AddRenderer(
+  this->Internals->Ui.sliceView_2->renderWindow()->AddRenderer(
     this->Internals->reconRenderer[1].Get());
-  this->Internals->Ui.sliceView_3->GetRenderWindow()->AddRenderer(
+  this->Internals->Ui.sliceView_3->renderWindow()->AddRenderer(
     this->Internals->reconRenderer[2].Get());
 
   vtkNew<vtkInteractorStyleRubberBand2D> interatorStyleMain;
@@ -321,13 +321,13 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   interatorStyle2->SetRenderOnMouseMove(true);
   interatorStyle3->SetRenderOnMouseMove(true);
 
-  this->Internals->Ui.sliceView->GetInteractor()->SetInteractorStyle(
+  this->Internals->Ui.sliceView->interactor()->SetInteractorStyle(
     interatorStyleMain.Get());
-  this->Internals->Ui.sliceView_1->GetInteractor()->SetInteractorStyle(
+  this->Internals->Ui.sliceView_1->interactor()->SetInteractorStyle(
     interatorStyle1.Get());
-  this->Internals->Ui.sliceView_2->GetInteractor()->SetInteractorStyle(
+  this->Internals->Ui.sliceView_2->interactor()->SetInteractorStyle(
     interatorStyle2.Get());
-  this->Internals->Ui.sliceView_3->GetInteractor()->SetInteractorStyle(
+  this->Internals->Ui.sliceView_3->interactor()->SetInteractorStyle(
     interatorStyle3.Get());
   this->Internals->setupCameras();
 
@@ -496,7 +496,7 @@ void RotateAlignWidget::onProjectionNumberChanged(int val)
   this->Internals->m_projectionNum = val;
   this->Internals->mainSliceMapper->SetSliceNumber(val);
   this->Internals->mainSliceMapper->Update();
-  this->Internals->Ui.sliceView->GetRenderWindow()->Render();
+  this->Internals->Ui.sliceView->renderWindow()->Render();
 }
 
 void RotateAlignWidget::onRotationShiftChanged(int val)
@@ -554,7 +554,7 @@ void RotateAlignWidget::onReconSliceChanged(int idx, int val)
   *slice = val;
 
   this->Internals->updateSliceLines();
-  this->Internals->Ui.sliceView->GetRenderWindow()->Render();
+  this->Internals->Ui.sliceView->renderWindow()->Render();
   this->Internals->m_reconSliceDirty[idx] = true;
   this->Internals->m_updateSlicesTimer.start();
 }
@@ -635,10 +635,10 @@ void RotateAlignWidget::changeColorMap(int reconSlice)
 
 void RotateAlignWidget::updateWidgets()
 {
-  this->Internals->Ui.sliceView->GetRenderWindow()->Render();
-  this->Internals->Ui.sliceView_1->GetRenderWindow()->Render();
-  this->Internals->Ui.sliceView_2->GetRenderWindow()->Render();
-  this->Internals->Ui.sliceView_3->GetRenderWindow()->Render();
+  this->Internals->Ui.sliceView->renderWindow()->Render();
+  this->Internals->Ui.sliceView_1->renderWindow()->Render();
+  this->Internals->Ui.sliceView_2->renderWindow()->Render();
+  this->Internals->Ui.sliceView_3->renderWindow()->Render();
 }
 
 void RotateAlignWidget::updateControls()

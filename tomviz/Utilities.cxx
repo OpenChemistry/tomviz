@@ -331,7 +331,7 @@ bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
   elem->PrintXML(stream, vtkIndent());
 
   pugi::xml_document document;
-  if (!document.load(stream.str().c_str())) {
+  if (!document.load_string(stream.str().c_str())) {
     qCritical("Failed to convert from vtkPVXMLElement to pugi::xml_document");
     return false;
   }

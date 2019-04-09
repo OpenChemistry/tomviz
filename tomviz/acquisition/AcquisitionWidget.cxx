@@ -44,8 +44,8 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
           SLOT(disconnectFromServer()));
   connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
 
-  m_ui->imageWidget->GetRenderWindow()->AddRenderer(m_renderer.Get());
-  m_ui->imageWidget->GetInteractor()->SetInteractorStyle(
+  m_ui->imageWidget->renderWindow()->AddRenderer(m_renderer.Get());
+  m_ui->imageWidget->interactor()->SetInteractorStyle(
     m_defaultInteractorStyle.Get());
   m_defaultInteractorStyle->SetRenderOnMouseMove(true);
 
@@ -218,7 +218,7 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
   m_imageSlice->SetMapper(m_imageSliceMapper.Get());
   m_renderer->AddViewProp(m_imageSlice.Get());
   resetCamera();
-  m_ui->imageWidget->GetRenderWindow()->Render();
+  m_ui->imageWidget->renderWindow()->Render();
 
   if (ActiveObjects::instance().activeDataSource()) {
     auto proxy = ActiveObjects::instance().activeDataSource()->colorMap();
