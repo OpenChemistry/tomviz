@@ -14,8 +14,6 @@
 #define TOMVIZ_DATA_SOURCE_DIR "@tomviz_data_DIR@/Data"
 
 // For install builds: these are paths when running from an installed location.
-#define PARAVIEW_VERSION_MAJOR "@PARAVIEW_VERSION_MAJOR@"
-#define PARAVIEW_VERSION_MINOR "@PARAVIEW_VERSION_MINOR@"
 #define TOMVIZ_PYTHON_INSTALL_DIR "@tomviz_python_install_dir@"
 #define TOMVIZ_DATA_INSTALL_DIR "@tomviz_data_install_dir@/Data"
 
