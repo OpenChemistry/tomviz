@@ -394,10 +394,15 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->mainSliceMapper->SetInputData(this->Internals->m_image);
   this->Internals->mainSliceMapper->Update();
 
-  DataSource* ds = op->dataSource();
-  if (!ds) {
+  // Use a child data source if one is available so the color map will match
+  DataSource* ds;
+  if (op->childDataSource())
+    ds = op->childDataSource();
+  else if (op->dataSource())
+    ds = op->dataSource();
+  else
     ds = ActiveObjects::instance().activeDataSource();
-  }
+
 
   vtkScalarsToColors* lut =
     vtkScalarsToColors::SafeDownCast(ds->colorMap()->GetClientSideObject());
