@@ -4,6 +4,7 @@
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
+#include "DataExchangeFormat.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "FileFormatManager.h"
@@ -196,6 +197,18 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     EmdFormat emdFile;
     vtkNew<vtkImageData> imageData;
     if (emdFile.read(fileName.toLatin1().data(), imageData)) {
+      DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
+                                          ? DataSource::TiltSeries
+                                          : DataSource::Volume;
+      dataSource = new DataSource(imageData, type);
+      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    }
+  } else if (info.suffix().toLower() == "h5") {
+    // For now, just assume this is DataExchange format.
+    loadWithParaview = false;
+    DataExchangeFormat deFile;
+    vtkNew<vtkImageData> imageData;
+    if (deFile.read(fileName.toLatin1().data(), imageData)) {
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;

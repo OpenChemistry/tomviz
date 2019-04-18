@@ -43,6 +43,8 @@ set(SOURCES
   CropReaction.h
   SelectVolumeWidget.cxx
   SelectVolumeWidget.h
+  DataExchangeFormat.cxx
+  DataExchangeFormat.h
   DataPropertiesModel.cxx
   DataPropertiesModel.h
   DataPropertiesPanel.cxx
