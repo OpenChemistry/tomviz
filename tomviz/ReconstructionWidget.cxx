@@ -162,25 +162,25 @@ ReconstructionWidget::ReconstructionWidget(DataSource* source, QWidget* p)
   this->Internals->dataSliceRenderer->AddViewProp(
     this->Internals->currentSliceActor.Get());
 
-  this->Internals->Ui.currentSliceView->GetRenderWindow()->AddRenderer(
+  this->Internals->Ui.currentSliceView->renderWindow()->AddRenderer(
     this->Internals->dataSliceRenderer.Get());
 
-  this->Internals->Ui.currentReconstructionView->GetRenderWindow()->AddRenderer(
+  this->Internals->Ui.currentReconstructionView->renderWindow()->AddRenderer(
     this->Internals->reconstructionSliceRenderer.Get());
 
-  this->Internals->Ui.sinogramView->GetRenderWindow()->AddRenderer(
+  this->Internals->Ui.sinogramView->renderWindow()->AddRenderer(
     this->Internals->sinogramRenderer.Get());
 
   vtkNew<vtkInteractorStyleRubberBand2D> interactorStyle;
   interactorStyle->SetRenderOnMouseMove(true);
 
-  this->Internals->Ui.currentSliceView->GetRenderWindow()
+  this->Internals->Ui.currentSliceView->renderWindow()
     ->GetInteractor()
     ->SetInteractorStyle(interactorStyle.Get());
-  this->Internals->Ui.currentReconstructionView->GetRenderWindow()
+  this->Internals->Ui.currentReconstructionView->renderWindow()
     ->GetInteractor()
     ->SetInteractorStyle(interactorStyle.Get());
-  this->Internals->Ui.sinogramView->GetRenderWindow()
+  this->Internals->Ui.sinogramView->renderWindow()
     ->GetInteractor()
     ->SetInteractorStyle(interactorStyle.Get());
 
@@ -215,10 +215,10 @@ void ReconstructionWidget::updateProgress(int progress)
   }
   Ui::ReconstructionWidget& ui = this->Internals->Ui;
   this->Internals->setupCurrentSliceLine(progress);
-  ui.currentSliceView->GetRenderWindow()->Render();
+  ui.currentSliceView->renderWindow()->Render();
   this->Internals->sinogramMapper->SetSliceNumber(
     this->Internals->sinogramMapper->GetSliceNumberMinValue() + progress);
-  ui.sinogramView->GetRenderWindow()->Render();
+  ui.sinogramView->renderWindow()->Render();
   double rem = (this->Internals->timer.elapsed() / (1000.0 * (progress + 1))) *
                (this->Internals->totalSlicesToProcess - progress);
 
@@ -241,6 +241,6 @@ void ReconstructionWidget::updateIntermediateResults(
   this->Internals->reconstruction->Modified();
   this->Internals->reconstructionSliceMapper->Update();
   Ui::ReconstructionWidget& ui = this->Internals->Ui;
-  ui.currentReconstructionView->GetRenderWindow()->Render();
+  ui.currentReconstructionView->renderWindow()->Render();
 }
 } // namespace tomviz

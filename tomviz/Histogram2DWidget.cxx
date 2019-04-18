@@ -33,8 +33,8 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   : QWidget(parent_), m_qvtk(new QVTKGLWidget(this))
 {
   // Set up the chart
-  m_histogramView->SetRenderWindow(m_qvtk->GetRenderWindow());
-  m_histogramView->SetInteractor(m_qvtk->GetInteractor());
+  m_histogramView->SetRenderWindow(m_qvtk->renderWindow());
+  m_histogramView->SetInteractor(m_qvtk->interactor());
   m_histogramView->GetScene()->AddItem(m_chartHistogram2D.Get());
 
   m_chartHistogram2D->SetRenderEmpty(true);

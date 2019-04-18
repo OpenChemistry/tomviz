@@ -65,10 +65,26 @@ if(NOT PARAVIEW_ENABLE_PYTHON)
     "Tomviz requires PARAVIEW_ENABLE_PYTHON to be enabled. "
     "Please rebuild ParaView with PARAVIEW_ENABLE_PYTHON set to TRUE.")
 endif()
-if(NOT PARAVIEW_QT_VERSION STREQUAL "5")
-  message(FATAL_ERROR
-    "Tomviz requires PARAVIEW_QT_VERSION to be 5, please rebuild ParaView.")
+
+load_cache(${ParaView_DIR}
+  PARAVIEW_PYTHON_VERSION
+)
+
+if(NOT "${PARAVIEW_PYTHON_VERSION}")
+  message(FATAL_ERROR "Failed to get PARAVIEW_PYTHON_VERSION")
 endif()
+
+# Get the ParaView Python variables
+load_cache(${ParaView_DIR}
+  READ_WITH_PREFIX Python${PARAVIEW_PYTHON_VERSION}_
+  EXECUTABLE INCLUDE_DIR LIBRARY_RELEASE
+)
+set(ParaView_PYTHON_EXECUTABLE
+    "${Python${PARAVIEW_PYTHON_VERSION}_EXECUTABLE}")
+set(ParaView_PYTHON_INCLUDE_DIR
+    "${Python${PARAVIEW_PYTHON_VERSION}_INCLUDE_DIR}")
+set(ParaView_PYTHON_LIBRARY
+    "${Python${PARAVIEW_PYTHON_VERSION}_LIBRARY_RELEASE}")
 
 # Most of the time we don't want to skip these checks, default to off.
 option(SKIP_PARAVIEW_ITK_PYTHON_CHECKS
@@ -88,10 +104,6 @@ if(ITK_FOUND AND NOT SKIP_PARAVIEW_ITK_PYTHON_CHECKS)
   # Verify that the ITK build is using the same Python as the ParaView build
   load_cache(${ITK_DIR}
     READ_WITH_PREFIX ITK_
-    PYTHON_INCLUDE_DIR PYTHON_LIBRARY
-  )
-  load_cache(${ParaView_DIR}
-    READ_WITH_PREFIX ParaView_
     PYTHON_INCLUDE_DIR PYTHON_LIBRARY
   )
 
@@ -115,10 +127,6 @@ if(ITK_FOUND AND NOT SKIP_PARAVIEW_ITK_PYTHON_CHECKS)
 endif()
 
 # Ensure we use the same Python as ParaView
-load_cache(${ParaView_DIR}
-  READ_WITH_PREFIX ParaView_
-  PYTHON_INCLUDE_DIR PYTHON_LIBRARY PYTHON_EXECUTABLE
-)
 set(PYTHON_INCLUDE_DIR ${ParaView_PYTHON_INCLUDE_DIR} CACHE PATH "Tomviz")
 set(PYTHON_LIBRARY ${ParaView_PYTHON_LIBRARY} CACHE PATH "Tomviz")
 set(PYTHON_EXECUTABLE ${ParaView_PYTHON_EXECUTABLE} CACHE PATH "Tomviz")

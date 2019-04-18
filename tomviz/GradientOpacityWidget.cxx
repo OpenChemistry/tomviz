@@ -32,8 +32,8 @@ GradientOpacityWidget::GradientOpacityWidget(QWidget* parent_)
   : QWidget(parent_), m_qvtk(new QVTKGLWidget(this)), m_adjustedTable(nullptr)
 {
   // Set up our little chart.
-  m_histogramView->SetRenderWindow(m_qvtk->GetRenderWindow());
-  m_histogramView->SetInteractor(m_qvtk->GetInteractor());
+  m_histogramView->SetRenderWindow(m_qvtk->renderWindow());
+  m_histogramView->SetInteractor(m_qvtk->interactor());
   m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor.Get());
 
   // Connect events from the histogram color/opacity editor.
