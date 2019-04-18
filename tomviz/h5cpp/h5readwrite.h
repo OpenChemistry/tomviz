@@ -182,9 +182,14 @@ public:
    * @param data A pointer to a block of memory with a size large enough
    *             to hold the data (size >= dim1 * dim2 * dim3...). This
    *             will be set to the data read from the data set.
+   * @param stride A stride that will be applied to all dimensions when
+   *               reading the data. If used, ensure that the dimensions
+   *               of @p data are all divided by the stride with integer
+   *               division (i. e., dims[i] /= stride).
    * @return True on success, false on failure.
    */
-  bool readData(const std::string& path, const DataType& type, void* data);
+  bool readData(const std::string& path, const DataType& type, void* data,
+                int stride = 1);
 
   /**
    * Write data to a specified path.

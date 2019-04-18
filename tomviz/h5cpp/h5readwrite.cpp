@@ -244,7 +244,7 @@ public:
 
   // void* data needs to be of the appropiate type and size
   bool readData(const string& path, hid_t dataTypeId, hid_t memTypeId,
-                void* data)
+                void* data, int stride = 1)
   {
     hid_t dataSetId = H5Dopen(m_fileId, path.c_str(), H5P_DEFAULT);
     if (dataSetId < 0) {
@@ -263,6 +263,29 @@ public:
 
     HIDCloser dataSpaceCloser(dataSpaceId, H5Sclose);
 
+    hid_t memSpace = H5S_ALL;
+    HIDCloser memSpaceCloser(-1, H5Sclose);
+    // If our stride isn't 1, select a hyperslab with the right stride
+    if (stride > 1) {
+      // First, get the dimensions
+      vector<int> dims = getDimensions(path);
+      size_t ndims = dims.size();
+
+      // Next, select the hyperslab
+      vector<hsize_t> start(ndims, 0);
+      vector<hsize_t> strides(ndims, stride);
+      vector<hsize_t> counts(ndims, 0);
+      for (size_t i = 0; i < dims.size(); ++i)
+        counts[i] = dims[i] / strides[i];
+
+      H5Sselect_hyperslab(dataSpaceId, H5S_SELECT_SET, start.data(),
+                          strides.data(), counts.data(), nullptr);
+
+      // Finally, create the mem space
+      memSpace = H5Screate_simple(ndims, counts.data(), nullptr);
+      memSpaceCloser.reset(memSpace);
+    }
+
     hid_t typeId = H5Dget_type(dataSetId);
     HIDCloser dataTypeCloser(typeId, H5Tclose);
 
@@ -276,7 +299,7 @@ public:
       return false;
     }
 
-    return H5Dread(dataSetId, memTypeId, H5S_ALL, dataSpaceId, H5P_DEFAULT,
+    return H5Dread(dataSetId, memTypeId, memSpace, dataSpaceId, H5P_DEFAULT,
                    data) >= 0;
   }
 
@@ -605,7 +628,8 @@ bool H5ReadWrite::readData(const string& path, T* data)
   return true;
 }
 
-bool H5ReadWrite::readData(const string& path, const DataType& type, void* data)
+bool H5ReadWrite::readData(const string& path, const DataType& type,
+                           void* data, int stride)
 {
   auto it = DataTypeToH5DataType.find(type);
   if (it == DataTypeToH5DataType.end()) {
@@ -623,7 +647,7 @@ bool H5ReadWrite::readData(const string& path, const DataType& type, void* data)
 
   hid_t memTypeId = memIt->second;
 
-  if (!m_impl->readData(path, dataTypeId, memTypeId, data)) {
+  if (!m_impl->readData(path, dataTypeId, memTypeId, data, stride)) {
     cerr << "Failed to read the data\n";
     return false;
   }
