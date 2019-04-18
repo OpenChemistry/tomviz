@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "ConvertToFloatOperator.h"
+#include "DataExchangeFormat.h"
 #include "EmdFormat.h"
 #include "Module.h"
 #include "Utilities.h"
@@ -71,6 +72,7 @@ void ExportDataReaction::onTriggered()
   if (exportType == "Volume") {
     filters << "TIFF format (*.tiff)"
             << "EMD format (*.emd *.hdf5)"
+            << "Data Exchange format (*.h5)"
             << "CSV File (*.csv)"
             << "Exodus II File (*.e *.ex2 *.ex2v2 *.exo *.exoII *.exoii *.g)"
             << "Legacy VTK Files (*.vtk)"
@@ -187,6 +189,16 @@ bool ExportDataReaction::exportData(const QString& filename)
   QFileInfo info(filename);
   if (info.suffix() == "emd") {
     EmdFormat writer;
+    auto image = vtkImageData::SafeDownCast(data);
+    if (!image || !writer.write(filename.toLatin1().data(), image)) {
+      qCritical() << "Failed to write out data.";
+      return false;
+    } else {
+      return true;
+    }
+  } else if (info.suffix() == "h5") {
+    // Assume for now that all "h5" files are Data Exchange files
+    DataExchangeFormat writer;
     auto image = vtkImageData::SafeDownCast(data);
     if (!image || !writer.write(filename.toLatin1().data(), image)) {
       qCritical() << "Failed to write out data.";

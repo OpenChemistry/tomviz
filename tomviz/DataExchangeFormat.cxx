@@ -12,6 +12,7 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPointData.h>
+#include <vtkTrivialProducer.h>
 
 #include <string>
 #include <vector>
@@ -95,6 +96,49 @@ bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image)
   image->Modified();
 
   return true;
+}
+
+bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
+{
+  auto t = source->producer();
+  auto image = vtkImageData::SafeDownCast(t->GetOutputDataObject(0));
+  return this->write(fileName, image);
+}
+
+bool DataExchangeFormat::write(const std::string& fileName, vtkImageData* image)
+{
+  using h5::H5ReadWrite;
+  H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::WriteOnly;
+  H5ReadWrite writer(fileName, mode);
+
+  // Now create an "/exchange" group
+  writer.createGroup("/exchange");
+
+  int dim[3] = { 0, 0, 0 };
+  image->GetDimensions(dim);
+  std::vector<int> dims({ dim[0], dim[1], dim[2] });
+
+  // We must allocate a new array, and copy the reordered array into it.
+  auto arrayPtr = image->GetPointData()->GetScalars();
+  auto dataPtr = arrayPtr->GetVoidPointer(0);
+  vtkNew<vtkImageData> reorderedImageData;
+  reorderedImageData->SetDimensions(dim);
+  reorderedImageData->AllocateScalars(arrayPtr->GetDataType(), 1);
+  auto outPtr =
+    reorderedImageData->GetPointData()->GetScalars()->GetVoidPointer(0);
+
+  switch (arrayPtr->GetDataType()) {
+    vtkTemplateMacro(tomviz::ReorderArrayC(reinterpret_cast<VTK_TT*>(dataPtr),
+                                           reinterpret_cast<VTK_TT*>(outPtr),
+                                           dim));
+    default:
+      cout << "Data Exchange Format: Unknown data type" << endl;
+  }
+
+  H5ReadWrite::DataType type =
+    h5::H5VtkTypeMaps::VtkToDataType(arrayPtr->GetDataType());
+
+  return writer.writeData("/exchange", "data", dims, type, outPtr);
 }
 
 } // namespace tomviz
