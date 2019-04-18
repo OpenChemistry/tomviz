@@ -314,6 +314,10 @@ list(APPEND SOURCES
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/operators)
 
+list(APPEND SOURCES
+  h5cpp/h5readwrite.cpp
+)
+
 set(exec_sources
   AboutDialog.h
   AboutDialog.cxx
