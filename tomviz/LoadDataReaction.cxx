@@ -116,6 +116,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "JPeg Image files (*.jpg *.jpeg)"
           << "PNG Image files (*.png)"
           << "TIFF Image files (*.tiff *.tif)"
+          << "Data Exchange files (*.h5)"
           << "OME-TIFF Image files (*.ome.tif)"
           << "Raw data files (*.raw *.dat *.bin)"
           << "Meta Image files (*.mhd *.mha)"
