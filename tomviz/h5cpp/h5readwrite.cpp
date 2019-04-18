@@ -194,6 +194,54 @@ public:
     return status >= 0;
   }
 
+  vector<int> getDimensions(const string& path)
+  {
+    vector<int> result;
+    if (!isDataSet(path)) {
+      cerr << path << " is not a data set.\n";
+      return result;
+    }
+
+    hid_t dataSetId = H5Dopen(fileId(), path.c_str(), H5P_DEFAULT);
+    if (dataSetId < 0) {
+      cerr << "Failed to get dataSetId\n";
+      return result;
+    }
+
+    // Automatically close upon leaving scope
+    HIDCloser dataSetCloser(dataSetId, H5Dclose);
+
+    hid_t dataSpaceId = H5Dget_space(dataSetId);
+    if (dataSpaceId < 0) {
+      cerr << "Failed to get dataSpaceId\n";
+      return result;
+    }
+
+    HIDCloser dataSpaceCloser(dataSpaceId, H5Sclose);
+
+    int dimCount = H5Sget_simple_extent_ndims(dataSpaceId);
+    if (dimCount < 1) {
+      cerr << "Error: number of dimensions is less than 1\n";
+      return result;
+    }
+
+    hsize_t* h5dims = new hsize_t[dimCount];
+    int dimCount2 = H5Sget_simple_extent_dims(dataSpaceId, h5dims, nullptr);
+
+    if (dimCount != dimCount2) {
+      cerr << "Error: dimCounts do not match\n";
+      delete[] h5dims;
+      return result;
+    }
+
+    result.resize(dimCount);
+    std::copy(h5dims, h5dims + dimCount, result.begin());
+
+    delete[] h5dims;
+
+    return result;
+  }
+
   // void* data needs to be of the appropiate type and size
   bool readData(const string& path, hid_t dataTypeId, hid_t memTypeId,
                 void* data)
@@ -484,50 +532,7 @@ DataType H5ReadWrite::dataType(const string& path)
 
 vector<int> H5ReadWrite::getDimensions(const string& path)
 {
-  vector<int> result;
-  if (!m_impl->isDataSet(path)) {
-    cerr << path << " is not a data set.\n";
-    return result;
-  }
-
-  hid_t dataSetId = H5Dopen(m_impl->fileId(), path.c_str(), H5P_DEFAULT);
-  if (dataSetId < 0) {
-    cerr << "Failed to get dataSetId\n";
-    return result;
-  }
-
-  // Automatically close upon leaving scope
-  HIDCloser dataSetCloser(dataSetId, H5Dclose);
-
-  hid_t dataSpaceId = H5Dget_space(dataSetId);
-  if (dataSpaceId < 0) {
-    cerr << "Failed to get dataSpaceId\n";
-    return result;
-  }
-
-  HIDCloser dataSpaceCloser(dataSpaceId, H5Sclose);
-
-  int dimCount = H5Sget_simple_extent_ndims(dataSpaceId);
-  if (dimCount < 1) {
-    cerr << "Error: number of dimensions is less than 1\n";
-    return result;
-  }
-
-  hsize_t* h5dims = new hsize_t[dimCount];
-  int dimCount2 = H5Sget_simple_extent_dims(dataSpaceId, h5dims, nullptr);
-
-  if (dimCount != dimCount2) {
-    cerr << "Error: dimCounts do not match\n";
-    delete[] h5dims;
-    return result;
-  }
-
-  result.resize(dimCount);
-  std::copy(h5dims, h5dims + dimCount, result.begin());
-
-  delete[] h5dims;
-
-  return result;
+  return m_impl->getDimensions(path);
 }
 
 int H5ReadWrite::dimensionCount(const string& path)
