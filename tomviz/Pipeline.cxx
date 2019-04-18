@@ -262,21 +262,13 @@ void Pipeline::branchFinished(DataSource* start, vtkDataObject* newData)
     if (newChildDataSource != nullptr) {
       emit lastOp->newChildDataSource(newChildDataSource);
       // Move modules from root data source.
-      bool oldMoveObjectsEnabled =
-        ActiveObjects::instance().moveObjectsEnabled();
-      ActiveObjects::instance().setMoveObjectsMode(false);
-      auto view = ActiveObjects::instance().activeView();
-      foreach (Module* module, ModuleManager::instance().findModules<Module*>(
-                                 dataSource(), nullptr)) {
-        // TODO: We should really copy the module properties as well.
-        auto newModule = ModuleManager::instance().createAndAddModule(
-          module->label(), newChildDataSource, view);
-        // Copy over properties using the serialization code.
-        newModule->deserialize(module->serialize());
-        ModuleManager::instance().removeModule(module);
-      }
-      ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+      moveModulesDown(newChildDataSource);
     }
+  }
+  else {
+    // If this is the only operator, make sure the modules are moved down.
+    if (start->operators().size() == 1)
+      moveModulesDown(lastOp->childDataSource());
   }
 }
 
@@ -493,6 +485,24 @@ void Pipeline::setExecutionMode(ExecutionMode executor)
   } else {
     m_executor.reset(new ThreadPipelineExecutor(this));
   }
+}
+
+void Pipeline::moveModulesDown(DataSource* newChildDataSource)
+{
+  bool oldMoveObjectsEnabled =
+    ActiveObjects::instance().moveObjectsEnabled();
+  ActiveObjects::instance().setMoveObjectsMode(false);
+  auto view = ActiveObjects::instance().activeView();
+  foreach (Module* module, ModuleManager::instance().findModules<Module*>(
+           dataSource(), nullptr)) {
+    // TODO: We should really copy the module properties as well.
+    auto newModule = ModuleManager::instance().createAndAddModule(
+      module->label(), newChildDataSource, view);
+    // Copy over properties using the serialization code.
+    newModule->deserialize(module->serialize());
+    ModuleManager::instance().removeModule(module);
+  }
+  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
 }
 
 } // namespace tomviz
