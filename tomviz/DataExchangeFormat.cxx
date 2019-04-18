@@ -60,12 +60,21 @@ bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image)
   h5::H5ReadWrite::DataType type = reader.dataType(deDataNode);
   int vtkDataType = h5::H5VtkTypeMaps::dataTypeToVtk(type);
 
-  // We can skip some data in each dimension and thus resample
-  // by using this stride
-  int stride = 2;
-
   // Get the dimensions
   std::vector<int> dims = reader.getDimensions(deDataNode);
+
+  // Check if one of the dimensions is greater than 1100
+  // If so, we will use a stride of 2.
+  // TODO: make this an option in the UI
+  int stride = 1;
+  for (const auto& dim: dims) {
+    if (dim > 1100) {
+      stride = 2;
+      std::cout << "Using a stride of " << stride << " because the data "
+                << "set is very large\n";
+      break;
+    }
+  }
 
   // Re-shape the dimensions according to the stride
   for (auto& dim : dims)
