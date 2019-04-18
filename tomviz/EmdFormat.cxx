@@ -6,6 +6,7 @@
 #include "DataSource.h"
 
 #include <h5cpp/h5readwrite.h>
+#include <h5cpp/h5vtktypemaps.h>
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
@@ -74,46 +75,6 @@ std::string firstEmdNode(h5::H5ReadWrite& reader)
   return "";
 }
 
-static const std::map<h5::H5ReadWrite::DataType, int> DataTypeToVTK = {
-  { h5::H5ReadWrite::DataType::Int8, VTK_SIGNED_CHAR },
-  { h5::H5ReadWrite::DataType::Int16, VTK_SHORT },
-  { h5::H5ReadWrite::DataType::Int32, VTK_INT },
-  { h5::H5ReadWrite::DataType::Int64, VTK_LONG_LONG },
-  { h5::H5ReadWrite::DataType::UInt8, VTK_UNSIGNED_CHAR },
-  { h5::H5ReadWrite::DataType::UInt16, VTK_UNSIGNED_SHORT },
-  { h5::H5ReadWrite::DataType::UInt32, VTK_UNSIGNED_INT },
-  { h5::H5ReadWrite::DataType::UInt64, VTK_UNSIGNED_LONG_LONG },
-  { h5::H5ReadWrite::DataType::Float, VTK_FLOAT },
-  { h5::H5ReadWrite::DataType::Double, VTK_DOUBLE }
-};
-
-int dataTypeToVTK(h5::H5ReadWrite::DataType& type)
-{
-  auto it = DataTypeToVTK.find(type);
-
-  if (it == DataTypeToVTK.end()) {
-    cerr << "Could not convert DataType to VTK!\n";
-    return -1;
-  }
-
-  return it->second;
-}
-
-h5::H5ReadWrite::DataType VTKToDataType(int type)
-{
-  auto it = DataTypeToVTK.cbegin();
-  while (it != DataTypeToVTK.cend()) {
-
-    if (it->second == type)
-      return it->first;
-
-    ++it;
-  }
-
-  cerr << "Failed to convert VTK to DataType\n";
-  return h5::H5ReadWrite::DataType::None;
-}
-
 bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 {
   using h5::H5ReadWrite;
@@ -146,7 +107,7 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
 
   // Get the type of the data
   h5::H5ReadWrite::DataType type = reader.dataType(emdDataNode);
-  int vtkDataType = dataTypeToVTK(type);
+  int vtkDataType = h5::H5VtkTypeMaps::dataTypeToVtk(type);
 
   // Get the dimensions
   std::vector<int> dims = reader.getDimensions(emdDataNode);
@@ -319,7 +280,8 @@ bool EmdFormat::write(const std::string& fileName, vtkImageData* image)
     cout << "EMD: Unknown data type" << endl;
   }
 
-  H5ReadWrite::DataType type = VTKToDataType(arrayPtr->GetDataType());
+  H5ReadWrite::DataType type =
+    h5::H5VtkTypeMaps::VtkToDataType(arrayPtr->GetDataType());
 
   writer.writeData("/data/tomography", "data", dims, type, outPtr);
 
