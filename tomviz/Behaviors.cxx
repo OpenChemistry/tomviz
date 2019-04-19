@@ -66,7 +66,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
   qRegisterMetaType<QTextCharFormat>();
   qRegisterMetaType<QTextCursor>();
 
-  PV_PLUGIN_IMPORT(TomvizExtensions)
+  // PV_PLUGIN_IMPORT(TomvizExtensions)
 
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "JPEGSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "PNGSeriesReader");
