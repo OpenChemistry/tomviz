@@ -34,9 +34,9 @@
 #include <sstream>
 
 // Import the generated header to load our custom plugin
-#include "pvextensions/Plugin/TomvizExtensionsPlugin.h"
+//#include "pvextensions/Plugin/TomvizExtensionsPlugin.h"
 
-PV_PLUGIN_IMPORT_INIT(TomvizExtensions)
+//PV_PLUGIN_IMPORT_INIT(TomvizExtensions)
 
 const char* const settings = "{"
                              "   \"settings\" : {"
