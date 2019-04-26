@@ -34,9 +34,9 @@
 #include <sstream>
 
 // Import the generated header to load our custom plugin
-//#include "pvextensions/Plugin/TomvizExtensionsPlugin.h"
+#include "pvextensions/Plugin/TomvizExtensionsPlugin.h"
 
-//PV_PLUGIN_IMPORT_INIT(TomvizExtensions)
+PV_PLUGIN_IMPORT_INIT(TomvizExtensions)
 
 const char* const settings = "{"
                              "   \"settings\" : {"
@@ -66,7 +66,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
   qRegisterMetaType<QTextCharFormat>();
   qRegisterMetaType<QTextCursor>();
 
-  // PV_PLUGIN_IMPORT(TomvizExtensions)
+  PV_PLUGIN_IMPORT(TomvizExtensions)
 
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "JPEGSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "PNGSeriesReader");
