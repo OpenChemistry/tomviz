@@ -5,7 +5,7 @@ include_directories(SYSTEM
   ${Qt5Concurrent_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
-add_subdirectory(pvextensions)
+# add_subdirectory(pvextensions)
 
 set(SOURCES
   AbstractDataModel.h
@@ -561,7 +561,7 @@ target_link_libraries(tomvizlib
     VTK::jsoncpp
     VTK::pugixml
     VTK::tiff
-    TomvizExtensions
+    #    TomvizExtensions
     Qt5::Network)
 if(WIN32)
   target_link_libraries(tomvizlib PUBLIC Qt5::WinMain)
