@@ -18,7 +18,7 @@ Dependencies
 
  * Qt 5.9+ (5.9 recommended)
  * CMake 3.3+
- * Python 3.6
+ * Python 3.7
  * NumPy 1.12
  * Git 2.1
  * C++ compiler with C++11 support (MSVC 2015 on Windows)

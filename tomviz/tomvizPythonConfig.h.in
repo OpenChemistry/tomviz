@@ -91,12 +91,12 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     // INSTALL_DIR/lib/paraview-X.Y/paraview. In our case the exectuable is in
     // INSTALL_DIR/bin, so ParaView's baked-in paths do not work.
     PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../lib/paraview/python3.6/site-packages");
+                                   "/../lib/paraview/python3.7/site-packages");
     // Add ITK to the python path
     PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../lib/itk/python3.6/dist-packages");
+                                   "/../lib/itk/python3.7/dist-packages");
     // Add the location for numpy and scipy
-    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.6/site-packages");
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.7/site-packages");
   }
 }
 
@@ -121,7 +121,7 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     // we don't add anything for ParaView since, ParaView takes care of that.
     PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/");
     PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Libraries/python3.6/site-packages");
+                                   "/../Libraries/python3.7/site-packages");
     PythonAppInitPrependPythonPath(exe_dir + "/../Python");
     PythonAppInitPrependPythonPath(exe_dir + "/../Python/lib-dynload");
     PythonAppInitPrependPythonPath(exe_dir + "/../Python/site-packages");
