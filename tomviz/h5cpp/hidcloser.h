@@ -19,6 +19,12 @@ public:
 
   hid_t value() { return m_value; }
 
+  void reset(hid_t value)
+  {
+    close();
+    m_value = value;
+  }
+
   herr_t close()
   {
     herr_t result = 0;
