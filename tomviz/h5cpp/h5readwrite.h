@@ -32,6 +32,9 @@ public:
   /** Closes the file and destroys the H5ReadWrite */
   ~H5ReadWrite();
 
+  /** Explicitly close the file if one is open */
+  void close();
+
   /** Copy constructor is disabled */
   H5ReadWrite(const H5ReadWrite&) = delete;
 

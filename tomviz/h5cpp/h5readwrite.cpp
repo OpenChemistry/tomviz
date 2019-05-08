@@ -370,6 +370,11 @@ H5ReadWrite::H5ReadWrite(const string& file, OpenMode mode)
 
 H5ReadWrite::~H5ReadWrite() = default;
 
+void H5ReadWrite::close()
+{
+  m_impl->clear();
+}
+
 vector<string> H5ReadWrite::children(const string& path, bool* ok)
 {
   setOk(ok, false);
