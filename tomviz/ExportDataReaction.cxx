@@ -72,7 +72,7 @@ void ExportDataReaction::onTriggered()
   if (exportType == "Volume") {
     filters << "TIFF format (*.tiff)"
             << "EMD format (*.emd *.hdf5)"
-            << "Data Exchange format (*.h5)"
+            << "HDF5 format (*.h5)"
             << "CSV File (*.csv)"
             << "Exodus II File (*.e *.ex2 *.ex2v2 *.exo *.exoII *.exoii *.g)"
             << "Legacy VTK Files (*.vtk)"
@@ -197,7 +197,6 @@ bool ExportDataReaction::exportData(const QString& filename)
       return true;
     }
   } else if (info.suffix() == "h5") {
-    // Assume for now that all "h5" files are Data Exchange files
     DataExchangeFormat writer;
     auto image = vtkImageData::SafeDownCast(data);
     if (!image || !writer.write(filename.toLatin1().data(), image)) {

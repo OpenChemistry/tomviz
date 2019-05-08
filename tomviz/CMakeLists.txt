@@ -67,6 +67,8 @@ set(SOURCES
   ExportDataReaction.h
   FileFormatManager.cxx
   FileFormatManager.h
+  GenericHDF5Format.cxx
+  GenericHDF5Format.h
   GradientOpacityWidget.h
   GradientOpacityWidget.cxx
   HistogramManager.h
