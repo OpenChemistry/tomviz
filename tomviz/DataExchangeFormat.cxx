@@ -4,6 +4,7 @@
 #include "DataExchangeFormat.h"
 
 #include "DataSource.h"
+#include "GenericHDF5Format.h"
 
 #include <h5cpp/h5readwrite.h>
 #include <h5cpp/h5vtktypemaps.h>
@@ -33,18 +34,6 @@ void ReorderArrayC(T* in, T* out, int dim[3])
   }
 }
 
-template <typename T>
-void ReorderArrayF(T* in, T* out, int dim[3])
-{
-  for (int i = 0; i < dim[0]; ++i) {
-    for (int j = 0; j < dim[1]; ++j) {
-      for (int k = 0; k < dim[2]; ++k) {
-        out[(k * dim[1] + j) * dim[0] + i] = in[(i * dim[1] + j) * dim[2] + k];
-      }
-    }
-  }
-}
-
 bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image)
 {
   using h5::H5ReadWrite;
@@ -56,55 +45,7 @@ bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image)
   if (!reader.isDataSet(deDataNode))
     return false;
 
-  // Get the type of the data
-  h5::H5ReadWrite::DataType type = reader.dataType(deDataNode);
-  int vtkDataType = h5::H5VtkTypeMaps::dataTypeToVtk(type);
-
-  // Get the dimensions
-  std::vector<int> dims = reader.getDimensions(deDataNode);
-
-  // Check if one of the dimensions is greater than 1100
-  // If so, we will use a stride of 2.
-  // TODO: make this an option in the UI
-  int stride = 1;
-  for (const auto& dim: dims) {
-    if (dim > 1100) {
-      stride = 2;
-      std::cout << "Using a stride of " << stride << " because the data "
-                << "set is very large\n";
-      break;
-    }
-  }
-
-  // Re-shape the dimensions according to the stride
-  for (auto& dim : dims)
-    dim /= stride;
-
-  vtkNew<vtkImageData> tmp;
-  tmp->SetDimensions(&dims[0]);
-  tmp->AllocateScalars(vtkDataType, 1);
-  image->SetDimensions(&dims[0]);
-  image->AllocateScalars(vtkDataType, 1);
-
-  if (!reader.readData(deDataNode, type, tmp->GetScalarPointer(), stride)) {
-    cerr << "Failed to read the data\n";
-    return false;
-  }
-
-  // Data Exchange stores data as row major order.
-  // VTK expects column major order.
-  auto inPtr = tmp->GetPointData()->GetScalars()->GetVoidPointer(0);
-  auto outPtr = image->GetPointData()->GetScalars()->GetVoidPointer(0);
-  switch (image->GetPointData()->GetScalars()->GetDataType()) {
-    vtkTemplateMacro(tomviz::ReorderArrayF(reinterpret_cast<VTK_TT*>(inPtr),
-                                           reinterpret_cast<VTK_TT*>(outPtr),
-                                           &dims[0]));
-    default:
-      cout << "Data Exchange Format: Unknown data type" << endl;
-  }
-  image->Modified();
-
-  return true;
+  return GenericHDF5Format::readVolume(reader, deDataNode, image);
 }
 
 bool DataExchangeFormat::write(const std::string& fileName, DataSource* source)
