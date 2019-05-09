@@ -5,7 +5,7 @@ include_directories(SYSTEM
   ${Qt5Concurrent_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
-# add_subdirectory(pvextensions)
+add_subdirectory(pvextensions)
 
 set(SOURCES
   AbstractDataModel.h
