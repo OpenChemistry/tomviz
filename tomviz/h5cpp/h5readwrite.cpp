@@ -313,12 +313,16 @@ public:
 
   bool isDataSet(const string& path)
   {
+    // It's okay if some of these functions fail, turn off errors
+    turnOffErrors();
+
     H5O_info_t info;
     if (!getInfoByName(path, info)) {
-      cerr << "Failed to get H5O info by name\n";
+      turnOnErrors();
       return false;
     }
 
+    turnOnErrors();
     return info.type == H5O_TYPE_DATASET;
   }
 
@@ -349,6 +353,31 @@ public:
     return it->second;
   }
 
+  // Turn off error messages and save the handlers and data
+  // in member variables
+  void turnOffErrors()
+  {
+    if (m_errorHandlingIsOff)
+      return;
+
+    H5Eget_auto2(H5E_DEFAULT, &m_errorHandler, &m_clientErrorData);
+    H5Eset_auto2(H5E_DEFAULT, nullptr, nullptr);
+    m_errorHandlingIsOff = true;
+  }
+
+  // Turn back on error messages using the saved handlers
+  // and data
+  void turnOnErrors()
+  {
+    if (!m_errorHandlingIsOff)
+      return;
+
+    H5Eset_auto2(H5E_DEFAULT, m_errorHandler, m_clientErrorData);
+    m_errorHandler = nullptr;
+    m_clientErrorData = nullptr;
+    m_errorHandlingIsOff = false;
+  }
+
   bool fileIsValid() { return m_fileId >= 0; }
 
   void clear()
@@ -362,6 +391,12 @@ public:
   hid_t fileId() const { return m_fileId; }
 
   hid_t m_fileId = H5I_INVALID_HID;
+
+  // The error handlers are saved when error handling is turned off,
+  // and they will be restored when error handling is turned back on.
+  bool m_errorHandlingIsOff = false;
+  H5E_auto_t m_errorHandler;
+  void* m_clientErrorData;
 };
 
 H5ReadWrite::H5ReadWrite(const string& file, OpenMode mode)
@@ -369,6 +404,11 @@ H5ReadWrite::H5ReadWrite(const string& file, OpenMode mode)
 {}
 
 H5ReadWrite::~H5ReadWrite() = default;
+
+void H5ReadWrite::close()
+{
+  m_impl->clear();
+}
 
 vector<string> H5ReadWrite::children(const string& path, bool* ok)
 {

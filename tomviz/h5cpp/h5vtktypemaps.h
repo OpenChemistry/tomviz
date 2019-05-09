@@ -34,7 +34,7 @@ public:
     auto it = DataTypeToVtk.find(type);
 
     if (it == DataTypeToVtk.end()) {
-      cerr << "Could not convert DataType to Vtk!\n";
+      std::cerr << "Could not convert DataType to Vtk!\n";
       return -1;
     }
 
@@ -52,7 +52,7 @@ public:
       ++it;
     }
 
-    cerr << "Failed to convert Vtk to DataType\n";
+    std::cerr << "Failed to convert Vtk to DataType\n";
     return h5::H5ReadWrite::DataType::None;
   }
 };

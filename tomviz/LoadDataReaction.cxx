@@ -4,10 +4,10 @@
 #include "LoadDataReaction.h"
 
 #include "ActiveObjects.h"
-#include "DataExchangeFormat.h"
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "FileFormatManager.h"
+#include "GenericHDF5Format.h"
 #include "ImageStackDialog.h"
 #include "ImageStackModel.h"
 #include "LoadStackReaction.h"
@@ -117,7 +117,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "JPeg Image files (*.jpg *.jpeg)"
           << "PNG Image files (*.png)"
           << "TIFF Image files (*.tiff *.tif)"
-          << "Data Exchange files (*.h5)"
+          << "HDF5 files (*.h5)"
           << "OME-TIFF Image files (*.ome.tif)"
           << "Raw data files (*.raw *.dat *.bin)"
           << "Meta Image files (*.mhd *.mha)"
@@ -206,11 +206,12 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
   } else if (info.suffix().toLower() == "h5") {
-    // For now, just assume this is DataExchange format.
     loadWithParaview = false;
-    DataExchangeFormat deFile;
+    // The generic HDF5 format will figure out if it is a special
+    // HDF5 format such as DataExchange.
+    GenericHDF5Format file;
     vtkNew<vtkImageData> imageData;
-    if (deFile.read(fileName.toLatin1().data(), imageData)) {
+    if (file.read(fileName.toLatin1().data(), imageData)) {
       DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
                                           ? DataSource::TiltSeries
                                           : DataSource::Volume;
