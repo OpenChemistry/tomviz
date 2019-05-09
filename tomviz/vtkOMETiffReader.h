@@ -5,12 +5,11 @@
 #define vtkOMETiffReader_h
 
 #include "vtkImageReader2.h"
-#include "vtkOMETiffReaderModule.h"
 
 namespace tomviz
 {
 
-class VTKOMETIFFREADER_EXPORT vtkOMETiffReader : public vtkImageReader2
+class vtkOMETiffReader : public vtkImageReader2
 {
 public:
   static vtkOMETiffReader *New();

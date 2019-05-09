@@ -20,6 +20,7 @@
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
+#include "vtkOMETiffReader.h"
 
 #include <pqActiveObjects.h>
 #include <pqLoadDataReaction.h>
@@ -218,20 +219,16 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
     loadWithParaview = false;
-    auto pxm = tomviz::ActiveObjects::instance().proxyManager();
-    const char* name = "OMETIFFReader";
-    vtkSmartPointer<vtkSMProxy> source;
-    source.TakeReference(pxm->NewProxy("sources", name));
-    QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
-    vtkSMStringVectorProperty* prop = vtkSMStringVectorProperty::SafeDownCast(
-      source->GetProperty(pname.toUtf8().data()));
-    pqSMAdaptor::setElementProperty(prop, fileName);
-    source->UpdateVTKObjects();
+    vtkNew<vtkOMETiffReader> reader;
+    reader->SetFileName(fileName.toLocal8Bit().constData());
+    reader->Update();
+    auto* imageData = reader->GetOutput();
 
-    dataSource = createDataSource(source, defaultModules, child);
+    dataSource = new DataSource(imageData);
     QJsonObject readerProperties;
-    readerProperties["name"] = name;
+    readerProperties["name"] = "OMETIFFReader";
     dataSource->setReaderProperties(readerProperties.toVariantMap());
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
   } else if (options.contains("reader")) {
     loadWithParaview = false;
     // Create the ParaView reader and set its properties using the JSON

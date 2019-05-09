@@ -189,6 +189,8 @@ set(SOURCES
   vtkLengthScaleRepresentation.cxx
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
+  vtkOMETiffReader.cxx
+  vtkOMETiffReader.h
   vtkVolumeScaleRepresentation.h
   vtkVolumeScaleRepresentation.cxx
   WebExportWidget.cxx

@@ -1,7 +1,5 @@
 paraview_add_plugin(TomvizExtensions
   VERSION "1.0"
-  MODULES vtkOMETiffReader
-  MODULE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/TomvizExtensions/vtk.module"
   FORCE_STATIC ON
 )
 
