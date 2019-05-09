@@ -11,7 +11,9 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 #include <vtkDataArray.h>
@@ -59,17 +61,40 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   // Get the dimensions
   std::vector<int> dims = reader.getDimensions(path);
 
-  // Check if one of the dimensions is greater than 1100
-  // If so, we will use a stride of 2.
-  // TODO: make this an option in the UI
+  // Check if any of the dimensions are greater than 1100.
+  // If so, warn the user and let them choose a stride.
   int stride = 1;
-  for (const auto& dim : dims) {
-    if (dim > 1100) {
-      stride = 2;
-      std::cout << "Using a stride of " << stride << " because the data "
-                << "set is very large\n";
-      break;
-    }
+  int maxDim = 1100;
+  bool chooseStride = std::any_of(dims.begin(), dims.end(),
+                                  [maxDim](int i) { return i > maxDim; });
+
+  if (chooseStride) {
+    QDialog dialog;
+    dialog.setWindowTitle("Large Dataset");
+
+    QVBoxLayout layout;
+    dialog.setLayout(&layout);
+
+    QHBoxLayout hLayout;
+    layout.addLayout(&hLayout);
+
+    QLabel label("Choose stride:");
+    hLayout.addWidget(&label);
+
+    QSpinBox spin;
+    spin.setMinimum(1);
+    spin.setValue(2);
+    spin.setAlignment(Qt::AlignRight);
+    hLayout.addWidget(&spin);
+
+    QDialogButtonBox okButton(QDialogButtonBox::Ok);
+    layout.addWidget(&okButton);
+    layout.setAlignment(&okButton, Qt::AlignCenter);
+    QObject::connect(&okButton, &QDialogButtonBox::accepted, &dialog,
+                     &QDialog::accept);
+
+    dialog.exec();
+    stride = spin.value();
   }
 
   // Re-shape the dimensions according to the stride
