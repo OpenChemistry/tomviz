@@ -71,7 +71,6 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "JPEGSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "PNGSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TIFFSeriesReader");
-  vtkSMReaderFactory::AddReaderToWhitelist("sources", "OMETIFFReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "TVRawImageReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "MRCSeriesReader");
   vtkSMReaderFactory::AddReaderToWhitelist("sources", "XMLImageDataReader");

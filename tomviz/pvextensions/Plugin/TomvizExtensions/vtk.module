@@ -1,7 +1,0 @@
-NAME
-  vtkOMETiffReader
-DEPENDS
-  VTK::CommonMisc
-  VTK::IOImage
-  VTK::pugixml
-  VTK::tiff
