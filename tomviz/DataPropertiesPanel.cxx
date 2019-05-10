@@ -147,7 +147,7 @@ QString getSizeNearestThousand(T num, bool labelAsBytes = false)
   else if (num < 1e12)
     ret = QString::number(num / 1e9, format, prec) + " G";
   else
-    std::cerr << "In " << __FUNCTION__ << ": " << num << " is too big!\n";
+    ret = QString::number(num / 1e12, format, prec) + " T";
 
   if (labelAsBytes)
     ret += "B";
