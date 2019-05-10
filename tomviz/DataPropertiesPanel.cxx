@@ -155,21 +155,25 @@ QString getSizeNearestThousand(T num, bool labelAsBytes = false)
   return ret;
 }
 
-QString getNumVoxelsString(vtkSMSourceProxy* proxy)
+QString getNumVoxelsString(vtkSMSourceProxy* proxy, int stride = 1)
 {
+  size_t multiplier = stride * stride * stride;
   vtkPVDataInformation* info = proxy->GetDataInformation(0);
-  vtkTypeInt64 numVoxels = info->GetNumberOfPoints();
-  return "Voxels: " + getSizeNearestThousand(numVoxels);
+  vtkTypeInt64 numVoxels = info->GetNumberOfPoints() * multiplier;
+  return getSizeNearestThousand(numVoxels);
 }
 
-QString getMemSizeString(vtkSMSourceProxy* proxy)
+QString getMemSizeString(vtkSMSourceProxy* proxy, int stride = 1)
 {
+  // If this isn't a size_t, calculating memSize below overflows
+  // for stride == 2 and a memory size of 1.3 gigabytes
+  size_t multiplier = stride * stride * stride;
   vtkPVDataInformation* info = proxy->GetDataInformation(0);
 
   // GetMemorySize() returns kilobytes
-  size_t memSize = info->GetMemorySize() * 1000;
+  size_t memSize = info->GetMemorySize() * 1000 * multiplier;
 
-  return "Memory: " + getSizeNearestThousand(memSize, true);
+  return getSizeNearestThousand(memSize, true);
 }
 
 } // namespace
@@ -269,8 +273,25 @@ void DataPropertiesPanel::updateData()
   m_ui->FileName->setText(dsource->fileName());
 
   m_ui->DataRange->setText(getDataDimensionsString(dsource->proxy()));
-  m_ui->NumVoxels->setText(getNumVoxelsString(dsource->proxy()));
-  m_ui->MemSize->setText(getMemSizeString(dsource->proxy()));
+
+  QString voxelsStr = "Voxels: " + getNumVoxelsString(dsource->proxy());
+  m_ui->NumVoxels->setText(voxelsStr);
+
+  QString memStr = "Memory: " + getMemSizeString(dsource->proxy());
+  m_ui->MemSize->setText(memStr);
+
+  if (dsource->stride() != 1) {
+    QString origVoxStr = "Original Voxels: ";
+    origVoxStr += getNumVoxelsString(dsource->proxy(), dsource->stride());
+    m_ui->OriginalNumVoxels->setText(origVoxStr);
+
+    QString origMemStr = "Original Memory: ";
+    origMemStr += getMemSizeString(dsource->proxy(), dsource->stride());
+    m_ui->OriginalMemSize->setText(origMemStr);
+
+    m_ui->OriginalNumVoxels->show();
+    m_ui->OriginalMemSize->show();
+  }
 
   int extent[6];
   double spacing[3];
@@ -559,6 +580,8 @@ void DataPropertiesPanel::clear()
   m_ui->DataRange->setText("");
   m_ui->NumVoxels->setText("");
   m_ui->MemSize->setText("");
+  m_ui->OriginalNumVoxels->hide();
+  m_ui->OriginalMemSize->hide();
   m_ui->ActiveScalars->clear();
   m_scalarsTableModel.setArraysInfo(QList<ArrayInfo>());
 

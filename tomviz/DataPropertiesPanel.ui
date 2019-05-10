@@ -70,6 +70,20 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="OriginalNumVoxels">
+     <property name="text">
+      <string>OriginalNumVoxels</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="OriginalMemSize">
+     <property name="text">
+      <string>OriginalMemSize</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QTableView" name="ScalarsTable"/>
    </item>
    <item>
