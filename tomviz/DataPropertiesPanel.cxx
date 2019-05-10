@@ -131,6 +131,43 @@ QString getDataDimensionsString(vtkSMSourceProxy* proxy)
   return extentString;
 }
 
+template <typename T>
+QString getSizeNearestThousand(T num)
+{
+  char format = 'f';
+  int prec = 1;
+
+  QString ret;
+  if (num < 1e3)
+    ret = QString::number(num) + " B";
+  else if (num < 1e6)
+    ret = QString::number(num / 1e3, format, prec) + " K";
+  else if (num < 1e9)
+    ret = QString::number(num / 1e6, format, prec) + " M";
+  else if (num < 1e12)
+    ret = QString::number(num / 1e9, format, prec) + " G";
+  else
+    std::cerr << "In " << __FUNCTION__ << ": " << num << " is too big!\n";
+  return ret;
+}
+
+QString getNumVoxelsString(vtkSMSourceProxy* proxy)
+{
+  vtkPVDataInformation* info = proxy->GetDataInformation(0);
+  vtkTypeInt64 numVoxels = info->GetNumberOfPoints();
+  return "Voxels: " + getSizeNearestThousand(numVoxels);
+}
+
+QString getMemSizeString(vtkSMSourceProxy* proxy)
+{
+  vtkPVDataInformation* info = proxy->GetDataInformation(0);
+
+  // GetMemorySize() returns kilobytes
+  size_t memSize = info->GetMemorySize() * 1000;
+
+  return "Size: " + getSizeNearestThousand(memSize);
+}
+
 } // namespace
 
 QList<ArrayInfo> DataPropertiesPanel::getArraysInfo(
@@ -228,6 +265,8 @@ void DataPropertiesPanel::updateData()
   m_ui->FileName->setText(dsource->fileName());
 
   m_ui->DataRange->setText(getDataDimensionsString(dsource->proxy()));
+  m_ui->NumVoxels->setText(getNumVoxelsString(dsource->proxy()));
+  m_ui->MemSize->setText(getMemSizeString(dsource->proxy()));
 
   int extent[6];
   double spacing[3];
@@ -514,6 +553,8 @@ void DataPropertiesPanel::clear()
 {
   m_ui->FileName->setText("");
   m_ui->DataRange->setText("");
+  m_ui->NumVoxels->setText("");
+  m_ui->MemSize->setText("");
   m_ui->ActiveScalars->clear();
   m_scalarsTableModel.setArraysInfo(QList<ArrayInfo>());
 
