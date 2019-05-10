@@ -1,23 +1,9 @@
-# Do not use automoc, autouic, and autorcc for ParaView extensions.
-set(CMAKE_AUTOMOC OFF)
-set(CMAKE_AUTOUIC OFF)
-set(CMAKE_AUTORCC OFF)
+# Generate an .h file containing the XML data
+file(READ TomvizExtensions.xml XML_DATA)
 
-set("_paraview_plugin_default_TomvizExtensions" ON)
-paraview_plugin_scan(
-  PLUGIN_FILES      "${CMAKE_CURRENT_SOURCE_DIR}/Plugin/paraview.plugin"
-  PROVIDES_PLUGINS  plugins
-  REQUIRES_MODULES  required_modules)
+# To generate a valid c string, remove \n and replace " with \"
+string(REPLACE "\n" "" XML_DATA ${XML_DATA})
+string(REPLACE "\"" "\\\"" XML_DATA ${XML_DATA})
 
-foreach (module IN LISTS required_modules)
-  if (NOT TARGET "${module}")
-    message("Missing required module: ${module}")
-    return ()
-  endif ()
-endforeach ()
-
-paraview_plugin_build(
-  RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  LIBRARY_DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-  LIBRARY_SUBDIRECTORY "pvextensions"
-  PLUGINS ${plugins})
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/TomvizExtensionsXml.h
+     "static const char* tomvizExtensionsXml = \"${XML_DATA}\";")
