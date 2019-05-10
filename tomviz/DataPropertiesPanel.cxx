@@ -169,7 +169,7 @@ QString getMemSizeString(vtkSMSourceProxy* proxy)
   // GetMemorySize() returns kilobytes
   size_t memSize = info->GetMemorySize() * 1000;
 
-  return "Size: " + getSizeNearestThousand(memSize, true);
+  return "Memory: " + getSizeNearestThousand(memSize, true);
 }
 
 } // namespace
