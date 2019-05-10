@@ -4,6 +4,7 @@
 #include "GenericHDF5Format.h"
 
 #include <DataExchangeFormat.h>
+#include <DataSource.h>
 
 #include <h5cpp/h5readwrite.h>
 #include <h5cpp/h5vtktypemaps.h>
@@ -16,6 +17,7 @@
 
 #include <vtkDataArray.h>
 #include <vtkImageData.h>
+
 #include <vtkPointData.h>
 
 #include <string>
@@ -61,16 +63,13 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 
   // Check if one of the dimensions is greater than 1100
   // If so, we will use a stride of 2.
-  // TODO: make this an option in the UI
   int stride = 1;
-  for (const auto& dim : dims) {
-    if (dim > 1100) {
-      stride = 2;
-      std::cout << "Using a stride of " << stride << " because the data "
-                << "set is very large\n";
-      break;
-    }
-  }
+  int maxDim = 1100;
+  bool useStride = std::any_of(dims.begin(), dims.end(),
+                               [maxDim](int i) { return i > maxDim; });
+
+  if (useStride)
+    stride = 2;
 
   // Re-shape the dimensions according to the stride
   for (auto& dim : dims)
@@ -98,6 +97,7 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
     default:
       cout << "Generic HDF5 Format: Unknown data type" << endl;
   }
+  DataSource::setStride(image, stride);
   image->Modified();
 
   return true;
