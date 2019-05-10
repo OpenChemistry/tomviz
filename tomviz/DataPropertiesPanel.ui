@@ -56,6 +56,20 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="NumVoxels">
+     <property name="text">
+      <string>NumVoxels</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="MemSize">
+     <property name="text">
+      <string>MemSize</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QTableView" name="ScalarsTable"/>
    </item>
    <item>
@@ -183,20 +197,6 @@
        </layout>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="NumVoxels">
-     <property name="text">
-      <string>NumVoxels</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="MemSize">
-     <property name="text">
-      <string>MemSize</string>
-     </property>
     </widget>
    </item>
    <item>
