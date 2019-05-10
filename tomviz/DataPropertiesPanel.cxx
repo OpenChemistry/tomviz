@@ -132,14 +132,14 @@ QString getDataDimensionsString(vtkSMSourceProxy* proxy)
 }
 
 template <typename T>
-QString getSizeNearestThousand(T num)
+QString getSizeNearestThousand(T num, bool labelAsBytes = false)
 {
   char format = 'f';
   int prec = 1;
 
   QString ret;
   if (num < 1e3)
-    ret = QString::number(num) + " B";
+    ret = QString::number(num) + " ";
   else if (num < 1e6)
     ret = QString::number(num / 1e3, format, prec) + " K";
   else if (num < 1e9)
@@ -148,6 +148,10 @@ QString getSizeNearestThousand(T num)
     ret = QString::number(num / 1e9, format, prec) + " G";
   else
     std::cerr << "In " << __FUNCTION__ << ": " << num << " is too big!\n";
+
+  if (labelAsBytes)
+    ret += "B";
+
   return ret;
 }
 
@@ -165,7 +169,7 @@ QString getMemSizeString(vtkSMSourceProxy* proxy)
   // GetMemorySize() returns kilobytes
   size_t memSize = info->GetMemorySize() * 1000;
 
-  return "Size: " + getSizeNearestThousand(memSize);
+  return "Size: " + getSizeNearestThousand(memSize, true);
 }
 
 } // namespace
