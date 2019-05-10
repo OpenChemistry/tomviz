@@ -15,6 +15,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkFieldData.h>
 #include <vtkImageData.h>
+#include <vtkIntArray.h>
 #include <vtkNew.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkPointData.h>
@@ -991,6 +992,19 @@ void DataSource::setTiltAngles(const QVector<double>& angles)
   emit dataChanged();
 }
 
+void DataSource::setStride(int stride)
+{
+  auto data = this->dataObject();
+  setStride(data, stride);
+  emit dataChanged();
+}
+
+int DataSource::stride() const
+{
+  auto data = this->dataObject();
+  return stride(data);
+}
+
 vtkSMProxy* DataSource::opacityMap() const
 {
   return this->Internals->ColorMap
@@ -1171,6 +1185,29 @@ void DataSource::setTiltAngles(vtkDataObject* data,
       tiltAngles->SetTuple1(i, angles[i]);
     }
   }
+}
+
+void DataSource::setStride(vtkDataObject* image, int stride)
+{
+  auto fd = image->GetFieldData();
+  if (!fd->HasArray("stride")) {
+    vtkNew<vtkIntArray> array;
+    array->SetName("stride");
+    array->SetNumberOfTuples(1);
+    array->FillComponent(0, 0);
+    fd->AddArray(array);
+  }
+
+  fd->GetArray("stride")->SetTuple1(0, stride);
+}
+
+int DataSource::stride(vtkDataObject* image)
+{
+  vtkFieldData* fd = image->GetFieldData();
+  if (!fd->HasArray("stride"))
+    return 1;
+
+  return fd->GetArray("stride")->GetComponent(0, 0);
 }
 
 } // namespace tomviz

@@ -153,6 +153,12 @@ public:
   /// Set the tilt angles to the values in the given QVector
   void setTiltAngles(const QVector<double>& angles);
 
+  /// Get the stride (1 implies no stride)
+  int stride() const;
+
+  // Set the stride
+  void setStride(int stride);
+
   /// Moves the displayPosition of the DataSource by deltaPosition
   void translate(const double deltaPosition[3]);
 
@@ -230,6 +236,10 @@ public:
   static QVector<double> getTiltAngles(vtkDataObject* image);
   static void setTiltAngles(vtkDataObject* image,
                             const QVector<double>& angles);
+
+  // A stride of 1 implies no stride
+  static int stride(vtkDataObject* image);
+  static void setStride(vtkDataObject* image, int stride);
 
 signals:
   /// This signal is fired to notify the world that the DataSource may have
