@@ -118,10 +118,8 @@ void DataPropertiesPanel::setDataSource(DataSource* dsource)
 
 namespace {
 
-QString getDataDimensionsString(vtkSMSourceProxy* proxy)
+QString getDataDimensionsString(vtkPVDataInformation* info)
 {
-  vtkPVDataInformation* info = proxy->GetDataInformation(0);
-
   QString extentString =
     QString("Dimensions: %1 x %2 x %3")
       .arg(info->GetExtent()[1] - info->GetExtent()[0] + 1)
@@ -155,20 +153,18 @@ QString getSizeNearestThousand(T num, bool labelAsBytes = false)
   return ret;
 }
 
-QString getNumVoxelsString(vtkSMSourceProxy* proxy, int stride = 1)
+QString getNumVoxelsString(vtkPVDataInformation* info, int stride = 1)
 {
   size_t multiplier = stride * stride * stride;
-  vtkPVDataInformation* info = proxy->GetDataInformation(0);
   vtkTypeInt64 numVoxels = info->GetNumberOfPoints() * multiplier;
   return getSizeNearestThousand(numVoxels);
 }
 
-QString getMemSizeString(vtkSMSourceProxy* proxy, int stride = 1)
+QString getMemSizeString(vtkPVDataInformation* info, int stride = 1)
 {
   // If this isn't a size_t, calculating memSize below overflows
   // for stride == 2 and a memory size of 1.3 gigabytes
   size_t multiplier = stride * stride * stride;
-  vtkPVDataInformation* info = proxy->GetDataInformation(0);
 
   // GetMemorySize() returns kilobytes
   size_t memSize = info->GetMemorySize() * 1000 * multiplier;
@@ -272,21 +268,23 @@ void DataPropertiesPanel::updateData()
 
   m_ui->FileName->setText(dsource->fileName());
 
-  m_ui->DataRange->setText(getDataDimensionsString(dsource->proxy()));
+  vtkPVDataInformation* info = dsource->proxy()->GetDataInformation(0);
 
-  QString voxelsStr = "Voxels: " + getNumVoxelsString(dsource->proxy());
+  m_ui->DataRange->setText(getDataDimensionsString(info));
+
+  QString voxelsStr = "Voxels: " + getNumVoxelsString(info);
   m_ui->NumVoxels->setText(voxelsStr);
 
-  QString memStr = "Memory: " + getMemSizeString(dsource->proxy());
+  QString memStr = "Memory: " + getMemSizeString(info);
   m_ui->MemSize->setText(memStr);
 
   if (dsource->stride() != 1) {
     QString origVoxStr = "Original Voxels: ";
-    origVoxStr += getNumVoxelsString(dsource->proxy(), dsource->stride());
+    origVoxStr += getNumVoxelsString(info, dsource->stride());
     m_ui->OriginalNumVoxels->setText(origVoxStr);
 
     QString origMemStr = "Original Memory: ";
-    origMemStr += getMemSizeString(dsource->proxy(), dsource->stride());
+    origMemStr += getMemSizeString(info, dsource->stride());
     m_ui->OriginalMemSize->setText(origMemStr);
 
     m_ui->OriginalNumVoxels->show();
