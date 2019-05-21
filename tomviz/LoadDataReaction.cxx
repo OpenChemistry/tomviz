@@ -230,6 +230,10 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     readerProperties["name"] = "OMETIFFReader";
     dataSource->setReaderProperties(readerProperties.toVariantMap());
     LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+  } else if (FileFormatManager::instance().pythonReaderFactory(
+               info.suffix().toLower()) != nullptr) {
+    loadWithParaview = false;
+    loadWithPython = true;
   } else if (options.contains("reader")) {
     loadWithParaview = false;
     // Create the ParaView reader and set its properties using the JSON
@@ -252,11 +256,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     }
 
     dataSource->setReaderProperties(props.toVariantMap());
-
-  } else if (FileFormatManager::instance().pythonReaderFactory(
-               info.suffix().toLower()) != nullptr) {
-    loadWithParaview = false;
-    loadWithPython = true;
   }
 
   if (loadWithParaview) {
