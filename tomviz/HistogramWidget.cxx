@@ -37,6 +37,7 @@
 #include <vtkSMTransferFunctionPresets.h>
 #include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMViewProxy.h>
+#include <vtkType.h>
 
 #include <QCheckBox>
 #include <QColorDialog>
@@ -401,6 +402,15 @@ void HistogramWidget::onCustomRangeClicked()
   double maxRange[2];
   activeDataSource->getRange(maxRange);
 
+  // Get the type of the active scalar
+  auto scalar = activeDataSource->activeScalars();
+  auto array = activeDataSource->getScalarsArray(scalar);
+  auto dataType = array->GetDataType();
+  int precision = 0;
+  if (dataType == VTK_FLOAT || dataType == VTK_DOUBLE) {
+    precision = 6;
+  }
+
   // Get the current range
   vtkVector2d currentRange;
   vtkDiscretizableColorTransferFunction* discFunc =
@@ -426,6 +436,7 @@ void HistogramWidget::onCustomRangeClicked()
   QDoubleSpinBox bottom;
   bottom.setRange(maxRange[0], maxRange[1]);
   bottom.setValue(currentRange[0]);
+  bottom.setDecimals(precision);
   bottom.setFixedSize(bottom.sizeHint());
   bottom.setToolTip("Min: " + QString::number(maxRange[0]));
   hLayout.addWidget(&bottom);
@@ -438,6 +449,7 @@ void HistogramWidget::onCustomRangeClicked()
   QDoubleSpinBox top;
   top.setRange(maxRange[0], maxRange[1]);
   top.setValue(currentRange[1]);
+  top.setDecimals(precision);
   top.setFixedSize(top.sizeHint());
   top.setToolTip("Max: " + QString::number(maxRange[1]));
   hLayout.addWidget(&top);
