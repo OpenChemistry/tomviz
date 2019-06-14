@@ -23,6 +23,7 @@ class vtkSMProxy;
 
 namespace tomviz {
 
+class PresetDialog;
 class QVTKGLWidget;
 
 class HistogramWidget : public QWidget
@@ -76,6 +77,8 @@ private:
   vtkWeakPointer<vtkTable> m_inputData;
 
   QVTKGLWidget* m_qvtk;
+
+  QWidget* m_presetDialog = nullptr;
 };
 } // namespace tomviz
 

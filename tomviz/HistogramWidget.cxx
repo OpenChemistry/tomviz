@@ -8,6 +8,7 @@
 #include "DoubleSliderWidget.h"
 #include "ModuleContour.h"
 #include "ModuleManager.h"
+#include "PresetDialog.h"
 #include "QVTKGLWidget.h"
 #include "Utilities.h"
 
@@ -528,7 +529,11 @@ void HistogramWidget::onSaveToPresetClicked()
 
 void HistogramWidget::onPresetClicked()
 {
-  showPresetDialog(this, nullptr);
+  if (m_presetDialog == nullptr) {
+    m_presetDialog = new PresetDialog(this);
+  }
+  m_presetDialog->show();
+  //showPresetDialog(this, nullptr);
 }
 
 void HistogramWidget::applyCurrentPreset()
