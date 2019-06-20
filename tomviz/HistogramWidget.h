@@ -78,7 +78,7 @@ private:
 
   QVTKGLWidget* m_qvtk;
 
-  QWidget* m_presetDialog = nullptr;
+  PresetDialog* m_presetDialog = nullptr;
 };
 } // namespace tomviz
 
