@@ -6,7 +6,7 @@
 #include "ui_PresetDialog.h"
 
 #include <QTableView>
-#include <QtWidgets>
+#include <QVBoxLayout>
 
 namespace tomviz {
 
@@ -20,8 +20,8 @@ PresetDialog::PresetDialog(QWidget* parent)
     The view will then invoke the methods of the model pointer to 
     determine the number of rows and columns that should be displayed.
   */
-  QTableView *view = new QTableView(this);
-  PresetModel *model = new PresetModel();
+  auto *view = new QTableView(this);
+  auto *model = new PresetModel();
   view->setModel(model);
   // make columns fit what is in them
   view->resizeColumnsToContents();
@@ -29,10 +29,10 @@ PresetDialog::PresetDialog(QWidget* parent)
   view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
   // create a grid to center the column
-  QVBoxLayout *layout = new QVBoxLayout;
+  auto *layout = new QVBoxLayout;
   layout->addWidget(view);
   layout->addWidget(m_ui->buttonBox);
-  this->setLayout(layout);
+  setLayout(layout);
 }
 
 PresetDialog::~PresetDialog() = default;
