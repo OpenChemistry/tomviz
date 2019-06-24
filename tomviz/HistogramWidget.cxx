@@ -520,6 +520,8 @@ void HistogramWidget::onPresetClicked()
   if (m_presetDialog == nullptr) {
     m_presetDialog = new PresetDialog(this);
   }
+  QObject::connect(m_presetDialog, SIGNAL(applyPreset(const Json::Value&)),
+      this, SLOT(applyCurrentPreset()));
   m_presetDialog->show();
   //showPresetDialog(this, nullptr);
 }
