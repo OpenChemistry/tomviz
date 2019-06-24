@@ -22,17 +22,23 @@ PresetDialog::PresetDialog(QWidget* parent)
   */
   auto *view = new QTableView(this);
   auto *model = new PresetModel();
+  // create a grid to center the column
+  auto *layout = new QVBoxLayout;
+
   view->setModel(model);
+  layout->addWidget(view);
+  layout->addWidget(m_ui->buttonBox);
+  setLayout(layout);
+
   // make columns fit what is in them
   view->resizeColumnsToContents();
   // make columns stetch to fit table size
   view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-  // create a grid to center the column
-  auto *layout = new QVBoxLayout;
-  layout->addWidget(view);
-  layout->addWidget(m_ui->buttonBox);
-  setLayout(layout);
+  connect(view, SIGNAL(doubleClicked(const QModelIndex&)),
+	  model, SLOT(handleClick(const QModelIndex&)));
+  connect(model, SIGNAL(getPreset(const Json::Value&)),
+	  this, SIGNAL(applyPreset(const Json::Value&)));
 }
 
 PresetDialog::~PresetDialog() = default;

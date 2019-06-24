@@ -1,11 +1,13 @@
-/* This source file is part of the Tomviz project, https://tomviz.org/.                                                                                                                                       It is released under the 3-Clause BSD License, see "LICENSE". */
+/* This source file is part of the Tomviz project, https://tomviz.org/.
+  It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #ifndef tomvizPresetDialog_h
 #define tomvizPresetDialog_h
 
 #include <QDialog>
-
 #include <QScopedPointer>
+
+#include <vtk_jsoncpp.h>
 
 namespace Ui {
 class PresetDialog;
@@ -17,11 +19,14 @@ class PresetDialog : public QDialog
 {
   Q_OBJECT
 
-public:
+ public:
   explicit PresetDialog(QWidget* parent);
   ~PresetDialog() override;
+  
+ signals:
+  void applyPreset(const Json::Value& preset);
 
-private:
+ private:
   QScopedPointer<Ui::PresetDialog> m_ui;
 };
 } // namespace tomviz                                                                                                                                                                                       
