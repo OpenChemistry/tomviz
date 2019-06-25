@@ -9,8 +9,6 @@
 #include <QDialog>
 #include <QScopedPointer>
 
-#include <vtk_jsoncpp.h>
-
 namespace Ui {
 class PresetDialog;
 }
@@ -21,15 +19,15 @@ class PresetDialog : public QDialog
 {
   Q_OBJECT
 
- public:
+public:
   explicit PresetDialog(QWidget* parent);
   QString getName();
   ~PresetDialog() override;
   
- signals:
+signals:
   void applyPreset();
 
- private:
+private:
   QScopedPointer<Ui::PresetDialog> m_ui;
   PresetModel *m_model;
 };

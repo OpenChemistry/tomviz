@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>290</width>
+    <width>280</width>
     <height>444</height>
    </rect>
   </property>
@@ -26,7 +26,7 @@
     <enum>Qt::Horizontal</enum>
    </property>
    <property name="standardButtons">
-    <set>QDialogButtonBox::Apply|QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
+    <set>QDialogButtonBox::Close|QDialogButtonBox::Ok</set>
    </property>
    <property name="centerButtons">
     <bool>true</bool>
