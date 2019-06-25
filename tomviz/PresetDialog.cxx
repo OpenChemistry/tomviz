@@ -5,6 +5,7 @@
 #include "PresetModel.h"
 #include "ui_PresetDialog.h"
 
+#include <QHeaderView>
 #include <QTableView>
 #include <QVBoxLayout>
 
