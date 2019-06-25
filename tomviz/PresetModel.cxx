@@ -16,7 +16,7 @@ namespace tomviz {
 PresetModel::PresetModel(QObject *parent)
   : QAbstractTableModel(parent)
 {
-  //  vtkNew<vtkSMTransferFunctionPresets> Presets;
+  vtkNew<vtkSMTransferFunctionPresets> Presets;
   auto begin = Presets->GetNumberOfPresets();
   QString file = "../tomviz/tomviz/resources/matplotlib_cmaps.json";
   Presets->ImportPresets(file.toStdString().c_str());
@@ -67,12 +67,17 @@ QVariant PresetModel::headerData(int section, Qt::Orientation orientation, int r
   return QVariant();
 }
 
-void PresetModel::handleClick(const QModelIndex &index)
+void PresetModel::setName (const QModelIndex &index) {
+  m_name = m_Pixmaps[index.row()].first;
+}
+
+QString PresetModel::getName() {
+  return m_name;
+}
+
+void PresetModel::changePreset(const QModelIndex &index)
 {
-  std::cout << "The Preset "
-	    << m_Pixmaps[index.row()].first.toStdString()
-	    << " was selected." << std::endl;
-  const Json::Value& preset = Presets->GetPreset(index.row()+232);
-  emit this->getPreset(preset);
+  setName(index);
+  emit applyPreset();
 }
 } // namespace tomviz

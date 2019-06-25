@@ -21,11 +21,11 @@ PresetDialog::PresetDialog(QWidget* parent)
     determine the number of rows and columns that should be displayed.
   */
   auto *view = new QTableView(this);
-  auto *model = new PresetModel();
+  m_model = new PresetModel();
   // create a grid to center the column
   auto *layout = new QVBoxLayout;
 
-  view->setModel(model);
+  view->setModel(m_model);
   layout->addWidget(view);
   layout->addWidget(m_ui->buttonBox);
   setLayout(layout);
@@ -36,9 +36,13 @@ PresetDialog::PresetDialog(QWidget* parent)
   view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
   connect(view, SIGNAL(doubleClicked(const QModelIndex&)),
-	  model, SLOT(handleClick(const QModelIndex&)));
-  connect(model, SIGNAL(getPreset(const Json::Value&)),
-	  this, SIGNAL(applyPreset(const Json::Value&)));
+	  m_model, SLOT(changePreset(const QModelIndex&)));
+  connect(m_model, SIGNAL(applyPreset()), this, SIGNAL(applyPreset()));
+
+}
+
+QString PresetDialog::getName() {
+  return m_model->getName();
 }
 
 PresetDialog::~PresetDialog() = default;

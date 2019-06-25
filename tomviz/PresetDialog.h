@@ -4,6 +4,8 @@
 #ifndef tomvizPresetDialog_h
 #define tomvizPresetDialog_h
 
+#include "PresetModel.h"
+
 #include <QDialog>
 #include <QScopedPointer>
 
@@ -21,13 +23,15 @@ class PresetDialog : public QDialog
 
  public:
   explicit PresetDialog(QWidget* parent);
+  QString getName();
   ~PresetDialog() override;
   
  signals:
-  void applyPreset(const Json::Value& preset);
+  void applyPreset();
 
  private:
   QScopedPointer<Ui::PresetDialog> m_ui;
+  PresetModel *m_model;
 };
 } // namespace tomviz                                                                                                                                                                                       
 
