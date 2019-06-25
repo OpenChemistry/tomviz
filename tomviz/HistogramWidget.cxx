@@ -457,11 +457,13 @@ void HistogramWidget::onCustomRangeClicked()
 
   // Make sure the bottom isn't higher than the top, and the
   // top isn't higher than the bottom.
-  connect(&bottom, static_cast<void (QDoubleSpinBox::*)(double)>(
-                     &QDoubleSpinBox::valueChanged),
+  connect(&bottom,
+          static_cast<void (QDoubleSpinBox::*)(double)>(
+            &QDoubleSpinBox::valueChanged),
           &top, &QDoubleSpinBox::setMinimum);
-  connect(&top, static_cast<void (QDoubleSpinBox::*)(double)>(
-                  &QDoubleSpinBox::valueChanged),
+  connect(&top,
+          static_cast<void (QDoubleSpinBox::*)(double)>(
+            &QDoubleSpinBox::valueChanged),
           &bottom, &QDoubleSpinBox::setMaximum);
 
   QDialogButtonBox buttonBox;
@@ -491,14 +493,14 @@ void HistogramWidget::showPresetDialog(const char* presetName)
 {
   if (m_presetDialog == nullptr) {
     m_presetDialog = new PresetDialog(this);
-    QObject::connect(m_presetDialog, &PresetDialog::applyPreset,
-      this, &HistogramWidget::applyCurrentPreset);
+    QObject::connect(m_presetDialog, &PresetDialog::applyPreset, this,
+                     &HistogramWidget::applyCurrentPreset);
   }
 
   if (presetName) {
-    //m_presetDialog->setCurrentPreset(presetName);
+    // m_presetDialog->setCurrentPreset(presetName);
   }
-  
+
   m_presetDialog->show();
 }
 
@@ -532,7 +534,7 @@ void HistogramWidget::onPresetClicked()
 void HistogramWidget::applyCurrentPreset()
 {
   vtkSMProxy* lut = m_LUTProxy;
-  
+
   if (!lut) {
     return;
   }
@@ -540,7 +542,7 @@ void HistogramWidget::applyCurrentPreset()
   QString result = m_presetDialog->getName();
   vtkSMTransferFunctionProxy::ApplyPreset(lut, result.toLatin1().data(), true);
 
-  renderViews();                                                                                   
+  renderViews();
   emit colorMapUpdated();
 }
 
