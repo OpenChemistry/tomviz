@@ -23,16 +23,18 @@ class PresetModel : public QAbstractTableModel
   int columnCount(const QModelIndex &parent = QModelIndex()) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+  void setName(const QModelIndex &index);
+  QString getName();
 
  signals:
-  void getPreset(const Json::Value& preset);
+  void applyPreset();
   
  public slots:
-  void handleClick(const QModelIndex &index);
+   void changePreset(const QModelIndex&);
 
  private:
-  vtkNew<vtkSMTransferFunctionPresets> Presets;
   QList<QPair<QString, QPixmap>> m_Pixmaps;
+  QString m_name;
 };
 }// namespace tomviz
 #endif
