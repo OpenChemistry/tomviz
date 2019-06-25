@@ -5,6 +5,7 @@
 #define tomvizPresetModel_h
 
 #include <QAbstractTableModel>
+#include <QApplication>
 #include <QList>
 
 #include <vtkNew.h>
@@ -24,7 +25,7 @@ public:
                 int role = Qt::DisplayRole) const override;
   QVariant headerData(int section, Qt::Orientation orientation,
                       int role) const override;
-  QString getName();
+  QString presetName();
 
 signals:
   void applyPreset();
@@ -36,6 +37,7 @@ public slots:
 private:
   QList<QPair<QString, QPixmap>> m_Pixmaps;
   QString m_name;
+  QString getMatplotlibColorMapFile();
 };
 } // namespace tomviz
 #endif

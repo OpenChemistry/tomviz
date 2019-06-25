@@ -539,7 +539,7 @@ void HistogramWidget::applyCurrentPreset()
     return;
   }
 
-  QString result = m_presetDialog->getName();
+  QString result = m_presetDialog->presetName();
   vtkSMTransferFunctionProxy::ApplyPreset(lut, result.toLatin1().data(), true);
 
   renderViews();

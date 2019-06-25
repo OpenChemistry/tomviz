@@ -21,6 +21,7 @@ PresetDialog::PresetDialog(QWidget* parent)
   auto* layout = new QVBoxLayout;
 
   view->setModel(m_model);
+  view->horizontalHeader()->hide();
   layout->addWidget(view);
   layout->addWidget(m_ui->buttonBox);
   setLayout(layout);
@@ -36,10 +37,10 @@ PresetDialog::PresetDialog(QWidget* parent)
   connect(m_model, &PresetModel::applyPreset, this, &PresetDialog::applyPreset);
 }
 
-QString PresetDialog::getName()
-{
-  return m_model->getName();
-}
-
 PresetDialog::~PresetDialog() = default;
+  
+QString PresetDialog::presetName()
+{
+  return m_model->presetName();
+}
 } // namespace tomviz
