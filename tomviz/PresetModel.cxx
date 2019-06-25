@@ -12,8 +12,7 @@
 namespace tomviz {
 
 // ctor
-PresetModel::PresetModel(QObject *parent)
-  : QAbstractTableModel(parent)
+PresetModel::PresetModel(QObject* parent) : QAbstractTableModel(parent)
 {
   vtkNew<vtkSMTransferFunctionPresets> Presets;
   auto begin = Presets->GetNumberOfPresets();
@@ -22,29 +21,29 @@ PresetModel::PresetModel(QObject *parent)
 
   pqPresetToPixmap PixMapRenderer;
   for (auto i = begin; i < Presets->GetNumberOfPresets(); ++i) {
-    m_Pixmaps.push_back(
-      QPair<QString, QPixmap>(static_cast<QString>(Presets->GetPresetName(i)),
-			      PixMapRenderer.render(Presets->GetPreset(i), QSize(135, 20))));
+    m_Pixmaps.push_back(QPair<QString, QPixmap>(
+      static_cast<QString>(Presets->GetPresetName(i)),
+      PixMapRenderer.render(Presets->GetPreset(i), QSize(135, 20))));
   }
 }
 
 // the number of rows the view should display
-int PresetModel::rowCount(const QModelIndex &id) const
+int PresetModel::rowCount(const QModelIndex& id) const
 {
   return id.isValid() ? 0 : m_Pixmaps.size();
 }
 
 // the number of columns the view should display
-int PresetModel::columnCount(const QModelIndex &/*parent*/) const
+int PresetModel::columnCount(const QModelIndex& /*parent*/) const
 {
   return 1;
 }
 
 // returns what value should be in the cell at a given index
-QVariant PresetModel::data(const QModelIndex &index, int role) const
-{ 
+QVariant PresetModel::data(const QModelIndex& index, int role) const
+{
   switch (role) {
-    case Qt::DisplayRole :
+    case Qt::DisplayRole:
       return m_Pixmaps[index.row()].first;
 
     case Qt::DecorationRole:
@@ -53,28 +52,31 @@ QVariant PresetModel::data(const QModelIndex &index, int role) const
     case Qt::TextAlignmentRole:
       return Qt::AlignLeft + Qt::AlignVCenter;
   }
- 
+
   return QVariant();
 }
 
-QVariant PresetModel::headerData(int, Qt::Orientation orientation, int role) const
+QVariant PresetModel::headerData(int, Qt::Orientation orientation,
+                                 int role) const
 {
-  if (role ==Qt::DisplayRole && orientation == Qt::Horizontal) {
+  if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
     return QString("Presets");
   }
 
   return QVariant();
 }
 
-void PresetModel::setName (const QModelIndex &index) {
+void PresetModel::setName(const QModelIndex& index)
+{
   m_name = m_Pixmaps[index.row()].first;
 }
 
-QString PresetModel::getName() {
+QString PresetModel::getName()
+{
   return m_name;
 }
-  
-void PresetModel::changePreset(const QModelIndex &index)
+
+void PresetModel::changePreset(const QModelIndex& index)
 {
   emit setName(index);
   emit applyPreset();
