@@ -525,11 +525,8 @@ void HistogramWidget::applyCurrentPreset()
     return;
   }
 
-  vtkSMProxy* sof =                                                                                
-      vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
-  
   QString result = m_presetDialog->getName();
-  vtkSMTransferFunctionProxy::ApplyPreset(lut, result.toStdString().c_str(), true);
+  vtkSMTransferFunctionProxy::ApplyPreset(lut, result.toLatin1().data(), true);
 
   renderViews();                                                                                   
   emit colorMapUpdated();
