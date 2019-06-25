@@ -57,7 +57,7 @@ QVariant PresetModel::data(const QModelIndex &index, int role) const
   return QVariant();
 }
 
-QVariant PresetModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant PresetModel::headerData(int, Qt::Orientation orientation, int role) const
 {
   if (role ==Qt::DisplayRole && orientation == Qt::Horizontal) {
     return QString("Presets");
