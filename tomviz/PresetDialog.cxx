@@ -15,14 +15,8 @@ PresetDialog::PresetDialog(QWidget* parent)
 {
   m_ui->setupUi(this);
 
-  /*
-    Create instance of PresetModel and pass a pointer to it to the view.
-    The view will then invoke the methods of the model pointer to 
-    determine the number of rows and columns that should be displayed.
-  */
   auto *view = new QTableView(this);
   m_model = new PresetModel();
-  // create a grid to center the column
   auto *layout = new QVBoxLayout;
 
   view->setModel(m_model);
@@ -30,17 +24,16 @@ PresetDialog::PresetDialog(QWidget* parent)
   layout->addWidget(m_ui->buttonBox);
   setLayout(layout);
 
-  // make columns fit what is in them
   view->resizeColumnsToContents();
-  // make columns stetch to fit table size
   view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-  connect(view, SIGNAL(doubleClicked(const QModelIndex&)),
-	  m_model, SLOT(changePreset(const QModelIndex&)));
-  connect(m_model, SIGNAL(applyPreset()), this, SIGNAL(applyPreset()));
+  connect(view, &QTableView::doubleClicked, m_model, &PresetModel::changePreset);
+  connect(view, &QTableView::clicked, m_model, &PresetModel::setName);
+  connect(m_ui->buttonBox, &QDialogButtonBox::accepted, this, &PresetDialog::applyPreset);
+  connect(m_model, &PresetModel::applyPreset, this, &PresetDialog::applyPreset);
 
 }
-
+  
 QString PresetDialog::getName() {
   return m_model->getName();
 }

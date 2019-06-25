@@ -7,7 +7,6 @@
 
 #include <QPair>
 #include <QPixmap>
-#include <QScopedPointer>
 #include <QSize>
 
 namespace tomviz {
@@ -74,10 +73,10 @@ void PresetModel::setName (const QModelIndex &index) {
 QString PresetModel::getName() {
   return m_name;
 }
-
+  
 void PresetModel::changePreset(const QModelIndex &index)
 {
-  setName(index);
+  emit setName(index);
   emit applyPreset();
 }
 } // namespace tomviz
