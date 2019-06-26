@@ -1,7 +1,7 @@
 [
     {
         "ColorSpace" : "Diverging",
-        "Name" : "Magma_17",
+        "Name" : "Magma",
         "NanColor" : [ 1, 1, 1 ],
         "Source" : "https://github.com/BIDS/colormap/blob/master/colormaps.py",
         "License" : "CC0",
@@ -79,7 +79,7 @@
     },
     {
         "ColorSpace" : "Diverging",
-        "Name" : "Inferno_17",
+        "Name" : "Inferno",
         "NanColor" : [ 1, 1, 1 ],
         "Source" : "https://github.com/BIDS/colormap/blob/master/colormaps.py",
         "License" : "CC0",
@@ -157,7 +157,7 @@
     },
     {
         "ColorSpace" : "Diverging",
-        "Name" : "Plasma_17",
+        "Name" : "Plasma",
         "NanColor" : [ 1, 1, 1 ],
         "Source" : "https://github.com/BIDS/colormap/blob/master/colormaps.py",
         "License" : "CC0",
@@ -235,7 +235,7 @@
     },
     {
         "ColorSpace" : "RGB",
-        "Name" : "Viridis_17",
+        "Name" : "Viridis",
         "NanColor" : [ 1, 1, 1 ],
         "Source" : "https://github.com/BIDS/colormap/blob/master/colormaps.py",
         "License" : "CC0",

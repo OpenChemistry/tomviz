@@ -119,6 +119,10 @@ set(SOURCES
   PipelineWorker.h
   PipelineSettingsDialog.cxx
   PipelineSettingsDialog.h
+  PresetDialog.cxx
+  PresetDialog.h
+  PresetModel.cxx
+  PresetModel.h
   ProgressDialog.cxx
   ProgressDialog.h
   ProgressDialogManager.cxx
