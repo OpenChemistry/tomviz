@@ -10,8 +10,6 @@ from paraview.web.dataset_builder import ImageDataSetBuilder
 from paraview.web.dataset_builder import CompositeDataSetBuilder
 from paraview.web.dataset_builder import VTKGeometryDataSetBuilder
 
-from tomviz import py2to3
-
 DATA_DIRECTORY = 'data'
 HTML_FILENAME = 'tomviz.html'
 JS_FILENAME = 'tomviz.js'
@@ -333,7 +331,7 @@ def get_source_lookuptable_section(source):
 
 
 def get_contour():
-    for key, value in py2to3.iteritems(simple.GetSources()):
+    for key, value in simple.GetSources().items():
         if 'FlyingEdges' in key[0]:
             return value
         if 'Contour' in key[0]:
@@ -342,7 +340,7 @@ def get_contour():
 
 
 def get_trivial_producer():
-    for key, value in py2to3.iteritems(simple.GetSources()):
+    for key, value in simple.GetSources().items():
         if 'TrivialProducer' in key[0]:
             return value
     return None
@@ -475,7 +473,7 @@ def export_contour_exploration_images(destinationPath, camera, **kwargs):
 def export_contours_geometry(destinationPath, **kwargs):
     view = simple.GetRenderView()
     sceneDescription = {'scene': []}
-    for key, value in py2to3.iteritems(simple.GetSources()):
+    for key, value in simple.GetSources().items():
         if key[0] == 'Contour':
             add_scene_item(sceneDescription, key[0], value, view)
 
@@ -509,7 +507,7 @@ def export_contours_geometry(destinationPath, **kwargs):
 def export_contour_exploration_geometry(destinationPath, **kwargs):
     values = [int(v) for v in kwargs['multiValue'].split(',')]
     contour = None
-    for key, value in py2to3.iteritems(simple.GetSources()):
+    for key, value in simple.GetSources().items():
         if key[0] == 'Contour':
             contour = value
 
@@ -652,7 +650,7 @@ def export_volume(destinationPath, **kwargs):
     # Write data field
     fieldDataPath = os.path.join(destinationPath, 'data', 'fieldData')
     with open(fieldDataPath, 'wb') as f:
-        f.write(py2to3.buffer(scalars))
+        f.write(memoryview(scalars))
 
 # -----------------------------------------------------------------------------
 # Composite exporter
@@ -675,7 +673,7 @@ def export_layers(destinationPath, camera):
         'scene': []
     }
 
-    for key, value in py2to3.iteritems(simple.GetSources()):
+    for key, value in simple.GetSources().items():
         add_scene_item(sceneDescription, key[0], value, view)
 
     # Generate export
