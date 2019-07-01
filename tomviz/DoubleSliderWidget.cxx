@@ -11,6 +11,8 @@
 #include <QHBoxLayout>
 #include <QSlider>
 
+#define DEFAULT_DOUBLE_PRECISION_VALUE 16
+
 namespace tomviz {
 
 DoubleSliderWidget::DoubleSliderWidget(bool showLineEdit, QWidget* p)
