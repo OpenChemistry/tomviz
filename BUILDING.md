@@ -64,7 +64,7 @@ you will need to specify the correct generator for the installed compiler.
     cd ..
     git clone git://itk.org/ITK.git
     cd ITK
-    git checkout v4.12.0
+    git checkout v5.0.0
     cd ..
     mkdir itk-build
     cd itk-build
