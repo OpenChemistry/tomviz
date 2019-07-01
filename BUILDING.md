@@ -72,7 +72,7 @@ you will need to specify the correct generator for the installed compiler.
       -DITK_LEGACY_REMOVE:BOOL=ON \
       -DITK_LEGACY_SILENT:BOOL=ON \
       -DITK_USE_FFTWF:BOOL=ON \
-      -DModule_BridgeNumPy:BOOL=ON \
+      -DModule_ITKBridgeNumPy:BOOL=ON \
       -DBUILD_TESTING:BOOL=OFF \
       -DITK_WRAP_unsigned_short:BOOL=ON \
       -DITK_WRAP_rgb_unsigned_char:BOOL=OFF \
