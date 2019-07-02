@@ -6,8 +6,11 @@
 #include "ui_PresetDialog.h"
 
 #include <QHeaderView>
+#include <QJsonObject>
 #include <QTableView>
 #include <QVBoxLayout>
+
+#include <vtkSMProxy.h>
 
 namespace tomviz {
 
@@ -31,7 +34,7 @@ PresetDialog::PresetDialog(QWidget* parent)
 
   connect(view, &QTableView::doubleClicked, m_model,
           &PresetModel::changePreset);
-  connect(view, &QTableView::clicked, m_model, &PresetModel::setName);
+  connect(view, &QTableView::clicked, m_model, &PresetModel::setRow);
   connect(m_ui->buttonBox, &QDialogButtonBox::accepted, this,
           &PresetDialog::applyPreset);
   connect(m_model, &PresetModel::applyPreset, this, &PresetDialog::applyPreset);
@@ -42,5 +45,15 @@ PresetDialog::~PresetDialog() = default;
 QString PresetDialog::presetName()
 {
   return m_model->presetName();
+}
+
+void PresetDialog::addNewPreset(const QJsonObject& newPreset)
+{
+  m_model->addNewPreset(newPreset);
+}
+
+QJsonObject PresetDialog::jsonObject()
+{
+  return m_model->jsonObject();
 }
 } // namespace tomviz
