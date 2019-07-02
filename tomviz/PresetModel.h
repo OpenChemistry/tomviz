@@ -6,10 +6,12 @@
 
 #include <QAbstractTableModel>
 #include <QApplication>
-#include <QList>
+#include <QJsonArray>
 
 #include <vtkNew.h>
 #include <vtkSMTransferFunctionPresets.h>
+
+class vtkSMProxy;
 
 namespace tomviz {
 
@@ -26,18 +28,23 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation,
                       int role) const override;
   QString presetName();
+  void addNewPreset(const QJsonObject& newPreset);
+  QJsonObject jsonObject();
 
 signals:
   void applyPreset();
 
 public slots:
   void changePreset(const QModelIndex&);
-  void setName(const QModelIndex& index);
+  void setRow(const QModelIndex& index);
 
 private:
-  QList<QPair<QString, QPixmap>> m_Pixmaps;
-  QString m_name;
-  QString getMatplotlibColorMapFile();
+  QJsonArray m_Presets;
+  int m_row = 2;
+  void loadFromFile();
+  QPixmap render(const QJsonObject& newPreset) const;
+  void updateRow(const int row);
+  void saveSettings();
 };
 } // namespace tomviz
 #endif

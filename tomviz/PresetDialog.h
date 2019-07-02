@@ -7,6 +7,8 @@
 #include <QDialog>
 #include <QScopedPointer>
 
+class vtkSMProxy;
+
 namespace Ui {
 class PresetDialog;
 }
@@ -22,6 +24,8 @@ class PresetDialog : public QDialog
 public:
   explicit PresetDialog(QWidget* parent);
   QString presetName();
+  void addNewPreset(const QJsonObject& newPreset);
+  QJsonObject jsonObject();
   ~PresetDialog() override;
 
 signals:
