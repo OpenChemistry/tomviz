@@ -88,6 +88,12 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
 
     // Add the location for numpy and scipy
     PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.7/site-packages");
+
+    // Add root python3.7 dir
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.7");
+
+    // Add the location of python .so libraries
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.7/lib-dynload");
   }
 }
 
