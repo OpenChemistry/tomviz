@@ -45,7 +45,7 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
 {
   switch (role) {
     case Qt::DisplayRole:
-      return m_Presets[index.row()].toObject().value("name");
+      return m_Presets[index.row()].toObject().value("Name");
 
     case Qt::DecorationRole:
       auto pixmap = render(m_Presets[index.row()].toObject());
@@ -144,8 +144,11 @@ void PresetModel::loadFromFile()
   QJsonArray objects = doc.array();
   for (auto value : objects) {
     QJsonObject obj = value.toObject();
-    QJsonObject nextDefault{ { "name", obj["Name"] },
-                             { "RGBPoints", obj["RGBPoints"] } };
+    QJsonObject nextDefault{
+      { "Name", obj["Name"] },
+      { "ColorSpace", obj["ColorSpace"] },
+      { "RGBPoints", obj["RGBPoints"] },
+    };
     m_Presets.push_back(nextDefault);
   }
   saveSettings();
