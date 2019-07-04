@@ -531,7 +531,10 @@ void HistogramWidget::onSaveToPresetClicked()
     vtkSMProxy* lut = m_LUTProxy;
     auto presetInfo = tomviz::serialize(lut);
     auto presetColors = presetInfo["colors"];
-    QJsonObject newPreset{ { "name", newName }, { "RGBPoints", presetColors } };
+    auto colorSpace = presetInfo["ColorSpace"];
+    QJsonObject newPreset{ { "Name", newName },
+                           { "ColorSpace", colorSpace },
+                           { "RGBPoints", presetColors } };
     showPresetDialog(newPreset);
   }
 }

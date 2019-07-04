@@ -238,6 +238,8 @@ QJsonObject serialize(vtkDiscretizableColorTransferFunction* func)
   }
   json["colors"] = colorTable;
 
+  json["colorSpace"] = func->GetColorSpace();
+
   return json;
 }
 
