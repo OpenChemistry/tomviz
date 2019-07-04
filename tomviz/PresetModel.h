@@ -30,6 +30,7 @@ public:
   QString presetName();
   void addNewPreset(const QJsonObject& newPreset);
   QJsonObject jsonObject();
+  void deletePreset(const QModelIndex& index);
 
 signals:
   void applyPreset();
@@ -43,7 +44,7 @@ private:
   int m_row = 2;
   void loadFromFile();
   QPixmap render(const QJsonObject& newPreset) const;
-  void updateRow(const int row);
+  void updateRow();
   void saveSettings();
 };
 } // namespace tomviz

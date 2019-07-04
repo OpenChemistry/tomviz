@@ -9,6 +9,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QMenu>
 #include <QPair>
 #include <QPixmap>
 #include <QSize>
@@ -45,7 +46,7 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
 {
   switch (role) {
     case Qt::DisplayRole:
-      return m_Presets[index.row()].toObject().value("Name");
+      return m_Presets[index.row()].toObject().value("name");
 
     case Qt::DecorationRole:
       auto pixmap = render(m_Presets[index.row()].toObject());
@@ -68,9 +69,9 @@ void PresetModel::setRow(const QModelIndex& index)
   m_row = index.row();
 }
 
-void PresetModel::updateRow(const int row)
+void PresetModel::updateRow()
 {
-  m_row = row;
+  m_row = m_Presets.size() - 1;
 }
 
 QString PresetModel::presetName()
@@ -80,7 +81,10 @@ QString PresetModel::presetName()
 
 QJsonObject PresetModel::jsonObject()
 {
-  return m_Presets[m_row].toObject();
+  QJsonObject pqPreset(m_Presets[m_row].toObject());
+  pqPreset.insert("RGBPoints", pqPreset["colors"]);
+  pqPreset.insert("ColorSpace", pqPreset["colorSpace"]);
+  return pqPreset;
 }
 
 void PresetModel::changePreset(const QModelIndex& index)
@@ -92,8 +96,7 @@ void PresetModel::changePreset(const QModelIndex& index)
 void PresetModel::addNewPreset(const QJsonObject& newPreset)
 {
   m_Presets.push_back(newPreset);
-  render(newPreset);
-  updateRow(m_Presets.size()-1);
+  updateRow();
   saveSettings();
   beginResetModel();
   endResetModel();
@@ -101,7 +104,11 @@ void PresetModel::addNewPreset(const QJsonObject& newPreset)
 
 QPixmap PresetModel::render(const QJsonObject& newPreset) const
 {
-  QJsonDocument doc(newPreset);
+  QJsonObject pqPreset(newPreset);
+  pqPreset.insert("RGBPoints", pqPreset["colors"]);
+  pqPreset.insert("ColorSpace", pqPreset["colorSpace"]);
+
+  QJsonDocument doc(pqPreset);
   QString preset(doc.toJson(QJsonDocument::Compact));
 
   Json::Value colors;
@@ -145,12 +152,24 @@ void PresetModel::loadFromFile()
   for (auto value : objects) {
     QJsonObject obj = value.toObject();
     QJsonObject nextDefault{
-      { "Name", obj["Name"] },
-      { "ColorSpace", obj["ColorSpace"] },
-      { "RGBPoints", obj["RGBPoints"] },
+      { "name", obj["Name"] },
+      { "colorSpace", obj.contains("ColorSpace")
+	  ? obj["ColorSpace"] : QJsonValue("Diverging") },
+      { "colors", obj["RGBPoints"] },
     };
     m_Presets.push_back(nextDefault);
   }
   saveSettings();
+}
+
+void PresetModel::deletePreset(const QModelIndex& index)
+{
+  m_Presets.removeAt(index.row());
+  if (m_row >= m_Presets.size()) {
+    updateRow();
+  }
+  saveSettings();
+  beginResetModel();
+  endResetModel();
 }
 } // namespace tomviz
