@@ -29,6 +29,7 @@ PresetDialog::PresetDialog(QWidget* parent)
   m_view->setContextMenuPolicy(Qt::CustomContextMenu);
   layout->addWidget(m_view);
   layout->addWidget(m_ui->buttonBox);
+  layout->setContentsMargins(0, 0, 0, 0);
   setLayout(layout);
 
   m_view->resizeColumnsToContents();

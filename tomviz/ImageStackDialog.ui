@@ -20,6 +20,21 @@
    <string>Open an image stack</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_4">
+   <property name="spacing">
+    <number>2</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
@@ -155,7 +170,7 @@
          </widget>
         </item>
         <item>
-         <layout  class="QHBoxLayout" name="horizontalLayout_3">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
           <item>
            <widget class="QPushButton" name="checkSizes">
             <property name="text">
@@ -164,14 +179,14 @@
            </widget>
           </item>
           <item>
-            <widget class="QDialogButtonBox" name="buttonBox">
-              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="standardButtons">
-              <set>QDialogButtonBox::Cancel|QDialogButtonBox::Open</set>
-              </property>
-            </widget>
+           <widget class="QDialogButtonBox" name="buttonBox">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="standardButtons">
+             <set>QDialogButtonBox::Cancel|QDialogButtonBox::Open</set>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
