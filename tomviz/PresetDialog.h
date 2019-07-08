@@ -7,6 +7,9 @@
 #include <QDialog>
 #include <QScopedPointer>
 
+class QTableView;
+class vtkSMProxy;
+
 namespace Ui {
 class PresetDialog;
 }
@@ -22,6 +25,8 @@ class PresetDialog : public QDialog
 public:
   explicit PresetDialog(QWidget* parent);
   QString presetName();
+  void addNewPreset(const QJsonObject& newPreset);
+  QJsonObject jsonObject();
   ~PresetDialog() override;
 
 signals:
@@ -30,6 +35,8 @@ signals:
 private:
   QScopedPointer<Ui::PresetDialog> m_ui;
   PresetModel* m_model;
+  QTableView* m_view;
+  void customMenuRequested(const QModelIndex& Index);
 };
 } // namespace tomviz
 

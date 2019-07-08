@@ -238,6 +238,26 @@ QJsonObject serialize(vtkDiscretizableColorTransferFunction* func)
   }
   json["colors"] = colorTable;
 
+  switch(func->GetColorSpace()) {
+    case 0:
+      json["colorSpace"] = "RGB";
+      break;
+    case 1:
+      json["colorSpace"] = "HSV";
+      break;
+    case 2:
+      json["colorSpace"] = "CIELAB";
+      break;
+    case 4:
+      json["colorSpace"] = "CIEDE2000";
+      break;
+    case 5:
+      json["colorSpace"] = "Step";
+      break;
+    default:
+      json["colorSpace"] = "Diverging";
+  }
+
   return json;
 }
 

@@ -48,6 +48,7 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QSettings>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -489,7 +490,7 @@ void HistogramWidget::onInvertClicked()
   emit colorMapUpdated();
 }
 
-void HistogramWidget::showPresetDialog(const char* presetName)
+void HistogramWidget::showPresetDialog(const QJsonObject& newPreset)
 {
   if (m_presetDialog == nullptr) {
     m_presetDialog = new PresetDialog(this);
@@ -497,8 +498,8 @@ void HistogramWidget::showPresetDialog(const char* presetName)
                      &HistogramWidget::applyCurrentPreset);
   }
 
-  if (presetName) {
-    // m_presetDialog->setCurrentPreset(presetName);
+  if (!newPreset.isEmpty()) {
+    m_presetDialog->addNewPreset(newPreset);
   }
 
   m_presetDialog->show();
@@ -506,29 +507,41 @@ void HistogramWidget::showPresetDialog(const char* presetName)
 
 void HistogramWidget::onSaveToPresetClicked()
 {
-  vtkSMProxy* lut = m_LUTProxy;
-  vtkSMProxy* sof =
-    vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
+  QDialog dialog;
+  QVBoxLayout vLayout;
+  QHBoxLayout hLayout;
 
-  Json::Value preset = vtkSMTransferFunctionProxy::GetStateAsPreset(lut);
-  Json::Value opacityInfo = vtkSMTransferFunctionProxy::GetStateAsPreset(sof);
-  preset["Points"] = opacityInfo["Points"];
+  vLayout.addLayout(&hLayout);
+  dialog.setLayout(&vLayout);
+  dialog.setWindowTitle(tr("Create Preset"));
 
-  std::string presetName;
-  {
-    // This scoping is necessary to ensure that the vtkSMTransferFunctionPresets
-    // saves the new preset to the "settings" before the choosePreset dialog is
-    // shown.
-    vtkNew<vtkSMTransferFunctionPresets> presets;
-    presetName = presets->AddUniquePreset(preset);
+  QLineEdit name;
+  name.setPlaceholderText("Enter name of new preset");
+  hLayout.addWidget(&name);
+
+  QDialogButtonBox buttonBox;
+  buttonBox.addButton(QDialogButtonBox::Ok);
+  buttonBox.addButton(QDialogButtonBox::Cancel);
+  connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  vLayout.addWidget(&buttonBox);
+
+  if (dialog.exec() == QDialog::Accepted) {
+    auto newName = name.text();
+    vtkSMProxy* lut = m_LUTProxy;
+    auto presetInfo = tomviz::serialize(lut);
+    auto presetColors = presetInfo["colors"];
+    auto colorSpace = presetInfo["colorSpace"];
+    QJsonObject newPreset{ { "name", newName },
+                           { "colorSpace", colorSpace },
+                           { "colors", presetColors } };
+    showPresetDialog(newPreset);
   }
-
-  showPresetDialog(presetName.c_str());
 }
 
 void HistogramWidget::onPresetClicked()
 {
-  showPresetDialog(nullptr);
+  showPresetDialog(QJsonObject());
 }
 
 void HistogramWidget::applyCurrentPreset()
@@ -539,8 +552,13 @@ void HistogramWidget::applyCurrentPreset()
     return;
   }
 
-  QString result = m_presetDialog->presetName();
-  vtkSMTransferFunctionProxy::ApplyPreset(lut, result.toLatin1().data(), true);
+  auto curr = m_presetDialog->jsonObject();
+  QJsonDocument doc(curr);
+  QString chosen(doc.toJson(QJsonDocument::Compact));
+  Json::Value value;
+  Json::Reader reader;
+  reader.parse(chosen.toLatin1().data(), value);
+  vtkSMTransferFunctionProxy::ApplyPreset(lut, value, true);
 
   renderViews();
   emit colorMapUpdated();
