@@ -3,18 +3,14 @@
 
 #include "QVTKGLWidget.h"
 
-#include <vtkGenericOpenGLRenderWindow.h>
-#include <vtkNew.h>
-
 #include <QSurfaceFormat>
+
 namespace tomviz {
 
 QVTKGLWidget::QVTKGLWidget(QWidget* parent, Qt::WindowFlags f)
   : QVTKOpenGLWidget(parent, f)
 {
   // Set some defaults for our render window.
-  vtkNew<vtkGenericOpenGLRenderWindow> window;
-  setRenderWindow(window);
   QSurfaceFormat glFormat = QVTKOpenGLWidget::defaultFormat();
   glFormat.setSamples(8);
   setFormat(glFormat);
