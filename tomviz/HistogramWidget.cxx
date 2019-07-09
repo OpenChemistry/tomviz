@@ -196,8 +196,7 @@ vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
     return nullptr;
   }
 
-  vtkSMTransferFunctionProxy* tferProxy =
-    vtkSMTransferFunctionProxy::SafeDownCast(m_LUTProxy);
+  auto tferProxy = vtkSMTransferFunctionProxy::SafeDownCast(m_LUTProxy);
   if (!tferProxy) {
     return nullptr;
   }
@@ -231,20 +230,20 @@ void HistogramWidget::onScalarOpacityFunctionChanged()
   // Update the histogram
   m_histogramView->GetRenderWindow()->Render();
 
-  // Update the scalar opacity function proxy as it does not update it's
+  // Update the scalar opacity function proxy as it does not update its
   // internal state when the VTK object changes.
   if (!m_LUTProxy) {
     return;
   }
 
-  vtkSMProxy* opacityMapProxy =
+  auto opacityMapProxy =
     vtkSMPropertyHelper(m_LUTProxy, "ScalarOpacityFunction", true).GetAsProxy();
   if (!opacityMapProxy) {
     return;
   }
 
   vtkSMPropertyHelper pointsHelper(opacityMapProxy, "Points");
-  vtkObjectBase* opacityMapObject = opacityMapProxy->GetClientSideObject();
+  auto opacityMapObject = opacityMapProxy->GetClientSideObject();
   auto pwf = vtkPiecewiseFunction::SafeDownCast(opacityMapObject);
   if (pwf) {
     pointsHelper.SetNumberOfElements(4 * pwf->GetSize());
