@@ -99,7 +99,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
   m_moveActiveBehavior = new tomviz::MoveActiveObject(this);
 
   // Set the default color map from a preset.
-  setDefaultColorMapFromPreset("Plasma_17");
+  setDefaultColorMapFromPreset("Plasma");
 
   // this will trigger the logic to setup reader/writer factories, etc.
   pqApplicationCore::instance()->loadConfigurationXML("<xml/>");
