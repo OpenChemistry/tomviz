@@ -4,8 +4,9 @@
 #ifndef tomvizModule_h
 #define tomvizModule_h
 
-#include <QIcon>
 #include <QObject>
+
+#include <QIcon>
 #include <QPointer>
 #include <QScopedPointer>
 
@@ -22,9 +23,11 @@ class vtkPiecewiseFunction;
 class vtkDataObject;
 
 namespace tomviz {
+
 class DataSource;
 class MoleculeSource;
 class OperatorResult;
+
 /// Abstract parent class for all Modules in tomviz.
 class Module : public QObject
 {
@@ -100,10 +103,6 @@ public:
   vtkImageData* transferFunction2D() const;
   vtkRectd* transferFunction2DBox() const;
 
-  /// Returns true if the given proxy is part of the display or data processing
-  /// in this module
-  virtual bool isProxyPartOfModule(vtkSMProxy* proxy) = 0;
-
   virtual bool supportsGradientOpacity() { return false; }
 
   /// A description of the data type that will be exported.  For instance if
@@ -155,15 +154,6 @@ protected:
   /// called when the color map proxy is changed, for example, when
   /// setUseDetachedColorMap is toggled.
   virtual void updateColorMap() {}
-
-  /// Returns a string for the save file indicating which proxy within the
-  /// module is passed to it.  These should be unique within the module, but
-  /// different modules can reuse common strings such as "representation".
-  /// getProxyForString is the inverse that should get the proxy given the
-  /// string returned from getStringForProxy.  These are used in saving
-  ///  animations.
-  virtual std::string getStringForProxy(vtkSMProxy* proxy) = 0;
-  virtual vtkSMProxy* getProxyForString(const std::string& str) = 0;
 
 signals:
   /// Emitted when the represented DataSource is updated.

@@ -342,34 +342,10 @@ DataSource* ModuleContour::colorMapDataSource() const
                                      : dataSource();
 }
 
-bool ModuleContour::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return proxy == m_contourFilter;
-}
-
 vtkSmartPointer<vtkDataObject> ModuleContour::getDataToExport()
 {
   return vtkAlgorithm::SafeDownCast(m_contourFilter->GetClientSideObject())
     ->GetOutputDataObject(0);
-}
-
-std::string ModuleContour::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == m_contourFilter) {
-    return "Contour";
-  } else {
-    qWarning("Gave bad proxy to module in save animation state");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleContour::getProxyForString(const std::string& str)
-{
-  if (str == "Contour") {
-    return m_contourFilter;
-  } else {
-    return nullptr;
-  }
 }
 
 QList<DataSource*> ModuleContour::getChildDataSources()

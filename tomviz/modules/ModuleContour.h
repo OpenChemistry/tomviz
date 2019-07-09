@@ -42,16 +42,12 @@ public:
 
   DataSource* colorMapDataSource() const override;
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
-
   QString exportDataTypeString() override { return "Mesh"; }
 
   vtkSmartPointer<vtkDataObject> getDataToExport() override;
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
   QList<DataSource*> getChildDataSources();
   void updateScalarColoring();
 

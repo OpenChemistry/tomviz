@@ -13,8 +13,6 @@
 
 class QCheckBox;
 class vtkMolecule;
-class vtkSMProxy;
-class vtkSMSourceProxy;
 
 namespace tomviz {
 
@@ -45,12 +43,7 @@ public:
   QString exportDataTypeString() override { return "Molecule"; }
   vtkSmartPointer<vtkDataObject> getDataToExport() override;
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
   void dataSourceMoved(double newX, double newY, double newZ) override;
-
-protected:
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private slots:
   void ballRadiusChanged(double val);

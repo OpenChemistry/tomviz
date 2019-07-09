@@ -172,21 +172,6 @@ void ModuleMolecule::dataSourceMoved(double, double, double)
 {
 }
 
-bool ModuleMolecule::isProxyPartOfModule(vtkSMProxy*)
-{
-  return false;
-}
-
-std::string ModuleMolecule::getStringForProxy(vtkSMProxy*)
-{
-  return "";
-}
-
-vtkSMProxy* ModuleMolecule::getProxyForString(const std::string&)
-{
-  return nullptr;
-}
-
 vtkSmartPointer<vtkDataObject> ModuleMolecule::getDataToExport()
 {
   return m_molecule;

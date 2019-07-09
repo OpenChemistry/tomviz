@@ -549,35 +549,6 @@ vtkSmartPointer<vtkDataObject> ModuleSlice::getDataToExport()
   return m_widget->GetResliceOutput();
 }
 
-bool ModuleSlice::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return (proxy == m_passThrough) || (proxy == m_propsPanelProxy);
-}
-
-std::string ModuleSlice::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == m_passThrough) {
-    return "PassThrough";
-  } else if (proxy == m_propsPanelProxy) {
-    return "NonOrthoSlice";
-  } else {
-    qWarning(
-      "Unknown proxy passed to module non-ortho-slice in save animation");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleSlice::getProxyForString(const std::string& str)
-{
-  if (str == "PassThrough") {
-    return m_passThrough;
-  } else if (str == "NonOrthoSlice") {
-    return m_propsPanelProxy;
-  } else {
-    return nullptr;
-  }
-}
-
 bool ModuleSlice::areScalarsMapped() const
 {
   vtkSMPropertyHelper mapScalars(m_propsPanelProxy->GetProperty("MapScalars"));

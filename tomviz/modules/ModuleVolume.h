@@ -12,9 +12,6 @@
 
 #include <QPointer>
 
-class vtkSMProxy;
-class vtkSMSourceProxy;
-
 class vtkPVRenderView;
 
 class vtkGPUVolumeRayCastMapper;
@@ -50,8 +47,6 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
-
   bool supportsGradientOpacity() override { return true; }
 
   QString exportDataTypeString() override { return "Volume"; }
@@ -60,8 +55,6 @@ public:
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private:
   Q_DISABLE_COPY(ModuleVolume)

@@ -303,33 +303,4 @@ void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
   m_thresholdRepresentation->UpdateVTKObjects();
 }
 
-//-----------------------------------------------------------------------------
-bool ModuleThreshold::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return (proxy == m_thresholdFilter) ||
-         (proxy == m_thresholdRepresentation);
-}
-
-std::string ModuleThreshold::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == m_thresholdFilter) {
-    return "Threshold";
-  } else if (proxy == m_thresholdRepresentation) {
-    return "Representation";
-  } else {
-    qWarning("Unknown proxy passed to module threshold in save animation");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleThreshold::getProxyForString(const std::string& str)
-{
-  if (str == "Threshold") {
-    return m_thresholdFilter;
-  } else if (str == "Representation") {
-    return m_thresholdRepresentation;
-  } else {
-    return nullptr;
-  }
-}
 } // namespace tomviz

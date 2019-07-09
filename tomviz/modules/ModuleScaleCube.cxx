@@ -311,22 +311,6 @@ void ModuleScaleCube::dataSourceMoved(double newX, double newY, double newZ)
   m_cubeRep->SetWorldPosition(position);
 }
 
-bool ModuleScaleCube::isProxyPartOfModule(vtkSMProxy*)
-{
-  return false;
-}
-
-std::string ModuleScaleCube::getStringForProxy(vtkSMProxy*)
-{
-  qWarning("Unknown proxy passed to module volume in save animation");
-  return "";
-}
-
-vtkSMProxy* ModuleScaleCube::getProxyForString(const std::string&)
-{
-  return nullptr;
-}
-
 void ModuleScaleCube::onBoxColorChanged(const QColor& color)
 {
   m_cubeRep->GetProperty()->SetDiffuseColor(

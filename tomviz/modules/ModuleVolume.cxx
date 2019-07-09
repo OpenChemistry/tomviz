@@ -21,14 +21,8 @@
 #include <vtkVolume.h>
 #include <vtkVolumeProperty.h>
 
-#include <pqProxiesWidget.h>
 #include <vtkPVRenderView.h>
 #include <vtkPointData.h>
-#include <vtkSMPVRepresentationProxy.h>
-#include <vtkSMParaViewPipelineControllerWithRendering.h>
-#include <vtkSMPropertyHelper.h>
-#include <vtkSMSessionProxyManager.h>
-#include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
@@ -367,22 +361,6 @@ void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
 {
   vtkVector3d pos(newX, newY, newZ);
   m_volume->SetPosition(pos.GetData());
-}
-
-bool ModuleVolume::isProxyPartOfModule(vtkSMProxy*)
-{
-  return false;
-}
-
-std::string ModuleVolume::getStringForProxy(vtkSMProxy*)
-{
-  qWarning("Unknown proxy passed to module volume in save animation");
-  return "";
-}
-
-vtkSMProxy* ModuleVolume::getProxyForString(const std::string&)
-{
-  return nullptr;
 }
 
 void ModuleVolume::setLighting(const bool val)

@@ -245,36 +245,6 @@ void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
   m_gridAxes->SetPosition(newX, newY, newZ);
 }
 
-//-----------------------------------------------------------------------------
-bool ModuleOutline::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return (proxy == m_outlineFilter) ||
-         (proxy == m_outlineRepresentation);
-}
-
-std::string ModuleOutline::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == m_outlineFilter) {
-    return "Outline";
-  } else if (proxy == m_outlineRepresentation) {
-    return "Representation";
-  } else {
-    qWarning("Unknown proxy passed to module outline in save animation");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleOutline::getProxyForString(const std::string& str)
-{
-  if (str == "Outline") {
-    return m_outlineFilter;
-  } else if (str == "Representation") {
-    return m_outlineRepresentation;
-  } else {
-    return nullptr;
-  }
-}
-
 void ModuleOutline::updateGridAxesBounds(DataSource* dataSource)
 {
   Q_ASSERT(dataSource);
@@ -282,10 +252,10 @@ void ModuleOutline::updateGridAxesBounds(DataSource* dataSource)
   dataSource->getBounds(bounds);
   m_gridAxes->SetGridBounds(bounds);
 }
+
 void ModuleOutline::initializeGridAxes(DataSource* data,
                                        vtkSMViewProxy* vtkView)
 {
-
   updateGridAxesBounds(data);
   m_gridAxes->SetVisibility(0);
   m_gridAxes->SetGenerateGrid(false);
