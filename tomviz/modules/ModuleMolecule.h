@@ -6,13 +6,13 @@
 
 #include "Module.h"
 
-#include <vtkActor.h>
-#include <vtkMoleculeMapper.h>
-#include <vtkPVRenderView.h>
-#include <vtkWeakPointer.h>
-
 class QCheckBox;
+
+class vtkActor;
 class vtkMolecule;
+class vtkMoleculeMapper;
+
+class vtkPVRenderView;
 
 namespace tomviz {
 
@@ -41,7 +41,7 @@ public:
   bool deserialize(const QJsonObject& json) override;
 
   QString exportDataTypeString() override { return "Molecule"; }
-  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+  vtkDataObject* dataToExport() override;
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 

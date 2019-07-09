@@ -51,7 +51,7 @@ public:
 
   QString exportDataTypeString() override { return "Volume"; }
 
-  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+  vtkDataObject* dataToExport() override;
 
 protected:
   void updateColorMap() override;

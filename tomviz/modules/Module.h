@@ -11,11 +11,9 @@
 #include <QScopedPointer>
 
 #include <vtkRect.h>
-#include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
 
 class QWidget;
-class pqAnimationCue;
 class vtkImageData;
 class vtkSMProxy;
 class vtkSMViewProxy;
@@ -111,7 +109,7 @@ public:
   virtual QString exportDataTypeString() { return ""; }
 
   /// Returns the data to export for this visualization module.
-  virtual vtkSmartPointer<vtkDataObject> getDataToExport();
+  virtual vtkDataObject* dataToExport();
 
   /// Returns the active scalars of the module
   int activeScalars() const { return m_activeScalars; }

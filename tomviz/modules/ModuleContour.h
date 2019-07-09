@@ -5,12 +5,10 @@
 #define tomvizModuleContour_h
 
 #include "Module.h"
-#include <vtkWeakPointer.h>
-
-#include <QPointer>
 
 class vtkSMProxy;
 class vtkSMSourceProxy;
+
 namespace tomviz {
 
 class ModuleContourWidget;
@@ -44,7 +42,7 @@ public:
 
   QString exportDataTypeString() override { return "Mesh"; }
 
-  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+  vtkDataObject* dataToExport() override;
 
 protected:
   void updateColorMap() override;

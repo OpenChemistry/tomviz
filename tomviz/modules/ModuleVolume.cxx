@@ -321,7 +321,7 @@ void ModuleVolume::onTransferModeChanged(const int mode)
   emit renderNeeded();
 }
 
-vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
+vtkDataObject* ModuleVolume::dataToExport()
 {
   auto trv = dataSource()->producer();
   return trv->GetOutputDataObject(0);

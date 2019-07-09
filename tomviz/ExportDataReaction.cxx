@@ -96,7 +96,7 @@ void ExportDataReaction::onTriggered()
     filters << "JPEG Files (*.jpg *.jpeg)"
             << "VTK ImageData Files (*.vti)";
   } else if (exportType == "Molecule") {
-    moleculeToFile(vtkMolecule::SafeDownCast(module->getDataToExport()));
+    moleculeToFile(vtkMolecule::SafeDownCast(module->dataToExport()));
     return;
   }
 
@@ -179,7 +179,7 @@ bool ExportDataReaction::exportData(const QString& filename)
 {
   auto server = pqActiveObjects::instance().activeServer();
 
-  auto data = m_module->getDataToExport();
+  auto data = m_module->dataToExport();
 
   if (!server) {
     qCritical("No active server located.");

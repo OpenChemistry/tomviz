@@ -49,7 +49,7 @@ public:
 
   QString exportDataTypeString() override { return "Image"; }
 
-  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+  vtkDataObject* dataToExport() override;
 
   enum Direction
   {

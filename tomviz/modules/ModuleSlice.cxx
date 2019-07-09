@@ -544,7 +544,7 @@ void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
   m_widget->SetDisplayOffset(pos);
 }
 
-vtkSmartPointer<vtkDataObject> ModuleSlice::getDataToExport()
+vtkDataObject* ModuleSlice::dataToExport()
 {
   return m_widget->GetResliceOutput();
 }

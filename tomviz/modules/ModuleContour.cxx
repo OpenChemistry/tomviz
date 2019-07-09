@@ -342,7 +342,7 @@ DataSource* ModuleContour::colorMapDataSource() const
                                      : dataSource();
 }
 
-vtkSmartPointer<vtkDataObject> ModuleContour::getDataToExport()
+vtkDataObject* ModuleContour::dataToExport()
 {
   return vtkAlgorithm::SafeDownCast(m_contourFilter->GetClientSideObject())
     ->GetOutputDataObject(0);
