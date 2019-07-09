@@ -272,7 +272,6 @@ void HistogramWidget::onCurrentPointEditEvent()
       rgb[1] = color.greenF();
       rgb[2] = color.blueF();
       m_histogramColorOpacityEditor->SetCurrentControlPointColor(rgb);
-      onScalarOpacityFunctionChanged();
     }
   }
 }
