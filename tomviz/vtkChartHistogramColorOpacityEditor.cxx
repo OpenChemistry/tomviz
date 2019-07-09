@@ -214,6 +214,10 @@ void vtkChartHistogramColorOpacityEditor::SetCurrentControlPointColor(
   xrgbms[2] = rgb[1];
   xrgbms[3] = rgb[2];
   ctf->SetNodeValue(currentIdx, xrgbms);
+
+  // Make sure we rebuild the color map so that it is used in later renders.
+  ctf->Modified();
+  ctf->Build();
 }
 
 double vtkChartHistogramColorOpacityEditor::GetContourValue()

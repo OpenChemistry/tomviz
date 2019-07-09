@@ -220,12 +220,8 @@ vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
 
 void HistogramWidget::onScalarOpacityFunctionChanged()
 {
-  auto core = pqApplicationCore::instance();
-  auto smModel = core->getServerManagerModel();
-  QList<pqView*> views = smModel->findItems<pqView*>();
-  foreach (pqView* view, views) {
-    view->render();
-  }
+  // Update rendered views of the data.
+  ActiveObjects::instance().renderAllViews();
 
   // Update the histogram
   m_histogramView->GetRenderWindow()->Render();
@@ -272,9 +268,9 @@ void HistogramWidget::onCurrentPointEditEvent()
       rgb[1] = color.greenF();
       rgb[2] = color.blueF();
       m_histogramColorOpacityEditor->SetCurrentControlPointColor(rgb);
-      onScalarOpacityFunctionChanged();
     }
   }
+  ActiveObjects::instance().renderAllViews();
 }
 
 void HistogramWidget::histogramClicked(vtkObject*)
