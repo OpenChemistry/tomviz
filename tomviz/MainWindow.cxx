@@ -5,7 +5,6 @@
 #include "ui_MainWindow.h"
 
 #include <pqApplicationCore.h>
-#include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSettings.h>
@@ -212,8 +211,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   // Connect the about dialog up too.
   connect(m_ui->actionAbout, &QAction::triggered, this,
           [this]() { openDialog<AboutDialog>(&m_aboutDialog); });
-
-  new pqMacroReaction(m_ui->actionMacros);
 
   // Instantiate tomviz application behavior.
   new Behaviors(this);

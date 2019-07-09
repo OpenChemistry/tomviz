@@ -64,7 +64,6 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionMacros"/>
     <addaction name="actionPassiveAcquisition"/>
     <addaction name="actionAcquisition"/>
     <addaction name="actionPipelineSettings"/>
@@ -375,11 +374,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
-   </property>
-  </action>
-  <action name="actionMacros">
-   <property name="text">
-    <string>&amp;Macros</string>
    </property>
   </action>
   <action name="actionPassiveAcquisition">
