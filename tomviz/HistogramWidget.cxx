@@ -18,6 +18,7 @@
 #include <vtkContextView.h>
 #include <vtkControlPointsItem.h>
 #include <vtkDataArray.h>
+#include <vtkDiscretizableColorTransferFunction.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
@@ -32,7 +33,6 @@
 #include <pqSettings.h>
 #include <pqView.h>
 
-#include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionPresets.h>
@@ -137,7 +137,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
 HistogramWidget::~HistogramWidget() = default;
 
-void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction* lut)
+void HistogramWidget::setLUT(vtkDiscretizableColorTransferFunction* lut)
 {
   if (m_LUT != lut) {
     if (m_scalarOpacityFunction) {
@@ -157,8 +157,8 @@ void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
 {
   if (proxy && m_LUTProxy != proxy) {
     m_LUTProxy = proxy;
-    vtkPVDiscretizableColorTransferFunction* lut =
-      vtkPVDiscretizableColorTransferFunction::SafeDownCast(
+    auto lut =
+      vtkDiscretizableColorTransferFunction::SafeDownCast(
         proxy->GetClientSideObject());
     setLUT(lut);
 
