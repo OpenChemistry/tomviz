@@ -64,8 +64,8 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionPassiveAcquisition"/>
     <addaction name="actionAcquisition"/>
+    <addaction name="actionPassiveAcquisition"/>
     <addaction name="actionPipelineSettings"/>
    </widget>
    <widget class="QMenu" name="menuData">
