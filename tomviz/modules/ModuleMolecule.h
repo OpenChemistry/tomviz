@@ -6,15 +6,13 @@
 
 #include "Module.h"
 
-#include <vtkActor.h>
-#include <vtkMoleculeMapper.h>
-#include <vtkPVRenderView.h>
-#include <vtkWeakPointer.h>
-
 class QCheckBox;
+
+class vtkActor;
 class vtkMolecule;
-class vtkSMProxy;
-class vtkSMSourceProxy;
+class vtkMoleculeMapper;
+
+class vtkPVRenderView;
 
 namespace tomviz {
 
@@ -43,14 +41,9 @@ public:
   bool deserialize(const QJsonObject& json) override;
 
   QString exportDataTypeString() override { return "Molecule"; }
-  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+  vtkDataObject* dataToExport() override;
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
   void dataSourceMoved(double newX, double newY, double newZ) override;
-
-protected:
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private slots:
   void ballRadiusChanged(double val);

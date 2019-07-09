@@ -18,7 +18,7 @@ class vtkTable;
 
 class QToolButton;
 
-class vtkPVDiscretizableColorTransferFunction;
+class vtkDiscretizableColorTransferFunction;
 class vtkSMProxy;
 
 namespace tomviz {
@@ -34,7 +34,7 @@ public:
   explicit HistogramWidget(QWidget* parent_ = nullptr);
   ~HistogramWidget() override;
 
-  void setLUT(vtkPVDiscretizableColorTransferFunction* lut);
+  void setLUT(vtkDiscretizableColorTransferFunction* lut);
   void setLUTProxy(vtkSMProxy* proxy);
 
   void setInputData(vtkTable* table, const char* x_, const char* y_);
@@ -72,7 +72,7 @@ private:
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
   QToolButton* m_colorLegendToolButton;
 
-  vtkWeakPointer<vtkPVDiscretizableColorTransferFunction> m_LUT;
+  vtkWeakPointer<vtkDiscretizableColorTransferFunction> m_LUT;
   vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
   vtkWeakPointer<vtkSMProxy> m_LUTProxy;
   vtkWeakPointer<vtkTable> m_inputData;

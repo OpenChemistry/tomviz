@@ -44,9 +44,9 @@ AcquisitionWidget::AcquisitionWidget(QWidget* parent)
           SLOT(disconnectFromServer()));
   connect(m_ui->previewButton, SIGNAL(clicked(bool)), SLOT(setTiltAngle()));
 
-  m_ui->imageWidget->renderWindow()->AddRenderer(m_renderer.Get());
+  m_ui->imageWidget->renderWindow()->AddRenderer(m_renderer);
   m_ui->imageWidget->interactor()->SetInteractorStyle(
-    m_defaultInteractorStyle.Get());
+    m_defaultInteractorStyle);
   m_defaultInteractorStyle->SetRenderOnMouseMove(true);
 
   m_renderer->SetBackground(1.0, 1.0, 1.0);
@@ -213,10 +213,10 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
   reader->Update();
   m_imageData = reader->GetOutput();
   m_imageSlice->GetProperty()->SetInterpolationTypeToNearest();
-  m_imageSliceMapper->SetInputData(m_imageData.Get());
+  m_imageSliceMapper->SetInputData(m_imageData);
   m_imageSliceMapper->Update();
-  m_imageSlice->SetMapper(m_imageSliceMapper.Get());
-  m_renderer->AddViewProp(m_imageSlice.Get());
+  m_imageSlice->SetMapper(m_imageSliceMapper);
+  m_renderer->AddViewProp(m_imageSlice);
   resetCamera();
   m_ui->imageWidget->renderWindow()->Render();
 
@@ -227,7 +227,7 @@ void AcquisitionWidget::previewReady(QString mimeType, QByteArray result)
     //    m_lut = vtkSmartPointer<vtkScalarsToColors>::New();
   }
   if (m_lut) {
-    m_imageSlice->GetProperty()->SetLookupTable(m_lut.Get());
+    m_imageSlice->GetProperty()->SetLookupTable(m_lut);
   }
 
   m_ui->previewButton->setEnabled(true);

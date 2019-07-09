@@ -9,7 +9,6 @@
 #include <pqPropertyLinks.h>
 #include <vtkWeakPointer.h>
 
-class vtkSMProxy;
 class vtkSMSourceProxy;
 
 namespace tomviz {
@@ -36,12 +35,8 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
-
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private slots:
   void dataUpdated();

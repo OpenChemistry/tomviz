@@ -71,13 +71,13 @@ vtkChartHistogramColorOpacityEditor::vtkChartHistogramColorOpacityEditor()
   this->ColorTransferControlPointsItem->SelectableOff();
 
   this->ColorTransferFunctionChart->AddPlot(
-    this->ColorTransferFunctionItem.Get());
+    this->ColorTransferFunctionItem);
   this->ColorTransferFunctionChart->SetPlotCorner(
-    this->ColorTransferFunctionItem.Get(), 1);
+    this->ColorTransferFunctionItem, 1);
   this->ColorTransferFunctionChart->AddPlot(
-    this->ColorTransferControlPointsItem.Get());
+    this->ColorTransferControlPointsItem);
   this->ColorTransferFunctionChart->SetPlotCorner(
-    this->ColorTransferControlPointsItem.Get(), 1);
+    this->ColorTransferControlPointsItem, 1);
 
   vtkAxis* bottomAxis =
     this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
@@ -94,8 +94,8 @@ vtkChartHistogramColorOpacityEditor::vtkChartHistogramColorOpacityEditor()
   vtkAxis* topAxis = this->ColorTransferFunctionChart->GetAxis(vtkAxis::TOP);
   topAxis->SetVisible(false);
 
-  this->AddItem(this->HistogramChart.Get());
-  this->AddItem(this->ColorTransferFunctionChart.Get());
+  this->AddItem(this->HistogramChart);
+  this->AddItem(this->ColorTransferFunctionChart);
 
   // Forward events from internal charts to observers of this object
   this->HistogramChart->AddObserver(vtkCommand::CursorChangedEvent,
@@ -129,12 +129,11 @@ void vtkChartHistogramColorOpacityEditor::SetHistogramInputData(
 
   // The histogram chart bottom axis range was updated in the call above.
   // Set the same range for the color bar bottom axis here.
-  vtkAxis* histogramBottomAxis = this->HistogramChart->GetAxis(vtkAxis::BOTTOM);
+  auto histogramBottomAxis = this->HistogramChart->GetAxis(vtkAxis::BOTTOM);
   double axisRange[2];
   histogramBottomAxis->GetRange(axisRange);
 
-  vtkAxis* bottomAxis =
-    this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
+  auto bottomAxis = this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
   bottomAxis->SetRange(axisRange);
 
   // The data range may change and cause the labels to change. Hence, update
@@ -176,8 +175,7 @@ vtkAxis* vtkChartHistogramColorOpacityEditor::GetHistogramAxis(int axis)
 bool vtkChartHistogramColorOpacityEditor::GetCurrentControlPointColor(
   double rgb[3])
 {
-  vtkColorTransferFunction* ctf =
-    this->ColorTransferControlPointsItem->GetColorTransferFunction();
+  auto ctf = this->ColorTransferControlPointsItem->GetColorTransferFunction();
   if (!ctf) {
     return false;
   }
@@ -200,14 +198,12 @@ bool vtkChartHistogramColorOpacityEditor::GetCurrentControlPointColor(
 void vtkChartHistogramColorOpacityEditor::SetCurrentControlPointColor(
   const double rgb[3])
 {
-  vtkColorTransferFunction* ctf =
-    this->ColorTransferControlPointsItem->GetColorTransferFunction();
+  auto ctf = this->ColorTransferControlPointsItem->GetColorTransferFunction();
   if (!ctf) {
     return;
   }
 
-  vtkIdType currentIdx =
-    this->ColorTransferControlPointsItem->GetCurrentPoint();
+  auto currentIdx = this->ColorTransferControlPointsItem->GetCurrentPoint();
   if (currentIdx < 0) {
     return;
   }
@@ -227,14 +223,14 @@ double vtkChartHistogramColorOpacityEditor::GetContourValue()
 
 void vtkChartHistogramColorOpacityEditor::SetDPI(int dpi)
 {
-  if (this->HistogramChart.Get()) {
+  if (this->HistogramChart) {
     this->HistogramChart->SetDPI(dpi);
   }
 }
 
 bool vtkChartHistogramColorOpacityEditor::Paint(vtkContext2D* painter)
 {
-  vtkContextScene* scene = this->GetScene();
+  auto scene = this->GetScene();
   int sceneWidth = scene->GetSceneWidth();
   int sceneHeight = scene->GetSceneHeight();
   if (this->Private->NeedsUpdate ||

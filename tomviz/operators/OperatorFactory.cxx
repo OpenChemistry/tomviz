@@ -51,8 +51,8 @@ protected:
       vtkNew<vtkTypeInt8Array> array;
       array->SetNumberOfTuples(1);
       array->SetName("tomviz_data_source_type");
-      fd->AddArray(array.Get());
-      dataType = array.Get();
+      fd->AddArray(array);
+      dataType = array;
     }
     // It should already be this value...
     dataType->SetTuple1(0, m_type);

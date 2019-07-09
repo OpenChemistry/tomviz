@@ -544,38 +544,9 @@ void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
   m_widget->SetDisplayOffset(pos);
 }
 
-vtkSmartPointer<vtkDataObject> ModuleSlice::getDataToExport()
+vtkDataObject* ModuleSlice::dataToExport()
 {
   return m_widget->GetResliceOutput();
-}
-
-bool ModuleSlice::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return (proxy == m_passThrough.Get()) || (proxy == m_propsPanelProxy.Get());
-}
-
-std::string ModuleSlice::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == m_passThrough.Get()) {
-    return "PassThrough";
-  } else if (proxy == m_propsPanelProxy.Get()) {
-    return "NonOrthoSlice";
-  } else {
-    qWarning(
-      "Unknown proxy passed to module non-ortho-slice in save animation");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleSlice::getProxyForString(const std::string& str)
-{
-  if (str == "PassThrough") {
-    return m_passThrough.Get();
-  } else if (str == "NonOrthoSlice") {
-    return m_propsPanelProxy.Get();
-  } else {
-    return nullptr;
-  }
 }
 
 bool ModuleSlice::areScalarsMapped() const

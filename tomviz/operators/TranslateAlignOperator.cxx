@@ -107,7 +107,7 @@ bool TranslateAlignOperator::applyTransform(vtkDataObject* data)
                         inImage, offsets));
   }
   offsetsToResult();
-  data->ShallowCopy(outImage.Get());
+  data->ShallowCopy(outImage);
   return true;
 }
 

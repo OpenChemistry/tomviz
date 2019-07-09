@@ -67,7 +67,7 @@ bool OperatorResult::finalize()
 vtkDataObject* OperatorResult::dataObject()
 {
   vtkDataObject* object = nullptr;
-  if (m_producerProxy.Get()) {
+  if (m_producerProxy) {
     vtkObjectBase* clientSideObject = m_producerProxy->GetClientSideObject();
     vtkTrivialProducer* producer =
       vtkTrivialProducer::SafeDownCast(clientSideObject);
@@ -113,7 +113,7 @@ vtkSMSourceProxy* OperatorResult::producerProxy()
 
 void OperatorResult::createProxyIfNeeded()
 {
-  if (!m_producerProxy.Get()) {
+  if (!m_producerProxy) {
     vtkSMProxyManager* proxyManager = vtkSMProxyManager::GetProxyManager();
     vtkSMSessionProxyManager* sessionProxyManager =
       proxyManager->GetActiveSessionProxyManager();
@@ -133,7 +133,7 @@ void OperatorResult::createProxyIfNeeded()
 
 void OperatorResult::deleteProxy()
 {
-  if (m_producerProxy.Get()) {
+  if (m_producerProxy) {
     vtkNew<vtkSMParaViewPipelineController> controller;
     controller->UnRegisterPipelineProxy(m_producerProxy);
     m_producerProxy = nullptr;
