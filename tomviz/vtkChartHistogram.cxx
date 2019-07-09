@@ -88,7 +88,7 @@ vtkChartHistogram::vtkChartHistogram()
   this->OpacityControlPointsItem->SetEndPointsYMovable(true);
   this->OpacityControlPointsItem->SetEndPointsRemovable(false);
 
-  vtkPen* pen = this->OpacityControlPointsItem->GetPen();
+  auto pen = this->OpacityControlPointsItem->GetPen();
   pen->SetLineType(vtkPen::SOLID_LINE);
   pen->SetColor(0, 0, 0);
   pen->SetOpacity(255);
@@ -160,30 +160,28 @@ void vtkChartHistogram::SetHistogramInputData(vtkTable* table,
   }
 
   // Set the range of the axes
-  vtkDataArray* yArray =
-    vtkDataArray::SafeDownCast(table->GetColumnByName(yAxisColumn));
+  auto yArray = vtkDataArray::SafeDownCast(table->GetColumnByName(yAxisColumn));
   if (!yArray) {
     return;
   }
 
   double max = log10(yArray->GetRange()[1]);
-  vtkAxis* leftAxis = this->GetAxis(vtkAxis::LEFT);
+  auto leftAxis = this->GetAxis(vtkAxis::LEFT);
   leftAxis->SetUnscaledMinimum(1.0);
   leftAxis->SetMaximumLimit(max + 2.0);
   leftAxis->SetMaximum(static_cast<int>(max) + 1.0);
 
-  vtkDataArray* xArray =
-    vtkDataArray::SafeDownCast(table->GetColumnByName(xAxisColumn));
+  auto xArray = vtkDataArray::SafeDownCast(table->GetColumnByName(xAxisColumn));
   if (xArray && xArray->GetNumberOfTuples() > 2) {
     double range[2];
     xArray->GetRange(range);
     double halfInc = (xArray->GetTuple1(1) - xArray->GetTuple1(0)) / 2.0;
-    vtkAxis* bottomAxis = this->GetAxis(vtkAxis::BOTTOM);
+    auto bottomAxis = this->GetAxis(vtkAxis::BOTTOM);
     bottomAxis->SetBehavior(vtkAxis::FIXED);
     bottomAxis->SetRange(range[0] - halfInc, range[1] + halfInc);
   }
   // reset the right axis
-  vtkAxis* rightAxis = this->GetAxis(vtkAxis::RIGHT);
+  auto rightAxis = this->GetAxis(vtkAxis::RIGHT);
   rightAxis->SetBehavior(vtkAxis::FIXED);
   rightAxis->SetRange(0.0, 1.0);
 }
@@ -228,7 +226,7 @@ void vtkChartHistogram::SetOpacityFunction(
 void vtkChartHistogram::SetDPI(int dpi)
 {
   if (this->GetScene()) {
-    vtkRenderer* renderer = this->GetScene()->GetRenderer();
+    auto renderer = this->GetScene()->GetRenderer();
     if (renderer && renderer->GetRenderWindow()) {
       renderer->GetRenderWindow()->SetDPI(dpi);
     }

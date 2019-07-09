@@ -65,7 +65,7 @@ void vtkChartTransfer2DEditor::SetTransfer2D(vtkImageData* transfer2D,
     const vtkIdType numPlots = GetNumberOfPlots();
     for (vtkIdType i = 0; i < numPlots; i++) {
       typedef vtkTransferFunctionBoxItem BoxType;
-      BoxType* boxItem = BoxType::SafeDownCast(GetPlot(i));
+      auto boxItem = BoxType::SafeDownCast(GetPlot(i));
       if (!boxItem) {
         continue;
       }
@@ -108,7 +108,7 @@ void vtkChartTransfer2DEditor::GenerateTransfer2D()
   const vtkIdType numPlots = GetNumberOfPlots();
   for (vtkIdType i = 0; i < numPlots; i++) {
     typedef vtkTransferFunctionBoxItem BoxType;
-    BoxType* boxItem = BoxType::SafeDownCast(GetPlot(i));
+    auto boxItem = BoxType::SafeDownCast(GetPlot(i));
     if (!boxItem) {
       continue;
     }
@@ -138,7 +138,7 @@ vtkIdType vtkChartTransfer2DEditor::AddFunction(
   const vtkIdType numPlots = GetNumberOfPlots();
   for (vtkIdType i = 0; i < numPlots; i++) {
     typedef vtkTransferFunctionBoxItem BoxType;
-    BoxType* item = BoxType::SafeDownCast(GetPlot(i));
+    auto item = BoxType::SafeDownCast(GetPlot(i));
     if (item) {
       return -1;
     }
@@ -180,8 +180,7 @@ void vtkChartTransfer2DEditor::OnBoxItemModified(vtkObject* vtkNotUsed(caller),
                                                  void* clientData,
                                                  void* vtkNotUsed(callData))
 {
-  vtkChartTransfer2DEditor* self =
-    reinterpret_cast<vtkChartTransfer2DEditor*>(clientData);
+  auto self = reinterpret_cast<vtkChartTransfer2DEditor*>(clientData);
   self->GenerateTransfer2D();
 }
 
