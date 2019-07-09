@@ -137,7 +137,7 @@ bool ReconstructionOperator::applyTransform(vtkDataObject* dataObject)
   if (isCanceled()) {
     return false;
   }
-  emit newChildDataSource("Reconstruction", reconstructionImage.Get());
+  emit newChildDataSource("Reconstruction", reconstructionImage);
   return true;
 }
 } // namespace tomviz

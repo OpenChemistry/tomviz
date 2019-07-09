@@ -56,7 +56,7 @@ vtkStandardNewMacro(vtkChartGradientOpacityEditor)
 
   this->HistogramChart->SetHiddenAxisBorder(10);
   this->HistogramChart->SetLayoutStrategy(vtkChart::AXES_TO_RECT);
-  this->AddItem(this->HistogramChart.Get());
+  this->AddItem(this->HistogramChart);
 
   vtkAxis* bottomAxis = this->HistogramChart->GetAxis(vtkAxis::BOTTOM);
   bottomAxis->SetTitle("Gradient Magnitude");
@@ -109,7 +109,7 @@ vtkAxis* vtkChartGradientOpacityEditor::GetHistogramAxis(int axis)
 
 void vtkChartGradientOpacityEditor::SetDPI(int dpi)
 {
-  if (this->HistogramChart.Get()) {
+  if (this->HistogramChart) {
     this->HistogramChart->SetDPI(dpi);
   }
 }

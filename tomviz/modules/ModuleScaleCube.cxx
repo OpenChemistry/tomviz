@@ -39,7 +39,7 @@ ModuleScaleCube::ModuleScaleCube(QObject* parentObject) : Module(parentObject)
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
   // "onPositionChanged" signal
   m_observedPositionId =
-    pqCoreUtilities::connect(m_cubeRep.Get(), vtkCommand::ModifiedEvent, this,
+    pqCoreUtilities::connect(m_cubeRep, vtkCommand::ModifiedEvent, this,
                              SIGNAL(onPositionChanged()));
 
   // Connect to our "onPositionChanged" signal and emit it with arguments
@@ -57,7 +57,7 @@ ModuleScaleCube::ModuleScaleCube(QObject* parentObject) : Module(parentObject)
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
   // "onSideLengthChanged" signal
   m_observedSideLengthId =
-    pqCoreUtilities::connect(m_cubeRep.Get(), vtkCommand::ModifiedEvent, this,
+    pqCoreUtilities::connect(m_cubeRep, vtkCommand::ModifiedEvent, this,
                              SIGNAL(onSideLengthChanged()));
 
   // Connect to our "onSideLengthChanged" signal and emit it with arguments
@@ -105,7 +105,7 @@ bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   const double* displayPosition = dataSource()->displayPosition();
   dataSourceMoved(displayPosition[0], displayPosition[1], displayPosition[2]);
 
-  m_handleWidget->SetRepresentation(m_cubeRep.Get());
+  m_handleWidget->SetRepresentation(m_cubeRep);
   m_handleWidget->EnabledOn();
 
   return true;

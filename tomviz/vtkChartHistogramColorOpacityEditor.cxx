@@ -71,13 +71,13 @@ vtkChartHistogramColorOpacityEditor::vtkChartHistogramColorOpacityEditor()
   this->ColorTransferControlPointsItem->SelectableOff();
 
   this->ColorTransferFunctionChart->AddPlot(
-    this->ColorTransferFunctionItem.Get());
+    this->ColorTransferFunctionItem);
   this->ColorTransferFunctionChart->SetPlotCorner(
-    this->ColorTransferFunctionItem.Get(), 1);
+    this->ColorTransferFunctionItem, 1);
   this->ColorTransferFunctionChart->AddPlot(
-    this->ColorTransferControlPointsItem.Get());
+    this->ColorTransferControlPointsItem);
   this->ColorTransferFunctionChart->SetPlotCorner(
-    this->ColorTransferControlPointsItem.Get(), 1);
+    this->ColorTransferControlPointsItem, 1);
 
   vtkAxis* bottomAxis =
     this->ColorTransferFunctionChart->GetAxis(vtkAxis::BOTTOM);
@@ -94,8 +94,8 @@ vtkChartHistogramColorOpacityEditor::vtkChartHistogramColorOpacityEditor()
   vtkAxis* topAxis = this->ColorTransferFunctionChart->GetAxis(vtkAxis::TOP);
   topAxis->SetVisible(false);
 
-  this->AddItem(this->HistogramChart.Get());
-  this->AddItem(this->ColorTransferFunctionChart.Get());
+  this->AddItem(this->HistogramChart);
+  this->AddItem(this->ColorTransferFunctionChart);
 
   // Forward events from internal charts to observers of this object
   this->HistogramChart->AddObserver(vtkCommand::CursorChangedEvent,
@@ -227,7 +227,7 @@ double vtkChartHistogramColorOpacityEditor::GetContourValue()
 
 void vtkChartHistogramColorOpacityEditor::SetDPI(int dpi)
 {
-  if (this->HistogramChart.Get()) {
+  if (this->HistogramChart) {
     this->HistogramChart->SetDPI(dpi);
   }
 }

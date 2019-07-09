@@ -25,6 +25,7 @@
 #include <QComboBox>
 #include <QFormLayout>
 #include <QVBoxLayout>
+
 namespace tomviz {
 
 ModuleThreshold::ModuleThreshold(QObject* parentObject) : Module(parentObject)
@@ -149,12 +150,12 @@ void ModuleThreshold::addToPanel(QWidget* panel)
   pqStringVectorPropertyWidget* arraySelection =
     new pqStringVectorPropertyWidget(
       m_thresholdFilter->GetProperty("SelectInputScalars"),
-      m_thresholdFilter.Get());
+      m_thresholdFilter);
   layout->addWidget(arraySelection);
 
   pqDoubleRangeSliderPropertyWidget* range =
     new pqDoubleRangeSliderPropertyWidget(
-      m_thresholdFilter.Get(),
+      m_thresholdFilter,
       m_thresholdFilter->GetProperty("ThresholdBetween"));
   range->setProperty(m_thresholdFilter->GetProperty("ThresholdBetween"));
   layout->addWidget(range);
@@ -305,15 +306,15 @@ void ModuleThreshold::dataSourceMoved(double newX, double newY, double newZ)
 //-----------------------------------------------------------------------------
 bool ModuleThreshold::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == m_thresholdFilter.Get()) ||
-         (proxy == m_thresholdRepresentation.Get());
+  return (proxy == m_thresholdFilter) ||
+         (proxy == m_thresholdRepresentation);
 }
 
 std::string ModuleThreshold::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == m_thresholdFilter.Get()) {
+  if (proxy == m_thresholdFilter) {
     return "Threshold";
-  } else if (proxy == m_thresholdRepresentation.Get()) {
+  } else if (proxy == m_thresholdRepresentation) {
     return "Representation";
   } else {
     qWarning("Unknown proxy passed to module threshold in save animation");
@@ -324,9 +325,9 @@ std::string ModuleThreshold::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleThreshold::getProxyForString(const std::string& str)
 {
   if (str == "Threshold") {
-    return m_thresholdFilter.Get();
+    return m_thresholdFilter;
   } else if (str == "Representation") {
-    return m_thresholdRepresentation.Get();
+    return m_thresholdRepresentation;
   } else {
     return nullptr;
   }

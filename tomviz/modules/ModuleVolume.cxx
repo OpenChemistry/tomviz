@@ -82,7 +82,7 @@ void ModuleVolume::initializeMapper(DataSource* data)
   m_volumeMapper->SetInputConnection(output);
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SelectScalarArray(scalarsIndex());
-  m_volume->SetMapper(m_volumeMapper.Get());
+  m_volume->SetMapper(m_volumeMapper);
   m_volumeMapper->UseJitteringOn();
   m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
   if (m_view != nullptr) {
@@ -97,7 +97,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   initializeMapper(data);
-  m_volume->SetProperty(m_volumeProperty.Get());
+  m_volume->SetProperty(m_volumeProperty);
   const double* displayPosition = data->displayPosition();
   m_volume->SetPosition(displayPosition[0], displayPosition[1],
                         displayPosition[2]);
@@ -110,7 +110,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
-  m_view->AddPropToRenderer(m_volume.Get());
+  m_view->AddPropToRenderer(m_volume);
   m_view->Update();
 
   connect(data, &DataSource::activeScalarsChanged, this,
@@ -180,7 +180,7 @@ void ModuleVolume::updateColorMap()
 bool ModuleVolume::finalize()
 {
   if (m_view) {
-    m_view->RemovePropFromRenderer(m_volume.Get());
+    m_view->RemovePropFromRenderer(m_volume);
   }
 
   return true;

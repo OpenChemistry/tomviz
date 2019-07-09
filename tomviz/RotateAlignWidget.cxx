@@ -101,14 +101,14 @@ public:
 
   void setupCameras()
   {
-    tomviz::setupRenderer(this->mainRenderer.Get(), this->mainSliceMapper.Get(),
+    tomviz::setupRenderer(this->mainRenderer, this->mainSliceMapper,
                           this->axesActor);
-    tomviz::setupRenderer(this->reconRenderer[0].Get(),
-                          this->reconSliceMapper[0].Get());
-    tomviz::setupRenderer(this->reconRenderer[1].Get(),
-                          this->reconSliceMapper[1].Get());
-    tomviz::setupRenderer(this->reconRenderer[2].Get(),
-                          this->reconSliceMapper[2].Get());
+    tomviz::setupRenderer(this->reconRenderer[0],
+                          this->reconSliceMapper[0]);
+    tomviz::setupRenderer(this->reconRenderer[1],
+                          this->reconSliceMapper[1]);
+    tomviz::setupRenderer(this->reconRenderer[2],
+                          this->reconSliceMapper[2]);
   }
 
   void setupColorMaps()
@@ -150,8 +150,8 @@ public:
     if (!tform) {
       vtkNew<vtkTransform> t;
       t->PreMultiply();
-      tform = t.Get();
-      this->axisActor->SetUserTransform(t.Get());
+      tform = t;
+      this->axisActor->SetUserTransform(t);
     }
     double centerOfRotation[3] = { 0.0, 0.0, 0.0 };
     vtkImageData* imageData = m_image;
@@ -288,29 +288,29 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->connect(this->Internals->Ui.colorMapButton_3, SIGNAL(clicked()), this,
                 SLOT(showChangeColorMapDialog2()));
 
-  this->Internals->mainSlice->SetMapper(this->Internals->mainSliceMapper.Get());
+  this->Internals->mainSlice->SetMapper(this->Internals->mainSliceMapper);
   this->Internals->reconSlice[0]->SetMapper(
-    this->Internals->reconSliceMapper[0].Get());
+    this->Internals->reconSliceMapper[0]);
   this->Internals->reconSlice[1]->SetMapper(
-    this->Internals->reconSliceMapper[1].Get());
+    this->Internals->reconSliceMapper[1]);
   this->Internals->reconSlice[2]->SetMapper(
-    this->Internals->reconSliceMapper[2].Get());
-  this->Internals->mainRenderer->AddViewProp(this->Internals->mainSlice.Get());
+    this->Internals->reconSliceMapper[2]);
+  this->Internals->mainRenderer->AddViewProp(this->Internals->mainSlice);
   this->Internals->reconRenderer[0]->AddViewProp(
-    this->Internals->reconSlice[0].Get());
+    this->Internals->reconSlice[0]);
   this->Internals->reconRenderer[1]->AddViewProp(
-    this->Internals->reconSlice[1].Get());
+    this->Internals->reconSlice[1]);
   this->Internals->reconRenderer[2]->AddViewProp(
-    this->Internals->reconSlice[2].Get());
+    this->Internals->reconSlice[2]);
 
   this->Internals->Ui.sliceView->renderWindow()->AddRenderer(
-    this->Internals->mainRenderer.Get());
+    this->Internals->mainRenderer);
   this->Internals->Ui.sliceView_1->renderWindow()->AddRenderer(
-    this->Internals->reconRenderer[0].Get());
+    this->Internals->reconRenderer[0]);
   this->Internals->Ui.sliceView_2->renderWindow()->AddRenderer(
-    this->Internals->reconRenderer[1].Get());
+    this->Internals->reconRenderer[1]);
   this->Internals->Ui.sliceView_3->renderWindow()->AddRenderer(
-    this->Internals->reconRenderer[2].Get());
+    this->Internals->reconRenderer[2]);
 
   vtkNew<vtkInteractorStyleRubberBand2D> interatorStyleMain;
   vtkNew<vtkInteractorStyleRubberBand2D> interatorStyle1;
@@ -322,13 +322,13 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   interatorStyle3->SetRenderOnMouseMove(true);
 
   this->Internals->Ui.sliceView->interactor()->SetInteractorStyle(
-    interatorStyleMain.Get());
+    interatorStyleMain);
   this->Internals->Ui.sliceView_1->interactor()->SetInteractorStyle(
-    interatorStyle1.Get());
+    interatorStyle1);
   this->Internals->Ui.sliceView_2->interactor()->SetInteractorStyle(
-    interatorStyle2.Get());
+    interatorStyle2);
   this->Internals->Ui.sliceView_3->interactor()->SetInteractorStyle(
-    interatorStyle3.Get());
+    interatorStyle3);
   this->Internals->setupCameras();
 
   this->Internals->rotationAxis->SetPoint1(0, 0, 0);
@@ -338,24 +338,24 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   vtkNew<vtkPolyDataMapper> mapper;
   mapper->SetInputConnection(this->Internals->rotationAxis->GetOutputPort());
 
-  this->Internals->axisActor->SetMapper(mapper.Get());
+  this->Internals->axisActor->SetMapper(mapper);
   this->Internals->axisActor->GetProperty()->SetColor(1, 1, 0); // yellow
   this->Internals->axisActor->GetProperty()->SetLineWidth(2.5);
-  this->Internals->mainRenderer->AddActor(this->Internals->axisActor.Get());
+  this->Internals->mainRenderer->AddActor(this->Internals->axisActor);
 
   for (int i = 0; i < 3; ++i) {
     this->Internals->reconSliceLine[i]->Update();
     vtkNew<vtkPolyDataMapper> sMapper;
     sMapper->SetInputConnection(
       this->Internals->reconSliceLine[i]->GetOutputPort());
-    this->Internals->reconSliceLineActor[i]->SetMapper(sMapper.Get());
+    this->Internals->reconSliceLineActor[i]->SetMapper(sMapper);
     this->Internals->reconSliceLineActor[i]->GetProperty()->SetColor(1, 0, 0);
     this->Internals->reconSliceLineActor[i]->GetProperty()->SetLineWidth(2.0);
     this->Internals->reconSliceLineActor[i]
       ->GetProperty()
       ->SetLineStipplePattern(0xFF00);
     this->Internals->mainRenderer->AddActor(
-      this->Internals->reconSliceLineActor[i].Get());
+      this->Internals->reconSliceLineActor[i]);
   }
 
   QObject::connect(this->Internals->Ui.projection,

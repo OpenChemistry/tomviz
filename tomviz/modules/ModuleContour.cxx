@@ -344,7 +344,7 @@ DataSource* ModuleContour::colorMapDataSource() const
 
 bool ModuleContour::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return proxy == m_contourFilter.Get();
+  return proxy == m_contourFilter;
 }
 
 vtkSmartPointer<vtkDataObject> ModuleContour::getDataToExport()
@@ -355,7 +355,7 @@ vtkSmartPointer<vtkDataObject> ModuleContour::getDataToExport()
 
 std::string ModuleContour::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == m_contourFilter.Get()) {
+  if (proxy == m_contourFilter) {
     return "Contour";
   } else {
     qWarning("Gave bad proxy to module in save animation state");
@@ -366,7 +366,7 @@ std::string ModuleContour::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleContour::getProxyForString(const std::string& str)
 {
   if (str == "Contour") {
-    return m_contourFilter.Get();
+    return m_contourFilter;
   } else {
     return nullptr;
   }

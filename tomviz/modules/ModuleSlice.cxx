@@ -551,14 +551,14 @@ vtkSmartPointer<vtkDataObject> ModuleSlice::getDataToExport()
 
 bool ModuleSlice::isProxyPartOfModule(vtkSMProxy* proxy)
 {
-  return (proxy == m_passThrough.Get()) || (proxy == m_propsPanelProxy.Get());
+  return (proxy == m_passThrough) || (proxy == m_propsPanelProxy);
 }
 
 std::string ModuleSlice::getStringForProxy(vtkSMProxy* proxy)
 {
-  if (proxy == m_passThrough.Get()) {
+  if (proxy == m_passThrough) {
     return "PassThrough";
-  } else if (proxy == m_propsPanelProxy.Get()) {
+  } else if (proxy == m_propsPanelProxy) {
     return "NonOrthoSlice";
   } else {
     qWarning(
@@ -570,9 +570,9 @@ std::string ModuleSlice::getStringForProxy(vtkSMProxy* proxy)
 vtkSMProxy* ModuleSlice::getProxyForString(const std::string& str)
 {
   if (str == "PassThrough") {
-    return m_passThrough.Get();
+    return m_passThrough;
   } else if (str == "NonOrthoSlice") {
-    return m_propsPanelProxy.Get();
+    return m_propsPanelProxy;
   } else {
     return nullptr;
   }

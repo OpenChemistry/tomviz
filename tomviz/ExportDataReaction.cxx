@@ -253,7 +253,7 @@ bool ExportDataReaction::exportData(const QString& filename)
       ConvertToFloatOperator convertFloat;
       convertFloat.applyTransform(fImage);
 
-      trivialProducer->SetOutput(fImage.Get());
+      trivialProducer->SetOutput(fImage);
       trivialProducer->UpdateInformation();
       trivialProducer->Update();
       producer->UpdatePipeline();
@@ -328,13 +328,13 @@ bool ExportDataReaction::exportData(const QString& filename)
       charArray->SetName(scalars->GetName());
       switch (scalars->GetDataType()) {
         vtkTemplateMacro(convertToUnsignedChar<VTK_TT>(
-          charArray.Get(), scalars->GetNumberOfComponents(),
+          charArray, scalars->GetNumberOfComponents(),
           scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0)));
       }
       newImage->GetPointData()->RemoveArray(scalars->GetName());
-      newImage->GetPointData()->SetScalars(charArray.Get());
+      newImage->GetPointData()->SetScalars(charArray);
 
-      trivialProducer->SetOutput(newImage.Get());
+      trivialProducer->SetOutput(newImage);
       trivialProducer->UpdateInformation();
       trivialProducer->Update();
       producer->UpdatePipeline();

@@ -36,7 +36,7 @@ public:
     vtkNew<vtkPen> pen;
     pen->SetColor(255, 0, 0, 255);
     pen->SetWidth(2.0);
-    painter->ApplyPen(pen.Get());
+    painter->ApplyPen(pen);
     painter->DrawLine(PositionX, 0, PositionX, 1e9);
     return true;
   }
@@ -73,7 +73,7 @@ vtkChartHistogram::vtkChartHistogram()
   this->GetTooltip()->GetTextProperties()->SetFontSize(fontSize);
 
   // Set up the plot bar
-  this->AddPlot(this->HistogramPlotBar.Get());
+  this->AddPlot(this->HistogramPlotBar);
   this->HistogramPlotBar->SetColor(0, 0, 255, 255);
   this->HistogramPlotBar->GetPen()->SetLineType(vtkPen::NO_PEN);
   this->HistogramPlotBar->SetSelectable(false);
@@ -81,8 +81,8 @@ vtkChartHistogram::vtkChartHistogram()
   // Set up and add the opacity editor chart items
   this->OpacityFunctionItem->SetOpacity(
     0.0); // don't show the transfer function
-  this->AddPlot(this->OpacityFunctionItem.Get());
-  this->SetPlotCorner(this->OpacityFunctionItem.Get(), 1);
+  this->AddPlot(this->OpacityFunctionItem);
+  this->SetPlotCorner(this->OpacityFunctionItem, 1);
 
   this->OpacityControlPointsItem->SetEndPointsXMovable(false);
   this->OpacityControlPointsItem->SetEndPointsYMovable(true);
@@ -93,8 +93,8 @@ vtkChartHistogram::vtkChartHistogram()
   pen->SetColor(0, 0, 0);
   pen->SetOpacity(255);
   pen->SetWidth(2.0);
-  this->AddPlot(this->OpacityControlPointsItem.Get());
-  this->SetPlotCorner(this->OpacityControlPointsItem.Get(), 1);
+  this->AddPlot(this->OpacityControlPointsItem);
+  this->SetPlotCorner(this->OpacityControlPointsItem, 1);
 }
 
 vtkChartHistogram::~vtkChartHistogram()
@@ -112,7 +112,7 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent& m)
     return false;
   }
   this->CalculateUnscaledPlotTransform(histo->GetXAxis(), histo->GetYAxis(),
-                                       this->Transform.Get());
+                                       this->Transform);
   vtkVector2f pos;
   this->Transform->InverseTransformPoints(m.GetScenePos().GetData(),
                                           pos.GetData(), 1);
@@ -124,7 +124,7 @@ bool vtkChartHistogram::MouseDoubleClickEvent(const vtkContextMouseEvent& m)
     // Work around a bug in the charts - ensure corner is invalid for the plot.
     this->Marker->SetXAxis(nullptr);
     this->Marker->SetYAxis(nullptr);
-    this->AddPlot(this->Marker.Get());
+    this->AddPlot(this->Marker);
   }
   this->InvokeEvent(vtkCommand::CursorChangedEvent);
   return true;
