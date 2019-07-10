@@ -6,6 +6,7 @@
 
 #include <pqApplicationCore.h>
 #include <pqObjectBuilder.h>
+#include <pqOutputWidget.h>
 #include <pqSaveAnimationReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
@@ -76,10 +77,6 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QtConcurrent>
-
-// undef ERROR here as its used in pqOutputWidget!
-#undef ERROR
-#include <pqOutputWidget.h>
 
 namespace {
 QString getAutosaveFile()
