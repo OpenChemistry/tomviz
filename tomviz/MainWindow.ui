@@ -52,8 +52,6 @@
     <addaction name="actionLoadState"/>
     <addaction name="actionSaveState"/>
     <addaction name="separator"/>
-    <addaction name="actionSaveDebuggingState"/>
-    <addaction name="separator"/>
     <addaction name="actionReset"/>
     <addaction name="actionExit"/>
    </widget>
@@ -66,9 +64,8 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionMacros"/>
-    <addaction name="actionPassiveAcquisition"/>
     <addaction name="actionAcquisition"/>
+    <addaction name="actionPassiveAcquisition"/>
     <addaction name="actionPipelineSettings"/>
    </widget>
    <widget class="QMenu" name="menuData">
@@ -371,25 +368,12 @@
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="actionSaveDebuggingState">
-   <property name="text">
-    <string>Save Debugging State</string>
-   </property>
-   <property name="toolTip">
-    <string>Save state with debugging information (advanced)</string>
-   </property>
-  </action>
   <action name="actionExit">
    <property name="text">
     <string>E&amp;xit</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
-   </property>
-  </action>
-  <action name="actionMacros">
-   <property name="text">
-    <string>&amp;Macros</string>
    </property>
   </action>
   <action name="actionPassiveAcquisition">

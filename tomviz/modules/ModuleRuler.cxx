@@ -196,35 +196,6 @@ bool ModuleRuler::deserialize(const QJsonObject& json)
   return false;
 }
 
-bool ModuleRuler::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return proxy == m_rulerSource.GetPointer() ||
-         proxy == m_representation.GetPointer();
-}
-
-std::string ModuleRuler::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == m_rulerSource.GetPointer()) {
-    return "Ruler";
-  } else if (proxy == m_representation.GetPointer()) {
-    return "Representation";
-  } else {
-    qWarning("Unknown proxy passed to module ruler in save animation");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleRuler::getProxyForString(const std::string& str)
-{
-  if (str == "Ruler") {
-    return m_rulerSource;
-  } else if (str == "Representation") {
-    return m_representation;
-  } else {
-    return nullptr;
-  }
-}
-
 void ModuleRuler::updateUnits()
 {
   DataSource* source = dataSource();

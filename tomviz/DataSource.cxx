@@ -840,7 +840,7 @@ void DataSource::dataModified()
     typeArray->SetNumberOfTuples(1);
     typeArray->SetName("tomviz_data_source_type");
     typeArray->SetTuple1(0, this->Internals->Type);
-    fd->AddArray(typeArray.Get());
+    fd->AddArray(typeArray);
   }
 
   // This indirection is necessary to overcome a bug in VTK/ParaView when

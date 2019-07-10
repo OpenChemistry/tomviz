@@ -38,8 +38,6 @@ public:
 
   void dataSourceMoved(double, double, double) override {}
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
-
 protected slots:
   void updateUnits();
   void updateShowLine(bool show);
@@ -50,8 +48,6 @@ signals:
 
 protected:
   void updateColorMap() override {}
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
 
   vtkSmartPointer<vtkSMSourceProxy> m_rulerSource;
   vtkSmartPointer<vtkSMProxy> m_representation;

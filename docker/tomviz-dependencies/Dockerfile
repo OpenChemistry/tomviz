@@ -73,14 +73,14 @@ RUN wget $QT_DOWNLOAD_URL && \
   rm -rf $QT_DIR
 
 # Build and install ITK
-ARG ITK_VERSION=v4.11.0
+ARG ITK_VERSION=v5.0.0
 RUN git clone -b $ITK_VERSION git://itk.org/ITK.git && \
   mkdir itk-build && \
   cd itk-build && \
   cmake -G Ninja -DCMAKE_BUILD_TYPE:STRING=Release \
     -DITK_LEGACY_REMOVE:BOOL=ON \
     -DITK_LEGACY_SILENT:BOOL=ON \
-    -DModule_BridgeNumPy:BOOL=ON \
+    -DModule_ITKBridgeNumPy:BOOL=ON \
     -DBUILD_TESTING:BOOL=OFF \
     -DITK_WRAP_unsigned_short:BOOL=ON \
     -DITK_BUILD_DEFAULT_MODULES:BOOL=OFF \
@@ -133,7 +133,7 @@ RUN git clone --recursive git://github.com/kitware/paraview.git && \
 # Provide paths to downstream builds
 ONBUILD ENV QT5_DIR /usr/local/Qt-5.8.0/lib/cmake/Qt5
 ONBUILD ENV PARAVIEW_DIR /paraview-build
-ONBUILD ENV ITK_DIR /opt/itk/lib/cmake/ITK-4.11
+ONBUILD ENV ITK_DIR /opt/itk/lib/cmake/ITK-5.0
 ONBUILD ENV GTEST_LIBRARY /opt/googletest/lib/libgtest.a
 ONBUILD ENV GTEST_MAIN_LIBRARY /opt/googletest/lib/libgtest_main.a
 ONBUILD ENV GTEST_INCLUDE_DIR /opt/googletest/include

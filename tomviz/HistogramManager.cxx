@@ -167,7 +167,7 @@ void HistogramMaker::makeHistogram(vtkSmartPointer<vtkImageData> input,
   // make the histogram and notify observers (the main thread) that it
   // is done.
   if (input && output) {
-    PopulateHistogram(input.Get(), output.Get());
+    PopulateHistogram(input, output);
   }
   emit histogramDone(input, output);
 }
@@ -176,7 +176,7 @@ void HistogramMaker::makeHistogram2D(vtkSmartPointer<vtkImageData> input,
                                      vtkSmartPointer<vtkImageData> output)
 {
   if (input && output) {
-    Populate2DHistogram(input.Get(), output.Get());
+    Populate2DHistogram(input, output);
   }
   emit histogram2DDone(input, output);
 }

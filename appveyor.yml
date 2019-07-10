@@ -7,8 +7,8 @@ cache:
   - C:\projects\itk-4.9.0-windows-64bit.zip.sha512
   - C:\projects\tbb.zip
   - C:\projects\tbb.zip.sha512
-  - C:\projects\python-3.6.0.zip
-  - C:\projects\python-3.6.0.zip.sha512
+  - C:\projects\python-3.7.3.zip
+  - C:\projects\python-3.7.3.zip.sha512
   - C:\projects\googletest-install.zip
   - C:\projects\googletest-install.zip.sha512
 install:

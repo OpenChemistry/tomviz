@@ -5,6 +5,7 @@
 #define tomvizModuleSlice_h
 
 #include "Module.h"
+
 #include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
 
@@ -46,11 +47,9 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
-
   QString exportDataTypeString() override { return "Image"; }
 
-  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+  vtkDataObject* dataToExport() override;
 
   enum Direction
   {
@@ -63,8 +62,6 @@ public:
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
   void updateSliceWidget();
   static Direction stringToDirection(const QString& name);
   static Direction modeToDirection(int sliceMode);

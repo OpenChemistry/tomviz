@@ -35,7 +35,7 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   // Set up the chart
   m_histogramView->SetRenderWindow(m_qvtk->renderWindow());
   m_histogramView->SetInteractor(m_qvtk->interactor());
-  m_histogramView->GetScene()->AddItem(m_chartHistogram2D.Get());
+  m_histogramView->GetScene()->AddItem(m_chartHistogram2D);
 
   m_chartHistogram2D->SetRenderEmpty(true);
   m_chartHistogram2D->SetAutoAxes(false);
@@ -57,7 +57,7 @@ Histogram2DWidget::Histogram2DWidget(QWidget* parent_)
   m_chartHistogram2D->GetAxis(vtkAxis::BOTTOM)->SetBehavior(vtkAxis::FIXED);
   m_chartHistogram2D->GetAxis(vtkAxis::TOP)->SetBehavior(vtkAxis::FIXED);
 
-  m_eventLink->Connect(m_chartHistogram2D.Get(), vtkCommand::EndEvent, this,
+  m_eventLink->Connect(m_chartHistogram2D, vtkCommand::EndEvent, this,
                        SLOT(onTransfer2DChanged()));
 
   // Offset margins to align with HistogramWidget
@@ -89,7 +89,7 @@ void Histogram2DWidget::setHistogram(vtkImageData* histogram)
 
   transferFunction->SetScaleToLog10();
   transferFunction->Build();
-  m_chartHistogram2D->SetTransferFunction(transferFunction.Get());
+  m_chartHistogram2D->SetTransferFunction(transferFunction);
 
   m_histogramView->Render();
 }

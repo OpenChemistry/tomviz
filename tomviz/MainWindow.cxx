@@ -5,10 +5,8 @@
 #include "ui_MainWindow.h"
 
 #include <pqApplicationCore.h>
-#include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
 #include <pqSaveAnimationReaction.h>
-#include <pqSaveStateReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
 #include <vtkPVPlugin.h>
@@ -214,8 +212,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionAbout, &QAction::triggered, this,
           [this]() { openDialog<AboutDialog>(&m_aboutDialog); });
 
-  new pqMacroReaction(m_ui->actionMacros);
-
   // Instantiate tomviz application behavior.
   new Behaviors(this);
 
@@ -401,7 +397,6 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   //#################################################################
   new ModuleMenu(m_ui->modulesToolbar, m_ui->menuModules, this);
   new RecentFilesMenu(*m_ui->menuRecentlyOpened, m_ui->menuRecentlyOpened);
-  new pqSaveStateReaction(m_ui->actionSaveDebuggingState);
 
   new SaveDataReaction(m_ui->actionSaveData);
   new SaveScreenshotReaction(m_ui->actionSaveScreenshot, this);

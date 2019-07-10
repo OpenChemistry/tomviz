@@ -235,12 +235,6 @@ void PassiveAcquisitionWidget::imageReady(QString mimeType, QByteArray result,
   reader->SetFileName(file.fileName().toLatin1());
   reader->Update();
   m_imageData = reader->GetOutput();
-  // Why is this here?
-  // m_imageSlice->GetProperty()->SetInterpolationTypeToNearest();
-  // m_imageSliceMapper->SetInputData(m_imageData.Get());
-  // m_imageSliceMapper->Update();
-  // m_imageSlice->SetMapper(m_imageSliceMapper.Get());
-  // m_renderer->AddViewProp(m_imageSlice.Get());
 
   // If we haven't added it, add our live data source to the pipeline.
   if (!m_dataSource) {

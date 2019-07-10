@@ -4,7 +4,6 @@
 # This source file is part of the Tomviz project, https://tomviz.org/.
 # It is released under the 3-Clause BSD License, see "LICENSE".
 ###############################################################################
-from tomviz import py2to3
 
 # Dictionary going from VTK array type to ITK type
 _vtk_to_itk_types = None
@@ -42,7 +41,7 @@ def vtk_itk_type_map():
             'vtkDoubleArray': 'D3'
         }
 
-        for (vtk_type, image_type) in py2to3.iteritems(type_map):
+        for (vtk_type, image_type) in type_map.items():
             try:
                 _vtk_to_itk_types[vtk_type] = getattr(itk.Image, image_type)
             except AttributeError:
@@ -154,7 +153,7 @@ def vtk_cast_map():
         import itkBuildOptions
 
         # Select the best supported type available in the wrapping.
-        for (vtk_type, possible_image_types) in py2to3.iteritems(type_map):
+        for (vtk_type, possible_image_types) in type_map.items():
             type_map[vtk_type] = None
             for possible_type in possible_image_types:
                 if itk.ctype(possible_type) in itkBuildOptions.SCALARS:

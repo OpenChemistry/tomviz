@@ -255,39 +255,4 @@ void ModuleSegment::dataSourceMoved(double newX, double newY, double newZ)
   vtkSMPropertyHelper(d->ContourRepresentation, "Position").Set(pos, 3);
 }
 
-//-----------------------------------------------------------------------------
-bool ModuleSegment::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return (proxy == d->ProgrammableFilter.Get()) ||
-         (proxy == d->ContourFilter.Get()) ||
-         (proxy == d->ContourRepresentation.Get());
-}
-
-std::string ModuleSegment::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == d->ProgrammableFilter.Get()) {
-    return "ProgrammableFilter";
-  } else if (proxy == d->ContourFilter.Get()) {
-    return "Contour";
-  } else if (proxy == d->ContourRepresentation.Get()) {
-    return "Representation";
-  } else {
-    qWarning("Unknown proxy passed to module segment in save animation");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleSegment::getProxyForString(const std::string& str)
-{
-  if (str == "ProgrammableFilter") {
-    return d->ProgrammableFilter.Get();
-  } else if (str == "ContourFilter") {
-    return d->ContourFilter.Get();
-  } else if (str == "Representation") {
-    return d->ContourRepresentation.Get();
-  } else {
-    qWarning("Unknown proxy passed to module segment in save animation");
-    return nullptr;
-  }
-}
 } // namespace tomviz

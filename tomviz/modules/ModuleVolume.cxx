@@ -21,14 +21,8 @@
 #include <vtkVolume.h>
 #include <vtkVolumeProperty.h>
 
-#include <pqProxiesWidget.h>
 #include <vtkPVRenderView.h>
 #include <vtkPointData.h>
-#include <vtkSMPVRepresentationProxy.h>
-#include <vtkSMParaViewPipelineControllerWithRendering.h>
-#include <vtkSMPropertyHelper.h>
-#include <vtkSMSessionProxyManager.h>
-#include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
@@ -82,7 +76,7 @@ void ModuleVolume::initializeMapper(DataSource* data)
   m_volumeMapper->SetInputConnection(output);
   m_volumeMapper->SetScalarModeToUsePointFieldData();
   m_volumeMapper->SelectScalarArray(scalarsIndex());
-  m_volume->SetMapper(m_volumeMapper.Get());
+  m_volume->SetMapper(m_volumeMapper);
   m_volumeMapper->UseJitteringOn();
   m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
   if (m_view != nullptr) {
@@ -97,7 +91,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   }
 
   initializeMapper(data);
-  m_volume->SetProperty(m_volumeProperty.Get());
+  m_volume->SetProperty(m_volumeProperty);
   const double* displayPosition = data->displayPosition();
   m_volume->SetPosition(displayPosition[0], displayPosition[1],
                         displayPosition[2]);
@@ -110,7 +104,7 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
-  m_view->AddPropToRenderer(m_volume.Get());
+  m_view->AddPropToRenderer(m_volume);
   m_view->Update();
 
   connect(data, &DataSource::activeScalarsChanged, this,
@@ -180,7 +174,7 @@ void ModuleVolume::updateColorMap()
 bool ModuleVolume::finalize()
 {
   if (m_view) {
-    m_view->RemovePropFromRenderer(m_volume.Get());
+    m_view->RemovePropFromRenderer(m_volume);
   }
 
   return true;
@@ -327,7 +321,7 @@ void ModuleVolume::onTransferModeChanged(const int mode)
   emit renderNeeded();
 }
 
-vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
+vtkDataObject* ModuleVolume::dataToExport()
 {
   auto trv = dataSource()->producer();
   return trv->GetOutputDataObject(0);
@@ -367,22 +361,6 @@ void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
 {
   vtkVector3d pos(newX, newY, newZ);
   m_volume->SetPosition(pos.GetData());
-}
-
-bool ModuleVolume::isProxyPartOfModule(vtkSMProxy*)
-{
-  return false;
-}
-
-std::string ModuleVolume::getStringForProxy(vtkSMProxy*)
-{
-  qWarning("Unknown proxy passed to module volume in save animation");
-  return "";
-}
-
-vtkSMProxy* ModuleVolume::getProxyForString(const std::string&)
-{
-  return nullptr;
 }
 
 void ModuleVolume::setLighting(const bool val)

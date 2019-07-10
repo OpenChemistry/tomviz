@@ -4,7 +4,6 @@
 #include "DoubleSliderWidget.h"
 
 #include "pqLineEdit.h"
-#include "vtkPVConfig.h"
 
 // Qt includes
 #include <QDoubleValidator>
@@ -93,7 +92,7 @@ void DoubleSliderWidget::setValue(double val)
     if (this->LineEdit) {
       this->BlockUpdate = true;
       this->LineEdit->setTextAndResetCursor(
-        QString().setNum(val, 'g', DEFAULT_DOUBLE_PRECISION_VALUE));
+        QString().setNum(val, 'g', 8));
       this->BlockUpdate = false;
     }
   }
