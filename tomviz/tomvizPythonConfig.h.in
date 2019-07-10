@@ -142,6 +142,8 @@ std::string PythonInitializationPythonPath()
   std::string path;
 #if defined(__APPLE__)
   path = "/../Python";
+#elif !defined(_WIN32)
+  path = "/../lib/python3.7";
 #endif
   return path;
 }
