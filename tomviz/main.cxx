@@ -38,7 +38,7 @@ int main(int argc, char** argv)
   splash.show();
   app.processEvents();
 
-#if defined(__APPLE__)
+#ifndef _WIN32
   // See if this helps Python initialize itself on macOS.
   std::string exeDir = QApplication::applicationDirPath().toLatin1().data();
   if (!tomviz::isBuildDir(exeDir)) {
