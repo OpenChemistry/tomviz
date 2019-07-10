@@ -18,11 +18,12 @@ class vtkTable;
 
 class QToolButton;
 
-class vtkPVDiscretizableColorTransferFunction;
+class vtkDiscretizableColorTransferFunction;
 class vtkSMProxy;
 
 namespace tomviz {
 
+class PresetDialog;
 class QVTKGLWidget;
 
 class HistogramWidget : public QWidget
@@ -33,7 +34,7 @@ public:
   explicit HistogramWidget(QWidget* parent_ = nullptr);
   ~HistogramWidget() override;
 
-  void setLUT(vtkPVDiscretizableColorTransferFunction* lut);
+  void setLUT(vtkDiscretizableColorTransferFunction* lut);
   void setLUTProxy(vtkSMProxy* proxy);
 
   void setInputData(vtkTable* table, const char* x_, const char* y_);
@@ -65,16 +66,18 @@ private:
   void renderViews();
   void rescaleTransferFunction(vtkSMProxy* lutProxy, double min, double max);
   bool createContourDialog(double& isoValue);
+  void showPresetDialog(const QJsonObject& newPreset);
   vtkNew<vtkChartHistogramColorOpacityEditor> m_histogramColorOpacityEditor;
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
   QToolButton* m_colorLegendToolButton;
 
-  vtkWeakPointer<vtkPVDiscretizableColorTransferFunction> m_LUT;
+  vtkWeakPointer<vtkDiscretizableColorTransferFunction> m_LUT;
   vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
   vtkWeakPointer<vtkSMProxy> m_LUTProxy;
   vtkWeakPointer<vtkTable> m_inputData;
 
+  PresetDialog* m_presetDialog = nullptr;
   QVTKGLWidget* m_qvtk;
 };
 } // namespace tomviz

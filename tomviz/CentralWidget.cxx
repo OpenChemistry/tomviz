@@ -308,7 +308,7 @@ void CentralWidget::histogramReady(vtkSmartPointer<vtkImageData> input,
     return;
   }
 
-  setHistogramTable(output.Get());
+  setHistogramTable(output);
 }
 
 void CentralWidget::histogram2DReady(vtkSmartPointer<vtkImageData> input,
@@ -341,7 +341,7 @@ vtkImageData* CentralWidget::getInputImage(vtkSmartPointer<vtkImageData> input)
 
   // The current dataset has changed since the histogram was requested,
   // ignore this histogram and wait for the next one queued...
-  if (image != input.Get()) {
+  if (image != input) {
     return nullptr;
   }
 

@@ -19,16 +19,12 @@ downloads = [{
     'target': '.',
 }, {
     '_id': '598239648d777f16d01ea145',
-    'name': 'python-3.6.0.zip',
+    'name': 'python-3.7.3.zip',
     'target': '.',
 }, {
     '_id': '58a3436c8d777f0721a61036',
     'name': 'googletest-install.zip',
     'target': '.',
-}, {
-    '_id': '598b11ed8d777f7d33e9c1bf',
-    'name': 'numpy.zip',
-    'target': 'python\\bin\\Lib\\site-packages',
 }]
 
 girder_url = 'https://data.kitware.com/api/v1'

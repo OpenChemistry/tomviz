@@ -6,7 +6,6 @@
 #include "DataSource.h"
 #include "ModuleContour.h"
 #include "ModuleMolecule.h"
-#include "ModuleOrthogonalSlice.h"
 #include "ModuleOutline.h"
 #include "ModuleRuler.h"
 #include "ModuleScaleCube.h"
@@ -35,7 +34,6 @@ QList<QString> ModuleFactory::moduleTypes()
         << "Slice"
         << "Ruler"
         << "Scale Cube"
-        << "Orthogonal Slice"
         << "Contour"
         << "Volume"
         << "Threshold"
@@ -88,7 +86,8 @@ Module* ModuleFactory::allocateModule(const QString& type)
   } else if (type == "Slice") {
     module = new ModuleSlice();
   } else if (type == "Orthogonal Slice") {
-    module = new ModuleOrthogonalSlice();
+    // Keep this to be able to open older state files.
+    module = new ModuleSlice();
   } else if (type == "Threshold") {
     module = new ModuleThreshold();
   } else if (type == "Ruler") {
@@ -204,9 +203,6 @@ const char* ModuleFactory::moduleType(Module* module)
   }
   if (qobject_cast<ModuleSlice*>(module)) {
     return "Slice";
-  }
-  if (qobject_cast<ModuleOrthogonalSlice*>(module)) {
-    return "Orthogonal Slice";
   }
   if (qobject_cast<ModuleThreshold*>(module)) {
     return "Threshold";

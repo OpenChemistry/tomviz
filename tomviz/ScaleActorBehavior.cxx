@@ -101,7 +101,7 @@ void ScaleActorBehavior::viewAdded(pqView* view)
     vtkNew<vtkCallbackCommand> cbc;
     cbc->SetCallback(UpdateScale);
     cbc->SetClientData(axis.GetPointer());
-    ren->AddObserver(vtkCommand::StartEvent, cbc.Get());
+    ren->AddObserver(vtkCommand::StartEvent, cbc);
     ren->AddActor(axis.GetPointer());
   }
 }

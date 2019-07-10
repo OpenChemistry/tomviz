@@ -1,10 +1,8 @@
 find_package(OpenGL REQUIRED)
 
 include_directories(SYSTEM
-  ${Qt5Network_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
   ${Qt5Concurrent_INCLUDE_DIRS}
-  ${PARAVIEW_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/thirdparty/pybind11/include)
 
 add_subdirectory(pvextensions)
@@ -25,6 +23,8 @@ set(SOURCES
   AddResampleReaction.h
   AlignWidget.cxx
   AlignWidget.h
+  ArrayWranglerReaction.cxx
+  ArrayWranglerReaction.h
   AxesReaction.cxx
   AxesReaction.h
   Behaviors.cxx
@@ -41,6 +41,8 @@ set(SOURCES
   CropReaction.h
   SelectVolumeWidget.cxx
   SelectVolumeWidget.h
+  DataExchangeFormat.cxx
+  DataExchangeFormat.h
   DataPropertiesModel.cxx
   DataPropertiesModel.h
   DataPropertiesPanel.cxx
@@ -65,6 +67,8 @@ set(SOURCES
   ExportDataReaction.h
   FileFormatManager.cxx
   FileFormatManager.h
+  GenericHDF5Format.cxx
+  GenericHDF5Format.h
   GradientOpacityWidget.h
   GradientOpacityWidget.cxx
   HistogramManager.h
@@ -115,6 +119,10 @@ set(SOURCES
   PipelineWorker.h
   PipelineSettingsDialog.cxx
   PipelineSettingsDialog.h
+  PresetDialog.cxx
+  PresetDialog.h
+  PresetModel.cxx
+  PresetModel.h
   ProgressDialog.cxx
   ProgressDialog.h
   ProgressDialogManager.cxx
@@ -161,6 +169,8 @@ set(SOURCES
   TomographyReconstruction.cxx
   TomographyTiltSeries.h
   TomographyTiltSeries.cxx
+  TransposeDataReaction.h
+  TransposeDataReaction.cxx
   Utilities.cxx
   Utilities.h
   Variant.cxx
@@ -185,6 +195,8 @@ set(SOURCES
   vtkLengthScaleRepresentation.cxx
   vtkNonOrthoImagePlaneWidget.cxx
   vtkNonOrthoImagePlaneWidget.h
+  vtkOMETiffReader.cxx
+  vtkOMETiffReader.h
   vtkVolumeScaleRepresentation.h
   vtkVolumeScaleRepresentation.cxx
   WebExportWidget.cxx
@@ -210,8 +222,6 @@ list(APPEND SOURCES
   modules/ModuleMenu.h
   modules/ModuleMolecule.cxx
   modules/ModuleMolecule.h
-  modules/ModuleOrthogonalSlice.cxx
-  modules/ModuleOrthogonalSlice.h
   modules/ModuleOutline.cxx
   modules/ModuleOutline.h
   modules/ModulePropertiesPanel.cxx
@@ -271,6 +281,8 @@ list(APPEND SOURCES
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/acquisition)
 
 list(APPEND SOURCES
+  operators/ArrayWranglerOperator.cxx
+  operators/ArrayWranglerOperator.h
   operators/ConvertToFloatOperator.cxx
   operators/ConvertToFloatOperator.h
   operators/CustomPythonOperatorWidget.cxx
@@ -305,8 +317,14 @@ list(APPEND SOURCES
   operators/SnapshotOperator.cxx
   operators/TranslateAlignOperator.h
   operators/TranslateAlignOperator.cxx
+  operators/TransposeDataOperator.h
+  operators/TransposeDataOperator.cxx
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/operators)
+
+list(APPEND SOURCES
+  h5cpp/h5readwrite.cpp
+)
 
 set(exec_sources
   AboutDialog.h
@@ -381,7 +399,7 @@ set(python_files
   SegmentPores.py
   RotationAlign.py
   WienerFilter.py
-  TV_Filter.py  
+  TV_Filter.py
   )
 
 set(json_files
@@ -546,12 +564,14 @@ target_link_libraries(tomviz PRIVATE tomvizlib ${OPENGL_LIBRARIES})
 
 target_link_libraries(tomvizlib
   PUBLIC
-    pqApplicationComponents
-    vtkPVServerManagerRendering
-    vtkglew
-    vtkjsoncpp
-    vtkpugixml
-    tomvizExtensions
+    ParaView::pqApplicationComponents
+    ParaView::pqPython
+    ParaView::ServerManagerRendering
+    VTK::glew
+    VTK::jsoncpp
+    VTK::pugixml
+    VTK::tiff
+    #    TomvizExtensions
     Qt5::Network)
 if(WIN32)
   target_link_libraries(tomvizlib PUBLIC Qt5::WinMain)

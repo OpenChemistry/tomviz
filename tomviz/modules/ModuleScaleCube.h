@@ -9,9 +9,6 @@
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
 
-class vtkSMProxy;
-class vtkSMSourceProxy;
-
 class vtkPVRenderView;
 
 class vtkHandleWidget;
@@ -42,14 +39,8 @@ public:
 
   void dataSourceMoved(double, double, double) override;
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
-
 protected slots:
   void dataPropertiesChanged();
-
-protected:
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private:
   Q_DISABLE_COPY(ModuleScaleCube)
@@ -91,6 +82,7 @@ private slots:
   void setLengthUnit();
   void setPositionUnit();
   void onBoxColorChanged(const QColor& color);
+  void onTextColorChanged(const QColor& color);
 
   void updateOffset(double, double, double);
 };

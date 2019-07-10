@@ -3,9 +3,9 @@
 
 #include "ModuleSlice.h"
 
-#include "ActiveObjects.h"
 #include "DataSource.h"
-#include "ScalarsComboBox.h"
+#include "DoubleSliderWidget.h"
+#include "IntSliderWidget.h"
 #include "Utilities.h"
 
 #include <vtkAlgorithm.h>
@@ -14,8 +14,6 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkNonOrthoImagePlaneWidget.h>
-#include <vtkPassThrough.h>
-#include <vtkPointData.h>
 #include <vtkProperty.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
@@ -41,6 +39,7 @@
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDebug>
 #include <QDoubleValidator>
 #include <QFormLayout>
@@ -60,7 +59,7 @@ ModuleSlice::~ModuleSlice()
 
 QIcon ModuleSlice::icon() const
 {
-  return QIcon(":/icons/pqSlice.png");
+  return QIcon(":/icons/orthoslice.png");
 }
 
 bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
@@ -69,12 +68,9 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     return false;
   }
 
-  auto pxm = ActiveObjects::instance().proxyManager();
-
-  m_imageData->ShallowCopy(
-    vtkImageData::SafeDownCast(data->producer()->GetOutputDataObject(0)));
-
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
+  auto producer = data->proxy();
+  auto pxm = producer->GetSessionProxyManager();
 
   // Create the pass through filter.
   vtkSmartPointer<vtkSMProxy> proxy;
@@ -90,10 +86,7 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   m_passThrough = vtkSMSourceProxy::SafeDownCast(proxy);
   Q_ASSERT(m_passThrough);
   controller->PreInitializeProxy(m_passThrough);
-  vtkSmartPointer<vtkPassThrough> filter;
-  filter = vtkPassThrough::SafeDownCast(m_passThrough->GetClientSideObject());
-  Q_ASSERT(filter);
-  filter->SetInputData(m_imageData);
+  vtkSMPropertyHelper(m_passThrough, "Input").Set(producer);
   controller->PostInitializeProxy(m_passThrough);
   controller->RegisterPipelineProxy(m_passThrough);
 
@@ -108,10 +101,11 @@ bool ModuleSlice::initialize(DataSource* data, vtkSMViewProxy* vtkView)
     m_widget->SetDisplayOffset(data->displayPosition());
     m_widget->On();
     m_widget->InteractionOn();
+    onDirectionChanged(m_direction);
+    onTextureInterpolateChanged(m_interpolate);
     pqCoreUtilities::connect(m_widget, vtkCommand::InteractionEvent, this,
                              SLOT(onPlaneChanged()));
     connect(data, SIGNAL(dataChanged()), this, SLOT(dataUpdated()));
-    connect(data, SIGNAL(activeScalarsChanged()), SLOT(onScalarArrayChanged()));
   }
 
   Q_ASSERT(m_widget);
@@ -178,6 +172,21 @@ void ModuleSlice::updateColorMap()
   m_widget->SetLookupTable(stc);
 }
 
+void ModuleSlice::updateSliceWidget()
+{
+  if (!m_sliceSlider || !imageData())
+    return;
+
+  int dims[3];
+  imageData()->GetDimensions(dims);
+
+  int axis = directionAxis(m_direction);
+  int maxSlice = dims[axis] - 1;
+
+  m_sliceSlider->setMinimum(0);
+  m_sliceSlider->setMaximum(maxSlice);
+}
+
 bool ModuleSlice::finalize()
 {
   vtkNew<vtkSMParaViewPipelineControllerWithRendering> controller;
@@ -186,7 +195,6 @@ bool ModuleSlice::finalize()
   m_passThrough = nullptr;
 
   if (m_widget != nullptr) {
-    m_widget->InteractionOff();
     m_widget->Off();
   }
 
@@ -243,9 +251,45 @@ void ModuleSlice::addToPanel(QWidget* panel)
   line->setFrameShadow(QFrame::Sunken);
   formLayout->addRow(line);
 
-  m_scalarsCombo = new ScalarsComboBox();
-  m_scalarsCombo->setOptions(dataSource(), this);
-  formLayout->addRow("Scalars", m_scalarsCombo);
+  m_directionCombo = new QComboBox();
+  m_directionCombo->addItem("XY Plane", QVariant(Direction::XY));
+  m_directionCombo->addItem("YZ Plane", QVariant(Direction::YZ));
+  m_directionCombo->addItem("XZ Plane", QVariant(Direction::XZ));
+  m_directionCombo->addItem("Custom", QVariant(Direction::Custom));
+  m_directionCombo->setCurrentIndex(static_cast<int>(m_direction));
+  formLayout->addRow("Direction", m_directionCombo);
+
+  m_sliceSlider = new IntSliderWidget(true);
+  m_sliceSlider->setLineEditWidth(50);
+  m_sliceSlider->setPageStep(1);
+  m_sliceSlider->setMinimum(0);
+  int axis = directionAxis(m_direction);
+  bool isOrtho = axis >= 0;
+  if (isOrtho) {
+    int dims[3];
+    imageData()->GetDimensions(dims);
+    m_sliceSlider->setMaximum(dims[axis] - 1);
+  }
+
+  // Sanity check: make sure the slice value is within the bounds
+  if (m_slice < m_sliceSlider->minimum())
+    m_slice = m_sliceSlider->minimum();
+  else if (m_slice > m_sliceSlider->maximum())
+    m_slice = m_sliceSlider->maximum();
+
+  m_sliceSlider->setValue(m_slice);
+
+  formLayout->addRow("Slice", m_sliceSlider);
+
+  m_opacitySlider = new DoubleSliderWidget(true);
+  m_opacitySlider->setLineEditWidth(50);
+  m_opacitySlider->setMinimum(0);
+  m_opacitySlider->setMaximum(1);
+  m_opacitySlider->setValue(m_opacity);
+  formLayout->addRow("Opacity", m_opacitySlider);
+
+  m_interpolateCheckBox = new QCheckBox("Interpolate Texture");
+  formLayout->addRow(m_interpolateCheckBox);
 
   QCheckBox* showArrow = new QCheckBox("Show Arrow");
   formLayout->addRow(showArrow);
@@ -263,6 +307,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     label = new QLabel(labels[i]);
     row->addWidget(label);
     pqLineEdit* inputBox = new pqLineEdit;
+    inputBox->setEnabled(!isOrtho);
     inputBox->setValidator(new QDoubleValidator(inputBox));
     m_Links.addPropertyLink(
       inputBox, "text2", SIGNAL(textChanged(const QString&)), m_propsPanelProxy,
@@ -270,6 +315,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
             &ModuleSlice::dataUpdated);
     row->addWidget(inputBox);
+    m_pointInputs[i] = inputBox;
   }
   layout->addItem(row);
 
@@ -280,6 +326,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     label = new QLabel(labels[i]);
     row->addWidget(label);
     pqLineEdit* inputBox = new pqLineEdit;
+    inputBox->setEnabled(!isOrtho);
     inputBox->setValidator(new QDoubleValidator(inputBox));
     m_Links.addPropertyLink(
       inputBox, "text2", SIGNAL(textChanged(const QString&)), m_propsPanelProxy,
@@ -287,6 +334,7 @@ void ModuleSlice::addToPanel(QWidget* panel)
     connect(inputBox, &pqLineEdit::textChangedAndEditingFinished, this,
             &ModuleSlice::dataUpdated);
     row->addWidget(inputBox);
+    m_normalInputs[i] = inputBox;
   }
   layout->addItem(row);
 
@@ -315,16 +363,31 @@ void ModuleSlice::addToPanel(QWidget* panel)
 
   m_opacityCheckBox->setChecked(m_mapOpacity);
 
-  connect(m_scalarsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+  connect(m_directionCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
           this, [this](int idx) {
-            setActiveScalars(m_scalarsCombo->itemData(idx).toInt());
-            onScalarArrayChanged();
+            Direction dir = m_directionCombo->itemData(idx).value<Direction>();
+            onDirectionChanged(dir);
           });
+
+  connect(m_interpolateCheckBox, &QCheckBox::toggled, this,
+          &ModuleSlice::onTextureInterpolateChanged);
+
+  connect(m_sliceSlider, &IntSliderWidget::valueEdited, this,
+          QOverload<int>::of(&ModuleSlice::onSliceChanged));
+  connect(m_sliceSlider, &IntSliderWidget::valueChanged, this,
+          QOverload<int>::of(&ModuleSlice::onSliceChanged));
+
+  connect(m_opacitySlider, &DoubleSliderWidget::valueEdited, this,
+          &ModuleSlice::onOpacityChanged);
+  connect(m_opacitySlider, &DoubleSliderWidget::valueChanged, this,
+          &ModuleSlice::onOpacityChanged);
 }
 
 void ModuleSlice::dataUpdated()
 {
   m_Links.accept();
+  // In case there are new slices, update min and max
+  updateSliceWidget();
   m_widget->SetMapScalars(
     vtkSMPropertyHelper(m_propsPanelProxy->GetProperty("MapScalars"), 1)
       .GetAsInt());
@@ -355,6 +418,13 @@ QJsonObject ModuleSlice::serialize() const
   props["mapScalars"] = m_widget->GetMapScalars() != 0;
   props["mapOpacity"] = m_mapOpacity;
 
+  props["slice"] = m_slice;
+  QVariant qData;
+  qData.setValue(m_direction);
+  props["direction"] = qData.toString();
+  props["interpolate"] = m_interpolate;
+  props["opacity"] = m_opacity;
+
   json["properties"] = props;
   return json;
 }
@@ -368,15 +438,20 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
     auto props = json["properties"].toObject();
     vtkSMPropertyHelper showProperty(m_propsPanelProxy, "ShowArrow");
     showProperty.Set(props["showArrow"].toBool() ? 1 : 0);
-    auto o = props["origin"].toArray();
-    auto p1 = props["point1"].toArray();
-    auto p2 = props["point2"].toArray();
-    double origin[3] = { o[0].toDouble(), o[1].toDouble(), o[2].toDouble() };
-    double point1[3] = { p1[0].toDouble(), p1[1].toDouble(), p1[2].toDouble() };
-    double point2[3] = { p2[0].toDouble(), p2[1].toDouble(), p2[2].toDouble() };
-    m_widget->SetOrigin(origin);
-    m_widget->SetPoint1(point1);
-    m_widget->SetPoint2(point2);
+    if (props.contains("origin") && props.contains("point1") &&
+        props.contains("point2")) {
+      auto o = props["origin"].toArray();
+      auto p1 = props["point1"].toArray();
+      auto p2 = props["point2"].toArray();
+      double origin[3] = { o[0].toDouble(), o[1].toDouble(), o[2].toDouble() };
+      double point1[3] = { p1[0].toDouble(), p1[1].toDouble(),
+                           p1[2].toDouble() };
+      double point2[3] = { p2[0].toDouble(), p2[1].toDouble(),
+                           p2[2].toDouble() };
+      m_widget->SetOrigin(origin);
+      m_widget->SetPoint1(point1);
+      m_widget->SetPoint2(point2);
+    }
     m_widget->SetMapScalars(props["mapScalars"].toBool() ? 1 : 0);
     if (props.contains("mapOpacity")) {
       m_mapOpacity = props["mapOpacity"].toBool();
@@ -385,7 +460,31 @@ bool ModuleSlice::deserialize(const QJsonObject& json)
       }
     }
     m_widget->UpdatePlacement();
-    m_scalarsCombo->setOptions(dataSource(), this);
+    // If deserializing a former OrthogonalSlice, the direction is encoded in
+    // the property "sliceMode" as an int
+    if (props.contains("sliceMode")) {
+      Direction direction = modeToDirection(props["sliceMode"].toInt());
+      onDirectionChanged(direction);
+    }
+    if (props.contains("direction")) {
+      Direction direction = stringToDirection(props["direction"].toString());
+      onDirectionChanged(direction);
+    }
+    if (props.contains("slice")) {
+      m_slice = props["slice"].toInt();
+      onSliceChanged(m_slice);
+    }
+    if (props.contains("opacity")) {
+      m_opacity = props["opacity"].toDouble();
+      onOpacityChanged(m_opacity);
+    }
+    if (props.contains("interpolate")) {
+      m_interpolate = props["interpolate"].toBool();
+      onTextureInterpolateChanged(m_interpolate);
+      if (m_interpolateCheckBox) {
+        m_interpolateCheckBox->setChecked(m_interpolate);
+      }
+    }
     onPlaneChanged();
     return true;
   }
@@ -433,6 +532,9 @@ void ModuleSlice::onPlaneChanged()
   int mapScalars = m_widget->GetMapScalars();
   mapScalarsProperty.Set(mapScalars);
 
+  // Adjust the slice slider if the slice has changed from dragging the arrow
+  onSliceChanged(centerPoint);
+
   m_ignoreSignals = false;
 }
 
@@ -442,38 +544,9 @@ void ModuleSlice::dataSourceMoved(double newX, double newY, double newZ)
   m_widget->SetDisplayOffset(pos);
 }
 
-vtkSmartPointer<vtkDataObject> ModuleSlice::getDataToExport()
+vtkDataObject* ModuleSlice::dataToExport()
 {
   return m_widget->GetResliceOutput();
-}
-
-bool ModuleSlice::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return (proxy == m_passThrough.Get()) || (proxy == m_propsPanelProxy.Get());
-}
-
-std::string ModuleSlice::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == m_passThrough.Get()) {
-    return "PassThrough";
-  } else if (proxy == m_propsPanelProxy.Get()) {
-    return "NonOrthoSlice";
-  } else {
-    qWarning(
-      "Unknown proxy passed to module non-ortho-slice in save animation");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleSlice::getProxyForString(const std::string& str)
-{
-  if (str == "PassThrough") {
-    return m_passThrough.Get();
-  } else if (str == "NonOrthoSlice") {
-    return m_propsPanelProxy.Get();
-  } else {
-    return nullptr;
-  }
 }
 
 bool ModuleSlice::areScalarsMapped() const
@@ -482,16 +555,172 @@ bool ModuleSlice::areScalarsMapped() const
   return mapScalars.GetAsInt() != 0;
 }
 
-void ModuleSlice::onScalarArrayChanged()
+vtkImageData* ModuleSlice::imageData() const
 {
-  QString arrayName;
-  if (activeScalars() == Module::DEFAULT_SCALARS) {
-    arrayName = dataSource()->activeScalars();
-  } else {
-    arrayName = dataSource()->scalarsName(activeScalars());
+  vtkImageData* data = vtkImageData::SafeDownCast(
+    dataSource()->producer()->GetOutputDataObject(0));
+  Q_ASSERT(data);
+  return data;
+}
+
+void ModuleSlice::onDirectionChanged(Direction direction)
+{
+  m_direction = direction;
+  int axis = directionAxis(direction);
+
+  bool isOrtho = axis >= 0;
+
+  for (int i = 0; i < 3; ++i) {
+    if (m_pointInputs[i]) {
+      m_pointInputs[i]->setEnabled(!isOrtho);
+    }
+    if (m_normalInputs[i]) {
+      m_normalInputs[i]->setEnabled(!isOrtho);
+    }
   }
-  m_imageData->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
+  if (m_sliceSlider) {
+    m_sliceSlider->setVisible(isOrtho);
+  }
+
+  m_widget->SetPlaneOrientation(axis);
+
+  if (m_directionCombo) {
+    if (direction != m_directionCombo->currentData().value<Direction>()) {
+      for (int i = 0; i < m_directionCombo->count(); ++i) {
+        Direction data = m_directionCombo->itemData(i).value<Direction>();
+        if (data == direction) {
+          m_directionCombo->setCurrentIndex(i);
+        }
+      }
+    }
+  }
+
+  if (!isOrtho) {
+    return;
+  }
+
+  int dims[3];
+  imageData()->GetDimensions(dims);
+
+  double normal[3] = { 0, 0, 0 };
+  int slice = 0;
+  int maxSlice = 0;
+
+  normal[axis] = 1;
+  slice = dims[axis] / 2;
+  maxSlice = dims[axis] - 1;
+
+  m_widget->SetNormal(normal);
+  if (m_sliceSlider) {
+    m_sliceSlider->setMinimum(0);
+    m_sliceSlider->setMaximum(maxSlice);
+  }
+  onSliceChanged(slice);
+  onPlaneChanged();
+  dataUpdated();
+}
+
+void ModuleSlice::onSliceChanged(int slice)
+{
+  m_slice = slice;
+  int axis = directionAxis(m_direction);
+
+  if (axis < 0) {
+    return;
+  }
+
+  m_widget->SetSliceIndex(slice);
+  if (m_sliceSlider) {
+    m_sliceSlider->setValue(slice);
+  }
+  onPlaneChanged();
+  dataUpdated();
+}
+
+void ModuleSlice::onSliceChanged(double* point)
+{
+  int axis = directionAxis(m_direction);
+  if (axis < 0) {
+    return;
+  }
+
+  int dims[3];
+  imageData()->GetDimensions(dims);
+  double bounds[6];
+  imageData()->GetBounds(bounds);
+  int slice;
+
+  slice = (dims[axis] - 1) * (point[axis] - bounds[2 * axis]) /
+          (bounds[2 * axis + 1] - bounds[2 * axis]);
+  onSliceChanged(slice);
+}
+
+void ModuleSlice::onTextureInterpolateChanged(bool flag)
+{
+  m_interpolate = flag;
+  if (!m_widget) {
+    return;
+  }
+  int val = flag ? 1 : 0;
+  m_widget->SetTextureInterpolate(val);
+  m_widget->SetResliceInterpolate(val);
   emit renderNeeded();
+}
+
+void ModuleSlice::onOpacityChanged(double opacity)
+{
+  m_opacity = opacity;
+  m_widget->SetOpacity(opacity);
+  emit renderNeeded();
+}
+
+int ModuleSlice::directionAxis(Direction direction)
+{
+  switch (direction) {
+    case Direction::XY: {
+      return 2;
+    }
+    case Direction::YZ: {
+      return 0;
+    }
+    case Direction::XZ: {
+      return 1;
+    }
+    default: {
+      return -1;
+    }
+  }
+}
+
+ModuleSlice::Direction ModuleSlice::stringToDirection(const QString& name)
+{
+  if (name == "XY") {
+    return Direction::XY;
+  } else if (name == "YZ") {
+    return Direction::YZ;
+  } else if (name == "XZ") {
+    return Direction::XZ;
+  } else {
+    return Direction::Custom;
+  }
+}
+
+ModuleSlice::Direction ModuleSlice::modeToDirection(int sliceMode)
+{
+  switch (sliceMode) {
+    case 5: {
+      return Direction::XY;
+    }
+    case 6: {
+      return Direction::YZ;
+    }
+    case 7: {
+      return Direction::XZ;
+    }
+    default: {
+      return Direction::Custom;
+    }
+  }
 }
 
 } // namespace tomviz

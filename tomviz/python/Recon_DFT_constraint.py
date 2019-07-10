@@ -39,8 +39,8 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         (Nx, Ny, Nz) = recon_F.shape
         #Note: Nz = np.int(Ny/2+1)
         Ntot = Nx * Ny * Ny
-        f = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='complex128')
-        r = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype='float64')
+        f = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype=np.complex64)
+        r = pyfftw.n_byte_align_empty((Nx, Ny, Ny), 16, dtype=np.float32)
         fft_forward = pyfftw.FFTW(r, f, axes=(0, 1, 2))
         fft_inverse = pyfftw.FFTW(
             f, r, direction='FFTW_BACKWARD', axes=(0, 1, 2))
@@ -56,7 +56,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
         G = np.exp(-kR**2 / (2 * sigma**2))
 
         #create initial support using sw
-        f = recon_F * G
+        f = (recon_F * G).astype(np.complex64)
         fft_inverse.update_arrays(f, r)
         fft_inverse.execute()
         cutoff = np.amax(r) * supportThreshold
@@ -64,7 +64,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
         recon_F[kR > kr_cutoffs[-1]] = 0
 
-        x = np.random.rand(Nx, Ny, Ny) #initial solution
+        x = np.random.rand(Nx, Ny, Ny).astype(np.float32) #initial solution
 
         self.progress.maximum = Niter
         step = 0
@@ -89,8 +89,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
 
             #Fourier space projection
             y2 = 2 * y1 - x
-
-            r = y2.copy()
+            r = y2.copy().astype(np.float32)
             fft_forward.update_arrays(r, f)
             fft_forward.execute()
 
@@ -123,7 +122,7 @@ class ReconConstrintedDFMOperator(tomviz.operators.CancelableOperator):
                 r = recon.copy()
                 fft_forward.update_arrays(r, f)
                 fft_forward.execute()
-                f = f * G
+                f = (f * G).astype(np.complex64)
                 fft_inverse.update_arrays(f, r)
                 fft_inverse.execute()
                 cutoff = np.amax(r) * supportThreshold
@@ -160,23 +159,24 @@ def dfm3(input, angles, Npad):
 
     # Initialization
     Nz = Ny // 2 + 1
-    w = np.zeros((Nx, Ny, Nz)) #store weighting factors
-    v = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype='complex128')
-    v = np.zeros(v.shape) + 1j * np.zeros(v.shape)
+    w = np.zeros((Nx, Ny, Nz), dtype=np.float32) #store weighting factors
+    v = pyfftw.n_byte_align_empty((Nx, Ny, Nz), 16, dtype=np.complex64)
+    v = np.zeros(v.shape, dtype=np.float32) \
+        + 1j * np.zeros(v.shape, dtype=np.float32)
     recon = pyfftw.n_byte_align_empty(
-        (Nx, Ny, Ny), 16, dtype='float64', order='F')
+        (Nx, Ny, Ny), 16, dtype=np.float32, order='F')
     recon_fftw_object = pyfftw.FFTW(
         v, recon, direction='FFTW_BACKWARD', axes=(0, 1, 2))
 
-    p = pyfftw.n_byte_align_empty((Nx, Npad), 16, dtype='float64')
-    pF = pyfftw.n_byte_align_empty((Nx, Npad // 2 + 1), 16, dtype='complex128')
+    p = pyfftw.n_byte_align_empty((Nx, Npad), 16, dtype=np.float32)
+    pF = pyfftw.n_byte_align_empty((Nx, Npad // 2 + 1), 16, dtype=np.complex64)
     p_fftw_object = pyfftw.FFTW(p, pF, axes=(0, 1))
 
     dk = np.double(Ny) / np.double(Npad)
 
     for a in range(0, Nproj):
         ang = angles[a] * np.pi / 180
-        projection = input[:, :, a] #2D projection image
+        projection = input[:, :, a].astype(np.float32) #2D projection image
         p = np.lib.pad(projection, ((0, 0), (pad_pre, pad_post)),
                        'constant', constant_values=(0, 0)) #pad zeros
         p = np.fft.ifftshift(p)
@@ -240,8 +240,8 @@ def bilinear(kz_new, ky_new, sz, sy, N, p):
 def radial_average(tiltseries, kr_cutoffs):
     (Nx, Ny, Nproj) = tiltseries.shape
 
-    f = pyfftw.n_byte_align_empty((Nx, Ny // 2 + 1), 16, dtype='complex128')
-    r = pyfftw.n_byte_align_empty((Nx, Ny), 16, dtype='float64')
+    f = pyfftw.n_byte_align_empty((Nx, Ny // 2 + 1), 16, dtype=np.complex64)
+    r = pyfftw.n_byte_align_empty((Nx, Ny), 16, dtype=np.float32)
     p_fftw_object = pyfftw.FFTW(r, f, axes=(0, 1))
     Ir = np.zeros(kr_cutoffs.size)
     I = np.zeros(kr_cutoffs.size)
@@ -254,7 +254,7 @@ def radial_average(tiltseries, kr_cutoffs):
     kR = np.sqrt(kY**2 + kX**2)
 
     for a in range(0, Nproj):
-        r = tiltseries[:, :, a].copy().astype('float64')
+        r = tiltseries[:, :, a].copy().astype(np.float32)
         p_fftw_object.update_arrays(r, f)
         p_fftw_object.execute()
         shell = kR <= kr_cutoffs[0]

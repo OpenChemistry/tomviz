@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "ConvertToFloatOperator.h"
+#include "DataExchangeFormat.h"
 #include "EmdFormat.h"
 #include "Module.h"
 #include "Utilities.h"
@@ -71,6 +72,7 @@ void ExportDataReaction::onTriggered()
   if (exportType == "Volume") {
     filters << "TIFF format (*.tiff)"
             << "EMD format (*.emd *.hdf5)"
+            << "HDF5 format (*.h5)"
             << "CSV File (*.csv)"
             << "Exodus II File (*.e *.ex2 *.ex2v2 *.exo *.exoII *.exoii *.g)"
             << "Legacy VTK Files (*.vtk)"
@@ -94,7 +96,7 @@ void ExportDataReaction::onTriggered()
     filters << "JPEG Files (*.jpg *.jpeg)"
             << "VTK ImageData Files (*.vti)";
   } else if (exportType == "Molecule") {
-    moleculeToFile(vtkMolecule::SafeDownCast(module->getDataToExport()));
+    moleculeToFile(vtkMolecule::SafeDownCast(module->dataToExport()));
     return;
   }
 
@@ -177,7 +179,7 @@ bool ExportDataReaction::exportData(const QString& filename)
 {
   auto server = pqActiveObjects::instance().activeServer();
 
-  auto data = m_module->getDataToExport();
+  auto data = m_module->dataToExport();
 
   if (!server) {
     qCritical("No active server located.");
@@ -187,6 +189,15 @@ bool ExportDataReaction::exportData(const QString& filename)
   QFileInfo info(filename);
   if (info.suffix() == "emd") {
     EmdFormat writer;
+    auto image = vtkImageData::SafeDownCast(data);
+    if (!image || !writer.write(filename.toLatin1().data(), image)) {
+      qCritical() << "Failed to write out data.";
+      return false;
+    } else {
+      return true;
+    }
+  } else if (info.suffix() == "h5") {
+    DataExchangeFormat writer;
     auto image = vtkImageData::SafeDownCast(data);
     if (!image || !writer.write(filename.toLatin1().data(), image)) {
       qCritical() << "Failed to write out data.";
@@ -242,7 +253,7 @@ bool ExportDataReaction::exportData(const QString& filename)
       ConvertToFloatOperator convertFloat;
       convertFloat.applyTransform(fImage);
 
-      trivialProducer->SetOutput(fImage.Get());
+      trivialProducer->SetOutput(fImage);
       trivialProducer->UpdateInformation();
       trivialProducer->Update();
       producer->UpdatePipeline();
@@ -317,13 +328,13 @@ bool ExportDataReaction::exportData(const QString& filename)
       charArray->SetName(scalars->GetName());
       switch (scalars->GetDataType()) {
         vtkTemplateMacro(convertToUnsignedChar<VTK_TT>(
-          charArray.Get(), scalars->GetNumberOfComponents(),
+          charArray, scalars->GetNumberOfComponents(),
           scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0)));
       }
       newImage->GetPointData()->RemoveArray(scalars->GetName());
-      newImage->GetPointData()->SetScalars(charArray.Get());
+      newImage->GetPointData()->SetScalars(charArray);
 
-      trivialProducer->SetOutput(newImage.Get());
+      trivialProducer->SetOutput(newImage);
       trivialProducer->UpdateInformation();
       trivialProducer->Update();
       producer->UpdatePipeline();

@@ -48,9 +48,9 @@ namespace {
 void createOrResizeTiltAnglesArray(vtkDataObject* data)
 {
   auto fd = data->GetFieldData();
+  int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
+  int numTiltAngles = extent[5] - extent[4] + 1;
   if (!fd->HasArray("tilt_angles")) {
-    int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
-    int numTiltAngles = extent[5] - extent[4] + 1;
     vtkNew<vtkDoubleArray> array;
     array->SetName("tilt_angles");
     array->SetNumberOfTuples(numTiltAngles);
@@ -59,8 +59,6 @@ void createOrResizeTiltAnglesArray(vtkDataObject* data)
   } else {
     // if it exists, ensure the size of the tilt angles array
     // corresponds to the size of the data
-    int* extent = vtkImageData::SafeDownCast(data)->GetExtent();
-    int numTiltAngles = extent[5] - extent[4] + 1;
     auto array = fd->GetArray("tilt_angles");
     if (numTiltAngles != array->GetNumberOfTuples()) {
       array->SetNumberOfTuples(numTiltAngles);
@@ -841,7 +839,7 @@ void DataSource::dataModified()
     typeArray->SetNumberOfTuples(1);
     typeArray->SetName("tomviz_data_source_type");
     typeArray->SetTuple1(0, this->Internals->Type);
-    fd->AddArray(typeArray.Get());
+    fd->AddArray(typeArray);
   }
 
   // This indirection is necessary to overcome a bug in VTK/ParaView when

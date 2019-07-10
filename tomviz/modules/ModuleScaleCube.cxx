@@ -12,6 +12,7 @@
 
 #include <pqCoreUtilities.h>
 #include <pqProxiesWidget.h>
+#include <vtkBillboardTextActor3D.h>
 #include <vtkCommand.h>
 #include <vtkPVDataInformation.h>
 #include <vtkPVRenderView.h>
@@ -22,6 +23,7 @@
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
+#include <vtkTextProperty.h>
 
 #include <QCheckBox>
 #include <QDoubleValidator>
@@ -37,7 +39,7 @@ ModuleScaleCube::ModuleScaleCube(QObject* parentObject) : Module(parentObject)
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
   // "onPositionChanged" signal
   m_observedPositionId =
-    pqCoreUtilities::connect(m_cubeRep.Get(), vtkCommand::ModifiedEvent, this,
+    pqCoreUtilities::connect(m_cubeRep, vtkCommand::ModifiedEvent, this,
                              SIGNAL(onPositionChanged()));
 
   // Connect to our "onPositionChanged" signal and emit it with arguments
@@ -55,7 +57,7 @@ ModuleScaleCube::ModuleScaleCube(QObject* parentObject) : Module(parentObject)
   // Connect to m_cubeRep's "modified" signal, and emit it as our own
   // "onSideLengthChanged" signal
   m_observedSideLengthId =
-    pqCoreUtilities::connect(m_cubeRep.Get(), vtkCommand::ModifiedEvent, this,
+    pqCoreUtilities::connect(m_cubeRep, vtkCommand::ModifiedEvent, this,
                              SIGNAL(onSideLengthChanged()));
 
   // Connect to our "onSideLengthChanged" signal and emit it with arguments
@@ -103,7 +105,7 @@ bool ModuleScaleCube::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   const double* displayPosition = dataSource()->displayPosition();
   dataSourceMoved(displayPosition[0], displayPosition[1], displayPosition[2]);
 
-  m_handleWidget->SetRepresentation(m_cubeRep.Get());
+  m_handleWidget->SetRepresentation(m_cubeRep);
   m_handleWidget->EnabledOn();
 
   return true;
@@ -143,6 +145,10 @@ QJsonObject ModuleScaleCube::serialize() const
   QJsonArray color = { c[0], c[1], c[2] };
   props["color"] = color;
 
+  m_cubeRep->GetLabelText()->GetTextProperty()->GetColor(c);
+  color = { c[0], c[1], c[2] };
+  props["textColor"] = color;
+
   json["properties"] = props;
 
   return json;
@@ -164,6 +170,21 @@ bool ModuleScaleCube::deserialize(const QJsonObject& json)
     auto c = props["color"].toArray();
     double color[3] = { c[0].toDouble(), c[1].toDouble(), c[2].toDouble() };
     m_cubeRep->GetProperty()->SetDiffuseColor(color);
+
+    if (props["textColor"].isArray()) {
+      // This property was added later on...
+      c = props["textColor"].toArray();
+      double textColor[3] = { c[0].toDouble(), c[1].toDouble(),
+                              c[2].toDouble() };
+      m_cubeRep->GetLabelText()->GetTextProperty()->SetColor(textColor);
+      if (m_controllers) {
+        QColor qTextColor(static_cast<int>(textColor[0] * 255.0 + 0.5),
+                          static_cast<int>(textColor[1] * 255.0 + 0.5),
+                          static_cast<int>(textColor[2] * 255.0 + 0.5));
+        m_controllers->setTextColor(qTextColor);
+      }
+    }
+
     if (m_controllers) {
       QColor qColor(static_cast<int>(color[0] * 255.0 + 0.5),
                     static_cast<int>(color[1] * 255.0 + 0.5),
@@ -207,6 +228,11 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
                                     static_cast<int>(color[1] * 255.0 + 0.5),
                                     static_cast<int>(color[2] * 255.0 + 0.5)));
 
+  m_cubeRep->GetLabelText()->GetTextProperty()->GetColor(color);
+  m_controllers->setTextColor(QColor(static_cast<int>(color[0] * 255.0 + 0.5),
+                                     static_cast<int>(color[1] * 255.0 + 0.5),
+                                     static_cast<int>(color[2] * 255.0 + 0.5)));
+
   // Connect the widget's signals to this class' slots
   connect(m_controllers, SIGNAL(adaptiveScalingToggled(const bool)), this,
           SLOT(setAdaptiveScaling(const bool)));
@@ -216,6 +242,8 @@ void ModuleScaleCube::addToPanel(QWidget* panel)
           SLOT(setAnnotation(const bool)));
   connect(m_controllers, &ModuleScaleCubeWidget::boxColorChanged, this,
           &ModuleScaleCube::onBoxColorChanged);
+  connect(m_controllers, &ModuleScaleCubeWidget::textColorChanged, this,
+          &ModuleScaleCube::onTextColorChanged);
 
   // Connect this class' signals to the widget's slots
   connect(this, SIGNAL(onLengthUnitChanged(const QString)), m_controllers,
@@ -283,25 +311,16 @@ void ModuleScaleCube::dataSourceMoved(double newX, double newY, double newZ)
   m_cubeRep->SetWorldPosition(position);
 }
 
-bool ModuleScaleCube::isProxyPartOfModule(vtkSMProxy*)
-{
-  return false;
-}
-
-std::string ModuleScaleCube::getStringForProxy(vtkSMProxy*)
-{
-  qWarning("Unknown proxy passed to module volume in save animation");
-  return "";
-}
-
-vtkSMProxy* ModuleScaleCube::getProxyForString(const std::string&)
-{
-  return nullptr;
-}
-
 void ModuleScaleCube::onBoxColorChanged(const QColor& color)
 {
   m_cubeRep->GetProperty()->SetDiffuseColor(
+    color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0);
+  emit renderNeeded();
+}
+
+void ModuleScaleCube::onTextColorChanged(const QColor& color)
+{
+  m_cubeRep->GetLabelText()->GetTextProperty()->SetColor(
     color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0);
   emit renderNeeded();
 }

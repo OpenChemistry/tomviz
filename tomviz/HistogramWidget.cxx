@@ -8,6 +8,7 @@
 #include "DoubleSliderWidget.h"
 #include "ModuleContour.h"
 #include "ModuleManager.h"
+#include "PresetDialog.h"
 #include "QVTKGLWidget.h"
 #include "Utilities.h"
 
@@ -17,6 +18,7 @@
 #include <vtkContextView.h>
 #include <vtkControlPointsItem.h>
 #include <vtkDataArray.h>
+#include <vtkDiscretizableColorTransferFunction.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkPiecewiseFunction.h>
 #include <vtkRenderWindow.h>
@@ -31,12 +33,12 @@
 #include <pqSettings.h>
 #include <pqView.h>
 
-#include <vtkPVDiscretizableColorTransferFunction.h>
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionPresets.h>
 #include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMViewProxy.h>
+#include <vtkType.h>
 
 #include <QCheckBox>
 #include <QColorDialog>
@@ -46,6 +48,7 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QSettings>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -58,18 +61,18 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   : QWidget(parent), m_qvtk(new QVTKGLWidget(this))
 {
   // Set up our little chart.
-  m_histogramView->SetRenderWindow(m_qvtk->GetRenderWindow());
-  m_histogramView->SetInteractor(m_qvtk->GetInteractor());
-  m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor.Get());
+  m_histogramView->SetRenderWindow(m_qvtk->renderWindow());
+  m_histogramView->SetInteractor(m_qvtk->interactor());
+  m_histogramView->GetScene()->AddItem(m_histogramColorOpacityEditor);
 
   // Connect events from the histogram color/opacity editor.
-  m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
+  m_eventLink->Connect(m_histogramColorOpacityEditor,
                        vtkCommand::CursorChangedEvent, this,
                        SLOT(histogramClicked(vtkObject*)));
-  m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
+  m_eventLink->Connect(m_histogramColorOpacityEditor,
                        vtkCommand::EndEvent, this,
                        SLOT(onScalarOpacityFunctionChanged()));
-  m_eventLink->Connect(m_histogramColorOpacityEditor.Get(),
+  m_eventLink->Connect(m_histogramColorOpacityEditor,
                        vtkControlPointsItem::CurrentPointEditEvent, this,
                        SLOT(onCurrentPointEditEvent()));
 
@@ -134,7 +137,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
 HistogramWidget::~HistogramWidget() = default;
 
-void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction* lut)
+void HistogramWidget::setLUT(vtkDiscretizableColorTransferFunction* lut)
 {
   if (m_LUT != lut) {
     if (m_scalarOpacityFunction) {
@@ -152,10 +155,10 @@ void HistogramWidget::setLUT(vtkPVDiscretizableColorTransferFunction* lut)
 
 void HistogramWidget::setLUTProxy(vtkSMProxy* proxy)
 {
-  if (m_LUTProxy != proxy) {
+  if (proxy && m_LUTProxy != proxy) {
     m_LUTProxy = proxy;
-    vtkPVDiscretizableColorTransferFunction* lut =
-      vtkPVDiscretizableColorTransferFunction::SafeDownCast(
+    auto lut =
+      vtkDiscretizableColorTransferFunction::SafeDownCast(
         proxy->GetClientSideObject());
     setLUT(lut);
 
@@ -193,8 +196,7 @@ vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
     return nullptr;
   }
 
-  vtkSMTransferFunctionProxy* tferProxy =
-    vtkSMTransferFunctionProxy::SafeDownCast(m_LUTProxy);
+  auto tferProxy = vtkSMTransferFunctionProxy::SafeDownCast(m_LUTProxy);
   if (!tferProxy) {
     return nullptr;
   }
@@ -218,30 +220,26 @@ vtkSMProxy* HistogramWidget::getScalarBarRepresentation(vtkSMProxy* view)
 
 void HistogramWidget::onScalarOpacityFunctionChanged()
 {
-  auto core = pqApplicationCore::instance();
-  auto smModel = core->getServerManagerModel();
-  QList<pqView*> views = smModel->findItems<pqView*>();
-  foreach (pqView* view, views) {
-    view->render();
-  }
+  // Update rendered views of the data.
+  ActiveObjects::instance().renderAllViews();
 
   // Update the histogram
   m_histogramView->GetRenderWindow()->Render();
 
-  // Update the scalar opacity function proxy as it does not update it's
+  // Update the scalar opacity function proxy as it does not update its
   // internal state when the VTK object changes.
   if (!m_LUTProxy) {
     return;
   }
 
-  vtkSMProxy* opacityMapProxy =
+  auto opacityMapProxy =
     vtkSMPropertyHelper(m_LUTProxy, "ScalarOpacityFunction", true).GetAsProxy();
   if (!opacityMapProxy) {
     return;
   }
 
   vtkSMPropertyHelper pointsHelper(opacityMapProxy, "Points");
-  vtkObjectBase* opacityMapObject = opacityMapProxy->GetClientSideObject();
+  auto opacityMapObject = opacityMapProxy->GetClientSideObject();
   auto pwf = vtkPiecewiseFunction::SafeDownCast(opacityMapObject);
   if (pwf) {
     pointsHelper.SetNumberOfElements(4 * pwf->GetSize());
@@ -270,9 +268,9 @@ void HistogramWidget::onCurrentPointEditEvent()
       rgb[1] = color.greenF();
       rgb[2] = color.blueF();
       m_histogramColorOpacityEditor->SetCurrentControlPointColor(rgb);
-      onScalarOpacityFunctionChanged();
     }
   }
+  ActiveObjects::instance().renderAllViews();
 }
 
 void HistogramWidget::histogramClicked(vtkObject*)
@@ -401,6 +399,15 @@ void HistogramWidget::onCustomRangeClicked()
   double maxRange[2];
   activeDataSource->getRange(maxRange);
 
+  // Get the type of the active scalar
+  auto scalar = activeDataSource->activeScalars();
+  auto array = activeDataSource->getScalarsArray(scalar);
+  auto dataType = array->GetDataType();
+  int precision = 0;
+  if (dataType == VTK_FLOAT || dataType == VTK_DOUBLE) {
+    precision = 6;
+  }
+
   // Get the current range
   vtkVector2d currentRange;
   vtkDiscretizableColorTransferFunction* discFunc =
@@ -426,6 +433,7 @@ void HistogramWidget::onCustomRangeClicked()
   QDoubleSpinBox bottom;
   bottom.setRange(maxRange[0], maxRange[1]);
   bottom.setValue(currentRange[0]);
+  bottom.setDecimals(precision);
   bottom.setFixedSize(bottom.sizeHint());
   bottom.setToolTip("Min: " + QString::number(maxRange[0]));
   hLayout.addWidget(&bottom);
@@ -438,17 +446,20 @@ void HistogramWidget::onCustomRangeClicked()
   QDoubleSpinBox top;
   top.setRange(maxRange[0], maxRange[1]);
   top.setValue(currentRange[1]);
+  top.setDecimals(precision);
   top.setFixedSize(top.sizeHint());
   top.setToolTip("Max: " + QString::number(maxRange[1]));
   hLayout.addWidget(&top);
 
   // Make sure the bottom isn't higher than the top, and the
   // top isn't higher than the bottom.
-  connect(&bottom, static_cast<void (QDoubleSpinBox::*)(double)>(
-                     &QDoubleSpinBox::valueChanged),
+  connect(&bottom,
+          static_cast<void (QDoubleSpinBox::*)(double)>(
+            &QDoubleSpinBox::valueChanged),
           &top, &QDoubleSpinBox::setMinimum);
-  connect(&top, static_cast<void (QDoubleSpinBox::*)(double)>(
-                  &QDoubleSpinBox::valueChanged),
+  connect(&top,
+          static_cast<void (QDoubleSpinBox::*)(double)>(
+            &QDoubleSpinBox::valueChanged),
           &bottom, &QDoubleSpinBox::setMaximum);
 
   QDialogButtonBox buttonBox;
@@ -474,95 +485,78 @@ void HistogramWidget::onInvertClicked()
   emit colorMapUpdated();
 }
 
-namespace {
-void showPresetDialog(HistogramWidget* self, const char* presetName)
+void HistogramWidget::showPresetDialog(const QJsonObject& newPreset)
 {
-  pqPresetDialog dialog(tomviz::mainWidget(),
-                        pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
-  if (presetName) {
-    dialog.setCurrentPreset(presetName);
+  if (m_presetDialog == nullptr) {
+    m_presetDialog = new PresetDialog(this);
+    QObject::connect(m_presetDialog, &PresetDialog::applyPreset, this,
+                     &HistogramWidget::applyCurrentPreset);
   }
-  dialog.setCustomizableLoadColors(true);
-  dialog.setCustomizableLoadOpacities(true);
-  dialog.setCustomizableUsePresetRange(true);
-  dialog.setCustomizableLoadAnnotations(false);
-  QObject::connect(&dialog, SIGNAL(applyPreset(const Json::Value&)), self,
-                   SLOT(applyCurrentPreset()));
-  dialog.exec();
+
+  if (!newPreset.isEmpty()) {
+    m_presetDialog->addNewPreset(newPreset);
+  }
+
+  m_presetDialog->show();
 }
-} // namespace
 
 void HistogramWidget::onSaveToPresetClicked()
 {
-  vtkSMProxy* lut = m_LUTProxy;
-  vtkSMProxy* sof =
-    vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
+  QDialog dialog;
+  QVBoxLayout vLayout;
+  QHBoxLayout hLayout;
 
-  Json::Value preset = vtkSMTransferFunctionProxy::GetStateAsPreset(lut);
-  Json::Value opacityInfo = vtkSMTransferFunctionProxy::GetStateAsPreset(sof);
-  preset["Points"] = opacityInfo["Points"];
+  vLayout.addLayout(&hLayout);
+  dialog.setLayout(&vLayout);
+  dialog.setWindowTitle(tr("Create Preset"));
 
-  std::string presetName;
-  {
-    // This scoping is necessary to ensure that the vtkSMTransferFunctionPresets
-    // saves the new preset to the "settings" before the choosePreset dialog is
-    // shown.
-    vtkNew<vtkSMTransferFunctionPresets> presets;
-    presetName = presets->AddUniquePreset(preset);
+  QLineEdit name;
+  name.setPlaceholderText("Enter name of new preset");
+  hLayout.addWidget(&name);
+
+  QDialogButtonBox buttonBox;
+  buttonBox.addButton(QDialogButtonBox::Ok);
+  buttonBox.addButton(QDialogButtonBox::Cancel);
+  connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  vLayout.addWidget(&buttonBox);
+
+  if (dialog.exec() == QDialog::Accepted) {
+    auto newName = name.text();
+    vtkSMProxy* lut = m_LUTProxy;
+    auto presetInfo = tomviz::serialize(lut);
+    auto presetColors = presetInfo["colors"];
+    auto colorSpace = presetInfo["colorSpace"];
+    QJsonObject newPreset{ { "name", newName },
+                           { "colorSpace", colorSpace },
+                           { "colors", presetColors } };
+    showPresetDialog(newPreset);
   }
-
-  showPresetDialog(this, presetName.c_str());
 }
 
 void HistogramWidget::onPresetClicked()
 {
-  showPresetDialog(this, nullptr);
+  showPresetDialog(QJsonObject());
 }
 
 void HistogramWidget::applyCurrentPreset()
 {
-  auto dialog = qobject_cast<pqPresetDialog*>(sender());
-  Q_ASSERT(dialog);
-
   vtkSMProxy* lut = m_LUTProxy;
+
   if (!lut) {
     return;
   }
 
-  if (dialog->loadColors() || dialog->loadOpacities()) {
-    vtkSMProxy* sof =
-      vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
-    if (dialog->loadColors()) {
-      vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
-                                              !dialog->usePresetRange());
-    }
-    if (dialog->loadOpacities()) {
-      if (sof) {
-        vtkSMTransferFunctionProxy::ApplyPreset(sof, dialog->currentPreset(),
-                                                !dialog->usePresetRange());
-      } else {
-        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not "
-                 "present.");
-      }
-    }
+  auto curr = m_presetDialog->jsonObject();
+  QJsonDocument doc(curr);
+  QString chosen(doc.toJson(QJsonDocument::Compact));
+  Json::Value value;
+  Json::Reader reader;
+  reader.parse(chosen.toLatin1().data(), value);
+  vtkSMTransferFunctionProxy::ApplyPreset(lut, value, true);
 
-    // We need to take extra care to avoid the color and opacity function ranges
-    // from straying away from each other. This can happen if only one of them
-    // is getting a preset and we're using the preset range.
-    if (dialog->usePresetRange() &&
-        (dialog->loadColors() ^ dialog->loadOpacities()) && sof) {
-      double range[2];
-      if (dialog->loadColors() &&
-          vtkSMTransferFunctionProxy::GetRange(lut, range)) {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range);
-      } else if (dialog->loadOpacities() &&
-                 vtkSMTransferFunctionProxy::GetRange(sof, range)) {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
-      }
-    }
-    renderViews();
-    emit colorMapUpdated();
-  }
+  renderViews();
+  emit colorMapUpdated();
 }
 
 void HistogramWidget::updateUI()

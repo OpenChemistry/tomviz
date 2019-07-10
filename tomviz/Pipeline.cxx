@@ -381,21 +381,13 @@ void Pipeline::branchFinished()
     if (newChildDataSource != nullptr) {
       emit lastOp->newChildDataSource(newChildDataSource);
       // Move modules from root data source.
-      bool oldMoveObjectsEnabled =
-        ActiveObjects::instance().moveObjectsEnabled();
-      ActiveObjects::instance().setMoveObjectsMode(false);
-      auto view = ActiveObjects::instance().activeView();
-      foreach (Module* module, ModuleManager::instance().findModules<Module*>(
-                                 dataSource(), nullptr)) {
-        // TODO: We should really copy the module properties as well.
-        auto newModule = ModuleManager::instance().createAndAddModule(
-          module->label(), newChildDataSource, view);
-        // Copy over properties using the serialization code.
-        newModule->deserialize(module->serialize());
-        ModuleManager::instance().removeModule(module);
-      }
-      ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
+      moveModulesDown(newChildDataSource);
     }
+  }
+  else {
+    // If this is the only operator, make sure the modules are moved down.
+    if (start->operators().size() == 1)
+      moveModulesDown(lastOp->childDataSource());
   }
 }
 
@@ -509,9 +501,7 @@ void Pipeline::addDataSource(DataSource* dataSource)
     if (!op->isNew()) {
       m_operatorsDeleted = true;
     }
-    // Do we need to move the transformed data source, !hasChildDataSource as we
-    // don't want to move "explicit" child data sources.
-    if (!op->hasChildDataSource() && op->childDataSource() != nullptr) {
+    if (op->childDataSource() != nullptr) {
       auto transformedDataSource = op->childDataSource();
       auto operators = op->dataSource()->operators();
       // We have an operator to move it to.
@@ -545,7 +535,7 @@ void Pipeline::addDataSource(DataSource* dataSource)
 void Pipeline::addDefaultModules(DataSource* dataSource)
 {
   // Note: In the future we can pull this out into a setting.
-  QStringList defaultModules = { "Outline", "Orthogonal Slice" };
+  QStringList defaultModules = { "Outline", "Slice" };
   bool oldMoveObjectsEnabled = ActiveObjects::instance().moveObjectsEnabled();
   ActiveObjects::instance().setMoveObjectsMode(false);
   auto view = ActiveObjects::instance().activeView();
@@ -604,6 +594,24 @@ Pipeline::Future* Pipeline::emptyFuture()
   QTimer::singleShot(0, [future] { emit future->finished(); });
 
   return future;
+}
+
+void Pipeline::moveModulesDown(DataSource* newChildDataSource)
+{
+  bool oldMoveObjectsEnabled =
+    ActiveObjects::instance().moveObjectsEnabled();
+  ActiveObjects::instance().setMoveObjectsMode(false);
+  auto view = ActiveObjects::instance().activeView();
+  foreach (Module* module, ModuleManager::instance().findModules<Module*>(
+           dataSource(), nullptr)) {
+    // TODO: We should really copy the module properties as well.
+    auto newModule = ModuleManager::instance().createAndAddModule(
+      module->label(), newChildDataSource, view);
+    // Copy over properties using the serialization code.
+    newModule->deserialize(module->serialize());
+    ModuleManager::instance().removeModule(module);
+  }
+  ActiveObjects::instance().setMoveObjectsMode(oldMoveObjectsEnabled);
 }
 
 #include "Pipeline.moc"

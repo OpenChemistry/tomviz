@@ -7,6 +7,7 @@
 #include "DataSource.h"
 #include "EmdFormat.h"
 #include "FileFormatManager.h"
+#include "GenericHDF5Format.h"
 #include "ImageStackDialog.h"
 #include "ImageStackModel.h"
 #include "LoadStackReaction.h"
@@ -19,6 +20,7 @@
 #include "RAWFileReaderDialog.h"
 #include "RecentFilesMenu.h"
 #include "Utilities.h"
+#include "vtkOMETiffReader.h"
 
 #include <pqActiveObjects.h>
 #include <pqLoadDataReaction.h>
@@ -115,6 +117,7 @@ QList<DataSource*> LoadDataReaction::loadData()
           << "JPeg Image files (*.jpg *.jpeg)"
           << "PNG Image files (*.png)"
           << "TIFF Image files (*.tiff *.tif)"
+          << "HDF5 files (*.h5)"
           << "OME-TIFF Image files (*.ome.tif)"
           << "Raw data files (*.raw *.dat *.bin)"
           << "Meta Image files (*.mhd *.mha)"
@@ -202,22 +205,35 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
       dataSource = new DataSource(imageData, type);
       LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
     }
+  } else if (info.suffix().toLower() == "h5") {
+    loadWithParaview = false;
+    // The generic HDF5 format will figure out if it is a special
+    // HDF5 format such as DataExchange.
+    GenericHDF5Format file;
+    vtkNew<vtkImageData> imageData;
+    if (file.read(fileName.toLatin1().data(), imageData)) {
+      DataSource::DataSourceType type = DataSource::hasTiltAngles(imageData)
+                                          ? DataSource::TiltSeries
+                                          : DataSource::Volume;
+      dataSource = new DataSource(imageData, type);
+      LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+    }
   } else if (info.completeSuffix().endsWith("ome.tif")) {
     loadWithParaview = false;
-    auto pxm = tomviz::ActiveObjects::instance().proxyManager();
-    const char* name = "OMETIFFReader";
-    vtkSmartPointer<vtkSMProxy> source;
-    source.TakeReference(pxm->NewProxy("sources", name));
-    QString pname = vtkSMCoreUtilities::GetFileNameProperty(source);
-    vtkSMStringVectorProperty* prop = vtkSMStringVectorProperty::SafeDownCast(
-      source->GetProperty(pname.toUtf8().data()));
-    pqSMAdaptor::setElementProperty(prop, fileName);
-    source->UpdateVTKObjects();
+    vtkNew<vtkOMETiffReader> reader;
+    reader->SetFileName(fileName.toLocal8Bit().constData());
+    reader->Update();
+    auto* imageData = reader->GetOutput();
 
-    dataSource = createDataSource(source, defaultModules, child);
+    dataSource = new DataSource(imageData);
     QJsonObject readerProperties;
-    readerProperties["name"] = name;
+    readerProperties["name"] = "OMETIFFReader";
     dataSource->setReaderProperties(readerProperties.toVariantMap());
+    LoadDataReaction::dataSourceAdded(dataSource, defaultModules, child);
+  } else if (FileFormatManager::instance().pythonReaderFactory(
+               info.suffix().toLower()) != nullptr) {
+    loadWithParaview = false;
+    loadWithPython = true;
   } else if (options.contains("reader")) {
     loadWithParaview = false;
     // Create the ParaView reader and set its properties using the JSON
@@ -240,11 +256,6 @@ DataSource* LoadDataReaction::loadData(const QStringList& fileNames,
     }
 
     dataSource->setReaderProperties(props.toVariantMap());
-
-  } else if (FileFormatManager::instance().pythonReaderFactory(
-               info.suffix().toLower()) != nullptr) {
-    loadWithParaview = false;
-    loadWithPython = true;
   }
 
   if (loadWithParaview) {

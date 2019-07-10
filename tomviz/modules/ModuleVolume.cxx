@@ -21,14 +21,8 @@
 #include <vtkVolume.h>
 #include <vtkVolumeProperty.h>
 
-#include <pqProxiesWidget.h>
 #include <vtkPVRenderView.h>
 #include <vtkPointData.h>
-#include <vtkSMPVRepresentationProxy.h>
-#include <vtkSMParaViewPipelineControllerWithRendering.h>
-#include <vtkSMPropertyHelper.h>
-#include <vtkSMSessionProxyManager.h>
-#include <vtkSMSourceProxy.h>
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
@@ -69,23 +63,38 @@ QIcon ModuleVolume::icon() const
   return QIcon(":/icons/pqVolumeData.png");
 }
 
+void ModuleVolume::initializeMapper(DataSource* data)
+{
+  vtkAlgorithmOutput *output = nullptr;
+  if (data == nullptr) {
+    output = m_volumeMapper->GetInputConnection(0, 0);
+  }
+  else {
+    output = data->producer()->GetOutputPort();
+  }
+  m_volumeMapper = vtkSmartPointer<vtkGPUVolumeRayCastMapper>::New();
+  m_volumeMapper->SetInputConnection(output);
+  m_volumeMapper->SetScalarModeToUsePointFieldData();
+  m_volumeMapper->SelectScalarArray(scalarsIndex());
+  m_volume->SetMapper(m_volumeMapper);
+  m_volumeMapper->UseJitteringOn();
+  m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
+  if (m_view != nullptr) {
+    m_view->Update();
+  }
+}
+
 bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
 {
   if (!Module::initialize(data, vtkView)) {
     return false;
   }
 
-  // Default parameters
-  m_imageData->ShallowCopy(
-    vtkImageData::SafeDownCast(data->producer()->GetOutputDataObject(0)));
-  m_volumeMapper->SetInputData(m_imageData);
-  m_volume->SetMapper(m_volumeMapper.Get());
-  m_volume->SetProperty(m_volumeProperty.Get());
+  initializeMapper(data);
+  m_volume->SetProperty(m_volumeProperty);
   const double* displayPosition = data->displayPosition();
   m_volume->SetPosition(displayPosition[0], displayPosition[1],
                         displayPosition[2]);
-  m_volumeMapper->UseJitteringOn();
-  m_volumeMapper->SetBlendMode(vtkVolumeMapper::COMPOSITE_BLEND);
   m_volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
   m_volumeProperty->SetAmbient(0.0);
   m_volumeProperty->SetDiffuse(1.0);
@@ -95,12 +104,19 @@ bool ModuleVolume::initialize(DataSource* data, vtkSMViewProxy* vtkView)
   updateColorMap();
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
-  m_view->AddPropToRenderer(m_volume.Get());
+  m_view->AddPropToRenderer(m_volume);
   m_view->Update();
 
   connect(data, &DataSource::activeScalarsChanged, this,
           &ModuleVolume::onScalarArrayChanged);
 
+  // Work around mapper bug on the mac, see the following issue for details:
+  // https://github.com/OpenChemistry/tomviz/issues/1776
+  // Should be removed when this is fixed.
+#if defined(Q_OS_MAC)
+  connect(data, &DataSource::dataChanged, this,
+          [this]() { this->initializeMapper(); });
+#endif
   return true;
 }
 
@@ -158,7 +174,7 @@ void ModuleVolume::updateColorMap()
 bool ModuleVolume::finalize()
 {
   if (m_view) {
-    m_view->RemovePropFromRenderer(m_volume.Get());
+    m_view->RemovePropFromRenderer(m_volume);
   }
 
   return true;
@@ -221,6 +237,7 @@ bool ModuleVolume::deserialize(const QJsonObject& json)
     }
 
     updatePanel();
+    onScalarArrayChanged();
     return true;
   }
   return false;
@@ -304,9 +321,10 @@ void ModuleVolume::onTransferModeChanged(const int mode)
   emit renderNeeded();
 }
 
-vtkSmartPointer<vtkDataObject> ModuleVolume::getDataToExport()
+vtkDataObject* ModuleVolume::dataToExport()
 {
-  return m_imageData.GetPointer();
+  auto trv = dataSource()->producer();
+  return trv->GetOutputDataObject(0);
 }
 
 void ModuleVolume::onAmbientChanged(const double value)
@@ -345,22 +363,6 @@ void ModuleVolume::dataSourceMoved(double newX, double newY, double newZ)
   m_volume->SetPosition(pos.GetData());
 }
 
-bool ModuleVolume::isProxyPartOfModule(vtkSMProxy*)
-{
-  return false;
-}
-
-std::string ModuleVolume::getStringForProxy(vtkSMProxy*)
-{
-  qWarning("Unknown proxy passed to module volume in save animation");
-  return "";
-}
-
-vtkSMProxy* ModuleVolume::getProxyForString(const std::string&)
-{
-  return nullptr;
-}
-
 void ModuleVolume::setLighting(const bool val)
 {
   m_volumeProperty->SetShade(val ? 1 : 0);
@@ -381,14 +383,23 @@ void ModuleVolume::setJittering(const bool val)
 
 void ModuleVolume::onScalarArrayChanged()
 {
-  QString arrayName;
-  if (activeScalars() == Module::DEFAULT_SCALARS) {
-    arrayName = dataSource()->activeScalars();
-  } else {
-    arrayName = dataSource()->scalarsName(activeScalars());
+  m_volumeMapper->SelectScalarArray(scalarsIndex());
+  auto tp = dataSource()->producer();
+  if (tp) {
+    tp->GetOutputDataObject(0)->Modified();
   }
-  m_imageData->GetPointData()->SetActiveScalars(arrayName.toLatin1().data());
   emit renderNeeded();
+}
+
+int ModuleVolume::scalarsIndex()
+{
+  int index;
+  if (activeScalars() == Module::DEFAULT_SCALARS) {
+    index = dataSource()->activeScalarsIdx();
+  } else {
+    index = activeScalars();
+  }
+  return index;
 }
 
 } // end of namespace tomviz

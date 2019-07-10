@@ -18,6 +18,7 @@ class PythonReader
 {
 public:
   PythonReader(Python::Object);
+  PythonReader();
   vtkSmartPointer<vtkImageData> read(QString);
 
 private:
@@ -28,6 +29,7 @@ class PythonReaderFactory
 {
 public:
   PythonReaderFactory(QString, QStringList, Python::Object);
+  PythonReaderFactory(QString, QStringList);
   QString getDescription() const;
   QStringList getExtensions() const;
   QString getFileDialogFilter() const;

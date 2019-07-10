@@ -18,7 +18,7 @@ Dependencies
 
  * Qt 5.9+ (5.9 recommended)
  * CMake 3.3+
- * Python 3.6
+ * Python 3.7
  * NumPy 1.12
  * Git 2.1
  * C++ compiler with C++11 support (MSVC 2015 on Windows)
@@ -42,6 +42,7 @@ with all prerequisites installed:
       -DPARAVIEW_ENABLE_WEB:BOOL=OFF \
       -DPARAVIEW_ENABLE_EMBEDDED_DOCUMENTATION:BOOL=OFF\
       -DPARAVIEW_USE_QTHELP:BOOL=OFF \
+      -DPARAVIEW_PLUGINS_DEFAULT:BOOL=OFF \
       -DVTK_SMP_IMPLEMENTATION_TYPE:STRING=TBB \
       -DVTK_PYTHON_VERSION:STRING=3 \
       -DVTK_PYTHON_FULL_THREADSAFE:BOOL=ON \
@@ -63,7 +64,7 @@ you will need to specify the correct generator for the installed compiler.
     cd ..
     git clone git://itk.org/ITK.git
     cd ITK
-    git checkout v4.12.0
+    git checkout v5.0.0
     cd ..
     mkdir itk-build
     cd itk-build
@@ -71,7 +72,7 @@ you will need to specify the correct generator for the installed compiler.
       -DITK_LEGACY_REMOVE:BOOL=ON \
       -DITK_LEGACY_SILENT:BOOL=ON \
       -DITK_USE_FFTWF:BOOL=ON \
-      -DModule_BridgeNumPy:BOOL=ON \
+      -DModule_ITKBridgeNumPy:BOOL=ON \
       -DBUILD_TESTING:BOOL=OFF \
       -DITK_WRAP_unsigned_short:BOOL=ON \
       -DITK_WRAP_rgb_unsigned_char:BOOL=OFF \

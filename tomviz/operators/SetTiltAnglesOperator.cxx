@@ -206,7 +206,7 @@ public:
         double delta =
           (endAngle->value() - startAngle->value()) / (end - start);
         double baseAngle = startAngle->value();
-        if (delta < 0) {
+        if (end < start) {
           int temp = start;
           start = end;
           end = temp;
@@ -435,8 +435,8 @@ bool SetTiltAnglesOperator::applyTransform(vtkDataObject* dataObject)
     vtkNew<vtkTypeInt8Array> array;
     array->SetNumberOfTuples(1);
     array->SetName("tomviz_data_source_type");
-    fd->AddArray(array.Get());
-    dataType = array.Get();
+    fd->AddArray(array);
+    dataType = array;
   }
   // It should already be this value...
   dataType->SetTuple1(0, DataSource::TiltSeries);
@@ -447,8 +447,8 @@ bool SetTiltAnglesOperator::applyTransform(vtkDataObject* dataObject)
     angles->SetNumberOfTuples(totalSlices);
     angles->FillComponent(0, 0.0);
     angles->SetName("tilt_angles");
-    fd->AddArray(angles.Get());
-    dataTiltAngles = angles.Get();
+    fd->AddArray(angles);
+    dataTiltAngles = angles;
   } else if (dataTiltAngles->GetNumberOfTuples() < totalSlices) {
     dataTiltAngles->SetNumberOfTuples(totalSlices);
   }

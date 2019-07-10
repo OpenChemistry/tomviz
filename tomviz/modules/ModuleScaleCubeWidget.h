@@ -37,6 +37,7 @@ signals:
   void sideLengthChanged(const double length);
   void annotationToggled(const bool state);
   void boxColorChanged(QColor color);
+  void textColorChanged(QColor color);
   //@}
 
 public slots:
@@ -53,6 +54,7 @@ public slots:
   void setSideLength(const double length);
   void setPosition(const double x, const double y, const double z);
   void setBoxColor(const QColor& color);
+  void setTextColor(const QColor& color);
   //@}
 
 private:

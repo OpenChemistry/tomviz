@@ -19,6 +19,7 @@ class PythonWriter
 {
 public:
   PythonWriter(Python::Object);
+  PythonWriter();
   bool write(QString fileName, vtkImageData* data);
 
 private:
@@ -29,6 +30,7 @@ class PythonWriterFactory
 {
 public:
   PythonWriterFactory(QString, QStringList, Python::Object);
+  PythonWriterFactory(QString, QStringList);
   QString getDescription() const;
   QStringList getExtensions() const;
   QString getFileDialogFilter() const;

@@ -24,6 +24,10 @@ class NumpyWriter(Writer, NumpyBase):
 
     def write(self, path, data_object):
         data = tomviz.utils.get_array(data_object)
+
+        # Convert to C ordering
+        data = np.ascontiguousarray(data)
+
         with open(path, "wb") as f:
             np.save(f, data)
 
@@ -36,6 +40,9 @@ class NumpyReader(Reader, NumpyBase):
 
         if len(data.shape) != 3:
             return vtkImageData()
+
+        # Convert to Fortran ordering
+        data = np.asfortranarray(data)
 
         image_data = vtkImageData()
         (x, y, z) = data.shape

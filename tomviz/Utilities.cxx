@@ -238,6 +238,26 @@ QJsonObject serialize(vtkDiscretizableColorTransferFunction* func)
   }
   json["colors"] = colorTable;
 
+  switch(func->GetColorSpace()) {
+    case 0:
+      json["colorSpace"] = "RGB";
+      break;
+    case 1:
+      json["colorSpace"] = "HSV";
+      break;
+    case 2:
+      json["colorSpace"] = "CIELAB";
+      break;
+    case 4:
+      json["colorSpace"] = "CIEDE2000";
+      break;
+    case 5:
+      json["colorSpace"] = "Step";
+      break;
+    default:
+      json["colorSpace"] = "Diverging";
+  }
+
   return json;
 }
 
@@ -331,7 +351,7 @@ bool serialize(vtkSMProxy* proxy, pugi::xml_node& out,
   elem->PrintXML(stream, vtkIndent());
 
   pugi::xml_document document;
-  if (!document.load(stream.str().c_str())) {
+  if (!document.load_string(stream.str().c_str())) {
     qCritical("Failed to convert from vtkPVXMLElement to pugi::xml_document");
     return false;
   }

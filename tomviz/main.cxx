@@ -3,6 +3,7 @@
 
 #include <QApplication>
 
+#include <QSplashScreen>
 #include <QSurfaceFormat>
 
 #include <QDebug>
@@ -32,13 +33,17 @@ int main(int argc, char** argv)
 
   QApplication app(argc, argv);
 
-#if defined(__APPLE__)
+  QPixmap pixmap(":/icons/tomvizfull.png");
+  QSplashScreen splash(pixmap);
+  splash.show();
+  app.processEvents();
+
+#ifndef _WIN32
   // See if this helps Python initialize itself on macOS.
   std::string exeDir = QApplication::applicationDirPath().toLatin1().data();
   if (!tomviz::isBuildDir(exeDir)) {
     QByteArray pythonPath =
       (exeDir + tomviz::PythonInitializationPythonPath()).c_str();
-    qDebug() << "Setting PYTHONHOME and PYTHONPATH:" << pythonPath;
     qputenv("PYTHONPATH", pythonPath);
     qputenv("PYTHONHOME", pythonPath);
   }
@@ -52,5 +57,8 @@ int main(int argc, char** argv)
   pqPVApplicationCore appCore(argc, argv);
   tomviz::MainWindow window;
   window.show();
+  splash.finish(&window);
+  window.openFiles(argc, argv);
+
   return app.exec();
 }

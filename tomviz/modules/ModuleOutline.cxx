@@ -90,7 +90,7 @@ bool ModuleOutline::finalize()
   controller->UnRegisterProxy(m_outlineFilter);
 
   if (m_view) {
-    m_view->GetRenderer()->RemoveActor(m_gridAxes.Get());
+    m_view->GetRenderer()->RemoveActor(m_gridAxes);
   }
 
   m_outlineFilter = nullptr;
@@ -245,36 +245,6 @@ void ModuleOutline::dataSourceMoved(double newX, double newY, double newZ)
   m_gridAxes->SetPosition(newX, newY, newZ);
 }
 
-//-----------------------------------------------------------------------------
-bool ModuleOutline::isProxyPartOfModule(vtkSMProxy* proxy)
-{
-  return (proxy == m_outlineFilter.Get()) ||
-         (proxy == m_outlineRepresentation.Get());
-}
-
-std::string ModuleOutline::getStringForProxy(vtkSMProxy* proxy)
-{
-  if (proxy == m_outlineFilter.Get()) {
-    return "Outline";
-  } else if (proxy == m_outlineRepresentation.Get()) {
-    return "Representation";
-  } else {
-    qWarning("Unknown proxy passed to module outline in save animation");
-    return "";
-  }
-}
-
-vtkSMProxy* ModuleOutline::getProxyForString(const std::string& str)
-{
-  if (str == "Outline") {
-    return m_outlineFilter.Get();
-  } else if (str == "Representation") {
-    return m_outlineRepresentation.Get();
-  } else {
-    return nullptr;
-  }
-}
-
 void ModuleOutline::updateGridAxesBounds(DataSource* dataSource)
 {
   Q_ASSERT(dataSource);
@@ -282,10 +252,10 @@ void ModuleOutline::updateGridAxesBounds(DataSource* dataSource)
   dataSource->getBounds(bounds);
   m_gridAxes->SetGridBounds(bounds);
 }
+
 void ModuleOutline::initializeGridAxes(DataSource* data,
                                        vtkSMViewProxy* vtkView)
 {
-
   updateGridAxesBounds(data);
   m_gridAxes->SetVisibility(0);
   m_gridAxes->SetGenerateGrid(false);
@@ -295,7 +265,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   // with all the faces, we need to create a new one and set it.
   vtkNew<vtkProperty> prop;
   prop->DeepCopy(m_gridAxes->GetProperty());
-  m_gridAxes->SetProperty(prop.Get());
+  m_gridAxes->SetProperty(prop);
 
   // Set mask to show labels on all axes
   m_gridAxes->SetLabelMask(vtkGridAxes3DActor::LabelMasks::MIN_X |
@@ -323,7 +293,7 @@ void ModuleOutline::initializeGridAxes(DataSource* data,
   updateGridAxesUnit(data);
 
   m_view = vtkPVRenderView::SafeDownCast(vtkView->GetClientSideView());
-  m_view->GetRenderer()->AddActor(m_gridAxes.Get());
+  m_view->GetRenderer()->AddActor(m_gridAxes);
 
   connect(data, &DataSource::dataPropertiesChanged, this, [this]() {
     auto dataSource = qobject_cast<DataSource*>(sender());
@@ -340,8 +310,8 @@ void ModuleOutline::updateGridAxesColor(double* color)
   for (int i = 0; i < 6; i++) {
     vtkNew<vtkTextProperty> prop;
     prop->SetColor(color);
-    m_gridAxes->SetTitleTextProperty(i, prop.Get());
-    m_gridAxes->SetLabelTextProperty(i, prop.Get());
+    m_gridAxes->SetTitleTextProperty(i, prop);
+    m_gridAxes->SetLabelTextProperty(i, prop);
   }
   m_gridAxes->GetProperty()->SetDiffuseColor(color);
   vtkSMPropertyHelper(m_outlineRepresentation, "DiffuseColor").Set(color, 3);

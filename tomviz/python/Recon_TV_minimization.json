@@ -1,16 +1,21 @@
 {
   "name" : "Recon_TV_minimization",
   "label" : "Reconstruct (TV Minimization)",
-  "description" : "Reconstruct a tilt series using TV Minimization.
+  "description" : "Reconstruct a tilt series using TV Minimization. 
 
-The tilt axis must be parallel to the x-direction and
-centered in the y-direction.
+The tilt axis must be parallel to the x-direction and centered in the y-direction. 
 
-The size of reconstruction will be (Nx,Ny,Ny). The number of
-iterations can be specified below.
+The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below. 
 
-Reconstrucing a 256x256x256 tomogram typically takes more
-than 100 mins with 5 iterations.",
+Reconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 iterations.",
+
+  "children": [
+    {
+      "name": "reconstruction",
+      "label": "Reconstruction",
+      "type": "reconstruction"
+    }],
+
   "parameters" : [
     {
       "name" : "Niter",
@@ -18,6 +23,14 @@ than 100 mins with 5 iterations.",
       "type" : "int",
       "default" : 1,
       "minimum" : 0
+    },
+    {
+      "name" : "Nupdates",
+      "label" : "Percent Of Updates for Live Reconstruction: \n0% means no updates. \n100% means an update for every slice.",
+      "type" : "int",
+      "default" : 0,
+      "minimum" : 0,
+      "maximum" : 100
     }
   ]
 }

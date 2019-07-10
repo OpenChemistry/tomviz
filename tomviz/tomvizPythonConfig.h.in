@@ -14,8 +14,6 @@
 #define TOMVIZ_DATA_SOURCE_DIR "@tomviz_data_DIR@/Data"
 
 // For install builds: these are paths when running from an installed location.
-#define PARAVIEW_VERSION_MAJOR "@PARAVIEW_VERSION_MAJOR@"
-#define PARAVIEW_VERSION_MINOR "@PARAVIEW_VERSION_MINOR@"
 #define TOMVIZ_PYTHON_INSTALL_DIR "@tomviz_python_install_dir@"
 #define TOMVIZ_DATA_INSTALL_DIR "@tomviz_data_install_dir@/Data"
 
@@ -88,17 +86,14 @@ void PythonAppInitPrependPathLinux(const std::string& exe_dir)
     // since exe_dir in <PREFiX>/bin, we do a  /../
     PythonAppInitPrependPythonPath(exe_dir + "/../" TOMVIZ_PYTHON_INSTALL_DIR);
 
-    // ParaView tries to take care of this, but its assumption is that the
-    // executable is a shared-forwarded executable in
-    // INSTALL_DIR/lib/paraview-X.Y/paraview. In our case the exectuable is in
-    // INSTALL_DIR/bin, so ParaView's baked-in paths do not work.
-    PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../lib/paraview/python3.6/site-packages");
-    // Add ITK to the python path
-    PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../lib/itk/python3.6/dist-packages");
     // Add the location for numpy and scipy
-    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.6/site-packages");
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.7/site-packages");
+
+    // Add root python3.7 dir
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.7");
+
+    // Add the location of python .so libraries
+    PythonAppInitPrependPythonPath(exe_dir + "/../lib/python3.7/lib-dynload");
   }
 }
 
@@ -123,7 +118,7 @@ void PythonAppInitPrependPathOsX(const std::string& exe_dir)
     // we don't add anything for ParaView since, ParaView takes care of that.
     PythonAppInitPrependPythonPath(exe_dir + "/../Libraries/");
     PythonAppInitPrependPythonPath(exe_dir +
-                                   "/../Libraries/python3.6/site-packages");
+                                   "/../Libraries/python3.7/site-packages");
     PythonAppInitPrependPythonPath(exe_dir + "/../Python");
     PythonAppInitPrependPythonPath(exe_dir + "/../Python/lib-dynload");
     PythonAppInitPrependPythonPath(exe_dir + "/../Python/site-packages");
@@ -147,6 +142,8 @@ std::string PythonInitializationPythonPath()
   std::string path;
 #if defined(__APPLE__)
   path = "/../Python";
+#elif !defined(_WIN32)
+  path = "/../lib/python3.7";
 #endif
   return path;
 }

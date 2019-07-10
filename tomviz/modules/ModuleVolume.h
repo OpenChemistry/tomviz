@@ -8,11 +8,9 @@
 
 #include <vtkNew.h>
 #include <vtkWeakPointer.h>
+#include <vtkSmartPointer.h>
 
 #include <QPointer>
-
-class vtkSMProxy;
-class vtkSMSourceProxy;
 
 class vtkPVRenderView;
 
@@ -36,6 +34,7 @@ public:
   QString label() const override { return "Volume"; }
   QIcon icon() const override;
   using Module::initialize;
+  void initializeMapper(DataSource *data=nullptr);
   bool initialize(DataSource* dataSource, vtkSMViewProxy* view) override;
   bool finalize() override;
   bool setVisibility(bool val) override;
@@ -48,26 +47,21 @@ public:
 
   void dataSourceMoved(double newX, double newY, double newZ) override;
 
-  bool isProxyPartOfModule(vtkSMProxy* proxy) override;
-
   bool supportsGradientOpacity() override { return true; }
 
   QString exportDataTypeString() override { return "Volume"; }
 
-  vtkSmartPointer<vtkDataObject> getDataToExport() override;
+  vtkDataObject* dataToExport() override;
 
 protected:
   void updateColorMap() override;
-  std::string getStringForProxy(vtkSMProxy* proxy) override;
-  vtkSMProxy* getProxyForString(const std::string& str) override;
 
 private:
   Q_DISABLE_COPY(ModuleVolume)
 
   vtkWeakPointer<vtkPVRenderView> m_view;
-  vtkNew<vtkImageData> m_imageData;
   vtkNew<vtkVolume> m_volume;
-  vtkNew<vtkGPUVolumeRayCastMapper> m_volumeMapper;
+  vtkSmartPointer<vtkGPUVolumeRayCastMapper> m_volumeMapper;
   vtkNew<vtkVolumeProperty> m_volumeProperty;
   QPointer<ModuleVolumeWidget> m_controllers;
   QPointer<ScalarsComboBox> m_scalarsCombo;
@@ -87,6 +81,7 @@ private slots:
   void onSpecularPowerChanged(const double value);
   void onTransferModeChanged(const int mode);
   void onScalarArrayChanged();
+  int scalarsIndex();
 };
 } // namespace tomviz
 

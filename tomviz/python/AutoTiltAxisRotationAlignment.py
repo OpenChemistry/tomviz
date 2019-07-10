@@ -27,7 +27,7 @@ class AutoTiltAxisRotationAlignOperator(tomviz.operators.CancelableOperator):
         self.progress.message = 'Initialization'
         #take FFT of all projections
         for i in range(Nproj):
-            self.progress.message = ('Taking Fourier transofrm of tilt image'
+            self.progress.message = ('Taking Fourier transform of tilt image'
                                      'No.%d/%d' % (i + 1, Nproj))
             tiltImage = tiltSeries[:, :, i]
             tiltImage_F = np.abs(np.fft.fft2(tiltImage))

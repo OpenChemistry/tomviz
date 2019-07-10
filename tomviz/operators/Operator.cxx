@@ -42,16 +42,7 @@ Operator::Operator(QObject* parentObject) : QObject(parentObject)
 Operator::~Operator()
 {
   setNumberOfResults(0);
-
   emit aboutToBeDestroyed(this);
-
-  if (hasChildDataSource()) {
-    auto cds = childDataSource();
-    // If the operator failed, the child data source will be null
-    if (cds) {
-      cds->removeAllOperators();
-    }
-  }
 }
 
 DataSource* Operator::dataSource()

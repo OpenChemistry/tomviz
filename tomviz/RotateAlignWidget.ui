@@ -14,8 +14,26 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>2</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_10">
+     <property name="spacing">
+      <number>2</number>
+     </property>
      <item>
       <widget class="tomviz::QVTKGLWidget" name="sliceView" native="true">
        <property name="sizePolicy">
@@ -34,8 +52,11 @@
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="spacing">
+        <number>2</number>
+       </property>
        <property name="leftMargin">
-        <number>10</number>
+        <number>0</number>
        </property>
        <item>
         <widget class="QLabel" name="label_7">
@@ -67,21 +88,10 @@
         </spacer>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_9">
-         <item>
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>Length unit</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="lengthUnit"/>
-         </item>
-        </layout>
-       </item>
-       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <property name="spacing">
+          <number>2</number>
+         </property>
          <item>
           <widget class="QLabel" name="label_4">
            <property name="text">
@@ -91,12 +101,19 @@
           </widget>
          </item>
          <item>
-          <widget class="tomviz::DoubleSpinBox" name="projection"/>
+          <widget class="tomviz::DoubleSpinBox" name="projection">
+           <property name="decimals">
+            <number>0</number>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <property name="spacing">
+          <number>2</number>
+         </property>
          <item>
           <widget class="QLabel" name="label_5">
            <property name="text">
@@ -106,12 +123,19 @@
           </widget>
          </item>
          <item>
-          <widget class="tomviz::DoubleSpinBox" name="rotationAxis"/>
+          <widget class="tomviz::DoubleSpinBox" name="rotationAxis">
+           <property name="decimals">
+            <number>0</number>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontallayout_11">
+         <property name="spacing">
+          <number>2</number>
+         </property>
          <item>
           <widget class="QLabel" name="label_6">
            <property name="text">
@@ -127,6 +151,9 @@
            </property>
            <property name="maximum">
             <double>180.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.500000000000000</double>
            </property>
           </widget>
          </item>
@@ -156,6 +183,9 @@
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="spacing">
+           <number>2</number>
+          </property>
           <item>
            <widget class="QLabel" name="label">
             <property name="text">
@@ -164,7 +194,11 @@
            </widget>
           </item>
           <item>
-           <widget class="tomviz::DoubleSpinBox" name="spinBox_1"/>
+           <widget class="tomviz::DoubleSpinBox" name="spinBox_1">
+            <property name="decimals">
+             <number>0</number>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="colorMapButton_1">
@@ -195,8 +229,14 @@
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_5">
+        <property name="spacing">
+         <number>2</number>
+        </property>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="spacing">
+           <number>2</number>
+          </property>
           <item>
            <widget class="QLabel" name="label_2">
             <property name="text">
@@ -205,7 +245,11 @@
            </widget>
           </item>
           <item>
-           <widget class="tomviz::DoubleSpinBox" name="spinBox_2"/>
+           <widget class="tomviz::DoubleSpinBox" name="spinBox_2">
+            <property name="decimals">
+             <number>0</number>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="colorMapButton_2">
@@ -236,8 +280,14 @@
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_6">
+        <property name="spacing">
+         <number>2</number>
+        </property>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <property name="spacing">
+           <number>2</number>
+          </property>
           <item>
            <widget class="QLabel" name="label_3">
             <property name="text">
@@ -246,7 +296,11 @@
            </widget>
           </item>
           <item>
-           <widget class="tomviz::DoubleSpinBox" name="spinBox_3"/>
+           <widget class="tomviz::DoubleSpinBox" name="spinBox_3">
+            <property name="decimals">
+             <number>0</number>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="colorMapButton_3">

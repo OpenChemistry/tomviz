@@ -5,10 +5,8 @@
 #include "ui_MainWindow.h"
 
 #include <pqApplicationCore.h>
-#include <pqMacroReaction.h>
 #include <pqObjectBuilder.h>
 #include <pqSaveAnimationReaction.h>
-#include <pqSaveStateReaction.h>
 #include <pqSettings.h>
 #include <pqView.h>
 #include <vtkPVPlugin.h>
@@ -214,18 +212,21 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionAbout, &QAction::triggered, this,
           [this]() { openDialog<AboutDialog>(&m_aboutDialog); });
 
-  new pqMacroReaction(m_ui->actionMacros);
-
   // Instantiate tomviz application behavior.
   new Behaviors(this);
 
   new LoadDataReaction(m_ui->actionOpen);
-  m_ui->actionOpen->setEnabled(false);
 
   new LoadStackReaction(m_ui->actionStack);
 
   // Build Data Transforms menu
   new DataTransformMenu(this, m_ui->menuData, m_ui->menuSegmentation);
+
+  // Create the custom transforms menu
+  m_customTransformsMenu = new QMenu("Custom Transforms", this);
+  m_customTransformsMenu->setEnabled(false);
+  m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
+                            m_customTransformsMenu);
 
   // Build Tomography menu
   // ################################################################
@@ -395,9 +396,7 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
 
   //#################################################################
   new ModuleMenu(m_ui->modulesToolbar, m_ui->menuModules, this);
-  m_ui->menuRecentlyOpened->setEnabled(false);
   new RecentFilesMenu(*m_ui->menuRecentlyOpened, m_ui->menuRecentlyOpened);
-  new pqSaveStateReaction(m_ui->actionSaveDebuggingState);
 
   new SaveDataReaction(m_ui->actionSaveData);
   new SaveScreenshotReaction(m_ui->actionSaveScreenshot, this);
@@ -486,16 +485,22 @@ MainWindow::MainWindow(QWidget* parent, Qt::WindowFlags flags)
   connect(m_ui->actionPipelineSettings, &QAction::triggered,
           pipelineSettingsDialog, &QWidget::show);
 
+  // Prepopulate the previously seen python readers/writers
+  // This operation is fast since it fetches the readers description
+  // from the settings, without really invoking python
+  FileFormatManager::instance().prepopulatePythonReaders();
+  FileFormatManager::instance().prepopulatePythonWriters();
+
   // Async initialize python
+  statusBar()->showMessage("Initializing python...");
   auto pythonWatcher = new QFutureWatcher<std::vector<OperatorDescription>>;
   connect(pythonWatcher, &QFutureWatcherBase::finished, this,
           [this, pythonWatcher]() {
-            m_ui->actionOpen->setEnabled(true);
-            m_ui->menuRecentlyOpened->setEnabled(true);
             m_ui->actionAcquisition->setEnabled(true);
             m_ui->actionPassiveAcquisition->setEnabled(true);
             registerCustomOperators(pythonWatcher->result());
             delete pythonWatcher;
+            statusBar()->showMessage("Initialization complete", 1500);
           });
   auto pythonFuture = QtConcurrent::run(initPython);
   pythonWatcher->setFuture(pythonFuture);
@@ -517,6 +522,7 @@ std::vector<OperatorDescription> MainWindow::initPython()
   RegexGroupSubstitution::registerType();
   auto operators = findCustomOperators();
   FileFormatManager::instance().registerPythonReaders();
+  FileFormatManager::instance().registerPythonWriters();
   return operators;
 }
 
@@ -529,30 +535,47 @@ void MainWindow::openDialog(QWidget** dialog)
   (*dialog)->show();
 }
 
+void MainWindow::openFiles(int argc, char** argv)
+{
+  if (argc < 2) {
+    return;
+  }
+
+  QString path(argv[argc - 1]);
+  QFileInfo info(path);
+  if (!info.exists()) {
+    return;
+  }
+
+  if (info.isFile()) {
+    if (info.suffix() == "tvsm") {
+      SaveLoadStateReaction::loadState(info.canonicalFilePath());
+    } else {
+      LoadDataReaction::loadData(info.canonicalFilePath());
+    }
+  } else if (info.isDir()) {
+    LoadStackReaction::loadData(info.canonicalFilePath());
+  }
+}
+
 void MainWindow::openTilt()
 {
   QString path = QApplication::applicationDirPath() + "/../share/tomviz/Data";
-  path += "/TiltSeries_NanoParticle_doi_10.1021-nl103400a.tif";
+  path += "/TiltSeries_NanoParticle_doi_10.1021-nl103400a.emd";
   QFileInfo info(path);
   if (info.exists()) {
-    DataSource* source = LoadDataReaction::loadData(info.canonicalFilePath());
-    auto op = new SetTiltAnglesOperator;
-    int extents[6];
-    source->getExtent(extents);
-    auto numTilts = extents[5] - extents[4] + 1;
-    QMap<size_t, double> tiltAngles;
-    for (int i = 0; i < numTilts; ++i) {
-      tiltAngles[i] = -73 + 2 * i;
-    }
-    op->setTiltAngles(tiltAngles);
-    source->addOperator(op);
+    LoadDataReaction::loadData(info.canonicalFilePath());
+  } else {
+    QMessageBox::warning(
+      this, "Sample Data not found",
+      QString("The data file \"%1\" was not found.").arg(path));
   }
 }
 
 void MainWindow::openRecon()
 {
   QString path = QApplication::applicationDirPath() + "/../share/tomviz/Data";
-  path += "/Recon_NanoParticle_doi_10.1021-nl103400a.tif";
+  path += "/Recon_NanoParticle_doi_10.1021-nl103400a.emd";
   QFileInfo info(path);
   if (info.exists()) {
     LoadDataReaction::loadData(info.canonicalFilePath());
@@ -767,7 +790,7 @@ void MainWindow::onFirstWindowShow()
     if (showWelcome) {
       QString path =
         QApplication::applicationDirPath() + "/../share/tomviz/Data";
-      path += "/Recon_NanoParticle_doi_10.1021-nl103400a.tif";
+      path += "/Recon_NanoParticle_doi_10.1021-nl103400a.emd";
       QFileInfo info(path);
       if (info.exists()) {
         WelcomeDialog welcomeDialog(this);
@@ -817,15 +840,7 @@ void MainWindow::registerCustomOperators(
 {
   // Always create the Custom Transforms menu so that it is possible to import
   // new operators.
-  if (m_customTransformsMenu) {
-    m_customTransformsMenu->clear();
-  }
-
-  if (!m_customTransformsMenu) {
-    m_customTransformsMenu = new QMenu("Custom Transforms", this);
-    m_ui->menubar->insertMenu(m_ui->menuModules->menuAction(),
-                              m_customTransformsMenu);
-  }
+  m_customTransformsMenu->clear();
 
   QAction* importCustomTransformAction =
     m_customTransformsMenu->addAction("Import Custom Transform...");
@@ -872,6 +887,7 @@ void MainWindow::registerCustomOperators(
                                      false, json);
     }
   }
+  m_customTransformsMenu->setEnabled(true);
 }
 
 std::vector<OperatorDescription> MainWindow::findCustomOperators()

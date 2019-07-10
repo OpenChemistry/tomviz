@@ -4,11 +4,11 @@
 #ifndef tomvizQVTKGLWidget_h
 #define tomvizQVTKGLWidget_h
 
-#include <QVTKOpenGLWidget.h>
+#include <QVTKOpenGLNativeWidget.h>
 
 namespace tomviz {
 
-class QVTKGLWidget : public QVTKOpenGLWidget
+class QVTKGLWidget : public QVTKOpenGLNativeWidget
 {
   Q_OBJECT
 
@@ -17,7 +17,8 @@ public:
                Qt::WindowFlags f = Qt::WindowFlags());
   ~QVTKGLWidget() override;
 
-private:
+protected:
+  bool event(QEvent* evt) override;
 };
 } // namespace tomviz
 

@@ -16,7 +16,6 @@ from tqdm import tqdm
 
 from tomviz import utils
 from tomviz._internal import find_transform_scalars
-from tomviz.py2to3 import py3
 
 LOG_FORMAT = '[%(asctime)s] %(levelname)s: %(message)s'
 
@@ -345,17 +344,11 @@ def _load_operator_module(label, script):
         os.write(fd, script.encode())
         os.close(fd)
         fd = None
-        if py3:
-            spec = importlib.util.spec_from_file_location(label, path)
-            operator_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(operator_module)
-        else:
-            module_dir = os.path.dirname(path)
-            sys.path.append(module_dir)
-            operator_module = importlib.import_module(
-                os.path.splitext(
-                    os.path.basename(path))[0])
-            sys.path.remove(module_dir)
+
+        spec = importlib.util.spec_from_file_location(label, path)
+        operator_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(operator_module)
+
     finally:
         if fd is not None:
             os.close(fd)

@@ -4,6 +4,7 @@
 #include "SaveDataReaction.h"
 
 #include "ConvertToFloatOperator.h"
+#include "DataExchangeFormat.h"
 #include "EmdFormat.h"
 #include "Utilities.h"
 
@@ -59,10 +60,10 @@ void SaveDataReaction::updateEnableState()
 
 void SaveDataReaction::onTriggered()
 {
-  FileFormatManager::instance().registerPythonWriters();
   QStringList filters;
   filters << "TIFF format (*.tiff)"
           << "EMD format (*.emd *.hdf5)"
+          << "HDF5 format (*.h5)"
           << "CSV File (*.csv)"
           << "Exodus II File (*.e *.ex2 *.ex2v2 *.exo *.exoII *.exoii *.g)"
           << "Legacy VTK Files (*.vtk)"
@@ -125,11 +126,18 @@ bool SaveDataReaction::saveData(const QString& filename)
     return false;
   }
 
-  FileFormatManager::instance().registerPythonWriters();
-
   QFileInfo info(filename);
   if (info.suffix() == "emd") {
     EmdFormat writer;
+    if (!writer.write(filename.toLatin1().data(), source)) {
+      qCritical() << "Failed to write out data.";
+      return false;
+    } else {
+      updateSource(filename, source);
+      return true;
+    }
+  } else if (info.suffix() == "h5") {
+    DataExchangeFormat writer;
     if (!writer.write(filename.toLatin1().data(), source)) {
       qCritical() << "Failed to write out data.";
       return false;

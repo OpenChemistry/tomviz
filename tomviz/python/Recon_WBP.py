@@ -6,7 +6,8 @@ import time
 
 class ReconWBPOperator(tomviz.operators.CancelableOperator):
 
-    def transform_scalars(self, dataset, Nrecon=None, filter=None, interp=None):
+    def transform_scalars(self, dataset, Nrecon=None, filter=None,
+                          interp=None, Nupdates=None):
         """
         3D Reconstruct from a tilt series using Weighted Back-projection Method
         """
@@ -28,7 +29,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
         self.progress.maximum = Nslice
         step = 0
 
-        recon = np.empty([Nslice, Nrecon, Nrecon], dtype=float, order='F')
+        recon = np.empty([Nslice, Nrecon, Nrecon], dtype=np.float32, order='F')
         t0 = time.time()
         counter = 1
         etcMessage = 'Estimated time to complete: n/a'
@@ -55,7 +56,7 @@ class ReconWBPOperator(tomviz.operators.CancelableOperator):
                 timeLeftHour, timeLeftMin, timeLeftSec)
 
             # Update only once every so many steps
-            if (i + 1) % 40 == 0:
+            if Nupdates != 0 and (i + 1) % (Nslice//Nupdates) == 0:
                 utils.set_array(child, recon) #add recon to child
                 # This copies data to the main thread
                 self.progress.data = child
@@ -95,7 +96,7 @@ def wbp2(sinogram, angles, N=None, filter="ramp", interp="linear"):
     s = s[:Nray, :]
 
     # Back projection
-    recon = np.zeros((N, N))
+    recon = np.zeros((N, N), np.float32)
     center_proj = Nray // 2  # Index of center of projection
     [X, Y] = np.mgrid[0:N, 0:N]
     xpr = X - int(N) // 2

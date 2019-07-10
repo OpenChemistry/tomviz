@@ -13,10 +13,10 @@ namespace {
 template <typename T>
 void convertToFloat(vtkFloatArray* fArray, int nComps, int nTuples, void* data)
 {
-  T* d = static_cast<T*>(data);
-  float* a = static_cast<float*>(fArray->GetVoidPointer(0));
+  auto d = static_cast<T*>(data);
+  auto a = static_cast<float*>(fArray->GetVoidPointer(0));
   for (int i = 0; i < nComps * nTuples; ++i) {
-    a[i] = (float)d[i];
+    a[i] = static_cast<float>(d[i]);
   }
 }
 } // namespace
@@ -32,12 +32,12 @@ QIcon ConvertToFloatOperator::icon() const
 
 bool ConvertToFloatOperator::applyTransform(vtkDataObject* data)
 {
-  vtkImageData* imageData = vtkImageData::SafeDownCast(data);
+  auto imageData = vtkImageData::SafeDownCast(data);
   // sanity check
   if (!imageData) {
     return false;
   }
-  vtkDataArray* scalars = imageData->GetPointData()->GetScalars();
+  auto scalars = imageData->GetPointData()->GetScalars();
   vtkNew<vtkFloatArray> floatArray;
   floatArray->SetNumberOfComponents(scalars->GetNumberOfComponents());
   floatArray->SetNumberOfTuples(scalars->GetNumberOfTuples());
@@ -48,7 +48,7 @@ bool ConvertToFloatOperator::applyTransform(vtkDataObject* data)
       scalars->GetNumberOfTuples(), scalars->GetVoidPointer(0)));
   }
   imageData->GetPointData()->RemoveArray(scalars->GetName());
-  imageData->GetPointData()->SetScalars(floatArray.Get());
+  imageData->GetPointData()->SetScalars(floatArray);
   return true;
 }
 

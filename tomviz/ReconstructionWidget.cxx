@@ -126,14 +126,14 @@ ReconstructionWidget::ReconstructionWidget(DataSource* source, QWidget* p)
     this->Internals->reconstruction->GetPointData()->GetScalars();
   darray->FillComponent(0, 0);
   this->Internals->reconstructionSliceMapper->SetInputData(
-    this->Internals->reconstruction.Get());
+    this->Internals->reconstruction);
   this->Internals->reconstructionSliceMapper->SetOrientationToX();
   this->Internals->reconstructionSliceMapper->Update();
 
-  this->Internals->dataSlice->SetMapper(this->Internals->dataSliceMapper.Get());
+  this->Internals->dataSlice->SetMapper(this->Internals->dataSliceMapper);
   this->Internals->reconstructionSlice->SetMapper(
-    this->Internals->reconstructionSliceMapper.Get());
-  this->Internals->sinogram->SetMapper(this->Internals->sinogramMapper.Get());
+    this->Internals->reconstructionSliceMapper);
+  this->Internals->sinogram->SetMapper(this->Internals->sinogramMapper);
 
   vtkScalarsToColors* lut =
     vtkScalarsToColors::SafeDownCast(source->colorMap()->GetClientSideObject());
@@ -143,11 +143,11 @@ ReconstructionWidget::ReconstructionWidget(DataSource* source, QWidget* p)
   this->Internals->sinogram->GetProperty()->SetLookupTable(lut);
 
   this->Internals->dataSliceRenderer->AddViewProp(
-    this->Internals->dataSlice.Get());
+    this->Internals->dataSlice);
   this->Internals->reconstructionSliceRenderer->AddViewProp(
-    this->Internals->reconstructionSlice.Get());
+    this->Internals->reconstructionSlice);
   this->Internals->sinogramRenderer->AddViewProp(
-    this->Internals->sinogram.Get());
+    this->Internals->sinogram);
 
   this->Internals->currentSliceLine->SetPoint1(0, 0, 0);
   this->Internals->currentSliceLine->SetPoint2(1, 1, 1);
@@ -156,40 +156,40 @@ ReconstructionWidget::ReconstructionWidget(DataSource* source, QWidget* p)
   vtkNew<vtkPolyDataMapper> lineMapper;
   lineMapper->SetInputConnection(
     this->Internals->currentSliceLine->GetOutputPort());
-  this->Internals->currentSliceActor->SetMapper(lineMapper.Get());
+  this->Internals->currentSliceActor->SetMapper(lineMapper);
   this->Internals->currentSliceActor->GetProperty()->SetColor(0.8, 0.4, 0.4);
   this->Internals->currentSliceActor->GetProperty()->SetLineWidth(2.5);
   this->Internals->dataSliceRenderer->AddViewProp(
-    this->Internals->currentSliceActor.Get());
+    this->Internals->currentSliceActor);
 
-  this->Internals->Ui.currentSliceView->GetRenderWindow()->AddRenderer(
-    this->Internals->dataSliceRenderer.Get());
+  this->Internals->Ui.currentSliceView->renderWindow()->AddRenderer(
+    this->Internals->dataSliceRenderer);
 
-  this->Internals->Ui.currentReconstructionView->GetRenderWindow()->AddRenderer(
-    this->Internals->reconstructionSliceRenderer.Get());
+  this->Internals->Ui.currentReconstructionView->renderWindow()->AddRenderer(
+    this->Internals->reconstructionSliceRenderer);
 
-  this->Internals->Ui.sinogramView->GetRenderWindow()->AddRenderer(
-    this->Internals->sinogramRenderer.Get());
+  this->Internals->Ui.sinogramView->renderWindow()->AddRenderer(
+    this->Internals->sinogramRenderer);
 
   vtkNew<vtkInteractorStyleRubberBand2D> interactorStyle;
   interactorStyle->SetRenderOnMouseMove(true);
 
-  this->Internals->Ui.currentSliceView->GetRenderWindow()
+  this->Internals->Ui.currentSliceView->renderWindow()
     ->GetInteractor()
-    ->SetInteractorStyle(interactorStyle.Get());
-  this->Internals->Ui.currentReconstructionView->GetRenderWindow()
+    ->SetInteractorStyle(interactorStyle);
+  this->Internals->Ui.currentReconstructionView->renderWindow()
     ->GetInteractor()
-    ->SetInteractorStyle(interactorStyle.Get());
-  this->Internals->Ui.sinogramView->GetRenderWindow()
+    ->SetInteractorStyle(interactorStyle);
+  this->Internals->Ui.sinogramView->renderWindow()
     ->GetInteractor()
-    ->SetInteractorStyle(interactorStyle.Get());
+    ->SetInteractorStyle(interactorStyle);
 
-  tomviz::setupRenderer(this->Internals->dataSliceRenderer.Get(),
-                        this->Internals->dataSliceMapper.Get());
-  tomviz::setupRenderer(this->Internals->sinogramRenderer.Get(),
-                        this->Internals->sinogramMapper.Get());
-  tomviz::setupRenderer(this->Internals->reconstructionSliceRenderer.Get(),
-                        this->Internals->reconstructionSliceMapper.Get());
+  tomviz::setupRenderer(this->Internals->dataSliceRenderer,
+                        this->Internals->dataSliceMapper);
+  tomviz::setupRenderer(this->Internals->sinogramRenderer,
+                        this->Internals->sinogramMapper);
+  tomviz::setupRenderer(this->Internals->reconstructionSliceRenderer,
+                        this->Internals->reconstructionSliceMapper);
 }
 
 ReconstructionWidget::~ReconstructionWidget()
@@ -215,10 +215,10 @@ void ReconstructionWidget::updateProgress(int progress)
   }
   Ui::ReconstructionWidget& ui = this->Internals->Ui;
   this->Internals->setupCurrentSliceLine(progress);
-  ui.currentSliceView->GetRenderWindow()->Render();
+  ui.currentSliceView->renderWindow()->Render();
   this->Internals->sinogramMapper->SetSliceNumber(
     this->Internals->sinogramMapper->GetSliceNumberMinValue() + progress);
-  ui.sinogramView->GetRenderWindow()->Render();
+  ui.sinogramView->renderWindow()->Render();
   double rem = (this->Internals->timer.elapsed() / (1000.0 * (progress + 1))) *
                (this->Internals->totalSlicesToProcess - progress);
 
@@ -241,6 +241,6 @@ void ReconstructionWidget::updateIntermediateResults(
   this->Internals->reconstruction->Modified();
   this->Internals->reconstructionSliceMapper->Update();
   Ui::ReconstructionWidget& ui = this->Internals->Ui;
-  ui.currentReconstructionView->GetRenderWindow()->Render();
+  ui.currentReconstructionView->renderWindow()->Render();
 }
 } // namespace tomviz

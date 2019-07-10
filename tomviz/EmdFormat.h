@@ -15,16 +15,9 @@ class DataSource;
 class EmdFormat
 {
 public:
-  EmdFormat();
-  ~EmdFormat();
-
   bool read(const std::string& fileName, vtkImageData* data);
   bool write(const std::string& fileName, DataSource* source);
   bool write(const std::string& fileName, vtkImageData* image);
-
-private:
-  class Private;
-  Private* d;
 };
 } // namespace tomviz
 

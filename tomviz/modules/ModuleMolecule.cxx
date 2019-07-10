@@ -9,9 +9,13 @@
 #include "OperatorResult.h"
 #include "Utilities.h"
 
+#include <vtkActor.h>
 #include <vtkMolecule.h>
+#include <vtkMoleculeMapper.h>
 #include <vtkNew.h>
 #include <vtkRenderer.h>
+
+#include <vtkPVRenderView.h>
 #include <vtkSMViewProxy.h>
 
 #include <QCheckBox>
@@ -172,22 +176,7 @@ void ModuleMolecule::dataSourceMoved(double, double, double)
 {
 }
 
-bool ModuleMolecule::isProxyPartOfModule(vtkSMProxy*)
-{
-  return false;
-}
-
-std::string ModuleMolecule::getStringForProxy(vtkSMProxy*)
-{
-  return "";
-}
-
-vtkSMProxy* ModuleMolecule::getProxyForString(const std::string&)
-{
-  return nullptr;
-}
-
-vtkSmartPointer<vtkDataObject> ModuleMolecule::getDataToExport()
+vtkDataObject* ModuleMolecule::dataToExport()
 {
   return m_molecule;
 }

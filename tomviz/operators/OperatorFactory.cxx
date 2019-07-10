@@ -3,6 +3,7 @@
 
 #include "OperatorFactory.h"
 
+#include "ArrayWranglerOperator.h"
 #include "ConvertToFloatOperator.h"
 #include "CropOperator.h"
 #include "OperatorPython.h"
@@ -10,6 +11,7 @@
 #include "SetTiltAnglesOperator.h"
 #include "SnapshotOperator.h"
 #include "TranslateAlignOperator.h"
+#include "TransposeDataOperator.h"
 
 #include "vtkFieldData.h"
 #include "vtkImageData.h"
@@ -49,8 +51,8 @@ protected:
       vtkNew<vtkTypeInt8Array> array;
       array->SetNumberOfTuples(1);
       array->SetName("tomviz_data_source_type");
-      fd->AddArray(array.Get());
-      dataType = array.Get();
+      fd->AddArray(array);
+      dataType = array;
     }
     // It should already be this value...
     dataType->SetTuple1(0, m_type);
@@ -76,12 +78,14 @@ QList<QString> OperatorFactory::operatorTypes()
 {
   QList<QString> reply;
   reply << "Python"
+        << "ArrayWrangler"
         << "ConvertToFloat"
         << "ConvertToVolume"
         << "Crop"
         << "CxxReconstruction"
         << "SetTiltAngles"
         << "TranslateAlign"
+        << "TransposeData"
         << "Snapshot";
   qSort(reply);
   return reply;
@@ -104,6 +108,8 @@ Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
   Operator* op = nullptr;
   if (type == "Python") {
     op = new OperatorPython();
+  } else if (type == "ArrayWrangler") {
+    op = new ArrayWranglerOperator();
   } else if (type == "ConvertToFloat") {
     op = new ConvertToFloatOperator();
   } else if (type == "ConvertToVolume") {
@@ -116,6 +122,8 @@ Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
     op = new SetTiltAnglesOperator();
   } else if (type == "TranslateAlign") {
     op = new TranslateAlignOperator(ds);
+  } else if (type == "TransposeData") {
+    op = new TransposeDataOperator();
   } else if (type == "Snapshot") {
     op = new SnapshotOperator(ds);
   }
@@ -130,7 +138,10 @@ const char* OperatorFactory::operatorType(const Operator* op)
   if (qobject_cast<const ConvertToVolumeOperator*>(op)) {
     return "ConvertToVolume";
   }
-  if (qobject_cast<const ConvertToFloatOperator*>(op)) {
+  if (qobject_cast<ArrayWranglerOperator*>(op)) {
+    return "ArrayWrangler";
+  }
+  if (qobject_cast<ConvertToFloatOperator*>(op)) {
     return "ConvertToFloat";
   }
   if (qobject_cast<const CropOperator*>(op)) {
@@ -145,7 +156,10 @@ const char* OperatorFactory::operatorType(const Operator* op)
   if (qobject_cast<const TranslateAlignOperator*>(op)) {
     return "TranslateAlign";
   }
-  if (qobject_cast<const SnapshotOperator*>(op)) {
+  if (qobject_cast<TransposeDataOperator*>(op)) {
+    return "TransposeData";
+  }
+  if (qobject_cast<SnapshotOperator*>(op)) {
     return "Snapshot";
   }
   return nullptr;
