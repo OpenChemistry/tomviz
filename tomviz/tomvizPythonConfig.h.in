@@ -131,9 +131,9 @@ bool isBuildDir(const std::string& exeDir)
   return vtksys::SystemTools::FileExists(
     (exeDir + "/../../../../CMakeCache.txt").c_str());
 #else
-  (void)exeDir;
+  return vtksys::SystemTools::FileExists(
+    (exeDir + "/../CMakeCache.txt").c_str());
 #endif
-  return false;
 }
 
 std::string PythonInitializationPythonPath()
