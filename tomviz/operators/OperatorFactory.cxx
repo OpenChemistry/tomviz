@@ -138,10 +138,10 @@ const char* OperatorFactory::operatorType(const Operator* op)
   if (qobject_cast<const ConvertToVolumeOperator*>(op)) {
     return "ConvertToVolume";
   }
-  if (qobject_cast<ArrayWranglerOperator*>(op)) {
+  if (qobject_cast<const ArrayWranglerOperator*>(op)) {
     return "ArrayWrangler";
   }
-  if (qobject_cast<ConvertToFloatOperator*>(op)) {
+  if (qobject_cast<const ConvertToFloatOperator*>(op)) {
     return "ConvertToFloat";
   }
   if (qobject_cast<const CropOperator*>(op)) {
@@ -156,10 +156,10 @@ const char* OperatorFactory::operatorType(const Operator* op)
   if (qobject_cast<const TranslateAlignOperator*>(op)) {
     return "TranslateAlign";
   }
-  if (qobject_cast<TransposeDataOperator*>(op)) {
+  if (qobject_cast<const TransposeDataOperator*>(op)) {
     return "TransposeData";
   }
-  if (qobject_cast<SnapshotOperator*>(op)) {
+  if (qobject_cast<const SnapshotOperator*>(op)) {
     return "Snapshot";
   }
   return nullptr;
