@@ -38,6 +38,7 @@ signals:
 public slots:
   void changePreset(const QModelIndex&);
   void setRow(const QModelIndex& index);
+  void resetToDefaults();
 
 private:
   QJsonArray m_Presets;
