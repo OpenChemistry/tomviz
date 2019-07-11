@@ -46,14 +46,24 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
 {
   switch (role) {
     case Qt::DisplayRole:
+    case Qt::EditRole:
       return m_Presets[index.row()].toObject().value("name");
 
     case Qt::DecorationRole:
+    {
       auto pixmap = render(m_Presets[index.row()].toObject());
       return pixmap;
+    }
 
-      /*  case Qt::TextAlignmentRole:
-          return Qt::AlignLeft + Qt::AlignVCenter;*/
+    case Qt::TextAlignmentRole:
+      return Qt::AlignCenter + Qt::AlignVCenter;
+
+    case Qt::FontRole:
+      if (index.row() == 2) {
+	QFont boldFont;
+        boldFont.setBold(true);
+        return boldFont;
+      }
   }
 
   return QVariant();
@@ -89,6 +99,13 @@ Qt::ItemFlags PresetModel::flags(const QModelIndex &index) const
 QVariant PresetModel::headerData(int, Qt::Orientation, int) const
 {
   return QVariant();
+}
+
+void PresetModel::modelChanged()
+{
+  saveSettings();
+  beginResetModel();
+  endResetModel();
 }
 
 void PresetModel::setRow(const QModelIndex& index)
@@ -209,8 +226,7 @@ void PresetModel::deletePreset(const QModelIndex& index)
   if (m_row >= m_Presets.size()) {
     updateRow();
   }
-  saveSettings();
-  beginResetModel();
-  endResetModel();
+
+  modelChanged();
 }
 } // namespace tomviz

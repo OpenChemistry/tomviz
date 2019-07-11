@@ -50,6 +50,7 @@ private:
   QPixmap render(const QJsonObject& newPreset) const;
   void updateRow();
   void saveSettings();
+  void modelChanged();
 };
 } // namespace tomviz
 #endif
