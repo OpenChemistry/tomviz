@@ -59,6 +59,33 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
   return QVariant();
 }
 
+bool PresetModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+  if (role == Qt::EditRole) {
+    if (!index.isValid())
+      return false;
+
+    if (value.toString().trimmed().isEmpty())
+      return false;
+
+    auto json = m_Presets[index.row()].toObject();
+    json.insert("name", value.toString());
+    m_Presets[index.row()] = json;
+
+    emit dataChanged(index, index);
+
+    saveSettings();
+
+    return true;
+  }
+  return false;
+}
+
+Qt::ItemFlags PresetModel::flags(const QModelIndex &index) const
+{
+  return Qt::ItemIsEditable | QAbstractTableModel::flags(index);
+}
+
 QVariant PresetModel::headerData(int, Qt::Orientation, int) const
 {
   return QVariant();
