@@ -113,7 +113,7 @@ Behaviors::Behaviors(QMainWindow* mainWindow) : QObject(mainWindow)
 QString Behaviors::getMatplotlibColorMapFile()
 {
   QString path = QApplication::applicationDirPath() +
-                 "/../share/tomviz/matplotlib_cmaps.json";
+                 "/../share/tomviz/defaultcolormaps.json";
   QFile file(path);
   if (file.exists()) {
     return path;
@@ -124,7 +124,7 @@ QString Behaviors::getMatplotlibColorMapFile()
 #ifdef __APPLE__
   else {
     path = QApplication::applicationDirPath() +
-           "/../../../../share/tomviz/matplotlib_cmaps.json";
+           "/../../../../share/tomviz/defaultcolormaps.json";
     return path;
   }
 #else

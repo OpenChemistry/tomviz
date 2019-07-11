@@ -446,7 +446,7 @@ set(json_files
   )
 
 set(resource_files
-  matplotlib_cmaps.json
+  defaultcolormaps.json
   )
 
 # Make symlinks where possible, file copies where necessary in the build tree.

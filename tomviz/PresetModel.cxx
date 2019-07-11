@@ -129,7 +129,7 @@ void PresetModel::saveSettings()
 void PresetModel::loadFromFile()
 {
   QString path = QApplication::applicationDirPath() +
-                 "/../share/tomviz/matplotlib_cmaps.json";
+                 "/../share/tomviz/defaultcolormaps.json";
   QFile file(path);
   if (!file.exists()) {
 // On OSX the above doesn't work in a build tree.  It is fine
@@ -137,7 +137,7 @@ void PresetModel::loadFromFile()
 // since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
 #ifdef __APPLE__
     path = QApplication::applicationDirPath() +
-           "/../../../../share/tomviz/matplotlib_cmaps.json";
+           "/../../../../share/tomviz/defaultcolormaps.json";
 #else
     path = "";
 #endif
