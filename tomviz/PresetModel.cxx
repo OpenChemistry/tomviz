@@ -97,9 +97,22 @@ void PresetModel::addNewPreset(const QJsonObject& newPreset)
 {
   m_Presets.push_back(newPreset);
   updateRow();
-  saveSettings();
-  beginResetModel();
-  endResetModel();
+  modelChanged();
+}
+
+void PresetModel::resetToDefaults()
+{
+  while (!m_Presets.isEmpty()) {
+    m_Presets.removeLast();
+  }
+
+  loadFromFile();
+
+  if (m_row >= m_Presets.size()) {
+    updateRow();
+  }
+
+  modelChanged();
 }
 
 QPixmap PresetModel::render(const QJsonObject& newPreset) const
@@ -156,6 +169,7 @@ void PresetModel::loadFromFile()
       { "colorSpace", obj.contains("ColorSpace")
 	  ? obj["ColorSpace"] : QJsonValue("Diverging") },
       { "colors", obj["RGBPoints"] },
+      { "default", QJsonValue(true) }
     };
     m_Presets.push_back(nextDefault);
   }

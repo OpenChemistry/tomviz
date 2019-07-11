@@ -529,7 +529,9 @@ void HistogramWidget::onSaveToPresetClicked()
     auto colorSpace = presetInfo["colorSpace"];
     QJsonObject newPreset{ { "name", newName },
                            { "colorSpace", colorSpace },
-                           { "colors", presetColors } };
+                           { "colors", presetColors },
+			   { "default", QJsonValue(false) }
+    };
     showPresetDialog(newPreset);
   }
 }

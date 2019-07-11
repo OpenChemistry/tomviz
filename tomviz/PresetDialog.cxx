@@ -29,6 +29,7 @@ PresetDialog::PresetDialog(QWidget* parent)
   m_view->setContextMenuPolicy(Qt::CustomContextMenu);
   layout->addWidget(m_view);
   layout->addWidget(m_ui->buttonBox);
+  layout->addWidget(m_ui->pushButton);
   layout->setContentsMargins(0, 0, 0, 0);
   setLayout(layout);
 
@@ -43,6 +44,10 @@ PresetDialog::PresetDialog(QWidget* parent)
   connect(m_model, &PresetModel::applyPreset, this, &PresetDialog::applyPreset);
   connect(m_view, &QMenu::customContextMenuRequested,
           [&](QPoint pos) { this->customMenuRequested(m_view->indexAt(pos)); });
+  connect(m_ui->pushButton, &QPushButton::clicked, this,
+	  &PresetDialog::warning);
+  connect(this, &PresetDialog::resetToDefaults, m_model,
+	  &PresetModel::resetToDefaults);
 }
 
 PresetDialog::~PresetDialog() = default;
