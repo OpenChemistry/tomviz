@@ -8,6 +8,7 @@
 #include <QHeaderView>
 #include <QJsonObject>
 #include <QMenu>
+#include <QMessageBox>
 #include <QTableView>
 #include <QVBoxLayout>
 
@@ -76,5 +77,20 @@ void PresetDialog::customMenuRequested(const QModelIndex& index)
   QMenu menu(this);
   menu.addAction(&removePreset);
   menu.exec(QCursor::pos());
+}
+
+void PresetDialog::warning()
+{
+  QMessageBox warning(this);
+  warning.setText("Are you sure you want to reset? This will lose any custom made presets and restore default names.");
+  warning.setStandardButtons(QMessageBox::Yes);
+  warning.addButton(QMessageBox::Cancel);
+  warning.setDefaultButton(QMessageBox::Cancel);
+  warning.setWindowTitle("Restore Defaults");
+  warning.setIcon(QMessageBox::Warning);
+
+  if (warning.exec() == QMessageBox::Yes) {
+    emit resetToDefaults();
+  };
 }
 } // namespace tomviz
