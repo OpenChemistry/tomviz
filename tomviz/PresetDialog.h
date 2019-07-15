@@ -31,6 +31,10 @@ public:
 
 signals:
   void applyPreset();
+  void resetToDefaults();
+
+private slots:
+  void warning();
 
 private:
   QScopedPointer<Ui::PresetDialog> m_ui;

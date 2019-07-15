@@ -46,22 +46,66 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
 {
   switch (role) {
     case Qt::DisplayRole:
+    case Qt::EditRole:
       return m_Presets[index.row()].toObject().value("name");
 
     case Qt::DecorationRole:
+    {
       auto pixmap = render(m_Presets[index.row()].toObject());
       return pixmap;
+    }
 
-      /*  case Qt::TextAlignmentRole:
-          return Qt::AlignLeft + Qt::AlignVCenter;*/
+    case Qt::TextAlignmentRole:
+      return Qt::AlignCenter + Qt::AlignVCenter;
+
+    case Qt::FontRole:
+      if (index.row() == 2) {
+	QFont boldFont;
+        boldFont.setBold(true);
+        return boldFont;
+      }
   }
 
   return QVariant();
 }
 
+bool PresetModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+  if (role == Qt::EditRole) {
+    if (!index.isValid())
+      return false;
+
+    if (value.toString().trimmed().isEmpty())
+      return false;
+
+    auto json = m_Presets[index.row()].toObject();
+    json.insert("name", value.toString());
+    m_Presets[index.row()] = json;
+
+    emit dataChanged(index, index);
+
+    saveSettings();
+
+    return true;
+  }
+  return false;
+}
+
+Qt::ItemFlags PresetModel::flags(const QModelIndex &index) const
+{
+  return Qt::ItemIsEditable | QAbstractTableModel::flags(index);
+}
+
 QVariant PresetModel::headerData(int, Qt::Orientation, int) const
 {
   return QVariant();
+}
+
+void PresetModel::modelChanged()
+{
+  saveSettings();
+  beginResetModel();
+  endResetModel();
 }
 
 void PresetModel::setRow(const QModelIndex& index)
@@ -97,9 +141,22 @@ void PresetModel::addNewPreset(const QJsonObject& newPreset)
 {
   m_Presets.push_back(newPreset);
   updateRow();
-  saveSettings();
-  beginResetModel();
-  endResetModel();
+  modelChanged();
+}
+
+void PresetModel::resetToDefaults()
+{
+  while (!m_Presets.isEmpty()) {
+    m_Presets.removeLast();
+  }
+
+  loadFromFile();
+
+  if (m_row >= m_Presets.size()) {
+    updateRow();
+  }
+
+  modelChanged();
 }
 
 QPixmap PresetModel::render(const QJsonObject& newPreset) const
@@ -156,6 +213,7 @@ void PresetModel::loadFromFile()
       { "colorSpace", obj.contains("ColorSpace")
 	  ? obj["ColorSpace"] : QJsonValue("Diverging") },
       { "colors", obj["RGBPoints"] },
+      { "default", QJsonValue(true) }
     };
     m_Presets.push_back(nextDefault);
   }
@@ -168,8 +226,7 @@ void PresetModel::deletePreset(const QModelIndex& index)
   if (m_row >= m_Presets.size()) {
     updateRow();
   }
-  saveSettings();
-  beginResetModel();
-  endResetModel();
+
+  modelChanged();
 }
 } // namespace tomviz

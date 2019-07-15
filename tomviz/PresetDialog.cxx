@@ -8,6 +8,7 @@
 #include <QHeaderView>
 #include <QJsonObject>
 #include <QMenu>
+#include <QMessageBox>
 #include <QTableView>
 #include <QVBoxLayout>
 
@@ -27,8 +28,10 @@ PresetDialog::PresetDialog(QWidget* parent)
   m_view->setModel(m_model);
   m_view->horizontalHeader()->hide();
   m_view->setContextMenuPolicy(Qt::CustomContextMenu);
+  m_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
   layout->addWidget(m_view);
   layout->addWidget(m_ui->buttonBox);
+  layout->addWidget(m_ui->pushButton);
   layout->setContentsMargins(0, 0, 0, 0);
   setLayout(layout);
 
@@ -43,6 +46,10 @@ PresetDialog::PresetDialog(QWidget* parent)
   connect(m_model, &PresetModel::applyPreset, this, &PresetDialog::applyPreset);
   connect(m_view, &QMenu::customContextMenuRequested,
           [&](QPoint pos) { this->customMenuRequested(m_view->indexAt(pos)); });
+  connect(m_ui->pushButton, &QPushButton::clicked, this,
+	  &PresetDialog::warning);
+  connect(this, &PresetDialog::resetToDefaults, m_model,
+	  &PresetModel::resetToDefaults);
 }
 
 PresetDialog::~PresetDialog() = default;
@@ -64,12 +71,32 @@ QJsonObject PresetDialog::jsonObject()
 
 void PresetDialog::customMenuRequested(const QModelIndex& index)
 {
+  QAction editPreset("Edit Preset Name", this);
   QAction removePreset("Delete Preset", this);
+
+  connect(&editPreset, &QAction::triggered,
+          [&]() { m_view->edit(index); });
   connect(&removePreset, &QAction::triggered,
           [&]() { m_model->deletePreset(index); });
 
   QMenu menu(this);
+  menu.addAction(&editPreset);
   menu.addAction(&removePreset);
   menu.exec(QCursor::pos());
+}
+
+void PresetDialog::warning()
+{
+  QMessageBox warning(this);
+  warning.setText("Are you sure you want to reset? This will lose any custom made presets and restore default names.");
+  warning.setStandardButtons(QMessageBox::Yes);
+  warning.addButton(QMessageBox::Cancel);
+  warning.setDefaultButton(QMessageBox::Cancel);
+  warning.setWindowTitle("Restore Defaults");
+  warning.setIcon(QMessageBox::Warning);
+
+  if (warning.exec() == QMessageBox::Yes) {
+    emit resetToDefaults();
+  };
 }
 } // namespace tomviz
