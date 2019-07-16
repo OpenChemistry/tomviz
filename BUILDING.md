@@ -32,7 +32,7 @@ You will need the development headers, so please ensure they are installed
 you are in a directory where you would like to place the source and builds
 with all prerequisites installed:
 
-    git clone --recursive git://github.com/openchemistry/paraview.git
+    git clone --recursive https://gitlab.kitware.com/paraview/paraview.git
     mkdir paraview-build
     cd paraview-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
