@@ -110,8 +110,10 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   vLayout->addWidget(button);
 
   button = new QToolButton;
+  m_savePresetButton = button;
   button->setIcon(QIcon(":/pqWidgets/Icons/pqSave16.png"));
   button->setToolTip("Save current color map as a preset");
+  button->setEnabled(false);
   connect(button, SIGNAL(clicked()), this, SLOT(onSaveToPresetClicked()));
   vLayout->addWidget(button);
 
@@ -130,6 +132,8 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
   connect(&ActiveObjects::instance(), SIGNAL(viewChanged(vtkSMViewProxy*)),
           this, SLOT(updateUI()));
+  connect(&ModuleManager::instance(), SIGNAL(dataSourceRemoved(DataSource*)),
+	  this, SLOT(updateUI()));
   connect(this, SIGNAL(colorMapUpdated()), this, SLOT(updateUI()));
 
   setLayout(hLayout);
@@ -570,11 +574,24 @@ void HistogramWidget::updateUI()
     auto sbProxy = getScalarBarRepresentation(view);
     if (view && sbProxy) {
       m_colorLegendToolButton->blockSignals(true);
+      m_savePresetButton->blockSignals(true);
       m_colorLegendToolButton->setEnabled(true);
       m_colorLegendToolButton->setChecked(
         vtkSMPropertyHelper(sbProxy, "Visibility").GetAsInt() == 1);
+      m_savePresetButton->setEnabled(true);
+      m_savePresetButton->blockSignals(false);
       m_colorLegendToolButton->blockSignals(false);
     }
+  }
+
+  auto dataSource = ActiveObjects::instance().activeDataSource();
+  if (!dataSource) {
+    m_colorLegendToolButton->blockSignals(true);
+    m_savePresetButton->blockSignals(true);
+    m_colorLegendToolButton->setEnabled(false);
+    m_savePresetButton->setEnabled(false);
+    m_savePresetButton->blockSignals(false);
+    m_colorLegendToolButton->blockSignals(false);
   }
 }
 
