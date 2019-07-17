@@ -195,8 +195,7 @@ void PresetModel::loadFromFile()
 #ifdef __APPLE__
     path = QApplication::applicationDirPath() +
            "/../../../../share/tomviz/defaultcolormaps.json";
-#else
-    path = "";
+    file.setFileName(path);
 #endif
   }
 
