@@ -355,6 +355,18 @@ def set_size(dataobject, x=None, y=None, z=None):
     dataobject.SetSpacing(spacing)
 
 
+def set_spacing(dataobject, x=None, y=None, z=None):
+    spacing = list(dataobject.GetSpacing())
+    if x is not None:
+        spacing[0] = x
+    if y is not None:
+        spacing[1] = y
+    if z is not None:
+        spacing[2] = z
+
+    dataobject.SetSpacing(spacing)
+
+
 def make_spreadsheet(column_names, table):
     # column_names is a list of strings
     # table is a 2D numpy.ndarray
