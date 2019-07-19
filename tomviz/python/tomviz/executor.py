@@ -27,7 +27,7 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 DIMS = ['dim1', 'dim2', 'dim3']
-
+ANGLE_UNITS = [b'[deg]', b'[rad]']
 
 class ProgressBase(object):
     def started(self, op=None):
@@ -370,9 +370,19 @@ def _read_emd(path):
                          tomography[dim].attrs['units'][0]))
 
         data  = tomography['data'][:]
+        # If this is a tilt series, swap the X and Z axes
+        if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
+            data = np.transpose(data, [2, 1, 0])
+
+            # Swap the dims order as well
+            angle_dim = dims[0]
+            x_dim = dims[-1]
+            dims[0] = x_dim
+            dims[-1] = angle_dim
+
 
         # EMD stores data as row major order.  VTK expects column major order.
-        data = data.reshape(data.shape[::-1])
+        data = np.asfortranarray(data)
 
         return (data, dims)
 
@@ -382,8 +392,12 @@ def _write_emd(path, data, dims=None):
     if data.tilt_angles is not None:
         tilt_angles = data.tilt_angles
 
+    # If this is a tilt series, swap the X and Z axes
+    if tilt_angles is not None:
+        data = np.transpose(data, [2, 1, 0])
+
     # Switch back to row major order for EMD stores
-    data = data.reshape(data.shape[::-1])
+    data = np.ascontiguousarray(data)
 
     with h5py.File(path, 'w') as f:
         f.attrs.create('version_major', 0, dtype='uint32')
@@ -395,9 +409,21 @@ def _write_emd(path, data, dims=None):
 
         if dims is None:
             dims = []
-            for i, name in zip(range(0, 3), ['x', 'y', 'z']):
+            names = ['x', 'y', 'z']
+            if tilt_angles is not None:
+                names = ['angles', 'y', 'x']
+
+            for i, name in zip(range(0, 3), names):
                 values = np.array(range(data.shape[i]))
                 dims.append(('/data/tomography/dim%d' % (i+1), values, name, '[n_m]'))
+
+        # Swap the dims as well
+        if tilt_angles is not None:
+            (first_dataset_name, first_values, first_name, first_units) = dims[0]
+            (last_dataset_name, last_values, last_name, last_units) = dims[-1]
+
+            dims[0] = (first_dataset_name, last_values, 'angles', last_units)
+            dims[-1] = (last_dataset_name, first_values, first_name, first_units)
 
         # add dimension vectors
         for (dataset_name, values, name, units) in dims:
@@ -406,12 +432,14 @@ def _write_emd(path, data, dims=None):
             d.attrs['units'] = np.string_(units)
             d[:] = values
 
-        # If we have angle update the last dim
+        # If we have angle update the first dim
         if tilt_angles is not None:
-            (name, _, _, _) = dims[-1]
+            (name, _, _, units) = dims[0]
             d = tomography_group[name]
             d.attrs['name'] = np.string_('angles')
-            d.attrs['units'] = np.string_('[deg]')
+            # Only override we don't already have a valid angle units.
+            if units not in ANGLE_UNITS:
+                d.attrs['units'] = np.string_('[deg]')
             d[:] = tilt_angles
 
 
