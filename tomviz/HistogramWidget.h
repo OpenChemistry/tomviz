@@ -71,6 +71,7 @@ private:
   vtkNew<vtkContextView> m_histogramView;
   vtkNew<vtkEventQtSlotConnect> m_eventLink;
   QToolButton* m_colorLegendToolButton;
+  QToolButton* m_savePresetButton;
 
   vtkWeakPointer<vtkDiscretizableColorTransferFunction> m_LUT;
   vtkWeakPointer<vtkPiecewiseFunction> m_scalarOpacityFunction;
