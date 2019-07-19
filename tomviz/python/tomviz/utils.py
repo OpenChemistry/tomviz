@@ -165,6 +165,10 @@ def make_child_dataset(reference_dataset):
     from vtk import vtkImageData
     new_child = vtkImageData()
     new_child.CopyStructure(reference_dataset)
+    input_spacing = reference_dataset.GetSpacing()
+    # For a reconstruction we copy the X spacing from the input dataset
+    child_spacing = (input_spacing[0], input_spacing[1], input_spacing[0])
+    new_child.SetSpacing(child_spacing)
 
     return new_child
 
@@ -327,6 +331,40 @@ def mark_as_tiltseries(dataobject):
         arr.SetName("tomviz_data_source_type")
         fd.AddArray(arr)
     arr.SetTuple1(0, 1)
+
+
+def set_size(dataobject, x=None, y=None, z=None):
+    axes = []
+    lengths = []
+    if x is not None:
+        axes.append(0)
+        lengths.append(x)
+    if y is not None:
+        axes.append(1)
+        lengths.append(y)
+    if z is not None:
+        axes.append(2)
+        lengths.append(z)
+
+    extent = dataobject.GetExtent()
+    spacing = list(dataobject.GetSpacing())
+    for axis, new_length in zip(axes, lengths):
+        spacing[axis] = \
+            new_length / (extent[2 * axis + 1] - extent[2 * axis] + 1)
+
+    dataobject.SetSpacing(spacing)
+
+
+def set_spacing(dataobject, x=None, y=None, z=None):
+    spacing = list(dataobject.GetSpacing())
+    if x is not None:
+        spacing[0] = x
+    if y is not None:
+        spacing[1] = y
+    if z is not None:
+        spacing[2] = z
+
+    dataobject.SetSpacing(spacing)
 
 
 def make_spreadsheet(column_names, table):
