@@ -165,6 +165,10 @@ def make_child_dataset(reference_dataset):
     from vtk import vtkImageData
     new_child = vtkImageData()
     new_child.CopyStructure(reference_dataset)
+    input_spacing = reference_dataset.GetSpacing()
+    # For a reconstruction we copy the X spacing from the input dataset
+    child_spacing = (input_spacing[0], input_spacing[1], input_spacing[0])
+    new_child.SetSpacing(child_spacing)
 
     return new_child
 
