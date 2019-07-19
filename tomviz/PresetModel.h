@@ -39,8 +39,9 @@ public slots:
   void resetToDefaults();
 
 private:
-  QJsonArray m_Presets;
+  QJsonArray m_presets;
   int m_row = 2;
+
   void loadFromFile();
   QPixmap render(const QJsonObject& newPreset) const;
   void updateRow();

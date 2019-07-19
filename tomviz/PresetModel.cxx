@@ -29,13 +29,13 @@ PresetModel::PresetModel(QObject* parent) : QAbstractTableModel(parent)
   if (doc.isNull() || !doc.isArray()) {
     loadFromFile();
   } else {
-    m_Presets = doc.array();
+    m_presets = doc.array();
   }
 }
 
 int PresetModel::rowCount(const QModelIndex& id) const
 {
-  return id.isValid() ? 0 : m_Presets.size();
+  return id.isValid() ? 0 : m_presets.size();
 }
 
 int PresetModel::columnCount(const QModelIndex& /*parent*/) const
@@ -48,11 +48,11 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
   switch (role) {
     case Qt::DisplayRole:
     case Qt::EditRole:
-      return m_Presets[index.row()].toObject().value("name");
+      return m_presets[index.row()].toObject().value("name");
 
     case Qt::DecorationRole:
     {
-      auto pixmap = render(m_Presets[index.row()].toObject());
+      auto pixmap = render(m_presets[index.row()].toObject());
       return pixmap;
     }
 
@@ -79,9 +79,9 @@ bool PresetModel::setData(const QModelIndex &index, const QVariant &value, int r
     if (value.toString().trimmed().isEmpty())
       return false;
 
-    auto json = m_Presets[index.row()].toObject();
+    auto json = m_presets[index.row()].toObject();
     json.insert("name", value.toString());
-    m_Presets[index.row()] = json;
+    m_presets[index.row()] = json;
 
     emit dataChanged(index, index);
 
@@ -116,17 +116,17 @@ void PresetModel::setRow(const QModelIndex& index)
 
 void PresetModel::updateRow()
 {
-  m_row = m_Presets.size() - 1;
+  m_row = m_presets.size() - 1;
 }
 
 QString PresetModel::presetName()
 {
-  return m_Presets[m_row].toObject().value("name").toString();
+  return m_presets[m_row].toObject().value("name").toString();
 }
 
 QJsonObject PresetModel::jsonObject()
 {
-  QJsonObject pqPreset(m_Presets[m_row].toObject());
+  QJsonObject pqPreset(m_presets[m_row].toObject());
   pqPreset.insert("RGBPoints", pqPreset["colors"]);
   pqPreset.insert("ColorSpace", pqPreset["colorSpace"]);
   return pqPreset;
@@ -140,20 +140,20 @@ void PresetModel::changePreset(const QModelIndex& index)
 
 void PresetModel::addNewPreset(const QJsonObject& newPreset)
 {
-  m_Presets.push_back(newPreset);
+  m_presets.push_back(newPreset);
   updateRow();
   modelChanged();
 }
 
 void PresetModel::resetToDefaults()
 {
-  while (!m_Presets.isEmpty()) {
-    m_Presets.removeLast();
+  while (!m_presets.isEmpty()) {
+    m_presets.removeLast();
   }
 
   loadFromFile();
 
-  if (m_row >= m_Presets.size()) {
+  if (m_row >= m_presets.size()) {
     updateRow();
   }
 
@@ -179,7 +179,7 @@ QPixmap PresetModel::render(const QJsonObject& newPreset) const
 
 void PresetModel::saveSettings()
 {
-  QJsonDocument doc(m_Presets);
+  QJsonDocument doc(m_presets);
   auto settings = pqApplicationCore::instance()->settings();
   settings->setValue("presetColors", doc.toJson(QJsonDocument::Compact));
 }
@@ -214,15 +214,15 @@ void PresetModel::loadFromFile()
       { "colors", obj["RGBPoints"] },
       { "default", QJsonValue(true) }
     };
-    m_Presets.push_back(nextDefault);
+    m_presets.push_back(nextDefault);
   }
   saveSettings();
 }
 
 void PresetModel::deletePreset(const QModelIndex& index)
 {
-  m_Presets.removeAt(index.row());
-  if (m_row >= m_Presets.size()) {
+  m_presets.removeAt(index.row());
+  if (m_row >= m_presets.size()) {
     updateRow();
   }
 
