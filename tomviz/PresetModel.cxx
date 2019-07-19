@@ -25,7 +25,7 @@ PresetModel::PresetModel(QObject* parent) : QAbstractTableModel(parent)
   auto settings = pqApplicationCore::instance()->settings();
   auto presetColors = settings->value("presetColors").toByteArray();
   auto doc = QJsonDocument::fromJson(presetColors);
-  if (doc.isNull()) {
+  if (doc.isNull() || !doc.isArray()) {
     loadFromFile();
   } else {
     m_Presets = doc.array();
