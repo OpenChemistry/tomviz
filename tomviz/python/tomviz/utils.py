@@ -333,6 +333,28 @@ def mark_as_tiltseries(dataobject):
     arr.SetTuple1(0, 1)
 
 
+def set_size(dataobject, x=None, y=None, z=None):
+    axes = []
+    lengths = []
+    if x is not None:
+        axes.append(0)
+        lengths.append(x)
+    if y is not None:
+        axes.append(1)
+        lengths.append(y)
+    if z is not None:
+        axes.append(2)
+        lengths.append(z)
+
+    extent = dataobject.GetExtent()
+    spacing = list(dataobject.GetSpacing())
+    for axis, new_length in zip(axes, lengths):
+        spacing[axis] = \
+            new_length / (extent[2 * axis + 1] - extent[2 * axis] + 1)
+
+    dataobject.SetSpacing(spacing)
+
+
 def make_spreadsheet(column_names, table):
     # column_names is a list of strings
     # table is a 2D numpy.ndarray
