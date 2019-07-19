@@ -5,13 +5,8 @@
 #define tomvizPresetModel_h
 
 #include <QAbstractTableModel>
-#include <QApplication>
+
 #include <QJsonArray>
-
-#include <vtkNew.h>
-#include <vtkSMTransferFunctionPresets.h>
-
-class vtkSMProxy;
 
 namespace tomviz {
 
@@ -26,7 +21,7 @@ public:
   QVariant data(const QModelIndex& index,
                 int role = Qt::DisplayRole) const override;
   bool setData(const QModelIndex &index, const QVariant &value,
-	       int role = Qt::EditRole) override;
+               int role = Qt::EditRole) override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QVariant headerData(int section, Qt::Orientation orientation,
                       int role) const override;
@@ -44,13 +39,15 @@ public slots:
   void resetToDefaults();
 
 private:
-  QJsonArray m_Presets;
+  QJsonArray m_presets;
   int m_row = 2;
+
   void loadFromFile();
   QPixmap render(const QJsonObject& newPreset) const;
   void updateRow();
   void saveSettings();
   void modelChanged();
 };
+
 } // namespace tomviz
 #endif

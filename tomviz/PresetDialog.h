@@ -24,10 +24,10 @@ class PresetDialog : public QDialog
 
 public:
   explicit PresetDialog(QWidget* parent);
+  ~PresetDialog() override;
   QString presetName();
   void addNewPreset(const QJsonObject& newPreset);
   QJsonObject jsonObject();
-  ~PresetDialog() override;
 
 signals:
   void applyPreset();
