@@ -7,6 +7,7 @@
 #include <pqPresetToPixmap.h>
 #include <pqSettings.h>
 
+#include <QApplication>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMenu>
@@ -60,7 +61,7 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
 
     case Qt::FontRole:
       if (index.row() == 2) {
-	QFont boldFont;
+        QFont boldFont;
         boldFont.setBold(true);
         return boldFont;
       }
@@ -189,9 +190,9 @@ void PresetModel::loadFromFile()
                  "/../share/tomviz/defaultcolormaps.json";
   QFile file(path);
   if (!file.exists()) {
-// On OSX the above doesn't work in a build tree.  It is fine
-// for superbuilds, but the following is needed in the build tree
-// since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
+    // On OSX the above doesn't work in a build tree.  It is fine
+    // for superbuilds, but the following is needed in the build tree
+    // since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
 #ifdef __APPLE__
     path = QApplication::applicationDirPath() +
            "/../../../../share/tomviz/defaultcolormaps.json";
@@ -209,8 +210,7 @@ void PresetModel::loadFromFile()
     QJsonObject obj = value.toObject();
     QJsonObject nextDefault{
       { "name", obj["Name"] },
-      { "colorSpace", obj.contains("ColorSpace")
-	  ? obj["ColorSpace"] : QJsonValue("Diverging") },
+      { "colorSpace", obj.contains("ColorSpace") ? obj["ColorSpace"] : QJsonValue("Diverging") },
       { "colors", obj["RGBPoints"] },
       { "default", QJsonValue(true) }
     };
