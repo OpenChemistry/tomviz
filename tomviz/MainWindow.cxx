@@ -799,7 +799,7 @@ void MainWindow::onFirstWindowShow()
   }
   QMessageBox::StandardButton response =
     QMessageBox::question(this, "Load autosave?",
-                          "There is a tomviz autosave file present.  Load it?",
+                          "There is an autosave file present. Load it?",
                           QMessageBox::Yes | QMessageBox::No);
   if (response == QMessageBox::Yes) {
     SaveLoadStateReaction::loadState(getAutosaveFile());
