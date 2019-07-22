@@ -25,18 +25,13 @@
 #include <vtkRenderWindow.h>
 #include <vtkTable.h>
 #include <vtkVector.h>
-#include <vtk_jsoncpp.h>
 
 #include <pqApplicationCore.h>
-#include <pqPresetDialog.h>
-#include <pqResetScalarRangeReaction.h>
-#include <pqServerManagerModel.h>
 #include <pqSettings.h>
 #include <pqView.h>
 
 #include <vtkSMPropertyHelper.h>
 #include <vtkSMTransferFunctionManager.h>
-#include <vtkSMTransferFunctionPresets.h>
 #include <vtkSMTransferFunctionProxy.h>
 #include <vtkSMViewProxy.h>
 #include <vtkType.h>
