@@ -4,6 +4,7 @@
 #include "DataSource.h"
 
 #include "ActiveObjects.h"
+#include "ColorMap.h"
 #include "ModuleFactory.h"
 #include "ModuleManager.h"
 #include "Operator.h"
@@ -1091,6 +1092,7 @@ void DataSource::init(vtkImageData* data, DataSourceType dataType,
   this->Internals->ColorMap = tfmgr->GetColorTransferFunction(
     QString("DataSourceColorMap%1").arg(colorMapCounter).toLatin1().data(),
     pxm);
+  ColorMap::instance().applyPreset(this->Internals->ColorMap);
   updateColorMap();
 
   // Every time the data changes, we should update the color map.
