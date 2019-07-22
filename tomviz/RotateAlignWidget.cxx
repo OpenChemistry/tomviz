@@ -5,17 +5,16 @@
 
 #include "ActiveObjects.h"
 #include "AddPythonTransformReaction.h"
+#include "ColorMap.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "PresetDialog.h"
 #include "TomographyReconstruction.h"
 #include "TomographyTiltSeries.h"
 #include "Utilities.h"
 
 #include <cmath>
 
-#include <pqPresetDialog.h>
-#include <vtkSMPropertyHelper.h>
-#include <vtkSMSourceProxy.h>
 #include <vtkSMTransferFunctionManager.h>
 #include <vtkSMTransferFunctionProxy.h>
 
@@ -582,60 +581,26 @@ void RotateAlignWidget::showChangeColorMapDialog(int reconSlice)
   auto slotsArray = make_array({ &RotateAlignWidget::changeColorMap0,
                                  &RotateAlignWidget::changeColorMap1,
                                  &RotateAlignWidget::changeColorMap2 });
-  pqPresetDialog dialog(tomviz::mainWidget(),
-                        pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
-  dialog.setCustomizableLoadColors(true);
-  dialog.setCustomizableLoadOpacities(true);
-  dialog.setCustomizableUsePresetRange(true);
-  dialog.setCustomizableLoadAnnotations(false);
-  this->connect(&dialog, &pqPresetDialog::applyPreset, this,
-                slotsArray[reconSlice]);
+
+  PresetDialog dialog(tomviz::mainWidget());
+  QObject::connect(&dialog, &PresetDialog::applyPreset, this,
+                   slotsArray[reconSlice]);
   dialog.exec();
 }
 
 void RotateAlignWidget::changeColorMap(int reconSlice)
 {
-  pqPresetDialog* dialog = qobject_cast<pqPresetDialog*>(this->sender());
+  auto dialog = qobject_cast<PresetDialog*>(sender());
   Q_ASSERT(dialog);
 
-  vtkSMProxy* lut = this->Internals->ReconColorMap[reconSlice];
+  auto lut = this->Internals->ReconColorMap[reconSlice];
   if (!lut) {
     return;
   }
 
-  if (dialog->loadColors() || dialog->loadOpacities()) {
-    vtkSMProxy* sof =
-      vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
-    if (dialog->loadColors()) {
-      vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
-                                              !dialog->usePresetRange());
-    }
-    if (dialog->loadOpacities()) {
-      if (sof) {
-        vtkSMTransferFunctionProxy::ApplyPreset(sof, dialog->currentPreset(),
-                                                !dialog->usePresetRange());
-      } else {
-        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not "
-                 "present.");
-      }
-    }
-
-    // We need to take extra care to avoid the color and opacity function ranges
-    // from straying away from each other. This can happen if only one of them
-    // is getting a preset and we're using the preset range.
-    if (dialog->usePresetRange() &&
-        (dialog->loadColors() ^ dialog->loadOpacities()) && sof) {
-      double range[2];
-      if (dialog->loadColors() &&
-          vtkSMTransferFunctionProxy::GetRange(lut, range)) {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range);
-      } else if (dialog->loadOpacities() &&
-                 vtkSMTransferFunctionProxy::GetRange(sof, range)) {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
-      }
-    }
-    this->updateWidgets();
-  }
+  auto current = dialog->presetName();
+  ColorMap::instance().applyPreset(current, lut);
+  updateWidgets();
 }
 
 void RotateAlignWidget::updateWidgets()
