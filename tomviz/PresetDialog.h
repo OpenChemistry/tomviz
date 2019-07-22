@@ -27,7 +27,6 @@ public:
   ~PresetDialog() override;
   QString presetName();
   void addNewPreset(const QJsonObject& newPreset);
-  QJsonObject jsonObject();
 
 signals:
   void applyPreset();

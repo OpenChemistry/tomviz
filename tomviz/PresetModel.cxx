@@ -2,40 +2,19 @@
    It is released under the 3-Clause BSD License, see "LICENSE". */
 
 #include "PresetModel.h"
-#include "Utilities.h"
 
-#include <pqPresetToPixmap.h>
-#include <pqSettings.h>
-
-#include <QApplication>
-#include <QJsonArray>
+#include <QFont>
 #include <QJsonObject>
-#include <QMenu>
-#include <QPair>
-#include <QPixmap>
-#include <QSize>
-
-#include <vtkSMProxy.h>
-#include <vtkScalarsToColors.h>
-#include <vtk_jsoncpp.h>
 
 namespace tomviz {
 
 PresetModel::PresetModel(QObject* parent) : QAbstractTableModel(parent)
 {
-  auto settings = pqApplicationCore::instance()->settings();
-  auto presetColors = settings->value("presetColors").toByteArray();
-  auto doc = QJsonDocument::fromJson(presetColors);
-  if (doc.isNull() || !doc.isArray()) {
-    loadFromFile();
-  } else {
-    m_presets = doc.array();
-  }
 }
 
 int PresetModel::rowCount(const QModelIndex& id) const
 {
-  return id.isValid() ? 0 : m_presets.size();
+  return id.isValid() ? 0 : m_colorMaps.count();
 }
 
 int PresetModel::columnCount(const QModelIndex& /*parent*/) const
@@ -48,19 +27,17 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
   switch (role) {
     case Qt::DisplayRole:
     case Qt::EditRole:
-      return m_presets[index.row()].toObject().value("name");
+      return m_colorMaps.presetName(index.row());
 
     case Qt::DecorationRole:
-    {
-      auto pixmap = render(m_presets[index.row()].toObject());
-      return pixmap;
-    }
+      return m_colorMaps.renderPreview(index.row());
 
     case Qt::TextAlignmentRole:
       return Qt::AlignCenter + Qt::AlignVCenter;
 
     case Qt::FontRole:
-      if (index.row() == 2) {
+      if (m_colorMaps.presetName(index.row())
+          == m_colorMaps.defaultPresetName()) {
         QFont boldFont;
         boldFont.setBold(true);
         return boldFont;
@@ -70,7 +47,8 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
   return QVariant();
 }
 
-bool PresetModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool PresetModel::setData(const QModelIndex &index, const QVariant &value,
+                          int role)
 {
   if (role == Qt::EditRole) {
     if (!index.isValid())
@@ -79,12 +57,8 @@ bool PresetModel::setData(const QModelIndex &index, const QVariant &value, int r
     if (value.toString().trimmed().isEmpty())
       return false;
 
-    auto json = m_presets[index.row()].toObject();
-    json.insert("name", value.toString());
-    m_presets[index.row()] = json;
-
+    m_colorMaps.setPresetName(index.row(), value.toString());
     emit dataChanged(index, index);
-
     saveSettings();
 
     return true;
@@ -116,20 +90,12 @@ void PresetModel::setRow(const QModelIndex& index)
 
 void PresetModel::updateRow()
 {
-  m_row = m_presets.size() - 1;
+  m_row = m_colorMaps.count() - 1;
 }
 
 QString PresetModel::presetName()
 {
-  return m_presets[m_row].toObject().value("name").toString();
-}
-
-QJsonObject PresetModel::jsonObject()
-{
-  QJsonObject pqPreset(m_presets[m_row].toObject());
-  pqPreset.insert("RGBPoints", pqPreset["colors"]);
-  pqPreset.insert("ColorSpace", pqPreset["colorSpace"]);
-  return pqPreset;
+  return m_colorMaps.presetName(m_row);
 }
 
 void PresetModel::changePreset(const QModelIndex& index)
@@ -140,89 +106,31 @@ void PresetModel::changePreset(const QModelIndex& index)
 
 void PresetModel::addNewPreset(const QJsonObject& newPreset)
 {
-  m_presets.push_back(newPreset);
+  m_colorMaps.addPreset(newPreset);
   updateRow();
   modelChanged();
 }
 
 void PresetModel::resetToDefaults()
 {
-  while (!m_presets.isEmpty()) {
-    m_presets.removeLast();
-  }
+  m_colorMaps.resetToDefaults();
 
-  loadFromFile();
-
-  if (m_row >= m_presets.size()) {
+  if (m_row >= m_colorMaps.count()) {
     updateRow();
   }
 
   modelChanged();
 }
 
-QPixmap PresetModel::render(const QJsonObject& newPreset) const
-{
-  QJsonObject pqPreset(newPreset);
-  pqPreset.insert("RGBPoints", pqPreset["colors"]);
-  pqPreset.insert("ColorSpace", pqPreset["colorSpace"]);
-
-  QJsonDocument doc(pqPreset);
-  QString preset(doc.toJson(QJsonDocument::Compact));
-
-  Json::Value colors;
-  Json::Reader reader;
-  reader.parse(preset.toLatin1().data(), colors);
-
-  pqPresetToPixmap PixMapRenderer;
-  return PixMapRenderer.render(colors, QSize(135, 20));
-}
-
 void PresetModel::saveSettings()
 {
-  QJsonDocument doc(m_presets);
-  auto settings = pqApplicationCore::instance()->settings();
-  settings->setValue("presetColors", doc.toJson(QJsonDocument::Compact));
-}
-
-void PresetModel::loadFromFile()
-{
-  QString path = QApplication::applicationDirPath() +
-                 "/../share/tomviz/defaultcolormaps.json";
-  QFile file(path);
-  if (!file.exists()) {
-    // On OSX the above doesn't work in a build tree.  It is fine
-    // for superbuilds, but the following is needed in the build tree
-    // since the executable is three levels down in bin/tomviz.app/Contents/MacOS/
-#ifdef __APPLE__
-    path = QApplication::applicationDirPath() +
-           "/../../../../share/tomviz/defaultcolormaps.json";
-    file.setFileName(path);
-#endif
-  }
-
-  file.open(QIODevice::ReadOnly);
-  QString defaults(file.readAll());
-  file.close();
-
-  QJsonDocument doc = QJsonDocument::fromJson(defaults.toUtf8());
-  QJsonArray objects = doc.array();
-  for (auto value : objects) {
-    QJsonObject obj = value.toObject();
-    QJsonObject nextDefault{
-      { "name", obj["Name"] },
-      { "colorSpace", obj.contains("ColorSpace") ? obj["ColorSpace"] : QJsonValue("Diverging") },
-      { "colors", obj["RGBPoints"] },
-      { "default", QJsonValue(true) }
-    };
-    m_presets.push_back(nextDefault);
-  }
-  saveSettings();
+  m_colorMaps.save();
 }
 
 void PresetModel::deletePreset(const QModelIndex& index)
 {
-  m_presets.removeAt(index.row());
-  if (m_row >= m_presets.size()) {
+  m_colorMaps.deletePreset(index.row());
+  if (m_row >= m_colorMaps.count()) {
     updateRow();
   }
 

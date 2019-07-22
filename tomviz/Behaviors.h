@@ -7,7 +7,6 @@
 #include <QObject>
 
 class QMainWindow;
-class vtkSMTransferFunctionPresets;
 
 namespace tomviz {
 
@@ -29,14 +28,6 @@ private:
   Q_DISABLE_COPY(Behaviors)
 
   MoveActiveObject* m_moveActiveBehavior;
-
-  QString getMatplotlibColorMapFile();
-
-  // Caller is responsible for calling Delete() on the returned object.
-  vtkSMTransferFunctionPresets* getPresets();
-
-  /// Use the named color map preset as default.
-  void setDefaultColorMapFromPreset(const char* name);
 
   void registerCustomOperatorUIs();
 };

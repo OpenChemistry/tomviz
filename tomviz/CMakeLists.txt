@@ -35,6 +35,8 @@ set(SOURCES
   CentralWidget.h
   CloneDataReaction.cxx
   CloneDataReaction.h
+  ColorMap.cxx
+  ColorMap.h
   ConvertToFloatReaction.cxx
   ConvertToFloatReaction.h
   CropReaction.cxx

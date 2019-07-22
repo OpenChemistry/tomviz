@@ -6,6 +6,8 @@
 
 #include <QAbstractTableModel>
 
+#include "ColorMap.h"
+
 #include <QJsonArray>
 
 namespace tomviz {
@@ -27,7 +29,6 @@ public:
                       int role) const override;
   QString presetName();
   void addNewPreset(const QJsonObject& newPreset);
-  QJsonObject jsonObject();
   void deletePreset(const QModelIndex& index);
 
 signals:
@@ -39,11 +40,9 @@ public slots:
   void resetToDefaults();
 
 private:
-  QJsonArray m_presets;
+  ColorMap& m_colorMaps = ColorMap::instance();
   int m_row = 2;
 
-  void loadFromFile();
-  QPixmap render(const QJsonObject& newPreset) const;
   void updateRow();
   void saveSettings();
   void modelChanged();

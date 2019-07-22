@@ -4,16 +4,15 @@
 #include "AlignWidget.h"
 
 #include "ActiveObjects.h"
+#include "ColorMap.h"
 #include "DataSource.h"
 #include "LoadDataReaction.h"
+#include "PresetDialog.h"
 #include "QVTKGLWidget.h"
 #include "SpinBox.h"
 #include "TranslateAlignOperator.h"
 #include "Utilities.h"
 
-#include <vtk_jsoncpp.h>
-
-#include <pqPresetDialog.h>
 #include <pqView.h>
 #include <vtkPVArrayInformation.h>
 #include <vtkSMPropertyHelper.h>
@@ -1082,65 +1081,31 @@ void AlignWidget::sliceOffsetEdited(int slice, int offsetComponent)
 
 void AlignWidget::onPresetClicked()
 {
-  pqPresetDialog dialog(tomviz::mainWidget(),
-                        pqPresetDialog::SHOW_NON_INDEXED_COLORS_ONLY);
-  dialog.setCustomizableLoadColors(true);
-  dialog.setCustomizableLoadOpacities(true);
-  dialog.setCustomizableUsePresetRange(true);
-  dialog.setCustomizableLoadAnnotations(false);
-  connect(&dialog, SIGNAL(applyPreset(const Json::Value&)),
-          SLOT(applyCurrentPreset()));
+  PresetDialog dialog(tomviz::mainWidget());
+  QObject::connect(&dialog, &PresetDialog::applyPreset, this,
+                   &AlignWidget::applyCurrentPreset);
   dialog.exec();
 }
 
 void AlignWidget::applyCurrentPreset()
 {
-  pqPresetDialog* dialog = qobject_cast<pqPresetDialog*>(sender());
+  auto dialog = qobject_cast<PresetDialog*>(sender());
   Q_ASSERT(dialog);
 
   if (m_modes.length() == 0) {
     return;
   }
 
-  vtkSMProxy* lut = m_modes[m_currentMode]->getLUT();
+  auto lut = m_modes[m_currentMode]->getLUT();
   if (!lut) {
     return;
   }
 
-  if (dialog->loadColors() || dialog->loadOpacities()) {
-    vtkSMProxy* sof =
-      vtkSMPropertyHelper(lut, "ScalarOpacityFunction", true).GetAsProxy();
-    if (dialog->loadColors()) {
-      vtkSMTransferFunctionProxy::ApplyPreset(lut, dialog->currentPreset(),
-                                              !dialog->usePresetRange());
-    }
-    if (dialog->loadOpacities()) {
-      if (sof) {
-        vtkSMTransferFunctionProxy::ApplyPreset(sof, dialog->currentPreset(),
-                                                !dialog->usePresetRange());
-      } else {
-        qWarning("Cannot load opacities since 'ScalarOpacityFunction' is not "
-                 "present.");
-      }
-    }
+  auto current = dialog->presetName();
+  ColorMap::instance().applyPreset(current, lut);
 
-    // We need to take extra care to avoid the color and opacity function ranges
-    // from straying away from each other. This can happen if only one of them
-    // is getting a preset and we're using the preset range.
-    if (dialog->usePresetRange() &&
-        (dialog->loadColors() ^ dialog->loadOpacities()) && sof) {
-      double range[2];
-      if (dialog->loadColors() &&
-          vtkSMTransferFunctionProxy::GetRange(lut, range)) {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(sof, range);
-      } else if (dialog->loadOpacities() &&
-                 vtkSMTransferFunctionProxy::GetRange(sof, range)) {
-        vtkSMTransferFunctionProxy::RescaleTransferFunction(lut, range);
-      }
-    }
-    renderViews();
-    m_widget->renderWindow()->Render();
-  }
+  renderViews();
+  m_widget->renderWindow()->Render();
 }
 
 int AlignWidget::restoreDraftDialog() const
