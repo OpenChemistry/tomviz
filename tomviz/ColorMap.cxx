@@ -124,7 +124,12 @@ void ColorMap::save()
   settings->setValue("presetColors", doc.toJson(QJsonDocument::Compact));
 }
 
-void ColorMap::applyPreset(int index, vtkSMProxy* proxy)
+void ColorMap::applyPreset(vtkSMProxy* proxy) const
+{
+  applyPreset(defaultPresetName(), proxy);
+}
+
+void ColorMap::applyPreset(int index, vtkSMProxy* proxy) const
 {
   if (!proxy || index < 0 || index >= m_presets.size()) {
     return;
@@ -142,7 +147,7 @@ void ColorMap::applyPreset(int index, vtkSMProxy* proxy)
   vtkSMTransferFunctionProxy::ApplyPreset(proxy, value, true);
 }
 
-void ColorMap::applyPreset(const QString& name, vtkSMProxy* proxy)
+void ColorMap::applyPreset(const QString& name, vtkSMProxy* proxy) const
 {
   if (!proxy) {
     return;

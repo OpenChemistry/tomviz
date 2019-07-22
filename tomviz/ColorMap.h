@@ -72,10 +72,15 @@ public:
   void save();
 
   /**
+   * Apply the default preset to the supplied transfer function proxy.
+   */
+  void applyPreset(vtkSMProxy* proxy) const;
+
+  /**
    * Apply the specified color map to the supplied transfer function proxy.
    */
-  void applyPreset(int index, vtkSMProxy* proxy);
-  void applyPreset(const QString& name, vtkSMProxy* proxy);
+  void applyPreset(int index, vtkSMProxy* proxy) const;
+  void applyPreset(const QString& name, vtkSMProxy* proxy) const;
 
 protected:
   ColorMap();
