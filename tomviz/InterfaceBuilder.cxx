@@ -209,7 +209,7 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
     }
   }
 
-  std::vector<T> minValues(defaultValues.size(), -9999);
+  std::vector<T> minValues(defaultValues.size(), std::numeric_limits<T>::lowest());
   if (parameterNode.contains("minimum")) {
     QJsonValueRef minNode = parameterNode["minimum"];
     if (isType<T>(minNode)) {
@@ -222,7 +222,7 @@ void addNumericWidget(QGridLayout* layout, int row, QJsonObject& parameterNode,
     }
   }
 
-  std::vector<T> maxValues(defaultValues.size(), 9999);
+  std::vector<T> maxValues(defaultValues.size(), std::numeric_limits<T>::max());
   if (parameterNode.contains("maximum")) {
     QJsonValueRef maxNode = parameterNode["maximum"];
     if (isType<T>(maxNode)) {
