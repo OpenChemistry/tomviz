@@ -12,8 +12,6 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
-#include <vtkSMProxy.h>
-
 namespace tomviz {
 
 PresetDialog::PresetDialog(QWidget* parent)
@@ -47,9 +45,9 @@ PresetDialog::PresetDialog(QWidget* parent)
   connect(m_view, &QMenu::customContextMenuRequested,
           [&](QPoint pos) { this->customMenuRequested(m_view->indexAt(pos)); });
   connect(m_ui->pushButton, &QPushButton::clicked, this,
-	  &PresetDialog::warning);
+	        &PresetDialog::warning);
   connect(this, &PresetDialog::resetToDefaults, m_model,
-	  &PresetModel::resetToDefaults);
+	        &PresetModel::resetToDefaults);
 }
 
 PresetDialog::~PresetDialog() = default;
@@ -62,11 +60,6 @@ QString PresetDialog::presetName()
 void PresetDialog::addNewPreset(const QJsonObject& newPreset)
 {
   m_model->addNewPreset(newPreset);
-}
-
-QJsonObject PresetDialog::jsonObject()
-{
-  return m_model->jsonObject();
 }
 
 void PresetDialog::customMenuRequested(const QModelIndex& index)

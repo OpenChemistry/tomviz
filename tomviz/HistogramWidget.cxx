@@ -4,6 +4,7 @@
 #include "HistogramWidget.h"
 
 #include "ActiveObjects.h"
+#include "ColorMap.h"
 #include "DataSource.h"
 #include "DoubleSliderWidget.h"
 #include "ModuleContour.h"
@@ -553,13 +554,8 @@ void HistogramWidget::applyCurrentPreset()
     return;
   }
 
-  auto curr = m_presetDialog->jsonObject();
-  QJsonDocument doc(curr);
-  QString chosen(doc.toJson(QJsonDocument::Compact));
-  Json::Value value;
-  Json::Reader reader;
-  reader.parse(chosen.toLatin1().data(), value);
-  vtkSMTransferFunctionProxy::ApplyPreset(lut, value, true);
+  auto current = m_presetDialog->presetName();
+  ColorMap::instance().applyPreset(current, lut);
 
   renderViews();
   emit colorMapUpdated();
