@@ -36,7 +36,8 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
       return Qt::AlignCenter + Qt::AlignVCenter;
 
     case Qt::FontRole:
-      if (index.row() == 2) {
+      if (m_colorMaps.presetName(index.row())
+          == m_colorMaps.defaultPresetName()) {
         QFont boldFont;
         boldFont.setBold(true);
         return boldFont;
@@ -46,7 +47,8 @@ QVariant PresetModel::data(const QModelIndex& index, int role) const
   return QVariant();
 }
 
-bool PresetModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool PresetModel::setData(const QModelIndex &index, const QVariant &value,
+                          int role)
 {
   if (role == Qt::EditRole) {
     if (!index.isValid())
