@@ -38,15 +38,11 @@ def calculate_weight(in_image, i, j, x, y, n_small, h, a):
     weight = math.exp(-max((similarity - 2*a**2), 0.0) / h**2)
 
     return weight
-@profile
+# @profile
 def calculate_weight_fast(values, pixel_patch, n_small, h, a):
     # get the current input
     pixel_patch = np.array(pixel_patch)
     neighbor_patch = np.array(values[0])
-    # print(len(pixel_patch))
-    # print(pixel_patch)
-    # print(len(neighbor_patch))
-    # print(neighbor_patch)
 
     # set the similarity defined by Euclidean distance
     similarity = np.sum((pixel_patch - neighbor_patch)**2)
@@ -57,6 +53,25 @@ def calculate_weight_fast(values, pixel_patch, n_small, h, a):
 
     # return the weight and the contribution it would make to denoising
     return weight, weight*neighbor_patch[int(len(neighbor_patch)/2)]
+
+# @profile
+def calculate_weight_fast2(pixel_patch, neighbor_patch, n_small, h, a):
+    # set the similarity defined by Euclidean distance
+    similarity = np.sum((pixel_patch - neighbor_patch)**2, axis=1)
+    similarity *= (1.0 / ((2*n_small+1)**2))
+    # element wise set to zero if below 0
+    threshold = (similarity - 2*a**2) < 0
+    similarity[threshold] = 0
+
+    # calculate weight
+    weights = np.exp(-similarity / h**2)
+
+    # compute contributions
+    neighbor_pixels = neighbor_patch[:, int(neighbor_patch.shape[1]/2)]
+    contributions = np.multiply(weights, neighbor_pixels)
+
+    # return the weight and the contribution it would make to denoising
+    return weights, contributions
 
 # Non Local Mean filter
 # n_large: search square window size of neighboring pixel j
@@ -100,7 +115,7 @@ def nonlocalmeans_2D(in_image, n_large, n_small, h, a):
     return out_image
 
 # optimized method
-@profile
+# @profile
 def nonlocalmeans_2D_fast(in_image, n_large, n_small, h, a):
     from functools import reduce, partial
     import operator
@@ -123,8 +138,58 @@ def nonlocalmeans_2D_fast(in_image, n_large, n_small, h, a):
     neighbor_window = [(row, column) for row in neighbor_range for column in neighbor_range if not (row == 0 and column == 0)]
 
     # precompute coordinate difference for the individual patch that would be used to calculate weight
-    # patch_range = range(-n_small, n_small + 1)
-    # patch_window = [(row, column) for row in patch_range for column in patch_range if not (row == 0 and column == 0)]
+    patch_rows, patch_cols = np.indices((2*n_small+1, 2*n_small+1))-n_small
+
+    # padding for denoising "corner" pixels
+    padding_length = n_large + n_small
+    padded_image = np.pad(in_image, padding_length, mode='wrap')
+
+    # iterate through all pixels, j is rows, i is columns
+    # offset is the padding_length so we are still iterating within in_image
+    for j in range(padding_length, num_rows + padding_length):
+        for i in range(padding_length, num_columns + padding_length):
+            # progress monitor
+            if ((j-padding_length)%1 == 0 and (i-padding_length) == 0):
+                print("row = " + str(j-padding_length) + ", column = " + str(i-padding_length))
+
+            # patch around the current pixel
+            pixel_patch_values = padded_image[j+patch_rows, i+patch_cols].flatten()
+
+            # patches around every neighbor location of the current pixel
+            neighbors_patch_values = [padded_image[j+neighbor[0]+patch_rows, i+neighbor[1]+patch_cols].flatten() for neighbor in neighbor_window]
+
+            # calculate the weights
+            weight_map = partial(calculate_weight_fast, pixel_patch=pixel_patch_values, n_small=n_small, h=h, a=a)
+            weights = map(weight_map, zip(neighbors_patch_values))
+
+            # Z is the sum of all weights, C is the sum of weight*neighbor_pixel, as indicated in paper
+            Z, C  = reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]), weights)
+            out_image[j-padding_length, i-padding_length] = C / Z
+
+    return out_image
+
+# optimized method 2
+# @profile
+def nonlocalmeans_2D_fast2(in_image, n_large, n_small, h, a):
+    from functools import reduce, partial
+    import operator
+
+    if (len(in_image.shape) != 2):
+        print("Error: input slice image dimension is not 2D")
+        return in_image
+
+    # initialize output image
+    out_image = np.zeros_like(in_image)
+
+    # some info about input image
+    num_rows = in_image.shape[0]
+    num_columns = in_image.shape[1]
+    print("in_image has " + str(num_rows) + " rows, " + str(num_columns) + " columns")
+
+    # precompute coordinate difference for the neighbors
+    neighbor_range = range(-n_large, n_large + 1)
+    # exclude the (0, 0) point which would be the original point
+    neighbor_window = [(row, column) for row in neighbor_range for column in neighbor_range if not (row == 0 and column == 0)]
 
     # precompute coordinate difference for the individual patch that would be used to calculate weight
     patch_rows, patch_cols = np.indices((2*n_small+1, 2*n_small+1))-n_small
@@ -138,33 +203,23 @@ def nonlocalmeans_2D_fast(in_image, n_large, n_small, h, a):
     for j in range(padding_length, num_rows + padding_length):
         for i in range(padding_length, num_columns + padding_length):
             # progress monitor
-            # if ((j-padding_length)%1 == 0 and (i-padding_length) == 0):
-            #     print("row = " + str(j-padding_length) + ", column = " + str(i-padding_length))
+            if ((j-padding_length)%1 == 0 and (i-padding_length) == 0):
+                print("row = " + str(j-padding_length) + ", column = " + str(i-padding_length))
 
-            # patch around the current pixel
-            # pixel_patch_coords = [tuple(map(operator.add, (j, i), patch_coordinate)) for patch_coordinate in patch_window]
-            # pixel_patch_values = [padded_image[k] for k in pixel_patch_coords]
+            # patch around the current pixel, flattened to 1D
             pixel_patch_values = padded_image[j+patch_rows, i+patch_cols].flatten()
+            # repeat the same row num_neighbor times
+            pixel_patch_values = np.array([pixel_patch_values,]*len(neighbor_window))
 
             # patches around every neighbor location of the current pixel
-            # neighbors_patch_coords is like
-            # [
-            #   [all coodinates within patch of neighbor 1],
-            #   [all coodinates within patch of neighbor 2],
-            #   ...
-            #   ...
-            #   [all coodinates within patch of neighbor n]
-            # ]
-            # neighbors_patch_coords = [[tuple(map(operator.add, pw, tuple(map(operator.add, (j, i), nw)))) for pw in patch_window] for nw in neighbor_window]
-            # neighbors_patch_values = [[padded_image[coord] for coord in patch] for patch in neighbors_patch_coords]
-            neighbors_patch_values = [padded_image[j+neighbor[0]+patch_rows, i+neighbor[1]+patch_cols].flatten() for neighbor in neighbor_window]
+            neighbors_patch_values = np.array([padded_image[j+neighbor[0]+patch_rows, i+neighbor[1]+patch_cols].flatten() for neighbor in neighbor_window])
 
             # calculate the weights
-            weight_map = partial(calculate_weight_fast, pixel_patch=pixel_patch_values, n_small=n_small, h=h, a=a)
-            weights = map(weight_map, zip(neighbors_patch_values))
+            weights, contributions = calculate_weight_fast2(pixel_patch_values, neighbors_patch_values, n_small, h, a)
 
             # Z is the sum of all weights, C is the sum of weight*neighbor_pixel, as indicated in paper
-            Z, C  = reduce(lambda a, b: (a[0] + b[0], a[1] + b[1]), weights)
+            Z = np.sum(weights)
+            C = np.sum(contributions)
             out_image[j-padding_length, i-padding_length] = C / Z
 
     return out_image
@@ -234,7 +289,7 @@ if __name__ == "__main__":
 
     # NLM denoising using my implementation
     start_time1 = time.time()
-    denoised_image_np = nonlocalmeans_2D_fast(noised_image_np, n_large=5, n_small=3, h=10, a=1)
+    denoised_image_np = nonlocalmeans_2D_fast2(noised_image_np, n_large=5, n_small=3, h=10, a=1)
     denoised_image = Image.fromarray(denoised_image_np)
     # denoised_image.show()
     if denoised_image.mode != 'RGB':
