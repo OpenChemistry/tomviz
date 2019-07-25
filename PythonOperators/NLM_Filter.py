@@ -171,8 +171,6 @@ def nonlocalmeans_2D_fast(in_image, n_large, n_small, h, a):
 # optimized method 2
 # @profile
 def nonlocalmeans_2D_fast2(in_image, n_large, n_small, h, a):
-    from functools import reduce, partial
-    import operator
 
     if (len(in_image.shape) != 2):
         print("Error: input slice image dimension is not 2D")
@@ -221,6 +219,70 @@ def nonlocalmeans_2D_fast2(in_image, n_large, n_small, h, a):
             Z = np.sum(weights)
             C = np.sum(contributions)
             out_image[j-padding_length, i-padding_length] = C / Z
+
+    return out_image
+
+
+@profile
+def nonlocalmeans_2D_fast3(in_image, n_small, num_features, num_neighbors, h, a):
+    import scipy as sp
+    from sklearn.decomposition import PCA
+    # from sklearn.neighbors.ball_tree import BallTree
+
+    if (len(in_image.shape) != 2):
+        print("Error: input slice image dimension is not 2D")
+        return in_image
+
+    # initialize output image
+    out_image = np.zeros_like(in_image)
+
+    # some info about input image
+    num_rows = in_image.shape[0]
+    num_columns = in_image.shape[1]
+    print("in_image has " + str(num_rows) + " rows, " + str(num_columns) + " columns")
+
+    # precompute coordinate difference for the individual patch that would be used to calculate weight
+    patch_rows, patch_cols = np.indices((2*n_small+1, 2*n_small+1))-n_small
+
+    # padding for denoising "corner" pixels
+    padding_length = n_small
+    padded_image = np.pad(in_image, padding_length, mode='wrap')
+
+    all_patches = np.zeros((num_rows*num_columns, (2*n_small+1)**2))
+
+    for j in range(n_small, n_small + num_rows):
+        for i in range(n_small, n_small + num_columns):
+            pixel_patch_values = padded_image[j+patch_rows, i+patch_cols].flatten()
+            all_patches[(j-n_small)*num_rows+(i-n_small), :] = pixel_patch_values
+
+    all_patches_transformed = PCA(n_components=num_features).fit_transform(all_patches)
+    # index the patches into a tree so we can get the nearest neighbors fast
+    neighbors_tree = sp.spatial.cKDTree(all_patches_transformed)
+
+    # iterate through all pixels, j is rows, i is columns
+    for j in range(num_rows):
+        for i in range(num_columns):
+            # progress monitor
+            if (j%1 == 0 and i == 0):
+                print("row = " + str(j) + ", column = " + str(i))
+
+            # patch around the current pixel
+            pixel_index = j * num_rows + i
+            pixel_patch_values = all_patches_transformed[pixel_index]
+            # repeat the same row num_neighbor times
+            pixel_patch_values = np.array([pixel_patch_values,]*num_neighbors)
+
+            # patches around every neighbor location of the current pixel
+            _, neighbors_patch_coordinates = neighbors_tree.query(pixel_patch_values, k=num_neighbors)
+            neighbors_patch_values = np.array(all_patches_transformed[neighbors_patch_coordinates])
+
+            # calculate the weights
+            weights, contributions = calculate_weight_fast2(pixel_patch_values, neighbors_patch_values, n_small, h, a)
+
+            # Z is the sum of all weights, C is the sum of weight*neighbor_pixel, as indicated in paper
+            Z = np.sum(weights)
+            C = np.sum(contributions)
+            out_image[j, i] = C / Z
 
     return out_image
 
@@ -289,7 +351,8 @@ if __name__ == "__main__":
 
     # NLM denoising using my implementation
     start_time1 = time.time()
-    denoised_image_np = nonlocalmeans_2D_fast2(noised_image_np, n_large=5, n_small=3, h=10, a=1)
+    # denoised_image_np = nonlocalmeans_2D_fast2(noised_image_np, n_large=5, n_small=3, h=10, a=1)
+    denoised_image_np = nonlocalmeans_2D_fast3(noised_image_np, n_small=3, num_features=25, num_neighbors=5, h=10, a=1)
     denoised_image = Image.fromarray(denoised_image_np)
     # denoised_image.show()
     if denoised_image.mode != 'RGB':
