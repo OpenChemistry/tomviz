@@ -387,11 +387,7 @@ def _read_emd(path):
         return (data, dims)
 
 
-def _write_emd(path, data, dims=None):
-    tilt_angles = None
-    if data.tilt_angles is not None:
-        tilt_angles = data.tilt_angles
-
+def _write_emd(path, data, tilt_angles=None, dims=None):
     # If this is a tilt series, swap the X and Z axes
     if tilt_angles is not None:
         data = np.transpose(data, [2, 1, 0])
@@ -443,62 +439,36 @@ def _write_emd(path, data, dims=None):
             d[:] = tilt_angles
 
 
-class DataObjectArray(np.ndarray):
-    """
-    ndarray subclass that allows us to attach data object metadata.
-    """
-    def __new__(cls, array):
-        obj = np.asarray(array).view(cls)
-        # add the metadata
-        obj.tilt_angles = None
-        obj.is_volume = False
-        # Finally, we must return the newly created object:
-        return obj
+class DataObject(object):
+    def __init__(self, array):
+        self.array  = array
+        self.is_volume = False
+        self.tilt_angles = None
 
-    def __array_finalize__(self, obj):
-        if obj is None:
-            return
-        self.tilt_angles = getattr(obj, 'tilt_angles', None)
-        self.is_volume = getattr(obj, 'is_volume', None)
+    def set_scalars(self, new_scalars):
+        np.reshape(new_scalars, self.array.shape)
+        self.array = np.asfortranarray(new_scalars)
 
-    def GetDimensions(self):
-        return self.shape
+    def set_array(self, new_array):
+        if not np.isfortran(new_array):
+            array = np.asfortranarray(new_array)
+
+        self.array = new_array
 
 def _patch_utils():
-    # Monkey patch tomviz.utils to make get_scalars a no-op and allow use to
-    # retrieve the transformed data from set_scalars. I know this is a little
-    # yucky!
-#    utils.get_scalars = lambda d: d
-
+    # Monkey patch tomviz.utils to support API outside Tomviz app.
+    # I know this is a little yucky!
     def _get_scalars(dataobject):
-        return dataobject.ravel(order='A')
+        return dataobject.array.ravel(order='A')
 
     def _set_scalars(dataobject, new_scalars):
-        order = 'C'
-        if np.isfortran(dataobject):
-            order = 'F'
+        dataobject.set_scalars(new_scalars)
 
-        new_scalars = np.reshape(new_scalars, dataobject.shape, order=order)
-
-        dataobject[...] = DataObjectArray(np.asfortranarray(new_scalars))
+    def _get_array(dataobject):
+        return dataobject.array
 
     def _set_array(dataobject, new_array):
-
-        if (dataobject.dtype != new_array.dtype or dataobject.shape != new_array.shape):
-            old_size_bytes = dataobject.dtype.itemsize
-            new_size_bytes = new_array.dtype.itemsize
-
-            new_shape = list(new_array.shape)
-            new_shape[-1] = new_array.shape[-1] * new_size_bytes // old_size_bytes
-
-            dataobject.resize(new_shape, refcheck=False)
-            dataobject.dtype = new_array.dtype
-
-        # Ensure Fortran ordering
-        if not np.isfortran(new_array):
-            new_array = new_array.reshape(new_array[::-1], order='F')
-
-        dataobject[...] = new_array
+        dataobject.set_array(new_array)
 
     def _set_tilt_angles(dataobject, tilt_angles):
         dataobject.tilt_angles = tilt_angles
@@ -508,10 +478,8 @@ def _patch_utils():
 
     def _make_child_dataset(reference_dataset):
         child = np.empty_like(reference_dataset)
-        child.is_volume = False
-        child.tilt_angles = None
 
-        return child
+        return DataObject(child)
 
     def _mark_as_volume(dataobject):
         dataobject.is_volume = True
@@ -519,7 +487,7 @@ def _patch_utils():
     utils.get_scalars = _get_scalars
     utils.set_scalars = _set_scalars
     utils.set_array = _set_array
-    utils.get_array = lambda d: d
+    utils.get_array = _get_array
     utils.set_tilt_angles = _set_tilt_angles
     utils.get_tilt_angles = _get_tilt_angles
     utils.make_child_dataset = _make_child_dataset
@@ -613,7 +581,7 @@ def _write_child_data(result, operator_index, output_file_path, dims):
 
         # Now write out the data
         child_data_path = os.path.join(operator_path, '%s.emd' % label)
-        _write_emd(child_data_path, dataobject, dims)
+        _write_emd(child_data_path, dataobject.array, dataobject.tilt_angles, dims)
 
 
 def execute(operators, start_at, data_file_path, output_file_path,
@@ -622,8 +590,7 @@ def execute(operators, start_at, data_file_path, output_file_path,
 
     _patch_utils()
 
-    # Replace the numpy array with our subclass so we can attach metadata.
-    data = DataObjectArray(data)
+    data = DataObject(data)
     # If we have angles set them
     if dims[-1][2] == b'angles':
         data.tilt_angles = dims[-1][1][:]
@@ -654,10 +621,10 @@ def execute(operators, start_at, data_file_path, output_file_path,
                 os.path.splitext(os.path.basename(data_file_path))[0]
 
         if result is None:
-            _write_emd(output_file_path, data, dims)
+            _write_emd(output_file_path, data.array, data.tilt_angles, dims)
         else:
             [(_, child_data)] = result.items()
-            _write_emd(output_file_path, child_data, dims)
+            _write_emd(output_file_path, child_data.array, child_data.tilt_angles, dims)
         logger.info('Write complete.')
         progress.finished()
 

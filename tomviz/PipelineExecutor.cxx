@@ -503,9 +503,9 @@ void DockerPipelineExecutor::containerError(int containerExitCode)
               displayError(
                 "Pipeline Error",
                 QString("Docker container exited with non-zero exit code: %1."
-                        "\n\nDocker logs below: \n\n %2")
-                  .arg(containerExitCode)
-                  .arg(logs));
+                        "\n\nSee message logs for Docker logs.")
+                  .arg(containerExitCode));
+              qCritical() << logs;
             }
             logsInvocation->deleteLater();
             PipelineSettings settings;
