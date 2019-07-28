@@ -287,6 +287,8 @@ list(APPEND SOURCES
   operators/ArrayWranglerOperator.h
   operators/ConvertToFloatOperator.cxx
   operators/ConvertToFloatOperator.h
+  operators/ConvertToVolumeOperator.cxx
+  operators/ConvertToVolumeOperator.h
   operators/CustomPythonOperatorWidget.cxx
   operators/CustomPythonOperatorWidget.h
   operators/CropOperator.cxx
