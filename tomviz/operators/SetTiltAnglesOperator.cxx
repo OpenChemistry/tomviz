@@ -359,7 +359,6 @@ private:
   QVector<double> previousTiltAngles;
 };
 
-#include "SetTiltAnglesOperator.moc"
 } // namespace
 
 namespace tomviz {
@@ -384,8 +383,7 @@ QJsonObject SetTiltAnglesOperator::serialize() const
 
   // Note that this is always a dense array of angles, storing it as such.
   QJsonArray angleArray;
-  for (auto itr = std::begin(m_tiltAngles); itr != std::end(m_tiltAngles);
-       ++itr) {
+  for (auto itr = m_tiltAngles.begin(); itr != m_tiltAngles.end(); ++itr) {
     angleArray << itr.value();
   }
 
@@ -452,10 +450,11 @@ bool SetTiltAnglesOperator::applyTransform(vtkDataObject* dataObject)
   } else if (dataTiltAngles->GetNumberOfTuples() < totalSlices) {
     dataTiltAngles->SetNumberOfTuples(totalSlices);
   }
-  for (auto itr = std::begin(m_tiltAngles); itr != std::end(m_tiltAngles);
-       ++itr) {
+  for (auto itr = m_tiltAngles.begin(); itr != m_tiltAngles.end(); ++itr) {
     dataTiltAngles->SetTuple(itr.key(), &itr.value());
   }
   return true;
 }
 } // namespace tomviz
+
+#include "SetTiltAnglesOperator.moc"
