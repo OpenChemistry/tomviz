@@ -5,6 +5,7 @@
 
 #include "ArrayWranglerOperator.h"
 #include "ConvertToFloatOperator.h"
+#include "ConvertToVolumeOperator.h"
 #include "CropOperator.h"
 #include "OperatorPython.h"
 #include "ReconstructionOperator.h"
@@ -13,81 +14,25 @@
 #include "TranslateAlignOperator.h"
 #include "TransposeDataOperator.h"
 
-#include "vtkFieldData.h"
-#include "vtkImageData.h"
-#include "vtkNew.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkTrivialProducer.h"
-#include "vtkTypeInt8Array.h"
-
-namespace {
-
-class ConvertToVolumeOperator : public tomviz::Operator
-{
-  Q_OBJECT
-public:
-  ConvertToVolumeOperator(
-    QObject* p = nullptr,
-    tomviz::DataSource::DataSourceType t = tomviz::DataSource::Volume,
-    QString label = "Mark as Volume")
-    : Operator(p), m_type(t), m_label(label)
-  {
-  }
-  ~ConvertToVolumeOperator() {}
-
-  QString label() const override { return m_label; }
-  QIcon icon() const override { return QIcon(); }
-  Operator* clone() const override { return new ConvertToVolumeOperator; }
-
-protected:
-  bool applyTransform(vtkDataObject* data) override
-  {
-    // The array should already exist... but just in case
-    vtkFieldData* fd = data->GetFieldData();
-    // Make sure the data is marked as a tilt series
-    vtkTypeInt8Array* dataType =
-      vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
-    if (!dataType) {
-      vtkNew<vtkTypeInt8Array> array;
-      array->SetNumberOfTuples(1);
-      array->SetName("tomviz_data_source_type");
-      fd->AddArray(array);
-      dataType = array;
-    }
-    // It should already be this value...
-    dataType->SetTuple1(0, m_type);
-    return true;
-  }
-
-private:
-  Q_DISABLE_COPY(ConvertToVolumeOperator)
-  tomviz::DataSource::DataSourceType m_type;
-  QString m_label;
-};
-
-#include "OperatorFactory.moc"
-} // namespace
-
 namespace tomviz {
 
-OperatorFactory::OperatorFactory() {}
+OperatorFactory::OperatorFactory() = default;
 
-OperatorFactory::~OperatorFactory() {}
+OperatorFactory::~OperatorFactory() = default;
 
 QList<QString> OperatorFactory::operatorTypes()
 {
   QList<QString> reply;
-  reply << "Python"
-        << "ArrayWrangler"
+  reply << "ArrayWrangler"
         << "ConvertToFloat"
         << "ConvertToVolume"
         << "Crop"
         << "CxxReconstruction"
+        << "Python"
         << "SetTiltAngles"
+        << "Snapshot"
         << "TranslateAlign"
-        << "TransposeData"
-        << "Snapshot";
-  qSort(reply);
+        << "TransposeData";
   return reply;
 }
 
