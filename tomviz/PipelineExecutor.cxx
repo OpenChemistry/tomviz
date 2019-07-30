@@ -242,7 +242,7 @@ docker::DockerStopInvocation* DockerPipelineExecutor::stop(
       }
 
       PipelineSettings settings;
-      if (settings.dockerRemove()) {
+      if (settings.dockerRemove() && !m_containerId.isEmpty()) {
         // Remove the container
         remove(m_containerId, true);
       }
@@ -511,7 +511,7 @@ void DockerPipelineExecutor::containerError(int containerExitCode)
             }
             logsInvocation->deleteLater();
             PipelineSettings settings;
-            if (settings.dockerRemove()) {
+            if (settings.dockerRemove() && !m_containerId.isEmpty()) {
               remove(m_containerId);
             }
           });
@@ -642,7 +642,7 @@ void DockerPipelineExecutor::reset()
   m_temporaryDir.reset(nullptr);
 
   PipelineSettings settings;
-  if (settings.dockerRemove()) {
+  if (settings.dockerRemove() && !m_containerId.isEmpty()) {
     // Remove the container
     remove(m_containerId, true);
   }
