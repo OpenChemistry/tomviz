@@ -208,7 +208,6 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
         :param data The current progress data value.
         :type value: numpy.ndarray
         """
-        value = value.T
         path = self.write_to_file(value)
         msg = {
             'type': 'progress.data',
@@ -247,10 +246,10 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
         self.write(msg)
 
 class WriteToFileMixin(object):
-    def write_to_file(self, data):
+    def write_to_file(self, dataobject):
         filename = '%d.emd' % self._sequence_number
         path = os.path.join(os.path.dirname(self._path), filename)
-        _write_emd(path, data)
+        _write_emd(path, dataobject.array, dataobject.tilt_angles)
         self._sequence_number += 1
 
         return filename
@@ -446,7 +445,10 @@ class DataObject(object):
         self.tilt_angles = None
 
     def set_scalars(self, new_scalars):
-        np.reshape(new_scalars, self.array.shape)
+        order = 'C'
+        if np.isfortran(self.array):
+            order = 'F'
+        new_scalars = np.reshape(new_scalars, self.array.shape, order=order)
         self.array = np.asfortranarray(new_scalars)
 
     def set_array(self, new_array):
@@ -514,7 +516,7 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
     if operator_label == 'SetTiltAngles':
         # Set the tilt angles so downstream operator can retrieve them
         # arguments the tilt angles.
-        utils.set_tilt_angles(input, np.array(arguments['angles']))
+        utils.set_tilt_angles(input, np.array(arguments['angles'], dtype=np.float64))
     else:
         # Now run the operator
         result = transform(input, **arguments)
@@ -593,7 +595,7 @@ def execute(operators, start_at, data_file_path, output_file_path,
     data = DataObject(data)
     # If we have angles set them
     if dims[-1][2] == b'angles':
-        data.tilt_angles = dims[-1][1][:]
+        data.tilt_angles = dims[-1][1][:].astype(np.float64)
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)
