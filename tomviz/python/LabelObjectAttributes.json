@@ -2,6 +2,7 @@
   "name" : "LabelObjectAttributes",
   "label" : "Label Object Attributes",
   "description" : "Creates a child dataset containing attributes of labeled objects in a labeled dataset. The input dataset is unmodified.",
+  "externalCompatible": false,
   "results" : [
     {
       "name" : "component_statistics",

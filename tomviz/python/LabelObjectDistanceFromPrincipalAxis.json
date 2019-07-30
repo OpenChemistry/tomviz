@@ -2,6 +2,7 @@
   "name" : "LabelObjectDistanceFromPrincipalAxis",
   "label" : "Label Object Distance From Principal Axis",
   "description" : "Computes the distance from an axis to voxels with the chosen label. The dataset is expected to be a label map and have field data arrays named 'Center' and 'PrincipalAxes'. Distance values replace labels in the dataset.",
+  "externalCompatible": false,
   "parameters" : [
     {
       "name" : "label_value",
