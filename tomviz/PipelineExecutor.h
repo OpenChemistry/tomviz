@@ -91,7 +91,7 @@ private slots:
   docker::DockerRunInvocation* run(const QString& image,
                                    const QStringList& args,
                                    const QMap<QString, QString>& bindMounts);
-  void remove(const QString& containerId);
+  void remove(const QString& containerId, bool force = false);
   docker::DockerStopInvocation* stop(const QString& containerId);
   void containerError(int exitCode);
 

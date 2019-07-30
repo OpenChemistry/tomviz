@@ -203,9 +203,9 @@ docker::DockerRunInvocation* DockerPipelineExecutor::run(
   return runInvocation;
 }
 
-void DockerPipelineExecutor::remove(const QString& containerId)
+void DockerPipelineExecutor::remove(const QString& containerId, bool force)
 {
-  auto removeInvocation = docker::remove(containerId);
+  auto removeInvocation = docker::remove(containerId, force);
   connect(removeInvocation, &docker::DockerRunInvocation::error, this,
           &DockerPipelineExecutor::error);
   connect(
@@ -242,7 +242,7 @@ docker::DockerStopInvocation* DockerPipelineExecutor::stop(
       PipelineSettings settings;
       if (settings.dockerRemove()) {
         // Remove the container
-        remove(m_containerId);
+        remove(m_containerId, true);
       }
 
       stopInvocation->deleteLater();
@@ -642,7 +642,7 @@ void DockerPipelineExecutor::reset()
   PipelineSettings settings;
   if (settings.dockerRemove()) {
     // Remove the container
-    remove(m_containerId);
+    remove(m_containerId, true);
   }
 
   m_containerId = QString();

@@ -122,7 +122,7 @@ class DockerRemoveInvocation : public DockerInvocation
 {
   Q_OBJECT
 public:
-  DockerRemoveInvocation(const QString& containerId);
+  DockerRemoveInvocation(const QString& containerId, bool force = false);
 
   DockerRemoveInvocation* run();
 
@@ -137,7 +137,7 @@ DockerRunInvocation* run(
 
 DockerPullInvocation* pull(const QString& image);
 DockerStopInvocation* stop(const QString& containerId, int wait = 10);
-DockerRemoveInvocation* remove(const QString& containerId);
+DockerRemoveInvocation* remove(const QString& containerId, bool force = false);
 DockerLogsInvocation* logs(const QString& containerId);
 DockerInspectInvocation* inspect(const QString& containerId);
 
