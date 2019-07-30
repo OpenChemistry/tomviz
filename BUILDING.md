@@ -64,14 +64,13 @@ you will need to specify the correct generator for the installed compiler.
     cd ..
     git clone git://itk.org/ITK.git
     cd ITK
-    git checkout v5.0.0
+    git checkout v5.0.1
     cd ..
     mkdir itk-build
     cd itk-build
     cmake -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
       -DITK_LEGACY_REMOVE:BOOL=ON \
       -DITK_LEGACY_SILENT:BOOL=ON \
-      -DITK_USE_FFTWF:BOOL=ON \
       -DModule_ITKBridgeNumPy:BOOL=ON \
       -DBUILD_TESTING:BOOL=OFF \
       -DITK_WRAP_unsigned_short:BOOL=ON \
@@ -81,7 +80,6 @@ you will need to specify the correct generator for the installed compiler.
       -DITKGroup_Core:BOOL=ON \
       -DITKGroup_Filtering:BOOL=ON \
       -DITKGroup_Segmentation:BOOL=ON \
-      -DITKGroup_Registration:BOOL=ON \
       -DITKGroup_Nonunit:BOOL=ON \
       -DPython_ADDITIONAL_VERSIONS:STRING=3 \
       -DITK_WRAP_PYTHON:BOOL=ON \
