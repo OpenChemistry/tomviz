@@ -4,12 +4,12 @@
 #ifndef tomvizAddAlignReaction_h
 #define tomvizAddAlignReaction_h
 
-#include <pqReaction.h>
+#include <Reaction.h>
 
 namespace tomviz {
 class DataSource;
 
-class AddAlignReaction : public pqReaction
+class AddAlignReaction : public Reaction
 {
   Q_OBJECT
 
@@ -19,7 +19,6 @@ public:
   void align(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState() override;
   void onTriggered() override { align(); }
 
 private:

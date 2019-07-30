@@ -4,14 +4,14 @@
 #ifndef tomvizTransposeDataReaction_h
 #define tomvizTransposeDataReaction_h
 
-#include <pqReaction.h>
+#include <Reaction.h>
 
 class QMainWindow;
 
 namespace tomviz {
 class DataSource;
 
-class TransposeDataReaction : public pqReaction
+class TransposeDataReaction : public Reaction
 {
   Q_OBJECT
 
@@ -21,7 +21,6 @@ public:
   void transposeData(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState() override;
   void onTriggered() override { transposeData(); }
 
 private:

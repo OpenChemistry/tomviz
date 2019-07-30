@@ -15,25 +15,8 @@
 namespace tomviz {
 
 AddAlignReaction::AddAlignReaction(QAction* parentObject)
-  : pqReaction(parentObject)
+  : Reaction(parentObject)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
-  updateEnableState();
-}
-
-void AddAlignReaction::updateEnableState()
-{
-  auto pipeline = ActiveObjects::instance().activePipeline();
-  bool enable = pipeline != nullptr;
-
-  // if (enable) {
-  //   auto dataSource = pipeline->transformedDataSource();
-  //   enable = (dataSource->type() == DataSource::TiltSeries ||
-  //             dataSource->type() == DataSource::FIB);
-  // }
-
-  parentAction()->setEnabled(enable);
 }
 
 void AddAlignReaction::align(DataSource* source)

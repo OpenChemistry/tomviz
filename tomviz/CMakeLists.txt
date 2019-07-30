@@ -139,6 +139,8 @@ set(SOURCES
   QVTKGLWidget.h
   RAWFileReaderDialog.h
   RAWFileReaderDialog.cxx
+  Reaction.cxx
+  Reaction.h
   RecentFilesMenu.cxx
   RecentFilesMenu.h
   ReconstructionReaction.cxx

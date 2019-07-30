@@ -15,17 +15,8 @@ namespace tomviz {
 
 TransposeDataReaction::TransposeDataReaction(QAction* parentObject,
                                              QMainWindow* mw)
-  : pqReaction(parentObject), m_mainWindow(mw)
+  : Reaction(parentObject), m_mainWindow(mw)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
-  updateEnableState();
-}
-
-void TransposeDataReaction::updateEnableState()
-{
-  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
-                             nullptr);
 }
 
 void TransposeDataReaction::transposeData(DataSource* source)

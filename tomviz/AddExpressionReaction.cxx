@@ -7,22 +7,14 @@
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
 #include "OperatorPython.h"
+#include "PipelineManager.h"
 #include "Utilities.h"
 
 namespace tomviz {
 
 AddExpressionReaction::AddExpressionReaction(QAction* parentObject)
-  : pqReaction(parentObject)
+  : Reaction(parentObject)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
-  updateEnableState();
-}
-
-void AddExpressionReaction::updateEnableState()
-{
-  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
-                             nullptr);
 }
 
 OperatorPython* AddExpressionReaction::addExpression(DataSource* source)

@@ -9,6 +9,7 @@
 #include "OperatorDialog.h"
 #include "OperatorPython.h"
 #include "Pipeline.h"
+#include "PipelineManager.h"
 #include "SelectVolumeWidget.h"
 #include "SpinBox.h"
 #include "Utilities.h"
@@ -23,9 +24,14 @@
 #include <QDialogButtonBox>
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QLabel>
 #include <QSpinBox>
 #include <QVBoxLayout>
+#include <QtDebug>
 
 #include <cassert>
 
@@ -142,6 +148,26 @@ AddPythonTransformReaction::AddPythonTransformReaction(
 {
   connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
           SLOT(updateEnableState()));
+  connect(&PipelineManager::instance(), &PipelineManager::executionModeUpdated,
+          this, &AddPythonTransformReaction::updateEnableState);
+
+  // If we have JSON, check whether the operator is compatible with being run
+  // in an external pipeline.
+  if (!json.isEmpty()) {
+    auto document = QJsonDocument::fromJson(json.toLatin1());
+    if (!document.isObject()) {
+      qCritical() << "Failed to parse operator JSON";
+      qCritical() << json;
+      return;
+    } else {
+      QJsonObject root = document.object();
+      QJsonValueRef externalNode = root["externalCompatible"];
+      if (!externalNode.isUndefined() && !externalNode.isNull()) {
+        this->externalCompatible = externalNode.toBool();
+      }
+    }
+  }
+
   updateEnableState();
 }
 
@@ -153,10 +179,18 @@ void AddPythonTransformReaction::updateEnableState()
   if (enable) {
     auto dataSource = pipeline->transformedDataSource();
 
-    if ((requiresTiltSeries && dataSource->type() == DataSource::TiltSeries) ||
-        (requiresVolume && dataSource->type() == DataSource::Volume) ||
-        (requiresFib && dataSource->type() == DataSource::FIB) ||
-        (!requiresTiltSeries && !requiresVolume && !requiresFib)) {
+    auto executionModeCompatible =
+      ((PipelineManager::instance().executionMode() ==
+          Pipeline::ExecutionMode::Docker &&
+        this->externalCompatible) ||
+       (PipelineManager::instance().executionMode() !=
+        Pipeline::ExecutionMode::Docker));
+
+    if (((requiresTiltSeries && dataSource->type() == DataSource::TiltSeries) ||
+         (requiresVolume && dataSource->type() == DataSource::Volume) ||
+         (requiresFib && dataSource->type() == DataSource::FIB) ||
+         (!requiresTiltSeries && !requiresVolume && !requiresFib)) &&
+        executionModeCompatible) {
       enable = true;
     } else {
       enable = false;

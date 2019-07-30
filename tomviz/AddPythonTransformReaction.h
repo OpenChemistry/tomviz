@@ -69,6 +69,7 @@ private:
   bool requiresTiltSeries;
   bool requiresVolume;
   bool requiresFib;
+  bool externalCompatible = true;
 };
 } // namespace tomviz
 
