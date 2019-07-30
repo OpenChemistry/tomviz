@@ -3,9 +3,9 @@
   "label" : "SIRT Reconstruction",
   "description" : "Reconstruct a tilt series using Simultaneous Iterative Reconstruction Techniques Technique (SIRT) with a Positivity Constraint.
 
-The tilt axis must be parallel to the x-direction and centered in the y-direction. 
+The tilt axis must be parallel to the x-direction and centered in the y-direction.
 
-The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below. 
+The size of reconstruction will be (Nx,Ny,Ny). The number of iterations can be specified below.
 
 Reconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 iterations.",
   "children": [
@@ -33,7 +33,7 @@ Reconstrucing a 256x256x256 tomogram typically takes more than 100 mins with 5 i
       "minimum" : 0
     },
     {
-      "name" : "updateMethodIndex", 
+      "name" : "updateMethodIndex",
       "label" : "Update method",
       "type" : "enumeration",
       "default" : 0,
