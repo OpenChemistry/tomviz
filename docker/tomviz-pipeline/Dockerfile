@@ -8,8 +8,6 @@ COPY tomviz/python/ /tmp/python/
 RUN pip install /tmp/python/ && \
   rm -rf /tmp/python/
 
-RUN pip install itk
-
 ENTRYPOINT ["tomviz-pipeline"]
 
 ARG BUILD_DATE
