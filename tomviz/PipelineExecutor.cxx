@@ -234,7 +234,9 @@ docker::DockerStopInvocation* DockerPipelineExecutor::stop(
       Q_UNUSED(exitStatus)
       if (exitCode) {
         displayError("Docker Error",
-                     QString("Docker stop failed with: %1").arg(exitCode));
+                     QString("Docker stop failed with: %1\n\n%2")
+                      .arg(exitCode)
+                      .arg(stopInvocation->stdErr()));
         stopInvocation->deleteLater();
         return;
       }
