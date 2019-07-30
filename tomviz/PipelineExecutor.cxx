@@ -457,11 +457,21 @@ void DockerPipelineExecutor::cancel(std::function<void()> canceled)
 bool DockerPipelineExecutor::cancel(Operator* op)
 {
   Q_UNUSED(op);
+
+  if (m_containerId.isEmpty()) {
+    return false;
+  }
+
+  // Cancel status checks
+  m_statusCheckTimer->stop();
+
+  // Stop the progress reader
+  m_progressReader->stop();
+
   // Simply stop the container.
   stop(m_containerId);
 
-  // Call reset to stop progress updates, status checking and clean
-  // update state.
+  // Clean update state.
   reset();
 
   // We can't cancel an individual operator so we return false, so the caller
