@@ -364,11 +364,9 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
           &DockerPipelineExecutor::reset);
 
   // We need to hook up the transformCanceled signal to each of the operators,
-  // so
-  // we can stop the container if the user cancels any of them.
+  // so we can stop the container if the user cancels any of them.
   for (Operator* op : operators) {
-    connect(op, &Operator::transformCanceled,
-            [this]() { this->cancel(nullptr); });
+    connect(op, &Operator::transformCanceled, future, [this]() { this->cancel(nullptr); });
   }
 
   // We are now ready to run the pipeline
