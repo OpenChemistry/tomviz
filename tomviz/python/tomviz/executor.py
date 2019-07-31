@@ -4,7 +4,6 @@ import os
 import numpy as np
 import logging
 import tempfile
-import sys
 import socket
 import abc
 import stat
@@ -28,6 +27,7 @@ logger.addHandler(stream_handler)
 
 DIMS = ['dim1', 'dim2', 'dim3']
 ANGLE_UNITS = [b'[deg]', b'[rad]']
+
 
 class ProgressBase(object):
     def started(self, op=None):
@@ -245,6 +245,7 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
 
         self.write(msg)
 
+
 class WriteToFileMixin(object):
     def write_to_file(self, dataobject):
         filename = '%d.emd' % self._sequence_number
@@ -295,6 +296,7 @@ class LocalSocketProgress(WriteToFileMixin, JsonProgress):
             self._connection.close()
 
         return False
+
 
 class FilesProgress(WriteToFileMixin, JsonProgress):
     """
@@ -368,7 +370,7 @@ def _read_emd(path):
                          tomography[dim].attrs['name'][0],
                          tomography[dim].attrs['units'][0]))
 
-        data  = tomography['data'][:]
+        data = tomography['data'][:]
         # If this is a tilt series, swap the X and Z axes
         if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
             data = np.transpose(data, [2, 1, 0])
@@ -378,7 +380,6 @@ def _read_emd(path):
             x_dim = dims[-1]
             dims[0] = x_dim
             dims[-1] = angle_dim
-
 
         # EMD stores data as row major order.  VTK expects column major order.
         data = np.asfortranarray(data)
@@ -410,15 +411,18 @@ def _write_emd(path, data, tilt_angles=None, dims=None):
 
             for i, name in zip(range(0, 3), names):
                 values = np.array(range(data.shape[i]))
-                dims.append(('/data/tomography/dim%d' % (i+1), values, name, '[n_m]'))
+                dims.append(('/data/tomography/dim%d' % (i+1),
+                             values, name, '[n_m]'))
 
         # Swap the dims as well
         if tilt_angles is not None:
-            (first_dataset_name, first_values, first_name, first_units) = dims[0]
+            (first_dataset_name, first_values, first_name, first_units) = \
+                dims[0]
             (last_dataset_name, last_values, last_name, last_units) = dims[-1]
 
             dims[0] = (first_dataset_name, last_values, 'angles', last_units)
-            dims[-1] = (last_dataset_name, first_values, first_name, first_units)
+            dims[-1] = (last_dataset_name, first_values, first_name,
+                        first_units)
 
         # add dimension vectors
         for (dataset_name, values, name, units) in dims:
@@ -440,7 +444,7 @@ def _write_emd(path, data, tilt_angles=None, dims=None):
 
 class DataObject(object):
     def __init__(self, array):
-        self.array  = array
+        self.array = array
         self.is_volume = False
         self.tilt_angles = None
 
@@ -453,9 +457,10 @@ class DataObject(object):
 
     def set_array(self, new_array):
         if not np.isfortran(new_array):
-            array = np.asfortranarray(new_array)
+            new_array = np.asfortranarray(new_array)
 
         self.array = new_array
+
 
 def _patch_utils():
     # Monkey patch tomviz.utils to support API outside Tomviz app.
@@ -516,7 +521,8 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
     if operator_label == 'SetTiltAngles':
         # Set the tilt angles so downstream operator can retrieve them
         # arguments the tilt angles.
-        utils.set_tilt_angles(input, np.array(arguments['angles'], dtype=np.float64))
+        utils.set_tilt_angles(input, np.array(arguments['angles'],
+                              dtype=np.float64))
     else:
         # Now run the operator
         result = transform(input, **arguments)
@@ -535,8 +541,8 @@ def _load_transform_functions(operators):
         # Special case for tilt angles operator
         if operator['type'] == 'SetTiltAngles':
             # Just save the angles
-            transform_functions.append((operator['type'], None,
-                                        {'angles': [float(a) for a in operator['angles']]}))
+            angles = {'angles': [float(a) for a in operator['angles']]}
+            transform_functions.append((operator['type'], None, angles))
             continue
 
         if 'script' not in operator:
@@ -583,7 +589,8 @@ def _write_child_data(result, operator_index, output_file_path, dims):
 
         # Now write out the data
         child_data_path = os.path.join(operator_path, '%s.emd' % label)
-        _write_emd(child_data_path, dataobject.array, dataobject.tilt_angles, dims)
+        _write_emd(child_data_path, dataobject.array, dataobject.tilt_angles,
+                   dims)
 
 
 def execute(operators, start_at, data_file_path, output_file_path,
@@ -626,7 +633,8 @@ def execute(operators, start_at, data_file_path, output_file_path,
             _write_emd(output_file_path, data.array, data.tilt_angles, dims)
         else:
             [(_, child_data)] = result.items()
-            _write_emd(output_file_path, child_data.array, child_data.tilt_angles, dims)
+            _write_emd(output_file_path, child_data.array,
+                       child_data.tilt_angles, dims)
         logger.info('Write complete.')
         progress.finished()
 
