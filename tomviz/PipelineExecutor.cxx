@@ -235,8 +235,8 @@ docker::DockerStopInvocation* DockerPipelineExecutor::stop(
       if (exitCode) {
         displayError("Docker Error",
                      QString("Docker stop failed with: %1\n\n%2")
-                      .arg(exitCode)
-                      .arg(stopInvocation->stdErr()));
+                       .arg(exitCode)
+                       .arg(stopInvocation->stdErr()));
         stopInvocation->deleteLater();
         return;
       }
@@ -366,7 +366,8 @@ Pipeline::Future* DockerPipelineExecutor::execute(vtkDataObject* data,
   // We need to hook up the transformCanceled signal to each of the operators,
   // so we can stop the container if the user cancels any of them.
   for (Operator* op : operators) {
-    connect(op, &Operator::transformCanceled, future, [this]() { this->cancel(nullptr); });
+    connect(op, &Operator::transformCanceled, future,
+            [this]() { this->cancel(nullptr); });
   }
 
   // We are now ready to run the pipeline
