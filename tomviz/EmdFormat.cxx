@@ -92,7 +92,8 @@ bool EmdFormat::read(const std::string& fileName, vtkImageData* image)
   if (!reader.isDataSet(emdDataNode))
     return false;
 
-  if (!GenericHDF5Format::readVolume(reader, emdDataNode, image)) {
+  GenericHDF5Format f;
+  if (!f.readVolume(reader, emdDataNode, image)) {
     std::cerr << "Failed to read the volume at " << emdDataNode << "\n";
     return false;
   }

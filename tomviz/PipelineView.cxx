@@ -33,6 +33,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QItemDelegate>
 #include <QItemSelection>
 #include <QKeyEvent>
@@ -226,6 +227,7 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
   QAction* snapshotAction = nullptr;
   QAction* showInterfaceAction = nullptr;
   QAction* exportTableResultAction = nullptr;
+  QAction* reloadAndResampleAction = nullptr;
   bool allowReExecute = false;
   CloneDataReaction* cloneReaction;
 
@@ -243,6 +245,8 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
       if (dataSource->type() == DataSource::Volume) {
         markAsTiltAction = contextMenu.addAction("Mark as Tilt Series");
         // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
+        if (dataSource->canReloadAndResample())
+          reloadAndResampleAction = contextMenu.addAction("Reload and Resample");
       } else if (dataSource->type() == DataSource::TiltSeries) {
         markAsVolumeAction = contextMenu.addAction("Mark as Volume");
         // markAsFibAction = contextMenu.addAction("Mark as Focused Ion Beam");
@@ -398,6 +402,15 @@ void PipelineView::contextMenuEvent(QContextMenuEvent* e)
     }
   } else if (selectedItem == exportTableResultAction) {
     exportTableAsJson(vtkTable::SafeDownCast(result->dataObject()));
+  } else if (selectedItem == reloadAndResampleAction) {
+    // Have the user pick a stride
+    bool ok;
+    int stride = QInputDialog::getInt(nullptr, "Reload and Resample",
+                                      "Choose Stride", 1, 1, 1e5, 1, &ok);
+    if (!ok)
+      return;
+
+    dataSource->reloadAndResample(stride);
   }
 }
 

@@ -62,16 +62,18 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 
   // Check if one of the dimensions is greater than 1200.
   // If so, ask the user to choose a stride.
-  int stride = 1;
-  for (const auto& dim : dims) {
-    if (dim > 1200) {
-      bool ok;
-      stride = QInputDialog::getInt(nullptr, "Large Dataset", "Choose Stride",
-                                    1, 1, 1e5, 1, &ok);
-      if (!ok)
-        return false;
+  int stride = m_stride;
+  if (m_checkSize) {
+    for (const auto& dim : dims) {
+      if (dim > 1200) {
+        bool ok;
+        stride = QInputDialog::getInt(nullptr, "Large Dataset", "Choose Stride",
+                                      1, 1, 1e5, 1, &ok);
+        if (!ok)
+          return false;
 
-      break;
+        break;
+      }
     }
   }
 
@@ -116,7 +118,7 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image)
   if (reader.isDataSet("/exchange/data")) {
     reader.close();
     DataExchangeFormat deFormat;
-    return deFormat.read(fileName, image);
+    return deFormat.read(fileName, image, m_checkSize, m_stride);
   }
 
   // Find all 3D datasets. If there is more than one, have the user choose.
@@ -161,7 +163,7 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image)
     dataNode = datasets[combo.currentIndex()];
   }
 
-  return GenericHDF5Format::readVolume(reader, dataNode, image);
+  return readVolume(reader, dataNode, image);
 }
 
 } // namespace tomviz
