@@ -289,6 +289,11 @@ QStringList DataSource::fileNames() const
 
 bool DataSource::canReloadAndResample() const
 {
+  // We do not currently allow datasources with operators to be
+  // reloaded and resampled.
+  if (!operators().empty())
+    return false;
+
   const auto& files = fileNames();
 
   // This currently only works for single files
