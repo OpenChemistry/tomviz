@@ -11,6 +11,7 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QInputDialog>
 #include <QLabel>
 #include <QVBoxLayout>
 
@@ -59,15 +60,17 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   // Get the dimensions
   std::vector<int> dims = reader.getDimensions(path);
 
-  // Check if one of the dimensions is greater than 1100
-  // If so, we will use a stride of 2.
-  // TODO: make this an option in the UI
+  // Check if one of the dimensions is greater than 1200.
+  // If so, ask the user to choose a stride.
   int stride = 1;
   for (const auto& dim : dims) {
-    if (dim > 1100) {
-      stride = 2;
-      std::cout << "Using a stride of " << stride << " because the data "
-                << "set is very large\n";
+    if (dim > 1200) {
+      bool ok;
+      stride = QInputDialog::getInt(nullptr, "Large Dataset", "Choose Stride",
+                                    1, 1, 1e5, 1, &ok);
+      if (!ok)
+        return false;
+
       break;
     }
   }
