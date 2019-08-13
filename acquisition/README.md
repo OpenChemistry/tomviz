@@ -1,5 +1,6 @@
-These instructions refer to the active acquisition server, refer to PASSIVE.md
-if you wish to monitor a directory for newly acquired data passively.
+These instructions refer to the active acquisition server, refer to
+[passive acquisition tutorial][passive] if you wish to monitor a directory for
+newly acquired data passively.
 
 # Installing development dependencies
 
@@ -203,3 +204,5 @@ Where ```url``` is URL that can be used to fetch th 2D TIFF
 
 ```
 Where ```url``` is URL that can be used to fetch th 2D TIFF
+
+[passive]: https://tomviz.readthedocs.io/en/latest/passive/
