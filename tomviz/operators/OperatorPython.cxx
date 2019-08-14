@@ -16,6 +16,7 @@
 #include "EditOperatorWidget.h"
 #include "OperatorResult.h"
 #include "OperatorWidget.h"
+#include "Pipeline.h"
 #include "PythonUtilities.h"
 #include "Utilities.h"
 #include "pqPythonSyntaxHighlighter.h"
@@ -155,20 +156,23 @@ OperatorPython::OperatorPython(QObject* parentObject)
     }
   }
 
+  auto connectionType = Qt::BlockingQueuedConnection;
+  if (dataSource()->pipeline()->executionMode() ==
+      Pipeline::ExecutionMode::Docker) {
+    connectionType = Qt::DirectConnection;
+  }
   // Needed so the worker thread can update data in the UI thread.
   connect(this, SIGNAL(childDataSourceUpdated(vtkSmartPointer<vtkDataObject>)),
           this, SLOT(updateChildDataSource(vtkSmartPointer<vtkDataObject>)),
-          Qt::BlockingQueuedConnection);
+          connectionType);
 
   // This connection is needed so we can create new child data sources in the UI
   // thread from a pipeline worker threads.
-  connect(
-    this,
-    SIGNAL(newChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>)),
-    this,
-    SLOT(
-      createNewChildDataSource(const QString&, vtkSmartPointer<vtkDataObject>)),
-    Qt::BlockingQueuedConnection);
+  connect(this, SIGNAL(newChildDataSource(const QString&,
+                                          vtkSmartPointer<vtkDataObject>)),
+          this, SLOT(createNewChildDataSource(const QString&,
+                                              vtkSmartPointer<vtkDataObject>)),
+          connectionType);
   connect(
     this,
     SIGNAL(newOperatorResult(const QString&, vtkSmartPointer<vtkDataObject>)),
@@ -340,21 +344,12 @@ void OperatorPython::setScript(const QString& str)
   }
 }
 
-bool OperatorPython::applyTransform(vtkDataObject* data)
+void OperatorPython::createChildDataSources()
 {
-  if (m_script.isEmpty()) {
-    return false;
-  }
-  if (!d->OperatorModule.isValid() || !d->TransformMethod.isValid()) {
-    return false;
-  }
-
-  Q_ASSERT(data);
-
   // Create child datasets in advance. Keep a map from DataSource to name
   // so that we can match Python script return dictionary values containing
   // child data after the script finishes.
-  QMap<DataSource*, QString> dataSourceByName;
+  m_dataSourceByName.clear();
   for (int i = 0; i < m_childDataSourceNamesAndLabels.size(); ++i) {
     QPair<QString, QString> nameLabelPair = m_childDataSourceNamesAndLabels[i];
     QString name(nameLabelPair.first);
@@ -367,10 +362,70 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
       childData->ShallowCopy(
         vtkImageData::SafeDownCast(dataSource()->dataObject()));
       emit newChildDataSource(label, childData);
-    }
 
-    dataSourceByName.insert(childDataSource(), nameLabelPair.first);
+      m_dataSourceByName.insert(childDataSource(), nameLabelPair.first);
+    }
   }
+}
+
+bool OperatorPython::updateChildDataSources(Python::Dict outputDict)
+{
+  if (hasChildDataSource()) {
+    Python::Object pyDataObject;
+    QString childKey = m_dataSourceByName[childDataSource()];
+    pyDataObject = outputDict[childKey];
+    if (!pyDataObject.isValid()) {
+      qCritical() << "No child dataset named " << childKey
+                  << "defined in dictionary returned from Python script.\n";
+      return false;
+    } else {
+      vtkObjectBase* vtkobject =
+        Python::VTK::GetPointerFromObject(pyDataObject, "vtkDataObject");
+      vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
+      if (dataObject) {
+        TemporarilyReleaseGil releaseMe;
+        emit childDataSourceUpdated(dataObject);
+      }
+    }
+  }
+
+  return true;
+}
+
+bool OperatorPython::updateChildDataSources(
+  QMap<QString, vtkSmartPointer<vtkDataObject>> output)
+{
+  if (hasChildDataSource()) {
+    QString childKey = m_dataSourceByName[childDataSource()];
+    for (QMap<QString, vtkSmartPointer<vtkDataObject>>::const_iterator iter =
+           output.begin();
+         iter != output.end(); ++iter) {
+
+      if (iter.key() != childKey) {
+        qCritical() << "No child dataset named " << childKey
+                    << "defined in dictionary returned from Python script.\n";
+        return false;
+      }
+
+      emit childDataSourceUpdated(iter.value());
+    }
+  }
+
+  return true;
+}
+
+bool OperatorPython::applyTransform(vtkDataObject* data)
+{
+  if (m_script.isEmpty()) {
+    return false;
+  }
+  if (!d->OperatorModule.isValid() || !d->TransformMethod.isValid()) {
+    return false;
+  }
+
+  Q_ASSERT(data);
+
+  createChildDataSources();
 
   Python::Object pydata = Python::VTK::GetObjectFromPointer(data);
 
@@ -407,24 +462,7 @@ bool OperatorPython::applyTransform(vtkDataObject* data)
     Python::Dict outputDict = result.toDict();
 
     // Support setting child data from the output dictionary
-    if (hasChildDataSource()) {
-      Python::Object pyDataObject;
-      QString childKey = dataSourceByName[childDataSource()];
-      pyDataObject = outputDict[childKey];
-      if (!pyDataObject.isValid()) {
-        errorEncountered = true;
-        qCritical() << "No child dataset named " << childKey
-                    << "defined in dictionary returned from Python script.\n";
-      } else {
-        vtkObjectBase* vtkobject =
-          Python::VTK::GetPointerFromObject(pyDataObject, "vtkDataObject");
-        vtkDataObject* dataObject = vtkDataObject::SafeDownCast(vtkobject);
-        if (dataObject) {
-          TemporarilyReleaseGil releaseMe;
-          emit childDataSourceUpdated(dataObject);
-        }
-      }
-    }
+    errorEncountered = !updateChildDataSources(outputDict);
 
     // Results (tables, etc.)
     for (int i = 0; i < m_resultNames.size(); ++i) {

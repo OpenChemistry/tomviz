@@ -75,36 +75,36 @@ Operator* OperatorFactory::createOperator(const QString& type, DataSource* ds)
   return op;
 }
 
-const char* OperatorFactory::operatorType(Operator* op)
+const char* OperatorFactory::operatorType(const Operator* op)
 {
-  if (qobject_cast<OperatorPython*>(op)) {
+  if (qobject_cast<const OperatorPython*>(op)) {
     return "Python";
   }
-  if (qobject_cast<ConvertToVolumeOperator*>(op)) {
+  if (qobject_cast<const ConvertToVolumeOperator*>(op)) {
     return "ConvertToVolume";
   }
-  if (qobject_cast<ArrayWranglerOperator*>(op)) {
+  if (qobject_cast<const ArrayWranglerOperator*>(op)) {
     return "ArrayWrangler";
   }
-  if (qobject_cast<ConvertToFloatOperator*>(op)) {
+  if (qobject_cast<const ConvertToFloatOperator*>(op)) {
     return "ConvertToFloat";
   }
-  if (qobject_cast<CropOperator*>(op)) {
+  if (qobject_cast<const CropOperator*>(op)) {
     return "Crop";
   }
-  if (qobject_cast<ReconstructionOperator*>(op)) {
+  if (qobject_cast<const ReconstructionOperator*>(op)) {
     return "CxxReconstruction";
   }
-  if (qobject_cast<SetTiltAnglesOperator*>(op)) {
+  if (qobject_cast<const SetTiltAnglesOperator*>(op)) {
     return "SetTiltAngles";
   }
-  if (qobject_cast<TranslateAlignOperator*>(op)) {
+  if (qobject_cast<const TranslateAlignOperator*>(op)) {
     return "TranslateAlign";
   }
-  if (qobject_cast<TransposeDataOperator*>(op)) {
+  if (qobject_cast<const TransposeDataOperator*>(op)) {
     return "TransposeData";
   }
-  if (qobject_cast<SnapshotOperator*>(op)) {
+  if (qobject_cast<const SnapshotOperator*>(op)) {
     return "Snapshot";
   }
   return nullptr;

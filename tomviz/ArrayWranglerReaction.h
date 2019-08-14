@@ -4,14 +4,14 @@
 #ifndef tomvizArrayWranglerReaction_h
 #define tomvizArrayWranglerReaction_h
 
-#include <pqReaction.h>
+#include <Reaction.h>
 
 class QMainWindow;
 
 namespace tomviz {
 class DataSource;
 
-class ArrayWranglerReaction : public pqReaction
+class ArrayWranglerReaction : public Reaction
 {
   Q_OBJECT
 
@@ -21,7 +21,6 @@ public:
   void wrangleArray(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState() override;
   void onTriggered() override { wrangleArray(); }
 
 private:

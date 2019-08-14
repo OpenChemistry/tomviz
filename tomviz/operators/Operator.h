@@ -225,11 +225,17 @@ signals:
   // a new operator is added.
   void dataSourceMoved(DataSource*);
 
+  // Emitted when the operator is moved into the canceled state. Note at this
+  // point the operator may still be running. This is used to indicate that
+  // a request to cancel this operator has been issued.
+  void transformCanceled();
+
 public slots:
   /// Called when the 'Cancel' button is pressed on the progress dialog.
   /// Subclasses overriding this method should call the base implementation
   /// to ensure the operator is marked as canceled.
-  virtual void cancelTransform() { m_state = OperatorState::Canceled; }
+  /// TODO: Not sure we need this/want this virtual anymore?
+  virtual void cancelTransform();
   bool isCanceled() { return m_state == OperatorState::Canceled; }
   bool isFinished()
   {

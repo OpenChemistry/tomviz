@@ -18,24 +18,8 @@
 namespace tomviz {
 
 ReconstructionReaction::ReconstructionReaction(QAction* parentObject)
-  : pqReaction(parentObject)
+  : Reaction(parentObject)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
-  updateEnableState();
-}
-
-void ReconstructionReaction::updateEnableState()
-{
-  auto pipeline = ActiveObjects::instance().activePipeline();
-  bool enable = pipeline != nullptr;
-
-  if (enable) {
-    auto dataSource = pipeline->transformedDataSource();
-    enable = dataSource->type() == DataSource::TiltSeries;
-  }
-
-  parentAction()->setEnabled(enable);
 }
 
 void ReconstructionReaction::recon(DataSource* input)

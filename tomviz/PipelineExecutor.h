@@ -43,9 +43,9 @@ public:
 
   /// Execute list of operators on a give data source. start is the index into
   /// the operator list indicating where the execution should start.
-  virtual void execute(vtkDataObject* data, QList<Operator*> operators,
-                       int start = 0) = 0;
-  virtual Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op) = 0;
+  virtual Pipeline::Future* execute(vtkDataObject* data,
+                                    QList<Operator*> operators, int start = 0,
+                                    int end = -1) = 0;
   virtual void cancel(std::function<void()> canceled) = 0;
   bool cancel(Operator* op);
   virtual bool isRunning() = 0;
@@ -60,26 +60,15 @@ class ThreadPipelineExecutor : public PipelineExecutor
 
 public:
   ThreadPipelineExecutor(Pipeline* pipeline);
-  void execute(vtkDataObject* data, QList<Operator*> operators, int start = 0);
-  Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op);
+  Pipeline::Future* execute(vtkDataObject* data, QList<Operator*> operators,
+                            int start = 0, int end = -1);
   void cancel(std::function<void()> canceled);
   bool cancel(Operator* op);
   bool isRunning();
 
-private slots:
-  void executePipelineBranch(vtkDataObject* data, QList<Operator*> operators);
-
-  /// The pipeline worker is finished with this branch.
-  void pipelineBranchFinished(bool result);
-
-  /// The pipeline worker has been canceled
-  void pipelineBranchCanceled();
-
-  void execute(DataSource* dataSource);
-
 private:
   PipelineWorker* m_worker;
-  PipelineWorker::Future* m_future = nullptr;
+  QPointer<PipelineWorker::Future> m_future;
 };
 
 class ProgressReader;
@@ -91,19 +80,18 @@ class DockerPipelineExecutor : public PipelineExecutor
 public:
   DockerPipelineExecutor(Pipeline* pipeline);
   ~DockerPipelineExecutor();
-  void execute(vtkDataObject* data, QList<Operator*> operators, int start = 0);
-  Pipeline::ImageFuture* getCopyOfImagePriorTo(Operator* op);
+  Pipeline::Future* execute(vtkDataObject* data, QList<Operator*> operators,
+                            int start = 0, int end = -1);
   void cancel(std::function<void()> canceled);
   bool cancel(Operator* op);
   bool isRunning();
 
 private slots:
   void error(QProcess::ProcessError error);
-  void progressReady(const QString& progressMessage);
   docker::DockerRunInvocation* run(const QString& image,
                                    const QStringList& args,
                                    const QMap<QString, QString>& bindMounts);
-  void remove(const QString& containerId);
+  void remove(const QString& containerId, bool force = false);
   docker::DockerStopInvocation* stop(const QString& containerId);
   void containerError(int exitCode);
 
@@ -119,12 +107,12 @@ private:
   void operatorStarted(Operator* op);
   void operatorFinished(Operator* op);
   void operatorError(Operator* op, const QString& error);
-  void operatorCanceled(Operator* op);
   void operatorProgressMaximum(Operator* op, int max);
   void operatorProgressStep(Operator* op, int step);
   void operatorProgressMessage(Operator* op, const QString& msg);
+  void operatorProgressData(Operator* op, vtkSmartPointer<vtkDataObject> data);
   void pipelineStarted();
-  void pipelineFinished();
+  void reset();
   void displayError(const QString& title, const QString& msg);
 };
 
@@ -133,16 +121,31 @@ class ProgressReader : public QObject
   Q_OBJECT
 
 public:
-  ProgressReader(const QString& path);
+  ProgressReader(const QString& path, const QList<Operator*>& operators);
 
   virtual void start() = 0;
   virtual void stop() = 0;
+  vtkSmartPointer<vtkDataObject> readProgressData(const QString& path);
 
 signals:
   void progressMessage(const QString& msg);
+  void operatorStarted(Operator* op);
+  void operatorFinished(Operator* op);
+  void operatorError(Operator* op, const QString& error);
+  void operatorCanceled(Operator* op);
+  void operatorProgressMaximum(Operator* op, int max);
+  void operatorProgressStep(Operator* op, int step);
+  void operatorProgressMessage(Operator* op, const QString& msg);
+  void operatorProgressData(Operator* op, vtkSmartPointer<vtkDataObject> data);
+  void pipelineStarted();
+  void pipelineFinished();
+
+private slots:
+  void progressReady(const QString& msg);
 
 protected:
   QString m_path;
+  QList<Operator*> m_operators;
 };
 
 class FilesProgressReader : public ProgressReader
@@ -150,7 +153,7 @@ class FilesProgressReader : public ProgressReader
   Q_OBJECT
 
 public:
-  FilesProgressReader(const QString& path);
+  FilesProgressReader(const QString& path, const QList<Operator*>& operators);
 
   void start();
   void stop();
@@ -166,7 +169,8 @@ class LocalSocketProgressReader : public ProgressReader
   Q_OBJECT
 
 public:
-  LocalSocketProgressReader(const QString& path);
+  LocalSocketProgressReader(const QString& path,
+                            const QList<Operator*>& operators);
 
   void start();
   void stop();

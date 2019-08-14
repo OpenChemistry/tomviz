@@ -356,7 +356,6 @@ QJsonObject DataSource::serialize() const
   QJsonArray jOperators;
   foreach (Operator* op, this->Internals->Operators) {
     QJsonObject jOperator = op->serialize();
-    jOperator["type"] = OperatorFactory::operatorType(op);
     jOperators.append(jOperator);
   }
   if (!jOperators.isEmpty()) {
@@ -964,7 +963,16 @@ void DataSource::setType(DataSourceType t)
   auto fd = data->GetFieldData();
   auto typeArray =
     vtkTypeInt8Array::SafeDownCast(fd->GetArray("tomviz_data_source_type"));
-  assert(typeArray);
+
+  // Create the type array if it doesn't exist
+  if (typeArray == nullptr) {
+    typeArray = vtkTypeInt8Array::New();
+    typeArray->SetNumberOfComponents(1);
+    typeArray->SetNumberOfTuples(1);
+    typeArray->SetName("tomviz_data_source_type");
+    fd->AddArray(typeArray);
+  }
+
   typeArray->SetTuple1(0, t);
   if (t == TiltSeries) {
     this->Internals->ensureTiltAnglesArrayExists();

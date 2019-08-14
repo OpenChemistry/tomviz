@@ -6,6 +6,7 @@
 #include "DataSource.h"
 #include "EditOperatorDialog.h"
 #include "ModuleManager.h"
+#include "OperatorFactory.h"
 #include "OperatorResult.h"
 #include "Pipeline.h"
 
@@ -159,6 +160,8 @@ QJsonObject Operator::serialize() const
     dataSources.append(ds->serialize());
     json["dataSources"] = dataSources;
   }
+  json["type"] = OperatorFactory::operatorType(this);
+
   return json;
 }
 
@@ -206,5 +209,11 @@ void Operator::createNewChildDataSource(
     childDataSource()->dataModified();
     setHasChildDataSource(true);
   }
+}
+
+void Operator::cancelTransform()
+{
+  m_state = OperatorState::Canceled;
+  emit transformCanceled();
 }
 } // namespace tomviz

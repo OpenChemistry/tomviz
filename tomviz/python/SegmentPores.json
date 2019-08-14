@@ -2,6 +2,7 @@
   "name" : "Segment Pores",
   "label" : "Segment Pores",
   "description" : "Segment pores. The expected pore size must greater than the minimum radius and less than the maximum radius. Pores will be separated according to the minimum radius.",
+  "externalCompatible": false,
   "children" : [
     {
       "name" : "label_map",

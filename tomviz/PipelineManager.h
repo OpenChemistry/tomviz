@@ -21,8 +21,9 @@ class PipelineManager : public QObject
 public:
   static PipelineManager& instance();
 
-  /// Update the execution modethe pipelines are using.
+  /// Update the execution mode the pipelines are using.
   void updateExecutionMode(Pipeline::ExecutionMode mode);
+  Pipeline::ExecutionMode executionMode();
 
 public slots:
   void addPipeline(Pipeline*);
@@ -38,6 +39,7 @@ private:
   ~PipelineManager() override;
 
   QList<QPointer<Pipeline>> m_pipelines;
+  Pipeline::ExecutionMode m_executionMode;
 };
 } // namespace tomviz
 

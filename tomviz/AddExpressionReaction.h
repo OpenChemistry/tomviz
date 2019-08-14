@@ -4,13 +4,13 @@
 #ifndef tomvizAddExpressionReaction_h
 #define tomvizAddExpressionReaction_h
 
-#include <pqReaction.h>
+#include <Reaction.h>
 
 namespace tomviz {
 class DataSource;
 class OperatorPython;
 
-class AddExpressionReaction : public pqReaction
+class AddExpressionReaction : public Reaction
 {
   Q_OBJECT
 
@@ -20,7 +20,6 @@ public:
   OperatorPython* addExpression(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState() override;
   void onTriggered() override { addExpression(); }
 
 private:

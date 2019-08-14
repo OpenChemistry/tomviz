@@ -4,12 +4,12 @@
 #ifndef tomvizReconstructionReaction_h
 #define tomvizReconstructionReaction_h
 
-#include <pqReaction.h>
+#include <Reaction.h>
 
 namespace tomviz {
 class DataSource;
 
-class ReconstructionReaction : public pqReaction
+class ReconstructionReaction : public Reaction
 {
   Q_OBJECT
 
@@ -19,7 +19,6 @@ public:
   void recon(DataSource* input = NULL);
 
 protected:
-  void updateEnableState();
   void onTriggered() { recon(); }
 
 private:

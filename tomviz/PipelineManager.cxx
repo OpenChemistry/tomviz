@@ -8,7 +8,12 @@
 
 namespace tomviz {
 
-PipelineManager::PipelineManager(QObject* p) : QObject(p) {}
+PipelineManager::PipelineManager(QObject* p) : QObject(p)
+{
+  PipelineSettings settings;
+  m_executionMode = settings.executionMode();
+  emit executionModeUpdated(m_executionMode);
+}
 
 PipelineManager::~PipelineManager() = default;
 
@@ -20,6 +25,7 @@ PipelineManager& PipelineManager::instance()
 
 void PipelineManager::updateExecutionMode(Pipeline::ExecutionMode mode)
 {
+  m_executionMode = mode;
   emit executionModeUpdated(mode);
 }
 
@@ -47,6 +53,11 @@ void PipelineManager::removeAllPipelines()
     pipeline->deleteLater();
   }
   m_pipelines.clear();
+}
+
+Pipeline::ExecutionMode PipelineManager::executionMode()
+{
+  return m_executionMode;
 }
 
 } // end of namespace tomviz

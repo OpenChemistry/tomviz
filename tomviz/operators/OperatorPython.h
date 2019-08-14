@@ -5,6 +5,7 @@
 #define tomvizOperatorPython_h
 
 #include "Operator.h"
+#include "PythonUtilities.h"
 #include <QMap>
 #include <QMetaType>
 #include <QScopedPointer>
@@ -53,6 +54,14 @@ public:
   /// Returns the argument that will be passed to transform_scalars
   QMap<QString, QVariant> arguments() const;
 
+  /// Not really "public" but needs to called when running pipeline externally.
+  void createChildDataSources();
+
+  /// Not really "public" but needs to called when running pipeline externally.
+  bool updateChildDataSources(Python::Dict output);
+  bool updateChildDataSources(
+    QMap<QString, vtkSmartPointer<vtkDataObject>> output);
+
   typedef CustomPythonOperatorWidget* (*CustomWidgetFunction)(
     QWidget*, Operator*, vtkSmartPointer<vtkImageData>);
 
@@ -96,6 +105,7 @@ private:
 
   QList<QString> m_resultNames;
   QList<QPair<QString, QString>> m_childDataSourceNamesAndLabels;
+  QMap<DataSource*, QString> m_dataSourceByName;
   QMap<QString, QVariant> m_arguments;
   int m_numberOfParameters = 0;
 };

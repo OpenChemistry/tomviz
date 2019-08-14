@@ -219,11 +219,15 @@ DockerInspectInvocation* DockerInspectInvocation::run()
   return qobject_cast<DockerInspectInvocation*>(DockerInvocation::run());
 }
 
-DockerRemoveInvocation::DockerRemoveInvocation(const QString& containerId)
+DockerRemoveInvocation::DockerRemoveInvocation(const QString& containerId,
+                                               bool force)
   : m_containerId(containerId)
 {
   QStringList args;
   args.append(containerId);
+  if (force) {
+    args.append("-f");
+  }
 
   init("rm", args);
 }
@@ -256,9 +260,9 @@ DockerStopInvocation* stop(const QString& containerId, int wait)
   return invocation->run();
 }
 
-DockerRemoveInvocation* remove(const QString& containerId)
+DockerRemoveInvocation* remove(const QString& containerId, bool force)
 {
-  auto invocation = new DockerRemoveInvocation(containerId);
+  auto invocation = new DockerRemoveInvocation(containerId, force);
   return invocation->run();
 }
 

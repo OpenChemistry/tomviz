@@ -1,14 +1,15 @@
 import h5py
 import importlib
 import os
-import numpy
+import numpy as np
 import logging
 import tempfile
-import sys
 import socket
 import abc
 import stat
 import json
+import six
+import errno
 
 from tqdm import tqdm
 
@@ -25,6 +26,7 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 DIMS = ['dim1', 'dim2', 'dim3']
+ANGLE_UNITS = [b'[deg]', b'[rad]']
 
 
 class ProgressBase(object):
@@ -120,6 +122,12 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
         Method the write JSON progress message. Implemented by subclass.
         """
 
+    @abc.abstractmethod
+    def write_to_file(self, data):
+        """
+        Write data to write and return path. Implemented by subclass.
+        """
+
     def set_operator_index(self, index):
         self._operator_index = index
 
@@ -182,11 +190,32 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
         m = {
             'type': 'progress.message',
             'operator': self._operator_index,
-            'messages': msg
+            'value': msg
         }
         self.write(m)
 
         self._message = msg
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        """
+        Updates the progress of the the operator.
+
+        :param data The current progress data value.
+        :type value: numpy.ndarray
+        """
+        path = self.write_to_file(value)
+        msg = {
+            'type': 'progress.data',
+            'operator': self._operator_index,
+            'value': path
+        }
+        self.write(msg)
+        self._data = value
 
     def __enter__(self):
         return self
@@ -217,7 +246,17 @@ class JsonProgress(ProgressBase, metaclass=abc.ABCMeta):
         self.write(msg)
 
 
-class LocalSocketProgress(JsonProgress):
+class WriteToFileMixin(object):
+    def write_to_file(self, dataobject):
+        filename = '%d.emd' % self._sequence_number
+        path = os.path.join(os.path.dirname(self._path), filename)
+        _write_emd(path, dataobject.array, dataobject.tilt_angles)
+        self._sequence_number += 1
+
+        return filename
+
+
+class LocalSocketProgress(WriteToFileMixin, JsonProgress):
     """
     Class used to update operator progress. Connects to QLocalServer and writes
     JSON message updating the UI on pipeline progress.
@@ -229,6 +268,7 @@ class LocalSocketProgress(JsonProgress):
         self._message = None
         self._connection = None
         self._path = socket_path
+        self._sequence_number = 0
 
         try:
             mode = os.stat(self._path).st_mode
@@ -258,7 +298,7 @@ class LocalSocketProgress(JsonProgress):
         return False
 
 
-class FilesProgress(JsonProgress):
+class FilesProgress(WriteToFileMixin, JsonProgress):
     """
     Class used to update operator progress by writing a sequence of files to a
     directory.
@@ -274,6 +314,8 @@ class FilesProgress(JsonProgress):
 
         with open(file_path, 'w') as f:
             json.dump(data, f)
+
+        return filename
 
 
 def _progress(progress_method, progress_path):
@@ -319,7 +361,6 @@ def _load_operator_module(label, script):
 
 def _read_emd(path):
     with h5py.File(path, 'r') as f:
-        # assuming you know the structure of the file
         tomography = f['data/tomography']
 
         dims = []
@@ -327,12 +368,33 @@ def _read_emd(path):
             dims.append((dim,
                          tomography[dim][:],
                          tomography[dim].attrs['name'][0],
-                         tomography[dim].attrs['name'][0]))
+                         tomography[dim].attrs['units'][0]))
 
-        return (tomography['data'][:], dims)
+        data = tomography['data'][:]
+        # If this is a tilt series, swap the X and Z axes
+        if dims[0][2] == b'angles' or dims[0][3] in ANGLE_UNITS:
+            data = np.transpose(data, [2, 1, 0])
+
+            # Swap the dims order as well
+            angle_dim = dims[0]
+            x_dim = dims[-1]
+            dims[0] = x_dim
+            dims[-1] = angle_dim
+
+        # EMD stores data as row major order.  VTK expects column major order.
+        data = np.asfortranarray(data)
+
+        return (data, dims)
 
 
-def _write_emd(path, data, dims):
+def _write_emd(path, data, tilt_angles=None, dims=None):
+    # If this is a tilt series, swap the X and Z axes
+    if tilt_angles is not None:
+        data = np.transpose(data, [2, 1, 0])
+
+    # Switch back to row major order for EMD stores
+    data = np.ascontiguousarray(data)
+
     with h5py.File(path, 'w') as f:
         f.attrs.create('version_major', 0, dtype='uint32')
         f.attrs.create('version_minor', 2, dtype='uint32')
@@ -341,33 +403,105 @@ def _write_emd(path, data, dims):
         tomography_group.attrs.create('emd_group_type', 1, dtype='uint32')
         tomography_group.create_dataset('data', data=data)
 
+        if dims is None:
+            dims = []
+            names = ['x', 'y', 'z']
+            if tilt_angles is not None:
+                names = ['angles', 'y', 'x']
+
+            for i, name in zip(range(0, 3), names):
+                values = np.array(range(data.shape[i]))
+                dims.append(('/data/tomography/dim%d' % (i+1),
+                             values, name, '[n_m]'))
+
+        # Swap the dims as well
+        if tilt_angles is not None:
+            (first_dataset_name, first_values, first_name, first_units) = \
+                dims[0]
+            (last_dataset_name, last_values, last_name, last_units) = dims[-1]
+
+            dims[0] = (first_dataset_name, last_values, 'angles', last_units)
+            dims[-1] = (last_dataset_name, first_values, first_name,
+                        first_units)
+
         # add dimension vectors
-        for (dataset_name, value, name, units) in dims:
-            d = tomography_group.create_dataset(dataset_name, (2,))
-            d.attrs['name'] = numpy.string_(name)
-            d.attrs['units'] = numpy.string_(units)
-            d[:] = value
+        for (dataset_name, values, name, units) in dims:
+            d = tomography_group.create_dataset(dataset_name, values.shape)
+            d.attrs['name'] = np.string_(name)
+            d.attrs['units'] = np.string_(units)
+            d[:] = values
+
+        # If we have angle update the first dim
+        if tilt_angles is not None:
+            (name, _, _, units) = dims[0]
+            d = tomography_group[name]
+            d.attrs['name'] = np.string_('angles')
+            # Only override we don't already have a valid angle units.
+            if units not in ANGLE_UNITS:
+                d.attrs['units'] = np.string_('[deg]')
+            d[:] = tilt_angles
+
+
+class DataObject(object):
+    def __init__(self, array):
+        self.array = array
+        self.is_volume = False
+        self.tilt_angles = None
+
+    def set_scalars(self, new_scalars):
+        order = 'C'
+        if np.isfortran(self.array):
+            order = 'F'
+        new_scalars = np.reshape(new_scalars, self.array.shape, order=order)
+        self.array = np.asfortranarray(new_scalars)
+
+    def set_array(self, new_array):
+        if not np.isfortran(new_array):
+            new_array = np.asfortranarray(new_array)
+
+        self.array = new_array
+
+
+def _patch_utils():
+    # Monkey patch tomviz.utils to support API outside Tomviz app.
+    # I know this is a little yucky!
+    def _get_scalars(dataobject):
+        return dataobject.array.ravel(order='A')
+
+    def _set_scalars(dataobject, new_scalars):
+        dataobject.set_scalars(new_scalars)
+
+    def _get_array(dataobject):
+        return dataobject.array
+
+    def _set_array(dataobject, new_array):
+        dataobject.set_array(new_array)
+
+    def _set_tilt_angles(dataobject, tilt_angles):
+        dataobject.tilt_angles = tilt_angles
+
+    def _get_tilt_angles(dataobject):
+        return dataobject.tilt_angles
+
+    def _make_child_dataset(reference_dataset):
+        child = np.empty_like(reference_dataset)
+
+        return DataObject(child)
+
+    def _mark_as_volume(dataobject):
+        dataobject.is_volume = True
+
+    utils.get_scalars = _get_scalars
+    utils.set_scalars = _set_scalars
+    utils.set_array = _set_array
+    utils.get_array = _get_array
+    utils.set_tilt_angles = _set_tilt_angles
+    utils.get_tilt_angles = _get_tilt_angles
+    utils.make_child_dataset = _make_child_dataset
+    utils.mark_as_volume = _mark_as_volume
 
 
 def _execute_transform(operator_label, transform, arguments, input, progress):
-    # Monkey patch tomviz.utils to make get_scalars a no-op and allow use to
-    # retrieve the transformed data from set_scalars. I know this is a little
-    # yucky! And yes I know this is not thread safe!
-    utils.get_scalars = lambda d: d
-    utils.get_array = lambda d: d
-    # Container to allow use to capture the transformed data, in Python 3 we
-    # could use nonlocal :-)
-    transformed_scalars_container = {}
-
-    def _set_scalars(dataobject, new_scalars):
-        transformed_scalars_container['data'] = new_scalars
-
-    def _set_array(dataobject, new_scalars):
-        transformed_scalars_container['data'] = new_scalars
-
-    utils.set_scalars = _set_scalars
-    utils.set_array = _set_array
-
     # Update the progress attribute to an instance that will work outside the
     # application and give use a nice progress information.
     spinner = None
@@ -381,20 +515,35 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
     logger.info('Executing \'%s\' operator' % operator_label)
     if not supports_progress:
         print('Operator doesn\'t support progress updates.')
-    # Now run the operator
-    transform(input, **arguments)
+
+    result = None
+    # Special case for SetTiltAngles
+    if operator_label == 'SetTiltAngles':
+        # Set the tilt angles so downstream operator can retrieve them
+        # arguments the tilt angles.
+        utils.set_tilt_angles(input, np.array(arguments['angles'],
+                              dtype=np.float64))
+    else:
+        # Now run the operator
+        result = transform(input, **arguments)
     if spinner is not None:
         update_spinner.cancel()
         spinner.finish()
 
     logger.info('Execution complete.')
 
-    return transformed_scalars_container['data']
+    return result
 
 
 def _load_transform_functions(operators):
     transform_functions = []
     for operator in operators:
+        # Special case for tilt angles operator
+        if operator['type'] == 'SetTiltAngles':
+            # Just save the angles
+            angles = {'angles': [float(a) for a in operator['angles']]}
+            transform_functions.append((operator['type'], None, angles))
+            continue
 
         if 'script' not in operator:
             raise Exception(
@@ -417,9 +566,43 @@ def _load_transform_functions(operators):
     return transform_functions
 
 
+def _write_child_data(result, operator_index, output_file_path, dims):
+    for (label, dataobject) in six.iteritems(result):
+        # Only need write out data if the operator made updates.
+        output_path = '.'
+        if output_file_path is not None:
+            output_path = os.path.dirname(output_file_path)
+
+        # Make a directory with the operator index
+        operator_path = os.path.join(output_path, str(operator_index))
+        try:
+            stat_result = os.stat(output_path)
+            os.makedirs(operator_path)
+            # We need to chown to the user and group who owns the output
+            # path ( for docker execution )
+            os.chown(operator_path, stat_result.st_uid, stat_result.st_gid)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and os.path.isdir(operator_path):
+                pass
+            else:
+                raise
+
+        # Now write out the data
+        child_data_path = os.path.join(operator_path, '%s.emd' % label)
+        _write_emd(child_data_path, dataobject.array, dataobject.tilt_angles,
+                   dims)
+
+
 def execute(operators, start_at, data_file_path, output_file_path,
             progress_method, progress_path):
     data, dims = _read_emd(data_file_path)
+
+    _patch_utils()
+
+    data = DataObject(data)
+    # If we have angles set them
+    if dims[-1][2] == b'angles':
+        data.tilt_angles = dims[-1][1][:].astype(np.float64)
 
     operators = operators[start_at:]
     transforms = _load_transform_functions(operators)
@@ -428,8 +611,15 @@ def execute(operators, start_at, data_file_path, output_file_path,
         operator_index = start_at
         for (label, transform, arguments) in transforms:
             progress.started(operator_index)
-            data = _execute_transform(label, transform, arguments, data,
-                                      progress)
+            result = _execute_transform(label, transform,
+                                        arguments, data,
+                                        progress)
+
+            # Do we have any child data sources we need to write out?
+            if result is not None:
+                _write_child_data(result, operator_index,
+                                  output_file_path, dims)
+
             progress.finished(operator_index)
             operator_index += 1
 
@@ -438,7 +628,13 @@ def execute(operators, start_at, data_file_path, output_file_path,
         if output_file_path is None:
             output_file_path = '%s_transformed.emd' % \
                 os.path.splitext(os.path.basename(data_file_path))[0]
-        _write_emd(output_file_path, data, dims)
+
+        if result is None:
+            _write_emd(output_file_path, data.array, data.tilt_angles, dims)
+        else:
+            [(_, child_data)] = result.items()
+            _write_emd(output_file_path, child_data.array,
+                       child_data.tilt_angles, dims)
         logger.info('Write complete.')
         progress.finished()
 

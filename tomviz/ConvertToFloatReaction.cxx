@@ -12,17 +12,8 @@
 namespace tomviz {
 
 ConvertToFloatReaction::ConvertToFloatReaction(QAction* parentObject)
-  : pqReaction(parentObject)
+  : Reaction(parentObject)
 {
-  connect(&ActiveObjects::instance(), SIGNAL(dataSourceChanged(DataSource*)),
-          SLOT(updateEnableState()));
-  updateEnableState();
-}
-
-void ConvertToFloatReaction::updateEnableState()
-{
-  parentAction()->setEnabled(ActiveObjects::instance().activeDataSource() !=
-                             nullptr);
 }
 
 void ConvertToFloatReaction::convertToFloat()

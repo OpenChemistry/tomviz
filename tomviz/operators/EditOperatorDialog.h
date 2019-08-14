@@ -44,7 +44,7 @@ private slots:
   void onApply();
   void onCancel();
   void onOkay();
-  void getCopyOfImagePriorToFinished(bool result);
+  void getCopyOfImagePriorToFinished();
 
 signals:
   void editStarted(Operator*);

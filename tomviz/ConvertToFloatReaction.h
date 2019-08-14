@@ -4,12 +4,12 @@
 #ifndef tomvizConvertToFloatReaction_h
 #define tomvizConvertToFloatReaction_h
 
-#include <pqReaction.h>
+#include <Reaction.h>
 
 namespace tomviz {
 class DataSource;
 
-class ConvertToFloatReaction : public pqReaction
+class ConvertToFloatReaction : public Reaction
 {
   Q_OBJECT
 
@@ -19,7 +19,6 @@ public:
   void convertToFloat();
 
 protected:
-  void updateEnableState() override;
   void onTriggered() override { convertToFloat(); }
 
 private:

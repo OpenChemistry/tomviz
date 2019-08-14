@@ -48,7 +48,7 @@ public:
   };
   Q_ENUM(ExecutionMode)
 
-  class ImageFuture;
+  class Future;
 
   Pipeline(DataSource* dataSource, QObject* parent = nullptr);
   ~Pipeline() override;
@@ -77,8 +77,6 @@ public:
   /// Return true if the pipeline is currently being executed.
   bool isRunning();
 
-  ImageFuture* getCopyOfImagePriorTo(Operator* op);
-
   /// Add default modules to this pipeline.
   void addDefaultModules(DataSource* dataSource);
 
@@ -94,12 +92,28 @@ public:
   void setExecutionMode(ExecutionMode executor);
 
   ExecutionMode executionMode() { return m_executionMode; };
+  PipelineExecutor* executor() { return m_executor.data(); };
+
+  static Future* emptyFuture();
 
 public slots:
-  void execute();
-  void execute(DataSource* dataSource, Operator* start = nullptr);
-
-  void branchFinished(DataSource* start, vtkDataObject* newData);
+  /// Execute the entire pipeline, starting at the root data source. Note the
+  /// returned Future instance needs to be cleaned up. deleteWhenFinished() can
+  /// be called to ensure its cleanup when the pipeline execution is finished.
+  Future* execute();
+  /// Execute the pipeline, starting at the given data source. Note the
+  /// returned Future instance needs to be cleaned up. deleteWhenFinished() can
+  /// be called to ensure its cleanup when the pipeline execution is finished.
+  Future* execute(DataSource* dataSource);
+  /// Execute the pipeline, starting at the operator provided. Note the
+  /// returned Future instance needs to be cleaned up. deleteWhenFinished() can
+  /// be called to ensure its cleanup when the pipeline execution is finished.
+  Future* execute(DataSource* dataSource, Operator* start);
+  /// Execute the pipeline, starting at 'start' end just before 'end'. If end is
+  /// nullptr the execution will run to the end of the pipeline. Note the
+  /// returned Future instance needs to be cleaned up. deleteWhenFinished() can
+  /// be called to ensure its cleanup when the pipeline execution is finished.
+  Future* execute(DataSource* dataSource, Operator* start, Operator* end);
 
   /// The user has started/finished editing an operator
   void startedEditingOp(Operator* op);
@@ -116,6 +130,9 @@ signals:
   /// is the datasource that should be moved to become its output in the
   /// pipeline view (or null if there isn't one).
   void operatorAdded(Operator* op, DataSource* outputDS = nullptr);
+
+private slots:
+  void branchFinished();
 
 private:
   DataSource* findTransformedDataSource(DataSource* dataSource);
@@ -135,28 +152,36 @@ private:
 };
 
 /// Return from getCopyOfImagePriorTo for caller to track async operation.
-class Pipeline::ImageFuture : public QObject
+class Pipeline::Future : public QObject
 {
   Q_OBJECT
 
 public:
   friend class ThreadPipelineExecutor;
 
+  Future(vtkImageData* result, QObject* parent = nullptr)
+    : QObject(parent), m_imageData(result){};
+  Future(vtkImageData* result, QList<Operator*> operators,
+         QObject* parent = nullptr)
+    : QObject(parent), m_imageData(result), m_operators(operators){};
+  Future(QList<Operator*> operators, QObject* parent = nullptr)
+    : QObject(parent), m_operators(operators){};
+  Future(QObject* parent = nullptr) : QObject(parent){};
+  virtual ~Future() override{};
+
   vtkSmartPointer<vtkImageData> result() { return m_imageData; }
-  Operator* op() { return m_operator; }
+  void setResult(vtkSmartPointer<vtkImageData> result) { m_imageData = result; }
+  void setResult(vtkImageData* result) { m_imageData = result; }
+  QList<Operator*> operators() { return m_operators; }
+  void deleteWhenFinished();
 
 signals:
-  void finished(bool result);
+  void finished();
   void canceled();
 
 private:
-  ImageFuture(Operator* op, vtkImageData* imageData,
-              PipelineWorker::Future* future = nullptr,
-              QObject* parent = nullptr);
-  ~ImageFuture() override;
-  Operator* m_operator;
   vtkSmartPointer<vtkImageData> m_imageData;
-  PipelineWorker::Future* m_future;
+  QList<Operator*> m_operators;
 };
 
 class PipelineSettings

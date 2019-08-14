@@ -2,6 +2,7 @@
   "name" : "ReconstructDFT",
   "label" : "Direct Fourier Reconstruction",
   "description" : "Reconstruct a tilt series using Direct Fourier Method (DFM). The tilt axis must be parallel to the x-direction and centered in the y-direction. The size of reconstruction will be (Nx,Ny,Ny). Reconstrucing a 512x512x512 tomogram typically takes 30-40 seconds.",
+  "externalCompatible": false,
   "children": [
     {
       "name": "reconstruction",

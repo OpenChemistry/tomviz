@@ -4,12 +4,12 @@
 #ifndef tomvizCloneDataReaction_h
 #define tomvizCloneDataReaction_h
 
-#include <pqReaction.h>
+#include <Reaction.h>
 
 namespace tomviz {
 class DataSource;
 
-class CloneDataReaction : public pqReaction
+class CloneDataReaction : public Reaction
 {
   Q_OBJECT
 
@@ -21,7 +21,6 @@ public:
 protected:
   /// Called when the action is triggered.
   void onTriggered() override { clone(); }
-  void updateEnableState() override;
 
 private:
   Q_DISABLE_COPY(CloneDataReaction)

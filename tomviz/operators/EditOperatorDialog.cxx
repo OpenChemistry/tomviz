@@ -109,9 +109,10 @@ EditOperatorDialog::EditOperatorDialog(Operator* op, DataSource* dataSource,
     }
     // We need the image data for call the datasource to run the pipeline
     else {
-      Pipeline::ImageFuture* future =
-        dataSource->pipeline()->getCopyOfImagePriorTo(op);
-      connect(future, &Pipeline::ImageFuture::finished, this,
+      auto operators = op->dataSource()->operators();
+      auto future =
+        dataSource->pipeline()->execute(op->dataSource(), nullptr, op);
+      connect(future, &Pipeline::Future::finished, this,
               &EditOperatorDialog::getCopyOfImagePriorToFinished);
     }
   } else {
@@ -269,22 +270,18 @@ void EditOperatorDialog::setupUI(EditOperatorWidget* opWidget)
           &EditOperatorDialog::onOkay);
 }
 
-void EditOperatorDialog::getCopyOfImagePriorToFinished(bool result)
+void EditOperatorDialog::getCopyOfImagePriorToFinished()
 {
   if (this->Internals->Op.isNull()) {
     return;
   }
 
-  Pipeline::ImageFuture* future =
-    qobject_cast<Pipeline::ImageFuture*>(this->sender());
+  auto future = qobject_cast<Pipeline::Future*>(this->sender());
 
-  if (result) {
-    auto opWidget =
-      this->Internals->Op->getEditorContentsWithData(this, future->result());
-    this->setupUI(opWidget);
-  } else {
-    qWarning() << "Error occured running operators.";
-  }
+  auto opWidget =
+    this->Internals->Op->getEditorContentsWithData(this, future->result());
+  this->setupUI(opWidget);
+
   future->deleteLater();
 }
 

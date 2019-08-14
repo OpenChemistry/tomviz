@@ -4,14 +4,14 @@
 #ifndef tomvizCropReaction_h
 #define tomvizCropReaction_h
 
-#include <pqReaction.h>
+#include <Reaction.h>
 
 class QMainWindow;
 
 namespace tomviz {
 class DataSource;
 
-class CropReaction : public pqReaction
+class CropReaction : public Reaction
 {
   Q_OBJECT
 
@@ -21,7 +21,6 @@ public:
   void crop(DataSource* source = nullptr);
 
 protected:
-  void updateEnableState() override;
   void onTriggered() override { crop(); }
 
 private:
