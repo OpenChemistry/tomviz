@@ -17,6 +17,14 @@ namespace tomviz {
 class GenericHDF5Format
 {
 public:
+  // Some options to set before reading
+
+  // Should we check the size and ask the user to stride?
+  void setCheckSize(bool b) { m_checkSize = b; }
+
+  // What should the stride be?
+  void setStride(int i) { m_stride = i; }
+
   bool read(const std::string& fileName, vtkImageData* data);
 
   /**
@@ -29,8 +37,15 @@ public:
    * @param data The vtkImageData where the volume will be written.
    * @return True on success, false on failure.
    */
-  static bool readVolume(h5::H5ReadWrite& reader, const std::string& path,
-                         vtkImageData* data);
+  bool readVolume(h5::H5ReadWrite& reader, const std::string& path,
+                  vtkImageData* data);
+private:
+  // Check to see if the size is very big, and if it is, allow the user
+  // to choose a stride.
+  bool m_checkSize = true;
+
+  // Stride to use, unless the user chooses one.
+  int m_stride = 1;
 };
 } // namespace tomviz
 

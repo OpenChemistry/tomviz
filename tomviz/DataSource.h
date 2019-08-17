@@ -120,6 +120,12 @@ public:
   /// Set the label for the data source.
   void setLabel(const QString& label);
 
+  /// Can we reload and resample the original dataset?
+  bool canReloadAndResample() const;
+
+  // Reload and resample the original dataset
+  bool reloadAndResample(int stride);
+
   /// Returns the name of the filename used from the originalDataSource.
   QString label() const;
 

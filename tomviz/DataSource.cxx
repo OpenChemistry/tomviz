@@ -5,6 +5,7 @@
 
 #include "ActiveObjects.h"
 #include "ColorMap.h"
+#include "GenericHDF5Format.h"
 #include "ModuleFactory.h"
 #include "ModuleManager.h"
 #include "Operator.h"
@@ -284,6 +285,64 @@ QStringList DataSource::fileNames() const
     }
   }
   return files;
+}
+
+bool DataSource::canReloadAndResample() const
+{
+  // We do not currently allow datasources with operators to be
+  // reloaded and resampled.
+  if (!operators().empty())
+    return false;
+
+  const auto& files = fileNames();
+
+  // This currently only works for single files
+  if (files.size() != 1)
+    return false;
+
+  const auto& file = files[0];
+
+  // If it ends in emd, we can do it as long as it is a volume
+  if (file.endsWith("emd", Qt::CaseInsensitive) && type() == Volume)
+    return true;
+
+  static const QStringList h5Extensions = { "h5", "he5", "hdf5" };
+
+  // If it looks like an HDF5 type (based on its extension), it can be
+  // reloaded and resampled.
+  return std::any_of(
+    h5Extensions.cbegin(), h5Extensions.cend(),
+    [&file](const QString& x) { return file.endsWith(x, Qt::CaseInsensitive); });
+}
+
+bool DataSource::reloadAndResample(int stride)
+{
+  const auto& files = fileNames();
+
+  // This currently only works for single files
+  if (files.size() != 1)
+    return false;
+
+  // The type must be a volume
+  if (type() != Volume)
+    return false;
+
+  const auto& file = files[0];
+
+  auto algo = vtkAlgorithm::SafeDownCast(proxy()->GetClientSideObject());
+  Q_ASSERT(algo);
+  auto data = algo->GetOutputDataObject(0);
+  auto image = vtkImageData::SafeDownCast(data);
+
+  GenericHDF5Format format;
+  format.setCheckSize(false);
+  format.setStride(stride);
+  bool success = format.read(file.toLatin1().data(), image);
+
+  dataModified();
+  emit activeScalarsChanged();
+  emit dataPropertiesChanged();
+  return success;
 }
 
 bool DataSource::isImageStack() const
