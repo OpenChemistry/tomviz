@@ -73,6 +73,8 @@ set(SOURCES
   GenericHDF5Format.h
   GradientOpacityWidget.h
   GradientOpacityWidget.cxx
+  Hdf5SubsampleWidget.h
+  Hdf5SubsampleWidget.cxx
   HistogramManager.h
   HistogramManager.cxx
   HistogramWidget.h

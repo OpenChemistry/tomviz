@@ -315,7 +315,7 @@ bool DataSource::canReloadAndResample() const
     [&file](const QString& x) { return file.endsWith(x, Qt::CaseInsensitive); });
 }
 
-bool DataSource::reloadAndResample(int stride)
+bool DataSource::reloadAndResample()
 {
   const auto& files = fileNames();
 
@@ -335,8 +335,7 @@ bool DataSource::reloadAndResample(int stride)
   auto image = vtkImageData::SafeDownCast(data);
 
   GenericHDF5Format format;
-  format.setCheckSize(false);
-  format.setStride(stride);
+  format.setAskForSubsample(true);
   bool success = format.read(file.toLatin1().data(), image);
 
   dataModified();

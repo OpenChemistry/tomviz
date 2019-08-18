@@ -35,7 +35,7 @@ void ReorderArrayC(T* in, T* out, int dim[3])
 }
 
 bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
-                              bool checkSize, int stride)
+                              bool askForSubsample)
 {
   using h5::H5ReadWrite;
   H5ReadWrite::OpenMode mode = H5ReadWrite::OpenMode::ReadOnly;
@@ -47,8 +47,7 @@ bool DataExchangeFormat::read(const std::string& fileName, vtkImageData* image,
     return false;
 
   GenericHDF5Format f;
-  f.setCheckSize(checkSize);
-  f.setStride(stride);
+  f.setAskForSubsample(askForSubsample);
   return f.readVolume(reader, deDataNode, image);
 }
 

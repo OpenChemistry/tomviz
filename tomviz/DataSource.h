@@ -124,7 +124,7 @@ public:
   bool canReloadAndResample() const;
 
   // Reload and resample the original dataset
-  bool reloadAndResample(int stride);
+  bool reloadAndResample();
 
   /// Returns the name of the filename used from the originalDataSource.
   QString label() const;

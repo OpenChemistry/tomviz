@@ -4,15 +4,15 @@
 #include "GenericHDF5Format.h"
 
 #include <DataExchangeFormat.h>
+#include <Hdf5SubsampleWidget.h>
 
 #include <h5cpp/h5readwrite.h>
 #include <h5cpp/h5vtktypemaps.h>
 
-#include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QInputDialog>
-#include <QLabel>
+#include <QStringList>
 #include <QVBoxLayout>
 
 #include <vtkDataArray.h>
@@ -23,6 +23,10 @@
 #include <vector>
 
 #include <iostream>
+
+using std::cerr;
+using std::cout;
+using std::endl;
 
 namespace tomviz {
 
@@ -57,37 +61,69 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   h5::H5ReadWrite::DataType type = reader.dataType(path);
   int vtkDataType = h5::H5VtkTypeMaps::dataTypeToVtk(type);
 
+  // This is the easiest way I could find to get the size of the type
+  int size = vtkDataArray::GetDataTypeSize(vtkDataType);
+
   // Get the dimensions
   std::vector<int> dims = reader.getDimensions(path);
 
-  // Check if one of the dimensions is greater than 1200.
-  // If so, ask the user to choose a stride.
-  int stride = m_stride;
-  if (m_checkSize) {
-    for (const auto& dim : dims) {
-      if (dim > 1200) {
-        bool ok;
-        stride = QInputDialog::getInt(nullptr, "Large Dataset", "Choose Stride",
-                                      1, 1, 1e5, 1, &ok);
-        if (!ok)
-          return false;
+  int bs[6];
+  int stride = 1;
 
-        break;
-      }
+  bool anyOver = std::any_of(dims.cbegin(), dims.cend(), [this](int i) {
+    return i >= m_subsampleDimOverride;
+  });
+  if (m_askForSubsample || anyOver) {
+    int dimensions[3] = { dims[0], dims[1], dims[2] };
+    QDialog dialog;
+    dialog.setWindowTitle("Pick Subsample");
+    QVBoxLayout layout;
+    dialog.setLayout(&layout);
+
+    Hdf5SubsampleWidget widget(dimensions, size);
+    layout.addWidget(&widget);
+
+    QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    layout.addWidget(&buttons);
+    QObject::connect(&buttons, &QDialogButtonBox::accepted, &dialog,
+                     &QDialog::accept);
+    QObject::connect(&buttons, &QDialogButtonBox::rejected, &dialog,
+                     &QDialog::reject);
+
+    // Check if the user cancels
+    if (!dialog.exec())
+      return false;
+
+    widget.bounds(bs);
+    stride = widget.stride();
+  } else {
+    // Set the bounds to the default values
+    for (int i = 0; i < 3; ++i) {
+      bs[i * 2] = 0;
+      bs[i * 2 + 1] = dims[i];
     }
   }
 
-  // Re-shape the dimensions according to the stride
-  for (auto& dim : dims)
-    dim /= stride;
+  // Set up the stride and counts
+  size_t start[3] = { static_cast<size_t>(bs[0]), static_cast<size_t>(bs[2]),
+                      static_cast<size_t>(bs[4]) };
+  size_t counts[3];
+  for (size_t i = 0; i < 3; ++i)
+    counts[i] = (bs[i * 2 + 1] - start[i]) / stride;
+
+  // vtk requires the counts to be an int array
+  int vtkCounts[3];
+  for (int i = 0; i < 3; ++i)
+    vtkCounts[i] = counts[i];
 
   vtkNew<vtkImageData> tmp;
-  tmp->SetDimensions(&dims[0]);
+  tmp->SetDimensions(&vtkCounts[0]);
   tmp->AllocateScalars(vtkDataType, 1);
-  image->SetDimensions(&dims[0]);
+  image->SetDimensions(&vtkCounts[0]);
   image->AllocateScalars(vtkDataType, 1);
 
-  if (!reader.readData(path, type, tmp->GetScalarPointer(), stride)) {
+  if (!reader.readData(path, type, tmp->GetScalarPointer(), stride, start,
+                       counts)) {
     std::cerr << "Failed to read the data\n";
     return false;
   }
@@ -99,7 +135,7 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
   switch (image->GetPointData()->GetScalars()->GetDataType()) {
     vtkTemplateMacro(tomviz::ReorderArrayF(reinterpret_cast<VTK_TT*>(inPtr),
                                            reinterpret_cast<VTK_TT*>(outPtr),
-                                           &dims[0]));
+                                           &vtkCounts[0]));
     default:
       cout << "Generic HDF5 Format: Unknown data type" << endl;
   }
@@ -118,7 +154,7 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image)
   if (reader.isDataSet("/exchange/data")) {
     reader.close();
     DataExchangeFormat deFormat;
-    return deFormat.read(fileName, image, m_checkSize, m_stride);
+    return deFormat.read(fileName, image, m_askForSubsample);
   }
 
   // Find all 3D datasets. If there is more than one, have the user choose.
@@ -141,26 +177,19 @@ bool GenericHDF5Format::read(const std::string& fileName, vtkImageData* image)
 
   if (datasets.size() != 1) {
     // If there is more than one dataset, have the user choose one
-    QDialog dialog;
-    QVBoxLayout layout;
-    dialog.setLayout(&layout);
-    dialog.setWindowTitle("Choose volume");
-    QLabel label("Choose volume to load:");
-    layout.addWidget(&label);
+    QStringList items;
+    for (auto& d : datasets)
+      items.append(QString::fromStdString(d));
 
-    QComboBox combo;
-    for (const auto& dataset : datasets)
-      combo.addItem(dataset.c_str());
-    layout.addWidget(&combo);
+    bool ok;
+    QString res = QInputDialog::getItem(
+      nullptr, "Choose volume", "Choose volume to load:", items, 0, false, &ok);
 
-    QDialogButtonBox okButton(QDialogButtonBox::Ok);
-    layout.addWidget(&okButton);
-    layout.setAlignment(&okButton, Qt::AlignCenter);
-    QObject::connect(&okButton, &QDialogButtonBox::accepted, &dialog,
-                     &QDialog::accept);
+    // Check if user canceled
+    if (!ok)
+      return false;
 
-    dialog.exec();
-    dataNode = datasets[combo.currentIndex()];
+    dataNode = datasets[items.indexOf(res)];
   }
 
   return readVolume(reader, dataNode, image);
