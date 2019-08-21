@@ -22,8 +22,9 @@ void getSinogram(vtkImageData* tiltSeries, int, float* sinogram);
 
 /// Interpolate a sinogram of given size and rotation axis. Useful for axis
 /// alignment
+/// "tiltAxis" is 0 if the tilt axis is X, and 1 if the tilt axis is Y
 void getSinogram(vtkImageData* tiltSeries, int, float* sinogram, int Nray,
-                 double axisPosition = 0);
+                 double axisPosition = 0, int tiltAxis = 0);
 
 // void getSinogram(vtkImageData *tiltSeries, int, float* sinogram,  int Nray,
 // double axisPosition = 0, double axisAngle = 0);

@@ -71,7 +71,7 @@ void getSinogram(vtkImageData* tiltSeries, int sliceNumber, float* sinogram)
 
 // Extract sinograms from tilt series
 void getSinogram(vtkImageData* tiltSeries, int sliceNumber, float* sinogram,
-                 int Nray, double axisPosition)
+                 int Nray, double axisPosition, int tiltAxis)
 {
   int extents[6];
   tiltSeries->GetExtent(extents);
@@ -79,12 +79,19 @@ void getSinogram(vtkImageData* tiltSeries, int sliceNumber, float* sinogram,
   int yDim = extents[3] - extents[2] + 1; // number of rays in tilt series
   int zDim = extents[5] - extents[4] + 1; // number of tilts
 
+  // Note that the meaning of x and y flip if the tiltAxis is flipped
+  int tiltAxDim;
+  if (tiltAxis == 0)
+    tiltAxDim = yDim;
+  else
+    tiltAxDim = xDim;
+
   // Convert tiltSeries type to float
   vtkSmartPointer<vtkFloatArray> dataAsFloats = convertToFloat(tiltSeries);
   float* dataPtr = static_cast<float*>(dataAsFloats->GetVoidPointer(
     0)); // Get pointer to tilt series (of type float)
 
-  double rayWidth = (double)yDim / (double)Nray;
+  double rayWidth = (double)tiltAxDim / (double)Nray;
   std::vector<float> weight1(Nray); // Store weights for linear interpolation
   std::vector<float> weight2(Nray); // Store weights for linear interpolation
   std::vector<int> index1(Nray);    // Store indices for linear interpolation
@@ -97,20 +104,29 @@ void getSinogram(vtkImageData* tiltSeries, int sliceNumber, float* sinogram,
     {
       if (z == 0) { // Initialize weights and indicies
         double rayCoord = (double)(r - Nray / 2) * rayWidth + axisPosition;
-        index1[r] = floor(rayCoord) + yDim / 2;
+        index1[r] = floor(rayCoord) + tiltAxDim / 2;
         index2[r] = index1[r] + 1;
         weight1[r] = fabs(rayCoord - floor(rayCoord));
         weight2[r] = 1 - weight1[r];
       }
       sinogram[z * Nray + r] = 0;
-      if (index1[r] >= 0 && index1[r] < yDim)
-        sinogram[z * Nray + r] +=
-          dataPtr[z * xDim * yDim + index1[r] * xDim + sliceNumber] *
-          weight1[r];
-      if (index2[r] >= 0 && index2[r] < yDim)
-        sinogram[z * Nray + r] +=
-          dataPtr[z * xDim * yDim + index2[r] * xDim + sliceNumber] *
-          weight2[r];
+      size_t dataInd;
+      if (index1[r] >= 0 && index1[r] < tiltAxDim) {
+        if (tiltAxis == 0)
+          dataInd = z * xDim * yDim + index1[r] * xDim + sliceNumber;
+        else
+          dataInd = z * xDim * yDim + sliceNumber * xDim + index1[r];
+
+        sinogram[z * Nray + r] += dataPtr[dataInd] * weight1[r];
+      }
+      if (index2[r] >= 0 && index2[r] < tiltAxDim) {
+        if (tiltAxis == 0)
+          dataInd = z * xDim * yDim + index2[r] * xDim + sliceNumber;
+        else
+          dataInd = z * xDim * yDim + sliceNumber * xDim + index2[r];
+
+        sinogram[z * Nray + r] += dataPtr[dataInd] * weight2[r];
+      }
     }
   }
 }

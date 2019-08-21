@@ -41,6 +41,7 @@ protected slots:
   void onRotationShiftChanged(int);
   void onRotationAngleChanged(double);
   void onRotationAxisChanged();
+  void onOrientationChanged(int);
 
   void updateWidgets();
   void updateControls();
