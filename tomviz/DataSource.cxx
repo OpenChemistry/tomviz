@@ -289,11 +289,6 @@ QStringList DataSource::fileNames() const
 
 bool DataSource::canReloadAndResample() const
 {
-  // We do not currently allow datasources with operators to be
-  // reloaded and resampled.
-  if (!operators().empty())
-    return false;
-
   const auto& files = fileNames();
 
   // This currently only works for single files
@@ -338,6 +333,10 @@ bool DataSource::reloadAndResample(int stride)
   format.setCheckSize(false);
   format.setStride(stride);
   bool success = format.read(file.toLatin1().data(), image);
+
+  // If there are operators, re-run the pipeline
+  if (!operators().empty())
+    pipeline()->execute(this, operators().first());
 
   dataModified();
   emit activeScalarsChanged();
