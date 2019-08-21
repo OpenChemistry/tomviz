@@ -167,8 +167,7 @@ public:
       if (m_orientation == 0) {
         double maxSlice = dims[1];
         yTranslate = (bounds[3] - bounds[2]) * m_shiftRotation / maxSlice;
-      }
-      else {
+      } else {
         double maxSlice = dims[0];
         xTranslate = (bounds[1] - bounds[0]) * m_shiftRotation / maxSlice;
       }
@@ -219,8 +218,8 @@ public:
         sin(-this->m_tiltRotation * PI / 180) * (sliceNum - dims[0] / 2);
 
       TomographyTiltSeries::getSinogram(
-        imageData, sliceNum, &sinogram[0], Nray,
-        shift, m_orientation); // Get a sinogram from tilt series
+        imageData, sliceNum, &sinogram[0], Nray, shift,
+        m_orientation); // Get a sinogram from tilt series
 
       this->reconImage[i]->SetExtent(0, Nray - 1, 0, Nray - 1, 0, 0);
       this->reconImage[i]->AllocateScalars(VTK_FLOAT, 1);
@@ -277,8 +276,7 @@ public:
           p2[0] = bounds[0] + (bounds[1] - bounds[0]) * (slices[i] / maxSlices);
           p1[1] = bounds[2];
           p2[1] = bounds[3];
-        }
-        else {
+        } else {
           p1[0] = bounds[0];
           p2[0] = bounds[1];
           p1[1] = bounds[2] + (bounds[3] - bounds[2]) * (slices[i] / maxSlices);
