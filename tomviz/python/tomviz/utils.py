@@ -492,3 +492,12 @@ def rotate_shape(input, angle, axes):
     output_shape[axes[1]] = ox
 
     return output_shape
+
+def get_number_of_channels(dataobject):
+    """
+    Returns the number of channels associated with this dataset.
+
+    :param dataobject The incoming dataset
+    :type: vtkDataObject
+    """
+    return dsa.WrapDataObject(dataobject).PointData.GetNumberOfArrays()
