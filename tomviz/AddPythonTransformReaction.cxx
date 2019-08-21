@@ -608,7 +608,7 @@ void AddPythonTransformReaction::addPythonOperator(
   const QString& jsonString)
 {
   // Create and add the operator
-  OperatorPython* opPython = new OperatorPython();
+  OperatorPython* opPython = new OperatorPython(source);
   opPython->setJSONDescription(jsonString);
   opPython->setLabel(scriptLabel);
   opPython->setScript(scriptBaseString);
@@ -623,7 +623,7 @@ void AddPythonTransformReaction::addPythonOperator(
   const QMap<QString, QString> typeInfo)
 {
   // Create and add the operator
-  OperatorPython* opPython = new OperatorPython();
+  OperatorPython* opPython = new OperatorPython(source);
   opPython->setLabel(scriptLabel);
   opPython->setScript(scriptBaseString);
   opPython->setArguments(arguments);

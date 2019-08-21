@@ -26,7 +26,7 @@ OperatorPython* AddExpressionReaction::addExpression(DataSource* source)
 
   QString script = getDefaultExpression(source);
 
-  OperatorPython* opPython = new OperatorPython();
+  OperatorPython* opPython = new OperatorPython(source);
   opPython->setScript(script);
   opPython->setLabel("Transform Data");
 
