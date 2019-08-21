@@ -493,6 +493,7 @@ def rotate_shape(input, angle, axes):
 
     return output_shape
 
+
 def get_number_of_channels(dataobject):
     """
     Returns the number of channels associated with this dataset.
