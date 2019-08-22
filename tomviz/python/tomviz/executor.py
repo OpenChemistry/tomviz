@@ -530,8 +530,6 @@ def _execute_transform(operator_label, transform, arguments, input, progress):
         update_spinner.cancel()
         spinner.finish()
 
-    logger.info('Execution complete.')
-
     return result
 
 
@@ -623,6 +621,7 @@ def execute(operators, start_at, data_file_path, output_file_path,
             progress.finished(operator_index)
             operator_index += 1
 
+        logger.info('Execution complete.')
         # Now write out the transformed data.
         logger.info('Writing transformed data.')
         if output_file_path is None:
