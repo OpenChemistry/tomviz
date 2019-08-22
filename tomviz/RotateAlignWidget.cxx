@@ -484,17 +484,31 @@ RotateAlignWidget::~RotateAlignWidget() {}
 
 void RotateAlignWidget::getValues(QMap<QString, QVariant>& map)
 {
-  QList<QVariant> value;
-  value << 0 << -this->Internals->m_shiftRotation << 0;
-  map.insert("SHIFT", value);
+  QList<QVariant> shift;
+  shift << 0 << -this->Internals->m_shiftRotation << 0;
+
+  // Swap x and y for the shift if we are doing vertical alignment
+  auto orientation = this->Internals->m_orientation;
+  if (orientation != 0)
+    shift.swap(0, 1);
+
+  map.insert("SHIFT", shift);
   map.insert("rotation_angle", this->Internals->m_tiltRotation);
+  map.insert("tilt_axis", orientation);
 }
 
 void RotateAlignWidget::setValues(const QMap<QString, QVariant>& map)
 {
+  if (map.contains("tilt_axis")) {
+    // Tilt axis should be updated first so the shift knows which index
+    // to use.
+    auto tilt = map["tilt_axis"];
+    onOrientationChanged(tilt.toInt());
+  }
   if (map.contains("SHIFT")) {
     auto shift = map["SHIFT"];
-    onRotationShiftChanged(-shift.toList()[1].toInt());
+    auto ind = (this->Internals->m_orientation == 0 ? 1 : 0);
+    onRotationShiftChanged(-shift.toList()[ind].toInt());
   }
   if (map.contains("rotation_angle")) {
     auto rotation = map["rotation_angle"];
@@ -669,7 +683,8 @@ void RotateAlignWidget::updateControls()
     QSignalBlocker(this->Internals->Ui.spinBox_2),
     QSignalBlocker(this->Internals->Ui.spinBox_3),
     QSignalBlocker(this->Internals->Ui.rotationAxis),
-    QSignalBlocker(this->Internals->Ui.rotationAngle)
+    QSignalBlocker(this->Internals->Ui.rotationAngle),
+    QSignalBlocker(this->Internals->Ui.orientation)
   };
 
   vtkImageData* imageData = this->Internals->m_image;
@@ -737,6 +752,8 @@ void RotateAlignWidget::updateControls()
   this->Internals->Ui.rotationAngle->setRange(rotationAngleRange[0],
                                               rotationAngleRange[1]);
   this->Internals->Ui.rotationAngle->setValue(rotationAngleValue);
+
+  this->Internals->Ui.orientation->setCurrentIndex(tiltAxis);
 
   this->Internals->axesActor->SetXAxisRange(xAxisRange);
   this->Internals->axesActor->SetYAxisRange(yAxisRange);

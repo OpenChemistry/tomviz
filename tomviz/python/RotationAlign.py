@@ -23,10 +23,6 @@ def transform_scalars(dataset, SHIFT=None, rotation_angle=90.0, tilt_axis=0):
 
     axis1 = (rotation_axis + 1) % 3
     axis2 = (rotation_axis + 2) % 3
-
-    if tilt_axis == 1:
-        axis1, axis2 = axis2, axis1
-
     axes = (axis1, axis2)
     shape = utils.rotate_shape(data_py_return, rotation_angle, axes=axes)
     data_py_return2 = np.empty(shape, data_py_return.dtype, order='F')
