@@ -51,6 +51,11 @@ public:
     ui.endY->setValue(dims[1]);
     ui.endZ->setValue(dims[2]);
 
+    // Show the upper limits with tooltips
+    ui.endX->setToolTip("Max: " + QString::number(dims[0]));
+    ui.endY->setToolTip("Max: " + QString::number(dims[1]));
+    ui.endZ->setToolTip("Max: " + QString::number(dims[2]));
+
     updateRanges();
     updateSizeString();
   }
