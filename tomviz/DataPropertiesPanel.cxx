@@ -167,7 +167,8 @@ QString getMemSizeString(vtkSMSourceProxy* proxy)
   vtkPVDataInformation* info = proxy->GetDataInformation(0);
 
   // GetMemorySize() returns kilobytes
-  size_t memSize = info->GetMemorySize() * 1000;
+  // Cast it to size_t to prevent integer overflows
+  size_t memSize = static_cast<size_t>(info->GetMemorySize()) * 1000;
 
   return "Memory: " + getSizeNearestThousand(memSize, true);
 }
