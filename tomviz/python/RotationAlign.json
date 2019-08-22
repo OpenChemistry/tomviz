@@ -19,6 +19,15 @@
       "default" : 90.0,
       "minimum" : -360.0,
       "maximum" : 360.0
+    },
+    {
+      "name" : "tilt_axis",
+      "label" : "Tilt Axis",
+      "description" : "The tilt axis (0 for X, 1 for Y).",
+      "type" : "int",
+      "default" : 0,
+      "minimum" : 0,
+      "maximum" : 1
     }
   ]
 }

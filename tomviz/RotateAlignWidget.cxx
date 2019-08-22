@@ -88,6 +88,7 @@ public:
   int m_slice0;
   int m_slice1;
   int m_slice2;
+  int m_orientation;
 
   RAWInternal()
   {
@@ -154,7 +155,7 @@ public:
     }
     double centerOfRotation[3] = { 0.0, 0.0, 0.0 };
     vtkImageData* imageData = m_image;
-    double yTranslate = 0;
+    double xTranslate = 0, yTranslate = 0;
     if (imageData) {
       double bounds[6];
       imageData->GetBounds(bounds);
@@ -163,13 +164,25 @@ public:
       centerOfRotation[0] = (bounds[0] + bounds[1]) / 2.0;
       centerOfRotation[1] = (bounds[2] + bounds[3]) / 2.0;
       centerOfRotation[2] = (bounds[4] + bounds[5]) / 2.0;
-      double maxSlice = dims[1];
-      yTranslate = (bounds[3] - bounds[2]) * m_shiftRotation / maxSlice;
+      if (m_orientation == 0) {
+        double maxSlice = dims[1];
+        yTranslate = (bounds[3] - bounds[2]) * m_shiftRotation / maxSlice;
+      } else {
+        double maxSlice = dims[0];
+        xTranslate = (bounds[1] - bounds[0]) * m_shiftRotation / maxSlice;
+      }
     }
     tform->Identity();
-    tform->Translate(0, yTranslate, 0);
+    tform->Translate(xTranslate, yTranslate, 0);
     tform->Translate(centerOfRotation);
-    tform->RotateZ(-this->m_tiltRotation);
+
+    double rotate = -this->m_tiltRotation;
+    if (m_orientation == 1) {
+      // Rotate an extra 90 degrees for orientation == 1
+      rotate -= 90.0;
+    }
+
+    tform->RotateZ(rotate);
     tform->Translate(-centerOfRotation[0], -centerOfRotation[1],
                      -centerOfRotation[2]);
     this->Ui.sliceView->renderWindow()->Render();
@@ -205,8 +218,9 @@ public:
         sin(-this->m_tiltRotation * PI / 180) * (sliceNum - dims[0] / 2);
 
       TomographyTiltSeries::getSinogram(
-        imageData, sliceNum, &sinogram[0], Nray,
-        shift); // Get a sinogram from tilt series
+        imageData, sliceNum, &sinogram[0], Nray, shift,
+        m_orientation); // Get a sinogram from tilt series
+
       this->reconImage[i]->SetExtent(0, Nray - 1, 0, Nray - 1, 0, 0);
       this->reconImage[i]->AllocateScalars(VTK_FLOAT, 1);
       vtkDataArray* reconArray =
@@ -248,14 +262,26 @@ public:
       imageData->GetBounds(bounds);
       int extent[6];
       imageData->GetExtent(extent);
-      double maxSlices = extent[1] - extent[0] + 1;
+      double maxSlices;
+      if (m_orientation == 0)
+        maxSlices = extent[1] - extent[0] + 1;
+      else
+        maxSlices = extent[3] - extent[2] + 1;
+
       int slices[3] = { m_slice0, m_slice1, m_slice2 };
       for (int i = 0; i < 3; ++i) {
         double p1[3], p2[3];
-        p1[0] = bounds[0] + (bounds[1] - bounds[0]) * (slices[i] / maxSlices);
-        p2[0] = bounds[0] + (bounds[1] - bounds[0]) * (slices[i] / maxSlices);
-        p1[1] = bounds[2];
-        p2[1] = bounds[3];
+        if (m_orientation == 0) {
+          p1[0] = bounds[0] + (bounds[1] - bounds[0]) * (slices[i] / maxSlices);
+          p2[0] = bounds[0] + (bounds[1] - bounds[0]) * (slices[i] / maxSlices);
+          p1[1] = bounds[2];
+          p2[1] = bounds[3];
+        } else {
+          p1[0] = bounds[0];
+          p2[0] = bounds[1];
+          p1[1] = bounds[2] + (bounds[3] - bounds[2]) * (slices[i] / maxSlices);
+          p2[1] = bounds[2] + (bounds[3] - bounds[2]) * (slices[i] / maxSlices);
+        }
         p1[2] = bounds[5];
         p2[2] = bounds[5];
         this->reconSliceLine[i]->SetPoint1(p1);
@@ -387,6 +413,11 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
                    &RotateAlignWidget::onRotationAngleChanged);
   this->Internals->Ui.rotationAngle->installEventFilter(this);
 
+  QObject::connect(this->Internals->Ui.orientation,
+                   QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+                   [this](int val) { this->onOrientationChanged(val); });
+  this->Internals->Ui.orientation->installEventFilter(this);
+
   //  this->connect(this->Internals->Ui.pushButton, SIGNAL(pressed()),
   //                SLOT(onFinalReconButtonPressed()));
 
@@ -419,6 +450,7 @@ RotateAlignWidget::RotateAlignWidget(Operator* op,
   this->Internals->m_slice0 = vtkMath::Round(0.25 * dims[0]);
   this->Internals->m_slice1 = vtkMath::Round(0.50 * dims[0]);
   this->Internals->m_slice2 = vtkMath::Round(0.75 * dims[0]);
+  this->Internals->m_orientation = 0;
 
   int projectionNum = dims[2] / 2;
   this->Internals->m_projectionNum = projectionNum;
@@ -452,17 +484,31 @@ RotateAlignWidget::~RotateAlignWidget() {}
 
 void RotateAlignWidget::getValues(QMap<QString, QVariant>& map)
 {
-  QList<QVariant> value;
-  value << 0 << -this->Internals->m_shiftRotation << 0;
-  map.insert("SHIFT", value);
+  QList<QVariant> shift;
+  shift << 0 << -this->Internals->m_shiftRotation << 0;
+
+  // Swap x and y for the shift if we are doing vertical alignment
+  auto orientation = this->Internals->m_orientation;
+  if (orientation != 0)
+    shift.swap(0, 1);
+
+  map.insert("SHIFT", shift);
   map.insert("rotation_angle", this->Internals->m_tiltRotation);
+  map.insert("tilt_axis", orientation);
 }
 
 void RotateAlignWidget::setValues(const QMap<QString, QVariant>& map)
 {
+  if (map.contains("tilt_axis")) {
+    // Tilt axis should be updated first so the shift knows which index
+    // to use.
+    auto tilt = map["tilt_axis"];
+    onOrientationChanged(tilt.toInt());
+  }
   if (map.contains("SHIFT")) {
     auto shift = map["SHIFT"];
-    onRotationShiftChanged(-shift.toList()[1].toInt());
+    auto ind = (this->Internals->m_orientation == 0 ? 1 : 0);
+    onRotationShiftChanged(-shift.toList()[ind].toInt());
   }
   if (map.contains("rotation_angle")) {
     auto rotation = map["rotation_angle"];
@@ -529,6 +575,24 @@ void RotateAlignWidget::onRotationAxisChanged()
   this->Internals->m_reconSliceDirty[1] = true;
   this->Internals->m_reconSliceDirty[2] = true;
   this->Internals->m_updateSlicesTimer.start();
+}
+
+void RotateAlignWidget::onOrientationChanged(int val)
+{
+  this->Internals->m_orientation = val;
+
+  int dims[3];
+  this->Internals->m_image->GetDimensions(dims);
+
+  this->Internals->m_slice0 = vtkMath::Round(0.25 * dims[val]);
+  this->Internals->m_slice1 = vtkMath::Round(0.50 * dims[val]);
+  this->Internals->m_slice2 = vtkMath::Round(0.75 * dims[val]);
+
+  this->updateControls();
+  this->Internals->updateSliceLines();
+  this->Internals->moveRotationAxisLine();
+  for (int i = 0; i < 3; ++i)
+    this->Internals->updateReconSlice(i);
 }
 
 void RotateAlignWidget::onReconSliceChanged(int idx, int val)
@@ -619,7 +683,8 @@ void RotateAlignWidget::updateControls()
     QSignalBlocker(this->Internals->Ui.spinBox_2),
     QSignalBlocker(this->Internals->Ui.spinBox_3),
     QSignalBlocker(this->Internals->Ui.rotationAxis),
-    QSignalBlocker(this->Internals->Ui.rotationAngle)
+    QSignalBlocker(this->Internals->Ui.rotationAngle),
+    QSignalBlocker(this->Internals->Ui.orientation)
   };
 
   vtkImageData* imageData = this->Internals->m_image;
@@ -647,15 +712,18 @@ void RotateAlignWidget::updateControls()
   double xAxisRange[2];
   double yAxisRange[2];
 
+  int tiltAxis = this->Internals->m_orientation;
+  int otherAxis = (tiltAxis == 0 ? 1 : 0);
+
   rotationShiftValue = this->Internals->m_shiftRotation;
-  rotationShiftRange[0] = -dims[1] / 2;
-  rotationShiftRange[1] = dims[1] / 2;
+  rotationShiftRange[0] = -dims[otherAxis] / 2;
+  rotationShiftRange[1] = dims[otherAxis] / 2;
 
   sliceValues[0] = this->Internals->m_slice0;
   sliceValues[1] = this->Internals->m_slice1;
   sliceValues[2] = this->Internals->m_slice2;
   sliceRange[0] = 0;
-  sliceRange[1] = dims[0] - 1;
+  sliceRange[1] = dims[tiltAxis] - 1;
 
   xAxisRange[0] = 0;
   xAxisRange[1] = dims[0];
@@ -684,6 +752,8 @@ void RotateAlignWidget::updateControls()
   this->Internals->Ui.rotationAngle->setRange(rotationAngleRange[0],
                                               rotationAngleRange[1]);
   this->Internals->Ui.rotationAngle->setValue(rotationAngleValue);
+
+  this->Internals->Ui.orientation->setCurrentIndex(tiltAxis);
 
   this->Internals->axesActor->SetXAxisRange(xAxisRange);
   this->Internals->axesActor->SetYAxisRange(yAxisRange);
