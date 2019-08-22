@@ -1,8 +1,12 @@
 import click
 import json
 import os
+import logging
+from pathlib import Path
 
 from tomviz import executor
+
+logger = logging.getLogger('tomviz')
 
 
 def _extract_pipeline(state):
@@ -32,8 +36,10 @@ def _extract_pipeline(state):
 
 
 @click.command(name="tomviz")
-@click.option('-d', '--data-file-path', help='Path to the EMD file, can be used'
-              ' to override data source in state file',
+@click.option('-d', '--data-path', help='Path to an EMD file or directory'
+              ' containing EMD files, can be used'
+              ' to override data source in state file. If multiple files are'
+              ' provided the pipeline with be run for each file.',
               type=click.Path(exists=True))
 @click.option('-s', '--state-file-path', help='Path to the Tomviz state file',
               type=click.Path(exists=True), required=True)
@@ -48,7 +54,7 @@ def _extract_pipeline(state):
 @click.option('-i', '--operator-index',
               help='The operator to start at.',
               type=int, default=0)
-def main(data_file_path, state_file_path, output_file_path, progress_method,
+def main(data_path, state_file_path, output_file_path, progress_method,
          socket_path, operator_index):
 
     # Extract the pipeline
@@ -59,23 +65,46 @@ def main(data_file_path, state_file_path, output_file_path, progress_method,
 
     # if we have been provided a data file path we are going to use the one
     # from the state file, so check it exists.
-    if data_file_path is None:
+    if data_path is None:
         if 'reader' not in datasource:
             raise Exception('Data source does not contain a reader.')
         filenames = datasource['reader']['fileNames']
         if len(filenames) > 1:
             raise Exception('Image stacks not supported.')
-        data_file_path = filenames[0]
+        data_path = filenames[0]
         # fileName is relative to the state file location, so convert to
         # absolute path.
-        data_file_path = os.path.abspath(
-            os.path.join(os.path.dirname(state_file_path), data_file_path))
-        if not data_file_path.lower().endswith('.emd'):
+        data_path = os.path.abspath(
+            os.path.join(os.path.dirname(state_file_path), data_path))
+        if not data_path.lower().endswith('.emd'):
             raise Exception(
                 'Unsupported data source format, only EMD is supported.')
-        if not os.path.exists(data_file_path):
+        if not os.path.exists(data_path):
             raise Exception('Data source path does not exist: %s'
-                            % data_file_path)
+                            % data_path)
 
-    executor.execute(operators, operator_index, data_file_path,
-                     output_file_path, progress_method, socket_path)
+    data_path = Path(data_path)
+    # Do we have multiple files to operate on
+    if data_path.is_dir():
+        data_file_paths = list(data_path.glob('*.emd'))
+        output_file_paths \
+            = ['%s_transformed.emd' % x.stem for x in data_file_paths]
+        # If we have been give an output directory write the output there
+        if output_file_path is not None and Path(output_file_path).is_dir():
+            output_file_paths \
+                = [Path(output_file_path) / x for x in output_file_paths]
+    else:
+        data_file_paths = [data_path]
+        output_file_paths = [output_file_path]
+
+    number_of_files = len(data_file_paths)
+    if number_of_files == 0:
+        logger.warning('No data files found.')
+    elif number_of_files > 1:
+        logger.info('Executing pipeline on %d files.' % number_of_files)
+
+    for (data_file_path, output_file_path) in zip(data_file_paths,
+                                                  output_file_paths):
+        logger.info('Executing pipeline on %s' % data_file_path)
+        executor.execute(operators, operator_index, data_file_path,
+                         output_file_path, progress_method, socket_path)
