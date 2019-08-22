@@ -76,9 +76,6 @@ def main(data_path, state_file_path, output_file_path, progress_method,
         # absolute path.
         data_path = os.path.abspath(
             os.path.join(os.path.dirname(state_file_path), data_path))
-        if not data_path.lower().endswith('.emd'):
-            raise Exception(
-                'Unsupported data source format, only EMD is supported.')
         if not os.path.exists(data_path):
             raise Exception('Data source path does not exist: %s'
                             % data_path)
@@ -94,6 +91,9 @@ def main(data_path, state_file_path, output_file_path, progress_method,
             output_file_paths \
                 = [Path(output_file_path) / x for x in output_file_paths]
     else:
+        if data_path.suffix.lower() != '.emd':
+            raise Exception(
+                'Unsupported data source format, only EMD is supported.')
         data_file_paths = [data_path]
         output_file_paths = [output_file_path]
 
