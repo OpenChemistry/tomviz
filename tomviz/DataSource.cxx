@@ -24,6 +24,7 @@
 #include <vtkStringArray.h>
 #include <vtkTrivialProducer.h>
 #include <vtkTypeInt8Array.h>
+#include <vtkTypeInt32Array.h>
 #include <vtkVector.h>
 
 #include <vtkPVArrayInformation.h>
@@ -1239,6 +1240,118 @@ void DataSource::setTiltAngles(vtkDataObject* data,
       tiltAngles->SetTuple1(i, angles[i]);
     }
   }
+}
+
+// My attempt to reduce some of the boiler plate code in the functions below
+template <typename ArrayType, typename T>
+void setFieldDataArray(vtkFieldData* fd, const char* arrayName, int numTuples,
+                       T* data)
+{
+  if (!fd->HasArray(arrayName)) {
+    vtkNew<ArrayType> typeArray;
+    typeArray->SetNumberOfComponents(1);
+    typeArray->SetNumberOfTuples(numTuples);
+    typeArray->SetName(arrayName);
+    fd->AddArray(typeArray);
+  }
+
+  ArrayType* typeArray = ArrayType::SafeDownCast(fd->GetArray(arrayName));
+  for (int i = 0; i < numTuples; ++i)
+    typeArray->SetTuple1(i, data[i]);
+}
+
+template <typename ArrayType, typename T>
+void getFieldDataArray(vtkFieldData* fd, const char* arrayName, int numTuples,
+                       T* data)
+{
+  if (!fd->HasArray(arrayName))
+    return;
+
+  ArrayType* typeArray = ArrayType::SafeDownCast(fd->GetArray(arrayName));
+  for (int i = 0; i < numTuples; ++i)
+    data[i] = typeArray->GetTuple1(i);
+}
+
+bool DataSource::wasSubsampled(vtkDataObject* image)
+{
+  bool ret = false;
+
+  if (!image)
+    return ret;
+
+  const char* arrayName = "was_subsampled";
+  using ArrayType = vtkTypeInt8Array;
+
+  vtkFieldData* fd = image->GetFieldData();
+  getFieldDataArray<ArrayType>(fd, arrayName, 1, &ret);
+  return ret;
+}
+
+void DataSource::setWasSubsampled(vtkDataObject* image, bool b)
+{
+  if (!image)
+    return;
+
+  const char* arrayName = "was_subsampled";
+  using ArrayType = vtkTypeInt8Array;
+
+  vtkFieldData* fd = image->GetFieldData();
+  setFieldDataArray<ArrayType>(fd, arrayName, 1, &b);
+}
+
+int DataSource::subsampleStride(vtkDataObject* image)
+{
+  int ret = 1;
+
+  if (!image)
+    return ret;
+
+  const char* arrayName = "subsample_stride";
+  using ArrayType = vtkTypeInt32Array;
+
+  vtkFieldData* fd = image->GetFieldData();
+  getFieldDataArray<ArrayType>(fd, arrayName, 1, &ret);
+  return ret;
+}
+
+void DataSource::setSubsampleStride(vtkDataObject* image, int i)
+{
+  if (!image)
+    return;
+
+  const char* arrayName = "subsample_stride";
+  using ArrayType = vtkTypeInt32Array;
+
+  vtkFieldData* fd = image->GetFieldData();
+  setFieldDataArray<ArrayType>(fd, arrayName, 1, &i);
+}
+
+void DataSource::subsampleVolumeBounds(vtkDataObject* image, int bs[6])
+{
+  // Set the default in case we return
+  for (int i = 0; i < 6; ++i)
+    bs[i] = -1;
+
+  if (!image)
+    return;
+
+  const char* arrayName = "subsample_volume_bounds";
+  using ArrayType = vtkTypeInt32Array;
+
+  vtkFieldData* fd = image->GetFieldData();
+  getFieldDataArray<ArrayType>(fd, arrayName, 6, bs);
+}
+
+void DataSource::setSubsampleVolumeBounds(vtkDataObject* image, int bs[6])
+{
+  if (!image)
+    return;
+
+  const char* arrayName = "subsample_volume_bounds";
+  using ArrayType = vtkTypeInt32Array;
+
+  vtkFieldData* fd = image->GetFieldData();
+  setFieldDataArray<ArrayType>(fd, arrayName, 6, bs);
 }
 
 } // namespace tomviz

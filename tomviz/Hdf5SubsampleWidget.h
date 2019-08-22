@@ -19,6 +19,10 @@ public:
                       QWidget* parent = nullptr);
   virtual ~Hdf5SubsampleWidget();
 
+  // For setting defaults
+  void setStride(int i);
+  void setBounds(int bs[6]);
+
   // For getting the results
   void bounds(int bs[6]) const;
   int stride() const;

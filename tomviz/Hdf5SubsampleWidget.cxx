@@ -83,6 +83,38 @@ public:
     bs[index++] = ui.endZ->value();
   }
 
+  void setBounds(int bs[6])
+  {
+    // If any of these are less than 0, just ignore the request
+    for (int i = 0; i < 6; ++i) {
+      if (bs[i] < 0)
+        return;
+    }
+
+    blockSpinnerSignals(true);
+
+    int index = 0;
+    ui.startX->setValue(bs[index++]);
+    ui.endX->setValue(bs[index++]);
+    ui.startY->setValue(bs[index++]);
+    ui.endY->setValue(bs[index++]);
+    ui.startZ->setValue(bs[index++]);
+    ui.endZ->setValue(bs[index++]);
+
+    blockSpinnerSignals(false);
+  }
+
+  void setStride(int i)
+  {
+    // If it is less than 1, just ignore the request
+    if (i < 1)
+      return;
+
+    ui.stride->blockSignals(true);
+    ui.stride->setValue(i);
+    ui.stride->blockSignals(false);
+  }
+
   QList<QSpinBox*> volumeSpinBoxes() const
   {
     return QList<QSpinBox*>(
@@ -149,9 +181,21 @@ void Hdf5SubsampleWidget::valueChanged()
   m_internals->updateSizeString();
 }
 
+void Hdf5SubsampleWidget::setBounds(int bs[6])
+{
+  m_internals->setBounds(bs);
+  valueChanged();
+}
+
 void Hdf5SubsampleWidget::bounds(int bs[6]) const
 {
   m_internals->bounds(bs);
+}
+
+void Hdf5SubsampleWidget::setStride(int i)
+{
+  m_internals->setStride(i);
+  valueChanged();
 }
 
 int Hdf5SubsampleWidget::stride() const

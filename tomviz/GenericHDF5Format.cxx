@@ -4,6 +4,7 @@
 #include "GenericHDF5Format.h"
 
 #include <DataExchangeFormat.h>
+#include <DataSource.h>
 #include <Hdf5SubsampleWidget.h>
 
 #include <h5cpp/h5readwrite.h>
@@ -83,6 +84,14 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
     Hdf5SubsampleWidget widget(dimensions, size);
     layout.addWidget(&widget);
 
+    if (DataSource::wasSubsampled(image)) {
+      // If it was previously subsampled, start with the previous values
+      widget.setStride(DataSource::subsampleStride(image));
+
+      DataSource::subsampleVolumeBounds(image, bs);
+      widget.setBounds(bs);
+    }
+
     QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     layout.addWidget(&buttons);
     QObject::connect(&buttons, &QDialogButtonBox::accepted, &dialog,
@@ -96,6 +105,10 @@ bool GenericHDF5Format::readVolume(h5::H5ReadWrite& reader,
 
     widget.bounds(bs);
     stride = widget.stride();
+
+    DataSource::setWasSubsampled(image, true);
+    DataSource::setSubsampleStride(image, stride);
+    DataSource::setSubsampleVolumeBounds(image, bs);
   } else {
     // Set the bounds to the default values
     for (int i = 0; i < 3; ++i) {
