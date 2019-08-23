@@ -300,7 +300,7 @@ bool GenericHDF5Format::writeVolume(h5::H5ReadWrite& writer,
                                            reinterpret_cast<VTK_TT*>(outPtr),
                                            dim));
     default:
-      cout << "EMD: Unknown data type" << endl;
+      cout << "Generic HDF5 Format: Unknown data type" << endl;
   }
 
   h5::H5ReadWrite::DataType type =
